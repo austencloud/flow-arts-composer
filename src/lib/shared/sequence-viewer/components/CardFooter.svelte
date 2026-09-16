@@ -74,6 +74,8 @@
 <style>
   /* The footer contains card facts only, centered as one balanced group. */
   .footer-section {
+    /* Sized so the hand legend can scale to the footer's width. */
+    container-type: inline-size;
     position: relative;
     display: flex;
     justify-content: center;
@@ -119,6 +121,11 @@
     display: flex;
     align-items: center;
     gap: 0.35em;
+    /* The footer floors its type at 12px for legibility. A narrow card (a
+       phone-frame preview in a short window) is not wide enough for the
+       as-performed line at that floor, so the legend shrinks with the footer
+       below roughly 300px rather than spilling past the card edges. */
+    font-size: min(1em, 4cqi);
     font-weight: 600;
     white-space: nowrap;
   }
