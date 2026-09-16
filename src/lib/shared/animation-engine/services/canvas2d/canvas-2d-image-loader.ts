@@ -94,11 +94,20 @@ export class Canvas2DImageLoader {
   };
   private leftPropType: string | null = null;
   private rightPropType: string | null = null;
+  /**
+   * Render keys of the most recent load request, set before the fetch starts.
+   * While they differ from leftPropType/rightPropType the canvas still holds
+   * the outgoing sprite for that hand; the renderer reads both to know.
+   */
+  private requestedLeftPropType: string | null = null;
+  private requestedRightPropType: string | null = null;
 
   async loadPropImages(propType: string): Promise<{
     left: HTMLImageElement;
     right: HTMLImageElement;
   }> {
+    this.requestedLeftPropType = propType;
+    this.requestedRightPropType = propType;
     try {
       // Generate blue and red prop SVGs
       const [leftPropData, rightPropData] = await Promise.all([
@@ -141,6 +150,8 @@ export class Canvas2DImageLoader {
         right: this.rightPropImage,
       };
     } catch (error) {
+      this.requestedLeftPropType = this.leftPropType;
+      this.requestedRightPropType = this.rightPropType;
       console.error("[Canvas2DImageLoader] Failed to load prop images:", error);
       throw error;
     }
@@ -157,6 +168,8 @@ export class Canvas2DImageLoader {
   }> {
     const request = Symbol();
     this.primaryColorRequest = request;
+    this.requestedLeftPropType = leftPropType;
+    this.requestedRightPropType = rightPropType;
     try {
       // Generate blue and red prop SVGs with different types
       // Pass darkMode to use local preview state instead of global
@@ -235,6 +248,10 @@ export class Canvas2DImageLoader {
         right: this.rightPropImage,
       };
     } catch (error) {
+      if (this.primaryColorRequest === request) {
+        this.requestedLeftPropType = this.leftPropType;
+        this.requestedRightPropType = this.rightPropType;
+      }
       console.error(
         "[Canvas2DImageLoader] Failed to load per-color prop images:",
         error
@@ -488,6 +505,16 @@ export class Canvas2DImageLoader {
     return this.rightPropType;
   }
 
+  /** Render key of the newest blue-hand load request, landed or not. */
+  getRequestedLeftPropType(): string | null {
+    return this.requestedLeftPropType;
+  }
+
+  /** Render key of the newest red-hand load request, landed or not. */
+  getRequestedRightPropType(): string | null {
+    return this.requestedRightPropType;
+  }
+
   getPreviousLeftProp(): PropSpriteSnapshot | null {
     return this.previousLeftProp;
   }
@@ -555,6 +582,8 @@ export class Canvas2DImageLoader {
     this.previousRightProp = null;
     this.leftPropType = null;
     this.rightPropType = null;
+    this.requestedLeftPropType = null;
+    this.requestedRightPropType = null;
     this.additionalLayerImages.length = 0;
     this.layerColorRequests.clear();
     this.primaryColorRequest = null;

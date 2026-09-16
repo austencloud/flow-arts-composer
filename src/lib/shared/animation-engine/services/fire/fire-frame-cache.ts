@@ -212,6 +212,17 @@ export class FireFrameCache {
     return this.cacheHeight;
   }
 
+  /**
+   * Whether the recorded loop was captured for this display size. A recording
+   * blits at its own display viewport, so replaying it on a resized canvas
+   * paints the flames at the old positions.
+   */
+  matchesDisplaySize(displayWidth: number, displayHeight: number): boolean {
+    return (
+      this.displayWidth === displayWidth && this.displayHeight === displayHeight
+    );
+  }
+
   getRecordingTexture(): WebGLTexture | null {
     return this.recordingTexture;
   }

@@ -1,4 +1,6 @@
 import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { modelSpriteFacesAwayFromTips } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
+import { PROP_MODEL_SPRITES } from "$lib/shared/pictograph/prop/domain/prop-model-sprites.generated";
 import type { PropSvgData } from "$lib/shared/animation-engine/domain/types/svg-types";
 
 export type { PropSvgData } from "$lib/shared/animation-engine/domain/types/svg-types";
@@ -290,6 +292,26 @@ function spriteSideForColor(color: string): PropSpriteSide {
 }
 
 /**
+ * Turn a model capture to face its tip table. Captures are grip-centred, so
+ * a one-sided prop captured facing -x (club, torch, poi, chicken, sword,
+ * hoops) is rotated a half turn about the box centre; that puts the painted
+ * end on the +x side where every tip table, trail, and the mandala expect
+ * it. Bilateral and radial props are returned unchanged. The predicate lives
+ * with the tip tables so the two never disagree about which sprites turn.
+ */
+export function orientModelSpriteToTips(propType: string, svg: string): string {
+  if (!modelSpriteFacesAwayFromTips(propType)) return svg;
+  const entry = PROP_MODEL_SPRITES[propType.toLowerCase()]!;
+  const cx = entry.width / 2;
+  const cy = entry.height / 2;
+  return svg.replace(
+    /(<svg\b[^>]*>)([\s\S]*)(<\/svg>\s*)$/i,
+    (_match, open: string, body: string, close: string) =>
+      `${open}<g transform="rotate(180 ${cx} ${cy})">${body}</g>${close}`
+  );
+}
+
+/**
  * Generate prop SVG with custom color
  */
 export async function generatePropSvg(
@@ -306,7 +328,10 @@ export async function generatePropSvg(
       propTypeLower,
       side ?? spriteSideForColor(color)
     );
-    const svg = await fetchPropSvg(path);
+    const svg = orientModelSpriteToTips(
+      modelRenderKey.propType,
+      await fetchPropSvg(path)
+    );
     const { width, height } = extractViewBoxDimensions(svg);
     return { svg, width, height };
   }
