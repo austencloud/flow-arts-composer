@@ -112,7 +112,7 @@ export function buildFusePathSource({
 
   const first = steps[0]!;
   const last = steps[steps.length - 1]!;
-  if (last.endPlacement !== first.startPlacement) {
+  if (last.endLocation !== first.startLocation) {
     return {
       ok: false,
       reason: "open-location",
@@ -132,7 +132,7 @@ export function buildFusePathSource({
   const label = `${side === "left" ? "Left" : "Right"} built LOOP`;
   const solo = createSoloProp(
     soloSteps,
-    first.startPlacement,
+    first.startLocation,
     first.startOrientation,
     { name: label, notes: "Built in Fuse" }
   );

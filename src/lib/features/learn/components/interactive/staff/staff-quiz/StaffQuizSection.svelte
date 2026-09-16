@@ -2,7 +2,7 @@
 StaffQuizSection - Main quiz UI with visualizer and answers
 -->
 <script lang="ts">
-  import StaffPositionVisualizer from "../StaffPositionVisualizer.svelte";
+  import StaffPlacementVisualizer from "../StaffPlacementVisualizer.svelte";
   import {
     type StaffQuizQuestion,
     type PlacementType,
@@ -31,7 +31,7 @@ StaffQuizSection - Main quiz UI with visualizer and answers
   <h3 class="quiz-title">{question.questionText}</h3>
 
   <div class="visualizer-container">
-    <StaffPositionVisualizer
+    <StaffPlacementVisualizer
       leftPosition={question.leftPos}
       rightPosition={question.rightPos}
       leftThumbOrientation={question.leftThumb}

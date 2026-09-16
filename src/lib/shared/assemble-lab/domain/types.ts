@@ -18,9 +18,9 @@ export interface AnimationParams {
   /** The SVG <g> element wrapping the prop to animate */
   element: SVGGElement;
   /** Grid location where prop currently sits */
-  startPlacement: GridLocation;
+  startLocation: GridLocation;
   /** Grid location to animate toward */
-  endPlacement: GridLocation;
+  endLocation: GridLocation;
   /** CW or CCW - determines pro vs anti for shifts */
   rotationDirection: RotationDirection;
   /** Number of additional turns (0, 0.5, 1, ...) */

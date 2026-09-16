@@ -9,8 +9,8 @@ import { getBuilderMotionPathD } from "./svg-prop-animator";
 describe("builder motion path preview", () => {
   it("uses the canvas center for a center-to-edge path", () => {
     const path = getBuilderMotionPathD({
-      startPosition: GridLocation.CENTER,
-      endPosition: GridLocation.EAST,
+      startLocation: GridLocation.CENTER,
+      endLocation: GridLocation.EAST,
       startOrientation: Orientation.CENTER_E,
       rotationDirection: RotationDirection.CLOCKWISE,
       turnCount: 0,
@@ -23,8 +23,8 @@ describe("builder motion path preview", () => {
   it("does not draw a fake route for a static destination", () => {
     expect(
       getBuilderMotionPathD({
-        startPosition: GridLocation.NORTH,
-        endPosition: GridLocation.NORTH,
+        startLocation: GridLocation.NORTH,
+        endLocation: GridLocation.NORTH,
         startOrientation: Orientation.IN,
         rotationDirection: RotationDirection.CLOCKWISE,
         turnCount: 0,

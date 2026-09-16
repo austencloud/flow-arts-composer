@@ -107,6 +107,12 @@ export const DEFAULT_IMAGE_COMPOSITION_SETTINGS: ImageCompositionSettings = {
 type PersistedImageCompositionSettings = Partial<ImageCompositionSettings> & {
   showCreatorName?: unknown;
   showBirthday?: unknown;
+  // Position -> placement rename: both the localStorage copy and the
+  // Firestore imageExport settings can still carry these pre-rename keys.
+  // Read-only fallback; createSettings never writes them back out.
+  includeStartPosition?: boolean;
+  startPositionLayout?: "row" | "column";
+  startPositionLayoutOverrides?: Record<string, "row" | "column">;
 };
 
 function createSettings(
@@ -115,16 +121,26 @@ function createSettings(
   const {
     showCreatorName: _legacyCreatorName,
     showBirthday: _legacyBirthday,
+    includeStartPosition: _legacyIncludeStartPosition,
+    startPositionLayout: _legacyStartPositionLayout,
+    startPositionLayoutOverrides: _legacyStartPositionLayoutOverrides,
     ...supportedSeed
   } = seed ?? {};
   const showNotes = supportedSeed.showNotes ?? DEFAULT_IMAGE_COMPOSITION_SETTINGS.showNotes;
+  const includeStartPlacement =
+    supportedSeed.includeStartPlacement ?? _legacyIncludeStartPosition;
+  const startPlacementLayout =
+    supportedSeed.startPlacementLayout ?? _legacyStartPositionLayout;
 
   return {
     ...DEFAULT_IMAGE_COMPOSITION_SETTINGS,
     ...supportedSeed,
+    ...(includeStartPlacement !== undefined && { includeStartPlacement }),
+    ...(startPlacementLayout !== undefined && { startPlacementLayout }),
     showNotes,
     addUserInfo: showNotes,
     startPlacementLayoutOverrides: {
+      ...(_legacyStartPositionLayoutOverrides ?? {}),
       ...(supportedSeed.startPlacementLayoutOverrides ?? {}),
     },
     columnCountOverrides: {

@@ -21,8 +21,8 @@ export type BuilderPhase =
   | "complete";
 
 export interface BuilderStep {
-  readonly startPlacement: GridLocation;
-  readonly endPlacement: GridLocation;
+  readonly startLocation: GridLocation;
+  readonly endLocation: GridLocation;
   readonly rotationDirection: RotationDirection;
   readonly turnCount: number;
   readonly startOrientation: Orientation;

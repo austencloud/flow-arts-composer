@@ -6,7 +6,7 @@ StaffIntroPage - Page 1: Staff Positions Introduction
     HandPosition,
     ThumbOrientation,
   } from "../../../../domain/constants/staff-examples";
-  import StaffPositionVisualizer from "../StaffPositionVisualizer.svelte";
+  import StaffPlacementVisualizer from "../StaffPlacementVisualizer.svelte";
 
   let {
     onNext,
@@ -35,7 +35,7 @@ StaffIntroPage - Page 1: Staff Positions Introduction
   </div>
 
   <div class="visualizer-section">
-    <StaffPositionVisualizer
+    <StaffPlacementVisualizer
       leftPosition={leftPos}
       rightPosition={rightPos}
       leftThumbOrientation={leftThumb}

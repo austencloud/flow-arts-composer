@@ -110,7 +110,7 @@ export interface AppSettings {
     handColorKey?: boolean; // L/R colour key in the start-placement bottom band
     handPointVisibility?: "all" | "active" | "none"; // all hand points, only where props are, or hidden
     stepNumbers?: boolean; // Show beat numbers on pictographs in sequences
-    beatPlacementGlyph?: boolean; // Show beat position glyph (musical timeline position)
+    beatPositionGlyph?: boolean; // Show beat position glyph (musical timeline position)
   };
 
   // Community/Privacy Settings
@@ -195,6 +195,53 @@ export function normalizeLegacyAppSettings(value: unknown): AppSettings {
   }
   delete normalized.blueBuugengFlipped;
   delete normalized.redBuugengFlipped;
+
+  // Position -> placement rename: fields renamed with no read-side migration.
+  // Only fill the new key when it is absent so an already-migrated or
+  // freshly saved value is never overwritten.
+  if (normalized.blockedStartPlacements === undefined && source.blockedStartPositions !== undefined) {
+    normalized.blockedStartPlacements = source.blockedStartPositions;
+  }
+  delete normalized.blockedStartPositions;
+
+  if (
+    normalized.blockedStartPlacementsByGridMode === undefined &&
+    source.blockedStartPositionsByGridMode !== undefined
+  ) {
+    normalized.blockedStartPlacementsByGridMode = source.blockedStartPositionsByGridMode;
+  }
+  delete normalized.blockedStartPositionsByGridMode;
+
+  if (
+    source.visibility != null &&
+    typeof source.visibility === "object" &&
+    !Array.isArray(source.visibility)
+  ) {
+    const visibilitySource = source.visibility as Record<string, unknown>;
+    const visibility: Record<string, unknown> = { ...visibilitySource };
+    if (visibility.placementsGlyph === undefined && visibilitySource.positionsGlyph !== undefined) {
+      visibility.placementsGlyph = visibilitySource.positionsGlyph;
+    }
+    delete visibility.positionsGlyph;
+    normalized.visibility = visibility;
+  }
+
+  if (
+    source.imageExport != null &&
+    typeof source.imageExport === "object" &&
+    !Array.isArray(source.imageExport)
+  ) {
+    const imageExportSource = source.imageExport as Record<string, unknown>;
+    const imageExport: Record<string, unknown> = { ...imageExportSource };
+    if (
+      imageExport.includeStartPlacement === undefined &&
+      imageExportSource.includeStartPosition !== undefined
+    ) {
+      imageExport.includeStartPlacement = imageExportSource.includeStartPosition;
+    }
+    delete imageExport.includeStartPosition;
+    normalized.imageExport = imageExport;
+  }
 
   if (Array.isArray(source.propPresets)) {
     normalized.propPresets = source.propPresets.map((preset) =>

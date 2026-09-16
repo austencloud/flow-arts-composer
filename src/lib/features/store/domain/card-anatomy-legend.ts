@@ -20,7 +20,7 @@ export const FRONT_LEGEND: readonly CardAnatomyLegendItem[] = [
   {
     id: "start",
     term: "Start",
-    text: "The start position: where the sequence starts and ends.",
+    text: "The start placement: where the sequence starts and ends.",
   },
   { id: "steps", term: "The steps", text: "The sequence itself, step by step, as pictographs." },
   {
@@ -63,7 +63,7 @@ export const BACK_LEGEND: readonly CardAnatomyLegendItem[] = [
   },
   {
     id: "startpos",
-    term: "Start position",
+    term: "Start placement",
     text: "Shows you where the sequence starts and ends, and the prop that sequence is using on that card.",
   },
   { id: "stepcount", term: "Step count", text: "The number of steps in the sequence." },

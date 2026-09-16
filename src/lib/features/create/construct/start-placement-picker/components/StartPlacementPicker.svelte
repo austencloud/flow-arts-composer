@@ -35,6 +35,9 @@ Controls moved below the grid for better UX
 
   // Local storage key for persisting picker preferences
   const STORAGE_KEY = "tka-start-placement-picker-prefs";
+  // Pre-rename key. Read-only fallback when the new key has nothing yet;
+  // writes always go to STORAGE_KEY.
+  const LEGACY_STORAGE_KEY = "tka-start-position-picker-prefs";
   const START_PLACEMENT_PATHS = [
     { value: "presets" as const, label: "Presets" },
     { value: "build" as const, label: "Build" },
@@ -157,7 +160,9 @@ Controls moved below the grid for better UX
    */
   function loadPersistedPreferences() {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored =
+        localStorage.getItem(STORAGE_KEY) ??
+        localStorage.getItem(LEGACY_STORAGE_KEY);
       if (!stored) return;
 
       const prefs = JSON.parse(stored) as {

@@ -38,8 +38,8 @@ export function resolveMotionType(
   gridMode: GridMode
 ): MotionType {
   const handMotionType = calculateMotionType(
-    step.startPlacement,
-    step.endPlacement,
+    step.startLocation,
+    step.endLocation,
     gridMode
   );
   switch (handMotionType) {
@@ -56,8 +56,8 @@ export function resolveMotionType(
       if (step.turnCount === -0.5) return MotionType.FLOAT;
 
       const handPathDir = calculateRotationDirection(
-        step.startPlacement,
-        step.endPlacement,
+        step.startLocation,
+        step.endLocation,
         gridMode
       );
       return handPathDir === step.rotationDirection
@@ -79,8 +79,8 @@ export interface BuilderHydration {
 /** Recover the builder's editable motion fields without dropping sequence-only metadata. */
 export function motionToBuilderStep(motion: MotionData): BuilderStep {
   return {
-    startPlacement: motion.startLocation,
-    endPlacement: motion.endLocation,
+    startLocation: motion.startLocation,
+    endLocation: motion.endLocation,
     rotationDirection: motion.rotationDirection,
     turnCount: motion.turns === "fl" ? -0.5 : motion.turns,
     startOrientation: motion.startOrientation,
@@ -117,7 +117,7 @@ export function sequenceToBuilderHydration(
     };
   } else if (leftSteps[0]) {
     startPoses[HandSide.LEFT] = {
-      location: leftSteps[0].startPlacement,
+      location: leftSteps[0].startLocation,
       orientation: leftSteps[0].startOrientation,
     };
   }
@@ -129,7 +129,7 @@ export function sequenceToBuilderHydration(
     };
   } else if (rightSteps[0]) {
     startPoses[HandSide.RIGHT] = {
-      location: rightSteps[0].startPlacement,
+      location: rightSteps[0].startLocation,
       orientation: rightSteps[0].startOrientation,
     };
   }
@@ -170,16 +170,16 @@ export function stepToMotion(
 
   const motion = createMotionData({
     hand: color,
-    startLocation: step.startPlacement,
-    endLocation: step.endPlacement,
+    startLocation: step.startLocation,
+    endLocation: step.endLocation,
     motionType,
     rotationDirection: resolvedRotation,
     turns: resolvedTurns,
     startOrientation: step.startOrientation,
     endOrientation: step.endOrientation,
     gridMode,
-    arrowLocation: step.startPlacement,
-    handPath: calculateHandPath(step.startPlacement, step.endPlacement, gridMode),
+    arrowLocation: step.startLocation,
+    handPath: calculateHandPath(step.startLocation, step.endLocation, gridMode),
     isVisible: true,
   });
 
@@ -294,7 +294,7 @@ export function convertToStartPlacement(
     startPoses[HandSide.LEFT] ??
     (firstLeft
       ? {
-          location: firstLeft.startPlacement,
+          location: firstLeft.startLocation,
           orientation: firstLeft.startOrientation,
         }
       : null);
@@ -302,7 +302,7 @@ export function convertToStartPlacement(
     startPoses[HandSide.RIGHT] ??
     (firstRight
       ? {
-          location: firstRight.startPlacement,
+          location: firstRight.startLocation,
           orientation: firstRight.startOrientation,
         }
       : null);

@@ -186,7 +186,7 @@
       class:current={showHighlight && highlightedStepIndex === -1}
       onclick={() => onStepClick(-1)}
       type="button"
-      aria-label="Go to start position"
+      aria-label="Go to start placement"
     >
       <CellRenderer
         cell={startCell}

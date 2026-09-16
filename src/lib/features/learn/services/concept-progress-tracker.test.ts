@@ -327,6 +327,73 @@ describe("ConceptProgressTracker completion reconciliation", () => {
   });
 });
 
+describe("ConceptProgressTracker legacy concept id alias", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.restoreAllMocks();
+  });
+
+  it("hydrates a stored hand-positions completion as hand-placements", () => {
+    // Shape left behind by data written before "hand-positions" was renamed
+    // to "hand-placements" with no migration.
+    writeStoredProgress({ completedConcepts: ["grid", "hand-positions"] });
+
+    const tracker = new ConceptProgressTracker();
+    const progress = tracker.getProgress();
+
+    expect(progress.completedConcepts.has("hand-placements")).toBe(true);
+    expect(progress.completedConcepts.has("hand-positions")).toBe(false);
+    expect(tracker.getConceptStatus("hand-placements")).toBe("completed");
+  });
+
+  it("merges a legacy hand-positions record onto hand-placements without un-completing it", () => {
+    writeStoredProgress({
+      concepts: {
+        "hand-positions": conceptRecord("hand-positions", {
+          status: "completed",
+          percentComplete: 100,
+          correctAnswers: 9,
+          bestStreak: 6,
+        }),
+        "hand-placements": conceptRecord("hand-placements", {
+          status: "in-progress",
+          percentComplete: 40,
+          correctAnswers: 4,
+          bestStreak: 2,
+        }),
+      },
+      completedConcepts: ["hand-positions"],
+    });
+
+    const tracker = new ConceptProgressTracker();
+    const progress = tracker.getProgress();
+
+    expect([...progress.concepts.keys()]).not.toContain("hand-positions");
+    expect(progress.completedConcepts.has("hand-positions")).toBe(false);
+
+    const record = tracker.getConceptProgress("hand-placements");
+    expect(record.status).toBe("completed");
+    expect(record.percentComplete).toBe(100);
+    // Neither side's earned stats are thrown away by the merge.
+    expect(record.correctAnswers).toBe(9);
+    expect(record.bestStreak).toBe(6);
+  });
+
+  it("only ever writes the current id back to storage", () => {
+    writeStoredProgress({ completedConcepts: ["hand-positions"] });
+
+    const tracker = new ConceptProgressTracker();
+    // Any write path (here, an unrelated completion) re-saves the whole
+    // progress object; the legacy id must not survive that round trip.
+    tracker.completeConcept("grid");
+
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
+    expect(stored.completedConcepts).toContain("hand-placements");
+    expect(stored.completedConcepts).not.toContain("hand-positions");
+    expect(Object.keys(stored.concepts)).not.toContain("hand-positions");
+  });
+});
+
 describe("ConceptProgressTracker sign-in merge", () => {
   beforeEach(() => {
     localStorage.clear();

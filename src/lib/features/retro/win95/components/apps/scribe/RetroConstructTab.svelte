@@ -122,7 +122,7 @@
     <!-- Phase 1: Start Position Picker                                  -->
     <div class="start-picker">
       <fieldset class="start-fieldset">
-        <legend>Choose Start Position</legend>
+        <legend>Choose Start Placement</legend>
         <div class="start-grid">
           {#each startPlacements as pos (pos.id)}
             <button

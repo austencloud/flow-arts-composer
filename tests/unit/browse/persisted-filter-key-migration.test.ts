@@ -40,8 +40,69 @@ vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
 
 import { createBrowseEngineForTest } from "../browse-engine-test-helpers.svelte";
 import { createBrowseEngine } from "$lib/shared/browse/engine/create-browse-engine.svelte";
+import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
+import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 
 const PERSIST_KEY = "test-migration-gallery";
+const PERSIST_KEY_ENUM_RENAME = "test-migration-gallery-placement-rename";
+
+function sequenceWithStartGroup(id: string, group: string): SequenceData {
+  return {
+    id,
+    word: id,
+    steps: [],
+    startingPlacementGroup: group,
+  } as unknown as SequenceData;
+}
+
+function seedLegacyPlacementEnumValues() {
+  // Persisted before "position" was renamed to "placement": the FilterType
+  // enum VALUES were "startPosition"/"endPosition", stacked one key per
+  // value like every other OR_STACKING_TYPES entry. Also includes a type
+  // that no longer exists at all, and a current, unrelated type that must
+  // survive untouched.
+  localStorage.setItem(
+    PERSIST_KEY_ENUM_RENAME,
+    JSON.stringify({
+      source: "community",
+      sortMethod: "alphabetical",
+      sortDirection: "asc",
+      activeFilters: [
+        [
+          "startPosition:alpha",
+          {
+            type: "startPosition",
+            value: "alpha",
+            label: "Alpha",
+            chipColor: "#fff",
+            locked: false,
+          },
+        ],
+        [
+          "retired_filter_type",
+          {
+            type: "retired_filter_type",
+            value: "whatever",
+            label: "Ghost",
+            chipColor: "#fff",
+            locked: false,
+          },
+        ],
+        [
+          "difficulty:2",
+          {
+            type: "difficulty",
+            value: 2,
+            label: "Level 2",
+            chipColor: "#fff",
+            locked: false,
+          },
+        ],
+      ],
+      columns: 4,
+    })
+  );
+}
 
 function seedLegacyPersistedState() {
   // The OLD scheme: one-per-type bare keys, no connectives field.
@@ -119,6 +180,53 @@ describe("persisted filter key migration", () => {
     } finally {
       dispose();
       localStorage.removeItem(PERSIST_KEY);
+    }
+  });
+
+  it("migrates the startPosition/endPosition enum rename, drops a retired type, and leaves a current type alone", () => {
+    seedLegacyPlacementEnumValues();
+    let engine: ReturnType<typeof createBrowseEngine>;
+    let dispose = () => {};
+    const viaHelper = createBrowseEngineForTest({
+      persistKey: PERSIST_KEY_ENUM_RENAME,
+    });
+    if (viaHelper.engine) {
+      engine = viaHelper.engine;
+      dispose = viaHelper.dispose;
+    } else {
+      engine = createBrowseEngine({ persistKey: PERSIST_KEY_ENUM_RENAME });
+      dispose = () => engine.destroy();
+    }
+    try {
+      // Old key/type gone; migrated onto the current FilterType with a key
+      // rebuilt to match, value intact.
+      expect(engine.activeFilters.has("startPosition:alpha")).toBe(false);
+      const migrated = engine.activeFilters.get("startPlacement:alpha");
+      expect(migrated?.type).toBe(BrowseFilterType.STARTING_PLACEMENT);
+      expect(migrated?.value).toBe("alpha");
+
+      // A type that no longer exists is dropped, not kept as a dead chip.
+      expect(engine.activeFilters.has("retired_filter_type")).toBe(false);
+      expect(
+        engine.allFilterChips.some((chip) => chip.key === "retired_filter_type")
+      ).toBe(false);
+
+      // A current, unrelated type restores untouched.
+      const untouched = engine.activeFilters.get("difficulty:2");
+      expect(untouched?.type).toBe(BrowseFilterType.DIFFICULTY);
+      expect(untouched?.value).toBe(2);
+
+      // The migrated filter actually filters. Drop the unrelated difficulty
+      // chip first so it doesn't AND against a pool with no difficulty data.
+      engine.removeFilter("difficulty");
+      engine.setPool([
+        sequenceWithStartGroup("alpha-seq", "alpha"),
+        sequenceWithStartGroup("beta-seq", "beta"),
+      ]);
+      expect(engine.sequences.map((s) => s.id)).toEqual(["alpha-seq"]);
+    } finally {
+      dispose();
+      localStorage.removeItem(PERSIST_KEY_ENUM_RENAME);
     }
   });
 });

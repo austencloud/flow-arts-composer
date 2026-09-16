@@ -3,7 +3,7 @@ AntispinPage - Page 4: Antispin rotation + summary comparison
 -->
 <script lang="ts">
   import { ANTISPIN_EXAMPLES } from "../../../../domain/constants/staff-examples";
-  import StaffPositionVisualizer from "../StaffPositionVisualizer.svelte";
+  import StaffPlacementVisualizer from "../StaffPlacementVisualizer.svelte";
 
   let {
     onNext,
@@ -35,7 +35,7 @@ AntispinPage - Page 4: Antispin rotation + summary comparison
   </div>
 
   <div class="visualizer-section">
-    <StaffPositionVisualizer
+    <StaffPlacementVisualizer
       leftPosition={currentExample.leftPos}
       rightPosition={currentExample.rightPos}
       leftThumbOrientation={currentExample.leftThumb}

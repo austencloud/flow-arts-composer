@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import type { CdSliceSettingsPatch } from "./cd-slice";
 
 type AuthUser = { uid: string; isAnonymous?: boolean } | null;
 type AuthListener = (user: AuthUser) => void;
@@ -360,6 +361,60 @@ describe("cd slice", () => {
 
     // ...and it is adopted once the visitor's own state is back.
     expect(store.addWord).toBe(false);
+  });
+
+  describe("legacy field names (position -> placement rename)", () => {
+    it("seeds includeStartPlacement and startPlacementLayout from a pre-rename payload", async () => {
+      const recipient = await loadManager();
+
+      const seeded = seedFromCdSlice(
+        {
+          rest: {
+            settings: {
+              includeStartPosition: false,
+              startPositionLayout: "column",
+            } as CdSliceSettingsPatch,
+          },
+        },
+        STEPS,
+        recipient.getSettings()
+      );
+
+      expect(seeded.includeStartPlacement).toBe(false);
+      expect(seeded.startPlacementLayout).toBe("column");
+    });
+
+    it("prefers the new field names when both are present in the payload", async () => {
+      const recipient = await loadManager();
+
+      const seeded = seedFromCdSlice(
+        {
+          rest: {
+            settings: {
+              includeStartPosition: false,
+              includeStartPlacement: true,
+              startPositionLayout: "column",
+              startPlacementLayout: "row",
+            } as CdSliceSettingsPatch,
+          },
+        },
+        STEPS,
+        recipient.getSettings()
+      );
+
+      expect(seeded.includeStartPlacement).toBe(true);
+      expect(seeded.startPlacementLayout).toBe("row");
+    });
+
+    it("never adds the legacy names to what captureCdSlice emits", async () => {
+      const store = await loadManager();
+      store.setIncludeStartPlacement(false);
+
+      const payload = captureCdSlice(store, STEPS);
+      const encoded = JSON.stringify(payload);
+      expect(encoded).not.toContain("includeStartPosition");
+      expect(encoded).not.toContain("startPositionLayout");
+    });
   });
 
   describe("full snapshot", () => {

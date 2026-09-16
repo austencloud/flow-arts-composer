@@ -18,7 +18,9 @@
  *
  * Every hydrated snapshot (localStorage, first load, live snapshot, import)
  * passes through reconcileCompletion, which keeps `completedConcepts` and the
- * per-concept `status` records from contradicting each other.
+ * per-concept `status` records from contradicting each other, and which also
+ * folds any legacy concept id (see LEGACY_CONCEPT_ID_ALIASES) onto its
+ * current id before the rest of reconciliation runs.
  */
 
 import { TKA_CONCEPTS, isConceptUnlocked } from "../domain/concepts";
@@ -30,6 +32,17 @@ import type {
 import type { UserKnowledgeProfilePersister } from "./user-knowledge-profile-persister";
 
 const STORAGE_KEY = "tka_learning_progress";
+
+/**
+ * Legacy concept id -> its current id. A concept id rename changes the value
+ * persisted in `completedConcepts` and in `concepts`' keys with no migration
+ * of existing data, so every hydration path reads both spellings and writes
+ * only the current one (via reconcileCompletion). Extend this table — don't
+ * replace an entry — the next time a concept id changes.
+ */
+export const LEGACY_CONCEPT_ID_ALIASES: Readonly<Record<string, string>> = {
+  "hand-positions": "hand-placements",
+};
 
 export class ConceptProgressTracker {
   private progress: LearningProgress;
@@ -256,6 +269,8 @@ export class ConceptProgressTracker {
    * less than 100% is the same contradiction one level down.
    */
   private reconcileCompletion(progress: LearningProgress): LearningProgress {
+    this.aliasLegacyConceptIds(progress);
+
     for (const [conceptId, concept] of progress.concepts) {
       if (concept.status === "completed") {
         progress.completedConcepts.add(conceptId);
@@ -282,6 +297,104 @@ export class ConceptProgressTracker {
     this.checkBadges(progress);
 
     return progress;
+  }
+
+  /**
+   * Folds every legacy-id entry in `completedConcepts` and `concepts` onto
+   * its current id (LEGACY_CONCEPT_ID_ALIASES) before the rest of
+   * reconciliation runs. Completion is additive: a completed legacy record
+   * can only complete the current one, never un-complete it. The legacy key
+   * is deleted once merged — this only runs while it is still present, so a
+   * snapshot that has already been through this once is left alone, and the
+   * next saveProgress() persists only the current id.
+   */
+  private aliasLegacyConceptIds(progress: LearningProgress): void {
+    for (const [legacyId, currentId] of Object.entries(
+      LEGACY_CONCEPT_ID_ALIASES
+    )) {
+      if (progress.completedConcepts.has(legacyId)) {
+        progress.completedConcepts.add(currentId);
+        progress.completedConcepts.delete(legacyId);
+      }
+
+      const legacyRecord = progress.concepts.get(legacyId);
+      if (legacyRecord) {
+        progress.concepts.set(
+          currentId,
+          this.mergeConceptRecords(
+            currentId,
+            progress.concepts.get(currentId),
+            legacyRecord
+          )
+        );
+        progress.concepts.delete(legacyId);
+      }
+    }
+  }
+
+  /**
+   * Combines a legacy-id record into its current-id counterpart. Every
+   * numeric stat takes the higher of the two, so neither side's earned
+   * progress is thrown away; `timeSpentSeconds` sums since both records
+   * represent real, non-overlapping practice time. Status takes whichever
+   * side is further along — a completed legacy record wins, an in-progress
+   * one never overwrites a completed current record.
+   */
+  private mergeConceptRecords(
+    conceptId: string,
+    current: ConceptProgress | undefined,
+    legacy: ConceptProgress
+  ): ConceptProgress {
+    if (!current) return { ...legacy, conceptId };
+
+    const statusRank: Record<ConceptStatus, number> = {
+      locked: 0,
+      available: 1,
+      "in-progress": 2,
+      completed: 3,
+    };
+    const status =
+      statusRank[legacy.status] > statusRank[current.status]
+        ? legacy.status
+        : current.status;
+
+    return {
+      conceptId,
+      status,
+      percentComplete: Math.max(
+        current.percentComplete,
+        legacy.percentComplete
+      ),
+      correctAnswers: Math.max(current.correctAnswers, legacy.correctAnswers),
+      incorrectAnswers: Math.max(
+        current.incorrectAnswers,
+        legacy.incorrectAnswers
+      ),
+      totalAttempts: Math.max(current.totalAttempts, legacy.totalAttempts),
+      accuracy: Math.max(current.accuracy, legacy.accuracy),
+      currentStreak: Math.max(current.currentStreak, legacy.currentStreak),
+      bestStreak: Math.max(current.bestStreak, legacy.bestStreak),
+      timeSpentSeconds: current.timeSpentSeconds + legacy.timeSpentSeconds,
+      startedAt: this.earlierDate(current.startedAt, legacy.startedAt),
+      completedAt: this.earlierDate(current.completedAt, legacy.completedAt),
+      lastPracticedAt: this.laterDate(
+        current.lastPracticedAt,
+        legacy.lastPracticedAt
+      ),
+      nextPracticeAt: current.nextPracticeAt ?? legacy.nextPracticeAt,
+    };
+  }
+
+  private earlierDate(a?: Date, b?: Date): Date | undefined {
+    if (!a) return b;
+    if (!b) return a;
+    return a.getTime() <= b.getTime() ? a : b;
+  }
+
+  private laterDate(a?: Date, b?: Date): Date | undefined {
+    if (!a) return b;
+    if (!b) return a;
+    return a.getTime() >= b.getTime() ? a : b;
   }
 
   private createConceptRecord(

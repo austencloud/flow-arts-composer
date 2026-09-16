@@ -269,7 +269,7 @@
   // Resolve the final position of a completed hand path
   function getFinalPosition(steps: BuilderStep[]): GridLocation | null {
     if (steps.length === 0) return null;
-    return steps[steps.length - 1]!.endPlacement;
+    return steps[steps.length - 1]!.endLocation;
   }
 
   // Compute rotation for a prop at a specific location/orientation
@@ -324,8 +324,8 @@
         animations.push(
           animator.animate({
             element: activePropGroupRef,
-            startPlacement: step.startPlacement,
-            endPlacement: step.endPlacement,
+            startLocation: step.startLocation,
+            endLocation: step.endLocation,
             rotationDirection: step.rotationDirection,
             turnCount: step.turnCount,
             startOrientation: step.startOrientation,
@@ -347,8 +347,8 @@
             animations.push(
               ghostAnimator.animate({
                 element: ghostLeftPropGroupRef,
-                startPlacement: leftStep.startPlacement,
-                endPlacement: leftStep.endPlacement,
+                startLocation: leftStep.startLocation,
+                endLocation: leftStep.endLocation,
                 rotationDirection: leftStep.rotationDirection,
                 turnCount: leftStep.turnCount,
                 startOrientation: leftStep.startOrientation,
@@ -380,8 +380,8 @@
             animations.push(
               ghostAnimator.animate({
                 element: ghostRightPropGroupRef,
-                startPlacement: rightStep.startPlacement,
-                endPlacement: rightStep.endPlacement,
+                startLocation: rightStep.startLocation,
+                endLocation: rightStep.endLocation,
                 rotationDirection: rightStep.rotationDirection,
                 turnCount: rightStep.turnCount,
                 startOrientation: rightStep.startOrientation,
@@ -492,9 +492,9 @@
   }
 
   const candidatePathD = $derived.by(() => {
-    const startPlacement = builderState.candidateStartPlacement;
+    const startLocation = builderState.candidateStartPlacement;
     if (
-      startPlacement === null ||
+      startLocation === null ||
       previewLocation === null ||
       builderState.phase === "animating" ||
       builderState.phase === "complete"
@@ -502,8 +502,8 @@
       return null;
     }
     return getBuilderMotionPathD({
-      startPlacement,
-      endPlacement: previewLocation,
+      startLocation,
+      endLocation: previewLocation,
       startOrientation: builderState.candidateStartOrientation,
       rotationDirection: builderState.candidateRotationDirection,
       turnCount: builderState.candidateTurnCount,
@@ -530,8 +530,8 @@
     const step = comparisonStep;
     if (candidatePathD === null || step === null) return null;
     return getBuilderMotionPathD({
-      startPlacement: step.startPlacement,
-      endPlacement: step.endPlacement,
+      startLocation: step.startLocation,
+      endLocation: step.endLocation,
       startOrientation: step.startOrientation,
       rotationDirection: step.rotationDirection,
       turnCount: step.turnCount,
@@ -571,12 +571,12 @@
 
     if (rightStepsDone === 0) {
       return {
-        position: builderState.leftSteps[0]!.startPlacement,
+        position: builderState.leftSteps[0]!.startLocation,
         orientation: builderState.leftSteps[0]!.startOrientation,
       };
     }
     return {
-      position: builderState.leftSteps[rightStepsDone - 1]!.endPlacement,
+      position: builderState.leftSteps[rightStepsDone - 1]!.endLocation,
       orientation: builderState.leftSteps[rightStepsDone - 1]!.endOrientation,
     };
   });
@@ -596,12 +596,12 @@
 
     if (leftStepsDone === 0) {
       return {
-        position: builderState.rightSteps[0]!.startPlacement,
+        position: builderState.rightSteps[0]!.startLocation,
         orientation: builderState.rightSteps[0]!.startOrientation,
       };
     }
     return {
-      position: builderState.rightSteps[leftStepsDone - 1]!.endPlacement,
+      position: builderState.rightSteps[leftStepsDone - 1]!.endLocation,
       orientation: builderState.rightSteps[leftStepsDone - 1]!.endOrientation,
     };
   });
