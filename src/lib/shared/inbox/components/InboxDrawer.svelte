@@ -38,7 +38,10 @@
   import { createMessageDeliveryState } from "../state/message-delivery-state.svelte";
   import { getMessageDeliveryRepository } from "../get-message-delivery-repository";
   import { getMessageDeliveryCoordinator } from "../get-message-delivery-coordinator";
-  import { setMessageDeliveryContext } from "../context/message-delivery-context";
+  import {
+    setMessageDeliveryContext,
+    unregisterMessageDeliveryState,
+  } from "../context/message-delivery-context";
   import { getErrorHandler } from "$lib/shared/application/get-error-handler";
 
   const messageDeliveryState = createMessageDeliveryState({
@@ -127,6 +130,7 @@
     mediaQuery?.removeEventListener("change", handleMediaChange);
     window.removeEventListener("online", messageDeliveryState.handleOnline);
     stopThreadSubscription();
+    unregisterMessageDeliveryState(messageDeliveryState);
     messageDeliveryState.dispose();
   });
 
@@ -572,10 +576,7 @@
   closeOnBackdrop={true}
   closeOnEscape={false}
   onclose={handleClose}
-  class={inboxState.currentView === "send-attachment" &&
-  inboxState.shareAttachment?.type !== "collection"
-    ? "inbox-drawer sharing-artifact"
-    : "inbox-drawer"}
+  class="inbox-drawer"
   ariaLabel="Inbox"
 >
   <div
@@ -977,25 +978,12 @@
     --sheet-width: min(clamp(30rem, 28vw, 64rem), 95vw);
   }
 
-  /* Sending a card or image: the artifact is the point of the sheet, and at
-     the conversation width it was a thumbnail beside a recipient list with a
-     column of nothing under it. 55vw gives the two-column sheet a left column
-     that fits the 960px card the sharer renders (the image never upscales past
-     its natural size); the sheet's own cap on the preview keeps the
-     note and Send in reach. */
-  :global(.drawer-content.inbox-drawer.sharing-artifact) {
-    --sheet-width: min(clamp(30rem, 55vw, 96rem), 95vw);
-  }
-
   /* Byte-identical to FULL_BLEED_DRAWER_QUERY in domain/full-bleed-drawer.ts.
      Pinned by full-bleed-drawer-contract.test.ts — see that module for why the
      test is "held", not "narrow". */
   @media (max-width: 768px),
     ((hover: none) and (pointer: coarse) and (max-width: 1024px)) {
-    /* Both selectors: the sharing-artifact width above carries one more class
-       and would otherwise outrank the full-bleed width here. */
-    :global(.drawer-content.inbox-drawer),
-    :global(.drawer-content.inbox-drawer.sharing-artifact) {
+    :global(.drawer-content.inbox-drawer) {
       --sheet-width: 100%;
       --sheet-radius-large: 0;
       /* Fill the viewport on mobile in EVERY view — list included, not just the
