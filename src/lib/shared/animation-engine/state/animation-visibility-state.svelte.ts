@@ -42,6 +42,7 @@ export interface AnimationVisibilitySettings {
 
   tkaGlyph: boolean;
   elementalGlyph: boolean;
+  propElementalGlyph: boolean;
   reversalIndicators: boolean;
   effortPreset: EffortId;
   pathShape: "arc" | "linear" | "concave";
@@ -123,6 +124,7 @@ export class AnimationVisibilityStateManager {
 
       tkaGlyph: true,
       elementalGlyph: false,
+      propElementalGlyph: false,
       reversalIndicators: false,
       effortPreset: "linear",
       pathShape: "arc",
@@ -150,6 +152,8 @@ export class AnimationVisibilityStateManager {
         parsed.stepNumbers = true;
 
         if (!("pathShape" in parsed)) parsed.pathShape = "arc";
+        if (!("propElementalGlyph" in parsed))
+          parsed.propElementalGlyph = false;
         if (!("motionAwarePaths" in parsed)) parsed.motionAwarePaths = false;
         // Migrate the former shared path-line flag.
         if (!("leftPathLines" in parsed)) {
