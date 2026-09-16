@@ -6,16 +6,19 @@
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
   import type { PostStudioSlotId } from "$lib/shared/media-composition/domain/post-studio-slots";
   import { sourceIcon } from "./post-studio-source-menu";
+  import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
 
   let {
     sequence,
     cardRenderOptions,
+    handLabeling = null,
     durationLabel,
     onRootReady,
     onEditRegion,
   }: {
     sequence: SequenceData;
     cardRenderOptions?: Partial<SequenceExportOptions> | null;
+    handLabeling?: HandLabeling | null;
     /** Output length, shown beside the format so the canvas needs no header. */
     durationLabel?: string;
     onRootReady?: (root: HTMLElement | null) => void;
@@ -156,6 +159,7 @@
                   playing={composition.isPlaying}
                   {sequence}
                   {cardRenderOptions}
+                  {handLabeling}
                   sequencePosition={layer.sequencePosition}
                   displayedBeatNumber={layer.displayedBeatNumber}
                   clipId={layer.clipId}
@@ -200,7 +204,8 @@
   <div class="preview-meta">
     <span class="format">
       <i class="fa-solid fa-mobile-screen" aria-hidden="true"></i>
-      9:16{#if durationLabel}<span class="duration"> · {durationLabel}</span
+      9:16{#if durationLabel}<span class="duration">
+          · {durationLabel}</span
         >{/if}
     </span>
   </div>

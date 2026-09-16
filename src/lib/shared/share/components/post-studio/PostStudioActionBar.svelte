@@ -5,6 +5,7 @@
   import type { PostStudioRoleKey } from "$lib/shared/media-composition/domain/post-studio-presets";
   import type { PostStudioSlotId } from "$lib/shared/media-composition/domain/post-studio-slots";
   import { ROLE_ICON, buildSourceMenuItems } from "./post-studio-source-menu";
+  import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
 
   /**
    * What the post is made of, and the thing that turns it into a file.
@@ -30,9 +31,10 @@
     exportedUrl: string | null;
     exportFilename: string;
     exportError?: string;
-    notationMirrored?: boolean;
-    notationMirrorPending?: boolean;
-    onToggleNotationMirror?: () => void;
+    /** Null when no performance footage is on the canvas. */
+    handLabeling?: HandLabeling | null;
+    handLabelingPending?: boolean;
+    onToggleHandLabeling?: () => void;
     audioMode: "original" | "instagram";
     canKeepOriginalAudio: boolean;
     onAudioModeChange: (mode: "original" | "instagram") => void;
@@ -57,9 +59,9 @@
     exportedUrl,
     exportFilename,
     exportError = "",
-    notationMirrored = false,
-    notationMirrorPending = false,
-    onToggleNotationMirror,
+    handLabeling = null,
+    handLabelingPending = false,
+    onToggleHandLabeling,
     audioMode,
     canKeepOriginalAudio,
     onAudioModeChange,
@@ -214,17 +216,21 @@
        post-wide switch parked inside one layer's panel read as that layer's
        property; here it sits with the other control that changes the whole
        post. (Flipping the FOOTAGE stays in the video's own panel: that one is
-       a property of the clip.) -->
-  {#if onToggleNotationMirror}
+       a property of the clip.) The switch is the performance's hand labeling. -->
+  {#if onToggleHandLabeling && handLabeling}
     <button
       type="button"
       class="guide-toggle mirror-toggle"
-      class:active={notationMirrored}
-      aria-pressed={notationMirrored}
-      disabled={notationMirrorPending}
-      aria-label="Mirror the notation"
-      title="Mirror the notation: reflects every notation layer, letters intact"
-      onclick={onToggleNotationMirror}
+      class:active={handLabeling === "mirror-me"}
+      aria-pressed={handLabeling === "mirror-me"}
+      disabled={handLabelingPending}
+      aria-label={handLabeling === "mirror-me"
+        ? "Mirror me: switch to as performed"
+        : "As performed: switch to mirror me"}
+      title={handLabeling === "mirror-me"
+        ? "Mirror me. The right-hand color is the viewer's right hand."
+        : "As performed. The right-hand color is the performer's right hand."}
+      onclick={onToggleHandLabeling}
     >
       <i class="fa-solid fa-right-left" aria-hidden="true"></i>
     </button>
