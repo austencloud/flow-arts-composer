@@ -106,7 +106,7 @@ export interface LayerRenderOptions {
   showTnD?: boolean;
   /** Elemental glyph (paired with TnD, same corner). */
   showElemental?: boolean;
-  /** Prop timing-and-direction element (top-right, dashed ring). Default: false. */
+  /** Prop timing-and-direction element (top-right). Default: false. */
   showPropTnD?: boolean;
   /** Start/end position letters (alpha/beta/gamma). */
   showPlacements?: boolean;

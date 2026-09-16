@@ -27,7 +27,7 @@ export interface PictographVisibilityOptions {
   showTKA?: boolean; // TKA Glyph includes turn numbers
   showTnD?: boolean;
   showElemental?: boolean;
-  /** Prop timing-and-direction element (top-right, dashed ring). Default: false. */
+  /** Prop timing-and-direction element (top-right). Default: false. */
   showPropTnD?: boolean;
   showPlacements?: boolean;
   /** L/R colour key on start positions. Default: true. */

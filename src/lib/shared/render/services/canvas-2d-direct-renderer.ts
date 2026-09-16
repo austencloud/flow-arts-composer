@@ -34,7 +34,11 @@ import type { RenderCanvas } from "./types";
 import { captureException } from "$lib/shared/analytics/services/posthog";
 import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 
-import { applyColorToSvg, getMotionColor, SELECTIVE_COLOR_PROP_TYPES } from "$lib/shared/utils/svg-color-utils";
+import {
+  applyColorToSvg,
+  getMotionColor,
+  SELECTIVE_COLOR_PROP_TYPES,
+} from "$lib/shared/utils/svg-color-utils";
 
 const VIEWBOX_SIZE = 950;
 
@@ -109,7 +113,10 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
     pictograph: PictographData | StepData,
     options: DirectRenderOptions
   ): Promise<RenderCanvas> {
-    const { canvas } = await this.renderPictographWithTiming(pictograph, options);
+    const { canvas } = await this.renderPictographWithTiming(
+      pictograph,
+      options
+    );
     return canvas;
   }
 
@@ -138,7 +145,11 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
 
     // Draw all elements
     const drawStart = performance.now();
-    await this.drawPictograph(ctx, pictograph as PreparedPictographData, options);
+    await this.drawPictograph(
+      ctx,
+      pictograph as PreparedPictographData,
+      options
+    );
     timing.drawMs = performance.now() - drawStart;
 
     timing.finalizeMs = 0;
@@ -162,7 +173,8 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
     }
 
     // Try injected preparer first, then global getter
-    const preparer = this.preparer || Canvas2DDirectRenderer.globalPreparerGetter?.();
+    const preparer =
+      this.preparer || Canvas2DDirectRenderer.globalPreparerGetter?.();
 
     if (preparer) {
       try {
@@ -219,7 +231,13 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
       this.drawBaseGridOnly(ctx, size, isDarkMode, gridMode);
     } else {
       // Full mode: draw complete grid with all points
-      await this.drawGrid(ctx, size, gridMode, isDarkMode, visibility.showNonRadialPoints ?? false);
+      await this.drawGrid(
+        ctx,
+        size,
+        gridMode,
+        isDarkMode,
+        visibility.showNonRadialPoints ?? false
+      );
     }
     const _gridTime = performance.now() - gridStart;
 
@@ -259,32 +277,61 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
 
     // 6. Draw turn numbers (TurnsColumn - to the RIGHT of letter)
     if (visibility.showTKA && preparedPictograph.motions) {
-      await drawTurnsColumn(ctx, preparedPictograph, letterDimensions, scale, isDarkMode, getTurnsTupleGenerator, visibility);
+      await drawTurnsColumn(
+        ctx,
+        preparedPictograph,
+        letterDimensions,
+        scale,
+        isDarkMode,
+        getTurnsTupleGenerator,
+        visibility
+      );
     }
 
     // 7. Draw direction dot (same/opp indicator)
-    if (visibility.showTKA && preparedPictograph.letter && preparedPictograph.motions) {
-      drawDirectionDot(ctx, preparedPictograph, letterDimensions, scale, isDarkMode, getTurnsTupleGenerator);
+    if (
+      visibility.showTKA &&
+      preparedPictograph.letter &&
+      preparedPictograph.motions
+    ) {
+      drawDirectionDot(
+        ctx,
+        preparedPictograph,
+        letterDimensions,
+        scale,
+        isDarkMode,
+        getTurnsTupleGenerator
+      );
     }
 
     // 9. Draw fused Elemental+TnD glyph (bottom-right corner)
     if (visibility.showTnD || visibility.showElemental) {
-      await drawElementalGlyph(ctx, preparedPictograph, gridMode, size, isDarkMode);
+      await drawElementalGlyph(
+        ctx,
+        preparedPictograph,
+        gridMode,
+        size,
+        isDarkMode
+      );
     }
 
-    // 9b. Prop timing-and-direction glyph (top-right, dashed ring)
+    // 9b. Prop timing-and-direction glyph (top-right)
     if (visibility.showPropTnD) {
-      await drawPropElementalGlyph(ctx, preparedPictograph, size, isDarkMode);
+      await drawPropElementalGlyph(ctx, preparedPictograph, size);
     }
 
     // 11. Draw Position glyph or Solo motion glyph (top center)
     // When showTKA is false (e.g. ChoreoCard solo mode), skip the baked-in solo
     // glyph — CellRenderer provides its own HTML overlay for locations/turns.
     const singleColor =
-      visibility.showLeftMotion === false || visibility.showRightMotion === false;
+      visibility.showLeftMotion === false ||
+      visibility.showRightMotion === false;
     if (singleColor && visibility.showTKA) {
       drawSoloMotionGlyph(
-        ctx, preparedPictograph, size, isDarkMode,
+        ctx,
+        preparedPictograph,
+        size,
+        isDarkMode,
         visibility.showLeftMotion ?? true,
         visibility.showRightMotion ?? true,
         visibility.handPathMode ?? false
@@ -295,10 +342,14 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
 
     // 12. Draw reversal indicators
     if (visibility.showReversals) {
-      drawReversalIndicators(ctx, preparedPictograph, size, isDarkMode, visibility);
+      drawReversalIndicators(
+        ctx,
+        preparedPictograph,
+        size,
+        isDarkMode,
+        visibility
+      );
     }
-
-
   }
 
   /**
@@ -319,7 +370,9 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
     const needsRotation = gridMode === GridMode.BOX;
 
     // Draw main grid
-    const gridImg = assetLoader.getGridImage(gridType === "box" ? "diamond" : gridType);
+    const gridImg = assetLoader.getGridImage(
+      gridType === "box" ? "diamond" : gridType
+    );
     if (gridImg) {
       ctx.save();
 
@@ -334,7 +387,7 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
         // Rotate 45 degrees around center for box mode
         const center = size / 2;
         ctx.translate(center, center);
-        ctx.rotate(45 * Math.PI / 180);
+        ctx.rotate((45 * Math.PI) / 180);
         ctx.translate(-center, -center);
       }
 
@@ -344,7 +397,9 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
 
     // Draw non-radial points overlay if enabled
     if (showNonRadial) {
-      const nonRadialImg = assetLoader.getNonRadialPointsImage(gridType === "box" ? "diamond" : gridType);
+      const nonRadialImg = assetLoader.getNonRadialPointsImage(
+        gridType === "box" ? "diamond" : gridType
+      );
       if (nonRadialImg) {
         ctx.save();
         if (isDarkMode) {
@@ -355,7 +410,7 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
         if (needsRotation) {
           const center = size / 2;
           ctx.translate(center, center);
-          ctx.rotate(45 * Math.PI / 180);
+          ctx.rotate((45 * Math.PI) / 180);
           ctx.translate(-center, -center);
         }
 
@@ -379,7 +434,9 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
     gridMode: GridMode = GridMode.DIAMOND
   ): void {
     const scale = size / VIEWBOX_SIZE;
-    const pointColor = isDarkMode ? GRID_POINT_COLOR_DARK : GRID_POINT_COLOR_LIGHT;
+    const pointColor = isDarkMode
+      ? GRID_POINT_COLOR_DARK
+      : GRID_POINT_COLOR_LIGHT;
     const isBoxMode = gridMode === GridMode.BOX;
 
     // Set opacity for grid points
@@ -393,7 +450,7 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
     if (isBoxMode) {
       const center = size / 2;
       ctx.translate(center, center);
-      ctx.rotate(45 * Math.PI / 180);
+      ctx.rotate((45 * Math.PI) / 180);
       ctx.translate(-center, -center);
     }
 
@@ -401,7 +458,13 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
     ctx.fillStyle = pointColor;
     const center = BASE_GRID_POINTS.center;
     ctx.beginPath();
-    ctx.arc(center.x * scale, center.y * scale, center.r * scale, 0, Math.PI * 2);
+    ctx.arc(
+      center.x * scale,
+      center.y * scale,
+      center.r * scale,
+      0,
+      Math.PI * 2
+    );
     ctx.fill();
 
     // Draw outer points
@@ -409,7 +472,13 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
     // This matches GridSvg.svelte's fill-opacity/stroke-opacity toggling.
     for (const point of Object.values(BASE_GRID_POINTS.outer)) {
       ctx.beginPath();
-      ctx.arc(point.x * scale, point.y * scale, point.r * scale, 0, Math.PI * 2);
+      ctx.arc(
+        point.x * scale,
+        point.y * scale,
+        point.r * scale,
+        0,
+        Math.PI * 2
+      );
       if (isBoxMode) {
         // Box mode: outlined circles (stroke only, no fill)
         ctx.strokeStyle = pointColor;
@@ -453,11 +522,27 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
         const viewBoxHeight = viewBoxParts[1] || 100;
 
         const displayColor = options.visibility.primaryPropColors?.[color];
-        const artwork = displayColor ? applyColorToSvg(assets.imageSrc, displayColor, {
-          sourceColors: [getMotionColor(color, "dark"), getMotionColor(color, "light")],
-          selectiveColorMode: (SELECTIVE_COLOR_PROP_TYPES as readonly string[]).includes(String(assets.propType ?? pictograph.motions?.[color]?.propType).toLowerCase()),
-        }) : assets.imageSrc;
-        const wrapped = wrapSvgContent(artwork, viewBoxWidth, viewBoxHeight, false);
+        const artwork = displayColor
+          ? applyColorToSvg(assets.imageSrc, displayColor, {
+              sourceColors: [
+                getMotionColor(color, "dark"),
+                getMotionColor(color, "light"),
+              ],
+              selectiveColorMode: (
+                SELECTIVE_COLOR_PROP_TYPES as readonly string[]
+              ).includes(
+                String(
+                  assets.propType ?? pictograph.motions?.[color]?.propType
+                ).toLowerCase()
+              ),
+            })
+          : assets.imageSrc;
+        const wrapped = wrapSvgContent(
+          artwork,
+          viewBoxWidth,
+          viewBoxHeight,
+          false
+        );
 
         const cacheKey = `prop_${color}_${this.hashString(wrapped.svg)}`;
         const img = await svgCache.getImage(wrapped.svg, cacheKey);
@@ -541,24 +626,40 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
         const fullViewBox = assets.viewBox.fullViewBox;
 
         const displayColor = options.visibility.primaryPropColors?.[hand];
-        const artwork = displayColor ? applyColorToSvg(assets.imageSrc, displayColor) : assets.imageSrc;
-        const wrapped = wrapSvgContent(artwork, viewBoxWidth, viewBoxHeight, true, fullViewBox, {
-          id: `arrow-halo-${hand}`,
-          isDarkMode,
-        });
+        const artwork = displayColor
+          ? applyColorToSvg(assets.imageSrc, displayColor)
+          : assets.imageSrc;
+        const wrapped = wrapSvgContent(
+          artwork,
+          viewBoxWidth,
+          viewBoxHeight,
+          true,
+          fullViewBox,
+          {
+            id: `arrow-halo-${hand}`,
+            isDarkMode,
+          }
+        );
 
         const cacheKey = `arrow_${hand}_exp_${this.hashString(wrapped.svg)}`;
         const img = await svgCache.getImage(wrapped.svg, cacheKey);
 
-        let viewBoxMinX = 0, viewBoxMinY = 0;
+        let viewBoxMinX = 0,
+          viewBoxMinY = 0;
         if (fullViewBox) {
           const parts = fullViewBox.split(/\s+/);
           viewBoxMinX = parseFloat(parts[0] || "0") || 0;
           viewBoxMinY = parseFloat(parts[1] || "0") || 0;
         }
 
-        const adjustedCenterX = (assets.center?.x ?? viewBoxWidth / 2) - viewBoxMinX + wrapped.offsetX;
-        const adjustedCenterY = (assets.center?.y ?? viewBoxHeight / 2) - viewBoxMinY + wrapped.offsetY;
+        const adjustedCenterX =
+          (assets.center?.x ?? viewBoxWidth / 2) -
+          viewBoxMinX +
+          wrapped.offsetX;
+        const adjustedCenterY =
+          (assets.center?.y ?? viewBoxHeight / 2) -
+          viewBoxMinY +
+          wrapped.offsetY;
 
         drawElementWithTransform(ctx, img, {
           x: position.x * scale,
@@ -584,7 +685,7 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash;
     }
     return String(hash);

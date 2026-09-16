@@ -252,8 +252,7 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
     {/if}
 
     <!-- The hand relationship owns the bottom-right corner; the prop
-         relationship sits top-right inside its dashed spin ring, behind its
-         own toggle. -->
+         relationship sits top-right, behind its own toggle. -->
     {#if propElementalGlyphVisible && effectivePropElementalType}
       {#key propElementalKey}
         <g
@@ -272,8 +271,6 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
             elementalType={effectivePropElementalType}
             visible={true}
             corner="top-right"
-            variant="prop"
-            {darkMode}
             ariaLabel={`Prop timing and direction element: ${effectivePropElementalType}`}
           />
         </g>

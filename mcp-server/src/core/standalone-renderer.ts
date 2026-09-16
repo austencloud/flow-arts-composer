@@ -151,15 +151,8 @@ const DIAMOND_VTG_MAP: Record<
 const ELEMENTAL_GLYPH_WIDTH = 95;
 const ELEMENTAL_GLYPH_HEIGHT = 125;
 const ELEMENTAL_OFFSET_PERCENTAGE = 0.04;
-// Prop timing-and-direction glyph: same element icon, wrapped in a dashed
-// spin ring so the prop relationship reads differently from the hand one.
-// Radius clears the 95x125 icon's corners inside the top-right slot.
-const PROP_TND_RING = {
-  radius: 80,
-  strokeWidth: 5,
-  dash: "14 10",
-  opacity: 0.75,
-} as const;
+// Gap between the hand and prop element icons when both share the top edge.
+const PROP_TND_GAP = 20;
 
 // Type1 letters (A-V) - only these show elemental glyphs
 const TYPE1_LETTERS = new Set([
@@ -291,7 +284,7 @@ export interface RenderVisibilityOptions {
   showTKA?: boolean;
   showTND?: boolean;
   showElemental?: boolean;
-  /** Prop timing-and-direction element: top-right slot, dashed spin ring. */
+  /** Prop timing-and-direction element: top-right slot. */
   showPropTnD?: boolean;
   showPlacements?: boolean;
   showReversals?: boolean;
@@ -577,7 +570,7 @@ export class StandaloneRenderer {
         input.startPlacement,
         darkMode,
         themeable,
-        showPropTnD ? ELEMENTAL_GLYPH_WIDTH + PROP_TND_RING.radius / 2 : 0
+        showPropTnD ? ELEMENTAL_GLYPH_WIDTH + PROP_TND_GAP : 0
       );
       if (elementalSvg)
         svgParts.push(
@@ -585,18 +578,14 @@ export class StandaloneRenderer {
         );
     }
 
-    // 6b. Prop timing-and-direction glyph (top right, dashed spin ring)
+    // 6b. Prop timing-and-direction glyph (top right)
     if (showPropTnD && input.leftMotion && input.rightMotion) {
       const propSvg = this.renderPropTnDGlyph(
         input.leftMotion,
-        input.rightMotion,
-        darkMode,
-        themeable
+        input.rightMotion
       );
       if (propSvg)
-        svgParts.push(
-          `<g class="svg-glyph svg-glyph-prop-tnd">${propSvg}</g>`
-        );
+        svgParts.push(`<g class="svg-glyph svg-glyph-prop-tnd">${propSvg}</g>`);
     }
 
     // 7. TKA Letter glyph with turn numbers (bottom left)
@@ -1547,32 +1536,16 @@ ${turnNumbersSvg}
 
   /**
    * Prop timing-and-direction glyph: the props' element (spin direction and
-   * start-bearing phase, not the hand paths) in the top-right slot inside a
-   * dashed spin ring. Mirrors ElementalGlyph.svelte variant="prop".
+   * start-bearing phase, not the hand paths) in the top-right slot. Mirrors
+   * ElementalGlyph.svelte corner="top-right".
    */
-  private renderPropTnDGlyph(
-    left: MotionInput,
-    right: MotionInput,
-    darkMode: boolean,
-    themeable: boolean = false
-  ): string {
+  private renderPropTnDGlyph(left: MotionInput, right: MotionInput): string {
     const elementalType = derivePropElementalType(left, right);
     if (!elementalType) return "";
     const markup = this.loadElementalGlyphMarkup(elementalType);
     if (!markup) return "";
 
-    const offset = VIEWBOX_SIZE * ELEMENTAL_OFFSET_PERCENTAGE;
-    const cx = VIEWBOX_SIZE - offset - ELEMENTAL_GLYPH_WIDTH / 2;
-    const cy = offset + ELEMENTAL_GLYPH_HEIGHT / 2;
-    const stroke = this.resolveColor(
-      "--dm-glyph-fill",
-      "#e6e6e6",
-      "#000000",
-      darkMode,
-      themeable
-    );
-    const ring = `<circle cx="${cx}" cy="${cy}" r="${PROP_TND_RING.radius}" fill="none" stroke="${stroke}" stroke-width="${PROP_TND_RING.strokeWidth}" stroke-dasharray="${PROP_TND_RING.dash}" stroke-linecap="round" opacity="${PROP_TND_RING.opacity}"/>`;
-    return `<g>${ring}${this.placeElementalGlyph(markup, 0)}</g>`;
+    return this.placeElementalGlyph(markup, 0);
   }
 
   /** Load one element icon and inline its class fills and gradient defs. */
@@ -1678,7 +1651,8 @@ ${turnNumbersSvg}
   ): string {
     const offsetWidth = VIEWBOX_SIZE * ELEMENTAL_OFFSET_PERCENTAGE;
     const offsetHeight = VIEWBOX_SIZE * ELEMENTAL_OFFSET_PERCENTAGE;
-    const xPosition = VIEWBOX_SIZE - ELEMENTAL_GLYPH_WIDTH - offsetWidth - xShift;
+    const xPosition =
+      VIEWBOX_SIZE - ELEMENTAL_GLYPH_WIDTH - offsetWidth - xShift;
     const yPosition = offsetHeight;
 
     return `<g>
