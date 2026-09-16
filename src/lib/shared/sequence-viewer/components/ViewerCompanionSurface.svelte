@@ -7,9 +7,7 @@
   import { getViewerTunnelStageContext } from "../context/viewer-tunnel-stage-context";
   import { getViewerStudioSurfaces } from "../context/viewer-studio-surfaces-context";
   import { reparentToInspector } from "./reparent-to-inspector";
-  import { sequenceForHandLabeling } from "../services/hand-labeled-sequence";
-  import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { createHandLabeledCard } from "../services/hand-labeled-card.svelte";
 
   let {
     side,
@@ -51,38 +49,13 @@
     onTunnelSaved,
   }: ViewerCompanionSurfaceProps = $props();
 
-  /**
-   * Beside performance footage the card draws the sequence the viewer should
-   * copy, not the stored one. Resolved asynchronously; until it lands the card
-   * keeps its previous sequence so a pure labeling flip on the same source
-   * never flashes a blank. A change of source, though, invalidates the held
-   * value immediately - it was derived from the old sequence and would
-   * otherwise draw the wrong one until the new resolve lands.
-   */
-  let labeledSequence = $state<SequenceData | null>(null);
-  let labeledSource: SequenceData | null = null;
-  $effect(() => {
-    const source = sequence;
-    const labeling = activeHandLabeling;
-    if (!labeling) {
-      labeledSequence = null;
-      labeledSource = null;
-      return;
-    }
-    if (labeledSource !== source) {
-      labeledSequence = null;
-    }
-    let cancelled = false;
-    void sequenceForHandLabeling(source, labeling).then((resolved) => {
-      if (cancelled) return;
-      labeledSequence = resolved;
-      labeledSource = source;
-    });
-    return () => {
-      cancelled = true;
-    };
+  // Beside performance footage the card draws the sequence the viewer should
+  // copy, not the stored one, and the footer legend must always describe the
+  // sequence actually drawn - never the labeling still in flight.
+  const labeledCard = createHandLabeledCard({
+    getSequence: () => sequence,
+    getLabeling: () => activeHandLabeling,
   });
-  const cardSequence = $derived(labeledSequence ?? sequence);
 
   const selectedPane = $derived(
     side === "left" ? splitConfig.leftPane : splitConfig.rightPane
@@ -146,10 +119,8 @@
       }}
     >
       <ChoreoCard
-        sequence={studioCard?.sequence ?? cardSequence}
-        handLabeling={studioCard || labeledSequence === null
-          ? null
-          : activeHandLabeling}
+        sequence={studioCard?.sequence ?? labeledCard.sequence}
+        handLabeling={studioCard ? null : labeledCard.labeling}
         customTitleText={sequence.sequenceKind === "hand-path"
           ? sequence.displayName || sequence.name
           : undefined}

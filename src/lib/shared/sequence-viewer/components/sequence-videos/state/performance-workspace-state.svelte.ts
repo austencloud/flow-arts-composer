@@ -190,9 +190,16 @@ export function createPerformanceWorkspaceState(
     returnToBrowsing();
   }
 
-  async function setHandLabeling(labeling: HandLabeling): Promise<void> {
+  // The manager already toasts a failed write, and the control reads its
+  // value straight from the stored record, so a rejection here only needs to
+  // stop short of an unhandled rejection - the control snaps back on its own.
+  async function persistHandLabeling(labeling: HandLabeling): Promise<void> {
     if (!selectedVideo) return;
-    await store.applyHandLabeling(selectedVideo.id, labeling);
+    try {
+      await store.applyHandLabeling(selectedVideo.id, labeling);
+    } catch {
+      // Already surfaced to the user by the store/manager.
+    }
   }
 
   function requestDelete(videoId: string): void {
@@ -266,7 +273,7 @@ export function createPerformanceWorkspaceState(
     returnToBrowsing,
     handleUploaded,
     saveStepMap,
-    setHandLabeling,
+    persistHandLabeling,
     requestDelete,
     cancelDelete,
     confirmDelete,

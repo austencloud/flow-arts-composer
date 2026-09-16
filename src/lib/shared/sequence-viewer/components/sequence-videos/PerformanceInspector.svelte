@@ -78,23 +78,29 @@
         {#if workspace.selectedVideo.description}
           <p class="description">{workspace.selectedVideo.description}</p>
         {/if}
+        {#if workspace.selectedVideo.creatorId === authState.user?.uid}
+          <div class="hand-labeling">
+            <span class="eyebrow" id="hand-labeling-label"
+              >Read the card as</span
+            >
+            <SegmentedControl
+              options={[
+                { value: "mirror-me", label: "Mirror me" },
+                { value: "as-performed", label: "As performed" },
+              ]}
+              value={resolveHandLabeling(workspace.selectedVideo)}
+              onchange={(value: HandLabeling) =>
+                void workspace.persistHandLabeling(value)}
+              size="sm"
+              color="accent"
+              semantics="radiogroup"
+              ariaLabelledby="hand-labeling-label"
+            />
+          </div>
+        {/if}
       </div>
 
       {#if workspace.selectedVideo.creatorId === authState.user?.uid}
-        <div class="hand-labeling">
-          <span class="eyebrow" id="hand-labeling-label">Read the card as</span>
-          <SegmentedControl
-            options={[
-              { value: "mirror-me", label: "Mirror me" },
-              { value: "as-performed", label: "As performed" },
-            ]}
-            value={resolveHandLabeling(workspace.selectedVideo)}
-            onchange={(value: HandLabeling) =>
-              void workspace.setHandLabeling(value)}
-            size="sm"
-            ariaLabelledby="hand-labeling-label"
-          />
-        </div>
         <div class="selected-actions">
           {#if canUpload}
             <PanelButton
