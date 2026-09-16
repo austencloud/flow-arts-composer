@@ -121,7 +121,7 @@
               fallbackIcon="fa-repeat"
               tint={repeatTint}
               name={`Repeated ×${orientationRepeat.count}`}
-              description={`Back at the start position, but the props are turned. Repeating ${orientationRepeat.count} times returns their orientation too.`}
+              description={`Back at the start placement, but the props are turned. Repeating ${orientationRepeat.count} times returns their orientation too.`}
               disabled={isApplying}
               onclick={() => !isApplying && onOrientationRepeat?.()}
             />

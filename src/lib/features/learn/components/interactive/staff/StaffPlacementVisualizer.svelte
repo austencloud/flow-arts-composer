@@ -1,7 +1,7 @@
 <!--
-StaffPositionVisualizer - Interactive grid showing staff prop orientations
+StaffPlacementVisualizer - Interactive grid showing staff prop orientations
 Shows staffs positioned on the 4-point diamond grid with thumb end markers.
-Demonstrates Alpha, Beta, Gamma positions with thumb orientations (in, out, mixed).
+Demonstrates Alpha, Beta, Gamma placements with thumb orientations (in, out, mixed).
 -->
 <script lang="ts">
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";

@@ -154,8 +154,8 @@ export function getPathD(
 
 export interface HandAnimationParams {
   element: SVGGElement;
-  startPlacement: GridLocation;
-  endPlacement: GridLocation;
+  startLocation: GridLocation;
+  endLocation: GridLocation;
   durationMs: number;
   handCenter: { x: number; y: number };
 }
@@ -167,15 +167,15 @@ export class HandPathAnimator {
   async animate(params: HandAnimationParams): Promise<void> {
     this.cancel();
 
-    const { element, startPlacement, endPlacement, durationMs, handCenter } = params;
+    const { element, startLocation, endLocation, durationMs, handCenter } = params;
 
     const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const duration = prefersReduced ? 0 : durationMs;
 
-    const startAngle = locToAngle(startPlacement);
-    const endAngle = locToAngle(endPlacement);
-    const isSamePoint = startPlacement === endPlacement;
-    const isDash = !isSamePoint && isOpposite(startPlacement, endPlacement);
+    const startAngle = locToAngle(startLocation);
+    const endAngle = locToAngle(endLocation);
+    const isSamePoint = startLocation === endLocation;
+    const isDash = !isSamePoint && isOpposite(startLocation, endLocation);
     const pathType = resolveHandPathType(isDash);
     const useCartesian = pathType !== "arc";
 

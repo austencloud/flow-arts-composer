@@ -430,7 +430,8 @@ export async function loadCurrentSequenceState(mode?: string): Promise<{
       return null;
     }
 
-    const parsed: unknown = JSON.parse(stateJson);
+    const rawParsed: unknown = JSON.parse(stateJson);
+    const parsed = migrateLegacySequenceStateBlob(rawParsed);
 
     if (!isValidSequenceState(parsed)) {
       console.warn("❌ Invalid sequence state structure, clearing state");
@@ -461,6 +462,38 @@ export async function loadCurrentSequenceState(mode?: string): Promise<{
     console.error("❌ Failed to load current sequence state:", error);
     return null;
   }
+}
+
+/**
+ * Migrates a `loadCurrentSequenceState` blob written before the position ->
+ * placement rename shipped. `hasStartPosition`/`selectedStartPosition` only
+ * fill the new keys when those are absent; an already-migrated or freshly
+ * saved blob passes through untouched. Never deletes user data over a
+ * spelling mismatch — a blob that fails validation even after this still
+ * gets cleared by the caller, not this function.
+ */
+export function migrateLegacySequenceStateBlob(value: unknown): unknown {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return value;
+  }
+
+  const source = value as Record<string, unknown>;
+  const migrated: Record<string, unknown> = { ...source };
+
+  if (
+    migrated["hasStartPlacement"] === undefined &&
+    typeof source["hasStartPosition"] === "boolean"
+  ) {
+    migrated["hasStartPlacement"] = source["hasStartPosition"];
+  }
+  if (
+    migrated["selectedStartPlacement"] === undefined &&
+    source["selectedStartPosition"] !== undefined
+  ) {
+    migrated["selectedStartPlacement"] = source["selectedStartPosition"];
+  }
+
+  return migrated;
 }
 
 function isValidSequenceState(obj: unknown): obj is {

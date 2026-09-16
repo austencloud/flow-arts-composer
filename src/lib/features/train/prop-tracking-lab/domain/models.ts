@@ -129,9 +129,9 @@ export interface DerivedPictograph {
   /** End keyframe index */
   endKeyframe: number;
   /** Start grid position */
-  startPlacement: GridLocation;
+  startLocation: GridLocation;
   /** End grid position */
-  endPlacement: GridLocation;
+  endLocation: GridLocation;
   /** Motion type (derived from start/end) */
   motionType: MotionType;
   /** Rotation direction */

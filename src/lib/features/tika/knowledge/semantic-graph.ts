@@ -38,9 +38,9 @@ const nodes: KnowledgeNode[] = [
 		sourceOfTruth: 'mcp-server/data/tka-glossary.json'
 	},
 	{
-		id: 'position',
+		id: 'placement',
 		type: 'concept',
-		name: { en: 'Position' },
+		name: { en: 'Placement' },
 		description: { en: 'The spatial relationship between the two hands on the grid' },
 		introducedAtLevel: 1,
 		facts: [
@@ -71,7 +71,7 @@ const nodes: KnowledgeNode[] = [
 		]
 	},
 	{
-		id: 'position-alpha',
+		id: 'placement-alpha',
 		type: 'term',
 		name: { en: 'Alpha' },
 		description: { en: 'Hands at opposite grid points' },
@@ -86,7 +86,7 @@ const nodes: KnowledgeNode[] = [
 		sourceOfTruth: 'mcp-server/data/tka-glossary.json#alpha'
 	},
 	{
-		id: 'position-beta',
+		id: 'placement-beta',
 		type: 'term',
 		name: { en: 'Beta' },
 		description: { en: 'Both hands at the same grid point' },
@@ -95,7 +95,7 @@ const nodes: KnowledgeNode[] = [
 		sourceOfTruth: 'mcp-server/data/tka-glossary.json#beta'
 	},
 	{
-		id: 'position-gamma',
+		id: 'placement-gamma',
 		type: 'term',
 		name: { en: 'Gamma' },
 		description: { en: 'Hands form a right angle on adjacent grid points' },
@@ -107,7 +107,7 @@ const nodes: KnowledgeNode[] = [
 		sourceOfTruth: 'mcp-server/data/tka-glossary.json#gamma'
 	},
 	{
-		id: 'position-zeta',
+		id: 'placement-zeta',
 		type: 'term',
 		name: { en: 'Zeta' },
 		description: { en: 'Hands form an obtuse angle (skewed grid)' },
@@ -119,7 +119,7 @@ const nodes: KnowledgeNode[] = [
 		sourceOfTruth: 'mcp-server/data/tka-glossary.json#zeta'
 	},
 	{
-		id: 'position-eta',
+		id: 'placement-eta',
 		type: 'term',
 		name: { en: 'Eta' },
 		description: { en: 'Hands form an acute angle (skewed grid)' },
@@ -322,15 +322,15 @@ const nodes: KnowledgeNode[] = [
 ];
 
 const relationships: KnowledgeRelationship[] = [
-	{ from: 'position-alpha', to: 'position', type: 'is-a', strength: 'strict' },
-	{ from: 'position-beta', to: 'position', type: 'is-a', strength: 'strict' },
-	{ from: 'position-gamma', to: 'position', type: 'is-a', strength: 'strict' },
-	{ from: 'position-zeta', to: 'position', type: 'is-a', strength: 'strict' },
-	{ from: 'position-eta', to: 'position', type: 'is-a', strength: 'strict' },
+	{ from: 'placement-alpha', to: 'placement', type: 'is-a', strength: 'strict' },
+	{ from: 'placement-beta', to: 'placement', type: 'is-a', strength: 'strict' },
+	{ from: 'placement-gamma', to: 'placement', type: 'is-a', strength: 'strict' },
+	{ from: 'placement-zeta', to: 'placement', type: 'is-a', strength: 'strict' },
+	{ from: 'placement-eta', to: 'placement', type: 'is-a', strength: 'strict' },
 
 	{
-		from: 'position-alpha',
-		to: 'position-beta',
+		from: 'placement-alpha',
+		to: 'placement-beta',
 		type: 'opposite-of',
 		strength: 'strict',
 		description: { en: 'Alpha (opposite points) vs Beta (same point)' }
@@ -432,18 +432,18 @@ const relationships: KnowledgeRelationship[] = [
 		strength: 'strict'
 	},
 
-	{ from: 'position', to: 'grid', type: 'requires', strength: 'strict' },
+	{ from: 'placement', to: 'grid', type: 'requires', strength: 'strict' },
 	{ from: 'motion', to: 'grid', type: 'requires', strength: 'strict' },
 
 	{
-		from: 'position-zeta',
-		to: 'position-gamma',
+		from: 'placement-zeta',
+		to: 'placement-gamma',
 		type: 'prerequisite-for',
 		strength: 'strict'
 	},
 	{
-		from: 'position-eta',
-		to: 'position-gamma',
+		from: 'placement-eta',
+		to: 'placement-gamma',
 		type: 'prerequisite-for',
 		strength: 'strict'
 	}

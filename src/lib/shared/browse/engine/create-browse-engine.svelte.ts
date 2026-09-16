@@ -111,12 +111,89 @@ function currentFilterLabel(filter: ActiveFilter): string {
 
 // Persistence
 
+/** Every value BrowseFilterType currently defines, for validating a
+ * persisted entry's stored type string. */
+const CURRENT_FILTER_TYPE_VALUES = new Set<string>(
+  Object.values(BrowseFilterType)
+);
+
+/** Filter type strings persisted before a FilterType enum value was renamed,
+ * mapped to today's value. STARTING_PLACEMENT/END_PLACEMENT used to be
+ * "startPosition"/"endPosition" (the domain concept "position" was renamed
+ * to "placement" with no migration). Extend this table — don't replace an
+ * entry — the next time a filter type's persisted value changes. */
+const LEGACY_FILTER_TYPE_ALIASES: Readonly<Record<string, BrowseFilterType>> =
+  {
+    startPosition: BrowseFilterType.STARTING_PLACEMENT,
+    endPosition: BrowseFilterType.END_PLACEMENT,
+  };
+
+/** Resolves a persisted filter's stored type string to its current
+ * FilterType, following the legacy alias table above. Returns null when the
+ * type is neither a current value nor a known legacy alias — such an entry
+ * no longer maps to anything `applyFilter` understands and must be dropped,
+ * not kept around as a chip that silently filters nothing. */
+function resolvePersistedFilterType(
+  storedType: string
+): BrowseFilterType | null {
+  const alias = LEGACY_FILTER_TYPE_ALIASES[storedType];
+  if (alias) return alias;
+  return CURRENT_FILTER_TYPE_VALUES.has(storedType)
+    ? (storedType as BrowseFilterType)
+    : null;
+}
+
+/** Rebuilds a persisted filter's map key when it embeds the old type
+ * string — either bare (`String(type)`, the one-per-type scheme) or
+ * stacked (`${type}:${value}`, e.g. OR_STACKING_TYPES). Falls back to the
+ * original key if it doesn't recognizably embed `storedType`. */
+function rekeyMigratedFilter(
+  key: string,
+  storedType: string,
+  migratedType: BrowseFilterType,
+  value: BrowseFilterValue
+): string {
+  if (key === storedType) return String(migratedType);
+  if (key.startsWith(`${storedType}:`))
+    return `${migratedType}:${String(value)}`;
+  return key;
+}
+
+/** Drops persisted filter entries whose type no longer exists, and rewrites
+ * entries whose type was renamed (LEGACY_FILTER_TYPE_ALIASES) onto the
+ * current FilterType, rebuilding the map key to match. Runs once, here, so
+ * every reader of `persisted.activeFilters` (buildInitialFilters,
+ * buildInitialConnectives) sees already-current data. */
+function migratePersistedFilters(
+  entries: Array<[string, ActiveFilter]>
+): Array<[string, ActiveFilter]> {
+  const migrated: Array<[string, ActiveFilter]> = [];
+  for (const [key, filter] of entries) {
+    const storedType = String(filter.type);
+    const type = resolvePersistedFilterType(storedType);
+    if (!type) continue;
+    const migratedKey =
+      type === storedType
+        ? key
+        : rekeyMigratedFilter(key, storedType, type, filter.value);
+    migrated.push([
+      migratedKey,
+      type === filter.type ? filter : { ...filter, type },
+    ]);
+  }
+  return migrated;
+}
+
 function loadPersisted(key: string | null): PersistedEngineState | null {
   if (!key) return null;
   try {
     const raw = localStorage.getItem(key);
     if (!raw) return null;
-    return JSON.parse(raw) as PersistedEngineState;
+    const state = JSON.parse(raw) as PersistedEngineState;
+    if (state.activeFilters) {
+      state.activeFilters = migratePersistedFilters(state.activeFilters);
+    }
+    return state;
   } catch {
     return null;
   }

@@ -77,7 +77,7 @@ export function buildCardVisibilityMenuItems(
     },
     {
       id: "card-vis-start-placement",
-      label: "Start Position",
+      label: "Start Placement",
       icon: "fa-flag",
       checked: c.includeStartPlacement,
       keepOpen: true,

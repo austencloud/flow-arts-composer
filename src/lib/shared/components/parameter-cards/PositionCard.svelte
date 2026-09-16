@@ -1,7 +1,7 @@
 <!--
-PositionCard.svelte - Unified starting position selection card
+PositionCard.svelte - Unified starting placement selection card
 Styled to match Generate module's card aesthetic
-Supports Alpha, Beta, Gamma positions with Greek symbol pills
+Supports Alpha, Beta, Gamma placements with Greek symbol pills
 -->
 <script lang="ts">
   import { attachRipple } from "$lib/shared/application/services/ripple-effect";
@@ -69,10 +69,10 @@ Supports Alpha, Beta, Gamma positions with Greek symbol pills
   class:disabled
   style="--card-index: {cardIndex}; grid-column: span {gridColumnSpan};"
   role="group"
-  aria-label="Starting position selection"
+  aria-label="Starting placement selection"
 >
   <div class="card-header">
-    <span class="card-title">Position</span>
+    <span class="card-title">Placement</span>
   </div>
 
   <div class="current-value">{displayValue}</div>
@@ -83,7 +83,7 @@ Supports Alpha, Beta, Gamma positions with Greek symbol pills
         class="pill-option"
         class:selected={value === position.id}
         onclick={() => handlePositionClick(position.id)}
-        aria-label="{position.fullName} position"
+        aria-label="{position.fullName} placement"
         aria-pressed={value === position.id}
         {disabled}
       >

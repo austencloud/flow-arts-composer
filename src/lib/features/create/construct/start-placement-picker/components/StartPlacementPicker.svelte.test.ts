@@ -38,6 +38,7 @@ function pickerState() {
 describe("StartPlacementPicker paths", () => {
   beforeEach(() => {
     localStorage.removeItem("tka-start-placement-picker-prefs");
+    localStorage.removeItem("tka-start-position-picker-prefs");
   });
 
   it("offers Presets and Build as direct single-select paths", async () => {
@@ -62,6 +63,48 @@ describe("StartPlacementPicker paths", () => {
     localStorage.setItem(
       "tka-start-placement-picker-prefs",
       JSON.stringify({ blueOrientation: "clock", redOrientation: "counter" })
+    );
+    const state = pickerState();
+    render(StartPlacementPicker, {
+      startPlacementState: state as never,
+      embedded: true,
+    });
+
+    await vi.waitFor(() => {
+      expect(state.setLeftOrientation).toHaveBeenCalledWith(Orientation.CLOCK);
+      expect(state.setRightOrientation).toHaveBeenCalledWith(
+        Orientation.COUNTER
+      );
+    });
+  });
+
+  it("falls back to the pre-rename storage key when the new key has nothing", async () => {
+    localStorage.setItem(
+      "tka-start-position-picker-prefs",
+      JSON.stringify({ leftOrientation: "clock", rightOrientation: "counter" })
+    );
+    const state = pickerState();
+    render(StartPlacementPicker, {
+      startPlacementState: state as never,
+      embedded: true,
+    });
+
+    await vi.waitFor(() => {
+      expect(state.setLeftOrientation).toHaveBeenCalledWith(Orientation.CLOCK);
+      expect(state.setRightOrientation).toHaveBeenCalledWith(
+        Orientation.COUNTER
+      );
+    });
+  });
+
+  it("prefers the new storage key when both are present", async () => {
+    localStorage.setItem(
+      "tka-start-placement-picker-prefs",
+      JSON.stringify({ leftOrientation: "clock", rightOrientation: "counter" })
+    );
+    localStorage.setItem(
+      "tka-start-position-picker-prefs",
+      JSON.stringify({ leftOrientation: "out", rightOrientation: "out" })
     );
     const state = pickerState();
     render(StartPlacementPicker, {

@@ -96,8 +96,8 @@
       const animator = builder.phase === "left" ? leftAnimator : rightAnimator;
       await animator.animate({
         element: handRef,
-        startPlacement: move.from,
-        endPlacement: move.to,
+        startLocation: move.from,
+        endLocation: move.to,
         durationMs: ANIMATION_DURATION_MS,
         handCenter: handData.svgData.center,
       });

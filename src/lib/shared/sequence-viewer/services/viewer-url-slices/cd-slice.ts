@@ -45,7 +45,13 @@
  * ENCODED (flat): addWord, addStepNumbers, addDifficultyLevel,
  * includeStartPlacement, customName, showLoopGlyph, showNotes, customNotesText,
  * showQRCode, showMandala, startPlacementLayout — plus, for the viewed sequence
- * length only, `cols` (headline param), `startLayout` and `infoCell`.
+ * length only, `cols` (headline param), `startLayout` and `infoCell`. This is
+ * a wire contract: captureCdSlice only ever emits these exact keys.
+ *
+ * seedFromCdSlice additionally accepts, READ-ONLY, the pre-rename
+ * `includeStartPosition` / `startPositionLayout` names inside `rest.settings`
+ * for share links minted before the position -> placement rename shipped.
+ * They are never added to ENCODED_FIELDS and captureCdSlice never writes them.
  *
  * EXCLUDED, with reasons:
  * - `darkMode`: a MIRROR of `AnimationVisibilityManager`, which this store
@@ -93,6 +99,19 @@ type EncodedField = (typeof ENCODED_FIELDS)[number];
 export type CdSliceSettingsPatch = Partial<
   Pick<ImageCompositionSettings, EncodedField>
 >;
+
+/**
+ * Position -> placement rename, read-side only. Share links minted before the
+ * rename shipped can still carry `rest.settings.includeStartPosition` /
+ * `startPositionLayout` under these pre-rename names. seedFromCdSlice reads
+ * them as a fallback when the current-name field is absent; captureCdSlice
+ * never writes them and they are intentionally NOT part of ENCODED_FIELDS —
+ * the wire contract above stays unchanged.
+ */
+type LegacyCdSliceSettingsPatch = {
+  includeStartPosition?: boolean;
+  startPositionLayout?: "row" | "column";
+};
 
 export interface CdSlicePayload {
   /** Headline `cols` param: the column choice for the viewed sequence length. */
@@ -179,7 +198,24 @@ export function seedFromCdSlice(
   if (infoCell) infoCellChoiceOverrides[key] = infoCell;
   else delete infoCellChoiceOverrides[key];
 
-  const encoded = payload.rest?.settings ?? {};
+  const rawSettings = payload.rest?.settings as
+    | (CdSliceSettingsPatch & LegacyCdSliceSettingsPatch)
+    | undefined;
+  const encoded: CdSliceSettingsPatch = rawSettings ? { ...rawSettings } : {};
+  if (
+    encoded.includeStartPlacement === undefined &&
+    rawSettings?.includeStartPosition !== undefined
+  ) {
+    encoded.includeStartPlacement = rawSettings.includeStartPosition;
+  }
+  if (
+    encoded.startPlacementLayout === undefined &&
+    rawSettings?.startPositionLayout !== undefined
+  ) {
+    encoded.startPlacementLayout = rawSettings.startPositionLayout;
+  }
+  delete (encoded as LegacyCdSliceSettingsPatch).includeStartPosition;
+  delete (encoded as LegacyCdSliceSettingsPatch).startPositionLayout;
   const showNotes =
     encoded.showNotes ?? DEFAULT_IMAGE_COMPOSITION_SETTINGS.showNotes;
   // `customName` is absent from the defaults, so a sender who never set one

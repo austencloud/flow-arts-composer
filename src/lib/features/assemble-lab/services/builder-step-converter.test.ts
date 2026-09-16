@@ -20,14 +20,14 @@ import {
 } from "./builder-step-converter";
 
 function step(
-  startPlacement: GridLocation,
-  endPlacement: GridLocation,
+  startLocation: GridLocation,
+  endLocation: GridLocation,
   rotationDirection: RotationDirection = RotationDirection.CLOCKWISE,
   turnCount = 0
 ): BuilderStep {
   return {
-    startPlacement,
-    endPlacement,
+    startLocation,
+    endLocation,
     rotationDirection,
     turnCount,
     startOrientation: Orientation.IN,

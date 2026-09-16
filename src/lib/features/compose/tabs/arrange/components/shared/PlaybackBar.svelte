@@ -71,7 +71,7 @@
           class="loop-btn"
           class:active={skipStartPlacement}
           onclick={onToggleLoop}
-          aria-label={skipStartPlacement ? "Loop mode: seamless" : "Loop mode: with start position"}
+          aria-label={skipStartPlacement ? "Loop mode: seamless" : "Loop mode: with start placement"}
           title={skipStartPlacement ? "Seamless loop (skips start pose)" : "Includes start pose each loop"}
         >
           <i class="fas fa-repeat" aria-hidden="true"></i>

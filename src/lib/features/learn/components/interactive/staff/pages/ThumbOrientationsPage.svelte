@@ -3,7 +3,7 @@ ThumbOrientationsPage - Page 2: Thumb In/Out orientations
 -->
 <script lang="ts">
   import { THUMB_EXAMPLES } from "../../../../domain/constants/staff-examples";
-  import StaffPositionVisualizer from "../StaffPositionVisualizer.svelte";
+  import StaffPlacementVisualizer from "../StaffPlacementVisualizer.svelte";
 
   let {
     onNext,
@@ -36,7 +36,7 @@ ThumbOrientationsPage - Page 2: Thumb In/Out orientations
   </div>
 
   <div class="visualizer-section">
-    <StaffPositionVisualizer
+    <StaffPlacementVisualizer
       leftPosition={currentExample.leftPos}
       rightPosition={currentExample.rightPos}
       leftThumbOrientation={currentExample.leftThumb}

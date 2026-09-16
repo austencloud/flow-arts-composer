@@ -3,7 +3,7 @@ ProspinPage - Page 3: Prospin rotation concept
 -->
 <script lang="ts">
   import { PROSPIN_EXAMPLES } from "../../../../domain/constants/staff-examples";
-  import StaffPositionVisualizer from "../StaffPositionVisualizer.svelte";
+  import StaffPlacementVisualizer from "../StaffPlacementVisualizer.svelte";
 
   let {
     onNext,
@@ -35,7 +35,7 @@ ProspinPage - Page 3: Prospin rotation concept
   </div>
 
   <div class="visualizer-section">
-    <StaffPositionVisualizer
+    <StaffPlacementVisualizer
       leftPosition={currentExample.leftPos}
       rightPosition={currentExample.rightPos}
       leftThumbOrientation={currentExample.leftThumb}

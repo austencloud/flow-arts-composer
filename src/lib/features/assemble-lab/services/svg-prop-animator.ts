@@ -55,8 +55,8 @@ function pointOnBuilderPath(
 }
 
 export interface BuilderMotionPathParams {
-  readonly startPosition: AnimationParams["startPlacement"];
-  readonly endPosition: AnimationParams["endPlacement"];
+  readonly startLocation: AnimationParams["startLocation"];
+  readonly endLocation: AnimationParams["endLocation"];
   readonly rotationDirection: AnimationParams["rotationDirection"];
   readonly turnCount: number;
   readonly startOrientation: AnimationParams["startOrientation"];
@@ -67,10 +67,10 @@ export function getBuilderMotionPathD(
   params: BuilderMotionPathParams,
   segments = 24
 ): string | null {
-  if (params.startPosition === params.endPosition) return null;
+  if (params.startLocation === params.endLocation) return null;
   const geometry = deriveBuilderMotionGeometry(
-    params.startPosition,
-    params.endPosition,
+    params.startLocation,
+    params.endLocation,
     params.startOrientation,
     params.rotationDirection,
     params.turnCount
@@ -94,8 +94,8 @@ export class SvgPropAnimator {
 
     const {
       element,
-      startPlacement: startPosition,
-      endPlacement: endPosition,
+      startLocation,
+      endLocation,
       rotationDirection,
       turnCount,
       startOrientation,
@@ -110,8 +110,8 @@ export class SvgPropAnimator {
     const duration = prefersReduced ? 0 : durationMs;
 
     const geometry = deriveBuilderMotionGeometry(
-      startPosition,
-      endPosition,
+      startLocation,
+      endLocation,
       startOrientation,
       rotationDirection,
       turnCount

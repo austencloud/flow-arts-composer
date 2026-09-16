@@ -159,7 +159,7 @@ function makeUnstructuredBuiltPath() {
   const steps = destinations.map(([destination, direction]) => {
     const step = createBuilderStep(pose, destination, direction, 0);
     pose = {
-      location: step.endPlacement,
+      location: step.endLocation,
       orientation: step.endOrientation,
     };
     return step;

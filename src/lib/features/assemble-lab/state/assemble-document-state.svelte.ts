@@ -112,7 +112,7 @@ export function createAssembleDocumentState(): AssembleDocumentState {
   );
   const candidateStartPlacement = $derived.by(() => {
     if (stepEditMode === "replace" && selectedStepIndex !== null) {
-      return activeSteps[selectedStepIndex]?.startPlacement ?? null;
+      return activeSteps[selectedStepIndex]?.startLocation ?? null;
     }
     return currentPosition;
   });
@@ -146,7 +146,7 @@ export function createAssembleDocumentState(): AssembleDocumentState {
     const first = steps[0];
     return first
       ? {
-          location: first.startPlacement,
+          location: first.startLocation,
           orientation: first.startOrientation,
         }
       : null;
@@ -156,7 +156,7 @@ export function createAssembleDocumentState(): AssembleDocumentState {
     const steps = activeHand === HandSide.LEFT ? leftSteps : rightSteps;
     const last = steps[steps.length - 1];
     if (last) {
-      currentPosition = last.endPlacement;
+      currentPosition = last.endLocation;
       currentOrientation = last.endOrientation;
       phase = "building";
       return;

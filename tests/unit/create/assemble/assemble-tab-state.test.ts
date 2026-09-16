@@ -119,7 +119,7 @@ describe("Assemble tab document synchronization", () => {
 
     sequenceState.setCurrentSequence(initial);
     expect(tabState.assembleBuilderState.leftSteps).toHaveLength(1);
-    expect(tabState.assembleBuilderState.leftSteps[0]?.endPlacement).toBe(
+    expect(tabState.assembleBuilderState.leftSteps[0]?.endLocation).toBe(
       GridLocation.EAST
     );
 
@@ -135,7 +135,7 @@ describe("Assemble tab document synchronization", () => {
     };
     sequenceState.setCurrentSequence({ ...initial, steps: [editedStep] });
 
-    expect(tabState.assembleBuilderState.leftSteps[0]?.endPlacement).toBe(
+    expect(tabState.assembleBuilderState.leftSteps[0]?.endLocation).toBe(
       GridLocation.SOUTH
     );
     await Promise.resolve();
@@ -151,7 +151,7 @@ describe("Assemble tab document synchronization", () => {
     expect(sequenceState.animationState.historyTransition).toEqual(
       expect.objectContaining({ direction: "undo", kind: "content" })
     );
-    expect(tabState.assembleBuilderState.leftSteps[0]?.endPlacement).toBe(
+    expect(tabState.assembleBuilderState.leftSteps[0]?.endLocation).toBe(
       GridLocation.EAST
     );
 
@@ -160,7 +160,7 @@ describe("Assemble tab document synchronization", () => {
     expect(sequenceState.animationState.historyTransition).toEqual(
       expect.objectContaining({ direction: "redo", kind: "content" })
     );
-    expect(tabState.assembleBuilderState.leftSteps[0]?.endPlacement).toBe(
+    expect(tabState.assembleBuilderState.leftSteps[0]?.endLocation).toBe(
       GridLocation.SOUTH
     );
 
@@ -253,7 +253,7 @@ describe("Assemble tab document synchronization", () => {
     expect(tabState.sequenceState?.currentSequence?.id).toBe(saved.id);
     expect(tabState.sequenceState?.currentSequence?.steps).toHaveLength(1);
     expect(tabState.assembleBuilderState.leftSteps).toHaveLength(1);
-    expect(tabState.assembleBuilderState.leftSteps[0]?.endPlacement).toBe(
+    expect(tabState.assembleBuilderState.leftSteps[0]?.endLocation).toBe(
       GridLocation.EAST
     );
   });
