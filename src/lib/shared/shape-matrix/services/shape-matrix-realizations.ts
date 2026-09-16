@@ -24,6 +24,23 @@ export const MODE_LABEL: Record<VtgMode, string> = {
   QO: "Quarter · Opp",
 };
 
+/**
+ * The two words a mode is made of, spelled out for a chip that stacks them:
+ * timing on one line, direction on the next. A chip has room for the full
+ * word where the code line had to abbreviate.
+ */
+export const MODE_WORDS: Record<
+  VtgMode,
+  { timing: "Split" | "Together" | "Quarter"; direction: "Same" | "Opposite" }
+> = {
+  SS: { timing: "Split", direction: "Same" },
+  TS: { timing: "Together", direction: "Same" },
+  QS: { timing: "Quarter", direction: "Same" },
+  SO: { timing: "Split", direction: "Opposite" },
+  TO: { timing: "Together", direction: "Opposite" },
+  QO: { timing: "Quarter", direction: "Opposite" },
+};
+
 /** Diamond-grid VTG mode → canonical TnD family. */
 export const MODE_FAMILY_ID: Record<VtgMode, string> = {
   SS: "split-same",

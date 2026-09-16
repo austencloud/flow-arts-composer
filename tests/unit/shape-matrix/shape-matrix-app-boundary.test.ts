@@ -625,14 +625,16 @@ describe("Shape Matrix app boundary", () => {
     );
   });
 
-  it("keeps each elemental button's visible mode and name in its accessible name", () => {
+  it("keeps each elemental button's visible words, element and mode in its accessible name", () => {
     const elementChipSource = readFileSync(
       resolve("src/lib/shared/shape-matrix/components/ElementChipRow.svelte"),
       "utf8"
     );
 
+    // The box shows timing over direction beside the element icon; the
+    // element's name and its two-letter code are read out, not drawn.
     expect(elementChipSource).toContain(
-      "ariaLabel={`${c.mode} ${elementName(c.el.element)} (${c.label})${"
+      "ariaLabel={`${c.words.timing} ${c.words.direction}, ${elementName(c.el.element)} (${c.mode})${"
     );
   });
 

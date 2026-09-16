@@ -316,6 +316,7 @@
   const allMotionsVisible = $derived(displayState.allMotionsVisible);
   const showTnD = $derived(displayState.showTnD);
   const showElemental = $derived(displayState.showElemental);
+  const showPropTnD = $derived(displayState.showPropTnD);
   const showPositions = $derived(displayState.showPositions);
   const showHandColorKey = $derived(displayState.showHandColorKey);
   const showGrid = $derived(displayState.showGrid);
@@ -662,6 +663,7 @@
       showReversals,
       showTnD,
       showElemental,
+      showPropTnD,
       showPositions,
       showHandColorKey,
       isSoloMode,
@@ -752,6 +754,7 @@
       showReversals,
       showTnD,
       showElemental,
+      showPropTnD,
       showPositions,
       showHandColorKey,
       showGrid,

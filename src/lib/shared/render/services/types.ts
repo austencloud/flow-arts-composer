@@ -106,6 +106,8 @@ export interface LayerRenderOptions {
   showTnD?: boolean;
   /** Elemental glyph (paired with TnD, same corner). */
   showElemental?: boolean;
+  /** Prop timing-and-direction element (top-right, dashed ring). Default: false. */
+  showPropTnD?: boolean;
   /** Start/end position letters (alpha/beta/gamma). */
   showPositions?: boolean;
   /** L/R hand colour key in the start-position bottom band. Default: true. */

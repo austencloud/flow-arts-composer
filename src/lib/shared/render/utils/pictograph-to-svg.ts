@@ -27,6 +27,8 @@ export interface PictographVisibilityOptions {
   showTKA?: boolean; // TKA Glyph includes turn numbers
   showTnD?: boolean;
   showElemental?: boolean;
+  /** Prop timing-and-direction element (top-right, dashed ring). Default: false. */
+  showPropTnD?: boolean;
   showPositions?: boolean;
   /** L/R colour key on start positions. Default: true. */
   showHandColorKey?: boolean;
@@ -129,6 +131,7 @@ export async function renderPictographToSVG(
       componentProps.showTKA = visibilityOptions.showTKA; // TKA Glyph includes turn numbers
       componentProps.showTnD = visibilityOptions.showTnD;
       componentProps.showElemental = visibilityOptions.showElemental;
+      componentProps.showPropTnD = visibilityOptions.showPropTnD;
       componentProps.showPositions = visibilityOptions.showPositions;
       componentProps.showReversals = visibilityOptions.showReversals;
       componentProps.showNonRadialPoints =
