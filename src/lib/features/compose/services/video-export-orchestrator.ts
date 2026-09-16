@@ -31,6 +31,8 @@ import type { CompositeVideoRenderer } from "$lib/shared/animation-engine/servic
 import type { ExportGlyphPrerenderer } from "$lib/shared/animation-engine/services/export-glyph-prerenderer";
 import { ExportFrameCompositor, type FrameCompositorConfig } from "./export-frame-compositor";
 import { OffscreenExportRenderer } from "$lib/shared/video-export/services/offscreen-export-renderer";
+import { drawOpenerFrame } from "$lib/shared/compose/domain/video-opener-frame";
+import { holdFrameCount } from "$lib/shared/share/domain/video-opener";
 
 import type { VideoExportFormat, VideoExportProgress, VideoEffectOverrides, IVideoExportOrchestrator, VideoExportOrchestratorOptions } from "$lib/shared/compose/domain/video-export-types";
 export type { VideoExportFormat, VideoExportProgress, VideoResolution, VideoEffectOverrides, VideoExportOrchestratorOptions } from "$lib/shared/compose/domain/video-export-types";
@@ -193,6 +195,21 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
       cancel: () => void;
     } | null = null;
 
+    // Opener hold: the chosen image sits at time zero for one beat (default)
+    // before the animation, so it is the frame players and thumbnails show.
+    // Sequence export only; the composite grid draws its own header frame.
+    const openerImage =
+      options.compositeMode && options.compositeMode !== "none"
+        ? undefined
+        : options.openerImage;
+    const openerFrames = openerImage
+      ? holdFrameCount({
+          fps,
+          secondsPerBeat: 1.0 / panelState.speed,
+          holdBeats: options.openerHoldBeats,
+        })
+      : 0;
+
     /** Which side of the export owns the progress readout — see onProgress below. */
     let captureComplete = false;
     let encodedSoFar = 0;
@@ -217,7 +234,8 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
         earlyStartDur + earlyStepDuration * earlyLoopCount + earlyEndDur;
       const secondsPerBeat = 1.0 / panelState.speed;
       const totalTimelineSeconds = earlyTotalDuration * secondsPerBeat;
-      const totalFramesEstimate = Math.ceil(totalTimelineSeconds * fps);
+      const totalFramesEstimate =
+        Math.ceil(totalTimelineSeconds * fps) + openerFrames;
 
       // Wire progress from worker - only used during the finalize phase.
       // During capture, the main loop reports its own progress; the worker
@@ -613,6 +631,45 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
         }
       }
 
+      const encodedFrameTotal = openerFrames + totalFrames;
+
+      if (openerImage && openerFrames > 0) {
+        drawOpenerFrame(
+          offscreenCtx,
+          openerImage,
+          offscreenCanvas.width,
+          offscreenCanvas.height
+        );
+        for (let o = 0; o < openerFrames; o++) {
+          if (this.shouldCancel) {
+            throw new Error("Export cancelled");
+          }
+          if (useBackgroundEncoder) {
+            const openerData = offscreenCtx.getImageData(
+              0,
+              0,
+              offscreenCanvas.width,
+              offscreenCanvas.height
+            );
+            this.backgroundEncoder.addFrame(
+              openerData,
+              o,
+              o * frameDurationMicros,
+              o % keyframeInterval === 0
+            );
+          } else if (inlineExporter) {
+            await inlineExporter.addFrame(offscreenCanvas);
+          }
+          if (o % 30 === 29) await this.waitForAnimationFrame();
+        }
+        onProgress({
+          progress: openerFrames / encodedFrameTotal,
+          stage: "capturing",
+          currentFrame: openerFrames,
+          totalFrames: encodedFrameTotal,
+        });
+      }
+
       for (let i = 0; i < totalFrames; i++) {
         if (this.shouldCancel) {
           throw new Error("Export cancelled");
@@ -744,8 +801,10 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
             offscreenCanvas.height
           );
 
-          const timestampMicros = i * frameDurationMicros;
-          const isKeyframe = i % keyframeInterval === 0;
+          // Encoder indices and timestamps continue after the opener hold.
+          const encodedIndex = openerFrames + i;
+          const timestampMicros = encodedIndex * frameDurationMicros;
+          const isKeyframe = encodedIndex % keyframeInterval === 0;
 
           // Parity capture (automated test harness). When
           // window.__tka_parity_capture lists frame indices, stash a COPY of
@@ -821,7 +880,7 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
           // Transfer the buffer zero-copy to the worker
           this.backgroundEncoder.addFrame(
             frameData,
-            i,
+            encodedIndex,
             timestampMicros,
             isKeyframe
           );
@@ -837,10 +896,10 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
         }
 
         onProgress({
-          progress: (i + 1) / totalFrames,
+          progress: (openerFrames + i + 1) / encodedFrameTotal,
           stage: "capturing",
-          currentFrame: i + 1,
-          totalFrames,
+          currentFrame: openerFrames + i + 1,
+          totalFrames: encodedFrameTotal,
         });
       }
 

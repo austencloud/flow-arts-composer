@@ -249,6 +249,15 @@ export function createViewerOrchestratorContextState(
             })
           : inputs.exportCoordinator.captureAnimationPreview();
       },
+      captureVideoOpener: (kind) =>
+        inputs.viewer3DState.renderMode === "3d"
+          ? Promise.resolve("")
+          : inputs.exportCoordinator.captureVideoOpener(
+              kind,
+              inputs.interactive.playbackController,
+              inputs.modalAnimationState,
+              inputs.getEffectiveSequence()
+            ),
       handleSyncToggle: inputs.lanSync.handleSyncToggle,
       handleOpenInCompose: inputs.handlers.handleOpenInCompose,
       handleEdit: inputs.handlers.handleEdit,

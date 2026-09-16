@@ -3,7 +3,10 @@
   import { DURATION } from "$lib/shared/transitions/transitions";
   import type { TnDElement } from "$lib/features/choreo-card/domain/tnd-element";
   import type { PropRelationship } from "../domain/prop-relationship";
-  import type { VtgMode } from "../services/shape-matrix-realizations";
+  import {
+    MODE_WORDS,
+    type VtgMode,
+  } from "../services/shape-matrix-realizations";
   import RelationshipChoiceChip from "./RelationshipChoiceChip.svelte";
 
   /**
@@ -170,9 +173,8 @@
                 <RelationshipChoiceChip
                   accent={choice.color}
                   icon={choice.icon}
-                  code={choice.detail}
-                  compactCode={choice.mode}
-                  label={choice.label}
+                  timing={MODE_WORDS[choice.mode].timing}
+                  direction={MODE_WORDS[choice.mode].direction}
                   active={selectedChoice?.key === choice.key}
                   disabled={building}
                   ariaLabel={`Props: ${choice.detail} ${choice.label}`}

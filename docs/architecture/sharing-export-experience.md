@@ -196,6 +196,26 @@ failure, not a cancel; cancel is reserved for the user's own action. When the
 clipboard API is denied, copy link falls back to selection copy and, if that
 also fails, reveals the link in a selectable field.
 
+### The image a clip opens with
+
+Players and file thumbnails show a video's first frame, so the download task
+lets the person choose it. One row under the stage, labelled `Opens with`,
+offers three choices: `First beat` (the sequence's start position), `This
+frame` (the pose on screen when the sheet opened), and `Mandala` (the
+sequence's mandala fingerprint). There is no scrubber. The stage shows exactly
+the chosen image, so what the person sees is what the clip opens on. The
+choice persists with the other video settings and marks an existing render
+stale like any other setting. `First beat` adds nothing, because the export
+already opens with one beat of the start position. The other two prepend a
+one-beat hold of the chosen image at the export speed, drawn contain-fit over
+black at output resolution, before the animation. The viewer owns the images:
+the sheet receives a capture callback per choice and hands the chosen data URL
+back with the render request, so the baked hold is the very image the stage
+showed. The row is hidden for hosts whose render cannot open on a chosen image
+(3D takes, art views, Post Studio renders). When an opener applies, the
+Instagram cover points at time zero unless the person picked a cover frame
+explicitly.
+
 ## Acceptance and future evaluation
 
 Before claiming implementation complete, verify these behaviors:

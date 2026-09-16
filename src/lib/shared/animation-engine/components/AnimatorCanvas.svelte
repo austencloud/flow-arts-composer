@@ -652,6 +652,7 @@ Last audit: 2025-12-27
   // Initialize visibility state via $effect.pre to avoid state_referenced_locally on visibilityManager
   let tkaGlyphVisible = $state(false);
   let elementalGlyphVisible = $state(false);
+  let propElementalGlyphVisible = $state(false);
   let stepNumbersVisible = $state(false);
   let globalDarkMode = $state(false);
   let wordHeaderVisible = $state(false);
@@ -661,6 +662,8 @@ Last audit: 2025-12-27
   $effect.pre(() => {
     tkaGlyphVisible = visibilityManager.getVisibility("tkaGlyph");
     elementalGlyphVisible = visibilityManager.getVisibility("elementalGlyph");
+    propElementalGlyphVisible =
+      visibilityManager.getVisibility("propElementalGlyph");
     stepNumbersVisible = visibilityManager.getVisibility("stepNumbers");
     globalDarkMode = visibilityManager.isDarkMode();
     wordHeaderVisible = visibilityManager.getVisibility("wordHeader");
@@ -680,6 +683,9 @@ Last audit: 2025-12-27
   const effectiveElementalGlyphVisible = $derived(
     elementalGlyphVisible && additionalLayers.length === 0
   );
+  const effectivePropElementalGlyphVisible = $derived(
+    propElementalGlyphVisible && additionalLayers.length === 0
+  );
   const effectiveBeatNumbersVisible = $derived(
     stepNumbersVisible && !hideStepNumbers
   );
@@ -693,6 +699,8 @@ Last audit: 2025-12-27
   function handleVisibilityChange() {
     tkaGlyphVisible = visibilityManager.getVisibility("tkaGlyph");
     elementalGlyphVisible = visibilityManager.getVisibility("elementalGlyph");
+    propElementalGlyphVisible =
+      visibilityManager.getVisibility("propElementalGlyph");
     stepNumbersVisible = visibilityManager.getVisibility("stepNumbers");
     globalDarkMode = visibilityManager.isDarkMode();
     wordHeaderVisible = visibilityManager.getVisibility("wordHeader");
@@ -876,6 +884,7 @@ Last audit: 2025-12-27
       {darkModeEnabled}
       {effectiveTkaGlyphVisible}
       elementalGlyphVisible={effectiveElementalGlyphVisible}
+      propElementalGlyphVisible={effectivePropElementalGlyphVisible}
       {propElementalType}
       {glyphFrame}
       {effectiveBeatNumbersVisible}

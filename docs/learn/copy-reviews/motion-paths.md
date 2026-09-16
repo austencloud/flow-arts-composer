@@ -265,3 +265,22 @@ Explorer: changing a left or right turn value while a matrix cell is selected pr
 Austen reported that the explorer drops the reader into five decisions at once after the introduction taught only paths. Three options were compared: progressive reveal with paths first, an extra bridge bite, and cutting the explorer to paths only. Austen accepted the progressive reveal.
 
 The explorer now opens with the loaded sequence, its animation, and the four path tiles. The shape selection (timing and direction, turns or ratios, the matrix, and the sequence browser) is hidden behind one secondary button, "Change the shapes", beneath the animation. Revealing it moves focus to the Sequence heading and it stays open for the visit. The default CCCC example is an anti-plus-pro pair, so Hybrid shows a difference on the first click. On wide hosts the revealed panel takes its previous first column; on phones it stacks below the comparison. No controls were removed and the explorer state is unchanged. Browser runtime checks at 1440×900 and 375×812 confirmed the two-column start, three-column reveal, focus handoff, stacking order, and absence of horizontal overflow. User review remains pending.
+
+## September 15: the matrix is the playground
+
+Review state: DRAFT under Austen's delegated editorial authorization. User review pending.
+
+Austen reversed the September 14 progressive reveal after seeing it live: the Shape Matrix is the delightful part, and hiding it behind a plain "Change the shapes" button meant most readers would never find it. He also rejected the frozen CCCC example (one hand isolating at the center, the other a bare antispin) and pointed out that the whole introduction sat in a narrow column with both rails empty.
+
+Changes:
+
+- The introduction responds to the page width. Above 52rem the copy and the Next button sit beside the drawing, clustered at its vertical center; below that the stack stays portrait. One document serves every viewport.
+- The explorer opens with the Shape Matrix visible and a real matrix pair already selected: one turn on each hand, left pro-in (2 petals) and right anti-in (4 petals). One pro and one anti keep Hybrid distinct from Arc on the first click, which the September 14 note required. The frozen example remains only as the placeholder while the matrix builds.
+- Turns and ratios stay visible above the matrix. Timing and direction, the one selector that uses vocabulary the introduction never taught, folds behind a disclosure that names the current relationship. Browse sequences stays in the heading.
+- The matrix always traces prop tips. Under a hands trace every cell drew the same shape, because hand paths do not vary across the grid. The trace toggle now affects only the animation and the four path tiles.
+
+Ownership ledger: ShapeMatrixGrid, TurnNotationControls, ElementChipRow, PanelButton (aria-expanded), growFade, SegmentedControl, and LessonStageControls unchanged; the explorer state factory unchanged; flowerPetals owns the default pair's petal counts. No new controls or motion.
+
+Evidence: browser pass at 375×667, 960×412, 820×1180, 1440×900, 1920×1080, 2560×1440, 3840×2160 and a 720×450 reflow stand-in for 200% zoom; no horizontal overflow at any tier; matrix cells stay at or above 60px on the phone tier; keyboard focus reaches the intro button, matrix cells, the disclosure, and the trace toggle. The disclosure animates through growFade, which carries the shared reduced-motion behavior.
+
+AI-bust review: clean. Copy names the control and the visible result. User review remains pending.
