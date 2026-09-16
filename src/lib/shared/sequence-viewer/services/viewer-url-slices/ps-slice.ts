@@ -37,9 +37,10 @@
  *   diffing" below. Never written to storage; `setAudioMode` only reassigns
  *   local `$state`.
  * - `notationMirrored` — whether the notation half of the studio is mirrored.
- *   Boolean, diffed against its fixed default (`false`). Never written to
- *   storage (`toggleNotationMirror` only reassigns local `$state` +
- *   an in-memory `mirrorCache`).
+ *   Boolean, diffed against its fixed default (`false`). Derived from the
+ *   chosen performance's hand labeling (`mirror-me` mirrors, the default), so
+ *   any studio with footage on the canvas emits it. The studio does not read
+ *   it back: a recipient's labeling comes from the performance record.
  *
  * EXCLUDED, with reasons:
  * - `chosenPerformance`: references a locally-uploaded or user-library video
@@ -53,9 +54,9 @@
  * - `timingAdvanced`: transient panel disclosure (the advanced-timing section
  *   toggle) — same class as `lookEditorOpen`, not a saved preference.
  * - `performanceLibraryError`, `exportError`, `exportedUrl`, `exportProgress`,
- *   `exportCancelled`, `notationMirrorPending`, `audioInspectionVersion`,
- *   `performanceHasAudio`, `bootedToPerformance`, `localPerformanceUrl`,
- *   `mirrorCache`: transient runtime/error/bookkeeping state, never a setting.
+ *   `exportCancelled`, `handLabelingPending`, `audioInspectionVersion`,
+ *   `performanceHasAudio`, `bootedToPerformance`, `localPerformanceUrl`:
+ *   transient runtime/error/bookkeeping state, never a setting.
  * - `workspaceWidth`, `workspaceHeight`, `viewportHeight`, `workspaceSizes`,
  *   `workspaceWasAdjusted`: measured, viewport-relative pixel geometry — the
  *   same "measured sizes" class this project excludes everywhere (t3's quality

@@ -1,11 +1,9 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 
-const { capturePsSlice, seedFromPsSlice, persistedPsSlice } = await import(
-  "./ps-slice"
-);
-const { PropType } = await import(
-  "$lib/shared/pictograph/prop/domain/enums/prop-type"
-);
+const { capturePsSlice, seedFromPsSlice, persistedPsSlice } =
+  await import("./ps-slice");
+const { PropType } =
+  await import("$lib/shared/pictograph/prop/domain/enums/prop-type");
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -118,6 +116,9 @@ describe("ps slice", () => {
     const seed = seedFromPsSlice(slice!);
 
     // What PostStudio.svelte's own initializers would apply the seed onto.
+    // `notationMirrored` is the exception: the studio derives it from the
+    // performance's hand labeling and never reads the seed, so the identity
+    // here is the pure round-trip, not the studio's seeding behavior.
     expect(
       capturePsSlice({
         propType: seed.propType ?? PropType.STAFF,
@@ -165,7 +166,8 @@ describe("ps slice", () => {
     const setItem = vi.spyOn(Storage.prototype, "setItem");
 
     // Simulate a seeded mount: capture, seed, and re-derive local $state as
-    // PostStudio.svelte's initializers would.
+    // PostStudio.svelte's initializers would (`notationMirrored` is modeled as
+    // a plain local here; the studio itself derives it from hand labeling).
     const slice = capturePsSlice({
       propType: PropType.TRIAD,
       defaultPropType: PropType.STAFF,

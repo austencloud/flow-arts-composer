@@ -55,6 +55,7 @@
     return {
       destroy: shared?.requestCard(owner, node, () => ({
         sequence,
+        handLabeling,
         highlightedStepIndex,
         options: cardRenderOptions,
         automatic,

@@ -106,6 +106,46 @@ describe("hand labeled card", () => {
     harness.dispose();
   });
 
+  it("settles pending after a failed resolve and retries on the next request", async () => {
+    const source = makeSequence("s");
+    const asPerformed = makeSequence("as-performed");
+    const second = deferred<SequenceData>();
+    const resolveFn = vi
+      .fn()
+      .mockReturnValueOnce(Promise.reject(new Error("mirror failed")))
+      .mockReturnValueOnce(second.promise);
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const harness = createHandLabeledCardHarness(
+      source,
+      "mirror-me",
+      resolveFn
+    );
+    flushSync();
+    await settle();
+
+    // A rejected request must not leave the control that asked disabled.
+    expect(harness.card.pending).toBe(false);
+    expect(harness.card.sequence).toBe(source);
+    expect(harness.card.labeling).toBeNull();
+    expect(consoleError).toHaveBeenCalledTimes(1);
+
+    harness.setLabeling("as-performed");
+    flushSync();
+    expect(harness.card.pending).toBe(true);
+    second.resolve(asPerformed);
+    await second.promise;
+    await settle();
+
+    expect(harness.card.sequence).toBe(asPerformed);
+    expect(harness.card.labeling).toBe("as-performed");
+    expect(harness.card.pending).toBe(false);
+    expect(resolveFn).toHaveBeenCalledTimes(2);
+    consoleError.mockRestore();
+    harness.dispose();
+  });
+
   it("clears the pair immediately on a source change", async () => {
     const sourceA = makeSequence("a");
     const sourceB = makeSequence("b");

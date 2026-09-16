@@ -12,6 +12,19 @@ interface Held {
   sequence: SequenceData;
 }
 
+interface Request {
+  source: SequenceData;
+  labeling: HandLabeling;
+}
+
+function answers(
+  pair: Request | null,
+  source: SequenceData,
+  labeling: HandLabeling
+): boolean {
+  return pair !== null && pair.source === source && pair.labeling === labeling;
+}
+
 export interface HandLabeledCard {
   /** What the card should draw: the resolved sequence, or the source until one lands. */
   readonly sequence: SequenceData;
@@ -35,6 +48,9 @@ export function createHandLabeledCard(
   // Raw: the pair is compared by object identity against the source, and a deep
   // proxy would never be identical to the sequence the caller handed in.
   let held = $state.raw<Held | null>(null);
+  // The request whose resolve rejected. It settles `pending` so the control
+  // that asked is not left disabled; the next request retries the resolver.
+  let failed = $state.raw<Request | null>(null);
   $effect(() => {
     const source = inputs.getSequence();
     const labeling = inputs.getLabeling();
@@ -45,16 +61,16 @@ export function createHandLabeledCard(
       held = null;
       return;
     }
-    if (current && current.source === source && current.labeling === labeling) {
-      return;
-    }
+    if (answers(current, source, labeling)) return;
     if (current && current.source !== source) held = null;
+    failed = null;
     let cancelled = false;
     resolve(source, labeling)
       .then((sequence) => {
         if (!cancelled) held = { source, labeling, sequence };
       })
       .catch((error) => {
+        if (!cancelled) failed = { source, labeling };
         console.error(
           "[hand-labeled-card] Could not label the notation:",
           error
@@ -68,7 +84,9 @@ export function createHandLabeledCard(
     const labeling = inputs.getLabeling();
     if (!labeling) return false;
     const source = inputs.getSequence();
-    return !(held && held.source === source && held.labeling === labeling);
+    return (
+      !answers(held, source, labeling) && !answers(failed, source, labeling)
+    );
   });
   return {
     get sequence() {

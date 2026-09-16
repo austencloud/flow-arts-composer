@@ -120,7 +120,9 @@
     >
       <ChoreoCard
         sequence={studioCard?.sequence ?? labeledCard.sequence}
-        handLabeling={studioCard ? null : labeledCard.labeling}
+        handLabeling={studioCard
+          ? studioCard.handLabeling
+          : labeledCard.labeling}
         customTitleText={sequence.sequenceKind === "hand-path"
           ? sequence.displayName || sequence.name
           : undefined}

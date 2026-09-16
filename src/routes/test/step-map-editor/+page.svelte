@@ -135,7 +135,14 @@
       updatedAt: now,
     };
     resetSequenceVideoStores();
-    getSequenceVideosStore(record.sequenceId).add(record);
+    const store = getSequenceVideosStore(record.sequenceId);
+    store.add(record);
+    // The real method writes to Firestore. The harness keeps the choice in
+    // memory, the same way the step map above never leaves the browser.
+    store.applyHandLabeling = async (videoId, handLabeling) => {
+      const held = store.videos.find((video) => video.id === videoId);
+      if (held) store.add({ ...held, handLabeling, updatedAt: new Date() });
+    };
   }
 
   async function handleSave(stepMap: StepMap) {
