@@ -16,10 +16,15 @@
  * Design: docs/superpowers/specs/2026-09-17-fuse-tnd-mode-rule-design.md
  */
 import {
+  MODE_FAMILY_ID,
   MODE_LABEL,
   MODE_ORDER,
   type VtgMode,
 } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+import {
+  TND_BY_FAMILY,
+  type TnDElement,
+} from "$lib/features/choreo-card/domain/tnd-element";
 import { createFuseRule, type FuseRule } from "./fuse-rule";
 
 export type FuseTnDMode = VtgMode;
@@ -53,6 +58,25 @@ export function fuseTnDModeLabel(mode: FuseTnDMode): string {
   const [timing, direction] = MODE_LABEL[mode].split(" · ");
   const fullDirection = direction === "Opp" ? "opposite" : "same";
   return `${timing}, ${fullDirection}`;
+}
+
+/**
+ * The element that stands for one mode everywhere the app draws TnD (the
+ * shape matrix, choreo cards, the mode picker): its accent colour and icon.
+ * The mode is the rule's identity, so the result strip and the follower card
+ * wear this rather than the colours of the operations that realise it.
+ */
+export function fuseTnDElement(mode: FuseTnDMode): TnDElement {
+  const element = TND_BY_FAMILY[MODE_FAMILY_ID[mode]];
+  if (!element) {
+    throw new Error(`No TnD element registered for mode ${mode}`);
+  }
+  return element;
+}
+
+/** The mode the rule pins, or the default when the rule is not expressible. */
+export function fuseRuleMode(rule: FuseRule): FuseTnDMode {
+  return (classifyFuseRule(rule) ?? DEFAULT_TND_SELECTION).mode;
 }
 
 function quarterSteps(offset: FuseQuarterOffset): number {
