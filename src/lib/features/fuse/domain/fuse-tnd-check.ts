@@ -26,18 +26,18 @@ export function checkFuseTnD(
   const undefinedBeats: number[] = [];
   let firstMismatchBeat: number | null = null;
 
-  sequence.steps.forEach((step, index) => {
+  for (const [index, step] of sequence.steps.entries()) {
     const beat = index + 1;
     // TnDMode's enum values are the same two-letter codes as VtgMode.
     const mode = deriveTnDFromPictograph(step).tndMode as FuseTnDMode | null;
     if (mode === null) {
       undefinedBeats.push(beat);
-      return;
+      continue;
     }
     if (mode !== expected && firstMismatchBeat === null) {
       firstMismatchBeat = beat;
     }
-  });
+  }
 
   return { expected, firstMismatchBeat, undefinedBeats };
 }

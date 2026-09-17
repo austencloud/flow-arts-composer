@@ -1,4 +1,3 @@
-// src/lib/features/fuse/domain/fuse-tnd-rule.dataframe.test.ts
 /**
  * Every rule the TnD picker resolves is pointwise on the follower hand, so it
  * must yield its mode on every shift beat, whatever the driver arc is. This

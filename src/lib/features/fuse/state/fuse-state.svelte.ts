@@ -68,6 +68,14 @@ import {
   parseFuseRule,
   type FuseRule,
 } from "../domain/fuse-rule";
+import { checkFuseTnD, type FuseTnDCheck } from "../domain/fuse-tnd-check";
+import {
+  classifyFuseRule,
+  coerceToTnDRule,
+  DEFAULT_TND_SELECTION,
+  resolveFuseRule,
+  type FuseTnDSelection,
+} from "../domain/fuse-tnd-rule";
 import { fusedDisplayName, fuseSequences } from "../services/sequence-fuser";
 import { createCircularFuseSoloSequence } from "../services/fuse-solo-sequence";
 import {
@@ -651,7 +659,30 @@ export function createFuseState({
   // just rebuilds the independent preview from them.
   let mode = $state<FuseMode>(persisted.mode ?? "shuffle");
   let driverSide = $state<FuseSide>(persisted.driverSide ?? "left");
-  let rule = $state<FuseRule>(persisted.rule ?? DEFAULT_RULE);
+  // A persisted rule may carry a 45-degree rotation the mode picker cannot
+  // express. Round it once on restore and remember that it happened, so the
+  // panel can say so until the next rule change.
+  const restoredRule = coerceToTnDRule(persisted.rule ?? DEFAULT_RULE);
+  let rule = $state<FuseRule>(
+    restoredRule.adjusted
+      ? resolveFuseRule(restoredRule.selection)
+      : (persisted.rule ?? DEFAULT_RULE)
+  );
+  let ruleAdjusted = $state(restoredRule.adjusted);
+  if (restoredRule.adjusted) {
+    persisted = { ...persisted, rule };
+    writePersistedState(persisted);
+  }
+
+  const tndSelection = $derived<FuseTnDSelection>(
+    classifyFuseRule(rule) ?? DEFAULT_TND_SELECTION
+  );
+
+  const tndCheck = $derived<FuseTnDCheck | null>(
+    mode === "symmetry" && previewSequence
+      ? checkFuseTnD(previewSequence, tndSelection.mode)
+      : null
+  );
   let symmetryPreview = $state<SequenceData | null>(null);
   let symmetryGeneration = 0;
   let relationshipDraftKey: string | null = null;
@@ -2002,6 +2033,7 @@ export function createFuseState({
 
     driverSide = nextDriver;
     rule = nextRule;
+    ruleAdjusted = false;
     mode = "symmetry";
     persistModeState();
     void deriveFollower();
@@ -2017,6 +2049,7 @@ export function createFuseState({
   function setRule(nextRule: FuseRule): void {
     if (fuseRulesEqual(nextRule, rule)) return;
     rule = nextRule;
+    ruleAdjusted = false;
     persistModeState();
     if (mode === "symmetry") void deriveFollower();
   }
@@ -2294,6 +2327,15 @@ export function createFuseState({
     },
     get rule(): FuseRule {
       return rule;
+    },
+    get tndSelection(): FuseTnDSelection {
+      return tndSelection;
+    },
+    get tndCheck(): FuseTnDCheck | null {
+      return tndCheck;
+    },
+    get ruleAdjusted(): boolean {
+      return ruleAdjusted;
     },
     get symmetryPreview() {
       return symmetryPreview;
