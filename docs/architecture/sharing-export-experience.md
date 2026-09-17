@@ -176,9 +176,14 @@ to phone, prepared file, viewer source.
   selection and delivery for both send surfaces;
   `SendDestinationPicker.svelte` is the shared picker. The viewer's
   `SendSequenceWorkspace.svelte` and the drawer's `SendAttachmentSheet.svelte`
-  are presentation only. The outbox is the drawer's; hosts that mount the
-  drawer lazily mount it on `inboxState.hostRequested`, and the workspace
-  reads the registered outbox from `message-delivery-context.ts`.
+  are presentation only. In the viewer, send mode is the `send` inspector
+  profile: the stage keeps the live view the person chose (Card, Motion, or
+  side by side; the rail stays usable) and the recipient column takes the
+  inspector track, docking under the stage where the track stacks. No card is
+  rendered for the sender; the recipient still receives the sequence and its
+  thumbnail. The outbox is the drawer's; hosts that mount the drawer lazily
+  mount it on `inboxState.hostRequested`, and the workspace reads the
+  registered outbox from `message-delivery-context.ts`.
 - Existing post composition and publishing components remain their respective
   owners. Do not introduce a second renderer, modal stack, or delivery service.
 

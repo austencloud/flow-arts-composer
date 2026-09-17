@@ -1,10 +1,11 @@
 <!--
   SendSequenceWorkspace.svelte
 
-  The viewer in send mode. Like Practice, the whole workspace morphs into one
-  decision: who gets this. The card the person is sending fills the stage,
-  the recipients take the column the inspector normally has, and the note and
-  Send sit in a bar across the bottom. Nothing else competes for the room.
+  The viewer's recipient column. In send mode the stage keeps showing the
+  view the person is sending from (Card, Motion, side by side, whichever they
+  chose) and this column takes the inspector track: the recipients fill it,
+  the note and Send sit docked at its foot. Stacked on a phone, the same
+  column docks under the stage.
 
   The selection and delivery rules are SendAttachmentState, shared with the
   inbox drawer's send sheet; this file is only the viewer-sized presentation.
@@ -77,193 +78,94 @@
     }
   );
 
-  const cardUrl = $derived(
-    session.previewBlob ? URL.createObjectURL(session.previewBlob) : null
-  );
-  $effect(() => {
-    const url = cardUrl;
-    return () => {
-      if (url) URL.revokeObjectURL(url);
-    };
-  });
-  const word = $derived(session.payload.sequence.word);
   const canSend = $derived(send.canSend && !!delivery);
 </script>
 
 <div class="send-workspace" aria-busy={send.sending}>
-  <!-- Two boxes: the outer is the container the queries read, the inner is
-       the grid they lay out. A container query never matches the container
-       itself, only its descendants. -->
-  <div class="send-grid">
-    <!-- The card IS the thing being sent; the stage shows it as it will arrive.
-       Its settings live on the Card pane, not here: choosing who must not
-       change what. -->
-    <section class="card-stage" aria-label="Card being sent">
-      <div class="card-frame">
-        {#if cardUrl}
-          <img
-            src={cardUrl}
-            alt={`Choreo card for ${word}`}
-            class="card-image"
-          />
-        {:else if session.previewPending}
-          <div class="card-status" role="status">
-            <i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i>
-            <span>Preparing card…</span>
-          </div>
-        {:else}
-          <div class="card-status" role="status">
-            <i class="fas fa-layer-group" aria-hidden="true"></i>
-            <span>The card could not be drawn. The sequence still sends.</span>
-          </div>
-        {/if}
-      </div>
-    </section>
+  <!-- The recipients own the height between the top of the column and the
+       bar; the picker scrolls its own list inside that. -->
+  <div class="recipients">
+    <SendDestinationPicker state={send} />
+  </div>
 
-    <aside class="recipients" aria-label="Recipients">
-      <SendDestinationPicker state={send} />
-    </aside>
-
-    <div class="send-bar">
-      <div class="note-field">
-        <textarea
-          class="note-input"
-          bind:value={send.message}
-          aria-label="Note (optional)"
-          placeholder="Add a note"
-          maxlength={SEND_MESSAGE_MAX}
-          rows={1}
-          disabled={send.sending}
-        ></textarea>
-        <span
-          class="char-count"
-          class:visible={send.message.length > SEND_MESSAGE_MAX * 0.8}
-          aria-hidden={send.message.length <= SEND_MESSAGE_MAX * 0.8}
-        >
-          {send.message.length}/{SEND_MESSAGE_MAX}
-        </span>
-      </div>
-      <button
-        type="button"
-        class="send-button"
-        onclick={send.send}
-        disabled={!canSend}
+  <div class="send-bar">
+    <div class="note-field">
+      <textarea
+        class="note-input"
+        bind:value={send.message}
+        aria-label="Note (optional)"
+        placeholder="Add a note"
+        maxlength={SEND_MESSAGE_MAX}
+        rows={1}
+        disabled={send.sending}
+      ></textarea>
+      <span
+        class="char-count"
+        class:visible={send.message.length > SEND_MESSAGE_MAX * 0.8}
+        aria-hidden={send.message.length <= SEND_MESSAGE_MAX * 0.8}
       >
-        <i
-          class="fas {send.sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'}"
-          aria-hidden="true"
-        ></i>
-        <span>{send.sending ? "Sending…" : send.sendLabel}</span>
-      </button>
+        {send.message.length}/{SEND_MESSAGE_MAX}
+      </span>
     </div>
+    <button
+      type="button"
+      class="send-button"
+      onclick={send.send}
+      disabled={!canSend}
+    >
+      <i
+        class="fas {send.sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'}"
+        aria-hidden="true"
+      ></i>
+      <span>{send.sending ? "Sending…" : send.sendLabel}</span>
+    </button>
   </div>
 </div>
 
 <style>
+  /* One column: the recipients take the definite room, the bar is
+     max-content so a fr sibling cannot drive it to zero. The box is an
+     inline-size container so the bar can read the column's width: docked
+     under the stage it spans the viewer, beside it it is a list wide. */
   .send-workspace {
-    /* `size`, not inline-size: the stacked layout caps the card in cqh, and
-       the layer above fixes this box's height, so containment costs nothing. */
-    container-type: size;
-    container-name: send-workspace;
-    width: 100%;
-    height: 100%;
-    min-width: 0;
-    min-height: 0;
-  }
-
-  .send-grid {
+    container-type: inline-size;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    /* The bar row is max-content, not auto: an auto row in a definite-height
-       grid floors at its items' minimum contribution, which a fr sibling can
-       drive to zero. */
-    grid-template-rows: minmax(0, auto) minmax(0, 1fr) max-content;
+    grid-template-rows: minmax(0, 1fr) max-content;
     gap: 0.75rem;
     width: 100%;
     height: 100%;
     min-width: 0;
     min-height: 0;
-    padding: 0.75rem;
+    padding: 1rem;
     box-sizing: border-box;
     overflow: hidden;
   }
 
-  /* One explicit 1fr track each way, never an auto row: a percentage height
-     inside an auto row resolves against the row the content sized, so a
-     portrait card measured itself at its natural height and ran under the
-     bar whenever the stage was short (DevTools open, a landscape phone). */
-  .card-stage {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr);
-    place-items: center;
-    min-width: 0;
-    min-height: 0;
-  }
-
-  /* Reserved at the card's own 6:5 before the render lands, so the stage does
-     not jump when the image replaces the status. Sized from the height the
-     stage gives it, so a wide stage never pushes the card past the bar. The
-     sharer draws 960px; a third over that reads fine on a wide monitor and
-     stops the card being an island on one. */
-  .card-frame {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr);
-    place-items: center;
-    height: 100%;
-    width: auto;
-    max-width: min(100%, 1280px);
-    aspect-ratio: 6 / 5;
-    min-width: 0;
-    min-height: 0;
-  }
-
-  /* Fills the frame rather than sitting at its natural size, so the frame's
-     clamp is the one that decides how large the card draws. */
-  .card-image {
-    display: block;
-    width: 100%;
-    height: 100%;
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-    border-radius: 0.75rem;
-    box-shadow: 0 18px 48px rgb(0 0 0 / 0.35);
-  }
-
-  .card-status {
-    display: grid;
-    place-items: center;
-    gap: 0.5rem;
-    padding: 1rem;
-    color: var(--theme-text-dim);
-    font-size: var(--font-size-xl, 1.25rem);
-    text-align: center;
-  }
-
-  .card-status span {
-    font-size: var(--font-size-sm, 0.875rem);
-  }
-
+  /* Scrolls only when the picker cannot fit: on a short landscape phone the
+     dock leaves the picker less than its floor, and without this the list
+     painted straight over the note and Send. */
   .recipients {
     display: grid;
     grid-template-rows: minmax(0, 1fr);
     min-width: 0;
     min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
+  /* The column is a list's width, not a stage's: the note runs the full
+     width and Send sits under it, so neither is squeezed beside the other. */
   .send-bar {
-    display: flex;
-    align-items: end;
-    gap: 0.75rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.625rem;
     min-width: 0;
   }
 
   .note-field {
     position: relative;
     display: grid;
-    flex: 1;
     min-width: 0;
   }
 
@@ -321,11 +223,9 @@
 
   .send-button {
     display: flex;
-    flex: 0 0 auto;
     align-items: center;
     justify-content: center;
     gap: 0.625rem;
-    min-width: 11rem;
     min-height: 3rem;
     padding: 0.75rem 1.25rem;
     background: var(--theme-accent, var(--semantic-info));
@@ -361,46 +261,17 @@
     outline-offset: 2px;
   }
 
-  /* Stacked (a phone, or a narrow embed): the card takes what a landscape
-     6:5 needs and no more than two fifths of the height, the list scrolls
-     under it, the bar stays docked. */
-  @container send-workspace (max-width: 55.999rem) {
-    .card-stage {
-      max-height: 40cqh;
-    }
-
-    .card-frame {
-      max-height: 40cqh;
+  /* Docked under the stage the column spans the viewer, so the note and
+     Send share one row and give the row they would have taken back to the
+     recipients. */
+  @container (min-width: 40rem) {
+    .send-bar {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
     }
 
     .send-button {
-      min-width: 0;
-    }
-  }
-
-  /* Side by side: the card owns the stage, the recipients take a column at
-     the width the viewer's inspector uses, the bar spans both. */
-  @container send-workspace (min-width: 56rem) {
-    .send-grid {
-      grid-template-columns: minmax(0, 1fr) clamp(20rem, 28cqw, 30rem);
-      grid-template-rows: minmax(0, 1fr) max-content;
-      column-gap: 1rem;
-      padding: 1rem;
-    }
-
-    .card-stage {
-      grid-row: 1;
-      grid-column: 1;
-    }
-
-    .recipients {
-      grid-row: 1;
-      grid-column: 2;
-    }
-
-    .send-bar {
-      grid-row: 2;
-      grid-column: 1 / -1;
+      min-width: 11rem;
     }
   }
 

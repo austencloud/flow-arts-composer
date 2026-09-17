@@ -172,6 +172,8 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
   // keep decaying on screen instead of being wiped.
   private lastLeftPropSwapSuppressed = false;
   private lastRightPropSwapSuppressed = false;
+  /** Chirality flip per hand for this frame; a change restarts that hand's rings. */
+  private frameFlipped: [boolean, boolean] = [false, false];
 
   // Per-color tipId epoch. Bumped once the fade-out envelope reaches
   // zero, so the next fade-in allocates a fresh accumulator FBO rather
@@ -437,6 +439,24 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
     }
     this.lastLeftPropSwapSuppressed = leftPropSwapSuppressed;
     this.lastRightPropSwapSuppressed = rightPropSwapSuppressed;
+
+    // A chirality flip mirrors every trail source, so the ring restarts
+    // rather than drawing a segment across the prop to the mirrored tip.
+    const leftFlipped = params.leftPropFlipped ?? false;
+    const rightFlipped = params.rightPropFlipped ?? false;
+    if (leftFlipped !== this.frameFlipped[0]) {
+      this.leftLeftRing = [];
+      this.leftRightRing = [];
+      this.leftLeftTail = createTailState(leadingEdge);
+      this.leftRightTail = createTailState(leadingEdge);
+    }
+    if (rightFlipped !== this.frameFlipped[1]) {
+      this.rightLeftRing = [];
+      this.rightRightRing = [];
+      this.rightLeftTail = createTailState(leadingEdge);
+      this.rightRightTail = createTailState(leadingEdge);
+    }
+    this.frameFlipped = [leftFlipped, rightFlipped];
 
     const leftHasTwoEnds = propTipEnds(leftPropType ?? undefined) === 2;
     const rightHasTwoEnds = propTipEnds(rightPropType ?? undefined) === 2;
@@ -1148,6 +1168,7 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
     const endpointConfig = {
       canvasSize,
       propDimensions: TRAIL_ENDPOINT_DIMENSIONS,
+      flipped: this.frameFlipped[propIndex],
     };
     // Tips are computed in the engine's square; this canvas covers the whole
     // frame with that square centred in it.
