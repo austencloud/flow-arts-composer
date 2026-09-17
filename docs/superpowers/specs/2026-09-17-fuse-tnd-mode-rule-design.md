@@ -81,7 +81,7 @@ Pure. Maps a selection to the existing `FuseRule` shape. The result feeds
 | SS (Split, Same) | 4 | none |
 | QS (Quarter, Same) | 2 for cw, 6 for ccw | none |
 | TO (Together, Opp) | 0 | mirror |
-| SO (Split, Opp) | 4 | flip |
+| SO (Split, Opp) | 0 | flip |
 | QO (Quarter, Opp) | 2 for cw, 6 for ccw | mirror |
 
 `invert` and `rewind` pass through.
