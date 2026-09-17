@@ -40,7 +40,10 @@ function buildGridChildren(vm: VisibilityStateManager): ContextMenuItem[] {
       label: "Hand Points",
       checked: vm.getHandPointVisibility() !== "none",
       keepOpen: true,
-      action: () => vm.setHandPointVisibility(vm.getHandPointVisibility() === "none" ? "all" : "none"),
+      action: () =>
+        vm.setHandPointVisibility(
+          vm.getHandPointVisibility() === "none" ? "all" : "none"
+        ),
     },
     {
       id: "toggle-non-radial",
@@ -59,21 +62,48 @@ function buildGlyphChildren(vm: VisibilityStateManager): ContextMenuItem[] {
       label: "TKA",
       checked: vm.getRawGlyphVisibility("tkaGlyph"),
       keepOpen: true,
-      action: () => vm.setGlyphVisibility("tkaGlyph", !vm.getRawGlyphVisibility("tkaGlyph")),
+      action: () =>
+        vm.setGlyphVisibility(
+          "tkaGlyph",
+          !vm.getRawGlyphVisibility("tkaGlyph")
+        ),
     },
+    // Two timing-and-direction glyphs, one per relationship. The HAND pair is
+    // the letter-based TnD mark plus its element (bottom-right); they move
+    // together, as the card's "TnD" chip already does. The PROP pair is its
+    // own key in the top-right corner.
     {
-      id: "toggle-tnd-glyph",
-      label: "TnD",
+      id: "toggle-hand-tnd-glyph",
+      label: "Hand TnD",
       checked: vm.getRawGlyphVisibility("tndGlyph"),
       keepOpen: true,
-      action: () => vm.setGlyphVisibility("tndGlyph", !vm.getRawGlyphVisibility("tndGlyph")),
+      action: () => {
+        const next = !vm.getRawGlyphVisibility("tndGlyph");
+        vm.setGlyphVisibility("tndGlyph", next);
+        vm.setGlyphVisibility("elementalGlyph", next);
+      },
+    },
+    {
+      id: "toggle-prop-tnd-glyph",
+      label: "Prop TnD",
+      checked: vm.getRawGlyphVisibility("propTndGlyph"),
+      keepOpen: true,
+      action: () =>
+        vm.setGlyphVisibility(
+          "propTndGlyph",
+          !vm.getRawGlyphVisibility("propTndGlyph")
+        ),
     },
     {
       id: "toggle-positions-glyph",
       label: "Positions",
       checked: vm.getRawGlyphVisibility("placementsGlyph"),
       keepOpen: true,
-      action: () => vm.setGlyphVisibility("placementsGlyph", !vm.getRawGlyphVisibility("placementsGlyph")),
+      action: () =>
+        vm.setGlyphVisibility(
+          "placementsGlyph",
+          !vm.getRawGlyphVisibility("placementsGlyph")
+        ),
     },
   ];
 }
