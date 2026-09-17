@@ -48,9 +48,11 @@
   // falls back to, used to shut the Rule editor mid-edit. A Pairing editor
   // restored into a workspace whose paths are no longer linked has nothing to
   // edit, so that one lands on the recipe list instead.
-  const recipePanel = fuseRecipePanel;
-  if (recipePanel.destination === "pairing" && fuseState.mode !== "symmetry") {
-    recipePanel.destination = null;
+  if (
+    fuseRecipePanel.destination === "pairing" &&
+    fuseState.mode !== "symmetry"
+  ) {
+    fuseRecipePanel.destination = null;
   }
   let actionSide = $state<FuseSide | null>(null);
   let firstStepOpen = $state(false);
@@ -155,7 +157,7 @@
   // hard floor and the row still overflowed.
   const recipeColumn = $derived(
     fullCard &&
-      recipePanel.open &&
+      fuseRecipePanel.open &&
       fitsFuseRecipeColumn(
         workspaceGridWidth || containerWidth,
         RECIPE_COLUMN_FIT
@@ -335,13 +337,13 @@
       // being shut, because the column also goes away when the window narrows
       // past the fit — there the recipe did not close, it moved into the sheet,
       // and it has to arrive there still showing the editor you had open.
-      if (!recipePanel.open) recipePanel.destination = null;
+      if (!fuseRecipePanel.open) fuseRecipePanel.destination = null;
     }, motionDuration(RECIPE_TRANSITION_MS));
     return () => clearTimeout(timer);
   });
 
   function closeRecipe(): void {
-    recipePanel.open = false;
+    fuseRecipePanel.open = false;
   }
 
   // Widening past the column threshold with the sheet open closes the sheet,
@@ -715,8 +717,8 @@
   }
 
   function openSettings(destination: FuseSettingsDestination): void {
-    recipePanel.destination = destination;
-    recipePanel.open = true;
+    fuseRecipePanel.destination = destination;
+    fuseRecipePanel.open = true;
   }
 
   // The header trigger is the one door to the recipe, so it is also the way
@@ -724,7 +726,7 @@
   // editor was last open — the door is labelled "Fuse recipe", and it should
   // give you the recipe.
   function toggleRecipe(): void {
-    if (recipePanel.open) closeRecipe();
+    if (fuseRecipePanel.open) closeRecipe();
     else openSettings(null);
   }
 
@@ -734,7 +736,7 @@
   function changeMode(mode: FuseMode): void {
     fuseState.setMode(mode);
     if (mode === "symmetry") openSettings("pairing");
-    else if (recipePanel.destination === "pairing") closeRecipe();
+    else if (fuseRecipePanel.destination === "pairing") closeRecipe();
   }
 
   // The follower card's footer states the rule that built it, so clicking it
@@ -767,7 +769,7 @@
       fuseState.isFusing}
   >
     <FuseWorkspaceHeader
-      recipeOpen={recipePanel.open}
+      recipeOpen={fuseRecipePanel.open}
       flatRecipeRail={wideWorkspace}
       onOpenRecipe={toggleRecipe}
       onOpenSetting={openSettings}
@@ -775,7 +777,7 @@
     />
     {#if recipeMounted && fullCard}
       <FuseRecipeColumn
-        bind:destination={recipePanel.destination}
+        bind:destination={fuseRecipePanel.destination}
         singleDestination={wideWorkspace}
         onClose={closeRecipe}
       />
@@ -887,8 +889,8 @@
   </div>
 
   <FuseSettingsDrawer
-    isOpen={recipePanel.open && !recipeColumn}
-    bind:destination={recipePanel.destination}
+    isOpen={fuseRecipePanel.open && !recipeColumn}
+    bind:destination={fuseRecipePanel.destination}
     onDismiss={dismissDrawer}
   />
   <FuseFirstStepPanel

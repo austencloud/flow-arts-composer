@@ -126,9 +126,6 @@
   const followerModeLabel = $derived(fuseTnDModeLabel(followerMode));
   const followerElement = $derived(fuseTnDElement(followerMode));
   const followerTransformLabel = $derived(fuseRuleLabel(fuseState.previewRule));
-  const followerRuleLabel = $derived(
-    `${followerModeLabel} (${followerTransformLabel})`
-  );
   const driverLabel = $derived(
     fuseState.previewDriverSide === "left" ? "Left" : "Right"
   );
@@ -165,10 +162,23 @@
     }
     return best;
   }
+  // The step grid draws its own plate hugging the cells, a gutter wide, and
+  // the stage clips at its edge. So the cells are fitted to the stage less
+  // that gutter on both axes, or the plate's border and corners would be cut
+  // off on whichever axis the grid fills. The phone hero fills the stage with
+  // one pictograph and keeps the stage's own frame.
+  const LIVE_GRID_GUTTER = 6;
+  const hostsGrid = $derived(!compactHero && displaySequence !== null);
+  const fitW = $derived(
+    hostsGrid ? Math.max(0, stageW - 2 * LIVE_GRID_GUTTER) : stageW
+  );
+  const fitH = $derived(
+    hostsGrid ? Math.max(0, stageH - 2 * LIVE_GRID_GUTTER) : stageH
+  );
   const stepColumns = $derived(
     full
-      ? (stepCols ?? getBestFuseStepColumns(stageW, stageH, stepCount, 0))
-      : bestStageCols(stageW, stageH, stepCount)
+      ? (stepCols ?? getBestFuseStepColumns(fitW, fitH, stepCount, 0))
+      : bestStageCols(fitW, fitH, stepCount)
   );
   const liveGridColumns = $derived(Math.max(1, stepColumns ?? 1));
   const liveGridRows = $derived(
@@ -180,8 +190,8 @@
       1,
       Math.floor(
         getFittedFuseCellSize(
-          stageW,
-          stageH,
+          fitW,
+          fitH,
           liveGridTotalColumns,
           liveGridRows,
           FUSE_LIVE_GRID_GAP
@@ -421,6 +431,8 @@
 
   <div
     class="notation-stage"
+    class:hosts-grid={hostsGrid}
+    style:--live-grid-gutter="{LIVE_GRID_GUTTER}px"
     bind:this={stageEl}
     oncontextmenu={openCardContextMenu}
     role="group"
@@ -498,10 +510,10 @@
         role={onEditPairing ? undefined : "status"}
         onclick={onEditPairing}
         style="--rule-accent: {followerElement.accentColor}"
-        title="{followerRuleLabel} of {driverLabel}"
+        title="{followerModeLabel} of {driverLabel} ({followerTransformLabel})"
         aria-label={onEditPairing
-          ? `Change pairing — currently ${followerRuleLabel} of ${driverLabel}`
-          : `${followerRuleLabel} of ${driverLabel}`}
+          ? `Change pairing — currently ${followerModeLabel} of ${driverLabel} (${followerTransformLabel})`
+          : `${followerModeLabel} of ${driverLabel} (${followerTransformLabel})`}
       >
         <img class="rule-icon" src={followerElement.iconPath} alt="" />
       </svelte:element>
@@ -534,7 +546,7 @@
       onclick={onEditPairing}
       style="--rule-accent: {followerElement.accentColor}"
       aria-label={onEditPairing
-        ? `Change pairing — currently ${followerRuleLabel} of ${driverLabel}`
+        ? `Change pairing — currently ${followerModeLabel} of ${driverLabel} (${followerTransformLabel})`
         : undefined}
     >
       <span class="note-glyph">
@@ -1252,30 +1264,27 @@
     min-height: 64px;
   }
 
-  /* Wherever the stage hosts the step grid it is the grid's sizing box, and
-     the grid is bound by one axis or the other, so the stage had a band of
-     black beside the cells that read as a void. The stage takes the card's own
+  /* While the stage hosts the step grid it is the grid's sizing box, and the
+     grid is bound by one axis or the other, so the stage had a band of black
+     beside the cells that read as a void. The stage takes the card's own
      surface and the panel surface hugs the cells instead: drawn by a
      pseudo-element spanning every track, so it is exactly the cells' extent
-     plus a gutter, wherever the centred grid lands. The phone hero is the one
-     stage that fills itself (one pictograph, edge to edge) and keeps its
-     frame. */
-  .source-card:not(.compact-hero) .notation-stage {
+     plus the gutter the fit reserved, wherever the centred grid lands. The
+     skeleton, the empty note and the phone hero keep the stage's own frame. */
+  .notation-stage.hosts-grid {
     border-color: transparent;
     background: transparent;
   }
 
-  .source-card:not(.compact-hero) .notation-stage :global(.live-path-grid) {
+  .notation-stage.hosts-grid :global(.live-path-grid) {
     background: transparent;
   }
 
-  .source-card:not(.compact-hero)
-    .notation-stage
-    :global(.live-path-grid::before) {
+  .notation-stage.hosts-grid :global(.live-path-grid::before) {
     content: "";
     z-index: 0;
     grid-area: 1 / 1 / -1 / -1;
-    margin: -6px;
+    margin: calc(-1 * var(--live-grid-gutter, 6px));
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: var(--settings-radius-md, 14px);
     background: var(--theme-panel-bg);

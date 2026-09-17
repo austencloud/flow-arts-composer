@@ -28,11 +28,7 @@
   import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { getFuseContext } from "../context/fuse-context";
   import type { FuseRecipeDestination } from "../domain/fuse-recipe-destination";
-  import {
-    classifyFuseRule,
-    DEFAULT_TND_SELECTION,
-    fuseTnDModeLabel,
-  } from "../domain/fuse-tnd-rule";
+  import { fuseRuleMode, fuseTnDModeLabel } from "../domain/fuse-tnd-rule";
   import type { FuseRecipeSummaries } from "../domain/fuse-recipe-summaries";
   import { FUSE_LENGTHS, type FuseMode } from "../state/fuse-state.svelte";
   import FuseRecipePopover from "./FuseRecipePopover.svelte";
@@ -85,11 +81,7 @@
   const displayedTurnIntensity = $derived(
     fuseState.generationLevel === 1 ? 0 : fuseState.maxTurnIntensity
   );
-  const ruleLabel = $derived(
-    fuseTnDModeLabel(
-      (classifyFuseRule(fuseState.rule) ?? DEFAULT_TND_SELECTION).mode
-    )
-  );
+  const ruleLabel = $derived(fuseTnDModeLabel(fuseRuleMode(fuseState.rule)));
   const driverLabel = $derived(
     fuseState.driverSide === "left" ? "Left" : "Right"
   );

@@ -8,7 +8,9 @@
  * Rule editor is open brings the editor back instead of shutting it.
  *
  * sessionStorage, not localStorage: this is where you were in this tab, not a
- * preference. A new tab opens on the workspace with the panel shut.
+ * preference, and a new tab opens on the workspace with the panel shut. On the
+ * compact hosts the restored sheet still plays its slide-up on load; only the
+ * desktop column lands in place.
  */
 import type { FuseSettingsDestination } from "../domain/fuse-recipe-destination";
 import { isFuseRecipeDestination } from "../domain/fuse-recipe-destination";
@@ -76,14 +78,3 @@ export const fuseRecipePanel = {
     persist();
   },
 };
-
-/** Test seam: reset the module state and clear what it wrote. */
-export function resetFuseRecipePanelForTests(): void {
-  open = false;
-  destination = null;
-  try {
-    sessionStorage?.removeItem(STORAGE_KEY);
-  } catch {
-    // Nothing to clear.
-  }
-}
