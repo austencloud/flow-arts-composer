@@ -67,7 +67,7 @@ describe("resolveFuseRule", () => {
     ["QS", "cw", createFuseRule({ rotationSteps: 2, reflect: "none" })],
     ["QS", "ccw", createFuseRule({ rotationSteps: 6, reflect: "none" })],
     ["TO", "cw", createFuseRule({ rotationSteps: 0, reflect: "mirror" })],
-    ["SO", "cw", createFuseRule({ rotationSteps: 4, reflect: "flip" })],
+    ["SO", "cw", createFuseRule({ rotationSteps: 0, reflect: "flip" })],
     ["QO", "cw", createFuseRule({ rotationSteps: 2, reflect: "mirror" })],
     ["QO", "ccw", createFuseRule({ rotationSteps: 6, reflect: "mirror" })],
   ] as const)("%s %s resolves to its rule", (mode, quarterOffset, expected) => {
@@ -176,8 +176,8 @@ export function resolveFuseRule(selection: FuseTnDSelection): FuseRule {
     case "TO":
       return createFuseRule({ rotationSteps: 0, reflect: "mirror", invert, rewind });
     case "SO":
-      // Flip is rotate 180 composed with mirror; it is the single-op label.
-      return createFuseRule({ rotationSteps: 4, reflect: "flip", invert, rewind });
+      // Flip alone is rotate 180 composed with mirror; it is the single-op label.
+      return createFuseRule({ rotationSteps: 0, reflect: "flip", invert, rewind });
     case "QO":
       return createFuseRule({
         rotationSteps: quarterSteps(quarterOffset),
@@ -1022,7 +1022,7 @@ describe("FuseRelationshipComposer", () => {
 
     expect(state.previewRelationship).toHaveBeenLastCalledWith(
       "left",
-      createFuseRule({ rotationSteps: 4, reflect: "flip", invert: true })
+      createFuseRule({ rotationSteps: 0, reflect: "flip", invert: true })
     );
   });
 
