@@ -5,8 +5,14 @@
  * animation visibility settings at once.
  */
 
-import { getAnimationVisibilityManager, type AnimationVisibilityStateManager } from "../state/animation-visibility-state.svelte";
-import type { EffectType, TipEffectMap } from "../domain/types/tip-effect-types";
+import {
+  getAnimationVisibilityManager,
+  type AnimationVisibilityStateManager,
+} from "../state/animation-visibility-state.svelte";
+import type {
+  EffectType,
+  TipEffectMap,
+} from "../domain/types/tip-effect-types";
 import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
 
 /**
@@ -18,6 +24,8 @@ export interface AnimationVisibilityState {
   props: boolean;
   trails: boolean;
   tkaGlyph: boolean; // TKA Glyph includes turn numbers
+  /** Hand timing-and-direction glyph. The prop glyph is overlay-only and
+   *  read straight from the visibility manager, so it is not mirrored here. */
   elementalGlyph: boolean;
   /** Dark Mode: dark background, inverted grid, white text/outlines */
   darkMode: boolean;
@@ -50,7 +58,9 @@ export class AnimationVisibilitySynchronizer {
   getState(): AnimationVisibilityState {
     const ecs = this.effectsConfigState;
     const tipEffectMap: TipEffectMap = ecs?.tipEffectMap ?? {};
-    const trailsActive = Object.values(tipEffectMap).some(a => a.effect === "trails");
+    const trailsActive = Object.values(tipEffectMap).some(
+      (a) => a.effect === "trails"
+    );
     const activeEffect = (ecs?.activeEffect ?? "none") as EffectType;
     return {
       grid: this.manager.isGridVisible(),

@@ -254,13 +254,13 @@
       class:active={getElementalGlyph()}
       onclick={toggleElementalGlyph}
       type="button"
-      title="Elemental classification glyph"
+      title="Hand timing and direction glyph"
       aria-label={getElementalGlyph()
-        ? "Hide elemental glyph"
-        : "Show elemental glyph"}
+        ? "Hide hand TnD glyph"
+        : "Show hand TnD glyph"}
       aria-pressed={getElementalGlyph()}
     >
-      <span>Element</span>
+      <span>Hand TnD</span>
     </button>
     <button
       class="element-btn"
