@@ -8,6 +8,7 @@
 <script lang="ts">
   import {
     MODE_ORDER,
+    MODE_SHORT_WORDS,
     MODE_WORDS,
     type VtgMode,
   } from "../services/shape-matrix-realizations";
@@ -41,6 +42,7 @@
   const chips = MODE_ORDER.map((mode) => ({
     mode,
     words: MODE_WORDS[mode],
+    shortWords: MODE_SHORT_WORDS[mode],
     el: TND_BY_FAMILY[FAMILY_BY_MODE[mode]],
   })).filter(
     (c): c is typeof c & { el: NonNullable<typeof c.el> } => c.el !== undefined
@@ -62,8 +64,8 @@
       {compact}
       accent={c.el.accentColor}
       icon={c.el.iconPath}
-      timing={c.words.timing}
-      direction={c.words.direction}
+      timing={c.shortWords.timing}
+      direction={c.shortWords.direction}
       active={selected === c.mode}
       disabled={disabled || (availabilityReady && !available.includes(c.mode))}
       ariaLabel={`${c.words.timing} ${c.words.direction}, ${elementName(c.el.element)} (${c.mode})${
