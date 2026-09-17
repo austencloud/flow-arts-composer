@@ -38,6 +38,9 @@ export interface LedSamplerConfig {
   rightPropDimensions: { width: number; height: number };
   leftPropType?: string;
   rightPropType?: string;
+  /** Chirality flip as drawn; LED positions mirror with the sprite. */
+  leftPropFlipped?: boolean;
+  rightPropFlipped?: boolean;
   /**
    * Overlaid tunnel layers. When present, LEDs are also emitted for each
    * layer's left/right props (propIndex >= 2) so the LED effect covers the whole
@@ -121,6 +124,7 @@ export class LedSampler {
         config,
         config.leftPropDimensions,
         config.leftPropType ?? null,
+        config.leftPropFlipped ?? false,
         0,
         ledCount,
         pattern,
@@ -138,6 +142,7 @@ export class LedSampler {
         config,
         config.rightPropDimensions,
         config.rightPropType ?? null,
+        config.rightPropFlipped ?? false,
         1,
         ledCount,
         pattern,
@@ -172,6 +177,7 @@ export class LedSampler {
             config,
             config.leftPropDimensions,
             config.leftPropType ?? null,
+            config.leftPropFlipped ?? false,
             propIndex,
             ledCount,
             pattern,
@@ -193,6 +199,7 @@ export class LedSampler {
             config,
             config.rightPropDimensions,
             config.rightPropType ?? null,
+            config.rightPropFlipped ?? false,
             propIndex,
             ledCount,
             pattern,
@@ -228,6 +235,7 @@ export class LedSampler {
     config: LedSamplerConfig,
     propDimensions: { width: number; height: number },
     propType: string | null,
+    flipped: boolean,
     propIndex: number,
     ledCount: number,
     pattern: StripPattern | null,
@@ -250,6 +258,7 @@ export class LedSampler {
     const angle = prop.staffRotationAngle;
     const cosA = Math.cos(angle);
     const sinA = Math.sin(angle);
+    const mirror = flipped ? -1 : 1;
 
     // A capsule lights the prop's own tip points. A pixel staff spans the
     // strip between the first and last of those same tracked points, so it
@@ -263,9 +272,9 @@ export class LedSampler {
     let outputIndex = outputStartIndex;
     for (let i = 0; i < emitCount && outputIndex < LED_SAMPLER_MAX_LEDS; i++) {
       const t = emitCount > 1 ? i / (emitCount - 1) : 0;
-      const dx = spanStrip
-        ? first.dx + (last.dx - first.dx) * t
-        : points[i]!.dx;
+      const dx =
+        (spanStrip ? first.dx + (last.dx - first.dx) * t : points[i]!.dx) *
+        mirror;
       const dy = spanStrip
         ? first.dy + (last.dy - first.dy) * t
         : points[i]!.dy;

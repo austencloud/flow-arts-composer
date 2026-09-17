@@ -225,6 +225,11 @@ export class TrailCapturer {
   // source identity so changing a tip/custom offset starts a new segment.
   private lastCapturedPoints = new Map<string, LastCapturedPoint>();
 
+  // Chirality flip of the last captured frame per hand. A flip moves every
+  // trail source to its mirror, so the trail restarts instead of drawing a
+  // segment across the prop.
+  private lastFlipped: [boolean, boolean] = [false, false];
+
   // Animation timing
   private animationStartTime: number | null = null;
   private previousBeatForLoopDetection = 0;
@@ -373,12 +378,23 @@ export class TrailCapturer {
       this.animationStartTime = currentTime;
     }
 
+    const leftFlipped = props.leftPropFlipped ?? false;
+    const rightFlipped = props.rightPropFlipped ?? false;
+    if (
+      leftFlipped !== this.lastFlipped[0] ||
+      rightFlipped !== this.lastFlipped[1]
+    ) {
+      this.lastFlipped = [leftFlipped, rightFlipped];
+      this.clearTrails();
+    }
+
     // Capture trail points for primary layer
     if (props.leftProp) {
       this.captureTrailPoint(
         props.leftProp,
         this.config.leftPropDimensions,
         0,
+        leftFlipped,
         animRelativeTime,
         currentBeat
       );
@@ -388,6 +404,7 @@ export class TrailCapturer {
         props.rightProp,
         this.config.rightPropDimensions,
         1,
+        rightFlipped,
         animRelativeTime,
         currentBeat
       );
@@ -411,6 +428,7 @@ export class TrailCapturer {
             layer.leftProp,
             this.config.leftPropDimensions,
             0,
+            leftFlipped,
             animRelativeTime,
             currentBeat,
             i
@@ -421,6 +439,7 @@ export class TrailCapturer {
             layer.rightProp,
             this.config.rightPropDimensions,
             1,
+            rightFlipped,
             animRelativeTime,
             currentBeat,
             i
@@ -585,6 +604,7 @@ export class TrailCapturer {
     prop: PropState,
     propDimensions: PropDimensions,
     propIndex: 0 | 1,
+    flipped: boolean,
     currentTime: number,
     currentStep: number,
     additionalLayerIndex: number
@@ -600,6 +620,7 @@ export class TrailCapturer {
     const endpointConfig: PropEndpointConfig = {
       canvasSize: this.config.canvasSize,
       propDimensions,
+      flipped,
     };
 
     const minSpacing = this.getAdaptivePointSpacing();
@@ -762,6 +783,7 @@ export class TrailCapturer {
     prop: PropState,
     propDimensions: PropDimensions,
     propIndex: 0 | 1,
+    flipped: boolean,
     currentTime: number,
     currentStep: number
   ): void {
@@ -774,6 +796,7 @@ export class TrailCapturer {
     const endpointConfig: PropEndpointConfig = {
       canvasSize: this.config.canvasSize,
       propDimensions,
+      flipped,
     };
 
     // Select buffer based on prop index (primary layer)

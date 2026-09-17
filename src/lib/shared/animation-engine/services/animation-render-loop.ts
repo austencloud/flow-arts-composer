@@ -1287,6 +1287,8 @@ export class AnimationRenderLoop {
         {
           leftProp: params.props.leftProp,
           rightProp: params.props.rightProp,
+          leftPropFlipped: params.leftPropFlipped ?? false,
+          rightPropFlipped: params.rightPropFlipped ?? false,
           additionalLayers:
             params.props.additionalLayers.length > 0
               ? params.props.additionalLayers
@@ -1654,6 +1656,8 @@ export class AnimationRenderLoop {
           rightProp: params.props.rightProp,
           leftPropType: params.leftPropType,
           rightPropType: params.rightPropType,
+          leftPropFlipped: params.leftPropFlipped ?? false,
+          rightPropFlipped: params.rightPropFlipped ?? false,
           tipEffectMap: params.tipEffectMap,
           loopDetected: this.loopDetectedThisFrame,
           isSeamlesslyLoopable: params.isSeamlesslyLoopable ?? false,
@@ -1728,7 +1732,9 @@ export class AnimationRenderLoop {
       this.renderer?.getLoadedPropRenderKeys?.() ?? null;
     const leftTipKey = loadedPropRenderKeys?.left ?? params.leftPropType;
     const rightTipKey = loadedPropRenderKeys?.right ?? params.rightPropType;
-    const propGeometryKey = `${leftTipKey ?? ""}|${rightTipKey ?? ""}|${tipPointSignature(leftTipKey)}|${tipPointSignature(rightTipKey)}`;
+    const leftPropFlipped = params.leftPropFlipped ?? false;
+    const rightPropFlipped = params.rightPropFlipped ?? false;
+    const propGeometryKey = `${leftTipKey ?? ""}|${rightTipKey ?? ""}|${tipPointSignature(leftTipKey)}|${tipPointSignature(rightTipKey)}|${leftPropFlipped ? "L" : "l"}${rightPropFlipped ? "R" : "r"}`;
 
     // Fire/charcoal/zap overlays: render after Canvas2D so they composite on top.
     // Fire, charcoal, and zap all consume FireTipTracker output (zap reads the
@@ -1780,6 +1786,8 @@ export class AnimationRenderLoop {
         rightPropType: params.rightPropType,
         leftPropRenderKey: loadedPropRenderKeys?.left ?? undefined,
         rightPropRenderKey: loadedPropRenderKeys?.right ?? undefined,
+        leftPropFlipped,
+        rightPropFlipped,
         renderedTransforms,
         // Overlaid tunnel layers get tips too, so per-tip effects cover every
         // copy in the kaleidoscope (not just the base pair). Absent for normal
@@ -1979,6 +1987,8 @@ export class AnimationRenderLoop {
           rightPropDimensions: props.rightPropDimensions,
           leftPropType: params.leftPropType,
           rightPropType: params.rightPropType,
+          leftPropFlipped: params.leftPropFlipped ?? false,
+          rightPropFlipped: params.rightPropFlipped ?? false,
           // LEDs cover overlaid tunnel layers too (parity with fire/charcoal).
           additionalLayers:
             props.additionalLayers.length > 0
@@ -2237,6 +2247,8 @@ export class AnimationRenderLoop {
         show,
         leftPropType: params.leftPropType,
         rightPropType: params.rightPropType,
+        leftPropFlipped: params.leftPropFlipped ?? false,
+        rightPropFlipped: params.rightPropFlipped ?? false,
         trackingMode: params.trailSettings.trackingMode,
         pathOptions: params.mandalaPathOptions,
         leftColor:

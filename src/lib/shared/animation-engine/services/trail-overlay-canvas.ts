@@ -161,6 +161,8 @@ export class TrailOverlayCanvas implements ITrailOverlayCanvas {
   // keeps fading naturally while the new source starts a disconnected path.
   private lastLeftPropSwapSuppressed = false;
   private lastRightPropSwapSuppressed = false;
+  /** Chirality flip per hand for this frame; a change restarts that hand's rings. */
+  private frameFlipped: [boolean, boolean] = [false, false];
 
   // Tracks whether a previous center position exists for the center-point
   // smoothing path (used by clearBuffers to reset inter-sequence state).
@@ -398,6 +400,20 @@ export class TrailOverlayCanvas implements ITrailOverlayCanvas {
     }
     this.lastLeftPropSwapSuppressed = leftPropSwapSuppressed;
     this.lastRightPropSwapSuppressed = rightPropSwapSuppressed;
+
+    // A chirality flip mirrors every trail source, so the ring restarts
+    // rather than drawing a segment across the prop to the mirrored tip.
+    const leftFlipped = params.leftPropFlipped ?? false;
+    const rightFlipped = params.rightPropFlipped ?? false;
+    if (leftFlipped !== this.frameFlipped[0]) {
+      this.leftLeftRing = [];
+      this.leftRightRing = [];
+    }
+    if (rightFlipped !== this.frameFlipped[1]) {
+      this.rightLeftRing = [];
+      this.rightRightRing = [];
+    }
+    this.frameFlipped = [leftFlipped, rightFlipped];
 
     const leftHasTwoEnds = propTipEnds(leftPropType ?? undefined) === 2;
     const rightHasTwoEnds = propTipEnds(rightPropType ?? undefined) === 2;
@@ -915,6 +931,7 @@ export class TrailOverlayCanvas implements ITrailOverlayCanvas {
     const endpointConfig = {
       canvasSize,
       propDimensions: TRAIL_ENDPOINT_DIMENSIONS,
+      flipped: this.frameFlipped[propIndex],
     };
     // Tips are computed in the engine's square; this canvas covers the whole
     // frame with that square centred in it.

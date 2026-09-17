@@ -32,6 +32,14 @@ export interface FireTipTrackerConfig {
    */
   leftPropRenderKey?: string;
   rightPropRenderKey?: string;
+  /**
+   * Chirality flip, as drawn: the Canvas2D renderer mirrors a flipped sprite
+   * with `scale(-1, 1)` after rotating it, so every painted point sits at
+   * (-dx, dy) in prop-local space. A three-armed trigeng emitted from the
+   * unmirrored table lands 60 degrees off, in the gap between two arms.
+   */
+  leftPropFlipped?: boolean;
+  rightPropFlipped?: boolean;
   /** Transforms from the Canvas2D renderer. When provided, used instead of recomputing positions. */
   renderedTransforms?: {
     left: RenderedPropTransform | null;
@@ -177,6 +185,7 @@ export class FireTipTracker {
         config.canvasSize,
         config.leftPropDimensions,
         config.leftPropRenderKey ?? config.leftPropType ?? null,
+        config.leftPropFlipped ?? false,
         0, // propIndex
         0, // prevTipOffset
         currentTime,
@@ -194,6 +203,7 @@ export class FireTipTracker {
         config.canvasSize,
         config.rightPropDimensions,
         config.rightPropRenderKey ?? config.rightPropType ?? null,
+        config.rightPropFlipped ?? false,
         1, // propIndex
         MAX_TOTAL_TIPS / 2, // prevTipOffset (red starts at slot 8)
         currentTime,
@@ -230,6 +240,7 @@ export class FireTipTracker {
             config.canvasSize,
             config.leftPropDimensions,
             config.leftPropType ?? null,
+            config.leftPropFlipped ?? false,
             2 + li * 2,
             `${li}-b`,
             currentTime,
@@ -244,6 +255,7 @@ export class FireTipTracker {
             config.canvasSize,
             config.rightPropDimensions,
             config.rightPropType ?? null,
+            config.rightPropFlipped ?? false,
             3 + li * 2,
             `${li}-r`,
             currentTime,
@@ -278,6 +290,7 @@ export class FireTipTracker {
     canvasSize: number,
     propDimensions: { width: number; height: number },
     propType: string | null,
+    flipped: boolean,
     propIndex: 0 | 1,
     prevTipOffset: number,
     currentTime: number,
@@ -315,6 +328,7 @@ export class FireTipTracker {
 
     const cosA = Math.cos(angle);
     const sinA = Math.sin(angle);
+    const mirror = flipped ? -1 : 1;
 
     let outputIndex = outputStartIndex;
 
@@ -322,9 +336,11 @@ export class FireTipTracker {
       const tp: TipPoint = tipPoints[i]!;
       const prevSlot = prevTipOffset + i;
 
-      // Transform tip point from prop-local to canvas space
-      const worldX = centerX + (tp.dx * cosA - tp.dy * sinA) * gridScaleFactor;
-      const worldY = centerY + (tp.dx * sinA + tp.dy * cosA) * gridScaleFactor;
+      // Transform tip point from prop-local to canvas space, mirrored the
+      // same way the renderer mirrors a chirality-B sprite.
+      const dx = tp.dx * mirror;
+      const worldX = centerX + (dx * cosA - tp.dy * sinA) * gridScaleFactor;
+      const worldY = centerY + (dx * sinA + tp.dy * cosA) * gridScaleFactor;
 
       this.emitTip(
         this.prevTips[prevSlot]!,
@@ -361,6 +377,7 @@ export class FireTipTracker {
     canvasSize: number,
     propDimensions: { width: number; height: number },
     propType: string | null,
+    flipped: boolean,
     propIndex: number,
     keyPrefix: string,
     currentTime: number,
@@ -378,12 +395,14 @@ export class FireTipTracker {
     const angle = prop.staffRotationAngle;
     const cosA = Math.cos(angle);
     const sinA = Math.sin(angle);
+    const mirror = flipped ? -1 : 1;
 
     let outputIndex = outputStartIndex;
     for (let i = 0; i < tipPoints.length && outputIndex < cap; i++) {
       const tp: TipPoint = tipPoints[i]!;
-      const worldX = center.x + (tp.dx * cosA - tp.dy * sinA) * gridScaleFactor;
-      const worldY = center.y + (tp.dx * sinA + tp.dy * cosA) * gridScaleFactor;
+      const dx = tp.dx * mirror;
+      const worldX = center.x + (dx * cosA - tp.dy * sinA) * gridScaleFactor;
+      const worldY = center.y + (dx * sinA + tp.dy * cosA) * gridScaleFactor;
 
       const key = `${keyPrefix}-${i}`;
       let prev = this.layerPrevTips.get(key);
