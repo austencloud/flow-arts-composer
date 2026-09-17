@@ -23,6 +23,9 @@ describe("production dynamic-import recovery", () => {
     );
 
     expect(preloadHandler).toContain("window.location.replace");
+    // The recovery must leave a breadcrumb: the root layout strips ?fresh=
+    // during boot, so this marker is the only trace of the reload.
+    expect(preloadHandler).toContain("markChunkRecoveryReload()");
     expect(preloadHandler).not.toContain("event.preventDefault()");
   });
 

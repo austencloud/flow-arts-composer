@@ -15,6 +15,10 @@ import {
   printReloadBreadcrumb,
   recordReloadReason,
 } from "$lib/shared/dev/reload-breadcrumb";
+import {
+  markChunkRecoveryReload,
+  printChunkRecoveryReloadBreadcrumb,
+} from "$lib/shared/offline/services/chunk-recovery-marker";
 
 // Dev: explain the previous automatic reload (if any) before the boot noise
 // starts, and arm the tracers for Vite's own full-reload/ws-disconnect reloads.
@@ -207,6 +211,11 @@ if (browser && dev) {
 // When the SW serves an old HTML shell that references chunk hashes the server
 // no longer has, dynamic imports fail. A single reload fetches the new manifest.
 if (browser && !dev) {
+  // Explain the previous stale-chunk recovery (if any) before the boot noise,
+  // and park it for the session_start event. Prod counterpart of the dev
+  // breadcrumb above; the SW update reload reports itself the same way.
+  printChunkRecoveryReloadBreadcrumb();
+
   window.addEventListener("vite:preloadError", () => {
     // Vite turns a cancelled preload error into a fulfilled import whose value
     // is undefined. The page is already leaving, but app startup keeps running
@@ -219,6 +228,7 @@ if (browser && !dev) {
     const last = Number(sessionStorage.getItem("tka-chunk-reload") || 0);
     if (Date.now() - last < 60_000) return;
     sessionStorage.setItem("tka-chunk-reload", String(Date.now()));
+    markChunkRecoveryReload();
     // Cache-bust the navigation: a plain reload can re-serve the identical
     // SW-cached HTML shell with the same dead chunk hashes (same trick as the
     // dev SW-escape above). The unique query forces the HTML from network.

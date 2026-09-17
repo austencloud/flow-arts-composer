@@ -1273,6 +1273,19 @@ export default defineConfig(({ command, mode }) => ({
       "@capacitor/keyboard",
       "@capacitor/splash-screen",
       "@capacitor/status-bar",
+
+      // Discovered at runtime by a long-lived dev server on 2026-09-16, one
+      // full page reload per discovery. Community/festival maps (creator
+      // profiles), the AI panel, camera tracking, and 3D scene loaders.
+      "@googlemaps/js-api-loader",
+      "@googlemaps/markerclusterer",
+      "@mediapipe/tasks-vision",
+      "@ai-sdk/svelte",
+      "ai",
+      "svelte-confetti",
+      "dompurify",
+      "three/examples/jsm/loaders/KTX2Loader.js",
+      "three/examples/jsm/environments/RoomEnvironment.js",
     ],
     exclude: [
       "pdfjs-dist",
