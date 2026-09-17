@@ -61,7 +61,10 @@
       caption: "Curve inward toward the center.",
       path: "concave",
     },
-    { title: "Three paths", caption: "Same shift. Different paths." },
+    {
+      title: "Three paths",
+      caption: "All three start and end at the same points. Only the path changes.",
+    },
   ];
   const COMPARISON_PATHS: readonly IntroPath[] = ["arc", "linear", "concave"];
   const LEGEND: readonly { path: IntroPath; x: number; label: string }[] = [
@@ -677,13 +680,18 @@
     .motion-path-intro {
       width: 100%;
       min-height: 0;
-      grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 0.9fr);
+      /* The drawing track is capped at the svg's own height cap so the
+         drawing fills it edge to edge; the copy track is only as wide as the
+         longest caption. The pair is centered as one unit so the words sit
+         beside the drawing instead of drifting to the far rail. */
+      grid-template-columns: minmax(0, min(30rem, 62vh)) minmax(18rem, 20rem);
       grid-template-rows: auto auto;
       grid-template-areas:
         "stage copy"
         "stage controls";
+      justify-content: center;
       align-content: center;
-      column-gap: clamp(2rem, 5cqw, 5rem);
+      column-gap: clamp(1.5rem, 3cqw, 2.5rem);
       row-gap: clamp(1rem, 2cqw, 1.5rem);
       margin-block: clamp(1.5rem, 4vw, 3rem);
     }
