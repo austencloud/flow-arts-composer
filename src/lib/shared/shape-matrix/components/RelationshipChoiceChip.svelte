@@ -46,9 +46,11 @@
   {:else}
     <span class="choice-dot" aria-hidden="true"></span>
   {/if}
+  <!-- Timing and direction are the two halves of one name, so they share
+       one weight and colour; a dimmer second line read as a caption. -->
   <span class="choice-copy">
     <strong>{timing}</strong>
-    <small>{direction}</small>
+    <strong>{direction}</strong>
   </span>
   <!-- Colour alone did not answer "which one did I pick?" across six element
        accents, several of them dark. The mark is always in the box and sits on
@@ -179,31 +181,18 @@
     line-height: 1.2;
   }
 
-  .choice-copy strong,
-  .choice-copy small {
+  .choice-copy strong {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  .choice-copy strong {
     color: color-mix(in srgb, var(--choice-accent) 80%, white);
     font-size: var(--font-size-compact, 0.75rem);
     letter-spacing: 0.02em;
     transition: color var(--duration-fast, 150ms) ease;
   }
 
-  .choice-copy small {
-    color: var(--theme-text-dim, rgb(255 255 255 / 0.64));
-    font-size: var(--font-size-compact, 0.75rem);
-  }
-
   .relationship-choice.active .choice-copy strong {
     color: color-mix(in srgb, var(--choice-accent) 30%, white);
-  }
-
-  .relationship-choice.active .choice-copy small {
-    color: color-mix(in srgb, var(--choice-accent) 22%, white);
   }
 
   /* A host outside the drill (the guide's explorer) asks for the row shape
