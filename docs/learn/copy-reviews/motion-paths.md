@@ -284,3 +284,15 @@ Ownership ledger: ShapeMatrixGrid, TurnNotationControls, ElementChipRow, PanelBu
 Evidence: browser pass at 375×667, 960×412, 820×1180, 1440×900, 1920×1080, 2560×1440, 3840×2160 and a 720×450 reflow stand-in for 200% zoom; no horizontal overflow at any tier; matrix cells stay at or above 60px on the phone tier; keyboard focus reaches the intro button, matrix cells, the disclosure, and the trace toggle. The disclosure animates through growFade, which carries the shared reduced-motion behavior.
 
 AI-bust review: clean. Copy names the control and the visible result. User review remains pending.
+
+## September 17: fold the shift into Arc
+
+Review state: Austen approved the recommendation ("do so") including the proposed Arc caption. User review of the rendered result pending.
+
+Austen pointed out that the "A shift" stage re-teaches a word Level 1 already taught with real pictograph demos. Its only job on this page was to plant the two endpoints the three paths share. The stage is gone; the introduction has six bites.
+
+The page has three front doors: the guide index, the "About motion paths" link in the animation path-shape settings, and the animation canvas context menu. Readers from the last two may never have opened Level 1, so Arc names the shift once. "Arc" now reads "One shift. Follow the circle around the center." The endpoints appear when Arc begins, the destination pulses while the hand waits at its start, and the traversal follows. Linear and Concave captions are unchanged. "Three paths" still closes with "Same shift. Different paths."
+
+The September 14 split of "A shift" from "Arc" existed because the two stages showed the same picture. With one stage there is nothing to duplicate. Under reduced motion Arc settles directly on the finished route with no pulse, as before.
+
+Ownership ledger: LessonStageControls, Crossfade, the intro geometry module, and the fade owner unchanged. Geometry tests unchanged. AI-bust review: clean.
