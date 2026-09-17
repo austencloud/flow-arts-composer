@@ -296,3 +296,7 @@ The page has three front doors: the guide index, the "About motion paths" link i
 The September 14 split of "A shift" from "Arc" existed because the two stages showed the same picture. With one stage there is nothing to duplicate. Under reduced motion Arc settles directly on the finished route with no pulse, as before.
 
 Ownership ledger: LessonStageControls, Crossfade, the intro geometry module, and the fade owner unchanged. Geometry tests unchanged. AI-bust review: clean.
+
+## September 17: Next moves to the right
+
+Austen asked whether Next should sit on the right. On the landscape composition the drawing now leads on the left and the copy and Next cluster at its vertical center on the right. The reason is stepper convention and reading order (look, read, advance), with right-thumb reach on landscape phones as a secondary benefit. Portrait is unchanged: the button stays centered below the drawing. No copy changed. Ownership ledger unchanged.
