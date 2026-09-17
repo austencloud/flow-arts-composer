@@ -3,7 +3,7 @@ export function computePropsSummary(propLabel: string): string {
 }
 
 /**
- * The eight toggles the Display page actually renders. `progressBar` is
+ * The nine toggles the Display page actually renders. `progressBar` is
  * deliberately absent: on screen it gated the whole transport rather than a
  * progress bar, so the transport became unconditional and the export-side
  * progress bar became an Export concern. Counting a switch this page no longer
@@ -11,7 +11,10 @@ export function computePropsSummary(propLabel: string): string {
  */
 export interface DisplayFlags {
   tkaGlyph: boolean;
+  /** Hand timing-and-direction glyph. */
   elementalGlyph: boolean;
+  /** Prop timing-and-direction glyph. */
+  propElementalGlyph: boolean;
   stepNumbers: boolean;
   props: boolean;
   wordHeader: boolean;
@@ -35,7 +38,7 @@ export function computeDisplaySummary(flags: DisplayFlags): string {
 
 export function computeEffectsSummary(
   activeEffect: string,
-  labels: Record<string, string>,
+  labels: Record<string, string>
 ): string {
   if (typeof activeEffect !== "string" || activeEffect === "") {
     console.warn("[pill-summaries] invalid activeEffect:", activeEffect);
@@ -49,7 +52,7 @@ export type PlaybackModeLike = "continuous" | "step";
 
 export function computePlaybackSummary(
   bpm: number,
-  mode: PlaybackModeLike,
+  mode: PlaybackModeLike
 ): string {
   const modeLabel = mode === "step" ? "Step" : "Cont.";
   if (!Number.isFinite(bpm) || bpm <= 0) {
@@ -71,14 +74,21 @@ const CANONICAL_RESOLUTIONS = new Set<number>([720, 1080, 2160, 4320]);
 export function computeExportSummary(input: ExportSummaryInput): string {
   const { resolution: r, fps, loopCount, renderMode } = input;
   if (!CANONICAL_RESOLUTIONS.has(r) || !Number.isFinite(fps) || fps <= 0) {
-    console.warn("[pill-summaries] invalid export input:", { resolution: r, fps });
+    console.warn("[pill-summaries] invalid export input:", {
+      resolution: r,
+      fps,
+    });
     return "- • - fps";
   }
-  const resLabel = renderMode === "3d"
-    ? `${r}×${r}`
-    : r >= 4320 ? "8K" : r >= 2160 ? "4K" : `${r}p`;
-  const loopLabel = Number.isFinite(loopCount) && loopCount > 1
-    ? ` • ${loopCount}×`
-    : "";
+  const resLabel =
+    renderMode === "3d"
+      ? `${r}×${r}`
+      : r >= 4320
+        ? "8K"
+        : r >= 2160
+          ? "4K"
+          : `${r}p`;
+  const loopLabel =
+    Number.isFinite(loopCount) && loopCount > 1 ? ` • ${loopCount}×` : "";
   return `${resLabel} • ${fps} fps${loopLabel}`;
 }

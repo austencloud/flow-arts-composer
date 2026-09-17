@@ -41,7 +41,16 @@ export interface AnimationVisibilitySettings {
   darkMode: boolean;
 
   tkaGlyph: boolean;
+  /**
+   * HAND timing-and-direction glyph (bottom-right corner): the element that
+   * classifies how the two hands travel relative to each other. The key
+   * predates the prop glyph and is persisted, so it keeps its old name.
+   */
   elementalGlyph: boolean;
+  /**
+   * PROP timing-and-direction glyph (top-right corner): the same element
+   * icons, classifying the props' own spin and phase instead of the hands.
+   */
   propElementalGlyph: boolean;
   reversalIndicators: boolean;
   effortPreset: EffortId;

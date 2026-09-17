@@ -5,8 +5,9 @@
  * and produces ContextMenuEntry[] for the animation canvas right-click menu.
  *
  * Submenu groups:
- *   - Visibility: Props, Step Numbers, TKA Glyph, Element, Word Header,
- *     Mandala, Paths, Progress Bar, Dark Mode (toggles, menu stays open)
+ *   - Visibility: Props, Step Numbers, TKA Glyph, Hand TnD, Prop TnD,
+ *     Word Header, Mandala, Paths, Progress Bar, Dark Mode (toggles, menu
+ *     stays open)
  *   - Grid: Off / 8-Point / Auto (radio-style)
  *   - Playback: Continuous / Step (radio-style)
  *   - Effects: None + every effect in the shared registry (radio-style)
@@ -329,13 +330,24 @@ function buildVisibilityChildren(
       keepOpen: true,
       action: () => vm.toggleVisibility("tkaGlyph"),
     },
+    // Two timing-and-direction glyphs, one per relationship. `elementalGlyph`
+    // is the HAND pair (bottom-right corner); `propElementalGlyph` is the
+    // PROP pair (top-right). Same element icons, different question answered.
     {
-      id: "vis-elemental-glyph",
-      label: "Element",
-      icon: "fa-fire-flame-curved",
+      id: "vis-hand-tnd-glyph",
+      label: "Hand TnD",
+      icon: "fa-hand",
       checked: settings.elementalGlyph,
       keepOpen: true,
       action: () => vm.toggleVisibility("elementalGlyph"),
+    },
+    {
+      id: "vis-prop-tnd-glyph",
+      label: "Prop TnD",
+      icon: "fa-fire-flame-curved",
+      checked: settings.propElementalGlyph,
+      keepOpen: true,
+      action: () => vm.toggleVisibility("propElementalGlyph"),
     },
     {
       id: "vis-word-header",

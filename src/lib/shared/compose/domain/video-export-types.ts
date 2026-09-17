@@ -136,6 +136,7 @@ export interface VideoExportOrchestratorOptions {
    */
   overlayOverrides?: Partial<{
     tkaGlyph: boolean;
+    /** Hand timing-and-direction glyph; the prop glyph is not exported yet. */
     elementalGlyph: boolean;
     stepNumbers: boolean;
     wordHeader: boolean;
