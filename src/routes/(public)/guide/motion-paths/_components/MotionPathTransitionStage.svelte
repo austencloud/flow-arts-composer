@@ -29,6 +29,8 @@
     trace: "hands" | "tips";
     leftPropType: PropType;
     rightPropType: PropType;
+    /** A solo plays one hand, so the two-hand letter and placement come off. */
+    hideGlyph?: boolean;
     onplayingchange: (playing: boolean) => void;
     onstepchange: (step: number) => void;
     /** Publishes a safe seek target for the canvas currently shown by the stage. */
@@ -47,6 +49,7 @@
     trace,
     leftPropType,
     rightPropType,
+    hideGlyph = false,
     onplayingchange,
     onstepchange,
     onseekref = undefined,
@@ -320,7 +323,8 @@
       onExternalPlayingChange={onplayingchange}
       {...callbacks}
       showControls={false}
-      showPlacementGlyph
+      showPlacementGlyph={!hideGlyph}
+      hideTkaGlyph={hideGlyph}
       beatIndicators={false}
       disableContextMenu
       playbackAllowed={active === source || waiting === source || fading}

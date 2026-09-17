@@ -34,6 +34,17 @@ export function createMotionPathExplorerState() {
   scope.visibility.setVisibility("rightPathLines", true);
   let original = $state<SequenceData>(motionPathExamples[2]!);
   let selectedPair = $state<{ left: Flower; right: Flower } | null>(null);
+  // A matrix header plays one hand of the pair on its own. The other hand
+  // keeps building so the pair stays solvable; the surfaces hide it.
+  let soloHand = $state<"left" | "right" | null>(null);
+  let guides = $state(true);
+  // Path lines follow the guides toggle per hand, so a solo takes the other
+  // hand's line with it; the visibility context hides that hand's prop.
+  function setSolo(hand: "left" | "right" | null) {
+    soloHand = hand;
+    scope.visibility.setVisibility("leftPathLines", guides && hand !== "right");
+    scope.visibility.setVisibility("rightPathLines", guides && hand !== "left");
+  }
   let selectedMode = $state<VtgMode | null>("SS");
   let pickerStatus = $state<PickerStatus>("idle");
   let pickerError = $state<string | null>(null);
@@ -50,7 +61,6 @@ export function createMotionPathExplorerState() {
     motionAwarePaths: false,
   });
   let trace = $state<"hands" | "tips">("tips");
-  let guides = $state(true);
   let playing = $state(false);
   let liveStep = $state(0);
   // InlineAnimationPlayer only reloads when its sequence identity changes. A
@@ -173,6 +183,9 @@ export function createMotionPathExplorerState() {
     get selectedMode() {
       return selectedMode;
     },
+    get soloHand() {
+      return soloHand;
+    },
     get pickerStatus() {
       return pickerStatus;
     },
@@ -216,6 +229,30 @@ export function createMotionPathExplorerState() {
       pair: { left: Flower; right: Flower },
       builder: MotionPathRealizationBuilder
     ) {
+      setSolo(null);
+      selectedPair = pair;
+      void prewarmPair(pair, builder, selectedMode);
+      void buildSelection(builder);
+    },
+    /**
+     * One axis flower alone, from its header. The other hand keeps whatever
+     * is selected, or the host's fallback when nothing is, so the pair still
+     * builds; a solo of the current pair only changes what is shown.
+     */
+    chooseMatrixSolo(
+      hand: "left" | "right",
+      flower: Flower,
+      fallback: MatrixPair,
+      builder: MotionPathRealizationBuilder
+    ) {
+      const other = selectedPair ?? fallback;
+      const pair =
+        hand === "left"
+          ? { left: flower, right: other.right }
+          : { left: other.left, right: flower };
+      setSolo(hand);
+      if (selectedPair && matrixPairKey(selectedPair) === matrixPairKey(pair))
+        return;
       selectedPair = pair;
       void prewarmPair(pair, builder, selectedMode);
       void buildSelection(builder);
@@ -230,6 +267,7 @@ export function createMotionPathExplorerState() {
     clearMatrixPair() {
       ++selectionVersion;
       selectedPair = null;
+      setSolo(null);
       pickerStatus = "idle";
       pickerError = null;
     },
@@ -240,14 +278,14 @@ export function createMotionPathExplorerState() {
       ++selectionVersion;
       original = value;
       selectedPair = null;
+      setSolo(null);
       pickerStatus = "idle";
       pickerError = null;
       transitionVersion += 1;
     },
     toggleGuides() {
       guides = !guides;
-      scope.visibility.setVisibility("leftPathLines", guides);
-      scope.visibility.setVisibility("rightPathLines", guides);
+      setSolo(soloHand);
     },
   };
 }
