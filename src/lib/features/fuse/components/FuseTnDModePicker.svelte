@@ -61,10 +61,41 @@
 </div>
 
 <style>
+  /* Three rows that share whatever height the host gives the grid, so on a
+     tall pane the chips grow with it instead of leaving the room below them
+     empty. Content-sized when the host is: `1fr` rows never drop under their
+     chip. */
   .mode-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: minmax(0, 1fr);
     gap: 8px;
     min-width: 0;
+  }
+
+  /* A chip that has grown to twice its natural height with the same 2.1rem
+     icon reads as a small chip floating in a big box. The icon and the words
+     scale with the room from a tall laptop up, in the same viewport tiers the
+     editor uses for its own chrome. */
+  @media (min-height: 1100px) {
+    .mode-grid :global(.choice-icon) {
+      width: 2.75rem;
+      height: 2.75rem;
+    }
+
+    .mode-grid :global(.choice-copy strong) {
+      font-size: var(--font-size-min, 0.875rem);
+    }
+  }
+
+  @media (min-height: 1400px) {
+    .mode-grid :global(.choice-icon) {
+      width: 3.25rem;
+      height: 3.25rem;
+    }
+
+    .mode-grid :global(.choice-copy strong) {
+      font-size: var(--font-size-base, 1rem);
+    }
   }
 </style>
