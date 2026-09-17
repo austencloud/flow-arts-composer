@@ -77,8 +77,8 @@ export function resolveFuseRule(selection: FuseTnDSelection): FuseRule {
     case "TO":
       return createFuseRule({ rotationSteps: 0, reflect: "mirror", invert, rewind });
     case "SO":
-      // Flip is rotate 180 composed with mirror; it is the single-op label.
-      return createFuseRule({ rotationSteps: 4, reflect: "flip", invert, rewind });
+      // Flip alone is rotate 180 composed with mirror; it is the single-op label.
+      return createFuseRule({ rotationSteps: 0, reflect: "flip", invert, rewind });
     case "QO":
       return createFuseRule({
         rotationSteps: quarterSteps(quarterOffset),
@@ -87,4 +87,72 @@ export function resolveFuseRule(selection: FuseTnDSelection): FuseRule {
         rewind,
       });
   }
+}
+
+/**
+ * The mode a rule yields, or null when the rotation is odd (a 45-degree slice
+ * gives eighth timing, which the deriver files under quarter; the panel does
+ * not offer it).
+ *
+ * Rotate 180 composed with mirror is flip, and composed with flip is mirror,
+ * so the two composites read as the single reflection they equal. The
+ * resolver never emits them, but persisted rules can carry them.
+ */
+export function classifyFuseRule(rule: FuseRule): FuseTnDSelection | null {
+  const steps = rule.rotationSteps;
+  if (steps % 2 !== 0) return null;
+
+  const { invert, rewind } = rule;
+  const quarterOffset: FuseQuarterOffset = steps === 6 ? "ccw" : "cw";
+  const base = { quarterOffset, invert, rewind };
+
+  if (steps === 2 || steps === 6) {
+    return { ...base, mode: rule.reflect === "none" ? "QS" : "QO" };
+  }
+
+  // steps is 0 or 4. Fold the rotation into the reflection.
+  const effectiveReflect =
+    steps === 0
+      ? rule.reflect
+      : rule.reflect === "none"
+        ? "rotate180"
+        : rule.reflect === "mirror"
+          ? "flip"
+          : "mirror";
+
+  switch (effectiveReflect) {
+    case "none":
+      return { ...base, mode: "TS" };
+    case "rotate180":
+      return { ...base, mode: "SS" };
+    case "mirror":
+      return { ...base, mode: "TO" };
+    case "flip":
+      return { ...base, mode: "SO" };
+  }
+}
+
+/**
+ * Bring a persisted rule into the mode model. Odd rotations round down to the
+ * nearest even step; everything else is kept. `adjusted` says whether a
+ * change was made, so the panel can say so once.
+ */
+export function coerceToTnDRule(rule: FuseRule): {
+  selection: FuseTnDSelection;
+  adjusted: boolean;
+} {
+  const direct = classifyFuseRule(rule);
+  if (direct) return { selection: direct, adjusted: false };
+
+  const rounded = createFuseRule({
+    ...rule,
+    rotationSteps: rule.rotationSteps - 1,
+  });
+  const selection = classifyFuseRule(rounded);
+  if (!selection) {
+    // Unreachable: an odd step minus one is even. Kept so the return type is
+    // honest without a non-null assertion.
+    return { selection: DEFAULT_TND_SELECTION, adjusted: true };
+  }
+  return { selection, adjusted: true };
 }
