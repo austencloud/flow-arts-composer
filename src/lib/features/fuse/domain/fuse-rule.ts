@@ -104,9 +104,11 @@ export function isIdentityRule(rule: FuseRule): boolean {
 }
 
 /**
- * What the rule is called wherever one line has to name it — the header recipe
- * summary, the follower card's note, the result chain. Reads as the operations
- * it performs, in the order it performs them.
+ * The operation chain a rule performs, in the order it performs them:
+ * "Rotate 90° + Mirror". A rule is named by the timing and direction it pins
+ * (`fuseTnDModeLabel`); this is the second line under that name, on the
+ * follower card's note and the Rule editor's result strip, and the whole of
+ * the status messages that report a pairing.
  */
 export function fuseRuleLabel(rule: FuseRule): string {
   const parts: string[] = [];

@@ -77,7 +77,9 @@
       : []),
   ]);
   const solo = $derived(
-    singleDestination && destination !== null && isFuseRecipeDestination(destination)
+    singleDestination &&
+      destination !== null &&
+      isFuseRecipeDestination(destination)
   );
 
   function selectDestination(id: string | null): void {
@@ -91,44 +93,73 @@
   <GenerationSettingsOverlay
     title={DESTINATION_LABELS[destination] ?? "Fuse recipe"}
     titleId="fuse-settings-title"
-    closeLabel="Close {DESTINATION_LABELS[destination] ?? 'Fuse recipe'} settings"
+    closeLabel="Close {DESTINATION_LABELS[destination] ??
+      'Fuse recipe'} settings"
     entrance={ENTRANCE}
     {onClose}
   >
     {#snippet children()}
-      <FuseRecipeSettingContent
-        {destination}
-        presentation="drawer"
-        onCancel={onClose}
-        onApply={onClose}
-      />
+      <!-- The same body the drill panel gives a detail: the pane's one
+           scroller, with a form that owns its footer (`.drill-grow`) taking the
+           remaining height so Cancel / Use this relationship land on the floor
+           rather than a third of the way down an otherwise empty panel. -->
+      <div class="solo-body themed-scrollbar">
+        <FuseRecipeSettingContent
+          {destination}
+          presentation="drawer"
+          onCancel={onClose}
+          onApply={onClose}
+        />
+      </div>
     {/snippet}
   </GenerationSettingsOverlay>
 {:else}
-<GenerationSettingsOverlay
-  title="Fuse recipe"
-  titleId="fuse-settings-title"
-  closeLabel="Close Fuse recipe settings"
-  entrance={ENTRANCE}
-  {onClose}
->
-  {#snippet children()}
-    <SettingsDrillPanel
-      items={drillItems}
-      bind:selected={destination}
-      onSelect={selectDestination}
-    >
-      {#snippet detail(id)}
-        {#if isFuseRecipeDestination(id)}
-          <FuseRecipeSettingContent
-            destination={id}
-            presentation="drawer"
-            onCancel={() => (destination = null)}
-            onApply={onClose}
-          />
-        {/if}
-      {/snippet}
-    </SettingsDrillPanel>
-  {/snippet}
-</GenerationSettingsOverlay>
+  <GenerationSettingsOverlay
+    title="Fuse recipe"
+    titleId="fuse-settings-title"
+    closeLabel="Close Fuse recipe settings"
+    entrance={ENTRANCE}
+    {onClose}
+  >
+    {#snippet children()}
+      <SettingsDrillPanel
+        items={drillItems}
+        bind:selected={destination}
+        onSelect={selectDestination}
+      >
+        {#snippet detail(id)}
+          {#if isFuseRecipeDestination(id)}
+            <FuseRecipeSettingContent
+              destination={id}
+              presentation="drawer"
+              onCancel={() => (destination = null)}
+              onApply={onClose}
+            />
+          {/if}
+        {/snippet}
+      </SettingsDrillPanel>
+    {/snippet}
+  </GenerationSettingsOverlay>
 {/if}
+
+<style>
+  .solo-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.625rem;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .solo-body > :global(*) {
+    flex: 0 0 auto;
+  }
+
+  .solo-body > :global(.drill-grow) {
+    flex: 1 0 auto;
+    max-width: 100%;
+  }
+</style>

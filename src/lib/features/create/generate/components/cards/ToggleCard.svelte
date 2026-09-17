@@ -146,13 +146,22 @@ Hides header when card height is below 65px for space optimization
     cursor: pointer;
   }
 
+  /* The quiet card is a bordered plate, so its options need a gutter from the
+     border: with the vivid card's 3px the chosen option's own ring sat on the
+     card's edge and the pair read as cramped. */
   .toggle-card.quiet {
     --card-title-letter-spacing: 0;
     --card-title-transform: none;
+    padding: clamp(6px, 2cqh, 10px) clamp(8px, 3cqw, 14px)
+      clamp(6px, 2.5cqh, 10px);
     border: 1px solid var(--theme-stroke);
     background: var(--theme-card-bg);
     box-shadow: none;
     color: var(--theme-text);
+  }
+
+  .toggle-card.quiet .toggle-options :global(.toggle-option) {
+    padding-inline: clamp(6px, 2cqw, 12px);
   }
 
   .toggle-card.quiet::after {
