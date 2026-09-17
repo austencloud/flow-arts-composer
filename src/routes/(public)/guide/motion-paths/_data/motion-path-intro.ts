@@ -1,10 +1,23 @@
+import { calculateMotionEndpoints } from "$lib/shared/animation-engine/services/endpoint-calculator";
 import { interpolatePropAngles } from "$lib/shared/animation-engine/services/prop-interpolator";
+import {
+  MotionType,
+  Orientation,
+  RotationDirection,
+} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { motionPathExamples } from "./motion-path-examples";
 
 export type IntroPath = "arc" | "linear" | "concave";
+export type IntroSpin = "pro" | "anti";
 export interface IntroPoint {
   x: number;
   y: number;
+}
+/** Staff heading over the shift, in radians, clockwise positive on screen. */
+export interface IntroSpinTrack {
+  path: IntroPath;
+  startAngle: number;
+  delta: number;
 }
 
 export const INTRO_RADIUS = 110;
@@ -35,6 +48,41 @@ export const INTRO_PATHS: Record<IntroPath, readonly IntroPoint[]> = {
   linear: sampleRoute("linear"),
   concave: sampleRoute("concave"),
 };
+
+// Hybrid's rule, as the engine applies it: pro rides the Arc, anti takes the
+// Concave. Both spins use the intro's east-to-south shift; the anti motion is
+// the example's own, the pro motion turns the same shift the other way.
+function spinTrack(spin: IntroSpin): IntroSpinTrack {
+  const source = motionPathExamples[2]!.steps[0]!.motions.left;
+  const motion =
+    spin === "anti"
+      ? source
+      : {
+          ...source,
+          motionType: MotionType.PRO,
+          rotationDirection: RotationDirection.CLOCKWISE,
+          startOrientation: Orientation.IN,
+          endOrientation: Orientation.IN,
+        };
+  const endpoints = calculateMotionEndpoints(motion);
+  return {
+    path: spin === "pro" ? "arc" : "concave",
+    startAngle: endpoints.startStaffAngle,
+    delta: endpoints.staffRotationDelta,
+  };
+}
+
+export const INTRO_SPINS: Record<IntroSpin, IntroSpinTrack> = {
+  pro: spinTrack("pro"),
+  anti: spinTrack("anti"),
+};
+
+export function introStaffAngle(
+  track: IntroSpinTrack,
+  progress: number
+): number {
+  return track.startAngle + track.delta * Math.max(0, Math.min(1, progress));
+}
 
 export function introPointAt(
   points: readonly IntroPoint[],

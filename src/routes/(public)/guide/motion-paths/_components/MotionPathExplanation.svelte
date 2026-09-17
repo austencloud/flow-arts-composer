@@ -21,20 +21,34 @@
   import { DARK_MOTION_BLUE_STROKE } from "$lib/shared/mandala/domain/mandala-constants";
   import GridSvg from "$lib/shared/pictograph/grid/components/GridSvg.svelte";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import { lerpAngle } from "$lib/shared/animation-engine/services/angle-calculator";
   import {
     INTRO_CENTER,
     INTRO_PATHS,
     INTRO_RADIUS,
+    INTRO_SPINS,
     introPathD,
     introPointAt,
+    introStaffAngle,
     type IntroPath,
     type IntroPoint,
+    type IntroSpin,
+    type IntroSpinTrack,
   } from "../_data/motion-path-intro";
 
+  interface LegendItem {
+    path: IntroPath;
+    x: number;
+    label: string;
+  }
   interface StageCopy {
     title: string;
     caption: string;
     path?: IntroPath;
+    /** A staff rides in the hand and turns with or against it. */
+    spin?: IntroSpin;
+    /** Overlay these routes instead of tracing one. */
+    compare?: readonly LegendItem[];
   }
 
   const STAGES: readonly StageCopy[] = [
@@ -64,13 +78,35 @@
     {
       title: "Three paths",
       caption: "All three start and end at the same points. Only the path changes.",
+      compare: [
+        { path: "arc", x: -118, label: "Arc" },
+        { path: "linear", x: -30, label: "Linear" },
+        { path: "concave", x: 66, label: "Concave" },
+      ],
     },
-  ];
-  const COMPARISON_PATHS: readonly IntroPath[] = ["arc", "linear", "concave"];
-  const LEGEND: readonly { path: IntroPath; x: number; label: string }[] = [
-    { path: "arc", x: -118, label: "Arc" },
-    { path: "linear", x: -30, label: "Linear" },
-    { path: "concave", x: 66, label: "Concave" },
+    // Hybrid is a rule about spin, so the staff has to appear before the rule
+    // can be named: one pro shift, one anti shift, then the rule.
+    {
+      title: "Pro",
+      caption: "Turn the staff with the hand. Hybrid keeps this on the Arc.",
+      path: "arc",
+      spin: "pro",
+    },
+    {
+      title: "Anti",
+      caption: "Turn the staff against the hand. Hybrid bends this inward.",
+      path: "concave",
+      spin: "anti",
+    },
+    {
+      title: "Hybrid",
+      caption:
+        "The fourth choice. Pro takes the Arc and anti takes the Concave, motion by motion.",
+      compare: [
+        { path: "arc", x: -125, label: "Pro on Arc" },
+        { path: "concave", x: 5, label: "Anti on Concave" },
+      ],
+    },
   ];
   const MORPH_DURATION = DURATION.dramatic * 2;
   const TRAVERSE_DURATION = DURATION.dramatic * 4;
@@ -84,6 +120,7 @@
   let routePoints = $state<readonly IntroPoint[]>(INTRO_PATHS.arc);
   let hand = $state<IntroPoint>(INTRO_CENTER);
   let traceProgress = $state(0);
+  let staffAngle = $state(INTRO_SPINS.pro.startAngle);
   let pulseActive = $state(false);
   let isReducedMotion = $state(reducedMotion());
   let frame: number | null = null;
@@ -98,8 +135,10 @@
   const routeD = $derived(introPathD(routePoints));
   const gridVisible = $derived(stage >= 1);
   const FIRST_PATH_STAGE = 2;
+  const FIRST_SPIN_STAGE = STAGES.findIndex((entry) => entry.spin);
   const endpointsVisible = $derived(stage >= FIRST_PATH_STAGE);
-  const routeVisible = $derived(stage >= FIRST_PATH_STAGE && !isFinal);
+  const routeVisible = $derived(stage >= FIRST_PATH_STAGE && !current.compare);
+  const staffVisible = $derived(current.spin !== undefined);
   // The destination pulses while Arc waits at its start, before the hand moves.
   const destinationPending = $derived(
     stage === FIRST_PATH_STAGE && traceProgress === 0
@@ -156,6 +195,7 @@
     const path = current.path ?? (isFinal ? "concave" : "arc");
     routePoints = INTRO_PATHS[path];
     traceProgress = stage >= FIRST_PATH_STAGE ? 1 : 0;
+    if (current.spin) staffAngle = introStaffAngle(INTRO_SPINS[current.spin], 1);
     hand =
       stage === 0
         ? INTRO_CENTER
@@ -188,12 +228,20 @@
     frame = requestAnimationFrame(animate);
   }
 
-  function runStage(nextPath: IntroPath, retrace = false): void {
+  function runStage(
+    nextPath: IntroPath,
+    retrace = false,
+    track: IntroSpinTrack | null = null
+  ): void {
     cancelFrame();
     const epoch = ++stageEpoch;
     const from = routePoints;
     const destination = INTRO_PATHS[nextPath];
     const handOrigin = hand;
+    // A staff already in the hand turns to its new heading during the morph;
+    // one that just appeared simply starts there.
+    const staffOrigin =
+      track && stage - 1 >= FIRST_SPIN_STAGE ? staffAngle : null;
     const nearest = from.reduce(
       (best, point, index) =>
         Math.hypot(point.x - hand.x, point.y - hand.y) <
@@ -219,6 +267,13 @@
         introPointAt(destination, startProgress),
         morphProgress
       );
+      if (track) {
+        const heading = introStaffAngle(track, startProgress);
+        staffAngle =
+          staffOrigin === null
+            ? heading
+            : lerpAngle(staffOrigin, heading, morphProgress);
+      }
 
       if (rawMorphProgress < 1) {
         frame = requestAnimationFrame(animate);
@@ -237,6 +292,7 @@
           : startProgress + (1 - startProgress) * rawProgress;
         traceProgress = progress;
         hand = introPointAt(destination, progress);
+        if (track) staffAngle = introStaffAngle(track, progress);
         if (rawProgress < 1) {
           frame = requestAnimationFrame(traverse);
           return;
@@ -251,6 +307,7 @@
             );
             traceProgress = redrawProgress;
             hand = introPointAt(destination, redrawProgress);
+            if (track) staffAngle = introStaffAngle(track, redrawProgress);
             if (redrawProgress < 1) {
               frame = requestAnimationFrame(redraw);
               return;
@@ -295,12 +352,16 @@
       else moveHandToStart();
       return;
     }
-    const nextPath = STAGES[stage]?.path;
-    if (!nextPath || isReducedMotion || !gate.active) {
+    const next = STAGES[stage];
+    if (!next?.path || isReducedMotion || !gate.active) {
       settle();
       return;
     }
-    runStage(nextPath, stage > FIRST_PATH_STAGE);
+    runStage(
+      next.path,
+      stage > FIRST_PATH_STAGE,
+      next.spin ? INTRO_SPINS[next.spin] : null
+    );
   }
 
   onMount(() => {
@@ -381,12 +442,12 @@
         </g>
       {/if}
 
-      {#if isFinal}
-        {#each COMPARISON_PATHS as path (path)}
+      {#if current.compare}
+        {#each current.compare as item (item.path)}
           <path
             class="comparison-route"
-            style:stroke={PATH_SHAPE_COLORS[path]}
-            d={introPathD(INTRO_PATHS[path])}
+            style:stroke={PATH_SHAPE_COLORS[item.path]}
+            d={introPathD(INTRO_PATHS[item.path])}
             in:fade={{ duration: motionDuration(DURATION.normal) }}
           />
         {/each}
@@ -398,12 +459,12 @@
         {#if traceD}<path class="trace" d={traceD} />{/if}
       {/if}
 
-      {#if isFinal}
+      {#if current.compare}
         <g
           class="route-legend"
           in:fade={{ duration: motionDuration(DURATION.normal) }}
         >
-          {#each LEGEND as item (item.path)}
+          {#each current.compare as item (item.path)}
             <g transform={`translate(${item.x} 148)`}>
               <path
                 class="legend-line"
@@ -414,6 +475,33 @@
             </g>
           {/each}
         </g>
+      {/if}
+
+      {#if staffVisible}
+        <!-- Under the hand, so the hand keeps holding it. -->
+        <foreignObject
+          x={hand.x - 48}
+          y={hand.y - 48}
+          width="96"
+          height="96"
+          transition:fade={{ duration: motionDuration(DURATION.normal) }}
+        >
+          <div
+            class="staff-art"
+            style:rotate={`${staffAngle}rad`}
+            xmlns="http://www.w3.org/1999/xhtml"
+          >
+            <PropCompositionPreview
+              propType={PropType.STAFF}
+              singleHand="left"
+              pairedGlyph
+              size={96}
+              darkBackground
+              colors={getSettings().primaryPropColors}
+              useSavedOverrides={false}
+            />
+          </div>
+        </foreignObject>
       {/if}
 
       <foreignObject x={hand.x - 24} y={hand.y - 24} width="48" height="48">
@@ -626,6 +714,14 @@
     filter: drop-shadow(
       0 0 0.35rem color-mix(in srgb, var(--hand-color) 50%, transparent)
     );
+    transform-origin: center;
+  }
+
+  .staff-art {
+    width: 96px;
+    height: 96px;
+    display: grid;
+    place-items: center;
     transform-origin: center;
   }
 
