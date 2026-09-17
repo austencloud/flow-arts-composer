@@ -670,17 +670,18 @@
   }
 
   /* Landscape: the words and the button sit beside the drawing instead of
-     leaving both rails empty. The copy and controls cluster at the vertical
-     center of the stage. */
+     leaving both rails empty. The drawing leads and the copy and Next cluster
+     at its vertical center on the right, so the eye goes look, read, advance
+     and Next lands where every stepper puts it. */
   @container (min-width: 52rem) {
     .motion-path-intro {
       width: 100%;
       min-height: 0;
-      grid-template-columns: minmax(18rem, 0.9fr) minmax(0, 1.1fr);
+      grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 0.9fr);
       grid-template-rows: auto auto;
       grid-template-areas:
-        "copy stage"
-        "controls stage";
+        "stage copy"
+        "stage controls";
       align-content: center;
       column-gap: clamp(2rem, 5cqw, 5rem);
       row-gap: clamp(1rem, 2cqw, 1.5rem);
