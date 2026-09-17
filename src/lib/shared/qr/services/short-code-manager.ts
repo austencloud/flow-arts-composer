@@ -80,6 +80,8 @@ const SHORTCODES_COLLECTION = "shortcodes";
  *  transactional invariant instead of a best-effort pre-check query. */
 const HASH_INDEX_COLLECTION = "shortcodeHashes";
 const MIN_CODE_LENGTH = 4;
+/** Minting grows a code by up to two characters when shorter ones collide. */
+export const MAX_SHORT_CODE_LENGTH = MIN_CODE_LENGTH + 2;
 
 /**
  * Shortcode payload/label schema. 2 = strict payload-derived labels
@@ -652,7 +654,7 @@ export class ShortCodeManager {
     }
 
     const maxAttemptsPerLength = 10;
-    const maxCodeLength = MIN_CODE_LENGTH + 2;
+    const maxCodeLength = MAX_SHORT_CODE_LENGTH;
     const indexRef = doc(firestore, HASH_INDEX_COLLECTION, encoderHash);
     let codeLength = MIN_CODE_LENGTH;
 
@@ -973,7 +975,7 @@ export class ShortCodeManager {
     // serializable transactions force the loser to retry, whose re-read then
     // sees the winner and adopts its code instead of minting a duplicate.
     const maxAttemptsPerLength = 10;
-    const maxCodeLength = MIN_CODE_LENGTH + 2;
+    const maxCodeLength = MAX_SHORT_CODE_LENGTH;
     let codeLength = MIN_CODE_LENGTH;
     const indexRef = encoderHash
       ? doc(firestore, HASH_INDEX_COLLECTION, encoderHash)

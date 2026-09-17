@@ -227,15 +227,33 @@ export const Scene3DFilmSchema = z.object({
   cameraMode: z.enum(["free", "auto-orbit"]),
   // A film with no camera samples cannot be rendered, so it is not a film.
   keyframes: z.array(CameraKeyframeSchema).min(1),
-  render: z.object({
-    fps: z.number(),
-    resolution: z.number(),
-    quality: z.enum(["standard", "cinema"]),
-    includeStartPlacement: z.boolean(),
-    includeEndHold: z.boolean(),
-  }),
+  render: z.preprocess(
+    normalizeLegacyFilmRender,
+    z.object({
+      fps: z.number(),
+      resolution: z.number(),
+      quality: z.enum(["standard", "cinema"]),
+      includeStartPlacement: z.boolean(),
+      includeEndHold: z.boolean(),
+    })
+  ),
   autoSaved: z.boolean(),
 });
+
+/** Films saved before the position → placement rename carry the old key.
+ *  Read-side normalization, no dual write, same as the other stored shapes. */
+function normalizeLegacyFilmRender(value: unknown): unknown {
+  if (!value || typeof value !== "object") return value;
+  const render = value as Record<string, unknown>;
+  if (
+    render.includeStartPlacement !== undefined ||
+    render.includeStartPosition === undefined
+  ) {
+    return value;
+  }
+  const { includeStartPosition, ...rest } = render;
+  return { ...rest, includeStartPlacement: includeStartPosition };
+}
 
 /** Whether this saved scene can be re-rendered into a video. */
 export function scene3DHasFilm(scene: Collected3DScene): boolean {
