@@ -30,18 +30,18 @@
   const ROWS: readonly ExampleRow[] = [
     {
       sequence: motionPathExamples[0]!,
-      motions: "Every motion is pro",
-      result: "Hybrid matches Arc.",
+      motions: "All pro",
+      result: "Same as Arc.",
     },
     {
       sequence: motionPathExamples[1]!,
-      motions: "Every motion is anti",
-      result: "Hybrid matches Concave.",
+      motions: "All anti",
+      result: "Same as Concave.",
     },
     {
       sequence: motionPathExamples[2]!,
-      motions: "One hand pro, one hand anti",
-      result: "Hybrid draws what neither fixed path draws.",
+      motions: "Left anti, right pro",
+      result: "Concave on the left hand, Arc on the right.",
     },
   ];
 
@@ -59,12 +59,11 @@
 
 <section class="hybrid-examples" aria-labelledby="hybrid-examples-heading">
   <header>
-    <h2 id="hybrid-examples-heading">Hybrid is a rule, not a path</h2>
+    <h2 id="hybrid-examples-heading">What Hybrid does</h2>
     <p>
-      Any motion can take any path. Hybrid picks one for each motion: Arc when
-      the motion is pro, Concave when it is anti. On an all-pro sequence it
-      matches Arc. On an all-anti sequence it matches Concave. Only a mixed
-      sequence tells them apart.
+      Hybrid uses Arc for pro motions and Concave for anti motions. Any motion
+      can take any path, so this is a default, not a law. Three sequences show
+      where it lands.
     </p>
   </header>
 

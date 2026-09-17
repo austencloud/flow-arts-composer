@@ -307,22 +307,24 @@ Austen saw the landscape composition with the copy and Next floating far from th
 
 He also called out "Same shift. Different paths." as reading machine-made. The closing caption now reads "All three start and end at the same points. Only the path changes." Two plain sentences that say what the picture shows. Austen has not yet confirmed this exact line; it is the one string in this revision that needs his eye. No other copy changed.
 
-## September 17: Hybrid is a rule, not a path
+## September 17: What Hybrid does
 
 Review state: Austen approved the plan ("do it"). User review of the rendered result and of the new strings pending.
 
 Austen rejected an intro prototype that animated "Pro rides the Arc, Anti bends inward" as if spin caused the path. Any motion can take any path; Hybrid is the animator's rule for choosing one per motion. That prototype was reverted. In its place a section between the introduction and the explorer shows the rule through examples rendered by the canonical owners: three sequences (all pro, all anti, one hand of each) under Arc, Concave, and Hybrid.
 
-New strings, all pending Austen's eye:
+Austen rejected the first heading, "Hybrid is a rule, not a path", as machine-made (the "X, not Y" flip). The section copy was rewritten to say what the picture shows.
 
-- Heading: "Hybrid is a rule, not a path"
-- Lede: "Any motion can take any path. Hybrid picks one for each motion: Arc when the motion is pro, Concave when it is anti. On an all-pro sequence it matches Arc. On an all-anti sequence it matches Concave. Only a mixed sequence tells them apart."
-- Row labels: "Every motion is pro" / "Every motion is anti" / "One hand pro, one hand anti"
-- Row results: "Hybrid matches Arc." / "Hybrid matches Concave." / "Hybrid draws what neither fixed path draws."
+New strings, pending Austen's eye:
+
+- Heading: "What Hybrid does"
+- Lede: "Hybrid uses Arc for pro motions and Concave for anti motions. Any motion can take any path, so this is a default, not a law. Three sequences show where it lands."
+- Row labels: "All pro" / "All anti" / "Left anti, right pro"
+- Row results: "Same as Arc." / "Same as Concave." / "Concave on the left hand, Arc on the right."
 - Explorer lede replaced. Old: "Hybrid is the fourth choice. It uses Arc for pro motions and Concave for anti motions." New: "Pick a pair of shapes from the matrix, or one shape from its edge, and switch the path while it plays."
 - Explorer status while a header solo plays: "One hand on its own. Pick a cell to pair it again."
 
-The tiles trace hands, not prop tips. The path shape is a rule about the hand path, and under a tip trace the all-pro row collapsed to a dot at the center, which taught nothing. Under a hand trace the Arc and Concave columns repeat across rows and only the Hybrid column changes, which is the point.
+The tiles trace hands, not prop tips. The path shape is a rule about the hand path, and under a tip trace the all-pro row collapsed to a dot at the center, which taught nothing. Under a hand trace the Arc and Concave columns repeat across rows and only the Hybrid column changes.
 
 Two explorer changes on Austen's request in the same review. Timing and direction no longer fold behind a disclosure; the chip row sits above the animation canvas as it does in the Shape Engine drill. A matrix header (one of the axis flowers) now plays that hand alone: the other prop, its path line, the letter and placement glyphs, and the chip row leave; the four path tiles draw that hand only. Picking a cell restores the pair.
 
