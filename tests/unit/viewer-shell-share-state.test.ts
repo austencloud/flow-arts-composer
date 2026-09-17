@@ -17,7 +17,6 @@ function createShareState(
     {
       captureScanAction: () => undefined,
       createSequenceSendSession,
-      renderCardPreview: () => Promise.reject(new Error("unused")),
       sendToStickerLab: () => undefined,
     } as never
   );
@@ -61,11 +60,7 @@ describe("viewer share file preparation", () => {
 });
 
 describe("viewer send mode", () => {
-  const session = {
-    payload: {},
-    previewBlob: null,
-    previewPending: true,
-  };
+  const session = { payload: {} };
 
   it("morphs into send mode and closes an open share sheet", () => {
     let sessions = 0;

@@ -39,6 +39,7 @@
   } from "../context/video-playhead-context";
   import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
   import { DURATION } from "$lib/shared/transitions/transitions";
+  import { flyFade } from "$lib/shared/transitions/motion";
   import { getSequenceVideosStore } from "$lib/shared/video-collaboration/state/sequence-videos-store.svelte";
   import { showToast, toast } from "$lib/shared/toast/state/toast-state.svelte";
   import { createPerformanceWorkspaceState } from "./sequence-videos/state/performance-workspace-state.svelte";
@@ -73,7 +74,6 @@
   import ChoreoCardContextMenuHost from "./choreo-card-context-menu/ChoreoCardContextMenuHost.svelte";
   import { createSequenceSendSession } from "$lib/shared/inbox/state/send-sequence-state.svelte";
   import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
-  import { getSharer } from "$lib/shared/share/get-sharer";
   import { createGlobalChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
   import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
   import { sendToStickerLab } from "$lib/shared/sequence-viewer/services/send-to-sticker-lab";
@@ -343,6 +343,9 @@
       getContext: () => ctx,
       getSequence: () => sequence,
       getIsMobile: () => isMobile,
+      // `share` is declared below; the getter runs lazily from a $derived,
+      // never during construction.
+      getSendModeActive: () => share.sendModeActive,
       getWorkspaceElement: () => viewerWorkspaceElement,
       startInSplit,
       startInCardThenSplit,
@@ -362,14 +365,6 @@
     },
     {
       createSequenceSendSession,
-      // Same inputs the share sheet's own card download uses, so the send
-      // preview matches the card on screen.
-      renderCardPreview: (target) =>
-        getSharer().getCardImageBlob(target, {
-          darkMode: ctx.exportOptions.imageDarkMode,
-          resolvedAutoLayout: ctx.resolvedCardAutoLayout,
-          cardPresentation: cardPresentation.value,
-        }),
       sendToStickerLab,
       captureScanAction: captureViewerAndScanAction,
     }
@@ -428,15 +423,20 @@
     layout.showVideoGallery && performanceWorkspace.view !== "browse"
   );
   /**
-   * Send mode takes the whole workspace the way the performance editor does:
-   * the stage and inspector stay mounted underneath and the canonical
-   * crossfade owns the handoff, so the animation is exactly where it was when
-   * the person comes back.
+   * The performance editor takes the whole workspace; the stage and inspector
+   * stay mounted underneath and the canonical crossfade owns the handoff.
+   * Send mode is not a takeover: the stage keeps showing the view being sent
+   * and the recipients take the inspector track, so a send that starts from
+   * the editor shows the performance stage beneath the recipients instead.
    */
   const workspaceTakeoverActive = $derived(
-    performanceEditorActive || share.sendModeActive
+    performanceEditorActive && !share.sendModeActive
   );
-  /** Practice and Send both clear the chrome that is not the decision. */
+  /**
+   * Practice clears the chrome that is not the decision. Send keeps the rail,
+   * because which view goes out is part of the decision; only the phone's
+   * media switcher steps aside so the stacked recipients get its room.
+   */
   const focusedModeActive = $derived(
     ctx.practiceActive || share.sendModeActive
   );
@@ -697,17 +697,32 @@
   const studioCanShareSideInspector = $derived(
     !layout.effectiveMobile && layout.bodyWidth > 1120
   );
+  // Send mode owns the inspector track outright; every other layer waits
+  // behind it until the send is done or cancelled.
   const studioUsesSideInspector = $derived(
-    layout.showPostStudio && studioCanShareSideInspector
+    layout.showPostStudio &&
+      studioCanShareSideInspector &&
+      !share.sendModeActive
   );
   const motionInspectorVisible = $derived(
-    layout.isVideoExportActive ||
-      (studioUsesSideInspector &&
-        studioSurfaces.inspectorContent === "animation")
+    !share.sendModeActive &&
+      (layout.isVideoExportActive ||
+        (studioUsesSideInspector &&
+          studioSurfaces.inspectorContent === "animation"))
   );
   const cardInspectorVisible = $derived(
-    layout.isImageExportActive ||
-      (studioUsesSideInspector && studioSurfaces.inspectorContent === "card")
+    !share.sendModeActive &&
+      (layout.isImageExportActive ||
+        (studioUsesSideInspector &&
+          studioSurfaces.inspectorContent === "card"))
+  );
+  const performanceInspectorVisible = $derived(
+    !share.sendModeActive &&
+      layout.showVideoGallery &&
+      performanceWorkspace.view === "browse"
+  );
+  const artInspectorVisible = $derived(
+    !share.sendModeActive && layout.isArtInspectorActive
   );
   const studioInspectorVisible = $derived(
     studioUsesSideInspector && studioSurfaces.inspectorContent === "studio"
@@ -892,6 +907,7 @@
       ? interactions.handleOpenApp
       : undefined}
     exportSettings={layout.isAnyExportActive &&
+    !share.sendModeActive &&
     !layout.effectiveMobile &&
     !layout.isRecordSceneActive &&
     !layout.isImageExportActive
@@ -968,6 +984,7 @@
           class:card-inspector={layout.inspectorProfile === "card"}
           class:performance-inspector={layout.inspectorProfile ===
             "performance"}
+          class:send-inspector={layout.inspectorProfile === "send"}
           class:desktop={!layout.effectiveMobile}
           class:stacked-rail={layout.stackedExportWithRail}
           class:sidebar-collapsed={layout.exportSidebarCollapsed &&
@@ -977,9 +994,9 @@
           {#if layout.showRail}
             <div
               class="viewer-rail-wrap"
-              class:collapsed={focusedModeActive}
-              inert={focusedModeActive}
-              aria-hidden={focusedModeActive}
+              class:collapsed={ctx.practiceActive}
+              inert={ctx.practiceActive}
+              aria-hidden={ctx.practiceActive}
             >
               <ViewerContentRail
                 reviewPostStudio={import.meta.env.DEV && reviewPostStudio}
@@ -1000,13 +1017,11 @@
           {/if}
 
           {#snippet workspaceTakeover()}
-            <!-- Two takeovers share the crossfade's second source. The
-                 performance editor stays mounted across visits (its own
-                 persistence contract); send mode mounts with its session and
-                 leaves with it, so a cancelled send holds nothing. -->
+            <!-- The performance editor stays mounted across visits (its own
+                 persistence contract). -->
             <div
               class="performance-editor-layer"
-              data-active={performanceEditorActive && !share.sendModeActive}
+              data-active={workspaceTakeoverActive}
               data-persistent-performance-editor
             >
               <PerformanceEditor
@@ -1016,15 +1031,6 @@
                 onSaveFirst={interactions.handleVideoUploadSaveFirst}
               />
             </div>
-            {#if share.sendSession}
-              <div class="send-mode-layer" data-viewer-send-mode>
-                <SendSequenceWorkspace
-                  session={share.sendSession}
-                  onSent={handleSequenceSent}
-                  onCancel={share.exitSendMode}
-                />
-              </div>
-            {/if}
           {/snippet}
 
           <ViewerWorkspacePanels
@@ -1032,14 +1038,17 @@
             inspectorActive={layout.isWorkspaceInspectorActive ||
               studioUsesSideInspector}
             inspectorCollapsed={!studioUsesSideInspector &&
+              !share.sendModeActive &&
               layout.exportSidebarCollapsed &&
               !layout.isImageExportActive}
             inspectorProfile={studioUsesSideInspector
               ? "motion"
               : layout.inspectorProfile}
-            stackedInspectorSize={layout.showVideoGallery
-              ? "var(--performance-inspector-height)"
-              : "auto"}
+            stackedInspectorSize={share.sendModeActive
+              ? "var(--send-inspector-height)"
+              : layout.showVideoGallery
+                ? "var(--performance-inspector-height)"
+                : "auto"}
             takeover={workspaceTakeover}
             takeoverActive={workspaceTakeoverActive}
           >
@@ -1344,13 +1353,9 @@
                 </div>
                 <div
                   class="inspector-content-layer performance-inspector-layer"
-                  data-active={layout.showVideoGallery &&
-                    performanceWorkspace.view === "browse"}
-                  inert={!layout.showVideoGallery ||
-                    performanceWorkspace.view !== "browse" ||
-                    undefined}
-                  aria-hidden={!layout.showVideoGallery ||
-                    performanceWorkspace.view !== "browse"}
+                  data-active={performanceInspectorVisible}
+                  inert={!performanceInspectorVisible || undefined}
+                  aria-hidden={!performanceInspectorVisible}
                   data-persistent-performance-inspector
                 >
                   <PerformanceInspector
@@ -1361,12 +1366,38 @@
                 </div>
                 <div
                   class="inspector-content-layer art-settings-layer"
-                  data-active={layout.isArtInspectorActive}
-                  inert={!layout.isArtInspectorActive || undefined}
-                  aria-hidden={!layout.isArtInspectorActive}
+                  data-active={artInspectorVisible}
+                  inert={!artInspectorVisible || undefined}
+                  aria-hidden={!artInspectorVisible}
                   bind:this={artInspectorTarget}
                   data-viewer-art-inspector-target
                 ></div>
+                <!-- Send mode: the recipients take the track the settings
+                     use, and the stage behind them stays live so the person
+                     sends from the view they can see. The workspace mounts
+                     with its session and leaves with it (a cancelled send
+                     holds nothing); the outro keeps it in place while the
+                     layer fades and the track closes. -->
+                <div
+                  class="inspector-content-layer send-layer"
+                  data-active={share.sendModeActive}
+                  inert={!share.sendModeActive || undefined}
+                  aria-hidden={!share.sendModeActive}
+                  data-viewer-send-mode
+                >
+                  {#if share.sendSession}
+                    <div
+                      class="send-layer-content"
+                      out:flyFade={{ y: 0, duration: DURATION.fast }}
+                    >
+                      <SendSequenceWorkspace
+                        session={share.sendSession}
+                        onSent={handleSequenceSent}
+                        onCancel={share.exitSendMode}
+                      />
+                    </div>
+                  {/if}
+                </div>
                 {#if !isMobile}
                   <div
                     class="inspector-content-layer card-settings-layer"
@@ -1720,6 +1751,7 @@
     --export-sidebar-width: 560px;
     --card-sidebar-width: clamp(480px, 28vw, 640px);
     --performance-sidebar-width: clamp(380px, 24vw, 520px);
+    --send-sidebar-width: clamp(360px, 22vw, 480px);
     --active-inspector-width: var(--export-sidebar-width);
     position: relative;
     display: flex;
@@ -1742,6 +1774,12 @@
     --active-inspector-width: var(--performance-sidebar-width);
   }
 
+  /* Recipients are a list of names; the column is the narrowest of the set
+     so the stage keeps the room for the view being sent. */
+  .viewer-and-export.send-inspector {
+    --active-inspector-width: var(--send-sidebar-width);
+  }
+
   .viewer-stage-container {
     position: relative;
     display: flex;
@@ -1754,8 +1792,7 @@
 
   .viewer-motion-stage-content,
   .performance-stage-layer,
-  .performance-editor-layer,
-  .send-mode-layer {
+  .performance-editor-layer {
     display: flex;
     width: 100%;
     height: 100%;
@@ -1909,6 +1946,18 @@
     display: flex;
     justify-content: flex-start;
     overflow: hidden;
+  }
+
+  .send-layer {
+    display: flex;
+    overflow: hidden;
+  }
+
+  .send-layer-content {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
   }
 
   .card-settings-layer {
@@ -2099,8 +2148,16 @@
     min-height: 16rem;
   }
 
+  /* Stacked send: the recipients dock under the live stage at a height the
+     list, the note, and Send can share. */
+  .viewer-and-export:not(.desktop) .send-layer > .send-layer-content {
+    height: var(--send-inspector-height);
+    min-height: 16rem;
+  }
+
   .viewer-and-export {
     --performance-inspector-height: min(46vh, 30rem);
+    --send-inspector-height: min(52vh, 32rem);
   }
 
   @media (max-height: 34rem) {
@@ -2111,8 +2168,16 @@
       min-height: 10rem;
     }
 
+    .viewer-and-export:not(.desktop) .send-layer > .send-layer-content {
+      min-height: 10rem;
+    }
+
+    /* A landscape phone: the dock takes more than the performance one so
+       the picker keeps its heading, the chosen recipient, and a row or two
+       of the list above the bar; the stage becomes a strip for the moment. */
     .viewer-and-export {
       --performance-inspector-height: min(48vh, 13rem);
+      --send-inspector-height: min(60vh, 16rem);
     }
   }
 

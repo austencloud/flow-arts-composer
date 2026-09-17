@@ -18,6 +18,12 @@ interface ViewerShellLayoutInputs {
   getContext: () => OrchestratorContext;
   getSequence: () => SequenceData;
   getIsMobile: () => boolean;
+  /**
+   * The viewer is choosing recipients. Send mode keeps the stage live and
+   * takes the inspector track for the recipient column, so it is an inspector
+   * profile here rather than a workspace takeover.
+   */
+  getSendModeActive: () => boolean;
   getWorkspaceElement: () => HTMLElement | null;
   startInSplit: boolean;
   startInCardThenSplit: boolean;
@@ -58,6 +64,7 @@ export function createViewerShellLayoutState(
   const isMobile = $derived(inputs.getIsMobile());
   const isLandscape = $derived(responsiveSettings?.isLandscapeMobile ?? false);
   const compactChrome = $derived(isMobile || bodyWidth < 1080);
+  const sendModeActive = $derived(inputs.getSendModeActive());
 
   const isVideoExportActive = $derived(
     inputs.getContext().editingPane === "animation"
@@ -129,24 +136,35 @@ export function createViewerShellLayoutState(
       bodyWidth <
         resolveExportSidebarMinWidth(persistedRailWidth, "performance")
   );
+  const sendInspectorNarrow = $derived(
+    sendModeActive &&
+      !isMobile &&
+      bodyWidth < resolveExportSidebarMinWidth(persistedRailWidth, "send")
+  );
   const effectiveMobile = $derived(
     isMobile ||
       cardExportNarrow ||
       videoExportNarrow ||
       artInspectorNarrow ||
-      performanceInspectorNarrow
+      performanceInspectorNarrow ||
+      sendInspectorNarrow
   );
+  // Send wins over every other inspector: the recipients are the decision
+  // the viewer is making, and the stage keeps showing the view being sent.
   const inspectorProfile = $derived<ViewerInspectorProfile>(
-    isImageExportActive
-      ? "card"
-      : isVideoExportActive
-        ? "motion"
-        : showVideoGallery
-          ? "performance"
-          : "art"
+    sendModeActive
+      ? "send"
+      : isImageExportActive
+        ? "card"
+        : isVideoExportActive
+          ? "motion"
+          : showVideoGallery
+            ? "performance"
+            : "art"
   );
   const isWorkspaceInspectorActive = $derived(
-    isSidebarExportActive ||
+    sendModeActive ||
+      isSidebarExportActive ||
       showVideoGallery ||
       (isArtInspectorActive && !effectiveMobile)
   );

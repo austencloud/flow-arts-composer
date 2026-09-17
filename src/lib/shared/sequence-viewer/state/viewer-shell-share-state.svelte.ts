@@ -27,7 +27,6 @@ interface ViewerShellShareInputs {
 interface ViewerShellShareDependencies {
   createSequenceSendSession: typeof import("$lib/shared/inbox/state/send-sequence-state.svelte").createSequenceSendSession;
   /** The Choreo Card the current pipeline draws for this sequence. */
-  renderCardPreview: (sequence: SequenceData) => Promise<Blob>;
   sendToStickerLab: typeof import("../services/send-to-sticker-lab").sendToStickerLab;
   captureScanAction: typeof import("$lib/shared/analytics/scan-analytics").captureScanAction;
 }
@@ -72,10 +71,9 @@ export function createViewerShellShareState(
   let sceneTakeSuspended = $state(false);
   let shareLinkFeedbackTimer: ReturnType<typeof setTimeout> | null = null;
   /**
-   * Send mode: the viewer itself morphs into the recipient picker, the way it
-   * morphs into Practice. `$state.raw` because the session carries its own
-   * `$state` fields (the card render) behind getters, and a deep proxy would
-   * only get in their way. Null when the viewer is not sending.
+   * Send mode: the recipients take the viewer's inspector column while the
+   * stage keeps showing the view being sent. Null when the viewer is not
+   * sending.
    */
   let sendSession = $state.raw<SequenceSendSession | null>(null);
 
@@ -87,20 +85,16 @@ export function createViewerShellShareState(
   }
 
   /**
-   * Enter send mode. The card is drawn with the viewer's current settings and
-   * the render is handed to the stage as soon as it lands. A share sheet that
-   * was open (Send in Flow Arts Composer lives in it too) closes first: the
-   * viewer is about to become the sending surface, and a dialog over it would
-   * hide the recipients it is asking for.
+   * Enter send mode. The stage stays live behind the recipients, so nothing
+   * is drawn for it. A share sheet that was open (Send in Flow Arts Composer
+   * lives in it too) closes first: the viewer is about to become the sending
+   * surface, and a dialog over it would hide the recipients it is asking for.
    */
   function sendToInbox(): void {
     const sequence = inputs.getSequence();
     dependencies.captureScanAction("send");
     if (sendSession) return;
-    const session = dependencies.createSequenceSendSession(
-      sequence,
-      dependencies.renderCardPreview
-    );
+    const session = dependencies.createSequenceSendSession(sequence);
     if (!session) return;
     if (postSheetOpen) {
       postSheetOpen = false;
