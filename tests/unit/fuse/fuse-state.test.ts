@@ -982,4 +982,42 @@ describe("Fuse state", () => {
       localStorage.removeItem("fuse-tab-state");
     }
   });
+
+  describe("TnD rule model", () => {
+    it("classifies the committed rule", () => {
+      localStorage.setItem(
+        "fuse-tab-state",
+        JSON.stringify({ mode: "symmetry", rule: createFuseRule({ reflect: "mirror" }) })
+      );
+      const state = createState(createLoader([]));
+      expect(state.tndSelection).toMatchObject({ mode: "TO", invert: false, rewind: false });
+      expect(state.ruleAdjusted).toBe(false);
+    });
+
+    it("coerces an odd persisted rotation and says so once", () => {
+      localStorage.setItem(
+        "fuse-tab-state",
+        JSON.stringify({
+          mode: "symmetry",
+          rule: createFuseRule({ rotationSteps: 3, reflect: "mirror" }),
+        })
+      );
+      const state = createState(createLoader([]));
+      expect(state.rule).toEqual(createFuseRule({ rotationSteps: 2, reflect: "mirror" }));
+      expect(state.tndSelection.mode).toBe("QO");
+      expect(state.ruleAdjusted).toBe(true);
+      expect(JSON.parse(localStorage.getItem("fuse-tab-state") ?? "{}").rule).toEqual(
+        createFuseRule({ rotationSteps: 2, reflect: "mirror" })
+      );
+
+      state.setRule(createFuseRule({ reflect: "flip" }));
+      expect(state.ruleAdjusted).toBe(false);
+    });
+
+    it("has no check outside Linked mode", () => {
+      localStorage.setItem("fuse-tab-state", JSON.stringify({ mode: "shuffle" }));
+      const state = createState(createLoader([]));
+      expect(state.tndCheck).toBeNull();
+    });
+  });
 });
