@@ -296,3 +296,13 @@ The page has three front doors: the guide index, the "About motion paths" link i
 The September 14 split of "A shift" from "Arc" existed because the two stages showed the same picture. With one stage there is nothing to duplicate. Under reduced motion Arc settles directly on the finished route with no pulse, as before.
 
 Ownership ledger: LessonStageControls, Crossfade, the intro geometry module, and the fade owner unchanged. Geometry tests unchanged. AI-bust review: clean.
+
+## September 17: Next moves to the right
+
+Austen asked whether Next should sit on the right. On the landscape composition the drawing now leads on the left and the copy and Next cluster at its vertical center on the right. The reason is stepper convention and reading order (look, read, advance), with right-thumb reach on landscape phones as a secondary benefit. Portrait is unchanged: the button stays centered below the drawing. No copy changed. Ownership ledger unchanged.
+
+## September 17: the words sit beside the drawing; "Three paths" reworded
+
+Austen saw the landscape composition with the copy and Next floating far from the drawing and asked for the gap closed. The drawing track is now capped at the drawing's own size and the copy track at the longest caption, and the pair is centered as one unit, so the words sit a short gap from the drawing's edge at every landscape width.
+
+He also called out "Same shift. Different paths." as reading machine-made. The closing caption now reads "All three start and end at the same points. Only the path changes." Two plain sentences that say what the picture shows. Austen has not yet confirmed this exact line; it is the one string in this revision that needs his eye. No other copy changed.

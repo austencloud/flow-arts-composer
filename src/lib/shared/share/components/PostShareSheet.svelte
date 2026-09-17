@@ -1144,6 +1144,13 @@
 
   /** Download is one explicit intent: reuse a prepared file, otherwise render
    * it and deliver only if this still-open request completes. */
+  /** The autofocus attribute only works while nothing in the document has
+   * focus; opened from a focused viewer button it did nothing and logged a
+   * browser notice on every open. Focusing explicitly is not conditional. */
+  function focusOnMount(node: HTMLElement) {
+    node.focus({ preventScroll: true });
+  }
+
   /** The revealed link is the recovery from a failed copy: land on it with
    * the text already selected so a keyboard copy is the only step left. */
   function selectOnMount(node: HTMLInputElement) {
@@ -1609,14 +1616,13 @@
       />
     {:else}
       <!-- Focus the surface so the dialog does not highlight Close on arrival. -->
-      <!-- svelte-ignore a11y_autofocus -->
       <div
         class="sheet"
         data-surface={surface}
         class:qr-step={!!qrDataUrl}
         class:menu-step={!filePreparationOpen}
         tabindex="-1"
-        autofocus
+        use:focusOnMount
       >
         <header class="panel-header">
           <div class="title-group">

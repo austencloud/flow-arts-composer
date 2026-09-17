@@ -48,8 +48,15 @@ export function onMessageDeliveryRegistered(
   };
 }
 
+/**
+ * Context first, the registered outbox second: the shared picker renders
+ * conversation rows inside the viewer's send mode too, where the drawer is a
+ * sibling and its context cannot reach.
+ */
 export function getMessageDeliveryContext(): MessageDeliveryState {
-  const state = getContext<MessageDeliveryState>(MESSAGE_DELIVERY_CONTEXT);
+  const state =
+    getContext<MessageDeliveryState | undefined>(MESSAGE_DELIVERY_CONTEXT) ??
+    registeredDelivery;
   if (!state) {
     throw new Error("Message delivery context is not available.");
   }

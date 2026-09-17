@@ -18,7 +18,11 @@
     configureShortCodeManager,
     getShortCodeManager,
   } from "$lib/shared/qr/get-short-code-manager";
-  import type { ShortCodeSequenceLoader } from "$lib/shared/qr/services/short-code-manager";
+  import {
+    MAX_SHORT_CODE_LENGTH,
+    type ShortCodeSequenceLoader,
+  } from "$lib/shared/qr/services/short-code-manager";
+  import { isInlineEncoded } from "$lib/shared/navigation/services/inline-qr-envelope";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import { hydrateSequence } from "$lib/shared/navigation/services/sequence-hydrator";
   import { createRouteLoadFence } from "$lib/shared/navigation/services/route-load-fence";
@@ -588,10 +592,17 @@
       // to sit here handed the payload to the URL decoder instead, which either
       // threw (`q1:`/`r1:`) or, for a `raw:` envelope, read `s~raw:iiSS` as the
       // header and returned a plausible but wrong sequence.
+      // A minted short code is four to six characters. Anything longer that is
+      // not an inline payload (a sequence id, a Firestore document id, a word)
+      // can never be one, and asking every short-code store first only earned
+      // a spurious "unresolved" console error and a wasted Firestore read.
       const shortCodeManager = getShortCodeManager();
-      let resolvedSequence = await shortCodeManager.resolveShortCode(id);
-      if (routeLoad.isStale(run)) return;
-      if (resolvedSequence) resolvedShortCode = id;
+      let resolvedSequence: SequenceData | null = null;
+      if (isInlineEncoded(id) || id.length <= MAX_SHORT_CODE_LENGTH) {
+        resolvedSequence = await shortCodeManager.resolveShortCode(id);
+        if (routeLoad.isStale(run)) return;
+        if (resolvedSequence) resolvedShortCode = id;
+      }
 
       if (!resolvedSequence) {
         resolvedSequence = await loadByIdentifier(id, { wordFallback: false });
