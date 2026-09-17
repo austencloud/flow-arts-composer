@@ -1,31 +1,35 @@
 <!--
   FuseTransformPicker — the symmetry rule editor.
 
-  Two decisions, in order: which path you edit, and the rule the other one is
-  rebuilt through.
+  Two decisions, in order: which path you edit, and how the two hands relate
+  in time and direction. The relationship is one of six timing-and-direction
+  modes; the rotation and reflection that produce it are resolved by
+  fuse-tnd-rule.ts and never shown. Quarter modes add one more choice, which
+  way round the circle the other hand sits. Invert and Rewind stay as
+  independent operations: Invert never touches timing or direction, and
+  Rewind keeps them only for symmetric paths, which the composer checks.
 
-  The rule has an AMOUNT and a set of OPERATIONS, so it gets two controls, not
-  three. The amount is a position on a circle and is picked on one — see
-  FuseRotationDial. The operations are four chips of one kind: Mirror and Flip
-  are the same choice twice (picking one drops the other, pressing the chosen
-  one again clears it), Invert and Rewind are independent, and all four toggle
-  the same way and look the same. They used to be a row of three bordered tiles
-  labelled REFLECT above a row of two pills labelled ALSO — two styles and two
-  headings for one question, which made Invert and Rewind read as a different
-  KIND of thing than Mirror. They are not; they are all operations applied to
-  the follower path.
-
-  Both values are owned + persisted by fuse-state; the composer passes drafts.
+  Both values are owned + persisted by fuse-state as a FuseRule; the composer
+  passes drafts.
 -->
 <script lang="ts">
   import LOOPIconStrip from "$lib/shared/components/LOOPIconStrip.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import FuseRotationDial from "./FuseRotationDial.svelte";
+  import FuseTnDModePicker from "./FuseTnDModePicker.svelte";
   import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
   import { getFuseContext } from "../context/fuse-context";
   import { fuseComponentColor } from "../domain/fuse-transform-presentation";
-  import type { FuseReflection, FuseRule } from "../domain/fuse-rule";
+  import type { FuseRule } from "../domain/fuse-rule";
+  import {
+    classifyFuseRule,
+    DEFAULT_TND_SELECTION,
+    isQuarterMode,
+    resolveFuseRule,
+    type FuseQuarterOffset,
+    type FuseTnDMode,
+    type FuseTnDSelection,
+  } from "../domain/fuse-tnd-rule";
   import type { FuseSide } from "../state/fuse-shuffle-pool.svelte";
 
   let {
@@ -44,8 +48,13 @@
   const selectedDriver = $derived(driver ?? fuseState.driverSide);
   const selectedRule = $derived(rule ?? fuseState.rule);
 
-  // Inert while a length load or a fuse is in flight, so a change can't race the
-  // derive it would trigger.
+  // The rule is the source of truth; the selection is a view of it. A rule
+  // the picker cannot express (odd rotation) reads as the default so the
+  // panel never renders with nothing chosen.
+  const selection = $derived<FuseTnDSelection>(
+    classifyFuseRule(selectedRule) ?? DEFAULT_TND_SELECTION
+  );
+
   const disabled = $derived(
     fuseState.isLoadingLength ||
       fuseState.pendingSide !== null ||
@@ -65,11 +74,15 @@
     ).map((option) => ({ ...option, disabled }))
   );
 
-  const rotationAccent = fuseComponentColor(LOOPComponent.ROTATED);
+  const offsetOptions = $derived(
+    (
+      [
+        { value: "cw", label: "Quarter clockwise" },
+        { value: "ccw", label: "Quarter counterclockwise" },
+      ] as { value: FuseQuarterOffset; label: string }[]
+    ).map((option) => ({ ...option, disabled }))
+  );
 
-  // One row, one control type, one visual weight. Mirror and Flip carry the
-  // reflection axis in their glyph because they are the same violet by brand;
-  // the other two carry their own primitive's colour.
   type Operation = {
     id: string;
     label: string;
@@ -78,45 +91,17 @@
     glyph: Set<LOOPComponent>;
     active: boolean;
     toggle: () => void;
-    axis?: "vertical" | "horizontal";
   };
 
-  function setReflect(value: FuseReflection): void {
-    commit({
-      ...selectedRule,
-      reflect: selectedRule.reflect === value ? "none" : value,
-    });
-  }
-
   const operations = $derived<Operation[]>([
-    {
-      id: "mirror",
-      label: "Mirror",
-      ariaLabel: "Mirror — reflect left and right",
-      color: fuseComponentColor(LOOPComponent.MIRRORED),
-      glyph: new Set([LOOPComponent.MIRRORED]),
-      axis: "vertical",
-      active: selectedRule.reflect === "mirror",
-      toggle: () => setReflect("mirror"),
-    },
-    {
-      id: "flip",
-      label: "Flip",
-      ariaLabel: "Flip — reflect top and bottom",
-      color: fuseComponentColor(LOOPComponent.FLIPPED),
-      glyph: new Set([LOOPComponent.FLIPPED]),
-      axis: "horizontal",
-      active: selectedRule.reflect === "flip",
-      toggle: () => setReflect("flip"),
-    },
     {
       id: "invert",
       label: "Invert",
       ariaLabel: "Invert — reverse every turn",
       color: fuseComponentColor(LOOPComponent.INVERTED),
       glyph: new Set([LOOPComponent.INVERTED]),
-      active: selectedRule.invert,
-      toggle: () => commit({ ...selectedRule, invert: !selectedRule.invert }),
+      active: selection.invert,
+      toggle: () => commitSelection({ ...selection, invert: !selection.invert }),
     },
     {
       id: "rewind",
@@ -124,13 +109,14 @@
       ariaLabel: "Rewind — reverse the step order",
       color: fuseComponentColor(LOOPComponent.REWOUND),
       glyph: new Set([LOOPComponent.REWOUND]),
-      active: selectedRule.rewind,
-      toggle: () => commit({ ...selectedRule, rewind: !selectedRule.rewind }),
+      active: selection.rewind,
+      toggle: () => commitSelection({ ...selection, rewind: !selection.rewind }),
     },
   ]);
 
   const followerLabel = $derived(selectedDriver === "left" ? "Right" : "Left");
   const driverLabel = $derived(selectedDriver === "left" ? "Left" : "Right");
+  const showOffset = $derived(isQuarterMode(selection.mode));
 
   function handleDriver(value: FuseSide): void {
     if (onDriverChange) onDriverChange(value);
@@ -142,8 +128,16 @@
     else fuseState.setRule(next);
   }
 
-  function chooseRotation(steps: number): void {
-    commit({ ...selectedRule, rotationSteps: steps });
+  function commitSelection(next: FuseTnDSelection): void {
+    commit(resolveFuseRule(next));
+  }
+
+  function chooseMode(mode: FuseTnDMode): void {
+    commitSelection({ ...selection, mode });
+  }
+
+  function chooseOffset(quarterOffset: FuseQuarterOffset): void {
+    commitSelection({ ...selection, quarterOffset });
   }
 </script>
 
@@ -171,7 +165,7 @@
     <div class="field-heading">
       <span class="step-number">2</span>
       <div>
-        <span class="field-label">Rule applied to {followerLabel}</span>
+        <span class="field-label">How {followerLabel} relates to {driverLabel}</span>
         <span class="field-help">
           Every change previews a new {followerLabel} path
         </span>
@@ -179,18 +173,30 @@
     </div>
 
     <div class="axis">
-      <span class="axis-label" id="fuse-rotation-label">Rotate</span>
-      <FuseRotationDial
-        value={selectedRule.rotationSteps}
-        accent={rotationAccent}
-        labelledBy="fuse-rotation-label"
+      <span class="axis-label" id="fuse-mode-label">Timing and direction</span>
+      <FuseTnDModePicker
+        selected={selection.mode}
         {disabled}
-        onchange={chooseRotation}
+        onpick={chooseMode}
       />
     </div>
 
+    {#if showOffset}
+      <div class="axis">
+        <span class="axis-label" id="fuse-offset-label">Which way round</span>
+        <SegmentedControl
+          options={offsetOptions}
+          value={selection.quarterOffset}
+          onchange={chooseOffset}
+          color="accent"
+          size="md"
+          ariaLabelledby="fuse-offset-label"
+        />
+      </div>
+    {/if}
+
     <div class="axis">
-      <span class="axis-label" id="fuse-operations-label">Then</span>
+      <span class="axis-label" id="fuse-operations-label">Also</span>
       <div
         class="operation-row"
         role="group"
@@ -210,7 +216,6 @@
             {#snippet iconSnippet()}
               <LOOPIconStrip
                 activeComponents={operation.glyph}
-                reflectionAxis={operation.axis}
                 size={14}
                 showFreeformWhenEmpty={false}
               />
