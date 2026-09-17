@@ -10,7 +10,12 @@ const MAX_RAIL_WIDTH = 300;
 export const VIEWER_INSPECTOR_HANDLE_SIZE = 8;
 export const VIEWER_STAGE_MIN_WIDTH = 600;
 
-export type ViewerInspectorProfile = "card" | "motion" | "art" | "performance";
+export type ViewerInspectorProfile =
+  | "card"
+  | "motion"
+  | "art"
+  | "performance"
+  | "send";
 
 const INSPECTOR_LAYOUTS: Record<
   ViewerInspectorProfile,
@@ -24,6 +29,11 @@ const INSPECTOR_LAYOUTS: Record<
   // between the two defaults is what makes the stage/inspector seam travel
   // when the viewer switches between Motion and Performances.
   performance: { defaultWidth: 400, minWidth: 360, maxWidth: 900 },
+  // Send mode keeps the live stage and puts the recipients where the
+  // inspector goes. A recipient row is an avatar and a name, so the column
+  // is the narrowest of the set; the stage keeps whatever view the person
+  // chose to send from.
+  send: { defaultWidth: 400, minWidth: 340, maxWidth: 720 },
 };
 
 export function viewerInspectorConstraints(profile: ViewerInspectorProfile): {
