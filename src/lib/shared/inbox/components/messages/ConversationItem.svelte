@@ -32,7 +32,11 @@
 
   // Haptic feedback service
   let hapticService: HapticFeedback | undefined;
-  const messageDeliveryState = getMessageDeliveryContext();
+  // A selection row shows no draft, so it never needs the outbox; the send
+  // pickers render rows before a lazily mounted drawer has registered one.
+  const messageDeliveryState = selectionMode
+    ? null
+    : getMessageDeliveryContext();
 
   onMount(() => {
     hapticService = getHapticFeedback();
@@ -51,9 +55,7 @@
   const displayName = $derived(
     isGroup ? conversation.groupName || "Unnamed Group" : directIdentity.primary
   );
-  const draft = $derived(
-    selectionMode ? undefined : messageDeliveryState.draftFor(conversation.id)
-  );
+  const draft = $derived(messageDeliveryState?.draftFor(conversation.id));
   const draftPreview = $derived.by(() => {
     if (!draft) return "";
     const content = draft.content.trim();
