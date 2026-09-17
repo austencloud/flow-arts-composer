@@ -2172,9 +2172,12 @@
       min-height: 10rem;
     }
 
+    /* A landscape phone: the dock takes more than the performance one so
+       the picker keeps its heading, the chosen recipient, and a row or two
+       of the list above the bar; the stage becomes a strip for the moment. */
     .viewer-and-export {
       --performance-inspector-height: min(48vh, 13rem);
-      --send-inspector-height: min(56vh, 14rem);
+      --send-inspector-height: min(60vh, 16rem);
     }
   }
 
