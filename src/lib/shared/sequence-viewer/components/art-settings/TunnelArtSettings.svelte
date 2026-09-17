@@ -158,6 +158,7 @@
     return computeDisplaySummary({
       tkaGlyph: settings.tkaGlyph,
       elementalGlyph: settings.elementalGlyph,
+      propElementalGlyph: settings.propElementalGlyph,
       stepNumbers: settings.stepNumbers,
       props: settings.props,
       wordHeader: settings.wordHeader,

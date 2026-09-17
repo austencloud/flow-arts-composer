@@ -208,7 +208,7 @@
     },
     {
       id: "elementalGlyph",
-      label: "Element",
+      label: "Hand TnD",
       preview: "element",
       active: () => elementalGlyph,
       toggle: () => vm.toggleVisibility("elementalGlyph"),

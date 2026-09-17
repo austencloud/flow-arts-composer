@@ -10,6 +10,7 @@ import {
 const allOff: DisplayFlags = {
   tkaGlyph: false,
   elementalGlyph: false,
+  propElementalGlyph: false,
   stepNumbers: false,
   props: false,
   wordHeader: false,
@@ -21,6 +22,7 @@ const allOff: DisplayFlags = {
 const allOn: DisplayFlags = {
   tkaGlyph: true,
   elementalGlyph: true,
+  propElementalGlyph: true,
   stepNumbers: true,
   props: true,
   wordHeader: true,
@@ -30,17 +32,17 @@ const allOn: DisplayFlags = {
 };
 
 describe("computeDisplaySummary", () => {
-  it("reports 0 / 8 visible when everything is off", () => {
-    expect(computeDisplaySummary(allOff)).toBe("0 / 8 visible");
+  it("reports 0 / 9 visible when everything is off", () => {
+    expect(computeDisplaySummary(allOff)).toBe("0 / 9 visible");
   });
 
-  it("reports 8 / 8 visible when every flag including grid is on", () => {
-    expect(computeDisplaySummary(allOn)).toBe("8 / 8 visible");
+  it("reports 9 / 9 visible when every flag including grid is on", () => {
+    expect(computeDisplaySummary(allOn)).toBe("9 / 9 visible");
   });
 
   it("counts grid as a regular flag", () => {
     expect(computeDisplaySummary({ ...allOff, grid: true })).toBe(
-      "1 / 8 visible"
+      "1 / 9 visible"
     );
   });
 
@@ -62,13 +64,13 @@ describe("computeDisplaySummary", () => {
   it("counts each visibility flag independently", () => {
     expect(
       computeDisplaySummary({ ...allOff, tkaGlyph: true, props: true })
-    ).toBe("2 / 8 visible");
+    ).toBe("2 / 9 visible");
   });
 
   it("denominator follows DisplayFlags arity (regression guard)", () => {
     // If someone adds a field to DisplayFlags without updating allOff, this
-    // test will fail because Object.values(...).length will jump to 9.
-    expect(Object.keys(allOff).length).toBe(8);
+    // test will fail because Object.values(...).length will jump to 10.
+    expect(Object.keys(allOff).length).toBe(9);
   });
 });
 
@@ -96,7 +98,9 @@ describe("computeEffectsSummary", () => {
     // must surface as a safe neutral, NOT laundered into "Custom".
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     expect(computeEffectsSummary("", labels)).toBe("Off");
-    expect(computeEffectsSummary(undefined as unknown as string, labels)).toBe("Off");
+    expect(computeEffectsSummary(undefined as unknown as string, labels)).toBe(
+      "Off"
+    );
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();
   });
@@ -119,7 +123,9 @@ describe("computePlaybackSummary", () => {
     // Upstream corruption must surface as a visible "something is wrong"
     // signal, not a literal "NaN BPM" that blends into the UI.
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    expect(computePlaybackSummary(Number.NaN, "continuous")).toBe("- BPM • Cont.");
+    expect(computePlaybackSummary(Number.NaN, "continuous")).toBe(
+      "- BPM • Cont."
+    );
     expect(computePlaybackSummary(0, "step")).toBe("- BPM • Step");
     expect(computePlaybackSummary(-1, "continuous")).toBe("- BPM • Cont.");
     expect(warn).toHaveBeenCalled();
@@ -130,31 +136,61 @@ describe("computePlaybackSummary", () => {
 describe("computeExportSummary", () => {
   it("formats 1080p at 60 fps in 2D mode without a loop suffix when loops === 1", () => {
     expect(
-      computeExportSummary({ resolution: 1080, fps: 60, loopCount: 1, renderMode: "2d" }),
+      computeExportSummary({
+        resolution: 1080,
+        fps: 60,
+        loopCount: 1,
+        renderMode: "2d",
+      })
     ).toBe("1080p • 60 fps");
   });
 
   it("uses × notation for resolution in 3D mode", () => {
     expect(
-      computeExportSummary({ resolution: 1080, fps: 60, loopCount: 1, renderMode: "3d" }),
+      computeExportSummary({
+        resolution: 1080,
+        fps: 60,
+        loopCount: 1,
+        renderMode: "3d",
+      })
     ).toBe("1080×1080 • 60 fps");
   });
 
   it("abbreviates 4K and 8K in 2D mode, passes through × notation in 3D mode", () => {
     expect(
-      computeExportSummary({ resolution: 2160, fps: 30, loopCount: 1, renderMode: "2d" }),
+      computeExportSummary({
+        resolution: 2160,
+        fps: 30,
+        loopCount: 1,
+        renderMode: "2d",
+      })
     ).toBe("4K • 30 fps");
     expect(
-      computeExportSummary({ resolution: 4320, fps: 30, loopCount: 1, renderMode: "2d" }),
+      computeExportSummary({
+        resolution: 4320,
+        fps: 30,
+        loopCount: 1,
+        renderMode: "2d",
+      })
     ).toBe("8K • 30 fps");
     expect(
-      computeExportSummary({ resolution: 4320, fps: 30, loopCount: 1, renderMode: "3d" }),
+      computeExportSummary({
+        resolution: 4320,
+        fps: 30,
+        loopCount: 1,
+        renderMode: "3d",
+      })
     ).toBe("4320×4320 • 30 fps");
   });
 
   it("appends ' • Nx' when loopCount > 1", () => {
     expect(
-      computeExportSummary({ resolution: 720, fps: 30, loopCount: 3, renderMode: "2d" }),
+      computeExportSummary({
+        resolution: 720,
+        fps: 30,
+        loopCount: 3,
+        renderMode: "2d",
+      })
     ).toBe("720p • 30 fps • 3×");
   });
 
@@ -164,13 +200,28 @@ describe("computeExportSummary", () => {
     // plausible-looking "0p • 60 fps".
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     expect(
-      computeExportSummary({ resolution: 0, fps: 60, loopCount: 1, renderMode: "2d" }),
+      computeExportSummary({
+        resolution: 0,
+        fps: 60,
+        loopCount: 1,
+        renderMode: "2d",
+      })
     ).toBe("- • - fps");
     expect(
-      computeExportSummary({ resolution: 999, fps: 60, loopCount: 1, renderMode: "2d" }),
+      computeExportSummary({
+        resolution: 999,
+        fps: 60,
+        loopCount: 1,
+        renderMode: "2d",
+      })
     ).toBe("- • - fps");
     expect(
-      computeExportSummary({ resolution: 1080, fps: Number.NaN, loopCount: 1, renderMode: "2d" }),
+      computeExportSummary({
+        resolution: 1080,
+        fps: Number.NaN,
+        loopCount: 1,
+        renderMode: "2d",
+      })
     ).toBe("- • - fps");
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();

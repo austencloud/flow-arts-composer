@@ -492,6 +492,7 @@
     return computeDisplaySummary({
       tkaGlyph: s.tkaGlyph,
       elementalGlyph: s.elementalGlyph,
+      propElementalGlyph: s.propElementalGlyph,
       stepNumbers: s.stepNumbers,
       props: s.props,
       wordHeader: s.wordHeader,
@@ -571,7 +572,9 @@
   const totalVideoDuration = $derived.by(() => {
     if (singlePlayDuration <= 0 || !exportOptions) return "";
     const unitSeconds = bpm > 0 ? 60 / bpm : 0;
-    const startHold = exportOptions.videoIncludeStartPlacement ? unitSeconds : 0;
+    const startHold = exportOptions.videoIncludeStartPlacement
+      ? unitSeconds
+      : 0;
     const endHold = exportOptions.videoIncludeEndHold ? unitSeconds : 0;
     const total =
       startHold + singlePlayDuration * exportOptions.videoLoopCount + endHold;
