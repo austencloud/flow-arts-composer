@@ -4,7 +4,7 @@
   import type { TnDElement } from "$lib/features/choreo-card/domain/tnd-element";
   import type { PropRelationship } from "../domain/prop-relationship";
   import {
-    MODE_WORDS,
+    MODE_SHORT_WORDS,
     type VtgMode,
   } from "../services/shape-matrix-realizations";
   import RelationshipChoiceChip from "./RelationshipChoiceChip.svelte";
@@ -173,8 +173,8 @@
                 <RelationshipChoiceChip
                   accent={choice.color}
                   icon={choice.icon}
-                  timing={MODE_WORDS[choice.mode].timing}
-                  direction={MODE_WORDS[choice.mode].direction}
+                  timing={MODE_SHORT_WORDS[choice.mode].timing}
+                  direction={MODE_SHORT_WORDS[choice.mode].direction}
                   active={selectedChoice?.key === choice.key}
                   disabled={building}
                   ariaLabel={`Props: ${choice.detail} ${choice.label}`}

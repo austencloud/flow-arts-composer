@@ -41,6 +41,21 @@ export const MODE_WORDS: Record<
   QO: { timing: "Quarter", direction: "Opposite" },
 };
 
+/** The words as a chip prints them: Together and Opposite are the two that
+ *  overrun a narrow chip, and Tog / Opp are how flow artists already say
+ *  them. Accessible names keep the full words. */
+export const MODE_SHORT_WORDS: Record<
+  VtgMode,
+  { timing: "Split" | "Tog" | "Quarter"; direction: "Same" | "Opp" }
+> = {
+  SS: { timing: "Split", direction: "Same" },
+  TS: { timing: "Tog", direction: "Same" },
+  QS: { timing: "Quarter", direction: "Same" },
+  SO: { timing: "Split", direction: "Opp" },
+  TO: { timing: "Tog", direction: "Opp" },
+  QO: { timing: "Quarter", direction: "Opp" },
+};
+
 /** Diamond-grid VTG mode → canonical TnD family. */
 export const MODE_FAMILY_ID: Record<VtgMode, string> = {
   SS: "split-same",
