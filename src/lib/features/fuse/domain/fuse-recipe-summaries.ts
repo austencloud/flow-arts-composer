@@ -13,7 +13,8 @@ import type {
   SoloLoopTraversalDirection,
 } from "../services/solo-loop-generator";
 import type { FuseMode } from "../state/fuse-state.svelte";
-import { fuseRuleLabel, type FuseRule } from "./fuse-rule";
+import type { FuseRule } from "./fuse-rule";
+import { fuseRuleMode, fuseTnDModeLabel } from "./fuse-tnd-rule";
 import type { FuseSide } from "../state/fuse-shuffle-pool.svelte";
 import type { FuseRecipeDestination } from "./fuse-recipe-destination";
 import { DEFAULT_GENERATION_STYLE } from "$lib/shared/create/domain/generation-style";
@@ -75,7 +76,9 @@ export function buildFuseRecipeSummaries(
     input.traversalDirection === null;
   const driver = input.driverSide === "left" ? "Left" : "Right";
   const follower = input.driverSide === "left" ? "Right" : "Left";
-  const transform = fuseRuleLabel(input.rule);
+  // The rule is named by the timing and direction it pins, as the Rule card
+  // and the follower footer name it; the operations are detail for the editor.
+  const transform = fuseTnDModeLabel(fuseRuleMode(input.rule));
   const turnLabel = input.maxTurnIntensity === 1 ? "turn" : "turns";
 
   return {

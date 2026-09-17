@@ -19,12 +19,12 @@
   import { authState } from "$lib/shared/auth/state/auth-state.svelte";
   import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
   import { getFuseContext } from "../context/fuse-context";
-  import LOOPIconStrip from "$lib/shared/components/LOOPIconStrip.svelte";
-  import {
-    fuseRuleGlyph,
-    fuseRuleTint,
-  } from "../domain/fuse-transform-presentation";
   import { fuseRuleLabel } from "../domain/fuse-rule";
+  import {
+    fuseRuleMode,
+    fuseTnDElement,
+    fuseTnDModeLabel,
+  } from "../domain/fuse-tnd-rule";
   import type { FuseSourceAdjustment } from "../state/fuse-state.svelte";
   import type { FuseSide } from "../state/fuse-shuffle-pool.svelte";
   import { resolveFusePictographMotionFrame } from "../services/fuse-pictograph-motion-frame";
@@ -119,12 +119,19 @@
 
     return createCircularFuseSoloSequence(side, solo);
   });
+  // The rule is named by the timing and direction it pins; the operations that
+  // realise it are the second line. The mode's element carries the colour and
+  // icon, the same ones the Rule editor's chips wear.
+  const followerMode = $derived(fuseRuleMode(fuseState.previewRule));
+  const followerModeLabel = $derived(fuseTnDModeLabel(followerMode));
+  const followerElement = $derived(fuseTnDElement(followerMode));
   const followerTransformLabel = $derived(fuseRuleLabel(fuseState.previewRule));
+  const followerRuleLabel = $derived(
+    `${followerModeLabel} (${followerTransformLabel})`
+  );
   const driverLabel = $derived(
     fuseState.previewDriverSide === "left" ? "Left" : "Right"
   );
-  const followerGlyph = $derived(fuseRuleGlyph(fuseState.previewRule));
-  const followerTransformTint = $derived(fuseRuleTint(fuseState.previewRule));
 
   // The playing beat, mapped to a 0-based step index, so the card cell for the
   // step currently on the animation canvas lights up in lockstep. The shared
@@ -490,18 +497,13 @@
         type={onEditPairing ? "button" : undefined}
         role={onEditPairing ? undefined : "status"}
         onclick={onEditPairing}
-        title="{followerTransformLabel} of {driverLabel}"
+        style="--rule-accent: {followerElement.accentColor}"
+        title="{followerRuleLabel} of {driverLabel}"
         aria-label={onEditPairing
-          ? `Change pairing — currently ${followerTransformLabel} of ${driverLabel}`
-          : `${followerTransformLabel} of ${driverLabel}`}
+          ? `Change pairing — currently ${followerRuleLabel} of ${driverLabel}`
+          : `${followerRuleLabel} of ${driverLabel}`}
       >
-        <LOOPIconStrip
-          activeComponents={followerGlyph.components}
-          reflectionAxis={followerGlyph.reflectionAxis}
-          rotationPeriod={followerGlyph.rotationPeriod}
-          size={18}
-          showFreeformWhenEmpty={false}
-        />
+        <img class="rule-icon" src={followerElement.iconPath} alt="" />
       </svelte:element>
     {:else}
       <div class="compact-source-tools">
@@ -530,22 +532,18 @@
       type={onEditPairing ? "button" : undefined}
       role={onEditPairing ? undefined : "status"}
       onclick={onEditPairing}
+      style="--rule-accent: {followerElement.accentColor}"
       aria-label={onEditPairing
-        ? `Change pairing — currently ${followerTransformLabel} of ${driverLabel}`
+        ? `Change pairing — currently ${followerRuleLabel} of ${driverLabel}`
         : undefined}
     >
-      <span class="note-glyph" style={followerTransformTint}>
-        <LOOPIconStrip
-          activeComponents={followerGlyph.components}
-          reflectionAxis={followerGlyph.reflectionAxis}
-          rotationPeriod={followerGlyph.rotationPeriod}
-          size={16}
-          showFreeformWhenEmpty={false}
-        />
+      <span class="note-glyph">
+        <img class="rule-icon" src={followerElement.iconPath} alt="" />
       </span>
       <span class="note-copy">
         <span class="note-role">Rebuilt from {driverLabel}</span>
-        <strong>{followerTransformLabel}</strong>
+        <strong>{followerModeLabel}</strong>
+        <span class="note-ops">{followerTransformLabel}</span>
       </span>
       {#if onEditPairing}
         <i class="fas fa-pen-to-square note-edit" aria-hidden="true"></i>
@@ -806,20 +804,24 @@
   }
 
   .compact-derived-indicator {
+    --rule-accent: var(--theme-accent, #8b5cf6);
     display: grid;
     place-items: center;
     width: 34px;
     height: 34px;
     border: 1px solid
-      color-mix(in srgb, var(--source-color) 62%, var(--theme-stroke));
+      color-mix(in srgb, var(--rule-accent) 62%, var(--theme-stroke));
     border-radius: 50%;
-    color: color-mix(in srgb, var(--source-color) 70%, white);
     background: color-mix(
       in srgb,
-      var(--source-color) 17%,
+      var(--rule-accent) 20%,
       var(--theme-panel-bg)
     );
-    font-size: var(--font-size-min, 14px);
+  }
+
+  .compact-derived-indicator .rule-icon {
+    width: 1.25rem;
+    height: 1.25rem;
   }
 
   .compact-derived-indicator.interactive {
@@ -958,25 +960,34 @@
     outline-offset: 2px;
   }
 
-  /* The rule's own LOOP colour, the same glyph and sweep the Pairing tiles use,
-     so the footer names the rule you picked instead of a generic link icon. */
+  /* The mode's element, the same accent and icon as the chip that chose it in
+     the Rule editor, so the footer names the rule you picked the way the
+     editor does. */
   .note-glyph {
-    --c1: var(--loop-c1, var(--theme-accent, #8b5cf6));
-    --c2: var(--loop-c2, var(--c1));
+    --rule-accent: var(--theme-accent, #8b5cf6);
     display: grid;
     place-items: center;
     flex: 0 0 auto;
-    width: 30px;
-    height: 30px;
-    border: 1.5px solid color-mix(in srgb, var(--c1) 58%, transparent);
+    width: 34px;
+    height: 34px;
+    border: 1.5px solid color-mix(in srgb, var(--rule-accent) 58%, transparent);
     border-radius: 9px;
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--c1) 26%, transparent) 0%,
-      color-mix(in srgb, var(--c2) var(--loop-c2-mix, 9%), transparent) 100%
-    );
-    color: var(--c1);
-    font-size: var(--font-size-min, 14px);
+    background: color-mix(in srgb, var(--rule-accent) 18%, transparent);
+  }
+
+  .rule-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    object-fit: contain;
+  }
+
+  .note-ops {
+    overflow: hidden;
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.62));
+    font-size: var(--font-size-compact, 12px);
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .note-copy {
@@ -1241,6 +1252,36 @@
     min-height: 64px;
   }
 
+  /* Wherever the stage hosts the step grid it is the grid's sizing box, and
+     the grid is bound by one axis or the other, so the stage had a band of
+     black beside the cells that read as a void. The stage takes the card's own
+     surface and the panel surface hugs the cells instead: drawn by a
+     pseudo-element spanning every track, so it is exactly the cells' extent
+     plus a gutter, wherever the centred grid lands. The phone hero is the one
+     stage that fills itself (one pictograph, edge to edge) and keeps its
+     frame. */
+  .source-card:not(.compact-hero) .notation-stage {
+    border-color: transparent;
+    background: transparent;
+  }
+
+  .source-card:not(.compact-hero) .notation-stage :global(.live-path-grid) {
+    background: transparent;
+  }
+
+  .source-card:not(.compact-hero)
+    .notation-stage
+    :global(.live-path-grid::before) {
+    content: "";
+    z-index: 0;
+    grid-area: 1 / 1 / -1 / -1;
+    margin: -6px;
+    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
+    border-radius: var(--settings-radius-md, 14px);
+    background: var(--theme-panel-bg);
+    pointer-events: none;
+  }
+
   @container fuse (min-width: 1100px) and (max-width: 1500px) and (min-height: 780px) {
     .source-card {
       gap: 8px;
@@ -1269,6 +1310,10 @@
 
     .follower-note {
       font-size: 16px;
+    }
+
+    .source-identity {
+      font-size: var(--font-size-base, 16px);
     }
   }
 

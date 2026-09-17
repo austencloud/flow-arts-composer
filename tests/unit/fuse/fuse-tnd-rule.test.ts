@@ -1,8 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { createFuseRule, LEGACY_RULES } from "$lib/features/fuse/domain/fuse-rule";
+import {
+  createFuseRule,
+  LEGACY_RULES,
+} from "$lib/features/fuse/domain/fuse-rule";
 import {
   classifyFuseRule,
   coerceToTnDRule,
+  FUSE_TND_MODES,
+  fuseRuleMode,
+  fuseTnDElement,
   resolveFuseRule,
   type FuseTnDSelection,
 } from "$lib/features/fuse/domain/fuse-tnd-rule";
@@ -28,19 +34,23 @@ describe("resolveFuseRule", () => {
     ["QO", "cw", createFuseRule({ rotationSteps: 2, reflect: "mirror" })],
     ["QO", "ccw", createFuseRule({ rotationSteps: 6, reflect: "mirror" })],
   ] as const)("%s %s resolves to its rule", (mode, quarterOffset, expected) => {
-    expect(resolveFuseRule(selection({ mode, quarterOffset }))).toEqual(expected);
+    expect(resolveFuseRule(selection({ mode, quarterOffset }))).toEqual(
+      expected
+    );
   });
 
   it("ignores the offset on non-quarter modes", () => {
-    expect(resolveFuseRule(selection({ mode: "SS", quarterOffset: "ccw" }))).toEqual(
-      resolveFuseRule(selection({ mode: "SS", quarterOffset: "cw" }))
-    );
+    expect(
+      resolveFuseRule(selection({ mode: "SS", quarterOffset: "ccw" }))
+    ).toEqual(resolveFuseRule(selection({ mode: "SS", quarterOffset: "cw" })));
   });
 
   it("passes invert and rewind through", () => {
     expect(
       resolveFuseRule(selection({ mode: "TO", invert: true, rewind: true }))
-    ).toEqual(createFuseRule({ reflect: "mirror", invert: true, rewind: true }));
+    ).toEqual(
+      createFuseRule({ reflect: "mirror", invert: true, rewind: true })
+    );
   });
 });
 
@@ -68,15 +78,18 @@ describe("classifyFuseRule", () => {
   it("reads the rotate-180 composites", () => {
     // rotate 180 then mirror (E-W) equals flip (N-S): Split, opp.
     expect(
-      classifyFuseRule(createFuseRule({ rotationSteps: 4, reflect: "mirror" }))?.mode
+      classifyFuseRule(createFuseRule({ rotationSteps: 4, reflect: "mirror" }))
+        ?.mode
     ).toBe("SO");
     // rotate 180 then flip equals mirror: Together, opp.
     expect(
-      classifyFuseRule(createFuseRule({ rotationSteps: 4, reflect: "flip" }))?.mode
+      classifyFuseRule(createFuseRule({ rotationSteps: 4, reflect: "flip" }))
+        ?.mode
     ).toBe("TO");
     // rotate 0 then flip is flip: Split, opp.
     expect(
-      classifyFuseRule(createFuseRule({ rotationSteps: 0, reflect: "flip" }))?.mode
+      classifyFuseRule(createFuseRule({ rotationSteps: 0, reflect: "flip" }))
+        ?.mode
     ).toBe("SO");
   });
 
@@ -91,7 +104,9 @@ describe("classifyFuseRule", () => {
 
   it("returns null on odd rotations", () => {
     for (const steps of [1, 3, 5, 7]) {
-      expect(classifyFuseRule(createFuseRule({ rotationSteps: steps }))).toBeNull();
+      expect(
+        classifyFuseRule(createFuseRule({ rotationSteps: steps }))
+      ).toBeNull();
     }
   });
 
@@ -113,7 +128,11 @@ describe("classifyFuseRule", () => {
 
 describe("coerceToTnDRule", () => {
   it("leaves even rotations alone", () => {
-    const rule = createFuseRule({ rotationSteps: 2, reflect: "mirror", invert: true });
+    const rule = createFuseRule({
+      rotationSteps: 2,
+      reflect: "mirror",
+      invert: true,
+    });
     expect(coerceToTnDRule(rule)).toEqual({
       selection: selection({ mode: "QO", quarterOffset: "cw", invert: true }),
       adjusted: false,
@@ -126,14 +145,56 @@ describe("coerceToTnDRule", () => {
     [5, "SS"],
     [7, "QS"],
   ] as const)("rounds %i down and keeps the other axes", (steps, mode) => {
-    const rule = createFuseRule({ rotationSteps: steps, invert: true, rewind: true });
+    const rule = createFuseRule({
+      rotationSteps: steps,
+      invert: true,
+      rewind: true,
+    });
     const result = coerceToTnDRule(rule);
     expect(result.adjusted).toBe(true);
-    expect(result.selection).toMatchObject({ mode, invert: true, rewind: true });
+    expect(result.selection).toMatchObject({
+      mode,
+      invert: true,
+      rewind: true,
+    });
   });
 
   it("gives 7 a counterclockwise offset and 3 a clockwise one", () => {
-    expect(coerceToTnDRule(createFuseRule({ rotationSteps: 7 })).selection.quarterOffset).toBe("ccw");
-    expect(coerceToTnDRule(createFuseRule({ rotationSteps: 3 })).selection.quarterOffset).toBe("cw");
+    expect(
+      coerceToTnDRule(createFuseRule({ rotationSteps: 7 })).selection
+        .quarterOffset
+    ).toBe("ccw");
+    expect(
+      coerceToTnDRule(createFuseRule({ rotationSteps: 3 })).selection
+        .quarterOffset
+    ).toBe("cw");
+  });
+});
+
+describe("fuseTnDElement", () => {
+  it("names an element with an accent and an icon for every mode", () => {
+    const seen = new Set<string>();
+    for (const mode of FUSE_TND_MODES) {
+      const element = fuseTnDElement(mode);
+      expect(element.accentColor).toMatch(/^#/);
+      expect(element.iconPath).toMatch(/^\/images\/elements\//);
+      seen.add(element.element);
+    }
+    expect(seen.size).toBe(FUSE_TND_MODES.length);
+  });
+
+  it("pairs Together-opposite with air, the default rule's element", () => {
+    expect(fuseTnDElement("TO").element).toBe("air");
+  });
+});
+
+describe("fuseRuleMode", () => {
+  it("reads the mode a rule pins", () => {
+    expect(fuseRuleMode(createFuseRule({ reflect: "flip" }))).toBe("SO");
+    expect(fuseRuleMode(createFuseRule({ rotationSteps: 6 }))).toBe("QS");
+  });
+
+  it("falls back to the default mode for a rule no mode expresses", () => {
+    expect(fuseRuleMode(createFuseRule({ rotationSteps: 3 }))).toBe("TO");
   });
 });

@@ -8,15 +8,11 @@
     type FuseRule,
   } from "../domain/fuse-rule";
   import type { FuseSide } from "../state/fuse-shuffle-pool.svelte";
-  import LOOPIconStrip from "$lib/shared/components/LOOPIconStrip.svelte";
-  import {
-    fuseRuleGlyph,
-    fuseRuleTint,
-  } from "../domain/fuse-transform-presentation";
   import FuseTransformPicker from "./FuseTransformPicker.svelte";
   import {
     classifyFuseRule,
     DEFAULT_TND_SELECTION,
+    fuseTnDElement,
     fuseTnDModeLabel,
   } from "../domain/fuse-tnd-rule";
   import { checkFuseTnD } from "../domain/fuse-tnd-check";
@@ -38,6 +34,10 @@
     classifyFuseRule(draftRule) ?? DEFAULT_TND_SELECTION
   );
   const draftModeLabel = $derived(fuseTnDModeLabel(draftSelection.mode));
+  // The mode is the rule. The result node wears the mode's element, the same
+  // accent and icon as the chip that chose it, and names the operations that
+  // realise it in a second, quieter line.
+  const draftElement = $derived(fuseTnDElement(draftSelection.mode));
 
   // The live preview the canvas is drawing for this draft. While the draft
   // matches the applied rule the state's own preview is the one to read.
@@ -59,8 +59,6 @@
   const draftFollowerLabel = $derived(
     draftDriver === "left" ? "Right path" : "Left path"
   );
-  const draftGlyph = $derived(fuseRuleGlyph(draftRule));
-  const draftRuleTint = $derived(fuseRuleTint(draftRule));
   const busy = $derived(
     fuseState.isLoadingLength ||
       fuseState.pendingSide !== null ||
@@ -157,14 +155,11 @@
           </span>
         </span>
         <i class="fas fa-arrow-right" aria-hidden="true"></i>
-        <span class="rule-node" style={draftRuleTint}>
-          <LOOPIconStrip
-            activeComponents={draftGlyph.components}
-            reflectionAxis={draftGlyph.reflectionAxis}
-            rotationPeriod={draftGlyph.rotationPeriod}
-            size={16}
-            showFreeformWhenEmpty={false}
-          />
+        <span
+          class="rule-node"
+          style="--rule-accent: {draftElement.accentColor}"
+        >
+          <img class="rule-icon" src={draftElement.iconPath} alt="" />
           <span class="node-copy">
             <span class="node-role">Rule</span>
             <strong>{resultModeLabel}</strong>
@@ -307,19 +302,25 @@
     font-size: var(--font-size-compact, 12px);
   }
 
-  /* A rule can now name four operations at once, and "Rotate 90° + Mirror +
-     Invert + Rewind" left to itself is six stacked lines — tall enough to push
-     the controls that built it out of the panel. Three is the cap, and the
-     glyph strip beside it carries the rule whether or not the words fit. */
+  /* The mode is two words and stays on one line. The operation chain under it
+     can name four operations, and "Rotate 90° + Mirror + Invert + Rewind" left
+     to itself is several stacked lines — tall enough to push the controls that
+     built it out of the panel. Two is the cap; the mode above it is the rule
+     whether or not every operation fits. */
   .rule-node .node-copy strong {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
     overflow: hidden;
-    font-size: var(--font-size-compact, 12px);
+    text-overflow: ellipsis;
+    white-space: nowrap;
     line-height: 1.25;
     text-align: center;
+  }
+
+  .rule-node .node-ops {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
   }
 
   .rule-node .node-copy {
@@ -359,26 +360,28 @@
     --node-color: var(--prop-red, #f44336);
   }
 
-  /* The rule is the thing you just built above, so it looks like the controls
-     that built it: same LOOP colours, same two-stop sweep for a composite. */
+  /* The rule is the mode you chose above, so the node looks like the chip that
+     chose it: the mode's element accent and icon. The operations that realise
+     the mode are named underneath in the dim line, not painted — two colour
+     systems on one node had the operations shouting over the rule. */
   .rule-node {
-    --c1: var(--loop-c1, var(--theme-accent, #8b5cf6));
-    --c2: var(--loop-c2, var(--c1));
-    /* The strip sits ABOVE the words rather than beside them. A four-operation
-       rule draws four glyphs, and beside them the sentence was left ~100px to
-       say "Rotate 225° + Mirror + Invert + Rewind" — it truncated mid-word. */
+    --rule-accent: var(--theme-accent, #8b5cf6);
+    /* The icon sits ABOVE the words rather than beside them so the sentence
+       keeps the node's full width. */
     display: grid;
     justify-items: center;
-    gap: 5px;
+    gap: 4px;
     min-width: 0;
     padding: 7px 12px;
-    border: 1.5px solid color-mix(in srgb, var(--c1) 62%, transparent);
+    border: 1.5px solid color-mix(in srgb, var(--rule-accent) 62%, transparent);
     border-radius: 10px;
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--c1) 24%, transparent) 0%,
-      color-mix(in srgb, var(--c2) var(--loop-c2-mix, 9%), transparent) 100%
-    );
+    background: color-mix(in srgb, var(--rule-accent) 18%, transparent);
+  }
+
+  .rule-icon {
+    width: 1.75rem;
+    height: 1.75rem;
+    object-fit: contain;
   }
 
   .editor-actions {
