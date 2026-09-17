@@ -124,8 +124,11 @@
 
 <style>
   /* One column: the recipients take the definite room, the bar is
-     max-content so a fr sibling cannot drive it to zero. */
+     max-content so a fr sibling cannot drive it to zero. The box is an
+     inline-size container so the bar can read the column's width: docked
+     under the stage it spans the viewer, beside it it is a list wide. */
   .send-workspace {
+    container-type: inline-size;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr) max-content;
@@ -139,11 +142,16 @@
     overflow: hidden;
   }
 
+  /* Scrolls only when the picker cannot fit: on a short landscape phone the
+     dock leaves the picker less than its floor, and without this the list
+     painted straight over the note and Send. */
   .recipients {
     display: grid;
     grid-template-rows: minmax(0, 1fr);
     min-width: 0;
     min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
   /* The column is a list's width, not a stage's: the note runs the full
@@ -251,6 +259,20 @@
   .send-button:focus-visible {
     outline: 2px solid var(--theme-accent, var(--semantic-info));
     outline-offset: 2px;
+  }
+
+  /* Docked under the stage the column spans the viewer, so the note and
+     Send share one row and give the row they would have taken back to the
+     recipients. */
+  @container (min-width: 40rem) {
+    .send-bar {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+    }
+
+    .send-button {
+      min-width: 11rem;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
