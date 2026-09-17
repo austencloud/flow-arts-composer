@@ -43,10 +43,12 @@
       title: "Your grid",
       caption: "The grid has a center.",
     },
-    { title: "A shift", caption: "From this point to the next one." },
+    // Level 1 already taught the shift. Arc names it once for readers who
+    // arrive from the animation settings without that page, then the three
+    // paths share those two endpoints.
     {
       title: "Arc",
-      caption: "Follow the circle around the center.",
+      caption: "One shift. Follow the circle around the center.",
       path: "arc",
     },
     {
@@ -92,12 +94,17 @@
   );
   const routeD = $derived(introPathD(routePoints));
   const gridVisible = $derived(stage >= 1);
-  const endpointsVisible = $derived(stage >= 2);
-  const routeVisible = $derived(stage >= 3 && !isFinal);
+  const FIRST_PATH_STAGE = 2;
+  const endpointsVisible = $derived(stage >= FIRST_PATH_STAGE);
+  const routeVisible = $derived(stage >= FIRST_PATH_STAGE && !isFinal);
+  // The destination pulses while Arc waits at its start, before the hand moves.
+  const destinationPending = $derived(
+    stage === FIRST_PATH_STAGE && traceProgress === 0
+  );
   const shiftStart = introPointAt(INTRO_PATHS.arc, 0);
   const shiftEnd = introPointAt(INTRO_PATHS.arc, 1);
   const traceD = $derived(
-    stage >= 3 && traceProgress > 0
+    stage >= FIRST_PATH_STAGE && traceProgress > 0
       ? introPathD(
           routePoints.slice(
             0,
@@ -145,11 +152,11 @@
     pulseActive = false;
     const path = current.path ?? (isFinal ? "concave" : "arc");
     routePoints = INTRO_PATHS[path];
-    traceProgress = stage >= 3 ? 1 : 0;
+    traceProgress = stage >= FIRST_PATH_STAGE ? 1 : 0;
     hand =
       stage === 0
         ? INTRO_CENTER
-        : stage <= 2
+        : stage < FIRST_PATH_STAGE
           ? introPointAt(routePoints, 0)
           : introPointAt(routePoints, 1);
   }
@@ -285,17 +292,12 @@
       else moveHandToStart();
       return;
     }
-    if (stage === 2) {
-      // Reveal the destination only; the hand waits at its start point.
-      settle();
-      return;
-    }
     const nextPath = STAGES[stage]?.path;
     if (!nextPath || isReducedMotion || !gate.active) {
       settle();
       return;
     }
-    runStage(nextPath, stage >= 4);
+    runStage(nextPath, stage > FIRST_PATH_STAGE);
   }
 
   onMount(() => {
@@ -443,7 +445,7 @@
           />
           <circle
             class="endpoint end"
-            class:arriving={stage === 2}
+            class:arriving={destinationPending}
             cx={shiftEnd.x}
             cy={shiftEnd.y}
             r="7"
