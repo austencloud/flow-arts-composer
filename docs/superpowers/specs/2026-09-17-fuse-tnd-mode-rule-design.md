@@ -25,7 +25,7 @@ the rule.
 In:
 - A six-mode TnD picker replaces the rotation dial and reflect toggles in the
   Linked Rule panel.
-- Lead-hand choice for the two quarter modes.
+- A clockwise / counterclockwise offset choice for the two quarter modes.
 - Invert stays as a free toggle.
 - Rewind stays as a verified toggle with a per-beat TnD check.
 - Persisted rules restore into the new model; odd rotations are coerced.
@@ -46,23 +46,31 @@ New file `src/lib/features/fuse/domain/fuse-tnd-rule.ts`.
 
 ```ts
 export type FuseTnDMode = VtgMode; // "SS" | "TS" | "QS" | "SO" | "TO" | "QO"
-export type FuseLeadHand = "left" | "right";
+export type FuseQuarterOffset = "cw" | "ccw";
 
 export interface FuseTnDSelection {
   mode: FuseTnDMode;
-  /** Only meaningful for QS and QO. Which hand is a quarter ahead. */
-  lead: FuseLeadHand;
+  /** Only meaningful for QS and QO. Which way round the circle the follower
+   *  sits from the driver: a quarter clockwise or a quarter counterclockwise. */
+  quarterOffset: FuseQuarterOffset;
   invert: boolean;
   rewind: boolean;
 }
 ```
+
+Why an offset and not a lead hand: which hand reaches the downbeat first
+depends on the driver's arc sense on that beat. A follower a quarter
+clockwise of a clockwise-moving driver leads; the same follower of a
+counterclockwise-moving driver lags. Generated paths reverse arc sense
+(hand-path mode "mixed"), so "Left leads" would be true on some beats and
+false on others. The offset is the thing the rule actually fixes.
 
 `FuseTnDMode` is a type alias of the existing `VtgMode` from
 `src/lib/shared/shape-matrix/services/shape-matrix-realizations.ts`. Labels,
 short words (Tog, Opp) and family ids come from `MODE_LABEL`,
 `MODE_SHORT_WORDS` and `MODE_FAMILY_ID` in that file.
 
-### resolveFuseRule(selection, driverSide): FuseRule
+### resolveFuseRule(selection): FuseRule
 
 Pure. Maps a selection to the existing `FuseRule` shape. The result feeds
 `applyDriverRule` unchanged.
@@ -71,37 +79,30 @@ Pure. Maps a selection to the existing `FuseRule` shape. The result feeds
 |---|---|---|
 | TS (Together, Same) | 0 | none |
 | SS (Split, Same) | 4 | none |
-| QS (Quarter, Same) | 2 when lead is the follower, 6 when lead is the driver | none |
+| QS (Quarter, Same) | 2 for cw, 6 for ccw | none |
 | TO (Together, Opp) | 0 | mirror |
 | SO (Split, Opp) | 4 | flip |
-| QO (Quarter, Opp) | 2 or 6, same lead rule as QS | mirror |
+| QO (Quarter, Opp) | 2 for cw, 6 for ccw | mirror |
 
-`invert` and `rewind` pass through. `driverSide` is needed to turn the
-lead hand into follower-relative rotation.
-
-The lead rule: `rotationSteps: 2` rotates the follower 90 degrees clockwise,
-which under the deriver's phase-to-south measure puts the follower a quarter
-cycle ahead. The dataframe-backed test (below) is the source of truth for
-which sign means which. If the test shows the opposite, swap 2 and 6 in the
-table and keep the user-facing meaning.
+`invert` and `rewind` pass through.
 
 SO uses flip rather than rotate 180 plus mirror because they are the same
 map (flip equals rotate 180 composed with mirror) and flip is the existing
 single-op label. QO uses rotation plus mirror because there is no single op
 for it.
 
-### classifyFuseRule(rule, driverSide): FuseTnDSelection | null
+### classifyFuseRule(rule): FuseTnDSelection | null
 
 Pure. The inverse. Returns null when `rotationSteps` is odd. For even steps:
 
 - steps 0, reflect none: TS
 - steps 4, reflect none: SS
-- steps 2 or 6, reflect none: QS, lead from the step and driver side
+- steps 2 or 6, reflect none: QS, offset cw for 2 and ccw for 6
 - steps 0, reflect mirror: TO
 - steps 0, reflect flip: SO
 - steps 4, reflect mirror: SO (rotate 180 then mirror equals flip)
 - steps 4, reflect flip: TO (rotate 180 then flip equals mirror)
-- steps 2 or 6, reflect mirror or flip: QO, lead from the step and driver side
+- steps 2 or 6, reflect mirror or flip: QO, offset cw for 2 and ccw for 6
 
 Note on composites: on the eight grid points, rotate 180 then mirror (E to W)
 is the same map as flip (N to S). Rotate 180 then flip is the same as mirror.
@@ -115,7 +116,7 @@ Every `LEGACY_RULES` id restores this way: `rotate90` to QS,
 `rotate-mirror` to QO, `mirror-invert` to TO with invert, `rotate-invert` to
 QS with invert, `rewind` to TS with rewind.
 
-### coerceToTnDRule(rule, driverSide): { selection, adjusted: boolean }
+### coerceToTnDRule(rule): { selection, adjusted: boolean }
 
 For odd `rotationSteps`, round down to the nearest even step (1 to 0, 3 to 2,
 5 to 4, 7 to 6), keep reflect, invert, rewind, then classify. `adjusted` is
@@ -132,8 +133,9 @@ Step 2 layout, top to bottom:
    are direction (Same, Opp). Chips render with `RelationshipChoiceChip`
    from shape-matrix so the picker matches the shape-matrix TnD chips. Short
    words on the chip, full words in the accessible name.
-2. A lead-hand segmented pair, "Left leads" and "Right leads", visible only
-   when the selected mode is QS or QO. Defaults to the driver side leading.
+2. An offset segmented pair, "Quarter clockwise" and "Quarter
+   counterclockwise", visible only when the selected mode is QS or QO.
+   Defaults to clockwise.
 3. Invert toggle. Same control as today.
 4. Rewind toggle. Same control as today, plus the verification note below.
 
@@ -169,15 +171,17 @@ interface FuseTnDCheck {
 using `deriveTnDFromPictograph` over each beat and mapping `TnDMode` to
 `VtgMode`. Null beats are skipped.
 
-With Rewind off this check always passes. A unit test asserts that over
-generated sequences.
+With Rewind off this check always passes; the dataframe test below is the
+proof, since every non-rewind rule is pointwise.
 
 With Rewind on and a mismatch, the Rewind toggle stays on. Under it a one-line
 note reads "Rewind breaks Together, opposite at beat 5." The result strip
 prefixes the mode with "About". Nothing is changed automatically.
 
-The check runs in Linked mode only and is exposed as a derived value on
-`fuseState` so the panel and the result strip read one source.
+The check is a pure function, `checkFuseTnD(sequence, expected)`, in the
+domain layer. `fuseState` exposes it as a derived value over
+`previewSequence` and the classified rule, in Linked mode only, so the panel
+and the result strip read one source.
 
 ## Persistence
 
@@ -193,9 +197,9 @@ unchanged.
 ## Data flow
 
 ```
-picker / lead / invert / rewind
+picker / offset / invert / rewind
   -> FuseTnDSelection (panel draft state)
-  -> resolveFuseRule(selection, driverSide)
+  -> resolveFuseRule(selection)
   -> fuseState.setRule(FuseRule)        (existing)
   -> applyDriverRule, deriveFollower    (existing)
   -> previewSequence                    (existing)
@@ -213,14 +217,14 @@ classifying the current rule. `chooseRule` resolves and commits as today.
 - Deriver returns null for every beat: `firstMismatchBeat` is null,
   `undefinedBeats` lists every beat, no note shown. A sequence with no shift
   beats has no TnD and the panel does not claim one.
-- Lead hand on a non-quarter mode is stored but ignored. Switching to a
+- Offset on a non-quarter mode is stored but ignored. Switching to a
   quarter mode reuses it.
 
 ## Testing
 
 Unit, `tests/unit/fuse/fuse-tnd-rule.test.ts`:
-- `resolveFuseRule` for all six modes, both leads, both driver sides; invert
-  and rewind pass through.
+- `resolveFuseRule` for all six modes and both offsets; invert and rewind
+  pass through.
 - `classifyFuseRule` round-trips every resolved rule and every `LEGACY_RULES`
   id to the expected mode; returns null on odd steps; reads the two
   rotate-180 composites correctly.
@@ -228,19 +232,20 @@ Unit, `tests/unit/fuse/fuse-tnd-rule.test.ts`:
   `adjusted`.
 
 Dataframe, `src/lib/features/fuse/domain/fuse-tnd-rule.dataframe.test.ts`, in
-the style of `hand-relationship-tnd.test.ts`: for each mode, lead and driver
-side with rewind off, apply the resolved rule's location map to the driver
-hand of every shift row in the Diamond and Box CSVs, run `deriveTnD`, assert
-the mode. This test fixes the lead sign.
+the style of `hand-relationship-tnd.test.ts`: for each mode and offset with
+rewind off, apply the resolved rule's location map to the left hand of every
+shift row in the Diamond and Box CSVs, run `deriveTnD`, assert the mode. This
+is the proof that every non-rewind rule pins its mode on every beat.
 
-State, `tests/unit/fuse/fuse-state-tnd-check.test.ts`:
-- Generated driver, every mode, rewind off: `firstMismatchBeat` is null.
-- Generated driver, rewind on: passes (the generator's symmetric loops).
-- Hand-built asymmetric driver, rewind on: reports the first mismatch beat.
+Check, `tests/unit/fuse/fuse-tnd-check.test.ts`, on hand-built sequences:
+- Every beat matches: `firstMismatchBeat` is null.
+- Dash and static beats are listed in `undefinedBeats`, not counted as
+  mismatches.
+- One beat off: reports that beat, 1-based.
 
 Component, `FuseRelationshipComposer.svelte.test.ts` additions:
 - Six chips render with short words and full accessible names.
-- Lead pair appears only for QS and QO.
+- Offset pair appears only for QS and QO.
 - Rotation dial and reflect toggles are gone.
 - Result strip leads with the mode label.
 
