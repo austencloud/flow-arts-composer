@@ -16,6 +16,7 @@ function relationshipState(): FuseState {
     tndSelection: { mode: "TO", quarterOffset: "cw", invert: false, rewind: false },
     tndCheck: null,
     ruleAdjusted: false,
+    previewSequence: null,
     setMode: vi.fn(),
     setRelationship: vi.fn(),
     previewRelationship: vi.fn().mockResolvedValue(undefined),

@@ -14,6 +14,12 @@
     fuseRuleTint,
   } from "../domain/fuse-transform-presentation";
   import FuseTransformPicker from "./FuseTransformPicker.svelte";
+  import {
+    classifyFuseRule,
+    DEFAULT_TND_SELECTION,
+    fuseTnDModeLabel,
+  } from "../domain/fuse-tnd-rule";
+  import { checkFuseTnD } from "../domain/fuse-tnd-check";
 
   let {
     onCancel,
@@ -28,6 +34,23 @@
   let draftRule = $state<FuseRule>(fuseState.rule);
 
   const draftRuleLabel = $derived(fuseRuleLabel(draftRule));
+  const draftSelection = $derived(
+    classifyFuseRule(draftRule) ?? DEFAULT_TND_SELECTION
+  );
+  const draftModeLabel = $derived(fuseTnDModeLabel(draftSelection.mode));
+
+  // The live preview the canvas is drawing for this draft. While the draft
+  // matches the applied rule the state's own preview is the one to read.
+  const draftCheck = $derived.by(() => {
+    if (!draftSelection.rewind) return null;
+    const sequence = fuseState.previewSequence;
+    if (!sequence) return null;
+    return checkFuseTnD(sequence, draftSelection.mode);
+  });
+  const rewindBreaksAt = $derived(draftCheck?.firstMismatchBeat ?? null);
+  const resultModeLabel = $derived(
+    rewindBreaksAt === null ? draftModeLabel : `About ${draftModeLabel.toLowerCase()}`
+  );
   const draftDriverLabel = $derived(
     draftDriver === "left" ? "Left path" : "Right path"
   );
@@ -106,6 +129,16 @@
     onRuleChange={chooseRule}
   />
 
+  {#if rewindBreaksAt !== null}
+    <p class="rule-note" role="status">
+      Rewind breaks {draftModeLabel} at beat {rewindBreaksAt}.
+    </p>
+  {/if}
+
+  {#if fuseState.ruleAdjusted}
+    <p class="rule-note" role="status">Rule adjusted to the nearest timing.</p>
+  {/if}
+
   <div class="relationship-commit">
     <!-- Named Result, not Preview: it states what applying this does, and the
          canvas behind the editor is already showing the live preview. -->
@@ -132,7 +165,8 @@
           />
           <span class="node-copy">
             <span class="node-role">Rule</span>
-            <strong>{draftRuleLabel}</strong>
+            <strong>{resultModeLabel}</strong>
+            <span class="node-ops">{draftRuleLabel}</span>
           </span>
         </span>
         <i class="fas fa-arrow-right" aria-hidden="true"></i>
@@ -257,6 +291,18 @@
     color: var(--theme-text, #fff);
     font-size: var(--font-size-min, 14px);
     font-weight: 700;
+  }
+
+  .node-ops {
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
+    font-size: var(--font-size-compact, 12px);
+    line-height: 1.25;
+  }
+
+  .rule-note {
+    margin: 0;
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.7));
+    font-size: var(--font-size-compact, 12px);
   }
 
   /* A rule can now name four operations at once, and "Rotate 90° + Mirror +
