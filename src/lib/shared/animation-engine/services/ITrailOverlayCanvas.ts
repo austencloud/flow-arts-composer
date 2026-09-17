@@ -26,6 +26,9 @@ export interface TrailOverlayRenderParams {
   /** Prop type names for correct trail endpoint resolution */
   leftPropType?: string | null;
   rightPropType?: string | null;
+  /** Chirality flip as drawn this frame; trail sources mirror with the sprite. */
+  leftPropFlipped?: boolean;
+  rightPropFlipped?: boolean;
   /** Current animation time in ms (performance.now() or virtualTime) */
   currentTime: number;
   /** Per-tip effect assignments — gates which tips capture trail points */

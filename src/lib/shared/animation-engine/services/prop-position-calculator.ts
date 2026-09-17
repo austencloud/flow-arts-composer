@@ -19,6 +19,12 @@ export interface PropEndpointConfig {
   gridHalfwayOffset?: number;
   /** Inward factor for radius (default: 1.0) */
   inwardFactor?: number;
+  /**
+   * Chirality flip, as drawn. The renderer mirrors a flipped sprite with
+   * `scale(-1, 1)` after rotating it, so every prop-local source sits at
+   * (-dx, dy). Trail tips and lab offsets follow the painted artwork.
+   */
+  flipped?: boolean;
 }
 
 /** Result of a single endpoint calculation */
@@ -52,20 +58,21 @@ function resolveTrailSource(
   if (source.type === "none") return null;
 
   const gridScaleFactor = config.canvasSize / VIEWBOX_SIZE;
+  const mirror = config.flipped ? -1 : 1;
 
   if (source.type === "tip") {
     const tipConfig = getTipPoints(propType);
     const tipPoint = tipConfig.points[source.index];
     if (!tipPoint) return null;
     return {
-      offsetX: tipPoint.dx * gridScaleFactor,
+      offsetX: tipPoint.dx * mirror * gridScaleFactor,
       offsetY: tipPoint.dy * gridScaleFactor,
     };
   }
 
   if (source.type === "custom") {
     return {
-      offsetX: source.dx * gridScaleFactor,
+      offsetX: source.dx * mirror * gridScaleFactor,
       offsetY: source.dy * gridScaleFactor,
     };
   }

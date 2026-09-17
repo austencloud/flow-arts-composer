@@ -135,6 +135,15 @@ export function resolveMandalaTipOffsets(
 	return [...unique.values()];
 }
 
+/** Mirror prop-local tip offsets the way the renderer mirrors a flipped sprite. */
+export function mirrorTipOffsets(
+	offsets: MandalaTipOffset[],
+	flipped: boolean
+): MandalaTipOffset[] {
+	if (!flipped) return offsets;
+	return offsets.map((point) => ({ dx: -point.dx, dy: point.dy }));
+}
+
 // ─── SVGPathData → PreparedMandalaPath conversion ──────────────────────────
 
 /**
@@ -189,15 +198,21 @@ export class MandalaPathPreparer {
 			leftColor: string;
 			rightColor: string;
 			sequenceKey?: string;
+			/**
+			 * Chirality flip as drawn. The renderer mirrors a flipped sprite with
+			 * `scale(-1, 1)`, so the guide traces the mirrored tip (-dx, dy).
+			 */
+			leftPropFlipped?: boolean;
+			rightPropFlipped?: boolean;
 		}
 	): PreparedMandalaPaths | null {
-		const leftTips = resolveMandalaTipOffsets(
-			options.leftPropType,
-			options.trackingMode
+		const leftTips = mirrorTipOffsets(
+			resolveMandalaTipOffsets(options.leftPropType, options.trackingMode),
+			options.leftPropFlipped ?? false
 		);
-		const rightTips = resolveMandalaTipOffsets(
-			options.rightPropType,
-			options.trackingMode
+		const rightTips = mirrorTipOffsets(
+			resolveMandalaTipOffsets(options.rightPropType, options.trackingMode),
+			options.rightPropFlipped ?? false
 		);
 		const cacheKey = [
 			options.sequenceKey ?? "",

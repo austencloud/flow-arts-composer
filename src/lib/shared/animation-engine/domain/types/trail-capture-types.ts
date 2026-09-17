@@ -23,6 +23,9 @@ export interface AdditionalLayerProps {
 export interface TrailCapturePropStates {
   leftProp: PropState | null;
   rightProp: PropState | null;
+  /** Chirality flip as drawn this frame; trail sources mirror with the sprite. */
+  leftPropFlipped?: boolean;
+  rightPropFlipped?: boolean;
   additionalLayers?: AdditionalLayerProps[];
 }
 
