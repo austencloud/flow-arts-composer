@@ -94,6 +94,8 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
   const exportOptions = getExportOptionsState();
 
   let animationCanvas = $state<HTMLCanvasElement | null>(null);
+  /** True from the moment a request is accepted until it settles. */
+  let exportClaimed = false;
 
   // ── 3D recording UI state ──
   const countdownValue = $state(0);
@@ -512,6 +514,44 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
    * forever on a render that was never going to happen.
    */
   async function handleExport(
+    editingPane: "animation" | "image" | "video-upload" | null,
+    effectiveSequence: SequenceData | null,
+    playbackController: AnimationPlaybackController | null,
+    modalAnimationState: AnimationPanelState,
+    hapticService: HapticFeedback | null,
+    isPlayingLocal: boolean,
+    bpmLocal: number,
+    isHandPath: boolean,
+    resolvedAutoLayout: ResolvedAutoLayout | null,
+    options?: ExportRequestOptions
+  ): Promise<boolean> {
+    // Claimed synchronously, before the first await. The exporter only marks
+    // itself busy once a render actually starts, and between here and there
+    // sit the account gate, the 3D handle wait, and the opener image decode.
+    // A second request during that window used to pass the busy check, bump
+    // the exporter's version so the first render's result was discarded, and
+    // then die on the orchestrator's own "Export already in progress".
+    if (exportClaimed) return false;
+    exportClaimed = true;
+    try {
+      return await runExport(
+        editingPane,
+        effectiveSequence,
+        playbackController,
+        modalAnimationState,
+        hapticService,
+        isPlayingLocal,
+        bpmLocal,
+        isHandPath,
+        resolvedAutoLayout,
+        options
+      );
+    } finally {
+      exportClaimed = false;
+    }
+  }
+
+  async function runExport(
     editingPane: "animation" | "image" | "video-upload" | null,
     effectiveSequence: SequenceData | null,
     playbackController: AnimationPlaybackController | null,
