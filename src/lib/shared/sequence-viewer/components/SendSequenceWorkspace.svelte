@@ -188,8 +188,14 @@
     overflow: hidden;
   }
 
+  /* One explicit 1fr track each way, never an auto row: a percentage height
+     inside an auto row resolves against the row the content sized, so a
+     portrait card measured itself at its natural height and ran under the
+     bar whenever the stage was short (DevTools open, a landscape phone). */
   .card-stage {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
     place-items: center;
     min-width: 0;
     min-height: 0;
@@ -202,6 +208,8 @@
      stops the card being an island on one. */
   .card-frame {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
     place-items: center;
     height: 100%;
     width: auto;
@@ -217,6 +225,8 @@
     display: block;
     width: 100%;
     height: 100%;
+    max-width: 100%;
+    max-height: 100%;
     object-fit: contain;
     border-radius: 0.75rem;
     box-shadow: 0 18px 48px rgb(0 0 0 / 0.35);
