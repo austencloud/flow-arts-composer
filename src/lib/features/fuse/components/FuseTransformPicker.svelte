@@ -101,7 +101,8 @@
       color: fuseComponentColor(LOOPComponent.INVERTED),
       glyph: new Set([LOOPComponent.INVERTED]),
       active: selection.invert,
-      toggle: () => commitSelection({ ...selection, invert: !selection.invert }),
+      toggle: () =>
+        commitSelection({ ...selection, invert: !selection.invert }),
     },
     {
       id: "rewind",
@@ -110,7 +111,8 @@
       color: fuseComponentColor(LOOPComponent.REWOUND),
       glyph: new Set([LOOPComponent.REWOUND]),
       active: selection.rewind,
-      toggle: () => commitSelection({ ...selection, rewind: !selection.rewind }),
+      toggle: () =>
+        commitSelection({ ...selection, rewind: !selection.rewind }),
     },
   ]);
 
@@ -165,7 +167,9 @@
     <div class="field-heading">
       <span class="step-number">2</span>
       <div>
-        <span class="field-label">How {followerLabel} relates to {driverLabel}</span>
+        <span class="field-label"
+          >How {followerLabel} relates to {driverLabel}</span
+        >
         <span class="field-help">
           Every change previews a new {followerLabel} path
         </span>
@@ -249,9 +253,9 @@
   }
 
   /* The card stays content-sized. Stretching it to reach the pinned footer put
-     ~100px between the dial and the chips, which read as two unrelated rows; the
-     same pixels left as panel background below the card read as a form that has
-     simply finished. */
+     empty space between the mode grid and the chips, which read as two unrelated
+     rows; the same pixels left as panel background below the card read as a form
+     that has simply finished. */
   .rule-field {
     container-type: inline-size;
   }
@@ -270,20 +274,12 @@
     text-transform: uppercase;
   }
 
-  /* Four chips, one row, equal shares — never auto-fill, so the row cannot
-     strand one of them on a line by itself. Below the width four labels need
-     they go two-by-two, which is still even. */
+  /* Two chips, one row, equal shares. */
   .operation-row {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
     min-width: 0;
-  }
-
-  @container (max-width: 25rem) {
-    .operation-row {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
   }
 
   .operation-row :global(.filter-chip) {

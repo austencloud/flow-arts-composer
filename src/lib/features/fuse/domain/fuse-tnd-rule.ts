@@ -64,9 +64,19 @@ export function resolveFuseRule(selection: FuseTnDSelection): FuseRule {
   const { mode, quarterOffset, invert, rewind } = selection;
   switch (mode) {
     case "TS":
-      return createFuseRule({ rotationSteps: 0, reflect: "none", invert, rewind });
+      return createFuseRule({
+        rotationSteps: 0,
+        reflect: "none",
+        invert,
+        rewind,
+      });
     case "SS":
-      return createFuseRule({ rotationSteps: 4, reflect: "none", invert, rewind });
+      return createFuseRule({
+        rotationSteps: 4,
+        reflect: "none",
+        invert,
+        rewind,
+      });
     case "QS":
       return createFuseRule({
         rotationSteps: quarterSteps(quarterOffset),
@@ -75,10 +85,20 @@ export function resolveFuseRule(selection: FuseTnDSelection): FuseRule {
         rewind,
       });
     case "TO":
-      return createFuseRule({ rotationSteps: 0, reflect: "mirror", invert, rewind });
+      return createFuseRule({
+        rotationSteps: 0,
+        reflect: "mirror",
+        invert,
+        rewind,
+      });
     case "SO":
       // Flip alone is rotate 180 composed with mirror; it is the single-op label.
-      return createFuseRule({ rotationSteps: 0, reflect: "flip", invert, rewind });
+      return createFuseRule({
+        rotationSteps: 0,
+        reflect: "flip",
+        invert,
+        rewind,
+      });
     case "QO":
       return createFuseRule({
         rotationSteps: quarterSteps(quarterOffset),

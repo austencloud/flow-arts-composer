@@ -49,7 +49,9 @@
   });
   const rewindBreaksAt = $derived(draftCheck?.firstMismatchBeat ?? null);
   const resultModeLabel = $derived(
-    rewindBreaksAt === null ? draftModeLabel : `About ${draftModeLabel.toLowerCase()}`
+    rewindBreaksAt === null
+      ? draftModeLabel
+      : `About ${draftModeLabel.toLowerCase()}`
   );
   const draftDriverLabel = $derived(
     draftDriver === "left" ? "Left path" : "Right path"

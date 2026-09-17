@@ -13,7 +13,12 @@ function relationshipState(): FuseState {
     isLoadingLength: false,
     pendingSide: null,
     isFusing: false,
-    tndSelection: { mode: "TO", quarterOffset: "cw", invert: false, rewind: false },
+    tndSelection: {
+      mode: "TO",
+      quarterOffset: "cw",
+      invert: false,
+      rewind: false,
+    },
     tndCheck: null,
     ruleAdjusted: false,
     previewSequence: null,
@@ -46,9 +51,15 @@ describe("FuseRelationshipComposer", () => {
     ]) {
       await expect.element(page.getByRole("button", { name })).toBeVisible();
     }
-    await expect.element(page.getByRole("radio", { name: "90° clockwise" })).not.toBeInTheDocument();
-    await expect.element(page.getByRole("button", { name: /^Mirror/ })).not.toBeInTheDocument();
-    await expect.element(page.getByRole("button", { name: /^Flip/ })).not.toBeInTheDocument();
+    await expect
+      .element(page.getByRole("radio", { name: "90° clockwise" }))
+      .not.toBeInTheDocument();
+    await expect
+      .element(page.getByRole("button", { name: /^Mirror/ }))
+      .not.toBeInTheDocument();
+    await expect
+      .element(page.getByRole("button", { name: /^Flip/ }))
+      .not.toBeInTheDocument();
   });
 
   it("rebuilds the follower as soon as a mode is picked", async () => {
@@ -58,7 +69,10 @@ describe("FuseRelationshipComposer", () => {
     await page.getByRole("button", { name: /^Split Same/ }).click();
 
     const splitSame = createFuseRule({ rotationSteps: 4, reflect: "none" });
-    expect(state.previewRelationship).toHaveBeenLastCalledWith("left", splitSame);
+    expect(state.previewRelationship).toHaveBeenLastCalledWith(
+      "left",
+      splitSame
+    );
 
     await page.getByRole("button", { name: "Use this relationship" }).click();
     expect(state.setRelationship).toHaveBeenCalledWith("left", splitSame);
@@ -71,12 +85,18 @@ describe("FuseRelationshipComposer", () => {
     const state = relationshipState();
     render(FuseRelationshipComposerTestHarness, { state });
 
-    await expect.element(page.getByRole("button", { name: "Quarter clockwise" })).not.toBeInTheDocument();
+    await expect
+      .element(page.getByRole("button", { name: "Quarter clockwise" }))
+      .not.toBeInTheDocument();
 
     await page.getByRole("button", { name: /^Quarter Opposite/ }).click();
-    await expect.element(page.getByRole("button", { name: "Quarter clockwise" })).toBeVisible();
+    await expect
+      .element(page.getByRole("button", { name: "Quarter clockwise" }))
+      .toBeVisible();
 
-    await page.getByRole("button", { name: "Quarter counterclockwise" }).click();
+    await page
+      .getByRole("button", { name: "Quarter counterclockwise" })
+      .click();
     expect(state.previewRelationship).toHaveBeenLastCalledWith(
       "left",
       createFuseRule({ rotationSteps: 6, reflect: "mirror" })
