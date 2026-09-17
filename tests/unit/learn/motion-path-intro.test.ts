@@ -3,9 +3,7 @@ import {
   INTRO_PATHS,
   INTRO_RADIUS,
   INTRO_CENTER,
-  INTRO_SPINS,
   introPointAt,
-  introStaffAngle,
 } from "../../../src/routes/(public)/guide/motion-paths/_data/motion-path-intro";
 
 describe("motion path introduction geometry", () => {
@@ -43,23 +41,5 @@ describe("motion path introduction geometry", () => {
     expect(introPointAt(points, 2)).toEqual(points.at(-1));
     const middle = introPointAt(points, 0.5 / 64);
     expect(middle.x).toBeCloseTo((points[0]!.x + points[1]!.x) / 2);
-  });
-});
-
-describe("motion path introduction spins", () => {
-  it("turns the staff a quarter turn with the hand for pro and against it for anti", () => {
-    // The hand travels east to south, clockwise on screen. A pro staff turns
-    // the same way and an anti staff the opposite way, each by one quarter.
-    expect(INTRO_SPINS.pro.path).toBe("arc");
-    expect(INTRO_SPINS.anti.path).toBe("concave");
-    expect(INTRO_SPINS.pro.delta).toBeCloseTo(Math.PI / 2);
-    expect(INTRO_SPINS.anti.delta).toBeCloseTo(-Math.PI / 2);
-    // Both begin pointing in at the east point, so the staff lies flat.
-    for (const track of Object.values(INTRO_SPINS)) {
-      expect(Math.abs(Math.sin(track.startAngle))).toBeCloseTo(0);
-      expect(introStaffAngle(track, 1)).toBeCloseTo(
-        track.startAngle + track.delta
-      );
-    }
   });
 });

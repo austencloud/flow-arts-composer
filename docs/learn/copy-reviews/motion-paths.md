@@ -306,17 +306,3 @@ Austen asked whether Next should sit on the right. On the landscape composition 
 Austen saw the landscape composition with the copy and Next floating far from the drawing and asked for the gap closed. The drawing track is now capped at the drawing's own size and the copy track at the longest caption, and the pair is centered as one unit, so the words sit a short gap from the drawing's edge at every landscape width.
 
 He also called out "Same shift. Different paths." as reading machine-made. The closing caption now reads "All three start and end at the same points. Only the path changes." Two plain sentences that say what the picture shows. Austen has not yet confirmed this exact line; it is the one string in this revision that needs his eye. No other copy changed.
-
-## September 17: Pro, Anti and Hybrid join the introduction
-
-Review state: prototype built on Austen's "show me" after a design discussion. Copy and the nine-bite length await his review.
-
-Austen liked the page as a whole but flagged the jump from "Three paths" straight into "Try all four on a sequence", and that Hybrid, the path he believes reflects how people spin, got one subordinate sentence. Hybrid is a rule about spin, and the introduction had no prop, so it had nothing to hang the rule on. Three bites follow "Three paths":
-
-- "Pro": "Turn the staff with the hand. Hybrid keeps this on the Arc." A staff appears in the hand, turns a quarter clockwise with the east-to-south shift, and the hand rides the Arc.
-- "Anti": "Turn the staff against the hand. Hybrid bends this inward." The staff turns a quarter the other way and the route becomes the Concave.
-- "Hybrid": "The fourth choice. Pro takes the Arc and anti takes the Concave, motion by motion." The two routes overlay in the colors the path panel uses, with the legend "Pro on Arc" and "Anti on Concave". The staff fades out here so the routes read clean.
-
-The staff headings come from the animation engine's own endpoint calculator on the introduction's shift, so the intro turns the staff exactly as the animator would. The captions describe what Hybrid does and stop short of claiming it is how people spin; the reference section still says the Concave is not an exact antispin construction, and that tension is Austen's call.
-
-Ownership ledger: PropCompositionPreview now draws the staff as well as the hand; LessonStageControls, Crossfade, and the fade owner unchanged; the intro geometry module gains the two spin tracks with a test. AI-bust review of the three new captions: no banned words, no em dashes; "The fourth choice." is a deliberate fragment that Austen may want whole.
