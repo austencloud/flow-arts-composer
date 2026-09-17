@@ -148,6 +148,7 @@ function createHarness(
         getContext: () => context,
         getSequence: () => sequence,
         getIsMobile: () => true,
+        getSendModeActive: () => false,
         getWorkspaceElement: () => null,
         startInSplit: false,
         startInCardThenSplit: false,
