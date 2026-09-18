@@ -778,10 +778,15 @@ Delegates ALL logic to services (SRP compliant)
           {/if}
         </div>
       {/each}
+
+      <!-- The grown card is an absolutely positioned child of the grid, not of
+           the stage around it: the grid is centered and capped per breakpoint,
+           so this is the only box whose edges are the cards' footprint. Out of
+           flow, so it takes no track and stays outside the flip above. -->
+      {#if expandedCard}
+        {@render expandedCard()}
+      {/if}
     </div>
-    {#if expandedCard}
-      {@render expandedCard()}
-    {/if}
   </div>
 </div>
 
@@ -971,6 +976,7 @@ Delegates ALL logic to services (SRP compliant)
   }
 
   .card-grid {
+    position: relative; /* Containing block for the grown card */
     display: grid;
     flex: 1 1 auto;
     width: 100%;

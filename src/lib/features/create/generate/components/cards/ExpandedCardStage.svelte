@@ -6,9 +6,10 @@
   in generate-card-morph.ts carries the card wrapper's box here and back.
 
   Two destinations for one component:
-  - side-by-side (isDesktopLayout): in place, absolute inside .card-grid-stage,
+  - side-by-side (isDesktopLayout): in place, absolute inside .card-grid,
     which the container renders this into through its expandedCard snippet.
-    The Level toolbar above the grid stays.
+    The grid is the cards' footprint (centered, capped per breakpoint), so
+    the grown card never overhangs it. The Level toolbar above stays.
   - stacked: portaled to <body> and fixed to the viewport, bottom nav included.
     It cannot stay inside the settings container: `container-type: size`
     applies layout containment, which makes the container the containing
