@@ -18,7 +18,10 @@
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { PROP_DIMENSIONS } from "$lib/shared/animation-engine/services/IPropTextureLoader";
   import { toScenePropType } from "$lib/shared/3d/domain/scene-prop-type";
-  import { PropType as ScenePropType } from "@austencloud/scene-3d";
+  import {
+    PropType as ScenePropType,
+    type PropBuild,
+  } from "@austencloud/scene-3d";
   import SpriteCaptureScene, {
     type SpriteCaptureResult,
   } from "./SpriteCaptureScene.svelte";
@@ -42,6 +45,23 @@
     return SCENE_VALUES.has(toScenePropType(prop) as string);
   }
 
+  /** The sprite key is the prop, except where one prop captures more than one look. */
+  type Job = {
+    prop: PropType;
+    key: string;
+    color: (typeof COLORS)[number];
+    build?: Partial<PropBuild>;
+  };
+
+  /** Extra looks captured under their own sprite key. */
+  const EXTRA_LOOKS: Partial<
+    Record<PropType, { key: string; build: Partial<PropBuild> }[]>
+  > = {
+    [PropType.TRIANGLE]: [
+      { key: "triangle_side", build: { triangleGrip: "side" } },
+    ],
+  };
+
   const requested = $derived(page.url.searchParams.get("prop"));
   /** ?force=1 skips the candidate filter (orientation checks against fan artwork). */
   const force = $derived(page.url.searchParams.get("force") === "1");
@@ -50,13 +70,34 @@
       force && requested ? true : isCaptureCandidate(prop)
     );
     return requested
-      ? all.filter((prop) => (prop as string) === requested)
+      ? all.filter(
+          (prop) =>
+            (prop as string) === requested ||
+            (EXTRA_LOOKS[prop] ?? []).some((look) => look.key === requested)
+        )
       : all;
   });
 
-  type Job = { prop: PropType; color: (typeof COLORS)[number] };
   const jobs = $derived(
-    queue.flatMap((prop) => COLORS.map((color) => ({ prop, color }) as Job))
+    queue
+      .flatMap((prop) => {
+        const looks = [
+          { key: prop as string, build: undefined },
+          ...(EXTRA_LOOKS[prop] ?? []),
+        ];
+        return looks.flatMap((look) =>
+          COLORS.map(
+            (color) =>
+              ({ prop, key: look.key, color, build: look.build }) as Job
+          )
+        );
+      })
+      .filter(
+        (job) =>
+          !requested ||
+          job.key === requested ||
+          (job.prop as string) === requested
+      )
   );
 
   let index = $state(0);
@@ -100,7 +141,7 @@
   async function handleCaptured(job: Job, result: SpriteCaptureResult) {
     const dims = PROP_DIMENSIONS[job.prop as string];
     if (!dims) {
-      advance(`${job.prop} ${job.color}: no PROP_DIMENSIONS entry`);
+      advance(`${job.key} ${job.color}: no PROP_DIMENSIONS entry`);
       return;
     }
     try {
@@ -108,7 +149,7 @@
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          prop: job.prop,
+          prop: job.key,
           color: job.color,
           width: dims.width,
           height: dims.height,
@@ -125,16 +166,16 @@
       };
       advance(
         payload.ok
-          ? `${job.prop} ${job.color}: saved (fit ${result.fit.toFixed(1)} u/m, extent ${result.extent.x.toFixed(3)}x${result.extent.y.toFixed(3)} m)`
-          : `${job.prop} ${job.color}: SAVE FAILED ${payload.error ?? ""}`
+          ? `${job.key} ${job.color}: saved (fit ${result.fit.toFixed(1)} u/m, extent ${result.extent.x.toFixed(3)}x${result.extent.y.toFixed(3)} m)`
+          : `${job.key} ${job.color}: SAVE FAILED ${payload.error ?? ""}`
       );
     } catch (error) {
-      advance(`${job.prop} ${job.color}: SAVE FAILED ${String(error)}`);
+      advance(`${job.key} ${job.color}: SAVE FAILED ${String(error)}`);
     }
   }
 
   function handleEmpty(job: Job) {
-    advance(`${job.prop} ${job.color}: EMPTY (no geometry after timeout)`);
+    advance(`${job.key} ${job.color}: EMPTY (no geometry after timeout)`);
   }
 
   function createRenderer(canvas: HTMLCanvasElement) {
@@ -160,13 +201,14 @@
     style:height="{stageHeight}px"
   >
     {#if current && box}
-      {#key `${current.prop}:${current.color}`}
+      {#key `${current.key}:${current.color}`}
         <Canvas {createRenderer} dpr={1}>
           <SpriteCaptureScene
             propType={toScenePropType(current.prop)}
             color={current.color}
             {box}
             {pixelsPerUnit}
+            build={current.build}
             oncaptured={(result) => handleCaptured(current, result)}
             onempty={() => handleEmpty(current)}
           />

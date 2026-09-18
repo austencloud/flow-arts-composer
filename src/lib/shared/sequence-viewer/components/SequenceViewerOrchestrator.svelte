@@ -123,6 +123,7 @@
     normalizeFanAppearance,
     type FanAppearance,
   } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import { normalizeTriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
 
   import { createPlaybackController } from "./playback-controller.svelte";
   import { createExportCoordinator } from "./export-coordinator.svelte";
@@ -387,9 +388,13 @@
     );
   });
 
-  // AppSettings owns the shared fan appearance. The scene package keeps a
-  // legacy default-build adapter for performer inheritance, so synchronize the
-  // two without replacing performer-scoped overrides.
+  // AppSettings owns the shared fan appearance and triangle grip. The scene
+  // package keeps a legacy default-build adapter for performer inheritance,
+  // so synchronize the two without replacing performer-scoped overrides. The
+  // grip rides the same signature as the fan appearance rather than its own
+  // effect, because both are one shared "build" concept and a second effect
+  // racing this one could each see the other's write as the tie-breaker and
+  // loop.
   let lastSettingsFanSignature: string | null = null;
   let lastSceneFanSignature: string | null = null;
   $effect(() => {
@@ -401,8 +406,9 @@
       frameColor: propFinishState.fanFrameColor,
       cover: propFinishState.fanCover,
     };
-    const settingsSignature = fanAppearanceSignature(settingsAppearance);
-    const sceneSignature = fanAppearanceSignature(sceneAppearance);
+    const settingsGrip = normalizeTriangleGrip(getSettings().triangleGrip);
+    const settingsSignature = `${fanAppearanceSignature(settingsAppearance)}|${settingsGrip}`;
+    const sceneSignature = `${fanAppearanceSignature(sceneAppearance)}|${propFinishState.triangleGrip}`;
 
     if (
       lastSettingsFanSignature === null ||
@@ -412,6 +418,7 @@
         propFinishState.setFanBuild(settingsAppearance.build);
         propFinishState.setFanFrameColor(settingsAppearance.frameColor);
         propFinishState.setFanCover(settingsAppearance.cover);
+        propFinishState.setTriangleGrip(settingsGrip);
       }
       lastSettingsFanSignature = settingsSignature;
       lastSceneFanSignature = settingsSignature;
@@ -421,7 +428,10 @@
     if (sceneSignature !== lastSceneFanSignature) {
       lastSceneFanSignature = sceneSignature;
       lastSettingsFanSignature = sceneSignature;
-      void updateSettings({ fanAppearance: sceneAppearance });
+      void updateSettings({
+        fanAppearance: sceneAppearance,
+        triangleGrip: propFinishState.triangleGrip,
+      });
     }
   });
 

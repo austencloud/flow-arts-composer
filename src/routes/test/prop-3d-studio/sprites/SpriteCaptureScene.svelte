@@ -26,6 +26,7 @@
     Plane,
     Prop3D,
     propFinishState,
+    type PropBuild,
     type PropType as ScenePropType,
   } from "@austencloud/scene-3d";
   import { getRoomEnvironmentTexture } from "$lib/shared/3d/rendering/room-environment";
@@ -50,12 +51,21 @@
     box: { width: number; height: number };
     /** Canvas pixels per 2D prop unit. */
     pixelsPerUnit: number;
+    /** Build fields to apply over the scene default (the side-grip capture). */
+    build?: Partial<PropBuild>;
     oncaptured: (result: SpriteCaptureResult) => void;
     onempty: () => void;
   }
 
-  let { propType, color, box, pixelsPerUnit, oncaptured, onempty }: Props =
-    $props();
+  let {
+    propType,
+    color,
+    box,
+    pixelsPerUnit,
+    build: buildOverride,
+    oncaptured,
+    onempty,
+  }: Props = $props();
 
   const FRAMES_STABLE = 24;
   const FRAMES_GIVE_UP = 600;
@@ -77,7 +87,10 @@
 
   let propGroup = $state<Group | undefined>(undefined);
   let camera = $state<OrthographicCamera | undefined>(undefined);
-  const propBuild = $derived(propFinishState.build);
+  const propBuild = $derived({
+    ...propFinishState.build,
+    ...(buildOverride ?? {}),
+  });
 
   const bounds = new Box3();
   const meshBounds = new Box3();
