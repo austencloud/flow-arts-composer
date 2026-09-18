@@ -1,35 +1,24 @@
 import {
-  deleteField,
-  doc,
-  serverTimestamp,
-  updateDoc,
-  writeBatch,
+  collectionGroup,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  where,
 } from "firebase/firestore";
 import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { reportErrorTelemetry } from "$lib/shared/error/services/error-telemetry-reporter";
 import {
   firestoreDelete,
-  firestoreGet,
   firestoreList,
   firestoreSet,
 } from "$lib/shared/firestore";
-import { trackWrite } from "$lib/shared/offline/state/sync-status-state.svelte";
-import { PUBLIC_PROFILE_VERSION } from "$lib/shared/community/domain/models/public-profile-contract";
-import {
-  SavedGeneratorSetupSchema,
-  UserWithFavoriteSchema,
-} from "../domain/models/favorite-config-schemas";
+import { getVisibleOwnerProfiles } from "$lib/shared/community/services/user-repository";
+import { SavedGeneratorSetupSchema } from "../domain/models/favorite-config-schemas";
 import type {
-  CommunityFavorite,
-  PersonalSetupSnapshot,
+  CommunitySetup,
   SavedGeneratorSetup,
   SavedSetupDraft,
 } from "../domain/models/favorite-config";
-import {
-  planPersonalMigration,
-  type LegacyFavoriteRecord,
-  type MigrationWrite,
-} from "../domain/setup-migration";
 import type { UIGenerationConfig } from "../state/generate-config.svelte";
 import type { StartEndOptions } from "$lib/shared/create/state/panel-coordination-state.svelte";
 import {
@@ -37,113 +26,46 @@ import {
   normalizePersistedStartEndOptions,
 } from "../domain/generator-persistence-normalizer";
 
-const USERS_COLLECTION = "users";
+const SETUPS_GROUP = "generatorSetups";
 const SETUP_REPOSITORY_NAME = "favorites";
-const pendingMigrationWrites = new Map<string, Promise<void>>();
 
-const setupsPath = (userId: string) => `users/${userId}/generatorSetups`;
+const setupsPath = (userId: string) => `users/${userId}/${SETUPS_GROUP}`;
 
 export interface GeneratorSetupRepository {
-  loadPersonal(
-    userId: string,
-    options: { allowMigration: boolean }
-  ): Promise<PersonalSetupSnapshot>;
-  loadCommunity(limit?: number): Promise<CommunityFavorite[]>;
+  loadPersonal(userId: string): Promise<SavedGeneratorSetup[]>;
+  loadCommunity(limit?: number): Promise<CommunitySetup[]>;
   createSetup(
     userId: string,
     draft: SavedSetupDraft
   ): Promise<SavedGeneratorSetup>;
   renameSetup(userId: string, setupId: string, name: string): Promise<void>;
-  updateSetup(
-    userId: string,
-    setup: SavedGeneratorSetup,
-    shared: boolean
-  ): Promise<void>;
-  deleteSetup(userId: string, setupId: string, shared: boolean): Promise<void>;
-  shareSetup(userId: string, setup: SavedGeneratorSetup): Promise<void>;
-  unshareSetup(userId: string): Promise<void>;
+  updateSetup(userId: string, setup: SavedGeneratorSetup): Promise<void>;
+  deleteSetup(userId: string, setupId: string): Promise<void>;
 }
 
-function sharedProjection(setup: SavedGeneratorSetup) {
-  return {
-    sourceSetupId: setup.id,
-    config: setup.config as unknown as Record<string, unknown>,
-    startEndOptions: setup.startEndOptions,
-    setAt: serverTimestamp(),
-  };
-}
-
-async function commitMigrationWrite(
-  userId: string,
-  write: MigrationWrite
-): Promise<void> {
-  const db = await getFirestoreInstance();
-  const batch = writeBatch(db);
-
-  batch.set(
-    doc(db, setupsPath(userId), write.setup.id),
-    {
-      name: write.setup.name,
-      config: write.setup.config,
-      startEndOptions: write.setup.startEndOptions,
-      createdAt: write.setup.createdAt,
-      updatedAt: serverTimestamp(),
-    },
-    { merge: true }
-  );
-
-  if (write.linkFavoriteToSetupId) {
-    batch.update(doc(db, USERS_COLLECTION, userId), {
-      "favoriteConfig.sourceSetupId": write.linkFavoriteToSetupId,
-    });
+function toDate(value: unknown): Date | null {
+  if (value instanceof Date) return value;
+  if (
+    value &&
+    typeof value === "object" &&
+    "toDate" in value &&
+    typeof (value as { toDate: unknown }).toDate === "function"
+  ) {
+    return (value as { toDate: () => Date }).toDate();
   }
-
-  await trackWrite(() => batch.commit(), SETUP_REPOSITORY_NAME);
-}
-
-function scheduleMigrationWrite(userId: string, write: MigrationWrite): void {
-  if (pendingMigrationWrites.has(userId)) return;
-
-  let operation: Promise<void>;
-  operation = commitMigrationWrite(userId, write)
-    .catch((error) => {
-      void reportErrorTelemetry({
-        message: "Generator setup migration failed",
-        technicalDetails:
-          error instanceof Error ? error.message : String(error),
-        severity: "warning",
-        context: {
-          module: "create",
-          action: "generatorSetupMigration",
-        },
-        error: error instanceof Error ? error : new Error(String(error)),
-      });
-    })
-    .finally(() => {
-      if (pendingMigrationWrites.get(userId) === operation) {
-        pendingMigrationWrites.delete(userId);
-      }
-    });
-
-  pendingMigrationWrites.set(userId, operation);
-}
-
-async function waitForPendingMigration(userId: string): Promise<void> {
-  await pendingMigrationWrites.get(userId);
+  return null;
 }
 
 export async function loadPersonal(
-  userId: string,
-  options: { allowMigration: boolean }
-): Promise<PersonalSetupSnapshot> {
-  const [setupDocs, userDoc] = await Promise.all([
-    firestoreList(setupsPath(userId), SavedGeneratorSetupSchema, {
-      orderBy: [{ field: "createdAt" }],
-    }),
-    firestoreGet(USERS_COLLECTION, userId, UserWithFavoriteSchema),
-  ]);
+  userId: string
+): Promise<SavedGeneratorSetup[]> {
+  const setupDocs = await firestoreList(
+    setupsPath(userId),
+    SavedGeneratorSetupSchema,
+    { orderBy: [{ field: "createdAt" }] }
+  );
 
-  const setups: SavedGeneratorSetup[] = setupDocs.map((setup) => ({
+  return setupDocs.map((setup) => ({
     id: setup.id,
     name: setup.name,
     config: normalizePersistedGenerationConfig(
@@ -155,58 +77,62 @@ export async function loadPersonal(
     createdAt: setup.createdAt ?? new Date(),
     updatedAt: setup.updatedAt ?? new Date(),
   }));
-
-  const favorite = (userDoc?.favoriteConfig ??
-    null) as LegacyFavoriteRecord | null;
-  const plan = planPersonalMigration(setups, favorite, new Date());
-
-  if (plan.write && options.allowMigration) {
-    scheduleMigrationWrite(userId, plan.write);
-  }
-
-  return {
-    setups: plan.setups,
-    sharedSetupId: plan.sharedSetupId,
-  };
 }
 
+/**
+ * Newest public setups across every account. The owner is the parent user
+ * doc in the path, never a field on the setup. Owners the community may not
+ * see (hidden, guest, legacy profile, deleted) drop out with their setups.
+ */
 export async function loadCommunity(
   limitCount = 20
-): Promise<CommunityFavorite[]> {
-  const users = await firestoreList(USERS_COLLECTION, UserWithFavoriteSchema, {
-    where: [
-      {
-        field: "publicProfileVersion",
-        op: "==",
-        value: PUBLIC_PROFILE_VERSION,
-      },
-      {
-        field: "favoriteConfig",
-        op: "!=",
-        value: null,
-      },
-    ],
-    orderBy: [{ field: "favoriteConfig" }],
-    limit: limitCount,
-  });
+): Promise<CommunitySetup[]> {
+  const db = await getFirestoreInstance();
+  const snapshot = await getDocs(
+    query(
+      collectionGroup(db, SETUPS_GROUP),
+      where("isPublic", "==", true),
+      orderBy("createdAt", "desc"),
+      limit(limitCount)
+    )
+  );
 
-  const results: CommunityFavorite[] = [];
+  const rows: Array<{
+    ownerId: string;
+    setupId: string;
+    data: Record<string, unknown>;
+  }> = [];
+  for (const docSnap of snapshot.docs) {
+    const ownerId = docSnap.ref.parent.parent?.id;
+    if (!ownerId) continue;
+    rows.push({
+      ownerId,
+      setupId: docSnap.id,
+      data: docSnap.data() as Record<string, unknown>,
+    });
+  }
 
-  for (const user of users) {
-    const favorite = user.favoriteConfig;
-    if (!favorite?.config) continue;
+  const owners = await getVisibleOwnerProfiles(
+    rows.map((row) => row.ownerId)
+  );
 
+  const results: CommunitySetup[] = [];
+  for (const row of rows) {
+    const owner = owners.get(row.ownerId);
+    if (!owner) continue;
     results.push({
-      userId: user.id,
-      displayName: user.displayName ?? "Unknown",
-      avatar: user.photoURL ?? undefined,
+      setupId: row.setupId,
+      userId: row.ownerId,
+      displayName: owner.displayName,
+      avatar: owner.photoURL,
+      name: typeof row.data.name === "string" ? row.data.name : "Setup",
       config: normalizePersistedGenerationConfig(
-        favorite.config
+        row.data.config ?? {}
       ) as UIGenerationConfig,
       startEndOptions: normalizePersistedStartEndOptions(
-        (favorite.startEndOptions ?? null) as StartEndOptions | null
+        (row.data.startEndOptions ?? null) as StartEndOptions | null
       ),
-      setAt: favorite.setAt ?? new Date(),
+      createdAt: toDate(row.data.createdAt) ?? new Date(),
     });
   }
 
@@ -217,7 +143,6 @@ export async function createSetup(
   userId: string,
   draft: SavedSetupDraft
 ): Promise<SavedGeneratorSetup> {
-  await waitForPendingMigration(userId);
   const id = await firestoreSet(
     setupsPath(userId),
     null,
@@ -225,6 +150,7 @@ export async function createSetup(
       name: draft.name,
       config: draft.config as unknown as Record<string, unknown>,
       startEndOptions: draft.startEndOptions,
+      isPublic: true,
     },
     {
       trackOffline: true,
@@ -248,11 +174,10 @@ export async function renameSetup(
   setupId: string,
   name: string
 ): Promise<void> {
-  await waitForPendingMigration(userId);
   await firestoreSet(
     setupsPath(userId),
     setupId,
-    { name },
+    { name, isPublic: true },
     {
       merge: true,
       trackOffline: true,
@@ -263,81 +188,32 @@ export async function renameSetup(
 
 export async function updateSetup(
   userId: string,
-  setup: SavedGeneratorSetup,
-  shared: boolean
+  setup: SavedGeneratorSetup
 ): Promise<void> {
-  await waitForPendingMigration(userId);
-  const db = await getFirestoreInstance();
-  const batch = writeBatch(db);
-
-  batch.set(
-    doc(db, setupsPath(userId), setup.id),
+  await firestoreSet(
+    setupsPath(userId),
+    setup.id,
     {
       config: setup.config as unknown as Record<string, unknown>,
       startEndOptions: setup.startEndOptions,
-      updatedAt: serverTimestamp(),
+      isPublic: true,
     },
-    { merge: true }
+    {
+      merge: true,
+      trackOffline: true,
+      repoName: SETUP_REPOSITORY_NAME,
+    }
   );
-
-  if (shared) {
-    batch.update(doc(db, USERS_COLLECTION, userId), {
-      favoriteConfig: sharedProjection(setup),
-    });
-  }
-
-  await trackWrite(() => batch.commit(), SETUP_REPOSITORY_NAME);
 }
 
 export async function deleteSetup(
   userId: string,
-  setupId: string,
-  shared: boolean
+  setupId: string
 ): Promise<void> {
-  await waitForPendingMigration(userId);
-  if (!shared) {
-    await firestoreDelete(setupsPath(userId), setupId, {
-      trackOffline: true,
-      repoName: SETUP_REPOSITORY_NAME,
-    });
-    return;
-  }
-
-  const db = await getFirestoreInstance();
-  const batch = writeBatch(db);
-  batch.delete(doc(db, setupsPath(userId), setupId));
-  batch.update(doc(db, USERS_COLLECTION, userId), {
-    favoriteConfig: deleteField(),
+  await firestoreDelete(setupsPath(userId), setupId, {
+    trackOffline: true,
+    repoName: SETUP_REPOSITORY_NAME,
   });
-
-  await trackWrite(() => batch.commit(), SETUP_REPOSITORY_NAME);
-}
-
-export async function shareSetup(
-  userId: string,
-  setup: SavedGeneratorSetup
-): Promise<void> {
-  await waitForPendingMigration(userId);
-  const db = await getFirestoreInstance();
-  await trackWrite(
-    () =>
-      updateDoc(doc(db, USERS_COLLECTION, userId), {
-        favoriteConfig: sharedProjection(setup),
-      }),
-    SETUP_REPOSITORY_NAME
-  );
-}
-
-export async function unshareSetup(userId: string): Promise<void> {
-  await waitForPendingMigration(userId);
-  const db = await getFirestoreInstance();
-  await trackWrite(
-    () =>
-      updateDoc(doc(db, USERS_COLLECTION, userId), {
-        favoriteConfig: deleteField(),
-      }),
-    SETUP_REPOSITORY_NAME
-  );
 }
 
 export const generatorSetupRepository: GeneratorSetupRepository = {
@@ -347,6 +223,4 @@ export const generatorSetupRepository: GeneratorSetupRepository = {
   renameSetup,
   updateSetup,
   deleteSetup,
-  shareSetup,
-  unshareSetup,
 };
