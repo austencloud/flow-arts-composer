@@ -348,6 +348,11 @@ export function detectsInnerRotation(steps: readonly PairMotions[]): boolean {
   );
 }
 
-// The two location tables that are not reflections, exported for the
-// per-step hand relationship constraint so it does not keep its own copy.
-export { IDENTITY as IDENTITY_LOCATION_MAP, ROTATE_180 as ROTATE_180_LOCATION_MAP };
+// The location tables that are not reflections, exported for the per-step
+// hand relationship constraint so it does not keep its own copies.
+export {
+  IDENTITY as IDENTITY_LOCATION_MAP,
+  ROTATE_180 as ROTATE_180_LOCATION_MAP,
+  ROTATE_90_CW as ROTATE_90_CW_LOCATION_MAP,
+  ROTATE_90_CCW as ROTATE_90_CCW_LOCATION_MAP,
+};
