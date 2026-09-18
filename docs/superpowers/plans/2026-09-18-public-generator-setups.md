@@ -2740,23 +2740,45 @@ npm run wt:finish -- codex/public-generator-setups --route /create
 
 If the guarded finish reports a gate failure, stop and report it verbatim; leave the worktree intact.
 
-- [ ] **Step 2: Deploy the index, wait, then rules**
+- [ ] **Step 2: Deploy the index and wait for it to build**
 
 ```bash
 firebase deploy --only firestore:indexes --project the-kinetic-alphabet
 ```
-Wait for the `generatorSetups` collection-group index to show `Enabled` in the Firebase console (Firestore > Indexes > Composite). Then:
-```bash
-firebase deploy --only firestore:rules --project the-kinetic-alphabet
-```
+Wait for the `generatorSetups` collection-group index to show `Enabled` in the
+Firebase console (Firestore > Indexes > Composite). Nothing reads it until the
+new app ships.
 
 - [ ] **Step 3: Run the backfill for real**
 
 ```bash
 node scripts/backfill-public-generator-setups.cjs
 ```
-Expected: `setups flagged: 2, already public: 0, favoriteConfig cleared: 1`. Re-run the census script afterwards to confirm both setup docs carry `isPublic: true` and the user doc has no `favoriteConfig`.
+Expected: `setups flagged: 2, already public: 0, favoriteConfig cleared: 1`.
+Safe before the app or rules ship: the old client ignores `isPublic`, and the
+only `favoriteConfig` in the database is Austen's own. Re-run the census
+script afterwards to confirm both setup docs carry `isPublic: true` and the
+user doc has no `favoriteConfig`.
 
-- [ ] **Step 4: Ship the app**
+- [ ] **Step 4: Ship the app, then the rules, back to back**
 
-Push `main` through the normal deploy path, then open the preset drawer on production as a second account (or in a guest window) and confirm the Community tab lists "VTG 1:1" and "My Favorite" under Austen's name.
+Order matters. The new rules deny any setup write without `isPublic: true`,
+and the currently deployed client never writes that field. If the rules ship
+first, every Save in the window until the new bundle is live is denied. The
+old rules allow any owner write, so the new client works under them, and its
+Community tab shows the load error with a retry button until the wildcard
+read rule lands. So: app first, rules immediately after.
+
+1. Push `main` (`git push origin main`); `web-ci.yml` gates `pages-deploy.yml`.
+   Wait for the production deploy to go green.
+2. Then:
+```bash
+firebase deploy --only firestore:rules --project the-kinetic-alphabet
+```
+
+- [ ] **Step 5: Verify on production**
+
+Open the preset drawer on production as a second account (or in a guest
+window) and confirm the Community tab lists "VTG 1:1" and "My Favorite" under
+Austen's name, that Save as a guest opens the signup drawer, and that Save as
+a full account lands in both Saved and (from another account) Community.

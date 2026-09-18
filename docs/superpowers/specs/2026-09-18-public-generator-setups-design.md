@@ -222,13 +222,16 @@ Idempotent. As of the census it touches two setup docs and one user doc.
 ## Deploy order
 
 1. Merge to `main` (rules and index files ship with the code).
-2. `firebase deploy --only firestore:indexes` first; wait for the
-   collection-group index to finish building (Firebase console shows it).
-3. `firebase deploy --only firestore:rules`.
-4. Run the backfill.
-5. Deploy the app.
+2. `firebase deploy --only firestore:indexes`; wait for the collection-group
+   index to finish building (Firebase console shows it).
+3. Run the backfill. Safe at any point: the old client ignores `isPublic`.
+4. Deploy the app (push `main`) and wait for the production deploy.
+5. `firebase deploy --only firestore:rules` right after the app is live.
 
-Until the index is built, the Community tab shows its load error and the
+The app ships before the rules because the new rules deny any setup write
+without `isPublic: true`, which the old client never sends; the old rules
+allow any owner write, so the new client is fine under them. Between the app
+deploy and the rules deploy the Community tab shows its load error and the
 retry button; nothing else is affected.
 
 ## Tests to update
