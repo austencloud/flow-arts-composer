@@ -4,7 +4,9 @@ Shared implementation for Shape Engine: the flower axis, level and
 ratio matrices, exact-realization drill, and cell rendering. Internal
 `ShapeMatrix*` names remain because the matrix is still the behavior they own.
 The implementation is consumed by the `/shape-engine` public
-destination, the history archive, and the lab dev harness
+destination, the Create module's Shape tab
+(`src/lib/features/create/shape-engine/`), the history archive, and the lab
+dev harness
 (`src/routes/test/shape-matrix/+page.svelte`,
 `src/lib/features/lab/vtg-lab/`).
 
@@ -24,20 +26,20 @@ state. FAC can omit it for an isolated session or provide its own state owner.
 
 ## Public surface
 
-| Symbol                                                                                                               | Path                                                          |
-| -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| `ShapeMatrixApp` (Svelte component, optional `persistence` adapter)                                                  | `$lib/shared/shape-matrix/app/ShapeMatrixApp.svelte`          |
-| `loadShapeMatrix`, `ShapeMatrixData`                                                                                 | `$lib/shared/shape-matrix/services/shape-matrix-flowers`      |
-| `applyFilter`, `defaultMatrixFilters`, `defaultAxisFilter`, `AxisFilter`, `MatrixFilters`                            | `$lib/shared/shape-matrix/domain/filter-flower-axis`          |
-| `matrixFiltersForSize`, `MatrixSize`                                                                                 | `$lib/shared/shape-matrix/domain/matrix-size-preset`          |
-| `ShapeMatrixGrid` (Svelte component, `onselect({blue,red})`)                                                         | `$lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte`  |
-| `buildModeCards`, `ModeCard` (incl. `seq: SequenceData`)                                                             | `$lib/shared/shape-matrix/services/build-realization-cards`   |
-| `MODE_ORDER`, `MODE_LABEL`, `VtgMode`                                                                                | `$lib/shared/shape-matrix/services/shape-matrix-realizations` |
-| `buildModeRealizationCandidates`, `ModeRealization`                                                                  | `$lib/shared/shape-matrix/services/build-mode-realizations`   |
-| `findExactParityCandidates`, `flowerPhaseOrientations`, `verifyAndCorrect`, `ParityResult`                           | `$lib/shared/shape-matrix/services/verify-realization-parity` |
+| Symbol                                                                                                                                | Path                                                          |
+| ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `ShapeMatrixApp` (Svelte component, optional `persistence` adapter)                                                                   | `$lib/shared/shape-matrix/app/ShapeMatrixApp.svelte`          |
+| `loadShapeMatrix`, `ShapeMatrixData`                                                                                                  | `$lib/shared/shape-matrix/services/shape-matrix-flowers`      |
+| `applyFilter`, `defaultMatrixFilters`, `defaultAxisFilter`, `AxisFilter`, `MatrixFilters`                                             | `$lib/shared/shape-matrix/domain/filter-flower-axis`          |
+| `matrixFiltersForSize`, `MatrixSize`                                                                                                  | `$lib/shared/shape-matrix/domain/matrix-size-preset`          |
+| `ShapeMatrixGrid` (Svelte component, `onselect({blue,red})`)                                                                          | `$lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte`  |
+| `buildModeCards`, `ModeCard` (incl. `seq: SequenceData`)                                                                              | `$lib/shared/shape-matrix/services/build-realization-cards`   |
+| `MODE_ORDER`, `MODE_LABEL`, `VtgMode`                                                                                                 | `$lib/shared/shape-matrix/services/shape-matrix-realizations` |
+| `buildModeRealizationCandidates`, `ModeRealization`                                                                                   | `$lib/shared/shape-matrix/services/build-mode-realizations`   |
+| `findExactParityCandidates`, `flowerPhaseOrientations`, `verifyAndCorrect`, `ParityResult`                                            | `$lib/shared/shape-matrix/services/verify-realization-parity` |
 | `renderCell`, `renderHeader`, `renderExtentFit`, `renderEngineAligned`, `engineExtentBoxRatio` (the animation canvas's guide painter) | `$lib/shared/shape-matrix/services/shape-matrix-render`       |
-| `renderPoiCell`, `renderPoiHeader` (poi light-trail painter; same signatures, swap via the grid's `painter` prop)    | `$lib/shared/shape-matrix/services/shape-matrix-poi-render`   |
-| `Flower`, `flowerKey`, `flowerLabel`, `flowerStartOrientation`, `buildFlowerAxis`, `ratioLabel`, `flowerTurnPattern` | `$lib/shared/shape-matrix/domain/flower-signature`            |
+| `renderPoiCell`, `renderPoiHeader` (poi light-trail painter; same signatures, swap via the grid's `painter` prop)                     | `$lib/shared/shape-matrix/services/shape-matrix-poi-render`   |
+| `Flower`, `flowerKey`, `flowerLabel`, `flowerStartOrientation`, `buildFlowerAxis`, `ratioLabel`, `flowerTurnPattern`                  | `$lib/shared/shape-matrix/domain/flower-signature`            |
 
 ## Known lab-side dependencies (not extracted)
 

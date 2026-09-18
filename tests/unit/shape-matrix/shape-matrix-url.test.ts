@@ -289,6 +289,31 @@ describe("shape matrix URL state", () => {
     expect(url.searchParams.get("theoryRight")).toBe("1:2-pro-in");
   });
 
+  it("carries a soloed theory ratio, and drops it without a theory pair", () => {
+    const url = new URL("https://tkaflowarts.com/shape-engine");
+    const soloed = readShapeMatrixRouteState(
+      "?theory=1&leftRatio=2:9&rightRatio=1:2&pairing=QO" +
+        "&theoryLeft=2:9-anti-in&theoryRight=1:2-pro-in&theorySolo=left"
+    );
+    expect(soloed.theorySolo).toBe("left");
+
+    writeShapeMatrixRouteState(url, soloed);
+    expect(url.searchParams.get("theorySolo")).toBe("left");
+
+    // The Matrix's own solo is a different hand on a different grid.
+    expect(soloed.solo).toBeNull();
+
+    // Without a theory pair there is no ratio to solo, so the link says
+    // nothing; and a link back to the Matrix leaves the theory solo behind.
+    expect(
+      readShapeMatrixRouteState(
+        "?theory=1&leftRatio=2:9&rightRatio=1:2&theorySolo=left"
+      ).theorySolo
+    ).toBeUndefined();
+    writeShapeMatrixRouteState(url, { ...soloed, surface: "matrix" });
+    expect(url.searchParams.get("theorySolo")).toBeNull();
+  });
+
   it("round-trips a linked ratio relationship only for equal ratios", () => {
     const linked = readShapeMatrixRouteState(
       "?theory=1&leftRatio=2:9&rightRatio=2:9&linkRatios=1"

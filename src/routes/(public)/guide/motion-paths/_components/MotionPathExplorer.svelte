@@ -52,6 +52,17 @@
   // The lesson is the path. Everything that picks what plays (the matrix, a
   // browsed sequence, turns, timing) waits behind one button.
   let chooserOpen = $state(false);
+  // Four boxes on one screen. Once the tiles and the canvas sit side by side
+  // (a 900px container) on a viewport tall enough (900px), the workspace
+  // takes the viewport's height, every box scales to its quadrant and the
+  // chooser is simply there. The fit-mode CSS below carries the same two
+  // thresholds; this flag drives what CSS cannot (the tiles' size, the
+  // chooser's presence, the chips' shape).
+  const FIT_MIN_CONTAINER = 900;
+  const FIT_MEDIA = "(min-height: 900px)";
+  let explorerWidth = $state(0);
+  let viewportTall = $state(false);
+  const fitMode = $derived(explorerWidth >= FIT_MIN_CONTAINER && viewportTall);
   // Which hands the canvas draws. The animator owns per-hand motion
   // visibility; this surface scopes its own instance so a header's solo hides
   // the other prop and its trail through that owner, as the Shape Engine does.
@@ -120,8 +131,8 @@
     return `${flower.style}, ${turns}`;
   }
 
-  // One plain line for what the canvas is playing, so the reader never has
-  // to open the chooser to know.
+  // One plain line for what the canvas is playing. Sighted readers get it
+  // from the canvas's own glyphs; this line is announced, not shown.
   const nowPlaying = $derived.by(() => {
     if (explorer.source === "sequence") {
       const word = simplifyRepeatedWord(explorer.browsed.word ?? "");
@@ -223,20 +234,30 @@
       if (preference.matches) explorer.playing = false;
     };
     preference.addEventListener("change", pauseForReducedMotion);
+    const tall = window.matchMedia(FIT_MEDIA);
+    viewportTall = tall.matches;
+    const syncTall = () => (viewportTall = tall.matches);
+    tall.addEventListener("change", syncTall);
     return () => {
       mounted = false;
       preference.removeEventListener("change", pauseForReducedMotion);
+      tall.removeEventListener("change", syncTall);
     };
   });
 </script>
 
-<section class="explorer" aria-label="Motion path comparison">
+<section
+  class="explorer"
+  aria-label="Motion path comparison"
+  bind:clientWidth={explorerWidth}
+>
   <div class="explorer-workspace">
     <!-- The path comes first. It is the one thing this page teaches, so it is
          the first thing to see and the first thing to touch. -->
     <div class="path-column">
       <PathShapePanel
         showHelp={false}
+        fill={fitMode}
         onSettingChange={() => explorer.syncPolicy()}
       >
         {#snippet preview(path, size)}
@@ -255,10 +276,6 @@
           />
         {/snippet}
       </PathShapePanel>
-      <p class="path-note">
-        Only the hand’s path between positions changes. The positions and the
-        spin stay the same.
-      </p>
     </div>
 
     <div class="motion-column">
@@ -321,24 +338,26 @@
             >{/if}
         </div>
       </div>
-      <div class="now-playing">
-        <span class="now-playing-text" aria-live="polite">{nowPlaying}</span>
-        <PanelButton
-          ariaExpanded={chooserOpen}
-          ariaControls="motion-path-chooser"
-          onclick={() => (chooserOpen = !chooserOpen)}
-        >
-          Change what plays
-          <i
-            class="fas fa-chevron-down chooser-chevron"
-            class:open={chooserOpen}
-            aria-hidden="true"
-          ></i>
-        </PanelButton>
-      </div>
+      <span class="sr-only" aria-live="polite">{nowPlaying}</span>
+      {#if !fitMode}
+        <div class="now-playing">
+          <PanelButton
+            ariaExpanded={chooserOpen}
+            ariaControls="motion-path-chooser"
+            onclick={() => (chooserOpen = !chooserOpen)}
+          >
+            Change what plays
+            <i
+              class="fas fa-chevron-down chooser-chevron"
+              class:open={chooserOpen}
+              aria-hidden="true"
+            ></i>
+          </PanelButton>
+        </div>
+      {/if}
     </div>
 
-    {#if chooserOpen}
+    {#if chooserOpen || fitMode}
       <!-- The played sequence has two sources. Each owns its own controls and
            its own stage, and the two swap in place. -->
       <section
@@ -356,10 +375,14 @@
               onchange={chooseSource}
             />
           </div>
+          <!-- Stacked, the box eases between the two control heights. In fit
+               mode the controls fill their row, so the layers fill the box
+               and the chips take whatever the turn picker leaves. -->
           <Crossfade
             key={explorer.source}
             duration={DURATION.normal}
             animateHeight
+            fill={fitMode}
           >
             {#if explorer.source === "matrix"}
               <div class="matrix-controls">
@@ -385,7 +408,8 @@
                     <ElementChipRow
                       selected={explorer.selectedMode}
                       columns={3}
-                      compact
+                      compact={!fitMode}
+                      fill={fitMode}
                       disabled={!explorer.selectedPair}
                       onpick={(mode) =>
                         explorer.chooseHandRelationship(
@@ -404,6 +428,8 @@
               </div>
             {/if}
           </Crossfade>
+          <!-- The strip keeps its height while idle so a build in progress
+               moves nothing beside it. -->
           <div class="picker-feedback" aria-live="polite">
             {#if explorer.pickerStatus === "loading"}
               <span>Building that sequence…</span>
@@ -411,14 +437,6 @@
               <span role="alert">{explorer.pickerError}</span>
               <PanelButton onclick={explorer.retryMatrixSelection}
                 >Try again</PanelButton
-              >
-            {:else}
-              <span
-                >{explorer.source === "sequence"
-                  ? "Switch the path while it plays."
-                  : explorer.soloHand
-                    ? "One hand on its own. Pick a cell to pair it again."
-                    : "Rows are left-hand shapes, columns are right-hand shapes. Pick a cell to play that pair, or a shape on the edge to play it alone."}</span
               >
             {/if}
           </div>
@@ -512,6 +530,8 @@
   .explorer {
     container-type: inline-size;
     min-width: 0;
+    /* Under the fixed site header when something scrolls to it. */
+    scroll-margin-top: calc(56px + var(--spacing-md, 16px));
   }
   .explorer-workspace,
   .chooser {
@@ -649,15 +669,8 @@
     margin-bottom: var(--spacing-sm, 8px);
   }
   .now-playing {
-    justify-content: space-between;
+    justify-content: flex-end;
     margin-top: var(--spacing-sm, 8px);
-  }
-  .now-playing-text {
-    flex: 1;
-    min-width: 0;
-    color: var(--theme-text-muted);
-    font-size: var(--font-size-sm, 14px);
-    line-height: 1.4;
   }
   .now-playing > :global(button) {
     flex-shrink: 0;
@@ -685,12 +698,6 @@
   .path-column :global(.path-shape-grid) {
     margin-top: 0;
   }
-  .path-note {
-    margin: var(--spacing-sm, 8px) 0 0;
-    color: var(--theme-text-muted);
-    font-size: var(--font-size-sm, 14px);
-    line-height: 1.5;
-  }
   .trace-choice {
     display: flex;
     align-items: center;
@@ -714,7 +721,7 @@
       display: grid;
       grid-column: 1;
       grid-row: 1;
-      grid-template-rows: auto minmax(0, 1fr) auto;
+      grid-template-rows: auto minmax(0, 1fr);
       align-self: stretch;
       order: 0;
     }
@@ -762,6 +769,73 @@
   @container (min-width: 1100px) {
     .motion-column {
       max-width: 640px;
+    }
+  }
+  /* Fit mode: the same two thresholds as the script. The workspace takes the
+     viewport under the 56px site header, the top row gets a little more than
+     the bottom (its transport and caption rows are fixed), and each box is
+     the largest square its quadrant holds. Capped where the natural layout
+     already fits. */
+  @container (min-width: 900px) {
+    @media (min-height: 900px) {
+      .explorer-workspace {
+        height: min(calc(100dvh - 56px - 2 * var(--spacing-md, 16px)), 1400px);
+        grid-template-rows: minmax(0, 1.2fr) minmax(0, 1fr);
+        align-items: stretch;
+      }
+      .path-column,
+      .motion-column,
+      .path-column :global(.path-shape-grid) {
+        min-height: 0;
+      }
+      .motion-stage {
+        display: flex;
+        justify-content: center;
+        flex: 1 1 0;
+        min-height: 0;
+        margin-bottom: 0;
+      }
+      .animation {
+        height: 100%;
+        width: auto;
+        max-width: 100%;
+      }
+      .chooser {
+        grid-template-rows: minmax(0, 1fr);
+        align-self: stretch;
+        min-height: 0;
+      }
+      /* The controls fill the row: heading, then the crossfaded controls,
+         then the status strip. The crossfade's layers fill that middle box,
+         so a source switch changes nothing the page anchors its scroll to,
+         and the chip row takes what the turn picker leaves. */
+      .source-controls {
+        display: flex;
+        flex-direction: column;
+        align-self: stretch;
+        min-height: 0;
+      }
+      .source-controls > :global(.crossfade.fill) {
+        flex: 1 1 0;
+        height: auto;
+        min-height: 0;
+      }
+      .matrix-controls {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+      }
+      .relationship {
+        flex: 1 1 0;
+        min-height: 0;
+      }
+      .source-stage {
+        align-self: center;
+        height: 100%;
+        min-height: 0;
+        max-height: 34rem;
+      }
     }
   }
 </style>

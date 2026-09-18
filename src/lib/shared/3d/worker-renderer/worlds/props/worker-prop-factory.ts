@@ -6,6 +6,7 @@ import { Group } from "three";
 import {
   createFanModelWorkerProp,
   createRegistryWorkerProp,
+  fanModelUrl,
   REGISTRY_WORKER_PROP_TYPES,
   resolveWorkerPropModel,
 } from "./worker-gltf-props";
@@ -131,10 +132,7 @@ export async function createWorkerPropVisual(
       options.propType === CANONICAL_PROP_TYPE.BIGFAN) &&
     options.build.fanBuild !== "pictograph"
   ) {
-    const modelUrl =
-      options.build.fanBuild === "flat-grip"
-        ? "/models/props/fan-flat-grip.glb"
-        : "/models/props/fan.glb";
+    const modelUrl = fanModelUrl(options.build.fanBuild);
     if (!options.loadModel) return missingLoader(options, modelUrl);
     const visual = await createFanModelWorkerProp(
       options,

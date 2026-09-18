@@ -23,6 +23,7 @@
     disabled = false,
     columns = 6,
     compact = false,
+    fill = false,
     onpick,
   }: {
     selected: VtgMode | null;
@@ -32,6 +33,9 @@
     /** Tracks in the row. The drill wants all six; a popover wants three. */
     columns?: number;
     compact?: boolean;
+    /** Take the height the host gives the row and grow the chips, icons
+     *  first, to fill it. The host must give the row a definite height. */
+    fill?: boolean;
     onpick: (mode: VtgMode | null) => void;
   } = $props();
 
@@ -55,6 +59,7 @@
 
 <div
   class="chip-row"
+  class:fill
   style="--chip-row-columns: {columns}"
   role="group"
   aria-label="Hand path timing and direction"
@@ -83,6 +88,17 @@
     display: grid;
     grid-template-columns: repeat(var(--chip-row-columns, 6), minmax(0, 1fr));
     gap: 0.55rem;
+  }
+  /* The row is a size container so the chips can take their icon and word
+     sizes from its height: taller chips get a bigger icon, not more air.
+     With two rows of chips, 24cqh is about half a chip. */
+  .chip-row.fill {
+    grid-auto-rows: minmax(0, 1fr);
+    height: 100%;
+    min-height: 0;
+    container-type: size;
+    --choice-icon-size: clamp(2.25rem, 24cqh, 7rem);
+    --choice-copy-size: clamp(var(--font-size-compact, 0.75rem), 4cqh, 1.1rem);
   }
   @container shape-matrix-drill (max-width: 30rem) {
     .chip-row {

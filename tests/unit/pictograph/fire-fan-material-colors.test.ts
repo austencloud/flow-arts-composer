@@ -43,6 +43,7 @@ describe("physical fire-fan material colors", () => {
     "fire",
     "fire-covered",
     "flat-grip",
+    "star",
     "lotus",
     "day",
     "day-covered",

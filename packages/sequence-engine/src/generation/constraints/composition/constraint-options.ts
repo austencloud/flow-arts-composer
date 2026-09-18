@@ -7,6 +7,7 @@
  */
 
 import type { HandRelationshipOptions } from "../style/hand-relationship-constraint.js";
+import type { PropRelationshipOptions } from "../style/prop-relationship-constraint.js";
 
 export interface ConstraintOptions {
   /** Pro, anti, or any motion type. Default: "any" */
@@ -42,4 +43,8 @@ export interface ConstraintOptions {
   /** Tie the left hand to the right hand inside every step. Hard. See
    *  HandRelationshipConstraint for the maps and what "inverted" means. */
   handRelationship?: HandRelationshipOptions;
+
+  /** Tie the props' spins (and, with a timing, their phase) together. Hard.
+   *  See PropRelationshipConstraint and generation/prop-relationship.ts. */
+  propRelationship?: PropRelationshipOptions;
 }

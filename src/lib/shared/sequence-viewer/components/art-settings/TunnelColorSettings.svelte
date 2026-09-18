@@ -125,6 +125,13 @@
             true
           );
         }}
+        onswap={() => {
+          const { left, right } = controller.customPropColors;
+          controller.setCustomPropColor("left", right);
+          controller.setCustomPropColor("right", left);
+          reportSetting("left_prop_color", left, right, true);
+          reportSetting("right_prop_color", right, left, true);
+        }}
       />
     {:else if !dense}
       <p class="section-hint">
@@ -174,6 +181,11 @@
             updatePerformer({
               ...editingColors,
               custom: { ...editingColors.custom, [hand]: value },
+            })}
+          onswap={() =>
+            updatePerformer({
+              ...editingColors,
+              custom: { ...editingColors.custom, left: preview.right, right: preview.left },
             })}
         />
       {:else if override?.mode === "hue"}

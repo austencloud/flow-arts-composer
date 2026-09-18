@@ -30,13 +30,26 @@ import { REFLECTION_LOCATION_MAPS } from "../../../loop/placement-maps/strict-lo
 import {
   IDENTITY_LOCATION_MAP,
   ROTATE_180_LOCATION_MAP,
+  ROTATE_90_CW_LOCATION_MAP,
+  ROTATE_90_CCW_LOCATION_MAP,
 } from "../../../loop/detection/pair-relation.js";
 
+/**
+ * The six Timing x Direction relations as location maps. Together Same is
+ * identity, Together Opposite the north-south reflection, Split Same the
+ * half turn, Split Opposite the east-west reflection. Quarter Same is a
+ * quarter turn in either sense and Quarter Opposite a reflection on either
+ * diagonal; the caller picks the sense or the axis.
+ */
 export type HandRelationshipMap =
   | "identity"
   | "rotate-180"
+  | "rotate-90-cw"
+  | "rotate-90-ccw"
   | "reflect-north-south"
-  | "reflect-east-west";
+  | "reflect-east-west"
+  | "reflect-northeast-southwest"
+  | "reflect-northwest-southeast";
 
 export interface HandRelationshipOptions {
   /** How the right hand's locations map onto the left hand's. */
@@ -50,14 +63,27 @@ export const HAND_RELATIONSHIP_LOCATION_MAPS: Readonly<
 > = {
   identity: IDENTITY_LOCATION_MAP,
   "rotate-180": ROTATE_180_LOCATION_MAP,
+  "rotate-90-cw": ROTATE_90_CW_LOCATION_MAP,
+  "rotate-90-ccw": ROTATE_90_CCW_LOCATION_MAP,
   "reflect-north-south": REFLECTION_LOCATION_MAPS["north-south"],
   "reflect-east-west": REFLECTION_LOCATION_MAPS["east-west"],
+  "reflect-northeast-southwest":
+    REFLECTION_LOCATION_MAPS["northeast-southwest"],
+  "reflect-northwest-southeast":
+    REFLECTION_LOCATION_MAPS["northwest-southeast"],
 };
 
 const REFLECTIONS: ReadonlySet<HandRelationshipMap> = new Set([
   "reflect-north-south",
   "reflect-east-west",
+  "reflect-northeast-southwest",
+  "reflect-northwest-southeast",
 ]);
+
+/** Whether the map flips the hand path (and so the natural spin). */
+export function isReflectionMap(map: HandRelationshipMap): boolean {
+  return REFLECTIONS.has(map);
+}
 
 const PRO_ANTI = new Set(["pro", "anti"]);
 
@@ -110,7 +136,7 @@ export function relatedRotationDirection(
 ): "cw" | "ccw" | undefined {
   const r = lower(rightDirection);
   if (r !== "cw" && r !== "ccw") return undefined;
-  const flip = REFLECTIONS.has(options.map) !== (options.inverted === true);
+  const flip = isReflectionMap(options.map) !== (options.inverted === true);
   if (!flip) return r;
   return r === "cw" ? "ccw" : "cw";
 }
@@ -133,7 +159,7 @@ export function handRelationshipHolds(
   ) {
     return false;
   }
-  return spinRelates(left, right, REFLECTIONS.has(options.map), inverted);
+  return spinRelates(left, right, isReflectionMap(options.map), inverted);
 }
 
 export class HandRelationshipConstraint implements IVariationConstraint {

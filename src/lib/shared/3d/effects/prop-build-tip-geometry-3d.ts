@@ -27,7 +27,8 @@ export interface PropBuildTipGeometry3D {
     | "lotus"
     | "day"
     | "moon"
-    | "flat-grip";
+    | "flat-grip"
+    | "star";
   readonly finish: "fire" | "day";
 }
 
@@ -98,6 +99,17 @@ export const FAN_FLAT_GRIP_WICK_CENTERS_M = [
   { x: 0.0, y: 0.261577311, z: 0 },
   { x: 0.127747059, y: 0.215953361, z: 0 },
   { x: 0.212911765, y: 0.110511345, z: 0 },
+] as const;
+
+// The same ring-centre-relative metres used by scripts/assets/star-fire-reference.json:
+// five rolled wicks on a half circle of spokes around a hub weld 2.28 inches
+// above the 4-inch manipulation ring.
+export const FAN_STAR_WICK_CENTERS_M = [
+  { x: -0.27305, y: 0.057912, z: 0 },
+  { x: -0.193075507, y: 0.250987507, z: 0 },
+  { x: 0.0, y: 0.330962, z: 0 },
+  { x: 0.193075507, y: 0.250987507, z: 0 },
+  { x: 0.27305, y: 0.057912, z: 0 },
 ] as const;
 
 /**
@@ -201,6 +213,9 @@ function fanAnchors(
   }
   if (build.fanBuild === "flat-grip") {
     return fixedAnchors(FAN_FLAT_GRIP_WICK_CENTERS_M, scale);
+  }
+  if (build.fanBuild === "star") {
+    return fixedAnchors(FAN_STAR_WICK_CENTERS_M, scale);
   }
   if (build.fanBuild === "lotus") {
     return fixedAnchors(FAN_LOTUS_WICK_CENTERS_M, scale);

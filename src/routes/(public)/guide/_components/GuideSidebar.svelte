@@ -24,7 +24,9 @@
    * mechanism needed, this already updates live as the reader scrolls the turns
    * / double-turns pages.
    */
+  import { tick } from "svelte";
   import { page } from "$app/state";
+  import { growFade } from "$lib/shared/transitions/motion";
   import {
     bodyPagesByGroup,
     GROUP_TITLES,
@@ -66,9 +68,6 @@
     })
   );
 
-  let level1Open = $state(true);
-  let level2Open = $state(true);
-
   function isLevel1Active(id: string): boolean {
     return pathname === `/guide/level-1/${id}`;
   }
@@ -76,23 +75,72 @@
   const ratiosActive = $derived(pathname === "/guide/ratios");
   const motionPathsActive = $derived(pathname === "/guide/motion-paths");
 
-  // ── sessionStorage scroll position - restore on (re)mount ──────────────
-  // GuideSidebar remounts fresh whenever the reader crosses from level-1 to
-  // level-2 (or back), since each level's +layout.svelte hosts its own
-  // GuideNav instance. Without this, every level crossing snaps the sidebar
-  // back to the top even if the reader had scrolled deep into Level 2's TOC.
+  // A level opens when the reader is inside it or on the hub; the other level
+  // starts folded so the current chapter is on screen without scrolling. Both
+  // opened by default before, which put the Ratios, Motion paths, and Codex
+  // links 2000px down a 650px rail with nothing highlighted in view. The
+  // reader's own toggle wins until the route changes.
+  const onHub = $derived(pathname === "/guide" || pathname === "/guide/");
+  const level1Auto = $derived(onHub || pathname.startsWith("/guide/level-1"));
+  const level2Auto = $derived(onHub || pathname.startsWith("/guide/level-2"));
+  let level1Choice = $state<boolean | null>(null);
+  let level2Choice = $state<boolean | null>(null);
+  const level1Open = $derived(level1Choice ?? level1Auto);
+  const level2Open = $derived(level2Choice ?? level2Auto);
+  $effect(() => {
+    void pathname;
+    level1Choice = null;
+    level2Choice = null;
+  });
+
+  // ── Keep the current page in view ───────────────────────────────────────
+  // The aside that hosts this nav is the scroller (guide.css), so scroll
+  // position is read and restored there. On every route change the link that
+  // carries aria-current is brought into the visible band if it sits outside
+  // it, which also covers the remount when the reader crosses levels.
   const SCROLL_KEY = "guide-sidebar-scroll";
   let navEl: HTMLElement | undefined = $state();
+
+  function scrollerOf(el: HTMLElement): HTMLElement {
+    let node: HTMLElement | null = el;
+    while (node) {
+      const overflow = getComputedStyle(node).overflowY;
+      if (overflow === "auto" || overflow === "scroll") return node;
+      node = node.parentElement;
+    }
+    return el;
+  }
+
+  function revealCurrent(el: HTMLElement) {
+    const current = el.querySelector<HTMLElement>(
+      '[aria-current="page"], [aria-current="location"]'
+    );
+    if (!current) return;
+    const scroller = scrollerOf(el);
+    const box = scroller.getBoundingClientRect();
+    const link = current.getBoundingClientRect();
+    if (link.top >= box.top && link.bottom <= box.bottom) return;
+    scroller.scrollTop +=
+      link.top - box.top - (scroller.clientHeight - link.height) / 2;
+  }
 
   $effect(() => {
     const el = navEl;
     if (!el) return;
+    const scroller = scrollerOf(el);
     const saved = sessionStorage.getItem(SCROLL_KEY);
-    if (saved) el.scrollTop = Number(saved);
+    if (saved) scroller.scrollTop = Number(saved);
     const onScroll = () =>
-      sessionStorage.setItem(SCROLL_KEY, String(el.scrollTop));
-    el.addEventListener("scroll", onScroll, { passive: true });
-    return () => el.removeEventListener("scroll", onScroll);
+      sessionStorage.setItem(SCROLL_KEY, String(scroller.scrollTop));
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    return () => scroller.removeEventListener("scroll", onScroll);
+  });
+
+  $effect(() => {
+    const el = navEl;
+    void pathname;
+    if (!el) return;
+    void tick().then(() => revealCurrent(el));
   });
 </script>
 
@@ -112,36 +160,38 @@
         class="level-toggle"
         aria-expanded={level1Open}
         aria-label={level1Open ? "Collapse Level 1" : "Expand Level 1"}
-        onclick={() => (level1Open = !level1Open)}
+        onclick={() => (level1Choice = !level1Open)}
       >
         <i class="fas fa-chevron-down" aria-hidden="true"></i>
       </button>
     </div>
 
     {#if level1Open}
-      {#each level1Groups as g (g.group)}
-        <div class="chapter-group">
-          <div class="group-heading">
-            <span class="group-num">{g.group}</span>
-            <span>{g.title}</span>
+      <div class="level-body" transition:growFade>
+        {#each level1Groups as g (g.group)}
+          <div class="chapter-group">
+            <div class="group-heading">
+              <span class="group-num">{g.group}</span>
+              <span>{g.title}</span>
+            </div>
+            <ul class="section-list">
+              {#each g.rows as row (row.id)}
+                <li class:sub={row.level === 1}>
+                  <a
+                    class="section-link"
+                    class:active={isLevel1Active(row.id)}
+                    aria-current={isLevel1Active(row.id) ? "page" : undefined}
+                    href={`/guide/level-1/${row.id}`}
+                    onclick={() => onLinkClick?.()}
+                  >
+                    {row.label}
+                  </a>
+                </li>
+              {/each}
+            </ul>
           </div>
-          <ul class="section-list">
-            {#each g.rows as row (row.id)}
-              <li class:sub={row.level === 1}>
-                <a
-                  class="section-link"
-                  class:active={isLevel1Active(row.id)}
-                  aria-current={isLevel1Active(row.id) ? "page" : undefined}
-                  href={`/guide/level-1/${row.id}`}
-                  onclick={() => onLinkClick?.()}
-                >
-                  {row.label}
-                </a>
-              </li>
-            {/each}
-          </ul>
-        </div>
-      {/each}
+        {/each}
+      </div>
     {/if}
   </div>
 
@@ -160,38 +210,40 @@
         class="level-toggle"
         aria-expanded={level2Open}
         aria-label={level2Open ? "Collapse Level 2" : "Expand Level 2"}
-        onclick={() => (level2Open = !level2Open)}
+        onclick={() => (level2Choice = !level2Open)}
       >
         <i class="fas fa-chevron-down" aria-hidden="true"></i>
       </button>
     </div>
 
     {#if level2Open}
-      {#each LEVEL2_SECTION_ANCHORS as route (route.slug)}
-        <div class="chapter-group">
-          <div class="group-heading">
-            <span class="group-num">{route.group}</span>
-            <span>{LEVEL2_GROUP_TITLES[route.group]}</span>
+      <div class="level-body" transition:growFade>
+        {#each LEVEL2_SECTION_ANCHORS as route (route.slug)}
+          <div class="chapter-group">
+            <div class="group-heading">
+              <span class="group-num">{route.group}</span>
+              <span>{LEVEL2_GROUP_TITLES[route.group]}</span>
+            </div>
+            <ul class="section-list">
+              {#each route.sections as section (section.id)}
+                <li>
+                  <a
+                    class="section-link"
+                    class:active={activeSectionId === section.id}
+                    aria-current={activeSectionId === section.id
+                      ? "location"
+                      : undefined}
+                    href={`/guide/level-2/${route.slug}#${section.id}`}
+                    onclick={() => onLinkClick?.()}
+                  >
+                    {section.title}
+                  </a>
+                </li>
+              {/each}
+            </ul>
           </div>
-          <ul class="section-list">
-            {#each route.sections as section (section.id)}
-              <li>
-                <a
-                  class="section-link"
-                  class:active={activeSectionId === section.id}
-                  aria-current={activeSectionId === section.id
-                    ? "location"
-                    : undefined}
-                  href={`/guide/level-2/${route.slug}#${section.id}`}
-                  onclick={() => onLinkClick?.()}
-                >
-                  {section.title}
-                </a>
-              </li>
-            {/each}
-          </ul>
-        </div>
-      {/each}
+        {/each}
+      </div>
     {/if}
   </div>
 

@@ -50,6 +50,10 @@ describe("isTabAccessible", () => {
   it("does not invent sub-tabs for the Creators module", () => {
     expect(isTabAccessible("creators", "creators", "guest")).toBe(false);
   });
+
+  it("allows the shape-engine tab in create for guests", () => {
+    expect(isTabAccessible("create", "shape-engine", "guest")).toBe(true);
+  });
 });
 
 describe("getAccessibleTabs", () => {
@@ -58,6 +62,7 @@ describe("getAccessibleTabs", () => {
       "assemble",
       "construct",
       "generate",
+      "shape-engine",
     ]);
   });
 

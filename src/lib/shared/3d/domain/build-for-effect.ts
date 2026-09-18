@@ -28,13 +28,13 @@ export interface PropBuildEquip {
 }
 
 /**
- * `flat-grip` remains a supported persisted fan appearance while the shared
- * scene package's current `PropBuild` catalog no longer includes it. Accept it
- * at this compatibility boundary so enabling fire preserves its five-wick
- * build; writes remain restricted to the current package shape.
+ * `flat-grip` and `star` remain supported persisted fan appearances even when
+ * the shared scene package's `PropBuild` catalog lags behind. Accept them at
+ * this compatibility boundary so enabling fire preserves their five-wick
+ * builds; writes remain restricted to the current package shape.
  */
 type EffectPropBuild = Omit<PropBuild, "fanBuild"> & {
-  readonly fanBuild: PropBuild["fanBuild"] | "flat-grip";
+  readonly fanBuild: PropBuild["fanBuild"] | "flat-grip" | "star";
 };
 
 /** Every member of the "Double Staff build" family. */
@@ -111,7 +111,8 @@ function fireEquip(
     if (
       current.fanBuild === "fire" ||
       current.fanBuild === "lotus" ||
-      current.fanBuild === "flat-grip"
+      current.fanBuild === "flat-grip" ||
+      current.fanBuild === "star"
     ) {
       return equipBuild({ fanCover: "bare" }, current);
     }

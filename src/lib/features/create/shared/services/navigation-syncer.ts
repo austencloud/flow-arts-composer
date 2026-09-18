@@ -59,6 +59,7 @@ export class NavigationSyncer {
     const validCreateTabs = [
       "construct",
       "generate",
+      "shape-engine",
       "spell",
       "assemble",
       "fuse",

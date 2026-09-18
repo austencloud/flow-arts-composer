@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   HandRelationshipConstraint,
   handRelationshipHolds,
+  relatedRotationDirection,
   type HandRelationshipOptions,
 } from "../../../../src/generation/constraints/style/hand-relationship-constraint.js";
 import { ConstraintType } from "../../../../src/generation/constraints/constraint-types.js";
@@ -240,5 +241,79 @@ describe("against the production dataframes", () => {
         .map((p) => p.startPlacement)
     );
     expect([...starts].sort()).toEqual(["gamma12", "gamma16", "gamma2", "gamma6"]);
+  });
+});
+
+describe("quarter maps", () => {
+  // Right hand E to N: a counter-clockwise arc, pro follows the hand, so ccw.
+  const right = motion("pro", "ccw", "e", "n");
+
+  it("rotate-90-cw sends E>N onto S>E and keeps the spin", () => {
+    const map = "rotate-90-cw" as const;
+    expect(
+      handRelationshipHolds(motion("pro", "ccw", "s", "e"), right, { map })
+    ).toBe(true);
+    expect(
+      handRelationshipHolds(motion("pro", "cw", "s", "e"), right, { map })
+    ).toBe(false);
+    expect(
+      handRelationshipHolds(motion("pro", "ccw", "n", "w"), right, { map })
+    ).toBe(false);
+    expect(
+      handRelationshipHolds(motion("anti", "cw", "s", "e"), right, {
+        map,
+        inverted: true,
+      })
+    ).toBe(true);
+  });
+
+  it("rotate-90-ccw sends E>N onto N>W and keeps the spin", () => {
+    const map = "rotate-90-ccw" as const;
+    expect(
+      handRelationshipHolds(motion("pro", "ccw", "n", "w"), right, { map })
+    ).toBe(true);
+    expect(
+      handRelationshipHolds(motion("pro", "cw", "n", "w"), right, { map })
+    ).toBe(false);
+  });
+
+  it("reflect-northeast-southwest sends E>N onto N>E and flips the spin", () => {
+    const map = "reflect-northeast-southwest" as const;
+    expect(
+      handRelationshipHolds(motion("pro", "cw", "n", "e"), right, { map })
+    ).toBe(true);
+    expect(
+      handRelationshipHolds(motion("pro", "ccw", "n", "e"), right, { map })
+    ).toBe(false);
+    expect(
+      handRelationshipHolds(motion("anti", "ccw", "n", "e"), right, {
+        map,
+        inverted: true,
+      })
+    ).toBe(true);
+  });
+
+  it("reflect-northwest-southeast sends E>N onto S>W and flips the spin", () => {
+    const map = "reflect-northwest-southeast" as const;
+    expect(
+      handRelationshipHolds(motion("pro", "cw", "s", "w"), right, { map })
+    ).toBe(true);
+    expect(
+      handRelationshipHolds(motion("pro", "ccw", "s", "w"), right, { map })
+    ).toBe(false);
+  });
+
+  it("relatedRotationDirection flips for the diagonal reflections only", () => {
+    expect(relatedRotationDirection("cw", { map: "rotate-90-cw" })).toBe("cw");
+    expect(relatedRotationDirection("cw", { map: "rotate-90-ccw" })).toBe("cw");
+    expect(
+      relatedRotationDirection("cw", { map: "reflect-northeast-southwest" })
+    ).toBe("ccw");
+    expect(
+      relatedRotationDirection("cw", {
+        map: "reflect-northwest-southeast",
+        inverted: true,
+      })
+    ).toBe("cw");
   });
 });
