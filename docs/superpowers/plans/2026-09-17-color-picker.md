@@ -327,12 +327,34 @@ describe("LabeledColorPairPicker", () => {
     const { onchange } = renderPicker();
     await openLeft();
     const hue = page.getByRole("slider", { name: "Left prop hue" });
-    await hue.click();
+    (hue.element() as HTMLElement).focus();
+    const before = onchange.mock.calls.length;
     await userEvent.keyboard("{ArrowRight}");
-    const calls = onchange.mock.calls.filter(([hand]) => hand === "left");
-    expect(calls.length).toBeGreaterThan(0);
-    expect(calls.at(-1)![1]).toMatch(/^#[0-9a-f]{6}$/);
+    await expect.poll(() => onchange.mock.calls.length).toBeGreaterThan(before);
+    const [hand, hex] = onchange.mock.calls.at(-1)!;
+    expect(hand).toBe("left");
+    expect(hex).toMatch(/^#[0-9a-f]{6}$/);
   });
+
+  it.each([
+    [300, 6, 1],
+    [420, 8, 1],
+    [640, 12, 1],
+    [900, 12, 2],
+  ])(
+    "in a %ipx box the matrix has %i columns and the editor %i tracks",
+    async (width, cols, tracks) => {
+      const { screen } = renderPicker();
+      screen.container.style.width = `${width}px`;
+      await openLeft();
+      const grid = screen.container.querySelector<HTMLElement>(".preset-grid")!;
+      const editor = screen.container.querySelector<HTMLElement>(".color-editor")!;
+      const trackCount = (el: HTMLElement) =>
+        getComputedStyle(el).gridTemplateColumns.split(" ").length;
+      await expect.poll(() => trackCount(grid)).toBe(cols);
+      await expect.poll(() => trackCount(editor)).toBe(tracks);
+    },
+  );
 
   it("has no axe violations with the editor open", async () => {
     renderPicker();
@@ -519,26 +541,28 @@ Replace the whole of `src/lib/shared/ui/components/LabeledColorPairPicker.svelte
   {#if editing}
     {@const entry = entries.find((item) => item.hand === editing)!}
     <div class="color-editor" id={editorId} role="group" aria-label={`${entry.label} color`}>
-      <div
-        class="preset-grid"
-        role="group"
-        aria-label={`${entry.label} presets`}
-        style:--columns={COLOR_PRESET_COLUMNS}
-      >
-        {#each COLOR_PRESETS as preset (preset.hex)}
-          {@const pressed = entry.value.toLowerCase() === preset.hex}
-          <button
-            type="button"
-            class="preset"
-            style:--preset={preset.hex}
-            aria-label={`${entry.label}: ${preset.name}`}
-            aria-pressed={pressed}
-            title={preset.name}
-            onclick={() => onchange(entry.hand, preset.hex)}
-          >
-            <span aria-hidden="true">{pressed ? "✓" : ""}</span>
-          </button>
-        {/each}
+      <div class="preset-block">
+        <div
+          class="preset-grid"
+          role="group"
+          aria-label={`${entry.label} presets`}
+          style:--columns={COLOR_PRESET_COLUMNS}
+        >
+          {#each COLOR_PRESETS as preset (preset.hex)}
+            {@const pressed = entry.value.toLowerCase() === preset.hex}
+            <button
+              type="button"
+              class="preset"
+              style:--preset={preset.hex}
+              aria-label={`${entry.label}: ${preset.name}`}
+              aria-pressed={pressed}
+              title={preset.name}
+              onclick={() => onchange(entry.hand, preset.hex)}
+            >
+              <span aria-hidden="true">{pressed ? "✓" : ""}</span>
+            </button>
+          {/each}
+        </div>
       </div>
       <div class="fine-tune">
         <ColorPicker
@@ -729,43 +753,51 @@ Replace the whole of `src/lib/shared/ui/components/LabeledColorPairPicker.svelte
     letter-spacing: 0.02em;
   }
 
-  /* Editor: swatch matrix + fine tune. Stacks until there is room for a
-     12-column matrix (33rem) beside the 16rem fine-tune column. */
+  /* Editor: swatch matrix + fine tune. A container query never matches the
+     element that declares the container, so the editor asks the outer
+     color-pair container and the matrix asks its preset-block wrapper. */
   .color-editor {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 12px;
-    padding: 12px;
+    padding: 8px;
     border: 1px solid var(--theme-stroke);
     border-radius: 12px;
     background: var(--theme-card-bg);
-    container: color-editor / inline-size;
   }
 
-  @container color-editor (min-width: 52rem) {
+  /* Two columns once the preset block can hold 8 columns beside the 16rem
+     fine-tune track: 42rem - 16rem - 12px gap - 18px padding and border
+     leaves 24rem. */
+  @container color-pair (min-width: 42rem) {
     .color-editor {
       grid-template-columns: minmax(0, 1fr) 16rem;
     }
   }
 
-  /* The matrix picks its column count from its own width so no row is ever
-     short: 48 swatches divide evenly by 12, 8 and 6. */
+  .preset-block {
+    min-width: 0;
+    container: preset-grid / inline-size;
+  }
+
+  /* The matrix picks its column count from the block width so no row is
+     ever short (48 divides by 12, 8 and 6) and every swatch stays at the
+     44px touch floor: 6 columns from 284px, 8 from 24rem, 12 from 36rem. */
   .preset-grid {
     --cols: 6;
     display: grid;
     grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
     gap: 4px;
     align-content: start;
-    container: preset-grid / inline-size;
   }
 
-  @container preset-grid (min-width: 22rem) {
+  @container preset-grid (min-width: 24rem) {
     .preset-grid {
       --cols: 8;
     }
   }
 
-  @container preset-grid (min-width: 33rem) {
+  @container preset-grid (min-width: 36rem) {
     .preset-grid {
       --cols: var(--columns, 12);
     }
@@ -814,6 +846,9 @@ Replace the whole of `src/lib/shared/ui/components/LabeledColorPairPicker.svelte
     gap: 10px;
     align-content: start;
     min-width: 0;
+    /* Stacked under the matrix the block would otherwise stretch the SV
+       square into a 650px strip. */
+    max-width: 28rem;
     container: fine-tune / inline-size;
     /* svelte-awesome-color-picker sizing and theme hooks; cqi resolves to a
        length so the library's px arithmetic keeps working. */
@@ -1180,7 +1215,7 @@ Start it with `preview_start {name: "tka-color-picker"}` and open `/test/sidebar
 
 - [ ] **Step 2: Tiers**
 
-At 375×667, 960×412, 820×1180, 1440×900, 1920×1080, 2560×1440, 3840×2160: open Left, screenshot with the editor open at each of the three width-toggle settings that change the column count at that tier. Confirm with `read_page`/JS that `.preset-grid` has 12, 8 or 6 columns and that no row is short (`children.length % cols === 0` is guaranteed; verify the computed `grid-template-columns` count). Confirm swatch width >= 40px and `.swap` is 44×44.
+At 375×667, 960×412, 820×1180, 1440×900, 1920×1080, 2560×1440, 3840×2160: open Left, screenshot with the editor open at each of the three width-toggle settings that change the column count at that tier. Confirm with `read_page`/JS that `.preset-grid` has 12, 8 or 6 columns and that no row is short (`children.length % cols === 0` is guaranteed; verify the computed `grid-template-columns` count). Confirm swatch width >= 44px and `.swap` is 44×44.
 
 - [ ] **Step 3: Interactions**
 

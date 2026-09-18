@@ -42,9 +42,10 @@ in a row lands at the same perceived lightness.
 
 - 12 hues, 30° apart, starting at 25° so red, orange, yellow, green, cyan,
   blue, violet, and pink each get a column.
-- 4 rows, in this order: light (L 0.82, C 0.11), vivid (L 0.66, C 0.22 before
-  gamut clip), deep (L 0.48, C 0.16), neutral (12 greys from white L 1.00 to
-  black L 0.00, evenly spaced in L).
+- 4 rows, in this order: light (L 0.82, C 0.11), vivid (each hue at its sRGB
+  gamut cusp, the most saturated color of that hue, because a fixed lightness
+  turns yellow into olive), deep (L 0.48, C 0.16), neutral (12 greys from
+  white L 1.00 to black L 0.00, evenly spaced in L).
 - 48 swatches. 48 divides by 12, 8, and 6, so the grid never ends on a short
   row at any of the three column counts below.
 - Each entry: `{ hex, name, row }` where `row` is `"light" | "vivid" | "deep" |
@@ -79,11 +80,15 @@ Layout, top to bottom:
    query the row stacks and the swap button centers between the two controls.
 4. Editor (when a hand is being edited, same toggle as today), a grid with two
    areas:
-   - **Swatches**: the swatch block is its own inline-size container.
+   - **Swatches**: a `div.preset-block` wrapper is the inline-size container
+     (a container query never matches the element that declares it, so the
+     grid must query an ancestor). Inside it the grid is
      `grid-template-columns: repeat(var(--cols), minmax(0,1fr))` with
-     `--cols: 12` at or above 33rem of swatch-block width, `8` from 22rem,
-     `6` below. Gap 4px. Those thresholds keep every swatch at 40px or wider
-     (6 cols at the 19rem sidebar floor is 44px). Each swatch is a `button`
+     `--cols: 12` at or above 36rem of preset-block width, `8` from 24rem,
+     `6` below. Gap 4px, editor padding 8px. Those thresholds keep every
+     swatch at the 44px touch floor (6 cols at the 19rem sidebar floor give
+     a 286px block and 44.3px swatches; 8 at 24rem is 44.5px; 12 at 36rem is
+     44.3px). Each swatch is a `button`
      with `aria-pressed`, `title={name}`, `aria-label="{hand label}: {name}"`,
      square via `aspect-ratio: 1`, the check mark on the pressed one. The
      current 44px minimum goes away; the matrix sizes to its columns.
@@ -103,10 +108,12 @@ Layout, top to bottom:
      opens `new EyeDropper().open()` and forwards `sRGBHex` lowercased; an
      `AbortError` is ignored. When the API is absent, the existing "More
      colors" native-input button stays as the fallback. Never both.
-   - The editor is its own inline-size container. At or above 52rem it is
-     two columns: swatches `minmax(0, 1fr)`, fine tune `16rem`, gap 12px,
-     which leaves the swatch block at least 33rem wide (12 columns). Below
-     that it stacks, swatches first.
+   - The editor queries the outer `color-pair` container. At or above 42rem
+     it is two columns: swatches `minmax(0, 1fr)`, fine tune `16rem`, gap
+     12px, which leaves the preset block at least 24rem wide (8 columns,
+     and 12 from 54rem where the block reaches 36rem). Below that it
+     stacks, swatches first, and `.fine-tune` has `max-width: 28rem` so the
+     SV square never becomes a 650px strip.
 
 All interactive elements keep the existing focus-visible outline. No new
 theme variables; only `--theme-*` tokens and the library's documented vars.
@@ -134,7 +141,10 @@ as `SegmentedControl.svelte.test.ts`):
 - opening a hand and clicking a swatch calls `onchange` with that hand and hex;
 - the pressed swatch matches the current value;
 - swap calls `onswap` once; without `onswap` there is no swap button;
-- ArrowRight on the hue slider fires `onchange` with a valid hex;
+- ArrowRight on the focused hue slider fires `onchange` beyond what the
+  focusing click already fired, with a valid hex;
+- rendered in a 300px, 420px, 640px and 900px wide box the matrix computes
+  to 6, 8, 12 and 12 columns, and at 900px the editor has two tracks;
 - a valid hex typed in the field fires `onchange`; an invalid one does not;
 - no axe violations with the editor open.
 
@@ -149,4 +159,5 @@ in Chromium, console clean. Screenshots go in the verification evidence.
 ## Out of scope
 
 `ClipAppearanceSection`'s local six-color list, `ProfileColorPicker` layout,
-alpha, saved custom swatches, and harmony suggestions.
+alpha, saved custom swatches, harmony suggestions, and a roving tabindex for
+the swatch matrix (48 tab stops today; a follow-up).
