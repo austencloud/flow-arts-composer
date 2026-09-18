@@ -46,10 +46,8 @@ import {
   type TurnSource,
 } from "../turns/TurnSource.js";
 import { materializeTurn } from "../turns/TurnMaterializer.js";
-import {
-  relatedRotationDirection,
-  type HandRelationshipOptions,
-} from "../constraints/style/hand-relationship-constraint.js";
+import type { HandRelationshipOptions } from "../constraints/style/hand-relationship-constraint.js";
+import { resolveLeftSpinRule, type LeftSpinRule } from "../turns/left-spin-rule.js";
 import {
   applyLayerPattern,
   enforceHandFlipParity,
@@ -221,15 +219,19 @@ function resolveTurnAllocationOptions(
 }
 
 /**
- * The relationship that decides a left dash's spin, or undefined when turns
- * are independent or no relationship is active. Only the random allocation
- * path matches turns; a turnPattern keeps whatever lanes it was given.
+ * The rule that decides a left dash or static spin, or undefined when turns
+ * are independent and no prop relationship is active. Only the random
+ * allocation path matches turns; a turnPattern keeps whatever lanes it was
+ * given, but a prop relationship still fixes the spin.
  */
-function resolveMatchedHandRelationship(
+function resolveLeftSpinRuleFor(
   options: BuildOptions
-): HandRelationshipOptions | undefined {
-  if (!options.matchHandTurns) return undefined;
-  return options.constraintOptions?.handRelationship;
+): LeftSpinRule | undefined {
+  return resolveLeftSpinRule({
+    handRelationship: options.constraintOptions?.handRelationship,
+    propRelationship: options.constraintOptions?.propRelationship,
+    matchHandTurns: options.matchHandTurns === true && !options.turnPattern,
+  });
 }
 
 // Public types
@@ -276,6 +278,9 @@ export interface BuildOptions {
    * a `constraintOptions.handRelationship` active, a left dash or static that
    * gained turns also takes the spin the relationship implies from the right
    * hand. Random allocation only: a `turnPattern` keeps its own lanes.
+   *
+   * A `constraintOptions.propRelationship` fixes that spin on its own, match
+   * turns or not.
    */
   matchHandTurns?: boolean;
 
@@ -843,7 +848,7 @@ export class SequenceBuilder {
           {
             level: options.level,
             allowStaticSteps: this.resolveAllowStaticSteps(options),
-            matchedHandRelationship: resolveMatchedHandRelationship(options),
+            leftSpinRule: resolveLeftSpinRuleFor(options),
           }
         );
         const propContinuity = this.resolveEffectivePropContinuity(options);
@@ -901,7 +906,7 @@ export class SequenceBuilder {
         rightStartOrientation: options.rightStartOrientation,
       },
       resolveLayerShaping(options),
-      resolveMatchedHandRelationship(options)
+      resolveLeftSpinRuleFor(options)
     );
 
     // Stage 6: LOOP extension (if requested)
@@ -1137,7 +1142,7 @@ export class SequenceBuilder {
         {
           level: options.level,
           allowStaticSteps: this.resolveAllowStaticSteps(options),
-          matchedHandRelationship: resolveMatchedHandRelationship(options),
+          leftSpinRule: resolveLeftSpinRuleFor(options),
         }
       );
       const propContinuity = this.resolveEffectivePropContinuity(options);
@@ -1262,7 +1267,7 @@ export class SequenceBuilder {
           {
             level: options.level,
             allowStaticSteps: this.resolveAllowStaticSteps(options),
-            matchedHandRelationship: resolveMatchedHandRelationship(options),
+            leftSpinRule: resolveLeftSpinRuleFor(options),
           }
         );
         const propContinuity = this.resolveEffectivePropContinuity(options);
@@ -1337,7 +1342,7 @@ export class SequenceBuilder {
         rightStartOrientation: options.rightStartOrientation,
       },
       resolveLayerShaping(options),
-      resolveMatchedHandRelationship(options)
+      resolveLeftSpinRuleFor(options)
     );
 
     // Stage 6: LOOP extension (if requested)
@@ -1512,7 +1517,7 @@ export class SequenceBuilder {
       level?: number;
       maxTurnIntensity?: number;
     },
-    matchedHandRelationship?: HandRelationshipOptions
+    leftSpinRule?: LeftSpinRule
   ): BuildResult {
     const bridgeIndices = new Set(searchResult.bridgeStepIndices);
     const sequence: SequenceStep[] = [];
@@ -1550,11 +1555,8 @@ export class SequenceBuilder {
       const leftTurn = materializeTurn(pd.leftMotion, leftTurns, {
         previousRotation: prevLeftRot,
         propContinuity,
-        forcedRotationDirection: matchedHandRelationship
-          ? relatedRotationDirection(
-              rightTurn.rotationDirection,
-              matchedHandRelationship
-            )
+        forcedRotationDirection: leftSpinRule
+          ? leftSpinRule(rightTurn.rotationDirection)
           : undefined,
       });
 

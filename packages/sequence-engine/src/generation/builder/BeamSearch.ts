@@ -38,10 +38,7 @@ import type {
 } from "../../core/types/sequence-engine-types.js";
 import { LetterClassifier } from "../../core/letters/LetterClassifier.js";
 import type { ReachabilityResult } from "../reachability/PlacementReachabilityAnalyzer.js";
-import {
-  relatedRotationDirection,
-  type HandRelationshipOptions,
-} from "../constraints/style/hand-relationship-constraint.js";
+import type { LeftSpinRule } from "../turns/left-spin-rule.js";
 
 /**
  * PropContinuity mode for rotation direction resolution.
@@ -64,16 +61,16 @@ function enrichWithTurns(
   turnSource: TurnSource | undefined,
   previousSteps: PictographData[],
   propContinuity: PropContinuityMode | undefined,
-  matchedHandRelationship?: HandRelationshipOptions
+  leftSpinRule?: LeftSpinRule
 ): PictographData {
   if (!turnSource) return variation;
 
   const leftTurns = turnSource.at(stepIndex, "left");
   const rightTurns = turnSource.at(stepIndex, "right");
 
-  // Right first: with matched turns and a hand relationship, a left dash or
-  // static that gains turns takes the spin the relationship implies from the
-  // right hand instead of its own continuity or coin flip.
+  // Right first: a left dash or static that gains turns takes the spin the
+  // rule implies from the right hand (a prop relationship, or match turns
+  // plus a hand relationship) instead of its own continuity or coin flip.
   const enrichedRight = enrichMotionDirection(
     variation.rightMotion,
     rightTurns,
@@ -87,11 +84,8 @@ function enrichWithTurns(
     previousSteps,
     "left",
     propContinuity,
-    matchedHandRelationship
-      ? relatedRotationDirection(
-          enrichedRight.rotationDirection as string | undefined,
-          matchedHandRelationship
-        )
+    leftSpinRule
+      ? leftSpinRule(enrichedRight.rotationDirection as string | undefined)
       : undefined
   );
 
@@ -233,9 +227,9 @@ export class BeamSearch {
       /** Offer static (Type 6) letters mid-sequence. Off by default: a static
        *  step the user did not ask for reads as standing still. */
       allowStaticSteps?: boolean;
-      /** "Match turns" plus a hand relationship: the left hand's dash or
-       *  static spin follows the right hand's. See enrichWithTurns. */
-      matchedHandRelationship?: HandRelationshipOptions;
+      /** Decides a left dash or static spin from the right hand's. See
+       *  turns/left-spin-rule.ts and enrichWithTurns. */
+      leftSpinRule?: LeftSpinRule;
     } = {}
   ) {}
 
@@ -359,7 +353,7 @@ export class BeamSearch {
           turnSource,
           initialState.steps,
           propContinuity,
-          this.options.matchedHandRelationship
+          this.options.leftSpinRule
         );
         const state = extendState(initialState, enriched, scored);
         beam.push(state);
@@ -445,7 +439,7 @@ export class BeamSearch {
               turnSource,
               state.steps,
               propContinuity,
-          this.options.matchedHandRelationship
+          this.options.leftSpinRule
             );
             nextBeam.push(extendState(state, enriched, scored));
             statesExplored++;
@@ -654,7 +648,7 @@ export class BeamSearch {
           turnSource,
           initialState.steps,
           propContinuity,
-          this.options.matchedHandRelationship
+          this.options.leftSpinRule
         );
         const state = extendState(initialState, enriched, scored);
         beam.push(state);
@@ -752,7 +746,7 @@ export class BeamSearch {
             turnSource,
             state.steps,
             propContinuity,
-          this.options.matchedHandRelationship
+          this.options.leftSpinRule
           );
           nextBeam.push(extendState(state, enriched, scored));
           statesExplored++;
