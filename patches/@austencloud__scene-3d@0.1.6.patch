@@ -19422,10 +19422,10 @@ index 9ed038d07d35b4d5d340c578e100415154ac1178..2048adf7ec318ffb9501f56a7e507503
      >
        <T is={coloredScene} />
 diff --git a/src/lib/components/props/Hoop3D.svelte b/src/lib/components/props/Hoop3D.svelte
-index 9ffc2413236b11d28d99f53884e6a696741e3333..06179df2b763d6c487394d974c7c227f85bea922 100644
+index 9ffc2413236b11d28d99f53884e6a696741e3333..cad34bdf1dac7bcdc80eca278f6c36175091d049 100644
 --- a/src/lib/components/props/Hoop3D.svelte
 +++ b/src/lib/components/props/Hoop3D.svelte
-@@ -1,20 +1,94 @@
+@@ -1,20 +1,98 @@
 +<script module lang="ts">
 +  import { SphereGeometry, TorusGeometry } from "three";
 +  import {
@@ -19483,6 +19483,10 @@ index 9ffc2413236b11d28d99f53884e6a696741e3333..06179df2b763d6c487394d974c7c227f
 +  function centreArc(centreAngle: number, arc: number): number {
 +    return centreAngle - arc / 2;
 +  }
++
++  // Fixed band lengths, so the arc each subtends on the ring is fixed too.
++  const joinArc = hoopBandArc(HOOP_JOIN_TAPE_M);
++  const gripArc = hoopBandArc(HOOP_GRIP_TAPE_M);
 +</script>
 +
  <script lang="ts">
@@ -19494,23 +19498,23 @@ index 9ffc2413236b11d28d99f53884e6a696741e3333..06179df2b763d6c487394d974c7c227f
 -   * is offset upward by the ring's radius. This means the bottom of the
 -   * torus touches the origin where the hand holds it.
 +   * A mini hoop: one 5/8in HDPE tube bent into an 18.5in ring.
-+   * `hoop-geometry.ts` carries the numbers and where each came from — the
++   * `hoop-geometry.ts` carries the numbers and where each came from: the
 +   * diameter off `minihoop.svg` (whose 18.36in lands inside the range minis are
 +   * sold at, unlike the club's length), the tube off the tubing spec, where 5/8in
 +   * is forced: 3/4in tube will not hold a round hoop at this diameter, which is
 +   * why no vendor sells that combination.
 +   *
 +   * The hand grips the tube's CENTRELINE at the near side of the ring, which is
-+   * where `minihoop.svg` puts its 2D hand point — measured 0.7% off the
++   * where `minihoop.svg` puts its 2D hand point, measured 0.7% off the
 +   * centreline, so the 2D and 3D grips are in register. `TorusGeometry`'s
 +   * `radius` is a centreline radius too, so offsetting the mesh up by exactly
 +   * that radius puts the grip at the group origin.
-    *
--   * Uses computePropRotation (unified for all prop types).
-+   * Because a hoop is sold in discrete inch sizes, its size is absolute — it does
++   *
++   * Because a hoop is sold in discrete inch sizes, its size is absolute: it does
 +   * not scale with the user's staff length the way Staff3D does. `scale` still
 +   * applies, which is what the BIGHOOP prop type uses.
-+   *
+    *
+-   * Uses computePropRotation (unified for all prop types).
 +   * Two black bands dress the ring: gaffer tape over the connector join at the
 +   * far rim, with the push button showing through it, and the grip wrap
 +   * centred on the hand at the near rim. Both come off the station table in
@@ -19527,7 +19531,7 @@ index 9ffc2413236b11d28d99f53884e6a696741e3333..06179df2b763d6c487394d974c7c227f
    import {
      LAYER_WORLD,
      LAYER_PLAYER_BODY,
-@@ -24,58 +98,60 @@
+@@ -24,58 +102,59 @@
      propState,
      color,
      visible = true,
@@ -19539,14 +19543,14 @@ index 9ffc2413236b11d28d99f53884e6a696741e3333..06179df2b763d6c487394d974c7c227f
  
    const propLayer = $derived(isActivePlayer ? LAYER_PLAYER_BODY : LAYER_WORLD);
 -  const palette = $derived(PROP_COLORS[color]);
--
+ 
 -  const effectiveLength = $derived(length ?? userProportionsState.staffLength);
 -  const staffRadius = $derived(
 -    thickness
 -      ? thickness / 2
 -      : userProportionsState.dimensions.staffRadius
 -  );
- 
+-
 -  // Ring radius: ~35% of staff length
 -  const ringRadius = $derived(effectiveLength * 0.35 * scale);
 -
@@ -19557,9 +19561,8 @@ index 9ffc2413236b11d28d99f53884e6a696741e3333..06179df2b763d6c487394d974c7c227f
 -  const gripOuterRadius = $derived(staffRadius * 1.4 * scale);
 -  const gripTubeRadius = $derived(staffRadius * 0.15 * scale);
 +  const geometry = $derived(getHoopGeometry(scale));
-+  const joinArc = $derived(hoopBandArc(HOOP_JOIN_TAPE_M));
-+  const gripArc = $derived(hoopBandArc(HOOP_GRIP_TAPE_M));
 +  const ringLift = $derived(HOOP_CENTERLINE_RADIUS_M * scale);
++  const farRimY = $derived(2 * ringLift + HOOP_HARDWARE_RADIUS_M * scale);
 +  const materials = $derived(getHoopMaterials(color));
  
    const rotation = $derived(computePropRotation(propState));
@@ -19601,8 +19604,8 @@ index 9ffc2413236b11d28d99f53884e6a696741e3333..06179df2b763d6c487394d974c7c227f
 +    />
 +    <T.Mesh
 +      geometry={geometry.button}
-+      material={materials.hardware}
-+      position={[0, 2 * ringLift + HOOP_HARDWARE_RADIUS_M * scale, 0]}
++      material={materials.button}
++      position={[0, farRimY, 0]}
 +      dispose={false}
 +    />
 +    <!-- Grip wrap centred on the hand (angle -pi/2). -->
@@ -20348,10 +20351,10 @@ index f2e76efafe1854c93461f47e9b16c32400ca3dca..b3f79749eee31ad401d6191162af556e
  {/if}
 diff --git a/src/lib/components/props/Triangle3D.svelte b/src/lib/components/props/Triangle3D.svelte
 new file mode 100644
-index 0000000000000000000000000000000000000000..1b42bc0a781026db06ccfbbdd5831914f1fc5242
+index 0000000000000000000000000000000000000000..564b9376d741ce37d0cefcb85f93099b1e30831d
 --- /dev/null
 +++ b/src/lib/components/props/Triangle3D.svelte
-@@ -0,0 +1,126 @@
+@@ -0,0 +1,129 @@
 +<script module lang="ts">
 +  import { SphereGeometry, TorusGeometry } from "three";
 +  import {
@@ -20416,6 +20419,7 @@ index 0000000000000000000000000000000000000000..1b42bc0a781026db06ccfbbdd5831914
 +    LAYER_WORLD,
 +    LAYER_PLAYER_BODY,
 +  } from "../../layers/layer-constants";
++  import { propFinishState } from "../../state/prop-finish-state.svelte";
 +  import { triangleSideArcs, triangleVertices } from "./triangle-geometry";
 +
 +  let {
@@ -20423,11 +20427,13 @@ index 0000000000000000000000000000000000000000..1b42bc0a781026db06ccfbbdd5831914
 +    color,
 +    visible = true,
 +    isActivePlayer = false,
-+    build,
++    build: buildOverride,
 +  }: Prop3DProps = $props();
 +
++  const build = $derived(buildOverride ?? propFinishState.build);
++
 +  const propLayer = $derived(isActivePlayer ? LAYER_PLAYER_BODY : LAYER_WORLD);
-+  const grip = $derived(build?.triangleGrip === "side" ? "side" : "corner");
++  const grip = $derived(build.triangleGrip === "side" ? "side" : "corner");
 +  const geometry = getTriangleGeometry();
 +  const materials = $derived(getHoopMaterials(color));
 +  const arcs = $derived(triangleSideArcs(grip));
@@ -21221,10 +21227,10 @@ index 0000000000000000000000000000000000000000..0da37239a8053b7b14d4224987f64838
 +}
 diff --git a/src/lib/components/props/frame-materials.ts b/src/lib/components/props/frame-materials.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..506f411715b1c8048da7738d596da3e43c4a3ca1
+index 0000000000000000000000000000000000000000..83ec9b56dc5df77f0cb37a49b22a9b80a90057a1
 --- /dev/null
 +++ b/src/lib/components/props/frame-materials.ts
-@@ -0,0 +1,328 @@
+@@ -0,0 +1,335 @@
 +/**
 + * Assembled-prop finish
 + *
@@ -21495,8 +21501,10 @@ index 0000000000000000000000000000000000000000..506f411715b1c8048da7738d596da3e4
 +export interface HoopMaterialSet {
 +  /** The tube. One material for the whole ring, because a hoop is one tube. */
 +  readonly tube: MeshPhysicalMaterial;
-+  /** Gaffer tape, printed elbows and the push button: matte near-black. */
++  /** Gaffer tape and the printed elbows: matte near-black. */
 +  readonly hardware: MeshStandardMaterial;
++  /** The push button showing through the join tape: matte dark grey. */
++  readonly button: MeshStandardMaterial;
 +  /** Path-visualization marker at the prop's position. */
 +  readonly trail: MeshBasicMaterial;
 +}
@@ -21505,10 +21513,10 @@ index 0000000000000000000000000000000000000000..506f411715b1c8048da7738d596da3e4
 +
 +/**
 + * A mini hoop is a single extrusion of coloured HDPE bent into a circle, so the
-+ * tube itself is ONE material — there is no band structure to describe the way
-+ * a club's knob, handle and body need one. What the tube does carry is the
-+ * gaffer tape over the connector join and the grip wrap opposite it, which get
-+ * their own near-black `hardware` material below.
++ * tube itself is ONE material, not the band structure a club's knob, handle
++ * and body need. What the tube does carry is the gaffer tape over the
++ * connector join and the grip wrap opposite it, which get their own
++ * near-black `hardware` material below.
 + *
 + * The finish comes off those photos: a bright, tight specular line runs the whole
 + * inner curve of the tube with the body colour reading through underneath, which
@@ -21540,6 +21548,11 @@ index 0000000000000000000000000000000000000000..506f411715b1c8048da7738d596da3e4
 +    }),
 +    hardware: new MeshStandardMaterial({
 +      color: "#1c1c1f",
++      roughness: 0.72,
++      metalness: 0.04,
++    }),
++    button: new MeshStandardMaterial({
++      color: "#3a3a3f",
 +      roughness: 0.72,
 +      metalness: 0.04,
 +    }),
@@ -21717,10 +21730,10 @@ index 0000000000000000000000000000000000000000..e6a8fa5c7212231654c232b99f194647
 +}
 diff --git a/src/lib/components/props/hoop-geometry.ts b/src/lib/components/props/hoop-geometry.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..55d375f530765ffa07e985a760327bb3e0561571
+index 0000000000000000000000000000000000000000..e94aeb4ca545031bde81550c0809bfd03e54ffb2
 --- /dev/null
 +++ b/src/lib/components/props/hoop-geometry.ts
-@@ -0,0 +1,138 @@
+@@ -0,0 +1,128 @@
 +/**
 + * Mini-hoop dimensions: the size from hoops people buy, the grip from the glyph.
 + *
@@ -21829,16 +21842,6 @@ index 0000000000000000000000000000000000000000..55d375f530765ffa07e985a760327bb3
 + * reads round.
 + */
 +export const HOOP_TUBE_SEGMENTS = 20;
-+
-+/**
-+ * Hand to the far outer edge of the ring, in metres.
-+ *
-+ * The hand grips the tube's centreline at the near side of the ring, so the ring
-+ * hangs entirely above the grip except for the near half of the tube. Hand to
-+ * the far edge is therefore a full diameter minus one tube radius.
-+ */
-+export const HOOP_REACH_M =
-+  2 * HOOP_CENTERLINE_RADIUS_M + HOOP_TUBE_RADIUS_M;
 +
 +/**
 + * Hardware bands sit over the tube at this ratio of its radius: the printed
@@ -22770,10 +22773,10 @@ index 0000000000000000000000000000000000000000..c3e88a14abd46aa706641905aad0885d
 +};
 diff --git a/src/lib/components/props/triangle-geometry.ts b/src/lib/components/props/triangle-geometry.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..b0e7ff905037f7cd80de60993cf66d16ed11c9ef
+index 0000000000000000000000000000000000000000..dc19d062e7c8ccd00dbd35406502c851cb35c453
 --- /dev/null
 +++ b/src/lib/components/props/triangle-geometry.ts
-@@ -0,0 +1,104 @@
+@@ -0,0 +1,109 @@
 +/**
 + * Triangle: three lengths of 5/8in hoop tubing joined by printed elbows into
 + * an equilateral frame whose sides keep the tubing's bow.
@@ -22783,15 +22786,20 @@ index 0000000000000000000000000000000000000000..b0e7ff905037f7cd80de60993cf66d16
 + * pins the two together. The chord is 22in, measured off the photo at the
 + * tube's known 5/8in; the sides bow outward by 4% of the chord.
 + *
-+ * The frame lies in the XY plane like the hoop's torus, hand at the origin,
-+ * reach along +y. Corner grip: vertex 0 on the hand, the far side across +y.
-+ * Side grip: the near side's bow point on the hand, so its chord sits one
-+ * sagitta ahead and the far vertex is at full reach. Both reaches are height
-+ * plus one sagitta, which is why one reach entry serves both grips.
++ * `triangleVertices`/`triangleSideArcs` below restate the vertex and arc
++ * layout in scripts/hoop-family-math.mjs's `triangleLayout`/`sideArc`, with
++ * one axis swapped: that script lays the reach out along +x, while this file
++ * lays it out along +y, to sit in the XY plane like the hoop's torus. Hand at
++ * the origin either way. Corner grip: vertex 0 on the hand, the far side
++ * across +y. Side grip: the near side's bow point on the hand, so its chord
++ * sits one sagitta ahead and the far vertex is at full reach. Both reaches
++ * are height plus one sagitta, which is why one reach entry serves both
++ * grips.
 + */
 +import { HOOP_HARDWARE_RATIO, HOOP_TUBE_RADIUS_M } from "./hoop-geometry";
++import type { TriangleGrip } from "../../state/prop-finish-state.svelte";
 +
-+export type TriangleGrip = "corner" | "side";
++export type { TriangleGrip };
 +
 +export const TRIANGLE_SIDE_CHORD_M = 0.5588;
 +export const TRIANGLE_SAGITTA_M = 0.02235;
@@ -23494,10 +23502,10 @@ index a6a29aa9b928eb98fc102f572da1ed2035c658ba..fe47e7800101428ecd25e58a40bd2bf8
  	BIGTORCH = "bigtorch",
  	POI = "poi",
 diff --git a/src/lib/index.ts b/src/lib/index.ts
-index 68c4a74d3b2fe5ba08879790479da3cd64dcae1d..e7c8998df873a4fe117a327cdb69c7cb1a404400 100644
+index 68c4a74d3b2fe5ba08879790479da3cd64dcae1d..34977ec29af66dc0763939f9c39196b916d1cfd2 100644
 --- a/src/lib/index.ts
 +++ b/src/lib/index.ts
-@@ -71,6 +71,16 @@ export { LAYER_WORLD, LAYER_PLAYER_BODY, LAYER_VIEWMODEL, getCameraLayers, shoul
+@@ -71,6 +71,17 @@ export { LAYER_WORLD, LAYER_PLAYER_BODY, LAYER_VIEWMODEL, getCameraLayers, shoul
  
  // State
  export { userProportionsState } from "./state/user-proportions-state.svelte";
@@ -23509,12 +23517,13 @@ index 68c4a74d3b2fe5ba08879790479da3cd64dcae1d..e7c8998df873a4fe117a327cdb69c7cb
 +	type FanBuild,
 +	type FanFrameColor,
 +	type FanCover,
++	type TriangleGrip,
 +} from "./state/prop-finish-state.svelte";
 +export type { PropBuild } from "./state/prop-finish-state.svelte";
  
  // Context
  export { setViewer3DContext, getViewer3DContext, tryGetViewer3DContext } from "./context/viewer-3d-context";
-@@ -78,10 +88,29 @@ export { setViewerVisibilityContext, getViewerVisibilityContext, tryGetViewerVis
+@@ -78,10 +89,29 @@ export { setViewerVisibilityContext, getViewerVisibilityContext, tryGetViewerVis
  export type { ViewerVisibilityState } from "./context/viewer-visibility-context";
  
  // Services - contracts
@@ -23547,7 +23556,7 @@ index 68c4a74d3b2fe5ba08879790479da3cd64dcae1d..e7c8998df873a4fe117a327cdb69c7cb
  export type { IAnimationStateMachine } from "./services/contracts/IAnimationStateMachine";
  export { LocomotionState } from "./services/contracts/IAnimationStateMachine";
  export type { IFootPlanter } from "./services/contracts/IFootPlanter";
-@@ -89,9 +118,21 @@ export type { IRootMotionExtractor } from "./services/contracts/IRootMotionExtra
+@@ -89,9 +119,21 @@ export type { IRootMotionExtractor } from "./services/contracts/IRootMotionExtra
  export type { IFingerAnimator } from "./services/contracts/IFingerAnimator";
  export type { IClavicleRaiser } from "./services/contracts/IClavicleRaiser";
  export type { ISpineTwister } from "./services/contracts/ISpineTwister";
@@ -23571,7 +23580,7 @@ index 68c4a74d3b2fe5ba08879790479da3cd64dcae1d..e7c8998df873a4fe117a327cdb69c7cb
  export type { ICameraChoreographer, PerformerPositionProvider } from "./services/contracts/ICameraChoreographer";
  export type { IFormationManager } from "./services/contracts/IFormationManager";
  export type { IContactCurveCache } from "./services/contracts/IContactCurveCache";
-@@ -113,19 +154,37 @@ export { IKSolver } from "./services/implementations/IKSolver";
+@@ -113,19 +155,37 @@ export { IKSolver } from "./services/implementations/IKSolver";
  export { LocomotionAnimator } from "./services/implementations/LocomotionAnimator";
  export { AnimationStateMachine } from "./services/implementations/AnimationStateMachine";
  export { FootPlanter } from "./services/implementations/FootPlanter";
@@ -23610,7 +23619,7 @@ index 68c4a74d3b2fe5ba08879790479da3cd64dcae1d..e7c8998df873a4fe117a327cdb69c7cb
  export { LegAnimator } from "./services/implementations/LegAnimator";
  export { solveCylinderGrasp } from "./services/implementations/CylinderGraspSolver";
  export type { GraspResult } from "./services/implementations/CylinderGraspSolver";
-@@ -151,3 +210,7 @@ export { PROP_COLORS, METAL_COLORS } from "./components/props/Prop3DProps";
+@@ -151,3 +211,7 @@ export { PROP_COLORS, METAL_COLORS } from "./components/props/Prop3DProps";
  
  // Data
  export { STAFF_GRIP_POSES } from "./data/grip-poses/staff-grip-poses";

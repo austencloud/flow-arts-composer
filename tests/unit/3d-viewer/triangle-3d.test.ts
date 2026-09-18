@@ -1,10 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { resolvePropTipAnchors3D } from "$lib/shared/3d/effects/prop-tip-geometry-3d";
-import { HOOP_FAMILY_REACH_M } from "$lib/shared/pictograph/prop/domain/hoop-family-geometry.generated";
-import { PropType } from "@austencloud/scene-3d";
+import { PropType, propFinishState } from "@austencloud/scene-3d";
 import { toScenePropType } from "$lib/shared/3d/domain/scene-prop-type";
 import { PropType as AppPropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { TRIANGLE_STATIONS_M } from "$lib/shared/pictograph/prop/domain/hoop-family-geometry.generated";
+import {
+  HOOP_FAMILY_REACH_M,
+  HOOP_HARDWARE_M,
+  TRIANGLE_STATIONS_M,
+} from "$lib/shared/pictograph/prop/domain/hoop-family-geometry.generated";
 import {
   TRIANGLE_ARC_ANGLE,
   TRIANGLE_BOW_RADIUS_M,
@@ -22,10 +25,13 @@ import {
   HOOP_CENTERLINE_RADIUS_M,
   HOOP_TUBE_RADIUS_M,
 } from "../../../node_modules/@austencloud/scene-3d/src/lib/components/props/hoop-geometry";
-import { propFinishState } from "../../../node_modules/@austencloud/scene-3d/src/lib/state/prop-finish-state.svelte";
 
 const STAFF_HALF_M = 0.8636 / 2;
 const BUILD = { fanBuild: "pictograph", finish: "day" } as const;
+
+afterEach(() => {
+  propFinishState.setTriangleGrip("corner");
+});
 
 describe("hoop family 3D reach", () => {
   it("tracks one tip at an absolute reach that ignores the staff length", () => {
@@ -95,10 +101,13 @@ describe("triangle 3D geometry", () => {
   });
 
   it("dresses the hoop with tape, a button and a grip wrap at real sizes", () => {
-    expect(HOOP_HARDWARE_RADIUS_M).toBeCloseTo(HOOP_TUBE_RADIUS_M * 1.3, 9);
-    expect(HOOP_JOIN_TAPE_M).toBe(0.045);
-    expect(HOOP_GRIP_TAPE_M).toBe(0.15);
-    expect(HOOP_BUTTON_RADIUS_M).toBe(0.003);
+    expect(HOOP_HARDWARE_RADIUS_M).toBeCloseTo(
+      HOOP_TUBE_RADIUS_M * HOOP_HARDWARE_M.hardwareRatio,
+      9
+    );
+    expect(HOOP_JOIN_TAPE_M).toBe(HOOP_HARDWARE_M.joinTape);
+    expect(HOOP_GRIP_TAPE_M).toBe(HOOP_HARDWARE_M.gripTape);
+    expect(HOOP_BUTTON_RADIUS_M).toBe(HOOP_HARDWARE_M.button / 2);
     expect(HOOP_JOIN_TAPE_M / HOOP_CENTERLINE_RADIUS_M).toBeLessThan(
       Math.PI / 4
     );
@@ -109,6 +118,5 @@ describe("triangle 3D geometry", () => {
     propFinishState.setTriangleGrip("side");
     expect(propFinishState.triangleGrip).toBe("side");
     expect(propFinishState.build.triangleGrip).toBe("side");
-    propFinishState.setTriangleGrip("corner");
   });
 });
