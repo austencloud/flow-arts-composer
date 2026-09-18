@@ -1,7 +1,7 @@
 import type { CsvEdge } from "$lib/features/choreo-card/services/pictograph-letter-lookup";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { SVGPathData } from "$lib/shared/mandala/domain/mandala-types";
-import type { TipPoint } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
+import type { ShapeMatrixTipPair } from "../domain/prop-pair";
 import type { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import type { Flower } from "../domain/flower-signature";
 import { derivePropRelationship } from "../domain/prop-relationship";
@@ -11,7 +11,7 @@ import { MODE_FAMILY_ID, type VtgMode } from "./shape-matrix-realizations";
 export interface FlowerParityTarget {
   left: SVGPathData[];
   right: SVGPathData[];
-  tipPoint?: TipPoint;
+  tips: ShapeMatrixTipPair;
   clubTipDx: number;
 }
 
@@ -39,7 +39,7 @@ export function buildExactFlowerPhases(
     target.left,
     target.right,
     edges,
-    target.tipPoint ?? target.clubTipDx
+    target.tips
   ).map((candidate) => ({
     sequence: candidate.sequence,
     leftOrientation: candidate.leftOri,

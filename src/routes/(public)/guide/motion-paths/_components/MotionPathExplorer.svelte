@@ -217,7 +217,7 @@
       {
         left: matrixData.left.get(flowerKey(pair.left))?.left ?? [],
         right: matrixData.right.get(flowerKey(pair.right))?.right ?? [],
-        tipPoint: matrixData.tipPoint,
+        tips: matrixData.tips,
         clubTipDx: matrixData.clubTipDx,
       },
       mode

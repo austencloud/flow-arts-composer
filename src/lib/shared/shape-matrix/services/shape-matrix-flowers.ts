@@ -11,6 +11,11 @@ import {
 } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
 import { getDefaultTrailPointConfig } from "$lib/shared/animation-engine/domain/types/trail-point-types";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import {
+  asPropPair,
+  type ShapeMatrixPropPair,
+  type ShapeMatrixTipPair,
+} from "../domain/prop-pair";
 import { resolveRotationStyleArchetypes } from "./rotation-style-archetypes";
 import { loadDiamondEdges } from "$lib/features/choreo-card/services/pictograph-letter-lookup";
 import { buildFlowerSequence } from "$lib/features/lab/vtg-lab/services/build-flower-sequence";
@@ -27,10 +32,16 @@ export interface ShapeMatrixData {
   left: Map<string, MandalaPaths>;
   /** flowerKey → red-hand MandalaPaths (its .red populated). */
   right: Map<string, MandalaPaths>;
-  propType?: PropType;
-  /** Canonical single tracked source used by paths, parity, and live trails. */
-  tipPoint?: TipPoint;
-  /** Radial reach retained for the existing canvas painters. */
+  /** The prop each hand was traced with. */
+  props: ShapeMatrixPropPair;
+  /** Canonical tracked source per hand, used by paths, parity, and live trails. */
+  tips: ShapeMatrixTipPair;
+  /** Per-hand radial reach of that tracked source. */
+  reach: { left: number; right: number };
+  /**
+   * The larger reach. Every painter, the Theory pane and the Theory detail
+   * scale by it, so cells, headers and the diagonal share one scale.
+   */
   clubTipDx: number;
   /** Identifies the exact path and trace geometry behind this matrix. */
   geometryKey?: string;
@@ -73,9 +84,28 @@ class LazyPathMap extends Map<string, MandalaPaths> {
   }
 }
 
+/**
+ * A single prop, or an equal pair, is one cached build. A mixed pair awaits
+ * both hands' single builds and stitches them: the left map from the left
+ * prop, the right map from the right prop. The maps are lazy, so composition
+ * is cheap and is not cached on its own; switching one hand reuses the other
+ * hand's warm build.
+ */
 export function loadShapeMatrix(
-  propType: PropType = PropType.STAFF,
+  props: PropType | ShapeMatrixPropPair = PropType.STAFF,
   options: ShapeMatrixLoadOptions = {}
+): Promise<ShapeMatrixData> {
+  const pair = asPropPair(props);
+  if (pair.left === pair.right) return loadSingle(pair.left, options);
+  return Promise.all([
+    loadSingle(pair.left, options),
+    loadSingle(pair.right, options),
+  ]).then(([left, right]) => composeShapeMatrix(left, right));
+}
+
+function loadSingle(
+  propType: PropType,
+  options: ShapeMatrixLoadOptions
 ): Promise<ShapeMatrixData> {
   const resolved = resolveLoadOptions(options);
   const key = `${propType}|${resolved.geometryKey}`;
@@ -89,6 +119,22 @@ export function loadShapeMatrix(
     if (cache.get(key) === pending) cache.delete(key);
   });
   return pending;
+}
+
+function composeShapeMatrix(
+  left: ShapeMatrixData,
+  right: ShapeMatrixData
+): ShapeMatrixData {
+  return {
+    axis: left.axis,
+    left: left.left,
+    right: right.right,
+    props: { left: left.props.left, right: right.props.right },
+    tips: { left: left.tips.left, right: right.tips.right },
+    reach: { left: left.reach.left, right: right.reach.right },
+    clubTipDx: Math.max(left.reach.left, right.reach.right),
+    geometryKey: left.geometryKey,
+  };
 }
 
 function resolveLoadOptions(
@@ -207,8 +253,9 @@ async function build(
     axis,
     left,
     right,
-    propType,
-    tipPoint: tip,
+    props: { left: propType, right: propType },
+    tips: { left: tip, right: tip },
+    reach: { left: clubTipDx, right: clubTipDx },
     clubTipDx,
     geometryKey: options.geometryKey,
   };

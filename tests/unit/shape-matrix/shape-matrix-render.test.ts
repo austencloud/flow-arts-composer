@@ -31,6 +31,7 @@ import {
 } from "$lib/shared/shape-matrix/services/shape-matrix-artwork";
 import type { ShapeMatrixData } from "$lib/shared/shape-matrix/services/shape-matrix-flowers";
 import type { Flower } from "$lib/shared/shape-matrix/domain/flower-signature";
+import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 
 const left: MandalaPaths = {
   left: [{ d: "M 0 0 C 10 0 10 10 20 10", tipIndex: 0 }],
@@ -56,6 +57,9 @@ const matrixData: ShapeMatrixData = {
   axis: [flower],
   left: new Map([["pro-0-in-diamond", left]]),
   right: new Map([["pro-0-in-diamond", right]]),
+  props: { left: PropType.STAFF, right: PropType.STAFF },
+  tips: { left: { dx: 100, dy: 0 }, right: { dx: 100, dy: 0 } },
+  reach: { left: 100, right: 100 },
   clubTipDx: 100,
   geometryKey: "arc:tips",
 };

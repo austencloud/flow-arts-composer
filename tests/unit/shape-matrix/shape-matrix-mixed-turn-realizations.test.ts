@@ -35,7 +35,7 @@ async function candidatesFor(leftKey: string, rightKey: string) {
   const overlay = {
     left: data.left.get(leftKey)?.left ?? [],
     right: data.right.get(rightKey)?.right ?? [],
-    tipPoint: data.tipPoint,
+    tips: data.tips,
     clubTipDx: data.clubTipDx,
   };
   const counts: Record<string, number> = {};
