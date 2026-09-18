@@ -12,7 +12,11 @@
   // would be the same in every row and only add noise. The drawings trace the
   // hands (tipDx 0), because the path shape is a rule about the hand path;
   // a staff tip would fold the spin back in and hide what the rule changes.
-  const PATHS = ["arc", "concave", "hybrid"] as const satisfies readonly MandalaPathShape[];
+  const PATHS = [
+    "arc",
+    "concave",
+    "hybrid",
+  ] as const satisfies readonly MandalaPathShape[];
   const PATH_LABELS: Record<(typeof PATHS)[number], string> = {
     arc: "Arc",
     concave: "Concave",
@@ -45,7 +49,6 @@
     },
   ];
 
-
   function variant(
     sequence: SequenceData,
     path: (typeof PATHS)[number]
@@ -67,7 +70,11 @@
     </p>
   </header>
 
-  <div class="table" role="table" aria-label="Three sequences under Arc, Concave, and Hybrid">
+  <div
+    class="table"
+    role="table"
+    aria-label="Three sequences under Arc, Concave, and Hybrid"
+  >
     <div class="head" role="row">
       <span class="head-cell steps-head" role="columnheader">Sequence</span>
       {#each PATHS as path (path)}
@@ -104,7 +111,11 @@
           <span class="result">{row.result}</span>
         </div>
         {#each PATHS as path (path)}
-          <div class="tile" role="cell" style:--path-color={PATH_SHAPE_COLORS[path]}>
+          <div
+            class="tile"
+            role="cell"
+            style:--path-color={PATH_SHAPE_COLORS[path]}
+          >
             <SequenceMandala
               sequence={variant(row.sequence, path)}
               pathShape={path}
@@ -119,7 +130,9 @@
             />
             <!-- Phone stacks each sequence over its tiles, so the column
                  headers scroll away; the tile carries its own name there. -->
-            <span class="tile-label" aria-hidden="true">{PATH_LABELS[path]}</span>
+            <span class="tile-label" aria-hidden="true"
+              >{PATH_LABELS[path]}</span
+            >
           </div>
         {/each}
       </div>
@@ -166,7 +179,11 @@
     gap: var(--spacing-sm, 8px) var(--spacing-md, 16px);
     align-items: center;
     padding-block: var(--spacing-md, 16px);
-    border-top: 1px solid var(--theme-stroke, color-mix(in srgb, var(--theme-text) 14%, transparent));
+    border-top: 1px solid
+      var(
+        --theme-stroke,
+        color-mix(in srgb, var(--theme-text) 14%, transparent)
+      );
   }
 
   .steps-head,
