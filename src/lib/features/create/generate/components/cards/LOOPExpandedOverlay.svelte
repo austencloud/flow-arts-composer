@@ -53,7 +53,8 @@ Animates forward in z-axis and expands to fill the container space
     onChange: (loopType: LOOPType) => void;
     onClose: () => void;
     /** "none" when a host transition (the card morph) is already carrying the
-     *  panel in; the root then skips its own scale entrance. */
+     *  panel in; the root then skips its own scale entrance. "none" also
+     *  skips the outro; the decision made at open time applies to the close. */
     entrance?: "scale" | "none";
     onLoopDisable?: () => void;
     layout?: "grid" | "list" | "responsive";

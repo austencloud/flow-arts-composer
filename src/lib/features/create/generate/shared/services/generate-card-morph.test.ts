@@ -59,7 +59,9 @@ describe("morphGenerateCard", () => {
       m();
       return null;
     });
-    expect(morphGenerateCard("loop", vi.fn())).toBe(false);
+    const secondMutate = vi.fn();
+    expect(morphGenerateCard("loop", secondMutate)).toBe(false);
+    expect(secondMutate).toHaveBeenCalledOnce();
     expect(lastGenerateCardMorphRan()).toBe(false);
   });
 });

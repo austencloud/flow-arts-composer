@@ -328,8 +328,8 @@ export interface PanelCoordinationState {
 
   /**
    * Which generate bento card is grown into its workspace, or null. At most
-   * one of the three is open because every open call runs closeAllPanels
-   * first. ExpandedCardStage renders from this.
+   * one of the three (later four) is open because every open call runs
+   * closeAllPanels first. ExpandedCardStage renders from this.
    */
   get openGenerateCard(): GenerateCardPanelId | null;
   /** Close whichever generate card is open. No-op when none is. */
@@ -654,6 +654,23 @@ export function createPanelCoordinationState(): PanelCoordinationState {
     workspacePlaybackSourceRevision = null;
     if (restoreStepEditorAfterPlayback) isStepEditorPanelOpen = true;
     restoreStepEditorAfterPlayback = false;
+  }
+
+  function closeCustomizeOverlay() {
+    isCustomizeOverlayOpen = false;
+    customizeOverlayProps = null;
+    forgetCustomizeOverlay();
+  }
+
+  function closeLOOPPanel() {
+    isLOOPPanelOpen = false;
+    loopCurrentType = null;
+    loopSelectedComponents = null;
+    loopOnChange = null;
+  }
+
+  function closePresetDrawer() {
+    isPresetDrawerOpen = false;
   }
 
   return {
@@ -1002,12 +1019,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
       loopSelectedComponents = components;
     },
 
-    closeLOOPPanel() {
-      isLOOPPanelOpen = false;
-      loopCurrentType = null;
-      loopSelectedComponents = null;
-      loopOnChange = null;
-    },
+    closeLOOPPanel,
 
     // Customize Overlay Getters
     get isCustomizeOverlayOpen() {
@@ -1028,11 +1040,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
       rememberCustomizeOverlayOpen(screen);
     },
 
-    closeCustomizeOverlay() {
-      isCustomizeOverlayOpen = false;
-      customizeOverlayProps = null;
-      forgetCustomizeOverlay();
-    },
+    closeCustomizeOverlay,
 
     // Preset Drawer Getters
     get isPresetDrawerOpen() {
@@ -1044,9 +1052,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
       isPresetDrawerOpen = true;
     },
 
-    closePresetDrawer() {
-      isPresetDrawerOpen = false;
-    },
+    closePresetDrawer,
 
     // Sequence Viewer Getters
     get isSequenceViewerOpen() {
@@ -1093,11 +1099,11 @@ export function createPanelCoordinationState(): PanelCoordinationState {
 
     closeGenerateCard() {
       if (isCustomizeOverlayOpen) {
-        this.closeCustomizeOverlay();
+        closeCustomizeOverlay();
       } else if (isLOOPPanelOpen) {
-        this.closeLOOPPanel();
+        closeLOOPPanel();
       } else if (isPresetDrawerOpen) {
-        this.closePresetDrawer();
+        closePresetDrawer();
       }
     },
 

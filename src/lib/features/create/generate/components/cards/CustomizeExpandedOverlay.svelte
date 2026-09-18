@@ -103,7 +103,8 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     onResetAll?: (() => void) | null;
     onClose: () => void;
     /** Forwarded to GenerationSettingsOverlay. "none" when a host transition
-     *  is already carrying the panel in. */
+     *  is already carrying the panel in. "none" also skips the outro; the
+     *  decision made at open time applies to the close. */
     entrance?: "scale" | "none";
   }>();
 

@@ -13,17 +13,22 @@
  * mutation. This module adds one more: no wrapper has claimed the name, which
  * is the public Composer demo (its own grid, no claims), where a transition
  * would snapshot the page for nothing.
+ *
+ * `lastRan` is set before `mutate()` runs, not after, so a panel that mounts
+ * synchronously inside the mutation and reads `lastGenerateCardMorphRan` sees
+ * this call's answer instead of the previous call's.
  */
 import { startMorph } from "$lib/shared/transitions/results-morph";
 import { countViewTransitionNameClaims } from "$lib/shared/transitions/view-transition-name-registry";
+import type { GenerateCardPanelId } from "$lib/shared/create/state/panel-coordination-state.svelte";
 
 /** The cards that grow. Order is irrelevant; membership is the contract. */
 export const GENERATE_CARD_MORPH_HOSTS = [
   "customize",
   "loop",
   "preset",
-] as const;
-export type GenerateCardMorphHost = (typeof GENERATE_CARD_MORPH_HOSTS)[number];
+] as const satisfies readonly GenerateCardPanelId[];
+export type GenerateCardMorphHost = GenerateCardPanelId;
 
 /**
  * The view-transition name a card id claims, or "" for cards that do not
@@ -49,11 +54,13 @@ export function morphGenerateCard(
   mutate: () => void
 ): boolean {
   if (countViewTransitionNameClaims(generateCardMorphName(host)) === 0) {
-    mutate();
     lastRan = false;
+    mutate();
     return false;
   }
-  lastRan = startMorph(mutate) !== null;
+  lastRan = false;
+  const transition = startMorph(mutate);
+  lastRan = transition !== null;
   return lastRan;
 }
 
