@@ -9,19 +9,19 @@
   const positions = [
     {
       src: "/images/position_images/alpha.png",
-      alt: "Alpha position: hands at opposite points on the grid",
+      alt: "Alpha placement: hands at opposite points on the grid",
       name: "Alpha",
       desc: "Opposite points",
     },
     {
       src: "/images/position_images/beta.png",
-      alt: "Beta position: hands at the same point on the grid",
+      alt: "Beta placement: hands at the same point on the grid",
       name: "Beta",
       desc: "Same point",
     },
     {
       src: "/images/position_images/gamma.png",
-      alt: "Gamma position: hands forming a right angle on the grid",
+      alt: "Gamma placement: hands forming a right angle on the grid",
       name: "Gamma",
       desc: "Right angle",
     },
