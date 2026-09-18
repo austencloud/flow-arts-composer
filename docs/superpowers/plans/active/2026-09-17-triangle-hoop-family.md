@@ -1648,7 +1648,7 @@ In `prop-tip-geometry-3d.ts` import `HOOP_FAMILY_REACH_M` from `$lib/shared/pict
  * table. A hoop is sold in inch sizes and a triangle is three cut lengths of
  * tubing: both are fixed-size objects, so like the club their reach is
  * absolute. The old `0.7 x staffLength` ratio described the earlier
- * staff-proportional Hoop3D, sized at 0.35x the staff radius, and never
+ * staff-proportional Hoop3D, sized at 0.35x the staff length, and never
  * matched the 18.5in ring: at the default staff length that ratio gives
  * 0.605m against the ring's actual 0.454m reach. The 2D tip tables sit on
  * the tube centreline too, so the reach is measured to the centreline, not
