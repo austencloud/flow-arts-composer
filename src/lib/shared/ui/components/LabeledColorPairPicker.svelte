@@ -53,8 +53,10 @@
     try {
       const { sRGBHex } = await new eyeDropper().open();
       onchange(hand, sRGBHex.toLowerCase());
-    } catch {
-      // Escape aborts the pick; nothing to apply.
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === "AbortError")) {
+        console.warn("Eyedropper failed", error);
+      }
     }
   }
 
@@ -455,6 +457,13 @@
   .fine-tune :global(.color-picker) {
     display: block;
     width: 100%;
+  }
+
+  /* The library's touch handlers are passive under Svelte 5, so the browser
+     must be told not to scroll while dragging the square or a slider. */
+  .fine-tune :global(.picker),
+  .fine-tune :global(.slider) {
+    touch-action: none;
   }
 
   .custom-row {

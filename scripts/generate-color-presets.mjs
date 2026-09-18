@@ -70,7 +70,8 @@ function maxChromaAt(L, hue) {
 // L 0.97, blue near L 0.45, so a fixed lightness cannot hold a real rainbow.
 function cuspHex(hue) {
   let best = { lightness: 0.66, chroma: 0 };
-  for (let lightness = 0.3; lightness <= 0.97; lightness += 0.005) {
+  for (let i = 0; i <= 134; i += 1) {
+    const lightness = 0.3 + i * 0.005;
     const chroma = maxChromaAt(lightness, hue);
     if (chroma > best.chroma) best = { lightness, chroma };
   }

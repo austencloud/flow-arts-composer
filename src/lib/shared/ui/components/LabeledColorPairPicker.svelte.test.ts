@@ -120,6 +120,33 @@ describe("LabeledColorPairPicker", () => {
     }
   });
 
+  it("does not emit on open, even for uppercase values", async () => {
+    const { onchange } = renderPicker({ left: "#3575E2" });
+    // openLeft() hardcodes the module-level LEFT constant into its selector,
+    // which does not match this test's overridden value; open by the label
+    // the component actually renders instead.
+    await page.getByRole("button", { name: "Edit Left prop, #3575E2" }).click();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(onchange).not.toHaveBeenCalled();
+  });
+
+  it("emits exactly once for a swatch click", async () => {
+    const { onchange } = renderPicker();
+    await openLeft();
+    await page.getByRole("button", { name: `Left prop: ${COLOR_PRESETS[5]!.name}` }).click();
+    expect(onchange).toHaveBeenCalledTimes(1);
+    expect(onchange).toHaveBeenCalledWith("left", COLOR_PRESETS[5]!.hex);
+  });
+
+  it("targets the hand whose editor is open", async () => {
+    const { onchange } = renderPicker();
+    await openLeft();
+    await page.getByRole("button", { name: /^Edit Right prop/ }).click();
+    await page.getByRole("button", { name: `Right prop: ${COLOR_PRESETS[7]!.name}` }).click();
+    expect(onchange).toHaveBeenCalledTimes(1);
+    expect(onchange).toHaveBeenCalledWith("right", COLOR_PRESETS[7]!.hex);
+  });
+
   it("has no axe violations with the editor open", async () => {
     renderPicker();
     await openLeft();
