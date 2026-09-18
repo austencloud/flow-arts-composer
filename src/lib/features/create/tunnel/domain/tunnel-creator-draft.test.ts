@@ -345,4 +345,108 @@ describe("tunnel creator draft", () => {
       })
     ).toBeNull();
   });
+
+  describe("pre-rename startPosition compatibility", () => {
+    const draftWithLegacySequence = (
+      legacySequence: Record<string, unknown>
+    ) => ({
+      version: TUNNEL_CREATOR_DRAFT_VERSION,
+      workflow: "custom",
+      mode: "separate",
+      composition: null,
+      relationship: {
+        rotationSteps: 0,
+        reflect: "none",
+        invert: false,
+        rewind: false,
+      },
+      sourceStates: [
+        {
+          performerId: "performer-1",
+          label: "Performer 1",
+          independentSequence: legacySequence,
+          origin: "picked",
+          sourceSequenceId: null,
+          provenance: null,
+          previous: [],
+        },
+      ],
+      workspace: { activePanel: null, generationTargetId: null },
+      editingTunnel: null,
+      presentation: null,
+    });
+
+    it("normalizes a legacy startPosition sequence field onto startPlacement", () => {
+      const legacySequence = {
+        id: "sequence-legacy",
+        name: "AAAA",
+        word: "AAAA",
+        steps: [{ id: "step-1" }],
+        startPosition: { id: "start-cell", gridPosition: "alpha1" },
+      };
+
+      const migrated = parseTunnelCreatorDraft(
+        draftWithLegacySequence(legacySequence)
+      );
+
+      const independentSequence = migrated?.sourceStates[0]
+        ?.independentSequence as unknown as Record<string, unknown>;
+      expect(independentSequence).not.toHaveProperty("startPosition");
+      expect(independentSequence?.startPlacement).toMatchObject({
+        id: "start-cell",
+        gridPlacement: "alpha1",
+      });
+    });
+
+    it("prefers a canonical startPlacement sequence field over a legacy startPosition sibling", () => {
+      const legacySequence = {
+        id: "sequence-both",
+        name: "AAAA",
+        word: "AAAA",
+        steps: [{ id: "step-1" }],
+        startPosition: { id: "legacy-start" },
+        startPlacement: { id: "canonical-start" },
+      };
+
+      const migrated = parseTunnelCreatorDraft(
+        draftWithLegacySequence(legacySequence)
+      );
+
+      const independentSequence = migrated?.sourceStates[0]
+        ?.independentSequence as unknown as Record<string, unknown>;
+      expect(independentSequence).not.toHaveProperty("startPosition");
+      expect(independentSequence?.startPlacement).toMatchObject({
+        id: "canonical-start",
+      });
+    });
+
+    it("normalizes a legacy sequence in performer history (previous), not just the active one", () => {
+      const legacySequence = {
+        id: "sequence-history",
+        name: "BBBB",
+        word: "BBBB",
+        steps: [{ id: "step-1" }],
+        startPosition: { id: "history-start", gridPosition: "beta3" },
+      };
+      const draft = draftWithLegacySequence({
+        id: "sequence-current",
+        name: "AAAA",
+        word: "AAAA",
+        steps: [{ id: "step-1" }],
+      });
+      (draft.sourceStates[0] as { previous: unknown[] }).previous = [
+        { sequence: legacySequence, origin: "picked" },
+      ];
+
+      const migrated = parseTunnelCreatorDraft(draft);
+
+      const historicalSequence = migrated?.sourceStates[0]?.previous[0]
+        ?.sequence as unknown as Record<string, unknown>;
+      expect(historicalSequence).not.toHaveProperty("startPosition");
+      expect(historicalSequence?.startPlacement).toMatchObject({
+        id: "history-start",
+        gridPlacement: "beta3",
+      });
+    });
+  });
 });

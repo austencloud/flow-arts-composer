@@ -286,4 +286,29 @@ describe("legacy placement (position -> placement) normalization", () => {
       endPlacement: "beta3",
     });
   });
+
+  it("moves a legacy startingPositionGroup label onto startingPlacementGroup", () => {
+    const source = {
+      id: "seq-group",
+      startingPositionGroup: "alpha",
+    };
+
+    const normalized = normalizeLegacySequence(source) as Record<string, any>;
+
+    expect(normalized.startingPlacementGroup).toBe("alpha");
+    expect(normalized).not.toHaveProperty("startingPositionGroup");
+  });
+
+  it("prefers a canonical startingPlacementGroup over a legacy startingPositionGroup sibling", () => {
+    const source = {
+      id: "seq-group-both",
+      startingPositionGroup: "alpha",
+      startingPlacementGroup: "gamma",
+    };
+
+    const normalized = normalizeLegacySequence(source) as Record<string, any>;
+
+    expect(normalized.startingPlacementGroup).toBe("gamma");
+    expect(normalized).not.toHaveProperty("startingPositionGroup");
+  });
 });

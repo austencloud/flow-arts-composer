@@ -392,6 +392,86 @@ describe("ConceptProgressTracker legacy concept id alias", () => {
     expect(stored.completedConcepts).not.toContain("hand-positions");
     expect(Object.keys(stored.concepts)).not.toContain("hand-positions");
   });
+
+  it("hydrates a stored staff-positions completion as staff-placements", () => {
+    // Same gap as hand-positions/hand-placements above, for the second id
+    // the audit found still unaliased: "staff-positions" -> "staff-placements".
+    writeStoredProgress({ completedConcepts: ["grid", "staff-positions"] });
+
+    const tracker = new ConceptProgressTracker();
+    const progress = tracker.getProgress();
+
+    expect(progress.completedConcepts.has("staff-placements")).toBe(true);
+    expect(progress.completedConcepts.has("staff-positions")).toBe(false);
+    expect(tracker.getConceptStatus("staff-placements")).toBe("completed");
+  });
+
+  it("merges a legacy staff-positions record onto staff-placements without un-completing it", () => {
+    writeStoredProgress({
+      concepts: {
+        "staff-positions": conceptRecord("staff-positions", {
+          status: "completed",
+          percentComplete: 100,
+          correctAnswers: 9,
+          bestStreak: 6,
+        }),
+        "staff-placements": conceptRecord("staff-placements", {
+          status: "in-progress",
+          percentComplete: 40,
+          correctAnswers: 4,
+          bestStreak: 2,
+        }),
+      },
+      completedConcepts: ["staff-positions"],
+    });
+
+    const tracker = new ConceptProgressTracker();
+    const progress = tracker.getProgress();
+
+    expect([...progress.concepts.keys()]).not.toContain("staff-positions");
+    expect(progress.completedConcepts.has("staff-positions")).toBe(false);
+
+    const record = tracker.getConceptProgress("staff-placements");
+    expect(record.status).toBe("completed");
+    expect(record.percentComplete).toBe(100);
+    expect(record.correctAnswers).toBe(9);
+    expect(record.bestStreak).toBe(6);
+  });
+
+  it("keeps timeSpentSeconds idempotent across repeated re-merges of the same legacy+current pair", () => {
+    // The persister's `{ merge: true }` write never removes the legacy id
+    // from a saved Firestore document (deleteField only lands on the next
+    // save), so aliasLegacyConceptIds can run again on the same pair across
+    // more than one hydration. A running sum would double the practice time
+    // on every re-merge; the max-based merge must land on the same total
+    // no matter how many times it runs over unchanged input.
+    const stored = () => ({
+      concepts: {
+        "hand-positions": conceptRecord("hand-positions", {
+          status: "completed",
+          timeSpentSeconds: 120,
+        }),
+        "hand-placements": conceptRecord("hand-placements", {
+          status: "in-progress",
+          timeSpentSeconds: 45,
+        }),
+      },
+      completedConcepts: ["hand-positions"],
+    });
+
+    writeStoredProgress(stored());
+    const first = new ConceptProgressTracker();
+    const firstRecord = first.getConceptProgress("hand-placements");
+    expect(firstRecord.timeSpentSeconds).toBe(120);
+
+    // A second hydration of the exact same legacy+current shape (as if the
+    // legacy id had survived another merge write) must land on the same
+    // number, not 120 + 120.
+    writeStoredProgress(stored());
+    const second = new ConceptProgressTracker();
+    const secondRecord = second.getConceptProgress("hand-placements");
+    expect(secondRecord.timeSpentSeconds).toBe(120);
+  });
 });
 
 describe("ConceptProgressTracker sign-in merge", () => {
