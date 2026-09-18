@@ -31,6 +31,9 @@ composed inline. Nothing in this spec creates a second picker.
 
 `COLOR_PRESETS` keeps its `{ hex, name }` shape so `ProfileColorPicker` and
 the character playground keep working; they gain the new palette for free.
+`ProfileColorPicker` moves its custom-color swatch out of the preset grid into
+a labelled button below it, because 48 + 1 items in eight columns would strand
+the custom swatch on its own row.
 
 ## Swatch matrix
 
@@ -117,6 +120,9 @@ Layout, top to bottom:
 
 All interactive elements keep the existing focus-visible outline. No new
 theme variables; only `--theme-*` tokens and the library's documented vars.
+The square and the sliders set `touch-action: none`: the library's touch
+handlers are passive under Svelte 5, so without it a drag on a phone also
+scrolls the panel.
 
 ## Callers
 
