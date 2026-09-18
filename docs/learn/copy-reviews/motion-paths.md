@@ -361,3 +361,21 @@ Explorer lede now: "Pick a pair of shapes from the matrix, or one shape from its
 The explorer also starts on Hybrid instead of Arc. The default pair mixes pro with anti, so the first frame is the rule at work: one hand on Arc, the other on Concave, and PathShapePanel's own header reads "Pro → Arc · Anti → Concave".
 
 Ownership ledger: MotionPathHybridExamples.svelte deleted; PathShapePanel and the animation scope's setPathPolicy unchanged. Evidence: 1440×900, section absent, Hybrid tile pressed on load, lede as above, no overflow.
+
+## September 17: the path comes first
+
+Austen looked at the explorer on main and asked how to make it more approachable. The first screen was a matrix of forty shapes with turn menus, six timing chips, a step strip and two toggles before the reader reached the four path tiles. He approved the recomposition ("Let's see you try").
+
+The lesson is the path, so the four tiles now open the explorer, beside the animation. Everything that picks what plays (the source toggle, turn controls, timing chips, the matrix or the browsed sequence's card, and their status line) waits behind one button under the canvas. The step strip is gone from the explorer; the transport keeps Play and Path lines. Trace defaults to Hands, since the hand path is what the rule is about and the tiles then read as a circle, straight lines, a star and a mix. On a phone the canvas comes first with the chooser opening under its button, and the tiles follow one swipe down; side by side, the path is on the left.
+
+Strings, pending Austen's eye:
+
+- Disclosure button and its region's accessible name: "Change what plays"
+- Now-playing line under the canvas, from the matrix pair: "Left hand pro, 1 turn. Right hand anti, 1 turn." (turn counts follow the pair; a float reads "float"); for a header solo: "Right hand pro, 1 turn, on its own."; from a browsed sequence: "AKEJ, 4 steps." (the word simplified as the card shows it; "A browsed sequence, 4 steps." if the sequence has no word); before the first pair loads: "Loading a sequence…"
+- Under the tiles: "Only the hand’s path between positions changes. The positions and the spin stay the same."
+- Matrix status: "Rows are left-hand shapes, columns are right-hand shapes. Pick a cell to play that pair, or a shape on the edge to play it alone." (replaces "Change the motion path to compare these shapes." and "Pick a cell to animate its shapes.")
+- Explorer lede now: "Switch the path while the sequence plays. Hybrid uses Arc for pro motions and Concave for anti motions. Any motion can take any path; Hybrid only sets the default." The first sentence no longer points at a matrix that is behind the button.
+
+Ownership ledger: PathShapePanel, MotionPathTransitionStage, SegmentedControl, Crossfade, ShapeMatrixGrid, ElementChipRow, TurnNotationControls, ChoreoCard, SequencePickerModal and growFade as before; PanelButton gains an `ariaControls` prop so the disclosure names its region. StepStrip leaves the explorer. The explorer state changes only its trace default.
+
+Evidence: browser pass at 375×667, 960×412, 820×1180, 1250×800, 1440×900, 1920×1080, 2560×1440, 3840×2160 and a 720×450 stand-in for 200% zoom; no horizontal overflow at any tier. Chooser open and closed, both sources, browse-and-pick, a header solo, the trace toggle and a cell pick observed with the now-playing line following each. Below a 900px container the chooser stacks so the timing chips keep their words (at 820 a two-column chooser clipped them to "S", "1", "("); above it the chooser's columns take the workspace's ratio so the stage sits under the canvas. AI-bust review of the new strings: clean.
