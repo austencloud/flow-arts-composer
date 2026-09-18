@@ -123,8 +123,10 @@ const PROP_TYPE_ENCODE: Record<PropType, string> = {
   [PropType.BIGTRIAD]: "t",
   [PropType.MINIHOOP]: "M",
   [PropType.BIGHOOP]: "H",
-  // Digit for the same reason as the baton and fire staff: every letter that
-  // reads as "triangle" or "tri" is taken.
+  // A lowercase letter in this table means "the big build of that uppercase
+  // code" (c/f/t/b/d/e/a/v/k). Triangle is not a big build, so it takes the
+  // next free digit after 7, the way the earlier standard-size variants
+  // (baton, fire staff, classic club) did.
   [PropType.TRIANGLE]: "8",
   [PropType.BUUGENG]: "B",
   [PropType.BIGBUUGENG]: "b",

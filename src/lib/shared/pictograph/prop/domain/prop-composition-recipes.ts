@@ -280,7 +280,7 @@ const COMPACT_RECIPES: Partial<Record<PropType, CompositionRecipe>> = {
 
 /**
  * Gets the composition recipe for a prop type.
- * Variants inherit from their base family.
+ * Variants fall back to their base family unless they have a recipe of their own.
  */
 export function getCompositionRecipe(
   propType: PropType,
@@ -295,7 +295,7 @@ export function getCompositionRecipe(
       FAMILY_RECIPES[base] ??
       DEFAULT_RECIPE
     );
-  return FAMILY_RECIPES[base] ?? FAMILY_RECIPES[propType] ?? DEFAULT_RECIPE;
+  return FAMILY_RECIPES[propType] ?? FAMILY_RECIPES[base] ?? DEFAULT_RECIPE;
 }
 
 /**

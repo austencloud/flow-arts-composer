@@ -408,7 +408,7 @@ const VARIANT_TO_BASE: Partial<Record<PropType, PropType>> = {
  * Mapping from base prop types to their variant prop types.
  * Order matters - this determines the cycle order when toggling.
  */
-export const BASE_TO_VARIANTS: Partial<Record<PropType, PropType[]>> = {
+const BASE_TO_VARIANTS: Partial<Record<PropType, PropType[]>> = {
   [PropType.STAFF]: [
     PropType.CAPSULE_BATON,
     PropType.FIRE_DOUBLE_STAFF,

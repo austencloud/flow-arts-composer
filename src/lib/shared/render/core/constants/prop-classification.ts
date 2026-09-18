@@ -6,8 +6,12 @@ const BIG_UNILATERAL_PROPS = [
   "bighoop", "bigfan", "bigtriad", "bigtorch", "bigcontactball",
 ] as const;
 
-const SMALL_UNILATERAL_PROPS = [
-  "fan", "club", "minihoop", "triangle", "triad", "ukulele",
+// Exported so tests can assert this list stays in sync with its siblings in
+// prop/domain/enums/prop-classification.ts and render-core/constants, rather
+// than three copies drifting apart unnoticed. classic_club was missing here
+// (present in both siblings) before that sync test caught it; added to match.
+export const SMALL_UNILATERAL_PROPS = [
+  "fan", "club", "classic_club", "minihoop", "triangle", "triad", "ukulele",
   "triquetra", "triquetra2", "chicken", "torch", "contactball", "poi",
 ] as const;
 
