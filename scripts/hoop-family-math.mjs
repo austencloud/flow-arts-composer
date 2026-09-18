@@ -87,9 +87,20 @@ function sideArc(p, q, centroid, m) {
     x: mid.x - normal.x * (m.bowRadiusMm - m.sagittaMm),
     y: mid.y - normal.y * (m.bowRadiusMm - m.sagittaMm),
   };
-  const bow = { x: mid.x + normal.x * m.sagittaMm, y: mid.y + normal.y * m.sagittaMm };
+  const bow = {
+    x: mid.x + normal.x * m.sagittaMm,
+    y: mid.y + normal.y * m.sagittaMm,
+  };
   const phi = Math.atan2(normal.y, normal.x);
-  return { p, q, mid, normal, centre, bow, startAngle: phi - m.arcAngleRad / 2 };
+  return {
+    p,
+    q,
+    mid,
+    normal,
+    centre,
+    bow,
+    startAngle: phi - m.arcAngleRad / 2,
+  };
 }
 
 /** Glyph units per real millimetre: the mini glyph's centreline over the real one. */
