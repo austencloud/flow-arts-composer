@@ -17,7 +17,8 @@ const COMMON = {
   theoryMode: "SS" as const,
   theoryPair: null,
   activeAxis: "both" as const,
-  propType: PropType.STAFF,
+  leftPropType: PropType.STAFF,
+  rightPropType: PropType.STAFF,
   propMode: null,
   solo: null,
 };
@@ -26,9 +27,7 @@ describe("shape matrix URL state", () => {
   it("round-trips the selected matrix state without dropping unrelated params", () => {
     const [left, right] = buildFlowerAxis();
     if (!left || !right) throw new Error("Shape Matrix axis is empty");
-    const url = new URL(
-      "https://tkaflowarts.com/shape-engine?ref=promo"
-    );
+    const url = new URL("https://tkaflowarts.com/shape-engine?ref=promo");
 
     writeShapeMatrixRouteState(url, {
       level: 3,
@@ -152,7 +151,8 @@ describe("shape matrix URL state", () => {
       rightTurn: 1.5,
       activeAxis: "right",
       labelMode: "ratios",
-      propType: PropType.FAN,
+      leftPropType: PropType.FAN,
+      rightPropType: PropType.FAN,
       pair: null,
       mode: null,
       propMode: null,
@@ -215,7 +215,8 @@ describe("shape matrix URL state", () => {
       rightTurn: 0.25,
       activeAxis: "both",
       labelMode: "turns",
-      propType: PropType.CLUB,
+      leftPropType: PropType.CLUB,
+      rightPropType: PropType.CLUB,
       pair: { left, right },
       mode: "TS",
       propMode: "SS",
@@ -252,9 +253,7 @@ describe("shape matrix URL state", () => {
   });
 
   it("round-trips both theory axes, the pairing, and the selected cell", () => {
-    const url = new URL(
-      "https://tkaflowarts.com/shape-engine?ref=theory"
-    );
+    const url = new URL("https://tkaflowarts.com/shape-engine?ref=theory");
     const state = readShapeMatrixRouteState(
       "?theory=1&leftRatio=2:9&rightRatio=1:2&pairing=QO" +
         "&theoryLeft=2:9-anti-in&theoryRight=1:2-pro-out&level=4"
@@ -361,9 +360,7 @@ describe("shape matrix URL state", () => {
     expect(full.theoryLeftRatio).toEqual({ propRotations: 15, handCycles: 4 });
     expect(full.theoryRightRatio).toEqual({ propRotations: 4, handCycles: 15 });
 
-    const url = new URL(
-      "https://tkaflowarts.com/shape-engine?theory=1&band=1"
-    );
+    const url = new URL("https://tkaflowarts.com/shape-engine?theory=1&band=1");
     writeShapeMatrixRouteState(url, full);
     expect(url.searchParams.get("band")).toBeNull();
   });
@@ -380,5 +377,48 @@ describe("shape matrix URL state", () => {
     const legacy = readShapeMatrixRouteState("?theory=1&leftRatio=2:9&level=4");
     expect(legacy.theoryLeftRatio).toEqual({ propRotations: 2, handCycles: 9 });
     expect("theoryBand" in legacy).toBe(false);
+  });
+
+  it("reads rp as the right hand and both hands from prop when rp is absent", () => {
+    expect(readShapeMatrixRouteState("?prop=staff&rp=fan")).toMatchObject({
+      leftPropType: PropType.STAFF,
+      rightPropType: PropType.FAN,
+    });
+    expect(readShapeMatrixRouteState("?prop=club")).toMatchObject({
+      leftPropType: PropType.CLUB,
+      rightPropType: PropType.CLUB,
+    });
+    expect(readShapeMatrixRouteState("?prop=staff&rp=nope")).toMatchObject({
+      leftPropType: PropType.STAFF,
+      rightPropType: PropType.STAFF,
+    });
+  });
+
+  it("writes rp only when the hands differ", () => {
+    const url = new URL("https://tkaflowarts.com/shape-engine?rp=fan");
+    writeShapeMatrixRouteState(url, {
+      ...COMMON,
+      level: 2,
+      leftTurn: 0,
+      rightTurn: 0,
+      labelMode: "turns",
+      pair: null,
+      mode: null,
+    });
+    expect(url.searchParams.get("prop")).toBe("staff");
+    expect(url.searchParams.has("rp")).toBe(false);
+
+    writeShapeMatrixRouteState(url, {
+      ...COMMON,
+      rightPropType: PropType.FAN,
+      level: 2,
+      leftTurn: 0,
+      rightTurn: 0,
+      labelMode: "turns",
+      pair: null,
+      mode: null,
+    });
+    expect(url.searchParams.get("prop")).toBe("staff");
+    expect(url.searchParams.get("rp")).toBe("fan");
   });
 });

@@ -105,7 +105,9 @@ export function readShapeMatrixRouteState(
   const rightTurn = readTurn(params, level, "rightTurn", "redTurn");
   const requestedSolo = params.get("solo");
   const solo =
-    requestedSolo === "left" || requestedSolo === "right" ? requestedSolo : null;
+    requestedSolo === "left" || requestedSolo === "right"
+      ? requestedSolo
+      : null;
   const requestedLabels = params.get("labels") as MatrixLabelMode | null;
   const labelMode =
     requestedLabels && LABEL_MODES.has(requestedLabels)
@@ -129,6 +131,11 @@ export function readShapeMatrixRouteState(
     rawAxis === "blue" ? "left" : rawAxis === "red" ? "right" : rawAxis
   ) as ShapeMatrixAxisTarget | null;
   const requestedProp = params.get("prop") as PropType | null;
+  const requestedRightProp = params.get("rp") as PropType | null;
+  const leftPropType =
+    requestedProp && PROP_TYPES.has(requestedProp)
+      ? requestedProp
+      : PropType.STAFF;
 
   const surface: ShapeMatrixSurface =
     params.get("theory") === "1" ? "theory" : "matrix";
@@ -168,10 +175,13 @@ export function readShapeMatrixRouteState(
     activeAxis:
       requestedAxis && AXIS_TARGETS.has(requestedAxis) ? requestedAxis : "both",
     labelMode,
-    propType:
-      requestedProp && PROP_TYPES.has(requestedProp)
-        ? requestedProp
-        : PropType.STAFF,
+    leftPropType,
+    // `rp` is written only when the hands differ, so an absent or unknown
+    // value means both hands hold the left prop.
+    rightPropType:
+      requestedRightProp && PROP_TYPES.has(requestedRightProp)
+        ? requestedRightProp
+        : leftPropType,
     pair,
     solo: pair ? solo : null,
     mode:
@@ -207,7 +217,10 @@ export function writeShapeMatrixRouteState(
   if (state.solo) url.searchParams.set("solo", state.solo);
   else url.searchParams.delete("solo");
   url.searchParams.set("labels", state.labelMode);
-  url.searchParams.set("prop", state.propType);
+  url.searchParams.set("prop", state.leftPropType);
+  if (state.rightPropType !== state.leftPropType)
+    url.searchParams.set("rp", state.rightPropType);
+  else url.searchParams.delete("rp");
   // Older links used this parameter to switch between two different picker
   // modes. The coordinated selector no longer has a driver, so new URLs remove
   // it while `propMode` continues to restore the exact relationship edge.
