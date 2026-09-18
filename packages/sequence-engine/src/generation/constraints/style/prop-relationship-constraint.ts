@@ -53,6 +53,19 @@ export function propRelatedRotationDirection(
   return r === "cw" ? "ccw" : "cw";
 }
 
+/**
+ * The shared phrasing for a prop relationship request, used both for this
+ * constraint's rejection reason and for the post-build report's detail
+ * description, so the two never drift apart.
+ */
+export function describePropRelationship(
+  options: PropRelationshipOptions
+): string {
+  return `Props spin ${options.direction}${
+    options.timing ? ` and sit ${options.timing}` : ""
+  }`;
+}
+
 /** Whether this dataset row can carry the relation once turns are applied. */
 export function propRelationshipCouldHold(
   candidate: PictographData,
@@ -74,9 +87,7 @@ export class PropRelationshipConstraint implements IVariationConstraint {
   readonly description: string;
 
   constructor(private readonly options: PropRelationshipOptions) {
-    this.description = `Props spin ${options.direction}${
-      options.timing ? ` and sit ${options.timing}` : ""
-    }`;
+    this.description = describePropRelationship(options);
   }
 
   evaluate(context: ConstraintContext): ConstraintScore {

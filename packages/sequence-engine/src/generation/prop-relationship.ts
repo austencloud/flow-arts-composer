@@ -117,12 +117,15 @@ export function propPhase(
   );
 }
 
+/** Radian slack at a timing band edge, absorbing floating-point error. */
+const BAND_EDGE_EPSILON = 1e-9;
+
 /** Together within pi/4 of zero, Split within pi/4 of pi, Quarter between. */
 export function timingFromPhase(phase: number): PropTiming {
   const wrapped = normalizeAngle(phase);
   const folded = Math.min(wrapped, TAU - wrapped);
-  if (folded < PI / 4 - 1e-9) return "tog";
-  if (folded > (3 * PI) / 4 + 1e-9) return "split";
+  if (folded < PI / 4 - BAND_EDGE_EPSILON) return "tog";
+  if (folded > (3 * PI) / 4 + BAND_EDGE_EPSILON) return "split";
   return "quarter";
 }
 
@@ -169,6 +172,9 @@ export function classifyPropRelationship(
   return { kind: "full", direction, timing: startTiming };
 }
 
+/** Tolerance, in units of pi/4 steps, for landing on an integer radial step. */
+const INTEGER_STEP_EPSILON = 1e-6;
+
 /**
  * The orientation that puts a prop at `leftLocation` in the requested phase
  * with a partner at `right`, or undefined when no radial orientation lands
@@ -190,7 +196,9 @@ export function derivePartnerOrientation(
   // bearing = center + pi - k * pi/4, solved for k.
   const raw = normalizeAngle(leftCenter + PI - leftBearing) / (PI / 4);
   const k = Math.round(raw);
-  if (Math.abs(raw - k) > 1e-6) return undefined;
+  // Tolerance for the derived bearing landing on an integer step of the
+  // radial cycle; anything further off means no radial orientation fits.
+  if (Math.abs(raw - k) > INTEGER_STEP_EPSILON) return undefined;
   return RADIAL_ORIENTATION_CYCLE[k % 8];
 }
 

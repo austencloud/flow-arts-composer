@@ -87,6 +87,18 @@ describe("propPhase and timingFromPhase", () => {
     expect(timingFromPhase(PI / 4 - 1e-6)).toBe("tog");
     expect(timingFromPhase((3 * PI) / 4 + 1e-6)).toBe("split");
   });
+
+  it("classes just inside a band edge as quarter, not tog or split", () => {
+    expect(timingFromPhase(PI / 4 + 1e-6)).toBe("quarter");
+    expect(timingFromPhase((3 * PI) / 4 - 1e-6)).toBe("quarter");
+  });
+
+  it("classes the wrapped mirror of the tog/quarter and quarter/split edges", () => {
+    // 5*PI/4 and -3*PI/4 are the same angle, folding to the same distance
+    // from zero as (3*PI)/4 above: an exact band edge, so quarter as well.
+    expect(timingFromPhase((5 * PI) / 4)).toBe("quarter");
+    expect(timingFromPhase((-3 * PI) / 4)).toBe("quarter");
+  });
 });
 
 describe("classifyPropRelationship", () => {

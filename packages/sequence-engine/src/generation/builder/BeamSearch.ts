@@ -439,7 +439,7 @@ export class BeamSearch {
               turnSource,
               state.steps,
               propContinuity,
-          this.options.leftSpinRule
+              this.options.leftSpinRule
             );
             nextBeam.push(extendState(state, enriched, scored));
             statesExplored++;
@@ -746,7 +746,7 @@ export class BeamSearch {
             turnSource,
             state.steps,
             propContinuity,
-          this.options.leftSpinRule
+            this.options.leftSpinRule
           );
           nextBeam.push(extendState(state, enriched, scored));
           statesExplored++;

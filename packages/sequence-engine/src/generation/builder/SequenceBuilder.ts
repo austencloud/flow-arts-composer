@@ -48,14 +48,20 @@ import {
 } from "../turns/TurnSource.js";
 import { materializeTurn } from "../turns/TurnMaterializer.js";
 import type { HandRelationshipOptions } from "../constraints/style/hand-relationship-constraint.js";
-import type { PropRelationshipOptions } from "../constraints/style/prop-relationship-constraint.js";
+import {
+  describePropRelationship,
+  type PropRelationshipOptions,
+} from "../constraints/style/prop-relationship-constraint.js";
 import {
   derivePartnerOrientation,
   reportPropRelationship,
   type PropDirection,
   type PropTiming,
 } from "../prop-relationship.js";
-import { resolveLeftSpinRule, type LeftSpinRule } from "../turns/left-spin-rule.js";
+import {
+  resolveLeftSpinRule,
+  type LeftSpinRule,
+} from "../turns/left-spin-rule.js";
 import {
   applyLayerPattern,
   enforceHandFlipParity,
@@ -278,6 +284,9 @@ function resolveTimedStartOrientations(
   return { leftStartOrientation: left, rightStartOrientation: derived };
 }
 
+// Both callers only ever pass a result that has already gone through
+// withPropRelationshipReport, which always adds this detail, so the `?? 1`
+// fallback below is unreachable; it exists only to satisfy the return type.
 function propRelationshipScore(result: BuildResult): number {
   return (
     result.constraintReport.details.find(
@@ -302,7 +311,7 @@ function withPropRelationshipReport(
     score,
     mode: "hard",
     description:
-      `Props ${request.direction}${request.timing ? ` ${request.timing}` : ""}: ` +
+      `${describePropRelationship(request)}: ` +
       `${report.holding} of ${judged} beats hold` +
       (report.exempt > 0 ? `, ${report.exempt} float beats exempt` : "") +
       (report.firstOffendingIndex !== null
@@ -320,6 +329,7 @@ function withPropRelationshipReport(
     constraintReport: {
       ...result.constraintReport,
       details,
+      score: score === 1 ? result.constraintReport.score : 0,
       satisfied: result.constraintReport.satisfied && score === 1,
     },
   };
@@ -548,7 +558,10 @@ export class SequenceBuilder {
    * the candidate-time constraint settles shift spins and the spin rule the
    * rest, so a miss here is a phase drift the search could not see. One more
    * roll usually lands; past that, the better of the two comes back with its
-   * report so the caller can say the props fell short.
+   * report so the caller can say the props fell short. With a timing and
+   * both start orientations pinned by the caller the phase is already fixed
+   * before the search runs, so the retry is skipped and the first attempt is
+   * returned as-is.
    * @throws Error if neither word nor length is provided
    * @throws Error if beam search finds no valid path at all
    */
@@ -561,6 +574,18 @@ export class SequenceBuilder {
       propRelationship
     );
     if (propRelationshipScore(first) === 1) return first;
+
+    // A timing pins the phase; with both start orientations also pinned by
+    // the caller, that phase is fixed before the search even runs, so a
+    // retry cannot change the verdict.
+    if (
+      propRelationship.timing !== undefined &&
+      options.leftStartOrientation !== undefined &&
+      options.rightStartOrientation !== undefined
+    ) {
+      return first;
+    }
+
     let second: BuildResult;
     try {
       second = withPropRelationshipReport(
@@ -568,7 +593,17 @@ export class SequenceBuilder {
         propRelationship
       );
     } catch {
+      // buildOnce is stateless and its RNG is unseeded Math.random, and the
+      // first call already succeeded with identical options, so a second
+      // throw here can only be a search dead end.
       return first;
+    }
+    if (
+      second.constraintReport.satisfied !== first.constraintReport.satisfied
+    ) {
+      // A result whose other hard constraints failed must not beat a clean
+      // one, even with a better raw prop score.
+      return second.constraintReport.satisfied ? second : first;
     }
     return propRelationshipScore(second) > propRelationshipScore(first)
       ? second
@@ -576,9 +611,7 @@ export class SequenceBuilder {
   }
 
   /**
-   * Build a sequence through the 7-stage pipeline.
-   * @throws Error if neither word nor length is provided
-   * @throws Error if beam search finds no valid path at all
+   * One attempt of the pipeline; `build()` adds the prop report and retry.
    */
   private buildOnce(options: BuildOptions): BuildResult {
     if (!options.word && !options.length) {
@@ -1690,8 +1723,10 @@ export class SequenceBuilder {
       const prevLeftRot = prevStep?.motions.left.rotationDirection;
       const prevRightRot = prevStep?.motions.right.rotationDirection;
 
-      // Right first: with matched turns and a relationship, a left dash or
-      // static takes the spin the relationship implies from the right hand.
+      // Right first: a left dash or static that gains turns takes the spin
+      // the rule implies from the right hand (a prop relationship, or match
+      // turns plus a hand relationship) instead of its own continuity or
+      // coin flip.
       const rightTurn = materializeTurn(pd.rightMotion, rightTurns, {
         previousRotation: prevRightRot,
         propContinuity,
@@ -1804,10 +1839,9 @@ export class SequenceBuilder {
       "left",
       leftStartOrientation
     );
-    const rightStartOrientation =
-      (startOrientations?.rightStartOrientation ||
-        shaped[0]?.motions.right.endOrientation ||
-        "in") as Orientation;
+    const rightStartOrientation = (startOrientations?.rightStartOrientation ||
+      shaped[0]?.motions.right.endOrientation ||
+      "in") as Orientation;
     propagated = propagator.propagateForColor(
       propagated,
       "right",

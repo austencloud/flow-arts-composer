@@ -117,8 +117,14 @@ describe("PropRelationshipConstraint", () => {
     };
     expect(constraint.evaluate(ok).satisfied).toBe(true);
     expect(constraint.couldSatisfy(candidate(proCw, proCw))).toBe(false);
-    expect(constraint.evaluate({ ...ok, candidate: candidate(proCw, proCw) })).toEqual(
-      expect.objectContaining({ score: 0, satisfied: false })
+    expect(
+      constraint.evaluate({ ...ok, candidate: candidate(proCw, proCw) })
+    ).toEqual(
+      expect.objectContaining({
+        score: 0,
+        satisfied: false,
+        reason: "Cannot hold: Props spin opp",
+      })
     );
   });
 

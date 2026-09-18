@@ -168,6 +168,27 @@ describe("start orientation under a prop timing", () => {
     expect(propDetail(result)?.score).toBe(1);
   });
 
+  it("derives the right start from the left one", () => {
+    const result = diamond().build({
+      length: 4,
+      gridMode: "diamond",
+      level: 2,
+      leftStartOrientation: "in",
+      constraintOptions: {
+        propRelationship: { direction: "same", timing: "split" },
+      },
+    });
+    const start = result.sequence[0]!;
+    expect(start.motions.left.startOrientation).toBe("in");
+    expect(
+      classifyPropRelationship(
+        { ...start.motions.left, rotationDirection: "cw", motionType: "pro" },
+        { ...start.motions.right, rotationDirection: "cw", motionType: "pro" }
+      )
+    ).toEqual({ kind: "full", direction: "same", timing: "split" });
+    expect(propDetail(result)?.score).toBe(1);
+  });
+
   it("keeps a contradicting caller pair and reports it instead of throwing", () => {
     // alpha1 starts left at s and right at n; both "in" already sits at
     // Split under Same (see the derivation test above), so pinning both and
@@ -188,6 +209,7 @@ describe("start orientation under a prop timing", () => {
     const detail = propDetail(result);
     expect(detail).toBeDefined();
     expect(detail!.score).toBeLessThan(1);
+    expect(detail!.description).toMatch(/first miss at step 1/);
     expect(result.constraintReport.satisfied).toBe(false);
   });
 });
