@@ -16,8 +16,9 @@
     persistence?: ShapeMatrixAppPersistence;
     /**
      * "standalone" hosts (the public /shape-engine route) carry the
-     * app's own identity block in the header. "embedded" hosts (the Toys tab)
-     * already name the surface through module chrome, so the header drops the
+     * app's own identity block in the header. "embedded" hosts (the Create
+     * module's Shape tab) already name the surface through module chrome, so
+     * the header drops the
      * title and leads with the controls.
      */
     variant?: "standalone" | "embedded";

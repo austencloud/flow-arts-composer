@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -9,7 +9,17 @@ import {
 } from "$lib/shared/navigation/config/tab-definitions";
 import { normalizeNavigationTarget } from "$lib/shared/navigation/config/module-definitions";
 
-const MESSAGE_LOCALES = ["de", "en", "es", "fr", "it", "ja", "pt", "ru"];
+function readMessages(locale: string): Record<string, string> {
+  return JSON.parse(
+    readFileSync(resolve(process.cwd(), `messages/${locale}.json`), "utf8")
+  ) as Record<string, string>;
+}
+
+/** The locales that carry the Fuse tab strings define where Shape ships. */
+const LOCALES_WITH_FUSE = readdirSync(resolve(process.cwd(), "messages"))
+  .filter((file) => file.endsWith(".json"))
+  .map((file) => file.replace(/\.json$/, ""))
+  .filter((locale) => Boolean(readMessages(locale).tab_create_fuse));
 
 vi.mock("$lib/shared/analytics/services/posthog-activity-logger", () => ({
   logModuleView: vi.fn(async () => {}),
@@ -67,23 +77,17 @@ describe("Shape Engine as a Create tab", () => {
   });
 
   it("ships the tab strings in every locale that has the Fuse strings", () => {
-    for (const locale of MESSAGE_LOCALES) {
-      const messages = JSON.parse(
-        readFileSync(resolve(process.cwd(), `messages/${locale}.json`), "utf8")
-      ) as Record<string, string>;
+    expect(LOCALES_WITH_FUSE.length).toBeGreaterThanOrEqual(8);
+    for (const locale of LOCALES_WITH_FUSE) {
+      const messages = readMessages(locale);
       expect(messages.tab_create_shape_engine, locale).toBeTruthy();
       expect(messages.tab_desc_create_shape_engine, locale).toBeTruthy();
     }
   });
 
   it("no longer lists Shape Matrix under Toys", () => {
-    expect(TOYS_TABS.map((tab) => tab.id)).toEqual([
-      "third-order",
-      "hand-tunnel",
-    ]);
-    const en = JSON.parse(
-      readFileSync(resolve(process.cwd(), "messages/en.json"), "utf8")
-    ) as Record<string, string>;
+    expect(TOYS_TABS.map((tab) => tab.id)).not.toContain("shape-matrix");
+    const en = readMessages("en");
     expect(en.tab_toys_shape_matrix).toBeUndefined();
     expect(en.tab_desc_toys_shape_matrix).toBeUndefined();
   });

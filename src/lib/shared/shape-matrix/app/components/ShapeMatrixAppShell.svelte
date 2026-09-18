@@ -34,8 +34,9 @@
   import { createLayoutMotion } from "$lib/shared/transitions/layout-flip";
 
   interface Props {
-    /** Embedded hosts (the Toys tab) get their name from module chrome, so
-        the header drops the identity block and leads with the controls. */
+    /** Embedded hosts (the Create module's Shape tab) get their name from
+        module chrome, so the header drops the identity block and leads with
+        the controls. */
     variant?: "standalone" | "embedded";
   }
 

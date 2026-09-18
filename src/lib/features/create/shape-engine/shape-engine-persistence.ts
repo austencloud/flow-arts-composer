@@ -6,24 +6,28 @@
  * Shape Engine lived in the Toys module until 2026-09-18. The legacy key is
  * read once so nobody loses their settings, then dropped on the next persist.
  */
-import type { ShapeMatrixAppSnapshot } from "$lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte";
+import { SHAPE_MATRIX_LEVELS } from "$lib/shared/shape-matrix/app/shape-matrix-levels";
+import type {
+  ShapeMatrixAppPersistence,
+  ShapeMatrixAppSnapshot,
+} from "$lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte";
 
 export const SHAPE_ENGINE_STORAGE_KEY = "create-shape-engine-state-v1";
 export const SHAPE_ENGINE_LEGACY_STORAGE_KEY = "toys-shape-matrix-state-v1";
-
-const VALID_LEVELS = [1, 2, 3, 4];
 
 function parseSnapshot(raw: string | null): ShapeMatrixAppSnapshot | null {
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as ShapeMatrixAppSnapshot;
-    return parsed && VALID_LEVELS.includes(parsed.level) ? parsed : null;
+    return parsed && SHAPE_MATRIX_LEVELS.includes(parsed.level) ? parsed : null;
   } catch {
     return null;
   }
 }
 
-export function createShapeEnginePersistence(storage: Storage) {
+export function createShapeEnginePersistence(
+  storage: Storage
+): ShapeMatrixAppPersistence {
   return {
     restore: (): ShapeMatrixAppSnapshot | null => {
       try {
