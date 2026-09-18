@@ -167,6 +167,8 @@
     backface-visibility: hidden;
   }
 
+  /* A page of control rows keeps a reading measure, so a wide sidebar does
+     not stretch its rows across the whole pane. */
   .panel-center-inner {
     margin: auto 0;
     width: 100%;
@@ -174,10 +176,15 @@
     align-self: center;
   }
 
+  /* A page that was handed its whole body (the prop grid, Display, Effects)
+     fills the pane in both axes. Its own layout measures the width it gets
+     and reflows, so a pane the user drags wider gets more tiles per row
+     rather than a fixed column with a margin either side. */
   .panel-center-inner.fill-body {
     margin: 0;
     flex: 1 1 0;
     min-height: 0;
+    max-width: none;
     display: flex;
     flex-direction: column;
   }
@@ -209,13 +216,16 @@
     border-radius: 3px;
   }
 
-  @media (min-width: 1680px) {
+  /* The measure widens with the pane it is in, not with the viewport: a
+     sidebar the user dragged wide on a laptop and a sidebar on a 4K panel
+     want the same column for the same width. */
+  @container animation-sidebar (min-width: 900px) {
     .panel-center-inner {
       max-width: 800px;
     }
   }
 
-  @media (min-width: 2600px) {
+  @container animation-sidebar (min-width: 1200px) {
     .panel-center-inner {
       max-width: 1000px;
     }
