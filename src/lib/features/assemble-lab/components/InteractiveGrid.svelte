@@ -492,7 +492,7 @@
   }
 
   const candidatePathD = $derived.by(() => {
-    const startLocation = builderState.candidateStartPlacement;
+    const startLocation = builderState.candidateStartLocation;
     if (
       startLocation === null ||
       previewLocation === null ||

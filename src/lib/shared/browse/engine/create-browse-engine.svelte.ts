@@ -22,6 +22,7 @@ import type {
 
 import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
 import type { BrowseFilterValue } from "$lib/shared/persistence/domain/types/filtering-types";
+import { resolvePersistedFilterType } from "$lib/shared/browse/services/legacy-filter-type-aliases";
 import { BrowseSortMethod } from "$lib/shared/browse/domain/enums/browse-enums";
 import {
   DEFAULT_BROWSE_VIEW_MODE,
@@ -111,38 +112,6 @@ function currentFilterLabel(filter: ActiveFilter): string {
 
 // Persistence
 
-/** Every value BrowseFilterType currently defines, for validating a
- * persisted entry's stored type string. */
-const CURRENT_FILTER_TYPE_VALUES = new Set<string>(
-  Object.values(BrowseFilterType)
-);
-
-/** Filter type strings persisted before a FilterType enum value was renamed,
- * mapped to today's value. STARTING_PLACEMENT/END_PLACEMENT used to be
- * "startPosition"/"endPosition" (the domain concept "position" was renamed
- * to "placement" with no migration). Extend this table — don't replace an
- * entry — the next time a filter type's persisted value changes. */
-const LEGACY_FILTER_TYPE_ALIASES: Readonly<Record<string, BrowseFilterType>> =
-  {
-    startPosition: BrowseFilterType.STARTING_PLACEMENT,
-    endPosition: BrowseFilterType.END_PLACEMENT,
-  };
-
-/** Resolves a persisted filter's stored type string to its current
- * FilterType, following the legacy alias table above. Returns null when the
- * type is neither a current value nor a known legacy alias — such an entry
- * no longer maps to anything `applyFilter` understands and must be dropped,
- * not kept around as a chip that silently filters nothing. */
-function resolvePersistedFilterType(
-  storedType: string
-): BrowseFilterType | null {
-  const alias = LEGACY_FILTER_TYPE_ALIASES[storedType];
-  if (alias) return alias;
-  return CURRENT_FILTER_TYPE_VALUES.has(storedType)
-    ? (storedType as BrowseFilterType)
-    : null;
-}
-
 /** Rebuilds a persisted filter's map key when it embeds the old type
  * string — either bare (`String(type)`, the one-per-type scheme) or
  * stacked (`${type}:${value}`, e.g. OR_STACKING_TYPES). Falls back to the
@@ -160,7 +129,7 @@ function rekeyMigratedFilter(
 }
 
 /** Drops persisted filter entries whose type no longer exists, and rewrites
- * entries whose type was renamed (LEGACY_FILTER_TYPE_ALIASES) onto the
+ * entries whose type was renamed (see legacy-filter-type-aliases.ts) onto the
  * current FilterType, rebuilding the map key to match. Runs once, here, so
  * every reader of `persisted.activeFilters` (buildInitialFilters,
  * buildInitialConnectives) sees already-current data. */
