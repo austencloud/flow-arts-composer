@@ -42,6 +42,25 @@
     sidebarOpen = false;
   }
 
+  // The floating contents pill is fixed over the reading column on narrow
+  // screens, where it sat on top of table columns and grid headers at every
+  // scroll position. It now steps out of the way while the reader scrolls
+  // down and returns on the first scroll up, the way a mobile browser bar
+  // does. It always stays while the drawer is open so it can close it.
+  let pillTucked = $state(false);
+  let lastScrollY = 0;
+  function onScroll() {
+    const y = window.scrollY;
+    const delta = y - lastScrollY;
+    lastScrollY = y;
+    if (sidebarOpen || y < 96) {
+      pillTucked = false;
+      return;
+    }
+    if (delta > 6) pillTucked = true;
+    else if (delta < -6) pillTucked = false;
+  }
+
   onMount(() => {
     if (!browser || !ownsStandaloneChrome) return;
     void (async () => {
@@ -53,6 +72,10 @@
   });
 </script>
 
+<svelte:window onscroll={onScroll} />
+
+<a href="#guide-main" class="skip-link">Skip to guide content</a>
+
 {#if ownsStandaloneChrome}
   <SiteHeader />
 {/if}
@@ -60,6 +83,7 @@
 <div class="guide-layout">
   <button
     class="mobile-menu-btn"
+    class:tucked={pillTucked && !sidebarOpen}
     onclick={() => (sidebarOpen = !sidebarOpen)}
     aria-label={sidebarOpen ? "Close Guide contents" : "Open Guide contents"}
     aria-expanded={sidebarOpen}
@@ -75,7 +99,7 @@
     <GuideSidebar {activeSectionId} onLinkClick={closeSidebar} />
   </aside>
 
-  <main class="guide-content">
+  <main class="guide-content" id="guide-main" tabindex="-1">
     {@render children()}
   </main>
 </div>
@@ -97,6 +121,45 @@
 {/if}
 
 <style>
+  /* Keyboard and screen reader readers get one jump past the site header and
+     the guide rail. Hidden until focused, then pinned at the top left. */
+  .skip-link {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+    background: oklch(0.18 0.02 270);
+    color: oklch(0.92 0.02 270);
+    border-radius: 8px;
+    text-decoration: none;
+    font-family: Inter, system-ui, sans-serif;
+    font-weight: 600;
+    z-index: 100;
+  }
+  .skip-link:focus {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    width: auto;
+    height: auto;
+    padding: 0.75rem 1.25rem;
+    margin: 0;
+    clip: auto;
+    outline: 2px solid oklch(0.74 0.11 265);
+    outline-offset: 2px;
+  }
+
+  /* The content column is a focus target for the skip link only; it needs
+     no ring of its own. */
+  .guide-content:focus {
+    outline: none;
+  }
+
   /* SiteHeader is a fixed 64px bar (56px once scrolled) that doesn't push
      document flow - the sidebar/menu-button below clear it explicitly
      instead of relying on layout push. */
@@ -118,6 +181,23 @@
     font-size: 0.8rem;
     font-weight: 750;
     letter-spacing: 0.01em;
+    transition:
+      transform var(--transition-normal, 200ms ease),
+      opacity var(--transition-normal, 200ms ease),
+      visibility 0s linear 0s;
+  }
+
+  /* Tucked: slides up behind the header and leaves the tab order, with
+     visibility flipping only once the slide has finished. */
+  .mobile-menu-btn.tucked {
+    transform: translateY(calc(-100% - 64px - 1.5rem));
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      transform var(--transition-normal, 200ms ease),
+      opacity var(--transition-normal, 200ms ease),
+      visibility 0s linear var(--duration-normal, 200ms);
   }
 
   @media (max-width: 1024px) {
@@ -126,6 +206,12 @@
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mobile-menu-btn {
+      transition: none;
     }
   }
 </style>

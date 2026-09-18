@@ -48,6 +48,12 @@
     soloHand?: "left" | "right" | null;
     /** Optional externally-owned selection for restored/shared app state. */
     selectedPair?: { left: TAxis; right: TAxis } | null;
+    /**
+     * Tiles are toggle buttons by default (`aria-pressed` names the chosen
+     * crossing). A host whose tiles navigate away instead of selecting passes
+     * false so a screen reader hears a plain button, not a toggle.
+     */
+    pressable?: boolean;
     /** Alternative cell/header painter (e.g. the poi trail painter). Defaults to the club-style painter. */
     painter?: ShapeMatrixArtworkPainter;
     /** Per-cell verdict tint (poi-legality curation). Null/undefined = no tint. */
@@ -102,6 +108,7 @@
     onsolo,
     soloHand = null,
     selectedPair,
+    pressable = true,
     painter,
     overlayFor,
     dimFor,
@@ -209,6 +216,78 @@
       ? keyOf(soloHand === "left" ? selectedPair.left : selectedPair.right)
       : null
   );
+
+  /* The tiles are one composite control, not one tab stop each: a 12x12
+     matrix would otherwise cost 144 Tabs to walk past. One tile carries the
+     tab stop (the chosen crossing, else the last one focused, else the first),
+     the arrows move between tiles, Home/End reach the row ends, and Ctrl with
+     them reaches the corners. Tab leaves the grid in a single step. */
+  let anchorRow = $state(0);
+  let anchorCol = $state(0);
+  $effect(() => {
+    if (!selectedKey) return;
+    for (let r = 0; r < rowAxis.length; r++) {
+      const left = keyOf(rowAxis[r]!);
+      for (let c = 0; c < colAxis.length; c++) {
+        if (`${left}__${keyOf(colAxis[c]!)}` === selectedKey) {
+          anchorRow = r;
+          anchorCol = c;
+          return;
+        }
+      }
+    }
+  });
+  const stopRow = $derived(
+    Math.min(anchorRow, Math.max(rowAxis.length - 1, 0))
+  );
+  const stopCol = $derived(
+    Math.min(anchorCol, Math.max(colAxis.length - 1, 0))
+  );
+  function onGridKeydown(event: KeyboardEvent) {
+    const cell = (event.target as HTMLElement | null)?.closest<HTMLElement>(
+      "button.cell"
+    );
+    if (!cell || event.altKey || event.metaKey) return;
+    const row = Number(cell.dataset.row);
+    const col = Number(cell.dataset.col);
+    let nextRow = row;
+    let nextCol = col;
+    switch (event.key) {
+      case "ArrowRight":
+        nextCol = col + 1;
+        break;
+      case "ArrowLeft":
+        nextCol = col - 1;
+        break;
+      case "ArrowDown":
+        nextRow = row + 1;
+        break;
+      case "ArrowUp":
+        nextRow = row - 1;
+        break;
+      case "Home":
+        nextCol = 0;
+        if (event.ctrlKey) nextRow = 0;
+        break;
+      case "End":
+        nextCol = colAxis.length - 1;
+        if (event.ctrlKey) nextRow = rowAxis.length - 1;
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+    nextRow = Math.max(0, Math.min(nextRow, rowAxis.length - 1));
+    nextCol = Math.max(0, Math.min(nextCol, colAxis.length - 1));
+    if (nextRow === row && nextCol === col) return;
+    anchorRow = nextRow;
+    anchorCol = nextCol;
+    wrap
+      ?.querySelector<HTMLButtonElement>(
+        `button.cell[data-row="${nextRow}"][data-col="${nextCol}"]`
+      )
+      ?.focus();
+  }
 </script>
 
 <!-- The tile size is container math, not a measurement: it is right in the
@@ -323,7 +402,17 @@
                     enabled: claimSelected && selectedKey === key,
                   }}
                   aria-label={`left ${labelOf(bf)} over right ${labelOf(rf)}`}
-                  aria-pressed={selectedKey === key}
+                  aria-pressed={pressable ? selectedKey === key : undefined}
+                  data-row={rowIndex}
+                  data-col={colIndex}
+                  tabindex={rowIndex === stopRow && colIndex === stopCol
+                    ? 0
+                    : -1}
+                  onfocus={() => {
+                    anchorRow = rowIndex;
+                    anchorCol = colIndex;
+                  }}
+                  onkeydown={onGridKeydown}
                   onclick={() => {
                     sel = key;
                     onselect({ left: bf, right: rf });
