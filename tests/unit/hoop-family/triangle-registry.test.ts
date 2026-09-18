@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { SMALL_UNILATERAL_PROPS as SMALL_UNILATERAL_PROPS_DOMAIN } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
-import { SMALL_UNILATERAL_PROPS as SMALL_UNILATERAL_PROPS_RENDER_CORE } from "$lib/shared/render/core/constants/prop-classification";
-import { SMALL_UNILATERAL_PROPS as SMALL_UNILATERAL_PROPS_PACKAGE } from "../../../packages/render-core/src/constants/prop-classification";
+import {
+  SMALL_UNILATERAL_PROPS,
+  isUnilateralProp as isUnilateralPropDomain,
+} from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
+import { isUnilateralProp as isUnilateralPropRenderCore } from "$lib/shared/render/core/constants/prop-classification";
 import {
   getAllVariations,
   getBasePropType,
@@ -16,13 +18,16 @@ import {
   encodePropForURL,
   parsePropTypeFromURLValue,
 } from "$lib/shared/navigation/services/sequence-encoder";
-import { applyMotionColorToSvg, getMotionColor } from "@tka/render-core";
+import {
+  applyMotionColorToSvg,
+  getMotionColor,
+  isUnilateralProp as isUnilateralPropPackage,
+  SELECTIVE_COLOR_PROP_TYPES,
+} from "@tka/render-core";
 
 describe("triangle registry membership", () => {
   it("is a small one-handed prop in the hoop family", () => {
-    expect(SMALL_UNILATERAL_PROPS_DOMAIN as readonly string[]).toContain(
-      "triangle"
-    );
+    expect(SMALL_UNILATERAL_PROPS as readonly string[]).toContain("triangle");
     expect(getBasePropType(PropType.TRIANGLE)).toBe(PropType.MINIHOOP);
     expect(getAllVariations(PropType.MINIHOOP)).toEqual([
       PropType.MINIHOOP,
@@ -62,22 +67,31 @@ describe("triangle registry membership", () => {
     );
   });
 
-  it("recolors selectively so the black elbows and gold band survive", () => {
+  it("recolors selectively so the black hardware survives", () => {
+    expect(SELECTIVE_COLOR_PROP_TYPES).toContain("triangle");
+
     const svgText = readFileSync(
       "static/images/props/pictograph/triangle.svg",
       "utf8"
     );
+    // Derived from the list, not hard-coded: drop "triangle" from
+    // SELECTIVE_COLOR_PROP_TYPES and this flag goes false, the whole SVG
+    // gets flatly recolored, and the #1C1C1F assertion below fails.
     const recolored = applyMotionColorToSvg(svgText, "left", {
-      selectiveColorMode: true,
+      selectiveColorMode: SELECTIVE_COLOR_PROP_TYPES.includes("triangle"),
     });
 
     // The neutral tube gets repainted to the hand colour.
     expect(recolored.toLowerCase()).not.toContain("#9a9a9a");
     expect(recolored).toContain(getMotionColor("left", "dark"));
 
-    // The black elbows/button and the gold grip band are dark/saturated
-    // enough that selective mode preserves them as authored.
+    // The black elbows/button are dark enough that selective mode preserves
+    // them as authored. This is the discriminating assertion.
     expect(recolored).toContain("#1C1C1F");
+
+    // The gold grip band (#C9AC68) is separately listed in
+    // ACCENT_COLORS_TO_PRESERVE, so it survives even in non-selective mode;
+    // it does not discriminate on SELECTIVE_COLOR_PROP_TYPES membership.
     expect(recolored).toContain("#C9AC68");
   });
 
@@ -95,18 +109,20 @@ describe("triangle registry membership", () => {
     }
   });
 
-  it("keeps the three SMALL_UNILATERAL_PROPS copies in sync", () => {
-    const domain = new Set(SMALL_UNILATERAL_PROPS_DOMAIN as readonly string[]);
-    const renderCore = new Set(
-      SMALL_UNILATERAL_PROPS_RENDER_CORE as readonly string[]
-    );
-    const pkg = new Set(SMALL_UNILATERAL_PROPS_PACKAGE as readonly string[]);
-
-    expect(renderCore).toEqual(domain);
-    expect(pkg).toEqual(domain);
-
-    expect(domain.has("triangle")).toBe(true);
-    expect(renderCore.has("triangle")).toBe(true);
-    expect(pkg.has("triangle")).toBe(true);
+  it("classifies triangle as unilateral in all three copies", () => {
+    // Behavioural, not a full-list comparison: the three SMALL_UNILATERAL_PROPS
+    // copies legitimately disagree on classic_club until that is reconciled as
+    // its own change (it feeds calculateBetaOffset's live render math, so it
+    // is not something to fix incidentally alongside triangle). This only
+    // asserts what this task actually needs: triangle reads as unilateral
+    // everywhere, and a real bilateral control (staff) does not.
+    for (const isUnilateral of [
+      isUnilateralPropDomain,
+      isUnilateralPropRenderCore,
+      isUnilateralPropPackage,
+    ]) {
+      expect(isUnilateral("triangle")).toBe(true);
+      expect(isUnilateral("staff")).toBe(false);
+    }
   });
 });

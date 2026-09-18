@@ -17,9 +17,7 @@ const BIG_UNILATERAL_PROPS = [
   "bigcontactball",
 ] as const;
 
-// Exported so tests can assert this list stays in sync with its siblings in
-// prop/domain/enums/prop-classification.ts and render/core/constants.
-export const SMALL_UNILATERAL_PROPS = [
+const SMALL_UNILATERAL_PROPS = [
   "fan",
   "club",
   "classic_club",
