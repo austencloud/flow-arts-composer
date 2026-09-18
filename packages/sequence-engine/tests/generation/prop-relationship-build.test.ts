@@ -4,7 +4,7 @@
  * candidate filtering, spin forcing on dash and static, start orientation
  * derivation, and the post-build report. Production dataframes.
  */
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { TransitionGraph } from "../../src/core/transition-graph/TransitionGraph.js";
 import { setLetterTransitionGraph } from "../../src/core/transition-graph/LetterTransitionGraph.js";
@@ -193,24 +193,38 @@ describe("start orientation under a prop timing", () => {
     // alpha1 starts left at s and right at n; both "in" already sits at
     // Split under Same (see the derivation test above), so pinning both and
     // asking for Together is the genuine contradiction here.
-    const result = diamond().build({
-      length: 4,
-      gridMode: "diamond",
-      level: 2,
-      leftStartOrientation: "in",
-      rightStartOrientation: "in",
-      startPlacement: "alpha1",
-      constraintOptions: {
-        propRelationship: { direction: "same", timing: "tog" },
-      },
+    //
+    // The builder draws rotation directions and starts from Math.random,
+    // and a float on step 1 is exempt from the prop timing, which moved the
+    // first reported miss to step 2 on some runs. Pin the stream so the
+    // report is the same on every run.
+    let seed = 7;
+    const random = vi.spyOn(Math, "random").mockImplementation(() => {
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      return seed / 4294967296;
     });
-    expect(result.sequence[0]!.motions.left.startOrientation).toBe("in");
-    expect(result.sequence[0]!.motions.right.startOrientation).toBe("in");
-    const detail = propDetail(result);
-    expect(detail).toBeDefined();
-    expect(detail!.score).toBeLessThan(1);
-    expect(detail!.description).toMatch(/first miss at step 1/);
-    expect(result.constraintReport.satisfied).toBe(false);
+    try {
+      const result = diamond().build({
+        length: 4,
+        gridMode: "diamond",
+        level: 2,
+        leftStartOrientation: "in",
+        rightStartOrientation: "in",
+        startPlacement: "alpha1",
+        constraintOptions: {
+          propRelationship: { direction: "same", timing: "tog" },
+        },
+      });
+      expect(result.sequence[0]!.motions.left.startOrientation).toBe("in");
+      expect(result.sequence[0]!.motions.right.startOrientation).toBe("in");
+      const detail = propDetail(result);
+      expect(detail).toBeDefined();
+      expect(detail!.score).toBeLessThan(1);
+      expect(detail!.description).toMatch(/first miss at step 1/);
+      expect(result.constraintReport.satisfied).toBe(false);
+    } finally {
+      random.mockRestore();
+    }
   });
 });
 
