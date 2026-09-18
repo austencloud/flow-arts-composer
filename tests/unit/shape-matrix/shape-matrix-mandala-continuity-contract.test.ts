@@ -344,15 +344,23 @@ describe("shape matrix mandala continuity", () => {
       "appState.setLevel(level, { stayOnDetail: true })"
     );
     // One list of levels and blurbs, read by everything that names a level:
-    // the popover, the difficulty strip beside the grid, and About. The strip
-    // is where the shell's level control went, so the shell no longer reads it.
+    // the popover, the wide header's difficulty control, and About. The
+    // control names the level on every press; the shell mounts it in the
+    // band beside Notation and reads no list of its own.
     expect(popover).toContain("SHAPE_MATRIX_LEVEL_DESCRIPTIONS");
-    const strip = read("app/components/ShapeMatrixDifficultyStrip.svelte");
-    expect(strip).toContain("SHAPE_MATRIX_LEVEL_DESCRIPTIONS");
+    const control = read("app/components/ShapeMatrixDifficultyControl.svelte");
+    expect(control).toContain("SHAPE_MATRIX_LEVEL_DESCRIPTIONS");
+    expect(control).toContain("{#key appState.level}");
     const about = read("app/components/ShapeMatrixAboutModal.svelte");
     expect(about).toContain("SHAPE_MATRIX_LEVEL_DESCRIPTIONS");
     const shell = read("app/components/ShapeMatrixAppShell.svelte");
     expect(shell).not.toContain("const LEVEL_DESCRIPTIONS");
+    expect(shell).toMatch(
+      /class="level-presence"[\s\S]*?<ShapeMatrixDifficultyControl \/>/
+    );
+    // The wide grid pane is the grid alone, as the Ratio Playground's is.
+    const matrixPane = read("app/components/ShapeMatrixMatrixPane.svelte");
+    expect(matrixPane).not.toContain("Difficulty");
   });
 
   it("keeps the compact topbar as the only chrome row on the detail view", () => {
