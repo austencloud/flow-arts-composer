@@ -72,9 +72,11 @@ Layout, top to bottom:
 3. Controls row: `[Left prop] [swap] [Right prop]`,
    `grid-template-columns: minmax(0,1fr) auto minmax(0,1fr)`. The swap button
    is a 44px icon button (`fas fa-right-left`), `aria-label="Swap left and
-   right colors"`, and calls `onchange("left", right)` then
-   `onchange("right", left)`. Under the existing 19rem container query the
-   row stacks and the swap button centers between the two controls.
+   right colors"`, and calls a new optional `onswap: () => void` prop once.
+   Two sequential `onchange` calls would not do: several callers rebuild the
+   whole pair from a snapshot that is stale by the second call. The button
+   only renders when `onswap` is provided. Under the existing 19rem container
+   query the row stacks and the swap button centers between the two controls.
 4. Editor (when a hand is being edited, same toggle as today), a grid with two
    areas:
    - **Swatches**: the swatch block is its own inline-size container.
@@ -117,7 +119,8 @@ theme variables; only `--theme-*` tokens and the library's documented vars.
   `rightPropType`, and `colors={{ left, right }}`. `PropTypeTab` passes
   `selectedLeftPropType` / `selectedRightPropType`. The other three
   `PrimaryPropColorSettings` callers pass nothing and get no preview.
-- `TunnelColorSettings`, `MandalaCategoryControl`: no change.
+- `TunnelColorSettings` (both pickers) and `MandalaCategoryControl` pass an
+  `onswap` that writes both hands from one snapshot.
 - `/test/sidebar-props`: passes a preview snippet using the first family and
   gains a width toggle (`SegmentedControl`: Full / 30rem / 19rem) that wraps
   the picker in a max-width box, so every column count (12 / 8 / 6) is
@@ -130,7 +133,8 @@ as `SegmentedControl.svelte.test.ts`):
 
 - opening a hand and clicking a swatch calls `onchange` with that hand and hex;
 - the pressed swatch matches the current value;
-- swap calls `onchange("left", right)` and `onchange("right", left)`;
+- swap calls `onswap` once; without `onswap` there is no swap button;
+- ArrowRight on the hue slider fires `onchange` with a valid hex;
 - a valid hex typed in the field fires `onchange`; an invalid one does not;
 - no axe violations with the editor open.
 
