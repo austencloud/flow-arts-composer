@@ -13,6 +13,11 @@
     /** Compact fan rails use measured artwork scaling; ordinary 8:3 pickers
      * keep the source framing so their previews never crop. */
     useImageScale?: boolean;
+    /**
+     * Name the maker under each look. Every card reserves the second line so
+     * the house builds sit level with the credited ones.
+     */
+    showCredit?: boolean;
   }
 
   let {
@@ -22,6 +27,7 @@
     onchange,
     density = "primary",
     useImageScale = false,
+    showCredit = false,
   }: Props = $props();
 
   function moveSelection(event: KeyboardEvent, index: number): void {
@@ -93,7 +99,17 @@
             />
           </Crossfade>
         </span>
-        <span class="option-label">{option.label}</span>
+        <span class="option-label" class:with-credit={showCredit}>
+          {#if showCredit}
+            <span class="option-name">{option.label}</span>
+            {#if option.designCredit}
+              <span class="option-credit">{option.designCredit.originator}</span
+              >
+            {/if}
+          {:else}
+            {option.label}
+          {/if}
+        </span>
         {#if value === option.id}
           <span
             class="selected-badge"
@@ -236,6 +252,38 @@
       color var(--duration-fast, 150ms) ease;
   }
 
+  .option-label.with-credit {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 2px;
+    /* Two lines' worth even when a house build has no maker to name. */
+    min-height: calc(2.6em + 2 * clamp(8px, 0.42cqi, 14px));
+    white-space: normal;
+  }
+
+  .option-name,
+  .option-credit {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .option-credit {
+    color: rgba(255, 255, 255, 0.46);
+    font-size: 0.78em;
+    font-weight: 640;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    transition: color var(--duration-fast, 150ms) ease;
+  }
+
+  .option.selected .option-credit {
+    color: color-mix(in srgb, var(--prop-picker-accent) 62%, white);
+  }
+
   .option.selected {
     border-color: color-mix(in srgb, var(--prop-picker-accent) 82%, white);
     color: #fff;
@@ -331,6 +379,7 @@
   @media (prefers-reduced-motion: reduce) {
     .option,
     .option-label,
+    .option-credit,
     .preview-frame img {
       transition: none;
     }

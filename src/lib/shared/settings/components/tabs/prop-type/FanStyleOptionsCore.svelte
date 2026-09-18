@@ -1,10 +1,10 @@
 <!--
   FanStyleOptions.svelte
-  The fan look (Pictograph, DoodleGrip Fire, Lotus Fire, DoodleGrip Day,
-  Moon LED, plus the cover where a build has one), opened from the prop
-  grid's look chip once a fan is selected. Bound to the shared fanAppearance
-  setting, which the 2D canvas and the 3D scene both read. The frame color
-  is a 3D-only detail and stays out of this 2D control.
+  The fan look (Pictograph, DoodleGrip Fire, Lotus Fire, Flat Grip Fire,
+  DoodleGrip Day, Moon LED, Star Fire, plus the covered DoodleGrip), opened
+  from the prop grid's look chip once a fan is selected. Bound to the shared
+  fanAppearance setting, which the 2D canvas and the 3D scene both read. The
+  frame color is a 3D-only detail and stays out of this 2D control.
 -->
 <script lang="ts">
   import FanAppearancePicker from "$lib/shared/pictograph/prop/components/FanAppearancePicker.svelte";
@@ -58,30 +58,62 @@
     width: 100%;
   }
 
-  /* The compact drill owns one visual rail, so its cards never split into a
-     second cover row. */
-  .fan-style-options :global(.fan-appearance-picker) {
-    --build-option-count: 7;
+  /*
+    One card per look, as many across as the host affords: a 200px effects
+    panel stacks them, a drawer seats three, a wide sheet four. The count is
+    never fixed, so adding a build can only add a card, not shrink the rest.
+  */
+  .fan-style-options :global(.option-grid) {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 8.75rem), 1fr));
+    gap: 10px;
   }
 
-  @container (max-width: 539px) {
-    .fan-style-options :global(.option-label) {
-      min-height: 0;
-      padding: 6px 8px;
-      font-size: 11.5px;
-      line-height: 1.15;
-      white-space: normal;
+  /*
+    Each compact preview is scaled so every fan reads at one size
+    (imageScale). The tallest of them, the DoodleGrip at 1.92, stands 0.57
+    card widths high, so a 3:2 frame holds it with air above and below
+    instead of the 8:3 capture frame cropping its wicks.
+  */
+  .fan-style-options :global(.preview-frame) {
+    aspect-ratio: 3 / 2;
+    height: auto;
+  }
+
+  @media (max-height: 560px) {
+    .fan-style-options :global(.preview-frame) {
+      aspect-ratio: 5 / 3;
     }
   }
 
-  /* Five build names share one row here, so the label runs tighter than
-     the inspector's full-width cards. */
-  .fan-style-options :global(.option-label) {
-    padding-inline: 10px;
-    font-size: 12.5px;
+  /* The chosen look glows from behind. Screen blending lets the wash sit
+     over captures that are opaque at the frame's own black, so it reads as
+     light in the room rather than a tinted rectangle. */
+  .fan-style-options :global(.preview-frame)::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: radial-gradient(
+      62% 74% at 50% 56%,
+      color-mix(in srgb, var(--prop-picker-accent) 62%, transparent),
+      transparent 72%
+    );
+    opacity: 0;
+    mix-blend-mode: screen;
+    pointer-events: none;
+    transition: opacity var(--duration-normal, 220ms) ease;
   }
 
-  /* Bounded hosts give the single compact choice rail all available height. */
+  .fan-style-options :global(.option.selected .preview-frame)::after {
+    opacity: 0.5;
+  }
+
+  .fan-style-options :global(.option-label) {
+    padding: 9px 12px 10px;
+    font-size: 13px;
+  }
+
+  /* Bounded hosts give the cards all available height to share. */
   .fan-style-options.fill {
     height: 100%;
     min-height: 0;
@@ -106,11 +138,18 @@
     min-height: 0;
   }
 
+  /* Rows grow to share the height when there is room and never shrink
+     below a card's natural size: a short phone drawer scrolls the grid
+     instead of cropping every fan. The 3px inset keeps a lifted or ringed
+     card's edge inside the scrollport. */
   .fan-style-options.fill :global(.option-grid) {
     flex: 1;
     min-height: 0;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    grid-auto-rows: minmax(0, 1fr);
+    grid-auto-rows: minmax(min-content, 1fr);
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    padding: 3px;
+    margin: -3px;
   }
 
   .fan-style-options.fill :global(.option) {
@@ -118,11 +157,14 @@
     min-height: 0;
   }
 
+  /* A grid item with an aspect ratio aligns to the start by default, which
+     would park the frame at the top of a tall card above a black band. It
+     stretches instead, and `contain` gives the fan the extra room as air. */
   .fan-style-options.fill :global(.preview-frame) {
-    height: 100%;
-    min-height: 0;
-    aspect-ratio: auto;
+    align-self: stretch;
   }
+
+  /* The rail scrolls its cards sideways under a compact toolbar. */
   .fan-style-options.horizontal {
     container-type: size;
     height: 100%;
@@ -174,9 +216,12 @@
   }
   .fan-style-options.horizontal :global(.option-label) {
     font-size: var(--font-size-min, 14px);
-    min-height: 44px;
-    white-space: normal;
-    overflow-wrap: anywhere;
-    padding: 6px 10px;
+    padding: 8px 12px 9px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fan-style-options :global(.preview-frame)::after {
+      transition: none;
+    }
   }
 </style>
