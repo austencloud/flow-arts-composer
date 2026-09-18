@@ -71,10 +71,10 @@
       claimSelected={appState.compact && appState.activeView === "matrix"}
       keyOf={theoryFlowerKey}
       labelOf={theoryFlowerLabel}
-      paintHeader={(flower, hand, sizePx) =>
-        theoryHeaderArtworkSrc(flower, hand, tipDx, sizePx)}
-      paintCell={(left, right, sizePx) =>
-        theoryCellArtworkSrc(left, right, tipDx, sizePx)}
+      paintHeader={(flower, hand, sizePx, painter) =>
+        theoryHeaderArtworkSrc(flower, hand, tipDx, sizePx, painter)}
+      paintCell={(left, right, sizePx, painter) =>
+        theoryCellArtworkSrc(left, right, tipDx, sizePx, painter)}
       emphasizedAxis={emphasis}
       corner={cornerGuide}
       revealToken={appState.revealToken}

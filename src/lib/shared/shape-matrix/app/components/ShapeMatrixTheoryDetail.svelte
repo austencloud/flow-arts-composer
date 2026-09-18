@@ -49,6 +49,7 @@
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import { getShapeMatrixAnimationContext } from "../context/shape-matrix-animation-context";
+  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import ShapeMatrixLiveRatioStage, {
     type LiveHand,
   } from "./ShapeMatrixLiveRatioStage.svelte";
@@ -62,6 +63,15 @@
   const animationState = getShapeMatrixAnimationContext();
   const BLUE = "var(--dm-motion-blue, #3575e2)";
   const RED = "var(--dm-motion-red, #ed1c24)";
+  /*
+   * The two inks. The account's saved hand colours where it has them, the
+   * theme's motion colours otherwise: the same choice the Matrix drill's
+   * canvas and the grid tiles on both surfaces make, so a green left prop in
+   * the grid is a green left prop on this stage.
+   */
+  const propColors = $derived(getSettings().primaryPropColors ?? null);
+  const leftInk = $derived(propColors?.left ?? BLUE);
+  const rightInk = $derived(propColors?.right ?? RED);
 
   /*
    * What this stage can actually draw, plus trails. The effects roster is the
@@ -184,7 +194,10 @@
 
   const hands = $derived<LiveHand[]>(
     pair
-      ? [liveHand(pair.left, "left", BLUE), liveHand(pair.right, "right", RED)]
+      ? [
+          liveHand(pair.left, "left", leftInk),
+          liveHand(pair.right, "right", rightInk),
+        ]
       : []
   );
 
@@ -303,11 +316,11 @@
         {:else}
           <header class="pair-heading" data-focus-mode-chrome>
             <div class="pair-keys">
-              <strong style={`color: ${BLUE};`}>
+              <strong style={`color: ${leftInk};`}>
                 {theoryRatioLabel(pair.left.ratio)}
               </strong>
               <span class="against">against</span>
-              <strong style={`color: ${RED};`}>
+              <strong style={`color: ${rightInk};`}>
                 {theoryRatioLabel(pair.right.ratio)}
               </strong>
             </div>
@@ -362,6 +375,7 @@
                 paused={!animationState.playing}
                 playbackMode={animationState.playbackMode}
                 propType={app.propType}
+                {propColors}
               />
             </button>
           </div>
