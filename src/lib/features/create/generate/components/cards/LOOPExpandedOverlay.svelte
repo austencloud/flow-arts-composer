@@ -39,6 +39,7 @@ Animates forward in z-axis and expands to fill the container space
     selectedComponents,
     onChange,
     onClose,
+    entrance = "scale",
     onLoopDisable,
     layout = "grid",
     rhythm,
@@ -51,6 +52,9 @@ Animates forward in z-axis and expands to fill the container space
     selectedComponents: Set<LOOPComponent>;
     onChange: (loopType: LOOPType) => void;
     onClose: () => void;
+    /** "none" when a host transition (the card morph) is already carrying the
+     *  panel in; the root then skips its own scale entrance. */
+    entrance?: "scale" | "none";
     onLoopDisable?: () => void;
     layout?: "grid" | "list" | "responsive";
     /** Current rhythm + context for the Rhythm tier. All optional — absent = tier hidden (legacy callers unaffected). */
@@ -513,8 +517,8 @@ Animates forward in z-axis and expands to fill the container space
   class="loop-expanded-overlay"
   class:combo-mode={isMultiSelectMode}
   transition:scale={{
-    start: 0.95,
-    duration: motionDuration(DURATION.emphasis),
+    start: entrance === "none" ? 1 : 0.95,
+    duration: entrance === "none" ? 0 : motionDuration(DURATION.emphasis),
     easing: quintOut,
   }}
 >

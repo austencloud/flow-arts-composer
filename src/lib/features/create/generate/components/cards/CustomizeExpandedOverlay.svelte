@@ -80,6 +80,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     onStartEndChange,
     onResetAll = null,
     onClose,
+    entrance = "scale",
   } = $props<{
     constraintPreset: "smooth" | "mixed" | "choppy";
     handPathMode: "smooth" | "mixed" | "choppy";
@@ -101,6 +102,9 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     onStartEndChange: ((options: StartEndOptions) => void) | null;
     onResetAll?: (() => void) | null;
     onClose: () => void;
+    /** Forwarded to GenerationSettingsOverlay. "none" when a host transition
+     *  is already carrying the panel in. */
+    entrance?: "scale" | "none";
   }>();
 
   let hapticService: HapticFeedback | null = $state(null);
@@ -365,6 +369,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   title="Customize"
   closeLabel="Close customize panel"
   onClose={handleClose}
+  {entrance}
 >
   {#snippet actions()}
     {#if onResetAll}
