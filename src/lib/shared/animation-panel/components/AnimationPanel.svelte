@@ -1221,6 +1221,7 @@
     fillBody={resolvedPill === "display" ||
       resolvedPill === "effects" ||
       resolvedPill === "props"}
+    fluidBody={resolvedPill === "props"}
     regionLabel="Animation export settings"
     onNavMount={(element) => {
       pillNavEl = element;
