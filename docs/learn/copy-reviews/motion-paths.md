@@ -347,3 +347,7 @@ The card shows the word and step numbers, no start placement (the player shows i
 Ownership ledger: SegmentedControl (the exactly-one owner already used for Trace), Crossfade for the controls swap (animateHeight, since the turn controls are taller than the Browse button) and the stage swap, ChoreoCard with forceContain and fitWidth, SequencePickerModal unchanged. The explorer state gains `source` and `browsed`; chooseSequence remembers the sequence and shows it, and showMatrix re-selects the pair.
 
 Evidence: browser pass at 375×667, 820×1180, and 1440×900 (the three compositions of the explorer); both sources, the swap in both directions, and the browse-and-pick flow observed; no horizontal overflow; the source stage stays 1:1 in both modes and the feedback line does not move. AI-bust review of the new strings: clean.
+
+## September 17: Hybrid lede loses its "X, not Y"
+
+"Any motion can take any path, so this is a default, not a law." carried the same flip Austen rejected in the heading an hour earlier. It now reads "Any motion can take any path; Hybrid only sets the default." Same fact, no flip. Pending Austen's eye with the rest of the section.

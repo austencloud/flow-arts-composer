@@ -62,7 +62,7 @@
     <h2 id="hybrid-examples-heading">What Hybrid does</h2>
     <p>
       Hybrid uses Arc for pro motions and Concave for anti motions. Any motion
-      can take any path, so this is a default, not a law. Three sequences show
+      can take any path; Hybrid only sets the default. Three sequences show
       where it lands.
     </p>
   </header>
