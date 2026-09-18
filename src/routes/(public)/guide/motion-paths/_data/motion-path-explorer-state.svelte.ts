@@ -35,6 +35,12 @@ export function createMotionPathExplorerState() {
   scope.visibility.setDarkMode(true);
   scope.visibility.setVisibility("leftPathLines", true);
   scope.visibility.setVisibility("rightPathLines", true);
+  // The canvas names what plays by its timing and direction, hands and
+  // props, beside the letter. The beat number and the positions are about
+  // where the sequence is, which is not the lesson.
+  scope.visibility.setVisibility("stepNumbers", false);
+  scope.visibility.setVisibility("elementalGlyph", true);
+  scope.visibility.setVisibility("propElementalGlyph", true);
   // Hybrid first: the default pair mixes pro with anti, so the first thing on
   // screen is the rule at work, one hand on Arc and the other on Concave.
   scope.visibility.setPathPolicy({ pathShape: "arc", motionAwarePaths: true });
@@ -49,11 +55,14 @@ export function createMotionPathExplorerState() {
   let soloHand = $state<"left" | "right" | null>(null);
   let guides = $state(true);
   // Path lines follow the guides toggle per hand, so a solo takes the other
-  // hand's line with it; the visibility context hides that hand's prop.
+  // hand's line with it; the visibility context hides that hand's prop. The
+  // timing glyphs describe a pair, so a solo takes them off too.
   function setSolo(hand: "left" | "right" | null) {
     soloHand = hand;
     scope.visibility.setVisibility("leftPathLines", guides && hand !== "right");
     scope.visibility.setVisibility("rightPathLines", guides && hand !== "left");
+    scope.visibility.setVisibility("elementalGlyph", hand === null);
+    scope.visibility.setVisibility("propElementalGlyph", hand === null);
   }
   let selectedMode = $state<VtgMode | null>("SS");
   let pickerStatus = $state<PickerStatus>("idle");

@@ -21,7 +21,7 @@
 
   let levelsSection = $state<HTMLElement | null>(null);
 
-  /* Opened from the difficulty strip's question mark, About is being asked one
+  /* Opened from the difficulty control's question mark, About is being asked one
      question rather than being browsed, so it goes to the answer. The modal
      mounts its body on open, hence the frame's wait for the node. */
   $effect(() => {
