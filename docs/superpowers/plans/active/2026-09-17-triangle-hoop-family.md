@@ -84,16 +84,42 @@ describe("hoop family stations", () => {
     expect(m.reachMm).toBeCloseTo(506.285, 2);
   });
 
-  it("puts the far bow point at the same reach for both grips", () => {
+  it("puts the far point at the reach for both grips", () => {
     const corner = triangleLayout(stations, "corner");
     const side = triangleLayout(stations, "side");
-    expect(corner.reachMm).toBeCloseTo(side.reachMm, 6);
-    // Corner grip: a vertex sits on the hand.
+    // Corner grip: a vertex sits on the hand and the far side's bow point is
+    // at the reach.
     expect(corner.vertices[0]).toEqual({ x: 0, y: 0 });
+    expect(corner.sides[1].bow.x).toBeCloseTo(corner.reachMm, 6);
     // Side grip: the near side's bow point sits on the hand, its chord one
-    // sagitta ahead.
+    // sagitta ahead, and the far vertex is at the reach.
     expect(side.vertices[0].x).toBeCloseTo(22.35, 6);
     expect(Math.abs(side.vertices[0].y)).toBeCloseTo(279.4, 6);
+    expect(side.vertices[2].x).toBeCloseTo(side.reachMm, 6);
+    expect(() => triangleLayout(stations, "edge")).toThrow();
+  });
+
+  it("runs every arc from p to q around a centre one bow radius from both", () => {
+    for (const grip of ["corner", "side"]) {
+      const layout = triangleLayout(stations, grip);
+      for (const side of layout.sides) {
+        const at = (a) => ({
+          x: side.centre.x + layout.bowRadiusMm * Math.cos(a),
+          y: side.centre.y + layout.bowRadiusMm * Math.sin(a),
+        });
+        const start = at(side.startAngle);
+        const end = at(side.startAngle + layout.arcAngleRad);
+        expect(start.x).toBeCloseTo(side.p.x, 6);
+        expect(start.y).toBeCloseTo(side.p.y, 6);
+        expect(end.x).toBeCloseTo(side.q.x, 6);
+        expect(end.y).toBeCloseTo(side.q.y, 6);
+        for (const point of [side.p, side.q, side.bow]) {
+          expect(
+            Math.hypot(point.x - side.centre.x, point.y - side.centre.y)
+          ).toBeCloseTo(layout.bowRadiusMm, 6);
+        }
+      }
+    }
   });
 
   it("reproduces the shipped hoop tip points exactly", () => {
@@ -116,18 +142,23 @@ describe("hoop family stations", () => {
   });
 
   it("gives each triangle grip five tips with the far point on the axis", () => {
-    const corner = triangleTipPoints(stations, "corner");
-    const side = triangleTipPoints(stations, "side");
-    expect(corner).toHaveLength(5);
-    expect(side).toHaveLength(5);
-    expect(corner[0]).toEqual({ dx: 135.15, dy: 0 });
-    expect(side[0]).toEqual({ dx: 135.15, dy: 0 });
-    // Corner: the two far vertices and the bow points of the gripped sides.
-    expect(corner[1]).toEqual({ dx: 129.18, dy: 74.58 });
-    expect(corner[3]).toEqual({ dx: 61.61, dy: 42.46 });
-    // Side: the two near vertices and the bow points of the far sides.
-    expect(side[1]).toEqual({ dx: 5.97, dy: 74.58 });
-    expect(side[3]).toEqual({ dx: 73.54, dy: 42.46 });
+    // Corner: far bow point, the two far vertices, the bow points of the
+    // gripped sides.
+    expect(triangleTipPoints(stations, "corner")).toEqual([
+      { dx: 135.15, dy: 0 },
+      { dx: 129.18, dy: 74.58 },
+      { dx: 129.18, dy: -74.58 },
+      { dx: 61.61, dy: 42.46 },
+      { dx: 61.61, dy: -42.46 },
+    ]);
+    // Side: far vertex, the two near vertices, the bow points of the far sides.
+    expect(triangleTipPoints(stations, "side")).toEqual([
+      { dx: 135.15, dy: 0 },
+      { dx: 5.97, dy: 74.58 },
+      { dx: 5.97, dy: -74.58 },
+      { dx: 73.54, dy: 42.46 },
+      { dx: 73.54, dy: -42.46 },
+    ]);
   });
 });
 ```
@@ -264,8 +295,12 @@ export function triangleMetrics(stations) {
  * the far vertex is at full reach.
  */
 export function triangleLayout(stations, grip) {
+  if (grip !== "corner" && grip !== "side") {
+    throw new Error(`unknown triangle grip: ${grip}`);
+  }
   const m = triangleMetrics(stations);
   const half = m.chordMm / 2;
+  // Both grips wind counter-clockwise so every side's arc runs from p to q.
   const vertices =
     grip === "side"
       ? [
@@ -275,8 +310,8 @@ export function triangleLayout(stations, grip) {
         ]
       : [
           { x: 0, y: 0 },
-          { x: m.heightMm, y: half },
           { x: m.heightMm, y: -half },
+          { x: m.heightMm, y: half },
         ];
   const centroid = {
     x: (vertices[0].x + vertices[1].x + vertices[2].x) / 3,
@@ -293,7 +328,9 @@ export function triangleLayout(stations, grip) {
 /**
  * One bowed side as an arc: its centre, the outward unit normal, the bow
  * point, and the angle (radians, CCW from +x) at which the arc starts. The
- * arc sweeps `arcAngleRad` from `startAngle`.
+ * arc starts at `p` (angle `startAngle`) and ends at `q` (angle
+ * `startAngle + arcAngleRad`), which holds because both grips wind
+ * counter-clockwise.
  */
 function sideArc(p, q, centroid, m) {
   const mid = { x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 };
@@ -334,8 +371,8 @@ export function hoopTipPoints(glyph) {
 /**
  * Five triangle tips in glyph units. Corner: far bow point, far vertices,
  * bow points of the gripped sides. Side: far vertex, near vertices, bow
- * points of the far sides. Order mirrors the hoop: the axis point first,
- * then the +y pair, then the -y pair.
+ * points of the far sides. Order: axis point, +y vertex, -y vertex, +y bow,
+ * -y bow.
  */
 export function triangleTipPoints(stations, grip) {
   const k = glyphUnitsPerMm(stations);
@@ -343,22 +380,21 @@ export function triangleTipPoints(stations, grip) {
   const u = (p) => ({ dx: round2(p.x * k), dy: round2(p.y * k) });
   const [v0, v1, v2] = layout.vertices;
   const [s01, s12, s20] = layout.sides;
-  // Order: axis point, +y vertex, -y vertex, +y bow, -y bow.
   if (grip === "side") {
     // v0 = (s, +half) and v1 = (s, -half) are the near vertices, v2 the far
     // one; s20 (v2 to v0) is the +y far side, s12 (v1 to v2) the -y far side.
     return [u(v2), u(v0), u(v1), u(s20.bow), u(s12.bow)];
   }
-  // v0 is on the hand; v1 = (h, +half), v2 = (h, -half); s12 is the far side;
-  // s01 (v0 to v1) is the +y gripped side, s20 (v2 to v0) the -y one.
-  return [u(s12.bow), u(v1), u(v2), u(s01.bow), u(s20.bow)];
+  // v0 is on the hand; v1 = (h, -half), v2 = (h, +half); s12 is the far side;
+  // s20 (v2 to v0) is the +y gripped side, s01 (v0 to v1) the -y one.
+  return [u(s12.bow), u(v2), u(v1), u(s20.bow), u(s01.bow)];
 }
 ```
 
 - [ ] **Step 5: Run the test to verify it passes**
 
 Run: `npx vitest run --config tests/config/vitest.config.ts tests/unit/hoop-family/hoop-family-math.test.ts`
-Expected: PASS (5 tests). If a triangle tip sign is off, the vertex or side index is wrong, not the geometry: check the comments above against the layout.
+Expected: PASS (6 tests). If a triangle tip sign is off, the vertex or side index is wrong, not the geometry: check the comments above against the layout.
 
 - [ ] **Step 6: Commit**
 
@@ -753,7 +789,7 @@ Run (Git Bash):
 mkdir -p "$TMP/hoop-family" && for f in static/images/props/pictograph/minihoop.svg static/images/props/pictograph/bighoop.svg static/images/props/pictograph/triangle.svg static/images/props/appearances/triangle-side.svg; do "/c/Program Files/Inkscape/bin/inkscape" "$f" --export-type=png --export-filename="$TMP/hoop-family/$(basename "$f" .svg).png" -h 260 -b white; done && magick montage "$TMP/hoop-family"/*.png -tile 2x2 -geometry +12+12 -background "#ddd" "$TMP/hoop-family/montage.png"
 ```
 
-Then Read `$TMP/hoop-family/montage.png`. Expected: rings with a short black band at the right rim and a longer gold band at the left rim; a triangle pointing right with black elbows and (corner) a gold left elbow or (side) a gold band on the left side. If a band lands on the wrong side, the arc angle convention is flipped: SVG's y axis points down, so angle 0 is +x and angle 90 degrees is DOWN; that does not change left/right, so a left/right error means `centre_dx` was subtracted rather than added.
+Then Read `$TMP/hoop-family/montage.png`. Expected: rings with a short black band at the right rim and a longer gold band at the left rim; a triangle pointing right with black elbows and (corner) a gold left elbow or (side) a gold band on the left side. SVG's y axis points down, so angle 0 is +x and angle 90 degrees is DOWN; that does not change left/right. If the hoop's bands land on the wrong side, `centre_dx` was subtracted rather than added. If the gold elbow on the corner triangle lands on a far vertex, an arc is being read from `q` to `p`: `triangleLayout` winds both grips counter-clockwise so every arc starts at `side.p`.
 
 - [ ] **Step 6: Commit**
 
@@ -2030,12 +2066,13 @@ export interface TriangleSideArc {
   readonly startAngle: number;
 }
 
+/** Both grips wind counter-clockwise (x right, y up) so each side's arc runs from its first vertex to its second. */
 export function triangleVertices(grip: TriangleGrip): readonly [Point2, Point2, Point2] {
   const half = TRIANGLE_SIDE_CHORD_M / 2;
   if (grip === "side") {
     return [
-      { x: half, y: TRIANGLE_SAGITTA_M },
       { x: -half, y: TRIANGLE_SAGITTA_M },
+      { x: half, y: TRIANGLE_SAGITTA_M },
       { x: 0, y: TRIANGLE_SAGITTA_M + TRIANGLE_HEIGHT_M },
     ];
   }
@@ -2492,12 +2529,13 @@ function getTriangleGeometries(): TriangleGeometries {
   return triangleGeometries;
 }
 
+// Both grips wind counter-clockwise, matching triangle-geometry.ts.
 function triangleVertices(grip: "corner" | "side"): [number, number][] {
   const half = TRIANGLE_SIDE_CHORD / 2;
   return grip === "side"
     ? [
-        [half, TRIANGLE_SAGITTA],
         [-half, TRIANGLE_SAGITTA],
+        [half, TRIANGLE_SAGITTA],
         [0, TRIANGLE_SAGITTA + TRIANGLE_HEIGHT],
       ]
     : [
