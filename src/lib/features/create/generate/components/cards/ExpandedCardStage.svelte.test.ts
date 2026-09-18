@@ -1,6 +1,6 @@
 import { render } from "vitest-browser-svelte";
-import { page, userEvent } from "vitest/browser";
-import { flushSync } from "svelte";
+import { page } from "vitest/browser";
+import { flushSync, tick } from "svelte";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ComponentProps } from "svelte";
 import ExpandedCardStage from "./ExpandedCardStage.svelte";
@@ -13,15 +13,13 @@ import {
   countViewTransitionNameClaims,
   resetViewTransitionNameRegistry,
 } from "$lib/shared/transitions/view-transition-name-registry";
+import { getEscapeLayerManager } from "$lib/shared/keyboard/get-escape-layer-manager";
 import type { FavoriteState } from "../../state/favorite-state.svelte";
 
 afterEach(() => {
   resetViewTransitionNameRegistry();
+  vi.restoreAllMocks();
 });
-
-function createState(): PanelCoordinationState {
-  return createPanelCoordinationState();
-}
 
 function fakeFavorites(): FavoriteState {
   return {
@@ -84,13 +82,50 @@ function props(
 
 describe("ExpandedCardStage", () => {
   it("renders nothing while no card is open", () => {
-    const state = createState();
+    const state = createPanelCoordinationState();
     const { container } = render(ExpandedCardStage, props(state));
     expect(container.querySelector(".expanded-card-stage")).toBeNull();
   });
 
+  it("scales the stage root in on a plain open", async () => {
+    const state = createPanelCoordinationState();
+    const { container } = render(ExpandedCardStage, props(state, true));
+
+    state.openPresetDrawer();
+    flushSync();
+
+    const root = container.querySelector<HTMLElement>(".expanded-card-stage");
+    expect(root).not.toBeNull();
+    // Nothing has claimed the morph (registry is empty per afterEach) and
+    // motion is not reduced, so the entrance is a real animation, not the
+    // instant no-op stageEntrance() returns for the other two cases.
+    await vi.waitFor(() => {
+      expect(root!.getAnimations().length).toBe(1);
+    });
+  });
+
+  it("skips the scale entrance under reduced motion", async () => {
+    vi.spyOn(window, "matchMedia").mockReturnValue({
+      matches: true,
+      media: "(prefers-reduced-motion: reduce)",
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    } as unknown as MediaQueryList);
+
+    const state = createPanelCoordinationState();
+    const { container } = render(ExpandedCardStage, props(state, true));
+
+    state.openPresetDrawer();
+    flushSync();
+    await tick();
+
+    const root = container.querySelector<HTMLElement>(".expanded-card-stage");
+    expect(root).not.toBeNull();
+    expect(root!.getAnimations().length).toBe(0);
+  });
+
   it("renders the Setups panel in the stage on side-by-side layouts", async () => {
-    const state = createState();
+    const state = createPanelCoordinationState();
     const { container } = render(ExpandedCardStage, props(state, true));
 
     state.openPresetDrawer();
@@ -106,7 +141,7 @@ describe("ExpandedCardStage", () => {
   });
 
   it("portals to the body on stacked layouts", () => {
-    const state = createState();
+    const state = createPanelCoordinationState();
     const { container } = render(ExpandedCardStage, props(state, false));
 
     state.openPresetDrawer();
@@ -121,7 +156,7 @@ describe("ExpandedCardStage", () => {
   });
 
   it("renders the LOOP overlay for the loop card", async () => {
-    const state = createState();
+    const state = createPanelCoordinationState();
     render(ExpandedCardStage, props(state, true));
 
     state.openLOOPPanel(LOOPType.MIRRORED, new Set(), () => {});
@@ -133,24 +168,89 @@ describe("ExpandedCardStage", () => {
     expect(countViewTransitionNameClaims("generate-card-loop")).toBe(1);
   });
 
+  it("moves focus onto the stage on open and back to the trigger on close", async () => {
+    const fixture = document.createElement("div");
+    fixture.className = "card-wrapper";
+    fixture.dataset.cardId = "preset";
+    const triggerButton = document.createElement("button");
+    triggerButton.type = "button";
+    triggerButton.textContent = "Open setups";
+    fixture.appendChild(triggerButton);
+    document.body.appendChild(fixture);
+
+    try {
+      const state = createPanelCoordinationState();
+      const { container } = render(ExpandedCardStage, props(state, true));
+
+      state.openPresetDrawer();
+      flushSync();
+      await tick();
+
+      const root = container.querySelector<HTMLElement>(".expanded-card-stage");
+      expect(document.activeElement).toBe(root);
+
+      state.closeGenerateCard();
+      flushSync();
+      await tick();
+
+      expect(document.activeElement).toBe(triggerButton);
+    } finally {
+      fixture.remove();
+    }
+  });
+
+  it("removes the portaled node and releases the claim on unmount", () => {
+    const state = createPanelCoordinationState();
+    const screen = render(ExpandedCardStage, props(state, false));
+
+    state.openPresetDrawer();
+    flushSync();
+
+    expect(
+      document.body.querySelector(":scope > .expanded-card-stage")
+    ).not.toBeNull();
+    expect(countViewTransitionNameClaims("generate-card-preset")).toBe(1);
+
+    screen.unmount();
+
+    expect(
+      document.body.querySelector(":scope > .expanded-card-stage")
+    ).toBeNull();
+    expect(countViewTransitionNameClaims("generate-card-preset")).toBe(0);
+  });
+
   it("closes on Escape and releases the claim", async () => {
-    const state = createState();
+    const state = createPanelCoordinationState();
     render(ExpandedCardStage, props(state, true));
 
     state.openPresetDrawer();
     flushSync();
     expect(state.openGenerateCard).toBe("preset");
 
-    await userEvent.keyboard("{Escape}");
+    // userEvent.keyboard("{Escape}") does not reach the escape layer manager
+    // here: the global "Escape" shortcut is wired up by the app's keyboard
+    // shortcut coordinator, which this isolated component render does not
+    // mount. Dismiss through the same layer manager the stage registers with
+    // instead of relying on a keydown listener that is not present.
+    const result = getEscapeLayerManager().dismissTopLayer();
+    expect(result).toBe("dismissed");
 
     // Chromium's View Transitions API runs the update callback (which is
     // where morphGenerateCard's mutate lands) on its own schedule, not
-    // synchronously with the keydown that requested it. Poll instead of
+    // synchronously with the dismiss that requested it. Poll instead of
     // guessing a frame count.
     await vi.waitFor(() => {
       flushSync();
       expect(state.openGenerateCard).toBeNull();
     });
-    expect(countViewTransitionNameClaims("generate-card-preset")).toBe(0);
+    // The claim is released by claimedViewTransitionName's destroy(), which
+    // only runs once Svelte finishes unmounting the stage root - and that
+    // wait for the root's own outro (stageEntrance() runs in reverse on
+    // close) to finish first. openGenerateCard going null is immediate;
+    // the outro, and the claim release after it, lag behind. Poll
+    // separately instead of asserting in the same tick.
+    await vi.waitFor(() => {
+      expect(countViewTransitionNameClaims("generate-card-preset")).toBe(0);
+    });
   });
 });

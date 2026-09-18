@@ -80,7 +80,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     onStartEndChange,
     onResetAll = null,
     onClose,
-    entrance = "scale",
+    titleId,
   } = $props<{
     constraintPreset: "smooth" | "mixed" | "choppy";
     handPathMode: "smooth" | "mixed" | "choppy";
@@ -102,10 +102,9 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     onStartEndChange: ((options: StartEndOptions) => void) | null;
     onResetAll?: (() => void) | null;
     onClose: () => void;
-    /** Forwarded to GenerationSettingsOverlay. "none" when a host transition
-     *  is already carrying the panel in. "none" also skips the outro; the
-     *  decision made at open time applies to the close. */
-    entrance?: "scale" | "none";
+    /** Forwarded to GenerationSettingsOverlay's heading id, so a host stage's
+     *  aria-labelledby points at the title this overlay actually renders. */
+    titleId?: string;
   }>();
 
   let hapticService: HapticFeedback | null = $state(null);
@@ -224,7 +223,9 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   const endBlockedPlacements = $derived(
     localEndPlacements.length === 0
       ? []
-      : getAllPlacements(gridMode).filter((p) => !localEndPlacements.includes(p))
+      : getAllPlacements(gridMode).filter(
+          (p) => !localEndPlacements.includes(p)
+        )
   );
 
   function handleEndBlockedChange(blocked: GridPlacement[]) {
@@ -370,7 +371,8 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   title="Customize"
   closeLabel="Close customize panel"
   onClose={handleClose}
-  {entrance}
+  entrance="none"
+  {titleId}
 >
   {#snippet actions()}
     {#if onResetAll}

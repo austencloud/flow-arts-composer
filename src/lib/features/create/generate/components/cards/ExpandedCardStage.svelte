@@ -16,17 +16,19 @@
 
   No backdrop, no outside-click dismissal: the workspace beside the grown card
   stays live. X and Escape close. Focus moves in on open and back to the card
-  that opened it on close.
+  that opened it on close. The {#key destination} remount on a layout flip
+  (desktop <-> stacked) drops the panel's local state and focus along with it;
+  acceptable for a resize or fold event, which is rare and not mid-task.
 -->
 <script lang="ts">
   import { tick } from "svelte";
+  import { scale } from "svelte/transition";
+  import { quintOut } from "svelte/easing";
   import { portal } from "../modals/portal";
   import { claimedViewTransitionName } from "$lib/shared/transitions/claimed-view-transition-name";
   import { reducedMotion } from "$lib/shared/transitions/motion";
-  import type {
-    GenerateCardPanelId,
-    PanelCoordinationState,
-  } from "$lib/shared/create/state/panel-coordination-state.svelte";
+  import { getEscapeLayerManager } from "$lib/shared/keyboard/get-escape-layer-manager";
+  import type { PanelCoordinationState } from "$lib/shared/create/state/panel-coordination-state.svelte";
   import {
     generateCardMorphName,
     lastGenerateCardMorphRan,
@@ -35,6 +37,7 @@
   import CustomizeExpandedOverlay from "./CustomizeExpandedOverlay.svelte";
   import LOOPExpandedOverlay from "./LOOPExpandedOverlay.svelte";
   import SetupsPanel from "../presets/SetupsPanel.svelte";
+  import { expandedCardTitleId } from "./expanded-card-stage-props";
   import type {
     LoopStageProps,
     SetupsStageProps,
@@ -54,47 +57,58 @@
 
   const openCard = $derived(panelState.openGenerateCard);
   const destination = $derived(isDesktopLayout ? "stage" : "viewport");
+  const customize = $derived(panelState.customizeOverlayProps);
 
-  // Decided once per open. A transition (or reduced motion) is the entrance;
-  // only a plain open on a browser without View Transitions scales in.
-  let entrance = $state<"scale" | "none">("none");
   let root = $state<HTMLElement | null>(null);
-  let openedFrom: GenerateCardPanelId | null = null;
+
+  // A morph already carried the card in (or reduced motion says skip motion
+  // entirely), so the stage root just appears; otherwise it scales in on its
+  // own, the same panel-covers-a-card motion GenerationSettingsOverlay used
+  // to do locally. Read fresh on every open, not cached, since a morph vs.
+  // plain open is decided per-call.
+  function stageEntrance() {
+    return lastGenerateCardMorphRan() || reducedMotion()
+      ? { start: 1, duration: 0 }
+      : { start: 0.95, duration: 250, easing: quintOut };
+  }
 
   $effect(() => {
     const card = openCard;
     if (!card) return;
-    openedFrom = card;
-    entrance = lastGenerateCardMorphRan() || reducedMotion() ? "none" : "scale";
     void tick().then(() => root?.focus({ preventScroll: true }));
     return () => {
       // Runs when the card changes or closes. Return focus to the card that
-      // opened us; it is still in the grid on both destinations.
+      // opened us, but only if focus is still somewhere inside this stage —
+      // if it already moved elsewhere (e.g. the user clicked into the grid
+      // before the close finished), pulling it back would be a surprise.
+      if (!root?.contains(document.activeElement)) return;
       const wrapper = document.querySelector<HTMLElement>(
-        `.card-wrapper[data-card-id="${card}"] button, .card-wrapper[data-card-id="${card}"] [tabindex]`
+        `.card-wrapper[data-card-id="${card}"] button, .card-wrapper[data-card-id="${card}"] [tabindex="0"]`
       );
       wrapper?.focus({ preventScroll: true });
     };
   });
 
+  // Escape closes through the same layer manager that closes drawers and
+  // modals, so a competing Escape shortcut never has to guess which layer
+  // the user meant.
+  $effect(() => {
+    if (!openCard) return;
+    return getEscapeLayerManager().register({
+      id: "generate:expanded-card",
+      canDismiss: () => true,
+      dismiss: close,
+    });
+  });
+
   function close() {
-    const card = openedFrom;
+    const card = openCard;
     if (!card) return;
     morphGenerateCard(card, () => panelState.closeGenerateCard());
   }
-
-  function handleKeydown(event: KeyboardEvent) {
-    if (event.key !== "Escape" || event.defaultPrevented || !openCard) return;
-    event.preventDefault();
-    close();
-  }
-
-  const customize = $derived(panelState.customizeOverlayProps);
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
-
-{#snippet body()}
+{#snippet body(titleId: string)}
   {#if openCard === "customize" && customize}
     <CustomizeExpandedOverlay
       constraintPreset={customize.constraintPreset}
@@ -117,7 +131,7 @@
       onStartEndChange={customize.onStartEndChange}
       onResetAll={customize.onResetAll}
       onClose={close}
-      {entrance}
+      {titleId}
     />
   {:else if openCard === "loop" && panelState.loopSelectedComponents && panelState.loopOnChange && panelState.loopCurrentType}
     <LOOPExpandedOverlay
@@ -132,7 +146,7 @@
       guestMaxLength={loop.guestMaxLength}
       onRequestSignup={loop.onRequestSignup}
       layout="responsive"
-      {entrance}
+      {titleId}
     />
   {:else if openCard === "preset"}
     <SetupsPanel
@@ -145,49 +159,59 @@
       onRequestShareAccount={setups.onRequestShareAccount}
       onRequestSignIn={setups.onRequestSignIn}
       onClose={close}
-      {entrance}
+      {titleId}
     />
   {/if}
 {/snippet}
 
-{#if openCard}
-  {#key destination}
-    {#if destination === "viewport"}
+{#key destination}
+  {#if destination === "viewport"}
+    {#if openCard}
       <div
         class="expanded-card-stage"
         data-destination="viewport"
         data-card-id={openCard}
+        role="dialog"
+        aria-labelledby={expandedCardTitleId(openCard)}
         tabindex="-1"
         bind:this={root}
         use:portal
         use:claimedViewTransitionName={{
           name: generateCardMorphName(openCard),
         }}
+        transition:scale={stageEntrance()}
       >
-        {@render body()}
-      </div>
-    {:else}
-      <div
-        class="expanded-card-stage"
-        data-destination="stage"
-        data-card-id={openCard}
-        tabindex="-1"
-        bind:this={root}
-        use:claimedViewTransitionName={{
-          name: generateCardMorphName(openCard),
-        }}
-      >
-        {@render body()}
+        {@render body(expandedCardTitleId(openCard))}
       </div>
     {/if}
-  {/key}
-{/if}
+  {:else if openCard}
+    <div
+      class="expanded-card-stage"
+      data-destination="stage"
+      data-card-id={openCard}
+      role="dialog"
+      aria-labelledby={expandedCardTitleId(openCard)}
+      tabindex="-1"
+      bind:this={root}
+      use:claimedViewTransitionName={{
+        name: generateCardMorphName(openCard),
+      }}
+      transition:scale={stageEntrance()}
+    >
+      {@render body(expandedCardTitleId(openCard))}
+    </div>
+  {/if}
+{/key}
 
 <style>
   .expanded-card-stage {
-    outline: none;
     /* The panels inside are absolute inset 0 (GenerationSettingsOverlay and
        LOOPExpandedOverlay both are), so this box is what sets their size. */
+  }
+
+  .expanded-card-stage:focus-visible {
+    outline: 2px solid var(--primary-color, #6366f1);
+    outline-offset: 2px;
   }
 
   .expanded-card-stage[data-destination="stage"] {

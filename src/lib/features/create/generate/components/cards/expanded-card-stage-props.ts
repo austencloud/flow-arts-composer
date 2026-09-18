@@ -1,38 +1,32 @@
 /**
- * Prop types for ExpandedCardStage.svelte.
- *
- * Pulled out of the component's <script lang="ts"> because svelte-check
- * rejects `export interface` there; module-level types declared inline are
- * not hoisted the way plain `interface` declarations are.
+ * Prop types for ExpandedCardStage.svelte, pulled out of the component's
+ * <script lang="ts"> because svelte-check rejects `export interface` there.
+ * Derived from the panels' own prop types (ComponentProps) instead of
+ * hand-rolled duplicates, so a forwarded prop cannot drift out of sync.
  */
-import type { ReflectionAxis } from "@tka/sequence-engine/loop";
-import type { GuestLoopLockKind } from "$lib/shared/create/services/loop-guest-gate";
-import type { FavoriteState } from "../../state/favorite-state.svelte";
-import type { ActiveSetupSource } from "../../domain/models/favorite-config";
+import type { ComponentProps } from "svelte";
+import type { GenerateCardPanelId } from "$lib/shared/create/state/panel-coordination-state.svelte";
+import LOOPExpandedOverlay from "./LOOPExpandedOverlay.svelte";
+import SetupsPanel from "../presets/SetupsPanel.svelte";
 
-export type RhythmValue = {
-  rotationInterval: 2 | 4;
-  inversionInterval: 2 | 4;
-  inversionMode: "expand" | "overlay";
-  reflectionAxis: ReflectionAxis;
-};
+export type LoopStageProps = Pick<
+  ComponentProps<typeof LOOPExpandedOverlay>,
+  | "rhythm"
+  | "sequenceLength"
+  | "onRhythmChange"
+  | "onLoopDisable"
+  | "guestMaxLength"
+  | "onRequestSignup"
+>;
 
-export interface LoopStageProps {
-  rhythm?: RhythmValue;
-  sequenceLength?: number;
-  onRhythmChange?: (updates: Partial<RhythmValue>) => void;
-  onLoopDisable?: () => void;
-  guestMaxLength?: number;
-  onRequestSignup?: (kind: GuestLoopLockKind) => void;
-}
+export type SetupsStageProps = Omit<
+  ComponentProps<typeof SetupsPanel>,
+  "onClose" | "titleId"
+>;
 
-export interface SetupsStageProps {
-  favoriteState: FavoriteState;
-  isSignedOut: boolean;
-  isPreview: boolean;
-  isAnonymous: boolean;
-  onApply: (source: ActiveSetupSource) => void;
-  onRequestCommunityAccount: () => void;
-  onRequestShareAccount: () => void;
-  onRequestSignIn: () => void;
+/** The dialog title id a grown card's chrome exposes, so the stage root's
+ *  aria-labelledby and the panel's own heading agree without either side
+ *  hardcoding the other's id format. */
+export function expandedCardTitleId(card: GenerateCardPanelId): string {
+  return `expanded-card-title-${card}`;
 }

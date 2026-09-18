@@ -30,7 +30,7 @@
     onRequestShareAccount,
     onRequestSignIn,
     onClose,
-    entrance = "scale",
+    titleId,
   }: {
     favoriteState: FavoriteState;
     isSignedOut: boolean;
@@ -41,7 +41,9 @@
     onRequestShareAccount: () => void;
     onRequestSignIn: () => void;
     onClose: () => void;
-    entrance?: "scale" | "none";
+    /** Forwarded to GenerationSettingsOverlay's heading id, so a host stage's
+     *  aria-labelledby points at the title this panel actually renders. */
+    titleId?: string;
   } = $props();
 
   let activeTab = $state<"saved" | "community">("saved");
@@ -123,9 +125,10 @@
   title="Generator setups"
   closeLabel="Close generator setups"
   {onClose}
-  {entrance}
+  entrance="none"
+  {titleId}
 >
-  <div class="drawer-body">
+  <div class="panel-body">
     <SegmentedControl
       options={[
         {
@@ -321,13 +324,12 @@
 />
 
 <style>
-  .drawer-body {
+  .panel-body {
     display: flex;
     flex: 1;
     min-height: 0;
     flex-direction: column;
     gap: 0.875rem;
-    padding: 0 0 env(safe-area-inset-bottom, 0px);
   }
 
   .setup-panel {
