@@ -37,7 +37,7 @@ export interface AssembleDocumentState {
   readonly canChangeGridMode: boolean;
   readonly canReorderSteps: boolean;
   readonly canReplaceSelectedStep: boolean;
-  readonly candidateStartPlacement: GridLocation | null;
+  readonly candidateStartLocation: GridLocation | null;
   readonly candidateStartOrientation: Orientation;
   readonly candidateRotationDirection: RotationDirection;
   readonly candidateTurnCount: number;
@@ -110,7 +110,7 @@ export function createAssembleDocumentState(): AssembleDocumentState {
       phase !== "animating" &&
       phase !== "complete"
   );
-  const candidateStartPlacement = $derived.by(() => {
+  const candidateStartLocation = $derived.by(() => {
     if (stepEditMode === "replace" && selectedStepIndex !== null) {
       return activeSteps[selectedStepIndex]?.startLocation ?? null;
     }
@@ -290,8 +290,8 @@ export function createAssembleDocumentState(): AssembleDocumentState {
     get canReplaceSelectedStep() {
       return canReplaceSelectedStep;
     },
-    get candidateStartPlacement() {
-      return candidateStartPlacement;
+    get candidateStartLocation() {
+      return candidateStartLocation;
     },
     get candidateStartOrientation() {
       return candidateStartOrientation;

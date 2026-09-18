@@ -1216,7 +1216,7 @@
   "skel2tka_frame_counter": "Frame \"{current}\" / \"{total}\"",
   "skel2tka_frame_scrubber": "Frame scrubber",
   "skel2tka_frames_analyzed": "\"{frames}\" frames analyzed in \"{seconds}\"s",
-  "skel2tka_grid_placement": "\"{position}\" position",
+  "skel2tka_grid_placement": "\"{position}\" placement",
   "skel2tka_hand_position_picker": "\"{hand}\" hand position",
   "skel2tka_kbd_beat": "beat",
   "skel2tka_kbd_frame": "frame",

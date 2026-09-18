@@ -116,4 +116,80 @@ describe("smart-filter-spec", () => {
 
     expect(members.map((sequence) => sequence.id)).toEqual(["fire"]);
   });
+
+  it("actually filters a stored pre-rename 'startPosition' filter type", () => {
+    // Firestore-persisted SmartFilterSpec / DeckRelease.galleryFilterSpec can
+    // carry the FilterType's pre-rename stored value ("startPosition"), not
+    // just the current enum value ("startPlacement"). deriveSpecMembers must
+    // resolve it onto STARTING_PLACEMENT and actually narrow the pool, not
+    // silently no-op the filter.
+    const pool = [
+      { id: "alpha-seq", word: "ALPHA", steps: [], startingPlacementGroup: "alpha" },
+      { id: "beta-seq", word: "BETA", steps: [], startingPlacementGroup: "beta" },
+    ] as unknown as SequenceData[];
+
+    const members = deriveSpecMembers(pool, {
+      source: "my-library",
+      filters: [
+        {
+          key: "startPosition",
+          type: "startPosition",
+          value: "alpha",
+          label: "Alpha",
+          chipColor: "#fff",
+        },
+      ],
+      sortMethod: BrowseSortMethod.ALPHABETICAL,
+      sortDirection: "asc",
+    });
+
+    expect(members.map((sequence) => sequence.id)).toEqual(["alpha-seq"]);
+  });
+
+  it("skips a stored filter whose type no longer exists", () => {
+    const addFilter = vi.fn();
+    const engine = {
+      addFilter,
+      setConnective: vi.fn(),
+      setSearch: vi.fn(),
+      setSort: vi.fn(),
+    } as unknown as BrowseEngine;
+
+    applySpecToEngine(engine, {
+      source: "my-library",
+      filters: [
+        {
+          key: "retired_filter_type",
+          type: "retired_filter_type",
+          value: "whatever",
+          label: "Ghost",
+          chipColor: "#fff",
+        },
+      ],
+      sortMethod: BrowseSortMethod.ALPHABETICAL,
+      sortDirection: "asc",
+    });
+
+    expect(addFilter).not.toHaveBeenCalled();
+
+    const pool = [
+      { id: "fire", word: "FIRE", steps: [] },
+    ] as unknown as SequenceData[];
+    const members = deriveSpecMembers(pool, {
+      source: "my-library",
+      filters: [
+        {
+          key: "retired_filter_type",
+          type: "retired_filter_type",
+          value: "whatever",
+          label: "Ghost",
+          chipColor: "#fff",
+        },
+      ],
+      sortMethod: BrowseSortMethod.ALPHABETICAL,
+      sortDirection: "asc",
+    });
+    // An unresolvable type is dropped, not treated as an always-match filter.
+    expect(members.map((sequence) => sequence.id)).toEqual(["fire"]);
+  });
 });

@@ -41,6 +41,11 @@ type BlockedStartPlacementsByGridMode = Partial<
 interface SerializedSessionOptions {
   startPlacementLetter?: string;
   /**
+   * @deprecated Pre-rename spelling of startPlacementLetter. Read only, as a
+   * fallback when startPlacementLetter is absent; never written.
+   */
+  startPositionLetter?: string;
+  /**
    * @deprecated Letter alone is ambiguous — "Γ" covers 8 gamma variants — so a
    * restored session could never rebuild the placement the user picked. Read
    * for backwards compatibility, never written. Superseded by endPlacements.
@@ -48,6 +53,11 @@ interface SerializedSessionOptions {
   endPlacementLetter?: string;
   /** Grid placement names, e.g. ["gamma11", "alpha3"]. */
   endPlacements?: string[];
+  /**
+   * @deprecated Pre-rename spelling of endPlacements. Read only, as a
+   * fallback when endPlacements is absent; never written.
+   */
+  endPositions?: string[];
   mustContainLetters: string[];
   mustNotContainLetters: string[];
   leftStartOrientation?: string;
@@ -97,15 +107,19 @@ function loadSessionOptions(): Partial<StartEndOptions> | null {
       JSON.parse(stored) as SerializedSessionOptions
     );
 
+    const startPlacementLetter =
+      data.startPlacementLetter || data.startPositionLetter;
+    const endPlacements = data.endPlacements || data.endPositions;
+
     return {
-      startPlacement: data.startPlacementLetter
-        ? ({ letter: data.startPlacementLetter } as PictographData)
+      startPlacement: startPlacementLetter
+        ? ({ letter: startPlacementLetter } as PictographData)
         : null,
       // The legacy endPlacementLetter is deliberately NOT migrated: a letter
       // cannot name which of its variants was chosen, and the constraint never
       // reached the engine anyway, so there is no working selection to keep.
       endPlacement: null,
-      endPlacements: (data.endPlacements || []) as GridPlacement[],
+      endPlacements: (endPlacements || []) as GridPlacement[],
       mustContainLetters: (data.mustContainLetters || []) as Letter[],
       mustNotContainLetters: (data.mustNotContainLetters || []) as Letter[],
       leftStartOrientation:

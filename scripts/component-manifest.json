@@ -16515,7 +16515,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/features/learn/components/interactive/staff/StaffPositionVisualizer.svelte",
+      "file": "lib/features/learn/components/interactive/staff/StaffPlacementVisualizer.svelte",
       "total": 199,
       "scriptLines": 69,
       "templateLines": 79,
