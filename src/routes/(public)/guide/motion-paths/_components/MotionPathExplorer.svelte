@@ -64,7 +64,7 @@
   });
   // The first thing on screen is a real matrix shape, not a frozen example.
   // One turn each keeps both hands drawing petals (pro 2, anti 4), and mixing
-  // pro with anti means Hybrid differs from Arc on the first click.
+  // pro with anti means the Hybrid default puts each hand on a different path.
   const DEFAULT_TURN: TurnValue = 1;
   const DEFAULT_PAIR: { left: Flower; right: Flower } = {
     left: {

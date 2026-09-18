@@ -35,6 +35,9 @@ export function createMotionPathExplorerState() {
   scope.visibility.setDarkMode(true);
   scope.visibility.setVisibility("leftPathLines", true);
   scope.visibility.setVisibility("rightPathLines", true);
+  // Hybrid first: the default pair mixes pro with anti, so the first thing on
+  // screen is the rule at work, one hand on Arc and the other on Concave.
+  scope.visibility.setPathPolicy({ pathShape: "arc", motionAwarePaths: true });
   let original = $state<SequenceData>(motionPathExamples[2]!);
   let source = $state<ExplorerSource>("matrix");
   // The last sequence taken from the picker. It starts as the mixed frozen
@@ -63,10 +66,7 @@ export function createMotionPathExplorerState() {
     MotionPathRealizationBuilder,
     RealizationCache
   >();
-  let policy = $state<AnimationPathPolicy>({
-    pathShape: "arc",
-    motionAwarePaths: false,
-  });
+  let policy = $state<AnimationPathPolicy>(scope.visibility.getPathPolicy());
   let trace = $state<"hands" | "tips">("tips");
   let playing = $state(false);
   let liveStep = $state(0);
