@@ -6,6 +6,12 @@
    * the same domain functions the engine uses (ratioLabel, flowerPetals,
    * levelForTurnValue). Nothing here is a hand-written copy of engine data, so
    * the page cannot drift away from the app it documents.
+   *
+   * The axes come from the pure domain builder rather than the loaded engine
+   * data, so every flower slot exists at first paint and the engine only fills
+   * ink into boxes that already hold their size. The page keeps one painter for
+   * all of its stills, the fixed blue and red guide inks, because the prose
+   * names those colours; a reader's saved hand colours belong to the engine.
    */
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
@@ -13,7 +19,10 @@
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
   import ShapeMatrixGrid from "$lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte";
   import ShapeMatrixMandalaArt from "$lib/shared/shape-matrix/components/ShapeMatrixMandalaArt.svelte";
-  import { headerArtworkSrc } from "$lib/shared/shape-matrix/services/shape-matrix-artwork";
+  import {
+    CLUB_ARTWORK_PAINTER,
+    headerArtworkSrc,
+  } from "$lib/shared/shape-matrix/services/shape-matrix-artwork";
   import {
     loadShapeMatrix,
     type ShapeMatrixData,
@@ -22,6 +31,7 @@
   import { matrixFiltersForSize } from "$lib/shared/shape-matrix/domain/matrix-size-preset";
   import {
     buildFloatAxis,
+    buildShapeMatrixAxis,
     flowerKey,
     flowerLabel,
     flowerPetals,
@@ -29,6 +39,7 @@
     type Flower,
     type FlowerStyle,
     type RotatingFlower,
+    type ShapePathStyle,
   } from "$lib/shared/shape-matrix/domain/flower-signature";
   import { matrixTurnsForLevel } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
   import {
@@ -49,6 +60,15 @@
   const ORIGINAL_AXIS_FILTER = matrixFiltersForSize("large").left;
   const FAMILY_TURNS = [0, 1, 2] as const;
 
+  /** The twelve original shapes, in the engine's own axis order. */
+  const originalAxis = applyFilter(
+    buildShapeMatrixAxis(),
+    ORIGINAL_AXIS_FILTER,
+    false
+  );
+  /** Tracks the matrix draws: one header plus one per shape on each axis. */
+  const MATRIX_TRACKS = originalAxis.length + 1;
+
   function rotating(turns: number, style: FlowerStyle): RotatingFlower {
     return {
       style,
@@ -67,13 +87,22 @@
     ratio: ratioLabel(turns),
     level: levelForTurnValue(turns),
     turnLabel: turns === "fl" ? "Float" : String(turns),
+    family: turns === 0 || turns === 1 || turns === 2,
     pro: turns === "fl" ? null : rotating(turns as number, "pro"),
     anti: turns === "fl" ? null : rotating(turns as number, "anti"),
   }));
 
   const example = { pro: rotating(1, "pro"), anti: rotating(1, "anti") };
 
-  function styleWord(style: FlowerStyle): string {
+  const families = FAMILY_TURNS.map((turns) => ({
+    turns,
+    ratio: ratioLabel(turns),
+    level: levelForTurns(turns, turns),
+    shapes: originalAxis.filter((flower) => flower.turns === turns),
+  }));
+
+  function styleWord(style: ShapePathStyle): string {
+    if (style === "float") return "Float";
     return style === "pro" ? "Prospin" : "Antispin";
   }
 
@@ -82,9 +111,18 @@
     return `${petals} petal${petals === 1 ? "" : "s"}`;
   }
 
+  /** A band opens at the level the ladder names for it, so the two agree. */
   function bandHref(turns: number): string {
     const key = turnValueToKey(turns);
-    return `/shape-engine?level=2&leftTurn=${key}&rightTurn=${key}&axis=both&labels=ratios&prop=staff`;
+    const params = new URLSearchParams({
+      level: String(levelForTurns(turns, turns)),
+      leftTurn: key,
+      rightTurn: key,
+      axis: "both",
+      labels: "ratios",
+      prop: "staff",
+    });
+    return `/shape-engine?${params}`;
   }
 
   function pairHref(left: Flower, right: Flower): string {
@@ -104,29 +142,19 @@
   let data = $state<ShapeMatrixData | null>(null);
   let loadError = $state("");
 
-  const originalAxis = $derived(
-    data ? applyFilter(data.axis, ORIGINAL_AXIS_FILTER, false) : []
-  );
-
-  const families = $derived(
-    FAMILY_TURNS.map((turns) => ({
-      turns,
-      ratio: ratioLabel(turns),
-      shapes: originalAxis.filter((flower) => flower.turns === turns),
-    }))
-  );
-
   /** Blue hand ink, the same painter the matrix rows use. */
   function paintFlower(flower: Flower) {
     return (sizePx: number) =>
-      data ? headerArtworkSrc(data, flower, "left", sizePx) : "";
+      data
+        ? headerArtworkSrc(data, flower, "left", sizePx, CLUB_ARTWORK_PAINTER)
+        : "";
   }
 
   onMount(async () => {
     try {
       data = await loadShapeMatrix();
     } catch (error) {
-      loadError = String(error);
+      loadError = error instanceof Error ? error.message : String(error);
     }
   });
 </script>
@@ -158,13 +186,22 @@
       </p>
       <p>
         Lorq Nichols, who publishes as <a
+          class="external"
           href={SPIN_SCIENCE_URL}
           target="_blank"
-          rel="noopener noreferrer">Spin Science</a
+          rel="noopener noreferrer"
+          >Spin Science<span class="sr-only"> (opens in a new tab)</span></a
         >, built the {ORIGINAL_SHAPE_MATRIX_NAME} from three of these ratios: 1:1,
         1:3, and 1:5. The {SHAPE_ENGINE_SHORT_NAME} generates the same pairings and
         carries the construction through the rest of the turn ladder.
       </p>
+      {#if loadError}
+        <p class="notice error" role="alert">
+          The flower drawings could not be built, so the shapes on this page are
+          blank. Reload to try again.
+          <span class="notice-detail">{loadError}</span>
+        </p>
+      {/if}
     </header>
 
     <section class="reading" aria-labelledby="reading-heading">
@@ -245,27 +282,27 @@
 
       <div class="ladder-table-scroll">
         <table class="ladder-table">
+          <caption>
+            The turn ladder, Float through three turns. Tinted rows are the
+            three ratios of the original matrix.
+          </caption>
           <thead>
             <tr>
               <th scope="col">Ratio</th>
               <th scope="col">Turns</th>
               <th scope="col">Level</th>
-              <th scope="col" colspan="2">Prospin</th>
-              <th scope="col" colspan="2">Antispin</th>
+              <th scope="col">Prospin</th>
+              <th scope="col">Antispin</th>
             </tr>
           </thead>
           <tbody>
             {#each ladder as row (row.turnLabel)}
-              <tr
-                class:family-row={row.turns === 0 ||
-                  row.turns === 1 ||
-                  row.turns === 2}
-              >
+              <tr class:family-row={row.family}>
                 <th scope="row" class="ratio-cell">{row.ratio}</th>
                 <td class="num">{row.turnLabel}</td>
-                <td class="num level">{row.level}</td>
+                <td class="num level">L{row.level}</td>
                 {#if row.pro && row.anti}
-                  <td class="art">
+                  <td class="style">
                     <span class="still">
                       <ShapeMatrixMandalaArt
                         paint={paintFlower(row.pro)}
@@ -273,9 +310,9 @@
                         alt={flowerLabel(row.pro)}
                       />
                     </span>
+                    <span class="petals">{petalWord(row.pro.petals)}</span>
                   </td>
-                  <td class="num petals">{row.pro.petals}p</td>
-                  <td class="art">
+                  <td class="style">
                     <span class="still">
                       <ShapeMatrixMandalaArt
                         paint={paintFlower(row.anti)}
@@ -283,10 +320,10 @@
                         alt={flowerLabel(row.anti)}
                       />
                     </span>
+                    <span class="petals">{petalWord(row.anti.petals)}</span>
                   </td>
-                  <td class="num petals">{row.anti.petals}p</td>
                 {:else}
-                  <td class="art">
+                  <td class="style float" colspan="2">
                     <span class="still">
                       <ShapeMatrixMandalaArt
                         paint={paintFlower(floatFlower)}
@@ -294,10 +331,10 @@
                         alt={flowerLabel(floatFlower)}
                       />
                     </span>
-                  </td>
-                  <td class="float-note" colspan="3">
-                    Float has no spin direction. The prop holds one absolute
-                    angle while the hand circles.
+                    <span class="petals">
+                      No spin direction. The prop holds one angle while the hand
+                      circles.
+                    </span>
                   </td>
                 {/if}
               </tr>
@@ -325,49 +362,45 @@
         </p>
       </div>
 
-      {#if loadError}
-        <p class="load-status error">
-          The flower engine failed to load: {loadError}
-        </p>
-      {:else}
-        <div class="family-list">
-          {#each families as family (family.turns)}
-            <section class="family" aria-label={`${family.ratio} family`}>
-              <header class="family-head">
-                <span class="family-ratio">{family.ratio}</span>
-                <span class="family-turns"
-                  >{family.turns} turn{family.turns === 1 ? "" : "s"}</span
-                >
-                <a class="family-link" href={bandHref(family.turns)}>
-                  Open the {family.ratio} band
-                </a>
-              </header>
-              <ol class="family-shapes">
-                {#each family.shapes as flower (flowerKey(flower))}
-                  <li>
-                    <span class="still still-md">
-                      <ShapeMatrixMandalaArt
-                        paint={paintFlower(flower)}
-                        artKey={flowerKey(flower)}
-                        alt={flowerLabel(flower)}
-                      />
-                    </span>
-                    <span class="shape-name">{styleWord(flower.style)}</span>
-                    <span class="shape-meta">
-                      {petalWord(flower.petals)}, starts {flower.ori}
-                    </span>
-                  </li>
-                {:else}
-                  <li class="load-status">Building flowers</li>
-                {/each}
-              </ol>
-            </section>
-          {/each}
-        </div>
-      {/if}
+      <div class="family-list">
+        {#each families as family (family.turns)}
+          <section class="family" aria-label={`${family.ratio} family`}>
+            <header class="family-head">
+              <span class="family-ratio">{family.ratio}</span>
+              <span class="family-turns"
+                >{family.turns} turn{family.turns === 1 ? "" : "s"}, level {family.level}</span
+              >
+              <a class="family-link" href={bandHref(family.turns)}>
+                Open the {family.ratio} band
+              </a>
+            </header>
+            <ol class="family-shapes">
+              {#each family.shapes as flower (flowerKey(flower))}
+                <li>
+                  <span class="still still-md">
+                    <ShapeMatrixMandalaArt
+                      paint={paintFlower(flower)}
+                      artKey={flowerKey(flower)}
+                      alt={flowerLabel(flower)}
+                    />
+                  </span>
+                  <span class="shape-name">{styleWord(flower.style)}</span>
+                  <span class="shape-meta">
+                    {petalWord(flower.petals)}, starts {flower.ori}
+                  </span>
+                </li>
+              {/each}
+            </ol>
+          </section>
+        {/each}
+      </div>
     </section>
 
-    <section class="pairings" aria-labelledby="pairings-heading">
+    <section
+      class="pairings"
+      aria-labelledby="pairings-heading"
+      style="--tracks: {MATRIX_TRACKS}"
+    >
       <div class="pairings-copy">
         <h2 id="pairings-heading">The 144 pairings</h2>
         <p>
@@ -377,12 +410,19 @@
           painter the {SHAPE_ENGINE_SHORT_NAME} animates. Blue rows are the left hand
           and red columns are the right hand, so a cell shows both paths at once.
         </p>
-        <p>Choosing a cell opens that pairing in the engine.</p>
+        <p>
+          Choosing a cell opens that pairing in the engine. With a keyboard, the
+          arrow keys move between cells.
+        </p>
+        <p class="scroll-hint">
+          The grid is wider than this screen. Slide it sideways to reach every
+          column.
+        </p>
       </div>
 
       <div class="matrix-stage">
         {#if loadError}
-          <p class="load-status error">{loadError}</p>
+          <p class="load-status error">Drawings unavailable</p>
         {:else if !data}
           <p class="load-status">Building flowers</p>
         {:else}
@@ -390,7 +430,9 @@
             {data}
             rowAxis={originalAxis}
             colAxis={originalAxis}
-            maxCellPx={72}
+            maxCellPx={88}
+            painter={CLUB_ARTWORK_PAINTER}
+            pressable={false}
             onselect={({ left, right }) => goto(pairHref(left, right))}
           />
         {/if}
@@ -413,10 +455,15 @@
       <ul class="source-list">
         <li>
           <a
+            class="external"
             href={ORIGINAL_SHAPE_MATRIX_URL}
             target="_blank"
             rel="noopener noreferrer"
-            >Lorq Nichols, {ORIGINAL_SHAPE_MATRIX_NAME}, on Spin Science</a
+            >Lorq Nichols, {ORIGINAL_SHAPE_MATRIX_NAME}, on Spin Science<span
+              class="sr-only"
+            >
+              (opens in a new tab)</span
+            ></a
           >
         </li>
         <li>
@@ -442,12 +489,23 @@
     --rule: var(--theme-stroke, oklch(0.4 0.04 270 / 0.22));
     --ink: var(--theme-text, oklch(0.94 0.01 270));
     --ink-dim: var(--theme-text-dim, oklch(0.72 0.01 270));
-    --ink-faint: oklch(0.58 0.02 270);
+    --ink-faint: oklch(0.6 0.02 270);
     --surface: var(--theme-card-bg, oklch(0.17 0.018 270 / 0.5));
+    --accent: var(--theme-accent, oklch(0.74 0.11 265));
+    --touch: var(--min-touch-target, 44px);
     display: grid;
     gap: clamp(2.75rem, 5vw, 4.5rem);
     padding: clamp(1.5rem, 3vw, 3rem) clamp(1rem, 3vw, 3rem)
       clamp(4rem, 7vw, 7rem);
+  }
+
+  /* Below the tablet breakpoint the guide grid keeps this route in its prose
+     column, which already carries a 1rem gutter on each side. A second gutter
+     here would cost a phone 32px of a 343px column. */
+  @media (max-width: 768px) {
+    .ratios {
+      padding-inline: 0;
+    }
   }
 
   .ratios h1 {
@@ -481,19 +539,56 @@
   }
 
   .ratios a {
-    color: var(--theme-accent, oklch(0.74 0.11 265));
+    color: var(--accent);
     text-decoration: underline;
     text-underline-offset: 0.18em;
   }
 
   .ratios a:focus-visible {
-    outline: 2px solid var(--theme-accent, oklch(0.74 0.11 265));
+    outline: 2px solid var(--accent);
     outline-offset: 3px;
     border-radius: 3px;
   }
 
+  /* Links that leave the site say so: a small arrow for sighted readers and
+     a hidden phrase for screen readers. */
+  .ratios a.external::after {
+    content: "\2197";
+    display: inline-block;
+    margin-left: 0.2em;
+    font-size: 0.8em;
+    text-decoration: none;
+  }
+
   .page-head p:last-child {
     margin-bottom: 0;
+  }
+
+  .notice {
+    margin: 1.25rem 0 0;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    background: var(--surface);
+    color: var(--ink);
+    font-size: var(--font-size-min, 0.875rem);
+  }
+
+  .notice.error {
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-error, oklch(0.7 0.16 25)) 45%,
+      transparent
+    );
+  }
+
+  .notice-detail {
+    display: block;
+    margin-top: 0.35rem;
+    color: var(--ink-faint);
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: var(--font-size-compact, 0.78rem);
+    overflow-wrap: anywhere;
   }
 
   /* Two column sections: prose keeps a reading measure, the visual takes the
@@ -514,24 +609,11 @@
       align-items: start;
     }
 
-    /* The ladder is seven columns wide and carries the page's densest
-       information, so it takes the larger share of the band. */
+    /* The ladder carries the page's densest information, so it takes the
+       larger share of the band. */
     .ladder {
       grid-template-columns: minmax(17rem, 0.5fr) minmax(0, 1fr);
       align-items: start;
-    }
-
-    /* The matrix is square, so it gets a square stage instead of a wide box
-       with dead space either side of the grid. */
-    .pairings {
-      grid-template-columns: minmax(17rem, 0.5fr) minmax(0, 1fr);
-      align-items: start;
-    }
-
-    .pairings .matrix-stage {
-      height: auto;
-      aspect-ratio: 1;
-      max-block-size: min(78vh, 44rem);
     }
   }
 
@@ -574,9 +656,11 @@
     font-weight: 640;
   }
 
+  /* Two shapes side by side down to a 320px phone: 7rem tracks fit a 270px
+     card, where 8rem tracks missed by a few pixels and stacked. */
   .worked-shapes {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
     gap: 1rem;
   }
 
@@ -598,6 +682,7 @@
     display: block;
     inline-size: 3rem;
     aspect-ratio: 1;
+    flex: none;
   }
 
   .still-md {
@@ -620,7 +705,11 @@
     text-align: center;
   }
 
+  /* The ladder. The table hugs its content and caps at a reading width, so on
+     a wide band the flowers grow instead of the gaps between them. */
   .ladder-table-scroll {
+    inline-size: 100%;
+    max-inline-size: 60rem;
     overflow-x: auto;
     border: 1px solid var(--rule);
     border-radius: 14px;
@@ -628,24 +717,30 @@
   }
 
   .ladder-table {
+    --still-size: clamp(3rem, 2.25rem + 1vw, 3.75rem);
     width: 100%;
     border-collapse: collapse;
     font-variant-numeric: tabular-nums;
   }
 
+  .ladder-table caption {
+    caption-side: bottom;
+    padding: 0.75rem 0.9rem 0.85rem;
+    color: var(--ink-faint);
+    font-size: var(--font-size-compact, 0.78rem);
+    text-align: left;
+  }
+
   .ladder-table th,
   .ladder-table td {
-    padding: 0.35rem 0.7rem;
+    padding: 0.35rem 0.8rem;
     border-bottom: 1px solid var(--rule);
     text-align: left;
     vertical-align: middle;
   }
 
   .ladder-table thead th {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    background: var(--theme-panel-bg, oklch(0.15 0.018 270));
+    padding-block: 0.6rem;
     color: var(--ink-faint);
     font-size: var(--font-size-compact, 0.78rem);
     font-weight: 640;
@@ -654,64 +749,93 @@
     white-space: nowrap;
   }
 
-  .ladder-table tbody tr:last-child th,
-  .ladder-table tbody tr:last-child td {
-    border-bottom: 0;
+  .ladder-table tbody tr.family-row {
+    background: color-mix(in srgb, var(--accent) 9%, transparent);
   }
 
-  .ladder-table tbody tr.family-row {
-    background: color-mix(
-      in srgb,
-      var(--theme-accent, oklch(0.74 0.11 265)) 9%,
-      transparent
-    );
+  /* The three label columns shrink to their words; the two style columns
+     split whatever is left, evenly. */
+  .ratio-cell,
+  .ladder-table .num {
+    width: 1%;
+    white-space: nowrap;
   }
 
   .ratio-cell {
     color: var(--ink);
     font-size: 1.05rem;
     font-weight: 660;
-    white-space: nowrap;
   }
 
   .ladder-table .num {
     color: var(--ink-dim);
-    white-space: nowrap;
   }
 
-  .ladder-table .level::before {
-    content: "L";
+  .ladder-table .level {
     color: var(--ink-faint);
+  }
+
+  /* Flower and its count read as one unit: the still first, the words beside
+     it, the pair anchored to the column's left edge. */
+  .ladder-table .style {
+    padding-block: 0.3rem;
+  }
+
+  .ladder-table .style .still {
+    display: inline-block;
+    inline-size: var(--still-size);
+    margin-right: 0.7rem;
+    vertical-align: middle;
   }
 
   .ladder-table .petals {
+    display: inline-block;
     color: var(--ink);
-    font-weight: 600;
-  }
-
-  .ladder-table .art {
-    width: 3rem;
-    padding-block: 0.2rem;
-  }
-
-  .ladder-table .float-note {
-    color: var(--ink-faint);
     font-size: var(--font-size-min, 0.875rem);
+    font-weight: 600;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  .ladder-table .float .petals {
+    max-inline-size: 22rem;
+    color: var(--ink-faint);
+    font-weight: 400;
     white-space: normal;
   }
 
-  /* At phone widths the seven columns fit by tightening the cells rather than
-     leaving the antispin half of the ladder behind a horizontal scroll. */
+  /* At phone widths the count sits under its flower so five columns fit in
+     the reading column without a sideways scroll. */
   @media (max-width: 30rem) {
     .ladder-table th,
     .ladder-table td {
-      padding: 0.3rem 0.3rem;
+      padding: 0.3rem 0.35rem;
     }
 
-    .ladder-table .art,
-    .ladder-table .art .still {
-      inline-size: 2.25rem;
-      width: 2.25rem;
+    .ladder-table {
+      --still-size: 2.25rem;
+    }
+
+    .ladder-table .style .still {
+      display: block;
+      margin: 0 auto 0.15rem;
+    }
+
+    .ladder-table .petals {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 500;
+      text-align: center;
+    }
+
+    .ladder-table .float .still {
+      display: inline-block;
+      margin: 0 0.6rem 0 0;
+    }
+
+    .ladder-table .float .petals {
+      display: inline-block;
+      text-align: left;
     }
 
     .ratio-cell {
@@ -719,10 +843,20 @@
     }
   }
 
+  /* The original twelve. Three families is a fixed count, so the tiers are
+     chosen, not fitted: one column of squares on a phone, one column of wide
+     bands with four shapes across on a tablet, three squares side by side on
+     a desktop. No tier strands a lone card on its own row. The section is
+     the container because a container query answers for an ancestor, never
+     for the element it styles. */
+  .twelve {
+    container-type: inline-size;
+  }
+
   .family-list {
     display: grid;
     gap: clamp(1rem, 2vw, 1.75rem);
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 21rem), 1fr));
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .family {
@@ -736,7 +870,7 @@
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: 0.5rem 0.9rem;
+    gap: 0.25rem 0.9rem;
     padding-bottom: 0.9rem;
     margin-bottom: 1rem;
     border-bottom: 1px solid var(--rule);
@@ -755,13 +889,17 @@
     font-size: var(--font-size-min, 0.875rem);
   }
 
+  /* A full touch target without growing the header row: the hit area is
+     padded and the padding is pulled back out of the flow. */
   .family-link {
     margin-left: auto;
+    padding-block: calc((var(--touch) - 1.4em) / 2);
+    margin-block: calc((var(--touch) - 1.4em) / -2);
     font-size: var(--font-size-min, 0.875rem);
+    line-height: 1.4;
+    white-space: nowrap;
   }
 
-  /* Four shapes per family, so the track count stays even and no row is
-     ever left holding a single orphan. */
   .family-shapes {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -778,14 +916,97 @@
     margin: 0;
   }
 
-  /* ShapeMatrixGrid is container sized, so its stage owns an explicit box.
-     Below the 44px touch floor the grid scrolls inside this stage rather than
-     shrinking its own cells. */
+  @container (min-width: 36rem) {
+    .family-shapes {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  @container (min-width: 56rem) {
+    .family-list {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .family-shapes {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  /* The 144 pairings. ShapeMatrixGrid is container sized, so its stage owns
+     an explicit box: a square that grows with the band up to the grid's
+     largest tile, and never shrinks below the grid at its 44px touch floor.
+     On a desktop the whole matrix is therefore always in view and the wheel
+     scrolls the page. On a phone the square can't be that wide; the height
+     still holds every row and the grid slides sideways under its sticky
+     headers. */
+  .pairings {
+    --tracks: 13;
+    --stage-max: calc(var(--tracks) * 72px + 6px);
+    --stage-min: calc(var(--tracks) * 44px + 6px);
+    container-type: inline-size;
+  }
+
+  .pairings-copy p:last-of-type {
+    margin-bottom: 0;
+  }
+
+  /* The matrix sits beside its prose only once the band can hold the whole
+     grid at its largest tile next to a reading column. Below that it drops
+     under the prose at full width, where it never has to scroll. */
+  @media (min-width: 96rem) {
+    .pairings {
+      grid-template-columns: minmax(17rem, 1fr) minmax(0, var(--stage-max));
+      align-items: start;
+    }
+  }
+
+  /* On a 4K class screen the guide band is fixed at its widest, so the grid
+     spends the extra room on larger tiles rather than a wider prose column. */
+  @media (min-width: 137.5rem) {
+    .pairings {
+      --stage-max: calc(var(--tracks) * 88px + 6px);
+    }
+  }
+
+  /* The hint is a narrow-screen affordance; it only shows where the grid
+     really is wider than its stage. */
+  .scroll-hint {
+    display: none;
+    color: var(--ink-faint);
+    font-size: var(--font-size-min, 0.875rem);
+  }
+
   .matrix-stage {
-    height: min(78vh, 44rem);
+    position: relative;
+    inline-size: min(100%, var(--stage-max));
+    aspect-ratio: 1;
+    min-block-size: var(--stage-min);
     border: 1px solid var(--rule);
     border-radius: 14px;
     overflow: hidden;
+  }
+
+  @container (max-width: 36rem) {
+    .scroll-hint {
+      display: block;
+    }
+
+    /* The right edge fades into the stage so the cut-off column reads as
+       "more this way" rather than a broken grid. It sits above the grid's
+       sticky headers and lets pointer events through. */
+    .matrix-stage::after {
+      content: "";
+      position: absolute;
+      inset: 0 0 0 auto;
+      width: 2.5rem;
+      z-index: 6;
+      pointer-events: none;
+      background: linear-gradient(
+        to right,
+        transparent,
+        var(--theme-panel-bg, oklch(0.15 0.018 270))
+      );
+    }
   }
 
   .load-status {
@@ -821,7 +1042,7 @@
   .source-list a {
     display: inline-flex;
     align-items: center;
-    min-height: var(--min-touch-target, 44px);
+    min-height: var(--touch);
   }
 
   .attribution {

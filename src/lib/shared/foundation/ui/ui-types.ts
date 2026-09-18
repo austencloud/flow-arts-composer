@@ -16,11 +16,12 @@
 export type BuildModeId =
   | "assemble" // Click grid points to build sequences visually
   | "construct" // Manual builder (one pictograph at a time)
+  | "generate" // Automatic sequence generation
+  | "shape-engine" // Pick a shape pairing, get the sequence that draws it
   | "fuse" // Combine two sequences into one
   | "tunnel" // Compose complete sequences into a multi-performer tunnel
   | "one-handed"
   | "guided" // Guided mode
-  | "generate" // Automatic sequence generation
   | "spell"; // Word-to-sequence generator
 
 /**

@@ -395,6 +395,8 @@
     <PrimaryPropColorSettings
       colors={settings.primaryPropColors}
       darkMode={settings.darkMode}
+      leftPropType={selectedLeftPropType}
+      rightPropType={selectedRightPropType}
       onchange={(value) => onUpdate?.({ key: "primaryPropColors", value })}
     />
 

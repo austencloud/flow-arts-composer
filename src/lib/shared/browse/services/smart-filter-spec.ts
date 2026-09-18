@@ -16,6 +16,10 @@ import {
   CONNECTIVE_STACKING_TYPES,
   type FilterConnective,
 } from "$lib/shared/browse/services/multi-filter";
+import {
+  legacyAliasesFor,
+  resolvePersistedFilterType,
+} from "$lib/shared/browse/services/legacy-filter-type-aliases";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type {
   BrowseEngine,
@@ -72,12 +76,20 @@ export function resolveSpecConnectives(
   const resolved: Record<string, FilterConnective> = {};
   for (const type of CONNECTIVE_STACKING_TYPES) {
     const key = String(type);
-    const stored = spec.connectives?.[key];
+    // A spec saved before the type was renamed may have its connective
+    // choice keyed by the old stored type string instead of the current one.
+    const stored =
+      spec.connectives?.[key] ??
+      legacyAliasesFor(type)
+        .map((legacyKey) => spec.connectives?.[legacyKey])
+        .find((value) => value === "any" || value === "all");
     if (stored === "any" || stored === "all") {
       resolved[key] = stored;
       continue;
     }
-    const entries = spec.filters.filter((f) => f.type === key).length;
+    const entries = spec.filters.filter(
+      (f) => resolvePersistedFilterType(f.type) === type
+    ).length;
     resolved[key] = entries >= 2 ? "all" : "any";
   }
   return resolved;
@@ -94,7 +106,13 @@ export function applySpecToEngine(
   spec: SmartFilterSpec
 ): void {
   for (const f of spec.filters) {
-    engine.addFilter(f.type as BrowseFilterType, f.value, f.label, f.chipColor);
+    // A spec saved before a FilterType value was renamed (e.g. "startPosition"
+    // -> STARTING_PLACEMENT) still stores the old string; resolve it onto the
+    // current enum value and drop anything that no longer maps to a filter
+    // the engine understands, rather than passing a dead type through.
+    const type = resolvePersistedFilterType(f.type);
+    if (!type) continue;
+    engine.addFilter(type, f.value, f.label, f.chipColor);
   }
   const connectives = resolveSpecConnectives(spec);
   for (const [type, connective] of Object.entries(connectives)) {
@@ -114,8 +132,10 @@ export function deriveSpecMembers(
 ): SequenceData[] {
   const map = new Map<string, ActiveFilter>();
   for (const f of spec.filters) {
+    const type = resolvePersistedFilterType(f.type);
+    if (!type) continue;
     map.set(f.key, {
-      type: f.type as BrowseFilterType,
+      type,
       value: f.value,
       label: f.label,
       chipColor: f.chipColor,

@@ -82,5 +82,54 @@ export function normalizePersistedStartEndOptions<T>(value: T): T {
     normalized.endPlacement = normalizeLegacyStep(value.endPlacement);
   }
 
+  // Pre-rename Firestore setups (users/{uid}/generatorSetups via
+  // favorite-config-repository.ts, and the legacy favorite recovered by
+  // setup-migration.ts) still carry the "position" spellings of the
+  // multi-select constraint arrays. Move each onto its "placement" key when
+  // that key is absent, then drop the old key.
+  if (
+    normalized.blockedStartPlacements === undefined &&
+    value.blockedStartPositions !== undefined
+  ) {
+    normalized.blockedStartPlacements = value.blockedStartPositions;
+  }
+  delete normalized.blockedStartPositions;
+  if (
+    normalized.endPlacements === undefined &&
+    value.endPositions !== undefined
+  ) {
+    normalized.endPlacements = value.endPositions;
+  }
+  delete normalized.endPositions;
+
+  // The same pre-rename setups can also carry the single-select legacy
+  // fields under their old names, distinct from the startPlacement/
+  // endPlacement step objects normalized above.
+  if (
+    normalized.startPlacement === undefined &&
+    value.startPosition !== undefined
+  ) {
+    normalized.startPlacement = normalizeLegacyStep(value.startPosition);
+  }
+  delete normalized.startPosition;
+  if (
+    normalized.endPlacement === undefined &&
+    value.endPosition !== undefined
+  ) {
+    normalized.endPlacement = normalizeLegacyStep(value.endPosition);
+  }
+  delete normalized.endPosition;
+
+  // Downstream readers (hasAnyConstraints, setOptions) call .length on both
+  // arrays unconditionally. A legacy setup that never had either array (they
+  // postdate some saved setups) must still produce empty arrays, not
+  // `undefined`, so those reads cannot throw.
+  if (normalized.blockedStartPlacements === undefined) {
+    normalized.blockedStartPlacements = [];
+  }
+  if (normalized.endPlacements === undefined) {
+    normalized.endPlacements = [];
+  }
+
   return normalized as T;
 }

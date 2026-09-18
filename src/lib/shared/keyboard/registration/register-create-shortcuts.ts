@@ -535,7 +535,7 @@ export function registerCreateShortcuts(
   service.register({
     id: "create.transform-rewind",
     label: "Rewind Sequence",
-    description: "Reverse the sequence to return to start position",
+    description: "Reverse the sequence to return to start placement",
     key: "w",
     modifiers: ["alt"],
     context: "create",

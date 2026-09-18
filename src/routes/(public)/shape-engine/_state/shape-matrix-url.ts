@@ -137,6 +137,11 @@ export function readShapeMatrixRouteState(
   const theoryLeft = readTheoryFlower(params, "theoryLeft", theoryLeftRatio);
   const theoryRight = readTheoryFlower(params, "theoryRight", theoryRightRatio);
   const requestedTheoryMode = params.get("pairing") as VtgMode | null;
+  const requestedTheorySolo = params.get("theorySolo");
+  const theorySolo =
+    requestedTheorySolo === "left" || requestedTheorySolo === "right"
+      ? requestedTheorySolo
+      : null;
 
   return {
     surface,
@@ -154,6 +159,9 @@ export function readShapeMatrixRouteState(
       theoryLeft && theoryRight
         ? { left: theoryLeft, right: theoryRight }
         : null,
+    // Optional, like the link flag: a link without a theory pair has no
+    // ratio to solo, and a link without a solo says nothing about one.
+    ...(theoryLeft && theoryRight && theorySolo ? { theorySolo } : {}),
     level,
     leftTurn,
     rightTurn,
@@ -228,9 +236,15 @@ export function writeShapeMatrixRouteState(
         "theoryRight",
         theoryFlowerKey(state.theoryPair.right)
       );
+      if (state.theorySolo) {
+        url.searchParams.set("theorySolo", state.theorySolo);
+      } else {
+        url.searchParams.delete("theorySolo");
+      }
     } else {
       url.searchParams.delete("theoryLeft");
       url.searchParams.delete("theoryRight");
+      url.searchParams.delete("theorySolo");
     }
   } else {
     url.searchParams.delete("theory");
@@ -240,6 +254,7 @@ export function writeShapeMatrixRouteState(
     url.searchParams.delete("pairing");
     url.searchParams.delete("theoryLeft");
     url.searchParams.delete("theoryRight");
+    url.searchParams.delete("theorySolo");
   }
 
   if (!state.pair) {

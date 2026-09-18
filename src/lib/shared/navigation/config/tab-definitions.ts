@@ -52,6 +52,18 @@ export const CREATE_TABS: Section[] = [
     metadata: { isCreationMethod: true },
   },
   {
+    id: "shape-engine",
+    labelKey: "tab_create_shape_engine",
+    descKey: "tab_desc_create_shape_engine",
+    label: "Shape",
+    icon: '<i class="fas fa-border-all" aria-hidden="true"></i>',
+    description:
+      "Pick a shape pairing and get the sequence that draws it. Powered by Shape Engine.",
+    color: "#2dd4bf",
+    gradient: "linear-gradient(135deg, #5eead4 0%, #2dd4bf 100%)",
+    metadata: { isCreationMethod: true },
+  },
+  {
     id: "fuse",
     labelKey: "tab_create_fuse",
     descKey: "tab_desc_create_fuse",
@@ -830,19 +842,9 @@ export const PLAYGROUND_TABS: Section[] = [
 
 // Toys module tabs - user-facing interactive toys, added one at a time on
 // Austen's explicit request (the successor to the dissolved Playground module,
-// whose galleries now live in the Library's Art shelf). First toy: Shape Matrix.
+// whose galleries now live in the Library's Art shelf). Shape Matrix was the
+// first toy; it graduated to the Create module's Shape tab on 2026-09-18.
 export const TOYS_TABS: Section[] = [
-  {
-    id: "shape-matrix",
-    labelKey: "tab_toys_shape_matrix",
-    descKey: "tab_desc_toys_shape_matrix",
-    label: "Shape Matrix",
-    icon: '<i class="fas fa-border-all" aria-hidden="true"></i>',
-    description:
-      "Explore shape pairings in an interactive matrix and watch each path traced live",
-    color: "#2dd4bf",
-    gradient: "linear-gradient(135deg, #5eead4 0%, #2dd4bf 100%)",
-  },
   {
     id: "third-order",
     labelKey: "tab_toys_third_order",
