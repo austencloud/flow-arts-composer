@@ -2,7 +2,7 @@ import { render } from "vitest-browser-svelte";
 import { page } from "vitest/browser";
 import { describe, expect, it, vi } from "vitest";
 import type { ComponentProps } from "svelte";
-import PresetDrawer from "./PresetDrawer.svelte";
+import SetupsPanel from "./SetupsPanel.svelte";
 import type { FavoriteState } from "../../state/favorite-state.svelte";
 import type {
   CommunitySetup,
@@ -84,14 +84,13 @@ function fakeState(options: StateOptions = {}): FavoriteState {
   } as unknown as FavoriteState;
 }
 
-type PresetDrawerProps = ComponentProps<typeof PresetDrawer>;
+type SetupsPanelProps = ComponentProps<typeof SetupsPanel>;
 
 function props(
   favoriteState: FavoriteState,
-  overrides: Partial<PresetDrawerProps> = {}
-): PresetDrawerProps {
+  overrides: Partial<SetupsPanelProps> = {}
+): SetupsPanelProps {
   return {
-    isOpen: true,
     favoriteState,
     isSignedOut: false,
     isPreview: false,
@@ -105,12 +104,9 @@ function props(
   };
 }
 
-describe("PresetDrawer", () => {
+describe("SetupsPanel", () => {
   it("keeps Save current setup available after setups exist", async () => {
-    render(
-      PresetDrawer,
-      props(fakeState({ setups: [setup("1"), setup("2")] }))
-    );
+    render(SetupsPanel, props(fakeState({ setups: [setup("1"), setup("2")] })));
 
     await expect
       .element(page.getByRole("button", { name: "Save current setup" }))
@@ -118,7 +114,7 @@ describe("PresetDrawer", () => {
   });
 
   it("tells the owner that saved setups are shared", async () => {
-    render(PresetDrawer, props(fakeState()));
+    render(SetupsPanel, props(fakeState()));
 
     await expect
       .element(page.getByText("Saved setups are shared with the community."))
@@ -129,7 +125,7 @@ describe("PresetDrawer", () => {
     const state = fakeState();
     const onRequestSaveAccount = vi.fn();
     render(
-      PresetDrawer,
+      SetupsPanel,
       props(state, { isAnonymous: true, onRequestSaveAccount })
     );
 
@@ -141,7 +137,7 @@ describe("PresetDrawer", () => {
 
   it("labels setup length in steps", async () => {
     render(
-      PresetDrawer,
+      SetupsPanel,
       props(fakeState({ setups: [setup("long", "Long setup", 16)] }))
     );
 
@@ -152,7 +148,7 @@ describe("PresetDrawer", () => {
   });
 
   it("has no share control on a saved setup row", async () => {
-    render(PresetDrawer, props(fakeState({ setups: [setup("1")] })));
+    render(SetupsPanel, props(fakeState({ setups: [setup("1")] })));
 
     await page.getByRole("button", { name: "Actions for Setup 1" }).click();
 
@@ -167,7 +163,7 @@ describe("PresetDrawer", () => {
   it("lists every community setup and applies by setup id", async () => {
     const onApply = vi.fn();
     render(
-      PresetDrawer,
+      SetupsPanel,
       props(
         fakeState({
           communitySetups: [
@@ -197,7 +193,7 @@ describe("PresetDrawer", () => {
     const onRequestCommunityAccount = vi.fn();
 
     render(
-      PresetDrawer,
+      SetupsPanel,
       props(
         fakeState({
           communitySetups: [
@@ -228,7 +224,7 @@ describe("PresetDrawer", () => {
         setupsLoadError: "Saved setups could not load",
       })
     );
-    const screen = render(PresetDrawer, errorProps);
+    const screen = render(SetupsPanel, errorProps);
 
     await expect
       .element(page.getByText("Saved setups could not load"))
@@ -252,7 +248,7 @@ describe("PresetDrawer", () => {
     const state = fakeState({
       communityLoadError: "Community setups could not load",
     });
-    const screen = render(PresetDrawer, props(state));
+    const screen = render(SetupsPanel, props(state));
 
     await page.getByRole("tab", { name: "Community" }).click();
 
@@ -285,7 +281,7 @@ describe("PresetDrawer", () => {
     const active = setup("1");
     const other = setup("2");
     render(
-      PresetDrawer,
+      SetupsPanel,
       props(
         fakeState({
           setups: [active, other],
@@ -316,7 +312,7 @@ describe("PresetDrawer", () => {
   });
 
   it("explains that deleting removes the setup from the community", async () => {
-    render(PresetDrawer, props(fakeState({ setups: [setup("1")] })));
+    render(SetupsPanel, props(fakeState({ setups: [setup("1")] })));
 
     await page.getByRole("button", { name: "Actions for Setup 1" }).click();
     await page.getByRole("menuitem", { name: "Delete" }).click();
@@ -328,5 +324,14 @@ describe("PresetDrawer", () => {
         )
       )
       .toBeVisible();
+  });
+
+  it("closes from the panel chrome", async () => {
+    const onClose = vi.fn();
+    render(SetupsPanel, props(fakeState(), { onClose }));
+
+    await page.getByRole("button", { name: "Close generator setups" }).click();
+
+    expect(onClose).toHaveBeenCalledOnce();
   });
 });

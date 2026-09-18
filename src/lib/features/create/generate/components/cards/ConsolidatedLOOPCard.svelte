@@ -16,7 +16,11 @@ icons when enabled. Click opens the expanded overlay.
   import type { PanelCoordinationState } from "$lib/shared/create/state/panel-coordination-state.svelte";
   import CardHeader from "./shared/CardHeader.svelte";
   import LOOPIconStrip from "$lib/shared/components/LOOPIconStrip.svelte";
-  import { buildLoopCardDisplay, describeLoopRhythm } from "./loop-card-display";
+  import {
+    buildLoopCardDisplay,
+    describeLoopRhythm,
+  } from "./loop-card-display";
+  import { morphGenerateCard } from "../../shared/services/generate-card-morph";
   import type { ReflectionAxis } from "@tka/sequence-engine/loop";
   import type { HandRelationship } from "$lib/shared/create/domain/hand-relationship";
 
@@ -109,15 +113,32 @@ icons when enabled. Click opens the expanded overlay.
       [LOOPType.ROTATED_SWAPPED]: t("generator_loop_rotated_swapped"),
       [LOOPType.MIRRORED_ROTATED]: t("generator_loop_mirrored_rotated"),
       [LOOPType.MIRRORED_INVERTED_ROTATED]: t("generator_loop_mir_comp_rot"),
-      [LOOPType.MIRRORED_SWAPPED_INVERTED]: t("generator_loop_mirrored_swapped") + " + " + t("generator_loop_inverted"),
-      [LOOPType.ROTATED_SWAPPED_INVERTED]: t("generator_loop_rotated_swapped") + " + " + t("generator_loop_inverted"),
-      [LOOPType.MIRRORED_ROTATED_SWAPPED]: t("generator_loop_mirrored_rotated") + " + " + t("generator_loop_swapped"),
-      [LOOPType.MIRRORED_ROTATED_INVERTED_SWAPPED]: t("generator_loop_all_four"),
+      [LOOPType.MIRRORED_SWAPPED_INVERTED]:
+        t("generator_loop_mirrored_swapped") +
+        " + " +
+        t("generator_loop_inverted"),
+      [LOOPType.ROTATED_SWAPPED_INVERTED]:
+        t("generator_loop_rotated_swapped") +
+        " + " +
+        t("generator_loop_inverted"),
+      [LOOPType.MIRRORED_ROTATED_SWAPPED]:
+        t("generator_loop_mirrored_rotated") +
+        " + " +
+        t("generator_loop_swapped"),
+      [LOOPType.MIRRORED_ROTATED_INVERTED_SWAPPED]: t(
+        "generator_loop_all_four"
+      ),
       [LOOPType.STRICT_REWOUND]: t("generator_loop_rewound"),
     };
     // Fallback: strip "strict_" prefix and title-case for unmapped legacy values
-    return typeMap[currentLOOPType as keyof typeof typeMap] ||
-      currentLOOPType.replace(/^strict_/, "").split("_").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" / ");
+    return (
+      typeMap[currentLOOPType as keyof typeof typeMap] ||
+      currentLOOPType
+        .replace(/^strict_/, "")
+        .split("_")
+        .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" / ")
+    );
   });
 
   // Combined labels run to ~45 characters ("NE-SW Reflection + Rotated +
@@ -125,7 +146,11 @@ icons when enabled. Click opens the expanded overlay.
   // lines and push the icon row past the card's edge, so the label steps down
   // by length onto the same ramp the Customize summary uses.
   const labelTier = $derived(
-    displayValue.length > 32 ? "long" : displayValue.length > 18 ? "medium" : "short"
+    displayValue.length > 32
+      ? "long"
+      : displayValue.length > 18
+        ? "medium"
+        : "short"
   );
 
   // Icon size tracks the card. A literal 16px reads as punctuation on a native
@@ -146,10 +171,12 @@ icons when enabled. Click opens the expanded overlay.
     // grid opens fresh; picking a loop enables it (onLOOPTypeChange sets
     // loopEnabled), and backing out without picking leaves the loop off — no
     // pre-enable, no stale selection.
-    panelState.openLOOPPanel(
-      currentLOOPType,
-      selectedComponents,
-      onLOOPTypeChange
+    morphGenerateCard("loop", () =>
+      panelState.openLOOPPanel(
+        currentLOOPType,
+        selectedComponents,
+        onLOOPTypeChange
+      )
     );
   }
 
@@ -172,7 +199,9 @@ icons when enabled. Click opens the expanded overlay.
     bind:clientHeight={cardHeight}
     onclick={handleClick}
     onkeydown={handleKeydown}
-    aria-label="LOOP: {displayValue}{rhythmDetail ? `, ${rhythmDetail}` : ''}. Click to configure."
+    aria-label="LOOP: {displayValue}{rhythmDetail
+      ? `, ${rhythmDetail}`
+      : ''}. Click to configure."
   >
     <CardHeader title="LOOP" {headerFontSize} />
     <!-- Label and icons center as one group, so this card's text lines up with
@@ -182,7 +211,11 @@ icons when enabled. Click opens the expanded overlay.
       <!-- The row is always here, empty when the loop is off, so toggling
            can't move the label above it. The strip carries its own role="img"
            and label, which would duplicate this button's name — hide it. -->
-      <div class="loop-icon-row" style="min-height: {iconSize}px;" aria-hidden="true">
+      <div
+        class="loop-icon-row"
+        style="min-height: {iconSize}px;"
+        aria-hidden="true"
+      >
         {#if display.iconComponents.size > 0}
           <LOOPIconStrip
             activeComponents={display.iconComponents}
@@ -225,9 +258,20 @@ icons when enabled. Click opens the expanded overlay.
   .loop-card-wrapper.enabled {
     background: linear-gradient(
       135deg,
-      color-mix(in srgb, var(--theme-accent-strong, #6366f1) 80%, var(--theme-card-bg)) 0%,
-      color-mix(in srgb, var(--theme-accent, #818cf8) 60%, var(--theme-card-bg)) 50%,
-      color-mix(in srgb, var(--theme-accent-strong, #6366f1) 70%, var(--theme-card-bg)) 100%
+      color-mix(
+          in srgb,
+          var(--theme-accent-strong, #6366f1) 80%,
+          var(--theme-card-bg)
+        )
+        0%,
+      color-mix(in srgb, var(--theme-accent, #818cf8) 60%, var(--theme-card-bg))
+        50%,
+      color-mix(
+          in srgb,
+          var(--theme-accent-strong, #6366f1) 70%,
+          var(--theme-card-bg)
+        )
+        100%
     );
     background-size: 200% 200%;
     animation: accentShimmer 6s ease-in-out infinite;
@@ -239,9 +283,15 @@ icons when enabled. Click opens the expanded overlay.
   }
 
   @keyframes accentShimmer {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
   }
 
   .loop-consolidated-card {

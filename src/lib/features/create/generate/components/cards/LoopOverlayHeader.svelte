@@ -2,13 +2,14 @@
   interface Props {
     onClose: () => void;
     onDisable?: () => void;
+    titleId?: string;
   }
 
   const props: Props = $props();
 </script>
 
 <div class="overlay-header">
-  <h3 class="overlay-title">Select LOOP Type</h3>
+  <h3 class="overlay-title" id={props.titleId}>Select LOOP Type</h3>
   <div class="header-actions">
     {#if props.onDisable}
       <button
