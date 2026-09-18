@@ -67,6 +67,11 @@ export const PATH_TO_SURFACE = [
     tab: "generate",
   },
   {
+    prefix: "src/lib/features/create/shape-engine/",
+    module: "create",
+    tab: "shape-engine",
+  },
+  {
     prefix: "src/lib/features/fuse/",
     module: "create",
     tab: "fuse",

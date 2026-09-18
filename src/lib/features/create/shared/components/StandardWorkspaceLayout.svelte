@@ -119,10 +119,11 @@
         : [5, 4];
   });
 
-  // Fuse and Tunnel own complete workspaces inside their tool-panel surface.
+  // Fuse, Tunnel and Shape own complete workspaces inside their tool-panel surface.
   const ownsFullWorkspace = $derived(
     navigationState.activeTab === "fuse" ||
-      navigationState.activeTab === "tunnel"
+      navigationState.activeTab === "tunnel" ||
+      navigationState.activeTab === "shape-engine"
   );
 
   // Workspace visible only when there's actual content to show
