@@ -28,6 +28,7 @@
   import { claimedViewTransitionName } from "$lib/shared/transitions/claimed-view-transition-name";
   import { reducedMotion } from "$lib/shared/transitions/motion";
   import { getEscapeLayerManager } from "$lib/shared/keyboard/get-escape-layer-manager";
+  import { isEditableKeyboardTarget } from "$lib/shared/keyboard/domain/shortcut-target-resolution";
   import type { PanelCoordinationState } from "$lib/shared/create/state/panel-coordination-state.svelte";
   import {
     generateCardMorphName,
@@ -110,13 +111,21 @@
   // Focus inside a non-modal dialog owns the first Escape; the global
   // shortcut defers to it (see shouldDeferEscapeShortcut's role="dialog"
   // check), so it is answered here instead.
+  //
+  // Two ways a nested field can keep this Escape for itself: it already
+  // handled the key (defaultPrevented), such as SavedSetupRow's rename input
+  // canceling its own rename, or it is an editable target that has not called
+  // preventDefault but still owns the first press by the escape-routing
+  // contract. Either way the stage defers instead of closing on top of it.
   function onKeydown(event: KeyboardEvent): void {
     if (
       event.key !== "Escape" ||
       event.ctrlKey ||
       event.altKey ||
       event.metaKey ||
-      event.shiftKey
+      event.shiftKey ||
+      event.defaultPrevented ||
+      isEditableKeyboardTarget(event.target)
     ) {
       return;
     }
@@ -149,6 +158,7 @@
       onStartEndChange={customize.onStartEndChange}
       onResetAll={customize.onResetAll}
       onClose={close}
+      entrance="none"
       {titleId}
     />
   {:else if openCard === "loop" && panelState.loopSelectedComponents && panelState.loopOnChange && panelState.loopCurrentType}

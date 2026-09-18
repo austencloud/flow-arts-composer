@@ -80,6 +80,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     onStartEndChange,
     onResetAll = null,
     onClose,
+    entrance = "scale",
     titleId,
   } = $props<{
     constraintPreset: "smooth" | "mixed" | "choppy";
@@ -102,6 +103,10 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     onStartEndChange: ((options: StartEndOptions) => void) | null;
     onResetAll?: (() => void) | null;
     onClose: () => void;
+    /** "none" when a host transition (the card morph) is already carrying the
+     *  panel in; forwarded to GenerationSettingsOverlay, whose default "scale"
+     *  is what CustomizeDrawer relies on for its own drawer-hosted entrance. */
+    entrance?: "scale" | "none";
     /** Forwarded to GenerationSettingsOverlay's heading id, so a host stage's
      *  aria-labelledby points at the title this overlay actually renders. */
     titleId?: string;
@@ -371,7 +376,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   title="Customize"
   closeLabel="Close customize panel"
   onClose={handleClose}
-  entrance="none"
+  {entrance}
   {titleId}
 >
   {#snippet actions()}

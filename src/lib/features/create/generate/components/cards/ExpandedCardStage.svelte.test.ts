@@ -263,4 +263,28 @@ describe("ExpandedCardStage", () => {
       expect(countViewTransitionNameClaims("generate-card-preset")).toBe(0);
     });
   });
+
+  it("keeps the stage open for an Escape aimed at an editable field", async () => {
+    const state = createPanelCoordinationState();
+    const { container } = render(ExpandedCardStage, props(state, true));
+
+    state.openPresetDrawer();
+    flushSync();
+    expect(state.openGenerateCard).toBe("preset");
+
+    const root = container.querySelector<HTMLElement>(".expanded-card-stage");
+    expect(root).not.toBeNull();
+    // The Setups panel only renders a rename input after a click on a saved
+    // row, and this fixture has no saved setups. A plain input stands in for
+    // it: isEditableKeyboardTarget treats any such input as owning the first
+    // Escape press, the same as the real rename field would.
+    const input = document.createElement("input");
+    root!.appendChild(input);
+    input.focus();
+
+    await userEvent.keyboard("{Escape}");
+
+    expect(state.openGenerateCard).toBe("preset");
+    expect(countViewTransitionNameClaims("generate-card-preset")).toBe(1);
+  });
 });
