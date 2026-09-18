@@ -301,18 +301,21 @@ describe("ExpandedCardStage", () => {
       { once: true }
     );
 
+    expect(document.activeElement).toBe(input);
+    const startViewTransition = vi.spyOn(document, "startViewTransition");
+
     await userEvent.keyboard("{Escape}");
 
     expect(claimed).toBe(false);
     expect(state.openGenerateCard).toBe("preset");
     expect(countViewTransitionNameClaims("generate-card-preset")).toBe(1);
 
-    // The stage's close morph is deferred (view-transition update callback
-    // plus Svelte teardown); give it the same window it would need to fire,
-    // then confirm the state still hasn't moved.
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    expect(state.openGenerateCard).toBe("preset");
-    expect(countViewTransitionNameClaims("generate-card-preset")).toBe(1);
+    // close() calls document.startViewTransition synchronously (see
+    // results-morph.ts's startMorph); the stage deferring instead of closing
+    // means that call never happens, which this spy proves without waiting
+    // out a fixed timeout for state that was never going to change.
+    expect(startViewTransition).not.toHaveBeenCalled();
+    startViewTransition.mockRestore();
   });
 
   it("keeps the stage open for an Escape another control already handled", async () => {
@@ -348,19 +351,26 @@ describe("ExpandedCardStage", () => {
       { once: true }
     );
 
+    expect(document.activeElement).toBe(button);
+    const startViewTransition = vi.spyOn(document, "startViewTransition");
+
     await userEvent.keyboard("{Escape}");
 
     // The button already prevented the default, so this listener seeing
     // defaultPrevented === true doesn't by itself prove the stage deferred
     // (the stage's own handler bails out on defaultPrevented before it would
-    // call stopPropagation, so the event bubbles here either way). The state
-    // and claim count below are what actually pin that down.
+    // call stopPropagation, so the event bubbles here either way). The state,
+    // claim count, and untriggered morph below are what actually pin that
+    // down.
     expect(claimed).toBe(true);
     expect(state.openGenerateCard).toBe("preset");
     expect(countViewTransitionNameClaims("generate-card-preset")).toBe(1);
 
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    expect(state.openGenerateCard).toBe("preset");
-    expect(countViewTransitionNameClaims("generate-card-preset")).toBe(1);
+    // close() calls document.startViewTransition synchronously (see
+    // results-morph.ts's startMorph); the stage deferring instead of closing
+    // means that call never happens, which this spy proves without waiting
+    // out a fixed timeout for state that was never going to change.
+    expect(startViewTransition).not.toHaveBeenCalled();
+    startViewTransition.mockRestore();
   });
 });

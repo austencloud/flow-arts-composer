@@ -118,14 +118,16 @@
   // preventDefault but still owns the first press by the escape-routing
   // contract. Either way the stage defers instead of closing on top of it.
   //
-  // This check uses the narrower isEditableKeyboardTarget rather than
-  // shouldDeferEscapeShortcut, because the latter's deferral list is written
-  // for a page that already has this stage's own root as a non-modal
-  // role="dialog" answering the first Escape; applying it again here would
-  // have the stage defer to itself. The gap: an expanded menu, listbox,
-  // combobox, or a [data-escape-shortcut-local] owner opened inside one of
-  // the three panels is not covered today, only editable fields are. None of
-  // Customize, LOOP, or Setups currently mounts one of those.
+  // The stage checks only editable targets and defaultPrevented rather than
+  // the shared shouldDeferEscapeShortcut owner list, because its own root is
+  // already a non-modal role="dialog" answering the first Escape; applying
+  // that list again here would have the stage defer to itself. LOOP's
+  // selected component button does carry aria-expanded="true", one of the
+  // list's other owners, and the stage intentionally still closes on top of
+  // it: that button owns no Escape press of its own. [role='tree'],
+  // [data-escape-shortcut-local] owners, and fullscreen are likewise not
+  // deferred here, and none of Customize, LOOP, or Setups mounts something
+  // that actually handles Escape itself.
   function onKeydown(event: KeyboardEvent): void {
     if (
       event.key !== "Escape" ||
