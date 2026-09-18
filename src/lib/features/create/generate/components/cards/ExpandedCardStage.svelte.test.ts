@@ -10,10 +10,15 @@ import {
 } from "$lib/shared/create/state/panel-coordination-state.svelte";
 import { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
 import {
+  claimViewTransitionName,
   countViewTransitionNameClaims,
   resetViewTransitionNameRegistry,
 } from "$lib/shared/transitions/view-transition-name-registry";
 import type { FavoriteState } from "../../state/favorite-state.svelte";
+import {
+  lastGenerateCardMorphRan,
+  morphGenerateCard,
+} from "../../shared/services/generate-card-morph";
 
 afterEach(() => {
   resetViewTransitionNameRegistry();
@@ -262,6 +267,83 @@ describe("ExpandedCardStage", () => {
     await vi.waitFor(() => {
       expect(countViewTransitionNameClaims("generate-card-preset")).toBe(0);
     });
+  });
+
+  it("returns focus to the trigger after a morph close", async () => {
+    const fixture = document.createElement("div");
+    fixture.className = "card-wrapper";
+    fixture.dataset.cardId = "preset";
+    const triggerButton = document.createElement("button");
+    triggerButton.type = "button";
+    triggerButton.textContent = "Open setups";
+    fixture.appendChild(triggerButton);
+    document.body.appendChild(fixture);
+
+    try {
+      const state = createPanelCoordinationState();
+      const { container } = render(ExpandedCardStage, props(state, true));
+
+      // Stand in for the card wrapper's claim, so the open below is carried
+      // by a real view transition the way the container's cards open, not
+      // the plain path the tests above take.
+      const releaseWrapperClaim = claimViewTransitionName(
+        "generate-card-preset",
+        (granted) => {
+          fixture.style.viewTransitionName = granted
+            ? "generate-card-preset"
+            : "";
+        }
+      );
+      const opened = morphGenerateCard("preset", () => {
+        releaseWrapperClaim();
+        state.openPresetDrawer();
+      });
+      expect(opened).toBe(true);
+      await vi.waitFor(() => {
+        flushSync();
+        expect(state.openGenerateCard).toBe("preset");
+      });
+      const root = container.querySelector<HTMLElement>(".expanded-card-stage");
+      await vi.waitFor(() => {
+        expect(document.activeElement).toBe(root);
+      });
+      // Let the open transition finish; a close while it is in flight would
+      // apply plainly and miss the path under test.
+      await vi.waitFor(
+        () => {
+          expect(
+            document
+              .getAnimations()
+              .some((animation) =>
+                String(animation.effect?.pseudoElement ?? "").includes(
+                  "view-transition"
+                )
+              )
+          ).toBe(false);
+        },
+        { timeout: 3000 }
+      );
+
+      // Escape closes through morphGenerateCard, which runs another real view
+      // transition (the stage holds the claim). The stage root then leaves
+      // with a zero-length outro and Chrome moves focus to <body> the moment
+      // it is removed, so the return-focus check has to run before the {#if}
+      // tears the root down.
+      await userEvent.keyboard("{Escape}");
+      await vi.waitFor(() => {
+        flushSync();
+        expect(state.openGenerateCard).toBeNull();
+      });
+      await vi.waitFor(() => {
+        expect(container.querySelector(".expanded-card-stage")).toBeNull();
+      });
+      // The close itself ran as a transition; this is the path the container's
+      // Escape takes in the app, not the plain close the test above uses.
+      expect(lastGenerateCardMorphRan()).toBe(true);
+      expect(document.activeElement).toBe(triggerButton);
+    } finally {
+      fixture.remove();
+    }
   });
 
   it("keeps the stage open for an Escape aimed at an editable field", async () => {

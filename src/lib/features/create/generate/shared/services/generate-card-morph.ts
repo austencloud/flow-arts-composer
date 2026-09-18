@@ -16,7 +16,10 @@
  *
  * `lastRan` is set before `mutate()` runs, not after, so a panel that mounts
  * synchronously inside the mutation and reads `lastGenerateCardMorphRan` sees
- * this call's answer instead of the previous call's.
+ * this call's answer instead of the previous call's. On the transition path
+ * that holds because `document.startViewTransition` runs its update callback
+ * (where `mutate` lands) asynchronously, after `startMorph` has returned and
+ * `lastRan` is assigned below.
  */
 import { startMorph } from "$lib/shared/transitions/results-morph";
 import { countViewTransitionNameClaims } from "$lib/shared/transitions/view-transition-name-registry";

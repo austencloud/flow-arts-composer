@@ -369,7 +369,7 @@ Card-based architecture with integrated Generate button:
                 configState.updateConfig({ loopEnabled: false });
               },
               onRequestSignup: (kind) => {
-                panelState.closeLOOPPanel();
+                morphGenerateCard("loop", () => panelState.closeLOOPPanel());
                 openLoopGateAuth(kind);
               },
               onRhythmChange: (u) =>

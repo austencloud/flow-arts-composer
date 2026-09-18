@@ -857,7 +857,6 @@ Delegates ALL logic to services (SRP compliant)
   }
 
   .card-grid-stage {
-    position: relative;
     flex: 1 1 auto;
     display: flex;
     align-items: stretch;

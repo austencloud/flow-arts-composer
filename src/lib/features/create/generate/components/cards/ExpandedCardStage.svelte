@@ -67,14 +67,24 @@
   // entirely), so the stage root just appears; otherwise it scales in on its
   // own, the same panel-covers-a-card motion GenerationSettingsOverlay used
   // to do locally. Read fresh on every open, not cached, since a morph vs.
-  // plain open is decided per-call.
+  // plain open is decided per-call. Svelte reads it again for the outro once
+  // the intro has ended, so a close reflects the most recent morph call: a
+  // close that went through morphGenerateCard is instant, and an external
+  // plain close (closeAllPanels from another panel opener) inherits whatever
+  // the previous call decided. That is a zero or a 250ms scale-out, never a
+  // flicker, so it is left alone.
   function stageEntrance() {
     return lastGenerateCardMorphRan() || reducedMotion()
       ? { start: 1, duration: 0 }
       : { start: 0.95, duration: 250, easing: quintOut };
   }
 
-  $effect(() => {
+  // A pre-effect, not $effect: its teardown has to run before the {#if}
+  // below detaches the root. A morph close gives the root a zero-length
+  // outro, so the block removes it synchronously, and Chrome moves focus to
+  // <body> the moment a focused element leaves the DOM. A plain $effect
+  // teardown runs after that and finds nothing inside the root to hand back.
+  $effect.pre(() => {
     const card = openCard;
     if (!card) return;
     void tick().then(() => root?.focus({ preventScroll: true }));
