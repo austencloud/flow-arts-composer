@@ -398,21 +398,22 @@ export async function getUserDisplayNames(
   return names;
 }
 
+export interface VisibleOwnerProfile {
+  displayName: string;
+  photoURL?: string;
+}
+
 /**
- * Like getUserDisplayNames, but only returns owners eligible to appear in a
- * public discovery surface: moderated (isHidden) accounts and anonymous guests
- * are omitted from the returned map. Callers filter their items to owners the
- * map still contains — so hiding a creator also removes their public
- * collections from discovery, matching the Browse Creators listing which
- * already skips these accounts (getUsersPaginated / getFeaturedCreators).
- * Owners whose user doc is missing entirely (deleted account) are also omitted.
+ * Display name and avatar for the owners a discovery surface may show.
+ * Applies the same suppression as getVisibleOwnerNames: hidden, guest,
+ * legacy-profile, and deleted owners are omitted from the map.
  */
-export async function getVisibleOwnerNames(
+export async function getVisibleOwnerProfiles(
   userIds: string[]
-): Promise<Map<string, string>> {
-  const names = new Map<string, string>();
+): Promise<Map<string, VisibleOwnerProfile>> {
+  const profiles = new Map<string, VisibleOwnerProfile>();
   const unique = [...new Set(userIds)].filter(Boolean);
-  if (unique.length === 0) return names;
+  if (unique.length === 0) return profiles;
 
   const firestore = await getFirestoreInstance();
   const usersRef = collection(firestore, USERS_COLLECTION);
@@ -429,11 +430,32 @@ export async function getVisibleOwnerNames(
       const data = docSnap.data() as FirestoreUserData;
       if (data.isHidden === true) return; // moderated — suppress from discovery
       if (isAnonymousGuest(data)) return; // guests aren't creators yet
-      names.set(docSnap.id, data.displayName ?? data.name ?? "Someone");
+      profiles.set(docSnap.id, {
+        displayName: data.displayName ?? data.name ?? "Someone",
+        photoURL: data.photoURL ?? undefined,
+      });
     });
   }
 
-  return names;
+  return profiles;
+}
+
+/**
+ * Like getUserDisplayNames, but only returns owners eligible to appear in a
+ * public discovery surface: moderated (isHidden) accounts and anonymous guests
+ * are omitted from the returned map. Callers filter their items to owners the
+ * map still contains — so hiding a creator also removes their public
+ * collections from discovery, matching the Browse Creators listing which
+ * already skips these accounts (getUsersPaginated / getFeaturedCreators).
+ * Owners whose user doc is missing entirely (deleted account) are also omitted.
+ */
+export async function getVisibleOwnerNames(
+  userIds: string[]
+): Promise<Map<string, string>> {
+  const profiles = await getVisibleOwnerProfiles(userIds);
+  return new Map(
+    [...profiles].map(([userId, profile]) => [userId, profile.displayName])
+  );
 }
 
 export async function getUsers(
