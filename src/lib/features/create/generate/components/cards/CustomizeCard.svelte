@@ -7,9 +7,13 @@ to three rows. Click opens the expanded overlay.
 <script lang="ts">
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import type { StartEndOptions, PanelCoordinationState } from "$lib/shared/create/state/panel-coordination-state.svelte";
+  import type {
+    StartEndOptions,
+    PanelCoordinationState,
+  } from "$lib/shared/create/state/panel-coordination-state.svelte";
   import { onMount, getContext } from "svelte";
   import { customizeOverlayWasOpen } from "$lib/shared/create/state/customize-overlay-hmr";
+  import { morphGenerateCard } from "../../shared/services/generate-card-morph";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import type { HandRelationship } from "$lib/shared/create/domain/hand-relationship";
   import CardHeader from "./shared/CardHeader.svelte";
@@ -121,7 +125,7 @@ to three rows. Click opens the expanded overlay.
 
   function handleClick() {
     hapticService?.trigger("selection");
-    openOverlay();
+    morphGenerateCard("customize", openOverlay);
   }
 
   function openOverlay() {

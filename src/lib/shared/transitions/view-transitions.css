@@ -61,6 +61,21 @@ html.named-route-morph::view-transition {
   animation-timing-function: var(--ease-in-out);
 }
 
+/* A generate bento card growing into its workspace (Customize, LOOP, Setups,
+   TnD). The card wrapper and the expanded stage share one name, so the group
+   carries the box between the grid slot and the stage or viewport while the
+   old card content cross-fades into the panel. Owner:
+   features/create/generate/shared/services/generate-card-morph.ts.
+   generate-card-tnd is reserved for the TnD card (companion spec) and has no
+   host yet. */
+::view-transition-group(generate-card-customize),
+::view-transition-group(generate-card-loop),
+::view-transition-group(generate-card-preset),
+::view-transition-group(generate-card-tnd) {
+  animation-duration: var(--duration-dramatic);
+  animation-timing-function: var(--ease-in-out);
+}
+
 ::view-transition-old(learn-lesson-heading),
 ::view-transition-new(learn-lesson-heading),
 ::view-transition-old(learn-lesson-controls),

@@ -54,3 +54,23 @@ describe("results morph layout stabilization", () => {
     expect(stabilize).not.toHaveBeenCalled();
   });
 });
+
+describe("results morph reduced motion", () => {
+  afterEach(() => {
+    delete document.documentElement.dataset.motionPreference;
+  });
+
+  it("applies the mutation plainly under the app's Reduce Motion setting", async () => {
+    installViewTransitionMock();
+    document.documentElement.dataset.motionPreference = "reduce";
+    const mutate = vi.fn();
+    const { startMorph } =
+      await import("$lib/shared/transitions/results-morph");
+
+    const transition = startMorph(mutate);
+
+    expect(transition).toBeNull();
+    expect(mutate).toHaveBeenCalledTimes(1);
+    expect(document.startViewTransition).not.toHaveBeenCalled();
+  });
+});
