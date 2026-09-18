@@ -136,7 +136,7 @@ export function relatedRotationDirection(
 ): "cw" | "ccw" | undefined {
   const r = lower(rightDirection);
   if (r !== "cw" && r !== "ccw") return undefined;
-  const flip = REFLECTIONS.has(options.map) !== (options.inverted === true);
+  const flip = isReflectionMap(options.map) !== (options.inverted === true);
   if (!flip) return r;
   return r === "cw" ? "ccw" : "cw";
 }
@@ -159,7 +159,7 @@ export function handRelationshipHolds(
   ) {
     return false;
   }
-  return spinRelates(left, right, REFLECTIONS.has(options.map), inverted);
+  return spinRelates(left, right, isReflectionMap(options.map), inverted);
 }
 
 export class HandRelationshipConstraint implements IVariationConstraint {

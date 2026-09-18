@@ -86,7 +86,7 @@ export class PropRelationshipConstraint implements IVariationConstraint {
       satisfied: ok,
       reason: ok
         ? `Props relate ${this.options.direction}`
-        : `Props cannot spin ${this.options.direction} on this step`,
+        : `Cannot hold: ${this.description}`,
     };
   }
 

@@ -12,7 +12,8 @@
  *
  * Bearings come from the grid location angle and the radial orientation, the
  * same numbers the app's angle-calculator and orientation-angle modules use;
- * the app delegates its classifier here so every surface reads one answer.
+ * the app is to delegate its classifier here so every surface reads one
+ * answer.
  */
 
 const PI = Math.PI;
@@ -53,13 +54,13 @@ export const PROP_TIMING_PHASE: Readonly<Record<PropTiming, number>> = {
 };
 
 export interface PropRelationshipMotion {
-  motionType: string;
-  rotationDirection: string;
-  startLocation: string;
-  endLocation: string;
-  startOrientation: string;
-  endOrientation: string;
-  turns?: number | "fl";
+  readonly motionType: string;
+  readonly rotationDirection: string;
+  readonly startLocation: string;
+  readonly endLocation: string;
+  readonly startOrientation: string;
+  readonly endOrientation: string;
+  readonly turns?: number | "fl";
 }
 
 export type PropRelationshipReading =
@@ -88,7 +89,7 @@ export function normalizeAngle(angle: number): number {
 
 /**
  * Where the prop's head points for a radial orientation at a location.
- * Undefined for a centric orientation or a location off the grid.
+ * Undefined for a centric orientation or the center.
  */
 export function propBearing(
   orientation: string,
