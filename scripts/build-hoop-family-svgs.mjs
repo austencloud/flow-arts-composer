@@ -29,8 +29,12 @@ const stations = loadStations();
 const TUBE = stations.tube_hex.value;
 const HARDWARE = stations.hardware_hex.value;
 const GOLD = stations.grip_band_hex.value;
+const BUTTON = stations.button_hex.value;
 const r2 = (n) => Math.round(n * 100) / 100;
-const f = (n) => r2(n).toFixed(2).replace(/\.?0+$/, "");
+const f = (n) =>
+  r2(n)
+    .toFixed(2)
+    .replace(/\.?0+$/, "");
 
 /** A thick arc as a filled annular sector: centre, centreline radius, half width, angles in radians. */
 function arcBand(cx, cy, radius, halfWidth, start, end, fill) {
@@ -98,14 +102,33 @@ function hoopGlyph(glyph, tubeUnits, name) {
   const band = tubeUnits * stations.hardware_ratio.value;
   const joinArc = (stations.hoop_join_tape_mm.value * k) / glyph.radius;
   const gripArc = (stations.hoop_grip_tape_mm.value * k) / glyph.radius;
-  const button = Math.max(2.5 * scale, (stations.hoop_button_mm.value * k) / 2);
+  const button = Math.max(
+    stations.hoop_button_glyph_units.value * scale,
+    (stations.hoop_button_mm.value * k) / 2
+  );
   const body = [
     ring(cx, cy, glyph.radius, tubeUnits / 2, TUBE),
     // Join tape at the far rim, angle 0, with the push button on top of it.
-    arcBand(cx, cy, glyph.radius, band / 2, -joinArc / 2, joinArc / 2, HARDWARE),
-    circle(cx + glyph.radius, cy, button, "#3A3A3F"),
+    arcBand(
+      cx,
+      cy,
+      glyph.radius,
+      band / 2,
+      -joinArc / 2,
+      joinArc / 2,
+      HARDWARE
+    ),
+    circle(cx + glyph.radius, cy, button, BUTTON),
     // Grip band at the near rim, angle 180, where the hand is.
-    arcBand(cx, cy, glyph.radius, band / 2, Math.PI - gripArc / 2, Math.PI + gripArc / 2, GOLD),
+    arcBand(
+      cx,
+      cy,
+      glyph.radius,
+      band / 2,
+      Math.PI - gripArc / 2,
+      Math.PI + gripArc / 2,
+      GOLD
+    ),
   ].join("\n");
   const painted = {
     x: cx - glyph.radius - band / 2,
@@ -134,6 +157,9 @@ function triangleGlyph(grip, box) {
   const band = tube * stations.hardware_ratio.value;
   const cx = box.width / 2;
   const cy = box.height / 2;
+  // Math-frame y maps straight onto SVG y, no flip: the triangle is
+  // symmetric about the local x-axis, and triangleTipPoints in
+  // hoop-family-math.mjs uses this same unflipped mapping for its tips.
   const R = layout.bowRadiusMm * k;
   const legArc = (stations.elbow_leg_mm.value * k) / R;
   const parts = [];
@@ -146,21 +172,27 @@ function triangleGlyph(grip, box) {
   }
   // Elbows: a sleeve leg over the first 50 mm of each side from each vertex,
   // plus a sphere at the vertex. The gripped elbow (corner grip) is gold.
-  const vertexColour = (v) => (grip === "corner" && v.x === 0 && v.y === 0 ? GOLD : HARDWARE);
+  const grippedVertex = grip === "corner" ? layout.vertices[0] : null;
+  const vertexColour = (v) => (v === grippedVertex ? GOLD : HARDWARE);
   for (const side of layout.sides) {
     const ox = cx + side.centre.x * k;
     const oy = cy + side.centre.y * k;
     const a0 = side.startAngle;
     const a1 = side.startAngle + layout.arcAngleRad;
-    parts.push(arcBand(ox, oy, R, band / 2, a0, a0 + legArc, vertexColour(side.p)));
-    parts.push(arcBand(ox, oy, R, band / 2, a1 - legArc, a1, vertexColour(side.q)));
+    parts.push(
+      arcBand(ox, oy, R, band / 2, a0, a0 + legArc, vertexColour(side.p))
+    );
+    parts.push(
+      arcBand(ox, oy, R, band / 2, a1 - legArc, a1, vertexColour(side.q))
+    );
   }
   for (const v of layout.vertices) {
     parts.push(circle(cx + v.x * k, cy + v.y * k, band / 2, vertexColour(v)));
   }
   if (grip === "side") {
     // Gold band centred on the near side's bow point, which is on the hand.
-    const near = layout.sides.find((s) => Math.abs(s.bow.x) < 1e-6 && Math.abs(s.bow.y) < 1e-6);
+    // sides[0] runs vertices[0] to vertices[1], the near pair for this grip.
+    const near = layout.sides[0];
     const ox = cx + near.centre.x * k;
     const oy = cy + near.centre.y * k;
     const half = (stations.hoop_grip_tape_mm.value * k) / R / 2;
@@ -179,7 +211,9 @@ function triangleGlyph(grip, box) {
       box.width,
       box.height,
       `Triangle glyph, ${grip} grip. ${GENERATED_NOTE}\nThree bowed sides of 5/8in tubing, printed elbows, ${
-        grip === "corner" ? "gripped elbow in gold" : "gold grip band at the near side's bow point"
+        grip === "corner"
+          ? "gripped elbow in gold"
+          : "gold grip band at the near side's bow point"
       }. Grip at the box centre; far point across +x.`,
       parts.join("\n")
     ),
@@ -202,8 +236,16 @@ function triangleBox() {
   return { width: r2(2 * halfW), height: r2(2 * halfH) };
 }
 
-const mini = hoopGlyph(stations.mini_glyph, stations.glyph_tube_units.value, "Mini hoop");
-const big = hoopGlyph(stations.big_glyph, stations.big_glyph_tube_units.value, "Big hoop");
+const mini = hoopGlyph(
+  stations.mini_glyph,
+  stations.glyph_tube_units.value,
+  "Mini hoop"
+);
+const big = hoopGlyph(
+  stations.big_glyph,
+  stations.big_glyph_tube_units.value,
+  "Big hoop"
+);
 const box = triangleBox();
 const corner = triangleGlyph("corner", box);
 const side = triangleGlyph("side", box);
@@ -223,25 +265,25 @@ writeFileSync("static/images/props/appearances/triangle-side.svg", side.svg);
 // `npx prettier --write`: unquoted keys, 2-space indent, trailing commas,
 // and arrays of objects broken one per line the way prettier prints them.
 
-const num = (n) => String(n);
-// Metres and radians computed through mm arithmetic carry binary floating
-// point noise (e.g. 0.45402499999999996). Round to 12 significant digits,
-// which is well past the nine decimals later tests compare against, then
-// print through num() so the printed text is still the minimal JS form.
-const metres = (n) => num(Number(n.toPrecision(12)));
+// Trims a double to 12 significant digits: well past the nine decimals later
+// tests compare against, so metres, radians and the hardware ratio (computed
+// through mm arithmetic) print without binary floating point noise (e.g.
+// 0.45402499999999996), while template interpolation stringifies the result
+// the same way a plain String(n) would.
+const tidy = (n) => String(Number(n.toPrecision(12)));
 
 function fmtBox(b) {
-  return `{ width: ${num(b.width)}, height: ${num(b.height)} }`;
+  return `{ width: ${b.width}, height: ${b.height} }`;
 }
 
 function fmtTipArray(tips) {
-  const lines = tips.map((t) => `    { dx: ${num(t.dx)}, dy: ${num(t.dy)} },`);
+  const lines = tips.map((t) => `    { dx: ${t.dx}, dy: ${t.dy} },`);
   return `[\n${lines.join("\n")}\n  ]`;
 }
 
 function fmtCrop(crop) {
   const fields = ["imageWidth", "imageHeight", "x", "y", "width", "height"]
-    .map((key) => `    ${key}: ${num(crop[key])},`)
+    .map((key) => `    ${key}: ${crop[key]},`)
     .join("\n");
   return `{\n${fields}\n  }`;
 }
@@ -280,7 +322,8 @@ const cropsBody = fmtRecord(
 
 const m = triangleMetrics(stations);
 const tubeRadiusM = stations.tube_od_mm.value / 2000;
-const hoopCentrelineM = (stations.hoop_od_mm.value - stations.tube_od_mm.value) / 1000;
+const hoopCentrelineM =
+  (stations.hoop_od_mm.value - stations.tube_od_mm.value) / 1000;
 
 const ts = `// GENERATED by scripts/build-hoop-family-svgs.mjs from
 // scripts/hoop-family-stations.json. Do not edit; change the table and re-run.
@@ -321,31 +364,38 @@ ${cropsBody}
 
 /** Hand to the far tube centreline, in metres. Hoops: across the ring. Triangle: height plus one sagitta, both grips. */
 export const HOOP_FAMILY_REACH_M = {
-  minihoop: ${metres(hoopCentrelineM)},
-  bighoop: ${metres(hoopCentrelineM * stations.big_scale.value)},
-  triangle: ${metres(m.reachMm / 1000)},
+  minihoop: ${tidy(hoopCentrelineM)},
+  bighoop: ${tidy(hoopCentrelineM * stations.big_scale.value)},
+  triangle: ${tidy(m.reachMm / 1000)},
 } as const;
 
 /** Triangle stations in metres; Triangle3D.svelte and the worker mirror restate these and tests pin them here. */
 export const TRIANGLE_STATIONS_M = {
-  sideChord: ${metres(m.chordMm / 1000)},
-  sagitta: ${metres(m.sagittaMm / 1000)},
-  bowRadius: ${metres(m.bowRadiusMm / 1000)},
-  arcAngle: ${metres(m.arcAngleRad)},
-  height: ${metres(m.heightMm / 1000)},
-  reach: ${metres(m.reachMm / 1000)},
-  tubeRadius: ${metres(tubeRadiusM)},
-  sleeveRadius: ${metres(tubeRadiusM * stations.hardware_ratio.value)},
-  elbowLeg: ${metres(stations.elbow_leg_mm.value / 1000)},
+  sideChord: ${tidy(m.chordMm / 1000)},
+  sagitta: ${tidy(m.sagittaMm / 1000)},
+  bowRadius: ${tidy(m.bowRadiusMm / 1000)},
+  arcAngle: ${tidy(m.arcAngleRad)},
+  height: ${tidy(m.heightMm / 1000)},
+  reach: ${tidy(m.reachMm / 1000)},
+  tubeRadius: ${tidy(tubeRadiusM)},
+  sleeveRadius: ${tidy(tubeRadiusM * stations.hardware_ratio.value)},
+  elbowLeg: ${tidy(stations.elbow_leg_mm.value / 1000)},
 } as const;
 
 /** Hoop hardware in metres: the join tape, its button, and the grip wrap. */
 export const HOOP_HARDWARE_M = {
-  joinTape: ${metres(stations.hoop_join_tape_mm.value / 1000)},
-  button: ${metres(stations.hoop_button_mm.value / 1000)},
-  gripTape: ${metres(stations.hoop_grip_tape_mm.value / 1000)},
-  hardwareRatio: ${metres(stations.hardware_ratio.value)},
+  joinTape: ${tidy(stations.hoop_join_tape_mm.value / 1000)},
+  button: ${tidy(stations.hoop_button_mm.value / 1000)},
+  gripTape: ${tidy(stations.hoop_grip_tape_mm.value / 1000)},
+  hardwareRatio: ${tidy(stations.hardware_ratio.value)},
 } as const;
 `;
-writeFileSync("src/lib/shared/pictograph/prop/domain/hoop-family-geometry.generated.ts", ts);
-console.log("hoop family artwork written", { mini: mini.box, big: big.box, triangle: box });
+writeFileSync(
+  "src/lib/shared/pictograph/prop/domain/hoop-family-geometry.generated.ts",
+  ts
+);
+console.log("hoop family artwork written", {
+  mini: mini.box,
+  big: big.box,
+  triangle: box,
+});

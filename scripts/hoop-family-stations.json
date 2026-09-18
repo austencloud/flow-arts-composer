@@ -20,6 +20,10 @@
     "value": 6,
     "source": "push button showing through the join tape"
   },
+  "hoop_button_glyph_units": {
+    "value": 2.5,
+    "source": "floor for the button radius at the mini scale; the real 6 mm button rounds to 0.8 units and would vanish"
+  },
   "hoop_grip_tape_mm": {
     "value": 150,
     "source": "grip wrap opposite the join, measured on a hoop in hand"
@@ -67,6 +71,10 @@
   "hardware_hex": {
     "value": "#1C1C1F",
     "source": "matte black printed PLA and gaffer tape; dark enough for selective recolor to preserve"
+  },
+  "button_hex": {
+    "value": "#3A3A3F",
+    "source": "the push button, a shade lighter than the tape so it reads on top of it"
   },
   "tube_hex": {
     "value": "#9A9A9A",
