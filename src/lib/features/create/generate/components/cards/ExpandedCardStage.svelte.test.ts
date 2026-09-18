@@ -28,8 +28,7 @@ afterEach(() => {
 function fakeFavorites(): FavoriteState {
   return {
     setups: [],
-    communityFavorites: [],
-    sharedSetupId: null,
+    communitySetups: [],
     activeSource: null,
     activeStatus: null,
     isLoadingSetups: false,
@@ -43,8 +42,6 @@ function fakeFavorites(): FavoriteState {
     saveCurrentSetup: vi.fn(async () => true),
     renameSetup: vi.fn(async () => true),
     updateSetupFromCurrent: vi.fn(async () => true),
-    shareSetup: vi.fn(async () => true),
-    unshareSetup: vi.fn(async () => true),
     deleteSetup: vi.fn(async () => true),
     setActiveSource: vi.fn(),
   } as unknown as FavoriteState;
@@ -78,7 +75,7 @@ function props(
       isAnonymous: false,
       onApply: vi.fn(),
       onRequestCommunityAccount: vi.fn(),
-      onRequestShareAccount: vi.fn(),
+      onRequestSaveAccount: vi.fn(),
       onRequestSignIn: vi.fn(),
     },
   };

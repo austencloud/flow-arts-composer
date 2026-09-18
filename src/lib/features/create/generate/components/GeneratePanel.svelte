@@ -165,8 +165,9 @@ Card-based architecture with integrated Generate button:
     const saved =
       source.kind === "setup"
         ? favoriteState.setups.find((setup) => setup.id === source.setupId)
-        : favoriteState.communityFavorites.find(
-            (favorite) => favorite.userId === source.userId
+        : favoriteState.communitySetups.find(
+            (setup) =>
+              setup.userId === source.userId && setup.setupId === source.setupId
           );
     if (!saved) return;
 
@@ -401,8 +402,8 @@ Card-based architecture with integrated Generate button:
               onApply: handleApplySource,
               onRequestCommunityAccount: () =>
                 authDrawerState.show("signup", "community-setups"),
-              onRequestShareAccount: () =>
-                authDrawerState.show("signup", "share-setup"),
+              onRequestSaveAccount: () =>
+                authDrawerState.show("signup", "save-setup"),
               onRequestSignIn: () =>
                 authDrawerState.show("signin", "saved-setups"),
             }}

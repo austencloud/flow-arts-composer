@@ -82,7 +82,7 @@ interface FirestoreUserData extends DocumentData {
  * appear in Browse Creators until they upgrade to a full account. The
  * `isAnonymous` flag is the canonical signal (written on doc create, cleared on
  * upgrade). The displayName fallback catches legacy/pre-deploy guest docs that
- * predate the flag — it's safe because createOrUpdateUserDocument always derives
+ * predate the flag, and it's safe because createOrUpdateUserDocument always derives
  * a real name from the provider on upgrade, so a full account is never literally
  * named "Anonymous User".
  */
@@ -183,7 +183,7 @@ async function mapFirestoreToEnhancedProfile(
           : new Date();
     // Absent stays absent. This used to fall back to `joinedDate`, which made
     // "never returned" indistinguishable from "returned on the day they
-    // joined" — the profile then rendered "Member since July 2026 / Active
+    // joined". The profile then rendered "Member since July 2026 / Active
     // July 2026" and looked broken. It also put this path out of step with the
     // directory path, which preserves the absence (hence the live
     // "never returned" branch in CreatorCell and the null handling in
@@ -398,21 +398,27 @@ export async function getUserDisplayNames(
   return names;
 }
 
+export interface VisibleOwnerProfile {
+  displayName: string;
+  photoURL?: string;
+}
+
 /**
- * Like getUserDisplayNames, but only returns owners eligible to appear in a
- * public discovery surface: moderated (isHidden) accounts and anonymous guests
- * are omitted from the returned map. Callers filter their items to owners the
- * map still contains — so hiding a creator also removes their public
- * collections from discovery, matching the Browse Creators listing which
- * already skips these accounts (getUsersPaginated / getFeaturedCreators).
- * Owners whose user doc is missing entirely (deleted account) are also omitted.
+ * Display name and avatar for owners eligible to appear in a public
+ * discovery surface. Like getUserDisplayNames, but moderated (isHidden)
+ * accounts and anonymous guests are omitted from the returned map. Callers
+ * filter their items to owners the map still contains, so hiding a creator
+ * also removes their public collections from discovery, matching the Browse
+ * Creators listing which already skips these accounts (getUsersPaginated /
+ * getFeaturedCreators). Owners whose user doc is missing entirely (deleted
+ * account) are also omitted.
  */
-export async function getVisibleOwnerNames(
+export async function getVisibleOwnerProfiles(
   userIds: string[]
-): Promise<Map<string, string>> {
-  const names = new Map<string, string>();
+): Promise<Map<string, VisibleOwnerProfile>> {
+  const profiles = new Map<string, VisibleOwnerProfile>();
   const unique = [...new Set(userIds)].filter(Boolean);
-  if (unique.length === 0) return names;
+  if (unique.length === 0) return profiles;
 
   const firestore = await getFirestoreInstance();
   const usersRef = collection(firestore, USERS_COLLECTION);
@@ -427,13 +433,26 @@ export async function getVisibleOwnerNames(
     const snapshot = await getDocs(q);
     snapshot.forEach((docSnap) => {
       const data = docSnap.data() as FirestoreUserData;
-      if (data.isHidden === true) return; // moderated — suppress from discovery
+      if (data.isHidden === true) return; // moderated, suppress from discovery
       if (isAnonymousGuest(data)) return; // guests aren't creators yet
-      names.set(docSnap.id, data.displayName ?? data.name ?? "Someone");
+      profiles.set(docSnap.id, {
+        displayName: data.displayName ?? data.name ?? "Someone",
+        photoURL: data.photoURL ?? data.avatar ?? undefined,
+      });
     });
   }
 
-  return names;
+  return profiles;
+}
+
+/** Name-only view of getVisibleOwnerProfiles. */
+export async function getVisibleOwnerNames(
+  userIds: string[]
+): Promise<Map<string, string>> {
+  const profiles = await getVisibleOwnerProfiles(userIds);
+  return new Map(
+    [...profiles].map(([userId, profile]) => [userId, profile.displayName])
+  );
 }
 
 export async function getUsers(
@@ -722,7 +741,7 @@ export async function followUser(
 
           // Write ONLY the relationship docs. followerCount / followingCount are
           // maintained server-side by the onFollowCreated / onFollowDeleted
-          // Cloud Functions — Firestore rules forbid a client writing another
+          // Cloud Functions. Firestore rules forbid a client writing another
           // user's followerCount (see firestore.rules `users/{userId}` update:
           // owner || admin), which is why the old cross-user count write here
           // triggered a permission-denied and broke follow/unfollow entirely.
@@ -780,7 +799,7 @@ export async function unfollowUser(
 
           // Delete ONLY the relationship docs. Counts are decremented
           // server-side by the onFollowDeleted Cloud Function (same reason as
-          // followUser — clients can't write another user's followerCount).
+          // followUser: clients can't write another user's followerCount).
           transaction.delete(followingRef);
           transaction.delete(followersRef);
 

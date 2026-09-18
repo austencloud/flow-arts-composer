@@ -207,7 +207,7 @@
       isAnonymous={setups.isAnonymous}
       onApply={setups.onApply}
       onRequestCommunityAccount={setups.onRequestCommunityAccount}
-      onRequestShareAccount={setups.onRequestShareAccount}
+      onRequestSaveAccount={setups.onRequestSaveAccount}
       onRequestSignIn={setups.onRequestSignIn}
       onClose={close}
       {titleId}
