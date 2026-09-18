@@ -112,6 +112,15 @@ Its `reparentToInspector` flight opts into `createLayoutMotion` with
 surface flights retain transform scaling. Searches: playback continuity,
 scrubber replacement, transport resizing.
 
+A card growing into its workspace (the Generate bento's Customize, LOOP,
+Setups and TnD cards) routes through `startMorph` from
+`shared/transitions/results-morph.ts` with names stamped by
+`claimedViewTransitionName`; the feature seam is
+`features/create/generate/shared/services/generate-card-morph.ts` and the
+host is `ExpandedCardStage.svelte`. Searches: card morph, expand card, grow
+card, bento expand, settings panel morph. Do not FLIP a card into a panel by
+hand; claim the name on both ends and wrap the state change.
+
 Shared-surface stacking extends `reparentToInspector`: control flights use the
 controls layer and may wait for the canvas to dock, using viewer-local
 `canvasMoving` rather than the aggregate moving flag. Canvas raster sizing
