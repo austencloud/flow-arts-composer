@@ -75,12 +75,34 @@ describe("LabeledColorPairPicker", () => {
     const { onchange } = renderPicker();
     await openLeft();
     const hue = page.getByRole("slider", { name: "Left prop hue" });
-    await hue.click();
+    (hue.element() as HTMLElement).focus();
+    const before = onchange.mock.calls.length;
     await userEvent.keyboard("{ArrowRight}");
-    const calls = onchange.mock.calls.filter(([hand]) => hand === "left");
-    expect(calls.length).toBeGreaterThan(0);
-    expect(calls.at(-1)![1]).toMatch(/^#[0-9a-f]{6}$/);
+    await expect.poll(() => onchange.mock.calls.length).toBeGreaterThan(before);
+    const [hand, hex] = onchange.mock.calls.at(-1)!;
+    expect(hand).toBe("left");
+    expect(hex).toMatch(/^#[0-9a-f]{6}$/);
   });
+
+  it.each([
+    [300, 6, 1],
+    [420, 8, 1],
+    [640, 12, 1],
+    [900, 12, 2],
+  ])(
+    "in a %ipx box the matrix has %i columns and the editor %i tracks",
+    async (width, cols, tracks) => {
+      const { screen } = renderPicker();
+      screen.container.style.width = `${width}px`;
+      await openLeft();
+      const grid = screen.container.querySelector<HTMLElement>(".preset-grid")!;
+      const editor = screen.container.querySelector<HTMLElement>(".color-editor")!;
+      const trackCount = (el: HTMLElement) =>
+        getComputedStyle(el).gridTemplateColumns.split(" ").length;
+      await expect.poll(() => trackCount(grid)).toBe(cols);
+      await expect.poll(() => trackCount(editor)).toBe(tracks);
+    },
+  );
 
   it("has no axe violations with the editor open", async () => {
     renderPicker();
