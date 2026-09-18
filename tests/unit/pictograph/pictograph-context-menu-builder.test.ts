@@ -44,7 +44,7 @@ describe("pictograph context menu builder", () => {
       "TKA",
       "Hand TnD",
       "Prop TnD",
-      "Positions",
+      "Placements",
     ]);
   });
 
