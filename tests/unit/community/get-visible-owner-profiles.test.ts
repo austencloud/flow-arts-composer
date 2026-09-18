@@ -78,6 +78,14 @@ describe("getVisibleOwnerProfiles", () => {
         { id: "guest", data: { displayName: "Guest", isAnonymous: true } },
         { id: "nameless", data: {} },
         { id: "nullphoto", data: { displayName: "N", photoURL: null } },
+        {
+          id: "legacyavatar",
+          data: {
+            displayName: "L",
+            photoURL: null,
+            avatar: "https://x/legacy.png",
+          },
+        },
       ])
     );
 
@@ -87,6 +95,7 @@ describe("getVisibleOwnerProfiles", () => {
       "guest",
       "nameless",
       "nullphoto",
+      "legacyavatar",
       "missing",
     ]);
 
@@ -101,6 +110,10 @@ describe("getVisibleOwnerProfiles", () => {
     expect(profiles.get("nullphoto")).toEqual({
       displayName: "N",
       photoURL: undefined,
+    });
+    expect(profiles.get("legacyavatar")).toEqual({
+      displayName: "L",
+      photoURL: "https://x/legacy.png",
     });
     expect(profiles.has("hidden")).toBe(false);
     expect(profiles.has("guest")).toBe(false);

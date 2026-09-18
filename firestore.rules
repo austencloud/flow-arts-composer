@@ -463,7 +463,8 @@ service cloud.firestore {
       // client writes is public (a one-shot backfill flags pre-existing
       // docs): the collection-group rule below authorizes discovery reads,
       // and this rule covers the owner's own list plus admin impersonation
-      // preview. Writes need a full account and must keep isPublic == true;
+      // preview. Writes need a full account, must keep isPublic == true, and
+      // must carry a string name of at most 60 characters and a map config;
       // the client never writes false. users/{uid}.favoriteConfig is a
       // retired projection and is no longer read or written.)
       // -------------------------------------------------------------------------
@@ -471,7 +472,10 @@ service cloud.firestore {
         allow read: if isOwner(userId) || isAdmin();
         allow create, update: if isOwner(userId)
           && isFullUser()
-          && request.resource.data.isPublic == true;
+          && request.resource.data.isPublic == true
+          && request.resource.data.name is string
+          && request.resource.data.name.size() <= 60
+          && request.resource.data.config is map;
         allow delete: if isOwner(userId);
       }
 

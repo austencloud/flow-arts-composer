@@ -2677,7 +2677,7 @@ Run:
 ```bash
 node scripts/backfill-public-generator-setups.cjs --dry-run
 ```
-Expected (per the 2026-09-18 census): two `isPublic: true ->` lines for `users/PBp3GSBO6igCKPwJyLZNmVEmamI3/generatorSetups/...`, one `delete favoriteConfig -> users/PBp3GSBO6igCKPwJyLZNmVEmamI3`, and the summary `setups flagged: 2, already public: 0, favoriteConfig cleared: 1`. Do NOT run without `--dry-run` in this task; the live run is part of the deploy sequence in Task 9 and happens after rules ship.
+Expected (per the 2026-09-18 census): two `isPublic: true ->` lines for `users/PBp3GSBO6igCKPwJyLZNmVEmamI3/generatorSetups/...`, one `delete favoriteConfig -> users/PBp3GSBO6igCKPwJyLZNmVEmamI3`, and the summary `setups flagged: 2, already public: 0, favoriteConfig cleared: 1`. Do NOT run without `--dry-run` in this task; the live run is part of the deploy sequence in Task 9 and happens after the index is built, before the app and rules ship.
 
 - [ ] **Step 3: Commit**
 
