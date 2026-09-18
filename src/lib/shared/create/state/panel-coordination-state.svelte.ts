@@ -192,6 +192,9 @@ export interface CustomizeOverlayProps {
   onResetAll: (() => void) | null;
 }
 
+/** The generate bento cards that grow into their workspace. */
+export type GenerateCardPanelId = "customize" | "loop" | "preset";
+
 export interface PanelCoordinationState {
   // Choose Start picker state. The handler receives the tapped tile index:
   // 0 for the start tile, 1..n for step tiles (the pose after that step).
@@ -322,6 +325,15 @@ export interface PanelCoordinationState {
 
   // Derived: Any Panel Open (for UI hiding coordination)
   get isAnyPanelOpen(): boolean;
+
+  /**
+   * Which generate bento card is grown into its workspace, or null. At most
+   * one of the three is open because every open call runs closeAllPanels
+   * first. ExpandedCardStage renders from this.
+   */
+  get openGenerateCard(): GenerateCardPanelId | null;
+  /** Close whichever generate card is open. No-op when none is. */
+  closeGenerateCard(): void;
 
   // Preset Drawer State
   get isPresetDrawerOpen(): boolean;
@@ -1070,6 +1082,23 @@ export function createPanelCoordinationState(): PanelCoordinationState {
         isPresetDrawerOpen ||
         isSequenceViewerOpen
       );
+    },
+
+    get openGenerateCard(): GenerateCardPanelId | null {
+      if (isCustomizeOverlayOpen) return "customize";
+      if (isLOOPPanelOpen) return "loop";
+      if (isPresetDrawerOpen) return "preset";
+      return null;
+    },
+
+    closeGenerateCard() {
+      if (isCustomizeOverlayOpen) {
+        this.closeCustomizeOverlay();
+      } else if (isLOOPPanelOpen) {
+        this.closeLOOPPanel();
+      } else if (isPresetDrawerOpen) {
+        this.closePresetDrawer();
+      }
     },
 
     // Duration Preview Mode
