@@ -63,7 +63,7 @@ export function createWorkerPerformerEffectIntent(
     fanBuild: input.propBuild.fanBuild,
     fanFrameColor: input.propBuild.fanFrameColor,
     fanCover: input.propBuild.fanCover,
-    triangleGrip: input.propBuild.triangleGrip ?? "corner",
+    triangleGrip: input.propBuild.triangleGrip,
   };
   const decisionsFor = (
     propIndex: 0 | 1,

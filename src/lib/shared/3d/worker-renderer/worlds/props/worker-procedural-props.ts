@@ -314,17 +314,35 @@ function createEightrings(
   );
 }
 
-// Mirrors hoop-geometry.ts and triangle-geometry.ts in @austencloud/scene-3d,
-// which restate scripts/hoop-family-stations.json in metres.
+// Mirrors hoop-geometry.ts, triangle-geometry.ts, Hoop3D.svelte, and
+// Triangle3D.svelte in @austencloud/scene-3d, which restate
+// scripts/hoop-family-stations.json in metres.
 // tests/unit/worker-renderer/worker-hoop-family.test.ts pins the built
 // geometry to the generated station module.
 const HOOP_OUTER_DIAMETER = 0.4699;
 const HOOP_TUBE_RADIUS = 0.015875 / 2;
 const HOOP_CENTERLINE_RADIUS = HOOP_OUTER_DIAMETER / 2 - HOOP_TUBE_RADIUS;
-const HOOP_HARDWARE_RADIUS = HOOP_TUBE_RADIUS * 1.3;
+const HOOP_HARDWARE_RATIO = 1.3;
+const HOOP_HARDWARE_RADIUS = HOOP_TUBE_RADIUS * HOOP_HARDWARE_RATIO;
 const HOOP_JOIN_TAPE = 0.045;
 const HOOP_GRIP_TAPE = 0.15;
 const HOOP_BUTTON_RADIUS = 0.003;
+const HOOP_TUBE_SEGMENTS = 20;
+const HOOP_RING_SEGMENTS = 128;
+
+/** Arc a band of the given length subtends on the ring's centreline, in radians. */
+function hoopBandArc(lengthM: number): number {
+  return lengthM / HOOP_CENTERLINE_RADIUS;
+}
+
+/**
+ * TorusGeometry sweeps counter-clockwise from angle 0 in the XY plane, so a
+ * band of `arc` radians centred on `centre` needs rotation.z = centre - arc/2.
+ * Matches Hoop3D.svelte's centreArc / Triangle3D.svelte's arc.startAngle use.
+ */
+function centreArc(centre: number, arc: number): number {
+  return centre - arc / 2;
+}
 
 interface HoopGeometries {
   ring: TorusGeometry;
@@ -335,12 +353,12 @@ interface HoopGeometries {
 const hoopGeometries = new Map<number, HoopGeometries>();
 
 function hoopBand(scale: number, length: number): TorusGeometry {
-  const arc = length / HOOP_CENTERLINE_RADIUS;
+  const arc = hoopBandArc(length);
   return new TorusGeometry(
     HOOP_CENTERLINE_RADIUS * scale,
     HOOP_HARDWARE_RADIUS * scale,
     12,
-    Math.max(8, Math.round((128 * arc) / (2 * Math.PI))),
+    Math.max(8, Math.round((HOOP_RING_SEGMENTS * arc) / (2 * Math.PI))),
     arc
   );
 }
@@ -352,8 +370,8 @@ function getHoopGeometries(scale: number): HoopGeometries {
       ring: new TorusGeometry(
         HOOP_CENTERLINE_RADIUS * scale,
         HOOP_TUBE_RADIUS * scale,
-        20,
-        128
+        HOOP_TUBE_SEGMENTS,
+        HOOP_RING_SEGMENTS
       ),
       joinTape: hoopBand(scale, HOOP_JOIN_TAPE),
       gripTape: hoopBand(scale, HOOP_GRIP_TAPE),
@@ -381,19 +399,18 @@ function createHoop(
   // Join tape at the far rim (angle pi/2), the push button on top of it.
   const joinTape = mesh(geometry.joinTape, materials.hardware, layer);
   joinTape.position.y = lift;
-  joinTape.rotation.z =
-    Math.PI / 2 - HOOP_JOIN_TAPE / HOOP_CENTERLINE_RADIUS / 2;
+  joinTape.rotation.z = centreArc(Math.PI / 2, hoopBandArc(HOOP_JOIN_TAPE));
   body.add(joinTape);
 
-  const button = mesh(geometry.button, materials.hardware, layer);
+  // Far rim, same y as Hoop3D.svelte's farRimY = 2 * ringLift + hardware radius.
+  const button = mesh(geometry.button, materials.button, layer);
   button.position.y = 2 * lift + HOOP_HARDWARE_RADIUS * scale;
   body.add(button);
 
   // Grip wrap centred on the hand (angle -pi/2).
   const gripTape = mesh(geometry.gripTape, materials.hardware, layer);
   gripTape.position.y = lift;
-  gripTape.rotation.z =
-    -Math.PI / 2 - HOOP_GRIP_TAPE / HOOP_CENTERLINE_RADIUS / 2;
+  gripTape.rotation.z = centreArc(-Math.PI / 2, hoopBandArc(HOOP_GRIP_TAPE));
   body.add(gripTape);
 
   return createVisual(options, body, materials.trail);
@@ -407,7 +424,11 @@ const TRIANGLE_BOW_RADIUS =
 const TRIANGLE_ARC_ANGLE =
   2 * Math.asin(TRIANGLE_SIDE_CHORD / (2 * TRIANGLE_BOW_RADIUS));
 const TRIANGLE_HEIGHT = (TRIANGLE_SIDE_CHORD * Math.sqrt(3)) / 2;
-const TRIANGLE_ELBOW_LEG_ANGLE = 0.05 / TRIANGLE_BOW_RADIUS;
+/** How far each elbow reaches along each side from the vertex. */
+const TRIANGLE_ELBOW_LEG_M = 0.05;
+const TRIANGLE_ELBOW_LEG_ANGLE = TRIANGLE_ELBOW_LEG_M / TRIANGLE_BOW_RADIUS;
+/** Segments around each side's arc; 0.56 m of tube at about 6 mm per segment. */
+const TRIANGLE_SIDE_SEGMENTS = 96;
 
 interface TriangleGeometries {
   side: TorusGeometry;
@@ -422,8 +443,8 @@ function getTriangleGeometries(): TriangleGeometries {
       side: new TorusGeometry(
         TRIANGLE_BOW_RADIUS,
         HOOP_TUBE_RADIUS,
-        20,
-        96,
+        HOOP_TUBE_SEGMENTS,
+        TRIANGLE_SIDE_SEGMENTS,
         TRIANGLE_ARC_ANGLE
       ),
       leg: new TorusGeometry(
@@ -439,8 +460,12 @@ function getTriangleGeometries(): TriangleGeometries {
   return triangleGeometries;
 }
 
+type TrianglePoint = readonly [number, number];
+
 // Both grips wind counter-clockwise, matching triangle-geometry.ts.
-function triangleVertices(grip: "corner" | "side"): [number, number][] {
+function triangleVertices(
+  grip: "corner" | "side"
+): readonly [TrianglePoint, TrianglePoint, TrianglePoint] {
   const half = TRIANGLE_SIDE_CHORD / 2;
   return grip === "side"
     ? [
@@ -463,8 +488,10 @@ function createTriangle(options: WorkerPropFactoryOptions): WorkerPropVisual {
   const body = new Group();
 
   const vertices = triangleVertices(grip);
-  const cx = (vertices[0]![0] + vertices[1]![0] + vertices[2]![0]) / 3;
-  const cy = (vertices[0]![1] + vertices[1]![1] + vertices[2]![1]) / 3;
+  const cx = (vertices[0][0] + vertices[1][0] + vertices[2][0]) / 3;
+  const cy = (vertices[0][1] + vertices[1][1] + vertices[2][1]) / 3;
+  // R - s from the chord midpoint toward the centroid, matching
+  // triangle-geometry.ts's triangleSideArcs.
   const inset = TRIANGLE_BOW_RADIUS - TRIANGLE_SAGITTA;
 
   for (let i = 0; i < 3; i += 1) {
@@ -477,6 +504,7 @@ function createTriangle(options: WorkerPropFactoryOptions): WorkerPropVisual {
     const len = Math.hypot(nx, ny);
     const ox = mx - (nx / len) * inset;
     const oy = my - (ny / len) * inset;
+    // Outward normal's angle, matching triangleSideArcs' startAngle.
     const start = Math.atan2(ny, nx) - TRIANGLE_ARC_ANGLE / 2;
 
     const side = mesh(geometry.side, materials.tube, layer);
@@ -484,6 +512,8 @@ function createTriangle(options: WorkerPropFactoryOptions): WorkerPropVisual {
     side.rotation.z = start;
     body.add(side);
 
+    // The first 50mm of tube from each end, matching Triangle3D.svelte's
+    // two leg meshes per side.
     for (const angle of [
       start,
       start + TRIANGLE_ARC_ANGLE - TRIANGLE_ELBOW_LEG_ANGLE,

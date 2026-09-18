@@ -41,6 +41,12 @@ const CANONICAL_PROP_SOURCE_HASHES = {
     "c943eabe2b40464e514f396ef7bcf97c0fa961587eee7320425edb360f95a4a5",
   "hoop-geometry.ts":
     "0b922d83644f0f28acae6e46341df7177e779e0c372c82c7c353a48a848c14e9",
+  "Hoop3D.svelte":
+    "595e3b940deae41c5310333bf419fe35d9d050cd88c34b68b16d20ebdef2b8f2",
+  "triangle-geometry.ts":
+    "36762a38aeed51d029989565b91089b7e627652a06955f80429ad5ea75ef3d2d",
+  "Triangle3D.svelte":
+    "157d34332346f1c239a7d950ff4de389d48859fe78a9b87a0a0d9e1e924e0a91",
   "torch-profile.ts":
     "d9337b9071279ec8f22e109e26e12fcb1892211b3ce590da50a03cac385a4bc3",
   "triad-frame.ts":

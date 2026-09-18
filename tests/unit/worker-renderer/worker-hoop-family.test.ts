@@ -4,6 +4,7 @@ import { createProceduralWorkerProp } from "$lib/shared/3d/worker-renderer/world
 import type { WorkerPropFactoryOptions } from "$lib/shared/3d/worker-renderer/worlds/props/worker-prop-factory-types";
 import {
   HOOP_FAMILY_REACH_M,
+  HOOP_HARDWARE_M,
   TRIANGLE_STATIONS_M,
 } from "$lib/shared/pictograph/prop/domain/hoop-family-geometry.generated";
 
@@ -53,9 +54,11 @@ describe("worker hoop family", () => {
     const box = bodyBounds(visual!);
     const size = box.getSize(new Vector3());
     // Ring top is 2 x centreline; the button sits one hardware radius above
-    // that and is 3 mm in radius.
+    // that and is button-diameter/2 in radius.
     expect(box.max.y).toBeCloseTo(
-      HOOP_FAMILY_REACH_M.minihoop + TRIANGLE_STATIONS_M.sleeveRadius + 0.003,
+      HOOP_FAMILY_REACH_M.minihoop +
+        TRIANGLE_STATIONS_M.tubeRadius * HOOP_HARDWARE_M.hardwareRatio +
+        HOOP_HARDWARE_M.button / 2,
       3
     );
     expect(size.x).toBeCloseTo(
