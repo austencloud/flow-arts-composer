@@ -259,33 +259,38 @@
         Only the hand’s path between positions changes. The positions and the
         spin stay the same.
       </p>
-      <div class="trace-choice">
-        <span class="control-label">Trace</span>
-        <SegmentedControl
-          options={[
-            { value: "hands", label: "Hands" },
-            { value: "tips", label: "Prop tips" },
-          ]}
-          value={explorer.trace}
-          ariaLabel="Trace point"
-          onchange={(value) => (explorer.trace = value)}
-        />
-      </div>
     </div>
 
     <div class="motion-column">
+      <!-- Trace sits with the other drawing switches. It also brings the two
+           columns to about the same height; the button then pins to the
+           bottom of the row so the chooser opens right under it. -->
       <div class="transport">
         <span class="stage-label">Animation</span>
-        <PanelButton
-          disabled={!ready || playerFailed}
-          onclick={() => (explorer.playing = !explorer.playing)}
-        >
-          {explorer.playing ? "Pause" : "Play"}
-        </PanelButton>
-        <PanelButton
-          ariaPressed={explorer.guides}
-          onclick={explorer.toggleGuides}>Path lines</PanelButton
-        >
+        <div class="transport-buttons">
+          <PanelButton
+            disabled={!ready || playerFailed}
+            onclick={() => (explorer.playing = !explorer.playing)}
+          >
+            {explorer.playing ? "Pause" : "Play"}
+          </PanelButton>
+          <PanelButton
+            ariaPressed={explorer.guides}
+            onclick={explorer.toggleGuides}>Path lines</PanelButton
+          >
+        </div>
+        <div class="trace-choice">
+          <span class="control-label">Trace</span>
+          <SegmentedControl
+            options={[
+              { value: "hands", label: "Hands" },
+              { value: "tips", label: "Prop tips" },
+            ]}
+            value={explorer.trace}
+            ariaLabel="Trace point"
+            onchange={(value) => (explorer.trace = value)}
+          />
+        </div>
       </div>
       <div class="motion-stage" aria-label="Selected path animation">
         <div class="animation">
@@ -399,9 +404,30 @@
               </div>
             {/if}
           </Crossfade>
+          <div class="picker-feedback" aria-live="polite">
+            {#if explorer.pickerStatus === "loading"}
+              <span>Building that sequence…</span>
+            {:else if explorer.pickerError}
+              <span role="alert">{explorer.pickerError}</span>
+              <PanelButton onclick={explorer.retryMatrixSelection}
+                >Try again</PanelButton
+              >
+            {:else}
+              <span
+                >{explorer.source === "sequence"
+                  ? "Switch the path while it plays."
+                  : explorer.soloHand
+                    ? "One hand on its own. Pick a cell to pair it again."
+                    : "Rows are left-hand shapes, columns are right-hand shapes. Pick a cell to play that pair, or a shape on the edge to play it alone."}</span
+              >
+            {/if}
+          </div>
         </div>
+        <!-- The stage is a square the height of the controls beside it (never
+             smaller than 20rem, never larger than the matrix's 34rem), so the
+             chooser packs into one band with nothing under the controls. -->
         <div class="source-stage">
-          <Crossfade key={explorer.source} duration={DURATION.normal}>
+          <Crossfade key={explorer.source} duration={DURATION.normal} fill>
             {#if explorer.source === "matrix"}
               <div class="matrix-stage" aria-busy={!matrixData && !matrixError}>
                 {#if matrixError}
@@ -461,25 +487,6 @@
             {/if}
           </Crossfade>
         </div>
-
-        <div class="picker-feedback" aria-live="polite">
-          {#if explorer.pickerStatus === "loading"}
-            <span>Building that sequence…</span>
-          {:else if explorer.pickerError}
-            <span role="alert">{explorer.pickerError}</span>
-            <PanelButton onclick={explorer.retryMatrixSelection}
-              >Try again</PanelButton
-            >
-          {:else}
-            <span
-              >{explorer.source === "sequence"
-                ? "Switch the path while it plays."
-                : explorer.soloHand
-                  ? "One hand on its own. Pick a cell to pair it again."
-                  : "Rows are left-hand shapes, columns are right-hand shapes. Pick a cell to play that pair, or a shape on the edge to play it alone."}</span
-            >
-          {/if}
-        </div>
       </section>
     {/if}
   </div>
@@ -526,6 +533,7 @@
   }
   .picker-heading,
   .transport,
+  .transport-buttons,
   .now-playing {
     display: flex;
     align-items: center;
@@ -538,18 +546,19 @@
   .browse-row {
     margin-block: var(--spacing-xs, 4px);
   }
-  /* The stage keeps the matrix's square at a size the eye can read; below
-     that the controls take the full width and the stage follows. */
-  .source-stage,
-  .picker-feedback {
+  /* Stacked, the stage is a square as wide as the matrix reads well; the
+     layers inside fill it, so the card takes the matrix's square and the
+     swap changes nothing below. */
+  .source-stage {
+    position: relative;
     width: 100%;
     max-width: 34rem;
+    aspect-ratio: 1;
     min-width: 0;
   }
-  /* The card takes the matrix's square, so the swap changes nothing below. */
   .card-stage {
     width: 100%;
-    aspect-ratio: 1;
+    height: 100%;
     min-width: 0;
   }
   .stage-label {
@@ -571,7 +580,7 @@
     font-size: var(--font-size-sm, 14px);
   }
   .matrix-stage {
-    aspect-ratio: 1;
+    height: 100%;
     min-width: 0;
     overflow: hidden;
     border: 1px solid var(--theme-stroke);
@@ -636,6 +645,7 @@
     color: var(--theme-text-muted);
   }
   .transport {
+    flex-wrap: wrap;
     margin-bottom: var(--spacing-sm, 8px);
   }
   .now-playing {
@@ -685,26 +695,38 @@
     display: flex;
     align-items: center;
     gap: var(--spacing-sm, 8px);
-    margin-top: var(--spacing-md, 16px);
+    margin-left: auto;
+    min-width: 0;
   }
+  /* A set width, not a flex basis: the row sizes itself from content, and
+     a basis is not content, so the control would shrink to the labels and
+     wrap the longer one. */
   .trace-choice :global(.segmented-control) {
-    flex: 1;
+    flex: 0 1 auto;
+    width: 13rem;
+    max-width: 100%;
   }
   @container (min-width: 640px) {
     .explorer-workspace {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     }
     .path-column {
       display: grid;
       grid-column: 1;
       grid-row: 1;
-      grid-template-rows: auto minmax(0, 1fr) auto auto;
+      grid-template-rows: auto minmax(0, 1fr) auto;
       align-self: stretch;
       order: 0;
     }
     .motion-column {
       grid-column: 2;
       grid-row: 1;
+      display: flex;
+      flex-direction: column;
+      align-self: stretch;
+    }
+    .motion-stage {
+      margin-bottom: auto;
     }
     .path-column :global(.path-shape-grid) {
       grid-template-rows: repeat(2, minmax(0, 1fr));
@@ -715,34 +737,29 @@
     }
   }
   /* Two columns in the chooser only once the controls column can hold the
-     timing chips unclipped. The columns take the workspace's ratio so the
-     stage sits under the canvas and the controls under the tiles. */
+     timing chips unclipped. The columns match the workspace so the stage
+     sits under the canvas and the controls under the tiles. The stage
+     stretches to the row the controls set and takes its width from that. */
   @container (min-width: 900px) {
     .chooser {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
-      grid-template-rows: auto minmax(0, 1fr) auto;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       column-gap: var(--spacing-lg, 24px);
     }
     .source-controls {
       grid-column: 1;
-      grid-row: 1;
+      align-self: start;
     }
     .source-stage {
       grid-column: 2;
-      grid-row: 1 / span 2;
+      align-self: stretch;
       justify-self: center;
-    }
-    .picker-feedback {
-      grid-column: 2;
-      grid-row: 3;
-      justify-self: center;
+      width: auto;
+      max-width: 100%;
+      min-height: 20rem;
+      max-height: 34rem;
     }
   }
   @container (min-width: 1100px) {
-    .explorer-workspace,
-    .chooser {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    }
     .motion-column {
       max-width: 640px;
     }
