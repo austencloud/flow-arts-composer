@@ -75,19 +75,21 @@
           {/if}
         </button>
       {/each}
-
-      <!-- Custom color swatch - opens native OS picker -->
-      <button
-        class="color-swatch custom-swatch"
-        style="--swatch-color: {selectedColor}"
-        onclick={openNativePicker}
-        disabled={saving}
-        aria-label="Pick a custom color"
-        title="Custom color"
-      >
-        <i class="fas fa-eyedropper" aria-hidden="true"></i>
-      </button>
     </div>
+
+    <!-- Custom color swatch - opens native OS picker -->
+    <button
+      type="button"
+      class="custom-color"
+      onclick={openNativePicker}
+      disabled={saving}
+      title="Custom color"
+    >
+      <span class="color-swatch custom-swatch" style="--swatch-color: {selectedColor}" aria-hidden="true">
+        <i class="fas fa-eyedropper"></i>
+      </span>
+      <span>Custom color</span>
+    </button>
 
     <!-- Hidden native color input - triggered by the custom swatch -->
     <input
@@ -211,7 +213,8 @@
     transform: scale(1.1);
   }
 
-  .color-swatch:focus-visible {
+  .color-swatch:focus-visible,
+  .custom-color:focus-visible {
     outline: 2px solid var(--theme-accent, #6366f1);
     outline-offset: 2px;
   }
@@ -240,6 +243,31 @@
 
   .custom-swatch i {
     font-size: var(--font-size-compact, 12px);
+  }
+
+  /* The custom-color control: swatch + label, sitting below the preset grid
+     instead of inside it so it never ends up alone on a short final row. */
+  .custom-color {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    padding: 4px 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .custom-color .custom-swatch {
+    flex: none;
+    width: 36px;
+  }
+
+  .custom-color:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   /* Hidden native input - only used to trigger the OS picker dialog */
