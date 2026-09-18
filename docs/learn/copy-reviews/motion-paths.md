@@ -351,3 +351,13 @@ Evidence: browser pass at 375×667, 820×1180, and 1440×900 (the three composit
 ## September 17: Hybrid lede loses its "X, not Y"
 
 "Any motion can take any path, so this is a default, not a law." carried the same flip Austen rejected in the heading an hour earlier. It now reads "Any motion can take any path; Hybrid only sets the default." Same fact, no flip. Pending Austen's eye with the rest of the section.
+
+## September 17: "What Hybrid does" cut
+
+Austen reviewed the rendered table on main and said it was not informative. He was right: every Arc tile was a circle, every Concave tile a star, both hands drew the same shape in the same colour, and nothing in a tile showed the spin the rule keys on. Nine drawings restated one sentence. The explorer below already shows the rule properly (a pro hand paired with an anti hand, switch to Hybrid, watch which hand changes), so the section is gone and the rule moved into the explorer's lede.
+
+Explorer lede now: "Pick a pair of shapes from the matrix, or one shape from its edge, and switch the path while it plays. Hybrid uses Arc for pro motions and Concave for anti motions. Any motion can take any path; Hybrid only sets the default."
+
+The explorer also starts on Hybrid instead of Arc. The default pair mixes pro with anti, so the first frame is the rule at work: one hand on Arc, the other on Concave, and PathShapePanel's own header reads "Pro → Arc · Anti → Concave".
+
+Ownership ledger: MotionPathHybridExamples.svelte deleted; PathShapePanel and the animation scope's setPathPolicy unchanged. Evidence: 1440×900, section absent, Hybrid tile pressed on load, lede as above, no overflow.
