@@ -13,6 +13,12 @@ export interface ShapeMatrixTipPair {
   right: TipPoint;
 }
 
+/** Each hand's radial reach to its tracked source, in prop-dimension units. */
+export interface ShapeMatrixReachPair {
+  left: number;
+  right: number;
+}
+
 /** One prop names both hands; a pair is taken as given. */
 export function asPropPair(
   props: PropType | ShapeMatrixPropPair

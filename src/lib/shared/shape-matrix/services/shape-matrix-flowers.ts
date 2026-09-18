@@ -14,6 +14,7 @@ import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import {
   asPropPair,
   type ShapeMatrixPropPair,
+  type ShapeMatrixReachPair,
   type ShapeMatrixTipPair,
 } from "../domain/prop-pair";
 import { resolveRotationStyleArchetypes } from "./rotation-style-archetypes";
@@ -37,7 +38,7 @@ export interface ShapeMatrixData {
   /** Canonical tracked source per hand, used by paths, parity, and live trails. */
   tips: ShapeMatrixTipPair;
   /** Per-hand radial reach of that tracked source. */
-  reach: { left: number; right: number };
+  reach: ShapeMatrixReachPair;
   /**
    * The larger reach. Every painter, the Theory pane and the Theory detail
    * scale by it, so cells, headers and the diagonal share one scale.

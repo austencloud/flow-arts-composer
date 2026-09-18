@@ -52,6 +52,7 @@
 - Modify: `src/lib/shared/shape-matrix/components/ShapeMatrixDrill.svelte:434-439`
 - Modify: `src/lib/features/lab/vtg-lab/components/ShapeMatrixDrillModal.svelte:34-38`
 - Modify: `src/routes/(public)/guide/motion-paths/_components/MotionPathExplorer.svelte:215-224`
+- Modify: `src/lib/features/fuse/components/FuseVtgPathPicker.svelte:153`
 - Modify: `tests/unit/shape-matrix/shape-matrix-mixed-turn-realizations.test.ts:36-41`
 - Modify: `tests/unit/learn/motion-path-entry-step.test.ts:219-224`
 - Modify: `src/lib/shared/shape-matrix/services/__tests__/solve-prop-relationship-phase.test.ts:108-110,321-325`

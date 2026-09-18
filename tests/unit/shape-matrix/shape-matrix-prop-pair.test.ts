@@ -73,7 +73,7 @@ describe("shape matrix prop pair", () => {
   it("finds exact realizations for a mixed pair through per-hand tips", async () => {
     const data = await loadShapeMatrix({
       left: PropType.STAFF,
-      right: PropType.FAN,
+      right: PropType.BIGSTAFF,
     });
     const find = (key: string) => data.axis.find((f) => flowerKey(f) === key);
     const left = find("pro-0-in-diamond");
@@ -91,5 +91,12 @@ describe("shape matrix prop pair", () => {
       "SS"
     );
     expect(candidates.length).toBeGreaterThanOrEqual(1);
+    // Feeding one hand's tip to both proves the search reads each hand's own source.
+    const collapsed = await buildModeRealizationCandidates(
+      { left, right },
+      { ...overlay, tips: { left: data.tips.left, right: data.tips.left } },
+      "SS"
+    );
+    expect(collapsed).toHaveLength(0);
   }, 60_000);
 });
