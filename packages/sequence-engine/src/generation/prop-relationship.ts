@@ -196,8 +196,6 @@ export function derivePartnerOrientation(
   // bearing = center + pi - k * pi/4, solved for k.
   const raw = normalizeAngle(leftCenter + PI - leftBearing) / (PI / 4);
   const k = Math.round(raw);
-  // Tolerance for the derived bearing landing on an integer step of the
-  // radial cycle; anything further off means no radial orientation fits.
   if (Math.abs(raw - k) > INTEGER_STEP_EPSILON) return undefined;
   return RADIAL_ORIENTATION_CYCLE[k % 8];
 }

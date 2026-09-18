@@ -39,12 +39,16 @@ const missStep = {
   },
 };
 
-function fakeResult(sequence: unknown[], marker: number): BuildResult {
+function fakeResult(
+  sequence: unknown[],
+  marker: number,
+  satisfied = true
+): BuildResult {
   return {
     sequence: sequence as BuildResult["sequence"],
     startPlacement: sequence[0] as BuildResult["startPlacement"],
     bridgeStepIndices: [],
-    constraintReport: { score: 1, satisfied: true, details: [] },
+    constraintReport: { score: 1, satisfied, details: [] },
     metrics: { statesExplored: marker, beamPrunings: 0 },
     turnAllocation: { left: [], right: [] },
   };
@@ -114,6 +118,40 @@ describe("build() retry around a prop relationship", () => {
 
     expect(spy).toHaveBeenCalledTimes(2);
     expect(result.metrics.statesExplored).toBe(1);
+  });
+
+  it("returns the first attempt when only its raw report is satisfied, even with a lower prop score", () => {
+    const builder = new SequenceBuilder({} as IVariationProvider);
+    const spy = vi
+      .spyOn(builder as never, "buildOnce")
+      // Prop score 0.5 (1 hold, 1 miss), raw report satisfied.
+      .mockReturnValueOnce(fakeResult([start, holdStep, missStep], 1, true))
+      // Prop score 1.0 (both hold), raw report unsatisfied: another hard
+      // constraint failed on this attempt.
+      .mockReturnValueOnce(fakeResult([start, holdStep, holdStep], 2, false));
+
+    const result = builder.build(buildOptions());
+
+    expect(spy).toHaveBeenCalledTimes(2);
+    expect(result.metrics.statesExplored).toBe(1);
+  });
+
+  it("returns the second attempt when only its raw report is satisfied, even with a lower prop score", () => {
+    const builder = new SequenceBuilder({} as IVariationProvider);
+    const spy = vi
+      .spyOn(builder as never, "buildOnce")
+      // Prop score 0.5 (1 hold, 1 miss), raw report unsatisfied: another
+      // hard constraint failed on this attempt.
+      .mockReturnValueOnce(fakeResult([start, holdStep, missStep], 1, false))
+      // Prop score 0.25 (1 hold, 3 misses), raw report satisfied.
+      .mockReturnValueOnce(
+        fakeResult([start, holdStep, missStep, missStep, missStep], 2, true)
+      );
+
+    const result = builder.build(buildOptions());
+
+    expect(spy).toHaveBeenCalledTimes(2);
+    expect(result.metrics.statesExplored).toBe(2);
   });
 
   it("skips the retry when a timing and both start orientations are pinned", () => {

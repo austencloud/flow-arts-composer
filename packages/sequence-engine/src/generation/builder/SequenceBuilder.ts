@@ -284,7 +284,7 @@ function resolveTimedStartOrientations(
   return { leftStartOrientation: left, rightStartOrientation: derived };
 }
 
-// Both callers only ever pass a result that has already gone through
+// Every caller only ever passes a result that has already gone through
 // withPropRelationshipReport, which always adds this detail, so the `?? 1`
 // fallback below is unreachable; it exists only to satisfy the return type.
 function propRelationshipScore(result: BuildResult): number {
@@ -569,10 +569,8 @@ export class SequenceBuilder {
     const propRelationship = options.constraintOptions?.propRelationship;
     if (!propRelationship) return this.buildOnce(options);
 
-    const first = withPropRelationshipReport(
-      this.buildOnce(options),
-      propRelationship
-    );
+    const firstRaw = this.buildOnce(options);
+    const first = withPropRelationshipReport(firstRaw, propRelationship);
     if (propRelationshipScore(first) === 1) return first;
 
     // A timing pins the phase; with both start orientations also pinned by
@@ -586,24 +584,29 @@ export class SequenceBuilder {
       return first;
     }
 
-    let second: BuildResult;
+    let secondRaw: BuildResult;
     try {
-      second = withPropRelationshipReport(
-        this.buildOnce(options),
-        propRelationship
-      );
+      secondRaw = this.buildOnce(options);
     } catch {
       // buildOnce is stateless and its RNG is unseeded Math.random, and the
       // first call already succeeded with identical options, so a second
       // throw here can only be a search dead end.
       return first;
     }
+    const second = withPropRelationshipReport(secondRaw, propRelationship);
+
+    // Compare the raw pipeline verdict, from before withPropRelationshipReport
+    // folds the prop score into `satisfied`: once folded, both sides read
+    // false whenever their prop score is below 1, which is guaranteed here,
+    // so comparing the folded flag can never tell the two apart. The raw
+    // flag still reflects every other hard constraint, so a result whose
+    // other hard constraints failed on their own must not beat one whose
+    // other hard constraints held, even with a better raw prop score.
     if (
-      second.constraintReport.satisfied !== first.constraintReport.satisfied
+      secondRaw.constraintReport.satisfied !==
+      firstRaw.constraintReport.satisfied
     ) {
-      // A result whose other hard constraints failed must not beat a clean
-      // one, even with a better raw prop score.
-      return second.constraintReport.satisfied ? second : first;
+      return secondRaw.constraintReport.satisfied ? second : first;
     }
     return propRelationshipScore(second) > propRelationshipScore(first)
       ? second

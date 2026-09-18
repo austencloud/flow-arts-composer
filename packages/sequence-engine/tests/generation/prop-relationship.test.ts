@@ -98,6 +98,9 @@ describe("propPhase and timingFromPhase", () => {
     // from zero as (3*PI)/4 above: an exact band edge, so quarter as well.
     expect(timingFromPhase((5 * PI) / 4)).toBe("quarter");
     expect(timingFromPhase((-3 * PI) / 4)).toBe("quarter");
+    // 7*PI/4 folds to PI/4, the tog/quarter band edge from above: also
+    // exact, so quarter as well.
+    expect(timingFromPhase((7 * PI) / 4)).toBe("quarter");
   });
 });
 
