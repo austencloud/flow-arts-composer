@@ -45,6 +45,7 @@ export default defineConfig({
       "firebase/storage",
       "posthog-js",
       "qr-code-styling",
+      "svelte-awesome-color-picker",
       "zod",
     ],
   },

@@ -1,5 +1,8 @@
 <script lang="ts">
-  import { COLOR_PRESETS } from "../color-presets";
+  import type { Snippet } from "svelte";
+  import ColorPicker from "svelte-awesome-color-picker";
+  import { COLOR_PRESETS, COLOR_PRESET_COLUMNS } from "../color-presets";
+  import BareWrapper from "./color-picker/BareWrapper.svelte";
   import type { HandSide } from "@tka/tka-types";
 
   interface Props {
@@ -8,7 +11,11 @@
     leftLabel?: string;
     rightLabel?: string;
     groupLabel?: string;
+    /** Live render of the pair; callers whose art is already on screen omit it. */
+    preview?: Snippet<[{ left: string; right: string }]>;
     onchange: (hand: HandSide, value: string) => void;
+    /** One call that swaps both hands; the button only appears when provided. */
+    onswap?: () => void;
   }
 
   let {
@@ -17,36 +24,76 @@
     leftLabel = "Left prop",
     rightLabel = "Right prop",
     groupLabel = "Prop colors",
+    preview,
     onchange,
+    onswap,
   }: Props = $props();
 
   let editing = $state<HandSide | null>(null);
   const editorId = $props.id();
 
-  let leftInput = $state();
-  let rightInput = $state();
+  let leftInput = $state<HTMLInputElement>();
+  let rightInput = $state<HTMLInputElement>();
 
   const entries = $derived([
     { hand: "left" as const, label: leftLabel, value: left, input: leftInput },
     { hand: "right" as const, label: rightLabel, value: right, input: rightInput },
   ]);
+
+  type EyeDropperCtor = new () => { open(): Promise<{ sRGBHex: string }> };
+  // Chromium only. The editor never renders on the server, so a plain check
+  // at init is safe; elsewhere the native input stays as the fallback.
+  const eyeDropper =
+    typeof window === "undefined"
+      ? undefined
+      : (window as Window & { EyeDropper?: EyeDropperCtor }).EyeDropper;
+
+  async function pickFromScreen(hand: HandSide) {
+    if (!eyeDropper) return;
+    try {
+      const { sRGBHex } = await new eyeDropper().open();
+      onchange(hand, sRGBHex.toLowerCase());
+    } catch {
+      // Escape aborts the pick; nothing to apply.
+    }
+  }
+
+  function applyPicked(hand: HandSide, current: string, hex: string | null) {
+    if (!hex) return;
+    const next = hex.slice(0, 7).toLowerCase();
+    if (next !== current.toLowerCase()) onchange(hand, next);
+  }
 </script>
 
 <div class="color-pair" role="group" aria-label={groupLabel}>
+  {#if preview}
+    <div class="pair-preview-art">{@render preview({ left, right })}</div>
+  {/if}
   <span
     class="pair-preview"
     style:background={`linear-gradient(90deg, ${left}, ${right})`}
     aria-hidden="true"
   ></span>
-  <div class="pair-controls">
-    {#each entries as entry (entry.hand)}
+  <div class="pair-controls" class:has-swap={!!onswap}>
+    {#each entries as entry, index (entry.hand)}
+      {#if index === 1 && onswap}
+        <button
+          type="button"
+          class="swap"
+          aria-label="Swap left and right colors"
+          title="Swap"
+          onclick={onswap}
+        >
+          <i class="fas fa-right-left" aria-hidden="true"></i>
+        </button>
+      {/if}
       <button
         type="button"
         class="color-control"
         style:--color={entry.value}
         aria-label={`Edit ${entry.label}, ${entry.value.toUpperCase()}`}
         aria-expanded={editing === entry.hand}
-        aria-controls={editorId}
+        aria-controls={editing === entry.hand ? editorId : undefined}
         onclick={() => (editing = editing === entry.hand ? null : entry.hand)}
       >
         <span class="color-swatch" aria-hidden="true">
@@ -82,40 +129,80 @@
   {#if editing}
     {@const entry = entries.find((item) => item.hand === editing)!}
     <div class="color-editor" id={editorId} role="group" aria-label={`${entry.label} color`}>
-      <div class="preset-grid" role="group" aria-label={`${entry.label} presets`}>
+      <div
+        class="preset-grid"
+        role="group"
+        aria-label={`${entry.label} presets`}
+        style:--columns={COLOR_PRESET_COLUMNS}
+      >
         {#each COLOR_PRESETS as preset (preset.hex)}
+          {@const pressed = entry.value.toLowerCase() === preset.hex}
           <button
             type="button"
             class="preset"
             style:--preset={preset.hex}
             aria-label={`${entry.label}: ${preset.name}`}
-            aria-pressed={entry.value.toLowerCase() === preset.hex}
+            aria-pressed={pressed}
             title={preset.name}
             onclick={() => onchange(entry.hand, preset.hex)}
-          ><span aria-hidden="true">{entry.value.toLowerCase() === preset.hex ? "✓" : ""}</span></button>
+          >
+            <span aria-hidden="true">{pressed ? "✓" : ""}</span>
+          </button>
         {/each}
       </div>
-      <div class="custom-row">
-        <label class="hex-field">
-          <span>Hex color</span>
-          <input
-            aria-label={`${entry.label} hex color`}
-            type="text"
-            value={entry.value.toUpperCase()}
-            maxlength="7"
-            pattern={"#[0-9a-fA-F]{6}"}
-            spellcheck="false"
-            autocomplete="off"
-            oninput={(event) => {
-              const value = event.currentTarget.value;
-              if (/^#[0-9a-f]{6}$/i.test(value)) onchange(entry.hand, value.toLowerCase());
-            }}
-            onblur={(event) => { event.currentTarget.value = entry.value.toUpperCase(); }}
-          />
-        </label>
-        <button class="custom-button" type="button" onclick={() => entry.input?.click()}>
-          More colors
-        </button>
+      <div class="fine-tune">
+        <ColorPicker
+          hex={entry.value}
+          isDialog={false}
+          isAlpha={false}
+          isTextInput={false}
+          sliderDirection="horizontal"
+          components={{ wrapper: BareWrapper }}
+          texts={{
+            label: {
+              h: `${entry.label} hue`,
+              s: `${entry.label} saturation`,
+              v: `${entry.label} brightness`,
+            },
+          }}
+          onInput={(color) => applyPicked(entry.hand, entry.value, color.hex)}
+        />
+        <div class="custom-row">
+          <label class="hex-field">
+            <span>Hex color</span>
+            <input
+              aria-label={`${entry.label} hex color`}
+              type="text"
+              value={entry.value.toUpperCase()}
+              maxlength="7"
+              pattern={"#[0-9a-fA-F]{6}"}
+              spellcheck="false"
+              autocomplete="off"
+              oninput={(event) => {
+                const value = event.currentTarget.value;
+                if (/^#[0-9a-f]{6}$/i.test(value)) onchange(entry.hand, value.toLowerCase());
+              }}
+              onblur={(event) => {
+                event.currentTarget.value = entry.value.toUpperCase();
+              }}
+            />
+          </label>
+          {#if eyeDropper}
+            <button
+              class="custom-button"
+              type="button"
+              aria-label="Pick a color from the screen"
+              title="Pick from screen"
+              onclick={() => pickFromScreen(entry.hand)}
+            >
+              <i class="fas fa-eye-dropper" aria-hidden="true"></i>
+            </button>
+          {:else}
+            <button class="custom-button" type="button" onclick={() => entry.input?.click()}>
+              More colors
+            </button>
+          {/if}
+        </div>
       </div>
     </div>
   {/if}
@@ -128,6 +215,12 @@
     gap: 10px;
     min-width: 0;
     container: color-pair / inline-size;
+  }
+
+  .pair-preview-art {
+    display: flex;
+    justify-content: center;
+    min-width: 0;
   }
 
   .pair-preview {
@@ -145,6 +238,28 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
+  }
+
+  .pair-controls.has-swap {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+
+  .swap {
+    align-self: center;
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
+    border-radius: 999px;
+    background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
+    color: var(--theme-text, #fff);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .swap:hover {
+    border-color: var(--theme-text-dim, rgba(255, 255, 255, 0.4));
   }
 
   .color-control {
@@ -179,9 +294,8 @@
     box-shadow: 0 0 0 1px color-mix(in srgb, var(--color) 40%, transparent);
   }
 
-  .color-control:focus-visible {
-    outline: 2px solid color-mix(in srgb, var(--color) 70%, white);
-    outline-offset: 2px;
+  .color-control[aria-expanded="true"] {
+    border-color: color-mix(in srgb, var(--color) 70%, white);
   }
 
   .color-swatch {
@@ -225,25 +339,52 @@
     letter-spacing: 0.02em;
   }
 
+  /* Editor: swatch matrix + fine tune. Stacks until there is room for a
+     12-column matrix (33rem) beside the 16rem fine-tune column. */
   .color-editor {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 12px;
     padding: 12px;
     border: 1px solid var(--theme-stroke);
     border-radius: 12px;
     background: var(--theme-card-bg);
+    container: color-editor / inline-size;
   }
 
+  @container color-editor (min-width: 52rem) {
+    .color-editor {
+      grid-template-columns: minmax(0, 1fr) 16rem;
+    }
+  }
+
+  /* The matrix picks its column count from its own width so no row is ever
+     short: 48 swatches divide evenly by 12, 8 and 6. */
   .preset-grid {
+    --cols: 6;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(44px, 1fr));
+    grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
     gap: 4px;
+    align-content: start;
+    container: preset-grid / inline-size;
+  }
+
+  @container preset-grid (min-width: 22rem) {
+    .preset-grid {
+      --cols: 8;
+    }
+  }
+
+  @container preset-grid (min-width: 33rem) {
+    .preset-grid {
+      --cols: var(--columns, 12);
+    }
   }
 
   .preset {
-    min-width: 44px;
-    min-height: 44px;
-    padding: 5px;
+    min-width: 0;
+    aspect-ratio: 1;
+    padding: 3px;
     border: 2px solid transparent;
     border-radius: 10px;
     background: transparent;
@@ -253,27 +394,78 @@
   .preset span {
     display: grid;
     place-items: center;
-    min-height: 30px;
+    width: 100%;
+    height: 100%;
     border-radius: 6px;
     background: var(--preset);
     color: white;
-    text-shadow: 0 1px 3px black, 0 0 3px black;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .35);
+    font-size: 14px;
+    text-shadow:
+      0 1px 3px black,
+      0 0 3px black;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
   }
 
-  .preset[aria-pressed="true"] { border-color: var(--theme-text); }
-  .preset:focus-visible, .custom-button:focus-visible, .hex-field input:focus-visible {
+  .preset[aria-pressed="true"] {
+    border-color: var(--theme-text);
+  }
+
+  .preset:focus-visible,
+  .swap:focus-visible,
+  .custom-button:focus-visible,
+  .hex-field input:focus-visible,
+  .color-control:focus-visible {
     outline: 2px solid var(--theme-text);
     outline-offset: 2px;
   }
 
-  .custom-row { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; }
-  .hex-field { display: grid; gap: 4px; flex: 1; min-width: 100px; }
-  .hex-field span { font-size: 14px; color: var(--theme-text); }
-  .hex-field input, .custom-button {
+  .fine-tune {
+    display: grid;
+    gap: 10px;
+    align-content: start;
+    min-width: 0;
+    container: fine-tune / inline-size;
+    /* svelte-awesome-color-picker sizing and theme hooks; cqi resolves to a
+       length so the library's px arithmetic keeps working. */
+    --picker-width: 100cqi;
+    --picker-height: 160px;
+    --picker-radius: 10px;
+    --picker-indicator-size: 14px;
+    --slider-width: 14px;
+    --focus-color: var(--theme-text);
+    --cp-border-color: var(--theme-stroke);
+    --cp-text-color: var(--theme-text);
+  }
+
+  .fine-tune :global(.color-picker) {
+    display: block;
+    width: 100%;
+  }
+
+  .custom-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 8px;
+  }
+
+  .hex-field {
+    display: grid;
+    gap: 4px;
+    flex: 1;
+    min-width: 100px;
+  }
+
+  .hex-field span {
+    font-size: 14px;
+    color: var(--theme-text);
+  }
+
+  .hex-field input,
+  .custom-button {
     box-sizing: border-box;
     min-height: 44px;
-    min-width: 0;
+    min-width: 44px;
     width: 100%;
     border: 1px solid var(--theme-stroke);
     border-radius: 8px;
@@ -282,9 +474,15 @@
     background: var(--theme-panel-bg);
     font-size: 14px;
   }
-  .hex-field input { font-family: ui-monospace, monospace; }
-  .custom-button { width: auto; cursor: pointer; }
-  @media (prefers-reduced-motion: reduce) { .color-control { transition: none; } }
+
+  .hex-field input {
+    font-family: ui-monospace, monospace;
+  }
+
+  .custom-button {
+    width: auto;
+    cursor: pointer;
+  }
 
   .native-color {
     position: absolute;
@@ -296,9 +494,20 @@
     pointer-events: none;
   }
 
-  @container (max-width: 19rem) {
-    .pair-controls {
+  @media (prefers-reduced-motion: reduce) {
+    .color-control {
+      transition: none;
+    }
+  }
+
+  @container color-pair (max-width: 19rem) {
+    .pair-controls,
+    .pair-controls.has-swap {
       grid-template-columns: 1fr;
+    }
+
+    .swap {
+      justify-self: center;
     }
   }
 </style>
