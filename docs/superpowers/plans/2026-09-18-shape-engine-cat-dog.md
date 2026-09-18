@@ -163,7 +163,7 @@ describe("shape matrix prop pair", () => {
 
 - [ ] **Step 2: Run it to confirm it fails**
 
-Run: `npx vitest run tests/unit/shape-matrix/shape-matrix-prop-pair.test.ts`
+Run: `npx vitest run --config tests/config/vitest.config.ts tests/unit/shape-matrix/shape-matrix-prop-pair.test.ts`
 Expected: FAIL (type or runtime: `props` undefined, `tips` undefined).
 
 - [ ] **Step 3: Create the domain types**
@@ -477,7 +477,7 @@ and add `import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop
 
 - [ ] **Step 10: Run the suites and tsc**
 
-Run: `npx vitest run tests/unit/shape-matrix tests/unit/learn/motion-path-entry-step.test.ts src/lib/shared/shape-matrix/services/__tests__ tests/unit/shape-matrix-elemental-drill.test.ts tests/unit/shape-matrix-engine-contract.test.ts`
+Run: `npx vitest run --config tests/config/vitest.config.ts tests/unit/shape-matrix tests/unit/learn/motion-path-entry-step.test.ts src/lib/shared/shape-matrix/services/__tests__ tests/unit/shape-matrix-elemental-drill.test.ts tests/unit/shape-matrix-engine-contract.test.ts`
 Expected: all pass, including the three new tests.
 
 Run: `npx tsc --noEmit 2>&1 | grep -v "node_modules/@austencloud/scene-3d\|packages/camera-3d" | grep "error TS"`
@@ -846,7 +846,7 @@ it("writes rp only when the hands differ", () => {
 
 - [ ] **Step 3: Run both files to confirm they fail**
 
-Run: `npx vitest run tests/unit/shape-matrix/shape-matrix-app-state.test.ts tests/unit/shape-matrix/shape-matrix-url.test.ts`
+Run: `npx vitest run --config tests/config/vitest.config.ts tests/unit/shape-matrix/shape-matrix-app-state.test.ts tests/unit/shape-matrix/shape-matrix-url.test.ts`
 Expected: FAIL (`catDog`, `leftPropType`, `rp` missing).
 
 - [ ] **Step 4: Rework the app state**
@@ -1100,7 +1100,7 @@ In `src/routes/(public)/shape-engine/+page.svelte` add `"rp",` after `"prop",` i
 
 - [ ] **Step 6: Run the tests and tsc**
 
-Run: `npx vitest run tests/unit/shape-matrix/shape-matrix-app-state.test.ts tests/unit/shape-matrix/shape-matrix-url.test.ts tests/unit/create/shape-engine-persistence.test.ts`
+Run: `npx vitest run --config tests/config/vitest.config.ts tests/unit/shape-matrix/shape-matrix-app-state.test.ts tests/unit/shape-matrix/shape-matrix-url.test.ts tests/unit/create/shape-engine-persistence.test.ts`
 Expected: PASS.
 
 Run: `npx tsc --noEmit 2>&1 | grep -v "node_modules/@austencloud/scene-3d\|packages/camera-3d" | grep "error TS"`
@@ -1233,7 +1233,7 @@ data = await loadShapeMatrix({
 
 Run: `npx prettier --write src/lib/shared/shape-matrix/components/ShapeMatrixDrill.svelte src/lib/shared/shape-matrix/app/components/ShapeMatrixDetailPane.svelte src/lib/features/create/tunnel/components/ShapeMatrixTunnelSourcePicker.svelte && npx eslint src/lib/shared/shape-matrix/components/ShapeMatrixDrill.svelte src/lib/shared/shape-matrix/app/components/ShapeMatrixDetailPane.svelte src/lib/features/create/tunnel/components/ShapeMatrixTunnelSourcePicker.svelte`
 
-Run: `npx vitest run tests/unit/shape-matrix-elemental-drill.test.ts tests/unit/shape-matrix`
+Run: `npx vitest run --config tests/config/vitest.config.ts tests/unit/shape-matrix-elemental-drill.test.ts tests/unit/shape-matrix`
 Expected: PASS.
 
 ```bash
@@ -1558,7 +1558,7 @@ describe("createShapeEnginePropSource", () => {
 });
 ```
 
-Run: `npx vitest run tests/unit/create/shape-engine-prop-source.test.ts`
+Run: `npx vitest run --config tests/config/vitest.config.ts tests/unit/create/shape-engine-prop-source.test.ts`
 Expected: FAIL (module not found).
 
 - [ ] **Step 2: Add the source contract to `ShapeMatrixApp`**
@@ -1699,7 +1699,7 @@ and the markup: `<ShapeMatrixApp {persistence} {propSource} variant="embedded" /
 
 - [ ] **Step 5: Tests, check, commit**
 
-Run: `npx vitest run tests/unit/create tests/unit/shape-matrix tests/unit/navigation/shape-engine-create-tab.test.ts`
+Run: `npx vitest run --config tests/config/vitest.config.ts tests/unit/create tests/unit/shape-matrix tests/unit/navigation/shape-engine-create-tab.test.ts`
 Expected: PASS.
 
 Run: `npx prettier --write src/lib/shared/shape-matrix/app/ShapeMatrixApp.svelte src/lib/features/create/shape-engine/shape-engine-prop-source.ts src/lib/features/create/shape-engine/ShapeEngineTab.svelte tests/unit/create/shape-engine-prop-source.test.ts && npx eslint src/lib/shared/shape-matrix/app/ShapeMatrixApp.svelte src/lib/features/create/shape-engine tests/unit/create/shape-engine-prop-source.test.ts && npm run check 2>&1 | tail -5`
@@ -1719,7 +1719,7 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 - [ ] **Step 1: Full gates in the worktree**
 
 ```bash
-npx vitest run tests/unit/shape-matrix tests/unit/create tests/unit/learn/motion-path-entry-step.test.ts tests/unit/navigation src/lib/shared/shape-matrix/services/__tests__ tests/unit/shape-matrix-elemental-drill.test.ts tests/unit/shape-matrix-engine-contract.test.ts tests/unit/shape-matrix-hero-pool.test.ts tests/unit/shape-matrix-hero-pool-contract.test.ts tests/unit/vtg-shape-ratios.test.ts
+npx vitest run --config tests/config/vitest.config.ts tests/unit/shape-matrix tests/unit/create tests/unit/learn/motion-path-entry-step.test.ts tests/unit/navigation src/lib/shared/shape-matrix/services/__tests__ tests/unit/shape-matrix-elemental-drill.test.ts tests/unit/shape-matrix-engine-contract.test.ts tests/unit/shape-matrix-hero-pool.test.ts tests/unit/shape-matrix-hero-pool-contract.test.ts tests/unit/vtg-shape-ratios.test.ts
 npm run check
 npx tsc --noEmit 2>&1 | grep -v "node_modules/@austencloud/scene-3d\|packages/camera-3d" | grep "error TS"
 ```
@@ -1740,7 +1740,7 @@ Stop the vite task in the same turn.
 - [ ] **Step 3: Integrate**
 
 ```bash
-cd /e/worktrees/tka-platform/shape-engine-cat-dog && git merge main -m "Merge main into codex/shape-engine-cat-dog" && npx vitest run tests/unit/shape-matrix tests/unit/create
+cd /e/worktrees/tka-platform/shape-engine-cat-dog && git merge main -m "Merge main into codex/shape-engine-cat-dog" && npx vitest run --config tests/config/vitest.config.ts tests/unit/shape-matrix tests/unit/create
 cd /e/tka-platform && MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL="*" npm run wt:finish -- codex/shape-engine-cat-dog --route /create/shape-engine
 ```
 
