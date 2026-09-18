@@ -291,13 +291,14 @@ Complete enough to hand to an executor, and nothing supersedes them.
 | [`2026-08-21-composer-presentation-mockup-handoff.md`](./2026-08-21-composer-presentation-mockup-handoff.md) | handoff | **SHIPPED** | 2c432e6d6e + 2ee83956aa | Successor: specs/shipped/2026-08-27-composer-presentation-promotion-plan.md |
 | [`2026-08-23-composer-presentation-fable-handoff.md`](./2026-08-23-composer-presentation-fable-handoff.md) | handoff | **SHIPPED** | 8ec8a09c54 promote reviewed presentation |  |
 
-### creators  <sub>3 shipped</sub>
+### creators  <sub>3 shipped, 1 in-flight</sub>
 
 | File | Type | Status | Evidence | Next action |
 | --- | --- | --- | --- | --- |
 | [`2026-08-23-creators-recent-work-presentation-intent-handoff.md`](./2026-08-23-creators-recent-work-presentation-intent-handoff.md) | handoff | **SHIPPED** | d1f7f29dc6 contract + 248c262fe1 previews render recorded intent |  |
 | [`2026-08-23-public-preview-presentation-intent-design.md`](./2026-08-23-public-preview-presentation-intent-design.md) | design | **SHIPPED** | 248c262fe1 + cfbd01e91a opted-in hosts only |  |
 | [`2026-08-25-community-map-invitation-design.md`](./2026-08-25-community-map-invitation-design.md) | design | **SHIPPED** | 9e748f2aad band + 8da56c8d52 full-page map opt-in |  |
+| [`2026-09-17-creator-presentation-intent-design.md`](./2026-09-17-creator-presentation-intent-design.md) | design | **IN-FLIGHT** | branch codex/creator-presentation-intent; extends the 08-23 contract with colors, trails, effects | Write and execute the implementation plan |
 
 ### film director  <sub>3 shipped</sub>
 
