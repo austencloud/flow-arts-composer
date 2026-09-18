@@ -17,6 +17,7 @@ import {
   PROP_MODEL_SPRITES,
   type PropModelSpriteEntry,
 } from "$lib/shared/pictograph/prop/domain/prop-model-sprites.generated";
+import { HOOP_FAMILY_TIP_POINTS } from "$lib/shared/pictograph/prop/domain/hoop-family-geometry.generated";
 
 /**
  * A single tip attachment point on a prop. Position only - no effect-specific
@@ -192,26 +193,27 @@ const BIGTRIAD_TIP_POINTS: PropTipConfig = {
 // 0 / 72 / 144 degrees on that centreline — dead centre of the tube, evenly
 // spaced around the hoop. The old values straddled the tube and put one point
 // behind the hand.
+// scripts/build-hoop-family-svgs.mjs reproduces these same measured values;
+// hoop-family-geometry.generated.ts is the source of truth now.
 const MINIHOOP_TIP_POINTS: PropTipConfig = {
-  points: [
-    { dx: 10.37, dy: -35.62 },
-    { dx: 78.13, dy: -57.63 },
-    { dx: 120, dy: 0 },
-    { dx: 78.13, dy: 57.63 },
-    { dx: 10.37, dy: 35.62 },
-  ],
+  points: [...HOOP_FAMILY_TIP_POINTS.minihoop],
 };
 
 // The same five ring angles at the big-hoop scale: measured centreline at
 // dx 149.8 with radius 142.4 and a 16-unit tube.
+// scripts/build-hoop-family-svgs.mjs reproduces these same measured values;
+// hoop-family-geometry.generated.ts is the source of truth now.
 const BIGHOOP_TIP_POINTS: PropTipConfig = {
-  points: [
-    { dx: 34.6, dy: -83.7 },
-    { dx: 193.8, dy: -135.43 },
-    { dx: 292.2, dy: 0 },
-    { dx: 193.8, dy: 135.43 },
-    { dx: 34.6, dy: 83.7 },
-  ],
+  points: [...HOOP_FAMILY_TIP_POINTS.bighoop],
+};
+
+// The triangle's five tips per grip: the far point on the axis, then the two
+// vertices and two bow points that frame it (scripts/hoop-family-math.mjs).
+const TRIANGLE_TIP_POINTS: PropTipConfig = {
+  points: [...HOOP_FAMILY_TIP_POINTS.triangle],
+};
+const TRIANGLE_SIDE_TIP_POINTS: PropTipConfig = {
+  points: [...HOOP_FAMILY_TIP_POINTS.triangle_side],
 };
 
 /**
@@ -550,6 +552,10 @@ function fanBuildTables(
 export const PROP_RENDER_KEY_TIP_POINTS: Record<string, PropTipConfig> = {
   ...fanBuildTables("fan", 1),
   ...fanBuildTables("bigfan", BIGFAN_BUILD_SCALE),
+  // The side grip by glyph key and by sprite key. The model-sprite scaler only
+  // handles axial tables, so the sprite key is registered outright.
+  triangle__side: TRIANGLE_SIDE_TIP_POINTS,
+  triangle_side__model: TRIANGLE_SIDE_TIP_POINTS,
 };
 
 // Callback injection avoids a circular dependency on the feature layer.
@@ -592,6 +598,7 @@ export const PROP_TIP_POINTS: Record<string, PropTipConfig> = {
   // Hoop family
   minihoop: MINIHOOP_TIP_POINTS,
   bighoop: BIGHOOP_TIP_POINTS,
+  triangle: TRIANGLE_TIP_POINTS,
 
   // Buugeng family
   buugeng: BUUGENG_TIP_POINTS,
@@ -607,7 +614,6 @@ export const PROP_TIP_POINTS: Record<string, PropTipConfig> = {
 
   // Sword
   sword: SWORD_TIP_POINTS,
-
 
   // Energy family (premium cosmetics) — reach copied from each parent
   energy_saber: ENERGY_SABER_TIP_POINTS,
@@ -852,9 +858,7 @@ export function getTipPointsBaseline(
  * frame cache keys on it so a look change never replays flames recorded for
  * other artwork.
  */
-export function tipPointSignature(
-  propType: string | null | undefined
-): string {
+export function tipPointSignature(propType: string | null | undefined): string {
   const points = getTipPoints(propType).points;
   let signature = "";
   for (const point of points) {

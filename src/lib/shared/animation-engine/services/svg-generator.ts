@@ -30,6 +30,10 @@ import {
   parseModelRenderKey,
   type PropSpriteSide,
 } from "$lib/shared/pictograph/prop/domain/prop-look";
+import {
+  parseTriangleRenderKey,
+  triangleAppearanceArtwork,
+} from "$lib/shared/pictograph/prop/domain/triangle-appearance";
 
 /**
  * SVG Generator for creating prop staff images and grid
@@ -258,6 +262,10 @@ export function resolvePropSvgPath(
   if (fanRenderKey) {
     return fanAppearanceArtwork(fanRenderKey.build, fanRenderKey.cover)!;
   }
+  const triangleRenderKey = parseTriangleRenderKey(propTypeLower);
+  if (triangleRenderKey) {
+    return triangleAppearanceArtwork(triangleRenderKey.grip)!;
+  }
   const modelRenderKey = parseModelRenderKey(propTypeLower);
   if (modelRenderKey) {
     return modelSpriteArtwork(modelRenderKey.propType, side);
@@ -338,7 +346,10 @@ export async function generatePropSvg(
   const path = resolvePropSvgPath(propTypeLower);
   const fanRenderKey = parseFanRenderKey(propTypeLower);
   const fetchedSvg = await fetchPropSvg(path);
-  const semanticPropType = fanRenderKey?.propType ?? propTypeLower;
+  const semanticPropType =
+    fanRenderKey?.propType ??
+    parseTriangleRenderKey(propTypeLower)?.propType ??
+    propTypeLower;
   // A parsed key is a material build by construction: FanRenderKey types
   // `build` as Exclude<FanBuild, "pictograph">, and resolveFanRenderKey returns
   // null for the pictograph build rather than a key carrying it. The old

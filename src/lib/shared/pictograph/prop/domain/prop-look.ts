@@ -10,6 +10,14 @@ import {
   PROP_MODEL_SPRITES,
   type PropModelSpriteEntry,
 } from "./prop-model-sprites.generated";
+import { HOOP_FAMILY_GLYPH_CROPS } from "./hoop-family-geometry.generated";
+import {
+  isTrianglePropType,
+  normalizeTriangleGrip,
+  resolveTriangleRenderKey,
+  triangleSpriteKey,
+  type TriangleGrip,
+} from "./triangle-appearance";
 
 /**
  * How the 2D animation canvas draws a prop.
@@ -48,6 +56,7 @@ export function hasModelSprite(propType: string | null | undefined): boolean {
 export interface PropRenderAppearance {
   fanAppearance?: FanAppearance | null;
   propLook?: PropLook | null;
+  triangleGrip?: TriangleGrip | null;
 }
 
 /**
@@ -66,10 +75,16 @@ export function resolvePropRenderKey(
       normalizeFanAppearance(appearance.fanAppearance)
     );
   }
-  if (
-    normalizePropLook(appearance.propLook) === "model" &&
-    hasModelSprite(normalized)
-  ) {
+  const wantsModel = normalizePropLook(appearance.propLook) === "model";
+  if (isTrianglePropType(normalized)) {
+    // The grip picks the sprite (triangle or triangle_side) under the model
+    // look, and the glyph key (triangle or triangle__side) otherwise.
+    const grip = normalizeTriangleGrip(appearance.triangleGrip);
+    const spriteKey = triangleSpriteKey(grip);
+    if (wantsModel && hasModelSprite(spriteKey)) return `${spriteKey}__model`;
+    return resolveTriangleRenderKey(normalized, grip);
+  }
+  if (wantsModel && hasModelSprite(normalized)) {
     return `${normalized}__model`;
   }
   return normalized;
@@ -196,14 +211,9 @@ const NOTATION_GLYPH_CROPS: Record<string, PropTileCrop> = {
     width: 471.4,
     height: 538.9,
   },
-  bighoop: {
-    imageWidth: 600,
-    imageHeight: 300,
-    x: 251.32,
-    y: -5.15,
-    width: 353.83,
-    height: 310.31,
-  },
+  minihoop: HOOP_FAMILY_GLYPH_CROPS.minihoop,
+  bighoop: HOOP_FAMILY_GLYPH_CROPS.bighoop,
+  triangle: HOOP_FAMILY_GLYPH_CROPS.triangle,
   trigeng: {
     imageWidth: 250,
     imageHeight: 236.7,
@@ -319,15 +329,18 @@ export function propTileArtwork(
           fill: FAN_PREVIEW_CROP,
         };
   }
+  const spriteKey = isTrianglePropType(normalized)
+    ? triangleSpriteKey(normalizeTriangleGrip(appearance.triangleGrip))
+    : normalized;
   if (
     normalizePropLook(appearance.propLook) === "model" &&
-    hasModelSprite(normalized)
+    hasModelSprite(spriteKey)
   ) {
     return {
-      href: modelSpriteArtwork(normalized, side),
+      href: modelSpriteArtwork(spriteKey, side),
       styled: true,
       prelit: true,
-      crop: modelSpriteCrop(PROP_MODEL_SPRITES[normalized]!),
+      crop: modelSpriteCrop(PROP_MODEL_SPRITES[spriteKey]!),
     };
   }
   return { href: fallback, styled: false, prelit: false };
