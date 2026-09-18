@@ -147,8 +147,8 @@ export class PropTypeManager {
     propType: string,
     appearance: FanAppearance,
     look: PropLook,
-    baseColors: TunnelPropColorPair | null = this.currentBaseColors,
-    triangleGrip: TriangleGrip = this.triangleGrip
+    baseColors: TunnelPropColorPair | null,
+    triangleGrip: TriangleGrip
   ): string {
     return resolvePropRenderKey(propType, {
       fanAppearance: appearance,
@@ -318,14 +318,14 @@ export class PropTypeManager {
       settingsLeft,
       settingsAppearance,
       settingsLook,
-      undefined,
+      this.currentBaseColors,
       settingsGrip
     );
     const settingsRightRender = this.baseRenderKey(
       settingsRight,
       settingsAppearance,
       settingsLook,
-      undefined,
+      this.currentBaseColors,
       settingsGrip
     );
     const renderAppearanceChanged =
@@ -689,13 +689,15 @@ export class PropTypeManager {
       leftPropType,
       appearance,
       look,
-      effectiveColors
+      effectiveColors,
+      grip
     );
     const rightRenderType = this.baseRenderKey(
       rightPropType,
       appearance,
       look,
-      effectiveColors
+      effectiveColors,
+      grip
     );
     this.renderPropTypeLeft = leftRenderType;
     this.renderPropTypeRight = rightRenderType;

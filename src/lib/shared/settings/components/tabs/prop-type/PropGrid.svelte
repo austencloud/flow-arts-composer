@@ -634,6 +634,7 @@
         onSelect={() => handleTileClick(prop)}
         fanAppearance={normalizedFanAppearance}
         {propLook}
+        triangleGrip={currentGrip}
         {recipeOverrides}
         {colors}
         previewPair={showAppearance}
@@ -677,6 +678,7 @@
         {color}
         fanAppearance={normalizedFanAppearance}
         {propLook}
+        triangleGrip={currentGrip}
         {recipeOverrides}
         {colors}
         previewPair={showAppearance}
