@@ -12,6 +12,7 @@ export const FAN_BUILDS = [
   "lotus",
   "day",
   "moon",
+  "star",
 ] as const;
 export type FanBuild = (typeof FAN_BUILDS)[number];
 
@@ -45,6 +46,7 @@ export const COMPACT_FAN_LOOKS = [
   "flat-grip",
   "day",
   "moon",
+  "star",
   "covered-fire",
 ] as const;
 export type CompactFanLook = (typeof COMPACT_FAN_LOOKS)[number];
@@ -116,6 +118,9 @@ export function resolveFanRenderKey(
   if (appearance.build === "flat-grip") {
     return `${normalized}__flat-grip`;
   }
+  if (appearance.build === "star") {
+    return `${normalized}__star`;
+  }
   return `${normalized}__lotus`;
 }
 
@@ -133,6 +138,15 @@ export function parseFanRenderKey(value: string): FanRenderKey | null {
     return {
       propType: flatGrip[1] as FanRenderKey["propType"],
       build: "flat-grip",
+      frameColor: DEFAULT_FAN_APPEARANCE.frameColor,
+      cover: DEFAULT_FAN_APPEARANCE.cover,
+    };
+  }
+  const star = /^(fan|bigfan)__star$/.exec(normalized);
+  if (star) {
+    return {
+      propType: star[1] as FanRenderKey["propType"],
+      build: "star",
       frameColor: DEFAULT_FAN_APPEARANCE.frameColor,
       cover: DEFAULT_FAN_APPEARANCE.cover,
     };
@@ -187,6 +201,9 @@ export function fanAppearanceArtwork(
   if (build === "flat-grip") {
     return "/images/props/appearances/fan-flat-grip.svg?v=1";
   }
+  if (build === "star") {
+    return "/images/props/appearances/fan-star.svg?v=1";
+  }
   if (build === "fire") {
     const file = cover === "covered" ? "fan-fire-covered.svg" : "fan-fire.svg";
     return `/images/props/appearances/${file}?v=2`;
@@ -224,6 +241,9 @@ export function scaleFanAppearanceForBigFan(svg: string): string {
 export function fanPreviewImage(appearance: FanAppearance): string {
   if (appearance.build === "flat-grip") {
     return previewImage("fan-flat-grip-complete.webp");
+  }
+  if (appearance.build === "star") {
+    return previewImage("fan-star-complete.webp");
   }
   if (appearance.build === "pictograph") {
     return previewImage("fan-pictograph-front.webp");
@@ -305,6 +325,18 @@ export function fanBuildPreviewOptions(
       designCredit: {
         originator: "Lighttoys",
         sourceUrl: "https://www.lighttoys.cz/product/moon-fans-ft/",
+      },
+    },
+    {
+      id: "star",
+      label: "Star Fire",
+      image: fanPreviewImage({ ...appearance, build: "star" }),
+      // Its 23.5-inch span fills 581px of the same 640px Blender render the
+      // Flat Grip uses at 536px, so 536 / 581 keeps the rail widths equal.
+      imageScale: 0.92,
+      designCredit: {
+        originator: "Renegade Juggling",
+        sourceUrl: "https://renegadejuggling.com/products/fire-fan-star",
       },
     },
   ];

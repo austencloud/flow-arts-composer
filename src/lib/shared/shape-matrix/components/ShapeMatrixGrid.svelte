@@ -70,14 +70,25 @@
     keyOf?: (item: TAxis) => string;
     /** Spoken description of an axis item. Defaults to the flower label. */
     labelOf?: (item: TAxis) => string;
-    /** Header artwork source at a measured size. Defaults to the flower painter. */
+    /**
+     * Header artwork source at a measured size. Defaults to the flower
+     * painter. The grid passes the painter it resolved (the account's hand
+     * inks, or the host's own), so a host that draws its own geometry still
+     * paints it in the same ink as every other tile.
+     */
     paintHeader?: (
       item: TAxis,
       hand: "left" | "right",
-      sizePx: number
+      sizePx: number,
+      painter: ShapeMatrixArtworkPainter
     ) => string;
     /** Cell artwork source at a measured size. Defaults to the flower painter. */
-    paintCell?: (left: TAxis, right: TAxis, sizePx: number) => string;
+    paintCell?: (
+      left: TAxis,
+      right: TAxis,
+      sizePx: number,
+      painter: ShapeMatrixArtworkPainter
+    ) => string;
     /** Optional focus feedback from an external axis editor. */
     emphasizedAxis?: "left" | "right" | "both" | null;
     /** Optional guide or action for the otherwise-empty axis intersection. */
@@ -155,13 +166,13 @@
   // touch-target floor through the 320px 4K layout.
   const headerPaint = (f: TAxis, hand: "left" | "right") => (sizePx: number) =>
     paintHeader
-      ? paintHeader(f, hand, sizePx)
+      ? paintHeader(f, hand, sizePx, effectivePainter)
       : data
         ? headerArtworkSrc(data, f as Flower, hand, sizePx, effectivePainter)
         : "";
   const cellPaint = (b: TAxis, r: TAxis) => (sizePx: number) =>
     paintCell
-      ? paintCell(b, r, sizePx)
+      ? paintCell(b, r, sizePx, effectivePainter)
       : data
         ? cellArtworkSrc(
             data,

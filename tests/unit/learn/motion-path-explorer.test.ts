@@ -77,7 +77,7 @@ describe("motion path guide isolation", () => {
       first.toggleGuides();
       first.trace = "hands";
       first.chooseSequence(structuredClone(motionPathExamples[1]!));
-      expect(second.selectedPath).toBe("arc");
+      expect(second.selectedPath).toBe("hybrid");
       expect(second.guides).toBe(true);
       expect(spy).not.toHaveBeenCalled();
     } finally {
@@ -117,12 +117,12 @@ describe("motion path guide isolation", () => {
 
     newestSelection!.resolve(newest);
     await vi.waitFor(() =>
-      expect(explorer.sequence.id).toBe("newest-matrix-realization-arc")
+      expect(explorer.sequence.id).toBe("newest-matrix-realization-hybrid")
     );
     olderSelection!.resolve(first);
     await Promise.resolve();
 
-    expect(explorer.sequence.id).toBe("newest-matrix-realization-arc");
+    expect(explorer.sequence.id).toBe("newest-matrix-realization-hybrid");
   });
 
   it("reuses a pair's prewarmed relationship instead of rebuilding on its click", async () => {
@@ -143,7 +143,7 @@ describe("motion path guide isolation", () => {
       expect(calls).toEqual(expect.arrayContaining(MODE_ORDER))
     );
     explorer.chooseHandRelationship("TO", builder);
-    await vi.waitFor(() => expect(explorer.sequence.id).toBe("matrix-TO-arc"));
+    await vi.waitFor(() => expect(explorer.sequence.id).toBe("matrix-TO-hybrid"));
 
     expect(calls.filter((mode) => mode === "TO")).toHaveLength(1);
   });
@@ -169,7 +169,7 @@ describe("motion path guide isolation", () => {
     await vi.waitFor(() => expect(explorer.pickerStatus).toBe("error"));
     explorer.retryMatrixSelection();
     await vi.waitFor(() =>
-      expect(explorer.sequence.id).toBe("recovered-relationship-arc")
+      expect(explorer.sequence.id).toBe("recovered-relationship-hybrid")
     );
     expect(explorer.pickerStatus).toBe("idle");
   });
