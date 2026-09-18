@@ -171,7 +171,7 @@ function triangleGlyph(grip, box) {
   const painted = {
     x: cx - band / 2,
     y: cy - halfSpread,
-    width: layout.reachMm * k + tube / 2 + band / 2,
+    width: layout.reachMm * k + band,
     height: 2 * halfSpread,
   };
   return {
@@ -188,14 +188,16 @@ function triangleGlyph(grip, box) {
   };
 }
 
-// Triangle box: half-width = reach + half tube (nothing sits behind the grip
-// but the sleeve, which is narrower); half-height = vertex spread + band.
+// Triangle box: half-width = reach + half band. The far point is either bare
+// tube (corner grip, the far side's bow) or a sleeve sphere (side grip, the
+// far vertex), and the sleeve sphere is wider than the tube, so the wider
+// one sets the margin; half-height = vertex spread + band.
 function triangleBox() {
   const k = glyphUnitsPerMm(stations);
   const m = triangleMetrics(stations);
   const tube = stations.glyph_tube_units.value;
   const band = tube * stations.hardware_ratio.value;
-  const halfW = Math.max(m.reachMm * k + tube / 2, band / 2);
+  const halfW = m.reachMm * k + band / 2;
   const halfH = (m.chordMm / 2) * k + band / 2;
   return { width: r2(2 * halfW), height: r2(2 * halfH) };
 }
@@ -222,6 +224,11 @@ writeFileSync("static/images/props/appearances/triangle-side.svg", side.svg);
 // and arrays of objects broken one per line the way prettier prints them.
 
 const num = (n) => String(n);
+// Metres and radians computed through mm arithmetic carry binary floating
+// point noise (e.g. 0.45402499999999996). Round to 12 significant digits,
+// which is well past the nine decimals later tests compare against, then
+// print through num() so the printed text is still the minimal JS form.
+const metres = (n) => num(Number(n.toPrecision(12)));
 
 function fmtBox(b) {
   return `{ width: ${num(b.width)}, height: ${num(b.height)} }`;
@@ -314,30 +321,30 @@ ${cropsBody}
 
 /** Hand to the far tube centreline, in metres. Hoops: across the ring. Triangle: height plus one sagitta, both grips. */
 export const HOOP_FAMILY_REACH_M = {
-  minihoop: ${hoopCentrelineM},
-  bighoop: ${hoopCentrelineM * stations.big_scale.value},
-  triangle: ${m.reachMm / 1000},
+  minihoop: ${metres(hoopCentrelineM)},
+  bighoop: ${metres(hoopCentrelineM * stations.big_scale.value)},
+  triangle: ${metres(m.reachMm / 1000)},
 } as const;
 
 /** Triangle stations in metres; Triangle3D.svelte and the worker mirror restate these and tests pin them here. */
 export const TRIANGLE_STATIONS_M = {
-  sideChord: ${m.chordMm / 1000},
-  sagitta: ${m.sagittaMm / 1000},
-  bowRadius: ${m.bowRadiusMm / 1000},
-  arcAngle: ${m.arcAngleRad},
-  height: ${m.heightMm / 1000},
-  reach: ${m.reachMm / 1000},
-  tubeRadius: ${tubeRadiusM},
-  sleeveRadius: ${tubeRadiusM * stations.hardware_ratio.value},
-  elbowLeg: ${stations.elbow_leg_mm.value / 1000},
+  sideChord: ${metres(m.chordMm / 1000)},
+  sagitta: ${metres(m.sagittaMm / 1000)},
+  bowRadius: ${metres(m.bowRadiusMm / 1000)},
+  arcAngle: ${metres(m.arcAngleRad)},
+  height: ${metres(m.heightMm / 1000)},
+  reach: ${metres(m.reachMm / 1000)},
+  tubeRadius: ${metres(tubeRadiusM)},
+  sleeveRadius: ${metres(tubeRadiusM * stations.hardware_ratio.value)},
+  elbowLeg: ${metres(stations.elbow_leg_mm.value / 1000)},
 } as const;
 
 /** Hoop hardware in metres: the join tape, its button, and the grip wrap. */
 export const HOOP_HARDWARE_M = {
-  joinTape: ${stations.hoop_join_tape_mm.value / 1000},
-  button: ${stations.hoop_button_mm.value / 1000},
-  gripTape: ${stations.hoop_grip_tape_mm.value / 1000},
-  hardwareRatio: ${stations.hardware_ratio.value},
+  joinTape: ${metres(stations.hoop_join_tape_mm.value / 1000)},
+  button: ${metres(stations.hoop_button_mm.value / 1000)},
+  gripTape: ${metres(stations.hoop_grip_tape_mm.value / 1000)},
+  hardwareRatio: ${metres(stations.hardware_ratio.value)},
 } as const;
 `;
 writeFileSync("src/lib/shared/pictograph/prop/domain/hoop-family-geometry.generated.ts", ts);

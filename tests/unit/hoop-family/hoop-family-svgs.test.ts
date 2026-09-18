@@ -23,7 +23,7 @@ describe("generated hoop family artwork", () => {
   });
 
   it("derives the triangle box from the reach and the vertex spread", () => {
-    expect(HOOP_FAMILY_BOXES.triangle.width).toBeCloseTo(280.3, 1);
+    expect(HOOP_FAMILY_BOXES.triangle.width).toBeCloseTo(283.3, 1);
     expect(HOOP_FAMILY_BOXES.triangle.height).toBeCloseTo(162.17, 1);
   });
 

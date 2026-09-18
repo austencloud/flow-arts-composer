@@ -26,7 +26,7 @@ export interface HoopFamilyCrop {
 export const HOOP_FAMILY_BOXES = {
   minihoop: { width: 257.9, height: 138.2 },
   bighoop: { width: 600, height: 300 },
-  triangle: { width: 280.3, height: 162.17 },
+  triangle: { width: 283.3, height: 162.17 },
 } as const satisfies Record<string, HoopFamilyBox>;
 
 export const HOOP_FAMILY_TIP_POINTS = {
@@ -78,30 +78,30 @@ export const HOOP_FAMILY_GLYPH_CROPS = {
     height: 300,
   },
   triangle: {
-    imageWidth: 280.3,
+    imageWidth: 283.3,
     imageHeight: 162.17,
-    x: 133.65,
+    x: 135.15,
     y: 0,
-    width: 146.65,
+    width: 148.15,
     height: 162.17,
   },
 } as const satisfies Record<string, HoopFamilyCrop>;
 
 /** Hand to the far tube centreline, in metres. Hoops: across the ring. Triangle: height plus one sagitta, both grips. */
 export const HOOP_FAMILY_REACH_M = {
-  minihoop: 0.45402499999999996,
+  minihoop: 0.454025,
   bighoop: 0.635635,
-  triangle: 0.5062849956347443,
+  triangle: 0.506284995635,
 } as const;
 
 /** Triangle stations in metres; Triangle3D.svelte and the worker mirror restate these and tests pin them here. */
 export const TRIANGLE_STATIONS_M = {
   sideChord: 0.5588,
-  sagitta: 0.022350000000000002,
-  bowRadius: 1.7575812639821025,
-  arcAngle: 0.319291492132703,
-  height: 0.4839349956347443,
-  reach: 0.5062849956347443,
+  sagitta: 0.02235,
+  bowRadius: 1.75758126398,
+  arcAngle: 0.319291492133,
+  height: 0.483934995635,
+  reach: 0.506284995635,
   tubeRadius: 0.0079375,
   sleeveRadius: 0.01031875,
   elbowLeg: 0.05,
