@@ -29,6 +29,7 @@ Card-based architecture with integrated Generate button:
   import CardBasedSettingsContainer from "./CardBasedSettingsContainer.svelte";
   import WordInputOverlay from "./cards/WordInputOverlay.svelte";
   import ExpandedCardStage from "./cards/ExpandedCardStage.svelte";
+  import { morphGenerateCard } from "../shared/services/generate-card-morph";
   import { createFavoriteState } from "../state/favorite-state.svelte";
   import {
     captureSetupSnapshot,
@@ -190,7 +191,10 @@ Card-based architecture with integrated Generate button:
       source,
       captureSetupSnapshot(configState.config, startEndState.options)
     );
-    panelState?.closePresetDrawer();
+    // Applying a setup shrinks the grown card the same way Escape does.
+    if (panelState?.isPresetDrawerOpen) {
+      morphGenerateCard("preset", () => panelState.closePresetDrawer());
+    }
   }
 
   async function handleGenerate(options: GenerationOptions | null) {
@@ -361,7 +365,7 @@ Card-based architecture with integrated Generate button:
               sequenceLength: configState.config.length,
               guestMaxLength: guestLoopMaxLength,
               onLoopDisable: () => {
-                panelState.closeLOOPPanel();
+                morphGenerateCard("loop", () => panelState.closeLOOPPanel());
                 configState.updateConfig({ loopEnabled: false });
               },
               onRequestSignup: (kind) => {
