@@ -117,6 +117,15 @@
   // canceling its own rename, or it is an editable target that has not called
   // preventDefault but still owns the first press by the escape-routing
   // contract. Either way the stage defers instead of closing on top of it.
+  //
+  // This check uses the narrower isEditableKeyboardTarget rather than
+  // shouldDeferEscapeShortcut, because the latter's deferral list is written
+  // for a page that already has this stage's own root as a non-modal
+  // role="dialog" answering the first Escape; applying it again here would
+  // have the stage defer to itself. The gap: an expanded menu, listbox,
+  // combobox, or a [data-escape-shortcut-local] owner opened inside one of
+  // the three panels is not covered today, only editable fields are. None of
+  // Customize, LOOP, or Setups currently mounts one of those.
   function onKeydown(event: KeyboardEvent): void {
     if (
       event.key !== "Escape" ||
