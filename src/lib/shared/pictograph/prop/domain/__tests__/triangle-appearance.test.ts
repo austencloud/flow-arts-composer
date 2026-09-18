@@ -8,11 +8,19 @@ import {
   triangleAppearanceArtwork,
   triangleSpriteKey,
 } from "../triangle-appearance";
-import { resolvePropRenderKey } from "../prop-look";
+import {
+  basePropTypeOfRenderKey,
+  hasModelSprite,
+  resolvePropRenderKey,
+} from "../prop-look";
 import { getPropDimensions } from "$lib/shared/animation-engine/services/IPropTextureLoader";
 import { resolvePropSvgPath } from "$lib/shared/animation-engine/services/svg-generator";
 import { getTipPointsBaseline } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
-import { HOOP_FAMILY_TIP_POINTS } from "../hoop-family-geometry.generated";
+import { propTextureMatchesRequest } from "$lib/shared/animation-engine/services/canvas2d/prop-texture-match";
+import {
+  HOOP_FAMILY_BOXES,
+  HOOP_FAMILY_TIP_POINTS,
+} from "../hoop-family-geometry.generated";
 
 describe("triangle grip appearance", () => {
   it("defaults to the corner grip and rejects garbage", () => {
@@ -54,20 +62,41 @@ describe("triangle grip appearance", () => {
     expect(resolvePropRenderKey("triangle", { triangleGrip: "side" })).toBe(
       "triangle__side"
     );
-    // No sprite captured yet: the model look falls back to the glyph key.
+    // Pinned to whichever the sprite registry actually has today: the glyph
+    // key until Task 10 captures the side sprite, then the model key.
     expect(
       resolvePropRenderKey("triangle", {
         triangleGrip: "side",
         propLook: "model",
       })
-    ).toMatch(/^triangle(__side|_side__model)$/);
+    ).toBe(
+      hasModelSprite("triangle_side")
+        ? "triangle_side__model"
+        : "triangle__side"
+    );
     expect(resolvePropRenderKey("minihoop", { triangleGrip: "side" })).toBe(
       "minihoop"
     );
   });
 
+  it("maps the side grip's sprite key back to the triangle PropType", () => {
+    // triangle_side__model splits at "__" to the sprite key "triangle_side",
+    // which is not itself a PropType; both this and the glyph key must
+    // resolve to "triangle" or the crossfade matcher freezes the prop.
+    expect(basePropTypeOfRenderKey("triangle_side__model")).toBe("triangle");
+    expect(basePropTypeOfRenderKey("triangle__side")).toBe("triangle");
+    expect(
+      propTextureMatchesRequest({
+        loaded: "triangle_side__model",
+        requested: "triangle_side__model",
+        paramsPropType: "triangle",
+      })
+    ).toBe(true);
+  });
+
   it("shares one box and one artwork path per grip", () => {
     const box = getPropDimensions("triangle");
+    expect(box).toEqual(HOOP_FAMILY_BOXES.triangle);
     expect(getPropDimensions("triangle__side")).toEqual(box);
     expect(getPropDimensions("triangle_side__model")).toEqual(box);
     expect(resolvePropSvgPath("triangle")).toBe(

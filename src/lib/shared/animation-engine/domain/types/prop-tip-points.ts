@@ -187,22 +187,21 @@ const BIGTRIAD_TIP_POINTS: PropTipConfig = {
   ],
 };
 
+// scripts/build-hoop-family-svgs.mjs reproduces the measured values below for
+// both hoops; hoop-family-geometry.generated.ts is the source of truth now.
+//
 // Hoops are butt-pivoted: the hand sits at the viewBox centre and the ring is
 // drawn entirely in +x. The measured ring centreline is at dx 59.4 with radius
 // 60.6 and a 16.8-unit tube, so these five points are ring angles 216 / 288 /
 // 0 / 72 / 144 degrees on that centreline — dead centre of the tube, evenly
 // spaced around the hoop. The old values straddled the tube and put one point
 // behind the hand.
-// scripts/build-hoop-family-svgs.mjs reproduces these same measured values;
-// hoop-family-geometry.generated.ts is the source of truth now.
 const MINIHOOP_TIP_POINTS: PropTipConfig = {
   points: [...HOOP_FAMILY_TIP_POINTS.minihoop],
 };
 
 // The same five ring angles at the big-hoop scale: measured centreline at
 // dx 149.8 with radius 142.4 and a 16-unit tube.
-// scripts/build-hoop-family-svgs.mjs reproduces these same measured values;
-// hoop-family-geometry.generated.ts is the source of truth now.
 const BIGHOOP_TIP_POINTS: PropTipConfig = {
   points: [...HOOP_FAMILY_TIP_POINTS.bighoop],
 };

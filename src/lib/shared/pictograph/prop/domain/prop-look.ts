@@ -14,6 +14,7 @@ import { HOOP_FAMILY_GLYPH_CROPS } from "./hoop-family-geometry.generated";
 import {
   isTrianglePropType,
   normalizeTriangleGrip,
+  parseTriangleRenderKey,
   resolveTriangleRenderKey,
   triangleSpriteKey,
   type TriangleGrip,
@@ -77,8 +78,8 @@ export function resolvePropRenderKey(
   }
   const wantsModel = normalizePropLook(appearance.propLook) === "model";
   if (isTrianglePropType(normalized)) {
-    // The grip picks the sprite (triangle or triangle_side) under the model
-    // look, and the glyph key (triangle or triangle__side) otherwise.
+    // A sprite is captured per grip, so the grip picks which one under the
+    // model look.
     const grip = normalizeTriangleGrip(appearance.triangleGrip);
     const spriteKey = triangleSpriteKey(grip);
     if (wantsModel && hasModelSprite(spriteKey)) return `${spriteKey}__model`;
@@ -104,7 +105,10 @@ export function parseModelRenderKey(value: string): ModelRenderKey | null {
 export function basePropTypeOfRenderKey(value: string): string {
   const normalized = value.toLowerCase();
   const separator = normalized.indexOf("__");
-  return separator === -1 ? normalized : normalized.slice(0, separator);
+  const head = separator === -1 ? normalized : normalized.slice(0, separator);
+  // triangle_side__model splits to the sprite key "triangle_side", which is
+  // not a PropType; map it (and the glyph key) back to "triangle".
+  return parseTriangleRenderKey(head)?.propType ?? head;
 }
 
 export const MODEL_SPRITE_ROOT = "/images/props/appearances/model";

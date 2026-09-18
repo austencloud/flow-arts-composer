@@ -43,12 +43,15 @@ export function triangleSpriteKey(grip: TriangleGrip): string {
   return grip === "side" ? "triangle_side" : PropType.TRIANGLE;
 }
 
+/**
+ * Parsed from either the glyph key `triangle__side` or the sprite key
+ * `triangle_side` — both name the triangle's side grip.
+ */
 export interface TriangleRenderKey {
   propType: "triangle";
   grip: "side";
 }
 
-/** Both the render key and the sprite key of the side grip map back to the triangle. */
 export function parseTriangleRenderKey(
   value: string
 ): TriangleRenderKey | null {

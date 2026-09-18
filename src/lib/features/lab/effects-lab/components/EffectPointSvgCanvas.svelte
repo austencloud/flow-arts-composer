@@ -7,9 +7,11 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { PROP_DIMENSIONS, DEFAULT_PROP_DIMENSIONS, type PropDimensions } from "$lib/shared/animation-engine/services/IPropTextureLoader";
+  import {
+    getPropDimensions,
+    type PropDimensions,
+  } from "$lib/shared/animation-engine/services/IPropTextureLoader";
   import { resolvePropSvgPath } from "$lib/shared/animation-engine/services/svg-generator";
-  import { basePropTypeOfRenderKey } from "$lib/shared/pictograph/prop/domain/prop-look";
   import type { EffectPointEditorState } from "../state/effect-point-editor-state.svelte";
 
   interface Props {
@@ -31,7 +33,12 @@
   let panX = $state(0);
   let panY = $state(0);
   let isPanning = $state(false);
-  let panStart = $state<{ x: number; y: number; panX: number; panY: number } | null>(null);
+  let panStart = $state<{
+    x: number;
+    y: number;
+    panX: number;
+    panY: number;
+  } | null>(null);
   let spaceHeld = $state(false);
 
   const ZOOM_MIN = 0.25;
@@ -49,7 +56,7 @@
   const NUDGE_STEP_LARGE = 10;
 
   let dims = $derived<PropDimensions>(
-    PROP_DIMENSIONS[basePropTypeOfRenderKey(editorState.selectedPropType)] ?? DEFAULT_PROP_DIMENSIONS
+    getPropDimensions(editorState.selectedPropType)
   );
 
   let baseViewBoxWidth = $derived(dims.width + PADDING * 2);
@@ -107,17 +114,32 @@
       // prop-dimension units, but some assets (e.g. simple_staff at 300x92.33
       // vs dims 270x83.1) carry a different coordinate scale. Without this,
       // the ghost renders off-center and tip markers drift off the prop ends.
-      const propDims = PROP_DIMENSIONS[basePropTypeOfRenderKey(propType)] ?? DEFAULT_PROP_DIMENSIONS;
-      const vb = (svgRoot.getAttribute("viewBox") ?? "").trim().split(/[\s,]+/).map(Number);
+      const propDims = getPropDimensions(propType);
+      const vb = (svgRoot.getAttribute("viewBox") ?? "")
+        .trim()
+        .split(/[\s,]+/)
+        .map(Number);
       let target: Element = propShapeGroup;
       if (
-        vb.length === 4 && vb.every(Number.isFinite) && vb[2]! > 0 && vb[3]! > 0 &&
-        (vb[2] !== propDims.width || vb[3] !== propDims.height || vb[0] !== 0 || vb[1] !== 0)
+        vb.length === 4 &&
+        vb.every(Number.isFinite) &&
+        vb[2]! > 0 &&
+        vb[3]! > 0 &&
+        (vb[2] !== propDims.width ||
+          vb[3] !== propDims.height ||
+          vb[0] !== 0 ||
+          vb[1] !== 0)
       ) {
         const sx = propDims.width / vb[2]!;
         const sy = propDims.height / vb[3]!;
-        const wrapper = document.createElementNS("http://www.w3.org/2000/svg", "g");
-        wrapper.setAttribute("transform", `scale(${sx} ${sy}) translate(${-vb[0]!} ${-vb[1]!})`);
+        const wrapper = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "g"
+        );
+        wrapper.setAttribute(
+          "transform",
+          `scale(${sx} ${sy}) translate(${-vb[0]!} ${-vb[1]!})`
+        );
         propShapeGroup.replaceChildren(wrapper);
         target = wrapper;
       } else {
@@ -135,7 +157,10 @@
     }
   }
 
-  function svgPointFromClientCoords(clientX: number, clientY: number): { dx: number; dy: number } | null {
+  function svgPointFromClientCoords(
+    clientX: number,
+    clientY: number
+  ): { dx: number; dy: number } | null {
     if (!svgEl) return null;
     const ctm = svgEl.getScreenCTM();
     if (!ctm) return null;
@@ -241,7 +266,10 @@
         const deltaY = Math.abs(coords.dy - mouseOrigin.dy);
 
         // Determine axis once mouse drag exceeds threshold
-        if (!constraintAxis && (deltaX > AXIS_LOCK_THRESHOLD || deltaY > AXIS_LOCK_THRESHOLD)) {
+        if (
+          !constraintAxis &&
+          (deltaX > AXIS_LOCK_THRESHOLD || deltaY > AXIS_LOCK_THRESHOLD)
+        ) {
           constraintAxis = deltaX >= deltaY ? "h" : "v";
         }
 
@@ -253,16 +281,28 @@
         const mouseDy = coords.dy - mouseOrigin.dy;
 
         if (constraintAxis === "h") {
-          editorState.updatePointPosition(index, origin.dx + mouseDx, origin.dy);
+          editorState.updatePointPosition(
+            index,
+            origin.dx + mouseDx,
+            origin.dy
+          );
         } else {
-          editorState.updatePointPosition(index, origin.dx, origin.dy + mouseDy);
+          editorState.updatePointPosition(
+            index,
+            origin.dx,
+            origin.dy + mouseDy
+          );
         }
       } else {
         // Unconstrained: apply mouse delta to point's original position
         constraintAxis = null;
         const mouseDx = coords.dx - mouseOrigin.dx;
         const mouseDy = coords.dy - mouseOrigin.dy;
-        editorState.updatePointPosition(index, origin.dx + mouseDx, origin.dy + mouseDy);
+        editorState.updatePointPosition(
+          index,
+          origin.dx + mouseDx,
+          origin.dy + mouseDy
+        );
       }
     };
 
@@ -305,7 +345,11 @@
       if (!coords || !touchOrigin) return;
       const moveDx = coords.dx - touchOrigin.dx;
       const moveDy = coords.dy - touchOrigin.dy;
-      editorState.updatePointPosition(index, origin.dx + moveDx, origin.dy + moveDy);
+      editorState.updatePointPosition(
+        index,
+        origin.dx + moveDx,
+        origin.dy + moveDy
+      );
     };
 
     const onTouchEnd = () => {
@@ -465,24 +509,69 @@
   >
     <!-- Background grid -->
     <defs>
-      <pattern id="editor-grid" width="50" height="50" patternUnits="userSpaceOnUse">
-        <line x1="0" y1="0" x2="0" y2="50" stroke="rgba(255,255,255,0.04)" stroke-width="0.5" />
-        <line x1="0" y1="0" x2="50" y2="0" stroke="rgba(255,255,255,0.04)" stroke-width="0.5" />
+      <pattern
+        id="editor-grid"
+        width="50"
+        height="50"
+        patternUnits="userSpaceOnUse"
+      >
+        <line
+          x1="0"
+          y1="0"
+          x2="0"
+          y2="50"
+          stroke="rgba(255,255,255,0.04)"
+          stroke-width="0.5"
+        />
+        <line
+          x1="0"
+          y1="0"
+          x2="50"
+          y2="0"
+          stroke="rgba(255,255,255,0.04)"
+          stroke-width="0.5"
+        />
       </pattern>
     </defs>
-    <rect x={viewBoxX} y={viewBoxY} width={viewBoxWidth} height={viewBoxHeight} fill="url(#editor-grid)" />
+    <rect
+      x={viewBoxX}
+      y={viewBoxY}
+      width={viewBoxWidth}
+      height={viewBoxHeight}
+      fill="url(#editor-grid)"
+    />
 
     <!-- Origin crosshair -->
-    <g class="origin-crosshair" transform="translate({baseViewBoxWidth / 2}, {baseViewBoxHeight / 2})">
-      <line x1="-20" y1="0" x2="20" y2="0" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,3" />
-      <line x1="0" y1="-20" x2="0" y2="20" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,3" />
+    <g
+      class="origin-crosshair"
+      transform="translate({baseViewBoxWidth / 2}, {baseViewBoxHeight / 2})"
+    >
+      <line
+        x1="-20"
+        y1="0"
+        x2="20"
+        y2="0"
+        stroke="rgba(255,255,255,0.15)"
+        stroke-width="1"
+        stroke-dasharray="4,3"
+      />
+      <line
+        x1="0"
+        y1="-20"
+        x2="0"
+        y2="20"
+        stroke="rgba(255,255,255,0.15)"
+        stroke-width="1"
+        stroke-dasharray="4,3"
+      />
       <circle r="3" fill="rgba(255,255,255,0.2)" />
     </g>
 
     <!-- Prop shape (centered in base viewBox) -->
     <g
       class="prop-shape"
-      transform="translate({(baseViewBoxWidth - dims.width) / 2}, {(baseViewBoxHeight - dims.height) / 2})"
+      transform="translate({(baseViewBoxWidth - dims.width) /
+        2}, {(baseViewBoxHeight - dims.height) / 2})"
       opacity="0.6"
       bind:this={propShapeGroup}
     ></g>
@@ -499,18 +588,37 @@
         transform="translate({cx}, {cy})"
         onmousedown={(e) => handlePointMouseDown(e, i)}
         ontouchstart={(e) => handlePointTouchStart(e, i)}
-        onclick={(e) => { e.stopPropagation(); editorState.selectedPointIndex = i; }}
-        onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); editorState.selectedPointIndex = i; } }}
+        onclick={(e) => {
+          e.stopPropagation();
+          editorState.selectedPointIndex = i;
+        }}
+        onkeydown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            editorState.selectedPointIndex = i;
+          }
+        }}
         role="button"
         tabindex="0"
         aria-label="Point {i + 1}: dx={point.dx}, dy={point.dy}"
       >
         <!-- Glow ring for selected -->
         {#if isSelected}
-          <circle r={r + 4} fill="none" stroke="var(--effect-accent)" stroke-width="2" opacity="0.5" />
+          <circle
+            r={r + 4}
+            fill="none"
+            stroke="var(--effect-accent)"
+            stroke-width="2"
+            opacity="0.5"
+          />
         {/if}
         <!-- Main circle -->
-        <circle r={r} fill="var(--effect-accent-border)" stroke="var(--effect-accent)" stroke-width="1.5" />
+        <circle
+          {r}
+          fill="var(--effect-accent-border)"
+          stroke="var(--effect-accent)"
+          stroke-width="1.5"
+        />
         <!-- Inner dot -->
         <circle r="2.5" fill="var(--effect-accent)" />
         <!-- Point number -->
@@ -534,21 +642,21 @@
       onclick={zoomIn}
       disabled={zoomLevel >= ZOOM_MAX}
       aria-label="Zoom in"
-      title="Zoom in"
-    >+</button>
+      title="Zoom in">+</button
+    >
     <button
       class="zoom-level"
       onclick={resetView}
       aria-label="Reset zoom to 100%"
-      title="Reset view"
-    >{zoomPercent}%</button>
+      title="Reset view">{zoomPercent}%</button
+    >
     <button
       class="zoom-btn"
       onclick={zoomOut}
       disabled={zoomLevel <= ZOOM_MIN}
       aria-label="Zoom out"
-      title="Zoom out"
-    >&minus;</button>
+      title="Zoom out">&minus;</button
+    >
   </div>
 
   <!-- Coordinate readout -->
