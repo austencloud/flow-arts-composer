@@ -7,15 +7,15 @@
 //
 // Usage: node scripts/backfill-public-generator-setups.cjs [--dry-run]
 //
-// The service account key is read from ../serviceAccountKey.json next to the
+// The service account key is read from ../serviceAccountKey.json at the
 // repo root, or from TKA_SERVICE_ACCOUNT_KEY when running from a worktree
 // that does not carry the key.
 const admin = require("firebase-admin");
 const path = require("path");
 
-const keyPath =
-  process.env.TKA_SERVICE_ACCOUNT_KEY ||
-  path.join(__dirname, "../serviceAccountKey.json");
+const keyPath = process.env.TKA_SERVICE_ACCOUNT_KEY
+  ? path.resolve(process.env.TKA_SERVICE_ACCOUNT_KEY)
+  : path.join(__dirname, "../serviceAccountKey.json");
 const sa = require(keyPath);
 admin.initializeApp({ credential: admin.credential.cert(sa) });
 
