@@ -98,6 +98,7 @@ export {
   HandRelationshipConstraint,
   handRelationshipHolds,
   relatedRotationDirection,
+  isReflectionMap,
   HAND_RELATIONSHIP_LOCATION_MAPS,
   type HandRelationshipMap,
   type HandRelationshipOptions,
