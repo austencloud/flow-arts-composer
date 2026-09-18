@@ -10,16 +10,8 @@ const harness = vi.hoisted(() => ({
 }));
 
 vi.mock("firebase/firestore", () => ({
-  collection: vi.fn(),
   collectionGroup: vi.fn((_db: unknown, id: string) => ({ group: id })),
-  doc: vi.fn(),
-  getDoc: vi.fn(),
   getDocs: harness.getDocs,
-  serverTimestamp: vi.fn(() => "__SERVER_TS__"),
-  setDoc: vi.fn(),
-  updateDoc: vi.fn(),
-  deleteDoc: vi.fn(),
-  writeBatch: vi.fn(),
   limit: vi.fn((count: number) => ({ limit: count })),
   orderBy: vi.fn((field: string, direction?: string) => ({
     orderBy: field,
@@ -183,7 +175,14 @@ describe("loadCommunity", () => {
           isPublic: true,
           createdAt: { toDate: () => NOW },
         }),
-        communityDoc("hidden", "s2", {
+        communityDoc("panda", "s2", {
+          name: "Panda Combo",
+          config: { level: 4 },
+          startEndOptions: null,
+          isPublic: true,
+          createdAt: { toDate: () => NOW },
+        }),
+        communityDoc("hidden", "s3", {
           name: "Hidden owner",
           config: { level: 1 },
           isPublic: true,
@@ -198,6 +197,7 @@ describe("loadCommunity", () => {
     harness.getVisibleOwnerProfiles.mockResolvedValue(
       new Map([
         ["austen", { displayName: "Austen Cloud", photoURL: "https://x/a.png" }],
+        ["panda", { displayName: "Panda" }],
       ])
     );
 
@@ -205,6 +205,7 @@ describe("loadCommunity", () => {
 
     expect(harness.getVisibleOwnerProfiles).toHaveBeenCalledWith([
       "austen",
+      "panda",
       "hidden",
     ]);
     expect(setups).toEqual([
@@ -216,11 +217,47 @@ describe("loadCommunity", () => {
         name: "VTG 1:1",
         createdAt: NOW,
       }),
+      expect.objectContaining({
+        setupId: "s2",
+        userId: "panda",
+        displayName: "Panda",
+        avatar: undefined,
+        name: "Panda Combo",
+        createdAt: NOW,
+      }),
     ]);
   });
 
+  it("drops a doc that fails the schema", async () => {
+    harness.getDocs.mockResolvedValue({
+      docs: [
+        communityDoc("austen", "s1", {
+          name: "VTG 1:1",
+          config: { level: 3 },
+          startEndOptions: null,
+          isPublic: true,
+          createdAt: { toDate: () => NOW },
+        }),
+        communityDoc("austen", "s2", {
+          name: 42,
+          startEndOptions: null,
+          isPublic: true,
+        }),
+      ],
+    });
+    harness.getVisibleOwnerProfiles.mockResolvedValue(
+      new Map([
+        ["austen", { displayName: "Austen Cloud", photoURL: "https://x/a.png" }],
+      ])
+    );
+
+    const setups = await loadCommunity();
+
+    expect(setups.map((setup) => setup.setupId)).toEqual(["s1"]);
+  });
+
   it("rejects read failures instead of returning an empty list", async () => {
-    harness.getDocs.mockRejectedValue(new Error("permission-denied"));
+    harness.getDocs.mockRejectedValueOnce(new Error("permission-denied"));
 
     await expect(loadCommunity()).rejects.toThrow("permission-denied");
   });

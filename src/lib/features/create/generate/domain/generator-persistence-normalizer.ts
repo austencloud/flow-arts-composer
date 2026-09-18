@@ -83,8 +83,7 @@ export function normalizePersistedStartEndOptions<T>(value: T): T {
   }
 
   // Pre-rename Firestore setups (users/{uid}/generatorSetups via
-  // favorite-config-repository.ts, and the legacy favorite recovered by
-  // setup-migration.ts) still carry the "position" spellings of the
+  // favorite-config-repository.ts) still carry the "position" spellings of the
   // multi-select constraint arrays. Move each onto its "placement" key when
   // that key is absent, then drop the old key.
   if (

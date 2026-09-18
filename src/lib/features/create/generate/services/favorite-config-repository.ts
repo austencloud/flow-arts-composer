@@ -14,6 +14,7 @@ import {
 } from "$lib/shared/firestore";
 import { getVisibleOwnerProfiles } from "$lib/shared/community/services/user-repository";
 import { SavedGeneratorSetupSchema } from "../domain/models/favorite-config-schemas";
+import type { SavedGeneratorSetupDoc } from "../domain/models/favorite-config-schemas";
 import type {
   CommunitySetup,
   SavedGeneratorSetup,
@@ -43,17 +44,20 @@ export interface GeneratorSetupRepository {
   deleteSetup(userId: string, setupId: string): Promise<void>;
 }
 
-function toDate(value: unknown): Date | null {
-  if (value instanceof Date) return value;
-  if (
-    value &&
-    typeof value === "object" &&
-    "toDate" in value &&
-    typeof (value as { toDate: unknown }).toDate === "function"
-  ) {
-    return (value as { toDate: () => Date }).toDate();
-  }
-  return null;
+/** Normalizes one parsed setup doc into the shape callers work with. */
+function toSavedSetup(doc: SavedGeneratorSetupDoc): SavedGeneratorSetup {
+  return {
+    id: doc.id,
+    name: doc.name,
+    config: normalizePersistedGenerationConfig(
+      doc.config
+    ) as UIGenerationConfig,
+    startEndOptions: normalizePersistedStartEndOptions(
+      (doc.startEndOptions ?? null) as StartEndOptions | null
+    ),
+    createdAt: doc.createdAt ?? new Date(),
+    updatedAt: doc.updatedAt ?? new Date(),
+  };
 }
 
 export async function loadPersonal(
@@ -65,18 +69,7 @@ export async function loadPersonal(
     { orderBy: [{ field: "createdAt" }] }
   );
 
-  return setupDocs.map((setup) => ({
-    id: setup.id,
-    name: setup.name,
-    config: normalizePersistedGenerationConfig(
-      setup.config
-    ) as UIGenerationConfig,
-    startEndOptions: normalizePersistedStartEndOptions(
-      (setup.startEndOptions ?? null) as StartEndOptions | null
-    ),
-    createdAt: setup.createdAt ?? new Date(),
-    updatedAt: setup.updatedAt ?? new Date(),
-  }));
+  return setupDocs.map(toSavedSetup);
 }
 
 /**
@@ -97,19 +90,25 @@ export async function loadCommunity(
     )
   );
 
-  const rows: Array<{
-    ownerId: string;
-    setupId: string;
-    data: Record<string, unknown>;
-  }> = [];
+  const rows: Array<{ ownerId: string; setup: SavedGeneratorSetupDoc }> = [];
   for (const docSnap of snapshot.docs) {
     const ownerId = docSnap.ref.parent.parent?.id;
     if (!ownerId) continue;
-    rows.push({
-      ownerId,
-      setupId: docSnap.id,
-      data: docSnap.data() as Record<string, unknown>,
+
+    const parsed = SavedGeneratorSetupSchema.safeParse({
+      id: docSnap.id,
+      ...docSnap.data(),
     });
+    if (!parsed.success) {
+      console.warn(
+        "[favorite-config-repository] skipping malformed community setup",
+        docSnap.ref.path,
+        parsed.error.issues
+      );
+      continue;
+    }
+
+    rows.push({ ownerId, setup: parsed.data });
   }
 
   const owners = await getVisibleOwnerProfiles(
@@ -120,19 +119,16 @@ export async function loadCommunity(
   for (const row of rows) {
     const owner = owners.get(row.ownerId);
     if (!owner) continue;
+    const setup = toSavedSetup(row.setup);
     results.push({
-      setupId: row.setupId,
+      setupId: setup.id,
       userId: row.ownerId,
       displayName: owner.displayName,
       avatar: owner.photoURL,
-      name: typeof row.data.name === "string" ? row.data.name : "Setup",
-      config: normalizePersistedGenerationConfig(
-        row.data.config ?? {}
-      ) as UIGenerationConfig,
-      startEndOptions: normalizePersistedStartEndOptions(
-        (row.data.startEndOptions ?? null) as StartEndOptions | null
-      ),
-      createdAt: toDate(row.data.createdAt) ?? new Date(),
+      name: setup.name,
+      config: setup.config,
+      startEndOptions: setup.startEndOptions,
+      createdAt: setup.createdAt,
     });
   }
 
@@ -148,7 +144,7 @@ export async function createSetup(
     null,
     {
       name: draft.name,
-      config: draft.config as unknown as Record<string, unknown>,
+      config: draft.config,
       startEndOptions: draft.startEndOptions,
       isPublic: true,
     },
@@ -190,11 +186,13 @@ export async function updateSetup(
   userId: string,
   setup: SavedGeneratorSetup
 ): Promise<void> {
+  // Merge writes rely on the caller supplying the full config and
+  // startEndOptions shape; read-side normalization drops retired keys.
   await firestoreSet(
     setupsPath(userId),
     setup.id,
     {
-      config: setup.config as unknown as Record<string, unknown>,
+      config: setup.config,
       startEndOptions: setup.startEndOptions,
       isPublic: true,
     },
