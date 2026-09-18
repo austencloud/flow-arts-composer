@@ -42,6 +42,9 @@ export function triangleMetrics(stations) {
  * the far vertex is at full reach.
  */
 export function triangleLayout(stations, grip) {
+  if (grip !== "corner" && grip !== "side") {
+    throw new Error(`unknown triangle grip: ${grip}`);
+  }
   const m = triangleMetrics(stations);
   const half = m.chordMm / 2;
   const vertices =
@@ -53,8 +56,8 @@ export function triangleLayout(stations, grip) {
         ]
       : [
           { x: 0, y: 0 },
-          { x: m.heightMm, y: half },
           { x: m.heightMm, y: -half },
+          { x: m.heightMm, y: half },
         ];
   const centroid = {
     x: (vertices[0].x + vertices[1].x + vertices[2].x) / 3,
@@ -70,8 +73,9 @@ export function triangleLayout(stations, grip) {
 
 /**
  * One bowed side as an arc: its centre, the outward unit normal, the bow
- * point, and the angle (radians, CCW from +x) at which the arc starts. The
- * arc sweeps `arcAngleRad` from `startAngle`.
+ * point, and the angle (radians, CCW from +x) at which the arc starts. Both
+ * grips wind their vertices counter-clockwise, so the arc starts at `p`
+ * (angle `startAngle`) and ends at `q` (angle `startAngle + arcAngleRad`).
  */
 function sideArc(p, q, centroid, m) {
   const mid = { x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 };
@@ -112,8 +116,8 @@ export function hoopTipPoints(glyph) {
 /**
  * Five triangle tips in glyph units. Corner: far bow point, far vertices,
  * bow points of the gripped sides. Side: far vertex, near vertices, bow
- * points of the far sides. Order mirrors the hoop: the axis point first,
- * then the +y pair, then the -y pair.
+ * points of the far sides. Order: axis point, +y vertex, -y vertex, +y bow,
+ * -y bow.
  */
 export function triangleTipPoints(stations, grip) {
   const k = glyphUnitsPerMm(stations);
@@ -121,13 +125,12 @@ export function triangleTipPoints(stations, grip) {
   const u = (p) => ({ dx: round2(p.x * k), dy: round2(p.y * k) });
   const [v0, v1, v2] = layout.vertices;
   const [s01, s12, s20] = layout.sides;
-  // Order: axis point, +y vertex, -y vertex, +y bow, -y bow.
   if (grip === "side") {
     // v0 = (s, +half) and v1 = (s, -half) are the near vertices, v2 the far
     // one; s20 (v2 to v0) is the +y far side, s12 (v1 to v2) the -y far side.
     return [u(v2), u(v0), u(v1), u(s20.bow), u(s12.bow)];
   }
-  // v0 is on the hand; v1 = (h, +half), v2 = (h, -half); s12 is the far side;
-  // s01 (v0 to v1) is the +y gripped side, s20 (v2 to v0) the -y one.
-  return [u(s12.bow), u(v1), u(v2), u(s01.bow), u(s20.bow)];
+  // v0 is on the hand; v1 = (h, -half), v2 = (h, +half); s12 is the far side;
+  // s20 (v2 to v0) is the +y gripped side, s01 (v0 to v1) the -y one.
+  return [u(s12.bow), u(v2), u(v1), u(s20.bow), u(s01.bow)];
 }

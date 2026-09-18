@@ -34,13 +34,50 @@ describe("hoop family stations", () => {
   it("puts the far bow point at the same reach for both grips", () => {
     const corner = triangleLayout(stations, "corner");
     const side = triangleLayout(stations, "side");
-    expect(corner.reachMm).toBeCloseTo(side.reachMm, 6);
-    // Corner grip: a vertex sits on the hand.
+    // Corner grip: a vertex sits on the hand, the far side's bow point sits
+    // at full reach.
     expect(corner.vertices[0]).toEqual({ x: 0, y: 0 });
+    expect(corner.sides[1].bow.x).toBeCloseTo(corner.reachMm, 6);
     // Side grip: the near side's bow point sits on the hand, its chord one
-    // sagitta ahead.
+    // sagitta ahead, and the far vertex sits at full reach.
     expect(side.vertices[0].x).toBeCloseTo(22.35, 6);
     expect(Math.abs(side.vertices[0].y)).toBeCloseTo(279.4, 6);
+    expect(side.vertices[2].x).toBeCloseTo(side.reachMm, 6);
+  });
+
+  it("runs every arc from p to q around a centre one bow radius from both", () => {
+    for (const grip of ["corner", "side"] as const) {
+      const layout = triangleLayout(stations, grip);
+      for (const s of layout.sides) {
+        const start = {
+          x: s.centre.x + layout.bowRadiusMm * Math.cos(s.startAngle),
+          y: s.centre.y + layout.bowRadiusMm * Math.sin(s.startAngle),
+        };
+        const end = {
+          x:
+            s.centre.x +
+            layout.bowRadiusMm * Math.cos(s.startAngle + layout.arcAngleRad),
+          y:
+            s.centre.y +
+            layout.bowRadiusMm * Math.sin(s.startAngle + layout.arcAngleRad),
+        };
+        expect(start.x).toBeCloseTo(s.p.x, 6);
+        expect(start.y).toBeCloseTo(s.p.y, 6);
+        expect(end.x).toBeCloseTo(s.q.x, 6);
+        expect(end.y).toBeCloseTo(s.q.y, 6);
+        expect(Math.hypot(s.p.x - s.centre.x, s.p.y - s.centre.y)).toBeCloseTo(
+          layout.bowRadiusMm,
+          6
+        );
+        expect(Math.hypot(s.q.x - s.centre.x, s.q.y - s.centre.y)).toBeCloseTo(
+          layout.bowRadiusMm,
+          6
+        );
+        expect(
+          Math.hypot(s.bow.x - s.centre.x, s.bow.y - s.centre.y)
+        ).toBeCloseTo(layout.bowRadiusMm, 6);
+      }
+    }
   });
 
   it("reproduces the shipped hoop tip points exactly", () => {
@@ -65,15 +102,27 @@ describe("hoop family stations", () => {
   it("gives each triangle grip five tips with the far point on the axis", () => {
     const corner = triangleTipPoints(stations, "corner");
     const side = triangleTipPoints(stations, "side");
-    expect(corner).toHaveLength(5);
-    expect(side).toHaveLength(5);
-    expect(corner[0]).toEqual({ dx: 135.15, dy: 0 });
-    expect(side[0]).toEqual({ dx: 135.15, dy: 0 });
-    // Corner: the two far vertices and the bow points of the gripped sides.
-    expect(corner[1]).toEqual({ dx: 129.18, dy: 74.58 });
-    expect(corner[3]).toEqual({ dx: 61.61, dy: 42.46 });
-    // Side: the two near vertices and the bow points of the far sides.
-    expect(side[1]).toEqual({ dx: 5.97, dy: 74.58 });
-    expect(side[3]).toEqual({ dx: 73.54, dy: 42.46 });
+    // Corner: axis bow point, the two far vertices, then the bow points of
+    // the gripped sides.
+    expect(corner).toEqual([
+      { dx: 135.15, dy: 0 },
+      { dx: 129.18, dy: 74.58 },
+      { dx: 129.18, dy: -74.58 },
+      { dx: 61.61, dy: 42.46 },
+      { dx: 61.61, dy: -42.46 },
+    ]);
+    // Side: axis vertex, the two near vertices, then the bow points of the
+    // far sides.
+    expect(side).toEqual([
+      { dx: 135.15, dy: 0 },
+      { dx: 5.97, dy: 74.58 },
+      { dx: 5.97, dy: -74.58 },
+      { dx: 73.54, dy: 42.46 },
+      { dx: 73.54, dy: -42.46 },
+    ]);
+  });
+
+  it("rejects an unknown triangle grip", () => {
+    expect(() => triangleLayout(stations, "edge")).toThrow();
   });
 });
