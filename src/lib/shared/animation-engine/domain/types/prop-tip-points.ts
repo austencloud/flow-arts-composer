@@ -487,6 +487,19 @@ export const FAN_FLAT_GRIP_TIP_POINTS: PropTipConfig = {
   ],
 };
 
+// Renegade Star: the five wick centres from scripts/assets/star-fire-reference.json
+// at the artwork's 340 px/m box fit (the star's 23.5-inch span outgrows the
+// DoodleGrip's 417.3 px/m inside the shared 260 x 207 fan box).
+export const FAN_STAR_TIP_POINTS: PropTipConfig = {
+  points: [
+    { dx: 19.69, dy: -92.84 },
+    { dx: 85.34, dy: -65.65 },
+    { dx: 112.53, dy: 0.0 },
+    { dx: 85.34, dy: 65.65 },
+    { dx: 19.69, dy: 92.84 },
+  ],
+};
+
 // DoodleGrip Day: the plate rim points shared with the 3D build, through the
 // same box mapping as the fire fan at the day build's 0.97 fit. The frame
 // colour only changes paint, not geometry, so all four keys share it.
@@ -534,6 +547,7 @@ function fanBuildTables(
     [`${propType}__fire_covered`]: fire,
     [`${propType}__lotus`]: scaledTips(FAN_LOTUS_TIP_POINTS, scale),
     [`${propType}__flat-grip`]: scaledTips(FAN_FLAT_GRIP_TIP_POINTS, scale),
+    [`${propType}__star`]: scaledTips(FAN_STAR_TIP_POINTS, scale),
     [`${propType}__moon`]: scaledTips(FAN_MOON_TIP_POINTS, scale),
     [`${propType}__day_black_bare`]: day,
     [`${propType}__day_black_covered`]: day,

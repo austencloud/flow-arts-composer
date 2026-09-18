@@ -240,6 +240,15 @@ export function normalizeLegacySequence<T>(value: T): T {
     "startingPlacement",
     "startingPosition"
   );
+  // `startingPositionGroup` held the same alpha/beta/gamma label now named
+  // `startingPlacementGroup`; it's a plain string, not a step-shaped object,
+  // so it moves with moveLegacyField rather than moveLegacyStepLikeField.
+  moveLegacyField(
+    normalized,
+    value,
+    "startingPlacementGroup",
+    "startingPositionGroup"
+  );
   if (Array.isArray(value.stepPairings)) {
     normalized.stepPairings = value.stepPairings.map(
       normalizeLegacyStepPairing

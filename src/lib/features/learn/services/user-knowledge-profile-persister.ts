@@ -13,6 +13,7 @@
 
 import {
   doc,
+  deleteField,
   getDoc,
   setDoc,
   onSnapshot,
@@ -24,6 +25,7 @@ import { trackWrite } from "$lib/shared/offline/state/sync-status-state.svelte";
 import { getUserLearningProgressPath } from "../data/firestore-paths";
 import type { LearningProgress, ConceptProgress } from "../domain/types";
 import type { SerializedLearningProgress } from "./types";
+import { LEGACY_CONCEPT_ID_ALIASES } from "./concept-progress-tracker";
 
 export class UserKnowledgeProfilePersister {
   /** Cancels the subscription this persister currently owns, if any. */
@@ -131,11 +133,25 @@ export class UserKnowledgeProfilePersister {
       const docRef = await this.getDocRef(userId);
       const serialized = this.serialize(progress);
 
+      // `setDoc(..., { merge: true })` merges the `concepts` map field
+      // recursively rather than replacing it, so a legacy concept id written
+      // before a rename is never overwritten by a save that only carries the
+      // current id: it survives in the document forever, and the tracker's
+      // alias merge runs again on every hydration. Marking every legacy id
+      // for deletion here removes it the next time this concept is saved.
+      const conceptsWithLegacyCleanup: Record<string, unknown> = {
+        ...serialized.concepts,
+      };
+      for (const legacyId of Object.keys(LEGACY_CONCEPT_ID_ALIASES)) {
+        conceptsWithLegacyCleanup[legacyId] = deleteField();
+      }
+
       await trackWrite(() =>
         setDoc(
           docRef,
           {
             ...serialized,
+            concepts: conceptsWithLegacyCleanup,
             updatedAt: serverTimestamp(),
           },
           { merge: true }

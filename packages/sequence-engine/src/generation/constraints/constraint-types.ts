@@ -19,6 +19,8 @@ export enum ConstraintType {
   HAND_PATH = "handPath",
   /** Left hand related to the right hand inside one step (mirror, unison, ...). */
   HAND_RELATIONSHIP = "handRelationship",
+  /** The two props spin in a requested relation (same or opposite, and a timing). */
+  PROP_RELATIONSHIP = "propRelationship",
 
   // Placement constraints
   PLACEMENT_GROUP = "placementGroup",
@@ -72,6 +74,7 @@ export const CONSTRAINT_CATEGORIES: Record<ConstraintType, ConstraintCategory> =
     [ConstraintType.REVERSAL]: ConstraintCategory.SEQUENCE,
     [ConstraintType.HAND_PATH]: ConstraintCategory.SEQUENCE,
     [ConstraintType.HAND_RELATIONSHIP]: ConstraintCategory.MOTION,
+    [ConstraintType.PROP_RELATIONSHIP]: ConstraintCategory.MOTION,
     [ConstraintType.PLACEMENT_GROUP]: ConstraintCategory.PLACEMENT,
     [ConstraintType.VTG_TIMING]: ConstraintCategory.TIMING,
     [ConstraintType.ALTERNATING]: ConstraintCategory.PATTERN,

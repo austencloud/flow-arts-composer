@@ -25,6 +25,7 @@
     direction = 1,
     reduceMotion = false,
     fillBody = false,
+    fluidBody = false,
     exporting = false,
     artPanel = false,
     regionLabel = "Animation controls",
@@ -40,6 +41,9 @@
     direction?: number;
     reduceMotion?: boolean;
     fillBody?: boolean;
+    /** The page's own layout measures its width and reflows, so it may take
+     *  the pane's whole width instead of the reading measure. */
+    fluidBody?: boolean;
     exporting?: boolean;
     artPanel?: boolean;
     regionLabel?: string;
@@ -84,7 +88,11 @@
                   duration: reduceMotion ? 0 : 120,
                 }}
               >
-                <div class="panel-center-inner" class:fill-body={fillBody}>
+                <div
+                  class="panel-center-inner"
+                  class:fill-body={fillBody}
+                  class:fluid-body={fluidBody}
+                >
                   <h2 class="panel-title">{activeLabel}</h2>
                   {@render body()}
                 </div>
@@ -167,6 +175,8 @@
     backface-visibility: hidden;
   }
 
+  /* A page of control rows keeps a reading measure, so a wide sidebar does
+     not stretch its rows across the whole pane. */
   .panel-center-inner {
     margin: auto 0;
     width: 100%;
@@ -174,12 +184,21 @@
     align-self: center;
   }
 
+  /* A page that was handed its whole body height. */
   .panel-center-inner.fill-body {
     margin: 0;
     flex: 1 1 0;
     min-height: 0;
     display: flex;
     flex-direction: column;
+  }
+
+  /* A page whose own layout measures the width it gets and reflows (the prop
+     grid) takes the pane's whole width too, so a pane the user drags wider
+     gets more tiles per row rather than a fixed column with a margin either
+     side. Pages of control rows keep the measure above. */
+  .panel-center-inner.fluid-body {
+    max-width: none;
   }
 
   .panel-title {
@@ -209,13 +228,16 @@
     border-radius: 3px;
   }
 
-  @media (min-width: 1680px) {
+  /* The measure widens with the pane it is in, not with the viewport: a
+     sidebar the user dragged wide on a laptop and a sidebar on a 4K panel
+     want the same column for the same width. */
+  @container animation-sidebar (min-width: 900px) {
     .panel-center-inner {
       max-width: 800px;
     }
   }
 
-  @media (min-width: 2600px) {
+  @container animation-sidebar (min-width: 1200px) {
     .panel-center-inner {
       max-width: 1000px;
     }

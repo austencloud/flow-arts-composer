@@ -1,0 +1,15 @@
+{
+  "referenceVersion": 1,
+  "source": "https://renegadejuggling.com/products/fire-fan-star",
+  "output": {
+    "path": "static/images/props/build-previews/fan-star-complete.webp",
+    "width": 640,
+    "height": 440
+  },
+  "sourceSha256": {
+    "scripts/assets/star-fire-reference.json": "7d7bcccdebc6b28126e0873c0a45c6fcc891559a20933229e3a11ec62e2c189c",
+    "scripts/build-star-fan.py": "d6011d2ba7dcb9530dfaf5c6dd0aefda66a5e9d0ae5ac5611b266cc33a91cb71",
+    "static/models/props/fan-star.glb": "f9a63e8fc2ac82a8744cd73d4a74e2dcf97a8d0e3d6e7337b0c384416d7c4000",
+    "static/images/props/appearances/fan-star.svg": "043c899592a57d8763757ed8991d2bab9ca9dc5f45da15dd49ee244074711e3d"
+  }
+}

@@ -3,7 +3,7 @@
   import { generatePropSvg } from "$lib/shared/animation-engine/services/svg-generator";
 
   interface ReviewFan {
-    id: "fire-bare" | "fire-covered" | "lotus" | "flat-grip";
+    id: "fire-bare" | "fire-covered" | "lotus" | "flat-grip" | "star";
     name: string;
     note: string;
     preview: string;
@@ -11,10 +11,18 @@
       | "fan__fire_bare"
       | "fan__fire_covered"
       | "fan__lotus"
-      | "fan__flat-grip";
+      | "fan__flat-grip"
+      | "fan__star";
   }
 
   const fans: readonly ReviewFan[] = [
+    {
+      id: "star",
+      name: "Renegade Juggling Star Fire",
+      note: "Five wicks on a half circle of straight spokes, a folded star lattice, and a 4-inch manipulation ring with an inner spinning ring.",
+      preview: "/images/props/build-previews/fan-star-complete.webp",
+      renderKey: "fan__star",
+    },
     {
       id: "flat-grip",
       name: "Forged Creations Flat Grip Fire",
@@ -51,6 +59,7 @@
   >;
 
   let renders = $state<MotionRenders>({
+    star: null,
     "flat-grip": null,
     "fire-bare": null,
     "fire-covered": null,

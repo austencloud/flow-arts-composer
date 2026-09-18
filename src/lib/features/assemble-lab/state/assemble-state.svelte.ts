@@ -142,8 +142,8 @@ export function createAssembleState(
     get canReplaceSelectedStep() {
       return document.canReplaceSelectedStep;
     },
-    get candidateStartPlacement() {
-      return document.candidateStartPlacement;
+    get candidateStartLocation() {
+      return document.candidateStartLocation;
     },
     get candidateStartOrientation() {
       return document.candidateStartOrientation;

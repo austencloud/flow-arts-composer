@@ -11,16 +11,21 @@
     onSettingChange,
     preview,
     showHelp = true,
+    fill = false,
   }: {
     onSettingChange?: (previousValue: string, value: string) => void;
     preview?: Snippet<["arc" | "linear" | "concave" | "hybrid", number]>;
     showHelp?: boolean;
+    /** Size the preview tiles to the box the grid is given, its height as
+     *  well as its width. The host must give the grid a definite height. */
+    fill?: boolean;
   } = $props();
 
   const vm = getAnimationVisibilityContext() ?? getAnimationVisibilityManager();
   const viewerPaths = getViewerPathContext();
   let session = $state(vm.getPathSession());
   let previewWidth = $state(0);
+  let previewHeight = $state(0);
 
   let pathShape = $state(vm.getPathShape());
   let motionAware = $state(vm.getMotionAwarePaths());
@@ -93,6 +98,28 @@
     },
   ];
 
+  /* A preview tile is its square preview with the label under it, inside
+     the tile's padding and border: about 24px taller than it is wide, with
+     the preview 20px narrower than the tile. Two tiles to a row. */
+  const PREVIEW_COLUMNS = 2;
+  const PREVIEW_GAP = 8;
+  const PREVIEW_TILE_EXTRA_HEIGHT = 24;
+  const PREVIEW_INSET = 20;
+  const previewRows = Math.ceil(options.length / PREVIEW_COLUMNS);
+
+  // Width-driven by default. With `fill`, the tiles are the largest squares
+  // that fit the grid's height too, centred in tracks wider than they are.
+  const previewTileWidth = $derived.by(() => {
+    const byWidth =
+      (previewWidth - PREVIEW_GAP * (PREVIEW_COLUMNS - 1)) / PREVIEW_COLUMNS;
+    if (!fill || previewHeight <= 0) return byWidth;
+    const byHeight =
+      (previewHeight - PREVIEW_GAP * (previewRows - 1)) / previewRows -
+      PREVIEW_TILE_EXTRA_HEIGHT;
+    return Math.min(byWidth, byHeight);
+  });
+  const previewSize = $derived(Math.max(1, previewTileWidth - PREVIEW_INSET));
+
   const isActive = (o: PathOption): boolean =>
     o.id === "byMotion" ? motionAware : !motionAware && pathShape === o.id;
   const selected = $derived(options.find(isActive) ?? options[0]!);
@@ -129,7 +156,9 @@
 <div
   class="path-shape-grid"
   class:with-preview={!!preview}
+  class:fill={!!preview && fill}
   bind:clientWidth={previewWidth}
+  bind:clientHeight={previewHeight}
 >
   {#each options as option (option.id)}
     <button
@@ -139,12 +168,13 @@
       aria-pressed={isActive(option)}
       onclick={() => select(option)}
       style:--path-color={option.color}
+      style:width={preview && fill ? `${previewTileWidth}px` : undefined}
     >
       {#if preview}
         <span class="path-preview" aria-hidden="true">
           {@render preview(
             option.id === "byMotion" ? "hybrid" : option.id,
-            Math.max(1, (previewWidth - 8) / 2 - 20)
+            previewSize
           )}
         </span>
       {:else}
@@ -225,6 +255,17 @@
   .with-preview .path-btn {
     padding: var(--spacing-sm, 8px);
     min-width: 0;
+  }
+  /* Height-limited tiles are narrower than their tracks; the tracks shrink
+     to them and the pair sits centred as one block, not one tile per half. */
+  .path-shape-grid.fill {
+    grid-template-columns: repeat(2, auto);
+    grid-auto-rows: minmax(0, 1fr);
+    justify-content: center;
+    min-height: 0;
+  }
+  .fill .path-btn {
+    min-height: 0;
   }
   .path-scope {
     color: var(--theme-text-muted);

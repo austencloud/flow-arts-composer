@@ -25,8 +25,10 @@
   import {
     isStationaryRatio,
     theoryKnobs,
+    theorySoloKnobs,
     type TheoryFlower,
   } from "$lib/shared/shape-matrix/domain/theory-flower";
+  import { tryGetViewerVisibilityContext } from "$lib/shared/sequence-viewer/context/viewer-visibility-context";
   import type { VtgMode } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
   import { theoryPropRelationship } from "$lib/shared/shape-matrix/domain/theory-prop-relationship";
   import { theoryRatioLabel } from "$lib/shared/shape-matrix/domain/theory-ratio";
@@ -49,6 +51,7 @@
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import { getShapeMatrixAnimationContext } from "../context/shape-matrix-animation-context";
+  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import ShapeMatrixLiveRatioStage, {
     type LiveHand,
   } from "./ShapeMatrixLiveRatioStage.svelte";
@@ -62,6 +65,15 @@
   const animationState = getShapeMatrixAnimationContext();
   const BLUE = "var(--dm-motion-blue, #3575e2)";
   const RED = "var(--dm-motion-red, #ed1c24)";
+  /*
+   * The two inks. The account's saved hand colours where it has them, the
+   * theme's motion colours otherwise: the same choice the Matrix drill's
+   * canvas and the grid tiles on both surfaces make, so a green left prop in
+   * the grid is a green left prop on this stage.
+   */
+  const propColors = $derived(getSettings().primaryPropColors ?? null);
+  const leftInk = $derived(propColors?.left ?? BLUE);
+  const rightInk = $derived(propColors?.right ?? RED);
 
   /*
    * What this stage can actually draw, plus trails. The effects roster is the
@@ -103,6 +115,14 @@
   let boundaryOpen = $state(false);
 
   const pair = $derived(app.theoryPair);
+  /* A header choice: one ratio on stage, the other hand's prop quiet. The
+     pair underneath is whole, so the heading, the pickers and the second
+     hand are what a solo takes away, not the selection. */
+  const solo = $derived(app.theorySoloHand);
+  /* The shell scopes the animator's per-hand motion visibility and points it
+     at the solo, and the Display page can change it afterwards; the stage
+     draws whichever hands that owner says are on. */
+  const motionVisibility = tryGetViewerVisibilityContext();
 
   const cellKey = $derived(
     pair
@@ -123,7 +143,7 @@
    */
   const alignKey = $derived(
     pair
-      ? `${app.theoryMode}|${cellKey}` +
+      ? `${app.theoryMode}|${cellKey}|${solo ?? "pair"}` +
           `|${pair.left.style}${pair.left.ori}|${pair.right.style}${pair.right.ori}`
       : app.theoryMode
   );
@@ -157,7 +177,11 @@
     hand: "left" | "right",
     color: string
   ): LiveHand {
-    const knobs = theoryKnobs(flower, hand, app.theoryMode);
+    /* A soloed hand is in its own frame, home bearing and clockwise: the
+       tile's own shape, with no pairing to be offset from. */
+    const knobs = solo
+      ? theorySoloKnobs(flower)
+      : theoryKnobs(flower, hand, app.theoryMode);
     /*
      * The mandala under the animation, from the first frame.
      *
@@ -182,9 +206,18 @@
     };
   }
 
+  const leftOn = $derived(
+    motionVisibility ? motionVisibility.leftMotion : solo !== "right"
+  );
+  const rightOn = $derived(
+    motionVisibility ? motionVisibility.rightMotion : solo !== "left"
+  );
   const hands = $derived<LiveHand[]>(
     pair
-      ? [liveHand(pair.left, "left", BLUE), liveHand(pair.right, "right", RED)]
+      ? [
+          ...(leftOn ? [liveHand(pair.left, "left", leftInk)] : []),
+          ...(rightOn ? [liveHand(pair.right, "right", rightInk)] : []),
+        ]
       : []
   );
 
@@ -266,32 +299,36 @@
          also repaints nothing in the grid: a tile is the two hands' shapes, and
          the pairing is what those two hands do to each other, which is a thing
          you watch rather than a thing you look at. -->
-    <div
-      class="mode-picker"
-      data-focus-mode-chrome
-      transition:growFade={{ axis: "y" }}
-    >
-      <ElementChipRow
-        selected={app.theoryMode}
-        onpick={(mode: VtgMode | null) => {
-          // The row clears on a second click, which the Matrix wants and
-          // Theory cannot use: the two hands are always in some pairing.
-          // Re-picking the chosen element keeps it.
-          if (mode) app.setTheoryMode(mode);
-        }}
-      />
-      <PropRelationshipChipRow
-        realizations={bridgeEntries}
-        selectedMode={app.theoryMode}
-        selectedPropMode={null}
-        activePropMode={null}
-        disabled={!pair}
-        ontarget={() => {
-          /* One entry per pairing, so the branching chips never render and
+    <!-- A solo is one hand, and a pairing is between two, so the pickers
+         leave with the other hand rather than staying inert. -->
+    {#if !solo}
+      <div
+        class="mode-picker"
+        data-focus-mode-chrome
+        transition:growFade={{ axis: "y" }}
+      >
+        <ElementChipRow
+          selected={app.theoryMode}
+          onpick={(mode: VtgMode | null) => {
+            // The row clears on a second click, which the Matrix wants and
+            // Theory cannot use: the two hands are always in some pairing.
+            // Re-picking the chosen element keeps it.
+            if (mode) app.setTheoryMode(mode);
+          }}
+        />
+        <PropRelationshipChipRow
+          realizations={bridgeEntries}
+          selectedMode={app.theoryMode}
+          selectedPropMode={null}
+          activePropMode={null}
+          disabled={!pair}
+          ontarget={() => {
+            /* One entry per pairing, so the branching chips never render and
                there is no second phase to target. */
-        }}
-      />
-    </div>
+          }}
+        />
+      </div>
+    {/if}
 
     <div class="media-stage">
       <div class="detail-flow">
@@ -303,13 +340,23 @@
         {:else}
           <header class="pair-heading" data-focus-mode-chrome>
             <div class="pair-keys">
-              <strong style={`color: ${BLUE};`}>
-                {theoryRatioLabel(pair.left.ratio)}
-              </strong>
-              <span class="against">against</span>
-              <strong style={`color: ${RED};`}>
-                {theoryRatioLabel(pair.right.ratio)}
-              </strong>
+              {#if solo === "right"}
+                <strong style={`color: ${rightInk};`}>
+                  {theoryRatioLabel(pair.right.ratio)}
+                </strong>
+              {:else if solo === "left"}
+                <strong style={`color: ${leftInk};`}>
+                  {theoryRatioLabel(pair.left.ratio)}
+                </strong>
+              {:else}
+                <strong style={`color: ${leftInk};`}>
+                  {theoryRatioLabel(pair.left.ratio)}
+                </strong>
+                <span class="against">against</span>
+                <strong style={`color: ${rightInk};`}>
+                  {theoryRatioLabel(pair.right.ratio)}
+                </strong>
+              {/if}
             </div>
           </header>
 
@@ -362,6 +409,7 @@
                 paused={!animationState.playing}
                 playbackMode={animationState.playbackMode}
                 propType={app.propType}
+                {propColors}
               />
             </button>
           </div>

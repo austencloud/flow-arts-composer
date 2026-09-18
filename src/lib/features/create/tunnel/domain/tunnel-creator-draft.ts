@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { normalizeLegacySequence } from "@tka/tka-types";
 import {
   TunnelCompositionSchema,
   TunnelSourceProvenanceSchema,
@@ -176,8 +177,42 @@ const VersionOneTunnelCreatorDraftSchema = z.object({
 /**
  * A stale or partially written draft should open as an empty creator, never as
  * a plausible-looking tunnel with missing performers or malformed transforms.
+ * Every sequence snapshot the draft carries (independentSequence and each
+ * performer's previous history) is passed through normalizeLegacySequence so
+ * a draft saved before the position -> placement rename still resolves its
+ * start step from the old startPosition/startingPosition spelling.
  */
 export function parseTunnelCreatorDraft(
+  value: unknown
+): TunnelCreatorDraft | null {
+  const draft = parseTunnelCreatorDraftShape(value);
+  return draft ? normalizeDraftSequences(draft) : null;
+}
+
+/** Applies normalizeLegacySequence to every sequence snapshot a parsed draft
+ * carries, so pre-rename localStorage data still yields a usable start step. */
+function normalizeDraftSequences(
+  draft: TunnelCreatorDraft
+): TunnelCreatorDraft {
+  return {
+    ...draft,
+    sourceStates: draft.sourceStates.map((source) => ({
+      ...source,
+      independentSequence:
+        source.independentSequence !== null
+          ? (normalizeLegacySequence(
+              source.independentSequence
+            ) as SequenceData)
+          : null,
+      previous: source.previous.map((entry) => ({
+        ...entry,
+        sequence: normalizeLegacySequence(entry.sequence) as SequenceData,
+      })),
+    })),
+  };
+}
+
+function parseTunnelCreatorDraftShape(
   value: unknown
 ): TunnelCreatorDraft | null {
   const parsed = TunnelCreatorDraftSchema.safeParse(value);

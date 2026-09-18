@@ -12,9 +12,10 @@
   const METHOD_ORDER = new Map([
     ["construct", 0],
     ["generate", 1],
-    ["fuse", 2],
-    ["tunnel", 3],
-    ["assemble", 4],
+    ["shape-engine", 2],
+    ["fuse", 3],
+    ["tunnel", 4],
+    ["assemble", 5],
   ]);
 
   let {
@@ -328,8 +329,11 @@
       align-content: center;
     }
 
+    /* Two primary cards fill the first row. Secondary cards sit three to
+       a row, or four when a signed-in user has all six methods, so
+       Assemble never wraps alone. */
     .method-index {
-      grid-template-columns: repeat(6, minmax(0, 1fr));
+      grid-template-columns: repeat(12, minmax(0, 1fr));
       column-gap: 16px;
       row-gap: 20px;
     }
@@ -339,11 +343,16 @@
     }
 
     .method-item.primary-method {
-      grid-column: span 3;
+      grid-column: span 6;
     }
 
     .method-item:not(.primary-method) {
-      grid-column: span 2;
+      grid-column: span 4;
+    }
+
+    .method-index:has(.method-item:nth-child(6))
+      .method-item:not(.primary-method) {
+      grid-column: span 3;
     }
 
     .method-card,

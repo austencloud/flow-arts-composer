@@ -20,6 +20,7 @@ import type {
   PictographData,
   ConstraintSet,
   ConstraintReport,
+  ConstraintDetail,
   IConstraint,
   IVariationConstraint,
 } from "../constraints/types.js";
@@ -46,10 +47,21 @@ import {
   type TurnSource,
 } from "../turns/TurnSource.js";
 import { materializeTurn } from "../turns/TurnMaterializer.js";
+import type { HandRelationshipOptions } from "../constraints/style/hand-relationship-constraint.js";
 import {
-  relatedRotationDirection,
-  type HandRelationshipOptions,
-} from "../constraints/style/hand-relationship-constraint.js";
+  describePropRelationship,
+  type PropRelationshipOptions,
+} from "../constraints/style/prop-relationship-constraint.js";
+import {
+  derivePartnerOrientation,
+  reportPropRelationship,
+  type PropDirection,
+  type PropTiming,
+} from "../prop-relationship.js";
+import {
+  resolveLeftSpinRule,
+  type LeftSpinRule,
+} from "../turns/left-spin-rule.js";
 import {
   applyLayerPattern,
   enforceHandFlipParity,
@@ -207,6 +219,10 @@ function resolveTurnAllocationOptions(
     ...(options.constraintOptions ?? {}),
   };
 
+  // A prop timing needs the phase kept beat to beat: equal turns on both
+  // hands and no floats (a float drops the prop out of its spin).
+  const propTiming = options.constraintOptions?.propRelationship?.timing;
+
   return {
     forcePeriod4OrientationCycle: shouldForcePeriod4OrientationCycle(
       options.loop
@@ -215,21 +231,124 @@ function resolveTurnAllocationOptions(
       ? { requiredTurns: constraints.turns }
       : {}),
     allowFloat:
-      constraints.motionType !== "pro" && constraints.motionType !== "anti",
-    matchHands: options.matchHandTurns === true,
+      propTiming === undefined &&
+      constraints.motionType !== "pro" &&
+      constraints.motionType !== "anti",
+    matchHands: options.matchHandTurns === true || propTiming !== undefined,
   };
 }
 
 /**
- * The relationship that decides a left dash's spin, or undefined when turns
- * are independent or no relationship is active. Only the random allocation
- * path matches turns; a turnPattern keeps whatever lanes it was given.
+ * Start orientations for a timed prop relationship. The right hand's is the
+ * caller's or the dataset's; the left is derived to sit at the requested
+ * phase unless the caller pinned both. With only the left pinned the roles
+ * swap: Together and Split are their own mirror and Quarter is a quarter
+ * either way, so the same derivation serves.
  */
-function resolveMatchedHandRelationship(
+function resolveTimedStartOrientations(
+  start: SequenceStep | undefined,
+  overrides:
+    | { leftStartOrientation?: string; rightStartOrientation?: string }
+    | undefined,
+  request: { direction: PropDirection; timing: PropTiming }
+):
+  | { leftStartOrientation?: string; rightStartOrientation?: string }
+  | undefined {
+  if (!start) return overrides;
+  const left = overrides?.leftStartOrientation;
+  const right = overrides?.rightStartOrientation;
+  if (left && right) return overrides;
+  if (!left) {
+    const rightOrientation =
+      right || start.motions.right.endOrientation || "in";
+    const derived = derivePartnerOrientation(
+      {
+        orientation: rightOrientation,
+        location: start.motions.right.endLocation,
+      },
+      start.motions.left.endLocation,
+      request.direction,
+      request.timing
+    );
+    return {
+      leftStartOrientation: derived,
+      rightStartOrientation: rightOrientation,
+    };
+  }
+  const derived = derivePartnerOrientation(
+    { orientation: left, location: start.motions.left.endLocation },
+    start.motions.right.endLocation,
+    request.direction,
+    request.timing
+  );
+  return { leftStartOrientation: left, rightStartOrientation: derived };
+}
+
+// Every caller only ever passes a result that has already gone through
+// withPropRelationshipReport, which always adds this detail, so the `?? 1`
+// fallback below is unreachable; it exists only to satisfy the return type.
+function propRelationshipScore(result: BuildResult): number {
+  return (
+    result.constraintReport.details.find(
+      (d) => d.constraint === ConstraintType.PROP_RELATIONSHIP
+    )?.score ?? 1
+  );
+}
+
+/**
+ * Replace the search's per-candidate PROP_RELATIONSHIP entry with the reading
+ * of the finished sequence, LOOP extension included. Float beats are exempt.
+ */
+function withPropRelationshipReport(
+  result: BuildResult,
+  request: PropRelationshipOptions
+): BuildResult {
+  const report = reportPropRelationship(result.sequence, request);
+  const judged = report.holding + report.offending;
+  const score = judged === 0 ? 1 : report.holding / judged;
+  const detail: ConstraintDetail = {
+    constraint: ConstraintType.PROP_RELATIONSHIP,
+    score,
+    mode: "hard",
+    description:
+      `${describePropRelationship(request)}: ` +
+      `${report.holding} of ${judged} beats hold` +
+      (report.exempt > 0 ? `, ${report.exempt} float beats exempt` : "") +
+      (report.firstOffendingIndex !== null
+        ? `, first miss at step ${report.firstOffendingIndex}`
+        : ""),
+  };
+  const details = [
+    ...result.constraintReport.details.filter(
+      (d) => d.constraint !== ConstraintType.PROP_RELATIONSHIP
+    ),
+    detail,
+  ];
+  return {
+    ...result,
+    constraintReport: {
+      ...result.constraintReport,
+      details,
+      score: score === 1 ? result.constraintReport.score : 0,
+      satisfied: result.constraintReport.satisfied && score === 1,
+    },
+  };
+}
+
+/**
+ * The rule that decides a left dash or static spin, or undefined when turns
+ * are independent and no prop relationship is active. Only the random
+ * allocation path matches turns; a turnPattern keeps whatever lanes it was
+ * given, but a prop relationship still fixes the spin.
+ */
+function resolveLeftSpinRuleFor(
   options: BuildOptions
-): HandRelationshipOptions | undefined {
-  if (!options.matchHandTurns) return undefined;
-  return options.constraintOptions?.handRelationship;
+): LeftSpinRule | undefined {
+  return resolveLeftSpinRule({
+    handRelationship: options.constraintOptions?.handRelationship,
+    propRelationship: options.constraintOptions?.propRelationship,
+    matchHandTurns: options.matchHandTurns === true && !options.turnPattern,
+  });
 }
 
 // Public types
@@ -276,6 +395,9 @@ export interface BuildOptions {
    * a `constraintOptions.handRelationship` active, a left dash or static that
    * gained turns also takes the spin the relationship implies from the right
    * hand. Random allocation only: a `turnPattern` keeps its own lanes.
+   *
+   * A `constraintOptions.propRelationship` fixes that spin on its own, match
+   * turns or not.
    */
   matchHandTurns?: boolean;
 
@@ -431,10 +553,72 @@ export class SequenceBuilder {
 
   /**
    * Build a sequence through the 7-stage pipeline.
+   *
+   * With a prop relationship the result also carries a post-build report:
+   * the candidate-time constraint settles shift spins and the spin rule the
+   * rest, so a miss here is a phase drift the search could not see. One more
+   * roll usually lands; past that, the better of the two comes back with its
+   * report so the caller can say the props fell short. With a timing and
+   * both start orientations pinned by the caller the phase is already fixed
+   * before the search runs, so the retry is skipped and the first attempt is
+   * returned as-is.
    * @throws Error if neither word nor length is provided
    * @throws Error if beam search finds no valid path at all
    */
   build(options: BuildOptions): BuildResult {
+    const propRelationship = options.constraintOptions?.propRelationship;
+    if (!propRelationship) return this.buildOnce(options);
+
+    const firstRaw = this.buildOnce(options);
+    const first = withPropRelationshipReport(firstRaw, propRelationship);
+    if (propRelationshipScore(first) === 1) return first;
+
+    // A timing pins the phase; with both start orientations also pinned by
+    // the caller, that phase is fixed before the search even runs, so a
+    // retry cannot change the verdict.
+    if (
+      propRelationship.timing !== undefined &&
+      options.leftStartOrientation !== undefined &&
+      options.rightStartOrientation !== undefined
+    ) {
+      return first;
+    }
+
+    let secondRaw: BuildResult;
+    try {
+      secondRaw = this.buildOnce(options);
+    } catch {
+      // buildOnce is stateless and its RNG is unseeded Math.random, and the
+      // first call already succeeded with identical options, so a second
+      // throw here can only be a search dead end.
+      return first;
+    }
+    const second = withPropRelationshipReport(secondRaw, propRelationship);
+
+    // Compare the raw pipeline verdict, from before withPropRelationshipReport
+    // folds the prop score into `satisfied`: once folded, both sides read
+    // false whenever their prop score is below 1. The first attempt's score
+    // is guaranteed below 1 here (the early return above already caught a
+    // score of 1), but the second's usually is too, so comparing the folded
+    // flag would rarely tell the two apart. The raw flag still reflects
+    // every other hard constraint, so a result whose other hard constraints
+    // failed on their own must not beat one whose other hard constraints
+    // held, even with a better raw prop score.
+    if (
+      secondRaw.constraintReport.satisfied !==
+      firstRaw.constraintReport.satisfied
+    ) {
+      return secondRaw.constraintReport.satisfied ? second : first;
+    }
+    return propRelationshipScore(second) > propRelationshipScore(first)
+      ? second
+      : first;
+  }
+
+  /**
+   * One attempt of the pipeline; `build()` adds the prop report and retry.
+   */
+  private buildOnce(options: BuildOptions): BuildResult {
     if (!options.word && !options.length) {
       throw new Error("Either word or length must be provided");
     }
@@ -843,7 +1027,7 @@ export class SequenceBuilder {
           {
             level: options.level,
             allowStaticSteps: this.resolveAllowStaticSteps(options),
-            matchedHandRelationship: resolveMatchedHandRelationship(options),
+            leftSpinRule: resolveLeftSpinRuleFor(options),
           }
         );
         const propContinuity = this.resolveEffectivePropContinuity(options);
@@ -901,7 +1085,8 @@ export class SequenceBuilder {
         rightStartOrientation: options.rightStartOrientation,
       },
       resolveLayerShaping(options),
-      resolveMatchedHandRelationship(options)
+      resolveLeftSpinRuleFor(options),
+      options.constraintOptions?.propRelationship
     );
 
     // Stage 6: LOOP extension (if requested)
@@ -1137,7 +1322,7 @@ export class SequenceBuilder {
         {
           level: options.level,
           allowStaticSteps: this.resolveAllowStaticSteps(options),
-          matchedHandRelationship: resolveMatchedHandRelationship(options),
+          leftSpinRule: resolveLeftSpinRuleFor(options),
         }
       );
       const propContinuity = this.resolveEffectivePropContinuity(options);
@@ -1262,7 +1447,7 @@ export class SequenceBuilder {
           {
             level: options.level,
             allowStaticSteps: this.resolveAllowStaticSteps(options),
-            matchedHandRelationship: resolveMatchedHandRelationship(options),
+            leftSpinRule: resolveLeftSpinRuleFor(options),
           }
         );
         const propContinuity = this.resolveEffectivePropContinuity(options);
@@ -1337,7 +1522,8 @@ export class SequenceBuilder {
         rightStartOrientation: options.rightStartOrientation,
       },
       resolveLayerShaping(options),
-      resolveMatchedHandRelationship(options)
+      resolveLeftSpinRuleFor(options),
+      options.constraintOptions?.propRelationship
     );
 
     // Stage 6: LOOP extension (if requested)
@@ -1512,7 +1698,8 @@ export class SequenceBuilder {
       level?: number;
       maxTurnIntensity?: number;
     },
-    matchedHandRelationship?: HandRelationshipOptions
+    leftSpinRule?: LeftSpinRule,
+    propRelationship?: PropRelationshipOptions
   ): BuildResult {
     const bridgeIndices = new Set(searchResult.bridgeStepIndices);
     const sequence: SequenceStep[] = [];
@@ -1541,8 +1728,10 @@ export class SequenceBuilder {
       const prevLeftRot = prevStep?.motions.left.rotationDirection;
       const prevRightRot = prevStep?.motions.right.rotationDirection;
 
-      // Right first: with matched turns and a relationship, a left dash or
-      // static takes the spin the relationship implies from the right hand.
+      // Right first: a left dash or static that gains turns takes the spin
+      // the rule implies from the right hand (a prop relationship, or match
+      // turns plus a hand relationship) instead of its own continuity or
+      // coin flip.
       const rightTurn = materializeTurn(pd.rightMotion, rightTurns, {
         previousRotation: prevRightRot,
         propContinuity,
@@ -1550,11 +1739,8 @@ export class SequenceBuilder {
       const leftTurn = materializeTurn(pd.leftMotion, leftTurns, {
         previousRotation: prevLeftRot,
         propContinuity,
-        forcedRotationDirection: matchedHandRelationship
-          ? relatedRotationDirection(
-              rightTurn.rotationDirection,
-              matchedHandRelationship
-            )
+        forcedRotationDirection: leftSpinRule
+          ? leftSpinRule(rightTurn.rotationDirection)
           : undefined,
       });
 
@@ -1632,6 +1818,16 @@ export class SequenceBuilder {
       }).steps;
     }
 
+    // With a prop timing the start orientations carry the phase and equal
+    // turns keep it, so a missing side is derived from the given one. A pair
+    // the caller pinned is theirs; the post-build report says whether it held.
+    const startOrientations = propRelationship?.timing
+      ? resolveTimedStartOrientations(shaped[0], orientationOverrides, {
+          direction: propRelationship.direction,
+          timing: propRelationship.timing,
+        })
+      : orientationOverrides;
+
     // Propagate orientations through the sequence. The CSV data has
     // orientations for 0-turn variations. After applying non-zero turns,
     // the end orientations must be recalculated: each step's start
@@ -1640,7 +1836,7 @@ export class SequenceBuilder {
     const propagator = new OrientationPropagator(
       new OrientationCalculatorImpl()
     );
-    const leftStartOrientation = (orientationOverrides?.leftStartOrientation ||
+    const leftStartOrientation = (startOrientations?.leftStartOrientation ||
       shaped[0]?.motions.left.endOrientation ||
       "in") as Orientation;
     let propagated = propagator.propagateForColor(
@@ -1648,10 +1844,9 @@ export class SequenceBuilder {
       "left",
       leftStartOrientation
     );
-    const rightStartOrientation =
-      (orientationOverrides?.rightStartOrientation ||
-        shaped[0]?.motions.right.endOrientation ||
-        "in") as Orientation;
+    const rightStartOrientation = (startOrientations?.rightStartOrientation ||
+      shaped[0]?.motions.right.endOrientation ||
+      "in") as Orientation;
     propagated = propagator.propagateForColor(
       propagated,
       "right",
@@ -1661,11 +1856,11 @@ export class SequenceBuilder {
     // Update step 0 (start placement) orientations when overrides are provided.
     // The propagator starts at i=1, so step 0 retains its original CSV orientations.
     // The start placement is a static hold, so start and end orientation are the same.
-    if (orientationOverrides && propagated[0]) {
+    if (startOrientations && propagated[0]) {
       const sp = propagated[0];
-      if (orientationOverrides.leftStartOrientation) {
+      if (startOrientations.leftStartOrientation) {
         const leftOri =
-          orientationOverrides.leftStartOrientation as Motion["startOrientation"];
+          startOrientations.leftStartOrientation as Motion["startOrientation"];
         propagated[0] = {
           ...sp,
           motions: {
@@ -1678,9 +1873,9 @@ export class SequenceBuilder {
           },
         };
       }
-      if (orientationOverrides.rightStartOrientation) {
+      if (startOrientations.rightStartOrientation) {
         const rightOri =
-          orientationOverrides.rightStartOrientation as Motion["startOrientation"];
+          startOrientations.rightStartOrientation as Motion["startOrientation"];
         const sp2 = propagated[0]!;
         propagated[0] = {
           ...sp2,

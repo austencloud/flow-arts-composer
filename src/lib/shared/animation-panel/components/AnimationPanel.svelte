@@ -42,7 +42,12 @@
   import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
   import type { PropChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
   import CatDogToggle from "$lib/shared/settings/components/tabs/prop-type/CatDogToggle.svelte";
+  import PrimaryPropColorSettings from "$lib/shared/settings/components/tabs/prop-type/PrimaryPropColorSettings.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import {
+    getSettings,
+    updateSetting,
+  } from "$lib/shared/application/state/app-state.svelte";
   import { viewingPropLabel } from "$lib/shared/foundation/services/prop-viewing";
   import AnimatorInspectorShell from "./AnimatorInspectorShell.svelte";
   import AnimatorInspectorFooter from "./AnimatorInspectorFooter.svelte";
@@ -149,6 +154,13 @@
       onToggleCatDog: () => void;
       onHandChange: (hand: "left" | "right") => void;
     };
+    /**
+     * Put the account's primary prop colours above the prop grid, the way the
+     * global prop drawer does, for a host whose canvas draws the props in
+     * those colours and has no other way to reach them. Hosts whose header
+     * already offers the control leave it off.
+     */
+    showPropColors?: boolean;
     onExport?: () => void;
     /** The host opens the shared file preview instead of rendering immediately. */
     exportOpensPreparation?: boolean;
@@ -215,6 +227,7 @@
     propPickerActive = false,
     propChirality,
     handProps,
+    showPropColors = false,
     onExport,
     exportOpensPreparation = false,
     onCancel,
@@ -762,6 +775,17 @@
         {/if}
       </div>
     {/if}
+    {#if showPropColors}
+      <!-- The same control the global prop drawer puts above its grid: the
+           pair's colours are chosen where the pair is chosen. -->
+      <div class="prop-colors">
+        <PrimaryPropColorSettings
+          colors={getSettings().primaryPropColors}
+          darkMode={getSettings().darkMode}
+          onchange={(colors) => updateSetting("primaryPropColors", colors)}
+        />
+      </div>
+    {/if}
     {#await import("$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte")}
       <!-- Reserve space while the chunk loads so the body doesn't render
            as a blank slot and then jump when the grid arrives. -->
@@ -1197,6 +1221,7 @@
     fillBody={resolvedPill === "display" ||
       resolvedPill === "effects" ||
       resolvedPill === "props"}
+    fluidBody={resolvedPill === "props"}
     regionLabel="Animation export settings"
     onNavMount={(element) => {
       pillNavEl = element;
@@ -1358,6 +1383,12 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
+    padding: 8px 16px 4px;
+    flex-shrink: 0;
+  }
+
+  /* The colour pair above the grid, on the prop drawer's own inset. */
+  .prop-colors {
     padding: 8px 16px 4px;
     flex-shrink: 0;
   }
