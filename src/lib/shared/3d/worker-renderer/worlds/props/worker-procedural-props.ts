@@ -59,6 +59,7 @@ export const PROCEDURAL_WORKER_PROP_TYPES = [
   CANONICAL_PROP_TYPE.BIGTRIAD,
   CANONICAL_PROP_TYPE.MINIHOOP,
   CANONICAL_PROP_TYPE.BIGHOOP,
+  CANONICAL_PROP_TYPE.TRIANGLE,
   CANONICAL_PROP_TYPE.FRACTALGENG,
   CANONICAL_PROP_TYPE.TRIQUETRA,
   CANONICAL_PROP_TYPE.TRIQUETRA2,
@@ -313,31 +314,191 @@ function createEightrings(
   );
 }
 
+// Mirrors hoop-geometry.ts and triangle-geometry.ts in @austencloud/scene-3d,
+// which restate scripts/hoop-family-stations.json in metres.
+// tests/unit/worker-renderer/worker-hoop-family.test.ts pins the built
+// geometry to the generated station module.
 const HOOP_OUTER_DIAMETER = 0.4699;
 const HOOP_TUBE_RADIUS = 0.015875 / 2;
 const HOOP_CENTERLINE_RADIUS = HOOP_OUTER_DIAMETER / 2 - HOOP_TUBE_RADIUS;
-const hoopGeometries = new Map<number, TorusGeometry>();
+const HOOP_HARDWARE_RADIUS = HOOP_TUBE_RADIUS * 1.3;
+const HOOP_JOIN_TAPE = 0.045;
+const HOOP_GRIP_TAPE = 0.15;
+const HOOP_BUTTON_RADIUS = 0.003;
+
+interface HoopGeometries {
+  ring: TorusGeometry;
+  joinTape: TorusGeometry;
+  gripTape: TorusGeometry;
+  button: SphereGeometry;
+}
+const hoopGeometries = new Map<number, HoopGeometries>();
+
+function hoopBand(scale: number, length: number): TorusGeometry {
+  const arc = length / HOOP_CENTERLINE_RADIUS;
+  return new TorusGeometry(
+    HOOP_CENTERLINE_RADIUS * scale,
+    HOOP_HARDWARE_RADIUS * scale,
+    12,
+    Math.max(8, Math.round((128 * arc) / (2 * Math.PI))),
+    arc
+  );
+}
+
+function getHoopGeometries(scale: number): HoopGeometries {
+  let geometry = hoopGeometries.get(scale);
+  if (!geometry) {
+    geometry = {
+      ring: new TorusGeometry(
+        HOOP_CENTERLINE_RADIUS * scale,
+        HOOP_TUBE_RADIUS * scale,
+        20,
+        128
+      ),
+      joinTape: hoopBand(scale, HOOP_JOIN_TAPE),
+      gripTape: hoopBand(scale, HOOP_GRIP_TAPE),
+      button: new SphereGeometry(HOOP_BUTTON_RADIUS * scale, 12, 8),
+    };
+    hoopGeometries.set(scale, geometry);
+  }
+  return geometry;
+}
 
 function createHoop(
   options: WorkerPropFactoryOptions,
   scale: number
 ): WorkerPropVisual {
   const layer = options.layer ?? 0;
-  let geometry = hoopGeometries.get(scale);
-  if (!geometry) {
-    geometry = new TorusGeometry(
-      HOOP_CENTERLINE_RADIUS * scale,
-      HOOP_TUBE_RADIUS * scale,
-      20,
-      128
-    );
-    hoopGeometries.set(scale, geometry);
-  }
+  const geometry = getHoopGeometries(scale);
   const materials = getHoopMaterials(options.color);
   const body = new Group();
-  const ring = mesh(geometry, materials.tube, layer);
-  ring.position.y = HOOP_CENTERLINE_RADIUS * scale;
+  const lift = HOOP_CENTERLINE_RADIUS * scale;
+
+  const ring = mesh(geometry.ring, materials.tube, layer);
+  ring.position.y = lift;
   body.add(ring);
+
+  // Join tape at the far rim (angle pi/2), the push button on top of it.
+  const joinTape = mesh(geometry.joinTape, materials.hardware, layer);
+  joinTape.position.y = lift;
+  joinTape.rotation.z =
+    Math.PI / 2 - HOOP_JOIN_TAPE / HOOP_CENTERLINE_RADIUS / 2;
+  body.add(joinTape);
+
+  const button = mesh(geometry.button, materials.hardware, layer);
+  button.position.y = 2 * lift + HOOP_HARDWARE_RADIUS * scale;
+  body.add(button);
+
+  // Grip wrap centred on the hand (angle -pi/2).
+  const gripTape = mesh(geometry.gripTape, materials.hardware, layer);
+  gripTape.position.y = lift;
+  gripTape.rotation.z =
+    -Math.PI / 2 - HOOP_GRIP_TAPE / HOOP_CENTERLINE_RADIUS / 2;
+  body.add(gripTape);
+
+  return createVisual(options, body, materials.trail);
+}
+
+const TRIANGLE_SIDE_CHORD = 0.5588;
+const TRIANGLE_SAGITTA = 0.02235;
+const TRIANGLE_BOW_RADIUS =
+  (TRIANGLE_SIDE_CHORD * TRIANGLE_SIDE_CHORD) / (8 * TRIANGLE_SAGITTA) +
+  TRIANGLE_SAGITTA / 2;
+const TRIANGLE_ARC_ANGLE =
+  2 * Math.asin(TRIANGLE_SIDE_CHORD / (2 * TRIANGLE_BOW_RADIUS));
+const TRIANGLE_HEIGHT = (TRIANGLE_SIDE_CHORD * Math.sqrt(3)) / 2;
+const TRIANGLE_ELBOW_LEG_ANGLE = 0.05 / TRIANGLE_BOW_RADIUS;
+
+interface TriangleGeometries {
+  side: TorusGeometry;
+  leg: TorusGeometry;
+  vertex: SphereGeometry;
+}
+let triangleGeometries: TriangleGeometries | null = null;
+
+function getTriangleGeometries(): TriangleGeometries {
+  if (!triangleGeometries) {
+    triangleGeometries = {
+      side: new TorusGeometry(
+        TRIANGLE_BOW_RADIUS,
+        HOOP_TUBE_RADIUS,
+        20,
+        96,
+        TRIANGLE_ARC_ANGLE
+      ),
+      leg: new TorusGeometry(
+        TRIANGLE_BOW_RADIUS,
+        HOOP_HARDWARE_RADIUS,
+        12,
+        8,
+        TRIANGLE_ELBOW_LEG_ANGLE
+      ),
+      vertex: new SphereGeometry(HOOP_HARDWARE_RADIUS, 16, 12),
+    };
+  }
+  return triangleGeometries;
+}
+
+// Both grips wind counter-clockwise, matching triangle-geometry.ts.
+function triangleVertices(grip: "corner" | "side"): [number, number][] {
+  const half = TRIANGLE_SIDE_CHORD / 2;
+  return grip === "side"
+    ? [
+        [-half, TRIANGLE_SAGITTA],
+        [half, TRIANGLE_SAGITTA],
+        [0, TRIANGLE_SAGITTA + TRIANGLE_HEIGHT],
+      ]
+    : [
+        [0, 0],
+        [half, TRIANGLE_HEIGHT],
+        [-half, TRIANGLE_HEIGHT],
+      ];
+}
+
+function createTriangle(options: WorkerPropFactoryOptions): WorkerPropVisual {
+  const layer = options.layer ?? 0;
+  const grip = options.build.triangleGrip === "side" ? "side" : "corner";
+  const geometry = getTriangleGeometries();
+  const materials = getHoopMaterials(options.color);
+  const body = new Group();
+
+  const vertices = triangleVertices(grip);
+  const cx = (vertices[0]![0] + vertices[1]![0] + vertices[2]![0]) / 3;
+  const cy = (vertices[0]![1] + vertices[1]![1] + vertices[2]![1]) / 3;
+  const inset = TRIANGLE_BOW_RADIUS - TRIANGLE_SAGITTA;
+
+  for (let i = 0; i < 3; i += 1) {
+    const [px, py] = vertices[i]!;
+    const [qx, qy] = vertices[(i + 1) % 3]!;
+    const mx = (px + qx) / 2;
+    const my = (py + qy) / 2;
+    const nx = mx - cx;
+    const ny = my - cy;
+    const len = Math.hypot(nx, ny);
+    const ox = mx - (nx / len) * inset;
+    const oy = my - (ny / len) * inset;
+    const start = Math.atan2(ny, nx) - TRIANGLE_ARC_ANGLE / 2;
+
+    const side = mesh(geometry.side, materials.tube, layer);
+    side.position.set(ox, oy, 0);
+    side.rotation.z = start;
+    body.add(side);
+
+    for (const angle of [
+      start,
+      start + TRIANGLE_ARC_ANGLE - TRIANGLE_ELBOW_LEG_ANGLE,
+    ]) {
+      const leg = mesh(geometry.leg, materials.hardware, layer);
+      leg.position.set(ox, oy, 0);
+      leg.rotation.z = angle;
+      body.add(leg);
+    }
+  }
+  for (const [vx, vy] of vertices) {
+    const vertex = mesh(geometry.vertex, materials.hardware, layer);
+    vertex.position.set(vx, vy, 0);
+    body.add(vertex);
+  }
   return createVisual(options, body, materials.trail);
 }
 
@@ -739,6 +900,8 @@ export function createProceduralWorkerProp(
       return createHoop(options, 1);
     case CANONICAL_PROP_TYPE.BIGHOOP:
       return createHoop(options, BIG_SCALE);
+    case CANONICAL_PROP_TYPE.TRIANGLE:
+      return createTriangle(options);
     case CANONICAL_PROP_TYPE.FRACTALGENG:
       return createGeng(options);
     case CANONICAL_PROP_TYPE.TRIQUETRA:

@@ -13,6 +13,7 @@ export const CANONICAL_PROP_TYPE = {
   BIGTRIAD: "bigtriad",
   MINIHOOP: "minihoop",
   BIGHOOP: "bighoop",
+  TRIANGLE: "triangle",
   BUUGENG: "buugeng",
   BIGBUUGENG: "bigbuugeng",
   FRACTALGENG: "fractalgeng",
@@ -54,6 +55,7 @@ export interface WorkerPropBuild {
   fanBuild: "pictograph" | "fire" | "lotus" | "day" | "moon" | "flat-grip";
   fanFrameColor: "black" | "white";
   fanCover: "bare" | "covered";
+  triangleGrip: "corner" | "side";
 }
 
 export type WorkerPropColor = "blue" | "red";

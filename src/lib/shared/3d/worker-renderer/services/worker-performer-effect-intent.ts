@@ -63,25 +63,24 @@ export function createWorkerPerformerEffectIntent(
     fanBuild: input.propBuild.fanBuild,
     fanFrameColor: input.propBuild.fanFrameColor,
     fanCover: input.propBuild.fanCover,
+    triangleGrip: input.propBuild.triangleGrip ?? "corner",
   };
   const decisionsFor = (
     propIndex: 0 | 1,
     propType: string | undefined
   ): WorkerTipEffectDecision[] =>
-    resolvePropTipAnchors3D(
-      propType,
-      input.staffHalfLength,
-      propBuild
-    ).map(({ effectTipIndex }) => ({
-      propIndex,
-      tipIndex: effectTipIndex,
-      effect: resolveEffect(
+    resolvePropTipAnchors3D(propType, input.staffHalfLength, propBuild).map(
+      ({ effectTipIndex }) => ({
         propIndex,
-        effectTipIndex,
-        input.tipEffectMap,
-        input.globalTipEffectMap ?? {}
-      ),
-    }));
+        tipIndex: effectTipIndex,
+        effect: resolveEffect(
+          propIndex,
+          effectTipIndex,
+          input.tipEffectMap,
+          input.globalTipEffectMap ?? {}
+        ),
+      })
+    );
 
   // Preserve anchor order and duplicates. Multi-prong props intentionally map
   // several physical emitters to the same logical effect slot.

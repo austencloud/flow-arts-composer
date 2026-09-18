@@ -21,7 +21,7 @@ const canonicalPropRoot = path.join(
  */
 const CANONICAL_PROP_SOURCE_HASHES = {
   "Prop3D.svelte":
-    "6bae71b6f5bd3274d7c022b1202cc61c5b76d22d048eaac7302f784218b47009",
+    "dbb650c26dc0de198ec3e52d8372eed4c0776e736fff1333c4b45aa7919955c3",
   "GltfProp3D.svelte":
     "62a715d89eb98785be287061b9720bcf7cc88c4bd19731433b931902e06bd96b",
   // Flat-grip build (43bf94fc40): the component picks fan-flat-grip.glb, and
@@ -40,7 +40,7 @@ const CANONICAL_PROP_SOURCE_HASHES = {
   "eightrings-profile.ts":
     "c943eabe2b40464e514f396ef7bcf97c0fa961587eee7320425edb360f95a4a5",
   "hoop-geometry.ts":
-    "5fdc56cb354a242428066c95b6f64891b10e709461d79f758aaf369d0e9be172",
+    "8d158b76f845560426414c585f89bd3b269ef2be11e5fc9d83df1b775df1d0c3",
   "torch-profile.ts":
     "d9337b9071279ec8f22e109e26e12fcb1892211b3ce590da50a03cac385a4bc3",
   "triad-frame.ts":
@@ -52,7 +52,7 @@ const CANONICAL_PROP_SOURCE_HASHES = {
   "plate-materials.ts":
     "709956b8ee633bf32244344ca4d8f703f1dc92db06fee7e00e8b09f5bf4d45f0",
   "frame-materials.ts":
-    "e395ac1f9319fab678a5c002fdd5b6b58de2422090aec8c6f741bb1bd0da8a72",
+    "9489ab9e6e0097c225c216fcc2e388ed1f0f130d15a30e25f6d4edd22476ff21",
   "prop-model-registry.ts":
     "203495aac2e641cb0e69a1d467884d769eab7dd6bbdb1f4faf3dd5365800cd15",
   "prop-model-recolor.ts":

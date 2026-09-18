@@ -114,9 +114,7 @@ function assertExactEffectIntent(
     ({ effect }) => !isWorkerEffectExact(effect)
   )?.effect;
   if (unsupported) {
-    throw new Error(
-      `Worker performer cannot reproduce ${unsupported} exactly`
-    );
+    throw new Error(`Worker performer cannot reproduce ${unsupported} exactly`);
   }
   throw new Error("Worker performer is missing resolved effect parameters");
 }
@@ -141,7 +139,9 @@ export function createWorkerPerformerSnapshot(
       options.effectIntent.propBuild.fanBuild !== options.propBuild.fanBuild ||
       options.effectIntent.propBuild.fanFrameColor !==
         options.propBuild.fanFrameColor ||
-      options.effectIntent.propBuild.fanCover !== options.propBuild.fanCover)
+      options.effectIntent.propBuild.fanCover !== options.propBuild.fanCover ||
+      options.effectIntent.propBuild.triangleGrip !==
+        options.propBuild.triangleGrip)
   ) {
     throw new Error(
       "Worker performer effect intent uses a different prop build"
