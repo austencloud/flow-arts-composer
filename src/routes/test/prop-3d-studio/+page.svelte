@@ -3,6 +3,7 @@
   import type { CameraStateSnapshot } from "@austencloud/scene-3d";
   import { replaceState } from "$app/navigation";
   import { onDestroy, onMount, untrack } from "svelte";
+  import { initializeAppServices } from "$lib/shared/application/state/services.svelte";
 
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import { setViewer3DContext } from "$lib/shared/3d/context/viewer-3d-context";
@@ -488,6 +489,11 @@
   });
 
   onMount(() => {
+    // Settings-backed picker rows (fan appearance, triangle grip) write through
+    // updateSettings, which is a no-op until the settings service exists. The
+    // app shell does this through MainApplication; /test/* routes have to do it
+    // themselves, as SequenceViewerTransitionReviewFrame does.
+    void initializeAppServices();
     const token = ++generationToken;
     const cachedSequence = readCachedRotatedLoop();
     const initialSequencePromise = cachedSequence
