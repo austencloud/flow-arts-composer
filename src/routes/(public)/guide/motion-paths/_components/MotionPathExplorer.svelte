@@ -131,8 +131,8 @@
     return `${flower.style}, ${turns}`;
   }
 
-  // One plain line for what the canvas is playing, so the reader never has
-  // to open the chooser to know.
+  // One plain line for what the canvas is playing. Sighted readers get it
+  // from the canvas's own glyphs; this line is announced, not shown.
   const nowPlaying = $derived.by(() => {
     if (explorer.source === "sequence") {
       const word = simplifyRepeatedWord(explorer.browsed.word ?? "");
@@ -276,10 +276,6 @@
           />
         {/snippet}
       </PathShapePanel>
-      <p class="path-note">
-        Only the hand’s path between positions changes. The positions and the
-        spin stay the same.
-      </p>
     </div>
 
     <div class="motion-column">
@@ -342,9 +338,9 @@
             >{/if}
         </div>
       </div>
-      <div class="now-playing">
-        <span class="now-playing-text" aria-live="polite">{nowPlaying}</span>
-        {#if !fitMode}
+      <span class="sr-only" aria-live="polite">{nowPlaying}</span>
+      {#if !fitMode}
+        <div class="now-playing">
           <PanelButton
             ariaExpanded={chooserOpen}
             ariaControls="motion-path-chooser"
@@ -357,8 +353,8 @@
               aria-hidden="true"
             ></i>
           </PanelButton>
-        {/if}
-      </div>
+        </div>
+      {/if}
     </div>
 
     {#if chooserOpen || fitMode}
@@ -379,10 +375,14 @@
               onchange={chooseSource}
             />
           </div>
+          <!-- Stacked, the box eases between the two control heights. In fit
+               mode the controls fill their row, so the layers fill the box
+               and the chips take whatever the turn picker leaves. -->
           <Crossfade
             key={explorer.source}
             duration={DURATION.normal}
             animateHeight
+            fill={fitMode}
           >
             {#if explorer.source === "matrix"}
               <div class="matrix-controls">
@@ -409,6 +409,7 @@
                       selected={explorer.selectedMode}
                       columns={3}
                       compact={!fitMode}
+                      fill={fitMode}
                       disabled={!explorer.selectedPair}
                       onpick={(mode) =>
                         explorer.chooseHandRelationship(
@@ -427,6 +428,8 @@
               </div>
             {/if}
           </Crossfade>
+          <!-- The strip keeps its height while idle so a build in progress
+               moves nothing beside it. -->
           <div class="picker-feedback" aria-live="polite">
             {#if explorer.pickerStatus === "loading"}
               <span>Building that sequence…</span>
@@ -434,14 +437,6 @@
               <span role="alert">{explorer.pickerError}</span>
               <PanelButton onclick={explorer.retryMatrixSelection}
                 >Try again</PanelButton
-              >
-            {:else}
-              <span
-                >{explorer.source === "sequence"
-                  ? "Switch the path while it plays."
-                  : explorer.soloHand
-                    ? "One hand on its own. Pick a cell to pair it again."
-                    : "Rows are left-hand shapes, columns are right-hand shapes. Pick a cell to play that pair, or a shape on the edge to play it alone."}</span
               >
             {/if}
           </div>
@@ -674,15 +669,8 @@
     margin-bottom: var(--spacing-sm, 8px);
   }
   .now-playing {
-    justify-content: space-between;
+    justify-content: flex-end;
     margin-top: var(--spacing-sm, 8px);
-  }
-  .now-playing-text {
-    flex: 1;
-    min-width: 0;
-    color: var(--theme-text-muted);
-    font-size: var(--font-size-sm, 14px);
-    line-height: 1.4;
   }
   .now-playing > :global(button) {
     flex-shrink: 0;
@@ -710,12 +698,6 @@
   .path-column :global(.path-shape-grid) {
     margin-top: 0;
   }
-  .path-note {
-    margin: var(--spacing-sm, 8px) 0 0;
-    color: var(--theme-text-muted);
-    font-size: var(--font-size-sm, 14px);
-    line-height: 1.5;
-  }
   .trace-choice {
     display: flex;
     align-items: center;
@@ -739,7 +721,7 @@
       display: grid;
       grid-column: 1;
       grid-row: 1;
-      grid-template-rows: auto minmax(0, 1fr) auto;
+      grid-template-rows: auto minmax(0, 1fr);
       align-self: stretch;
       order: 0;
     }
@@ -818,12 +800,34 @@
         width: auto;
         max-width: 100%;
       }
-      /* The controls keep their top edge (start-aligned above) so a mode
-         switch, which changes their height, moves nothing the page anchors
-         its scroll to. */
       .chooser {
         grid-template-rows: minmax(0, 1fr);
         align-self: stretch;
+        min-height: 0;
+      }
+      /* The controls fill the row: heading, then the crossfaded controls,
+         then the status strip. The crossfade's layers fill that middle box,
+         so a source switch changes nothing the page anchors its scroll to,
+         and the chip row takes what the turn picker leaves. */
+      .source-controls {
+        display: flex;
+        flex-direction: column;
+        align-self: stretch;
+        min-height: 0;
+      }
+      .source-controls > :global(.crossfade.fill) {
+        flex: 1 1 0;
+        height: auto;
+        min-height: 0;
+      }
+      .matrix-controls {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+      }
+      .relationship {
+        flex: 1 1 0;
         min-height: 0;
       }
       .source-stage {

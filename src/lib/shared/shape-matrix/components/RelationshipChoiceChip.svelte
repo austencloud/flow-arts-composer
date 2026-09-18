@@ -149,10 +149,11 @@
     outline-offset: 2px;
   }
 
-  /* The baked-in code (SS, TO…) was illegible at 1.55rem. */
+  /* The baked-in code (SS, TO…) was illegible at 1.55rem. A host that sizes
+     its row by height (ElementChipRow's fill) sets the size itself. */
   .choice-icon {
-    width: 2.25rem;
-    height: 2.25rem;
+    width: var(--choice-icon-size, 2.25rem);
+    height: var(--choice-icon-size, 2.25rem);
     flex: 0 0 auto;
     object-fit: contain;
     opacity: 0.68;
@@ -186,7 +187,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     color: color-mix(in srgb, var(--choice-accent) 80%, white);
-    font-size: var(--font-size-compact, 0.75rem);
+    font-size: var(--choice-copy-size, var(--font-size-compact, 0.75rem));
     letter-spacing: 0.02em;
     transition: color var(--duration-fast, 150ms) ease;
   }
