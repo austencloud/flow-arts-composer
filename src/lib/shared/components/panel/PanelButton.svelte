@@ -32,6 +32,8 @@
     ariaBusy?: boolean;
     /** For a disclosure button: whether the region it controls is open. */
     ariaExpanded?: boolean;
+    /** For a disclosure button: the id of the region it opens. */
+    ariaControls?: string;
     /** For a button that toggles a mode on and off: whether it is currently on. */
     ariaPressed?: boolean;
     /** Makes this the active surface's Ctrl/Cmd+S target. */
@@ -51,6 +53,7 @@
     ref = $bindable(null),
     ariaBusy = false,
     ariaExpanded,
+    ariaControls,
     ariaPressed,
     saveShortcut = false,
   }: Props = $props();
@@ -87,6 +90,7 @@
     aria-label={ariaLabel}
     aria-busy={ariaBusy}
     aria-expanded={ariaExpanded}
+    aria-controls={ariaControls}
     aria-pressed={ariaPressed}
   >
     {@render children()}

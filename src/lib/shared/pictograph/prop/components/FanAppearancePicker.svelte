@@ -83,6 +83,7 @@
       value={compact ? compactLook : appearance.build}
       options={compact ? compactLookOptions : buildOptions}
       useImageScale={compact}
+      showCredit={compact}
       onchange={(next) =>
         compact
           ? chooseCompactLook(next as CompactFanLook)

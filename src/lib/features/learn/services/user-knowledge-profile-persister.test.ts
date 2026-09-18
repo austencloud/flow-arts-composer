@@ -16,11 +16,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const onSnapshot = vi.fn();
 const getFirestoreInstance = vi.fn();
+const setDoc = vi.fn();
+const DELETE_FIELD = Symbol("deleteField");
 
 vi.mock("firebase/firestore", () => ({
   doc: vi.fn((_firestore: unknown, path: string) => ({ path })),
   getDoc: vi.fn(),
-  setDoc: vi.fn(),
+  setDoc: (...args: unknown[]) => setDoc(...args),
+  deleteField: vi.fn(() => DELETE_FIELD),
   onSnapshot: (...args: unknown[]) => onSnapshot(...args),
   serverTimestamp: vi.fn(() => "server-timestamp"),
 }));
@@ -160,5 +163,60 @@ describe("UserKnowledgeProfilePersister.subscribeToProgress", () => {
     // A late cancel from the superseded subscription must not reach user-b's.
     cancelFirst();
     expect(secondUnsubscribe).not.toHaveBeenCalled();
+  });
+});
+
+describe("UserKnowledgeProfilePersister.saveProgress legacy id cleanup", () => {
+  beforeEach(() => {
+    setDoc.mockReset();
+    getFirestoreInstance.mockResolvedValue({});
+  });
+
+  it("marks every legacy concept id in the alias table for deletion under concepts", async () => {
+    const { LEGACY_CONCEPT_ID_ALIASES } = await import(
+      "./concept-progress-tracker"
+    );
+    const persister = new UserKnowledgeProfilePersister();
+
+    await persister.saveProgress("user-1", {
+      concepts: new Map([
+        [
+          "hand-placements",
+          {
+            conceptId: "hand-placements",
+            status: "completed",
+            percentComplete: 100,
+            correctAnswers: 0,
+            incorrectAnswers: 0,
+            totalAttempts: 0,
+            accuracy: 0,
+            currentStreak: 0,
+            bestStreak: 0,
+            timeSpentSeconds: 0,
+          },
+        ],
+      ]),
+      completedConcepts: new Set(["hand-placements"]),
+      overallProgress: 0,
+      totalCorrect: 0,
+      totalTimeSpent: 0,
+      badges: [],
+      lastUpdated: new Date("2026-09-17T00:00:00.000Z"),
+    });
+
+    expect(setDoc).toHaveBeenCalledTimes(1);
+    const written = setDoc.mock.calls[0]![1] as { concepts: Record<string, unknown> };
+
+    // The legitimate current-id entry survives the write untouched.
+    expect(written.concepts["hand-placements"]).toMatchObject({
+      status: "completed",
+    });
+
+    // Every legacy id from the alias table carries a deleteField() sentinel,
+    // so a stale legacy entry left over from an older merge write (which
+    // `{ merge: true }` would otherwise never clear) is removed on this save.
+    for (const legacyId of Object.keys(LEGACY_CONCEPT_ID_ALIASES)) {
+      expect(written.concepts[legacyId]).toBe(DELETE_FIELD);
+    }
   });
 });

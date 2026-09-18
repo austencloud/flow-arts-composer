@@ -87,6 +87,12 @@ export interface ShapeMatrixAppSnapshot {
    */
   theoryMode: VtgMode;
   theoryPair: { left: TheoryFlower; right: TheoryFlower } | null;
+  /**
+   * The Theory surface's own solo: one ratio from its header, played by its
+   * own prop alone. Optional because saved snapshots predate it; absent is
+   * the pair.
+   */
+  theorySolo?: "left" | "right" | null;
   level: TurnLevel;
   leftTurn: TurnValue;
   rightTurn: TurnValue;
@@ -241,6 +247,12 @@ export function createShapeMatrixAppState(
   );
   let theoryMode = $state<VtgMode>(initial.theoryMode);
   let theoryPair = $state(initial.theoryPair);
+  /* The Theory surface keeps its own solo, as it keeps its own pair: the two
+     grids are two selections, and leaving one for the other does not change
+     what the other was showing. */
+  let theorySoloHand = $state<"left" | "right" | null>(
+    initial.theoryPair ? (initial.theorySolo ?? null) : null
+  );
   let level = $state(initial.level);
   let leftTurn = $state<TurnValue>(
     clampMatrixTurnToLevel(initial.leftTurn, initial.level)
@@ -528,11 +540,40 @@ export function createShapeMatrixAppState(
     pair: { left: TheoryFlower; right: TheoryFlower },
     options: ShapeMatrixSelectPairOptions = {}
   ): void {
+    // A cell is both hands; choosing one leaves any solo behind.
+    theorySoloHand = null;
     theoryPair = pair;
     if (compact && options.navigate !== false) {
       activeView = "detail";
       requestCompactFocus("detail");
     }
+    syncState();
+  }
+
+  /**
+   * One ratio alone, from its own header: the Theory surface's answer to the
+   * Matrix's header solo. The other hand keeps whatever it was set to (its
+   * axis's first flower otherwise), so the pair underneath stays whole and a
+   * cell picked afterwards resumes with both hands.
+   */
+  function selectTheorySolo(
+    hand: "left" | "right",
+    flower: TheoryFlower,
+    options: ShapeMatrixSelectPairOptions = {}
+  ): void {
+    const pair =
+      hand === "left"
+        ? {
+            left: flower,
+            right:
+              theoryPair?.right ?? theoryFlowerAt(theoryRightRatio, null),
+          }
+        : {
+            left: theoryPair?.left ?? theoryFlowerAt(theoryLeftRatio, null),
+            right: flower,
+          };
+    selectTheoryPair(pair, options);
+    theorySoloHand = hand;
     syncState();
   }
 
@@ -579,6 +620,7 @@ export function createShapeMatrixAppState(
       theoryRightRatio = nextRight;
       theoryRatiosLinked = false;
       theoryPair = nextPair;
+      theorySoloHand = null;
       theoryMode = nextMode;
     } else {
       if (!data) return;
@@ -676,6 +718,7 @@ export function createShapeMatrixAppState(
           right: theoryFlowerAt(theoryRightRatio, snapshot.theoryPair.right),
         }
       : null;
+    theorySoloHand = theoryPair ? (snapshot.theorySolo ?? null) : null;
     leftTurn = clampMatrixTurnToLevel(snapshot.leftTurn, snapshot.level);
     rightTurn = clampMatrixTurnToLevel(snapshot.rightTurn, snapshot.level);
     activeAxis = snapshot.activeAxis;
@@ -827,6 +870,7 @@ export function createShapeMatrixAppState(
       theoryRatiosLinked,
       theoryMode,
       theoryPair,
+      theorySolo: theorySoloHand,
       level,
       leftTurn,
       rightTurn,
@@ -912,6 +956,9 @@ export function createShapeMatrixAppState(
     get soloHand() {
       return soloHand;
     },
+    get theorySoloHand() {
+      return theorySoloHand;
+    },
     get data() {
       return data;
     },
@@ -965,6 +1012,7 @@ export function createShapeMatrixAppState(
     unlinkTheoryRatios,
     setTheoryMode,
     selectTheoryPair,
+    selectTheorySolo,
     surpriseMe,
     setPropType,
     selectPair,

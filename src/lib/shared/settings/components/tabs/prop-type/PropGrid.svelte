@@ -40,7 +40,10 @@
     isFanPropType,
     normalizeFanAppearance,
   } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import type {
+    FanAppearance,
+    FanBuild,
+  } from "$lib/shared/pictograph/prop/domain/fan-appearance";
   import type { PropChiralitySeam } from "./prop-chirality-seam";
   import { isBuugengFamilyProp } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
   import type { Snippet } from "svelte";
@@ -452,6 +455,15 @@
       (option) => option.id === normalizedFanAppearance.build
     )
   );
+  // Builds traced from another maker's product link back to that maker from
+  // the rail heading; the narrow rail shows the short name.
+  const RAIL_CREDIT_SHORT_NAMES: Partial<Record<FanBuild, string>> = {
+    "flat-grip": "Forged",
+    star: "Renegade",
+  };
+  const railCreditShortName = $derived(
+    fanLook ? RAIL_CREDIT_SHORT_NAMES[fanLook.id] : undefined
+  );
 
   // Track which locked prop (if any) is showing its inline earn tip.
   let lockedTipFor = $state<PropType | null>(null);
@@ -580,16 +592,18 @@
         <div class="rail-heading">
           <strong class="drill-title">{drillTitle}</strong>
         </div>
-        {#if drill.kind === "fan-look" && fanLook?.id === "flat-grip" && fanLook.designCredit}
+        {#if drill.kind === "fan-look" && fanLook?.designCredit && railCreditShortName}
           <a
             class="rail-credit"
             href={fanLook.designCredit.sourceUrl}
             target="_blank"
             rel="noreferrer"
-            aria-label="Forged Creations source"
+            aria-label={`${fanLook.designCredit.originator} source`}
           >
             <span class="credit-long">{fanLook.designCredit.originator}</span>
-            <span class="credit-short" aria-hidden="true">Forged</span>
+            <span class="credit-short" aria-hidden="true"
+              >{railCreditShortName}</span
+            >
             <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
           </a>
         {/if}

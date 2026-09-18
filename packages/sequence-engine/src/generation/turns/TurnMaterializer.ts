@@ -11,10 +11,11 @@ export interface TurnMaterializationOptions {
   random?: () => number;
   /**
    * Direction to give a dash or static that gained turns, instead of the
-   * continuity or coin-flip answer. The builder sets it for the left hand when
-   * "Match turns" is on and a hand relationship decides the spin (a mirrored
-   * dash spins the other way from its partner). A shift keeps its own
-   * direction regardless; this never overrides the dataset.
+   * continuity or coin-flip answer. The builder sets it from the LeftSpinRule
+   * the search resolved: a prop relationship, or "Match turns" plus a hand
+   * relationship (a mirrored dash spins the other way from its partner). See
+   * turns/left-spin-rule.ts. A shift keeps its own direction regardless; this
+   * never overrides the dataset.
    */
   forcedRotationDirection?: string;
 }

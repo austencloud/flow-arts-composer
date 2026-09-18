@@ -19,11 +19,18 @@
   interface Props {
     /** The shell owns navigation, the same way it does for the Matrix. */
     onselect?: (pair: { left: TheoryFlower; right: TheoryFlower }) => void;
+    /** A header is one hand's ratio: play it alone, by its own prop. */
+    onsolo?: (hand: "left" | "right", flower: TheoryFlower) => void;
     onsurprise?: () => void;
     /** The compact header popover points back at the axis it is changing. */
     emphasizedAxis?: "left" | "right" | "both" | null;
   }
-  let { onselect, onsurprise, emphasizedAxis = null }: Props = $props();
+  let {
+    onselect,
+    onsolo,
+    onsurprise,
+    emphasizedAxis = null,
+  }: Props = $props();
 
   const appState = getShapeMatrixAppContext();
   const animationState = getShapeMatrixAnimationContext();
@@ -71,14 +78,16 @@
       claimSelected={appState.compact && appState.activeView === "matrix"}
       keyOf={theoryFlowerKey}
       labelOf={theoryFlowerLabel}
-      paintHeader={(flower, hand, sizePx) =>
-        theoryHeaderArtworkSrc(flower, hand, tipDx, sizePx)}
-      paintCell={(left, right, sizePx) =>
-        theoryCellArtworkSrc(left, right, tipDx, sizePx)}
+      paintHeader={(flower, hand, sizePx, painter) =>
+        theoryHeaderArtworkSrc(flower, hand, tipDx, sizePx, painter)}
+      paintCell={(left, right, sizePx, painter) =>
+        theoryCellArtworkSrc(left, right, tipDx, sizePx, painter)}
       emphasizedAxis={emphasis}
       corner={cornerGuide}
       revealToken={appState.revealToken}
       onselect={onselect ?? appState.selectTheoryPair}
+      onsolo={onsolo ?? appState.selectTheorySolo}
+      soloHand={appState.theorySoloHand}
     />
   </div>
 </section>

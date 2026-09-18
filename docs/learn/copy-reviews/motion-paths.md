@@ -361,3 +361,59 @@ Explorer lede now: "Pick a pair of shapes from the matrix, or one shape from its
 The explorer also starts on Hybrid instead of Arc. The default pair mixes pro with anti, so the first frame is the rule at work: one hand on Arc, the other on Concave, and PathShapePanel's own header reads "Pro → Arc · Anti → Concave".
 
 Ownership ledger: MotionPathHybridExamples.svelte deleted; PathShapePanel and the animation scope's setPathPolicy unchanged. Evidence: 1440×900, section absent, Hybrid tile pressed on load, lede as above, no overflow.
+
+## September 17: the path comes first
+
+Austen looked at the explorer on main and asked how to make it more approachable. The first screen was a matrix of forty shapes with turn menus, six timing chips, a step strip and two toggles before the reader reached the four path tiles. He approved the recomposition ("Let's see you try").
+
+The lesson is the path, so the four tiles now open the explorer, beside the animation. Everything that picks what plays (the source toggle, turn controls, timing chips, the matrix or the browsed sequence's card, and their status line) waits behind one button under the canvas. The step strip is gone from the explorer; the transport keeps Play and Path lines. Trace defaults to Hands, since the hand path is what the rule is about and the tiles then read as a circle, straight lines, a star and a mix. On a phone the canvas comes first with the chooser opening under its button, and the tiles follow one swipe down; side by side, the path is on the left.
+
+Strings, pending Austen's eye:
+
+- Disclosure button and its region's accessible name: "Change what plays"
+- Now-playing line under the canvas, from the matrix pair: "Left hand pro, 1 turn. Right hand anti, 1 turn." (turn counts follow the pair; a float reads "float"); for a header solo: "Right hand pro, 1 turn, on its own."; from a browsed sequence: "AKEJ, 4 steps." (the word simplified as the card shows it; "A browsed sequence, 4 steps." if the sequence has no word); before the first pair loads: "Loading a sequence…"
+- Under the tiles: "Only the hand’s path between positions changes. The positions and the spin stay the same."
+- Matrix status: "Rows are left-hand shapes, columns are right-hand shapes. Pick a cell to play that pair, or a shape on the edge to play it alone." (replaces "Change the motion path to compare these shapes." and "Pick a cell to animate its shapes.")
+- Explorer lede now: "Switch the path while the sequence plays. Hybrid uses Arc for pro motions and Concave for anti motions. Any motion can take any path; Hybrid only sets the default." The first sentence no longer points at a matrix that is behind the button.
+
+Ownership ledger: PathShapePanel, MotionPathTransitionStage, SegmentedControl, Crossfade, ShapeMatrixGrid, ElementChipRow, TurnNotationControls, ChoreoCard, SequencePickerModal and growFade as before; PanelButton gains an `ariaControls` prop so the disclosure names its region. StepStrip leaves the explorer. The explorer state changes only its trace default.
+
+Evidence: browser pass at 375×667, 960×412, 820×1180, 1250×800, 1440×900, 1920×1080, 2560×1440, 3840×2160 and a 720×450 stand-in for 200% zoom; no horizontal overflow at any tier. Chooser open and closed, both sources, browse-and-pick, a header solo, the trace toggle and a cell pick observed with the now-playing line following each. Below a 900px container the chooser stacks so the timing chips keep their words (at 820 a two-column chooser clipped them to "S", "1", "("); above it the chooser's columns take the workspace's ratio so the stage sits under the canvas. AI-bust review of the new strings: clean.
+
+## September 17: the open chooser packs
+
+Austen opened "Change what plays" on main and found two voids: one under the button (the tile column ran about a hundred pixels past the canvas column, so the chooser opened under a gap) and one under the chooser's controls (a 544px matrix beside a short stack of controls). Layout only; no strings change.
+
+Trace moves from under the tiles into the transport row with Play and Path lines, which brings the two columns to about the same height; the motion column then stretches to the row and pins the now-playing line to its bottom, so the button always sits level with the tiles' note and the chooser opens right under it. Inside the chooser the status line joins the controls stack, and the stage becomes a square the height of that stack (never under 20rem so the card and the matrix stay readable, never over the matrix's 34rem). At desktop the matrix is now about 320px with 63px cells beside the turn and timing controls; in the Sequence source the card takes the same square beside its shorter controls. Stacked, below a 900px container, the stage is a square as wide as the column, as before.
+
+Ownership ledger: no new owners. Crossfade's `fill` mode sizes the two stage layers to the square; SegmentedControl gets a set width in the transport (a flex basis is not content, so the row sized itself from the labels and wrapped "Prop tips").
+
+Evidence: browser pass at 375×667, 960×412, 820×1180, 1250×800, 1440×900 and 1920×1080; no horizontal overflow at any tier. At 1440 both columns measure 677px and the chooser opens at the button's edge; the matrix stage is 320×320 beside 266px of controls plus the status line, and the card takes the same 320px square in the Sequence source. At 960 the columns were 587 and 558 before the pin and both 587 after. Both trace options read on one line at every tier. Console clean apart from the PostHog notice.
+
+## September 18: the four boxes on one screen
+
+Austen saw the packed chooser on his 2560×1440 monitor and rejected the 320px matrix: it was already small, and the point was never to shrink it. He wanted the tile pickers bigger, and above that he wanted the controls, the matrix, the tiles and the animation to fit on one screen on any device, so picking a cell does not mean scrolling back up to watch it play. Layout only; no strings change.
+
+Fit mode. Once the tiles and the canvas sit side by side (a 900px container) on a viewport at least 900px tall, the workspace takes the viewport under the site header (capped at 1400px), its top row gets a little more than the bottom, and every box scales to its quadrant: the tiles size to their height as well as their width, the canvas is the tallest square its stage holds, the matrix stretches to the chooser row up to its 34rem cap, and the chooser is simply there, with no "Change what plays" button and the timing chips at their full size. The controls keep their top edge in that row: centred, a switch to the Sequence source (whose controls are far shorter) moved the clicked button and the page scrolled after it. Below either threshold, phones, tablets and short desktop windows keep the stacked flow with the chooser behind its button.
+
+Ownership ledger: PathShapePanel gains a `fill` prop for the explorer's preview tiles (the largest squares that fit the grid's height too, centred as a pair); MotionPathExplorer mirrors the two thresholds in script for what CSS cannot drive. The stage, the matrix, the card and the canvas keep their owners; the canvas already filled its box through the player's `fill` mode.
+
+Evidence: browser pass at 2560×1340, 1920×950, 1440×900, 1250×900, 1440×800 and 375×667. At 2560 the workspace is 1368×1252 under the header, the tiles 267×290, the canvas 558, the matrix 542 with 107px cells (its original size) and the chips 218×84, all without a scroll. At 1440×900 the tiles are 147×170, the canvas 318 and the matrix 342, still on one screen; at 1250 the transport wraps and the canvas is 266. At 1440×800 and on the phone the layout is the one shipped on September 17, button and all. Switching sources in fit mode leaves the scroll position where it was. Console clean apart from the PostHog notice.
+
+Found in passing, not fixed here: the shared Crossfade's `animateHeight` freezes at the outgoing layer's height when a key reverts to a layer that is still fading out (Svelte resumes that layer without re-running the tracking action). Reproduced by switching the chooser's source back and forth within the fade; logged as its own task.
+
+## September 18: the captions go, the canvas names the timing
+
+Austen, on the fit-mode layout at 2560×1440: better, but he is not going to read captions like the tiles' note or the "Left hand pro, 1 turn" line, so they go; the timing chips can be taller with icons that grow with them; and the canvas should stop showing the beat number and the positions and show the prop and hand timing-and-direction glyphs instead. He also wondered whether the matrix's top-left corner could carry the turn controls, as the shape engine's does.
+
+Strings removed: the tiles' note ("Only the hand's path between positions changes. The positions and the spin stay the same."), the now-playing line under the canvas (kept as a visually hidden live region, so assistive technology still hears what plays), and the chooser's idle instructions ("Rows are left-hand shapes, columns are right-hand shapes…", "One hand on its own…", "Switch the path while it plays."). The status strip keeps its height and now carries only a build in progress or an error with its retry. No strings added.
+
+Canvas: the beat number and the α/β/γ positions are off; the hand relationship glyph (bottom right) and the prop relationship glyph (top right) are on, beside the letter and its turns. A solo takes both relationship glyphs off with the letter, since each describes a pair.
+
+Chips: in fit mode the controls fill their row (the crossfade fills instead of measuring) and the chip row takes what the turn picker leaves; ElementChipRow's new `fill` makes the row a size container and RelationshipChoiceChip reads its icon and word sizes from it, so a taller chip gets a bigger icon (about half the chip) rather than more air. Stacked and phone hosts keep the compact row shape; the shape engine's drill sets no sizes and is unchanged.
+
+Ownership ledger: ElementChipRow `fill`, RelationshipChoiceChip `--choice-icon-size` and `--choice-copy-size` fallbacks. The glyph overlay already owned both relationship glyphs behind the scope's visibility flags; the explorer state sets them. No new owners.
+
+Evidence: browser pass at 2560×1340 (chips 218×182 with 82px icons, tiles 281×305, canvas 610, matrix 542), 1920×1080 (chips 218×123, icons 61px, canvas 469, matrix 423), 1440×900 (chips 177×82, icons 42px, canvas 370, matrix 342), 1440×800 (stacked flow, button at the right of its row, compact chips 177×45 with 34px icons, the crossfade back on its measured height) and 375×667 (compact chips 95×45). Solo removes both relationship glyphs and the chip row; picking a pair brings them back. Source switches in fit mode leave the scroll where it was. Console clean apart from the PostHog notice. The drill could not be opened on the task server: `/shape-engine` fails to boot until the primary installs `svelte-awesome-color-picker`, a dependency main added on September 18.
+
+Corner as a control surface: not built. The shape engine's corner holds Surprise and two axis steppers because its cells reach 320px; the explorer's corner is 107px at 2560, 72px at 1920 and 68px at 1440, which cannot hold two 44px steppers, so the turns stay in the controls column.

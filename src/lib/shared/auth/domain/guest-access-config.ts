@@ -15,7 +15,8 @@ export const GUEST_SAVE_CAP = 3;
 // GUEST_SAVE_CAP, kept locally) live under browse > library. Without it a guest
 // could save but never see what they saved.
 const GUEST_MODULE_ACCESS: Record<string, string[]> = {
-  create: ["assemble", "construct", "generate"],
+  // shape-engine is public at /shape-engine already, so the tab is too.
+  create: ["assemble", "construct", "generate", "shape-engine"],
   browse: ["explore", "you"],
   creators: [],
 };

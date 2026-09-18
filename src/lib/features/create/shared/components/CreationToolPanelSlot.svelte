@@ -18,10 +18,11 @@
   import { getCreateModuleContext } from "../context/create-module-context";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import ConstructTabContent from "./ConstructTabContent.svelte";
-  // GeneratePanel (136-file subtree), AssembleToolPanel (21), and FuseTab (235!)
-  // are deferred via LazyMount — only the active build-mode tab's chunk loads.
-  // Construct is the default tab so ConstructTabContent stays eager. This keeps
-  // ~400 files out of the Create module's first-paint graph (see scripts/trace-create-three.cjs).
+  // GeneratePanel (136-file subtree), AssembleToolPanel (21), FuseTab (235!)
+  // and ShapeEngineTab are deferred via LazyMount — only the active build-mode
+  // tab's chunk loads. Construct is the default tab so ConstructTabContent
+  // stays eager. This keeps ~400 files out of the Create module's first-paint
+  // graph (see scripts/trace-create-three.cjs).
   import {
     logConstructStartPlacementCompleted,
     type StartPlacementPath,
@@ -297,6 +298,12 @@
           {:else if activeToolPanel === "tunnel"}
             <LazyMount
               loader={() => import("../../tunnel/TunnelTab.svelte")}
+              active
+            />
+          {:else if activeToolPanel === "shape-engine"}
+            <!-- Shape - pick a shape pairing, get the sequence (deferred chunk) -->
+            <LazyMount
+              loader={() => import("../../shape-engine/ShapeEngineTab.svelte")}
               active
             />
           {/if}

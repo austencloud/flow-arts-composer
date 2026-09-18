@@ -24,11 +24,12 @@ const CANONICAL_PROP_SOURCE_HASHES = {
     "dbb650c26dc0de198ec3e52d8372eed4c0776e736fff1333c4b45aa7919955c3",
   "GltfProp3D.svelte":
     "62a715d89eb98785be287061b9720bcf7cc88c4bd19731433b931902e06bd96b",
-  // Flat-grip build (43bf94fc40): the component picks fan-flat-grip.glb, and
-  // worker-prop-factory.ts plus worker-gltf-props.ts make the same choice from
-  // the same build.fanBuild value, so the worker is already in parity.
+  // Flat-grip (43bf94fc40) and Star builds: the component picks the build's
+  // own GLB through SEPARATE_BUILD_MODEL_URLS, and fanModelUrl() in
+  // worker-gltf-props.ts makes the same choice from the same build.fanBuild
+  // value, so the worker is already in parity.
   "Fan3D.svelte":
-    "e0153c9447c163665314beeb56fee0324cc33d60a2dcb30e01ad4efadb58a6c7",
+    "bfd1d3ba446b5753c8ed4cc856a8a29197133b8be7a164e6a060a8b2b6088902",
   "club-profile.ts":
     "23e6db6928f508be7b6b15d915a6fd5bf22365418708075390edae2e74e796b1",
   "fan-profile.ts":

@@ -36,6 +36,7 @@
 				"fan__fire_bare",
 				"fan__lotus",
 				"fan__flat-grip",
+				"fan__star",
 				"fan__day_black_bare",
 				"fan__moon",
 				"bigfan",

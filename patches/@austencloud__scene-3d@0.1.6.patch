@@ -3144,10 +3144,10 @@ diff --git a/dist/lib/components/props/Eightrings3D.svelte.d.ts.map b/dist/lib/c
 deleted file mode 100644
 index fadf6104b043722cb8415eb47964e1527ee8a117..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Fan3D.svelte b/dist/lib/components/props/Fan3D.svelte
-index dc635e752d11561cb585cbaaffa05b1e525d31e8..bfd1f4b09de7289a38eba0ba95c00c622320d074 100644
+index dc635e752d11561cb585cbaaffa05b1e525d31e8..16426cf4a056edb4fa4c633632c324d0f24b0404 100644
 --- a/dist/lib/components/props/Fan3D.svelte
 +++ b/dist/lib/components/props/Fan3D.svelte
-@@ -1,29 +1,51 @@
+@@ -1,29 +1,58 @@
 +<script module lang="ts">
 +  import type { BufferGeometry } from "three";
 +  import { buildFanShape, FAN_FRAME_WIDTH } from "./fan-profile";
@@ -3199,6 +3199,7 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..bfd1f4b09de7289a38eba0ba95c00c62
    import { computePropRotation } from "./prop3d-transforms";
 +  import { getPlateMaterials, PLATE_TRAIL_GEOMETRY } from "./plate-materials";
 +  import { propFinishState } from "../../state/prop-finish-state.svelte";
++  import type { PropBuild } from "../../state/prop-finish-state.svelte";
    import { userProportionsState } from "../../state/user-proportions-state.svelte";
 -  import {
 -    LAYER_WORLD,
@@ -3207,6 +3208,12 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..bfd1f4b09de7289a38eba0ba95c00c62
 +  import { LAYER_WORLD, LAYER_PLAYER_BODY } from "../../layers/layer-constants";
 +
 +  const MODEL_URL = "/models/props/fan.glb";
++  // Fire, Lotus, Day and Moon share one GLB and switch groups; the Flat Grip
++  // and Star fans ship as their own single-group files.
++  const SEPARATE_BUILD_MODEL_URLS: Partial<Record<PropBuild["fanBuild"], string>> = {
++    "flat-grip": "/models/props/fan-flat-grip.glb",
++    star: "/models/props/fan-star.glb",
++  };
 +  const DAY_FRAME_COLORS = {
 +    black: "#11141a",
 +    white: "#f0f1f4",
@@ -3214,7 +3221,7 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..bfd1f4b09de7289a38eba0ba95c00c62
  
    let {
      propState,
-@@ -33,156 +55,124 @@
+@@ -33,156 +62,124 @@
      thickness,
      isActivePlayer = false,
      scale = 1,
@@ -3225,7 +3232,8 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..bfd1f4b09de7289a38eba0ba95c00c62
 -
 -  // Fan blade radius is ~50% of staff length
 -  const FAN_BLADE_RATIO = 0.5;
--
++  const build = $derived(buildOverride ?? propFinishState.build);
+ 
 -  // Blade arc: ~150 degrees = 2.618 radians
 -  const BLADE_THETA_LENGTH = 2.618;
 -  // Center the arc so it fans symmetrically upward from origin
@@ -3234,13 +3242,12 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..bfd1f4b09de7289a38eba0ba95c00c62
 -
 -  // 5 spine ribs evenly distributed across the blade arc
 -  const SPINE_COUNT = 5;
-+  const build = $derived(buildOverride ?? propFinishState.build);
- 
+-
 -  const staffLength = $derived(
 +  const propLayer = $derived(isActivePlayer ? LAYER_PLAYER_BODY : LAYER_WORLD);
 +  const fanLoader = useGltf();
 +  const gltf = $derived(fanLoader.load(
-+    build.fanBuild === "flat-grip" ? "/models/props/fan-flat-grip.glb" : MODEL_URL
++    SEPARATE_BUILD_MODEL_URLS[build.fanBuild] ?? MODEL_URL
 +  ));
 +  const rotation = $derived(computePropRotation(propState));
 +  const trailMaterial = $derived(getPlateMaterials(color).trail);
@@ -19053,10 +19060,10 @@ index 12a776e2dc4cc4cf8f484afde470d094690a6dc0..e99e626aef531d417e49111acc3fed41
 +  />
  {/if}
 diff --git a/src/lib/components/props/Fan3D.svelte b/src/lib/components/props/Fan3D.svelte
-index dc635e752d11561cb585cbaaffa05b1e525d31e8..bfd1f4b09de7289a38eba0ba95c00c622320d074 100644
+index dc635e752d11561cb585cbaaffa05b1e525d31e8..16426cf4a056edb4fa4c633632c324d0f24b0404 100644
 --- a/src/lib/components/props/Fan3D.svelte
 +++ b/src/lib/components/props/Fan3D.svelte
-@@ -1,29 +1,51 @@
+@@ -1,29 +1,58 @@
 +<script module lang="ts">
 +  import type { BufferGeometry } from "three";
 +  import { buildFanShape, FAN_FRAME_WIDTH } from "./fan-profile";
@@ -19108,6 +19115,7 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..bfd1f4b09de7289a38eba0ba95c00c62
    import { computePropRotation } from "./prop3d-transforms";
 +  import { getPlateMaterials, PLATE_TRAIL_GEOMETRY } from "./plate-materials";
 +  import { propFinishState } from "../../state/prop-finish-state.svelte";
++  import type { PropBuild } from "../../state/prop-finish-state.svelte";
    import { userProportionsState } from "../../state/user-proportions-state.svelte";
 -  import {
 -    LAYER_WORLD,
@@ -19116,6 +19124,12 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..bfd1f4b09de7289a38eba0ba95c00c62
 +  import { LAYER_WORLD, LAYER_PLAYER_BODY } from "../../layers/layer-constants";
 +
 +  const MODEL_URL = "/models/props/fan.glb";
++  // Fire, Lotus, Day and Moon share one GLB and switch groups; the Flat Grip
++  // and Star fans ship as their own single-group files.
++  const SEPARATE_BUILD_MODEL_URLS: Partial<Record<PropBuild["fanBuild"], string>> = {
++    "flat-grip": "/models/props/fan-flat-grip.glb",
++    star: "/models/props/fan-star.glb",
++  };
 +  const DAY_FRAME_COLORS = {
 +    black: "#11141a",
 +    white: "#f0f1f4",
@@ -19123,7 +19137,7 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..bfd1f4b09de7289a38eba0ba95c00c62
  
    let {
      propState,
-@@ -33,156 +55,124 @@
+@@ -33,156 +62,124 @@
      thickness,
      isActivePlayer = false,
      scale = 1,
@@ -19134,7 +19148,8 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..bfd1f4b09de7289a38eba0ba95c00c62
 -
 -  // Fan blade radius is ~50% of staff length
 -  const FAN_BLADE_RATIO = 0.5;
--
++  const build = $derived(buildOverride ?? propFinishState.build);
+ 
 -  // Blade arc: ~150 degrees = 2.618 radians
 -  const BLADE_THETA_LENGTH = 2.618;
 -  // Center the arc so it fans symmetrically upward from origin
@@ -19143,13 +19158,12 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..bfd1f4b09de7289a38eba0ba95c00c62
 -
 -  // 5 spine ribs evenly distributed across the blade arc
 -  const SPINE_COUNT = 5;
-+  const build = $derived(buildOverride ?? propFinishState.build);
- 
+-
 -  const staffLength = $derived(
 +  const propLayer = $derived(isActivePlayer ? LAYER_PLAYER_BODY : LAYER_WORLD);
 +  const fanLoader = useGltf();
 +  const gltf = $derived(fanLoader.load(
-+    build.fanBuild === "flat-grip" ? "/models/props/fan-flat-grip.glb" : MODEL_URL
++    SEPARATE_BUILD_MODEL_URLS[build.fanBuild] ?? MODEL_URL
 +  ));
 +  const rotation = $derived(computePropRotation(propState));
 +  const trailMaterial = $derived(getPlateMaterials(color).trail);
@@ -35646,10 +35660,10 @@ index 0000000000000000000000000000000000000000..30ccfb4de78798dd472a76de1d3aa7c2
 +}
 diff --git a/src/lib/state/prop-finish-state.svelte.ts b/src/lib/state/prop-finish-state.svelte.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..d37d19e3f2d23fdf5b99715cbc2a63041d5eb8a1
+index 0000000000000000000000000000000000000000..e2e21cf354a4c90c5e5e9c84eedec1b83f00276a
 --- /dev/null
 +++ b/src/lib/state/prop-finish-state.svelte.ts
-@@ -0,0 +1,119 @@
+@@ -0,0 +1,126 @@
 +/**
 + * Prop Finish State
 + *
@@ -35664,7 +35678,14 @@ index 0000000000000000000000000000000000000000..d37d19e3f2d23fdf5b99715cbc2a6304
 +import { PropType } from "../domain/enums/PropType";
 +
 +export type PropFinish = "fire" | "day";
-+export type FanBuild = "pictograph" | "fire" | "lotus" | "day" | "moon" | "flat-grip";
++export type FanBuild =
++  | "pictograph"
++  | "fire"
++  | "lotus"
++  | "day"
++  | "moon"
++  | "flat-grip"
++  | "star";
 +export type FanFrameColor = "black" | "white";
 +export type FanCover = "bare" | "covered";
 +export type TriangleGrip = "corner" | "side";

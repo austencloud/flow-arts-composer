@@ -9,7 +9,7 @@ patchedDependencies:
     hash: f163e5ba342f1576ff6fd359c5e5795dfec1fd0415dce6617ebe03d3c3d995e7
     path: patches/@austencloud__backgrounds@0.7.12.patch
   '@austencloud/scene-3d@0.1.6':
-    hash: 7395f7a0a7e38837d261c2d0943448a0a21cfceb7bbb4028dd9348a269d0e7cb
+    hash: 0730ac94e82129ca3d62726dc44d5194ad61b0651c3a94eea54f03a8e72a8104
     path: patches/@austencloud__scene-3d@0.1.6.patch
   svelte-fast-check@0.4.5:
     hash: 79c185fc32c5583774bc91ec4fa0ebcbac5c790d9b132fc5728f5d13a3d72474
@@ -60,7 +60,7 @@ importers:
         version: 0.1.0(svelte@5.49.2)
       '@austencloud/scene-3d':
         specifier: ^0.1.6
-        version: 0.1.6(patch_hash=7395f7a0a7e38837d261c2d0943448a0a21cfceb7bbb4028dd9348a269d0e7cb)(@threlte/core@8.3.1(svelte@5.49.2)(three@0.182.0))(@threlte/extras@9.7.1(@types/three@0.182.0)(svelte@5.49.2)(three@0.182.0))(svelte@5.49.2)(three@0.182.0)
+        version: 0.1.6(patch_hash=0730ac94e82129ca3d62726dc44d5194ad61b0651c3a94eea54f03a8e72a8104)(@threlte/core@8.3.1(svelte@5.49.2)(three@0.182.0))(@threlte/extras@9.7.1(@types/three@0.182.0)(svelte@5.49.2)(three@0.182.0))(svelte@5.49.2)(three@0.182.0)
       '@austencloud/sidebar':
         specifier: ^1.0.1
         version: 1.0.1(svelte@5.49.2)
@@ -280,6 +280,9 @@ importers:
       realtime-bpm-analyzer:
         specifier: ^5.0.0
         version: 5.0.0
+      svelte-awesome-color-picker:
+        specifier: 4.1.3
+        version: 4.1.3(svelte@5.49.2)
       svelte-confetti:
         specifier: ^2.3.2
         version: 2.3.2(svelte@5.49.2)
@@ -7756,6 +7759,17 @@ packages:
     peerDependencies:
       svelte: ^5.0.0
 
+  svelte-awesome-color-picker@4.1.3:
+    resolution: {integrity: sha512-fYio6XR2vp9WO0ihT6Vlw1Kj278gEZtqfIRde4YBx5OgGjBdQJxFE8jl6OibPQPrmaz625HZPZaSbRflL88/Mg==}
+    engines: {node: '>=24'}
+    peerDependencies:
+      svelte: ^5.0.0
+
+  svelte-awesome-slider@2.0.0:
+    resolution: {integrity: sha512-YBkOdYm1Feaqsn2JkJBRs+Kc/X3Qy/3GuVmI7GmoYDjBaHkjx9uH4khTuED22z57Hg3gGWeDhp/clIjWDdLNaw==}
+    peerDependencies:
+      svelte: ^5.0.0
+
   svelte-check@4.3.6:
     resolution: {integrity: sha512-uBkz96ElE3G4pt9E1Tw0xvBfIUQkeH794kDQZdAUk795UVMr+NJZpuFSS62vcmO/DuSalK83LyOwhgWq8YGU1Q==}
     engines: {node: '>= 18.0.0'}
@@ -8992,7 +9006,7 @@ snapshots:
       '@austencloud/media-tagging-types': 0.1.0
       svelte: 5.49.2
 
-  '@austencloud/scene-3d@0.1.6(patch_hash=7395f7a0a7e38837d261c2d0943448a0a21cfceb7bbb4028dd9348a269d0e7cb)(@threlte/core@8.3.1(svelte@5.49.2)(three@0.182.0))(@threlte/extras@9.7.1(@types/three@0.182.0)(svelte@5.49.2)(three@0.182.0))(svelte@5.49.2)(three@0.182.0)':
+  '@austencloud/scene-3d@0.1.6(patch_hash=0730ac94e82129ca3d62726dc44d5194ad61b0651c3a94eea54f03a8e72a8104)(@threlte/core@8.3.1(svelte@5.49.2)(three@0.182.0))(@threlte/extras@9.7.1(@types/three@0.182.0)(svelte@5.49.2)(three@0.182.0))(svelte@5.49.2)(three@0.182.0)':
     dependencies:
       '@threlte/core': 8.3.1(svelte@5.49.2)(three@0.182.0)
       '@threlte/extras': 9.7.1(@types/three@0.182.0)(svelte@5.49.2)(three@0.182.0)
@@ -16479,6 +16493,16 @@ snapshots:
       esrap: 1.2.2
       svelte: 5.49.2
       zimmerframe: 1.1.2
+
+  svelte-awesome-color-picker@4.1.3(svelte@5.49.2):
+    dependencies:
+      colord: 2.9.3
+      svelte: 5.49.2
+      svelte-awesome-slider: 2.0.0(svelte@5.49.2)
+
+  svelte-awesome-slider@2.0.0(svelte@5.49.2):
+    dependencies:
+      svelte: 5.49.2
 
   svelte-check@4.3.6(picomatch@4.0.4)(svelte@5.49.2)(typescript@5.9.3):
     dependencies:

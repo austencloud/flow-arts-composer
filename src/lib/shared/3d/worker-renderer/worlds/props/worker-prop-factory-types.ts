@@ -52,7 +52,14 @@ export type CanonicalWorkerPropType =
 
 export interface WorkerPropBuild {
   finish: "fire" | "day";
-  fanBuild: "pictograph" | "fire" | "lotus" | "day" | "moon" | "flat-grip";
+  fanBuild:
+    | "pictograph"
+    | "fire"
+    | "lotus"
+    | "day"
+    | "moon"
+    | "flat-grip"
+    | "star";
   fanFrameColor: "black" | "white";
   fanCover: "bare" | "covered";
   triangleGrip: "corner" | "side";

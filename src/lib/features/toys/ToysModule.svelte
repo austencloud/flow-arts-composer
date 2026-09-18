@@ -7,13 +7,12 @@
   import { TOYS_TABS } from "$lib/shared/navigation/config/tab-definitions";
 
   const tabComponents: Record<string, () => Promise<{ default: any }>> = {
-    "shape-matrix": () => import("./tabs/shape-matrix/ShapeMatrixToy.svelte"),
     "third-order": () => import("./tabs/third-order/ThirdOrderToy.svelte"),
     "hand-tunnel": () => import("./tabs/hand-tunnel/HandTunnelToy.svelte"),
   };
 
   const activeTab = $derived(
-    navigationState.activeTab || TOYS_TABS[0]?.id || "shape-matrix"
+    navigationState.activeTab || TOYS_TABS[0]?.id || "third-order"
   );
 
   let TabComponent = $state<any>(null);

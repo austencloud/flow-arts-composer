@@ -109,6 +109,34 @@ export function normalizeSectionId(
   return SECTION_ID_MIGRATIONS[moduleId]?.[rawSectionId] ?? rawSectionId;
 }
 
+/** Sections that moved to another module. Old links open what the tab became. */
+const SECTION_MODULE_MIGRATIONS: Readonly<
+  Record<
+    string,
+    Readonly<Record<string, { moduleId: ModuleId; sectionId: string }>>
+  >
+> = {
+  // Shape Engine graduated from Toys to the Create module's Shape tab (2026-09-18)
+  toys: {
+    "shape-matrix": { moduleId: "create", sectionId: "shape-engine" },
+  },
+};
+
+/**
+ * Resolve a module/section pair from a URL or history entry to where it lives
+ * now: follows cross-module moves first, then same-module renames.
+ */
+export function normalizeNavigationTarget(
+  moduleId: ModuleId,
+  rawSectionId: string | null | undefined
+): { moduleId: ModuleId; sectionId: string | undefined } {
+  const moved = rawSectionId
+    ? SECTION_MODULE_MIGRATIONS[moduleId]?.[rawSectionId]
+    : undefined;
+  if (moved) return moved;
+  return { moduleId, sectionId: normalizeSectionId(moduleId, rawSectionId) };
+}
+
 // Module definitions for the new navigation system
 // NOTE: Dashboard removed - it was a redundant launcher. Create is now the default landing.
 export const MODULE_DEFINITIONS: ModuleDefinition[] = [

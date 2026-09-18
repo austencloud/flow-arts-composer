@@ -149,6 +149,7 @@
         showEffectsPlayback={false}
         selectedPropType={appState.propType}
         onPropChange={(propType) => void appState.setPropType(propType)}
+        showPropColors={true}
         showPathShape={false}
         showMotionVisibility={true}
         showSequenceMarks={!theory}
