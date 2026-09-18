@@ -6,10 +6,11 @@
  * sequence to realize — that is the entire reason the Theory surface exists —
  * so its geometry comes from the QfT model instead.
  *
- * Everything downstream of the path stays shared: the same
- * `renderCell` / `renderHeader` guide painter, the same hand colours, the same
- * 2.5px stroke, the same purple overlap, the same extent fit. A Theory tile is
- * a Matrix tile whose curve was computed a different way, which is the point.
+ * Everything downstream of the path stays shared: the grid's own
+ * `ShapeMatrixArtworkPainter`, the same hand colours (the account's, when it
+ * has saved a pair), the same 2.5px stroke, the same purple overlap, the same
+ * extent fit. A Theory tile is a Matrix tile whose curve was computed a
+ * different way, which is the point.
  *
  * Each hand is drawn in its own frame, with no pairing in it. That is the
  * Matrix's rule too: a tile is the blue hand's shape against the red hand's,
@@ -25,7 +26,10 @@ import {
   MANDALA_GRID_RADIUS,
 } from "$lib/shared/mandala/domain/mandala-constants";
 import { traceScaledPath } from "$lib/shared/notation/qft/qft-model";
-import { renderCell, renderHeader } from "./shape-matrix-render";
+import {
+  CLUB_ARTWORK_PAINTER,
+  type ShapeMatrixArtworkPainter,
+} from "./shape-matrix-artwork";
 import {
   theoryFlowerKey,
   theorySoloKnobs,
@@ -155,17 +159,25 @@ function currentDpr(): number {
   return typeof window !== "undefined" ? (window.devicePixelRatio ?? 1) : 1;
 }
 
+/*
+ * The painter is the grid's: the same one the Matrix tiles are painted with,
+ * carrying the account's saved hand inks and a cache key that tells one
+ * palette's rasters from another's. Without it every Theory tile stayed in
+ * the hero palette while the Matrix beside it followed the user's colours.
+ */
 export function theoryHeaderArtworkSrc(
   flower: TheoryFlower,
   hand: "left" | "right",
   clubTipDx: number,
-  sizePx: number
+  sizePx: number,
+  painter: ShapeMatrixArtworkPainter = CLUB_ARTWORK_PAINTER
 ): string {
   const size = Math.round(sizePx);
   const dpr = currentDpr();
-  const key = `h:${hand}:${theoryFlowerKey(flower)}:${size}:${dpr}`;
+  const ink = painter.cacheKey ?? "hero";
+  const key = `h:${ink}:${hand}:${theoryFlowerKey(flower)}:${size}:${dpr}`;
   return remember(key, () =>
-    renderHeader(pathsFor(flower, hand, clubTipDx), hand, size, clubTipDx)
+    painter.header(pathsFor(flower, hand, clubTipDx), hand, size, clubTipDx)
   );
 }
 
@@ -173,14 +185,17 @@ export function theoryCellArtworkSrc(
   left: TheoryFlower,
   right: TheoryFlower,
   clubTipDx: number,
-  sizePx: number
+  sizePx: number,
+  painter: ShapeMatrixArtworkPainter = CLUB_ARTWORK_PAINTER
 ): string {
   const size = Math.round(sizePx);
   const dpr = currentDpr();
+  const ink = painter.cacheKey ?? "hero";
   const key =
-    `c:${theoryFlowerKey(left)}__${theoryFlowerKey(right)}:${size}:${dpr}`;
+    `c:${ink}:${theoryFlowerKey(left)}__${theoryFlowerKey(right)}` +
+    `:${size}:${dpr}`;
   return remember(key, () =>
-    renderCell(
+    painter.cell(
       pathsFor(left, "left", clubTipDx),
       pathsFor(right, "right", clubTipDx),
       size,

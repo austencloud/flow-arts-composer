@@ -5163,7 +5163,7 @@
         "getter": "getCurrentQuestion"
       },
       {
-        "file": "src/lib/features/learn/components/interactive/staff/StaffPositionVisualizer.svelte",
+        "file": "src/lib/features/learn/components/interactive/staff/StaffPlacementVisualizer.svelte",
         "variable": "hapticService",
         "getter": "getHapticFeedback"
       },
@@ -61067,7 +61067,7 @@
             "line": 8
           },
           {
-            "file": "src/lib/features/learn/components/interactive/staff/StaffPositionVisualizer.svelte",
+            "file": "src/lib/features/learn/components/interactive/staff/StaffPlacementVisualizer.svelte",
             "importPath": "$lib/shared/application/services/haptic-feedback",
             "line": 8
           },

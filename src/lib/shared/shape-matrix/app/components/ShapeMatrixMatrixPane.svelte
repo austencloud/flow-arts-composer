@@ -4,7 +4,6 @@
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import { getShapeMatrixAnimationContext } from "../context/shape-matrix-animation-context";
   import { customizeSection } from "../state/shape-matrix-customize";
-  import ShapeMatrixDifficultyStrip from "./ShapeMatrixDifficultyStrip.svelte";
   import ShapeMatrixGridCorner from "./ShapeMatrixGridCorner.svelte";
   import ShapeMatrixRecipeStrip from "./ShapeMatrixRecipeStrip.svelte";
 
@@ -40,8 +39,6 @@
 >
   {#if state.compact}
     <ShapeMatrixRecipeStrip surface="level" onsurprise={surprise} />
-  {:else}
-    <ShapeMatrixDifficultyStrip />
   {/if}
   <div class="matrix-stage" inert={workspaceOpen} aria-hidden={workspaceOpen}>
     {#if state.loadError}
@@ -75,13 +72,18 @@
     height: 100%;
     min-height: 0;
     display: grid;
-    /* A strip above the grid in both hosts: difficulty on a wide one, the
-       recipe on a compact one. */
-    grid-template-rows: auto minmax(0, 1fr);
+    /* Nothing but the grid on a wide host, as on the Ratio Playground:
+       difficulty is a header setting. */
+    grid-template-rows: minmax(0, 1fr);
     overflow: hidden;
     border: 1px solid var(--theme-stroke, rgb(255 255 255 / 0.1));
     border-radius: 16px;
     background: var(--theme-panel-bg, rgb(16 23 33 / 0.82));
+  }
+
+  /* Compact hosts add the recipe strip above the grid. */
+  .matrix-pane.compact {
+    grid-template-rows: auto minmax(0, 1fr);
   }
 
   .status button {

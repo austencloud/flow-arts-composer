@@ -325,6 +325,39 @@ describe("shape matrix app state", () => {
     expect(state.theoryColAxis).toHaveLength(4);
   });
 
+  it("solos one theory ratio from its header, over a whole pair", () => {
+    // The Ratio Playground's headers are one hand each, like the Matrix's.
+    // Soloing one keeps a whole pair underneath (the other axis's first
+    // flower when nothing was chosen), and a cell is both hands again. The
+    // Matrix's own solo is a separate selection and does not move.
+    const { state, syncState } = createState(false);
+    state.setSurface("theory");
+    const [row] = state.theoryRowAxis;
+    const [column] = state.theoryColAxis;
+    if (!row || !column) throw new Error("Theory axis is empty");
+
+    state.selectTheorySolo("right", column);
+
+    expect(state.theorySoloHand).toBe("right");
+    expect(state.theoryPair?.right).toEqual(column);
+    expect(state.theoryPair?.left).toBeTruthy();
+    expect(state.soloHand).toBeNull();
+    expect(syncState).toHaveBeenLastCalledWith(
+      expect.objectContaining({ theorySolo: "right" })
+    );
+
+    state.selectTheorySolo("left", row);
+    expect(state.theorySoloHand).toBe("left");
+    expect(state.theoryPair?.left).toEqual(row);
+    expect(state.theoryPair?.right).toEqual(column);
+
+    state.selectTheoryPair({ left: row, right: column });
+    expect(state.theorySoloHand).toBeNull();
+    expect(syncState).toHaveBeenLastCalledWith(
+      expect.objectContaining({ theorySolo: null })
+    );
+  });
+
   it("commits both visible theory ratios in one state update", () => {
     const { state, syncState } = createState(false);
 

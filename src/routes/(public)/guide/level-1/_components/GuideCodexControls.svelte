@@ -36,7 +36,7 @@
     { key: "showGlyph", label: "Glyph" },
     { key: "showGrid", label: "Grid" },
     { key: "showTKA", label: "TKA" },
-    { key: "showPlacements", label: "Positions" },
+    { key: "showPlacements", label: "Placements" },
     { key: "showReversals", label: "Reversals" },
     { key: "showNonRadialPoints", label: "Non-Radial" },
   ];

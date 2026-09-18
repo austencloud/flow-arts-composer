@@ -533,7 +533,7 @@
                       "positions_glyph",
                       placementsGlyph,
                       (value) => vm.setGlyphVisibility("placementsGlyph", value)
-                    )}>Positions</button
+                    )}>Placements</button
                 >
                 <button
                   type="button"
@@ -857,7 +857,7 @@
                   placementsGlyph,
                   (value) => vm.setGlyphVisibility("placementsGlyph", value)
                 )}
-              aria-pressed={placementsGlyph}>Positions</button
+              aria-pressed={placementsGlyph}>Placements</button
             >
             <button
               type="button"
