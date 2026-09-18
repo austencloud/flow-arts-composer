@@ -56,6 +56,7 @@ interface StateOptions {
   activeSetupId?: string | null;
   activeStatus?: "active" | null;
   setupsLoadError?: string | null;
+  communityLoadError?: string | null;
   pendingAction?: PendingSetupAction | null;
 }
 
@@ -70,7 +71,7 @@ function fakeState(options: StateOptions = {}): FavoriteState {
     isLoadingSetups: false,
     isLoadingCommunity: false,
     setupsLoadError: options.setupsLoadError ?? null,
-    communityLoadError: null,
+    communityLoadError: options.communityLoadError ?? null,
     pendingAction: options.pendingAction ?? null,
     canSave: true,
     loadPersonal: vi.fn(async () => undefined),
@@ -244,6 +245,39 @@ describe("PresetDrawer", () => {
     await expect.element(page.getByText("No saved setups yet")).toBeVisible();
     await expect
       .element(page.getByText("Saved setups could not load"))
+      .not.toBeInTheDocument();
+  });
+
+  it("keeps community load failure distinct from an empty list", async () => {
+    const state = fakeState({
+      communityLoadError: "Community setups could not load",
+    });
+    const screen = render(PresetDrawer, props(state));
+
+    await page.getByRole("tab", { name: "Community" }).click();
+
+    await expect
+      .element(page.getByText("Community setups could not load"))
+      .toBeVisible();
+    await expect
+      .element(page.getByRole("button", { name: "Try again" }))
+      .toBeVisible();
+    await expect
+      .element(page.getByText("No setups shared yet"))
+      .not.toBeInTheDocument();
+
+    await page.getByRole("button", { name: "Try again" }).click();
+    expect(state.loadCommunity).toHaveBeenCalledOnce();
+
+    await screen.rerender(props(fakeState()));
+    await page.getByRole("tab", { name: "Community" }).click();
+
+    await expect.element(page.getByText("No setups shared yet")).toBeVisible();
+    await expect
+      .element(page.getByText("Setups people save appear here."))
+      .toBeVisible();
+    await expect
+      .element(page.getByText("Community setups could not load"))
       .not.toBeInTheDocument();
   });
 

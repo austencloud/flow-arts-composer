@@ -48,6 +48,8 @@
   let activeTab = $state<"saved" | "community">("saved");
   let deleteTarget = $state<SavedGeneratorSetup | null>(null);
 
+  const SUMMARY_SEPARATOR = "\u00B7";
+
   function summarize(item: SavedGeneratorSetup | CommunitySetup): string {
     const config = item.config;
     const parts = [
@@ -56,7 +58,7 @@
       `${config.length} ${config.length === 1 ? "step" : "steps"}`,
     ];
     if (config.loopEnabled) parts.push("LOOP");
-    return parts.join(" \u00B7 ");
+    return parts.join(` ${SUMMARY_SEPARATOR} `);
   }
 
   function handleTabChange(value: "saved" | "community"): void {
@@ -284,7 +286,7 @@
             </div>
           {:else}
             <div class="setup-list">
-              {#each favoriteState.communitySetups as setup (setup.setupId)}
+              {#each favoriteState.communitySetups as setup (`${setup.userId}/${setup.setupId}`)}
                 <button
                   type="button"
                   class="favorite-item community-item"
@@ -299,13 +301,15 @@
                   <RobustAvatar
                     src={setup.avatar}
                     name={setup.displayName}
-                    alt={`${setup.displayName}'s avatar`}
+                    alt=""
                     size="sm"
                   />
                   <span class="favorite-info">
                     <span class="favorite-name">{setup.name}</span>
                     <span class="favorite-summary"
-                      >{setup.displayName} · {summarize(setup)}</span
+                      >{setup.displayName} {SUMMARY_SEPARATOR} {summarize(
+                        setup
+                      )}</span
                     >
                   </span>
                   <span class="status-slot">
@@ -484,13 +488,7 @@
     outline-offset: 2px;
   }
 
-  .cap-message {
-    margin: -0.25rem 0 0;
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.66));
-    font-size: var(--font-size-compact, 12px);
-    text-align: center;
-  }
-
+  .cap-message,
   .share-note {
     margin: -0.25rem 0 0;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.66));

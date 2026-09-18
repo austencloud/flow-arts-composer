@@ -632,7 +632,7 @@ Delegates ALL logic to services (SRP compliant)
                 (setup: CommunitySetup) =>
                   setup.userId === source.userId &&
                   setup.setupId === source.setupId
-              )?.name ?? "Browse"
+              )?.name ?? "Community setup"
             );
           }
           return favoriteState.setups.length > 0
