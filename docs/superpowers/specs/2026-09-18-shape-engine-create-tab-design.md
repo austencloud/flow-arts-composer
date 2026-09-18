@@ -83,18 +83,24 @@ future of the Toys module.
   so it no longer names Shape Matrix as the first toy.
 - Update `src/lib/shared/shape-matrix/README.md` so the consumer list names
   the Create tab instead of Toys.
-- URL redirect: in `navigation-state.svelte.ts`, where the URL is parsed and
-  the `moderation` special case lives, `toys` + `shape-matrix` resolves to
-  module `create`, tab `shape-engine`. Stale persisted navigation that still
-  points at `toys/shape-matrix` falls to Toys' first tab through the existing
-  unknown-tab fallback, which is acceptable.
+- URL redirect: `module-definitions.ts` gains a cross-module section
+  migration map next to `SECTION_ID_MIGRATIONS`, exposed as
+  `normalizeNavigationTarget(moduleId, sectionId)`, where `toys` +
+  `shape-matrix` resolves to module `create`, tab `shape-engine`. Every URL
+  parser goes through it: `navigation-state.svelte.ts` at startup,
+  `parsePathNavigation()` in the navigation coordinator (which re-parses the
+  URL at boot and would otherwise override the first result), and the
+  coordinator's popstate handler for old history entries. Stale persisted
+  last-tab data that still says `toys/shape-matrix` falls to Toys' first tab
+  through the existing unknown-tab fallback, which is acceptable.
 
 ## Verification
 
 - Unit: the persistence adapter fallback (new key wins, old key is read once
   and removed on the next persist, invalid JSON yields null). The
-  `toys/shape-matrix` redirect if navigation-state has a URL-parsing test
-  harness; otherwise it is covered by the browser pass.
+  `toys/shape-matrix` redirect through `initializeNavigationHistory()` under
+  jsdom (the harness `scan-atlas-route-migration.test.ts` already uses), so
+  the boot-time parser is exercised, not only navigation-state.
 - Type and lint gates: `npm run check` scope narrowed to the touched files
   where the project scripts allow, plus the existing unit suite.
 - Browser, in the task worktree on a task-owned port: the Create front door
