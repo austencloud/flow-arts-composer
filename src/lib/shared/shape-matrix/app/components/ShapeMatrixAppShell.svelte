@@ -22,6 +22,7 @@
   import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
   import ShapeMatrixCustomizeWorkspace from "./ShapeMatrixCustomizeWorkspace.svelte";
   import ShapeMatrixDetailPane from "./ShapeMatrixDetailPane.svelte";
+  import ShapeMatrixDifficultyControl from "./ShapeMatrixDifficultyControl.svelte";
   import ShapeMatrixMatrixPane from "./ShapeMatrixMatrixPane.svelte";
   import ShapeMatrixTurnPopover from "./ShapeMatrixTurnPopover.svelte";
   import ShapeMatrixSurfaceControl from "./ShapeMatrixSurfaceControl.svelte";
@@ -460,17 +461,19 @@
     {/if}
 
     {#if !appState.compact}
-      <!-- The surface choice outranks everything below it. Difficulty is
-           not here: it reshapes the grid alone, so it stands with the grid
-           (ShapeMatrixDifficultyStrip) where the press and the change are one
-           glance apart. Notation stays, because it re-reads every surface. -->
+      <!-- The surface choice outranks everything below it. The Matrix adds
+           the two settings that shape its whole surface: Difficulty, which
+           reshapes the grid, and Notation, which re-reads it. Both leave
+           with the Matrix, so the Ratio Playground's band is the surface
+           choice alone and its grid pane is nothing but the grid; the
+           Matrix's pane is the same, which is the point. -->
       <div class="header-meta">
         <div class="surface-control-cell">
           <ShapeMatrixSurfaceControl />
         </div>
         {#if !theory}
-          <!-- The wrapper owns the gap as well as the cell width, so removing
-               Difficulty releases one continuous piece of space instead of
+          <!-- The wrapper owns the gap as well as the cell widths, so leaving
+               the Matrix releases one continuous piece of space instead of
                leaving a final half-rem gap to snap away at teardown. -->
           <div
             class="level-presence"
@@ -479,6 +482,7 @@
               duration: booted ? DURATION.normal : 0,
             }}
           >
+            <ShapeMatrixDifficultyControl />
             <!-- The axis values themselves are edited in the recipe bar above
                  the grid; the header keeps only the settings that shape the
                  whole surface. -->
@@ -907,8 +911,10 @@
 
   /* The bento cell: a caption row over its control, each cell carrying its
      own card chrome. The caption names the control so the band reads as
-     labeled instruments instead of a strip of anonymous widgets. */
-  .control-cell {
+     labeled instruments instead of a strip of anonymous widgets. The band
+     owns the grammar, so a cell a child component renders (Difficulty)
+     wears the same chrome as one written here (Notation). */
+  .header-meta :global(.control-cell) {
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
     align-items: center;
@@ -935,7 +941,7 @@
     margin-left: 0.5rem;
   }
 
-  .control-label {
+  .header-meta :global(.control-label) {
     color: var(--theme-text-dim, rgb(255 255 255 / 0.52));
     font-size: var(--font-size-compact, 0.75rem);
     font-weight: 650;
@@ -1046,11 +1052,11 @@
 
     /* Compact hosts trade the captions for canvas; the cells keep their
        card chrome so the band still reads as grouped instruments. */
-    .control-label {
+    .header-meta :global(.control-label) {
       display: none;
     }
 
-    .control-cell {
+    .header-meta :global(.control-cell) {
       gap: 0;
       padding: 0.25rem 0.35rem;
       border-radius: 10px;
