@@ -6,8 +6,8 @@
  */
 import type { ComponentProps } from "svelte";
 import type { GenerateCardPanelId } from "$lib/shared/create/state/panel-coordination-state.svelte";
-import LOOPExpandedOverlay from "./LOOPExpandedOverlay.svelte";
-import SetupsPanel from "../presets/SetupsPanel.svelte";
+import type LOOPExpandedOverlay from "./LOOPExpandedOverlay.svelte";
+import type SetupsPanel from "../presets/SetupsPanel.svelte";
 
 export type LoopStageProps = Pick<
   ComponentProps<typeof LOOPExpandedOverlay>,

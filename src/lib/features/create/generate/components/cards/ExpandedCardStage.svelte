@@ -78,8 +78,8 @@
     void tick().then(() => root?.focus({ preventScroll: true }));
     return () => {
       // Runs when the card changes or closes. Return focus to the card that
-      // opened us, but only if focus is still somewhere inside this stage —
-      // if it already moved elsewhere (e.g. the user clicked into the grid
+      // opened us, but only if focus is still somewhere inside this stage.
+      // If it already moved elsewhere (e.g. the user clicked into the grid
       // before the close finished), pulling it back would be a surprise.
       if (!root?.contains(document.activeElement)) return;
       const wrapper = document.querySelector<HTMLElement>(
@@ -105,6 +105,24 @@
     const card = openCard;
     if (!card) return;
     morphGenerateCard(card, () => panelState.closeGenerateCard());
+  }
+
+  // Focus inside a non-modal dialog owns the first Escape; the global
+  // shortcut defers to it (see shouldDeferEscapeShortcut's role="dialog"
+  // check), so it is answered here instead.
+  function onKeydown(event: KeyboardEvent): void {
+    if (
+      event.key !== "Escape" ||
+      event.ctrlKey ||
+      event.altKey ||
+      event.metaKey ||
+      event.shiftKey
+    ) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    close();
   }
 </script>
 
@@ -139,6 +157,7 @@
       selectedComponents={panelState.loopSelectedComponents}
       onChange={panelState.loopOnChange}
       onClose={close}
+      entrance="none"
       onLoopDisable={loop.onLoopDisable}
       rhythm={loop.rhythm}
       sequenceLength={loop.sequenceLength}
@@ -175,6 +194,7 @@
         aria-labelledby={expandedCardTitleId(openCard)}
         tabindex="-1"
         bind:this={root}
+        onkeydown={onKeydown}
         use:portal
         use:claimedViewTransitionName={{
           name: generateCardMorphName(openCard),
@@ -193,6 +213,7 @@
       aria-labelledby={expandedCardTitleId(openCard)}
       tabindex="-1"
       bind:this={root}
+      onkeydown={onKeydown}
       use:claimedViewTransitionName={{
         name: generateCardMorphName(openCard),
       }}

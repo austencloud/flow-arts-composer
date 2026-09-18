@@ -4,7 +4,7 @@ Animates forward in z-axis and expands to fill the container space
 -->
 <script lang="ts">
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { fly } from "svelte/transition";
+  import { fly, scale } from "svelte/transition";
   import { quintOut } from "svelte/easing";
   import { onMount, tick } from "svelte";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
@@ -39,6 +39,7 @@ Animates forward in z-axis and expands to fill the container space
     selectedComponents,
     onChange,
     onClose,
+    entrance = "scale",
     titleId,
     onLoopDisable,
     layout = "grid",
@@ -52,6 +53,10 @@ Animates forward in z-axis and expands to fill the container space
     selectedComponents: Set<LOOPComponent>;
     onChange: (loopType: LOOPType) => void;
     onClose: () => void;
+    /** "none" when a host transition (the card morph) is already carrying the
+     *  panel in; the root then skips its own scale entrance. "none" also
+     *  skips the outro; the decision made at open time applies to the close. */
+    entrance?: "scale" | "none";
     /** Forwarded to LoopOverlayHeader as the heading's id, so a host stage's
      *  aria-labelledby points at the title this overlay actually renders. */
     titleId?: string;
@@ -516,6 +521,11 @@ Animates forward in z-axis and expands to fill the container space
   bind:this={overlayElement}
   class="loop-expanded-overlay"
   class:combo-mode={isMultiSelectMode}
+  transition:scale={{
+    start: entrance === "none" ? 1 : 0.95,
+    duration: entrance === "none" ? 0 : motionDuration(DURATION.emphasis),
+    easing: quintOut,
+  }}
 >
   <LoopOverlayHeader
     {titleId}

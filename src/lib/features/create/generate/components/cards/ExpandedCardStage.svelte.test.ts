@@ -1,5 +1,5 @@
 import { render } from "vitest-browser-svelte";
-import { page } from "vitest/browser";
+import { page, userEvent } from "vitest/browser";
 import { flushSync, tick } from "svelte";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ComponentProps } from "svelte";
@@ -13,7 +13,6 @@ import {
   countViewTransitionNameClaims,
   resetViewTransitionNameRegistry,
 } from "$lib/shared/transitions/view-transition-name-registry";
-import { getEscapeLayerManager } from "$lib/shared/keyboard/get-escape-layer-manager";
 import type { FavoriteState } from "../../state/favorite-state.svelte";
 
 afterEach(() => {
@@ -221,23 +220,32 @@ describe("ExpandedCardStage", () => {
 
   it("closes on Escape and releases the claim", async () => {
     const state = createPanelCoordinationState();
-    render(ExpandedCardStage, props(state, true));
+    const { container } = render(ExpandedCardStage, props(state, true));
 
     state.openPresetDrawer();
     flushSync();
     expect(state.openGenerateCard).toBe("preset");
 
-    // userEvent.keyboard("{Escape}") does not reach the escape layer manager
-    // here: the global "Escape" shortcut is wired up by the app's keyboard
-    // shortcut coordinator, which this isolated component render does not
-    // mount. Dismiss through the same layer manager the stage registers with
-    // instead of relying on a keydown listener that is not present.
-    const result = getEscapeLayerManager().dismissTopLayer();
-    expect(result).toBe("dismissed");
+    const root = container.querySelector<HTMLElement>(".expanded-card-stage");
+    expect(root).not.toBeNull();
+    // The open effect focuses the root after tick(); wait for that instead of
+    // assuming it has already landed by the time flushSync() returns.
+    await vi.waitFor(() => {
+      expect(document.activeElement).toBe(root);
+    });
+    // Prove the claim actually exists here, so the release assertion below
+    // cannot pass vacuously against a claim that was never made.
+    expect(countViewTransitionNameClaims("generate-card-preset")).toBe(1);
+
+    // Focus is inside the stage root, so this real key press is answered by
+    // the root's own onkeydown handler (the stage is a non-modal dialog and
+    // owns the first Escape), not by the app's global keyboard shortcut
+    // coordinator, which this isolated component render does not mount.
+    await userEvent.keyboard("{Escape}");
 
     // Chromium's View Transitions API runs the update callback (which is
     // where morphGenerateCard's mutate lands) on its own schedule, not
-    // synchronously with the dismiss that requested it. Poll instead of
+    // synchronously with the Escape press that requested it. Poll instead of
     // guessing a frame count.
     await vi.waitFor(() => {
       flushSync();
@@ -245,10 +253,12 @@ describe("ExpandedCardStage", () => {
     });
     // The claim is released by claimedViewTransitionName's destroy(), which
     // only runs once Svelte finishes unmounting the stage root - and that
-    // wait for the root's own outro (stageEntrance() runs in reverse on
-    // close) to finish first. openGenerateCard going null is immediate;
-    // the outro, and the claim release after it, lag behind. Poll
-    // separately instead of asserting in the same tick.
+    // waits for the root's own outro to finish first. lastGenerateCardMorphRan()
+    // is true here (close() runs a real view transition in Chromium), so the
+    // outro duration is 0; the lag between openGenerateCard going null and the
+    // claim reaching 0 is the view-transition update callback plus Svelte's
+    // own teardown, not the outro. Poll separately instead of asserting in the
+    // same tick.
     await vi.waitFor(() => {
       expect(countViewTransitionNameClaims("generate-card-preset")).toBe(0);
     });
