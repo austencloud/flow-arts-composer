@@ -3,7 +3,10 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { CREATE_TABS } from "$lib/shared/navigation/config/tab-definitions";
+import {
+  CREATE_TABS,
+  TOYS_TABS,
+} from "$lib/shared/navigation/config/tab-definitions";
 
 const MESSAGE_LOCALES = ["de", "en", "es", "fr", "it", "ja", "pt", "ru"];
 
@@ -56,5 +59,32 @@ describe("Shape Engine as a Create tab", () => {
       expect(messages.tab_create_shape_engine, locale).toBeTruthy();
       expect(messages.tab_desc_create_shape_engine, locale).toBeTruthy();
     }
+  });
+
+  it("no longer lists Shape Matrix under Toys", () => {
+    expect(TOYS_TABS.map((tab) => tab.id)).toEqual([
+      "third-order",
+      "hand-tunnel",
+    ]);
+    const en = JSON.parse(
+      readFileSync(resolve(process.cwd(), "messages/en.json"), "utf8")
+    ) as Record<string, string>;
+    expect(en.tab_toys_shape_matrix).toBeUndefined();
+    expect(en.tab_desc_toys_shape_matrix).toBeUndefined();
+  });
+
+  it("sends the old /toys/shape-matrix link to the Shape tab", async () => {
+    const state = await createStateAt("/toys/shape-matrix");
+
+    expect(state.currentModule).toBe("create");
+    expect(state.activeTab).toBe("shape-engine");
+    expect(state.isCreateFrontDoorOpen).toBe(false);
+  });
+
+  it("leaves other Toys links alone", async () => {
+    const state = await createStateAt("/toys/hand-tunnel");
+
+    expect(state.currentModule).toBe("toys");
+    expect(state.activeTab).toBe("hand-tunnel");
   });
 });

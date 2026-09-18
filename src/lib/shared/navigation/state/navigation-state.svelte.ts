@@ -213,9 +213,16 @@ export function createNavigationState() {
           pathParts[1]?.toLowerCase() ||
           searchParams.get("section")?.toLowerCase();
 
-        const normalizedModule = normalizeModuleId(rawUrlModule);
+        let normalizedModule = normalizeModuleId(rawUrlModule);
         if (normalizedModule) {
           urlTab = normalizeSectionId(normalizedModule, urlTab);
+        }
+
+        // Shape Engine graduated from Toys to the Create module's Shape tab
+        // (2026-09-18): the old /toys/shape-matrix link opens what it became.
+        if (normalizedModule === "toys" && urlTab === "shape-matrix") {
+          normalizedModule = "create";
+          urlTab = "shape-engine";
         }
 
         // Moderation folded into Admin as a tab (2026-06-30): a bare /moderation
