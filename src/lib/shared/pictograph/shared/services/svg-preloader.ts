@@ -25,6 +25,7 @@ export class SvgPreloader {
     "fan",
     "triad",
     "minihoop",
+    "triangle",
     "buugeng",
     "triquetra",
     "sword",

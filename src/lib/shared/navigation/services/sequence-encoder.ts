@@ -123,6 +123,9 @@ const PROP_TYPE_ENCODE: Record<PropType, string> = {
   [PropType.BIGTRIAD]: "t",
   [PropType.MINIHOOP]: "M",
   [PropType.BIGHOOP]: "H",
+  // Digit for the same reason as the baton and fire staff: every letter that
+  // reads as "triangle" or "tri" is taken.
+  [PropType.TRIANGLE]: "8",
   [PropType.BUUGENG]: "B",
   [PropType.BIGBUUGENG]: "b",
   [PropType.TRIGENG]: "J",

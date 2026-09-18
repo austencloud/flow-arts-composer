@@ -44,6 +44,7 @@ const PRESENTATIONS: Partial<
   [PropType.BIGTRIAD]: { scale: 1.32 },
   [PropType.MINIHOOP]: { scale: 1.38 },
   [PropType.BIGHOOP]: { scale: 1.72 },
+  [PropType.TRIANGLE]: { scale: 1.38 },
   [PropType.BUUGENG]: { scale: 1.38 },
   [PropType.BIGBUUGENG]: { scale: 1.54 },
   [PropType.TRIGENG]: { scale: 1.3 },

@@ -55,6 +55,11 @@ export const SELECTIVE_COLOR_PROP_TYPES = [
   // take left or right, while the kevlar wicks and the gold thumb bands stay as
   // authored. Kevlar is never left or right.
   "fire_double_staff",
+  // Hoop family: the tube is neutral gray and takes left or right, while the
+  // black join tape, elbows and button and the gold grip band stay as drawn.
+  "minihoop",
+  "bighoop",
+  "triangle",
   "sword-knight",
   "sword-saber",
   "sword-flamberge",
