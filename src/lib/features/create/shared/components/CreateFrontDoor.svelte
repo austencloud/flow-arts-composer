@@ -12,9 +12,10 @@
   const METHOD_ORDER = new Map([
     ["construct", 0],
     ["generate", 1],
-    ["fuse", 2],
-    ["tunnel", 3],
-    ["assemble", 4],
+    ["shape-engine", 2],
+    ["fuse", 3],
+    ["tunnel", 4],
+    ["assemble", 5],
   ]);
 
   let {

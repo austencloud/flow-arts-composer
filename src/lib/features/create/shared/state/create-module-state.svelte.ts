@@ -149,6 +149,7 @@ export function createCreateModuleState(
     "construct",
     "assemble",
     "generate",
+    "shape-engine",
     "fuse",
     "tunnel",
   ];

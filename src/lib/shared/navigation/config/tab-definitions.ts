@@ -52,6 +52,18 @@ export const CREATE_TABS: Section[] = [
     metadata: { isCreationMethod: true },
   },
   {
+    id: "shape-engine",
+    labelKey: "tab_create_shape_engine",
+    descKey: "tab_desc_create_shape_engine",
+    label: "Shape",
+    icon: '<i class="fas fa-border-all" aria-hidden="true"></i>',
+    description:
+      "Pick a shape pairing and get the sequence that draws it. Powered by Shape Engine.",
+    color: "#2dd4bf",
+    gradient: "linear-gradient(135deg, #5eead4 0%, #2dd4bf 100%)",
+    metadata: { isCreationMethod: true },
+  },
+  {
     id: "fuse",
     labelKey: "tab_create_fuse",
     descKey: "tab_desc_create_fuse",

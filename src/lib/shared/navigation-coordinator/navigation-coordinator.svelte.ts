@@ -425,6 +425,7 @@ const TAB_ORDERS: Record<string, string[]> = {
     "assemble",
     "construct",
     "generate",
+    "shape-engine",
     "fuse",
     "spell",
     "editor",
