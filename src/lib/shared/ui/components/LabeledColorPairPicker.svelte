@@ -1,5 +1,8 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
+  import { cubicOut } from "svelte/easing";
+  import { prefersReducedMotion } from "svelte/motion";
+  import { slide } from "svelte/transition";
   import ColorPicker from "svelte-awesome-color-picker";
   import { COLOR_PRESETS, COLOR_PRESET_COLUMNS } from "../color-presets";
   import BareWrapper from "./color-picker/BareWrapper.svelte";
@@ -64,6 +67,20 @@
     if (!hex) return;
     const next = hex.slice(0, 7).toLowerCase();
     if (next !== current.toLowerCase()) onchange(hand, next);
+  }
+
+  /** Height and fade together, so the editor grows out of the controls
+      instead of popping. Reduced motion skips it entirely. */
+  function expand(node: Element, { duration = 280 }: { duration?: number } = {}) {
+    if (prefersReducedMotion.current) return { duration: 0 };
+    const grow = slide(node, { duration, easing: cubicOut });
+    return {
+      duration,
+      easing: cubicOut,
+      // slide's css ends without a semicolon; the separator matters because
+      // Svelte splits the string into keyframe properties on ";".
+      css: (t: number, u: number) => `${grow.css?.(t, u) ?? ""}; opacity: ${t}`,
+    };
   }
 </script>
 
@@ -130,7 +147,14 @@
   </div>
   {#if editing}
     {@const entry = entries.find((item) => item.hand === editing)!}
-    <div class="color-editor" id={editorId} role="group" aria-label={`${entry.label} color`}>
+    <div
+      class="color-editor"
+      id={editorId}
+      role="group"
+      aria-label={`${entry.label} color`}
+      in:expand={{ duration: 280 }}
+      out:expand={{ duration: 200 }}
+    >
       <div class="preset-block">
         <div
           class="preset-grid"
@@ -216,9 +240,15 @@
   .color-pair {
     display: flex;
     flex-direction: column;
-    gap: 10px;
     min-width: 0;
     container: color-pair / inline-size;
+  }
+
+  /* Sibling margins instead of gap: the slide transition animates the
+     editor's margin along with its height, so closing ends at zero rather
+     than snapping over a leftover gap. */
+  .color-pair > * + * {
+    margin-top: 10px;
   }
 
   .pair-preview-art {
