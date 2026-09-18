@@ -439,6 +439,11 @@
               true
             );
           }}
+          onswap={() => {
+            const left = ctrl.customLeft;
+            ctrl.customLeft = ctrl.customRight;
+            ctrl.customRight = left;
+          }}
         />
       </div>
     {/if}

@@ -22,6 +22,8 @@
   let chirality = $state("normal");
   let cover = $state<"bare" | "covered">("bare");
   let colors = $state({ left: "#36d6c5", right: "#ff8dba" });
+  let pickerWidth = $state<"full" | "mid" | "narrow">("full");
+  const PICKER_MAX_WIDTH = { full: "none", mid: "30rem", narrow: "19rem" } as const;
   const types = getAllPropTypes().filter(isPropActive);
   const families = [...new Set(types.map(getBasePropType))];
   const fanBuilds = fanBuildPreviewOptions(DEFAULT_FAN_APPEARANCE);
@@ -43,6 +45,17 @@
 
 <svelte:head><title>Prop pair gallery</title></svelte:head>
 
+{#snippet preview(pair: { left: string; right: string })}
+  <PropCompositionPreview
+    propType={families[0]!}
+    size={96}
+    pairedGlyph
+    darkBackground
+    useSavedOverrides={false}
+    colors={pair}
+  />
+{/snippet}
+
 <main>
   <header>
     <h1>Prop pair gallery</h1>
@@ -50,11 +63,25 @@
       Every family, variant and fan build. The two small buttons show the actual
       mobile and sidebar sizes.
     </p>
-    <LabeledColorPairPicker
-      left={colors.left}
-      right={colors.right}
-      onchange={(hand, color) => (colors = { ...colors, [hand]: color })}
+    <SegmentedControl
+      options={[
+        { value: "full", label: "Full width" },
+        { value: "mid", label: "30rem" },
+        { value: "narrow", label: "19rem" },
+      ]}
+      value={pickerWidth}
+      onchange={(value) => (pickerWidth = value)}
+      ariaLabel="Picker width"
     />
+    <div class="picker-box" style:max-width={PICKER_MAX_WIDTH[pickerWidth]}>
+      <LabeledColorPairPicker
+        left={colors.left}
+        right={colors.right}
+        {preview}
+        onchange={(hand, color) => (colors = { ...colors, [hand]: color })}
+        onswap={() => (colors = { left: colors.right, right: colors.left })}
+      />
+    </div>
     <div class="controls">
       <SegmentedControl
         options={[
@@ -149,6 +176,10 @@
     font-size: 14px;
     line-height: 1.5;
     margin: 0 0 20px;
+  }
+  .picker-box {
+    width: 100%;
+    margin-inline: auto;
   }
   .controls {
     display: flex;
