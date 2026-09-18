@@ -5,10 +5,20 @@ Delegates ALL logic to services (SRP compliant)
 <script lang="ts">
   import { buildCardDescriptors } from "$lib/features/create/generate/shared/services/card-configurator";
   import { getLOOPParameterProvider } from "$lib/features/create/generate/shared/get-loop-parameter-provider";
-  import { onMount, getContext, type ComponentProps } from "svelte";
+  import {
+    onMount,
+    getContext,
+    type ComponentProps,
+    type Snippet,
+  } from "svelte";
   import { flip } from "svelte/animate";
   import { motionDuration, popIn } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
+  import { claimedViewTransitionName } from "$lib/shared/transitions/claimed-view-transition-name";
+  import {
+    generateCardMorphName,
+    morphGenerateCard,
+  } from "../shared/services/generate-card-morph";
   import type {
     PanelCoordinationState,
     StartEndOptions,
@@ -91,6 +101,7 @@ Delegates ALL logic to services (SRP compliant)
     isDesktopLayout = false,
     onOpenWordInput,
     favoriteState,
+    expandedCard,
   } = $props<{
     config: UIGenerationConfig;
     isFreeformMode: boolean;
@@ -107,6 +118,9 @@ Delegates ALL logic to services (SRP compliant)
     isDesktopLayout?: boolean;
     onOpenWordInput?: () => void;
     favoriteState: FavoriteState;
+    /** The grown card, rendered inside the grid stage. GeneratePanel supplies
+     *  ExpandedCardStage here so the panels keep their host's props. */
+    expandedCard?: Snippet;
   }>();
 
   // Get panel coordination state from context (for LOOP expanded overlay)
@@ -544,9 +558,9 @@ Delegates ALL logic to services (SRP compliant)
     placementsResetTrigger++;
   }
 
-  // Preset: open drawer via panel state (drawer rendered in GeneratePanel)
+  // Preset: open through the card morph (the stage renders from panel state).
   function handleOpenPresetDrawer() {
-    panelState.openPresetDrawer();
+    morphGenerateCard("preset", () => panelState.openPresetDrawer());
   }
 
   // Build cards using service - reactive to all dependencies
@@ -699,6 +713,10 @@ Delegates ALL logic to services (SRP compliant)
           class="card-wrapper"
           data-card-id={card.id}
           style:grid-column="span {card.gridColumnSpan}"
+          use:claimedViewTransitionName={{
+            name: generateCardMorphName(card.id),
+            enabled: panelState.openGenerateCard !== card.id,
+          }}
           animate:flip={{
             duration: motionDuration(DURATION.emphasis),
             easing: quintOut,
@@ -761,6 +779,9 @@ Delegates ALL logic to services (SRP compliant)
         </div>
       {/each}
     </div>
+    {#if expandedCard}
+      {@render expandedCard()}
+    {/if}
   </div>
 </div>
 
@@ -831,6 +852,7 @@ Delegates ALL logic to services (SRP compliant)
   }
 
   .card-grid-stage {
+    position: relative;
     flex: 1 1 auto;
     display: flex;
     align-items: stretch;
