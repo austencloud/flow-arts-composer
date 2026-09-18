@@ -872,6 +872,11 @@
     getLeftPropType: () => getSettings().leftPropType,
     getRightPropType: () => getSettings().rightPropType,
     getCatDogModeEnabled: () => getSettings().catDogMode,
+    getPresentationSource: () => ({
+      primaryPropColors: getAppSettings().primaryPropColors ?? null,
+      trail: animationSettings.trail,
+      effects: effectsConfigState.config,
+    }),
     getHapticService: () => interactive.hapticService,
     onDeleteSuccess: () => handleClose(),
   });
@@ -1245,6 +1250,8 @@
 {#if libraryActions.saveProps}
   <SavePropDialog
     bind:value={libraryActions.saveProps}
+    presentationSummary={libraryActions.presentationSummary}
+    bind:useDefaultLook={libraryActions.useDefaultLook}
     onSave={() => libraryActions.finishPropChoice(true)}
     onCancel={() => libraryActions.finishPropChoice(false)}
   />
