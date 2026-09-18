@@ -67,7 +67,9 @@ export function createMotionPathExplorerState() {
     RealizationCache
   >();
   let policy = $state<AnimationPathPolicy>(scope.visibility.getPathPolicy());
-  let trace = $state<"hands" | "tips">("tips");
+  // Hands first. The path is the hand between positions, and the four tiles
+  // only read as circle, lines, star and a mix when they trace the hand.
+  let trace = $state<"hands" | "tips">("hands");
   let playing = $state(false);
   let liveStep = $state(0);
   // InlineAnimationPlayer only reloads when its sequence identity changes. A
