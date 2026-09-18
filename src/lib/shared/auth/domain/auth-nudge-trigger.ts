@@ -71,7 +71,7 @@ export const AUTH_NUDGE_TEXTS: Record<AuthNudgeTrigger, string> = {
   "share-sequence":
     "Create a free account to send sequences, make links, and share or download Choreo Cards.",
   // Guests can build collections, but sending one through the inbox names the
-  // sender, so it needs a full account just like sharing a setup does.
+  // sender, so it needs a full account just like saving a setup does.
   "share-collection": "Create a free account to share your collections.",
   // Sequence viewer / /q scan funnel - the three reasons that actually reach
   // the shared AuthModal (publish/download require a full account per
@@ -166,7 +166,7 @@ const AUTH_PROMPT_CONTENTS: Record<AuthNudgeTrigger, AuthPromptContent> = {
   "save-setup": {
     key: "save-setup",
     title: "Save this setup",
-    body: "Sign in or create an account to save setups. Saved setups are shared with the community.",
+    body: "Sign in or create an account to save it. Saved setups are shared with the community.",
   },
   "share-sequence": {
     key: "share-sequence",

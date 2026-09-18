@@ -6,25 +6,21 @@
     setup,
     summary,
     isActive,
-    isShared,
     isBusy,
     disableMutations,
     onApply,
     onUpdate,
     onRenameSubmit,
-    onShareToggle,
     onDelete,
   }: {
     setup: SavedGeneratorSetup;
     summary: string;
     isActive: boolean;
-    isShared: boolean;
     isBusy: boolean;
     disableMutations: boolean;
     onApply: () => void;
     onUpdate: () => void;
     onRenameSubmit: (name: string) => Promise<boolean>;
-    onShareToggle: () => void;
     onDelete: () => void;
   } = $props();
 
@@ -47,12 +43,6 @@
       label: "Rename",
       icon: "fa-solid fa-pen",
       action: startRename,
-      disabled: disableMutations || isBusy,
-    },
-    {
-      label: isShared ? "Unshare" : "Share as my Favorite",
-      icon: "fa-solid fa-heart",
-      action: onShareToggle,
       disabled: disableMutations || isBusy,
     },
     {
@@ -112,16 +102,7 @@
       onclick={onApply}
     >
       <span class="favorite-info">
-        <span class="name-line">
-          <span class="favorite-name">{setup.name}</span>
-          <span
-            class="shared-slot"
-            class:visible={isShared}
-            aria-hidden={!isShared}
-          >
-            Shared
-          </span>
-        </span>
+        <span class="favorite-name">{setup.name}</span>
         <span class="favorite-summary">{summary}</span>
       </span>
       <span class="status-slot">{statusLabel}</span>
@@ -203,13 +184,6 @@
     gap: 0.125rem;
   }
 
-  .name-line {
-    display: flex;
-    min-width: 0;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
   .favorite-name {
     min-width: 0;
     overflow: hidden;
@@ -217,34 +191,6 @@
     font-weight: 650;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  .shared-slot {
-    flex-shrink: 0;
-    min-width: 3.5rem;
-    padding: 0.1rem 0.4rem;
-    border: 1px solid
-      color-mix(
-        in srgb,
-        var(--semantic-error, #e11d48) 55%,
-        transparent
-      );
-    border-radius: 999px;
-    color: color-mix(
-      in srgb,
-      var(--semantic-error, #e11d48) 72%,
-      white
-    );
-    font-size: 0.65rem;
-    font-weight: 700;
-    line-height: 1.2;
-    text-align: center;
-    text-transform: uppercase;
-    visibility: hidden;
-  }
-
-  .shared-slot.visible {
-    visibility: visible;
   }
 
   .favorite-summary {

@@ -1,8 +1,8 @@
 <!--
   Generator setup drawer
 
-  Saved setups are private workspace snapshots. Community Favorites are
-  intentionally shared projections. Desktop uses a compact side drawer;
+  Every saved setup is public: the Saved tab is the owner's own list, the
+  Community tab is everyone else's. Desktop uses a compact side drawer;
   narrow layouts match the measured Generate panel bounds.
 -->
 <script lang="ts">
@@ -17,7 +17,7 @@
   import type { FavoriteState } from "../../state/favorite-state.svelte";
   import type {
     ActiveSetupSource,
-    CommunityFavorite,
+    CommunitySetup,
     SavedGeneratorSetup,
   } from "../../domain/models/favorite-config";
 
@@ -29,7 +29,7 @@
     isAnonymous,
     onApply,
     onRequestCommunityAccount,
-    onRequestShareAccount,
+    onRequestSaveAccount,
     onRequestSignIn,
     onClose,
   }: {
@@ -40,7 +40,7 @@
     isAnonymous: boolean;
     onApply: (source: ActiveSetupSource) => void;
     onRequestCommunityAccount: () => void;
-    onRequestShareAccount: () => void;
+    onRequestSaveAccount: () => void;
     onRequestSignIn: () => void;
     onClose: () => void;
   } = $props();
@@ -48,7 +48,7 @@
   let activeTab = $state<"saved" | "community">("saved");
   let deleteTarget = $state<SavedGeneratorSetup | null>(null);
 
-  function summarize(item: SavedGeneratorSetup | CommunityFavorite): string {
+  function summarize(item: SavedGeneratorSetup | CommunitySetup): string {
     const config = item.config;
     const parts = [
       `L${config.level}`,
@@ -67,12 +67,16 @@
     activeTab = value;
   }
 
-  function handleCommunityApply(userId: string): void {
+  function handleCommunityApply(setup: CommunitySetup): void {
     if (isAnonymous) {
       onRequestCommunityAccount();
       return;
     }
-    onApply({ kind: "community", userId });
+    onApply({
+      kind: "community",
+      userId: setup.userId,
+      setupId: setup.setupId,
+    });
   }
 
   function isSetupSource(setupId: string): boolean {
@@ -82,10 +86,11 @@
     );
   }
 
-  function isCommunitySource(userId: string): boolean {
+  function isCommunitySource(setup: CommunitySetup): boolean {
     return (
       favoriteState.activeSource?.kind === "community" &&
-      favoriteState.activeSource.userId === userId
+      favoriteState.activeSource.userId === setup.userId &&
+      favoriteState.activeSource.setupId === setup.setupId
     );
   }
 
@@ -96,14 +101,12 @@
     );
   }
 
-  function handleShareToggle(setupId: string, shared: boolean): void {
-    if (shared) {
-      void favoriteState.unshareSetup();
-    } else if (isAnonymous) {
-      onRequestShareAccount();
-    } else {
-      void favoriteState.shareSetup(setupId);
+  function handleSaveClick(): void {
+    if (isAnonymous) {
+      onRequestSaveAccount();
+      return;
     }
+    void favoriteState.saveCurrentSetup();
   }
 
   async function handleDeleteConfirm(): Promise<void> {
@@ -192,12 +195,14 @@
               disabled={!favoriteState.canSave}
               aria-busy={favoriteState.pendingAction?.kind === "create" ||
                 undefined}
-              onclick={() => void favoriteState.saveCurrentSetup()}
+              onclick={handleSaveClick}
             >
               {favoriteState.pendingAction?.kind === "create"
                 ? "Saving..."
                 : "Save current setup"}
             </button>
+
+            <p class="share-note">Saved setups are shared with the community.</p>
 
             {#if favoriteState.setups.length >= 10}
               <p class="cap-message" role="status">
@@ -235,7 +240,6 @@
                     summary={summarize(setup)}
                     isActive={isSetupSource(setup.id) &&
                       favoriteState.activeStatus === "active"}
-                    isShared={favoriteState.sharedSetupId === setup.id}
                     isBusy={setupIsBusy(setup.id)}
                     disableMutations={isPreview || isSignedOut}
                     onApply={() =>
@@ -244,11 +248,6 @@
                       void favoriteState.updateSetupFromCurrent(setup.id)}
                     onRenameSubmit={(name) =>
                       favoriteState.renameSetup(setup.id, name)}
-                    onShareToggle={() =>
-                      handleShareToggle(
-                        setup.id,
-                        favoriteState.sharedSetupId === setup.id
-                      )}
                     onDelete={() => (deleteTarget = setup)}
                   />
                 {/each}
@@ -268,7 +267,7 @@
             <SkeletonLoader variant="rect" height="64px" count={3} />
           {:else if favoriteState.communityLoadError}
             <div class="load-state error-state" role="alert">
-              <span>Community favorites could not load</span>
+              <span>Community setups could not load</span>
               <button
                 type="button"
                 class="retry-button"
@@ -277,41 +276,40 @@
                 Try again
               </button>
             </div>
-          {:else if favoriteState.communityFavorites.length === 0}
+          {:else if favoriteState.communitySetups.length === 0}
             <div class="empty-state">
               <i class="fa-regular fa-heart" aria-hidden="true"></i>
-              <strong>No shared setups yet</strong>
-              <span
-                >Community Favorites will appear here when people choose to
-                share.</span
-              >
+              <strong>No setups shared yet</strong>
+              <span>Setups people save appear here.</span>
             </div>
           {:else}
             <div class="setup-list">
-              {#each favoriteState.communityFavorites as favorite (favorite.userId)}
+              {#each favoriteState.communitySetups as setup (setup.setupId)}
                 <button
                   type="button"
                   class="favorite-item community-item"
-                  class:active={isCommunitySource(favorite.userId) &&
+                  class:active={isCommunitySource(setup) &&
                     favoriteState.activeStatus === "active"}
-                  aria-current={isCommunitySource(favorite.userId) &&
+                  aria-current={isCommunitySource(setup) &&
                   favoriteState.activeStatus === "active"
                     ? "true"
                     : undefined}
-                  onclick={() => handleCommunityApply(favorite.userId)}
+                  onclick={() => handleCommunityApply(setup)}
                 >
                   <RobustAvatar
-                    src={favorite.avatar}
-                    name={favorite.displayName}
-                    alt={`${favorite.displayName}'s avatar`}
+                    src={setup.avatar}
+                    name={setup.displayName}
+                    alt={`${setup.displayName}'s avatar`}
                     size="sm"
                   />
                   <span class="favorite-info">
-                    <span class="favorite-name">{favorite.displayName}</span>
-                    <span class="favorite-summary">{summarize(favorite)}</span>
+                    <span class="favorite-name">{setup.name}</span>
+                    <span class="favorite-summary"
+                      >{setup.displayName} · {summarize(setup)}</span
+                    >
                   </span>
                   <span class="status-slot">
-                    {isCommunitySource(favorite.userId) &&
+                    {isCommunitySource(setup) &&
                     favoriteState.activeStatus === "active"
                       ? "Active"
                       : ""}
@@ -329,9 +327,7 @@
 <ConfirmDialog
   isOpen={deleteTarget !== null}
   title={deleteTarget ? `Delete “${deleteTarget.name}”?` : ""}
-  message={deleteTarget && favoriteState.sharedSetupId === deleteTarget.id
-    ? "This removes the saved setup and stops sharing it as your Favorite. Your current generator settings will not change."
-    : "This removes the saved setup. Your current generator settings will not change."}
+  message="This removes the saved setup from your list and the community. Your current generator settings will not change."
   confirmText="Delete"
   cancelText="Cancel"
   variant="danger"
@@ -489,6 +485,13 @@
   }
 
   .cap-message {
+    margin: -0.25rem 0 0;
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.66));
+    font-size: var(--font-size-compact, 12px);
+    text-align: center;
+  }
+
+  .share-note {
     margin: -0.25rem 0 0;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.66));
     font-size: var(--font-size-compact, 12px);
