@@ -306,3 +306,48 @@ Austen asked whether Next should sit on the right. On the landscape composition 
 Austen saw the landscape composition with the copy and Next floating far from the drawing and asked for the gap closed. The drawing track is now capped at the drawing's own size and the copy track at the longest caption, and the pair is centered as one unit, so the words sit a short gap from the drawing's edge at every landscape width.
 
 He also called out "Same shift. Different paths." as reading machine-made. The closing caption now reads "All three start and end at the same points. Only the path changes." Two plain sentences that say what the picture shows. Austen has not yet confirmed this exact line; it is the one string in this revision that needs his eye. No other copy changed.
+
+## September 17: What Hybrid does
+
+Review state: Austen approved the plan ("do it"). User review of the rendered result and of the new strings pending.
+
+Austen rejected an intro prototype that animated "Pro rides the Arc, Anti bends inward" as if spin caused the path. Any motion can take any path; Hybrid is the animator's rule for choosing one per motion. That prototype was reverted. In its place a section between the introduction and the explorer shows the rule through examples rendered by the canonical owners: three sequences (all pro, all anti, one hand of each) under Arc, Concave, and Hybrid.
+
+Austen rejected the first heading, "Hybrid is a rule, not a path", as machine-made (the "X, not Y" flip). The section copy was rewritten to say what the picture shows.
+
+New strings, pending Austen's eye:
+
+- Heading: "What Hybrid does"
+- Lede: "Hybrid uses Arc for pro motions and Concave for anti motions. Any motion can take any path, so this is a default, not a law. Three sequences show where it lands."
+- Row labels: "All pro" / "All anti" / "Left anti, right pro"
+- Row results: "Same as Arc." / "Same as Concave." / "Concave on the left hand, Arc on the right."
+- Explorer lede replaced. Old: "Hybrid is the fourth choice. It uses Arc for pro motions and Concave for anti motions." New: "Pick a pair of shapes from the matrix, or one shape from its edge, and switch the path while it plays."
+- Explorer status while a header solo plays: "One hand on its own. Pick a cell to pair it again."
+
+The tiles trace hands, not prop tips. The path shape is a rule about the hand path, and under a tip trace the all-pro row collapsed to a dot at the center, which taught nothing. Under a hand trace the Arc and Concave columns repeat across rows and only the Hybrid column changes.
+
+Two explorer changes on Austen's request in the same review. Timing and direction no longer fold behind a disclosure; the chip row sits above the animation canvas as it does in the Shape Engine drill. A matrix header (one of the axis flowers) now plays that hand alone: the other prop, its path line, the letter and placement glyphs, and the chip row leave; the four path tiles draw that hand only. Picking a cell restores the pair.
+
+Ownership ledger: SequenceMandala, GuidePictograph (the guide's static notation cell; StepStrip is a playback carousel and would ring a current step), applySequencePathPreview, PATH_SHAPE_COLORS, ShapeMatrixGrid (its existing onsolo/soloHand contract), ElementChipRow, SequenceViewerVisibilityState via the viewer visibility context (the same owner the Shape Engine shell uses for a solo), InlineAnimationPlayer's hideTkaGlyph/showPlacementGlyph, growFade. No new controls or motion owners. The explorer state gains soloHand and chooseMatrixSolo.
+
+Evidence: browser pass at 375×667, 960×412, 820×1180, 1440×900, 1920×1080, 2560×1440, 3840×2160 and a 720×450 stand-in for 200% zoom; no horizontal overflow at any tier; root 16px at every tier. The examples table stacks each sequence over its three labelled tiles below a 44rem container width and reads as one row per sequence above it. Solo verified: one prop, one path line, no glyphs, no chip row, one-hand tiles; pair restored on a cell click; Path lines toggle honours the solo. AI-bust review of the new strings: clean.
+
+## September 17: the explorer's two sources
+
+Austen asked for the explorer's left column to hold two modes instead of a Browse button beside the matrix. Before, a browsed sequence played in the animation while the matrix stayed on screen with a stale selection. Now a segmented control at the top of the column picks the source. "Shape matrix" shows the turn controls and the matrix. "Sequence" shows a Browse button and the browsed sequence's card in the matrix's square. Picking from the browser switches to the Sequence source; switching back to the matrix replays the remembered pair, or the default pair at the current turns if none was picked. The timing-and-direction chip row belongs to the matrix and leaves with it.
+
+Strings, pending Austen's eye:
+
+- Source control options: "Shape matrix" / "Sequence"; accessible name "Sequence source"
+- Explorer status in the Sequence source: "Switch the path while it plays."
+- "Browse sequences" unchanged.
+
+The card shows the word and step numbers, no start placement (the player shows it), no notes, difficulty, or LOOP glyph, and staff props to match the animation. It is contained in the same square the matrix uses, so the swap moves nothing below it; the card's own layout owner picks the grid that fits.
+
+Ownership ledger: SegmentedControl (the exactly-one owner already used for Trace), Crossfade for the controls swap (animateHeight, since the turn controls are taller than the Browse button) and the stage swap, ChoreoCard with forceContain and fitWidth, SequencePickerModal unchanged. The explorer state gains `source` and `browsed`; chooseSequence remembers the sequence and shows it, and showMatrix re-selects the pair.
+
+Evidence: browser pass at 375×667, 820×1180, and 1440×900 (the three compositions of the explorer); both sources, the swap in both directions, and the browse-and-pick flow observed; no horizontal overflow; the source stage stays 1:1 in both modes and the feedback line does not move. AI-bust review of the new strings: clean.
+
+## September 17: Hybrid lede loses its "X, not Y"
+
+"Any motion can take any path, so this is a default, not a law." carried the same flip Austen rejected in the heading an hour earlier. It now reads "Any motion can take any path; Hybrid only sets the default." Same fact, no flip. Pending Austen's eye with the rest of the section.

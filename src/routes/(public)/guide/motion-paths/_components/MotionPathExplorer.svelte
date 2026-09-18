@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
+  import { SequenceViewerVisibilityState } from "$lib/shared/sequence-viewer/state/viewer-visibility-state.svelte";
+  import { setViewerVisibilityContext } from "$lib/shared/sequence-viewer/context/viewer-visibility-context";
   import { growFade } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import { browser } from "$app/environment";
@@ -8,6 +10,8 @@
   import PathShapePanel from "$lib/shared/animation-engine/components/settings-panels/PathShapePanel.svelte";
   import { setAnimationVisibilityContext } from "$lib/shared/animation-engine/state/animation-visibility-context";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import Crossfade from "$lib/shared/components/Crossfade.svelte";
+  import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import TurnNotationControls from "$lib/shared/shape-matrix/app/components/TurnNotationControls.svelte";
   import ShapeMatrixGrid from "$lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte";
@@ -29,14 +33,14 @@
     shapeMatrixTipPoint,
     type ShapeMatrixData,
   } from "$lib/shared/shape-matrix/services/shape-matrix-flowers";
-  import {
-    MODE_LABEL,
-    type VtgMode,
-  } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+  import type { VtgMode } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
   import StepStrip from "$lib/shared/timeline/StepStrip.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { createMotionPathExplorerState } from "../_data/motion-path-explorer-state.svelte";
+  import {
+    createMotionPathExplorerState,
+    type ExplorerSource,
+  } from "../_data/motion-path-explorer-state.svelte";
   import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
   import { registerLoopDetector } from "$lib/shared/create/get-loop-detector";
   import type { TurnValue } from "$lib/shared/create/services/level-turn-values";
@@ -46,9 +50,18 @@
   const matrixTipDx = shapeMatrixTipPoint(PropType.STAFF)?.dx;
   setAnimationVisibilityContext(explorer.scope.visibility);
   let pickerOpen = $state(false);
-  // Timing and direction is the one selector that needs vocabulary the intro
-  // never taught, so it stays folded until asked for.
-  let relationshipOpen = $state(false);
+  // Which hands the canvas draws. The animator owns per-hand motion
+  // visibility; this surface scopes its own instance so a header's solo hides
+  // the other prop and its trail through that owner, as the Shape Engine does.
+  const motionVisibility = new SequenceViewerVisibilityState(true);
+  setViewerVisibilityContext(motionVisibility);
+  $effect(() => {
+    const solo = explorer.soloHand;
+    untrack(() => {
+      motionVisibility.leftMotion = solo !== "right";
+      motionVisibility.rightMotion = solo !== "left";
+    });
+  });
   // The first thing on screen is a real matrix shape, not a frozen example.
   // One turn each keeps both hands drawing petals (pro 2, anti 4), and mixing
   // pro with anti means Hybrid differs from Arc on the first click.
@@ -95,6 +108,21 @@
   const colAxis = $derived(
     matrixData ? applyFilter(matrixData.axis, matrixFilters.right, false) : []
   );
+
+  const SOURCE_OPTIONS: { value: ExplorerSource; label: string }[] = [
+    { value: "matrix", label: "Shape matrix" },
+    { value: "sequence", label: "Sequence" },
+  ];
+
+  function chooseSource(value: ExplorerSource): void {
+    if (value === explorer.source) return;
+    if (value === "sequence") explorer.showSequence();
+    else
+      explorer.showMatrix(
+        pairAtTurns(DEFAULT_PAIR, leftTurn, rightTurn),
+        buildMatrixSequence
+      );
+  }
 
   function chooseTurn(hand: "left" | "right", value: TurnValue): void {
     if (hand === "left") leftTurn = value;
@@ -180,47 +208,102 @@
 
 <section class="explorer" aria-label="Motion path comparison">
   <div class="explorer-workspace">
-    <section class="shape-picker" aria-labelledby="shape-picker-title">
+    <!-- The played sequence has two sources. Each owns its own controls and
+         its own stage, and the two swap in place. -->
+    <section class="shape-picker" aria-label="Sequence source">
       <div class="source-controls">
         <div class="picker-heading">
-          <h3 id="shape-picker-title">Shapes</h3>
-          <PanelButton onclick={() => (pickerOpen = true)}
-            >Browse sequences</PanelButton
-          >
-        </div>
-        <div class="turn-picker">
-          <TurnNotationControls
-            {leftTurn}
-            {rightTurn}
-            {labelMode}
-            onturn={chooseTurn}
-            onlabelmodechange={(value) => (labelMode = value)}
+          <SegmentedControl
+            options={SOURCE_OPTIONS}
+            value={explorer.source}
+            ariaLabel="Sequence source"
+            onchange={chooseSource}
           />
         </div>
+        <Crossfade
+          key={explorer.source}
+          duration={DURATION.normal}
+          animateHeight
+        >
+          {#if explorer.source === "matrix"}
+            <div class="turn-picker">
+              <TurnNotationControls
+                {leftTurn}
+                {rightTurn}
+                {labelMode}
+                onturn={chooseTurn}
+                onlabelmodechange={(value) => (labelMode = value)}
+              />
+            </div>
+          {:else}
+            <div class="browse-row">
+              <PanelButton fullWidth onclick={() => (pickerOpen = true)}
+                >Browse sequences</PanelButton
+              >
+            </div>
+          {/if}
+        </Crossfade>
       </div>
-      <div class="matrix-stage" aria-busy={!matrixData && !matrixError}>
-        {#if matrixError}
-          <div class="matrix-status error" role="alert">
-            <p>{matrixError}</p>
-            <PanelButton onclick={() => void loadMatrix()}
-              >Try again</PanelButton
-            >
-          </div>
-        {:else if !matrixData}
-          <p class="matrix-status" role="status">
-            Building the Shape Matrix…
-          </p>
-        {:else}
-          <ShapeMatrixGrid
-            data={previewMatrix}
-            {rowAxis}
-            {colAxis}
-            maxCellPx={108}
-            selectedPair={explorer.selectedPair}
-            onselect={(pair) =>
-              explorer.chooseMatrixPair(pair, buildMatrixSequence)}
-          />
-        {/if}
+      <div class="source-stage">
+        <Crossfade key={explorer.source} duration={DURATION.normal}>
+          {#if explorer.source === "matrix"}
+            <div class="matrix-stage" aria-busy={!matrixData && !matrixError}>
+              {#if matrixError}
+                <div class="matrix-status error" role="alert">
+                  <p>{matrixError}</p>
+                  <PanelButton onclick={() => void loadMatrix()}
+                    >Try again</PanelButton
+                  >
+                </div>
+              {:else if !matrixData}
+                <p class="matrix-status" role="status">
+                  Building the Shape Matrix…
+                </p>
+              {:else}
+                <ShapeMatrixGrid
+                  data={previewMatrix}
+                  {rowAxis}
+                  {colAxis}
+                  maxCellPx={108}
+                  selectedPair={explorer.selectedPair}
+                  soloHand={explorer.soloHand}
+                  onselect={(pair) =>
+                    explorer.chooseMatrixPair(pair, buildMatrixSequence)}
+                  onsolo={(hand, flower) =>
+                    explorer.chooseMatrixSolo(
+                      hand,
+                      flower,
+                      pairAtTurns(DEFAULT_PAIR, leftTurn, rightTurn),
+                      buildMatrixSequence
+                    )}
+                />
+              {/if}
+            </div>
+          {:else}
+            <!-- The browsed sequence's card, with the notation the player is
+                 reading. The path controls change the animation, not the
+                 notation, so the card stays put while the path switches.
+                 Contained, the card picks the grid that best fills the
+                 matrix's square. -->
+            <div class="card-stage">
+              <ChoreoCard
+                sequence={explorer.browsed}
+                showWord
+                showStepNumbers
+                includeStartPlacement={false}
+                showDifficultyLevel={false}
+                showNotes={false}
+                showLoopGlyph={false}
+                darkMode
+                leftPropType={PropType.STAFF}
+                rightPropType={PropType.STAFF}
+                hideSoloHeader
+                forceContain
+                fitWidth
+              />
+            </div>
+          {/if}
+        </Crossfade>
       </div>
 
       <div class="picker-feedback" aria-live="polite">
@@ -233,45 +316,14 @@
           >
         {:else}
           <span
-            >{explorer.selectedPair
-              ? "Change the motion path to compare these shapes."
-              : "Pick a cell to animate its shapes."}</span
+            >{explorer.source === "sequence"
+              ? "Switch the path while it plays."
+              : explorer.soloHand
+                ? "One hand on its own. Pick a cell to pair it again."
+                : explorer.selectedPair
+                  ? "Change the motion path to compare these shapes."
+                  : "Pick a cell to animate its shapes."}</span
           >
-        {/if}
-      </div>
-
-      <div class="relationship">
-        <PanelButton
-          ariaExpanded={relationshipOpen}
-          onclick={() => (relationshipOpen = !relationshipOpen)}
-        >
-          <span class="relationship-label">
-            <span>Timing and direction</span>
-            {#if explorer.selectedMode}
-              <span class="relationship-current"
-                >{MODE_LABEL[explorer.selectedMode]}</span
-              >
-            {/if}
-          </span>
-          <i
-            class="fas fa-chevron-down relationship-chevron"
-            class:open={relationshipOpen}
-            aria-hidden="true"
-          ></i>
-        </PanelButton>
-        {#if relationshipOpen}
-          <div
-            class="relationship-picker"
-            transition:growFade={{ axis: "y", duration: DURATION.normal }}
-          >
-            <ElementChipRow
-              selected={explorer.selectedMode}
-              columns={3}
-              compact
-              onpick={(mode) =>
-                explorer.chooseHandRelationship(mode, buildMatrixSequence)}
-            />
-          </div>
         {/if}
       </div>
     </section>
@@ -291,6 +343,22 @@
             onclick={explorer.toggleGuides}>Path lines</PanelButton
           >
         </div>
+        <!-- Timing and direction sit above the canvas as they do in the Shape
+             Engine's drill. A solo has one hand, so the row leaves with it;
+             a browsed sequence has no matrix pair to rebuild, so it has no row. -->
+        {#if !explorer.soloHand && explorer.source === "matrix"}
+          <div
+            class="relationship"
+            transition:growFade={{ axis: "y", duration: DURATION.normal }}
+          >
+            <ElementChipRow
+              selected={explorer.selectedMode}
+              disabled={!explorer.selectedPair}
+              onpick={(mode) =>
+                explorer.chooseHandRelationship(mode, buildMatrixSequence)}
+            />
+          </div>
+        {/if}
         <div class="motion-stage" aria-label="Selected path animation">
           <div class="animation">
             {#if browser}
@@ -302,6 +370,7 @@
                 trace={explorer.trace}
                 leftPropType={PropType.STAFF}
                 rightPropType={PropType.STAFF}
+                hideGlyph={explorer.soloHand !== null}
                 onplayingchange={(value) => (explorer.playing = value)}
                 onstepchange={(value) => (explorer.liveStep = value)}
                 onseekref={(seek) => (stageSeek = seek)}
@@ -355,6 +424,7 @@
             <SequenceMandala
               sequence={explorer.variants[path]}
               pathShape={path}
+              show={explorer.soloHand ?? "both"}
               {size}
               mode="gallery"
               darkMode
@@ -427,10 +497,21 @@
     gap: var(--spacing-sm, 8px);
     min-height: 44px;
   }
-  .picker-heading {
-    justify-content: space-between;
+  .picker-heading :global(.segmented-control) {
+    flex: 1;
   }
-  .picker-heading h3,
+  .browse-row {
+    margin-block: var(--spacing-xs, 4px);
+  }
+  .source-stage {
+    min-width: 0;
+  }
+  /* The card takes the matrix's square, so the swap changes nothing below. */
+  .card-stage {
+    width: 100%;
+    aspect-ratio: 1;
+    min-width: 0;
+  }
   .stage-label {
     margin: 0;
     color: var(--theme-text);
@@ -440,7 +521,6 @@
   .stage-label {
     margin-right: auto;
   }
-  .relationship-picker,
   .turn-picker {
     display: grid;
     gap: var(--spacing-xs, 4px);
@@ -497,6 +577,9 @@
   .motion-column {
     max-width: 580px;
     margin-inline: auto;
+    /* ElementChipRow narrows to three tracks inside a drill-named container;
+       this column plays the drill's part here. */
+    container: shape-matrix-drill / inline-size;
   }
   .animation {
     position: relative;
@@ -526,34 +609,8 @@
     margin-bottom: var(--spacing-sm, 8px);
   }
   .relationship {
-    display: grid;
-    gap: var(--spacing-sm, 8px);
     min-width: 0;
-  }
-  .relationship > :global(button) {
-    justify-content: space-between;
-    width: 100%;
-  }
-  .relationship-label {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--spacing-xs, 4px) var(--spacing-sm, 8px);
-    min-width: 0;
-    text-align: left;
-  }
-  .relationship-current {
-    color: var(--theme-text-muted);
-    font-weight: 500;
-  }
-  .relationship-chevron {
-    flex-shrink: 0;
-    transition: transform var(--duration-fast) var(--ease-out);
-  }
-  .relationship-chevron.open {
-    transform: rotate(180deg);
-  }
-  .relationship-picker {
-    min-width: 0;
+    margin-bottom: var(--spacing-sm, 8px);
   }
   .path-column :global(.path-header) {
     align-items: center;
@@ -580,8 +637,6 @@
   @container (min-width: 640px) {
     .shape-picker {
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      /* The fr row absorbs the matrix height so the timing disclosure stays
-         directly under the turn controls instead of drifting to mid-column. */
       grid-template-rows: auto minmax(0, 1fr) auto;
       column-gap: var(--spacing-lg, 24px);
     }
@@ -589,19 +644,13 @@
       grid-column: 1;
       grid-row: 1;
     }
-    .matrix-stage {
+    .source-stage {
       grid-column: 2;
       grid-row: 1 / span 2;
     }
     .picker-feedback {
       grid-column: 2;
       grid-row: 3;
-    }
-    /* Sits directly under the turn controls; the matrix owns the tall rows. */
-    .relationship {
-      grid-column: 1;
-      grid-row: 2;
-      align-self: start;
     }
     .comparison {
       grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
@@ -630,7 +679,7 @@
     .shape-picker > * {
       width: 100%;
     }
-    .matrix-stage {
+    .source-stage {
       flex: none;
     }
   }
