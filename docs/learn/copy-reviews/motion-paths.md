@@ -331,3 +331,19 @@ Two explorer changes on Austen's request in the same review. Timing and directio
 Ownership ledger: SequenceMandala, GuidePictograph (the guide's static notation cell; StepStrip is a playback carousel and would ring a current step), applySequencePathPreview, PATH_SHAPE_COLORS, ShapeMatrixGrid (its existing onsolo/soloHand contract), ElementChipRow, SequenceViewerVisibilityState via the viewer visibility context (the same owner the Shape Engine shell uses for a solo), InlineAnimationPlayer's hideTkaGlyph/showPlacementGlyph, growFade. No new controls or motion owners. The explorer state gains soloHand and chooseMatrixSolo.
 
 Evidence: browser pass at 375×667, 960×412, 820×1180, 1440×900, 1920×1080, 2560×1440, 3840×2160 and a 720×450 stand-in for 200% zoom; no horizontal overflow at any tier; root 16px at every tier. The examples table stacks each sequence over its three labelled tiles below a 44rem container width and reads as one row per sequence above it. Solo verified: one prop, one path line, no glyphs, no chip row, one-hand tiles; pair restored on a cell click; Path lines toggle honours the solo. AI-bust review of the new strings: clean.
+
+## September 17: the explorer's two sources
+
+Austen asked for the explorer's left column to hold two modes instead of a Browse button beside the matrix. Before, a browsed sequence played in the animation while the matrix stayed on screen with a stale selection. Now a segmented control at the top of the column picks the source. "Shape matrix" shows the turn controls and the matrix. "Sequence" shows a Browse button and the browsed sequence's card in the matrix's square. Picking from the browser switches to the Sequence source; switching back to the matrix replays the remembered pair, or the default pair at the current turns if none was picked. The timing-and-direction chip row belongs to the matrix and leaves with it.
+
+Strings, pending Austen's eye:
+
+- Source control options: "Shape matrix" / "Sequence"; accessible name "Sequence source"
+- Explorer status in the Sequence source: "Switch the path while it plays."
+- "Browse sequences" unchanged.
+
+The card shows the word and step numbers, no start placement (the player shows it), no notes, difficulty, or LOOP glyph, and staff props to match the animation. It is contained in the same square the matrix uses, so the swap moves nothing below it; the card's own layout owner picks the grid that fits.
+
+Ownership ledger: SegmentedControl (the exactly-one owner already used for Trace), Crossfade for the controls swap (animateHeight, since the turn controls are taller than the Browse button) and the stage swap, ChoreoCard with forceContain and fitWidth, SequencePickerModal unchanged. The explorer state gains `source` and `browsed`; chooseSequence remembers the sequence and shows it, and showMatrix re-selects the pair.
+
+Evidence: browser pass at 375×667, 820×1180, and 1440×900 (the three compositions of the explorer); both sources, the swap in both directions, and the browse-and-pick flow observed; no horizontal overflow; the source stage stays 1:1 in both modes and the feedback line does not move. AI-bust review of the new strings: clean.

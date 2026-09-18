@@ -20,6 +20,9 @@ export type MotionPathRealizationBuilder = (
 
 type PickerStatus = "idle" | "loading" | "error";
 
+/** Where the played sequence comes from: a matrix cell or the picker. */
+export type ExplorerSource = "matrix" | "sequence";
+
 type MatrixPair = { left: Flower; right: Flower };
 type RealizationCache = Map<string, Map<VtgMode, Promise<SequenceData | null>>>;
 
@@ -33,6 +36,10 @@ export function createMotionPathExplorerState() {
   scope.visibility.setVisibility("leftPathLines", true);
   scope.visibility.setVisibility("rightPathLines", true);
   let original = $state<SequenceData>(motionPathExamples[2]!);
+  let source = $state<ExplorerSource>("matrix");
+  // The last sequence taken from the picker. It starts as the mixed frozen
+  // example so the sequence source has a card to show before any browsing.
+  let browsed = $state<SequenceData>(motionPathExamples[2]!);
   let selectedPair = $state<{ left: Flower; right: Flower } | null>(null);
   // A matrix header plays one hand of the pair on its own. The other hand
   // keeps building so the pair stays solvable; the surfaces hide it.
@@ -169,6 +176,27 @@ export function createMotionPathExplorerState() {
     }
   }
 
+  function chooseMatrixPair(
+    pair: MatrixPair,
+    builder: MotionPathRealizationBuilder
+  ): void {
+    setSolo(null);
+    selectedPair = pair;
+    void prewarmPair(pair, builder, selectedMode);
+    void buildSelection(builder);
+  }
+
+  /** Play the browsed sequence. The matrix pair stays remembered. */
+  function showSequence(): void {
+    ++selectionVersion;
+    source = "sequence";
+    original = browsed;
+    setSolo(null);
+    pickerStatus = "idle";
+    pickerError = null;
+    transitionVersion += 1;
+  }
+
   return {
     scope,
     get sequence() {
@@ -185,6 +213,12 @@ export function createMotionPathExplorerState() {
     },
     get soloHand() {
       return soloHand;
+    },
+    get source() {
+      return source;
+    },
+    get browsed() {
+      return browsed;
     },
     get pickerStatus() {
       return pickerStatus;
@@ -225,15 +259,7 @@ export function createMotionPathExplorerState() {
     syncPolicy() {
       policy = scope.visibility.getPathPolicy();
     },
-    chooseMatrixPair(
-      pair: { left: Flower; right: Flower },
-      builder: MotionPathRealizationBuilder
-    ) {
-      setSolo(null);
-      selectedPair = pair;
-      void prewarmPair(pair, builder, selectedMode);
-      void buildSelection(builder);
-    },
+    chooseMatrixPair,
     /**
      * One axis flower alone, from its header. The other hand keeps whatever
      * is selected, or the host's fallback when nothing is, so the pair still
@@ -275,13 +301,14 @@ export function createMotionPathExplorerState() {
       if (retryBuilder) void buildSelection(retryBuilder);
     },
     chooseSequence(value: SequenceData) {
-      ++selectionVersion;
-      original = value;
-      selectedPair = null;
-      setSolo(null);
-      pickerStatus = "idle";
-      pickerError = null;
-      transitionVersion += 1;
+      browsed = value;
+      showSequence();
+    },
+    showSequence,
+    /** Back to the matrix: the remembered pair, or the host's fallback. */
+    showMatrix(fallback: MatrixPair, builder: MotionPathRealizationBuilder) {
+      source = "matrix";
+      chooseMatrixPair(selectedPair ?? fallback, builder);
     },
     toggleGuides() {
       guides = !guides;
