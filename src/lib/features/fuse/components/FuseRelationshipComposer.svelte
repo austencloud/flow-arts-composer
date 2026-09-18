@@ -242,13 +242,23 @@
     margin-top: auto;
     padding-top: var(--settings-spacing-md, 14px);
     padding-bottom: 2px;
-    border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
-    background: var(--theme-panel-bg, rgba(18, 18, 28, 0.98));
+    /* The scrim is the pane's own solid surface, so it only shows as a scrim
+       when it has controls to cover. The theme's panel colour is a translucent
+       black and painted a darker box onto the pane. */
+    background: var(--customize-surface-solid, var(--theme-panel-bg, #12141c));
   }
 
+  /* A card like the two steps above it, with the same frame and the same
+     inset, so the chain sits inside a plate instead of running edge to edge
+     with its end nodes against the pane's sides. */
   .result {
     display: grid;
     gap: 8px;
+    min-width: 0;
+    padding: clamp(12px, 0.45cqw, 17px);
+    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
+    border-radius: var(--settings-radius-md, 14px);
+    background: var(--theme-card-bg, rgba(255, 255, 255, 0.045));
   }
 
   /* The chain spans the panel: the path and rule nodes share the width evenly
@@ -409,6 +419,10 @@
     .relationship-commit {
       gap: 10px;
       padding-top: 10px;
+    }
+
+    .result {
+      padding: 8px 10px;
     }
   }
 

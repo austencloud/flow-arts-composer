@@ -176,7 +176,7 @@
       </div>
     </div>
 
-    <div class="axis">
+    <div class="axis mode-axis">
       <span class="axis-label" id="fuse-mode-label">Timing and direction</span>
       <FuseTnDModePicker
         selected={selection.mode}
@@ -199,7 +199,7 @@
       </div>
     {/if}
 
-    <div class="axis">
+    <div class="axis operations-axis">
       <span class="axis-label" id="fuse-operations-label">Also</span>
       <div
         class="operation-row"
@@ -232,8 +232,13 @@
 </div>
 
 <style>
+  /* The picker takes whatever height the editor has to spare, and hands it to
+     the rule card below, so a tall pane fills with taller chips instead of a
+     band of nothing between the last row and the pinned footer. `1 0 auto`:
+     grow, never shrink, so a pane shorter than the form still scrolls it. */
   .transform-picker {
     display: flex;
+    flex: 1 0 auto;
     flex-direction: column;
     gap: var(--settings-spacing-md, 14px);
     width: 100%;
@@ -252,11 +257,14 @@
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.045));
   }
 
-  /* The card stays content-sized. Stretching it to reach the pinned footer put
-     empty space between the mode grid and the chips, which read as two unrelated
-     rows; the same pixels left as panel background below the card read as a form
-     that has simply finished. */
+  /* The rule card grows to the pinned footer, and the spare height goes into
+     the chip rows themselves rather than between them: the four rows of chips
+     (three modes, one of operations) share it evenly, so every chip gets
+     taller by the same amount and the rows stay one block. Stretching the card
+     without stretching the rows is what used to leave a gap between the mode
+     grid and the chips. */
   .rule-field {
+    flex: 1 0 auto;
     container-type: inline-size;
   }
 
@@ -264,6 +272,19 @@
     display: grid;
     gap: 6px;
     min-width: 0;
+  }
+
+  .mode-axis,
+  .operations-axis {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .mode-axis {
+    flex: 3 0 auto;
+  }
+
+  .operations-axis {
+    flex: 1 0 auto;
   }
 
   .axis-label {
@@ -284,6 +305,7 @@
 
   .operation-row :global(.filter-chip) {
     width: 100%;
+    height: 100%;
     justify-content: center;
   }
 
