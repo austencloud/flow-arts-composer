@@ -7,6 +7,7 @@ import {
   CREATE_TABS,
   TOYS_TABS,
 } from "$lib/shared/navigation/config/tab-definitions";
+import { normalizeNavigationTarget } from "$lib/shared/navigation/config/module-definitions";
 
 const MESSAGE_LOCALES = ["de", "en", "es", "fr", "it", "ja", "pt", "ru"];
 
@@ -16,6 +17,20 @@ vi.mock("$lib/shared/analytics/services/posthog-activity-logger", () => ({
 vi.mock("$lib/shared/hmr-helper", () => ({
   hasMimeErrorOccurred: () => false,
   verifyTabSwitch: vi.fn(),
+}));
+vi.mock("$app/environment", () => ({
+  browser: true,
+  dev: true,
+  building: false,
+  version: "test",
+}));
+vi.mock("$app/navigation", () => ({
+  pushState: (destination: string | URL, state: App.PageState) => {
+    history.pushState(state, "", destination);
+  },
+  replaceState: (destination: string | URL, state: App.PageState) => {
+    history.replaceState(state, "", destination);
+  },
 }));
 
 async function createStateAt(pathname: string) {
@@ -87,4 +102,35 @@ describe("Shape Engine as a Create tab", () => {
     expect(state.currentModule).toBe("toys");
     expect(state.activeTab).toBe("hand-tunnel");
   });
+
+  it("resolves the moved section for every URL parser", () => {
+    expect(normalizeNavigationTarget("toys", "shape-matrix")).toEqual({
+      moduleId: "create",
+      sectionId: "shape-engine",
+    });
+    expect(normalizeNavigationTarget("toys", "hand-tunnel")).toEqual({
+      moduleId: "toys",
+      sectionId: "hand-tunnel",
+    });
+    expect(normalizeNavigationTarget("toys", undefined)).toEqual({
+      moduleId: "toys",
+      sectionId: undefined,
+    });
+  });
+
+  it("rewrites the legacy browser URL at boot without dropping its query", async () => {
+    history.replaceState({}, "", "/toys/shape-matrix?source=bookmark");
+    vi.resetModules();
+
+    const { initializeNavigationHistory } =
+      await import("$lib/shared/navigation-coordinator/navigation-coordinator.svelte");
+    initializeNavigationHistory();
+
+    expect(location.pathname).toBe("/create/shape-engine");
+    expect(location.search).toBe("?source=bookmark");
+    expect(history.state).toMatchObject({
+      moduleId: "create",
+      sectionId: "shape-engine",
+    });
+  }, 30_000);
 });

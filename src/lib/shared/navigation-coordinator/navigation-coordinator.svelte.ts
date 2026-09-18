@@ -32,7 +32,10 @@ function afterViewTransitionSettles(
 }
 
 import type { ModuleId } from "../navigation/domain/types";
-import { normalizeSectionId } from "../navigation/config/module-definitions";
+import {
+  normalizeNavigationTarget,
+  normalizeSectionId,
+} from "../navigation/config/module-definitions";
 import {
   MODULE_DEFINITIONS,
   ENABLED_MODULE_DEFINITIONS,
@@ -845,12 +848,19 @@ function parsePathNavigation(): {
     }
 
     // Validate module exists
-    const moduleDefinition = MODULE_DEFINITIONS.find((m) => m.id === moduleId);
+    let moduleDefinition = MODULE_DEFINITIONS.find((m) => m.id === moduleId);
     if (moduleDefinition) {
-      sectionId = normalizeSectionId(moduleId, sectionId);
+      // A section that moved to another module (e.g. /toys/shape-matrix) resolves
+      // to its new home; the seeded history entry below rewrites the URL.
+      const target = normalizeNavigationTarget(moduleId, sectionId);
+      if (target.moduleId !== moduleId) {
+        moduleId = target.moduleId;
+        moduleDefinition = MODULE_DEFINITIONS.find((m) => m.id === moduleId);
+      }
+      sectionId = target.sectionId;
       // If section is provided, validate it exists for this module
       if (sectionId) {
-        const validSection = moduleDefinition.sections.some(
+        const validSection = moduleDefinition?.sections.some(
           (s) => s.id === sectionId
         );
         if (!validSection) {
@@ -997,12 +1007,16 @@ export function initializeNavigationHistory() {
       needsHistoryUpdate = true;
     }
 
-    const normalizedTargetSection = normalizeSectionId(
+    const normalizedTarget = normalizeNavigationTarget(
       targetModule,
       targetSection
     );
-    if (normalizedTargetSection !== targetSection) {
-      targetSection = normalizedTargetSection;
+    if (
+      normalizedTarget.moduleId !== targetModule ||
+      normalizedTarget.sectionId !== targetSection
+    ) {
+      targetModule = normalizedTarget.moduleId;
+      targetSection = normalizedTarget.sectionId;
       needsHistoryUpdate = true;
     }
 

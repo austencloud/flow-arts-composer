@@ -16,6 +16,7 @@ import {
 import {
   MODULE_DEFINITIONS,
   normalizeModuleId,
+  normalizeNavigationTarget,
   normalizeSectionId,
 } from "../config/module-definitions";
 
@@ -215,14 +216,9 @@ export function createNavigationState() {
 
         let normalizedModule = normalizeModuleId(rawUrlModule);
         if (normalizedModule) {
-          urlTab = normalizeSectionId(normalizedModule, urlTab);
-        }
-
-        // Shape Engine graduated from Toys to the Create module's Shape tab
-        // (2026-09-18): the old /toys/shape-matrix link opens what it became.
-        if (normalizedModule === "toys" && urlTab === "shape-matrix") {
-          normalizedModule = "create";
-          urlTab = "shape-engine";
+          const target = normalizeNavigationTarget(normalizedModule, urlTab);
+          normalizedModule = target.moduleId;
+          urlTab = target.sectionId;
         }
 
         // Moderation folded into Admin as a tab (2026-06-30): a bare /moderation
