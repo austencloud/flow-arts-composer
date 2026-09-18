@@ -394,9 +394,12 @@
   // grip rides the same signature as the fan appearance rather than its own
   // effect, because both are one shared "build" concept and a second effect
   // racing this one could each see the other's write as the tie-breaker and
-  // loop.
-  let lastSettingsFanSignature: string | null = null;
-  let lastSceneFanSignature: string | null = null;
+  // loop. ScenePropPicker's syncTriangleGripToScene (in
+  // scene-prop-picker-grip-sync.svelte.ts) reads the same scene state but is
+  // strictly one way, settings to scene, and never writes AppSettings, so it
+  // cannot race this two-way effect.
+  let lastSettingsBuildSignature: string | null = null;
+  let lastSceneBuildSignature: string | null = null;
   $effect(() => {
     const settingsAppearance = normalizeFanAppearance(
       getSettings().fanAppearance
@@ -411,8 +414,8 @@
     const sceneSignature = `${fanAppearanceSignature(sceneAppearance)}|${propFinishState.triangleGrip}`;
 
     if (
-      lastSettingsFanSignature === null ||
-      settingsSignature !== lastSettingsFanSignature
+      lastSettingsBuildSignature === null ||
+      settingsSignature !== lastSettingsBuildSignature
     ) {
       if (sceneSignature !== settingsSignature) {
         propFinishState.setFanBuild(settingsAppearance.build);
@@ -420,14 +423,14 @@
         propFinishState.setFanCover(settingsAppearance.cover);
         propFinishState.setTriangleGrip(settingsGrip);
       }
-      lastSettingsFanSignature = settingsSignature;
-      lastSceneFanSignature = settingsSignature;
+      lastSettingsBuildSignature = settingsSignature;
+      lastSceneBuildSignature = settingsSignature;
       return;
     }
 
-    if (sceneSignature !== lastSceneFanSignature) {
-      lastSceneFanSignature = sceneSignature;
-      lastSettingsFanSignature = sceneSignature;
+    if (sceneSignature !== lastSceneBuildSignature) {
+      lastSceneBuildSignature = sceneSignature;
+      lastSettingsBuildSignature = sceneSignature;
       void updateSettings({
         fanAppearance: sceneAppearance,
         triangleGrip: propFinishState.triangleGrip,

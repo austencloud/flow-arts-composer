@@ -2715,25 +2715,21 @@ Look at how `SCENE_PROP_TYPES` is built (line 110 onward): it flattens family va
 
 In the settings-won branch, after the three `propFinishState.setFan*` calls add `propFinishState.setTriangleGrip(settingsGrip);` (inside the same `if (sceneSignature !== settingsSignature)`). In the scene-won branch change the update to `void updateSettings({ fanAppearance: sceneAppearance, triangleGrip: propFinishState.triangleGrip });`.
 
-`ScenePropPicker.svelte`: the 3D studio has no orchestrator, so the scene default follows settings here too. Add the imports `getSettings` (already imported for `BentoPropGrid`? check; otherwise `import { getSettings } from "$lib/shared/application/state/app-state.svelte";`) and `normalizeTriangleGrip`, then:
+`ScenePropPicker.svelte`: the 3D studio has no orchestrator, so the scene default follows settings here too. This sync is one way, settings to scene, and must run unconditionally: a performer-scoped host still gets its own resolved `build` from `buildOverride ?? propFinishState.build` a few lines above, but that `build` is never what this effect writes, so gating the effect on `buildOverride` protects nothing and (in the Prop Studio, whose host always passes a `build` prop) makes the sync permanently inert. Extract the effect body into an exported helper next to the picker, `scene-prop-picker-grip-sync.svelte.ts`, so a test can drive the real function through `$effect.root` without mounting the picker's heavier dependency tree:
 
 ```ts
-  // The Grip pills live in BentoPropGrid and write AppSettings; the scene
-  // default follows them so the 3D prop turns in the hand as the row is
-  // toggled. A performer-scoped host keeps its own build.
-  $effect(() => {
-    const grip = normalizeTriangleGrip(getSettings().triangleGrip);
-    if (buildOverride) return;
-    if (propFinishState.triangleGrip !== grip) propFinishState.setTriangleGrip(grip);
-  });
+// scene-prop-picker-grip-sync.svelte.ts
+export function syncTriangleGripToScene(): void {
+  const grip = normalizeTriangleGrip(getSettings().triangleGrip);
+  if (propFinishState.triangleGrip !== grip) {
+    propFinishState.setTriangleGrip(grip);
+  }
+}
 ```
 
-Also include `build.triangleGrip` in `buildLayoutSignature` so the build stage re-measures on a grip change:
+`ScenePropPicker.svelte` mounts it unconditionally: `$effect(syncTriangleGripToScene);`.
 
-```ts
-      build.fanCover,
-      build.triangleGrip,
-```
+No grip control renders in the build stage, so `buildLayoutSignature` does not need `build.triangleGrip`; leave it out.
 
 - [ ] **Step 5: The other `PropBuild` literal sites in `src`**
 

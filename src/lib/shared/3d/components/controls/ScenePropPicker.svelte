@@ -16,11 +16,9 @@
 
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import BentoPropGrid from "$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
   import FanAppearancePicker from "$lib/shared/pictograph/prop/components/FanAppearancePicker.svelte";
   import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-  import { normalizeTriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
   import { createGlobalChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
   import { createLayoutMotion } from "$lib/shared/transitions/layout-flip";
   import { motionDuration } from "$lib/shared/transitions/motion";
@@ -31,6 +29,7 @@
   } from "../../domain/scene-prop-catalog";
   import { toScenePropType } from "../../domain/scene-prop-type";
   import PropBuildPicker from "./PropBuildPicker.svelte";
+  import { syncTriangleGripToScene } from "./scene-prop-picker-grip-sync.svelte";
 
   interface Props {
     /** Null means All Performers currently contains more than one prop type. */
@@ -57,15 +56,10 @@
   const build = $derived(buildOverride ?? propFinishState.build);
   const chirality = createGlobalChiralitySeam();
 
-  // The Grip pills live in BentoPropGrid and write AppSettings; the scene
-  // default follows them so the 3D prop turns in the hand as the row is
-  // toggled. A performer-scoped host keeps its own build.
-  $effect(() => {
-    const grip = normalizeTriangleGrip(getSettings().triangleGrip);
-    if (buildOverride) return;
-    if (propFinishState.triangleGrip !== grip)
-      propFinishState.setTriangleGrip(grip);
-  });
+  // One way, settings to scene: see scene-prop-picker-grip-sync.svelte.ts.
+  // A performer-scoped host still keeps its own build in `build` above; this
+  // effect only ever writes the scene default, never a performer override.
+  $effect(syncTriangleGripToScene);
   const scenePropType = $derived(
     currentProp === null ? null : toScenePropType(currentProp)
   );
@@ -91,7 +85,6 @@
       showFinishes,
       build.fanFrameColor,
       build.fanCover,
-      build.triangleGrip,
     ].join(":")
   );
 

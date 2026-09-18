@@ -6,8 +6,12 @@
   static/images/props/appearances/model/<prop>-<color>.svg and regenerates
   prop-model-sprites.generated.ts. Dev only.
 
-    /test/prop-3d-studio/sprites            capture everything
-    /test/prop-3d-studio/sprites?prop=sword capture one prop
+    /test/prop-3d-studio/sprites                    capture everything
+    /test/prop-3d-studio/sprites?prop=sword          capture one prop
+    /test/prop-3d-studio/sprites?prop=triangle       capture all four Triangle
+                                                      jobs (corner/side x blue/red)
+    /test/prop-3d-studio/sprites?prop=triangle_side  capture only the side-grip
+                                                      pair (blue/red)
 
   document.body.dataset.spriteCaptureDone flips to "1" when the run ends.
 -->
@@ -18,6 +22,7 @@
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { PROP_DIMENSIONS } from "$lib/shared/animation-engine/services/IPropTextureLoader";
   import { toScenePropType } from "$lib/shared/3d/domain/scene-prop-type";
+  import { triangleSpriteKey } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
   import {
     PropType as ScenePropType,
     type PropBuild,
@@ -58,7 +63,7 @@
     Record<PropType, { key: string; build: Partial<PropBuild> }[]>
   > = {
     [PropType.TRIANGLE]: [
-      { key: "triangle_side", build: { triangleGrip: "side" } },
+      { key: triangleSpriteKey("side"), build: { triangleGrip: "side" } },
     ],
   };
 
@@ -86,12 +91,17 @@
           ...(EXTRA_LOOKS[prop] ?? []),
         ];
         return looks.flatMap((look) =>
-          COLORS.map(
-            (color) =>
-              ({ prop, key: look.key, color, build: look.build }) as Job
-          )
+          COLORS.map((color) => ({
+            prop,
+            key: look.key,
+            color,
+            build: look.build,
+          }))
         );
       })
+      // queue already narrowed by prop; a requested EXTRA_LOOKS key (e.g.
+      // triangle_side) still shares its prop with the plain-look job, so this
+      // second filter drops that plain job and keeps only the matching look.
       .filter(
         (job) =>
           !requested ||

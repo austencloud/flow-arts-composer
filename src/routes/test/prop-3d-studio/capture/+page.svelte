@@ -30,6 +30,7 @@
     type FanCover,
     type FanFrameColor,
     type PropFinish,
+    type TriangleGrip,
   } from "@austencloud/scene-3d";
   import CaptureScene from "./CaptureScene.svelte";
 
@@ -93,7 +94,7 @@
     }
     const triangleGrip = params.get("triangleGrip");
     if (triangleGrip === "corner" || triangleGrip === "side") {
-      propFinishState.setTriangleGrip(triangleGrip);
+      propFinishState.setTriangleGrip(triangleGrip satisfies TriangleGrip);
     }
   });
 </script>
