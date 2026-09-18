@@ -443,6 +443,8 @@
             const left = ctrl.customLeft;
             ctrl.customLeft = ctrl.customRight;
             ctrl.customRight = left;
+            reportSetting("custom_color_a", "custom", "changed", true);
+            reportSetting("custom_color_b", "custom", "changed", true);
           }}
         />
       </div>

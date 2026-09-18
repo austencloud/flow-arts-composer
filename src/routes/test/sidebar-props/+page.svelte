@@ -180,6 +180,7 @@
   .picker-box {
     width: 100%;
     margin-inline: auto;
+    margin-block: 12px 0;
   }
   .controls {
     display: flex;
