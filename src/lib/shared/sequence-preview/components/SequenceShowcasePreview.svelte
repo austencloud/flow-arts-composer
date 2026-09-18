@@ -32,7 +32,7 @@
     rightPropType?: PropType | null;
     railLeftPropType?: PropType | null;
     railRightPropType?: PropType | null;
-    primaryPropColors?: ViewerCustomColorPair;
+    primaryPropColors?: ViewerCustomColorPair | null;
     externalPlaying?: boolean | null;
     onExternalPlayingChange?: (playing: boolean) => void;
     onStepChange?: (step: number, sequenceId: string | null) => void;
