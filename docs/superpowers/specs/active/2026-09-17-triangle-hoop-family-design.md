@@ -128,11 +128,16 @@ Rules the generator follows:
   grip, radius 60.6; big: dx 149.8, radius 142.4), so trails, mandala reach,
   seeded placements, and existing sprites keep their frame and the regenerated
   tip points equal the old ones. Only the tube weight changes: 10 units for
-  the mini glyph, 15 for the big (the largest that stays inside `600 x 300`).
+  the mini glyph, 15 for the big (the largest tube that stays inside
+  `600 x 300`; the join band over it overruns the far edge by up to 1.95
+  units, sub-pixel at every displayed size, and that is accepted rather than
+  thinning the big tube).
 - **The triangle box is derived.** Scale is the mini hoop's units per
   millimetre (121.2 / 454.025, the centreline diameter over the real one).
-  Half-width = reach x scale + half glyph tube; half-height = far-vertex
-  spread x scale + hardware band radius. Expected about `280 x 162`; the
+  Half-width = reach x scale + hardware band radius, because the far point is
+  bare tube on the corner grip but a sleeved vertex on the side grip and the
+  sleeve is the wider of the two; half-height = far-vertex spread x scale +
+  hardware band radius. Expected about `283 x 162`; the
   generated file is the source of truth and `PROP_DIMENSIONS` in
   `IPropTextureLoader.ts` imports it rather than restating it.
 - **Tip points.** Five per look, mirroring the hoop's five: corner grip gets
