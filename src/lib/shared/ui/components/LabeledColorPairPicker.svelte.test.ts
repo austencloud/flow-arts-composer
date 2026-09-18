@@ -104,6 +104,22 @@ describe("LabeledColorPairPicker", () => {
     },
   );
 
+  it("keeps the hue slider and hex row inside the fine-tune block", async () => {
+    const { screen } = renderPicker();
+    screen.container.style.width = "900px";
+    await openLeft();
+    const block = screen.container.querySelector<HTMLElement>(".fine-tune")!;
+    const hue = page.getByRole("slider", { name: "Left prop hue" }).element();
+    const field = page.getByRole("textbox", { name: "Left prop hex color" }).element();
+    await expect.poll(() => block.getBoundingClientRect().width).toBe(256);
+    for (const el of [hue, field]) {
+      const r = el.getBoundingClientRect();
+      const b = block.getBoundingClientRect();
+      expect(r.left).toBeGreaterThanOrEqual(b.left);
+      expect(r.right).toBeLessThanOrEqual(b.right + 0.5);
+    }
+  });
+
   it("has no axe violations with the editor open", async () => {
     renderPicker();
     await openLeft();

@@ -431,6 +431,8 @@
 
   .fine-tune {
     display: grid;
+    /* Children may not widen the track. */
+    grid-template-columns: minmax(0, 1fr);
     gap: 10px;
     align-content: start;
     min-width: 0;

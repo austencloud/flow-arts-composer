@@ -21,8 +21,13 @@
 </div>
 
 <style>
+  /* The library's square and hue slider expect named areas from their wrapper
+     (`.h` is `grid-area: hue`); without them the slider lands in an implicit
+     second column. Alpha is never enabled by the owner, so no alpha row. */
   .bare {
     display: grid;
+    grid-template-areas: "picker" "hue";
+    grid-template-columns: minmax(0, 1fr);
     gap: 6px;
     width: 100%;
   }
