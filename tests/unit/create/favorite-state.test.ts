@@ -4,7 +4,7 @@ import {
   type FavoriteStateDeps,
 } from "$lib/features/create/generate/state/favorite-state.svelte";
 import type {
-  CommunityFavorite,
+  CommunitySetup,
   SavedGeneratorSetup,
 } from "$lib/features/create/generate/domain/models/favorite-config";
 import { captureSetupSnapshot } from "$lib/features/create/generate/domain/setup-snapshot";
@@ -29,18 +29,29 @@ function makeSetup(id: string, name = id): SavedGeneratorSetup {
   };
 }
 
+function makeCommunitySetup(
+  userId: string,
+  setupId: string,
+  name = setupId
+): CommunitySetup {
+  return {
+    setupId,
+    userId,
+    displayName: `User ${userId}`,
+    name,
+    config: CONFIG,
+    startEndOptions: null,
+    createdAt: NOW,
+  };
+}
+
 interface FakeOptions {
-  personal?:
-    | { setups: SavedGeneratorSetup[]; sharedSetupId: string | null }
-    | Error;
-  community?: CommunityFavorite[] | Error;
+  personal?: SavedGeneratorSetup[] | Error;
+  community?: CommunitySetup[] | Error;
 }
 
 function makeDeps(options: FakeOptions = {}) {
-  const personal = options.personal ?? {
-    setups: [],
-    sharedSetupId: null,
-  };
+  const personal = options.personal ?? [];
   const community = options.community ?? [];
   const repository = {
     loadPersonal: vi.fn(async () => {
@@ -58,8 +69,6 @@ function makeDeps(options: FakeOptions = {}) {
     renameSetup: vi.fn(async () => undefined),
     updateSetup: vi.fn(async () => undefined),
     deleteSetup: vi.fn(async () => undefined),
-    shareSetup: vi.fn(async () => undefined),
-    unshareSetup: vi.fn(async () => undefined),
   };
   const deps: Partial<FavoriteStateDeps> = {
     repository,
@@ -67,7 +76,6 @@ function makeDeps(options: FakeOptions = {}) {
     awaitAuthReady: vi.fn(async () => undefined),
     getUserId: () => "u1",
     isPreviewActive: () => false,
-    isAnonymousUser: () => false,
     notifySuccess: vi.fn(),
     reportUserError: vi.fn(),
   };
@@ -118,9 +126,9 @@ describe("favorite state", () => {
     );
     expect(state.setupsLoadError).toBeNull();
     expect(state.communityLoadError).toBe(
-      "Community favorites could not load"
+      "Community setups could not load"
     );
-    expect(state.communityFavorites).toEqual([]);
+    expect(state.communitySetups).toEqual([]);
   });
 
   it("failed personal read exposes error state", async () => {
@@ -134,6 +142,21 @@ describe("favorite state", () => {
       "Saved setups could not load"
     );
     expect(state.canSave).toBe(false);
+  });
+
+  it("hides the viewer's own setups from the community list", async () => {
+    const { deps } = makeDeps({
+      community: [
+        makeCommunitySetup("u1", "mine"),
+        makeCommunitySetup("u2", "theirs"),
+      ],
+    });
+    const state = await settled(
+      createFavoriteState(liveSnapshot, deps)
+    );
+    expect(state.communitySetups.map((setup) => setup.setupId)).toEqual([
+      "theirs",
+    ]);
   });
 
   it("save activates the returned setup and reports success", async () => {
@@ -150,15 +173,30 @@ describe("favorite state", () => {
       setupId: "new-id",
     });
     expect(state.activeStatus).toBe("active");
-    expect(deps.notifySuccess).toHaveBeenCalledWith("Setup saved");
+    expect(deps.notifySuccess).toHaveBeenCalledWith(
+      "Saved and shared with the community"
+    );
+  });
+
+  it("update writes the setup without a share flag", async () => {
+    const { deps, repository } = makeDeps({
+      personal: [makeSetup("s1")],
+    });
+    const state = await settled(
+      createFavoriteState(liveSnapshot, deps)
+    );
+
+    await expect(state.updateSetupFromCurrent("s1")).resolves.toBe(true);
+    expect(repository.updateSetup).toHaveBeenCalledWith(
+      "u1",
+      expect.objectContaining({ id: "s1", config: CONFIG })
+    );
+    expect(repository.updateSetup.mock.calls[0]).toHaveLength(2);
   });
 
   it("failed writes mutate nothing", async () => {
     const { deps, repository } = makeDeps({
-      personal: {
-        setups: [makeSetup("s1")],
-        sharedSetupId: "s1",
-      },
+      personal: [makeSetup("s1")],
     });
     repository.deleteSetup.mockRejectedValue(new Error("offline"));
     const state = await settled(
@@ -167,16 +205,12 @@ describe("favorite state", () => {
 
     await expect(state.deleteSetup("s1")).resolves.toBe(false);
     expect(state.setups).toHaveLength(1);
-    expect(state.sharedSetupId).toBe("s1");
     expect(deps.reportUserError).toHaveBeenCalled();
   });
 
   it("deleting the active setup clears provenance", async () => {
-    const { deps } = makeDeps({
-      personal: {
-        setups: [makeSetup("s1")],
-        sharedSetupId: null,
-      },
+    const { deps, repository } = makeDeps({
+      personal: [makeSetup("s1")],
     });
     const state = await settled(
       createFavoriteState(liveSnapshot, deps)
@@ -184,6 +218,7 @@ describe("favorite state", () => {
     state.setActiveSource({ kind: "setup", setupId: "s1" });
 
     await expect(state.deleteSetup("s1")).resolves.toBe(true);
+    expect(repository.deleteSetup).toHaveBeenCalledWith("u1", "s1");
     expect(state.activeSource).toBeNull();
     expect(state.setups).toEqual([]);
   });
@@ -193,15 +228,12 @@ describe("favorite state", () => {
       level: 2,
     } as unknown as SavedGeneratorSetup["config"];
     const { deps } = makeDeps({
-      personal: {
-        setups: [
-          {
-            ...makeSetup("legacy"),
-            config: legacyConfig,
-          },
-        ],
-        sharedSetupId: null,
-      },
+      personal: [
+        {
+          ...makeSetup("legacy"),
+          config: legacyConfig,
+        },
+      ],
     });
     const state = await settled(
       createFavoriteState(liveSnapshot, deps)
@@ -215,13 +247,35 @@ describe("favorite state", () => {
     expect(state.activeStatus).toBe("active");
   });
 
+  it("resolves a community source by setup id", async () => {
+    const { deps } = makeDeps({
+      community: [
+        makeCommunitySetup("u2", "first"),
+        makeCommunitySetup("u2", "second"),
+      ],
+    });
+    const state = await settled(
+      createFavoriteState(liveSnapshot, deps)
+    );
+
+    state.setActiveSource({
+      kind: "community",
+      userId: "u2",
+      setupId: "second",
+    });
+
+    expect(state.activeSource).toEqual({
+      kind: "community",
+      userId: "u2",
+      setupId: "second",
+    });
+    expect(state.activeStatus).toBe("active");
+  });
+
   it("detaches the applied setup when a control changes", async () => {
     const live = createLiveConfigHarness(CONFIG);
     const { deps } = makeDeps({
-      personal: {
-        setups: [makeSetup("s1")],
-        sharedSetupId: null,
-      },
+      personal: [makeSetup("s1")],
     });
     const state = await settled(
       createFavoriteState(live.getLiveSnapshot, deps)
@@ -241,10 +295,7 @@ describe("favorite state", () => {
   it("re-attaches the applied setup when the controls match it again", async () => {
     const live = createLiveConfigHarness(CONFIG);
     const { deps } = makeDeps({
-      personal: {
-        setups: [makeSetup("s1")],
-        sharedSetupId: null,
-      },
+      personal: [makeSetup("s1")],
     });
     const state = await settled(
       createFavoriteState(live.getLiveSnapshot, deps)
@@ -266,10 +317,7 @@ describe("favorite state", () => {
   it("clears private setups when the active identity signs out", async () => {
     let userId: string | null = "u1";
     const { deps } = makeDeps({
-      personal: {
-        setups: [makeSetup("s1")],
-        sharedSetupId: "s1",
-      },
+      personal: [makeSetup("s1")],
     });
     deps.getUserId = () => userId;
     const state = await settled(
@@ -281,48 +329,31 @@ describe("favorite state", () => {
     await state.loadPersonal();
 
     expect(state.setups).toEqual([]);
-    expect(state.sharedSetupId).toBeNull();
     expect(state.activeSource).toBeNull();
     expect(state.activeStatus).toBeNull();
   });
 
   it("ignores a stale personal read after the identity changes", async () => {
     let userId: string | null = "u1";
-    let resolveFirst!: (value: {
-      setups: SavedGeneratorSetup[];
-      sharedSetupId: string | null;
-    }) => void;
-    const firstRead = new Promise<{
-      setups: SavedGeneratorSetup[];
-      sharedSetupId: string | null;
-    }>((resolve) => {
+    let resolveFirst!: (value: SavedGeneratorSetup[]) => void;
+    const firstRead = new Promise<SavedGeneratorSetup[]>((resolve) => {
       resolveFirst = resolve;
     });
     const { deps, repository } = makeDeps();
     deps.getUserId = () => userId;
     repository.loadPersonal.mockImplementation(
       async (requestedUserId: string) =>
-        requestedUserId === "u1"
-          ? firstRead
-          : {
-              setups: [makeSetup("u2-setup")],
-              sharedSetupId: null,
-            }
+        requestedUserId === "u1" ? firstRead : [makeSetup("u2-setup")]
     );
 
     const state = createFavoriteState(liveSnapshot, deps);
     await vi.waitFor(() => {
-      expect(repository.loadPersonal).toHaveBeenCalledWith("u1", {
-        allowMigration: true,
-      });
+      expect(repository.loadPersonal).toHaveBeenCalledWith("u1");
     });
 
     userId = "u2";
     await state.loadPersonal();
-    resolveFirst({
-      setups: [makeSetup("stale-u1-setup")],
-      sharedSetupId: null,
-    });
+    resolveFirst([makeSetup("stale-u1-setup")]);
     await firstRead;
 
     expect(state.setups.map((setup) => setup.id)).toEqual([
@@ -330,52 +361,16 @@ describe("favorite state", () => {
     ]);
   });
 
-  it("sharing replaces the shared setup", async () => {
-    const { deps } = makeDeps({
-      personal: {
-        setups: [makeSetup("s1"), makeSetup("s2")],
-        sharedSetupId: "s1",
-      },
-    });
-    const state = await settled(
-      createFavoriteState(liveSnapshot, deps)
-    );
-
-    await expect(state.shareSetup("s2")).resolves.toBe(true);
-    expect(state.sharedSetupId).toBe("s2");
-  });
-
-  it("anonymous users cannot reach the public share write", async () => {
-    const { deps, repository } = makeDeps({
-      personal: {
-        setups: [makeSetup("s1")],
-        sharedSetupId: null,
-      },
-    });
-    deps.isAnonymousUser = () => true;
-    const state = await settled(
-      createFavoriteState(liveSnapshot, deps)
-    );
-
-    await expect(state.shareSetup("s1")).resolves.toBe(false);
-    expect(repository.shareSetup).not.toHaveBeenCalled();
-  });
-
   it("admin preview loads read-only", async () => {
     const { deps, repository } = makeDeps({
-      personal: {
-        setups: [makeSetup("s1")],
-        sharedSetupId: null,
-      },
+      personal: [makeSetup("s1")],
     });
     deps.isPreviewActive = () => true;
     const state = await settled(
       createFavoriteState(liveSnapshot, deps)
     );
 
-    expect(repository.loadPersonal).toHaveBeenCalledWith("u1", {
-      allowMigration: false,
-    });
+    expect(repository.loadPersonal).toHaveBeenCalledWith("u1");
     await expect(state.saveCurrentSetup()).resolves.toBe(false);
     expect(state.canSave).toBe(false);
   });
@@ -398,9 +393,7 @@ describe("favorite state", () => {
     const ten = Array.from({ length: 10 }, (_, index) =>
       makeSetup(`s${index}`, `Setup ${index + 1}`)
     );
-    const { deps } = makeDeps({
-      personal: { setups: ten, sharedSetupId: null },
-    });
+    const { deps } = makeDeps({ personal: ten });
     const state = await settled(
       createFavoriteState(liveSnapshot, deps)
     );

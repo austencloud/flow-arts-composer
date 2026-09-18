@@ -1,9 +1,10 @@
 /**
- * Saved-setups and community-Favorite state for GeneratePanel.
+ * Saved-setups and community-setups state for GeneratePanel.
  *
- * Persistence, auth, and the live panel snapshot are dependency injected so
- * the state stays testable. Mutations return false after reporting a failure;
- * callers must not close the drawer or mutate UI optimistically.
+ * Every saved setup is public. Persistence, auth, and the live panel snapshot
+ * are dependency injected so the state stays testable. Mutations return false
+ * after reporting a failure; callers must not close the drawer or mutate UI
+ * optimistically.
  */
 import {
   generatorSetupRepository,
@@ -24,7 +25,7 @@ import {
 } from "../domain/setup-snapshot";
 import type {
   ActiveSetupSource,
-  CommunityFavorite,
+  CommunitySetup,
   PendingSetupAction,
   SavedGeneratorSetup,
 } from "../domain/models/favorite-config";
@@ -38,7 +39,6 @@ export interface FavoriteStateDeps {
   awaitAuthReady: () => Promise<void>;
   getUserId: () => string | null;
   isPreviewActive: () => boolean;
-  isAnonymousUser: () => boolean;
   getLiveSnapshot: () => SetupSnapshot;
   notifySuccess: (message: string) => void;
   reportUserError: (
@@ -57,8 +57,6 @@ function defaultDeps(
     awaitAuthReady: awaitAuthSettled,
     getUserId: getEffectiveUserId,
     isPreviewActive: () => userPreviewState.isActive,
-    isAnonymousUser: () =>
-      !authState.isAuthenticated || authState.isAnonymous,
     getLiveSnapshot,
     notifySuccess: (message) => showToast(message, "success"),
     reportUserError: (message, error, action) => {
@@ -94,8 +92,7 @@ export function createFavoriteState(
   };
 
   let setups = $state<SavedGeneratorSetup[]>([]);
-  let communityFavorites = $state<CommunityFavorite[]>([]);
-  let sharedSetupId = $state<string | null>(null);
+  let communitySetups = $state<CommunitySetup[]>([]);
   let appliedSource = $state<ActiveSetupSource | null>(null);
   let appliedBaseline = $state<SetupSnapshot | null>(null);
   let isLoadingSetups = $state(true);
@@ -148,7 +145,6 @@ export function createFavoriteState(
       personalInFlight = null;
       personalIdentity = null;
       setups = [];
-      sharedSetupId = null;
       setupsLoadError = null;
       if (appliedSource?.kind === "setup") {
         appliedSource = null;
@@ -165,7 +161,6 @@ export function createFavoriteState(
     if (personalIdentity !== userId) {
       personalIdentity = userId;
       setups = [];
-      sharedSetupId = null;
       if (appliedSource?.kind === "setup") {
         appliedSource = null;
         appliedBaseline = null;
@@ -177,17 +172,14 @@ export function createFavoriteState(
     setupsLoadError = null;
     const operation = (async () => {
       try {
-        const snapshot = await deps.repository.loadPersonal(userId, {
-          allowMigration: !deps.isPreviewActive(),
-        });
+        const loaded = await deps.repository.loadPersonal(userId);
         if (
           requestVersion !== personalRequestVersion ||
           deps.getUserId() !== userId
         ) {
           return;
         }
-        setups = snapshot.setups;
-        sharedSetupId = snapshot.sharedSetupId;
+        setups = loaded;
       } catch (error) {
         if (
           requestVersion !== personalRequestVersion ||
@@ -227,9 +219,8 @@ export function createFavoriteState(
         ) {
           return;
         }
-        communityFavorites = all.filter(
-          (favorite) => favorite.userId !== userId
-        );
+        // Own setups live in the Saved tab already.
+        communitySetups = all.filter((setup) => setup.userId !== userId);
       } catch (error) {
         if (
           requestVersion !== communityRequestVersion ||
@@ -237,7 +228,7 @@ export function createFavoriteState(
         ) {
           return;
         }
-        communityLoadError = "Community favorites could not load";
+        communityLoadError = "Community setups could not load";
         console.error("[FavoriteState] loadCommunity failed:", error);
       } finally {
         if (requestVersion === communityRequestVersion) {
@@ -274,7 +265,7 @@ export function createFavoriteState(
         created.config,
         created.startEndOptions
       );
-      deps.notifySuccess("Setup saved");
+      deps.notifySuccess("Saved and shared with the community");
       return true;
     } catch (error) {
       deps.reportUserError(
@@ -334,11 +325,7 @@ export function createFavoriteState(
         startEndOptions: snapshot.startEndOptions,
         updatedAt: new Date(),
       };
-      await deps.repository.updateSetup(
-        userId,
-        updated,
-        sharedSetupId === setupId
-      );
+      await deps.repository.updateSetup(userId, updated);
       setups = setups.map((setup) =>
         setup.id === setupId ? updated : setup
       );
@@ -362,64 +349,14 @@ export function createFavoriteState(
     }
   }
 
-  async function shareSetup(setupId: string): Promise<boolean> {
-    const userId = guardMutation();
-    const setup = setups.find((candidate) => candidate.id === setupId);
-    if (!userId || !setup || deps.isAnonymousUser()) return false;
-
-    pendingAction = { kind: "share", setupId };
-    try {
-      await deps.repository.shareSetup(userId, setup);
-      sharedSetupId = setupId;
-      deps.notifySuccess("Shared as your Favorite");
-      return true;
-    } catch (error) {
-      deps.reportUserError(
-        "Couldn't share the setup",
-        error,
-        "shareSetup"
-      );
-      return false;
-    } finally {
-      pendingAction = null;
-    }
-  }
-
-  async function unshareSetup(): Promise<boolean> {
-    const userId = guardMutation();
-    if (!userId || sharedSetupId === null) return false;
-
-    pendingAction = { kind: "unshare" };
-    try {
-      await deps.repository.unshareSetup(userId);
-      sharedSetupId = null;
-      deps.notifySuccess("Your setup is no longer shared");
-      return true;
-    } catch (error) {
-      deps.reportUserError(
-        "Couldn't stop sharing the setup",
-        error,
-        "unshareSetup"
-      );
-      return false;
-    } finally {
-      pendingAction = null;
-    }
-  }
-
   async function deleteSetup(setupId: string): Promise<boolean> {
     const userId = guardMutation();
     if (!userId) return false;
 
     pendingAction = { kind: "delete", setupId };
     try {
-      await deps.repository.deleteSetup(
-        userId,
-        setupId,
-        sharedSetupId === setupId
-      );
+      await deps.repository.deleteSetup(userId, setupId);
       setups = setups.filter((setup) => setup.id !== setupId);
-      if (sharedSetupId === setupId) sharedSetupId = null;
       if (
         appliedSource?.kind === "setup" &&
         appliedSource.setupId === setupId
@@ -457,8 +394,8 @@ export function createFavoriteState(
     const saved =
       source.kind === "setup"
         ? setups.find((setup) => setup.id === source.setupId)
-        : communityFavorites.find(
-            (favorite) => favorite.userId === source.userId
+        : communitySetups.find(
+            (setup) => setup.setupId === source.setupId
           );
     appliedBaseline = saved
       ? captureSetupSnapshot(
@@ -472,11 +409,8 @@ export function createFavoriteState(
     get setups() {
       return setups;
     },
-    get communityFavorites() {
-      return communityFavorites;
-    },
-    get sharedSetupId() {
-      return sharedSetupId;
+    get communitySetups() {
+      return communitySetups;
     },
     get activeSource() {
       return activeSource;
@@ -508,8 +442,6 @@ export function createFavoriteState(
     saveCurrentSetup,
     renameSetup,
     updateSetupFromCurrent,
-    shareSetup,
-    unshareSetup,
     deleteSetup,
     setActiveSource,
   };
