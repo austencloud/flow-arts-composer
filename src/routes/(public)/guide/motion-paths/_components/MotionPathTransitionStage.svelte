@@ -29,7 +29,7 @@
     trace: "hands" | "tips";
     leftPropType: PropType;
     rightPropType: PropType;
-    /** A solo plays one hand, so the two-hand letter and placement come off. */
+    /** A solo plays one hand, so the two-hand letter comes off. */
     hideGlyph?: boolean;
     onplayingchange: (playing: boolean) => void;
     onstepchange: (step: number) => void;
@@ -323,7 +323,7 @@
       onExternalPlayingChange={onplayingchange}
       {...callbacks}
       showControls={false}
-      showPlacementGlyph={!hideGlyph}
+      showPlacementGlyph={false}
       hideTkaGlyph={hideGlyph}
       beatIndicators={false}
       disableContextMenu
