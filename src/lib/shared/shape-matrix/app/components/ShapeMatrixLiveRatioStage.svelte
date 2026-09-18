@@ -78,6 +78,7 @@
   import { resolveEffectivePropsVisibility } from "$lib/shared/animation-engine/state/effective-prop-visibility";
   import {
     generateLeftPropSvg,
+    generatePropSvg,
     generateRightPropSvg,
   } from "$lib/shared/animation-engine/services/svg-generator";
   import { applyEffort } from "$lib/shared/effort/domain/effort-easing-unified";
@@ -107,6 +108,13 @@
     tipAngle?: number;
     /** Which prop to draw. Its sprite is loaded once per type per side. */
     propType?: string;
+    /**
+     * The account's saved hand colours, or null for the theme's motion
+     * colours. The sprites are recoloured through the engine's own prop
+     * colouriser, so a custom ink here is the same ink the Matrix canvas
+     * draws the same prop in.
+     */
+    propColors?: { left: string; right: string } | null;
   }
 
   let {
@@ -118,6 +126,7 @@
     propReach = PROP_LENGTH,
     tipAngle = 0,
     propType = "staff",
+    propColors = null,
   }: Props = $props();
 
   /*
@@ -259,12 +268,17 @@
 
   $effect(() => {
     const wanted = propType;
+    const inks = propColors;
     let cancelled = false;
     void (async () => {
       try {
         const [left, right] = await Promise.all([
-          generateLeftPropSvg(wanted, true),
-          generateRightPropSvg(wanted, true),
+          inks
+            ? generatePropSvg(wanted, inks.left, "dark", "left")
+            : generateLeftPropSvg(wanted, true),
+          inks
+            ? generatePropSvg(wanted, inks.right, "dark", "right")
+            : generateRightPropSvg(wanted, true),
         ]);
         const [leftSprite, rightSprite] = await Promise.all([
           decodeSvg(left.svg, left.width, left.height),
