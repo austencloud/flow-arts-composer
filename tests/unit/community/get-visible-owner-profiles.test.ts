@@ -77,6 +77,7 @@ describe("getVisibleOwnerProfiles", () => {
         { id: "hidden", data: { displayName: "Moderated", isHidden: true } },
         { id: "guest", data: { displayName: "Guest", isAnonymous: true } },
         { id: "nameless", data: {} },
+        { id: "nullphoto", data: { displayName: "N", photoURL: null } },
       ])
     );
 
@@ -85,6 +86,7 @@ describe("getVisibleOwnerProfiles", () => {
       "hidden",
       "guest",
       "nameless",
+      "nullphoto",
       "missing",
     ]);
 
@@ -94,6 +96,10 @@ describe("getVisibleOwnerProfiles", () => {
     });
     expect(profiles.get("nameless")).toEqual({
       displayName: "Someone",
+      photoURL: undefined,
+    });
+    expect(profiles.get("nullphoto")).toEqual({
+      displayName: "N",
       photoURL: undefined,
     });
     expect(profiles.has("hidden")).toBe(false);
@@ -118,6 +124,11 @@ describe("getVisibleOwnerProfiles", () => {
       .filter((call) => call[1] === "in")
       .map((call) => call[2] as string[]);
     expect(inChunks.map((chunk) => chunk.length)).toEqual([30, 1]);
+    expect(
+      h.whereCalls.some(
+        (call) => call[0] === "publicProfileVersion" && call[1] === "=="
+      )
+    ).toBe(true);
   });
 });
 

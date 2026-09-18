@@ -404,9 +404,14 @@ export interface VisibleOwnerProfile {
 }
 
 /**
- * Display name and avatar for the owners a discovery surface may show.
- * Applies the same suppression as getVisibleOwnerNames: hidden, guest,
- * legacy-profile, and deleted owners are omitted from the map.
+ * Display name and avatar for owners eligible to appear in a public
+ * discovery surface. Like getUserDisplayNames, but moderated (isHidden)
+ * accounts and anonymous guests are omitted from the returned map. Callers
+ * filter their items to owners the map still contains — so hiding a creator
+ * also removes their public collections from discovery, matching the Browse
+ * Creators listing which already skips these accounts (getUsersPaginated /
+ * getFeaturedCreators). Owners whose user doc is missing entirely (deleted
+ * account) are also omitted.
  */
 export async function getVisibleOwnerProfiles(
   userIds: string[]
@@ -440,15 +445,7 @@ export async function getVisibleOwnerProfiles(
   return profiles;
 }
 
-/**
- * Like getUserDisplayNames, but only returns owners eligible to appear in a
- * public discovery surface: moderated (isHidden) accounts and anonymous guests
- * are omitted from the returned map. Callers filter their items to owners the
- * map still contains — so hiding a creator also removes their public
- * collections from discovery, matching the Browse Creators listing which
- * already skips these accounts (getUsersPaginated / getFeaturedCreators).
- * Owners whose user doc is missing entirely (deleted account) are also omitted.
- */
+/** Name-only view of getVisibleOwnerProfiles. */
 export async function getVisibleOwnerNames(
   userIds: string[]
 ): Promise<Map<string, string>> {
