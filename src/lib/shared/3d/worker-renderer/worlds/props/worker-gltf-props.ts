@@ -16,6 +16,7 @@ import {
 } from "./worker-prop-materials";
 import type {
   CanonicalWorkerPropType,
+  WorkerPropBuild,
   WorkerPropFactoryOptions,
   WorkerPropVisual,
 } from "./worker-prop-factory-types";
@@ -317,16 +318,23 @@ function forEachNamedMaterial(
   });
 }
 
+/**
+ * Fire, Lotus, Day and Moon share one GLB and switch groups; the Flat Grip
+ * and Star fans ship as their own single-group files. Fan3D.svelte in the
+ * scene package makes the same choice from the same build value.
+ */
+export function fanModelUrl(fanBuild: WorkerPropBuild["fanBuild"]): string {
+  if (fanBuild === "flat-grip") return "/models/props/fan-flat-grip.glb";
+  if (fanBuild === "star") return "/models/props/fan-star.glb";
+  return "/models/props/fan.glb";
+}
+
 export async function createFanModelWorkerProp(
   options: WorkerPropFactoryOptions,
   scale: number
 ): Promise<WorkerPropVisual | null> {
   if (!options.loadModel) return null;
-  const source = await options.loadModel(
-    options.build.fanBuild === "flat-grip"
-      ? "/models/props/fan-flat-grip.glb"
-      : "/models/props/fan.glb"
-  );
+  const source = await options.loadModel(fanModelUrl(options.build.fanBuild));
   const scene = source.clone(true);
   const ownedMaterials = new Set<Material>();
   scene.traverse((child) => {
