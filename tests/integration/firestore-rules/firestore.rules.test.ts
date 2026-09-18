@@ -16,6 +16,7 @@ import {
   documentId,
   getDoc,
   getDocs,
+  orderBy,
   query,
   setDoc,
   updateDoc,
@@ -1978,7 +1979,8 @@ describe("generator setups: public saved configs", () => {
       getDocs(
         query(
           collectionGroup(reader, "generatorSetups"),
-          where("isPublic", "==", true)
+          where("isPublic", "==", true),
+          orderBy("createdAt", "desc")
         )
       )
     );
@@ -1997,9 +1999,25 @@ describe("generator setups: public saved configs", () => {
     const reader = readerCtx().firestore(SDK_SETTINGS);
 
     await assertFails(
+      setDoc(doc(reader, setupPath(FULL_UID, "intruder")), PUBLIC_SETUP)
+    );
+    await assertFails(
       updateDoc(doc(reader, setupPath(FULL_UID)), { name: "Changed" })
     );
     await assertFails(deleteDoc(doc(reader, setupPath(FULL_UID))));
+  });
+
+  it("lets the owner merge isPublic onto a legacy doc", async () => {
+    await seedSetup(FULL_UID, "legacy", { name: "Legacy", config: {} });
+    const db = fullCtx().firestore(SDK_SETTINGS);
+
+    await assertSucceeds(
+      setDoc(
+        doc(db, setupPath(FULL_UID, "legacy")),
+        { name: "Renamed", isPublic: true },
+        { merge: true }
+      )
+    );
   });
 
   it("lets an admin preview but not mutate another user's setups", async () => {
