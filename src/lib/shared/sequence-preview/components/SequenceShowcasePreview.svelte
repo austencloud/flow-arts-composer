@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
   import type { Snippet } from "svelte";
   import { activateWhenNear } from "$lib/actions/activate-when-near";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
@@ -9,6 +9,9 @@
   import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { resolveRecordedPropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
+  import { resolveViewingPresentation } from "$lib/shared/sequence-preview/services/viewing-presentation";
+  import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
+  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
   import { createAnimationScope } from "$lib/shared/animation-engine/state/animation-scope.svelte";
 
   interface Props {
@@ -101,6 +104,33 @@
   // prop pair. Null = no recorded intent; every layer then keeps its default
   // visitor-context behavior. Never written back to global Settings.
   const recordedPropConfig = $derived(resolveRecordedPropConfig(sequence));
+
+  // Creator-recorded look (colors, trail, effects), resolved once per sequence
+  // and pushed into this preview's own ephemeral scope. Mode-free: the
+  // visitor's settings never reach a public card. A caller-supplied
+  // primaryPropColors prop still wins for surfaces that deliberately recolor.
+  const viewingPresentation = $derived(resolveViewingPresentation(sequence));
+  const playerPropColors = $derived(
+    primaryPropColors !== undefined
+      ? primaryPropColors
+      : viewingPresentation.primaryPropColors
+  );
+  // The step rail renders pictographs in dark mode; pin the theme pair
+  // explicitly so a null look never falls through to the visitor's Settings.
+  const railLeftColor = $derived(
+    playerPropColors?.left ?? getMotionColor(HandSide.LEFT, "dark")
+  );
+  const railRightColor = $derived(
+    playerPropColors?.right ?? getMotionColor(HandSide.RIGHT, "dark")
+  );
+
+  $effect(() => {
+    const look = viewingPresentation;
+    untrack(() => {
+      previewAnimationScope.settings.updateSettings({ trail: look.trail });
+      previewAnimationScope.effects.replace(look.effects);
+    });
+  });
 
   const playerRequested = $derived(
     alwaysLive ||
@@ -303,7 +333,7 @@
               leftPropType ?? recordedPropConfig?.leftPropType ?? null,
             rightPropType:
               rightPropType ?? recordedPropConfig?.rightPropType ?? null,
-            primaryPropColors,
+            primaryPropColors: playerPropColors,
             autoPlay: true,
             showControls: false,
             chrome: "minimal",
@@ -380,8 +410,8 @@
             rightPropType ??
             recordedPropConfig?.rightPropType ??
             null,
-          leftColorOverride: primaryPropColors?.left,
-          rightColorOverride: primaryPropColors?.right,
+          leftColorOverride: railLeftColor,
+          rightColorOverride: railRightColor,
           currentStep: playbackStep,
           bpm: 60,
           density: "compact",

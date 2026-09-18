@@ -15,6 +15,7 @@
 -->
 <script lang="ts">
   import { fade } from "svelte/transition";
+  import { untrack } from "svelte";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import PropAwareThumbnail from "$lib/shared/browse/components/PropAwareThumbnail.svelte";
   import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
@@ -23,6 +24,9 @@
   import { getTipPointsBaseline } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
   import { engineAlignScale } from "$lib/shared/mandala/services/engine-align";
   import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+  import { createAnimationScope } from "$lib/shared/animation-engine/state/animation-scope.svelte";
+  import { resolveRecordedPropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
+  import { resolveViewingPresentation } from "$lib/shared/sequence-preview/services/viewing-presentation";
   import WordHeader from "$lib/shared/animation-engine/components/layers/WordHeader.svelte";
   import type { LiveSlots, Medium } from "./live-slots.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
@@ -144,9 +148,28 @@
   // Both halves of the composite use the same reactive prop pair. The player
   // used to inherit the selected props while the mandala floor defaulted to a
   // saved intent or staff, so clubs could animate over a two-ended staff path.
+  // Creator-recorded prop pair wins on the creator's own stage; the visitor's
+  // props are only a fallback for legacy records with nothing recorded.
+  const recordedPropConfig = $derived(resolveRecordedPropConfig(sequence));
   const seqPropTypes = $derived({
-    left: settingsService.settings.leftPropType ?? "staff",
-    right: settingsService.settings.rightPropType ?? "staff",
+    left:
+      recordedPropConfig?.leftPropType ??
+      settingsService.settings.leftPropType ??
+      "staff",
+    right:
+      recordedPropConfig?.rightPropType ??
+      settingsService.settings.rightPropType ??
+      "staff",
+  });
+
+  const tileAnimationScope = createAnimationScope({ persistence: "ephemeral" });
+  const viewingPresentation = $derived(resolveViewingPresentation(sequence));
+  $effect(() => {
+    const look = viewingPresentation;
+    untrack(() => {
+      tileAnimationScope.settings.updateSettings({ trail: look.trail });
+      tileAnimationScope.effects.replace(look.effects);
+    });
   });
 
   /** Outermost tip distance for a prop, in the engine's prop-local units. */
@@ -284,6 +307,10 @@
                   sequence,
                   leftPropType: seqPropTypes.left,
                   rightPropType: seqPropTypes.right,
+                  primaryPropColors: viewingPresentation.primaryPropColors,
+                  visibilityManagerOverride: tileAnimationScope.visibility,
+                  effectsConfigState: tileAnimationScope.effects,
+                  trailSettingsOverride: tileAnimationScope.settings.trail,
                   autoPlay: true,
                   showControls: false,
                   chrome: "minimal",
