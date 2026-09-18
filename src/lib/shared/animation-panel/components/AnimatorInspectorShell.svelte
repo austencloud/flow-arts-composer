@@ -25,6 +25,7 @@
     direction = 1,
     reduceMotion = false,
     fillBody = false,
+    fluidBody = false,
     exporting = false,
     artPanel = false,
     regionLabel = "Animation controls",
@@ -40,6 +41,9 @@
     direction?: number;
     reduceMotion?: boolean;
     fillBody?: boolean;
+    /** The page's own layout measures its width and reflows, so it may take
+     *  the pane's whole width instead of the reading measure. */
+    fluidBody?: boolean;
     exporting?: boolean;
     artPanel?: boolean;
     regionLabel?: string;
@@ -84,7 +88,11 @@
                   duration: reduceMotion ? 0 : 120,
                 }}
               >
-                <div class="panel-center-inner" class:fill-body={fillBody}>
+                <div
+                  class="panel-center-inner"
+                  class:fill-body={fillBody}
+                  class:fluid-body={fluidBody}
+                >
                   <h2 class="panel-title">{activeLabel}</h2>
                   {@render body()}
                 </div>
@@ -176,17 +184,21 @@
     align-self: center;
   }
 
-  /* A page that was handed its whole body (the prop grid, Display, Effects)
-     fills the pane in both axes. Its own layout measures the width it gets
-     and reflows, so a pane the user drags wider gets more tiles per row
-     rather than a fixed column with a margin either side. */
+  /* A page that was handed its whole body height. */
   .panel-center-inner.fill-body {
     margin: 0;
     flex: 1 1 0;
     min-height: 0;
-    max-width: none;
     display: flex;
     flex-direction: column;
+  }
+
+  /* A page whose own layout measures the width it gets and reflows (the prop
+     grid) takes the pane's whole width too, so a pane the user drags wider
+     gets more tiles per row rather than a fixed column with a margin either
+     side. Pages of control rows keep the measure above. */
+  .panel-center-inner.fluid-body {
+    max-width: none;
   }
 
   .panel-title {
