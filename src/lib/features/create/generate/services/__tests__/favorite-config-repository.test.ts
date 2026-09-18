@@ -71,7 +71,10 @@ function communityDoc(
 ) {
   return {
     id,
-    ref: { parent: { parent: ownerId ? { id: ownerId } : null } },
+    ref: {
+      parent: { parent: ownerId ? { id: ownerId } : null },
+      path: `users/${ownerId ?? "root"}/generatorSetups/${id}`,
+    },
     data: () => data,
   };
 }

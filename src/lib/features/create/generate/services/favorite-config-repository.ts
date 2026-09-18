@@ -96,8 +96,8 @@ export async function loadCommunity(
     if (!ownerId) continue;
 
     const parsed = SavedGeneratorSetupSchema.safeParse({
-      id: docSnap.id,
       ...docSnap.data(),
+      id: docSnap.id,
     });
     if (!parsed.success) {
       console.warn(
