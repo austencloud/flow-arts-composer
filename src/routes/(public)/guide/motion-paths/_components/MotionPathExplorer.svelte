@@ -52,6 +52,17 @@
   // The lesson is the path. Everything that picks what plays (the matrix, a
   // browsed sequence, turns, timing) waits behind one button.
   let chooserOpen = $state(false);
+  // Four boxes on one screen. Once the tiles and the canvas sit side by side
+  // (a 900px container) on a viewport tall enough (900px), the workspace
+  // takes the viewport's height, every box scales to its quadrant and the
+  // chooser is simply there. The fit-mode CSS below carries the same two
+  // thresholds; this flag drives what CSS cannot (the tiles' size, the
+  // chooser's presence, the chips' shape).
+  const FIT_MIN_CONTAINER = 900;
+  const FIT_MEDIA = "(min-height: 900px)";
+  let explorerWidth = $state(0);
+  let viewportTall = $state(false);
+  const fitMode = $derived(explorerWidth >= FIT_MIN_CONTAINER && viewportTall);
   // Which hands the canvas draws. The animator owns per-hand motion
   // visibility; this surface scopes its own instance so a header's solo hides
   // the other prop and its trail through that owner, as the Shape Engine does.
@@ -223,20 +234,30 @@
       if (preference.matches) explorer.playing = false;
     };
     preference.addEventListener("change", pauseForReducedMotion);
+    const tall = window.matchMedia(FIT_MEDIA);
+    viewportTall = tall.matches;
+    const syncTall = () => (viewportTall = tall.matches);
+    tall.addEventListener("change", syncTall);
     return () => {
       mounted = false;
       preference.removeEventListener("change", pauseForReducedMotion);
+      tall.removeEventListener("change", syncTall);
     };
   });
 </script>
 
-<section class="explorer" aria-label="Motion path comparison">
+<section
+  class="explorer"
+  aria-label="Motion path comparison"
+  bind:clientWidth={explorerWidth}
+>
   <div class="explorer-workspace">
     <!-- The path comes first. It is the one thing this page teaches, so it is
          the first thing to see and the first thing to touch. -->
     <div class="path-column">
       <PathShapePanel
         showHelp={false}
+        fill={fitMode}
         onSettingChange={() => explorer.syncPolicy()}
       >
         {#snippet preview(path, size)}
@@ -323,22 +344,24 @@
       </div>
       <div class="now-playing">
         <span class="now-playing-text" aria-live="polite">{nowPlaying}</span>
-        <PanelButton
-          ariaExpanded={chooserOpen}
-          ariaControls="motion-path-chooser"
-          onclick={() => (chooserOpen = !chooserOpen)}
-        >
-          Change what plays
-          <i
-            class="fas fa-chevron-down chooser-chevron"
-            class:open={chooserOpen}
-            aria-hidden="true"
-          ></i>
-        </PanelButton>
+        {#if !fitMode}
+          <PanelButton
+            ariaExpanded={chooserOpen}
+            ariaControls="motion-path-chooser"
+            onclick={() => (chooserOpen = !chooserOpen)}
+          >
+            Change what plays
+            <i
+              class="fas fa-chevron-down chooser-chevron"
+              class:open={chooserOpen}
+              aria-hidden="true"
+            ></i>
+          </PanelButton>
+        {/if}
       </div>
     </div>
 
-    {#if chooserOpen}
+    {#if chooserOpen || fitMode}
       <!-- The played sequence has two sources. Each owns its own controls and
            its own stage, and the two swap in place. -->
       <section
@@ -385,7 +408,7 @@
                     <ElementChipRow
                       selected={explorer.selectedMode}
                       columns={3}
-                      compact
+                      compact={!fitMode}
                       disabled={!explorer.selectedPair}
                       onpick={(mode) =>
                         explorer.chooseHandRelationship(
@@ -512,6 +535,8 @@
   .explorer {
     container-type: inline-size;
     min-width: 0;
+    /* Under the fixed site header when something scrolls to it. */
+    scroll-margin-top: calc(56px + var(--spacing-md, 16px));
   }
   .explorer-workspace,
   .chooser {
@@ -762,6 +787,51 @@
   @container (min-width: 1100px) {
     .motion-column {
       max-width: 640px;
+    }
+  }
+  /* Fit mode: the same two thresholds as the script. The workspace takes the
+     viewport under the 56px site header, the top row gets a little more than
+     the bottom (its transport and caption rows are fixed), and each box is
+     the largest square its quadrant holds. Capped where the natural layout
+     already fits. */
+  @container (min-width: 900px) {
+    @media (min-height: 900px) {
+      .explorer-workspace {
+        height: min(calc(100dvh - 56px - 2 * var(--spacing-md, 16px)), 1400px);
+        grid-template-rows: minmax(0, 1.2fr) minmax(0, 1fr);
+        align-items: stretch;
+      }
+      .path-column,
+      .motion-column,
+      .path-column :global(.path-shape-grid) {
+        min-height: 0;
+      }
+      .motion-stage {
+        display: flex;
+        justify-content: center;
+        flex: 1 1 0;
+        min-height: 0;
+        margin-bottom: 0;
+      }
+      .animation {
+        height: 100%;
+        width: auto;
+        max-width: 100%;
+      }
+      /* The controls keep their top edge (start-aligned above) so a mode
+         switch, which changes their height, moves nothing the page anchors
+         its scroll to. */
+      .chooser {
+        grid-template-rows: minmax(0, 1fr);
+        align-self: stretch;
+        min-height: 0;
+      }
+      .source-stage {
+        align-self: center;
+        height: 100%;
+        min-height: 0;
+        max-height: 34rem;
+      }
     }
   }
 </style>
