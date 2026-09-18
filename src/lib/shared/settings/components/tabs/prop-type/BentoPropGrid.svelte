@@ -26,6 +26,8 @@
     | "propLook"
     | "recipeOverrides"
     | "colors"
+    | "triangleGrip"
+    | "onTriangleGripChange"
   > = $props();
   const settings = $derived(getSettings());
 </script>
@@ -41,6 +43,8 @@
   propLook={settings.propArtwork}
   recipeOverrides={settings.compositionRecipeOverrides}
   colors={settings.primaryPropColors}
+  triangleGrip={settings.triangleGrip ?? "corner"}
+  onTriangleGripChange={(triangleGrip) => void updateSettings({ triangleGrip })}
 >
   {#snippet premiumBadge()}
     <PremiumBadge tooltip="Premium prop" />

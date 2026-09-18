@@ -38,6 +38,11 @@ import {
   resolvePropRenderKey,
   type PropLook,
 } from "$lib/shared/pictograph/prop/domain/prop-look";
+import {
+  DEFAULT_TRIANGLE_GRIP,
+  normalizeTriangleGrip,
+  type TriangleGrip,
+} from "$lib/shared/pictograph/prop/domain/triangle-appearance";
 
 import type {
   AdditionalLayerTextureStatus,
@@ -55,6 +60,7 @@ export class PropTypeManager {
   private renderPropTypeRight: string | null = null;
   private fanAppearance: FanAppearance = DEFAULT_FAN_APPEARANCE;
   private propLook: PropLook = DEFAULT_PROP_LOOK;
+  private triangleGrip: TriangleGrip = DEFAULT_TRIANGLE_GRIP;
   trailsSuppressedUntilTextureLoad = false;
 
   // Additional layer texture loading for tunnel mode (indexed by layer)
@@ -141,11 +147,13 @@ export class PropTypeManager {
     propType: string,
     appearance: FanAppearance,
     look: PropLook,
-    baseColors: TunnelPropColorPair | null = this.currentBaseColors
+    baseColors: TunnelPropColorPair | null = this.currentBaseColors,
+    triangleGrip: TriangleGrip = this.triangleGrip
   ): string {
     return resolvePropRenderKey(propType, {
       fanAppearance: appearance,
       propLook: baseColors ? "pictograph" : look,
+      triangleGrip,
     });
   }
 
@@ -170,19 +178,24 @@ export class PropTypeManager {
     const nextLook = normalizePropLook(
       this.settingsService?.currentSettings?.propArtwork
     );
+    const nextGrip = normalizeTriangleGrip(
+      this.settingsService?.currentSettings?.triangleGrip
+    );
     const nextBaseColors =
       props.tunnelPropColors ?? props.primaryPropColors ?? null;
     const newLeftRender = this.baseRenderKey(
       newLeft,
       nextAppearance,
       nextLook,
-      nextBaseColors
+      nextBaseColors,
+      nextGrip
     );
     const newRightRender = this.baseRenderKey(
       newRight,
       nextAppearance,
       nextLook,
-      nextBaseColors
+      nextBaseColors,
+      nextGrip
     );
 
     // Check if overrides changed
@@ -217,6 +230,7 @@ export class PropTypeManager {
       this.renderPropTypeRight = newRightRender;
       this.fanAppearance = nextAppearance;
       this.propLook = nextLook;
+      this.triangleGrip = nextGrip;
       state.setLeftPropType(newLeft);
       state.setRightPropType(newRight);
       state.setLegacyPropType(newLeft);
@@ -297,15 +311,22 @@ export class PropTypeManager {
     const settingsLook = normalizePropLook(
       this.settingsService?.currentSettings?.propArtwork
     );
+    const settingsGrip = normalizeTriangleGrip(
+      this.settingsService?.currentSettings?.triangleGrip
+    );
     const settingsLeftRender = this.baseRenderKey(
       settingsLeft,
       settingsAppearance,
-      settingsLook
+      settingsLook,
+      undefined,
+      settingsGrip
     );
     const settingsRightRender = this.baseRenderKey(
       settingsRight,
       settingsAppearance,
-      settingsLook
+      settingsLook,
+      undefined,
+      settingsGrip
     );
     const renderAppearanceChanged =
       this.renderPropTypeLeft !== null &&
@@ -349,6 +370,7 @@ export class PropTypeManager {
       this.renderPropTypeRight = settingsRightRender;
       this.fanAppearance = settingsAppearance;
       this.propLook = settingsLook;
+      this.triangleGrip = settingsGrip;
 
       // Invalidate path cache FIRST - it holds pre-computed endpoint positions
       // for the old prop geometry. If the render loop reads stale cache data
@@ -412,7 +434,7 @@ export class PropTypeManager {
     // Signature of every layer's per-hand prop type. Empty entries fall back to
     // the global prop, so an all-default set yields "|"-joined blanks — a
     // performer swapping a prop changes the signature and re-generates sprites.
-    const propSig = `${this.fanAppearance.build}:${this.fanAppearance.frameColor}:${this.fanAppearance.cover}:${this.propLook}|${additionalLayers
+    const propSig = `${this.fanAppearance.build}:${this.fanAppearance.frameColor}:${this.fanAppearance.cover}:${this.propLook}:${this.triangleGrip}|${additionalLayers
       .map((l) => `${l.leftPropType ?? ""}:${l.rightPropType ?? ""}`)
       .join("|")}`;
 
@@ -630,6 +652,7 @@ export class PropTypeManager {
     let rightPropType = state.currentRightPropType;
     let appearance = this.fanAppearance;
     let look = this.propLook;
+    let grip = this.triangleGrip;
 
     if (
       this.propTypeOverrideLeft != null ||
@@ -645,6 +668,7 @@ export class PropTypeManager {
       rightPropType = settings.rightPropType || settings.propType || "staff";
       appearance = normalizeFanAppearance(settings.fanAppearance);
       look = normalizePropLook(settings.propArtwork);
+      grip = normalizeTriangleGrip(settings.triangleGrip);
 
       // Also update engine state to keep it in sync
       state.setLeftPropType(leftPropType);
@@ -654,6 +678,7 @@ export class PropTypeManager {
 
     this.fanAppearance = appearance;
     this.propLook = look;
+    this.triangleGrip = grip;
 
     // Pass dark mode state for prop color selection
     // This allows preview isolation - local preview dark mode instead of global
