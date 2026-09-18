@@ -122,17 +122,19 @@ Rules the generator follows:
   Legibility at cell size is the point of a glyph; the true weight lives in the
   model look. Hardware bands are drawn at 1.3x the glyph tube, matching the 3D
   sleeve ratio.
-- **Hoop boxes do not move.** Minihoop stays `257.9 x 138.2`, bighoop stays
-  `600 x 300`, so trails, mandala reach, and existing sprites keep their frame.
-  The ring is fitted to the box: near-rim tube centreline at the box centre,
-  far outer edge on the box edge. For the mini hoop that is a centreline
-  diameter of 123.95 units (old drawing: 120.5).
+- **Hoop boxes and centrelines do not move.** Minihoop stays `257.9 x 138.2`,
+  bighoop stays `600 x 300`, and each ring's tube centreline stays exactly
+  where the existing tip points measure it (mini: centre at dx 59.4 from the
+  grip, radius 60.6; big: dx 149.8, radius 142.4), so trails, mandala reach,
+  seeded placements, and existing sprites keep their frame and the regenerated
+  tip points equal the old ones. Only the tube weight changes: 10 units for
+  the mini glyph, 15 for the big (the largest that stays inside `600 x 300`).
 - **The triangle box is derived.** Scale is the mini hoop's units per
-  millimetre (123.95 / 454.025). Half-width = reach x scale + half glyph
-  tube; height = far-vertex spread + elbow sleeve. Expected about
-  `286 x 166`; the generated file is the source of truth and
-  `PROP_DIMENSIONS` in `IPropTextureLoader.ts` imports it rather than
-  restating it.
+  millimetre (121.2 / 454.025, the centreline diameter over the real one).
+  Half-width = reach x scale + half glyph tube; half-height = far-vertex
+  spread x scale + hardware band radius. Expected about `280 x 162`; the
+  generated file is the source of truth and `PROP_DIMENSIONS` in
+  `IPropTextureLoader.ts` imports it rather than restating it.
 - **Tip points.** Five per look, mirroring the hoop's five: corner grip gets
   the far side's bow point, both far vertices, and the bow points of the two
   gripped sides; side grip gets the far vertex, both near vertices, and the
@@ -197,13 +199,15 @@ rim at the default staff length. Emitters and trails follow the same table.
 ## 6. Sprites, tests, verification
 
 - `/test/prop-3d-studio/sprites` captures `minihoop`, `bighoop`, `triangle`,
-  and a `triangle-side` pair (captured with `build.triangleGrip = "side"`),
+  and a `triangle_side` pair (captured with `build.triangleGrip = "side"`),
   writing `PROP_MODEL_SPRITES` entries for all four keys and the sprite files
-  `appearances/model/triangle-side-{blue,red}.svg`. With the model look
-  active, `resolvePropRenderKey` returns `triangle__model` for the corner
-  grip and `triangle-side__model` for the side grip; `hasModelSprite` and
-  `parseModelRenderKey` treat `triangle-side` as a sprite key whose notation
-  prop is `triangle`.
+  `appearances/model/triangle_side-{blue,red}.svg`. The sprite key uses an
+  underscore because the save endpoint only accepts `/^[a-z0-9_]+$/`. With
+  the model look active, `resolvePropRenderKey` returns `triangle__model` for
+  the corner grip and `triangle_side__model` for the side grip;
+  `parseTriangleRenderKey` maps both `triangle__side` and `triangle_side`
+  back to the notation prop `triangle` so dimensions, tip points, and the
+  selective recolor list resolve through the base prop.
 - Unit tests: station math (bow radius, arc angle, corner and side reach equal
   to the millimetre), generated boxes and tip points, registry membership
   (classification, variants, families, encoder round-trip, seeded lists in
@@ -237,3 +241,7 @@ rim at the default staff length. Emitters and trails follow the same table.
 - Per-beat grip changes in notation.
 - Redrawing any other prop's glyph.
 - Replacing the pnpm patch workflow for `@austencloud/scene-3d`.
+- Threading the grip through the static pictograph loader
+  (`PropSvgLoadOptions` and its sixty call sites). The pictograph grid draws
+  the corner glyph for either grip; the animator, the 3D scene, picker tiles,
+  and sprites follow the grip.
