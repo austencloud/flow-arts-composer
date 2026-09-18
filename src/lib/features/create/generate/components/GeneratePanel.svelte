@@ -28,9 +28,7 @@ Card-based architecture with integrated Generate button:
   import { createSpellModeState } from "../state/spell-mode-state.svelte";
   import CardBasedSettingsContainer from "./CardBasedSettingsContainer.svelte";
   import WordInputOverlay from "./cards/WordInputOverlay.svelte";
-  import LOOPDrawer from "./modals/LOOPDrawer.svelte";
-  import CustomizeDrawer from "./modals/CustomizeDrawer.svelte";
-  import PresetDrawer from "./presets/PresetDrawer.svelte";
+  import ExpandedCardStage from "./cards/ExpandedCardStage.svelte";
   import { createFavoriteState } from "../state/favorite-state.svelte";
   import {
     captureSetupSnapshot,
@@ -342,7 +340,72 @@ Card-based architecture with integrated Generate button:
       isDesktopLayout={isDesktop}
       onOpenWordInput={() => spellModeState.openWordInput()}
       {favoriteState}
-    />
+    >
+      {#snippet expandedCard()}
+        {#if panelState}
+          <ExpandedCardStage
+            {panelState}
+            isDesktopLayout={isDesktop}
+            loop={{
+              rhythm: {
+                rotationInterval:
+                  configState.config.period === Period.QUARTERED ? 4 : 2,
+                inversionInterval: configState.config.inversionInterval ?? 2,
+                inversionMode: configState.config.inversionMode ?? "expand",
+                reflectionAxis:
+                  configState.config.reflectionAxis ??
+                  (configState.config.loopType === LOOPType.FLIPPED
+                    ? "east-west"
+                    : "north-south"),
+              },
+              sequenceLength: configState.config.length,
+              guestMaxLength: guestLoopMaxLength,
+              onLoopDisable: () => {
+                panelState.closeLOOPPanel();
+                configState.updateConfig({ loopEnabled: false });
+              },
+              onRequestSignup: (kind) => {
+                panelState.closeLOOPPanel();
+                openLoopGateAuth(kind);
+              },
+              onRhythmChange: (u) =>
+                configState.updateConfig({
+                  ...(u.rotationInterval
+                    ? {
+                        period:
+                          u.rotationInterval === 4
+                            ? Period.QUARTERED
+                            : Period.HALVED,
+                      }
+                    : {}),
+                  ...(u.inversionInterval
+                    ? { inversionInterval: u.inversionInterval }
+                    : {}),
+                  ...(u.inversionMode
+                    ? { inversionMode: u.inversionMode }
+                    : {}),
+                  ...(u.reflectionAxis
+                    ? { reflectionAxis: u.reflectionAxis }
+                    : {}),
+                }),
+            }}
+            setups={{
+              favoriteState,
+              isSignedOut,
+              isPreview,
+              isAnonymous: isAnonymousViewer,
+              onApply: handleApplySource,
+              onRequestCommunityAccount: () =>
+                authDrawerState.show("signup", "community-setups"),
+              onRequestShareAccount: () =>
+                authDrawerState.show("signup", "share-setup"),
+              onRequestSignIn: () =>
+                authDrawerState.show("signin", "saved-setups"),
+            }}
+          />
+        {/if}
+      {/snippet}
+    </CardBasedSettingsContainer>
   </div>
 </div>
 
@@ -352,73 +415,6 @@ Card-based architecture with integrated Generate button:
     wordValue={spellModeState.inputWord}
     onWordChange={(v) => spellModeState.setInputWord(v)}
     onClose={() => spellModeState.closeWordInput()}
-  />
-{/if}
-
-<!-- Generation panels (rendered outside card grid for full-screen coverage).
-     Start/End + Rhythm are handled inside the unified Customize overlay below;
-     the standalone StartEndSheet / DurationRhythmSheet were removed (orphaned). -->
-{#if panelState}
-  <LOOPDrawer
-    isOpen={panelState.isLOOPPanelOpen}
-    currentType={panelState.loopCurrentType}
-    selectedComponents={panelState.loopSelectedComponents}
-    onChange={panelState.loopOnChange}
-    onClose={() => panelState.closeLOOPPanel()}
-    onLoopDisable={() => {
-      panelState.closeLOOPPanel();
-      configState.updateConfig({ loopEnabled: false });
-    }}
-    rhythm={{
-      rotationInterval: configState.config.period === Period.QUARTERED ? 4 : 2,
-      inversionInterval: configState.config.inversionInterval ?? 2,
-      inversionMode: configState.config.inversionMode ?? "expand",
-      reflectionAxis:
-        configState.config.reflectionAxis ??
-        (configState.config.loopType === LOOPType.FLIPPED
-          ? "east-west"
-          : "north-south"),
-    }}
-    sequenceLength={configState.config.length}
-    guestMaxLength={guestLoopMaxLength}
-    onRequestSignup={(kind) => {
-      panelState.closeLOOPPanel();
-      openLoopGateAuth(kind);
-    }}
-    onRhythmChange={(u) =>
-      configState.updateConfig({
-        ...(u.rotationInterval
-          ? {
-              period:
-                u.rotationInterval === 4 ? Period.QUARTERED : Period.HALVED,
-            }
-          : {}),
-        ...(u.inversionInterval
-          ? { inversionInterval: u.inversionInterval }
-          : {}),
-        ...(u.inversionMode ? { inversionMode: u.inversionMode } : {}),
-        ...(u.reflectionAxis ? { reflectionAxis: u.reflectionAxis } : {}),
-      })}
-  />
-
-  <CustomizeDrawer
-    isOpen={panelState.isCustomizeOverlayOpen}
-    overlayProps={panelState.customizeOverlayProps}
-    onClose={() => panelState.closeCustomizeOverlay()}
-  />
-
-  <PresetDrawer
-    isOpen={panelState.isPresetDrawerOpen}
-    {favoriteState}
-    {isSignedOut}
-    {isPreview}
-    isAnonymous={isAnonymousViewer}
-    onApply={handleApplySource}
-    onRequestCommunityAccount={() =>
-      authDrawerState.show("signup", "community-setups")}
-    onRequestShareAccount={() => authDrawerState.show("signup", "share-setup")}
-    onRequestSignIn={() => authDrawerState.show("signin", "saved-setups")}
-    onClose={() => panelState.closePresetDrawer()}
   />
 {/if}
 
