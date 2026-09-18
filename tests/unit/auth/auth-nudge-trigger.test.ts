@@ -46,7 +46,7 @@ describe("AUTH_NUDGE_TEXTS — one phrasing for the account ask", () => {
         "share-collection",
         "share-image-signin",
         "share-sequence",
-        "share-setup",
+        "save-setup",
         "viewer-signin-account",
         "viewer-signin-download",
         "viewer-signin-publish",

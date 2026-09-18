@@ -13,7 +13,7 @@ export type AuthNudgeTrigger =
   | "loop-locked-guest"
   | "community-setups"
   | "saved-setups"
-  | "share-setup"
+  | "save-setup"
   | "share-sequence"
   | "share-collection"
   | "viewer-signin-publish"
@@ -63,10 +63,11 @@ export const AUTH_NUDGE_TEXTS: Record<AuthNudgeTrigger, string> = {
   "community-setups":
     "Create a free account to use community setups and build sequences up to 64 steps.",
   "saved-setups": "Create a free account to keep setups across sessions.",
-  // Community cards show the creator's name and avatar, so sharing a setup
-  // needs a full account. The state layer blocks the write as a second gate.
-  "share-setup":
-    "Create a free account to share your setup with the community.",
+  // Every saved setup is public and shows the creator's name and avatar, so
+  // saving needs a full account. Firestore rules block the write as a second
+  // gate.
+  "save-setup":
+    "Create a free account to save setups. Saved setups are shared with the community.",
   "share-sequence":
     "Create a free account to send sequences, make links, and share or download Choreo Cards.",
   // Guests can build collections, but sending one through the inbox names the
@@ -162,10 +163,10 @@ const AUTH_PROMPT_CONTENTS: Record<AuthNudgeTrigger, AuthPromptContent> = {
     title: "Keep your setups",
     body: "Sign in or create an account to keep setups across sessions.",
   },
-  "share-setup": {
-    key: "share-setup",
-    title: "Share this setup",
-    body: "Sign in or create an account to share this setup with the community.",
+  "save-setup": {
+    key: "save-setup",
+    title: "Save this setup",
+    body: "Sign in or create an account to save setups. Saved setups are shared with the community.",
   },
   "share-sequence": {
     key: "share-sequence",
