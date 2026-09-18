@@ -63,8 +63,18 @@ function makeDeps(options: FakeOptions = {}) {
       return community;
     }),
     createSetup: vi.fn(
-      async (_userId: string, draft: { name: string }) =>
-        makeSetup("new-id", draft.name)
+      async (
+        _userId: string,
+        draft: {
+          name: string;
+          config: SavedGeneratorSetup["config"];
+          startEndOptions: SavedGeneratorSetup["startEndOptions"];
+        }
+      ) => ({
+        ...makeSetup("new-id", draft.name),
+        config: draft.config,
+        startEndOptions: draft.startEndOptions,
+      })
     ),
     renameSetup: vi.fn(async () => undefined),
     updateSetup: vi.fn(async () => undefined),
@@ -179,6 +189,31 @@ describe("favorite state", () => {
   });
 
   it("update writes the setup without a share flag", async () => {
+    const live = createLiveConfigHarness(CONFIG);
+    const { deps, repository } = makeDeps({
+      personal: [makeSetup("s1")],
+    });
+    const state = await settled(
+      createFavoriteState(live.getLiveSnapshot, deps)
+    );
+    state.setActiveSource(
+      { kind: "setup", setupId: "s1" },
+      live.getLiveSnapshot()
+    );
+    live.setLevel(3);
+    expect(state.activeStatus).toBeNull();
+
+    await expect(state.updateSetupFromCurrent("s1")).resolves.toBe(true);
+    expect(repository.updateSetup).toHaveBeenCalledWith(
+      "u1",
+      expect.objectContaining({ id: "s1" })
+    );
+    expect(repository.updateSetup.mock.calls[0]).toHaveLength(2);
+    expect(state.activeStatus).toBe("active");
+    expect(state.setups[0].config.level).toBe(3);
+  });
+
+  it("rename requires a known setup", async () => {
     const { deps, repository } = makeDeps({
       personal: [makeSetup("s1")],
     });
@@ -186,12 +221,22 @@ describe("favorite state", () => {
       createFavoriteState(liveSnapshot, deps)
     );
 
-    await expect(state.updateSetupFromCurrent("s1")).resolves.toBe(true);
-    expect(repository.updateSetup).toHaveBeenCalledWith(
+    const longName = "x".repeat(70);
+    await expect(
+      state.renameSetup("s1", "  " + longName + "  ")
+    ).resolves.toBe(true);
+    expect(repository.renameSetup).toHaveBeenCalledWith(
       "u1",
-      expect.objectContaining({ id: "s1", config: CONFIG })
+      "s1",
+      "x".repeat(60)
     );
-    expect(repository.updateSetup.mock.calls[0]).toHaveLength(2);
+    expect(state.setups[0].name).toBe("x".repeat(60));
+
+    await expect(state.renameSetup("s1", "   ")).resolves.toBe(false);
+    await expect(state.renameSetup("missing", "Name")).resolves.toBe(
+      false
+    );
+    expect(repository.renameSetup).toHaveBeenCalledOnce();
   });
 
   it("failed writes mutate nothing", async () => {
@@ -250,13 +295,26 @@ describe("favorite state", () => {
   it("resolves a community source by setup id", async () => {
     const { deps } = makeDeps({
       community: [
-        makeCommunitySetup("u2", "first"),
+        {
+          ...makeCommunitySetup("u2", "first"),
+          config: {
+            ...CONFIG,
+            level: 5,
+          } as unknown as SavedGeneratorSetup["config"],
+        },
         makeCommunitySetup("u2", "second"),
       ],
     });
     const state = await settled(
       createFavoriteState(liveSnapshot, deps)
     );
+
+    state.setActiveSource({
+      kind: "community",
+      userId: "u2",
+      setupId: "first",
+    });
+    expect(state.activeStatus).toBeNull();
 
     state.setActiveSource({
       kind: "community",
@@ -350,11 +408,12 @@ describe("favorite state", () => {
     await vi.waitFor(() => {
       expect(repository.loadPersonal).toHaveBeenCalledWith("u1");
     });
+    const staleOperation = state.loadPersonal();
 
     userId = "u2";
     await state.loadPersonal();
     resolveFirst([makeSetup("stale-u1-setup")]);
-    await firstRead;
+    await staleOperation;
 
     expect(state.setups.map((setup) => setup.id)).toEqual([
       "u2-setup",

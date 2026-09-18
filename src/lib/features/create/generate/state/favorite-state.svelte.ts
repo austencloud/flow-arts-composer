@@ -249,7 +249,7 @@ export function createFavoriteState(
 
   async function saveCurrentSetup(): Promise<boolean> {
     const userId = guardMutation();
-    if (!userId || setups.length >= SETUP_CAP) return false;
+    if (!userId || !canSave) return false;
 
     pendingAction = { kind: "create" };
     try {
@@ -285,7 +285,8 @@ export function createFavoriteState(
   ): Promise<boolean> {
     const userId = guardMutation();
     const name = rawName.trim().slice(0, SETUP_NAME_MAX_LENGTH);
-    if (!userId || !name) return false;
+    const existing = setups.find((setup) => setup.id === setupId);
+    if (!userId || !name || !existing) return false;
 
     pendingAction = { kind: "rename", setupId };
     try {
@@ -395,7 +396,9 @@ export function createFavoriteState(
       source.kind === "setup"
         ? setups.find((setup) => setup.id === source.setupId)
         : communitySetups.find(
-            (setup) => setup.setupId === source.setupId
+            (setup) =>
+              setup.userId === source.userId &&
+              setup.setupId === source.setupId
           );
     appliedBaseline = saved
       ? captureSetupSnapshot(
