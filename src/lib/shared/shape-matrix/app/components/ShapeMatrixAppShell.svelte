@@ -120,7 +120,11 @@
   const motionVisibility = new SequenceViewerVisibilityState(true);
   setViewerVisibilityContext(motionVisibility);
   $effect(() => {
-    const solo = appState.soloHand;
+    // Each surface keeps its own solo; the stage shows the one on screen.
+    const solo =
+      appState.surface === "theory"
+        ? appState.theorySoloHand
+        : appState.soloHand;
     untrack(() => {
       motionVisibility.leftMotion = solo !== "right";
       motionVisibility.rightMotion = solo !== "left";
