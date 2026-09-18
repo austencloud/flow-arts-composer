@@ -78,6 +78,15 @@ describe("propPhase and timingFromPhase", () => {
     expect(timingFromPhase(PI)).toBe("split");
     expect(timingFromPhase(PI + PI / 8)).toBe("split");
   });
+
+  it("classes an exact band edge as quarter, not tog or split", () => {
+    expect(timingFromPhase(PI / 4)).toBe("quarter");
+    expect(timingFromPhase(-PI / 4)).toBe("quarter");
+    expect(timingFromPhase((3 * PI) / 4)).toBe("quarter");
+    expect(timingFromPhase(PI / 4 + 2 * PI)).toBe("quarter");
+    expect(timingFromPhase(PI / 4 - 1e-6)).toBe("tog");
+    expect(timingFromPhase((3 * PI) / 4 + 1e-6)).toBe("split");
+  });
 });
 
 describe("classifyPropRelationship", () => {

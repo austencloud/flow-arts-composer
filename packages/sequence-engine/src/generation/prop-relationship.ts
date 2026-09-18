@@ -117,12 +117,12 @@ export function propPhase(
   );
 }
 
-/** Together within a quarter turn of zero, Split within a quarter of half. */
+/** Together within pi/4 of zero, Split within pi/4 of pi, Quarter between. */
 export function timingFromPhase(phase: number): PropTiming {
   const wrapped = normalizeAngle(phase);
   const folded = Math.min(wrapped, TAU - wrapped);
-  if (folded < PI / 4) return "tog";
-  if (folded > (3 * PI) / 4) return "split";
+  if (folded < PI / 4 - 1e-9) return "tog";
+  if (folded > (3 * PI) / 4 + 1e-9) return "split";
   return "quarter";
 }
 

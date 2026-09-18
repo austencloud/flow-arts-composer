@@ -103,6 +103,33 @@ export {
   type HandRelationshipMap,
   type HandRelationshipOptions,
 } from "./constraints/style/hand-relationship-constraint.js";
+export {
+  PropRelationshipConstraint,
+  propRelationshipCouldHold,
+  propRelatedRotationDirection,
+  type PropRelationshipOptions,
+} from "./constraints/style/prop-relationship-constraint.js";
+export {
+  classifyPropRelationship,
+  derivePartnerOrientation,
+  propBearing,
+  propPhase,
+  timingFromPhase,
+  reportPropRelationship,
+  normalizeAngle,
+  LOCATION_BEARINGS,
+  RADIAL_ORIENTATION_CYCLE,
+  PROP_TIMING_PHASE,
+  type PropDirection,
+  type PropTiming,
+  type PropRelationshipMotion,
+  type PropRelationshipReading,
+  type PropRelationshipReport,
+} from "./prop-relationship.js";
+export {
+  resolveLeftSpinRule,
+  type LeftSpinRule,
+} from "./turns/left-spin-rule.js";
 
 // Parsing
 export {
