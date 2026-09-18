@@ -597,11 +597,13 @@ export class SequenceBuilder {
 
     // Compare the raw pipeline verdict, from before withPropRelationshipReport
     // folds the prop score into `satisfied`: once folded, both sides read
-    // false whenever their prop score is below 1, which is guaranteed here,
-    // so comparing the folded flag can never tell the two apart. The raw
-    // flag still reflects every other hard constraint, so a result whose
-    // other hard constraints failed on their own must not beat one whose
-    // other hard constraints held, even with a better raw prop score.
+    // false whenever their prop score is below 1. The first attempt's score
+    // is guaranteed below 1 here (the early return above already caught a
+    // score of 1), but the second's usually is too, so comparing the folded
+    // flag would rarely tell the two apart. The raw flag still reflects
+    // every other hard constraint, so a result whose other hard constraints
+    // failed on their own must not beat one whose other hard constraints
+    // held, even with a better raw prop score.
     if (
       secondRaw.constraintReport.satisfied !==
       firstRaw.constraintReport.satisfied

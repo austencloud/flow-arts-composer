@@ -4,13 +4,17 @@
  * buildOnce so each case controls exactly what the search "found" without
  * running the real pipeline: one call when the first attempt already holds,
  * two calls on a miss, a graceful fallback when the second attempt throws,
- * and the first attempt winning an exact tie.
+ * the first attempt winning an exact tie, the raw constraint verdict (not
+ * the folded prop score) picking the winner in the two cases where one
+ * attempt's other hard constraints failed on their own, and a skipped
+ * retry when a timing and both start orientations already pin the phase.
  */
 import { describe, expect, it, vi } from "vitest";
 import { SequenceBuilder } from "../../src/generation/index.js";
 import type { BuildResult } from "../../src/generation/builder/SequenceBuilder.js";
 import type { IVariationProvider } from "../../src/generation/data/IVariationProvider.js";
 import type { PropRelationshipMotion } from "../../src/generation/prop-relationship.js";
+import { ConstraintType } from "../../src/generation/constraints/constraint-types.js";
 
 function motion(
   overrides: Partial<PropRelationshipMotion> = {}
@@ -134,6 +138,11 @@ describe("build() retry around a prop relationship", () => {
 
     expect(spy).toHaveBeenCalledTimes(2);
     expect(result.metrics.statesExplored).toBe(1);
+    expect(result.constraintReport.satisfied).toBe(false);
+    const detail = result.constraintReport.details.find(
+      (d) => d.constraint === ConstraintType.PROP_RELATIONSHIP
+    );
+    expect(detail).toBeDefined();
   });
 
   it("returns the second attempt when only its raw report is satisfied, even with a lower prop score", () => {
@@ -152,6 +161,11 @@ describe("build() retry around a prop relationship", () => {
 
     expect(spy).toHaveBeenCalledTimes(2);
     expect(result.metrics.statesExplored).toBe(2);
+    expect(result.constraintReport.satisfied).toBe(false);
+    const detail = result.constraintReport.details.find(
+      (d) => d.constraint === ConstraintType.PROP_RELATIONSHIP
+    );
+    expect(detail).toBeDefined();
   });
 
   it("skips the retry when a timing and both start orientations are pinned", () => {
