@@ -351,3 +351,41 @@ Evidence: browser pass at 375×667, 820×1180, and 1440×900 (the three composit
 ## September 17: Hybrid lede loses its "X, not Y"
 
 "Any motion can take any path, so this is a default, not a law." carried the same flip Austen rejected in the heading an hour earlier. It now reads "Any motion can take any path; Hybrid only sets the default." Same fact, no flip. Pending Austen's eye with the rest of the section.
+
+## September 17: "What Hybrid does" cut
+
+Austen reviewed the rendered table on main and said it was not informative. He was right: every Arc tile was a circle, every Concave tile a star, both hands drew the same shape in the same colour, and nothing in a tile showed the spin the rule keys on. Nine drawings restated one sentence. The explorer below already shows the rule properly (a pro hand paired with an anti hand, switch to Hybrid, watch which hand changes), so the section is gone and the rule moved into the explorer's lede.
+
+Explorer lede now: "Pick a pair of shapes from the matrix, or one shape from its edge, and switch the path while it plays. Hybrid uses Arc for pro motions and Concave for anti motions. Any motion can take any path; Hybrid only sets the default."
+
+The explorer also starts on Hybrid instead of Arc. The default pair mixes pro with anti, so the first frame is the rule at work: one hand on Arc, the other on Concave, and PathShapePanel's own header reads "Pro → Arc · Anti → Concave".
+
+Ownership ledger: MotionPathHybridExamples.svelte deleted; PathShapePanel and the animation scope's setPathPolicy unchanged. Evidence: 1440×900, section absent, Hybrid tile pressed on load, lede as above, no overflow.
+
+## September 17: the path comes first
+
+Austen looked at the explorer on main and asked how to make it more approachable. The first screen was a matrix of forty shapes with turn menus, six timing chips, a step strip and two toggles before the reader reached the four path tiles. He approved the recomposition ("Let's see you try").
+
+The lesson is the path, so the four tiles now open the explorer, beside the animation. Everything that picks what plays (the source toggle, turn controls, timing chips, the matrix or the browsed sequence's card, and their status line) waits behind one button under the canvas. The step strip is gone from the explorer; the transport keeps Play and Path lines. Trace defaults to Hands, since the hand path is what the rule is about and the tiles then read as a circle, straight lines, a star and a mix. On a phone the canvas comes first with the chooser opening under its button, and the tiles follow one swipe down; side by side, the path is on the left.
+
+Strings, pending Austen's eye:
+
+- Disclosure button and its region's accessible name: "Change what plays"
+- Now-playing line under the canvas, from the matrix pair: "Left hand pro, 1 turn. Right hand anti, 1 turn." (turn counts follow the pair; a float reads "float"); for a header solo: "Right hand pro, 1 turn, on its own."; from a browsed sequence: "AKEJ, 4 steps." (the word simplified as the card shows it; "A browsed sequence, 4 steps." if the sequence has no word); before the first pair loads: "Loading a sequence…"
+- Under the tiles: "Only the hand’s path between positions changes. The positions and the spin stay the same."
+- Matrix status: "Rows are left-hand shapes, columns are right-hand shapes. Pick a cell to play that pair, or a shape on the edge to play it alone." (replaces "Change the motion path to compare these shapes." and "Pick a cell to animate its shapes.")
+- Explorer lede now: "Switch the path while the sequence plays. Hybrid uses Arc for pro motions and Concave for anti motions. Any motion can take any path; Hybrid only sets the default." The first sentence no longer points at a matrix that is behind the button.
+
+Ownership ledger: PathShapePanel, MotionPathTransitionStage, SegmentedControl, Crossfade, ShapeMatrixGrid, ElementChipRow, TurnNotationControls, ChoreoCard, SequencePickerModal and growFade as before; PanelButton gains an `ariaControls` prop so the disclosure names its region. StepStrip leaves the explorer. The explorer state changes only its trace default.
+
+Evidence: browser pass at 375×667, 960×412, 820×1180, 1250×800, 1440×900, 1920×1080, 2560×1440, 3840×2160 and a 720×450 stand-in for 200% zoom; no horizontal overflow at any tier. Chooser open and closed, both sources, browse-and-pick, a header solo, the trace toggle and a cell pick observed with the now-playing line following each. Below a 900px container the chooser stacks so the timing chips keep their words (at 820 a two-column chooser clipped them to "S", "1", "("); above it the chooser's columns take the workspace's ratio so the stage sits under the canvas. AI-bust review of the new strings: clean.
+
+## September 17: the open chooser packs
+
+Austen opened "Change what plays" on main and found two voids: one under the button (the tile column ran about a hundred pixels past the canvas column, so the chooser opened under a gap) and one under the chooser's controls (a 544px matrix beside a short stack of controls). Layout only; no strings change.
+
+Trace moves from under the tiles into the transport row with Play and Path lines, which brings the two columns to about the same height; the motion column then stretches to the row and pins the now-playing line to its bottom, so the button always sits level with the tiles' note and the chooser opens right under it. Inside the chooser the status line joins the controls stack, and the stage becomes a square the height of that stack (never under 20rem so the card and the matrix stay readable, never over the matrix's 34rem). At desktop the matrix is now about 320px with 63px cells beside the turn and timing controls; in the Sequence source the card takes the same square beside its shorter controls. Stacked, below a 900px container, the stage is a square as wide as the column, as before.
+
+Ownership ledger: no new owners. Crossfade's `fill` mode sizes the two stage layers to the square; SegmentedControl gets a set width in the transport (a flex basis is not content, so the row sized itself from the labels and wrapped "Prop tips").
+
+Evidence: browser pass at 375×667, 960×412, 820×1180, 1250×800, 1440×900 and 1920×1080; no horizontal overflow at any tier. At 1440 both columns measure 677px and the chooser opens at the button's edge; the matrix stage is 320×320 beside 266px of controls plus the status line, and the card takes the same 320px square in the Sequence source. At 960 the columns were 587 and 558 before the pin and both 587 after. Both trace options read on one line at every tier. Console clean apart from the PostHog notice.

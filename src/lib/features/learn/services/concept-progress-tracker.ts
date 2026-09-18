@@ -42,6 +42,7 @@ const STORAGE_KEY = "tka_learning_progress";
  */
 export const LEGACY_CONCEPT_ID_ALIASES: Readonly<Record<string, string>> = {
   "hand-positions": "hand-placements",
+  "staff-positions": "staff-placements",
 };
 
 export class ConceptProgressTracker {
@@ -334,11 +335,15 @@ export class ConceptProgressTracker {
 
   /**
    * Combines a legacy-id record into its current-id counterpart. Every
-   * numeric stat takes the higher of the two, so neither side's earned
-   * progress is thrown away; `timeSpentSeconds` sums since both records
-   * represent real, non-overlapping practice time. Status takes whichever
-   * side is further along — a completed legacy record wins, an in-progress
-   * one never overwrites a completed current record.
+   * numeric stat, including `timeSpentSeconds`, takes the higher of the two:
+   * the persister's `{ merge: true }` write never removes the legacy id from
+   * a saved document, so this merge can run again on the same legacy+current
+   * pair on a later hydration, and a running sum would double-count that
+   * practice time on every re-merge. Taking the max keeps the merge
+   * idempotent while still never throwing away either side's earned
+   * progress. Status takes whichever side is further along — a completed
+   * legacy record wins, an in-progress one never overwrites a completed
+   * current record.
    */
   private mergeConceptRecords(
     conceptId: string,
@@ -374,7 +379,10 @@ export class ConceptProgressTracker {
       accuracy: Math.max(current.accuracy, legacy.accuracy),
       currentStreak: Math.max(current.currentStreak, legacy.currentStreak),
       bestStreak: Math.max(current.bestStreak, legacy.bestStreak),
-      timeSpentSeconds: current.timeSpentSeconds + legacy.timeSpentSeconds,
+      timeSpentSeconds: Math.max(
+        current.timeSpentSeconds,
+        legacy.timeSpentSeconds
+      ),
       startedAt: this.earlierDate(current.startedAt, legacy.startedAt),
       completedAt: this.earlierDate(current.completedAt, legacy.completedAt),
       lastPracticedAt: this.laterDate(

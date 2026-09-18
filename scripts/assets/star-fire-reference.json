@@ -1,0 +1,128 @@
+{
+  "version": 1,
+  "product": "Renegade Juggling Fire Fan Star",
+  "source": "https://renegadejuggling.com/products/fire-fan-star",
+  "source_image": "https://renegadejuggling.com/cdn/shop/files/firefanstar.jpg?v=1743114756",
+  "provenance": "Lattice topology, fold angles, ring placement and wick proportions traced from the 1200 x 1600 vendor photograph and mirrored into a symmetric design. The published 23.5 x 16 inch envelope, 4 inch outside-diameter manipulation ring and 12 x 2 inch riveted wick strips set the scale. The inner spinning ring, wire gauges, ring links and wick roll diameter are photographic estimates, not CAD measurements. No photograph is redistributed.",
+  "published": {
+    "width_in": 23.5,
+    "height_in": 16,
+    "manipulation_ring_outside_diameter_in": 4,
+    "wick_strip_in": [12, 2],
+    "wick_count": 5,
+    "burn_time_min": [4, 5],
+    "finish": "black powder coat",
+    "set_weight_g": 816
+  },
+  "published_dimensions_m": [0.5969, 0.4064],
+  "hand_pivot_m": [0.0, 0.0],
+  "hub_m": [0.0, 0.057912],
+  "spoke_angles_deg": [180, 135, 90, 45, 0],
+  "wick_tip_radius_m": 0.29845,
+  "wick_length_m": 0.0508,
+  "wick_radius_m": 0.0155,
+  "wick_centers_m": [
+    [-0.27305, 0.057912],
+    [-0.193075507, 0.250987507],
+    [0.0, 0.330962],
+    [0.193075507, 0.250987507],
+    [0.27305, 0.057912]
+  ],
+  "wick_directions": [
+    [-1.0, 0.0],
+    [-0.707106781, 0.707106781],
+    [0.0, 1.0],
+    [0.707106781, 0.707106781],
+    [1.0, 0.0]
+  ],
+  "wick_bases_m": [
+    [-0.24765, 0.057912],
+    [-0.175114994, 0.233026994],
+    [0.0, 0.305562],
+    [0.175114994, 0.233026994],
+    [0.24765, 0.057912]
+  ],
+  "frame_wire_radius_m": 0.0015,
+  "ring_tube_radius_m": 0.0032,
+  "folds_m": [
+    {
+      "point": [-0.098559469, 0.017087331],
+      "spokes": [0],
+      "hub_angle_deg": 202.5,
+      "hub_radius_m": 0.10668
+    },
+    {
+      "point": [-0.092462262, 0.08974931],
+      "spokes": [0, 1],
+      "hub_angle_deg": 161.0,
+      "hub_radius_m": 0.09779
+    },
+    {
+      "point": [-0.042868314, 0.14580507],
+      "spokes": [1, 2],
+      "hub_angle_deg": 116.0,
+      "hub_radius_m": 0.09779
+    },
+    {
+      "point": [0.042868314, 0.14580507],
+      "spokes": [2, 3],
+      "hub_angle_deg": 64.0,
+      "hub_radius_m": 0.09779
+    },
+    {
+      "point": [0.092462262, 0.08974931],
+      "spokes": [3, 4],
+      "hub_angle_deg": 19.0,
+      "hub_radius_m": 0.09779
+    },
+    {
+      "point": [0.098559469, 0.017087331],
+      "spokes": [4],
+      "hub_angle_deg": -22.5,
+      "hub_radius_m": 0.10668
+    }
+  ],
+  "ring_m": {
+    "center": [0.0, 0.0],
+    "outer_radius": 0.0508,
+    "inner_ring_outer_radius": 0.02794,
+    "link_angles_deg": [25, 155, 270],
+    "link_half_spread_deg": 9,
+    "hub_leg_angles_deg": [68, 112]
+  },
+  "svg_scale_px_per_m": 340,
+  "svg_scale_note": "The shared 260 x 207 fan box holds the 23.5 inch span at 340 px/m (DoodleGrip Fire draws at 417.3); the 2D tip table uses the same scale.",
+  "trace": {
+    "image_size_px": [1200, 1600],
+    "hub_px": [595, 950],
+    "ring_center_px": [595, 1075],
+    "ring_outer_radius_px": 108,
+    "wick_bases_px": [
+      [130, 950],
+      [262, 632],
+      [598, 500],
+      [935, 630],
+      [1080, 950]
+    ],
+    "wick_outer_ends_px": [
+      [15, 950],
+      [185, 555],
+      [598, 378],
+      [1010, 555],
+      [1180, 950]
+    ],
+    "fold_px": [
+      [405, 1030],
+      [405, 890],
+      [515, 785],
+      [672, 785],
+      [785, 885],
+      [790, 1030]
+    ],
+    "ring_link_px": [
+      [668, 1040],
+      [520, 1040],
+      [595, 1135]
+    ]
+  }
+}

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { normalizePersistedGenerationConfig } from "./generator-persistence-normalizer";
+import {
+  normalizePersistedGenerationConfig,
+  normalizePersistedStartEndOptions,
+} from "./generator-persistence-normalizer";
 
 describe("normalizePersistedGenerationConfig", () => {
   it("clamps a persisted level 4 (SKEWED) down to the available max", () => {
@@ -35,5 +38,74 @@ describe("normalizePersistedGenerationConfig", () => {
     expect(normalizePersistedGenerationConfig(null)).toEqual({});
     expect(normalizePersistedGenerationConfig(undefined)).toEqual({});
     expect(normalizePersistedGenerationConfig("skewed")).toEqual({});
+  });
+});
+
+describe("normalizePersistedStartEndOptions", () => {
+  it("moves the pre-rename multi-select arrays onto their placement keys", () => {
+    const result = normalizePersistedStartEndOptions({
+      blockedStartPositions: ["alpha1"],
+      endPositions: ["beta3", "gamma7"],
+    });
+    expect(result).toMatchObject({
+      blockedStartPlacements: ["alpha1"],
+      endPlacements: ["beta3", "gamma7"],
+    });
+    expect(result).not.toHaveProperty("blockedStartPositions");
+    expect(result).not.toHaveProperty("endPositions");
+  });
+
+  it("prefers the current arrays when both spellings are present", () => {
+    const result = normalizePersistedStartEndOptions({
+      blockedStartPositions: ["alpha1"],
+      blockedStartPlacements: ["gamma7"],
+      endPositions: ["beta3"],
+      endPlacements: ["zeta2"],
+    });
+    expect(result).toMatchObject({
+      blockedStartPlacements: ["gamma7"],
+      endPlacements: ["zeta2"],
+    });
+    expect(result).not.toHaveProperty("blockedStartPositions");
+    expect(result).not.toHaveProperty("endPositions");
+  });
+
+  it("defaults both arrays to empty when a legacy setup never had either", () => {
+    // Pre-rename setups saved before these arrays existed at all must still
+    // produce [] so downstream .length reads (hasAnyConstraints, setOptions)
+    // cannot throw on undefined.
+    const result = normalizePersistedStartEndOptions({ mustContainLetters: [] });
+    expect(result).toMatchObject({
+      blockedStartPlacements: [],
+      endPlacements: [],
+    });
+  });
+
+  it("moves the pre-rename single-select step fields onto their placement keys", () => {
+    const result = normalizePersistedStartEndOptions({
+      startPosition: { id: "start-cell", gridPosition: "alpha1" },
+      endPosition: { id: "end-cell", gridPosition: "beta3" },
+    });
+    expect(result).not.toHaveProperty("startPosition");
+    expect(result).not.toHaveProperty("endPosition");
+    expect((result as Record<string, unknown>).startPlacement).toMatchObject({
+      id: "start-cell",
+      gridPlacement: "alpha1",
+    });
+    expect((result as Record<string, unknown>).endPlacement).toMatchObject({
+      id: "end-cell",
+      gridPlacement: "beta3",
+    });
+  });
+
+  it("prefers the current single-select step fields over legacy siblings", () => {
+    const result = normalizePersistedStartEndOptions({
+      startPosition: { id: "legacy-start" },
+      startPlacement: { id: "canonical-start" },
+    });
+    expect((result as Record<string, unknown>).startPlacement).toMatchObject({
+      id: "canonical-start",
+    });
+    expect(result).not.toHaveProperty("startPosition");
   });
 });
