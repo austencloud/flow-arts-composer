@@ -71,6 +71,7 @@ Delegates ALL logic to services (SRP compliant)
   import GenerateButtonCard from "./cards/GenerateButtonCard.svelte";
   import ConsolidatedLOOPCard from "./cards/ConsolidatedLOOPCard.svelte";
   import CustomizeCard from "./cards/CustomizeCard.svelte";
+  import TnDCard from "./cards/TnDCard.svelte";
   import WordInputCard from "./cards/WordInputCard.svelte";
   import PresetCard from "./cards/PresetCard.svelte";
   import type { FavoriteState } from "../state/favorite-state.svelte";
@@ -762,6 +763,8 @@ Delegates ALL logic to services (SRP compliant)
               color={cardColors.customize.color}
               shadowColor={cardColors.customize.shadowColor}
             />
+          {:else if card.id === "tnd"}
+            <TnDCard {...card.props as ComponentProps<typeof TnDCard>} />
           {:else if card.id === "loop"}
             <ConsolidatedLOOPCard
               {...card.props as ComponentProps<typeof ConsolidatedLOOPCard>}
@@ -906,15 +909,7 @@ Delegates ALL logic to services (SRP compliant)
     }
 
     .card-settings-container:not([data-desktop-layout="true"])
-      .card-grid[data-level="1"] {
-      grid-template-rows:
-        var(--compact-level-row)
-        minmax(var(--min-touch-target), 0.9fr)
-        minmax(var(--min-touch-target), 0.9fr)
-        minmax(64px, 1.2fr);
-      grid-auto-rows: unset;
-    }
-
+      .card-grid[data-level="1"],
     .card-settings-container:not([data-desktop-layout="true"])
       .card-grid[data-level="2"],
     .card-settings-container:not([data-desktop-layout="true"])
@@ -1007,10 +1002,11 @@ Delegates ALL logic to services (SRP compliant)
        instead, which eases the whole box between the two measured layouts. */
   }
 
-  /* Level 2 and 3 add a fourth row. Generate is the primary action, so it stays
-     at least as tall as the compact Level control instead of becoming the
-     shallowest row when the panel is tight. */
+  /* Every level has four rows since the TnD card. Generate is the primary
+     action, so it stays at least as tall as the compact Level control instead
+     of becoming the shallowest row when the panel is tight. */
   @container settings-grid (width >= 630px) and (height < 560px) {
+    .card-grid[data-level="1"],
     .card-grid[data-level="2"],
     .card-grid[data-level="3"] {
       grid-template-rows:
@@ -1024,6 +1020,8 @@ Delegates ALL logic to services (SRP compliant)
 
   @container settings-grid (width < 630px) and (height < 560px) {
     .card-settings-container:not([data-desktop-layout="true"])
+      .card-grid[data-level="1"],
+    .card-settings-container:not([data-desktop-layout="true"])
       .card-grid[data-level="2"],
     .card-settings-container:not([data-desktop-layout="true"])
       .card-grid[data-level="3"] {
@@ -1036,6 +1034,8 @@ Delegates ALL logic to services (SRP compliant)
       grid-auto-rows: unset;
     }
 
+    .card-settings-container[data-desktop-layout="true"]
+      .card-grid[data-level="1"],
     .card-settings-container[data-desktop-layout="true"]
       .card-grid[data-level="2"],
     .card-settings-container[data-desktop-layout="true"]

@@ -273,7 +273,7 @@ describe("card-configurator LOOP descriptor", () => {
     });
   });
 
-  it("keeps Customize and LOOP at an even 3/3 split", () => {
+  it("gives Customize a third of its row and LOOP a half of its own", () => {
     const cards = buildCardDescriptors(
       config,
       DifficultyLevel.INTERMEDIATE,
@@ -296,7 +296,7 @@ describe("card-configurator LOOP descriptor", () => {
       true
     );
 
-    expect(cards.find((c) => c.id === "customize")?.gridColumnSpan).toBe(3);
+    expect(cards.find((c) => c.id === "customize")?.gridColumnSpan).toBe(2);
     expect(cards.find((c) => c.id === "loop")?.gridColumnSpan).toBe(3);
   });
 });

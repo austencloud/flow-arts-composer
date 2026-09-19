@@ -68,6 +68,16 @@ function props(
       onLoopDisable: vi.fn(),
       onRequestSignup: vi.fn(),
     },
+    tnd: {
+      handRelationship: "free",
+      propRelationship: "free",
+      matchHandTurns: false,
+      level: 3,
+      blockedHandModes: {},
+      onHandRelationshipChange: vi.fn(),
+      onPropRelationshipChange: vi.fn(),
+      onMatchHandTurnsChange: vi.fn(),
+    },
     setups: {
       favoriteState: fakeFavorites(),
       isSignedOut: false,
@@ -198,6 +208,28 @@ describe("ExpandedCardStage", () => {
     } finally {
       fixture.remove();
     }
+  });
+
+  it("renders the TnD panel for the tnd card", async () => {
+    const state = createPanelCoordinationState();
+    const { container } = render(ExpandedCardStage, props(state, true));
+
+    state.openTnDPanel();
+    flushSync();
+    await tick();
+
+    const root = container.querySelector<HTMLElement>(".expanded-card-stage");
+    expect(root?.dataset.cardId).toBe("tnd");
+    await expect
+      .element(page.getByRole("heading", { name: "Timing and direction" }))
+      .toBeInTheDocument();
+    // Both 3x2 grids are mounted, Hands and Props.
+    expect(container.querySelectorAll('[aria-label="Free hands"]').length).toBe(
+      1
+    );
+    expect(container.querySelectorAll('[aria-label="Free props"]').length).toBe(
+      1
+    );
   });
 
   it("removes the portaled node and releases the claim on unmount", () => {

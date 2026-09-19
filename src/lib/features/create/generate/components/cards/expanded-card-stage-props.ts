@@ -8,6 +8,7 @@ import type { ComponentProps } from "svelte";
 import type { GenerateCardPanelId } from "$lib/shared/create/state/panel-coordination-state.svelte";
 import type LOOPExpandedOverlay from "./LOOPExpandedOverlay.svelte";
 import type SetupsPanel from "../presets/SetupsPanel.svelte";
+import type TnDPanel from "./TnDPanel.svelte";
 
 export type LoopStageProps = Pick<
   ComponentProps<typeof LOOPExpandedOverlay>,
@@ -18,6 +19,11 @@ export type LoopStageProps = Pick<
   | "guestMaxLength"
   | "onRequestSignup"
   | "handRelationship"
+>;
+
+export type TnDStageProps = Omit<
+  ComponentProps<typeof TnDPanel>,
+  "onClose" | "titleId"
 >;
 
 export type SetupsStageProps = Omit<

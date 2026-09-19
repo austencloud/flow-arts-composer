@@ -7,6 +7,7 @@ import {
 import { minLength as minLengthEngine } from "@tka/sequence-engine/generation";
 import {
   expanderMultiplier,
+  handModesBlockedByLoop,
   resolveLoopConfig,
   specHasExpandInversion,
 } from "$lib/shared/create/services/loop-type-utils";
@@ -236,6 +237,24 @@ export function buildCardDescriptors(
     });
   }
 
+  // TnD card (Hands, Props, Match turns). The LOOP type decides which hand
+  // modes are off; the panel shows them disabled with the reason.
+  if (handlers.handleHandRelationshipChange) {
+    cardList.push({
+      id: "tnd",
+      props: {
+        handRelationship: config.handRelationship ?? "free",
+        propRelationship: config.propRelationship ?? "free",
+        matchHandTurns: config.matchHandTurns ?? false,
+        blockedHandModes: handModesBlockedByLoop(
+          loopEnabled ? config.loopType : null
+        ),
+        cardIndex: cardIndex++,
+      },
+      gridColumnSpan: 3,
+    });
+  }
+
   // Consolidated LOOP card (toggle + type selection)
   if (handlers.handleLoopToggle) {
     cardList.push({
@@ -280,6 +299,7 @@ export function buildCardDescriptors(
     capabilities: {
       preset: Boolean(handlers.handleOpenPresetDrawer),
       customize: Boolean(handlers.handleConstraintPresetChange),
+      tnd: Boolean(handlers.handleHandRelationshipChange),
       loop: Boolean(handlers.handleLoopToggle),
       generate: Boolean(handlers.handleGenerateClick),
     },
