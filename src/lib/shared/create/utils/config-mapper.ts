@@ -187,6 +187,11 @@ export function uiConfigToGenerationOptions(
   // When loop is enabled, use the circular generation pipeline; otherwise freeform
   const effectiveMode = uiConfig.loopEnabled ? "circular" : "freeform";
 
+  // A prop mode names a timing as well as a direction, and the timing is what
+  // constrains turns and start orientations below.
+  const propTimingRequested =
+    (uiConfig.propRelationship ?? DEFAULT_TND_SELECTION) !== "free";
+
   const options: GenerationOptions = {
     length: uiConfig.length,
     gridMode: uiConfig.gridMode,
@@ -213,9 +218,7 @@ export function uiConfigToGenerationOptions(
     propRelationship: uiConfig.propRelationship ?? DEFAULT_TND_SELECTION,
     // A prop timing only means something when both hands take the same
     // turns, so a prop mode forces matched turns.
-    matchHandTurns:
-      (uiConfig.matchHandTurns ?? false) ||
-      (uiConfig.propRelationship ?? DEFAULT_TND_SELECTION) !== "free",
+    matchHandTurns: (uiConfig.matchHandTurns ?? false) || propTimingRequested,
 
     // Include start/end options if provided
     blockedStartPlacements:
@@ -228,7 +231,18 @@ export function uiConfigToGenerationOptions(
 
     // Start orientation overrides (engine seeds step 0 + propagates). Orientation
     // values are already engine strings ("in"/"clock"/"out"/"counter").
-    leftStartOrientation: startEndOptions?.leftStartOrientation ?? undefined,
+    //
+    // A prop timing releases the left one. The requested phase IS a statement
+    // about the two start orientations, and the engine derives the left from
+    // the right to land it (resolveTimedStartOrientations). Send both and the
+    // phase is fixed before the search runs, the engine skips its retry, and
+    // the request is unreachable for most timings: measured over the diamond
+    // dataframe at level 3, pinning both held every beat in 17 of 30 runs,
+    // releasing the left in 30 of 30. The right hand keeps the user's pick,
+    // so a deliberate choice still shows up in the result.
+    leftStartOrientation: propTimingRequested
+      ? undefined
+      : (startEndOptions?.leftStartOrientation ?? undefined),
     rightStartOrientation: startEndOptions?.rightStartOrientation ?? undefined,
   };
   return options;

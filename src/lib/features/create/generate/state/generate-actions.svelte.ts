@@ -87,12 +87,17 @@ const DASH_LETTERS: Set<string> = new Set([
 ]);
 
 export const PROP_CONSTRAINT_SHORTFALL_TEXT =
-  "Props constraint not fully met. Try Free props or another start orientation.";
+  "Props timing could not hold on every beat. A pinned start position is the usual cause.";
 
 /**
  * The engine always returns its best sequence. When the requested prop timing
  * could not be held on every beat, the report's propRelationship detail scores
  * below 1; say so once, the same way a LOOP shortfall is surfaced.
+ *
+ * This should be rare. The timing is a statement about the two start
+ * orientations, and config-mapper releases the left one so the engine can
+ * derive it; what is left is a start position pinned to a placement whose two
+ * hand locations cannot host the requested phase.
  */
 function reportPropShortfall(report: ConstraintReport | undefined): void {
   const prop = report?.details.find(

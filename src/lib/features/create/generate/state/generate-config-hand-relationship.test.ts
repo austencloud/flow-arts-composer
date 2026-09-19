@@ -81,6 +81,38 @@ describe("TnD selections in the Generate config", () => {
     );
   });
 
+  it("frees the left start orientation so a prop timing can be reached", () => {
+    // The engine derives the left prop's start orientation from the right's
+    // to land the requested phase, but only when the caller has not already
+    // pinned both. The app's start-end defaults pin both to "in", which fixes
+    // the phase before the search runs and makes most timings unreachable.
+    const state = createGenerationConfigState();
+    const startEnd = {
+      blockedStartPlacements: [],
+      startPlacement: null,
+      endPlacement: null,
+      endPlacements: [],
+      mustContainLetters: [],
+      mustNotContainLetters: [],
+      leftStartOrientation: "in",
+      rightStartOrientation: "in",
+    } as never;
+
+    state.updateConfig({ propRelationship: "TS" });
+    const timed = uiConfigToGenerationOptions(
+      state.config,
+      undefined,
+      startEnd
+    );
+    expect(timed.leftStartOrientation).toBeUndefined();
+    expect(timed.rightStartOrientation).toBe("in");
+
+    state.updateConfig({ propRelationship: "free" });
+    const free = uiConfigToGenerationOptions(state.config, undefined, startEnd);
+    expect(free.leftStartOrientation).toBe("in");
+    expect(free.rightStartOrientation).toBe("in");
+  });
+
   it("sends Free hands when the LOOP rules the hand mode out", () => {
     const state = createGenerationConfigState();
     state.updateConfig({
