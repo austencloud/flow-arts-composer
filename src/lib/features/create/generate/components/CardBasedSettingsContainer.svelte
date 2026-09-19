@@ -74,7 +74,7 @@ Delegates ALL logic to services (SRP compliant)
   import WordInputCard from "./cards/WordInputCard.svelte";
   import PresetCard from "./cards/PresetCard.svelte";
   import type { FavoriteState } from "../state/favorite-state.svelte";
-  import type { HandRelationship } from "$lib/shared/create/domain/hand-relationship";
+  import type { TnDSelection } from "$lib/shared/create/domain/hand-relationship";
   import type {
     CommunitySetup,
     SavedGeneratorSetup,
@@ -515,16 +515,16 @@ Delegates ALL logic to services (SRP compliant)
     updateConfig({ motionTypeFilter: v === "mixed" ? null : v });
   }
 
-  function handleHandRelationshipChange(v: HandRelationship) {
-    updateConfig({ handRelationship: v });
+  function handleHandRelationshipChange(value: TnDSelection) {
+    updateConfig({ handRelationship: value });
   }
 
-  function handleHandRelationshipInvertedChange(v: boolean) {
-    updateConfig({ handRelationshipInverted: v });
+  function handlePropRelationshipChange(value: TnDSelection) {
+    updateConfig({ propRelationship: value });
   }
 
-  function handleMatchHandTurnsChange(v: boolean) {
-    updateConfig({ matchHandTurns: v });
+  function handleMatchHandTurnsChange(value: boolean) {
+    updateConfig({ matchHandTurns: value });
   }
 
   // LOOP toggle handler
@@ -602,7 +602,7 @@ Delegates ALL logic to services (SRP compliant)
         handleHandPathModeChange,
         handleMotionTypeFilterChange,
         handleHandRelationshipChange,
-        handleHandRelationshipInvertedChange,
+        handlePropRelationshipChange,
         handleMatchHandTurnsChange,
         handleDurationTemplateSelect,
         handleLoopToggle,

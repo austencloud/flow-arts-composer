@@ -163,12 +163,6 @@
       constraintPreset={customize.constraintPreset}
       handPathMode={customize.handPathMode}
       motionTypeFilter={customize.motionTypeFilter}
-      handRelationship={customize.handRelationship}
-      handRelationshipInverted={customize.handRelationshipInverted}
-      onHandRelationshipChange={customize.onHandRelationshipChange}
-      onHandRelationshipInvertedChange={customize.onHandRelationshipInvertedChange}
-      matchHandTurns={customize.matchHandTurns}
-      onMatchHandTurnsChange={customize.onMatchHandTurnsChange}
       startEndOptions={customize.startEndOptions}
       level={customize.level}
       gridMode={customize.gridMode}

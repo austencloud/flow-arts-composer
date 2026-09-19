@@ -228,13 +228,6 @@ export function buildCardDescriptors(
         onConstraintPresetChange: handlers.handleConstraintPresetChange,
         onHandPathModeChange: handlers.handleHandPathModeChange,
         onMotionTypeFilterChange: handlers.handleMotionTypeFilterChange,
-        handRelationship: config.handRelationship,
-        handRelationshipInverted: config.handRelationshipInverted,
-        matchHandTurns: config.matchHandTurns,
-        onHandRelationshipChange: handlers.handleHandRelationshipChange ?? null,
-        onHandRelationshipInvertedChange:
-          handlers.handleHandRelationshipInvertedChange ?? null,
-        onMatchHandTurnsChange: handlers.handleMatchHandTurnsChange ?? null,
         onStartEndChange: hasStartEnd ? handlers.handleStartEndChange : null,
         onResetAll: handlers.handleResetAll ?? null,
         cardIndex: cardIndex++,
