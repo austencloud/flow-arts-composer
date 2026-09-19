@@ -423,12 +423,11 @@ export interface BuildOptions {
    * static step carrying turns is a real figure, and a turn pattern that calls
    * for one cannot be built without this.
    *
-   * Defaults to on for a turn pattern, a layer target, or a hand-relationship
-   * LOOP that excludes dashes and can carry turns. Those LOOPs may need a
-   * stationary-hand step to reach the closing placement. Set it explicitly to
-   * override either way. Even when on, a
-   * static step still has to clear Type6Constraint, which refuses level 1
-   * outright and refuses any step whose hands both sit at zero turns.
+   * On by default. A static step still has to clear Type6Constraint, which
+   * refuses level 1 outright and refuses any step whose hands both sit at zero
+   * turns — so a still never gets built and nothing has to be configured to
+   * prevent one. Set this to false to keep statics out of a sequence that
+   * could otherwise carry one.
    */
   allowStaticSteps?: boolean;
 
@@ -1208,7 +1207,7 @@ export class SequenceBuilder {
     // Uses the same static-letter gate as BeamSearch, and must: reachability
     // decides which placements are worth visiting at each step, so excluding
     // static letters here would prune the paths to them before the beam ever
-    // offered one.
+    // offered one. The gate is open unless the caller closed it.
     const allVariationsForReach = this.variationProvider.getAllVariations(
       options.gridMode
     );
@@ -1270,7 +1269,8 @@ export class SequenceBuilder {
       let requiredEndPlacements: Set<string> | undefined;
       let loopPlacementMap: Record<string, string[]> | undefined;
       const loopTarget = lengthLoopTargets?.[attempt];
-      const attemptStartPlacement = loopTarget?.start ?? effectiveStartPlacement;
+      const attemptStartPlacement =
+        loopTarget?.start ?? effectiveStartPlacement;
 
       if (loopTarget) {
         requiredEndPlacements = loopTarget.requiredEnds;
@@ -1635,26 +1635,17 @@ export class SequenceBuilder {
    * path without breaking the requested hand relationship. Undirected
    * generation keeps its moving-hand default; an explicit value always wins.
    */
+  /**
+   * Statics are offered by default. The rule that keeps them honest is
+   * Type6Constraint, not this: it refuses level 1 outright and refuses any
+   * step whose hands both sit at zero turns, which is the only case the old
+   * defaults were ever standing in for. Turn intensity zero therefore rules
+   * them out on its own, with nothing to configure. A caller can still say
+   * `allowStaticSteps: false` to keep them out of a sequence that could
+   * otherwise carry one.
+   */
   private resolveAllowStaticSteps(options: BuildOptions): boolean {
-    const motionFamily =
-      options.constraintOptions?.motionFamily ??
-      (options.constraintPreset
-        ? getPresetOptions(options.constraintPreset)?.motionFamily
-        : undefined);
-    const constrainedLoopWithTurns =
-      options.loop &&
-      options.constraintOptions?.handRelationship &&
-      motionFamily?.exclude?.includes("dash") &&
-      options.level > 1 &&
-      options.maxTurnIntensity !== 0;
-    return (
-      options.allowStaticSteps ??
-      Boolean(
-        options.turnPattern ||
-        options.targetLayerPattern ||
-        constrainedLoopWithTurns
-      )
-    );
+    return options.allowStaticSteps ?? true;
   }
 
   private resolveEffectivePropContinuity(
