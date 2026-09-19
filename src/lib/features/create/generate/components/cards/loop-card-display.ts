@@ -21,7 +21,7 @@ import {
   resolveLoopConfig,
 } from "$lib/shared/create/services/loop-type-utils";
 import type { ReflectionAxis } from "@tka/sequence-engine/loop";
-import type { HandRelationship } from "$lib/shared/create/domain/hand-relationship";
+import type { TnDSelection } from "$lib/shared/create/domain/hand-relationship";
 
 export interface LoopCardDisplayInput {
   loopEnabled: boolean;
@@ -32,7 +32,7 @@ export interface LoopCardDisplayInput {
   inversionMode?: "expand" | "overlay";
   reflectionAxis?: ReflectionAxis;
   /** Mirrored and Flipped hands coerce quartered rotation and diagonal axes. */
-  handRelationship?: HandRelationship;
+  handRelationship?: TnDSelection;
 }
 
 export interface LoopCardDisplay {
@@ -129,12 +129,16 @@ export function buildLoopCardDisplay(
   // resolveLoopConfig is the period gate: a persisted quartered value on a
   // LOOP without rotation comes back halved, so the card can't show the
   // 90° spin glyph for a 180° loop.
-  const resolved = resolveLoopConfig(input.loopType, input.period as string | undefined, {
-    inversionInterval: input.inversionInterval,
-    inversionMode: input.inversionMode,
-    reflectionAxis: input.reflectionAxis,
-    handRelationship: input.handRelationship,
-  });
+  const resolved = resolveLoopConfig(
+    input.loopType,
+    input.period as string | undefined,
+    {
+      inversionInterval: input.inversionInterval,
+      inversionMode: input.inversionMode,
+      reflectionAxis: input.reflectionAxis,
+      handRelationship: input.handRelationship,
+    }
+  );
 
   const effectiveAxis = resolveEffectiveAxis(
     selectedComponents,
@@ -154,7 +158,10 @@ export function buildLoopCardDisplay(
 
   return {
     selectedComponents,
-    iconComponents: normalizeReflectionForIcons(selectedComponents, effectiveAxis),
+    iconComponents: normalizeReflectionForIcons(
+      selectedComponents,
+      effectiveAxis
+    ),
     overlayComponents:
       inverts && resolved.loopRhythm.inversionMode === "overlay"
         ? new Set([LOOPComponent.INVERTED])
@@ -176,9 +183,12 @@ export function buildLoopCardDisplay(
  */
 export function describeLoopRhythm(display: LoopCardDisplay): string {
   const parts: string[] = [];
-  if (display.rotationPeriod === Period.QUARTERED) parts.push("quartered rotation");
-  else if (display.rotationPeriod === Period.HALVED) parts.push("halved rotation");
-  if (display.inversionPeriod === Period.QUARTERED) parts.push("quartered inversion");
+  if (display.rotationPeriod === Period.QUARTERED)
+    parts.push("quartered rotation");
+  else if (display.rotationPeriod === Period.HALVED)
+    parts.push("halved rotation");
+  if (display.inversionPeriod === Period.QUARTERED)
+    parts.push("quartered inversion");
   if (display.overlayComponents.has(LOOPComponent.INVERTED)) {
     parts.push("overlay inversion");
   }

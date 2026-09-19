@@ -21,15 +21,18 @@ import {
   PropContinuity,
 } from "$lib/shared/foundation/domain/models/generation/generate-models";
 import type { StartEndOptions } from "$lib/shared/create/state/panel-coordination-state.svelte";
-import { resolveLoopConfig } from "$lib/shared/create/services/loop-type-utils";
+import {
+  loopBlocksHandMode,
+  resolveLoopConfig,
+} from "$lib/shared/create/services/loop-type-utils";
 import type { ReflectionAxis } from "@tka/sequence-engine/loop";
 import type {
   GenerationMotionTypeFilter,
   GenerationStyleAxis,
 } from "$lib/shared/create/domain/generation-style";
 import {
-  DEFAULT_HAND_RELATIONSHIP,
-  type HandRelationship,
+  DEFAULT_TND_SELECTION,
+  type TnDSelection,
 } from "$lib/shared/create/domain/hand-relationship";
 
 /**
@@ -117,9 +120,9 @@ export interface UIGenerationConfig {
   handPathMode: GenerationStyleAxis; // Hand path reversal frequency
   motionTypeFilter: GenerationMotionTypeFilter; // Dash frequency ("mixed" = null)
 
-  // Hand relationship (Generate only, not part of GenerationStylePolicy)
-  handRelationship: HandRelationship;
-  handRelationshipInverted: boolean;
+  // Timing and direction (Generate only, not part of GenerationStylePolicy)
+  handRelationship: TnDSelection;
+  propRelationship: TnDSelection;
   matchHandTurns: boolean;
 
   // Duration rhythm template (applied automatically after generation)
@@ -127,6 +130,18 @@ export interface UIGenerationConfig {
 
   // Spell mode length override (null = use natural expanded length)
   spellTargetLength: number | null;
+}
+
+/**
+ * A hand mode the current LOOP cannot run under (a QS persisted before the
+ * LOOP was switched to mirrored, for instance) reaches the engine as Free
+ * rather than as a contradiction. The TnD panel disables the same modes, so
+ * this only fires for configs saved before the LOOP changed.
+ */
+function engineHandMode(uiConfig: UIGenerationConfig): TnDSelection {
+  const hand = uiConfig.handRelationship ?? DEFAULT_TND_SELECTION;
+  const loopType = uiConfig.loopEnabled ? uiConfig.loopType : null;
+  return loopBlocksHandMode(loopType, hand) ? "free" : hand;
 }
 
 /**
@@ -194,12 +209,17 @@ export function uiConfigToGenerationOptions(
     constraintPreset: uiConfig.constraintPreset ?? undefined,
     handPathMode: uiConfig.handPathMode ?? undefined,
     motionTypeFilter: uiConfig.motionTypeFilter ?? undefined,
-    handRelationship: uiConfig.handRelationship ?? DEFAULT_HAND_RELATIONSHIP,
-    handRelationshipInverted: uiConfig.handRelationshipInverted ?? false,
-    matchHandTurns: uiConfig.matchHandTurns ?? false,
+    handRelationship: engineHandMode(uiConfig),
+    propRelationship: uiConfig.propRelationship ?? DEFAULT_TND_SELECTION,
+    // A prop timing only means something when both hands take the same
+    // turns, so a prop mode forces matched turns.
+    matchHandTurns:
+      (uiConfig.matchHandTurns ?? false) ||
+      (uiConfig.propRelationship ?? DEFAULT_TND_SELECTION) !== "free",
 
     // Include start/end options if provided
-    blockedStartPlacements: startEndOptions?.blockedStartPlacements ?? undefined,
+    blockedStartPlacements:
+      startEndOptions?.blockedStartPlacements ?? undefined,
     startPlacement: startEndOptions?.startPlacement ?? undefined,
     endPlacement: startEndOptions?.endPlacement ?? undefined,
     endPlacements: startEndOptions?.endPlacements ?? undefined,
@@ -243,8 +263,8 @@ export function generationOptionsToUIConfig(
     constraintPreset,
     handPathMode: options.handPathMode ?? "mixed",
     motionTypeFilter: options.motionTypeFilter ?? null,
-    handRelationship: options.handRelationship ?? DEFAULT_HAND_RELATIONSHIP,
-    handRelationshipInverted: options.handRelationshipInverted ?? false,
+    handRelationship: options.handRelationship ?? DEFAULT_TND_SELECTION,
+    propRelationship: options.propRelationship ?? DEFAULT_TND_SELECTION,
     matchHandTurns: options.matchHandTurns ?? false,
     durationTemplateId: null,
     spellTargetLength: null,

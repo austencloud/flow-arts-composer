@@ -267,7 +267,7 @@ Card-based architecture with integrated Generate button:
       cur.handPathMode !== last.handPathMode ||
       cur.motionTypeFilter !== last.motionTypeFilter ||
       cur.handRelationship !== last.handRelationship ||
-      cur.handRelationshipInverted !== last.handRelationshipInverted ||
+      cur.propRelationship !== last.propRelationship ||
       cur.matchHandTurns !== last.matchHandTurns
     );
   });

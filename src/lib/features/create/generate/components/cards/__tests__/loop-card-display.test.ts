@@ -65,7 +65,7 @@ describe("buildLoopCardDisplay — rotation period", () => {
       loopEnabled: true,
       loopType: LOOPType.ROTATED,
       period: Period.QUARTERED,
-      handRelationship: "mirrored",
+      handRelationship: "TO",
     });
     expect(display.rotationPeriod).toBe(Period.HALVED);
   });
@@ -75,7 +75,7 @@ describe("buildLoopCardDisplay — rotation period", () => {
       loopEnabled: true,
       loopType: LOOPType.ROTATED,
       period: Period.QUARTERED,
-      handRelationship: "unison",
+      handRelationship: "TS",
     });
     expect(display.rotationPeriod).toBe(Period.QUARTERED);
   });
@@ -234,8 +234,7 @@ describe("card-configurator LOOP descriptor", () => {
     constraintPreset: "smooth",
     handPathMode: "mixed",
     motionTypeFilter: null,
-    handRelationship: "flipped",
-    handRelationshipInverted: false,
+    handRelationship: "SO",
     matchHandTurns: false,
     durationTemplateId: null,
     spellTargetLength: null,
@@ -270,7 +269,7 @@ describe("card-configurator LOOP descriptor", () => {
       inversionInterval: 4,
       inversionMode: "overlay",
       reflectionAxis: "east-west",
-      handRelationship: "flipped",
+      handRelationship: "SO",
     });
   });
 

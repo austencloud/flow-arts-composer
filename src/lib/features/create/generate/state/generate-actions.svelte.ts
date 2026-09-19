@@ -408,6 +408,8 @@ export function createGenerationActionsState(
         !!config &&
         ((config.handRelationship != null &&
           config.handRelationship !== "free") ||
+          (config.propRelationship != null &&
+            config.propRelationship !== "free") ||
           config.matchHandTurns === true);
       const generationOptions: GenerationOptions = config
         ? {
