@@ -14,14 +14,17 @@
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { GenerationOptions } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import {
-  GenerationMode,
-} from "$lib/shared/foundation/domain/models/generation/generate-models";
+import { GenerationMode } from "$lib/shared/foundation/domain/models/generation/generate-models";
 import type { sequenceMetadataManager as SequenceMetadataManagerSingleton } from "$lib/shared/create/services/sequence-metadata-manager";
 type SequenceMetadataManager = typeof SequenceMetadataManagerSingleton;
 import { SequenceBuilder } from "@tka/sequence-engine/generation";
 import type { ConstraintOptions } from "@tka/sequence-engine/generation";
-import { LOOPType, Period as EnginePeriod, loopSpecFromWire } from "@tka/sequence-engine/loop";
+import {
+  LOOPType,
+  Period as EnginePeriod,
+  loopSpecFromWire,
+  type ReflectionAxis,
+} from "@tka/sequence-engine/loop";
 import {
   TransitionGraph as EngineTransitionGraph,
   setLetterTransitionGraph,
@@ -29,8 +32,18 @@ import {
 } from "@tka/sequence-engine";
 import { BrowserDataProvider } from "$lib/shared/sequence-engine/data/browser-data-provider";
 import { letterQueryHandler as globalLetterQueryHandler } from "$lib/shared/pictograph/tka-glyph/services/letter-query-handler";
-import { expanderMultiplier, specHasExpandInversion } from "$lib/shared/create/services/loop-type-utils";
-import { handRelationshipToEngine } from "$lib/shared/create/domain/hand-relationship";
+import {
+  expanderMultiplier,
+  parseLoopComponents,
+  specHasExpandInversion,
+} from "$lib/shared/create/services/loop-type-utils";
+import {
+  handModeToEngine,
+  propModeToEngine,
+} from "$lib/shared/create/domain/hand-relationship";
+import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+import { getGridLocationsFromPlacement } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
+import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 
 // The engine's word-based generation path reads from a global transition
 // graph singleton (mirrors mcp-server/src/shared/server-context.ts which
@@ -44,11 +57,13 @@ function ensureEngineTransitionGraph(): Promise<void> {
 
   engineTransitionGraphPromise = (async () => {
     const dataProvider = new BrowserDataProvider(globalLetterQueryHandler);
-     
+
     // BrowserDataProvider structurally matches the engine's SequenceDataProvider;
     // the nominal type mismatch comes from two separate type declarations that
     // will be reconciled when the app's shim is retired.
-    const graph = new EngineTransitionGraph(dataProvider as unknown as ISequenceDataProvider);
+    const graph = new EngineTransitionGraph(
+      dataProvider as unknown as ISequenceDataProvider
+    );
     await graph.initialize();
     setLetterTransitionGraph(graph);
   })();
@@ -95,6 +110,39 @@ function resolveStartPlacement(options: GenerationOptions): string | undefined {
   return options.startPlacement?.startPlacement
     ? String(options.startPlacement.startPlacement)
     : undefined;
+}
+
+/**
+ * Grid locations of the pinned start, or null when the start is free or the
+ * placement is not one the grid knows. handModeToEngine uses them to pick
+ * the quarter sense that fits the start.
+ */
+function startLocations(
+  options: GenerationOptions
+): { left: string; right: string } | null {
+  const placement = resolveStartPlacement(options);
+  if (!placement) return null;
+  try {
+    const [left, right] = getGridLocationsFromPlacement(
+      placement as GridPlacement
+    );
+    return { left, right };
+  } catch {
+    return null;
+  }
+}
+
+/** The reflection axis of a mirrored or flipped LOOP, or null. */
+function loopReflectionAxis(options: GenerationOptions): ReflectionAxis | null {
+  if (options.mode !== GenerationMode.CIRCULAR) return null;
+  const components = parseLoopComponents(options.loopType);
+  if (
+    !components.has(LOOPComponent.MIRRORED) &&
+    !components.has(LOOPComponent.FLIPPED)
+  ) {
+    return null;
+  }
+  return options.loopRhythm?.reflectionAxis ?? null;
 }
 
 export class GenerationOrchestrator {
@@ -195,7 +243,12 @@ export class GenerationOrchestrator {
 
     const seedLength = Math.max(1, Math.floor(options.length / multiplier));
 
-    if (!options.word && wire && specHasExpandInversion(wire) && seedLength < 2) {
+    if (
+      !options.word &&
+      wire &&
+      specHasExpandInversion(wire) &&
+      seedLength < 2
+    ) {
       throw new Error(
         "Seed too short for an inversion combo. One-step half seeds are dash-only, so inversion would be invisible."
       );
@@ -221,9 +274,7 @@ export class GenerationOrchestrator {
         period,
         useTargetedGeneration: true,
         ...(wire ? { loopSpec: loopSpecFromWire(wire) } : {}),
-        ...(!options.word
-          ? { requestedTotalLength: options.length }
-          : {}),
+        ...(!options.word ? { requestedTotalLength: options.length } : {}),
       },
     });
 
@@ -278,15 +329,24 @@ export class GenerationOrchestrator {
       result.dashPreference = "maximize";
     }
 
-    // Hand relationship: a hard per-step constraint, passed straight through.
-    // Anything added to GenerationOptions has to be threaded here or it does
-    // nothing (see the endPlacements note at the top of this file).
-    const relationship = handRelationshipToEngine(
+    // Hand and prop timing/direction: hard per-step constraints. Anything
+    // added to GenerationOptions has to be threaded here or it does nothing
+    // (see the endPlacements note at the top of this file).
+    const prop = options.propRelationship ?? "free";
+    const propRelationship = propModeToEngine(prop);
+    if (propRelationship) {
+      result.propRelationship = propRelationship;
+    }
+    const handRelationship = handModeToEngine(
       options.handRelationship ?? "free",
-      options.handRelationshipInverted ?? false
+      {
+        prop,
+        loopAxis: loopReflectionAxis(options),
+        startLocations: startLocations(options),
+      }
     );
-    if (relationship) {
-      result.handRelationship = relationship;
+    if (handRelationship) {
+      result.handRelationship = handRelationship;
     }
 
     return result;
@@ -298,9 +358,7 @@ export class GenerationOrchestrator {
    * The two enums share most string values. The main difference is the
    * app uses "strict_rewound" while the engine uses "rewound".
    */
-  private mapLoopTypeToEngine(
-    appLoopType?: string
-  ): LOOPType {
+  private mapLoopTypeToEngine(appLoopType?: string): LOOPType {
     if (!appLoopType) return LOOPType.ROTATED;
 
     // Handle the naming difference for rewound
@@ -309,9 +367,7 @@ export class GenerationOrchestrator {
     }
 
     // All other values match between app and engine enums
-    const engineType = Object.values(LOOPType).find(
-      (v) => v === appLoopType
-    );
+    const engineType = Object.values(LOOPType).find((v) => v === appLoopType);
     return engineType ?? LOOPType.ROTATED;
   }
 

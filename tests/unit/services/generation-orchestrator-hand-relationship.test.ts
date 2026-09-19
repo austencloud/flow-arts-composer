@@ -1,15 +1,18 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Same stub pattern as generation-orchestrator-loopspec.test.ts: only the
-// generation subpath is mocked so we can read what reaches build().
+// Only SequenceBuilder is stubbed so the test can read what reaches build().
+// Everything else on the generation subpath (the location maps
+// handModeToEngine reads) is the real engine.
 const buildMock = vi.fn();
-vi.mock("@tka/sequence-engine/generation", () => {
+vi.mock("@tka/sequence-engine/generation", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@tka/sequence-engine/generation")>();
   class SequenceBuilder {
     build(...args: unknown[]) {
       return buildMock(...args);
     }
   }
-  return { SequenceBuilder };
+  return { ...actual, SequenceBuilder };
 });
 
 import { GenerationOrchestrator } from "$lib/shared/create/services/generation-orchestrator";
@@ -32,6 +35,15 @@ function baseOptions(overrides: Partial<GenerationOptions>): GenerationOptions {
   };
 }
 
+function circular(overrides: Partial<GenerationOptions>): GenerationOptions {
+  return baseOptions({
+    mode: GenerationMode.CIRCULAR,
+    loopType: "mirrored" as never,
+    period: "halved" as never,
+    ...overrides,
+  });
+}
+
 function makeOrchestrator() {
   const stubVariationProvider = {
     initialize: vi.fn().mockResolvedValue(undefined),
@@ -50,40 +62,99 @@ function makeOrchestrator() {
   );
 }
 
-describe("GenerationOrchestrator hand relationship", () => {
-  beforeEach(() => buildMock.mockReset());
+function constraintsOf(call = 0) {
+  return buildMock.mock.calls[call]![0].constraintOptions;
+}
 
-  it("passes the relationship to the engine as a constraint option", async () => {
+describe("GenerationOrchestrator timing and direction", () => {
+  beforeEach(() => buildMock.mockReset());
+  afterEach(() => vi.restoreAllMocks());
+
+  it("sends the hand map with the derived inversion and the prop option", async () => {
     await makeOrchestrator().generateSequence(
-      baseOptions({ handRelationship: "mirrored", handRelationshipInverted: true })
+      baseOptions({ handRelationship: "TS", propRelationship: "TO" })
     );
-    const callArg = buildMock.mock.calls[0]![0];
-    expect(callArg.constraintOptions.handRelationship).toEqual({
-      map: "reflect-north-south",
+    expect(constraintsOf().handRelationship).toEqual({
+      map: "identity",
       inverted: true,
+    });
+    expect(constraintsOf().propRelationship).toEqual({
+      direction: "opp",
+      timing: "tog",
     });
   });
 
-  it("sends nothing for Free or when the field is absent", async () => {
+  it("sends nothing for Free or when the fields are absent", async () => {
     const orchestrator = makeOrchestrator();
-    await orchestrator.generateSequence(baseOptions({ handRelationship: "free" }));
+    await orchestrator.generateSequence(
+      baseOptions({ handRelationship: "free", propRelationship: "free" })
+    );
     await orchestrator.generateSequence(baseOptions({}));
     expect(buildMock.mock.calls).toHaveLength(2);
-    for (const call of buildMock.mock.calls) {
-      expect(call[0].constraintOptions.handRelationship).toBeUndefined();
+    for (const call of [0, 1]) {
+      expect(constraintsOf(call).handRelationship).toBeUndefined();
+      expect(constraintsOf(call).propRelationship).toBeUndefined();
     }
+  });
+
+  it("picks the quarter sense from a pinned start", async () => {
+    const orchestrator = makeOrchestrator();
+    await orchestrator.generateSequence(
+      baseOptions({
+        handRelationship: "QS",
+        startPlacementId: "gamma9" as never,
+      })
+    );
+    await orchestrator.generateSequence(
+      baseOptions({
+        handRelationship: "QS",
+        startPlacementId: "gamma1" as never,
+      })
+    );
+    expect(constraintsOf(0).handRelationship).toEqual({
+      map: "rotate-90-cw",
+      inverted: false,
+    });
+    expect(constraintsOf(1).handRelationship).toEqual({
+      map: "rotate-90-ccw",
+      inverted: false,
+    });
+  });
+
+  it("follows a diagonal reflection LOOP axis for QO", async () => {
+    await makeOrchestrator().generateSequence(
+      circular({
+        handRelationship: "QO",
+        loopRhythm: {
+          rotationInterval: 2,
+          inversionInterval: 2,
+          inversionMode: "expand",
+          reflectionAxis: "northwest-southeast",
+        } as never,
+      })
+    );
+    expect(constraintsOf().handRelationship).toEqual({
+      map: "reflect-northwest-southeast",
+      inverted: false,
+    });
+  });
+
+  it("rolls a quarter sense when nothing pins it", async () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    await makeOrchestrator().generateSequence(
+      baseOptions({ handRelationship: "QS" })
+    );
+    expect(constraintsOf().handRelationship).toEqual({
+      map: "rotate-90-ccw",
+      inverted: false,
+    });
   });
 
   it("passes matchHandTurns to the builder on both paths", async () => {
     const orchestrator = makeOrchestrator();
     await orchestrator.generateSequence(baseOptions({ matchHandTurns: true }));
     await orchestrator.generateSequence(
-      baseOptions({
-        mode: GenerationMode.CIRCULAR,
-        loopType: "rotated" as never,
-        period: "halved" as never,
-        matchHandTurns: true,
-      })
+      circular({ loopType: "rotated" as never, matchHandTurns: true })
     );
     await orchestrator.generateSequence(baseOptions({}));
     expect(buildMock.mock.calls[0]![0].matchHandTurns).toBe(true);
@@ -93,18 +164,15 @@ describe("GenerationOrchestrator hand relationship", () => {
 
   it("also reaches the circular path", async () => {
     await makeOrchestrator().generateSequence(
-      baseOptions({
-        mode: GenerationMode.CIRCULAR,
-        loopType: "rotated" as never,
-        period: "halved" as never,
-        handRelationship: "unison",
-        handRelationshipInverted: false,
-      })
+      circular({ handRelationship: "TS", propRelationship: "SS" })
     );
-    const callArg = buildMock.mock.calls[0]![0];
-    expect(callArg.constraintOptions.handRelationship).toEqual({
+    expect(constraintsOf().handRelationship).toEqual({
       map: "identity",
       inverted: false,
+    });
+    expect(constraintsOf().propRelationship).toEqual({
+      direction: "same",
+      timing: "split",
     });
   });
 });
