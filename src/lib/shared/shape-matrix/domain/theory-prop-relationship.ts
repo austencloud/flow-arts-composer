@@ -10,13 +10,10 @@
  * The Matrix reads that off a realized sequence's start orientations. A theory
  * ratio has no sequence, which is the whole reason the surface exists, so the
  * bearings come from the same QfT knobs the animation runs on. The three cases
- * and their thresholds stay in `prop-relationship.ts`; this module only says
- * where the bearings come from.
+ * and their thresholds live in the engine behind `propTimingBetween`; this
+ * module only says where the bearings come from.
  */
-import {
-  propTimingBetween,
-  type PropRelationship,
-} from "./prop-relationship";
+import { propTimingBetween, type PropRelationship } from "./prop-relationship";
 import { TND_BY_FAMILY } from "$lib/features/choreo-card/domain/tnd-element";
 import { propRateForKnobs, angleOf } from "$lib/shared/notation/qft/qft-model";
 import { theoryKnobs, type TheoryFlower } from "./theory-flower";
@@ -61,7 +58,8 @@ export function theoryPropRelationship(
   // angle they hold throughout.
   const timing = propTimingBetween(
     angleOf((left.handPhase ?? 0) + (left.phase ?? 0)),
-    angleOf((right.handPhase ?? 0) + (right.phase ?? 0))
+    angleOf((right.handPhase ?? 0) + (right.phase ?? 0)),
+    direction
   );
   const element = TND_BY_FAMILY[`${timing}-${direction}`];
   if (!element) {
