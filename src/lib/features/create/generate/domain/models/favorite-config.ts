@@ -1,22 +1,6 @@
 import type { UIGenerationConfig } from "../../state/generate-config.svelte";
 import type { StartEndOptions } from "$lib/shared/create/state/panel-coordination-state.svelte";
 
-export interface FavoriteConfig {
-  sourceSetupId?: string;
-  config: UIGenerationConfig;
-  startEndOptions?: StartEndOptions | null;
-  setAt: Date;
-}
-
-export interface CommunityFavorite {
-  userId: string;
-  displayName: string;
-  avatar?: string;
-  config: UIGenerationConfig;
-  startEndOptions?: StartEndOptions | null;
-  setAt: Date;
-}
-
 export interface SavedGeneratorSetup {
   id: string;
   name: string;
@@ -26,11 +10,16 @@ export interface SavedGeneratorSetup {
   updatedAt: Date;
 }
 
-export interface SharedGeneratorFavorite {
-  sourceSetupId: string;
+/** A public setup from any account, as the Community tab shows it. */
+export interface CommunitySetup {
+  setupId: string;
+  userId: string;
+  displayName: string;
+  avatar?: string;
+  name: string;
   config: UIGenerationConfig;
   startEndOptions: StartEndOptions | null;
-  setAt: Date;
+  createdAt: Date;
 }
 
 export interface SavedSetupDraft {
@@ -39,19 +28,10 @@ export interface SavedSetupDraft {
   startEndOptions: StartEndOptions | null;
 }
 
-export interface PersonalSetupSnapshot {
-  setups: SavedGeneratorSetup[];
-  sharedSetupId: string | null;
-}
-
 export type ActiveSetupSource =
   | { kind: "setup"; setupId: string }
-  | { kind: "community"; userId: string };
+  | { kind: "community"; userId: string; setupId: string };
 
 export type PendingSetupAction =
   | { kind: "create" }
-  | {
-      kind: "rename" | "update" | "share" | "delete";
-      setupId: string;
-    }
-  | { kind: "unshare" };
+  | { kind: "rename" | "update" | "delete"; setupId: string };

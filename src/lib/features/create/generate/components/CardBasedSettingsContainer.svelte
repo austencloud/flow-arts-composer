@@ -76,7 +76,7 @@ Delegates ALL logic to services (SRP compliant)
   import type { FavoriteState } from "../state/favorite-state.svelte";
   import type { HandRelationship } from "$lib/shared/create/domain/hand-relationship";
   import type {
-    CommunityFavorite,
+    CommunitySetup,
     SavedGeneratorSetup,
   } from "../domain/models/favorite-config";
 
@@ -642,10 +642,11 @@ Delegates ALL logic to services (SRP compliant)
           }
           if (source?.kind === "community") {
             return (
-              favoriteState.communityFavorites.find(
-                (favorite: CommunityFavorite) =>
-                  favorite.userId === source.userId
-              )?.displayName ?? "Browse"
+              favoriteState.communitySetups.find(
+                (setup: CommunitySetup) =>
+                  setup.userId === source.userId &&
+                  setup.setupId === source.setupId
+              )?.name ?? "Community setup"
             );
           }
           return favoriteState.setups.length > 0
