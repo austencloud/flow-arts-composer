@@ -15,6 +15,7 @@ LOOPComponentGrid.svelte - Layout for LOOP component selection buttons
   let {
     selectedComponents,
     disabledComponents = null,
+    disabledReasons = {},
     lockedComponents = null,
     isMultiSelectMode = false,
     layout = "grid",
@@ -27,6 +28,8 @@ LOOPComponentGrid.svelte - Layout for LOOP component selection buttons
     selectedComponents: Set<LOOPComponent>;
     /** Components that can't join the current selection (combo mode gating). */
     disabledComponents?: Set<LOOPComponent> | null;
+    /** Per-component reason for a hand-mode disable, shown on the button. */
+    disabledReasons?: Partial<Record<LOOPComponent, string>>;
     /** Guest-gated components — still clickable, but route to sign-up. */
     lockedComponents?: Set<LOOPComponent> | null;
     isMultiSelectMode?: boolean;
@@ -99,6 +102,7 @@ LOOPComponentGrid.svelte - Layout for LOOP component selection buttons
       {compactOnMobile}
       isSelected={selectedComponents.has(componentInfo.component)}
       isDisabled={disabledComponents?.has(componentInfo.component) ?? false}
+      disabledReason={disabledReasons[componentInfo.component]}
       isLocked={lockedComponents?.has(componentInfo.component) ?? false}
       showDescription={showDescriptions}
       isExpanded={isComponentExpanded(componentInfo.component)}

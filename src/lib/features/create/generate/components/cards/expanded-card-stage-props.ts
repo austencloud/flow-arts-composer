@@ -17,6 +17,7 @@ export type LoopStageProps = Pick<
   | "onLoopDisable"
   | "guestMaxLength"
   | "onRequestSignup"
+  | "handRelationship"
 >;
 
 export type SetupsStageProps = Omit<

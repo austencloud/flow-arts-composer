@@ -190,6 +190,7 @@
       onRhythmChange={loop.onRhythmChange}
       guestMaxLength={loop.guestMaxLength}
       onRequestSignup={loop.onRequestSignup}
+      handRelationship={loop.handRelationship}
       layout="responsive"
       {titleId}
     />

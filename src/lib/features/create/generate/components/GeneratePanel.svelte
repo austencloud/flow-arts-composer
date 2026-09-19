@@ -364,6 +364,7 @@ Card-based architecture with integrated Generate button:
                     : "north-south"),
               },
               sequenceLength: configState.config.length,
+              handRelationship: configState.config.handRelationship,
               guestMaxLength: guestLoopMaxLength,
               onLoopDisable: () => {
                 morphGenerateCard("loop", () => panelState.closeLOOPPanel());
