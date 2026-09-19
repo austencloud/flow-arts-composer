@@ -185,7 +185,7 @@ export interface CustomizeOverlayProps {
 }
 
 /** The generate bento cards that grow into their workspace. */
-export type GenerateCardPanelId = "customize" | "loop" | "preset";
+export type GenerateCardPanelId = "customize" | "loop" | "preset" | "tnd";
 
 export interface PanelCoordinationState {
   // Choose Start picker state. The handler receives the tapped tile index:
@@ -320,7 +320,7 @@ export interface PanelCoordinationState {
 
   /**
    * Which generate bento card is grown into its workspace, or null. At most
-   * one of the three (later four) is open because every open call runs
+   * one of the four is open because every open call runs
    * closeAllPanels first. ExpandedCardStage renders from this.
    */
   get openGenerateCard(): GenerateCardPanelId | null;
@@ -338,6 +338,11 @@ export interface PanelCoordinationState {
 
   openCustomizeOverlay(props: CustomizeOverlayProps): void;
   closeCustomizeOverlay(): void;
+
+  // TnD panel state (Hands, Props, Match turns)
+  get isTnDPanelOpen(): boolean;
+  openTnDPanel(): void;
+  closeTnDPanel(): void;
 
   // Duration Preview Mode State (for live preview in duration pattern drawer)
   get isDurationPreviewMode(): boolean;
@@ -546,6 +551,9 @@ export function createPanelCoordinationState(): PanelCoordinationState {
   // Preset drawer state
   let isPresetDrawerOpen = $state(false);
 
+  // TnD panel state
+  let isTnDPanelOpen = $state(false);
+
   // Customize overlay state (Style + Rhythm + Start/End in one overlay)
   let isCustomizeOverlayOpen = $state(false);
   let customizeOverlayProps = $state<CustomizeOverlayProps | null>(null);
@@ -622,6 +630,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
     forgetCustomizeOverlay();
 
     isPresetDrawerOpen = false;
+    isTnDPanelOpen = false;
 
     isSequenceViewerOpen = false;
     optionAudition = null;
@@ -663,6 +672,10 @@ export function createPanelCoordinationState(): PanelCoordinationState {
 
   function closePresetDrawer() {
     isPresetDrawerOpen = false;
+  }
+
+  function closeTnDPanel() {
+    isTnDPanelOpen = false;
   }
 
   return {
@@ -1046,6 +1059,18 @@ export function createPanelCoordinationState(): PanelCoordinationState {
 
     closePresetDrawer,
 
+    // TnD Panel Getters
+    get isTnDPanelOpen() {
+      return isTnDPanelOpen;
+    },
+
+    openTnDPanel() {
+      closeAllPanels();
+      isTnDPanelOpen = true;
+    },
+
+    closeTnDPanel,
+
     // Sequence Viewer Getters
     get isSequenceViewerOpen() {
       return isSequenceViewerOpen;
@@ -1078,6 +1103,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
         isLOOPPanelOpen ||
         isCustomizeOverlayOpen ||
         isPresetDrawerOpen ||
+        isTnDPanelOpen ||
         isSequenceViewerOpen
       );
     },
@@ -1086,6 +1112,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
       if (isCustomizeOverlayOpen) return "customize";
       if (isLOOPPanelOpen) return "loop";
       if (isPresetDrawerOpen) return "preset";
+      if (isTnDPanelOpen) return "tnd";
       return null;
     },
 
@@ -1096,6 +1123,8 @@ export function createPanelCoordinationState(): PanelCoordinationState {
         closeLOOPPanel();
       } else if (isPresetDrawerOpen) {
         closePresetDrawer();
+      } else if (isTnDPanelOpen) {
+        closeTnDPanel();
       }
     },
 

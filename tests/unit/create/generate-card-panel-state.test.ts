@@ -54,6 +54,11 @@ describe("openGenerateCard", () => {
     state.openPresetDrawer();
     expect(state.openGenerateCard).toBe("preset");
     expect(state.isLOOPPanelOpen).toBe(false);
+
+    state.openTnDPanel();
+    expect(state.openGenerateCard).toBe("tnd");
+    expect(state.isPresetDrawerOpen).toBe(false);
+    expect(state.isAnyPanelOpen).toBe(true);
   });
 
   it("closeGenerateCard closes whichever card is open", () => {
@@ -73,6 +78,11 @@ describe("openGenerateCard", () => {
     state.closeGenerateCard();
     expect(state.isCustomizeOverlayOpen).toBe(false);
     expect(state.customizeOverlayProps).toBeNull();
+
+    state.openTnDPanel();
+    state.closeGenerateCard();
+    expect(state.isTnDPanelOpen).toBe(false);
+    expect(state.openGenerateCard).toBeNull();
   });
 
   it("closeGenerateCard is a no-op when nothing is open", () => {
