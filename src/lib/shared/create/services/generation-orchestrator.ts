@@ -18,7 +18,10 @@ import { GenerationMode } from "$lib/shared/foundation/domain/models/generation/
 import type { sequenceMetadataManager as SequenceMetadataManagerSingleton } from "$lib/shared/create/services/sequence-metadata-manager";
 type SequenceMetadataManager = typeof SequenceMetadataManagerSingleton;
 import { SequenceBuilder } from "@tka/sequence-engine/generation";
-import type { ConstraintOptions } from "@tka/sequence-engine/generation";
+import type {
+  ConstraintOptions,
+  ConstraintReport,
+} from "@tka/sequence-engine/generation";
 import {
   LOOPType,
   Period as EnginePeriod,
@@ -145,6 +148,15 @@ function loopReflectionAxis(options: GenerationOptions): ReflectionAxis | null {
   return options.loopRhythm?.reflectionAxis ?? null;
 }
 
+/**
+ * Observers a caller can attach to one generation. The engine always returns
+ * its best sequence; the report says how well it met the soft constraints, and
+ * the generate action turns a prop-timing shortfall into a toast.
+ */
+export interface GenerationHooks {
+  onConstraintReport?: (report: ConstraintReport) => void;
+}
+
 export class GenerationOrchestrator {
   constructor(
     private readonly variationProvider: BrowserVariationProvider,
@@ -155,18 +167,22 @@ export class GenerationOrchestrator {
   /**
    * Generate complete sequence - routes to appropriate mode
    */
-  async generateSequence(options: GenerationOptions): Promise<SequenceData> {
+  async generateSequence(
+    options: GenerationOptions,
+    hooks?: GenerationHooks
+  ): Promise<SequenceData> {
     if (options.mode === GenerationMode.CIRCULAR) {
-      return this.generateCircularSequence(options);
+      return this.generateCircularSequence(options, hooks);
     }
-    return this.generateFreeformSequence(options);
+    return this.generateFreeformSequence(options, hooks);
   }
 
   /**
    * Generate a freeform (non-looping) sequence via the shared engine.
    */
   private async generateFreeformSequence(
-    options: GenerationOptions
+    options: GenerationOptions,
+    hooks?: GenerationHooks
   ): Promise<SequenceData> {
     await this.variationProvider.initialize(String(options.gridMode));
     if (options.word) {
@@ -195,6 +211,8 @@ export class GenerationOrchestrator {
       rightStartOrientation: options.rightStartOrientation,
     });
 
+    hooks?.onConstraintReport?.(result.constraintReport);
+
     return this.transformer.convertToSequenceData(result, options);
   }
 
@@ -206,7 +224,8 @@ export class GenerationOrchestrator {
    * produce the full circular sequence.
    */
   private async generateCircularSequence(
-    options: GenerationOptions
+    options: GenerationOptions,
+    hooks?: GenerationHooks
   ): Promise<SequenceData> {
     await this.variationProvider.initialize(String(options.gridMode));
     if (options.word) {
@@ -277,6 +296,8 @@ export class GenerationOrchestrator {
         ...(!options.word ? { requestedTotalLength: options.length } : {}),
       },
     });
+
+    hooks?.onConstraintReport?.(result.constraintReport);
 
     return this.transformer.convertToSequenceData(result, options);
   }

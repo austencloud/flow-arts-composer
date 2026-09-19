@@ -21,6 +21,7 @@ import {
   DifficultyLevel,
   type GenerationOptions,
 } from "$lib/shared/foundation/domain/models/generation/generate-models";
+import { ConstraintType } from "@tka/sequence-engine/generation";
 import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 
@@ -54,7 +55,10 @@ function makeOrchestrator() {
   const stubMetadataManager = {
     mapDifficultyToLevel: vi.fn().mockReturnValue(1),
   };
-  buildMock.mockReturnValue({ sequence: [] });
+  buildMock.mockReturnValue({
+    sequence: [],
+    constraintReport: { score: 1, satisfied: true, details: [] },
+  });
   return new GenerationOrchestrator(
     stubVariationProvider as never,
     stubTransformer as never,
@@ -174,5 +178,30 @@ describe("GenerationOrchestrator timing and direction", () => {
       direction: "same",
       timing: "split",
     });
+  });
+
+  it("hands the constraint report to the caller on both paths", async () => {
+    const report = {
+      score: 0.5,
+      satisfied: false,
+      details: [
+        {
+          constraint: ConstraintType.PROP_RELATIONSHIP,
+          score: 0.5,
+          description: "2 of 4 beats off",
+          mode: "soft" as const,
+        },
+      ],
+    };
+    const onConstraintReport = vi.fn();
+    const orchestrator = makeOrchestrator();
+    buildMock.mockReturnValue({ sequence: [], constraintReport: report });
+    await orchestrator.generateSequence(baseOptions({}), {
+      onConstraintReport,
+    });
+    await orchestrator.generateSequence(circular({}), { onConstraintReport });
+    expect(onConstraintReport).toHaveBeenCalledTimes(2);
+    expect(onConstraintReport).toHaveBeenNthCalledWith(1, report);
+    expect(onConstraintReport).toHaveBeenNthCalledWith(2, report);
   });
 });

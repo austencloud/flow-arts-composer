@@ -51,6 +51,10 @@ import {
 import { authState } from "$lib/shared/auth/state/auth-state.svelte";
 import { AUTH_NUDGE_TEXTS } from "$lib/shared/auth/domain/auth-nudge-trigger";
 import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+import {
+  ConstraintType,
+  type ConstraintReport,
+} from "@tka/sequence-engine/generation";
 import { isPremiumOrAbove } from "$lib/shared/auth/domain/models/user-role";
 import { logSequenceAction } from "$lib/shared/analytics/services/posthog-activity-logger";
 import type { Letter } from "$lib/shared/foundation/domain/models/letter";
@@ -81,6 +85,23 @@ const DASH_LETTERS: Set<string> = new Set([
   "Ψ-",
   "Λ-",
 ]);
+
+export const PROP_CONSTRAINT_SHORTFALL_TEXT =
+  "Props constraint not fully met. Try Free props or another start orientation.";
+
+/**
+ * The engine always returns its best sequence. When the requested prop timing
+ * could not be held on every beat, the report's propRelationship detail scores
+ * below 1; say so once, the same way a LOOP shortfall is surfaced.
+ */
+function reportPropShortfall(report: ConstraintReport | undefined): void {
+  const prop = report?.details.find(
+    (detail) => detail.constraint === ConstraintType.PROP_RELATIONSHIP
+  );
+  if (prop && prop.score < 1) {
+    toast.info(PROP_CONSTRAINT_SHORTFALL_TEXT, 6000);
+  }
+}
 
 export function createGenerationActionsState(
   getSequenceState?: () => SequenceState | undefined,
@@ -173,8 +194,10 @@ export function createGenerationActionsState(
         orchestrationService = generationOrchestrator;
       }
 
-      let generatedSequence =
-        await orchestrationService.generateSequence(options);
+      let generatedSequence = await orchestrationService.generateSequence(
+        options,
+        { onConstraintReport: reportPropShortfall }
+      );
 
       // Apply duration rhythm template if configured
       const config = getConfig?.();
@@ -441,8 +464,10 @@ export function createGenerationActionsState(
         uiConfig: errorContext.uiConfig,
       };
 
-      let generatedSequence =
-        await generationOrchestrator.generateSequence(generationOptions);
+      let generatedSequence = await generationOrchestrator.generateSequence(
+        generationOptions,
+        { onConstraintReport: reportPropShortfall }
+      );
 
       // If LOOP is requested, apply it post-hoc via the bridge-aware extender.
       // This path can add a single bridge letter to make the sequence land at

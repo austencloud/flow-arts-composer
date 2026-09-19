@@ -122,7 +122,8 @@ describe("onSpellGenerate — truncation toast (mirrors onGenerateClicked)", () 
           ...(loopEnabled
             ? { period: "halved", loopSpecWire: expect.any(Object) }
             : {}),
-        })
+        }),
+        expect.objectContaining({ onConstraintReport: expect.any(Function) })
       );
       expect(actions.lastGeneratedSequence?.id).toBe("relationship");
     }
