@@ -44,6 +44,16 @@
   import { AnimationStateManager } from "$lib/shared/animation-engine/services/animation-state-manager";
   import { AnimationLoop } from "$lib/shared/animation-engine/services/animation-loop";
 
+  // Canvas-menu video download (opt-in via `videoDownload`)
+  import { getExportOrchestrator } from "$lib/shared/export-panel/get-export-orchestrator";
+  import { ensureVideoExportOrchestrator } from "$lib/shared/animation-engine/get-video-export-orchestrator";
+  import {
+    removeToast,
+    showToast,
+    toast,
+  } from "$lib/shared/toast/state/toast-state.svelte";
+  import type { ContextMenuEntry } from "$lib/shared/components/context-menu/context-menu-types";
+
   // BPM/Speed conversion constant
   const DEFAULT_BPM = 60;
 
@@ -149,6 +159,7 @@
     hideStepNumbers = false,
     gridVisible = true,
     disableContextMenu = false,
+    videoDownload = false,
     interactive = true,
     hoverHint = "badge",
     cornerToggle = false,
@@ -312,6 +323,12 @@
     /** Suppress the canvas right-click / long-press settings menu so a locked
      *  public embed can't have its prop/effort/BPM changed out from under it. */
     disableContextMenu?: boolean;
+    /** Adds "Download as a video" to the canvas right-click menu, beside the
+     *  GIF item. Opt-in: this player owns the canvas, controller and panel
+     *  state the video pipeline needs, but a gallery tile or a locked public
+     *  hero has no business handing out an MP4 render. Create's workspace
+     *  playback turns it on. */
+    videoDownload?: boolean;
     /** Display-only mode. False strips ALL playback input from the minimal
      *  chrome — no tap-to-toggle, no hover play/pause badge, no progress line —
      *  so a locked hero is a pure continuous loop the visitor can't pause or
@@ -386,6 +403,87 @@
   // Animation state - each player gets its own
   const animationState = createAnimationPanelState();
   let appliedExternalPlaybackMode: PlaybackMode | null = null;
+
+  // Right-click on a <canvas> is a dead gesture: unlike a real <video>, the
+  // browser has no "Save video as..." to offer, so nothing about the animation
+  // says it can leave the page. The GIF item already fills that gap; this adds
+  // the artifact people actually post — the same MP4 the export panel renders,
+  // reached without opening it. This player owns all three things the video
+  // pipeline needs (live canvas, controller, panel state), so it runs the
+  // export itself rather than routing through the drawer.
+  let liveCanvas = $state<HTMLCanvasElement | null>(null);
+  let isVideoExporting = $state(false);
+
+  // Deliberately does NOT gate on playbackController: it is a plain `let`, so a
+  // derived that read it would latch on whatever it saw at first evaluation and
+  // never recompute. Both operands here are reactive and only settle once the
+  // engine has loaded, by which point the controller exists; the action guards
+  // it again anyway.
+  const canDownloadVideo = $derived(
+    videoDownload && !!liveCanvas && !!animationState.sequenceData
+  );
+
+  async function downloadAnimationVideo(): Promise<void> {
+    const canvas = liveCanvas;
+    const controller = playbackController;
+    const seq = animationState.sequenceData;
+    if (isVideoExporting || !canvas || !controller || !seq) return;
+
+    isVideoExporting = true;
+    let progressToastId: string | null = null;
+
+    try {
+      progressToastId = showToast({
+        message: "Rendering video from this animation…",
+        type: "info",
+        duration: 0,
+      });
+
+      // The video orchestrator is registered by whichever surface loaded it
+      // first (usually the export drawer). This player can be the first one
+      // here, so it registers the same lazily-loaded singleton rather than
+      // failing with "orchestrator not available".
+      const exportOrchestrator = getExportOrchestrator();
+      const videoExportOrchestrator = await ensureVideoExportOrchestrator();
+      exportOrchestrator.setVideoOrchestrator(videoExportOrchestrator);
+
+      await exportOrchestrator.export(
+        seq,
+        { format: "animation" },
+        {
+          animationDependencies: {
+            canvas,
+            playbackController: controller,
+            animationState,
+          },
+        }
+      );
+      toast.success("Video downloaded.");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Video export could not finish."
+      );
+    } finally {
+      if (progressToastId) removeToast(progressToastId, "programmatic");
+      isVideoExporting = false;
+    }
+  }
+
+  const videoMenuItems = $derived<ContextMenuEntry[]>(
+    canDownloadVideo
+      ? [
+          {
+            id: "download-animation-video",
+            label: isVideoExporting
+              ? "Rendering video…"
+              : "Download as a video",
+            icon: "fa-file-arrow-down",
+            disabled: isVideoExporting,
+            action: downloadAnimationVideo,
+          },
+        ]
+      : []
+  );
 
   // Track last loaded sequence to prevent re-loading same sequence
   // Also prevents remounts during prop type changes (hot-swap handles those)
@@ -959,6 +1057,8 @@
         {cornerToggle}
         {showScrubberPlaybackControl}
         onInitialized={onCanvasInitialized}
+        onCanvasReady={(canvas) => (liveCanvas = canvas)}
+        extraContextMenuItems={videoMenuItems}
         onProgressBarSeek={scrubbable ? handleSeek : null}
         onProgressBarScrubStart={scrubbable ? handleScrubStart : null}
         onProgressBarScrubEnd={scrubbable ? handleScrubEnd : null}
