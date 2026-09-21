@@ -23,6 +23,7 @@ export type SkewFrameMotionType = "pro" | "anti" | "static" | "dash";
 export type FrameSpacing = "eta" | "zeta";
 export type CrossedPosition = "alpha" | "beta";
 type Travel = 90 | -90;
+type HandTurn = 0 | 90 | -90 | 180;
 
 export interface SkewFrameHand {
   readonly motionType: SkewFrameMotionType;
@@ -96,7 +97,7 @@ export function crossedPosition(
 }
 
 /** Signed hand-path turn, clockwise positive: 0, ±90, 180. Null for 45°/135° arcs. */
-function handTurn(hand: SkewFrameHand): 0 | 90 | -90 | 180 | null {
+function handTurn(hand: SkewFrameHand): HandTurn | null {
   const delta = (ANGLE[hand.endLocation] - ANGLE[hand.startLocation] + 360) % 360;
   if (delta === 0) return 0;
   if (delta === 90) return 90;
@@ -106,7 +107,7 @@ function handTurn(hand: SkewFrameHand): 0 | 90 | -90 | 180 | null {
 }
 
 /** pro/anti shift a quarter, static holds, dash crosses. */
-function motionAgreesWithPath(hand: SkewFrameHand, turn: 0 | 90 | -90 | 180): boolean {
+function motionAgreesWithPath(hand: SkewFrameHand, turn: HandTurn): boolean {
   switch (hand.motionType) {
     case "pro":
     case "anti":
@@ -119,7 +120,7 @@ function motionAgreesWithPath(hand: SkewFrameHand, turn: 0 | 90 | -90 | 180): bo
 }
 
 /** Narrows a hand turn to a travel direction. True only for the ±90 cases. */
-function isTravel(turn: 0 | 90 | -90 | 180): turn is Travel {
+function isTravel(turn: HandTurn): turn is Travel {
   return turn === 90 || turn === -90;
 }
 
@@ -209,6 +210,8 @@ export function classifySkewedFrameLetter(beat: SkewFrameBeat): Letter | null {
   const rightShifts = right.motionType === "pro" || right.motionType === "anti";
 
   if (leftShifts && rightShifts) {
+    // motionAgreesWithPath already forced the turn to +/-90 for a shifting
+    // hand. The guard only narrows the type.
     if (!isTravel(leftTurn)) return null;
     const blueTravel = leftTurn;
     if (leftTurn === rightTurn) {
@@ -220,11 +223,7 @@ export function classifySkewedFrameLetter(beat: SkewFrameBeat): Letter | null {
       return leaderType === "pro" ? Letter.U : Letter.V;
     }
     const crossed = crossedPosition(left.startLocation, right.startLocation, blueTravel);
-    return pickSpin(
-      OPPOSITE_FAMILIES[start][crossed],
-      left.motionType as ShiftMotionType,
-      right.motionType as ShiftMotionType
-    );
+    return pickSpin(OPPOSITE_FAMILIES[start][crossed], left.motionType, right.motionType);
   }
 
   if (leftShifts || rightShifts) {
