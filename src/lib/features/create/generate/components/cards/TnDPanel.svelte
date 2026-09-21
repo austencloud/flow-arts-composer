@@ -159,29 +159,6 @@
     padding: clamp(8px, 2cqi, 16px);
   }
 
-  /* Roomy expanded stages should feel like a control surface, not a compact
-     popover stranded at the top. Once there is enough height to preserve the
-     labels and the Match turns explanation, the six choices share the
-     remaining room. Short stages keep the content-sized layout and scroll. */
-  @container tnd-panel (min-width: 561px) and (min-height: 22rem) {
-    .tnd-panel {
-      grid-template-rows: minmax(0, 1fr);
-      column-gap: clamp(20px, 4cqi, 48px);
-      padding: clamp(12px, 2cqi, 24px);
-    }
-
-    .tnd-section {
-      display: grid;
-      grid-template-rows: auto auto minmax(0, 1fr) minmax(5.5rem, auto);
-      gap: clamp(12px, 1.5cqh, 24px);
-    }
-
-    .turns-row {
-      grid-row: 4;
-      margin-top: 0;
-    }
-  }
-
   @container tnd-panel (max-width: 560px) {
     .tnd-panel {
       grid-template-columns: minmax(0, 1fr);
@@ -228,5 +205,28 @@
     font-size: var(--font-size-min, 0.875rem);
     line-height: 1.35;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.72));
+  }
+
+  /* Roomy expanded stages should feel like a control surface, not a compact
+     popover stranded at the top. Once there is enough height to preserve the
+     labels and the Match turns explanation, the six choices share the
+     remaining room. Short stages keep the content-sized layout and scroll. */
+  @container tnd-panel (min-width: 561px) and (min-height: 22rem) {
+    .tnd-panel {
+      grid-template-rows: minmax(0, 1fr);
+      column-gap: clamp(20px, 4cqi, 48px);
+      padding: clamp(12px, 2cqi, 24px);
+    }
+
+    .tnd-section {
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr) minmax(5.5rem, auto);
+      gap: clamp(12px, 1.5cqh, 24px);
+    }
+
+    .turns-row {
+      grid-row: 4;
+      margin-top: 0;
+    }
   }
 </style>
