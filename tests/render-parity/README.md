@@ -13,6 +13,11 @@ Header, body, and footer are measured separately so the large white body cannot
 hide a missing badge. A deliberately removed badge must fail the header
 tolerance.
 
+The Start-cell L/R hand-color key also has its own cropped comparison. Removing
+the key must fail that region, even when the change is too small to fail the
+whole body. The same check runs against source and packaged MCP output with
+the default, dark-mode, and custom hand colors.
+
 For visual investigation, run `pnpm exec tsx tests/render-parity/serve-card-parity.ts`
 from the repository root and open the printed loopback URL. The page uses the
 same Composer fixture adapter as the automated test. PNG triplets and metrics

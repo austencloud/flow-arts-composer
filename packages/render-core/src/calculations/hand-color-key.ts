@@ -19,7 +19,7 @@ export const HAND_COLOR_KEY = {
   /** Swatch radius. Smaller than the old 28 so the pair reads as a label, not a prop. */
   SWATCH_RADIUS: 20,
   /** Same family and weight as the step number and the letter fallback. */
-  FONT_FAMILY: "Georgia, serif",
+  FONT_FAMILY: "Gelasio, Georgia, serif",
   FONT_WEIGHT: "bold",
   FONT_SIZE: 64,
   /** Gap from swatch edge to the letter's left side. */

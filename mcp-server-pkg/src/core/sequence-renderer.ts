@@ -218,7 +218,12 @@ export async function renderSequenceToImage(
       };
       ctx.drawImage(
         (await loadImage(
-          await renderer.renderToPng(pictograph, { ...visibilityOptions, size: cell.cellSize })
+          await renderer.renderToPng(pictograph, {
+            ...visibilityOptions,
+            // The start cell is part of the pictograph canon: it carries the L/R key.
+            showHandColorKey: step.stepNumber === 0,
+            size: cell.cellSize,
+          })
         )) as unknown as CanvasImageSource,
         cell.x,
         cell.y,
