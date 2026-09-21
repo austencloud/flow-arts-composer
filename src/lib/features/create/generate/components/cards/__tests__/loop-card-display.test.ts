@@ -65,7 +65,7 @@ describe("buildLoopCardDisplay — rotation period", () => {
       loopEnabled: true,
       loopType: LOOPType.ROTATED,
       period: Period.QUARTERED,
-      handRelationship: "mirrored",
+      handRelationship: "TO",
     });
     expect(display.rotationPeriod).toBe(Period.HALVED);
   });
@@ -75,7 +75,7 @@ describe("buildLoopCardDisplay — rotation period", () => {
       loopEnabled: true,
       loopType: LOOPType.ROTATED,
       period: Period.QUARTERED,
-      handRelationship: "unison",
+      handRelationship: "TS",
     });
     expect(display.rotationPeriod).toBe(Period.QUARTERED);
   });
@@ -234,8 +234,7 @@ describe("card-configurator LOOP descriptor", () => {
     constraintPreset: "smooth",
     handPathMode: "mixed",
     motionTypeFilter: null,
-    handRelationship: "flipped",
-    handRelationshipInverted: false,
+    handRelationship: "SO",
     matchHandTurns: false,
     durationTemplateId: null,
     spellTargetLength: null,
@@ -270,11 +269,11 @@ describe("card-configurator LOOP descriptor", () => {
       inversionInterval: 4,
       inversionMode: "overlay",
       reflectionAxis: "east-west",
-      handRelationship: "flipped",
+      handRelationship: "SO",
     });
   });
 
-  it("keeps Customize and LOOP at an even 3/3 split", () => {
+  it("gives Customize a third of its row and LOOP a half of its own", () => {
     const cards = buildCardDescriptors(
       config,
       DifficultyLevel.INTERMEDIATE,
@@ -297,7 +296,7 @@ describe("card-configurator LOOP descriptor", () => {
       true
     );
 
-    expect(cards.find((c) => c.id === "customize")?.gridColumnSpan).toBe(3);
+    expect(cards.find((c) => c.id === "customize")?.gridColumnSpan).toBe(2);
     expect(cards.find((c) => c.id === "loop")?.gridColumnSpan).toBe(3);
   });
 });

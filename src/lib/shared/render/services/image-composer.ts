@@ -94,8 +94,8 @@ export class ImageComposer {
   // duration badge, and the per-cell main-thread fallback. These thin accessors
   // expose exactly what that path needs without duplicating composer state.
 
-  async preloadHeaderGlyphs(): Promise<void> {
-    await this.TextRenderer.preloadGlyphImages();
+  async preloadHeaderGlyphs(word: string): Promise<void> {
+    await this.TextRenderer.preloadGlyphImagesForWord(word);
   }
 
   async resolveVisibilitySettings(
@@ -294,7 +294,6 @@ export class ImageComposer {
       throw new Error("Sequence must have at least one beat");
     }
 
-    await (this.TextRenderer as TextRenderer).preloadGlyphImages();
     // Ensure Gelasio is loaded into document.fonts before any canvas text draw
     // (no-op in the worker, which seeds self.fonts at init). Cached after first.
     await ensureCardFonts();
@@ -315,6 +314,11 @@ export class ImageComposer {
     }
 
     const layout = computeCardFrontLayout(sequence, options, visibilitySettings);
+    await this.preloadHeaderGlyphs(
+      options.addWord && !options.renderWordAsText
+        ? options.customName || layout.derivedWord
+        : ""
+    );
     const {
       columns,
       rows,

@@ -33,6 +33,7 @@ Animates forward in z-axis and expands to fill the container space
     normalizeReflectionSelection,
     type LoopRhythmValue,
   } from "./loop-expanded-overlay-model";
+  import type { TnDSelection } from "$lib/shared/create/domain/hand-relationship";
 
   let {
     currentType,
@@ -48,6 +49,7 @@ Animates forward in z-axis and expands to fill the container space
     onRhythmChange,
     guestMaxLength,
     onRequestSignup,
+    handRelationship,
   } = $props<{
     currentType: LOOPType;
     selectedComponents: Set<LOOPComponent>;
@@ -73,6 +75,9 @@ Animates forward in z-axis and expands to fill the container space
         routes straight to the auth screen, whose contextual copy is picked by
         kind (category → every-LOOP-type, length → step cap). */
     onRequestSignup?: (kind: GuestLoopLockKind) => void;
+    /** The hand mode from the TnD card; reflection modes narrow the LOOP
+        choices here. Absent reads as Free (legacy callers unaffected). */
+    handRelationship?: TnDSelection;
   }>();
 
   let hapticService: HapticFeedback | null = null;
@@ -154,11 +159,15 @@ Animates forward in z-axis and expands to fill the container space
       detailComponent,
       sequenceLength,
       guestMaxLength,
+      handRelationship,
     })
   );
   const explanationText = $derived(overlayModel.explanationText);
   const isImplemented = $derived(overlayModel.isImplemented);
   const disabledComponents = $derived(overlayModel.disabledComponents);
+  const disabledReasons = $derived(overlayModel.disabledReasons);
+  const reflectionAxisOptions = $derived(overlayModel.reflectionAxisOptions);
+  const quarteredAvailable = $derived(overlayModel.quarteredAvailable);
   const selectionCount = $derived(overlayModel.selectionCount);
   const configurableComponents = $derived(overlayModel.configurableComponents);
   const canConfigureRotation = $derived(
@@ -559,6 +568,8 @@ Animates forward in z-axis and expands to fill the container space
         ? rhythmGate.reason
         : undefined}
       {idPrefix}
+      {reflectionAxisOptions}
+      {quarteredAvailable}
       onChange={updateRhythm}
     />
   {/snippet}
@@ -614,6 +625,7 @@ Animates forward in z-axis and expands to fill the container space
       <LOOPComponentGrid
         selectedComponents={localSelectedComponents}
         {disabledComponents}
+        {disabledReasons}
         {lockedComponents}
         {isMultiSelectMode}
         {layout}
@@ -653,6 +665,7 @@ Animates forward in z-axis and expands to fill the container space
               <LOOPComponentGrid
                 selectedComponents={localSelectedComponents}
                 {disabledComponents}
+                {disabledReasons}
                 {lockedComponents}
                 {isMultiSelectMode}
                 layout="grid"
@@ -683,6 +696,7 @@ Animates forward in z-axis and expands to fill the container space
         <LOOPComponentGrid
           selectedComponents={localSelectedComponents}
           {disabledComponents}
+          {disabledReasons}
           {lockedComponents}
           {isMultiSelectMode}
           {layout}
@@ -728,6 +742,7 @@ Animates forward in z-axis and expands to fill the container space
                 <LOOPComponentGrid
                   selectedComponents={localSelectedComponents}
                   {disabledComponents}
+                  {disabledReasons}
                   {lockedComponents}
                   {isMultiSelectMode}
                   layout="grid"

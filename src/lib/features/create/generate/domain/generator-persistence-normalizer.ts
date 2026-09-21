@@ -3,7 +3,10 @@ import {
   clampToAvailableLevel,
   type UIGenerationConfig,
 } from "../shared/utils/config-mapper";
-import { isHandRelationship } from "$lib/shared/create/domain/hand-relationship";
+import {
+  LEGACY_HAND_RELATIONSHIP_MODES,
+  isTnDSelection,
+} from "$lib/shared/create/domain/hand-relationship";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -23,20 +26,38 @@ export function normalizePersistedGenerationConfig(
   // Generate now uses Level and Turn Intensity only. Old custom patterns must
   // not silently override those controls when a session or setup is restored.
   delete normalized.turnPattern;
-  // A setup or session saved by a build that knew a relationship this one
-  // does not (or a corrupted value) must not reach the engine. Drop it so the
-  // default wins; a well-formed value passes through untouched.
-  if (
+  // Hand and prop timing/direction. A build before the TnD card stored the
+  // hand relationship under four legacy names plus an inverted flag; map the
+  // names onto modes, derive the prop mode the flag implied, and drop
+  // anything this build does not know so the default wins.
+  const legacyHand =
+    typeof value.handRelationship === "string"
+      ? LEGACY_HAND_RELATIONSHIP_MODES[value.handRelationship]
+      : undefined;
+  if (legacyHand) {
+    normalized.handRelationship = legacyHand;
+    if (
+      value.handRelationshipInverted === true &&
+      value.propRelationship === undefined
+    ) {
+      // Inverted reflection hands spun the props the same way; inverted
+      // rotation hands spun them opposite. Together timing is the closest
+      // reading the old flag had.
+      normalized.propRelationship =
+        legacyHand === "TO" || legacyHand === "SO" ? "TS" : "TO";
+    }
+  } else if (
     value.handRelationship !== undefined &&
-    !isHandRelationship(value.handRelationship)
+    !isTnDSelection(value.handRelationship)
   ) {
     delete normalized.handRelationship;
   }
+  delete normalized.handRelationshipInverted;
   if (
-    value.handRelationshipInverted !== undefined &&
-    typeof value.handRelationshipInverted !== "boolean"
+    value.propRelationship !== undefined &&
+    !isTnDSelection(value.propRelationship)
   ) {
-    delete normalized.handRelationshipInverted;
+    delete normalized.propRelationship;
   }
   if (
     value.matchHandTurns !== undefined &&

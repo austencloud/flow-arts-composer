@@ -46,6 +46,7 @@ Card-based architecture with integrated Generate button:
   import { uiConfigToGenerationOptions } from "../shared/utils/config-mapper";
   import type { GenerationOptions } from "../shared/domain/models/generate-models";
   import { LOOPType, Period } from "../circular/domain/models/circular-models";
+  import { handModesBlockedByLoop } from "$lib/shared/create/services/loop-type-utils";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { PropType as PropTypeEnum } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
@@ -267,7 +268,7 @@ Card-based architecture with integrated Generate button:
       cur.handPathMode !== last.handPathMode ||
       cur.motionTypeFilter !== last.motionTypeFilter ||
       cur.handRelationship !== last.handRelationship ||
-      cur.handRelationshipInverted !== last.handRelationshipInverted ||
+      cur.propRelationship !== last.propRelationship ||
       cur.matchHandTurns !== last.matchHandTurns
     );
   });
@@ -364,6 +365,7 @@ Card-based architecture with integrated Generate button:
                     : "north-south"),
               },
               sequenceLength: configState.config.length,
+              handRelationship: configState.config.handRelationship,
               guestMaxLength: guestLoopMaxLength,
               onLoopDisable: () => {
                 morphGenerateCard("loop", () => panelState.closeLOOPPanel());
@@ -393,6 +395,23 @@ Card-based architecture with integrated Generate button:
                     ? { reflectionAxis: u.reflectionAxis }
                     : {}),
                 }),
+            }}
+            tnd={{
+              handRelationship: configState.config.handRelationship ?? "free",
+              propRelationship: configState.config.propRelationship ?? "free",
+              matchHandTurns: configState.config.matchHandTurns ?? false,
+              level: configState.config.level,
+              blockedHandModes: handModesBlockedByLoop(
+                configState.config.loopEnabled
+                  ? configState.config.loopType
+                  : null
+              ),
+              onHandRelationshipChange: (value) =>
+                configState.updateConfig({ handRelationship: value }),
+              onPropRelationshipChange: (value) =>
+                configState.updateConfig({ propRelationship: value }),
+              onMatchHandTurnsChange: (value) =>
+                configState.updateConfig({ matchHandTurns: value }),
             }}
             setups={{
               favoriteState,

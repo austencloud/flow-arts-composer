@@ -297,14 +297,19 @@ describe("exact flower parity", () => {
               : relationship.kind;
           })
         ),
-      ];
+      ].sort();
     }
+    // Sorted because the claim is which bands each hand relationship can
+    // reach, not which of them the wheel walks into first. An opposite-spin
+    // phase is read against the mirror (bearing sum minus pi), so the two TO
+    // phases changed places when that reading moved into the engine; both
+    // bands are still there, which is what this is for.
     expect(table).toEqual({
       SS: ["quarter-same"],
-      TS: ["tog-same", "split-same"],
+      TS: ["split-same", "tog-same"],
       QS: ["quarter-same"],
       SO: ["quarter-opp"],
-      TO: ["tog-opp", "split-opp"],
+      TO: ["split-opp", "tog-opp"],
       QO: ["quarter-opp"],
     });
 

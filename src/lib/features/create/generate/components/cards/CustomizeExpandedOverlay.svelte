@@ -34,11 +34,6 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     StartPlacementPreset,
   } from "../../shared/domain/start-placement-presets";
   import GenerationStylePanel from "$lib/shared/create/components/GenerationStylePanel.svelte";
-  import HandRelationshipPanel from "./HandRelationshipPanel.svelte";
-  import {
-    describeHandRelationship,
-    type HandRelationship,
-  } from "$lib/shared/create/domain/hand-relationship";
   import SettingsDrillPanel, {
     type SettingsDrillItem,
   } from "$lib/shared/ui/components/settings-drill/SettingsDrillPanel.svelte";
@@ -71,12 +66,6 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     onConstraintPresetChange,
     onHandPathModeChange,
     onMotionTypeFilterChange,
-    handRelationship = "free",
-    handRelationshipInverted = false,
-    matchHandTurns = false,
-    onHandRelationshipChange = null,
-    onHandRelationshipInvertedChange = null,
-    onMatchHandTurnsChange = null,
     onStartEndChange,
     onResetAll = null,
     onClose,
@@ -94,12 +83,6 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     onConstraintPresetChange: (v: "smooth" | "mixed" | "choppy") => void;
     onHandPathModeChange: (v: "smooth" | "mixed" | "choppy") => void;
     onMotionTypeFilterChange: (v: "no-dash" | "mixed" | "prefer-dash") => void;
-    handRelationship?: HandRelationship;
-    handRelationshipInverted?: boolean;
-    matchHandTurns?: boolean;
-    onHandRelationshipChange?: ((v: HandRelationship) => void) | null;
-    onHandRelationshipInvertedChange?: ((v: boolean) => void) | null;
-    onMatchHandTurnsChange?: ((v: boolean) => void) | null;
     onStartEndChange: ((options: StartEndOptions) => void) | null;
     onResetAll?: (() => void) | null;
     onClose: () => void;
@@ -148,15 +131,6 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   let localMotionTypeFilter = $state<"no-dash" | "prefer-dash" | null>(
     untrack(() => motionTypeFilter)
   );
-
-  // ─── Local state for the hand relationship (instant UI feedback) ───
-  let localHandRelationship = $state<HandRelationship>(
-    untrack(() => handRelationship)
-  );
-  let localHandRelationshipInverted = $state<boolean>(
-    untrack(() => handRelationshipInverted)
-  );
-  let localMatchHandTurns = $state<boolean>(untrack(() => matchHandTurns));
 
   // ─── Local state for start placements (instant UI feedback) ───
   let localBlockedPlacements = $state<GridPlacement[]>(
@@ -269,9 +243,6 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   // End Placement stays present and locked when LOOP owns it — dropping the row
   // would change the list length and move the row below it, and leave a user
   // who saw the setting once with no explanation.
-  //
-  // Hand Relationship appears only on surfaces that pass a change handler;
-  // the public Composer demo does not offer it.
   const drillItems = $derived<SettingsDrillItem[]>([
     { id: "style", label: "Style", value: styleSummary },
     { id: "startPos", label: "Start Placement", value: startPosDisplay },
@@ -282,19 +253,6 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
       disabled: !isFreeformMode,
       disabledReason: "Set by LOOP",
     },
-    ...(onHandRelationshipChange
-      ? [
-          {
-            id: "hands",
-            label: "Hand Relationship",
-            value: describeHandRelationship(
-              localHandRelationship,
-              localHandRelationshipInverted,
-              localMatchHandTurns
-            ),
-          },
-        ]
-      : []),
   ]);
 
   function handleClose() {
@@ -316,10 +274,6 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     localConstraintPreset = GENERATE_DEFAULT_CONFIG.constraintPreset;
     localHandPathMode = GENERATE_DEFAULT_CONFIG.handPathMode;
     localMotionTypeFilter = GENERATE_DEFAULT_CONFIG.motionTypeFilter;
-    localHandRelationship = GENERATE_DEFAULT_CONFIG.handRelationship;
-    localHandRelationshipInverted =
-      GENERATE_DEFAULT_CONFIG.handRelationshipInverted;
-    localMatchHandTurns = GENERATE_DEFAULT_CONFIG.matchHandTurns;
     localBlockedPlacements = [];
     localEndPlacements = [];
     localLeftOri = Orientation.IN;
@@ -475,28 +429,6 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
               {gridMode}
             />
           </div>
-        {:else if id === "hands"}
-          <div class="drill-fill spread">
-            <HandRelationshipPanel
-              relationship={localHandRelationship}
-              inverted={localHandRelationshipInverted}
-              haptic={hapticService}
-              onRelationshipChange={(v) => {
-                localHandRelationship = v;
-                onHandRelationshipChange?.(v);
-              }}
-              onInvertedChange={(v) => {
-                localHandRelationshipInverted = v;
-                onHandRelationshipInvertedChange?.(v);
-              }}
-              matchTurns={localMatchHandTurns}
-              turnsAvailable={level >= 2}
-              onMatchTurnsChange={(v) => {
-                localMatchHandTurns = v;
-                onMatchHandTurnsChange?.(v);
-              }}
-            />
-          </div>
         {/if}
       {/snippet}
     </SettingsDrillPanel>
@@ -506,7 +438,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
 <ConfirmDialog
   bind:isOpen={resetConfirmOpen}
   title="Reset all settings?"
-  message="Style, hand relationship, start placements, level, length and LOOP settings all go back to their defaults. This can't be undone."
+  message="Style, start placements, level, length and LOOP settings all go back to their defaults. This can't be undone."
   confirmText="Reset"
   cancelText="Keep"
   variant="danger"

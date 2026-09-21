@@ -28,8 +28,8 @@ import {
   type GenerationStyleAxis,
 } from "$lib/shared/create/domain/generation-style";
 import {
-  DEFAULT_HAND_RELATIONSHIP,
-  type HandRelationship,
+  DEFAULT_TND_SELECTION,
+  type TnDSelection,
 } from "$lib/shared/create/domain/hand-relationship";
 
 // Re-export for convenience
@@ -56,8 +56,8 @@ interface SerializedConfig {
   handPathMode?: GenerationStyleAxis;
   motionTypeFilter?: GenerationMotionTypeFilter;
   // Hand relationship
-  handRelationship?: HandRelationship;
-  handRelationshipInverted?: boolean;
+  handRelationship?: TnDSelection;
+  propRelationship?: TnDSelection;
   matchHandTurns?: boolean;
   // Duration rhythm template
   durationTemplateId?: string | null;
@@ -88,7 +88,7 @@ function saveConfig(config: UIGenerationConfig): void {
       handPathMode: config.handPathMode,
       motionTypeFilter: config.motionTypeFilter,
       handRelationship: config.handRelationship,
-      handRelationshipInverted: config.handRelationshipInverted,
+      propRelationship: config.propRelationship,
       matchHandTurns: config.matchHandTurns,
       durationTemplateId: config.durationTemplateId,
       spellTargetLength: config.spellTargetLength,
@@ -190,8 +190,8 @@ function loadConfig(): UIGenerationConfig | null {
     if (data.handRelationship !== undefined) {
       result.handRelationship = data.handRelationship;
     }
-    if (data.handRelationshipInverted !== undefined) {
-      result.handRelationshipInverted = data.handRelationshipInverted;
+    if (data.propRelationship !== undefined) {
+      result.propRelationship = data.propRelationship;
     }
     if (data.matchHandTurns !== undefined) {
       result.matchHandTurns = data.matchHandTurns;
@@ -237,8 +237,8 @@ const DEFAULT_CONFIG: UIGenerationConfig = {
   loopType: LOOPType.ROTATED,
   reflectionAxis: "north-south",
   ...DEFAULT_GENERATION_STYLE,
-  handRelationship: DEFAULT_HAND_RELATIONSHIP,
-  handRelationshipInverted: false,
+  handRelationship: DEFAULT_TND_SELECTION,
+  propRelationship: DEFAULT_TND_SELECTION,
   matchHandTurns: false,
   durationTemplateId: null,
   spellTargetLength: null,

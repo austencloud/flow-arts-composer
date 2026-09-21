@@ -30,6 +30,7 @@ export const GENERATE_CARD_MORPH_HOSTS = [
   "customize",
   "loop",
   "preset",
+  "tnd",
 ] as const satisfies readonly GenerateCardPanelId[];
 export type GenerateCardMorphHost = GenerateCardPanelId;
 

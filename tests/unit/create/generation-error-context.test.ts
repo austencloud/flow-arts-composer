@@ -17,8 +17,8 @@ describe("generation error reports", () => {
       handPathMode: "smooth",
       motionTypeFilter: "no-dash",
       turnIntensity: 1.5,
-      handRelationship: "mirrored",
-      handRelationshipInverted: true,
+      handRelationship: "TO",
+      propRelationship: "free",
       matchHandTurns: false,
       startPlacementId: "alpha1",
       blockedStartPlacements: ["beta1", "gamma3"],
@@ -49,8 +49,8 @@ describe("generation error reports", () => {
       expect.arrayContaining(Object.keys(options))
     );
     expect(snapshot).toMatchObject({
-      handRelationship: "mirrored",
-      handRelationshipInverted: true,
+      handRelationship: "TO",
+      propRelationship: "free",
       matchHandTurns: false,
       startPlacementId: "alpha1",
       endPlacements: ["alpha3", "alpha7"],

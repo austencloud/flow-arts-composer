@@ -5,14 +5,11 @@
  * Updated to match exact legacy generation parameters and options.
  */
 import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type {
-  LOOPType,
-  Period,
-} from "./circular-models";
+import type { LOOPType, Period } from "./circular-models";
 import type { LOOPSpec, LOOPSpecWire } from "@tka/sequence-engine/loop";
 import type { TurnLanes } from "@tka/sequence-engine/generation";
 import type { LoopRhythm } from "$lib/shared/create/services/loop-type-utils";
-import type { HandRelationship } from "$lib/shared/create/domain/hand-relationship";
+import type { TnDSelection } from "$lib/shared/create/domain/hand-relationship";
 
 // Re-export LOOPType for convenience
 export type { LOOPType };
@@ -65,11 +62,14 @@ export interface GenerationOptions {
   handPathMode?: "smooth" | "mixed" | "choppy" | undefined;
   motionTypeFilter?: "no-dash" | "prefer-dash" | null | undefined;
 
-  // Hand relationship: how the left hand relates to the right inside each
-  // step. "free" or absent means unconstrained. Inverted is ignored for free.
-  handRelationship?: HandRelationship | undefined;
-  handRelationshipInverted?: boolean | undefined;
-  /** Both hands take the same turn value every step. Absent means off. */
+  /** Hand timing and direction, a TnD selection. Free means unconstrained. */
+  handRelationship?: TnDSelection | undefined;
+  /** Prop timing and direction, a TnD selection. Free means unconstrained. */
+  propRelationship?: TnDSelection | undefined;
+  /**
+   * Both hands take the same turns on every step. Forced on by config-mapper
+   * while a prop mode is set, because a prop timing needs equal turns.
+   */
   matchHandTurns?: boolean | undefined;
 
   // Customize options - advanced constraints for generation
@@ -119,7 +119,10 @@ export interface PictographOperation {
 // NOTE: Period and LOOPType are now in circular/domain/models/circular-models.ts
 // Import from there if needed
 
-import { LOOPComponent, RESERVED_ORIENTATION_PRIMITIVES } from "@tka/sequence-engine/loop";
+import {
+  LOOPComponent,
+  RESERVED_ORIENTATION_PRIMITIVES,
+} from "@tka/sequence-engine/loop";
 export { LOOPComponent, RESERVED_ORIENTATION_PRIMITIVES };
 
 /**
@@ -188,7 +191,6 @@ export enum GenerationMode {
   /** @internal Used by the generation orchestrator when loopEnabled=true + freeform mode */
   CIRCULAR = "circular",
 }
-
 
 /**
  * Rotation directions for blue and red props

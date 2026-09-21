@@ -39,10 +39,12 @@
   import CustomizeExpandedOverlay from "./CustomizeExpandedOverlay.svelte";
   import LOOPExpandedOverlay from "./LOOPExpandedOverlay.svelte";
   import SetupsPanel from "../presets/SetupsPanel.svelte";
+  import TnDPanel from "./TnDPanel.svelte";
   import { expandedCardTitleId } from "./expanded-card-stage-props";
   import type {
     LoopStageProps,
     SetupsStageProps,
+    TnDStageProps,
   } from "./expanded-card-stage-props";
 
   let {
@@ -50,11 +52,13 @@
     isDesktopLayout,
     loop,
     setups,
+    tnd,
   }: {
     panelState: PanelCoordinationState;
     isDesktopLayout: boolean;
     loop: LoopStageProps;
     setups: SetupsStageProps;
+    tnd: TnDStageProps;
   } = $props();
 
   const openCard = $derived(panelState.openGenerateCard);
@@ -163,12 +167,6 @@
       constraintPreset={customize.constraintPreset}
       handPathMode={customize.handPathMode}
       motionTypeFilter={customize.motionTypeFilter}
-      handRelationship={customize.handRelationship}
-      handRelationshipInverted={customize.handRelationshipInverted}
-      onHandRelationshipChange={customize.onHandRelationshipChange}
-      onHandRelationshipInvertedChange={customize.onHandRelationshipInvertedChange}
-      matchHandTurns={customize.matchHandTurns}
-      onMatchHandTurnsChange={customize.onMatchHandTurnsChange}
       startEndOptions={customize.startEndOptions}
       level={customize.level}
       gridMode={customize.gridMode}
@@ -196,7 +194,21 @@
       onRhythmChange={loop.onRhythmChange}
       guestMaxLength={loop.guestMaxLength}
       onRequestSignup={loop.onRequestSignup}
+      handRelationship={loop.handRelationship}
       layout="responsive"
+      {titleId}
+    />
+  {:else if openCard === "tnd"}
+    <TnDPanel
+      handRelationship={tnd.handRelationship}
+      propRelationship={tnd.propRelationship}
+      matchHandTurns={tnd.matchHandTurns}
+      level={tnd.level}
+      blockedHandModes={tnd.blockedHandModes}
+      onHandRelationshipChange={tnd.onHandRelationshipChange}
+      onPropRelationshipChange={tnd.onPropRelationshipChange}
+      onMatchHandTurnsChange={tnd.onMatchHandTurnsChange}
+      onClose={close}
       {titleId}
     />
   {:else if openCard === "preset"}

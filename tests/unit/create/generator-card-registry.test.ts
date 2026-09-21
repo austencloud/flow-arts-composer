@@ -19,6 +19,7 @@ const CURRENT_PANEL_CARD_IDS = [
   "grid-mode",
   "turn-intensity",
   "customize",
+  "tnd",
   "loop",
   "generate-button",
 ] as const;
@@ -35,6 +36,7 @@ function makeHandlers(): CardHandlers {
     handleHandPathModeChange: vi.fn(),
     handleMotionTypeFilterChange: vi.fn(),
     handleLoopToggle: vi.fn(),
+    handleHandRelationshipChange: vi.fn(),
     handleOpenPresetDrawer: vi.fn(),
     handleGenerateClick: vi.fn(),
   } as unknown as CardHandlers;

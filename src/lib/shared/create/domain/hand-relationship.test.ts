@@ -1,90 +1,91 @@
 import { describe, expect, it } from "vitest";
 import {
-  DEFAULT_HAND_RELATIONSHIP,
-  HAND_RELATIONSHIPS,
-  HAND_RELATIONSHIP_HINTS,
-  HAND_RELATIONSHIP_INVERTED_HINT,
-  HAND_RELATIONSHIP_LABELS,
-  MATCH_HAND_TURNS_HINT,
-  MATCH_HAND_TURNS_LABEL,
-  MATCH_HAND_TURNS_LEVEL_HINT,
-  ELEMENT_ROW_LABELS,
-  TND_ROW_LABELS,
-  describeHandRelationship,
-  handRelationshipToEngine,
-  isHandRelationship,
-  relationshipReflectionAxis,
+  DEFAULT_TND_SELECTION,
+  HAND_MODE_MAPS,
+  LEGACY_HAND_RELATIONSHIP_MODES,
+  TND_SELECTIONS,
+  describeTnDSelection,
+  handModeMaps,
+  isReflectionMode,
+  isTnDSelection,
+  propDirectionOf,
+  propModeToEngine,
+  propTimingOf,
 } from "./hand-relationship";
 
-describe("hand relationship vocabulary", () => {
-  it("defaults to free and recognizes only its own values", () => {
-    expect(DEFAULT_HAND_RELATIONSHIP).toBe("free");
-    expect(HAND_RELATIONSHIPS).toEqual([
+describe("TnD selection vocabulary", () => {
+  it("defaults to free and recognizes only free plus the six modes", () => {
+    expect(DEFAULT_TND_SELECTION).toBe("free");
+    expect(TND_SELECTIONS).toEqual([
       "free",
-      "mirrored",
-      "flipped",
-      "unison",
-      "opposite",
+      "SS",
+      "TS",
+      "QS",
+      "SO",
+      "TO",
+      "QO",
     ]);
-    expect(isHandRelationship("mirrored")).toBe(true);
-    expect(isHandRelationship("sideways")).toBe(false);
-    expect(isHandRelationship(undefined)).toBe(false);
+    expect(isTnDSelection("free")).toBe(true);
+    expect(isTnDSelection("QO")).toBe(true);
+    expect(isTnDSelection("mirrored")).toBe(false);
+    expect(isTnDSelection(undefined)).toBe(false);
   });
 
-  it("maps every relationship to an engine map and free to nothing", () => {
-    expect(handRelationshipToEngine("free", true)).toBeUndefined();
-    expect(handRelationshipToEngine("mirrored", false)).toEqual({
-      map: "reflect-north-south",
-      inverted: false,
-    });
-    expect(handRelationshipToEngine("flipped", true)).toEqual({
-      map: "reflect-east-west",
-      inverted: true,
-    });
-    expect(handRelationshipToEngine("unison", false)).toEqual({
-      map: "identity",
-      inverted: false,
-    });
-    expect(handRelationshipToEngine("opposite", false)).toEqual({
-      map: "rotate-180",
-      inverted: false,
+  it("maps the four legacy names onto modes", () => {
+    expect(LEGACY_HAND_RELATIONSHIP_MODES).toEqual({
+      mirrored: "TO",
+      flipped: "SO",
+      unison: "TS",
+      opposite: "SS",
     });
   });
 
-  it("names the axis a reflection relationship keeps", () => {
-    expect(relationshipReflectionAxis("mirrored")).toBe("north-south");
-    expect(relationshipReflectionAxis("flipped")).toBe("east-west");
-    expect(relationshipReflectionAxis("unison")).toBeNull();
-    expect(relationshipReflectionAxis("opposite")).toBeNull();
-    expect(relationshipReflectionAxis("free")).toBeNull();
+  it("gives every mode its engine maps, two for the quarter modes", () => {
+    expect(HAND_MODE_MAPS).toEqual({
+      TS: ["identity"],
+      TO: ["reflect-north-south"],
+      SS: ["rotate-180"],
+      SO: ["reflect-east-west"],
+      QS: ["rotate-90-cw", "rotate-90-ccw"],
+      QO: ["reflect-northeast-southwest", "reflect-northwest-southeast"],
+    });
+    expect(handModeMaps("QS")).toEqual(["rotate-90-cw", "rotate-90-ccw"]);
   });
 
-  it("describes the row value", () => {
-    expect(describeHandRelationship("free", true)).toBe("Free");
-    expect(describeHandRelationship("mirrored", false)).toBe("Mirrored");
-    expect(describeHandRelationship("mirrored", true)).toBe(
-      "Mirrored, inverted"
-    );
-    expect(describeHandRelationship("free", false, true)).toBe(
-      "Free, matched turns"
-    );
-    expect(describeHandRelationship("mirrored", true, true)).toBe(
-      "Mirrored, inverted, matched turns"
-    );
+  it("knows which modes are reflections", () => {
+    expect(isReflectionMode("TO")).toBe(true);
+    expect(isReflectionMode("SO")).toBe(true);
+    expect(isReflectionMode("QO")).toBe(true);
+    expect(isReflectionMode("TS")).toBe(false);
+    expect(isReflectionMode("SS")).toBe(false);
+    expect(isReflectionMode("QS")).toBe(false);
   });
 
-  it("never says hybrid and never uses an em dash", () => {
-    const copy = [
-      ...Object.values(HAND_RELATIONSHIP_LABELS),
-      ...Object.values(HAND_RELATIONSHIP_HINTS),
-      HAND_RELATIONSHIP_INVERTED_HINT,
-      MATCH_HAND_TURNS_LABEL,
-      MATCH_HAND_TURNS_HINT,
-      MATCH_HAND_TURNS_LEVEL_HINT,
-      ...Object.values(TND_ROW_LABELS),
-      ...Object.values(ELEMENT_ROW_LABELS),
-    ].join(" ");
-    expect(copy.toLowerCase()).not.toContain("hybrid");
-    expect(copy).not.toContain("—");
+  it("reads prop direction and timing off the mode letters", () => {
+    expect(propDirectionOf("TS")).toBe("same");
+    expect(propDirectionOf("QO")).toBe("opp");
+    expect(propTimingOf("TS")).toBe("tog");
+    expect(propTimingOf("SO")).toBe("split");
+    expect(propTimingOf("QS")).toBe("quarter");
+  });
+
+  it("builds the engine prop option and nothing for Free", () => {
+    expect(propModeToEngine("free")).toBeUndefined();
+    expect(propModeToEngine("TO")).toEqual({ direction: "opp", timing: "tog" });
+    expect(propModeToEngine("QS")).toEqual({
+      direction: "same",
+      timing: "quarter",
+    });
+  });
+
+  it("describes a selection with its two words", () => {
+    expect(describeTnDSelection("free")).toBe("Free");
+    expect(describeTnDSelection("TS")).toBe("Together Same");
+    expect(describeTnDSelection("QO")).toBe("Quarter Opposite");
+  });
+
+  it("never uses an em dash in its copy", () => {
+    const copy = TND_SELECTIONS.map(describeTnDSelection).join(" ");
+    expect(copy).not.toContain("\u2014");
   });
 });
