@@ -11,11 +11,21 @@
   the card the sheet composes around was not a card this app can produce.
   Austen (2026-08-11): "Even when we're testing we should be using real data."
 
-  The only thing still simulated is video-export progress, which the viewer
-  owns and no harness can drive.
+  `?real-video` mounts the same offscreen animation stack the viewer exports
+  from, so the sheet can also exercise its real render → blob hydration →
+  download path without needing an account.
 -->
 <script lang="ts">
   import { onDestroy, onMount, tick } from "svelte";
+  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import { createAnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
+  import { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
+  import { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
+  import { AnimationStateManager } from "$lib/shared/animation-engine/services/animation-state-manager";
+  import { AnimationLoop } from "$lib/shared/animation-engine/services/animation-loop";
+  import { getViewerAnimationPropConfig } from "$lib/shared/animation-engine/get-viewer-animation-prop-config";
+  import { getExportOptionsState } from "$lib/shared/animation-panel/state/export-options-state.svelte";
+  import { SequenceModalExporter } from "$lib/shared/sequence-viewer/services/sequence-modal-exporter.svelte";
   import PostShareSheet from "$lib/shared/share/components/PostShareSheet.svelte";
   import PostStudio from "$lib/shared/share/components/post-studio/PostStudio.svelte";
   import type { MetaPublishStatus } from "$lib/shared/share/services/meta-publish";
@@ -53,12 +63,57 @@
   let studioAnimationType = $state<"video" | "image">("video");
   let initialArtifact = $state<"card" | "video">("card");
   let tkaHandoffCount = $state(0);
+  let realVideoMode = $state(false);
+  let failNextRealRender = $state(false);
+  let animationCanvas = $state<HTMLCanvasElement | null>(null);
+  let playbackController: AnimationPlaybackController | null = null;
+  let realVideoUrl = $state<string | null>(null);
+  let realRenderVersion = 0;
+
+  // This is deliberately instance-owned. A fixture opened in another tab must
+  // not cancel or revoke the viewer's singleton export preview.
+  const realVideoExporter = new SequenceModalExporter();
+  const animationState = createAnimationPanelState();
+  const exportOptions = getExportOptionsState();
+  let realExporting = $derived(realVideoExporter.state.isExporting);
+  let realExportProgress = $derived(
+    realVideoExporter.state.progress?.progress ?? null
+  );
+  let currentLetter = $derived.by(() => {
+    const steps = animationState.sequenceData?.steps;
+    if (!steps?.length) return null;
+    const index = Math.min(
+      Math.max(0, Math.floor(animationState.currentStep) - 1),
+      steps.length - 1
+    );
+    return steps[index]?.letter ?? null;
+  });
+  let currentStepData = $derived.by(() => {
+    const current = animationState.sequenceData;
+    if (!current?.steps?.length) return null;
+    if (animationState.currentStep < 1 && current.startPlacement)
+      return current.startPlacement;
+    const index = Math.min(
+      Math.max(0, Math.floor(animationState.currentStep) - 1),
+      current.steps.length - 1
+    );
+    return current.steps[index] ?? null;
+  });
+  let gridMode = $derived(animationState.sequenceData?.gridMode);
 
   onMount(async () => {
     const params = new URLSearchParams(window.location.search);
     studioHarness = params.has("studio");
     cardOnly = params.has("card");
+    realVideoMode = params.has("real-video");
     initialArtifact = params.get("artifact") === "video" ? "video" : "card";
+    playbackController = new AnimationPlaybackController(
+      new SequenceAnimationOrchestrator(
+        new AnimationStateManager(),
+        getViewerAnimationPropConfig
+      ),
+      new AnimationLoop()
+    );
     const requestedMeta = params.get("meta");
     if (
       requestedMeta === "none" ||
@@ -90,6 +145,14 @@
       sequence = performanceVideoUrl
         ? { ...hydrated, performanceVideoUrl }
         : hydrated;
+      if (
+        realVideoMode &&
+        !playbackController.initialize(sequence, animationState)
+      ) {
+        loadError =
+          "The real animation engine could not initialize this sequence.";
+        return;
+      }
 
       if (params.has("open")) {
         await tick();
@@ -114,6 +177,10 @@
 
   onDestroy(() => {
     if (studioCardUrl) URL.revokeObjectURL(studioCardUrl);
+    realRenderVersion += 1;
+    realVideoExporter.dispose();
+    playbackController?.dispose();
+    animationState.dispose();
   });
 
   let isOpen = $state(false);
@@ -238,6 +305,48 @@
     isExportingVideo = true;
     exportProgress = 0.42;
   }
+
+  function clearRealVideo(): boolean {
+    realRenderVersion += 1;
+    realVideoExporter.cancel();
+    realVideoExporter.dismissPreview();
+    realVideoUrl = null;
+    return true;
+  }
+
+  async function requestRealVideo(): Promise<boolean> {
+    if (!sequence || !animationCanvas || !playbackController) return false;
+    if (failNextRealRender) {
+      failNextRealRender = false;
+      return false;
+    }
+
+    clearRealVideo();
+    const exportVersion = ++realRenderVersion;
+    const options = exportOptions.getVideoOptions();
+    await realVideoExporter.exportAnimation(
+      {
+        fps: options.fps,
+        loopCount: options.loopCount,
+        resolution: options.resolution,
+        includeStartPlacement: options.includeStartPlacement,
+        includeEndHold: options.includeEndHold,
+      },
+      {
+        canvas: animationCanvas,
+        playbackController,
+        panelState: animationState,
+      },
+      {
+        onSuccess: () => {},
+        onError: () => {},
+        onHaptic: () => {},
+      }
+    );
+    if (exportVersion !== realRenderVersion) return false;
+    realVideoUrl = realVideoExporter.state.previewBlobUrl;
+    return !!realVideoUrl;
+  }
 </script>
 
 {#if !studioHarness}
@@ -245,6 +354,14 @@
     <h1>PostShareSheet</h1>
     <div class="controls">
       <button type="button" onclick={() => (isOpen = true)}>Open sheet</button>
+      {#if realVideoMode}
+        <button type="button" onclick={() => (failNextRealRender = true)}
+          >Fail next real render</button
+        >
+        <button type="button" onclick={clearRealVideo}
+          >Cancel real render</button
+        >
+      {/if}
       <button type="button" onclick={fakeRender}>Simulate video render</button>
       <button
         type="button"
@@ -277,11 +394,18 @@
       {:else if !sequence}
         Loading {SEQUENCE_ID} from the published gallery…
       {:else}
-        Real sequence {sequence.word} ({sequence.steps?.length ?? 0} steps). Video
-        export is driven by the viewer in the real app; this harness only simulates
-        its progress states.
+        Real sequence {sequence.word} ({sequence.steps?.length ?? 0} steps).
+        {#if realVideoMode}
+          Real video export uses the selected resolution, FPS, and repeats.
+          Choose Download a file in the sheet to run render → blob hydration →
+          download.
+        {:else}
+          Video export is driven by the viewer in the real app; this harness
+          only simulates its progress states.
+        {/if}
         {#if tkaHandoffCount}
-          Send in Flow Arts Composer selected {tkaHandoffCount} time{tkaHandoffCount === 1
+          Send in Flow Arts Composer selected {tkaHandoffCount} time{tkaHandoffCount ===
+          1
             ? ""
             : "s"}.
         {/if}
@@ -311,14 +435,33 @@
     availableArtifacts={cardOnly ? ["card"] : ["card", "video"]}
     {initialArtifact}
     shareUrl=""
-    {videoBlobUrl}
-    {isExportingVideo}
-    {exportProgress}
-    onRequestVideo={fakeRender}
+    canCreateLink={!realVideoMode}
+    videoBlobUrl={realVideoMode ? realVideoUrl : videoBlobUrl}
+    isExportingVideo={realVideoMode ? realExporting : isExportingVideo}
+    exportProgress={realVideoMode ? realExportProgress : exportProgress}
+    onRequestVideo={realVideoMode ? requestRealVideo : fakeRender}
+    onCancelVideo={realVideoMode ? clearRealVideo : undefined}
+    onPrepareFile={realVideoMode ? clearRealVideo : undefined}
     onSendInTka={() => (tkaHandoffCount += 1)}
     onClose={() => (isOpen = false)}
     metaStatusOverride={overrideEnabled ? META_STATES[metaState] : undefined}
   />
+{/if}
+
+{#if realVideoMode}
+  <div class="offscreen-animation" aria-hidden="true">
+    <AnimatorCanvas
+      leftProp={animationState.leftPropState}
+      rightProp={animationState.rightPropState}
+      gridVisible={true}
+      {gridMode}
+      letter={currentLetter}
+      stepData={currentStepData}
+      sequenceData={animationState.sequenceData}
+      isPlaying={animationState.isPlaying}
+      onCanvasReady={(canvas) => (animationCanvas = canvas)}
+    />
+  </div>
 {/if}
 
 <style>
@@ -366,5 +509,14 @@
     margin-top: 1rem;
     opacity: 0.7;
     font-size: 0.875rem;
+  }
+
+  .offscreen-animation {
+    position: fixed;
+    top: -99999px;
+    left: -99999px;
+    width: 320px;
+    height: 320px;
+    overflow: hidden;
   }
 </style>

@@ -82,6 +82,7 @@ export interface ViewerSplitPaneProps {
     artType: "mandala" | "tunnel";
     controller: TunnelViewController;
     mandalaController: MandalaViewerController;
+    capturePreview: () => string;
   }) => void;
   /**
    * The share sheet currently owns a render of this art. The pane suppresses

@@ -25,6 +25,32 @@ export function shouldDeliverPendingVideo(
   );
 }
 
+export type PendingVideoDownloadOutcome = "waiting" | "deliver" | "retry";
+
+/**
+ * A render can finish after the person changes its settings or leaves the
+ * captured view. The finished bytes are then useful for previewing, but they
+ * are no longer the file they asked to download. Surface that distinction so
+ * the original Download action never appears to have vanished.
+ */
+export function pendingVideoDownloadOutcome(
+  value: PendingVideoDownload
+): PendingVideoDownloadOutcome {
+  if (!value.pending) return "waiting";
+  if (shouldDeliverPendingVideo(value)) return "deliver";
+
+  const requestFinished =
+    value.sheetOpen &&
+    value.status === "ready" &&
+    value.hasBlob &&
+    value.pendingRequestVersion === value.requestVersion;
+  const requestChanged =
+    value.currentSettingsKey !== value.requestedSettingsKey ||
+    value.currentSourceKey !== value.requestedSourceKey;
+
+  return requestFinished && requestChanged ? "retry" : "waiting";
+}
+
 export function videoDownloadSettingsKey(value: {
   resolution: number;
   fps: number;

@@ -74,6 +74,34 @@ follow the links for their complete context.
 
 ## Product decisions
 
+### September 20 continuation: three destinations
+
+The approved next iteration keeps three top-level intentions: **Download a file**,
+**Share a link**, and **Publish socially**. These are distinct tasks within the
+existing sharing owner, not three new delivery implementations. The current view
+supplies the recognizable subject before a person chooses a destination.
+
+- Download opens with the artifact implied by the viewer. Video and card are
+  file choices inside that task. Resolution, frame rate, repeats, opener image,
+  and card presentation belong here; captions and account connections do not.
+- Share a link explains the recipient's experience and offers a single Copy link
+  action. Sending through Flow Arts Composer hands off to the existing viewer
+  send mode without rendering a file.
+- Publish socially owns post caption, account review, and the post composition
+  entry. An unavailable integration remains unavailable. Opening this task does
+  not upload media, connect an account, or publish anything.
+
+Direct Export still enters Download immediately. The three intentions must not
+become a compulsory extra chooser for an action whose destination is already
+known. A roomy desktop uses preview and settings together; a narrow screen
+stacks them. Width and height both determine when disclosure is useful.
+
+The continuation also identified two state requirements: a canceled or failed
+3D scene take must return to a usable download task, and a download invalidated
+by source/settings changes must explicitly invite a retry rather than silently
+discard its promised delivery. Tunnel and 3D previews must come from their live
+source, never from an unrelated 2D animation.
+
 ### Entry context determines the initial task
 
 | Entry                | Initial presentation                                                           | Primary result                                                               |
@@ -244,3 +272,42 @@ first actions, uncertainty about the payload/destination, wrong turns, completio
 and cancellation recovery. Compare against the previous experience. Browser tests
 can establish functionality and geometry; they cannot establish that no human
 will ever hesitate. Record real user evidence separately from design assumptions.
+
+### September 20 implementation evidence
+
+The three-destination implementation was exercised against the public sequence
+viewer and a development-only host for the production video exporter. The latter
+is `/test/post-share-sheet?real-video&artifact=video&open`; it loads a real public
+16-step sequence and uses `SequenceModalExporter`, rather than a simulated blob.
+It prevents short-link creation in that mode. Keep it development-only.
+
+- One Download action rendered an 18-second playable MP4 at 720p/30 fps and
+  initiated the browser download after blob hydration. Browser download events
+  confirmed completion of a 1,727,804-byte file. Changing resolution marked it
+  stale. Cancellation and an injected renderer failure restored usable controls;
+  retry completed a real download.
+- The actual viewer's Export Animation entered Download directly without capture.
+  Copy link produced inline `Link copied` after one activation. Tunnel and 3D
+  sharing used captures of their mounted sources. Account requirements remained
+  visible before file preparation; testing did not create an account.
+- Unprepared and completed download layouts were checked at all seven CSS
+  viewport tiers above. No horizontal overflow was measured. Desktop tiers
+  from 1440x900 through 3840x2160 needed no internal scrolling. The small phone
+  fit its unexpanded controls; expanded controls and short landscape used one
+  content scroll region while retaining the primary action. Reflow was checked
+  at 960x540 CSS pixels (the effective space of 1920x1080 at 200%); this was
+  viewport emulation, not a claim of a native browser zoom test. Reduced-motion
+  emulation reached the same controls with effectively zero transition duration.
+- Sixteen focused tests passed across `video-download-intent.test.ts`,
+  `viewer-shell-share-state.test.ts`, and
+  `export-coordinator-scene-take-lifecycle.test.ts`.
+- Independent review found and closed three lifecycle hazards: resuming the
+  sheet during asynchronous 3D recipe persistence, treating a newly rendered
+  output URL as a changed input, and hiding composition when direct publishing
+  is unavailable. Live render output must never invalidate its own request.
+  Only precomposed Post Studio files use their existing URL as source identity.
+
+No social post, message to a real recipient, account connection, phone upload,
+or completed 3D recipe save was performed as verification. The delayed 3D save
+and cancel race is covered by a controlled regression test. These checks establish
+behavior and layout, not uncoached user-task success or subjective satisfaction.
