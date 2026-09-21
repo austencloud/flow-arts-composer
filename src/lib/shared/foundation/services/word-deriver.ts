@@ -1,14 +1,19 @@
 import type { Step } from "@tka/tka-types";
 import type { SequenceData } from "../domain/models/sequence-data";
 import type { StepPairingData } from "../domain/models/step-pairing-data";
+import { renderWordNotation, type WordUnit } from "../utils/word-notation";
+import { isSkewedFrameStep } from "./skewed-frame";
 
 export function deriveWordFromBeats(steps: readonly Step[]): string {
   if (!steps || steps.length === 0) return "";
 
-  return steps
-    .map((step) => step.letter ?? "")
-    .filter((letter) => letter !== "")
-    .join("");
+  const units: WordUnit[] = [];
+  for (const step of steps) {
+    const letter = step.letter ?? "";
+    if (letter === "") continue;
+    units.push({ letter, skewed: isSkewedFrameStep(step) });
+  }
+  return renderWordNotation(units);
 }
 
 export function deriveWord(sequence: SequenceData): string {
@@ -21,10 +26,14 @@ export function deriveWord(sequence: SequenceData): string {
   // Steps aren't persisted to Firestore - they're derived at load time by the
   // hydrator. If hydration hasn't run yet, stepPairings still has the letters.
   if (sequence.stepPairings && sequence.stepPairings.length > 0) {
-    const derived = sequence.stepPairings
-      .map((p) => p.letter ?? "")
-      .filter((l) => l !== "")
-      .join("");
+    const derived = renderWordNotation(
+      sequence.stepPairings
+        .filter((pairing) => (pairing.letter ?? "") !== "")
+        .map((pairing) => ({
+          letter: pairing.letter as string,
+          skewed: isSkewedFrameStep(pairing),
+        }))
+    );
     if (derived) return derived;
   }
 
@@ -71,7 +80,7 @@ export function getSequenceDisplayName(sequence: SequenceData): string {
 //      one that must stop a write.
 
 export interface WordDerivationStatus {
-  /** Concatenated notation tokens, in beat order. Empty when nothing resolved. */
+  /** Notation word in beat order, skewed spans in braces. Empty when nothing resolved. */
   readonly word: string;
   /** True when every content beat produced a token. The persistence gate. */
   readonly complete: boolean;
@@ -131,7 +140,7 @@ export function deriveWordStatusFromSteps(
   const beats = steps.filter((step) => step.stepNumber !== 0);
   if (beats.length === 0) return emptyStatus("none");
 
-  const tokens: string[] = [];
+  const tokens: WordUnit[] = [];
   const missingStepIndexes: number[] = [];
   const blankStepIndexes: number[] = [];
 
@@ -145,11 +154,11 @@ export function deriveWordStatusFromSteps(
       missingStepIndexes.push(index);
       return;
     }
-    tokens.push(token);
+    tokens.push({ letter: token, skewed: isSkewedFrameStep(step) });
   });
 
   return {
-    word: tokens.join(""),
+    word: renderWordNotation(tokens),
     complete: missingStepIndexes.length === 0,
     stepCount: beats.length,
     tokenCount: tokens.length,
@@ -183,7 +192,7 @@ export function deriveWordStatusFromStepPairings(
   if (!stepPairings || stepPairings.length === 0) return emptyStatus("none");
 
   const beats = stepPairings;
-  const tokens: string[] = [];
+  const tokens: WordUnit[] = [];
   const missingStepIndexes: number[] = [];
 
   beats.forEach((pairing, index) => {
@@ -192,11 +201,11 @@ export function deriveWordStatusFromStepPairings(
       missingStepIndexes.push(index);
       return;
     }
-    tokens.push(token);
+    tokens.push({ letter: token, skewed: isSkewedFrameStep(pairing) });
   });
 
   return {
-    word: tokens.join(""),
+    word: renderWordNotation(tokens),
     complete: missingStepIndexes.length === 0,
     stepCount: beats.length,
     tokenCount: tokens.length,

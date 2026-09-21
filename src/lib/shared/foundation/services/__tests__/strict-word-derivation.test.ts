@@ -19,6 +19,7 @@ import {
   requireCompleteWord,
   IncompleteWordError,
   deriveWord,
+  deriveWordFromBeats,
 } from "../word-deriver";
 import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { getPersistedStepCount } from "$lib/shared/library/domain/sequence-min-length";
@@ -296,5 +297,76 @@ describe("requireCompleteWord", () => {
   it("refuses a sequence with no steps and no pairings", () => {
     expect(() => requireCompleteWord(createSequenceData({ id: "x", steps: [] })))
       .toThrow(IncompleteWordError);
+  });
+});
+
+describe("skewed spans in the derived word", () => {
+  const skewedMotions = () => ({
+    left: createMotionData({
+      motionType: "pro" as const,
+      rotationDirection: "cw" as const,
+      startLocation: "n" as const,
+      endLocation: "e" as const,
+      turns: 0,
+      startOrientation: "in" as const,
+      endOrientation: "in" as const,
+    }),
+    right: createMotionData({
+      motionType: "pro" as const,
+      rotationDirection: "cw" as const,
+      startLocation: "ne" as const,
+      endLocation: "se" as const,
+      turns: 0,
+      startOrientation: "in" as const,
+      endOrientation: "in" as const,
+    }),
+  });
+
+  it("wraps consecutive skewed steps in one brace pair", () => {
+    const steps = [
+      step(1, "A"),
+      step(2, "S", { motions: skewedMotions() }),
+      step(3, "T", { motions: skewedMotions() }),
+      step(4, "G"),
+    ];
+    expect(deriveWordFromBeats(steps)).toBe("A{ST}G");
+    const status = deriveWordStatusFromSteps(steps);
+    expect(status.word).toBe("A{ST}G");
+    expect(status.complete).toBe(true);
+    expect(status.tokenCount).toBe(4);
+  });
+
+  it("reads skewed pairings from their placements", () => {
+    const pairings = [
+      { letter: "A", leftReversal: false, rightReversal: false, startPlacement: "alpha1", endPlacement: "alpha3" },
+      { letter: "U", leftReversal: false, rightReversal: false, startPlacement: "eta2", endPlacement: "eta4" },
+      { letter: "S", leftReversal: false, rightReversal: false, startPlacement: "eta4", endPlacement: "eta6" },
+    ] as unknown as StepPairingData[];
+    expect(deriveWordStatusFromStepPairings(pairings).word).toBe("A{US}");
+    expect(deriveWord(createSequenceData({ steps: [], stepPairings: pairings }))).toBe("A{US}");
+  });
+
+  it("does not brace a beat whose hands both skew but start and end pure", () => {
+    const bothSkew = {
+      left: createMotionData({
+        motionType: "pro" as const,
+        rotationDirection: "cw" as const,
+        startLocation: "n" as const,
+        endLocation: "ne" as const,
+        turns: 0,
+        startOrientation: "in" as const,
+        endOrientation: "in" as const,
+      }),
+      right: createMotionData({
+        motionType: "pro" as const,
+        rotationDirection: "cw" as const,
+        startLocation: "s" as const,
+        endLocation: "sw" as const,
+        turns: 0,
+        startOrientation: "in" as const,
+        endOrientation: "in" as const,
+      }),
+    };
+    expect(deriveWordFromBeats([step(1, "A", { motions: bothSkew })])).toBe("A");
   });
 });
