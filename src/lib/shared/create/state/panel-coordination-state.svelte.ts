@@ -74,6 +74,10 @@ export interface MandalaViewerSelection {
   pathShape: MandalaPathShape;
 }
 
+export type PendingGenerateCardEditorHandoff =
+  | { kind: "step-editor" }
+  | { kind: "mandala"; selection: MandalaViewerSelection };
+
 const sequenceActionsPanelPersistence = createPersistenceHelper({
   key: "tka_sequence_actions_panel_open",
   defaultValue: false,
@@ -264,11 +268,13 @@ export interface PanelCoordinationState {
   // Beat Editor Panel State (non-modal - allows click-through to pictographs)
   get isStepEditorPanelOpen(): boolean;
   get mandalaViewerSelection(): MandalaViewerSelection | null;
+  get pendingGenerateCardEditorHandoff(): PendingGenerateCardEditorHandoff | null;
 
   openStepEditorPanel(): void;
   closeStepEditorPanel(): void;
   openMandalaViewer(selection: MandalaViewerSelection): void;
   closeMandalaViewer(): void;
+  completeGenerateCardEditorHandoff(): void;
 
   // Tool Panel Dimensions (for sizing other panels)
   get toolPanelHeight(): number;
@@ -473,6 +479,8 @@ export function createPanelCoordinationState(): PanelCoordinationState {
   // closing it out from under the user.
   let isStepEditorPanelOpen = $state(stepEditorPanelPersistence.load());
   let mandalaViewerSelection = $state<MandalaViewerSelection | null>(null);
+  let pendingGenerateCardEditorHandoff =
+    $state.raw<PendingGenerateCardEditorHandoff | null>(null);
 
   // Auto-save panel open states
   $effect.root(() => {
@@ -615,6 +623,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
     isSequenceActionsPanelOpen = false;
     isStepEditorPanelOpen = false;
     mandalaViewerSelection = null;
+    pendingGenerateCardEditorHandoff = null;
 
     isLOOPPanelOpen = false;
     loopSelectedComponents = null;
@@ -917,24 +926,52 @@ export function createPanelCoordinationState(): PanelCoordinationState {
       return mandalaViewerSelection;
     },
 
+    get pendingGenerateCardEditorHandoff() {
+      return pendingGenerateCardEditorHandoff;
+    },
+
     openStepEditorPanel() {
       // Beat Editor is non-modal - it does NOT close other panels
       // This allows the user to click on pictographs while the panel is open
       // It does need the editable card, so a running preview ends here.
       dropWorkspacePlayback();
       mandalaViewerSelection = null;
+      if (
+        isCustomizeOverlayOpen ||
+        isLOOPPanelOpen ||
+        isPresetDrawerOpen ||
+        isTnDPanelOpen
+      ) {
+        pendingGenerateCardEditorHandoff = { kind: "step-editor" };
+        return;
+      }
+      pendingGenerateCardEditorHandoff = null;
       isStepEditorPanelOpen = true;
     },
 
     closeStepEditorPanel() {
       isStepEditorPanelOpen = false;
       mandalaViewerSelection = null;
+      pendingGenerateCardEditorHandoff = null;
     },
 
     openMandalaViewer(selection: MandalaViewerSelection) {
       // The mandala uses the same non-modal drawer as the beat editor. Keeping
       // the drawer mounted lets a later pictograph click swap the editor back
       // in without closing and reopening the panel.
+      if (
+        isCustomizeOverlayOpen ||
+        isLOOPPanelOpen ||
+        isPresetDrawerOpen ||
+        isTnDPanelOpen
+      ) {
+        pendingGenerateCardEditorHandoff = {
+          kind: "mandala",
+          selection,
+        };
+        return;
+      }
+      pendingGenerateCardEditorHandoff = null;
       mandalaViewerSelection = selection;
       isStepEditorPanelOpen = true;
     },
@@ -942,6 +979,17 @@ export function createPanelCoordinationState(): PanelCoordinationState {
     closeMandalaViewer() {
       mandalaViewerSelection = null;
       isStepEditorPanelOpen = false;
+      pendingGenerateCardEditorHandoff = null;
+    },
+
+    completeGenerateCardEditorHandoff() {
+      const request = pendingGenerateCardEditorHandoff;
+      pendingGenerateCardEditorHandoff = null;
+      if (!request) return;
+
+      mandalaViewerSelection =
+        request.kind === "mandala" ? request.selection : null;
+      isStepEditorPanelOpen = true;
     },
 
     // Tool Panel Dimensions
