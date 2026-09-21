@@ -39,6 +39,8 @@ Usage:
   } from "../../tka-glyph/components/TKAGlyph.svelte";
   import TurnsColumn from "../../tka-glyph/components/TurnsColumn.svelte";
   import DirectionDot from "../../tka-glyph/components/DirectionDot.svelte";
+  import SkewBraces from "../../tka-glyph/components/SkewBraces.svelte";
+  import { isSkewedFrameBeat } from "$lib/shared/foundation/services/skewed-frame";
   import { parseTurnsTuple } from "../../tka-glyph/utils/turn-tuple-parser";
   import ReversalIndicators from "./ReversalIndicators.svelte";
   import ElementalGlyph from "./ElementalGlyph.svelte";
@@ -339,6 +341,13 @@ Usage:
   );
   const renderedGlyphs = $derived(
     pictograph.letter ? [{ letter: pictograph.letter, data: pictograph }] : []
+  );
+  // A beat that starts or ends in a zeta/eta position wears braces around its
+  // letter, matching the "{...}" span in the word.
+  const skewedFrame = $derived(
+    isVisibleMotion(pictograph.motions?.left) &&
+      isVisibleMotion(pictograph.motions?.right) &&
+      isSkewedFrameBeat(pictograph.motions.left, pictograph.motions.right)
   );
   const contentDuration = () =>
     animateContent && !printMode ? motionDuration(DURATION.normal) : 0;
@@ -670,6 +679,24 @@ Usage:
         />
       </g>
     {/each}
+
+    <!-- Skew braces (skewed-frame beats only) - fades in lockstep with the TKA glyph above -->
+    {#if pictograph.letter && skewedFrame}
+      <g
+        opacity={glyphOpacity}
+        transform="translate({tkaOffset}, 0)"
+        transition:fade={{ duration: contentDuration() }}
+      >
+        <SkewBraces
+          letter={pictograph.letter}
+          {letterDimensions}
+          visible={showTKA && !poseOnly}
+          {previewMode}
+          {animateVisibility}
+          {darkMode}
+        />
+      </g>
+    {/if}
 
     <!-- Turns Column (part of TKA) -->
     <g opacity={glyphOpacity} transform="translate({tkaOffset}, 0)">
