@@ -21,7 +21,9 @@
     "test:pack": "node scripts/verify-packed-package.mjs",
     "start": "node dist/index.js",
     "prepack": "npm run build",
-    "prepublishOnly": "npm run typecheck && npm run build && npm run test:pack"
+    "release:verify": "node scripts/release-package.mjs",
+    "release:publish": "node scripts/release-package.mjs --publish",
+    "prepublishOnly": "node scripts/block-direct-publish.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",

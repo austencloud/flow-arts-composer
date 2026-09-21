@@ -1,0 +1,77 @@
+name: Card rendering policy approval
+
+# Inspect filenames only. Never check out or execute pull-request code here.
+# This trusted base-branch workflow records approval against the PR head SHA.
+on:
+  pull_request_target:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+  statuses: write
+
+concurrency:
+  group: card-policy-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    outputs:
+      requires-approval: ${{ steps.files.outputs.requires-approval }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+      - uses: actions/github-script@v7
+        id: files
+        with:
+          script: |
+            const { changedCardPolicyFiles } = await import(`${process.env.GITHUB_WORKSPACE}/scripts/card-render-policy.mjs`);
+            const pr = context.payload.pull_request;
+            await github.rest.repos.createCommitStatus({
+              ...context.repo, sha: pr.head.sha, context: 'Card Render Policy Review',
+              state: 'pending', description: 'Checking whether rendering policy needs owner approval',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            });
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              ...context.repo, pull_number: pr.number, per_page: 100
+            });
+            if (files.length < pr.changed_files) throw new Error('Incomplete PR file list; cannot approve policy automatically');
+            const protectedFiles = changedCardPolicyFiles(files);
+            core.setOutput('requires-approval', String(protectedFiles.length > 0));
+            core.info(`Policy files requiring approval: ${JSON.stringify(protectedFiles)}`);
+
+  approve:
+    needs: inspect
+    if: needs.inspect.outputs.requires-approval == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: card-render-policy-review
+      url: ${{ github.event.pull_request.html_url }}
+    steps:
+      - run: echo "The owner approved these rendering policy changes."
+
+  result:
+    needs: [inspect, approve]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        env:
+          INSPECTION: ${{ needs.inspect.result }}
+          REQUIRES_APPROVAL: ${{ needs.inspect.outputs.requires-approval }}
+          APPROVAL: ${{ needs.approve.result }}
+        with:
+          script: |
+            const passed = process.env.INSPECTION === 'success' &&
+              (process.env.REQUIRES_APPROVAL === 'false' || process.env.APPROVAL === 'success');
+            await github.rest.repos.createCommitStatus({
+              ...context.repo, sha: context.payload.pull_request.head.sha,
+              context: 'Card Render Policy Review', state: passed ? 'success' : 'failure',
+              description: passed ? 'Rendering policy unchanged or approved by owner' : 'Rendering policy approval did not complete',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            });
