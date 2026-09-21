@@ -6,7 +6,11 @@ import { GripType } from "@austencloud/scene-3d";
 import { createAvatarServices } from "../../../node_modules/@austencloud/scene-3d/src/lib/services/implementations/AvatarServicesFactory";
 import { auditFireStaffProfile } from "$lib/shared/3d/diagnostics/contact-correct/fire-staff-mesh-audit";
 import { runContactCorrectSweep } from "$lib/shared/3d/diagnostics/contact-correct/contact-sweep-runner";
-import { avatar, avatarAssetsPresent, loadRig } from "../3d/locomotion-harness";
+import {
+  avatar,
+  avatarAssetsPresent,
+  loadRig,
+} from "../../unit/3d/locomotion-harness";
 import {
   sampleStaffIsolation,
   ISOLATION_STAFF_CONTACT,

@@ -1,8 +1,11 @@
 # Contact-correct performer evidence
 
-Status: blocked by failed physical acceptance checks; preserved on
-`codex/contact-correct-performers`, unmerged. This is an implementation
-checkpoint, not a completed contact-correct performer.
+Status: experimental contact lab. The existing `/test/grip-lab` route is being
+integrated for stable local inspection; physical acceptance remains incomplete.
+The named `npm run test:contact-lab-acceptance` workflow preserves its failing
+assertions as experimental evidence and is excluded from the ordinary release
+test gate. This is an implementation checkpoint, not a completed
+contact-correct performer.
 
 ## Elbow editor freeze correction (2026-09-21)
 
@@ -34,8 +37,7 @@ Editing there still authors a key and blends between saved keys. The editor
 and timeline name the selected stop alongside its exact phase.
 
 Seeking within the selected quarter preserves that loop. Selecting South in
-W→S seeks phase 4, preserving the final quarter rather than jumping to phase
-0. Seeking outside the selected quarter switches to the full loop. Saved-pose
+W→S seeks phase 4, preserving the final quarter rather than jumping to phase 0. Seeking outside the selected quarter switches to the full loop. Saved-pose
 buttons use the same behavior. Browser checks exercised these transitions,
 including SE at phase 0.5 with S→E still selected.
 
@@ -249,7 +251,7 @@ fingers, 0.152–0.341 mm. The corrected pose and reports are retained in
 [ch07 runtime report](contact-correct-evidence/ch07-right-east-after-load-guard.json)
 and [imported-rig swap report](contact-correct-evidence/metaperson-right-east-swap-report.json).
 
-The work still fails release acceptance:
+The experimental contact-lab acceptance workflow still fails:
 
 - **Continuity:** 961 samples × four rigs × two hands = 7,688 integrated poses.
   Contact, directed axis, reach, wrist limits, limb lengths, planted feet,
@@ -278,6 +280,14 @@ runtime/declaration files, installed from the persistent patch with
 18 installed artifacts to the authored package. All matched. The final
 `npm run check` reports zero errors and zero warnings. The task-owned preview
 server was stopped; port 5173 was not modified.
+
+## Experimental acceptance workflow
+
+Run `npm run test:contact-lab-acceptance` to reproduce the retained full-motion
+continuity and posed-skin acceptance failures. These tests intentionally remain
+outside `npm run test:ci` while the existing grip lab is available as a stable
+local experimental route. A successful ordinary test gate does not certify
+contact-correct motion or physical skin clearance.
 
 ## Next implementation boundary
 
