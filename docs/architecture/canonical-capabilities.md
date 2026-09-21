@@ -11,8 +11,11 @@ route, tip drift. `shared/3d/performers/isolation-keyframes.ts` owns the cyclic
 smoothstep sampling extracted from the negative-space reach page; that page
 and `routes/test/grip-lab/isolation-teaching.ts` both consume it. The latter
 owns bounded teaching channels and URL serialization. `PoseHandles` composes
-the existing Threlte `TransformControls` interaction with semantic proxy
-objects, never animated bones. `AuthoredContactPose` in the scene-3d patch
+Three.js `TransformControls` with semantic proxy objects, never animated bones.
+Its native lifecycle bypasses the extras wrapper: that wrapper's reactive
+attach/change feedback detached a handle mid-drag and froze pose editing.
+Only native `objectChange` events author poses; raycasting and gizmos remain
+owned by Three.js. `AuthoredContactPose` in the scene-3d patch
 extends the existing strict contact animator with opt-in body inputs.
 The production `collision/stance-yaw-track.ts` remains the automatic anticipatory
 stance owner; it does not author these user-taught poses. This lab intentionally

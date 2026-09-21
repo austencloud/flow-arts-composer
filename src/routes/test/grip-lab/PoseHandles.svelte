@@ -1,9 +1,10 @@
 <script lang="ts">
-  import { T, useTask } from "@threlte/core";
-  import { TransformControls } from "@threlte/extras";
+  import { onMount, untrack } from "svelte";
+  import { T, useTask, useThrelte } from "@threlte/core";
+  import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
   import { Group, Vector3, type Bone, type Object3D } from "three";
 
-  import type { PoseHandle, TeachingPose } from "./isolation-teaching";
+  import { channelLimit, type PoseHandle, type TeachingPose, type PoseChannel } from "./isolation-teaching";
 
   interface Props {
     root: Object3D | null;
@@ -47,6 +48,51 @@
   let arm: Bone | null = null;
   let cachedHand: "left" | "right" = hand;
   let dragging = false;
+  const { camera, dom, scene, invalidate } = useThrelte();
+  let controls = $state.raw<TransformControls>();
+
+  onMount(() => {
+    const current = new TransformControls(camera.current, dom);
+    current.setSpace("world");
+    current.setTranslationSnap(0.005);
+    current.setRotationSnap(Math.PI / 180);
+    const helper = current.getHelper();
+    scene.add(helper);
+    current.addEventListener("mouseDown", begin);
+    current.addEventListener("objectChange", changeSelected);
+    current.addEventListener("mouseUp", end);
+    current.addEventListener("change", invalidate);
+    controls = current;
+    return () => {
+      end();
+      current.removeEventListener("mouseDown", begin);
+      current.removeEventListener("objectChange", changeSelected);
+      current.removeEventListener("mouseUp", end);
+      current.removeEventListener("change", invalidate);
+      scene.remove(helper);
+      current.dispose();
+    };
+  });
+
+  $effect(() => {
+    const current = controls;
+    const target = selectedProxy();
+    const enabled = visible && !!root;
+    const mode = selected === "chest" ? "rotate" : "translate";
+    const activeCamera = camera.current;
+    if (!current) return;
+    // The extras wrapper's attach effect tracks its own dragging event and
+    // detaches mid-gesture. Keep native Three controls and their setters outside
+    // dependency tracking; only an actual objectChange authors a pose.
+    untrack(() => {
+      if (current.object !== target) current.attach(target);
+      current.camera = activeCamera;
+      current.setMode(mode);
+      current.enabled = enabled;
+      current.getHelper().visible = enabled;
+      if (!enabled) end();
+    });
+  });
 
   function findBone(suffix: RegExp): Bone | null {
     let result: Bone | null = null;
@@ -105,11 +151,11 @@
 
   function begin(): void {
     dragging = true;
-    onBegin();
+    untrack(onBegin);
   }
 
   function changeChest(): void {
-    onChange({
+    commitChanges({
       pitch: chestProxy.rotation.x,
       turn: chestProxy.rotation.y,
       lean: chestProxy.rotation.z,
@@ -118,31 +164,44 @@
 
   function changePelvis(): void {
     const offset = pelvisProxy.position.clone().sub(pelvisBase);
-    onChange({ pelvisX: offset.x, pelvisY: offset.y, pelvisZ: offset.z });
+    commitChanges({ pelvisX: offset.x, pelvisY: offset.y, pelvisZ: offset.z });
   }
 
   function changeElbow(): void {
     const offset = elbowProxy.position.clone().sub(shoulderWorld);
-    onChange({ elbowX: offset.x / 0.25, elbowY: offset.y / 0.25, elbowZ: offset.z / 0.25 });
+    commitChanges({ elbowX: offset.x / 0.25, elbowY: offset.y / 0.25, elbowZ: offset.z / 0.25 });
   }
 
   function changeTip(): void {
     const offset = tipProxy.position.clone().sub(new Vector3(...tipOrigin));
-    onChange({ tipX: offset.x, tipY: offset.y, tipZ: offset.z });
+    commitChanges({ tipX: offset.x, tipY: offset.y, tipZ: offset.z });
+  }
+
+  function commitChanges(changes: Partial<TeachingPose>): void {
+    const changed = (Object.keys(changes) as PoseChannel[]).some((channel) => {
+      const value = changes[channel]!;
+      const bounded = Math.max(-channelLimit(channel), Math.min(channelLimit(channel), value));
+      return Number.isFinite(value) && Math.abs(Math.round(bounded * 10000) / 10000 - pose[channel]) > 0.00005;
+    });
+    if (changed) onChange(changes);
   }
 
   function changeSelected(): void {
     if (!dragging) return;
-    if (selected === "chest") changeChest();
-    else if (selected === "pelvis") changePelvis();
-    else if (selected === "elbow") changeElbow();
-    else changeTip();
+    // Event callbacks may read pose state, but must not subscribe a caller's
+    // reactive effect to the same state they write.
+    untrack(() => {
+      if (selected === "chest") changeChest();
+      else if (selected === "pelvis") changePelvis();
+      else if (selected === "elbow") changeElbow();
+      else changeTip();
+    });
   }
 
   function end(): void {
     if (!dragging) return;
     dragging = false;
-    onEnd();
+    untrack(onEnd);
   }
 
   useTask(() => syncProxies());
@@ -163,16 +222,4 @@
   <T is={tipProxy}>
     {#if selected === "tip"}<T.Mesh renderOrder={10}><T.SphereGeometry args={[0.035, 16, 12]} /><T.MeshBasicMaterial color="#f3c46e" depthTest={false} /></T.Mesh>{/if}
   </T>
-
-  <TransformControls
-    object={selectedProxy()}
-    mode={selected === "chest" ? "rotate" : "translate"}
-    space="world"
-    translationSnap={0.005}
-    rotationSnap={Math.PI / 180}
-    onmouseDown={begin}
-    onchange={changeSelected}
-    onobjectChange={changeSelected}
-    onmouseUp={end}
-  />
 {/if}

@@ -4,6 +4,28 @@ Status: blocked by failed physical acceptance checks; preserved on
 `codex/contact-correct-performers`, unmerged. This is an implementation
 checkpoint, not a completed contact-correct performer.
 
+## Elbow editor freeze correction (2026-09-21)
+
+Reproduced Austen's saved phase-0.5 pose (lean 0.2618 rad, elbow pole
+[-0.2, -0.74, 0.35]). Opening it worked; dragging the green elbow axis locked
+the renderer and timed out browser mouse dispatch after 20 seconds. Merely
+isolating the host callback with `untrack` did not fix it. Removing the general
+change callback stopped the freeze but the extras wrapper still detached the
+handle at drag start, leaving edits unchanged; that was not accepted as a fix.
+
+`PoseHandles` now owns the lifecycle of the same native Three.js
+TransformControls. Attachment/property synchronization runs outside reactive
+dependency tracking, and only native `objectChange` writes a pose. Unchanged
+bounded values are ignored. Listeners, scene helper and controls are disposed
+on unmount. No scene-package or finger-fit cache changes were needed.
+
+The same actual upward drag then completed in 311 ms, changed elbowY from
+-0.74 to 0.0318, retained the 0.2618 torso lean, and saved the edited pose in
+the URL. Reload restored the 0.8 cm elbow-guide readout. Undo restored the
+entire original serialized pose list exactly. `npm run check` passed with
+zero errors and warnings. These checks address editor responsiveness and
+persistence, not the unresolved physical contact/motion acceptance below.
+
 ## Diagonal inspection stops (2026-09-21)
 
 The existing grip lab now exposes S, SE, E, NE, N, NW, W and SW. These are
@@ -71,7 +93,8 @@ visible warnings in the page.
 Browser checks verified a real pelvis-handle drag, Undo, insertion of a pose at
 2.5, copied-link reload restoring its 40° turn and all six poses, and zero drift
 reporting zero actual displacement. The TransformControls wrapper required its
-explicit `onchange` forwarding path for continuous drag writes. The page uses
+explicit `onchange` forwarding path for continuous drag writes at that stage;
+the later freeze correction above supersedes that workaround. The page uses
 stage/house labels; front-camera world +X is stage left, +Z is downstage.
 
 Layout was inspected at 375×667, 960×412, 820×1180, 1440×900, 1920×1080,
