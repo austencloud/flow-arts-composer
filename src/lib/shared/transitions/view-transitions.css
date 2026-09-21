@@ -65,15 +65,33 @@ html.named-route-morph::view-transition {
    TnD). The card wrapper and the expanded stage share one name, so the group
    carries the box between the grid slot and the stage or viewport while the
    old card content cross-fades into the panel. Owner:
-   features/create/generate/shared/services/generate-card-morph.ts.
-   generate-card-tnd is reserved for the TnD card (companion spec) and has no
-   host yet. */
+   features/create/generate/shared/services/generate-card-morph.ts. */
 ::view-transition-group(generate-card-customize),
 ::view-transition-group(generate-card-loop),
 ::view-transition-group(generate-card-preset),
 ::view-transition-group(generate-card-tnd) {
   animation-duration: var(--duration-dramatic);
   animation-timing-function: var(--ease-in-out);
+}
+
+/* Every expandable card is named before the click so any one can become the
+   morph source. Keep the chosen card above its stationary siblings throughout
+   the handoff; DOM order otherwise lets a later card (notably LOOP) float over
+   the expanding workspace for a few frames. */
+html.generate-card-morph-active::view-transition-group(generate-card-customize),
+html.generate-card-morph-active::view-transition-group(generate-card-loop),
+html.generate-card-morph-active::view-transition-group(generate-card-preset),
+html.generate-card-morph-active::view-transition-group(generate-card-tnd) {
+  z-index: 1;
+}
+
+html.generate-card-morph-customize::view-transition-group(
+    generate-card-customize
+  ),
+html.generate-card-morph-loop::view-transition-group(generate-card-loop),
+html.generate-card-morph-preset::view-transition-group(generate-card-preset),
+html.generate-card-morph-tnd::view-transition-group(generate-card-tnd) {
+  z-index: 2;
 }
 
 ::view-transition-old(learn-lesson-heading),

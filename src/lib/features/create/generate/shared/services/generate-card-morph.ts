@@ -48,6 +48,17 @@ export function generateCardMorphName(cardId: string): string {
 
 let lastRan = false;
 
+const ACTIVE_MORPH_CLASS = "generate-card-morph-active";
+
+function claimMorphLayer(host: GenerateCardMorphHost): () => void {
+  const hostClass = `generate-card-morph-${host}`;
+  document.documentElement.classList.add(ACTIVE_MORPH_CLASS, hostClass);
+
+  return () => {
+    document.documentElement.classList.remove(ACTIVE_MORPH_CLASS, hostClass);
+  };
+}
+
 interface GenerateCardMorphOptions {
   /**
    * Runs once the card is visually at its destination. Plain/reduced-motion
@@ -101,9 +112,26 @@ export function morphGenerateCard(
     if (options.onSettled) schedulePlainSettlement(options.onSettled);
     return false;
   }
+
+  // All four expandable cards have named snapshots so any one of them can be
+  // the next source. During a morph, the chosen card must paint above those
+  // stationary siblings; otherwise a later card such as LOOP briefly crosses
+  // in front of the workspace growing out of Timing and direction.
+  const releaseMorphLayer = claimMorphLayer(host);
   lastRan = false;
-  const transition = startMorph(mutate);
+  let transition: ViewTransition | null;
+  try {
+    transition = startMorph(mutate);
+  } catch (error) {
+    releaseMorphLayer();
+    throw error;
+  }
   lastRan = transition !== null;
+  if (transition) {
+    void transition.finished.then(releaseMorphLayer, releaseMorphLayer);
+  } else {
+    releaseMorphLayer();
+  }
   runWhenSettled(transition, options.onSettled);
   return lastRan;
 }

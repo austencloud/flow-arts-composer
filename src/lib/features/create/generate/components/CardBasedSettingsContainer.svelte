@@ -681,7 +681,11 @@ Delegates ALL logic to services (SRP compliant)
   </div>
 
   <div class="card-grid-stage">
-    <div class="card-grid" data-level={selectedLevel}>
+    <div
+      class="card-grid"
+      data-level={selectedLevel}
+      data-expanded-card={panelState.openGenerateCard ?? undefined}
+    >
       {#if levelCardEntry}
         <div class="compact-level-card" data-card-id={levelCardEntry.id}>
           <LevelCard
@@ -1093,6 +1097,16 @@ Delegates ALL logic to services (SRP compliant)
     flex: 1;
     min-height: 0;
     min-width: 0;
+  }
+
+  /* The Generate card normally breathes past its own box. Once a card owns the
+     expanded stage, keep that ambient motion inside the old grid instead of
+     letting a green edge peek around the full-size workspace snapshot. */
+  .card-grid[data-expanded-card]
+    .card-wrapper[data-card-id="generate-button"]
+    :global(.generate-button-card) {
+    animation: none;
+    transform: none;
   }
 
   /*
