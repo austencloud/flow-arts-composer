@@ -37,6 +37,7 @@
   import PoseHandles from "./PoseHandles.svelte";
   import PoseEditor from "./PoseEditor.svelte";
   import KeyframeTimeline from "./KeyframeTimeline.svelte";
+  import GripLabShortcuts from "./GripLabShortcuts.svelte";
   import { allowedTipOffset, authoredBodyPose, TEACHING_ANCHOR_OFFSET, TRANSITIONS, type PoseHandle } from "./isolation-teaching";
   import {
     createContactInspectionState,
@@ -80,6 +81,37 @@
   let dragging = $state(false);
   let selectedHandle = $state<PoseHandle>("chest");
   let copyStatus = $state("");
+  let shortcutsOpen = $state(false);
+  let keyframeFeedback = $state("");
+  function deleteKeyframe() {
+    const selected = inspection.selectedKey;
+    if (inspection.removeKey()) {
+      keyframeFeedback = `Deleted keyframe ${selected!.phase.toFixed(3)}. Undo restores it.`;
+    } else {
+      keyframeFeedback = inspection.keys.length <= 1
+        ? "Keep at least one keyframe to hold the pose."
+        : "Select a keyframe diamond before deleting.";
+    }
+  }
+  function undoKeyframe() {
+    if (!inspection.canUndo) return;
+    inspection.undo();
+    keyframeFeedback = "Undid the last pose change.";
+  }
+  function redoKeyframe() {
+    if (!inspection.canRedo) return;
+    inspection.redo();
+    keyframeFeedback = "Redid the pose change.";
+  }
+  function addKeyframe() {
+    keyframeFeedback = inspection.addKey()
+      ? `Added keyframe ${inspection.phase.toFixed(3)}.`
+      : inspection.keys.length >= 100 ? "This loop already has 100 keyframes." : "There is already a keyframe here.";
+  }
+  function selectKeyframe(phase: number) {
+    inspection.seekPosition(phase);
+    keyframeFeedback = "";
+  }
   const taughtPose = $derived(inspection.pose);
   const tipOffset = $derived(allowedTipOffset(taughtPose, inspection.tolerance));
   const staffOffset = $derived<[number, number, number]>([
@@ -254,7 +286,14 @@
 </script>
 
 <svelte:head><title>Staff isolation · TKA</title></svelte:head>
-<main class="inspection">
+<main class="inspection" data-edit-history-shortcut-scope>
+<GripLabShortcuts bind:open={shortcutsOpen} blocked={characterDrawerOpen || diagnosticsOpen || dragging}
+  canUndo={inspection.canUndo} canRedo={inspection.canRedo}
+  onUndo={undoKeyframe} onRedo={redoKeyframe} onDelete={deleteKeyframe} onAdd={addKeyframe}
+  onPlay={() => ready && inspection.setPlaying(!inspection.playing)}
+  onStep={(direction) => inspection.setPhase(inspection.phase + direction * 0.01)}
+  onNeighbor={(direction) => { inspection.seekKeyframe(direction); keyframeFeedback = ""; }}
+  onStart={() => inspection.reset()} />
   <header class="page-header">
     <div>
       <h1>Staff isolation</h1>
@@ -265,6 +304,7 @@
         inspection.setPlaying(false);
       }}>Edit pose</PanelButton>
       <PanelButton onclick={copyPose}>Copy pose link</PanelButton>
+      <PanelButton onclick={() => shortcutsOpen = true}>Shortcuts</PanelButton>
       <button
         type="button"
         aria-label="Character"
@@ -396,10 +436,11 @@
       >
     </div>
     <KeyframeTimeline keys={inspection.keys} phase={inspection.phase} range={inspection.range}
-      selectedKey={inspection.selectedKey} canUndo={inspection.canUndo}
-      onSelect={(phase) => inspection.seekPosition(phase)}
-      onAdd={() => inspection.addKey()} onRemove={() => inspection.removeKey()}
-      onUndo={() => inspection.undo()} onMove={(from, to) => inspection.moveKey(from, to)}
+      selectedKey={inspection.selectedKey} canUndo={inspection.canUndo} canRedo={inspection.canRedo}
+      feedback={keyframeFeedback} onSelect={selectKeyframe}
+      onNeighbor={(direction) => { inspection.seekKeyframe(direction); keyframeFeedback = ""; }}
+      onAdd={addKeyframe} onRemove={deleteKeyframe}
+      onUndo={undoKeyframe} onRedo={redoKeyframe} onMove={(from, to) => inspection.moveKey(from, to)}
       onEdit={() => { inspection.setPlaying(false); editing = true; }}
       onBegin={() => inspection.beginEdit()} onEnd={() => inspection.endEdit()} />
     <div class="control-grid">
