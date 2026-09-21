@@ -85,6 +85,18 @@ html.generate-card-morph-active::view-transition-group(generate-card-tnd) {
   z-index: 1;
 }
 
+/* The card morph is local to the Generate grid. Leaving the default root
+   snapshot enabled also rasterizes the persistent translucent navigation rail;
+   that flattened image reads as opaque black until the transition ends. Keep
+   the live shell on screen and transition only the named card snapshots. */
+html.generate-card-morph-active {
+  view-transition-name: none;
+}
+
+html.generate-card-morph-active::view-transition {
+  background: transparent;
+}
+
 html.generate-card-morph-customize::view-transition-group(
     generate-card-customize
   ),
