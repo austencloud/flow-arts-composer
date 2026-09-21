@@ -1,8 +1,9 @@
 <!--
-  TnDPanel: the grown TnD card. Two sections, Hands and Props, each a Free
-  chip beside the shared 3x2 TnDModeGrid, and the Match turns toggle under
-  Props. Presentation only: every change goes straight back through a
-  handler and the stage re-renders from the config.
+  TnDPanel: the grown TnD card. Two sections, Hands and Props, each group Free
+  with the shared 3x2 TnDModeGrid. Turn matching is a panel-wide rule because
+  prop timing constrains both hands, so it sits in a shared footer instead of
+  looking like a seventh prop choice. Presentation only: every change goes
+  straight back through a handler and the stage re-renders from the config.
 
   Hand modes the current LOOP cannot keep arrive in `blockedHandModes` and
   show disabled with the reason; the LOOP overlay does the mirror image for
@@ -91,23 +92,25 @@
             >{describeTnDSelection(handRelationship)}</span
           >
         </div>
-        <RelationshipChoiceChip
-          compact
-          accent="var(--theme-accent, #38bdf8)"
-          timing="Free"
-          direction="No constraints"
-          active={handRelationship === "free"}
-          ariaLabel="Free hands"
-          onpick={() => onHandRelationshipChange("free")}
-        />
-        <TnDModeGrid
-          fullLabels
-          selected={handRelationship === "free" ? null : handRelationship}
-          disabledModes={blockedModes}
-          reasons={blockedHandModes}
-          ariaLabel="Hand timing and direction"
-          onpick={onHandRelationshipChange}
-        />
+        <div class="choice-stack">
+          <RelationshipChoiceChip
+            compact
+            accent="var(--theme-accent, #38bdf8)"
+            timing="Free"
+            direction="No constraints"
+            active={handRelationship === "free"}
+            ariaLabel="Free hands"
+            onpick={() => onHandRelationshipChange("free")}
+          />
+          <TnDModeGrid
+            fullLabels
+            selected={handRelationship === "free" ? null : handRelationship}
+            disabledModes={blockedModes}
+            reasons={blockedHandModes}
+            ariaLabel="Hand timing and direction"
+            onpick={onHandRelationshipChange}
+          />
+        </div>
       </section>
 
       <section class="tnd-section" aria-labelledby="tnd-props-heading">
@@ -117,37 +120,43 @@
             >{describeTnDSelection(propRelationship)}</span
           >
         </div>
-        <RelationshipChoiceChip
-          compact
-          accent="var(--theme-accent, #38bdf8)"
-          timing="Free"
-          direction="No constraints"
-          active={propRelationship === "free"}
-          ariaLabel="Free props"
-          onpick={() => onPropRelationshipChange("free")}
-        />
-        <TnDModeGrid
-          fullLabels
-          selected={propRelationship === "free" ? null : propRelationship}
-          ariaLabel="Prop timing and direction"
-          onpick={onPropRelationshipChange}
-        />
-        <div class="turns-row">
-          <FilterChipBase
-            label={turnsLabel}
-            icon={timingSet ? "fas fa-lock" : undefined}
-            mode="toggle"
-            emphasis="soft"
-            size="sm"
-            labelScale="readable"
-            active={matchHandTurns || timingSet}
-            disabled={!turnsAvailable || timingSet}
-            ariaLabel={turnsAriaLabel}
-            onclick={() => onMatchHandTurnsChange(!matchHandTurns)}
+        <div class="choice-stack">
+          <RelationshipChoiceChip
+            compact
+            accent="var(--theme-accent, #38bdf8)"
+            timing="Free"
+            direction="No constraints"
+            active={propRelationship === "free"}
+            ariaLabel="Free props"
+            onpick={() => onPropRelationshipChange("free")}
           />
-          <p class="turns-hint">{turnsHint}</p>
+          <TnDModeGrid
+            fullLabels
+            selected={propRelationship === "free" ? null : propRelationship}
+            ariaLabel="Prop timing and direction"
+            onpick={onPropRelationshipChange}
+          />
         </div>
       </section>
+
+      <div class="turns-row" aria-labelledby="turn-matching-title">
+        <div class="turns-copy">
+          <h4 class="turns-title" id="turn-matching-title">Turn matching</h4>
+          <p class="turns-hint">{turnsHint}</p>
+        </div>
+        <FilterChipBase
+          label={turnsLabel}
+          icon={timingSet ? "fas fa-lock" : undefined}
+          mode="toggle"
+          emphasis="soft"
+          size="sm"
+          labelScale="readable"
+          active={matchHandTurns || timingSet}
+          disabled={!turnsAvailable || timingSet}
+          ariaLabel={turnsAriaLabel}
+          onclick={() => onMatchHandTurnsChange(!matchHandTurns)}
+        />
+      </div>
     </div>
   </div>
 </GenerationSettingsOverlay>
@@ -184,6 +193,14 @@
     min-width: 0;
   }
 
+  .choice-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    min-height: 0;
+  }
+
   .section-head {
     display: flex;
     align-items: baseline;
@@ -206,14 +223,35 @@
   }
 
   .turns-row {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-top: 4px;
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "copy control";
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+    padding-top: 12px;
+    border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.14));
   }
 
   .turns-row :global(.filter-chip) {
-    align-self: flex-start;
+    grid-area: control;
+    justify-self: end;
+  }
+
+  .turns-copy {
+    grid-area: copy;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  .turns-title {
+    margin: 0;
+    font-size: var(--font-size-min, 0.875rem);
+    font-weight: 700;
+    color: var(--theme-text, #fff);
   }
 
   .turns-hint {
@@ -223,33 +261,53 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.72));
   }
 
+  @container tnd-panel (max-width: 560px) {
+    .turns-row {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas:
+        "control"
+        "copy";
+    }
+
+    .turns-row :global(.filter-chip) {
+      justify-self: start;
+    }
+  }
+
   /* Roomy expanded stages should feel like a control surface, not a compact
      popover stranded at the top. Once there is enough height to preserve the
      labels and the Match turns explanation, the six choices share the
      remaining room. Short stages keep the content-sized layout and scroll. */
   @container tnd-panel (min-width: 561px) and (min-height: 22rem) {
     .tnd-panel {
-      grid-template-rows: minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr) auto;
       column-gap: clamp(20px, 4cqi, 48px);
       padding: clamp(12px, 2cqi, 24px);
     }
 
     .tnd-section {
       display: grid;
-      grid-template-rows: auto auto minmax(0, 1fr) minmax(5.5rem, auto);
+      grid-template-rows: auto minmax(0, 1fr);
       gap: clamp(12px, 1.5cqh, 24px);
     }
 
-    .tnd-section :global(.mode-grid) {
+    .choice-stack {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: clamp(10px, 1.25cqh, 18px);
+    }
+
+    .choice-stack :global(.mode-grid) {
       width: 100%;
       height: 100%;
-      max-height: 28rem;
-      align-self: center;
+      max-height: 34rem;
+      align-self: start;
     }
 
     .turns-row {
-      grid-row: 4;
+      grid-row: 2;
       margin-top: 0;
+      padding-top: clamp(12px, 1.5cqh, 20px);
     }
   }
 </style>
