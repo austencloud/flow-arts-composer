@@ -224,6 +224,13 @@
       gap: clamp(12px, 1.5cqh, 24px);
     }
 
+    .tnd-section :global(.mode-grid) {
+      width: 100%;
+      height: 100%;
+      max-height: 28rem;
+      align-self: center;
+    }
+
     .turns-row {
       grid-row: 4;
       margin-top: 0;

@@ -10,6 +10,12 @@ Use `docs/reference/styling-guide.md` for token and CSS implementation details.
 Use the shared primitives named here for interaction behavior. If a legacy
 screen conflicts with this document, treat the screen as debt, not precedent.
 
+Use [Visual Review](visual-review.md) for aesthetic evaluation and the
+`ui-bust` skill for its planning, review, and research-refresh workflow. This
+canon records product choices, not universal evidence of AI authorship.
+Research sources, limits, and freshness live in the
+[evidence ledger](../reference/visual-design-evidence.md).
+
 ## The Product in One Paragraph
 
 Flow Arts Composer is an artifact-centered creative tool. The interface should
@@ -359,7 +365,13 @@ Before approving a new or substantially restyled surface, verify:
 - Selection affects the whole object and has a non-color cue.
 - Structural changes use the canonical motion system.
 - Wide layouts recompose; narrow layouts retain capability.
-- The final screenshots look like a product, not generated output.
+- The rendered composition has evidence-backed findings under Visual Review,
+  separate from functional checks. Unassessed aesthetics cannot count as a pass.
+
+The checklist establishes conformance to this product's visual grammar. It
+does not certify distinctiveness, human origin, or Austen's approval. New
+surfaces and substantial restyles also require the proportional aesthetic
+review in [Visual Review](visual-review.md).
 
 ## 14. Evidence and Authority
 
