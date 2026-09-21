@@ -13,6 +13,8 @@
   let maxReadableStepLayers = $state(0);
   let maxBackOutgoingX = $state(0);
   let collapseMidpoint = $state(0);
+  let maxInteractiveLayers = $state(0);
+  let observedOverlap = $state(false);
   let stage: HTMLDivElement;
 
   const HEIGHTS: Record<string, number> = { alpha: 60, beta: 160, gamma: 100 };
@@ -21,6 +23,28 @@
     key = "beta";
     setTimeout(() => (key = "alpha"), 20);
     setTimeout(() => (key = "beta"), 40);
+  }
+
+  function sampleInteractiveLayers(): void {
+    maxInteractiveLayers = 0;
+    observedOverlap = false;
+    rapidToggle();
+    const start = performance.now();
+    const sample = () => {
+      const layers = [
+        ...stage.querySelectorAll<HTMLElement>(".crossfade > .layer"),
+      ];
+      observedOverlap ||= layers.length > 1;
+      maxInteractiveLayers = Math.max(
+        maxInteractiveLayers,
+        layers.filter(
+          (layer) =>
+            !layer.inert && layer.getAttribute("aria-hidden") !== "true"
+        ).length
+      );
+      if (performance.now() - start < 250) requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
   }
 
   function measureCollapse(): void {
@@ -90,11 +114,18 @@
 <button type="button" onclick={() => (key = "gamma")}>Show gamma</button>
 <button type="button" onclick={rapidToggle}>Rapid toggle</button>
 <button type="button" onclick={measureCollapse}>Measure collapse</button>
+<button type="button" onclick={sampleInteractiveLayers}
+  >Measure interactive layers</button
+>
+<output data-testid="interactive-layer-count">{maxInteractiveLayers}</output>
+<output data-testid="observed-overlap">{observedOverlap}</output>
 <output data-testid="collapse-midpoint">{collapseMidpoint}</output>
 
 <div bind:this={stage} data-testid="stage" style="width: 240px;">
   <Crossfade {key} duration={80} animateHeight>
-    <div class="panel" style="height: {HEIGHTS[key]}px;">{key} panel</div>
+    <div class="panel" style="height: {HEIGHTS[key]}px;">
+      {key} panel <button type="button">Panel action</button>
+    </div>
   </Crossfade>
 </div>
 

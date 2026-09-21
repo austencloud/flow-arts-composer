@@ -48,7 +48,10 @@
 <script lang="ts">
   import { fade, type TransitionConfig } from "svelte/transition";
   import { DURATION } from "$lib/shared/transitions/transitions";
-  import { flyFade } from "$lib/shared/transitions/motion";
+  import {
+    flyFade,
+    reducedMotion as prefersReducedMotion,
+  } from "$lib/shared/transitions/motion";
   import type { Snippet } from "svelte";
 
   type Mode = "crossfade" | "swap";
@@ -90,18 +93,29 @@
     children: Snippet;
   } = $props();
 
-  let reducedMotion = $state(
-    typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  );
+  let reducedMotion = $state(prefersReducedMotion());
 
   $effect(() => {
     const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const handler = (e: MediaQueryListEvent) => {
-      reducedMotion = e.matches;
+    const handler = () => {
+      reducedMotion = prefersReducedMotion();
+      if (reducedMotion) {
+        for (const animation of box?.getAnimations({ subtree: true }) ?? []) {
+          if (animation.effect?.getTiming().iterations !== Infinity)
+            animation.finish();
+        }
+      }
     };
     mql.addEventListener("change", handler);
-    return () => mql.removeEventListener("change", handler);
+    const preferenceObserver = new MutationObserver(handler);
+    preferenceObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-motion-preference"],
+    });
+    return () => {
+      mql.removeEventListener("change", handler);
+      preferenceObserver.disconnect();
+    };
   });
 
   // Svelte's `fade` is a JS/CSS transition, so a CSS `transition: none` media
@@ -142,6 +156,15 @@
           y: 0,
         })
       : fade(node, { duration: effDuration });
+  }
+
+  function setLayerInteractive(event: Event, interactive: boolean): void {
+    const layer = event.currentTarget as HTMLElement;
+    // Outgoing controls stay painted during the fade but must stop accepting
+    // input. A reversed transition restores the returning layer immediately.
+    layer.inert = !interactive;
+    if (interactive) layer.removeAttribute("aria-hidden");
+    else layer.setAttribute("aria-hidden", "true");
   }
 
   // The box is driven off the INCOMING layer's natural height. The outgoing
@@ -281,7 +304,14 @@
   class:animate-height={heightEnabled}
 >
   {#key key}
-    <div class="layer" use:trackLayer in:enterLayer out:leaveLayer>
+    <div
+      class="layer"
+      use:trackLayer
+      in:enterLayer
+      out:leaveLayer
+      onintrostart={(event) => setLayerInteractive(event, true)}
+      onoutrostart={(event) => setLayerInteractive(event, false)}
+    >
       {@render children()}
     </div>
   {/key}

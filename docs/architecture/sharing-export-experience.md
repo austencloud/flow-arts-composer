@@ -553,3 +553,87 @@ flow was inspected at phone, tablet, short landscape, desktop, and 4K viewport
 sizes; desktop settings opened automatically and the large desktop layouts had
 no unnecessary inner scrollbar. CI retains live/export/difference images so a
 future regression can be investigated without rebuilding this evidence manually.
+
+### September 21 sharing motion audit
+
+Austen reported that the File type selector abruptly changed the modal's height
+between Card and Video. The previous acceptance checks established the final
+layouts and file lifecycle, but did not measure the intervening frames. The
+baseline browser trace changed from approximately 846px to 416px in a single
+frame. A CSS height transition on an unchanged `fit-content` declaration did
+not cover intrinsic content changes.
+
+The audit covers this sheet's Home, Link, Download, phone-transfer, publishing,
+and Instagram review states, plus the card/video settings they expose. It does
+not certify the separate Post Studio editor or external operating-system and
+social-network interfaces.
+
+| State change                                                                                       | Motion or stability owner                                            |
+| -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Dialog changes natural height                                                                      | `BaseModal.animateSize` and shared `createIntrinsicHeightMotion`     |
+| Home / Link / Download / Publish and phone-transfer route                                          | Shared `Crossfade` for content; `BaseModal` owns frame height        |
+| Card / Video settings                                                                              | Shared `Crossfade`; live card settings do not key the heavy renderer |
+| Disclosure, custom footer, start-placement choices, stale/render/error status and delivery actions | Shared `growFade` for normal-flow presence                           |
+| Header title and download action label changes                                                     | Reserved geometry so copy does not push neighbouring controls        |
+| Review detail and recovery rows                                                                    | Shared `growFade`                                                    |
+
+An outgoing layer remains visible while fading, but must immediately become
+inert and hidden from assistive technology. Rapid reversal must leave one
+interactive branch. Preserve the live card's intrinsic stage sizing and its
+readiness signal: wrapping it in an absolutely positioned or height-pinned
+crossfade can stop PNG preparation even when the final screenshot looks
+plausible. The real-card lifecycle tests caught that failure during this audit.
+
+Treat nested motion as an integration problem. Animating the settings column
+does not establish that the taller preview column or modal frame animates.
+Checking for _any_ descendant animation is not a valid reason to skip the
+frame: a spinner, an opacity fade, or a small status row may be unrelated to
+the dimension that changes. Likewise, constraining an updated target to the
+last few milliseconds of an earlier transition can produce a large late jump.
+
+New transition checks must sample the actual sheet after native input, including
+Card to Video, reversal, and reduced motion. Keep the existing immediate-click,
+source replacement, retry, and Auto-layout tests. At short landscape sizes,
+assert the download dock remains inside the dialog and reachable; adding a
+crossfade wrapper must not break the scroll area's flex constraint. Final
+screenshots and tests that merely intercept `animate()` calls are insufficient.
+
+The frame retains its measured height between observations. Its nonshrinking
+content wrapper provides the next natural size independently. Releasing the
+frame to `auto` after every animation permits a first-frame reflow before the
+next observer notification. Do not infer a destination by summing animated
+descendants: columns, overlays, and viewport caps invalidate that arithmetic.
+The outer route Crossfades must not pin height or measure against their own
+previous height; keep their flex/scroll constraints and let the dialog own it.
+
+Verification for this audit: 12 actual-sheet browser regressions, 16 shared
+modal/Crossfade browser checks, and 35 focused sharing/motion logic tests pass.
+The tests include immediate download intent, source replacement, PNG retry,
+real pictographs, transition frame sampling, rapid reversals, inactive outgoing
+controls, short-landscape scrolling, and both initial and live changes to Reduce
+Motion. The initial source checks alone did not establish these behaviors.
+
+Browser inspection covered 375×667, 960×412, 820×1180, 1440×900, 1920×1080,
+2560×1440, and 3840×2160, plus 720×450 for 200% desktop reflow. Download actions
+remain visible; only constrained heights need a content scrollbar. At the large
+desktop sizes neither Card nor Video has an unnecessary inner scrollbar. The
+mobile Instagram Preview/Details switch keeps media mounted, fades the panes,
+and makes the inactive pane inert. Publishing/phone-transfer completion was not
+performed against a real account or recipient.
+
+Visual review: VR-1, evidence ledger checked 2026-09-21, calibration **NOT
+CALIBRATED**. Audience: a creator saving or sharing the current sequence. Owner
+constraint: smooth, consistent transitions without blank space or inaccessible
+controls. This is a motion repair within the existing composition, not a new
+visual design. Independent code review found the live Reduce Motion cancellation
+gap; its fix has a browser regression. Aesthetic inspection is **self-review —
+less independent**. Project specificity, hierarchy, grouping, real artifacts,
+craft, and product continuity are supported by the inspected download and review
+states: the current sequence remains the subject, the download action remains
+distinct, settings stay adjacent on desktop, and motion uses shared primitives.
+This is not a claim of universal aesthetic acceptance or external-app coverage.
+
+Task-local frame traces, viewport geometry, browser captures, and test logs are
+retained in `E:/tka-share-layout-motion-evidence`. Some captures from the in-app
+browser have compositor cropping/scaling artifacts; geometry records and direct
+interaction, rather than those image edges, establish viewport containment.

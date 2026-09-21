@@ -7,7 +7,9 @@ import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence
 import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
 import { getVisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
 import { EMPTY_META_PUBLISH_STATUS } from "$lib/shared/share/services/meta-publish";
+import type { MetaPublishStatus } from "$lib/shared/share/services/meta-publish";
 import PostShareSheet from "$lib/shared/share/components/PostShareSheet.svelte";
+import { DURATION } from "$lib/shared/transitions/transitions";
 import "../../src/app.css";
 
 const { renderCard, deliverCard } = vi.hoisted(() => ({
@@ -37,6 +39,101 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
+interface HeightSample {
+  timestamp: number;
+  height: number;
+}
+
+function nextFrame(): Promise<number> {
+  return new Promise((resolve) => requestAnimationFrame(resolve));
+}
+
+function hasRunningFiniteAnimation(dialog: HTMLDialogElement): boolean {
+  return dialog.getAnimations({ subtree: true }).some((animation) => {
+    const iterations = animation.effect?.getTiming().iterations;
+    return animation.playState === "running" && iterations !== Infinity;
+  });
+}
+
+async function settledDialogHeight(dialog: HTMLDialogElement): Promise<number> {
+  const deadline = performance.now() + 2_000;
+  let previous = dialog.getBoundingClientRect().height;
+  let stableFrames = 0;
+  while (performance.now() < deadline) {
+    await nextFrame();
+    const current = dialog.getBoundingClientRect().height;
+    if (
+      !hasRunningFiniteAnimation(dialog) &&
+      Math.abs(current - previous) < 1
+    ) {
+      stableFrames += 1;
+      if (stableFrames >= 3) return current;
+    } else {
+      stableFrames = 0;
+    }
+    previous = current;
+  }
+  throw new Error("Share dialog did not settle within 2 seconds");
+}
+
+async function sampleDialogHeights(
+  dialog: HTMLDialogElement,
+  count: number,
+  initialHeight: number
+): Promise<HeightSample[]> {
+  const samples = [{ timestamp: performance.now(), height: initialHeight }];
+  for (let frame = 0; frame < count; frame += 1) {
+    const timestamp = await nextFrame();
+    samples.push({
+      timestamp,
+      height: dialog.getBoundingClientRect().height,
+    });
+  }
+  return samples;
+}
+
+function assertContinuousHeightMotion(
+  samples: HeightSample[],
+  direction: "shrinking" | "growing",
+  label: string
+): void {
+  const start = samples[0]!.height;
+  const end = samples.at(-1)!.height;
+  expect(Math.abs(start - end)).toBeGreaterThan(20);
+  expect(
+    samples.some(
+      ({ height }) =>
+        height > Math.min(start, end) + 2 && height < Math.max(start, end) - 2
+    )
+  ).toBe(true);
+
+  for (let index = 1; index < samples.length; index += 1) {
+    const previous = samples[index - 1]!;
+    const current = samples[index]!;
+    const elapsed = current.timestamp - previous.timestamp;
+    const delta = current.height - previous.height;
+    // Bound motion relative to the distance and shared clock. The standard
+    // cubic easing peaks below 3x its average speed; 3.5 allows frame rounding.
+    // A fixed px/frame limit rejects valid motion when rendering drops a frame.
+    const maximumDelta =
+      (Math.abs(start - end) * Math.max(0, elapsed) * 3.5) / DURATION.normal +
+      2;
+    if (Math.abs(delta) > maximumDelta) {
+      throw new Error(
+        `${label} jumped ${delta.toFixed(1)}px after ${elapsed.toFixed(1)}ms: ${samples.map(({ timestamp, height }) => `${timestamp.toFixed(1)}:${height.toFixed(1)}`).join(", ")}`
+      );
+    }
+    if (direction === "shrinking" && delta > 2) {
+      throw new Error(`${label} grew during its shrink: ${delta.toFixed(1)}px`);
+    }
+    if (direction === "growing" && delta < -2) {
+      throw new Error(
+        `${label} shrank during its growth: ${delta.toFixed(1)}px`
+      );
+    }
+  }
+}
+
 function realSequence(steps = 16): SequenceData {
   const sequence = structuredClone(demo);
   sequence.steps = sequence.steps.slice(0, steps);
@@ -47,7 +144,28 @@ function realSequence(steps = 16): SequenceData {
   } as unknown as SequenceData;
 }
 
-async function openCard(sequence: SequenceData, columns: number | null = 2) {
+const INSTAGRAM_CONNECTED: MetaPublishStatus = {
+  instagram: {
+    accountId: "render-parity-instagram",
+    username: "render-parity",
+    accountType: "CREATOR",
+    route: "instagram-login",
+    expiresAtMs: Date.now() + 60_000,
+    capabilities: null,
+  },
+  facebookPage: null,
+};
+
+async function openCard(
+  sequence: SequenceData,
+  columns: number | null = 2,
+  options: {
+    availableArtifacts?: readonly ("card" | "video")[];
+    videoBlobUrl?: string | null;
+    initialEntry?: "chooser" | "download";
+    metaStatusOverride?: MetaPublishStatus;
+  } = {}
+) {
   await page.viewport(1920, 1080);
   const composition = getImageCompositionManager();
   composition.setPersistenceSuspended(true);
@@ -59,15 +177,15 @@ async function openCard(sequence: SequenceData, columns: number | null = 2) {
     isOpen: true,
     sequence,
     shareUrl: "",
-    videoBlobUrl: null,
+    videoBlobUrl: options.videoBlobUrl ?? null,
     isExportingVideo: false,
     exportProgress: null,
     onClose: vi.fn(),
     initialArtifact: "card",
-    availableArtifacts: ["card"],
-    initialEntry: "download",
+    availableArtifacts: options.availableArtifacts ?? ["card"],
+    initialEntry: options.initialEntry ?? "download",
     canCreateLink: false,
-    metaStatusOverride: EMPTY_META_PUBLISH_STATUS,
+    metaStatusOverride: options.metaStatusOverride ?? EMPTY_META_PUBLISH_STATUS,
   });
 }
 
@@ -77,6 +195,184 @@ afterEach(() => {
 });
 
 describe("Download card with real live pictographs", () => {
+  it("moves the actual sheet height through Card and Video instead of snapping", async () => {
+    renderCard.mockReturnValue(new Promise<Blob>(() => {}));
+    const screen = await openCard(realSequence(), 2, {
+      availableArtifacts: ["card", "video"],
+      videoBlobUrl: "data:video/mp4;base64,AAAA",
+    });
+    try {
+      await expect.poll(() => renderCard.mock.calls.length).toBeGreaterThan(0);
+
+      const dialog = document.querySelector<HTMLDialogElement>(
+        "dialog.share-sheet-modal"
+      );
+      const fileType =
+        document.querySelector<HTMLSelectElement>(".file-type select");
+      expect(dialog).not.toBeNull();
+      expect(fileType).not.toBeNull();
+      const cardHeight = await settledDialogHeight(dialog!);
+
+      fileType!.value = "video";
+      fileType!.dispatchEvent(new Event("change", { bubbles: true }));
+      const cardToVideo = await sampleDialogHeights(dialog!, 14, cardHeight);
+      assertContinuousHeightMotion(cardToVideo, "shrinking", "Card → Video");
+
+      // Reverse while the return transition is still in flight: the dialog must
+      // continue from its displayed height instead of flashing to either end.
+      fileType!.value = "card";
+      fileType!.dispatchEvent(new Event("change", { bubbles: true }));
+      const videoToCard = await sampleDialogHeights(
+        dialog!,
+        14,
+        dialog!.getBoundingClientRect().height
+      );
+      assertContinuousHeightMotion(videoToCard, "growing", "Video → Card");
+    } finally {
+      await screen.unmount();
+    }
+
+    const matchMedia = window.matchMedia;
+    window.matchMedia = ((query: string) =>
+      ({
+        matches: query === "(prefers-reduced-motion: reduce)",
+        media: query,
+        addEventListener() {},
+        removeEventListener() {},
+        addListener() {},
+        removeListener() {},
+        dispatchEvent: () => true,
+      }) as MediaQueryList) as typeof window.matchMedia;
+    try {
+      const reducedScreen = await openCard(realSequence(), 2, {
+        availableArtifacts: ["card", "video"],
+        videoBlobUrl: "data:video/mp4;base64,AAAA",
+      });
+      await expect.poll(() => renderCard.mock.calls.length).toBeGreaterThan(0);
+      const reducedDialog = document.querySelector<HTMLDialogElement>(
+        "dialog.share-sheet-modal"
+      );
+      const reducedFileType =
+        document.querySelector<HTMLSelectElement>(".file-type select");
+      await expect
+        .poll(() => reducedDialog?.getBoundingClientRect().height ?? 0)
+        .toBeGreaterThan(0);
+      const reducedCardHeight = await settledDialogHeight(reducedDialog!);
+      reducedFileType!.value = "video";
+      reducedFileType!.dispatchEvent(new Event("change", { bubbles: true }));
+      await nextFrame();
+      expect(reducedDialog!.getBoundingClientRect().height).toBeLessThan(
+        reducedCardHeight - 20
+      );
+      await reducedScreen.unmount();
+    } finally {
+      window.matchMedia = matchMedia;
+    }
+  });
+
+  it("keeps outgoing file controls inert during a rapid Card and Video reversal", async () => {
+    renderCard.mockReturnValue(new Promise<Blob>(() => {}));
+    const screen = await openCard(realSequence(), 2, {
+      availableArtifacts: ["card", "video"],
+      // The stage only needs a current URL to exercise the ready-video branch;
+      // it does not decode or deliver this fixture.
+      videoBlobUrl: "data:video/mp4;base64,AAAA",
+    });
+    await expect.poll(() => renderCard.mock.calls.length).toBeGreaterThan(0);
+
+    const fileType =
+      document.querySelector<HTMLSelectElement>(".file-type select");
+    expect(fileType).not.toBeNull();
+    fileType!.value = "video";
+    fileType!.dispatchEvent(new Event("change", { bubbles: true }));
+    await expect
+      .poll(() => document.querySelector(".video-settings"))
+      .not.toBeNull();
+    expect(
+      document.querySelectorAll(".editing-column .crossfade > .layer[inert]")
+        .length
+    ).toBeGreaterThan(0);
+
+    fileType!.value = "card";
+    fileType!.dispatchEvent(new Event("change", { bubbles: true }));
+    await expect
+      .poll(() => document.querySelector(".card-settings"))
+      .not.toBeNull();
+    expect(
+      document.querySelectorAll(".editing-column .crossfade > .layer[inert]")
+        .length
+    ).toBeGreaterThan(0);
+    await screen.unmount();
+  });
+
+  it("keeps the Download dock reachable in short landscape", async () => {
+    renderCard.mockReturnValue(new Promise<Blob>(() => {}));
+    const screen = await openCard(realSequence());
+    await expect.poll(() => renderCard.mock.calls.length).toBeGreaterThan(0);
+    await page.viewport(960, 412);
+    await expect
+      .poll(() => {
+        const dialog = document.querySelector("dialog.share-sheet-modal");
+        const download = [
+          ...document.querySelectorAll<HTMLButtonElement>("button"),
+        ].find((button) => button.textContent?.trim() === "Download card");
+        if (!dialog || !download) return false;
+        return (
+          download.getBoundingClientRect().bottom <=
+          dialog.getBoundingClientRect().bottom + 1
+        );
+      })
+      .toBe(true);
+    await screen.unmount();
+  });
+
+  it("scrolls a prepared social-publish card to its review action", async () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 600;
+    canvas.height = 1600;
+    const png = await new Promise<Blob>((resolve) =>
+      canvas.toBlob((blob) => resolve(blob!), "image/png")
+    );
+    renderCard.mockResolvedValue(png);
+    const screen = await openCard(realSequence(32), 2, {
+      initialEntry: "chooser",
+      metaStatusOverride: INSTAGRAM_CONNECTED,
+    });
+    await page.viewport(1440, 900);
+
+    await page.getByRole("button", { name: /Publish socially/ }).click();
+    await page
+      .getByRole("button", { name: "Prepare card", exact: true })
+      .click();
+    await expect
+      .poll(
+        () =>
+          document.querySelector<HTMLImageElement>(".publish-preview")
+            ?.naturalHeight
+      )
+      .toBe(1600);
+    await settledDialogHeight(
+      document.querySelector("dialog.share-sheet-modal")!
+    );
+
+    const route = document.querySelector<HTMLElement>(
+      ".sheet-scroll.publish-route"
+    );
+    const review = document.querySelector<HTMLElement>(
+      ".publish-route button.network"
+    );
+    expect(route).not.toBeNull();
+    expect(review).not.toBeNull();
+    expect(route!.scrollHeight).toBeGreaterThan(route!.clientHeight);
+    route!.scrollTop = route!.scrollHeight;
+    await nextFrame();
+    expect(review!.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+      route!.getBoundingClientRect().bottom + 1
+    );
+
+    await screen.unmount();
+  });
+
   it("honors an immediate click while the initial Auto layout settles", async () => {
     const png = deferred<Blob>();
     renderCard.mockReturnValue(png.promise);
