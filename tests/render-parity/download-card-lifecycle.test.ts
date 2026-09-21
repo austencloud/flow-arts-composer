@@ -47,13 +47,13 @@ function realSequence(steps = 16): SequenceData {
   } as unknown as SequenceData;
 }
 
-async function openCard(sequence: SequenceData) {
+async function openCard(sequence: SequenceData, columns: number | null = 2) {
   await page.viewport(1920, 1080);
   const composition = getImageCompositionManager();
   composition.setPersistenceSuspended(true);
   composition.setShowQRCode(false);
   composition.setShowMandala(true);
-  composition.setColumnCountForStepCount(sequence.steps.length, 2);
+  composition.setColumnCountForStepCount(sequence.steps.length, columns);
   getVisibilityStateManager().setGridVisibility(true);
   return render(PostShareSheet, {
     isOpen: true,
@@ -77,6 +77,23 @@ afterEach(() => {
 });
 
 describe("Download card with real live pictographs", () => {
+  it("honors an immediate click while the initial Auto layout settles", async () => {
+    const png = deferred<Blob>();
+    renderCard.mockReturnValue(png.promise);
+    const screen = await openCard(realSequence(), null);
+    // Click synchronously before waiting for assets, layout, or the PNG request.
+    // Playwright's stability wait would conceal the first-paint boundary here.
+    const download = [
+      ...document.querySelectorAll<HTMLButtonElement>("button"),
+    ].find((button) => button.textContent?.trim() === "Download card");
+    expect(download).toBeDefined();
+    download!.click();
+    await expect.poll(() => renderCard.mock.calls.length).toBeGreaterThan(0);
+    png.resolve(new Blob(["initial Auto card"], { type: "image/png" }));
+    await expect.poll(() => deliverCard.mock.calls.length).toBe(1);
+    await screen.unmount();
+  });
+
   it.each([
     [375, 667],
     [820, 1180],
@@ -102,6 +119,32 @@ describe("Download card with real live pictographs", () => {
           card.right <= stage.right + 1 &&
           card.top >= stage.top - 1 &&
           card.bottom <= stage.bottom + 1
+        );
+      })
+      .toBe(true);
+    await screen.unmount();
+  });
+
+  it("fits Auto to the phone preview instead of the full viewport height", async () => {
+    renderCard.mockReturnValue(new Promise<Blob>(() => {}));
+    const screen = await openCard(realSequence(8), null);
+    await expect.poll(() => renderCard.mock.calls.length).toBeGreaterThan(0);
+    await page.viewport(375, 667);
+    await expect
+      .poll(() => {
+        const stage = document
+          .querySelector(".stage.live-card-stage")
+          ?.getBoundingClientRect();
+        const card = document
+          .querySelector(".live-export-card .preview-stack")
+          ?.getBoundingClientRect();
+        // The former viewport-based choice squeezed this eight-step card into
+        // a 66px strip inside a 334px stage, despite Auto being selected.
+        return (
+          !!stage &&
+          !!card &&
+          card.width > stage.width * 0.6 &&
+          card.height <= stage.height
         );
       })
       .toBe(true);

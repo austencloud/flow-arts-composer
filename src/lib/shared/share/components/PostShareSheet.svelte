@@ -351,9 +351,19 @@
       liveCardAutoLayoutKey === key
     )
       return;
+    // The first Auto measurement completes the current choice; it is not a
+    // settings edit. Keep an immediate Download click attached through that
+    // initial settlement. A source/settings edit has already changed the
+    // request revision and therefore cannot carry an old intent forward.
+    const carryInitialDownload =
+      pendingCardDownloadRevision === request.revision &&
+      liveCardContentReadySourceRevision !== request.sourceRevision;
     liveCardAutoLayout = layout;
     liveCardAutoLayoutKey = key;
     liveCardLayoutSourceRevision = request.sourceRevision;
+    if (carryInitialDownload) {
+      pendingCardDownloadRevision = cardPreview.request?.revision ?? null;
+    }
     queueMicrotask(() => {
       const current = cardPreview.request;
       if (
@@ -2499,11 +2509,13 @@
     color: var(--theme-text, rgba(255, 255, 255, 0.92));
   }
 
-  /* The card's measured ratio owns its narrow-sheet height. A tall card stays
-     * in the sheet's one scroll region instead of being clipped by the stage. */
+  /* Auto needs the stage's stable capacity before the PNG exists. Giving the
+     narrow layout an explicit cap keeps it from choosing against the entire
+     viewport and then shrinking a tall card into a short preview. */
   .stage.live-card-stage {
     position: relative;
-    height: auto;
+    height: clamp(12rem, 30dvh, 18rem);
+    max-height: clamp(12rem, 30dvh, 18rem);
     overflow: visible;
   }
 
@@ -3548,6 +3560,9 @@
     .sheet-scroll.download-route .stage {
       height: 11rem;
       min-height: 0;
+    }
+    .sheet-scroll.download-route .stage.live-card-stage {
+      max-height: 11rem;
     }
     .sheet-scroll.download-route .preview-column {
       align-self: start;

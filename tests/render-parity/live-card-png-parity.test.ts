@@ -36,7 +36,34 @@ const LIVE_CASES: LiveCase[] = [
   { name: "light-row", testCase: fixture("composer-light") },
   { name: "dark-row", testCase: fixture("composer-dark") },
   { name: "footer-row", testCase: fixture("footer") },
+  {
+    name: "metadata-footer-off-row",
+    testCase: {
+      ...fixture("composer-light"),
+      name: "live-metadata-footer-off",
+      sequence: {
+        ...fixture("composer-light").sequence,
+        metadata: {
+          ...fixture("composer-light").sequence.metadata,
+          pathShape: "linear",
+        },
+      } as CardParityCase["sequence"],
+      options: { showFooter: false },
+    },
+  },
   { name: "duration-row", testCase: fixture("duration-badges") },
+  {
+    name: "custom-title-row",
+    testCase: {
+      ...fixture("composer-light"),
+      name: "live-custom-title",
+      options: {
+        showDifficulty: true,
+        showMandala: true,
+        customName: "Export card title",
+      } as CardParityCase["options"],
+    },
+  },
   { name: "custom-props-row", testCase: fixture("custom-colors") },
   { name: "mixed-props-row", testCase: fixture("mixed-fan-staff") },
   { name: "qr-mandala-row", testCase: fixture("qr-code-row") },
@@ -119,57 +146,6 @@ async function settleVisibleCard(host: Element): Promise<void> {
       requestAnimationFrame(() => resolve())
     );
   }
-}
-
-function liveGeometry(host: Element) {
-  const rect = (selector: string) => {
-    const element = host.querySelector<HTMLElement>(selector);
-    if (!element) return null;
-    const { width, height } = element.getBoundingClientRect();
-    return {
-      width,
-      height,
-      inlineHeight: element.style.height || null,
-      computedHeight: getComputedStyle(element).height,
-    };
-  };
-  const card = host.querySelector<HTMLElement>(".choreo-card-root");
-  return {
-    columns: card?.dataset.layoutColumns,
-    rows: card?.dataset.layoutRows,
-    root: rect(".choreo-card-root"),
-    previewStack: rect(".preview-stack"),
-    header: rect(".header-section"),
-    grid: rect(".grid-section"),
-    footer: rect(".footer-section"),
-  };
-}
-
-function mandalaGeometry(host: Element) {
-  return [...host.querySelectorAll<HTMLElement>(".mandala-cell")].map(
-    (cell) => {
-      const canvas = cell.querySelector<HTMLCanvasElement>("canvas");
-      const svg = cell.querySelector<SVGSVGElement>("svg");
-      const box = cell.getBoundingClientRect();
-      return {
-        cell: { width: box.width, height: box.height },
-        canvas: canvas
-          ? {
-              width: canvas.width,
-              height: canvas.height,
-              cssWidth: getComputedStyle(canvas).width,
-              cssHeight: getComputedStyle(canvas).height,
-            }
-          : null,
-        svg: svg
-          ? {
-              width: svg.getBoundingClientRect().width,
-              height: svg.getBoundingClientRect().height,
-            }
-          : null,
-      };
-    }
-  );
 }
 
 async function exportImage(testCase: CardParityCase): Promise<ParityImage> {
@@ -291,30 +267,14 @@ describe("actual LiveExportCard ⇄ downloaded PNG parity", () => {
         ).toBeGreaterThan(0);
       }
 
-      if (
-        first.image.width !== expected.width ||
-        first.image.height !== expected.height
-      ) {
-        console.info(
-          `live geometry/${liveCase.name}`,
-          liveGeometry(first.screen.getByTestId("live-export-card").element())
-        );
-      }
       expect(first.image.width).toBe(expected.width);
       expect(first.image.height).toBe(expected.height);
-      if (liveCase.name === "light-row" || liveCase.name === "dark-row") {
-        await commands.writeCardParityArtifacts(
-          liveCase.name,
-          imageBase64(first.image),
-          imageBase64(expected)
-        );
-      }
+      await commands.writeCardParityArtifacts(
+        liveCase.name,
+        imageBase64(first.image),
+        imageBase64(expected)
+      );
       const report = cardParityMetrics(first.image, expected, testCase);
-      console.info(`live/${liveCase.name}`, report);
-      if (liveCase.name === "light-row") {
-        const host = first.screen.getByTestId("live-export-card").element();
-        console.info("live mandala/light-row", mandalaGeometry(host));
-      }
       assertCardParity(report, `live/${liveCase.name}`);
       await first.screen.unmount();
     });

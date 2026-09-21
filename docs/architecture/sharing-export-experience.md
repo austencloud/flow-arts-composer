@@ -503,6 +503,32 @@ The initial readiness signal waits for the real pictograph SVGs to mount and
 paint; it does not wait for QR resolution or restart for each fractional sizing
 adjustment. A new source remounts the card and retires that signal.
 
+The narrow sheet needs an explicit stage height cap before the file is ready.
+Using the full viewport as Auto's available height selected a tall arrangement
+that then shrank into the short phone preview. The real Generate flow reproduced
+an eight-step card only 66px wide inside a 334px stage at 375×667. With the stage
+cap supplied to Auto, the same card occupies the available 309px content width.
+Pinned layouts still remain pinned and contain the complete card.
+
+The first Auto measurement completes the initial choice; it is not a user edit.
+An immediate Download click must survive that settlement. Once the initial card
+is ready, layout/settings changes cancel a pending download as usual. The real
+sheet regression clicks before waiting for pictographs or a PNG request, because
+a browser automation stability wait can otherwise hide this timing defect.
+
+Export presentation retains real SVG pictograph cells. Its header, footer, step
+labels, and mandala use the same small drawing primitives as the PNG, avoiding separate
+font metrics and gradient implementations. This does not replace the assembled
+card with a PNG or turn pictographs into bitmap cells. QR source resolution and
+placement also follow the shared composition rules; the ordinary viewer keeps
+its existing presentation. The tests caught a smaller live QR source and a
+different inset that a full-card similarity score would have concealed.
+
+Cell separators must overlay the artwork, as they do in PNG composition. A
+layout-consuming border reduced a nominal 300px cell's live artwork to 298px.
+Export presentation uses a full-size cell with an overlaid separator; ordinary
+viewer styling is unchanged. The strict live comparison caught this discrepancy.
+
 Regression coverage includes the actual download sheet with its real pictographs:
 an explicit click during preparation, pinned/Auto round trips, replacement of a
 sequence while an old PNG is pending, retry after failure, and containment at

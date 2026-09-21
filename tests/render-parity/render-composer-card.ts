@@ -87,6 +87,8 @@ export function cardParityExportOptions(
     columnCount: opts.columnCount,
     addWord: resolved.addWord ?? true,
     addStepNumbers: resolved.addStepNumbers ?? true,
+    customName: resolved.customName,
+    renderWordAsText: resolved.renderWordAsText,
     addDifficultyLevel: hideBadge
       ? false
       : (resolved.addDifficultyLevel ?? opts.showDifficulty ?? print),
@@ -94,6 +96,7 @@ export function cardParityExportOptions(
     addUserInfo: false,
     showNotes: resolved.showNotes ?? opts.showFooter ?? false,
     notes: resolved.notes ?? opts.notes,
+    customNotesText: resolved.customNotesText,
     ...(print ? { deckCard: { contentWidth: 678, contentHeight: 978 } } : {}),
     accentColor: opts.accentColor,
     accentTintOpacity: opts.accentTintOpacity,

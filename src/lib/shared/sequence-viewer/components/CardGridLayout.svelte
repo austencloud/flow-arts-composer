@@ -42,6 +42,7 @@
   import CellRenderer from "./CellRenderer.svelte";
   import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
   import { getQRCellScale } from "$lib/shared/qr/qr-cell-scale";
+  import { calculateQrCellGeometry } from "@tka/render-composition";
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
   import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
   import { toMandalaPathShape } from "$lib/shared/mandala/services/mandala-path-policy";
@@ -192,8 +193,10 @@
   const isLightBackground = $derived(
     settingsService.settings.backgroundType === BackgroundType.CELESTIAL
   );
-  const qrScalePct = $derived(
-    `${getQRCellScale(sequence?.steps?.length ?? 0) * 100}%`
+  const qrImageSize = $derived(
+    exportPresentation && cellWidth > 0
+      ? `${calculateQrCellGeometry(cellWidth).qrSize}px`
+      : `${getQRCellScale(sequence?.steps?.length ?? 0) * 100}%`
   );
 
   // Bind helper: forward the scroll ref to the parent
@@ -271,7 +274,10 @@
     <!-- Interactive viewer: wrap the QR so a transparent button can sit over
          the baked-in play badge (centered 25%, where modules are cleared). The
          <img> underneath is untouched and still scannable. -->
-    <div class="qr-play-wrapper" style="width:{qrScalePct};height:{qrScalePct}">
+    <div
+      class="qr-play-wrapper"
+      style="width:{qrImageSize};height:{qrImageSize}"
+    >
       <img
         class="qr-code-image qr-fill"
         src={qrDataUrl}
@@ -292,7 +298,7 @@
       src={qrDataUrl}
       alt="Scan to get this sequence"
       draggable="false"
-      style="width:{qrScalePct};height:{qrScalePct}"
+      style="width:{qrImageSize};height:{qrImageSize}"
     />
   {/if}
 {/snippet}
@@ -975,6 +981,30 @@
   }
 
   .pictograph-cell.dark-mode {
+    border-color: var(--theme-stroke, rgba(255, 255, 255, 0.1));
+  }
+
+  /* Canvas composition paints its smart border over a full-size pictograph.
+     Keep that geometry for exports: an overlay preserves the viewer's visual
+     separator without shrinking the live SVG's 100% content box. */
+  :global(.choreo-card-root.export-presentation)
+    .pictograph-cell:not(.qr-cell):not(.mandala-cell) {
+    border-width: 0;
+  }
+
+  :global(.choreo-card-root.export-presentation)
+    .pictograph-cell:not(.qr-cell):not(.mandala-cell)::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    box-sizing: border-box;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    pointer-events: none;
+  }
+
+  :global(.choreo-card-root.export-presentation.dark-mode)
+    .pictograph-cell:not(.qr-cell):not(.mandala-cell)::after {
     border-color: var(--theme-stroke, rgba(255, 255, 255, 0.1));
   }
 

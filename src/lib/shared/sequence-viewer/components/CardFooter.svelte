@@ -74,6 +74,12 @@
     class="footer-section"
     class:dark-mode={activeDarkMode}
     class:export-presentation={exportPresentation}
+    role={exportPresentation ? "img" : undefined}
+    aria-label={exportPresentation
+      ? showNotes && customNotesText.trim()
+        ? customNotesText
+        : "Card footer"
+      : undefined}
     style="height: {scaledFooterHeight}px; padding-left: {footerMargin}px; padding-right: {footerMargin}px; font-size: max(var(--font-size-compact, 12px), {footerFontSize}px);"
     transition:fly|local={{
       y: 20,
@@ -86,10 +92,7 @@
         class="export-footer-canvas"
         bind:this={exportCanvas}
         bind:clientWidth={exportCanvasWidth}
-        role="img"
-        aria-label={showNotes && customNotesText.trim()
-          ? customNotesText
-          : "Card footer"}
+        aria-hidden="true"
       ></canvas>
     {:else}
       {#if handLegend}

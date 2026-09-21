@@ -14,6 +14,7 @@
 <script lang="ts">
   import { fade, scale, slide } from "svelte/transition";
   import { TextRenderer } from "$lib/shared/render/services/text-renderer";
+  import { ensureCardFonts } from "$lib/shared/render/services/gelasio-fonts";
   import { cubicOut } from "svelte/easing";
   import DifficultyBadge from "$lib/shared/components/DifficultyBadge.svelte";
   import LOOPIconStrip from "$lib/shared/components/LOOPIconStrip.svelte";
@@ -53,6 +54,8 @@
     activeDarkMode: boolean;
     /** The downloaded artifact uses the canvas card palette exactly. */
     exportPresentation?: boolean;
+    /** Explicitly choose the canvas title renderer used by PNG composition. */
+    renderWordAsText?: boolean;
   }
 
   const {
@@ -79,6 +82,7 @@
     wordTitleFontSize,
     activeDarkMode,
     exportPresentation = false,
+    renderWordAsText,
   }: Props = $props();
 
   const wordSideInset = $derived.by(() => {
@@ -101,6 +105,15 @@
   const exportTextRenderer = new TextRenderer();
   let exportCanvas = $state<HTMLCanvasElement>();
   let exportCanvasWidth = $state(0);
+  const exportHeaderLabel = $derived.by(() => {
+    const title = customTitleText?.trim() || (wordVisible ? sequence.word : "");
+    const parts = title ? [title] : [];
+    if (showDifficultyLevel) parts.push(`Level ${difficultyLevel}`);
+    if (showLoopGlyph && loopComponents?.size) {
+      parts.push(`LOOP ${[...loopComponents].join(", ")}`);
+    }
+    return parts.join(". ") || "Card header";
+  });
   $effect(() => {
     const canvas = exportCanvas;
     if (!exportPresentation || !canvas || exportCanvasWidth < 1) return;
@@ -108,9 +121,9 @@
     const height = Math.round(scaledHeaderHeight);
     if (height < 1) return;
     const customTitle = customTitleText?.trim();
-    const renderAsText = Boolean(customTitle) || !wordVisible;
+    const renderAsText = renderWordAsText ?? false;
     const snapshot = {
-      word: wordVisible ? customTitle || sequence.word || "" : "",
+      word: customTitle || (wordVisible ? sequence.word || "" : ""),
       indicatorSizeScale: badgeSize / scaledHeaderHeight,
       difficultyLevel,
       showDifficultyBadge: showDifficultyLevel,
@@ -124,6 +137,8 @@
     };
     let cancelled = false;
     void (async () => {
+      await ensureCardFonts();
+      if (cancelled) return;
       if (!snapshot.renderAsText && snapshot.word) {
         await exportTextRenderer.preloadGlyphImagesForWord(snapshot.word);
       }
@@ -147,6 +162,8 @@
     class="header-section"
     class:dark-mode={activeDarkMode}
     class:export-presentation={exportPresentation}
+    role={exportPresentation ? "img" : undefined}
+    aria-label={exportPresentation ? exportHeaderLabel : undefined}
     style="height: {scaledHeaderHeight}px;"
     transition:slide|local={{
       duration: exportPresentation ? 0 : HEADER_MOTION_MS,
@@ -158,10 +175,7 @@
         class="export-header-canvas"
         bind:this={exportCanvas}
         bind:clientWidth={exportCanvasWidth}
-        role="img"
-        aria-label={wordVisible
-          ? customTitleText?.trim() || sequence.word || "Card header"
-          : "Card header"}
+        aria-hidden="true"
       ></canvas>
     {:else if isBrowseSoloMode}
       <span

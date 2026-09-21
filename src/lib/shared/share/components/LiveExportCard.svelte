@@ -43,6 +43,20 @@
   const handPathMode = $derived(
     visibility?.handPathMode ?? !!sequence.metadata?.isHandPathVisualization
   );
+  const resolvedLeftPropType = $derived(
+    options.leftPropTypeOverride ?? visibility?.leftPropType
+  );
+  const resolvedRightPropType = $derived(
+    options.rightPropTypeOverride ?? visibility?.rightPropType
+  );
+  // ChoreoCard treats differing hand props as an explicit presentation mode.
+  // The PNG receives this directly from its snapshot, so derive the same fact
+  // here instead of letting the default viewer mode collapse both hands to left.
+  const hasMixedPropTypes = $derived(
+    resolvedLeftPropType !== undefined &&
+      resolvedRightPropType !== undefined &&
+      resolvedLeftPropType !== resolvedRightPropType
+  );
   // The canvas exporter accepts an explicit loop type even for a sequence that
   // has not persisted its derived LOOP metadata yet. Give the viewer that same
   // resolved identity so its header does not quietly omit the icon strip.
@@ -207,9 +221,11 @@
     {handPathMode}
     darkMode={visibility?.darkMode ?? false}
     customTitleText={options.customName}
+    renderWordAsText={options.renderWordAsText}
     customNotesText={options.customNotesText ?? options.notes}
-    leftPropType={options.leftPropTypeOverride ?? visibility?.leftPropType}
-    rightPropType={options.rightPropTypeOverride ?? visibility?.rightPropType}
+    leftPropType={resolvedLeftPropType}
+    rightPropType={resolvedRightPropType}
+    catDogModeEnabled={hasMixedPropTypes}
     primaryPropColors={visibility?.primaryPropColors}
     columnCount={liveColumnCount}
     startPlacementLayoutOverride={automaticLayout

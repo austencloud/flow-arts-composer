@@ -117,6 +117,8 @@
     cardAspectRatio?: number;
     /** Plain-text artifact title for cards whose identity is not a TKA word. */
     customTitleText?: string;
+    /** Choose the canvas title renderer for an export snapshot. */
+    renderWordAsText?: boolean;
     customNotesText?: string;
     /**
      * Set only beside performance footage. Draws the "which color is your
@@ -209,6 +211,7 @@
     primaryPropColors,
     cardAspectRatio,
     customTitleText: requestedTitleText,
+    renderWordAsText,
     customNotesText = "Created using Flow Arts Composer",
     handLabeling = null,
     leftPropType,
@@ -571,7 +574,13 @@
         )
       : null
   );
-  const showFooter = $derived(displayState.showFooter || handLegend !== null);
+  // Artifact canvas cards reserve footer geometry only for requested notes.
+  // Viewer metadata remains available in the normal interactive presentation.
+  const showFooter = $derived(
+    exportPresentation
+      ? showNotes
+      : displayState.showFooter || handLegend !== null
+  );
 
   const qrState = createChoreoCardQrState(
     () => ({
@@ -583,6 +592,7 @@
       leftPropType,
       rightPropType,
       browseViewMode,
+      exportPresentation,
     }),
     { getGenerator: getQRCodeGenerator, getUrlGenerator: getUrlQRCodeGenerator }
   );
@@ -1183,6 +1193,9 @@
         {wordTitleFontSize}
         {activeDarkMode}
         {exportPresentation}
+        renderWordAsText={exportPresentation
+          ? (renderWordAsText ?? false)
+          : undefined}
       />
 
       <!-- Grid section with individual pictograph cells -->
@@ -1239,7 +1252,9 @@
       <CardFooter
         {showFooter}
         showNotes={showNotes && handLegend === null}
-        hasPathShapeMetadata={hasPathShapeMetadata && handLegend === null}
+        hasPathShapeMetadata={!exportPresentation &&
+          hasPathShapeMetadata &&
+          handLegend === null}
         {customNotesText}
         {scaledFooterHeight}
         {footerFontSize}
