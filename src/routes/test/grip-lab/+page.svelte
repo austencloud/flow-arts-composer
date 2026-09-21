@@ -473,14 +473,15 @@
 
 <style>
   .inspection {
-    --settings-page-max: 76rem;
     height: 100dvh;
     box-sizing: border-box;
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto minmax(18rem, 1fr) auto;
     gap: clamp(0.75rem, 2cqw, 1.25rem);
-    max-width: var(--settings-page-max);
-    margin: 0 auto;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
     padding: clamp(0.5rem, 1.5vw, 1rem);
     color: var(--theme-text);
     container-type: inline-size;
@@ -495,6 +496,7 @@
   .page-header {
     justify-content: space-between;
     gap: 1rem;
+    min-width: 0;
   }
   h1 {
     margin: 0;
@@ -503,6 +505,7 @@
   }
   .header-actions {
     gap: 0.5rem;
+    min-width: 0;
     flex-wrap: wrap;
     justify-content: flex-end;
   }
@@ -524,6 +527,7 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     position: relative;
+    min-width: 0;
     min-height: 0;
     overflow: hidden;
     border: 1px solid var(--theme-stroke);
@@ -534,7 +538,7 @@
       var(--theme-panel-bg)
     );
   }
-  .stage.editing { grid-template-columns: minmax(0, 1fr) 19rem; }
+  .stage.editing { grid-template-columns: minmax(0, 1fr) clamp(18rem, 20cqw, 24rem); }
   .scene { position: relative; min-width: 0; min-height: 0; overflow: hidden; }
   .pose-panel { overflow-y: auto; min-height: 0; padding: 0.85rem; background: var(--theme-panel-bg); display: flex; flex-direction: column; gap: 0.9rem; }
   .pose-panel :global(> *) { flex-shrink: 0; }
@@ -561,6 +565,7 @@
   }
   .controls {
     display: grid;
+    min-width: 0;
     gap: 0.45rem;
     padding: 0.5rem 0.75rem;
     border: 1px solid var(--theme-stroke);
@@ -575,6 +580,7 @@
     grid-template-columns: auto minmax(16rem, 1fr);
     align-items: center;
     gap: 0.75rem;
+    min-width: 0;
   }
   .scrubber {
     display: grid;
@@ -584,6 +590,7 @@
     min-height: var(--min-touch-target, 44px);
     color: var(--theme-text-dim);
     font-size: var(--font-size-min, 14px);
+    min-width: 0;
   }
   input {
     width: 100%;
@@ -594,6 +601,7 @@
     grid-template-columns: minmax(18rem, 1fr) auto auto;
     align-items: center;
     gap: 0.5rem;
+    min-width: 0;
   }
   .position-stops { width: 100%; min-width: 0; }
   .drawer-content {
@@ -645,7 +653,7 @@
       grid-column: 1 / -1;
     }
   }
-  @media (min-width: 701px) and (max-height: 560px) and (orientation: landscape) {
+  @media (min-width: 701px) and (max-height: 800px) and (orientation: landscape) {
     .stage.editing { grid-template-columns: minmax(0, 1fr); grid-template-rows: 22rem auto; }
     .pose-panel { max-height: 24rem; }
     .controls { align-content: start; }
@@ -683,6 +691,17 @@
     .control-grid {
       display: flex;
       flex-direction: column;
+    }
+  }
+  @media (min-width: 701px) and (min-height: 561px) and (max-height: 800px) and (orientation: landscape) {
+    .inspection:has(.stage.editing) { min-height: 0; height: 100dvh; }
+    .stage.editing { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(16rem, 1fr) minmax(0, 1fr); }
+    .pose-panel { max-height: none; }
+  }
+  @media (min-width: 1100px) and (min-height: 561px) and (max-height: 800px) and (orientation: landscape) {
+    .stage.editing {
+      grid-template-columns: minmax(0, 1fr) clamp(18rem, 20cqw, 24rem);
+      grid-template-rows: minmax(0, 1fr);
     }
   }
   @media (prefers-reduced-motion: reduce) {
