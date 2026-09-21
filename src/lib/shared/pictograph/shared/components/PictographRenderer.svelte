@@ -52,8 +52,8 @@ Usage:
   import type { TurnsTupleGenerator } from "$lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator";
   import { GridMode, GridLocation } from "../../grid/domain/enums/grid-enums";
   import {
-    HAND_COLOR_KEY,
     calculateHandColorKeyLayout,
+    getHandKeyGlyphPath,
   } from "@tka/render-core";
   import {
     type ElementalType,
@@ -720,9 +720,6 @@ Usage:
         class:visible={handColorKeyShown}
         transform="translate({expandedWidth / 2}, 0)"
         aria-label="Left and right prop colors"
-        font-family={HAND_COLOR_KEY.FONT_FAMILY}
-        font-size={HAND_COLOR_KEY.FONT_SIZE}
-        font-weight={HAND_COLOR_KEY.FONT_WEIGHT}
         fill={darkMode === undefined
           ? "var(--dm-text-color)"
           : darkMode
@@ -738,7 +735,10 @@ Usage:
               ? (effectiveLeftColor ?? "var(--dm-motion-blue)")
               : (effectiveRightColor ?? "var(--dm-motion-red)")}
           />
-          <text x={entry.labelX} y={handColorKey.baselineY}>{entry.label}</text>
+          <path
+            d={getHandKeyGlyphPath(entry.label)}
+            transform="translate({entry.labelX} {handColorKey.baselineY})"
+          />
         {/each}
       </g>
     {/if}
