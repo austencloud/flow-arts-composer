@@ -135,6 +135,16 @@ export function createContactInspectionState() {
       playing = false;
       persist();
     },
+    seekPosition(next: number) {
+      if (!Number.isFinite(next)) return;
+      // South is also the end of W → S. Keep the current quarter when possible.
+      const target = next === 0 && transition === "3" ? 4 : Math.max(0, Math.min(4, next));
+      const [start, end] = range();
+      if (target < start || target > end) transition = "all";
+      phase = target;
+      playing = false;
+      persist();
+    },
     setPlaying(next: boolean) {
       playing = next;
       persist();

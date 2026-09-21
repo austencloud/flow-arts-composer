@@ -4,6 +4,36 @@ Status: blocked by failed physical acceptance checks; preserved on
 `codex/contact-correct-performers`, unmerged. This is an implementation
 checkpoint, not a completed contact-correct performer.
 
+## Diagonal inspection stops (2026-09-21)
+
+The existing grip lab now exposes S, SE, E, NE, N, NW, W and SW. These are
+navigation stops; selecting a stop does not create or overwrite a taught pose.
+Editing there still authors a key and blends between saved keys. The editor
+and timeline name the selected stop alongside its exact phase.
+
+Seeking within the selected quarter preserves that loop. Selecting South in
+W→S seeks phase 4, preserving the final quarter rather than jumping to phase
+0. Seeking outside the selected quarter switches to the full loop. Saved-pose
+buttons use the same behavior. Browser checks exercised these transitions,
+including SE at phase 0.5 with S→E still selected.
+
+The eight controls reuse SegmentedControl and wrap into two rows of four when
+their container is narrow. Direct inspection covered the seven viewport tiers
+listed below; the stop buttons remained at least 44 CSS pixels high. The page
+and state changes passed `npm run check` with zero errors and warnings.
+
+Existing links containing `poses=` retain their saved choreography. A fresh
+link without that parameter, or Reset poses, loads the current defaults.
+
+A kinematic ch07 probe confirmed that the unchanged first-quarter elbow pole
+does not produce an outward-moving elbow throughout S→E: its measured lateral
+direction reverses inward near SE. An experimental SE key with a more outward
+pole and a small body shift was rejected after browser inspection: it raised
+the upper arm almost to shoulder height at SE, then tucked it again by phase
+0.75. The navigation change therefore does not claim to fix that elbow route
+or to supply approved natural body movement. The original taught motion is
+preserved for editing at these newly accessible intermediate positions.
+
 ## Pose teaching in the existing grip lab (2026-09-21)
 
 The grip lab now separates S→E, E→N, N→W and W→S, with quarter looping,

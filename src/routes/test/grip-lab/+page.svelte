@@ -43,12 +43,19 @@
   } from "./contact-inspection-state.svelte";
 
   const inspection = createContactInspectionState();
-  const cardinals = [
-    { value: "0", label: "South" },
-    { value: "1", label: "East" },
-    { value: "2", label: "North" },
-    { value: "3", label: "West" },
+  const positions = [
+    { value: "0", label: "S", ariaLabel: "South" },
+    { value: "0.5", label: "SE", ariaLabel: "Southeast" },
+    { value: "1", label: "E", ariaLabel: "East" },
+    { value: "1.5", label: "NE", ariaLabel: "Northeast" },
+    { value: "2", label: "N", ariaLabel: "North" },
+    { value: "2.5", label: "NW", ariaLabel: "Northwest" },
+    { value: "3", label: "W", ariaLabel: "West" },
+    { value: "3.5", label: "SW", ariaLabel: "Southwest" },
   ];
+  let positionsWidth = $state(800);
+  const selectedPosition = $derived(positions.find((position) =>
+    Math.abs(Number(position.value) - inspection.phase % 4) < 0.0005));
   const hands = [
     { value: "right", label: "Right", tone: "red" },
     { value: "left", label: "Left", tone: "blue" },
@@ -349,7 +356,7 @@
     </div>
     {#if editing}
       <aside class="pose-panel" aria-label="Teach this pose">
-        <div class="pose-heading"><strong>Pose {inspection.phase.toFixed(3)}</strong>
+        <div class="pose-heading"><strong>{selectedPosition?.label ?? "Pose"} · {inspection.phase.toFixed(3)}</strong>
           <span>{inspection.keys.length} saved poses</span></div>
         <PoseEditor pose={taughtPose} selected={selectedHandle} onSelect={(value) => selectedHandle = value}
           onBegin={() => inspection.beginEdit()} onChange={(changes) => inspection.editPose(changes)}
@@ -362,7 +369,7 @@
         <div class="keyframes" aria-label="Saved poses">
           {#each inspection.keys as key (key.phase)}
             <PanelButton ariaPressed={Math.abs(key.phase - (inspection.phase % 4)) < 0.005}
-              onclick={() => { inspection.setTransition("all"); inspection.setPhase(key.phase); }}>
+              onclick={() => inspection.seekPosition(key.phase)}>
               {key.phase.toFixed(2)}
             </PanelButton>
           {/each}
@@ -386,7 +393,7 @@
         />
       </div>
       <label class="scrubber"
-        ><span>Position {inspection.phase.toFixed(3)}</span><input
+        ><span>{selectedPosition?.label ?? "Position"} · {inspection.phase.toFixed(3)}</span><input
           aria-label="Isolation position"
           type="range"
           min={inspection.range[0]}
@@ -399,14 +406,16 @@
       >
     </div>
     <div class="control-grid">
-      <SegmentedControl
-        options={cardinals}
-        value={Number.isInteger(inspection.phase)
-          ? String(inspection.phase % 4)
-          : ""}
-        onchange={(value) => { inspection.setTransition("all"); inspection.setPhase(Number(value)); }}
-        ariaLabel="Cardinal isolation position"
-      /><SegmentedControl
+      <div class="position-stops" bind:clientWidth={positionsWidth}>
+        <SegmentedControl
+          options={positions}
+          value={selectedPosition?.value ?? ""}
+          columns={positionsWidth < 400 ? 4 : undefined}
+          density="tight"
+          onchange={(value) => inspection.seekPosition(Number(value))}
+          ariaLabel="Isolation position stops"
+        />
+      </div><SegmentedControl
         options={hands}
         value={inspection.hand}
         onchange={(value) => inspection.setHand(value)}
@@ -590,6 +599,7 @@
     align-items: center;
     gap: 0.5rem;
   }
+  .position-stops { width: 100%; min-width: 0; }
   .drawer-content {
     padding: 0 1.25rem 1.5rem;
   }
