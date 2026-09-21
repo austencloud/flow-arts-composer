@@ -1,5 +1,6 @@
 import type { ResolvedPropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
 import type { SequenceRenderer } from "$lib/shared/render/services/sequence-renderer";
+import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
 import type { SequenceData } from "../../foundation/domain/models/sequence-data";
 import type { ShareOptions } from "../domain/models/share-options";
 import { PreviewCache } from "./preview-cache";
@@ -102,6 +103,8 @@ export class Sharer {
       resolvedAutoLayout?: ResolvedAutoLayout | null;
       /** Current card or one-share footer override. */
       cardPresentation?: CardPresentation;
+      /** The exact settings already used by a live export preview. */
+      resolvedRenderOptions?: Partial<SequenceExportOptions>;
     },
     onProgress?: ImageGenerationProgressCallback
   ): Promise<Blob> {
@@ -113,25 +116,26 @@ export class Sharer {
         stepSize: 240,
         format: "PNG" as const,
         quality: 1.0,
-        ...buildCardRenderOptions(sequence, {
-          propConfig: opts.propConfig,
-          darkMode: opts.darkMode,
-          isHandPath: !!sequence.metadata?.isHandPathVisualization,
-          resolvedAutoLayout: opts.resolvedAutoLayout ?? null,
-          cardPresentation: opts.cardPresentation,
-        }),
+        ...(opts.resolvedRenderOptions ??
+          buildCardRenderOptions(sequence, {
+            propConfig: opts.propConfig,
+            darkMode: opts.darkMode,
+            isHandPath:
+              sequence.sequenceKind === "hand-path" ||
+              !!sequence.metadata?.isHandPathVisualization,
+            resolvedAutoLayout: opts.resolvedAutoLayout ?? null,
+            cardPresentation: opts.cardPresentation,
+          })),
       };
 
-      // The visibility snapshot belongs in the key even though most of it never
-      // reaches renderOptions: buildCardRenderOptions deliberately leaves TKA,
-      // TnD, positions and non-radial points undefined so the composer inherits
-      // them from the global manager at render time. That makes them real inputs
-      // to the image and invisible to a key built from the options alone — toggle
-      // TKA off and the cache hands back the card that still has it. (The same
-      // reasoning already put leftPropType/rightPropType in the options object.)
+      // Legacy callers can still supply partial overrides. A resolved live
+      // preview already owns its visibility, so later global changes must not
+      // change that artifact's cache identity.
       const cacheKey = hashString(
         `${JSON.stringify(sequence)}\n${JSON.stringify(renderOptions)}\n${JSON.stringify(
-          getVisibilityStateManager().getState()
+          opts.resolvedRenderOptions
+            ? null
+            : getVisibilityStateManager().getState()
         )}`
       );
       const cached = this.cardBlobCache.get(cacheKey);

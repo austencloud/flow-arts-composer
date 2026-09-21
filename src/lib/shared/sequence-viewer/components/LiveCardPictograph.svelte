@@ -21,6 +21,7 @@
     stepNumber,
     showStepNumber,
     poseOnly = false,
+    exportPresentation = false,
   }: {
     live: NonNullable<ChoreoCardCell["live"]>;
     darkMode: boolean;
@@ -28,6 +29,8 @@
     showStepNumber: boolean;
     /** Choose Start picker: grid and props only, beat glyphs fade out. */
     poseOnly?: boolean;
+    /** Portable card previews use the compositor's opaque cell host. */
+    exportPresentation?: boolean;
   } = $props();
 
   const contract = $derived(
@@ -93,9 +96,7 @@
   );
   const step = $derived(live.data as Partial<StepData>);
   // Derived even while the chip is off so the glyph stays mounted and fades.
-  const propElementalType = $derived(
-    derivePropElementalTypeForStep(live.data)
-  );
+  const propElementalType = $derived(derivePropElementalTypeForStep(live.data));
   // Diamond and box share one loaded SVG; rotating it does not emit onGridReady.
   const gridMode = $derived(
     prepared?._prepared?.gridMode === GridMode.SKEWED ? "skewed" : "diamond"
@@ -129,18 +130,19 @@
     <PictographRenderer
       pictograph={displayed}
       {darkMode}
+      transparentBackground={exportPresentation}
       showDuration={false}
       showHandColorKey={stepNumber === 0
         ? options.showHandColorKey !== false
         : undefined}
-      animateVisibility={true}
+      animateVisibility={!exportPresentation}
       showPathShape={false}
       widthMultiplier={options.widthMultiplier}
       glyphLayout={options.primaryPropColors ? "card-custom" : "card"}
       leftColorOverride={options.primaryPropColors?.left}
       rightColorOverride={options.primaryPropColors?.right}
       showGrid={options.showGrid}
-      gridPointsOnTop={!options.primaryPropColors}
+      gridPointsOnTop={options.gridPointsOnTop ?? !options.primaryPropColors}
       showNonRadialPoints={options.showNonRadialPoints}
       handPointVisibility={options.handPointVisibility}
       {activeLocations}

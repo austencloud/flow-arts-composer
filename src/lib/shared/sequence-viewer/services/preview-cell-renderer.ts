@@ -76,6 +76,8 @@ export interface PreviewCellRenderOptions {
   showPlacements?: boolean;
   /** L/R colour key on the start cell. Default: true. */
   showHandColorKey?: boolean;
+  /** Draw grid hand points above props/arrows, matching the compositor layers. */
+  gridPointsOnTop?: boolean;
 
   /** When true, renders hand path visualization: HAND props, float arrows for shifts,
    *  no TKA overlay, no reversals. Shows pure spatial trajectory. */

@@ -80,6 +80,35 @@ afterEach(() => {
 });
 
 describe("createCardPreviewState artifact identity", () => {
+  it("exposes the live snapshot before file preparation is allowed", async () => {
+    const pending = deferred<Blob>();
+    renderCard.mockReturnValue(pending.promise);
+    let state!: CardPreviewState;
+    const value = sequence("A");
+    const screen = render(CardPreviewStateHarness, {
+      sequence: value,
+      enabled: true,
+      renderEnabled: false,
+      onState: (next) => (state = next),
+    });
+    await settle();
+    expect(state.request?.sequence.word).toBe("A");
+    expect(state.request?.options).toEqual({ word: "A", darkMode: false });
+    expect(state.blob).toBeNull();
+    expect(renderCard).not.toHaveBeenCalled();
+    await screen.rerender({
+      sequence: value,
+      enabled: true,
+      renderEnabled: true,
+    });
+    await settle();
+    expect(renderCard).toHaveBeenCalledTimes(1);
+    expect(renderCard.mock.calls[0]?.[1].resolvedRenderOptions).toEqual(
+      state.request?.options
+    );
+    await screen.unmount();
+  });
+
   it("hides a completed A immediately when B is requested", async () => {
     const first = deferred<Blob>();
     const second = deferred<Blob>();

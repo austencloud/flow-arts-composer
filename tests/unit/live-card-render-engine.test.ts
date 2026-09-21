@@ -59,6 +59,7 @@ function setup() {
     cloudProbeEnabled: false,
     isBrowseSoloMode: false,
     isMotionSoloMode: false,
+    useDurationLayout: false,
     getSoloLocationLabel: String,
     onRenderProgress: vi.fn(),
     onRenderSettled: vi.fn(),
@@ -124,6 +125,10 @@ describe("live card rendering lifecycle", () => {
     setDeps({
       ...deps,
       includeStartPlacement: false,
+      // Ordinary cards keep proportional duration geometry. The export
+      // presentation deliberately opts out so its square compositor grid
+      // remains pixel-identical to the PNG.
+      useDurationLayout: true,
       effectiveColumns: 2,
       sequence: {
         ...deps.sequence,

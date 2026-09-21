@@ -20,7 +20,10 @@
     if (!from.width || !from.height || !to.width || !to.height) {
       return { duration: 0 };
     }
-    if (Math.abs(from.width - to.width) > 2 || Math.abs(from.height - to.height) > 2) {
+    if (
+      Math.abs(from.width - to.width) > 2 ||
+      Math.abs(from.height - to.height) > 2
+    ) {
       return { duration: 0 };
     }
     const dx = Math.abs(from.left - to.left);
@@ -42,6 +45,7 @@
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
   import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
   import { toMandalaPathShape } from "$lib/shared/mandala/services/mandala-path-policy";
+  import type { MandalaPathShape } from "$lib/shared/mandala/domain/mandala-types";
 
   import type { ChoreoCardCell as CellData } from "$lib/shared/choreo-card/services/choreo-card-render-engine";
 
@@ -59,6 +63,8 @@
     effectiveColumns: number;
     effectiveRows: number;
     hasMixedDurations: boolean;
+    /** Portable PNG cards keep square cells while retaining duration badges. */
+    useDurationLayout?: boolean;
     durationRows: TimelineRow[];
     durationColCount: number;
     includeStartPlacement: boolean;
@@ -99,10 +105,15 @@
     getMotionSoloMotion: (cellIndex: number) => MotionData | undefined;
     formatSoloTurns: (turns: number | "fl" | undefined | null) => string;
     shortOrientation: (ori: string | undefined | null) => string | null;
+    /** A portable export card holds the same path policy as its PNG snapshot. */
+    mandalaPathShape?: MandalaPathShape;
+    /** Render mandalas with the card PNG's canvas geometry. */
+    exportPresentation?: boolean;
   }
 
   /** Fraction of the cell width the mandala occupies. Tweak for breathing room. */
   const MANDALA_CELL_SCALE = 0.78;
+  const EXPORT_MANDALA_CELL_SCALE = 0.85;
 
   const {
     sequence,
@@ -111,6 +122,7 @@
     effectiveColumns,
     effectiveRows,
     hasMixedDurations,
+    useDurationLayout = hasMixedDurations,
     durationRows,
     durationColCount,
     includeStartPlacement,
@@ -146,7 +158,13 @@
     getMotionSoloMotion,
     formatSoloTurns,
     shortOrientation,
+    mandalaPathShape: requestedMandalaPathShape,
+    exportPresentation = false,
   }: Props = $props();
+
+  const mandalaCellScale = $derived(
+    exportPresentation ? EXPORT_MANDALA_CELL_SCALE : MANDALA_CELL_SCALE
+  );
 
   // The card's mandalas trace the same hand paths the animation draws, so they
   // follow the same motion-path policy. Picking Concave on the animation canvas
@@ -154,8 +172,15 @@
   // frame. The manager publishes through observers rather than runes, hence the
   // subscription instead of a plain $derived.
   const visibilityManager = getAnimationVisibilityManager();
-  let mandalaPathShape = $state(toMandalaPathShape(visibilityManager.getPathPolicy()));
+  let mandalaPathShape = $state(
+    requestedMandalaPathShape ??
+      toMandalaPathShape(visibilityManager.getPathPolicy())
+  );
   $effect(() => {
+    if (requestedMandalaPathShape) {
+      mandalaPathShape = requestedMandalaPathShape;
+      return;
+    }
     const sync = () => {
       mandalaPathShape = toMandalaPathShape(visibilityManager.getPathPolicy());
     };
@@ -164,8 +189,12 @@
     return () => visibilityManager.unregisterObserver(sync);
   });
   const scaleDuration = $derived(flipDuration > 0 ? 200 : 0);
-  const isLightBackground = $derived(settingsService.settings.backgroundType === BackgroundType.CELESTIAL);
-  const qrScalePct = $derived(`${getQRCellScale(sequence?.steps?.length ?? 0) * 100}%`);
+  const isLightBackground = $derived(
+    settingsService.settings.backgroundType === BackgroundType.CELESTIAL
+  );
+  const qrScalePct = $derived(
+    `${getQRCellScale(sequence?.steps?.length ?? 0) * 100}%`
+  );
 
   // Bind helper: forward the scroll ref to the parent
   function bindGridScrollRef(node: HTMLDivElement) {
@@ -173,7 +202,7 @@
     return {
       destroy() {
         onGridScrollRefChange(undefined);
-      }
+      },
     };
   }
 </script>
@@ -189,6 +218,7 @@
       aria-label="Go to start placement"
     >
       <CellRenderer
+        {exportPresentation}
         cell={startCell}
         showDurBadge={false}
         {showStepNumbers}
@@ -214,6 +244,7 @@
       class:current={showHighlight && highlightedStepIndex === -1}
     >
       <CellRenderer
+        {exportPresentation}
         cell={startCell}
         showDurBadge={false}
         {showStepNumbers}
@@ -241,7 +272,12 @@
          the baked-in play badge (centered 25%, where modules are cleared). The
          <img> underneath is untouched and still scannable. -->
     <div class="qr-play-wrapper" style="width:{qrScalePct};height:{qrScalePct}">
-      <img class="qr-code-image qr-fill" src={qrDataUrl} alt="Scan to get this sequence" draggable="false" />
+      <img
+        class="qr-code-image qr-fill"
+        src={qrDataUrl}
+        alt="Scan to get this sequence"
+        draggable="false"
+      />
       <button
         type="button"
         class="qr-play-hit"
@@ -251,7 +287,13 @@
       ></button>
     </div>
   {:else}
-    <img class="qr-code-image" src={qrDataUrl} alt="Scan to get this sequence" draggable="false" style="width:{qrScalePct};height:{qrScalePct}" />
+    <img
+      class="qr-code-image"
+      src={qrDataUrl}
+      alt="Scan to get this sequence"
+      draggable="false"
+      style="width:{qrScalePct};height:{qrScalePct}"
+    />
   {/if}
 {/snippet}
 
@@ -267,30 +309,42 @@
         percent={-1}
         size={20}
         strokeWidth={2}
-        color={activeDarkMode ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.45)"}
+        color={activeDarkMode
+          ? "rgba(255, 255, 255, 0.7)"
+          : "rgba(0, 0, 0, 0.45)"}
       />
     </div>
   {/if}
 {/snippet}
 
-{#if hasMixedDurations && durationRows.length > 0}
+{#if useDurationLayout && durationRows.length > 0}
   <!-- Duration-aware layout: Auto can place Start above or beside the timeline. -->
-  {@const startCell = cells.find(c => c.index === -1)}
-  {@const startInColumn = includeStartPlacement && startPlacementLayout === "column"}
+  {@const startCell = cells.find((c) => c.index === -1)}
+  {@const startInColumn =
+    includeStartPlacement && startPlacementLayout === "column"}
   {@const stepMaxUnits = durationColCount - (startInColumn ? 1 : 0)}
   {#if needsScroll}
     <div class="grid-scroll-container themed-scrollbar" use:bindGridScrollRef>
       <div
         class="duration-layout"
-        class:start-row={includeStartPlacement && startPlacementLayout === "row"}
+        class:start-row={includeStartPlacement &&
+          startPlacementLayout === "row"}
         class:dark-mode={activeDarkMode}
         style="--max-units: {durationColCount}; --step-max: {stepMaxUnits};"
       >
         {#if includeStartPlacement && startCell}
-          <div class="duration-start-col" class:dark-mode={activeDarkMode} transition:fade|local={{ duration: scaleDuration }}>
+          <div
+            class="duration-start-col"
+            class:dark-mode={activeDarkMode}
+            transition:fade|local={{ duration: scaleDuration }}
+          >
             {@render startCellBlock(startCell)}
             {#if showQRCode}
-              <div class="pictograph-cell qr-cell" class:dark-mode={activeDarkMode} transition:fade|local={{ duration: scaleDuration }}>
+              <div
+                class="pictograph-cell qr-cell"
+                class:dark-mode={activeDarkMode}
+                transition:fade|local={{ duration: scaleDuration }}
+              >
                 {@render qrCellBlock()}
               </div>
             {/if}
@@ -300,27 +354,35 @@
           {#each durationRows as row, rowIdx (rowIdx)}
             <div class="duration-row">
               {#each row.steps as { stepIndex, duration } (stepIndex)}
-                {@const cell = cells.find(c => c.index === stepIndex)}
+                {@const cell = cells.find((c) => c.index === stepIndex)}
                 {#if cell}
-                  <div class="duration-cell" class:dark-mode={activeDarkMode} style="--dur: {duration}; flex: {duration};">
+                  <div
+                    class="duration-cell"
+                    class:dark-mode={activeDarkMode}
+                    style="--dur: {duration}; flex: {duration};"
+                  >
                     {#if onStepClick}
                       <button
                         class="pictograph-cell clickable"
                         class:dark-mode={activeDarkMode}
-                        class:current={showHighlight && highlightedStepIndex === cell.index}
-                        class:played={showHighlight && highlightedStepIndex !== null && cell.index < highlightedStepIndex}
+                        class:current={showHighlight &&
+                          highlightedStepIndex === cell.index}
+                        class:played={showHighlight &&
+                          highlightedStepIndex !== null &&
+                          cell.index < highlightedStepIndex}
                         onclick={() => onStepClick(cell.index)}
                         type="button"
                         aria-label="Go to step {cell.label}"
                       >
                         <CellRenderer
+                          {exportPresentation}
                           {cell}
                           showDurBadge={true}
                           {showStepNumbers}
                           {posePicker}
                           {activeDarkMode}
                           {crossfadeActive}
-                {transitionMode}
+                          {transitionMode}
                           {isBrowseSoloMode}
                           {isMotionSoloMode}
                           {soloHand}
@@ -336,17 +398,21 @@
                       <div
                         class="pictograph-cell"
                         class:dark-mode={activeDarkMode}
-                        class:current={showHighlight && highlightedStepIndex === cell.index}
-                        class:played={showHighlight && highlightedStepIndex !== null && cell.index < highlightedStepIndex}
+                        class:current={showHighlight &&
+                          highlightedStepIndex === cell.index}
+                        class:played={showHighlight &&
+                          highlightedStepIndex !== null &&
+                          cell.index < highlightedStepIndex}
                       >
                         <CellRenderer
+                          {exportPresentation}
                           {cell}
                           showDurBadge={true}
                           {showStepNumbers}
                           {posePicker}
                           {activeDarkMode}
                           {crossfadeActive}
-                {transitionMode}
+                          {transitionMode}
                           {isBrowseSoloMode}
                           {isMotionSoloMode}
                           {soloHand}
@@ -378,7 +444,11 @@
         <div class="duration-start-col" class:dark-mode={activeDarkMode}>
           {@render startCellBlock(startCell)}
           {#if showQRCode && (qrDataUrl || qrPending)}
-            <div class="pictograph-cell qr-cell" class:dark-mode={activeDarkMode} transition:fade|local={{ duration: scaleDuration }}>
+            <div
+              class="pictograph-cell qr-cell"
+              class:dark-mode={activeDarkMode}
+              transition:fade|local={{ duration: scaleDuration }}
+            >
               {@render qrCellBlock()}
             </div>
           {/if}
@@ -388,27 +458,35 @@
         {#each durationRows as row, rowIdx (rowIdx)}
           <div class="duration-row">
             {#each row.steps as { stepIndex, duration } (stepIndex)}
-              {@const cell = cells.find(c => c.index === stepIndex)}
+              {@const cell = cells.find((c) => c.index === stepIndex)}
               {#if cell}
-                <div class="duration-cell" class:dark-mode={activeDarkMode} style="--dur: {duration}; flex: {duration};">
+                <div
+                  class="duration-cell"
+                  class:dark-mode={activeDarkMode}
+                  style="--dur: {duration}; flex: {duration};"
+                >
                   {#if onStepClick}
                     <button
                       class="pictograph-cell clickable"
                       class:dark-mode={activeDarkMode}
-                      class:current={showHighlight && highlightedStepIndex === cell.index}
-                      class:played={showHighlight && highlightedStepIndex !== null && cell.index < highlightedStepIndex}
+                      class:current={showHighlight &&
+                        highlightedStepIndex === cell.index}
+                      class:played={showHighlight &&
+                        highlightedStepIndex !== null &&
+                        cell.index < highlightedStepIndex}
                       onclick={() => onStepClick(cell.index)}
                       type="button"
                       aria-label="Go to step {cell.label}"
                     >
                       <CellRenderer
+                        {exportPresentation}
                         {cell}
                         showDurBadge={true}
                         {showStepNumbers}
                         {posePicker}
                         {activeDarkMode}
                         {crossfadeActive}
-                {transitionMode}
+                        {transitionMode}
                         {isBrowseSoloMode}
                         {isMotionSoloMode}
                         {soloHand}
@@ -424,17 +502,21 @@
                     <div
                       class="pictograph-cell"
                       class:dark-mode={activeDarkMode}
-                      class:current={showHighlight && highlightedStepIndex === cell.index}
-                      class:played={showHighlight && highlightedStepIndex !== null && cell.index < highlightedStepIndex}
+                      class:current={showHighlight &&
+                        highlightedStepIndex === cell.index}
+                      class:played={showHighlight &&
+                        highlightedStepIndex !== null &&
+                        cell.index < highlightedStepIndex}
                     >
                       <CellRenderer
+                        {exportPresentation}
                         {cell}
                         showDurBadge={true}
                         {showStepNumbers}
                         {posePicker}
                         {activeDarkMode}
                         {crossfadeActive}
-                {transitionMode}
+                        {transitionMode}
                         {isBrowseSoloMode}
                         {isMotionSoloMode}
                         {soloHand}
@@ -457,7 +539,7 @@
   {/if}
 {:else if needsScroll}
   <!-- Uniform grid: scroll mode -->
-  {@const startCellScroll = cells.find(c => c.index === -1)}
+  {@const startCellScroll = cells.find((c) => c.index === -1)}
   <div class="grid-scroll-container themed-scrollbar" use:bindGridScrollRef>
     <div
       class="grid-section"
@@ -479,62 +561,70 @@
           style="grid-column: {cell.gridColumn}; grid-row: {cell.gridRow};"
           animate:safeFlip={{ duration: flipDuration, easing: cubicOut }}
         >
-        {#if onStepClick && cell.index >= 0}
-          <button
-            class="pictograph-cell clickable"
-            class:dark-mode={activeDarkMode}
-            class:current={showHighlight && highlightedStepIndex === cell.index}
-            class:played={showHighlight && highlightedStepIndex !== null && cell.index < highlightedStepIndex}
-            onclick={() => onStepClick(cell.index)}
-            type="button"
-            aria-label="Go to step {cell.label}"
-          >
-            <CellRenderer
-              {cell}
-              showDurBadge={true}
-              {showStepNumbers}
-              {posePicker}
-              {activeDarkMode}
-              {crossfadeActive}
+          {#if onStepClick && cell.index >= 0}
+            <button
+              class="pictograph-cell clickable"
+              class:dark-mode={activeDarkMode}
+              class:current={showHighlight &&
+                highlightedStepIndex === cell.index}
+              class:played={showHighlight &&
+                highlightedStepIndex !== null &&
+                cell.index < highlightedStepIndex}
+              onclick={() => onStepClick(cell.index)}
+              type="button"
+              aria-label="Go to step {cell.label}"
+            >
+              <CellRenderer
+                {exportPresentation}
+                {cell}
+                showDurBadge={true}
+                {showStepNumbers}
+                {posePicker}
+                {activeDarkMode}
+                {crossfadeActive}
                 {transitionMode}
-              {isBrowseSoloMode}
-              {isMotionSoloMode}
-              {soloHand}
-              {stepNumFontSize}
-              {hasMixedDurations}
-              {formatDuration}
-              {getMotionSoloMotion}
-              {formatSoloTurns}
-              {shortOrientation}
-            />
-          </button>
-        {:else}
-          <div
-            class="pictograph-cell"
-            class:dark-mode={activeDarkMode}
-            class:current={showHighlight && highlightedStepIndex === cell.index}
-            class:played={showHighlight && highlightedStepIndex !== null && cell.index < highlightedStepIndex}
-          >
-            <CellRenderer
-              {cell}
-              showDurBadge={true}
-              {showStepNumbers}
-              {posePicker}
-              {activeDarkMode}
-              {crossfadeActive}
+                {isBrowseSoloMode}
+                {isMotionSoloMode}
+                {soloHand}
+                {stepNumFontSize}
+                {hasMixedDurations}
+                {formatDuration}
+                {getMotionSoloMotion}
+                {formatSoloTurns}
+                {shortOrientation}
+              />
+            </button>
+          {:else}
+            <div
+              class="pictograph-cell"
+              class:dark-mode={activeDarkMode}
+              class:current={showHighlight &&
+                highlightedStepIndex === cell.index}
+              class:played={showHighlight &&
+                highlightedStepIndex !== null &&
+                cell.index < highlightedStepIndex}
+            >
+              <CellRenderer
+                {exportPresentation}
+                {cell}
+                showDurBadge={true}
+                {showStepNumbers}
+                {posePicker}
+                {activeDarkMode}
+                {crossfadeActive}
                 {transitionMode}
-              {isBrowseSoloMode}
-              {isMotionSoloMode}
-              {soloHand}
-              {stepNumFontSize}
-              {hasMixedDurations}
-              {formatDuration}
-              {getMotionSoloMotion}
-              {formatSoloTurns}
-              {shortOrientation}
-            />
-          </div>
-        {/if}
+                {isBrowseSoloMode}
+                {isMotionSoloMode}
+                {soloHand}
+                {stepNumFontSize}
+                {hasMixedDurations}
+                {formatDuration}
+                {getMotionSoloMotion}
+                {formatSoloTurns}
+                {shortOrientation}
+              />
+            </div>
+          {/if}
         </div>
       {/each}
       {#if qrGridPlacement && (qrDataUrl || qrPending)}
@@ -554,18 +644,23 @@
           style="grid-column: {placement.col}; grid-row: {placement.row};"
           transition:fade|local={{ duration: scaleDuration }}
         >
-          <div class="pictograph-cell mandala-cell" class:light-bg={isLightBackground}>
+          <div
+            class="pictograph-cell mandala-cell"
+            class:light-bg={isLightBackground}
+          >
             <SequenceMandala
               {primaryPropColors}
               {sequence}
               mode="card-back"
               style="stroke"
               show={placement.variant === "full" ? "both" : placement.variant}
-              size={Math.round((cellWidth || 120) * MANDALA_CELL_SCALE)}
+              size={Math.floor((cellWidth || 120) * mandalaCellScale)}
               darkMode={activeDarkMode}
               {leftPropType}
               {rightPropType}
               pathShape={mandalaPathShape}
+              strokeWidth={exportPresentation ? 3 : undefined}
+              exportRaster={exportPresentation}
             />
           </div>
         </div>
@@ -574,7 +669,7 @@
   </div>
 {:else}
   <!-- Uniform grid: standard mode -->
-  {@const startCell = cells.find(c => c.index === -1)}
+  {@const startCell = cells.find((c) => c.index === -1)}
   <div
     class="grid-section"
     class:dark-mode={activeDarkMode}
@@ -595,62 +690,68 @@
         style="grid-column: {cell.gridColumn}; grid-row: {cell.gridRow};"
         animate:safeFlip={{ duration: flipDuration, easing: cubicOut }}
       >
-      {#if onStepClick && cell.index >= 0}
-        <button
-          class="pictograph-cell clickable"
-          class:dark-mode={activeDarkMode}
-          class:current={showHighlight && highlightedStepIndex === cell.index}
-          class:played={showHighlight && highlightedStepIndex !== null && cell.index < highlightedStepIndex}
-          onclick={() => onStepClick(cell.index)}
-          type="button"
-          aria-label="Go to step {cell.label}"
-        >
-          <CellRenderer
-            {cell}
-            showDurBadge={true}
-            {showStepNumbers}
-            {posePicker}
-            {activeDarkMode}
-            {crossfadeActive}
-                {transitionMode}
-            {isBrowseSoloMode}
-            {isMotionSoloMode}
-            {soloHand}
-            {stepNumFontSize}
-            {hasMixedDurations}
-            {formatDuration}
-            {getMotionSoloMotion}
-            {formatSoloTurns}
-            {shortOrientation}
-          />
-        </button>
-      {:else}
-        <div
-          class="pictograph-cell"
-          class:dark-mode={activeDarkMode}
-          class:current={showHighlight && highlightedStepIndex === cell.index}
-          class:played={showHighlight && highlightedStepIndex !== null && cell.index < highlightedStepIndex}
-        >
-          <CellRenderer
-            {cell}
-            showDurBadge={true}
-            {showStepNumbers}
-            {posePicker}
-            {activeDarkMode}
-            {crossfadeActive}
-                {transitionMode}
-            {isBrowseSoloMode}
-            {isMotionSoloMode}
-            {soloHand}
-            {stepNumFontSize}
-            {hasMixedDurations}
-            {formatDuration}
-            {getMotionSoloMotion}
-            {formatSoloTurns}
-            {shortOrientation}
-          />
-        </div>
-      {/if}
+        {#if onStepClick && cell.index >= 0}
+          <button
+            class="pictograph-cell clickable"
+            class:dark-mode={activeDarkMode}
+            class:current={showHighlight && highlightedStepIndex === cell.index}
+            class:played={showHighlight &&
+              highlightedStepIndex !== null &&
+              cell.index < highlightedStepIndex}
+            onclick={() => onStepClick(cell.index)}
+            type="button"
+            aria-label="Go to step {cell.label}"
+          >
+            <CellRenderer
+              {exportPresentation}
+              {cell}
+              showDurBadge={true}
+              {showStepNumbers}
+              {posePicker}
+              {activeDarkMode}
+              {crossfadeActive}
+              {transitionMode}
+              {isBrowseSoloMode}
+              {isMotionSoloMode}
+              {soloHand}
+              {stepNumFontSize}
+              {hasMixedDurations}
+              {formatDuration}
+              {getMotionSoloMotion}
+              {formatSoloTurns}
+              {shortOrientation}
+            />
+          </button>
+        {:else}
+          <div
+            class="pictograph-cell"
+            class:dark-mode={activeDarkMode}
+            class:current={showHighlight && highlightedStepIndex === cell.index}
+            class:played={showHighlight &&
+              highlightedStepIndex !== null &&
+              cell.index < highlightedStepIndex}
+          >
+            <CellRenderer
+              {exportPresentation}
+              {cell}
+              showDurBadge={true}
+              {showStepNumbers}
+              {posePicker}
+              {activeDarkMode}
+              {crossfadeActive}
+              {transitionMode}
+              {isBrowseSoloMode}
+              {isMotionSoloMode}
+              {soloHand}
+              {stepNumFontSize}
+              {hasMixedDurations}
+              {formatDuration}
+              {getMotionSoloMotion}
+              {formatSoloTurns}
+              {shortOrientation}
+            />
+          </div>
+        {/if}
       </div>
     {/each}
     {#if qrGridPlacement && (qrDataUrl || qrPending)}
@@ -670,18 +771,23 @@
         style="grid-column: {placement.col}; grid-row: {placement.row};"
         transition:fade|local={{ duration: scaleDuration }}
       >
-        <div class="pictograph-cell mandala-cell" class:light-bg={isLightBackground}>
+        <div
+          class="pictograph-cell mandala-cell"
+          class:light-bg={isLightBackground}
+        >
           <SequenceMandala
             {primaryPropColors}
             {sequence}
             mode="card-back"
             style="stroke"
             show={placement.variant === "full" ? "both" : placement.variant}
-            size={Math.round((cellWidth || 120) * MANDALA_CELL_SCALE)}
+            size={Math.floor((cellWidth || 120) * mandalaCellScale)}
             darkMode={activeDarkMode}
             {leftPropType}
             {rightPropType}
             pathShape={mandalaPathShape}
+            strokeWidth={exportPresentation ? 3 : undefined}
+            exportRaster={exportPresentation}
           />
         </div>
       </div>
@@ -875,7 +981,10 @@
   /* Clickable cells */
   .pictograph-cell.clickable {
     cursor: pointer;
-    transition: transform 150ms ease, box-shadow 150ms ease, border-color 350ms ease;
+    transition:
+      transform 150ms ease,
+      box-shadow 150ms ease,
+      border-color 350ms ease;
   }
 
   /* Hover affordance: scale the cell up so it reads as clickable (click to jump
@@ -944,6 +1053,23 @@
     background: #000;
   }
 
+  /* The canvas export has a pure white (or #0a0a0f dark) card field. The
+     * interactive viewer keeps its softer grid treatment, while the live
+     * Download artifact uses the canvas palette before its PNG is ready. */
+  :global(.choreo-card-root.export-presentation) .grid-section,
+  :global(.choreo-card-root.export-presentation) .duration-layout,
+  :global(.choreo-card-root.export-presentation) .duration-cell,
+  :global(.choreo-card-root.export-presentation) .qr-cell {
+    background: #fff;
+  }
+
+  :global(.choreo-card-root.export-presentation.dark-mode) .grid-section,
+  :global(.choreo-card-root.export-presentation.dark-mode) .duration-layout,
+  :global(.choreo-card-root.export-presentation.dark-mode) .duration-cell,
+  :global(.choreo-card-root.export-presentation.dark-mode) .qr-cell {
+    background: #0a0a0f;
+  }
+
   /* Fills the reserved cell rather than sizing to the ring, so nothing shifts
      when the real QR image replaces it. */
   .qr-pending {
@@ -962,8 +1088,12 @@
     animation: qrImgIn var(--duration-normal, 200ms) ease;
   }
   @keyframes qrImgIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   /* Interactive viewer only: clickable play badge over the QR. The wrapper
@@ -1012,7 +1142,9 @@
     box-shadow: 0 0 12px rgba(99, 102, 241, 0.5);
     opacity: 0;
     transform: scale(0.82);
-    transition: opacity 160ms ease, transform 160ms ease;
+    transition:
+      opacity 160ms ease,
+      transform 160ms ease;
     pointer-events: none;
   }
 
