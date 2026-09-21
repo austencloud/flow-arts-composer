@@ -436,6 +436,26 @@
       min-height: 220px;
     }
   }
+  @media (min-aspect-ratio: 1/1) {
+    @container (min-width: 1000px) {
+      .theme-composition {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) clamp(280px, 22cqi, 340px);
+        gap: var(--settings-gap);
+      }
+      .theme-stage {
+        border-radius: 18px;
+      }
+      .theme-controls {
+        align-self: start;
+        border-top: 1px solid var(--theme-stroke);
+        border-radius: 18px;
+      }
+      .theme-choices {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+  }
   @media (prefers-reduced-motion: reduce) {
     .theme-choices button,
     .apply-theme {
