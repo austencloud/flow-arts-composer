@@ -413,6 +413,15 @@ export class AnimationRenderLoop {
       this.onEffectError = config.onEffectError ?? null;
     if (config.mandalaOverlay !== undefined) {
       this.mandalaOverlay = config.mandalaOverlay;
+      // The visibility toggle can create this canvas after the engine has
+      // already settled its first measured frame. Its initial buffer may still
+      // be the 500px bootstrap size while CSS stretches it across the live
+      // stage, which magnifies the guide independently of the props and their
+      // trails. Attach it at the render loop's current frame immediately.
+      this.mandalaOverlay?.resize(
+        this.canvasFrame.width,
+        this.canvasFrame.height
+      );
       this.mandalaPathPreparer.clearCache();
       this.previousMandalaPaths = null;
     }
