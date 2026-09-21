@@ -83,6 +83,8 @@
     onPropLookChange,
     recipeOverrides,
     colors,
+    isActive = true,
+    onDrillChange,
   } = $props<{
     selectedPropType: PropType | null;
     color?: "blue" | "red" | (string & {});
@@ -150,6 +152,10 @@
     onPropLookChange?: (look: PropLook) => void;
     recipeOverrides?: Partial<Record<PropType, CompositionRecipe>>;
     colors?: ViewerCustomColorPair | null;
+    /** A sheet can reset this transient route when it closes. */
+    isActive?: boolean;
+    /** Lets a sheet temporarily reclaim root-only control space while drilled. */
+    onDrillChange?: (drilled: boolean) => void;
   }>();
 
   const allowedPropSet = $derived(
@@ -232,6 +238,12 @@
     | { kind: "prop-look" };
   let drill = $state<Drill | null>(null);
   let rootEl = $state<HTMLDivElement | null>(null);
+
+  $effect(() => {
+    if (!isActive && drill !== null) drill = null;
+  });
+
+  $effect(() => onDrillChange?.(drill !== null));
 
   const drillKey = $derived(
     drill === null

@@ -74,6 +74,7 @@
   // Drawer's respectLayoutMode, which would also tag the overlay with
   // side-by-side-layout and clamp the backdrop to the right half.
   let isSideBySide = $state(false);
+  let isDrilled = $state(false);
   let layoutUnsubscribe: (() => void) | null = null;
 
   onMount(() => {
@@ -88,6 +89,7 @@
   const placement = $derived(isSideBySide ? "right" : "bottom");
 
   function setOpen(open: boolean) {
+    if (!open) isDrilled = false;
     if (isOpen === open) return;
     isOpen = open;
     onOpenChange?.(open);
@@ -136,8 +138,8 @@
     />
 
     <div class="picker-body">
-      {#if showCatDogToggle || showTabs}
-        <div class="picker-toolbar">
+      {#if !isDrilled && (showCatDogToggle || showTabs)}
+        <div class="picker-toolbar" transition:growFade={{ axis: "y" }}>
           {#if showCatDogToggle}
             <CatDogToggle
               catDogMode={catDogEnabled}
@@ -179,8 +181,8 @@
         </div>
       {/if}
 
-      {#if onPrimaryPropColorsChange}
-        <div class="color-settings">
+      {#if !isDrilled && onPrimaryPropColorsChange}
+        <div class="color-settings" transition:growFade={{ axis: "y" }}>
           <PrimaryPropColorSettings
             colors={primaryPropColors}
             {darkMode}
@@ -197,6 +199,8 @@
         flat
         scrollMode="internal"
         fill
+        isActive={isOpen}
+        onDrillChange={(drilled) => (isDrilled = drilled)}
         onSelect={handlePropSelect}
         {chirality}
       />
