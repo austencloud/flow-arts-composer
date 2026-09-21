@@ -5,6 +5,7 @@
     releaseBackground,
   } from "$lib/shared/background/shared/state/background-hold.svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
   import { tryGetAccountSetupContext } from "$lib/shared/onboarding/context/account-setup-context";
   import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
@@ -32,7 +33,7 @@
     forest: "Layered green light with a little breathing room.",
     winter: "A calm blue field with crisp, quiet motion.",
     pride: "A full spectrum with bright, celebratory movement.",
-    blossom: "Soft petals and a vivid spring color story.",
+    blossom: "Pink blossoms and drifting petals.",
     autumn: "Falling color, warm air, and a little fire.",
     celestial: "Open sky, sunlight, and a clear horizon.",
     void: "Near-black space for maximum focus on the composition.",
@@ -50,6 +51,13 @@
     getCardMetadata(previewType) ?? BACKGROUND_CARD_REGISTRY[0]
   );
   const previewIsCurrent = $derived(previewType === currentType);
+  const needsThemeConfirmation = $derived(
+    accountSetupState?.available &&
+      accountSetupState.tasks.some(
+        (task) => task.id === "theme" && !task.complete
+      )
+  );
+  const canApplyPreview = $derived(!previewIsCurrent || needsThemeConfirmation);
 
   $effect(() => {
     if (!BACKGROUND_CARD_REGISTRY.some((theme) => theme.type === previewType)) {
@@ -85,10 +93,12 @@
   }
 
   function applyPreview(): void {
-    if (previewIsCurrent) return;
+    if (!canApplyPreview) return;
     hapticService?.trigger("success");
-    applyThemeFromColors(undefined, preview.themeColors);
-    onUpdate?.({ key: "backgroundType", value: previewType });
+    if (!previewIsCurrent) {
+      applyThemeFromColors(undefined, preview.themeColors);
+      onUpdate?.({ key: "backgroundType", value: previewType });
+    }
     void recordThemeChoice();
   }
 </script>
@@ -97,7 +107,7 @@
   <section class="theme-workspace" aria-labelledby="theme-heading">
     <header class="theme-intro">
       <p class="eyebrow">Appearance</p>
-      <h3 id="theme-heading">Theme</h3>
+      <h3 id="theme-heading">{t("tab_settings_theme")}</h3>
       <p>Choose the moving backdrop for your composer.</p>
     </header>
 
@@ -155,10 +165,10 @@
           class="apply-theme"
           class:applied={previewIsCurrent}
           onclick={applyPreview}
-          disabled={previewIsCurrent}
+          disabled={!canApplyPreview}
         >
-          {previewIsCurrent ? "Current theme" : `Use ${preview.label}`}
-          {#if previewIsCurrent}<i class="fas fa-check" aria-hidden="true"
+          {canApplyPreview ? `Use ${preview.label}` : "Current theme"}
+          {#if !canApplyPreview}<i class="fas fa-check" aria-hidden="true"
             ></i>{/if}
         </button>
       </aside>
@@ -174,6 +184,7 @@
     height: 100%;
     overflow: auto;
     padding: var(--settings-gap);
+    padding-bottom: calc(var(--settings-gap) + 16px);
   }
   .theme-workspace {
     width: min(1180px, 100%);
@@ -204,7 +215,7 @@
   }
   .theme-composition {
     display: grid;
-    grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+    grid-template-columns: minmax(0, 2fr) minmax(340px, 1fr);
     gap: var(--settings-gap);
     align-items: stretch;
   }

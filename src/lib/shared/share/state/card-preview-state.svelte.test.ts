@@ -94,7 +94,7 @@ describe("createCardPreviewState artifact identity", () => {
     const screen = render(CardPreviewStateHarness, {
       sequence: sequence("A"),
       enabled: true,
-      onState: (next) => (state = next),
+      onState: (next: CardPreviewState) => (state = next),
     });
 
     await settle();
@@ -105,7 +105,7 @@ describe("createCardPreviewState artifact identity", () => {
     await screen.rerender({
       sequence: sequence("B"),
       enabled: true,
-      onState: (next) => (state = next),
+      onState: (next: CardPreviewState) => (state = next),
     });
 
     expect(state.url).toBeNull();
@@ -133,14 +133,14 @@ describe("createCardPreviewState artifact identity", () => {
     const screen = render(CardPreviewStateHarness, {
       sequence: sequence("A"),
       enabled: true,
-      onState: (next) => (state = next),
+      onState: (next: CardPreviewState) => (state = next),
     });
 
     await settle();
     await screen.rerender({
       sequence: sequence("B"),
       enabled: true,
-      onState: (next) => (state = next),
+      onState: (next: CardPreviewState) => (state = next),
     });
     first.resolve(new Blob(["late A"]));
     await settle();
@@ -171,7 +171,7 @@ describe("createCardPreviewState artifact identity", () => {
     const screen = render(CardPreviewStateHarness, {
       sequence: value,
       enabled: true,
-      onState: (next) => (state = next),
+      onState: (next: CardPreviewState) => (state = next),
     });
 
     await settle();
@@ -198,14 +198,14 @@ describe("createCardPreviewState artifact identity", () => {
     await screen.rerender({
       sequence: value,
       enabled: false,
-      onState: (next) => (state = next),
+      onState: (next: CardPreviewState) => (state = next),
     });
     expect(state.url).toBeNull();
     expect(state.isPreparing).toBe(false);
     await screen.rerender({
       sequence: value,
       enabled: true,
-      onState: (next) => (state = next),
+      onState: (next: CardPreviewState) => (state = next),
     });
     expect(state.url).toBe("blob:reset");
 
@@ -231,7 +231,7 @@ describe("createCardPreviewState artifact identity", () => {
     const screen = render(CardPreviewStateHarness, {
       sequence: sequence("A"),
       enabled: true,
-      onState: (next) => (state = next),
+      onState: (next: CardPreviewState) => (state = next),
     });
 
     await settle();
@@ -245,7 +245,7 @@ describe("createCardPreviewState artifact identity", () => {
     await screen.rerender({
       sequence: null,
       enabled: true,
-      onState: (next) => (state = next),
+      onState: (next: CardPreviewState) => (state = next),
     });
     reset.resolve(new Blob(["late after null"]));
     await settle();
@@ -255,7 +255,7 @@ describe("createCardPreviewState artifact identity", () => {
     const secondScreen = render(CardPreviewStateHarness, {
       sequence: sequence("B"),
       enabled: true,
-      onState: (next) => (state = next),
+      onState: (next: CardPreviewState) => (state = next),
     });
     await settle();
     await secondScreen.unmount();
@@ -279,8 +279,9 @@ describe("createCardPreviewState artifact identity", () => {
     const screen = render(CardPreviewStateHarness, {
       sequence: value,
       enabled: true,
-      onState: (next) => (state = next),
-      onHarness: (next) => (harness = next),
+      onState: (next: CardPreviewState) => (state = next),
+      onHarness: (next: { setWord: (word: string) => void }) =>
+        (harness = next),
     });
 
     await settle();
