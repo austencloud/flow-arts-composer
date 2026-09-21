@@ -8,6 +8,14 @@ import {
 } from "./card-parity-metrics";
 import { renderComposerCard } from "./render-composer-card";
 
+declare const __MCP_PACKED_ROOT__: boolean;
+
+const adapters = [
+  "source",
+  "packaged",
+  ...(__MCP_PACKED_ROOT__ ? ["installed"] : []),
+] as const;
+
 async function decodePng(base64: string): Promise<ImageData> {
   const image = new Image();
   image.src = `data:image/png;base64,${base64}`;
@@ -55,7 +63,7 @@ describe("Composer ⇄ MCP card PNG parity", () => {
   for (const testCase of cardParityCases()) {
     it(`${testCase.name}: reports strict per-region parity for both adapters`, async () => {
       const composer = await canvasImage(await renderComposerCard(testCase));
-      for (const adapter of ["source", "packaged"] as const) {
+      for (const adapter of adapters) {
         const base64 = await commands.renderMcpCard(
           adapter,
           testCase.sequence,

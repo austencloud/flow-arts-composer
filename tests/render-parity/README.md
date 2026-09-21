@@ -1,8 +1,10 @@
 # Card rendering parity
 
 `npm run test:card-mcp-parity` compares the real browser `ImageComposer` export
-against both the source and packaged MCP renderers. It compares the same inputs
-at the same output size; it does not compare an adapter to its own screenshot.
+against the source and package-source MCP renderers, plus the installed
+package's `dist/card-renderer.js` when `MCP_PACKED_ROOT` is set. It compares
+the same inputs at the same output size; it does not compare an adapter to its
+own screenshot.
 
 The corpus covers light/dark exports, explicit and default difficulty badges,
 physical print frames, LOOP periods/reflection/overlay metadata, repeated titles,
@@ -15,8 +17,8 @@ tolerance.
 
 The Start-cell L/R hand-color key also has its own cropped comparison. Removing
 the key must fail that region, even when the change is too small to fail the
-whole body. The same check runs against source and packaged MCP output with
-the default, dark-mode, and custom hand colors.
+whole body. The same check runs against source, package-source, and installed
+MCP output with the default, dark-mode, and custom hand colors.
 
 For visual investigation, run `pnpm exec tsx tests/render-parity/serve-card-parity.ts`
 from the repository root and open the printed loopback URL. The page uses the
@@ -56,6 +58,29 @@ Node side set `TSX_TSCONFIG_PATH` to an untracked tsconfig whose `paths` map
   assets into the distributable package. Do not edit the copies independently.
 
 Web App CI runs the cross-renderer test and rejects stale packaged assets.
+Its required `Composer and MCP Card Parity` check also installs the release
+tarball into an isolated directory and runs every comparison against that
+installed renderer. A missing installed renderer fails the check; it never
+falls back to the source checkout.
+
+## Publishing and policy review
+
+Run `npm run release:verify --prefix mcp-server-pkg` to build, pack, install,
+and compare a release without publishing it. The tested archive and its
+SHA-512 receipt are saved in `mcp-server-pkg/.release/` and uploaded by CI.
+From a clean committed checkout, `npm run release:publish --prefix mcp-server-pkg`
+runs the same gate and publishes those exact tested bytes. It never rebuilds
+after verification. Direct directory publishing is blocked by `prepublishOnly`.
+An account owner can still deliberately bypass local hooks; repository scripts
+cannot revoke that authority.
+
+`Card Render Policy Review` is a separate required status. Its workflow runs
+from the trusted base branch, inspects changed filenames without executing PR
+code, and requires Austen's approval in the `card-render-policy-review` GitHub
+environment when fixtures, tolerances, or gate code change. Approval is tied to
+that run and head commit; a new commit starts a new review. Changes to ordinary
+rendering code need passing comparisons but do not need this manual step.
+
 When changing card rendering, update the shared owner and add a representative
 fixture for any new option. Do not widen tolerances to accept a visible defect.
 Small rasterization differences are distinct from missing content or displaced

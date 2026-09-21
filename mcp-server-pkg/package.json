@@ -21,25 +21,17 @@
     "test:pack": "node scripts/verify-packed-package.mjs",
     "start": "node dist/index.js",
     "prepack": "npm run build",
-    "prepublishOnly": "npm run typecheck && npm run build && npm run test:pack"
+    "release:verify": "node scripts/release-package.mjs",
+    "release:publish": "node scripts/release-package.mjs --publish",
+    "prepublishOnly": "node scripts/block-direct-publish.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
     "@napi-rs/canvas": "^1.0.9",
     "@resvg/resvg-js": "^2.6.0",
+    "jsdom": "^27.4.0",
+    "qr-code-styling": "^1.9.2",
     "zod": "^3.25.0"
-  },
-  "peerDependencies": {
-    "jsdom": ">=22",
-    "qr-code-styling": "^1.9.2"
-  },
-  "peerDependenciesMeta": {
-    "jsdom": {
-      "optional": true
-    },
-    "qr-code-styling": {
-      "optional": true
-    }
   },
   "devDependencies": {
     "@tka/domain": "file:../packages/domain",

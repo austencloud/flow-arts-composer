@@ -3,22 +3,14 @@ name: Web App CI
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - "desktop/**"
-      - "docs/**"
-      - "*.md"
   pull_request:
     branches: [main]
-    paths-ignore:
-      - "desktop/**"
-      - "docs/**"
-      - "*.md"
 
 jobs:
   card-render-parity:
     name: Composer and MCP Card Parity
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -37,7 +29,14 @@ jobs:
           git diff --exit-code -- mcp-server-pkg/assets
           test -z "$(git ls-files --others --exclude-standard -- mcp-server-pkg/assets)"
       - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm run test:card-mcp-parity
+      - name: Compare Composer with source and installed MCP package
+        run: npm run release:verify --prefix mcp-server-pkg
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: verified-mcp-package
+          include-hidden-files: true
+          path: mcp-server-pkg/.release/
 
   validate:
     name: Type Check, Test, Build

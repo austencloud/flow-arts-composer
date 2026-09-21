@@ -130,6 +130,23 @@ describe("LabeledColorPairPicker", () => {
     expect(onchange).not.toHaveBeenCalled();
   });
 
+  it("animates the editor open and keeps it mounted while it closes", async () => {
+    const { screen } = renderPicker();
+    await openLeft();
+    const editor = screen.container.querySelector<HTMLElement>(".color-editor")!;
+    // Svelte 5 runs css transitions through the Web Animations API, so a
+    // running animation on the node is the proof the intro is playing.
+    const running = () =>
+      editor.getAnimations().filter((a) => a.playState === "running").length;
+    expect(running()).toBeGreaterThan(0);
+    await expect.poll(running).toBe(0);
+
+    await openLeft();
+    expect(screen.container.contains(editor)).toBe(true);
+    expect(running()).toBeGreaterThan(0);
+    await expect.poll(() => screen.container.contains(editor)).toBe(false);
+  });
+
   it("emits exactly once for a swatch click", async () => {
     const { onchange } = renderPicker();
     await openLeft();

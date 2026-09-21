@@ -24,6 +24,7 @@
     disabled = false,
     disabledModes = [],
     reasons = {},
+    fullLabels = false,
     ariaLabel = "Timing and direction",
     onpick,
   }: {
@@ -34,6 +35,8 @@
     disabledModes?: readonly VtgMode[];
     /** Why a mode in `disabledModes` is off, shown as its tooltip. */
     reasons?: Partial<Record<VtgMode, string>>;
+    /** Uses complete words when the host gives each choice enough room. */
+    fullLabels?: boolean;
     ariaLabel?: string;
     onpick: (mode: VtgMode) => void;
   } = $props();
@@ -74,8 +77,8 @@
       compact
       accent={c.el.accentColor}
       icon={c.el.iconPath}
-      timing={c.shortWords.timing}
-      direction={c.shortWords.direction}
+      timing={fullLabels ? c.words.timing : c.shortWords.timing}
+      direction={fullLabels ? c.words.direction : c.shortWords.direction}
       active={selected === c.mode}
       disabled={disabled || isBlocked(c.mode)}
       title={isBlocked(c.mode) ? (reasons[c.mode] ?? null) : null}

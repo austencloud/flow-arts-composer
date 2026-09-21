@@ -15,11 +15,13 @@
     applies layout containment, which makes the container the containing
     block for fixed descendants.
 
-  No backdrop, no outside-click dismissal: the workspace beside the grown card
-  stays live. X and Escape close. Focus moves in on open and back to the card
-  that opened it on close. The {#key destination} remount on a layout flip
-  (desktop <-> stacked) drops the panel's local state and focus along with it;
-  acceptable for a resize or fold event, which is rare and not mid-task.
+  No backdrop: the workspace beside the grown card stays live. On desktop, a
+  click outside closes the card without consuming the interaction, so the
+  workspace control underneath still works. X and Escape close everywhere.
+  Focus moves in on open and back to the card that opened it on close. The
+  {#key destination} remount on a layout flip (desktop <-> stacked) drops the
+  panel's local state and focus along with it; acceptable for a resize or fold
+  event, which is rare and not mid-task.
 -->
 <script lang="ts">
   import { tick } from "svelte";
@@ -115,6 +117,30 @@
       canDismiss: () => true,
       dismiss: close,
     });
+  });
+
+  // The side-by-side stage is intentionally non-modal: the workspace around
+  // it remains actionable. Close after the click bubbles through its target,
+  // so the outside control receives its normal interaction before the stage
+  // changes the grid geometry. Never prevent or stop the event.
+  // The viewport destination fills the screen, so it keeps the explicit X
+  // and Escape routes instead of manufacturing an unreachable click-away.
+  $effect(() => {
+    if (!openCard || destination !== "stage") return;
+
+    const card = openCard;
+    const dismissFromOutside = (event: MouseEvent): void => {
+      if (!root || event.composedPath().includes(root)) return;
+      // An outside card can replace this one in its own click handler. Do not
+      // let the old stage's bubbling listener immediately close the new card.
+      if (panelState.openGenerateCard !== card) return;
+      close();
+    };
+
+    document.addEventListener("click", dismissFromOutside);
+    return () => {
+      document.removeEventListener("click", dismissFromOutside);
+    };
   });
 
   function close() {

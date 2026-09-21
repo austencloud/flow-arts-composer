@@ -12,6 +12,11 @@ const projectRoot = path.resolve(
 );
 
 export default defineConfig({
+  define: {
+    // Browser tests cannot read the Node process environment at runtime. Bake
+    // this single release-runner flag into the browser bundle instead.
+    __MCP_PACKED_ROOT__: JSON.stringify(Boolean(process.env.MCP_PACKED_ROOT)),
+  },
   plugins: [svelte()],
   publicDir: path.resolve(projectRoot, "static"),
   optimizeDeps: {
@@ -41,6 +46,10 @@ export default defineConfig({
       "@tka/render-composition": path.resolve(
         projectRoot,
         "packages/render-composition/src/index.ts"
+      ),
+      "@tka/render-core": path.resolve(
+        projectRoot,
+        "packages/render-core/src/index.ts"
       ),
       "$app/environment": path.resolve(
         projectRoot,
