@@ -20,6 +20,7 @@ beforeEach(() => {
   startMorph.mockReset();
   claims.mockReset();
   claims.mockReturnValue(0);
+  document.documentElement.className = "";
 });
 
 describe("generateCardMorphName", () => {
@@ -59,11 +60,19 @@ describe("morphGenerateCard", () => {
 
     morphGenerateCard("customize", vi.fn(), { onSettled });
     expect(onSettled).not.toHaveBeenCalled();
+    expect(document.documentElement).toHaveClass(
+      "generate-card-morph-active",
+      "generate-card-morph-customize"
+    );
 
     finish();
     await finished;
     await Promise.resolve();
     expect(onSettled).toHaveBeenCalledOnce();
+    expect(document.documentElement).not.toHaveClass(
+      "generate-card-morph-active",
+      "generate-card-morph-customize"
+    );
   });
 
   it("routes through startMorph when the name is claimed and reports whether a transition ran", async () => {
@@ -71,7 +80,7 @@ describe("morphGenerateCard", () => {
     const mutate = vi.fn();
     startMorph.mockImplementation((m) => {
       m();
-      return {} as ViewTransition;
+      return { finished: Promise.resolve() } as ViewTransition;
     });
 
     expect(morphGenerateCard("loop", mutate)).toBe(true);
