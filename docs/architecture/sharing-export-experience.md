@@ -145,6 +145,21 @@ to a card merely because an old sheet default used that artifact.
 - Copy link performs one copy action and reports its progress/result at that
   control. It does not render media. A copied link should preserve the intended
   view and must not misrepresent who can open it.
+- A sent sequence carries the sender's view, not just the sequence. When send
+  mode opens, the viewer's state is snapshotted the way Copy link builds a
+  link (`extractViewerStateQuery` over `getShareUrl()`: the `pane`, `split`,
+  `fx`, `cols`, and `s` names) and rides on the attachment as
+  `metadata.sequenceViewParams`, additive to the existing sequence metadata.
+  It is a snapshot, not a live feed: the message means what the viewer showed
+  when the person chose Send, so later stage changes do not alter what was
+  sent. Opening the attachment seeds the recipient's viewer with that query
+  before it mounts (`sequence-viewer-overlay-state`'s `seedViewerStateParams`),
+  the same override path a followed share link takes, so they land on the
+  sender's pane, effects, and visibility as a view-only override of their own
+  saved values — which `closeSequenceOverlay` strips again on exit. The plain
+  `/q/<code>` link carries the same query so an out-of-app open matches; scan
+  handoff already forwards its query to the viewer. Absent on messages sent
+  before the field existed, which simply open on the recipient's defaults.
 - Sending to a friend in Flow Arts Composer uses the existing sequence-attachment
   workflow; it is not a social publishing operation. From the viewer it is a
   mode, not a dialog: the workspace morphs the way it does for Practice. The
@@ -211,7 +226,11 @@ to phone, prepared file, viewer source.
   rendered for the sender; the recipient still receives the sequence and its
   thumbnail. The outbox is the drawer's; hosts that mount the drawer lazily
   mount it on `inboxState.hostRequested`, and the workspace reads the
-  registered outbox from `message-delivery-context.ts`.
+  registered outbox from `message-delivery-context.ts`. The sender's view
+  travels with the send: `viewer-shell-share-state` snapshots it into the
+  `SequenceSendSession` at entry, `send-attachment-state` passes it to
+  `buildSequenceMessageAttachment`, and `SequenceMessageCard` hands it back to
+  `openSequenceViewer` for the recipient.
 - Existing post composition and publishing components remain their respective
   owners. Do not introduce a second renderer, modal stack, or delivery service.
 

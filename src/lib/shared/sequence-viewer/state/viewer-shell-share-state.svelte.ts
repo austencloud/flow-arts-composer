@@ -1,6 +1,7 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { OrchestratorContext } from "../domain/viewer-orchestrator-context";
 import { buildViewerShareActions } from "../services/viewer-shell-model";
+import { extractViewerStateQuery } from "../services/viewer-orchestrator-model";
 import type { MandalaViewerController } from "./mandala-viewer-controller.svelte";
 import type { TunnelViewController } from "../tunnel/tunnel-view-controller.svelte";
 import type { ShareArtifact } from "$lib/shared/share/services/post-handoff";
@@ -108,7 +109,15 @@ export function createViewerShellShareState(
     const sequence = inputs.getSequence();
     dependencies.captureScanAction("send");
     if (sendSession) return;
-    const session = dependencies.createSequenceSendSession(sequence);
+    // Snapshot, not live: the message means what the viewer showed when the
+    // person chose Send. Same full-state link Copy link builds.
+    const viewParams = extractViewerStateQuery(
+      inputs.getContext().getShareUrl()
+    );
+    const session = dependencies.createSequenceSendSession(
+      sequence,
+      viewParams ? { viewParams } : {}
+    );
     if (!session) return;
     if (postSheetOpen) {
       postSheetOpen = false;
