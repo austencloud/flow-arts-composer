@@ -27,6 +27,7 @@ import {
   isFanPropType,
   normalizeFanAppearance,
 } from "../../prop/domain/fan-appearance";
+import { resolvePropRenderKey } from "../../prop/domain/prop-look";
 // Prop-type defaults used when callers don't pass explicit options.
 // Formerly imported getSettings() from app-state.svelte, but that module chain
 // pulls in Firebase auth which accesses `window` — crashing in Web Workers.
@@ -282,6 +283,14 @@ export class PictographPreparer {
       (isFanPropType(effectiveLeft) || isFanPropType(effectiveRight))
         ? fanAppearanceSignature(normalizeFanAppearance(options.fanAppearance))
         : "",
+      resolvePropRenderKey(effectiveLeft, {
+        fanAppearance: options?.fanAppearance,
+        propLook: options?.propLook,
+      }),
+      resolvePropRenderKey(effectiveRight, {
+        fanAppearance: options?.fanAppearance,
+        propLook: options?.propLook,
+      }),
       pictograph.betaSwapped ? "bs" : "",
       getPictographGeometryRevision(pictograph) ?? "",
       // Visibility is render-relevant: an invisible placeholder hand must not
@@ -368,10 +377,11 @@ export class PictographPreparer {
               motion.propPlacementData,
               motion,
               options?.useGridVersion ?? false,
-              options?.themeMode || options?.fanAppearance
+              options?.themeMode || options?.fanAppearance || options?.propLook
                 ? {
                     themeMode: options.themeMode,
                     fanAppearance: options.fanAppearance,
+                    propLook: options.propLook,
                   }
                 : undefined
             ),

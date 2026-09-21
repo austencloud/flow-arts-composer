@@ -88,4 +88,45 @@ describe("PropGrid fan look credit", () => {
     await model.click();
     expect(onPropLookChange).toHaveBeenCalledWith("model");
   });
+
+  it("selects Buugeng and replaces the root grid with its persistent details", async () => {
+    const onSelect = vi.fn();
+    const onPropLookChange = vi.fn();
+
+    render(PropGrid, {
+      selectedPropType: PropType.BUUGENG,
+      onSelect,
+      allowedProps: [PropType.BUUGENG, PropType.BIGBUUGENG],
+      fanAppearance: { build: "fire", frameColor: "black", cover: "bare" },
+      onFanAppearanceChange: vi.fn(),
+      propLook: "pictograph",
+      onPropLookChange,
+    });
+
+    await page
+      .getByRole("button", { name: "Select Buugeng prop type" })
+      .click();
+    expect(onSelect).toHaveBeenCalledWith(PropType.BUUGENG);
+
+    await expect
+      .element(page.getByRole("radio", { name: "Pictograph" }))
+      .toHaveAttribute("aria-checked", "true");
+    await expect
+      .element(page.getByRole("radio", { name: "3D model" }))
+      .toBeVisible();
+    await expect
+      .element(page.getByRole("button", { name: "Big" }))
+      .toBeVisible();
+
+    await page.getByRole("radio", { name: "3D model" }).click();
+    expect(onPropLookChange).toHaveBeenCalledWith("model");
+
+    await page.getByRole("button", { name: "Back to all props" }).click();
+    await expect
+      .element(page.getByRole("button", { name: "Select Buugeng prop type" }))
+      .toBeVisible();
+    await expect
+      .element(page.getByRole("radio", { name: "3D model" }))
+      .not.toBeInTheDocument();
+  });
 });

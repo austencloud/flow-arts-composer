@@ -21,6 +21,15 @@ The production `collision/stance-yaw-track.ts` remains the automatic anticipator
 stance owner; it does not author these user-taught poses. This lab intentionally
 eases to rest at each taught pose instead of choosing anticipation itself.
 
+Grip Lab's `KeyframeTimeline.svelte` presents these whole-pose keys at their
+actual phase and plots the same shared lean sampler. It extends the existing
+`contact-inspection-state.svelte.ts` owner for add, delete, retime, and undo;
+it does not own another animation clock. Searches: timeline, keyframe,
+ScrubbableNumber, unified playback. `UnifiedTimeline` owns sequence playback,
+not authored pose timing; the lab retains its existing `TransportControls`
+and composes `PanelButton` and `ScrubbableNumber` for keyframe actions and
+retiming. Closely spaced markers use separate rows so each remains selectable.
+
 Sequence sharing extends `shared/share/components/PostShareSheet.svelte`.
 Read `docs/architecture/sharing-export-experience.md` for the retained research,
 entry-context decisions, browser constraints, and acceptance checks.
@@ -49,6 +58,19 @@ fan appearance, primary prop colors. `prop-look.ts` owns build artwork and
 same recipes. Navigation reads the existing app settings for both hands,
 chirality and colors. Drawer activation, haptics and navigation geometry keep
 their existing owners.
+
+Prop selection and appearance use
+`shared/settings/components/tabs/prop-type/PropGrid.svelte` for the gallery,
+family drill-down, Back/Escape navigation, and animated decision screens.
+`BentoPropGrid.svelte` connects that presentation to account settings;
+`PropSelectionSheet.svelte` provides the bounded Change Prop drawer.
+Searches: prop look, model artwork, prop variants, Change Prop, fan styles.
+`PropLookPicker.svelte` composes `PropBuildPicker.svelte` for captured model
+versus pictograph artwork. `FanStyleOptionsCore.svelte` composes the existing
+`FanAppearancePicker.svelte` for fan builds and covers. The effect tuner and
+viewer reuse this gallery; `ScenePropPicker.svelte` adds scene-specific finish
+controls. Extend these owners instead of appending another appearance picker
+or creating a separate variant catalogue.
 
 Hand identity colors reuse `packages/render-composition/src/hand-colors.ts` for
 cross-runtime normalization and `mandala-palette.ts` for overlap blending.
