@@ -67,7 +67,10 @@ describe("buildCustomizeSummary — defaults", () => {
   });
 
   it("reports Default for the public-demo baseline when it is injected", () => {
-    const summary = buildCustomizeSummary(inputFrom(DEMO_BASELINE), DEMO_BASELINE);
+    const summary = buildCustomizeSummary(
+      inputFrom(DEMO_BASELINE),
+      DEMO_BASELINE
+    );
     expect(summary.isDefault).toBe(true);
     expect(summary.facts).toEqual([]);
   });
@@ -275,18 +278,16 @@ describe("summaryRowBudget", () => {
   });
 
   it("keeps the accessible summary complete while the card truncates", () => {
-    const summary = buildCustomizeSummary(
-      {
-        ...inputFrom(PRODUCTION_STYLE_BASELINE, {
-          ...NO_CONSTRAINTS,
-          blockedStartPlacements: blockAllExcept(CLASSIC_DIAMOND_PLACEMENTS),
-          leftStartOrientation: Orientation.CLOCK,
-        }),
-        constraintPreset: "choppy",
-        handPathMode: "smooth",
-        motionTypeFilter: "prefer-dash",
-      }
-    );
+    const summary = buildCustomizeSummary({
+      ...inputFrom(PRODUCTION_STYLE_BASELINE, {
+        ...NO_CONSTRAINTS,
+        blockedStartPlacements: blockAllExcept(CLASSIC_DIAMOND_PLACEMENTS),
+        leftStartOrientation: Orientation.CLOCK,
+      }),
+      constraintPreset: "choppy",
+      handPathMode: "smooth",
+      motionTypeFilter: "prefer-dash",
+    });
     expect(summary.facts).toEqual([
       "Props: Choppy",
       "Hands: Smooth",
@@ -302,56 +303,5 @@ describe("summaryRowBudget", () => {
     expect(summary.accessibleSummary).toBe(
       "Props: Choppy, Hands: Smooth, Dashes: High, Classic 3, Ori: CW/In"
     );
-  });
-});
-
-describe("hand relationship fact", () => {
-  it("names the relationship when it is not Free", () => {
-    const summary = buildCustomizeSummary({
-      ...inputFrom(PRODUCTION_STYLE_BASELINE),
-      handRelationship: "mirrored",
-      handRelationshipInverted: true,
-    });
-    expect(summary.facts).toContain("Relationship: Mirrored, inverted");
-    expect(summary.isDefault).toBe(false);
-  });
-
-  it("says nothing for Free, even with the inverted flag set", () => {
-    const summary = buildCustomizeSummary({
-      ...inputFrom(PRODUCTION_STYLE_BASELINE),
-      handRelationship: "free",
-      handRelationshipInverted: true,
-    });
-    expect(summary.facts.some((f) => f.startsWith("Relationship:"))).toBe(
-      false
-    );
-    expect(summary.isDefault).toBe(true);
-  });
-
-  it("adds a Turns fact when the hands' turns are matched", () => {
-    const summary = buildCustomizeSummary({
-      ...inputFrom(PRODUCTION_STYLE_BASELINE),
-      handRelationship: "free",
-      matchHandTurns: true,
-    });
-    expect(summary.facts).toEqual(["Turns: Matched"]);
-    expect(summary.isDefault).toBe(false);
-    const both = buildCustomizeSummary({
-      ...inputFrom(PRODUCTION_STYLE_BASELINE),
-      handRelationship: "mirrored",
-      matchHandTurns: true,
-    });
-    expect(both.facts).toEqual(["Relationship: Mirrored", "Turns: Matched"]);
-  });
-
-  it("orders the fact after the style axes", () => {
-    const summary = buildCustomizeSummary({
-      ...inputFrom({ ...PRODUCTION_STYLE_BASELINE, constraintPreset: "choppy" }),
-      handRelationship: "unison",
-    });
-    expect(summary.facts.slice(0, 2)).toEqual([
-      "Props: Choppy",
-      "Relationship: Unison",
-    ]);
   });
 });

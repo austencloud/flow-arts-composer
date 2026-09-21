@@ -15,6 +15,7 @@
     active = false,
     disabled = false,
     compact = false,
+    title = null,
     ariaLabel,
     onpick,
   }: {
@@ -25,6 +26,8 @@
     active?: boolean;
     disabled?: boolean;
     compact?: boolean;
+    /** Tooltip, used by hosts that disable a chip and explain why. */
+    title?: string | null;
     ariaLabel: string;
     onpick: () => void;
   } = $props();
@@ -39,6 +42,7 @@
   aria-pressed={active}
   aria-label={ariaLabel}
   {disabled}
+  title={title ?? undefined}
   onclick={onpick}
 >
   {#if icon}

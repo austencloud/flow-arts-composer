@@ -5,10 +5,10 @@ import {
 } from "$lib/features/choreo-card/domain/tnd-element";
 import type { Flower } from "./flower-signature";
 import {
-  mapOrientationToAngle,
-  mapPositionToAngle,
-} from "$lib/shared/animation-engine/services/angle-calculator";
-import { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  classifyPropRelationship,
+  propPhase,
+  timingFromPhase,
+} from "@tka/sequence-engine/generation";
 import type { ElementalType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import {
   isVisibleMotion,
@@ -34,37 +34,31 @@ export type PropRelationship =
       element: TnDElement;
     };
 
-function normalizedPhaseDelta(a: number, b: number): number {
-  const tau = Math.PI * 2;
-  const raw = (((a - b) % tau) + tau) % tau;
-  return Math.min(raw, tau - raw);
-}
-
-function timingFromPhase(delta: number): PropTimingRelationship {
-  const quarter = Math.PI / 2;
-  if (delta < quarter / 2) return "tog";
-  if (delta > Math.PI - quarter / 2) return "split";
-  return "quarter";
-}
-
 /**
  * The prop timing between two prop bearings, in radians.
  *
  * Exported because a surface with no sequence to read bearings off has to
  * classify the same three cases. The Theory ratios take their bearings from
- * the QfT knobs rather than from a step's start orientation, and that is the
- * only difference: the thresholds stay here, in one place.
+ * the QfT knobs rather than from a step's start orientation. The thresholds
+ * and the phase rule (bearing difference for same-spin props, mirror sum for
+ * opposite-spin props) live in the engine; this is the app's one door to them.
  */
 export function propTimingBetween(
   a: number,
-  b: number
+  b: number,
+  direction: PropDirectionRelationship = "same"
 ): PropTimingRelationship {
-  return timingFromPhase(normalizedPhaseDelta(a, b));
+  return timingFromPhase(propPhase(a, b, direction));
 }
 
 type RelationshipMotion = Pick<
   MotionData,
-  "rotationDirection" | "startOrientation" | "startLocation"
+  | "motionType"
+  | "rotationDirection"
+  | "startOrientation"
+  | "startLocation"
+  | "endOrientation"
+  | "endLocation"
 >;
 
 const FLOAT: PropRelationship = {
@@ -92,38 +86,37 @@ export function derivePropRelationship(
   const left = step?.motions.left;
   const right = step?.motions.right;
   if (!left || !right) return FLOAT;
-  return relationshipFromMotions(left, right, pair.left.turns, pair.right.turns);
+  return relationshipFromMotions(
+    left,
+    right,
+    pair.left.turns,
+    pair.right.turns
+  );
 }
 
+/**
+ * The engine owns the geometry: which bearings the props hold, how the phase
+ * between them is measured for each spin direction, and where the tog, quarter
+ * and split bands fall. The generator's prop constraint and every reader in the
+ * app therefore agree by construction. The one gate the engine cannot apply
+ * stays here: it reads a single beat and has no turn rates to compare.
+ */
 function relationshipFromMotions(
   left: RelationshipMotion,
   right: RelationshipMotion,
   leftTurns: number | "fl" | undefined,
   rightTurns: number | "fl" | undefined
 ): PropRelationship {
-  if (leftTurns === "fl" || rightTurns === "fl") return FLOAT;
-  if (
-    left.rotationDirection === RotationDirection.NO_ROTATION ||
-    right.rotationDirection === RotationDirection.NO_ROTATION
-  ) {
-    return FLOAT;
-  }
-
-  const direction: PropDirectionRelationship =
-    left.rotationDirection === right.rotationDirection ? "same" : "opp";
-  if (leftTurns !== rightTurns) {
+  const reading = classifyPropRelationship(
+    { ...left, turns: leftTurns },
+    { ...right, turns: rightTurns }
+  );
+  if (reading.kind === "float") return FLOAT;
+  const { direction } = reading;
+  if (reading.kind === "direction-only" || leftTurns !== rightTurns) {
     return { kind: "direction-only", direction, timing: null, element: null };
   }
-
-  const leftAngle = mapOrientationToAngle(
-    left.startOrientation,
-    mapPositionToAngle(left.startLocation)
-  );
-  const rightAngle = mapOrientationToAngle(
-    right.startOrientation,
-    mapPositionToAngle(right.startLocation)
-  );
-  const timing = timingFromPhase(normalizedPhaseDelta(leftAngle, rightAngle));
+  const { timing } = reading;
   const element = TND_BY_FAMILY[`${timing}-${direction}`];
   if (!element) {
     throw new Error(`No element for prop relationship ${timing}-${direction}`);

@@ -3,15 +3,15 @@
  *
  * α, β and γ are static: neither hand moves, and prop rotation is the whole
  * point of them. The generator used to refuse them everywhere except a start
- * position, so a user who asked for a specific figure of turns could never get
- * one built. Now they are offered whenever the caller asked for particular
- * turns — a turn pattern or a layer target — and Type6Constraint decides step
- * by step whether the step in front of it actually carries any.
+ * position, first by a blanket exclusion and then by one narrowed to callers
+ * who had asked for particular turns. Both were standing in for the only rule
+ * that was ever wanted: a static step with no turns is just a still. That rule
+ * is Type6Constraint — level 1 refused outright, level 2 and up allowed when
+ * at least one hand turns — so the pool now offers statics everywhere and the
+ * constraint decides step by step.
  *
- * The two things worth guarding are the two ways this can go wrong: a static
- * step showing up with no turns (which reads as standing still), and static
- * steps leaking into ordinary undirected generation (which is what the old
- * blanket exclusion was protecting against).
+ * The thing worth guarding is the way this goes wrong: a static step showing
+ * up with no turns.
  */
 import { beforeAll, describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
@@ -92,7 +92,9 @@ class CsvVariationProvider implements IVariationProvider {
 }
 
 function builder(): SequenceBuilder {
-  return new SequenceBuilder(new CsvVariationProvider(loadVariations(CSV_PATH)));
+  return new SequenceBuilder(
+    new CsvVariationProvider(loadVariations(CSV_PATH))
+  );
 }
 
 beforeAll(async () => {
@@ -175,7 +177,8 @@ describe("SequenceBuilder — static (Type 6) steps", () => {
 
     for (const step of statics) {
       const total =
-        turnCount(step.motions.left.turns) + turnCount(step.motions.right.turns);
+        turnCount(step.motions.left.turns) +
+        turnCount(step.motions.right.turns);
       expect(
         total,
         `static step ${step.letter} carried no turns`
@@ -192,11 +195,37 @@ describe("SequenceBuilder — static (Type 6) steps", () => {
     }
   });
 
-  it("builds no static steps when nothing asked for particular turns", () => {
+  it("builds static steps in ordinary generation, and only where turns land", () => {
+    // No turn pattern and no layer target — just a level 3 request. The turns
+    // the allocator hands out are enough to make a static step a real figure,
+    // so it is offered like any other letter.
+    const { statics, buildsWithStatics } = staticStepsAcrossBuilds({
+      length: 16,
+      gridMode: "diamond",
+      level: 3,
+    });
+
+    expect(buildsWithStatics).toBeGreaterThan(0);
+    for (const step of statics) {
+      const total =
+        turnCount(step.motions.left.turns) +
+        turnCount(step.motions.right.turns);
+      expect(
+        total,
+        `static step ${step.letter} carried no turns`
+      ).toBeGreaterThan(0);
+    }
+  });
+
+  it("builds no static steps when nothing turns", () => {
+    // Turn intensity zero means every step sits at zero turns, so every static
+    // step would be a still. Type6Constraint refuses all of them without the
+    // caller having to say anything.
     const { statics } = staticStepsAcrossBuilds({
       length: 16,
       gridMode: "diamond",
       level: 3,
+      maxTurnIntensity: 0,
     });
     expect(statics).toEqual([]);
   });
