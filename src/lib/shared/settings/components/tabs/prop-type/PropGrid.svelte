@@ -1337,6 +1337,10 @@
   .detail-options.fill {
     flex: 1;
     min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-width: thin;
+    padding: 0 2px 8px;
   }
 
   .detail-options.fill > :global(.fan-style-options) {
