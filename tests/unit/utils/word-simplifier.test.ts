@@ -241,3 +241,30 @@ describe("Word Simplifier", () => {
     });
   });
 });
+
+describe("simplifyRepeatedWord with skew notation", () => {
+  it("simplifies a repeated span", () => {
+    expect(simplifyRepeatedWord("{STS}{STS}")).toBe("{STS}");
+  });
+
+  it("simplifies a repeat inside one span", () => {
+    expect(simplifyRepeatedWord("{STSSTS}")).toBe("{STS}");
+    expect(simplifyRepeatedWord("{USUSUSUS}")).toBe("{US}");
+  });
+
+  it("keeps skewed and unskewed units apart", () => {
+    expect(simplifyRepeatedWord("A{A}")).toBe("A{A}");
+    expect(simplifyRepeatedWord("A{A}A{A}")).toBe("A{A}");
+  });
+
+  it("applies the mirror rule inside a span", () => {
+    expect(simplifyRepeatedWord("{ABBA}")).toBe("{AB}");
+  });
+
+  it("leaves plain words exactly as before", () => {
+    expect(simplifyRepeatedWord("ABCABCABC")).toBe("ABC");
+    expect(simplifyRepeatedWord("W-W-")).toBe("W-");
+    expect(simplifyRepeatedWord("HELLO")).toBe("HELLO");
+    expect(simplifyRepeatedWord("__fused__")).toBe("__fused__");
+  });
+});

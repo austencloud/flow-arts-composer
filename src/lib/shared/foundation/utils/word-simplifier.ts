@@ -16,6 +16,18 @@ import {
   simplifyRepeatedWord as simplifyPortableWord,
   splitWordLetterUnits,
 } from "@tka/render-composition";
+import {
+  parseWordNotation,
+  renderWordNotation,
+  type WordUnit,
+} from "./word-notation";
+
+export {
+  parseWordNotation,
+  renderWordNotation,
+  stripWordNotation,
+  type WordUnit,
+} from "./word-notation";
 
 /** Every canonical letter value, for {@link isTkaWord}'s membership test. */
 const TKA_LETTER_UNITS: ReadonlySet<string> = new Set<string>(
@@ -33,9 +45,53 @@ const TKA_LETTER_UNITS: ReadonlySet<string> = new Set<string>(
  * 2. For each pattern length, check if the word is formed by repeating that pattern
  * 3. Return the first (shortest) repeating pattern found
  * 4. If no pattern found, return the original word
+ *
+ * Skew braces are respected: `{STSSTS}` becomes `{STS}` and a skewed unit
+ * never matches an unskewed one.
  */
 export function simplifyRepeatedWord(word: string): string {
-  return simplifyPortableWord(word);
+  if (!word) return word;
+  const units = parseWordNotation(word);
+  // Not a run of letters (a placeholder, a typed name): the portable simplifier
+  // keeps its exact historical behaviour for those.
+  if (units.length === 0 || renderWordNotation(units) !== word) {
+    return simplifyPortableWord(word);
+  }
+  const simplified = simplifyRepeatedUnits(units);
+  return simplified === units ? word : renderWordNotation(simplified);
+}
+
+/** A unit's identity for repeat detection: letter plus skew flag. */
+function unitKey(unit: WordUnit): string {
+  return unit.skewed ? `{${unit.letter}` : unit.letter;
+}
+
+/**
+ * Unit-level port of the portable simplifier: a full repeat collapses to its
+ * pattern ("ABCABC" to "ABC"); otherwise a mirrored group list keeps its first
+ * half ("ABBA" to "AB"). Returns the same array when nothing applies.
+ */
+function simplifyRepeatedUnits(units: readonly WordUnit[]): readonly WordUnit[] {
+  const keys = units.map(unitKey);
+  for (let length = 1; length <= Math.floor(keys.length / 2); length++) {
+    if (keys.length % length !== 0) continue;
+    const pattern = keys.slice(0, length);
+    const repeats = keys.every((key, index) => key === pattern[index % length]);
+    if (repeats) return units.slice(0, length);
+  }
+  for (let groupSize = 1; groupSize <= Math.floor(keys.length / 2); groupSize++) {
+    if (keys.length % groupSize !== 0) continue;
+    const groups = Array.from({ length: keys.length / groupSize }, (_, index) =>
+      keys.slice(index * groupSize, (index + 1) * groupSize).join("")
+    );
+    if (
+      groups[0] !== groups[1] &&
+      groups.every((group, index) => group === groups[groups.length - 1 - index])
+    ) {
+      return units.slice(0, Math.ceil(groups.length / 2) * groupSize);
+    }
+  }
+  return units;
 }
 
 /**
@@ -129,13 +185,15 @@ export function compressedToDisplayString(
  * strict on both ends — no whitespace, no punctuation, and every unit has to be
  * an actual member of {@link Letter}. Lowercase Latin fails on membership
  * (`Letter.ALPHA` is "α", never "a"), which is what keeps ordinary English words
- * out even though the tokenizer happily splits them.
+ * out even though the tokenizer happily splits them. A word may carry skew
+ * braces around a span (`A{STS}B`); they must be well formed.
  */
 export function isTkaWord(text: string): boolean {
   if (!text) return false;
-  const units = splitIntoLetterUnits(text);
-  // The tokenizer skips characters it does not recognize; rejoining proves that
-  // nothing was dropped, so "A B" and "A!" fail here rather than passing as "AB".
-  if (units.length === 0 || units.join("") !== text) return false;
-  return units.every((unit) => TKA_LETTER_UNITS.has(unit));
+  const units = parseWordNotation(text);
+  // The parser skips characters it does not recognize; re-rendering proves that
+  // nothing was dropped and that any braces are well formed, so "A B", "A!",
+  // "{}" and "{A}{B}" fail here rather than passing as words.
+  if (units.length === 0 || renderWordNotation(units) !== text) return false;
+  return units.every((unit) => TKA_LETTER_UNITS.has(unit.letter));
 }
