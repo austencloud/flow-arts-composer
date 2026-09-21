@@ -66,6 +66,11 @@ export class CanvasResizer {
   private visibleSettleTimer: ReturnType<typeof setTimeout> | null = null;
   private wasObservationSuppressed = false;
   private hasSizedFromObservation = false;
+  /** The renderer is initialized before ResizeObserver reports its first box.
+   *  Keep that observer pass responsible for its initial texture resize, while
+   *  publishing the layout frame immediately so effect overlays never begin
+   *  life with the default 500px square. */
+  private hasAppliedInitialFrame = false;
 
   // Bound reference to resize handler for event listener cleanup
   private boundResizeHandler = () => this.handleResize();
@@ -73,6 +78,13 @@ export class CanvasResizer {
   initialize(container: HTMLDivElement, renderer: ResizableRenderer): void {
     this.container = container;
     this.renderer = renderer;
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    if (width > 0 && height > 0) {
+      const frame = measureFrame(width, height);
+      this.state.currentSize = frame.size;
+      this.state.frame = frame;
+    }
   }
 
   setup(): void {
@@ -126,6 +138,7 @@ export class CanvasResizer {
     this.paused = false;
     this.wasObservationSuppressed = false;
     this.hasSizedFromObservation = false;
+    this.hasAppliedInitialFrame = false;
     this.container = null;
     this.renderer = null;
     this.state.currentSize = DEFAULT_CANVAS_SIZE;
@@ -225,12 +238,15 @@ export class CanvasResizer {
     // The main canvas only rebuilds when its square changes. A wrapper that
     // grows sideways at the same height still counts as a resize, because the
     // effect overlays paint the whole rectangle and must be reallocated to it.
-    if (!sameFrame(frame, this.state.frame)) {
+    const frameChanged = !sameFrame(frame, this.state.frame);
+    if (frameChanged || !this.hasAppliedInitialFrame) {
       this.state.isResizing = true;
       const squareChanged = newSize !== this.state.currentSize;
       this.state.currentSize = newSize;
       this.state.frame = frame;
-      if (squareChanged) await this.renderer.resize(newSize);
+      if (squareChanged || !this.hasAppliedInitialFrame)
+        await this.renderer.resize(newSize);
+      this.hasAppliedInitialFrame = true;
       this.state.isResizing = false;
       this.state.resizeCount++; // Increment to trigger reactivity
     }
