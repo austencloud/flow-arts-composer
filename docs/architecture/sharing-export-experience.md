@@ -354,3 +354,72 @@ client and scroll heights; short windows used the existing single scrolling
 body and fixed download dock. Reflow at 960x540 and reduced-motion disclosure
 were also checked. Nineteen focused glyph/header tests passed, including later
 words and worker-seeded bitmap caches, which must not access browser-only loaders.
+
+### September 21 QR reuse and measured image preparation
+
+The existing QR bake was not enough to guarantee export reuse. The card exporter
+uses 240-pixel cells with a 214-pixel QR slot, while prepared SVGs were baked at
+200 pixels. Size participates in the prepared-artwork key, so export could miss
+a perfectly usable vector image. Sequence QR generation now requests and
+prepares the canonical 200-pixel SVG; each canvas draws it at its actual slot size.
+The existing keys remain valid. Content, rendering revision, props, theme, style,
+icon, and link destination still invalidate the corresponding preparation.
+URL-only QR generation retains its requested dimensions.
+
+Matching requests without an abort signal share in-flight preparation. Requests
+with cancellation retain their own work and stop before further preparation or
+short-code creation. A rejected preparation is not retained as a reusable result.
+
+`CardExportTrace` records local, request-scoped timing through the existing
+Sharer, SequenceRenderer, ImageComposer, and QR generator. It is enabled in local
+development; production diagnostics can be enabled with `profileCard=1` in the
+page URL. Console entries begin with `[Card export timing]`. Start entries show
+the active stage during a stall; the final JSON report includes wall-clock total,
+phase timings, cache outcome, step count, and output bytes. It records no sequence
+text, links, cache keys, or account data and sends no telemetry. Nested spans may
+overlap: use the report's total, never the sum of phase durations. A swallowed QR
+failure is flagged as `qrFailed` rather than appearing to be a successful QR.
+
+Ownership search covered timing, profiling, measurements, and concurrency. The
+existing boot profiler measures app startup and the animation export tracker
+estimates video encoding; neither owns card preparation. The new trace owns only
+one diagnostic request. The existing canonical cell warmer remains the owner of
+scan readiness, including its bounded foreground scheduling; no second image
+renderer or cloud cache was introduced.
+
+The actual 16-step card in `/test/post-share-sheet?card&open&profileCard=1`
+reproduced a **29,046 ms** creation wait with a prepared-QR miss. Drawing its 17
+pictograph cells took **273 ms**, fonts **27 ms**, and PNG encoding **49 ms**.
+Dark and light scan readiness consumed **11,396 ms** and **16,691 ms** respectively.
+SVG generation itself took **15 ms**. After a page reload with that prepared QR
+available, the complete card took **298 ms**, including a **2.9 ms** prepared lookup.
+The latter is a reuse result, not a first-ever sequence speed guarantee.
+
+A read-only network experiment checked the same 34 published scan assets with
+`no-store` requests: serial reads took **8,367 ms**, and four concurrent reads took
+**1,818 ms**, with every request succeeding. This measures asset checks, not an
+entire cold export; request order and network conditions can affect the result.
+The recorded payload totals varied slightly between passes, so this is not a
+byte-identical throughput benchmark. The evidence supports two bounded changes:
+foreground QR preparation checks existing public assets before rendering and
+uploading them, and processes up to four cells at a time. Background callers keep
+their serial behavior. A truly missing object still has to be prepared and
+successfully uploaded before its QR is ready. Genuine missing objects may now
+produce a 404 during that foreground lookup; this is an expected cache miss.
+
+The implemented foreground warmer was then exercised directly against those
+published cells after resetting only the task browser's canonical-cell readiness
+caches. It verified all **34 cells in 2,128 ms**, with **34 remote hits and zero
+render/upload fallbacks**. This demonstrates reuse from a browser without local
+proof. It does not measure generating genuinely new, unpublished cells.
+
+Raw timing evidence is retained in
+[`card-export-timing-2026-09-21.json`](../research/card-export-timing-2026-09-21.json).
+These are local Chromium/Vite measurements on one real published sequence. They
+identify the observed bottleneck; they do not establish a universal latency bound.
+
+Focused verification passed 57 tests covering canonical QR reuse, concurrent
+requests, cancellation, foreground limits, background serial behavior, failed
+publication, library warm compatibility, card-cache invalidation, card settings,
+and trace isolation. The final rendered card was inspected in the browser with
+the reused QR present. Layout and output settings were not changed by this work.

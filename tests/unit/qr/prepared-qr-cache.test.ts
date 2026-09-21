@@ -90,7 +90,8 @@ describe("prepared QR reuse", () => {
       { darkMode: true },
       { viewMode: "hsl" },
       { deckId: "deck" },
-      { size: 400 },
+      { margin: 4 },
+      { style: "classic" as const },
       { centerIcon: "none" as const },
     ]) {
       expect(await cache.keyFor(sequence, props, options)).not.toBe(key);
