@@ -37,6 +37,7 @@
   let width = $state(800);
   let moveError = $state("");
   let moving = false;
+  let timingRoot: HTMLDivElement | undefined;
   let moveStarted = false;
   const names = ["S", "SE", "E", "NE", "N", "NW", "W", "SW", "S"];
   const selectedIndex = $derived(
@@ -119,6 +120,28 @@
 </script>
 
 <svelte:window
+  onpointerdown={(event) => {
+    if (event.target instanceof Node && timingRoot?.contains(event.target))
+      beginMove();
+  }}
+  onkeydowncapture={(event) => {
+    if (
+      event.target instanceof HTMLButtonElement &&
+      timingRoot?.contains(event.target) &&
+      [
+        "ArrowLeft",
+        "ArrowRight",
+        "ArrowUp",
+        "ArrowDown",
+        "Home",
+        "End",
+        "PageUp",
+        "PageDown",
+      ].includes(event.key)
+    )
+      beginMove();
+  }}
+  onkeyup={endMove}
   onpointerup={endMove}
   onpointercancel={endMove}
   onblur={endMove}
@@ -225,25 +248,7 @@
       class="timing"
       role="group"
       aria-label="Keyframe timing"
-      onpointerdowncapture={beginMove}
-      onkeydowncapture={(event) => {
-        if (
-          event.target instanceof HTMLButtonElement &&
-          [
-            "ArrowLeft",
-            "ArrowRight",
-            "ArrowUp",
-            "ArrowDown",
-            "Home",
-            "End",
-            "PageUp",
-            "PageDown",
-          ].includes(event.key)
-        )
-          beginMove();
-      }}
-      onkeyup={endMove}
-      onfocusout={endMove}
+      bind:this={timingRoot}
     >
       {#if selectedKey}
         <ScrubbableNumber
@@ -278,8 +283,7 @@
   .curve-label,
   .toolbar,
   .navigation,
-  .actions,
-  .details {
+  .actions {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -303,7 +307,6 @@
   }
   .blend,
   .curve-label,
-  .detail-hint,
   .feedback,
   .muted {
     color: var(--theme-text-dim);
@@ -425,11 +428,6 @@
     display: grid;
     grid-template-columns: 44px minmax(10rem, 1fr) 44px;
   }
-  .details {
-    min-height: 48px;
-    flex-wrap: wrap;
-    margin-top: 0.25rem;
-  }
   .timing {
     min-width: 12rem;
     order: 1;
@@ -466,12 +464,6 @@
     }
     .actions :global(> *) {
       flex: 1;
-    }
-    .detail-hint {
-      display: none;
-    }
-    .details {
-      justify-content: space-between;
     }
     .timing {
       min-width: 0;
