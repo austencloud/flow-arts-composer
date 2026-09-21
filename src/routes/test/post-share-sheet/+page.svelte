@@ -37,6 +37,7 @@
   import { getVideosForSequence } from "$lib/shared/video-collaboration/services/collaborative-video-manager";
   import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
   import { registerLoopDetector } from "$lib/shared/create/get-loop-detector";
+  import demoSequence from "$lib/shared/landing/data/demo-sequence.json";
 
   /**
    * A real published sequence: 16 steps, a rotated LOOP of period 4, owned by
@@ -55,6 +56,7 @@
   const SEQUENCE_ID = "2077a0d6-01d1-4b2b-a920-da9da6ee7e47";
 
   let sequence = $state<SequenceData | null>(null);
+  let gallerySequence: SequenceData | null = null;
   let loadError = $state<string | null>(null);
   let studioHarness = $state(false);
   let cardOnly = $state(false);
@@ -145,6 +147,7 @@
       sequence = performanceVideoUrl
         ? { ...hydrated, performanceVideoUrl }
         : hydrated;
+      gallerySequence = sequence;
       if (
         realVideoMode &&
         !playbackController.initialize(sequence, animationState)
@@ -184,6 +187,14 @@
   });
 
   let isOpen = $state(false);
+
+  async function useBundledCardSequence(): Promise<void> {
+    // The landing page's real fallback sequence exercises source replacement
+    // without creating a new sequence or publishing test assets.
+    sequence = await hydrateSequence(
+      structuredClone(demoSequence) as unknown as SequenceData
+    );
+  }
   let videoBlobUrl = $state<string | null>(null);
   let isExportingVideo = $state(false);
   let exportProgress = $state<number | null>(null);
@@ -354,6 +365,14 @@
     <h1>PostShareSheet</h1>
     <div class="controls">
       <button type="button" onclick={() => (isOpen = true)}>Open sheet</button>
+      {#if cardOnly && !studioHarness}
+        <button type="button" onclick={useBundledCardSequence}
+          >Use bundled card sequence</button
+        >
+        <button type="button" onclick={() => (sequence = gallerySequence)}
+          >Use gallery card sequence</button
+        >
+      {/if}
       {#if realVideoMode}
         <button type="button" onclick={() => (failNextRealRender = true)}
           >Fail next real render</button

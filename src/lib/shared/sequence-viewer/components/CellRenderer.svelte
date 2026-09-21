@@ -33,6 +33,8 @@
     getMotionSoloMotion: (cellIndex: number) => MotionData | undefined;
     formatSoloTurns: (turns: number | "fl" | undefined | null) => string;
     shortOrientation: (ori: string | undefined | null) => string | null;
+    /** Portable card previews use the compositor's opaque cell host. */
+    exportPresentation?: boolean;
   }
 
   const {
@@ -52,6 +54,7 @@
     getMotionSoloMotion,
     formatSoloTurns,
     shortOrientation,
+    exportPresentation = false,
   }: Props = $props();
 
   const isSwapMode = $derived(transitionMode === "swap");
@@ -63,8 +66,11 @@
     live={cell.live}
     darkMode={activeDarkMode}
     stepNumber={cell.index + 1}
-    showStepNumber={showStepNumbers && !isMotionSoloMode && (!isBrowseSoloMode || cell.index === -1)}
+    showStepNumber={showStepNumbers &&
+      !isMotionSoloMode &&
+      (!isBrowseSoloMode || cell.index === -1)}
     poseOnly={posePicker && cell.index !== -1}
+    {exportPresentation}
   />
 {:else if cell.renderFailed}
   <div class="cell-render-error" role="img" aria-label="Pictograph unavailable">
@@ -303,21 +309,15 @@
     color: #ffffff;
   }
 
-  /* Duration badge - bottom-center, matches DurationGlyph.svelte positioning
-     (y=890 in 950-unit viewBox = ~93.7% from top, centered horizontally) */
+  /* Matches the shared canvas badge: x=475, y=890, 52px in its 950-unit box. */
   .duration-badge {
     position: absolute;
-    bottom: 2%;
+    top: 93.6842%;
     left: 50%;
-    transform: translateX(-50%);
-    font-family:
-      Inter,
-      "SF Pro Display",
-      -apple-system,
-      BlinkMacSystemFont,
-      sans-serif;
-    font-weight: 600;
-    font-size: min(5.5cqw, 14px);
+    transform: translate(-50%, -50%);
+    font-family: Gelasio, Georgia, serif;
+    font-weight: 700;
+    font-size: 5.4737cqw;
     line-height: 1;
     color: #231f20;
     pointer-events: none;

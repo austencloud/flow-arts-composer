@@ -8,6 +8,7 @@
   interface Props {
     sequence: SequenceData | null;
     enabled: boolean;
+    renderEnabled?: boolean;
     darkMode?: boolean;
     onState: (state: CardPreviewState) => void;
     onHarness?: (harness: { setWord: (word: string) => void }) => void;
@@ -16,6 +17,7 @@
   let {
     sequence,
     enabled,
+    renderEnabled = true,
     darkMode = false,
     onState,
     onHarness,
@@ -29,6 +31,7 @@
   const previewState = createCardPreviewState({
     getSequence: () => currentSequence,
     getEnabled: () => enabled,
+    getRenderEnabled: () => renderEnabled,
     getDarkMode: () => darkMode,
     getResolvedAutoLayout: () => null,
   });
