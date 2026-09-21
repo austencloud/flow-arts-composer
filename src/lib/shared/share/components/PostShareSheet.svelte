@@ -253,6 +253,14 @@
   let videoSettingsOpen = $state(false);
   // A tall sheet has room to show the settings without a disclosure.
   const roomySheet = new MediaQuery("(min-height: 760px)");
+  // Keep phone downloads focused on the artifact; a roomy desktop can show the
+  // card controls without making people open a second layer.
+  const roomyCardSheet = new MediaQuery(
+    "(min-width: 900px) and (min-height: 760px)"
+  );
+  const cardSettingsExpanded = $derived(
+    cardSettingsOpen || roomyCardSheet.current
+  );
   const videoSettingsExpanded = $derived(
     videoSettingsOpen || roomySheet.current
   );
@@ -1779,6 +1787,7 @@
           <div
             class="sheet-scroll"
             class:download-route={true}
+            class:card-preparation={artifact === "card"}
             class:video-preparation={artifact === "video"}
             class:has-preview={previewReady || !!animationPreviewUrl}
           >
@@ -1935,29 +1944,45 @@
                        the account defaults the Card tab writes too; the footer
                        stays a one-share override until saved to the card. -->
                   <fieldset class="card-settings" aria-label="Card settings">
-                    <PanelButton
-                      fullWidth
-                      ariaExpanded={cardSettingsOpen}
-                      onclick={() => (cardSettingsOpen = !cardSettingsOpen)}
-                    >
-                      <i class="fa-solid fa-sliders" aria-hidden="true"></i>
-                      Card settings
-                      <span class="setting-value"
-                        >{exportOptions.imageDarkMode ? "Dark" : "Light"} · Footer
-                        {shareDraft.cardPresentation.footer.mode === "off"
-                          ? "off"
-                          : shareDraft.cardPresentation.footer.mode === "credit"
-                            ? "credit"
-                            : "custom"}</span
+                    {#if roomyCardSheet.current}
+                      <div class="settings-heading">
+                        Card settings
+                        <span class="setting-value"
+                          >{exportOptions.imageDarkMode ? "Dark" : "Light"} · Footer
+                          {shareDraft.cardPresentation.footer.mode === "off"
+                            ? "off"
+                            : shareDraft.cardPresentation.footer.mode ===
+                                "credit"
+                              ? "credit"
+                              : "custom"}</span
+                        >
+                      </div>
+                    {:else}
+                      <PanelButton
+                        fullWidth
+                        ariaExpanded={cardSettingsOpen}
+                        onclick={() => (cardSettingsOpen = !cardSettingsOpen)}
                       >
-                      <i
-                        class={cardSettingsOpen
-                          ? "fa-solid fa-chevron-up"
-                          : "fa-solid fa-chevron-down"}
-                        aria-hidden="true"
-                      ></i>
-                    </PanelButton>
-                    {#if cardSettingsOpen}
+                        <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+                        Card settings
+                        <span class="setting-value"
+                          >{exportOptions.imageDarkMode ? "Dark" : "Light"} · Footer
+                          {shareDraft.cardPresentation.footer.mode === "off"
+                            ? "off"
+                            : shareDraft.cardPresentation.footer.mode ===
+                                "credit"
+                              ? "credit"
+                              : "custom"}</span
+                        >
+                        <i
+                          class={cardSettingsOpen
+                            ? "fa-solid fa-chevron-up"
+                            : "fa-solid fa-chevron-down"}
+                          aria-hidden="true"
+                        ></i>
+                      </PanelButton>
+                    {/if}
+                    {#if cardSettingsExpanded}
                       <div
                         class="disclosure-body"
                         transition:growFade={{ axis: "y" }}
@@ -3283,6 +3308,26 @@
     }
     .sheet-scroll.download-route .stage {
       height: clamp(20rem, 40dvh, 24rem);
+    }
+    /* A card can be wide, square, or tall. Let its own ratio set the desktop
+       stage, but stop a tall card before it crowds the download controls. */
+    .sheet-scroll.download-route.card-preparation {
+      --settings-card-stage-max-height: max(
+        11rem,
+        calc(
+          var(--viewport-height, 100dvh) - 3rem - 5.25rem - 5.125rem - 2.25rem -
+            3.5rem - 2px
+        )
+      );
+    }
+    .sheet-scroll.download-route.card-preparation .stage {
+      height: auto;
+      max-height: var(--settings-card-stage-max-height);
+    }
+    .sheet-scroll.download-route.card-preparation .stage .preview {
+      width: 100%;
+      height: auto;
+      max-height: calc(var(--settings-card-stage-max-height) - 1.5rem);
     }
     .share-intents {
       padding: 1.75rem;

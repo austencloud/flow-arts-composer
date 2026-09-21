@@ -70,39 +70,48 @@ export class TextRenderer {
   constructor() {}
 
   private glyphImageCache = new Map<string, GlyphImageData>();
+  private glyphImageLoadPromises = new Map<string, Promise<void>>();
 
   async preloadGlyphImages(): Promise<void> {
-    if (this.glyphImageCache.size > 0) return;
+    const letters = Object.values(Letter);
+    const missing = letters.filter(
+      (letter) => !this.glyphImageCache.has(letter)
+    );
+    if (missing.length === 0) return;
+
     const { getGlyphCache } =
       await import("$lib/shared/render/get-glyph-cache");
     const cache = getGlyphCache();
     await cache.initialize();
 
-    const letters = Object.values(Letter);
     await Promise.all(
-      letters.map((letter) => {
-        const dataUrl = cache.getGlyphDataUrl(letter);
-        if (!dataUrl) return Promise.resolve();
-        return new Promise<void>((resolve) => {
-          const timer = setTimeout(resolve, 3000);
-          const img = new Image();
-          img.onload = () => {
-            clearTimeout(timer);
-            this.glyphImageCache.set(letter, {
-              image: img,
-              naturalWidth: img.naturalWidth,
-              naturalHeight: img.naturalHeight,
-              isDash: letter.endsWith("-"),
-            });
-            resolve();
-          };
-          img.onerror = () => {
-            clearTimeout(timer);
-            resolve();
-          };
-          img.src = dataUrl;
-        });
-      })
+      missing.map((letter) => this.preloadGlyphImage(cache, letter))
+    );
+  }
+
+  /**
+   * Loads only the TKA glyphs a header will paint. Full preloading remains
+   * available for worker bitmap setup and app warmup.
+   */
+  async preloadGlyphImagesForWord(word: string): Promise<void> {
+    const letters = [...new Set(tokenizeWord(word))];
+    if (letters.length === 0) return;
+
+    const missing = letters.filter(
+      (letter) => !this.glyphImageCache.has(letter)
+    );
+    if (missing.length === 0) return;
+
+    const { getGlyphCache } =
+      await import("$lib/shared/render/get-glyph-cache");
+    const cache = getGlyphCache();
+
+    const notAlreadyLoading = missing.filter(
+      (letter) => !this.glyphImageLoadPromises.has(letter)
+    );
+    await cache.loadGlyphsByLetter(notAlreadyLoading);
+    await Promise.all(
+      missing.map((letter) => this.preloadGlyphImage(cache, letter))
     );
   }
 
@@ -141,6 +150,42 @@ export class TextRenderer {
 
   getGlyphCache(): Map<string, GlyphImageData> {
     return this.glyphImageCache;
+  }
+
+  private preloadGlyphImage(
+    cache: { getGlyphDataUrl(letter: string): string | null },
+    letter: string
+  ): Promise<void> {
+    if (this.glyphImageCache.has(letter)) return Promise.resolve();
+
+    const inFlight = this.glyphImageLoadPromises.get(letter);
+    if (inFlight) return inFlight;
+
+    const dataUrl = cache.getGlyphDataUrl(letter);
+    if (!dataUrl) return Promise.resolve();
+
+    const load = new Promise<void>((resolve) => {
+      const timer = setTimeout(resolve, 3000);
+      const img = new Image();
+      img.onload = () => {
+        clearTimeout(timer);
+        this.glyphImageCache.set(letter, {
+          image: img,
+          naturalWidth: img.naturalWidth,
+          naturalHeight: img.naturalHeight,
+          isDash: letter.endsWith("-"),
+        });
+        resolve();
+      };
+      img.onerror = () => {
+        clearTimeout(timer);
+        resolve();
+      };
+      img.src = dataUrl;
+    }).finally(() => this.glyphImageLoadPromises.delete(letter));
+
+    this.glyphImageLoadPromises.set(letter, load);
+    return load;
   }
 
   renderWordText(
