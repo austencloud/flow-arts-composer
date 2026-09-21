@@ -21,6 +21,15 @@ The production `collision/stance-yaw-track.ts` remains the automatic anticipator
 stance owner; it does not author these user-taught poses. This lab intentionally
 eases to rest at each taught pose instead of choosing anticipation itself.
 
+Grip Lab's `KeyframeTimeline.svelte` presents these whole-pose keys at their
+actual phase and plots the same shared lean sampler. It extends the existing
+`contact-inspection-state.svelte.ts` owner for add, delete, retime, and undo;
+it does not own another animation clock. Searches: timeline, keyframe,
+ScrubbableNumber, unified playback. `UnifiedTimeline` owns sequence playback,
+not authored pose timing; the lab retains its existing `TransportControls`
+and composes `PanelButton` and `ScrubbableNumber` for keyframe actions and
+retiming. Closely spaced markers use separate rows so each remains selectable.
+
 Sequence sharing extends `shared/share/components/PostShareSheet.svelte`.
 Read `docs/architecture/sharing-export-experience.md` for the retained research,
 entry-context decisions, browser constraints, and acceptance checks.
