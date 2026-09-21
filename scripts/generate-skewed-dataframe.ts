@@ -6,12 +6,20 @@
  *
  * Skew = modified shift that crosses grid boundary (cardinal <-> intercardinal)
  *
+ * Category 3 rows enumerate every beat that starts in the skewed frame (zeta/eta)
+ * and letter it with src/lib/shared/pictograph/skew/skewed-frame-letter.ts.
+ *
  * Run with: npx tsx scripts/generate-skewed-dataframe.ts
  */
 
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
+import {
+  classifySkewedFrameLetter,
+  type SkewFrameLocation,
+  type SkewFrameMotionType,
+} from "../src/lib/shared/pictograph/skew/skewed-frame-letter";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -63,7 +71,7 @@ interface SkewedRow extends PictographRow {
   rightHandPath: HandPath;
   leftSkewSteps: number;
   rightSkewSteps: number;
-  category: 1 | 2; // 1 = ends skewed (zeta/eta), 2 = both skew but ends normal
+  category: 1 | 2 | 3; // 1 = ends skewed (zeta/eta), 2 = both skew but ends normal, 3 = starts and ends in the skewed frame
 }
 
 // Classify which category a skewed motion belongs to
@@ -334,14 +342,14 @@ function parseRow(line: string, header: string[]): PictographRow | null {
     endPlacement: row.endPlacement,
     timing: row.timing,
     direction: row.direction,
-    leftMotionType: row.leftMotionType as MotionType,
-    leftRotationDirection: row.leftRotationDirection,
-    leftStartLocation: row.leftStartLocation.toLowerCase() as Location,
-    leftEndLocation: row.leftEndLocation.toLowerCase() as Location,
-    rightMotionType: row.rightMotionType as MotionType,
-    rightRotationDirection: row.rightRotationDirection,
-    rightStartLocation: row.rightStartLocation.toLowerCase() as Location,
-    rightEndLocation: row.rightEndLocation.toLowerCase() as Location,
+    leftMotionType: row.blueMotionType as MotionType,
+    leftRotationDirection: row.blueRotationDirection,
+    leftStartLocation: row.blueStartLocation.toLowerCase() as Location,
+    leftEndLocation: row.blueEndLocation.toLowerCase() as Location,
+    rightMotionType: row.redMotionType as MotionType,
+    rightRotationDirection: row.redRotationDirection,
+    rightStartLocation: row.redStartLocation.toLowerCase() as Location,
+    rightEndLocation: row.redEndLocation.toLowerCase() as Location,
   };
 }
 
@@ -476,6 +484,107 @@ function generateSkewedVariants(base: PictographRow): SkewedRow[] {
   return variants;
 }
 
+// ---------------------------------------------------------------------------
+// Category 3: beats that start in the skewed frame (one hand cardinal, one
+// intercardinal). Every hand option below is a legal move inside the frame,
+// so 32 start pairs x 6 x 6 options = 1152 rows, lettered by the classifier.
+// timing is "none" (the guide's split/tog/quarter vocabulary describes pure
+// frames); direction is same/opp for two shifts and none otherwise.
+// ---------------------------------------------------------------------------
+
+interface FrameHandOption {
+  motionType: SkewFrameMotionType;
+  /** Steps of 45 degrees around LOCATION_CYCLE, clockwise positive. */
+  steps: 0 | 2 | -2 | 4;
+}
+
+const FRAME_HAND_OPTIONS: FrameHandOption[] = [
+  { motionType: "pro", steps: 2 },
+  { motionType: "pro", steps: -2 },
+  { motionType: "anti", steps: 2 },
+  { motionType: "anti", steps: -2 },
+  { motionType: "static", steps: 0 },
+  { motionType: "dash", steps: 4 },
+];
+
+function moveLocation(loc: Location, steps: number): Location {
+  return LOCATION_CYCLE[(LOCATION_CYCLE.indexOf(loc) + steps + 8) % 8];
+}
+
+function frameRotationDirection(option: FrameHandOption): string {
+  if (option.motionType === "pro") return option.steps > 0 ? "cw" : "ccw";
+  if (option.motionType === "anti") return option.steps > 0 ? "ccw" : "cw";
+  return "noRotation";
+}
+
+function frameHandPath(option: FrameHandOption): HandPath {
+  if (option.motionType === "static") return "static";
+  if (option.motionType === "dash") return "dash";
+  return option.steps > 0 ? "cw" : "ccw";
+}
+
+function frameDirection(blue: FrameHandOption, red: FrameHandOption): string {
+  const blueShifts = blue.motionType === "pro" || blue.motionType === "anti";
+  const redShifts = red.motionType === "pro" || red.motionType === "anti";
+  if (!blueShifts || !redShifts) return "none";
+  return blue.steps === red.steps ? "same" : "opp";
+}
+
+function generateSkewedFrameRows(): SkewedRow[] {
+  const rows: SkewedRow[] = [];
+  for (const blueStart of LOCATION_CYCLE) {
+    for (const redStart of LOCATION_CYCLE) {
+      if (isCardinal(blueStart) === isCardinal(redStart)) continue;
+      for (const blue of FRAME_HAND_OPTIONS) {
+        for (const red of FRAME_HAND_OPTIONS) {
+          const blueEnd = moveLocation(blueStart, blue.steps);
+          const redEnd = moveLocation(redStart, red.steps);
+          const letter = classifySkewedFrameLetter({
+            left: {
+              motionType: blue.motionType,
+              startLocation: blueStart as SkewFrameLocation,
+              endLocation: blueEnd as SkewFrameLocation,
+            },
+            right: {
+              motionType: red.motionType,
+              startLocation: redStart as SkewFrameLocation,
+              endLocation: redEnd as SkewFrameLocation,
+            },
+          });
+          if (!letter) {
+            throw new Error(
+              `No skewed-frame letter for blue ${blue.motionType} ${blueStart}->${blueEnd}, red ${red.motionType} ${redStart}->${redEnd}`
+            );
+          }
+          rows.push({
+            letter,
+            startPlacement: deriveEndPlacement(blueStart, redStart),
+            endPlacement: deriveEndPlacement(blueEnd, redEnd),
+            timing: "none",
+            direction: frameDirection(blue, red),
+            leftMotionType: blue.motionType,
+            leftRotationDirection: frameRotationDirection(blue),
+            leftStartLocation: blueStart,
+            leftEndLocation: blueEnd,
+            rightMotionType: red.motionType,
+            rightRotationDirection: frameRotationDirection(red),
+            rightStartLocation: redStart,
+            rightEndLocation: redEnd,
+            leftSkewDir: "",
+            rightSkewDir: "",
+            leftHandPath: frameHandPath(blue),
+            rightHandPath: frameHandPath(red),
+            leftSkewSteps: 0,
+            rightSkewSteps: 0,
+            category: 3,
+          });
+        }
+      }
+    }
+  }
+  return rows;
+}
+
 // Convert row to CSV line
 function toCSVLine(row: SkewedRow): string {
   return [
@@ -554,6 +663,10 @@ function main() {
 
   console.log(`Generated ${allVariants.length} skewed variants`);
 
+  const frameRows = generateSkewedFrameRows();
+  allVariants.push(...frameRows);
+  console.log(`Generated ${frameRows.length} skewed-frame rows (category 3)`);
+
   // Deduplicate (some may be identical from Diamond vs Box)
   const seen = new Set<string>();
   const uniqueVariants = allVariants.filter((v) => {
@@ -587,6 +700,7 @@ function main() {
   console.log("\n=== CATEGORY DISTRIBUTION ===");
   console.log(`  Category 1 (ends skewed): ${byCategory.get(1) || 0}`);
   console.log(`  Category 2 (both skew, ends normal): ${byCategory.get(2) || 0}`);
+  console.log(`  Category 3 (starts and ends in the skewed frame): ${byCategory.get(3) || 0}`);
 
   console.log("\nVariants by letter (top 10):");
   [...byLetter.entries()]
