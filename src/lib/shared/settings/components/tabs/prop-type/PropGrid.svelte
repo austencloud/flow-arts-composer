@@ -28,7 +28,6 @@
     isPremiumCosmeticProp,
   } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
   import { tick } from "svelte";
-  import { growFade } from "$lib/shared/transitions/motion";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import PropGridButton from "./PropGridButton.svelte";
   import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
@@ -228,7 +227,8 @@
   // styles can be compared against the live preview; Back or Escape returns.
   type Drill =
     | { kind: "family"; base: PropType }
-    | { kind: "fan-look" }
+    | { kind: "fan-look"; prop: PropType; fromChip?: boolean }
+    | { kind: "details"; prop: PropType }
     | { kind: "prop-look" };
   let drill = $state<Drill | null>(null);
   let rootEl = $state<HTMLDivElement | null>(null);
@@ -240,7 +240,9 @@
         ? `family:${drill.base}`
         : drill.kind === "fan-look"
           ? "fan-look"
-          : "prop-look"
+          : drill.kind === "details"
+            ? `details:${drill.prop}`
+            : "prop-look"
   );
   const drillTitle = $derived(
     drill === null
@@ -249,7 +251,9 @@
         ? `${getPropTypeDisplayInfo(drill.base).label} styles`
         : drill.kind === "fan-look"
           ? "Fan look"
-          : "Prop look"
+          : drill.kind === "details"
+            ? `${getPropTypeDisplayInfo(drill.prop).label} details`
+            : "Prop look"
   );
 
   async function openDrill(next: Drill): Promise<void> {
@@ -262,12 +266,22 @@
     const previous = drill;
     drill = null;
     await tick();
+    const rootSelector = (prop: PropType): string => {
+      const base = getBasePropType(prop);
+      return familyCount(base)
+        ? `[data-family-tile="${base}"]`
+        : `[data-prop-tile="${base}"]`;
+    };
     const selector =
       previous?.kind === "family"
         ? `[data-family-tile="${previous.base}"]`
         : previous?.kind === "fan-look"
-          ? '[data-testid="fan-look-chip"]'
-          : '[data-testid="prop-look-chip"]';
+          ? previous.fromChip
+            ? '[data-testid="fan-look-chip"]'
+            : rootSelector(previous.prop)
+          : previous?.kind === "details"
+            ? rootSelector(previous.prop)
+            : '[data-testid="prop-look-chip"]';
     rootEl?.querySelector<HTMLElement>(selector)?.focus();
   }
 
@@ -424,16 +438,16 @@
   // the same way Buugeng chirality docks, and drills into the full chooser.
   const showFanLook = $derived(
     showAppearance &&
-      selectedPropType !== null &&
-      isFanPropType(selectedPropType)
+      ((drill?.kind === "fan-look" && isFanPropType(drill.prop)) ||
+        (selectedPropType !== null && isFanPropType(selectedPropType)))
   );
   // Fans own their richer build / frame / cover contract. The global artwork
   // setting only appears for a selected prop with a captured 3D sprite.
   const showPropLook = $derived(
     showAppearance &&
-      selectedPropType !== null &&
+      detailProp !== null &&
       onPropLookChange !== undefined &&
-      hasModelSprite(selectedPropType)
+      hasModelSprite(detailProp)
   );
   const selectedPropLookOption = $derived(
     selectedPropType === null
@@ -443,19 +457,26 @@
         )
   );
 
+  const detailProp = $derived(
+    drill?.kind === "details" || drill?.kind === "fan-look"
+      ? drill.prop
+      : selectedPropType
+  );
+
   // Size is a property of the current prop, not a prop of its own. Every big
   // prop is reached from here, which is why the grid can fold them away.
   const showSize = $derived(
-    selectedPropType !== null &&
-      selectablePropSet.has(selectedPropType) &&
-      hasBigVariant(selectedPropType)
+    detailProp !== null &&
+      selectablePropSet.has(detailProp) &&
+      hasBigVariant(detailProp)
   );
-  const sizeIsBig = $derived(
-    selectedPropType !== null && isBigVariant(selectedPropType)
-  );
+  const sizeIsBig = $derived(detailProp !== null && isBigVariant(detailProp));
   function chooseSize(big: boolean) {
-    if (selectedPropType === null || sizeIsBig === big) return;
-    onSelect(toggleBigVariant(selectedPropType));
+    if (detailProp === null || sizeIsBig === big) return;
+    const next = toggleBigVariant(detailProp);
+    if (drill?.kind === "details") drill = { ...drill, prop: next };
+    if (drill?.kind === "fan-look") drill = { ...drill, prop: next };
+    onSelect(next);
   }
   const normalizedFanAppearance = $derived(
     normalizeFanAppearance(fanAppearance)
@@ -480,6 +501,26 @@
   // Track which paid prop (if any) is showing its upgrade nudge.
   let premiumNudgeFor = $state<PropType | null>(null);
 
+  function opensDetails(prop: PropType): boolean {
+    return (
+      showAppearance &&
+      (isFanPropType(prop) ||
+        hasBigVariant(prop) ||
+        (onPropLookChange !== undefined && hasModelSprite(prop)) ||
+        (chirality !== undefined && isBuugengFamilyProp(prop)))
+    );
+  }
+
+  function selectProp(prop: PropType): void {
+    onSelect(prop);
+    if (!opensDetails(prop)) return;
+    void openDrill(
+      isFanPropType(prop)
+        ? { kind: "fan-look", prop }
+        : { kind: "details", prop }
+    );
+  }
+
   /**
    * Central click router for all tiles. The decision itself lives in
    * routePropTileClick so the ordering it encodes — premium before
@@ -492,7 +533,7 @@
     if (prop === PropType.HAND && includeBareHands) {
       lockedTipFor = null;
       premiumNudgeFor = null;
-      onSelect(prop);
+      selectProp(prop);
       return;
     }
 
@@ -500,7 +541,7 @@
     if (accessMode === "educational" && !premium) {
       lockedTipFor = null;
       premiumNudgeFor = null;
-      onSelect(prop);
+      selectProp(prop);
       return;
     }
     const route = premium
@@ -514,7 +555,7 @@
     if (route === "select") {
       lockedTipFor = null;
       premiumNudgeFor = null;
-      onSelect(prop);
+      selectProp(prop);
       return;
     }
 
@@ -563,7 +604,13 @@
       class="look-chip"
       data-testid="fan-look-chip"
       aria-label={`Fan look: ${fanLook?.label ?? normalizedFanAppearance.build}. Change`}
-      onclick={() => void openDrill({ kind: "fan-look" })}
+      onclick={() =>
+        selectedPropType !== null &&
+        void openDrill({
+          kind: "fan-look",
+          prop: selectedPropType,
+          fromChip: true,
+        })}
     >
       {#if fanLook}
         <img class="look-thumb" src={fanLook.image} alt="" draggable="false" />
@@ -663,6 +710,7 @@
         propType={prop}
         selected={selectedPropType === prop}
         {color}
+        buttonProps={{ "data-prop-tile": prop }}
         onSelect={() => handleTileClick(prop)}
         fanAppearance={normalizedFanAppearance}
         {propLook}
@@ -763,12 +811,40 @@
             </div>
           {/if}
           {#if drill.kind === "fan-look"}
-            <FanStyleOptionsCore
-              fill={fillHeight > 0 && layout !== "rail"}
-              horizontal={layout === "rail"}
-              appearance={normalizedFanAppearance}
-              onchange={onFanAppearanceChange}
-            />
+            <div class="detail-options" class:fill={fillHeight > 0}>
+              {#if showSize}{@render sizeControl()}{/if}
+              <FanStyleOptionsCore
+                fill={fillHeight > 0 && layout !== "rail"}
+                horizontal={layout === "rail"}
+                appearance={normalizedFanAppearance}
+                onchange={onFanAppearanceChange}
+              />
+            </div>
+          {:else if drill.kind === "details"}
+            <div class="detail-options" class:fill={fillHeight > 0}>
+              {#if showSize}
+                <div class="detail-row">
+                  <span class="look-label">Size</span>
+                  {@render sizeControl()}
+                </div>
+              {/if}
+              {#if showPropLook && onPropLookChange}
+                <PropLookPicker
+                  propType={drill.prop}
+                  value={propLook}
+                  onchange={onPropLookChange}
+                />
+              {/if}
+              {#if chirality && isBuugengFamilyProp(drill.prop)}
+                <PropChiralityRow
+                  propType={drill.prop}
+                  hands={chirality.hands}
+                  {colors}
+                  {propLook}
+                  onChange={chirality.onChange}
+                />
+              {/if}
+            </div>
           {:else if drill.kind === "prop-look" && selectedPropType !== null && onPropLookChange}
             <PropLookPicker
               propType={selectedPropType}
@@ -845,42 +921,6 @@
       {/if}
     </Crossfade>
   </div>
-
-  {#if showSize && drill === null && layout !== "rail"}
-    <div class="look-dock size-dock" transition:growFade={{ axis: "y" }}>
-      <span class="look-label">Size</span>
-      {@render sizeControl()}
-    </div>
-  {/if}
-
-  {#if showFanLook && drill === null && layout !== "rail"}
-    <div class="look-dock" transition:growFade={{ axis: "y" }}>
-      <span class="look-label">Fan look</span>
-      {@render fanControl()}
-    </div>
-  {/if}
-
-  {#if showPropLook && drill === null && layout !== "rail" && selectedPropType !== null && onPropLookChange}
-    <div class="prop-look-dock" transition:growFade={{ axis: "y" }}>
-      <PropLookPicker
-        propType={selectedPropType}
-        value={propLook}
-        onchange={onPropLookChange}
-      />
-    </div>
-  {/if}
-
-  {#if chirality && selectedPropType !== null && isBuugengFamilyProp(selectedPropType)}
-    <div class="chirality-dock" transition:growFade={{ axis: "y" }}>
-      <PropChiralityRow
-        propType={selectedPropType}
-        hands={chirality.hands}
-        {colors}
-        {propLook}
-        onChange={chirality.onChange}
-      />
-    </div>
-  {/if}
 
   {#if premiumNudgeFor && premiumNudge}
     <div class="premium-nudge-dock">
@@ -1003,6 +1043,12 @@
     grid-template-rows: minmax(0, 1fr);
   }
   .rail .drill-view.fan-look-drill > :global(.fan-style-options) {
+    height: 100%;
+  }
+  .rail .drill-view > .detail-options {
+    min-height: 0;
+  }
+  .rail .drill-view.fan-look-drill > .detail-options {
     height: 100%;
   }
   .rail .drill-view.prop-look-drill > :global(.prop-look-picker) {
@@ -1281,6 +1327,31 @@
     min-height: 0;
   }
 
+  .detail-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .detail-options.fill {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .detail-options.fill > :global(.fan-style-options) {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .detail-row {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
   .drill-bar {
     display: flex;
     align-items: center;
@@ -1333,38 +1404,6 @@
     font-weight: 700;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  /* One chip for the selected fan's look. It sits where Buugeng chirality
-     sits: below the grid in the drawer, above it in the flat mobile dock. */
-  .look-dock {
-    display: flex;
-    flex: 0 0 auto;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    min-width: 0;
-    margin: 0 12px 12px;
-    padding: 8px 8px 8px 14px;
-    border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.14));
-    border-radius: 16px;
-    background: color-mix(
-      in srgb,
-      var(--theme-accent, #8b6cff) 8%,
-      var(--theme-card-bg, rgba(0, 0, 0, 0.75))
-    );
-  }
-
-  .prop-look-dock {
-    flex: 0 0 auto;
-    min-width: 0;
-    padding: 10px 18px 14px;
-    border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
-    background: color-mix(
-      in srgb,
-      var(--theme-card-bg, rgba(255, 255, 255, 0.04)) 60%,
-      transparent
-    );
   }
 
   .size-toggle {
@@ -1462,26 +1501,6 @@
     .drill-back {
       transition: none;
     }
-  }
-
-  .chirality-dock {
-    flex: 0 0 auto;
-    min-width: 0;
-  }
-
-  /* The flat picker is the compact/mobile drawer. Chirality is part of
-     choosing Buugeng, so surface it before the prop catalogue instead of
-     making the user scroll through every prop to find the A/B controls. */
-  .prop-grid-root.flat .chirality-dock {
-    order: -1;
-  }
-
-  .prop-grid-root.flat .look-dock {
-    order: -1;
-  }
-
-  .prop-grid-root.flat .prop-look-dock {
-    order: -1;
   }
 
   @container prop-grid (min-width: 360px) {

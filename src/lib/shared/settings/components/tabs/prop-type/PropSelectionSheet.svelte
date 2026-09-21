@@ -135,7 +135,7 @@
       onClose={handleClose}
     />
 
-    <div class="picker-body" class:scrolls={!!onPrimaryPropColorsChange}>
+    <div class="picker-body">
       {#if showCatDogToggle || showTabs}
         <div class="picker-toolbar">
           {#if showCatDogToggle}
@@ -194,8 +194,9 @@
         {color}
         {title}
         variant="inline"
-        scrollMode={onPrimaryPropColorsChange ? "host" : "internal"}
-        fill={!onPrimaryPropColorsChange}
+        flat
+        scrollMode="internal"
+        fill
         onSelect={handlePropSelect}
         {chirality}
       />
@@ -209,9 +210,6 @@
     flex-direction: column;
     flex: 1;
     min-height: 0;
-  }
-  .picker-body.scrolls {
-    overflow-y: auto;
   }
   .color-settings {
     padding: 12px 18px;
