@@ -144,7 +144,7 @@
   /* The overlay chrome is absolute inset 0 in the stage; this host scrolls
      inside it and is the container the two-column split reads. */
   .tnd-host {
-    container-type: inline-size;
+    container-type: size;
     container-name: tnd-panel;
     height: 100%;
     min-height: 0;
@@ -155,7 +155,31 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: clamp(12px, 3cqi, 24px);
+    min-height: 100%;
     padding: clamp(8px, 2cqi, 16px);
+  }
+
+  /* Roomy expanded stages should feel like a control surface, not a compact
+     popover stranded at the top. Once there is enough height to preserve the
+     labels and the Match turns explanation, the six choices share the
+     remaining room. Short stages keep the content-sized layout and scroll. */
+  @container tnd-panel (min-width: 561px) and (min-height: 22rem) {
+    .tnd-panel {
+      grid-template-rows: minmax(0, 1fr);
+      column-gap: clamp(20px, 4cqi, 48px);
+      padding: clamp(12px, 2cqi, 24px);
+    }
+
+    .tnd-section {
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr) minmax(5.5rem, auto);
+      gap: clamp(12px, 1.5cqh, 24px);
+    }
+
+    .turns-row {
+      grid-row: 4;
+      margin-top: 0;
+    }
   }
 
   @container tnd-panel (max-width: 560px) {
