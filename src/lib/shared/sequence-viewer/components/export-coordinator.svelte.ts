@@ -103,6 +103,11 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
   let recordingElapsed = $state(0);
   let recordingTimer: ReturnType<typeof setInterval> | null = null;
   let resolveRecording: (() => void) | null = null;
+  let recordingCanceled = false;
+  // Covers the whole scene-take transaction: live recording, recipe storage,
+  // the render decision, and deterministic export. `isRecording3D` deliberately
+  // remains just the live-camera state.
+  let sceneTakeActive = $state(false);
 
   // Between Stop and the offline render, the person picks how good the render
   // should be. The recording is already saved by then, so backing out here
@@ -257,6 +262,12 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
 
   function handleCancelExport() {
     sequenceModalExporter.cancel();
+    // A scene take is waiting on its own live recording promise, before the
+    // shared exporter exists. Resolve that promise and its render-choice card
+    // so Cancel returns the share sheet to a retryable state.
+    recordingCanceled = true;
+    resolveRecording?.();
+    resolvePendingRender?.(false);
   }
 
   function handleRetryExport(handleExportFn: () => Promise<unknown>) {
@@ -686,6 +697,8 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
       if (driverActive && primaryAvatar) primaryAvatar.loop = true;
 
       // Start camera recording
+      recordingCanceled = false;
+      sceneTakeActive = true;
       cameraKeyframes.startRecording(threlteCamera);
       isRecording3D = true;
       recordingElapsed = 0;
@@ -734,7 +747,12 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
       }
 
       const recordedDuration = cameraKeyframes.duration;
+      if (recordingCanceled) {
+        sceneTakeActive = false;
+        return false;
+      }
       if (recordedDuration <= 0) {
+        sceneTakeActive = false;
         showToast("Recording too short. Please try again.", "error");
         return false;
       }
@@ -749,15 +767,27 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
         includeStartPlacement: opts.includeStartPlacement,
         includeEndHold: opts.includeEndHold,
       };
-      const filmEntry = await saveFilmRecipe({
-        viewer3DState,
-        sequence: effectiveSequence,
-        bpm: bpmLocal,
-        keyframes: cameraKeyframes.keyframes,
-        cameraMode: useOrbit ? "auto-orbit" : "free",
-        render: recipeRender,
-      });
+      let filmEntry: { id: string } | null = null;
+      try {
+        filmEntry = await saveFilmRecipe({
+          viewer3DState,
+          sequence: effectiveSequence,
+          bpm: bpmLocal,
+          keyframes: cameraKeyframes.keyframes,
+          cameraMode: useOrbit ? "auto-orbit" : "free",
+          render: recipeRender,
+        });
+      } catch (error) {
+        sceneTakeActive = false;
+        throw error;
+      }
       lastFilmEntryId = filmEntry?.id ?? null;
+      // Cancel can arrive while the recipe write is in flight. Keep its result
+      // for the scene library, but never surface its decision or start a render.
+      if (recordingCanceled) {
+        sceneTakeActive = false;
+        return false;
+      }
 
       // ── The render card: how good, or not at all ──
       pendingFilmRender = { durationSeconds: recordedDuration };
@@ -767,6 +797,7 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
       pendingFilmRender = null;
       resolvePendingRender = null;
       if (!wantsRender) {
+        sceneTakeActive = false;
         showToast("Recording kept in your scenes. Render it any time.", "info");
         return false;
       }
@@ -816,6 +847,9 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
           videoCallbacks
         );
         exported3DOk = true;
+      } catch (error) {
+        sceneTakeActive = false;
+        throw error;
       } finally {
         isRecording3D = false;
         recordingElapsed = 0;
@@ -844,6 +878,7 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
       // Auto-download on finish (focused tab) + toast/preview fallback.
       if (exported3DOk && autoDeliver)
         autoDeliverExportedVideo(effectiveSequence);
+      sceneTakeActive = false;
       return true;
     }
 
@@ -946,6 +981,9 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
     },
     get isRecording3D() {
       return isRecording3D;
+    },
+    get sceneTakeActive() {
+      return sceneTakeActive;
     },
     get recordingElapsed() {
       return recordingElapsed;
