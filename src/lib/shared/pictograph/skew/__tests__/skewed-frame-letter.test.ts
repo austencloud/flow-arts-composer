@@ -123,17 +123,17 @@ describe("classifySkewedFrameLetter", () => {
   });
 
   it("letters every one of the 1152 skewed-frame beats with exactly the 38 letters", () => {
-    const options: Array<{ motionType: SkewFrameMotionType; turn: number }> = [
-      { motionType: "pro", turn: 2 },
-      { motionType: "pro", turn: -2 },
-      { motionType: "anti", turn: 2 },
-      { motionType: "anti", turn: -2 },
-      { motionType: "static", turn: 0 },
-      { motionType: "dash", turn: 4 },
+    const options: Array<{ motionType: SkewFrameMotionType; steps: number }> = [
+      { motionType: "pro", steps: 2 },
+      { motionType: "pro", steps: -2 },
+      { motionType: "anti", steps: 2 },
+      { motionType: "anti", steps: -2 },
+      { motionType: "static", steps: 0 },
+      { motionType: "dash", steps: 4 },
     ];
-    const move = (loc: SkewFrameLocation, turn: number): SkewFrameLocation => {
+    const move = (loc: SkewFrameLocation, steps: number): SkewFrameLocation => {
       const index = SKEW_FRAME_LOCATIONS.indexOf(loc);
-      return SKEW_FRAME_LOCATIONS[(index + turn + 8) % 8]!;
+      return SKEW_FRAME_LOCATIONS[(index + steps + 8) % 8]!;
     };
     const counts = new Map<string, number>();
     let beats = 0;
@@ -144,10 +144,10 @@ describe("classifySkewedFrameLetter", () => {
           for (const r of options) {
             beats++;
             const letter = classifySkewedFrameLetter({
-              left: hand(b.motionType, blue, move(blue, b.turn)),
-              right: hand(r.motionType, red, move(red, r.turn)),
+              left: hand(b.motionType, blue, move(blue, b.steps)),
+              right: hand(r.motionType, red, move(red, r.steps)),
             });
-            expect(letter, `${blue}/${b.motionType}/${b.turn} ${red}/${r.motionType}/${r.turn}`).not.toBeNull();
+            expect(letter, `${blue}/${b.motionType}/${b.steps} ${red}/${r.motionType}/${r.steps}`).not.toBeNull();
             counts.set(letter!, (counts.get(letter!) ?? 0) + 1);
           }
         }
@@ -180,11 +180,14 @@ describe("standard-frame cross-checks against DiamondPictographDataframe.csv", (
         SKEW_FRAME_LOCATIONS.indexOf(start as SkewFrameLocation) +
         8) %
       8;
+    expect([2, 6]).toContain(delta);
     return delta === 2 ? 90 : -90;
   };
 
   it("U rows are led by the pro hand and V rows by the anti hand", () => {
-    for (const row of rows.filter((r) => r.letter === "U" || r.letter === "V")) {
+    const matching = rows.filter((r) => r.letter === "U" || r.letter === "V");
+    expect(matching.length).toBe(32);
+    for (const row of matching) {
       const leader = leadingHand(
         row.blueStartLocation as SkewFrameLocation,
         row.redStartLocation as SkewFrameLocation,
@@ -196,7 +199,9 @@ describe("standard-frame cross-checks against DiamondPictographDataframe.csv", (
   });
 
   it("M rows cross alpha and P rows cross beta", () => {
-    for (const row of rows.filter((r) => r.letter === "M" || r.letter === "P")) {
+    const matching = rows.filter((r) => r.letter === "M" || r.letter === "P");
+    expect(matching.length).toBe(16);
+    for (const row of matching) {
       const crossed = crossedPosition(
         row.blueStartLocation as SkewFrameLocation,
         row.redStartLocation as SkewFrameLocation,

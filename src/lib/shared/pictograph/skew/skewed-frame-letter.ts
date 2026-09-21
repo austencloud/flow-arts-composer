@@ -3,9 +3,12 @@
  *
  * A beat is in the skewed frame when one hand sits on a cardinal point
  * (n e s w) and the other on an intercardinal point (ne se sw nw). The hands
- * are then 45° apart (eta) or 135° apart (zeta). Neither frame exists in the
- * Diamond/Box dataframes, so the letter is computed from geometry here and
- * baked into SkewedPictographDataframe.csv by scripts/generate-skewed-dataframe.ts.
+ * are then 45° apart (eta) or 135° apart (zeta). Beats that enter or exit the
+ * frame are lettered by scripts/generate-skewed-dataframe.ts from their base
+ * Diamond/Box row. Beats that start in the frame have no base row, so their
+ * letter is computed here; the generator feeds every such beat through
+ * classifySkewedFrameLetter and writes the result to
+ * SkewedPictographDataframe.csv as category 3 rows.
  *
  * Rules: docs/superpowers/specs/2026-09-21-skewed-frame-lettering-design.md.
  * The letter is a pure function of the two hand motions. Blue = left, red =
@@ -13,12 +16,13 @@
  * without the app's enums.
  */
 import { Letter } from "../../foundation/domain/models/letter";
+import { isMixedPair } from "../../foundation/services/skewed-frame";
 
 export type SkewFrameLocation = "n" | "ne" | "e" | "se" | "s" | "sw" | "w" | "nw";
 export type SkewFrameMotionType = "pro" | "anti" | "static" | "dash";
 export type FrameSpacing = "eta" | "zeta";
 export type CrossedPosition = "alpha" | "beta";
-export type Travel = 90 | -90;
+type Travel = 90 | -90;
 
 export interface SkewFrameHand {
   readonly motionType: SkewFrameMotionType;
@@ -42,13 +46,9 @@ const ANGLE: Record<SkewFrameLocation, number> = {
   n: 0, ne: 45, e: 90, se: 135, s: 180, sw: 225, w: 270, nw: 315,
 };
 
-export function isCardinalLocation(location: SkewFrameLocation): boolean {
-  return ANGLE[location] % 90 === 0;
-}
-
-/** True when exactly one hand is on a cardinal point. */
+/** True when exactly one hand is on a cardinal point. Same rule as skewed-frame.ts. */
 export function isSkewedFramePair(a: SkewFrameLocation, b: SkewFrameLocation): boolean {
-  return isCardinalLocation(a) !== isCardinalLocation(b);
+  return isMixedPair(a, b);
 }
 
 /** 45° apart = eta, 135° apart = zeta, anything else = not a skewed pair. */
@@ -118,8 +118,14 @@ function motionAgreesWithPath(hand: SkewFrameHand, turn: 0 | 90 | -90 | 180): bo
   }
 }
 
+/** Narrows a hand turn to a travel direction. True only for the ±90 cases. */
+function isTravel(turn: 0 | 90 | -90 | 180): turn is Travel {
+  return turn === 90 || turn === -90;
+}
+
 type SpinTriple = readonly [pro: Letter, anti: Letter, hybrid: Letter];
 type SpinPair = readonly [pro: Letter, anti: Letter];
+type ShiftMotionType = "pro" | "anti";
 
 /** Opposite-direction families by start spacing and crossed position. */
 const OPPOSITE_FAMILIES: Record<FrameSpacing, Record<CrossedPosition, SpinTriple>> = {
@@ -161,7 +167,7 @@ const SHIFT_DASH: Record<FrameSpacing, Record<FrameSpacing, SpinPair>> = {
   },
 };
 
-function pickSpin(triple: SpinTriple, a: SkewFrameMotionType, b: SkewFrameMotionType): Letter {
+function pickSpin(triple: SpinTriple, a: ShiftMotionType, b: ShiftMotionType): Letter {
   if (a === b) return a === "pro" ? triple[0] : triple[1];
   return triple[2];
 }
@@ -195,13 +201,16 @@ export function classifySkewedFrameLetter(beat: SkewFrameBeat): Letter | null {
 
   const start = frameSpacing(left.startLocation, right.startLocation);
   const end = frameSpacing(left.endLocation, right.endLocation);
+  // Motions move by multiples of 90, so a mixed start pair stays mixed and
+  // both spacings are always defined. The guard only narrows the type.
   if (!start || !end) return null;
 
   const leftShifts = left.motionType === "pro" || left.motionType === "anti";
   const rightShifts = right.motionType === "pro" || right.motionType === "anti";
 
   if (leftShifts && rightShifts) {
-    const blueTravel = leftTurn as Travel;
+    if (!isTravel(leftTurn)) return null;
+    const blueTravel = leftTurn;
     if (leftTurn === rightTurn) {
       if (left.motionType === right.motionType) {
         return left.motionType === "pro" ? Letter.S : Letter.T;
@@ -211,7 +220,11 @@ export function classifySkewedFrameLetter(beat: SkewFrameBeat): Letter | null {
       return leaderType === "pro" ? Letter.U : Letter.V;
     }
     const crossed = crossedPosition(left.startLocation, right.startLocation, blueTravel);
-    return pickSpin(OPPOSITE_FAMILIES[start][crossed], left.motionType, right.motionType);
+    return pickSpin(
+      OPPOSITE_FAMILIES[start][crossed],
+      left.motionType as ShiftMotionType,
+      right.motionType as ShiftMotionType
+    );
   }
 
   if (leftShifts || rightShifts) {
