@@ -35,8 +35,8 @@ import {
   calculateDashLocation,
   type DashLocationInput,
   calculateReversalPositions,
-  calculateHandColorKeyLayout,
-  HAND_COLOR_KEY,
+  drawHandColorKey,
+  renderHandColorKeySvg,
   applyColorToSvg,
   applyFanFrameColor,
   applyFanPaperContrast,
@@ -1873,9 +1873,6 @@ ${turnNumbersSvg}
     themeable: boolean = false,
     customColors?: HandColorPair | null
   ): string {
-    const layout = calculateHandColorKeyLayout(showLeft, showRight);
-    if (layout.entries.length === 0) return "";
-
     const textColor = this.resolveColor(
       "--dm-text-color",
       "#ffffff",
@@ -1883,19 +1880,14 @@ ${turnNumbersSvg}
       darkMode,
       themeable
     );
-    const parts = layout.entries.map((entry) => {
-      const fill = this.resolveMotionColor(
-        entry.hand,
-        darkMode,
-        themeable,
-        customColors
-      );
-      return (
-        `<circle cx="${entry.swatchX}" cy="${layout.centerY}" r="${layout.swatchRadius}" fill="${fill}"/>` +
-        `<text x="${entry.labelX}" y="${layout.baselineY}">${entry.label}</text>`
-      );
+    return renderHandColorKeySvg({
+      showLeft,
+      showRight,
+      centerX: VIEWBOX_SIZE / 2,
+      textColor,
+      colorForHand: (hand) =>
+        this.resolveMotionColor(hand, darkMode, themeable, customColors),
     });
-    return `<g class="hand-color-key" transform="translate(${VIEWBOX_SIZE / 2}, 0)" font-family="${HAND_COLOR_KEY.FONT_FAMILY}" font-size="${HAND_COLOR_KEY.FONT_SIZE}" font-weight="${HAND_COLOR_KEY.FONT_WEIGHT}" fill="${textColor}">${parts.join("")}</g>`;
   }
 
   /** Draw the complete key with bundled Gelasio after Resvg draws every other glyph. */
@@ -1910,38 +1902,22 @@ ${turnNumbersSvg}
     const context = canvas.getContext("2d");
     context.drawImage(await loadImage(png), 0, 0, size, size);
 
-    const layout = calculateHandColorKeyLayout(
-      (options.showLeftMotion ?? true) && !!input.leftMotion,
-      (options.showRightMotion ?? true) && !!input.rightMotion
-    );
     const scale = size / VIEWBOX_SIZE;
     const darkMode = options.darkMode !== false;
-    context.font = `${HAND_COLOR_KEY.FONT_WEIGHT} ${HAND_COLOR_KEY.FONT_SIZE * scale}px Gelasio, Georgia, serif`;
-    context.textAlign = "start";
-    context.textBaseline = "alphabetic";
-    for (const entry of layout.entries) {
-      context.fillStyle = this.resolveMotionColor(
-        entry.hand,
-        darkMode,
-        false,
-        options.primaryPropColors
-      );
-      context.beginPath();
-      context.arc(
-        (VIEWBOX_SIZE / 2 + entry.swatchX) * scale,
-        layout.centerY * scale,
-        layout.swatchRadius * scale,
-        0,
-        Math.PI * 2
-      );
-      context.fill();
-      context.fillStyle = darkMode ? "#ffffff" : "#231f20";
-      context.fillText(
-        entry.label,
-        (VIEWBOX_SIZE / 2 + entry.labelX) * scale,
-        layout.baselineY * scale
-      );
-    }
+    drawHandColorKey(context, {
+      showLeft: (options.showLeftMotion ?? true) && !!input.leftMotion,
+      showRight: (options.showRightMotion ?? true) && !!input.rightMotion,
+      scale,
+      centerX: (VIEWBOX_SIZE / 2) * scale,
+      textColor: darkMode ? "#ffffff" : "#231f20",
+      colorForHand: (hand) =>
+        this.resolveMotionColor(
+          hand,
+          darkMode,
+          false,
+          options.primaryPropColors
+        ),
+    });
     return canvas.toBuffer("image/png");
   }
 
