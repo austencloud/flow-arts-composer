@@ -8,6 +8,11 @@ paths:
 Use this contract when a diff changes what a rendered surface looks like. Tests
 and type checks do not prove composition.
 
+For new surfaces, substantial restyles, or aesthetic reviews, also follow
+`docs/architecture/visual-review.md` through the `ui-bust` skill. Keep aesthetic
+readiness separate from geometry, accessibility, and functional evidence.
+The full viewport pass alone cannot approve a visual direction.
+
 ## Scope
 
 - No browser pass: comments, types, non-visual logic, ordinary copy changes, or
@@ -72,7 +77,9 @@ data still requires explicit authorization.
 
 Stop when every affected tier and state has been observed, measurements support
 the geometry claims, screenshots show no relevant defect, and targeted runtime
-checks pass. Do not add frames or repeat unchanged passes without new evidence.
+checks pass. This completes the applicable rendering checks, not aesthetic
+acceptance. Complete the separate aesthetic review when in scope. Do not add
+frames or repeat unchanged passes without new evidence.
 
 Visual judgment stays with the agent that can inspect the rendered surface; do
 not replace it with a delegated prose review or a request for Austen to supply a
