@@ -178,22 +178,24 @@
 
 <style>
   .background-tab {
-    --settings-gap: clamp(12px, 2cqi, 20px);
+    --settings-gap: clamp(8px, 1cqi, 12px);
     container-type: inline-size;
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(min-content, 1fr);
     min-height: 0;
     height: 100%;
     overflow: auto;
     padding: var(--settings-gap);
-    padding-bottom: calc(var(--settings-gap) + 16px);
   }
   .theme-workspace {
-    width: min(1440px, 100%);
+    display: flex;
+    flex-direction: column;
+    width: 100%;
     min-width: 0;
-    margin-block: auto;
-    margin-inline: auto;
   }
   .theme-intro {
+    flex: none;
     margin-bottom: var(--settings-gap);
   }
   .eyebrow {
@@ -219,11 +221,13 @@
   .theme-composition {
     display: flex;
     flex-direction: column;
+    flex: 1;
     min-width: 0;
   }
   .theme-stage {
     position: relative;
-    height: clamp(280px, calc(100dvh - 320px), 760px);
+    flex: 1 0 280px;
+    min-height: 280px;
     overflow: hidden;
     border: 1px solid var(--theme-stroke);
     border-radius: 18px 18px 0 0;
@@ -272,6 +276,7 @@
     line-height: 1.4;
   }
   .theme-controls {
+    flex: none;
     min-width: 0;
     padding: 14px;
     border: 1px solid var(--theme-stroke);
@@ -401,7 +406,8 @@
   }
   @container (max-width: 759px) {
     .theme-stage {
-      height: clamp(220px, 38dvh, 380px);
+      flex-basis: clamp(220px, 38dvh, 380px);
+      min-height: clamp(220px, 38dvh, 380px);
     }
     .theme-controls {
       padding: 12px;
@@ -426,7 +432,8 @@
   }
   @media (max-height: 650px) and (min-width: 760px) {
     .theme-stage {
-      height: clamp(220px, calc(100dvh - 240px), 420px);
+      flex-basis: 220px;
+      min-height: 220px;
     }
   }
   @media (prefers-reduced-motion: reduce) {
