@@ -36,6 +36,7 @@
   import { copyTextToClipboard } from "$lib/shared/share/services/link-share";
   import PoseHandles from "./PoseHandles.svelte";
   import PoseEditor from "./PoseEditor.svelte";
+  import KeyframeTimeline from "./KeyframeTimeline.svelte";
   import { allowedTipOffset, authoredBodyPose, TEACHING_ANCHOR_OFFSET, TRANSITIONS, type PoseHandle } from "./isolation-teaching";
   import {
     createContactInspectionState,
@@ -357,25 +358,14 @@
     {#if editing}
       <aside class="pose-panel" aria-label="Teach this pose">
         <div class="pose-heading"><strong>{selectedPosition?.label ?? "Pose"} · {inspection.phase.toFixed(3)}</strong>
-          <span>{inspection.keys.length} saved poses</span></div>
+          <span>{inspection.selectedKey ? "Whole-pose keyframe" : "New keyframe on edit"}</span></div>
         <PoseEditor pose={taughtPose} selected={selectedHandle} onSelect={(value) => selectedHandle = value}
           onBegin={() => inspection.beginEdit()} onChange={(changes) => inspection.editPose(changes)}
           onEnd={() => inspection.endEdit()} tolerance={inspection.tolerance}
           onTolerance={(value) => inspection.setTolerance(value)} {tipDrift} />
         <div class="pose-actions">
-          <PanelButton disabled={!inspection.canUndo} onclick={() => inspection.undo()}>Undo pose</PanelButton>
           <PanelButton onclick={() => inspection.resetPose()}>Reset poses</PanelButton>
         </div>
-        <div class="keyframes" aria-label="Saved poses">
-          {#each inspection.keys as key (key.phase)}
-            <PanelButton ariaPressed={Math.abs(key.phase - (inspection.phase % 4)) < 0.005}
-              onclick={() => inspection.seekPosition(key.phase)}>
-              {key.phase.toFixed(2)}
-            </PanelButton>
-          {/each}
-        </div>
-        <PanelButton disabled={inspection.keys.length <= 1 || !inspection.keys.some((key) => Math.abs(key.phase - (inspection.phase % 4)) < 0.005)}
-          onclick={() => inspection.removeKey()}>Remove this pose</PanelButton>
       </aside>
     {/if}
   </section>
@@ -405,6 +395,13 @@
         /></label
       >
     </div>
+    <KeyframeTimeline keys={inspection.keys} phase={inspection.phase} range={inspection.range}
+      selectedKey={inspection.selectedKey} canUndo={inspection.canUndo}
+      onSelect={(phase) => inspection.seekPosition(phase)}
+      onAdd={() => inspection.addKey()} onRemove={() => inspection.removeKey()}
+      onUndo={() => inspection.undo()} onMove={(from, to) => inspection.moveKey(from, to)}
+      onEdit={() => { inspection.setPlaying(false); editing = true; }}
+      onBegin={() => inspection.beginEdit()} onEnd={() => inspection.endEdit()} />
     <div class="control-grid">
       <div class="position-stops" bind:clientWidth={positionsWidth}>
         <SegmentedControl
@@ -480,7 +477,7 @@
     height: 100dvh;
     box-sizing: border-box;
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(18rem, 1fr) auto;
     gap: clamp(0.75rem, 2cqw, 1.25rem);
     max-width: var(--settings-page-max);
     margin: 0 auto;
@@ -543,8 +540,7 @@
   .pose-panel :global(> *) { flex-shrink: 0; }
   .pose-heading { display: flex; justify-content: space-between; align-items: baseline; font-size: var(--font-size-min, 14px); gap: 0.5rem; }
   .pose-heading span { color: var(--theme-text-dim); font-size: var(--font-size-compact, 12px); }
-  .pose-actions, .keyframes { display: flex; gap: 0.4rem; flex-wrap: wrap; }
-  .keyframes { max-height: 6.5rem; overflow: auto; }
+  .pose-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
   .stage-directions { position: absolute; inset: auto 0.65rem 0.6rem; display: flex; justify-content: space-between; gap: 1rem; pointer-events: none; font-size: var(--font-size-compact, 12px); color: var(--theme-text-dim); }
   .reach-warning { position: absolute; inset: 0.6rem 0.6rem auto; width: fit-content; max-width: calc(100% - 1.2rem); margin: 0; padding: 0.5rem 0.7rem; box-sizing: border-box; border-radius: 0.5rem; background: var(--theme-panel-bg); color: var(--semantic-warning, #ffbf69); font-size: var(--font-size-min, 14px); }
   .copy-status { margin: 0; font-size: var(--font-size-min, 14px); }
@@ -610,7 +606,8 @@
     .pose-panel { padding: 0.65rem; max-height: 26rem; }
     .stage-directions span { max-width: 8rem; }
     .inspection {
-      min-height: 30rem;
+      min-height: 48rem;
+      height: auto;
       grid-template-rows: auto minmax(8rem, 1fr) auto;
       padding: 0.5rem;
       gap: 0.5rem;
@@ -619,6 +616,7 @@
       align-items: center;
       gap: 0.5rem;
     }
+    .scene { height: clamp(16rem, 45dvh, 26rem); }
     .header-actions button {
       min-width: 44px;
       padding: 0.5rem;
