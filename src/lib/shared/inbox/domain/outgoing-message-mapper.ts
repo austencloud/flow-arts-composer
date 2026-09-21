@@ -44,6 +44,7 @@ function buildLocalAttachments(
           sequenceThumbnail: payload.sequenceThumbnail,
           sequenceAuthor: payload.sequenceAuthor,
           sequenceStepCount: payload.sequenceStepCount,
+          sequenceViewParams: payload.sequenceViewParams,
         },
       },
     ];
