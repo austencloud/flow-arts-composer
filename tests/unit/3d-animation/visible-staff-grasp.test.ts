@@ -138,5 +138,53 @@ describe.runIf(avatarAssetsPresent())("visible stationary staff grasp", () => {
       mesh.maximumPenetrationM,
       JSON.stringify(mesh.worstIntersection)
     ).toBeLessThanOrEqual(0.0005);
+
+    const cacheProbe = services.fingers as unknown as {
+      rightHand: { contactCylinderLocal: object | null };
+    };
+    const cachedFit = cacheProbe.rightHand.contactCylinderLocal;
+    const fittedRotations = [...state.fingerChains!.right.values()].map((bone) =>
+      bone.quaternion.clone()
+    );
+    const nanometreNoise = new Vector3(2e-8, 0, 0);
+    services.fingers.setCylinderContact("right", {
+      a: a.clone().add(nanometreNoise),
+      b: b.clone().add(nanometreNoise),
+      radiusM: STAFF_RADIUS_M,
+      lengthM: 0.9,
+    });
+    services.fingers.solveCylinderContacts();
+    expect(cacheProbe.rightHand.contactCylinderLocal).toBe(cachedFit);
+    [...state.fingerChains!.right.values()].forEach((bone, index) =>
+      expect(bone.quaternion.angleTo(fittedRotations[index]!)).toBeLessThan(1e-6)
+    );
+
+    const solverResidual = new Vector3(0.00005, 0, 0);
+    const shiftedA = a.clone().add(solverResidual);
+    const shiftedB = b.clone().add(solverResidual);
+    services.fingers.setCylinderContact("right", {
+      a: shiftedA, b: shiftedB, radiusM: STAFF_RADIUS_M, lengthM: 0.9,
+    });
+    services.fingers.solveCylinderContacts();
+    expect(cacheProbe.rightHand.contactCylinderLocal).toBe(cachedFit);
+    root.updateMatrixWorld(true);
+    const reusedMesh = auditFireStaffProfile(root, shiftedA, shiftedB, { deadlineMs: 3_000 });
+    expect(reusedMesh.status).toBe("available");
+    expect(reusedMesh.maximumPenetrationM).toBeLessThanOrEqual(0.0005);
+    for (const finger of services.fingers.getCylinderContactReport("right")) {
+      expect(finger.distalPadClearanceM).toBeGreaterThanOrEqual(-0.0005);
+      expect(finger.distalPadClearanceM).toBeLessThanOrEqual(0.002);
+    }
+
+    // Moving the finite shaft along its own axis changes which part of the
+    // handle a fingertip can support, so it must not reuse the old fit.
+    services.fingers.setCylinderContact("right", {
+      a: a.clone().addScaledVector(axis, 0.001),
+      b: b.clone().addScaledVector(axis, 0.001),
+      radiusM: STAFF_RADIUS_M,
+      lengthM: 0.9,
+    });
+    services.fingers.solveCylinderContacts();
+    expect(cacheProbe.rightHand.contactCylinderLocal).not.toBe(cachedFit);
   }, 10_000);
 });

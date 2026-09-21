@@ -5,6 +5,19 @@ wholesale. Each row names the behavior owner. Verify the path in current code
 before relying on it. Add a row only for shared behavior or an intentional
 keep-separate decision, not for every component.
 
+Isolation pose teaching extends `/test/grip-lab` and `ContactIsolationPerformer`.
+Searches: negative space, isolation keyframe, pose handle, torso turn, elbow
+route, tip drift. `shared/3d/performers/isolation-keyframes.ts` owns the cyclic
+smoothstep sampling extracted from the negative-space reach page; that page
+and `routes/test/grip-lab/isolation-teaching.ts` both consume it. The latter
+owns bounded teaching channels and URL serialization. `PoseHandles` composes
+the existing Threlte `TransformControls` interaction with semantic proxy
+objects, never animated bones. `AuthoredContactPose` in the scene-3d patch
+extends the existing strict contact animator with opt-in body inputs.
+The production `collision/stance-yaw-track.ts` remains the automatic anticipatory
+stance owner; it does not author these user-taught poses. This lab intentionally
+eases to rest at each taught pose instead of choosing anticipation itself.
+
 Sequence sharing extends `shared/share/components/PostShareSheet.svelte`.
 Read `docs/architecture/sharing-export-experience.md` for the retained research,
 entry-context decisions, browser constraints, and acceptance checks.

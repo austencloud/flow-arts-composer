@@ -4,6 +4,84 @@ Status: blocked by failed physical acceptance checks; preserved on
 `codex/contact-correct-performers`, unmerged. This is an implementation
 checkpoint, not a completed contact-correct performer.
 
+## Pose teaching in the existing grip lab (2026-09-21)
+
+The grip lab now separates S→E, E→N, N→W and W→S, with quarter looping,
+scrubbing, chest/pelvis/elbow-route/tip handles, numeric controls, Undo, saved
+pose markers and URL replay. Every edit authors a key at the paused phase;
+cyclic smoothstep interpolation is shared with the older isolation page.
+The elbow handle is a pole direction, not an unconstrained joint position.
+
+The source review covered the negative-space reach reference, archived
+behind-body prototype, staff-turn-preparation study, the old isolation
+keyframes, and the archived **Anatomy Lab** task
+(`01a06a2b-66ee-7693-8b22-6c5053ec16ef`). That task's request for flowing turns
+does not establish anticipation for every move. Austen's latest clarification
+governs this exercise: shoulders remain neutral through North, then turn stage
+left during N→W, countershifting stage right and downstage. See section 9 of
+[the reach reference](../reference/negative-space-and-wall-plane-reach.md).
+
+An optional authored-pose input on the shared performer replaces the automatic
+target-following lean/crouch for this lab. Callers that omit it retain the prior
+solver behavior. Feet remain planted within the rig's leg reach; torso rotation
+is distributed across the spine. The baseline is an editable first proposal,
+not Austen-approved choreography or proof of the intended elbow occlusion.
+
+The teaching circle has a constant 25 cm upstage placement adjustment. Separate
+animated tip offsets are bounded in total 3D distance by the visible drift
+control (default ceiling 13 cm; zero requests exact isolation). The measured
+first baseline uses 9 cm upward displacement at South and approximately 9.4 cm
+of lateral/depth displacement at West. These are substantial allowances, shown
+explicitly for teaching rather than described as perfect isolation. A bounded
+real-rig probe at 13 phases found a remaining 10.75 mm palm residual at 3.9;
+the other sampled positions were at or below 0.009 mm. This is not a dense
+contact, penetration, or natural-motion certification. Gaps over 3 mm are
+visible warnings in the page.
+
+Browser checks verified a real pelvis-handle drag, Undo, insertion of a pose at
+2.5, copied-link reload restoring its 40° turn and all six poses, and zero drift
+reporting zero actual displacement. The TransformControls wrapper required its
+explicit `onchange` forwarding path for continuous drag writes. The page uses
+stage/house labels; front-camera world +X is stage left, +Z is downstage.
+
+Layout was inspected at 375×667, 960×412, 820×1180, 1440×900, 1920×1080,
+2560×1440 and 3840×2160, plus a 640×360 CSS-viewport reflow equivalent to
+200% zoom on the native 1280×720 panel. No horizontal overflow was measured.
+The editor scrolls independently when needed; fixed scene heights prevent the
+canvas's intrinsic height from expanding the narrow/short layout. Saved pose
+buttons retain 44 px height instead of shrinking away. Browser capture scaling
+under emulation added black margins/stitching artifacts at large sizes, so
+those images were interpreted alongside CSS geometry rather than as pixel-size
+evidence.
+
+Playback investigation found that equivalent hand-local staff endpoints varied
+by only 21 nanometres between poses, but string rounding to seven decimal
+places produced different fit-cache keys. That repeatedly ran the expensive
+thumb/finger seed search. The cache now compares equivalent cylinder geometry
+with a 0.1 mm endpoint bound and tight scale tolerance; grip type and
+radius must match. It still remeasures the contacts against the current posed
+mesh. A real hand-relative shaft shift remains a cache miss; this is not a
+general reuse of earlier finger poses over changing contact geometry. A first
+one-micrometre bound still missed intermediate frames with small arm-solve
+residuals, so the final endpoint bound is below both the existing 0.5 mm
+penetration limit and 2 mm contact tolerance.
+The real-rig regression confirms 20 nm perturbation retains the fitted finger
+rotations, a 0.05 mm shift retains contact and independently audited surface
+penetration within the existing limits, and a 1 mm axial staff shift invalidates
+the fit. The final focused
+run passes 13 tests across five files; `npm run check` reports zero errors and
+warnings. The installed package's 21 owned source/runtime/type artifacts match
+the preserved patch. Existing multiple-Three import warnings remain.
+Successive final browser reads during N→W advanced phase 2.511→2.556 over
+approximately 0.13 seconds, with responsive pause/scrub/edit actions.
+See [the verified editing view](contact-correct-evidence/isolation-teaching-controls.webp).
+
+Focused tests cover cyclic interpolation and URL round trips, malformed links,
+the phase-wrap seam, rigid staff geometry and bounded drift, real-rig authored
+body/feet invariants, and the existing stationary skin-fit grip. None of these
+certifies the previous full-motion solver failures below. This teaching tool
+remains on the unmerged experimental branch with that limitation.
+
 ## Stationary grasp correction after user review
 
 The user's ch07/right screenshot at phase `0.806` correctly rejected the

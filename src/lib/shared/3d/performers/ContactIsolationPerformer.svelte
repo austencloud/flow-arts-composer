@@ -6,6 +6,7 @@
     userProportionsState,
     type AvatarContactReport,
     type AvatarContactGeometryCallback,
+    type AuthoredContactPose,
   } from "@austencloud/scene-3d";
   import type { CharacterId } from "../domain/character-model";
   import {
@@ -24,6 +25,8 @@
     characterId,
     phase,
     hand = "right",
+    bodyPose = null,
+    tipOffset = [0, 0, 0],
     onReady,
     onReport,
     onGeometry,
@@ -31,6 +34,8 @@
     characterId: CharacterId;
     phase: number;
     hand?: IsolationHand;
+    bodyPose?: AuthoredContactPose | null;
+    tipOffset?: readonly [number, number, number];
     onReady?: () => void;
     onReport?: (report: AvatarContactReport) => void;
     onGeometry?: AvatarContactGeometryCallback;
@@ -45,7 +50,7 @@
     },
     makeStandaloneDeps()
   );
-  const prop = $derived(sampleStaffIsolation(phase));
+  const prop = $derived(sampleStaffIsolation(phase, tipOffset));
   onDestroy(() => avatarState.destroy());
 </script>
 
@@ -63,6 +68,7 @@
   propLength={ISOLATION_STAFF_CONTACT.lengthM}
   contactMode="prop-authoritative"
   staffContact={ISOLATION_STAFF_CONTACT}
+  authoredContactPose={bodyPose}
   onContactReport={onReport}
   onContactGeometry={onGeometry}
   onAvatarSwapped={onReady}

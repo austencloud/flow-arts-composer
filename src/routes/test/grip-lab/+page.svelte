@@ -32,6 +32,11 @@
     INSPECTION_FOV_DEG,
   } from "../_lab-kit/inspection-shot";
   import ContactDiagnostics from "./ContactDiagnostics.svelte";
+  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import { copyTextToClipboard } from "$lib/shared/share/services/link-share";
+  import PoseHandles from "./PoseHandles.svelte";
+  import PoseEditor from "./PoseEditor.svelte";
+  import { allowedTipOffset, authoredBodyPose, TEACHING_ANCHOR_OFFSET, TRANSITIONS, type PoseHandle } from "./isolation-teaching";
   import {
     createContactInspectionState,
     type InspectionView,
@@ -62,12 +67,28 @@
     diagnosticsOpen = $state(false),
     auditSummary = $state<string | null>(null);
   let report = $state<AvatarContactReport | null>(null);
-  let avatarRoot: Object3D | null = null;
+  let avatarRoot = $state.raw<Object3D | null>(null);
+  let editing = $state(false);
+  let dragging = $state(false);
+  let selectedHandle = $state<PoseHandle>("chest");
+  let copyStatus = $state("");
+  const taughtPose = $derived(inspection.pose);
+  const tipOffset = $derived(allowedTipOffset(taughtPose, inspection.tolerance));
+  const staffOffset = $derived<[number, number, number]>([
+    tipOffset[0] + TEACHING_ANCHOR_OFFSET[0],
+    tipOffset[1] + TEACHING_ANCHOR_OFFSET[1],
+    tipOffset[2] + TEACHING_ANCHOR_OFFSET[2],
+  ]);
+  const tipDrift = $derived(Math.hypot(...tipOffset));
+  const bodyPose = $derived(authoredBodyPose(taughtPose));
+  const reachGap = $derived((inspection.hand === "right" ? report?.right : report?.left)?.palmResidualM ?? 0);
   // A measurement belongs to one posed frame, never the next scrub position.
   $effect(() => {
     inspection.phase;
     inspection.hand;
     inspection.characterId;
+    taughtPose;
+    inspection.tolerance;
     auditSummary = null;
   });
   let catalog = $state<readonly CharacterDefinition[]>(
@@ -78,16 +99,19 @@
   setCharacterCatalogContext(() => catalog);
 
   const groundOffset = $derived(-userProportionsState.groundY);
-  const prop = $derived(sampleStaffIsolation(inspection.phase));
+  const prop = $derived(sampleStaffIsolation(inspection.phase, staffOffset));
   const handCenter = $derived<[number, number, number]>([
     prop.worldPosition.x,
     prop.worldPosition.y + groundOffset,
     prop.worldPosition.z + STAGE.AVATAR_GRID_OFFSET,
   ]);
   const endpoint = $derived<[number, number, number]>([
-    ISOLATION_ENDPOINT[0],
-    ISOLATION_ENDPOINT[1] + groundOffset,
-    ISOLATION_ENDPOINT[2] + STAGE.AVATAR_GRID_OFFSET,
+    ISOLATION_ENDPOINT[0] + TEACHING_ANCHOR_OFFSET[0],
+    ISOLATION_ENDPOINT[1] + groundOffset + TEACHING_ANCHOR_OFFSET[1],
+    ISOLATION_ENDPOINT[2] + STAGE.AVATAR_GRID_OFFSET + TEACHING_ANCHOR_OFFSET[2],
+  ]);
+  const actualEndpoint = $derived<[number, number, number]>([
+    endpoint[0] + tipOffset[0], endpoint[1] + tipOffset[1], endpoint[2] + tipOffset[2],
   ]);
   const shot = $derived.by(() => {
     const view: InspectionView = inspection.view;
@@ -139,8 +163,24 @@
     const elapsed = Math.min(100, timestamp - previousTimestamp);
     previousTimestamp = timestamp;
     if (inspection.playing && ready)
-      inspection.advancePhase((inspection.phase + elapsed / 3000) % 4);
+      inspection.tick(elapsed / 3000);
     animation = requestAnimationFrame(frame);
+  }
+  function beginPoseEdit() {
+    dragging = true;
+    inspection.beginEdit();
+  }
+  function endPoseEdit() {
+    dragging = false;
+    inspection.endEdit();
+  }
+  async function copyPose() {
+    try {
+      await copyTextToClipboard(inspection.poseLink());
+      copyStatus = "Pose link copied";
+    } catch {
+      copyStatus = "Copy failed — use the address bar";
+    }
   }
   function checkFrame() {
     if (!report) {
@@ -209,10 +249,14 @@
 <main class="inspection">
   <header class="page-header">
     <div>
-      <p class="eyebrow">Contact inspection</p>
       <h1>Staff isolation</h1>
     </div>
     <div class="header-actions">
+      <PanelButton ariaPressed={editing} onclick={() => {
+        editing = !editing;
+        inspection.setPlaying(false);
+      }}>Edit pose</PanelButton>
+      <PanelButton onclick={copyPose}>Copy pose link</PanelButton>
       <button
         type="button"
         aria-label="Character"
@@ -230,11 +274,11 @@
   </header>
   <section
     class="stage"
-    bind:clientWidth={stageWidth}
-    bind:clientHeight={stageHeight}
+    class:editing
     aria-label="Staff isolation performer"
     aria-busy={!ready}
   >
+    <div class="scene" bind:clientWidth={stageWidth} bind:clientHeight={stageHeight}>
     <Canvas shadows>
       {#key inspection.view}<T.PerspectiveCamera
           makeDefault
@@ -242,6 +286,7 @@
           fov={INSPECTION_FOV_DEG}
           ><OrbitControls
             bind:ref={cameraControls}
+            enabled={!dragging}
             enablePan={false}
             rightDragAction="rotate"
             target={shot.target}
@@ -274,6 +319,8 @@
         characterId={inspection.characterId}
         phase={inspection.phase}
         hand={inspection.hand}
+        {bodyPose}
+        tipOffset={staffOffset}
         onReady={markReady}
         onReport={(next) => (report = { ...next })}
         onGeometry={(root, next) => {
@@ -281,14 +328,53 @@
           report = { ...next };
         }}
       />
+      <PoseHandles root={avatarRoot} pose={taughtPose} selected={selectedHandle}
+        visible={editing && !inspection.playing && ready}
+        hand={inspection.hand} tipPosition={actualEndpoint} tipOrigin={endpoint}
+        onBegin={beginPoseEdit} onChange={(changes) => inspection.editPose(changes)} onEnd={endPoseEdit} />
     </Canvas>
+    {#if inspection.view === "front"}
+      <div class="stage-directions" aria-label="Audience view directions">
+        <span>Stage right · House left</span><span>Stage left · House right</span>
+      </div>
+    {/if}
+    {#if ready && reachGap > 0.003}
+      <p class="reach-warning" role="status">Hand is {(reachGap * 100).toFixed(1)} cm short — adjust the body or tip.</p>
+    {/if}
     {#if !ready}<p class="stage-status" role="status">
         {loadFailed
           ? "The performer did not finish loading. Choose another available character or reload this inspection."
           : "Loading performer…"}
       </p>{/if}
+    </div>
+    {#if editing}
+      <aside class="pose-panel" aria-label="Teach this pose">
+        <div class="pose-heading"><strong>Pose {inspection.phase.toFixed(3)}</strong>
+          <span>{inspection.keys.length} saved poses</span></div>
+        <PoseEditor pose={taughtPose} selected={selectedHandle} onSelect={(value) => selectedHandle = value}
+          onBegin={() => inspection.beginEdit()} onChange={(changes) => inspection.editPose(changes)}
+          onEnd={() => inspection.endEdit()} tolerance={inspection.tolerance}
+          onTolerance={(value) => inspection.setTolerance(value)} {tipDrift} />
+        <div class="pose-actions">
+          <PanelButton disabled={!inspection.canUndo} onclick={() => inspection.undo()}>Undo pose</PanelButton>
+          <PanelButton onclick={() => inspection.resetPose()}>Reset poses</PanelButton>
+        </div>
+        <div class="keyframes" aria-label="Saved poses">
+          {#each inspection.keys as key (key.phase)}
+            <PanelButton ariaPressed={Math.abs(key.phase - (inspection.phase % 4)) < 0.005}
+              onclick={() => { inspection.setTransition("all"); inspection.setPhase(key.phase); }}>
+              {key.phase.toFixed(2)}
+            </PanelButton>
+          {/each}
+        </div>
+        <PanelButton disabled={inspection.keys.length <= 1 || !inspection.keys.some((key) => Math.abs(key.phase - (inspection.phase % 4)) < 0.005)}
+          onclick={() => inspection.removeKey()}>Remove this pose</PanelButton>
+      </aside>
+    {/if}
   </section>
   <section class="controls" aria-label="Isolation controls">
+    <SegmentedControl options={TRANSITIONS} value={inspection.transition}
+      onchange={(value) => inspection.setTransition(value)} ariaLabel="Isolation transition" />
     <div class="playback-row">
       <div class="transport-row">
         <TransportControls
@@ -300,12 +386,12 @@
         />
       </div>
       <label class="scrubber"
-        ><span>Loop position</span><input
-          aria-label="Loop position"
+        ><span>Position {inspection.phase.toFixed(3)}</span><input
+          aria-label="Isolation position"
           type="range"
-          min="0"
-          max="4"
-          step=".01"
+          min={inspection.range[0]}
+          max={inspection.range[1]}
+          step=".001"
           value={inspection.phase}
           oninput={(event) =>
             inspection.setPhase(Number(event.currentTarget.value))}
@@ -318,7 +404,7 @@
         value={Number.isInteger(inspection.phase)
           ? String(inspection.phase % 4)
           : ""}
-        onchange={(value) => inspection.setPhase(Number(value))}
+        onchange={(value) => { inspection.setTransition("all"); inspection.setPhase(Number(value)); }}
         ariaLabel="Cardinal isolation position"
       /><SegmentedControl
         options={hands}
@@ -333,6 +419,7 @@
         ariaLabel="Inspection camera"
       />
     </div>
+    {#if copyStatus}<p class="copy-status" role="status">{copyStatus}</p>{/if}
   </section>
 </main>
 <Drawer
@@ -403,13 +490,6 @@
     justify-content: space-between;
     gap: 1rem;
   }
-  .eyebrow {
-    margin: 0 0 0.2rem;
-    color: var(--theme-text-dim);
-    font-size: var(--font-size-compact, 12px);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
   h1 {
     margin: 0;
     font-size: clamp(1.5rem, 4cqw, 2.25rem);
@@ -435,6 +515,8 @@
     border-color: var(--theme-stroke-strong);
   }
   .stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
     position: relative;
     min-height: 0;
     overflow: hidden;
@@ -446,6 +528,17 @@
       var(--theme-panel-bg)
     );
   }
+  .stage.editing { grid-template-columns: minmax(0, 1fr) 19rem; }
+  .scene { position: relative; min-width: 0; min-height: 0; overflow: hidden; }
+  .pose-panel { overflow-y: auto; min-height: 0; padding: 0.85rem; background: var(--theme-panel-bg); display: flex; flex-direction: column; gap: 0.9rem; }
+  .pose-panel :global(> *) { flex-shrink: 0; }
+  .pose-heading { display: flex; justify-content: space-between; align-items: baseline; font-size: var(--font-size-min, 14px); gap: 0.5rem; }
+  .pose-heading span { color: var(--theme-text-dim); font-size: var(--font-size-compact, 12px); }
+  .pose-actions, .keyframes { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .keyframes { max-height: 6.5rem; overflow: auto; }
+  .stage-directions { position: absolute; inset: auto 0.65rem 0.6rem; display: flex; justify-content: space-between; gap: 1rem; pointer-events: none; font-size: var(--font-size-compact, 12px); color: var(--theme-text-dim); }
+  .reach-warning { position: absolute; inset: 0.6rem 0.6rem auto; width: fit-content; max-width: calc(100% - 1.2rem); margin: 0; padding: 0.5rem 0.7rem; box-sizing: border-box; border-radius: 0.5rem; background: var(--theme-panel-bg); color: var(--semantic-warning, #ffbf69); font-size: var(--font-size-min, 14px); }
+  .copy-status { margin: 0; font-size: var(--font-size-min, 14px); }
   .stage :global(canvas) {
     display: block;
     width: 100%;
@@ -501,6 +594,11 @@
     padding: 0 1.25rem 1.5rem;
   }
   @media (max-width: 700px) {
+    .stage.editing { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; }
+    .stage.editing .scene { height: clamp(16rem, 55dvh, 26rem); }
+    .inspection:has(.stage.editing) { min-height: 48rem; height: auto; }
+    .pose-panel { padding: 0.65rem; max-height: 26rem; }
+    .stage-directions span { max-width: 8rem; }
     .inspection {
       min-height: 30rem;
       grid-template-rows: auto minmax(8rem, 1fr) auto;
@@ -515,8 +613,7 @@
       min-width: 44px;
       padding: 0.5rem;
     }
-    .header-actions span,
-    .eyebrow {
+    .header-actions span {
       display: none;
     }
     .playback-row {
@@ -540,7 +637,11 @@
       grid-column: 1 / -1;
     }
   }
-  @media (max-height: 560px) and (orientation: landscape) {
+  @media (min-width: 701px) and (max-height: 560px) and (orientation: landscape) {
+    .stage.editing { grid-template-columns: minmax(0, 1fr); grid-template-rows: 22rem auto; }
+    .pose-panel { max-height: 24rem; }
+    .controls { align-content: start; }
+    .inspection:has(.stage.editing) { min-height: 42rem; height: auto; }
     .inspection {
       grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.55fr);
       grid-template-rows: auto minmax(15rem, 1fr);

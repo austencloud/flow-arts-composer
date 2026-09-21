@@ -19,7 +19,10 @@ export function wrapStaffIsolationPhase(phase: number): number {
 
 /** One rigid staff rotating around its thumb end. Coordinates are grid-local;
  * PerformerRig owns the fixed grid-to-world transform. */
-export function sampleStaffIsolation(phase: number): PropState3D {
+export function sampleStaffIsolation(
+  phase: number,
+  tipOffset: readonly [number, number, number] = [0, 0, 0],
+): PropState3D {
   const angle = (wrapStaffIsolationPhase(phase) * Math.PI) / 2;
   const shaftRotation = new Quaternion().setFromAxisAngle(AXIS, -angle);
   // Prop3D lays its +Y model along -X before applying PropState3D rotation.
@@ -33,6 +36,7 @@ export function sampleStaffIsolation(phase: number): PropState3D {
       shaftRotation
     )
   );
+  worldPosition.add(new Vector3(...tipOffset));
   return {
     plane: Plane.WALL,
     centerPathAngle: angle + Math.PI / 2,
