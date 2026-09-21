@@ -311,3 +311,46 @@ No social post, message to a real recipient, account connection, phone upload,
 or completed 3D recipe save was performed as verification. The delayed 3D save
 and cancel race is covered by a controlled regression test. These checks establish
 behavior and layout, not uncoached user-task success or subjective satisfaction.
+
+### September 20 card preview correction
+
+Austen's subsequent card screenshot exposed a gap in the preceding verification:
+the desktop video layout passed, but the card still inherited the video's
+384-pixel stage cap. `object-fit: contain` preserved the card's proportions by
+shrinking it inside a much wider box. Card settings also started collapsed at
+every viewport size; only video settings had automatic desktop expansion.
+
+The download card now uses its intrinsic image ratio and the full preview-column
+width. Exceptionally tall cards are contained by the space remaining in the
+viewport after the sheet header, toolbar, padding, and download dock. Do not
+reintroduce a fixed video-height limit or a percentage-of-screen limit for cards.
+At least 900 CSS pixels wide and 760 high, card settings appear directly beside
+the preview. Narrow or short windows retain the disclosure. Use CSS viewport
+dimensions, since a physical 4K monitor may present a smaller scaled viewport.
+
+There are separate contributors to first-image latency:
+
+- The header renderer previously waited for the complete glyph library before
+  drawing a single word. Its word-scoped path now uses the existing glyph cache
+  and tokenizer to prepare only the actual header symbols, including Greek and
+  dashed letters. Later words must still load their missing symbols. Full-library
+  preload remains available to worker setup and background warming.
+- QR generation can wait for canonical cells in both themes and a short link
+  before the final PNG is returned. This is a readiness contract for the person
+  scanning the printed card. Do not silently remove it to make a timing claim.
+  The prepared QR cache already avoids that work on a repeat request.
+
+A cold development preview was observed still preparing after 16 seconds; that
+run did not have phase instrumentation, so its delay cannot be assigned wholly
+to either cause. A subsequent instrumented warm 16-step render completed its
+composition in 335 ms, with cell drawing finished at 314 ms. This is diagnostic
+evidence, not a cold-render speed guarantee. Temporary instrumentation was removed.
+
+Verification covered card previews at all seven viewport tiers, wide and tall
+column layouts, manual phone disclosure, and automatic desktop expansion. At
+3840x2160 the 16-step card used the full 640-pixel inner preview width with no
+content scrollbar. At 1920x1080 the final content region measured identical
+client and scroll heights; short windows used the existing single scrolling
+body and fixed download dock. Reflow at 960x540 and reduced-motion disclosure
+were also checked. Nineteen focused glyph/header tests passed, including later
+words and worker-seeded bitmap caches, which must not access browser-only loaders.
