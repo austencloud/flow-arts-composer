@@ -110,6 +110,10 @@ CI retains the live image, PNG export, and difference image for each case in its
 Download intent, source replacement, retry, Auto sizing, phone containment, and
 QR-independent readiness through the real components.
 
+These browser test files run sequentially. Native MCP rendering executes
+synchronously in the browser-command server; running it alongside the live
+tests blocks their asset requests and can cause unrelated readiness timeouts.
+
 The `composer` and `print` profiles intentionally have different dimensions and
 badge scales. Compare matching profiles and options. This suite covers image
 exports, not every interactive card state. The QR fixtures carry the real

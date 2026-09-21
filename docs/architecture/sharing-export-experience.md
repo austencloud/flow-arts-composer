@@ -543,3 +543,13 @@ local session with QR disabled, 16-step PNG preparation took roughly 240–350 m
 matching cached requests took roughly 3–4 ms. This is not a cold-start or QR
 publication benchmark. Existing stage timing instrumentation and the earlier QR
 reuse measurements remain the owners of that separate performance question.
+
+Final verification on September 21 passed the complete package verification
+gate: 20 browser/source/installed-MCP comparisons, 13 live-card parity checks
+including negative controls, eight actual-sheet lifecycle checks, and the
+held-QR readiness check. The 39 focused logic tests and six browser preview-state
+tests also passed. Regional image tolerances were not widened. The real Generate
+flow was inspected at phone, tablet, short landscape, desktop, and 4K viewport
+sizes; desktop settings opened automatically and the large desktop layouts had
+no unnecessary inner scrollbar. CI retains live/export/difference images so a
+future regression can be investigated without rebuilding this evidence manually.
