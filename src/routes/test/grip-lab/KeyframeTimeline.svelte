@@ -10,10 +10,14 @@
     range: readonly [number, number];
     selectedKey: TeachingKey | undefined;
     canUndo: boolean;
+    canRedo: boolean;
+    feedback?: string;
     onSelect: (phase: number) => void;
+    onNeighbor: (direction: -1 | 1) => void;
     onAdd: () => void;
     onRemove: () => void;
     onUndo: () => void;
+    onRedo: () => void;
     onMove: (from: number, to: number) => boolean;
     onEdit: () => void;
     onBegin: () => void;
@@ -25,10 +29,14 @@
     range,
     selectedKey,
     canUndo,
+    canRedo,
+    feedback = "",
     onSelect,
+    onNeighbor,
     onAdd,
     onRemove,
     onUndo,
+    onRedo,
     onMove,
     onEdit,
     onBegin,
@@ -87,13 +95,8 @@
     onSelect(t);
   }
   function neighbor(direction: -1 | 1) {
-    const t = phase % 4;
-    const target =
-      direction > 0
-        ? (keys.find((key) => key.phase > t + 0.005) ?? keys[0])
-        : ([...keys].reverse().find((key) => key.phase < t - 0.005) ??
-          keys.at(-1));
-    if (target) select(target.phase);
+    moveError = "";
+    onNeighbor(direction);
   }
   function move(value: number) {
     if (!selectedKey) return;
@@ -243,6 +246,10 @@
           onUndo();
         }}>Undo</PanelButton
       >
+      <PanelButton disabled={!canRedo} onclick={() => {
+        moveError = "";
+        onRedo();
+      }}>Redo</PanelButton>
     </div>
     <div
       class="timing"
@@ -266,7 +273,7 @@
     >
   </div>
   <p class="feedback" role="status">
-    {moveError ||
+    {moveError || feedback ||
       (keys.length === 1
         ? "One keyframe holds the pose through the loop."
         : "Deleting removes the whole pose; the remaining keyframes blend together.")}
