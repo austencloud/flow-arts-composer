@@ -25,15 +25,22 @@
     version: number
   ): void {
     if (freezeFrame !== null) cancelAnimationFrame(freezeFrame);
+    let readyFrames = 0;
     const check = () => {
       if (version !== requestVersion || !mounted) return;
       if (
         controller.isReady() &&
         controller.getCurrentType() === typeToFreeze
       ) {
-        freezeFrame = null;
-        freezeIfNeeded();
-        return;
+        // Readiness can precede the renderer's first animation frame. Allow
+        // that queued paint before freezing, including after a canvas resize.
+        if (++readyFrames >= 2) {
+          freezeFrame = null;
+          freezeIfNeeded();
+          return;
+        }
+      } else {
+        readyFrames = 0;
       }
       freezeFrame = requestAnimationFrame(check);
     };
