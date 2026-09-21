@@ -67,6 +67,7 @@
     "lint:fix": "prettier --write . && eslint . --fix",
     "format": "prettier --write .",
     "test:ci": "vitest run --config tests/config/vitest.config.ts",
+    "test:contact-lab-acceptance": "vitest run --config tests/config/vitest.contact-lab.config.ts",
     "test:packages": "pnpm --recursive --filter \"./packages/*\" run test",
     "//test:packages": "Workspace packages carry their own vitest configs and are NOT matched by tests/config/vitest.config.ts. Without this, 464 passing assertions across sequence-engine, render-composition, tka-types and render-core ran nowhere — sequence-engine did not even have a test script. Wired into web-ci.yml.",
     "test:components": "vitest --config tests/config/vitest.components.config.ts",

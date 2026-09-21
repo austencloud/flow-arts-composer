@@ -5,6 +5,22 @@ wholesale. Each row names the behavior owner. Verify the path in current code
 before relying on it. Add a row only for shared behavior or an intentional
 keep-separate decision, not for every component.
 
+Isolation pose teaching extends `/test/grip-lab` and `ContactIsolationPerformer`.
+Searches: negative space, isolation keyframe, pose handle, torso turn, elbow
+route, tip drift. `shared/3d/performers/isolation-keyframes.ts` owns the cyclic
+smoothstep sampling extracted from the negative-space reach page; that page
+and `routes/test/grip-lab/isolation-teaching.ts` both consume it. The latter
+owns bounded teaching channels and URL serialization. `PoseHandles` composes
+Three.js `TransformControls` with semantic proxy objects, never animated bones.
+Its native lifecycle bypasses the extras wrapper: that wrapper's reactive
+attach/change feedback detached a handle mid-drag and froze pose editing.
+Only native `objectChange` events author poses; raycasting and gizmos remain
+owned by Three.js. `AuthoredContactPose` in the scene-3d patch
+extends the existing strict contact animator with opt-in body inputs.
+The production `collision/stance-yaw-track.ts` remains the automatic anticipatory
+stance owner; it does not author these user-taught poses. This lab intentionally
+eases to rest at each taught pose instead of choosing anticipation itself.
+
 Sequence sharing extends `shared/share/components/PostShareSheet.svelte`.
 Read `docs/architecture/sharing-export-experience.md` for the retained research,
 entry-context decisions, browser constraints, and acceptance checks.
@@ -33,6 +49,19 @@ fan appearance, primary prop colors. `prop-look.ts` owns build artwork and
 same recipes. Navigation reads the existing app settings for both hands,
 chirality and colors. Drawer activation, haptics and navigation geometry keep
 their existing owners.
+
+Prop selection and appearance use
+`shared/settings/components/tabs/prop-type/PropGrid.svelte` for the gallery,
+family drill-down, Back/Escape navigation, and animated decision screens.
+`BentoPropGrid.svelte` connects that presentation to account settings;
+`PropSelectionSheet.svelte` provides the bounded Change Prop drawer.
+Searches: prop look, model artwork, prop variants, Change Prop, fan styles.
+`PropLookPicker.svelte` composes `PropBuildPicker.svelte` for captured model
+versus pictograph artwork. `FanStyleOptionsCore.svelte` composes the existing
+`FanAppearancePicker.svelte` for fan builds and covers. The effect tuner and
+viewer reuse this gallery; `ScenePropPicker.svelte` adds scene-specific finish
+controls. Extend these owners instead of appending another appearance picker
+or creating a separate variant catalogue.
 
 Hand identity colors reuse `packages/render-composition/src/hand-colors.ts` for
 cross-runtime normalization and `mandala-palette.ts` for overlap blending.
