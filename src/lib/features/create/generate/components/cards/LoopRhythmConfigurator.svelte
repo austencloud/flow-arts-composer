@@ -8,6 +8,7 @@
     REFLECTION_AXIS_DETAILS,
     REFLECTION_AXIS_OPTIONS,
     type LoopRhythmValue,
+    type ReflectionAxisOption,
   } from "./loop-expanded-overlay-model";
   import { effectiveInversionInterval } from "$lib/shared/create/services/loop-type-utils";
 
@@ -17,6 +18,10 @@
     inversionCaption: string;
     statusReason?: string;
     idPrefix?: string;
+    /** Axis choices with the hand mode's veto applied. Defaults to every axis. */
+    reflectionAxisOptions?: ReflectionAxisOption[];
+    /** False closes Quartered (reflection hand modes only survive halved). */
+    quarteredAvailable?: boolean;
     onChange: (updates: Partial<LoopRhythmValue>) => void;
   }
 
@@ -78,7 +83,7 @@
     {/snippet}
 
     <SegmentedControl
-      options={REFLECTION_AXIS_OPTIONS}
+      options={props.reflectionAxisOptions ?? REFLECTION_AXIS_OPTIONS}
       value={props.rhythm.reflectionAxis}
       onchange={(reflectionAxis) => props.onChange({ reflectionAxis })}
       size="sm"
@@ -111,7 +116,11 @@
     <SegmentedControl
       options={[
         { value: "2", label: "Halved" },
-        { value: "4", label: "Quartered" },
+        {
+          value: "4",
+          label: "Quartered",
+          disabled: !(props.quarteredAvailable ?? true),
+        },
       ]}
       value={String(props.rhythm.rotationInterval)}
       onchange={(value) =>

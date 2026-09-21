@@ -1,0 +1,4 @@
+interface:
+  display_name: "UI Bust"
+  short_description: "Planning a new UI or substantial restyle"
+  default_prompt: "Use $ui-bust to apply the UI Bust workflow to this task."

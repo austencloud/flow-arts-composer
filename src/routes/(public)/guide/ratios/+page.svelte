@@ -173,93 +173,95 @@
 />
 
 <GuideShell>
-  <article class="ratios guide-page-route">
-    <header class="page-head">
-      <h1>Spin ratios</h1>
-      <p>
-        A spin ratio counts one pattern twice: how many circles the hand
-        travels, and how many rotations the prop makes over the same span. It is
-        written hands first, so <strong>1:3</strong> is one hand circle to three prop
-        rotations. The Kinetic Alphabet counts the same motion as turns, where one
-        turn is 180 degrees of prop rotation on top of the base rotation the motion
-        already carries.
-      </p>
-      <p>
-        Lorq Nichols, who publishes as <a
-          class="external"
-          href={SPIN_SCIENCE_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          >Spin Science<span class="sr-only"> (opens in a new tab)</span></a
-        >, built the {ORIGINAL_SHAPE_MATRIX_NAME} from three of these ratios: 1:1,
-        1:3, and 1:5. The {SHAPE_ENGINE_SHORT_NAME} generates the same pairings and
-        carries the construction through the rest of the turn ladder.
-      </p>
-      {#if loadError}
-        <p class="notice error" role="alert">
-          The flower drawings could not be built, so the shapes on this page are
-          blank. Reload to try again.
-          <span class="notice-detail">{loadError}</span>
-        </p>
-      {/if}
-    </header>
-
-    <section class="reading" aria-labelledby="reading-heading">
-      <div class="reading-copy">
-        <h2 id="reading-heading">Reading a ratio</h2>
-
-        <dl class="terms">
-          <div>
-            <dt>Hand cycles, H</dt>
-            <dd>Complete circles the hand travels.</dd>
-          </div>
-          <div>
-            <dt>Prop rotations, P</dt>
-            <dd>Complete rotations the prop makes over those circles.</dd>
-          </div>
-        </dl>
-
+  <article class="ratios guide-page-route" style="--tracks: {MATRIX_TRACKS}">
+    <div class="opening">
+      <header class="page-head">
+        <h1>Spin ratios</h1>
         <p>
-          For a moving hand the two systems convert directly. Prop rotations per
-          hand cycle are <code>P / H = 2 × turns + 1</code>, and the same
-          relation read backwards is <code>turns = (P / H − 1) / 2</code>.
+          A spin ratio counts one pattern twice: how many circles the hand
+          travels, and how many rotations the prop makes over the same span. It
+          is written hands first, so <strong>1:3</strong> is one hand circle to three
+          prop rotations. The Kinetic Alphabet counts the same motion as turns, where
+          one turn is 180 degrees of prop rotation on top of the base rotation the
+          motion already carries.
         </p>
         <p>
-          The reduced ratio also fixes the petal count. A prospin flower draws
-          <code>|P − H|</code> petals and an antispin flower draws
-          <code>P + H</code>. Both counts follow one tracked prop end. A two
-          ended prop such as a staff traces the mirrored figure as well, so the
-          drawing shows twice as many petals as the count.
+          Lorq Nichols, who publishes as <a
+            class="external"
+            href={SPIN_SCIENCE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            >Spin Science<span class="sr-only"> (opens in a new tab)</span></a
+          >, built the {ORIGINAL_SHAPE_MATRIX_NAME} from three of these ratios: 1:1,
+          1:3, and 1:5. The {SHAPE_ENGINE_SHORT_NAME} generates the same pairings
+          and carries the construction through the rest of the turn ladder.
         </p>
-        <p>
-          Float sits outside the arithmetic. The prop makes no rotation of its
-          own while the hand circles, which is the ratio 1:0, and the Kinetic
-          Alphabet names it Float instead of a number.
-        </p>
-      </div>
+        {#if loadError}
+          <p class="notice error" role="alert">
+            The flower drawings could not be built, so the shapes on this page
+            are blank. Reload to try again.
+            <span class="notice-detail">{loadError}</span>
+          </p>
+        {/if}
+      </header>
 
-      <figure class="worked">
-        <figcaption>1:3, one turn</figcaption>
-        <div class="worked-shapes">
-          {#each [example.pro, example.anti] as flower (flowerKey(flower))}
-            <div class="worked-shape">
-              <span class="still still-lg">
-                <ShapeMatrixMandalaArt
-                  paint={paintFlower(flower)}
-                  artKey={flowerKey(flower)}
-                  alt={flowerLabel(flower)}
-                />
-              </span>
-              <span class="shape-name">{styleWord(flower.style)}</span>
-              <span class="shape-meta">{petalWord(flower.petals)}</span>
+      <section class="reading" aria-labelledby="reading-heading">
+        <div class="reading-copy">
+          <h2 id="reading-heading">Reading a ratio</h2>
+
+          <dl class="terms">
+            <div>
+              <dt>Hand cycles, H</dt>
+              <dd>Complete circles the hand travels.</dd>
             </div>
-          {/each}
+            <div>
+              <dt>Prop rotations, P</dt>
+              <dd>Complete rotations the prop makes over those circles.</dd>
+            </div>
+          </dl>
+
+          <p>
+            For a moving hand the two systems convert directly. Prop rotations
+            per hand cycle are <code>P / H = 2 × turns + 1</code>, and the same
+            relation read backwards is <code>turns = (P / H − 1) / 2</code>.
+          </p>
+          <p>
+            The reduced ratio also fixes the petal count. A prospin flower draws
+            <code>|P − H|</code> petals and an antispin flower draws
+            <code>P + H</code>. Both counts follow one tracked prop end. A two
+            ended prop such as a staff traces the mirrored figure as well, so
+            the drawing shows twice as many petals as the count.
+          </p>
+          <p>
+            Float sits outside the arithmetic. The prop makes no rotation of its
+            own while the hand circles, which is the ratio 1:0, and the Kinetic
+            Alphabet names it Float instead of a number.
+          </p>
         </div>
-        <p class="worked-note">
-          P is 3 and H is 1, so prospin draws 2 petals and antispin draws 4.
-        </p>
-      </figure>
-    </section>
+
+        <figure class="worked">
+          <figcaption>1:3, one turn</figcaption>
+          <div class="worked-shapes">
+            {#each [example.pro, example.anti] as flower (flowerKey(flower))}
+              <div class="worked-shape">
+                <span class="still still-lg">
+                  <ShapeMatrixMandalaArt
+                    paint={paintFlower(flower)}
+                    artKey={flowerKey(flower)}
+                    alt={flowerLabel(flower)}
+                  />
+                </span>
+                <span class="shape-name">{styleWord(flower.style)}</span>
+                <span class="shape-meta">{petalWord(flower.petals)}</span>
+              </div>
+            {/each}
+          </div>
+          <p class="worked-note">
+            P is 3 and H is 1, so prospin draws 2 petals and antispin draws 4.
+          </p>
+        </figure>
+      </section>
+    </div>
 
     <section class="ladder" aria-labelledby="ladder-heading">
       <div class="ladder-copy">
@@ -362,45 +364,43 @@
         </p>
       </div>
 
-      <div class="family-list">
-        {#each families as family (family.turns)}
-          <section class="family" aria-label={`${family.ratio} family`}>
-            <header class="family-head">
-              <span class="family-ratio">{family.ratio}</span>
-              <span class="family-turns"
-                >{family.turns} turn{family.turns === 1 ? "" : "s"}, level {family.level}</span
-              >
-              <a class="family-link" href={bandHref(family.turns)}>
-                Open the {family.ratio} band
-              </a>
-            </header>
-            <ol class="family-shapes">
-              {#each family.shapes as flower (flowerKey(flower))}
-                <li>
-                  <span class="still still-md">
-                    <ShapeMatrixMandalaArt
-                      paint={paintFlower(flower)}
-                      artKey={flowerKey(flower)}
-                      alt={flowerLabel(flower)}
-                    />
-                  </span>
-                  <span class="shape-name">{styleWord(flower.style)}</span>
-                  <span class="shape-meta">
-                    {petalWord(flower.petals)}, starts {flower.ori}
-                  </span>
-                </li>
-              {/each}
-            </ol>
-          </section>
-        {/each}
+      <div class="family-band">
+        <div class="family-list">
+          {#each families as family (family.turns)}
+            <section class="family" aria-label={`${family.ratio} family`}>
+              <header class="family-head">
+                <span class="family-ratio">{family.ratio}</span>
+                <span class="family-turns"
+                  >{family.turns} turn{family.turns === 1 ? "" : "s"}, level {family.level}</span
+                >
+                <a class="family-link" href={bandHref(family.turns)}>
+                  Open the {family.ratio} band
+                </a>
+              </header>
+              <ol class="family-shapes">
+                {#each family.shapes as flower (flowerKey(flower))}
+                  <li>
+                    <span class="still still-md">
+                      <ShapeMatrixMandalaArt
+                        paint={paintFlower(flower)}
+                        artKey={flowerKey(flower)}
+                        alt={flowerLabel(flower)}
+                      />
+                    </span>
+                    <span class="shape-name">{styleWord(flower.style)}</span>
+                    <span class="shape-meta">
+                      {petalWord(flower.petals)}, starts {flower.ori}
+                    </span>
+                  </li>
+                {/each}
+              </ol>
+            </section>
+          {/each}
+        </div>
       </div>
     </section>
 
-    <section
-      class="pairings"
-      aria-labelledby="pairings-heading"
-      style="--tracks: {MATRIX_TRACKS}"
-    >
+    <section class="pairings" aria-labelledby="pairings-heading">
       <div class="pairings-copy">
         <h2 id="pairings-heading">The 144 pairings</h2>
         <p>
@@ -439,48 +439,52 @@
       </div>
     </section>
 
-    <section class="beyond" aria-labelledby="beyond-heading">
-      <h2 id="beyond-heading">Past the original twelve</h2>
-      <p>
-        The engine keeps the row and column pairing and widens the axes. Levels
-        3 and 4 add the half turn, quarter turn, and Float rows from the table
-        above, and each axis picks its band on its own, so the two hands do not
-        have to sit in the same family. The Theory Matrix sets the level system
-        aside and pairs any two whole number ratios up to 15 on each side.
-      </p>
-    </section>
+    <div class="closing">
+      <section class="beyond" aria-labelledby="beyond-heading">
+        <h2 id="beyond-heading">Past the original twelve</h2>
+        <p>
+          The engine keeps the row and column pairing and widens the axes.
+          Levels 3 and 4 add the half turn, quarter turn, and Float rows from
+          the table above, and each axis picks its band on its own, so the two
+          hands do not have to sit in the same family. The Theory Matrix sets
+          the level system aside and pairs any two whole number ratios up to 15
+          on each side.
+        </p>
+      </section>
 
-    <section class="sources" aria-labelledby="sources-heading">
-      <h2 id="sources-heading">Sources</h2>
-      <ul class="source-list">
-        <li>
-          <a
-            class="external"
-            href={ORIGINAL_SHAPE_MATRIX_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            >Lorq Nichols, {ORIGINAL_SHAPE_MATRIX_NAME}, on Spin Science<span
-              class="sr-only"
+      <section class="sources" aria-labelledby="sources-heading">
+        <h2 id="sources-heading">Sources</h2>
+        <ul class="source-list">
+          <li>
+            <a
+              class="external"
+              href={ORIGINAL_SHAPE_MATRIX_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              >Lorq Nichols, {ORIGINAL_SHAPE_MATRIX_NAME}, on Spin Science<span
+                class="sr-only"
+              >
+                (opens in a new tab)</span
+              ></a
             >
-              (opens in a new tab)</span
-            ></a
-          >
-        </li>
-        <li>
-          <a href="/history#archive-record-vtg">The Vulcan Tech Gospel record</a
-          >
-        </li>
-        <li>
-          <a href="/history#archive-record-lorq">The Lorq Nichols record</a>
-        </li>
-        <li><a href="/shape-engine">{SHAPE_ENGINE_SHORT_NAME}</a></li>
-      </ul>
-      <p class="attribution">
-        The {SHAPE_ENGINE_SHORT_NAME} was built independently by {KINETIC_SHAPE_ENGINE_AUTHOR}.
-        It does not reproduce Nichols' original diagram and is not an official
-        Spin Science release.
-      </p>
-    </section>
+          </li>
+          <li>
+            <a href="/history#archive-record-vtg"
+              >The Vulcan Tech Gospel record</a
+            >
+          </li>
+          <li>
+            <a href="/history#archive-record-lorq">The Lorq Nichols record</a>
+          </li>
+          <li><a href="/shape-engine">{SHAPE_ENGINE_SHORT_NAME}</a></li>
+        </ul>
+        <p class="attribution">
+          The {SHAPE_ENGINE_SHORT_NAME} was built independently by {KINETIC_SHAPE_ENGINE_AUTHOR}.
+          It does not reproduce Nichols' original diagram and is not an official
+          Spin Science release.
+        </p>
+      </section>
+    </div>
   </article>
 </GuideShell>
 
@@ -493,10 +497,39 @@
     --surface: var(--theme-card-bg, oklch(0.17 0.018 270 / 0.5));
     --accent: var(--theme-accent, oklch(0.74 0.11 265));
     --touch: var(--min-touch-target, 44px);
+    /* The wide composition is two tracks: prose at a fixed measure, visuals
+       in whatever is left. The article caps at the width where the matrix
+       reaches its largest tile beside that measure, and centres, so extra
+       width becomes symmetric margin instead of gaps inside the page. */
+    --copy: 36rem;
+    --gutter: clamp(1.5rem, 3vw, 3rem);
+    --section-gap: clamp(2.75rem, 5vw, 4.5rem);
+    --pad: clamp(1rem, 3vw, 3rem);
+    --tracks: 13;
+    --stage-max: calc(var(--tracks) * 72px + 6px);
+    --stage-min: calc(var(--tracks) * 44px + 6px);
+    box-sizing: border-box;
+    inline-size: 100%;
+    max-inline-size: calc(
+      var(--copy) + var(--gutter) + var(--stage-max) + 2 * var(--pad)
+    );
+    margin-inline: auto;
     display: grid;
-    gap: clamp(2.75rem, 5vw, 4.5rem);
-    padding: clamp(1.5rem, 3vw, 3rem) clamp(1rem, 3vw, 3rem)
-      clamp(4rem, 7vw, 7rem);
+    gap: var(--section-gap);
+    padding: clamp(1.5rem, 3vw, 3rem) var(--pad) clamp(4rem, 7vw, 7rem);
+  }
+
+  /* On a 4K class screen the guide band is fixed at its widest, so the grid
+     spends the extra room on larger tiles rather than a wider prose column. */
+  @media (min-width: 137.5rem) {
+    .ratios {
+      --stage-max: calc(var(--tracks) * 88px + 6px);
+    }
+  }
+
+  .opening {
+    display: grid;
+    gap: var(--section-gap);
   }
 
   /* Below the tablet breakpoint the guide grid keeps this route in its prose
@@ -598,7 +631,7 @@
   .twelve,
   .pairings {
     display: grid;
-    gap: clamp(1.5rem, 3vw, 3rem);
+    gap: var(--gutter);
     padding-top: clamp(1.75rem, 3vw, 2.75rem);
     border-top: 1px solid var(--rule);
   }
@@ -846,10 +879,11 @@
   /* The original twelve. Three families is a fixed count, so the tiers are
      chosen, not fitted: one column of squares on a phone, one column of wide
      bands with four shapes across on a tablet, three squares side by side on
-     a desktop. No tier strands a lone card on its own row. The section is
-     the container because a container query answers for an ancestor, never
-     for the element it styles. */
-  .twelve {
+     a desktop. No tier strands a lone card on its own row. The band, not the
+     list, is the container because a container query answers for an
+     ancestor, never for the element it styles; on a wide screen the band is
+     the column beside the prose, so the tiers follow that column. */
+  .family-band {
     container-type: inline-size;
   }
 
@@ -940,9 +974,6 @@
      still holds every row and the grid slides sideways under its sticky
      headers. */
   .pairings {
-    --tracks: 13;
-    --stage-max: calc(var(--tracks) * 72px + 6px);
-    --stage-min: calc(var(--tracks) * 44px + 6px);
     container-type: inline-size;
   }
 
@@ -955,16 +986,8 @@
      under the prose at full width, where it never has to scroll. */
   @media (min-width: 96rem) {
     .pairings {
-      grid-template-columns: minmax(17rem, 1fr) minmax(0, var(--stage-max));
+      grid-template-columns: minmax(0, var(--copy)) minmax(0, 1fr);
       align-items: start;
-    }
-  }
-
-  /* On a 4K class screen the guide band is fixed at its widest, so the grid
-     spends the extra room on larger tiles rather than a wider prose column. */
-  @media (min-width: 137.5rem) {
-    .pairings {
-      --stage-max: calc(var(--tracks) * 88px + 6px);
     }
   }
 
@@ -1021,6 +1044,11 @@
     color: var(--semantic-error, oklch(0.7 0.16 25));
   }
 
+  .closing {
+    display: grid;
+    gap: var(--section-gap);
+  }
+
   .beyond,
   .sources {
     padding-top: clamp(1.75rem, 3vw, 2.75rem);
@@ -1048,5 +1076,105 @@
   .attribution {
     color: var(--ink-faint);
     font-size: var(--font-size-min, 0.875rem);
+  }
+
+  /* Wide: the worked example becomes the opening panel. It stands beside the
+     heading and the reading notes together, its two flowers stacked and
+     drawn large, so the top of the page is one composition instead of a
+     heading with an empty right half. The reading section's own box goes
+     away here so its copy and figure can sit in the opening grid. */
+  @media (min-width: 96rem) {
+    .opening {
+      grid-template-columns: minmax(0, var(--copy)) minmax(0, 1fr);
+      grid-template-rows: auto auto;
+      column-gap: var(--gutter);
+      align-items: start;
+    }
+
+    .reading {
+      display: contents;
+    }
+
+    .page-head {
+      grid-column: 1;
+      grid-row: 1;
+    }
+
+    .reading-copy {
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    .worked {
+      grid-column: 2;
+      grid-row: 1 / 3;
+      align-self: stretch;
+      container-type: inline-size;
+      display: grid;
+      align-content: center;
+      padding: clamp(1.5rem, 2vw, 3rem);
+    }
+
+    .worked-shapes {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 2rem;
+    }
+
+    /* The panel's height is set by the prose beside it, which the fixed
+       measure keeps near constant across the tier, so the flowers grow with
+       the panel's width up to the size that fills that height. */
+    .still-lg {
+      inline-size: min(45cqw, 17rem);
+    }
+
+    .worked figcaption {
+      font-size: 1.25rem;
+      text-align: center;
+    }
+
+    .worked-note {
+      max-inline-size: 44ch;
+      margin-inline: auto;
+      text-align: center;
+    }
+
+    .ladder,
+    .twelve {
+      grid-template-columns: minmax(0, var(--copy)) minmax(0, 1fr);
+      align-items: start;
+    }
+
+    .ladder-table-scroll {
+      max-inline-size: none;
+    }
+
+    .ladder-table .float .petals {
+      max-inline-size: 40rem;
+    }
+
+    /* The table and the matrix run taller than their prose. Pinning the
+       prose under the site header keeps it beside the rows it describes
+       instead of leaving a blank column once they scroll away. */
+    .ladder-copy,
+    .pairings-copy {
+      position: sticky;
+      top: calc(64px + 1.5rem);
+    }
+
+    /* The two closing sections share one band under one rule, so the page
+       ends on the same two tracks it opened with. */
+    .closing {
+      grid-template-columns: minmax(0, var(--copy)) minmax(0, 1fr);
+      column-gap: var(--gutter);
+      align-items: start;
+      padding-top: clamp(1.75rem, 3vw, 2.75rem);
+      border-top: 1px solid var(--rule);
+    }
+
+    .beyond,
+    .sources {
+      padding-top: 0;
+      border-top: 0;
+    }
   }
 </style>

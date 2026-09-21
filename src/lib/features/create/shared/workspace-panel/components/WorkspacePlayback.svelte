@@ -82,6 +82,7 @@
           chrome="minimal"
           fill
           scrubbable
+          videoDownload
           showScrubberPlaybackControl
           hoverHint="none"
           autoPlay={active}

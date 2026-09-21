@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const getRawData = vi
   .fn()
@@ -45,6 +45,8 @@ describe("QRCodeGenerator canonical cell readiness", () => {
     imageCache.get.mockResolvedValue(null);
     preparedCache.get.mockResolvedValue(null);
   });
+
+  afterEach(() => vi.unstubAllGlobals());
 
   it("verifies both themes with the printed prop pair before creating a code", async () => {
     const events: string[] = [];
@@ -202,6 +204,72 @@ describe("QRCodeGenerator canonical cell readiness", () => {
     expect(warm).not.toHaveBeenCalled();
     expect(createShortCode).not.toHaveBeenCalled();
     expect(getRawData).not.toHaveBeenCalled();
+  });
+
+  it("draws a canonical prepared SVG at the card's requested size", async () => {
+    const ready = {
+      svg: "<svg/>",
+      dataUrl: "data:ready",
+      encodedUrl: "https://tka.run/ABCD",
+      shortCode: "ABCD",
+    };
+    class ReadyImage {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      set src(_value: string) {
+        queueMicrotask(() => this.onload?.());
+      }
+    }
+    vi.stubGlobal("Image", ReadyImage);
+    preparedCache.get.mockResolvedValue(ready);
+    const warm = vi.fn();
+    const createShortCode = vi.fn();
+    const generator = new QRCodeGenerator(
+      { createShortCode } as never,
+      imageCache as never,
+      warm,
+      preparedCache
+    );
+
+    await expect(
+      generator.generateAsImage(sequence, 214)
+    ).resolves.toBeInstanceOf(ReadyImage);
+
+    expect(preparedCache.keyFor).toHaveBeenCalledWith(
+      sequence,
+      expect.anything(),
+      expect.objectContaining({ size: 200 })
+    );
+    expect(warm).not.toHaveBeenCalled();
+    expect(createShortCode).not.toHaveBeenCalled();
+    expect(getRawData).not.toHaveBeenCalled();
+  });
+
+  it("shares one signal-less canonical preparation between matching cards", async () => {
+    const warm = vi
+      .fn()
+      .mockResolvedValue({ total: 2, ready: 2, hashes: [], failures: [] });
+    const createShortCode = vi.fn().mockResolvedValue({
+      code: "ABCD",
+      url: "https://tka.run/ABCD",
+      isNew: true,
+    });
+    const generator = new QRCodeGenerator(
+      { createShortCode } as never,
+      imageCache as never,
+      warm,
+      preparedCache
+    );
+
+    const [first, second] = await Promise.all([
+      generator.generateForSequence(sequence, { size: 200 }),
+      generator.generateForSequence(sequence, { size: 214 }),
+    ]);
+
+    expect(second).toEqual(first);
+    expect(warm).toHaveBeenCalledTimes(2);
+    expect(createShortCode).toHaveBeenCalledOnce();
+    expect(getRawData).toHaveBeenCalledOnce();
   });
 
   it("publishes reusable artwork only after both themes and the QR succeed", async () => {

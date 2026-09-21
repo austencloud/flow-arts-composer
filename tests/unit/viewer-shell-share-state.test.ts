@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { createViewerShellShareState } from "$lib/shared/sequence-viewer/state/viewer-shell-share-state.svelte";
+import {
+  createViewerShellShareState,
+  viewerVideoSourceIdentity,
+} from "$lib/shared/sequence-viewer/state/viewer-shell-share-state.svelte";
 
 function createShareState(
   onDismiss: () => void,
@@ -56,6 +59,26 @@ describe("viewer share file preparation", () => {
 
     share.markSessionResumed();
     expect(share.preserveSession).toBe(false);
+  });
+
+  it("keeps a rendered post's source kind stable when its sheet reopens", () => {
+    const share = createShareState(() => undefined);
+
+    share.sharePost();
+    const sourceKind = share.videoSourceKind;
+    share.setPostSheetOpen(false);
+
+    share.sharePost();
+    expect(share.videoSourceKind).toBe(sourceKind);
+    expect(sourceKind).toBe("post");
+  });
+
+  it("does not make a live result stale, while a changed precomposed post is new input", () => {
+    expect(viewerVideoSourceIdentity("scene", null)).toBe("scene:live");
+    expect(viewerVideoSourceIdentity("scene", null)).toBe("scene:live");
+    expect(viewerVideoSourceIdentity("post", "blob:post-a")).not.toBe(
+      viewerVideoSourceIdentity("post", "blob:post-b")
+    );
   });
 });
 

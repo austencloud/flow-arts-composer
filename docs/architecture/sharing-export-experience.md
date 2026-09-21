@@ -74,6 +74,34 @@ follow the links for their complete context.
 
 ## Product decisions
 
+### September 20 continuation: three destinations
+
+The approved next iteration keeps three top-level intentions: **Download a file**,
+**Share a link**, and **Publish socially**. These are distinct tasks within the
+existing sharing owner, not three new delivery implementations. The current view
+supplies the recognizable subject before a person chooses a destination.
+
+- Download opens with the artifact implied by the viewer. Video and card are
+  file choices inside that task. Resolution, frame rate, repeats, opener image,
+  and card presentation belong here; captions and account connections do not.
+- Share a link explains the recipient's experience and offers a single Copy link
+  action. Sending through Flow Arts Composer hands off to the existing viewer
+  send mode without rendering a file.
+- Publish socially owns post caption, account review, and the post composition
+  entry. An unavailable integration remains unavailable. Opening this task does
+  not upload media, connect an account, or publish anything.
+
+Direct Export still enters Download immediately. The three intentions must not
+become a compulsory extra chooser for an action whose destination is already
+known. A roomy desktop uses preview and settings together; a narrow screen
+stacks them. Width and height both determine when disclosure is useful.
+
+The continuation also identified two state requirements: a canceled or failed
+3D scene take must return to a usable download task, and a download invalidated
+by source/settings changes must explicitly invite a retry rather than silently
+discard its promised delivery. Tunnel and 3D previews must come from their live
+source, never from an unrelated 2D animation.
+
 ### Entry context determines the initial task
 
 | Entry                | Initial presentation                                                           | Primary result                                                               |
@@ -244,3 +272,188 @@ first actions, uncertainty about the payload/destination, wrong turns, completio
 and cancellation recovery. Compare against the previous experience. Browser tests
 can establish functionality and geometry; they cannot establish that no human
 will ever hesitate. Record real user evidence separately from design assumptions.
+
+### September 20 implementation evidence
+
+The three-destination implementation was exercised against the public sequence
+viewer and a development-only host for the production video exporter. The latter
+is `/test/post-share-sheet?real-video&artifact=video&open`; it loads a real public
+16-step sequence and uses `SequenceModalExporter`, rather than a simulated blob.
+It prevents short-link creation in that mode. Keep it development-only.
+
+- One Download action rendered an 18-second playable MP4 at 720p/30 fps and
+  initiated the browser download after blob hydration. Browser download events
+  confirmed completion of a 1,727,804-byte file. Changing resolution marked it
+  stale. Cancellation and an injected renderer failure restored usable controls;
+  retry completed a real download.
+- The actual viewer's Export Animation entered Download directly without capture.
+  Copy link produced inline `Link copied` after one activation. Tunnel and 3D
+  sharing used captures of their mounted sources. Account requirements remained
+  visible before file preparation; testing did not create an account.
+- Unprepared and completed download layouts were checked at all seven CSS
+  viewport tiers above. No horizontal overflow was measured. Desktop tiers
+  from 1440x900 through 3840x2160 needed no internal scrolling. The small phone
+  fit its unexpanded controls; expanded controls and short landscape used one
+  content scroll region while retaining the primary action. Reflow was checked
+  at 960x540 CSS pixels (the effective space of 1920x1080 at 200%); this was
+  viewport emulation, not a claim of a native browser zoom test. Reduced-motion
+  emulation reached the same controls with effectively zero transition duration.
+- Sixteen focused tests passed across `video-download-intent.test.ts`,
+  `viewer-shell-share-state.test.ts`, and
+  `export-coordinator-scene-take-lifecycle.test.ts`.
+- Independent review found and closed three lifecycle hazards: resuming the
+  sheet during asynchronous 3D recipe persistence, treating a newly rendered
+  output URL as a changed input, and hiding composition when direct publishing
+  is unavailable. Live render output must never invalidate its own request.
+  Only precomposed Post Studio files use their existing URL as source identity.
+
+No social post, message to a real recipient, account connection, phone upload,
+or completed 3D recipe save was performed as verification. The delayed 3D save
+and cancel race is covered by a controlled regression test. These checks establish
+behavior and layout, not uncoached user-task success or subjective satisfaction.
+
+### September 20 card preview correction
+
+Austen's subsequent card screenshot exposed a gap in the preceding verification:
+the desktop video layout passed, but the card still inherited the video's
+384-pixel stage cap. `object-fit: contain` preserved the card's proportions by
+shrinking it inside a much wider box. Card settings also started collapsed at
+every viewport size; only video settings had automatic desktop expansion.
+
+The download card now uses its intrinsic image ratio and the full preview-column
+width. Exceptionally tall cards are contained by the space remaining in the
+viewport after the sheet header, toolbar, padding, and download dock. Do not
+reintroduce a fixed video-height limit or a percentage-of-screen limit for cards.
+At least 900 CSS pixels wide and 760 high, card settings appear directly beside
+the preview. Narrow or short windows retain the disclosure. Use CSS viewport
+dimensions, since a physical 4K monitor may present a smaller scaled viewport.
+
+There are separate contributors to first-image latency:
+
+- The header renderer previously waited for the complete glyph library before
+  drawing a single word. Its word-scoped path now uses the existing glyph cache
+  and tokenizer to prepare only the actual header symbols, including Greek and
+  dashed letters. Later words must still load their missing symbols. Full-library
+  preload remains available to worker setup and background warming.
+- QR generation can wait for canonical cells in both themes and a short link
+  before the final PNG is returned. This is a readiness contract for the person
+  scanning the printed card. Do not silently remove it to make a timing claim.
+  The prepared QR cache already avoids that work on a repeat request.
+
+A cold development preview was observed still preparing after 16 seconds; that
+run did not have phase instrumentation, so its delay cannot be assigned wholly
+to either cause. A subsequent instrumented warm 16-step render completed its
+composition in 335 ms, with cell drawing finished at 314 ms. This is diagnostic
+evidence, not a cold-render speed guarantee. Temporary instrumentation was removed.
+
+Verification covered card previews at all seven viewport tiers, wide and tall
+column layouts, manual phone disclosure, and automatic desktop expansion. At
+3840x2160 the 16-step card used the full 640-pixel inner preview width with no
+content scrollbar. At 1920x1080 the final content region measured identical
+client and scroll heights; short windows used the existing single scrolling
+body and fixed download dock. Reflow at 960x540 and reduced-motion disclosure
+were also checked. Nineteen focused glyph/header tests passed, including later
+words and worker-seeded bitmap caches, which must not access browser-only loaders.
+
+### September 21 QR reuse and measured image preparation
+
+The existing QR bake was not enough to guarantee export reuse. The card exporter
+uses 240-pixel cells with a 214-pixel QR slot, while prepared SVGs were baked at
+200 pixels. Size participates in the prepared-artwork key, so export could miss
+a perfectly usable vector image. Sequence QR generation now requests and
+prepares the canonical 200-pixel SVG; each canvas draws it at its actual slot size.
+The existing keys remain valid. Content, rendering revision, props, theme, style,
+icon, and link destination still invalidate the corresponding preparation.
+URL-only QR generation retains its requested dimensions.
+
+Matching requests without an abort signal share in-flight preparation. Requests
+with cancellation retain their own work and stop before further preparation or
+short-code creation. A rejected preparation is not retained as a reusable result.
+
+`CardExportTrace` records local, request-scoped timing through the existing
+Sharer, SequenceRenderer, ImageComposer, and QR generator. It is enabled in local
+development; production diagnostics can be enabled with `profileCard=1` in the
+page URL. Console entries begin with `[Card export timing]`. Start entries show
+the active stage during a stall; the final JSON report includes wall-clock total,
+phase timings, cache outcome, step count, and output bytes. It records no sequence
+text, links, cache keys, or account data and sends no telemetry. Nested spans may
+overlap: use the report's total, never the sum of phase durations. A swallowed QR
+failure is flagged as `qrFailed` rather than appearing to be a successful QR.
+
+Ownership search covered timing, profiling, measurements, and concurrency. The
+existing boot profiler measures app startup and the animation export tracker
+estimates video encoding; neither owns card preparation. The new trace owns only
+one diagnostic request. The existing canonical cell warmer remains the owner of
+scan readiness, including its bounded foreground scheduling; no second image
+renderer or cloud cache was introduced.
+
+The actual 16-step card in `/test/post-share-sheet?card&open&profileCard=1`
+reproduced a **29,046 ms** creation wait with a prepared-QR miss. Drawing its 17
+pictograph cells took **273 ms**, fonts **27 ms**, and PNG encoding **49 ms**.
+Dark and light scan readiness consumed **11,396 ms** and **16,691 ms** respectively.
+SVG generation itself took **15 ms**. After a page reload with that prepared QR
+available, the complete card took **298 ms**, including a **2.9 ms** prepared lookup.
+The latter is a reuse result, not a first-ever sequence speed guarantee.
+
+A read-only network experiment checked the same 34 published scan assets with
+`no-store` requests: serial reads took **8,367 ms**, and four concurrent reads took
+**1,818 ms**, with every request succeeding. This measures asset checks, not an
+entire cold export; request order and network conditions can affect the result.
+The recorded payload totals varied slightly between passes, so this is not a
+byte-identical throughput benchmark. The evidence supports two bounded changes:
+foreground QR preparation checks existing public assets before rendering and
+uploading them, and processes up to four cells at a time. Background callers keep
+their serial behavior. A truly missing object still has to be prepared and
+successfully uploaded before its QR is ready. Genuine missing objects may now
+produce a 404 during that foreground lookup; this is an expected cache miss.
+
+The implemented foreground warmer was then exercised directly against those
+published cells after resetting only the task browser's canonical-cell readiness
+caches. It verified all **34 cells in 2,128 ms**, with **34 remote hits and zero
+render/upload fallbacks**. This demonstrates reuse from a browser without local
+proof. It does not measure generating genuinely new, unpublished cells.
+
+Raw timing evidence is retained in
+[`card-export-timing-2026-09-21.json`](../research/card-export-timing-2026-09-21.json).
+These are local Chromium/Vite measurements on one real published sequence. They
+identify the observed bottleneck; they do not establish a universal latency bound.
+
+Focused verification passed 57 tests covering canonical QR reuse, concurrent
+requests, cancellation, foreground limits, background serial behavior, failed
+publication, library warm compatibility, card-cache invalidation, card settings,
+and trace isolation. The final rendered card was inspected in the browser with
+the reused QR present. Layout and output settings were not changed by this work.
+
+### September 21 stale card during sequence changes
+
+Austen reported that generating another sequence and reopening Download card
+showed the previous card for four or five seconds. This was a preview lifecycle
+defect, separate from QR preparation latency. The shared card-preview state kept
+its previous URL and downloadable blob until the replacement render completed.
+Its loading state also treated any retained URL as ready.
+
+The actual Create → Generate → Share → Download card flow reproduced this with
+two generated sequences. Holding the second real render at the Sharer boundary
+left the first image visible under the second sequence's heading; Share card
+and Send to phone also remained available. This check used the agent browser's
+local settings with QR disabled to isolate preview ownership from network work.
+
+A prepared preview belongs to its sequence content and complete render settings.
+When those inputs change, the old image and file must stop being exposed
+immediately, before the replacement request completes. A late result from an
+obsolete request must never become the current preview or downloadable file.
+Reopening an unchanged card may still reuse matching prepared artwork.
+
+The fix extends `createCardPreviewState`, shared by the download sheet and Post
+Studio. It snapshots the requested sequence, gates all exposed artifact data on
+the current content/settings identity, and checks that identity again when an
+asynchronous render completes. Reset retires pending results as well as the
+displayed artifact. Prepared QR and card-blob caches retain their existing owners.
+
+Browser verification repeated the actual Generate flow with held real card
+results. The replacement showed preparation with zero old preview images and
+no old-file handoff actions after more than eight seconds. An obsolete result
+released before the current result did not appear; another obsolete result
+released afterward did not replace the current image. Closing and reopening the
+unchanged card reused the same preview URL without another render request.
+These checks prove preview ownership, not reduced image-generation latency.

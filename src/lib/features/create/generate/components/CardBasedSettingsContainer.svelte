@@ -5,10 +5,20 @@ Delegates ALL logic to services (SRP compliant)
 <script lang="ts">
   import { buildCardDescriptors } from "$lib/features/create/generate/shared/services/card-configurator";
   import { getLOOPParameterProvider } from "$lib/features/create/generate/shared/get-loop-parameter-provider";
-  import { onMount, getContext, type ComponentProps } from "svelte";
+  import {
+    onMount,
+    getContext,
+    type ComponentProps,
+    type Snippet,
+  } from "svelte";
   import { flip } from "svelte/animate";
   import { motionDuration, popIn } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
+  import { claimedViewTransitionName } from "$lib/shared/transitions/claimed-view-transition-name";
+  import {
+    generateCardMorphName,
+    morphGenerateCard,
+  } from "../shared/services/generate-card-morph";
   import type {
     PanelCoordinationState,
     StartEndOptions,
@@ -61,12 +71,13 @@ Delegates ALL logic to services (SRP compliant)
   import GenerateButtonCard from "./cards/GenerateButtonCard.svelte";
   import ConsolidatedLOOPCard from "./cards/ConsolidatedLOOPCard.svelte";
   import CustomizeCard from "./cards/CustomizeCard.svelte";
+  import TnDCard from "./cards/TnDCard.svelte";
   import WordInputCard from "./cards/WordInputCard.svelte";
   import PresetCard from "./cards/PresetCard.svelte";
   import type { FavoriteState } from "../state/favorite-state.svelte";
-  import type { HandRelationship } from "$lib/shared/create/domain/hand-relationship";
+  import type { TnDSelection } from "$lib/shared/create/domain/hand-relationship";
   import type {
-    CommunityFavorite,
+    CommunitySetup,
     SavedGeneratorSetup,
   } from "../domain/models/favorite-config";
 
@@ -91,6 +102,7 @@ Delegates ALL logic to services (SRP compliant)
     isDesktopLayout = false,
     onOpenWordInput,
     favoriteState,
+    expandedCard,
   } = $props<{
     config: UIGenerationConfig;
     isFreeformMode: boolean;
@@ -107,6 +119,9 @@ Delegates ALL logic to services (SRP compliant)
     isDesktopLayout?: boolean;
     onOpenWordInput?: () => void;
     favoriteState: FavoriteState;
+    /** The grown card, rendered inside the grid stage. GeneratePanel supplies
+     *  ExpandedCardStage here so the panels keep their host's props. */
+    expandedCard?: Snippet;
   }>();
 
   // Get panel coordination state from context (for LOOP expanded overlay)
@@ -501,16 +516,16 @@ Delegates ALL logic to services (SRP compliant)
     updateConfig({ motionTypeFilter: v === "mixed" ? null : v });
   }
 
-  function handleHandRelationshipChange(v: HandRelationship) {
-    updateConfig({ handRelationship: v });
+  function handleHandRelationshipChange(value: TnDSelection) {
+    updateConfig({ handRelationship: value });
   }
 
-  function handleHandRelationshipInvertedChange(v: boolean) {
-    updateConfig({ handRelationshipInverted: v });
+  function handlePropRelationshipChange(value: TnDSelection) {
+    updateConfig({ propRelationship: value });
   }
 
-  function handleMatchHandTurnsChange(v: boolean) {
-    updateConfig({ matchHandTurns: v });
+  function handleMatchHandTurnsChange(value: boolean) {
+    updateConfig({ matchHandTurns: value });
   }
 
   // LOOP toggle handler
@@ -544,9 +559,9 @@ Delegates ALL logic to services (SRP compliant)
     placementsResetTrigger++;
   }
 
-  // Preset: open drawer via panel state (drawer rendered in GeneratePanel)
+  // Preset: open through the card morph (the stage renders from panel state).
   function handleOpenPresetDrawer() {
-    panelState.openPresetDrawer();
+    morphGenerateCard("preset", () => panelState.openPresetDrawer());
   }
 
   // Build cards using service - reactive to all dependencies
@@ -588,7 +603,7 @@ Delegates ALL logic to services (SRP compliant)
         handleHandPathModeChange,
         handleMotionTypeFilterChange,
         handleHandRelationshipChange,
-        handleHandRelationshipInvertedChange,
+        handlePropRelationshipChange,
         handleMatchHandTurnsChange,
         handleDurationTemplateSelect,
         handleLoopToggle,
@@ -628,10 +643,11 @@ Delegates ALL logic to services (SRP compliant)
           }
           if (source?.kind === "community") {
             return (
-              favoriteState.communityFavorites.find(
-                (favorite: CommunityFavorite) =>
-                  favorite.userId === source.userId
-              )?.displayName ?? "Browse"
+              favoriteState.communitySetups.find(
+                (setup: CommunitySetup) =>
+                  setup.userId === source.userId &&
+                  setup.setupId === source.setupId
+              )?.name ?? "Community setup"
             );
           }
           return favoriteState.setups.length > 0
@@ -699,6 +715,10 @@ Delegates ALL logic to services (SRP compliant)
           class="card-wrapper"
           data-card-id={card.id}
           style:grid-column="span {card.gridColumnSpan}"
+          use:claimedViewTransitionName={{
+            name: generateCardMorphName(card.id),
+            enabled: panelState.openGenerateCard !== card.id,
+          }}
           animate:flip={{
             duration: motionDuration(DURATION.emphasis),
             easing: quintOut,
@@ -743,6 +763,8 @@ Delegates ALL logic to services (SRP compliant)
               color={cardColors.customize.color}
               shadowColor={cardColors.customize.shadowColor}
             />
+          {:else if card.id === "tnd"}
+            <TnDCard {...card.props as ComponentProps<typeof TnDCard>} />
           {:else if card.id === "loop"}
             <ConsolidatedLOOPCard
               {...card.props as ComponentProps<typeof ConsolidatedLOOPCard>}
@@ -760,6 +782,14 @@ Delegates ALL logic to services (SRP compliant)
           {/if}
         </div>
       {/each}
+
+      <!-- The grown card is an absolutely positioned child of the grid, not of
+           the stage around it: the grid is centered and capped per breakpoint,
+           so this is the only box whose edges are the cards' footprint. Out of
+           flow, so it takes no track and stays outside the flip above. -->
+      {#if expandedCard}
+        {@render expandedCard()}
+      {/if}
     </div>
   </div>
 </div>
@@ -879,15 +909,7 @@ Delegates ALL logic to services (SRP compliant)
     }
 
     .card-settings-container:not([data-desktop-layout="true"])
-      .card-grid[data-level="1"] {
-      grid-template-rows:
-        var(--compact-level-row)
-        minmax(var(--min-touch-target), 0.9fr)
-        minmax(var(--min-touch-target), 0.9fr)
-        minmax(64px, 1.2fr);
-      grid-auto-rows: unset;
-    }
-
+      .card-grid[data-level="1"],
     .card-settings-container:not([data-desktop-layout="true"])
       .card-grid[data-level="2"],
     .card-settings-container:not([data-desktop-layout="true"])
@@ -949,6 +971,7 @@ Delegates ALL logic to services (SRP compliant)
   }
 
   .card-grid {
+    position: relative; /* Containing block for the grown card */
     display: grid;
     flex: 1 1 auto;
     width: 100%;
@@ -979,10 +1002,11 @@ Delegates ALL logic to services (SRP compliant)
        instead, which eases the whole box between the two measured layouts. */
   }
 
-  /* Level 2 and 3 add a fourth row. Generate is the primary action, so it stays
-     at least as tall as the compact Level control instead of becoming the
-     shallowest row when the panel is tight. */
+  /* Every level has four rows since the TnD card. Generate is the primary
+     action, so it stays at least as tall as the compact Level control instead
+     of becoming the shallowest row when the panel is tight. */
   @container settings-grid (width >= 630px) and (height < 560px) {
+    .card-grid[data-level="1"],
     .card-grid[data-level="2"],
     .card-grid[data-level="3"] {
       grid-template-rows:
@@ -996,6 +1020,8 @@ Delegates ALL logic to services (SRP compliant)
 
   @container settings-grid (width < 630px) and (height < 560px) {
     .card-settings-container:not([data-desktop-layout="true"])
+      .card-grid[data-level="1"],
+    .card-settings-container:not([data-desktop-layout="true"])
       .card-grid[data-level="2"],
     .card-settings-container:not([data-desktop-layout="true"])
       .card-grid[data-level="3"] {
@@ -1008,6 +1034,8 @@ Delegates ALL logic to services (SRP compliant)
       grid-auto-rows: unset;
     }
 
+    .card-settings-container[data-desktop-layout="true"]
+      .card-grid[data-level="1"],
     .card-settings-container[data-desktop-layout="true"]
       .card-grid[data-level="2"],
     .card-settings-container[data-desktop-layout="true"]

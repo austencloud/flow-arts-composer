@@ -14,12 +14,16 @@ import { PRINT_QR_RENDER_SIZE } from "@tka/render-composition";
 
 interface ComposerCardRenderOptions {
   hideBadge?: boolean;
+  hideHandColorKey?: boolean;
 }
 
 /** Renders the Composer side of a fixture with the same public card options. */
 export async function renderComposerCard(
   testCase: CardParityCase,
-  { hideBadge = false }: ComposerCardRenderOptions = {}
+  {
+    hideBadge = false,
+    hideHandColorKey = false,
+  }: ComposerCardRenderOptions = {}
 ): Promise<HTMLCanvasElement | OffscreenCanvas> {
   const opts = testCase.options;
   registerLoopDisplayResolver(resolveLoopDisplay);
@@ -72,6 +76,7 @@ export async function renderComposerCard(
     loopType: opts.loopComponents ? LOOPType.ROTATED : undefined,
     showLoopGlyph: !!opts.loopComponents,
     visibilityOverrides: {
+      showHandColorKey: !hideHandColorKey,
       darkMode: opts.darkMode ?? false,
       printMode: true,
       showGrid: true,

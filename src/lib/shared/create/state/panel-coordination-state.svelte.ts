@@ -22,7 +22,6 @@
  */
 
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { HandRelationship } from "$lib/shared/create/domain/hand-relationship";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
 import type { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
@@ -180,17 +179,13 @@ export interface CustomizeOverlayProps {
   onConstraintPresetChange: (v: "smooth" | "mixed" | "choppy") => void;
   onHandPathModeChange: (v: "smooth" | "mixed" | "choppy") => void;
   onMotionTypeFilterChange: (v: "no-dash" | "mixed" | "prefer-dash") => void;
-  /** Absent on surfaces that do not offer the row (public Composer demo). */
-  handRelationship?: HandRelationship;
-  handRelationshipInverted?: boolean;
-  onHandRelationshipChange?: ((v: HandRelationship) => void) | null;
-  onHandRelationshipInvertedChange?: ((v: boolean) => void) | null;
-  matchHandTurns?: boolean;
-  onMatchHandTurnsChange?: ((v: boolean) => void) | null;
   onStartEndChange: ((options: StartEndOptions) => void) | null;
   /** "Reset all" — every persisted generation setting back to first-run. */
   onResetAll: (() => void) | null;
 }
+
+/** The generate bento cards that grow into their workspace. */
+export type GenerateCardPanelId = "customize" | "loop" | "preset" | "tnd";
 
 export interface PanelCoordinationState {
   // Choose Start picker state. The handler receives the tapped tile index:
@@ -323,6 +318,15 @@ export interface PanelCoordinationState {
   // Derived: Any Panel Open (for UI hiding coordination)
   get isAnyPanelOpen(): boolean;
 
+  /**
+   * Which generate bento card is grown into its workspace, or null. At most
+   * one of the four is open because every open call runs
+   * closeAllPanels first. ExpandedCardStage renders from this.
+   */
+  get openGenerateCard(): GenerateCardPanelId | null;
+  /** Close whichever generate card is open. No-op when none is. */
+  closeGenerateCard(): void;
+
   // Preset Drawer State
   get isPresetDrawerOpen(): boolean;
   openPresetDrawer(): void;
@@ -334,6 +338,11 @@ export interface PanelCoordinationState {
 
   openCustomizeOverlay(props: CustomizeOverlayProps): void;
   closeCustomizeOverlay(): void;
+
+  // TnD panel state (Hands, Props, Match turns)
+  get isTnDPanelOpen(): boolean;
+  openTnDPanel(): void;
+  closeTnDPanel(): void;
 
   // Duration Preview Mode State (for live preview in duration pattern drawer)
   get isDurationPreviewMode(): boolean;
@@ -542,6 +551,9 @@ export function createPanelCoordinationState(): PanelCoordinationState {
   // Preset drawer state
   let isPresetDrawerOpen = $state(false);
 
+  // TnD panel state
+  let isTnDPanelOpen = $state(false);
+
   // Customize overlay state (Style + Rhythm + Start/End in one overlay)
   let isCustomizeOverlayOpen = $state(false);
   let customizeOverlayProps = $state<CustomizeOverlayProps | null>(null);
@@ -618,6 +630,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
     forgetCustomizeOverlay();
 
     isPresetDrawerOpen = false;
+    isTnDPanelOpen = false;
 
     isSequenceViewerOpen = false;
     optionAudition = null;
@@ -642,6 +655,27 @@ export function createPanelCoordinationState(): PanelCoordinationState {
     workspacePlaybackSourceRevision = null;
     if (restoreStepEditorAfterPlayback) isStepEditorPanelOpen = true;
     restoreStepEditorAfterPlayback = false;
+  }
+
+  function closeCustomizeOverlay() {
+    isCustomizeOverlayOpen = false;
+    customizeOverlayProps = null;
+    forgetCustomizeOverlay();
+  }
+
+  function closeLOOPPanel() {
+    isLOOPPanelOpen = false;
+    loopCurrentType = null;
+    loopSelectedComponents = null;
+    loopOnChange = null;
+  }
+
+  function closePresetDrawer() {
+    isPresetDrawerOpen = false;
+  }
+
+  function closeTnDPanel() {
+    isTnDPanelOpen = false;
   }
 
   return {
@@ -990,12 +1024,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
       loopSelectedComponents = components;
     },
 
-    closeLOOPPanel() {
-      isLOOPPanelOpen = false;
-      loopCurrentType = null;
-      loopSelectedComponents = null;
-      loopOnChange = null;
-    },
+    closeLOOPPanel,
 
     // Customize Overlay Getters
     get isCustomizeOverlayOpen() {
@@ -1016,11 +1045,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
       rememberCustomizeOverlayOpen(screen);
     },
 
-    closeCustomizeOverlay() {
-      isCustomizeOverlayOpen = false;
-      customizeOverlayProps = null;
-      forgetCustomizeOverlay();
-    },
+    closeCustomizeOverlay,
 
     // Preset Drawer Getters
     get isPresetDrawerOpen() {
@@ -1032,9 +1057,19 @@ export function createPanelCoordinationState(): PanelCoordinationState {
       isPresetDrawerOpen = true;
     },
 
-    closePresetDrawer() {
-      isPresetDrawerOpen = false;
+    closePresetDrawer,
+
+    // TnD Panel Getters
+    get isTnDPanelOpen() {
+      return isTnDPanelOpen;
     },
+
+    openTnDPanel() {
+      closeAllPanels();
+      isTnDPanelOpen = true;
+    },
+
+    closeTnDPanel,
 
     // Sequence Viewer Getters
     get isSequenceViewerOpen() {
@@ -1068,8 +1103,29 @@ export function createPanelCoordinationState(): PanelCoordinationState {
         isLOOPPanelOpen ||
         isCustomizeOverlayOpen ||
         isPresetDrawerOpen ||
+        isTnDPanelOpen ||
         isSequenceViewerOpen
       );
+    },
+
+    get openGenerateCard(): GenerateCardPanelId | null {
+      if (isCustomizeOverlayOpen) return "customize";
+      if (isLOOPPanelOpen) return "loop";
+      if (isPresetDrawerOpen) return "preset";
+      if (isTnDPanelOpen) return "tnd";
+      return null;
+    },
+
+    closeGenerateCard() {
+      if (isCustomizeOverlayOpen) {
+        closeCustomizeOverlay();
+      } else if (isLOOPPanelOpen) {
+        closeLOOPPanel();
+      } else if (isPresetDrawerOpen) {
+        closePresetDrawer();
+      } else if (isTnDPanelOpen) {
+        closeTnDPanel();
+      }
     },
 
     // Duration Preview Mode

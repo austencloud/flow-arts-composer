@@ -91,7 +91,10 @@
     registerScanSessionCleanup,
   } from "$lib/shared/analytics/scan-analytics";
   import { createViewerShellLayoutState } from "../state/viewer-shell-layout-state.svelte";
-  import { createViewerShellShareState } from "../state/viewer-shell-share-state.svelte";
+  import {
+    createViewerShellShareState,
+    viewerVideoSourceIdentity,
+  } from "../state/viewer-shell-share-state.svelte";
   import {
     createViewerShellInteractionState,
     type ViewerShellExportOverrides,
@@ -636,13 +639,10 @@
    * could neither see nor stop. Step aside for the take, come back with it.
    */
   let awaitingSceneTake = $state(false);
-  /** previewBlobUrl at step-aside, so an older export can't count as the take. */
-  let takeBaselineUrl = $state<string | null>(null);
 
   $effect(() => {
     if (!ctx.isRecording3D || !share.postSheetOpen) return;
     awaitingSceneTake = true;
-    takeBaselineUrl = ctx.previewBlobUrl;
     share.suspendForSceneTake();
   });
 
@@ -654,9 +654,9 @@
       awaitingSceneTake = false;
       return;
     }
-    if (ctx.isRecording3D || ctx.isExporting) return;
-    const url = ctx.previewBlobUrl;
-    if (!url || url === takeBaselineUrl) return;
+    // The scene's render-choice card is still using the stage. Keep the sheet
+    // aside until it is answered, then recover even when no video was made.
+    if (ctx.sceneTakeActive || ctx.isExporting || ctx.pendingFilmRender) return;
     awaitingSceneTake = false;
     share.resumeAfterSceneTake();
   });
@@ -713,8 +713,7 @@
   const cardInspectorVisible = $derived(
     !share.sendModeActive &&
       (layout.isImageExportActive ||
-        (studioUsesSideInspector &&
-          studioSurfaces.inspectorContent === "card"))
+        (studioUsesSideInspector && studioSurfaces.inspectorContent === "card"))
   );
   const performanceInspectorVisible = $derived(
     !share.sendModeActive &&
@@ -1082,7 +1081,7 @@
                         rendererHandleRequired={ctx.renderMode === "3d" &&
                           (layout.isRecordSceneActive ||
                             ctx.countdownValue > 0 ||
-                            ctx.isRecording3D ||
+                            ctx.sceneTakeActive ||
                             ctx.isExporting ||
                             !!ctx.pendingFilmRender ||
                             interactions.videoBusy)}
@@ -1572,9 +1571,11 @@
     preserveSession={share.preserveSession}
     onSessionResumed={share.markSessionResumed}
     videoLabel={artShareVideo.label}
-    captureAnimationPreview={share.artShare || share.postShare
-      ? () => ""
-      : ctx.captureAnimationPreview}
+    captureAnimationPreview={share.artShare
+      ? share.artShare.capturePreview
+      : share.postShare
+        ? () => ""
+        : ctx.captureAnimationPreview}
     captureVideoOpener={share.artShare ||
     share.postShare ||
     share.sceneShare ||
@@ -1582,7 +1583,7 @@
       ? undefined
       : ctx.captureVideoOpener}
     is3DExport={ctx.renderMode === "3d"}
-    videoSourceKey={`${ctx.effectiveSequence?.id ?? ctx.effectiveSequence?.word ?? "unsaved"}:${share.getShareUrl()}`}
+    videoSourceKey={`${ctx.effectiveSequence?.id ?? ctx.effectiveSequence?.word ?? "unsaved"}:${share.getShareUrl()}:${viewerVideoSourceIdentity(share.videoSourceKind, share.postShare ? postStudioVideoUrl : null)}:${ctx.renderMode}`}
     initialArtifact={share.artShare ||
     share.sceneShare ||
     (share.postShare && !!postStudioVideoUrl) ||

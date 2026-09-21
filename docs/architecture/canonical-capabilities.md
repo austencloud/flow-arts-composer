@@ -47,7 +47,10 @@ the rasterized step-0 cell for card fronts, exports and thumbnails through
 `drawHandColorKey`, and the MCP `StandaloneRenderer` draws it for
 `generate_pictograph` and the sequence image start cell, so every surface
 bakes in the same key.
-The prop timing-and-direction glyph (`propTndGlyph` visibility key, `showPropTnD` render flag, `Prop TnD` chip, default off) reuses the same element art as the hand glyph but sits in the top-right slot. `derivePropElementalTypeForStep` in `shape-matrix/domain/prop-relationship.ts` classifies one step's props (null for a start position, float, or unequal turn rates); `getElementalGlyphBox` in `elemental-glyph-layout.ts` owns the slot geometry; `ElementalGlyph` (`corner="top-right"`) draws it in the DOM, `drawPropElementalGlyph` in `canvas-2d-glyph-renderer.ts` draws it for card fronts and exports, and the MCP `StandaloneRenderer` draws it through `renderPropTnDGlyph` under the `showPropTnD` option. The 2D animation canvas draws it in `GlyphOverlay` behind the animation engine's own `propElementalGlyph` setting ("Prop TnD" in both animation display panels).
+The prop timing-and-direction glyph (`propTndGlyph` visibility key, `showPropTnD` render flag, `Prop TnD` chip, default off) reuses the same element art as the hand glyph but sits in the top-right slot. `derivePropElementalTypeForStep` in `shape-matrix/domain/prop-relationship.ts` classifies one step's props (null for a start position, float, or unequal turn rates) by delegating the bearings, the phase rule and the timing bands to the engine's `classifyPropRelationship` in `packages/sequence-engine/src/generation/prop-relationship.ts`, so the generator's prop constraint and every glyph agree; `getElementalGlyphBox` in `elemental-glyph-layout.ts` owns the slot geometry; `ElementalGlyph` (`corner="top-right"`) draws it in the DOM, `drawPropElementalGlyph` in `canvas-2d-glyph-renderer.ts` draws it for card fronts and exports, and the MCP `StandaloneRenderer` draws it through `renderPropTnDGlyph` under the `showPropTnD` option. The 2D animation canvas draws it in `GlyphOverlay` behind the animation engine's own `propElementalGlyph` setting ("Prop TnD" in both animation display panels).
+
+Timing and direction as a generator setting lives on the Generate bento's TnD card. `shared/create/domain/hand-relationship.ts` owns the vocabulary (`TnDSelection` is `"free"` or a `VtgMode`, `describeTnDSelection`, `handModeToEngine`, `propModeToEngine`); `features/choreo-card/components/TnDModeGrid.svelte` is the one 3x2 mode picker (the Fuse picker wraps it); `features/create/generate/components/cards/TnDPanel.svelte` and `TnDCard.svelte` are the workspace and the card; `tndLoopCompatibility` and `handModesBlockedByLoop` in `shared/create/services/loop-type-utils.ts` own the cross-disabling between a hand mode and a LOOP. Searches: hand relationship, prop relationship, TnD card, together same, quarter opposite, match turns. Do not add a second mode grid or a second compatibility table.
+
 `ChoreoCard` resolves its palette once for cells and `CardGridLayout` mandalas.
 Animation frame parameters carry the same hand pair independently of effect
 styling, and `mandala-guide-painter.ts` derives overlap from its actual path
@@ -111,6 +114,15 @@ Its `reparentToInspector` flight opts into `createLayoutMotion` with
 `resize: "layout"`: the row changes width without scaling its controls. Other
 surface flights retain transform scaling. Searches: playback continuity,
 scrubber replacement, transport resizing.
+
+A card growing into its workspace (the Generate bento's Customize, LOOP,
+Setups and TnD cards) routes through `startMorph` from
+`shared/transitions/results-morph.ts` with names stamped by
+`claimedViewTransitionName`; the feature seam is
+`features/create/generate/shared/services/generate-card-morph.ts` and the
+host is `ExpandedCardStage.svelte`. Searches: card morph, expand card, grow
+card, bento expand, settings panel morph. Do not FLIP a card into a panel by
+hand; claim the name on both ends and wrap the state change.
 
 Shared-surface stacking extends `reparentToInspector`: control flights use the
 controls layer and may wait for the canvas to dock, using viewer-local

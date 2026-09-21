@@ -16,6 +16,7 @@ import {
   documentId,
   getDoc,
   getDocs,
+  orderBy,
   query,
   setDoc,
   updateDoc,
@@ -1908,53 +1909,208 @@ describe("messaging attachments", () => {
   });
 });
 
-describe("generator setups: private saved configs", () => {
+describe("generator setups: public saved configs", () => {
   const setupPath = (uid: string, id = "s1") =>
     `users/${uid}/generatorSetups/${id}`;
+  const READER_UID = "setup-reader-1";
 
-  it("lets an owner create, read, update, and delete a setup", async () => {
+  function readerCtx() {
+    return testEnv.authenticatedContext(READER_UID, {
+      firebase: { sign_in_provider: "password" },
+    });
+  }
+
+  async function seedSetup(
+    uid: string,
+    id: string,
+    data: Record<string, unknown>
+  ) {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), setupPath(uid, id)), data);
+    });
+  }
+
+  const PUBLIC_SETUP = { name: "Setup 1", config: { level: 1 }, isPublic: true };
+
+  it("lets a full owner create, read, update, and delete a public setup", async () => {
     const db = fullCtx().firestore(SDK_SETTINGS);
-    await assertSucceeds(
-      setDoc(doc(db, setupPath(FULL_UID)), {
-        name: "Setup 1",
-        config: { level: 1 },
-      })
-    );
+    await assertSucceeds(setDoc(doc(db, setupPath(FULL_UID)), PUBLIC_SETUP));
     await assertSucceeds(getDoc(doc(db, setupPath(FULL_UID))));
     await assertSucceeds(
-      updateDoc(doc(db, setupPath(FULL_UID)), {
-        name: "Renamed",
-      })
+      updateDoc(doc(db, setupPath(FULL_UID)), { name: "Renamed" })
     );
     await assertSucceeds(deleteDoc(doc(db, setupPath(FULL_UID))));
   });
 
-  it("lets an anonymous owner use private setups", async () => {
+  it("denies an anonymous owner creating a setup", async () => {
     const db = anonCtx().firestore(SDK_SETTINGS);
-    await assertSucceeds(
-      setDoc(doc(db, setupPath(ANON_UID)), {
-        name: "Setup 1",
-        config: {},
-      })
-    );
-    await assertSucceeds(getDoc(doc(db, setupPath(ANON_UID))));
+    await assertFails(setDoc(doc(db, setupPath(ANON_UID)), PUBLIC_SETUP));
   });
 
-  it("denies another authenticated user read and write access", async () => {
-    await testEnv.withSecurityRulesDisabled(async (context) => {
-      await setDoc(doc(context.firestore(), setupPath(FULL_UID)), {
+  it("denies creating or updating a setup that is not public", async () => {
+    const db = fullCtx().firestore(SDK_SETTINGS);
+    await assertFails(
+      setDoc(doc(db, setupPath(FULL_UID, "no-flag")), {
         name: "Setup 1",
         config: {},
-      });
-    });
-    const other = anonCtx().firestore(SDK_SETTINGS);
-
-    await assertFails(getDoc(doc(other, setupPath(FULL_UID))));
-    await assertFails(
-      setDoc(doc(other, setupPath(FULL_UID)), {
-        name: "Changed",
       })
     );
+    await assertFails(
+      setDoc(doc(db, setupPath(FULL_UID, "false-flag")), {
+        name: "Setup 1",
+        config: {},
+        isPublic: false,
+      })
+    );
+    await seedSetup(FULL_UID, "s1", PUBLIC_SETUP);
+    await assertFails(
+      updateDoc(doc(db, setupPath(FULL_UID)), { isPublic: false })
+    );
+  });
+
+  it("lets anyone read a public setup and run the public collection-group query", async () => {
+    await seedSetup(FULL_UID, "s1", PUBLIC_SETUP);
+    const reader = readerCtx().firestore(SDK_SETTINGS);
+    const signedOut = testEnv.unauthenticatedContext().firestore(SDK_SETTINGS);
+
+    await assertSucceeds(getDoc(doc(reader, setupPath(FULL_UID))));
+    await assertSucceeds(getDoc(doc(signedOut, setupPath(FULL_UID))));
+    await assertSucceeds(
+      getDocs(
+        query(
+          collectionGroup(reader, "generatorSetups"),
+          where("isPublic", "==", true),
+          orderBy("createdAt", "desc")
+        )
+      )
+    );
+  });
+
+  it("denies a bare collection-group query and reads of a non-public doc", async () => {
+    await seedSetup(FULL_UID, "legacy", { name: "Legacy", config: {} });
+    const reader = readerCtx().firestore(SDK_SETTINGS);
+
+    await assertFails(getDocs(collectionGroup(reader, "generatorSetups")));
+    await assertFails(getDoc(doc(reader, setupPath(FULL_UID, "legacy"))));
+  });
+
+  it("denies another user writing a setup", async () => {
+    await seedSetup(FULL_UID, "s1", PUBLIC_SETUP);
+    const reader = readerCtx().firestore(SDK_SETTINGS);
+
+    await assertFails(
+      setDoc(doc(reader, setupPath(FULL_UID, "intruder")), PUBLIC_SETUP)
+    );
+    await assertFails(
+      updateDoc(doc(reader, setupPath(FULL_UID)), { name: "Changed" })
+    );
+    await assertFails(deleteDoc(doc(reader, setupPath(FULL_UID))));
+  });
+
+  it("lets the owner merge isPublic onto a legacy doc", async () => {
+    await seedSetup(FULL_UID, "legacy", { name: "Legacy", config: {} });
+    const db = fullCtx().firestore(SDK_SETTINGS);
+
+    await assertSucceeds(
+      setDoc(
+        doc(db, setupPath(FULL_UID, "legacy")),
+        { name: "Renamed", isPublic: true },
+        { merge: true }
+      )
+    );
+  });
+
+  it("lets the owner rename merge on an existing public doc without resending config", async () => {
+    await seedSetup(FULL_UID, "s1", PUBLIC_SETUP);
+    const db = fullCtx().firestore(SDK_SETTINGS);
+
+    await assertSucceeds(
+      setDoc(
+        doc(db, setupPath(FULL_UID)),
+        { name: "Renamed", isPublic: true },
+        { merge: true }
+      )
+    );
+  });
+
+  it("denies creating a setup with a non-boolean isPublic, a bad name, or a non-map config", async () => {
+    const db = fullCtx().firestore(SDK_SETTINGS);
+
+    await assertFails(
+      setDoc(doc(db, setupPath(FULL_UID, "bad-isPublic-number")), {
+        name: "Setup",
+        config: {},
+        isPublic: 1,
+      })
+    );
+    await assertFails(
+      setDoc(doc(db, setupPath(FULL_UID, "bad-isPublic-string")), {
+        name: "Setup",
+        config: {},
+        isPublic: "true",
+      })
+    );
+    await assertFails(
+      setDoc(doc(db, setupPath(FULL_UID, "bad-name-number")), {
+        name: 42,
+        config: {},
+        isPublic: true,
+      })
+    );
+    await assertFails(
+      setDoc(doc(db, setupPath(FULL_UID, "bad-name-too-long")), {
+        name: "a".repeat(61),
+        config: {},
+        isPublic: true,
+      })
+    );
+    await assertFails(
+      setDoc(doc(db, setupPath(FULL_UID, "bad-config-string")), {
+        name: "Setup",
+        config: "nope",
+        isPublic: true,
+      })
+    );
+    await assertSucceeds(
+      setDoc(doc(db, setupPath(FULL_UID, "max-length-name")), {
+        name: "a".repeat(60),
+        config: {},
+        isPublic: true,
+      })
+    );
+  });
+
+  it("lets a non-owner list public setups filtered by isPublic, denies an unfiltered list", async () => {
+    await seedSetup(FULL_UID, "s1", PUBLIC_SETUP);
+    const reader = readerCtx().firestore(SDK_SETTINGS);
+
+    await assertSucceeds(
+      getDocs(
+        query(
+          collection(reader, `users/${FULL_UID}/generatorSetups`),
+          where("isPublic", "==", true)
+        )
+      )
+    );
+    await assertFails(
+      getDocs(collection(reader, `users/${FULL_UID}/generatorSetups`))
+    );
+  });
+
+  it("lets a signed-out client run the public collection-group query and get a public setup", async () => {
+    await seedSetup(FULL_UID, "s1", PUBLIC_SETUP);
+    const signedOut = testEnv.unauthenticatedContext().firestore(SDK_SETTINGS);
+
+    await assertSucceeds(
+      getDocs(
+        query(
+          collectionGroup(signedOut, "generatorSetups"),
+          where("isPublic", "==", true),
+          orderBy("createdAt", "desc")
+        )
+      )
+    );
+    await assertSucceeds(getDoc(doc(signedOut, setupPath(FULL_UID))));
   });
 
   it("lets an admin preview but not mutate another user's setups", async () => {
@@ -1962,39 +2118,14 @@ describe("generator setups: private saved configs", () => {
       await setDoc(doc(context.firestore(), `users/${ADMIN_UID}`), {
         role: "admin",
       });
-      await setDoc(doc(context.firestore(), setupPath(FULL_UID)), {
-        name: "Setup 1",
-        config: {},
-      });
     });
+    await seedSetup(FULL_UID, "legacy", { name: "Legacy", config: {} });
     const admin = adminCtx().firestore(SDK_SETTINGS);
 
-    await assertSucceeds(getDoc(doc(admin, setupPath(FULL_UID))));
+    await assertSucceeds(getDoc(doc(admin, setupPath(FULL_UID, "legacy"))));
     await assertFails(
-      updateDoc(doc(admin, setupPath(FULL_UID)), {
-        name: "Changed",
-      })
+      updateDoc(doc(admin, setupPath(FULL_UID, "legacy")), { name: "Changed" })
     );
-  });
-
-  it("denies signed-out setup reads without changing public Favorite reads", async () => {
-    await testEnv.withSecurityRulesDisabled(async (context) => {
-      await setDoc(doc(context.firestore(), `users/${FULL_UID}`), {
-        publicProfileVersion: 2,
-        favoriteConfig: {
-          sourceSetupId: "s1",
-          config: {},
-        },
-      });
-      await setDoc(doc(context.firestore(), setupPath(FULL_UID)), {
-        name: "Setup 1",
-        config: {},
-      });
-    });
-    const signedOut = testEnv.unauthenticatedContext().firestore(SDK_SETTINGS);
-
-    await assertFails(getDoc(doc(signedOut, setupPath(FULL_UID))));
-    await assertSucceeds(getDoc(doc(signedOut, `users/${FULL_UID}`)));
   });
 });
 
