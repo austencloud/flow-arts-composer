@@ -1,13 +1,5 @@
 <script lang="ts">
-  /**
-   * Hero background cycle: the page swaps its own chrome background so a
-   * visitor sees the app retune its interface colors instead of reading a
-   * claim that it can. Auto-advances only while the row is on screen, the tab
-   * is visible, and motion is welcome; the first visitor tap takes over and
-   * the cycle stops for the rest of this mount.
-   */
   import { onDestroy } from "svelte";
-  import { MediaQuery } from "svelte/reactivity";
   import type { BackgroundType } from "@austencloud/backgrounds";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import { ANIMATED_BACKGROUNDS } from "$lib/shared/settings/utils/public-page-backgrounds";
@@ -24,65 +16,23 @@
     };
   });
 
-  const CYCLE_MS = 9000;
-
-  const reduceMotion = new MediaQuery("(prefers-reduced-motion: reduce)");
-
-  let root = $state<HTMLDivElement | null>(null);
-  let onScreen = $state(false);
-  let tabVisible = $state(true);
-  let visitorChose = $state(false);
-
   const active = $derived(marketingBackground.type as string);
 
   function select(value: string): void {
-    visitorChose = true;
     marketingBackground.set(value as BackgroundType);
   }
-
-  $effect(() => {
-    const node = root;
-    if (!node) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        onScreen = entries.some((entry) => entry.isIntersecting);
-      },
-      { threshold: 0.2 }
-    );
-    observer.observe(node);
-    return () => observer.disconnect();
-  });
-
-  $effect(() => {
-    const read = () => (tabVisible = document.visibilityState === "visible");
-    read();
-    document.addEventListener("visibilitychange", read);
-    return () => document.removeEventListener("visibilitychange", read);
-  });
-
-  $effect(() => {
-    if (visitorChose || reduceMotion.current || !onScreen || !tabVisible) return;
-
-    const timer = setInterval(() => {
-      const index = ORDER.indexOf(marketingBackground.type as string);
-      const next = ORDER[(index + 1) % ORDER.length];
-      marketingBackground.set(next as BackgroundType);
-    }, CYCLE_MS);
-
-    return () => clearInterval(timer);
-  });
 
   onDestroy(() => marketingBackground.reset());
 </script>
 
-<div class="bg-cycle" bind:this={root}>
+<div class="bg-cycle">
+  <span class="theme-label">Theme:</span>
   <div class="bg-cycle-row">
     <SegmentedControl
       {options}
       value={active}
       onchange={select}
-      ariaLabel="Page background"
+      ariaLabel="Theme"
       color="accent"
       size="sm"
     >
@@ -95,14 +45,21 @@
       {/snippet}
     </SegmentedControl>
   </div>
-  <p class="bg-cycle-note">
-    Pick a background. The whole interface follows it.
-  </p>
 </div>
 
 <style>
   .bg-cycle {
-    margin-top: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm, 8px);
+    margin-top: var(--spacing-md, 16px);
+  }
+
+  .theme-label {
+    color: var(--theme-text-secondary);
+    font-size: var(--font-size-sm);
   }
 
   /* The four segments hold one fixed row, so switching the active option can
@@ -111,6 +68,7 @@
     display: flex;
     justify-content: center;
     min-height: max(var(--min-touch-target, 48px), 48px);
+    max-width: 100%;
   }
 
   /* Four short labels size to their labels, not to the hero column. The
@@ -127,20 +85,5 @@
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
-  }
-
-  .bg-cycle-note {
-    margin: 0.6rem 0 0;
-    max-inline-size: var(--measure-note);
-    margin-inline: auto;
-    text-align: center;
-    color: oklch(0.74 0.018 270);
-    font-size: var(--font-size-min, 0.875rem);
-  }
-
-  @media (max-width: 48rem) {
-    .bg-cycle-note {
-      font-size: var(--font-size-compact, 0.75rem);
-    }
   }
 </style>

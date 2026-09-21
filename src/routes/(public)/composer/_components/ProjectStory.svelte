@@ -1,3 +1,7 @@
+<script lang="ts">
+  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+</script>
+
 <section
   id="austen-cloud"
   class="project-story"
@@ -17,17 +21,12 @@
       Austen Cloud created The Kinetic Alphabet in 2022 and develops Flow Arts
       Composer.
     </p>
-    <p>
-      The project received a 2024–25 Seed Fund grant from Fund the Flow Arts.
-    </p>
-    <p class="creator-links">
-      <a
-        href="https://fundtheflowarts.org/announcing-2024-25-seed-fund-grant-recipients/"
-        rel="noopener noreferrer">Seed Fund announcement</a
+    <div class="creator-links">
+      <PanelButton href="mailto:support@tkaflowarts.com"
+        >Email Austen</PanelButton
       >
-      <a href="mailto:support@tkaflowarts.com">Email support</a>
-      <a href="/history">Notation history</a>
-    </p>
+      <PanelButton href="/history">Notation history</PanelButton>
+    </div>
   </div>
 </section>
 
@@ -77,19 +76,6 @@
     flex-wrap: wrap;
     gap: 0.85rem 1.25rem;
     margin-top: 1.5rem;
-  }
-
-  a {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--min-touch-target, 44px);
-    color: var(--theme-text, #fff);
-    font-size: var(--font-size-min, 0.875rem);
-  }
-
-  a:focus-visible {
-    outline: 2px solid var(--theme-accent, oklch(0.72 0.16 285));
-    outline-offset: 4px;
   }
 
   @media (max-width: 48rem) {

@@ -3,6 +3,10 @@
   import { MediaQuery } from "svelte/reactivity";
   import { activateWhenNear } from "$lib/actions/activate-when-near";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
+  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
+  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
   import {
     trackCtaClick,
     trackDemoInteraction,
@@ -21,7 +25,6 @@
   import { isConstrainedConnection } from "$lib/shared/platform/network-conditions";
   import { runAfterNamedRouteMorphIdle } from "$lib/shared/transitions/named-route-morph-state.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import ComposerGenerateDemo from "./ComposerGenerateDemo.svelte";
   import ComposerBackgroundCycle from "./ComposerBackgroundCycle.svelte";
   import ProjectStory from "./ProjectStory.svelte";
   import "$lib/shared/landing/styles/editorial-measure.css";
@@ -68,7 +71,18 @@
       latchedHeroSequence = first;
     }
   });
-  const carriedSequence = $derived(visitorSequence ?? latchedHeroSequence);
+  const carriedSequence = $derived(
+    visitorSequence ?? latchedHeroSequence ?? FALLBACK_DEMO
+  );
+  let selectedProp = $state<PropType>(PropType.STAFF);
+  let propPickerOpen = $state(false);
+  let propPickerLoaded = $state(false);
+  const propName = $derived(getPropTypeDisplayInfo(selectedProp).label);
+
+  function openPropPicker(): void {
+    propPickerLoaded = true;
+    propPickerOpen = true;
+  }
   const reduceMotion = new MediaQuery("(prefers-reduced-motion: reduce)");
   let constructActive = $state(false);
   let outputsActive = $state(false);
@@ -130,6 +144,34 @@
     });
   }
 </script>
+
+{#snippet propControl()}
+  <PanelButton
+    onclick={openPropPicker}
+    ariaLabel={`Change props. Current: ${propName}`}
+  >
+    <PropCompositionPreview
+      propType={selectedProp}
+      size={28}
+      useSavedOverrides={false}
+    />
+    <span>Props: {propName}</span>
+    <i class="fas fa-chevron-down" aria-hidden="true"></i>
+  </PanelButton>
+{/snippet}
+
+<LazyMount
+  loader={() =>
+    import("$lib/shared/settings/components/tabs/prop-type/PropSelectionSheet.svelte")}
+  active={propPickerLoaded}
+  props={{
+    isOpen: propPickerOpen,
+    selectedPropType: selectedProp,
+    title: "Props",
+    onSelect: (prop: PropType) => (selectedProp = prop),
+    onOpenChange: (open: boolean) => (propPickerOpen = open),
+  }}
+/>
 
 {#snippet tunnelPlaceholder()}
   <!-- Same two-column band the tunnel renders into (stage left, controls
@@ -243,8 +285,8 @@
         element={heroAct.element}
         onReroll={handleReroll}
         rerolling={heroAct.rerolling}
-        leftPropType={heroAct.propType}
-        rightPropType={heroAct.propType}
+        leftPropType={selectedProp}
+        rightPropType={selectedProp}
         onSequenceBoundary={heroAct.offerSequenceBoundary}
         note="a real sequence playing in Composer"
         trailSettingsOverride={HERO_TRAIL_PRESET}
@@ -255,8 +297,7 @@
         cornerToggle={true}
         loadPriority="immediate"
       />
-      <!-- The page background is the app's own. Cycling it here is the one
-           place the page shows that the whole interface retunes to it. -->
+      <div class="hero-props">{@render propControl()}</div>
       <ComposerBackgroundCycle />
     </div>
 
@@ -265,7 +306,7 @@
     <a
       class="scroll-cue"
       href="#making-title"
-      aria-label="Scroll to Build the sequence"
+      aria-label="Scroll to Try Composer"
     >
       <span>Scroll</span>
       <i class="fas fa-chevron-down" aria-hidden="true"></i>
@@ -274,57 +315,39 @@
 
   <section class="notation-bridge" aria-labelledby="notation-title">
     <h2 id="notation-title">The Kinetic Alphabet</h2>
-    <div>
-      <p>
-        TKA is a pictographic notation system for flow arts choreography. Each
-        picture records a movement step; together they record a sequence.
-      </p>
-      <p>
-        A video shows a performance. The notation gives you a form you can
-        return to, change, compare, and pass along.
-      </p>
-      <p class="notation-links">
-        <a href="/faq">Common questions</a><a href="/history"
-          >Notation history</a
-        ><a href="/guide">Read the Guide</a>
-      </p>
+    <p>
+      TKA is a pictographic notation system for flow arts choreography. Each
+      picture records a movement step. Arrange the pictures into a sequence,
+      then play it in Composer.
+    </p>
+    <div class="notation-links">
+      <PanelButton href="/guide">Read the Guide</PanelButton>
+      <PanelButton href="/history">Notation history</PanelButton>
+      <PanelButton href="/faq">Common questions</PanelButton>
     </div>
   </section>
 
-  <!-- One heading, then the thing itself. An earlier version explained Build and
-       Generate in a two-column definition list directly above the two demos that
-       ARE build and generate — narration sitting on top of the working control it
-       narrates. The demos carry their own labels; the page does not need to
-       introduce them twice. -->
   <section class="making" aria-labelledby="making-title">
-    <h2 id="making-title" class="making-title">Build the sequence.</h2>
-    <p class="section-intro">
-      Start with a position. Composer keeps the next move workable.
-    </p>
+    <h2 id="making-title" class="making-title">Try Composer</h2>
 
     <div class="making-demos" use:activateConstruct>
-      <div class="construct-surface">
-        <LazyMount
-          loader={() => import("../_sections/ConstructSection.svelte")}
-          active={constructActive}
-          props={{
-            presentationMode: "guided-build",
-            onVisitorComposed: carryVisitorSequence,
-          }}
-          error={constructLoadError}
-          debugName="composer guided construct"
-        >
-          {#snippet placeholder()}
-            {@render constructPlaceholder()}
-          {/snippet}
-        </LazyMount>
-      </div>
-      <div class="generator-surface">
-        <ComposerGenerateDemo
-          sequence={carriedSequence}
-          onGenerated={carryVisitorSequence}
-        />
-      </div>
+      <LazyMount
+        loader={() => import("./ComposerPractice.svelte")}
+        active={constructActive}
+        props={{
+          sequence: carriedSequence,
+          onSequenceChange: carryVisitorSequence,
+          leftPropType: selectedProp,
+          rightPropType: selectedProp,
+          propControl,
+        }}
+        error={constructLoadError}
+        debugName="composer guided construct"
+      >
+        {#snippet placeholder()}
+          {@render constructPlaceholder()}
+        {/snippet}
+      </LazyMount>
     </div>
   </section>
 
@@ -334,11 +357,7 @@
     use:activateOutputs
   >
     <div class="changing-intro">
-      <h2 id="changing-title">See what you made.</h2>
-      <p>
-        The sequence you build above carries into the tunnel and the 3D player
-        below. Its notation comes with it.
-      </p>
+      <h2 id="changing-title">See it in motion</h2>
     </div>
 
     <!-- The tunnel gets its own full-width band: the square stage on the left,
@@ -351,7 +370,13 @@
         <LazyMount
           loader={() => import("./ComposerTunnelDemo.svelte")}
           active={outputsActive && !!carriedSequence}
-          props={{ sequence: carriedSequence, layout: "band" }}
+          props={{
+            sequence: carriedSequence,
+            layout: "band",
+            leftPropType: selectedProp,
+            rightPropType: selectedProp,
+            propControl,
+          }}
           error={tunnelLoadError}
           debugName="composer tunnel"
         >
@@ -388,16 +413,6 @@
     <p class="small-screen-3d-note">
       The 3D viewer needs WebGL2 and a screen at least 600px in both directions.
     </p>
-
-    <aside class="scope-copy" aria-labelledby="scope-title">
-      <h3 id="scope-title">Built around double staves.</h3>
-      <p>
-        TKA also applies to paired static props such as fans, clubs, and
-        buugeng. Tosses, contact rolling, grip changes, and momentum-based props
-        are outside that core scope. A prop visual does not mean every sequence
-        can be performed with it.
-      </p>
-    </aside>
   </section>
 
   <section class="keeping" aria-labelledby="keeping-title" use:activateShelf>
@@ -406,8 +421,7 @@
       <div class="keeping-lede">
         <p>
           Guests keep three sequences on this device. A full account keeps a
-          cloud library and collections. The gallery below is everyone's public
-          work, with the same filters the app uses.
+          cloud library and collections. Browse other people's sequences below.
         </p>
         <div class="keeping-actions">
           <a href="/browse" class="primary-action">Browse the Gallery</a>
@@ -635,6 +649,12 @@
     --hero-demo-max-width: min(100%, 45rem, 47svh);
   }
 
+  .hero-props {
+    display: flex;
+    justify-content: center;
+    margin-top: var(--spacing-md, 16px);
+  }
+
   .opening-player::before {
     content: "";
     position: absolute;
@@ -677,24 +697,17 @@
   .keeping-shelf {
     container-type: inline-size;
     min-width: 0;
+    --composer-gallery-height: 88rem;
   }
 
   .making {
-    padding-block: clamp(3rem, 7vw, 112px);
+    padding-block: clamp(2rem, 4vw, 64px);
     border-top: 1px solid var(--theme-stroke, oklch(0.45 0.03 270 / 0.2));
   }
 
   .making-title {
     scroll-margin-top: calc(var(--marketing-header-h, 64px) + 1rem);
-    max-width: 18ch;
-  }
-
-  .section-intro {
-    max-inline-size: var(--measure-prose);
-    margin: 1.2rem 0 0;
-    color: oklch(0.76 0.014 270);
-    font-size: var(--font-size-base, 1rem);
-    line-height: 1.65;
+    text-align: center;
   }
 
   /* px ceiling — see the note on h1. Was 5rem, which the root ramp turned into
@@ -706,11 +719,6 @@
     line-height: 1;
   }
 
-  /* Body copy is capped in characters, not in rem, and is NOT centered: it
-     stays on the same left grid line as the heading above it. A narrow block
-     centered inside a wide section is the stranded-ribbon failure, which is a
-     different bug from this one, not its cure. */
-  .changing-intro > p,
   .keeping-lede > p {
     max-inline-size: var(--measure-prose);
     margin: 1.25rem 0 0;
@@ -719,23 +727,11 @@
     line-height: 1.7;
   }
 
-  .generator-surface {
-    container-type: inline-size;
-    min-width: 0;
-  }
-
-  /* The two demos are separated by a gap, not by a tracked-out uppercase rule
-     saying "or draw another". Each panel already says what it is — one has a
-     picker and a play button, the other a Generate button. */
   .making-demos {
     display: grid;
     gap: clamp(1.5rem, 3vw, 3rem);
     min-width: 0;
-    margin-top: clamp(2rem, 4vw, 4rem);
-  }
-
-  .construct-surface {
-    min-width: 0;
+    margin-top: var(--spacing-lg, 24px);
   }
 
   .construct-placeholder {
@@ -773,6 +769,7 @@
 
   .changing-intro {
     min-width: 0;
+    text-align: center;
   }
 
   .tunnel-band {
@@ -892,12 +889,10 @@
   }
 
   .notation-bridge {
-    display: grid;
-    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
-    gap: clamp(2rem, 5vw, 80px);
-    max-width: min(100%, 82rem);
+    max-width: min(100%, 56rem);
     margin: 0 auto;
-    padding: clamp(4rem, 6vw, 96px) 0;
+    padding: clamp(2rem, 4vw, 64px) 0;
+    text-align: center;
   }
 
   .notation-bridge h2 {
@@ -913,56 +908,19 @@
   }
 
   .notation-bridge p {
-    max-width: 54ch;
-    margin: 0.85rem 0 0;
+    max-width: 60ch;
+    margin: 1.25rem auto 0;
     color: var(--theme-text-secondary, oklch(0.74 0.018 270));
     font-size: clamp(1rem, 0.97rem + 0.18vw, 1.12rem);
     line-height: 1.65;
-  }
-
-  .notation-bridge p:first-child {
-    margin-top: 0;
   }
 
   .notation-bridge .notation-links {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.85rem 1.25rem;
+    justify-content: center;
+    gap: var(--spacing-sm, 8px);
     margin-top: 1.4rem;
-  }
-
-  .notation-links a {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--min-touch-target, 44px);
-    color: var(--theme-text, #fff);
-    font-size: var(--font-size-min, 0.875rem);
-  }
-
-  .notation-links a:focus-visible {
-    outline: 2px solid var(--theme-accent, oklch(0.72 0.16 285));
-    outline-offset: 4px;
-  }
-
-  .changing .scope-copy {
-    max-width: min(100%, 52rem);
-    margin: clamp(2rem, 4vw, 3.5rem) auto 0;
-  }
-
-  .changing .scope-copy h3 {
-    margin: 0 0 0.8rem;
-    font-family: "Fraunces", Georgia, serif;
-    font-size: clamp(1.5rem, 1.2rem + 1vw, 2.25rem);
-    font-weight: 650;
-    letter-spacing: -0.04em;
-    line-height: 1;
-  }
-
-  .changing .scope-copy p {
-    margin: 0;
-    color: var(--theme-text-secondary, oklch(0.74 0.018 270));
-    font-size: clamp(1rem, 0.97rem + 0.18vw, 1.12rem);
-    line-height: 1.65;
   }
 
   /* Same bounded frame ComposerGalleryDemo renders into, so the LazyMount
@@ -970,7 +928,7 @@
   .gallery-placeholder,
   .gallery-error {
     box-sizing: border-box;
-    height: min(80vh, 56rem);
+    height: var(--composer-gallery-height, 80rem);
     padding: clamp(0.75rem, 1.7vw, 1.4rem);
     border: 1px solid var(--theme-stroke, oklch(0.45 0.03 270 / 0.2));
     border-radius: clamp(1rem, 1.5vw, 1.5rem);
@@ -1010,10 +968,6 @@
       min-height: calc(100dvh - var(--marketing-header-h, 64px) - 1.25rem);
       gap: 2.5rem;
       padding-top: 1.5rem;
-    }
-
-    .notation-bridge {
-      grid-template-columns: 1fr;
     }
 
     .opening-copy {
@@ -1064,6 +1018,10 @@
   /* Phones: the player is the whole point of this screen, so it keeps its
      width and the hero grows past the fold instead of shrinking it. */
   @media (max-width: 48rem) {
+    .keeping-shelf {
+      --composer-gallery-height: 56rem;
+    }
+
     .opening {
       min-height: 0;
     }

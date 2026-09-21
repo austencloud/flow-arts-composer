@@ -17,7 +17,7 @@
 -->
 <script lang="ts">
   import { MediaQuery } from "svelte/reactivity";
-  import { onDestroy } from "svelte";
+  import { onDestroy, type Snippet } from "svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import TunnelArtView from "$lib/shared/sequence-viewer/tunnel/TunnelArtView.svelte";
   import { TunnelViewController } from "$lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte";
@@ -49,7 +49,16 @@
   let {
     sequence: sourceSequence,
     layout = "square",
-  }: { sequence: SequenceData; layout?: "square" | "band" } = $props();
+    leftPropType = "staff",
+    rightPropType = "staff",
+    propControl,
+  }: {
+    sequence: SequenceData;
+    layout?: "square" | "band";
+    leftPropType?: string;
+    rightPropType?: string;
+    propControl?: Snippet;
+  } = $props();
 
   const reduceMotion = new MediaQuery("(prefers-reduced-motion: reduce)");
   let playing = $state(!reduceMotion.current);
@@ -163,8 +172,8 @@
         {playback}
         {controller}
         bpm={60}
-        leftPropType="staff"
-        rightPropType="staff"
+        {leftPropType}
+        {rightPropType}
         bind:playing
       />
     </div>
@@ -197,7 +206,7 @@
     </div>
     <div class="band-controls">
       <h3 class="band-title">Tunnel</h3>
-      <p class="band-caption">The same movement, repeated around the ring.</p>
+      {@render propControl?.()}
       <div class="control-row">
         <span class="control-label">Performers</span>
         {@render performers()}
@@ -325,17 +334,16 @@
     flex-direction: column;
     gap: 0.75rem;
     max-width: 30rem;
+    width: 100%;
+  }
+  .band-controls > :global(.panel-btn) {
+    align-self: flex-start;
   }
   .band-title {
     margin: 0;
     font-size: var(--font-size-lg, 1.25rem);
     font-weight: 700;
     letter-spacing: 0.01em;
-  }
-  .band-caption {
-    margin: 0 0 0.5rem;
-    color: oklch(0.78 0.02 270);
-    line-height: 1.5;
   }
   /* Deterministic footprint: fixed label column and fixed row height, so the
      row never moves when the selected value changes (no-layout-shift). */
