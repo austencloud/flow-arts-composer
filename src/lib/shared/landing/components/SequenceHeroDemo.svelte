@@ -61,6 +61,7 @@
     tipEffectMap = undefined,
     externalBpm,
     showNotationStrip = false,
+    preserveNotationStrip = false,
     showWordHeader = false,
     showCaption = true,
     autoPlay = true,
@@ -114,6 +115,10 @@
         stage. The rail is lazy, compact, and reserves its full height at SSR;
         other SequenceHeroDemo hosts retain the original visible caption. */
     showNotationStrip?: boolean;
+    /** Keeps the notation rail available on short viewports. Most landing
+        heroes recover canvas height there; explanatory embeds can opt in when
+        the pictographs are part of the page's essential evidence. */
+    preserveNotationStrip?: boolean;
     /** Shows the shared animated word header while preserving the square
         canvas beneath it. The header is isolated from persisted app settings. */
     showWordHeader?: boolean;
@@ -156,7 +161,8 @@
       ? null
       : new MediaQuery("(width < 42rem) and (height >= 500px)");
   const shouldMountNotationRail = $derived(
-    showNotationStrip && !(hiddenNotationRail?.current ?? false)
+    showNotationStrip &&
+      (preserveNotationStrip || !(hiddenNotationRail?.current ?? false))
   );
   const notationOrientation = $derived(
     narrowNotationRail?.current ? "vertical" : "horizontal"
@@ -275,6 +281,7 @@
 <div
   class="hero-demo"
   class:with-notation-strip={showNotationStrip}
+  class:notation-strip-required={preserveNotationStrip}
   use:activatePlayerWhenNear
 >
   <figure class="demo-figure">
@@ -714,6 +721,22 @@
     .with-notation-strip .reroll-button {
       padding-inline: 0.75rem;
       font-size: var(--font-size-min, 0.875rem);
+    }
+  }
+
+  /* About uses the rail as the evidence for its definition, not a decorative
+     hero extra. Its opt-in keeps the pictographs available when a short screen
+     would otherwise hide them. */
+  @media (width >= 42rem) and (width < 105rem) and (height >= 500px) and (height < 44rem),
+    (height < 500px),
+    (width >= 105rem) and (height < 64rem) {
+    .notation-strip-required.with-notation-strip .notation-strip {
+      display: block;
+    }
+
+    .notation-strip-required.with-notation-strip .demo-stage.rail-attached {
+      border-bottom: 0;
+      border-radius: 18px 18px 0 0;
     }
   }
 
