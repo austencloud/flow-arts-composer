@@ -22,7 +22,7 @@ icons when enabled. Click opens the expanded overlay.
   } from "./loop-card-display";
   import { morphGenerateCard } from "../../shared/services/generate-card-morph";
   import type { ReflectionAxis } from "@tka/sequence-engine/loop";
-  import type { HandRelationship } from "$lib/shared/create/domain/hand-relationship";
+  import type { TnDSelection } from "$lib/shared/create/domain/hand-relationship";
 
   let {
     loopEnabled,
@@ -43,7 +43,7 @@ icons when enabled. Click opens the expanded overlay.
     inversionInterval?: 2 | 4;
     inversionMode?: "expand" | "overlay";
     reflectionAxis?: ReflectionAxis;
-    handRelationship?: HandRelationship;
+    handRelationship?: TnDSelection;
     onLOOPTypeChange: (loopType: LOOPType) => void;
     cardIndex?: number;
     headerFontSize?: string;

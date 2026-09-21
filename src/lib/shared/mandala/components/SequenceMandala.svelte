@@ -130,6 +130,8 @@
 		palette?: MandalaPalette;
 		/** Override stroke width (default 2.5) */
 		strokeWidth?: number;
+		/** Use the canvas renderer so a portable card matches its PNG exactly. */
+		exportRaster?: boolean;
 		/** Per-path gradient colors for gradient color mode */
 		gradient?: {
 			left: [string, string];
@@ -166,6 +168,7 @@
 		palette: paletteOverride,
 		primaryPropColors,
 		strokeWidth,
+		exportRaster = false,
 		gradient,
 		tipEnds,
 	}: Props = $props();
@@ -393,7 +396,11 @@
 
 	const calculatedPaths = $derived.by((): MandalaPaths | null => {
 		if (!calcReady || !sequence?.steps) return null;
-		const overrides = tipDx === undefined ? animatedTipOverrides : { dx: effectiveDx, dy: 0 };
+		// Card PNGs use the canonical path calculator with prop identities but no
+		// viewer tip offsets. Preserve that geometry for the live export canvas.
+		const overrides = exportRaster
+			? (tipDx === undefined ? undefined : { dx: effectiveDx, dy: 0 })
+			: (tipDx === undefined ? animatedTipOverrides : { dx: effectiveDx, dy: 0 });
 		const morph = activeMorph;
 		if (morph) {
 			return calculateMandalaMorphed(
@@ -485,7 +492,7 @@
 	// Canvas while motion is live (undulation or shape-morph), SVG when fully
 	// static. `svgString` is lazy — it isn't read in the canvas branch, so the
 	// expensive SVG-string build is skipped entirely during animation.
-	const useCanvas = $derived(animate || activeMorph !== null || changeMorphActive);
+	const useCanvas = $derived(exportRaster || animate || activeMorph !== null || changeMorphActive);
 
 	const svgString = $derived.by((): string => {
 		if (useCanvas || !paths) return "";
@@ -545,19 +552,25 @@
 		ctx.clearRect(0, 0, device, device);
 		ctx.scale(ratio, ratio);
 
-		// Device-space glow blur that matches the SVG `#glow` feGaussianBlur, whose
-		// stdDeviation lives inside the scaled <g> (so its device size is
-		// stdDeviation × renderScale × ratio). Mirrors mandala-frame-renderer.
-		const renderExtent = resolveMandalaRenderExtent(p, opts);
-		const renderScale = logicalSize / 2 / (renderExtent * 1.05);
-
 		renderMandalaToCanvas(ctx, p, {
 			...opts,
 			size: logicalSize,
-			glow: {
-				blur: GLOW_STDDEV * renderScale * ratio,
-				bloomBlur: DEFAULT_OVERLAP_CONFIG.bloomBlur * renderScale * ratio,
-			},
+			// The card PNG's compositor uses the direct, crisp stroke renderer.
+			// Keep viewer glow for interactive/animated mandalas, but do not add a
+			// second raster treatment to the export snapshot.
+			...(exportRaster
+				? {}
+				: (() => {
+						// Device-space glow blur mirrors the SVG `#glow` filter.
+						const renderExtent = resolveMandalaRenderExtent(p, opts);
+						const renderScale = logicalSize / 2 / (renderExtent * 1.05);
+						return {
+							glow: {
+								blur: GLOW_STDDEV * renderScale * ratio,
+								bloomBlur: DEFAULT_OVERLAP_CONFIG.bloomBlur * renderScale * ratio,
+							},
+						};
+					})()),
 			offsetX: 0,
 			offsetY: 0,
 			maskScratch: scratch ?? undefined,

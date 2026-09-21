@@ -9,6 +9,18 @@ import type { SequenceSendSession } from "$lib/shared/inbox/state/send-sequence-
 type ViewerShareActionId = "share-sequence" | "send-sequence" | "copy-link";
 
 /**
+ * A render result is not an input to its own request: using its object URL here
+ * would make a completed live export look stale. Post Studio is different: its
+ * composed file exists before the sheet asks to deliver it.
+ */
+export function viewerVideoSourceIdentity(
+  sourceKind: string,
+  precomposedVideoUrl: string | null
+): string {
+  return `${sourceKind}:${precomposedVideoUrl ?? "live"}`;
+}
+
+/**
  * The art view a share is about. ArtPane owns both controllers, so it hands
  * them up here rather than rendering a sheet of its own — the shell already
  * hosts the one sheet every share entry point lands on.
@@ -17,6 +29,8 @@ export interface ArtShareTarget {
   artType: "mandala" | "tunnel";
   controller: TunnelViewController;
   mandalaController: MandalaViewerController;
+  /** A still from the mounted art stage, used only to identify the file being prepared. */
+  capturePreview: () => string;
 }
 
 interface ViewerShellShareInputs {
@@ -334,6 +348,12 @@ export function createViewerShellShareState(
     },
     get preserveSession() {
       return preserveSession;
+    },
+    get videoSourceKind() {
+      return (
+        artShare?.artType ??
+        (sceneShare ? "scene" : postShare ? "post" : "animation")
+      );
     },
     get sendSession() {
       return sendSession;

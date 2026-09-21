@@ -15,6 +15,7 @@
     active = false,
     disabled = false,
     compact = false,
+    title = null,
     ariaLabel,
     onpick,
   }: {
@@ -25,6 +26,8 @@
     active?: boolean;
     disabled?: boolean;
     compact?: boolean;
+    /** Tooltip, used by hosts that disable a chip and explain why. */
+    title?: string | null;
     ariaLabel: string;
     onpick: () => void;
   } = $props();
@@ -39,6 +42,7 @@
   aria-pressed={active}
   aria-label={ariaLabel}
   {disabled}
+  title={title ?? undefined}
   onclick={onpick}
 >
   {#if icon}
@@ -53,8 +57,8 @@
     <strong>{direction}</strong>
   </span>
   <!-- Colour alone did not answer "which one did I pick?" across six element
-       accents, several of them dark. The mark is always in the box and sits on
-       the corner, outside the content area, so choosing one moves nothing. -->
+       accents, several of them dark. The mark stays inside the selected box so
+       it cannot appear to belong to its neighbour. -->
   <span class="choice-check" aria-hidden="true">
     <i class="fas fa-check"></i>
   </span>
@@ -113,8 +117,8 @@
 
   .choice-check {
     position: absolute;
-    top: -0.35rem;
-    inset-inline-end: -0.35rem;
+    top: 0.4rem;
+    inset-inline-end: 0.4rem;
     display: grid;
     place-items: center;
     width: 1.2rem;
@@ -186,7 +190,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: color-mix(in srgb, var(--choice-accent) 80%, white);
+    color: color-mix(in srgb, var(--choice-accent) 65%, white);
     font-size: var(--choice-copy-size, var(--font-size-compact, 0.75rem));
     letter-spacing: 0.02em;
     transition: color var(--duration-fast, 150ms) ease;

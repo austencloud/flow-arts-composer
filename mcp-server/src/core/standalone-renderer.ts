@@ -9,6 +9,7 @@
  */
 
 import { Resvg } from "@resvg/resvg-js";
+import { createCanvas, loadImage } from "@napi-rs/canvas/node-canvas.js";
 import { readFileSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
@@ -34,8 +35,8 @@ import {
   calculateDashLocation,
   type DashLocationInput,
   calculateReversalPositions,
-  calculateHandColorKeyLayout,
-  HAND_COLOR_KEY,
+  drawHandColorKey,
+  renderHandColorKeySvg,
   applyColorToSvg,
   applyFanFrameColor,
   applyFanPaperContrast,
@@ -59,6 +60,7 @@ import {
   type PictographAdjustmentInput,
   type MotionAdjustmentInput,
 } from "./arrow-adjustment.js";
+import { ensureGelasioRegistered } from "./gelasio-fonts.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -421,10 +423,16 @@ export class StandaloneRenderer {
   ): Promise<Buffer> {
     const svg = await this.renderToSvg(input, {
       ...options,
+      // Canvas supplies the key below because Resvg cannot rasterize bundled WOFF2 text.
+      showHandColorKey: false,
       themeable: false,
       inline: false,
     });
-    return this.svgToPng(svg, options.size || 400);
+    const size = options.size || 400;
+    const png = this.svgToPng(svg, size);
+    return options.showHandColorKey
+      ? this.drawHandColorKeyOnPng(png, size, input, options)
+      : png;
   }
 
   /**
@@ -1865,9 +1873,6 @@ ${turnNumbersSvg}
     themeable: boolean = false,
     customColors?: HandColorPair | null
   ): string {
-    const layout = calculateHandColorKeyLayout(showLeft, showRight);
-    if (layout.entries.length === 0) return "";
-
     const textColor = this.resolveColor(
       "--dm-text-color",
       "#ffffff",
@@ -1875,19 +1880,45 @@ ${turnNumbersSvg}
       darkMode,
       themeable
     );
-    const parts = layout.entries.map((entry) => {
-      const fill = this.resolveMotionColor(
-        entry.hand,
-        darkMode,
-        themeable,
-        customColors
-      );
-      return (
-        `<circle cx="${entry.swatchX}" cy="${layout.centerY}" r="${layout.swatchRadius}" fill="${fill}"/>` +
-        `<text x="${entry.labelX}" y="${layout.baselineY}">${entry.label}</text>`
-      );
+    return renderHandColorKeySvg({
+      showLeft,
+      showRight,
+      centerX: VIEWBOX_SIZE / 2,
+      textColor,
+      colorForHand: (hand) =>
+        this.resolveMotionColor(hand, darkMode, themeable, customColors),
     });
-    return `<g class="hand-color-key" transform="translate(${VIEWBOX_SIZE / 2}, 0)" font-family="${HAND_COLOR_KEY.FONT_FAMILY}" font-size="${HAND_COLOR_KEY.FONT_SIZE}" font-weight="${HAND_COLOR_KEY.FONT_WEIGHT}" fill="${textColor}">${parts.join("")}</g>`;
+  }
+
+  /** Draw the complete key with bundled Gelasio after Resvg draws every other glyph. */
+  private async drawHandColorKeyOnPng(
+    png: Buffer,
+    size: number,
+    input: PictographInput,
+    options: RenderVisibilityOptions
+  ): Promise<Buffer> {
+    ensureGelasioRegistered();
+    const canvas = createCanvas(size, size);
+    const context = canvas.getContext("2d");
+    context.drawImage(await loadImage(png), 0, 0, size, size);
+
+    const scale = size / VIEWBOX_SIZE;
+    const darkMode = options.darkMode !== false;
+    drawHandColorKey(context, {
+      showLeft: (options.showLeftMotion ?? true) && !!input.leftMotion,
+      showRight: (options.showRightMotion ?? true) && !!input.rightMotion,
+      scale,
+      centerX: (VIEWBOX_SIZE / 2) * scale,
+      textColor: darkMode ? "#ffffff" : "#231f20",
+      colorForHand: (hand) =>
+        this.resolveMotionColor(
+          hand,
+          darkMode,
+          false,
+          options.primaryPropColors
+        ),
+    });
+    return canvas.toBuffer("image/png");
   }
 
   // ==========================================================================

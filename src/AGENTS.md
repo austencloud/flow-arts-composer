@@ -23,6 +23,9 @@ remain higher priority.
 - Inspect visual output only when the change affects appearance. New surfaces
   and responsive recomposition use the full viewport matrix; local visual fixes
   use the affected tiers and both state endpoints.
+- Use `.agents/skills/ui-bust/SKILL.md` for new surfaces, substantial restyles,
+  or aesthetic reviews. Establish the composition before coding and report
+  aesthetic readiness separately from functional verification.
 
 Task routes:
 

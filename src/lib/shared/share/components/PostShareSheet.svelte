@@ -30,6 +30,8 @@
   import { getShortCodeManager } from "$lib/shared/qr/get-short-code-manager";
   import { getCaptionPresetManager } from "$lib/shared/share/state/caption-presets.svelte";
   import { createCardPreviewState } from "$lib/shared/share/state/card-preview-state.svelte";
+  import LiveExportCard from "$lib/shared/share/components/LiveExportCard.svelte";
+  import { isCardLayoutAutomatic } from "$lib/shared/share/services/card-render-options";
   import { createPostShareDraftState } from "$lib/shared/share/state/post-share-draft-state.svelte";
   import ExportImagePanel from "$lib/shared/sequence-viewer/components/ExportImagePanel.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
@@ -57,9 +59,10 @@
   import { getUser } from "$lib/shared/auth/state/auth-state.svelte";
   import {
     planFileRequest,
-    shouldDeliverPendingVideo,
+    pendingVideoDownloadOutcome,
     videoDownloadSettingsKey,
   } from "$lib/shared/share/domain/video-download-intent";
+  import { pendingCardDownloadOutcome } from "$lib/shared/share/domain/card-download-intent";
   import {
     VIDEO_OPENER_OPTIONS,
     openerAddsHold,
@@ -239,7 +242,7 @@
   let presetsOpen = $state(false);
   /** Opening Share must not spend a render on a link or sequence handoff. */
   let filePreparationOpen = $state(false);
-  type ShareRoute = "home" | "download" | "publish";
+  type ShareRoute = "home" | "download" | "link" | "publish";
   let shareRoute = $state<ShareRoute>("home");
   let pendingDownload = $state(false);
   let pendingDownloadVersion = $state<number | null>(null);
@@ -253,6 +256,14 @@
   let videoSettingsOpen = $state(false);
   // A tall sheet has room to show the settings without a disclosure.
   const roomySheet = new MediaQuery("(min-height: 760px)");
+  // Keep phone downloads focused on the artifact; a roomy desktop can show the
+  // card controls without making people open a second layer.
+  const roomyCardSheet = new MediaQuery(
+    "(min-width: 900px) and (min-height: 760px)"
+  );
+  const cardSettingsExpanded = $derived(
+    cardSettingsOpen || roomyCardSheet.current
+  );
   const videoSettingsExpanded = $derived(
     videoSettingsOpen || roomySheet.current
   );
@@ -275,6 +286,12 @@
   let publishOpen = $state(false);
   let failedPreviewUrl = $state<string | null>(null);
   let cardRenderFailed = $state(false);
+  let liveCardAutoLayout = $state<ResolvedAutoLayout | null>(null);
+  let liveCardAutoLayoutKey = $state("");
+  let liveCardLayoutSourceRevision = $state<string | null>(null);
+  let liveCardReadyRevision = $state<string | null>(null);
+  let liveCardContentReadySourceRevision = $state<string | null>(null);
+  let pendingCardDownloadRevision = $state<string | null>(null);
 
   let statusMessage = $state("");
   let busyDestination = $state<HandoffDestinationId | null>(null);
@@ -301,12 +318,84 @@
     getEnabled: () =>
       isOpen && filePreparationOpen && shareDraft.artifact === "card",
     getDarkMode: () => exportOptions.imageDarkMode,
-    getResolvedAutoLayout: () => resolvedCardAutoLayout,
+    getResolvedAutoLayout: () => liveCardAutoLayout ?? resolvedCardAutoLayout,
     getCardPresentation: () => shareDraft.cardPresentation,
+    getRenderEnabled: () => {
+      // Post Studio and Publish prepare a PNG without mounting this sheet's
+      // live card. Their existing background render path must stay available.
+      if (shareRoute !== "download") return true;
+      const request = cardPreview.request;
+      if (!request || liveCardReadyRevision !== request.revision) return false;
+      return (
+        !isCardLayoutAutomatic(request.sequence.steps.length) ||
+        (liveCardAutoLayout !== null &&
+          liveCardLayoutSourceRevision === request.sourceRevision)
+      );
+    },
     onError: () => {
       cardRenderFailed = true;
       statusMessage = "Couldn't render the card";
     },
+  });
+
+  function resolveLiveCardAutoLayout(
+    layout: ResolvedAutoLayout | null,
+    _width: number,
+    _height: number
+  ): void {
+    const request = cardPreview.request;
+    if (!request || !layout) return;
+    const key = JSON.stringify(layout);
+    if (
+      liveCardLayoutSourceRevision === request.sourceRevision &&
+      liveCardAutoLayoutKey === key
+    )
+      return;
+    // The first Auto measurement completes the current choice; it is not a
+    // settings edit. Keep an immediate Download click attached through that
+    // initial settlement. A source/settings edit has already changed the
+    // request revision and therefore cannot carry an old intent forward.
+    const carryInitialDownload =
+      pendingCardDownloadRevision === request.revision &&
+      liveCardContentReadySourceRevision !== request.sourceRevision;
+    liveCardAutoLayout = layout;
+    liveCardAutoLayoutKey = key;
+    liveCardLayoutSourceRevision = request.sourceRevision;
+    if (carryInitialDownload) {
+      pendingCardDownloadRevision = cardPreview.request?.revision ?? null;
+    }
+    queueMicrotask(() => {
+      const current = cardPreview.request;
+      if (
+        current &&
+        liveCardContentReadySourceRevision === current.sourceRevision
+      )
+        liveCardReadyRevision = current.revision;
+    });
+  }
+
+  function markLiveCardReady(): void {
+    const request = cardPreview.request;
+    if (!request) return;
+    liveCardContentReadySourceRevision = request.sourceRevision;
+    liveCardReadyRevision = request.revision;
+  }
+
+  let observedLiveCardSourceRevision: string | null = null;
+  $effect(() => {
+    const sourceRevision = cardPreview.request?.sourceRevision ?? null;
+    if (sourceRevision === observedLiveCardSourceRevision) return;
+    observedLiveCardSourceRevision = sourceRevision;
+    // A newly mounted card can finish its cached-content readiness in the same
+    // flush as this observer. Keep that valid signal instead of clearing the
+    // PNG gate after the card is already visibly settled.
+    if (liveCardContentReadySourceRevision === sourceRevision) return;
+    liveCardAutoLayout = null;
+    liveCardAutoLayoutKey = "";
+    liveCardLayoutSourceRevision = null;
+    liveCardReadyRevision = null;
+    liveCardContentReadySourceRevision = null;
+    pendingCardDownloadRevision = null;
   });
 
   let shortUrl = $state<string | null>(null);
@@ -565,9 +654,10 @@
 
   const previewReady = $derived(
     !qrDataUrl &&
-      ((artifact === "card" && !!cardPreview.url) ||
+      ((artifact === "card" && !!cardPreview.request) ||
         (artifact === "video" && !!activeVideoUrl))
   );
+  const cardDownloadPending = $derived(pendingCardDownloadRevision !== null);
 
   /** Busy means work is actually running, including bytes arriving for delivery. */
   const videoBusy = $derived(videoStatus === "rendering");
@@ -725,8 +815,7 @@
     shortUrl = seededShortUrl || null;
     shareRoute = initialEntry === "download" ? "download" : "home";
     filePreparationOpen = shareRoute === "download";
-    animationPreviewUrl =
-      shareRoute === "download" ? captureAnimationPreview() || null : null;
+    animationPreviewUrl = captureAnimationPreview() || null;
     openerPreviews = {};
     openerCaptureSession += 1;
     if (initialEntry === "download") shareDraft.selectArtifact(initialArtifact);
@@ -857,6 +946,9 @@
   function beginFilePreparation(): void {
     filePreparationOpen = true;
     shareRoute = "download";
+    // The card is mounted afresh for each Download visit. Do not let a paint
+    // from a prior visit unlock the PNG before this visible card has settled.
+    liveCardReadyRevision = null;
     animationPreviewUrl = captureAnimationPreview() || null;
     statusMessage = "";
   }
@@ -978,7 +1070,12 @@
 
   function openInstagramReview(): void {
     const account = metaStatus.instagram;
-    if (!account || !reviewPreviewUrl) return;
+    if (!account || !reviewPreviewUrl || videoBusy || videoSettingsStale) {
+      if (videoSettingsStale) {
+        statusMessage = "Prepare the updated video before publishing.";
+      }
+      return;
+    }
 
     const now = Date.now();
     const isReel = artifact === "video";
@@ -1077,6 +1174,7 @@
   function requestVideo(): void {
     if (!shareDraft.availableArtifacts.includes("video")) return;
     if (videoBusy || isExportingVideo || isRecordingScene) return;
+    statusMessage = "";
     const requestVersion = ++videoRequestVersion;
     sawExternalVideoExport = false;
     // Retire an old ordinary render only for this explicit user action.
@@ -1130,6 +1228,7 @@
 
   function cancelVideo(): void {
     if (!videoBusy && !isExportingVideo && !isRecordingScene) return;
+    statusMessage = "";
     videoRequestVersion += 1;
     sawExternalVideoExport = false;
     requestedVideoKey = null;
@@ -1183,27 +1282,71 @@
     requestVideo();
   }
 
-  $effect(() => {
-    if (
-      !shouldDeliverPendingVideo({
-        pending: pendingDownload,
-        sheetOpen: isOpen,
-        requestVersion: videoRequestVersion,
-        pendingRequestVersion: pendingDownloadVersion,
-        currentSettingsKey: videoSettingsKey,
-        requestedSettingsKey: pendingDownloadSettingsKey,
-        currentSourceKey: videoSourceKey,
-        requestedSourceKey: pendingDownloadSourceKey,
-        status: videoStatus,
-        hasBlob: !!videoBlob,
-      })
-    )
+  /** A card download has one intent too: the visible card keeps its place while
+   * the PNG catches up, then delivery happens only for this exact snapshot. */
+  function downloadCard(): void {
+    const request = cardPreview.request;
+    if (!request) return;
+    if (needsAccountForFiles) {
+      requestAccountForFile();
       return;
+    }
+    if (cardPreview.blob) {
+      void runDestination("download");
+      return;
+    }
+    statusMessage = "";
+    if (cardPreview.hasError) {
+      cardPreview.reset();
+      pendingCardDownloadRevision = cardPreview.request?.revision ?? null;
+      return;
+    }
+    pendingCardDownloadRevision = request.revision;
+  }
+
+  $effect(() => {
+    const request = cardPreview.request;
+    const outcome = pendingCardDownloadOutcome({
+      pendingRevision: pendingCardDownloadRevision,
+      sheetOpen: isOpen && shareRoute === "download",
+      artifact,
+      currentRevision: request?.revision ?? null,
+      hasBlob: !!cardPreview.blob,
+      hasError: cardPreview.hasError,
+    });
+    if (outcome === "waiting") return;
+    pendingCardDownloadRevision = null;
+    if (outcome === "failed") {
+      statusMessage = "Couldn't render the card. Try again.";
+      return;
+    }
+    if (outcome === "deliver") void runDestination("download");
+  });
+
+  $effect(() => {
+    const outcome = pendingVideoDownloadOutcome({
+      pending: pendingDownload,
+      sheetOpen: isOpen,
+      requestVersion: videoRequestVersion,
+      pendingRequestVersion: pendingDownloadVersion,
+      currentSettingsKey: videoSettingsKey,
+      requestedSettingsKey: pendingDownloadSettingsKey,
+      currentSourceKey: videoSourceKey,
+      requestedSourceKey: pendingDownloadSourceKey,
+      status: videoStatus,
+      hasBlob: !!videoBlob,
+    });
+    if (outcome === "waiting") return;
     pendingDownload = false;
     pendingDownloadVersion = null;
     pendingDownloadSettingsKey = null;
     pendingDownloadSourceKey = null;
-    void runDestination("download");
+    if (outcome === "deliver") {
+      void runDestination("download");
+    } else {
+      statusMessage =
+        "Settings or the current view changed while rendering. Download again to prepare the updated file.";
+    }
   });
 
   $effect(() => {
@@ -1212,6 +1355,7 @@
     pendingDownloadVersion = null;
     pendingDownloadSettingsKey = null;
     pendingDownloadSourceKey = null;
+    pendingCardDownloadRevision = null;
     if (videoBusy || isExportingVideo || isRecordingScene) cancelVideo();
   });
 
@@ -1325,7 +1469,12 @@
   /** Uploads first because Meta ingests the artifact from a public URL. */
   async function postToTarget(target: MetaPublishTarget): Promise<void> {
     const blob = activeBlob;
-    if (!blob) return;
+    if (!blob || videoBusy || videoSettingsStale) {
+      statusMessage = videoSettingsStale
+        ? "Prepare the updated video before publishing."
+        : "Prepare media before choosing an account.";
+      return;
+    }
     if (!sequence?.id) {
       statusMessage =
         "Save this sequence first so it has somewhere to upload to.";
@@ -1440,7 +1589,14 @@
   /** Account setup can run before the artifact is ready; delivery cannot. */
   function networkDisabled(plan: NetworkPlan): boolean {
     if (plan.kind === "connect" || plan.kind === "choose-page") return metaBusy;
-    return !activeBlob || metaBusy || busyDestination !== null || qrPending;
+    return (
+      !activeBlob ||
+      videoBusy ||
+      videoSettingsStale ||
+      metaBusy ||
+      busyDestination !== null ||
+      qrPending
+    );
   }
 
   async function connectTarget(target: MetaPublishTarget): Promise<void> {
@@ -1589,14 +1745,19 @@
   {isOpen}
   ariaLabel={shareRoute === "publish"
     ? "Publish a post"
-    : shareRoute === "download"
-      ? `Download ${artifact === "video" ? "animation" : "card"}`
-      : "Share sequence"}
+    : shareRoute === "link"
+      ? "Share a link"
+      : shareRoute === "download"
+        ? `Download ${artifact === "video" ? "animation" : "card"}`
+        : "Share sequence"}
   {onClose}
   onClosed={runPendingHandoff}
   narrow={!!qrDataUrl}
   compact={shareRoute === "home" && !qrDataUrl}
-  focused={shareRoute === "download" || shareRoute === "publish"}
+  focused={shareRoute === "download" ||
+    shareRoute === "link" ||
+    shareRoute === "publish"}
+  wide={shareRoute === "download"}
 >
   {#snippet children(surface)}
     {#if instagramReviewOpen && reviewPreviewUrl}
@@ -1629,9 +1790,11 @@
             <h2 class="panel-title">
               {shareRoute === "publish"
                 ? "Publish a post"
-                : shareRoute === "download"
-                  ? `Download ${artifact === "video" ? "animation" : "card"}`
-                  : "Share sequence"}
+                : shareRoute === "link"
+                  ? "Share a link"
+                  : shareRoute === "download"
+                    ? `Download ${artifact === "video" ? "animation" : "card"}`
+                    : "Share sequence"}
             </h2>
             <div class="sequence-identity">
               <TKAWordGlyph word={glyphWord} height={glyphHeight} darkMode />
@@ -1649,102 +1812,109 @@
 
         {#if shareRoute === "home"}
           <div class="share-intents">
+            {#if animationPreviewUrl}
+              <img
+                class="home-preview"
+                src={animationPreviewUrl}
+                alt="Current sequence view"
+              />
+            {/if}
             <div class="intent-grid">
               <button
                 type="button"
                 class="intent"
-                disabled={busyLocalTile !== null || copyLinkPending}
-                onclick={handleCopyLinkIntent}
+                onclick={() => beginDownload(artifact)}
               >
-                <i
-                  class={copyLinkPending
-                    ? "fa-solid fa-circle-notch fa-spin"
-                    : copyLinkMessage === "Link copied"
-                      ? "fa-solid fa-check"
-                      : "fa-solid fa-link"}
-                  aria-hidden="true"
-                ></i>
-                <span>Copy link</span>
-                <small aria-live="polite">
-                  {copyLinkPending
-                    ? "Copying…"
-                    : copyLinkMessage ||
-                      "Open this view with its current settings"}
-                </small>
+                <i class="fa-solid fa-download" aria-hidden="true"></i>
+                <span>Download a file</span>
+                <small>Save the current view as a video or card image</small>
               </button>
-              {#if revealedLinkUrl}
-                <label class="link-reveal" transition:growFade={{ axis: "y" }}>
-                  <span>Sequence link</span>
-                  <input
-                    type="url"
-                    readonly
-                    value={revealedLinkUrl}
-                    use:selectOnMount
-                    onfocus={(event) => event.currentTarget.select()}
-                  />
-                </label>
-              {/if}
-              {#if onSendInTka}
-                <button
-                  type="button"
-                  class="intent"
-                  onclick={() => handOffAfterClose(() => onSendInTka?.())}
-                >
-                  <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
-                  <span>Send to a friend</span>
-                  <small>In Flow Arts Composer</small>
-                </button>
-              {/if}
               <button
                 type="button"
                 class="intent"
-                onclick={() => beginDownload("video")}
+                disabled={busyLocalTile !== null || copyLinkPending}
+                onclick={() => (shareRoute = "link")}
               >
-                <i class="fa-solid fa-download" aria-hidden="true"></i>
-                <span>Download {videoLabel.toLowerCase()}</span>
-                <small>Save the animation from this view</small>
+                <i class="fa-solid fa-link" aria-hidden="true"></i>
+                <span>Share a link</span>
+                <small>Open this exact view or send it to a friend</small>
               </button>
-              {#if availableArtifacts.includes("card")}
-                <button
-                  type="button"
-                  class="intent"
-                  onclick={() => beginDownload("card")}
-                >
-                  <i class="fa-regular fa-image" aria-hidden="true"></i>
-                  <span>Download card</span>
-                  <small>Save a sequence card image</small>
-                </button>
-              {/if}
-              {#if onOpenPostStudio}
-                <button type="button" class="intent" onclick={openPostStudio}>
-                  <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"
-                  ></i>
-                  <span>Design a social post</span>
-                  <small>Compose a post before choosing where to share it</small
-                  >
-                </button>
-              {/if}
-              {#if META_POSTING_ENABLED || metaStatusOverride !== undefined}
-                <button
-                  type="button"
-                  class="intent"
-                  onclick={() => {
-                    shareRoute = "publish";
-                    publishOpen = true;
-                    if (!needsAccountForFiles) preparePostLink();
-                  }}
-                >
-                  <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
-                  <span>Publish a post</span>
-                  <small>Choose an available connected account</small>
-                </button>
-              {/if}
+              <button
+                type="button"
+                class="intent"
+                onclick={() => {
+                  shareRoute = "publish";
+                  publishOpen = true;
+                  if (postingAvailable && !needsAccountForFiles)
+                    preparePostLink();
+                }}
+              >
+                <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+                <span>Publish socially</span>
+                <small>Write a caption and choose a connected account</small>
+              </button>
             </div>
+          </div>
+        {:else if shareRoute === "link"}
+          <div class="sheet-scroll link-route">
+            <button
+              type="button"
+              class="back-to-chooser"
+              onclick={returnToChooser}
+              ><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back to sharing</button
+            >
+            <p class="link-description">
+              Anyone with this link opens the current sequence view.
+            </p>
+            <PanelButton
+              variant="primary"
+              fullWidth
+              disabled={copyLinkPending}
+              onclick={handleCopyLinkIntent}
+            >
+              <i
+                class={copyLinkPending
+                  ? "fa-solid fa-circle-notch fa-spin"
+                  : copyLinkMessage === "Link copied"
+                    ? "fa-solid fa-check"
+                    : "fa-solid fa-copy"}
+                aria-hidden="true"
+              ></i>
+              {copyLinkPending
+                ? "Copying link…"
+                : copyLinkMessage === "Link copied"
+                  ? "Link copied"
+                  : "Copy link"}
+            </PanelButton>
+            {#if copyLinkMessage && copyLinkMessage !== "Link copied"}
+              <p class="delivery-feedback" role="status">{copyLinkMessage}</p>
+            {/if}
+            {#if revealedLinkUrl}
+              <label class="link-reveal" transition:growFade={{ axis: "y" }}>
+                <span>Sequence link</span>
+                <input
+                  type="url"
+                  readonly
+                  value={revealedLinkUrl}
+                  use:selectOnMount
+                  onfocus={(event) => event.currentTarget.select()}
+                />
+              </label>
+            {/if}
+            {#if onSendInTka}
+              <PanelButton
+                onclick={() => handOffAfterClose(() => onSendInTka?.())}
+              >
+                <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+                Send to a friend
+              </PanelButton>
+            {/if}
           </div>
         {:else if shareRoute === "download"}
           <div
             class="sheet-scroll"
             class:download-route={true}
+            class:card-preparation={artifact === "card"}
             class:video-preparation={artifact === "video"}
             class:has-preview={previewReady || !!animationPreviewUrl}
           >
@@ -1761,6 +1931,23 @@
                       Back to sharing
                     </button>
                   {/if}
+                  {#if availableArtifacts.length > 1}
+                    <label class="file-type">
+                      <span>File type</span>
+                      <select
+                        value={artifact}
+                        disabled={videoBusy}
+                        onchange={(event) =>
+                          handleArtifactChange(
+                            event.currentTarget.value as ShareArtifact
+                          )}
+                      >
+                        {#each artifactOptions as option (option.value)}
+                          <option value={option.value}>{option.label}</option>
+                        {/each}
+                      </select>
+                    </label>
+                  {/if}
                 </div>
               {/if}
 
@@ -1770,6 +1957,8 @@
                 class:video-placeholder={artifact === "video" &&
                   !activeVideoUrl &&
                   !qrDataUrl}
+                class:live-card-stage={artifact === "card" &&
+                  !!cardPreview.request}
               >
                 {#if qrDataUrl}
                   <div class="qr-view">
@@ -1789,19 +1978,19 @@
                       Back
                     </button>
                   </div>
-                {:else if artifact === "card" && ((cardRenderFailed && !cardPreview.url) || (cardPreview.url && failedPreviewUrl === cardPreview.url))}
-                  <div class="stage-pending stage-refused" role="status">
-                    <i class="fa-regular fa-image" aria-hidden="true"></i>
-                    <strong>Preview unavailable</strong>
-                    <span>Close sharing and try opening it again.</span>
-                  </div>
-                {:else if artifact === "card" && cardPreview.url}
-                  <img
-                    class="preview"
-                    src={cardPreview.url}
-                    alt="Sequence card preview"
-                    onerror={() => (failedPreviewUrl = cardPreview.url)}
-                  />
+                {:else if artifact === "card" && cardPreview.request}
+                  {#key cardPreview.request.sourceRevision}
+                    <LiveExportCard
+                      sequence={cardPreview.request.sequence}
+                      options={cardPreview.request.options}
+                      revision={cardPreview.request.revision}
+                      automaticLayout={isCardLayoutAutomatic(
+                        cardPreview.request.sequence.steps.length
+                      )}
+                      onAutoLayoutResolved={resolveLiveCardAutoLayout}
+                      onReady={markLiveCardReady}
+                    />
+                  {/key}
                 {:else if artifact === "video" && activeVideoUrl}
                   <!-- svelte-ignore a11y_media_has_caption -->
                   <video
@@ -1847,24 +2036,6 @@
                 {/if}
               </div>
 
-              {#if openerEnabled && sequence && !qrDataUrl}
-                <fieldset
-                  class="opener-row"
-                  aria-label="Opens with"
-                  disabled={videoBusy}
-                >
-                  <span id="share-video-opener">Opens with</span>
-                  <SegmentedControl
-                    options={openerOptions}
-                    value={exportOptions.videoOpener}
-                    onchange={(value) => exportOptions.setVideoOpener(value)}
-                    color="accent"
-                    size="sm"
-                    ariaLabelledby="share-video-opener"
-                  />
-                </fieldset>
-              {/if}
-
               {#if artifact === "video" && (videoBusy || videoStatus === "failed" || videoStatus === "canceled")}
                 <p class="render-feedback" role="status">
                   {videoBusy
@@ -1877,6 +2048,23 @@
             </div>
             <div class="editing-column">
               {#if !qrDataUrl}
+                {#if openerEnabled && sequence}
+                  <fieldset
+                    class="opener-row"
+                    aria-label="Opens with"
+                    disabled={videoBusy}
+                  >
+                    <span id="share-video-opener">Opens with</span>
+                    <SegmentedControl
+                      options={openerOptions}
+                      value={exportOptions.videoOpener}
+                      onchange={(value) => exportOptions.setVideoOpener(value)}
+                      color="accent"
+                      size="sm"
+                      ariaLabelledby="share-video-opener"
+                    />
+                  </fieldset>
+                {/if}
                 {#if artifact === "card" && sequence}
                   <!-- The same editor as the viewer's Card tab, folded the way
                        Video settings is: the card is being chosen as it is
@@ -1885,29 +2073,45 @@
                        the account defaults the Card tab writes too; the footer
                        stays a one-share override until saved to the card. -->
                   <fieldset class="card-settings" aria-label="Card settings">
-                    <PanelButton
-                      fullWidth
-                      ariaExpanded={cardSettingsOpen}
-                      onclick={() => (cardSettingsOpen = !cardSettingsOpen)}
-                    >
-                      <i class="fa-solid fa-sliders" aria-hidden="true"></i>
-                      Card settings
-                      <span class="setting-value"
-                        >{exportOptions.imageDarkMode ? "Dark" : "Light"} · Footer
-                        {shareDraft.cardPresentation.footer.mode === "off"
-                          ? "off"
-                          : shareDraft.cardPresentation.footer.mode === "credit"
-                            ? "credit"
-                            : "custom"}</span
+                    {#if roomyCardSheet.current}
+                      <div class="settings-heading">
+                        Card settings
+                        <span class="setting-value"
+                          >{exportOptions.imageDarkMode ? "Dark" : "Light"} · Footer
+                          {shareDraft.cardPresentation.footer.mode === "off"
+                            ? "off"
+                            : shareDraft.cardPresentation.footer.mode ===
+                                "credit"
+                              ? "credit"
+                              : "custom"}</span
+                        >
+                      </div>
+                    {:else}
+                      <PanelButton
+                        fullWidth
+                        ariaExpanded={cardSettingsOpen}
+                        onclick={() => (cardSettingsOpen = !cardSettingsOpen)}
                       >
-                      <i
-                        class={cardSettingsOpen
-                          ? "fa-solid fa-chevron-up"
-                          : "fa-solid fa-chevron-down"}
-                        aria-hidden="true"
-                      ></i>
-                    </PanelButton>
-                    {#if cardSettingsOpen}
+                        <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+                        Card settings
+                        <span class="setting-value"
+                          >{exportOptions.imageDarkMode ? "Dark" : "Light"} · Footer
+                          {shareDraft.cardPresentation.footer.mode === "off"
+                            ? "off"
+                            : shareDraft.cardPresentation.footer.mode ===
+                                "credit"
+                              ? "credit"
+                              : "custom"}</span
+                        >
+                        <i
+                          class={cardSettingsOpen
+                            ? "fa-solid fa-chevron-up"
+                            : "fa-solid fa-chevron-down"}
+                          aria-hidden="true"
+                        ></i>
+                      </PanelButton>
+                    {/if}
+                    {#if cardSettingsExpanded}
                       <div
                         class="disclosure-body"
                         transition:growFade={{ axis: "y" }}
@@ -2086,6 +2290,33 @@
                   <i class="fa-solid fa-film" aria-hidden="true"></i>
                   Download video
                 </PanelButton>
+              {:else if artifact === "card"}
+                <PanelButton
+                  variant="primary"
+                  fullWidth
+                  disabled={!cardPreview.request ||
+                    busyDestination !== null ||
+                    qrPending}
+                  ariaBusy={busyDestination === "download" ||
+                    cardDownloadPending}
+                  onclick={downloadCard}
+                >
+                  <i
+                    class={busyDestination === "download" || cardDownloadPending
+                      ? "fa-solid fa-circle-notch fa-spin"
+                      : cardPreview.hasError
+                        ? "fa-solid fa-rotate-right"
+                        : "fa-solid fa-download"}
+                    aria-hidden="true"
+                  ></i>
+                  {cardPreview.hasError
+                    ? "Retry image"
+                    : cardDownloadPending
+                      ? "Preparing download…"
+                      : busyDestination === "download"
+                        ? "Downloading…"
+                        : "Download card"}
+                </PanelButton>
               {:else}
                 <PanelButton
                   variant="primary"
@@ -2131,7 +2362,19 @@
               class="back-to-chooser"
               onclick={() => (shareRoute = "home")}>Back to sharing</button
             >
-            {#if needsAccountForFiles}
+            {#if !postingAvailable}
+              <p class="account-note">
+                Social publishing is not available here yet. Download a file,
+                then post it from the social app you use.
+              </p>
+              <PanelButton
+                variant="primary"
+                onclick={() => beginDownload(artifact)}
+              >
+                <i class="fa-solid fa-download" aria-hidden="true"></i>
+                Download a file
+              </PanelButton>
+            {:else if needsAccountForFiles}
               <p class="account-note">
                 Publishing a post needs a free account so it can connect to your
                 social accounts.
@@ -2143,6 +2386,41 @@
               >
                 <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
                 Create free account
+              </PanelButton>
+            {:else if artifact === "video" && videoBusy}
+              {#if activeVideoUrl || openerPreviewUrl}
+                {#if activeVideoUrl}
+                  <!-- svelte-ignore a11y_media_has_caption -->
+                  <video
+                    class="preview publish-preview"
+                    src={activeVideoUrl}
+                    autoplay
+                    loop
+                    muted
+                    playsinline
+                  ></video>
+                {:else}
+                  <img
+                    class="preview publish-preview"
+                    src={openerPreviewUrl}
+                    alt="Current animation view"
+                  />
+                {/if}
+              {/if}
+              <p class="render-feedback" role="status">
+                {progressLabel || "Rendering animation…"}
+              </p>
+              <PanelButton onclick={cancelVideo}>
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                Cancel render
+              </PanelButton>
+            {:else if artifact === "video" && videoSettingsStale}
+              <p class="render-feedback" role="status">
+                Settings changed. Prepare the updated video before publishing.
+              </p>
+              <PanelButton variant="primary" onclick={requestVideo}>
+                <i class="fa-solid fa-film" aria-hidden="true"></i>
+                Prepare updated video
               </PanelButton>
             {:else if artifact === "video" && activeVideoUrl}
               <video
@@ -2173,7 +2451,7 @@
                   : "Prepare card"}</PanelButton
               >
             {/if}
-            {#if !needsAccountForFiles}
+            {#if postingAvailable && !needsAccountForFiles && !videoBusy && !videoSettingsStale}
               <label for="post-share-caption" class="post-caption"
                 >Post caption</label
               >
@@ -2193,6 +2471,13 @@
                     plan
                   )}{/each}
               </div>
+            {/if}
+            {#if onOpenPostStudio}
+              <PanelButton onclick={openPostStudio}>
+                <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"
+                ></i>
+                Edit post composition
+              </PanelButton>
             {/if}
           </div>
         {/if}
@@ -2222,6 +2507,16 @@
   .stage-refused {
     flex-direction: column;
     color: var(--theme-text, rgba(255, 255, 255, 0.92));
+  }
+
+  /* Auto needs the stage's stable capacity before the PNG exists. Giving the
+     narrow layout an explicit cap keeps it from choosing against the entire
+     viewport and then shrinking a tall card into a short preview. */
+  .stage.live-card-stage {
+    position: relative;
+    height: clamp(12rem, 30dvh, 18rem);
+    max-height: clamp(12rem, 30dvh, 18rem);
+    overflow: visible;
   }
 
   /* Keep the shared control content-sized above the artwork. */
@@ -2840,6 +3135,16 @@
     overflow-y: auto;
     padding: 1.25rem;
   }
+  .home-preview {
+    display: block;
+    width: min(100%, 16rem);
+    max-height: 8rem;
+    margin: 0 auto 1rem;
+    border: 1px solid var(--theme-stroke);
+    border-radius: 0.625rem;
+    object-fit: contain;
+    background: var(--theme-card-bg);
+  }
   .menu-step {
     height: auto;
   }
@@ -2851,6 +3156,16 @@
     display: grid;
     grid-template-columns: 1fr;
     gap: 0.75rem;
+  }
+  .link-route {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+  }
+  .link-description {
+    margin: 0;
+    color: var(--theme-text-secondary);
+    font-size: var(--font-size-min, 0.875rem);
   }
   .intent,
   .publish-route {
@@ -2916,6 +3231,27 @@
     flex-wrap: wrap;
     gap: 0.5rem;
   }
+  .file-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: var(--min-touch-target, 44px);
+    margin-left: auto;
+    color: var(--theme-text-secondary);
+    font-size: var(--font-size-min, 0.875rem);
+  }
+  .file-type select {
+    min-height: var(--min-touch-target, 44px);
+    padding: 0 2rem 0 0.625rem;
+    border: 1px solid var(--theme-stroke);
+    border-radius: 0.5rem;
+    background: var(--theme-card-bg);
+    color: var(--theme-text);
+    font: inherit;
+  }
+  .file-type select:disabled {
+    opacity: 0.55;
+  }
   .delivery-column {
     display: flex;
     flex-direction: column;
@@ -2943,7 +3279,7 @@
     place-items: center;
     grid-template-rows: minmax(0, 1fr);
     grid-template-columns: minmax(0, 1fr);
-    height: clamp(14rem, 36dvh, 24rem);
+    height: clamp(12rem, 30dvh, 18rem);
     min-height: 0;
     padding: 0.75rem;
     border: 1px solid var(--theme-stroke);
@@ -3119,8 +3455,14 @@
       gap: 1.25rem;
       padding: 1.125rem 1.5rem;
     }
-    .sheet-scroll.download-route,
-    .sheet-scroll.publish-route {
+    .sheet-scroll.download-route {
+      grid-template-columns: minmax(24rem, 1.45fr) minmax(20rem, 0.9fr);
+      gap: 1.5rem;
+      width: min(100%, 72rem);
+      margin-inline: auto;
+    }
+    .sheet-scroll.publish-route,
+    .sheet-scroll.link-route {
       display: flex;
       flex-direction: column;
       gap: 0.875rem;
@@ -3131,7 +3473,33 @@
       margin-inline: auto;
     }
     .sheet-scroll.download-route .stage {
-      height: clamp(18rem, 42dvh, 24rem);
+      height: clamp(20rem, 40dvh, 24rem);
+    }
+    /* A card can be wide, square, or tall. Let its own ratio set the desktop
+       stage, but stop a tall card before it crowds the download controls. */
+    .sheet-scroll.download-route.card-preparation {
+      --settings-card-stage-max-height: max(
+        11rem,
+        calc(
+          var(--viewport-height, 100dvh) - 3rem - 5.25rem - 5.125rem - 2.25rem -
+            3.5rem - 2px
+        )
+      );
+    }
+    .sheet-scroll.download-route.card-preparation .stage {
+      height: auto;
+      max-height: var(--settings-card-stage-max-height);
+    }
+    .sheet-scroll.download-route.card-preparation .stage.live-card-stage {
+      --live-export-card-max-height: calc(
+        var(--settings-card-stage-max-height) - 1.5rem
+      );
+      overflow: hidden;
+    }
+    .sheet-scroll.download-route.card-preparation .stage .preview {
+      width: 100%;
+      height: auto;
+      max-height: calc(var(--settings-card-stage-max-height) - 1.5rem);
     }
     .share-intents {
       padding: 1.75rem;
@@ -3192,6 +3560,9 @@
     .sheet-scroll.download-route .stage {
       height: 11rem;
       min-height: 0;
+    }
+    .sheet-scroll.download-route .stage.live-card-stage {
+      max-height: 11rem;
     }
     .sheet-scroll.download-route .preview-column {
       align-self: start;

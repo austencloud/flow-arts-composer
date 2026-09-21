@@ -34,11 +34,6 @@ import {
   type GenerationStyleAxis,
   type GenerationStylePolicy,
 } from "$lib/shared/create/domain/generation-style";
-import {
-  DEFAULT_HAND_RELATIONSHIP,
-  describeHandRelationship,
-  type HandRelationship,
-} from "$lib/shared/create/domain/hand-relationship";
 
 export type StyleAxisValue = GenerationStyleAxis;
 export type DashFilter = GenerationMotionTypeFilter;
@@ -79,11 +74,6 @@ export interface CustomizeSummaryInput {
   constraintPreset: StyleAxisValue;
   handPathMode: StyleAxisValue;
   motionTypeFilter: DashFilter;
-  /** Free by default; absent means Free. */
-  handRelationship?: HandRelationship;
-  handRelationshipInverted?: boolean;
-  /** Off by default; absent means off. */
-  matchHandTurns?: boolean;
   startEndOptions?: StartEndOptions | null;
   gridMode?: GridMode;
 }
@@ -133,19 +123,6 @@ export function buildCustomizeSummary(
   }
   if (dashKey(input.motionTypeFilter) !== dashKey(baseline.motionTypeFilter)) {
     push(`Dashes: ${DASH_LABELS[dashKey(input.motionTypeFilter)]}`);
-  }
-
-  // The relationship has no per-surface baseline: Free is the untouched value
-  // everywhere. "Hands:" is taken by the hand-path axis above, hence
-  // "Relationship:".
-  const relationship = input.handRelationship ?? DEFAULT_HAND_RELATIONSHIP;
-  if (relationship !== DEFAULT_HAND_RELATIONSHIP) {
-    push(
-      `Relationship: ${describeHandRelationship(relationship, input.handRelationshipInverted ?? false)}`
-    );
-  }
-  if (input.matchHandTurns) {
-    push("Turns: Matched");
   }
 
   const options = input.startEndOptions;

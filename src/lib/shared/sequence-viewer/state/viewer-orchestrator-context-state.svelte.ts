@@ -196,6 +196,7 @@ export function createViewerOrchestratorContextState(
       viewer3DState: inputs.viewer3DState,
       countdownValue: inputs.exportCoordinator.countdownValue,
       isRecording3D: inputs.exportCoordinator.isRecording3D,
+      sceneTakeActive: inputs.exportCoordinator.sceneTakeActive,
       recordingElapsed: inputs.exportCoordinator.recordingElapsed,
       handleStopRecording: inputs.exportCoordinator.handleStopRecording,
       pendingFilmRender: inputs.exportCoordinator.pendingFilmRender,

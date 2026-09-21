@@ -74,6 +74,7 @@
     "test:qr-critical:components": "vitest run --config tests/config/vitest.components.config.ts src/lib/features/choreo-card/components/scan-activity/RecentScansList.svelte.test.ts src/lib/features/choreo-card/components/scan-activity/ScanCardPeek.svelte.test.ts src/lib/features/choreo-card/components/scan-activity/ScanCellWarmControls.svelte.test.ts src/lib/shared/choreo-card/components/TKAWordGlyph.svelte.test.ts",
     "test:render-parity": "vitest run --config tests/config/vitest.render-parity.config.ts",
     "test:card-mcp-parity": "vitest run --config tests/config/vitest.card-mcp-parity.config.ts",
+    "test:live-card-png-parity": "vitest run --config tests/config/vitest.card-mcp-parity.config.ts tests/render-parity/live-card-png-parity.test.ts",
     "test:render-parity:capture": "cross-env RENDER_PARITY_MODE=capture vitest run --config tests/config/vitest.render-parity.config.ts",
     "test:render-parity:compare": "cross-env RENDER_PARITY_MODE=compare vitest run --config tests/config/vitest.render-parity.config.ts",
     "test:rules": "npm run test:rules:core && npm run test:rules:parity && npm run test:rules:artifacts",

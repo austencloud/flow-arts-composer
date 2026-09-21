@@ -1,5 +1,6 @@
 import type { AuthoredHand } from "$lib/shared/foundation/domain/models/authored-hand";
 import type { SoloPropData } from "$lib/shared/foundation/domain/models/solo-prop-data";
+import type { CardExportTrace } from "$lib/shared/render/services/card-export-trace";
 
 export const LOOP_TYPE_TAGS: Record<string, string> = {
   rotated: "sr",
@@ -120,6 +121,9 @@ export interface QRCodeOptions {
   signal?: AbortSignal;
   /** Internal rendering heartbeat used by long-running thumbnail work. */
   onActivity?: () => void;
+  /** Local timing trace for a card export. It is intentionally excluded from
+   * cache identity because it cannot change the QR that is rendered. */
+  trace?: CardExportTrace;
 }
 
 /**

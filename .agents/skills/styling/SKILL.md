@@ -21,4 +21,8 @@ description: Use when writing or modifying CSS, design tokens, or component styl
 
 Product visual direction: `docs/architecture/visual-design-canon.md`.
 
+For new surfaces, substantial restyles, or aesthetic review, use the `ui-bust`
+skill and `docs/architecture/visual-review.md`. A local CSS repair stays focused;
+token compliance and passing viewport checks do not establish aesthetic quality.
+
 Implementation reference with variable lists and scrollbar system: `docs/reference/styling-guide.md`.

@@ -531,12 +531,13 @@ export class BeamSearch {
 
     // Step 1: Build the candidate pool that seeds the first step.
     //
-    // Static (Type 6) letters are normally held out. Both hands stay put, so
-    // without turns the step reads as standing still, and a randomly chosen
-    // one is almost never what was wanted. When the caller has set an explicit
-    // turn pattern, though, a static step is the carrier of the figure — prop
-    // rotation is the whole point of Type 6 — so the pool keeps them and
-    // Type6Constraint decides step by step, which is what it was written for.
+    // Static (Type 6) letters are in the pool like any other. Both hands stay
+    // put, so without turns the step reads as standing still — but prop
+    // rotation is the whole point of Type 6, and a static step carrying turns
+    // is a real figure. Type6Constraint draws that line step by step, which is
+    // what it was written for: level 1 refused, level 2 and up allowed when at
+    // least one hand turns. Holding them out of the pool here would decide the
+    // question before it could see the step.
     const allVariations = this.variationProvider.getAllVariations(
       this.gridMode
     );
@@ -595,7 +596,11 @@ export class BeamSearch {
       });
     }
 
-    if (length === 1 && requiredEndPlacements && requiredEndPlacements.size > 0) {
+    if (
+      length === 1 &&
+      requiredEndPlacements &&
+      requiredEndPlacements.size > 0
+    ) {
       const endSet = requiredEndPlacements;
       firstStepCandidates = firstStepCandidates.filter((p) =>
         endSet.has(p.endPlacement)
@@ -668,8 +673,14 @@ export class BeamSearch {
     // length is 1). The end-placement filter inside the loop never fires, so we
     // must enforce it here. Without this, single-step seeds for quartered LOOPs
     // can end at any placement, causing the executor to reject the sequence.
-    if (length === 1 && requiredEndPlacements && requiredEndPlacements.size > 0) {
-      beam = beam.filter((s) => requiredEndPlacements.has(s.currentEndPlacement));
+    if (
+      length === 1 &&
+      requiredEndPlacements &&
+      requiredEndPlacements.size > 0
+    ) {
+      beam = beam.filter((s) =>
+        requiredEndPlacements.has(s.currentEndPlacement)
+      );
 
       if (beam.length === 0) {
         return this.failResult(

@@ -102,8 +102,8 @@ describe("onSpellGenerate — truncation toast (mirrors onGenerateClicked)", () 
         undefined,
         () =>
           makeConfig({
-            handRelationship: "mirrored",
-            handRelationshipInverted: true,
+            handRelationship: "TO",
+            propRelationship: "free",
             matchHandTurns: true,
             loopEnabled,
             loopType: "rotated",
@@ -115,14 +115,15 @@ describe("onSpellGenerate — truncation toast (mirrors onGenerateClicked)", () 
       expect(generateSequenceMock).toHaveBeenCalledWith(
         expect.objectContaining({
           word: "DJ",
-          handRelationship: "mirrored",
-          handRelationshipInverted: true,
+          handRelationship: "TO",
+          propRelationship: "free",
           matchHandTurns: true,
           mode: loopEnabled ? "circular" : "freeform",
           ...(loopEnabled
             ? { period: "halved", loopSpecWire: expect.any(Object) }
             : {}),
-        })
+        }),
+        expect.objectContaining({ onConstraintReport: expect.any(Function) })
       );
       expect(actions.lastGeneratedSequence?.id).toBe("relationship");
     }

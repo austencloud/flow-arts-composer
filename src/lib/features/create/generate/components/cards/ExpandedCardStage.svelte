@@ -15,11 +15,13 @@
     applies layout containment, which makes the container the containing
     block for fixed descendants.
 
-  No backdrop, no outside-click dismissal: the workspace beside the grown card
-  stays live. X and Escape close. Focus moves in on open and back to the card
-  that opened it on close. The {#key destination} remount on a layout flip
-  (desktop <-> stacked) drops the panel's local state and focus along with it;
-  acceptable for a resize or fold event, which is rare and not mid-task.
+  No backdrop: the workspace beside the grown card stays live. On desktop, a
+  click outside closes the card without consuming the interaction, so the
+  workspace control underneath still works. X and Escape close everywhere.
+  Focus moves in on open and back to the card that opened it on close. The
+  {#key destination} remount on a layout flip (desktop <-> stacked) drops the
+  panel's local state and focus along with it; acceptable for a resize or fold
+  event, which is rare and not mid-task.
 -->
 <script lang="ts">
   import { tick } from "svelte";
@@ -39,10 +41,12 @@
   import CustomizeExpandedOverlay from "./CustomizeExpandedOverlay.svelte";
   import LOOPExpandedOverlay from "./LOOPExpandedOverlay.svelte";
   import SetupsPanel from "../presets/SetupsPanel.svelte";
+  import TnDPanel from "./TnDPanel.svelte";
   import { expandedCardTitleId } from "./expanded-card-stage-props";
   import type {
     LoopStageProps,
     SetupsStageProps,
+    TnDStageProps,
   } from "./expanded-card-stage-props";
 
   let {
@@ -50,11 +54,13 @@
     isDesktopLayout,
     loop,
     setups,
+    tnd,
   }: {
     panelState: PanelCoordinationState;
     isDesktopLayout: boolean;
     loop: LoopStageProps;
     setups: SetupsStageProps;
+    tnd: TnDStageProps;
   } = $props();
 
   const openCard = $derived(panelState.openGenerateCard);
@@ -113,6 +119,30 @@
     });
   });
 
+  // The side-by-side stage is intentionally non-modal: the workspace around
+  // it remains actionable. Close after the click bubbles through its target,
+  // so the outside control receives its normal interaction before the stage
+  // changes the grid geometry. Never prevent or stop the event.
+  // The viewport destination fills the screen, so it keeps the explicit X
+  // and Escape routes instead of manufacturing an unreachable click-away.
+  $effect(() => {
+    if (!openCard || destination !== "stage") return;
+
+    const card = openCard;
+    const dismissFromOutside = (event: MouseEvent): void => {
+      if (!root || event.composedPath().includes(root)) return;
+      // An outside card can replace this one in its own click handler. Do not
+      // let the old stage's bubbling listener immediately close the new card.
+      if (panelState.openGenerateCard !== card) return;
+      close();
+    };
+
+    document.addEventListener("click", dismissFromOutside);
+    return () => {
+      document.removeEventListener("click", dismissFromOutside);
+    };
+  });
+
   function close() {
     const card = openCard;
     if (!card) return;
@@ -163,12 +193,6 @@
       constraintPreset={customize.constraintPreset}
       handPathMode={customize.handPathMode}
       motionTypeFilter={customize.motionTypeFilter}
-      handRelationship={customize.handRelationship}
-      handRelationshipInverted={customize.handRelationshipInverted}
-      onHandRelationshipChange={customize.onHandRelationshipChange}
-      onHandRelationshipInvertedChange={customize.onHandRelationshipInvertedChange}
-      matchHandTurns={customize.matchHandTurns}
-      onMatchHandTurnsChange={customize.onMatchHandTurnsChange}
       startEndOptions={customize.startEndOptions}
       level={customize.level}
       gridMode={customize.gridMode}
@@ -196,7 +220,21 @@
       onRhythmChange={loop.onRhythmChange}
       guestMaxLength={loop.guestMaxLength}
       onRequestSignup={loop.onRequestSignup}
+      handRelationship={loop.handRelationship}
       layout="responsive"
+      {titleId}
+    />
+  {:else if openCard === "tnd"}
+    <TnDPanel
+      handRelationship={tnd.handRelationship}
+      propRelationship={tnd.propRelationship}
+      matchHandTurns={tnd.matchHandTurns}
+      level={tnd.level}
+      blockedHandModes={tnd.blockedHandModes}
+      onHandRelationshipChange={tnd.onHandRelationshipChange}
+      onPropRelationshipChange={tnd.onPropRelationshipChange}
+      onMatchHandTurnsChange={tnd.onMatchHandTurnsChange}
+      onClose={close}
       {titleId}
     />
   {:else if openCard === "preset"}
