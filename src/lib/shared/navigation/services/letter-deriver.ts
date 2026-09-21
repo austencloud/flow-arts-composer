@@ -13,6 +13,7 @@ import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import { normalizeLetter } from "$lib/shared/foundation/domain/models/letter";
 import { getSequenceMotionProfile } from "$lib/shared/foundation/services/sequence-motion-profile";
+import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
 import { motionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
 import { deriveGridMode } from "../../pictograph/grid/services/grid-mode-deriver";
 
@@ -79,7 +80,8 @@ export async function deriveLettersForSequence(
   // Letter identity includes both alphabet and case: Latin B and Greek β are
   // different TKA letters. Each beat is already canonical, so changing the
   // assembled word's case would change the sequence the title describes.
-  const word = letters.join("");
+  // Skewed spans get their braces from the shared builder.
+  const word = deriveWordFromBeats(stepsWithLetters);
 
   return {
     ...sequence,
