@@ -13,6 +13,7 @@
 
 <script lang="ts">
   import { fade, scale, slide } from "svelte/transition";
+  import { TextRenderer } from "$lib/shared/render/services/text-renderer";
   import { cubicOut } from "svelte/easing";
   import DifficultyBadge from "$lib/shared/components/DifficultyBadge.svelte";
   import LOOPIconStrip from "$lib/shared/components/LOOPIconStrip.svelte";
@@ -50,6 +51,8 @@
     badgeNumberFontSize: number;
     wordTitleFontSize: number;
     activeDarkMode: boolean;
+    /** The downloaded artifact uses the canvas card palette exactly. */
+    exportPresentation?: boolean;
   }
 
   const {
@@ -75,6 +78,7 @@
     badgeNumberFontSize,
     wordTitleFontSize,
     activeDarkMode,
+    exportPresentation = false,
   }: Props = $props();
 
   const wordSideInset = $derived.by(() => {
@@ -94,16 +98,72 @@
       overlayComponents,
     });
   });
+  const exportTextRenderer = new TextRenderer();
+  let exportCanvas = $state<HTMLCanvasElement>();
+  let exportCanvasWidth = $state(0);
+  $effect(() => {
+    const canvas = exportCanvas;
+    if (!exportPresentation || !canvas || exportCanvasWidth < 1) return;
+    const width = Math.round(exportCanvasWidth);
+    const height = Math.round(scaledHeaderHeight);
+    if (height < 1) return;
+    const customTitle = customTitleText?.trim();
+    const renderAsText = Boolean(customTitle) || !wordVisible;
+    const snapshot = {
+      word: wordVisible ? customTitle || sequence.word || "" : "",
+      indicatorSizeScale: badgeSize / scaledHeaderHeight,
+      difficultyLevel,
+      showDifficultyBadge: showDifficultyLevel,
+      loopComponents: showLoopGlyph ? (loopComponents ?? undefined) : undefined,
+      rotationPeriod: loopRotationPeriod,
+      inversionPeriod: loopInversionPeriod,
+      reflectionAxis: loopReflectionAxis,
+      overlayComponents: loopOverlayComponents,
+      darkMode: activeDarkMode,
+      renderAsText,
+    };
+    let cancelled = false;
+    void (async () => {
+      if (!snapshot.renderAsText && snapshot.word) {
+        await exportTextRenderer.preloadGlyphImagesForWord(snapshot.word);
+      }
+      if (cancelled) return;
+      canvas.width = width;
+      canvas.height = height;
+      exportTextRenderer.renderWordHeader({
+        canvas,
+        headerHeight: height,
+        ...snapshot,
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  });
 </script>
 
 {#if showHeader}
   <div
     class="header-section"
     class:dark-mode={activeDarkMode}
+    class:export-presentation={exportPresentation}
     style="height: {scaledHeaderHeight}px;"
-    transition:slide|local={{ duration: HEADER_MOTION_MS, easing: cubicOut }}
+    transition:slide|local={{
+      duration: exportPresentation ? 0 : HEADER_MOTION_MS,
+      easing: cubicOut,
+    }}
   >
-    {#if isBrowseSoloMode}
+    {#if exportPresentation}
+      <canvas
+        class="export-header-canvas"
+        bind:this={exportCanvas}
+        bind:clientWidth={exportCanvasWidth}
+        role="img"
+        aria-label={wordVisible
+          ? customTitleText?.trim() || sequence.word || "Card header"
+          : "Card header"}
+      ></canvas>
+    {:else if isBrowseSoloMode}
       <span
         class="word-title"
         style="font-size: {wordTitleFontSize}px; color: {soloHand === 'left'
@@ -195,6 +255,17 @@
   .header-section.dark-mode {
     background: rgba(10, 10, 15, 0.98);
     border-bottom-color: var(--theme-stroke, rgba(255, 255, 255, 0.15));
+  }
+
+  .header-section.export-presentation {
+    background: transparent;
+    border-bottom: 0;
+  }
+
+  .export-header-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
   }
 
   .badge-wrapper {

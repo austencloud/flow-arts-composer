@@ -29,9 +29,14 @@ export interface ChoreoCardSizingDeps {
   readonly forceContain: boolean;
   readonly needsScroll: boolean;
   readonly fitWidth: boolean;
+  /** Export snapshots must match raster card pixels, including CSS rounding. */
+  readonly exactExportGeometry?: boolean;
   readonly containSizeMotion: "focus" | "return" | "restore" | null;
   readonly containMotionBox: ChoreoCardMotionBox | null;
   readonly containModel: ContainModel;
+  /** A stable host box for Auto layout; intrinsic card sizing still uses its DOM box. */
+  readonly layoutContainerWidthOverride?: number;
+  readonly layoutContainerHeightOverride?: number;
   /** Fit a square-cell grid inside a separately fixed outer card ratio. */
   readonly squareGridContain?: boolean;
 }
@@ -69,6 +74,29 @@ export function fitSquareGridCell(size: Size, model: ContainModel): number {
   }
 
   return Math.max(0, Math.min(widthBound, heightBound));
+}
+
+/**
+ * The stack's grid consumes fractional cell pixels, while the header and
+ * footer receive whole-pixel CSS heights. Keep that rounding in the contain
+ * calculation too: otherwise a 600px two-column card models a 66.667px
+ * header but paints a 66px header, leaving its exported box one pixel taller
+ * than the raster card it represents.
+ */
+export function getContainedCardHeight(
+  width: number,
+  model: ContainModel
+): number {
+  if (!(width > 0) || !(model.cols > 0) || !(model.gridHeightUnits > 0)) {
+    return 0;
+  }
+
+  const cellWidth = width / model.cols;
+  const headerHeight =
+    model.headerUnits > 0 ? Math.floor(cellWidth * model.headerUnits) : 0;
+  const footerHeight =
+    model.footerUnits > 0 ? Math.floor(cellWidth * model.footerUnits) : 0;
+  return model.gridHeightUnits * cellWidth + headerHeight + footerHeight;
 }
 
 /**
@@ -123,6 +151,15 @@ export function createChoreoCardSizingState(
   let flipTimer: ReturnType<typeof setTimeout> | null = null;
   let sizeJump = $state(false);
   let jumpFrame: number | null = null;
+  // An export stack fills its own observed root. Changing that descendant from
+  // inside the root's ResizeObserver delivery asks Chrome to deliver another
+  // resize in the same cycle (and can produce an endless undelivered-notice
+  // loop while the host settles its intrinsic ratio). Keep the latest observed
+  // size and apply it after that delivery has completed.
+  let exportContainFrame: number | null = null;
+  let pendingExportContainSize: Size | undefined;
+  let exportCellFrame: number | null = null;
+  let pendingExportStackSize: Size | undefined;
   // Chrome between the host pane's box and the Card's content box (padding and
   // borders on the panes in between). Learned from settled frames so the
   // destination solve does not need to know the host's markup.
@@ -136,6 +173,8 @@ export function createChoreoCardSizingState(
   // is still opening. Null whenever the live measurement is the truth.
   let motionContainerWidth = $state<number | null>(null);
   let motionContainerHeight = $state<number | null>(null);
+  let layoutContainerWidthOverride = $state(0);
+  let layoutContainerHeightOverride = $state(0);
   // Whether this host supplies pane destinations at all. It separates "the
   // pane is collapsing away, so there is no box to aim at" from "this host
   // never had one", which are different situations with different answers.
@@ -397,6 +436,17 @@ export function createChoreoCardSizingState(
       return;
     }
 
+    // Export presentation uses the same physical card as the PNG. Its width is
+    // authoritative: the wrapper receives this intrinsic ratio and applies the
+    // sheet-height cap before the next paint. Constraining it to the wrapper's
+    // *previous* height turns the initial 1:1 wrapper into a smaller ratio,
+    // then feeds that rounded ratio back into Auto/pinned layout measurements.
+    // Header and footer still use their rendered whole-pixel CSS heights.
+    if (deps.exactExportGeometry) {
+      nextWidth = availableWidth;
+      nextHeight = getContainedCardHeight(nextWidth, deps.containModel);
+    }
+
     const widthChanged =
       nextWidth !== containedWidth &&
       (nextWidth === null ||
@@ -506,12 +556,29 @@ export function createChoreoCardSizingState(
         ? { width: rect.width, height: rect.height }
         : undefined;
       captureContainerDimensions(size);
+      if (getDeps().exactExportGeometry) {
+        pendingExportContainSize = size;
+        if (exportContainFrame !== null) return;
+        exportContainFrame = requestAnimationFrame(() => {
+          exportContainFrame = null;
+          const pending = pendingExportContainSize;
+          pendingExportContainSize = undefined;
+          updateContainedDimensions(pending);
+        });
+        return;
+      }
       updateContainedDimensions(size);
     });
     observer.observe(container);
     captureContainerDimensions();
     updateContainedDimensions();
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      if (exportContainFrame !== null) {
+        cancelAnimationFrame(exportContainFrame);
+        exportContainFrame = null;
+      }
+    };
   });
 
   $effect(() => {
@@ -520,9 +587,25 @@ export function createChoreoCardSizingState(
     void deps.forceContain;
     void deps.needsScroll;
     void deps.fitWidth;
+    void deps.exactExportGeometry;
     void deps.containSizeMotion;
     void deps.containMotionBox;
     updateContainedDimensions();
+  });
+
+  // Layout derives its model from these getters. Cache the optional host box
+  // first so that getter never re-enters getDeps() through containModel.
+  $effect(() => {
+    const deps = getDeps();
+    layoutContainerWidthOverride =
+      deps.layoutContainerWidthOverride && deps.layoutContainerWidthOverride > 0
+        ? deps.layoutContainerWidthOverride
+        : 0;
+    layoutContainerHeightOverride =
+      deps.layoutContainerHeightOverride &&
+      deps.layoutContainerHeightOverride > 0
+        ? deps.layoutContainerHeightOverride
+        : 0;
   });
 
   $effect(() => {
@@ -531,19 +614,41 @@ export function createChoreoCardSizingState(
 
     const observer = new ResizeObserver((entries) => {
       const rect = entries[entries.length - 1]?.contentRect;
-      updateCellWidth(
-        rect ? { width: rect.width, height: rect.height } : undefined
-      );
+      const size = rect
+        ? { width: rect.width, height: rect.height }
+        : undefined;
+      // Cell width changes header/grid descendants. Do not make those DOM
+      // writes inside the observed stack's delivery for a static export card.
+      if (getDeps().exactExportGeometry) {
+        pendingExportStackSize = size;
+        if (exportCellFrame !== null) return;
+        exportCellFrame = requestAnimationFrame(() => {
+          exportCellFrame = null;
+          const pending = pendingExportStackSize;
+          pendingExportStackSize = undefined;
+          updateCellWidth(pending);
+        });
+        return;
+      }
+      updateCellWidth(size);
     });
     observer.observe(stack);
     updateCellWidth();
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      if (exportCellFrame !== null) {
+        cancelAnimationFrame(exportCellFrame);
+        exportCellFrame = null;
+      }
+    };
   });
 
   $effect(() => {
     return () => {
       if (flipTimer !== null) clearTimeout(flipTimer);
       if (jumpFrame !== null) cancelAnimationFrame(jumpFrame);
+      if (exportContainFrame !== null) cancelAnimationFrame(exportContainFrame);
+      if (exportCellFrame !== null) cancelAnimationFrame(exportCellFrame);
     };
   });
 
@@ -559,6 +664,16 @@ export function createChoreoCardSizingState(
     },
     get containerHeight() {
       return motionContainerHeight ?? containerHeight;
+    },
+    get layoutContainerWidth() {
+      return layoutContainerWidthOverride > 0
+        ? layoutContainerWidthOverride
+        : (motionContainerWidth ?? containerWidth);
+    },
+    get layoutContainerHeight() {
+      return layoutContainerHeightOverride > 0
+        ? layoutContainerHeightOverride
+        : (motionContainerHeight ?? containerHeight);
     },
     get cellWidth() {
       return cellWidth;
