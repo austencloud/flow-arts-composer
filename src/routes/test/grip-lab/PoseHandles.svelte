@@ -69,6 +69,7 @@
       current.removeEventListener("objectChange", changeSelected);
       current.removeEventListener("mouseUp", end);
       current.removeEventListener("change", invalidate);
+      current.detach();
       scene.remove(helper);
       current.dispose();
     };
@@ -85,12 +86,16 @@
     // detaches mid-gesture. Keep native Three controls and their setters outside
     // dependency tracking; only an actual objectChange authors a pose.
     untrack(() => {
-      if (current.object !== target) current.attach(target);
+      if (enabled && current.object !== target) current.attach(target);
       current.camera = activeCamera;
       current.setMode(mode);
       current.enabled = enabled;
       current.getHelper().visible = enabled;
-      if (!enabled) end();
+      if (!enabled) {
+        // Hidden proxies leave the scene, so the controls must release them too.
+        current.detach();
+        end();
+      }
     });
   });
 
