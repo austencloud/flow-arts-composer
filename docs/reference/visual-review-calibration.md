@@ -9,6 +9,14 @@ Calibration makes recurring review judgments inspectable without treating a past
 
 ## Prepared collection round
 
+[Round 02: composition study](../design/visual-calibration/round-02/index.html)
+compares three arrangements of one TKA section with identical copy, images,
+palette, and type family. It follows owner feedback that the first set still
+felt AI-generated when read. This is an authorized design discussion, not a
+conversion of that reaction into six rejection labels. See its
+[record and verification limits](../design/visual-calibration/round-02/record.md).
+No preference has been recorded for these new variants.
+
 [Round 01](../design/visual-calibration/round-01/index.html) contains six real-page
 cases and eight captured frames for Austen to label. The
 [round record](../design/visual-calibration/round-01/round.md) describes provenance,
