@@ -144,6 +144,7 @@ export function buildCardRenderOptions(
 
   const props =
     input.propConfig ?? resolveViewingProps(getSettings(), sequence).config;
+  const settings = getSettings();
   return {
     ...(!isHandPath && {
       leftPropTypeOverride: props.leftPropType,
@@ -167,16 +168,29 @@ export function buildCardRenderOptions(
       getAnimationVisibilityManager().getPathPolicy()
     ),
     visibilityOverrides: {
-      primaryPropColors: getSettings().primaryPropColors ?? null,
+      fanAppearance: settings.fanAppearance,
+      primaryPropColors: settings.primaryPropColors ?? null,
+      leftPropType: props.leftPropType,
+      rightPropType: props.rightPropType,
+      leftBuugengFlipped: settings.leftBuugengFlipped ?? false,
+      rightBuugengFlipped: settings.rightBuugengFlipped ?? false,
       darkMode: input.darkMode,
       showQRCode: effectiveInfoCell.showQRCode,
       showGrid: vm.getGridVisibility(),
       showMandala: effectiveInfoCell.showMandala,
       handPathMode: isHandPath,
-      // Match the preview's hand-path overlay suppression. Left undefined for
-      // normal cards so the composer inherits TKA/reversal visibility from the
-      // global VisibilityStateManager.
-      ...(isHandPath ? { showTKA: false, showReversals: false } : {}),
+      // Live preview and PNG consume this same snapshot. Reading global
+      // visibility later could bake settings changed during preparation.
+      showTKA: !isHandPath && vm.getRawGlyphVisibility("tkaGlyph"),
+      showTnD: vm.getRawGlyphVisibility("tndGlyph"),
+      showElemental: vm.getRawGlyphVisibility("elementalGlyph"),
+      showPropTnD: vm.getRawGlyphVisibility("propTndGlyph"),
+      showPlacements: vm.getRawGlyphVisibility("placementsGlyph"),
+      showHandColorKey: vm.getRawGlyphVisibility("handColorKey"),
+      showReversals:
+        !isHandPath && vm.getRawGlyphVisibility("reversalIndicators"),
+      showNonRadialPoints: vm.getNonRadialVisibility(),
+      handPointVisibility: vm.getHandPointVisibility(),
     },
   };
 }

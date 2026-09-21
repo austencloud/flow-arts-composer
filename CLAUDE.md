@@ -24,14 +24,20 @@ coding agents.
 - Use the configured Chrome DevTools MCP and
   `scripts/launch-chrome-debug.ps1` for local application verification. Keep one
   task-owned tab, pass its page ID to scoped calls, emulate viewports per page,
-  and close only that tab when finished.
+  and close only temporary verification tabs when finished. Keep a tab used to
+  deliver the result open for Austen to review.
 - Use the dedicated agent browser profile for application testing. Austen
   completes password, passkey, CAPTCHA, and consent interactions. Do not use his
   personal browser session without explicit authorization.
 - Never start, restart, replace, or kill the dev server on port 5173. Use the
   IPv6 HTTPS probe and a task-owned free port when a separate server is needed.
 - In a Git repository, follow the worktree and scoped-commit lifecycle in
-  `AGENTS.md`. Preserve unrelated work and never use destructive Git cleanup.
+  `AGENTS.md`. Guarded local integration needs no extra permission question
+  unless the user explicitly forbids merging. If it is blocked or the user
+  requests an unmerged preview, deliver a
+  verified task-worktree preview on a free non-5173 port when an app route
+  exists, keep that preview and its tab alive for handoff, and provide the
+  clickable URL. Preserve unrelated work and never use destructive Git cleanup.
 
 Do not add model-version guidance, tool inventories, incident histories, or
 duplicated project rules here. Put durable architecture in `docs/architecture/`

@@ -4,6 +4,7 @@ import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence
 import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import type { getQRCodeGenerator } from "$lib/shared/qr/get-qr-code-generator";
 import { encodeSequence } from "$lib/shared/navigation/services/sequence-encoder";
+import { PRINT_QR_RENDER_SIZE } from "@tka/render-composition";
 
 export interface ChoreoCardQrDeps {
   readonly sequence: SequenceData;
@@ -14,6 +15,8 @@ export interface ChoreoCardQrDeps {
   readonly leftPropType: PropType | undefined;
   readonly rightPropType: PropType | undefined;
   readonly browseViewMode: BrowseViewMode | undefined;
+  /** Use the PNG's authored QR resolution for a stable export presentation. */
+  readonly exportPresentation?: boolean;
 }
 
 export interface ChoreoCardQrServices {
@@ -39,13 +42,14 @@ export function createChoreoCardQrState(
   const cacheKey = $derived.by(() => {
     const deps = getDeps();
     if (!deps.showQRCode) return "";
-    if (deps.qrUrl) return `url:${deps.darkMode}:${deps.qrUrl}`;
+    const presentation = deps.exportPresentation ? "export" : "viewer";
+    if (deps.qrUrl) return `url:${presentation}:${deps.darkMode}:${deps.qrUrl}`;
     // Editing a sequence in place keeps its ID; its QR must follow the motions.
     const sequenceId = encodeSequence(deps.sequence);
     const authTag = deps.isAuthenticated ? "a" : "g";
     const leftProp = deps.leftPropType ?? "default";
     const rightProp = deps.rightPropType ?? "default";
-    return `${sequenceId}:${deps.darkMode}:${authTag}:${leftProp}:${rightProp}${encodedViewMode ? `:${encodedViewMode}` : ""}`;
+    return `${presentation}:${sequenceId}:${deps.darkMode}:${authTag}:${leftProp}:${rightProp}${encodedViewMode ? `:${encodedViewMode}` : ""}`;
   });
 
   $effect(() => {
@@ -87,7 +91,10 @@ export function createChoreoCardQrState(
     dataUrl = null;
     generating = true;
     const options = {
-      size: 200,
+      // A URL QR does not use the sequence-preparation cache. Author it at the
+      // PNG's canonical resolution before both surfaces scale it into the same
+      // cell geometry. Sequence QRs stay at the shared prepared 200px source.
+      size: deps.qrUrl && deps.exportPresentation ? PRINT_QR_RENDER_SIZE : 200,
       margin: 1,
       style: "modern" as const,
       darkMode: deps.darkMode,

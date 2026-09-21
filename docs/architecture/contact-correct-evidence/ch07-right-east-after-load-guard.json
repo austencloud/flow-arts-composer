@@ -1,0 +1,79 @@
+{
+  "mode": "prop-authoritative",
+  "staffContact": {
+    "lengthM": 0.9,
+    "radiusM": 0.0095
+  },
+  "converged": true,
+  "iterations": 298,
+  "infeasible": false,
+  "authoredBlueEndpointA": null,
+  "authoredBlueEndpointB": null,
+  "authoredRedEndpointA": {
+    "x": 0,
+    "y": 1.4120999999999997,
+    "z": 0.5
+  },
+  "authoredRedEndpointB": {
+    "x": -0.9,
+    "y": 1.4120999999999997,
+    "z": 0.5
+  },
+  "renderedBlueEndpointA": null,
+  "renderedBlueEndpointB": null,
+  "renderedRedEndpointA": {
+    "x": 0,
+    "y": 1.4120999999999997,
+    "z": 0.5
+  },
+  "renderedRedEndpointB": {
+    "x": -0.9,
+    "y": 1.4120999999999997,
+    "z": 0.5
+  },
+  "left": null,
+  "right": {
+    "available": true,
+    "palmResidualM": 4.0514556401577955e-9,
+    "reachResidualM": 0,
+    "axisResidualDeg": 0,
+    "fingers": [
+      {
+        "finger": "thumb",
+        "available": true,
+        "signedClearanceM": 0.0002204512268764794,
+        "axialCoverage": true,
+        "supported": true
+      },
+      {
+        "finger": "index",
+        "available": true,
+        "signedClearanceM": 0.0003414742201948021,
+        "axialCoverage": true,
+        "supported": true
+      },
+      {
+        "finger": "middle",
+        "available": true,
+        "signedClearanceM": 0.0003524592177408569,
+        "axialCoverage": true,
+        "supported": true
+      },
+      {
+        "finger": "ring",
+        "available": true,
+        "signedClearanceM": 0.0002463095400654196,
+        "axialCoverage": true,
+        "supported": true
+      },
+      {
+        "finger": "pinky",
+        "available": true,
+        "signedClearanceM": 0.0002160701567012974,
+        "axialCoverage": true,
+        "supported": true
+      }
+    ]
+  },
+  "bodyCollisionEvents": []
+}

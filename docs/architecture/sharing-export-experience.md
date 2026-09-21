@@ -457,3 +457,99 @@ released before the current result did not appear; another obsolete result
 released afterward did not replace the current image. Closing and reopening the
 unchanged card reused the same preview URL without another render request.
 These checks prove preview ownership, not reduced image-generation latency.
+
+### September 21 live card preview and background file preparation
+
+Austen requested the real, assembled ChoreoCard in Download card while its PNG
+prepares. The visible card must not depend on completing the file, and must not
+switch to a raster image when preparation finishes. QR readiness may still take
+time; its reserved cell can prepare independently of the rest of the preview.
+This changes when the person can see and edit the card, not the scan-readiness
+requirements of a downloaded QR code.
+
+`LiveExportCard` adapts the sequence viewer's actual `ChoreoCard`; it is not a
+second card renderer. `createCardPreviewState.request` exposes the current
+sequence and resolved export-option snapshot before a blob exists. Both the live
+component and Sharer consume that snapshot. Complete visibility overrides keep
+an asynchronous export from reading a later set of global display settings.
+Viewer-only selection and playback decorations are excluded from export
+presentation.
+
+Auto layout is resolved by the mounted live card. The file receives that exact
+column/start-placement decision after the live card has had an initial paint.
+It must not independently choose a layout from a different container. Source
+changes invalidate the resolved layout as well as any pending file delivery.
+
+Download remains an explicit user action. While the PNG is preparing, the first
+Download click records an intent for the current card revision. Completion may
+deliver that revision once. Closing the sheet, leaving its file route, changing
+the sequence, or changing settings retires the intent. A failed file preparation
+keeps the live card visible and permits retry. Native sharing keeps its existing
+user-gesture requirements; this download behavior must not auto-open a system
+share chooser after a long asynchronous render.
+
+Parity must compare the mounted live DOM with its actual composed PNG. The
+existing browser-to-MCP PNG comparison does not cover this boundary. Tests must
+use the same real sequence, option snapshot, and resolved geometry on both
+sides, wait for their assets, and compare header, pictograph body, and footer
+regions. A deliberately missing meaningful element must fail the check. Do not
+make a visible discrepancy pass by widening image-difference tolerances.
+
+The live card's containment is not an input to Auto. Use the available stage
+width/height to select a layout, and derive its intrinsic aspect from the shared
+card geometry. Feeding the already-contained dimensions back into that choice
+caused repeated ResizeObserver notifications and stalled file preparation.
+The initial readiness signal waits for the real pictograph SVGs to mount and
+paint; it does not wait for QR resolution or restart for each fractional sizing
+adjustment. A new source remounts the card and retires that signal.
+
+The narrow sheet needs an explicit stage height cap before the file is ready.
+Using the full viewport as Auto's available height selected a tall arrangement
+that then shrank into the short phone preview. The real Generate flow reproduced
+an eight-step card only 66px wide inside a 334px stage at 375×667. With the stage
+cap supplied to Auto, the same card occupies the available 309px content width.
+Pinned layouts still remain pinned and contain the complete card.
+
+The first Auto measurement completes the initial choice; it is not a user edit.
+An immediate Download click must survive that settlement. Once the initial card
+is ready, layout/settings changes cancel a pending download as usual. The real
+sheet regression clicks before waiting for pictographs or a PNG request, because
+a browser automation stability wait can otherwise hide this timing defect.
+
+Export presentation retains real SVG pictograph cells. Its header, footer, step
+labels, and mandala use the same small drawing primitives as the PNG, avoiding separate
+font metrics and gradient implementations. This does not replace the assembled
+card with a PNG or turn pictographs into bitmap cells. QR source resolution and
+placement also follow the shared composition rules; the ordinary viewer keeps
+its existing presentation. The tests caught a smaller live QR source and a
+different inset that a full-card similarity score would have concealed.
+
+Cell separators must overlay the artwork, as they do in PNG composition. A
+layout-consuming border reduced a nominal 300px cell's live artwork to 298px.
+Export presentation uses a full-size cell with an overlaid separator; ordinary
+viewer styling is unchanged. The strict live comparison caught this discrepancy.
+
+Regression coverage includes the actual download sheet with its real pictographs:
+an explicit click during preparation, pinned/Auto round trips, replacement of a
+sequence while an old PNG is pending, retry after failure, and containment at
+phone/tablet sizes. A separate held-QR test proves the rest of the card can become
+ready independently. These checks supplement the snapshot/cache tests; a card
+tested alone did not catch the interaction between its geometry and the sheet.
+
+Local browser verification held actual Sharer results after PNG preparation.
+The live card was already mounted before the request, a queued click downloaded
+once, and closing/switching sequences retired old delivery intent. In this warm
+local session with QR disabled, 16-step PNG preparation took roughly 240–350 ms;
+matching cached requests took roughly 3–4 ms. This is not a cold-start or QR
+publication benchmark. Existing stage timing instrumentation and the earlier QR
+reuse measurements remain the owners of that separate performance question.
+
+Final verification on September 21 passed the complete package verification
+gate: 20 browser/source/installed-MCP comparisons, 13 live-card parity checks
+including negative controls, eight actual-sheet lifecycle checks, and the
+held-QR readiness check. The 39 focused logic tests and six browser preview-state
+tests also passed. Regional image tolerances were not widened. The real Generate
+flow was inspected at phone, tablet, short landscape, desktop, and 4K viewport
+sizes; desktop settings opened automatically and the large desktop layouts had
+no unnecessary inner scrollbar. CI retains live/export/difference images so a
+future regression can be investigated without rebuilding this evidence manually.

@@ -88,6 +88,8 @@ export interface ChoreoCardRenderDeps {
   readonly mandalaLayoutOverride: MandalaLayoutOverride | null;
   readonly effectiveColumns: number;
   readonly effectiveRows: number;
+  /** The portable PNG card keeps duration values but uses square cells. */
+  readonly useDurationLayout: boolean;
   readonly layoutWidthUnits: number;
   readonly columnCount: number | null;
   readonly darkMode: boolean;
@@ -262,7 +264,7 @@ export function createChoreoCardRenderEngine(
       if (!step) continue;
       const duration = step.duration ?? 1;
       const options =
-        mixedDurations && duration !== 1
+        deps.useDurationLayout && mixedDurations && duration !== 1
           ? { ...deps.renderOptions, widthMultiplier: duration }
           : deps.renderOptions;
       tasks.push({
@@ -353,7 +355,10 @@ export function createChoreoCardRenderEngine(
             data: cell.index === -1 ? start : deps.sequence.steps[cell.index]!,
             options: {
               ...deps.renderOptions,
-              widthMultiplier: mixed && cell.index !== -1 ? cell.duration : 1,
+              widthMultiplier:
+                deps.useDurationLayout && mixed && cell.index !== -1
+                  ? cell.duration
+                  : 1,
             },
             epoch: liveEpoch,
             onSettled: (failed: boolean) => {
@@ -638,7 +643,7 @@ export function createChoreoCardRenderEngine(
           if (!step) continue;
           const duration = step.duration ?? 1;
           const options =
-            mixed && duration !== 1
+            deps.useDurationLayout && mixed && duration !== 1
               ? { ...deps.renderOptions, widthMultiplier: duration }
               : deps.renderOptions;
           newUrls.set(

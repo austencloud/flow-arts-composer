@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createChoreoCardSizingState,
   fitSquareGridCell,
+  getContainedCardHeight,
 } from "$lib/shared/choreo-card/state/choreo-card-sizing-state.svelte";
 
 const disposals: Array<() => void> = [];
@@ -162,6 +163,18 @@ describe("ChoreoCard contained sizing motion", () => {
 });
 
 describe("fixed-aspect square grid sizing", () => {
+  it("models the header at its rendered whole-pixel height", () => {
+    expect(
+      getContainedCardHeight(600, {
+        cols: 2,
+        gridHeightUnits: 3,
+        headerUnits: 2 / 9,
+        footerUnits: 0,
+        headerMinPx: 0,
+      })
+    ).toBe(966);
+  });
+
   it("uses height when three square rows cannot fit at full width", () => {
     expect(
       fitSquareGridCell(

@@ -108,8 +108,11 @@
     align-items: center;
     justify-content: center;
     padding: 8px;
-    width: var(--min-touch-target);
-    height: var(--min-touch-target);
+    width: max(var(--min-touch-target, 44px), 44px);
+    height: max(var(--min-touch-target, 44px), 44px);
+    min-width: 44px;
+    min-height: 44px;
+    flex-shrink: 0;
     transition: all var(--duration-normal) ease;
   }
 

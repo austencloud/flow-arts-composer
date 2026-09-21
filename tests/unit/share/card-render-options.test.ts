@@ -18,9 +18,27 @@ const ic = {
   getStartPlacementLayoutForStepCount: () => ic._layout,
   getInfoCellChoiceForStepCount: () => ic._choice,
 };
-const vm = { getGridVisibility: () => true };
-const appSettings = { primaryPropColors: { left: "#00ff88", right: "#ff8800" } };
-vi.mock("$lib/shared/application/state/app-state.svelte", () => ({ getSettings: () => appSettings }));
+const glyphs: Record<string, boolean> = {
+  tkaGlyph: true,
+  tndGlyph: false,
+  elementalGlyph: false,
+  propTndGlyph: false,
+  placementsGlyph: false,
+  handColorKey: true,
+  reversalIndicators: true,
+};
+const vm = {
+  getGridVisibility: () => true,
+  getRawGlyphVisibility: (key: string) => glyphs[key] ?? false,
+  getNonRadialVisibility: () => false,
+  getHandPointVisibility: () => "all" as const,
+};
+const appSettings = {
+  primaryPropColors: { left: "#00ff88", right: "#ff8800" },
+};
+vi.mock("$lib/shared/application/state/app-state.svelte", () => ({
+  getSettings: () => appSettings,
+}));
 
 vi.mock("$lib/shared/share/state/image-composition-state.svelte", () => ({
   getImageCompositionManager: () => ic,
@@ -35,17 +53,25 @@ vi.mock("$lib/shared/auth/firebase", () => ({
 
 import { buildCardRenderOptions } from "$lib/shared/share/services/card-render-options";
 
-const seq = { steps: [{ letter: "A" }, { letter: "B" }, { letter: "C" }] } as any;
+const seq = {
+  steps: [{ letter: "A" }, { letter: "B" }, { letter: "C" }],
+} as any;
 
 describe("buildCardRenderOptions", () => {
   it("snapshots the primary hand colors into the worker export options", () => {
-    expect(buildCardRenderOptions(seq, { darkMode: false }).visibilityOverrides?.primaryPropColors)
-      .toEqual({ left: "#00ff88", right: "#ff8800" });
+    expect(
+      buildCardRenderOptions(seq, { darkMode: false }).visibilityOverrides
+        ?.primaryPropColors
+    ).toEqual({ left: "#00ff88", right: "#ff8800" });
   });
   it("exports the selected presentation instead of the account props", () => {
     const options = buildCardRenderOptions(seq, {
       darkMode: false,
-      propConfig: { leftPropType: "fan", rightPropType: "buugeng", catDogMode: true } as never,
+      propConfig: {
+        leftPropType: "fan",
+        rightPropType: "buugeng",
+        catDogMode: true,
+      } as never,
     });
     expect(options.leftPropTypeOverride).toBe("fan");
     expect(options.rightPropTypeOverride).toBe("buugeng");
@@ -72,8 +98,8 @@ describe("buildCardRenderOptions", () => {
     expect(o.visibilityOverrides?.showQRCode).toBe(true);
     expect(o.visibilityOverrides?.showGrid).toBe(true);
     expect(o.visibilityOverrides?.handPathMode).toBe(false);
-    // Normal cards leave TKA/reversal visibility to the global vm fallback.
-    expect(o.visibilityOverrides?.showTKA).toBeUndefined();
+    // Normal cards capture glyph settings before asynchronous preparation.
+    expect(o.visibilityOverrides?.showTKA).toBe(true);
   });
 
   it("does not emit personal names or record dates", () => {
@@ -136,11 +162,17 @@ describe("buildCardRenderOptions", () => {
     ic._cols = 4;
     ic.includeStartPlacement = true;
     ic._layout = "row";
-    expect(buildCardRenderOptions(seq, { darkMode: false }).columnCount).toBe(4);
+    expect(buildCardRenderOptions(seq, { darkMode: false }).columnCount).toBe(
+      4
+    );
     ic._layout = "column";
-    expect(buildCardRenderOptions(seq, { darkMode: false }).columnCount).toBe(5);
+    expect(buildCardRenderOptions(seq, { darkMode: false }).columnCount).toBe(
+      5
+    );
     ic.includeStartPlacement = false;
-    expect(buildCardRenderOptions(seq, { darkMode: false }).columnCount).toBe(4);
+    expect(buildCardRenderOptions(seq, { darkMode: false }).columnCount).toBe(
+      4
+    );
   });
 
   it("reuses the live preview's Auto columns and start placement", () => {
@@ -211,12 +243,22 @@ describe("buildCardRenderOptions", () => {
     const o = buildCardRenderOptions(oneStep, { darkMode: false });
     expect(o.visibilityOverrides?.showQRCode).toBe(false);
     // Multi-count cards are unaffected.
-    expect(buildCardRenderOptions(seq, { darkMode: false }).visibilityOverrides?.showQRCode).toBe(true);
+    expect(
+      buildCardRenderOptions(seq, { darkMode: false }).visibilityOverrides
+        ?.showQRCode
+    ).toBe(true);
   });
 
   it("one-spot 4-count + both on + choice 'mandala' resolves to mandala only", () => {
     // The fallback Auto table gives 4 steps one info cell before the preview reports.
-    const fourStep = { steps: [{ letter: "A" }, { letter: "B" }, { letter: "C" }, { letter: "D" }] } as any;
+    const fourStep = {
+      steps: [
+        { letter: "A" },
+        { letter: "B" },
+        { letter: "C" },
+        { letter: "D" },
+      ],
+    } as any;
     ic._cols = null; // auto layout table, not a 4-column override
     ic._layout = "row";
     ic._choice = "mandala";
@@ -226,7 +268,14 @@ describe("buildCardRenderOptions", () => {
   });
 
   it("one-spot 4-count + both on + choice 'qr' keeps QR only", () => {
-    const fourStep = { steps: [{ letter: "A" }, { letter: "B" }, { letter: "C" }, { letter: "D" }] } as any;
+    const fourStep = {
+      steps: [
+        { letter: "A" },
+        { letter: "B" },
+        { letter: "C" },
+        { letter: "D" },
+      ],
+    } as any;
     ic._cols = null;
     ic._layout = "row";
     ic._choice = "qr";
@@ -236,7 +285,10 @@ describe("buildCardRenderOptions", () => {
   });
 
   it("suppresses difficulty, LOOP glyph, reversals and TKA in hand-path mode", () => {
-    const o = buildCardRenderOptions(seq, { darkMode: false, isHandPath: true });
+    const o = buildCardRenderOptions(seq, {
+      darkMode: false,
+      isHandPath: true,
+    });
     expect(o.addDifficultyLevel).toBe(false);
     expect(o.showLoopGlyph).toBe(false);
     expect(o.addReversalSymbols).toBe(false);

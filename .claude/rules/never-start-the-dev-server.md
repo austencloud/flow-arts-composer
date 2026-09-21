@@ -10,5 +10,11 @@ Port 5173 and the `tka-dev` process belong to Austen's Agent Hub workflow.
   `curl.exe -k -g "https://[::1]:5173/"`; an IPv4 localhost failure is not proof
   that it is down.
 - A task that needs an independent server may use a free non-5173 port after the
-  `resource-budget.md` gate. Stop every process it starts in the same turn.
+  `resource-budget.md` gate. For a delivery preview, the server's working
+  directory must be the task worktree; verify the changed route and worktree
+  content, open it in the task browser when available, and provide its clickable
+  URL. Keep the handed-off preview process and tab alive past the final response.
+  Use a persistent or detached process when needed, record its process, port,
+  worktree, and log in task context, and stop it only when superseded by
+  integration or when the user finishes the task.
 - Do not kill another task's server or process to obtain a port or memory.

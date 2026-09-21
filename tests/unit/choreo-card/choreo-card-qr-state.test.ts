@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import type { QRCodeResult } from "$lib/shared/qr/services/types";
+import { PRINT_QR_RENDER_SIZE } from "@tka/render-composition";
 import { createChoreoCardQrStateHarness } from "./choreo-card-qr-state-harness.svelte";
 import { TRANSITION_REVIEW_SEQUENCE } from "../../../src/routes/test/sequence-viewer-transitions/transition-review-fixture";
 
@@ -75,6 +76,30 @@ describe("choreo card QR state", () => {
       );
       expect(harness.qrState.dataUrl).toBe(qrResult("published").dataUrl);
       expect(harness.qrState.settled).toBe(true);
+    } finally {
+      harness.dispose();
+    }
+  });
+
+  it("authors a published export QR at the PNG source resolution", async () => {
+    const generateForUrl = vi.fn().mockResolvedValue(qrResult("export"));
+    const harness = createChoreoCardQrStateHarness({
+      sequence,
+      leftPropType: PropType.HAND,
+      rightPropType: PropType.HAND,
+      generateForSequence: vi.fn(),
+      generateForUrl,
+      isAuthenticated: false,
+      qrUrl: "https://tka.run/DACF4E",
+      exportPresentation: true,
+    });
+    try {
+      flushSync();
+      await Promise.resolve();
+      expect(generateForUrl).toHaveBeenCalledWith(
+        "https://tka.run/DACF4E",
+        expect.objectContaining({ size: PRINT_QR_RENDER_SIZE })
+      );
     } finally {
       harness.dispose();
     }

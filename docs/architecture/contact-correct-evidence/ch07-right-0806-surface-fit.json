@@ -1,0 +1,88 @@
+{
+  "url": "http://127.0.0.1:5188/test/grip-lab?phase=0.806&hand=right&view=hand&character=ch07",
+  "audit": "\"available: maximum penetration 0.06 mm; skin nearest mixamorig8RightHandIndex2. Interior containment: unavailable.\"",
+  "report": {
+    "mode": "prop-authoritative",
+    "staffContact": {
+      "lengthM": 0.9,
+      "radiusM": 0.0102125
+    },
+    "converged": true,
+    "iterations": 298,
+    "infeasible": false,
+    "authoredBlueEndpointA": null,
+    "authoredBlueEndpointB": null,
+    "authoredRedEndpointA": {
+      "x": 1.1102230246251565e-16,
+      "y": 1.4120999999999997,
+      "z": 0.5
+    },
+    "authoredRedEndpointB": {
+      "x": -0.8585339855106543,
+      "y": 1.1420640843828513,
+      "z": 0.5
+    },
+    "renderedBlueEndpointA": null,
+    "renderedBlueEndpointB": null,
+    "renderedRedEndpointA": {
+      "x": 1.1102230246251565e-16,
+      "y": 1.4120999999999997,
+      "z": 0.5
+    },
+    "renderedRedEndpointB": {
+      "x": -0.8585339855106543,
+      "y": 1.1420640843828513,
+      "z": 0.5
+    },
+    "left": null,
+    "right": {
+      "available": true,
+      "palmResidualM": 4.8834403481145695e-9,
+      "reachResidualM": 0,
+      "axisResidualDeg": 0,
+      "fingers": [
+        {
+          "finger": "thumb",
+          "available": true,
+          "signedClearanceM": 0.000546373515900209,
+          "distalPadClearanceM": 0.000546373515900209,
+          "axialCoverage": true,
+          "supported": true
+        },
+        {
+          "finger": "index",
+          "available": true,
+          "signedClearanceM": 0.00017804058410622083,
+          "distalPadClearanceM": 0.00124374179850535,
+          "axialCoverage": true,
+          "supported": true
+        },
+        {
+          "finger": "middle",
+          "available": true,
+          "signedClearanceM": 0.0005658666397769345,
+          "distalPadClearanceM": 0.0005658666397769345,
+          "axialCoverage": true,
+          "supported": true
+        },
+        {
+          "finger": "ring",
+          "available": true,
+          "signedClearanceM": 0.0004723495207971974,
+          "distalPadClearanceM": 0.0005896679920968147,
+          "axialCoverage": true,
+          "supported": true
+        },
+        {
+          "finger": "pinky",
+          "available": true,
+          "signedClearanceM": 0.00023987621789342203,
+          "distalPadClearanceM": 0.0005181268450032781,
+          "axialCoverage": true,
+          "supported": true
+        }
+      ]
+    },
+    "bodyCollisionEvents": []
+  }
+}

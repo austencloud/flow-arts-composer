@@ -32,8 +32,13 @@
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import PropGridButton from "./PropGridButton.svelte";
   import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
+  import {
+    hasModelSprite,
+    propLookOptions,
+  } from "$lib/shared/pictograph/prop/domain/prop-look";
   import type { CompositionRecipe } from "$lib/shared/pictograph/prop/domain/prop-composition-recipes";
   import PropChiralityRow from "./PropChiralityRow.svelte";
+  import PropLookPicker from "./PropLookPicker.svelte";
   import FanStyleOptionsCore from "./FanStyleOptionsCore.svelte";
   import {
     fanBuildPreviewOptions,
@@ -76,6 +81,7 @@
     premiumBadge,
     premiumNudge,
     propLook,
+    onPropLookChange,
     recipeOverrides,
     colors,
   } = $props<{
@@ -141,6 +147,8 @@
     premiumBadge?: Snippet;
     premiumNudge?: Snippet<[{ dismiss: () => void }]>;
     propLook?: PropLook;
+    /** Persists the global artwork preference owned by the app settings seam. */
+    onPropLookChange?: (look: PropLook) => void;
     recipeOverrides?: Partial<Record<PropType, CompositionRecipe>>;
     colors?: ViewerCustomColorPair | null;
   }>();
@@ -218,7 +226,10 @@
   // grid for that choice's tiles at the grid's own tile size behind a back
   // bar. `null` is the all-props grid. Picking stays one level down so the
   // styles can be compared against the live preview; Back or Escape returns.
-  type Drill = { kind: "family"; base: PropType } | { kind: "fan-look" };
+  type Drill =
+    | { kind: "family"; base: PropType }
+    | { kind: "fan-look" }
+    | { kind: "prop-look" };
   let drill = $state<Drill | null>(null);
   let rootEl = $state<HTMLDivElement | null>(null);
 
@@ -227,14 +238,18 @@
       ? "all"
       : drill.kind === "family"
         ? `family:${drill.base}`
-        : "fan-look"
+        : drill.kind === "fan-look"
+          ? "fan-look"
+          : "prop-look"
   );
   const drillTitle = $derived(
     drill === null
       ? ""
       : drill.kind === "family"
         ? `${getPropTypeDisplayInfo(drill.base).label} styles`
-        : "Fan look"
+        : drill.kind === "fan-look"
+          ? "Fan look"
+          : "Prop look"
   );
 
   async function openDrill(next: Drill): Promise<void> {
@@ -250,7 +265,9 @@
     const selector =
       previous?.kind === "family"
         ? `[data-family-tile="${previous.base}"]`
-        : '[data-testid="fan-look-chip"]';
+        : previous?.kind === "fan-look"
+          ? '[data-testid="fan-look-chip"]'
+          : '[data-testid="prop-look-chip"]';
     rootEl?.querySelector<HTMLElement>(selector)?.focus();
   }
 
@@ -396,6 +413,7 @@
   // current prop stops being a fan) returns to the grid on its own.
   $effect(() => {
     if (drill?.kind === "fan-look" && !showFanLook) drill = null;
+    if (drill?.kind === "prop-look" && !showPropLook) drill = null;
     if (drill?.kind === "family" && !allBases.includes(drill.base)) {
       drill = null;
     }
@@ -408,6 +426,21 @@
     showAppearance &&
       selectedPropType !== null &&
       isFanPropType(selectedPropType)
+  );
+  // Fans own their richer build / frame / cover contract. The global artwork
+  // setting only appears for a selected prop with a captured 3D sprite.
+  const showPropLook = $derived(
+    showAppearance &&
+      selectedPropType !== null &&
+      onPropLookChange !== undefined &&
+      hasModelSprite(selectedPropType)
+  );
+  const selectedPropLookOption = $derived(
+    selectedPropType === null
+      ? undefined
+      : propLookOptions(selectedPropType).find(
+          (option) => option.id === (propLook ?? "pictograph")
+        )
   );
 
   // Size is a property of the current prop, not a prop of its own. Every big
@@ -541,6 +574,28 @@
       <i class="fas fa-chevron-right look-caret" aria-hidden="true"></i>
     </button>
   {/snippet}
+  {#snippet propLookControl()}
+    <button
+      type="button"
+      class="look-chip"
+      data-testid="prop-look-chip"
+      aria-label={`Prop look: ${selectedPropLookOption?.label ?? "Pictograph"}. Change`}
+      onclick={() => void openDrill({ kind: "prop-look" })}
+    >
+      {#if selectedPropLookOption}
+        <img
+          class="look-thumb"
+          src={selectedPropLookOption.image}
+          alt=""
+          draggable="false"
+        />
+      {/if}
+      <span class="look-name"
+        >{selectedPropLookOption?.label ?? "Pictograph"}</span
+      >
+      <i class="fas fa-chevron-right look-caret" aria-hidden="true"></i>
+    </button>
+  {/snippet}
   {#if layout === "rail"}
     <header class="rail-toolbar">
       {#if drill !== null}
@@ -574,6 +629,7 @@
         <div class="rail-heading">{@render heading?.()}</div>
         {#if showSize}{@render sizeControl()}{/if}
         {#if showFanLook}{@render fanControl()}{/if}
+        {#if showPropLook}{@render propLookControl()}{/if}
       {/if}
       <div class="rail-actions">{@render actions?.()}</div>
     </header>
@@ -687,6 +743,7 @@
           class="drill-view"
           class:fill={fillHeight > 0}
           class:fan-look-drill={drill.kind === "fan-look"}
+          class:prop-look-drill={drill.kind === "prop-look"}
           style:height={fillHeight > 0 ? `${fillHeight}px` : undefined}
           aria-label={drillTitle}
           data-escape-shortcut-local
@@ -711,6 +768,12 @@
               horizontal={layout === "rail"}
               appearance={normalizedFanAppearance}
               onchange={onFanAppearanceChange}
+            />
+          {:else if drill.kind === "prop-look" && selectedPropType !== null && onPropLookChange}
+            <PropLookPicker
+              propType={selectedPropType}
+              value={propLook}
+              onchange={onPropLookChange}
             />
           {:else}
             <div
@@ -794,6 +857,16 @@
     <div class="look-dock" transition:growFade={{ axis: "y" }}>
       <span class="look-label">Fan look</span>
       {@render fanControl()}
+    </div>
+  {/if}
+
+  {#if showPropLook && drill === null && layout !== "rail" && selectedPropType !== null && onPropLookChange}
+    <div class="prop-look-dock" transition:growFade={{ axis: "y" }}>
+      <PropLookPicker
+        propType={selectedPropType}
+        value={propLook}
+        onchange={onPropLookChange}
+      />
     </div>
   {/if}
 
@@ -925,11 +998,16 @@
   }
   /* Fan Look has no inner back bar or modifier row. Give its one choice rail
      the entire drilled area instead of preserving the family drill's auto row. */
-  .rail .drill-view.fan-look-drill {
+  .rail .drill-view.fan-look-drill,
+  .rail .drill-view.prop-look-drill {
     grid-template-rows: minmax(0, 1fr);
   }
   .rail .drill-view.fan-look-drill > :global(.fan-style-options) {
     height: 100%;
+  }
+  .rail .drill-view.prop-look-drill > :global(.prop-look-picker) {
+    align-self: center;
+    width: min(32rem, 100%);
   }
   .rail .drill-tiles.flat-grid {
     grid-template-columns: repeat(var(--family-count), minmax(8.5rem, 1fr));
@@ -1277,6 +1355,18 @@
     );
   }
 
+  .prop-look-dock {
+    flex: 0 0 auto;
+    min-width: 0;
+    padding: 10px 18px 14px;
+    border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
+    background: color-mix(
+      in srgb,
+      var(--theme-card-bg, rgba(255, 255, 255, 0.04)) 60%,
+      transparent
+    );
+  }
+
   .size-toggle {
     display: flex;
     flex: 0 0 auto;
@@ -1387,6 +1477,10 @@
   }
 
   .prop-grid-root.flat .look-dock {
+    order: -1;
+  }
+
+  .prop-grid-root.flat .prop-look-dock {
     order: -1;
   }
 

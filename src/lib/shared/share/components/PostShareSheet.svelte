@@ -30,6 +30,8 @@
   import { getShortCodeManager } from "$lib/shared/qr/get-short-code-manager";
   import { getCaptionPresetManager } from "$lib/shared/share/state/caption-presets.svelte";
   import { createCardPreviewState } from "$lib/shared/share/state/card-preview-state.svelte";
+  import LiveExportCard from "$lib/shared/share/components/LiveExportCard.svelte";
+  import { isCardLayoutAutomatic } from "$lib/shared/share/services/card-render-options";
   import { createPostShareDraftState } from "$lib/shared/share/state/post-share-draft-state.svelte";
   import ExportImagePanel from "$lib/shared/sequence-viewer/components/ExportImagePanel.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
@@ -60,6 +62,7 @@
     pendingVideoDownloadOutcome,
     videoDownloadSettingsKey,
   } from "$lib/shared/share/domain/video-download-intent";
+  import { pendingCardDownloadOutcome } from "$lib/shared/share/domain/card-download-intent";
   import {
     VIDEO_OPENER_OPTIONS,
     openerAddsHold,
@@ -283,6 +286,12 @@
   let publishOpen = $state(false);
   let failedPreviewUrl = $state<string | null>(null);
   let cardRenderFailed = $state(false);
+  let liveCardAutoLayout = $state<ResolvedAutoLayout | null>(null);
+  let liveCardAutoLayoutKey = $state("");
+  let liveCardLayoutSourceRevision = $state<string | null>(null);
+  let liveCardReadyRevision = $state<string | null>(null);
+  let liveCardContentReadySourceRevision = $state<string | null>(null);
+  let pendingCardDownloadRevision = $state<string | null>(null);
 
   let statusMessage = $state("");
   let busyDestination = $state<HandoffDestinationId | null>(null);
@@ -309,12 +318,84 @@
     getEnabled: () =>
       isOpen && filePreparationOpen && shareDraft.artifact === "card",
     getDarkMode: () => exportOptions.imageDarkMode,
-    getResolvedAutoLayout: () => resolvedCardAutoLayout,
+    getResolvedAutoLayout: () => liveCardAutoLayout ?? resolvedCardAutoLayout,
     getCardPresentation: () => shareDraft.cardPresentation,
+    getRenderEnabled: () => {
+      // Post Studio and Publish prepare a PNG without mounting this sheet's
+      // live card. Their existing background render path must stay available.
+      if (shareRoute !== "download") return true;
+      const request = cardPreview.request;
+      if (!request || liveCardReadyRevision !== request.revision) return false;
+      return (
+        !isCardLayoutAutomatic(request.sequence.steps.length) ||
+        (liveCardAutoLayout !== null &&
+          liveCardLayoutSourceRevision === request.sourceRevision)
+      );
+    },
     onError: () => {
       cardRenderFailed = true;
       statusMessage = "Couldn't render the card";
     },
+  });
+
+  function resolveLiveCardAutoLayout(
+    layout: ResolvedAutoLayout | null,
+    _width: number,
+    _height: number
+  ): void {
+    const request = cardPreview.request;
+    if (!request || !layout) return;
+    const key = JSON.stringify(layout);
+    if (
+      liveCardLayoutSourceRevision === request.sourceRevision &&
+      liveCardAutoLayoutKey === key
+    )
+      return;
+    // The first Auto measurement completes the current choice; it is not a
+    // settings edit. Keep an immediate Download click attached through that
+    // initial settlement. A source/settings edit has already changed the
+    // request revision and therefore cannot carry an old intent forward.
+    const carryInitialDownload =
+      pendingCardDownloadRevision === request.revision &&
+      liveCardContentReadySourceRevision !== request.sourceRevision;
+    liveCardAutoLayout = layout;
+    liveCardAutoLayoutKey = key;
+    liveCardLayoutSourceRevision = request.sourceRevision;
+    if (carryInitialDownload) {
+      pendingCardDownloadRevision = cardPreview.request?.revision ?? null;
+    }
+    queueMicrotask(() => {
+      const current = cardPreview.request;
+      if (
+        current &&
+        liveCardContentReadySourceRevision === current.sourceRevision
+      )
+        liveCardReadyRevision = current.revision;
+    });
+  }
+
+  function markLiveCardReady(): void {
+    const request = cardPreview.request;
+    if (!request) return;
+    liveCardContentReadySourceRevision = request.sourceRevision;
+    liveCardReadyRevision = request.revision;
+  }
+
+  let observedLiveCardSourceRevision: string | null = null;
+  $effect(() => {
+    const sourceRevision = cardPreview.request?.sourceRevision ?? null;
+    if (sourceRevision === observedLiveCardSourceRevision) return;
+    observedLiveCardSourceRevision = sourceRevision;
+    // A newly mounted card can finish its cached-content readiness in the same
+    // flush as this observer. Keep that valid signal instead of clearing the
+    // PNG gate after the card is already visibly settled.
+    if (liveCardContentReadySourceRevision === sourceRevision) return;
+    liveCardAutoLayout = null;
+    liveCardAutoLayoutKey = "";
+    liveCardLayoutSourceRevision = null;
+    liveCardReadyRevision = null;
+    liveCardContentReadySourceRevision = null;
+    pendingCardDownloadRevision = null;
   });
 
   let shortUrl = $state<string | null>(null);
@@ -573,9 +654,10 @@
 
   const previewReady = $derived(
     !qrDataUrl &&
-      ((artifact === "card" && !!cardPreview.url) ||
+      ((artifact === "card" && !!cardPreview.request) ||
         (artifact === "video" && !!activeVideoUrl))
   );
+  const cardDownloadPending = $derived(pendingCardDownloadRevision !== null);
 
   /** Busy means work is actually running, including bytes arriving for delivery. */
   const videoBusy = $derived(videoStatus === "rendering");
@@ -864,6 +946,9 @@
   function beginFilePreparation(): void {
     filePreparationOpen = true;
     shareRoute = "download";
+    // The card is mounted afresh for each Download visit. Do not let a paint
+    // from a prior visit unlock the PNG before this visible card has settled.
+    liveCardReadyRevision = null;
     animationPreviewUrl = captureAnimationPreview() || null;
     statusMessage = "";
   }
@@ -1197,6 +1282,47 @@
     requestVideo();
   }
 
+  /** A card download has one intent too: the visible card keeps its place while
+   * the PNG catches up, then delivery happens only for this exact snapshot. */
+  function downloadCard(): void {
+    const request = cardPreview.request;
+    if (!request) return;
+    if (needsAccountForFiles) {
+      requestAccountForFile();
+      return;
+    }
+    if (cardPreview.blob) {
+      void runDestination("download");
+      return;
+    }
+    statusMessage = "";
+    if (cardPreview.hasError) {
+      cardPreview.reset();
+      pendingCardDownloadRevision = cardPreview.request?.revision ?? null;
+      return;
+    }
+    pendingCardDownloadRevision = request.revision;
+  }
+
+  $effect(() => {
+    const request = cardPreview.request;
+    const outcome = pendingCardDownloadOutcome({
+      pendingRevision: pendingCardDownloadRevision,
+      sheetOpen: isOpen && shareRoute === "download",
+      artifact,
+      currentRevision: request?.revision ?? null,
+      hasBlob: !!cardPreview.blob,
+      hasError: cardPreview.hasError,
+    });
+    if (outcome === "waiting") return;
+    pendingCardDownloadRevision = null;
+    if (outcome === "failed") {
+      statusMessage = "Couldn't render the card. Try again.";
+      return;
+    }
+    if (outcome === "deliver") void runDestination("download");
+  });
+
   $effect(() => {
     const outcome = pendingVideoDownloadOutcome({
       pending: pendingDownload,
@@ -1229,6 +1355,7 @@
     pendingDownloadVersion = null;
     pendingDownloadSettingsKey = null;
     pendingDownloadSourceKey = null;
+    pendingCardDownloadRevision = null;
     if (videoBusy || isExportingVideo || isRecordingScene) cancelVideo();
   });
 
@@ -1830,6 +1957,8 @@
                 class:video-placeholder={artifact === "video" &&
                   !activeVideoUrl &&
                   !qrDataUrl}
+                class:live-card-stage={artifact === "card" &&
+                  !!cardPreview.request}
               >
                 {#if qrDataUrl}
                   <div class="qr-view">
@@ -1849,19 +1978,19 @@
                       Back
                     </button>
                   </div>
-                {:else if artifact === "card" && ((cardRenderFailed && !cardPreview.url) || (cardPreview.url && failedPreviewUrl === cardPreview.url))}
-                  <div class="stage-pending stage-refused" role="status">
-                    <i class="fa-regular fa-image" aria-hidden="true"></i>
-                    <strong>Preview unavailable</strong>
-                    <span>Close sharing and try opening it again.</span>
-                  </div>
-                {:else if artifact === "card" && cardPreview.url}
-                  <img
-                    class="preview"
-                    src={cardPreview.url}
-                    alt="Sequence card preview"
-                    onerror={() => (failedPreviewUrl = cardPreview.url)}
-                  />
+                {:else if artifact === "card" && cardPreview.request}
+                  {#key cardPreview.request.sourceRevision}
+                    <LiveExportCard
+                      sequence={cardPreview.request.sequence}
+                      options={cardPreview.request.options}
+                      revision={cardPreview.request.revision}
+                      automaticLayout={isCardLayoutAutomatic(
+                        cardPreview.request.sequence.steps.length
+                      )}
+                      onAutoLayoutResolved={resolveLiveCardAutoLayout}
+                      onReady={markLiveCardReady}
+                    />
+                  {/key}
                 {:else if artifact === "video" && activeVideoUrl}
                   <!-- svelte-ignore a11y_media_has_caption -->
                   <video
@@ -2161,6 +2290,33 @@
                   <i class="fa-solid fa-film" aria-hidden="true"></i>
                   Download video
                 </PanelButton>
+              {:else if artifact === "card"}
+                <PanelButton
+                  variant="primary"
+                  fullWidth
+                  disabled={!cardPreview.request ||
+                    busyDestination !== null ||
+                    qrPending}
+                  ariaBusy={busyDestination === "download" ||
+                    cardDownloadPending}
+                  onclick={downloadCard}
+                >
+                  <i
+                    class={busyDestination === "download" || cardDownloadPending
+                      ? "fa-solid fa-circle-notch fa-spin"
+                      : cardPreview.hasError
+                        ? "fa-solid fa-rotate-right"
+                        : "fa-solid fa-download"}
+                    aria-hidden="true"
+                  ></i>
+                  {cardPreview.hasError
+                    ? "Retry image"
+                    : cardDownloadPending
+                      ? "Preparing download…"
+                      : busyDestination === "download"
+                        ? "Downloading…"
+                        : "Download card"}
+                </PanelButton>
               {:else}
                 <PanelButton
                   variant="primary"
@@ -2351,6 +2507,16 @@
   .stage-refused {
     flex-direction: column;
     color: var(--theme-text, rgba(255, 255, 255, 0.92));
+  }
+
+  /* Auto needs the stage's stable capacity before the PNG exists. Giving the
+     narrow layout an explicit cap keeps it from choosing against the entire
+     viewport and then shrinking a tall card into a short preview. */
+  .stage.live-card-stage {
+    position: relative;
+    height: clamp(12rem, 30dvh, 18rem);
+    max-height: clamp(12rem, 30dvh, 18rem);
+    overflow: visible;
   }
 
   /* Keep the shared control content-sized above the artwork. */
@@ -3324,6 +3490,12 @@
       height: auto;
       max-height: var(--settings-card-stage-max-height);
     }
+    .sheet-scroll.download-route.card-preparation .stage.live-card-stage {
+      --live-export-card-max-height: calc(
+        var(--settings-card-stage-max-height) - 1.5rem
+      );
+      overflow: hidden;
+    }
     .sheet-scroll.download-route.card-preparation .stage .preview {
       width: 100%;
       height: auto;
@@ -3388,6 +3560,9 @@
     .sheet-scroll.download-route .stage {
       height: 11rem;
       min-height: 0;
+    }
+    .sheet-scroll.download-route .stage.live-card-stage {
+      max-height: 11rem;
     }
     .sheet-scroll.download-route .preview-column {
       align-self: start;

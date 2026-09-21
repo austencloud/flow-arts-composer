@@ -12,6 +12,7 @@ import {
   type LoopDisplay,
 } from "$lib/shared/loop-labeler/get-loop-display-resolver";
 import type { getVisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
+import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
 
 export interface ChoreoCardDisplayDeps {
   readonly sequence: SequenceData;
@@ -25,6 +26,8 @@ export interface ChoreoCardDisplayDeps {
   readonly showNotes: boolean;
   readonly showLeftMotion: boolean;
   readonly showRightMotion: boolean;
+  /** A portable card snapshot must not follow viewer toggles while it prepares. */
+  readonly visibilityOverrides?: SequenceExportOptions["visibilityOverrides"];
 }
 
 /** Owns card display semantics derived from viewer and glyph visibility. */
@@ -51,43 +54,73 @@ export function createChoreoCardDisplayState(
   const allMotionsVisible = $derived(showLeftMotion && showRightMotion);
   const showTnD = $derived.by(() => {
     void visibilityVersion;
-    return visibilityManager.getRawGlyphVisibility("tndGlyph");
+    return (
+      getDeps().visibilityOverrides?.showTnD ??
+      visibilityManager.getRawGlyphVisibility("tndGlyph")
+    );
   });
   const showElemental = $derived.by(() => {
     void visibilityVersion;
-    return visibilityManager.getRawGlyphVisibility("elementalGlyph");
+    return (
+      getDeps().visibilityOverrides?.showElemental ??
+      visibilityManager.getRawGlyphVisibility("elementalGlyph")
+    );
   });
   const showPropTnD = $derived.by(() => {
     void visibilityVersion;
-    return visibilityManager.getRawGlyphVisibility("propTndGlyph");
+    return (
+      getDeps().visibilityOverrides?.showPropTnD ??
+      visibilityManager.getRawGlyphVisibility("propTndGlyph")
+    );
   });
   const showPlacements = $derived.by(() => {
     void visibilityVersion;
-    return visibilityManager.getRawGlyphVisibility("placementsGlyph");
+    return (
+      getDeps().visibilityOverrides?.showPlacements ??
+      visibilityManager.getRawGlyphVisibility("placementsGlyph")
+    );
   });
   const showHandColorKey = $derived.by(() => {
     void visibilityVersion;
-    return visibilityManager.getRawGlyphVisibility("handColorKey");
+    return (
+      getDeps().visibilityOverrides?.showHandColorKey ??
+      visibilityManager.getRawGlyphVisibility("handColorKey")
+    );
   });
   const showGrid = $derived.by(() => {
     void visibilityVersion;
-    return visibilityManager.getGridVisibility();
+    return (
+      getDeps().visibilityOverrides?.showGrid ??
+      visibilityManager.getGridVisibility()
+    );
   });
   const showNonRadial = $derived.by(() => {
     void visibilityVersion;
-    return visibilityManager.getNonRadialVisibility();
+    return (
+      getDeps().visibilityOverrides?.showNonRadialPoints ??
+      visibilityManager.getNonRadialVisibility()
+    );
   });
   const handPointVis = $derived.by<"all" | "active" | "none">(() => {
     void visibilityVersion;
-    return visibilityManager.getHandPointVisibility();
+    return (
+      getDeps().visibilityOverrides?.handPointVisibility ??
+      visibilityManager.getHandPointVisibility()
+    );
   });
   const showTKA = $derived.by(() => {
     void visibilityVersion;
-    return visibilityManager.getRawGlyphVisibility("tkaGlyph");
+    return (
+      getDeps().visibilityOverrides?.showTKA ??
+      visibilityManager.getRawGlyphVisibility("tkaGlyph")
+    );
   });
   const showReversals = $derived.by(() => {
     void visibilityVersion;
-    return visibilityManager.getRawGlyphVisibility("reversalIndicators");
+    return (
+      getDeps().visibilityOverrides?.showReversals ??
+      visibilityManager.getRawGlyphVisibility("reversalIndicators")
+    );
   });
 
   const isBrowseSoloMode = $derived(

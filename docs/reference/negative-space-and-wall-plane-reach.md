@@ -207,3 +207,37 @@ through the pocket is separate work, tracked outside this document.
 - `.claude/rules/tka-domain.md` — terminology guardrails
 - `.claude/rules/mcp-ground-truth.md` — this document is a primary source, not a
   substitute for the MCP server on letters, VTG, or positions
+
+## 9. Teaching the one-hand isolation (2026-09-21)
+
+Source: Austen, in **Build Contact-Correct Performers**, clarifying the motion
+and approving direct pose teaching in the existing `/test/grip-lab`.
+
+- One regular red staff in the right hand. Hand starts South, thumb end in,
+  and travels South → East → North → West → South.
+- Use stage and house terminology. In the frontal audience view, screen right
+  is stage left / house right; screen left is stage right / house left.
+  Austen's "lean East" means stage right, with the compass understood from
+  the performer facing the audience at North.
+- For this exercise, the shoulders need not turn before North. The turn takes
+  place during North → West. The shoulders face stage left while the upper
+  body countershifts slightly stage right and downstage. The elbow reaches
+  downstage and can briefly obscure the staff passing upstage/inside it.
+- Begin with the feet planted and the motion carried by the upper body.
+  Stepping is not a prerequisite for this one-staff example.
+- The thumb end should read as isolated to the audience, but exact robotic
+  isolation is not mandatory. Depth displacement and a controlled amount of
+  positional error are permitted. Make that allowance adjustable rather than
+  silently changing the score or allowing a detached grip.
+- Let Austen pause any of the four transitions, directly edit a pose, and
+  review how the body interpolates between taught poses. Preserve the exact
+  phase and edits in a link so corrections can be discussed reproducibly.
+
+This clarification governs this isolation; it does not overwrite the different
+North → East thumb-in-to-thumb-out reach described above. Nor does it establish
+that all sequences should turn without preparation.
+
+The grip lab's front camera sits on world +Z looking toward -Z. Its screen-right
+axis is world +X, so its explicit adapter maps stage left to +X and stage right
+to -X; downstage is +Z. The older `Stage3D.svelte` stage-side comment uses the
+opposite lateral labels and must not be used to invert this teaching surface.

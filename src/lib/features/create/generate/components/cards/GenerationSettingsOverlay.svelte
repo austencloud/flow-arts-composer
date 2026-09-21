@@ -69,8 +69,8 @@
     padding: 16px;
     overflow: hidden;
     background-color: var(--customize-surface-solid);
-    background-image: var(--customize-surface-gradient),
-      var(--customize-surface-wash-layer);
+    background-image:
+      var(--customize-surface-gradient), var(--customize-surface-wash-layer);
     border: 2px solid
       color-mix(in srgb, var(--customize-accent) 40%, transparent);
     border-radius: 16px;
@@ -101,8 +101,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: var(--min-touch-target);
-    height: var(--min-touch-target);
+    width: max(var(--min-touch-target, 44px), 44px);
+    height: max(var(--min-touch-target, 44px), 44px);
+    min-width: 44px;
+    min-height: 44px;
+    flex-shrink: 0;
     padding: 8px;
     color: var(--theme-text, white);
     cursor: pointer;

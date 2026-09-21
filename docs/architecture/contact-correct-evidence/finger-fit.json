@@ -1,0 +1,308 @@
+[
+  {
+    "rig": "ch07",
+    "side": "left",
+    "confidence": 1,
+    "clearancesM": {
+      "thumb": 0.00019597070768446155,
+      "index": 0.00026203367613591554,
+      "middle": 0.0002475216276024185,
+      "ring": 0.00026107034236085014,
+      "pinky": 0.00022026594292902423
+    },
+    "supported": {
+      "thumb": true,
+      "index": true,
+      "middle": true,
+      "ring": true,
+      "pinky": true
+    },
+    "segments": {
+      "thumb": {
+        "baseClearanceM": 0.0428250123806151,
+        "proximalMiddleM": 0.009941567258072668,
+        "middleDistalM": 0.00019597070768446155,
+        "distalTipM": 0.006447299990733539
+      },
+      "index": {
+        "baseClearanceM": 0.006656933809927224,
+        "proximalMiddleM": 0.0005804169473710439,
+        "middleDistalM": 0.00026203367613591554,
+        "distalTipM": 0.003757159527473867
+      },
+      "middle": {
+        "baseClearanceM": 0.008444843444188027,
+        "proximalMiddleM": 0.008444843444188027,
+        "middleDistalM": 0.02580145433215722,
+        "distalTipM": 0.0002475216276024185
+      },
+      "ring": {
+        "baseClearanceM": 0.007884780991346584,
+        "proximalMiddleM": 0.007884780991346584,
+        "middleDistalM": 0.014508459218435046,
+        "distalTipM": 0.00026107034236085014
+      },
+      "pinky": {
+        "baseClearanceM": 0.004351619860899537,
+        "proximalMiddleM": 0.0008176015594414791,
+        "middleDistalM": 0.001981368292375951,
+        "distalTipM": 0.00022026594292902423
+      }
+    }
+  },
+  {
+    "rig": "ch07",
+    "side": "right",
+    "confidence": 1,
+    "clearancesM": {
+      "thumb": 0.0002204508709768016,
+      "index": 0.0003414709451305142,
+      "middle": 0.0003524558397032503,
+      "ring": 0.00024630688176410136,
+      "pinky": 0.00021606451739877375
+    },
+    "supported": {
+      "thumb": true,
+      "index": true,
+      "middle": true,
+      "ring": true,
+      "pinky": true
+    },
+    "segments": {
+      "thumb": {
+        "baseClearanceM": 0.04090968497497806,
+        "proximalMiddleM": 0.01741187429120396,
+        "middleDistalM": 0.0008594235002018467,
+        "distalTipM": 0.0002204508709768016
+      },
+      "index": {
+        "baseClearanceM": 0.007696784322178039,
+        "proximalMiddleM": 0.0003414709451305142,
+        "middleDistalM": 0.002526531362104786,
+        "distalTipM": 0.003819020999419741
+      },
+      "middle": {
+        "baseClearanceM": 0.008953706942431697,
+        "proximalMiddleM": 0.0003524558397032503,
+        "middleDistalM": 0.0018233031583848773,
+        "distalTipM": 0.00800771674215997
+      },
+      "ring": {
+        "baseClearanceM": 0.008898150164512036,
+        "proximalMiddleM": 0.008119286748267136,
+        "middleDistalM": 0.0011079524291660752,
+        "distalTipM": 0.00024630688176410136
+      },
+      "pinky": {
+        "baseClearanceM": 0.0031782636279357097,
+        "proximalMiddleM": 0.003124834311886935,
+        "middleDistalM": 0.0016960307228687872,
+        "distalTipM": 0.00021606451739877375
+      }
+    }
+  },
+  {
+    "rig": "ch18",
+    "side": "left",
+    "confidence": 1,
+    "clearancesM": {
+      "thumb": 0.0001953827507489127,
+      "index": 0.00023976080372890493,
+      "middle": 0.0002659844674553699,
+      "ring": 0.00033496728850732245,
+      "pinky": 0.0002113976521973082
+    },
+    "supported": {
+      "thumb": true,
+      "index": true,
+      "middle": true,
+      "ring": true,
+      "pinky": true
+    },
+    "segments": {
+      "thumb": {
+        "baseClearanceM": 0.04952341044935863,
+        "proximalMiddleM": 0.009784213289703761,
+        "middleDistalM": 0.0001953827507489127,
+        "distalTipM": 0.0072314599553211885
+      },
+      "index": {
+        "baseClearanceM": 0.01026148806576784,
+        "proximalMiddleM": 0.0004972373987879603,
+        "middleDistalM": 0.00023976080372890493,
+        "distalTipM": 0.00976971729917983
+      },
+      "middle": {
+        "baseClearanceM": 0.010263708308103867,
+        "proximalMiddleM": 0.0007758961647046682,
+        "middleDistalM": 0.0002659844674553699,
+        "distalTipM": 0.007634373889997886
+      },
+      "ring": {
+        "baseClearanceM": 0.010721764749627284,
+        "proximalMiddleM": 0.00698280381860285,
+        "middleDistalM": 0.00033496728850732245,
+        "distalTipM": 0.0016401919355517082
+      },
+      "pinky": {
+        "baseClearanceM": 0.0062426053571753275,
+        "proximalMiddleM": 0.003197869715676293,
+        "middleDistalM": 0.0002113976521973082,
+        "distalTipM": 0.000755357747461828
+      }
+    }
+  },
+  {
+    "rig": "ch18",
+    "side": "right",
+    "confidence": 1,
+    "clearancesM": {
+      "thumb": 0.00020983801510650064,
+      "index": 0.00034594899477530076,
+      "middle": 0.0002661169270701527,
+      "ring": 0.00019273721475049788,
+      "pinky": 0.0002755141108967364
+    },
+    "supported": {
+      "thumb": true,
+      "index": true,
+      "middle": true,
+      "ring": true,
+      "pinky": true
+    },
+    "segments": {
+      "thumb": {
+        "baseClearanceM": 0.048895006940955596,
+        "proximalMiddleM": 0.009422636273336716,
+        "middleDistalM": 0.00020983801510650064,
+        "distalTipM": 0.005725183895005916
+      },
+      "index": {
+        "baseClearanceM": 0.011085255498724054,
+        "proximalMiddleM": 0.0051258902144139355,
+        "middleDistalM": 0.00034594899477530076,
+        "distalTipM": 0.0031588537743148792
+      },
+      "middle": {
+        "baseClearanceM": 0.010344043261942153,
+        "proximalMiddleM": 0.0019064555367664477,
+        "middleDistalM": 0.0002661169270701527,
+        "distalTipM": 0.0073310760594226
+      },
+      "ring": {
+        "baseClearanceM": 0.012183648689819714,
+        "proximalMiddleM": 0.007970564438506272,
+        "middleDistalM": 0.00019273721475049788,
+        "distalTipM": 0.0012342810268485835
+      },
+      "pinky": {
+        "baseClearanceM": 0.006945574632197291,
+        "proximalMiddleM": 0.005810966953696179,
+        "middleDistalM": 0.0002818742646238234,
+        "distalTipM": 0.0002755141108967364
+      }
+    }
+  },
+  {
+    "rig": "personal-metaperson",
+    "side": "left",
+    "confidence": 0.895631452824896,
+    "clearancesM": {
+      "thumb": 0.0002375715380084839,
+      "index": 0.0002125678604118584,
+      "middle": 0.00034017088085927776,
+      "ring": 0.0003420462922718243,
+      "pinky": 0.00015733658513279822
+    },
+    "supported": {
+      "thumb": true,
+      "index": true,
+      "middle": true,
+      "ring": true,
+      "pinky": true
+    },
+    "segments": {
+      "thumb": {
+        "baseClearanceM": 0.05277631018688621,
+        "proximalMiddleM": 0.008954627973569884,
+        "middleDistalM": 0.0002375715380084839,
+        "distalTipM": 0.0050794615699804035
+      },
+      "index": {
+        "baseClearanceM": 0.009667568700374544,
+        "proximalMiddleM": 0.009667568700374544,
+        "middleDistalM": 0.02458347277772125,
+        "distalTipM": 0.0002125678604118584
+      },
+      "middle": {
+        "baseClearanceM": 0.011549046804397969,
+        "proximalMiddleM": 0.011549046804397969,
+        "middleDistalM": 0.027532182431392795,
+        "distalTipM": 0.00034017088085927776
+      },
+      "ring": {
+        "baseClearanceM": 0.015156882993159183,
+        "proximalMiddleM": 0.015047930391019815,
+        "middleDistalM": 0.023251170057120393,
+        "distalTipM": 0.0003420462922718243
+      },
+      "pinky": {
+        "baseClearanceM": 0.009795859180595355,
+        "proximalMiddleM": 0.009192584586024753,
+        "middleDistalM": 0.006089287809266775,
+        "distalTipM": 0.00015733658513279822
+      }
+    }
+  },
+  {
+    "rig": "personal-metaperson",
+    "side": "right",
+    "confidence": 0.8958569624734458,
+    "clearancesM": {
+      "thumb": 0.00022805034744886096,
+      "index": 0.0002123497494670116,
+      "middle": 0.00034003029169625727,
+      "ring": 0.0003405820709293109,
+      "pinky": 0.00015222802567634638
+    },
+    "supported": {
+      "thumb": true,
+      "index": true,
+      "middle": true,
+      "ring": true,
+      "pinky": true
+    },
+    "segments": {
+      "thumb": {
+        "baseClearanceM": 0.052775734058656244,
+        "proximalMiddleM": 0.01117432342139732,
+        "middleDistalM": 0.00022805034744886096,
+        "distalTipM": 0.005778188470680159
+      },
+      "index": {
+        "baseClearanceM": 0.009664879506500157,
+        "proximalMiddleM": 0.009664879506500157,
+        "middleDistalM": 0.024583338694025104,
+        "distalTipM": 0.0002123497494670116
+      },
+      "middle": {
+        "baseClearanceM": 0.011546379552869728,
+        "proximalMiddleM": 0.011546379552869728,
+        "middleDistalM": 0.027532063876493828,
+        "distalTipM": 0.00034003029169625727
+      },
+      "ring": {
+        "baseClearanceM": 0.01515412193882923,
+        "proximalMiddleM": 0.015045164849059343,
+        "middleDistalM": 0.023251609814882244,
+        "distalTipM": 0.0003405820709293109
+      },
+      "pinky": {
+        "baseClearanceM": 0.009793188577997453,
+        "proximalMiddleM": 0.009189819077247387,
+        "middleDistalM": 0.006088153851213391,
+        "distalTipM": 0.00015222802567634638
+      }
+    }
+  }
+]

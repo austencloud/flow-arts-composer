@@ -20,6 +20,7 @@ import {
   createMotionData,
   type MotionData,
 } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { sampleIsolationChannel } from "$lib/shared/3d/performers/isolation-keyframes";
 
 export const ISOLATION_STEP_COUNT = 4;
 // Match the unscaled production fire-double-staff.glb (900 mm).
@@ -75,26 +76,7 @@ export function torsoYawAtKeyframes(
   phase: number,
   keyframes: readonly TorsoKeyframe[]
 ): number {
-  const sorted = [...keyframes].sort((a, b) => a.phase - b.phase);
-  if (sorted.length === 0) return 0;
-  const wrapped = wrapIsolationPhase(phase);
-  const after = sorted.find((keyframe) => keyframe.phase > wrapped) ?? {
-    ...sorted[0]!,
-    phase: sorted[0]!.phase + ISOLATION_STEP_COUNT,
-  };
-  const before = [...sorted]
-    .reverse()
-    .find((keyframe) => keyframe.phase <= wrapped) ?? {
-    ...sorted[sorted.length - 1]!,
-    phase: sorted[sorted.length - 1]!.phase - ISOLATION_STEP_COUNT,
-  };
-  const position =
-    wrapped < before.phase ? wrapped + ISOLATION_STEP_COUNT : wrapped;
-  return (
-    before.yaw +
-    (after.yaw - before.yaw) *
-      smoothstep((position - before.phase) / (after.phase - before.phase))
-  );
+  return sampleIsolationChannel(phase, keyframes, (key) => key.yaw);
 }
 
 export function upsertTorsoKeyframe(

@@ -16,6 +16,7 @@
   // Note: transition/animation imports (fade, fly, scale, flip, cubicOut) moved to
   // extracted sub-components (CardHeader, CardFooter, CardGridLayout, CellRenderer).
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
   import type { ViewerCustomColorPair } from "../domain/viewer-custom-colors";
   import type { PreviewCellRenderOptions } from "../services/preview-cell-renderer";
   import type { ViewerPaneBox } from "./viewer-panel-layout";
@@ -62,7 +63,10 @@
     formatDuration,
   } from "$lib/shared/choreo-card/services/choreo-card-label-format";
   import { createChoreoCardLayoutState } from "$lib/shared/choreo-card/state/choreo-card-layout-state.svelte";
-  import { createChoreoCardSizingState } from "$lib/shared/choreo-card/state/choreo-card-sizing-state.svelte";
+  import {
+    createChoreoCardSizingState,
+    getContainedCardHeight,
+  } from "$lib/shared/choreo-card/state/choreo-card-sizing-state.svelte";
   import { createChoreoCardQrState } from "$lib/shared/choreo-card/state/choreo-card-qr-state.svelte";
   import { createChoreoCardDisplayState } from "$lib/shared/choreo-card/state/choreo-card-display-state.svelte";
   import { createChoreoCardRenderLifecycle } from "$lib/shared/choreo-card/state/choreo-card-render-lifecycle.svelte";
@@ -113,6 +117,8 @@
     cardAspectRatio?: number;
     /** Plain-text artifact title for cards whose identity is not a TKA word. */
     customTitleText?: string;
+    /** Choose the canvas title renderer for an export snapshot. */
+    renderWordAsText?: boolean;
     customNotesText?: string;
     /**
      * Set only beside performance footage. Draws the "which color is your
@@ -143,6 +149,9 @@
     onRenderProgress?: (loaded: number, total: number) => void;
     /** All cells and the QR have painted; a hidden host may reveal the card. */
     onReady?: () => void;
+    /** All pictograph content has painted. Unlike onReady, this does not wait
+     * for an optional QR request to settle. */
+    onContentReady?: () => void;
     // Increment to force a full re-render (clears caches and re-renders all cells)
     rerenderTrigger?: number;
     // Suppress solo mode header ("Left Prop Path" / "Right Hand Path")
@@ -171,6 +180,15 @@
       width: number,
       height: number
     ) => void;
+    /** Pins a portable card to its export snapshot instead of live viewer state. */
+    visibilityOverrides?: SequenceExportOptions["visibilityOverrides"];
+    /** Stable artifact presentation has no viewer controls, selection, or entrance motion. */
+    exportPresentation?: boolean;
+    /** The export snapshot's mandala policy, independent of the live animation panel. */
+    mandalaPathShape?: SequenceExportOptions["mandalaPathShape"];
+    /** Stable host bounds for Auto selection, separate from contained artwork. */
+    layoutAvailableWidth?: number;
+    layoutAvailableHeight?: number;
   }
 
   const {
@@ -193,6 +211,7 @@
     primaryPropColors,
     cardAspectRatio,
     customTitleText: requestedTitleText,
+    renderWordAsText,
     customNotesText = "Created using Flow Arts Composer",
     handLabeling = null,
     leftPropType,
@@ -208,6 +227,7 @@
     fitWidth = false,
     onRenderProgress,
     onReady,
+    onContentReady,
     rerenderTrigger = 0,
     hideSoloHeader = false,
     onContextMenu,
@@ -216,6 +236,11 @@
     containSizeMotion = null,
     containMotionBox = null,
     onAutoLayoutResolved,
+    visibilityOverrides,
+    exportPresentation = false,
+    mandalaPathShape,
+    layoutAvailableWidth,
+    layoutAvailableHeight,
   }: Props = $props();
 
   // Auth-aware WITHOUT dragging Firebase onto pages that never need it.
@@ -235,6 +260,12 @@
   // signed-out visitor who dominates the landing path.
   let authApi = $state<typeof AuthStateModule | null>(null);
   let authLoadPromise: Promise<void> | null = null;
+  let liveContentDomVersion = $state(0);
+  let contentReadyScheduled = false;
+  let contentReadyDisposed = false;
+  onDestroy(() => {
+    contentReadyDisposed = true;
+  });
   function ensureAuthLoaded(): void {
     if (authLoadPromise) return;
     authLoadPromise = (async () => {
@@ -246,6 +277,57 @@
   }
   $effect(() => {
     if (showQRCode && !qrUrl) ensureAuthLoaded();
+  });
+  $effect(() => {
+    const stack = previewStackElement;
+    if (!stack || !onContentReady) return;
+    const observer = new MutationObserver(() => {
+      liveContentDomVersion++;
+    });
+    observer.observe(stack, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  });
+  $effect(() => {
+    void liveContentDomVersion;
+    const ready = onContentReady;
+    const stack = previewStackElement;
+    const visibleCells = cells.filter(
+      (cell) => includeStartPlacement || cell.index !== -1
+    );
+    // A Download Card uses the live SVG renderer so it can paint before the
+    // PNG worker starts. Those cells become meaningful when their SVGs mount;
+    // they do not need to wait for the bitmap lifecycle's isLoaded flag.
+    const mountedLiveCells = stack
+      ? stack.querySelectorAll(".live-pictograph svg[role='img']").length
+      : 0;
+    const expectedLiveCells = visibleCells.filter((cell) => cell.live).length;
+    if (
+      !ready ||
+      !stack ||
+      !containedWidth ||
+      !containedHeight ||
+      !visibleCells.length ||
+      mountedLiveCells < expectedLiveCells ||
+      !visibleCells.every(
+        (cell) => cell.live || cell.isLoaded || cell.renderFailed
+      ) ||
+      contentReadyScheduled
+    )
+      return;
+    // Contained geometry may continue settling by a fraction of a pixel after
+    // the actual SVG card is visible. Do not cancel this meaningful-content
+    // paint just because that separate sizing observer reports again.
+    contentReadyScheduled = true;
+    void (async () => {
+      await tick();
+      await Promise.allSettled(
+        [...stack.querySelectorAll("img")].map((image) => image.decode())
+      );
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+      );
+      if (!contentReadyDisposed) ready();
+    })();
   });
   const isAuthenticated = $derived(authApi?.isAuthenticated ?? false);
   const canShowQRCode = $derived(isAuthenticated || !!qrUrl);
@@ -286,9 +368,12 @@
   let prevEffectiveColumns = $state(0);
   let prevEffectiveRows = $state(0);
   const hasMixedDurations = $derived(renderModel.hasMixedDurations);
+  // The PNG compositor uses a square grid and carries duration in its badge.
+  // Keep the live export presentation on that same geometry without erasing
+  // the source duration data CellRenderer needs for the badge.
+  const useDurationLayout = $derived(hasMixedDurations && !exportPresentation);
   const durationRows = $derived(renderModel.durationRows);
   const durationColCount = $derived(renderModel.durationColCount);
-
   const crossfader = createCrossfaderState(() => darkMode);
   // Reactive aliases used by the template and internal functions
   const crossfadeActive = $derived(crossfader.crossfadeActive);
@@ -325,6 +410,7 @@
       showNotes,
       showLeftMotion: viewerVisibility?.leftMotion ?? true,
       showRightMotion: viewerVisibility?.rightMotion ?? true,
+      visibilityOverrides,
     }),
     vm
   );
@@ -422,7 +508,11 @@
             containerHeight: containerRawHeight,
             showHeader,
             showFooter,
-            showQRCode: sc > 1 && showQRCode && canShowQRCode,
+            showQRCode:
+              sc > 1 &&
+              (exportPresentation
+                ? (visibilityOverrides?.showQRCode ?? false)
+                : showQRCode && canShowQRCode),
           })
         : null;
     const spl =
@@ -445,15 +535,35 @@
       hasPublishedUrl: !!qrUrl,
     });
   });
-  const effShowQRCode = $derived(effectiveInfoCell.showQRCode);
-  const effShowMandala = $derived(effectiveInfoCell.showMandala);
+  const effShowQRCode = $derived(
+    exportPresentation
+      ? (visibilityOverrides?.showQRCode ?? false)
+      : effectiveInfoCell.showQRCode
+  );
+  const effShowMandala = $derived(
+    exportPresentation
+      ? (visibilityOverrides?.showMandala ?? false)
+      : effectiveInfoCell.showMandala
+  );
 
   // True only under a scan-origin /sequence route — cells use the cloud cache.
   const cloudProbeEnabled = getScanCardCloudProbe();
+  const snapshotPrimaryPropColors = $derived(
+    primaryPropColors !== undefined
+      ? primaryPropColors
+      : visibilityOverrides?.primaryPropColors !== undefined
+        ? visibilityOverrides.primaryPropColors
+        : undefined
+  );
   const effectivePrimaryPropColors = $derived(
     cloudProbeEnabled
       ? null
-      : (primaryPropColors ?? getSettings().primaryPropColors)
+      : exportPresentation
+        ? (snapshotPrimaryPropColors ?? {
+            left: getMotionColor(HandSide.LEFT, darkMode ? "dark" : "light"),
+            right: getMotionColor(HandSide.RIGHT, darkMode ? "dark" : "light"),
+          })
+        : (snapshotPrimaryPropColors ?? getSettings().primaryPropColors)
   );
   const handLegend = $derived(
     handLabeling
@@ -464,7 +574,13 @@
         )
       : null
   );
-  const showFooter = $derived(displayState.showFooter || handLegend !== null);
+  // Artifact canvas cards reserve footer geometry only for requested notes.
+  // Viewer metadata remains available in the normal interactive presentation.
+  const showFooter = $derived(
+    exportPresentation
+      ? showNotes
+      : displayState.showFooter || handLegend !== null
+  );
 
   const qrState = createChoreoCardQrState(
     () => ({
@@ -476,6 +592,7 @@
       leftPropType,
       rightPropType,
       browseViewMode,
+      exportPresentation,
     }),
     { getGenerator: getQRCodeGenerator, getUrlGenerator: getUrlQRCodeGenerator }
   );
@@ -507,6 +624,9 @@
     containMotionBox,
     containModel: layoutState.containModel,
     squareGridContain: fixedCardAspectRatio !== null,
+    exactExportGeometry: exportPresentation,
+    layoutContainerWidthOverride: layoutAvailableWidth,
+    layoutContainerHeightOverride: layoutAvailableHeight,
   }));
 
   layoutState = createChoreoCardLayoutState(() => ({
@@ -517,7 +637,10 @@
     showFooter,
     showQRCode: effShowQRCode,
     autoLayoutReservesQRCode:
-      sequence.steps.length > 1 && showQRCode && canShowQRCode,
+      sequence.steps.length > 1 &&
+      (exportPresentation
+        ? (visibilityOverrides?.showQRCode ?? false)
+        : showQRCode && canShowQRCode),
     showMandala: effShowMandala,
     forceContain,
     // These feed ONLY the mandala placement (which color fills the info cell).
@@ -528,10 +651,10 @@
     startPlacementLayoutOverride,
     compositionVersion,
     cellWidth: sizingState.cellWidth,
-    hasMixedDurations,
+    hasMixedDurations: useDurationLayout,
     durationColCount,
-    containerWidth: sizingState.containerWidth,
-    containerHeight: sizingState.containerHeight,
+    containerWidth: sizingState.layoutContainerWidth,
+    containerHeight: sizingState.layoutContainerHeight,
     autoLayoutOverride,
   }));
 
@@ -613,11 +736,17 @@
       return;
     }
     const fit = layoutState.autoFit;
-    const measuredWidth = containedWidth ?? 0;
-    const measuredHeight = containedHeight ?? 0;
+    // The callback must use the stable layout bounds, not the aspect-fitted
+    // DOM box. Feeding that fitted box back into LiveExportCard's ratio makes
+    // fractional chrome rounding continually resize its ResizeObserver.
+    const measuredWidth = Math.round(sizingState.layoutContainerWidth);
+    const measuredHeight = Math.round(
+      getContainedCardHeight(measuredWidth, layoutState.containModel)
+    );
+    if (!(measuredWidth > 0 && measuredHeight > 0)) return;
     const key = fit
-      ? `${sequence.steps.length}:${fit.cols}:${fit.rows}:${fit.startPlacement}:${fit.widthUnits ?? fit.cols}:${Math.round(measuredWidth)}x${Math.round(measuredHeight)}`
-      : "none";
+      ? `${sequence.steps.length}:${fit.cols}:${fit.rows}:${fit.startPlacement}:${fit.widthUnits ?? fit.cols}:${measuredWidth}x${measuredHeight}`
+      : `${sequence.steps.length}:${effectiveColumns}:${effectiveRows}:${startPlacementLayout}:${showHeader ? 1 : 0}:${showFooter ? 1 : 0}:${measuredWidth}x${measuredHeight}`;
     if (key === lastReportedAutoLayoutKey) return;
     lastReportedAutoLayoutKey = key;
     report(
@@ -667,10 +796,14 @@
   // override leftPropType/rightPropType are unaffected; chirality only applies
   // to buugeng-family props.
   const leftBuugengFlipped = $derived(
-    getSettings().leftBuugengFlipped ?? false
+    visibilityOverrides?.leftBuugengFlipped ??
+      getSettings().leftBuugengFlipped ??
+      false
   );
   const rightBuugengFlipped = $derived(
-    getSettings().rightBuugengFlipped ?? false
+    visibilityOverrides?.rightBuugengFlipped ??
+      getSettings().rightBuugengFlipped ??
+      false
   );
 
   /**
@@ -705,8 +838,14 @@
       ...baseOptions,
       fanAppearance: cloudProbeEnabled
         ? undefined
-        : getSettings().fanAppearance,
+        : (visibilityOverrides?.fanAppearance ?? getSettings().fanAppearance),
       primaryPropColors: effectivePrimaryPropColors,
+      // The compositor renders canonical blue/red cards in two layers, placing
+      // grid points over props. A genuinely custom palette uses its direct
+      // renderer, where grid sits below props instead.
+      ...(exportPresentation && {
+        gridPointsOnTop: !snapshotPrimaryPropColors,
+      }),
       // A scan represents the printed card, not the scanner's personal export
       // toggles. Pin the same canonical visibility used when QR creation
       // verifies cloud assets; retain the sequence's participating hands.
@@ -746,6 +885,7 @@
       mandalaLayoutOverride,
       effectiveColumns,
       effectiveRows,
+      useDurationLayout,
       layoutWidthUnits: layoutState.containModel.cols,
       columnCount,
       darkMode,
@@ -766,7 +906,7 @@
       handPathMode,
       fanAppearance: cloudProbeEnabled
         ? undefined
-        : getSettings().fanAppearance,
+        : (visibilityOverrides?.fanAppearance ?? getSettings().fanAppearance),
       primaryPropColors: effectivePrimaryPropColors,
       sequence,
       leftPropType,
@@ -938,6 +1078,7 @@
   class:dark-mode={activeDarkMode}
   class:scroll-mode={needsScroll}
   class:force-contain={forceContain}
+  class:export-presentation={exportPresentation}
   data-contain-size-motion={containSizeMotion}
   data-contain-size-jump={sizingState.sizeJump ? "true" : undefined}
   data-header-motion={headerMotion ? "true" : undefined}
@@ -951,6 +1092,7 @@
   bind:this={containerElement}
   oncontextmenu={(e: MouseEvent) => {
     e.preventDefault();
+    if (exportPresentation) return;
     if (longPressFired) {
       longPressFired = false;
       return;
@@ -962,7 +1104,13 @@
     handleContextMenu(e);
   }}
   onpointerdown={(e: PointerEvent) => {
-    if (e.button !== 0 || e.pointerType === "mouse" || !onContextMenu) return;
+    if (
+      exportPresentation ||
+      e.button !== 0 ||
+      e.pointerType === "mouse" ||
+      !onContextMenu
+    )
+      return;
     longPressFired = false;
     const x = e.clientX;
     const y = e.clientY;
@@ -984,7 +1132,7 @@
   onpointerup={() => cancelLongPress()}
   onpointercancel={() => cancelLongPress()}
 >
-  {#if isRefreshing && cells.length > 0}
+  {#if !exportPresentation && isRefreshing && cells.length > 0}
     <!-- The card keeps showing its previous images while it regenerates, so
          without this a toggle looks like a dead control. Absolutely positioned
          and pointer-events:none — it can never move or block the card. -->
@@ -1044,23 +1192,29 @@
         {badgeNumberFontSize}
         {wordTitleFontSize}
         {activeDarkMode}
+        {exportPresentation}
+        renderWordAsText={exportPresentation
+          ? (renderWordAsText ?? false)
+          : undefined}
       />
 
       <!-- Grid section with individual pictograph cells -->
       <CardGridLayout
         {sequence}
+        {exportPresentation}
         primaryPropColors={effectivePrimaryPropColors}
         {cells}
         {visibleCells}
         {effectiveColumns}
         {effectiveRows}
         {hasMixedDurations}
+        {useDurationLayout}
         {durationRows}
         {durationColCount}
         {startPlacementLayout}
         {includeStartPlacement}
         {needsScroll}
-        {showHighlight}
+        showHighlight={exportPresentation ? false : showHighlight}
         {highlightedStepIndex}
         showQRCode={effShowQRCode}
         {qrDataUrl}
@@ -1073,9 +1227,9 @@
         {activeDarkMode}
         {leftPropType}
         {rightPropType}
-        {onStepClick}
-        {onQrPlayClick}
-        {clickableStart}
+        onStepClick={exportPresentation ? undefined : onStepClick}
+        onQrPlayClick={exportPresentation ? undefined : onQrPlayClick}
+        clickableStart={exportPresentation ? false : clickableStart}
         onGridScrollRefChange={(el) => {
           gridScrollRef = el;
         }}
@@ -1091,19 +1245,23 @@
         {getMotionSoloMotion}
         {formatSoloTurns}
         {shortOrientation}
+        {mandalaPathShape}
       />
 
       <!-- Footer section -->
       <CardFooter
         {showFooter}
         showNotes={showNotes && handLegend === null}
-        hasPathShapeMetadata={hasPathShapeMetadata && handLegend === null}
+        hasPathShapeMetadata={!exportPresentation &&
+          hasPathShapeMetadata &&
+          handLegend === null}
         {customNotesText}
         {scaledFooterHeight}
         {footerFontSize}
         {footerMargin}
         {activeDarkMode}
         {handLegend}
+        {exportPresentation}
       />
     </div>
   {/if}
@@ -1143,6 +1301,14 @@
     /* Keep align-items: center (inherited from .choreo-card-root) so the
        content stays visually centered during the grid transition.
        flex-start was causing a 187px upward jump on the first frame. */
+  }
+
+  /* Downloads are a stable record of the current presentation. Viewer-only
+     entrances, hover affordances, and selection animation would make it look
+     different while the PNG is being prepared. */
+  .choreo-card-root.export-presentation :global(*) {
+    animation: none !important;
+    transition: none !important;
   }
 
   .loading-placeholder {

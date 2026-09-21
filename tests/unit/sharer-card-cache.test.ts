@@ -39,6 +39,34 @@ function makeSharer() {
 }
 
 describe("Sharer card blob cache", () => {
+  it("renders the live preview's resolved options despite later global settings", async () => {
+    const { sharer, renderSequenceToBlob } = makeSharer();
+    const sequence = makeSequence();
+    const snapshot = {
+      columnCount: 2,
+      visibilityOverrides: { showTKA: false, darkMode: true },
+      customNotesText: "This card",
+    };
+    cardRenderState.options = {
+      columnCount: 8,
+      customNotesText: "Later settings",
+    };
+    const first = await sharer.getCardImageBlob(sequence, {
+      darkMode: true,
+      resolvedRenderOptions: snapshot,
+    });
+    expect(renderSequenceToBlob.mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining(snapshot)
+    );
+    cardRenderState.options = { columnCount: 4 };
+    const second = await sharer.getCardImageBlob(sequence, {
+      darkMode: true,
+      resolvedRenderOptions: snapshot,
+    });
+    expect(second).toBe(first);
+    expect(renderSequenceToBlob).toHaveBeenCalledTimes(1);
+  });
+
   it("reuses the exact rendered card and its in-flight render", async () => {
     cardRenderState.options = { marker: "initial" };
     const { sharer, renderSequenceToBlob } = makeSharer();

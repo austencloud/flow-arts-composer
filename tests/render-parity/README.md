@@ -86,6 +86,34 @@ fixture for any new option. Do not widen tolerances to accept a visible defect.
 Small rasterization differences are distinct from missing content or displaced
 geometry; inspect the saved difference image before changing a tolerance.
 
+## Live card ⇄ PNG export gate
+
+`npm run test:live-card-png-parity` mounts the actual `LiveExportCard` and
+screenshots its `ChoreoCard` through Chromium at the export's native dimensions.
+It compares that DOM image with the real Composer PNG through the same
+header/body/footer/Start hand-colour-key regions used above. The compact matrix
+covers light and dark cards, footer, metadata with footer disabled, custom titles,
+durations, custom colors, mixed props, QR plus mandala, column layout, a complete
+visibility/header-off snapshot, and Auto.
+
+Auto is deliberately a two-phase check: it first records the live container's
+winner, asserts that the mounted DOM chose it, then freezes that winner in a
+fresh native-size live mount before comparing it to the PNG. CSS preview size
+is not mistaken for canvas resolution. QR tests use the already published
+fixture URLs in `card-parity-cases.ts`; they never mint a code or upload data.
+
+The test includes negative controls that remove the real header glyph and shift
+the mounted card. Both must fail the regional limits. This runs in the required
+CI parity job through `test:card-mcp-parity`; it is not an orphaned test file.
+CI retains the live image, PNG export, and difference image for each case in its
+`live-card-parity` artifact, including failed runs. The same gate exercises
+Download intent, source replacement, retry, Auto sizing, phone containment, and
+QR-independent readiness through the real components.
+
+These browser test files run sequentially. Native MCP rendering executes
+synchronously in the browser-command server; running it alongside the live
+tests blocks their asset requests and can cause unrelated readiness timeouts.
+
 The `composer` and `print` profiles intentionally have different dimensions and
 badge scales. Compare matching profiles and options. This suite covers image
 exports, not every interactive card state. The QR fixtures carry the real
