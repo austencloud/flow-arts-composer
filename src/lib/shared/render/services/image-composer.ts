@@ -18,6 +18,8 @@ import type { PictographMemoryCache } from "./pictograph-memory-cache";
 import type { Canvas2DDirectRenderer } from "./canvas-2d-direct-renderer";
 import type { LayerCompositor } from "./layer-compositor";
 import { drawStepNumber } from "./step-number-renderer";
+import { drawHandColorKey } from "./canvas-2d-glyph-renderer";
+import { isVisibleMotion } from "../../pictograph/shared/domain/models/motion-data";
 import type { QRCodeGenerator } from "../../qr/services/qr-code-generator";
 import {
   blobToImage,
@@ -739,6 +741,24 @@ export class ImageComposer {
       if (stepNumber !== undefined) {
         const isDarkMode = finalVisibilitySettings.darkMode ?? false;
         drawStepNumber(ctx, stepNumber, x, y, stepSize, isDarkMode);
+        // Custom palettes bypass the layer compositor, but Start still needs its key.
+        if (
+          stepNumber === 0 &&
+          finalVisibilitySettings.showHandColorKey !== false
+        ) {
+          ctx.save();
+          ctx.translate(x, y);
+          drawHandColorKey(ctx, stepSize, isDarkMode, {
+            showLeft:
+              (finalVisibilitySettings.showLeftMotion ?? true) &&
+              isVisibleMotion(pictographData.motions?.left),
+            showRight:
+              (finalVisibilitySettings.showRightMotion ?? true) &&
+              isVisibleMotion(pictographData.motions?.right),
+            primaryPropColors: finalVisibilitySettings.primaryPropColors,
+          });
+          ctx.restore();
+        }
       }
     } catch (error) {
       console.error(`❌ Failed to render beat at (${column}, ${row}):`, error);

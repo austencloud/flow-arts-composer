@@ -9,6 +9,7 @@
  */
 
 import { Resvg } from "@resvg/resvg-js";
+import { createCanvas, loadImage } from "@napi-rs/canvas/node-canvas.js";
 import { readFileSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
@@ -59,6 +60,7 @@ import {
   type PictographAdjustmentInput,
   type MotionAdjustmentInput,
 } from "./arrow-adjustment.js";
+import { ensureGelasioRegistered } from "./gelasio-fonts.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -421,10 +423,16 @@ export class StandaloneRenderer {
   ): Promise<Buffer> {
     const svg = await this.renderToSvg(input, {
       ...options,
+      // Canvas supplies the key below because Resvg cannot rasterize bundled WOFF2 text.
+      showHandColorKey: false,
       themeable: false,
       inline: false,
     });
-    return this.svgToPng(svg, options.size || 400);
+    const size = options.size || 400;
+    const png = this.svgToPng(svg, size);
+    return options.showHandColorKey
+      ? this.drawHandColorKeyOnPng(png, size, input, options)
+      : png;
   }
 
   /**
@@ -1888,6 +1896,53 @@ ${turnNumbersSvg}
       );
     });
     return `<g class="hand-color-key" transform="translate(${VIEWBOX_SIZE / 2}, 0)" font-family="${HAND_COLOR_KEY.FONT_FAMILY}" font-size="${HAND_COLOR_KEY.FONT_SIZE}" font-weight="${HAND_COLOR_KEY.FONT_WEIGHT}" fill="${textColor}">${parts.join("")}</g>`;
+  }
+
+  /** Draw the complete key with bundled Gelasio after Resvg draws every other glyph. */
+  private async drawHandColorKeyOnPng(
+    png: Buffer,
+    size: number,
+    input: PictographInput,
+    options: RenderVisibilityOptions
+  ): Promise<Buffer> {
+    ensureGelasioRegistered();
+    const canvas = createCanvas(size, size);
+    const context = canvas.getContext("2d");
+    context.drawImage(await loadImage(png), 0, 0, size, size);
+
+    const layout = calculateHandColorKeyLayout(
+      (options.showLeftMotion ?? true) && !!input.leftMotion,
+      (options.showRightMotion ?? true) && !!input.rightMotion
+    );
+    const scale = size / VIEWBOX_SIZE;
+    const darkMode = options.darkMode !== false;
+    context.font = `${HAND_COLOR_KEY.FONT_WEIGHT} ${HAND_COLOR_KEY.FONT_SIZE * scale}px Gelasio, Georgia, serif`;
+    context.textAlign = "start";
+    context.textBaseline = "alphabetic";
+    for (const entry of layout.entries) {
+      context.fillStyle = this.resolveMotionColor(
+        entry.hand,
+        darkMode,
+        false,
+        options.primaryPropColors
+      );
+      context.beginPath();
+      context.arc(
+        (VIEWBOX_SIZE / 2 + entry.swatchX) * scale,
+        layout.centerY * scale,
+        layout.swatchRadius * scale,
+        0,
+        Math.PI * 2
+      );
+      context.fill();
+      context.fillStyle = darkMode ? "#ffffff" : "#231f20";
+      context.fillText(
+        entry.label,
+        (VIEWBOX_SIZE / 2 + entry.labelX) * scale,
+        layout.baselineY * scale
+      );
+    }
+    return canvas.toBuffer("image/png");
   }
 
   // ==========================================================================
