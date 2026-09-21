@@ -74,6 +74,33 @@ const staff = {
 };
 
 describe("posed mesh staff audit", () => {
+  it("matches the renderer after a scaled skinned mesh is moved under a parent", () => {
+    const root = new Object3D();
+    root.add(
+      meshWithTriangle(
+        "hand",
+        [
+          [-0.5, -0.4, 0],
+          [0.5, -0.4, 0],
+          [0, 0.6, 0],
+        ],
+        "Index3"
+      )
+    );
+    root.position.y = 3;
+    root.scale.setScalar(1.4);
+    const movedStaff = {
+      a: staff.a.clone().add(new Vector3(0, 3, 0)),
+      b: staff.b.clone().add(new Vector3(0, 3, 0)),
+      radius: staff.radius,
+    };
+    const cold = auditPosedMeshAgainstStaff({ root, staff: movedStaff });
+    root.updateMatrixWorld(true);
+    const rendered = auditPosedMeshAgainstStaff({ root, staff: movedStaff });
+    expect(cold.maximumPenetrationM).toBeCloseTo(0.05, 8);
+    expect(rendered.maximumPenetrationM).toEqual(cold.maximumPenetrationM);
+  });
+
   it("detects a shaft crossing a triangle whose vertices are all outside the cylinder", () => {
     const root = new Object3D();
     root.add(
@@ -87,6 +114,12 @@ describe("posed mesh staff audit", () => {
     expect(result.status).toBe("available");
     expect(result.maximumPenetrationM).toBeCloseTo(0.05);
     expect(result.affectedRegions).toEqual(["face"]);
+    expect(result.worstIntersection).toEqual({
+      meshName: "face",
+      triangleIndex: 0,
+      boneNames: ["Face"],
+      penetrationM: 0.05,
+    });
   });
 
   it("does not exclude a finger merely because the grip window is active", () => {

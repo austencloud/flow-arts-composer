@@ -160,7 +160,7 @@ describe.runIf(avatarAssetsPresent())(
         skeleton.processGLTF(scene, { height: 1.7, minY: 0 }, id);
         const state = services.skeleton.getState();
         expect(state.fingerChains).not.toBeNull();
-        services.fingers.initialize(state.fingerChains!);
+        services.fingers.initialize(state.fingerChains!, state.meshes);
         const chain = services.skeleton.getRightArmChain()!;
         const target = chain.effector
           .getWorldPosition(new Vector3())
@@ -185,7 +185,7 @@ describe.runIf(avatarAssetsPresent())(
           services.fingers.setCylinderContact("right", {
             a: target.clone().add(new Vector3(0, -0.45, 0)),
             b: target.clone().add(new Vector3(0, 0.45, 0)),
-            radiusM: 0.0095,
+            radiusM: (0.019 / 2) * 1.075,
             lengthM: 0.9,
           });
           services.fingers.solveCylinderContacts();

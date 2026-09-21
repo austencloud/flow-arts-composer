@@ -5,7 +5,10 @@ import { describe, expect, it } from "vitest";
 import { GripType } from "@austencloud/scene-3d";
 import { createAvatarServices } from "../../../node_modules/@austencloud/scene-3d/src/lib/services/implementations/AvatarServicesFactory";
 import { avatar, avatarAssetsPresent, loadRig } from "../3d/locomotion-harness";
-import { sampleStaffIsolation } from "$lib/shared/3d/performers/staff-isolation";
+import {
+  sampleStaffIsolation,
+  ISOLATION_STAFF_CONTACT,
+} from "$lib/shared/3d/performers/staff-isolation";
 
 const ORIGIN = new Vector3(0, 1.5621, 0.3);
 const HEIGHT = 1.905;
@@ -38,7 +41,11 @@ async function setup(id: string, side: "left" | "right") {
   group.add(scene);
   group.position.y = -services.skeleton.getFeetOffset();
   scene.updateWorldMatrix(true, true);
-  services.fingers.initialize(services.skeleton.getState().fingerChains!);
+  const skeletonState = services.skeleton.getState();
+  services.fingers.initialize(
+    skeletonState.fingerChains!,
+    skeletonState.meshes
+  );
   services.fingers.setCylinderContactStrict(true);
   services.fingers.setGrips(
     side === "left" ? GripType.SQUARE : GripType.IDLE,
@@ -95,7 +102,7 @@ function sample(rig: Awaited<ReturnType<typeof setup>>, phase: number) {
   services.fingers.setCylinderContact(side, {
     a: target.clone().addScaledVector(staffAxis, -0.45),
     b: target.clone().addScaledVector(staffAxis, 0.45),
-    radiusM: 0.0095,
+    radiusM: ISOLATION_STAFF_CONTACT.radiusM,
     lengthM: 0.9,
   });
   services.fingers.solveCylinderContacts();

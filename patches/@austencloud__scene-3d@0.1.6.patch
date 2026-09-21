@@ -5,7 +5,7 @@ diff --git a/dist/index.d.ts.map b/dist/index.d.ts.map
 deleted file mode 100644
 index d554c5bba49036758f9b3c997d025556395cf72b..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/Avatar3D.svelte b/dist/lib/components/Avatar3D.svelte
-index 9b167be2ff..1c7b5f6b6a 100644
+index 9b167be2ff..160abe62c7 100644
 --- a/dist/lib/components/Avatar3D.svelte
 +++ b/dist/lib/components/Avatar3D.svelte
 @@ -16,29 +16,50 @@
@@ -985,8 +985,12 @@ index 9b167be2ff..1c7b5f6b6a 100644
          footPlanter.initialize(skeletonService, legIKSolver, contactCurveCache);
        }
  
-@@ -487,6 +1053,7 @@
-           fingerAnimator.initialize(skeletonState.fingerChains);
+@@ -484,9 +1050,10 @@
+       if (fingerAnimator) {
+         const skeletonState = skeletonService.getState();
+         if (skeletonState.fingerChains) {
+-          fingerAnimator.initialize(skeletonState.fingerChains);
++          fingerAnimator.initialize(skeletonState.fingerChains, skeletonState.meshes);
          }
        }
 +      contactReadyRoot = skeletonService.getRoot();
@@ -8043,7 +8047,7 @@ diff --git a/dist/lib/services/contracts/IAnimationStateMachine.d.ts.map b/dist/
 deleted file mode 100644
 index 73f0876c4cafab9821e6e2daa10dafef0c71ff1f..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/contracts/IAvatarAnimator.d.ts b/dist/lib/services/contracts/IAvatarAnimator.d.ts
-index 786bf68515..18f6a5883c 100644
+index 786bf68515..c2e896585b 100644
 --- a/dist/lib/services/contracts/IAvatarAnimator.d.ts
 +++ b/dist/lib/services/contracts/IAvatarAnimator.d.ts
 @@ -4,9 +4,10 @@
@@ -8058,7 +8062,7 @@ index 786bf68515..18f6a5883c 100644
  /**
   * Pose for a single hand/arm
   */
-@@ -74,6 +75,98 @@ export interface PositionOffset {
+@@ -74,6 +75,100 @@ export interface PositionOffset {
      y: number;
      z: number;
  }
@@ -8119,6 +8123,8 @@ index 786bf68515..18f6a5883c 100644
 +    available: boolean;
 +    /** Surface-to-surface distance: positive is a gap, negative is penetration. */
 +    signedClearanceM: number | null;
++    /** Clearance of the distal pad, separate from contact anywhere on a finger. */
++    distalPadClearanceM?: number | null;
 +    /** The distal tip is inside the finite cylinder's usable axial interval. */
 +    axialCoverage: boolean | null;
 +    /** A supported contact is close without exceeding the numeric penetration tolerance. */
@@ -8157,7 +8163,7 @@ index 786bf68515..18f6a5883c 100644
  export interface IAvatarAnimator {
      /**
       * Set the hand targets from prop states
-@@ -120,8 +213,54 @@ export interface IAvatarAnimator {
+@@ -120,8 +215,54 @@ export interface IAvatarAnimator {
       * Set prop states and compute per-arm IK blend weights.
       * Arms with props ramp toward IK (weight 1).
       * Arms without props ramp toward animation (weight 0).
@@ -8213,7 +8219,7 @@ index 786bf68515..18f6a5883c 100644
      /**
       * Enable/disable smooth blending between poses
       */
-@@ -140,4 +279,3 @@ export interface IAvatarAnimator {
+@@ -140,4 +281,3 @@ export interface IAvatarAnimator {
       */
      setExternalSpinePitch(radians: number): void;
  }
@@ -8265,8 +8271,30 @@ diff --git a/dist/lib/services/contracts/IElbowPoleComputer.d.ts.map b/dist/lib/
 deleted file mode 100644
 index 1398e02575c009988a3429900bffee8ffad07b40..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/contracts/IFingerAnimator.d.ts b/dist/lib/services/contracts/IFingerAnimator.d.ts
-deleted file mode 100644
-index 531009a4332db87dfe321647150e1d19180b5ee3..0000000000000000000000000000000000000000
+index 531009a433..ce7688dd79 100644
+--- a/dist/lib/services/contracts/IFingerAnimator.d.ts
++++ b/dist/lib/services/contracts/IFingerAnimator.d.ts
+@@ -1,4 +1,5 @@
+ import type { GripType, FingerChains } from "../../domain/models/GripPose";
++import type { SkinnedMesh } from "three";
+ /**
+  * Animates finger bones by slerping between grip pose presets.
+  * Peer to ILegAnimator - operates on disjoint bone sets.
+@@ -6,7 +7,7 @@ import type { GripType, FingerChains } from "../../domain/models/GripPose";
+  */
+ export interface IFingerAnimator {
+     /** Bind to a skeleton's finger bone chains. Call after model loads. */
+-    initialize(fingerChains: FingerChains): void;
++    initialize(fingerChains: FingerChains, meshes?: readonly SkinnedMesh[]): void;
+     /** Whether initialize() has been called with valid finger chains. */
+     isReady(): boolean;
+     /** Set the target grip for one hand. Animator slerps toward it. */
+@@ -22,4 +23,3 @@ export interface IFingerAnimator {
+     /** Release bone references. */
+     dispose(): void;
+ }
+-//# sourceMappingURL=IFingerAnimator.d.ts.map
+\ No newline at end of file
 diff --git a/dist/lib/services/contracts/IFingerAnimator.d.ts.map b/dist/lib/services/contracts/IFingerAnimator.d.ts.map
 deleted file mode 100644
 index 7f8ba3743e2533011f7b30073b79f53de29ce693..0000000000000000000000000000000000000000
@@ -8864,10 +8892,10 @@ diff --git a/dist/lib/services/implementations/AvatarAnimator.d.ts.map b/dist/li
 deleted file mode 100644
 index f8e47d42167b6ea9bb4fd8f44f41273f48f1943b..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/AvatarAnimator.js b/dist/lib/services/implementations/AvatarAnimator.js
-index bdd5ae35ed..5af68a084d 100644
+index bdd5ae35ed..19778b4789 100644
 --- a/dist/lib/services/implementations/AvatarAnimator.js
 +++ b/dist/lib/services/implementations/AvatarAnimator.js
-@@ -4,7 +4,88 @@
+@@ -4,7 +4,91 @@
   * Manages avatar pose states and smooth animation blending.
   * Bridges TKA prop states to skeleton IK targets.
   */
@@ -8891,6 +8919,9 @@ index bdd5ae35ed..5af68a084d 100644
 +/** Palm center sits this fraction of the way from the wrist joint to the
 + *  Middle1 knuckle - the spot a staff shaft actually crosses the hand. */
 +const PALM_CENTER_FRACTION = 0.65;
++// Calibrated clearance from the inferred channel to the palmar grip surface.
++const PALMAR_SOCKET_OFFSET_M = 0.008;
++const LONGITUDINAL_SOCKET_OFFSET_M = 0.008;
 +/** Two adjacent grips need enough lateral room for both closed hands. The
 + *  render-side contact lock can bridge half of this distance per prop. */
 +const MIN_ADJACENT_GRIP_SEPARATION = 0.07;
@@ -8957,7 +8988,7 @@ index bdd5ae35ed..5af68a084d 100644
  export class AvatarAnimator {
      ikSolver;
      skeleton;
-@@ -14,6 +95,18 @@ export class AvatarAnimator {
+@@ -14,6 +98,18 @@ export class AvatarAnimator {
      // Per-arm IK blend weights: 0 = animation drives the arm, 1 = IK drives the arm
      leftArmIK = { weight: 0, targetWeight: 0 };
      rightArmIK = { weight: 0, targetWeight: 0 };
@@ -8976,7 +9007,7 @@ index bdd5ae35ed..5af68a084d 100644
      ikBlendSpeed = 1 / 0.3; // ~0.3s ramp time
      smoothBlending = true;
      smoothingFactor = 0.15; // 0-1, higher = smoother but laggier
-@@ -23,8 +116,13 @@ export class AvatarAnimator {
+@@ -23,8 +119,13 @@ export class AvatarAnimator {
      transitionProgress = 0;
      transitionConfig = null;
      poleComputer;
@@ -8990,7 +9021,7 @@ index bdd5ae35ed..5af68a084d 100644
      _poleVectorsEnabled = true;
      clavicleRaiser;
      leftClavicleQuat = new Quaternion();
-@@ -67,6 +165,132 @@ export class AvatarAnimator {
+@@ -67,6 +168,132 @@ export class AvatarAnimator {
       * on top of the twist rest pose before arm IK runs. 0 = disabled.
       */
      externalSpinePitchRad = 0;
@@ -9123,7 +9154,7 @@ index bdd5ae35ed..5af68a084d 100644
      constructor(ikSolver, skeleton, poleComputer, clavicleRaiser, spineTwister) {
          this.ikSolver = ikSolver;
          this.skeleton = skeleton;
-@@ -140,9 +364,43 @@ export class AvatarAnimator {
+@@ -140,9 +367,43 @@ export class AvatarAnimator {
                  weight: 1,
              }
              : null;
@@ -9168,7 +9199,7 @@ index bdd5ae35ed..5af68a084d 100644
          this.leftArmIK.targetWeight = blueProp ? 1 : 0;
          this.rightArmIK.targetWeight = redProp ? 1 : 0;
          const ox = offset?.x ?? 0;
-@@ -154,6 +412,7 @@ export class AvatarAnimator {
+@@ -154,6 +415,7 @@ export class AvatarAnimator {
          this.targetPose.leftHand = blueProp
              ? {
                  targetPosition: new Vector3(blueProp.worldPosition.x - ox, blueProp.worldPosition.y - oy, blueProp.worldPosition.z - oz),
@@ -9176,7 +9207,7 @@ index bdd5ae35ed..5af68a084d 100644
                  staffAngle: blueProp.staffRotationAngle,
                  plane: blueProp.plane,
                  weight: 1,
-@@ -162,13 +421,80 @@ export class AvatarAnimator {
+@@ -162,13 +424,80 @@ export class AvatarAnimator {
          this.targetPose.rightHand = redProp
              ? {
                  targetPosition: new Vector3(redProp.worldPosition.x - ox, redProp.worldPosition.y - oy, redProp.worldPosition.z - oz),
@@ -9257,7 +9288,7 @@ index bdd5ae35ed..5af68a084d 100644
      setLeftHandTarget(target) {
          this.targetPose.leftHand = { ...target };
          this.targetPose.timestamp = Date.now();
-@@ -183,8 +509,14 @@ export class AvatarAnimator {
+@@ -183,8 +512,14 @@ export class AvatarAnimator {
      update(deltaTime) {
          // Ramp per-arm IK blend weights (framerate-independent exponential lerp)
          const blendFactor = 1 - Math.exp(-this.ikBlendSpeed * deltaTime);
@@ -9274,7 +9305,7 @@ index bdd5ae35ed..5af68a084d 100644
          if (this.transitioning) {
              this.updateTransition(deltaTime);
          }
-@@ -197,7 +529,281 @@ export class AvatarAnimator {
+@@ -197,7 +532,291 @@ export class AvatarAnimator {
          // Apply combined layers
          const finalPose = this.computeFinalPose();
          // Solve IK for arms
@@ -9329,8 +9360,18 @@ index bdd5ae35ed..5af68a084d 100644
 +                continue;
 +            if (this.strictSockets[side])
 +                palm.copy(this.strictSockets[side]);
-+            else
++            else {
++                const normal = side === "left" ? this.leftPalmNormalLocal : this.rightPalmNormalLocal;
++                const longitudinal = side === "left" ? this.leftGripLongitudinalLocal : this.rightGripLongitudinalLocal;
++                const wrist = side === "left" ? state.leftArmChain?.effector : state.rightArmChain?.effector;
++                if (normal && wrist) {
++                    const scale = wrist.getWorldScale(new Vector3()).x;
++                    palm.addScaledVector(normal, PALMAR_SOCKET_OFFSET_M / Math.abs(scale));
++                    if (longitudinal)
++                        palm.addScaledVector(longitudinal, LONGITUDINAL_SOCKET_OFFSET_M / Math.abs(scale));
++                }
 +                this.strictSockets[side] = palm.clone();
++            }
 +        }
 +        const active = ([
 +            { side: "left", hand: pose.leftHand, chain: state.leftArmChain },
@@ -9557,7 +9598,7 @@ index bdd5ae35ed..5af68a084d 100644
      }
      blendToTarget(_deltaTime) {
          // Hands snap directly to prop positions - no lerp.
-@@ -273,18 +879,184 @@ export class AvatarAnimator {
+@@ -273,18 +892,184 @@ export class AvatarAnimator {
          }
          return result;
      }
@@ -9743,7 +9784,7 @@ index bdd5ae35ed..5af68a084d 100644
          // Cache shoulder rest Y positions once (before any clavicle rotation has been applied).
          // CRITICAL: Do NOT read these per-frame after clavicle is rotated - the elevated
          // position feeds back and causes oscillation.
-@@ -335,7 +1107,7 @@ export class AvatarAnimator {
+@@ -335,7 +1120,7 @@ export class AvatarAnimator {
              // Nullable hands are first-class: SpineTwister handles the
              // single-hand-gaze branch and the no-hand identity branch
              // internally, so we pass pose hands through as-is.
@@ -9752,7 +9793,7 @@ index bdd5ae35ed..5af68a084d 100644
              // Apply twist to each bone individually for a natural spinal curve.
              // Each bone gets its own weighted quaternion from SpineTwister.
              const applySpineTwist = (boneName, key, twistQuat) => {
-@@ -389,11 +1161,148 @@ export class AvatarAnimator {
+@@ -389,11 +1174,148 @@ export class AvatarAnimator {
                      hipsBoneForUpdate.updateMatrixWorld(true);
              }
          }
@@ -9902,7 +9943,7 @@ index bdd5ae35ed..5af68a084d 100644
                  // Save what the locomotion animation wrote to bone quaternions
                  const animRootQuat = leftChain.root.quaternion.clone();
                  const animMiddleQuat = leftChain.middle.quaternion.clone();
-@@ -402,7 +1311,7 @@ export class AvatarAnimator {
+@@ -402,7 +1324,7 @@ export class AvatarAnimator {
                  if (this._clavicleRaiseEnabled && this.clavicleRaiser && this.shoulderRestCached) {
                      const leftShoulder = state.bones.get("LeftShoulder");
                      if (leftShoulder) {
@@ -9911,7 +9952,7 @@ index bdd5ae35ed..5af68a084d 100644
                          this.leftClavicleQuat.slerp(targetQuat, this.smoothingFactor);
                          leftShoulder.quaternion
                              .copy(this.leftClavicleRestQuat)
-@@ -410,19 +1319,56 @@ export class AvatarAnimator {
+@@ -410,19 +1332,56 @@ export class AvatarAnimator {
                          leftShoulder.updateMatrixWorld(true);
                      }
                  }
@@ -9971,7 +10012,7 @@ index bdd5ae35ed..5af68a084d 100644
                  // Save IK results BEFORE blending - .copy() would overwrite them
                  const ikRootQuat = leftChain.root.quaternion.clone();
                  const ikMiddleQuat = leftChain.middle.quaternion.clone();
-@@ -432,12 +1378,20 @@ export class AvatarAnimator {
+@@ -432,12 +1391,20 @@ export class AvatarAnimator {
                  leftChain.root.quaternion.copy(animRootQuat).slerp(ikRootQuat, w);
                  leftChain.middle.quaternion.copy(animMiddleQuat).slerp(ikMiddleQuat, w);
                  leftChain.effector.quaternion.copy(animEffectorQuat).slerp(ikEffectorQuat, w);
@@ -9993,7 +10034,7 @@ index bdd5ae35ed..5af68a084d 100644
                  // Save what the locomotion animation wrote to bone quaternions
                  const animRootQuat = rightChain.root.quaternion.clone();
                  const animMiddleQuat = rightChain.middle.quaternion.clone();
-@@ -446,7 +1400,7 @@ export class AvatarAnimator {
+@@ -446,7 +1413,7 @@ export class AvatarAnimator {
                  if (this._clavicleRaiseEnabled && this.clavicleRaiser && this.shoulderRestCached) {
                      const rightShoulder = state.bones.get("RightShoulder");
                      if (rightShoulder) {
@@ -10002,7 +10043,7 @@ index bdd5ae35ed..5af68a084d 100644
                          this.rightClavicleQuat.slerp(targetQuat, this.smoothingFactor);
                          rightShoulder.quaternion
                              .copy(this.rightClavicleRestQuat)
-@@ -454,19 +1408,49 @@ export class AvatarAnimator {
+@@ -454,19 +1421,49 @@ export class AvatarAnimator {
                          rightShoulder.updateMatrixWorld(true);
                      }
                  }
@@ -10055,7 +10096,7 @@ index bdd5ae35ed..5af68a084d 100644
                  // Save IK results BEFORE blending - .copy() would overwrite them
                  const ikRootQuat = rightChain.root.quaternion.clone();
                  const ikMiddleQuat = rightChain.middle.quaternion.clone();
-@@ -476,11 +1460,726 @@ export class AvatarAnimator {
+@@ -476,11 +1473,726 @@ export class AvatarAnimator {
                  rightChain.root.quaternion.copy(animRootQuat).slerp(ikRootQuat, w);
                  rightChain.middle.quaternion.copy(animMiddleQuat).slerp(ikMiddleQuat, w);
                  rightChain.effector.quaternion.copy(animEffectorQuat).slerp(ikEffectorQuat, w);
@@ -10278,7 +10319,7 @@ index bdd5ae35ed..5af68a084d 100644
 +            // opposite direction would silently flip which end the thumb faces.
 +            const axis = transverse.clone();
 +            const palm = m.clone().multiplyScalar(PALM_CENTER_FRACTION);
-+            const worldPalmLength = handWorld.distanceTo(middleWorld) * PALM_CENTER_FRACTION;
++            const worldPalmLength = handWorld.distanceTo(hand.localToWorld(palm.clone()));
 +            return { axis, longitudinal, palm, palmNormal, worldPalmLength };
 +        };
 +        const left = calibrateSide(leftChain.effector, chains.left);
@@ -10782,7 +10823,7 @@ index bdd5ae35ed..5af68a084d 100644
      addLayer(layer) {
          this.layers.set(layer.id, layer);
      }
-@@ -521,6 +2220,12 @@ export class AvatarAnimator {
+@@ -521,6 +2233,12 @@ export class AvatarAnimator {
      setExternalSpinePitch(radians) {
          this.externalSpinePitchRad = radians;
      }
@@ -10795,7 +10836,7 @@ index bdd5ae35ed..5af68a084d 100644
      /** Debug toggle: disable pole vectors to compare old vs new elbow behavior */
      togglePoleVectors() {
          this._poleVectorsEnabled = !this._poleVectorsEnabled;
-@@ -528,9 +2233,16 @@ export class AvatarAnimator {
+@@ -528,9 +2246,16 @@ export class AvatarAnimator {
              // Reset to default backward poles so difference is visible immediately
              this.leftPoleVector.set(0, 0, -1);
              this.rightPoleVector.set(0, 0, -1);
@@ -12485,11 +12526,12 @@ index d42bcd447471742c09a421dc92e9eb63986abbb4..b448e44004d3680ebcee15b0e40c3b04
 +    }
  }
 diff --git a/dist/lib/services/implementations/FingerAnimator.d.ts b/dist/lib/services/implementations/FingerAnimator.d.ts
-index d49f92aeda..20a0a48131 100644
+index d49f92aeda..89e4fb65a4 100644
 --- a/dist/lib/services/implementations/FingerAnimator.d.ts
 +++ b/dist/lib/services/implementations/FingerAnimator.d.ts
-@@ -1,22 +1,58 @@
+@@ -1,22 +1,77 @@
 +import { Vector3 } from "three";
++import type { SkinnedMesh } from "three";
  import type { IFingerAnimator } from "../contracts/IFingerAnimator";
  import { GripType, type FingerChains } from "../../domain/models/GripPose";
 +import type { FingerCylinderContact, StaffContact } from "../contracts/IAvatarAnimator";
@@ -12497,12 +12539,17 @@ index d49f92aeda..20a0a48131 100644
 +    a: Vector3;
 +    b: Vector3;
 +}
++/** Whether a projected finger chain closes around the shaft center. The chain
++ * is closed from tip to MCP: a curl lying entirely above the shaft has the
++ * same pad proximity as a real grip, but leaves the center outside this loop. */
++export declare function fingerChainEnclosesCylinder(points: readonly Vector3[], cylinder: FingerCylinderContactInput): boolean;
  export declare class FingerAnimator implements IFingerAnimator {
      private leftHand;
      private rightHand;
      private blendSpeed;
      private ready;
      private readonly scratchQuat;
+-    initialize(fingerChains: FingerChains): void;
 +    private readonly scratchDelta;
 +    private leftCylinder;
 +    private rightCylinder;
@@ -12519,7 +12566,7 @@ index d49f92aeda..20a0a48131 100644
 +    private readonly segmentW;
 +    private readonly segmentPointA;
 +    private readonly segmentPointB;
-     initialize(fingerChains: FingerChains): void;
++    initialize(fingerChains: FingerChains, meshes?: readonly SkinnedMesh[]): void;
      isReady(): boolean;
      setGrip(hand: "left" | "right", type: GripType): void;
      setGrips(leftGrip: GripType, rightGrip: GripType): void;
@@ -12530,18 +12577,32 @@ index d49f92aeda..20a0a48131 100644
 +    setCylinderContact(hand: "left" | "right", cylinder: FingerCylinderContactInput | null): void;
 +    setCylinderContactStrict(strict: boolean): void;
 +    solveCylinderContacts(): void;
-+    getCylinderContactReport(hand: "left" | "right"): readonly FingerCylinderContact[];
++    getCylinderContactReport(side: "left" | "right"): readonly FingerCylinderContact[];
      update(deltaTime: number): void;
      setBlendSpeed(speed: number): void;
      getCurrentGrip(hand: "left" | "right"): GripType;
      dispose(): void;
      private createHandState;
++    /** Cache the visible skin's radial support for each phalanx. */
++    private measureSkinSupportRadii;
 +    private calibrateSquareThumb;
      private writeTargetRotation;
 +    private writeThumbTargetRotation;
      private updateHand;
 +    private solveHandCylinder;
++    private synchronizeSkinMeshes;
 +    private measureFinger;
++    private distalPadClearance;
++    private fingerEnclosureCost;
++    private pointToCylinderClearance;
++    private fingerSkinClearance;
++    private fingerTriangleClearance;
++    private triangleStaffDistance;
++    private segmentSegmentDistanceSq;
++    /** Penalize a thumb that closes beside the index rather than across the
++     * handle. This is evaluated in the live staff frame, so exporter-specific
++     * thumb axes cannot turn a near-index pose into a dangling one. */
++    private thumbOppositionCost;
 +    private distalTip;
 +    private segmentToCylinderClearance;
 +    private segmentSegmentDistance;
@@ -12553,14 +12614,44 @@ diff --git a/dist/lib/services/implementations/FingerAnimator.d.ts.map b/dist/li
 deleted file mode 100644
 index c81171af6db42d1aee03e56854cbd3557e1a6695..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/FingerAnimator.js b/dist/lib/services/implementations/FingerAnimator.js
-index 6c2e8693da..b8bad58e99 100644
+index 6c2e8693da..7e5271488e 100644
 --- a/dist/lib/services/implementations/FingerAnimator.js
 +++ b/dist/lib/services/implementations/FingerAnimator.js
-@@ -1,15 +1,55 @@
+@@ -1,15 +1,86 @@
 -import { Quaternion } from "three";
-+import { Euler, Quaternion, Vector3 } from "three";
++import { Euler, Quaternion, Triangle, Vector3 } from "three";
  import { GripType, FINGER_BONES, } from "../../domain/models/GripPose";
  import { STAFF_GRIP_POSES } from "../../data/grip-poses/staff-grip-poses";
++/** Whether a projected finger chain closes around the shaft center. The chain
++ * is closed from tip to MCP: a curl lying entirely above the shaft has the
++ * same pad proximity as a real grip, but leaves the center outside this loop. */
++export function fingerChainEnclosesCylinder(points, cylinder) {
++    if (points.length < 3)
++        return false;
++    const axis = new Vector3().subVectors(cylinder.b, cylinder.a);
++    if (axis.lengthSq() <= 1e-10)
++        return false;
++    axis.normalize();
++    const reference = Math.abs(axis.x) < 0.8
++        ? new Vector3(1, 0, 0)
++        : new Vector3(0, 1, 0);
++    const u = new Vector3().crossVectors(axis, reference).normalize();
++    const v = new Vector3().crossVectors(axis, u).normalize();
++    const center = new Vector3().addVectors(cylinder.a, cylinder.b).multiplyScalar(0.5);
++    const projected = points.map((point) => {
++        const offset = point.clone().sub(center);
++        return [offset.dot(u), offset.dot(v)];
++    });
++    let inside = false;
++    for (let index = 0, previous = projected.length - 1; index < projected.length; previous = index++) {
++        const [x, y] = projected[index];
++        const [previousX, previousY] = projected[previous];
++        if ((y > 0) !== (previousY > 0) &&
++            0 < (previousX - x) * -y / (previousY - y) + x)
++            inside = !inside;
++    }
++    return inside;
++}
 +const THUMB_BONE_COUNT = 3;
 +const INDEX_MIDDLE_JOINT = 4;
 +const MIDDLE_PROXIMAL_JOINT = 6;
@@ -12570,6 +12661,7 @@ index 6c2e8693da..b8bad58e99 100644
 +const FINGER_RADIUS_FRACTION = 0.115;
 +const CONTACT_TOLERANCE_M = 0.002;
 +const PENETRATION_TOLERANCE_M = 0.0005;
++const DISTAL_PAD_TARGET_CLEARANCE_M = 0.0005;
 +const FINGER_NAMES = ["thumb", "index", "middle", "ring", "pinky"];
 +const FINGER_STARTS = [0, 3, 6, 9, 12];
 +/**
@@ -12589,6 +12681,9 @@ index 6c2e8693da..b8bad58e99 100644
      blendSpeed = 6.0;
      ready = false;
      scratchQuat = new Quaternion();
+-    initialize(fingerChains) {
+-        this.leftHand = this.createHandState(fingerChains.left);
+-        this.rightHand = this.createHandState(fingerChains.right);
 +    scratchDelta = new Quaternion();
 +    leftCylinder = null;
 +    rightCylinder = null;
@@ -12605,15 +12700,15 @@ index 6c2e8693da..b8bad58e99 100644
 +    segmentW = new Vector3();
 +    segmentPointA = new Vector3();
 +    segmentPointB = new Vector3();
-     initialize(fingerChains) {
-         this.leftHand = this.createHandState(fingerChains.left);
-         this.rightHand = this.createHandState(fingerChains.right);
++    initialize(fingerChains, meshes = []) {
++        this.leftHand = this.createHandState(fingerChains.left, meshes);
++        this.rightHand = this.createHandState(fingerChains.right, meshes);
 +        this.calibrateSquareThumb(this.leftHand, "left");
 +        this.calibrateSquareThumb(this.rightHand, "right");
          this.ready = true;
          this.applyPoseImmediate(this.leftHand, GripType.IDLE, "left");
          this.applyPoseImmediate(this.rightHand, GripType.IDLE, "right");
-@@ -27,9 +67,43 @@ export class FingerAnimator {
+@@ -27,9 +98,43 @@ export class FingerAnimator {
          this.setGrip("left", leftGrip);
          this.setGrip("right", rightGrip);
      }
@@ -12640,11 +12735,11 @@ index 6c2e8693da..b8bad58e99 100644
 +            this.applyPoseImmediate(this.leftHand, this.leftHand.targetGrip, "left");
 +            this.applyPoseImmediate(this.rightHand, this.rightHand.targetGrip, "right");
 +        }
-+        this.solveHandCylinder(this.leftHand, this.leftCylinder, this.leftContactReport);
-+        this.solveHandCylinder(this.rightHand, this.rightCylinder, this.rightContactReport);
++        this.solveHandCylinder(this.leftHand, this.leftCylinder, this.leftContactReport, "left");
++        this.solveHandCylinder(this.rightHand, this.rightCylinder, this.rightContactReport, "right");
 +    }
-+    getCylinderContactReport(hand) {
-+        return hand === "left" ? this.leftContactReport : this.rightContactReport;
++    getCylinderContactReport(side) {
++        return side === "left" ? this.leftContactReport : this.rightContactReport;
 +    }
      update(deltaTime) {
          if (!this.ready || !this.leftHand || !this.rightHand)
@@ -12657,7 +12752,7 @@ index 6c2e8693da..b8bad58e99 100644
          this.updateHand(this.leftHand, "left", deltaTime);
          this.updateHand(this.rightHand, "right", deltaTime);
      }
-@@ -44,51 +118,346 @@ export class FingerAnimator {
+@@ -44,51 +149,675 @@ export class FingerAnimator {
          this.leftHand = null;
          this.rightHand = null;
          this.ready = false;
@@ -12666,7 +12761,8 @@ index 6c2e8693da..b8bad58e99 100644
 +        this.leftContactReport.length = 0;
 +        this.rightContactReport.length = 0;
      }
-     createHandState(boneMap) {
+-    createHandState(boneMap) {
++    createHandState(boneMap, meshes) {
          const bones = [];
 +        const restRotations = [];
          const currentRotations = [];
@@ -12689,7 +12785,8 @@ index 6c2e8693da..b8bad58e99 100644
 +                ? new Vector3(this.scratchDelta.x, this.scratchDelta.y, this.scratchDelta.z).multiplyScalar(1 / sine)
 +                : new Vector3(1, 0, 0));
          }
-         return {
+-        return {
++        const state = {
              targetGrip: GripType.IDLE,
 +            restRotations,
              currentRotations,
@@ -12698,7 +12795,121 @@ index 6c2e8693da..b8bad58e99 100644
 +            hingeAxes,
 +            contactKey: null,
 +            contactPose: null,
-+        };
++            skinRadii: [],
++            skinSamples: [],
++            skinTriangles: [],
+         };
++        for (const mesh of meshes) {
++            mesh.updateWorldMatrix(true, false);
++            mesh.updateMatrixWorld(true);
++        }
++        state.skinRadii = this.measureSkinSupportRadii(state, meshes);
++        return state;
+     }
+-    // Writes the target rotation for boneIndex into scratchQuat, mirroring for right hand.
+-    // Right-hand mirror negates Y and Z to reflect across the YZ plane.
+-    writeTargetRotation(gripType, boneIndex, hand) {
++    /** Cache the visible skin's radial support for each phalanx. */
++    measureSkinSupportRadii(state, meshes) {
++        const samples = state.bones.map(() => []);
++        const skinSamples = state.bones.map(() => []);
++        const boneIndices = new Map(state.bones.map((bone, index) => [bone.name, index]));
++        const origins = state.bones.map((bone) => bone.getWorldPosition(new Vector3()));
++        const ends = state.bones.map((bone, index) => {
++            const child = bone.children.find((node) => node.isBone);
++            return child
++                ? child.getWorldPosition(new Vector3())
++                : index % 3 === 2
++                    ? origins[index].clone().add(origins[index].clone().sub(origins[index - 1]))
++                    : origins[index].clone();
++        });
++        for (const mesh of meshes) {
++            const skinIndex = mesh.geometry.getAttribute("skinIndex");
++            const skinWeight = mesh.geometry.getAttribute("skinWeight");
++            const position = mesh.geometry.getAttribute("position");
++            if (!skinIndex || !skinWeight || !position || !mesh.skeleton || !mesh.getVertexPosition)
++                continue;
++            mesh.updateWorldMatrix(true, false);
++            for (let vertex = 0; vertex < position.count; vertex += 1) {
++                let slot = 0;
++                let weight = -Infinity;
++                for (let influence = 0; influence < 4; influence += 1) {
++                    const candidate = skinWeight.getComponent(vertex, influence);
++                    if (candidate > weight) {
++                        weight = candidate;
++                        slot = influence;
++                    }
++                }
++                if (weight < 0.5)
++                    continue;
++                const sourceBone = mesh.skeleton.bones[skinIndex.getComponent(vertex, slot)];
++                const index = sourceBone ? boneIndices.get(sourceBone.name) : undefined;
++                if (index === undefined)
++                    continue;
++                const start = origins[index];
++                const end = ends[index];
++                const axis = end.clone().sub(start);
++                const lengthSq = axis.lengthSq();
++                if (lengthSq <= 1e-10)
++                    continue;
++                const point = mesh.getVertexPosition(vertex, new Vector3()).applyMatrix4(mesh.matrixWorld);
++                const t = Math.max(0.12, Math.min(0.88, point.clone().sub(start).dot(axis) / lengthSq));
++                const radius = point.distanceTo(start.clone().addScaledVector(axis, t));
++                samples[index].push(radius);
++                skinSamples[index].push({ mesh, vertex, radius, distalFraction: t });
++            }
++        }
++        state.skinSamples = skinSamples.map((candidates) => candidates
++            .sort((a, b) => b.radius - a.radius)
++            // A bounded cache keeps refinement predictable while retaining the
++            // skin support most likely to meet a shaft after the bone turns.
++            .slice(0, 24)
++            .map(({ mesh, vertex, distalFraction }) => ({ mesh, vertex, distalFraction })));
++        state.skinTriangles = state.bones.map(() => []);
++        for (const mesh of meshes) {
++            const skinIndex = mesh.geometry.getAttribute("skinIndex");
++            const skinWeight = mesh.geometry.getAttribute("skinWeight");
++            const position = mesh.geometry.getAttribute("position");
++            if (!skinIndex || !skinWeight || !position || !mesh.skeleton || !mesh.getVertexPosition)
++                continue;
++            const index = mesh.geometry.getIndex();
++            const triangleCount = (index ? index.count : position.count) / 3;
++            const dominant = (vertex) => {
++                let slot = 0;
++                let weight = -Infinity;
++                for (let influence = 0; influence < 4; influence += 1) {
++                    const candidate = skinWeight.getComponent(vertex, influence);
++                    if (candidate > weight) {
++                        weight = candidate;
++                        slot = influence;
++                    }
++                }
++                const source = weight >= 0.5 ? mesh.skeleton.bones[skinIndex.getComponent(vertex, slot)] : undefined;
++                return source ? boneIndices.get(source.name) : undefined;
++            };
++            for (let triangle = 0; triangle < triangleCount; triangle += 1) {
++                const offset = triangle * 3;
++                const a = index ? index.getX(offset) : offset;
++                const b = index ? index.getX(offset + 1) : offset + 1;
++                const c = index ? index.getX(offset + 2) : offset + 2;
++                for (const bone of new Set([dominant(a), dominant(b), dominant(c)]))
++                    if (bone !== undefined)
++                        state.skinTriangles[bone].push({ mesh, a, b, c });
++            }
++        }
++        return samples.map((values, index) => {
++            const length = origins[index].distanceTo(ends[index]);
++            const fallback = Math.max(0.003, length * FINGER_RADIUS_FRACTION);
++            if (values.length < 6)
++                return fallback;
++            values.sort((a, b) => a - b);
++            // 85th percentile retains the visible pad and rejects blended palm seams.
++            const support = values[Math.floor((values.length - 1) * 0.85)];
++            // Do not cap a measured skin support by bone length: short distal bones
++            // commonly carry a wider fingertip pad, and shrinking that observed
++            // surface is exactly how a cylinder silently cuts through it.
++            return Math.max(fallback, support);
++        });
 +    }
 +    calibrateSquareThumb(state, hand) {
 +        const thumbBase = state.bones[0];
@@ -12728,7 +12939,7 @@ index 6c2e8693da..b8bad58e99 100644
 +                state.bones[index].quaternion.copy(this.scratchQuat);
 +            }
 +            palm.updateWorldMatrix(true, true);
-         };
++        };
 +        try {
 +            applyDefaultSquare();
 +            const defaultDistance = thumbPosition
@@ -12778,10 +12989,7 @@ index 6c2e8693da..b8bad58e99 100644
 +        finally {
 +            restore();
 +        }
-     }
--    // Writes the target rotation for boneIndex into scratchQuat, mirroring for right hand.
--    // Right-hand mirror negates Y and Z to reflect across the YZ plane.
--    writeTargetRotation(gripType, boneIndex, hand) {
++    }
 +    // Grip poses are joint deltas, not replacement local rotations. Keeping each
 +    // character's imported reference pose is what lets the same curl work on
 +    // Mixamo, Unreal, and other rigs whose finger axes start differently.
@@ -12803,7 +13011,7 @@ index 6c2e8693da..b8bad58e99 100644
          else {
 -            this.scratchQuat.set(raw[0], raw[1], raw[2], raw[3]);
 +            this.scratchDelta.set(raw[0], raw[1], raw[2], raw[3]);
-+        }
+         }
 +        this.scratchQuat
 +            .copy(state.restRotations[boneIndex])
 +            .multiply(this.scratchDelta)
@@ -12814,7 +13022,7 @@ index 6c2e8693da..b8bad58e99 100644
 +        if (hand === "right") {
 +            this.scratchDelta.y = -this.scratchDelta.y;
 +            this.scratchDelta.z = -this.scratchDelta.z;
-         }
++        }
 +        this.scratchQuat
 +            .copy(state.restRotations[boneIndex])
 +            .multiply(this.scratchDelta)
@@ -12831,7 +13039,8 @@ index 6c2e8693da..b8bad58e99 100644
              state.bones[i].quaternion.copy(state.currentRotations[i]);
          }
      }
-+    solveHandCylinder(state, cylinder, report) {
++    solveHandCylinder(state, cylinder, report, side) {
++        this.synchronizeSkinMeshes(state);
 +        report.length = 0;
 +        const hand = state.bones[0]?.parent;
 +        let contactKey = null;
@@ -12858,11 +13067,14 @@ index 6c2e8693da..b8bad58e99 100644
 +            }
 +            // Refine all three hinges. A single middle-joint correction can leave
 +            // the pinky floating or drive its distal segment through the shaft.
-+            const bases = state.bones.slice(start, start + 3).map((bone) => bone.quaternion.clone());
++            let bases = state.bones.slice(start, start + 3).map((bone) => bone.quaternion.clone());
 +            const angles = [0, 0, 0];
 +            const limits = [0, 1, 2].map((joint) => {
++                // Thumb opposition is a saddle motion, not just another finger curl.
++                // Keep its three local corrections inside a physiological 52° window
++                // while allowing the actual hand frame to carry it across the shaft.
 +                if (finger === "thumb")
-+                    return [-0.6, 0.6];
++                    return [-0.9, 0.9];
 +                const pose = STAFF_GRIP_POSES[GripType.SQUARE].rotations[start + joint];
 +                const baseFlex = 2 * Math.atan2(Math.hypot(pose[0], pose[1], pose[2]), pose[3]);
 +                return [-baseFlex, [95, 110, 85][joint] * Math.PI / 180 - baseFlex];
@@ -12875,6 +13087,40 @@ index 6c2e8693da..b8bad58e99 100644
 +                }
 +                state.bones[start].updateWorldMatrix(true, true);
 +            };
++            if (finger === "thumb" && cylinder) {
++                let bestBases = bases.map((base) => base.clone());
++                let bestRank = Infinity;
++                for (const flexion of SQUARE_THUMB_BASE_FLEXION_DEGREES)
++                    for (const abduction of SQUARE_THUMB_ABDUCTION_DEGREES)
++                        for (const opposition of SQUARE_THUMB_OPPOSITION_DEGREES)
++                            for (const middleFlexion of SQUARE_THUMB_MIDDLE_FLEXION_DEGREES)
++                                for (const tipFlexion of SQUARE_THUMB_TIP_FLEXION_DEGREES) {
++                                    const candidate = [
++                                        new Quaternion().setFromEuler(new Euler(flexion * Math.PI / 180, abduction * Math.PI / 180, opposition * Math.PI / 180)),
++                                        new Quaternion().setFromEuler(new Euler(middleFlexion * Math.PI / 180, 0, 0)),
++                                        new Quaternion().setFromEuler(new Euler(tipFlexion * Math.PI / 180, 0, 0)),
++                                    ];
++                                    bases = candidate.map((delta, joint) => {
++                                        if (side === "right")
++                                            delta = delta.clone().set(delta.x, -delta.y, -delta.z, delta.w);
++                                        return state.restRotations[start + joint].clone().multiply(delta).normalize();
++                                    });
++                                    apply();
++                                    const triangle = this.fingerTriangleClearance(state, start, cylinder);
++                                    const pad = this.fingerSkinClearance(state, start, cylinder, true);
++                                    const oppositionCost = this.thumbOppositionCost(state, cylinder);
++                                    // Any surface overlap loses to every clear candidate. Within
++                                    // the clear set, choose pad proximity then opposition.
++                                    const rank = triangle < -PENETRATION_TOLERANCE_M
++                                        ? 1e6 + -triangle * 1e6
++                                        : Math.abs((Number.isFinite(pad) ? pad : 0) - DISTAL_PAD_TARGET_CLEARANCE_M) * 100 + oppositionCost;
++                                    if (rank < bestRank) {
++                                        bestRank = rank;
++                                        bestBases = bases.map((base) => base.clone());
++                                    }
++                                }
++                bases = bestBases;
++            }
 +            const cost = () => {
 +                const measured = this.measureFinger(state, start, finger, cylinder);
 +                const clearance = measured.signedClearanceM;
@@ -12883,7 +13129,24 @@ index 6c2e8693da..b8bad58e99 100644
 +                // Penetration costs more than a remaining gap. A tiny positive margin
 +                // avoids contact chattering without concealing failures.
 +                const error = clearance - 0.0002;
++                const padClearance = this.distalPadClearance(state, start, cylinder);
++                const trianglePadClearance = this.fingerTriangleClearance(state, start, cylinder, true);
++                const skinPadClearance = this.fingerSkinClearance(state, start, cylinder, true);
++                const padError = (Number.isFinite(trianglePadClearance)
++                    ? trianglePadClearance
++                    : Number.isFinite(skinPadClearance)
++                        ? skinPadClearance
++                        : padClearance) - DISTAL_PAD_TARGET_CLEARANCE_M;
++                const triangleClearance = this.fingerTriangleClearance(state, start, cylinder);
++                const triangleError = triangleClearance - 0.0002;
 +                return error * error * (error < 0 ? 40 : 1)
++                    // The visible grasp is made by distal pads. Without this term a
++                    // proximal knuckle can satisfy the cylinder while the finger hangs
++                    // straight past the shaft.
++                    + padError * padError * (padError < 0 ? 120 : 30)
++                    + triangleError * triangleError * (triangleError < 0 ? 800 : 1)
++                    + (finger === "thumb" ? 0 : this.fingerEnclosureCost(state, start, cylinder))
++                    + (finger === "thumb" ? this.thumbOppositionCost(state, cylinder) : 0)
 +                    + angles.reduce((sum, angle) => sum + angle * angle, 0) * 1e-8;
 +            };
 +            apply();
@@ -12938,6 +13201,17 @@ index 6c2e8693da..b8bad58e99 100644
 +            state.contactPose = state.bones.map((bone) => bone.quaternion.clone());
 +        }
 +    }
++    synchronizeSkinMeshes(state) {
++        const meshes = new Set();
++        state.skinSamples.forEach((samples) => samples.forEach((sample) => meshes.add(sample.mesh)));
++        state.skinTriangles.forEach((triangles) => triangles.forEach((triangle) => meshes.add(triangle.mesh)));
++        for (const mesh of meshes) {
++            mesh.updateWorldMatrix(true, false);
++            // SkinnedMesh updates bindMatrixInverse here; updateWorldMatrix alone
++            // leaves CPU skin queries one renderer frame behind the visible mesh.
++            mesh.updateMatrixWorld(true);
++        }
++    }
 +    measureFinger(state, start, finger, cylinder) {
 +        const proximal = state.bones[start];
 +        const middle = state.bones[start + 1];
@@ -12948,12 +13222,29 @@ index 6c2e8693da..b8bad58e99 100644
 +        proximal.getWorldPosition(this.scratchA);
 +        middle.getWorldPosition(this.scratchB);
 +        distal.getWorldPosition(this.scratchC);
-+        const fingerRadius = Math.max(0.003, this.scratchA.distanceTo(this.scratchB) * FINGER_RADIUS_FRACTION);
++        const fallbackRadius = Math.max(0.003, this.scratchA.distanceTo(this.scratchB) * FINGER_RADIUS_FRACTION);
 +        const tip = this.distalTip(distal, this.scratchB, this.scratchC, this.scratchD);
-+        const first = this.segmentToCylinderClearance(this.scratchA, this.scratchB, cylinder, fingerRadius);
-+        const second = this.segmentToCylinderClearance(this.scratchB, this.scratchC, cylinder, fingerRadius);
-+        const third = this.segmentToCylinderClearance(this.scratchC, tip, cylinder, fingerRadius);
-+        const signedClearanceM = Math.min(first, second, third);
++        const first = this.segmentToCylinderClearance(this.scratchA, this.scratchB, cylinder, state.skinRadii[start] ?? fallbackRadius);
++        const second = this.segmentToCylinderClearance(this.scratchB, this.scratchC, cylinder, state.skinRadii[start + 1] ?? fallbackRadius);
++        const third = this.segmentToCylinderClearance(this.scratchC, tip, cylinder, state.skinRadii[start + 2] ?? fallbackRadius);
++        const capsuleClearance = Math.min(first, second, third);
++        const triangleClearance = this.fingerTriangleClearance(state, start, cylinder, false);
++        const skinClearance = this.fingerSkinClearance(state, start, cylinder, false);
++        const capsulePadClearance = this.distalPadClearance(state, start, cylinder);
++        const trianglePadClearance = this.fingerTriangleClearance(state, start, cylinder, true);
++        const skinPadClearance = this.fingerSkinClearance(state, start, cylinder, true);
++        // The skinned surface is the rendered body. Capsule values only cover rigs
++        // that did not supply usable weighted vertices.
++        const signedClearanceM = Number.isFinite(triangleClearance)
++            ? triangleClearance
++            : Number.isFinite(skinClearance)
++                ? skinClearance
++                : capsuleClearance;
++        const distalPadClearanceM = Number.isFinite(trianglePadClearance)
++            ? trianglePadClearance
++            : Number.isFinite(skinPadClearance)
++                ? skinPadClearance
++                : capsulePadClearance;
 +        const axis = this.scratchAxis.subVectors(cylinder.b, cylinder.a);
 +        const lengthSq = axis.lengthSq();
 +        const axial = lengthSq > 1e-10
@@ -12964,11 +13255,146 @@ index 6c2e8693da..b8bad58e99 100644
 +            finger,
 +            available: true,
 +            signedClearanceM,
++            distalPadClearanceM,
 +            axialCoverage,
 +            supported: axialCoverage &&
 +                signedClearanceM <= CONTACT_TOLERANCE_M &&
-+                signedClearanceM >= -PENETRATION_TOLERANCE_M,
++                signedClearanceM >= -PENETRATION_TOLERANCE_M &&
++                distalPadClearanceM <= CONTACT_TOLERANCE_M &&
++                distalPadClearanceM >= -PENETRATION_TOLERANCE_M,
 +        };
++    }
++    distalPadClearance(state, start, cylinder) {
++        const middle = state.bones[start + 1];
++        const distal = state.bones[start + 2];
++        if (!middle || !distal)
++            return Infinity;
++        distal.getWorldPosition(this.scratchC);
++        middle.getWorldPosition(this.scratchB);
++        const tip = this.distalTip(distal, this.scratchB, this.scratchC, this.scratchD);
++        const fallbackRadius = Math.max(0.003, this.scratchB.distanceTo(this.scratchC) * FINGER_RADIUS_FRACTION);
++        // A segment's proximal endpoint can touch while the fingertip visibly
++        // hangs below the shaft. Sample the pad itself, well past the distal
++        // joint but short of the nail edge, and use the mesh-derived distal skin
++        // radius at that support point.
++        const pad = this.scratchA.lerpVectors(this.scratchC, tip, 0.75);
++        return this.pointToCylinderClearance(pad, cylinder, state.skinRadii[start + 2] ?? fallbackRadius);
++    }
++    fingerEnclosureCost(state, start, cylinder) {
++        const proximal = state.bones[start];
++        const middle = state.bones[start + 1];
++        const distal = state.bones[start + 2];
++        if (!proximal || !middle || !distal)
++            return Infinity;
++        const a = proximal.getWorldPosition(new Vector3());
++        const b = middle.getWorldPosition(new Vector3());
++        const c = distal.getWorldPosition(new Vector3());
++        const tip = this.distalTip(distal, b, c, new Vector3());
++        if (fingerChainEnclosesCylinder([a, b, c, tip], cylinder))
++            return 0;
++        // A center outside the chain loop is an anatomically open curl. This
++        // bounded geometric penalty is large enough to prefer a wrap, while the
++        // joint limits still prevent a malformed rig from folding through itself.
++        return 0.02;
++    }
++    pointToCylinderClearance(point, cylinder, radius) {
++        const axis = this.scratchAxis.subVectors(cylinder.b, cylinder.a);
++        const lengthSq = axis.lengthSq();
++        const t = lengthSq > 1e-10
++            ? Math.max(0, Math.min(1, point.clone().sub(cylinder.a).dot(axis) / lengthSq))
++            : 0;
++        this.scratchB.copy(cylinder.a).addScaledVector(axis, t);
++        return point.distanceTo(this.scratchB) - cylinder.radiusM - radius;
++    }
++    fingerSkinClearance(state, start, cylinder, distalOnly) {
++        let clearance = Infinity;
++        const first = distalOnly ? start + 2 : start;
++        const last = start + 3;
++        for (let bone = first; bone < last; bone += 1) {
++            for (const sample of state.skinSamples[bone] ?? []) {
++                if (distalOnly && sample.distalFraction < 0.55)
++                    continue;
++                const point = sample.mesh
++                    .getVertexPosition(sample.vertex, new Vector3())
++                    .applyMatrix4(sample.mesh.matrixWorld);
++                clearance = Math.min(clearance, this.pointToCylinderClearance(point, cylinder, 0));
++            }
++        }
++        return clearance;
++    }
++    fingerTriangleClearance(state, start, cylinder, distalOnly = false) {
++        let clearance = Infinity;
++        const seen = new Set();
++        const first = distalOnly ? start + 2 : start;
++        const last = start + 3;
++        for (let bone = first; bone < last; bone += 1)
++            for (const sample of state.skinTriangles[bone] ?? []) {
++                const key = `${sample.mesh.id}:${sample.a}:${sample.b}:${sample.c}`;
++                if (seen.has(key))
++                    continue;
++                seen.add(key);
++                const a = sample.mesh.getVertexPosition(sample.a, new Vector3()).applyMatrix4(sample.mesh.matrixWorld);
++                const b = sample.mesh.getVertexPosition(sample.b, new Vector3()).applyMatrix4(sample.mesh.matrixWorld);
++                const c = sample.mesh.getVertexPosition(sample.c, new Vector3()).applyMatrix4(sample.mesh.matrixWorld);
++                clearance = Math.min(clearance, this.triangleStaffDistance(new Triangle(a, b, c), cylinder) - cylinder.radiusM);
++            }
++        return clearance;
++    }
++    triangleStaffDistance(triangle, cylinder) {
++        const axis = cylinder.b.clone().sub(cylinder.a);
++        const length = axis.length();
++        if (length > 1e-10) {
++            const direction = axis.multiplyScalar(1 / length);
++            const normal = triangle.getNormal(new Vector3());
++            const denom = normal.dot(direction);
++            if (Math.abs(denom) > 1e-12) {
++                const distance = normal.dot(triangle.a.clone().sub(cylinder.a)) / denom;
++                if (distance >= 0 && distance <= length && triangle.containsPoint(cylinder.a.clone().addScaledVector(direction, distance)))
++                    return 0;
++            }
++        }
++        const closest = new Vector3();
++        let distanceSq = Math.min(triangle.closestPointToPoint(cylinder.a, closest).distanceToSquared(cylinder.a), triangle.closestPointToPoint(cylinder.b, closest).distanceToSquared(cylinder.b));
++        for (const [first, second] of [[triangle.a, triangle.b], [triangle.b, triangle.c], [triangle.c, triangle.a]])
++            distanceSq = Math.min(distanceSq, this.segmentSegmentDistanceSq(cylinder.a, cylinder.b, first, second));
++        return Math.sqrt(distanceSq);
++    }
++    segmentSegmentDistanceSq(a, b, c, d) {
++        const u = b.clone().sub(a), v = d.clone().sub(c), w = a.clone().sub(c);
++        const uu = u.dot(u), uv = u.dot(v), vv = v.dot(v), uw = u.dot(w), vw = v.dot(w);
++        const denominator = uu * vv - uv * uv;
++        let s = denominator > 1e-12 ? (uv * vw - vv * uw) / denominator : 0;
++        s = Math.max(0, Math.min(1, s));
++        let t = vv > 1e-12 ? (uv * s + vw) / vv : 0;
++        t = Math.max(0, Math.min(1, t));
++        if (uu > 1e-12)
++            s = Math.max(0, Math.min(1, (uv * t - uw) / uu));
++        return a.clone().addScaledVector(u, s).distanceToSquared(c.clone().addScaledVector(v, t));
++    }
++    /** Penalize a thumb that closes beside the index rather than across the
++     * handle. This is evaluated in the live staff frame, so exporter-specific
++     * thumb axes cannot turn a near-index pose into a dangling one. */
++    thumbOppositionCost(state, cylinder) {
++        const thumb = state.bones[2];
++        const index = state.bones[4];
++        if (!thumb || !index)
++            return 0;
++        const axis = this.scratchAxis.subVectors(cylinder.b, cylinder.a);
++        const lengthSq = axis.lengthSq();
++        if (lengthSq <= 1e-10)
++            return 0;
++        const radial = (bone, out) => {
++            bone.getWorldPosition(out).sub(cylinder.a);
++            out.addScaledVector(axis, -out.dot(axis) / lengthSq);
++            return out.lengthSq() > 1e-10 ? out.normalize() : null;
++        };
++        const thumbRadial = radial(thumb, this.scratchA);
++        const indexRadial = radial(index, this.scratchB);
++        if (!thumbRadial || !indexRadial)
++            return 0;
++        // A small negative dot is enough to distinguish a true opposing closure
++        // from two fingers hovering on the same side of the shaft.
++        return Math.max(0, thumbRadial.dot(indexRadial) + 0.15) ** 2 * 0.01;
 +    }
 +    distalTip(distal, middle, origin, out) {
 +        const child = distal.children.find((node) => node.isBone);
@@ -17745,7 +18171,7 @@ index 525808ca7068a828865a64e176f7bbd641ccc013..ff0ffc3ad65cb6c617fb582992f392fa
    },
    "files": [
 diff --git a/src/lib/components/Avatar3D.svelte b/src/lib/components/Avatar3D.svelte
-index 9b167be2ff..1c7b5f6b6a 100644
+index 9b167be2ff..160abe62c7 100644
 --- a/src/lib/components/Avatar3D.svelte
 +++ b/src/lib/components/Avatar3D.svelte
 @@ -16,29 +16,50 @@
@@ -18725,8 +19151,12 @@ index 9b167be2ff..1c7b5f6b6a 100644
          footPlanter.initialize(skeletonService, legIKSolver, contactCurveCache);
        }
  
-@@ -487,6 +1053,7 @@
-           fingerAnimator.initialize(skeletonState.fingerChains);
+@@ -484,9 +1050,10 @@
+       if (fingerAnimator) {
+         const skeletonState = skeletonService.getState();
+         if (skeletonState.fingerChains) {
+-          fingerAnimator.initialize(skeletonState.fingerChains);
++          fingerAnimator.initialize(skeletonState.fingerChains, skeletonState.meshes);
          }
        }
 +      contactReadyRoot = skeletonService.getRoot();
@@ -25945,7 +26375,7 @@ index 0000000000000000000000000000000000000000..98e57dea0dd008683a1a784921519a32
 +  return scratch.distanceTo(b.getWorldPosition(new Vector3()));
 +}
 diff --git a/src/lib/services/contracts/IAvatarAnimator.ts b/src/lib/services/contracts/IAvatarAnimator.ts
-index 42a46ac294..9b6ad8f601 100644
+index 42a46ac294..2bf7add857 100644
 --- a/src/lib/services/contracts/IAvatarAnimator.ts
 +++ b/src/lib/services/contracts/IAvatarAnimator.ts
 @@ -5,9 +5,10 @@
@@ -25960,7 +26390,7 @@ index 42a46ac294..9b6ad8f601 100644
  
  /**
   * Pose for a single hand/arm
-@@ -82,6 +83,110 @@ export interface PositionOffset {
+@@ -82,6 +83,112 @@ export interface PositionOffset {
    z: number;
  }
  
@@ -26026,6 +26456,8 @@ index 42a46ac294..9b6ad8f601 100644
 +  available: boolean;
 +  /** Surface-to-surface distance: positive is a gap, negative is penetration. */
 +  signedClearanceM: number | null;
++  /** Clearance of the distal pad, separate from contact anywhere on a finger. */
++  distalPadClearanceM?: number | null;
 +  /** The distal tip is inside the finite cylinder's usable axial interval. */
 +  axialCoverage: boolean | null;
 +  /** A supported contact is close without exceeding the numeric penetration tolerance. */
@@ -26071,7 +26503,7 @@ index 42a46ac294..9b6ad8f601 100644
  export interface IAvatarAnimator {
    /**
     * Set the hand targets from prop states
-@@ -140,13 +245,67 @@ export interface IAvatarAnimator {
+@@ -140,13 +247,67 @@ export interface IAvatarAnimator {
     * Set prop states and compute per-arm IK blend weights.
     * Arms with props ramp toward IK (weight 1).
     * Arms without props ramp toward animation (weight 0).
@@ -27006,10 +27438,10 @@ index 0000000000000000000000000000000000000000..2ffaba50d596d64feda7d3a54922536f
 +  return confidence;
 +}
 diff --git a/src/lib/services/implementations/AvatarAnimator.ts b/src/lib/services/implementations/AvatarAnimator.ts
-index c73bcabe86..6eb19e59fd 100644
+index c73bcabe86..c0648be22c 100644
 --- a/src/lib/services/implementations/AvatarAnimator.ts
 +++ b/src/lib/services/implementations/AvatarAnimator.ts
-@@ -5,21 +5,138 @@
+@@ -5,21 +5,141 @@
   * Bridges TKA prop states to skeleton IK targets.
   */
  
@@ -27073,6 +27505,9 @@ index c73bcabe86..6eb19e59fd 100644
 +/** Palm center sits this fraction of the way from the wrist joint to the
 + *  Middle1 knuckle - the spot a staff shaft actually crosses the hand. */
 +const PALM_CENTER_FRACTION = 0.65;
++// Calibrated clearance from the inferred channel to the palmar grip surface.
++const PALMAR_SOCKET_OFFSET_M = 0.008;
++const LONGITUDINAL_SOCKET_OFFSET_M = 0.008;
 +
 +/** Two adjacent grips need enough lateral room for both closed hands. The
 + *  render-side contact lock can bridge half of this distance per prop. */
@@ -27152,7 +27587,7 @@ index c73bcabe86..6eb19e59fd 100644
  
  export class AvatarAnimator implements IAvatarAnimator {
    private currentPose: BodyPose;
-@@ -29,6 +146,18 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -29,6 +149,18 @@ export class AvatarAnimator implements IAvatarAnimator {
    // Per-arm IK blend weights: 0 = animation drives the arm, 1 = IK drives the arm
    private leftArmIK = { weight: 0, targetWeight: 0 };
    private rightArmIK = { weight: 0, targetWeight: 0 };
@@ -27171,7 +27606,7 @@ index c73bcabe86..6eb19e59fd 100644
    private ikBlendSpeed = 1 / 0.3; // ~0.3s ramp time
    private smoothBlending = true;
    private smoothingFactor = 0.15; // 0-1, higher = smoother but laggier
-@@ -38,8 +167,13 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -38,8 +170,13 @@ export class AvatarAnimator implements IAvatarAnimator {
    private transitionProgress = 0;
    private transitionConfig: TransitionConfig | null = null;
    private poleComputer: IElbowPoleComputer | null;
@@ -27185,7 +27620,7 @@ index c73bcabe86..6eb19e59fd 100644
    private _poleVectorsEnabled = true;
  
    private clavicleRaiser: IClavicleRaiser | null;
-@@ -85,6 +219,142 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -85,6 +222,142 @@ export class AvatarAnimator implements IAvatarAnimator {
     */
    private externalSpinePitchRad = 0;
  
@@ -27328,7 +27763,7 @@ index c73bcabe86..6eb19e59fd 100644
    constructor(
      private ikSolver: IIKSolver,
      private skeleton: IAvatarSkeletonBuilder,
-@@ -180,13 +450,59 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -180,13 +453,59 @@ export class AvatarAnimator implements IAvatarAnimator {
          }
        : null;
  
@@ -27389,7 +27824,7 @@ index c73bcabe86..6eb19e59fd 100644
    ): void {
      this.leftArmIK.targetWeight = blueProp ? 1 : 0;
      this.rightArmIK.targetWeight = redProp ? 1 : 0;
-@@ -205,6 +521,7 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -205,6 +524,7 @@ export class AvatarAnimator implements IAvatarAnimator {
              blueProp.worldPosition.y - oy,
              blueProp.worldPosition.z - oz
            ),
@@ -27397,7 +27832,7 @@ index c73bcabe86..6eb19e59fd 100644
            staffAngle: blueProp.staffRotationAngle,
            plane: blueProp.plane,
            weight: 1,
-@@ -218,15 +535,104 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -218,15 +538,104 @@ export class AvatarAnimator implements IAvatarAnimator {
              redProp.worldPosition.y - oy,
              redProp.worldPosition.z - oz
            ),
@@ -27502,7 +27937,7 @@ index c73bcabe86..6eb19e59fd 100644
    setLeftHandTarget(target: HandPose): void {
      this.targetPose.leftHand = { ...target };
      this.targetPose.timestamp = Date.now();
-@@ -244,8 +650,13 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -244,8 +653,13 @@ export class AvatarAnimator implements IAvatarAnimator {
    update(deltaTime: number): void {
      // Ramp per-arm IK blend weights (framerate-independent exponential lerp)
      const blendFactor = 1 - Math.exp(-this.ikBlendSpeed * deltaTime);
@@ -27518,7 +27953,7 @@ index c73bcabe86..6eb19e59fd 100644
  
      if (this.transitioning) {
        this.updateTransition(deltaTime);
-@@ -259,7 +670,263 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -259,7 +673,273 @@ export class AvatarAnimator implements IAvatarAnimator {
      const finalPose = this.computeFinalPose();
  
      // Solve IK for arms
@@ -27568,7 +28003,17 @@ index c73bcabe86..6eb19e59fd 100644
 +      const hand = side === "left" ? pose.leftHand : pose.rightHand;
 +      if (!palm || !hand) continue;
 +      if (this.strictSockets[side]) palm.copy(this.strictSockets[side]!);
-+      else this.strictSockets[side] = palm.clone();
++      else {
++        const normal = side === "left" ? this.leftPalmNormalLocal : this.rightPalmNormalLocal;
++        const longitudinal = side === "left" ? this.leftGripLongitudinalLocal : this.rightGripLongitudinalLocal;
++        const wrist = side === "left" ? state.leftArmChain?.effector : state.rightArmChain?.effector;
++        if (normal && wrist) {
++          const scale = wrist.getWorldScale(new Vector3()).x;
++          palm.addScaledVector(normal, PALMAR_SOCKET_OFFSET_M / Math.abs(scale));
++          if (longitudinal) palm.addScaledVector(longitudinal, LONGITUDINAL_SOCKET_OFFSET_M / Math.abs(scale));
++        }
++        this.strictSockets[side] = palm.clone();
++      }
 +    }
 +    const active = ([
 +      { side: "left" as const, hand: pose.leftHand, chain: state.leftArmChain },
@@ -27783,7 +28228,7 @@ index c73bcabe86..6eb19e59fd 100644
    }
  
    private blendToTarget(_deltaTime: number): void {
-@@ -378,13 +1045,217 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -378,13 +1058,217 @@ export class AvatarAnimator implements IAvatarAnimator {
      return result;
    }
  
@@ -28002,7 +28447,7 @@ index c73bcabe86..6eb19e59fd 100644
      // Compute body center from Hips bone (or default to origin)
      const bodyCenter = new Vector3(0, 0, 0);
      const hipsBone = state.bones.get("Hips");
-@@ -392,6 +1263,11 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -392,6 +1276,11 @@ export class AvatarAnimator implements IAvatarAnimator {
        hipsBone.getWorldPosition(bodyCenter);
      }
  
@@ -28014,7 +28459,7 @@ index c73bcabe86..6eb19e59fd 100644
      // Cache shoulder rest Y positions once (before any clavicle rotation has been applied).
      // CRITICAL: Do NOT read these per-frame after clavicle is rotated - the elevated
      // position feeds back and causes oscillation.
-@@ -445,7 +1321,8 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -445,7 +1334,8 @@ export class AvatarAnimator implements IAvatarAnimator {
          pose.leftHand?.targetPosition ?? null,
          pose.rightHand?.targetPosition ?? null,
          bodyCenter,
@@ -28024,7 +28469,7 @@ index c73bcabe86..6eb19e59fd 100644
        );
  
        // Apply twist to each bone individually for a natural spinal curve.
-@@ -511,12 +1388,175 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -511,12 +1401,175 @@ export class AvatarAnimator implements IAvatarAnimator {
        }
      }
  
@@ -28201,7 +28646,7 @@ index c73bcabe86..6eb19e59fd 100644
          // Save what the locomotion animation wrote to bone quaternions
          const animRootQuat = leftChain.root.quaternion.clone();
          const animMiddleQuat = leftChain.middle.quaternion.clone();
-@@ -527,7 +1567,7 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -527,7 +1580,7 @@ export class AvatarAnimator implements IAvatarAnimator {
            const leftShoulder = state.bones.get("LeftShoulder");
            if (leftShoulder) {
              const targetQuat = this.clavicleRaiser.computeClavicleRotation(
@@ -28210,7 +28655,7 @@ index c73bcabe86..6eb19e59fd 100644
                "left",
                this.leftShoulderRestY,
                leftChain.totalLength
-@@ -540,6 +1580,15 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -540,6 +1593,15 @@ export class AvatarAnimator implements IAvatarAnimator {
            }
          }
  
@@ -28226,7 +28671,7 @@ index c73bcabe86..6eb19e59fd 100644
          // Build IK target with optional pole vector
          const target: IKTarget = {
            position: leftTarget,
-@@ -547,19 +1596,75 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -547,19 +1609,75 @@ export class AvatarAnimator implements IAvatarAnimator {
          };
  
          if (this._poleVectorsEnabled && this.poleComputer && leftHand.plane) {
@@ -28305,7 +28750,7 @@ index c73bcabe86..6eb19e59fd 100644
  
          // Save IK results BEFORE blending - .copy() would overwrite them
          const ikRootQuat = leftChain.root.quaternion.clone();
-@@ -572,13 +1677,24 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -572,13 +1690,24 @@ export class AvatarAnimator implements IAvatarAnimator {
          leftChain.middle.quaternion.copy(animMiddleQuat).slerp(ikMiddleQuat, w);
          leftChain.effector.quaternion.copy(animEffectorQuat).slerp(ikEffectorQuat, w);
  
@@ -28331,7 +28776,7 @@ index c73bcabe86..6eb19e59fd 100644
          // Save what the locomotion animation wrote to bone quaternions
          const animRootQuat = rightChain.root.quaternion.clone();
          const animMiddleQuat = rightChain.middle.quaternion.clone();
-@@ -589,7 +1705,7 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -589,7 +1718,7 @@ export class AvatarAnimator implements IAvatarAnimator {
            const rightShoulder = state.bones.get("RightShoulder");
            if (rightShoulder) {
              const targetQuat = this.clavicleRaiser.computeClavicleRotation(
@@ -28340,7 +28785,7 @@ index c73bcabe86..6eb19e59fd 100644
                "right",
                this.rightShoulderRestY,
                rightChain.totalLength
-@@ -602,6 +1718,15 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -602,6 +1731,15 @@ export class AvatarAnimator implements IAvatarAnimator {
            }
          }
  
@@ -28356,7 +28801,7 @@ index c73bcabe86..6eb19e59fd 100644
          // Build IK target with optional pole vector
          const target: IKTarget = {
            position: rightTarget,
-@@ -609,19 +1734,68 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -609,19 +1747,68 @@ export class AvatarAnimator implements IAvatarAnimator {
          };
  
          if (this._poleVectorsEnabled && this.poleComputer && rightHand.plane) {
@@ -28428,7 +28873,7 @@ index c73bcabe86..6eb19e59fd 100644
  
          // Save IK results BEFORE blending - .copy() would overwrite them
          const ikRootQuat = rightChain.root.quaternion.clone();
-@@ -634,13 +1808,972 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -634,13 +1821,972 @@ export class AvatarAnimator implements IAvatarAnimator {
          rightChain.middle.quaternion.copy(animMiddleQuat).slerp(ikMiddleQuat, w);
          rightChain.effector.quaternion.copy(animEffectorQuat).slerp(ikEffectorQuat, w);
  
@@ -28694,7 +29139,7 @@ index c73bcabe86..6eb19e59fd 100644
 +      const axis = transverse.clone();
 +      const palm = m.clone().multiplyScalar(PALM_CENTER_FRACTION);
 +      const worldPalmLength =
-+        handWorld.distanceTo(middleWorld) * PALM_CENTER_FRACTION;
++        handWorld.distanceTo(hand.localToWorld(palm.clone()));
 +      return { axis, longitudinal, palm, palmNormal, worldPalmLength };
 +    };
 +
@@ -29401,7 +29846,7 @@ index c73bcabe86..6eb19e59fd 100644
  
    addLayer(layer: AnimationLayer): void {
      this.layers.set(layer.id, layer);
-@@ -689,6 +2822,20 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -689,6 +2835,20 @@ export class AvatarAnimator implements IAvatarAnimator {
      this.externalSpinePitchRad = radians;
    }
  
@@ -29422,7 +29867,7 @@ index c73bcabe86..6eb19e59fd 100644
    /** Debug toggle: disable pole vectors to compare old vs new elbow behavior */
    togglePoleVectors(): boolean {
      this._poleVectorsEnabled = !this._poleVectorsEnabled;
-@@ -696,10 +2843,18 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -696,10 +2856,18 @@ export class AvatarAnimator implements IAvatarAnimator {
        // Reset to default backward poles so difference is visible immediately
        this.leftPoleVector.set(0, 0, -1);
        this.rightPoleVector.set(0, 0, -1);
@@ -31966,16 +32411,18 @@ index 626111debe6cf0d4a8846c94e3b6847e3aa2758f..beac36ea1ba8dcd58f43158c07c6e709
 +  }
  }
 diff --git a/src/lib/services/implementations/FingerAnimator.ts b/src/lib/services/implementations/FingerAnimator.ts
-index 0b10e18f56..a7692023b5 100644
+index 0b10e18f56..4a57d8279c 100644
 --- a/src/lib/services/implementations/FingerAnimator.ts
 +++ b/src/lib/services/implementations/FingerAnimator.ts
-@@ -1,4 +1,4 @@
+@@ -1,5 +1,5 @@
 -import { Quaternion } from "three";
-+import { Euler, Quaternion, Vector3 } from "three";
- import type { Bone } from "three";
+-import type { Bone } from "three";
++import { Euler, Quaternion, Triangle, Vector3 } from "three";
++import type { Bone, SkinnedMesh } from "three";
  import type { IFingerAnimator } from "../contracts/IFingerAnimator";
  import {
-@@ -8,23 +8,81 @@ import {
+   GripType,
+@@ -8,23 +8,119 @@ import {
    type FingerChains,
  } from "../../domain/models/GripPose";
  import { STAFF_GRIP_POSES } from "../../data/grip-poses/staff-grip-poses";
@@ -31993,11 +32440,48 @@ index 0b10e18f56..a7692023b5 100644
 +  hingeAxes: Vector3[];
 +  contactKey: string | null;
 +  contactPose: Quaternion[] | null;
++  skinRadii: number[];
++  skinSamples: Array<Array<{ mesh: SkinnedMesh; vertex: number; distalFraction: number }>>;
++  skinTriangles: Array<Array<{ mesh: SkinnedMesh; a: number; b: number; c: number }>>;
  }
  
 +export interface FingerCylinderContactInput extends StaffContact {
 +  a: Vector3;
 +  b: Vector3;
++}
++
++/** Whether a projected finger chain closes around the shaft center. The chain
++ * is closed from tip to MCP: a curl lying entirely above the shaft has the
++ * same pad proximity as a real grip, but leaves the center outside this loop. */
++export function fingerChainEnclosesCylinder(
++  points: readonly Vector3[],
++  cylinder: FingerCylinderContactInput
++): boolean {
++  if (points.length < 3) return false;
++  const axis = new Vector3().subVectors(cylinder.b, cylinder.a);
++  if (axis.lengthSq() <= 1e-10) return false;
++  axis.normalize();
++  const reference = Math.abs(axis.x) < 0.8
++    ? new Vector3(1, 0, 0)
++    : new Vector3(0, 1, 0);
++  const u = new Vector3().crossVectors(axis, reference).normalize();
++  const v = new Vector3().crossVectors(axis, u).normalize();
++  const center = new Vector3().addVectors(cylinder.a, cylinder.b).multiplyScalar(0.5);
++  const projected = points.map((point) => {
++    const offset = point.clone().sub(center);
++    return [offset.dot(u), offset.dot(v)] as const;
++  });
++  let inside = false;
++  for (let index = 0, previous = projected.length - 1; index < projected.length; previous = index++) {
++    const [x, y] = projected[index]!;
++    const [previousX, previousY] = projected[previous]!;
++    if (
++      (y > 0) !== (previousY > 0) &&
++      0 < (previousX - x) * -y / (previousY - y) + x
++    )
++      inside = !inside;
++  }
++  return inside;
 +}
 +
 +const THUMB_BONE_COUNT = 3;
@@ -32009,6 +32493,7 @@ index 0b10e18f56..a7692023b5 100644
 +const FINGER_RADIUS_FRACTION = 0.115;
 +const CONTACT_TOLERANCE_M = 0.002;
 +const PENETRATION_TOLERANCE_M = 0.0005;
++const DISTAL_PAD_TARGET_CLEARANCE_M = 0.0005;
 +
 +
 +const FINGER_NAMES = ["thumb", "index", "middle", "ring", "pinky"] as const;
@@ -32049,15 +32534,18 @@ index 0b10e18f56..a7692023b5 100644
 +  private readonly segmentPointA = new Vector3();
 +  private readonly segmentPointB = new Vector3();
  
-   initialize(fingerChains: FingerChains): void {
-     this.leftHand = this.createHandState(fingerChains.left);
-     this.rightHand = this.createHandState(fingerChains.right);
+-  initialize(fingerChains: FingerChains): void {
+-    this.leftHand = this.createHandState(fingerChains.left);
+-    this.rightHand = this.createHandState(fingerChains.right);
++  initialize(fingerChains: FingerChains, meshes: readonly SkinnedMesh[] = []): void {
++    this.leftHand = this.createHandState(fingerChains.left, meshes);
++    this.rightHand = this.createHandState(fingerChains.right, meshes);
 +    this.calibrateSquareThumb(this.leftHand, "left");
 +    this.calibrateSquareThumb(this.rightHand, "right");
      this.ready = true;
  
      this.applyPoseImmediate(this.leftHand, GripType.IDLE, "left");
-@@ -47,9 +105,49 @@ export class FingerAnimator implements IFingerAnimator {
+@@ -47,9 +143,49 @@ export class FingerAnimator implements IFingerAnimator {
      this.setGrip("right", rightGrip);
    }
  
@@ -32086,14 +32574,14 @@ index 0b10e18f56..a7692023b5 100644
 +      this.applyPoseImmediate(this.leftHand, this.leftHand.targetGrip, "left");
 +      this.applyPoseImmediate(this.rightHand, this.rightHand.targetGrip, "right");
 +    }
-+    this.solveHandCylinder(this.leftHand, this.leftCylinder, this.leftContactReport);
-+    this.solveHandCylinder(this.rightHand, this.rightCylinder, this.rightContactReport);
++    this.solveHandCylinder(this.leftHand, this.leftCylinder, this.leftContactReport, "left");
++    this.solveHandCylinder(this.rightHand, this.rightCylinder, this.rightContactReport, "right");
 +  }
 +
 +  getCylinderContactReport(
-+    hand: "left" | "right"
++    side: "left" | "right"
 +  ): readonly FingerCylinderContact[] {
-+    return hand === "left" ? this.leftContactReport : this.rightContactReport;
++    return side === "left" ? this.leftContactReport : this.rightContactReport;
 +  }
 +
    update(deltaTime: number): void {
@@ -32107,7 +32595,7 @@ index 0b10e18f56..a7692023b5 100644
      this.updateHand(this.leftHand, "left", deltaTime);
      this.updateHand(this.rightHand, "right", deltaTime);
    }
-@@ -67,11 +165,17 @@ export class FingerAnimator implements IFingerAnimator {
+@@ -67,11 +203,20 @@ export class FingerAnimator implements IFingerAnimator {
      this.leftHand = null;
      this.rightHand = null;
      this.ready = false;
@@ -32117,7 +32605,11 @@ index 0b10e18f56..a7692023b5 100644
 +    this.rightContactReport.length = 0;
    }
  
-   private createHandState(boneMap: Map<FingerBoneName, Bone>): HandState {
+-  private createHandState(boneMap: Map<FingerBoneName, Bone>): HandState {
++  private createHandState(
++    boneMap: Map<FingerBoneName, Bone>,
++    meshes: readonly SkinnedMesh[]
++  ): HandState {
      const bones: Bone[] = [];
 +    const restRotations: Quaternion[] = [];
      const currentRotations: Quaternion[] = [];
@@ -32125,7 +32617,7 @@ index 0b10e18f56..a7692023b5 100644
  
      for (const boneName of FINGER_BONES) {
        const bone = boneMap.get(boneName);
-@@ -79,31 +183,182 @@ export class FingerAnimator implements IFingerAnimator {
+@@ -79,31 +224,287 @@ export class FingerAnimator implements IFingerAnimator {
          throw new Error(`Missing finger bone: ${boneName}`);
        }
        bones.push(bone);
@@ -32143,7 +32635,8 @@ index 0b10e18f56..a7692023b5 100644
 +      );
      }
  
-     return {
+-    return {
++    const state: HandState = {
        targetGrip: GripType.IDLE,
 +      restRotations,
        currentRotations,
@@ -32152,11 +32645,114 @@ index 0b10e18f56..a7692023b5 100644
 +      hingeAxes,
 +      contactKey: null,
 +      contactPose: null,
-     };
-   }
- 
--  // Writes the target rotation for boneIndex into scratchQuat, mirroring for right hand.
--  // Right-hand mirror negates Y and Z to reflect across the YZ plane.
++      skinRadii: [],
++      skinSamples: [],
++      skinTriangles: [],
++    };
++    for (const mesh of meshes) {
++      mesh.updateWorldMatrix(true, false);
++      mesh.updateMatrixWorld(true);
++    }
++    state.skinRadii = this.measureSkinSupportRadii(state, meshes);
++    return state;
++  }
++
++  /** Cache the visible skin's radial support for each phalanx. */
++  private measureSkinSupportRadii(
++    state: HandState,
++    meshes: readonly SkinnedMesh[]
++  ): number[] {
++    const samples = state.bones.map(() => [] as number[]);
++    const skinSamples = state.bones.map(
++      () => [] as Array<{ mesh: SkinnedMesh; vertex: number; radius: number; distalFraction: number }>
++    );
++    const boneIndices = new Map(state.bones.map((bone, index) => [bone.name, index]));
++    const origins = state.bones.map((bone) => bone.getWorldPosition(new Vector3()));
++    const ends = state.bones.map((bone, index) => {
++      const child = bone.children.find((node): node is Bone => node.isBone);
++      return child
++        ? child.getWorldPosition(new Vector3())
++        : index % 3 === 2
++          ? origins[index]!.clone().add(origins[index]!.clone().sub(origins[index - 1]!))
++          : origins[index]!.clone();
++    });
++    for (const mesh of meshes) {
++      const skinIndex = mesh.geometry.getAttribute("skinIndex");
++      const skinWeight = mesh.geometry.getAttribute("skinWeight");
++      const position = mesh.geometry.getAttribute("position");
++      if (!skinIndex || !skinWeight || !position || !mesh.skeleton || !mesh.getVertexPosition) continue;
++      mesh.updateWorldMatrix(true, false);
++      for (let vertex = 0; vertex < position.count; vertex += 1) {
++        let slot = 0;
++        let weight = -Infinity;
++        for (let influence = 0; influence < 4; influence += 1) {
++          const candidate = skinWeight.getComponent(vertex, influence);
++          if (candidate > weight) { weight = candidate; slot = influence; }
++        }
++        if (weight < 0.5) continue;
++        const sourceBone = mesh.skeleton.bones[skinIndex.getComponent(vertex, slot)];
++        const index = sourceBone ? boneIndices.get(sourceBone.name) : undefined;
++        if (index === undefined) continue;
++        const start = origins[index]!;
++        const end = ends[index]!;
++        const axis = end.clone().sub(start);
++        const lengthSq = axis.lengthSq();
++        if (lengthSq <= 1e-10) continue;
++        const point = mesh.getVertexPosition(vertex, new Vector3()).applyMatrix4(mesh.matrixWorld);
++        const t = Math.max(0.12, Math.min(0.88, point.clone().sub(start).dot(axis) / lengthSq));
++        const radius = point.distanceTo(start.clone().addScaledVector(axis, t));
++        samples[index]!.push(radius);
++        skinSamples[index]!.push({ mesh, vertex, radius, distalFraction: t });
++      }
++    }
++    state.skinSamples = skinSamples.map((candidates) =>
++      candidates
++        .sort((a, b) => b.radius - a.radius)
++        // A bounded cache keeps refinement predictable while retaining the
++        // skin support most likely to meet a shaft after the bone turns.
++        .slice(0, 24)
++        .map(({ mesh, vertex, distalFraction }) => ({ mesh, vertex, distalFraction }))
++    );
++    state.skinTriangles = state.bones.map(() => []);
++    for (const mesh of meshes) {
++      const skinIndex = mesh.geometry.getAttribute("skinIndex");
++      const skinWeight = mesh.geometry.getAttribute("skinWeight");
++      const position = mesh.geometry.getAttribute("position");
++      if (!skinIndex || !skinWeight || !position || !mesh.skeleton || !mesh.getVertexPosition) continue;
++      const index = mesh.geometry.getIndex();
++      const triangleCount = (index ? index.count : position.count) / 3;
++      const dominant = (vertex: number) => {
++        let slot = 0; let weight = -Infinity;
++        for (let influence = 0; influence < 4; influence += 1) {
++          const candidate = skinWeight.getComponent(vertex, influence);
++          if (candidate > weight) { weight = candidate; slot = influence; }
++        }
++        const source = weight >= 0.5 ? mesh.skeleton!.bones[skinIndex.getComponent(vertex, slot)] : undefined;
++        return source ? boneIndices.get(source.name) : undefined;
++      };
++      for (let triangle = 0; triangle < triangleCount; triangle += 1) {
++        const offset = triangle * 3;
++        const a = index ? index.getX(offset) : offset;
++        const b = index ? index.getX(offset + 1) : offset + 1;
++        const c = index ? index.getX(offset + 2) : offset + 2;
++        for (const bone of new Set([dominant(a), dominant(b), dominant(c)]))
++          if (bone !== undefined) state.skinTriangles[bone]!.push({ mesh, a, b, c });
++      }
++    }
++    return samples.map((values, index) => {
++      const length = origins[index]!.distanceTo(ends[index]!);
++      const fallback = Math.max(0.003, length * FINGER_RADIUS_FRACTION);
++      if (values.length < 6) return fallback;
++      values.sort((a, b) => a - b);
++      // 85th percentile retains the visible pad and rejects blended palm seams.
++      const support = values[Math.floor((values.length - 1) * 0.85)]!;
++      // Do not cap a measured skin support by bone length: short distal bones
++      // commonly carry a wider fingertip pad, and shrinking that observed
++      // surface is exactly how a cylinder silently cuts through it.
++      return Math.max(fallback, support);
++    });
++  }
++
 +  private calibrateSquareThumb(
 +    state: HandState,
 +    hand: "left" | "right"
@@ -32191,7 +32787,7 @@ index 0b10e18f56..a7692023b5 100644
 +        state.bones[index]!.quaternion.copy(this.scratchQuat);
 +      }
 +      palm.updateWorldMatrix(true, true);
-+    };
+     };
 +
 +    try {
 +      applyDefaultSquare();
@@ -32260,8 +32856,10 @@ index 0b10e18f56..a7692023b5 100644
 +    } finally {
 +      restore();
 +    }
-+  }
-+
+   }
+ 
+-  // Writes the target rotation for boneIndex into scratchQuat, mirroring for right hand.
+-  // Right-hand mirror negates Y and Z to reflect across the YZ plane.
 +  // Grip poses are joint deltas, not replacement local rotations. Keeping each
 +  // character's imported reference pose is what lets the same curl work on
 +  // Mixamo, Unreal, and other rigs whose finger axes start differently.
@@ -32313,7 +32911,7 @@ index 0b10e18f56..a7692023b5 100644
    }
  
    private updateHand(
-@@ -115,13 +370,197 @@ export class FingerAnimator implements IFingerAnimator {
+@@ -115,13 +516,452 @@ export class FingerAnimator implements IFingerAnimator {
      const alpha = Math.min(1, this.blendSpeed * deltaTime);
  
      for (let i = 0; i < FINGER_BONES.length; i++) {
@@ -32328,8 +32926,10 @@ index 0b10e18f56..a7692023b5 100644
 +  private solveHandCylinder(
 +    state: HandState,
 +    cylinder: FingerCylinderContactInput | null,
-+    report: FingerCylinderContact[]
++    report: FingerCylinderContact[],
++    side: "left" | "right"
 +  ): void {
++    this.synchronizeSkinMeshes(state);
 +    report.length = 0;
 +    const hand = state.bones[0]?.parent;
 +    let contactKey: string | null = null;
@@ -32357,10 +32957,13 @@ index 0b10e18f56..a7692023b5 100644
 +
 +      // Refine all three hinges. A single middle-joint correction can leave
 +      // the pinky floating or drive its distal segment through the shaft.
-+      const bases = state.bones.slice(start, start + 3).map((bone) => bone.quaternion.clone());
++      let bases = state.bones.slice(start, start + 3).map((bone) => bone.quaternion.clone());
 +      const angles = [0, 0, 0];
 +      const limits = [0, 1, 2].map((joint) => {
-+        if (finger === "thumb") return [-0.6, 0.6] as const;
++        // Thumb opposition is a saddle motion, not just another finger curl.
++        // Keep its three local corrections inside a physiological 52° window
++        // while allowing the actual hand frame to carry it across the shaft.
++        if (finger === "thumb") return [-0.9, 0.9] as const;
 +        const pose = STAFF_GRIP_POSES[GripType.SQUARE].rotations[start + joint]!;
 +        const baseFlex = 2 * Math.atan2(Math.hypot(pose[0], pose[1], pose[2]), pose[3]);
 +        return [-baseFlex, [95, 110, 85][joint]! * Math.PI / 180 - baseFlex] as const;
@@ -32373,6 +32976,36 @@ index 0b10e18f56..a7692023b5 100644
 +        }
 +        state.bones[start]!.updateWorldMatrix(true, true);
 +      };
++      if (finger === "thumb" && cylinder) {
++        let bestBases = bases.map((base) => base.clone());
++        let bestRank = Infinity;
++        for (const flexion of SQUARE_THUMB_BASE_FLEXION_DEGREES)
++          for (const abduction of SQUARE_THUMB_ABDUCTION_DEGREES)
++            for (const opposition of SQUARE_THUMB_OPPOSITION_DEGREES)
++              for (const middleFlexion of SQUARE_THUMB_MIDDLE_FLEXION_DEGREES)
++                for (const tipFlexion of SQUARE_THUMB_TIP_FLEXION_DEGREES) {
++                  const candidate = [
++                    new Quaternion().setFromEuler(new Euler(flexion * Math.PI / 180, abduction * Math.PI / 180, opposition * Math.PI / 180)),
++                    new Quaternion().setFromEuler(new Euler(middleFlexion * Math.PI / 180, 0, 0)),
++                    new Quaternion().setFromEuler(new Euler(tipFlexion * Math.PI / 180, 0, 0)),
++                  ];
++                  bases = candidate.map((delta, joint) => {
++                    if (side === "right") delta = delta.clone().set(delta.x, -delta.y, -delta.z, delta.w);
++                    return state.restRotations[start + joint]!.clone().multiply(delta).normalize();
++                  });
++                  apply();
++                  const triangle = this.fingerTriangleClearance(state, start, cylinder);
++                  const pad = this.fingerSkinClearance(state, start, cylinder, true);
++                  const oppositionCost = this.thumbOppositionCost(state, cylinder);
++                  // Any surface overlap loses to every clear candidate. Within
++                  // the clear set, choose pad proximity then opposition.
++                  const rank = triangle < -PENETRATION_TOLERANCE_M
++                    ? 1e6 + -triangle * 1e6
++                    : Math.abs((Number.isFinite(pad) ? pad : 0) - DISTAL_PAD_TARGET_CLEARANCE_M) * 100 + oppositionCost;
++                  if (rank < bestRank) { bestRank = rank; bestBases = bases.map((base) => base.clone()); }
++                }
++        bases = bestBases;
++      }
 +      const cost = () => {
 +        const measured = this.measureFinger(state, start, finger, cylinder);
 +        const clearance = measured.signedClearanceM;
@@ -32380,7 +33013,24 @@ index 0b10e18f56..a7692023b5 100644
 +        // Penetration costs more than a remaining gap. A tiny positive margin
 +        // avoids contact chattering without concealing failures.
 +        const error = clearance - 0.0002;
++        const padClearance = this.distalPadClearance(state, start, cylinder);
++        const trianglePadClearance = this.fingerTriangleClearance(state, start, cylinder, true);
++        const skinPadClearance = this.fingerSkinClearance(state, start, cylinder, true);
++        const padError = (Number.isFinite(trianglePadClearance)
++          ? trianglePadClearance
++          : Number.isFinite(skinPadClearance)
++          ? skinPadClearance
++          : padClearance) - DISTAL_PAD_TARGET_CLEARANCE_M;
++        const triangleClearance = this.fingerTriangleClearance(state, start, cylinder);
++        const triangleError = triangleClearance - 0.0002;
 +        return error * error * (error < 0 ? 40 : 1)
++          // The visible grasp is made by distal pads. Without this term a
++          // proximal knuckle can satisfy the cylinder while the finger hangs
++          // straight past the shaft.
++          + padError * padError * (padError < 0 ? 120 : 30)
++          + triangleError * triangleError * (triangleError < 0 ? 800 : 1)
++          + (finger === "thumb" ? 0 : this.fingerEnclosureCost(state, start, cylinder))
++          + (finger === "thumb" ? this.thumbOppositionCost(state, cylinder) : 0)
 +          + angles.reduce((sum, angle) => sum + angle * angle, 0) * 1e-8;
 +      };
 +      apply();
@@ -32428,6 +33078,18 @@ index 0b10e18f56..a7692023b5 100644
 +    }
 +  }
 +
++  private synchronizeSkinMeshes(state: HandState): void {
++    const meshes = new Set<SkinnedMesh>();
++    state.skinSamples.forEach((samples) => samples.forEach((sample) => meshes.add(sample.mesh)));
++    state.skinTriangles.forEach((triangles) => triangles.forEach((triangle) => meshes.add(triangle.mesh)));
++    for (const mesh of meshes) {
++      mesh.updateWorldMatrix(true, false);
++      // SkinnedMesh updates bindMatrixInverse here; updateWorldMatrix alone
++      // leaves CPU skin queries one renderer frame behind the visible mesh.
++      mesh.updateMatrixWorld(true);
++    }
++  }
++
 +  private measureFinger(
 +    state: HandState,
 +    start: number,
@@ -32443,15 +33105,38 @@ index 0b10e18f56..a7692023b5 100644
 +    proximal.getWorldPosition(this.scratchA);
 +    middle.getWorldPosition(this.scratchB);
 +    distal.getWorldPosition(this.scratchC);
-+    const fingerRadius = Math.max(
++    const fallbackRadius = Math.max(
 +      0.003,
 +      this.scratchA.distanceTo(this.scratchB) * FINGER_RADIUS_FRACTION
 +    );
 +    const tip = this.distalTip(distal, this.scratchB, this.scratchC, this.scratchD);
-+    const first = this.segmentToCylinderClearance(this.scratchA, this.scratchB, cylinder, fingerRadius);
-+    const second = this.segmentToCylinderClearance(this.scratchB, this.scratchC, cylinder, fingerRadius);
-+    const third = this.segmentToCylinderClearance(this.scratchC, tip, cylinder, fingerRadius);
-+    const signedClearanceM = Math.min(first, second, third);
++    const first = this.segmentToCylinderClearance(
++      this.scratchA, this.scratchB, cylinder, state.skinRadii[start] ?? fallbackRadius
++    );
++    const second = this.segmentToCylinderClearance(
++      this.scratchB, this.scratchC, cylinder, state.skinRadii[start + 1] ?? fallbackRadius
++    );
++    const third = this.segmentToCylinderClearance(
++      this.scratchC, tip, cylinder, state.skinRadii[start + 2] ?? fallbackRadius
++    );
++    const capsuleClearance = Math.min(first, second, third);
++    const triangleClearance = this.fingerTriangleClearance(state, start, cylinder, false);
++    const skinClearance = this.fingerSkinClearance(state, start, cylinder, false);
++    const capsulePadClearance = this.distalPadClearance(state, start, cylinder);
++    const trianglePadClearance = this.fingerTriangleClearance(state, start, cylinder, true);
++    const skinPadClearance = this.fingerSkinClearance(state, start, cylinder, true);
++    // The skinned surface is the rendered body. Capsule values only cover rigs
++    // that did not supply usable weighted vertices.
++    const signedClearanceM = Number.isFinite(triangleClearance)
++      ? triangleClearance
++      : Number.isFinite(skinClearance)
++      ? skinClearance
++      : capsuleClearance;
++    const distalPadClearanceM = Number.isFinite(trianglePadClearance)
++      ? trianglePadClearance
++      : Number.isFinite(skinPadClearance)
++      ? skinPadClearance
++      : capsulePadClearance;
 +    const axis = this.scratchAxis.subVectors(cylinder.b, cylinder.a);
 +    const lengthSq = axis.lengthSq();
 +    const axial = lengthSq > 1e-10
@@ -32462,12 +33147,180 @@ index 0b10e18f56..a7692023b5 100644
 +      finger,
 +      available: true,
 +      signedClearanceM,
++      distalPadClearanceM,
 +      axialCoverage,
 +      supported:
 +        axialCoverage &&
-+        signedClearanceM <= CONTACT_TOLERANCE_M &&
-+        signedClearanceM >= -PENETRATION_TOLERANCE_M,
++          signedClearanceM <= CONTACT_TOLERANCE_M &&
++          signedClearanceM >= -PENETRATION_TOLERANCE_M &&
++          distalPadClearanceM <= CONTACT_TOLERANCE_M &&
++          distalPadClearanceM >= -PENETRATION_TOLERANCE_M,
 +    };
++  }
++
++  private distalPadClearance(
++    state: HandState,
++    start: number,
++    cylinder: FingerCylinderContactInput
++  ): number {
++    const middle = state.bones[start + 1];
++    const distal = state.bones[start + 2];
++    if (!middle || !distal) return Infinity;
++    distal.getWorldPosition(this.scratchC);
++    middle.getWorldPosition(this.scratchB);
++    const tip = this.distalTip(distal, this.scratchB, this.scratchC, this.scratchD);
++    const fallbackRadius = Math.max(
++      0.003,
++      this.scratchB.distanceTo(this.scratchC) * FINGER_RADIUS_FRACTION
++    );
++    // A segment's proximal endpoint can touch while the fingertip visibly
++    // hangs below the shaft. Sample the pad itself, well past the distal
++    // joint but short of the nail edge, and use the mesh-derived distal skin
++    // radius at that support point.
++    const pad = this.scratchA.lerpVectors(this.scratchC, tip, 0.75);
++    return this.pointToCylinderClearance(
++      pad,
++      cylinder,
++      state.skinRadii[start + 2] ?? fallbackRadius
++    );
++  }
++
++  private fingerEnclosureCost(
++    state: HandState,
++    start: number,
++    cylinder: FingerCylinderContactInput
++  ): number {
++    const proximal = state.bones[start];
++    const middle = state.bones[start + 1];
++    const distal = state.bones[start + 2];
++    if (!proximal || !middle || !distal) return Infinity;
++    const a = proximal.getWorldPosition(new Vector3());
++    const b = middle.getWorldPosition(new Vector3());
++    const c = distal.getWorldPosition(new Vector3());
++    const tip = this.distalTip(distal, b, c, new Vector3());
++    if (fingerChainEnclosesCylinder([a, b, c, tip], cylinder)) return 0;
++    // A center outside the chain loop is an anatomically open curl. This
++    // bounded geometric penalty is large enough to prefer a wrap, while the
++    // joint limits still prevent a malformed rig from folding through itself.
++    return 0.02;
++  }
++
++  private pointToCylinderClearance(
++    point: Vector3,
++    cylinder: FingerCylinderContactInput,
++    radius: number
++  ): number {
++    const axis = this.scratchAxis.subVectors(cylinder.b, cylinder.a);
++    const lengthSq = axis.lengthSq();
++    const t = lengthSq > 1e-10
++      ? Math.max(0, Math.min(1, point.clone().sub(cylinder.a).dot(axis) / lengthSq))
++      : 0;
++    this.scratchB.copy(cylinder.a).addScaledVector(axis, t);
++    return point.distanceTo(this.scratchB) - cylinder.radiusM - radius;
++  }
++
++  private fingerSkinClearance(
++    state: HandState,
++    start: number,
++    cylinder: FingerCylinderContactInput,
++    distalOnly: boolean
++  ): number {
++    let clearance = Infinity;
++    const first = distalOnly ? start + 2 : start;
++    const last = start + 3;
++    for (let bone = first; bone < last; bone += 1) {
++      for (const sample of state.skinSamples[bone] ?? []) {
++        if (distalOnly && sample.distalFraction < 0.55) continue;
++        const point = sample.mesh
++          .getVertexPosition(sample.vertex, new Vector3())
++          .applyMatrix4(sample.mesh.matrixWorld);
++        clearance = Math.min(
++          clearance,
++          this.pointToCylinderClearance(point, cylinder, 0)
++        );
++      }
++    }
++    return clearance;
++  }
++
++  private fingerTriangleClearance(state: HandState, start: number, cylinder: FingerCylinderContactInput, distalOnly = false): number {
++    let clearance = Infinity;
++    const seen = new Set<string>();
++    const first = distalOnly ? start + 2 : start;
++    const last = start + 3;
++    for (let bone = first; bone < last; bone += 1) for (const sample of state.skinTriangles[bone] ?? []) {
++      const key = `${sample.mesh.id}:${sample.a}:${sample.b}:${sample.c}`;
++      if (seen.has(key)) continue;
++      seen.add(key);
++      const a = sample.mesh.getVertexPosition(sample.a, new Vector3()).applyMatrix4(sample.mesh.matrixWorld);
++      const b = sample.mesh.getVertexPosition(sample.b, new Vector3()).applyMatrix4(sample.mesh.matrixWorld);
++      const c = sample.mesh.getVertexPosition(sample.c, new Vector3()).applyMatrix4(sample.mesh.matrixWorld);
++      clearance = Math.min(
++        clearance,
++        this.triangleStaffDistance(new Triangle(a, b, c), cylinder) - cylinder.radiusM
++      );
++    }
++    return clearance;
++  }
++
++  private triangleStaffDistance(triangle: Triangle, cylinder: FingerCylinderContactInput): number {
++    const axis = cylinder.b.clone().sub(cylinder.a);
++    const length = axis.length();
++    if (length > 1e-10) {
++      const direction = axis.multiplyScalar(1 / length);
++      const normal = triangle.getNormal(new Vector3());
++      const denom = normal.dot(direction);
++      if (Math.abs(denom) > 1e-12) {
++        const distance = normal.dot(triangle.a.clone().sub(cylinder.a)) / denom;
++        if (distance >= 0 && distance <= length && triangle.containsPoint(cylinder.a.clone().addScaledVector(direction, distance))) return 0;
++      }
++    }
++    const closest = new Vector3();
++    let distanceSq = Math.min(
++      triangle.closestPointToPoint(cylinder.a, closest).distanceToSquared(cylinder.a),
++      triangle.closestPointToPoint(cylinder.b, closest).distanceToSquared(cylinder.b)
++    );
++    for (const [first, second] of [[triangle.a, triangle.b], [triangle.b, triangle.c], [triangle.c, triangle.a]] as const)
++      distanceSq = Math.min(distanceSq, this.segmentSegmentDistanceSq(cylinder.a, cylinder.b, first, second));
++    return Math.sqrt(distanceSq);
++  }
++
++  private segmentSegmentDistanceSq(a: Vector3, b: Vector3, c: Vector3, d: Vector3): number {
++    const u = b.clone().sub(a), v = d.clone().sub(c), w = a.clone().sub(c);
++    const uu = u.dot(u), uv = u.dot(v), vv = v.dot(v), uw = u.dot(w), vw = v.dot(w);
++    const denominator = uu * vv - uv * uv;
++    let s = denominator > 1e-12 ? (uv * vw - vv * uw) / denominator : 0;
++    s = Math.max(0, Math.min(1, s));
++    let t = vv > 1e-12 ? (uv * s + vw) / vv : 0;
++    t = Math.max(0, Math.min(1, t));
++    if (uu > 1e-12) s = Math.max(0, Math.min(1, (uv * t - uw) / uu));
++    return a.clone().addScaledVector(u, s).distanceToSquared(c.clone().addScaledVector(v, t));
++  }
++
++  /** Penalize a thumb that closes beside the index rather than across the
++   * handle. This is evaluated in the live staff frame, so exporter-specific
++   * thumb axes cannot turn a near-index pose into a dangling one. */
++  private thumbOppositionCost(
++    state: HandState,
++    cylinder: FingerCylinderContactInput
++  ): number {
++    const thumb = state.bones[2];
++    const index = state.bones[4];
++    if (!thumb || !index) return 0;
++    const axis = this.scratchAxis.subVectors(cylinder.b, cylinder.a);
++    const lengthSq = axis.lengthSq();
++    if (lengthSq <= 1e-10) return 0;
++    const radial = (bone: Bone, out: Vector3) => {
++      bone.getWorldPosition(out).sub(cylinder.a);
++      out.addScaledVector(axis, -out.dot(axis) / lengthSq);
++      return out.lengthSq() > 1e-10 ? out.normalize() : null;
++    };
++    const thumbRadial = radial(thumb, this.scratchA);
++    const indexRadial = radial(index, this.scratchB);
++    if (!thumbRadial || !indexRadial) return 0;
++    // A small negative dot is enough to distinguish a true opposing closure
++    // from two fingers hovering on the same side of the shaft.
++    return Math.max(0, thumbRadial.dot(indexRadial) + 0.15) ** 2 * 0.01;
 +  }
 +
 +  private distalTip(distal: Bone, middle: Vector3, origin: Vector3, out: Vector3): Vector3 {
@@ -32512,7 +33365,7 @@ index 0b10e18f56..a7692023b5 100644
    private applyPoseImmediate(
      state: HandState,
      gripType: GripType,
-@@ -129,7 +568,7 @@ export class FingerAnimator implements IFingerAnimator {
+@@ -129,7 +969,7 @@ export class FingerAnimator implements IFingerAnimator {
    ): void {
      state.targetGrip = gripType;
      for (let i = 0; i < FINGER_BONES.length; i++) {
@@ -38167,3 +39020,23 @@ index 0000000000000000000000000000000000000000..108dfc81b254b53496d83fb551b0aea1
 +  StaffObjectOptions,
 +} from "./lib/rendering/create-staff-object";
 +export type { AvatarServices } from "./lib/services/implementations/AvatarServicesFactory";
+diff --git a/src/lib/services/contracts/IFingerAnimator.ts b/src/lib/services/contracts/IFingerAnimator.ts
+index 059e119199..09ff76fe43 100644
+--- a/src/lib/services/contracts/IFingerAnimator.ts
++++ b/src/lib/services/contracts/IFingerAnimator.ts
+@@ -1,5 +1,6 @@
+ // src/lib/shared/3d/services/contracts/IFingerAnimator.ts
+ import type { GripType, FingerChains } from "../../domain/models/GripPose";
++import type { SkinnedMesh } from "three";
+ 
+ /**
+  * Animates finger bones by slerping between grip pose presets.
+@@ -8,7 +9,7 @@ import type { GripType, FingerChains } from "../../domain/models/GripPose";
+  */
+ export interface IFingerAnimator {
+   /** Bind to a skeleton's finger bone chains. Call after model loads. */
+-  initialize(fingerChains: FingerChains): void;
++  initialize(fingerChains: FingerChains, meshes?: readonly SkinnedMesh[]): void;
+ 
+   /** Whether initialize() has been called with valid finger chains. */
+   isReady(): boolean;

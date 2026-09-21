@@ -168,7 +168,7 @@
     auditSummary =
       audit.maximumPenetrationM == null
         ? `Mesh audit unavailable (${audit.reason ?? "no geometry"}).`
-        : `${audit.status}: maximum penetration ${(audit.maximumPenetrationM * 1000).toFixed(2)} mm; regions ${audit.affectedRegions.join(", ") || "none"}. Interior containment: ${audit.interiorContainment}.`;
+        : `${audit.status}: maximum penetration ${(audit.maximumPenetrationM * 1000).toFixed(2)} mm; skin nearest ${audit.worstIntersection?.boneNames.join(", ") || audit.affectedRegions.join(", ") || "none"}. Interior containment: ${audit.interiorContainment}.`;
   }
   async function checkPersonalCharacter() {
     const personal = CHARACTER_DEFINITIONS.find(

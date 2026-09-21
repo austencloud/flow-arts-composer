@@ -4,6 +4,48 @@ Status: blocked by failed physical acceptance checks; preserved on
 `codex/contact-correct-performers`, unmerged. This is an implementation
 checkpoint, not a completed contact-correct performer.
 
+## Stationary grasp correction after user review
+
+The user's ch07/right screenshot at phase `0.806` correctly rejected the
+previous grasp. The old capsule report marked all fingers supported while the
+visible index skin intersected the grip by 6.81 mm. That report was insufficient.
+
+The updated fitter uses posed finger triangles for collision and contact,
+requires distal contact and a cross-sectional enclosure of the shaft, and
+searches bounded thumb-base orientations against the actual staff. It caches
+the result in hand-local space. The grip center is calibrated 8 mm palmar and
+8 mm longitudinal from the inferred channel for this stationary case. The
+physical grip radius includes the model's raised wrap: 10.2125 mm.
+
+Skin queries now refresh `SkinnedMesh` bind inverses through `updateMatrixWorld`,
+matching the renderer. `updateWorldMatrix` alone produced a false difference
+between headless tests and the displayed hand. A translated/scaled skinned-mesh
+regression covers this distinction.
+
+The installed preview at the exact user frame measures **0.06 mm maximum
+surface overlap** against the conservative fire-staff profile. All five contacts
+are supported; the thumb pad clearance is 0.546 mm. Close-ups were inspected
+from the front, side and beneath the palm:
+
+- [Before](contact-correct-evidence/ch07-right-0806-before-skin-fit.png)
+- [Front](contact-correct-evidence/ch07-right-0806-surface-fit-front.png),
+  [side](contact-correct-evidence/ch07-right-0806-surface-fit-side.png),
+  [palm](contact-correct-evidence/ch07-right-0806-surface-fit-palm.png)
+- [Rendered diagnostics](contact-correct-evidence/ch07-right-0806-surface-fit.json)
+
+Nineteen focused tests pass, including the real-rig stationary grasp, independent
+skin audit, finger enclosure, held-frame replay, and fixed staff trajectory.
+`npm run check` reports zero errors and warnings. The persistent package patch
+was installed offline with a frozen lockfile; all 21 owned source, runtime and
+declaration artifacts matched the authored package.
+
+This is verification of the reported stationary grasp, not certification of
+every avatar, hand, prop diameter or full motion. The 8 mm socket calibration
+has not been generalized. Cold fitting also takes seconds and needs performance
+work before broad rollout. The earlier full-motion continuity failures below
+have not been revalidated after this correction; volumetric containment remains
+unavailable for this open character mesh. The branch therefore remains unmerged.
+
 ## Baseline
 
 Inspected `/test/grip-lab` on local main on 2026-09-20. It displayed X-Bot,

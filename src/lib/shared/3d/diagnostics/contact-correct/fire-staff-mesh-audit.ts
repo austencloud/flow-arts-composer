@@ -68,6 +68,16 @@ export function auditFireStaffProfile(
   );
   return {
     status: unavailable?.status ?? "available",
+    worstIntersection: samples.reduce<
+      PosedMeshAuditResult["worstIntersection"]
+    >(
+      (worst, sample) =>
+        sample.worstIntersection &&
+        (!worst || sample.worstIntersection.penetrationM > worst.penetrationM)
+          ? sample.worstIntersection
+          : worst,
+      null
+    ),
     maximumPenetrationM: samples.every(
       (sample) => sample.maximumPenetrationM !== null
     )

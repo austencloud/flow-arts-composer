@@ -6,7 +6,8 @@ export type IsolationHand = "left" | "right";
 // Dimensions authored by scripts/build-fire-double-staff-model.py.
 export const ISOLATION_STAFF_CONTACT = {
   lengthM: 0.9,
-  radiusM: 0.0095,
+  // The helical wrap rises 7.5% above the nominal 19 mm grip diameter.
+  radiusM: (0.019 / 2) * 1.075,
 } as const;
 export const ISOLATION_ENDPOINT = [0, -0.15, 0.2] as const;
 const AXIS = new Vector3(0, 0, 1);

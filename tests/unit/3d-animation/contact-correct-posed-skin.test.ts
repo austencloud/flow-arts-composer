@@ -7,7 +7,10 @@ import { createAvatarServices } from "../../../node_modules/@austencloud/scene-3
 import { auditFireStaffProfile } from "$lib/shared/3d/diagnostics/contact-correct/fire-staff-mesh-audit";
 import { runContactCorrectSweep } from "$lib/shared/3d/diagnostics/contact-correct/contact-sweep-runner";
 import { avatar, avatarAssetsPresent, loadRig } from "../3d/locomotion-harness";
-import { sampleStaffIsolation } from "$lib/shared/3d/performers/staff-isolation";
+import {
+  sampleStaffIsolation,
+  ISOLATION_STAFF_CONTACT,
+} from "$lib/shared/3d/performers/staff-isolation";
 
 const ORIGIN = new Vector3(0, 1.5621, 0.3);
 const HEIGHT_M = 1.905;
@@ -33,7 +36,11 @@ async function setup(id: string, side: "left" | "right") {
   root.add(scene);
   root.position.y = -services.skeleton.getFeetOffset();
   root.updateWorldMatrix(true, true);
-  services.fingers.initialize(services.skeleton.getState().fingerChains!);
+  const skeletonState = services.skeleton.getState();
+  services.fingers.initialize(
+    skeletonState.fingerChains!,
+    skeletonState.meshes
+  );
   services.fingers.setGrips(
     side === "left" ? GripType.SQUARE : GripType.IDLE,
     side === "right" ? GripType.SQUARE : GripType.IDLE
@@ -86,7 +93,7 @@ describe.runIf(avatarAssetsPresent())("contact-correct posed skin", () => {
           rig.services.fingers.setCylinderContact(side, {
             a,
             b,
-            radiusM: 0.0095,
+            radiusM: ISOLATION_STAFF_CONTACT.radiusM,
             lengthM: 0.9,
           });
           rig.services.fingers.solveCylinderContacts();

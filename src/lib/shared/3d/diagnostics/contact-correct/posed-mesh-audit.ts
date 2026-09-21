@@ -29,6 +29,13 @@ export interface PosedMeshAuditResult {
   testedTriangles: number;
   excludedPalmTriangles: number;
   reason: string | null;
+  /** Dominant skinning bones identify the affected skin, not anatomical tissue. */
+  worstIntersection?: {
+    meshName: string;
+    triangleIndex: number;
+    boneNames: readonly string[];
+    penetrationM: number;
+  } | null;
   /** Surface-triangle contact only; a separate closed-volume query is required
    * before certifying that a shaft wholly inside a torso is clear. */
   interiorContainment: "clear" | "contained" | "unavailable" | "ambiguous";
@@ -275,6 +282,7 @@ export function auditPosedMeshAgainstStaff(
   let testedTriangles = 0;
   let excludedPalmTriangles = 0;
   let maximumPenetrationM = 0;
+  let worstIntersection: PosedMeshAuditResult["worstIntersection"] = null;
   const affectedRegions = new Set<string>();
   const closedMeshTriangles: Triangle[][] = [];
   let hasNonWatertightMesh = false;
@@ -284,6 +292,9 @@ export function auditPosedMeshAgainstStaff(
   const vc = new Vector3();
 
   options.root.updateWorldMatrix(true, true);
+  // SkinnedMesh refreshes its attached bind inverse in updateMatrixWorld,
+  // not updateWorldMatrix. Match the renderer before reading posed vertices.
+  options.root.updateMatrixWorld(true);
   options.root.traverse((object) => {
     if (!(object as SkinnedMesh).isSkinnedMesh || !isRendered(object)) return;
     const mesh = object as SkinnedMesh;
@@ -326,6 +337,20 @@ export function auditPosedMeshAgainstStaff(
       const distance = triangleStaffDistance(triangle, options.staff);
       const penetration = options.staff.radius - distance;
       if (penetration > 0) {
+        if (penetration > maximumPenetrationM) {
+          worstIntersection = {
+            meshName: mesh.name || "unnamed-skinned-mesh",
+            triangleIndex,
+            boneNames: [
+              ...new Set(
+                [ia, ib, ic]
+                  .map((vertex) => dominantBoneName(mesh, vertex))
+                  .filter((name): name is string => name !== null)
+              ),
+            ].sort(),
+            penetrationM: penetration,
+          };
+        }
         maximumPenetrationM = Math.max(maximumPenetrationM, penetration);
         affectedRegions.add(mesh.name || "unnamed-skinned-mesh");
       }
@@ -375,6 +400,7 @@ export function auditPosedMeshAgainstStaff(
   return {
     status: budgetExhausted ? "exhausted" : "available",
     maximumPenetrationM,
+    worstIntersection,
     affectedRegions: [...affectedRegions].sort(),
     testedTriangles,
     excludedPalmTriangles,
