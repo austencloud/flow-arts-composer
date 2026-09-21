@@ -226,6 +226,7 @@ describe("card-configurator LOOP descriptor", () => {
     turnIntensity: 1,
     gridMode: GridMode.DIAMOND,
     propContinuity: "continuous",
+    propRelationship: "free",
     period: Period.QUARTERED,
     loopType: LOOPType.MIRRORED_ROTATED,
     inversionInterval: 4,

@@ -28,8 +28,7 @@ import { calculateTurnPositions } from "../../pictograph/tka-glyph/utils/turn-po
 import { deriveTnDFromPictograph } from "../../pictograph/shared/domain/utils/tnd-deriver";
 import {
   calculateReversalPositions,
-  calculateHandColorKeyLayout,
-  HAND_COLOR_KEY,
+  drawHandColorKey as drawSharedHandColorKey,
 } from "../core";
 import type { TurnsTupleGenerator } from "../../pictograph/arrow/positioning/placement/services/turns-tuple-generator";
 import type { GridPlacement } from "../../pictograph/grid/domain/enums/grid-enums";
@@ -855,36 +854,17 @@ export function drawHandColorKey(
   },
   offsetX = 0
 ): void {
-  const layout = calculateHandColorKeyLayout(hands.showLeft, hands.showRight);
-  if (layout.entries.length === 0) return;
-
   const scale = size / VIEWBOX_SIZE;
   const centerX = offsetX + (VIEWBOX_SIZE / 2) * scale;
   const theme = isDarkMode ? "dark" : "light";
-
-  ctx.save();
-  ctx.font = `${HAND_COLOR_KEY.FONT_WEIGHT} ${HAND_COLOR_KEY.FONT_SIZE * scale}px Gelasio, Georgia, serif`;
-  ctx.textAlign = "start";
-  ctx.textBaseline = "alphabetic";
-  for (const entry of layout.entries) {
-    const hand = entry.hand === "left" ? HandSide.LEFT : HandSide.RIGHT;
-    ctx.fillStyle =
-      hands.primaryPropColors?.[entry.hand] ?? getMotionColor(hand, theme);
-    ctx.beginPath();
-    ctx.arc(
-      centerX + entry.swatchX * scale,
-      layout.centerY * scale,
-      layout.swatchRadius * scale,
-      0,
-      Math.PI * 2
-    );
-    ctx.fill();
-    ctx.fillStyle = isDarkMode ? "#ffffff" : "#231f20";
-    ctx.fillText(
-      entry.label,
-      centerX + entry.labelX * scale,
-      layout.baselineY * scale
-    );
-  }
-  ctx.restore();
+  drawSharedHandColorKey(ctx, {
+    showLeft: hands.showLeft,
+    showRight: hands.showRight,
+    scale,
+    centerX,
+    textColor: isDarkMode ? "#ffffff" : "#231f20",
+    colorForHand: (hand) =>
+      hands.primaryPropColors?.[hand] ??
+      getMotionColor(hand === "left" ? HandSide.LEFT : HandSide.RIGHT, theme),
+  });
 }
