@@ -66,11 +66,36 @@ screenshots misleadingly shrink that phone into the native desktop canvas.
 Do not classify those capture defects as application layout failures, and do
 not treat the geometry table as visual approval.
 
-Permission to use the separate project-owned test Chrome was requested via an
-asynchronous question; no approval had arrived when this record was written.
-Do not switch browser surfaces without resolving that permission. No personal
-browser, external data, or accounts were changed. Port5173 was not restarted or
-replaced. The task-owned HTTPS5174 preview must be stopped before ending.
+The user approved the separate project-owned test Chrome on the follow-up turn.
+The dedicated profile launched on9222, but is not connected to the browser
+runtime: the supported extension diagnostic reports its browser extension is
+not installed. The runtime's only connected Chrome is profile `Austen`, which
+was not used. No personal browser, external data, or accounts were changed.
+Port5173 was not restarted or replaced. The earlier HTTPS5174 Vite preview was
+stopped before that turn ended.
+
+The branch was brought current with local main on the follow-up turn and both
+focused Vitest files passed again (6 tests). Development-server slots were
+initially occupied by other tasks, so a local production build was attempted.
+A slot then freed up; the task-owned build (PID91788) was stopped and the normal
+worktree preview started. No build was deployed.
+
+## Live delivery preview
+
+- URL: `https://localhost:5174/about` (also `/composer`).
+- Worktree: `E:/tka-about-composer-fusion`.
+- Detached task-owned Node/Vite PID104116; port5174, IPv6 HTTPS.
+- Started 2026-09-21 14:13 America/Chicago, with `TKA_VITE_PORT=5174` and strict
+  port selection. Port5173 remains untouched.
+- Logs: `.fusion-preview.out.log` and `.fusion-preview.err.log` in the worktree.
+- HTTP200 and actual rendered DOM confirmed the fused page, including all demos,
+  TKA bridge, scope, and creator story. The in-app tab is marked as a deliverable.
+- Keep this preview alive for Austen's review. It reserves one agent-owned Vite
+  slot. Stop it only after successful integration supersedes it or Austen
+  finishes the task. Verify PID/command identity before stopping it.
+
+This delivery follows the updated repository lifecycle permitting persistent
+worktree previews; incomplete wide-screen/200% verification is still not a pass.
 
 After the remaining visual checks, bring the branch current with local main,
 repeat only invalidated checks, and use the guarded project finish workflow:
