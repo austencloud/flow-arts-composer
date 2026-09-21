@@ -76,6 +76,10 @@ export default defineConfig({
   },
   test: {
     name: "card-mcp-parity",
+    // Native MCP rendering is synchronous in the browser-command server.
+    // Running it beside live tests stalls their asset requests and readiness
+    // polls; serial files keep lifecycle assertions independent of that work.
+    fileParallelism: false,
     include: [
       "tests/render-parity/card-mcp-parity.test.ts",
       "tests/render-parity/live-card-png-parity.test.ts",
