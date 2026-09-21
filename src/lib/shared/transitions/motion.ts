@@ -2,6 +2,8 @@ import { cubicInOut, cubicOut } from "svelte/easing";
 import type { TransitionConfig } from "svelte/transition";
 import { DURATION } from "./transitions";
 
+const STANDARD_MOTION_EASING = "cubic-bezier(0.4, 0, 0.2, 1)";
+
 /**
  * motion — reduced-motion-aware Svelte transitions on the DURATION tokens.
  *
@@ -30,6 +32,86 @@ export function motionDuration(ms: number): number {
 /** Default duration for `animate:flip` list reordering. */
 export function flipDuration(): number {
   return motionDuration(DURATION.normal);
+}
+
+/**
+ * Owns a content-sized overlay's height while it moves between two measured
+ * layouts. The caller measures the natural destination; this keeps the visual
+ * starting point when a second change arrives before the first one settles.
+ */
+export interface IntrinsicHeightMotion {
+  resize(from: number, target: number): Animation | null;
+  currentHeight(): number | null;
+  cancel(): void;
+}
+
+/**
+ * Animate an overlay's own height without scaling the content inside it.
+ * `target` must come from layout metrics such as `offsetHeight`, rather than a
+ * transformed screen rectangle, so opening transforms cannot freeze a card at
+ * the wrong size.
+ */
+export function createIntrinsicHeightMotion(
+  element: HTMLElement,
+  duration = DURATION.normal
+): IntrinsicHeightMotion {
+  let animation: Animation | null = null;
+  let animationStart = 0;
+  let animationTarget = 0;
+
+  return {
+    resize(from: number, target: number): Animation | null {
+      animation?.cancel();
+      animation = null;
+
+      // The live style is the destination. `backwards` holds the visible
+      // starting height until the first animation frame, so the box cannot
+      // flash at its new size before moving there.
+      element.style.height = `${target}px`;
+      const effectiveDuration =
+        element.dataset.dragging === "true" ? 0 : motionDuration(duration);
+      if (effectiveDuration === 0 || Math.abs(from - target) < 0.5) {
+        return null;
+      }
+
+      const nextAnimation = element.animate(
+        [{ height: `${from}px` }, { height: `${target}px` }],
+        {
+          duration: effectiveDuration,
+          easing: STANDARD_MOTION_EASING,
+          fill: "backwards",
+        }
+      );
+      animation = nextAnimation;
+      animationStart = from;
+      animationTarget = target;
+      nextAnimation.addEventListener(
+        "finish",
+        () => {
+          if (animation !== nextAnimation) return;
+          animation = null;
+          // Keep owning the frame between observations. Releasing it to auto
+          // lets a child's first reflow briefly move the frame before RO runs.
+          // The independently sized content wrapper supplies the next target.
+        },
+        { once: true }
+      );
+      return nextAnimation;
+    },
+
+    currentHeight(): number | null {
+      if (!animation) return null;
+      const progress = animation.effect?.getComputedTiming().progress;
+      if (typeof progress !== "number") return animationStart;
+      return animationStart + (animationTarget - animationStart) * progress;
+    },
+
+    cancel(): void {
+      animation?.cancel();
+      animation = null;
+      element.style.height = "";
+    },
+  };
 }
 
 interface FlyFadeParams {
