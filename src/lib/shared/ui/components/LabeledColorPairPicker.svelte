@@ -1,9 +1,8 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import { cubicOut } from "svelte/easing";
-  import { prefersReducedMotion } from "svelte/motion";
-  import { slide } from "svelte/transition";
   import ColorPicker from "svelte-awesome-color-picker";
+  import { growFade } from "$lib/shared/transitions/motion";
+  import { DURATION } from "$lib/shared/transitions/transitions";
   import { COLOR_PRESETS, COLOR_PRESET_COLUMNS } from "../color-presets";
   import BareWrapper from "./color-picker/BareWrapper.svelte";
   import type { HandSide } from "@tka/tka-types";
@@ -69,19 +68,6 @@
     if (next !== current.toLowerCase()) onchange(hand, next);
   }
 
-  /** Height and fade together, so the editor grows out of the controls
-      instead of popping. Reduced motion skips it entirely. */
-  function expand(node: Element, { duration = 280 }: { duration?: number } = {}) {
-    if (prefersReducedMotion.current) return { duration: 0 };
-    const grow = slide(node, { duration, easing: cubicOut });
-    return {
-      duration,
-      easing: cubicOut,
-      // slide's css ends without a semicolon; the separator matters because
-      // Svelte splits the string into keyframe properties on ";".
-      css: (t: number, u: number) => `${grow.css?.(t, u) ?? ""}; opacity: ${t}`,
-    };
-  }
 </script>
 
 <div class="color-pair" role="group" aria-label={groupLabel}>
@@ -152,8 +138,8 @@
       id={editorId}
       role="group"
       aria-label={`${entry.label} color`}
-      in:expand={{ duration: 280 }}
-      out:expand={{ duration: 200 }}
+      in:growFade={{ duration: DURATION.emphasis }}
+      out:growFade={{ duration: DURATION.normal }}
     >
       <div class="preset-block">
         <div
