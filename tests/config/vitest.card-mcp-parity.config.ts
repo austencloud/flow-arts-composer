@@ -13,7 +13,24 @@ const projectRoot = path.resolve(
 export default defineConfig({
   plugins: [svelte()],
   publicDir: path.resolve(projectRoot, "static"),
-  optimizeDeps: { include: ["pixelmatch", "fabric", "zod"] },
+  optimizeDeps: {
+    include: [
+      "pixelmatch",
+      "fabric",
+      "zod",
+      "qr-code-styling",
+      "canvas",
+      "firebase/app",
+      "firebase/auth",
+      "firebase/database",
+      "firebase/firestore",
+      "firebase/functions",
+      "firebase/storage",
+      "posthog-js",
+      "@capacitor/core",
+      "fflate",
+    ],
+  },
   resolve: {
     conditions: ["browser"],
     alias: {
