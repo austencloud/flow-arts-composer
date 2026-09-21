@@ -24,12 +24,35 @@ unless a higher-priority platform or safety instruction conflicts.
   edits there.
 - Create a unique `codex/<task-slug>` branch. Stage and commit only task-owned
   paths; never use broad staging, a bare commit, or destructive reset/checkout.
+- Completed implementation must be on local `main` or accessible through a
+  verified, live worktree preview. A branch name or worktree path alone is not
+  delivery.
 - In this repository, implementation approval includes scoped commits, guarded
   local integration, and clean worktree removal. From the primary checkout run
   `npm run wt:finish -- <branch> --route /real-route` for reviewable UI or
-  `npm run wt:finish -- <branch> --nonvisual` otherwise.
-- If any gate fails, leave the branch and worktree intact and report the exact
-  blocker. Never delete another task's branch or dirty worktree.
+  `npm run wt:finish -- <branch> --nonvisual` otherwise. Do this without a
+  routine permission question unless the user explicitly asks not to merge.
+- After integration, verify the changed app route on the primary server and
+  provide its direct URL, opening it in the task browser when available. For
+  nonvisual work, link the changed file or artifact.
+- If guarded integration is blocked or work is kept unmerged for preview, leave
+  the branch and worktree intact and continue toward a reviewable delivery.
+  For an app route, start or reuse a
+  task-owned server whose working directory is this task's worktree, on a free
+  non-5173 port, after the resource gate. Verify the changed route against the
+  worktree content, open it in DevTools or the in-app browser when available,
+  and always provide its clickable URL.
+- Keep a handed-off preview server and its delivered browser tab alive past the
+  final response. Use a persistent or detached process if the tool session
+  would end it, record the task-owned process, port, worktree, and log in task
+  context, and reserve its Vite-server slot while it runs. Stop it when
+  superseded by integration or when the user finishes the task.
+- Nonvisual instruction or code artifacts should prefer integration and do not
+  need a fake app server. If integration remains blocked, provide the directly
+  reviewable artifact or diff and report the incomplete integration accurately.
+  If neither delivery path works, report the concrete blocker and attempted
+  alternatives; do not claim completion. Never delete another task's branch or
+  dirty worktree.
 
 ## Verification
 
@@ -50,7 +73,8 @@ unless a higher-priority platform or safety instruction conflicts.
   explicit authorization.
 - Port 5173 is Austen's IPv6 HTTPS/2 dev server. Never start, restart, replace,
   or kill it. Probe it with `curl.exe -k -g "https://[::1]:5173/"`. A task-owned
-  server must use a free port and be stopped in the same turn.
+  server must use a free port; preserve a handed-off delivery preview as
+  described in Repository Lifecycle.
 
 ## Exact Routing
 
