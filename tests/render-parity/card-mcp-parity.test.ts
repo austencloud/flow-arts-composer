@@ -35,6 +35,23 @@ async function canvasImage(
 }
 
 describe("Composer ⇄ MCP card PNG parity", () => {
+  it.each(["composer-light", "print-footer"])(
+    "negative control: removing the hand-color key fails its own region (%s)",
+    async (name) => {
+      const testCase = cardParityCases().find((entry) => entry.name === name)!;
+      const withKey = await canvasImage(await renderComposerCard(testCase));
+      const withoutKey = await canvasImage(
+        await renderComposerCard(testCase, { hideHandColorKey: true })
+      );
+      const key = cardParityMetrics(withKey, withoutKey, testCase).find(
+        (region) => region.name === "handColorKey"
+      )!;
+      expect(key.percent).toBeGreaterThan(CARD_PARITY_LIMITS.handColorKey!);
+      expect(() => assertCardParity([key], "missing hand-color key")).toThrow(
+        "handColorKey"
+      );
+    }
+  );
   for (const testCase of cardParityCases()) {
     it(`${testCase.name}: reports strict per-region parity for both adapters`, async () => {
       const composer = await canvasImage(await renderComposerCard(testCase));
