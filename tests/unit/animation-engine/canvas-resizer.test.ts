@@ -148,6 +148,26 @@ describe("CanvasResizer", () => {
     resizer.dispose();
   });
 
+  it("seeds a square quick-viewer stage before its observer runs", () => {
+    const container = {
+      clientWidth: 1514,
+      clientHeight: 1514,
+      closest: () => null,
+    } as unknown as HTMLDivElement;
+    const resizer = new CanvasResizer();
+
+    resizer.initialize(container, {
+      resize: vi.fn().mockResolvedValue(undefined),
+    });
+
+    expect(resizer.state.frame).toEqual({
+      size: 1514,
+      width: 1514,
+      height: 1514,
+    });
+    resizer.dispose();
+  });
+
   it("retains the readable backing size while its workspace pane is inert", async () => {
     let width = 630;
     let inert = false;
