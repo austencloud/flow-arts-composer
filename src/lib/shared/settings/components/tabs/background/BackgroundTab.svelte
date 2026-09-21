@@ -454,6 +454,10 @@
       .theme-choices {
         grid-template-columns: minmax(0, 1fr);
       }
+      .controls-heading {
+        flex-direction: column;
+        align-items: flex-start;
+      }
     }
   }
   @media (prefers-reduced-motion: reduce) {
