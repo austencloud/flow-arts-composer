@@ -113,7 +113,9 @@
     display: flex;
     flex-direction: column;
     width: 100%;
+    flex: 1 1 auto;
     height: 100%;
+    min-height: 0;
     max-width: 1200px;
     margin: 0 auto;
     padding: clamp(8px, 2cqi, 16px);

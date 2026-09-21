@@ -226,19 +226,22 @@ export class EffectRendererManager {
     return this.renderers.get(id) ?? null;
   }
 
+
   /**
    * Wire dependencies after construction. Called once from AnimationEngine.initialize().
    */
   wire(deps: {
     containerElement: HTMLDivElement;
     canvasSize: number;
+    /** The host rectangle, seeded before the first ResizeObserver callback. */
+    canvasFrame?: CanvasFrame;
     renderLoopService: IAnimationRenderLoop | null;
     getFrameParams: FrameParamsProvider;
     getVM: () => AnimationVisibilityStateManager;
   }): void {
     this.containerElement = deps.containerElement;
     this.canvasSize = deps.canvasSize;
-    this.frame = squareFrame(deps.canvasSize);
+    this.frame = deps.canvasFrame ?? squareFrame(deps.canvasSize);
     this.renderLoopService = deps.renderLoopService;
     this.getFrameParams = deps.getFrameParams;
     this.getVM = deps.getVM;
@@ -279,7 +282,6 @@ export class EffectRendererManager {
   isEffectEnabled(effect: OverlayEffectId): boolean {
     return this.prevEffectEnabled.get(effect) ?? false;
   }
-
 
   /**
    * Generic init/destroy lifecycle for a single registry-driven overlay effect.

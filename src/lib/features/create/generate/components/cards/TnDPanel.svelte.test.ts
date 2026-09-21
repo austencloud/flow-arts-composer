@@ -147,7 +147,7 @@ describe("TnDPanel", () => {
     );
 
     const chip = container.querySelector<HTMLButtonElement>(
-      'button[aria-label="Match turns"]'
+      'button[aria-label="Match turns, required by prop timing"]'
     );
     expect(chip?.disabled).toBe(true);
     expect(chip?.getAttribute("aria-pressed")).toBe("true");

@@ -43,6 +43,7 @@ import { FireTipTracker } from "./fire-tip-tracker";
 import { LedSampler } from "./led-sampler";
 import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { MandalaOverlayCanvas } from "$lib/shared/mandala/services/mandala-overlay-canvas";
+import { squareFrame } from "../domain/types/canvas-frame";
 
 /**
  * Context passed to CanvasLifecycleManager.initialize().
@@ -387,6 +388,11 @@ export class CanvasLifecycleManager {
 
     erm.fireTipTracker = new FireTipTracker();
     erm.ledSampler = new LedSampler();
+    // The main renderer was just allocated from this host's real dimensions,
+    // but ResizeObserver has not delivered its first callback yet. Seed every
+    // overlay consumer with the same frame so a quick viewer cannot stretch a
+    // default-square particle canvas across its actual stage.
+    const initialFrame = this._resizer?.state.frame ?? squareFrame(canvasSize);
 
     const renderLoop = new AnimationRenderLoop();
     this._renderLoop = renderLoop;
@@ -394,7 +400,8 @@ export class CanvasLifecycleManager {
       renderer: this._animationRenderer,
       TrailCapturer: this._trailCapturer,
       pathCache: this._precomputer?.getPathCache() ?? null,
-      canvasSize,
+      canvasSize: initialFrame.size,
+      canvasFrame: initialFrame,
       frameBudgetMonitor,
       fireTipTracker: erm.fireTipTracker,
       ledSampler: erm.ledSampler,
@@ -404,7 +411,8 @@ export class CanvasLifecycleManager {
 
     erm.wire({
       containerElement,
-      canvasSize,
+      canvasSize: initialFrame.size,
+      canvasFrame: initialFrame,
       renderLoopService: renderLoop,
       getFrameParams: () => buildFrameParams(getLastPropsRef() ?? { leftProp: null, rightProp: null }),
       getVM,
@@ -422,7 +430,11 @@ export class CanvasLifecycleManager {
     });
 
     erm.trailOverlay = erm.createTrailOverlay();
-    erm.trailOverlay.initialize(containerElement, canvasSize, canvasSize);
+    erm.trailOverlay.initialize(
+      containerElement,
+      initialFrame.width,
+      initialFrame.height
+    );
     renderLoop.updateConfig({ renderers: { trails: erm.trailOverlay as unknown as import("./effects/effect-renderer").EffectRendererLike } });
     erm.syncEffectLayers();
   }

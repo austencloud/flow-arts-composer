@@ -16,6 +16,7 @@
   import GenerationSettingsOverlay from "./GenerationSettingsOverlay.svelte";
   import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import TnDModeGrid from "$lib/features/choreo-card/components/TnDModeGrid.svelte";
+  import RelationshipChoiceChip from "$lib/shared/shape-matrix/components/RelationshipChoiceChip.svelte";
   import {
     describeTnDSelection,
     type TnDSelection,
@@ -23,6 +24,7 @@
   import type { VtgMode } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
 
   const MATCH_HAND_TURNS_LABEL = "Match turns";
+  const MATCH_HAND_TURNS_REQUIRED_LABEL = "Match turns · Required";
   const MATCH_HAND_TURNS_HINT =
     "Both hands take the same turns on every step, and a mirrored dash spins the mirror way.";
   const MATCH_HAND_TURNS_LEVEL_HINT = "Level 1 has no turns to match.";
@@ -58,6 +60,12 @@
   const blockedModes = $derived(Object.keys(blockedHandModes) as VtgMode[]);
   const timingSet = $derived(propRelationship !== "free");
   const turnsAvailable = $derived(level >= 2);
+  const turnsLabel = $derived(
+    timingSet ? MATCH_HAND_TURNS_REQUIRED_LABEL : MATCH_HAND_TURNS_LABEL
+  );
+  const turnsAriaLabel = $derived(
+    timingSet ? "Match turns, required by prop timing" : MATCH_HAND_TURNS_LABEL
+  );
   const turnsHint = $derived(
     !turnsAvailable
       ? MATCH_HAND_TURNS_LEVEL_HINT
@@ -83,16 +91,17 @@
             >{describeTnDSelection(handRelationship)}</span
           >
         </div>
-        <FilterChipBase
-          label="Free"
-          mode="toggle"
-          emphasis="solid"
-          size="sm"
+        <RelationshipChoiceChip
+          compact
+          accent="var(--theme-accent, #38bdf8)"
+          timing="Free"
+          direction="No constraints"
           active={handRelationship === "free"}
           ariaLabel="Free hands"
-          onclick={() => onHandRelationshipChange("free")}
+          onpick={() => onHandRelationshipChange("free")}
         />
         <TnDModeGrid
+          fullLabels
           selected={handRelationship === "free" ? null : handRelationship}
           disabledModes={blockedModes}
           reasons={blockedHandModes}
@@ -108,29 +117,32 @@
             >{describeTnDSelection(propRelationship)}</span
           >
         </div>
-        <FilterChipBase
-          label="Free"
-          mode="toggle"
-          emphasis="solid"
-          size="sm"
+        <RelationshipChoiceChip
+          compact
+          accent="var(--theme-accent, #38bdf8)"
+          timing="Free"
+          direction="No constraints"
           active={propRelationship === "free"}
           ariaLabel="Free props"
-          onclick={() => onPropRelationshipChange("free")}
+          onpick={() => onPropRelationshipChange("free")}
         />
         <TnDModeGrid
+          fullLabels
           selected={propRelationship === "free" ? null : propRelationship}
           ariaLabel="Prop timing and direction"
           onpick={onPropRelationshipChange}
         />
         <div class="turns-row">
           <FilterChipBase
-            label={MATCH_HAND_TURNS_LABEL}
+            label={turnsLabel}
+            icon={timingSet ? "fas fa-lock" : undefined}
             mode="toggle"
-            emphasis="solid"
+            emphasis="soft"
             size="sm"
+            labelScale="readable"
             active={matchHandTurns || timingSet}
             disabled={!turnsAvailable || timingSet}
-            ariaLabel={MATCH_HAND_TURNS_LABEL}
+            ariaLabel={turnsAriaLabel}
             onclick={() => onMatchHandTurnsChange(!matchHandTurns)}
           />
           <p class="turns-hint">{turnsHint}</p>
@@ -198,6 +210,10 @@
     flex-direction: column;
     gap: 6px;
     margin-top: 4px;
+  }
+
+  .turns-row :global(.filter-chip) {
+    align-self: flex-start;
   }
 
   .turns-hint {

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { ViewerPlaybackState } from "../domain/viewer-prop-groups";
   import type { TipEffectMap } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
@@ -11,7 +12,11 @@
     animationSettings,
     type AnimationSettingsState,
   } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-  import type { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+  import {
+    getAnimationVisibilityManager,
+    type AnimationVisibilityStateManager,
+    type GridMode as GridVisibilityMode,
+  } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
   import { foldTrailIntentIntoSettings } from "$lib/shared/effects/translators/canvas2d-translator";
   import {
     toggleTunnelPlayback,
@@ -117,6 +122,22 @@
 
   const seq = $derived(playback?.animationState.sequenceData ?? sequence);
   const gridMode = $derived(seq?.gridMode);
+  let selectedGridMode = $state<GridVisibilityMode>("auto");
+  const effectiveGridMode = $derived(
+    selectedGridMode === "8point" ? GridMode.EIGHT_POINT : gridMode
+  );
+
+  $effect(() => {
+    const manager = visibilityManager ?? getAnimationVisibilityManager();
+
+    const syncGridMode = () => {
+      selectedGridMode = manager.getGridMode();
+    };
+    syncGridMode();
+    manager.registerObserver(syncGridMode);
+    return () => manager.unregisterObserver(syncGridMode);
+  });
+
   const stepCount = $derived(seq?.steps?.length ?? 0);
 
   // Self-driven playhead — a MONOTONIC 0-indexed beat accumulator. It does NOT
@@ -239,7 +260,7 @@
         hoverHint="badge"
         cornerToggle={true}
         onPlaybackToggle={handlePlaybackToggle}
-        {gridMode}
+        gridMode={effectiveGridMode}
         {trailSettings}
         {tipEffectMap}
         effectsConfigState={effectsConfig ?? undefined}

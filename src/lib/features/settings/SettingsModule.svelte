@@ -10,7 +10,6 @@
   Mobile: Swipe left from left edge to exit (matches portal animation direction)
 -->
 <script lang="ts">
-  import { page } from "$app/state";
   import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { onMount } from "svelte";
@@ -36,8 +35,7 @@
   import ProfileTab from "$lib/shared/settings/components/tabs/ProfileTab.svelte";
   import ReleaseNotesTab from "$lib/shared/settings/components/tabs/ReleaseNotesTab.svelte";
   import PropTypeTab from "$lib/shared/settings/components/tabs/PropTypeTab.svelte";
-  import ThemeShowroom from "$lib/shared/settings/components/tabs/background/showroom/ThemeShowroom.svelte";
-  import { getShowroomThemeFromId } from "$lib/shared/settings/components/tabs/background/showroom/theme-showroom-data";
+  import BackgroundTab from "$lib/shared/settings/components/tabs/background/BackgroundTab.svelte";
   import PreferencesTab from "$lib/shared/settings/components/tabs/PreferencesTab.svelte";
   import LanguageTab from "$lib/shared/settings/components/tabs/LanguageTab.svelte";
   import ShortcutCenter from "$lib/shared/keyboard/components/ShortcutCenter.svelte";
@@ -131,9 +129,6 @@
 
   // Use navigation state's active tab
   const activeTab = $derived(navigationState.activeTab);
-  const linkedThemePreview = $derived(
-    getShowroomThemeFromId(page.url.searchParams.get("theme"))
-  );
 
   // Swipe-to-exit gesture state
   let swipeStartX = 0;
@@ -250,11 +245,11 @@
   {:else}
     <div
       class="settings-module-body"
-      class:theme-showroom-active={activeTab === "theme"}
+      class:theme-background-active={activeTab === "theme"}
     >
       <section
         class="panel"
-        class:theme-showroom-active={activeTab === "theme"}
+        class:theme-background-active={activeTab === "theme"}
       >
         {#if activeTab === "profile"}
           <ProfileTab
@@ -266,11 +261,7 @@
         {:else if activeTab === "props"}
           <PropTypeTab {settings} onUpdate={handleSettingUpdate} />
         {:else if activeTab === "theme"}
-          <ThemeShowroom
-            {settings}
-            onUpdate={handleSettingUpdate}
-            initialPreview={linkedThemePreview}
-          />
+          <BackgroundTab {settings} onUpdate={handleSettingUpdate} />
         {:else if activeTab === "notifications"}
           <NotificationPreferencesPanel />
         {:else if activeTab === "preferences"}
@@ -406,7 +397,7 @@
     border-radius: 3px;
   }
 
-  .settings-module-body.theme-showroom-active {
+  .settings-module-body.theme-background-active {
     overflow: hidden;
     padding: 0;
   }
@@ -426,7 +417,7 @@
     align-items: stretch;
   }
 
-  .panel.theme-showroom-active {
+  .panel.theme-background-active {
     padding: 0;
     border-radius: 0;
   }

@@ -163,6 +163,34 @@ describe("EffectRendererManager — prewarm + keep-warm", () => {
     expect(fakeRenderer.canvas.style.display).toBe("none");
   });
 
+  it("uses the measured wide frame when an effect starts before ResizeObserver", () => {
+    const manager = new EffectRendererManager({
+      keepInactiveWebglRenderersWarm: true,
+    });
+    manager.wire({
+      containerElement: {} as HTMLDivElement,
+      canvasSize: 800,
+      canvasFrame: { size: 800, width: 1200, height: 800 },
+      renderLoopService: {
+        updateConfig: vi.fn(),
+        triggerRender: vi.fn(),
+      } as never,
+      getFrameParams: () => ({}) as never,
+      getVM: () => ({}) as never,
+    });
+
+    manager.prewarmRenderer("fire");
+
+    // A 800×800 fallback backing store is CSS-stretched across this host and
+    // pushes particle coordinates down and right. The first renderer must use
+    // the real 1200×800 rectangle instead.
+    expect(fakeRenderer.initialize).toHaveBeenCalledWith(
+      expect.anything(),
+      1200,
+      800
+    );
+  });
+
   it("enabling a prewarmed effect reuses the warm renderer (no re-create) and shows it", () => {
     const { manager } = wiredManager();
     manager.prewarmRenderer("fire");

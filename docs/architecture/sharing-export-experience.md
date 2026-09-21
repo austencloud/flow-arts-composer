@@ -423,3 +423,37 @@ requests, cancellation, foreground limits, background serial behavior, failed
 publication, library warm compatibility, card-cache invalidation, card settings,
 and trace isolation. The final rendered card was inspected in the browser with
 the reused QR present. Layout and output settings were not changed by this work.
+
+### September 21 stale card during sequence changes
+
+Austen reported that generating another sequence and reopening Download card
+showed the previous card for four or five seconds. This was a preview lifecycle
+defect, separate from QR preparation latency. The shared card-preview state kept
+its previous URL and downloadable blob until the replacement render completed.
+Its loading state also treated any retained URL as ready.
+
+The actual Create → Generate → Share → Download card flow reproduced this with
+two generated sequences. Holding the second real render at the Sharer boundary
+left the first image visible under the second sequence's heading; Share card
+and Send to phone also remained available. This check used the agent browser's
+local settings with QR disabled to isolate preview ownership from network work.
+
+A prepared preview belongs to its sequence content and complete render settings.
+When those inputs change, the old image and file must stop being exposed
+immediately, before the replacement request completes. A late result from an
+obsolete request must never become the current preview or downloadable file.
+Reopening an unchanged card may still reuse matching prepared artwork.
+
+The fix extends `createCardPreviewState`, shared by the download sheet and Post
+Studio. It snapshots the requested sequence, gates all exposed artifact data on
+the current content/settings identity, and checks that identity again when an
+asynchronous render completes. Reset retires pending results as well as the
+displayed artifact. Prepared QR and card-blob caches retain their existing owners.
+
+Browser verification repeated the actual Generate flow with held real card
+results. The replacement showed preparation with zero old preview images and
+no old-file handoff actions after more than eight seconds. An obsolete result
+released before the current result did not appear; another obsolete result
+released afterward did not replace the current image. Closing and reopening the
+unchanged card reused the same preview URL without another render request.
+These checks prove preview ownership, not reduced image-generation latency.

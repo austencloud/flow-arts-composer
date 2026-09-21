@@ -21,6 +21,8 @@ import { getImageCompositionManager } from "$lib/shared/share/state/image-compos
 import { getVisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
 import type { CardPresentation } from "$lib/shared/share/domain/models/card-presentation";
 import { buildCardPreviewRenderKey } from "$lib/shared/share/state/card-preview-render-key";
+import { canonicalJSON } from "$lib/shared/foundation/utils/canonical-json";
+import { hashString } from "$lib/shared/foundation/services/content-hasher";
 
 interface CardPreviewInputs {
   /** The sequence to draw. Null suspends rendering. */
@@ -37,6 +39,16 @@ interface CardPreviewInputs {
   /** Current card or one-share footer override. */
   getCardPresentation?: () => CardPresentation | undefined;
   onError?: (error: unknown) => void;
+}
+
+interface CardRenderRequest {
+  target: SequenceData;
+  darkMode: boolean;
+  resolvedAutoLayout: ResolvedAutoLayout | null;
+  cardPresentation: CardPresentation | undefined;
+  options: Partial<SequenceExportOptions>;
+  identity: string;
+  revision: string;
 }
 
 export function createCardPreviewState(inputs: CardPreviewInputs) {
@@ -58,18 +70,25 @@ export function createCardPreviewState(inputs: CardPreviewInputs) {
 
   let blob = $state<Blob | null>(null);
   let url = $state<string | null>(null);
-  let renderOptions = $state<Partial<SequenceExportOptions> | null>(null);
-  let renderedKey: string | null = null;
-  let renderedTarget: SequenceData | null = null;
+  let renderedOptions = $state<Partial<SequenceExportOptions> | null>(null);
+  let renderedIdentity = $state<string | null>(null);
+  let failedIdentity = $state<string | null>(null);
+  let resetVersion = $state(0);
 
-  $effect(() => {
-    const target = inputs.getSequence();
-    if (!inputs.getEnabled() || !target) return;
-
-    // Subscribes this effect to every card setting the surface can reach.
-    // buildCardRenderOptions reads both managers, but through plain method
-    // calls that no rune is watching — this is the dependency.
+  const requestedRender = $derived.by((): CardRenderRequest | null => {
+    // Reading this makes observer-backed composition and visibility changes
+    // visible to the derived request as soon as their observers publish.
     void settingsVersion;
+    void resetVersion;
+
+    const liveTarget = inputs.getSequence();
+    if (!inputs.getEnabled() || !liveTarget) return null;
+
+    // Keep the object the asynchronous renderer receives tied to this exact
+    // identity. Without a snapshot, an in-place edit can change the live
+    // object after its identity was stamped but before Sharer reads it.
+    const target = $state.snapshot(liveTarget) as SequenceData;
+
     const darkMode = inputs.getDarkMode();
     const resolvedAutoLayout = inputs.getResolvedAutoLayout();
     const cardPresentation = inputs.getCardPresentation?.();
@@ -79,36 +98,65 @@ export function createCardPreviewState(inputs: CardPreviewInputs) {
       resolvedAutoLayout,
       cardPresentation,
     });
-    renderOptions = options;
-
-    // The visibility snapshot rides along because TKA, TnD, positions and
-    // non-radial points never enter the options — the composer inherits them
-    // from the global manager at render time. Keyed on the options alone, this
-    // guard would return early on the one class of setting it cannot see.
     const settingsKey = buildCardPreviewRenderKey(
       options,
       visibility.getState()
     );
-    if (settingsKey === renderedKey && target === renderedTarget) return;
+
+    const identity = `${canonicalJSON(target)}|${settingsKey}|${resetVersion}`;
+    return {
+      target,
+      darkMode,
+      resolvedAutoLayout,
+      cardPresentation,
+      options,
+      // A sequence can be edited in place while retaining its id and object
+      // reference. The file must follow its content, not either shortcut.
+      identity,
+      revision: hashString(identity),
+    };
+  });
+
+  function clearArtifact(): void {
+    if (url) URL.revokeObjectURL(url);
+    blob = null;
+    url = null;
+    renderedOptions = null;
+    renderedIdentity = null;
+  }
+
+  $effect(() => {
+    const request = requestedRender;
+    if (!request || request.identity === renderedIdentity) return;
+
+    // A retry after re-opening or reset should announce preparation again.
+    failedIdentity = null;
 
     let stale = false;
 
     void (async () => {
       try {
-        const rendered = await getSharer().getCardImageBlob(target, {
-          darkMode,
-          resolvedAutoLayout,
-          cardPresentation,
+        const rendered = await getSharer().getCardImageBlob(request.target, {
+          darkMode: request.darkMode,
+          resolvedAutoLayout: request.resolvedAutoLayout,
+          cardPresentation: request.cardPresentation,
         });
-        if (stale) return;
-        if (url) URL.revokeObjectURL(url);
+        // A render may finish between an input change and the effect cleanup.
+        // Check the live request too, so that small window cannot put the
+        // previous card back into a newly selected sequence.
+        if (stale || requestedRender?.identity !== request.identity) return;
+        clearArtifact();
         blob = rendered;
         url = URL.createObjectURL(rendered);
-        renderedKey = settingsKey;
-        renderedTarget = target;
+        renderedOptions = request.options;
+        renderedIdentity = request.identity;
+        failedIdentity = null;
       } catch (error) {
         console.error("[cardPreview] Card render failed:", error);
-        if (!stale) inputs.onError?.(error);
+        if (!stale && requestedRender?.identity === request.identity) {
+          failedIdentity = request.identity;
+          inputs.onError?.(error);
+        }
       }
     })();
 
@@ -120,22 +168,28 @@ export function createCardPreviewState(inputs: CardPreviewInputs) {
   onDestroy(() => {
     composition.unregisterObserver(onCardSettingsChanged);
     visibility.unregisterObserver(onCardSettingsChanged);
-    if (url) URL.revokeObjectURL(url);
+    clearArtifact();
   });
 
   return {
     get blob() {
-      return blob;
+      return requestedRender?.identity === renderedIdentity ? blob : null;
     },
     get url() {
-      return url;
+      return requestedRender?.identity === renderedIdentity ? url : null;
     },
     /** The options the card was drawn with, for surfaces that re-render it. */
     get renderOptions() {
-      return renderOptions;
+      return requestedRender?.identity === renderedIdentity
+        ? renderedOptions
+        : null;
     },
     get isPreparing() {
-      return url === null;
+      return (
+        requestedRender !== null &&
+        requestedRender.identity !== renderedIdentity &&
+        requestedRender.identity !== failedIdentity
+      );
     },
     /**
      * Identity of the settings the blob in hand was drawn from. Surfaces that
@@ -143,7 +197,9 @@ export function createCardPreviewState(inputs: CardPreviewInputs) {
      * key on this so a re-render is visible downstream.
      */
     get revision() {
-      return renderedKey;
+      return requestedRender?.identity === renderedIdentity
+        ? requestedRender.revision
+        : null;
     },
     /** Bumps when a card setting changes. Exposed for hosts keying their own work. */
     get settingsVersion() {
@@ -151,11 +207,9 @@ export function createCardPreviewState(inputs: CardPreviewInputs) {
     },
     /** Drops the cached blob so the next run re-renders. */
     reset(): void {
-      if (url) URL.revokeObjectURL(url);
-      blob = null;
-      url = null;
-      renderedKey = null;
-      renderedTarget = null;
+      resetVersion++;
+      failedIdentity = null;
+      clearArtifact();
     },
   };
 }
