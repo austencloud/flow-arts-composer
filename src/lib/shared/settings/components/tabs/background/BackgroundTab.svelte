@@ -106,7 +106,6 @@
 <div class="background-tab themed-scrollbar">
   <section class="theme-workspace" aria-labelledby="theme-heading">
     <header class="theme-intro">
-      <p class="eyebrow">Appearance</p>
       <h3 id="theme-heading">{t("tab_settings_theme")}</h3>
       <p>Choose the moving backdrop for your composer.</p>
     </header>
@@ -129,10 +128,23 @@
         </div>
       </section>
 
-      <aside class="theme-rail" aria-label="Theme choices">
-        <div class="rail-heading">
-          <p class="eyebrow">Choose a theme</p>
-          <span>{BACKGROUND_CARD_REGISTRY.length} available</span>
+      <section class="theme-controls" aria-label="Theme choices">
+        <div class="controls-heading">
+          <div>
+            <p class="eyebrow">Choose a theme</p>
+            <span>{BACKGROUND_CARD_REGISTRY.length} available</span>
+          </div>
+          <button
+            type="button"
+            class="apply-theme"
+            class:applied={previewIsCurrent}
+            onclick={applyPreview}
+            disabled={!canApplyPreview}
+          >
+            {canApplyPreview ? `Use ${preview.label}` : "Current theme"}
+            {#if !canApplyPreview}<i class="fas fa-check" aria-hidden="true"
+              ></i>{/if}
+          </button>
         </div>
 
         <div class="theme-choices" aria-label="Choose a theme">
@@ -159,19 +171,7 @@
             </button>
           {/each}
         </div>
-
-        <button
-          type="button"
-          class="apply-theme"
-          class:applied={previewIsCurrent}
-          onclick={applyPreview}
-          disabled={!canApplyPreview}
-        >
-          {canApplyPreview ? `Use ${preview.label}` : "Current theme"}
-          {#if !canApplyPreview}<i class="fas fa-check" aria-hidden="true"
-            ></i>{/if}
-        </button>
-      </aside>
+      </section>
     </div>
   </section>
 </div>
@@ -180,6 +180,7 @@
   .background-tab {
     --settings-gap: clamp(12px, 2cqi, 20px);
     container-type: inline-size;
+    display: flex;
     min-height: 0;
     height: 100%;
     overflow: auto;
@@ -187,8 +188,10 @@
     padding-bottom: calc(var(--settings-gap) + 16px);
   }
   .theme-workspace {
-    width: min(1180px, 100%);
-    margin: 0 auto;
+    width: min(1440px, 100%);
+    min-width: 0;
+    margin-block: auto;
+    margin-inline: auto;
   }
   .theme-intro {
     margin-bottom: var(--settings-gap);
@@ -214,17 +217,16 @@
     font-size: 14px;
   }
   .theme-composition {
-    display: grid;
-    grid-template-columns: minmax(0, 2fr) minmax(340px, 1fr);
-    gap: var(--settings-gap);
-    align-items: stretch;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
   }
   .theme-stage {
     position: relative;
-    min-height: clamp(320px, 48cqw, 570px);
+    height: clamp(280px, calc(100dvh - 320px), 760px);
     overflow: hidden;
     border: 1px solid var(--theme-stroke);
-    border-radius: 18px;
+    border-radius: 18px 18px 0 0;
     isolation: isolate;
     background: var(--theme-panel-bg);
   }
@@ -258,7 +260,7 @@
   .stage-title-wrap h4 {
     margin: 0;
     font-family: system-ui, sans-serif;
-    font-size: clamp(42px, 8cqi, 82px);
+    font-size: clamp(36px, 5cqi, 64px);
     line-height: 0.9;
     letter-spacing: -0.05em;
   }
@@ -269,39 +271,40 @@
     font-size: 14px;
     line-height: 1.4;
   }
-  .theme-rail {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+  .theme-controls {
     min-width: 0;
     padding: 14px;
     border: 1px solid var(--theme-stroke);
-    border-radius: 16px;
+    border-top: 0;
+    border-radius: 0 0 18px 18px;
     background: var(--theme-card-bg);
   }
-  .rail-heading {
+  .controls-heading {
     display: flex;
-    align-items: baseline;
+    align-items: center;
+    flex-wrap: wrap;
     justify-content: space-between;
-    gap: 8px;
+    gap: 12px;
+    margin-bottom: 12px;
   }
-  .rail-heading .eyebrow {
+  .controls-heading .eyebrow {
+    margin-bottom: 2px;
     color: var(--theme-text);
   }
-  .rail-heading span {
+  .controls-heading span {
     color: var(--theme-text-dim);
     font-size: 12px;
   }
   .theme-choices {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 8px;
   }
   .theme-choices button {
     display: grid;
-    grid-template-columns: 30px minmax(0, 1fr) 16px;
+    grid-template-columns: 36px minmax(0, 1fr) 16px;
     align-items: center;
-    min-height: 48px;
+    min-height: 56px;
     gap: 8px;
     padding: 5px;
     overflow: hidden;
@@ -334,8 +337,8 @@
   }
   .choice-art {
     display: grid;
-    width: 30px;
-    height: 36px;
+    width: 36px;
+    height: 44px;
     place-items: center;
     border-radius: 6px;
     color: white;
@@ -374,8 +377,8 @@
     justify-content: center;
     min-height: 44px;
     gap: 8px;
-    margin-top: auto;
-    padding: 8px 12px;
+    flex: 0 0 auto;
+    padding: 8px 14px;
     color: var(--theme-button-text, #fff);
     font: inherit;
     font-weight: 700;
@@ -396,23 +399,34 @@
     border-color: var(--theme-stroke-strong);
     cursor: default;
   }
-  @container (max-width: 700px) {
-    .theme-composition {
-      grid-template-columns: 1fr;
-    }
+  @container (max-width: 759px) {
     .theme-stage {
-      min-height: min(60vh, 440px);
+      height: clamp(220px, 38dvh, 380px);
     }
-    .theme-rail {
+    .theme-controls {
       padding: 12px;
     }
-  }
-  @media (max-height: 650px) and (min-width: 701px) {
-    .theme-stage {
-      min-height: 310px;
+    .theme-choices {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-    .theme-rail {
-      max-height: 420px;
+    .theme-choices button {
+      grid-template-columns: 40px minmax(0, 1fr) 16px;
+      min-height: 56px;
+    }
+    .choice-art {
+      width: 40px;
+      height: 44px;
+    }
+    .controls-heading {
+      align-items: flex-start;
+    }
+    .apply-theme {
+      min-height: 44px;
+    }
+  }
+  @media (max-height: 650px) and (min-width: 760px) {
+    .theme-stage {
+      height: clamp(220px, calc(100dvh - 240px), 420px);
     }
   }
   @media (prefers-reduced-motion: reduce) {
