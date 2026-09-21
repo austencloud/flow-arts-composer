@@ -24,7 +24,10 @@ interface KeyUndoSnapshot {
   keys: TeachingKey[];
   phase: number;
   transition: "all" | "0" | "1" | "2" | "3";
+  tolerance: number;
 }
+
+const HISTORY_LIMIT = 30;
 
 function numberInRange(value: string | null, fallback: number): number {
   const parsed = Number(value);
@@ -61,7 +64,9 @@ export function createContactInspectionState() {
       : 0.13
   );
   let undoKeys = $state<KeyUndoSnapshot[]>([]);
+  let redoKeys = $state<KeyUndoSnapshot[]>([]);
   let editInProgress = false;
+  let editSnapshot = $state.raw<KeyUndoSnapshot | null>(null);
   const range = () =>
     transition === "all"
       ? ([0, 4] as const)
@@ -93,19 +98,88 @@ export function createContactInspectionState() {
     writeUrl(next, { mode: "replace" });
   }
 
-  function pushKeyUndo(): void {
-    undoKeys = [
-      ...undoKeys.slice(-29),
-      {
-        keys: keys.map((key) => ({ ...key })),
-        phase,
-        transition,
-      },
-    ];
+  function snapshot(): KeyUndoSnapshot {
+    return {
+      keys: keys.map((key) => ({ ...key })),
+      phase,
+      transition,
+      tolerance,
+    };
+  }
+
+  function appendHistory(
+    history: KeyUndoSnapshot[],
+    entry: KeyUndoSnapshot
+  ): KeyUndoSnapshot[] {
+    return [...history.slice(-(HISTORY_LIMIT - 1)), entry];
+  }
+
+  function snapshotMatchesCurrent(entry: KeyUndoSnapshot): boolean {
+    return (
+      entry.phase === phase &&
+      entry.transition === transition &&
+      entry.tolerance === tolerance &&
+      encodeTeachingKeys(entry.keys) === encodeTeachingKeys(keys)
+    );
+  }
+
+  function restoreSnapshot(entry: KeyUndoSnapshot): void {
+    keys = entry.keys.map((key) => ({ ...key }));
+    phase = entry.phase;
+    transition = entry.transition;
+    tolerance = entry.tolerance;
+  }
+
+  function recordChange(before: KeyUndoSnapshot): boolean {
+    if (snapshotMatchesCurrent(before)) return false;
+    if (editInProgress) {
+      editSnapshot ??= before;
+      return true;
+    }
+    undoKeys = appendHistory(undoKeys, before);
+    redoKeys = [];
+    return true;
+  }
+
+  function finishEdit(): boolean {
+    if (!editInProgress) return false;
+    const before = editSnapshot;
+    editInProgress = false;
+    editSnapshot = null;
+    if (!before || snapshotMatchesCurrent(before)) return false;
+    undoKeys = appendHistory(undoKeys, before);
+    redoKeys = [];
+    return true;
   }
 
   function segmentForPhase(value: number): "0" | "1" | "2" | "3" {
     return String(Math.min(3, Math.floor(value))) as "0" | "1" | "2" | "3";
+  }
+
+  function seekPosition(next: number): void {
+    if (!Number.isFinite(next)) return;
+    // South is also the end of W → S. Keep the current quarter when possible.
+    const target =
+      next === 0 && transition === "3" ? 4 : Math.max(0, Math.min(4, next));
+    const [start, end] = range();
+    if (target < start || target > end) transition = "all";
+    phase = target;
+    playing = false;
+    persist();
+  }
+
+  function neighboringKeyframe(
+    direction: -1 | 1,
+    current: number
+  ): TeachingKey | undefined {
+    if (direction === 1) {
+      return keys.find((key) => key.phase > current + 0.005);
+    }
+    for (let index = keys.length - 1; index >= 0; index -= 1) {
+      const key = keys[index]!;
+      if (key.phase < current - 0.005) return key;
+    }
+    return undefined;
   }
 
   return {
@@ -125,7 +199,7 @@ export function createContactInspectionState() {
       return teachingKeyAtPhase(keys, phase);
     },
     get canAddKey() {
-      return canAddTeachingKeyAtPhase(keys, phase);
+      return keys.length < 100 && canAddTeachingKeyAtPhase(keys, phase);
     },
     get canRemoveKey() {
       return keys.length > 1 && !!teachingKeyAtPhase(keys, phase);
@@ -134,7 +208,16 @@ export function createContactInspectionState() {
       return tolerance;
     },
     get canUndo() {
-      return undoKeys.length > 0;
+      return (
+        undoKeys.length > 0 ||
+        (!!editSnapshot && !snapshotMatchesCurrent(editSnapshot))
+      );
+    },
+    get canRedo() {
+      return (
+        redoKeys.length > 0 &&
+        (!editSnapshot || snapshotMatchesCurrent(editSnapshot))
+      );
     },
     setTransition(next: string) {
       transition = option(next, ["all", "0", "1", "2", "3"], "all");
@@ -148,57 +231,73 @@ export function createContactInspectionState() {
         start + ((Math.max(start, phase) - start + delta) % (end - start));
     },
     beginEdit() {
-      if (!editInProgress) pushKeyUndo();
+      if (!editInProgress) editSnapshot = snapshot();
       editInProgress = true;
       playing = false;
     },
     editPose(changes: Partial<TeachingPose>) {
-      if (!editInProgress) pushKeyUndo();
+      const before = snapshot();
       keys = upsertTeachingKey(keys, phase, changes);
       playing = false;
+      recordChange(before);
       if (!editInProgress) persist();
     },
     endEdit() {
-      editInProgress = false;
+      finishEdit();
       persist();
     },
     setTolerance(value: number) {
       if (!Number.isFinite(value)) return;
+      const before = snapshot();
       tolerance = Math.max(0, Math.min(0.2, value));
+      playing = false;
+      recordChange(before);
+      if (!editInProgress) persist();
+    },
+    undo() {
+      finishEdit();
+      const previous = undoKeys.at(-1);
+      if (!previous) return;
+      redoKeys = appendHistory(redoKeys, snapshot());
+      undoKeys = undoKeys.slice(0, -1);
+      restoreSnapshot(previous);
       playing = false;
       persist();
     },
-    undo() {
-      const previous = undoKeys.at(-1);
-      if (!previous) return;
-      keys = previous.keys;
-      phase = previous.phase;
-      transition = previous.transition;
-      undoKeys = undoKeys.slice(0, -1);
+    redo() {
+      finishEdit();
+      const next = redoKeys.at(-1);
+      if (!next) return;
+      undoKeys = appendHistory(undoKeys, snapshot());
+      redoKeys = redoKeys.slice(0, -1);
+      restoreSnapshot(next);
       playing = false;
       persist();
     },
     resetPose() {
-      pushKeyUndo();
+      const before = snapshot();
       keys = defaultTeachingKeys();
       playing = false;
-      persist();
+      recordChange(before);
+      if (!editInProgress) persist();
     },
     addKey(): boolean {
-      if (!canAddTeachingKeyAtPhase(keys, phase)) return false;
-      pushKeyUndo();
+      if (keys.length >= 100 || !canAddTeachingKeyAtPhase(keys, phase)) return false;
+      const before = snapshot();
       keys = upsertTeachingKey(keys, phase, {});
       playing = false;
-      persist();
+      recordChange(before);
+      if (!editInProgress) persist();
       return true;
     },
     removeKey() {
       const selected = teachingKeyAtPhase(keys, phase);
       if (keys.length <= 1 || !selected) return false;
-      pushKeyUndo();
+      const before = snapshot();
       keys = keys.filter((key) => key !== selected);
       playing = false;
-      persist();
+      recordChange(before);
+      if (!editInProgress) persist();
       return true;
     },
     moveKey(fromPhase: number, toPhase: number): boolean {
@@ -211,7 +310,7 @@ export function createContactInspectionState() {
       )
         return false;
       if (source.phase === destination) return true;
-      if (!editInProgress) pushKeyUndo();
+      const before = snapshot();
       keys = keys
         .map((key) => (key === source ? { ...key, phase: destination } : key))
         .sort((a, b) => a.phase - b.phase);
@@ -220,6 +319,7 @@ export function createContactInspectionState() {
         transition = segmentForPhase(phase);
       }
       playing = false;
+      recordChange(before);
       if (!editInProgress) persist();
       return true;
     },
@@ -249,15 +349,13 @@ export function createContactInspectionState() {
       persist();
     },
     seekPosition(next: number) {
-      if (!Number.isFinite(next)) return;
-      // South is also the end of W → S. Keep the current quarter when possible.
-      const target =
-        next === 0 && transition === "3" ? 4 : Math.max(0, Math.min(4, next));
-      const [start, end] = range();
-      if (target < start || target > end) transition = "all";
-      phase = target;
-      playing = false;
-      persist();
+      seekPosition(next);
+    },
+    seekKeyframe(direction: -1 | 1) {
+      const current = phase % 4;
+      const neighboringKey = neighboringKeyframe(direction, current);
+      const wrappedKey = direction === 1 ? keys[0] : keys.at(-1);
+      seekPosition((neighboringKey ?? wrappedKey)?.phase ?? current);
     },
     setPlaying(next: boolean) {
       playing = next;

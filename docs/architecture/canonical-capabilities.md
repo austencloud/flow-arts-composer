@@ -23,12 +23,20 @@ eases to rest at each taught pose instead of choosing anticipation itself.
 
 Grip Lab's `KeyframeTimeline.svelte` presents these whole-pose keys at their
 actual phase and plots the same shared lean sampler. It extends the existing
-`contact-inspection-state.svelte.ts` owner for add, delete, retime, and undo;
+`contact-inspection-state.svelte.ts` owner for add, delete, retime, undo/redo,
+and previous/next keyframe selection;
 it does not own another animation clock. Searches: timeline, keyframe,
 ScrubbableNumber, unified playback. `UnifiedTimeline` owns sequence playback,
 not authored pose timing; the lab retains its existing `TransportControls`
 and composes `PanelButton` and `ScrubbableNumber` for keyframe actions and
 retiming. Closely spaced markers use separate rows so each remains selectable.
+Grip Lab shortcuts compose `KeyboardShortcutManager`, `ShortcutRegistry`,
+`registerEditHistoryShortcuts`, and `EditHistoryShortcutBridge`. Searches:
+hotkeys, keyboard deletion, redo, editable focus. The test route has no app
+shortcut coordinator, so `GripLabShortcuts.svelte` owns a page-lifetime registry
+and disposes it on navigation. `grip-lab-shortcuts.ts` supplies lab actions and
+reuses shared editable/widget/layer target guards. Help uses the same binding
+definitions with the shared `Drawer` and `KeyboardKeyDisplay` primitives.
 
 Sequence sharing extends `shared/share/components/PostShareSheet.svelte`.
 Read `docs/architecture/sharing-export-experience.md` for the retained research,
