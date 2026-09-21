@@ -22,6 +22,7 @@
  * `lastRan` is assigned below.
  */
 import { startMorph } from "$lib/shared/transitions/results-morph";
+import { STAGGER } from "$lib/shared/transitions/transitions";
 import { countViewTransitionNameClaims } from "$lib/shared/transitions/view-transition-name-registry";
 import type { GenerateCardPanelId } from "$lib/shared/create/state/panel-coordination-state.svelte";
 
@@ -47,6 +48,42 @@ export function generateCardMorphName(cardId: string): string {
 
 let lastRan = false;
 
+interface GenerateCardMorphOptions {
+  /**
+   * Runs once the card is visually at its destination. Plain/reduced-motion
+   * paths settle on one tight state-stabilization beat; a real View Transition
+   * waits for `finished`. This is the seam for handing the shared workspace to
+   * the next surface without letting two major entrances compete for it.
+   */
+  onSettled?: () => void;
+}
+
+function schedulePlainSettlement(onSettled: () => void): void {
+  // Leave one tight choreography beat for selection-derived effects to settle.
+  // This is not visible motion; it prevents the destination drawer from being
+  // opened and then closed again inside the same reactive turn.
+  setTimeout(onSettled, STAGGER.micro);
+}
+
+function runWhenSettled(
+  transition: ViewTransition | null,
+  onSettled: (() => void) | undefined
+): void {
+  if (!onSettled) return;
+  if (!transition) {
+    // Even an instant/reduced-motion handoff waits until the initiating click
+    // has finished propagating. Opening the destination synchronously here
+    // lets later selection effects from that same click close it again before
+    // it ever paints.
+    schedulePlainSettlement(onSettled);
+    return;
+  }
+
+  // A skipped transition still completed the state mutation. Continue the
+  // handoff on either outcome so the destination panel can never get stuck.
+  void transition.finished.then(onSettled, onSettled);
+}
+
 /**
  * Open or close `host` by running `mutate` inside the card morph when one can
  * run. Returns true when a transition is carrying the change, false when the
@@ -55,16 +92,19 @@ let lastRan = false;
  */
 export function morphGenerateCard(
   host: GenerateCardMorphHost,
-  mutate: () => void
+  mutate: () => void,
+  options: GenerateCardMorphOptions = {}
 ): boolean {
   if (countViewTransitionNameClaims(generateCardMorphName(host)) === 0) {
     lastRan = false;
     mutate();
+    if (options.onSettled) schedulePlainSettlement(options.onSettled);
     return false;
   }
   lastRan = false;
   const transition = startMorph(mutate);
   lastRan = transition !== null;
+  runWhenSettled(transition, options.onSettled);
   return lastRan;
 }
 

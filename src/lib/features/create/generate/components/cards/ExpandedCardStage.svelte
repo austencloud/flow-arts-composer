@@ -68,6 +68,7 @@
   const customize = $derived(panelState.customizeOverlayProps);
 
   let root = $state<HTMLElement | null>(null);
+  let editorHandoffInFlight = false;
 
   // A morph already carried the card in (or reduced motion says skip motion
   // entirely), so the stage root just appears; otherwise it scales in on its
@@ -122,7 +123,11 @@
   // The side-by-side stage is intentionally non-modal: the workspace around
   // it remains actionable. Close after the click bubbles through its target,
   // so the outside control receives its normal interaction before the stage
-  // changes the grid geometry. Never prevent or stop the event.
+  // changes the grid geometry. Never prevent or stop the event. If that
+  // interaction requested the shared editor drawer, hold the drawer closed
+  // until the card has visibly returned to its tile. The selected step still
+  // highlights immediately, so the click is acknowledged while the two major
+  // surfaces trade the right-hand workspace in a readable order.
   // The viewport destination fills the screen, so it keeps the explicit X
   // and Escape routes instead of manufacturing an unreachable click-away.
   $effect(() => {
@@ -131,10 +136,22 @@
     const card = openCard;
     const dismissFromOutside = (event: MouseEvent): void => {
       if (!root || event.composedPath().includes(root)) return;
-      // An outside card can replace this one in its own click handler. Do not
-      // let the old stage's bubbling listener immediately close the new card.
-      if (panelState.openGenerateCard !== card) return;
-      close();
+
+      // Svelte delegates component click handlers above the native document
+      // listener. Defer to the next task so every delegated selection effect
+      // has settled before deciding whether this was an editor handoff, a card
+      // replacement, or only a plain dismissal.
+      setTimeout(() => {
+        // An outside card can replace this one in its own click handler. Do not
+        // let the old stage's listener immediately close the new card.
+        if (panelState.openGenerateCard !== card) return;
+
+        if (panelState.pendingGenerateCardEditorHandoff) {
+          startEditorHandoff();
+        } else {
+          close();
+        }
+      }, 0);
     };
 
     document.addEventListener("click", dismissFromOutside);
@@ -143,10 +160,37 @@
     };
   });
 
-  function close() {
+  // Most editor requests originate from a click outside the grown card and
+  // are handled by the bubbling listener above. Keep this reactive fallback
+  // for keyboard/programmatic selection paths so they receive the same
+  // choreography instead of leaving a request waiting behind the card.
+  $effect(() => {
+    if (!openCard || !panelState.pendingGenerateCardEditorHandoff) return;
+    startEditorHandoff();
+  });
+
+  function startEditorHandoff() {
+    if (
+      editorHandoffInFlight ||
+      !openCard ||
+      !panelState.pendingGenerateCardEditorHandoff
+    ) {
+      return;
+    }
+
+    editorHandoffInFlight = true;
+    close(() => {
+      panelState.completeGenerateCardEditorHandoff();
+      editorHandoffInFlight = false;
+    });
+  }
+
+  function close(onSettled?: () => void) {
     const card = openCard;
     if (!card) return;
-    morphGenerateCard(card, () => panelState.closeGenerateCard());
+    morphGenerateCard(card, () => panelState.closeGenerateCard(), {
+      onSettled,
+    });
   }
 
   // Focus inside a non-modal dialog owns the first Escape; the global
