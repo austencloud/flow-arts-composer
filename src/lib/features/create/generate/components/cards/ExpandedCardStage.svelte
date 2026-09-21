@@ -16,7 +16,7 @@
     block for fixed descendants.
 
   No backdrop: the workspace beside the grown card stays live. On desktop, a
-  pointer press outside closes the card without consuming the click, so the
+  click outside closes the card without consuming the interaction, so the
   workspace control underneath still works. X and Escape close everywhere.
   Focus moves in on open and back to the card that opened it on close. The
   {#key destination} remount on a layout flip (desktop <-> stacked) drops the
@@ -120,22 +120,26 @@
   });
 
   // The side-by-side stage is intentionally non-modal: the workspace around
-  // it remains actionable. Close on pointerdown so the stage is already on
-  // its way out before the eventual click, but never prevent or stop the
-  // event—the outside control must still receive its normal interaction.
+  // it remains actionable. Close after the click bubbles through its target,
+  // so the outside control receives its normal interaction before the stage
+  // changes the grid geometry. Never prevent or stop the event.
   // The viewport destination fills the screen, so it keeps the explicit X
   // and Escape routes instead of manufacturing an unreachable click-away.
   $effect(() => {
     if (!openCard || destination !== "stage") return;
 
-    const dismissFromOutside = (event: PointerEvent): void => {
+    const card = openCard;
+    const dismissFromOutside = (event: MouseEvent): void => {
       if (!root || event.composedPath().includes(root)) return;
+      // An outside card can replace this one in its own click handler. Do not
+      // let the old stage's bubbling listener immediately close the new card.
+      if (panelState.openGenerateCard !== card) return;
       close();
     };
 
-    document.addEventListener("pointerdown", dismissFromOutside);
+    document.addEventListener("click", dismissFromOutside);
     return () => {
-      document.removeEventListener("pointerdown", dismissFromOutside);
+      document.removeEventListener("click", dismissFromOutside);
     };
   });
 

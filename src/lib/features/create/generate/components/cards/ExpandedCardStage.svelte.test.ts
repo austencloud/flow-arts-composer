@@ -232,7 +232,7 @@ describe("ExpandedCardStage", () => {
     );
   });
 
-  it("closes the desktop stage on an outside press without consuming the click", async () => {
+  it("closes the desktop stage after an outside control receives its click", async () => {
     const outsideAction = vi.fn();
     const outsideButton = document.createElement("button");
     outsideButton.type = "button";
@@ -254,9 +254,6 @@ describe("ExpandedCardStage", () => {
       ).toBe("stage");
 
       const startViewTransition = vi.spyOn(document, "startViewTransition");
-      outsideButton.dispatchEvent(
-        new PointerEvent("pointerdown", { bubbles: true, composed: true })
-      );
       outsideButton.click();
 
       expect(outsideAction).toHaveBeenCalledOnce();
@@ -286,6 +283,30 @@ describe("ExpandedCardStage", () => {
     expect(state.openGenerateCard).toBe("tnd");
   });
 
+  it("keeps a new expanded card opened by the outside click", async () => {
+    const outsideButton = document.createElement("button");
+    outsideButton.type = "button";
+    outsideButton.textContent = "Open setups instead";
+    document.body.appendChild(outsideButton);
+
+    try {
+      const state = createPanelCoordinationState();
+      render(ExpandedCardStage, props(state, true));
+      outsideButton.addEventListener("click", () => state.openPresetDrawer());
+
+      state.openTnDPanel();
+      flushSync();
+      await tick();
+
+      outsideButton.click();
+      flushSync();
+
+      expect(state.openGenerateCard).toBe("preset");
+    } finally {
+      outsideButton.remove();
+    }
+  });
+
   it("does not install click-away dismissal for the full-screen stage", async () => {
     const outsideButton = document.createElement("button");
     outsideButton.type = "button";
@@ -300,9 +321,6 @@ describe("ExpandedCardStage", () => {
       flushSync();
       await tick();
 
-      outsideButton.dispatchEvent(
-        new PointerEvent("pointerdown", { bubbles: true, composed: true })
-      );
       outsideButton.click();
 
       expect(state.openGenerateCard).toBe("tnd");
