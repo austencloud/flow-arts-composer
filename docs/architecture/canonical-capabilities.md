@@ -37,8 +37,11 @@ their existing owners.
 Hand identity colors reuse `packages/render-composition/src/hand-colors.ts` for
 cross-runtime normalization and `mandala-palette.ts` for overlap blending.
 `viewer-custom-colors.ts` retains the app-facing compatibility API. Searches: primary prop colors,
-hand-color key, mandala overlap, start-placement legend. The key's geometry is
-`calculateHandColorKeyLayout` in `packages/render-core`. The user toggle is the
+hand-color key, mandala overlap, start-placement legend. `packages/render-core`
+owns the hand key's geometry plus its shared Canvas painter and standalone SVG
+serialization (`calculateHandColorKeyLayout`, `drawHandColorKey`, and
+`renderHandColorKeySvg`); callers supply their resolved colors and canvas context.
+The user toggle is the
 `handColorKey` glyph in `VisibilityStateManager` (export panel `Hand key` chip),
 carried as `showHandColorKey` through `PreviewCellRenderOptions`,
 `LayerRenderOptions` and `visibilityOverrides`. `PictographRenderer`

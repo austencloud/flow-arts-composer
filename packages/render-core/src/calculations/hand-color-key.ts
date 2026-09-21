@@ -49,6 +49,45 @@ export interface HandColorKeyLayout {
   entries: HandColorKeyEntry[];
 }
 
+/** The small Canvas 2D surface shared by browser and NAPI canvas renderers. */
+export interface HandColorKeyCanvasContext {
+  save(): void;
+  restore(): void;
+  beginPath(): void;
+  arc(
+    x: number,
+    y: number,
+    radius: number,
+    startAngle: number,
+    endAngle: number
+  ): void;
+  fill(): void;
+  fillText(text: string, x: number, y: number): void;
+  font: string;
+  textAlign: string;
+  textBaseline: string;
+  fillStyle: unknown;
+}
+
+export interface DrawHandColorKeyOptions {
+  showLeft: boolean;
+  showRight: boolean;
+  /** Output pixels per 950-unit viewBox. */
+  scale: number;
+  /** Output-pixel centre of the 950-unit viewBox. */
+  centerX: number;
+  textColor: string;
+  colorForHand: (hand: HandColorKeyEntry["hand"]) => string;
+}
+
+export interface RenderHandColorKeySvgOptions {
+  showLeft: boolean;
+  showRight: boolean;
+  centerX: number;
+  textColor: string;
+  colorForHand: (hand: HandColorKeyEntry["hand"]) => string;
+}
+
 /**
  * Lay out the hand colour key for whichever hands are actually present.
  *
@@ -92,4 +131,60 @@ export function calculateHandColorKeyLayout(
     baselineY: CENTER_Y + BASELINE_OFFSET,
     entries,
   };
+}
+
+/** Draws the key onto any Canvas 2D-compatible context without runtime-specific types. */
+export function drawHandColorKey(
+  context: HandColorKeyCanvasContext,
+  options: DrawHandColorKeyOptions
+): void {
+  const layout = calculateHandColorKeyLayout(
+    options.showLeft,
+    options.showRight
+  );
+  if (layout.entries.length === 0) return;
+
+  context.save();
+  context.font = `${HAND_COLOR_KEY.FONT_WEIGHT} ${HAND_COLOR_KEY.FONT_SIZE * options.scale}px ${HAND_COLOR_KEY.FONT_FAMILY}`;
+  context.textAlign = "start";
+  context.textBaseline = "alphabetic";
+  for (const entry of layout.entries) {
+    context.fillStyle = options.colorForHand(entry.hand);
+    context.beginPath();
+    context.arc(
+      options.centerX + entry.swatchX * options.scale,
+      layout.centerY * options.scale,
+      layout.swatchRadius * options.scale,
+      0,
+      Math.PI * 2
+    );
+    context.fill();
+    context.fillStyle = options.textColor;
+    context.fillText(
+      entry.label,
+      options.centerX + entry.labelX * options.scale,
+      layout.baselineY * options.scale
+    );
+  }
+  context.restore();
+}
+
+/** Serializes the SVG form used by standalone renderers from the same layout and styling. */
+export function renderHandColorKeySvg(
+  options: RenderHandColorKeySvgOptions
+): string {
+  const layout = calculateHandColorKeyLayout(
+    options.showLeft,
+    options.showRight
+  );
+  if (layout.entries.length === 0) return "";
+
+  const parts = layout.entries.map((entry) => {
+    const fill = options.colorForHand(entry.hand);
+    return (
+      `<circle cx="${entry.swatchX}" cy="${layout.centerY}" r="${layout.swatchRadius}" fill="${fill}"/>` +
+      `<text x="${entry.labelX}" y="${layout.baselineY}">${entry.label}</text>`
+    );
+  });
+  return `<g class="hand-color-key" transform="translate(${options.centerX}, 0)" font-family="${HAND_COLOR_KEY.FONT_FAMILY}" font-size="${HAND_COLOR_KEY.FONT_SIZE}" font-weight="${HAND_COLOR_KEY.FONT_WEIGHT}" fill="${options.textColor}">${parts.join("")}</g>`;
 }
