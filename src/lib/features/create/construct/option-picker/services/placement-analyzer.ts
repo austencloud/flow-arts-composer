@@ -14,7 +14,7 @@ import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/servi
 export class PlacementAnalyzer {
 
   /**
-   * Get the placement group (Alpha, Beta, Gamma) from a GridPlacement
+   * Get the placement group (alpha, beta, gamma, zeta, eta, tau, terra) from a GridPlacement
    */
   getEndPlacementGroup(
     endPlacement: GridPlacement | null | undefined
@@ -26,6 +26,10 @@ export class PlacementAnalyzer {
     if (placementStr.startsWith("alpha")) return GridPlacementGroup.ALPHA;
     if (placementStr.startsWith("beta")) return GridPlacementGroup.BETA;
     if (placementStr.startsWith("gamma")) return GridPlacementGroup.GAMMA;
+    if (placementStr.startsWith("zeta")) return GridPlacementGroup.ZETA;
+    if (placementStr.startsWith("eta")) return GridPlacementGroup.ETA;
+    if (placementStr.startsWith("tau")) return GridPlacementGroup.TAU;
+    if (placementStr.startsWith("terra")) return GridPlacementGroup.TERRA;
 
     return null;
   }
@@ -87,10 +91,14 @@ export class PlacementAnalyzer {
     }
 
     // Calculate the difference (accounting for circular wraparound)
-    const isGamma = startGroup === GridPlacementGroup.GAMMA;
-    const totalPlacements = isGamma ? 16 : 8;
-    const quarterStep = isGamma ? 4 : 2;
-    const halfStep = isGamma ? 8 : 4;
+    // Gamma, zeta, and eta have 16 numbered placements; alpha and beta have 8.
+    const sixteenSlots =
+      startGroup === GridPlacementGroup.GAMMA ||
+      startGroup === GridPlacementGroup.ZETA ||
+      startGroup === GridPlacementGroup.ETA;
+    const totalPlacements = sixteenSlots ? 16 : 8;
+    const quarterStep = sixteenSlots ? 4 : 2;
+    const halfStep = sixteenSlots ? 8 : 4;
 
     // Calculate absolute difference, accounting for wraparound
     let diff = Math.abs(endNum - startNum);

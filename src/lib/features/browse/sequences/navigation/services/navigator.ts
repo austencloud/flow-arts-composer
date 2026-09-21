@@ -7,6 +7,7 @@
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
 import type {
   BrowseNavigationConfig,
   BrowseNavigationItem,
@@ -317,13 +318,18 @@ function generateLetterSection(sequences: SequenceData[]): NavigationSection {
 
   sequences.forEach((seq) => {
     // Skip sequences without a valid word property
-    if (!seq.word || typeof seq.word !== "string" || seq.word.length === 0) {
+    if (!seq.word || typeof seq.word !== "string") {
+      return;
+    }
+    // Skew braces mark a span, not a letter: index by the first letter inside.
+    const bare = stripWordNotation(seq.word);
+    if (bare.length === 0) {
       return;
     }
 
     // Handle letter types: "W" vs "W-" (type 3 letters)
-    const firstChar = seq.word.charAt(0).toUpperCase();
-    const secondChar = seq.word.charAt(1);
+    const firstChar = bare.charAt(0).toUpperCase();
+    const secondChar = bare.charAt(1);
     const firstLetter = secondChar === "-" ? `${firstChar}-` : firstChar;
 
     if (!letterGroups.has(firstLetter)) {
