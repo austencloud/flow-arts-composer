@@ -21,18 +21,28 @@ import { drawStepNumber } from "./step-number-renderer";
 import { drawHandColorKey } from "./canvas-2d-glyph-renderer";
 import { isVisibleMotion } from "../../pictograph/shared/domain/models/motion-data";
 import type { QRCodeGenerator } from "../../qr/services/qr-code-generator";
-import { blobToImage, canvasToImage, imageToBlob } from "./image-format-converter";
+import {
+  blobToImage,
+  canvasToImage,
+  imageToBlob,
+} from "./image-format-converter";
 import { createRenderCanvas } from "./create-render-canvas";
 import type { RenderCanvas } from "./types";
 import { findEmptyCellForQR } from "./cell-border-renderer";
-import { renderDurationBadge, stepHasDurationBadge } from "@tka/render-composition";
+import {
+  renderDurationBadge,
+  stepHasDurationBadge,
+} from "@tka/render-composition";
 import {
   computeCardFrontLayout,
   paintCardFrontBackground,
   paintCardFrontChrome,
   buildCellLayerOptions,
 } from "./card-front-assembler";
-import type { CardFrontLayout, CardFrontChromeDeps } from "./card-front-assembler";
+import type {
+  CardFrontLayout,
+  CardFrontChromeDeps,
+} from "./card-front-assembler";
 import type { LayerRenderOptions, LayerVisibility } from "./types";
 import { composeCardImage as composeCardImageFn } from "./card-composer";
 import { ensureCardFonts } from "./gelasio-fonts";
@@ -55,11 +65,15 @@ import {
   DARK_MOTION_PURPLE_STROKE,
   DARK_MOTION_PURPLE_FILL,
 } from "../../mandala/domain/mandala-constants";
-import type { PreparedPictographData } from '../../pictograph/shared/domain/models/prepared-pictograph-data';
+import type { PreparedPictographData } from "../../pictograph/shared/domain/models/prepared-pictograph-data";
+import type { CardExportTrace } from "./card-export-trace";
 
 const yieldToEventLoop: () => Promise<void> =
-  (globalThis as unknown as Record<string, Record<string, () => Promise<void>>>).scheduler?.yield?.bind((globalThis as unknown as Record<string, unknown>).scheduler) ??
-  (() => new Promise<void>((r) => setTimeout(r, 0)));
+  (
+    globalThis as unknown as Record<string, Record<string, () => Promise<void>>>
+  ).scheduler?.yield?.bind(
+    (globalThis as unknown as Record<string, unknown>).scheduler
+  ) ?? (() => new Promise<void>((r) => setTimeout(r, 0)));
 
 export class ImageComposer {
   private layer1Hits = 0;
@@ -104,7 +118,8 @@ export class ImageComposer {
     const v = await this.getVisibilitySettings(options.visibilityOverrides);
     if (options.leftVisible === false) v.showLeftMotion = false;
     if (options.rightVisible === false) v.showRightMotion = false;
-    if (v.showLeftMotion === false || v.showRightMotion === false) v.showTKA = false;
+    if (v.showLeftMotion === false || v.showRightMotion === false)
+      v.showTKA = false;
     return v;
   }
 
@@ -135,9 +150,16 @@ export class ImageComposer {
   ): Promise<ImageBitmap> {
     await this.ensureCanvas2DInitialized();
     if (!this.layerCompositor) throw new Error("layerCompositor unavailable");
-    const result = await this.layerCompositor.compose(prepared, options, visibility, stepNumber);
+    const result = await this.layerCompositor.compose(
+      prepared,
+      options,
+      visibility,
+      stepNumber
+    );
     const c = result.canvas;
-    return c instanceof OffscreenCanvas ? c.transferToImageBitmap() : createImageBitmap(c);
+    return c instanceof OffscreenCanvas
+      ? c.transferToImageBitmap()
+      : createImageBitmap(c);
   }
 
   setCompositionalCaching(enabled: boolean): void {
@@ -170,7 +192,7 @@ export class ImageComposer {
       console.warn(
         "[ImageComposer] Locked card render passed partial visibilityOverrides " +
           "(showNonRadialPoints undefined) — it will inherit the global vm. " +
-          "Use buildCanonicalCardVisibility() for deck/print renders.",
+          "Use buildCanonicalCardVisibility() for deck/print renders."
       );
     }
     if (
@@ -186,7 +208,8 @@ export class ImageComposer {
       let rightPropType = overrides.rightPropType;
       if (!leftPropType || !rightPropType) {
         try {
-          const { getSettings } = await import("$lib/shared/application/state/app-state.svelte");
+          const { getSettings } =
+            await import("$lib/shared/application/state/app-state.svelte");
           const appSettings = getSettings();
           leftPropType ??= appSettings.leftPropType;
           rightPropType ??= appSettings.rightPropType;
@@ -221,18 +244,17 @@ export class ImageComposer {
     }
 
     // Fallback path: read from Svelte stores (not available in worker context)
-    const { getVisibilityStateManager } = await import(
-      "../../pictograph/shared/state/visibility-state.svelte"
-    );
+    const { getVisibilityStateManager } =
+      await import("../../pictograph/shared/state/visibility-state.svelte");
     const visibilityManager = getVisibilityStateManager();
     await visibilityManager.ensureSettingsLoaded();
 
-    const { getAnimationVisibilityManager } = await import(
-      "../../animation-engine/state/animation-visibility-state.svelte"
-    );
+    const { getAnimationVisibilityManager } =
+      await import("../../animation-engine/state/animation-visibility-state.svelte");
     const animVisibilityManager = getAnimationVisibilityManager();
 
-    const { getSettings } = await import("$lib/shared/application/state/app-state.svelte");
+    const { getSettings } =
+      await import("$lib/shared/application/state/app-state.svelte");
     const appSettings = getSettings();
 
     const globalSettings: PictographVisibilityOptions = {
@@ -257,12 +279,16 @@ export class ImageComposer {
     if (overrides) {
       return {
         fanAppearance: overrides.fanAppearance ?? globalSettings.fanAppearance,
-        primaryPropColors: overrides.primaryPropColors !== undefined ? overrides.primaryPropColors : globalSettings.primaryPropColors,
+        primaryPropColors:
+          overrides.primaryPropColors !== undefined
+            ? overrides.primaryPropColors
+            : globalSettings.primaryPropColors,
         showTKA: overrides.showTKA ?? globalSettings.showTKA,
         showTnD: overrides.showTnD ?? globalSettings.showTnD,
         showElemental: overrides.showElemental ?? globalSettings.showElemental,
         showPropTnD: overrides.showPropTnD ?? globalSettings.showPropTnD,
-        showPlacements: overrides.showPlacements ?? globalSettings.showPlacements,
+        showPlacements:
+          overrides.showPlacements ?? globalSettings.showPlacements,
         showHandColorKey:
           overrides.showHandColorKey ?? globalSettings.showHandColorKey,
         showReversals: overrides.showReversals ?? globalSettings.showReversals,
@@ -270,7 +296,8 @@ export class ImageComposer {
           overrides.showNonRadialPoints ?? globalSettings.showNonRadialPoints,
         darkMode: overrides.darkMode ?? globalSettings.darkMode,
         showGrid: overrides.showGrid ?? true,
-        handPointVisibility: overrides.handPointVisibility ?? globalSettings.handPointVisibility,
+        handPointVisibility:
+          overrides.handPointVisibility ?? globalSettings.handPointVisibility,
         leftPropType: overrides.leftPropType ?? globalSettings.leftPropType,
         rightPropType: overrides.rightPropType ?? globalSettings.rightPropType,
         leftBuugengFlipped:
@@ -288,7 +315,8 @@ export class ImageComposer {
     sequence: SequenceData,
     options: Partial<SequenceExportOptions>,
     onProgress?: CompositionProgressCallback,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    trace?: CardExportTrace
   ): Promise<RenderCanvas> {
     if (!sequence.steps || sequence.steps.length === 0) {
       throw new Error("Sequence must have at least one beat");
@@ -296,29 +324,44 @@ export class ImageComposer {
 
     // Ensure Gelasio is loaded into document.fonts before any canvas text draw
     // (no-op in the worker, which seeds self.fonts at init). Cached after first.
+    const endFonts = trace?.start("fonts");
     await ensureCardFonts();
+    endFonts?.();
 
     this.compositionL2Hits = 0;
     this.compositionL1Hits = 0;
     this.compositionFreshRenders = 0;
 
+    const endVisibility = trace?.start("visibility-settings");
     const visibilitySettings = await this.getVisibilitySettings(
       options.visibilityOverrides
     );
+    endVisibility?.();
 
-    if (options.leftVisible === false) visibilitySettings.showLeftMotion = false;
-    if (options.rightVisible === false) visibilitySettings.showRightMotion = false;
+    if (options.leftVisible === false)
+      visibilitySettings.showLeftMotion = false;
+    if (options.rightVisible === false)
+      visibilitySettings.showRightMotion = false;
 
-    if (visibilitySettings.showLeftMotion === false || visibilitySettings.showRightMotion === false) {
+    if (
+      visibilitySettings.showLeftMotion === false ||
+      visibilitySettings.showRightMotion === false
+    ) {
       visibilitySettings.showTKA = false;
     }
 
-    const layout = computeCardFrontLayout(sequence, options, visibilitySettings);
+    const layout = computeCardFrontLayout(
+      sequence,
+      options,
+      visibilitySettings
+    );
+    const endGlyphs = trace?.start("header-glyphs");
     await this.preloadHeaderGlyphs(
       options.addWord && !options.renderWordAsText
         ? options.customName || layout.derivedWord
         : ""
     );
+    endGlyphs?.();
     const {
       columns,
       rows,
@@ -343,11 +386,17 @@ export class ImageComposer {
 
     let derivedStartPlacement: StartPlacementData | null = null;
     const firstStep = sequence.steps[0];
-    if (options.includeStartPlacement && !sequence.startPlacement && firstStep) {
+    if (
+      options.includeStartPlacement &&
+      !sequence.startPlacement &&
+      firstStep
+    ) {
       derivedStartPlacement = createStartPlacementFromBeatStart(firstStep);
     }
-    const effectiveStartPlacement = sequence.startPlacement ?? derivedStartPlacement;
-    const hasStartPlacement = options.includeStartPlacement && effectiveStartPlacement;
+    const effectiveStartPlacement =
+      sequence.startPlacement ?? derivedStartPlacement;
+    const hasStartPlacement =
+      options.includeStartPlacement && effectiveStartPlacement;
     const totalItems = sequence.steps.length + (hasStartPlacement ? 1 : 0);
     let renderedCount = 0;
 
@@ -358,9 +407,12 @@ export class ImageComposer {
       options.leftPropTypeOverride ||
       options.rightPropTypeOverride;
 
-    const effectiveLeftPropType = options.leftPropTypeOverride ?? options.propTypeOverride;
-    const effectiveRightPropType = options.rightPropTypeOverride ?? options.propTypeOverride;
+    const effectiveLeftPropType =
+      options.leftPropTypeOverride ?? options.propTypeOverride;
+    const effectiveRightPropType =
+      options.rightPropTypeOverride ?? options.propTypeOverride;
 
+    const endCells = trace?.start("pictograph-cells");
     if (hasStartPlacement && effectiveStartPlacement) {
       const startStepNumber = options.addStepNumbers ? 0 : undefined;
       const startPlacementData = hasPropOverride
@@ -395,7 +447,8 @@ export class ImageComposer {
     const { startRow, startColumn, stepsPerRow } = layout;
 
     for (let i = 0; i < sequence.steps.length; i++) {
-      if (signal?.aborted) throw new DOMException("Render aborted", "AbortError");
+      if (signal?.aborted)
+        throw new DOMException("Render aborted", "AbortError");
       if (i > 0) await yieldToEventLoop();
       const beat = sequence.steps[i];
       if (!beat) continue;
@@ -439,6 +492,10 @@ export class ImageComposer {
       });
     }
 
+    endCells?.({
+      cells: totalItems,
+    });
+    const endChrome = trace?.start("card-decoration");
     await paintCardFrontChrome(
       canvas,
       ctx,
@@ -446,8 +503,9 @@ export class ImageComposer {
       sequence,
       options,
       visibilitySettings,
-      this.buildChromeDeps(sequence, layout, options)
+      this.buildChromeDeps(sequence, layout, options, trace)
     );
+    endChrome?.();
 
     return canvas;
   }
@@ -461,15 +519,20 @@ export class ImageComposer {
   buildChromeDeps(
     sequence: SequenceData,
     layout: CardFrontLayout,
-    options: Partial<SequenceExportOptions>
+    options: Partial<SequenceExportOptions>,
+    trace?: CardExportTrace
   ): CardFrontChromeDeps {
-    const { columns, rows, stepSize, gridOffsetY, gridOffsetX, isDarkMode } = layout;
-    const effectiveLeftPropType = options.leftPropTypeOverride ?? options.propTypeOverride;
-    const effectiveRightPropType = options.rightPropTypeOverride ?? options.propTypeOverride;
+    const { columns, rows, stepSize, gridOffsetY, gridOffsetX, isDarkMode } =
+      layout;
+    const effectiveLeftPropType =
+      options.leftPropTypeOverride ?? options.propTypeOverride;
+    const effectiveRightPropType =
+      options.rightPropTypeOverride ?? options.propTypeOverride;
     return {
       textRenderer: this.TextRenderer,
       qrCodeGenerator: this.qrCodeGenerator,
       renderMandalas: async (c) => {
+        const endMandala = trace?.start("mandala");
         await this.renderMandalas(
           c,
           sequence,
@@ -483,6 +546,7 @@ export class ImageComposer {
           effectiveLeftPropType,
           effectiveRightPropType
         );
+        endMandala?.();
       },
       renderQRCode: async (c) => {
         const emptyCell = findEmptyCellForQR(columns, rows, sequence, options);
@@ -500,6 +564,7 @@ export class ImageComposer {
             options.deckId,
             options.deckName,
             options.qrImageBitmap,
+            trace
           );
         }
       },
@@ -518,7 +583,11 @@ export class ImageComposer {
     const isDark = visibilitySettings.darkMode ?? false;
     const leftProp = visibilitySettings.leftPropType;
     const rightProp = visibilitySettings.rightPropType;
-    const catDogModeEnabled = !!(leftProp && rightProp && leftProp !== rightProp);
+    const catDogModeEnabled = !!(
+      leftProp &&
+      rightProp &&
+      leftProp !== rightProp
+    );
 
     const previewOptions: PreviewCellRenderOptions = {
       fanAppearance: visibilitySettings.fanAppearance,
@@ -536,7 +605,9 @@ export class ImageComposer {
       showGrid: visibilitySettings.showGrid ?? true,
       handPointVisibility: (visibilitySettings.handPointVisibility === "none"
         ? "active"
-        : visibilitySettings.handPointVisibility ?? "all") as "all" | "active",
+        : (visibilitySettings.handPointVisibility ?? "all")) as
+        | "all"
+        | "active",
       showTKA: visibilitySettings.showTKA ?? true,
       showReversals: visibilitySettings.showReversals ?? true,
       showHandColorKey: visibilitySettings.showHandColorKey ?? true,
@@ -579,7 +650,11 @@ export class ImageComposer {
         rightPropType: rightPropType ?? visibilitySettings?.rightPropType,
       };
 
-      if (this.useCompositionalCaching && this.layerCompositor && !finalVisibilitySettings.primaryPropColors) {
+      if (
+        this.useCompositionalCaching &&
+        this.layerCompositor &&
+        !finalVisibilitySettings.primaryPropColors
+      ) {
         await this.renderPictographWithLayerCompositor(
           ctx,
           pictographData,
@@ -594,7 +669,10 @@ export class ImageComposer {
         return;
       }
 
-      const baseKey = this.keyHasher.deriveKey(pictographData, finalVisibilitySettings);
+      const baseKey = this.keyHasher.deriveKey(
+        pictographData,
+        finalVisibilitySettings
+      );
 
       const blobKey = `${baseKey}:${stepSize}`;
 
@@ -644,7 +722,11 @@ export class ImageComposer {
               console.warn("[ImageComposer] Failed to cache blob:", err);
             });
             this.writeThroughToPreviewCache(
-              pictographData, stepNumber, stepSize, finalVisibilitySettings, blob
+              pictographData,
+              stepNumber,
+              stepSize,
+              finalVisibilitySettings,
+              blob
             );
           });
         }
@@ -715,14 +797,20 @@ export class ImageComposer {
       layer2Misses: this.layer2Misses,
       layer2HitRate:
         this.layer2Hits + this.layer2Misses > 0
-          ? ((this.layer2Hits / (this.layer2Hits + this.layer2Misses)) * 100).toFixed(2) + "%"
+          ? (
+              (this.layer2Hits / (this.layer2Hits + this.layer2Misses)) *
+              100
+            ).toFixed(2) + "%"
           : "0%",
 
       layer1Hits: this.layer1Hits,
       layer1Misses: this.layer1Misses,
       layer1HitRate:
         this.layer1Hits + this.layer1Misses > 0
-          ? ((this.layer1Hits / (this.layer1Hits + this.layer1Misses)) * 100).toFixed(2) + "%"
+          ? (
+              (this.layer1Hits / (this.layer1Hits + this.layer1Misses)) *
+              100
+            ).toFixed(2) + "%"
           : "0%",
 
       totalHits,
@@ -751,7 +839,6 @@ export class ImageComposer {
     this.layer2Misses = 0;
   }
 
-
   private async renderQRCode(
     ctx: CanvasRenderingContext2D,
     sequence: SequenceData,
@@ -765,6 +852,7 @@ export class ImageComposer {
     deckId?: string,
     deckName?: string,
     preRenderedQR?: CanvasImageSource,
+    trace?: CardExportTrace
   ): Promise<void> {
     // Proceed if we have either a generator OR a pre-rendered image (the worker
     // path supplies a main-rendered bitmap because it has no QR generator).
@@ -784,19 +872,16 @@ export class ImageComposer {
       // to the cell below. Generated QR is produced at qrSize directly.
       const qrImage: CanvasImageSource = preRenderedQR
         ? preRenderedQR
-        : await this.qrCodeGenerator!.generateAsImage(
-            sequence,
-            qrSize,
-            {
-              style: "modern",
-              margin: 1,
-              darkMode: isDarkMode,
-              leftPropType: leftPropType,
-              rightPropType: rightPropType,
-              deckId,
-              deckName,
-            }
-          );
+        : await this.qrCodeGenerator!.generateAsImage(sequence, qrSize, {
+            trace,
+            style: "modern",
+            margin: 1,
+            darkMode: isDarkMode,
+            leftPropType: leftPropType,
+            rightPropType: rightPropType,
+            deckId,
+            deckName,
+          });
 
       const cellLeft = cell.col * stepSize + horizontalOffset;
       const cellTop = cell.row * stepSize + headerHeight;
@@ -808,10 +893,10 @@ export class ImageComposer {
 
       ctx.drawImage(qrImage, x, y, qrSize, qrSize);
     } catch (error) {
+      trace?.note("qrFailed", true);
       console.error("[ImageComposer] Failed to render QR code:", error);
     }
   }
-
 
   private async renderMandalas(
     ctx: CanvasRenderingContext2D,
@@ -824,15 +909,13 @@ export class ImageComposer {
     isDarkMode: boolean,
     options: Partial<SequenceExportOptions>,
     leftPropType?: PropType,
-    rightPropType?: PropType,
+    rightPropType?: PropType
   ): Promise<void> {
     try {
-      const { calculate: calculateMandalaGeometry } = await import(
-        "../../mandala/services/mandala-geometry-calculator"
-      );
-      const { getMandalaPathOptions } = await import(
-        "../../mandala/services/mandala-path-options"
-      );
+      const { calculate: calculateMandalaGeometry } =
+        await import("../../mandala/services/mandala-geometry-calculator");
+      const { getMandalaPathOptions } =
+        await import("../../mandala/services/mandala-path-options");
       const tipEnds = pairTipEnds(leftPropType, rightPropType);
       // The card traces the same hand paths the animation draws, so it uses the
       // shape the caller was showing. Unset means the arc default.
@@ -842,8 +925,8 @@ export class ImageComposer {
         rightPropType,
         getMandalaPathOptions(
           options.mandalaPathShape ?? "arc",
-          tipEnds === 1 ? 1 : 2,
-        ),
+          tipEnds === 1 ? 1 : 2
+        )
       );
       if (paths.left.length === 0 && paths.right.length === 0) return;
 
@@ -880,14 +963,19 @@ export class ImageComposer {
             purpleFill: LIGHT_MOTION_PURPLE_FILL,
           };
 
-      const visibility = await this.getVisibilitySettings(options.visibilityOverrides);
-      const palette = applyMandalaHandColors(defaultPalette, visibility.primaryPropColors);
+      const visibility = await this.getVisibilitySettings(
+        options.visibilityOverrides
+      );
+      const palette = applyMandalaHandColors(
+        defaultPalette,
+        visibility.primaryPropColors
+      );
       const mandalaScale = 0.85;
       const mandalaSize = Math.floor(stepSize * mandalaScale);
       const padding = (stepSize - mandalaSize) / 2;
 
       for (const p of placements) {
-        const show = p.variant === "full" ? "both" as const : p.variant;
+        const show = p.variant === "full" ? ("both" as const) : p.variant;
         const x = (p.col - 1) * stepSize + gridOffsetX + padding;
         const y = (p.row - 1) * stepSize + gridOffsetY + padding;
 
@@ -943,9 +1031,8 @@ export class ImageComposer {
     visibilitySettings: PictographVisibilityOptions
   ): Promise<PreparedPictographData> {
     const themeMode = visibilitySettings.darkMode ? "dark" : "light";
-    const { pictographPreparer: preparer } = await import(
-      "../../pictograph/shared/services/pictograph-preparer"
-    );
+    const { pictographPreparer: preparer } =
+      await import("../../pictograph/shared/services/pictograph-preparer");
     const prepared = await preparer.prepareSingle(pictographData, {
       themeMode,
       fanAppearance: visibilitySettings.fanAppearance,
@@ -982,10 +1069,8 @@ export class ImageComposer {
       visibilitySettings
     );
 
-    const { options: layerOptions, visibility: layerVisibility } = buildCellLayerOptions(
-      stepSize,
-      visibilitySettings
-    );
+    const { options: layerOptions, visibility: layerVisibility } =
+      buildCellLayerOptions(stepSize, visibilitySettings);
 
     const result = await this.layerCompositor.compose(
       preparedPictograph,
@@ -1011,12 +1096,14 @@ export class ImageComposer {
     sequence: SequenceData,
     options: Partial<SequenceExportOptions>,
     onProgress?: CompositionProgressCallback,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    trace?: CardExportTrace
   ): Promise<RenderCanvas> {
     return composeCardImageFn(
       sequence,
       options,
-      (seq, opts, prog, sig) => this.composeSequenceImage(seq, opts, prog, sig),
+      (seq, opts, prog, sig) =>
+        this.composeSequenceImage(seq, opts, prog, sig, trace),
       onProgress,
       signal
     );

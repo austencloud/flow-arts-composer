@@ -18,6 +18,7 @@ import * as pictographCloudCache from "$lib/shared/render/services/pictograph-cl
 import { startPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
 import { detectMixedDurations } from "$lib/shared/choreo-card/services/step-durations";
 import { getSequenceMotionVisibility } from "$lib/shared/foundation/services/sequence-motion-profile";
+import type { CardExportTrace } from "$lib/shared/render/services/card-export-trace";
 
 export interface WarmOptions {
   /** Scan cards render dark by default. */
@@ -34,6 +35,12 @@ export interface WarmOptions {
   signal?: AbortSignal;
   /** Reports completed cloud checks/renders to an outer inactivity deadline. */
   onActivity?: () => void;
+  /** QR creation is waiting for every scan asset. It may probe public objects
+   * first and prepare up to four missing cells at once; background callers stay
+   * serial so visible cards share the renderer fairly. */
+  foreground?: boolean;
+  /** Optional export-local timing summary. No cell identity is recorded. */
+  trace?: CardExportTrace;
 }
 
 export interface WarmCellFailure {
@@ -63,7 +70,9 @@ export class IncompleteCellWarmError extends Error {
 // session. Concurrent sequences that share a cell also join the same promise,
 // so the worker pool never rasterizes an identical canonical object twice.
 const verifiedCloudHashes = new Set<string>();
-const pendingVerifiedWarms = new Map<string, Promise<void>>();
+type CanonicalCellSource = "known" | "remote" | "rendered";
+
+const pendingVerifiedWarms = new Map<string, Promise<CanonicalCellSource>>();
 
 function throwIfAborted(signal?: AbortSignal): void {
   if (!signal?.aborted) return;
@@ -78,24 +87,27 @@ async function renderCanonicalCell(
   renderOptions: PreviewCellRenderOptions,
   hash: string,
   verifyUpload: boolean,
+  probeUnknown: boolean,
   signal?: AbortSignal
-): Promise<void> {
+): Promise<CanonicalCellSource> {
   // Most cards collapse onto pictographs that a previous card already
   // uploaded. Successful uploads and reads both register positive existence in
   // the cloud-cache owner. That proof lets QR preparation skip an entire image
   // download before rendering and another after upload.
-  if (verifyUpload && pictographCloudCache.isCellKnownAvailable(hash)) return;
+  if (verifyUpload && pictographCloudCache.isCellKnownAvailable(hash))
+    return "known";
 
-  // Unknown hashes are expected writer misses. Render and upload them without
-  // issuing a public GET that would produce a browser-visible 404. Scanner
-  // reads still probe directly after publication has guaranteed availability.
+  // Foreground QR preparation first checks the public object. Most hashes were
+  // baked by a different publisher, so this avoids needless rasterization and
+  // upload on a browser that has not seen them before. Background warming keeps
+  // its quiet writer path because a 404 is expected there.
   if (verifyUpload) {
     const stored = await pictographCloudCache.download(hash, {
-      probeUnknown: false,
+      probeUnknown,
       signal,
     });
     throwIfAborted(signal);
-    if (stored) return;
+    if (stored) return "remote";
   }
 
   let url: string | null = null;
@@ -110,6 +122,7 @@ async function renderCanonicalCell(
     if (verifyUpload && !pictographCloudCache.isCellKnownAvailable(hash)) {
       throw new Error("canonical object upload did not complete");
     }
+    return "rendered";
   } finally {
     if (url?.startsWith("blob:")) URL.revokeObjectURL(url);
   }
@@ -121,9 +134,10 @@ async function ensureVerifiedCanonicalCell(
   isDark: boolean,
   renderOptions: PreviewCellRenderOptions,
   hash: string,
+  probeUnknown: boolean,
   signal?: AbortSignal
-): Promise<void> {
-  if (verifiedCloudHashes.has(hash)) return;
+): Promise<CanonicalCellSource> {
+  if (verifiedCloudHashes.has(hash)) return "known";
 
   let pending = pendingVerifiedWarms.get(hash);
   if (!pending) {
@@ -133,9 +147,11 @@ async function ensureVerifiedCanonicalCell(
       isDark,
       renderOptions,
       hash,
-      true
-    ).then(() => {
+      true,
+      probeUnknown
+    ).then((source) => {
       verifiedCloudHashes.add(hash);
+      return source;
     });
     pendingVerifiedWarms.set(hash, pending);
 
@@ -149,11 +165,12 @@ async function ensureVerifiedCanonicalCell(
     void pending.then(clearPending, clearPending);
   }
 
-  await pending;
+  const source = await pending;
   // Shared same-hash work belongs to every current caller, so one thumbnail's
   // cancellation must not abort the core promise for the others. Stop this
   // consumer after the shared result settles instead.
   throwIfAborted(signal);
+  return source;
 }
 
 export function getCanonicalSequenceCells(
@@ -209,59 +226,81 @@ export async function warmSequenceCells(
 ): Promise<WarmSequenceCellsResult> {
   throwIfAborted(opts.signal);
   const entries = getCanonicalSequenceCells(sequence, opts);
-  const hashes: string[] = [];
-  const failures: WarmCellFailure[] = [];
-  // Canonical warming sits inside thumbnail rendering and can run for several
-  // visible cards at once. Process one cell per warm so those cards share the
-  // renderer fairly instead of each dumping an entire light+dark sequence into
-  // the worker pool at the same time.
-  for (const { cell, data, options } of entries) {
-    throwIfAborted(opts.signal);
-    try {
-      const hash = await deriveCloudCellHash(
-        data,
-        opts.isDark ?? true,
-        options
-      );
-      if (opts.requireComplete) {
-        await ensureVerifiedCanonicalCell(
+  const hashes = new Array<string | undefined>(entries.length);
+  const failures = new Array<WarmCellFailure | undefined>(entries.length);
+  const sourceCounts: Record<CanonicalCellSource, number> = {
+    known: 0,
+    remote: 0,
+    rendered: 0,
+  };
+  // Background card work remains serial. A foreground QR waits on this exact
+  // readiness proof, so it may keep four missing cells in flight without
+  // starting a theme's second pass or an unbounded batch.
+  const concurrency = opts.foreground ? 4 : 1;
+  let next = 0;
+  const prepareNext = async (): Promise<void> => {
+    while (next < entries.length) {
+      throwIfAborted(opts.signal);
+      const index = next++;
+      const { cell, data, options } = entries[index]!;
+      try {
+        const hash = await deriveCloudCellHash(
           data,
-          cell,
           opts.isDark ?? true,
-          options,
-          hash,
-          opts.signal
+          options
         );
-      } else {
-        await renderCanonicalCell(
-          data,
+        if (opts.requireComplete) {
+          const source = await ensureVerifiedCanonicalCell(
+            data,
+            cell,
+            opts.isDark ?? true,
+            options,
+            hash,
+            opts.foreground === true,
+            opts.signal
+          );
+          sourceCounts[source]++;
+        } else {
+          await renderCanonicalCell(
+            data,
+            cell,
+            opts.isDark ?? true,
+            options,
+            hash,
+            false,
+            false,
+            opts.signal
+          );
+        }
+        hashes[index] = hash;
+      } catch (error) {
+        if (opts.signal?.aborted) throwIfAborted(opts.signal);
+        failures[index] = {
           cell,
-          opts.isDark ?? true,
-          options,
-          hash,
-          false,
-          opts.signal
-        );
+          reason: error instanceof Error ? error.message : String(error),
+        };
+      } finally {
+        opts.onActivity?.();
       }
-      hashes.push(hash);
-    } catch (error) {
-      if (opts.signal?.aborted) throwIfAborted(opts.signal);
-      failures.push({
-        cell,
-        reason: error instanceof Error ? error.message : String(error),
-      });
-    } finally {
-      opts.onActivity?.();
     }
-  }
+  };
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, entries.length) }, prepareNext)
+  );
   const result: WarmSequenceCellsResult = {
     total: entries.length,
-    ready: hashes.length,
-    hashes,
-    failures,
+    ready: hashes.filter((hash): hash is string => hash !== undefined).length,
+    hashes: hashes.filter((hash): hash is string => hash !== undefined),
+    failures: failures.filter(
+      (failure): failure is WarmCellFailure => failure !== undefined
+    ),
   };
+  const theme = (opts.isDark ?? true) ? "dark" : "light";
+  for (const [source, count] of Object.entries(sourceCounts)) {
+    opts.trace?.note(`qr.cells.${theme}.${source}`, count);
+  }
 
-  if (opts.requireComplete && failures.length > 0) {
+  if (opts.requireComplete && result.failures.length > 0) {
     throw new IncompleteCellWarmError(result);
   }
   return result;
