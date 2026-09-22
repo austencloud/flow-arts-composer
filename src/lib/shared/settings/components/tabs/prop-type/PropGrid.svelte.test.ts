@@ -58,11 +58,75 @@ describe("PropGrid fan look credit", () => {
   it("keeps the heading plain for the house DoodleGrip", async () => {
     renderRail({ build: "fire", frameColor: "black", cover: "bare" });
 
+    expect(document.querySelector('[data-testid="prop-look-chip"]')).toBeNull();
     await page.getByTestId("fan-look-chip").click();
 
     await expect
       .element(page.getByRole("button", { name: "Back to all props" }))
       .toBeVisible();
     expect(document.querySelector(".rail-credit")).toBeNull();
+  });
+
+  it("offers the global 3D model choice in a captured prop's rail", async () => {
+    const onPropLookChange = vi.fn();
+    render(PropGrid, {
+      selectedPropType: PropType.STAFF,
+      onSelect: vi.fn(),
+      layout: "rail",
+      fanAppearance: { build: "fire", frameColor: "black", cover: "bare" },
+      onFanAppearanceChange: vi.fn(),
+      propLook: "pictograph",
+      onPropLookChange,
+    });
+
+    await page.getByTestId("prop-look-chip").click();
+    const model = page.getByRole("radio", { name: "3D model" });
+    const pictograph = page.getByRole("radio", { name: "Pictograph" });
+    await expect.element(model).toBeVisible();
+    await expect.element(pictograph).toHaveAttribute("aria-checked", "true");
+
+    await model.click();
+    expect(onPropLookChange).toHaveBeenCalledWith("model");
+  });
+
+  it("selects Buugeng and replaces the root grid with its persistent details", async () => {
+    const onSelect = vi.fn();
+    const onPropLookChange = vi.fn();
+
+    render(PropGrid, {
+      selectedPropType: PropType.BUUGENG,
+      onSelect,
+      allowedProps: [PropType.BUUGENG, PropType.BIGBUUGENG],
+      fanAppearance: { build: "fire", frameColor: "black", cover: "bare" },
+      onFanAppearanceChange: vi.fn(),
+      propLook: "pictograph",
+      onPropLookChange,
+    });
+
+    await page
+      .getByRole("button", { name: "Select Buugeng prop type" })
+      .click();
+    expect(onSelect).toHaveBeenCalledWith(PropType.BUUGENG);
+
+    await expect
+      .element(page.getByRole("radio", { name: "Pictograph" }))
+      .toHaveAttribute("aria-checked", "true");
+    await expect
+      .element(page.getByRole("radio", { name: "3D model" }))
+      .toBeVisible();
+    await expect
+      .element(page.getByRole("button", { name: "Big" }))
+      .toBeVisible();
+
+    await page.getByRole("radio", { name: "3D model" }).click();
+    expect(onPropLookChange).toHaveBeenCalledWith("model");
+
+    await page.getByRole("button", { name: "Back to all props" }).click();
+    await expect
+      .element(page.getByRole("button", { name: "Select Buugeng prop type" }))
+      .toBeVisible();
+    await expect
+      .element(page.getByRole("radio", { name: "3D model" }))
+      .not.toBeInTheDocument();
   });
 });

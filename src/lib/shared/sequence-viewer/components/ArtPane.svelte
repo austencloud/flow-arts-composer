@@ -166,6 +166,7 @@
         artType: ArtType;
         controller: TunnelViewController;
         mandalaController: MandalaViewerController;
+        capturePreview: () => string;
       } | null
     ) => void;
     /** The share sheet owns the current render; keep the inline preview out. */
@@ -345,7 +346,25 @@
       onArtShare?.(null);
       return;
     }
-    onArtShare?.({ artType, controller, mandalaController });
+    onArtShare?.({
+      artType,
+      controller,
+      mandalaController,
+      // A tunnel is assembled from the prop, trail, and effect canvases that
+      // are already on screen. Composite those live layers; do not create a
+      // second renderer that could drift from its colors or effects.
+      capturePreview: () =>
+        artType === "tunnel"
+          ? capturePosterFromContainer(
+              sharedTunnelCanvas
+                ? (tunnelStage?.canvas?.closest<HTMLElement>(
+                    "[data-persistent-animator]"
+                  ) ?? null)
+                : artBodyEl,
+              { size: 960 }
+            )
+          : "",
+    });
     return () => onArtShare?.(null);
   });
 

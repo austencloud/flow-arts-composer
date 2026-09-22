@@ -1,13 +1,16 @@
 <script lang="ts">
   import Seo from "$lib/shared/components/Seo.svelte";
-  import PositionTrioGrid from "$lib/shared/landing/components/PositionTrioGrid.svelte";
+  import SequenceHeroDemo from "$lib/shared/landing/components/SequenceHeroDemo.svelte";
+  import demoJson from "$lib/shared/landing/data/demo-sequence.json";
+  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import "$lib/shared/landing/styles/public-editorial.css";
 
   const TITLE = "About The Kinetic Alphabet";
   const DESCRIPTION =
-    "The Kinetic Alphabet (TKA) is a notation system for flow arts. Learn what TKA is, how it works, and why it exists.";
+    "The Kinetic Alphabet (TKA) is a pictographic notation system for flow arts choreography. Flow Arts Composer is the browser app for using it.";
   const URL = "https://tkaflowarts.com/about";
   const PERSON_ID = `${URL}#austen-cloud`;
+  const demoSequence = demoJson as unknown as SequenceData;
 
   const pageJsonLd = JSON.stringify({
     "@context": "https://schema.org",
@@ -34,7 +37,7 @@
         name: "The Kinetic Alphabet",
         alternateName: "TKA",
         description:
-          "A pictographic notation system for flow arts choreography. Every pair of grid placements is given a letter, so a sequence of movement can be written down, read back, and searched as a word.",
+          "A pictographic notation system for flow arts choreography. Each picture records a movement step; together they record a sequence.",
         disambiguatingDescription:
           "Created by Austen Cloud in 2022. The Kinetic Alphabet is its own system and is not built on, derived from, or an extension of the other flow arts notations documented on this site. The Shape Matrix, CAPs, the Vulcan Tech Gospel, QFT Notation and the rest are separate works by other authors, archived and credited at /history.",
         dateCreated: "2022",
@@ -67,48 +70,6 @@
       },
     ],
   }).replace(/</g, "\\u003c");
-
-  const pathways = [
-    {
-      label: "Guide",
-      title: "Learn the notation",
-      copy: "Start with the grid, hand placements, motions, letters, and words.",
-      href: "/guide",
-    },
-    {
-      label: "History",
-      title: "Trace the notation",
-      copy: "Read the sourced chronology of systems used to write flow arts down.",
-      href: "/history",
-    },
-    {
-      label: "Software",
-      title: "Tour Flow Arts Composer",
-      copy: "See the tools for building, generating, animating, saving, and sharing choreography.",
-      href: "/composer",
-    },
-    {
-      label: "Answers",
-      title: "Read common questions",
-      copy: "Get direct answers about learning TKA, supported props, sharing, and cost.",
-      href: "/faq",
-    },
-  ];
-
-  const pictographParts = [
-    {
-      term: "Position",
-      description: "Where each hand begins and ends on the grid.",
-    },
-    {
-      term: "Path",
-      description: "How each hand moves between those points.",
-    },
-    {
-      term: "Rotation",
-      description: "How the props turn during the step.",
-    },
-  ];
 </script>
 
 <Seo
@@ -124,76 +85,67 @@
 <main class="about-page" id="main-content">
   <header class="about-hero">
     <div class="hero-copy">
-      <span class="eyebrow">What is TKA?</span>
-      <h1>The Kinetic Alphabet</h1>
+      <span class="eyebrow">About the project</span>
+      <h1>What is The Kinetic Alphabet?</h1>
       <p class="hero-lede">
-        The Kinetic Alphabet is a notation system for flow arts.
+        The Kinetic Alphabet is a way to write flow arts choreography in
+        pictures.
       </p>
       <p class="hero-body">
-        One pictograph keeps the hand positions, hand paths, and prop rotations
-        for a movement step together. Put the pictographs in order and the
-        choreography can be read again.
+        Each picture records a movement step. Put them together to record a
+        sequence. Flow Arts Composer is the browser app for composing, playing,
+        and sharing sequences in this notation.
       </p>
-      <a class="resource-chip hero-link" href="#how-it-reads">
-        See how a pictograph reads
+      <a class="resource-chip hero-link" href="/composer">
+        Explore Flow Arts Composer
       </a>
     </div>
 
-    <div class="placement-shell" aria-labelledby="placement-heading">
-      <span class="proof-label">Start with placement</span>
-      <h2 id="placement-heading">The relationship between the hands</h2>
-      <p>
-        Alpha places the hands opposite each other. Beta puts both hands at the
-        same point. Gamma makes a right angle.
+    <div id="how-it-reads" class="artifact-shell">
+      <span class="proof-label">A sequence in TKA notation</span>
+      <SequenceHeroDemo
+        sequence={demoSequence}
+        note="Select play to watch the sequence."
+        showNotationStrip={true}
+        preserveNotationStrip={true}
+        autoPlay={false}
+        cornerToggle={true}
+        showCaption={false}
+        loadPriority="immediate"
+      />
+      <p class="artifact-caption">
+        Press play to see the movement beside its notation.
       </p>
-      <PositionTrioGrid />
     </div>
   </header>
 
-  <section
-    id="how-it-reads"
-    class="reading-band"
-    aria-labelledby="reading-heading"
-  >
+  <section class="reading-band" aria-labelledby="reading-heading">
     <div class="reading-copy">
-      <span class="section-kicker">One step at a time</span>
-      <h2 id="reading-heading">A pictograph keeps the movement together.</h2>
+      <span class="section-kicker">Purpose</span>
+      <h2 id="reading-heading">Keep the structure close at hand.</h2>
       <p>
-        The grid and arrows carry the information that would otherwise be
-        scattered across a video, a rehearsal note, and somebody's memory.
-        Letters give common combinations a short name, but the picture remains
-        readable on its own.
+        A video can show a performance. TKA gives a sequence a form you can
+        return to, change, compare, and pass along.
+      </p>
+      <p>
+        Keep a phrase you want to practice, then change a step in Composer and
+        watch how the sequence changes.
       </p>
     </div>
 
-    <dl class="pictograph-parts">
-      {#each pictographParts as part}
-        <div>
-          <dt>{part.term}</dt>
-          <dd>{part.description}</dd>
-        </div>
-      {/each}
-    </dl>
-  </section>
-
-  <section class="pathways" aria-labelledby="pathways-heading">
-    <div class="pathways-heading">
-      <span class="section-kicker">Choose what comes next</span>
-      <h2 id="pathways-heading">Go straight to the part you need.</h2>
+    <div class="scope-copy">
+      <span class="section-kicker">Scope</span>
+      <h2>Built around double staves.</h2>
       <p>
-        The rest of the site separates learning, history, software, and quick
-        answers.
+        TKA also applies to paired static props such as fans, clubs, and
+        buugeng. Tosses, contact rolling, grip changes, and momentum-based props
+        are outside that core scope. A prop visual in Composer does not mean
+        every sequence can be performed with it.
       </p>
-    </div>
-
-    <div class="pathway-grid">
-      {#each pathways as pathway}
-        <a class="resource-chip pathway-card" href={pathway.href}>
-          <span class="pathway-label">{pathway.label}</span>
-          <strong>{pathway.title}</strong>
-          <span class="pathway-copy">{pathway.copy}</span>
-        </a>
-      {/each}
+      <div class="resource-row scope-links">
+        <a href="/faq" class="resource-chip">Read common questions</a>
+        <a href="/history" class="quiet-link">Read the notation history</a>
+      </div>
     </div>
   </section>
 
@@ -203,16 +155,14 @@
     aria-labelledby="creator-heading"
   >
     <div class="creator-copy">
-      <span class="section-kicker">About the project</span>
-      <h2 id="creator-heading">Built by Austen Cloud</h2>
+      <span class="section-kicker">Creator and project</span>
+      <h2 id="creator-heading">Created by Austen Cloud in 2022.</h2>
       <p>
         The Kinetic Alphabet and Flow Arts Composer are developed by Austen
         Cloud. The project received a 2024–25 Seed Fund grant from Fund the Flow
         Arts.
       </p>
-      <p class="project-date">Created in 2022. Development continues.</p>
     </div>
-
     <div class="resource-row creator-links">
       <a
         href="https://fundtheflowarts.org/announcing-2024-25-seed-fund-grant-recipients/"
@@ -227,13 +177,20 @@
 
   <section class="composer-endcap" aria-labelledby="composer-heading">
     <div>
-      <span class="section-kicker">Make something</span>
-      <h2 id="composer-heading">Open Composer in your browser.</h2>
-      <p>Flow Arts Composer is free to use. No download required.</p>
+      <span class="section-kicker">Next step</span>
+      <h2 id="composer-heading">See what Flow Arts Composer can do.</h2>
+      <p>
+        Tour the tools, learn the notation, or open the app when you are ready.
+      </p>
     </div>
-    <a href="/create" class="resource-chip composer-link" data-sveltekit-reload>
-      Open Flow Arts Composer
-    </a>
+    <div class="next-links">
+      <a href="/composer" class="resource-chip composer-link"
+        >Explore Flow Arts Composer</a
+      >
+      <a href="/guide" class="resource-chip">Read the Guide</a>
+      <a href="/create" class="quiet-link" data-sveltekit-reload>Open the app</a
+      >
+    </div>
   </section>
 </main>
 
@@ -269,8 +226,7 @@
 
   .eyebrow,
   .section-kicker,
-  .proof-label,
-  .pathway-label {
+  .proof-label {
     display: block;
     color: var(--about-muted);
     font-size: var(--font-size-compact, 0.75rem);
@@ -311,9 +267,8 @@
   }
 
   .hero-body,
-  .placement-shell p,
   .reading-copy p,
-  .pathways-heading p,
+  .scope-copy p,
   .creator-copy p,
   .composer-endcap p {
     color: var(--about-muted);
@@ -334,37 +289,22 @@
     width: fit-content;
   }
 
-  .placement-shell {
+  .artifact-shell {
     min-width: 0;
-    padding: 1.4rem;
-    border: 1px solid var(--about-stroke);
-    border-radius: 1.25rem;
-    background: var(--about-surface);
+    padding: 0.35rem;
   }
 
-  .placement-shell h2 {
-    max-width: 18ch;
-    margin: 0.5rem 0 0.7rem;
-    font-family: var(
-      --landing-heading-font,
-      "Playfair Display",
-      Georgia,
-      serif
-    );
-    font-size: clamp(1.65rem, 1.4rem + 0.65vw, 2.4rem);
-    font-weight: 500;
-    letter-spacing: -0.025em;
-    line-height: 1.08;
+  .artifact-shell :global(.hero-demo) {
+    --hero-demo-max-width: min(32rem, 100%);
+    margin-top: 0.65rem;
   }
 
-  .placement-shell p {
-    max-width: 46ch;
-    margin: 0;
-  }
-
-  .placement-shell :global(.position-grid) {
-    width: 100%;
-    margin: 1.5rem 0 0;
+  .artifact-caption {
+    margin: 0.5rem 0 0;
+    color: var(--about-muted);
+    font-size: var(--font-size-min, 0.875rem);
+    line-height: 1.5;
+    text-align: center;
   }
 
   .reading-band,
@@ -381,13 +321,13 @@
   }
 
   .reading-copy,
-  .pathways-heading,
+  .scope-copy,
   .creator-copy {
     padding-inline: 0.35rem;
   }
 
   .reading-copy h2,
-  .pathways-heading h2,
+  .scope-copy h2,
   .creator-copy h2,
   .composer-endcap h2 {
     max-width: 16ch;
@@ -405,97 +345,24 @@
   }
 
   .reading-copy p,
-  .pathways-heading p,
+  .scope-copy p,
   .creator-copy p {
     max-width: 58ch;
     margin: 0;
-  }
-
-  .pictograph-parts {
-    margin: 0;
-    border-top: 1px solid var(--about-stroke);
-  }
-
-  .pictograph-parts div {
-    display: grid;
-    gap: 0.4rem;
-    padding: 1.15rem 0.35rem;
-    border-bottom: 1px solid var(--about-stroke);
-  }
-
-  .pictograph-parts dt {
-    color: var(--about-text);
-    font-size: 1rem;
-    font-weight: 700;
-  }
-
-  .pictograph-parts dd {
-    margin: 0;
-    color: var(--about-muted);
-    font-size: 0.95rem;
-    line-height: 1.5;
-  }
-
-  .pathways {
-    padding: 3.5rem 0;
-    border-bottom: 1px solid var(--about-stroke);
-  }
-
-  .pathways-heading {
-    margin-bottom: 2rem;
-  }
-
-  .pathway-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
-  }
-
-  .about-page :global(.pathway-card) {
-    display: flex;
-    min-height: 7.5rem;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-start;
-    gap: 0.45rem;
-    padding: 1rem;
-    border-radius: 1rem;
-    white-space: normal;
-  }
-
-  .pathway-card strong {
-    margin-top: auto;
-    color: var(--about-text);
-    font-family: var(
-      --landing-heading-font,
-      "Playfair Display",
-      Georgia,
-      serif
-    );
-    font-size: 1.12rem;
-    font-weight: 500;
-    line-height: 1.15;
-  }
-
-  .pathway-copy {
-    display: none;
-    color: var(--about-muted);
-    font-size: 0.9rem;
-    line-height: 1.45;
   }
 
   .creator-band {
     align-items: end;
   }
 
-  .project-date {
-    margin-top: 1rem !important;
-    font-size: 0.9rem !important;
-  }
-
   .creator-links {
     align-content: end;
     margin: 0;
+  }
+
+  .scope-links {
+    align-items: center;
+    margin-bottom: 0;
   }
 
   .composer-endcap {
@@ -510,6 +377,20 @@
 
   .composer-endcap p {
     margin: 0;
+  }
+
+  .next-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .quiet-link {
+    min-height: var(--min-touch-target, 44px);
+    padding: 0.55rem 0.25rem;
+    color: var(--about-muted);
+    font-size: var(--font-size-min, 0.875rem);
   }
 
   .about-page :global(.composer-link) {
@@ -534,66 +415,12 @@
       padding: 4rem clamp(1rem, 2.5cqw, 3rem);
     }
 
-    .placement-shell {
-      padding: clamp(1.5rem, 2.5cqw, 2.5rem);
-    }
-
     .reading-band,
+    .creator-band,
     .composer-endcap {
       grid-template-columns: minmax(0, 0.9fr) minmax(22rem, 1.1fr);
       gap: clamp(3rem, 7cqw, 8rem);
       padding: clamp(4rem, 6cqw, 7rem) clamp(1rem, 2.5cqw, 3rem);
-    }
-
-    .creator-band {
-      padding: clamp(4rem, 6cqw, 7rem) clamp(1rem, 2.5cqw, 3rem);
-    }
-
-    .pictograph-parts {
-      align-self: center;
-    }
-
-    .pictograph-parts div {
-      grid-template-columns: minmax(7rem, 0.35fr) minmax(0, 0.65fr);
-      align-items: baseline;
-      gap: 1.25rem;
-    }
-
-    .pathways {
-      padding: clamp(4rem, 6cqw, 7rem) clamp(1rem, 2.5cqw, 3rem);
-    }
-
-    .pathways-heading {
-      display: grid;
-      grid-template-columns: minmax(0, 0.85fr) minmax(20rem, 1.15fr);
-      column-gap: clamp(3rem, 7cqw, 8rem);
-      align-items: end;
-    }
-
-    .pathways-heading .section-kicker {
-      grid-column: 1 / -1;
-    }
-
-    .pathways-heading h2 {
-      margin-bottom: 0;
-    }
-
-    .pathway-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 1rem;
-    }
-
-    .about-page :global(.pathway-card) {
-      min-height: 10.5rem;
-      padding: 1.25rem;
-    }
-
-    .pathway-card strong {
-      font-size: 1.35rem;
-    }
-
-    .pathway-copy {
-      display: block;
     }
 
     .creator-links {
@@ -601,36 +428,11 @@
     }
 
     .composer-endcap {
-      grid-template-columns: minmax(0, 1fr) max-content;
+      grid-template-columns: minmax(0, 1fr) minmax(20rem, max-content);
     }
 
     .composer-link {
       justify-self: end;
-    }
-  }
-
-  @container about-page (min-width: 64rem) {
-    .creator-band {
-      grid-template-columns: minmax(0, 0.9fr) minmax(22rem, 1.1fr);
-      gap: clamp(3rem, 7cqw, 8rem);
-    }
-  }
-
-  @container about-page (min-width: 90rem) {
-    .pathway-grid {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-  }
-
-  @media (min-width: 1680px) {
-    .placement-shell :global(.position-grid) {
-      width: 100%;
-      margin: 2rem 0 0;
-      gap: 1.5rem;
-    }
-
-    .placement-shell :global(.position-image-container) {
-      max-width: 12rem;
     }
   }
 

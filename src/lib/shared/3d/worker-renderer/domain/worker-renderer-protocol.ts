@@ -405,6 +405,11 @@ export interface WorkerPerformerDiagnostics {
 }
 
 export interface WorkerRendererBootMetrics {
+  warmReuse?: boolean;
+  retainedRuntimeBytes?: number;
+  retainedRuntimeCount?: number;
+  cacheCandidateBytes?: number;
+  cacheSkipReason?: string;
   acceptedAt: number;
   rendererReadyAt: number;
   environmentReadyAt: number;
@@ -472,6 +477,12 @@ export interface PosterReadyWorkerRendererMessage {
   requestId: number;
 }
 
+export interface PrefetchWorkerEnvironmentMessage {
+  type: "prefetch-environment";
+  requestId: number;
+  environment: WorkerEnvironmentKey;
+}
+
 export interface LivePresentedWorkerRendererMessage {
   type: "live-presented";
   requestId: number;
@@ -528,6 +539,7 @@ export interface DisposeWorkerRendererMessage {
 
 export type WorkerRendererInMessage =
   | InitializeWorkerRendererMessage
+  | PrefetchWorkerEnvironmentMessage
   | SwitchWorkerRendererEnvironmentMessage
   | PosterReadyWorkerRendererMessage
   | LivePresentedWorkerRendererMessage

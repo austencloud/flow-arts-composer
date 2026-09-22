@@ -1,12 +1,25 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { OrchestratorContext } from "../domain/viewer-orchestrator-context";
 import { buildViewerShareActions } from "../services/viewer-shell-model";
+import { extractViewerStateQuery } from "../services/viewer-orchestrator-model";
 import type { MandalaViewerController } from "./mandala-viewer-controller.svelte";
 import type { TunnelViewController } from "../tunnel/tunnel-view-controller.svelte";
 import type { ShareArtifact } from "$lib/shared/share/services/post-handoff";
 import type { SequenceSendSession } from "$lib/shared/inbox/state/send-sequence-state.svelte";
 
 type ViewerShareActionId = "share-sequence" | "send-sequence" | "copy-link";
+
+/**
+ * A render result is not an input to its own request: using its object URL here
+ * would make a completed live export look stale. Post Studio is different: its
+ * composed file exists before the sheet asks to deliver it.
+ */
+export function viewerVideoSourceIdentity(
+  sourceKind: string,
+  precomposedVideoUrl: string | null
+): string {
+  return `${sourceKind}:${precomposedVideoUrl ?? "live"}`;
+}
 
 /**
  * The art view a share is about. ArtPane owns both controllers, so it hands
@@ -17,6 +30,8 @@ export interface ArtShareTarget {
   artType: "mandala" | "tunnel";
   controller: TunnelViewController;
   mandalaController: MandalaViewerController;
+  /** A still from the mounted art stage, used only to identify the file being prepared. */
+  capturePreview: () => string;
 }
 
 interface ViewerShellShareInputs {
@@ -94,7 +109,15 @@ export function createViewerShellShareState(
     const sequence = inputs.getSequence();
     dependencies.captureScanAction("send");
     if (sendSession) return;
-    const session = dependencies.createSequenceSendSession(sequence);
+    // Snapshot, not live: the message means what the viewer showed when the
+    // person chose Send. Same full-state link Copy link builds.
+    const viewParams = extractViewerStateQuery(
+      inputs.getContext().getShareUrl()
+    );
+    const session = dependencies.createSequenceSendSession(
+      sequence,
+      viewParams ? { viewParams } : {}
+    );
     if (!session) return;
     if (postSheetOpen) {
       postSheetOpen = false;
@@ -279,18 +302,6 @@ export function createViewerShellShareState(
     return true;
   }
 
-  /** The existing Export control enters the same file-preparation sheet. */
-  function openFilePreparation(): void {
-    artShare = null;
-    sceneShare = false;
-    postShare = false;
-    sceneTakeSuspended = false;
-    initialEntry = "download";
-    preparedOrdinaryVideo = false;
-    preserveSession = false;
-    postSheetOpen = true;
-  }
-
   function selectAction(actionId: string): void {
     switch (actionId as ViewerShareActionId) {
       case "share-sequence":
@@ -335,6 +346,12 @@ export function createViewerShellShareState(
     get preserveSession() {
       return preserveSession;
     },
+    get videoSourceKind() {
+      return (
+        artShare?.artType ??
+        (sceneShare ? "scene" : postShare ? "post" : "animation")
+      );
+    },
     get sendSession() {
       return sendSession;
     },
@@ -378,7 +395,6 @@ export function createViewerShellShareState(
     setArtShareTarget,
     selectAction,
     prepareFile,
-    openFilePreparation,
     sendToStickerLab,
     shareScene,
     sharePost,

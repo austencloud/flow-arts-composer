@@ -14,6 +14,7 @@
   import { resolvePreviewCellRender } from "../services/preview-cell-render-contract";
   import { ensureCardFonts } from "$lib/shared/render/services/gelasio-fonts";
   import { derivePropElementalTypeForStep } from "$lib/shared/shape-matrix/domain/prop-relationship";
+  import { renderStepNumber } from "@tka/render-composition";
 
   let {
     live,
@@ -21,6 +22,7 @@
     stepNumber,
     showStepNumber,
     poseOnly = false,
+    exportPresentation = false,
   }: {
     live: NonNullable<ChoreoCardCell["live"]>;
     darkMode: boolean;
@@ -28,6 +30,8 @@
     showStepNumber: boolean;
     /** Choose Start picker: grid and props only, beat glyphs fade out. */
     poseOnly?: boolean;
+    /** Portable card previews use the compositor's opaque cell host. */
+    exportPresentation?: boolean;
   } = $props();
 
   const contract = $derived(
@@ -42,6 +46,7 @@
   let failed = $state(false);
   let readyGridMode = $state<string | null>(null);
   let fontsReady = $state(false);
+  let exportNumberCanvas = $state<HTMLCanvasElement>();
   $effect(() => {
     let cancelled = false;
     void ensureCardFonts().then(() => {
@@ -50,6 +55,37 @@
     return () => {
       cancelled = true;
     };
+  });
+
+  // Keep the actual live SVG pictograph intact. The export-only label layer
+  // uses the same canvas primitive as PNG composition, after its font has
+  // loaded, so text raster and hanging-baseline metrics stay identical.
+  $effect(() => {
+    const canvas = exportNumberCanvas;
+    if (
+      !exportPresentation ||
+      !canvas ||
+      !fontsReady ||
+      !showStepNumber ||
+      poseOnly
+    )
+      return;
+    const draw = (): void => {
+      const bounds = canvas.getBoundingClientRect();
+      const width = Math.round(bounds.width);
+      const height = Math.round(bounds.height);
+      if (width < 1 || height < 1) return;
+      if (canvas.width !== width) canvas.width = width;
+      if (canvas.height !== height) canvas.height = height;
+      const context = canvas.getContext("2d");
+      if (!context) return;
+      context.clearRect(0, 0, width, height);
+      renderStepNumber(context, stepNumber, 0, 0, height, darkMode);
+    };
+    draw();
+    const observer = new ResizeObserver(draw);
+    observer.observe(canvas);
+    return () => observer.disconnect();
   });
 
   $effect(() => {
@@ -93,9 +129,7 @@
   );
   const step = $derived(live.data as Partial<StepData>);
   // Derived even while the chip is off so the glyph stays mounted and fades.
-  const propElementalType = $derived(
-    derivePropElementalTypeForStep(live.data)
-  );
+  const propElementalType = $derived(derivePropElementalTypeForStep(live.data));
   // Diamond and box share one loaded SVG; rotating it does not emit onGridReady.
   const gridMode = $derived(
     prepared?._prepared?.gridMode === GridMode.SKEWED ? "skewed" : "diamond"
@@ -129,18 +163,19 @@
     <PictographRenderer
       pictograph={displayed}
       {darkMode}
+      transparentBackground={exportPresentation}
       showDuration={false}
       showHandColorKey={stepNumber === 0
         ? options.showHandColorKey !== false
         : undefined}
-      animateVisibility={true}
+      animateVisibility={!exportPresentation}
       showPathShape={false}
       widthMultiplier={options.widthMultiplier}
       glyphLayout={options.primaryPropColors ? "card-custom" : "card"}
       leftColorOverride={options.primaryPropColors?.left}
       rightColorOverride={options.primaryPropColors?.right}
       showGrid={options.showGrid}
-      gridPointsOnTop={!options.primaryPropColors}
+      gridPointsOnTop={options.gridPointsOnTop ?? !options.primaryPropColors}
       showNonRadialPoints={options.showNonRadialPoints}
       handPointVisibility={options.handPointVisibility}
       {activeLocations}
@@ -158,7 +193,13 @@
         readyGridMode = gridMode;
       }}
     />
-    {#if showStepNumber && !poseOnly}
+    {#if exportPresentation && showStepNumber && !poseOnly}
+      <canvas
+        class="number-layer export-number-layer"
+        aria-hidden="true"
+        bind:this={exportNumberCanvas}
+      ></canvas>
+    {:else if showStepNumber && !poseOnly}
       <svg
         class="number-layer"
         viewBox="0 0 {950 * (options.widthMultiplier ?? 1)} 950"
@@ -187,6 +228,9 @@
     width: 100%;
     height: 100%;
     pointer-events: none;
+  }
+  .export-number-layer {
+    display: block;
   }
   .number-layer :global(.beat-number) {
     font-family: Gelasio, Georgia, serif;

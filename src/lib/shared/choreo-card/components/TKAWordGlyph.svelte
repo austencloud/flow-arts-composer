@@ -1,7 +1,12 @@
 <script lang="ts">
   import { getGlyphCache } from "$lib/shared/render/get-glyph-cache";
   import { isDashLetter, getBaseLetter } from "$lib/shared/pictograph/tka-glyph/utils/letter-image-getter";
-  import { compressWord, type CompressedSegment } from "$lib/shared/foundation/utils/word-simplifier";
+  import {
+    compressWord,
+    parseWordNotation,
+    stripWordNotation,
+    type CompressedSegment,
+  } from "$lib/shared/foundation/utils/word-simplifier";
 
   interface Props {
     word: string;
@@ -22,8 +27,16 @@
   const LETTER_GAP_RATIO = 0.12;
   const DOT_SIZE_RATIO = 0.15;
   const GROUP_GAP_RATIO = 0.35;
+  const BRACE_HEIGHT_RATIO = 0.95;
 
-  const segments = $derived(word ? compressWord(word) : []);
+  // Glyph images exist for letters only; braces are drawn as text. A word
+  // that is one whole skewed span (every rotate-45 fuse) gets a pair around
+  // the row. Partial spans render their letters without braces here.
+  const segments = $derived(word ? compressWord(stripWordNotation(word)) : []);
+  const wholeWordSkewed = $derived.by(() => {
+    const units = parseWordNotation(word ?? "");
+    return units.length > 0 && units.every((unit) => unit.skewed);
+  });
   const hasCompression = $derived(segments.some((s: CompressedSegment) => s.repeat > 1));
   const neededBaseLetters = $derived.by(() => [
     ...new Set(
@@ -76,6 +89,9 @@
       style="transform: scale({fitScale});"
       bind:offsetWidth={naturalWidth}
     >
+    {#if wholeWordSkewed}
+      <span class="skew-brace" style="font-size: {height * BRACE_HEIGHT_RATIO}px; margin-right: {height * LETTER_GAP_RATIO}px;">&#123;</span>
+    {/if}
     {#each segments as segment, segIdx}
       {#if segIdx > 0 && hasCompression}
         <span
@@ -108,6 +124,9 @@
         {/each}
       </span>
     {/each}
+    {#if wholeWordSkewed}
+      <span class="skew-brace" style="font-size: {height * BRACE_HEIGHT_RATIO}px; margin-left: {height * LETTER_GAP_RATIO}px;">&#125;</span>
+    {/if}
     </div>
   </div>
 {/if}
@@ -177,6 +196,13 @@
 
   .dark-mode .glyph img {
     filter: invert(0.9);
+  }
+
+  .skew-brace {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-weight: 500;
+    line-height: 1;
+    flex-shrink: 0;
   }
 
   .dash-bar {

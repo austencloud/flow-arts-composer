@@ -17,6 +17,7 @@ interface HarnessOptions {
   generateForUrl?: ReturnType<typeof getQRCodeGenerator>["generateForUrl"];
   isAuthenticated?: boolean;
   qrUrl?: string;
+  exportPresentation?: boolean;
 }
 
 export function createChoreoCardQrStateHarness(options: HarnessOptions) {
@@ -29,6 +30,7 @@ export function createChoreoCardQrStateHarness(options: HarnessOptions) {
     leftPropType: options.leftPropType,
     rightPropType: options.rightPropType,
     browseViewMode: undefined,
+    exportPresentation: options.exportPresentation,
   });
 
   const generator = {

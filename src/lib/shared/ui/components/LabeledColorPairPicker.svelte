@@ -1,6 +1,8 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import ColorPicker from "svelte-awesome-color-picker";
+  import { growFade } from "$lib/shared/transitions/motion";
+  import { DURATION } from "$lib/shared/transitions/transitions";
   import { COLOR_PRESETS, COLOR_PRESET_COLUMNS } from "../color-presets";
   import BareWrapper from "./color-picker/BareWrapper.svelte";
   import type { HandSide } from "@tka/tka-types";
@@ -65,6 +67,7 @@
     const next = hex.slice(0, 7).toLowerCase();
     if (next !== current.toLowerCase()) onchange(hand, next);
   }
+
 </script>
 
 <div class="color-pair" role="group" aria-label={groupLabel}>
@@ -130,7 +133,14 @@
   </div>
   {#if editing}
     {@const entry = entries.find((item) => item.hand === editing)!}
-    <div class="color-editor" id={editorId} role="group" aria-label={`${entry.label} color`}>
+    <div
+      class="color-editor"
+      id={editorId}
+      role="group"
+      aria-label={`${entry.label} color`}
+      in:growFade={{ duration: DURATION.emphasis }}
+      out:growFade={{ duration: DURATION.normal }}
+    >
       <div class="preset-block">
         <div
           class="preset-grid"
@@ -216,9 +226,15 @@
   .color-pair {
     display: flex;
     flex-direction: column;
-    gap: 10px;
     min-width: 0;
     container: color-pair / inline-size;
+  }
+
+  /* Sibling margins instead of gap: the slide transition animates the
+     editor's margin along with its height, so closing ends at zero rather
+     than snapping over a leftover gap. */
+  .color-pair > * + * {
+    margin-top: 10px;
   }
 
   .pair-preview-art {

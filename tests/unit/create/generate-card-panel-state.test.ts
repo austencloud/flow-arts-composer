@@ -54,6 +54,11 @@ describe("openGenerateCard", () => {
     state.openPresetDrawer();
     expect(state.openGenerateCard).toBe("preset");
     expect(state.isLOOPPanelOpen).toBe(false);
+
+    state.openTnDPanel();
+    expect(state.openGenerateCard).toBe("tnd");
+    expect(state.isPresetDrawerOpen).toBe(false);
+    expect(state.isAnyPanelOpen).toBe(true);
   });
 
   it("closeGenerateCard closes whichever card is open", () => {
@@ -73,11 +78,50 @@ describe("openGenerateCard", () => {
     state.closeGenerateCard();
     expect(state.isCustomizeOverlayOpen).toBe(false);
     expect(state.customizeOverlayProps).toBeNull();
+
+    state.openTnDPanel();
+    state.closeGenerateCard();
+    expect(state.isTnDPanelOpen).toBe(false);
+    expect(state.openGenerateCard).toBeNull();
   });
 
   it("closeGenerateCard is a no-op when nothing is open", () => {
     const state = createState();
     expect(() => state.closeGenerateCard()).not.toThrow();
     expect(state.openGenerateCard).toBeNull();
+  });
+
+  it("holds the editor request until the expanded card completes its handoff", () => {
+    const state = createState();
+    state.openTnDPanel();
+
+    state.openStepEditorPanel();
+    expect(state.isStepEditorPanelOpen).toBe(false);
+    expect(state.pendingGenerateCardEditorHandoff).toEqual({
+      kind: "step-editor",
+    });
+
+    state.closeGenerateCard();
+    state.completeGenerateCardEditorHandoff();
+    expect(state.pendingGenerateCardEditorHandoff).toBeNull();
+    expect(state.isStepEditorPanelOpen).toBe(true);
+  });
+
+  it("preserves a mandala request across the expanded-card handoff", () => {
+    const state = createState();
+    const selection = { variant: "both", pathShape: "hybrid" } as const;
+    state.openCustomizeOverlay(customizeProps);
+
+    state.openMandalaViewer(selection);
+    expect(state.isStepEditorPanelOpen).toBe(false);
+    expect(state.pendingGenerateCardEditorHandoff).toEqual({
+      kind: "mandala",
+      selection,
+    });
+
+    state.closeGenerateCard();
+    state.completeGenerateCardEditorHandoff();
+    expect(state.isStepEditorPanelOpen).toBe(true);
+    expect(state.mandalaViewerSelection).toEqual(selection);
   });
 });

@@ -1,14 +1,31 @@
 import type { Step } from "@tka/tka-types";
 import type { SequenceData } from "../domain/models/sequence-data";
 import type { StepPairingData } from "../domain/models/step-pairing-data";
+import { renderWordNotation, type WordUnit } from "../utils/word-notation";
+import { isSkewedFrameStep, type FrameStepLike } from "./skewed-frame";
 
+/** One resolved letter paired with its skew flag, for the four token sites below. */
+const skewUnit = (letter: string, step: FrameStepLike): WordUnit => ({
+  letter,
+  skewed: isSkewedFrameStep(step),
+});
+
+/**
+ * A beat with no letter contributes no unit to the word, so braces merge
+ * across it: two skewed beats separated by an unlettered beat still share one
+ * span, because the braces describe adjacency in the resolved word, not
+ * adjacency of beats in the sequence.
+ */
 export function deriveWordFromBeats(steps: readonly Step[]): string {
   if (!steps || steps.length === 0) return "";
 
-  return steps
-    .map((step) => step.letter ?? "")
-    .filter((letter) => letter !== "")
-    .join("");
+  const units: WordUnit[] = [];
+  for (const step of steps) {
+    const letter = step.letter ?? "";
+    if (letter === "") continue;
+    units.push(skewUnit(letter, step));
+  }
+  return renderWordNotation(units);
 }
 
 export function deriveWord(sequence: SequenceData): string {
@@ -21,10 +38,13 @@ export function deriveWord(sequence: SequenceData): string {
   // Steps aren't persisted to Firestore - they're derived at load time by the
   // hydrator. If hydration hasn't run yet, stepPairings still has the letters.
   if (sequence.stepPairings && sequence.stepPairings.length > 0) {
-    const derived = sequence.stepPairings
-      .map((p) => p.letter ?? "")
-      .filter((l) => l !== "")
-      .join("");
+    const units: WordUnit[] = [];
+    for (const pairing of sequence.stepPairings) {
+      const letter = pairing.letter ?? "";
+      if (letter === "") continue;
+      units.push(skewUnit(letter, pairing));
+    }
+    const derived = renderWordNotation(units);
     if (derived) return derived;
   }
 
@@ -71,7 +91,10 @@ export function getSequenceDisplayName(sequence: SequenceData): string {
 //      one that must stop a write.
 
 export interface WordDerivationStatus {
-  /** Concatenated notation tokens, in beat order. Empty when nothing resolved. */
+  /**
+   * Notation word in beat order, skewed spans in braces. An unlettered beat
+   * contributes no unit, so a span merges across it. Empty when nothing resolved.
+   */
   readonly word: string;
   /** True when every content beat produced a token. The persistence gate. */
   readonly complete: boolean;
@@ -131,7 +154,7 @@ export function deriveWordStatusFromSteps(
   const beats = steps.filter((step) => step.stepNumber !== 0);
   if (beats.length === 0) return emptyStatus("none");
 
-  const tokens: string[] = [];
+  const tokens: WordUnit[] = [];
   const missingStepIndexes: number[] = [];
   const blankStepIndexes: number[] = [];
 
@@ -145,11 +168,11 @@ export function deriveWordStatusFromSteps(
       missingStepIndexes.push(index);
       return;
     }
-    tokens.push(token);
+    tokens.push(skewUnit(token, step));
   });
 
   return {
-    word: tokens.join(""),
+    word: renderWordNotation(tokens),
     complete: missingStepIndexes.length === 0,
     stepCount: beats.length,
     tokenCount: tokens.length,
@@ -183,7 +206,7 @@ export function deriveWordStatusFromStepPairings(
   if (!stepPairings || stepPairings.length === 0) return emptyStatus("none");
 
   const beats = stepPairings;
-  const tokens: string[] = [];
+  const tokens: WordUnit[] = [];
   const missingStepIndexes: number[] = [];
 
   beats.forEach((pairing, index) => {
@@ -192,11 +215,11 @@ export function deriveWordStatusFromStepPairings(
       missingStepIndexes.push(index);
       return;
     }
-    tokens.push(token);
+    tokens.push(skewUnit(token, pairing));
   });
 
   return {
-    word: tokens.join(""),
+    word: renderWordNotation(tokens),
     complete: missingStepIndexes.length === 0,
     stepCount: beats.length,
     tokenCount: tokens.length,

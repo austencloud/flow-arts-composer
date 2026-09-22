@@ -41,6 +41,7 @@ export interface CardRegistryEntry {
 export interface GeneratorCardCapabilities {
   preset: boolean;
   customize: boolean;
+  tnd: boolean;
   loop: boolean;
   generate: boolean;
 }
@@ -48,6 +49,7 @@ export interface GeneratorCardCapabilities {
 const ALWAYS_AVAILABLE: GeneratorCardCapabilities = {
   preset: true,
   customize: true,
+  tnd: true,
   loop: true,
   generate: true,
 };
@@ -116,8 +118,8 @@ export const CARD_REGISTRY = [
     id: "grid-mode",
     tourHeader: "GRID",
     tourDefaultValue: "Diamond",
-    tourSpan: 3,
-    beginnerSpan: 2,
+    tourSpan: 2,
+    beginnerSpan: 3,
     helpId: "grid-mode",
     colorKey: "gridMode",
     slot: "grid",
@@ -126,7 +128,7 @@ export const CARD_REGISTRY = [
     id: "turn-intensity",
     tourHeader: "TURNS",
     tourDefaultValue: "≤1",
-    tourSpan: 3,
+    tourSpan: 2,
     helpId: "turn-intensity",
     colorKey: "turnIntensity",
     slot: "grid",
@@ -136,8 +138,8 @@ export const CARD_REGISTRY = [
     id: "customize",
     tourHeader: "CUSTOMIZE",
     tourDefaultValue: "Default",
-    tourSpan: 3,
-    beginnerSpan: 2,
+    tourSpan: 2,
+    beginnerSpan: 3,
     helpId: "prop-continuity",
     helpOverride: {
       name: "Customize",
@@ -151,11 +153,19 @@ export const CARD_REGISTRY = [
     slot: "grid",
   },
   {
+    id: "tnd",
+    tourHeader: "TIMING AND DIRECTION",
+    tourDefaultValue: "Free",
+    tourSpan: 3,
+    helpId: "tnd",
+    colorKey: "mode",
+    slot: "grid",
+  },
+  {
     id: "loop",
     tourHeader: "LOOP",
     tourDefaultValue: "Rotated",
     tourSpan: 3,
-    beginnerSpan: 2,
     helpId: "loop-type",
     helpOverride: {
       name: "LOOP",
@@ -210,6 +220,7 @@ export function getGeneratorPanelCards(options?: {
     }
     if (entry.id === "preset") return capabilities.preset;
     if (entry.id === "customize") return capabilities.customize;
+    if (entry.id === "tnd") return capabilities.tnd;
     if (entry.id === "loop") return capabilities.loop;
     if (entry.id === "generate-button") return capabilities.generate;
     return true;

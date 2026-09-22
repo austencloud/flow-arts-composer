@@ -24,16 +24,15 @@ import {
   BLUE_HEX,
   RED_HEX,
 } from "../../pictograph/tka-glyph/services/turn-color-interpreter";
-import { calculateTurnPositions } from "../../pictograph/tka-glyph/utils/turn-position-calculator";
+import { calculateTurnPositions, getTurnsColumnRightExtent } from "../../pictograph/tka-glyph/utils/turn-position-calculator";
 import { deriveTnDFromPictograph } from "../../pictograph/shared/domain/utils/tnd-deriver";
 import {
   calculateReversalPositions,
-  calculateHandColorKeyLayout,
-  HAND_COLOR_KEY,
+  drawHandColorKey as drawSharedHandColorKey,
 } from "../core";
-import type { TurnsTupleGenerator } from "../../pictograph/arrow/positioning/placement/services/turns-tuple-generator";
 import type { GridPlacement } from "../../pictograph/grid/domain/enums/grid-enums";
-import type { MotionData } from "../../pictograph/shared/domain/models/motion-data";
+import { isVisibleMotion, type MotionData } from "../../pictograph/shared/domain/models/motion-data";
+import { isSkewedFrameBeat } from "$lib/shared/foundation/services/skewed-frame";
 import {
   HandSide,
   getElementImagePath,
@@ -45,6 +44,7 @@ import {
 import { derivePropElementalTypeForStep } from "$lib/shared/shape-matrix/domain/prop-relationship";
 import { getMotionColor } from "../../utils/svg-color-utils";
 import { drawMonochromeImage, drawTintedImage } from "@tka/render-composition";
+import { drawSkewBraces } from "../utils/draw-skew-braces";
 
 const VIEWBOX_SIZE = 950;
 
@@ -126,20 +126,8 @@ export function drawDirectionDot(
   letterDimensions: { width: number; height: number },
   scale: number,
   isDarkMode: boolean,
-  turnsTupleGeneratorGetter?: () => TurnsTupleGenerator | undefined
+  turnsTuple: string
 ): void {
-  let turnsTuple = "(s, 0, 0)";
-  try {
-    const generator = turnsTupleGeneratorGetter?.();
-    if (generator) {
-      turnsTuple = generator.generateTurnsTuple(pictograph);
-    } else {
-      return;
-    }
-  } catch {
-    return;
-  }
-
   const parsed = parseTurnsTuple(turnsTuple);
   const direction = parsed.direction;
 
@@ -210,31 +198,55 @@ export async function drawTKAGlyph(
   return drawTKAGlyphText(ctx, String(letter), size, isDarkMode);
 }
 
+/**
+ * Skew braces ("{" / "}") around the letter of a skewed-frame beat - the
+ * canvas mirror of SkewBraces.svelte, gated the same way PictographRenderer
+ * gates the DOM component (isVisibleMotion on both hands, then
+ * isSkewedFrameBeat). Callers draw this after the letter/dash and before the
+ * turns column so the rightExtent clearance below can account for whatever
+ * the turns column is about to paint.
+ */
+export function drawSkewBracesGlyph(
+  ctx: CanvasRenderingContext2D,
+  pictograph: PictographData,
+  letterDimensions: { width: number; height: number },
+  scale: number,
+  isDarkMode: boolean,
+  turnsTuple: string
+): void {
+  if (!pictograph.letter) return;
+  const left = pictograph.motions?.left;
+  const right = pictograph.motions?.right;
+  if (!isVisibleMotion(left) || !isVisibleMotion(right)) return;
+  if (!isSkewedFrameBeat(left, right)) return;
+
+  const parsed = parseTurnsTuple(turnsTuple);
+  const rightExtent = getTurnsColumnRightExtent(parsed);
+
+  drawSkewBraces(ctx, {
+    letter: pictograph.letter,
+    letterDimensions,
+    rightExtent,
+    darkMode: isDarkMode,
+    originX: TKA_GLYPH_X * scale,
+    originY: TKA_GLYPH_Y * scale,
+    scale,
+  });
+}
+
 export async function drawTurnsColumn(
   ctx: CanvasRenderingContext2D,
   pictograph: PictographData,
   letterDimensions: { width: number; height: number },
   scale: number,
   isDarkMode: boolean,
-  turnsTupleGeneratorGetter?: () => TurnsTupleGenerator | undefined,
+  turnsTuple: string,
   motionVisibility?: {
     showLeftMotion?: boolean;
     showRightMotion?: boolean;
     primaryPropColors?: { left: string; right: string } | null;
   }
 ): Promise<void> {
-  let turnsTuple = "(s, 0, 0)";
-  try {
-    const generator = turnsTupleGeneratorGetter?.();
-    if (generator) {
-      turnsTuple = generator.generateTurnsTuple(pictograph);
-    } else {
-      return;
-    }
-  } catch {
-    // Use default
-  }
-
   const parsed = parseTurnsTuple(turnsTuple);
   // A slot renders if it has a displayable number OR is halved - a halved
   // 0-turn motion shows the mark alone (matches TurnsColumn.svelte's showTop/
@@ -855,36 +867,17 @@ export function drawHandColorKey(
   },
   offsetX = 0
 ): void {
-  const layout = calculateHandColorKeyLayout(hands.showLeft, hands.showRight);
-  if (layout.entries.length === 0) return;
-
   const scale = size / VIEWBOX_SIZE;
   const centerX = offsetX + (VIEWBOX_SIZE / 2) * scale;
   const theme = isDarkMode ? "dark" : "light";
-
-  ctx.save();
-  ctx.font = `${HAND_COLOR_KEY.FONT_WEIGHT} ${HAND_COLOR_KEY.FONT_SIZE * scale}px Gelasio, Georgia, serif`;
-  ctx.textAlign = "start";
-  ctx.textBaseline = "alphabetic";
-  for (const entry of layout.entries) {
-    const hand = entry.hand === "left" ? HandSide.LEFT : HandSide.RIGHT;
-    ctx.fillStyle =
-      hands.primaryPropColors?.[entry.hand] ?? getMotionColor(hand, theme);
-    ctx.beginPath();
-    ctx.arc(
-      centerX + entry.swatchX * scale,
-      layout.centerY * scale,
-      layout.swatchRadius * scale,
-      0,
-      Math.PI * 2
-    );
-    ctx.fill();
-    ctx.fillStyle = isDarkMode ? "#ffffff" : "#231f20";
-    ctx.fillText(
-      entry.label,
-      centerX + entry.labelX * scale,
-      layout.baselineY * scale
-    );
-  }
-  ctx.restore();
+  drawSharedHandColorKey(ctx, {
+    showLeft: hands.showLeft,
+    showRight: hands.showRight,
+    scale,
+    centerX,
+    textColor: isDarkMode ? "#ffffff" : "#231f20",
+    colorForHand: (hand) =>
+      hands.primaryPropColors?.[hand] ??
+      getMotionColor(hand === "left" ? HandSide.LEFT : HandSide.RIGHT, theme),
+  });
 }

@@ -25,6 +25,7 @@
     | "premiumBadge"
     | "premiumNudge"
     | "propLook"
+    | "onPropLookChange"
     | "recipeOverrides"
     | "colors"
     | "triangleGrip"
@@ -42,6 +43,7 @@
   premiumVisible={isPremiumCosmeticVisible()}
   premiumAllowed={checkPremiumCosmeticAccess().allowed}
   propLook={settings.propArtwork}
+  onPropLookChange={(propArtwork) => void updateSettings({ propArtwork })}
   recipeOverrides={settings.compositionRecipeOverrides}
   colors={settings.primaryPropColors}
   triangleGrip={settings.triangleGrip ?? DEFAULT_TRIANGLE_GRIP}

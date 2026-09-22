@@ -1,6 +1,7 @@
 <script lang="ts">
   import InstagramIcon from "$lib/shared/auth/components/icons/InstagramIcon.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import { growFade } from "$lib/shared/transitions/motion";
   import { getPostDeliveryContext } from "$lib/shared/share/context/post-delivery-context";
   import {
     countInstagramCaptionParts,
@@ -38,9 +39,11 @@
     onReconnect,
   }: Props = $props();
 
-  const { state } = getPostDeliveryContext();
-  const draft = $derived(state.draft);
-  const capability = $derived(state.capabilitySnapshot);
+  const { state: postState } = getPostDeliveryContext();
+  let reviewWidth = $state(0);
+  const compactReview = $derived(reviewWidth <= 54 * 16);
+  const draft = $derived(postState.draft);
+  const capability = $derived(postState.capabilitySnapshot);
   const eligibility = $derived(
     evaluateInstagramPublishEligibility(draft, capability)
   );
@@ -69,7 +72,11 @@
   }
 </script>
 
-<section class="review-shell" aria-label="Review Instagram post">
+<section
+  class="review-shell"
+  aria-label="Review Instagram post"
+  bind:clientWidth={reviewWidth}
+>
   <header class="review-header">
     <button class="header-action" type="button" onclick={onBack}>
       <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
@@ -95,8 +102,8 @@
         { value: "preview", label: "Preview" },
         { value: "details", label: "Post details" },
       ]}
-      value={state.mobileView}
-      onchange={state.setMobileView}
+      value={postState.mobileView}
+      onchange={postState.setMobileView}
       ariaLabel="Instagram review view"
       semantics="radiogroup"
       size="sm"
@@ -104,8 +111,13 @@
     />
   </div>
 
-  <div class="review-body" data-mobile-view={state.mobileView}>
-    <section class="preview-column" aria-label="Final media preview">
+  <div class="review-body" data-mobile-view={postState.mobileView}>
+    <section
+      class="preview-column"
+      aria-label="Final media preview"
+      inert={compactReview && postState.mobileView !== "preview"}
+      aria-hidden={compactReview && postState.mobileView !== "preview"}
+    >
       <div class="preview-toolbar">
         <span>{formatLabel}</span>
         <span class="ratio">{draft.format === "reel" ? "9:16" : "4:5"}</span>
@@ -128,7 +140,12 @@
       </button>
     </section>
 
-    <section class="details-column" aria-label="Instagram post details">
+    <section
+      class="details-column"
+      aria-label="Instagram post details"
+      inert={compactReview && postState.mobileView !== "details"}
+      aria-hidden={compactReview && postState.mobileView !== "details"}
+    >
       <div class="account-card">
         <span class="instagram-mark"><InstagramIcon /></span>
         <span class="account-copy">
@@ -156,12 +173,12 @@
           value={draft.caption}
           rows="5"
           maxlength="2200"
-          oninput={(event) => state.setCaption(event.currentTarget.value)}
+          oninput={(event) => postState.setCaption(event.currentTarget.value)}
         ></textarea>
       </div>
 
       {#if draft.format === "reel"}
-        <div class="detail-card">
+        <div class="detail-card" transition:growFade={{ axis: "y" }}>
           <div class="section-heading">
             <span>Where the Reel appears</span>
           </div>
@@ -171,7 +188,7 @@
               { value: "reels", label: "Reels only" },
             ]}
             value={draft.instagram.shareToFeed === false ? "reels" : "feed"}
-            onchange={(value) => state.setShareToFeed(value === "feed")}
+            onchange={(value) => postState.setShareToFeed(value === "feed")}
             ariaLabel="Where the Reel appears"
             semantics="radiogroup"
             size="sm"
@@ -181,7 +198,7 @@
       {/if}
 
       {#if hasAudio}
-        <div class="detail-card sound-card">
+        <div class="detail-card sound-card" transition:growFade={{ axis: "y" }}>
           <span class="detail-icon">
             <i class="fa-solid fa-volume-high" aria-hidden="true"></i>
           </span>
@@ -193,7 +210,11 @@
       {/if}
 
       {#if !eligibility.canPublishDirectly}
-        <div class="recovery-card" role="status">
+        <div
+          class="recovery-card"
+          role="status"
+          transition:growFade={{ axis: "y" }}
+        >
           <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
           <span>{directPublishMessage()}</span>
           {#if eligibility.recoveryAction === "reconnect"}
@@ -589,13 +610,40 @@
     }
 
     .review-body {
+      position: relative;
       display: block;
       overflow-y: auto;
     }
 
+    /* Keep both views mounted so changing the picker never tears down media.
+       Only the active view remains in normal flow; the fading source overlays
+       it and cannot reserve the other view's full scroll height. */
+    .preview-column,
+    .details-column {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      box-sizing: border-box;
+      transition:
+        opacity var(--transition-normal),
+        visibility 0s linear var(--duration-normal);
+    }
+
     .review-body[data-mobile-view="details"] .preview-column,
     .review-body[data-mobile-view="preview"] .details-column {
-      display: none;
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .review-body[data-mobile-view="preview"] .preview-column,
+    .review-body[data-mobile-view="details"] .details-column {
+      position: relative;
+      inset: auto;
+      visibility: visible;
+      opacity: 1;
+      pointer-events: auto;
+      transition-delay: 0s;
     }
 
     .preview-column,
@@ -765,6 +813,15 @@
 
     .delivery-actions {
       padding-top: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    @container (max-width: 54rem) {
+      .preview-column,
+      .details-column {
+        transition: none;
+      }
     }
   }
 </style>

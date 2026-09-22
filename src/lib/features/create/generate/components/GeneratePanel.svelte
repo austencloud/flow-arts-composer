@@ -46,6 +46,7 @@ Card-based architecture with integrated Generate button:
   import { uiConfigToGenerationOptions } from "../shared/utils/config-mapper";
   import type { GenerationOptions } from "../shared/domain/models/generate-models";
   import { LOOPType, Period } from "../circular/domain/models/circular-models";
+  import { handModesBlockedByLoop } from "$lib/shared/create/services/loop-type-utils";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { PropType as PropTypeEnum } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
@@ -133,11 +134,12 @@ Card-based architecture with integrated Generate button:
   );
   // Every guest gate goes straight to the auth screen — no intermediate
   // nudge; the modal's contextual copy carries the why (Austen, 2026-08-10).
-  // Category locks ask for every LOOP type; length locks are step-cap asks.
+  // Name the selected LOOP even when its minimum length is the restriction.
+  // Choosing a configuration is not an encounter with the current sequence cap.
   function openLoopGateAuth(kind: GuestLoopLockKind) {
     authDrawerState.show(
       "signup",
-      kind === "length" ? "step-cap-guest" : "loop-locked-guest"
+      kind === "length" ? "loop-step-cap-guest" : "loop-locked-guest"
     );
   }
 
@@ -165,8 +167,9 @@ Card-based architecture with integrated Generate button:
     const saved =
       source.kind === "setup"
         ? favoriteState.setups.find((setup) => setup.id === source.setupId)
-        : favoriteState.communityFavorites.find(
-            (favorite) => favorite.userId === source.userId
+        : favoriteState.communitySetups.find(
+            (setup) =>
+              setup.userId === source.userId && setup.setupId === source.setupId
           );
     if (!saved) return;
 
@@ -175,7 +178,7 @@ Card-based architecture with integrated Generate button:
       return;
     }
     if (accessTier === "guest" && saved.config.length > getMaxSteps("guest")) {
-      authDrawerState.show("signup", "step-cap-guest");
+      authDrawerState.show("signup", "setup-step-cap-guest");
       return;
     }
 
@@ -266,7 +269,7 @@ Card-based architecture with integrated Generate button:
       cur.handPathMode !== last.handPathMode ||
       cur.motionTypeFilter !== last.motionTypeFilter ||
       cur.handRelationship !== last.handRelationship ||
-      cur.handRelationshipInverted !== last.handRelationshipInverted ||
+      cur.propRelationship !== last.propRelationship ||
       cur.matchHandTurns !== last.matchHandTurns
     );
   });
@@ -363,6 +366,7 @@ Card-based architecture with integrated Generate button:
                     : "north-south"),
               },
               sequenceLength: configState.config.length,
+              handRelationship: configState.config.handRelationship,
               guestMaxLength: guestLoopMaxLength,
               onLoopDisable: () => {
                 morphGenerateCard("loop", () => panelState.closeLOOPPanel());
@@ -393,6 +397,23 @@ Card-based architecture with integrated Generate button:
                     : {}),
                 }),
             }}
+            tnd={{
+              handRelationship: configState.config.handRelationship ?? "free",
+              propRelationship: configState.config.propRelationship ?? "free",
+              matchHandTurns: configState.config.matchHandTurns ?? false,
+              level: configState.config.level,
+              blockedHandModes: handModesBlockedByLoop(
+                configState.config.loopEnabled
+                  ? configState.config.loopType
+                  : null
+              ),
+              onHandRelationshipChange: (value) =>
+                configState.updateConfig({ handRelationship: value }),
+              onPropRelationshipChange: (value) =>
+                configState.updateConfig({ propRelationship: value }),
+              onMatchHandTurnsChange: (value) =>
+                configState.updateConfig({ matchHandTurns: value }),
+            }}
             setups={{
               favoriteState,
               isSignedOut,
@@ -401,8 +422,8 @@ Card-based architecture with integrated Generate button:
               onApply: handleApplySource,
               onRequestCommunityAccount: () =>
                 authDrawerState.show("signup", "community-setups"),
-              onRequestShareAccount: () =>
-                authDrawerState.show("signup", "share-setup"),
+              onRequestSaveAccount: () =>
+                authDrawerState.show("signup", "save-setup"),
               onRequestSignIn: () =>
                 authDrawerState.show("signin", "saved-setups"),
             }}

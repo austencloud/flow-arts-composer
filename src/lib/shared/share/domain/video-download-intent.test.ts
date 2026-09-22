@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   planFileRequest,
+  pendingVideoDownloadOutcome,
   shouldDeliverPendingVideo,
   videoDownloadSettingsKey,
 } from "./video-download-intent";
@@ -45,6 +46,32 @@ describe("pending video download delivery", () => {
     expect(
       shouldDeliverPendingVideo({ ...ready, currentSourceKey: "Mandala" })
     ).toBe(false);
+  });
+
+  it("asks for a visible retry when a completed requested file became stale", () => {
+    expect(
+      pendingVideoDownloadOutcome({
+        ...ready,
+        currentSettingsKey: "2160|60|1|",
+      })
+    ).toBe("retry");
+    expect(
+      pendingVideoDownloadOutcome({
+        ...ready,
+        currentSourceKey: "Mandala",
+      })
+    ).toBe("retry");
+  });
+
+  it("keeps waiting while a changed request is still rendering", () => {
+    expect(
+      pendingVideoDownloadOutcome({
+        ...ready,
+        status: "rendering",
+        hasBlob: false,
+        currentSettingsKey: "2160|60|1|",
+      })
+    ).toBe("waiting");
   });
 
   it("invalidates a prepared file only for settings the exporter consumes", () => {

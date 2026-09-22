@@ -11,6 +11,7 @@
     compact?: boolean;
     expanded?: boolean;
     focused?: boolean;
+    wide?: boolean;
     children: Snippet<[surface: "modal" | "drawer"]>;
   }
   let {
@@ -22,6 +23,7 @@
     compact = false,
     expanded = false,
     focused = false,
+    wide = false,
     children,
   }: Props = $props();
   const headingId = $props.id();
@@ -30,10 +32,11 @@
 <!-- The native modal layer keeps editor toolbars behind sharing on phones too. -->
 <BaseModal
   open={isOpen}
-  class={`share-sheet-modal${narrow ? " share-sheet-modal--narrow" : ""}${compact ? " share-sheet-modal--compact" : ""}${expanded ? " share-sheet-modal--expanded" : ""}${focused ? " share-sheet-modal--focused" : ""}`}
+  class={`share-sheet-modal${narrow ? " share-sheet-modal--narrow" : ""}${compact ? " share-sheet-modal--compact" : ""}${expanded ? " share-sheet-modal--expanded" : ""}${focused ? " share-sheet-modal--focused" : ""}${wide ? " share-sheet-modal--wide" : ""}`}
   size={compact ? "fit" : "full"}
   position="center"
   animation="pop"
+  animateSize
   labelledBy={headingId}
   onclose={onClose}
   onclosed={onClosed}
@@ -62,10 +65,7 @@
     backdrop-filter: none;
     border: 1px solid var(--theme-stroke);
     border-radius: 1.25rem;
-    interpolate-size: allow-keywords;
-    transition:
-      width var(--transition-normal),
-      height var(--transition-normal);
+    transition: width var(--transition-normal);
   }
   :global(dialog.share-sheet-modal[data-size="full"] .modal-content-wrapper) {
     height: auto;
@@ -80,10 +80,21 @@
     overflow-y: hidden;
     overflow-x: hidden;
   }
-  :global(dialog.share-sheet-modal[data-size="full"] .modal-body > .sheet) {
+  :global(dialog.share-sheet-modal[data-size="full"] .modal-body > .crossfade),
+  :global(
+    dialog.share-sheet-modal[data-size="full"] .modal-body > .crossfade > .layer
+  ),
+  :global(
+    dialog.share-sheet-modal[data-size="full"]
+      .modal-body
+      > .crossfade
+      > .layer
+      > .sheet
+  ) {
     width: 100%;
     height: auto;
     max-height: inherit;
+    min-height: 0;
   }
   :global(dialog.base-modal.share-sheet-modal--narrow[data-size]) {
     width: min(30rem, calc(100vw - 2rem));
@@ -96,6 +107,9 @@
   }
   :global(dialog.base-modal.share-sheet-modal--focused[data-size]) {
     width: min(42rem, calc(100vw - 2rem));
+  }
+  :global(dialog.base-modal.share-sheet-modal--wide[data-size]) {
+    width: min(72rem, calc(100vw - 3rem));
   }
   :global(dialog.base-modal.share-sheet-modal--expanded[data-size]) {
     width: calc(100vw - 1rem);

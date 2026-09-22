@@ -224,6 +224,7 @@ export {
   LOOPEndPlacementSelector,
   loopEndPlacementSelector,
   determineEndPlacementForSpec,
+  determineEndPlacementsForSpec,
 } from "./targeting/LOOPEndPlacementSelector.js";
 export {
   PartialSequenceGenerator,
@@ -240,6 +241,14 @@ export {
   type ExtensionAnalysis,
   type ExtensionOptions,
 } from "./extension/SequenceExtender.js";
+
+export {
+  completeLOOPExtension,
+  isLegacyLOOPSeedValid,
+  isSupportedLegacyLOOPType,
+  type LOOPCompletionRequest,
+  type LOOPCompletionResult,
+} from "./execution/complete-loop-extension.js";
 
 export {
   extendForOrientationCycle,

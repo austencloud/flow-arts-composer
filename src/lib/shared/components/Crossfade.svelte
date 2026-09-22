@@ -48,7 +48,10 @@
 <script lang="ts">
   import { fade, type TransitionConfig } from "svelte/transition";
   import { DURATION } from "$lib/shared/transitions/transitions";
-  import { flyFade } from "$lib/shared/transitions/motion";
+  import {
+    flyFade,
+    reducedMotion as prefersReducedMotion,
+  } from "$lib/shared/transitions/motion";
   import type { Snippet } from "svelte";
 
   type Mode = "crossfade" | "swap";
@@ -90,18 +93,29 @@
     children: Snippet;
   } = $props();
 
-  let reducedMotion = $state(
-    typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  );
+  let reducedMotion = $state(prefersReducedMotion());
 
   $effect(() => {
     const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const handler = (e: MediaQueryListEvent) => {
-      reducedMotion = e.matches;
+    const handler = () => {
+      reducedMotion = prefersReducedMotion();
+      if (reducedMotion) {
+        for (const animation of box?.getAnimations({ subtree: true }) ?? []) {
+          if (animation.effect?.getTiming().iterations !== Infinity)
+            animation.finish();
+        }
+      }
     };
     mql.addEventListener("change", handler);
-    return () => mql.removeEventListener("change", handler);
+    const preferenceObserver = new MutationObserver(handler);
+    preferenceObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-motion-preference"],
+    });
+    return () => {
+      mql.removeEventListener("change", handler);
+      preferenceObserver.disconnect();
+    };
   });
 
   // Svelte's `fade` is a JS/CSS transition, so a CSS `transition: none` media
@@ -142,6 +156,15 @@
           y: 0,
         })
       : fade(node, { duration: effDuration });
+  }
+
+  function setLayerInteractive(event: Event, interactive: boolean): void {
+    const layer = event.currentTarget as HTMLElement;
+    // Outgoing controls stay painted during the fade but must stop accepting
+    // input. A reversed transition restores the returning layer immediately.
+    layer.inert = !interactive;
+    if (interactive) layer.removeAttribute("aria-hidden");
+    else layer.setAttribute("aria-hidden", "true");
   }
 
   // The box is driven off the INCOMING layer's natural height. The outgoing
@@ -216,13 +239,7 @@
     });
   }
 
-  /**
-   * Claims the currently-mounted layer. `bind:this` cannot be used here: the
-   * outgoing block's binding tears down AFTER its outro, which would null out
-   * the reference to the layer that replaced it. Clearing only when the node
-   * being destroyed is still the live one keeps the newest layer authoritative.
-   */
-  function trackLayer(node: HTMLElement) {
+  function claimLayer(node: HTMLElement): void {
     liveLayer = node;
     if (heightEnabled) {
       cancelScheduledMeasure();
@@ -231,6 +248,30 @@
       observer.observe(node);
       measure();
     }
+  }
+
+  /**
+   * The layer the current key put on screen. Svelte marks a leaving layer
+   * `inert` on the same commit that mounts or resumes the arriving one, so the
+   * one layer that is not inert is the one the user is about to see.
+   */
+  function shownLayer(): HTMLElement | null {
+    if (!box) return null;
+    for (const child of box.children) {
+      const layer = child as HTMLElement;
+      if (layer.classList.contains("layer") && !layer.inert) return layer;
+    }
+    return null;
+  }
+
+  /**
+   * Claims the currently-mounted layer. `bind:this` cannot be used here: the
+   * outgoing block's binding tears down AFTER its outro, which would null out
+   * the reference to the layer that replaced it. Clearing only when the node
+   * being destroyed is still the live one keeps the newest layer authoritative.
+   */
+  function trackLayer(node: HTMLElement) {
+    claimLayer(node);
     return {
       destroy() {
         if (liveLayer !== node) return;
@@ -251,6 +292,20 @@
     animateNextMeasure = true;
   });
 
+  // A key that returns to a layer still fading out RESUMES that layer's block
+  // instead of remounting it, so `use:trackLayer` never runs again and the box
+  // would stay tracked to the layer now leaving — frozen at its height once
+  // that layer is destroyed. This runs after the block has committed: the
+  // resumed layer is the one not inert, so claim it and ease the box back to
+  // its height on the same clock as its fade-in.
+  $effect(() => {
+    void key;
+    const shown = shownLayer();
+    if (!shown || shown === liveLayer) return;
+    if (heightEnabled) animateNextMeasure = true;
+    claimLayer(shown);
+  });
+
   $effect(() => {
     if (!heightEnabled) {
       // Releasing control has to hand the box back to content sizing, or it
@@ -263,7 +318,7 @@
       if (box) box.style.height = "";
       return;
     }
-    if (!observer && liveLayer) trackLayer(liveLayer);
+    if (!observer && liveLayer) claimLayer(liveLayer);
     return () => {
       heightAnimation?.cancel();
       heightAnimation = null;
@@ -281,7 +336,14 @@
   class:animate-height={heightEnabled}
 >
   {#key key}
-    <div class="layer" use:trackLayer in:enterLayer out:leaveLayer>
+    <div
+      class="layer"
+      use:trackLayer
+      in:enterLayer
+      out:leaveLayer
+      onintrostart={(event) => setLayerInteractive(event, true)}
+      onoutrostart={(event) => setLayerInteractive(event, false)}
+    >
       {@render children()}
     </div>
   {/key}

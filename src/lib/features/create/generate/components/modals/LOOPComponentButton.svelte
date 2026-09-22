@@ -14,6 +14,7 @@ Shows description in Quick Apply mode, compact in Build Combo mode
     isSelected = false,
     isDisabled = false,
     isLocked = false,
+    disabledReason,
     showDescription = false,
     compactOnMobile = false,
     isExpanded = false,
@@ -29,6 +30,8 @@ Shows description in Quick Apply mode, compact in Build Combo mode
     isDisabled?: boolean;
     /** Guest-gated: still clickable, but tapping routes to sign-up. */
     isLocked?: boolean;
+    /** Shown as the tooltip and spoken in the label while disabled. */
+    disabledReason?: string;
     showDescription?: boolean;
     /** Keep list detail on desktop, then use the compact grid treatment on phones. */
     compactOnMobile?: boolean;
@@ -66,10 +69,11 @@ Shows description in Quick Apply mode, compact in Build Combo mode
     class:locked={isLocked}
     onclick={onClick}
     disabled={isDisabled}
+    title={isDisabled ? disabledReason : undefined}
     aria-expanded={expandedContent ? isExpanded : undefined}
     aria-controls={expandedContent ? expandedContentId : undefined}
     aria-label="{label} - {description} - {isDisabled
-      ? 'not compatible with current selection'
+      ? (disabledReason ?? 'not compatible with current selection')
       : isLocked
         ? 'locked, sign up to unlock'
         : isSelected

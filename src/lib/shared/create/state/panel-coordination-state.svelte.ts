@@ -22,7 +22,6 @@
  */
 
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { HandRelationship } from "$lib/shared/create/domain/hand-relationship";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
 import type { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
@@ -74,6 +73,10 @@ export interface MandalaViewerSelection {
   variant: MandalaRenderOptions["show"];
   pathShape: MandalaPathShape;
 }
+
+export type PendingGenerateCardEditorHandoff =
+  | { kind: "step-editor" }
+  | { kind: "mandala"; selection: MandalaViewerSelection };
 
 const sequenceActionsPanelPersistence = createPersistenceHelper({
   key: "tka_sequence_actions_panel_open",
@@ -180,20 +183,13 @@ export interface CustomizeOverlayProps {
   onConstraintPresetChange: (v: "smooth" | "mixed" | "choppy") => void;
   onHandPathModeChange: (v: "smooth" | "mixed" | "choppy") => void;
   onMotionTypeFilterChange: (v: "no-dash" | "mixed" | "prefer-dash") => void;
-  /** Absent on surfaces that do not offer the row (public Composer demo). */
-  handRelationship?: HandRelationship;
-  handRelationshipInverted?: boolean;
-  onHandRelationshipChange?: ((v: HandRelationship) => void) | null;
-  onHandRelationshipInvertedChange?: ((v: boolean) => void) | null;
-  matchHandTurns?: boolean;
-  onMatchHandTurnsChange?: ((v: boolean) => void) | null;
   onStartEndChange: ((options: StartEndOptions) => void) | null;
   /** "Reset all" — every persisted generation setting back to first-run. */
   onResetAll: (() => void) | null;
 }
 
 /** The generate bento cards that grow into their workspace. */
-export type GenerateCardPanelId = "customize" | "loop" | "preset";
+export type GenerateCardPanelId = "customize" | "loop" | "preset" | "tnd";
 
 export interface PanelCoordinationState {
   // Choose Start picker state. The handler receives the tapped tile index:
@@ -272,11 +268,13 @@ export interface PanelCoordinationState {
   // Beat Editor Panel State (non-modal - allows click-through to pictographs)
   get isStepEditorPanelOpen(): boolean;
   get mandalaViewerSelection(): MandalaViewerSelection | null;
+  get pendingGenerateCardEditorHandoff(): PendingGenerateCardEditorHandoff | null;
 
   openStepEditorPanel(): void;
   closeStepEditorPanel(): void;
   openMandalaViewer(selection: MandalaViewerSelection): void;
   closeMandalaViewer(): void;
+  completeGenerateCardEditorHandoff(): void;
 
   // Tool Panel Dimensions (for sizing other panels)
   get toolPanelHeight(): number;
@@ -328,7 +326,7 @@ export interface PanelCoordinationState {
 
   /**
    * Which generate bento card is grown into its workspace, or null. At most
-   * one of the three (later four) is open because every open call runs
+   * one of the four is open because every open call runs
    * closeAllPanels first. ExpandedCardStage renders from this.
    */
   get openGenerateCard(): GenerateCardPanelId | null;
@@ -346,6 +344,11 @@ export interface PanelCoordinationState {
 
   openCustomizeOverlay(props: CustomizeOverlayProps): void;
   closeCustomizeOverlay(): void;
+
+  // TnD panel state (Hands, Props, Match turns)
+  get isTnDPanelOpen(): boolean;
+  openTnDPanel(): void;
+  closeTnDPanel(): void;
 
   // Duration Preview Mode State (for live preview in duration pattern drawer)
   get isDurationPreviewMode(): boolean;
@@ -476,6 +479,8 @@ export function createPanelCoordinationState(): PanelCoordinationState {
   // closing it out from under the user.
   let isStepEditorPanelOpen = $state(stepEditorPanelPersistence.load());
   let mandalaViewerSelection = $state<MandalaViewerSelection | null>(null);
+  let pendingGenerateCardEditorHandoff =
+    $state.raw<PendingGenerateCardEditorHandoff | null>(null);
 
   // Auto-save panel open states
   $effect.root(() => {
@@ -554,6 +559,9 @@ export function createPanelCoordinationState(): PanelCoordinationState {
   // Preset drawer state
   let isPresetDrawerOpen = $state(false);
 
+  // TnD panel state
+  let isTnDPanelOpen = $state(false);
+
   // Customize overlay state (Style + Rhythm + Start/End in one overlay)
   let isCustomizeOverlayOpen = $state(false);
   let customizeOverlayProps = $state<CustomizeOverlayProps | null>(null);
@@ -615,6 +623,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
     isSequenceActionsPanelOpen = false;
     isStepEditorPanelOpen = false;
     mandalaViewerSelection = null;
+    pendingGenerateCardEditorHandoff = null;
 
     isLOOPPanelOpen = false;
     loopSelectedComponents = null;
@@ -630,6 +639,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
     forgetCustomizeOverlay();
 
     isPresetDrawerOpen = false;
+    isTnDPanelOpen = false;
 
     isSequenceViewerOpen = false;
     optionAudition = null;
@@ -671,6 +681,10 @@ export function createPanelCoordinationState(): PanelCoordinationState {
 
   function closePresetDrawer() {
     isPresetDrawerOpen = false;
+  }
+
+  function closeTnDPanel() {
+    isTnDPanelOpen = false;
   }
 
   return {
@@ -912,24 +926,52 @@ export function createPanelCoordinationState(): PanelCoordinationState {
       return mandalaViewerSelection;
     },
 
+    get pendingGenerateCardEditorHandoff() {
+      return pendingGenerateCardEditorHandoff;
+    },
+
     openStepEditorPanel() {
       // Beat Editor is non-modal - it does NOT close other panels
       // This allows the user to click on pictographs while the panel is open
       // It does need the editable card, so a running preview ends here.
       dropWorkspacePlayback();
       mandalaViewerSelection = null;
+      if (
+        isCustomizeOverlayOpen ||
+        isLOOPPanelOpen ||
+        isPresetDrawerOpen ||
+        isTnDPanelOpen
+      ) {
+        pendingGenerateCardEditorHandoff = { kind: "step-editor" };
+        return;
+      }
+      pendingGenerateCardEditorHandoff = null;
       isStepEditorPanelOpen = true;
     },
 
     closeStepEditorPanel() {
       isStepEditorPanelOpen = false;
       mandalaViewerSelection = null;
+      pendingGenerateCardEditorHandoff = null;
     },
 
     openMandalaViewer(selection: MandalaViewerSelection) {
       // The mandala uses the same non-modal drawer as the beat editor. Keeping
       // the drawer mounted lets a later pictograph click swap the editor back
       // in without closing and reopening the panel.
+      if (
+        isCustomizeOverlayOpen ||
+        isLOOPPanelOpen ||
+        isPresetDrawerOpen ||
+        isTnDPanelOpen
+      ) {
+        pendingGenerateCardEditorHandoff = {
+          kind: "mandala",
+          selection,
+        };
+        return;
+      }
+      pendingGenerateCardEditorHandoff = null;
       mandalaViewerSelection = selection;
       isStepEditorPanelOpen = true;
     },
@@ -937,6 +979,17 @@ export function createPanelCoordinationState(): PanelCoordinationState {
     closeMandalaViewer() {
       mandalaViewerSelection = null;
       isStepEditorPanelOpen = false;
+      pendingGenerateCardEditorHandoff = null;
+    },
+
+    completeGenerateCardEditorHandoff() {
+      const request = pendingGenerateCardEditorHandoff;
+      pendingGenerateCardEditorHandoff = null;
+      if (!request) return;
+
+      mandalaViewerSelection =
+        request.kind === "mandala" ? request.selection : null;
+      isStepEditorPanelOpen = true;
     },
 
     // Tool Panel Dimensions
@@ -1054,6 +1107,18 @@ export function createPanelCoordinationState(): PanelCoordinationState {
 
     closePresetDrawer,
 
+    // TnD Panel Getters
+    get isTnDPanelOpen() {
+      return isTnDPanelOpen;
+    },
+
+    openTnDPanel() {
+      closeAllPanels();
+      isTnDPanelOpen = true;
+    },
+
+    closeTnDPanel,
+
     // Sequence Viewer Getters
     get isSequenceViewerOpen() {
       return isSequenceViewerOpen;
@@ -1086,6 +1151,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
         isLOOPPanelOpen ||
         isCustomizeOverlayOpen ||
         isPresetDrawerOpen ||
+        isTnDPanelOpen ||
         isSequenceViewerOpen
       );
     },
@@ -1094,6 +1160,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
       if (isCustomizeOverlayOpen) return "customize";
       if (isLOOPPanelOpen) return "loop";
       if (isPresetDrawerOpen) return "preset";
+      if (isTnDPanelOpen) return "tnd";
       return null;
     },
 
@@ -1104,6 +1171,8 @@ export function createPanelCoordinationState(): PanelCoordinationState {
         closeLOOPPanel();
       } else if (isPresetDrawerOpen) {
         closePresetDrawer();
+      } else if (isTnDPanelOpen) {
+        closeTnDPanel();
       }
     },
 

@@ -22,6 +22,7 @@
  * `lastRan` is assigned below.
  */
 import { startMorph } from "$lib/shared/transitions/results-morph";
+import { STAGGER } from "$lib/shared/transitions/transitions";
 import { countViewTransitionNameClaims } from "$lib/shared/transitions/view-transition-name-registry";
 import type { GenerateCardPanelId } from "$lib/shared/create/state/panel-coordination-state.svelte";
 
@@ -30,6 +31,7 @@ export const GENERATE_CARD_MORPH_HOSTS = [
   "customize",
   "loop",
   "preset",
+  "tnd",
 ] as const satisfies readonly GenerateCardPanelId[];
 export type GenerateCardMorphHost = GenerateCardPanelId;
 
@@ -46,6 +48,53 @@ export function generateCardMorphName(cardId: string): string {
 
 let lastRan = false;
 
+const ACTIVE_MORPH_CLASS = "generate-card-morph-active";
+
+function claimMorphLayer(host: GenerateCardMorphHost): () => void {
+  const hostClass = `generate-card-morph-${host}`;
+  document.documentElement.classList.add(ACTIVE_MORPH_CLASS, hostClass);
+
+  return () => {
+    document.documentElement.classList.remove(ACTIVE_MORPH_CLASS, hostClass);
+  };
+}
+
+interface GenerateCardMorphOptions {
+  /**
+   * Runs once the card is visually at its destination. Plain/reduced-motion
+   * paths settle on one tight state-stabilization beat; a real View Transition
+   * waits for `finished`. This is the seam for handing the shared workspace to
+   * the next surface without letting two major entrances compete for it.
+   */
+  onSettled?: () => void;
+}
+
+function schedulePlainSettlement(onSettled: () => void): void {
+  // Leave one tight choreography beat for selection-derived effects to settle.
+  // This is not visible motion; it prevents the destination drawer from being
+  // opened and then closed again inside the same reactive turn.
+  setTimeout(onSettled, STAGGER.micro);
+}
+
+function runWhenSettled(
+  transition: ViewTransition | null,
+  onSettled: (() => void) | undefined
+): void {
+  if (!onSettled) return;
+  if (!transition) {
+    // Even an instant/reduced-motion handoff waits until the initiating click
+    // has finished propagating. Opening the destination synchronously here
+    // lets later selection effects from that same click close it again before
+    // it ever paints.
+    schedulePlainSettlement(onSettled);
+    return;
+  }
+
+  // A skipped transition still completed the state mutation. Continue the
+  // handoff on either outcome so the destination panel can never get stuck.
+  void transition.finished.then(onSettled, onSettled);
+}
+
 /**
  * Open or close `host` by running `mutate` inside the card morph when one can
  * run. Returns true when a transition is carrying the change, false when the
@@ -54,16 +103,36 @@ let lastRan = false;
  */
 export function morphGenerateCard(
   host: GenerateCardMorphHost,
-  mutate: () => void
+  mutate: () => void,
+  options: GenerateCardMorphOptions = {}
 ): boolean {
   if (countViewTransitionNameClaims(generateCardMorphName(host)) === 0) {
     lastRan = false;
     mutate();
+    if (options.onSettled) schedulePlainSettlement(options.onSettled);
     return false;
   }
+
+  // All four expandable cards have named snapshots so any one of them can be
+  // the next source. During a morph, the chosen card must paint above those
+  // stationary siblings; otherwise a later card such as LOOP briefly crosses
+  // in front of the workspace growing out of Timing and direction.
+  const releaseMorphLayer = claimMorphLayer(host);
   lastRan = false;
-  const transition = startMorph(mutate);
+  let transition: ViewTransition | null;
+  try {
+    transition = startMorph(mutate);
+  } catch (error) {
+    releaseMorphLayer();
+    throw error;
+  }
   lastRan = transition !== null;
+  if (transition) {
+    void transition.finished.then(releaseMorphLayer, releaseMorphLayer);
+  } else {
+    releaseMorphLayer();
+  }
+  runWhenSettled(transition, options.onSettled);
   return lastRan;
 }
 

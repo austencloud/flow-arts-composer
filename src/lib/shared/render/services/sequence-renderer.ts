@@ -4,6 +4,7 @@ import type { SequenceExportOptions } from "../domain/models/sequence-export-opt
 import { ImageComposer } from "./image-composer";
 import type { CompositionProgressCallback, RenderCanvas } from "./types";
 import type { ImageFormatConverter } from "./image-format-converter";
+import type { CardExportTrace } from "./card-export-trace";
 
 export class SequenceRenderer {
   constructor(
@@ -15,7 +16,8 @@ export class SequenceRenderer {
     sequence: SequenceData,
     options: Partial<SequenceExportOptions> = {},
     onProgress?: CompositionProgressCallback,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    trace?: CardExportTrace
   ): Promise<RenderCanvas> {
     if (!sequence) {
       throw new Error("Sequence data is required for rendering");
@@ -36,13 +38,15 @@ export class SequenceRenderer {
             sequence,
             fullOptions,
             onProgress,
-            signal
+            signal,
+            trace
           )
         : await this.compositionService.composeSequenceImage(
             sequence,
             fullOptions,
             onProgress,
-            signal
+            signal,
+            trace
           );
 
       return canvas;
@@ -57,7 +61,8 @@ export class SequenceRenderer {
     sequence: SequenceData,
     options: Partial<SequenceExportOptions> = {},
     onProgress?: CompositionProgressCallback,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    trace?: CardExportTrace
   ): Promise<Blob> {
     if (!sequence) {
       throw new Error("Sequence data is required for rendering");
@@ -70,27 +75,45 @@ export class SequenceRenderer {
         sequence,
         fullOptions,
         onProgress,
-        signal
+        signal,
+        trace
       );
 
+      const endEncoding = trace?.start("png-encoding");
       let blob: Blob;
       if (canvas instanceof OffscreenCanvas) {
         const fmt = fullOptions.format.toLowerCase();
-        const mimeType = fmt === "jpeg" ? "image/jpeg" : fmt === "webp" ? "image/webp" : "image/png";
-        blob = await canvas.convertToBlob({ type: mimeType, quality: fullOptions.quality });
-      } else {
-        blob = await this.formatService.canvasToBlob(canvas as HTMLCanvasElement, {
-          format: fullOptions.format.toLowerCase() as "png" | "jpeg" | "webp",
+        const mimeType =
+          fmt === "jpeg"
+            ? "image/jpeg"
+            : fmt === "webp"
+              ? "image/webp"
+              : "image/png";
+        blob = await canvas.convertToBlob({
+          type: mimeType,
           quality: fullOptions.quality,
-          ...(fullOptions.width !== undefined
-            ? { width: fullOptions.width }
-            : {}),
-          ...(fullOptions.height !== undefined
-            ? { height: fullOptions.height }
-            : {}),
         });
+      } else {
+        blob = await this.formatService.canvasToBlob(
+          canvas as HTMLCanvasElement,
+          {
+            format: fullOptions.format.toLowerCase() as "png" | "jpeg" | "webp",
+            quality: fullOptions.quality,
+            ...(fullOptions.width !== undefined
+              ? { width: fullOptions.width }
+              : {}),
+            ...(fullOptions.height !== undefined
+              ? { height: fullOptions.height }
+              : {}),
+          }
+        );
       }
 
+      endEncoding?.({
+        bytes: blob.size,
+        width: canvas.width,
+        height: canvas.height,
+      });
       return blob;
     } catch (error) {
       throw new Error(
@@ -109,9 +132,9 @@ export class SequenceRenderer {
 
     try {
       const previewOptions = this.mergeWithDefaults({
-        stepScale: options.stepScale ?? 0.5, 
-        quality: options.quality ?? 0.8, 
-        ...options, 
+        stepScale: options.stepScale ?? 0.5,
+        quality: options.quality ?? 0.8,
+        ...options,
       });
 
       const canvas = await this.renderSequenceToCanvas(
@@ -121,8 +144,16 @@ export class SequenceRenderer {
 
       if (canvas instanceof OffscreenCanvas) {
         const fmt = previewOptions.format.toLowerCase();
-        const mimeType = fmt === "jpeg" ? "image/jpeg" : fmt === "webp" ? "image/webp" : "image/png";
-        const blob = await canvas.convertToBlob({ type: mimeType, quality: previewOptions.quality });
+        const mimeType =
+          fmt === "jpeg"
+            ? "image/jpeg"
+            : fmt === "webp"
+              ? "image/webp"
+              : "image/png";
+        const blob = await canvas.convertToBlob({
+          type: mimeType,
+          quality: previewOptions.quality,
+        });
         return URL.createObjectURL(blob);
       }
       return this.formatService.canvasToDataURL(canvas as HTMLCanvasElement, {
@@ -185,7 +216,7 @@ export class SequenceRenderer {
 
       stepScale: 1.0,
       stepSize: getBaseBeatSize(),
-      margin: 0, 
+      margin: 0,
 
       rightVisible: true,
       leftVisible: true,

@@ -5,6 +5,50 @@ wholesale. Each row names the behavior owner. Verify the path in current code
 before relying on it. Add a row only for shared behavior or an intentional
 keep-separate decision, not for every component.
 
+LOOP extension completion lives in
+`packages/sequence-engine/src/loop/execution/complete-loop-extension.ts`.
+Searches: extend sequence, LOOP execution, seed admission, orientation closure,
+minimal loop, quartered. `completeLOOPExtension` owns immutable seed validation,
+structural execution, closure, and derived-pass reduction;
+`isLegacyLOOPSeedValid` supplies the app's placement admission rule. App and MCP
+adapters preserve their presentation fields and recover letters. Explicit
+generation specs and QR recipe expansion retain their engine structural path;
+they must not inherit extension-only reduction or legacy translation. See
+`docs/architecture/loop-execution.md` for the compatibility contract.
+
+Isolation pose teaching extends `/test/grip-lab` and `ContactIsolationPerformer`.
+Searches: negative space, isolation keyframe, pose handle, torso turn, elbow
+route, tip drift. `shared/3d/performers/isolation-keyframes.ts` owns the cyclic
+smoothstep sampling extracted from the negative-space reach page; that page
+and `routes/test/grip-lab/isolation-teaching.ts` both consume it. The latter
+owns bounded teaching channels and URL serialization. `PoseHandles` composes
+Three.js `TransformControls` with semantic proxy objects, never animated bones.
+Its native lifecycle bypasses the extras wrapper: that wrapper's reactive
+attach/change feedback detached a handle mid-drag and froze pose editing.
+Only native `objectChange` events author poses; raycasting and gizmos remain
+owned by Three.js. `AuthoredContactPose` in the scene-3d patch
+extends the existing strict contact animator with opt-in body inputs.
+The production `collision/stance-yaw-track.ts` remains the automatic anticipatory
+stance owner; it does not author these user-taught poses. This lab intentionally
+eases to rest at each taught pose instead of choosing anticipation itself.
+
+Grip Lab's `KeyframeTimeline.svelte` presents these whole-pose keys at their
+actual phase and plots the same shared lean sampler. It extends the existing
+`contact-inspection-state.svelte.ts` owner for add, delete, retime, undo/redo,
+and previous/next keyframe selection;
+it does not own another animation clock. Searches: timeline, keyframe,
+ScrubbableNumber, unified playback. `UnifiedTimeline` owns sequence playback,
+not authored pose timing; the lab retains its existing `TransportControls`
+and composes `PanelButton` and `ScrubbableNumber` for keyframe actions and
+retiming. Closely spaced markers use separate rows so each remains selectable.
+Grip Lab shortcuts compose `KeyboardShortcutManager`, `ShortcutRegistry`,
+`registerEditHistoryShortcuts`, and `EditHistoryShortcutBridge`. Searches:
+hotkeys, keyboard deletion, redo, editable focus. The test route has no app
+shortcut coordinator, so `GripLabShortcuts.svelte` owns a page-lifetime registry
+and disposes it on navigation. `grip-lab-shortcuts.ts` supplies lab actions and
+reuses shared editable/widget/layer target guards. Help uses the same binding
+definitions with the shared `Drawer` and `KeyboardKeyDisplay` primitives.
+
 Sequence sharing extends `shared/share/components/PostShareSheet.svelte`.
 Read `docs/architecture/sharing-export-experience.md` for the retained research,
 entry-context decisions, browser constraints, and acceptance checks.
@@ -34,11 +78,27 @@ same recipes. Navigation reads the existing app settings for both hands,
 chirality and colors. Drawer activation, haptics and navigation geometry keep
 their existing owners.
 
+Prop selection and appearance use
+`shared/settings/components/tabs/prop-type/PropGrid.svelte` for the gallery,
+family drill-down, Back/Escape navigation, and animated decision screens.
+`BentoPropGrid.svelte` connects that presentation to account settings;
+`PropSelectionSheet.svelte` provides the bounded Change Prop drawer.
+Searches: prop look, model artwork, prop variants, Change Prop, fan styles.
+`PropLookPicker.svelte` composes `PropBuildPicker.svelte` for captured model
+versus pictograph artwork. `FanStyleOptionsCore.svelte` composes the existing
+`FanAppearancePicker.svelte` for fan builds and covers. The effect tuner and
+viewer reuse this gallery; `ScenePropPicker.svelte` adds scene-specific finish
+controls. Extend these owners instead of appending another appearance picker
+or creating a separate variant catalogue.
+
 Hand identity colors reuse `packages/render-composition/src/hand-colors.ts` for
 cross-runtime normalization and `mandala-palette.ts` for overlap blending.
 `viewer-custom-colors.ts` retains the app-facing compatibility API. Searches: primary prop colors,
-hand-color key, mandala overlap, start-placement legend. The key's geometry is
-`calculateHandColorKeyLayout` in `packages/render-core`. The user toggle is the
+hand-color key, mandala overlap, start-placement legend. `packages/render-core`
+owns the hand key's geometry plus its shared Canvas painter and standalone SVG
+serialization (`calculateHandColorKeyLayout`, `drawHandColorKey`, and
+`renderHandColorKeySvg`); callers supply their resolved colors and canvas context.
+The user toggle is the
 `handColorKey` glyph in `VisibilityStateManager` (export panel `Hand key` chip),
 carried as `showHandColorKey` through `PreviewCellRenderOptions`,
 `LayerRenderOptions` and `visibilityOverrides`. `PictographRenderer`
@@ -47,7 +107,10 @@ the rasterized step-0 cell for card fronts, exports and thumbnails through
 `drawHandColorKey`, and the MCP `StandaloneRenderer` draws it for
 `generate_pictograph` and the sequence image start cell, so every surface
 bakes in the same key.
-The prop timing-and-direction glyph (`propTndGlyph` visibility key, `showPropTnD` render flag, `Prop TnD` chip, default off) reuses the same element art as the hand glyph but sits in the top-right slot. `derivePropElementalTypeForStep` in `shape-matrix/domain/prop-relationship.ts` classifies one step's props (null for a start position, float, or unequal turn rates); `getElementalGlyphBox` in `elemental-glyph-layout.ts` owns the slot geometry; `ElementalGlyph` (`corner="top-right"`) draws it in the DOM, `drawPropElementalGlyph` in `canvas-2d-glyph-renderer.ts` draws it for card fronts and exports, and the MCP `StandaloneRenderer` draws it through `renderPropTnDGlyph` under the `showPropTnD` option. The 2D animation canvas draws it in `GlyphOverlay` behind the animation engine's own `propElementalGlyph` setting ("Prop TnD" in both animation display panels).
+The prop timing-and-direction glyph (`propTndGlyph` visibility key, `showPropTnD` render flag, `Prop TnD` chip, default off) reuses the same element art as the hand glyph but sits in the top-right slot. `derivePropElementalTypeForStep` in `shape-matrix/domain/prop-relationship.ts` classifies one step's props (null for a start position, float, or unequal turn rates) by delegating the bearings, the phase rule and the timing bands to the engine's `classifyPropRelationship` in `packages/sequence-engine/src/generation/prop-relationship.ts`, so the generator's prop constraint and every glyph agree; `getElementalGlyphBox` in `elemental-glyph-layout.ts` owns the slot geometry; `ElementalGlyph` (`corner="top-right"`) draws it in the DOM, `drawPropElementalGlyph` in `canvas-2d-glyph-renderer.ts` draws it for card fronts and exports, and the MCP `StandaloneRenderer` draws it through `renderPropTnDGlyph` under the `showPropTnD` option. The 2D animation canvas draws it in `GlyphOverlay` behind the animation engine's own `propElementalGlyph` setting ("Prop TnD" in both animation display panels).
+
+Timing and direction as a generator setting lives on the Generate bento's TnD card. `shared/create/domain/hand-relationship.ts` owns the vocabulary (`TnDSelection` is `"free"` or a `VtgMode`, `describeTnDSelection`, `handModeToEngine`, `propModeToEngine`); `features/choreo-card/components/TnDModeGrid.svelte` is the one 3x2 mode picker (the Fuse picker wraps it); `features/create/generate/components/cards/TnDPanel.svelte` and `TnDCard.svelte` are the workspace and the card; `tndLoopCompatibility` and `handModesBlockedByLoop` in `shared/create/services/loop-type-utils.ts` own the cross-disabling between a hand mode and a LOOP. Searches: hand relationship, prop relationship, TnD card, together same, quarter opposite, match turns. Do not add a second mode grid or a second compatibility table.
+
 `ChoreoCard` resolves its palette once for cells and `CardGridLayout` mandalas.
 Animation frame parameters carry the same hand pair independently of effect
 styling, and `mandala-guide-painter.ts` derives overlap from its actual path
@@ -147,7 +210,7 @@ canvas, shared inspector, shared Choreo Card, shared playback bar, live handoff.
 | scene boot, scene switch, persistent worker renderer, poster handoff, shader warmup, GLB prefetch                                   | `shared/3d/worker-renderer/` owns the persistent production worker for all ten environments; `shared/3d/scene-boot/` owns legacy main-thread boot (Record Scene); `shared/3d/rendering/viewer-lighting-rig.ts` owns viewer lighting; environment worlds under `shared/3d/environments/worlds/` stay renderer-neutral with thin Svelte and worker adapters                                                                                                                                                                                                                                                                  |
 | filter, chip, pill, toggle row, segmented selector                                                                                  | `FilterChipBase` for independent toggles; `SegmentedControl` for exactly-one selection; see `.claude/rules/chip-primitives.md`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | crossfade, keyed swap, canvas handoff, animated height                                                                              | `shared/components/Crossfade.svelte` for cheap keyed content; `shared/components/DualSourceCrossfade.svelte` for heavy or stateful sources (`clip={false}` preserves stage-owned overflow controls); see `.claude/rules/crossfade-primitive.md`                                                                                                                                                                                                                                                                                                                                                                            |
-| layout motion, reflow, panel presence, reorder, FLIP                                                                                | `shared/transitions/motion.ts`, `shared/panels/PanelGroup.svelte`, Svelte `animate:flip` with `flipDuration()`, and `shared/transitions/layout-flip.ts`; see `.claude/rules/no-layout-shift.md`                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| layout motion, reflow, panel presence, reorder, FLIP, intrinsic modal height                                                        | `shared/transitions/motion.ts` (`createIntrinsicHeightMotion` through `BaseModal.animateSize` for content-sized dialogs), `shared/panels/PanelGroup.svelte`, Svelte `animate:flip` with `flipDuration()`, and `shared/transitions/layout-flip.ts`; see `.claude/rules/no-layout-shift.md`                                                                                                                                                                                                                                                                                                                                  |
 | step grid, pictograph preview swap, visual slot identity, difficulty and LOOP metadata                                              | `features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte` owns document-vs-slot identity; `SequenceMetadataRail.svelte` owns compact difficulty and LOOP indicators                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | Choreo Card image export, MCP sequence image, renderer profile, packaged glyph assets                                               | `packages/render-composition/src/sequence-card-pipeline.ts` owns card composition and `COMPOSER_CARD_EXPORT_PROFILE_V1`. Composer and both MCP adapters consume that profile. `static/images/letters_trimmed/` owns TKA glyph artwork; `mcp-server-pkg/scripts/sync-card-assets.mjs` generates the publishable package copy during builds. Extend these owners instead of copying layout logic, defaults, or glyph files.                                                                                                                                                                                                  |
 | BPM, tempo, tap tempo, speed preset                                                                                                 | `shared/animation-engine/domain/tempo-behavior.ts` and `shared/animation-engine/domain/constants/timing.ts`; presentations are `BpmChips.svelte` and `TempoControl.svelte`                                                                                                                                                                                                                                                                                                                                                                                                                                                 |

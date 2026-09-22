@@ -19,6 +19,7 @@
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
   import ShapeMatrixGrid from "$lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte";
   import ShapeMatrixMandalaArt from "$lib/shared/shape-matrix/components/ShapeMatrixMandalaArt.svelte";
+  import DifficultyBadge from "$lib/shared/components/DifficultyBadge.svelte";
   import {
     CLUB_ARTWORK_PAINTER,
     headerArtworkSrc,
@@ -42,6 +43,10 @@
     type ShapePathStyle,
   } from "$lib/shared/shape-matrix/domain/flower-signature";
   import { matrixTurnsForLevel } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
+  import {
+    SHAPE_MATRIX_LEVELS,
+    SHAPE_MATRIX_LEVEL_DESCRIPTIONS,
+  } from "$lib/shared/shape-matrix/app/shape-matrix-levels";
   import {
     levelForTurnValue,
     levelForTurns,
@@ -91,6 +96,16 @@
     pro: turns === "fl" ? null : rotating(turns as number, "pro"),
     anti: turns === "fl" ? null : rotating(turns as number, "anti"),
   }));
+
+  /* The ladder groups by level, because that is the order a reader meets
+     these turn values in: each level opens a set of new ratios on top of the
+     ones below it. Names and blurbs come from the level table the matrix
+     selector reads, so the page and the selector cannot disagree. */
+  const levelGroups = SHAPE_MATRIX_LEVELS.map((level) => ({
+    level,
+    ...SHAPE_MATRIX_LEVEL_DESCRIPTIONS[level],
+    rows: ladder.filter((row) => row.level === level),
+  })).filter((group) => group.rows.length > 0);
 
   const example = { pro: rotating(1, "pro"), anti: rotating(1, "anti") };
 
@@ -186,15 +201,16 @@
           motion already carries.
         </p>
         <p>
-          Lorq Nichols, who publishes as <a
+          Three ratios carry most of the vocabulary. Lorq Nichols, who publishes
+          as <a
             class="external"
             href={SPIN_SCIENCE_URL}
             target="_blank"
             rel="noopener noreferrer"
             >Spin Science<span class="sr-only"> (opens in a new tab)</span></a
-          >, built the {ORIGINAL_SHAPE_MATRIX_NAME} from three of these ratios: 1:1,
-          1:3, and 1:5. The {SHAPE_ENGINE_SHORT_NAME} generates the same pairings
-          and carries the construction through the rest of the turn ladder.
+          >, built the {ORIGINAL_SHAPE_MATRIX_NAME} from 1:1, 1:3, and 1:5. The same
+          construction keeps working the rest of the way up the turn ladder, which
+          is what the tables below lay out.
         </p>
         {#if loadError}
           <p class="notice error" role="alert">
@@ -264,85 +280,108 @@
     </div>
 
     <section class="ladder" aria-labelledby="ladder-heading">
-      <div class="ladder-copy">
-        <h2 id="ladder-heading">Ratios and turns</h2>
-        <p>
-          Every turn value the Kinetic Alphabet carries, the ratio that names
-          it, and the two flowers one hand draws at that ratio.
-        </p>
-        <p>
-          Level 1 uses 0 turns only. Level 2 adds whole turns. Level 3 adds half
-          turns and Float. Level 4 adds quarter turns, including the negative
-          quarter the engine shows at 2:1.
-        </p>
-        <p>
-          Half and quarter turns reduce to ratios with two hand cycles. Those
-          patterns need two circles of the hand before the prop returns to its
-          starting angle.
-        </p>
-      </div>
+      <!-- The intro and the four level groups share one flow, so a wide band
+           balances them into columns together instead of parking the prose
+           beside a stack twice its height. -->
+      <div class="ladder-flow">
+        <div class="ladder-copy">
+          <h2 id="ladder-heading">Ratios and turns</h2>
+          <p>
+            Every turn value the Kinetic Alphabet carries, the ratio that names
+            it, and the two flowers one hand draws at that ratio. The groups are
+            the four levels, and each one opens the ratios listed under it on
+            top of everything the levels before it already allow.
+          </p>
+          <p>
+            Half and quarter turns reduce to ratios with two hand cycles. Those
+            patterns need two circles of the hand before the prop returns to its
+            starting angle. At 2:1 the hand circles twice for a single prop
+            rotation, which is slower than the hand and counts as a quarter turn
+            backwards.
+          </p>
+          <p class="ladder-note">
+            Tinted rows are the three ratios of the original matrix.
+          </p>
+        </div>
 
-      <div class="ladder-table-scroll">
-        <table class="ladder-table">
-          <caption>
-            The turn ladder, Float through three turns. Tinted rows are the
-            three ratios of the original matrix.
-          </caption>
-          <thead>
-            <tr>
-              <th scope="col">Ratio</th>
-              <th scope="col">Turns</th>
-              <th scope="col">Level</th>
-              <th scope="col">Prospin</th>
-              <th scope="col">Antispin</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each ladder as row (row.turnLabel)}
-              <tr class:family-row={row.family}>
-                <th scope="row" class="ratio-cell">{row.ratio}</th>
-                <td class="num">{row.turnLabel}</td>
-                <td class="num level">L{row.level}</td>
-                {#if row.pro && row.anti}
-                  <td class="style">
-                    <span class="still">
-                      <ShapeMatrixMandalaArt
-                        paint={paintFlower(row.pro)}
-                        artKey={flowerKey(row.pro)}
-                        alt={flowerLabel(row.pro)}
-                      />
-                    </span>
-                    <span class="petals">{petalWord(row.pro.petals)}</span>
-                  </td>
-                  <td class="style">
-                    <span class="still">
-                      <ShapeMatrixMandalaArt
-                        paint={paintFlower(row.anti)}
-                        artKey={flowerKey(row.anti)}
-                        alt={flowerLabel(row.anti)}
-                      />
-                    </span>
-                    <span class="petals">{petalWord(row.anti.petals)}</span>
-                  </td>
-                {:else}
-                  <td class="style float" colspan="2">
-                    <span class="still">
-                      <ShapeMatrixMandalaArt
-                        paint={paintFlower(floatFlower)}
-                        artKey={flowerKey(floatFlower)}
-                        alt={flowerLabel(floatFlower)}
-                      />
-                    </span>
-                    <span class="petals">
-                      No spin direction. The prop holds one angle while the hand
-                      circles.
-                    </span>
-                  </td>
-                {/if}
-              </tr>
-            {/each}
-          </tbody>
-        </table>
+        {#each levelGroups as group (group.level)}
+          <section
+            class="level-group"
+            aria-labelledby={`level-${group.level}-heading`}
+          >
+            <header class="level-head">
+              <DifficultyBadge level={group.level} size="2rem" />
+              <span class="level-title">
+                <span id={`level-${group.level}-heading`} class="level-name">
+                  Level {group.level}, {group.name}
+                </span>
+                <span class="level-blurb">{group.blurb}</span>
+              </span>
+            </header>
+
+            <div class="ladder-table-scroll">
+              <table class="ladder-table">
+                <caption class="sr-only">
+                  Level {group.level} ratios, turns, and the flowers they draw
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Ratio</th>
+                    <th scope="col">Turns</th>
+                    <th scope="col">Prospin</th>
+                    <th scope="col">Antispin</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {#each group.rows as row (row.turnLabel)}
+                    <tr class:family-row={row.family}>
+                      <th scope="row" class="ratio-cell">{row.ratio}</th>
+                      <td class="num">{row.turnLabel}</td>
+                      {#if row.pro && row.anti}
+                        <td class="style">
+                          <span class="still">
+                            <ShapeMatrixMandalaArt
+                              paint={paintFlower(row.pro)}
+                              artKey={flowerKey(row.pro)}
+                              alt={flowerLabel(row.pro)}
+                            />
+                          </span>
+                          <span class="petals">{petalWord(row.pro.petals)}</span
+                          >
+                        </td>
+                        <td class="style">
+                          <span class="still">
+                            <ShapeMatrixMandalaArt
+                              paint={paintFlower(row.anti)}
+                              artKey={flowerKey(row.anti)}
+                              alt={flowerLabel(row.anti)}
+                            />
+                          </span>
+                          <span class="petals"
+                            >{petalWord(row.anti.petals)}</span
+                          >
+                        </td>
+                      {:else}
+                        <td class="style float" colspan="2">
+                          <span class="still">
+                            <ShapeMatrixMandalaArt
+                              paint={paintFlower(floatFlower)}
+                              artKey={flowerKey(floatFlower)}
+                              alt={flowerLabel(floatFlower)}
+                            />
+                          </span>
+                          <span class="petals">
+                            Holds one angle while the hand circles.
+                          </span>
+                        </td>
+                      {/if}
+                    </tr>
+                  {/each}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        {/each}
       </div>
     </section>
 
@@ -351,11 +390,11 @@
         <h2 id="twelve-heading">The original twelve</h2>
         <p>
           Nichols took four even petaled driving styles from each family, which
-          gives twelve shapes for one hand. The {SHAPE_ENGINE_SHORT_NAME} reaches
-          the same twelve from its own axis: three ratios, prospin and antispin, and
-          the two starting orientations named in and out. A start pointing in puts
-          the prop toward the center of the hand path, a start pointing out puts it
-          away, and that choice moves where the figure sits.
+          gives twelve shapes for one hand. Three ratios, two spin directions,
+          and two starting orientations reach the same twelve: prospin or
+          antispin, started in or started out. A start pointing in puts the prop
+          toward the center of the hand path, a start pointing out puts it away,
+          and that choice moves where the figure sits.
         </p>
         <p>
           The 1:1 prospin pair shows what the start does most plainly. Starting
@@ -405,14 +444,13 @@
         <h2 id="pairings-heading">The 144 pairings</h2>
         <p>
           One left hand shape over one right hand shape makes a cell. Twelve
-          shapes on each axis is 144 cells. The grid here is the engine's own
-          matrix restricted to the three original ratios, drawn by the same
-          painter the {SHAPE_ENGINE_SHORT_NAME} animates. Blue rows are the left hand
-          and red columns are the right hand, so a cell shows both paths at once.
+          shapes on each axis is 144 cells, and that is the whole matrix at the
+          three original ratios. Blue rows are the left hand and red columns are
+          the right hand, so a cell shows both paths at once.
         </p>
         <p>
-          Choosing a cell opens that pairing in the engine. With a keyboard, the
-          arrow keys move between cells.
+          Choosing a cell opens that pairing in the {SHAPE_ENGINE_SHORT_NAME},
+          where it animates. With a keyboard, the arrow keys move between cells.
         </p>
         <p class="scroll-hint">
           The grid is wider than this screen. Slide it sideways to reach every
@@ -443,12 +481,11 @@
       <section class="beyond" aria-labelledby="beyond-heading">
         <h2 id="beyond-heading">Past the original twelve</h2>
         <p>
-          The engine keeps the row and column pairing and widens the axes.
-          Levels 3 and 4 add the half turn, quarter turn, and Float rows from
-          the table above, and each axis picks its band on its own, so the two
-          hands do not have to sit in the same family. The Theory Matrix sets
-          the level system aside and pairs any two whole number ratios up to 15
-          on each side.
+          The pairing does not stop at three ratios. Levels 3 and 4 bring in the
+          half turn, quarter turn, and Float rows from the tables above, and
+          each hand picks its ratio on its own, so the two do not have to sit in
+          the same family. Past the levels entirely, any two whole number ratios
+          up to 15 on each side pair the same way.
         </p>
       </section>
 
@@ -636,17 +673,53 @@
     border-top: 1px solid var(--rule);
   }
 
+  /* Until the band can carry columns, the ladder is one stack and the intro
+     keeps a reading measure. */
+  .ladder-flow {
+    display: grid;
+    gap: clamp(1.5rem, 2.5vw, 2.25rem);
+  }
+
+  .ladder-copy {
+    max-inline-size: 42rem;
+  }
+
+  /* Nothing in the flow may be cut in half by a column break: a group keeps
+     its heading with its table, and a paragraph stays whole. */
+  .ladder-copy,
+  .level-group {
+    break-inside: avoid;
+  }
+
+  .ladder-copy p {
+    break-inside: avoid;
+  }
+
   @media (min-width: 62rem) {
     .reading {
       grid-template-columns: minmax(0, 1fr) minmax(20rem, 0.72fr);
       align-items: start;
     }
 
-    /* The ladder carries the page's densest information, so it takes the
-       larger share of the band. */
-    .ladder {
-      grid-template-columns: minmax(17rem, 0.5fr) minmax(0, 1fr);
-      align-items: start;
+    /* As soon as the band can hold two columns the whole ladder flows into
+       them, intro included. The browser balances the column heights, so the
+       four groups land wherever they even out rather than where a hard coded
+       split puts them. */
+    .ladder-flow {
+      display: block;
+      columns: 2;
+      column-gap: var(--gutter);
+    }
+
+    /* Block layout drops the grid gap, so the blocks carry their own. */
+    .ladder-flow > *:not(:last-child) {
+      margin-block-end: clamp(1.5rem, 2.5vw, 2.25rem);
+    }
+
+    /* The column width is the measure now, for the prose as well as the
+       tables, so neither leaves a ragged strip down its right side. */
+    .ladder-copy {
+      max-inline-size: none;
     }
   }
 
@@ -738,15 +811,61 @@
     text-align: center;
   }
 
-  /* The ladder. The table hugs its content and caps at a reading width, so on
-     a wide band the flowers grow instead of the gaps between them. */
+  /* One level, its badge, and the ratios it opens. Its width is whatever the
+     column gives it, so the cells never stretch into an empty band. */
+  .level-group {
+    display: grid;
+    gap: 0.6rem;
+  }
+
+  /* One column: a tablet's full width would stretch four columns of cells
+     across a band far wider than they need, so the table keeps a cap of its
+     own. Above this the column it sits in is already the cap. */
+  @media (max-width: 61.99rem) {
+    .level-group {
+      max-inline-size: 44rem;
+    }
+  }
+
+  /* The badge is the same numeral the cards carry, so a level reads the same
+     here as it does on a deck. */
+  .level-head {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+  }
+
+  .level-title {
+    display: grid;
+    gap: 0.1rem;
+    min-inline-size: 0;
+  }
+
+  .level-name {
+    color: var(--ink);
+    font-size: 1.02rem;
+    font-weight: 660;
+    line-height: 1.2;
+  }
+
+  .level-blurb {
+    color: var(--ink-faint);
+    font-size: var(--font-size-min, 0.875rem);
+    line-height: 1.3;
+  }
+
   .ladder-table-scroll {
+    container-type: inline-size;
     inline-size: 100%;
-    max-inline-size: 60rem;
     overflow-x: auto;
     border: 1px solid var(--rule);
     border-radius: 14px;
     background: var(--surface);
+  }
+
+  .ladder-note {
+    color: var(--ink-faint);
+    font-size: var(--font-size-min, 0.875rem);
   }
 
   .ladder-table {
@@ -754,14 +873,6 @@
     width: 100%;
     border-collapse: collapse;
     font-variant-numeric: tabular-nums;
-  }
-
-  .ladder-table caption {
-    caption-side: bottom;
-    padding: 0.75rem 0.9rem 0.85rem;
-    color: var(--ink-faint);
-    font-size: var(--font-size-compact, 0.78rem);
-    text-align: left;
   }
 
   .ladder-table th,
@@ -786,8 +897,8 @@
     background: color-mix(in srgb, var(--accent) 9%, transparent);
   }
 
-  /* The three label columns shrink to their words; the two style columns
-     split whatever is left, evenly. */
+  /* The two label columns shrink to their words; the two style columns split
+     whatever is left, evenly. */
   .ratio-cell,
   .ladder-table .num {
     width: 1%;
@@ -802,10 +913,6 @@
 
   .ladder-table .num {
     color: var(--ink-dim);
-  }
-
-  .ladder-table .level {
-    color: var(--ink-faint);
   }
 
   /* Flower and its count read as one unit: the still first, the words beside
@@ -837,16 +944,24 @@
     white-space: normal;
   }
 
-  /* At phone widths the count sits under its flower so five columns fit in
-     the reading column without a sideways scroll. */
-  @media (max-width: 30rem) {
+  /* When the stack is too narrow to carry a flower and its count on one
+     line, the count moves under the flower. The stack is the container, so
+     the two halves always agree no matter what the viewport is doing. */
+  @container (max-width: 32rem) {
     .ladder-table th,
     .ladder-table td {
       padding: 0.3rem 0.35rem;
     }
 
     .ladder-table {
-      --still-size: 2.25rem;
+      --still-size: 2.75rem;
+    }
+
+    /* The two flower columns center their contents here, so their headings
+       center with them. */
+    .ladder-table thead th:nth-child(3),
+    .ladder-table thead th:nth-child(4) {
+      text-align: center;
     }
 
     .ladder-table .style .still {
@@ -861,14 +976,9 @@
       text-align: center;
     }
 
-    .ladder-table .float .still {
-      display: inline-block;
-      margin: 0 0.6rem 0 0;
-    }
-
+    /* Float reads the same way as the rest: mark on top, words under it. */
     .ladder-table .float .petals {
-      display: inline-block;
-      text-align: left;
+      margin-inline: auto;
     }
 
     .ratio-cell {
@@ -1138,24 +1248,19 @@
       text-align: center;
     }
 
-    .ladder,
     .twelve {
       grid-template-columns: minmax(0, var(--copy)) minmax(0, 1fr);
       align-items: start;
     }
 
-    .ladder-table-scroll {
-      max-inline-size: none;
+    /* Wide enough that the five columns can carry a larger drawing. */
+    .ladder-table {
+      --still-size: 4.25rem;
     }
 
-    .ladder-table .float .petals {
-      max-inline-size: 40rem;
-    }
-
-    /* The table and the matrix run taller than their prose. Pinning the
-       prose under the site header keeps it beside the rows it describes
-       instead of leaving a blank column once they scroll away. */
-    .ladder-copy,
+    /* The matrix runs taller than its prose. Pinning the prose under the
+       site header keeps it beside the grid it describes instead of leaving
+       a blank column once the grid scrolls away. */
     .pairings-copy {
       position: sticky;
       top: calc(64px + 1.5rem);
@@ -1175,6 +1280,14 @@
     .sources {
       padding-top: 0;
       border-top: 0;
+    }
+  }
+
+  /* Widest tier: the band can hold the prose and both stacks on one line
+     and still leave each stack the width its five columns need. */
+  @media (min-width: 128rem) {
+    .ladder-flow {
+      columns: 3;
     }
   }
 </style>

@@ -8,6 +8,8 @@ const mocks = vi.hoisted(() => {
   }> = [];
   return {
     pending,
+    forceLazyResolution: false,
+    lazyOrchestrator: null as Promise<unknown> | null,
     cancelExport: vi.fn(),
     executeExport: vi.fn(
       (
@@ -24,11 +26,14 @@ const mocks = vi.hoisted(() => {
 });
 
 vi.mock("$lib/shared/animation-engine/get-video-export-orchestrator", () => ({
-  tryGetVideoExportOrchestrator: () => ({
-    executeExport: mocks.executeExport,
-    cancelExport: mocks.cancelExport,
-  }),
-  ensureVideoExportOrchestrator: vi.fn(),
+  tryGetVideoExportOrchestrator: () =>
+    mocks.forceLazyResolution
+      ? null
+      : {
+          executeExport: mocks.executeExport,
+          cancelExport: mocks.cancelExport,
+        },
+  ensureVideoExportOrchestrator: () => mocks.lazyOrchestrator,
 }));
 vi.mock("$lib/shared/render/get-sequence-renderer", () => ({
   getSequenceRenderer: vi.fn(),
@@ -70,6 +75,8 @@ describe("SequenceModalExporter cancellation races", () => {
   beforeEach(() => {
     mocks.pending.length = 0;
     vi.clearAllMocks();
+    mocks.forceLazyResolution = false;
+    mocks.lazyOrchestrator = null;
     let createdUrl = 0;
     vi.stubGlobal("URL", {
       createObjectURL: vi.fn(() => `blob:export-${++createdUrl}`),
@@ -120,6 +127,31 @@ describe("SequenceModalExporter cancellation races", () => {
 
     expect(exporter.state.previewBlobUrl).toBe("blob:export-1");
     expect(URL.createObjectURL).toHaveBeenCalledExactlyOnceWith(retryBlob);
+    expect(exporter.state.isExporting).toBe(false);
+  });
+
+  it("does not begin an offscreen render when cancellation wins the lazy-load race", async () => {
+    const deferred = Promise.withResolvers<{
+      executeExport: typeof mocks.executeExport;
+      cancelExport: typeof mocks.cancelExport;
+    }>();
+    mocks.forceLazyResolution = true;
+    mocks.lazyOrchestrator = deferred.promise;
+
+    const exporter = new SequenceModalExporter();
+    const exportPromise = exporter.exportAnimation(
+      options,
+      dependencies,
+      callbacks()
+    );
+    exporter.cancel();
+    deferred.resolve({
+      executeExport: mocks.executeExport,
+      cancelExport: mocks.cancelExport,
+    });
+    await exportPromise;
+
+    expect(mocks.executeExport).not.toHaveBeenCalled();
     expect(exporter.state.isExporting).toBe(false);
   });
 });
