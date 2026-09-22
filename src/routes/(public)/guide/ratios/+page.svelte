@@ -92,6 +92,22 @@
     anti: turns === "fl" ? null : rotating(turns as number, "anti"),
   }));
 
+  /* Fifteen rows in one stack runs three times the height of the prose that
+     introduces them. Split at one turn: the first stack is the whole turns
+     and what sits under them, the second is the quarter and half steps above. */
+  const ladderHalves = [
+    {
+      label: "Float through one turn",
+      rows: ladder.filter(
+        (row) => row.turns === "fl" || Number(row.turns) <= 1
+      ),
+    },
+    {
+      label: "One and a quarter turns through three",
+      rows: ladder.filter((row) => row.turns !== "fl" && Number(row.turns) > 1),
+    },
+  ];
+
   const example = { pro: rotating(1, "pro"), anti: rotating(1, "anti") };
 
   const families = FAMILY_TURNS.map((turns) => ({
@@ -280,69 +296,73 @@
           patterns need two circles of the hand before the prop returns to its
           starting angle.
         </p>
+        <p class="ladder-note">
+          Tinted rows are the three ratios of the original matrix.
+        </p>
       </div>
 
-      <div class="ladder-table-scroll">
-        <table class="ladder-table">
-          <caption>
-            The turn ladder, Float through three turns. Tinted rows are the
-            three ratios of the original matrix.
-          </caption>
-          <thead>
-            <tr>
-              <th scope="col">Ratio</th>
-              <th scope="col">Turns</th>
-              <th scope="col">Level</th>
-              <th scope="col">Prospin</th>
-              <th scope="col">Antispin</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each ladder as row (row.turnLabel)}
-              <tr class:family-row={row.family}>
-                <th scope="row" class="ratio-cell">{row.ratio}</th>
-                <td class="num">{row.turnLabel}</td>
-                <td class="num level">L{row.level}</td>
-                {#if row.pro && row.anti}
-                  <td class="style">
-                    <span class="still">
-                      <ShapeMatrixMandalaArt
-                        paint={paintFlower(row.pro)}
-                        artKey={flowerKey(row.pro)}
-                        alt={flowerLabel(row.pro)}
-                      />
-                    </span>
-                    <span class="petals">{petalWord(row.pro.petals)}</span>
-                  </td>
-                  <td class="style">
-                    <span class="still">
-                      <ShapeMatrixMandalaArt
-                        paint={paintFlower(row.anti)}
-                        artKey={flowerKey(row.anti)}
-                        alt={flowerLabel(row.anti)}
-                      />
-                    </span>
-                    <span class="petals">{petalWord(row.anti.petals)}</span>
-                  </td>
-                {:else}
-                  <td class="style float" colspan="2">
-                    <span class="still">
-                      <ShapeMatrixMandalaArt
-                        paint={paintFlower(floatFlower)}
-                        artKey={flowerKey(floatFlower)}
-                        alt={flowerLabel(floatFlower)}
-                      />
-                    </span>
-                    <span class="petals">
-                      No spin direction. The prop holds one angle while the hand
-                      circles.
-                    </span>
-                  </td>
-                {/if}
-              </tr>
-            {/each}
-          </tbody>
-        </table>
+      <div class="ladder-stacks">
+        {#each ladderHalves as half (half.label)}
+          <div class="ladder-table-scroll">
+            <table class="ladder-table">
+              <caption>{half.label}</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Ratio</th>
+                  <th scope="col">Turns</th>
+                  <th scope="col">Level</th>
+                  <th scope="col">Prospin</th>
+                  <th scope="col">Antispin</th>
+                </tr>
+              </thead>
+              <tbody>
+                {#each half.rows as row (row.turnLabel)}
+                  <tr class:family-row={row.family}>
+                    <th scope="row" class="ratio-cell">{row.ratio}</th>
+                    <td class="num">{row.turnLabel}</td>
+                    <td class="num level">L{row.level}</td>
+                    {#if row.pro && row.anti}
+                      <td class="style">
+                        <span class="still">
+                          <ShapeMatrixMandalaArt
+                            paint={paintFlower(row.pro)}
+                            artKey={flowerKey(row.pro)}
+                            alt={flowerLabel(row.pro)}
+                          />
+                        </span>
+                        <span class="petals">{petalWord(row.pro.petals)}</span>
+                      </td>
+                      <td class="style">
+                        <span class="still">
+                          <ShapeMatrixMandalaArt
+                            paint={paintFlower(row.anti)}
+                            artKey={flowerKey(row.anti)}
+                            alt={flowerLabel(row.anti)}
+                          />
+                        </span>
+                        <span class="petals">{petalWord(row.anti.petals)}</span>
+                      </td>
+                    {:else}
+                      <td class="style float" colspan="2">
+                        <span class="still">
+                          <ShapeMatrixMandalaArt
+                            paint={paintFlower(floatFlower)}
+                            artKey={flowerKey(floatFlower)}
+                            alt={flowerLabel(floatFlower)}
+                          />
+                        </span>
+                        <span class="petals">
+                          No spin direction. The prop holds one angle while the
+                          hand circles.
+                        </span>
+                      </td>
+                    {/if}
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
+        {/each}
       </div>
     </section>
 
@@ -636,17 +656,38 @@
     border-top: 1px solid var(--rule);
   }
 
+  /* Until the band can carry columns, the intro keeps a reading measure. */
+  .ladder-copy {
+    max-inline-size: 42rem;
+  }
+
   @media (min-width: 62rem) {
     .reading {
       grid-template-columns: minmax(0, 1fr) minmax(20rem, 0.72fr);
       align-items: start;
     }
 
-    /* The ladder carries the page's densest information, so it takes the
-       larger share of the band. */
-    .ladder {
-      grid-template-columns: minmax(17rem, 0.5fr) minmax(0, 1fr);
-      align-items: start;
+    /* The two stacks sit side by side as soon as the band can hold them,
+       with the intro flowing across it in reading-width columns. */
+    .ladder-stacks {
+      grid-template-columns: repeat(2, minmax(0, 44rem));
+      justify-content: space-between;
+    }
+
+    .ladder-copy {
+      max-inline-size: none;
+      columns: 26rem;
+      column-gap: var(--gutter);
+    }
+
+    .ladder-copy h2 {
+      column-span: all;
+    }
+
+    /* A paragraph split across two columns reads as a mistake, so each one
+       stays whole in the column it starts in. */
+    .ladder-copy p {
+      break-inside: avoid;
     }
   }
 
@@ -738,15 +779,27 @@
     text-align: center;
   }
 
-  /* The ladder. The table hugs its content and caps at a reading width, so on
-     a wide band the flowers grow instead of the gaps between them. */
+  /* The ladder, in two stacks. Each stack caps near the width its five
+     columns actually need, so the cells never stretch into empty bands. */
+  .ladder-stacks {
+    display: grid;
+    gap: var(--gutter);
+    align-items: start;
+  }
+
   .ladder-table-scroll {
+    container-type: inline-size;
     inline-size: 100%;
-    max-inline-size: 60rem;
+    max-inline-size: 44rem;
     overflow-x: auto;
     border: 1px solid var(--rule);
     border-radius: 14px;
     background: var(--surface);
+  }
+
+  .ladder-note {
+    color: var(--ink-faint);
+    font-size: var(--font-size-min, 0.875rem);
   }
 
   .ladder-table {
@@ -757,10 +810,12 @@
   }
 
   .ladder-table caption {
-    caption-side: bottom;
-    padding: 0.75rem 0.9rem 0.85rem;
-    color: var(--ink-faint);
-    font-size: var(--font-size-compact, 0.78rem);
+    caption-side: top;
+    padding: 0.75rem 0.9rem;
+    border-bottom: 1px solid var(--rule);
+    color: var(--ink-dim);
+    font-size: var(--font-size-min, 0.875rem);
+    font-weight: 620;
     text-align: left;
   }
 
@@ -837,16 +892,24 @@
     white-space: normal;
   }
 
-  /* At phone widths the count sits under its flower so five columns fit in
-     the reading column without a sideways scroll. */
-  @media (max-width: 30rem) {
+  /* When the stack is too narrow to carry a flower and its count on one
+     line, the count moves under the flower. The stack is the container, so
+     the two halves always agree no matter what the viewport is doing. */
+  @container (max-width: 32rem) {
     .ladder-table th,
     .ladder-table td {
       padding: 0.3rem 0.35rem;
     }
 
     .ladder-table {
-      --still-size: 2.25rem;
+      --still-size: 2.75rem;
+    }
+
+    /* The two flower columns center their contents here, so their headings
+       center with them. */
+    .ladder-table thead th:nth-child(4),
+    .ladder-table thead th:nth-child(5) {
+      text-align: center;
     }
 
     .ladder-table .style .still {
@@ -861,14 +924,9 @@
       text-align: center;
     }
 
-    .ladder-table .float .still {
-      display: inline-block;
-      margin: 0 0.6rem 0 0;
-    }
-
+    /* Float reads the same way as the rest: mark on top, words under it. */
     .ladder-table .float .petals {
-      display: inline-block;
-      text-align: left;
+      margin-inline: auto;
     }
 
     .ratio-cell {
@@ -1138,24 +1196,19 @@
       text-align: center;
     }
 
-    .ladder,
     .twelve {
       grid-template-columns: minmax(0, var(--copy)) minmax(0, 1fr);
       align-items: start;
     }
 
-    .ladder-table-scroll {
-      max-inline-size: none;
+    /* Wide enough that the five columns can carry a larger drawing. */
+    .ladder-table {
+      --still-size: 4.25rem;
     }
 
-    .ladder-table .float .petals {
-      max-inline-size: 40rem;
-    }
-
-    /* The table and the matrix run taller than their prose. Pinning the
-       prose under the site header keeps it beside the rows it describes
-       instead of leaving a blank column once they scroll away. */
-    .ladder-copy,
+    /* The matrix runs taller than its prose. Pinning the prose under the
+       site header keeps it beside the grid it describes instead of leaving
+       a blank column once the grid scrolls away. */
     .pairings-copy {
       position: sticky;
       top: calc(64px + 1.5rem);
@@ -1175,6 +1228,19 @@
     .sources {
       padding-top: 0;
       border-top: 0;
+    }
+  }
+
+  /* Widest tier: the band can hold the prose and both stacks on one line
+     and still leave each stack the width its five columns need. */
+  @media (min-width: 128rem) {
+    .ladder {
+      grid-template-columns: minmax(0, var(--copy)) minmax(0, 1fr);
+      align-items: start;
+    }
+
+    .ladder-copy {
+      columns: auto;
     }
   }
 </style>
