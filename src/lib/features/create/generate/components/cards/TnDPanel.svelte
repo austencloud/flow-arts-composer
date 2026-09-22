@@ -145,7 +145,10 @@
       {#if startFeasibility?.feasible === false}
         <div class="feasibility-warning" role="status">
           <strong>No valid starting move</strong>
-          <span>These choices leave no allowed first step. Try another timing and direction, or allow more starting placements in Customize.</span>
+          <span
+            >These choices leave no allowed first step. Try another timing and
+            direction, or allow more starting placements in Customize.</span
+          >
         </div>
       {/if}
 
@@ -190,7 +193,7 @@
     padding: clamp(8px, 2cqi, 16px);
   }
 
-  @container tnd-panel (max-width: 560px) {
+  @container tnd-panel (max-width: 359px) {
     .tnd-panel {
       grid-template-columns: minmax(0, 1fr);
     }
@@ -257,7 +260,11 @@
     padding: 10px 12px;
     border: 1px solid var(--semantic-warning, #f59e0b);
     border-radius: 12px;
-    background: color-mix(in srgb, var(--semantic-warning, #f59e0b) 12%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-warning, #f59e0b) 12%,
+      transparent
+    );
     color: var(--theme-text, #fff);
     font-size: var(--font-size-min, 0.875rem);
     line-height: 1.35;
@@ -294,7 +301,7 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.72));
   }
 
-  @container tnd-panel (max-width: 560px) {
+  @container tnd-panel (max-width: 359px) {
     .turns-row {
       grid-template-columns: minmax(0, 1fr);
       grid-template-areas:
@@ -304,6 +311,56 @@
 
     .turns-row :global(.filter-chip) {
       justify-self: start;
+    }
+  }
+
+  /* A middle-width stage is often height-constrained even in a tall browser
+     window. Keep Hands and Props alongside each other here; stacking both
+     complete grids makes the bottom choices disappear behind a scrollbar. */
+  @container tnd-panel (min-width: 360px) and (max-width: 560px) {
+    .tnd-panel {
+      align-content: center;
+      gap: clamp(10px, 2cqi, 16px);
+      padding: 8px;
+    }
+
+    .tnd-section,
+    .choice-stack {
+      gap: 6px;
+    }
+
+    .choice-stack > :global(.relationship-choice) {
+      min-height: 3.75rem;
+    }
+
+    .choice-stack :global(.mode-grid) {
+      gap: 6px;
+    }
+
+    .choice-stack :global(.mode-grid .relationship-choice) {
+      flex-direction: column;
+      gap: 2px;
+      min-height: 68px;
+      padding: 2px 4px;
+      text-align: center;
+    }
+
+    .choice-stack :global(.mode-grid .choice-icon) {
+      width: 1.75rem;
+      height: 1.75rem;
+    }
+
+    .choice-stack :global(.mode-grid .choice-copy) {
+      width: 100%;
+    }
+
+    .choice-stack :global(.mode-grid .choice-copy strong) {
+      font-size: var(--font-size-min, 0.875rem);
+    }
+
+    .turns-row {
+      margin-top: 0;
+      padding-top: 8px;
     }
   }
 
