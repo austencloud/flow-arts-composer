@@ -85,8 +85,8 @@ supplies the recognizable subject before a person chooses a destination.
   file choices inside that task. Resolution, frame rate, repeats, opener image,
   and card presentation belong here; captions and account connections do not.
 - Share a link explains the recipient's experience and offers a single Copy link
-  action. Sending through Flow Arts Composer hands off to the existing viewer
-  send mode without rendering a file.
+  action. Sending through Flow Arts Composer happens in the viewer's share
+  panel without rendering a file.
 - Publish socially owns post caption, account review, and the post composition
   entry. An unavailable integration remains unavailable. Opening this task does
   not upload media, connect an account, or publish anything.
@@ -108,7 +108,7 @@ source, never from an unrelated 2D animation.
 | -------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
 | Export animation     | Download animation, recognizable current-view preview, current output settings | Prepare if necessary, then download the video                                |
 | Export card          | Download card, card preview and card-specific settings                         | Download the displayed card                                                  |
-| Share sequence       | Compact sequence sharing view with subject and clear actions                   | Copy its link, send a sequence attachment, or enter contextual file download |
+| Share (viewer)       | Share panel beside the live stage; the rail picks the subject                  | Copy its link, send a sequence attachment, or enter contextual file download |
 | Design a social post | Existing post composition workspace                                            | Prepare an intentional social post                                           |
 | Direct publishing    | Separate, explicitly entered publishing flow                                   | Review the actual account, media, caption, and publishing action             |
 
@@ -145,14 +145,14 @@ to a card merely because an old sheet default used that artifact.
 - Copy link performs one copy action and reports its progress/result at that
   control. It does not render media. A copied link should preserve the intended
   view and must not misrepresent who can open it.
-- A sent sequence carries the sender's view, not just the sequence. When send
-  mode opens, the viewer's state is snapshotted the way Copy link builds a
+- A sent sequence carries the sender's view, not just the sequence. When the
+  person presses Send, the viewer's state is read the way Copy link builds a
   link (`extractViewerStateQuery` over `getShareUrl()`: the `pane`, `split`,
   `fx`, `cols`, and `s` names) and rides on the attachment as
   `metadata.sequenceViewParams`, additive to the existing sequence metadata.
-  It is a snapshot, not a live feed: the message means what the viewer showed
-  when the person chose Send, so later stage changes do not alter what was
-  sent. Opening the attachment seeds the recipient's viewer with that query
+  It is read at Send, not when the panel opened: the panel stays open while
+  the person changes views, so the message means what the stage showed when
+  they sent it. Opening the attachment seeds the recipient's viewer with that query
   before it mounts (`sequence-viewer-overlay-state`'s `seedViewerStateParams`),
   the same override path a followed share link takes, so they land on the
   sender's pane, effects, and visibility as a view-only override of their own
@@ -160,14 +160,24 @@ to a card merely because an old sheet default used that artifact.
   `/q/<code>` link carries the same query so an out-of-app open matches; scan
   handoff already forwards its query to the viewer. Absent on messages sent
   before the field existed, which simply open on the recipient's defaults.
+- In the viewer, Share is not a dialog. It toggles a share panel in the
+  inspector track beside the live stage, the way the Export page sits there.
+  The rail item the person has selected is what gets shared; the panel names
+  it and follows rail changes while it stays open. The panel holds Copy link,
+  a Download action named for that subject (Card image, Video, Post video),
+  More for the system share sheet where the browser supports it, Publish in
+  development builds, and the Send to a friend recipients. Download and
+  Publish open the file sheet directly at that task, not at its chooser, and
+  the panel is still there when the sheet closes. Share again, the close
+  button, or Escape closes the panel.
 - Sending to a friend in Flow Arts Composer uses the existing sequence-attachment
-  workflow; it is not a social publishing operation. From the viewer it is a
-  mode, not a dialog: the workspace morphs the way it does for Practice. The
-  card as currently configured fills the stage, recipients take the inspector
-  column, and the note and Send sit in a bar across the bottom. Choosing who
-  must not change what, so the card settings stay on the Card pane. Cancel or
-  Escape restores the pane the person was on. The inbox drawer keeps its own
-  send sheet for shares that start inside the inbox.
+  workflow; it is not a social publishing operation. In the viewer it lives in
+  the share panel, not in the file sheet. Choosing who must not change what, so
+  the card settings stay on the Card pane. A guest sees a sign-up prompt in
+  place of recipients; after sign-up the recipients appear without reopening.
+  After a send the panel stays open with fresh recipients. The inbox drawer
+  keeps its own send sheet for shares that start inside the inbox, and Create's
+  share sheet keeps its Send to a friend entry.
 - Native sharing is available when the actual payload is supported. After a long
   render, a clear Choose app or Share video action may be required for browser
   user activation. Do not promise automatic chooser opening everywhere.
@@ -219,16 +229,16 @@ to phone, prepared file, viewer source.
   selection and delivery for both send surfaces;
   `SendDestinationPicker.svelte` is the shared picker. The viewer's
   `SendSequenceWorkspace.svelte` and the drawer's `SendAttachmentSheet.svelte`
-  are presentation only. In the viewer, send mode is the `send` inspector
-  profile: the stage keeps the live view the person chose (Card, Motion, or
-  side by side; the rail stays usable) and the recipient column takes the
-  inspector track, docking under the stage where the track stacks. No card is
-  rendered for the sender; the recipient still receives the sequence and its
-  thumbnail. The outbox is the drawer's; hosts that mount the drawer lazily
+  are presentation only. In the viewer, `ViewerSharePanel.svelte` is the
+  `share` inspector profile: the stage keeps the live view the person chose
+  (the rail stays usable) and the panel takes the inspector track, docking
+  under the stage where the track stacks. `viewer-shell-share-state` owns the
+  panel's open state and its `SequenceSendSession`. No card is rendered for
+  the sender; the recipient still receives the sequence and its thumbnail. The outbox is the drawer's; hosts that mount the drawer lazily
   mount it on `inboxState.hostRequested`, and the workspace reads the
   registered outbox from `message-delivery-context.ts`. The sender's view
-  travels with the send: `viewer-shell-share-state` snapshots it into the
-  `SequenceSendSession` at entry, `send-attachment-state` passes it to
+  travels with the send: `send-attachment-state` reads it through
+  `getSequenceViewParams` when Send is pressed, passes it to
   `buildSequenceMessageAttachment`, and `SequenceMessageCard` hands it back to
   `openSequenceViewer` for the recipient.
 - Existing post composition and publishing components remain their respective
@@ -252,7 +262,7 @@ also fails, reveals the link in a selectable field.
 
 The sequence animation is downloaded from the viewer's own Export page, not
 from a route inside the share sheet. The stage keeps playing beside the page
-(the same shape as Send mode), the settings stack in one column with chips
+(the same shape as the share panel), the settings stack in one column with chips
 for every choice, and the page's footer button renders and delivers the file.
 Share → Download a file → Video hands off to that page and closes the sheet,
 the way Post Studio takes over from the sheet; the sheet's own download route
