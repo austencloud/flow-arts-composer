@@ -52,4 +52,15 @@ describe("profile stage sequence prop contract", () => {
     // parsing and validating it (recorded-prop-intent.ts).
     expect(artifactTile).not.toContain("creatorIntent?.propConfig");
   });
+
+  it("passes the resolved creator colors to the hover-card overlay's PropAwareThumbnail, never the viewer's Settings", () => {
+    // The hover overlay used to call PropAwareThumbnail with no color prop,
+    // which made it fall back to getSettings().primaryPropColors — leaking
+    // the VIEWER's palette onto the CREATOR's card art. Explicitly passing
+    // viewingPresentation.primaryPropColors (undefined = legacy, null =
+    // theme default, object = the creator's pair) closes that leak.
+    expect(artifactTile).toMatch(
+      /<PropAwareThumbnail\s+\{sequence\}\s+\{lightMode\}\s+leftPropType=\{seqPropTypes\.left as PropType\}\s+rightPropType=\{seqPropTypes\.right as PropType\}\s+primaryPropColors=\{viewingPresentation\.primaryPropColors\}\s*\/>/
+    );
+  });
 });

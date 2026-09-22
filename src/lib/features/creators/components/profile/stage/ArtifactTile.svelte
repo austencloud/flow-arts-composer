@@ -382,7 +382,13 @@
            so it is a request, never the resting state. -->
       {#if hovered}
         <div class="card-overlay" transition:fade={{ duration: DURATION.fast }}>
-          <PropAwareThumbnail {sequence} {lightMode} />
+          <PropAwareThumbnail
+            {sequence}
+            {lightMode}
+            leftPropType={seqPropTypes.left as PropType}
+            rightPropType={seqPropTypes.right as PropType}
+            primaryPropColors={viewingPresentation.primaryPropColors}
+          />
         </div>
       {/if}
     {:else if medium === "mandala" && mandala}

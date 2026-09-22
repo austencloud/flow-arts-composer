@@ -439,6 +439,7 @@
             leftPropType={recordedPropConfig?.leftPropType}
             rightPropType={recordedPropConfig?.rightPropType}
             catDogModeEnabled={recordedPropConfig?.catDogMode ?? false}
+            primaryPropColors={playerPropColors}
             eager
             {allowQR}
           />
