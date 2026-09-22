@@ -1317,12 +1317,78 @@
       white-space: nowrap;
     }
 
-    .follower-note {
-      font-size: 16px;
+    .source-identity {
+      font-size: var(--font-size-base, 16px);
+    }
+
+    /* The identity held a row of its own, two words across the card's whole
+       width, and the note saying where a rebuilt path came from held a second
+       row pinned to the card's floor. They answer the same question — what
+       this card is — so here they share the identity's row and the note lays
+       its three lines out along it instead of stacking them. The floor block's
+       height goes to the stage. Grid rather than the column's flex because it
+       places by area: the note stays last in the markup, where the narrow
+       layouts still want it under the notation. */
+    .source-card:not(.compact-hero):not(.compact-toolbar) {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      grid-template-areas:
+        "identity note"
+        "stage stage"
+        "tail tail";
     }
 
     .source-identity {
-      font-size: var(--font-size-base, 16px);
+      grid-area: identity;
+      align-self: center;
+      min-height: 0;
+    }
+
+    .notation-stage {
+      grid-area: stage;
+    }
+
+    .source-actions,
+    .first-step-toolbar {
+      grid-area: tail;
+    }
+
+    .follower-note {
+      grid-area: note;
+      align-self: center;
+      justify-self: end;
+      width: auto;
+      max-width: 100%;
+      min-width: 0;
+      min-height: 0;
+      margin-top: 0;
+      padding: 5px 10px;
+      font-size: 16px;
+    }
+
+    /* `minmax(0, auto)` so the longest rule — Quarter, opposite by Rotate 90 +
+       Mirror — gives way to its own ellipsis at the narrow end of this tier
+       rather than pushing the note past the card. */
+    .follower-note .note-copy {
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(0, auto);
+      align-items: baseline;
+      gap: 9px;
+    }
+
+    .follower-note .note-role {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* In the bar it was absolute so the identity stayed centred in a full-width
+       row. The note is sized to its own content now, so there is no slack for
+       an absolute control to sit in without landing on the words. */
+    .follower-note .note-edit {
+      position: static;
+      margin-left: 1px;
     }
   }
 
