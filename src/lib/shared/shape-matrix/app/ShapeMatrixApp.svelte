@@ -8,12 +8,15 @@
   import {
     createShapeMatrixAppState,
     type ShapeMatrixAppPersistence,
+    type ShapeMatrixPropSource,
   } from "./state/shape-matrix-app-state.svelte";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { DEFAULT_THEORY_RATIO } from "$lib/shared/shape-matrix/domain/theory-ratio";
 
   interface Props {
     persistence?: ShapeMatrixAppPersistence;
+    /** Where the prop pair lives when a host owns it; absent on the standalone route. */
+    propSource?: ShapeMatrixPropSource;
     /**
      * "standalone" hosts (the public /shape-engine route) carry the
      * app's own identity block in the header. "embedded" hosts (the Create
@@ -24,7 +27,7 @@
     variant?: "standalone" | "embedded";
   }
 
-  let { persistence, variant = "standalone" }: Props = $props();
+  let { persistence, propSource, variant = "standalone" }: Props = $props();
   let host: HTMLDivElement;
   let shell: ShapeMatrixAppShell | undefined;
 
@@ -36,6 +39,9 @@
       loadMatrix: loadShapeMatrix,
       syncState: (snapshot) => persistence?.persist(snapshot),
       link: persistence?.link,
+      onPropPairChange: propSource
+        ? (pair, catDog) => propSource.set({ ...pair, catDog })
+        : undefined,
     },
     {
       surface: "matrix",
@@ -48,7 +54,8 @@
       rightTurn: 2,
       activeAxis: "both",
       labelMode: "turns",
-      propType: PropType.STAFF,
+      leftPropType: propSource?.left ?? PropType.STAFF,
+      rightPropType: propSource?.right ?? PropType.STAFF,
       pair: null,
       mode: null,
       propMode: null,
@@ -60,7 +67,8 @@
 
   onMount(() => {
     const restored = persistence?.restore() ?? null;
-    if (restored) state.restoreState(restored);
+    if (restored)
+      state.restoreState(restored, { keepPropPair: propSource !== undefined });
 
     // The compact seam is the shell stylesheet's `(width < 75rem) or
     // (height < 42rem)` container query. Measuring in rem here, not fixed
@@ -84,6 +92,16 @@
     void state.load();
 
     return () => observer.disconnect();
+  });
+
+  // Settings to engine. The state ignores an unchanged pair, and an adopted
+  // pair is never announced back, so a pick made here does not echo.
+  $effect(() => {
+    if (!propSource) return;
+    state.adoptPropPair(
+      { left: propSource.left, right: propSource.right },
+      propSource.catDog
+    );
   });
 </script>
 

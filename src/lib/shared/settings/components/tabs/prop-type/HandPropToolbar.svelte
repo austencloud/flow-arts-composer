@@ -3,10 +3,9 @@
 
   /**
    * Per-hand picking for hosts whose props live in settings. The Props page
-   * gains the Cat Dog chip and, while it is on, Left/Right hand segments;
-   * `selectedPropType` and `onPropChange` then address `hand`. Hosts with
-   * one local prop (Post Studio, profile photo, landing) omit this and keep
-   * the single grid.
+   * gains the Cat Dog chip and, while it is on, Left/Right hand segments to
+   * pick which hand the grid below addresses. Hosts with one local prop
+   * (Post Studio, profile photo, landing) omit this and keep the single grid.
    */
   export interface HandPropToolbarProps {
     catDog: boolean;

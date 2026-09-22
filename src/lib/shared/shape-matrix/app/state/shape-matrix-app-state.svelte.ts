@@ -133,6 +133,19 @@ export interface ShapeMatrixAppPersistence {
 
 export type { ShapeMatrixPropHand } from "$lib/shared/shape-matrix/domain/prop-pair";
 
+/**
+ * A host that owns the prop pair elsewhere (the Create module's Shape tab
+ * mirrors settings). The engine adopts what the source says and reports its
+ * own picks back; the standalone route passes none and keeps the pair in its
+ * URL.
+ */
+export interface ShapeMatrixPropSource {
+  readonly left: PropType;
+  readonly right: PropType;
+  readonly catDog: boolean;
+  set(pair: { left: PropType; right: PropType; catDog: boolean }): void;
+}
+
 interface ShapeMatrixAppDependencies {
   loadMatrix: (props: ShapeMatrixPropPair) => Promise<ShapeMatrixData>;
   syncState: (state: ShapeMatrixAppSnapshot) => void;
