@@ -71,6 +71,8 @@
   /** The engine's own 144 band: three ratios, both styles, both starts, diamond. */
   const ORIGINAL_AXIS_FILTER = matrixFiltersForSize("large").left;
   const FAMILY_TURNS = [0, 1, 2] as const;
+  const BASE_LEVEL = 1;
+  const WHOLE_TURN_LEVEL = 2;
   const QUARTER_TURN_LEVEL = 4;
 
   /** The twelve original shapes, in the engine's own axis order. */
@@ -116,18 +118,39 @@
      selector reads, so the page and the selector cannot disagree. */
   const levelGroups = SHAPE_MATRIX_LEVELS.map((level) => {
     const rows = ladder.filter((row) => row.level === level);
-    /* Quarter turns carry one note card after their ratios, the one place
-       the two hand cycle arithmetic needs saying. */
-    const cells = rows.length + (level === QUARTER_TURN_LEVEL ? 1 : 0);
+    /* Whole turns and quarter turns each carry one note card after their
+       ratios: how a turn adds petals, and the two hand cycle arithmetic. */
+    const noted = level === WHOLE_TURN_LEVEL || level === QUARTER_TURN_LEVEL;
+    const cells = rows.length + (noted ? 1 : 0);
     return { level, ...SHAPE_MATRIX_LEVEL_DESCRIPTIONS[level], rows, cells };
-  }).filter((group) => group.rows.length > 0);
+  }).filter((group) => group.level !== BASE_LEVEL && group.rows.length > 0);
+
+  /**
+   * Level 1 shows both starts. At 1:1 starting in and starting out draw four
+   * different base motions, the four shapes the original matrix gives this
+   * ratio, so collapsing them to the in start would hide half of Level 1.
+   */
+  const BASE_NAMES = { in: "Isolation", out: "Extension" } as const;
+  const baseLevel = SHAPE_MATRIX_LEVEL_DESCRIPTIONS[BASE_LEVEL];
+  const baseRatio = ratioLabel(0);
+  const baseCards = (["in", "out"] as const).map((ori) => ({
+    ori,
+    label: ori === "in" ? "Starts in" : "Starts out",
+    flowers: (["pro", "anti"] as const).map((style) => {
+      const flower = rotating(0, style, ori);
+      return {
+        flower,
+        meta: style === "pro" ? BASE_NAMES[ori] : petalWord(flower.petals),
+      };
+    }),
+  }));
 
   /**
    * The board is a grid of equal cards, four or eight across. Each level
    * spans as many tracks as it has cards, up to the full row, plus one row for
-   * its heading. The counts are 1, 3, 4, and 8 cards, so the levels tile both
-   * widths with no cell left over: 1 + 3 and 4 and 4 + 4 at four across,
-   * 1 + 3 + 4 and 8 at eight across.
+   * its heading. Levels 2 to 4 hold 4, 4, and 8 cards, notes included, so
+   * they tile both widths with no cell left over: 4 and 4 and 4 + 4 at four
+   * across, 4 + 4 and 8 at eight across.
    */
   function boardSpan(cells: number, columns: number): string {
     const span = Math.min(cells, columns);
@@ -490,13 +513,62 @@
           Every turn value the Kinetic Alphabet carries, set out by the level
           that first allows it. Each card gives the ratio, the turns it names,
           and the two flowers one hand draws at that ratio, following one end of
-          the prop from a start pointing in. A level keeps everything the levels
-          before it allow and adds the cards under it.
+          the prop. A level keeps everything the levels before it allow and adds
+          the cards under it.
+        </p>
+        <p>
+          At Level 1 the two starts draw four different base motions, so its
+          cards show a start pointing in and a start pointing out. Higher up,
+          starting out draws the same flower turned half a petal, and at quarter
+          turns the very same flower, so those cards show the start pointing in.
         </p>
         <p class="ladder-note">
           Tinted cards are the three ratios of the original matrix.
         </p>
       </div>
+
+      <section
+        class="level-group base-tray"
+        aria-labelledby="level-{BASE_LEVEL}-heading"
+        style="--level-tint: {levelTint(BASE_LEVEL)}"
+      >
+        <header class="level-head">
+          <DifficultyBadge level={BASE_LEVEL} size="2rem" />
+          <span class="level-title">
+            <span id="level-{BASE_LEVEL}-heading" class="level-name">
+              Level {BASE_LEVEL}, {baseLevel.name}
+            </span>
+            <span class="level-blurb">{baseLevel.blurb}</span>
+          </span>
+        </header>
+        <ol class="base-cards" role="list">
+          {#each baseCards as card (card.ori)}
+            <li class="ratio-card family-card base-card">
+              <p class="card-head">
+                <span class="card-ratio">{baseRatio}</span>
+                <span class="card-turns">{card.label}</span>
+              </p>
+              <div class="card-flowers">
+                {#each card.flowers as item (flowerKey(item.flower))}
+                  <div class="card-flower">
+                    <span class="still">
+                      <ShapeMatrixMandalaArt
+                        paint={paintFlower(item.flower)}
+                        artKey={flowerKey(item.flower)}
+                        alt={`${baseRatio} ${styleWord(item.flower.style).toLowerCase()}, ${card.label.toLowerCase()}: ${item.meta.toLowerCase()}`}
+                      />
+                    </span>
+                    <span class="card-style"
+                      >{styleWord(item.flower.style)}</span
+                    >
+                    <span class="card-petals">{item.meta}</span>
+                  </div>
+                {/each}
+              </div>
+            </li>
+          {/each}
+        </ol>
+      </section>
 
       <!-- One grid of equal cards. The levels span the tracks their cards
            need, so the board is a solid rectangle at every width instead of
@@ -568,6 +640,13 @@
                   </li>
                 {/each}
               </ol>
+
+              {#if group.level === WHOLE_TURN_LEVEL}
+                <p class="ladder-aside">
+                  Each whole turn adds two petals to both flowers, and a half
+                  turn adds one, so Level 3 fills the gaps between these counts.
+                </p>
+              {/if}
 
               {#if group.level === QUARTER_TURN_LEVEL}
                 <p class="ladder-aside">
@@ -1142,6 +1221,45 @@
     background: color-mix(in srgb, var(--level-tint) 7%, transparent);
   }
 
+  /* Level 1 sits apart from the board with its two cards, one per start.
+     Once its tray holds them side by side they take the board's wide card
+     layout; on a phone they are the same row cards as the rest. */
+  .base-tray {
+    container: base-tray / inline-size;
+    align-self: start;
+  }
+
+  .base-cards {
+    display: grid;
+    gap: 0.6rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @container base-tray (min-width: 30rem) {
+    .base-cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    /* Doubled class: the board's card rules come later in the file. */
+    .base-card.ratio-card {
+      --card-still: 9rem;
+      grid-template-columns: minmax(0, 1fr);
+      align-items: start;
+      gap: 0.6rem;
+      padding: 0.75rem;
+    }
+
+    .base-card.ratio-card .card-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.2rem 0.5rem;
+    }
+  }
+
   /* The board, not the grid, is the container, because a container query
      answers for an ancestor. Below the first tier each level is a heading
      over a list of wide cards, one per row. */
@@ -1306,8 +1424,8 @@
 
   /* Four across. Every level spans its own tracks on a shared grid and
      borrows the grid's rows through subgrid, so the headings on one row sit
-     on one line and every card on a row is the same height. Level 1 and 2
-     share the first row, Level 3 fills the second, Level 4 fills two. */
+     on one line and every card on a row is the same height. Levels 2 and 3
+     fill a row each and Level 4 fills two. */
   @container ladder-board (min-width: 34rem) {
     /* Trays sit further apart than the cards inside them, which a subgrid's
        own gap allows. */
@@ -1357,20 +1475,6 @@
     }
   }
 
-  /* Level 1 gets a single track. Where that track is narrower than about
-     13rem, every heading on the board stacks its badge over its name, so the
-     one track holds the name without squeezing it beside the badge and the
-     headings on a row still match. They share the row's height: badges line
-     up along the top and the rules along the bottom. */
-  @container ladder-board ((min-width: 34rem) and (max-width: 53rem)) or ((min-width: 96rem) and (max-width: 107rem)) {
-    .level-head {
-      flex-direction: column;
-      align-items: flex-start;
-      align-self: stretch;
-      gap: 0.45rem;
-    }
-  }
-
   /* Four across on a tablet leaves each track about 8rem, so the note sets
      and the style labels set smaller to stay inside a card. */
   @container ladder-board (min-width: 34rem) and (max-width: 52rem) {
@@ -1392,8 +1496,8 @@
     }
   }
 
-  /* Eight across: Levels 1, 2, and 3 share the first row and Level 4 with
-     its note fills the second. */
+  /* Eight across: Levels 2 and 3 share the first row and Level 4 fills the
+     second. */
   @container ladder-board (min-width: 96rem) {
     .ladder-grid {
       grid-template-columns: repeat(8, minmax(0, 1fr));
@@ -1925,6 +2029,17 @@
   }
 
   @media (min-width: 96rem) {
+    /* Level 1's tray takes the band beside the ladder's prose. */
+    .ladder {
+      grid-template-columns: minmax(0, var(--copy)) minmax(0, 1fr);
+      column-gap: var(--gutter);
+    }
+
+    .ladder-board,
+    .swap {
+      grid-column: 1 / -1;
+    }
+
     .swap {
       grid-template-columns: minmax(0, var(--copy)) minmax(0, 1fr);
       column-gap: var(--gutter);
