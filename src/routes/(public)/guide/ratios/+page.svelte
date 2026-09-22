@@ -20,6 +20,7 @@
   import ShapeMatrixGrid from "$lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte";
   import ShapeMatrixMandalaArt from "$lib/shared/shape-matrix/components/ShapeMatrixMandalaArt.svelte";
   import DifficultyBadge from "$lib/shared/components/DifficultyBadge.svelte";
+  import { DIFFICULTY_LEVELS } from "$lib/shared/config/difficulty-styles";
   import {
     CLUB_ARTWORK_PAINTER,
     cellArtworkSrc,
@@ -131,6 +132,16 @@
     return `--span-${columns}: ${span}; --rows-${columns}: ${rows}`;
   }
 
+  /**
+   * A level's tray takes its tint from the middle of that level's badge
+   * gradient, so the trays read as the same sky blue, silver, gold, and
+   * purple the badges carry.
+   */
+  function levelTint(level: number): string {
+    const stops = DIFFICULTY_LEVELS[level]?.stops ?? [];
+    return stops[Math.floor(stops.length / 2)]?.color ?? "transparent";
+  }
+
   function turnWords(turns: number): string {
     const size = Math.abs(turns);
     const sign = turns < 0 ? "−" : "";
@@ -158,16 +169,20 @@
   interface EndsCase {
     ratio: string;
     style: FlowerStyle;
-    level: TurnLevel;
     frames: [EndsFrame, EndsFrame, EndsFrame];
+  }
+
+  interface EndsLevel {
+    level: TurnLevel;
+    name: string;
+    cases: [EndsCase, EndsCase];
     summary: string;
   }
 
   function endsCase(
     turns: number,
     style: FlowerStyle,
-    names: { in: string; out: string; both: string } | null,
-    summary: string
+    names: { in: string; out: string; both: string } | null = null
   ): EndsCase {
     const near = rotating(turns, style, "in");
     /* Quarter turns, and only quarter turns, reduce to two hand cycles. */
@@ -177,7 +192,6 @@
     return {
       ratio: ratioLabel(turns),
       style,
-      level: levelForTurns(turns, turns),
       frames: [
         { flowers: [near], label: "Starts in", meta: names?.in ?? petalWord(near.petals) },
         {
@@ -191,26 +205,50 @@
           meta: names?.both ?? petalWord(both),
         },
       ],
+    };
+  }
+
+  /** One ratio per level, prospin beside antispin, the ladder's own pairs. */
+  function endsLevel(turns: number, summary: string, proNames: Parameters<typeof endsCase>[2] = null): EndsLevel {
+    const level = levelForTurns(turns, turns);
+    return {
+      level,
+      name: SHAPE_MATRIX_LEVEL_DESCRIPTIONS[level].name,
+      cases: [endsCase(turns, "pro", proNames), endsCase(turns, "anti")],
       summary,
     };
   }
 
-  const endsCases: EndsCase[] = [
-    endsCase(
+  const endsLevels: EndsLevel[] = [
+    endsLevel(
       0,
-      "pro",
-      { in: "Isolation", out: "Extension", both: "Point in a circle" },
-      "The isolation and the extension are one staff motion."
+      "The isolation and the extension are one staff motion, and the two antispin lines make a cross.",
+      { in: "Isolation", out: "Extension", both: "Point in a circle" }
     ),
-    endsCase(0, "anti", null, "The two lines lie at right angles, so the staff draws a cross."),
-    endsCase(1, "pro", null, "Out is in turned half a petal, so 2 petals become 4."),
-    endsCase(
+    endsLevel(1, "Out is in turned half a petal, so each flower doubles."),
+    endsLevel(0.5, "The same doubling at a half turn: 1 petal becomes 2, and 3 become 6."),
+    endsLevel(
       0.25,
-      "pro",
-      null,
-      "The far end retraces the near end, so the staff draws what a poi draws."
+      "Two hand circles: the far end retraces the near end, so a staff draws what a poi draws."
     ),
   ];
+
+  /**
+   * 1:2 and 2:1 share their petal counts because the counts use the two
+   * numbers together. The laps are the hand's count: the engine's hand circle
+   * (radius 80) is wider than the staff tip's reach (67.4), so the drawn path
+   * winds around the center once per hand circle, measured at every turn
+   * value from -0.25 to 3.
+   */
+  const swapRows = [
+    { turns: 0.5, laps: 1 },
+    { turns: -0.25, laps: 2 },
+  ].map(({ turns, laps }) => ({
+    ratio: ratioLabel(turns),
+    level: levelForTurnValue(turns),
+    laps,
+    flowers: [rotating(turns, "pro"), rotating(turns, "anti")],
+  }));
 
   /** The pairing the matrix's reading figure takes apart. */
   const anatomyLeft = rotating(1, "pro");
@@ -449,7 +487,7 @@
             <section
               class="level-group"
               aria-labelledby={`level-${group.level}-heading`}
-              style="{boardSpan(group.cells, 4)}; {boardSpan(group.cells, 8)}"
+              style="{boardSpan(group.cells, 4)}; {boardSpan(group.cells, 8)}; --level-tint: {levelTint(group.level)}"
             >
               <header class="level-head">
                 <DifficultyBadge level={group.level} size="2rem" />
@@ -519,6 +557,58 @@
           {/each}
         </div>
       </div>
+
+      <section class="swap" aria-labelledby="swap-heading">
+        <div class="swap-copy">
+          <h3 id="swap-heading">Same petals, different laps</h3>
+          <p>
+            1:2 and 2:1 draw the same counts, one petal prospin and three
+            antispin, though they move nothing alike. At 1:2 the prop spins
+            twice for each hand circle. At 2:1 the hand circles twice while the
+            prop turns once.
+          </p>
+          <p>
+            The petal count uses the two numbers together, <code>|P − H|</code>
+            for prospin and <code>P + H</code> for antispin, so it cannot tell
+            which number belongs to the hand. The laps can. The hand circle is
+            wider than the prop's reach in these drawings, so the path goes
+            around the center once for every hand circle: once at 1:2, twice
+            at 2:1.
+          </p>
+          <p>
+            Every quarter turn ratio laps twice. That second lap is also why a
+            staff draws nothing new there, as
+            <a href="#ends-heading">One end or two</a> shows.
+          </p>
+        </div>
+
+        <ul class="swap-rows" role="list">
+          {#each swapRows as row (row.ratio)}
+            <li class="swap-row" style="--level-tint: {levelTint(row.level)}">
+              <p class="swap-head">
+                <DifficultyBadge level={row.level} size="1.5rem" />
+                <span class="swap-ratio">{row.ratio}</span>
+                <span class="swap-laps"
+                  >{row.laps === 1 ? "1 lap" : `${row.laps} laps`}</span
+                >
+              </p>
+              {#each row.flowers as flower (flowerKey(flower))}
+                <div class="swap-flower">
+                  <span class="still">
+                    <ShapeMatrixMandalaArt
+                      paint={paintFlower(flower)}
+                      artKey={`swap-${flowerKey(flower)}`}
+                      alt={`${row.ratio} ${flowerLabel(flower)}`}
+                    />
+                  </span>
+                  <span class="card-style">{styleWord(flower.style)}</span>
+                  <span class="card-petals">{petalWord(flower.petals)}</span>
+                </div>
+              {/each}
+            </li>
+          {/each}
+        </ul>
+      </section>
     </section>
 
     <section class="twelve" aria-labelledby="twelve-heading">
@@ -599,49 +689,62 @@
           antispin starts draw lines at right angles, and a staff draws both.
         </p>
         <p>
-          At every ratio with one hand cycle, the out figure is the in figure
-          turned half a petal, so a staff doubles the petals. Quarter turns are
-          the exception. After one hand circle the prop is back where it began
-          with its ends swapped, so the far end retraces the near end's path
-          and nothing doubles. In and out draw the same figure there, which is
+          Through Level 3 every ratio takes one hand circle, and there the out
+          figure is the in figure turned half a petal, so a staff doubles the
+          petals. Level 4's quarter turns take two. After the first circle the
+          prop is back where it began with its ends swapped, so the far end
+          retraces the near end's path and nothing doubles. In and out draw the same figure there, which is
           why the {SHAPE_ENGINE_SHORT_NAME} fills its second quarter turn start
           with the prop pointing along the hand path instead.
         </p>
       </div>
 
       <div class="ends-board">
-        <ul class="ends-cards" role="list">
-          {#each endsCases as item (`${item.ratio}-${item.style}`)}
-            <li class="ends-card">
-              <p class="ends-head">
-                <DifficultyBadge level={item.level} size="1.35rem" />
-                <span class="ends-ratio">{item.ratio}</span>
-                <span class="ends-style">{styleWord(item.style)}</span>
-              </p>
-              <div class="ends-sum">
-                {#each item.frames as frame, index (frame.label)}
-                  <div class="ends-frame">
-                    <span class="still">
-                      {#if index > 0}
-                        <span class="sum-op" aria-hidden="true"
-                          >{index === 1 ? "+" : "="}</span
-                        >
-                      {/if}
-                      <ShapeMatrixMandalaArt
-                        paint={paintTogether(frame.flowers)}
-                        artKey={`ends-${frame.flowers.map((flower) => flowerKey(flower)).join("+")}`}
-                        alt={`${item.ratio} ${styleWord(item.style).toLowerCase()}, ${frame.label.toLowerCase()}: ${frame.meta.toLowerCase()}`}
-                      />
-                    </span>
-                    <span class="ends-label">{frame.label}</span>
-                    <span class="ends-meta">{frame.meta}</span>
+        {#each endsLevels as tray (tray.level)}
+          <section
+            class="ends-level"
+            aria-labelledby={`ends-level-${tray.level}`}
+            style="--level-tint: {levelTint(tray.level)}"
+          >
+            <header class="ends-level-head">
+              <DifficultyBadge level={tray.level} size="1.6rem" />
+              <span id={`ends-level-${tray.level}`} class="level-name"
+                >Level {tray.level}, {tray.name}</span
+              >
+            </header>
+            <ul class="ends-cards" role="list">
+              {#each tray.cases as item (`${item.ratio}-${item.style}`)}
+                <li class="ends-card">
+                  <p class="ends-head">
+                    <span class="ends-ratio">{item.ratio}</span>
+                    <span class="ends-style">{styleWord(item.style)}</span>
+                  </p>
+                  <div class="ends-sum">
+                    {#each item.frames as frame, index (frame.label)}
+                      <div class="ends-frame" class:ends-both={index === 2}>
+                        <span class="still">
+                          {#if index > 0}
+                            <span class="sum-op" aria-hidden="true"
+                              >{index === 1 ? "+" : "="}</span
+                            >
+                          {/if}
+                          <ShapeMatrixMandalaArt
+                            paint={paintTogether(frame.flowers)}
+                            artKey={`ends-${frame.flowers.map((flower) => flowerKey(flower)).join("+")}`}
+                            alt={`${item.ratio} ${styleWord(item.style).toLowerCase()}, ${frame.label.toLowerCase()}: ${frame.meta.toLowerCase()}`}
+                          />
+                        </span>
+                        <span class="ends-label">{frame.label}</span>
+                        <span class="ends-meta">{frame.meta}</span>
+                      </div>
+                    {/each}
                   </div>
-                {/each}
-              </div>
-              <p class="ends-summary">{item.summary}</p>
-            </li>
-          {/each}
-        </ul>
+                </li>
+              {/each}
+            </ul>
+            <p class="ends-summary">{tray.summary}</p>
+          </section>
+        {/each}
       </div>
     </section>
 
@@ -1027,6 +1130,16 @@
     font-size: var(--font-size-min, 0.875rem);
   }
 
+  /* A level's tray. Each level on the page sits in its own tray, tinted with
+     its badge colour, so the levels read apart even where they share a row. */
+  .level-group,
+  .ends-level,
+  .swap-row {
+    border: 1px solid color-mix(in srgb, var(--level-tint) 30%, transparent);
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--level-tint) 7%, transparent);
+  }
+
   /* The board, not the grid, is the container, because a container query
      answers for an ancestor. Below the first tier each level is a heading
      over a list of wide cards, one per row. */
@@ -1036,12 +1149,13 @@
 
   .ladder-grid {
     display: grid;
-    gap: 1.75rem;
+    gap: 1rem;
   }
 
   .level-group {
     display: grid;
     gap: 0.6rem;
+    padding: 0.6rem;
   }
 
   /* The badge is the same numeral the cards carry, so a level reads the same
@@ -1053,7 +1167,7 @@
     align-items: center;
     gap: 0.7rem;
     padding-bottom: 0.6rem;
-    border-bottom: 1px solid var(--rule);
+    border-bottom: 1px solid color-mix(in srgb, var(--level-tint) 26%, transparent);
   }
 
   .level-title {
@@ -1192,11 +1306,11 @@
      on one line and every card on a row is the same height. Level 1 and 2
      share the first row, Level 3 fills the second, Level 4 fills two. */
   @container ladder-board (min-width: 34rem) {
+    /* Trays sit further apart than the cards inside them, which a subgrid's
+       own gap allows. */
     .ladder-grid {
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 0.6rem;
-      /* Each heading carries the space above it; the first row gives it back. */
-      margin-top: -1.25rem;
+      gap: 0.9rem;
     }
 
     .level-group {
@@ -1204,12 +1318,12 @@
       grid-row: span var(--rows-4);
       grid-template-columns: subgrid;
       grid-template-rows: subgrid;
+      gap: 0.5rem;
     }
 
     .level-head {
       grid-column: 1 / -1;
       align-self: end;
-      margin-top: 1.25rem;
     }
 
     .ratio-cards {
@@ -1257,6 +1371,12 @@
   /* Four across on a tablet leaves each track about 8rem, so the note sets
      and the style labels set smaller to stay inside a card. */
   @container ladder-board (min-width: 34rem) and (max-width: 52rem) {
+    /* A tablet track is about 8rem, so the trays keep a thin edge. */
+    .level-group {
+      padding: 0.35rem;
+      gap: 0.35rem;
+    }
+
     .card-style {
       font-size: 0.64rem;
       letter-spacing: 0.02em;
@@ -1378,19 +1498,48 @@
     margin-bottom: 0;
   }
 
+  /* Four trays, one per level, each holding that level's prospin and
+     antispin. Two trays across once each can hold its pair side by side. */
+  .ends {
+    container: ends / inline-size;
+  }
+
   .ends-board {
-    container: ends-board / inline-size;
+    display: grid;
+    gap: 1rem;
+  }
+
+  @container ends (min-width: 74rem) {
+    .ends-board {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .ends-level {
+    container: ends-level / inline-size;
+    display: grid;
+    align-content: start;
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .ends-level-head {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.1rem 0.25rem 0.6rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--level-tint) 26%, transparent);
   }
 
   .ends-cards {
     display: grid;
-    gap: 0.75rem;
+    gap: 0.6rem;
     margin: 0;
     padding: 0;
     list-style: none;
   }
 
-  @container ends-board (min-width: 40rem) {
+  @container ends-level (min-width: 30rem) {
     .ends-cards {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -1401,7 +1550,7 @@
     align-content: start;
     gap: 0.75rem;
     margin: 0;
-    padding: 1rem;
+    padding: 0.9rem;
     border: 1px solid var(--rule);
     border-radius: 14px;
     background: var(--surface);
@@ -1426,15 +1575,37 @@
     font-size: var(--font-size-min, 0.875rem);
   }
 
-  /* Three equal frames with room between them for the operators. Each
-     operator sits in the still it leads into, centred on the gap before it,
-     so it lines up with the drawings rather than with the words under them. */
+  /* Three frames with room between them for the operators. Each operator
+     sits in the still it leads into, centred on the gap before it, so it
+     lines up with the drawings rather than with the words under them. */
   .ends-sum,
   .anatomy-sum {
     --op-gap: 1.5rem;
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     column-gap: var(--op-gap);
+  }
+
+  /* An end card leads with its answer: the two starts stack small in the
+     narrow track and what the staff draws takes the wide one. */
+  .ends-sum {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    row-gap: 1.75rem;
+    max-inline-size: 27rem;
+    margin-inline: auto;
+    inline-size: 100%;
+  }
+
+  .ends-both {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+  }
+
+  /* The plus sits in the gap under the first start's words. */
+  .ends-frame:nth-child(2) .sum-op {
+    top: -0.9rem;
+    left: 50%;
   }
 
   .ends-frame,
@@ -1479,6 +1650,7 @@
 
   .ends-summary {
     margin: 0;
+    padding-inline: 0.25rem;
     color: var(--ink-dim);
     font-size: var(--font-size-min, 0.875rem);
     line-height: 1.45;
@@ -1500,12 +1672,90 @@
     line-height: 1.45;
   }
 
+  /* Same petals, different laps: 1:2 and 2:1 side by side, each in its own
+     level's tray, with the lap count beside the ratio. */
+  .swap {
+    container: swap / inline-size;
+    display: grid;
+    gap: 1.25rem;
+    padding-top: 0.5rem;
+  }
+
+  .swap-copy {
+    max-inline-size: 42rem;
+  }
+
+  .swap-copy h3,
   .beyond h3 {
     margin: 0 0 0.6rem;
     color: var(--ink);
     font-size: 1.1rem;
     font-weight: 660;
   }
+
+  .swap-copy p:last-child {
+    margin-bottom: 0;
+  }
+
+  .swap-rows {
+    display: grid;
+    gap: 0.9rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @container swap (min-width: 34rem) {
+    .swap-rows {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .swap-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem 0.5rem;
+    margin: 0;
+    padding: 0.75rem 0.75rem 1rem;
+  }
+
+  .swap-head {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin: 0;
+    padding: 0 0.25rem 0.6rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--level-tint) 26%, transparent);
+  }
+
+  .swap-ratio {
+    color: var(--ink);
+    font-size: 1.1rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 660;
+  }
+
+  .swap-laps {
+    margin-left: auto;
+    color: var(--ink);
+    font-size: var(--font-size-min, 0.875rem);
+    font-weight: 620;
+  }
+
+  .swap-flower {
+    display: grid;
+    justify-items: center;
+    gap: 0.1rem;
+    min-inline-size: 0;
+    text-align: center;
+  }
+
+  .swap-flower .still {
+    inline-size: min(100%, 11rem);
+    margin-bottom: 0.3rem;
+  }
+
 
   .beyond p {
     margin: 0;
@@ -1717,18 +1967,35 @@
     }
   }
 
-  /* The matrix and the end cards sit beside their prose only once the band
-     holds a reading column and the whole grid at its 72px tiles, which the
-     guide's sidebar allows from about a 1920px screen. */
-  @media (min-width: 120rem) {
-    .ends,
-    .pairings {
-      grid-template-columns: minmax(0, var(--copy)) minmax(0, 1fr);
+  /* On a wide band the end cards' prose runs in two columns across the top,
+     and the four trays sit two by two under it, so neither leaves a strip of
+     empty band beside the other. */
+  @media (min-width: 80rem) {
+    .ends-copy {
+      columns: 2;
       column-gap: var(--gutter);
     }
 
-    .ends {
-      align-items: start;
+    .ends-copy h2 {
+      column-span: all;
+    }
+  }
+
+  @media (min-width: 96rem) {
+    .swap {
+      grid-template-columns: minmax(0, var(--copy)) minmax(0, 1fr);
+      column-gap: var(--gutter);
+      align-items: center;
+    }
+  }
+
+  /* The matrix sits beside its prose only once the band
+     holds a reading column and the whole grid at its 72px tiles, which the
+     guide's sidebar allows from about a 1920px screen. */
+  @media (min-width: 120rem) {
+    .pairings {
+      grid-template-columns: minmax(0, var(--copy)) minmax(0, 1fr);
+      column-gap: var(--gutter);
     }
 
     /* The matrix runs taller than its prose, so the column beside it
