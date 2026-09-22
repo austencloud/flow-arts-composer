@@ -17,8 +17,9 @@ import type {
   SequenceVisibility,
 } from "$lib/shared/library/domain/models/library-sequence";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { compareKineticLetters } from "$lib/shared/browse/utils/kinetic-alphabet-sort";
+import { compareKineticLetters, extractBaseLetter } from "$lib/shared/browse/utils/kinetic-alphabet-sort";
 import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
 
 import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
 import type { LibraryRepository } from "$lib/shared/library/services/library-repository";
@@ -282,23 +283,12 @@ class LibraryStateManager {
     result.sort((a, b) => {
       // Special handling for "word" sort - use kinetic alphabet order
       if (filters.sortBy === "word") {
-        const aWord = a.word ?? "";
-        const bWord = b.word ?? "";
+        // Skew braces mark a span, not a letter: sort by the letters inside.
+        const aWord = stripWordNotation(a.word ?? "");
+        const bWord = stripWordNotation(b.word ?? "");
 
-        // Extract first letter (handling dash variants like "W-")
-        const getBaseLetter = (word: string): string => {
-          if (!word) return "";
-          const TYPE6_LETTERS = ["α", "β", "γ", "ζ", "η", "τ", "⊕"];
-          const firstChar = word.charAt(0);
-          const char = TYPE6_LETTERS.includes(firstChar)
-            ? firstChar
-            : firstChar.toUpperCase();
-          const secondChar = word.charAt(1);
-          return secondChar === "-" ? `${char}-` : char;
-        };
-
-        const letterA = getBaseLetter(aWord);
-        const letterB = getBaseLetter(bWord);
+        const letterA = extractBaseLetter(aWord);
+        const letterB = extractBaseLetter(bWord);
 
         let comparison = compareKineticLetters(letterA, letterB);
         if (comparison === 0) {
