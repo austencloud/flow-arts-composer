@@ -64,9 +64,19 @@ vi.mock(
   })
 );
 
-vi.mock("$lib/shared/animation-engine/state/animation-panel-state.svelte", () => ({
-  createAnimationPanelState: () => workspaceVideoMocks.panelState,
-}));
+vi.mock(
+  "$lib/shared/animation-engine/state/animation-panel-state.svelte",
+  () => ({
+    createAnimationPanelState: () => workspaceVideoMocks.panelState,
+  })
+);
+
+// The player is exercised in the browser route. This control test keeps the
+// exporter fixture isolated from an unrelated WebGL playback stack.
+vi.mock(
+  "$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte",
+  () => import("./ShareButtonInlinePlayerStub.svelte")
+);
 
 vi.mock("$lib/shared/share/get-sharer", () => ({
   getSharer: () => ({
@@ -76,7 +86,9 @@ vi.mock("$lib/shared/share/get-sharer", () => ({
 }));
 
 vi.mock("$lib/shared/share/services/post-handoff", async (original) => ({
-  ...(await original<typeof import("$lib/shared/share/services/post-handoff")>()),
+  ...(await original<
+    typeof import("$lib/shared/share/services/post-handoff")
+  >()),
   downloadArtifact: workspaceVideoMocks.downloadArtifact,
 }));
 
