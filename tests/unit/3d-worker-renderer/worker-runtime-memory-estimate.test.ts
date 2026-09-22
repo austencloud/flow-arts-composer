@@ -11,11 +11,27 @@ import {
   UnsignedByteType,
 } from "three";
 import { describe, expect, it } from "vitest";
-import { estimateWorkerRuntimeBytes } from "$lib/shared/3d/worker-renderer/services/worker-runtime-memory-estimate";
+import {
+  estimateWorkerRuntimeBytes,
+  retainedSceneBudgetBytes,
+} from "$lib/shared/3d/worker-renderer/services/worker-runtime-memory-estimate";
 
 const viewport = { width: 1, height: 1, dpr: 1 };
 
 describe("worker runtime memory estimate", () => {
+  it.each([undefined, NaN, Infinity, -1, 0.5, 4])(
+    "uses the conservative retention budget for device memory %s",
+    (deviceMemory) => {
+      expect(retainedSceneBudgetBytes(deviceMemory)).toBe(96 * 1024 * 1024);
+    }
+  );
+
+  it("allows heavier scenes on capable devices without an unbounded budget", () => {
+    expect(retainedSceneBudgetBytes(8)).toBe(192 * 1024 * 1024);
+    expect(retainedSceneBudgetBytes(16)).toBe(320 * 1024 * 1024);
+    expect(retainedSceneBudgetBytes(128)).toBe(320 * 1024 * 1024);
+  });
+
   it("uses compressed mip bytes instead of an expanded RGBA estimate", () => {
     const scene = new Scene();
     const texture = new CompressedTexture(
