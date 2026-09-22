@@ -15,7 +15,7 @@ export type ViewerInspectorProfile =
   | "motion"
   | "art"
   | "performance"
-  | "send";
+  | "share";
 
 const INSPECTOR_LAYOUTS: Record<
   ViewerInspectorProfile,
@@ -29,11 +29,11 @@ const INSPECTOR_LAYOUTS: Record<
   // between the two defaults is what makes the stage/inspector seam travel
   // when the viewer switches between Motion and Performances.
   performance: { defaultWidth: 400, minWidth: 360, maxWidth: 900 },
-  // Send mode keeps the live stage and puts the recipients where the
-  // inspector goes. A recipient row is an avatar and a name, so the column
-  // is the narrowest of the set; the stage keeps whatever view the person
-  // chose to send from.
-  send: { defaultWidth: 400, minWidth: 340, maxWidth: 720 },
+  // The share panel keeps the live stage and takes the inspector's place. It
+  // is a row of actions over a recipient list (an avatar and a name each), so
+  // the column is the narrowest of the set; the stage keeps whatever view the
+  // rail has selected.
+  share: { defaultWidth: 400, minWidth: 340, maxWidth: 720 },
 };
 
 export function viewerInspectorConstraints(profile: ViewerInspectorProfile): {

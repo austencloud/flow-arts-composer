@@ -10,8 +10,11 @@
 -->
 <script lang="ts">
   import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
+  import Crossfade from "$lib/shared/components/Crossfade.svelte";
+  import { DURATION } from "$lib/shared/transitions/transitions";
   import UserSearchInput from "$lib/shared/user-search/UserSearchInput.svelte";
   import type { SendAttachmentState } from "../../state/send-attachment-state.svelte";
+  import ConversationSkeleton from "../skeletons/ConversationSkeleton.svelte";
   import ConversationItem from "./ConversationItem.svelte";
   import GroupAvatarStack from "./GroupAvatarStack.svelte";
 
@@ -25,6 +28,17 @@
   }
 
   let { state, collapseOnSelect = false }: Props = $props();
+
+  // While recents load, show their rows as placeholders. Rendering the empty
+  // list instead read as "you have no conversations" and focused the search,
+  // which on a phone also threw up the keyboard.
+  const recentsPhase = $derived(
+    state.recentsLoading
+      ? "loading"
+      : state.recentConversations.length > 0
+        ? "ready"
+        : "none"
+  );
 </script>
 
 <section
@@ -140,27 +154,32 @@
     inert={state.sending}
     aria-label="Share destinations"
   >
-    {#if state.recentConversations.length > 0}
-      <div class="destination-group">
-        <h4>Recent conversations</h4>
-        <div class="conversation-options">
-          {#each state.recentConversations as conversation (conversation.id)}
-            <ConversationItem
-              {conversation}
-              selectionMode
-              selected={state.isConversationSelected(conversation.id)}
-              onclick={() => state.toggleConversation(conversation)}
-            />
-          {/each}
+    <Crossfade key={recentsPhase} duration={DURATION.normal} animateHeight>
+      {#if recentsPhase === "loading"}
+        <div class="destination-group" aria-busy="true">
+          <h4>Recent conversations</h4>
+          <ConversationSkeleton count={3} />
         </div>
-      </div>
-    {/if}
+      {:else if recentsPhase === "ready"}
+        <div class="destination-group">
+          <h4>Recent conversations</h4>
+          <div class="conversation-options">
+            {#each state.recentConversations as conversation (conversation.id)}
+              <ConversationItem
+                {conversation}
+                selectionMode
+                selected={state.isConversationSelected(conversation.id)}
+                onclick={() => state.toggleConversation(conversation)}
+              />
+            {/each}
+          </div>
+        </div>
+      {/if}
+    </Crossfade>
 
     <div class="destination-group new-conversation">
       <h4>
-        {state.recentConversations.length > 0
-          ? "Start a new conversation"
-          : "Find someone"}
+        {recentsPhase === "none" ? "Find someone" : "Start a new conversation"}
       </h4>
       {#key state.searchResetKey}
         <UserSearchInput
@@ -170,8 +189,7 @@
           placeholder="Search by username or name"
           inlineResults
           excludeUserIds={state.excludeUserIds}
-          autofocus={state.recentConversations.length === 0 &&
-            !state.hasDestination}
+          autofocus={recentsPhase === "none" && !state.hasDestination}
         />
       {/key}
     </div>

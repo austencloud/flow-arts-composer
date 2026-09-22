@@ -10,6 +10,7 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import type { SequenceDetailLoader } from "$lib/shared/browse/services/sequence-detail-loader";
+import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
 
 export interface CopyResult {
   success: boolean;
@@ -44,7 +45,7 @@ export class ClaudeCodeCopier {
 
     // Header - deduplicate repeated word in circular sequences
     const rawWord = fullSequence.word || fullSequence.name || "Untitled";
-    lines.push(`# ${this.deduplicateWord(rawWord)}`);
+    lines.push(`# ${simplifyRepeatedWord(rawWord)}`);
     lines.push(`id: ${fullSequence.id}`);
     lines.push(`owner: ${fullSequence.ownerId || "unknown"}`);
     lines.push(
@@ -157,23 +158,5 @@ export class ClaudeCodeCopier {
       COUNTER_IN: "counterIn", COUNTER_OUT: "counterOut",
     };
     return map[ori] ?? ori.toLowerCase();
-  }
-
-  /**
-   * Circular sequences store the full rotated cycle as the word,
-   * e.g. "Z-Σ-YΩZ-Σ-YΩZ-Σ-YΩZ-Σ-YΩ". Extract the base unit.
-   */
-  private deduplicateWord(word: string): string {
-    if (word.length < 2) return word;
-    // Try every possible base length from 1 to half the word
-    for (let len = 1; len <= word.length / 2; len++) {
-      if (word.length % len !== 0) continue;
-      const base = word.substring(0, len);
-      const repeats = word.length / len;
-      if (repeats >= 2 && base.repeat(repeats) === word) {
-        return base;
-      }
-    }
-    return word;
   }
 }

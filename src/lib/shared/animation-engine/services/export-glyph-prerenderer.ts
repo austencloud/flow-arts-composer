@@ -1,13 +1,14 @@
 /**
  * Export Glyph Prerenderer
  *
- * Pre-renders complete TKA glyphs (letter + dash + turns column) as composite
- * HTMLImageElements before the export frame loop. Each unique combination of
- * letter, turns tuple, and turn colors produces one cached image.
+ * Pre-renders complete TKA glyphs (letter + dash + skew braces + turns
+ * column) as composite HTMLImageElements before the export frame loop. Each
+ * unique combination of letter, turns tuple, turn colors, and skewed-frame
+ * membership produces one cached image.
  *
  * This ensures the exported video matches the live canvas exactly - the live
- * canvas renders TKAGlyph + Dash + TurnsColumn as SVG overlays; without
- * pre-rendering, the export would only show a bare letter SVG.
+ * canvas renders TKAGlyph + Dash + SkewBraces + TurnsColumn as SVG overlays;
+ * without pre-rendering, the export would only show a bare letter SVG.
  */
 
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
@@ -33,6 +34,11 @@ export interface GlyphAsset {
   /** Pixels the image extends above the standard glyph origin (50, 800).
    *  When turns are present, the top turn number sits above the letter. */
   yOffset: number;
+  /** Pixels the image extends left of the standard glyph origin (50, 800).
+   *  A skewed-frame beat's opening brace sits left of the letter's own
+   *  x=0, so the composite is padded and shifted right by this amount -
+   *  the caller must shift its draw position left by the same amount. */
+  xOffset: number;
 }
 
 export interface ElementalGlyphAsset {
@@ -57,7 +63,26 @@ import {
   getSlotUnitWidth,
   getSlotOffsetX,
 } from "$lib/shared/pictograph/tka-glyph/utils/turn-tuple-parser";
-import { calculateTurnPositions } from "$lib/shared/pictograph/tka-glyph/utils/turn-position-calculator";
+import {
+  calculateTurnPositions,
+  getTurnsColumnRightExtent,
+} from "$lib/shared/pictograph/tka-glyph/utils/turn-position-calculator";
+import {
+  getSkewBraceInk,
+  getSkewBraceLayout,
+  placeSkewBraceGlyphs,
+} from "$lib/shared/pictograph/tka-glyph/utils/skew-brace-layout";
+import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { isSkewedFrameBeat } from "$lib/shared/foundation/services/skewed-frame";
+import {
+  SKEW_BRACE_FILL_DARK,
+  SKEW_BRACE_FILL_LIGHT,
+  SKEW_BRACE_FONT_FAMILY,
+  SKEW_BRACE_FONT_WEIGHT,
+} from "$lib/shared/render/utils/draw-skew-braces";
+
+/** Glyph units of clear space kept beside a brace's measured ink. */
+const BRACE_INK_MARGIN = 4;
 
 // Constants matching Dash.svelte
 const DASH_WIDTH = 70;
@@ -128,7 +153,11 @@ export class ExportGlyphPrerenderer {
         isDarkMode
       );
 
-      const key = `${step.letter}|${turnsTuple}|${topColor}|${bottomColor}`;
+      // A skewed-frame beat wears braces a non-skewed beat of the same
+      // letter/turns/colors does not, so the flag must be part of the key -
+      // otherwise the two would collide on one cached image.
+      const skewed = this.isSkewedStep(step);
+      const key = `${step.letter}|${turnsTuple}|${topColor}|${bottomColor}|${skewed ? "skew" : "plain"}`;
       this.stepKeyMap.set(i, key);
 
       if (!uniqueGlyphs.has(key)) {
@@ -268,6 +297,21 @@ export class ExportGlyphPrerenderer {
   // ---------------------------------------------------------------------------
 
   /**
+   * True when a step's beat wears skew braces - both hands present (not an
+   * invisible placeholder) and one hand's start or end location is cardinal
+   * while the other's is intercardinal. Matches PictographRenderer.svelte's
+   * own skewedFrame gate and the three canvas renderers' isSkewedFrameBeat
+   * check, so this composite agrees with every other render path.
+   */
+  private isSkewedStep(step: StepData): boolean {
+    const left = step.motions?.left;
+    const right = step.motions?.right;
+    return (
+      isVisibleMotion(left) && isVisibleMotion(right) && isSkewedFrameBeat(left, right)
+    );
+  }
+
+  /**
    * Map TurnColorInterpreter output (always dark-mode hex) to the correct
    * export color based on the actual dark/light mode.
    */
@@ -343,6 +387,25 @@ export class ExportGlyphPrerenderer {
 
     const parsed = parseTurnsTuple(data.turnsTuple);
     const hasDash = isDashLetter(data.letter);
+
+    // Skew braces ("{" / "}") around the letter of a skewed-frame beat - the
+    // composite-SVG mirror of SkewBraces.svelte, gated the same way
+    // PictographRenderer.svelte gates the DOM component. rightExtent reuses
+    // the same getTurnsColumnRightExtent the live turns column and the three
+    // canvas renderers use, so the closing brace clears whatever the turns
+    // column below is about to paint.
+    const skewed = this.isSkewedStep(data.step);
+    const braceLayout = skewed
+      ? getSkewBraceLayout(data.letter, letterDims, {
+          rightExtent: getTurnsColumnRightExtent(parsed),
+        })
+      : null;
+    // Same ink placement SkewBraces.svelte uses. The composite is rasterised
+    // on this page, with this page's fonts, so the page's measurement holds.
+    const braceGlyphs = braceLayout
+      ? placeSkewBraceGlyphs(braceLayout, getSkewBraceInk())
+      : null;
+
     // A slot shows if it has a displayable number OR is halved - a halved
     // 0-turn motion shows the mark alone (matches TurnsColumn.svelte and
     // canvas-2d-glyph-renderer.ts's showTop/showBottom).
@@ -373,10 +436,28 @@ export class ExportGlyphPrerenderer {
     if (hasTurns && turnPositions) {
       maxRight = Math.max(maxRight, turnPositions.top.x + columnWidth);
     }
+    // A skewed beat's closing brace can extend past the turns column. Pad the
+    // right edge by one full font-size beyond closeX: a glyph's advance width
+    // can never exceed its own em box, so this is a deterministic upper bound
+    // that needs no synchronous text-measurement API (not reliably available
+    // in every context this composite gets built in).
+    if (braceLayout) {
+      maxRight = Math.max(maxRight, braceLayout.closeX + braceLayout.fontSize);
+    }
+
+    // A skewed beat's opening brace sits left of the letter's own x=0 origin.
+    // Shift the whole composite right far enough that the brace's ink, not
+    // just the gap before it, lands inside the SVG viewBox: padding by the
+    // gap alone left the glyph entirely at negative x, clipped from every
+    // exported frame. The margin covers anti-aliasing and the 1/64em rounding
+    // of measured ink.
+    const xPadLeft = braceGlyphs
+      ? Math.max(0, Math.ceil(-braceGlyphs.inkLeft + BRACE_INK_MARGIN))
+      : 0;
 
     const yPadTop = hasTurns ? TURN_Y_PADDING : 0;
     const yPadBottom = hasTurns ? TURN_Y_PADDING : 0;
-    const totalWidth = Math.ceil(maxRight);
+    const totalWidth = Math.ceil(maxRight) + xPadLeft;
     const totalHeight = Math.ceil(letterDims.height + yPadTop + yPadBottom);
 
     // -- Build composite SVG --------------------------------------------------
@@ -398,7 +479,7 @@ export class ExportGlyphPrerenderer {
 
     // --- Letter + Dash group (optionally inverted for dark mode) ---
     const invertAttr = isDarkMode ? ' style="filter: invert(0.9)"' : "";
-    parts.push(`<g transform="translate(0, ${yPadTop})"${invertAttr}>`);
+    parts.push(`<g transform="translate(${xPadLeft}, ${yPadTop})"${invertAttr}>`);
 
     // Inline the letter SVG content
     const letterContent = this.extractSvgInnerContent(letterSvg);
@@ -421,6 +502,26 @@ export class ExportGlyphPrerenderer {
 
     parts.push("</g>"); // End letter+dash group
 
+    // --- Skew braces (NOT inside the dark-mode-inverted group - unlike the
+    // dash's fixed color, which the CSS invert flips into a dark-mode
+    // approximation, these use SkewBraces.svelte's exact dark/light hex so
+    // there is no drift from an inverted #231f20 not quite matching #d9d9d9) ---
+    if (braceLayout && braceGlyphs) {
+      const braceFill = isDarkMode ? SKEW_BRACE_FILL_DARK : SKEW_BRACE_FILL_LIGHT;
+      const braceAttrs =
+        `text-anchor="start" dominant-baseline="alphabetic" ` +
+        `font-family="${SKEW_BRACE_FONT_FAMILY}" font-weight="${SKEW_BRACE_FONT_WEIGHT}" ` +
+        `font-size="${braceLayout.fontSize}" fill="${braceFill}"`;
+      parts.push(
+        `<text x="${braceGlyphs.open.x + xPadLeft}" y="${braceGlyphs.open.y + yPadTop}" ` +
+          `${braceAttrs}>{</text>`
+      );
+      parts.push(
+        `<text x="${braceGlyphs.close.x + xPadLeft}" y="${braceGlyphs.close.y + yPadTop}" ` +
+          `${braceAttrs}>}</text>`
+      );
+    }
+
     // --- Turn numbers + halved-motion marks (NOT inside the dark-mode-inverted group) ---
     if (hasTurns && turnPositions) {
       if (showTop) {
@@ -429,7 +530,7 @@ export class ExportGlyphPrerenderer {
           this.appendTurnNumber(
             parts,
             parsed.top,
-            turnPositions.top.x + topOffsetX,
+            turnPositions.top.x + topOffsetX + xPadLeft,
             turnPositions.top.y + yPadTop,
             "top-color",
             svgTextCache,
@@ -439,7 +540,7 @@ export class ExportGlyphPrerenderer {
         if (parsed.topHalved) {
           this.appendHalfMark(
             parts,
-            turnPositions.top.x + topOffsetX + topOwnWidth + MARK_GAP,
+            turnPositions.top.x + topOffsetX + topOwnWidth + MARK_GAP + xPadLeft,
             turnPositions.top.y + yPadTop,
             "top-color",
             svgTextCache,
@@ -453,7 +554,7 @@ export class ExportGlyphPrerenderer {
           this.appendTurnNumber(
             parts,
             parsed.bottom,
-            turnPositions.bottom.x + bottomOffsetX,
+            turnPositions.bottom.x + bottomOffsetX + xPadLeft,
             turnPositions.bottom.y + yPadTop,
             "bottom-color",
             svgTextCache,
@@ -463,7 +564,7 @@ export class ExportGlyphPrerenderer {
         if (parsed.bottomHalved) {
           this.appendHalfMark(
             parts,
-            turnPositions.bottom.x + bottomOffsetX + bottomOwnWidth + MARK_GAP,
+            turnPositions.bottom.x + bottomOffsetX + bottomOwnWidth + MARK_GAP + xPadLeft,
             turnPositions.bottom.y + yPadTop,
             "bottom-color",
             svgTextCache,
@@ -487,6 +588,7 @@ export class ExportGlyphPrerenderer {
         image,
         dimensions: { width: totalWidth, height: totalHeight },
         yOffset: yPadTop,
+        xOffset: xPadLeft,
       });
     } catch (err) {
       console.error(`Failed to prerender glyph for "${data.letter}":`, err);

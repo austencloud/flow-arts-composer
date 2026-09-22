@@ -59,6 +59,36 @@ describe("step cap encounters", () => {
     }
   });
 
+  it("keeps action prompts out of cap and encore history after real cap encounters", () => {
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      authDrawerState.show("signup", "step-cap-guest", "cap-sequence");
+      authDrawerState.hide();
+    }
+    expect(authDrawerState.stepCapAttempts).toBe(5);
+
+    const actionTriggers = [
+      "extend-sequence",
+      "turn-pattern",
+      "rotation-direction",
+      "duration-pattern",
+      "choose-start",
+      "rewind-sequence",
+      "loop-step-cap-guest",
+      "setup-step-cap-guest",
+    ] as const;
+    for (const trigger of actionTriggers) {
+      authDrawerState.show("signup", trigger, "cap-sequence");
+      expect(authDrawerState.stepCapAttempts).toBe(5);
+      expect(authDrawerState.encorePrompt).toBeNull();
+      expect(authDrawerState.claimEncore()).toBe(false);
+      authDrawerState.hide();
+    }
+
+    authDrawerState.show("signup", "step-cap-guest", "cap-sequence");
+    expect(authDrawerState.stepCapAttempts).toBe(6);
+    expect(authDrawerState.encorePrompt).toBe("offer");
+  });
+
   it("offers an explicit encore without spending it on dismissal", () => {
     for (let attempt = 1; attempt <= 5; attempt++) {
       authDrawerState.show("signup", "step-cap-guest", "encore-sequence");

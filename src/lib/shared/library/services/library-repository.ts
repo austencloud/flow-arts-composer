@@ -40,6 +40,7 @@ import {
   ensureComposition,
 } from "$lib/shared/foundation/services/sequence-hydrator";
 import { deriveWordStatus } from "$lib/shared/foundation/services/word-deriver";
+import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
 import {
   firestoreGet,
   firestoreGetDetailed,
@@ -1245,7 +1246,7 @@ export class LibraryRepository {
       result = result.filter(
         (seq) =>
           seq.name.toLowerCase().includes(searchLower) ||
-          seq.word.toLowerCase().includes(searchLower) ||
+          stripWordNotation(seq.word).toLowerCase().includes(searchLower) ||
           seq.displayName?.toLowerCase().includes(searchLower)
       );
     }

@@ -605,7 +605,7 @@
 
   function gatedPattern(
     action: () => void | Promise<void>,
-    trigger: AuthNudgeTrigger = "patterns-guest"
+    trigger: AuthNudgeTrigger
   ): () => void {
     return () => {
       if (patternsLocked) {
@@ -616,13 +616,15 @@
     };
   }
 
-  const gatedTurnPattern = gatedPattern(handleTurnPattern);
-  const gatedRotationDirection = gatedPattern(handleRotationDirection);
-  const gatedDuration = gatedPattern(handleDuration);
-  const gatedRewind = gatedPattern(handleRewind);
-  // Extend adds steps, so the ask names the step cap rather than the tools.
-  const gatedExtend = gatedPattern(handleExtend, "step-cap-guest");
-  const gatedShiftStart = gatedPattern(handleShiftStart);
+  const gatedTurnPattern = gatedPattern(handleTurnPattern, "turn-pattern");
+  const gatedRotationDirection = gatedPattern(
+    handleRotationDirection,
+    "rotation-direction"
+  );
+  const gatedDuration = gatedPattern(handleDuration, "duration-pattern");
+  const gatedRewind = gatedPattern(handleRewind, "rewind-sequence");
+  const gatedExtend = gatedPattern(handleExtend, "extend-sequence");
+  const gatedShiftStart = gatedPattern(handleShiftStart, "choose-start");
 
   async function handleCopySequenceJson() {
     const result = await actionOrchestrator.copySequenceJson();

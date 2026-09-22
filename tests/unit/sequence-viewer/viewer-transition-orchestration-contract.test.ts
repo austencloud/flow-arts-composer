@@ -302,7 +302,7 @@ describe("Sequence Viewer transition orchestration contract", () => {
     // Send mode owns the inspector track, so the card inspector yields to it
     // before the export and studio conditions are consulted.
     expect(shell).toContain(
-      "const cardInspectorVisible = $derived(\n    !share.sendModeActive &&\n      (layout.isImageExportActive ||"
+      "const cardInspectorVisible = $derived(\n    !share.panelOpen &&\n      (layout.isImageExportActive ||"
     );
     expect(shellLayoutState).toContain(
       'if (previousMode !== "card" && mode === "card")'
@@ -628,7 +628,7 @@ describe("Sequence Viewer transition orchestration contract", () => {
     // Send mode keeps the live stage and puts the recipients in the inspector,
     // so it is not a workspace takeover: only the performance editor is.
     expect(shell).toContain("takeoverActive={workspaceTakeoverActive}");
-    expect(shell).toContain("performanceEditorActive && !share.sendModeActive");
+    expect(shell).toContain("performanceEditorActive && !share.panelOpen");
     expect(shellLayoutState).toContain("showVideoGallery ||");
     // Performances owns its own inspector profile. The gap between its width
     // and the effects inspector width is the seam travel Gate 5 animates.

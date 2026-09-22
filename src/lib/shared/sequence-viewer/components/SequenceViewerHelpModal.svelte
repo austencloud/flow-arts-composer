@@ -69,7 +69,7 @@
         <p>Save or share your sequence in different formats.</p>
         <ul>
           <li><strong>Image</strong> - Download as PNG</li>
-          <li><strong>Animation</strong> - Export as GIF or video</li>
+          <li><strong>Animation</strong> - Export as a video</li>
           <li><strong>Copy</strong> - Copy image to clipboard</li>
         </ul>
       </HelpSection>

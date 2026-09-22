@@ -14,6 +14,11 @@ import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/servi
 import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import {
+  LOOPType,
+  Period as EnginePeriod,
+  loopExecutorSelector,
+} from "@tka/sequence-engine/loop";
 
 /** The executor interface both encoder and decoder need */
 export interface LOOPExecutorLike {
@@ -28,40 +33,26 @@ export interface LOOPExecutorLike {
 export async function getLoopExecutor(
   tag: string
 ): Promise<LOOPExecutorLike | null> {
-  switch (tag) {
-    case "sr": {
-      const mod =
-        await import("$lib/features/create/generate/circular/services/strict-rotated-loop-executor");
-      return mod.strictRotatedLOOPExecutor;
-    }
-    case "sm": {
-      const mod =
-        await import("$lib/features/create/generate/circular/services/strict-mirrored-loop-executor");
-      return mod.strictMirroredLOOPExecutor;
-    }
-    case "sf": {
-      const mod =
-        await import("$lib/features/create/generate/circular/services/strict-flipped-loop-executor");
-      return mod.strictFlippedLOOPExecutor;
-    }
-    case "ss": {
-      const mod =
-        await import("$lib/features/create/generate/circular/services/strict-swapped-loop-executor");
-      return mod.strictSwappedLOOPExecutor;
-    }
-    case "si": {
-      const mod =
-        await import("$lib/features/create/generate/circular/services/strict-inverted-loop-executor");
-      return mod.strictInvertedLOOPExecutor;
-    }
-    case "rw": {
-      const mod =
-        await import("$lib/features/create/generate/circular/services/rewound-loop-executor");
-      return mod.rewoundLOOPExecutor;
-    }
-    default:
-      return null;
-  }
+  const loopType = {
+    sr: LOOPType.ROTATED,
+    sm: LOOPType.MIRRORED,
+    sf: LOOPType.FLIPPED,
+    ss: LOOPType.SWAPPED,
+    si: LOOPType.INVERTED,
+    rw: LOOPType.REWOUND,
+  }[tag];
+  if (!loopType) return null;
+  return {
+    executeLOOP: (steps, period) =>
+      loopExecutorSelector
+        .getExecutor(loopType)
+        .executeLOOP(
+          steps,
+          period === Period.QUARTERED
+            ? EnginePeriod.QUARTERED
+            : EnginePeriod.HALVED
+        ) as StepData[],
+  };
 }
 
 /**

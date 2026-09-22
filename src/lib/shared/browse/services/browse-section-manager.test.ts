@@ -65,3 +65,51 @@ describe("organizeSections — length grouping", () => {
     expect(sections[0]!.title).toContain("8 steps");
   });
 });
+
+function letterConfig(): SectionConfig {
+  return {
+    groupBy: "letter",
+    sortMethod: "alphabetical" as BrowseSortMethod,
+    showEmptySections: false,
+    expandedSections: new Set<string>(),
+  };
+}
+
+describe("organizeSections - letter grouping", () => {
+  // Regression: a skewed-frame word like "{ABAB}" was bucketed under "{"
+  // because deriveLetter read the brace as the first character. The braces
+  // mark a span, not a letter, so a braced word must file under its first
+  // letter and land in the same section as a plain word with that letter.
+  it("files a braced word under its first letter, alongside a plain word with the same letter", () => {
+    const bracedSeq = {
+      id: "seq-braced",
+      name: "{ABAB}",
+      word: "{ABAB}",
+      steps: [],
+      thumbnails: [],
+      tags: [],
+      metadata: {},
+      isFavorite: false,
+      sequenceLength: 4,
+    } as unknown as SequenceData;
+
+    const plainSeq = {
+      id: "seq-plain",
+      name: "ACDB",
+      word: "ACDB",
+      steps: [],
+      thumbnails: [],
+      tags: [],
+      metadata: {},
+      isFavorite: false,
+      sequenceLength: 4,
+    } as unknown as SequenceData;
+
+    const sections = organizeSections([bracedSeq, plainSeq], letterConfig());
+
+    expect(sections).toHaveLength(1);
+    expect(sections[0]!.id).toBe("letter-a|4");
+    expect(sections[0]!.count).toBe(2);
+    expect(sections[0]!.title.startsWith("A ")).toBe(true);
+  });
+});

@@ -11,6 +11,12 @@ import type { CanonicalSequence } from "./types";
 import type { StepSignatureGenerator } from "./step-signature-generator";
 import type { WordCyclicEquivalenceDetector } from "$lib/shared/foundation/utils/word-cyclic-equivalence-detector";
 import type { SequenceSignature, StepSignature } from "../domain/models/signatures";
+import {
+  parseWordNotation,
+  renderWordNotation,
+  rotateWordUnits,
+  stripWordNotation,
+} from "$lib/shared/foundation/utils/word-notation";
 
 export class SequenceCanonicalizer {
   constructor(
@@ -27,8 +33,9 @@ export class SequenceCanonicalizer {
     let canonicalWord = sequence.word;
 
     if (sequence.isCircular && sequence.steps.length > 0) {
-      canonicalWord = this.wordCyclicEquivalenceDetector.getCanonicalForm(sequence.word);
-      circularOffset = this.findCircularOffset(sequence.word, canonicalWord);
+      const rotated = this.canonicalizeCircularWord(sequence.word);
+      canonicalWord = rotated.canonicalWord;
+      circularOffset = rotated.offset;
     }
 
     // For now, we don't apply spatial rotation during canonicalization
@@ -66,8 +73,9 @@ export class SequenceCanonicalizer {
     let circularOffset = 0;
 
     if (sequence.isCircular && sequence.word.length > 0) {
-      canonicalWord = this.wordCyclicEquivalenceDetector.getCanonicalForm(sequence.word);
-      circularOffset = this.findCircularOffset(sequence.word, canonicalWord);
+      const rotated = this.canonicalizeCircularWord(sequence.word);
+      canonicalWord = rotated.canonicalWord;
+      circularOffset = rotated.offset;
     }
 
     return this.generateCanonicalHash(
@@ -107,6 +115,46 @@ export class SequenceCanonicalizer {
     };
   }
 
+
+  /**
+   * Rotates a (possibly skewed) word to its canonical circular form.
+   *
+   * The cyclic-equivalence detector and the offset search both run on the
+   * bare letters: braces are span markers, not beats, and a character-by-
+   * character rotation over them would corrupt the offset. The resulting
+   * letter-based offset then rotates the word's parsed unit array, so the
+   * canonical word keeps its original skew mask instead of losing it.
+   *
+   * Dash letters (e.g. "W-") are two characters wide, so a letter offset
+   * already diverges from a beat index for those words. That mismatch
+   * predates this method and is not addressed here.
+   *
+   * It has a second consequence: because that character offset is applied
+   * to the unit array, this method is not rotation-invariant for words with
+   * more than one dash letter. For example, "AW-BW-" and "W-BW-A" (a
+   * rotation of it) both canonicalize to "W-BW-A", but "BW-AW-" and
+   * "W-AW-B" (also a rotation of the same underlying sequence) both
+   * canonicalize to "AW-BW-" instead. So haveSameCanonicalForm can return
+   * false for two rotations of one multi-dash sequence, depending on which
+   * rotation each one started from. This is pre-existing: the old
+   * character-by-character rotation had the same problem, producing a
+   * mid-unit canonical string and an equally wrong offset. Fixing it means
+   * running the rotation search over the unit array itself (double the
+   * units, pick the lexicographically smallest rotation by letter
+   * sequence) so the offset becomes a unit index instead of a character
+   * index; that is a separate change from this one.
+   */
+  private canonicalizeCircularWord(word: string): {
+    canonicalWord: string;
+    offset: number;
+  } {
+    const strippedWord = stripWordNotation(word);
+    const canonicalLetters = this.wordCyclicEquivalenceDetector.getCanonicalForm(strippedWord);
+    const offset = this.findCircularOffset(strippedWord, canonicalLetters);
+    const units = parseWordNotation(word);
+    const canonicalWord = renderWordNotation(rotateWordUnits(units, offset));
+    return { canonicalWord, offset };
+  }
 
   /**
    * Find how many positions the original word needs to rotate to become canonical.

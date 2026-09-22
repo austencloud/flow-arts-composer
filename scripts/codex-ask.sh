@@ -32,14 +32,12 @@
 
 set -euo pipefail
 
-MODEL="${CODEX_ASK_MODEL:-gpt-5.6-sol}"
+MODEL="${CODEX_ASK_MODEL:-gpt-6-sol}"
 
-# Optional reasoning effort (low|medium|high|xhigh). Unset keeps the CLI
-# default for the model. Set it per task; do not default every run to xhigh.
-EFFORT_ARGS=()
-if [ -n "${CODEX_ASK_EFFORT:-}" ]; then
-	EFFORT_ARGS=(-c "model_reasoning_effort=\"${CODEX_ASK_EFFORT}\"")
-fi
+# Defaults favor bounded, routine review. Set either environment variable for a
+# task that needs a different model or effort.
+EFFORT="${CODEX_ASK_EFFORT:-medium}"
+EFFORT_ARGS=(-c "model_reasoning_effort=\"${EFFORT}\"")
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 if [ $# -lt 1 ]; then

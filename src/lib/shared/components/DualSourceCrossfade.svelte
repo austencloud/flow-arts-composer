@@ -3,6 +3,10 @@
   the hidden source, then changes `active` only after that source is ready. This
   keeps a canvas, editor, or other expensive surface alive while its replacement
   starts behind it. Cheap keyed swaps still belong in Crossfade.svelte.
+
+  Both sources always fill the stage, so the hidden one is inert but still laid
+  out: `data-inert-keeps-layout` tells a canvas inside it to keep following the
+  stage size instead of freezing as it would in a collapsing pane.
 -->
 <script lang="ts">
   import type { Snippet } from "svelte";
@@ -97,6 +101,7 @@
     class:unclipped={!clip}
     class:active={active === "first"}
     inert={active !== "first"}
+    data-inert-keeps-layout
     aria-hidden={active !== "first"}
     ontransitionend={(event) => handleTransitionEnd(event, "first")}
     ontransitioncancel={(event) => handleTransitionEnd(event, "first")}
@@ -108,6 +113,7 @@
     class:unclipped={!clip}
     class:active={active === "second"}
     inert={active !== "second"}
+    data-inert-keeps-layout
     aria-hidden={active !== "second"}
     ontransitionend={(event) => handleTransitionEnd(event, "second")}
     ontransitioncancel={(event) => handleTransitionEnd(event, "second")}

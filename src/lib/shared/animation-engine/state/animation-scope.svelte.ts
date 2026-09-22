@@ -28,9 +28,10 @@ export class AnimationScope {
     const ephemeral = options.persistence === "ephemeral";
     this.visibility = new AnimationVisibilityStateManager({ ephemeral });
     this.settings = createAnimationSettingsState({ ephemeral });
-    // Effects config is per-instance by construction; presets persistence is
-    // handled by the local adapter in Phase 2 (EffectsPanel localStorage moves there).
-    this.effects = createEffectsConfigState();
+    // An ephemeral scope must never read from or write to the shared
+    // tka_effects_config key; public previews render the creator's look, not
+    // the visitor's saved effects. Persisted tiers keep today's behavior.
+    this.effects = createEffectsConfigState(undefined, { persist: !ephemeral });
   }
 
   /** Single source of truth for playback speed. 1.0 == 60 BPM. */
@@ -40,7 +41,7 @@ export class AnimationScope {
 }
 
 export function createAnimationScope(
-  options: AnimationScopeOptions,
+  options: AnimationScopeOptions
 ): AnimationScope {
   return new AnimationScope(options);
 }

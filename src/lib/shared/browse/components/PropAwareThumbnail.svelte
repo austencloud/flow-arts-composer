@@ -49,6 +49,7 @@
   import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
   import { authState } from "$lib/shared/auth/state/auth-state.svelte";
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+  import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
 
   interface Props {
     sequence: SequenceData;
@@ -57,6 +58,14 @@
     catDogModeEnabled?: boolean;
     lightMode?: boolean;
     variant?: ThumbnailVariant;
+    /**
+     * Chosen hand palette. `undefined` (the default) falls back to the
+     * viewer's Settings — correct for a personal surface, but a creator-work
+     * surface (public card art, hover previews) must pass its own resolved
+     * colors explicitly so it never leaks the viewer's palette. `null` means
+     * the theme default; an object is those exact colors.
+     */
+    primaryPropColors?: ViewerCustomColorPair | null;
     // Composition overrides
     addWord?: boolean;
     addStepNumbers?: boolean;
@@ -91,6 +100,7 @@
     catDogModeEnabled = false,
     lightMode = false,
     variant = "gallery",
+    primaryPropColors,
     addWord,
     addStepNumbers,
     includeStartPlacement,
@@ -181,10 +191,15 @@
       leftPropType,
       rightPropType,
       catDogModeEnabled,
-      // The same palette the live PictographRenderer reads, so a card in a
+      // An explicit prop wins (creator-work surfaces resolve their own look
+      // and must never leak the viewer's Settings). Otherwise fall back to
+      // the same palette the live PictographRenderer reads, so a card in a
       // picker matches the sheet it gets added to. Null keeps the card on the
       // shared default-color cache class.
-      primaryPropColors: getSettings().primaryPropColors ?? null,
+      primaryPropColors:
+        primaryPropColors !== undefined
+          ? primaryPropColors
+          : (getSettings().primaryPropColors ?? null),
       lightMode,
       variant,
       addWord,

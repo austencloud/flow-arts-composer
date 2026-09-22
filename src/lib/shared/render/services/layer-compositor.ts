@@ -13,8 +13,9 @@ import {
   getTurnNumberImagePath,
   getTurnNumberWidth,
 } from "../../pictograph/tka-glyph/utils/turn-tuple-parser";
-import { calculateTurnPositions } from "../../pictograph/tka-glyph/utils/turn-position-calculator";
+import { calculateTurnPositions, getTurnsColumnRightExtent } from "../../pictograph/tka-glyph/utils/turn-position-calculator";
 import { isDashLetter } from "../../pictograph/tka-glyph/utils/letter-image-getter";
+import { isSkewedFrameBeat } from "$lib/shared/foundation/services/skewed-frame";
 import { calculateReversalPositions } from "../core";
 import type { Canvas2DDirectRenderer } from './canvas-2d-direct-renderer';
 import {
@@ -24,6 +25,7 @@ import {
 } from "@tka/render-composition";
 import { ensureCardFonts } from "./gelasio-fonts";
 import { drawHandColorKey } from "./canvas-2d-glyph-renderer";
+import { drawSkewBraces } from "../utils/draw-skew-braces";
 
 const VIEWBOX_SIZE = 950;
 const TKA_GLYPH_X = 50;
@@ -519,6 +521,18 @@ export class LayerCompositor {
 
     const scale = options.size / VIEWBOX_SIZE;
 
+    // Computed once (when either consumer below could need it) and threaded
+    // through to both the braces and the turns column, instead of each
+    // calling this independently and generating the same tuple twice on
+    // every skewed beat. Still gated on pictograph.letter/.motions, matching
+    // each block's own guard, so a pictograph with neither (this method's
+    // caller already gates on showTKA && pictograph.letter, but stays
+    // defensive here) pays zero cost, same as before the dedupe.
+    let turnsTuple = "(s, 0, 0)";
+    if (pictograph.letter || pictograph.motions) {
+      turnsTuple = this.getTurnsTuple(pictograph);
+    }
+
     let letterDimensions = { width: 100, height: 100 };
     if (pictograph.letter) {
       letterDimensions = await this.drawTKAGlyph(ctx, pictograph.letter as Letter, options.size, options.darkMode);
@@ -526,14 +540,16 @@ export class LayerCompositor {
       if (isDashLetter(pictograph.letter)) {
         this.drawDash(ctx, letterDimensions, scale, options.darkMode);
       }
+
+      this.drawSkewBracesOverlay(ctx, pictograph, letterDimensions, scale, options.darkMode, turnsTuple);
     }
 
     if (pictograph.motions) {
-      await this.drawTurnsColumn(ctx, pictograph, letterDimensions, scale, options.darkMode, motionVisibility);
+      await this.drawTurnsColumn(ctx, pictograph, letterDimensions, scale, options.darkMode, turnsTuple, motionVisibility);
     }
 
     if (pictograph.letter && pictograph.motions) {
-      this.drawDirectionDot(ctx, pictograph, letterDimensions, scale, options.darkMode);
+      this.drawDirectionDot(ctx, pictograph, letterDimensions, scale, options.darkMode, turnsTuple);
     }
 
     return canvas;
@@ -761,16 +777,50 @@ export class LayerCompositor {
     ctx.restore();
   }
 
+  /**
+   * Skew braces ("{" / "}") around the letter of a skewed-frame beat - the
+   * canvas mirror of SkewBraces.svelte, gated the same way PictographRenderer
+   * gates the DOM component (isVisibleMotion on both hands, then
+   * isSkewedFrameBeat). Drawn before the turns column so its rightExtent
+   * clearance can account for whatever the turns column is about to paint.
+   */
+  private drawSkewBracesOverlay(
+    ctx: RenderContext2D,
+    pictograph: PreparedPictographData,
+    letterDimensions: { width: number; height: number },
+    scale: number,
+    darkMode: boolean,
+    turnsTuple: string
+  ): void {
+    if (!pictograph.letter) return;
+    const left = pictograph.motions?.left;
+    const right = pictograph.motions?.right;
+    if (!isVisibleMotion(left) || !isVisibleMotion(right)) return;
+    if (!isSkewedFrameBeat(left, right)) return;
+
+    const parsed = parseTurnsTuple(turnsTuple);
+    const rightExtent = getTurnsColumnRightExtent(parsed);
+
+    drawSkewBraces(ctx, {
+      letter: pictograph.letter,
+      letterDimensions,
+      rightExtent,
+      darkMode,
+      originX: TKA_GLYPH_X * scale,
+      originY: TKA_GLYPH_Y * scale,
+      scale,
+    });
+  }
+
   private async drawTurnsColumn(
     ctx: RenderContext2D,
     pictograph: PreparedPictographData,
     letterDimensions: { width: number; height: number },
     scale: number,
     _darkMode: boolean,
+    turnsTuple: string,
     motionVisibility?: { showLeftMotion?: boolean; showRightMotion?: boolean }
   ): Promise<void> {
-    const turnsTuple = this.getTurnsTuple(pictograph);
-
     const parsed = parseTurnsTuple(turnsTuple);
     const showTop = shouldDisplayTurn(parsed.top);
     const showBottom = shouldDisplayTurn(parsed.bottom);
@@ -848,12 +898,17 @@ export class LayerCompositor {
 
   private drawDirectionDot(
     ctx: RenderContext2D,
-    pictograph: PreparedPictographData,
+    // Unused now that the tuple is passed in rather than recomputed here -
+    // kept (prefixed, matching drawTurnsColumn's _darkMode convention in
+    // this same file) instead of dropped, so this method's signature stays
+    // parallel with its two siblings (drawSkewBracesOverlay,
+    // drawTurnsColumn) at the shared call site above.
+    _pictograph: PreparedPictographData,
     letterDimensions: { width: number; height: number },
     scale: number,
-    darkMode: boolean
+    darkMode: boolean,
+    turnsTuple: string
   ): void {
-    const turnsTuple = this.getTurnsTuple(pictograph);
     const parsed = parseTurnsTuple(turnsTuple);
     const direction = parsed.direction;
 

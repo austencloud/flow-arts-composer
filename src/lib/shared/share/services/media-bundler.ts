@@ -26,15 +26,6 @@ export class MediaBundler {
       );
       items.push(imageItem);
 
-      const gifBlob = await this.generateSequenceGif(sequence, options);
-      const gifItem = await this.createMediaItemFromBlob(
-        gifBlob,
-        "IMAGE",
-        items.length,
-        `${sequence.word}_animated.gif`
-      );
-      items.push(gifItem);
-
       return items;
     } catch (error: unknown) {
       console.error("Failed to bundle sequence media:", error);
@@ -188,13 +179,6 @@ export class MediaBundler {
   }
 
   private async generateSequenceImage(
-    sequence: SequenceData,
-    options: ShareOptions
-  ): Promise<Blob> {
-    return await this.shareService.getImageBlob(sequence, options);
-  }
-
-  private async generateSequenceGif(
     sequence: SequenceData,
     options: ShareOptions
   ): Promise<Blob> {

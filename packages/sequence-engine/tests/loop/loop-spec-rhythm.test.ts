@@ -55,4 +55,22 @@ describe("loopSpecFromLegacyRhythm", () => {
       new Map([[LOOPComponent.REWOUND, 2]])
     );
   });
+
+  it("keeps rotated-inverted's public rhythm expansion behavior", () => {
+    const spec = loopSpecFromLegacyRhythm("rotated_inverted", 4);
+    const inverted = spec.left?.components.get(LOOPComponent.INVERTED);
+
+    expect(inverted).toEqual({ period: 2 });
+    expect(spec.left?.components.get(LOOPComponent.ROTATED)?.period).toBe(4);
+  });
+
+  it("keeps rotated-swapped's public rhythm expansion behavior", () => {
+    expect(periods("rotated_swapped_inverted", 4)).toEqual(
+      new Map([
+        [LOOPComponent.ROTATED, 4],
+        [LOOPComponent.SWAPPED, 2],
+        [LOOPComponent.INVERTED, 2],
+      ])
+    );
+  });
 });

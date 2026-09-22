@@ -4,19 +4,23 @@
  * MCP server steps use flat leftMotion/rightMotion.
  * Engine steps use nested motions.left/motions.right.
  * This adapter converts at the boundary so the MCP server can use
- * the engine's full set of 15 LOOP executors.
+ * the engine's canonical LOOP completion path.
  */
 
 import type { SequenceStep as McpStep } from "../sequence-builder.js";
 import {
   LOOPType,
   Period,
-  loopExecutorSelector,
+  executeLOOP as executeEngineLOOP,
   detectLOOPFromSteps as engineDetectLOOP,
   isSequenceCircular as engineIsCircular,
   findLetterByMotions as engineFindLetter,
   type LOOPDetectionResult,
 } from "@tka/sequence-engine/loop";
+import type {
+  Motion as EngineMotion,
+  Step as EngineStep,
+} from "@tka/tka-types";
 
 interface MotionData {
   hand: "left" | "right";
@@ -52,22 +56,61 @@ export interface LOOPExecutionResult {
   error?: string;
 }
 
-function toEngineStep(mcp: McpStep): any {
-  const { leftMotion, rightMotion, ...rest } = mcp as any;
+type EngineAdapterStep = EngineStep &
+  Pick<McpStep, "leftReversal" | "rightReversal">;
+
+function toEngineMotion(
+  motion: McpStep["leftMotion"],
+  hand: "left" | "right"
+): EngineMotion {
+  // MCP predates canonical motion fields. The adapter supplies the required
+  // hand channel and missing turn value without changing its caller's data.
   return {
-    ...rest,
-    motions: { left: leftMotion, right: rightMotion },
-    duration: 1,
-  };
+    ...motion,
+    hand,
+    turns: motion.turns ?? 0,
+  } as EngineMotion;
 }
 
-function toMcpStep(engine: any): McpStep {
-  const { motions, duration, id, ...rest } = engine;
+function toEngineStep(mcp: McpStep, index: number): EngineAdapterStep {
   return {
-    ...rest,
-    leftMotion: motions.left,
-    rightMotion: motions.right,
-  };
+    id: `mcp-loop-step-${index}`,
+    letter: mcp.letter || null,
+    startPlacement: mcp.startPlacement,
+    endPlacement: mcp.endPlacement,
+    motions: {
+      left: toEngineMotion(mcp.leftMotion, "left"),
+      right: toEngineMotion(mcp.rightMotion, "right"),
+    },
+    stepNumber: mcp.stepNumber,
+    duration: mcp.duration ?? 1,
+    variation: mcp.variation,
+    ...(mcp.isBridge !== undefined && { isBridge: mcp.isBridge }),
+    ...(mcp.leftReversal !== undefined && { leftReversal: mcp.leftReversal }),
+    ...(mcp.rightReversal !== undefined && {
+      rightReversal: mcp.rightReversal,
+    }),
+  } as EngineAdapterStep;
+}
+
+function toMcpStep(engine: EngineAdapterStep): McpStep {
+  return {
+    letter: engine.letter ?? "",
+    variation: engine.variation ?? 0,
+    startPlacement: engine.startPlacement ?? "",
+    endPlacement: engine.endPlacement ?? "",
+    leftMotion: { ...engine.motions.left, hand: "left" },
+    rightMotion: { ...engine.motions.right, hand: "right" },
+    stepNumber: engine.stepNumber,
+    duration: engine.duration,
+    ...(engine.isBridge !== undefined && { isBridge: engine.isBridge }),
+    ...(engine.leftReversal !== undefined && {
+      leftReversal: engine.leftReversal,
+    }),
+    ...(engine.rightReversal !== undefined && {
+      rightReversal: engine.rightReversal,
+    }),
+  } as McpStep;
 }
 
 export function executeLOOP(
@@ -77,81 +120,26 @@ export function executeLOOP(
   period: Period = Period.HALVED,
   allPictographs: PictographData[] = []
 ): LOOPExecutionResult {
-  const originalBeatCount = steps.length - 1; // exclude start placement step
-
-  const errorResult = (msg: string): LOOPExecutionResult => ({
-    success: false,
-    steps: [],
+  const completed = executeEngineLOOP(
+    steps.map(toEngineStep),
     word,
-    loopWord: "",
-    seedWord: word,
-    derivedWord: "",
     loopType,
     period,
-    isCircular: false,
-    derivedBeatIndices: [],
-    error: msg,
-  });
-
-  if (steps.length < 2) {
-    return errorResult(
-      "Sequence must have at least 2 steps (start placement + 1 beat)"
-    );
-  }
-
-  let executor;
-  try {
-    executor = loopExecutorSelector.getExecutor(loopType);
-  } catch {
-    return errorResult(`LOOP type "${loopType}" is not supported`);
-  }
-
-  // Convert to engine format and clone (executors mutate via shift/push)
-  const engineSteps = steps.map(toEngineStep);
-
-  let resultEngineSteps: any[];
-  try {
-    resultEngineSteps = executor.executeLOOP(engineSteps, period);
-  } catch (err: any) {
-    return errorResult(err?.message ?? String(err));
-  }
-
-  // Convert back to MCP format
-  const resultSteps = resultEngineSteps.map(toMcpStep);
-
-  // Derive letters for generated steps using motion parameters
-  const derivedBeatIndices: number[] = [];
-  const derivedLetters: string[] = [];
-
-  for (let i = originalBeatCount + 1; i < resultSteps.length; i++) {
-    const step = resultSteps[i]!;
-    derivedBeatIndices.push(i);
-
-    const derived = engineFindLetter(
-      step.leftMotion as any,
-      step.rightMotion as any,
-      allPictographs as any[]
-    );
-    if (derived) {
-      (step as any).letter = derived;
-    }
-    derivedLetters.push((step as any).letter ?? "");
-  }
-
-  const derivedWord = derivedLetters.join("");
-  const loopWord = word + derivedWord;
+    allPictographs
+  );
 
   return {
-    success: true,
-    steps: resultSteps,
-    word,
-    loopWord,
-    seedWord: word,
-    derivedWord,
-    loopType,
-    period,
-    isCircular: true,
-    derivedBeatIndices,
+    success: completed.success,
+    steps: completed.steps.map((step) => toMcpStep(step as EngineAdapterStep)),
+    word: completed.word,
+    loopWord: completed.loopWord,
+    seedWord: completed.seedWord,
+    derivedWord: completed.derivedWord,
+    loopType: completed.loopType,
+    period: completed.period,
+    isCircular: completed.isCircular,
+    derivedBeatIndices: completed.derivedStepIndices,
+    ...(completed.error !== undefined && { error: completed.error }),
   };
 }
 

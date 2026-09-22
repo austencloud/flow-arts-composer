@@ -17,6 +17,7 @@ import {
 import { loopDetector } from "./loop-detector";
 import { convert as convertSequenceToEntry } from "$lib/features/choreo-card/services/sequence-to-entry-converter";
 import { parseLoopComponents } from "$lib/shared/create/services/loop-type-utils";
+import { canonicalJSON } from "$lib/shared/foundation/utils/canonical-json";
 
 export interface LoopDisplay {
   components: Set<LOOPComponent>;
@@ -117,8 +118,12 @@ function isSequenceData(input: LoopDisplayInput): input is SequenceData {
   return Array.isArray((input as SequenceData).steps);
 }
 
-function getSequenceId(input: LoopDisplayInput): string | undefined {
-  return input.id;
+function getSequenceCacheKey(input: LoopDisplayInput): string | undefined {
+  if (!input.id) return undefined;
+
+  // Library variations can intentionally share an ID. The display contract
+  // depends on the full sequence (or its certificate), not that label alone.
+  return canonicalJSON(input);
 }
 
 function hasEnoughSteps(input: LoopDisplayInput): boolean {
@@ -150,7 +155,7 @@ export function clearLoopDisplayCache(): void {
  * On-demand path (actual steps) takes precedence over stored metadata.
  */
 export function resolveLoopDisplay(input: LoopDisplayInput): LoopDisplay {
-  const cacheKey = getSequenceId(input);
+  const cacheKey = getSequenceCacheKey(input);
   const inputHasSteps = hasEnoughSteps(input);
 
   if (cacheKey) {
@@ -204,7 +209,7 @@ function reportSpecDetectionMismatch(
     if (agree) return;
 
     const mismatch: LoopDisplayMismatch = {
-      sequenceId: getSequenceId(input) ?? null,
+      sequenceId: input.id ?? null,
       specComponents: specSorted,
       detectedComponents: detectedSorted,
     };

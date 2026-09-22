@@ -1173,9 +1173,14 @@ describe("GlobalUserMap scan marker contract", () => {
     "utf8"
   );
 
-  it("keeps weekly-channel click listeners and enables keyboard interaction", () => {
-    expect(source.match(/marker\.addListener\("click"/g)).toHaveLength(2);
-    expect(source).not.toContain('addEventListener("gmp-click"');
+  it("uses gmp-click listeners on clickable markers", () => {
+    // The weekly channel logs a deprecation warning for every addListener
+    // call on an AdvancedMarkerElement. gmp-click only fires when the marker
+    // is gmpClickable, so both flags below are load-bearing.
+    expect(source.match(/marker\.addEventListener\("gmp-click"/g)).toHaveLength(
+      2
+    );
+    expect(source).not.toContain('marker.addListener("click"');
     expect(source).toContain("gmpClickable: true");
     expect(source).toContain("gmpClickable: Boolean(onScanMarkerClick)");
   });

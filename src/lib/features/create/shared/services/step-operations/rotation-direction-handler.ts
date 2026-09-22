@@ -14,6 +14,7 @@ import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
 import type { ICreateModuleState } from "../../types/create-module-types";
+import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
 import type { IMotionQueryHandler } from "$lib/shared/foundation/services/data/data-contracts";
 import { deriveGridMode as _deriveGridMode } from "$lib/shared/pictograph/grid/services/grid-mode-deriver";
 import type { Letter } from "$lib/shared/foundation/domain/models/letter";
@@ -268,10 +269,7 @@ async function recalculateLetterAsync(
           } as StepData;
 
           // Update word and sequence together
-          const word = stepsWithLetter
-            .map((step) => step.letter ?? "")
-            .join("")
-            .toUpperCase();
+          const word = deriveWordFromBeats(stepsWithLetter);
 
           // D4: letter is derived from the (now-flipped) motion configuration —
           // still a motion-consequential mutation, so invalidate the certificate.

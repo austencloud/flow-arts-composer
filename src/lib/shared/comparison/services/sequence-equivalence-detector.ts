@@ -11,6 +11,7 @@
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { SequenceCanonicalizer } from "./sequence-canonicalizer";
+import { findWordUnitsRotationOffset } from "$lib/shared/foundation/utils/word-notation";
 
 /**
  * Result of equivalence comparison
@@ -70,7 +71,6 @@ interface LocalMotionSignature {
 }
 import type { StepSignatureGenerator } from "./step-signature-generator";
 import type { SpatialTransformDetector } from "./spatial-transform-detector";
-import type { WordCyclicEquivalenceDetector } from "$lib/shared/foundation/utils/word-cyclic-equivalence-detector";
 import type { MotionSignature, StepSignature } from "../domain/models/signatures";
 import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
@@ -79,8 +79,7 @@ export class SequenceEquivalenceDetector {
   constructor(
     private readonly sequenceCanonicalizer: SequenceCanonicalizer,
     private readonly stepSignatureGenerator: StepSignatureGenerator,
-    private readonly spatialTransformDetector: SpatialTransformDetector,
-    private readonly wordCyclicEquivalenceDetector: WordCyclicEquivalenceDetector
+    private readonly spatialTransformDetector: SpatialTransformDetector
   ) {}
 
   areEquivalent(sequenceA: SequenceData, sequenceB: SequenceData): EquivalenceResult {
@@ -267,16 +266,22 @@ export class SequenceEquivalenceDetector {
     seqA: SequenceData,
     seqB: SequenceData
   ): EquivalenceResult {
-    const wordResult = this.wordCyclicEquivalenceDetector.areCyclicEquivalent(
-      seqA.word,
-      seqB.word
-    );
+    // Word-unit rotation, not wordCyclicEquivalenceDetector: that operates on
+    // raw characters, so a skew brace counts as if it were its own beat and
+    // desyncs the offset from the step array below. findWordUnitsRotationOffset
+    // parses the braces out first and searches unit rotations directly, so its
+    // offset is always a valid unit rotation, dashes included. The residual
+    // caveat is unlettered beats: parseWordNotation emits no unit for a beat
+    // with no letter, so a sequence with an unlettered beat has fewer units
+    // than steps, and this offset is then a unit offset, not a step offset.
+    // verifyCircularRotation below takes its loop length from
+    // seqA.steps.length alone, so this is only correct when neither sequence
+    // has an unlettered beat.
+    const offset = findWordUnitsRotationOffset(seqA.word, seqB.word);
 
-    if (!wordResult.isEquivalent) {
+    if (offset === null) {
       return this.notEquivalent();
     }
-
-    const offset = wordResult.rotationOffset ?? 0;
 
     // Verify that the actual step data matches when rotated
     if (!this.verifyCircularRotation(seqA, seqB, offset)) {

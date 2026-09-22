@@ -27,32 +27,20 @@ export interface SequenceSendSession {
   readonly payload: SequenceSharePayload;
 }
 
-export interface SequenceSendSessionOptions {
-  /**
-   * The viewer state the person is sending from, as the share-link query
-   * (`pane`, `fx`, `s`, ...). Captured once when send mode opens so the
-   * message carries the view they chose, not whatever the stage shows later.
-   */
-  viewParams?: string;
-}
-
 /**
  * Prepares a sequence share for a host that is not the inbox drawer. Same
  * guest gate as `openSendSequenceSheetWithCard`; returns null when the
  * sign-up drawer took over instead.
  */
 export function createSequenceSendSession(
-  sequence: SequenceData,
-  options: SequenceSendSessionOptions = {}
+  sequence: SequenceData
 ): SequenceSendSession | null {
   if (!authState.isFullAccount) {
     authDrawerState.show("signup", "share-sequence");
     return null;
   }
   inboxState.requestHost();
-  const payload = buildSequenceSharePayload(sequence);
-  if (options.viewParams) payload.sequenceViewParams = options.viewParams;
-  return { payload };
+  return { payload: buildSequenceSharePayload(sequence) };
 }
 
 /**

@@ -10,6 +10,7 @@ import { BrowseSortMethod } from "$lib/shared/browse/domain/enums/browse-enums";
 import { sortSequencesByKineticAlphabet } from "$lib/shared/browse/utils/kinetic-alphabet-sort";
 import { calculateDifficultyLevel } from "$lib/shared/browse/services/sequence-difficulty-calculator";
 import { resolveBrowseDate } from "$lib/shared/browse/services/browse-date";
+import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
 
 /** Numeric difficulty (1–3). Prefers stored `level`, else computes from steps. */
 export function resolveDifficultyLevel(sequence: SequenceData): number {
@@ -127,8 +128,9 @@ function getSectionKey(
 }
 
 function getAlphabeticalSection(sequence: SequenceData): string {
-  const word = sequence.word;
-  if (!word || word.length === 0) return "#";
+  // Skew braces mark a span, not a letter: section by the letters inside.
+  const word = stripWordNotation(sequence.word ?? "");
+  if (word.length === 0) return "#";
 
   const firstChar = word[0]!;
 

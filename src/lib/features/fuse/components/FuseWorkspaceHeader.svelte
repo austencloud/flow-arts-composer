@@ -278,17 +278,14 @@
       padding: 10px 12px 10px 18px;
     }
 
-    /* Two centered rows instead of one right-heavy line. The old row put the
-       title alone on the left, the recipe door floating by itself in the gap
-       after it, and all six tiles packed against the right edge — the rail's
-       centre sat 165px right of the header's. Title and door now sit together
-       as one centred pair, and the rail gets the full width under them. */
-    .fuse-header {
-      flex-wrap: wrap;
-      justify-content: center;
-      row-gap: 10px;
-    }
-
+    /* One row: the title at its head, the rail taking the rest of it. The
+       title used to hold a centred row of its own, which spent 42px of
+       workspace height on two words and left the cards under it at 84px —
+       short enough that ToggleCard's own container queries dropped the Grid
+       card's icons to 12px and turned its two options sideways to fit. The
+       row the title gave up went into the rail's track height, so the cards
+       are what grew. Nothing else is in this row at this size: the mode switch
+       lives in the Pairing card and the recipe door in the cards themselves. */
     .title-block {
       flex: 0 0 auto;
     }

@@ -75,7 +75,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: "Can I share what I make?",
     answer:
-      "Yes. Export a sequence as a PNG, GIF, or video. On supported phones, the system share sheet can send the file to another app. You can also share a sequence link, and eligible saved sequences can be published to the community gallery.",
+      "Yes. Export a sequence as a PNG or video. On supported phones, the system share sheet can send the file to another app. You can also share a sequence link, and eligible saved sequences can be published to the community gallery.",
   },
 ];
 

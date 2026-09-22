@@ -14,6 +14,7 @@ import {
   resolveTunnelPropColorState,
   type TunnelPropColorState,
 } from "./tunnel-prop-colors";
+import { safeClone } from "$lib/shared/foundation/utils/safe-clone";
 
 export const SNAPSHOT_VERSION = 3;
 
@@ -236,14 +237,6 @@ export interface SnapshotDeps {
   getBpm: () => number;
 }
 
-const clone = <T>(v: T): T => {
-  try {
-    return structuredClone(v);
-  } catch {
-    return JSON.parse(JSON.stringify(v));
-  }
-};
-
 export function captureTunnelSnapshot(deps: SnapshotDeps): TunnelSnapshot {
   const {
     controller,
@@ -257,13 +250,13 @@ export function captureTunnelSnapshot(deps: SnapshotDeps): TunnelSnapshot {
   return {
     version: SNAPSHOT_VERSION,
     tunnel: {
-      config: clone(controller.config),
+      config: safeClone(controller.config),
       gridVisible: controller.gridVisible,
-      colors: clone(controller.colors),
+      colors: safeClone(controller.colors),
       section: controller.section,
       presetRecipe: controller.presetRecipe,
     },
-    effects: clone(effects.config),
+    effects: safeClone(effects.config),
     effort: visibility.getEffortPreset(),
     paths: {
       pathShape: visibility.getPathShape(),
@@ -278,7 +271,7 @@ export function captureTunnelSnapshot(deps: SnapshotDeps): TunnelSnapshot {
       leftBuugengFlipped: settings.leftBuugengFlipped ?? false,
       rightBuugengFlipped: settings.rightBuugengFlipped ?? false,
     },
-    trailRender: clone(animationSettings.trail),
+    trailRender: safeClone(animationSettings.trail),
   };
 }
 

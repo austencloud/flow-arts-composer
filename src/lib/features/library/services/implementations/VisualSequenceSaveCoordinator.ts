@@ -107,6 +107,10 @@ export class VisualSequenceSaveCoordinator implements IVisualSequenceSaveCoordin
       (savedPathShape === "linear" || savedPathShape === "concave"
         ? savedPathShape
         : "arc");
+    const presentation =
+      intent.presentation !== undefined
+        ? intent.presentation
+        : sequence.creatorIntent?.presentation;
 
     return createSequenceData({
       ...sequence,
@@ -121,6 +125,7 @@ export class VisualSequenceSaveCoordinator implements IVisualSequenceSaveCoordin
           : sequence.effortTimeline !== undefined
             ? { effortTimeline: sequence.effortTimeline }
             : {}),
+        ...(presentation !== undefined && { presentation }),
       },
       intendedProp: { leftPropType, rightPropType, catDogMode },
     });

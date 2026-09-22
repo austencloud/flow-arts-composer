@@ -79,6 +79,7 @@
     }
 
     // Subscribe to conversations for unread message counts
+    inboxState.markConversationsPending();
     unsubscribeMessages = conversationService.subscribeToConversations(
       (conversations) => {
         inboxState.setConversations(conversations);

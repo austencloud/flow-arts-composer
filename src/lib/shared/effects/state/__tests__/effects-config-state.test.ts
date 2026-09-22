@@ -366,4 +366,55 @@ describe("EffectsConfigState", () => {
       expect(state.effectLayerOverrides).toEqual({});
     });
   });
+
+  describe("ephemeral (persist:false) instances stay isolated", () => {
+    // A gallery/preview grid mounts N of these per page (Recent Work, this
+    // profile stage's tiles, tunnel/scene collection previews). Every one of
+    // them used to run the module-level `getSceneUndoManager().registerDomain`
+    // call, so the LAST tile to mount silently became the app-wide effects
+    // undo target. Only the one genuinely persisted instance may register.
+    it("does not register the effects undo domain", () => {
+      undoSpies.registerDomain.mockClear();
+      createEffectsConfigState(undefined, { persist: false });
+      expect(undoSpies.registerDomain).not.toHaveBeenCalled();
+    });
+
+    it("a persist:true instance still registers the effects undo domain", () => {
+      undoSpies.registerDomain.mockClear();
+      createEffectsConfigState();
+      expect(undoSpies.registerDomain).toHaveBeenCalledWith(
+        "effects",
+        expect.objectContaining({
+          capture: expect.any(Function),
+          restore: expect.any(Function),
+        })
+      );
+    });
+
+    // `migrateFromVmStorageOnce` reads the viewer's shared
+    // `animation-visibility-settings` key, can overlay its legacy fire/LED/
+    // charcoal data into the instance, and writes back to strip the consumed
+    // keys. An ephemeral card preview must never read the viewer's storage,
+    // and must certainly never rewrite it out from under them mid-browse.
+    it("does not read or write the viewer's legacy animation-visibility-settings key", () => {
+      const ls = makeLocalStorageStub();
+      vi.stubGlobal("window", {});
+      vi.stubGlobal("localStorage", ls);
+
+      const legacyVm = { fireIntensity: 0.99, fireColorBlend: 0.5 };
+      ls.setItem("animation-visibility-settings", JSON.stringify(legacyVm));
+
+      const state = createEffectsConfigState(undefined, { persist: false });
+
+      // Had the overlay run, fire.intensity would read 0.99 and the legacy
+      // key would have been rewritten with fireIntensity/fireColorBlend
+      // stripped out.
+      expect(state.fire.intensity).toBe(DEFAULT_EFFECTS_CONFIG.fire.intensity);
+      expect(ls.getItem("animation-visibility-settings")).toBe(
+        JSON.stringify(legacyVm)
+      );
+
+      vi.unstubAllGlobals();
+    });
+  });
 });

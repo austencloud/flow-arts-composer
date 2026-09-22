@@ -54,6 +54,7 @@ import { getExportOrchestrator } from "$lib/shared/export-panel/get-export-orche
   import { setAnimationPlaybackRef } from "$lib/shared/coordinators/animation-playback-ref.svelte";
   import { ANIMATION_AUTO_START_DELAY_MS } from "$lib/shared/animation-engine/domain/constants/timing";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
   import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
 
   const ctx = getCreateModuleContext();
@@ -419,10 +420,7 @@ import { getExportOrchestrator } from "$lib/shared/export-panel/get-export-orche
     if (sequence.word) return sequence;
 
     // Derive word from beat letters (same logic as SequenceStatsCalculator.generateSequenceWord)
-    const derivedWord = sequence.steps
-      ?.filter((step) => !!step.letter)
-      .map((step) => step.letter)
-      .join("") || "";
+    const derivedWord = deriveWordFromBeats(sequence.steps ?? []);
 
     if (!derivedWord) return sequence;
 

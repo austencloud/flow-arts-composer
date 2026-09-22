@@ -303,13 +303,11 @@ describe("landing shared-element contract", () => {
       "const heroAct = createHeroAct({ initialSequence: FALLBACK_DEMO });"
     );
     expect(composer).toContain("runAfterNamedRouteMorphIdle(heroAct.start)");
-    // The hero keeps auto-advancing; the tunnel and 3D bands latch its first
-    // LIVE draw, skipping the baked fixture by id, so a Threlte scene is never
-    // torn down under a reading visitor.
+    // The tunnel and 3D bands open on the baked fixture, then latch the first
+    // LIVE hero draw so a Threlte scene is never torn down under a reader.
     expect(composer).toContain("sequence={heroAct.sequence}");
-    expect(composer).toContain(
-      "const carriedSequence = $derived(visitorSequence ?? latchedHeroSequence)"
-    );
+    expect(composer).toContain("resolveComposerCarriedSequence(");
+    expect(composer).toContain("FALLBACK_DEMO");
     expect(composer).toContain(
       "if (first && first.id !== FALLBACK_DEMO.id && !latchedHeroSequence) {"
     );

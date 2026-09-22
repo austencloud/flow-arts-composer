@@ -6,9 +6,9 @@ Every design spec, handoff, audit and review sitting loose in this folder, with 
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| SHIPPED | 139 | The thing it describes exists in `src/` or landed in a named commit. |
+| SHIPPED | 140 | The thing it describes exists in `src/` or landed in a named commit. |
 | SUPERSEDED | 13 | A later doc replaced it, or the doc says so itself. |
-| IN-FLIGHT | 23 | Partly built — an open ledger, an open branch, or a named blocker. |
+| IN-FLIGHT | 22 | Partly built — an open ledger, an open branch, or a named blocker. |
 | OPEN | 27 | Still an idea. Nothing built, nothing supersedes it. |
 
 Nothing has been deleted or moved. This index is the only new file.
@@ -291,13 +291,14 @@ Complete enough to hand to an executor, and nothing supersedes them.
 | [`2026-08-21-composer-presentation-mockup-handoff.md`](./2026-08-21-composer-presentation-mockup-handoff.md) | handoff | **SHIPPED** | 2c432e6d6e + 2ee83956aa | Successor: specs/shipped/2026-08-27-composer-presentation-promotion-plan.md |
 | [`2026-08-23-composer-presentation-fable-handoff.md`](./2026-08-23-composer-presentation-fable-handoff.md) | handoff | **SHIPPED** | 8ec8a09c54 promote reviewed presentation |  |
 
-### creators  <sub>3 shipped</sub>
+### creators  <sub>3 shipped, 1 in-flight</sub>
 
 | File | Type | Status | Evidence | Next action |
 | --- | --- | --- | --- | --- |
 | [`2026-08-23-creators-recent-work-presentation-intent-handoff.md`](./2026-08-23-creators-recent-work-presentation-intent-handoff.md) | handoff | **SHIPPED** | d1f7f29dc6 contract + 248c262fe1 previews render recorded intent |  |
 | [`2026-08-23-public-preview-presentation-intent-design.md`](./2026-08-23-public-preview-presentation-intent-design.md) | design | **SHIPPED** | 248c262fe1 + cfbd01e91a opted-in hosts only |  |
 | [`2026-08-25-community-map-invitation-design.md`](./2026-08-25-community-map-invitation-design.md) | design | **SHIPPED** | 9e748f2aad band + 8da56c8d52 full-page map opt-in |  |
+| [`2026-09-17-creator-presentation-intent-design.md`](./2026-09-17-creator-presentation-intent-design.md) | design | **SHIPPED** | branch codex/creator-presentation-intent (fix d75f2137bb, projection test 8079dbcbe6); harness /test/creator-presentation | Follow-ups: SaveToLibrary panels in features/create lack the look row; save dialog does not scale up at 4K |
 
 ### film director  <sub>3 shipped</sub>
 

@@ -20,6 +20,10 @@ const LOCAL_STORAGE_KEY = "loop-labels";
  * - localStorage is a cache for fast startup and offline fallback
  * - On load: Fetch from Firebase, merge with localStorage (recover any local-only items)
  * - On save: Write to Firebase FIRST, then update localStorage cache
+ *
+ * public-index-syncer.ts reads this same "loop-labels" collection keyed by
+ * stripWordNotation(word); this repository still keys by the raw word and
+ * has no callers today. Whoever reconnects the loop-labeler UI must strip here too.
  */
 export class LOOPLabelsFirebaseRepository {
   private syncStatus: "synced" | "syncing" | "error" = "synced";

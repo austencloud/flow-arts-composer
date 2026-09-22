@@ -21,6 +21,14 @@ import {
   normalizeCardPresentation,
   type CardPresentation,
 } from "$lib/shared/share/domain/models/card-presentation";
+import {
+  capturePresentation,
+  resolvePresentation,
+  summarizePresentation,
+  type PresentationSource,
+  type PresentationSummary,
+} from "$lib/shared/foundation/services/presentation-intent";
+import type { PresentationIntent } from "$lib/shared/foundation/domain/models/presentation-intent";
 
 export interface LibraryActionHandlerDeps {
   getSequence: () => SequenceData | null;
@@ -30,6 +38,8 @@ export interface LibraryActionHandlerDeps {
   getCatDogModeEnabled: () => boolean | undefined;
   getHapticService: () => HapticFeedback | null;
   onDeleteSuccess: () => void;
+  /** The live scene's look, or null when this surface has no animation scope. */
+  getPresentationSource: () => PresentationSource | null;
 }
 
 export function createLibraryActionHandler(deps: LibraryActionHandlerDeps) {
@@ -41,6 +51,18 @@ export function createLibraryActionHandler(deps: LibraryActionHandlerDeps) {
     resolveSaveProps = null;
     saveProps = null;
   }
+  let capturedPresentation = $state<PresentationIntent | null>(null);
+  let useDefaultLook = $state(false);
+  const presentationSummary = $derived.by<PresentationSummary | null>(() => {
+    if (!capturedPresentation) return null;
+    const resolved = resolvePresentation(
+      { presentation: capturedPresentation },
+      "live-capture"
+    );
+    return resolved.kind === "recorded"
+      ? summarizePresentation(resolved.value)
+      : null;
+  });
   let isSaved = $state(true);
   let isSaving = $state(false);
   let isFavorite = $state(false);
@@ -171,11 +193,30 @@ export function createLibraryActionHandler(deps: LibraryActionHandlerDeps) {
       rightPropType: deps.getRightPropType(),
       catDogMode: deps.getCatDogModeEnabled(),
     });
+    const source = deps.getPresentationSource();
+    let captured: PresentationIntent | null = null;
+    if (source) {
+      try {
+        captured = capturePresentation(source);
+      } catch (error) {
+        console.error("[Orchestrator] capturePresentation FAILED:", error);
+      }
+    }
+    capturedPresentation = captured;
+    useDefaultLook = false;
     const selectedProps = await new Promise<ResolvedPropConfig | null>(
       (resolve) => {
         resolveSaveProps = resolve;
       }
     );
+
+    const presentationPatch: { presentation?: PresentationIntent | null } =
+      capturedPresentation
+        ? { presentation: useDefaultLook ? null : capturedPresentation }
+        : {};
+    capturedPresentation = null;
+    useDefaultLook = false;
+
     if (!selectedProps) return;
 
     savedStateRevision += 1;
@@ -188,6 +229,7 @@ export function createLibraryActionHandler(deps: LibraryActionHandlerDeps) {
         rightPropType: selectedProps.rightPropType,
         catDogModeEnabled: selectedProps.catDogMode,
         pathShape: getAnimationVisibilityManager().getPathShape(),
+        ...presentationPatch,
       });
       if (outcome.status === "failed") return;
 
@@ -246,6 +288,15 @@ export function createLibraryActionHandler(deps: LibraryActionHandlerDeps) {
       saveProps = value;
     },
     finishPropChoice,
+    get useDefaultLook() {
+      return useDefaultLook;
+    },
+    set useDefaultLook(value: boolean) {
+      useDefaultLook = value;
+    },
+    get presentationSummary() {
+      return presentationSummary;
+    },
     get isSaved() {
       return isSaved;
     },

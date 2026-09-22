@@ -4,6 +4,8 @@
  * Provides proper sorting for kinetic alphabet letters respecting system order
  */
 
+import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
+
 /**
  * Complete kinetic alphabet letter order
  * Organized by type in the canonical sequence
@@ -86,9 +88,10 @@ function getLetterSortIndex(letter: string): number {
  * Type 6 letters: α, β, γ, ζ, η, τ, ⊕
  */
 export function extractBaseLetter(word: string): string {
-  if (!word || word.length === 0) return "";
+  const bare = stripWordNotation(word ?? "");
+  if (bare.length === 0) return "";
 
-  const firstChar = word[0]!;
+  const firstChar = bare[0]!;
 
   // Type 6 static letters (these should not be uppercased)
   const TYPE6_LETTERS = ["α", "β", "γ", "ζ", "η", "τ", "⊕"];
@@ -102,7 +105,7 @@ export function extractBaseLetter(word: string): string {
     char = firstChar.toUpperCase();
   }
 
-  const secondChar = word[1];
+  const secondChar = bare[1];
 
   // Check if it's a dash variant (e.g., "W-" or "Σ-")
   if (secondChar === "-") {
@@ -145,8 +148,10 @@ export function sortSequencesByKineticAlphabet<
   T extends { word: string; sequenceLength?: number },
 >(sequences: T[]): T[] {
   return [...sequences].sort((a, b) => {
-    const letterA = extractBaseLetter(a.word);
-    const letterB = extractBaseLetter(b.word);
+    const wordA = stripWordNotation(a.word);
+    const wordB = stripWordNotation(b.word);
+    const letterA = extractBaseLetter(wordA);
+    const letterB = extractBaseLetter(wordB);
 
     const letterCompare = compareKineticLetters(letterA, letterB);
     if (letterCompare !== 0) {
@@ -159,6 +164,7 @@ export function sortSequencesByKineticAlphabet<
       return lengthDiff;
     }
 
-    return a.word.localeCompare(b.word);
+    // Skew braces mark a span, not a letter: tie-break on the letters inside.
+    return wordA.localeCompare(wordB);
   });
 }

@@ -21,6 +21,8 @@ function letterFromGridPlacement(gridPlacement: unknown): Letter | null {
   if (placement.startsWith("alpha")) return Letter.ALPHA;
   if (placement.startsWith("beta")) return Letter.BETA;
   if (placement.startsWith("gamma")) return Letter.GAMMA;
+  if (placement.startsWith("zeta")) return Letter.ZETA;
+  if (placement.startsWith("eta")) return Letter.ETA;
   return null;
 }
 

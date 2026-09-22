@@ -14,6 +14,7 @@ import type { LOOPComponent } from "$lib/shared/foundation/domain/models/generat
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { LOOPExplanation, SeedInfo, SeedTransformation } from "./types";
+import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
 import {
   HORIZONTAL_MIRROR_PLACEMENT_MAP,
   VERTICAL_MIRROR_PLACEMENT_MAP,
@@ -49,7 +50,8 @@ export function explainLOOP(
   loopComponents: Set<LOOPComponent>
 ): LOOPExplanation {
   const steps = sequence.steps;
-  const word = sequence.word ?? "";
+  // Skew braces mark a span, not a letter: decompose the letters inside.
+  const word = stripWordNotation(sequence.word ?? "");
 
   if (!steps || steps.length === 0 || loopComponents.size === 0) {
     return fallbackExplanation(loopComponents, sequence);

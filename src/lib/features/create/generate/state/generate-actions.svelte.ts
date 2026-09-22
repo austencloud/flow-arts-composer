@@ -11,6 +11,7 @@ import { setPendingGenerationAnimation } from "$lib/features/create/shared/works
 import { clearArrowPositionCache } from "$lib/shared/pictograph/arrow/rendering/arrow-position-cache";
 import { clearPropPositionCache } from "$lib/shared/pictograph/prop/prop-position-cache";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
 import type { GenerationOptions } from "../shared/domain/models/generate-models";
 import { GenerationMode } from "../shared/domain/models/generate-models";
 import type { GenerationOrchestrator } from "$lib/shared/create/services/generation-orchestrator";
@@ -723,9 +724,7 @@ export function createGenerationActionsState(
       }) ?? [];
 
     const extendedWord =
-      extended.word ||
-      extended.steps?.map((s) => s.letter || "").join("") ||
-      "";
+      extended.word || deriveWordFromBeats(extended.steps ?? []);
 
     return {
       ...extended,

@@ -3,6 +3,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CanvasResizer } from "$lib/shared/animation-engine/services/canvas-resizer.svelte";
 
+// The shared setup replaces document.createElement with plain mocks, so real
+// nodes (needed for closest() and MutationObserver) come from the HTML parser.
+function mountHtml(html: string): HTMLElement {
+  document.body.insertAdjacentHTML("beforeend", html);
+  return document.body.lastElementChild as HTMLElement;
+}
+
 describe("CanvasResizer", () => {
   let notifyResize: ResizeObserverCallback;
 
@@ -23,6 +30,7 @@ describe("CanvasResizer", () => {
   });
 
   afterEach(() => {
+    document.body.replaceChildren();
     delete document.documentElement.dataset.motionPreference;
     vi.useRealTimers();
     vi.unstubAllGlobals();
@@ -171,13 +179,14 @@ describe("CanvasResizer", () => {
   it("retains the readable backing size while its workspace pane is inert", async () => {
     let width = 630;
     let inert = false;
+    const inertPane = mountHtml("<div inert></div>");
     const container = {
       get clientWidth() {
         return width;
       },
       clientHeight: 780,
       closest: (selector: string) =>
-        inert && selector === "[inert]" ? {} : null,
+        inert && selector.startsWith("[inert]") ? inertPane : null,
       getBoundingClientRect: () =>
         ({
           width,
@@ -226,13 +235,14 @@ describe("CanvasResizer", () => {
   it("waits for the final reduced-motion layout before rebuilding", async () => {
     let width = 630;
     let inert = false;
+    const inertPane = mountHtml("<div inert></div>");
     const container = {
       get clientWidth() {
         return width;
       },
       clientHeight: 780,
       closest: (selector: string) =>
-        inert && selector === "[inert]" ? {} : null,
+        inert && selector.startsWith("[inert]") ? inertPane : null,
       getBoundingClientRect: () =>
         ({
           width,
@@ -268,6 +278,91 @@ describe("CanvasResizer", () => {
     await vi.advanceTimersByTimeAsync(1);
     expect(renderer.resize).toHaveBeenLastCalledWith(560);
     expect(renderer.resize).toHaveBeenCalledTimes(2);
+
+    resizer.dispose();
+  });
+
+  function laidOut(
+    container: HTMLDivElement,
+    size: { width: number; height: number }
+  ): HTMLDivElement {
+    Object.defineProperty(container, "clientWidth", {
+      get: () => size.width,
+    });
+    Object.defineProperty(container, "clientHeight", {
+      get: () => size.height,
+    });
+    return container;
+  }
+
+  it("catches up when an inert ancestor is lifted without a size change", async () => {
+    // A hidden crossfade source is made inert, the window grows behind it,
+    // then the source is revealed. Removing `inert` does not change its box,
+    // so ResizeObserver never reports again — the resizer has to notice the
+    // reveal itself or the revealed canvas keeps the old, stretched raster.
+    const size = { width: 579, height: 496 };
+    const pane = mountHtml("<div inert><div></div></div>");
+    const container = laidOut(pane.firstElementChild as HTMLDivElement, size);
+
+    const renderer = { resize: vi.fn().mockResolvedValue(undefined) };
+    const resizer = new CanvasResizer();
+    resizer.initialize(container, renderer);
+    resizer.setup();
+    notifyResize([], {} as ResizeObserver);
+
+    size.width = 891;
+    size.height = 1020;
+    notifyResize([], {} as ResizeObserver);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(renderer.resize).not.toHaveBeenCalled();
+
+    pane.removeAttribute("inert");
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(renderer.resize).toHaveBeenLastCalledWith(891);
+    expect(resizer.state.frame).toEqual({
+      size: 891,
+      width: 891,
+      height: 1020,
+    });
+
+    resizer.dispose();
+  });
+
+  it("keeps a laid-out staging source current while it is inert", async () => {
+    // A crossfade's standby source is inert but keeps the stage's full box,
+    // so its observations are real layout, not a collapsing pane. It must
+    // follow the stage while hidden so it is sharp the moment it is revealed.
+    const size = { width: 579, height: 496 };
+    const workspace = mountHtml(
+      "<div><div inert data-inert-keeps-layout><div></div></div></div>"
+    );
+    const container = laidOut(
+      workspace.querySelector("[data-inert-keeps-layout] > div")!,
+      size
+    );
+
+    const renderer = { resize: vi.fn().mockResolvedValue(undefined) };
+    const resizer = new CanvasResizer();
+    resizer.initialize(container, renderer);
+    resizer.setup();
+    notifyResize([], {} as ResizeObserver);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(renderer.resize).toHaveBeenLastCalledWith(496);
+
+    size.width = 891;
+    size.height = 1020;
+    notifyResize([], {} as ResizeObserver);
+    await vi.advanceTimersByTimeAsync(50);
+    expect(renderer.resize).toHaveBeenLastCalledWith(891);
+
+    // The same staging source inside a pane that is itself leaving the
+    // workspace is still suppressed: that pane's geometry is collapsing.
+    workspace.setAttribute("inert", "");
+    size.width = 48;
+    notifyResize([], {} as ResizeObserver);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(renderer.resize).toHaveBeenCalledTimes(2);
+    expect(resizer.state.currentSize).toBe(891);
 
     resizer.dispose();
   });

@@ -19,6 +19,7 @@
   } from "../domain/performer-step-timing";
   import { toScenePropType } from "../domain/scene-prop-type";
   import { getSceneEnvironmentRendererKey } from "../environments/domain/scene-environment";
+  import { getWorkerEnvironmentKey } from "../worker-renderer/domain/worker-viewer-backend";
   import { getStageCoordinateFrame } from "../environments/domain/stage-coordinate-frame";
   import {
     getCanonicalPerformerStageBounds,
@@ -406,6 +407,11 @@
     {cameraFov}
     {pixelRatio}
     qualityTier={renderQualityTier}
+    onRendererReady={(renderer) =>
+      viewer.registerEnvironmentPreparation((environmentId) => {
+        const key = getWorkerEnvironmentKey(environmentId);
+        if (key) renderer.prefetch(key);
+      })}
     onFrame={(deltaMs) => onWorkerFrame?.(deltaMs / 1000)}
     performerInteractionFrame={interactionFrame}
     interactionViewer={viewer}

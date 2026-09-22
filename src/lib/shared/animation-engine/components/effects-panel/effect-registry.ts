@@ -27,19 +27,27 @@ import { FROST_PRESET_GROUP } from "./presets/frost-presets";
 import { SILK_PRESET_GROUP } from "./presets/silk-presets";
 import { ANIMAL_PRESET_GROUP } from "./presets/animal-presets";
 import { PULSE_PRESET_GROUP } from "./presets/pulse-presets";
+// Moved to effects/domain so pure domain code (e.g. presentation-intent) can
+// read effect labels without pulling in this file's 17 preset modules and the
+// HMR helper. Imported (not just re-exported) because EFFECTS/EFFECT_ICONS/
+// EffectMeta are still used below in this file (EffectRegistration, registry
+// building, effectNavIcon, readyEffectIds); re-exported so every existing
+// importer of this module keeps working unchanged.
+import {
+  EFFECTS,
+  EFFECT_COLORS,
+  EFFECT_LABELS,
+  EFFECT_ICONS,
+  type EffectMeta,
+} from "$lib/shared/effects/domain/effect-meta";
 
-export interface EffectMeta {
-  readonly id: string;
-  readonly label: string;
-  readonly icon: `fa-${string}`;
-  readonly color: `#${string}`;
-  /** Show this effect's coven in the hub. Defaults to true when omitted. */
-  readonly ready3d?: boolean;
-  /** GLB path for the coven stage; omitted → stone-disc platform. */
-  readonly stageModel?: string;
-  /** Acolyte skin id; omitted → default avatar. (Deferred capability.) */
-  readonly skin?: string;
-}
+export {
+  EFFECTS,
+  EFFECT_COLORS,
+  EFFECT_LABELS,
+  EFFECT_ICONS,
+  type EffectMeta,
+};
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface EffectRegistration {
@@ -51,41 +59,6 @@ export interface EffectRegistration {
   customizeComponent: () => Promise<{ default: Component<any> }>;
   primaryParam?: PrimaryParamSpec;
 }
-
-export const EFFECTS: readonly EffectMeta[] = [
-  { id: "trails", label: "Trails", icon: "fa-route", color: "#60a5fa" },
-  { id: "fire", label: "Fire", icon: "fa-fire", color: "#f97316" },
-  { id: "led", label: "LED", icon: "fa-lightbulb", color: "#22c55e" },
-  { id: "charcoal", label: "Coal", icon: "fa-diamond", color: "#a855f7" },
-  { id: "zap", label: "Zap", icon: "fa-bolt", color: "#38bdf8" },
-  { id: "sparkles", label: "Sparkle", icon: "fa-star", color: "#fbbf24" },
-  { id: "ghost", label: "Ghost", icon: "fa-ghost", color: "#22d3ee" },
-  { id: "bloom", label: "Bloom", icon: "fa-sun", color: "#f472b6" },
-  { id: "goo", label: "Goo", icon: "fa-droplet", color: "#3a7fd9" },
-  { id: "bubbles", label: "Bubbles", icon: "fa-circle-notch", color: "#c8e0ff" },
-  { id: "petals", label: "Petals", icon: "fa-leaf", color: "#ffc0d8" },
-  { id: "smoke", label: "Smoke", icon: "fa-smog", color: "#c0c0c8" },
-  { id: "ink", label: "Ink", icon: "fa-paint-brush", color: "#b8956a" },
-  // frost: retired from the roster (Animal took its slot). Its config,
-  // renderer, and preset/customize map entries stay dormant — deletion tracked
-  // in a follow-up spec. Registration loops over EFFECTS, so dropping it here
-  // unregisters the chip without touching the dormant code.
-  { id: "silk", label: "Silk", icon: "fa-wind", color: "#c0c0d0" },
-  { id: "animal", label: "Animal", icon: "fa-dragon", color: "#3aa655" },
-  { id: "pulse", label: "Pulse", icon: "fa-bullseye", color: "#38bdf8" },
-] as const;
-
-export const EFFECT_COLORS: Record<string, string> = Object.fromEntries(
-  EFFECTS.map((e) => [e.id, e.color]),
-);
-
-export const EFFECT_LABELS: Record<string, string> = Object.fromEntries(
-  EFFECTS.map((e) => [e.id, e.label]),
-);
-
-export const EFFECT_ICONS: Record<string, string> = Object.fromEntries(
-  EFFECTS.map((e) => [e.id, e.icon]),
-);
 
 /** Generic Effects glyph, used only while nothing is chosen. */
 export const EFFECTS_FALLBACK_ICON = "fa-wand-magic-sparkles";

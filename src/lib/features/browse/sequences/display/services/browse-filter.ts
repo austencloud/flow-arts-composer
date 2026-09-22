@@ -6,6 +6,7 @@
  */
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
 import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
 import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { BrowseFilterValue } from "$lib/shared/persistence/domain/types/filtering-types";
@@ -105,7 +106,7 @@ export class BrowseFilter {
 
     // Handle single letter
     return sequences.filter(
-      (seq) => seq.word[0]?.toUpperCase() === filterValue.toUpperCase()
+      (seq) => stripWordNotation(seq.word)[0]?.toUpperCase() === filterValue.toUpperCase()
     );
   }
 
@@ -119,7 +120,7 @@ export class BrowseFilter {
     }
 
     return sequences.filter((seq) => {
-      const firstLetter = seq.word[0]?.toUpperCase();
+      const firstLetter = stripWordNotation(seq.word)[0]?.toUpperCase();
       return firstLetter && firstLetter >= start && firstLetter <= end;
     });
   }
@@ -136,7 +137,7 @@ export class BrowseFilter {
     
     // Sort sequences to prioritize those starting with the searchTerm
     return sequences.filter((seq) => {
-      const word = seq.word.toLowerCase();
+      const word = stripWordNotation(seq.word).toLowerCase();
       const name = seq.name.toLowerCase();
       const intended = seq.intendedWord?.toLowerCase() || "";
       const display = seq.displayName?.toLowerCase() || "";
@@ -149,8 +150,8 @@ export class BrowseFilter {
       );
     }).sort((a, b) => {
       // Primary priority: Word starts with search term
-      const aStarts = a.word.toLowerCase().startsWith(searchTerm);
-      const bStarts = b.word.toLowerCase().startsWith(searchTerm);
+      const aStarts = stripWordNotation(a.word).toLowerCase().startsWith(searchTerm);
+      const bStarts = stripWordNotation(b.word).toLowerCase().startsWith(searchTerm);
       if (aStarts && !bStarts) return -1;
       if (!aStarts && bStarts) return 1;
 

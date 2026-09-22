@@ -684,13 +684,13 @@ export class R2VideoUploader {
   async uploadAnimatedSequence(
     sequenceId: string,
     animationBlob: Blob,
-    format: "webp" | "gif",
+    format: "webp",
     options?: UploadOptions
   ): Promise<VideoUploadResult> {
     try {
       const userId = this.getUserId();
       const fileName = `sequence.${format}`;
-      const contentType = format === "webp" ? "image/webp" : "image/gif";
+      const contentType = "image/webp";
 
       return await this.uploadSingle(
         fileName,

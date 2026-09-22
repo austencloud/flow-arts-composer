@@ -288,16 +288,20 @@
       grid-template-columns:
         minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0fr) minmax(0, 1fr)
         minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0fr);
-      grid-auto-rows: 5.25rem;
+      /* Tall enough that the cards are read rather than deciphered. Below
+         95px ToggleCard shrinks its icons to 12px and lays its options out
+         side by side; below 65px it drops its title outright. At 84px — what
+         this was while the header title held a row of its own — Grid and
+         Pairing were both in that first band. */
+      grid-auto-rows: 7.5rem;
       gap: 8px;
-      /* 100% basis is what puts the rail on its own row under the centred
-         title. Keep it in this shorthand — a bare `flex-basis` earlier in the
-         block gets reset by this declaration. */
-      flex: 1 1 100%;
-      width: 100%;
+      /* Shares the header's one row with the title: no basis of its own, so
+         it takes whatever the title leaves. Keep it in this shorthand — a
+         bare `flex-basis` earlier in the block gets reset by this
+         declaration. */
+      flex: 1 1 0;
       max-width: 200rem;
       min-width: 0;
-      margin-inline: auto;
       /* The card text scales off each card's own box, so one declaration here
          keeps all seven reading at the same size. */
       --rail-card-title-size: var(--font-size-compact, 12px);
@@ -336,7 +340,7 @@
 
   @container fuse (min-width: 2600px) and (min-height: 1400px) {
     .recipe-rail {
-      grid-auto-rows: 6.5rem;
+      grid-auto-rows: 9rem;
       gap: 12px;
       --rail-card-title-size: var(--font-size-min, 14px);
       --card-text-size: clamp(1.05rem, 17cqh, 1.5rem);

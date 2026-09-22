@@ -1,44 +1,23 @@
-# App-vs-engine LOOP parity audit
+# Canonical LOOP completion contract
 
-Read-only audit evidence for Phase 3 of
-`docs/superpowers/specs/active/2026-04-20-sequence-engine-unification-design.md`
-("delete the five app-side LOOP executors, rewire `SequenceExtender` to the
-engine"). No production code is touched by anything in this directory.
+The pre-migration differential audit established that the app executors and the
+engine disagreed. The extension path now uses the engine's completion boundary,
+so these tests assert completed LOOP behavior directly instead of preserving
+known defects as parity expectations.
 
 Findings and migration sequence:
 `docs/reports/opus-batch-2026-09-12/sequence-engine-parity.md`.
 
 ## What runs by default
 
-| File | Question it answers |
-| --- | --- |
-| `orientation-calculator-parity.test.ts` | Do the app's and engine's duplicated end-orientation calculators agree? (Yes, exhaustively — so LOOP differences are attributable to executor logic.) |
-| `loop-executor-parity.test.ts` | For each LOOP type and period, do the two executor paths produce the same behaviour? |
-| `engine-pipeline-configuration.test.ts` | Which engine spec conversion and post-stage combination would actually reproduce the app's behaviour? |
-| `minimal-divergence-repros.test.ts` | The smallest concrete sequences on which the two paths disagree, with both sides' exact output. |
-| `downstream-reach.test.ts` | Which production entry points actually hit the divergent conversion, and what a caller sees when they do. |
+| File                                    | Question it answers                                                                                                                                       |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `orientation-calculator-parity.test.ts` | Do the app's and engine's duplicated end-orientation calculators agree? (Yes, exhaustively — so LOOP differences are attributable to executor logic.)     |
+| `loop-completion-contract.test.ts`      | Does each supported legacy operation preserve its seed, produce its requested transformation, chain coherent steps, and close placement plus orientation? |
 
-These suites **lock measured current behaviour, including its defects.** Sets
-named `*_DIVERGENT` / `*_INCOHERENT` / `*_OPEN` are defect inventories that
-should shrink; when they do, these tests fail and say exactly what changed.
-That is the intended signal, not a regression.
-
-## What is quarantined
-
-`quarantine/loop-closure-contract.quarantine.test.ts` states the plain contract
-("every LOOP is internally coherent and returns to its start position") with no
-allowance for the defects. **It fails today, by design.** Every `describe` is
-gated on an environment variable, so it is skipped in the default run:
-
-```bash
-LOOP_PARITY_QUARANTINE=1 npx vitest run \
-  --config tests/config/vitest.config.ts \
-  tests/unit/opus-sequence-parity/quarantine
-```
-
-Four failures are expected at audit time (base `c4be1619`): app
-`mirrored_swapped_inverted` and `mirrored_rotated_inverted_swapped` at both
-periods, and engine quartered `rotated_inverted` and `rotated_swapped`.
+The historical differential and the D1/D2 examples remain documented in
+`docs/reports/opus-batch-2026-09-12/sequence-engine-parity.md`; the production
+contract now requires those cases to be coherent and closed.
 
 ## Determinism
 

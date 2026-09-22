@@ -240,7 +240,9 @@
         gmpClickable: true,
       } as AccessibleAdvancedMarkerOptions) as MutableAdvancedMarker;
 
-      marker.addListener("click", () => {
+      // AdvancedMarkerElement is a DOM element: Google deprecated the legacy
+      // addListener("click") path on it and warns on every call.
+      marker.addEventListener("gmp-click", () => {
         const current = userMarkerHandles.get(location.userId)?.location;
         if (!current) return;
         selectedUser = current;
@@ -314,7 +316,7 @@
         gmpClickable: Boolean(onScanMarkerClick),
       } as AccessibleAdvancedMarkerOptions) as MutableAdvancedMarker;
       if (onScanMarkerClick) {
-        marker.addListener("click", () => {
+        marker.addEventListener("gmp-click", () => {
           if (scanMarkerHandles.has(scan.id)) onScanMarkerClick?.(scan.id);
         });
       }

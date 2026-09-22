@@ -45,4 +45,19 @@ describe("isTkaWord", () => {
     expect(isTkaWord("Θ")).toBe(true);
     expect(isTkaWord("θ")).toBe(false);
   });
+
+  it("accepts well-formed skew notation", () => {
+    expect(isTkaWord("{US}")).toBe(true);
+    expect(isTkaWord("A{STS}B")).toBe(true);
+    expect(isTkaWord("{Σ-Δ-}ζ")).toBe(true);
+  });
+
+  it("rejects malformed skew notation", () => {
+    expect(isTkaWord("{}")).toBe(false);
+    expect(isTkaWord("{A}{B}")).toBe(false);
+    expect(isTkaWord("{A")).toBe(false);
+    expect(isTkaWord("A}")).toBe(false);
+    expect(isTkaWord("{{A}}")).toBe(false);
+    expect(isTkaWord("{A}-B")).toBe(false);
+  });
 });

@@ -5,14 +5,10 @@
  * and letter recovery all use the same engine path as SequenceBuilder.
  */
 
-import type {
-  Motion,
-  SequenceStep,
-} from "../../core/types/sequence-engine-types.js";
+import type { SequenceStep } from "../../core/types/sequence-engine-types.js";
 import { findLetterByMotions } from "../LetterLookup.js";
 import { LOOPType, Period } from "../loop-types.js";
-import { loopExecutorSelector } from "./LOOPExecutorSelector.js";
-import { closeOrientationCycle } from "./orientation-cycle.js";
+import { completeLOOPExtension } from "./complete-loop-extension.js";
 
 export interface MotionData {
   hand: string;
@@ -72,23 +68,18 @@ export function executeLOOP(
   }
 
   try {
-    const input = steps.map(cloneStep);
-    const structurallyExtended = loopExecutorSelector
-      .getExecutor(loopType)
-      .executeLOOP(input, period);
-    const closure = closeOrientationCycle(structurallyExtended, {
-      seedStepCount,
+    const completed = completeLOOPExtension(steps, {
+      loopType,
+      period,
     });
     const resolvedSteps = recoverLetters(
-      closure.steps,
+      completed.steps,
       allPictographs,
       seedStepCount
     );
     const letterSteps = resolvedSteps.filter((step) => step.stepNumber > 0);
     const derivedSteps = letterSteps.slice(seedStepCount);
-    const derivedWord = derivedSteps
-      .map((step) => step.letter ?? "")
-      .join("");
+    const derivedWord = derivedSteps.map((step) => step.letter ?? "").join("");
 
     return {
       success: true,
@@ -100,7 +91,7 @@ export function executeLOOP(
       loopType,
       period,
       isCircular: true,
-      derivedStepIndices: derivedSteps.map((step) => step.stepNumber),
+      derivedStepIndices: completed.derivedStepIndices,
     };
   } catch (error) {
     return failure(
@@ -151,15 +142,5 @@ function failure(
     isCircular: false,
     derivedStepIndices: [],
     error,
-  };
-}
-
-function cloneStep(step: SequenceStep): SequenceStep {
-  return {
-    ...step,
-    motions: {
-      left: { ...step.motions.left } as Motion,
-      right: { ...step.motions.right } as Motion,
-    },
   };
 }

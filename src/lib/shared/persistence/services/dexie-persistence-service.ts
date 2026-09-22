@@ -16,6 +16,7 @@ import {
   normalizeLegacySequence,
   normalizeLegacyStep,
 } from "@tka/tka-types";
+import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
 
 export async function initialize(): Promise<void> {
   try {
@@ -116,7 +117,7 @@ export async function searchSequences(query: string): Promise<SequenceData[]> {
       .filter(
         (seq) =>
           seq.name.toLowerCase().includes(searchTerm) ||
-          seq.word.toLowerCase().includes(searchTerm) ||
+          stripWordNotation(seq.word).toLowerCase().includes(searchTerm) ||
           (seq.author?.toLowerCase().includes(searchTerm) ?? false)
       )
       .toArray();

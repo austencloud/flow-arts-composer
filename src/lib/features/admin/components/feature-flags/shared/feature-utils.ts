@@ -297,7 +297,6 @@ export const QUICK_PRESETS: QuickPreset[] = [
     color: "#10b981",
     features: [
       "capability:export:video",
-      "capability:export:gif",
       "capability:export:png",
     ],
   },

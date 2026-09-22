@@ -279,6 +279,18 @@
         </div>
         <div>
           <dt>Worker boot</dt>
+          <dd>
+            {last.workerBoot.warmReuse
+              ? "Prepared scene reused"
+              : "Prepared from assets"}
+          </dd>
+          <dt>Retained scenes</dt>
+          <dd>
+            {last.workerBoot.retainedRuntimeCount ?? 0} · {Math.round(
+              (last.workerBoot.retainedRuntimeBytes ?? 0) / 1024 / 1024
+            )} MiB estimated
+          </dd>
+          <dt>Worker preparation</dt>
           <dd>{last.workerBoot.firstFrameMs.toFixed(0)} ms</dd>
         </div>
         <div>

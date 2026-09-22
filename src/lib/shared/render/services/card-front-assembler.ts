@@ -328,11 +328,8 @@ export async function paintCardFrontChrome(
 
   const loopTypeOverride = options.loopType;
   let loopComponents: Set<LOOPComponent> | undefined;
-  // Only the resolver branch (`display`) carries overlay-mode info — a bare
-  // LOOPType shortcode (the fallback branch below, used when the resolver
-  // hasn't been registered, e.g. inside composition.worker.ts) has no way to
-  // recover which components are overlay vs expand. Degraded, not wrong: the
-  // icon strip just omits the separator dot in that case.
+  // Only canonical resolution carries overlay-mode information. The legacy
+  // shortcode fallback cannot distinguish overlay from expanded components.
   let overlayComponents: Set<LOOPComponent> | undefined;
 
   const resolver = tryGetLoopDisplayResolver();

@@ -23,7 +23,7 @@ function m(
   startLocation: Loc,
   endLocation: Loc,
   startOrientation: Ori,
-  endOrientation: Ori,
+  endOrientation: Ori
 ) {
   return {
     motionType,
@@ -43,7 +43,7 @@ function step(
   letter: string | null,
   startPlacement: string,
   endPlacement: string,
-  left: ReturnType<typeof m>,
+  left: ReturnType<typeof m>
 ): Step {
   return {
     id: `step-${stepNumber}`,
@@ -59,16 +59,58 @@ function step(
 /** The six distinct steps of the card: YΦΔ then its vertical mirror YΦΔ. */
 function cardHalf(startNumber: number): Step[] {
   return [
-    step(startNumber + 0, "Y", "gamma13", "beta5", m("pro", "ccw", "w", "s", "in", "in")),
-    step(startNumber + 1, "Φ", "beta5", "alpha5", m("dash", "noRotation", "s", "n", "in", "out")),
-    step(startNumber + 2, "Δ", "alpha5", "gamma5", m("anti", "ccw", "n", "e", "out", "in")),
-    step(startNumber + 3, "Y", "gamma5", "beta5", m("pro", "cw", "e", "s", "in", "in")),
-    step(startNumber + 4, "Φ", "beta5", "alpha5", m("dash", "noRotation", "s", "n", "in", "out")),
-    step(startNumber + 5, "Δ", "alpha5", "gamma13", m("anti", "cw", "n", "w", "out", "in")),
+    step(
+      startNumber + 0,
+      "Y",
+      "gamma13",
+      "beta5",
+      m("pro", "ccw", "w", "s", "in", "in")
+    ),
+    step(
+      startNumber + 1,
+      "Φ",
+      "beta5",
+      "alpha5",
+      m("dash", "noRotation", "s", "n", "in", "out")
+    ),
+    step(
+      startNumber + 2,
+      "Δ",
+      "alpha5",
+      "gamma5",
+      m("anti", "ccw", "n", "e", "out", "in")
+    ),
+    step(
+      startNumber + 3,
+      "Y",
+      "gamma5",
+      "beta5",
+      m("pro", "cw", "e", "s", "in", "in")
+    ),
+    step(
+      startNumber + 4,
+      "Φ",
+      "beta5",
+      "alpha5",
+      m("dash", "noRotation", "s", "n", "in", "out")
+    ),
+    step(
+      startNumber + 5,
+      "Δ",
+      "alpha5",
+      "gamma13",
+      m("anti", "cw", "n", "w", "out", "in")
+    ),
   ];
 }
 
-const START = step(0, null, "gamma13", "gamma13", m("static", "noRotation", "w", "w", "in", "in"));
+const START = step(
+  0,
+  null,
+  "gamma13",
+  "gamma13",
+  m("static", "noRotation", "w", "w", "in", "in")
+);
 
 /** The full 12-step card: two identical copies of the 6-step mirrored loop. */
 function card12(): Step[] {
@@ -85,7 +127,14 @@ describe("reduceToMinimalLoop", () => {
 
     const letters = result.steps.filter((s) => s.stepNumber > 0);
     expect(letters).toHaveLength(6);
-    expect(letters.map((s) => s.letter)).toEqual(["Y", "Φ", "Δ", "Y", "Φ", "Δ"]);
+    expect(letters.map((s) => s.letter)).toEqual([
+      "Y",
+      "Φ",
+      "Δ",
+      "Y",
+      "Φ",
+      "Δ",
+    ]);
     // Renumbered contiguously 1..6.
     expect(letters.map((s) => s.stepNumber)).toEqual([1, 2, 3, 4, 5, 6]);
     // Start-position step preserved at index 0.
@@ -103,14 +152,47 @@ describe("reduceToMinimalLoop", () => {
   it("PRESERVES an orientation-cycle loop (same motions, different orientations per pass)", () => {
     // Two passes with identical locations/motion types but DIFFERENT
     // orientations — a genuine period-2 orientation cycle, not a literal copy.
-    const a = step(1, "A", "alpha1", "beta1", m("pro", "cw", "n", "s", "in", "out"));
-    const b = step(2, "B", "beta1", "alpha1", m("pro", "cw", "s", "n", "out", "in"));
+    const a = step(
+      1,
+      "A",
+      "alpha1",
+      "beta1",
+      m("pro", "cw", "n", "s", "in", "out")
+    );
+    const b = step(
+      2,
+      "B",
+      "beta1",
+      "alpha1",
+      m("pro", "cw", "s", "n", "out", "in")
+    );
     // pass 2: same motion geometry, orientations shifted (out/in vs in/out)
-    const c = step(3, "A", "alpha1", "beta1", m("pro", "cw", "n", "s", "out", "in"));
-    const d = step(4, "B", "beta1", "alpha1", m("pro", "cw", "s", "n", "in", "out"));
+    const c = step(
+      3,
+      "A",
+      "alpha1",
+      "beta1",
+      m("pro", "cw", "n", "s", "out", "in")
+    );
+    const d = step(
+      4,
+      "B",
+      "beta1",
+      "alpha1",
+      m("pro", "cw", "s", "n", "in", "out")
+    );
     const oriCycle: Step[] = [
-      step(0, null, "alpha1", "alpha1", m("static", "noRotation", "n", "n", "in", "in")),
-      a, b, c, d,
+      step(
+        0,
+        null,
+        "alpha1",
+        "alpha1",
+        m("static", "noRotation", "n", "n", "in", "in")
+      ),
+      a,
+      b,
+      c,
+      d,
     ];
 
     const result = reduceToMinimalLoop(oriCycle);
@@ -129,11 +211,44 @@ describe("reduceToMinimalLoop", () => {
 
   it("collapses a 4× literal repeat all the way to the base unit", () => {
     // YΦΔYΦΔ repeated 4× = 24 steps → collapses to the 6-step base.
-    const card24: Step[] = [START, ...cardHalf(1), ...cardHalf(7), ...cardHalf(13), ...cardHalf(19)];
+    const card24: Step[] = [
+      START,
+      ...cardHalf(1),
+      ...cardHalf(7),
+      ...cardHalf(13),
+      ...cardHalf(19),
+    ];
     const result = reduceToMinimalLoop(card24);
 
     expect(result.reduced).toBe(true);
     expect(result.originalLength).toBe(24);
     expect(result.reducedLength).toBe(6);
+  });
+
+  it("does not collapse authored differences outside the old motion-field subset", () => {
+    const first = cardHalf(1);
+    const second = cardHalf(7).map((s, index) =>
+      index === 2 ? { ...s, duration: 2, isBridge: true } : s
+    );
+    const result = reduceToMinimalLoop([START, ...first, ...second]);
+
+    expect(result.reduced).toBe(false);
+  });
+
+  it("can preserve custom authored IDs while removing a later literal repeat", () => {
+    const first = cardHalf(1).map((s, index) =>
+      index < 3 ? { ...s, id: `author-${index + 1}` } : s
+    );
+    const result = reduceToMinimalLoop([START, ...first, ...cardHalf(7)], {
+      minimumLetterSteps: 6,
+      preservePrefixSteps: 3,
+    });
+
+    expect(result.reduced).toBe(true);
+    expect(result.steps.slice(1, 4).map((s) => s.id)).toEqual([
+      "author-1",
+      "author-2",
+      "author-3",
+    ]);
   });
 });

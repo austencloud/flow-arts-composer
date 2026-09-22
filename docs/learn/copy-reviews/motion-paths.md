@@ -417,3 +417,23 @@ Ownership ledger: ElementChipRow `fill`, RelationshipChoiceChip `--choice-icon-s
 Evidence: browser pass at 2560×1340 (chips 218×182 with 82px icons, tiles 281×305, canvas 610, matrix 542), 1920×1080 (chips 218×123, icons 61px, canvas 469, matrix 423), 1440×900 (chips 177×82, icons 42px, canvas 370, matrix 342), 1440×800 (stacked flow, button at the right of its row, compact chips 177×45 with 34px icons, the crossfade back on its measured height) and 375×667 (compact chips 95×45). Solo removes both relationship glyphs and the chip row; picking a pair brings them back. Source switches in fit mode leave the scroll where it was. Console clean apart from the PostHog notice. The drill could not be opened on the task server: `/shape-engine` fails to boot until the primary installs `svelte-awesome-color-picker`, a dependency main added on September 18.
 
 Corner as a control surface: not built. The shape engine's corner holds Surprise and two axis steppers because its cells reach 320px; the explorer's corner is 107px at 2560, 72px at 1920 and 68px at 1440, which cannot hold two 44px steppers, so the turns stay in the controls column.
+
+## September 22: the intro's hand never waits or crawls
+
+Austen, stepping through the intro: after the grid stage, Next into Arc left the hand still for a moment before it traveled, and Next pressed while a path was drawing brought the next path in slowly, as if it were finishing the old motion from wherever the hand was.
+
+Measured on the live page: entering Arc ran a 700 ms reshape from the arc route to the same arc route before the hand could move. Each later stage kept the hand's leftover progress: a 700 ms reshape with the hand nearly still, a 1.4 s slide back along the new path, then a 1.4 s redraw, 3.6 s in all when interrupted.
+
+Interaction now: every path stage is one motion. The route reshapes toward the new path while the hand slides back along it to the start (700 ms from the end, proportionally less from partway), then the hand draws the new path at the animator's even pace. Next pressed at any moment starts that motion from wherever the hand and route are. Arc starts drawing on the first frame, and its destination pulses until the hand arrives. The closing comparison lets a draw in flight finish along its own line. Reduced motion still jumps each stage to its end state. No strings changed.
+
+Evidence: task server, frame-by-frame hand positions. Arc moves on the first frame and arrives in 1.4 s. Next at 60% of Linear returns in about 0.4 s, then Concave draws in 1.4 s. Next during the grid glide, two Nexts 150 ms apart and Next mid-draw into the comparison all stay continuous (largest step between frames 12 units of a 330-unit drawing). Reduced motion lands every stage at once.
+
+## September 22: the hand lifts and sets down instead of rewinding
+
+Austen, after the single-motion version: on Next the hand slid back to the east start point, and the slide looked rushed. He asked for the clearest effect available.
+
+Chosen: a lift and set-down, the way a teacher starts a demonstration over. On Next the hand fades and shrinks slightly where it is (200 ms), reappears at the start point slightly large and settles (350 ms), then draws the new path at the animator's even pace (1.4 s). It never travels backward along a path, so nothing can read as a replay. The finished path fades off and stays behind as a faint line, so Linear is drawn beside Arc and Concave beside both, and the closing comparison colors all three. Start again lifts the hand and sets it down at the center. Next pressed mid-lift carries on from the hand's current fade instead of popping it back to full. Reduced motion still jumps each stage to its end state. No strings changed.
+
+Options weighed: sliding back along the path (read as a hurried replay), drawing each new path from the end back to the start (reverses the shift's direction between stages), and a continuous loop (Next would wait for the lap). The lift keeps one direction and answers Next at once.
+
+Evidence: task server, frame-by-frame hand position, opacity and scale. Arc draws on the first frame. Linear: the hand is gone at 200 ms, back at the start and settled by 500 ms, and draws 550 to 1950 ms. A second Next 100 ms into a lift, Next mid-draw into the comparison, and Start again all change opacity by at most 0.23 per frame, and the hand never jumps while visible. Ghost counts are 1 on Linear, 2 on Concave, and 0 once the comparison shows.

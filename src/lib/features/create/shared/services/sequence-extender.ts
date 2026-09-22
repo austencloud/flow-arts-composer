@@ -7,6 +7,7 @@
 
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import {
   GridMode,
@@ -16,7 +17,7 @@ import type { LOOPOption } from "./loop-validator";
 import type { OrientationAlignment } from "./orientation-alignment-calculator";
 import {
   Period,
-  type LOOPType,
+  LOOPType,
 } from "$lib/shared/foundation/domain/models/generation/circular-models";
 import type { Letter } from "$lib/shared/foundation/domain/models/letter";
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
@@ -145,7 +146,6 @@ export interface ExtensionApplyResult {
   /** Message to display to user */
   message: string;
 }
-import type { LOOPExecutorSelector } from "$lib/features/create/generate/circular/services/loop-executor-selector";
 import type { ReversalDetector } from "$lib/shared/create/services/reversal-detector";
 import type {
   ILetterQueryHandler,
@@ -156,15 +156,18 @@ type StepConverter = typeof StepConverterSingleton;
 import type { LOOPValidator } from "./loop-validator";
 import type { SequenceAnalyzer } from "./sequence-analyzer";
 import type { BridgeFinder } from "./bridge-finder";
-import { recalculateAllOrientations } from "$lib/shared/create/services/orientation-propagation";
 import {
   HALVED_LOOPS,
   QUARTERED_LOOPS,
 } from "$lib/shared/foundation/domain/models/generation/circular-placement-maps";
+import {
+  completeLOOPExtension,
+  LOOPType as EngineLOOPType,
+  Period as EnginePeriod,
+} from "@tka/sequence-engine/loop";
 
 export class SequenceExtender {
   constructor(
-    private loopExecutorSelector: LOOPExecutorSelector,
     private reversalDetector: ReversalDetector,
     private letterQueryHandler: ILetterQueryHandler,
     private stepConverter: StepConverter,
@@ -303,9 +306,6 @@ export class SequenceExtender {
         ? Period.QUARTERED
         : Period.HALVED);
 
-    // Get the executor for the selected LOOP type
-    const executor = this.loopExecutorSelector.getExecutor(loopType);
-
     // Convert sequence to StepData array for the executor
     const sequenceSteps =
       this.sequenceAnalyzer.convertSequenceToBeats(sequence);
@@ -314,16 +314,18 @@ export class SequenceExtender {
       throw new Error("No steps in sequence to extend");
     }
 
-    // IMPORTANT: Save original length BEFORE executing, since executor modifies array in place
-    const originalLength = sequenceSteps.length;
+    const completion = completeLOOPExtension(sequenceSteps, {
+      loopType: toEngineLOOPType(loopType),
+      period:
+        period === Period.QUARTERED
+          ? EnginePeriod.QUARTERED
+          : EnginePeriod.HALVED,
+    });
 
-    // Execute the LOOP transformation (modifies sequenceSteps in place)
-    const completedSteps = executor.executeLOOP(sequenceSteps, period);
-
-    // Return only the new steps (after the original sequence)
-    const newSteps = completedSteps.slice(originalLength);
-
-    return newSteps;
+    const derivedStepNumbers = new Set(completion.derivedStepIndices);
+    return completion.steps.filter((step) =>
+      derivedStepNumbers.has(step.stepNumber)
+    ) as StepData[];
   }
 
   /**
@@ -351,10 +353,21 @@ export class SequenceExtender {
           beat,
           sequence.gridMode || GridMode.DIAMOND
         );
+        const hasPairedVisibleMotions =
+          isVisibleMotion(beat.motions?.left) &&
+          isVisibleMotion(beat.motions?.right);
+        if (hasPairedVisibleMotions && !derivedLetter) {
+          throw new Error(
+            `Cannot derive a canonical letter for generated step ${beat.stepNumber}`
+          );
+        }
         return {
           ...beat,
+          id: crypto.randomUUID(),
           stepNumber: existingStepCount + index + 1,
-          letter: derivedLetter ?? beat.letter, // Use derived letter, fall back to original if derivation fails
+          // A one-hand placeholder has no paired letter to look up. Its source
+          // letter remains the only meaningful label for the extension UI.
+          letter: derivedLetter ?? beat.letter,
         };
       })
     );
@@ -363,7 +376,7 @@ export class SequenceExtender {
     const newSteps = [...(sequence.steps || []), ...stepsWithDerivedLetters];
 
     // Build the updated word from all step letters
-    const word = newSteps.map((step) => step.letter ?? "").join("");
+    const word = deriveWordFromBeats(newSteps);
 
     let extendedSequence: SequenceData = {
       ...sequence,
@@ -372,13 +385,6 @@ export class SequenceExtender {
       isCircular: true,
       loopType: options.loopType,
     };
-
-    // Recalculate all orientations through the combined sequence.
-    // The LOOP executor updates orientations on engine-format fields (leftMotion/rightMotion),
-    // but the app reads from motions.left/motions.right. Without this recalculation,
-    // the motions field carries stale orientations from the source step's spread,
-    // causing the choreo card to render wrong prop angles.
-    extendedSequence = recalculateAllOrientations(extendedSequence);
 
     // Process reversals for the extended sequence
     // This detects rotation direction changes between consecutive steps
@@ -537,10 +543,14 @@ export class SequenceExtender {
   }
 }
 
+function toEngineLOOPType(loopType: LOOPType): EngineLOOPType {
+  if (loopType === LOOPType.STRICT_REWOUND) return EngineLOOPType.REWOUND;
+  return loopType as EngineLOOPType;
+}
+
 // ============================================================================
 // DIRECT SINGLETON EXPORT
 // ============================================================================
-import { loopExecutorSelector } from "$lib/features/create/generate/circular/services/loop-executor-selector";
 import { reversalDetector } from "$lib/shared/create/services/reversal-detector";
 import { letterQueryHandler } from "$lib/shared/pictograph/tka-glyph/services/letter-query-handler";
 import { stepConverter } from "$lib/features/create/generate/shared/services/step-converter";
@@ -550,7 +560,6 @@ import { bridgeFinder } from "./bridge-finder";
 import { motionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
 
 export const sequenceExtender = new SequenceExtender(
-  loopExecutorSelector,
   reversalDetector,
   letterQueryHandler,
   stepConverter,

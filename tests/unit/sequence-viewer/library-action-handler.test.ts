@@ -74,6 +74,13 @@ import { createLibraryActionHandler } from "$lib/shared/sequence-viewer/state/li
 import { LibraryError } from "$lib/shared/library/domain/library-error";
 import { registerVisualSequenceSaveCoordinatorFactory } from "$lib/shared/library/get-visual-sequence-save-coordinator";
 import { VisualSequenceSaveCoordinator } from "$lib/features/library/services/implementations/VisualSequenceSaveCoordinator";
+import {
+  DEFAULT_TRAIL_SETTINGS,
+  TrailMode,
+  TrailEffect,
+} from "$lib/shared/animation-engine/domain/types/trail-types";
+import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import type { PresentationSource } from "$lib/shared/foundation/services/presentation-intent";
 
 const sequence = {
   id: "sequence-1",
@@ -82,7 +89,24 @@ const sequence = {
   metadata: {},
 };
 
-function makeHandler(isOwned = true) {
+const LIVE_SOURCE: PresentationSource = {
+  primaryPropColors: { left: "#00ff00", right: "#ff00ff" },
+  trail: {
+    ...DEFAULT_TRAIL_SETTINGS,
+    mode: TrailMode.PERSISTENT,
+    effect: TrailEffect.NONE,
+  },
+  effects: {
+    ...DEFAULT_EFFECTS_CONFIG,
+    tipEffectMap: { "*": { effect: "led" } },
+    activeEffect: "led",
+  },
+};
+
+function makeHandler(
+  isOwned = true,
+  presentationSource: PresentationSource | null = LIVE_SOURCE
+) {
   const handler = createLibraryActionHandler({
     getSequence: () => sequence as never,
     getIsOwned: () => isOwned,
@@ -91,6 +115,7 @@ function makeHandler(isOwned = true) {
     getCatDogModeEnabled: () => false,
     getHapticService: () => ({ trigger: vi.fn() }) as never,
     onDeleteSuccess: vi.fn(),
+    getPresentationSource: () => presentationSource,
   });
   handler.syncSavedState(sequence as never);
   return handler;
@@ -335,5 +360,119 @@ describe("sequence viewer library action feedback", () => {
       })
     ).resolves.toBe(false);
     expect(mocks.updateSequence).not.toHaveBeenCalled();
+  });
+
+  it("captures the live look and stores it pruned on save", async () => {
+    mocks.saveSequence.mockResolvedValue({
+      persisted: true,
+      sequenceId: "copy",
+    });
+    const handler = makeHandler(false);
+    const pending = handler.handleSave();
+    expect(handler.presentationSummary?.trailLabel).toBe("Persistent trail");
+    expect(handler.presentationSummary?.effectLabels).toEqual(["LED"]);
+    expect(handler.presentationSummary?.colors).toEqual({
+      left: "#00ff00",
+      right: "#ff00ff",
+    });
+    handler.finishPropChoice(true);
+    await pending;
+    const stored = mocks.saveSequence.mock.calls[0]?.[0];
+    expect(stored.creatorIntent.presentation.primaryPropColors).toEqual({
+      left: "#00ff00",
+      right: "#ff00ff",
+    });
+    expect(stored.creatorIntent.presentation.trail.mode).toBe("persistent");
+    expect(stored.creatorIntent.presentation.trail).not.toHaveProperty(
+      "usePathCache"
+    );
+    expect(stored.creatorIntent.presentation.effects.led).toEqual(
+      DEFAULT_EFFECTS_CONFIG.led
+    );
+    expect(stored.creatorIntent.presentation.effects).not.toHaveProperty(
+      "fire"
+    );
+  });
+
+  it("stores an explicit null when Use default look is on", async () => {
+    mocks.saveSequence.mockResolvedValue({
+      persisted: true,
+      sequenceId: "copy",
+    });
+    const handler = makeHandler(false);
+    const pending = handler.handleSave();
+    handler.useDefaultLook = true;
+    handler.finishPropChoice(true);
+    await pending;
+    const stored = mocks.saveSequence.mock.calls[0]?.[0];
+    expect(stored.creatorIntent).toHaveProperty("presentation");
+    expect(stored.creatorIntent.presentation).toBeNull();
+  });
+
+  it("omits presentation when no live scene is available", async () => {
+    mocks.saveSequence.mockResolvedValue({
+      persisted: true,
+      sequenceId: "copy",
+    });
+    const handler = makeHandler(false, null);
+    const pending = handler.handleSave();
+    expect(handler.presentationSummary).toBeNull();
+    handler.finishPropChoice(true);
+    await pending;
+    const stored = mocks.saveSequence.mock.calls[0]?.[0];
+    expect(stored.creatorIntent).not.toHaveProperty("presentation");
+  });
+
+  it("resets the default-look switch after the dialog closes", async () => {
+    const handler = makeHandler();
+    const pending = handler.handleSave();
+    handler.useDefaultLook = true;
+    handler.finishPropChoice(false);
+    await pending;
+    expect(handler.useDefaultLook).toBe(false);
+    expect(handler.presentationSummary).toBeNull();
+  });
+
+  it("stores the look captured when the dialog opened, not later edits", async () => {
+    mocks.saveSequence.mockResolvedValue({
+      persisted: true,
+      sequenceId: "copy",
+    });
+    const live: PresentationSource = {
+      ...LIVE_SOURCE,
+      trail: { ...LIVE_SOURCE.trail },
+    };
+    const handler = makeHandler(false, live);
+    const pending = handler.handleSave();
+    live.trail.mode = TrailMode.OFF;
+    expect(handler.presentationSummary?.trailLabel).toBe("Persistent trail");
+    handler.finishPropChoice(true);
+    await pending;
+    const stored = mocks.saveSequence.mock.calls[0]?.[0];
+    expect(stored.creatorIntent.presentation.trail.mode).toBe(
+      TrailMode.PERSISTENT
+    );
+  });
+
+  it("does not throw and omits presentation when the live source is malformed", async () => {
+    mocks.saveSequence.mockResolvedValue({
+      persisted: true,
+      sequenceId: "copy",
+    });
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const malformed = {
+      ...LIVE_SOURCE,
+      effects: undefined,
+    } as unknown as PresentationSource;
+    const handler = makeHandler(false, malformed);
+    const pending = handler.handleSave();
+    expect(handler.presentationSummary).toBeNull();
+    handler.finishPropChoice(true);
+    await pending;
+    const stored = mocks.saveSequence.mock.calls[0]?.[0];
+    expect(stored.creatorIntent).not.toHaveProperty("presentation");
+    consoleError.mockRestore();
   });
 });

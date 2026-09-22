@@ -43,6 +43,7 @@ import {
 import type { Letter } from "$lib/shared/foundation/domain/models/letter";
 import type { MotionData as AppMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import type { LOOPType as AppLOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
+import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
 
 export class BuildResultTransformer {
   constructor(
@@ -65,11 +66,10 @@ export class BuildResultTransformer {
     const startPlacement = this.mapStartPlacement(startPlacementStep);
     const steps = this.mapSteps(result.sequence.slice(1), options);
 
-    // Calculate word from the mapped steps
-    const word = steps
-      .filter((s) => s.letter)
-      .map((s) => s.letter)
-      .join("");
+    // Calculate word from the mapped steps. deriveWordFromBeats wraps any
+    // skewed run (zeta/eta start or end placement) in braces, matching the
+    // stored word notation everywhere else a word is derived from beats.
+    const word = deriveWordFromBeats(steps);
 
     const level = this.metadataManager.mapDifficultyToLevel(options.difficulty);
 

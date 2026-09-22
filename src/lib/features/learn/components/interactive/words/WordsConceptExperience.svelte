@@ -12,6 +12,7 @@
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+  import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
   import type { ExperienceViewMode } from "../../../domain/types";
   import { getExperiencePersistence } from "../../../state/experience-persistence.svelte";
   import LessonStageControls from "../LessonStageControls.svelte";
@@ -63,7 +64,7 @@
 
   const coreSequences = $derived(
     LEARNING_LETTERS_CORE_WORDS.flatMap((word) => {
-      const match = sequences.find((sequence) => sequence.word === word);
+      const match = sequences.find((sequence) => stripWordNotation(sequence.word) === word);
       return match ? [match] : [];
     })
   );
@@ -87,7 +88,7 @@
   );
   const activeTeachingContent = $derived(
     activeCoreSequence
-      ? getLearningLetterTeachingContent(activeCoreSequence.word)
+      ? getLearningLetterTeachingContent(stripWordNotation(activeCoreSequence.word))
       : null
   );
 

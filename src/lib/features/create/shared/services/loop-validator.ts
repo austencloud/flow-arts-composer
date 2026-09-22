@@ -6,7 +6,6 @@
  */
 
 import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { LOOPExecutorSelector } from "$lib/features/create/generate/circular/services/loop-executor-selector";
 import {
   LOOPType,
   LOOP_TYPE_LABELS,
@@ -37,18 +36,10 @@ export interface LOOPValidationResult {
   unavailable: LOOPOption[];
 }
 import {
-  HALVED_LOOPS,
-  QUARTERED_LOOPS,
-} from "$lib/shared/foundation/domain/models/generation/circular-placement-maps";
-import {
-  MIRRORED_LOOP_VALIDATION_SET,
-  FLIPPED_LOOP_VALIDATION_SET,
-  SWAPPED_LOOP_VALIDATION_SET,
-  INVERTED_LOOP_VALIDATION_SET,
-  MIRRORED_SWAPPED_VALIDATION_SET,
-  ROTATED_SWAPPED_NONDEGENERATE_QUARTERED_VALIDATION_SET,
-  ROTATED_SWAPPED_NONDEGENERATE_HALVED_VALIDATION_SET,
-} from "$lib/features/create/generate/circular/domain/constants/strict-loop-placement-maps";
+  isLegacyLOOPSeedValid,
+  LOOPType as EngineLOOPType,
+  Period as EnginePeriod,
+} from "@tka/sequence-engine/loop";
 
 /**
  * LOOP options with icons and descriptions for UI display.
@@ -144,13 +135,12 @@ const ALL_LOOP_TYPES = [
   LOOPType.MIRRORED_INVERTED_ROTATED,
   LOOPType.MIRRORED_SWAPPED_INVERTED,
   LOOPType.ROTATED_SWAPPED_INVERTED,
+  LOOPType.MIRRORED_ROTATED_SWAPPED,
   LOOPType.MIRRORED_ROTATED_INVERTED_SWAPPED,
   LOOPType.STRICT_REWOUND,
 ];
 
 export class LOOPValidator {
-  constructor(private loopExecutorSelector: LOOPExecutorSelector) {}
-
   /**
    * Get LOOP options filtered by validity for a placement pair
    */
@@ -164,10 +154,6 @@ export class LOOPValidator {
     const placementPair = `${startPlacement},${endPlacement}`;
 
     for (const loopType of ALL_LOOP_TYPES) {
-      if (!this.loopExecutorSelector.isSupported(loopType)) {
-        continue;
-      }
-
       const config = LOOP_OPTION_CONFIG[loopType];
       const option: LOOPOption = {
         loopType,
@@ -194,92 +180,14 @@ export class LOOPValidator {
     placementPair: string,
     period: Period
   ): boolean {
-    // Rotated LOOPs use rotation-based validation
-    const rotationSet =
-      period === Period.QUARTERED ? QUARTERED_LOOPS : HALVED_LOOPS;
-
-    // Rotated+Swapped LOOPs need composed validation (rotation THEN swap),
-    // excluding alpha starts, where rotate+swap cancel per-hand and the
-    // combo degenerates. Beta and gamma are genuine. Matches the engine-side
-    // composed swap(rotate(start)) seam gate.
-    const rotatedSwappedSet =
-      period === Period.QUARTERED
-        ? ROTATED_SWAPPED_NONDEGENERATE_QUARTERED_VALIDATION_SET
-        : ROTATED_SWAPPED_NONDEGENERATE_HALVED_VALIDATION_SET;
-
-    switch (loopType) {
-      // Pure rotation-based LOOPs (no swap component)
-      case LOOPType.ROTATED:
-      case LOOPType.ROTATED_INVERTED:
-        return rotationSet.has(placementPair);
-
-      // Rotated + Swapped: end must be SWAPPED(ROTATED(start))
-      case LOOPType.ROTATED_SWAPPED:
-        return rotatedSwappedSet.has(placementPair);
-
-      // Pure mirror-based LOOPs (no rotation component)
-      case LOOPType.MIRRORED:
-      case LOOPType.MIRRORED_INVERTED:
-        return MIRRORED_LOOP_VALIDATION_SET.has(placementPair);
-
-      // Flipped LOOP (N ↔ S)
-      case LOOPType.FLIPPED:
-        return FLIPPED_LOOP_VALIDATION_SET.has(placementPair);
-
-      // Mirrored + Swapped (uses composed validation set)
-      case LOOPType.MIRRORED_SWAPPED:
-        return MIRRORED_SWAPPED_VALIDATION_SET.has(placementPair);
-
-      // Compound LOOPs containing ROTATED - need BOTH mirror AND rotation validation
-      case LOOPType.MIRRORED_ROTATED:
-      case LOOPType.MIRRORED_INVERTED_ROTATED:
-        return (
-          MIRRORED_LOOP_VALIDATION_SET.has(placementPair) &&
-          rotationSet.has(placementPair)
-        );
-
-      // All Four: additionally restricted to starts fixed under both mirror
-      // and swap (beta1/beta5) — elsewhere the mirror degrades to a flip
-      case LOOPType.MIRRORED_ROTATED_INVERTED_SWAPPED:
-        return (
-          (placementPair.startsWith("beta1,") ||
-            placementPair.startsWith("beta5,")) &&
-          MIRRORED_LOOP_VALIDATION_SET.has(placementPair) &&
-          rotationSet.has(placementPair)
-        );
-
-      // Swap-based LOOPs
-      case LOOPType.SWAPPED:
-      case LOOPType.SWAPPED_INVERTED:
-        return SWAPPED_LOOP_VALIDATION_SET.has(placementPair);
-
-      // Invert-only LOOP (needs same start/end placement)
-      case LOOPType.INVERTED:
-        return INVERTED_LOOP_VALIDATION_SET.has(placementPair);
-
-      // Mirrored + Swapped + Inverted: inverted dominates placement-wise —
-      // return to start — but the start must be fixed under both mirror and
-      // swap (beta1/beta5); elsewhere the mirror degrades to a flip
-      case LOOPType.MIRRORED_SWAPPED_INVERTED:
-        return (
-          (placementPair.startsWith("beta1,") ||
-            placementPair.startsWith("beta5,")) &&
-          INVERTED_LOOP_VALIDATION_SET.has(placementPair)
-        );
-
-      // Rotated + Swapped + Inverted: placement-wise identical to
-      // Rotated + Swapped (inversion is placement-free) — beta starts only
-      case LOOPType.ROTATED_SWAPPED_INVERTED:
-        return rotatedSwappedSet.has(placementPair);
-
-      // Rewound LOOP - always valid (works on any sequence regardless of placements)
-      case LOOPType.STRICT_REWOUND:
-        return true;
-
-      default:
-        // Unknown LOOP type - assume not valid
-        return false;
-    }
+    const [startPlacement, endPlacement] = placementPair.split(",");
+    if (!startPlacement || !endPlacement) return false;
+    return isLegacyLOOPSeedValid(
+      startPlacement,
+      endPlacement,
+      toEngineLOOPType(loopType),
+      period === Period.QUARTERED ? EnginePeriod.QUARTERED : EnginePeriod.HALVED
+    );
   }
 
   /**
@@ -289,15 +197,13 @@ export class LOOPValidator {
     const options: LOOPOption[] = [];
 
     for (const loopType of ALL_LOOP_TYPES) {
-      if (this.loopExecutorSelector.isSupported(loopType)) {
-        const config = LOOP_OPTION_CONFIG[loopType];
-        options.push({
-          loopType,
-          name: LOOP_TYPE_LABELS[loopType],
-          description: config.description,
-          icon: config.icon,
-        });
-      }
+      const config = LOOP_OPTION_CONFIG[loopType];
+      options.push({
+        loopType,
+        name: LOOP_TYPE_LABELS[loopType],
+        description: config.description,
+        icon: config.icon,
+      });
     }
 
     return options;
@@ -307,6 +213,10 @@ export class LOOPValidator {
 // ============================================================================
 // DIRECT SINGLETON EXPORT
 // ============================================================================
-import { loopExecutorSelector } from "$lib/features/create/generate/circular/services/loop-executor-selector";
+export const loopValidator = new LOOPValidator();
 
-export const loopValidator = new LOOPValidator(loopExecutorSelector);
+function toEngineLOOPType(loopType: LOOPType): EngineLOOPType {
+  return loopType === LOOPType.STRICT_REWOUND
+    ? EngineLOOPType.REWOUND
+    : (loopType as EngineLOOPType);
+}

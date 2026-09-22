@@ -152,8 +152,21 @@ Props:
       loadedLetterDimensions = cachedDims;
       dimensionsReady = true;
     } else {
-      // Not cached yet - trigger async load and wait for it
+      // Not cached yet - drop the previous (now-stale) letter's resolved
+      // size before the load starts, so effectiveLetterDimensions can't
+      // fall back to it while this letter's fetch is in flight (same
+      // failure mode as GlyphRenderer.svelte's identical guard: the stale
+      // width would leak through, the render gate below would read
+      // dimensions as ready, and this letter would render one frame at the
+      // PREVIOUS letter's width). This effect only reads `letter`, so
+      // writing state here cannot re-trigger it.
+      loadedLetterDimensions = { width: 100, height: 100 };
+      // Trigger async load and wait for it
       preloadLetterDimensions([currentLetter]).then(() => {
+        // Ignore a superseded load: if the letter moved on again before
+        // this resolved, applying it now would overwrite dimensions/ready
+        // state for whichever letter is current at that point.
+        if (letter !== currentLetter) return;
         // After loading completes, get from cache and update state
         const dims = getLetterDimensions(currentLetter);
         loadedLetterDimensions = dims;

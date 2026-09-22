@@ -52,6 +52,13 @@ import {
   captureActivePropConfig,
   resolveRecordedPropConfig,
 } from "$lib/shared/foundation/services/recorded-prop-intent";
+import {
+  capturePresentation,
+  resolvePresentation,
+} from "$lib/shared/foundation/services/presentation-intent";
+import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
+import { loadPersistedEffectsConfig } from "$lib/shared/effects/state/effects-config-state.svelte";
+import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
 import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
 
 /** How long the "Saved!" success state lingers before the overlay dismisses. */
@@ -225,14 +232,36 @@ export class LibrarySaveService {
       visibility === "public" && !resolveRecordedPropConfig(resolvedSequence)
         ? captureActivePropConfig(settingsService.settings)
         : null;
+    // Same publication-moment rule for the look: a public save with nothing
+    // recorded stamps the creator's current look. Colors and trail come from
+    // the global settings; effects come from the persisted key, which is what
+    // any fresh scope boots with, tracks a live persisting scope within its
+    // 300ms save debounce, and is the only source on surfaces with no scope
+    // (scan, intake, retro, video record). Recorded and explicit default-look
+    // (null) sequences are never restamped, and a malformed snapshot is kept
+    // as is (it resolves neutral, not absent) so a re-save from an older
+    // client never destroys a shape a newer one wrote. Private saves are
+    // working saves.
+    const capturedPresentation =
+      visibility === "public" &&
+      resolvePresentation(resolvedSequence.creatorIntent, resolvedSequence.id)
+        .kind === "absent"
+        ? capturePresentation({
+            primaryPropColors:
+              settingsService.settings.primaryPropColors ?? null,
+            trail: animationSettings.trail,
+            effects: loadPersistedEffectsConfig() ?? DEFAULT_EFFECTS_CONFIG,
+          })
+        : null;
     const sequenceToSave = withCanonicalStepCount({
       ...resolvedSequence,
-      ...(capturedIntent && {
+      ...((capturedIntent || capturedPresentation) && {
         creatorIntent: {
           ...resolvedSequence.creatorIntent,
-          propConfig: capturedIntent,
+          ...(capturedIntent && { propConfig: capturedIntent }),
+          ...(capturedPresentation && { presentation: capturedPresentation }),
         },
-        intendedProp: capturedIntent,
+        ...(capturedIntent && { intendedProp: capturedIntent }),
       }),
       name,
       displayName: displayName || undefined,

@@ -2,7 +2,7 @@
      viewer. Rendering stays asynchronous, and fixed preview/status geometry
      prevents state changes from moving the sheet. -->
 <script lang="ts">
-  import { onDestroy, untrack } from "svelte";
+  import { onDestroy, untrack, type Snippet } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { growFade } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
@@ -146,11 +146,14 @@
     onOpenVideoExport?: () => void;
     /** False for local-only guest flows that cannot mint an account-owned link. */
     canCreateLink?: boolean;
-    /** A dedicated Export or Download shortcut enters file preparation directly. */
-    initialEntry?: "chooser" | "download";
+    /** A host with its own share surface (the viewer's share panel) enters
+     * file preparation or publishing directly, with no chooser to go back to. */
+    initialEntry?: "chooser" | "download" | "publish";
     /** A live 3D take temporarily hides this sheet, then resumes its draft. */
     preserveSession?: boolean;
     onSessionResumed?: () => void;
+    /** A host-owned animation stage shown before its encoded video is ready. */
+    liveVideoPreview?: Snippet;
   }
 
   let {
@@ -185,6 +188,7 @@
     initialEntry = "chooser",
     preserveSession = false,
     onSessionResumed,
+    liveVideoPreview,
   }: Props = $props();
 
   const postDeliveryState = createPostDeliveryState({
@@ -505,6 +509,11 @@
   // A previous file must disappear while an explicit retry replaces it.
   const activeVideoUrl = $derived(
     videoStatus === "ready" ? videoBlobUrl : null
+  );
+  // This stays mounted while a render reports progress or settles. The encoded
+  // file replaces it only once there is a usable URL.
+  const showingLiveVideoPreview = $derived(
+    artifact === "video" && !!liveVideoPreview && !activeVideoUrl && !qrDataUrl
   );
   /**
    * Parent context objects are rebuilt during playback. Track the primitive
@@ -855,12 +864,13 @@
     copyLinkMessage = "";
     revealedLinkUrl = null;
     shortUrl = seededShortUrl || null;
-    shareRoute = initialEntry === "download" ? "download" : "home";
+    shareRoute = initialEntry === "chooser" ? "home" : initialEntry;
     filePreparationOpen = shareRoute === "download";
     animationPreviewUrl = captureAnimationPreview() || null;
     openerPreviews = {};
     openerCaptureSession += 1;
     if (initialEntry === "download") shareDraft.selectArtifact(initialArtifact);
+    if (initialEntry === "publish") untrack(openPublish);
   });
 
   $effect(() => {
@@ -1105,6 +1115,12 @@
   function openCaption(): void {
     captionOpen = !captionOpen;
     if (captionOpen) preparePostLink();
+  }
+
+  function openPublish(): void {
+    shareRoute = "publish";
+    publishOpen = true;
+    if (postingAvailable && !needsAccountForFiles) preparePostLink();
   }
 
   function returnToChooser(): void {
@@ -1914,16 +1930,7 @@
                     <span>Share a link</span>
                     <small>Open this exact view or send it to a friend</small>
                   </button>
-                  <button
-                    type="button"
-                    class="intent"
-                    onclick={() => {
-                      shareRoute = "publish";
-                      publishOpen = true;
-                      if (postingAvailable && !needsAccountForFiles)
-                        preparePostLink();
-                    }}
-                  >
+                  <button type="button" class="intent" onclick={openPublish}>
                     <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
                     <span>Publish socially</span>
                     <small>Write a caption and choose a connected account</small
@@ -2002,12 +2009,14 @@
                 class:download-route={true}
                 class:card-preparation={artifact === "card"}
                 class:video-preparation={artifact === "video"}
-                class:has-preview={previewReady || !!animationPreviewUrl}
+                class:has-preview={previewReady ||
+                  !!animationPreviewUrl ||
+                  showingLiveVideoPreview}
               >
                 <div class="preview-column">
                   {#if !qrDataUrl}
                     <div class="preparation-toolbar">
-                      {#if initialEntry !== "download"}
+                      {#if initialEntry === "chooser"}
                         <button
                           type="button"
                           class="back-to-chooser"
@@ -2041,10 +2050,13 @@
                   >
                     <div
                       class="stage"
-                      class:showing-media={!!previewReady}
+                      class:showing-media={!!previewReady ||
+                        showingLiveVideoPreview}
                       class:video-placeholder={artifact === "video" &&
                         !activeVideoUrl &&
+                        !showingLiveVideoPreview &&
                         !qrDataUrl}
+                      class:live-video-stage={showingLiveVideoPreview}
                       class:live-card-stage={artifact === "card" &&
                         !!cardPreview.request}
                     >
@@ -2075,9 +2087,15 @@
                         <Crossfade
                           key={qrDataUrl
                             ? "phone"
-                            : `video:${activeVideoUrl ? "ready" : openerPreviewUrl ? "opener" : videoStatus}`}
+                            : `video:${activeVideoUrl ? "ready" : showingLiveVideoPreview ? "live" : openerPreviewUrl ? "opener" : videoStatus}`}
                           duration={DURATION.normal}
-                          fill
+                          fill={!!(
+                            qrDataUrl ||
+                            activeVideoUrl ||
+                            showingLiveVideoPreview ||
+                            openerPreviewUrl
+                          )}
+                          animateHeight
                         >
                           {#if qrDataUrl}
                             <div class="qr-view">
@@ -2111,6 +2129,10 @@
                               muted
                               playsinline
                             ></video>
+                          {:else if showingLiveVideoPreview && liveVideoPreview}
+                            <div class="live-video-preview">
+                              {@render liveVideoPreview()}
+                            </div>
                           {:else if artifact === "video" && openerPreviewUrl}
                             <!-- This capture belongs to the viewer. The sheet only presents
                        it, and it is the exact image the clip opens with. -->
@@ -2131,12 +2153,12 @@
                               <strong
                                 >{videoStatus === "failed"
                                   ? "Video could not be rendered"
-                                  : "Animation preview unavailable"}</strong
+                                  : "Animation preview"}</strong
                               >
                               <span
                                 >{videoStatus === "failed"
                                   ? "Check the settings and try again."
-                                  : "The viewer did not provide a current-view capture."}</span
+                                  : "Your video preview appears after rendering."}</span
                               >
                             </div>
                           {:else}
@@ -2511,11 +2533,14 @@
               </footer>
             {:else if shareRoute === "publish"}
               <div class="sheet-scroll publish-route">
-                <button
-                  type="button"
-                  class="back-to-chooser"
-                  onclick={() => (shareRoute = "home")}>Back to sharing</button
-                >
+                {#if initialEntry !== "publish"}
+                  <button
+                    type="button"
+                    class="back-to-chooser"
+                    onclick={() => (shareRoute = "home")}
+                    >Back to sharing</button
+                  >
+                {/if}
                 <Crossfade
                   key={publishPreparationKey}
                   duration={DURATION.normal}
@@ -3471,6 +3496,24 @@
     min-height: 0;
     object-fit: contain;
     border-radius: 0.25rem;
+  }
+  .sheet-scroll.video-preparation .stage {
+    height: clamp(14rem, 48dvh, 28rem);
+  }
+  .stage.live-video-stage {
+    padding: 0.5rem;
+  }
+  /* The supplied stage lives in the host's style scope, so this boundary owns
+     the dimensions that keep the canvas useful across share-sheet layouts. */
+  .stage :global(.live-video-preview) {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+  @media (max-height: 480px) {
+    .sheet-scroll.video-preparation .stage {
+      height: min(52dvh, 16rem);
+    }
   }
   .stage-pending {
     text-align: center;
