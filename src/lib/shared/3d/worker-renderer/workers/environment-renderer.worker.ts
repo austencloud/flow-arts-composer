@@ -94,6 +94,7 @@ interface SceneRequest {
   reducedMotion: boolean;
   acceptedAt: number;
   rendererReadyAt: number;
+  backgroundPreparation?: boolean;
 }
 
 interface SceneRuntime {
@@ -432,7 +433,10 @@ function renderFrame(now: number): void {
 
 async function nextWorkerFrame(): Promise<number> {
   return new Promise((resolve) => {
-    animationFrame = scope.requestAnimationFrame(resolve);
+    animationFrame = scope.requestAnimationFrame((now) => {
+      animationFrame = 0;
+      resolve(now);
+    });
   });
 }
 
@@ -864,7 +868,7 @@ async function runTransition(): Promise<void> {
         await selectWorkerSceneAssets(sceneRequest.environment);
         if (isSuperseded(sceneRequest)) continue;
       }
-      if (world && !posterInstalled) {
+      if (world && !posterInstalled && !sceneRequest.backgroundPreparation) {
         await capturePoster(sceneRequest.requestId);
         if (isSuperseded(sceneRequest)) {
           retainedRuntime?.dispose();
@@ -877,6 +881,8 @@ async function runTransition(): Promise<void> {
         if (retainSceneCache) retainedScenes.retain(outgoingRuntime);
         else outgoingRuntime.dispose();
       }
+      preparingFirstFrame = true;
+      applyViewport(requestedViewport);
       let prepared = false;
       try {
         prepared = retainedRuntime
@@ -1026,6 +1032,7 @@ scope.onmessage = (event: MessageEvent<WorkerRendererInMessage>) => {
         reducedMotion,
         acceptedAt,
         rendererReadyAt: acceptedAt,
+        backgroundPreparation: message.backgroundPreparation,
       });
       break;
     }

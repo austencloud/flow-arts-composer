@@ -285,6 +285,123 @@ describe("live worker scene handoff", () => {
     renderer.dispose();
   });
 
+  it("rebuilds a third scene in the idle worker without booting another context", () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const { renderer, onFrame } = fixture();
+    renderer.switchTo("ocean");
+    present(workers[0]!, 1, "ocean");
+    renderer.switchTo("rainbow");
+    present(workers[1]!, 2, "rainbow");
+    vi.advanceTimersByTime(160);
+
+    renderer.setEffects({ playing: true, sources: [] });
+    renderer.switchTo("celestial");
+    expect(workers).toHaveLength(2);
+    expect(workers[0]!.terminate).not.toHaveBeenCalled();
+    expect(
+      workers[0]!.postMessage.mock.calls.map(([message]) => message)
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: "camera",
+          requestId: 3,
+        }),
+        expect.objectContaining({
+          type: "switch-environment",
+          requestId: 3,
+          environment: "celestial",
+          backgroundPreparation: true,
+        }),
+        expect.objectContaining({
+          type: "effects",
+          effects: { playing: true, sources: [] },
+        }),
+      ])
+    );
+    expect(renderer.snapshot).toMatchObject({
+      active: "rainbow",
+      staging: "celestial",
+      liveWorkers: 2,
+    });
+    frame(workers[1]!, 2, "rainbow");
+    expect(onFrame).toHaveBeenCalledOnce();
+
+    send(workers[0]!, {
+      type: "first-frame",
+      requestId: 3,
+      environment: "celestial",
+      metrics: { warmReuse: false, rendererMs: 0 },
+    });
+    expect(renderer.snapshot.active).toBe("rainbow");
+    expect(workers[0]!.postMessage.mock.calls.at(-1)?.[0]).toMatchObject({
+      type: "visibility",
+      requestId: 3,
+      visible: true,
+    });
+    frame(workers[0]!, 1, "ocean");
+    expect(renderer.snapshot.active).toBe("rainbow");
+    frame(workers[0]!, 3, "celestial");
+    flushFrame();
+    expect(renderer.snapshot).toMatchObject({
+      active: "celestial",
+      liveWorkers: 2,
+      lastMeasurement: {
+        liveWorkersAtSwap: 2,
+        workerBoot: { warmReuse: false },
+      },
+    });
+    renderer.dispose();
+  });
+
+  it("cancels idle worker rebuilding when the active scene is reselected", () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const { renderer, onFrame } = fixture();
+    renderer.switchTo("ocean");
+    present(workers[0]!, 1, "ocean");
+    renderer.switchTo("rainbow");
+    present(workers[1]!, 2, "rainbow");
+    vi.advanceTimersByTime(160);
+    renderer.switchTo("celestial");
+    renderer.switchTo("rainbow");
+    expect(workers).toHaveLength(2);
+    expect(workers[0]!.terminate).toHaveBeenCalledOnce();
+    expect(renderer.snapshot).toMatchObject({
+      active: "rainbow",
+      staging: null,
+      liveWorkers: 1,
+    });
+    frame(workers[1]!, 2, "rainbow");
+    expect(onFrame).toHaveBeenCalledOnce();
+    renderer.dispose();
+  });
+
+  it("retries a failed idle-worker rebuild without stopping the outgoing scene", () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const { renderer, onFrame } = fixture();
+    renderer.switchTo("ocean");
+    present(workers[0]!, 1, "ocean");
+    renderer.switchTo("rainbow");
+    present(workers[1]!, 2, "rainbow");
+    vi.advanceTimersByTime(160);
+    renderer.switchTo("celestial");
+    send(workers[0]!, {
+      type: "error",
+      requestId: 3,
+      environment: "celestial",
+      message: "scene failed",
+    });
+    expect(workers[0]!.terminate).toHaveBeenCalledOnce();
+    expect(workers).toHaveLength(3);
+    expect(renderer.snapshot).toMatchObject({
+      active: "rainbow",
+      staging: "celestial",
+      liveWorkers: 2,
+    });
+    frame(workers[1]!, 2, "rainbow");
+    expect(onFrame).toHaveBeenCalledOnce();
+    renderer.dispose();
+  });
+
   it("discards a lost cached context before returning to that scene", () => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     const { renderer } = fixture();

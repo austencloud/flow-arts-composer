@@ -125,6 +125,7 @@ export class WorkerEnvironmentRenderer {
   private readonly supported: boolean;
   private active: WorkerRendererSlot | null = null;
   private staging: WorkerRendererSlot | null = null;
+  private backgroundStaging: WorkerRendererSlot | null = null;
   private idle: WorkerRendererSlot | null = null;
   private fading: WorkerRendererSlot | null = null;
   private pending: PendingEnvironment | null = null;
@@ -284,6 +285,37 @@ export class WorkerEnvironmentRenderer {
         visible: true,
       });
       this.progressPhase = "resume";
+    } else if (this.idle?.isLive) {
+      const slot = this.idle;
+      this.idle = null;
+      this.staging = slot;
+      this.backgroundStaging = slot;
+      slot.state = {
+        ...slot.state,
+        requestId: request.requestId,
+        environment: request.environment,
+        status: "booting",
+      };
+      slot.setPresentation(false);
+      const cameraReady = slot.post({
+        type: "camera",
+        requestId: request.requestId,
+        camera: this.camera ?? getWorkerEnvironmentCamera(request.environment),
+      });
+      const switchReady =
+        cameraReady &&
+        slot.post({
+          type: "switch-environment",
+          requestId: request.requestId,
+          environment: request.environment,
+          reducedMotion: prefersReducedMotion(),
+          backgroundPreparation: true,
+        });
+      if (!switchReady) {
+        slot.terminate();
+        this.staging = null;
+        this.startStaging(request);
+      }
     } else {
       this.dropIdle();
       this.startStaging(request);
@@ -351,6 +383,7 @@ export class WorkerEnvironmentRenderer {
     this.swapFrame = null;
     this.staging?.terminate();
     this.staging = null;
+    this.backgroundStaging = null;
     this.phase = "idle";
     this.progressPhase = null;
     this.progress = 0;
@@ -382,6 +415,7 @@ export class WorkerEnvironmentRenderer {
   }
 
   private startStaging(request: PendingEnvironment): void {
+    this.backgroundStaging = null;
     try {
       const slot = new WorkerRendererSlot({
         container: this.container,
@@ -454,7 +488,12 @@ export class WorkerEnvironmentRenderer {
         message.requestId === this.pending?.requestId &&
         message.environment === this.pending?.environment
       ) {
-        this.present(slot, this.warmMetrics(slot, this.pending!));
+        this.present(
+          slot,
+          slot === this.backgroundStaging
+            ? this.bootMetrics.get(slot)!
+            : this.warmMetrics(slot, this.pending!)
+        );
       }
       return;
     }
@@ -483,7 +522,24 @@ export class WorkerEnvironmentRenderer {
       case "first-frame":
         if (message.environment !== this.pending.environment) return;
         this.bootMetrics.set(slot, message.metrics);
-        this.present(slot, message.metrics);
+        if (slot === this.backgroundStaging) {
+          if (slot.state.status !== "booting") return;
+          // A reused hidden canvas needs its first live frame after preparation.
+          // Its completed preparation render is not yet visible to the user.
+          this.progressPhase = "resume";
+          slot.state = { ...slot.state, status: "ready" };
+          if (
+            !slot.post({
+              type: "visibility",
+              requestId: this.pending.requestId,
+              visible: true,
+            })
+          ) {
+            this.handleFailure(slot, "Unable to resume prepared renderer");
+          }
+        } else {
+          this.present(slot, message.metrics);
+        }
         break;
       case "error":
         this.handleFailure(slot, message.message);
@@ -538,6 +594,7 @@ export class WorkerEnvironmentRenderer {
   ): void {
     const request = this.pending;
     if (!request || slot !== this.staging || this.swapFrame !== null) return;
+    this.backgroundStaging = null;
     this.phase = "swapping";
     this.progress = 1;
     this.progressPhase = "handoff";
