@@ -24,12 +24,12 @@ targets, secret handling, scoped Git and dirty-worktree protection, authorized
 local integration, actual-route verification, persistent previews and resource
 ownership, honest incomplete delivery, risk-matched testing, Windows elevation,
 personal-browser consent, and API migration guidance. Repeated wording was
-consolidated and the full-history Astra exception retained. The original is
+consolidated and the full-history parent-model exception retained. The original is
 backed up in Austen's Codex backups directory.
 
-`.codex/config.toml` supplies overridable project defaults: High effort,
+`.codex/config.toml` supplies overridable project defaults: Sol/Medium,
 120,000-token automatic compaction, 4,000-token stored tool outputs, and
-Terra/Medium workers. These do not change the model context-window capacity,
+Sol/Medium workers. These do not change the model context-window capacity,
 remove skills or integrations, or bypass a permission boundary. The installed
 Codex app-server's `config/read` resolved these values successfully. Explicit
 task choices still take precedence; global defaults apply outside this project.
