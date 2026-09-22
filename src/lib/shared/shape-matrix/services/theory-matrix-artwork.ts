@@ -52,7 +52,7 @@ const STILL_POINT_RADIUS = MANDALA_GRID_RADIUS * 0.055;
  * tip `reach` out from it, so this ratio is the one thing a drawing needs
  * to place a prop against a hand at any scale. A staff reads about 0.84, not
  * 1: the tip stops short of the outer grid point rather than landing on it.
- * `reach` is this hand's own reach, not necessarily the pair's larger one —
+ * `reach` is this hand's own reach, not necessarily the pair's larger one:
  * cat dog draws each hand's prop at its own length.
  */
 export function propReachInHandRadii(reach: number): number {
@@ -167,7 +167,7 @@ function currentDpr(): number {
  * palette's rasters from another's. Without it every Theory tile stayed in
  * the hero palette while the Matrix beside it followed the user's colours.
  *
- * `reach` traces this hand's own geometry — a staff-handed tile must draw the
+ * `reach` traces this hand's own geometry. A staff-handed tile must draw the
  * staff's shape, not the other hand's longer or shorter prop. `scale` is a
  * separate value (the pair's larger reach) passed through to the painter so
  * every tile in the grid, regardless of which hand's prop is shorter, shares

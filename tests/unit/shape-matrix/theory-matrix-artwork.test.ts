@@ -2,7 +2,7 @@
  * Cat dog puts a different prop in each hand, and a mixed pair (staff and
  * bigstaff, say) has two different reaches. The Theory tiles must trace each
  * hand's own reach, the same way the live stage beside them does (see
- * ShapeMatrixTheoryDetail's per-hand `data.reach`) — a shared reach drew the
+ * ShapeMatrixTheoryDetail's per-hand `data.reach`). A shared reach drew the
  * short-reach hand's shape as if it held the long prop.
  */
 import { describe, expect, it } from "vitest";
