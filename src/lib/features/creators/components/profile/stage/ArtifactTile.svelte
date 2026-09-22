@@ -162,10 +162,22 @@
       "staff",
   });
 
-  const tileAnimationScope = createAnimationScope({ persistence: "ephemeral" });
+  // Only a sequence tile ever plays the InlineAnimationPlayer, so only a
+  // sequence tile needs an animation scope — tunnel/scene/mandala tiles never
+  // touch it. `medium` is fixed for the life of a mounted tile (the parent's
+  // `{#each ... (key)}` encodes the medium into the key, so a medium change
+  // remounts rather than updates), so reading it once, outside reactivity, is
+  // correct rather than a shortcut. `untrack` keeps that one read from
+  // tripping Svelte's state_referenced_locally warning.
+  const tileAnimationScope = untrack(() =>
+    medium === "sequence"
+      ? createAnimationScope({ persistence: "ephemeral" })
+      : null
+  );
   const viewingPresentation = $derived(resolveViewingPresentation(sequence));
   $effect(() => {
     const look = viewingPresentation;
+    if (!tileAnimationScope) return;
     untrack(() => {
       tileAnimationScope.settings.updateSettings({ trail: look.trail });
       tileAnimationScope.effects.replace(look.effects);
@@ -308,9 +320,9 @@
                   leftPropType: seqPropTypes.left,
                   rightPropType: seqPropTypes.right,
                   primaryPropColors: viewingPresentation.primaryPropColors,
-                  visibilityManagerOverride: tileAnimationScope.visibility,
-                  effectsConfigState: tileAnimationScope.effects,
-                  trailSettingsOverride: tileAnimationScope.settings.trail,
+                  visibilityManagerOverride: tileAnimationScope?.visibility,
+                  effectsConfigState: tileAnimationScope?.effects,
+                  trailSettingsOverride: tileAnimationScope?.settings.trail,
                   autoPlay: true,
                   showControls: false,
                   chrome: "minimal",
