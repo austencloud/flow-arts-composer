@@ -16,10 +16,24 @@
  */
 import { getSkewBraceLayout } from "../../pictograph/tka-glyph/utils/skew-brace-layout";
 
-const FILL_LIGHT = "#231f20";
-const FILL_DARK = "#d9d9d9";
-const FONT_FAMILY = "system-ui, -apple-system, 'Segoe UI', sans-serif";
-const FONT_WEIGHT = "500";
+// Exported so other brace-drawing paths (e.g. export-glyph-prerenderer.ts,
+// which paints via SVG <text> rather than a canvas ctx) share the exact same
+// colours/font instead of re-declaring their own copies.
+export const SKEW_BRACE_FILL_LIGHT = "#231f20";
+export const SKEW_BRACE_FILL_DARK = "#d9d9d9";
+// Matches SkewBraces.svelte's stack. The trailing "sans-serif" guarantees the
+// braces still paint in workers and offscreen contexts, where the named local
+// family ('Segoe UI') may resolve differently or not load at all (Chrome
+// blocks local() font lookups in a worker for fingerprinting - see
+// gelasio-fonts.ts, which bundles a face for exactly this reason). If a
+// skewed beat ever enters the card-parity corpus, bundle a face for the
+// braces the same way rather than relying on this fallback stack.
+export const SKEW_BRACE_FONT_FAMILY = "system-ui, -apple-system, 'Segoe UI', sans-serif";
+export const SKEW_BRACE_FONT_WEIGHT = "500";
+const FILL_LIGHT = SKEW_BRACE_FILL_LIGHT;
+const FILL_DARK = SKEW_BRACE_FILL_DARK;
+const FONT_FAMILY = SKEW_BRACE_FONT_FAMILY;
+const FONT_WEIGHT = SKEW_BRACE_FONT_WEIGHT;
 
 export interface DrawSkewBracesOptions {
   readonly letter: string;

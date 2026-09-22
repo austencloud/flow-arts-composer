@@ -521,6 +521,11 @@ export class LayerCompositor {
 
     const scale = options.size / VIEWBOX_SIZE;
 
+    // Computed once and threaded through to both the braces and the turns
+    // column below - they used to each call this independently, generating
+    // the same tuple for the same pictograph twice on every skewed beat.
+    const turnsTuple = this.getTurnsTuple(pictograph);
+
     let letterDimensions = { width: 100, height: 100 };
     if (pictograph.letter) {
       letterDimensions = await this.drawTKAGlyph(ctx, pictograph.letter as Letter, options.size, options.darkMode);
@@ -529,11 +534,11 @@ export class LayerCompositor {
         this.drawDash(ctx, letterDimensions, scale, options.darkMode);
       }
 
-      this.drawSkewBracesOverlay(ctx, pictograph, letterDimensions, scale, options.darkMode);
+      this.drawSkewBracesOverlay(ctx, pictograph, letterDimensions, scale, options.darkMode, turnsTuple);
     }
 
     if (pictograph.motions) {
-      await this.drawTurnsColumn(ctx, pictograph, letterDimensions, scale, options.darkMode, motionVisibility);
+      await this.drawTurnsColumn(ctx, pictograph, letterDimensions, scale, options.darkMode, turnsTuple, motionVisibility);
     }
 
     if (pictograph.letter && pictograph.motions) {
@@ -777,7 +782,8 @@ export class LayerCompositor {
     pictograph: PreparedPictographData,
     letterDimensions: { width: number; height: number },
     scale: number,
-    darkMode: boolean
+    darkMode: boolean,
+    turnsTuple: string
   ): void {
     if (!pictograph.letter) return;
     const left = pictograph.motions?.left;
@@ -785,7 +791,6 @@ export class LayerCompositor {
     if (!isVisibleMotion(left) || !isVisibleMotion(right)) return;
     if (!isSkewedFrameBeat(left, right)) return;
 
-    const turnsTuple = this.getTurnsTuple(pictograph);
     const parsed = parseTurnsTuple(turnsTuple);
     const rightExtent = getTurnsColumnRightExtent(parsed);
 
@@ -806,10 +811,9 @@ export class LayerCompositor {
     letterDimensions: { width: number; height: number },
     scale: number,
     _darkMode: boolean,
+    turnsTuple: string,
     motionVisibility?: { showLeftMotion?: boolean; showRightMotion?: boolean }
   ): Promise<void> {
-    const turnsTuple = this.getTurnsTuple(pictograph);
-
     const parsed = parseTurnsTuple(turnsTuple);
     const showTop = shouldDisplayTurn(parsed.top);
     const showBottom = shouldDisplayTurn(parsed.bottom);

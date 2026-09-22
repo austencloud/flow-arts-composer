@@ -225,24 +225,13 @@ export function drawSkewBracesGlyph(
   letterDimensions: { width: number; height: number },
   scale: number,
   isDarkMode: boolean,
-  turnsTupleGeneratorGetter?: () => TurnsTupleGenerator | undefined
+  turnsTuple: string
 ): void {
   if (!pictograph.letter) return;
   const left = pictograph.motions?.left;
   const right = pictograph.motions?.right;
   if (!isVisibleMotion(left) || !isVisibleMotion(right)) return;
   if (!isSkewedFrameBeat(left, right)) return;
-
-  let turnsTuple = "(s, 0, 0)";
-  try {
-    const generator = turnsTupleGeneratorGetter?.();
-    if (generator) {
-      turnsTuple = generator.generateTurnsTuple(pictograph);
-    }
-  } catch {
-    // Use default - a missing/failing generator just means no turns-column
-    // clearance, not that the braces themselves should disappear.
-  }
 
   const parsed = parseTurnsTuple(turnsTuple);
   const rightExtent = getTurnsColumnRightExtent(parsed);
@@ -264,25 +253,13 @@ export async function drawTurnsColumn(
   letterDimensions: { width: number; height: number },
   scale: number,
   isDarkMode: boolean,
-  turnsTupleGeneratorGetter?: () => TurnsTupleGenerator | undefined,
+  turnsTuple: string,
   motionVisibility?: {
     showLeftMotion?: boolean;
     showRightMotion?: boolean;
     primaryPropColors?: { left: string; right: string } | null;
   }
 ): Promise<void> {
-  let turnsTuple = "(s, 0, 0)";
-  try {
-    const generator = turnsTupleGeneratorGetter?.();
-    if (generator) {
-      turnsTuple = generator.generateTurnsTuple(pictograph);
-    } else {
-      return;
-    }
-  } catch {
-    // Use default
-  }
-
   const parsed = parseTurnsTuple(turnsTuple);
   // A slot renders if it has a displayable number OR is halved - a halved
   // 0-turn motion shows the mark alone (matches TurnsColumn.svelte's showTop/

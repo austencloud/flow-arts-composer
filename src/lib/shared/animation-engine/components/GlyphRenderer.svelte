@@ -25,13 +25,19 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
 </script>
 
 <script lang="ts">
-  import TKAGlyph from "$lib/shared/pictograph/tka-glyph/components/TKAGlyph.svelte";
+  import TKAGlyph, {
+    getLetterDimensions,
+  } from "$lib/shared/pictograph/tka-glyph/components/TKAGlyph.svelte";
   import TurnsColumn from "$lib/shared/pictograph/tka-glyph/components/TurnsColumn.svelte";
+  import SkewBraces from "$lib/shared/pictograph/tka-glyph/components/SkewBraces.svelte";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
   import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
   import { turnsTupleGenerator } from "$lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator";
   import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+  import { isSkewedFrameBeat } from "$lib/shared/foundation/services/skewed-frame";
+  import { parseTurnsTuple } from "$lib/shared/pictograph/tka-glyph/utils/turn-tuple-parser";
+  import { getTurnsColumnRightExtent } from "$lib/shared/pictograph/tka-glyph/utils/turn-position-calculator";
   import { onMount } from "svelte";
 
   let {
@@ -64,6 +70,31 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
     return turnsTupleGenerator.generateTurnsTuple(stepData);
   });
 
+  // A beat that starts or ends in a zeta/eta position wears braces around its
+  // letter - matches PictographRenderer.svelte's own skewedFrame gate, so the
+  // animation canvas (this component's serialized output) agrees with the
+  // live pictograph. GlyphRenderer only serializes the TKAGlyph subtree it
+  // owns, so SkewBraces (a sibling of TKAGlyph in PictographRenderer) has to
+  // be mounted here directly rather than reused from there.
+  const skewedFrame = $derived(
+    !!stepData &&
+      isVisibleMotion(stepData.motions?.left) &&
+      isVisibleMotion(stepData.motions?.right) &&
+      isSkewedFrameBeat(stepData.motions.left, stepData.motions.right)
+  );
+
+  // Synchronous cache read - the <TKAGlyph> below populates this same cache,
+  // so a letter already seen this session is available on the same frame
+  // (mirrors PictographRenderer.svelte's letterDimensions accessor).
+  const letterDimensions = $derived(getLetterDimensions(letter));
+
+  // Extra width the turns column reserves to the right of the letter+dash
+  // edge, so the closing brace clears the turn numbers instead of painting
+  // under them - same rightExtent PictographRenderer computes.
+  const braceRightExtent = $derived(
+    skewedFrame ? getTurnsColumnRightExtent(parseTurnsTuple(turnsTuple)) : 0
+  );
+
   let svgElement: SVGSVGElement | null = $state(null);
   let isReady = $state(false);
 
@@ -92,8 +123,11 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
     }
 
     try {
-      // Check serialized glyph cache first - avoids getBBox() + DOM cloning + serialization
-      const glyphCacheKey = `${letter}|${turnsTuple}`;
+      // Check serialized glyph cache first - avoids getBBox() + DOM cloning + serialization.
+      // A skewed-frame beat wears braces a non-skewed beat of the same
+      // letter/turns does not, so the flag has to be part of the key -
+      // otherwise the two would collide on one cached (un)braced SVG string.
+      const glyphCacheKey = `${letter}|${turnsTuple}|${skewedFrame ? "skew" : "plain"}`;
       const cached = serializedGlyphCache.get(glyphCacheKey);
       if (cached) {
         onSvgReady(cached.svgString, cached.width, cached.height, cached.x, cached.y);
@@ -238,6 +272,17 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
 >
   {#if letter}
     <TKAGlyph {letter} {pictographData} x={50} y={800} scale={1} />
+    {#if skewedFrame}
+      <SkewBraces
+        {letter}
+        {letterDimensions}
+        rightExtent={braceRightExtent}
+        x={50}
+        y={800}
+        scale={1}
+        visible={true}
+      />
+    {/if}
     <TurnsColumn
       {turnsTuple}
       {letter}
