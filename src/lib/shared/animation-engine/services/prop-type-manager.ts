@@ -475,14 +475,20 @@ export class PropTypeManager {
           const leftPropType = layer.leftPropType ?? state.currentLeftPropType;
           const rightPropType =
             layer.rightPropType ?? state.currentRightPropType;
-          const leftRenderType = resolveFanRenderKey(
-            leftPropType,
-            this.fanAppearance
-          );
-          const rightRenderType = resolveFanRenderKey(
-            rightPropType,
-            this.fanAppearance
-          );
+          // Same render-key path as the primary layer's baseRenderKey, pinned
+          // to the pictograph look (tunnel layers never use baked model
+          // sprites; see the comment on baseRenderKey), so a triangle grip
+          // shows the same glyph on every layer instead of only the primary.
+          const leftRenderType = resolvePropRenderKey(leftPropType, {
+            fanAppearance: this.fanAppearance,
+            propLook: "pictograph",
+            triangleGrip: this.triangleGrip,
+          });
+          const rightRenderType = resolvePropRenderKey(rightPropType, {
+            fanAppearance: this.fanAppearance,
+            propLook: "pictograph",
+            triangleGrip: this.triangleGrip,
+          });
 
           this.animationRenderer
             .loadAdditionalLayerPropTextures(

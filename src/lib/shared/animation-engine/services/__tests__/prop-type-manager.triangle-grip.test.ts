@@ -111,4 +111,30 @@ describe("PropTypeManager triangle grip threading", () => {
       null
     );
   });
+
+  it("passes the side grip's render key to every tunnel layer, not just the primary", async () => {
+    const { ptm, renderer } = makeManager();
+    (renderer as any).loadAdditionalLayerPropTextures = vi
+      .fn()
+      .mockResolvedValue(undefined);
+    // Same private field the settings path (tested above) assigns; set
+    // directly so this test stays focused on the tunnel-layer render key.
+    (ptm as any).triangleGrip = "side";
+
+    const state = makeState("triangle", "triangle");
+    const props = {
+      additionalLayers: [{ leftProp: {}, rightProp: {} }],
+    } as any;
+
+    ptm.handleAdditionalLayers(props, state, getFrameParams, false);
+    await flushHotSwap();
+
+    expect(renderer.loadAdditionalLayerPropTextures).toHaveBeenCalledWith(
+      0,
+      "triangle__side",
+      "triangle__side",
+      expect.any(String),
+      expect.any(String)
+    );
+  });
 });
