@@ -22,6 +22,33 @@ import {
 interface PendingEnvironment {
   requestId: number;
   environment: WorkerEnvironmentKey;
+  requestedAt: number;
+}
+
+export type WorkerSceneSwitchEventKind =
+  | "requested"
+  | "started"
+  | "phase"
+  | "cancelled"
+  | "retrying"
+  | "failed"
+  | "ready"
+  | "ignored";
+
+export interface WorkerSceneSwitchEvent {
+  kind: WorkerSceneSwitchEventKind;
+  requestId: number;
+  environment: WorkerEnvironmentKey;
+  phase: string | null;
+  elapsedMs: number;
+  detail: string | null;
+}
+
+export interface WorkerSceneSwitchCurrentRequest {
+  requestId: number;
+  environment: WorkerEnvironmentKey;
+  phase: string | null;
+  elapsedMs: number;
 }
 
 export interface WorkerSceneSwitchMeasurement {
@@ -55,6 +82,8 @@ export interface WorkerSceneSwitchSnapshot {
   liveWorkers: number;
   heldFrame: WorkerEnvironmentKey | null;
   lastError: string | null;
+  currentRequest: WorkerSceneSwitchCurrentRequest | null;
+  events: readonly WorkerSceneSwitchEvent[];
   lastMeasurement: WorkerSceneSwitchMeasurement | null;
   history: readonly WorkerSceneSwitchMeasurement[];
 }
@@ -118,6 +147,7 @@ export class WorkerEnvironmentRenderer {
   private progressPhase: string | null = null;
   private phase: WorkerSceneSwitchSnapshot["phase"] = "idle";
   private lastError: string | null = null;
+  private events: WorkerSceneSwitchEvent[] = [];
   private lastMeasurement: WorkerSceneSwitchMeasurement | null = null;
   private history: WorkerSceneSwitchMeasurement[] = [];
   private disposed = false;
@@ -161,6 +191,15 @@ export class WorkerEnvironmentRenderer {
       liveWorkers: this.slot?.isLive ? 1 : 0,
       heldFrame: this.posterEnvironment,
       lastError: this.lastError,
+      currentRequest: this.pending
+        ? {
+            requestId: this.pending.requestId,
+            environment: this.pending.environment,
+            phase: this.progressPhase,
+            elapsedMs: performance.now() - this.pending.requestedAt,
+          }
+        : null,
+      events: [...this.events],
       lastMeasurement: this.lastMeasurement,
       history: [...this.history],
     };
@@ -168,7 +207,9 @@ export class WorkerEnvironmentRenderer {
 
   switchTo(environment: WorkerEnvironmentKey): void {
     if (!this.supported || this.disposed) return;
-    if (this.pending?.environment === environment) return;
+    if (this.pending?.environment === environment && this.phase !== "error") {
+      return;
+    }
     if (
       !this.pending &&
       this.displayedEnvironment === environment &&
@@ -182,11 +223,16 @@ export class WorkerEnvironmentRenderer {
       this.presentationFrame = null;
     }
 
-    const supersedesPending = this.pending !== null;
+    const cancelled = this.pending;
+    const supersedesPending = cancelled !== null;
     const request: PendingEnvironment = {
       requestId: ++this.latestRequestId,
       environment,
+      requestedAt: performance.now(),
     };
+    if (cancelled) {
+      this.recordEvent("cancelled", cancelled, this.progressPhase);
+    }
     this.pending = request;
     this.lastError = null;
     this.progress = 0;
@@ -194,10 +240,27 @@ export class WorkerEnvironmentRenderer {
     this.phase = "booting";
     this.beginProbe(request.requestId);
     this.responsiveness.setPhase(this.progressPhase);
+    this.recordEvent("requested", request, this.progressPhase);
     this.publish();
 
     if (!this.slot) {
       this.createSession(request);
+      return;
+    }
+    const slot = this.slot;
+
+    if (!slot.isLive) {
+      this.recoveryAttempted = false;
+      this.recordEvent("retrying", request, "worker", "retry after failure");
+      try {
+        slot.restart(this.slotStart(request));
+      } catch (error) {
+        this.failWithoutRecovery(
+          error instanceof Error ? error.message : String(error),
+          request
+        );
+      }
+      this.publish();
       return;
     }
 
@@ -206,21 +269,25 @@ export class WorkerEnvironmentRenderer {
     // make a rapid final choice wait tens of seconds. Replace that worker and
     // context under the already-painted poster; ordinary one-at-a-time scene
     // changes continue to reuse the persistent session.
-    if (supersedesPending && this.slot.isPosterVisible) {
+    if (supersedesPending && slot.isPosterVisible) {
       this.progressPhase = "worker";
       this.responsiveness.setPhase("worker");
-      this.slot.restart(this.slotStart(request));
+      slot.restart(this.slotStart(request));
       this.publish();
       return;
     }
 
-    this.slot.state = this.slotState(request, "booting");
-    this.slot.post({
-      type: "switch-environment",
-      requestId: request.requestId,
-      environment: request.environment,
-      reducedMotion: prefersReducedMotion(),
-    });
+    slot.state = this.slotState(request, "booting");
+    if (
+      !slot.post({
+        type: "switch-environment",
+        requestId: request.requestId,
+        environment: request.environment,
+        reducedMotion: prefersReducedMotion(),
+      })
+    ) {
+      this.handleFailure(slot, "Unable to queue the requested worker scene");
+    }
   }
 
   setCamera(camera: WorkerCameraSnapshot): void {
@@ -310,6 +377,9 @@ export class WorkerEnvironmentRenderer {
       case "progress":
         if (this.pending?.requestId === message.requestId) {
           this.progress = message.fraction;
+          if (this.progressPhase !== message.phase) {
+            this.recordEvent("phase", this.pending, message.phase);
+          }
           this.progressPhase = message.phase;
           this.responsiveness.setPhase(message.phase);
           this.scheduleProgressPublish();
@@ -332,7 +402,28 @@ export class WorkerEnvironmentRenderer {
         }
         return;
       case "error":
-        this.handleFailure(slot, message.message);
+        // A superseded build can finish with an error after the final choice
+        // has been queued. Its worker is still useful until the final request
+        // has its poster, so do not turn that obsolete result into a failure
+        // of the scene the user most recently chose.
+        if (
+          !this.pending ||
+          this.pending.requestId === message.requestId ||
+          this.liveEnvironment === message.environment
+        ) {
+          this.handleFailure(slot, message.message, this.pending ?? undefined);
+        } else if (message.environment) {
+          this.recordEvent(
+            "ignored",
+            {
+              requestId: message.requestId,
+              environment: message.environment,
+              requestedAt: performance.now(),
+            },
+            this.progressPhase,
+            message.message
+          );
+        }
         return;
       case "context-lost":
         this.handleFailure(slot, "Worker WebGL context was lost");
@@ -346,8 +437,15 @@ export class WorkerEnvironmentRenderer {
           this.onInteraction?.(message);
         }
         return;
-      case "disposed":
       case "booting":
+        if (
+          this.pending?.requestId === message.requestId &&
+          this.pending.environment === message.environment
+        ) {
+          this.recordEvent("started", this.pending, this.progressPhase);
+        }
+        return;
+      case "disposed":
         return;
     }
   }
@@ -356,6 +454,16 @@ export class WorkerEnvironmentRenderer {
     slot: WorkerRendererSlot,
     message: Extract<WorkerRendererOutMessage, { type: "poster" }>
   ): void {
+    const pending = this.pending;
+    if (
+      !pending ||
+      (pending.requestId !== message.requestId &&
+        this.displayedEnvironment !== message.environment &&
+        this.liveEnvironment !== message.environment)
+    ) {
+      message.bitmap.close();
+      return;
+    }
     try {
       slot.installPoster(message.bitmap);
     } catch (error) {
@@ -368,6 +476,7 @@ export class WorkerEnvironmentRenderer {
     this.posterEnvironment = message.environment;
     this.displayedEnvironment = message.environment;
     this.progressPhase = "release";
+    this.recordEvent("phase", pending, this.progressPhase);
     this.responsiveness.setPhase("release");
     this.publish();
 
@@ -381,7 +490,9 @@ export class WorkerEnvironmentRenderer {
         this.publish();
         return;
       }
-      slot.post({ type: "poster-ready", requestId: message.requestId });
+      if (!slot.post({ type: "poster-ready", requestId: message.requestId })) {
+        this.handleFailure(slot, "Unable to acknowledge the held scene frame");
+      }
     });
   }
 
@@ -390,10 +501,17 @@ export class WorkerEnvironmentRenderer {
     message: Extract<WorkerRendererOutMessage, { type: "first-frame" }>
   ): void {
     const request = this.pending;
-    if (!request || request.requestId !== message.requestId) return;
+    if (
+      !request ||
+      request.requestId !== message.requestId ||
+      request.environment !== message.environment
+    ) {
+      return;
+    }
     this.phase = "swapping";
     this.progress = 1;
     this.progressPhase = "handoff";
+    this.recordEvent("phase", request, this.progressPhase);
     const receivedAt = performance.now();
     const posterWasVisible = slot.isPosterVisible;
     this.publish();
@@ -408,6 +526,12 @@ export class WorkerEnvironmentRenderer {
         return;
       }
 
+      if (
+        !slot.post({ type: "live-presented", requestId: request.requestId })
+      ) {
+        this.handleFailure(slot, "Unable to confirm the replacement scene");
+        return;
+      }
       slot.clearPoster();
       this.posterEnvironment = null;
       this.liveEnvironment = request.environment;
@@ -417,7 +541,6 @@ export class WorkerEnvironmentRenderer {
       this.progressPhase = null;
       this.recoveryAttempted = false;
       slot.state = this.slotState(request, "active");
-      slot.post({ type: "live-presented", requestId: request.requestId });
 
       const swappedAt = performance.now();
       const probe = this.endProbe();
@@ -431,8 +554,7 @@ export class WorkerEnvironmentRenderer {
         mainThreadMaxGapMs: probe?.mainThreadMaxGapMs ?? 0,
         mainThreadMaxGapPhase: probe?.mainThreadMaxGapPhase ?? null,
         mainThreadGapsOver50Ms: probe?.mainThreadGapsOver50Ms ?? 0,
-        outgoingWorkerMaxFrameGapMs:
-          probe?.outgoingWorkerMaxFrameGapMs ?? 0,
+        outgoingWorkerMaxFrameGapMs: probe?.outgoingWorkerMaxFrameGapMs ?? 0,
         outgoingWorkerMaxFrameGapPhase:
           probe?.outgoingWorkerMaxFrameGapPhase ?? null,
         outgoingVisualMode: posterWasVisible
@@ -451,27 +573,41 @@ export class WorkerEnvironmentRenderer {
       };
       this.lastMeasurement = measurement;
       this.history = [...this.history, measurement].slice(-20);
+      this.recordEvent("ready", request, null);
       this.publish();
     });
   }
 
-  private handleFailure(slot: WorkerRendererSlot, message: string): void {
+  private handleFailure(
+    slot: WorkerRendererSlot,
+    message: string,
+    attributedRequest: PendingEnvironment | undefined = this.pending ??
+      undefined
+  ): void {
     if (slot !== this.slot || this.disposed) return;
     this.lastError = message;
     const request = this.pending;
+    if (attributedRequest) {
+      this.recordEvent(
+        "failed",
+        attributedRequest,
+        this.progressPhase,
+        message
+      );
+    }
     if (request && !this.recoveryAttempted) {
       this.recoveryAttempted = true;
       this.progress = 0;
       this.progressPhase = "worker";
       this.phase = "booting";
       this.responsiveness.setPhase("worker");
+      this.recordEvent("retrying", request, "worker", "automatic recovery");
       try {
         slot.restart(this.slotStart(request));
         this.publish();
         return;
       } catch (error) {
-        this.lastError =
-          error instanceof Error ? error.message : String(error);
+        this.lastError = error instanceof Error ? error.message : String(error);
       }
     }
 
@@ -481,8 +617,20 @@ export class WorkerEnvironmentRenderer {
     this.publish();
   }
 
-  private failWithoutRecovery(message: string): void {
+  private failWithoutRecovery(
+    message: string,
+    attributedRequest: PendingEnvironment | undefined = this.pending ??
+      undefined
+  ): void {
     this.lastError = message;
+    if (attributedRequest) {
+      this.recordEvent(
+        "failed",
+        attributedRequest,
+        this.progressPhase,
+        message
+      );
+    }
     this.endProbe();
     this.phase = "error";
     this.publish();
@@ -514,6 +662,25 @@ export class WorkerEnvironmentRenderer {
 
   private beginProbe(nextRequestId: number): void {
     this.responsiveness.begin(nextRequestId);
+  }
+
+  private recordEvent(
+    kind: WorkerSceneSwitchEventKind,
+    request: PendingEnvironment,
+    phase: string | null,
+    detail: string | null = null
+  ): void {
+    this.events = [
+      ...this.events,
+      {
+        kind,
+        requestId: request.requestId,
+        environment: request.environment,
+        phase,
+        elapsedMs: Math.max(0, performance.now() - request.requestedAt),
+        detail,
+      },
+    ].slice(-40);
   }
 
   private endProbe() {
@@ -573,11 +740,19 @@ export class WorkerEnvironmentRenderer {
       | Omit<Extract<WorkerRendererInMessage, { type: "effects" }>, "requestId">
       | Omit<Extract<WorkerRendererInMessage, { type: "quality" }>, "requestId">
   ): void {
-    if (!this.slot) return;
-    this.slot.post({
-      ...message,
-      requestId: this.latestRequestId,
-    } as WorkerRendererInMessage);
+    // A terminal worker failure has already been attributed to the request.
+    // Frame producers can still emit while their old slot unwinds, but those
+    // updates cannot reach a worker and must not replace the useful root cause.
+    if (!this.slot || !this.slot.isLive || this.phase === "error") return;
+    if (
+      !this.slot.post({
+        ...message,
+        requestId: this.latestRequestId,
+      } as WorkerRendererInMessage)
+    ) {
+      this.lastError = `Unable to send worker ${message.type} update`;
+      this.publish();
+    }
   }
 
   private scheduleProgressPublish(): void {

@@ -248,25 +248,36 @@ failure, not a cancel; cancel is reserved for the user's own action. When the
 clipboard API is denied, copy link falls back to selection copy and, if that
 also fails, reveals the link in a selectable field.
 
+### Downloading the animation from the viewer
+
+The sequence animation is downloaded from the viewer's own Export page, not
+from a route inside the share sheet. The stage keeps playing beside the page
+(the same shape as Send mode), the settings stack in one column with chips
+for every choice, and the page's footer button renders and delivers the file.
+Share → Download a file → Video hands off to that page and closes the sheet,
+the way Post Studio takes over from the sheet; the sheet's own download route
+keeps Card, plus Video for hosts with their own exporters (Mandala, Tunnel,
+3D takes, Post Studio renders), where the file type is a chip row. The sheet
+never mounts a second animation engine: a frozen capture behind a modal was
+the reason the download moved.
+
 ### The image a clip opens with
 
-Players and file thumbnails show a video's first frame, so the download task
-lets the person choose it. One row under the stage, labelled `Opens with`,
-offers three choices: `First beat` (the sequence's start position), `This
-frame` (the pose on screen when the sheet opened), and `Mandala` (the
-sequence's mandala fingerprint). There is no scrubber. The stage shows exactly
-the chosen image, so what the person sees is what the clip opens on. The
-choice persists with the other video settings and marks an existing render
-stale like any other setting. `First beat` adds nothing, because the export
-already opens with one beat of the start position. The other two prepend a
-one-beat hold of the chosen image at the export speed, drawn contain-fit over
-black at output resolution, before the animation. The viewer owns the images:
-the sheet receives a capture callback per choice and hands the chosen data URL
-back with the render request, so the baked hold is the very image the stage
-showed. The row is hidden for hosts whose render cannot open on a chosen image
-(3D takes, art views, Post Studio renders). When an opener applies, the
-Instagram cover points at time zero unless the person picked a cover frame
-explicitly.
+Players and file thumbnails show a video's first frame, so the Export page
+lets the person choose it. A chip row labelled `Opens` offers three choices:
+`First beat` (the sequence's start position), `Current frame` (whatever the
+live stage shows when Download is pressed; pause where it looks right), and
+`Mandala` (the sequence's mandala fingerprint, drawn in the account's hand
+colours like the card back, with a thumbnail under the row). The choice
+persists with the other video settings. `First beat` adds nothing, because
+the export already opens with one beat of the start position. The other two
+prepend a one-beat hold of the chosen image at the export speed, drawn
+contain-fit over black at output resolution, before the animation. The export
+captures the image itself as the render starts; a share sheet that owns a
+render still hands its own capture with the request. The row is hidden for
+hosts whose render cannot open on a chosen image (3D takes, art views, Post
+Studio renders). When an opener applies, the Instagram cover points at time
+zero unless the person picked a cover frame explicitly.
 
 ## Acceptance and future evaluation
 

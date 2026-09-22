@@ -302,18 +302,6 @@ export function createViewerShellShareState(
     return true;
   }
 
-  /** The existing Export control enters the same file-preparation sheet. */
-  function openFilePreparation(): void {
-    artShare = null;
-    sceneShare = false;
-    postShare = false;
-    sceneTakeSuspended = false;
-    initialEntry = "download";
-    preparedOrdinaryVideo = false;
-    preserveSession = false;
-    postSheetOpen = true;
-  }
-
   function selectAction(actionId: string): void {
     switch (actionId as ViewerShareActionId) {
       case "share-sequence":
@@ -407,7 +395,6 @@ export function createViewerShellShareState(
     setArtShareTarget,
     selectAction,
     prepareFile,
-    openFilePreparation,
     sendToStickerLab,
     shareScene,
     sharePost,

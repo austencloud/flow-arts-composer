@@ -385,8 +385,6 @@
       !stageExtent &&
       !onPerformanceSample &&
       !gaitProbeState.enabled &&
-      leftPropType !== null &&
-      rightPropType !== null &&
       viewer3DState.performerManager.renderablePerformers.every(
         ({ presencePhase }) => presencePhase === "present"
       )
@@ -705,7 +703,7 @@
          root so it still covers the transport during the scene-load hold. -->
     <div class="stage-area">
       {#if renderEmptyScene || canvasMountReady || initialRevealMode === "streaming"}
-        {#if workerHostExact && workerEnvironment && sequenceData && leftPropType && rightPropType}
+        {#if workerHostExact && workerEnvironment && sequenceData}
           <WorkerViewer3DScene
             environment={workerEnvironment}
             {sequenceData}
