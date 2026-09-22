@@ -2,8 +2,20 @@ import type { Step } from "@tka/tka-types";
 import type { SequenceData } from "../domain/models/sequence-data";
 import type { StepPairingData } from "../domain/models/step-pairing-data";
 import { renderWordNotation, type WordUnit } from "../utils/word-notation";
-import { isSkewedFrameStep } from "./skewed-frame";
+import { isSkewedFrameStep, type FrameStepLike } from "./skewed-frame";
 
+/** One resolved letter paired with its skew flag, for the four token sites below. */
+const skewUnit = (letter: string, step: FrameStepLike): WordUnit => ({
+  letter,
+  skewed: isSkewedFrameStep(step),
+});
+
+/**
+ * A beat with no letter contributes no unit to the word, so braces merge
+ * across it: two skewed beats separated by an unlettered beat still share one
+ * span, because the braces describe adjacency in the resolved word, not
+ * adjacency of beats in the sequence.
+ */
 export function deriveWordFromBeats(steps: readonly Step[]): string {
   if (!steps || steps.length === 0) return "";
 
@@ -11,7 +23,7 @@ export function deriveWordFromBeats(steps: readonly Step[]): string {
   for (const step of steps) {
     const letter = step.letter ?? "";
     if (letter === "") continue;
-    units.push({ letter, skewed: isSkewedFrameStep(step) });
+    units.push(skewUnit(letter, step));
   }
   return renderWordNotation(units);
 }
@@ -26,14 +38,13 @@ export function deriveWord(sequence: SequenceData): string {
   // Steps aren't persisted to Firestore - they're derived at load time by the
   // hydrator. If hydration hasn't run yet, stepPairings still has the letters.
   if (sequence.stepPairings && sequence.stepPairings.length > 0) {
-    const derived = renderWordNotation(
-      sequence.stepPairings
-        .filter((pairing) => (pairing.letter ?? "") !== "")
-        .map((pairing) => ({
-          letter: pairing.letter as string,
-          skewed: isSkewedFrameStep(pairing),
-        }))
-    );
+    const units: WordUnit[] = [];
+    for (const pairing of sequence.stepPairings) {
+      const letter = pairing.letter ?? "";
+      if (letter === "") continue;
+      units.push(skewUnit(letter, pairing));
+    }
+    const derived = renderWordNotation(units);
     if (derived) return derived;
   }
 
@@ -80,7 +91,10 @@ export function getSequenceDisplayName(sequence: SequenceData): string {
 //      one that must stop a write.
 
 export interface WordDerivationStatus {
-  /** Notation word in beat order, skewed spans in braces. Empty when nothing resolved. */
+  /**
+   * Notation word in beat order, skewed spans in braces. An unlettered beat
+   * contributes no unit, so a span merges across it. Empty when nothing resolved.
+   */
   readonly word: string;
   /** True when every content beat produced a token. The persistence gate. */
   readonly complete: boolean;
@@ -154,7 +168,7 @@ export function deriveWordStatusFromSteps(
       missingStepIndexes.push(index);
       return;
     }
-    tokens.push({ letter: token, skewed: isSkewedFrameStep(step) });
+    tokens.push(skewUnit(token, step));
   });
 
   return {
@@ -201,7 +215,7 @@ export function deriveWordStatusFromStepPairings(
       missingStepIndexes.push(index);
       return;
     }
-    tokens.push({ letter: token, skewed: isSkewedFrameStep(pairing) });
+    tokens.push(skewUnit(token, pairing));
   });
 
   return {

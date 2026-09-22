@@ -62,13 +62,17 @@ function step(
 /** The legacy start-placement entry: stepNumber 0, letterless by design. */
 const startStep = () => step(0, null);
 
-function pairing(letter: string | null): StepPairingData {
+function pairing(
+  letter: string | null,
+  extra: Partial<StepPairingData> = {}
+): StepPairingData {
   return {
     letter: letter as StepPairingData["letter"],
     leftReversal: false,
     rightReversal: false,
     startPlacement: null,
     endPlacement: null,
+    ...extra,
   };
 }
 
@@ -172,7 +176,7 @@ describe("deriveWordStatusFromSteps", () => {
 describe("deriveWordStatusFromStepPairings", () => {
   it("derives from pairings when steps have not been hydrated", () => {
     const status = deriveWordStatusFromStepPairings(
-      lettersOf("ABC").map(pairing)
+      lettersOf("ABC").map((l) => pairing(l))
     );
     expect(status.word).toBe("ABC");
     expect(status.complete).toBe(true);
@@ -194,7 +198,7 @@ describe("deriveWordStatusFromStepPairings", () => {
   });
 
   it("stepCount matches getPersistedStepCount, which counts pairings raw", () => {
-    const pairings = lettersOf("ABC").map(pairing);
+    const pairings = lettersOf("ABC").map((l) => pairing(l));
     const sequence = createSequenceData({ id: "x", steps: [], stepPairings: pairings });
     expect(deriveWordStatusFromStepPairings(pairings).stepCount).toBe(
       getPersistedStepCount(sequence)
@@ -207,7 +211,7 @@ describe("deriveWordStatus (sequence level)", () => {
     const sequence = createSequenceData({
       id: "x",
       steps: lettersOf("ABC").map((l, i) => step(i + 1, l)),
-      stepPairings: lettersOf("XYZ").map(pairing),
+      stepPairings: lettersOf("XYZ").map((l) => pairing(l)),
     });
     const status = deriveWordStatus(sequence);
     expect(status.source).toBe("steps");
@@ -220,7 +224,7 @@ describe("deriveWordStatus (sequence level)", () => {
     const sequence = createSequenceData({
       id: "x",
       steps: [step(1, "A"), step(2, null), step(3, "C")],
-      stepPairings: lettersOf("ABC").map(pairing),
+      stepPairings: lettersOf("ABC").map((l) => pairing(l)),
     });
     const status = deriveWordStatus(sequence);
 
@@ -233,7 +237,7 @@ describe("deriveWordStatus (sequence level)", () => {
     const sequence = createSequenceData({
       id: "x",
       steps: [],
-      stepPairings: lettersOf("ABC").map(pairing),
+      stepPairings: lettersOf("ABC").map((l) => pairing(l)),
     });
     expect(deriveWordStatus(sequence).source).toBe("stepPairings");
   });
@@ -338,12 +342,53 @@ describe("skewed spans in the derived word", () => {
 
   it("reads skewed pairings from their placements", () => {
     const pairings = [
-      { letter: "A", leftReversal: false, rightReversal: false, startPlacement: "alpha1", endPlacement: "alpha3" },
-      { letter: "U", leftReversal: false, rightReversal: false, startPlacement: "eta2", endPlacement: "eta4" },
-      { letter: "S", leftReversal: false, rightReversal: false, startPlacement: "eta4", endPlacement: "eta6" },
-    ] as unknown as StepPairingData[];
+      pairing("A", { startPlacement: "alpha1", endPlacement: "alpha3" }),
+      pairing("U", { startPlacement: "eta2", endPlacement: "eta4" }),
+      pairing("S", { startPlacement: "eta4", endPlacement: "eta6" }),
+    ];
     expect(deriveWordStatusFromStepPairings(pairings).word).toBe("A{US}");
     expect(deriveWord(createSequenceData({ steps: [], stepPairings: pairings }))).toBe("A{US}");
+  });
+
+  it("merges skewed spans across an unlettered beat", () => {
+    const steps = [
+      step(1, "S", { motions: skewedMotions() }),
+      step(2, null),
+      step(3, "T", { motions: skewedMotions() }),
+    ];
+    expect(deriveWordFromBeats(steps)).toBe("{ST}");
+    const status = deriveWordStatusFromSteps(steps);
+    expect(status.complete).toBe(false);
+    expect(status.missingStepIndexes).toEqual([1]);
+  });
+
+  it("agrees with the pairings source for the same beats, motions or placements", () => {
+    const steps = [
+      step(1, "A", { startPlacement: "alpha1", endPlacement: "alpha3" }),
+      step(2, "S", { motions: skewedMotions(), startPlacement: "eta2", endPlacement: "eta4" }),
+      step(3, "G", { startPlacement: "alpha5", endPlacement: "alpha7" }),
+    ];
+    const pairings = [
+      pairing("A", { startPlacement: "alpha1", endPlacement: "alpha3" }),
+      pairing("S", { startPlacement: "eta2", endPlacement: "eta4" }),
+      pairing("G", { startPlacement: "alpha5", endPlacement: "alpha7" }),
+    ];
+
+    expect(deriveWordStatusFromSteps(steps).word).toBe(
+      deriveWordStatusFromStepPairings(pairings).word
+    );
+    expect(deriveWord(createSequenceData({ steps, stepPairings: [] }))).toBe(
+      deriveWord(createSequenceData({ steps: [], stepPairings: pairings }))
+    );
+  });
+
+  it("wraps a leading skewed span that ends before the last beat", () => {
+    const steps = [
+      step(1, "S", { motions: skewedMotions() }),
+      step(2, "T", { motions: skewedMotions() }),
+      step(3, "G"),
+    ];
+    expect(deriveWordFromBeats(steps)).toBe("{ST}G");
   });
 
   it("does not brace a beat whose hands both skew but start and end pure", () => {
