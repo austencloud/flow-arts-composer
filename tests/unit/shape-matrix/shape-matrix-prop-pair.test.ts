@@ -7,6 +7,7 @@ import {
 } from "$lib/shared/shape-matrix/services/shape-matrix-flowers";
 import { flowerKey } from "$lib/shared/shape-matrix/domain/flower-signature";
 import { buildModeRealizationCandidates } from "$lib/shared/shape-matrix/services/build-mode-realizations";
+import { propPairFromLegacy } from "$lib/shared/shape-matrix/domain/prop-pair";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 
 // Real data: the checked-in base-word snapshot and the diamond dataframe,
@@ -99,4 +100,36 @@ describe("shape matrix prop pair", () => {
     );
     expect(collapsed).toHaveLength(0);
   }, 60_000);
+});
+
+describe("propPairFromLegacy", () => {
+  it("reads only propType into both hands", () => {
+    expect(propPairFromLegacy({ propType: PropType.FAN })).toEqual({
+      left: PropType.FAN,
+      right: PropType.FAN,
+    });
+  });
+
+  it("reads only leftPropType into both hands", () => {
+    expect(propPairFromLegacy({ leftPropType: PropType.CLUB })).toEqual({
+      left: PropType.CLUB,
+      right: PropType.CLUB,
+    });
+  });
+
+  it("keeps each hand's own field when both are set", () => {
+    expect(
+      propPairFromLegacy({
+        leftPropType: PropType.STAFF,
+        rightPropType: PropType.FAN,
+      })
+    ).toEqual({ left: PropType.STAFF, right: PropType.FAN });
+  });
+
+  it("falls back to staff/staff when nothing is set", () => {
+    expect(propPairFromLegacy({})).toEqual({
+      left: PropType.STAFF,
+      right: PropType.STAFF,
+    });
+  });
 });

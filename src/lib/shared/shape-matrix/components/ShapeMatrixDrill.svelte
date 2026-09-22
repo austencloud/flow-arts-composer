@@ -242,6 +242,13 @@
   let waitingSource = $state<PlayerSource | null>(null);
   let visibleRealization = $state.raw<ModeRealization | null>(null);
   let railRealization = $state.raw<ModeRealization | null>(null);
+  /**
+   * The pair the rail's own sequence was built with. Kept in step with
+   * `railRealization` (set and cleared at the same points) so the rail never
+   * draws an arriving pair over the still-settling old sequence: the crossfade
+   * settles the sequence and the props together.
+   */
+  let railProps = $state.raw<{ left: PropType; right: PropType } | null>(null);
   let queuedLayer: PlayerLayer | null = null;
   let crossfadeOutgoing = $state<PlayerSource | null>(null);
   let activeTransitionId: number | null = null;
@@ -745,6 +752,10 @@
           if (visibleSource !== active || getLayer(active)?.key !== settledKey)
             return;
           railRealization = settledLayer.realization;
+          railProps = {
+            left: settledLayer.leftPropType,
+            right: settledLayer.rightPropType,
+          };
         });
       });
     }
@@ -945,6 +956,7 @@
     waitingSource = null;
     visibleRealization = null;
     railRealization = null;
+    railProps = null;
     realizationChoicesKey = null;
     pendingRealizationChoices = null;
     queuedLayer = null;
@@ -1353,8 +1365,8 @@
               anchor: "center",
               orientation: "horizontal",
               loop: true,
-              leftPropType: data.props.left,
-              rightPropType: data.props.right,
+              leftPropType: (railProps ?? data.props).left,
+              rightPropType: (railProps ?? data.props).right,
               propElementalType: railPropElementalType,
               stepPulse: false,
               staggerCellUpdates: true,

@@ -1,5 +1,5 @@
 import type { TipPoint } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 
 /** The prop in each hand. Equal hands are the ordinary single-prop matrix. */
 export interface ShapeMatrixPropPair {
@@ -27,4 +27,17 @@ export function asPropPair(
   props: PropType | ShapeMatrixPropPair
 ): ShapeMatrixPropPair {
   return typeof props === "string" ? { left: props, right: props } : props;
+}
+
+/**
+ * Older saves and settings carry one `propType`. Each hand reads its own field
+ * first; the left falls back to that prop, the right to the left.
+ */
+export function propPairFromLegacy(source: {
+  propType?: PropType;
+  leftPropType?: PropType;
+  rightPropType?: PropType;
+}): ShapeMatrixPropPair {
+  const left = source.leftPropType ?? source.propType ?? PropType.STAFF;
+  return { left, right: source.rightPropType ?? left };
 }

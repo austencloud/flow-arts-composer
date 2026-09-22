@@ -23,10 +23,11 @@ import {
   MODE_ORDER,
   type VtgMode,
 } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type {
-  ShapeMatrixPropHand,
-  ShapeMatrixPropPair,
+import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import {
+  propPairFromLegacy,
+  type ShapeMatrixPropHand,
+  type ShapeMatrixPropPair,
 } from "$lib/shared/shape-matrix/domain/prop-pair";
 import { requestShapeMatrixTransition } from "$lib/shared/shape-matrix/debug/shape-matrix-transition-recorder";
 import { spinRatioEquals, type SpinRatio } from "@vtg/domain";
@@ -148,11 +149,7 @@ interface ShapeMatrixAppDependencies {
 function snapshotPropPair(
   snapshot: ShapeMatrixAppSnapshot
 ): ShapeMatrixPropPair {
-  const legacy = snapshot.propType ?? PropType.STAFF;
-  return {
-    left: snapshot.leftPropType ?? legacy,
-    right: snapshot.rightPropType ?? snapshot.leftPropType ?? legacy,
-  };
+  return propPairFromLegacy(snapshot);
 }
 
 const LEVEL_LANDING_TURN: Record<TurnLevel, TurnValue> = {
