@@ -6,7 +6,11 @@ import {
 
 function createShareState(
   onDismiss: () => void,
-  createSequenceSendSession: () => unknown = () => null
+  createSequenceSendSession: (
+    sequence: unknown,
+    options?: { viewParams?: string }
+  ) => unknown = () => null,
+  shareUrl = "https://tka.run/sequence/OMY3?v=OMY3"
 ) {
   return createViewerShellShareState(
     {
@@ -14,6 +18,7 @@ function createShareState(
         ({
           dismissPreview: onDismiss,
           viewerState: { viewerMode: "animation" },
+          getShareUrl: () => shareUrl,
         }) as never,
       getSequence: () => ({}) as never,
     },
@@ -110,6 +115,32 @@ describe("viewer send mode", () => {
     share.exitSendMode();
     expect(share.sendModeActive).toBe(false);
     expect(share.sendSession).toBeNull();
+  });
+
+  it("snapshots the view the person is sending from", () => {
+    const seen: Array<{ viewParams?: string } | undefined> = [];
+    const share = createShareState(
+      () => undefined,
+      (_sequence, options) => {
+        seen.push(options);
+        return session;
+      },
+      "https://tka.run/sequence/OMY3?v=OMY3&pane=animation&fx=trail&s=abc"
+    );
+
+    share.sendToInbox();
+    expect(seen).toEqual([{ viewParams: "pane=animation&fx=trail&s=abc" }]);
+
+    // A link with no viewer state sends a plain sequence.
+    const plain = createShareState(
+      () => undefined,
+      (_sequence, options) => {
+        seen.push(options);
+        return session;
+      }
+    );
+    plain.sendToInbox();
+    expect(seen[1]).toEqual({});
   });
 
   it("stays a viewer when the guest gate takes over", () => {
