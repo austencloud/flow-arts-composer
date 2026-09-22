@@ -24,7 +24,7 @@ import {
   BLUE_HEX,
   RED_HEX,
 } from "../../pictograph/tka-glyph/services/turn-color-interpreter";
-import { calculateTurnPositions } from "../../pictograph/tka-glyph/utils/turn-position-calculator";
+import { calculateTurnPositions, getTurnsColumnRightExtent } from "../../pictograph/tka-glyph/utils/turn-position-calculator";
 import { deriveTnDFromPictograph } from "../../pictograph/shared/domain/utils/tnd-deriver";
 import {
   calculateReversalPositions,
@@ -32,7 +32,8 @@ import {
 } from "../core";
 import type { TurnsTupleGenerator } from "../../pictograph/arrow/positioning/placement/services/turns-tuple-generator";
 import type { GridPlacement } from "../../pictograph/grid/domain/enums/grid-enums";
-import type { MotionData } from "../../pictograph/shared/domain/models/motion-data";
+import { isVisibleMotion, type MotionData } from "../../pictograph/shared/domain/models/motion-data";
+import { isSkewedFrameBeat } from "$lib/shared/foundation/services/skewed-frame";
 import {
   HandSide,
   getElementImagePath,
@@ -44,6 +45,7 @@ import {
 import { derivePropElementalTypeForStep } from "$lib/shared/shape-matrix/domain/prop-relationship";
 import { getMotionColor } from "../../utils/svg-color-utils";
 import { drawMonochromeImage, drawTintedImage } from "@tka/render-composition";
+import { drawSkewBraces } from "../utils/draw-skew-braces";
 
 const VIEWBOX_SIZE = 950;
 
@@ -207,6 +209,53 @@ export async function drawTKAGlyph(
   }
 
   return drawTKAGlyphText(ctx, String(letter), size, isDarkMode);
+}
+
+/**
+ * Skew braces ("{" / "}") around the letter of a skewed-frame beat - the
+ * canvas mirror of SkewBraces.svelte, gated the same way PictographRenderer
+ * gates the DOM component (isVisibleMotion on both hands, then
+ * isSkewedFrameBeat). Callers draw this after the letter/dash and before the
+ * turns column so the rightExtent clearance below can account for whatever
+ * the turns column is about to paint.
+ */
+export function drawSkewBracesGlyph(
+  ctx: CanvasRenderingContext2D,
+  pictograph: PictographData,
+  letterDimensions: { width: number; height: number },
+  scale: number,
+  isDarkMode: boolean,
+  turnsTupleGeneratorGetter?: () => TurnsTupleGenerator | undefined
+): void {
+  if (!pictograph.letter) return;
+  const left = pictograph.motions?.left;
+  const right = pictograph.motions?.right;
+  if (!isVisibleMotion(left) || !isVisibleMotion(right)) return;
+  if (!isSkewedFrameBeat(left, right)) return;
+
+  let turnsTuple = "(s, 0, 0)";
+  try {
+    const generator = turnsTupleGeneratorGetter?.();
+    if (generator) {
+      turnsTuple = generator.generateTurnsTuple(pictograph);
+    }
+  } catch {
+    // Use default - a missing/failing generator just means no turns-column
+    // clearance, not that the braces themselves should disappear.
+  }
+
+  const parsed = parseTurnsTuple(turnsTuple);
+  const rightExtent = getTurnsColumnRightExtent(parsed);
+
+  drawSkewBraces(ctx, {
+    letter: pictograph.letter,
+    letterDimensions,
+    rightExtent,
+    darkMode: isDarkMode,
+    originX: TKA_GLYPH_X * scale,
+    originY: TKA_GLYPH_Y * scale,
+    scale,
+  });
 }
 
 export async function drawTurnsColumn(

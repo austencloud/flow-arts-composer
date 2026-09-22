@@ -13,8 +13,9 @@ import {
   getTurnNumberImagePath,
   getTurnNumberWidth,
 } from "../../pictograph/tka-glyph/utils/turn-tuple-parser";
-import { calculateTurnPositions } from "../../pictograph/tka-glyph/utils/turn-position-calculator";
+import { calculateTurnPositions, getTurnsColumnRightExtent } from "../../pictograph/tka-glyph/utils/turn-position-calculator";
 import { isDashLetter } from "../../pictograph/tka-glyph/utils/letter-image-getter";
+import { isSkewedFrameBeat } from "$lib/shared/foundation/services/skewed-frame";
 import { calculateReversalPositions } from "../core";
 import type { Canvas2DDirectRenderer } from './canvas-2d-direct-renderer';
 import {
@@ -24,6 +25,7 @@ import {
 } from "@tka/render-composition";
 import { ensureCardFonts } from "./gelasio-fonts";
 import { drawHandColorKey } from "./canvas-2d-glyph-renderer";
+import { drawSkewBraces } from "../utils/draw-skew-braces";
 
 const VIEWBOX_SIZE = 950;
 const TKA_GLYPH_X = 50;
@@ -526,6 +528,8 @@ export class LayerCompositor {
       if (isDashLetter(pictograph.letter)) {
         this.drawDash(ctx, letterDimensions, scale, options.darkMode);
       }
+
+      this.drawSkewBracesOverlay(ctx, pictograph, letterDimensions, scale, options.darkMode);
     }
 
     if (pictograph.motions) {
@@ -759,6 +763,41 @@ export class LayerCompositor {
     ctx.roundRect(dashX, dashY, dashWidth, dashHeight, dashRadius);
     ctx.fill();
     ctx.restore();
+  }
+
+  /**
+   * Skew braces ("{" / "}") around the letter of a skewed-frame beat - the
+   * canvas mirror of SkewBraces.svelte, gated the same way PictographRenderer
+   * gates the DOM component (isVisibleMotion on both hands, then
+   * isSkewedFrameBeat). Drawn before the turns column so its rightExtent
+   * clearance can account for whatever the turns column is about to paint.
+   */
+  private drawSkewBracesOverlay(
+    ctx: RenderContext2D,
+    pictograph: PreparedPictographData,
+    letterDimensions: { width: number; height: number },
+    scale: number,
+    darkMode: boolean
+  ): void {
+    if (!pictograph.letter) return;
+    const left = pictograph.motions?.left;
+    const right = pictograph.motions?.right;
+    if (!isVisibleMotion(left) || !isVisibleMotion(right)) return;
+    if (!isSkewedFrameBeat(left, right)) return;
+
+    const turnsTuple = this.getTurnsTuple(pictograph);
+    const parsed = parseTurnsTuple(turnsTuple);
+    const rightExtent = getTurnsColumnRightExtent(parsed);
+
+    drawSkewBraces(ctx, {
+      letter: pictograph.letter,
+      letterDimensions,
+      rightExtent,
+      darkMode,
+      originX: TKA_GLYPH_X * scale,
+      originY: TKA_GLYPH_Y * scale,
+      scale,
+    });
   }
 
   private async drawTurnsColumn(

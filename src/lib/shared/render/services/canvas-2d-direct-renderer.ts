@@ -17,6 +17,7 @@ import {
   drawTKAGlyph,
   drawTurnsColumn,
   drawDirectionDot,
+  drawSkewBracesGlyph,
   drawElementalGlyph,
   drawPropElementalGlyph,
   drawPlacementGlyph,
@@ -273,6 +274,18 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
       if (isDashLetter(preparedPictograph.letter)) {
         drawDash(ctx, letterDimensions, scale, isDarkMode);
       }
+
+      // 5b. Skew braces around the letter (skewed-frame beats only) - must
+      // come before the turns column so its rightExtent clearance can
+      // account for whatever the turns column is about to paint.
+      drawSkewBracesGlyph(
+        ctx,
+        preparedPictograph,
+        letterDimensions,
+        scale,
+        isDarkMode,
+        getTurnsTupleGenerator
+      );
     }
 
     // 6. Draw turn numbers (TurnsColumn - to the RIGHT of letter)
