@@ -49,27 +49,29 @@ const STILL_POINT_RADIUS = MANDALA_GRID_RADIUS * 0.055;
  * How far the prop reaches, measured in hand-orbit radii.
  *
  * The engine puts a hand point at `ENGINE_GRID_RADIUS` and the prop's tracked
- * tip `clubTipDx` out from it, so this ratio is the one thing a drawing needs
+ * tip `reach` out from it, so this ratio is the one thing a drawing needs
  * to place a prop against a hand at any scale. A staff reads about 0.84, not
  * 1: the tip stops short of the outer grid point rather than landing on it.
+ * `reach` is this hand's own reach, not necessarily the pair's larger one —
+ * cat dog draws each hand's prop at its own length.
  */
-export function propReachInHandRadii(clubTipDx: number): number {
-  return clubTipDx / ENGINE_GRID_RADIUS;
+export function propReachInHandRadii(reach: number): number {
+  return reach / ENGINE_GRID_RADIUS;
 }
 
-function propReachFor(clubTipDx: number): number {
-  return MANDALA_GRID_RADIUS * propReachInHandRadii(clubTipDx);
+function propReachFor(reach: number): number {
+  return MANDALA_GRID_RADIUS * propReachInHandRadii(reach);
 }
 
 function traceFlower(
   flower: TheoryFlower,
-  clubTipDx: number
+  reach: number
 ): Array<{ x: number; y: number }> {
   // The two radii are separate so the drawing carries the real prop reach of
   // the selected prop, the same one the Matrix tiles are drawn at.
   return traceScaledPath(theorySoloKnobs(flower), {
     hand: MANDALA_GRID_RADIUS,
-    prop: propReachFor(clubTipDx),
+    prop: propReachFor(reach),
   });
 }
 
@@ -112,9 +114,9 @@ function toPathData(points: Array<{ x: number; y: number }>): SVGPathData[] {
 export function theoryFlowerPaths(
   flower: TheoryFlower,
   hand: "left" | "right",
-  clubTipDx: number
+  reach: number
 ): MandalaPaths {
-  const traced = toPathData(traceFlower(flower, clubTipDx));
+  const traced = toPathData(traceFlower(flower, reach));
   return hand === "left"
     ? { left: traced, right: [], purple: [] }
     : { left: [], right: traced, purple: [] };
@@ -145,12 +147,12 @@ function remember(key: string, paint: () => string): string {
 function pathsFor(
   flower: TheoryFlower,
   hand: "left" | "right",
-  clubTipDx: number
+  reach: number
 ): MandalaPaths {
-  const key = `${hand}:${theoryFlowerKey(flower)}:${clubTipDx}`;
+  const key = `${hand}:${theoryFlowerKey(flower)}:${reach}`;
   const cached = geometry.get(key);
   if (cached) return cached;
-  const built = theoryFlowerPaths(flower, hand, clubTipDx);
+  const built = theoryFlowerPaths(flower, hand, reach);
   geometry.set(key, built);
   return built;
 }
@@ -164,27 +166,35 @@ function currentDpr(): number {
  * carrying the account's saved hand inks and a cache key that tells one
  * palette's rasters from another's. Without it every Theory tile stayed in
  * the hero palette while the Matrix beside it followed the user's colours.
+ *
+ * `reach` traces this hand's own geometry — a staff-handed tile must draw the
+ * staff's shape, not the other hand's longer or shorter prop. `scale` is a
+ * separate value (the pair's larger reach) passed through to the painter so
+ * every tile in the grid, regardless of which hand's prop is shorter, shares
+ * one extent fit.
  */
 export function theoryHeaderArtworkSrc(
   flower: TheoryFlower,
   hand: "left" | "right",
-  clubTipDx: number,
+  reach: number,
+  scale: number,
   sizePx: number,
   painter: ShapeMatrixArtworkPainter = CLUB_ARTWORK_PAINTER
 ): string {
   const size = Math.round(sizePx);
   const dpr = currentDpr();
   const ink = painter.cacheKey ?? "hero";
-  const key = `h:${ink}:${hand}:${theoryFlowerKey(flower)}:${size}:${dpr}`;
+  const key = `h:${ink}:${hand}:${theoryFlowerKey(flower)}:${reach}:${scale}:${size}:${dpr}`;
   return remember(key, () =>
-    painter.header(pathsFor(flower, hand, clubTipDx), hand, size, clubTipDx)
+    painter.header(pathsFor(flower, hand, reach), hand, size, scale)
   );
 }
 
 export function theoryCellArtworkSrc(
   left: TheoryFlower,
   right: TheoryFlower,
-  clubTipDx: number,
+  reach: { left: number; right: number },
+  scale: number,
   sizePx: number,
   painter: ShapeMatrixArtworkPainter = CLUB_ARTWORK_PAINTER
 ): string {
@@ -193,13 +203,13 @@ export function theoryCellArtworkSrc(
   const ink = painter.cacheKey ?? "hero";
   const key =
     `c:${ink}:${theoryFlowerKey(left)}__${theoryFlowerKey(right)}` +
-    `:${size}:${dpr}`;
+    `:${reach.left}:${reach.right}:${scale}:${size}:${dpr}`;
   return remember(key, () =>
     painter.cell(
-      pathsFor(left, "left", clubTipDx),
-      pathsFor(right, "right", clubTipDx),
+      pathsFor(left, "left", reach.left),
+      pathsFor(right, "right", reach.right),
       size,
-      clubTipDx
+      scale
     )
   );
 }

@@ -50,7 +50,16 @@
   // Theory geometry comes from the QfT model, not from a realized sequence, so
   // the grid renders before the pictograph data finishes loading. Prop reach is
   // the one thing it borrows, and the standard staff covers the wait.
-  const tipDx = $derived(appState.data?.clubTipDx ?? MANDALA_STANDARD_TIP_DX);
+  //
+  // Each hand traces its own reach: with a mixed pair (cat dog with staff and
+  // bigstaff, say) the staff hand's tiles must show the staff's shape, not the
+  // longer prop's. `scale` stays the pair's larger reach so every tile in the
+  // grid keeps one shared extent fit, matching the live stage beside it.
+  const reach = $derived({
+    left: appState.data?.reach.left ?? MANDALA_STANDARD_TIP_DX,
+    right: appState.data?.reach.right ?? MANDALA_STANDARD_TIP_DX,
+  });
+  const scale = $derived(appState.data?.clubTipDx ?? MANDALA_STANDARD_TIP_DX);
 </script>
 
 {#snippet cornerGuide()}
@@ -79,9 +88,9 @@
       keyOf={theoryFlowerKey}
       labelOf={theoryFlowerLabel}
       paintHeader={(flower, hand, sizePx, painter) =>
-        theoryHeaderArtworkSrc(flower, hand, tipDx, sizePx, painter)}
+        theoryHeaderArtworkSrc(flower, hand, reach[hand], scale, sizePx, painter)}
       paintCell={(left, right, sizePx, painter) =>
-        theoryCellArtworkSrc(left, right, tipDx, sizePx, painter)}
+        theoryCellArtworkSrc(left, right, reach, scale, sizePx, painter)}
       emphasizedAxis={emphasis}
       corner={cornerGuide}
       revealToken={appState.revealToken}
