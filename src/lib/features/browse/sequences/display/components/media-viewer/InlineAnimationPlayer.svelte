@@ -94,6 +94,8 @@
         if (posLower.startsWith("alpha")) return Letter.ALPHA;
         if (posLower.startsWith("beta")) return Letter.BETA;
         if (posLower.startsWith("gamma")) return Letter.GAMMA;
+        if (posLower.startsWith("zeta")) return Letter.ZETA;
+        if (posLower.startsWith("eta")) return Letter.ETA;
       }
     }
 
@@ -101,7 +103,7 @@
   }
 
   /**
-   * Greek letter (α, β, γ) for the FINAL held position — mirror of
+   * Greek letter (α, β, γ, ζ, η) for the FINAL held position — mirror of
    * getStartPlacementLetter for the end-hold phase. At the End the hand isn't
    * mid-letter; it holds the last step's end position, so the glyph should read
    * that position, not the previous step's letter.
@@ -115,6 +117,8 @@
       if (posLower.startsWith("alpha")) return Letter.ALPHA;
       if (posLower.startsWith("beta")) return Letter.BETA;
       if (posLower.startsWith("gamma")) return Letter.GAMMA;
+      if (posLower.startsWith("zeta")) return Letter.ZETA;
+      if (posLower.startsWith("eta")) return Letter.ETA;
     }
     return null;
   }
