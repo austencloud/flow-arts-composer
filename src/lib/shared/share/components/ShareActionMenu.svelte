@@ -38,6 +38,11 @@
      * unified still renders a menu.
      */
     onDirectOpen?: (() => void) | null;
+    /**
+     * For a direct trigger that opens and closes a panel: whether it is open.
+     * Exposed as `aria-pressed` and drawn as a ring around the trigger.
+     */
+    pressed?: boolean;
     onTriggerClick?: () => void;
     onBlockedOpen?: () => void;
     onActionSelect: (actionId: string) => void;
@@ -63,6 +68,7 @@
     containDesktopMenu = false,
     statusMessage = "",
     onDirectOpen = null,
+    pressed,
     onTriggerClick = () => {},
     onBlockedOpen = () => {},
     onActionSelect,
@@ -127,6 +133,7 @@
       aria-expanded={useMobileSheet && canOpen && !onDirectOpen
         ? open
         : undefined}
+      aria-pressed={onDirectOpen ? pressed : undefined}
       data-testid={testId}
       disabled={disabled || busy}
       onclick={handleDirectTrigger}
@@ -321,6 +328,11 @@
   :global(.share-action-trigger:active:not(:disabled)) {
     transform: scale(0.95);
     transition-duration: var(--duration-instant);
+  }
+
+  :global(.share-action-trigger[aria-pressed="true"]) {
+    outline: 2px solid color-mix(in srgb, var(--theme-accent) 70%, white);
+    outline-offset: 2px;
   }
 
   :global(.share-action-trigger:focus-visible) {

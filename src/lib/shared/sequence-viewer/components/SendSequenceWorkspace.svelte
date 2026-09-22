@@ -1,11 +1,10 @@
 <!--
   SendSequenceWorkspace.svelte
 
-  The viewer's recipient column. In send mode the stage keeps showing the
-  view the person is sending from (Card, Motion, side by side, whichever they
-  chose) and this column takes the inspector track: the recipients fill it,
-  the note and Send sit docked at its foot. Stacked on a phone, the same
-  column docks under the stage.
+  The share panel's recipients. The stage keeps showing the view being
+  shared (Card, Motion, side by side, whichever the rail has selected); the
+  recipients fill the rest of the panel, the note and Send sit docked at its
+  foot. Stacked on a phone, the panel docks under the stage.
 
   The selection and delivery rules are SendAttachmentState, shared with the
   inbox drawer's send sheet; this file is only the viewer-sized presentation.
@@ -30,11 +29,13 @@
     session: SequenceSendSession;
     /** The outbox accepted it for these conversations, in queue order. */
     onSent: (conversationIds: string[]) => void;
-    /** Cancel, or a guest tapping Send: leave send mode. */
+    /** A guest tapping Send: the host retires the panel before sign-up. */
     onCancel: () => void;
+    /** The viewer state the message carries, read at the moment of Send. */
+    getViewParams?: () => string | undefined;
   }
 
-  let { session, onSent, onCancel }: Props = $props();
+  let { session, onSent, onCancel, getViewParams }: Props = $props();
 
   let hapticService: HapticFeedback | undefined;
   onMount(() => {
@@ -61,6 +62,7 @@
       getAttachment: () => attachment,
       onSent,
       onGuestBlocked: onCancel,
+      getSequenceViewParams: getViewParams,
     },
     {
       // Forwarded, not captured: the outbox may register after this mounts.
