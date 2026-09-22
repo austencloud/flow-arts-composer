@@ -12,7 +12,7 @@ When darkMode prop is provided, it overrides global state.
 CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
 -->
 <script lang="ts">
-  import { fade } from "svelte/transition";
+  import { fade, scale } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import type { Letter } from "$lib/shared/foundation/domain/models/letter";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
@@ -93,6 +93,10 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
   // so its out and in phases each take half the envelope. Both overlays then
   // start and finish their step transition at the same instants.
   const STEP_NUMBER_PHASE_DURATION = FADE_DURATION / 2;
+  // The incoming number settles from slightly oversized to its rest size
+  // while it fades in: one easing curve, no direction reversal, and nothing
+  // still moving once the fade has finished.
+  const STEP_NUMBER_SETTLE_SCALE = 1.06;
 
   // Track letter dimensions with reactive state that updates when cache is populated
   // We use $state + $effect because $derived only evaluates once per change,
@@ -306,13 +310,19 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
          Each phase runs for half of FADE_DURATION so the whole swap fits the
          same envelope as the letter glyph's cross-fade below-left; a full
          duration per phase made the number visibly lag the glyph.
+         The in transition is scale (fade + settle) rather than a CSS keyframe
+         pulse: a dip-and-return pulse on a remounting group played its dip
+         while the number was still invisible, so only the grow-back showed,
+         late and with a velocity kick at the reversal.
          The Start/End words are step labels too: the step-numbers toggle hides
          all three, matching the export compositor's single showStepNumbers gate. -->
     {#if stepNumbersVisible}
       {#key stepKey}
         <g
           class="beat-number-group"
-          in:fade={{
+          in:scale={{
+            start: STEP_NUMBER_SETTLE_SCALE,
+            opacity: 0,
             duration: motionDuration(STEP_NUMBER_PHASE_DURATION),
             delay: motionDuration(STEP_NUMBER_PHASE_DURATION),
             easing: cubicOut,
@@ -364,24 +374,11 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
     transition: filter var(--duration-fast) ease-out !important;
   }
 
-  /* Beat pulse on the step number: the group remounts on every step (keyed on
-     stepKey), so this mount animation replays at every seam — in time with the
-     golden step ring (same 400ms as guideStepRingIn). */
+  /* The in:scale settle transforms this SVG group; give it a real box and a
+     centered origin so it scales about the number, not the svg origin. */
   .beat-number-group {
     transform-box: fill-box;
     transform-origin: center;
-    animation: step-number-pulse 400ms ease-out;
-  }
-  @keyframes step-number-pulse {
-    0% {
-      transform: scale(1);
-    }
-    50% {
-      transform: scale(0.91);
-    }
-    100% {
-      transform: scale(1);
-    }
   }
 
   /* Dark-mode glyph recoloring is handled INSIDE TKAGlyph by swapping the
