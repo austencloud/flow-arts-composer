@@ -13,6 +13,7 @@ It then checks those rules against the two shipped dataframes:
 Run from the repository root:
     python scripts/notation/multigrid-lettering-census.py
     python scripts/notation/multigrid-lettering-census.py --classes   # list every class
+    python scripts/notation/multigrid-lettering-census.py --catalog   # markdown catalog with sheet cells
 
 Research tool only. Nothing in the app imports it.
 """
@@ -329,6 +330,196 @@ def census(show_classes: bool):
                     print(f"      {letter(grid, b):3} {describe(grid, b)}")
 
 
+# ------------------------------------------------------------------ catalog
+
+# Cells of the 2026 Skews.ai artboards, decoded from their vector geometry
+# (grid dots, prop bars, arrow tails and arrow-head shapes) and checked by eye
+# against renders. Each hand is (start, end, motion). Points are numbered
+# clockwise from the top; on the ten-point grid even numbers are the filled
+# pentagon. Page 15 X: the red arrow's hooked tail is ambiguous and is read as
+# 1 to 3, the same geometry as W. The sheets are drafts, not a reference: the
+# catalog letters every class by rule and only reports where a sheet drew it.
+SHEETS = {
+    "trigrid": ("page 21", [
+        ("G", (0, 1, "pro"), (0, 1, "pro")),
+        ("H", (0, 1, "anti"), (0, 1, "anti")),
+        ("I", (0, 1, "anti"), (0, 1, "pro")),
+        ("J", (2, 0, "pro"), (1, 0, "pro")),
+        ("K", (2, 0, "anti"), (1, 0, "anti")),
+        ("L", (2, 0, "anti"), (1, 0, "pro")),
+        ("M", (0, 2, "pro"), (0, 1, "pro")),
+        ("N", (0, 2, "anti"), (0, 1, "anti")),
+        ("O", (0, 2, "anti"), (0, 1, "pro")),
+        ("P", (2, 1, "pro"), (1, 2, "pro")),
+        ("Q", (1, 2, "anti"), (2, 1, "anti")),
+        ("R", (1, 2, "pro"), (2, 1, "anti")),
+        ("S", (1, 2, "pro"), (0, 1, "pro")),
+        ("T", (1, 2, "anti"), (0, 1, "anti")),
+        ("U", (1, 2, "pro"), (0, 1, "anti")),
+        ("V", (1, 2, "anti"), (0, 1, "pro")),
+        ("W", (2, 2, "static"), (0, 1, "pro")),
+        ("X", (2, 2, "static"), (0, 1, "anti")),
+        ("Y", (0, 0, "static"), (1, 0, "pro")),
+        ("Z", (0, 0, "static"), (1, 0, "anti")),
+    ]),
+    "pentagrid": ("page 22", [
+        ("A", (2, 3, "pro"), (0, 1, "pro")),
+        ("B", (2, 3, "anti"), (0, 1, "anti")),
+        ("C1", (2, 3, "pro"), (0, 1, "anti")),
+        ("C2", (2, 3, "anti"), (0, 1, "pro")),
+        ("D", (0, 4, "pro"), (0, 1, "pro")),
+        ("E", (0, 4, "anti"), (0, 1, "anti")),
+        ("F", (0, 4, "anti"), (0, 1, "pro")),
+        ("G", (1, 0, "pro"), (1, 0, "pro")),
+        ("H", (1, 0, "anti"), (1, 0, "anti")),
+        ("I", (1, 0, "anti"), (1, 0, "pro")),
+        ("J", (4, 0, "pro"), (1, 0, "pro")),
+        ("K", (4, 0, "anti"), (1, 0, "anti")),
+        ("L", (4, 0, "anti"), (1, 0, "pro")),
+        ("M1", (4, 3, "pro"), (0, 1, "pro")),
+        ("N1", (4, 3, "anti"), (0, 1, "anti")),
+        ("O1", (4, 3, "anti"), (0, 1, "pro")),
+        ("M2", (4, 3, "pro"), (1, 2, "pro")),
+        ("N2", (4, 3, "anti"), (1, 2, "anti")),
+        ("O2", (4, 3, "pro"), (1, 2, "anti")),
+        ("P", (2, 1, "pro"), (1, 2, "pro")),
+        ("Q", (2, 1, "anti"), (1, 2, "anti")),
+        ("R", (2, 1, "anti"), (1, 2, "pro")),
+        ("S", (1, 2, "pro"), (0, 1, "pro")),
+        ("T", (1, 2, "anti"), (0, 1, "anti")),
+        ("U", (1, 2, "pro"), (0, 1, "anti")),
+        ("V", (1, 2, "anti"), (0, 1, "pro")),
+        ("W", (3, 3, "static"), (0, 1, "pro")),
+        ("X", (3, 3, "static"), (0, 1, "anti")),
+        ("Y", (0, 0, "static"), (1, 0, "pro")),
+        ("Z", (0, 0, "static"), (1, 0, "anti")),
+        ("Σ", (3, 3, "static"), (1, 2, "pro")),
+        ("Δ", (3, 3, "static"), (1, 2, "anti")),
+        ("θ", (3, 3, "static"), (3, 2, "pro")),
+        ("Ω", (3, 3, "static"), (3, 2, "anti")),
+    ]),
+    "skewed pentagrid, pentagons interchangeable": ("page 15", [
+        ("Al", (5, 7, "pro"), (0, 2, "pro")),
+        ("Af", (4, 6, "pro"), (1, 3, "pro")),
+        ("Bl", (5, 7, "anti"), (0, 2, "anti")),
+        ("Bf", (4, 6, "anti"), (1, 3, "anti")),
+        ("C1l^x", (5, 7, "pro"), (0, 2, "anti")),
+        ("C1f_x", (4, 6, "pro"), (1, 3, "anti")),
+        ("C2l^x", (5, 7, "anti"), (1, 3, "pro")),
+        ("C2f_x", (4, 6, "anti"), (0, 2, "pro")),
+        ("D", (0, 8, "pro"), (1, 3, "pro")),
+        ("E", (0, 8, "anti"), (1, 3, "anti")),
+        ("F", (0, 8, "anti"), (1, 3, "pro")),
+        ("G", (2, 0, "pro"), (1, 9, "pro")),
+        ("H", (2, 0, "anti"), (1, 9, "anti")),
+        ("I^x", (2, 0, "anti"), (1, 9, "pro")),
+        ("I_x", (1, 9, "anti"), (2, 0, "pro")),
+        ("J", (8, 0, "pro"), (1, 9, "pro")),
+        ("K", (8, 0, "anti"), (1, 9, "anti")),
+        ("L", (8, 0, "anti"), (1, 9, "pro")),
+        ("M1", (8, 6, "pro"), (1, 3, "pro")),
+        ("N1", (8, 6, "anti"), (1, 3, "anti")),
+        ("O1", (8, 6, "anti"), (1, 3, "pro")),
+        ("M2", (8, 6, "pro"), (3, 5, "pro")),
+        ("N2", (8, 6, "anti"), (3, 5, "anti")),
+        ("O2", (8, 6, "pro"), (3, 5, "anti")),
+        ("P", (4, 2, "pro"), (3, 5, "pro")),
+        ("Q", (4, 2, "anti"), (3, 5, "anti")),
+        ("R", (4, 2, "anti"), (3, 5, "pro")),
+        ("S", (3, 5, "pro"), (0, 2, "pro")),
+        ("T", (3, 5, "anti"), (0, 2, "anti")),
+        ("U", (3, 5, "pro"), (0, 2, "anti")),
+        ("V", (3, 5, "anti"), (0, 2, "pro")),
+        ("W", (6, 6, "static"), (1, 3, "pro")),
+        ("X", (6, 6, "static"), (1, 3, "anti")),
+        ("Y", (0, 0, "static"), (1, 9, "pro")),
+        ("Z", (0, 0, "static"), (1, 9, "anti")),
+        ("Σ", (6, 6, "static"), (3, 5, "pro")),
+        ("Δ", (6, 6, "static"), (3, 5, "anti")),
+        ("θ", (6, 6, "static"), (5, 3, "pro")),
+        ("Ω", (6, 6, "static"), (5, 3, "anti")),
+    ]),
+}
+
+ALPHABET = "A B C D E F G H I J K L M N O P Q R S T U V W X Y Z Σ Δ Θ Ω".split()
+ALPHABET += [f"{x}-" for x in "W X Y Z Σ Δ Θ Ω".split()]
+KINDS = ("type 1 same", "type 1 opposite", "type 2", "type 3")
+KIND_LABEL = {"type 1 same": "1 same", "type 1 opposite": "1 opposite", "type 2": "2", "type 3": "3"}
+
+
+def sheet_beat(grid: Grid, cell):
+    return tuple((s, (e - s) % grid.points, m) for s, e, m in cell)
+
+
+def catalog_class(grid: Grid, beat) -> str:
+    """Spacing path, placements touched and, for hybrids, the leader's motion."""
+    (b, bd, bm), (r, rd, rm) = beat
+    k = kind(beat)
+    if k == "type 1 opposite":
+        d0, d1 = opposite_path(grid, beat)
+    elif k == "type 1 same":
+        d0 = d1 = Fraction(signed(grid, r - b))
+    else:
+        mover, partner = (beat[0], beat[1]) if bm in (PRO, ANTI) else (beat[1], beat[0])
+        still = (partner[0] + partner[1]) % grid.points
+        d0 = Fraction(signed(grid, still - mover[0]))
+        d1 = d0 - signed(grid, mover[1])
+    text = f"{spacing_deg(grid, d0)} to {spacing_deg(grid, d1)}"
+    inner = [name for t, name in landmarks(grid, d0, d1) if 0 < t < 1]
+    if inner:
+        text += " through " + " and ".join(inner)
+    if k == "type 1 same" and bm != rm and leader(grid, beat):
+        lead = bm if leader(grid, beat) == "blue" else rm
+        text += f", {lead} leads"
+    return text
+
+
+def catalog():
+    grids = {g.name: g for g in GRIDS}
+    distinct = grids["skewed pentagrid, pentagons distinct"]
+    for name, (page, cells) in SHEETS.items():
+        grid = grids[name]
+        classes = {}
+        for beat in all_beats(grid):
+            if kind(beat) in KINDS:
+                classes.setdefault(canonical(grid, beat), beat)
+        drawn = defaultdict(list)
+        for label, blue, red in cells:
+            drawn[canonical(grid, sheet_beat(grid, (blue, red)))].append(label)
+        splits = Counter()
+        if grid.mixed:
+            seen = set()
+            for beat in all_beats(distinct):
+                key = canonical(distinct, beat)
+                if kind(beat) in KINDS and key not in seen:
+                    seen.add(key)
+                    splits[canonical(grid, beat)] += 1
+
+        def order(item):
+            beat = item[1]
+            return (KINDS.index(kind(beat)), ALPHABET.index(letter(grid, beat)), catalog_class(grid, beat))
+
+        print(f"\n### {name[0].upper() + name[1:]}: {len(classes)} classes, sheet {page}\n")
+        head = ["Letter", "Type", "Motions", "Class", "Near/far", "Sheet"]
+        if grid.mixed:
+            head.append("Distinct pentagons")
+        print("| " + " | ".join(head) + " |")
+        print("|" + " --- |" * len(head))
+        for key, beat in sorted(classes.items(), key=order):
+            got = letter(grid, beat)
+            (_, _, bm), (_, _, rm) = beat
+            motions = f"{bm}/{rm}" if bm == rm else "/".join(sorted({bm, rm}, key=[PRO, ANTI, STATIC, DASH].index))
+            near_far = opposite_letter_near_far(grid, beat) if kind(beat) == "type 1 opposite" else got
+            row = [got, KIND_LABEL[kind(beat)], motions, catalog_class(grid, beat),
+                   "" if near_far == got else near_far, " ".join(drawn.get(key, [])) or "not drawn"]
+            if grid.mixed:
+                row.append(str(splits[key]))
+            print("| " + " | ".join(row) + " |")
+        stray = [label for label, blue, red in cells if canonical(grid, sheet_beat(grid, (blue, red))) not in classes]
+        if stray:
+            print(f"\nSheet cells outside Types 1 to 3: {' '.join(stray)}")
+
+
 # ------------------------------------------------------------- validations
 
 DIAMOND_INDEX = {"n": 0, "e": 1, "s": 2, "w": 3}
@@ -369,6 +560,9 @@ def opposite_only(rule):
 
 
 def main():
+    if "--catalog" in sys.argv:
+        catalog()
+        return
     census("--classes" in sys.argv)
     print("\n=== validation against shipped dataframes")
     diamond = GRIDS[1]

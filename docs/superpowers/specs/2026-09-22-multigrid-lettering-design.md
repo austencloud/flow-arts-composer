@@ -5,11 +5,17 @@ at the end. No classifier, dataframe or app change is part of this document.
 
 Scope: Type 1 to Type 3 letters on the trigrid, the plain pentagrid and the
 skewed pentagrid (ten points, one hand on each pentagon), checked against the
-diamond and the shipped skewed diamond frame. Sources are the 2026 `Skews.ai`
-artboards (page 15 = sheet 06 "Tier 1 Pentagrid Skewed", page 16 = sheet 07
-"Pentagrid Skews, Plus", page 21 = Trigrid, page 22 = Tier 1 Pentagrid) and
-the two shipped dataframes. See `docs/reference/skew-notation.md` for the
-source list and the modifier notation.
+diamond and the shipped skewed diamond frame.
+
+The old multi-grid sheets in the 2026 `Skews.ai` file (page 15 = sheet 06
+"Tier 1 Pentagrid Skewed", page 16 = sheet 07 "Pentagrid Skews, Plus", page
+21 = Tier 1 Trigrid, page 22 = Tier 1 Pentagrid) are unfinished drafts. They
+skip classes, draw some classes twice, and include cells that do not belong
+on the page. They are not a reference. This document letters every class by
+rule, gives the complete catalog for each grid, and uses the sheets only to
+show what the drafts got right, what they missed, and what the old labels
+become. See `docs/reference/skew-notation.md` for the source list and the
+modifier notation.
 
 ## Principle (approved)
 
@@ -79,178 +85,248 @@ Treat the dashing hand as static at its end point, apply the Type 2 rule, and
 add the dash: W- X- Y- Z- Σ- Δ- Θ- Ω-. This reproduces both the diamond and
 the shipped skewed-frame SHIFT_DASH table. Type 3 exists only where a dash
 exists (an even number of points). On the skewed pentagrid a dash moves five
-steps, so it always lands on the other pentagon.
+steps, so it always lands on the other pentagon, and the Type 3 classes
+follow the plain pentagrid's Type 2 paths.
 
-## Per-grid letter table
+## Summary by grid
 
-Counts are classes up to rotation, mirror (which reverses travel) and
-blue/red swap. `x2` means two classes that the rule gives the same letter; see
-open question 3 for how to tell them apart. Degrees are spacings.
+Counts are Type 1 to 3 classes up to rotation, mirror (which reverses travel)
+and blue/red swap. `x2` means two classes that the rule gives the same letter;
+open question 3 asks how to tell them apart.
 
-| Grid                                        | Type 1 same                          | Type 1 opposite                                                                                                   | Type 2                                                                                  | Type 3                  |
-| ------------------------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ----------------------- |
-| Trigrid                                     | G H I (0); S T U V (120)             | D E F (0 through alpha to 120); J K L (120 through alpha to 0); P Q R (120 through beta to 120)                   | W X (120 through alpha); Y Z (120 to 0); Θ Ω (0 to 120)                                 | none                    |
-| Diamond                                     | A B C; G H I; S T U V                | D E F; J K L; M N O; P Q R                                                                                        | W X Y Z Σ Δ Θ Ω                                                                         | all eight               |
-| Plain pentagrid                             | G H I (0); S T U V x2 (72 and 144)   | D E F (0 to 144); J K L (144 to 0); M N O x2 (72 to 144 and 144 to 72, through alpha); P Q R (72 through beta)    | W X (144 through alpha); Y Z (72 to 0); Σ Δ (144 to 72); Θ Ω x2 (0 to 72 and 72 to 144) | none                    |
-| Skewed diamond (shipped frame)              | S T U V x2 (45 and 135)              | M N O x2; P Q R x2                                                                                                | all eight                                                                               | all eight               |
-| Skewed pentagrid, pentagons interchangeable | A B C (180); S T U V x2 (36 and 108) | D E F (36 to 180); J K L (180 to 36); M N O (108 through alpha); P Q R x2 (36 to 108 and 108 to 36, through beta) | W X; Y Z; Σ Δ x2 (180 to 108 and 108 to 36); Θ Ω                                        | all eight, Θ- and Ω- x2 |
-| Skewed pentagrid, pentagons distinct        | 20 classes: A B, C x2, S T U V x4    | 20 classes: D E, F x2, J K, L x2, M N, O x2, P Q x2, R x4                                                         | 20 classes                                                                              | 20 classes              |
+| Grid                               | Type 1 same           | Type 1 opposite               | Type 2                | Type 3              |
+| ---------------------------------- | --------------------- | ----------------------------- | --------------------- | ------------------- |
+| Trigrid (22)                       | G H I; S T U V        | D E F; J K L; P Q R           | W X; Y Z; Θ Ω         | none                |
+| Diamond (38)                       | A B C; G H I; S T U V | D E F; J K L; M N O; P Q R    | all eight             | all eight           |
+| Plain pentagrid (36)               | G H I; S T U V x2     | D E F; J K L; M N O x2; P Q R | W X; Y Z; Σ Δ; Θ Ω x2 | none                |
+| Skewed diamond, shipped frame (36) | S T U V x2            | M N O x2; P Q R x2            | all eight             | all eight           |
+| Skewed pentagrid (46)              | A B C; S T U V x2     | D E F; J K L; M N O; P Q R x2 | W X; Y Z; Σ Δ x2; Θ Ω | all eight, Θ- Ω- x2 |
 
-Notes on the table:
+Notes:
 
 - The trigrid has no A B C, no M N O and no Σ Δ. Two hands 120 apart are
   never opposite at an endpoint; every opposite-direction path that crosses
   alpha starts or ends at beta; and a single shift from 120 either reaches
   beta or passes alpha.
 - The plain pentagrid has no A B C (no antipode) and no Type 3 (no dash).
-- On the skewed pentagrid, opposite-direction hybrids never split when the
-  pentagons are interchangeable, because reflecting across the hands'
-  bisector swaps the pentagons. They split by the pro hand's pentagon only when
-  the pentagons are distinct. The same holds for the 180 hybrid C.
+- The skewed pentagrid counts treat the two pentagons as interchangeable. If
+  filled and open count as different (open question 1), the 46 classes
+  become 80. The last column of its catalog shows how each class splits. A
+  class splits only when something tells the two hands apart: a leader, or pro
+  against anti. Opposite-direction pro/pro and anti/anti classes and the 180
+  A and B never split.
 
-## Choice between two opposite-direction rules
+## Complete catalogs
 
-The shipped skewed-frame classifier (`OPPOSITE_FAMILIES` in
-`src/lib/shared/pictograph/skew/skewed-frame-letter.ts`) uses a different rule.
-Written for any grid it reads: take the last landmark reached after the start.
-Alpha gives D E F when the start spacing is under 90, otherwise M N O. Beta
-gives J K L when the start spacing is over 90, otherwise P Q R. If no landmark
-is reached after the start, a beta start gives D E F and an alpha start gives
-J K L. Call this the near/far rule.
+Generated by `python scripts/notation/multigrid-lettering-census.py --catalog`.
+"Class" is the spacing path in degrees and any placement crossed strictly
+inside the beat. For Type 2 and Type 3 it is the path with the non-shifting
+hand held at its end point. "Near/far" is filled only where the shipped
+skewed-frame rule would give a different letter (see "Choice between two
+opposite-direction rules").
+"Sheet" names the old cell that draws the class, or "not drawn".
 
-Both rules give the same letters on the diamond. They differ here:
+### Trigrid: 22 classes, sheet page 21
 
-| Grid             | Class                   | Landmark rule | Near/far rule   | Sheet    |
-| ---------------- | ----------------------- | ------------- | --------------- | -------- |
-| Trigrid          | 120 through beta to 120 | P Q R         | J K L           | P        |
-| Plain pentagrid  | 72 through alpha to 144 | M N O         | D E F           | M1       |
-| Skewed diamond   | 45 through alpha to 135 | M N O         | D E F (shipped) | no sheet |
-| Skewed diamond   | 135 through beta to 45  | P Q R         | J K L (shipped) | no sheet |
-| Skewed pentagrid | 108 through beta to 36  | P Q R         | J K L           | J        |
+| Letter | Type       | Motions     | Class                    | Near/far | Sheet     |
+| ------ | ---------- | ----------- | ------------------------ | -------- | --------- |
+| G      | 1 same     | pro/pro     | 0 to 0                   |          | G         |
+| H      | 1 same     | anti/anti   | 0 to 0                   |          | H         |
+| I      | 1 same     | pro/anti    | 0 to 0                   |          | I         |
+| S      | 1 same     | pro/pro     | 120 to 120               |          | S         |
+| T      | 1 same     | anti/anti   | 120 to 120               |          | T         |
+| U      | 1 same     | pro/anti    | 120 to 120, pro leads    |          | U         |
+| V      | 1 same     | pro/anti    | 120 to 120, anti leads   |          | V         |
+| D      | 1 opposite | pro/pro     | 0 to 120 through alpha   |          | M         |
+| E      | 1 opposite | anti/anti   | 0 to 120 through alpha   |          | N         |
+| F      | 1 opposite | pro/anti    | 0 to 120 through alpha   |          | O         |
+| J      | 1 opposite | pro/pro     | 120 to 0 through alpha   |          | J         |
+| K      | 1 opposite | anti/anti   | 120 to 0 through alpha   |          | K         |
+| L      | 1 opposite | pro/anti    | 120 to 0 through alpha   |          | L         |
+| P      | 1 opposite | pro/pro     | 120 to 120 through beta  | J        | P         |
+| Q      | 1 opposite | anti/anti   | 120 to 120 through beta  | K        | Q         |
+| R      | 1 opposite | pro/anti    | 120 to 120 through beta  | L        | R         |
+| W      | 2          | pro/static  | 120 to 120 through alpha |          | W         |
+| X      | 2          | anti/static | 120 to 120 through alpha |          | X         |
+| Y      | 2          | pro/static  | 120 to 0                 |          | Y         |
+| Z      | 2          | anti/static | 120 to 0                 |          | Z         |
+| Θ      | 2          | pro/static  | 0 to 120                 |          | not drawn |
+| Ω      | 2          | anti/static | 0 to 120                 |          | not drawn |
 
-For the landmark rule:
+### Pentagrid: 36 classes, sheet page 22
 
-- It is the approved principle applied once more. D E F and J K L need an
-  exact pure placement at an endpoint, just as A B C and G H I do.
-- Time reversal behaves the same on every grid: it swaps D and J and fixes M
-  and P. Under near/far, reversal swaps D with J on the diamond but D with M
-  and J with P on the skewed diamond.
-- It matches every opposite-direction cell on page 22, including M1, which
-  near/far renames to D.
+| Letter | Type       | Motions     | Class                    | Near/far | Sheet     |
+| ------ | ---------- | ----------- | ------------------------ | -------- | --------- |
+| G      | 1 same     | pro/pro     | 0 to 0                   |          | G         |
+| H      | 1 same     | anti/anti   | 0 to 0                   |          | H         |
+| I      | 1 same     | pro/anti    | 0 to 0                   |          | I         |
+| S      | 1 same     | pro/pro     | 144 to 144               |          | A         |
+| S      | 1 same     | pro/pro     | 72 to 72                 |          | S         |
+| T      | 1 same     | anti/anti   | 144 to 144               |          | B         |
+| T      | 1 same     | anti/anti   | 72 to 72                 |          | T         |
+| U      | 1 same     | pro/anti    | 144 to 144, pro leads    |          | C1        |
+| U      | 1 same     | pro/anti    | 72 to 72, pro leads      |          | U         |
+| V      | 1 same     | pro/anti    | 144 to 144, anti leads   |          | C2        |
+| V      | 1 same     | pro/anti    | 72 to 72, anti leads     |          | V         |
+| D      | 1 opposite | pro/pro     | 0 to 144                 |          | D         |
+| E      | 1 opposite | anti/anti   | 0 to 144                 |          | E         |
+| F      | 1 opposite | pro/anti    | 0 to 144                 |          | F         |
+| J      | 1 opposite | pro/pro     | 144 to 0                 |          | J         |
+| K      | 1 opposite | anti/anti   | 144 to 0                 |          | K         |
+| L      | 1 opposite | pro/anti    | 144 to 0                 |          | L         |
+| M      | 1 opposite | pro/pro     | 144 to 72 through alpha  |          | M2        |
+| M      | 1 opposite | pro/pro     | 72 to 144 through alpha  | D        | M1        |
+| N      | 1 opposite | anti/anti   | 144 to 72 through alpha  |          | N2        |
+| N      | 1 opposite | anti/anti   | 72 to 144 through alpha  | E        | N1        |
+| O      | 1 opposite | pro/anti    | 144 to 72 through alpha  |          | O2        |
+| O      | 1 opposite | pro/anti    | 72 to 144 through alpha  | F        | O1        |
+| P      | 1 opposite | pro/pro     | 72 to 72 through beta    |          | P         |
+| Q      | 1 opposite | anti/anti   | 72 to 72 through beta    |          | Q         |
+| R      | 1 opposite | pro/anti    | 72 to 72 through beta    |          | R         |
+| W      | 2          | pro/static  | 144 to 144 through alpha |          | W         |
+| X      | 2          | anti/static | 144 to 144 through alpha |          | X         |
+| Y      | 2          | pro/static  | 72 to 0                  |          | Y         |
+| Z      | 2          | anti/static | 72 to 0                  |          | Z         |
+| Σ      | 2          | pro/static  | 144 to 72                |          | Σ         |
+| Δ      | 2          | anti/static | 144 to 72                |          | Δ         |
+| Θ      | 2          | pro/static  | 0 to 72                  |          | θ         |
+| Θ      | 2          | pro/static  | 72 to 144                |          | not drawn |
+| Ω      | 2          | anti/static | 0 to 72                  |          | Ω         |
+| Ω      | 2          | anti/static | 72 to 144                |          | not drawn |
 
-Against it:
+### Skewed pentagrid: 46 classes, sheet page 15
 
-- It reopens decision 2 of
-  `docs/superpowers/specs/2026-09-21-skewed-frame-lettering-design.md`.
-  128 of the 1024 shipped category 3 rows in `SkewedPictographDataframe.csv`
-  would change: D to M 16, E to N 16, F to O 32, J to P 16, K to Q 16, L to R 32.
-  The skewed diamond frame would then use only M N O and P Q R for opposite
-  shifts.
-- Sheet 06's J cell (108 through beta to 36) follows near/far, not the
-  landmark rule. The landmark rule matches page 22 M1 and trigrid P, which
-  near/far does not. Sheet 06's M2 cell and the trigrid sheet's M cell follow
-  neither rule, so no rule reproduces every old label.
+"Distinct" is the number of classes this row becomes if filled and open
+pentagons count as different.
 
-Recommendation: the landmark rule.
+| Letter | Type       | Motions     | Class                    | Near/far | Sheet     | Distinct |
+| ------ | ---------- | ----------- | ------------------------ | -------- | --------- | -------- |
+| A      | 1 same     | pro/pro     | 180 to 180               |          | Al        | 1        |
+| B      | 1 same     | anti/anti   | 180 to 180               |          | Bl        | 1        |
+| C      | 1 same     | pro/anti    | 180 to 180               |          | C1l^x     | 2        |
+| S      | 1 same     | pro/pro     | 108 to 108               |          | Af, S     | 2        |
+| S      | 1 same     | pro/pro     | 36 to 36                 |          | G         | 2        |
+| T      | 1 same     | anti/anti   | 108 to 108               |          | Bf, T     | 2        |
+| T      | 1 same     | anti/anti   | 36 to 36                 |          | H         | 2        |
+| U      | 1 same     | pro/anti    | 108 to 108, pro leads    |          | C1f_x, U  | 2        |
+| U      | 1 same     | pro/anti    | 36 to 36, pro leads      |          | I^x       | 2        |
+| V      | 1 same     | pro/anti    | 108 to 108, anti leads   |          | V         | 2        |
+| V      | 1 same     | pro/anti    | 36 to 36, anti leads     |          | I_x       | 2        |
+| D      | 1 opposite | pro/pro     | 36 to 180                |          | D         | 1        |
+| E      | 1 opposite | anti/anti   | 36 to 180                |          | E         | 1        |
+| F      | 1 opposite | pro/anti    | 36 to 180                |          | F         | 2        |
+| J      | 1 opposite | pro/pro     | 180 to 36                |          | M2        | 1        |
+| K      | 1 opposite | anti/anti   | 180 to 36                |          | N2        | 1        |
+| L      | 1 opposite | pro/anti    | 180 to 36                |          | O2        | 2        |
+| M      | 1 opposite | pro/pro     | 108 to 108 through alpha |          | M1        | 1        |
+| N      | 1 opposite | anti/anti   | 108 to 108 through alpha |          | N1        | 1        |
+| O      | 1 opposite | pro/anti    | 108 to 108 through alpha |          | O1        | 2        |
+| P      | 1 opposite | pro/pro     | 108 to 36 through beta   | J        | J         | 1        |
+| P      | 1 opposite | pro/pro     | 36 to 108 through beta   |          | P         | 1        |
+| Q      | 1 opposite | anti/anti   | 108 to 36 through beta   | K        | K         | 1        |
+| Q      | 1 opposite | anti/anti   | 36 to 108 through beta   |          | Q         | 1        |
+| R      | 1 opposite | pro/anti    | 108 to 36 through beta   | L        | L         | 2        |
+| R      | 1 opposite | pro/anti    | 36 to 108 through beta   |          | R         | 2        |
+| W      | 2          | pro/static  | 108 to 180               |          | not drawn | 2        |
+| X      | 2          | anti/static | 108 to 180               |          | not drawn | 2        |
+| Y      | 2          | pro/static  | 36 to 36 through beta    |          | Y         | 2        |
+| Z      | 2          | anti/static | 36 to 36 through beta    |          | Z         | 2        |
+| Σ      | 2          | pro/static  | 108 to 36                |          | Σ         | 2        |
+| Σ      | 2          | pro/static  | 180 to 108               |          | W         | 2        |
+| Δ      | 2          | anti/static | 108 to 36                |          | Δ         | 2        |
+| Δ      | 2          | anti/static | 180 to 108               |          | X         | 2        |
+| Θ      | 2          | pro/static  | 36 to 108                |          | θ         | 2        |
+| Ω      | 2          | anti/static | 36 to 108                |          | Ω         | 2        |
+| W-     | 3          | pro/dash    | 144 to 144 through alpha |          | not drawn | 2        |
+| X-     | 3          | anti/dash   | 144 to 144 through alpha |          | not drawn | 2        |
+| Y-     | 3          | pro/dash    | 72 to 0                  |          | not drawn | 2        |
+| Z-     | 3          | anti/dash   | 72 to 0                  |          | not drawn | 2        |
+| Σ-     | 3          | pro/dash    | 144 to 72                |          | not drawn | 2        |
+| Δ-     | 3          | anti/dash   | 144 to 72                |          | not drawn | 2        |
+| Θ-     | 3          | pro/dash    | 0 to 72                  |          | not drawn | 2        |
+| Θ-     | 3          | pro/dash    | 72 to 144                |          | not drawn | 2        |
+| Ω-     | 3          | anti/dash   | 0 to 72                  |          | not drawn | 2        |
+| Ω-     | 3          | anti/dash   | 72 to 144                |          | not drawn | 2        |
 
-## Sheet 06 (page 15, Tier 1 Pentagrid Skewed): old label to new letter
+## What the drafts get wrong
 
-Every cell was decoded from the vector artwork (dots, rings, prop bars, arrow
-shapes) and put through the rules by `mapcells.py`, a research script in the
-session scratchpad that imports the census module. Degrees are start to end
-spacing. "Leader on filled/open" means the leading hand's pentagon.
+### Trigrid (page 21)
 
-| Old      | Geometry                                  | Landmark rule | Near/far |
-| -------- | ----------------------------------------- | ------------- | -------- |
-| Al       | 180, pro/pro                              | A             | A        |
-| Bl       | 180, anti/anti                            | B             | B        |
-| C1l^x    | 180, hybrid, pro on open                  | C             | C        |
-| Af       | 108, pro/pro, leader on filled            | S             | S        |
-| Bf       | 108, anti/anti, leader on filled          | T             | T        |
-| C1f_x    | 108, pro leads, leader on filled          | U             | U        |
-| C2l^x    | 144, anti leads, both hands on open       | V (see below) | V        |
-| C2f_x    | 144, anti leads, both hands on filled     | V (see below) | V        |
-| D E F    | 36 to 180                                 | D E F         | D E F    |
-| G H      | 36, pro/pro and anti/anti, leader on open | S T           | S T      |
-| I^x      | 36, pro leads, leader on open             | U             | U        |
-| I_x      | 36, anti leads, leader on open            | V             | V        |
-| J K L    | 108 through beta to 36                    | P Q R         | J K L    |
-| M1 N1 O1 | 108 through alpha to 108                  | M N O         | M N O    |
-| M2 N2 O2 | 180 to 36                                 | J K L         | J K L    |
-| P Q R    | 36 through beta to 108                    | P Q R         | P Q R    |
-| S T U V  | 108, leader on open                       | S T U V       | S T U V  |
-| W X      | 180 to 108                                | Σ Δ           | Σ Δ      |
-| Y Z      | 36 through beta to 36                     | Y Z           | Y Z      |
-| Σ Δ      | 108 to 36                                 | Σ Δ           | Σ Δ      |
-| θ Ω      | 36 to 108                                 | Θ Ω           | Θ Ω      |
+- Missing: Θ Ω, one hand static while the other shifts from beta to 120.
+- Relabel: the sheet's M N O start together and end 120 apart, so they are
+  D E F. The sheet has no D E F cells, so nothing else moves.
+- Everything else is drawn once and keeps its letter.
 
-The X cell's red arrow has an ambiguous hooked tail and decodes as a 0 to 3
-arc. It is read here as 1 to 3, the same geometry as W, which is what the
-label pair implies.
+### Pentagrid (page 22)
 
-### What the old labels meant
+- Missing: Θ Ω from 72 to 144 (one hand static, widening without reaching
+  alpha).
+- Relabel: the sheet's A B C1 C2 are 144 apart and have a leader, so they are
+  S T U V at 144. C1 is pro leads (U) and C2 is anti leads (V), which is the
+  U/V split the principle keeps.
+- The sheet's M1 N1 O1 and M2 N2 O2 keep M N O and become variants by start
+  spacing (72 and 144).
+- The three unlabeled static cells (144, 0 and 72) are Types 4 to 6 and out
+  of scope here.
 
-Each sheet 06 cell is a page 22 letter with one hand moved one step (36
-degrees) forward along its own travel, onto the open pentagon. Check: Al is
-old A (144) with the leader moved forward to 180; Af is old A with the
-follower moved forward to 108; G H I are 0 with one hand moved to 36; S T U V
-are 72 with the leader moved to 108; D, M1, M2, P, W, Y, Σ and θ each shift
-their page 22 geometry by one step in the same way. So the sheet names each
-cell by the letter it was derived from, plus a mark for which hand was moved:
+### Skewed pentagrid (page 15, sheet 06)
+
+- Missing: W X (108 to 180, one hand static, ending opposite) and all ten
+  Type 3 classes. The sheet has no dash cells at all.
+- Drawn twice: the sheet's Af and S, Bf and T, and C1f_x and U are the same
+  classes when the pentagons are interchangeable. They differ only in which
+  pentagon the leader starts on.
+- Not skewed-frame beats: C2l^x and C2f_x have both hands on one pentagon.
+  They are the plain pentagrid's 144 V drawn on each pentagon.
+- Relabel: G H I^x I_x become S T U V at 36; Af Bf C1f_x become S T U at 108;
+  C1l^x becomes C; M2 N2 O2 (starting opposite) become J K L; the sheet's
+  W X (starting opposite and narrowing) become Σ Δ; θ is written Θ.
+- Rule-dependent: the sheet's J K L (108 to 36 through beta) are P Q R under
+  the landmark rule and stay J K L under near/far.
+- If filled and open count as different, the sheet draws 37 of 80 classes and
+  misses 43, among them 36 with the leader on filled, 108 anti leads with the leader on filled,
+  and the 180 hybrid with the anti hand on open.
+
+### What the old sheet 06 labels meant
+
+Every sheet 06 cell except the two C2 cells is a page 22 letter with one hand
+moved one step (36 degrees) forward along its own travel, onto the open
+pentagon. Examples:
+
+- Al is old A (144) with the leader moved forward to 180.
+- Af is old A with the follower moved forward to 108.
+- G H I are 0 with one hand moved to 36.
+- S T U V are 72 with the leader moved to 108.
+- D, M1, M2, P, W, Y, Σ and θ each shift their page 22 geometry by one step
+  in the same way.
+
+So the draft names each cell by the letter it came from, plus a mark for the
+hand that moved:
 
 - `l` or `f`: the leader or the follower moved.
 - `^x` or `_x`: the pro hand or the anti hand moved.
 
-This is the modifier convention already documented in section 3 of
-`skew-notation.md` (superscript = pro hand, subscript = anti hand, `l`/`f` =
-leading/following hand), with `x` standing for a one-step skew in place of
-`+`. It holds for every cell except the two C2 cells. Under the decode,
-C2 with the leader moved would be 180 with the anti hand on open (mark
-`l_x`), and C2 with the follower moved would be 108 anti leads with the
-leader on filled (mark `f^x`). The sheet instead draws unmoved 144 C2 twice,
-once per pentagon, with `l` paired to `^x`. These two cells look unfinished.
+This is the modifier convention in section 3 of `skew-notation.md`
+(superscript = pro hand, subscript = anti hand, `l`/`f` = leading/following
+hand), with `x` standing for a one-step skew in place of `+`. Under this
+reading, C2 with the leader moved would be 180 with the anti hand on open
+(mark `l_x`). C2 with the follower moved would be 108 anti leads with the
+leader on filled (mark `f^x`). The draft shows neither.
 
-The approved principle letters a cell by its own shape, which is why most old
-labels change. The derivation marks belong to modifier notation.
+Under the approved principle a cell is lettered by its own shape, which is
+why most sheet 06 labels change. The derivation marks belong to modifier
+notation.
 
-Classes the sheet does not draw: 36 with the leader on filled, 108 anti leads
-with the leader on filled, and the 180 hybrid with the anti hand on open.
-These only matter if filled and open count as different (open question 1).
+### Pentagrid plus (page 16, sheet 07)
 
-## Page 22 (Tier 1 Pentagrid): old label to new letter
-
-| Old                     | Geometry                   | Landmark rule | Near/far     |
-| ----------------------- | -------------------------- | ------------- | ------------ |
-| A B                     | 144, pro/pro and anti/anti | S T (144)     | S T (144)    |
-| C1                      | 144, pro leads             | U (144)       | U (144)      |
-| C2                      | 144, anti leads            | V (144)       | V (144)      |
-| D E F                   | 0 to 144                   | D E F         | D E F        |
-| G H I                   | 0                          | G H I         | G H I        |
-| J K L                   | 144 to 0                   | J K L         | J K L        |
-| M1 N1 O1                | 72 through alpha to 144    | M N O         | D E F        |
-| M2 N2 O2                | 144 through alpha to 72    | M N O         | M N O        |
-| P Q R                   | 72 through beta to 72      | P Q R         | P Q R        |
-| S T U V                 | 72                         | S T U V (72)  | S T U V (72) |
-| W X                     | 144 through alpha to 144   | W X           | W X          |
-| Y Z                     | 72 to 0                    | Y Z           | Y Z          |
-| Σ Δ                     | 144 to 72                  | Σ Δ           | Σ Δ          |
-| θ Ω                     | 0 to 72                    | Θ Ω           | Θ Ω          |
-| three unlabeled statics | 144, 0, 72                 | Type 6        | Type 6       |
-
-The sheet's C1 and C2 are the U/V leader split at 144: C1 is pro leads and C2
-is anti leads. The class 72 to 144 (shift plus static, widening, Θ Ω) is
-missing from the sheet.
-
-## Sheet 07 (page 16, Pentagrid Skews Plus): old label to new letter
-
-A plus beat starts in the plain pentagon and ends with one hand one step past
+A plus beat starts on the plain pentagon and ends with one hand one step past
 its endpoint. On the diamond such entries and exits keep their base letter
 and carry the modifier (`scripts/generate-skewed-dataframe.ts` letters them
-from the base row). Sheet 07 follows the same convention: each cell is its
-page 22 base letter plus a mark for which hand takes the plus. The new label
-is therefore the page 22 mapping with the mark kept. The page 16 vector
-artwork did not decode, so this table follows the labels, not a geometric
-check.
+from the base row). Sheet 07 follows the same convention, so each cell's new
+label is its page 22 base letter's new label with the mark kept. The page 16
+artwork did not decode, so this table follows the printed labels, not a
+geometric check, and it inherits page 22's gap: the 72 to 144 Θ Ω base has no
+plus cells.
 
 | Old                     | New (landmark rule)    | Near/far differs |
 | ----------------------- | ---------------------- | ---------------- |
@@ -267,48 +343,82 @@ check.
 | U+ U₊ V+ V₊             | U+ U₊ V+ V₊ at 72      |                  |
 | W+ X+ Y+ Z+ Σ+ Δ+ θ+ Ω+ | unchanged, θ written Θ |                  |
 
-The last R cell is printed `R+` twice; the second is read as `R₊`. At 144 the
-old A and B cells are symmetric letters on page 22, but as S and T they have a
-leader, so under section 3 they need `l`/`f` marks: A+ becomes S+l or S+f
-depending on which hand the artwork moves. That split cannot be read from the
-labels alone.
+The last R cell is printed `R+` twice; the second is read as `R₊`. As S and
+T at 144, the old A and B have a leader, so under section 3 they need
+`l`/`f` marks. The sheet draws one cell each, so one of S+l / S+f and one of
+T+l / T+f is missing, and which one is drawn cannot be read from the labels.
 
-## Trigrid sheet (page 21)
+## Choice between two opposite-direction rules
 
-| Old                     | Geometry                | New (both rules unless noted) |
-| ----------------------- | ----------------------- | ----------------------------- |
-| J K L                   | 120 through alpha to 0  | J K L                         |
-| M N O                   | 0 through alpha to 120  | D E F                         |
-| P Q R                   | 120 through beta to 120 | P Q R (near/far: J K L)       |
-| G H I, S T U V, W X Y Z | as drawn                | unchanged                     |
+The shipped skewed-frame classifier (`OPPOSITE_FAMILIES` in
+`src/lib/shared/pictograph/skew/skewed-frame-letter.ts`) uses a different rule.
+Written for any grid it reads: take the last landmark reached after the start.
+Alpha gives D E F when the start spacing is under 90, otherwise M N O. Beta
+gives J K L when the start spacing is over 90, otherwise P Q R. If no landmark
+is reached after the start, a beta start gives D E F and an alpha start gives
+J K L. Call this the near/far rule.
 
-The sheet has no Θ Ω, although 0 to 120 with one static hand exists.
+Both rules give the same letters on the diamond. They differ here:
+
+| Grid             | Class                   | Landmark rule | Near/far rule   |
+| ---------------- | ----------------------- | ------------- | --------------- |
+| Trigrid          | 120 through beta to 120 | P Q R         | J K L           |
+| Plain pentagrid  | 72 through alpha to 144 | M N O         | D E F           |
+| Skewed diamond   | 45 through alpha to 135 | M N O         | D E F (shipped) |
+| Skewed diamond   | 135 through beta to 45  | P Q R         | J K L (shipped) |
+| Skewed pentagrid | 108 through beta to 36  | P Q R         | J K L           |
+
+The drafts do not settle this: page 22's M1 and the trigrid's P follow the
+landmark rule, and sheet 06's J follows near/far.
+
+For the landmark rule:
+
+- It is the approved principle applied once more. D E F and J K L need an
+  exact pure placement at an endpoint, just as A B C and G H I do.
+- Time reversal behaves the same on every grid: it swaps D and J and fixes M
+  and P. Under near/far, reversal swaps D with J on the diamond but D with M
+  and J with P on the skewed diamond.
+- Near/far depends on which side of 90 degrees the start spacing falls. That
+  threshold has no placement behind it on the trigrid or pentagrids.
+
+Against it:
+
+- It reopens decision 2 of
+  `docs/superpowers/specs/2026-09-21-skewed-frame-lettering-design.md`.
+  128 of the 1024 shipped category 3 rows in `SkewedPictographDataframe.csv`
+  would change: D to M 16, E to N 16, F to O 32, J to P 16, K to Q 16, L to R 32.
+  The skewed diamond frame would then use only M N O and P Q R for opposite
+  shifts.
+
+Recommendation: the landmark rule.
 
 ## Trigrid dataframe discrepancy (report only, not fixed)
 
 `static/data/pictographs/TrigridPictographDataframe.csv` (189 rows, points n,
-se, sw) disagrees with the trigrid sheet and with both rules:
+se, sw) disagrees with the catalog:
 
-- Its J is beta to gamma, which the sheet calls M.
-- Its M is gamma to gamma, opposite direction, which the sheet calls P.
+- Its J is beta to gamma, which the catalog calls D.
+- Its M is gamma to gamma, opposite direction, which the catalog calls P.
 - Its P Q R duplicate S T U as same-direction rows.
 - Its V duplicates M as an opposite-direction row.
 - I has one hybrid only.
-- There is no gamma to beta opposite-direction row (the sheet's J).
+- There is no gamma to beta opposite-direction row (the catalog's J).
 
 The file is read only by `src/lib/features/lab/trigrid-lab`. It should be
-regenerated from whichever rule is approved.
+regenerated from the approved catalog.
 
 ## Evidence
 
 `scripts/notation/multigrid-lettering-census.py` enumerates every beat on
 each grid (static, pro/anti shift, and a dash where the point count is even),
 reduces to classes, applies both opposite-direction rules and checks them
-against the shipped data. Run from the repository root:
+against the shipped data. It also holds the decoded cells of pages 15, 21 and
+22 and prints the catalogs above. Run from the repository root:
 
 ```
 python scripts/notation/multigrid-lettering-census.py
 python scripts/notation/multigrid-lettering-census.py --classes
+python scripts/notation/multigrid-lettering-census.py --catalog
 ```
 
 Result on 2026-09-22:
@@ -317,6 +427,11 @@ Result on 2026-09-22:
 - `SkewedPictographDataframe.csv`, the 1024 Type 1 to 3 rows of category 3:
   near/far matches all of them; the landmark rule differs on 128, listed above.
 - The Type 2 and Type 3 rules match every row in both files.
+
+The sheet cells were decoded from the vector artwork (grid dots, prop bars,
+arrow tails and arrow-head shapes) and checked by eye against renders. The
+page 15 X cell's red arrow has an ambiguous hooked tail and is read as the
+same geometry as W.
 
 The Flow Arts MCP server (`tka-domain-local`) failed to connect during this
 work. Letter facts were checked against the dataframes and the classifier
@@ -328,10 +443,11 @@ instead of the MCP.
    Diamond versus box is a grid mode, not a letter difference, and the shipped
    skewed classifier ignores which family the leader sits on. The old `l`/`f`
    marks record which hand was moved, which is modifier notation. With the
-   pentagons interchangeable the skewed pentagrid has 55 classes instead of 92.
+   pentagons interchangeable the skewed pentagrid has 46 Type 1 to 3 classes
+   instead of 80.
 2. Is the decode of `l`/`f` and `^x`/`_x` above correct?
 3. How are same-letter variants labelled (S T U V at 72 and 144, M N O at two
-   start spacings, and so on)? Candidates: numbered, as the sheet's M1/M2,
+   start spacings, and so on)? Candidates: numbered, as page 22's M1/M2,
    ordered narrower start spacing first; or a spacing or placement tag.
    Recommendation: numbered, narrower start first, which keeps page 22's M1/M2
    order.
