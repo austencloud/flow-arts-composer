@@ -19,6 +19,9 @@ import {
 import {
   parseWordNotation,
   renderWordNotation,
+  stripWordNotation,
+  SKEW_SPAN_OPEN,
+  SKEW_SPAN_CLOSE,
   type WordUnit,
 } from "./word-notation";
 
@@ -52,11 +55,21 @@ const TKA_LETTER_UNITS: ReadonlySet<string> = new Set<string>(
 export function simplifyRepeatedWord(word: string): string {
   if (!word) return word;
   const units = parseWordNotation(word);
-  // Not a run of letters (a placeholder, a typed name): the portable simplifier
-  // keeps its exact historical behaviour for those.
-  if (units.length === 0 || renderWordNotation(units) !== word) {
-    return simplifyPortableWord(word);
+  if (units.length === 0) return simplifyPortableWord(word);
+  const letters = units.map((unit) => unit.letter).join("");
+  if (letters !== stripWordNotation(word)) {
+    // A character outside the letter class was dropped: genuinely malformed
+    // input, or a name with spaces, digits, or punctuation. A braced string
+    // never reaches the brace-unaware portable simplifier, which would
+    // silently delete the braces; an unbraced one keeps the portable
+    // simplifier's exact historical behaviour.
+    return word.includes(SKEW_SPAN_OPEN) || word.includes(SKEW_SPAN_CLOSE)
+      ? word
+      : simplifyPortableWord(word);
   }
+  // The letters are intact even when the brace layout is not canonical
+  // (two adjacent spans like "{ST}{TS}" instead of one run); the unit
+  // simplifier below handles both the canonical and non-canonical layouts.
   const simplified = simplifyRepeatedUnits(units);
   return simplified === units ? word : renderWordNotation(simplified);
 }
@@ -82,7 +95,7 @@ function simplifyRepeatedUnits(units: readonly WordUnit[]): readonly WordUnit[] 
   for (let groupSize = 1; groupSize <= Math.floor(keys.length / 2); groupSize++) {
     if (keys.length % groupSize !== 0) continue;
     const groups = Array.from({ length: keys.length / groupSize }, (_, index) =>
-      keys.slice(index * groupSize, (index + 1) * groupSize).join("")
+      keys.slice(index * groupSize, (index + 1) * groupSize).join("|")
     );
     if (
       groups[0] !== groups[1] &&
@@ -127,17 +140,20 @@ export function simplifyAndTruncate(
   // First simplify the word
   const simplified = simplifyRepeatedWord(word);
 
-  // Split into letter units
-  const letterUnits = splitIntoLetterUnits(simplified);
+  // Split into letter units, skew braces included
+  const units = parseWordNotation(simplified);
 
   // If within limit, return as-is
-  if (letterUnits.length <= maxLetters) {
+  if (units.length <= maxLetters) {
     return simplified;
   }
 
-  // Truncate to maxLetters units and add ellipsis
-  const truncatedUnits = letterUnits.slice(0, maxLetters);
-  return truncatedUnits.join("") + "...";
+  // Truncate to maxLetters units and add ellipsis. Re-rendering the kept
+  // slice (rather than joining raw letters) keeps an open skew brace closed,
+  // so a truncated span stays legible: "A{BCDEFGHIJ}K" at 8 becomes
+  // "A{BCDEFGH}...".
+  const truncatedUnits = units.slice(0, maxLetters);
+  return renderWordNotation(truncatedUnits) + "...";
 }
 
 export interface CompressedSegment {

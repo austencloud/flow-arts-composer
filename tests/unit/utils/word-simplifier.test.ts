@@ -17,6 +17,8 @@ import {
   compressWord,
   compressedToDisplayString,
 } from "../../../src/lib/shared/foundation/utils/word-simplifier";
+import { simplifyRepeatedWord as simplifyPortableWord } from "@tka/render-composition";
+import { Letter } from "../../../src/lib/shared/foundation/domain/models/letter";
 
 describe("Word Simplifier", () => {
   describe("simplifyRepeatedWord", () => {
@@ -245,6 +247,9 @@ describe("Word Simplifier", () => {
 describe("simplifyRepeatedWord with skew notation", () => {
   it("simplifies a repeated span", () => {
     expect(simplifyRepeatedWord("{STS}{STS}")).toBe("{STS}");
+    // Same letters, a non-canonical layout (two spans instead of one run):
+    // the unit simplifier handles it directly rather than by luck.
+    expect(simplifyRepeatedWord("{ST}{TS}")).toBe("{ST}");
   });
 
   it("simplifies a repeat inside one span", () => {
@@ -259,6 +264,11 @@ describe("simplifyRepeatedWord with skew notation", () => {
 
   it("applies the mirror rule inside a span", () => {
     expect(simplifyRepeatedWord("{ABBA}")).toBe("{AB}");
+    expect(simplifyRepeatedWord("A{BB}A")).toBe("A{B}");
+  });
+
+  it("simplifies a repeated span that sits between plain letters", () => {
+    expect(simplifyRepeatedWord("A{STS}GA{STS}G")).toBe("A{STS}G");
   });
 
   it("leaves plain words exactly as before", () => {
@@ -266,5 +276,52 @@ describe("simplifyRepeatedWord with skew notation", () => {
     expect(simplifyRepeatedWord("W-W-")).toBe("W-");
     expect(simplifyRepeatedWord("HELLO")).toBe("HELLO");
     expect(simplifyRepeatedWord("__fused__")).toBe("__fused__");
+  });
+});
+
+describe("simplifyRepeatedWord matches the portable simplifier for unbraced words", () => {
+  // Every letter shape the alphabet has: single Latin, a dash letter, a
+  // Type2 Greek capital, a lowercase static Greek, and the special terra
+  // glyph. None of these words carry skew braces, so both implementations
+  // must agree exactly.
+  const ALPHABET: readonly string[] = [
+    Letter.A,
+    Letter.B,
+    Letter.C,
+    Letter.W_DASH,
+    Letter.PHI_DASH,
+    Letter.OMEGA,
+    Letter.ALPHA,
+    Letter.TERRA,
+  ];
+
+  function wordsOfLength(length: number): string[] {
+    if (length === 0) return [""];
+    const shorter = wordsOfLength(length - 1);
+    const words: string[] = [];
+    for (const prefix of shorter) {
+      for (const letter of ALPHABET) {
+        words.push(prefix + letter);
+      }
+    }
+    return words;
+  }
+
+  it("agrees with the portable simplifier for every unbraced word of length 1 to 5", () => {
+    for (let length = 1; length <= 5; length++) {
+      for (const word of wordsOfLength(length)) {
+        expect(simplifyRepeatedWord(word)).toBe(simplifyPortableWord(word));
+      }
+    }
+  });
+});
+
+describe("simplifyAndTruncate with skew notation", () => {
+  it("truncates a plain long word exactly as before", () => {
+    expect(simplifyAndTruncate("ABCDEFGHIJKL", 8)).toBe("ABCDEFGH...");
+  });
+
+  it("keeps an opening brace closed when truncating through a span", () => {
+    expect(simplifyAndTruncate("A{BCDEFGHIJ}K", 8)).toBe("A{BCDEFGH}...");
   });
 });

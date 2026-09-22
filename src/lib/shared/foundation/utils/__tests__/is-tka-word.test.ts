@@ -57,5 +57,7 @@ describe("isTkaWord", () => {
     expect(isTkaWord("{A}{B}")).toBe(false);
     expect(isTkaWord("{A")).toBe(false);
     expect(isTkaWord("A}")).toBe(false);
+    expect(isTkaWord("{{A}}")).toBe(false);
+    expect(isTkaWord("{A}-B")).toBe(false);
   });
 });
