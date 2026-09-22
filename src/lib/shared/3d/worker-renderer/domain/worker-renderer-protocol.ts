@@ -462,6 +462,7 @@ export interface InitializeWorkerRendererMessage {
   performers: readonly WorkerPerformerSnapshot[];
   effects?: WorkerSceneEffectsSnapshot;
   reducedMotion?: boolean;
+  retainSceneCache?: boolean;
 }
 
 export interface SwitchWorkerRendererEnvironmentMessage {

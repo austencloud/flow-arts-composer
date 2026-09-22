@@ -5,16 +5,6 @@ import type { LOOPComponent } from "$lib/shared/foundation/domain/models/generat
 import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import type { TnDElement } from "../domain/tnd-element";
 
-export interface CardBackDomRenderOptions {
-  width: number;
-  height: number;
-  bleedPx: number;
-  theme: string;
-  leftPropType?: PropType;
-  rightPropType?: PropType;
-  primaryPropColors?: { left: string; right: string } | null;
-}
-
 /**
  * Per-hand skew data for a single step.
  *

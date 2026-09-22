@@ -495,9 +495,23 @@ def catalog():
                     seen.add(key)
                     splits[canonical(grid, beat)] += 1
 
+        def start_spacing(beat):
+            return spacing_deg(grid, Fraction(catalog_class(grid, beat).split(" ")[0]) / grid.step_deg)
+
         def order(item):
             beat = item[1]
-            return (KINDS.index(kind(beat)), ALPHABET.index(letter(grid, beat)), catalog_class(grid, beat))
+            return (KINDS.index(kind(beat)), ALPHABET.index(letter(grid, beat)), start_spacing(beat))
+
+        # Variants of one letter are numbered by start spacing, narrowest first.
+        by_letter = defaultdict(list)
+        for key, beat in sorted(classes.items(), key=order):
+            by_letter[letter(grid, beat)].append(key)
+        variant = {}
+        for base, keys in by_letter.items():
+            spacings = [start_spacing(classes[k]) for k in keys]
+            assert len(set(spacings)) == len(spacings), (name, base, spacings)
+            for number, key in enumerate(keys, 1):
+                variant[key] = base if len(keys) == 1 else base[0] + str(number) + base[1:]
 
         print(f"\n### {name[0].upper() + name[1:]}: {len(classes)} classes, sheet {page}\n")
         head = ["Letter", "Type", "Motions", "Class", "Near/far", "Sheet"]
@@ -510,7 +524,7 @@ def catalog():
             (_, _, bm), (_, _, rm) = beat
             motions = f"{bm}/{rm}" if bm == rm else "/".join(sorted({bm, rm}, key=[PRO, ANTI, STATIC, DASH].index))
             near_far = opposite_letter_near_far(grid, beat) if kind(beat) == "type 1 opposite" else got
-            row = [got, KIND_LABEL[kind(beat)], motions, catalog_class(grid, beat),
+            row = [variant[key], KIND_LABEL[kind(beat)], motions, catalog_class(grid, beat),
                    "" if near_far == got else near_far, " ".join(drawn.get(key, [])) or "not drawn"]
             if grid.mixed:
                 row.append(str(splits[key]))
