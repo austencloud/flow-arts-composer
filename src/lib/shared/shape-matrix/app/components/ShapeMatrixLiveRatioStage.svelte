@@ -241,6 +241,9 @@
     image: HTMLImageElement;
     width: number;
     height: number;
+    /** Which prop this sprite was generated for, so a stale load never draws
+     *  as the prop that superseded it. */
+    prop: string;
   }
   const sprites = $state<{ left: PropSprite | null; right: PropSprite | null }>(
     {
@@ -252,7 +255,8 @@
   function decodeSvg(
     svg: string,
     width: number,
-    height: number
+    height: number,
+    prop: string
   ): Promise<PropSprite> {
     return new Promise((resolve, reject) => {
       const image = new Image();
@@ -261,7 +265,7 @@
       // every prop that is not one.
       image.width = width;
       image.height = height;
-      image.onload = () => resolve({ image, width, height });
+      image.onload = () => resolve({ image, width, height, prop });
       image.onerror = () => reject(new Error("prop sprite failed to decode"));
       image.src = `data:image/svg+xml;base64,${btoa(
         unescape(encodeURIComponent(svg))
@@ -273,32 +277,43 @@
     const wanted = { left: leftPropType, right: rightPropType };
     const inks = propColors;
     let cancelled = false;
-    void (async () => {
+
+    /*
+     * One side at a time, so a fan that fails to decode on the right never
+     * takes the left staff down with it. Each side's own catch also means a
+     * slow left load does not wait on a fast right one, or the reverse.
+     */
+    async function loadSide(
+      side: "left" | "right",
+      prop: string
+    ): Promise<void> {
       try {
-        const [left, right] = await Promise.all([
-          inks
-            ? generatePropSvg(wanted.left, inks.left, "dark", "left")
-            : generateLeftPropSvg(wanted.left, true),
-          inks
-            ? generatePropSvg(wanted.right, inks.right, "dark", "right")
-            : generateRightPropSvg(wanted.right, true),
-        ]);
-        const [leftSprite, rightSprite] = await Promise.all([
-          decodeSvg(left.svg, left.width, left.height),
-          decodeSvg(right.svg, right.width, right.height),
-        ]);
+        const generated =
+          side === "left"
+            ? inks
+              ? await generatePropSvg(prop, inks.left, "dark", "left")
+              : await generateLeftPropSvg(prop, true)
+            : inks
+              ? await generatePropSvg(prop, inks.right, "dark", "right")
+              : await generateRightPropSvg(prop, true);
+        const sprite = await decodeSvg(
+          generated.svg,
+          generated.width,
+          generated.height,
+          prop
+        );
         if (cancelled) return;
-        sprites.left = leftSprite;
-        sprites.right = rightSprite;
+        sprites[side] = sprite;
       } catch {
         // The stick fallback below is a complete drawing on its own, so a
-        // prop that will not decode costs the artwork nothing.
-        if (!cancelled) {
-          sprites.left = null;
-          sprites.right = null;
-        }
+        // prop that will not decode costs only this hand's artwork.
+        if (!cancelled) sprites[side] = null;
       }
-    })();
+    }
+
+    void loadSide("left", wanted.left);
+    void loadSide("right", wanted.right);
+
     return () => {
       cancelled = true;
     };
@@ -660,7 +675,14 @@
 
         if (!showProps) continue;
 
-        const sprite = hand.side === "left" ? sprites.left : sprites.right;
+        const handPropType =
+          hand.side === "left" ? leftPropType : rightPropType;
+        const loaded = hand.side === "left" ? sprites.left : sprites.right;
+        // A sprite made for the prop this hand USED to hold is not this
+        // hand's prop any more: drawing it rotated by the new prop's
+        // `tipAngle` would point a stale drawing at the wrong tip. The stick
+        // fallback covers the gap until the matching sprite lands.
+        const sprite = loaded && loaded.prop === handPropType ? loaded : null;
         if (sprite) {
           const spriteWidth = sprite.width / ENGINE_GRID_RADIUS;
           const spriteHeight = sprite.height / ENGINE_GRID_RADIUS;

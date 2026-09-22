@@ -84,7 +84,7 @@
   const THEORY_EFFECTS = ["trails", ...CANVAS2D_HOSTED_EFFECTS] as const;
 
   /*
-   * The prop's reach, in hand-orbit radii. The tiles in the grid are already
+   * Each hand's reach, in hand-orbit radii. The tiles in the grid are already
    * drawn at it, and drawing the animation at a flat one prop length gave the
    * same flower different proportions in the two places. Theory paths come from
    * the model rather than from a realized sequence, so the grid can render
@@ -99,17 +99,32 @@
   });
 
   /*
+   * What the stage actually draws, as opposed to what the picker is aimed at.
+   * A pair reload is in flight between the moment a prop is chosen and the
+   * moment `app.data` catches up, and during that gap the state's hand
+   * getters already name the new prop while the loaded geometry (and its
+   * sprites) is still the old one. Falling back to the state only covers the
+   * first load, before any pair has landed at all.
+   */
+  const drawnProps = $derived(
+    app.data?.props ?? { left: app.leftPropType, right: app.rightPropType }
+  );
+
+  /*
    * Where each hand's tracked tip sits inside its own prop's artwork. The
    * trail follows one point per prop and the drawing has to point AT that
-   * point, which is a different bearing on a staff than on a fan.
+   * point, which is a different bearing on a staff than on a fan. This reads
+   * `drawnProps` rather than `data.tips`: under `trace: "hands"` the tip pair
+   * is zero, and the sprite still needs its real bearing regardless of what
+   * the trace is tracking.
    */
   function tipAngleFor(prop: PropType): number {
     const tip = shapeMatrixTipPoint(prop);
     return tip ? Math.atan2(tip.dy, tip.dx) : 0;
   }
   const tipAngle = $derived({
-    left: tipAngleFor(app.leftPropType),
-    right: tipAngleFor(app.rightPropType),
+    left: tipAngleFor(drawnProps.left),
+    right: tipAngleFor(drawnProps.right),
   });
 
   /*
@@ -415,8 +430,8 @@
                 {tipAngle}
                 paused={!animationState.playing}
                 playbackMode={animationState.playbackMode}
-                leftPropType={app.leftPropType}
-                rightPropType={app.rightPropType}
+                leftPropType={drawnProps.left}
+                rightPropType={drawnProps.right}
                 {propColors}
               />
             </button>
