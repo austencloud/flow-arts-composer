@@ -187,7 +187,10 @@ export function isolationPalmRoll(phase: number): number {
   if (t < 3) return (3 - t) * 2 * stageLeftRoll;
   return 0;
 }
-export function authoredBodyPose(pose: TeachingPose, phase = 0): AuthoredContactPose {
+export function authoredBodyPose(
+  pose: TeachingPose,
+  phase = 0
+): AuthoredContactPose {
   return {
     pelvisOffset: { x: pose.pelvisX, y: pose.pelvisY, z: pose.pelvisZ },
     torsoYawRad: pose.turn,

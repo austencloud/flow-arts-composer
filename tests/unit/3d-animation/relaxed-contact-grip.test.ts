@@ -44,7 +44,11 @@ describe.runIf(avatarAssetsPresent())("relaxed strict-contact grip", () => {
     services.animator.setContactMode("prop-authoritative");
 
     let keys = defaultTeachingKeys();
-    const sample = (phase: number, relaxation: number, rollOverride?: number) => {
+    const sample = (
+      phase: number,
+      relaxation: number,
+      rollOverride?: number
+    ) => {
       const teaching = sampleTeachingPose(phase, keys);
       const tip = allowedTipOffset(teaching, 0.13);
       const authored = sampleStaffIsolation(phase, [
@@ -100,12 +104,27 @@ describe.runIf(avatarAssetsPresent())("relaxed strict-contact grip", () => {
         )
         .normalize();
       const fingers = state.fingerChains!.right;
-      const wristPoint = state.rightArmChain!.effector.getWorldPosition(new Vector3());
-      const middlePoint = fingers.get("Middle1")!.getWorldPosition(new Vector3());
-      const palmNormal = fingers.get("Pinky1")!.getWorldPosition(new Vector3())
+      const wristPoint = state.rightArmChain!.effector.getWorldPosition(
+        new Vector3()
+      );
+      const middlePoint = fingers
+        .get("Middle1")!
+        .getWorldPosition(new Vector3());
+      const palmNormal = fingers
+        .get("Pinky1")!
+        .getWorldPosition(new Vector3())
         .sub(fingers.get("Index1")!.getWorldPosition(new Vector3()))
-        .cross(middlePoint.clone().sub(wristPoint)).normalize();
-      if (palmNormal.dot(fingers.get("Thumb1")!.getWorldPosition(new Vector3()).sub(middlePoint)) < 0) palmNormal.negate();
+        .cross(middlePoint.clone().sub(wristPoint))
+        .normalize();
+      if (
+        palmNormal.dot(
+          fingers
+            .get("Thumb1")!
+            .getWorldPosition(new Vector3())
+            .sub(middlePoint)
+        ) < 0
+      )
+        palmNormal.negate();
       return {
         phase,
         palmNormal,
