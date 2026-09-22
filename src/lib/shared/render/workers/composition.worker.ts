@@ -97,13 +97,17 @@ async function handleInit(
     { Canvas2DDirectRenderer },
     { LayerCompositor },
     { PictographKeyHasher },
+    { registerWorkerLoopDisplayResolver },
   ] = await Promise.all([
     import("../services/image-composer"),
     import("../services/text-renderer"),
     import("../services/canvas-2d-direct-renderer"),
     import("../services/layer-compositor"),
     import("../services/pictograph-key-hasher"),
+    import("$lib/shared/composition-root/worker-loop-display-resolver"),
   ]);
+
+  registerWorkerLoopDisplayResolver();
 
   // --- TextRenderer: populate with transferred glyph bitmaps ---
   workerTextRenderer = new TextRenderer();
