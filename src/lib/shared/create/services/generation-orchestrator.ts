@@ -21,6 +21,7 @@ import { SequenceBuilder } from "@tka/sequence-engine/generation";
 import type {
   ConstraintOptions,
   ConstraintReport,
+  HandRelationshipOptions,
 } from "@tka/sequence-engine/generation";
 import {
   LOOPType,
@@ -44,6 +45,10 @@ import {
   handModeToEngine,
   propModeToEngine,
 } from "$lib/shared/create/domain/hand-relationship";
+import {
+  assessStartFeasibility,
+  type StartFeasibilityResult,
+} from "$lib/shared/create/domain/start-feasibility";
 import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
 import { getGridLocationsFromPlacement } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
@@ -178,12 +183,36 @@ export class GenerationOrchestrator {
   }
 
   /**
+   * Checks only for a conclusive first-step impossibility using the same CSV
+   * rows and hard relationship constraints as generation. A feasible result
+   * intentionally does not promise that the later search can close a LOOP.
+   */
+  async checkStartFeasibility(
+    options: GenerationOptions
+  ): Promise<StartFeasibilityResult> {
+    const variations = await this.variationProvider.getAllVariationsForGrid(
+      String(options.gridMode)
+    );
+    return assessStartFeasibility({
+      variations,
+      handRelationship: options.handRelationship,
+      propRelationship: options.propRelationship,
+      blockedStartPlacements: options.blockedStartPlacements?.map(String),
+      startPlacement: resolveStartPlacement(options),
+      loopAxis: loopReflectionAxis(options),
+      startLocations: startLocations(options),
+    });
+  }
+
+  /**
    * Generate a freeform (non-looping) sequence via the shared engine.
    */
   private async generateFreeformSequence(
     options: GenerationOptions,
     hooks?: GenerationHooks
   ): Promise<SequenceData> {
+    const feasibility = await this.checkStartFeasibility(options);
+    this.throwIfStartImpossible(feasibility);
     await this.variationProvider.initialize(String(options.gridMode));
     if (options.word) {
       await ensureEngineTransitionGraph();
@@ -198,7 +227,10 @@ export class GenerationOrchestrator {
       ...(options.word ? { word: options.word } : { length: options.length }),
       gridMode: String(options.gridMode),
       level,
-      constraintOptions: this.mapConstraints(options),
+      constraintOptions: this.mapConstraints(
+        options,
+        this.chooseViableHandRelationship(feasibility)
+      ),
       startPlacement: resolveStartPlacement(options),
       blockedStartPlacements: options.blockedStartPlacements?.map(String),
       endPlacements: resolveEndPlacements(options),
@@ -227,6 +259,8 @@ export class GenerationOrchestrator {
     options: GenerationOptions,
     hooks?: GenerationHooks
   ): Promise<SequenceData> {
+    const feasibility = await this.checkStartFeasibility(options);
+    this.throwIfStartImpossible(feasibility);
     await this.variationProvider.initialize(String(options.gridMode));
     if (options.word) {
       await ensureEngineTransitionGraph();
@@ -277,7 +311,10 @@ export class GenerationOrchestrator {
       ...(options.word ? { word: options.word } : { length: seedLength }),
       gridMode: String(options.gridMode),
       level,
-      constraintOptions: this.mapConstraints(options),
+      constraintOptions: this.mapConstraints(
+        options,
+        this.chooseViableHandRelationship(feasibility)
+      ),
       startPlacement: resolveStartPlacement(options),
       blockedStartPlacements: options.blockedStartPlacements?.map(String),
       endPlacements: resolveEndPlacements(options),
@@ -309,7 +346,10 @@ export class GenerationOrchestrator {
    * handPathMode: smooth/mixed/choppy → hand path continuity
    * motionTypeFilter: no-dash/prefer-dash/null → motion family exclusion
    */
-  private mapConstraints(options: GenerationOptions): ConstraintOptions {
+  private mapConstraints(
+    options: GenerationOptions,
+    resolvedHandRelationship?: ConstraintOptions["handRelationship"]
+  ): ConstraintOptions {
     const result: ConstraintOptions = {};
 
     // Prop continuity (constraintPreset axis)
@@ -358,7 +398,7 @@ export class GenerationOrchestrator {
     if (propRelationship) {
       result.propRelationship = propRelationship;
     }
-    const handRelationship = handModeToEngine(
+    const handRelationship = resolvedHandRelationship ?? handModeToEngine(
       options.handRelationship ?? "free",
       {
         prop,
@@ -371,6 +411,18 @@ export class GenerationOrchestrator {
     }
 
     return result;
+  }
+
+  private throwIfStartImpossible(result: StartFeasibilityResult): void {
+    if (!result.feasible) throw new Error(result.reason);
+  }
+
+  private chooseViableHandRelationship(
+    result: StartFeasibilityResult
+  ): HandRelationshipOptions | undefined {
+    const choices = result.viableHandRelationships;
+    if (choices.length === 0) return undefined;
+    return choices[Math.floor(Math.random() * choices.length)];
   }
 
   /**
