@@ -80,7 +80,7 @@
 		"name": "The Kinetic Alphabet",
 		"alternateName": "TKA",
 		"url": "https://tkaflowarts.com/",
-		"description": "The Kinetic Alphabet is a notation system for flow arts, created by Austen Cloud in 2022: every pair of grid positions is given a letter, so a sequence can be written down, read back, and searched as a word. Use Flow Arts Composer to write, animate, save, and share choreography.",
+		"description": "The Kinetic Alphabet is a notation system for flow arts, created by Austen Cloud in 2022: every pair of grid placements is given a letter, so a sequence can be written down, read back, and searched as a word. Use Flow Arts Composer to write, animate, save, and share choreography.",
 		"inLanguage": "en-US",
 		"publisher": { "@id": "https://tkaflowarts.com/#organization" }
 	}

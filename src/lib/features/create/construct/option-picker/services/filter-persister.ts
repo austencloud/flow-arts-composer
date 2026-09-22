@@ -98,10 +98,22 @@ export class FilterPersister implements IFilterPersister {
         return null;
       }
 
+      // Pre-rename persisted data (before "position" -> "placement") used
+      // endPositionFilter and the "endPosition" sortMethod value. Read both
+      // spellings, write only the current ones.
+      const legacy = parsed as unknown as {
+        endPositionFilter?: Record<string, boolean>;
+      };
+      const rawSortMethod = String(parsed["sortMethod"]);
+      const sortMethod = (
+        rawSortMethod === "endPosition" ? "endPlacement" : rawSortMethod
+      ) as SortMethod;
+
       return {
-        sortMethod: parsed["sortMethod"],
+        sortMethod,
         typeFilter: parsed["typeFilter"],
-        endPlacementFilter: parsed.endPlacementFilter ?? {},
+        endPlacementFilter:
+          parsed.endPlacementFilter ?? legacy.endPositionFilter ?? {},
         reversalFilter: parsed.reversalFilter ?? {},
         isContinuousOnly: parsed.isContinuousOnly ?? this.loadContinuousOnly(),
       };

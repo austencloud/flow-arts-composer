@@ -17,6 +17,7 @@
  */
 
 import { browser } from "$app/environment";
+import { LEGACY_CONCEPT_ID_ALIASES } from "../services/concept-progress-tracker";
 
 /**
  * State for a single experience
@@ -67,13 +68,60 @@ export function clearActiveConceptId(): void {
 // Experience State Persistence (step/phase within a concept)
 
 /**
- * Load all experience states from localStorage
+ * Fold every legacy concept id key onto its current id
+ * (LEGACY_CONCEPT_ID_ALIASES). A concept id rename does not migrate the state
+ * already saved under the old key: if only the legacy key is present, it
+ * becomes the current key; if both are present, the current key's state is
+ * kept and the legacy one is dropped. `_activeConceptId` is folded the same
+ * way since it also holds a concept id, just as a value rather than a key.
+ * Returns the same object when nothing needed folding, so callers can tell
+ * whether a re-save is warranted.
+ */
+function foldLegacyConceptIds(states: AllExperiencesState): {
+	states: AllExperiencesState;
+	changed: boolean;
+} {
+	let changed = false;
+	const folded: AllExperiencesState = { ...states };
+
+	for (const [legacyId, currentId] of Object.entries(
+		LEGACY_CONCEPT_ID_ALIASES
+	)) {
+		if (legacyId in folded) {
+			if (!(currentId in folded)) {
+				folded[currentId] = folded[legacyId];
+			}
+			delete folded[legacyId];
+			changed = true;
+		}
+	}
+
+	if (
+		typeof folded._activeConceptId === "string" &&
+		folded._activeConceptId in LEGACY_CONCEPT_ID_ALIASES
+	) {
+		folded._activeConceptId =
+			LEGACY_CONCEPT_ID_ALIASES[folded._activeConceptId];
+		changed = true;
+	}
+
+	return { states: folded, changed };
+}
+
+/**
+ * Load all experience states from localStorage, folding any legacy concept
+ * id onto its current id. The fold is one-time: when it changes anything,
+ * the result is written straight back so the next load reads clean state.
  */
 function loadAllStates(): AllExperiencesState {
 	if (!browser) return {};
 	try {
 		const stored = localStorage.getItem(STORAGE_KEY);
-		return stored ? JSON.parse(stored) : {};
+		if (!stored) return {};
+		const parsed = JSON.parse(stored) as AllExperiencesState;
+		const { states, changed } = foldLegacyConceptIds(parsed);
+		if (changed) saveAllStates(states);
+		return states;
 	} catch {
 		return {};
 	}

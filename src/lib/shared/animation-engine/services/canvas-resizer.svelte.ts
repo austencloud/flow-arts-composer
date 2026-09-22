@@ -29,6 +29,14 @@ export const DEFAULT_CANVAS_SIZE = 500;
 const RESIZE_SETTLE_MS = 40;
 
 /**
+ * Marks an inert ancestor that keeps its full layout box — a crossfade's
+ * standby source staged behind the live one. Observations inside it are real
+ * geometry rather than a pane collapsing out of the workspace, so they are not
+ * suppressed. DualSourceCrossfade sets it on its hidden source.
+ */
+const SUPPRESSING_INERT_SELECTOR = "[inert]:not([data-inert-keeps-layout])";
+
+/**
  * Renderer interface for resize operations
  */
 export interface ResizableRenderer {
@@ -65,7 +73,15 @@ export class CanvasResizer {
   private settleTimer: ReturnType<typeof setTimeout> | null = null;
   private visibleSettleTimer: ReturnType<typeof setTimeout> | null = null;
   private wasObservationSuppressed = false;
+  /** Lifting `inert` does not change the container's box, so ResizeObserver
+   *  stays silent on reveal. This watches the suppressing ancestor instead. */
+  private revealObserver: MutationObserver | null = null;
   private hasSizedFromObservation = false;
+  /** The renderer is initialized before ResizeObserver reports its first box.
+   *  Keep that observer pass responsible for its initial texture resize, while
+   *  publishing the layout frame immediately so effect overlays never begin
+   *  life with the default 500px square. */
+  private hasAppliedInitialFrame = false;
 
   // Bound reference to resize handler for event listener cleanup
   private boundResizeHandler = () => this.handleResize();
@@ -73,6 +89,13 @@ export class CanvasResizer {
   initialize(container: HTMLDivElement, renderer: ResizableRenderer): void {
     this.container = container;
     this.renderer = renderer;
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    if (width > 0 && height > 0) {
+      const frame = measureFrame(width, height);
+      this.state.currentSize = frame.size;
+      this.state.frame = frame;
+    }
   }
 
   setup(): void {
@@ -95,6 +118,7 @@ export class CanvasResizer {
     this.resizeObserver = null;
     this.cancelSettle();
     this.cancelVisibleSettle();
+    this.stopWatchingForReveal();
 
     if (typeof window !== "undefined") {
       window.removeEventListener("resize", this.boundResizeHandler);
@@ -126,6 +150,7 @@ export class CanvasResizer {
     this.paused = false;
     this.wasObservationSuppressed = false;
     this.hasSizedFromObservation = false;
+    this.hasAppliedInitialFrame = false;
     this.container = null;
     this.renderer = null;
     this.state.currentSize = DEFAULT_CANVAS_SIZE;
@@ -153,7 +178,38 @@ export class CanvasResizer {
    * pane returns, making every canvas detail briefly look heavy and soft.
    */
   private observationSuppressed(): boolean {
-    return this.container?.closest("[inert]") !== null;
+    return this.suppressingAncestor() !== null;
+  }
+
+  private suppressingAncestor(): Element | null {
+    return this.container?.closest(SUPPRESSING_INERT_SELECTOR) ?? null;
+  }
+
+  /**
+   * A surface can be revealed without its box changing — a crossfade source
+   * that was already full size, a pane that stayed laid out. No observer
+   * callback follows, so without this the revealed canvas keeps the raster it
+   * had when it went inert, stretched over whatever the stage became since.
+   */
+  private watchForReveal(): void {
+    if (this.revealObserver || typeof MutationObserver === "undefined") return;
+    const ancestor = this.suppressingAncestor();
+    if (!ancestor) return;
+    this.revealObserver = new MutationObserver(() => {
+      this.stopWatchingForReveal();
+      // Re-evaluates from scratch: another inert ancestor re-arms the watch,
+      // a full reveal takes the settle-after-reveal path below.
+      this.handleResize();
+    });
+    this.revealObserver.observe(ancestor, {
+      attributes: true,
+      attributeFilter: ["inert", "data-inert-keeps-layout"],
+    });
+  }
+
+  private stopWatchingForReveal(): void {
+    this.revealObserver?.disconnect();
+    this.revealObserver = null;
   }
 
   /**
@@ -178,6 +234,7 @@ export class CanvasResizer {
       this.wasObservationSuppressed = true;
       this.cancelSettle();
       this.cancelVisibleSettle();
+      this.watchForReveal();
       return;
     }
 
@@ -225,12 +282,15 @@ export class CanvasResizer {
     // The main canvas only rebuilds when its square changes. A wrapper that
     // grows sideways at the same height still counts as a resize, because the
     // effect overlays paint the whole rectangle and must be reallocated to it.
-    if (!sameFrame(frame, this.state.frame)) {
+    const frameChanged = !sameFrame(frame, this.state.frame);
+    if (frameChanged || !this.hasAppliedInitialFrame) {
       this.state.isResizing = true;
       const squareChanged = newSize !== this.state.currentSize;
       this.state.currentSize = newSize;
       this.state.frame = frame;
-      if (squareChanged) await this.renderer.resize(newSize);
+      if (squareChanged || !this.hasAppliedInitialFrame)
+        await this.renderer.resize(newSize);
+      this.hasAppliedInitialFrame = true;
       this.state.isResizing = false;
       this.state.resizeCount++; // Increment to trigger reactivity
     }

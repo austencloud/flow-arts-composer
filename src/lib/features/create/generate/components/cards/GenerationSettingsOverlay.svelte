@@ -69,8 +69,8 @@
     padding: 16px;
     overflow: hidden;
     background-color: var(--customize-surface-solid);
-    background-image: var(--customize-surface-gradient),
-      var(--customize-surface-wash-layer);
+    background-image:
+      var(--customize-surface-gradient), var(--customize-surface-wash-layer);
     border: 2px solid
       color-mix(in srgb, var(--customize-accent) 40%, transparent);
     border-radius: 16px;
@@ -79,12 +79,15 @@
       0 0 24px color-mix(in srgb, var(--customize-accent) 20%, transparent);
   }
 
+  /* The band is as tall as the close button, and the button is sized for a
+     thumb. On a mouse that was 48px of panel height under one word, on top of
+     the 16px of panel padding above it and the 8px column gap below. The
+     margin was a fourth separator between the two. */
   .overlay-header {
     display: flex;
     align-items: center;
     flex-shrink: 0;
     gap: 8px;
-    margin-bottom: 4px;
   }
 
   .overlay-title {
@@ -101,8 +104,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: var(--min-touch-target);
-    height: var(--min-touch-target);
+    width: max(var(--min-touch-target, 44px), 44px);
+    height: max(var(--min-touch-target, 44px), 44px);
+    min-width: 44px;
+    min-height: 44px;
+    flex-shrink: 0;
     padding: 8px;
     color: var(--theme-text, white);
     cursor: pointer;
@@ -122,6 +128,24 @@
   .close-button svg {
     width: 20px;
     height: 20px;
+  }
+
+  /* A mouse does not need the thumb target, and every pixel this band does not
+     take is one the panel's own content gets. 34px is still well past the 24px
+     minimum for a pointer-driven control; coarse pointers keep the full 44. */
+  @media (pointer: fine) {
+    .close-button {
+      width: 34px;
+      height: 34px;
+      min-width: 34px;
+      min-height: 34px;
+      padding: 6px;
+    }
+
+    .close-button svg {
+      width: 18px;
+      height: 18px;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {

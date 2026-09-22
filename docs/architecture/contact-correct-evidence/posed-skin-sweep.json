@@ -1,0 +1,682 @@
+[
+  {
+    "id": "ch07",
+    "side": "right",
+    "phase": 0,
+    "fingerContact": [
+      {
+        "finger": "thumb",
+        "clearanceM": 0.00022045026036161906,
+        "supported": true
+      },
+      {
+        "finger": "index",
+        "clearanceM": 0.00034147147445242124,
+        "supported": true
+      },
+      {
+        "finger": "middle",
+        "clearanceM": 0.00035245693753841074,
+        "supported": true
+      },
+      {
+        "finger": "ring",
+        "clearanceM": 0.0002463091378662515,
+        "supported": true
+      },
+      {
+        "finger": "pinky",
+        "clearanceM": 0.00021606889762647253,
+        "supported": true
+      }
+    ],
+    "mesh": {
+      "status": "available",
+      "penetrationM": 0.006810997717764441,
+      "regions": [
+        "Ch07_Body"
+      ],
+      "containment": "unavailable"
+    }
+  },
+  {
+    "id": "ch07",
+    "side": "right",
+    "phase": 0.25,
+    "fingerContact": [
+      {
+        "finger": "thumb",
+        "clearanceM": 0.00022045169042208667,
+        "supported": true
+      },
+      {
+        "finger": "index",
+        "clearanceM": 0.0003414724908920833,
+        "supported": true
+      },
+      {
+        "finger": "middle",
+        "clearanceM": 0.00035245766142967625,
+        "supported": true
+      },
+      {
+        "finger": "ring",
+        "clearanceM": 0.0002463096781718378,
+        "supported": true
+      },
+      {
+        "finger": "pinky",
+        "clearanceM": 0.0002160695296998215,
+        "supported": true
+      }
+    ],
+    "mesh": {
+      "status": "available",
+      "penetrationM": 0.0072636594309992975,
+      "regions": [
+        "Ch07_Body"
+      ],
+      "containment": "unavailable"
+    }
+  },
+  {
+    "id": "ch07",
+    "side": "right",
+    "phase": 0.5,
+    "fingerContact": [
+      {
+        "finger": "thumb",
+        "clearanceM": 0.00022045095146352653,
+        "supported": true
+      },
+      {
+        "finger": "index",
+        "clearanceM": 0.00034147371138478627,
+        "supported": true
+      },
+      {
+        "finger": "middle",
+        "clearanceM": 0.0003524586961449203,
+        "supported": true
+      },
+      {
+        "finger": "ring",
+        "clearanceM": 0.000246309960853776,
+        "supported": true
+      },
+      {
+        "finger": "pinky",
+        "clearanceM": 0.00021607041252735652,
+        "supported": true
+      }
+    ],
+    "mesh": {
+      "status": "available",
+      "penetrationM": 0.007943094122504709,
+      "regions": [
+        "Ch07_Body"
+      ],
+      "containment": "unavailable"
+    }
+  },
+  {
+    "id": "ch07",
+    "side": "right",
+    "phase": 0.75,
+    "fingerContact": [
+      {
+        "finger": "thumb",
+        "clearanceM": 0.0002204517947569139,
+        "supported": true
+      },
+      {
+        "finger": "index",
+        "clearanceM": 0.0003414745597360401,
+        "supported": true
+      },
+      {
+        "finger": "middle",
+        "clearanceM": 0.000352459412416406,
+        "supported": true
+      },
+      {
+        "finger": "ring",
+        "clearanceM": 0.00024631027107741834,
+        "supported": true
+      },
+      {
+        "finger": "pinky",
+        "clearanceM": 0.00021607093557518076,
+        "supported": true
+      }
+    ],
+    "mesh": {
+      "status": "available",
+      "penetrationM": 0.008397076034264848,
+      "regions": [
+        "Ch07_Body"
+      ],
+      "containment": "unavailable"
+    }
+  },
+  {
+    "id": "ch07",
+    "side": "right",
+    "phase": 1,
+    "fingerContact": [
+      {
+        "finger": "thumb",
+        "clearanceM": 0.00022045114470478112,
+        "supported": true
+      },
+      {
+        "finger": "index",
+        "clearanceM": 0.0003414739842703624,
+        "supported": true
+      },
+      {
+        "finger": "middle",
+        "clearanceM": 0.0003524590012342413,
+        "supported": true
+      },
+      {
+        "finger": "ring",
+        "clearanceM": 0.00024630945540844934,
+        "supported": true
+      },
+      {
+        "finger": "pinky",
+        "clearanceM": 0.00021606995019190752,
+        "supported": true
+      }
+    ],
+    "mesh": {
+      "status": "available",
+      "penetrationM": 0.008556494096292873,
+      "regions": [
+        "Ch07_Body"
+      ],
+      "containment": "unavailable"
+    }
+  },
+  {
+    "id": "ch07",
+    "side": "right",
+    "phase": 1.25,
+    "fingerContact": [
+      {
+        "finger": "thumb",
+        "clearanceM": 0.00022045106121415612,
+        "supported": true
+      },
+      {
+        "finger": "index",
+        "clearanceM": 0.00034147111779010827,
+        "supported": true
+      },
+      {
+        "finger": "middle",
+        "clearanceM": 0.000352456156085733,
+        "supported": true
+      },
+      {
+        "finger": "ring",
+        "clearanceM": 0.00024630939359794124,
+        "supported": true
+      },
+      {
+        "finger": "pinky",
+        "clearanceM": 0.00021606792909887197,
+        "supported": true
+      }
+    ],
+    "mesh": {
+      "status": "available",
+      "penetrationM": 0.008332427612139984,
+      "regions": [
+        "Ch07_Body"
+      ],
+      "containment": "unavailable"
+    }
+  },
+  {
+    "id": "ch07",
+    "side": "right",
+    "phase": 1.5,
+    "fingerContact": [
+      {
+        "finger": "thumb",
+        "clearanceM": 0.00022044858287218177,
+        "supported": true
+      },
+      {
+        "finger": "index",
+        "clearanceM": 0.00034146832664697915,
+        "supported": true
+      },
+      {
+        "finger": "middle",
+        "clearanceM": 0.00035245363027387993,
+        "supported": true
+      },
+      {
+        "finger": "ring",
+        "clearanceM": 0.00024630719640278366,
+        "supported": true
+      },
+      {
+        "finger": "pinky",
+        "clearanceM": 0.00021606436008515112,
+        "supported": true
+      }
+    ],
+    "mesh": {
+      "status": "available",
+      "penetrationM": 0.007797257878550233,
+      "regions": [
+        "Ch07_Body"
+      ],
+      "containment": "unavailable"
+    }
+  },
+  {
+    "id": "ch07",
+    "side": "right",
+    "phase": 1.75,
+    "fingerContact": [
+      {
+        "finger": "thumb",
+        "clearanceM": 0.00022044755605035542,
+        "supported": true
+      },
+      {
+        "finger": "index",
+        "clearanceM": 0.00034146917841409736,
+        "supported": true
+      },
+      {
+        "finger": "middle",
+        "clearanceM": 0.0003524547391241233,
+        "supported": true
+      },
+      {
+        "finger": "ring",
+        "clearanceM": 0.00024630667406548134,
+        "supported": true
+      },
+      {
+        "finger": "pinky",
+        "clearanceM": 0.00021606481803738802,
+        "supported": true
+      }
+    ],
+    "mesh": {
+      "status": "available",
+      "penetrationM": 0.007184736855233594,
+      "regions": [
+        "Ch07_Body"
+      ],
+      "containment": "unavailable"
+    }
+  },
+  {
+    "id": "ch07",
+    "side": "right",
+    "phase": 2,
+    "fingerContact": [
+      {
+        "finger": "thumb",
+        "clearanceM": 0.0002204475276322438,
+        "supported": true
+      },
+      {
+        "finger": "index",
+        "clearanceM": 0.00034146872287575724,
+        "supported": true
+      },
+      {
+        "finger": "middle",
+        "clearanceM": 0.00035245438151462836,
+        "supported": true
+      },
+      {
+        "finger": "ring",
+        "clearanceM": 0.0002463074202218858,
+        "supported": true
+      },
+      {
+        "finger": "pinky",
+        "clearanceM": 0.00021606534022510036,
+        "supported": true
+      }
+    ],
+    "mesh": {
+      "status": "available",
+      "penetrationM": 0.006811000758821004,
+      "regions": [
+        "Ch07_Body"
+      ],
+      "containment": "unavailable"
+    }
+  },
+  {
+    "id": "ch07",
+    "side": "right",
+    "phase": 2.25,
+    "fingerContact": [
+      {
+        "finger": "thumb",
+        "clearanceM": 0.00022044825331439533,
+        "supported": true
+      },
+      {
+        "finger": "index",
+        "clearanceM": 0.0003414663802764812,
+        "supported": true
+      },
+      {
+        "finger": "middle",
+        "clearanceM": 0.0003524522591852588,
+        "supported": true
+      },
+      {
+        "finger": "ring",
+        "clearanceM": 0.0002463082645091665,
+        "supported": true
+      },
+      {
+        "finger": "pinky",
+        "clearanceM": 0.0002160651419136658,
+        "supported": true
+      }
+    ],
+    "mesh": {
+      "status": "available",
+      "penetrationM": 0.007446196623667292,
+      "regions": [
+        "Ch07_Body"
+      ],
+      "containment": "unavailable"
+    }
+  },
+  {
+    "id": "ch07",
+    "side": "right",
+    "phase": 2.5,
+    "fingerContact": [
+      {
+        "finger": "thumb",
+        "clearanceM": 0.00022044901995024822,
+        "supported": true
+      },
+      {
+        "finger": "index",
+        "clearanceM": 0.00034146636056839536,
+        "supported": true
+      },
+      {
+        "finger": "middle",
+        "clearanceM": 0.0003524522587263282,
+        "supported": true
+      },
+      {
+        "finger": "ring",
+        "clearanceM": 0.000246308324404186,
+        "supported": true
+      },
+      {
+        "finger": "pinky",
+        "clearanceM": 0.0002160651833543587,
+        "supported": true
+      }
+    ],
+    "mesh": {
+      "status": "available",
+      "penetrationM": 0.008135048692895582,
+      "regions": [
+        "Ch07_Body"
+      ],
+      "containment": "unavailable"
+    }
+  },
+  {
+    "id": "ch07",
+    "side": "right",
+    "phase": 2.75,
+    "fingerContact": [
+      {
+        "finger": "thumb",
+        "clearanceM": 0.00022044905940643567,
+        "supported": true
+      },
+      {
+        "finger": "index",
+        "clearanceM": 0.0003414660257174515,
+        "supported": true
+      },
+      {
+        "finger": "middle",
+        "clearanceM": 0.0003524519807426756,
+        "supported": true
+      },
+      {
+        "finger": "ring",
+        "clearanceM": 0.00024630751945892626,
+        "supported": true
+      },
+      {
+        "finger": "pinky",
+        "clearanceM": 0.00021606415826304,
+        "supported": true
+      }
+    ],
+    "mesh": {
+      "status": "available",
+      "penetrationM": 0.008595324305868384,
+      "regions": [
+        "Ch07_Body"
+      ],
+      "containment": "unavailable"
+    }
+  },
+  {
+    "id": "ch07",
+    "side": "right",
+    "phase": 3,
+    "fingerContact": [
+      {
+        "finger": "thumb",
+        "clearanceM": 0.00022044703425860238,
+        "supported": true
+      },
+      {
+        "finger": "index",
+        "clearanceM": 0.0003414662509247648,
+        "supported": true
+      },
+      {
+        "finger": "middle",
+        "clearanceM": 0.0003524528083671532,
+        "supported": true
+      },
+      {
+        "finger": "ring",
+        "clearanceM": 0.00024630554659735944,
+        "supported": true
+      },
+      {
+        "finger": "pinky",
+        "clearanceM": 0.0002160633830501045,
+        "supported": true
+      }
+    ],
+    "mesh": {
+      "status": "available",
+      "penetrationM": 0.008707043533875955,
+      "regions": [
+        "Ch07_Body"
+      ],
+      "containment": "unavailable"
+    }
+  },
+  {
+    "id": "ch07",
+    "side": "right",
+    "phase": 3.25,
+    "fingerContact": [
+      {
+        "finger": "thumb",
+        "clearanceM": 0.00022044669155352713,
+        "supported": true
+      },
+      {
+        "finger": "index",
+        "clearanceM": 0.0003414682756575564,
+        "supported": true
+      },
+      {
+        "finger": "middle",
+        "clearanceM": 0.00035245483099540214,
+        "supported": true
+      },
+      {
+        "finger": "ring",
+        "clearanceM": 0.00024630529542939844,
+        "supported": true
+      },
+      {
+        "finger": "pinky",
+        "clearanceM": 0.00021606466723367215,
+        "supported": true
+      }
+    ],
+    "mesh": {
+      "status": "available",
+      "penetrationM": 0.00854921592730956,
+      "regions": [
+        "Ch07_Body"
+      ],
+      "containment": "unavailable"
+    }
+  },
+  {
+    "id": "ch07",
+    "side": "right",
+    "phase": 3.5,
+    "fingerContact": [
+      {
+        "finger": "thumb",
+        "clearanceM": 0.0002204471069971077,
+        "supported": true
+      },
+      {
+        "finger": "index",
+        "clearanceM": 0.0003414698061717028,
+        "supported": true
+      },
+      {
+        "finger": "middle",
+        "clearanceM": 0.00035245606781928503,
+        "supported": true
+      },
+      {
+        "finger": "ring",
+        "clearanceM": 0.0002463063272300256,
+        "supported": true
+      },
+      {
+        "finger": "pinky",
+        "clearanceM": 0.00021606633520842179,
+        "supported": true
+      }
+    ],
+    "mesh": {
+      "status": "available",
+      "penetrationM": 0.008099760933364397,
+      "regions": [
+        "Ch07_Body"
+      ],
+      "containment": "unavailable"
+    }
+  },
+  {
+    "id": "ch07",
+    "side": "right",
+    "phase": 3.75,
+    "fingerContact": [
+      {
+        "finger": "thumb",
+        "clearanceM": 0.00022044914409801407,
+        "supported": true
+      },
+      {
+        "finger": "index",
+        "clearanceM": 0.0003414708114689775,
+        "supported": true
+      },
+      {
+        "finger": "middle",
+        "clearanceM": 0.00035245655573382627,
+        "supported": true
+      },
+      {
+        "finger": "ring",
+        "clearanceM": 0.0002463083009084156,
+        "supported": true
+      },
+      {
+        "finger": "pinky",
+        "clearanceM": 0.00021606809552666712,
+        "supported": true
+      }
+    ],
+    "mesh": {
+      "status": "available",
+      "penetrationM": 0.007427102493302141,
+      "regions": [
+        "Ch07_Body"
+      ],
+      "containment": "unavailable"
+    }
+  },
+  {
+    "id": "ch07",
+    "side": "right",
+    "phase": 4,
+    "fingerContact": [
+      {
+        "finger": "thumb",
+        "clearanceM": 0.00022045026036161906,
+        "supported": true
+      },
+      {
+        "finger": "index",
+        "clearanceM": 0.00034147147445242124,
+        "supported": true
+      },
+      {
+        "finger": "middle",
+        "clearanceM": 0.00035245693753841074,
+        "supported": true
+      },
+      {
+        "finger": "ring",
+        "clearanceM": 0.0002463091378662515,
+        "supported": true
+      },
+      {
+        "finger": "pinky",
+        "clearanceM": 0.00021606889762647253,
+        "supported": true
+      }
+    ],
+    "mesh": {
+      "status": "available",
+      "penetrationM": 0.006810997717764441,
+      "regions": [
+        "Ch07_Body"
+      ],
+      "containment": "unavailable"
+    }
+  }
+]

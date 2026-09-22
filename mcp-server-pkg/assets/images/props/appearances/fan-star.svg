@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 207" data-generated-from="scripts/assets/star-fire-reference.json">
+<title>Renegade star fire fan</title>
+<g data-fan-frame="" fill="none" stroke="#2E3192" stroke-linecap="round" stroke-linejoin="round">
+<polyline points="149.6901,103.5000 149.6901,10.6630" stroke-width="1.0200"/>
+<polyline points="149.6901,103.5000 215.3358,37.8543" stroke-width="1.0200"/>
+<polyline points="149.6901,103.5000 242.5271,103.5000" stroke-width="1.0200"/>
+<polyline points="149.6901,103.5000 215.3358,169.1457" stroke-width="1.0200"/>
+<polyline points="149.6901,103.5000 149.6901,196.3370" stroke-width="1.0200"/>
+<polyline points="149.6901,17.2590 135.8097,69.9898" stroke-width="1.0200"/>
+<polyline points="149.6901,103.5000 135.8097,69.9898" stroke-width="1.0200"/>
+<polyline points="149.6901,17.2590 160.5148,72.0628 210.6717,42.5184" stroke-width="1.0200"/>
+<polyline points="149.6901,103.5000 160.5148,72.0628" stroke-width="1.0200"/>
+<polyline points="210.6717,42.5184 179.5737,88.9248 235.9311,103.5000" stroke-width="1.0200"/>
+<polyline points="149.6901,103.5000 179.5737,88.9248" stroke-width="1.0200"/>
+<polyline points="235.9311,103.5000 179.5737,118.0752 210.6717,164.4816" stroke-width="1.0200"/>
+<polyline points="149.6901,103.5000 179.5737,118.0752" stroke-width="1.0200"/>
+<polyline points="210.6717,164.4816 160.5148,134.9372 149.6901,189.7410" stroke-width="1.0200"/>
+<polyline points="149.6901,103.5000 160.5148,134.9372" stroke-width="1.0200"/>
+<polyline points="149.6901,189.7410 135.8097,137.0102" stroke-width="1.0200"/>
+<polyline points="149.6901,103.5000 135.8097,137.0102" stroke-width="1.0200"/>
+<polyline points="149.6901,103.5000 145.0055,109.5626" stroke-width="1.0200"/>
+<polyline points="149.6901,103.5000 145.0055,97.4374" stroke-width="1.0200"/>
+<polyline points="133.5549,111.1235 134.4609,119.0571" stroke-width="1.0200"/>
+<polyline points="133.5549,111.1235 139.0500,116.9171" stroke-width="1.0200"/>
+<polyline points="133.5549,95.8765 139.0500,90.0829" stroke-width="1.0200"/>
+<polyline points="133.5549,95.8765 134.4609,87.9429" stroke-width="1.0200"/>
+<polyline points="121.5884,103.5000 114.0153,100.9683" stroke-width="1.0200"/>
+<polyline points="121.5884,103.5000 114.0153,106.0317" stroke-width="1.0200"/>
+<circle cx="130.0000" cy="103.5000" r="16.1840" stroke-width="2.1760"/>
+<circle cx="130.0000" cy="103.5000" r="8.4116" stroke-width="2.1760"/>
+</g>
+<g data-fan-wicks="" fill="#f5e6b8">
+<rect data-star-wick="1" x="-8.6360" y="-5.2700" width="17.2720" height="10.5400" rx="0.7" transform="translate(149.6901,10.6630) rotate(-90.0000)"/>
+<rect data-star-wick="2" x="-8.6360" y="-5.2700" width="17.2720" height="10.5400" rx="0.7" transform="translate(215.3358,37.8543) rotate(-45.0000)"/>
+<rect data-star-wick="3" x="-8.6360" y="-5.2700" width="17.2720" height="10.5400" rx="0.7" transform="translate(242.5271,103.5000) rotate(0.0000)"/>
+<rect data-star-wick="4" x="-8.6360" y="-5.2700" width="17.2720" height="10.5400" rx="0.7" transform="translate(215.3358,169.1457) rotate(45.0000)"/>
+<rect data-star-wick="5" x="-8.6360" y="-5.2700" width="17.2720" height="10.5400" rx="0.7" transform="translate(149.6901,196.3370) rotate(90.0000)"/>
+</g>
+</svg>

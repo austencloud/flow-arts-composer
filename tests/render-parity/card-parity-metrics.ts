@@ -5,6 +5,7 @@ import {
   getCardFrameContentInset,
 } from "@tka/render-composition";
 import type { CardParityCase } from "./card-parity-cases";
+import { calculateHandColorKeyLayout, HAND_COLOR_KEY } from "@tka/render-core";
 
 export interface ParityImage {
   width: number;
@@ -19,6 +20,10 @@ export const CARD_PARITY_LIMITS: Record<string, number> = {
   header: 0.25,
   body: 0.35,
   footer: 2,
+  // At 210px print cells, identical bundled glyphs leave 38 edge pixels in
+  // this 1,026px crop (3.71%) across Chromium and native Canvas rasterizers.
+  // Missing-key controls cover both this smallest print crop and normal cards.
+  handColorKey: 4,
 };
 
 export function assertCardParity(
@@ -58,7 +63,20 @@ export function cardParityMetrics(
     options.exportProfile === "print"
       ? getCardFrameContentInset(options.frame?.bleedPx ?? 36)
       : 0;
+  const key = calculateHandColorKeyLayout(true, true);
+  const scale = (layout.cellSize ?? options.cellSize) / 950;
+  const keyLeft = 475 + key.entries[0]!.swatchX - key.swatchRadius - 8;
+  const keyRight =
+    475 + key.entries[1]!.labelX + HAND_COLOR_KEY.LABEL_WIDTH + 8;
+  const keyTop = key.baselineY - HAND_COLOR_KEY.FONT_SIZE - 8;
   const regions = [
+    {
+      name: "handColorKey",
+      x: Math.floor(inset + (layout.gridStartX ?? 0) + keyLeft * scale),
+      y: Math.floor(inset + layout.gridStartY + keyTop * scale),
+      width: Math.ceil((keyRight - keyLeft) * scale),
+      height: Math.ceil((HAND_COLOR_KEY.FONT_SIZE + 16) * scale),
+    },
     {
       name: "header",
       x: inset,

@@ -13,6 +13,7 @@ export type GeneratorHelpId =
   | "grid-mode"
   | "prop-continuity"
   | "turn-intensity"
+  | "tnd"
   | "loop-type"
   | "period"
   | "duration-rhythm"
@@ -122,6 +123,23 @@ export const generatorHelpContent: GeneratorHelpItem[] = [
       "The card color shifts green→red to match",
     ],
     tip: "The color gradient (green→red) indicates intensity visually.",
+  },
+
+  {
+    id: "tnd",
+    icon: "fa-hands",
+    name: "Timing and direction",
+    color: "#f2673a",
+    shortDesc: "How the hands and props relate",
+    fullDesc:
+      "Pick how the two hands travel relative to each other, how the two props sit in their circles, or both. Each choice is a timing (Together, Split, Quarter) and a direction (Same, Opposite), named by its element. Free leaves that side to the generator.",
+    bullets: [
+      "Hands: the geometric relation between the two hand paths on the grid",
+      "Props: the relation between the two prop bearings and spins",
+      "Match turns: both hands take the same turns on every step",
+      "A LOOP that cannot keep a hand mode switches that mode off, and the reverse",
+    ],
+    tip: "Start with one side set and the other Free; the workspace's shape matrix shows the element each beat lands on.",
   },
 
   // === LOOP-SPECIFIC SETTINGS ===

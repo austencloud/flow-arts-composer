@@ -327,6 +327,20 @@
       ]
     },
     {
+      "collectionGroup": "generatorSetups",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "isPublic",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "hallOfShame",
       "queryScope": "COLLECTION",
       "fields": [

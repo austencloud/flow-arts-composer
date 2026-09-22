@@ -260,7 +260,8 @@ const server = createServer(async (request, response) => {
     response.end(JSON.stringify({ error: String(error) }));
   }
 });
-server.listen(5188, "127.0.0.1", () =>
-  console.log("Card parity review: http://127.0.0.1:5188")
+const port = Number(process.env.CARD_PARITY_PORT ?? 5188);
+server.listen(port, "127.0.0.1", () =>
+  console.log(`Card parity review: http://127.0.0.1:${port}`)
 );
 process.on("SIGINT", () => server.close(() => process.exit()));

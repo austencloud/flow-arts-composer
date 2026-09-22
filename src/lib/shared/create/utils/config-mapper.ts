@@ -21,15 +21,18 @@ import {
   PropContinuity,
 } from "$lib/shared/foundation/domain/models/generation/generate-models";
 import type { StartEndOptions } from "$lib/shared/create/state/panel-coordination-state.svelte";
-import { resolveLoopConfig } from "$lib/shared/create/services/loop-type-utils";
+import {
+  loopBlocksHandMode,
+  resolveLoopConfig,
+} from "$lib/shared/create/services/loop-type-utils";
 import type { ReflectionAxis } from "@tka/sequence-engine/loop";
 import type {
   GenerationMotionTypeFilter,
   GenerationStyleAxis,
 } from "$lib/shared/create/domain/generation-style";
 import {
-  DEFAULT_HAND_RELATIONSHIP,
-  type HandRelationship,
+  DEFAULT_TND_SELECTION,
+  type TnDSelection,
 } from "$lib/shared/create/domain/hand-relationship";
 
 /**
@@ -117,9 +120,9 @@ export interface UIGenerationConfig {
   handPathMode: GenerationStyleAxis; // Hand path reversal frequency
   motionTypeFilter: GenerationMotionTypeFilter; // Dash frequency ("mixed" = null)
 
-  // Hand relationship (Generate only, not part of GenerationStylePolicy)
-  handRelationship: HandRelationship;
-  handRelationshipInverted: boolean;
+  // Timing and direction (Generate only, not part of GenerationStylePolicy)
+  handRelationship: TnDSelection;
+  propRelationship: TnDSelection;
   matchHandTurns: boolean;
 
   // Duration rhythm template (applied automatically after generation)
@@ -127,6 +130,18 @@ export interface UIGenerationConfig {
 
   // Spell mode length override (null = use natural expanded length)
   spellTargetLength: number | null;
+}
+
+/**
+ * A hand mode the current LOOP cannot run under (a QS persisted before the
+ * LOOP was switched to mirrored, for instance) reaches the engine as Free
+ * rather than as a contradiction. The TnD panel disables the same modes, so
+ * this only fires for configs saved before the LOOP changed.
+ */
+function engineHandMode(uiConfig: UIGenerationConfig): TnDSelection {
+  const hand = uiConfig.handRelationship ?? DEFAULT_TND_SELECTION;
+  const loopType = uiConfig.loopEnabled ? uiConfig.loopType : null;
+  return loopBlocksHandMode(loopType, hand) ? "free" : hand;
 }
 
 /**
@@ -172,6 +187,11 @@ export function uiConfigToGenerationOptions(
   // When loop is enabled, use the circular generation pipeline; otherwise freeform
   const effectiveMode = uiConfig.loopEnabled ? "circular" : "freeform";
 
+  // A prop mode names a timing as well as a direction, and the timing is what
+  // constrains turns and start orientations below.
+  const propTimingRequested =
+    (uiConfig.propRelationship ?? DEFAULT_TND_SELECTION) !== "free";
+
   const options: GenerationOptions = {
     length: uiConfig.length,
     gridMode: uiConfig.gridMode,
@@ -194,12 +214,15 @@ export function uiConfigToGenerationOptions(
     constraintPreset: uiConfig.constraintPreset ?? undefined,
     handPathMode: uiConfig.handPathMode ?? undefined,
     motionTypeFilter: uiConfig.motionTypeFilter ?? undefined,
-    handRelationship: uiConfig.handRelationship ?? DEFAULT_HAND_RELATIONSHIP,
-    handRelationshipInverted: uiConfig.handRelationshipInverted ?? false,
-    matchHandTurns: uiConfig.matchHandTurns ?? false,
+    handRelationship: engineHandMode(uiConfig),
+    propRelationship: uiConfig.propRelationship ?? DEFAULT_TND_SELECTION,
+    // A prop timing only means something when both hands take the same
+    // turns, so a prop mode forces matched turns.
+    matchHandTurns: (uiConfig.matchHandTurns ?? false) || propTimingRequested,
 
     // Include start/end options if provided
-    blockedStartPlacements: startEndOptions?.blockedStartPlacements ?? undefined,
+    blockedStartPlacements:
+      startEndOptions?.blockedStartPlacements ?? undefined,
     startPlacement: startEndOptions?.startPlacement ?? undefined,
     endPlacement: startEndOptions?.endPlacement ?? undefined,
     endPlacements: startEndOptions?.endPlacements ?? undefined,
@@ -208,7 +231,18 @@ export function uiConfigToGenerationOptions(
 
     // Start orientation overrides (engine seeds step 0 + propagates). Orientation
     // values are already engine strings ("in"/"clock"/"out"/"counter").
-    leftStartOrientation: startEndOptions?.leftStartOrientation ?? undefined,
+    //
+    // A prop timing releases the left one. The requested phase IS a statement
+    // about the two start orientations, and the engine derives the left from
+    // the right to land it (resolveTimedStartOrientations). Send both and the
+    // phase is fixed before the search runs, the engine skips its retry, and
+    // the request is unreachable for most timings: measured over the diamond
+    // dataframe at level 3, pinning both held every beat in 17 of 30 runs,
+    // releasing the left in 30 of 30. The right hand keeps the user's pick,
+    // so a deliberate choice still shows up in the result.
+    leftStartOrientation: propTimingRequested
+      ? undefined
+      : (startEndOptions?.leftStartOrientation ?? undefined),
     rightStartOrientation: startEndOptions?.rightStartOrientation ?? undefined,
   };
   return options;
@@ -243,8 +277,8 @@ export function generationOptionsToUIConfig(
     constraintPreset,
     handPathMode: options.handPathMode ?? "mixed",
     motionTypeFilter: options.motionTypeFilter ?? null,
-    handRelationship: options.handRelationship ?? DEFAULT_HAND_RELATIONSHIP,
-    handRelationshipInverted: options.handRelationshipInverted ?? false,
+    handRelationship: options.handRelationship ?? DEFAULT_TND_SELECTION,
+    propRelationship: options.propRelationship ?? DEFAULT_TND_SELECTION,
     matchHandTurns: options.matchHandTurns ?? false,
     durationTemplateId: null,
     spellTargetLength: null,

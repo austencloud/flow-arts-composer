@@ -1,9 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { createViewerShellShareState } from "$lib/shared/sequence-viewer/state/viewer-shell-share-state.svelte";
+import {
+  createViewerShellShareState,
+  viewerVideoSourceIdentity,
+} from "$lib/shared/sequence-viewer/state/viewer-shell-share-state.svelte";
 
 function createShareState(
   onDismiss: () => void,
-  createSequenceSendSession: () => unknown = () => null
+  createSequenceSendSession: (
+    sequence: unknown,
+    options?: { viewParams?: string }
+  ) => unknown = () => null,
+  shareUrl = "https://tka.run/sequence/OMY3?v=OMY3"
 ) {
   return createViewerShellShareState(
     {
@@ -11,6 +18,7 @@ function createShareState(
         ({
           dismissPreview: onDismiss,
           viewerState: { viewerMode: "animation" },
+          getShareUrl: () => shareUrl,
         }) as never,
       getSequence: () => ({}) as never,
     },
@@ -57,6 +65,26 @@ describe("viewer share file preparation", () => {
     share.markSessionResumed();
     expect(share.preserveSession).toBe(false);
   });
+
+  it("keeps a rendered post's source kind stable when its sheet reopens", () => {
+    const share = createShareState(() => undefined);
+
+    share.sharePost();
+    const sourceKind = share.videoSourceKind;
+    share.setPostSheetOpen(false);
+
+    share.sharePost();
+    expect(share.videoSourceKind).toBe(sourceKind);
+    expect(sourceKind).toBe("post");
+  });
+
+  it("does not make a live result stale, while a changed precomposed post is new input", () => {
+    expect(viewerVideoSourceIdentity("scene", null)).toBe("scene:live");
+    expect(viewerVideoSourceIdentity("scene", null)).toBe("scene:live");
+    expect(viewerVideoSourceIdentity("post", "blob:post-a")).not.toBe(
+      viewerVideoSourceIdentity("post", "blob:post-b")
+    );
+  });
 });
 
 describe("viewer send mode", () => {
@@ -87,6 +115,32 @@ describe("viewer send mode", () => {
     share.exitSendMode();
     expect(share.sendModeActive).toBe(false);
     expect(share.sendSession).toBeNull();
+  });
+
+  it("snapshots the view the person is sending from", () => {
+    const seen: Array<{ viewParams?: string } | undefined> = [];
+    const share = createShareState(
+      () => undefined,
+      (_sequence, options) => {
+        seen.push(options);
+        return session;
+      },
+      "https://tka.run/sequence/OMY3?v=OMY3&pane=animation&fx=trail&s=abc"
+    );
+
+    share.sendToInbox();
+    expect(seen).toEqual([{ viewParams: "pane=animation&fx=trail&s=abc" }]);
+
+    // A link with no viewer state sends a plain sequence.
+    const plain = createShareState(
+      () => undefined,
+      (_sequence, options) => {
+        seen.push(options);
+        return session;
+      }
+    );
+    plain.sendToInbox();
+    expect(seen[1]).toEqual({});
   });
 
   it("stays a viewer when the guest gate takes over", () => {

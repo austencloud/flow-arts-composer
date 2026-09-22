@@ -22,6 +22,7 @@
 
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
 import {
   GridMode,
   type GridPlacement,
@@ -206,7 +207,7 @@ export function searchCandidateUnits(
       steps: [...walk],
       startPlacement: startPlacement as GridPlacement,
       endPlacement: endPlacement as GridPlacement,
-      word: walk.map((step) => step.letter ?? "").join(""),
+      word: deriveWordFromBeats(walk),
       connectorCount,
       ...shapeOf(origins),
     });

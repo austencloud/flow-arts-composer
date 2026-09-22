@@ -3,7 +3,10 @@ import {
   clampToAvailableLevel,
   type UIGenerationConfig,
 } from "../shared/utils/config-mapper";
-import { isHandRelationship } from "$lib/shared/create/domain/hand-relationship";
+import {
+  LEGACY_HAND_RELATIONSHIP_MODES,
+  isTnDSelection,
+} from "$lib/shared/create/domain/hand-relationship";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -23,20 +26,38 @@ export function normalizePersistedGenerationConfig(
   // Generate now uses Level and Turn Intensity only. Old custom patterns must
   // not silently override those controls when a session or setup is restored.
   delete normalized.turnPattern;
-  // A setup or session saved by a build that knew a relationship this one
-  // does not (or a corrupted value) must not reach the engine. Drop it so the
-  // default wins; a well-formed value passes through untouched.
-  if (
+  // Hand and prop timing/direction. A build before the TnD card stored the
+  // hand relationship under four legacy names plus an inverted flag; map the
+  // names onto modes, derive the prop mode the flag implied, and drop
+  // anything this build does not know so the default wins.
+  const legacyHand =
+    typeof value.handRelationship === "string"
+      ? LEGACY_HAND_RELATIONSHIP_MODES[value.handRelationship]
+      : undefined;
+  if (legacyHand) {
+    normalized.handRelationship = legacyHand;
+    if (
+      value.handRelationshipInverted === true &&
+      value.propRelationship === undefined
+    ) {
+      // Inverted reflection hands spun the props the same way; inverted
+      // rotation hands spun them opposite. Together timing is the closest
+      // reading the old flag had.
+      normalized.propRelationship =
+        legacyHand === "TO" || legacyHand === "SO" ? "TS" : "TO";
+    }
+  } else if (
     value.handRelationship !== undefined &&
-    !isHandRelationship(value.handRelationship)
+    !isTnDSelection(value.handRelationship)
   ) {
     delete normalized.handRelationship;
   }
+  delete normalized.handRelationshipInverted;
   if (
-    value.handRelationshipInverted !== undefined &&
-    typeof value.handRelationshipInverted !== "boolean"
+    value.propRelationship !== undefined &&
+    !isTnDSelection(value.propRelationship)
   ) {
-    delete normalized.handRelationshipInverted;
+    delete normalized.propRelationship;
   }
   if (
     value.matchHandTurns !== undefined &&
@@ -80,6 +101,54 @@ export function normalizePersistedStartEndOptions<T>(value: T): T {
   }
   if (value.endPlacement !== undefined) {
     normalized.endPlacement = normalizeLegacyStep(value.endPlacement);
+  }
+
+  // Pre-rename Firestore setups (users/{uid}/generatorSetups via
+  // favorite-config-repository.ts) still carry the "position" spellings of the
+  // multi-select constraint arrays. Move each onto its "placement" key when
+  // that key is absent, then drop the old key.
+  if (
+    normalized.blockedStartPlacements === undefined &&
+    value.blockedStartPositions !== undefined
+  ) {
+    normalized.blockedStartPlacements = value.blockedStartPositions;
+  }
+  delete normalized.blockedStartPositions;
+  if (
+    normalized.endPlacements === undefined &&
+    value.endPositions !== undefined
+  ) {
+    normalized.endPlacements = value.endPositions;
+  }
+  delete normalized.endPositions;
+
+  // The same pre-rename setups can also carry the single-select legacy
+  // fields under their old names, distinct from the startPlacement/
+  // endPlacement step objects normalized above.
+  if (
+    normalized.startPlacement === undefined &&
+    value.startPosition !== undefined
+  ) {
+    normalized.startPlacement = normalizeLegacyStep(value.startPosition);
+  }
+  delete normalized.startPosition;
+  if (
+    normalized.endPlacement === undefined &&
+    value.endPosition !== undefined
+  ) {
+    normalized.endPlacement = normalizeLegacyStep(value.endPosition);
+  }
+  delete normalized.endPosition;
+
+  // Downstream readers (hasAnyConstraints, setOptions) call .length on both
+  // arrays unconditionally. A legacy setup that never had either array (they
+  // postdate some saved setups) must still produce empty arrays, not
+  // `undefined`, so those reads cannot throw.
+  if (normalized.blockedStartPlacements === undefined) {
+    normalized.blockedStartPlacements = [];
+  }
+  if (normalized.endPlacements === undefined) {
+    normalized.endPlacements = [];
   }
 
   return normalized as T;

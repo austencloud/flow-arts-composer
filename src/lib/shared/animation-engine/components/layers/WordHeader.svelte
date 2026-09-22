@@ -13,7 +13,15 @@ Supports letter highlighting during animation playback.
   import {
     simplifyAndTruncate,
     compressWord,
+    parseWordNotation,
+    stripWordNotation,
+    type WordUnit,
   } from "$lib/shared/foundation/utils/word-simplifier";
+  import {
+    getSkewBraceInk,
+    SKEW_BRACE_FONT_SCALE,
+    skewBraceLineBoxDrop,
+  } from "$lib/shared/pictograph/tka-glyph/utils/skew-brace-layout";
   import { untrack } from "svelte";
   import DifficultyBadge from "$lib/shared/components/DifficultyBadge.svelte";
   import LOOPIconStrip from "$lib/shared/components/LOOPIconStrip.svelte";
@@ -193,13 +201,27 @@ Supports letter highlighting during animation playback.
   // faded dot between segments (e.g. BΦ-BΦ-BΦ-BΦ-AΦ-AΦ-AΦ-AΦ- → BΦ- · AΦ-).
   // Matches TKAWordGlyph and the export renderHeader path. Null → fall back to
   // the simplifyAndTruncate display above.
+  // The compressor reads letters only, so the skew braces come off first. A
+  // word that is one whole skewed span (every rotate-45 fuse) gets its pair
+  // back around the compressed row; a word with a partial span keeps the unit
+  // display below, where the braces can sit at the span's real boundaries.
   const compressedSegments = $derived.by(() => {
     if (!displayedWord) return null;
-    const segments = compressWord(displayedWord);
+    const units = parseWordNotation(displayedWord);
+    const skewedCount = units.filter((unit) => unit.skewed).length;
+    if (skewedCount > 0 && skewedCount < units.length) return null;
+    const segments = compressWord(stripWordNotation(displayedWord));
     if (!segments.some((s) => s.repeat > 1)) return null;
     const letterCount = segments.reduce((n, s) => n + s.tokens.length, 0);
     if (letterCount > 12) return null;
     return segments;
+  });
+
+  // True when every letter of the displayed word sits in the skewed frame, so
+  // the compressed row wears one brace pair around the whole word.
+  const wholeWordSkewed = $derived.by(() => {
+    const units = parseWordNotation(displayedWord ?? "");
+    return units.length > 0 && units.every((unit) => unit.skewed);
   });
 
   // Computed: Whether animation highlighting is active
@@ -208,32 +230,41 @@ Supports letter highlighting during animation playback.
   );
 
   /**
-   * Parse display text into TKA letter units (handles dash-letters like "Λ-")
+   * The display text as TKA letter units with their skew flag. The parser
+   * keeps a trailing dash with its letter ("Λ-") and reads the braces as span
+   * marks rather than letters, so the beat count never includes them. The
+   * truncation marker simplifyAndTruncate appends is not notation; it comes
+   * back as three dot units so a cut-off word still shows its "...".
    */
-  const parsedLetters = $derived.by(() => {
+  const parsedLetters = $derived.by((): WordUnit[] => {
     if (!displayText) return [];
-    const letters: string[] = [];
-    for (let i = 0; i < displayText.length; i++) {
-      const char = displayText[i]!;
-      const nextChar = displayText[i + 1];
-      // Check if this is a dash-letter (e.g., "Λ-", "X-")
-      if (nextChar === "-") {
-        letters.push(char + "-");
-        i++; // Skip the dash on next iteration
-      } else {
-        letters.push(char);
-      }
+    const units = parseWordNotation(displayText);
+    if (displayText.endsWith("...")) {
+      units.push(
+        { letter: ".", skewed: false },
+        { letter: ".", skewed: false },
+        { letter: ".", skewed: false }
+      );
     }
-    return letters;
+    return units;
   });
 
   type DisplayUnit =
     | { kind: "letter"; letter: string; letterIdx: number }
-    | { kind: "dot" };
+    | { kind: "dot" }
+    | { kind: "brace"; side: "open" | "close" };
+
+  // How far the brace glyph's ink hangs below the middle of its box, measured
+  // once for this page's fonts. The .skew-brace rule raises it by this much.
+  const BRACE_DROP = skewBraceLineBoxDrop(getSkewBraceInk()).toFixed(4);
+
+  const OPEN_BRACE: DisplayUnit = { kind: "brace", side: "open" };
+  const CLOSE_BRACE: DisplayUnit = { kind: "brace", side: "close" };
 
   const displayUnits = $derived.by((): DisplayUnit[] => {
     if (compressedSegments) {
       const units: DisplayUnit[] = [];
+      if (wholeWordSkewed) units.push(OPEN_BRACE);
       let letterIdx = 0;
       compressedSegments.forEach((seg, si) => {
         if (si > 0) units.push({ kind: "dot" });
@@ -241,13 +272,25 @@ Supports letter highlighting during animation playback.
           units.push({ kind: "letter", letter: token, letterIdx: letterIdx++ });
         }
       });
+      if (wholeWordSkewed) units.push(CLOSE_BRACE);
       return units;
     }
-    return parsedLetters.map((letter, i) => ({
-      kind: "letter" as const,
-      letter,
-      letterIdx: i,
-    }));
+    // One brace pair around every maximal run of skewed letters: the same
+    // grouping renderWordNotation writes into the stored word.
+    const units: DisplayUnit[] = [];
+    let open = false;
+    parsedLetters.forEach((unit, i) => {
+      if (unit.skewed && !open) {
+        units.push(OPEN_BRACE);
+        open = true;
+      } else if (!unit.skewed && open) {
+        units.push(CLOSE_BRACE);
+        open = false;
+      }
+      units.push({ kind: "letter", letter: unit.letter, letterIdx: i });
+    });
+    if (open) units.push(CLOSE_BRACE);
+    return units;
   });
 
   /**
@@ -270,6 +313,8 @@ Supports letter highlighting during animation playback.
     for (const unit of displayUnits) {
       if (unit.kind === "dot") {
         em += 0.43; // 0.15em dot + 0.2em margins + gap
+      } else if (unit.kind === "brace") {
+        em += 0.55; // a brace at 1.15em is ~0.45em wide, plus the gap
       } else if (isDashLetter(unit.letter)) {
         // 0.96em glyph + 0.70em bar + two 0.08em gaps. The glyph term is higher
         // than the alphabet-wide 0.8 average on purpose: dash-letters skew to the
@@ -363,11 +408,18 @@ Supports letter highlighting during animation playback.
 
     <!-- `--word-em` lets the CSS shrink the WHOLE word to fit rather than letting
          flex squeeze the glyphs individually. See .word-text. -->
-    <span class="word-text" style="--word-em: {wordEmWidth.toFixed(2)}">
+    <span
+      class="word-text"
+      style="--word-em: {wordEmWidth.toFixed(2)}; --brace-scale: {SKEW_BRACE_FONT_SCALE}; --brace-drop: {BRACE_DROP}"
+    >
       {#if hasActiveHighlighting && displayUnits.length > 0 && animationPhase === "idle"}
         {#each displayUnits as unit, index (index)}
           {#if unit.kind === "dot"}
             <span class="group-dot"></span>
+          {:else if unit.kind === "brace"}
+            <span class="skew-brace"
+              >{#if unit.side === "open"}&#123;{:else}&#125;{/if}</span
+            >
           {:else}
             {@const url = getGlyphUrl(unit.letter)}
             <span
@@ -400,6 +452,17 @@ Supports letter highlighting during animation playback.
                 1 -
                 index}"
             ></span>
+          {:else if unit.kind === "brace"}
+            <span
+              class="skew-brace animated"
+              class:entering={animationPhase === "entering"}
+              class:exiting={animationPhase === "exiting"}
+              class:visible={animationPhase === "idle"}
+              style="--letter-index: {index}; --total-letters: {displayUnits.length}; --reverse-index: {displayUnits.length -
+                1 -
+                index}"
+              >{#if unit.side === "open"}&#123;{:else}&#125;{/if}</span
+            >
           {:else}
             {@const url = getGlyphUrl(unit.letter)}
             <span
@@ -642,8 +705,34 @@ Supports letter highlighting during animation playback.
     flex-shrink: 0;
   }
 
+  /* Skew-span braces: notation around a run of skewed-frame letters, drawn as
+     text because no glyph image exists for them. They take the pictograph's
+     brace-to-letter ratio (SkewBraces.svelte, via --brace-scale) so they read
+     as brackets around the letters instead of as two more, smaller letters.
+     The box is held to the letters' 1em so the taller glyph overflows evenly
+     rather than growing the header. Centring the box centres the font's
+     ascent+descent, not the brace's ink, so the brace is raised by the
+     measured difference (--brace-drop, in brace em). During playback they
+     rest at the group-dot's weight: structure, not a beat. */
+  .skew-brace {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    position: relative;
+    top: calc(-1em * var(--brace-drop, 0));
+    height: calc(1em / var(--brace-scale, 1));
+    overflow: visible;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: calc(var(--brace-scale, 1) * 1em);
+    font-weight: 500;
+    line-height: 1;
+    opacity: 0.4;
+    transition: opacity 0.15s ease;
+  }
+
   .letter.animated,
-  .group-dot.animated {
+  .group-dot.animated,
+  .skew-brace.animated {
     opacity: 0;
     transform: translateY(8px) scale(0.8);
   }
@@ -653,7 +742,8 @@ Supports letter highlighting during animation playback.
   }
 
   .letter.animated.entering,
-  .group-dot.animated.entering {
+  .group-dot.animated.entering,
+  .skew-brace.animated.entering {
     animation: letterEnter var(--duration-emphasis)
       cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     animation-delay: calc(
@@ -662,7 +752,8 @@ Supports letter highlighting during animation playback.
   }
 
   .letter.animated.exiting,
-  .group-dot.animated.exiting {
+  .group-dot.animated.exiting,
+  .skew-brace.animated.exiting {
     opacity: 1;
     transform: translateY(0) scale(1);
     animation: letterExit var(--duration-normal) cubic-bezier(0.4, 0, 1, 1)
@@ -673,7 +764,8 @@ Supports letter highlighting during animation playback.
   }
 
   .letter.animated.visible,
-  .group-dot.animated.visible {
+  .group-dot.animated.visible,
+  .skew-brace.animated.visible {
     opacity: 1;
     transform: translateY(0) scale(1);
   }

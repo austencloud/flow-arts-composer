@@ -558,6 +558,23 @@ describe("Shape Matrix app boundary", () => {
       "setViewerVisibilityContext(motionVisibility)"
     );
     expect(shellSource).toContain("appState.soloHand");
+    expect(shellSource).toContain("appState.theorySoloHand");
+
+    // The Ratio Playground's headers do the same, through the same grid.
+    const theoryPaneSource = readFileSync(
+      resolve(APP_ROOT, "components/ShapeMatrixTheoryPane.svelte"),
+      "utf8"
+    );
+    const theoryDetailSource = readFileSync(
+      resolve(APP_ROOT, "components/ShapeMatrixTheoryDetail.svelte"),
+      "utf8"
+    );
+    expect(theoryPaneSource).toContain(
+      "onsolo={onsolo ?? appState.selectTheorySolo}"
+    );
+    expect(theoryPaneSource).toContain("soloHand={appState.theorySoloHand}");
+    expect(theoryDetailSource).toContain("{#if !solo}");
+    expect(theoryDetailSource).toContain("theorySoloKnobs(flower)");
   });
 
   it("shares the view on the press, with no sheet of its own", () => {

@@ -1,5 +1,6 @@
 import type { ResolvedPropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
 import type { SequenceRenderer } from "$lib/shared/render/services/sequence-renderer";
+import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
 import type { SequenceData } from "../../foundation/domain/models/sequence-data";
 import type { ShareOptions } from "../domain/models/share-options";
 import { PreviewCache } from "./preview-cache";
@@ -9,6 +10,7 @@ import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-a
 import { hashString } from "$lib/shared/foundation/services/content-hasher";
 import { getVisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
 import type { CardPresentation } from "$lib/shared/share/domain/models/card-presentation";
+import { startCardExportTrace } from "$lib/shared/render/services/card-export-trace";
 
 export const CARD_BLOB_CACHE_MAX_ENTRIES = 3;
 export const CARD_BLOB_CACHE_MAX_BYTES = 24 * 1024 * 1024;
@@ -101,85 +103,112 @@ export class Sharer {
       resolvedAutoLayout?: ResolvedAutoLayout | null;
       /** Current card or one-share footer override. */
       cardPresentation?: CardPresentation;
+      /** The exact settings already used by a live export preview. */
+      resolvedRenderOptions?: Partial<SequenceExportOptions>;
     },
     onProgress?: ImageGenerationProgressCallback
   ): Promise<Blob> {
-    const renderOptions = {
-      stepSize: 240,
-      format: "PNG" as const,
-      quality: 1.0,
-      ...buildCardRenderOptions(sequence, {
-        propConfig: opts.propConfig,
-        darkMode: opts.darkMode,
-        isHandPath: !!sequence.metadata?.isHandPathVisualization,
-        resolvedAutoLayout: opts.resolvedAutoLayout ?? null,
-        cardPresentation: opts.cardPresentation,
-      }),
-    };
+    const trace = startCardExportTrace();
+    trace.note("steps", sequence.steps?.length ?? 0);
+    try {
+      const endSettings = trace.start("settings-and-cache-key");
+      const renderOptions = {
+        stepSize: 240,
+        format: "PNG" as const,
+        quality: 1.0,
+        ...(opts.resolvedRenderOptions ??
+          buildCardRenderOptions(sequence, {
+            propConfig: opts.propConfig,
+            darkMode: opts.darkMode,
+            isHandPath:
+              sequence.sequenceKind === "hand-path" ||
+              !!sequence.metadata?.isHandPathVisualization,
+            resolvedAutoLayout: opts.resolvedAutoLayout ?? null,
+            cardPresentation: opts.cardPresentation,
+          })),
+      };
 
-    // The visibility snapshot belongs in the key even though most of it never
-    // reaches renderOptions: buildCardRenderOptions deliberately leaves TKA,
-    // TnD, positions and non-radial points undefined so the composer inherits
-    // them from the global manager at render time. That makes them real inputs
-    // to the image and invisible to a key built from the options alone — toggle
-    // TKA off and the cache hands back the card that still has it. (The same
-    // reasoning already put leftPropType/rightPropType in the options object.)
-    const cacheKey = hashString(
-      `${JSON.stringify(sequence)}\n${JSON.stringify(renderOptions)}\n${JSON.stringify(
-        getVisibilityStateManager().getState()
-      )}`
-    );
-    const cached = this.cardBlobCache.get(cacheKey);
-    if (cached) {
-      // Refresh insertion order so the small cache keeps the cards used most
-      // recently by the workspace, viewer, and library save paths.
-      this.cardBlobCache.delete(cacheKey);
-      this.cardBlobCache.set(cacheKey, cached);
-      return cached;
-    }
+      // Legacy callers can still supply partial overrides. A resolved live
+      // preview already owns its visibility, so later global changes must not
+      // change that artifact's cache identity.
+      const cacheKey = hashString(
+        `${JSON.stringify(sequence)}\n${JSON.stringify(renderOptions)}\n${JSON.stringify(
+          opts.resolvedRenderOptions
+            ? null
+            : getVisibilityStateManager().getState()
+        )}`
+      );
+      const cached = this.cardBlobCache.get(cacheKey);
+      endSettings();
+      if (cached) {
+        trace.note("blobCache", "hit");
+        // Refresh insertion order so the small cache keeps the cards used most
+        // recently by the workspace, viewer, and library save paths.
+        this.cardBlobCache.delete(cacheKey);
+        this.cardBlobCache.set(cacheKey, cached);
+        return cached;
+      }
 
-    const pending = this.cardBlobInFlight.get(cacheKey);
-    if (pending) return pending;
+      const pending = this.cardBlobInFlight.get(cacheKey);
+      if (pending) {
+        trace.note("blobCache", "in-flight");
+        return await trace.measure("await-existing-render", () => pending);
+      }
+      trace.note("blobCache", "miss");
 
-    const renderPromise = this.renderService
-      .renderSequenceToBlob(sequence, renderOptions, onProgress)
-      .then((blob) => {
-        // A single pathological render must not pin more memory than the
-        // entire workspace cache budget. Callers still receive the blob; it is
-        // simply not retained.
-        if (blob.size > CARD_BLOB_CACHE_MAX_BYTES) {
-          return blob;
-        }
-
-        const replaced = this.cardBlobCache.get(cacheKey);
-        if (replaced) {
-          this.cardBlobCacheBytes -= replaced.size;
-          this.cardBlobCache.delete(cacheKey);
-        }
-
-        this.cardBlobCache.set(cacheKey, blob);
-        this.cardBlobCacheBytes += blob.size;
-
-        while (
-          this.cardBlobCache.size > CARD_BLOB_CACHE_MAX_ENTRIES ||
-          this.cardBlobCacheBytes > CARD_BLOB_CACHE_MAX_BYTES
-        ) {
-          const oldestKey = this.cardBlobCache.keys().next().value;
-          if (oldestKey === undefined) break;
-          const oldestBlob = this.cardBlobCache.get(oldestKey);
-          this.cardBlobCache.delete(oldestKey);
-          if (oldestBlob) {
-            this.cardBlobCacheBytes -= oldestBlob.size;
+      const renderPromise = this.renderService
+        .renderSequenceToBlob(
+          sequence,
+          renderOptions,
+          onProgress,
+          undefined,
+          trace
+        )
+        .then((blob) => {
+          // A single pathological render must not pin more memory than the
+          // entire workspace cache budget. Callers still receive the blob; it is
+          // simply not retained.
+          if (blob.size > CARD_BLOB_CACHE_MAX_BYTES) {
+            return blob;
           }
-        }
-        return blob;
-      })
-      .finally(() => {
-        this.cardBlobInFlight.delete(cacheKey);
-      });
 
-    this.cardBlobInFlight.set(cacheKey, renderPromise);
-    return renderPromise;
+          const replaced = this.cardBlobCache.get(cacheKey);
+          if (replaced) {
+            this.cardBlobCacheBytes -= replaced.size;
+            this.cardBlobCache.delete(cacheKey);
+          }
+
+          this.cardBlobCache.set(cacheKey, blob);
+          this.cardBlobCacheBytes += blob.size;
+
+          while (
+            this.cardBlobCache.size > CARD_BLOB_CACHE_MAX_ENTRIES ||
+            this.cardBlobCacheBytes > CARD_BLOB_CACHE_MAX_BYTES
+          ) {
+            const oldestKey = this.cardBlobCache.keys().next().value;
+            if (oldestKey === undefined) break;
+            const oldestBlob = this.cardBlobCache.get(oldestKey);
+            this.cardBlobCache.delete(oldestKey);
+            if (oldestBlob) {
+              this.cardBlobCacheBytes -= oldestBlob.size;
+            }
+          }
+          return blob;
+        })
+        .finally(() => {
+          this.cardBlobInFlight.delete(cacheKey);
+        });
+
+      this.cardBlobInFlight.set(cacheKey, renderPromise);
+      const result = await renderPromise;
+      trace.note("bytes", result.size);
+      return result;
+    } catch (error) {
+      trace.finish("error");
+      throw error;
+    } finally {
+      trace.finish();
+    }
   }
 
   generateFilename(sequence: SequenceData, options: ShareOptions): string {

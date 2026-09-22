@@ -119,10 +119,11 @@
         : [5, 4];
   });
 
-  // Fuse and Tunnel own complete workspaces inside their tool-panel surface.
+  // Fuse, Tunnel and Shape own complete workspaces inside their tool-panel surface.
   const ownsFullWorkspace = $derived(
     navigationState.activeTab === "fuse" ||
-      navigationState.activeTab === "tunnel"
+      navigationState.activeTab === "tunnel" ||
+      navigationState.activeTab === "shape-engine"
   );
 
   // Workspace visible only when there's actual content to show
@@ -135,6 +136,40 @@
       CreateModuleState.undoController?.nextUndoEntry?.type ===
         UndoOperationType.CLEAR_SEQUENCE
   );
+
+  // While the preview is showing, a click on anything that isn't a control or
+  // the player itself returns to the card, like a lightbox backdrop. The press
+  // has to start on background too, so a scrub released off the player (whose
+  // click lands on the shared ancestor) doesn't close it.
+  const PLAYBACK_FOREGROUND =
+    '[data-playback-foreground], button, a, input, select, textarea, label, [contenteditable], [role="button"], [role="slider"], [role="menu"], [role="listbox"], [role="dialog"], [aria-haspopup]';
+  let playbackPressOnBackground = false;
+
+  function isPlaybackBackground(target: EventTarget | null) {
+    return target instanceof Element && !target.closest(PLAYBACK_FOREGROUND);
+  }
+
+  function notePlaybackPress(event: PointerEvent) {
+    playbackPressOnBackground =
+      isWorkspacePlayback && isPlaybackBackground(event.target);
+  }
+
+  function dismissPlaybackOnBackground(event: MouseEvent) {
+    const pressedBackground = playbackPressOnBackground;
+    playbackPressOnBackground = false;
+    if (!isWorkspacePlayback || event.defaultPrevented) return;
+    // Keyboard-synthesized clicks have no press; only pointer clicks count.
+    if (!pressedBackground || !isPlaybackBackground(event.target)) return;
+    // A modal on top owns its own backdrop; the preview keeps running.
+    if (
+      document.querySelector(
+        'dialog[open], [role="dialog"], [role="alertdialog"], [aria-modal="true"]'
+      )
+    ) {
+      return;
+    }
+    panelState.stopWorkspacePlayback();
+  }
 
   function handleWorkspaceUndo() {
     if (navigationState.activeTab === "construct") {
@@ -183,12 +218,18 @@
 
 {#snippet workspacePanel()}
   <!-- Workspace Panel - Visible based on tab and content -->
+  <!-- Background click is a pointer shortcut; Escape, the corner X and Stop
+       are the keyboard-reachable exits. -->
+  <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
   <div
     bind:this={workspaceContainerRef}
     class="workspace-container"
     class:workspace-collapsed={!shouldShowWorkspace}
     class:assemble-workspace={isAssembleTab}
+    class:playback-dismissible={isWorkspacePlayback}
     style:--workspace-border-color={workspaceBorderColor}
+    onpointerdown={notePlaybackPress}
+    onclick={dismissPlaybackOnBackground}
   >
     <!-- Workspace Content Area -->
     <div class="workspace-content">
@@ -385,6 +426,11 @@
 
   .workspace-history-actions[inert] {
     opacity: 0.45;
+  }
+
+  /* Signals that the empty space around the preview closes it. */
+  .workspace-container.playback-dismissible {
+    cursor: pointer;
   }
 
   /* Collapsed state - invisible but still in layout flow */

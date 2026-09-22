@@ -9,6 +9,7 @@
  */
 
 import { Resvg } from "@resvg/resvg-js";
+import { createCanvas, loadImage } from "@napi-rs/canvas/node-canvas.js";
 import { readFileSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
@@ -32,6 +33,8 @@ import {
   calculateDashLocation,
   type DashLocationInput,
   calculateReversalPositions,
+  drawHandColorKey,
+  renderHandColorKeySvg,
   applyColorToSvg,
   applyFanFrameColor,
   applyFanPaperContrast,
@@ -51,6 +54,7 @@ import {
   type PictographAdjustmentInput,
   type MotionAdjustmentInput,
 } from "./arrow-adjustment.js";
+import { ensureGelasioRegistered } from "./gelasio-fonts.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -286,6 +290,8 @@ export interface RenderVisibilityOptions {
   showElemental?: boolean;
   showPlacements?: boolean;
   showReversals?: boolean;
+  /** Start-placement legend: L/R swatches in the bottom-centre band. */
+  showHandColorKey?: boolean;
   showGrid?: boolean;
   showNonRadialPoints?: boolean;
   showLeftMotion?: boolean;
@@ -405,8 +411,16 @@ export class StandaloneRenderer {
     input: PictographInput,
     options: RenderVisibilityOptions = {}
   ): Promise<Buffer> {
-    const svg = await this.renderToSvg(input, options);
-    return this.svgToPng(svg, options.size || 950);
+    const svg = await this.renderToSvg(input, {
+      ...options,
+      // Canvas supplies the key below because Resvg cannot rasterize bundled WOFF2 text.
+      showHandColorKey: false,
+    });
+    const size = options.size || 950;
+    const png = this.svgToPng(svg, size);
+    return options.showHandColorKey
+      ? this.drawHandColorKeyOnPng(png, size, input, options)
+      : png;
   }
 
   async renderToBase64(
@@ -431,6 +445,7 @@ export class StandaloneRenderer {
       showElemental = false,
       showPlacements = false,
       showReversals = false,
+      showHandColorKey = false,
       showGrid = true,
       showLeftMotion = true,
       showRightMotion = true,
@@ -557,6 +572,17 @@ export class StandaloneRenderer {
         primaryPropColors
       );
       if (reversalSvg) svgParts.push(reversalSvg);
+    }
+
+    // 10. Start-placement hand colour key (bottom centre)
+    if (showHandColorKey) {
+      const keySvg = this.renderHandColorKey(
+        showLeftMotion && !!input.leftMotion,
+        showRightMotion && !!input.rightMotion,
+        darkMode,
+        primaryPropColors
+      );
+      if (keySvg) svgParts.push(keySvg);
     }
 
     const halo = `<defs><filter id="arrow-halo" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="${darkMode ? "#0a0a0f" : "white"}"/><feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="${darkMode ? "#0a0a0f" : "white"}"/><feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="${darkMode ? "#0a0a0f" : "white"}"/></filter></defs>`;
@@ -1624,6 +1650,49 @@ ${turnNumbersSvg}
     });
 
     return `<g class="reversal-indicators">${circles.join("\n")}</g>`;
+  }
+
+  /** Uses the shared layout so packaged images keep the Composer's key geometry. */
+  private renderHandColorKey(
+    showLeft: boolean,
+    showRight: boolean,
+    darkMode: boolean,
+    customColors?: HandColorPair | null
+  ): string {
+    const textColor = darkMode ? "#ffffff" : "#231f20";
+    return renderHandColorKeySvg({
+      showLeft,
+      showRight,
+      centerX: VIEWBOX_SIZE / 2,
+      textColor,
+      colorForHand: (hand) => resolveMotionColor(hand, darkMode, customColors),
+    });
+  }
+
+  /** Draw the complete key with bundled Gelasio after Resvg draws every other glyph. */
+  private async drawHandColorKeyOnPng(
+    png: Buffer,
+    size: number,
+    input: PictographInput,
+    options: RenderVisibilityOptions
+  ): Promise<Buffer> {
+    ensureGelasioRegistered();
+    const canvas = createCanvas(size, size);
+    const context = canvas.getContext("2d");
+    context.drawImage(await loadImage(png), 0, 0, size, size);
+
+    const scale = size / VIEWBOX_SIZE;
+    const darkMode = options.darkMode !== false;
+    drawHandColorKey(context, {
+      showLeft: (options.showLeftMotion ?? true) && !!input.leftMotion,
+      showRight: (options.showRightMotion ?? true) && !!input.rightMotion,
+      scale,
+      centerX: (VIEWBOX_SIZE / 2) * scale,
+      textColor: darkMode ? "#ffffff" : "#231f20",
+      colorForHand: (hand) =>
+        resolveMotionColor(hand, darkMode, options.primaryPropColors),
+    });
+    return canvas.toBuffer("image/png");
   }
 
   private parseGridMode(gridMode?: string): GridMode {

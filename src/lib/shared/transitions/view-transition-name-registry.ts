@@ -83,7 +83,10 @@ export function claimViewTransitionName(
 	};
 }
 
-/** Number of live claims on a name. Testing/diagnostics only. */
+/**
+ * Live claim count for a name. Gates the generate card morph in
+ * generate-card-morph.ts; tests use it to assert claims move.
+ */
 export function countViewTransitionNameClaims(name: string): number {
 	return claimsByName.get(name)?.length ?? 0;
 }

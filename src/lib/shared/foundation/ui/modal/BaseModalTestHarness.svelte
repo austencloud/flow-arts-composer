@@ -15,6 +15,7 @@
   } = $props();
 
   let isOpen = $state(true);
+  let isShortContent = $state(shortContent);
   let openedCount = $state(0);
   let wasNativeOpenWhenNotified = $state(false);
   let closedCount = $state(0);
@@ -47,6 +48,7 @@
   bind:open={isOpen}
   size="fit"
   {animation}
+  animateSize
   {allowExternalOverlays}
   labelledBy="base-modal-test-title"
   onopened={handleOpened}
@@ -54,11 +56,14 @@
 >
   <h2 id="base-modal-test-title">Scrollable modal</h2>
   <div
-    class:short-content={shortContent}
-    class:tall-content={!shortContent}
+    class:short-content={isShortContent}
+    class:tall-content={!isShortContent}
     aria-hidden="true"
   ></div>
   <button type="button" onclick={() => (isOpen = false)}>Close modal</button>
+  <button type="button" onclick={() => (isShortContent = !isShortContent)}>
+    Toggle content height
+  </button>
   <button type="button">End of modal</button>
 </BaseModal>
 

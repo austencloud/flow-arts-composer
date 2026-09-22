@@ -267,7 +267,10 @@ describe("canonical concept lesson composition", () => {
     expect(motions).not.toContain("MotionVisualizer");
     expect(motions).not.toContain("MOTIONS_INFO");
     expect(motions).not.toContain("MotionTypePage");
-    expect(rotation).not.toContain("StaffPositionVisualizer");
+    // Guards against the rotation lesson pulling in the staff visualizer
+    // from the older lesson pattern; renamed with the position->placement
+    // rename (16bc0acb4f), not removed, so the assertion follows the rename.
+    expect(rotation).not.toContain("StaffPlacementVisualizer");
     expect(type1).not.toContain("TYPE1_ALPHABET");
     expect(type1).not.toContain("Type1ProspinPage");
   });

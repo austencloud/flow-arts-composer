@@ -11,6 +11,7 @@ import { setPendingGenerationAnimation } from "$lib/features/create/shared/works
 import { clearArrowPositionCache } from "$lib/shared/pictograph/arrow/rendering/arrow-position-cache";
 import { clearPropPositionCache } from "$lib/shared/pictograph/prop/prop-position-cache";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
 import type { GenerationOptions } from "../shared/domain/models/generate-models";
 import { GenerationMode } from "../shared/domain/models/generate-models";
 import type { GenerationOrchestrator } from "$lib/shared/create/services/generation-orchestrator";
@@ -51,6 +52,10 @@ import {
 import { authState } from "$lib/shared/auth/state/auth-state.svelte";
 import { AUTH_NUDGE_TEXTS } from "$lib/shared/auth/domain/auth-nudge-trigger";
 import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+import {
+  ConstraintType,
+  type ConstraintReport,
+} from "@tka/sequence-engine/generation";
 import { isPremiumOrAbove } from "$lib/shared/auth/domain/models/user-role";
 import { logSequenceAction } from "$lib/shared/analytics/services/posthog-activity-logger";
 import type { Letter } from "$lib/shared/foundation/domain/models/letter";
@@ -81,6 +86,28 @@ const DASH_LETTERS: Set<string> = new Set([
   "Ψ-",
   "Λ-",
 ]);
+
+export const PROP_CONSTRAINT_SHORTFALL_TEXT =
+  "Props timing could not hold on every beat. A pinned start position is the usual cause.";
+
+/**
+ * The engine always returns its best sequence. When the requested prop timing
+ * could not be held on every beat, the report's propRelationship detail scores
+ * below 1; say so once, the same way a LOOP shortfall is surfaced.
+ *
+ * This should be rare. The timing is a statement about the two start
+ * orientations, and config-mapper releases the left one so the engine can
+ * derive it; what is left is a start position pinned to a placement whose two
+ * hand locations cannot host the requested phase.
+ */
+function reportPropShortfall(report: ConstraintReport | undefined): void {
+  const prop = report?.details.find(
+    (detail) => detail.constraint === ConstraintType.PROP_RELATIONSHIP
+  );
+  if (prop && prop.score < 1) {
+    toast.info(PROP_CONSTRAINT_SHORTFALL_TEXT, 6000);
+  }
+}
 
 export function createGenerationActionsState(
   getSequenceState?: () => SequenceState | undefined,
@@ -173,8 +200,10 @@ export function createGenerationActionsState(
         orchestrationService = generationOrchestrator;
       }
 
-      let generatedSequence =
-        await orchestrationService.generateSequence(options);
+      let generatedSequence = await orchestrationService.generateSequence(
+        options,
+        { onConstraintReport: reportPropShortfall }
+      );
 
       // Apply duration rhythm template if configured
       const config = getConfig?.();
@@ -408,6 +437,8 @@ export function createGenerationActionsState(
         !!config &&
         ((config.handRelationship != null &&
           config.handRelationship !== "free") ||
+          (config.propRelationship != null &&
+            config.propRelationship !== "free") ||
           config.matchHandTurns === true);
       const generationOptions: GenerationOptions = config
         ? {
@@ -439,8 +470,10 @@ export function createGenerationActionsState(
         uiConfig: errorContext.uiConfig,
       };
 
-      let generatedSequence =
-        await generationOrchestrator.generateSequence(generationOptions);
+      let generatedSequence = await generationOrchestrator.generateSequence(
+        generationOptions,
+        { onConstraintReport: reportPropShortfall }
+      );
 
       // If LOOP is requested, apply it post-hoc via the bridge-aware extender.
       // This path can add a single bridge letter to make the sequence land at
@@ -691,9 +724,7 @@ export function createGenerationActionsState(
       }) ?? [];
 
     const extendedWord =
-      extended.word ||
-      extended.steps?.map((s) => s.letter || "").join("") ||
-      "";
+      extended.word || deriveWordFromBeats(extended.steps ?? []);
 
     return {
       ...extended,

@@ -87,7 +87,7 @@ export interface AssembleState {
   readonly stepEditMode: BuilderStepEditMode | null;
   readonly canReorderSteps: boolean;
   readonly canReplaceSelectedStep: boolean;
-  readonly candidateStartPlacement: GridLocation | null;
+  readonly candidateStartLocation: GridLocation | null;
   readonly candidateStartOrientation: Orientation;
   readonly candidateRotationDirection: RotationDirection;
   readonly candidateTurnCount: number;

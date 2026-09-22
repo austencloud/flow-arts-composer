@@ -1,197 +1,266 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const harness = vi.hoisted(() => {
-  const batch = {
-    set: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-    commit: vi.fn(),
-  };
-
-  return {
-    batch,
-    writeBatch: vi.fn(() => batch),
-    firestoreList: vi.fn(),
-    firestoreGet: vi.fn(),
-    firestoreSet: vi.fn(),
-    firestoreDelete: vi.fn(),
-    updateDoc: vi.fn(async () => undefined),
-  };
-});
+const harness = vi.hoisted(() => ({
+  firestoreList: vi.fn(),
+  firestoreSet: vi.fn(),
+  firestoreDelete: vi.fn(),
+  getDocs: vi.fn(),
+  getVisibleOwnerProfiles: vi.fn(),
+  queryArgs: [] as unknown[][],
+}));
 
 vi.mock("firebase/firestore", () => ({
-  doc: vi.fn((_db: unknown, ...segments: string[]) => ({
-    path: segments.join("/"),
+  collectionGroup: vi.fn((_db: unknown, id: string) => ({ group: id })),
+  getDocs: harness.getDocs,
+  limit: vi.fn((count: number) => ({ limit: count })),
+  orderBy: vi.fn((field: string, direction?: string) => ({
+    orderBy: field,
+    direction,
   })),
-  updateDoc: harness.updateDoc,
-  deleteField: vi.fn(() => "__DELETE__"),
-  serverTimestamp: vi.fn(() => "__SERVER_TS__"),
-  writeBatch: harness.writeBatch,
+  query: vi.fn((...args: unknown[]) => {
+    harness.queryArgs.push(args);
+    return args;
+  }),
+  where: vi.fn((field: string, op: string, value: unknown) => ({
+    where: field,
+    op,
+    value,
+  })),
 }));
 
 vi.mock("$lib/shared/auth/firebase", () => ({
   getFirestoreInstance: vi.fn(async () => ({})),
 }));
 
-vi.mock("$lib/shared/offline/state/sync-status-state.svelte", () => ({
-  trackWrite: vi.fn((operation: () => Promise<unknown>) => operation()),
-}));
-
-vi.mock("$lib/shared/error/services/error-telemetry-reporter", () => ({
-  reportErrorTelemetry: vi.fn(),
-}));
-
 vi.mock("$lib/shared/firestore", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
   firestoreList: harness.firestoreList,
-  firestoreGet: harness.firestoreGet,
   firestoreSet: harness.firestoreSet,
   firestoreDelete: harness.firestoreDelete,
 }));
 
+vi.mock("$lib/shared/community/services/user-repository", () => ({
+  getVisibleOwnerProfiles: harness.getVisibleOwnerProfiles,
+}));
+
 import {
+  createSetup,
   deleteSetup,
   loadCommunity,
   loadPersonal,
-  shareSetup,
+  renameSetup,
   updateSetup,
 } from "../favorite-config-repository";
 import type { SavedGeneratorSetup } from "../../domain/models/favorite-config";
 
-const NOW = new Date();
+const NOW = new Date("2026-09-18T12:00:00Z");
+const CONFIG = { level: 2 } as unknown as SavedGeneratorSetup["config"];
 const A_SETUP = {
   id: "s1",
   name: "Setup 1",
-  config: {
-    level: 2,
-  } as unknown as SavedGeneratorSetup["config"],
+  config: CONFIG,
   startEndOptions: null,
   createdAt: NOW,
   updatedAt: NOW,
 } satisfies SavedGeneratorSetup;
 
+function communityDoc(
+  ownerId: string | null,
+  id: string,
+  data: Record<string, unknown>
+) {
+  return {
+    id,
+    ref: {
+      parent: { parent: ownerId ? { id: ownerId } : null },
+      path: `users/${ownerId ?? "root"}/generatorSetups/${id}`,
+    },
+    data: () => data,
+  };
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
+  harness.queryArgs.length = 0;
+  harness.getVisibleOwnerProfiles.mockResolvedValue(new Map());
 });
 
-describe("loadPersonal migration commit", () => {
-  it("returns the migrated snapshot without awaiting the batch commit", async () => {
-    harness.firestoreList.mockResolvedValue([]);
-    harness.firestoreGet.mockResolvedValue({
-      id: "u1",
-      favoriteConfig: {
-        config: { level: 3 },
-        startEndOptions: null,
-      },
-    });
-    harness.batch.commit.mockReturnValue(new Promise(() => {}));
+describe("loadPersonal", () => {
+  it("lists the owner's setups ordered by createdAt", async () => {
+    harness.firestoreList.mockResolvedValue([
+      { id: "s1", name: "One", config: { level: 1 }, createdAt: NOW },
+    ]);
 
-    const result = await loadPersonal("migration-user", {
-      allowMigration: true,
-    });
+    const setups = await loadPersonal("u1");
 
-    expect(result.sharedSetupId).toBe("legacy-favorite");
-    expect(result.setups.map((setup) => setup.id)).toEqual(["legacy-favorite"]);
-    expect(harness.batch.set).toHaveBeenCalledTimes(1);
-    expect(harness.batch.update).toHaveBeenCalledWith(expect.anything(), {
-      "favoriteConfig.sourceSetupId": "legacy-favorite",
-    });
-  });
-
-  it("orders the first mutation after a pending migration", async () => {
-    harness.firestoreList.mockResolvedValue([]);
-    harness.firestoreGet.mockResolvedValue({
-      id: "ordered-user",
-      favoriteConfig: {
-        config: { level: 3 },
-        startEndOptions: null,
-      },
-    });
-    let finishMigration!: () => void;
-    harness.batch.commit.mockReturnValue(
-      new Promise<void>((resolve) => {
-        finishMigration = resolve;
-      })
+    expect(harness.firestoreList).toHaveBeenCalledWith(
+      "users/u1/generatorSetups",
+      expect.anything(),
+      { orderBy: [{ field: "createdAt" }] }
     );
-
-    await loadPersonal("ordered-user", {
-      allowMigration: true,
-    });
-    const share = shareSetup("ordered-user", A_SETUP);
-    await Promise.resolve();
-
-    expect(harness.updateDoc).not.toHaveBeenCalled();
-    finishMigration();
-    await share;
-    expect(harness.updateDoc).toHaveBeenCalledOnce();
-  });
-
-  it("skips migration writes during admin preview", async () => {
-    harness.firestoreList.mockResolvedValue([]);
-    harness.firestoreGet.mockResolvedValue({
-      id: "u1",
-      favoriteConfig: {
-        config: { level: 3 },
-        startEndOptions: null,
-      },
-    });
-
-    const result = await loadPersonal("u1", {
-      allowMigration: false,
-    });
-
-    expect(result.sharedSetupId).toBe("legacy-favorite");
-    expect(harness.writeBatch).not.toHaveBeenCalled();
+    expect(setups.map((setup) => setup.id)).toEqual(["s1"]);
   });
 });
 
-describe("shared batches", () => {
-  it("updates private and public snapshots in one batch", async () => {
-    harness.batch.commit.mockResolvedValue(undefined);
+describe("writes", () => {
+  it("creates a setup as public", async () => {
+    harness.firestoreSet.mockResolvedValue("new-id");
 
-    await updateSetup("u1", A_SETUP, true);
+    const created = await createSetup("u1", {
+      name: "Setup 1",
+      config: CONFIG,
+      startEndOptions: null,
+    });
 
-    expect(harness.batch.set).toHaveBeenCalledTimes(1);
-    expect(harness.batch.update).toHaveBeenCalledTimes(1);
-    expect(harness.batch.commit).toHaveBeenCalledTimes(1);
-    const projection = harness.batch.update.mock.calls[0]?.[1] as {
-      favoriteConfig: { sourceSetupId: string };
-    };
-    expect(projection.favoriteConfig.sourceSetupId).toBe("s1");
+    expect(harness.firestoreSet).toHaveBeenCalledWith(
+      "users/u1/generatorSetups",
+      null,
+      expect.objectContaining({ name: "Setup 1", isPublic: true }),
+      expect.objectContaining({ trackOffline: true })
+    );
+    expect(created.id).toBe("new-id");
   });
 
-  it("deletes private data and removes the public projection in one batch", async () => {
-    harness.batch.commit.mockResolvedValue(undefined);
+  it("keeps a renamed setup public", async () => {
+    await renameSetup("u1", "s1", "Renamed");
 
-    await deleteSetup("u1", "s1", true);
+    expect(harness.firestoreSet).toHaveBeenCalledWith(
+      "users/u1/generatorSetups",
+      "s1",
+      { name: "Renamed", isPublic: true },
+      expect.objectContaining({ merge: true })
+    );
+  });
 
-    expect(harness.batch.delete).toHaveBeenCalledTimes(1);
-    expect(harness.batch.update).toHaveBeenCalledWith(expect.anything(), {
-      favoriteConfig: "__DELETE__",
-    });
-    expect(harness.batch.commit).toHaveBeenCalledTimes(1);
+  it("keeps an updated setup public", async () => {
+    await updateSetup("u1", A_SETUP);
+
+    expect(harness.firestoreSet).toHaveBeenCalledWith(
+      "users/u1/generatorSetups",
+      "s1",
+      expect.objectContaining({ config: CONFIG, isPublic: true }),
+      expect.objectContaining({ merge: true })
+    );
+  });
+
+  it("deletes the setup doc", async () => {
+    await deleteSetup("u1", "s1");
+
+    expect(harness.firestoreDelete).toHaveBeenCalledWith(
+      "users/u1/generatorSetups",
+      "s1",
+      expect.objectContaining({ trackOffline: true })
+    );
   });
 });
 
 describe("loadCommunity", () => {
-  it("queries only migrated public profiles", async () => {
-    harness.firestoreList.mockResolvedValue([]);
+  it("queries public setups newest first", async () => {
+    harness.getDocs.mockResolvedValue({ docs: [] });
 
-    await loadCommunity();
+    await loadCommunity(7);
 
-    expect(harness.firestoreList).toHaveBeenCalledWith(
-      "users",
-      expect.anything(),
-      expect.objectContaining({
-        where: expect.arrayContaining([
-          { field: "publicProfileVersion", op: "==", value: 2 },
-        ]),
-      })
+    expect(harness.queryArgs[0]).toEqual([
+      { group: "generatorSetups" },
+      { where: "isPublic", op: "==", value: true },
+      { orderBy: "createdAt", direction: "desc" },
+      { limit: 7 },
+    ]);
+  });
+
+  it("maps docs with visible owners and drops the rest", async () => {
+    harness.getDocs.mockResolvedValue({
+      docs: [
+        communityDoc("austen", "s1", {
+          name: "VTG 1:1",
+          config: { level: 3 },
+          startEndOptions: null,
+          isPublic: true,
+          createdAt: { toDate: () => NOW },
+        }),
+        communityDoc("panda", "s2", {
+          name: "Panda Combo",
+          config: { level: 4 },
+          startEndOptions: null,
+          isPublic: true,
+          createdAt: { toDate: () => NOW },
+        }),
+        communityDoc("hidden", "s3", {
+          name: "Hidden owner",
+          config: { level: 1 },
+          isPublic: true,
+        }),
+        communityDoc(null, "root", {
+          name: "No parent user",
+          config: {},
+          isPublic: true,
+        }),
+      ],
+    });
+    harness.getVisibleOwnerProfiles.mockResolvedValue(
+      new Map([
+        ["austen", { displayName: "Austen Cloud", photoURL: "https://x/a.png" }],
+        ["panda", { displayName: "Panda" }],
+      ])
     );
+
+    const setups = await loadCommunity();
+
+    expect(harness.getVisibleOwnerProfiles).toHaveBeenCalledWith([
+      "austen",
+      "panda",
+      "hidden",
+    ]);
+    expect(setups).toEqual([
+      expect.objectContaining({
+        setupId: "s1",
+        userId: "austen",
+        displayName: "Austen Cloud",
+        avatar: "https://x/a.png",
+        name: "VTG 1:1",
+        createdAt: NOW,
+      }),
+      expect.objectContaining({
+        setupId: "s2",
+        userId: "panda",
+        displayName: "Panda",
+        avatar: undefined,
+        name: "Panda Combo",
+        createdAt: NOW,
+      }),
+    ]);
+  });
+
+  it("drops a doc that fails the schema", async () => {
+    harness.getDocs.mockResolvedValue({
+      docs: [
+        communityDoc("austen", "s1", {
+          name: "VTG 1:1",
+          config: { level: 3 },
+          startEndOptions: null,
+          isPublic: true,
+          createdAt: { toDate: () => NOW },
+        }),
+        communityDoc("austen", "s2", {
+          name: 42,
+          startEndOptions: null,
+          isPublic: true,
+        }),
+      ],
+    });
+    harness.getVisibleOwnerProfiles.mockResolvedValue(
+      new Map([
+        ["austen", { displayName: "Austen Cloud", photoURL: "https://x/a.png" }],
+      ])
+    );
+
+    const setups = await loadCommunity();
+
+    expect(setups.map((setup) => setup.setupId)).toEqual(["s1"]);
   });
 
   it("rejects read failures instead of returning an empty list", async () => {
-    harness.firestoreList.mockRejectedValue(new Error("permission-denied"));
+    harness.getDocs.mockRejectedValueOnce(new Error("permission-denied"));
 
     await expect(loadCommunity()).rejects.toThrow("permission-denied");
   });

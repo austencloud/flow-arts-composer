@@ -210,6 +210,8 @@ export interface OrchestratorContext {
   viewer3DState: ReturnType<typeof createViewer3DState>;
   countdownValue: number;
   isRecording3D: boolean;
+  /** A 3D take remains active while its recipe is saved and render choice is pending. */
+  sceneTakeActive: boolean;
   recordingElapsed: number;
   handleStopRecording: () => void;
   /** Non-null while the render card is up: recording has stopped and the

@@ -49,6 +49,29 @@ function throwIfAborted(signal?: AbortSignal): void {
   throw new DOMException("Aborted", "AbortError");
 }
 
+function awaitWithAbort<T>(
+  promise: Promise<T>,
+  signal?: AbortSignal
+): Promise<T> {
+  if (!signal) return promise;
+  throwIfAborted(signal);
+  return new Promise((resolve, reject) => {
+    const abort = () =>
+      reject(signal.reason ?? new DOMException("Aborted", "AbortError"));
+    signal.addEventListener("abort", abort, { once: true });
+    promise.then(
+      (value) => {
+        signal.removeEventListener("abort", abort);
+        resolve(value);
+      },
+      (error) => {
+        signal.removeEventListener("abort", abort);
+        reject(error);
+      }
+    );
+  });
+}
+
 /**
  * Style presets for quick styling
  */
@@ -80,6 +103,14 @@ export class QRCodeGenerator {
    *  long-lived tab generating QR codes for many distinct sequences can't
    *  accumulate decoded images indefinitely. */
   private readonly decodedImages = new Map<string, HTMLImageElement>();
+
+  /** One readiness proof can serve several card canvases at once. A failed or
+   * canceled preparation never becomes a durable cache entry, and the next
+   * request is free to retry. */
+  private readonly sequencePreparations = new Map<
+    string,
+    Promise<QRCodeResult>
+  >();
 
   /** Cap on `decodedImages` entries. Comfortably above a single deck render's
    *  distinct-payload count; evicts the oldest entry past the cap. */
@@ -164,8 +195,10 @@ export class QRCodeGenerator {
     // pixels — url + size + margin + resolved style — so a repeat payload is a
     // pure cache read, no render.
     const cacheKey = `${QR_IMAGE_CACHE_SCHEMA}:${size}:${margin}:${centerIcon}:${JSON.stringify(style)}:${url}`;
+    const finishSvg = options?.trace?.start("qr.svg");
     const cachedImage = await this.imageCache.get(cacheKey);
     if (cachedImage) {
+      finishSvg?.({ hit: true });
       return cachedImage;
     }
 
@@ -193,6 +226,7 @@ export class QRCodeGenerator {
 
     const result = { svg: svgText, dataUrl };
     void this.imageCache.set(cacheKey, result);
+    finishSvg?.({ hit: false });
     return result;
   }
 
@@ -219,62 +253,96 @@ export class QRCodeGenerator {
       deckName: options?.deckName,
     };
 
+    // Prepared SVGs are always baked at 200px. They remain sharp when a card
+    // canvas draws them at its own size, while every such card shares one
+    // readiness proof and one short link.
+    const canonicalOptions = { ...options, size: 200 };
+    const finishPrepared = options?.trace?.start("qr.prepared");
     const preparedKey = await this.preparedCache.keyFor(
       sequence,
       propConfig,
-      options
+      canonicalOptions
     );
-    const ready = await this.preparedCache.get(preparedKey);
-    throwIfAborted(options?.signal);
-    if (ready) return ready;
-
-    // A printable QR is a promise that its landing page is ready. Confirm the
-    // exact prop pair in both supported card themes before minting or returning
-    // the code; scanners should download these cells, never discover that the
-    // publisher's background warm silently failed and rasterize on a phone.
-    for (const isDark of [true, false]) {
-      await this.cellWarmer(sequence, {
-        isDark,
-        leftPropType: propConfig.leftPropType,
-        rightPropType: propConfig.rightPropType,
-        catDogMode: propConfig.catDogMode,
-        requireComplete: true,
-        signal: options?.signal,
-        onActivity: options?.onActivity,
-      });
-      options?.onActivity?.();
-      throwIfAborted(options?.signal);
-    }
-
-    // Every QR is the Firebase short code (tka.run/<code>). The dense "offline"
-    // s~ path that baked the whole sequence into the URL is gone — those QRs
-    // were unscannable and varied in module density. Callers gate guests out
-    // before they ever reach here (guests get no QR at all).
-    if (!this.shortCodeManager) {
-      throw new Error(
-        "QRCodeGenerator: sequence QRs require a ShortCodeManager; this instance was constructed URL-only"
-      );
-    }
-    const { code, url: shortUrl } = await this.shortCodeManager.createShortCode(
-      sequence,
-      propOptions
-    );
-    options?.onActivity?.();
     throwIfAborted(options?.signal);
 
-    // Generate QR code
-    const { svg, dataUrl } = await this.generateQR(shortUrl, options);
+    // Cancellation belongs to the caller that started this work. Only requests
+    // without cancellation share an in-flight preparation, so closing one card
+    // cannot leave another card waiting on work that was deliberately aborted.
+    let preparation = options?.signal
+      ? undefined
+      : this.sequencePreparations.get(preparedKey);
+    if (preparation) finishPrepared?.({ hit: "in-flight" });
+    if (!preparation) {
+      preparation = (async () => {
+        const ready = await this.preparedCache.get(preparedKey);
+        finishPrepared?.({ hit: Boolean(ready) });
+        if (ready) return ready;
 
-    const result = {
-      svg,
-      dataUrl,
-      encodedUrl: shortUrl,
-      shortCode: code,
-    };
-    // Only successful preparation may publish this reusable readiness proof.
-    // Uploading it never delays displaying or saving the QR that is ready now.
-    void this.preparedCache.set(preparedKey, result).catch(() => {});
-    return result;
+        // A printable QR is a promise that its landing page is ready. Confirm
+        // both card themes before minting the code; scanners must not discover
+        // missing cells and rasterize on a phone.
+        for (const isDark of [true, false]) {
+          await (options?.trace?.measure(
+            `qr.cells.${isDark ? "dark" : "light"}`,
+            () =>
+              this.cellWarmer(sequence, {
+                isDark,
+                leftPropType: propConfig.leftPropType,
+                rightPropType: propConfig.rightPropType,
+                catDogMode: propConfig.catDogMode,
+                requireComplete: true,
+                foreground: true,
+                signal: options?.signal,
+                onActivity: options?.onActivity,
+                trace: options?.trace,
+              })
+          ) ??
+            this.cellWarmer(sequence, {
+              isDark,
+              leftPropType: propConfig.leftPropType,
+              rightPropType: propConfig.rightPropType,
+              catDogMode: propConfig.catDogMode,
+              requireComplete: true,
+              foreground: true,
+              signal: options?.signal,
+              onActivity: options?.onActivity,
+              trace: options?.trace,
+            }));
+          options?.onActivity?.();
+          throwIfAborted(options?.signal);
+        }
+
+        if (!this.shortCodeManager) {
+          throw new Error(
+            "QRCodeGenerator: sequence QRs require a ShortCodeManager; this instance was constructed URL-only"
+          );
+        }
+        const { code, url: shortUrl } = await (options?.trace?.measure(
+          "qr.short-link",
+          () => this.shortCodeManager!.createShortCode(sequence, propOptions)
+        ) ?? this.shortCodeManager.createShortCode(sequence, propOptions));
+        options?.onActivity?.();
+        throwIfAborted(options?.signal);
+
+        const { svg, dataUrl } = await this.generateQR(
+          shortUrl,
+          canonicalOptions
+        );
+        throwIfAborted(options?.signal);
+        const result = { svg, dataUrl, encodedUrl: shortUrl, shortCode: code };
+        // Only successful preparation may publish this reusable readiness proof.
+        void this.preparedCache.set(preparedKey, result).catch(() => {});
+        return result;
+      })();
+      if (!options?.signal) {
+        this.sequencePreparations.set(preparedKey, preparation);
+        void preparation.then(
+          () => this.sequencePreparations.delete(preparedKey),
+          () => this.sequencePreparations.delete(preparedKey)
+        );
+      }
+    }
+    return awaitWithAbort(preparation, options?.signal);
   }
 
   /**
@@ -317,7 +385,9 @@ export class QRCodeGenerator {
     options?: QRCodeOptions
   ): Promise<HTMLImageElement | null> {
     const prepared = await this.findPreparedForSequence(sequence, options);
-    return prepared ? this.loadDecodedImage(prepared.dataUrl) : null;
+    return prepared
+      ? this.loadDecodedImage(prepared.dataUrl, options?.trace)
+      : null;
   }
 
   async generateForUrl(
@@ -348,7 +418,7 @@ export class QRCodeGenerator {
       size,
     });
 
-    return this.loadDecodedImage(result.dataUrl);
+    return this.loadDecodedImage(result.dataUrl, options?.trace);
   }
 
   /**
@@ -369,10 +439,13 @@ export class QRCodeGenerator {
       size,
     });
 
-    return this.loadDecodedImage(result.dataUrl);
+    return this.loadDecodedImage(result.dataUrl, options?.trace);
   }
 
-  private loadDecodedImage(dataUrl: string): Promise<HTMLImageElement> {
+  private loadDecodedImage(
+    dataUrl: string,
+    trace?: QRCodeOptions["trace"]
+  ): Promise<HTMLImageElement> {
     // Reuse an already-decoded image for the same dataURL (deck cards sharing a
     // payload decode once). Re-insert on hit so the entry is treated as most
     // recently used by the insertion-order eviction below.
@@ -382,6 +455,8 @@ export class QRCodeGenerator {
       this.decodedImages.set(dataUrl, existing);
       return Promise.resolve(existing);
     }
+
+    const finishDecode = trace?.start("qr.decode");
 
     // Convert data URL to HTMLImageElement
     return new Promise((resolve, reject) => {
@@ -394,9 +469,13 @@ export class QRCodeGenerator {
           const oldest = this.decodedImages.keys().next().value;
           if (oldest !== undefined) this.decodedImages.delete(oldest);
         }
+        finishDecode?.();
         resolve(img);
       };
-      img.onerror = () => reject(new Error("Failed to load QR code as image"));
+      img.onerror = () => {
+        finishDecode?.({ failed: true });
+        reject(new Error("Failed to load QR code as image"));
+      };
       img.src = dataUrl;
     });
   }

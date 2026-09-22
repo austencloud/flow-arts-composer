@@ -45,7 +45,11 @@ function injectRealCsvData() {
 
 type StepSpec = [MotionType, GridLocation, GridLocation, RotationDirection];
 
-function makeSoloProp(specs: StepSpec[], start: GridLocation): SoloPropData {
+function makeSoloProp(
+  specs: StepSpec[],
+  start: GridLocation,
+  gridMode: GridMode = GridMode.DIAMOND
+): SoloPropData {
   const steps: SoloPropStepData[] = specs.map(([motionType, s, e, rot]) => ({
     startLocation: s,
     endLocation: e,
@@ -72,12 +76,12 @@ function makeSoloProp(specs: StepSpec[], start: GridLocation): SoloPropData {
       length: specs.length,
       bigrams: [],
       uniqueLocations: [...new Set(locations)],
-      impliedGridMode: GridMode.DIAMOND,
+      impliedGridMode: gridMode,
       isClosed: locations[0] === locations[locations.length - 1],
     },
     length: specs.length,
     bigrams: [],
-    impliedGridMode: GridMode.DIAMOND,
+    impliedGridMode: gridMode,
   };
 }
 
@@ -85,6 +89,12 @@ const N = "n" as GridLocation;
 const E = "e" as GridLocation;
 const S = "s" as GridLocation;
 const W = "w" as GridLocation;
+const NE = "ne" as GridLocation;
+const SE = "se" as GridLocation;
+const SW = "sw" as GridLocation;
+const NW = "nw" as GridLocation;
+/** What the Rotate 45 degree rule does to a diamond hand: every point one step clockwise. */
+const rotate45: Record<string, GridLocation> = { n: NE, e: SE, s: SW, w: NW };
 const PRO = MotionType.PRO;
 const ANTI = MotionType.ANTI;
 const CW = RotationDirection.CLOCKWISE;
@@ -119,6 +129,13 @@ const rightSpecs: StepSpec[] = [
   [ANTI, N, W, CW],
   [ANTI, W, S, CW],
 ];
+
+const rightSkewedSpecs: StepSpec[] = rightSpecs.map(([type, s, e, rot]) => [
+  type,
+  rotate45[s]!,
+  rotate45[e]!,
+  rot,
+]);
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -174,6 +191,27 @@ describe("fused sequence word derivation", () => {
     expect(
       calls.some((m) => m.includes("1/12") && m.includes("incomplete"))
     ).toBe(true);
+  });
+
+  it("letters every beat of a rotate-45 fuse and writes the span in braces", async () => {
+    injectRealCsvData();
+    const fused = fuseSequences(
+      makeSoloProp(leftSpecs, S),
+      makeSoloProp(rightSkewedSpecs, SW, GridMode.BOX)
+    );
+    expect(fused.gridMode).toBe(GridMode.SKEWED);
+
+    const derived = await deriveLettersForSequence(fused);
+    const letters = derived.steps.map((step) => step.letter);
+    expect(letters.every(Boolean), letters.join(",")).toBe(true);
+    // Beat 1: blue pro s->e and red anti sw->se both travel counter-clockwise;
+    // blue is ahead and is the pro hand, so the pro hand leads: U.
+    expect(letters[0]).toBe("U");
+    // Pin the literal brace-aware output across the six-unit repeat rather
+    // than a shape-only regex, so a regression in the simplifier itself
+    // (not just a missing brace) fails this test.
+    expect(derived.word).toBe("{UUQVVNUUQVVN}");
+    expect(fusedDisplayName(derived.word)).toBe("{UUQVVN}");
   });
 });
 

@@ -12,7 +12,7 @@
   accentColor={element?.accentColor}
 >
   {#if element}
-    <img src={element.iconPath} alt="" width="24" height="24" />
+    <img src={element.iconPath} alt="" width="32" height="32" />
   {/if}
   <span>{article.compactName}</span>
 </PanelButton>

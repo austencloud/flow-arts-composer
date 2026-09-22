@@ -15,6 +15,7 @@ import type {
 } from "$lib/shared/browse/domain/models/browse-models";
 import { sortSequencesByKineticAlphabet } from "$lib/shared/browse/utils/kinetic-alphabet-sort";
 import { deriveWord } from '$lib/shared/foundation/services/word-deriver';
+import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
 import { calculateDifficultyLevel } from "$lib/shared/browse/services/sequence-difficulty-calculator";
 
 /** Numeric difficulty (1–3). Prefers the stored `level`, else computes from steps. */
@@ -53,7 +54,7 @@ function tndFamilyOf(sequence: SequenceData): string {
 
 /** First-letter label in the kinetic alphabet ("A", "W-", "α"…). */
 function deriveLetter(sequence: SequenceData): string {
-  const word = deriveWord(sequence);
+  const word = stripWordNotation(deriveWord(sequence));
   const firstChar = word.charAt(0);
   // Type 6 letters keep their glyph; Type 1–5 uppercase.
   const char = TYPE6_LETTERS.includes(firstChar) ? firstChar : firstChar.toUpperCase();
@@ -312,8 +313,8 @@ function sortSequencesInSection(
       const alphabetSorted = sortSequencesByKineticAlphabet(sorted);
       return alphabetSorted.sort((a, b) => {
         // Keep alphabetical order but group by length within same starting letter
-        const letterA = a.word?.charAt(0) ?? "";
-        const letterB = b.word?.charAt(0) ?? "";
+        const letterA = stripWordNotation(a.word ?? "").charAt(0);
+        const letterB = stripWordNotation(b.word ?? "").charAt(0);
         if (letterA === letterB) {
           return getLength(a) - getLength(b);
         }

@@ -226,7 +226,10 @@ describe("collectionsState", () => {
     const nudge = mocks.offerGuestSaveNudge.mock.calls[0]![0];
     expect(nudge.action.label).toBe("Create account");
     nudge.action.onClick();
-    expect(mocks.authDrawerShow).toHaveBeenCalledWith("signup");
+    expect(mocks.authDrawerShow).toHaveBeenCalledWith(
+      "signup",
+      "sync-library"
+    );
   });
 
   it("does not offer signup to full accounts after adding a sequence", async () => {

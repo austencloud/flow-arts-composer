@@ -38,10 +38,7 @@ import type {
 } from "../../core/types/sequence-engine-types.js";
 import { LetterClassifier } from "../../core/letters/LetterClassifier.js";
 import type { ReachabilityResult } from "../reachability/PlacementReachabilityAnalyzer.js";
-import {
-  relatedRotationDirection,
-  type HandRelationshipOptions,
-} from "../constraints/style/hand-relationship-constraint.js";
+import type { LeftSpinRule } from "../turns/left-spin-rule.js";
 
 /**
  * PropContinuity mode for rotation direction resolution.
@@ -64,16 +61,16 @@ function enrichWithTurns(
   turnSource: TurnSource | undefined,
   previousSteps: PictographData[],
   propContinuity: PropContinuityMode | undefined,
-  matchedHandRelationship?: HandRelationshipOptions
+  leftSpinRule?: LeftSpinRule
 ): PictographData {
   if (!turnSource) return variation;
 
   const leftTurns = turnSource.at(stepIndex, "left");
   const rightTurns = turnSource.at(stepIndex, "right");
 
-  // Right first: with matched turns and a hand relationship, a left dash or
-  // static that gains turns takes the spin the relationship implies from the
-  // right hand instead of its own continuity or coin flip.
+  // Right first: a left dash or static that gains turns takes the spin the
+  // rule implies from the right hand (a prop relationship, or match turns
+  // plus a hand relationship) instead of its own continuity or coin flip.
   const enrichedRight = enrichMotionDirection(
     variation.rightMotion,
     rightTurns,
@@ -87,11 +84,8 @@ function enrichWithTurns(
     previousSteps,
     "left",
     propContinuity,
-    matchedHandRelationship
-      ? relatedRotationDirection(
-          enrichedRight.rotationDirection as string | undefined,
-          matchedHandRelationship
-        )
+    leftSpinRule
+      ? leftSpinRule(enrichedRight.rotationDirection as string | undefined)
       : undefined
   );
 
@@ -233,9 +227,9 @@ export class BeamSearch {
       /** Offer static (Type 6) letters mid-sequence. Off by default: a static
        *  step the user did not ask for reads as standing still. */
       allowStaticSteps?: boolean;
-      /** "Match turns" plus a hand relationship: the left hand's dash or
-       *  static spin follows the right hand's. See enrichWithTurns. */
-      matchedHandRelationship?: HandRelationshipOptions;
+      /** Decides a left dash or static spin from the right hand's. See
+       *  turns/left-spin-rule.ts and enrichWithTurns. */
+      leftSpinRule?: LeftSpinRule;
     } = {}
   ) {}
 
@@ -359,7 +353,7 @@ export class BeamSearch {
           turnSource,
           initialState.steps,
           propContinuity,
-          this.options.matchedHandRelationship
+          this.options.leftSpinRule
         );
         const state = extendState(initialState, enriched, scored);
         beam.push(state);
@@ -445,7 +439,7 @@ export class BeamSearch {
               turnSource,
               state.steps,
               propContinuity,
-          this.options.matchedHandRelationship
+              this.options.leftSpinRule
             );
             nextBeam.push(extendState(state, enriched, scored));
             statesExplored++;
@@ -537,12 +531,13 @@ export class BeamSearch {
 
     // Step 1: Build the candidate pool that seeds the first step.
     //
-    // Static (Type 6) letters are normally held out. Both hands stay put, so
-    // without turns the step reads as standing still, and a randomly chosen
-    // one is almost never what was wanted. When the caller has set an explicit
-    // turn pattern, though, a static step is the carrier of the figure — prop
-    // rotation is the whole point of Type 6 — so the pool keeps them and
-    // Type6Constraint decides step by step, which is what it was written for.
+    // Static (Type 6) letters are in the pool like any other. Both hands stay
+    // put, so without turns the step reads as standing still — but prop
+    // rotation is the whole point of Type 6, and a static step carrying turns
+    // is a real figure. Type6Constraint draws that line step by step, which is
+    // what it was written for: level 1 refused, level 2 and up allowed when at
+    // least one hand turns. Holding them out of the pool here would decide the
+    // question before it could see the step.
     const allVariations = this.variationProvider.getAllVariations(
       this.gridMode
     );
@@ -601,7 +596,11 @@ export class BeamSearch {
       });
     }
 
-    if (length === 1 && requiredEndPlacements && requiredEndPlacements.size > 0) {
+    if (
+      length === 1 &&
+      requiredEndPlacements &&
+      requiredEndPlacements.size > 0
+    ) {
       const endSet = requiredEndPlacements;
       firstStepCandidates = firstStepCandidates.filter((p) =>
         endSet.has(p.endPlacement)
@@ -654,7 +653,7 @@ export class BeamSearch {
           turnSource,
           initialState.steps,
           propContinuity,
-          this.options.matchedHandRelationship
+          this.options.leftSpinRule
         );
         const state = extendState(initialState, enriched, scored);
         beam.push(state);
@@ -674,8 +673,14 @@ export class BeamSearch {
     // length is 1). The end-placement filter inside the loop never fires, so we
     // must enforce it here. Without this, single-step seeds for quartered LOOPs
     // can end at any placement, causing the executor to reject the sequence.
-    if (length === 1 && requiredEndPlacements && requiredEndPlacements.size > 0) {
-      beam = beam.filter((s) => requiredEndPlacements.has(s.currentEndPlacement));
+    if (
+      length === 1 &&
+      requiredEndPlacements &&
+      requiredEndPlacements.size > 0
+    ) {
+      beam = beam.filter((s) =>
+        requiredEndPlacements.has(s.currentEndPlacement)
+      );
 
       if (beam.length === 0) {
         return this.failResult(
@@ -752,7 +757,7 @@ export class BeamSearch {
             turnSource,
             state.steps,
             propContinuity,
-          this.options.matchedHandRelationship
+            this.options.leftSpinRule
           );
           nextBeam.push(extendState(state, enriched, scored));
           statesExplored++;

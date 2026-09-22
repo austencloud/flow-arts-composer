@@ -16,14 +16,17 @@
 -->
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { fade } from "svelte/transition";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import {
     DURATION,
     SLIDE,
     STAGGER,
   } from "$lib/shared/transitions/transitions";
-  import { flyFade, motionDuration } from "$lib/shared/transitions/motion";
+  import {
+    flyFade,
+    growFade,
+    motionDuration,
+  } from "$lib/shared/transitions/motion";
   import type { ExportOptionsStateManager } from "$lib/shared/animation-panel/state/export-options-state.svelte";
   import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
   import { getVisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
@@ -533,7 +536,7 @@
                       "positions_glyph",
                       placementsGlyph,
                       (value) => vm.setGlyphVisibility("placementsGlyph", value)
-                    )}>Positions</button
+                    )}>Placements</button
                 >
                 <button
                   type="button"
@@ -633,7 +636,7 @@
                   <button
                     type="button"
                     class="rt-chip"
-                    transition:fade={{ duration: 150 }}
+                    transition:growFade={{ axis: "x" }}
                     aria-pressed={startPosLayout === "row"}
                     onclick={() => setStartPlacementLayout("row")}
                     >Top Row</button
@@ -641,7 +644,7 @@
                   <button
                     type="button"
                     class="rt-chip"
-                    transition:fade={{ duration: 150 }}
+                    transition:growFade={{ axis: "x" }}
                     aria-pressed={startPosLayout === "column"}
                     onclick={() => setStartPlacementLayout("column")}
                     >Left Column</button
@@ -857,7 +860,7 @@
                   placementsGlyph,
                   (value) => vm.setGlyphVisibility("placementsGlyph", value)
                 )}
-              aria-pressed={placementsGlyph}>Positions</button
+              aria-pressed={placementsGlyph}>Placements</button
             >
             <button
               type="button"
@@ -970,6 +973,7 @@
               <button
                 type="button"
                 class="chip"
+                transition:growFade={{ axis: "x" }}
                 class:active={startPosLayout === "row"}
                 onclick={() => setStartPlacementLayout("row")}
                 aria-pressed={startPosLayout === "row"}>Top Row</button
@@ -977,6 +981,7 @@
               <button
                 type="button"
                 class="chip"
+                transition:growFade={{ axis: "x" }}
                 class:active={startPosLayout === "column"}
                 onclick={() => setStartPlacementLayout("column")}
                 aria-pressed={startPosLayout === "column"}>Left Column</button

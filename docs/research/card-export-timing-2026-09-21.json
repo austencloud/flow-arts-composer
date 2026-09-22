@@ -1,0 +1,232 @@
+{
+  "environment": "Local Chromium agent browser, Vite development build, 1920x1080 CSS viewport; public 16-step sequence from the PostShareSheet harness",
+  "notes": [
+    "First sample has no matching prepared QR and uses the previous serial cell warmer; QR SVG reuse fix and instrumentation are present.",
+    "Second sample follows a page reload with persistent prepared QR available; it is not a first-ever sequence timing.",
+    "Nested spans overlap and must not be added to calculate total duration.",
+    "Public asset read benchmark uses no-store GETs only; it is not full image creation and does not upload anything.",
+    "Optimized warmer used real published cells after resetting only the test origin canonical-cell readiness caches; all34 cells were remote hits, with zero render/upload fallbacks. This isolates cell preparation from prepared-QR and final-PNG caches."
+  ],
+  "cardReports": [
+    {
+      "recordedAt": "2026-09-21T07:05:55.810Z",
+      "id": 1,
+      "outcome": "ok",
+      "durationMs": 29046.19999998808,
+      "detail": {
+        "steps": 16,
+        "blobCache": "miss",
+        "bytes": 219593
+      },
+      "spans": [
+        {
+          "phase": "settings-and-cache-key",
+          "startMs": 0.19999998807907104,
+          "durationMs": 7.4000000059604645
+        },
+        {
+          "phase": "fonts",
+          "startMs": 7.9000000059604645,
+          "durationMs": 27.19999998807907
+        },
+        {
+          "phase": "visibility-settings",
+          "startMs": 35.099999994039536,
+          "durationMs": 1.800000011920929
+        },
+        {
+          "phase": "header-glyphs",
+          "startMs": 37.099999994039536,
+          "durationMs": 1
+        },
+        {
+          "phase": "pictograph-cells",
+          "startMs": 41.5,
+          "durationMs": 273.2999999821186,
+          "detail": {
+            "cells": 17,
+            "memoryHits": 0,
+            "persistentHits": 0,
+            "rendered": 17
+          }
+        },
+        {
+          "phase": "card-decoration",
+          "startMs": 314.90000000596046,
+          "durationMs": 28682
+        },
+        {
+          "phase": "qr.prepared",
+          "startMs": 319.09999999403954,
+          "durationMs": 179.5,
+          "detail": {
+            "hit": false
+          }
+        },
+        {
+          "phase": "qr.cells.dark",
+          "startMs": 498.69999998807907,
+          "durationMs": 11396.200000017881
+        },
+        {
+          "phase": "qr.cells.light",
+          "startMs": 11894.90000000596,
+          "durationMs": 16690.59999999404
+        },
+        {
+          "phase": "qr.short-link",
+          "startMs": 28585.59999999404,
+          "durationMs": 364.19999998807907
+        },
+        {
+          "phase": "qr.svg",
+          "startMs": 28949.90000000596,
+          "durationMs": 15.199999988079071,
+          "detail": {
+            "hit": false
+          }
+        },
+        {
+          "phase": "qr.decode",
+          "startMs": 28966.29999998212,
+          "durationMs": 4.100000023841858
+        },
+        {
+          "phase": "mandala",
+          "startMs": 28971.40000000596,
+          "durationMs": 18.599999994039536
+        },
+        {
+          "phase": "png-encoding",
+          "startMs": 28996.90000000596,
+          "durationMs": 49.099999994039536,
+          "detail": {
+            "bytes": 219593,
+            "width": 960,
+            "height": 1280
+          }
+        }
+      ]
+    },
+    {
+      "recordedAt": "2026-09-21T07:07:38.131Z",
+      "id": 1,
+      "outcome": "ok",
+      "durationMs": 298.10000002384186,
+      "detail": {
+        "steps": 16,
+        "blobCache": "miss",
+        "bytes": 219593
+      },
+      "spans": [
+        {
+          "phase": "settings-and-cache-key",
+          "startMs": 0.10000002384185791,
+          "durationMs": 8.199999988079071
+        },
+        {
+          "phase": "fonts",
+          "startMs": 8.5,
+          "durationMs": 24.80000001192093
+        },
+        {
+          "phase": "visibility-settings",
+          "startMs": 33.400000005960464,
+          "durationMs": 1.300000011920929
+        },
+        {
+          "phase": "header-glyphs",
+          "startMs": 34.70000001788139,
+          "durationMs": 0.5999999940395355
+        },
+        {
+          "phase": "pictograph-cells",
+          "startMs": 35.400000005960464,
+          "durationMs": 194.80000001192093,
+          "detail": {
+            "cells": 17,
+            "memoryHits": 0,
+            "persistentHits": 0,
+            "rendered": 17
+          }
+        },
+        {
+          "phase": "card-decoration",
+          "startMs": 230.30000001192093,
+          "durationMs": 33.5
+        },
+        {
+          "phase": "qr.prepared",
+          "startMs": 230.7000000178814,
+          "durationMs": 2.9000000059604645,
+          "detail": {
+            "hit": true
+          }
+        },
+        {
+          "phase": "qr.decode",
+          "startMs": 233.7000000178814,
+          "durationMs": 0.5999999940395355
+        },
+        {
+          "phase": "mandala",
+          "startMs": 234.40000000596046,
+          "durationMs": 26.599999994039536
+        },
+        {
+          "phase": "png-encoding",
+          "startMs": 263.80000001192093,
+          "durationMs": 34.19999998807907,
+          "detail": {
+            "bytes": 219593,
+            "width": 960,
+            "height": 1280
+          }
+        }
+      ]
+    }
+  ],
+  "assetReadBenchmark": [
+    {
+      "concurrency": 1,
+      "requests": 34,
+      "ms": 8367,
+      "bytes": 212842,
+      "failed": 0
+    },
+    {
+      "concurrency": 4,
+      "requests": 34,
+      "ms": 1817.7,
+      "bytes": 205564,
+      "failed": 0
+    }
+  ],
+  "optimizedWarmer": {
+    "recordedAt": "2026-09-21T07:13:14.764Z",
+    "id": 1,
+    "outcome": "ok",
+    "durationMs": 2128,
+    "detail": {
+      "scenario": "remote-ready-cells-without-local-proof",
+      "qr.cells.dark.known": 0,
+      "qr.cells.dark.remote": 17,
+      "qr.cells.dark.rendered": 0,
+      "qr.cells.light.known": 0,
+      "qr.cells.light.remote": 17,
+      "qr.cells.light.rendered": 0
+    },
+    "spans": [
+      {
+        "phase": "qr.cells.dark",
+        "startMs": 0.09999999403953552,
+        "durationMs": 1141.800000011921
+      },
+      {
+        "phase": "qr.cells.light",
+        "startMs": 1141.9000000059605,
+        "durationMs": 986
+      }
+    ]
+  }
+}

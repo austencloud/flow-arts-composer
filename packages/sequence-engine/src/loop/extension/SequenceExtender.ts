@@ -17,17 +17,22 @@
  */
 
 import type { SequenceStep } from "../../core/types/sequence-engine-types.js";
-import { LOOPType, Period, type LOOPOption, type LOOPValidationResult } from "../loop-types.js";
+import {
+  ALL_LOOP_TYPES,
+  LOOPType,
+  LOOP_TYPE_DESCRIPTIONS,
+  LOOP_TYPE_LABELS,
+  Period,
+  type LOOPOption,
+} from "../loop-types.js";
 import {
   HALVED_LOOPS,
   QUARTERED_LOOPS,
 } from "../placement-maps/circular-placement-maps.js";
 import {
-  getLOOPOptionsForPlacementPair,
-} from "../validation/LOOPValidator.js";
-import { loopExecutorSelector, type LOOPExecutorSelector } from "../execution/LOOPExecutorSelector.js";
-import { closeOrientationCycle } from "../execution/orientation-cycle.js";
-
+  completeLOOPExtension,
+  isLegacyLOOPSeedValid,
+} from "../execution/complete-loop-extension.js";
 
 /**
  * Categorizes how a sequence can be extended.
@@ -59,10 +64,7 @@ export interface ExtensionOptions {
   period?: Period;
 }
 
-
 export class SequenceExtender {
-  constructor(private readonly executorSelector: LOOPExecutorSelector) {}
-
   /**
    * Analyze a sequence to determine if it can be extended with LOOP patterns.
    * @param steps - Full step array (step 0 = start placement, rest = steps)
@@ -114,11 +116,30 @@ export class SequenceExtender {
     }
 
     // Get LOOP options filtered by validity for this placement pair
-    const { available, unavailable } = getLOOPOptionsForPlacementPair(
-      startPlacement,
-      currentEndPlacement,
-      period
-    );
+    const available: LOOPOption[] = [];
+    const unavailable: Array<LOOPOption & { reason?: string }> = [];
+    for (const loopType of ALL_LOOP_TYPES) {
+      const option = {
+        loopType,
+        name: LOOP_TYPE_LABELS[loopType],
+        description: LOOP_TYPE_DESCRIPTIONS[loopType],
+      };
+      if (
+        isLegacyLOOPSeedValid(
+          startPlacement,
+          currentEndPlacement,
+          loopType,
+          period
+        )
+      ) {
+        available.push(option);
+      } else {
+        unavailable.push({
+          ...option,
+          reason: "Placement pair not valid for this LOOP type",
+        });
+      }
+    }
 
     const canExtend = available.length > 0;
 
@@ -177,9 +198,6 @@ export class SequenceExtender {
         ? Period.QUARTERED
         : Period.HALVED);
 
-    // Get the executor for the selected LOOP type
-    const executor = this.executorSelector.getExecutor(loopType);
-
     const letterSteps = steps.filter((step) => step.stepNumber > 0);
 
     if (letterSteps.length === 0) {
@@ -187,24 +205,14 @@ export class SequenceExtender {
     }
 
     const originalLength = letterSteps.length;
-    const input = steps.map((step) => ({
-      ...step,
-      motions: {
-        left: { ...step.motions.left },
-        right: { ...step.motions.right },
-      },
-    }));
-    const structurallyCompleted = executor.executeLOOP(input, period);
-    const completed = closeOrientationCycle(structurallyCompleted, {
-      seedStepCount: originalLength,
+    const completed = completeLOOPExtension(steps, {
+      loopType,
+      period,
     });
 
-    return completed.steps.filter(
-      (step) => step.stepNumber > originalLength
-    );
+    return completed.steps.filter((step) => step.stepNumber > originalLength);
   }
 }
-
 
 function getStartPlacement(steps: SequenceStep[]): string | null {
   const startStep = steps.find((step) => step.stepNumber === 0);
@@ -217,5 +225,4 @@ function getCurrentEndPlacement(steps: SequenceStep[]): string | null {
   return letterSteps[letterSteps.length - 1]!.endPlacement;
 }
 
-
-export const sequenceExtender = new SequenceExtender(loopExecutorSelector);
+export const sequenceExtender = new SequenceExtender();

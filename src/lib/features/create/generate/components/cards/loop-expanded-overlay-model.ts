@@ -15,10 +15,16 @@ import {
   type RhythmGate,
 } from "$lib/shared/create/services/loop-rhythm-gating";
 import {
+  describeTnDSelection,
+  type TnDSelection,
+} from "$lib/shared/create/domain/hand-relationship";
+import {
   buildLoopSpec,
   canExtendCombo,
   effectiveInversionInterval,
   generateLOOPType,
+  tndLoopCompatibility,
+  type TndLoopCompatibility,
 } from "$lib/shared/create/services/loop-type-utils";
 
 export interface LoopRhythmValue {
@@ -81,6 +87,11 @@ export const REFLECTION_AXIS_OPTIONS = (
   tone: "accent" as const,
 }));
 
+/** One axis choice for the picker, with the hand mode's veto applied. */
+export type ReflectionAxisOption = (typeof REFLECTION_AXIS_OPTIONS)[number] & {
+  disabled?: boolean;
+};
+
 export function normalizeReflectionSelection(
   components: ReadonlySet<LOOPComponent>
 ): Set<LOOPComponent> {
@@ -99,12 +110,20 @@ export interface LoopOverlayModelInput {
   detailComponent: LOOPComponent | null;
   sequenceLength?: number;
   guestMaxLength?: number;
+  /** The hand mode from the TnD card. Absent reads as Free. */
+  handRelationship?: TnDSelection;
 }
 
 export interface LoopOverlayModel {
   explanationText: string;
   isImplemented: boolean;
   disabledComponents: Set<LOOPComponent> | null;
+  /** Why the hand mode disables a component; keyed by component. */
+  disabledReasons: Partial<Record<LOOPComponent, string>>;
+  /** The axis picker's options with the hand mode's veto applied. */
+  reflectionAxisOptions: ReflectionAxisOption[];
+  /** Whether a rotated LOOP may run quartered under the hand mode. */
+  quarteredAvailable: boolean;
   selectionCount: number;
   configurableComponents: Set<LOOPComponent>;
   detailInfo: LOOPComponentInfo | null;
@@ -120,10 +139,16 @@ export interface LoopOverlayModel {
 
 function deriveDisabledComponents(
   selectedComponents: Set<LOOPComponent>,
-  isMultiSelectMode: boolean
+  isMultiSelectMode: boolean,
+  blocked: ReadonlySet<LOOPComponent>
 ): Set<LOOPComponent> | null {
-  if (!isMultiSelectMode) return null;
+  // The hand mode's vetoes apply in both modes. A component that is already
+  // selected stays clickable so the user can take it out of the combo.
   const disabled = new Set<LOOPComponent>();
+  for (const component of blocked) {
+    if (!selectedComponents.has(component)) disabled.add(component);
+  }
+  if (!isMultiSelectMode) return disabled.size > 0 ? disabled : null;
   for (const info of LOOP_COMPONENTS) {
     const component = info.component as LOOPComponent;
     if (selectedComponents.has(component)) continue;
@@ -132,6 +157,29 @@ function deriveDisabledComponents(
     }
   }
   return disabled;
+}
+
+function deriveDisabledReasons(
+  handRelationship: TnDSelection,
+  compatibility: TndLoopCompatibility
+): Partial<Record<LOOPComponent, string>> {
+  const reasons: Partial<Record<LOOPComponent, string>> = {};
+  for (const component of compatibility.blockedComponents) {
+    reasons[component] =
+      `Not compatible with ${describeTnDSelection(handRelationship)} hands`;
+  }
+  return reasons;
+}
+
+function deriveReflectionAxisOptions(
+  compatibility: TndLoopCompatibility
+): ReflectionAxisOption[] {
+  return REFLECTION_AXIS_OPTIONS.map((option) => ({
+    ...option,
+    disabled: compatibility.keptAxes
+      ? !compatibility.keptAxes.includes(option.value)
+      : false,
+  }));
 }
 
 function deriveConfigurableComponents(
@@ -229,6 +277,7 @@ export function buildLoopOverlayModel(
     detailComponent,
     sequenceLength,
     guestMaxLength,
+    handRelationship = "free",
   } = input;
   const generatedType = generateLOOPType(selectedComponents);
   const specWire = buildLoopSpec(selectedComponents, rhythm);
@@ -249,14 +298,19 @@ export function buildLoopOverlayModel(
     rhythmControlsAvailable
   );
   const isImplemented = generatedType !== null;
+  const compatibility = tndLoopCompatibility(handRelationship);
 
   return {
     explanationText: generateExplanationText(selectedComponents),
     isImplemented,
     disabledComponents: deriveDisabledComponents(
       selectedComponents,
-      isMultiSelectMode
+      isMultiSelectMode,
+      compatibility.blockedComponents
     ),
+    disabledReasons: deriveDisabledReasons(handRelationship, compatibility),
+    reflectionAxisOptions: deriveReflectionAxisOptions(compatibility),
+    quarteredAvailable: compatibility.allowsQuartered,
     selectionCount: selectedComponents.size,
     configurableComponents,
     detailInfo,

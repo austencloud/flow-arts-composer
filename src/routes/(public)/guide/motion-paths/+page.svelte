@@ -32,10 +32,9 @@
     <header class="explorer-intro">
       <h2>Try all four on a sequence</h2>
       <p>
-        Pick a pair of shapes from the matrix, or one shape from its edge, and
-        switch the path while it plays. Hybrid uses Arc for pro motions and
-        Concave for anti motions. Any motion can take any path; Hybrid only sets
-        the default.
+        Switch the path while the sequence plays. Hybrid uses Arc for pro
+        motions and Concave for anti motions. Any motion can take any path;
+        Hybrid only sets the default.
       </p>
     </header>
 

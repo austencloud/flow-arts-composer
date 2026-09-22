@@ -14,10 +14,14 @@ import {
   ROTATED_LOOP_TYPES,
 } from "$lib/shared/foundation/domain/models/generation/circular-models";
 import {
-  DEFAULT_HAND_RELATIONSHIP,
-  isHandRelationship,
-  relationshipReflectionAxis,
+  DEFAULT_TND_SELECTION,
+  isTnDSelection,
+  type TnDSelection,
 } from "$lib/shared/create/domain/hand-relationship";
+import {
+  MODE_ORDER,
+  type VtgMode,
+} from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
 import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
 import {
   getLOOPSpecExpansionMultiplier,
@@ -280,6 +284,123 @@ export function buildLoopSpec(
   return { left: prop, right: prop };
 }
 
+export interface TndLoopCompatibility {
+  /** LOOP components the hand mode cannot commute with; the overlay disables them. */
+  blockedComponents: ReadonlySet<LOOPComponent>;
+  /** Whether a rotated LOOP may run quartered under this hand mode. */
+  allowsQuartered: boolean;
+  /** Reflection axes the hand mode keeps, or null when every axis is fine. */
+  keptAxes: readonly ReflectionAxis[] | null;
+  /** The axis to coerce to when the requested one is not kept. */
+  fallbackAxis: ReflectionAxis | null;
+}
+
+const NO_COMPONENTS: ReadonlySet<LOOPComponent> = new Set();
+const CARDINAL_AXES: readonly ReflectionAxis[] = ["north-south", "east-west"];
+const DIAGONAL_AXES: readonly ReflectionAxis[] = [
+  "northeast-southwest",
+  "northwest-southeast",
+];
+
+/**
+ * Which LOOP transforms commute with a hand mode. A reflection hand mode
+ * (TO, SO, QO) only survives reflections across its own family of axes and
+ * halved rotation. A quarter rotation (QS) has no reflection that commutes
+ * with it and cannot swap hands, but it keeps quartered rotation. Together
+ * and Split rotations (TS, SS) and Free commute with everything.
+ */
+export function tndLoopCompatibility(
+  handMode: TnDSelection
+): TndLoopCompatibility {
+  switch (handMode) {
+    case "TO":
+      return {
+        blockedComponents: NO_COMPONENTS,
+        allowsQuartered: false,
+        keptAxes: CARDINAL_AXES,
+        fallbackAxis: "north-south",
+      };
+    case "SO":
+      return {
+        blockedComponents: NO_COMPONENTS,
+        allowsQuartered: false,
+        keptAxes: CARDINAL_AXES,
+        fallbackAxis: "east-west",
+      };
+    case "QS":
+      return {
+        blockedComponents: new Set([
+          LOOPComponent.MIRRORED,
+          LOOPComponent.FLIPPED,
+          LOOPComponent.SWAPPED,
+        ]),
+        allowsQuartered: true,
+        keptAxes: null,
+        fallbackAxis: null,
+      };
+    case "QO":
+      return {
+        blockedComponents: NO_COMPONENTS,
+        allowsQuartered: false,
+        keptAxes: DIAGONAL_AXES,
+        fallbackAxis: "northeast-southwest",
+      };
+    default:
+      return {
+        blockedComponents: NO_COMPONENTS,
+        allowsQuartered: true,
+        keptAxes: null,
+        fallbackAxis: null,
+      };
+  }
+}
+
+/** Reads a raw config field as a selection; anything unknown is Free. */
+export function readTnDSelection(value: unknown): TnDSelection {
+  return isTnDSelection(value) ? value : DEFAULT_TND_SELECTION;
+}
+
+/**
+ * The first component of a LOOP type that the hand mode cannot run under,
+ * or null when they commute.
+ */
+export function loopBlocksHandMode(
+  loopType: LOOPType | string | null | undefined,
+  handMode: TnDSelection
+): LOOPComponent | null {
+  const blocked = tndLoopCompatibility(handMode).blockedComponents;
+  if (blocked.size === 0) return null;
+  for (const component of parseLoopComponents(loopType)) {
+    if (blocked.has(component)) return component;
+  }
+  return null;
+}
+
+const COMPONENT_BLOCK_LABELS: Partial<Record<LOOPComponent, string>> = {
+  [LOOPComponent.MIRRORED]: "Reflection",
+  [LOOPComponent.FLIPPED]: "Reflection",
+  [LOOPComponent.SWAPPED]: "Swapped",
+};
+
+/**
+ * Hand modes the current LOOP type rules out, each with the reason the TnD
+ * panel shows on the disabled chip.
+ */
+export function handModesBlockedByLoop(
+  loopType: LOOPType | string | null | undefined
+): Partial<Record<VtgMode, string>> {
+  const blocked: Partial<Record<VtgMode, string>> = {};
+  if (!loopType) return blocked;
+  for (const mode of MODE_ORDER) {
+    const component = loopBlocksHandMode(loopType, mode);
+    if (component) {
+      const label = COMPONENT_BLOCK_LABELS[component] ?? component;
+      blocked[mode] = `Not compatible with a ${label} LOOP`;
+    }
+  }
+  return blocked;
+}
+
 export interface ResolvedLoopConfig {
   /** Effective period after gating quartered→halved for non-rotation types. */
   period: "halved" | "quartered";
@@ -319,22 +440,22 @@ export function resolveLoopConfig(
     inversionMode?: "expand" | "overlay";
     reflectionAxis?: ReflectionAxis;
     /**
-     * A reflection hand relationship (Mirrored, Flipped) only survives LOOP
-     * transforms that commute with it. Quartered rotation and the diagonal
-     * axes do not, so they are coerced here rather than blocked: the LOOP
-     * card, the length stepper and the engine all read this one resolved
-     * value. Accepts the raw config field, so an unknown string reads as free.
+     * The hand mode. A reflection mode only survives LOOP transforms that
+     * commute with it (see tndLoopCompatibility): quartered rotation and
+     * the wrong family of reflection axes are coerced here rather than
+     * blocked, so the LOOP card, the length stepper and the engine all read
+     * one resolved value. Accepts the raw config field; unknown reads as
+     * free.
      */
     handRelationship?: string | null;
   }
 ): ResolvedLoopConfig {
-  const requestedRelationship = rhythmOpts?.handRelationship;
-  const relationship = isHandRelationship(requestedRelationship)
-    ? requestedRelationship
-    : DEFAULT_HAND_RELATIONSHIP;
-  const keptAxis = relationshipReflectionAxis(relationship);
+  const compatibility = tndLoopCompatibility(
+    readTnDSelection(rhythmOpts?.handRelationship)
+  );
   const supportsQuartered =
-    ROTATED_LOOP_TYPES.has(loopType as LOOPType) && keptAxis === null;
+    ROTATED_LOOP_TYPES.has(loopType as LOOPType) &&
+    compatibility.allowsQuartered;
   const period: "halved" | "quartered" =
     supportsQuartered && requestedPeriod === "quartered"
       ? "quartered"
@@ -342,9 +463,11 @@ export function resolveLoopConfig(
   const requestedAxis: ReflectionAxis =
     rhythmOpts?.reflectionAxis ??
     (String(loopType).includes("flipped") ? "east-west" : "north-south");
-  const diagonal =
-    requestedAxis === "northeast-southwest" ||
-    requestedAxis === "northwest-southeast";
+  const { keptAxes, fallbackAxis } = compatibility;
+  const reflectionAxis =
+    keptAxes && fallbackAxis && !keptAxes.includes(requestedAxis)
+      ? fallbackAxis
+      : requestedAxis;
   const inversionMode = rhythmOpts?.inversionMode ?? "expand";
   const loopRhythm: LoopRhythm = {
     rotationInterval: period === "quartered" ? 4 : 2,
@@ -355,7 +478,7 @@ export function resolveLoopConfig(
       inversionMode,
     }),
     inversionMode,
-    reflectionAxis: keptAxis && diagonal ? keptAxis : requestedAxis,
+    reflectionAxis,
   };
   const loopSpecWire =
     buildLoopSpec(parseLoopComponents(loopType), loopRhythm) ?? undefined;

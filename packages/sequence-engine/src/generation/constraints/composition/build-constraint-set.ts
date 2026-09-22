@@ -22,6 +22,7 @@ import {
   minimizeDashes,
 } from "../style/dash-preference-constraint.js";
 import { HandRelationshipConstraint } from "../style/hand-relationship-constraint.js";
+import { PropRelationshipConstraint } from "../style/prop-relationship-constraint.js";
 
 // Dash preference shares ConstraintType.MOTION_TYPE with hard filters, but
 // is always soft. Weight it heavier than the default 1.0 so it actually
@@ -132,6 +133,10 @@ export function buildConstraintSet(options: ConstraintOptions): ConstraintSet {
   // Hand relationship dimension. Hard: a pair either relates or it does not.
   if (options.handRelationship) {
     hard.push(new HandRelationshipConstraint(options.handRelationship));
+  }
+
+  if (options.propRelationship) {
+    hard.push(new PropRelationshipConstraint(options.propRelationship));
   }
 
   const set: ConstraintSet = { hard, soft };

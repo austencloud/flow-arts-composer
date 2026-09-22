@@ -22,6 +22,7 @@ import {
   type Effect,
 } from "postprocessing";
 import { EnvironmentTransitionCompositor } from "../../environments/rendering/environment-transition-compositor";
+import type { EnvironmentTransitionPhase } from "../../environments/domain/environment-transition";
 import {
   SCENE_COLOR_SNAPSHOT_SCALE_3D,
   clearSceneColorSnapshot3D,
@@ -63,6 +64,7 @@ export interface ScenePostProcessingPipelineOptions {
 export interface ScenePostProcessingRenderOptions {
   forceBaseRender?: boolean;
   transitionOpacity?: number;
+  transitionPhase?: EnvironmentTransitionPhase;
 }
 
 interface OceanRendererState {
@@ -130,6 +132,7 @@ export class ScenePostProcessingPipeline {
     {
       forceBaseRender = false,
       transitionOpacity = 0,
+      transitionPhase = "idle",
     }: ScenePostProcessingRenderOptions = {}
   ): void {
     if (this.disposed) return;
@@ -155,8 +158,17 @@ export class ScenePostProcessingPipeline {
       this.renderer,
       this.scene,
       this.camera,
-      transitionOpacity
+      transitionOpacity,
+      transitionPhase
     );
+  }
+
+  captureTransitionFrame(): void {
+    if (this.disposed || this.transitionCompositor.hasRetainedFrame) return;
+    // preserveDrawingBuffer is off, so redraw before copying instead of
+    // reading a backbuffer the browser may already have cleared.
+    this.render(0, { forceBaseRender: true });
+    this.transitionCompositor.capture(this.renderer);
   }
 
   /** The framebuffer used by the production scene pass before effects. */
