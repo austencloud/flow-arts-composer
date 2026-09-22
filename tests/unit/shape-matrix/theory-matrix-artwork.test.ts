@@ -106,6 +106,10 @@ describe("theory matrix artwork", () => {
     expect(mixedLeftPath).toEqual(shortLeftPath);
     // It does not draw the shape a 300-reach hand would.
     expect(mixedLeftPath).not.toEqual(longLeftPath);
+    // `scale` stays the pair's larger reach regardless of which hand traces
+    // at which reach: it only ever fits the cell to the canvas, it never
+    // feeds the geometry.
+    expect(mixed.cellCalls[0]?.scale).toBe(300);
   });
 
   it("keys the header raster cache on reach, so a reach change repaints", () => {
@@ -121,5 +125,41 @@ describe("theory matrix artwork", () => {
     // The same request again is a cache hit, not a third paint call.
     theoryHeaderArtworkSrc(leftFlower, "left", 126, 126, 64, painter);
     expect(headerCalls).toHaveLength(2);
+  });
+
+  it("keys the cell raster cache on each hand's reach, so a reach change repaints", () => {
+    const { painter, cellCalls } = stubPainter("cell-reach-cache");
+
+    theoryCellArtworkSrc(
+      leftFlower,
+      rightFlower,
+      { left: 126, right: 126 },
+      126,
+      64,
+      painter
+    );
+    theoryCellArtworkSrc(
+      leftFlower,
+      rightFlower,
+      { left: 300, right: 300 },
+      300,
+      64,
+      painter
+    );
+
+    expect(cellCalls).toHaveLength(2);
+    expect(cellCalls[0]?.scale).toBe(126);
+    expect(cellCalls[1]?.scale).toBe(300);
+
+    // The same request again is a cache hit, not a third paint call.
+    theoryCellArtworkSrc(
+      leftFlower,
+      rightFlower,
+      { left: 126, right: 126 },
+      126,
+      64,
+      painter
+    );
+    expect(cellCalls).toHaveLength(2);
   });
 });

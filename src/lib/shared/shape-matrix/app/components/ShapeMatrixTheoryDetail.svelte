@@ -22,6 +22,7 @@
   import { traceScaledPath } from "$lib/shared/notation/qft/qft-model";
   import { propReachInHandRadii } from "$lib/shared/shape-matrix/services/theory-matrix-artwork";
   import { shapeMatrixTipPoint } from "$lib/shared/shape-matrix/services/shape-matrix-flowers";
+  import { foldUntraceablePropPair } from "$lib/shared/shape-matrix/domain/prop-pair";
   import {
     isStationaryRatio,
     theoryKnobs,
@@ -104,10 +105,14 @@
    * moment `app.data` catches up, and during that gap the state's hand
    * getters already name the new prop while the loaded geometry (and its
    * sprites) is still the old one. Falling back to the state only covers the
-   * first load, before any pair has landed at all.
+   * first load, before any pair has landed at all, and that fallback is
+   * folded: the state's own props are the user's raw pick and can name a
+   * prop the engine cannot trace a path for (a bare hand, a single contact
+   * ball), which would ask this stage for a sprite that does not exist.
    */
   const drawnProps = $derived(
-    app.data?.props ?? { left: app.leftPropType, right: app.rightPropType }
+    app.data?.props ??
+      foldUntraceablePropPair({ left: app.leftPropType, right: app.rightPropType })
   );
 
   /*

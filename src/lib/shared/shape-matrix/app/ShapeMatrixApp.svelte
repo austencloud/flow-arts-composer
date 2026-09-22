@@ -13,7 +13,6 @@
   import { followPropSource } from "./state/follow-prop-source.svelte";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { DEFAULT_THEORY_RATIO } from "$lib/shared/shape-matrix/domain/theory-ratio";
-  import { foldUntraceableProp } from "$lib/shared/shape-matrix/domain/prop-pair";
 
   interface Props {
     persistence?: ShapeMatrixAppPersistence;
@@ -56,8 +55,8 @@
       rightTurn: 2,
       activeAxis: "both",
       labelMode: "turns",
-      leftPropType: foldUntraceableProp(propSource?.left ?? PropType.STAFF),
-      rightPropType: foldUntraceableProp(propSource?.right ?? PropType.STAFF),
+      leftPropType: propSource?.left ?? PropType.STAFF,
+      rightPropType: propSource?.right ?? PropType.STAFF,
       pair: null,
       mode: null,
       propMode: null,

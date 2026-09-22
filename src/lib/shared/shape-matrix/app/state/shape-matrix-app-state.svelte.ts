@@ -293,7 +293,7 @@ export function createShapeMatrixAppState(
   );
   let activeAxis = $state<ShapeMatrixAxisTarget>(initial.activeAxis);
   let labelMode = $state(initial.labelMode);
-  const initialPair = foldUntraceablePropPair(propPairFromLegacy(initial));
+  const initialPair = propPairFromLegacy(initial);
   let leftPropType = $state(initialPair.left);
   let rightPropType = $state(initialPair.right);
   /** Whether the hand segments show; starts on when the restored pair differs. */
@@ -371,6 +371,15 @@ export function createShapeMatrixAppState(
    * token was still current when the fetch came back, and it came back
    * clean. False covers both a superseded request and a failed one, so a
    * caller can treat "not the winner" as a single case.
+   *
+   * `nextPair` is the user's raw choice and stays raw everywhere in this
+   * state -- `requestedPropPair`, `leftPropType`/`rightPropType`, and every
+   * announcement to the host all carry exactly what was asked for. Folding
+   * happens once, right here, only for the value handed to `loadMatrix`: a
+   * prop the engine cannot trace a path for (a bare hand, a single contact
+   * ball) draws as staff instead of leaving the matrix stuck on its error
+   * state, while the raw pick is never overwritten in state or echoed back
+   * into settings as staff.
    */
   async function load(
     nextPair: ShapeMatrixPropPair = { left: leftPropType, right: rightPropType }
@@ -380,7 +389,9 @@ export function createShapeMatrixAppState(
     loading = true;
     loadError = null;
     try {
-      const nextData = await dependencies.loadMatrix(nextPair);
+      const nextData = await dependencies.loadMatrix(
+        foldUntraceablePropPair(nextPair)
+      );
       if (token !== loadToken) return false;
       data = nextData;
       leftPropType = nextPair.left;
@@ -810,26 +821,26 @@ export function createShapeMatrixAppState(
    * bumps the load token, so the pick's own in-flight load resolves
    * superseded and never overwrites what settings just asked for.
    *
-   * The incoming pair is folded before any of that: settings may hold a
-   * prop the engine cannot trace (bare hand, a single contact ball), and
-   * drawing it would leave the matrix stuck on its error state. The folded
-   * pair is what gets compared, loaded and stored, so a settings value that
-   * folds to what is already on screen is correctly seen as unchanged
-   * instead of looping through a reload every time this fires.
+   * The incoming pair is stored and compared exactly as settings gave it:
+   * this is the value `load()` echoes back through `onPropPairChange`, so
+   * settings must see its own value again, never a folded stand-in. A prop
+   * the engine cannot trace a path for (a bare hand, a single contact ball)
+   * is only folded to staff where `load()` hands the pair to `loadMatrix`,
+   * which is what keeps the matrix drawing without touching the saved
+   * choice.
    */
   function adoptPropPair(pair: ShapeMatrixPropPair, nextCatDog: boolean): void {
-    const folded = foldUntraceablePropPair(pair);
     if (
-      folded.left === requestedPropPair.left &&
-      folded.right === requestedPropPair.right &&
+      pair.left === requestedPropPair.left &&
+      pair.right === requestedPropPair.right &&
       nextCatDog === catDog
     )
       return;
     catDog = nextCatDog;
     if (!nextCatDog) propHand = "left";
-    leftPropType = folded.left;
-    rightPropType = folded.right;
-    requestedPropPair = folded;
+    leftPropType = pair.left;
+    rightPropType = pair.right;
+    requestedPropPair = pair;
     if (data || loading) void load();
   }
 

@@ -394,18 +394,20 @@ describe("shape matrix URL state", () => {
     });
   });
 
-  it("folds a prop the engine cannot trace to staff instead of breaking the matrix", () => {
-    // Bare hand and a single contact ball have no tracked tip; a shared link
-    // carrying either must still draw, not leave the matrix on its error state.
+  it("parses a prop the engine cannot trace as-is, unfolded", () => {
+    // Bare hand and a single contact ball have no tracked tip. The URL layer
+    // no longer folds them to staff -- that now happens once, where the app
+    // state hands a pair to the engine's loader -- so a shared link still
+    // round-trips the exact prop it named.
     expect(readShapeMatrixRouteState("?prop=hand&rp=club")).toMatchObject({
-      leftPropType: PropType.STAFF,
+      leftPropType: PropType.HAND,
       rightPropType: PropType.CLUB,
     });
     expect(
       readShapeMatrixRouteState("?prop=club&rp=contactball")
     ).toMatchObject({
       leftPropType: PropType.CLUB,
-      rightPropType: PropType.STAFF,
+      rightPropType: PropType.CONTACTBALL,
     });
   });
 

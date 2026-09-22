@@ -936,7 +936,7 @@ describe("shape matrix prop pair state", () => {
     );
   });
 
-  it("folds an untraceable adopted prop to staff instead of breaking the matrix", async () => {
+  it("adopts an untraceable pair as its raw self and loads it folded to staff", async () => {
     const { state, loadMatrix } = createState(false, {
       left: PropType.STAFF,
       right: PropType.STAFF,
@@ -945,10 +945,12 @@ describe("shape matrix prop pair state", () => {
     loadMatrix.mockClear();
 
     // Bare hand has no tracked tip; the engine cannot trace it. Settings can
-    // still hold it (a global choice), but adopting it must not hand the
-    // matrix a prop it cannot build.
+    // still hold it (a global choice). Adopting it keeps that raw value in
+    // state -- so an announcement back to the host never turns Hand into
+    // Staff behind its back -- while the value handed to the engine folds so
+    // the matrix still draws instead of erroring.
     state.adoptPropPair({ left: PropType.HAND, right: PropType.CLUB }, true);
-    expect(state.leftPropType).toBe(PropType.STAFF);
+    expect(state.leftPropType).toBe(PropType.HAND);
     expect(state.rightPropType).toBe(PropType.CLUB);
     await vi.waitFor(() =>
       expect(state.data?.props).toEqual({
@@ -961,11 +963,81 @@ describe("shape matrix prop pair state", () => {
       right: PropType.CLUB,
     });
 
-    // The same untraceable pair again folds to the same thing already on
-    // screen, so it must read as unchanged rather than looping a reload.
+    // The identical raw pair again is judged against the raw value already
+    // stored, so it reads as unchanged rather than looping a reload.
     loadMatrix.mockClear();
     state.adoptPropPair({ left: PropType.HAND, right: PropType.CLUB }, true);
     expect(loadMatrix).not.toHaveBeenCalled();
+  });
+
+  it("announces cat dog turned on with the raw untraceable pair intact", async () => {
+    const onPropPairChange = vi.fn();
+    const { state } = createState(false, { onPropPairChange });
+    await state.load();
+    state.adoptPropPair({ left: PropType.HAND, right: PropType.HAND }, false);
+    await vi.waitFor(() =>
+      expect(state.data?.props).toEqual({
+        left: PropType.STAFF,
+        right: PropType.STAFF,
+      })
+    );
+
+    await state.toggleCatDog();
+
+    expect(state.catDog).toBe(true);
+    expect(onPropPairChange).toHaveBeenCalledWith(
+      { left: PropType.HAND, right: PropType.HAND },
+      true
+    );
+  });
+
+  it("keeps a raw untraceable hand when only the other hand is picked", async () => {
+    const onPropPairChange = vi.fn();
+    const { state, loadMatrix } = createState(false, { onPropPairChange });
+    await state.load();
+    state.adoptPropPair({ left: PropType.HAND, right: PropType.STAFF }, true);
+    await vi.waitFor(() =>
+      expect(state.data?.props).toEqual({
+        left: PropType.STAFF,
+        right: PropType.STAFF,
+      })
+    );
+    loadMatrix.mockClear();
+    state.setPropHand("right");
+
+    await state.setPropType(PropType.CLUB);
+
+    expect(loadMatrix).toHaveBeenLastCalledWith({
+      left: PropType.STAFF,
+      right: PropType.CLUB,
+    });
+    expect(state.leftPropType).toBe(PropType.HAND);
+    expect(state.rightPropType).toBe(PropType.CLUB);
+    expect(onPropPairChange).toHaveBeenCalledWith(
+      { left: PropType.HAND, right: PropType.CLUB },
+      true
+    );
+  });
+
+  it("picking a prop the engine cannot trace loads folded to staff instead of erroring", async () => {
+    const { state, loadMatrix } = createState(false);
+    await state.load();
+
+    await state.setPropType(PropType.CONTACTBALL);
+
+    expect(state.loadError).toBeNull();
+    // Loaded folded to staff: this is the exact pair `build()` would throw
+    // on, so the fold at the load boundary is what keeps this a success.
+    expect(loadMatrix).toHaveBeenLastCalledWith({
+      left: PropType.STAFF,
+      right: PropType.STAFF,
+    });
+    expect(state.data?.props).toEqual({
+      left: PropType.STAFF,
+      right: PropType.STAFF,
+    });
+    expect(state.leftPropType).toBe(PropType.CONTACTBALL);
+    expect(state.rightPropType).toBe(PropType.CONTACTBALL);
   });
 
   it("adopts a pair from the host without syncing or notifying", async () => {
