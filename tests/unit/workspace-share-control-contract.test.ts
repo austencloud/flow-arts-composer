@@ -121,9 +121,13 @@ describe("Create workspace share control contract", () => {
     const handlerStart = shareButtonSource.indexOf(
       "function handleCopyLink(): void"
     );
-    const handlerEnd = shareButtonSource.indexOf(
-      "function handleGuestShare(): void"
-    );
+    // End at the next top-level function so later async helpers in the file
+    // cannot leak into the handler under test.
+    const nextFunction = /\n {2}(?:async )?function /g;
+    nextFunction.lastIndex = handlerStart + 1;
+    const handlerEnd = nextFunction.exec(shareButtonSource)?.index ?? -1;
+    expect(handlerStart).toBeGreaterThanOrEqual(0);
+    expect(handlerEnd).toBeGreaterThan(handlerStart);
     const handler = shareButtonSource.slice(handlerStart, handlerEnd);
 
     expect(handler).toContain(
