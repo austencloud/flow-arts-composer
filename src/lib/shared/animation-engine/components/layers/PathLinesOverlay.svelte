@@ -41,7 +41,7 @@
     stepData?: StepData | StartPlacementData | null;
     showLeft?: boolean;
     showRight?: boolean;
-    primaryPropColors?: ViewerCustomColorPair;
+    primaryPropColors?: ViewerCustomColorPair | null;
     /** Per-surface visibility manager; falls back to the global singleton. */
     vm?: AnimationVisibilityStateManager | null;
   } = $props();
@@ -96,7 +96,11 @@
     return isVisibleMotion(motion) ? buildPathD(motion) : null;
   });
 
-  const colors = $derived(primaryPropColors ?? getSettings().primaryPropColors);
+  const colors = $derived(
+    primaryPropColors !== undefined
+      ? primaryPropColors
+      : getSettings().primaryPropColors
+  );
   const leftColor = $derived(
     colors?.left ?? getMotionColor(HandSide.LEFT, "dark")
   );

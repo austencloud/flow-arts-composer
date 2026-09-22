@@ -2,6 +2,7 @@ import { render } from "vitest-browser-svelte";
 import { page } from "vitest/browser";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import TKAWordGlyphHarness from "./__tests__/TKAWordGlyphHarness.svelte";
+import { measureHtmlBraceInk } from "$lib/shared/pictograph/tka-glyph/utils/__tests__/html-brace-ink";
 
 const glyphCacheState = vi.hoisted(() => ({
   loaded: new Set<string>(),
@@ -94,5 +95,78 @@ describe("TKAWordGlyph fitToParent", () => {
       expect(host.querySelector('img[alt="γ"]')).not.toBeNull();
     });
     expect(host.querySelector(".glyph-fallback")).toBeNull();
+  });
+});
+
+describe("TKAWordGlyph skew braces", () => {
+  it("braces a whole skewed span without falling through to the fallback path", async () => {
+    render(TKAWordGlyphHarness, { width: 280, word: "{AB}" });
+
+    const host = page.getByTestId("glyph-host").element() as HTMLElement;
+    await vi.waitFor(() => {
+      expect(host.querySelectorAll("img")).toHaveLength(2);
+    });
+
+    expect(host.querySelectorAll(".skew-brace")).toHaveLength(2);
+    expect(host.querySelectorAll(".glyph-fallback")).toHaveLength(0);
+  });
+
+  it("centres each brace's ink on the letters and matches their height", async () => {
+    render(TKAWordGlyphHarness, { width: 280, word: "{AB}" });
+
+    const host = page.getByTestId("glyph-host").element() as HTMLElement;
+    await vi.waitFor(() => {
+      expect(host.querySelectorAll("img")).toHaveLength(2);
+    });
+
+    const letterBox = host.querySelector("img")!.getBoundingClientRect();
+    const letterCentre = (letterBox.top + letterBox.bottom) / 2;
+    const braces = [...host.querySelectorAll<HTMLElement>(".skew-brace")];
+    expect(braces).toHaveLength(2);
+    for (const brace of braces) {
+      const ink = measureHtmlBraceInk(brace);
+      expect(Math.abs(ink.centreY - letterCentre)).toBeLessThanOrEqual(
+        0.03 * letterBox.height
+      );
+      // Same brace-to-letter ratio as the pictograph: ink as tall as the letter.
+      expect(Math.abs(ink.height - letterBox.height)).toBeLessThanOrEqual(
+        0.06 * letterBox.height
+      );
+    }
+  });
+
+  it("leaves a partial skewed span unbraced", async () => {
+    render(TKAWordGlyphHarness, { width: 280, word: "A{B}" });
+
+    const host = page.getByTestId("glyph-host").element() as HTMLElement;
+    await vi.waitFor(() => {
+      expect(host.querySelectorAll("img")).toHaveLength(2);
+    });
+
+    expect(host.querySelectorAll(".skew-brace")).toHaveLength(0);
+  });
+
+  it("keeps a whole skewed span (braces included) inside a narrow host", async () => {
+    render(TKAWordGlyphHarness, { width: 60, word: "{AB}" });
+
+    const host = page.getByTestId("glyph-host").element() as HTMLElement;
+    await vi.waitFor(() => {
+      expect(host.querySelectorAll("img")).toHaveLength(2);
+    });
+    await nextPaint();
+
+    const row = host.querySelector(".glyph-row") as HTMLElement;
+    // The braces render as children of .glyph-row, so once the row (measured
+    // at its natural, unscaled width via bind:offsetWidth) is confirmed to
+    // fit inside the host, the braces are covered by that same fit - no
+    // separate rect needed for them. Real Chromium layout here (this suite
+    // runs under @vitest/browser-playwright, not jsdom), so offsetWidth and
+    // getBoundingClientRect reflect actual rendered geometry.
+    expect(row.querySelectorAll(".skew-brace")).toHaveLength(2);
+    const hostRect = host.getBoundingClientRect();
+    const rowRect = row.getBoundingClientRect();
+    expect(rowRect.left).toBeGreaterThanOrEqual(hostRect.left - 0.5);
+    expect(rowRect.right).toBeLessThanOrEqual(hostRect.right + 0.5);
+    expect(row.style.transform).not.toBe("scale(1)");
   });
 });

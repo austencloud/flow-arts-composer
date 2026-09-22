@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   ephemeralAdapter,
   createMemoryAdapter,
@@ -132,5 +132,61 @@ describe("scope isolation regression (the reported bug)", () => {
     userScope.visibility.toggleMotionAwarePaths(); // user turns Hybrid ON
     expect(userScope.visibility.getMotionAwarePaths()).toBe(true);
     expect(landingScope.visibility.getMotionAwarePaths()).toBe(false); // landing stays OFF
+  });
+});
+
+describe("ephemeral animation scope effects", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.runOnlyPendingTimers();
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it("does not read or write tka_effects_config", () => {
+    const stored = JSON.stringify({
+      version: 38,
+      tipEffectMap: { "*": { effect: "fire" } },
+    });
+    const getItem = vi
+      .spyOn(Storage.prototype, "getItem")
+      .mockImplementation((key: string) =>
+        key === "tka_effects_config" ? stored : null
+      );
+    const setItem = vi
+      .spyOn(Storage.prototype, "setItem")
+      .mockImplementation(() => {});
+
+    const scope = createAnimationScope({ persistence: "ephemeral" });
+    expect(scope.effects.config.tipEffectMap).toEqual({
+      "*": { effect: "trails" },
+    });
+    scope.effects.setActiveEffect("led");
+    vi.runAllTimers();
+
+    const effectsReads = getItem.mock.calls.filter(
+      ([key]) => key === "tka_effects_config"
+    );
+    const effectsWrites = setItem.mock.calls.filter(
+      ([key]) => key === "tka_effects_config"
+    );
+    expect(effectsReads).toHaveLength(0);
+    expect(effectsWrites).toHaveLength(0);
+  });
+
+  it("local scopes still load the persisted effects config", () => {
+    const stored = JSON.stringify({
+      version: 38,
+      tipEffectMap: { "*": { effect: "fire" } },
+    });
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation((key: string) =>
+      key === "tka_effects_config" ? stored : null
+    );
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {});
+
+    const scope = createAnimationScope({ persistence: "local" });
+    expect(scope.effects.config.tipEffectMap["*"]?.effect).toBe("fire");
   });
 });

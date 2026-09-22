@@ -1,6 +1,7 @@
 import { render } from "vitest-browser-svelte";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import WordHeader from "./WordHeader.svelte";
+import { measureHtmlBraceInk } from "$lib/shared/pictograph/tka-glyph/utils/__tests__/html-brace-ink";
 
 const glyphCacheState = vi.hoisted(() => ({
   loaded: new Set<string>(),
@@ -141,5 +142,112 @@ describe("WordHeader title transitions", () => {
       },
       { timeout: 1500 }
     );
+  });
+});
+
+describe("WordHeader skewed spans", () => {
+  /**
+   * A rotate-45 fuse stores its word as one braced span, "{ΨΩZ-VΦΔW-T}". The
+   * braces are notation, not beats: the highlight has to walk the eight
+   * letters, and the braces have to read as brackets around them, drawn at the
+   * letters' own height rather than as two more dim letters.
+   */
+  const SKEWED_WORD = "{ΨΩZ-VΦΔW-T}";
+
+  it("renders the braces as span marks, not as letter units", async () => {
+    render(WordHeader, { word: SKEWED_WORD, visible: true });
+
+    await vi.waitFor(() => {
+      expect(document.querySelectorAll(".letter").length).toBe(8);
+    });
+    const braces = [...document.querySelectorAll(".skew-brace")].map(
+      (el) => el.textContent?.trim()
+    );
+    expect(braces).toEqual(["{", "}"]);
+    expect(
+      [...document.querySelectorAll(".letter")].map((el) => el.textContent?.trim())
+    ).toEqual(["Ψ", "Ω", "Z-", "V", "Φ", "Δ", "W-", "T"]);
+  });
+
+  it("highlights the beat's own letter and wraps on the letter count", async () => {
+    const activeLetter = () =>
+      document.querySelector(".letter.active")?.textContent?.trim() ?? null;
+
+    const screen = render(WordHeader, {
+      word: SKEWED_WORD,
+      visible: true,
+      activeStepNumber: 1,
+    });
+    await vi.waitFor(() => expect(activeLetter()).toBe("Ψ"), { timeout: 1500 });
+
+    await screen.rerender({ word: SKEWED_WORD, visible: true, activeStepNumber: 8 });
+    await vi.waitFor(() => expect(activeLetter()).toBe("T"));
+
+    await screen.rerender({ word: SKEWED_WORD, visible: true, activeStepNumber: 9 });
+    await vi.waitFor(() => expect(activeLetter()).toBe("Ψ"));
+
+    expect(document.querySelector(".skew-brace.active")).toBeNull();
+  });
+
+  it("draws the braces at least as tall as the letters", async () => {
+    render(WordHeader, { word: SKEWED_WORD, visible: true });
+
+    await vi.waitFor(() => {
+      expect(document.querySelector(".skew-brace")).not.toBeNull();
+    });
+    const wordText = document.querySelector(".word-text") as HTMLElement;
+    const brace = document.querySelector(".skew-brace") as HTMLElement;
+    const letterEm = parseFloat(getComputedStyle(wordText).fontSize);
+    const braceEm = parseFloat(getComputedStyle(brace).fontSize);
+    expect(braceEm).toBeGreaterThanOrEqual(letterEm);
+    expect(getComputedStyle(brace).fontFamily).not.toContain("TKA Letters");
+  });
+
+  it("centres each brace's ink on the letters and matches their height", async () => {
+    render(WordHeader, { word: SKEWED_WORD, visible: true });
+
+    await vi.waitFor(() => {
+      expect(document.querySelectorAll(".skew-brace")).toHaveLength(2);
+    });
+    // Retried until the entrance transitions settle at rest.
+    await vi.waitFor(() => {
+      const letter = document.querySelector(".letter") as HTMLElement;
+      const letterBox = letter.getBoundingClientRect();
+      const letterCentre = (letterBox.top + letterBox.bottom) / 2;
+      for (const brace of document.querySelectorAll<HTMLElement>(".skew-brace")) {
+        const ink = measureHtmlBraceInk(brace);
+        // A line-height box centres the font's whole ascent+descent, which
+        // put the brace ink about 0.17 letter-heights low.
+        expect(Math.abs(ink.centreY - letterCentre)).toBeLessThanOrEqual(
+          0.03 * letterBox.height
+        );
+        expect(Math.abs(ink.height - letterBox.height)).toBeLessThanOrEqual(
+          0.06 * letterBox.height
+        );
+      }
+    });
+  });
+
+  it("wraps a compressed whole-word span in one brace pair", async () => {
+    render(WordHeader, {
+      word: "{STSSTS}",
+      visible: true,
+      activeStepNumber: 4,
+    });
+
+    await vi.waitFor(() => {
+      expect(document.querySelectorAll(".letter").length).toBe(3);
+    });
+    expect(document.querySelectorAll(".skew-brace").length).toBe(2);
+    await vi.waitFor(() =>
+      expect(
+        document.querySelector(".letter.active")?.textContent?.trim()
+      ).toBe("S")
+    );
+    expect(
+      [...document.querySelectorAll(".letter")].indexOf(
+        document.querySelector(".letter.active")!
+      )
+    ).toBe(0);
   });
 });

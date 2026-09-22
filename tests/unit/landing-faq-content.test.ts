@@ -72,7 +72,7 @@ describe("landing FAQ content contract", () => {
       /straight to Instagram|directly to Instagram/i
     );
     expect(sharing!.answer).toMatch(/PNG/);
-    expect(sharing!.answer).toMatch(/GIF/);
+    expect(sharing!.answer).not.toMatch(/GIF/);
     expect(sharing!.answer).toMatch(/video/);
     expect(sharing!.answer).toMatch(/share sheet/);
   });

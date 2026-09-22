@@ -1,0 +1,89 @@
+{
+  "sourceCommit": "437a951f6ad096dfe0ae7d979773d14f3a00e813",
+  "records": [
+    {
+      "tag": "sr",
+      "grid": "diamond",
+      "seed": "iiSS|wewex0:eaeax0|wewex0.5:eawex0.5:d2.5|wesou0.5:wenoc0.5",
+      "full": "iiSS|wewex0:eaeax0|wewex0.5:eawex0.5:d2.5|wesou0.5:wenoc0.5|sosox0.5:nosox0.5:d2.5|soeau0.5:sowec0.5|eaeax0.5:weeax0.5:d2.5|eanou0.5:easoc0.5|nonox0.5:sonox0.5:d2.5|noweu0.5:noeac0.5",
+      "count": 8
+    },
+    {
+      "tag": "sr",
+      "grid": "box",
+      "seed": "iiSS|swswx0:nenex0|swswx0.5:neswx0.5:d2.5|swseu0.5:swnwc0.5",
+      "full": "iiSS|swswx0:nenex0|swswx0.5:neswx0.5:d2.5|swseu0.5:swnwc0.5|sesex0.5:nwsex0.5:d2.5|seneu0.5:seswc0.5|nenex0.5:swnex0.5:d2.5|nenwu0.5:nesec0.5|nwnwx0.5:senwx0.5:d2.5|nwswu0.5:nwnec0.5",
+      "count": 8
+    },
+    {
+      "tag": "sm",
+      "grid": "diamond",
+      "seed": "iiSS|wewex0:eaeax0|wenoc0.5:easoc0.5:d2.5|noeac0.5:sowec0.5",
+      "full": "iiSS|wewex0:eaeax0|wenoc0.5:easoc0.5:d2.5|noeac0.5:sowec0.5|eanou0.5:wesou0.5:d2.5|noweu0.5:soeau0.5",
+      "count": 4
+    },
+    {
+      "tag": "sm",
+      "grid": "box",
+      "seed": "iiSS|swswx0:nenex0|swswx0.5:neswx0.5:d2.5|swseu0.5:swnwc0.5",
+      "full": "iiSS|swswx0:nenex0|swswx0.5:neswx0.5:d2.5|swseu0.5:swnwc0.5|sesex0.5:nwsex0.5:d2.5|seswc0.5:seneu0.5",
+      "count": 4
+    },
+    {
+      "tag": "sf",
+      "grid": "diamond",
+      "seed": "iiSS|wewex0:eaeax0|wenoc0.5:easoc0.5:d2.5|noweu0.5:soeau0.5",
+      "full": "iiSS|wewex0:eaeax0|wenoc0.5:easoc0.5:d2.5|noweu0.5:soeau0.5|wesou0.5:eanou0.5:d2.5|sowec0.5:noeac0.5",
+      "count": 4
+    },
+    {
+      "tag": "sf",
+      "grid": "box",
+      "seed": "iiSS|swswx0:nenex0|swswx0.5:neswx0.5:d2.5|swnwc0.5:swseu0.5",
+      "full": "iiSS|swswx0:nenex0|swswx0.5:neswx0.5:d2.5|swnwc0.5:swseu0.5|nwnwx0.5:senwx0.5:d2.5|nwswu0.5:nwnec0.5",
+      "count": 4
+    },
+    {
+      "tag": "ss",
+      "grid": "diamond",
+      "seed": "iiSS|wewex0:eaeax0|wenoc0.5:easoc0.5:d2.5|noeac0.5:sowec0.5",
+      "full": "iiSS|wewex0:eaeax0|wenoc0.5:easoc0.5:d2.5|noeac0.5:sowec0.5|easoc0.5:wenoc0.5:d2.5|sowec0.5:noeac0.5",
+      "count": 4
+    },
+    {
+      "tag": "ss",
+      "grid": "box",
+      "seed": "iiSS|swswx0:nenex0|swnwc0.5:nesec0.5:d2.5|nwnec0.5:seswc0.5",
+      "full": "iiSS|swswx0:nenex0|swnwc0.5:nesec0.5:d2.5|nwnec0.5:seswc0.5|nesec0.5:swnwc0.5:d2.5|seswc0.5:nwnec0.5",
+      "count": 4
+    },
+    {
+      "tag": "si",
+      "grid": "diamond",
+      "seed": "iiSS|wewex0:eaeax0|wenoc0.5:easoc0.5:d2.5|noweu0.5:soeau0.5",
+      "full": "iiSS|wewex0:eaeax0|wenoc0.5:easoc0.5:d2.5|noweu0.5:soeau0.5|wenou0.5:easou0.5:d2.5|nowec0.5:soeac0.5",
+      "count": 4
+    },
+    {
+      "tag": "si",
+      "grid": "box",
+      "seed": "iiSS|swswx0:nenex0|swnwc0.5:nesec0.5:d2.5|nwswu0.5:seneu0.5",
+      "full": "iiSS|swswx0:nenex0|swnwc0.5:nesec0.5:d2.5|nwswu0.5:seneu0.5|swnwu0.5:neseu0.5:d2.5|nwswc0.5:senec0.5",
+      "count": 4
+    },
+    {
+      "tag": "rw",
+      "grid": "diamond",
+      "seed": "iiSS|wewex0:eaeax0|wenoc0.5:easoc0.5:d2.5|noeac0.5:sowec0.5",
+      "full": "iiSS|wewex0:eaeax0|wenoc0.5:easoc0.5:d2.5|noeac0.5:sowec0.5|eanou0.5:wesou0.5|noweu0.5:soeau0.5:d2.5",
+      "count": 4
+    },
+    {
+      "tag": "rw",
+      "grid": "box",
+      "seed": "iiSS|swswx0:nenex0|swnwc0.5:nesec0.5:d2.5|nwnec0.5:seswc0.5",
+      "full": "iiSS|swswx0:nenex0|swnwc0.5:nesec0.5:d2.5|nwnec0.5:seswc0.5|nenwu0.5:swseu0.5|nwswu0.5:seneu0.5:d2.5",
+      "count": 4
+    }
+  ]
+}

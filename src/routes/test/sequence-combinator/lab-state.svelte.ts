@@ -43,6 +43,7 @@ import {
   createSequenceData,
   type SequenceData,
 } from "$lib/shared/foundation/domain/models/sequence-data";
+import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
 import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
 import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 
@@ -230,7 +231,7 @@ function parseCard(text: string, slot: SlotId): SequenceData {
   const word =
     typeof candidate.word === "string" && candidate.word.length > 0
       ? candidate.word
-      : steps.map((step) => step.letter ?? "?").join("");
+      : deriveWordFromBeats(steps);
 
   return createSequenceData({
     ...candidate,

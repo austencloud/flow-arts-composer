@@ -1,5 +1,16 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 
+/** The lower demonstrations need a sequence before the hero can reach a
+ * playback boundary. The baked opening keeps them usable while the hero is
+ * paused, offscreen, or still preparing its first live continuation. */
+export function resolveComposerCarriedSequence(
+  visitorSequence: SequenceData | null,
+  latchedHeroSequence: SequenceData | null,
+  openingSequence: SequenceData
+): SequenceData {
+  return visitorSequence ?? latchedHeroSequence ?? openingSequence;
+}
+
 /** The generator follows the page until its visitor asks for a fresh result.
  * After that, the preview stays on the result they chose instead of being
  * replaced by activity in another demonstration. */

@@ -23,9 +23,7 @@ function fakeCanvas(kind: "render" | "poster") {
       setAttribute: vi.fn(),
       transferControlToOffscreen: vi.fn(() => ({ width: 1, height: 1 })),
       getContext: vi.fn((type: string) =>
-        kind === "poster" && type === "bitmaprenderer"
-          ? bitmapContext
-          : null
+        kind === "poster" && type === "bitmaprenderer" ? bitmapContext : null
       ),
       remove: vi.fn(),
     } as unknown as HTMLCanvasElement,
@@ -115,10 +113,7 @@ describe("worker renderer adaptive quality", () => {
     return { workers, render, poster, renderer, onSnapshot, onFrame };
   }
 
-  function send(
-    worker: FakeWorker,
-    data: Record<string, unknown>
-  ): void {
+  function send(worker: FakeWorker, data: Record<string, unknown>): void {
     worker.onmessage?.(new MessageEvent("message", { data }));
   }
 
@@ -135,6 +130,47 @@ describe("worker renderer adaptive quality", () => {
     });
     flushFrame();
   }
+
+  it("prepares a likely choice without changing the selected scene or starting another worker", () => {
+    const { workers, renderer } = fixture();
+    renderer.switchTo("ocean");
+    const worker = workers[0]!;
+    renderer.prefetch("winter");
+    expect(
+      worker.postMessage.mock.calls.some(
+        ([message]) => message.type === "prefetch-environment"
+      )
+    ).toBe(false);
+    present(worker, 1, "ocean");
+    renderer.prefetch("winter");
+    expect(worker.postMessage).toHaveBeenLastCalledWith(
+      { type: "prefetch-environment", requestId: 1, environment: "winter" },
+      []
+    );
+    expect(renderer.snapshot).toMatchObject({
+      active: "ocean",
+      staging: null,
+      phase: "idle",
+      liveWorkers: 1,
+    });
+    expect(workers).toHaveLength(1);
+    renderer.dispose();
+  });
+
+  it("respects Data Saver when preparing an unselected scene", () => {
+    const { workers, renderer } = fixture();
+    renderer.switchTo("ocean");
+    const worker = workers[0]!;
+    present(worker, 1, "ocean");
+    vi.stubGlobal("navigator", {
+      onLine: true,
+      connection: { saveData: true },
+    });
+    worker.postMessage.mockClear();
+    renderer.prefetch("winter");
+    expect(worker.postMessage).not.toHaveBeenCalled();
+    renderer.dispose();
+  });
 
   it("reuses one worker while applying quality to this and later scenes", () => {
     const { workers, renderer } = fixture();
@@ -238,6 +274,177 @@ describe("worker renderer adaptive quality", () => {
         liveWorkersAfterCleanup: 1,
         passedWorkerBound: true,
       },
+    });
+    renderer.dispose();
+  });
+
+  it("does not reveal a stale first frame from a different environment", () => {
+    const { workers, poster, renderer } = fixture();
+    renderer.switchTo("ocean");
+    const worker = workers[0]!;
+    present(worker, 1, "ocean");
+    renderer.switchTo("rainbow");
+    send(worker, {
+      type: "poster",
+      requestId: 2,
+      environment: "ocean",
+      bitmap: { close: vi.fn() } as unknown as ImageBitmap,
+    });
+    flushFrame();
+
+    send(worker, {
+      type: "first-frame",
+      requestId: 2,
+      environment: "celestial",
+      metrics: {},
+    });
+    flushFrame();
+
+    expect(poster.canvas.style.opacity).toBe("1");
+    expect(renderer.snapshot).toMatchObject({
+      active: "ocean",
+      staging: "rainbow",
+      heldFrame: "ocean",
+    });
+    renderer.dispose();
+  });
+
+  it("records request phases and ignores an obsolete worker failure", () => {
+    const { workers, renderer } = fixture();
+    renderer.switchTo("ocean");
+    const worker = workers[0]!;
+    send(worker, {
+      type: "booting",
+      requestId: 1,
+      environment: "ocean",
+      acceptedAt: 10,
+    });
+    send(worker, {
+      type: "progress",
+      requestId: 1,
+      phase: "construct",
+      fraction: 0.5,
+    });
+    present(worker, 1, "ocean");
+    flushFrame();
+
+    renderer.switchTo("rainbow");
+    renderer.switchTo("celestial");
+    send(worker, {
+      type: "error",
+      requestId: 2,
+      environment: "rainbow",
+      message: "obsolete build failed",
+    });
+
+    expect(renderer.snapshot.currentRequest).toMatchObject({
+      requestId: 3,
+      environment: "celestial",
+      phase: "poster",
+    });
+    expect(renderer.snapshot.events).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "requested", requestId: 1 }),
+        expect.objectContaining({ kind: "started", requestId: 1 }),
+        expect.objectContaining({
+          kind: "phase",
+          requestId: 1,
+          phase: "construct",
+        }),
+        expect.objectContaining({ kind: "ready", requestId: 1 }),
+        expect.objectContaining({ kind: "cancelled", requestId: 2 }),
+        expect.objectContaining({
+          kind: "ignored",
+          requestId: 2,
+          environment: "rainbow",
+          detail: "obsolete build failed",
+        }),
+      ])
+    );
+    renderer.dispose();
+  });
+
+  it("retries the same destination after its recovery budget is exhausted", () => {
+    const { workers, poster, renderer } = fixture();
+    renderer.switchTo("ocean");
+    const firstWorker = workers[0]!;
+    present(firstWorker, 1, "ocean");
+    renderer.switchTo("rainbow");
+    send(firstWorker, {
+      type: "poster",
+      requestId: 2,
+      environment: "ocean",
+      bitmap: { close: vi.fn() } as unknown as ImageBitmap,
+    });
+    flushFrame();
+
+    const recoveryCanvas = fakeCanvas("render");
+    const retryCanvas = fakeCanvas("render");
+    vi.mocked(document.createElement)
+      .mockReturnValueOnce(recoveryCanvas.canvas)
+      .mockReturnValueOnce(retryCanvas.canvas);
+    send(firstWorker, {
+      type: "error",
+      requestId: 2,
+      environment: "rainbow",
+      message: "first failure",
+    });
+    send(workers[1]!, {
+      type: "error",
+      requestId: 2,
+      environment: "rainbow",
+      message: "second failure",
+    });
+
+    expect(renderer.snapshot.phase).toBe("error");
+    expect(poster.canvas.style.opacity).toBe("1");
+    renderer.setPerformers([]);
+    expect(renderer.snapshot.lastError).toBe("second failure");
+    renderer.switchTo("rainbow");
+
+    expect(workers).toHaveLength(3);
+    expect(workers[2]?.postMessage.mock.calls[0]?.[0]).toMatchObject({
+      type: "initialize",
+      requestId: 3,
+      environment: "rainbow",
+    });
+    expect(renderer.snapshot).toMatchObject({
+      phase: "booting",
+      staging: "rainbow",
+      heldFrame: "ocean",
+      currentRequest: { requestId: 3, environment: "rainbow" },
+    });
+    expect(renderer.snapshot.events).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "failed",
+          requestId: 2,
+          detail: "second failure",
+        }),
+        expect.objectContaining({ kind: "cancelled", requestId: 2 }),
+        expect.objectContaining({
+          kind: "retrying",
+          requestId: 3,
+          detail: "retry after failure",
+        }),
+      ])
+    );
+    renderer.dispose();
+  });
+
+  it("keeps only the latest bounded lifecycle diagnostics", () => {
+    const { renderer } = fixture();
+    const environments = ["ocean", "rainbow"] as const;
+
+    for (let index = 0; index < 25; index += 1) {
+      renderer.switchTo(environments[index % environments.length]!);
+    }
+
+    expect(renderer.snapshot.events).toHaveLength(40);
+    expect(renderer.snapshot.events.at(-1)).toMatchObject({
+      kind: "requested",
+      requestId: 25,
+      environment: "ocean",
     });
     renderer.dispose();
   });
@@ -378,5 +585,11 @@ describe("worker renderer adaptive quality", () => {
       source.indexOf("const firstRenderStartedAt")
     );
     expect(source).toContain('case "quality":');
+    expect(source).toContain(
+      "activeRenderer.setRenderTarget(previousRenderTarget);"
+    );
+    expect(source).toMatch(
+      /try \{[\s\S]*warmWorkerRenderer[\s\S]*finally \{[\s\S]*activeRenderer\.setRenderTarget\(previousRenderTarget\);/
+    );
   });
 });

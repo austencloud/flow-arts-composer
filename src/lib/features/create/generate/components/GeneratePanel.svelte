@@ -166,11 +166,12 @@ Card-based architecture with integrated Generate button:
   );
   // Every guest gate goes straight to the auth screen — no intermediate
   // nudge; the modal's contextual copy carries the why (Austen, 2026-08-10).
-  // Category locks ask for every LOOP type; length locks are step-cap asks.
+  // Name the selected LOOP even when its minimum length is the restriction.
+  // Choosing a configuration is not an encounter with the current sequence cap.
   function openLoopGateAuth(kind: GuestLoopLockKind) {
     authDrawerState.show(
       "signup",
-      kind === "length" ? "step-cap-guest" : "loop-locked-guest"
+      kind === "length" ? "loop-step-cap-guest" : "loop-locked-guest"
     );
   }
 
@@ -209,7 +210,7 @@ Card-based architecture with integrated Generate button:
       return;
     }
     if (accessTier === "guest" && saved.config.length > getMaxSteps("guest")) {
-      authDrawerState.show("signup", "step-cap-guest");
+      authDrawerState.show("signup", "setup-step-cap-guest");
       return;
     }
 

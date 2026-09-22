@@ -1,5 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
-import { Color, Fog, Group, PerspectiveCamera, Scene } from "three";
+import {
+  Color,
+  Fog,
+  Group,
+  PerspectiveCamera,
+  Scene,
+  SRGBColorSpace,
+  Vector2,
+} from "three";
 
 import {
   BASE_SCENE_LAYER,
@@ -9,6 +17,49 @@ import {
 } from "$lib/shared/3d/environments/rendering/environment-transition-compositor";
 
 describe("environment transition compositor", () => {
+  it("holds the complete outgoing frame through interrupted loads and releases it after reveal", () => {
+    const compositor = new EnvironmentTransitionCompositor();
+    const opacities: number[] = [];
+    const renderer = {
+      autoClear: true,
+      outputColorSpace: SRGBColorSpace,
+      getDrawingBufferSize: vi.fn((size: Vector2) => size.set(1280, 720)),
+      copyFramebufferToTexture: vi.fn(),
+      clearDepth: vi.fn(),
+      render: vi.fn((scene: Scene) => {
+        const material = (scene.children[0] as import("three").Mesh)
+          .material as import("three").MeshBasicMaterial;
+        opacities.push(material.opacity);
+        expect(material.map?.image).toMatchObject({ width: 1280, height: 720 });
+      }),
+    } as unknown as import("three").WebGLRenderer;
+    const scene = new Scene();
+    const camera = new PerspectiveCamera();
+
+    compositor.capture(renderer);
+    const texture = vi.mocked(renderer.copyFramebufferToTexture).mock
+      .calls[0][0];
+    const dispose = vi.spyOn(texture, "dispose");
+    compositor.render(renderer, scene, camera, 0, "covering");
+    compositor.render(renderer, scene, camera, 0.88, "gap");
+    compositor.render(renderer, scene, camera, 0.88, "waiting");
+    compositor.capture(renderer);
+    compositor.render(renderer, scene, camera, 0.88, "covering");
+    compositor.render(renderer, scene, camera, 0.44, "revealing");
+
+    expect(opacities).toEqual([1, 1, 1, 1, 0.5]);
+    expect(renderer.copyFramebufferToTexture).toHaveBeenCalledTimes(1);
+    expect(renderer.clearDepth).not.toHaveBeenCalled();
+    expect(renderer.autoClear).toBe(true);
+    expect(texture.colorSpace).toBe(SRGBColorSpace);
+    expect(dispose).not.toHaveBeenCalled();
+    compositor.render(renderer, scene, camera, 0, "idle");
+    expect(dispose).toHaveBeenCalledTimes(1);
+    expect(compositor.hasRetainedFrame).toBe(false);
+    compositor.dispose();
+    expect(dispose).toHaveBeenCalledTimes(1);
+  });
+
   it("adds declarative and imperative performer descendants to both passes", () => {
     const root = new Group();
     const declarativeChild = new Group();

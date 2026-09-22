@@ -37,8 +37,9 @@ import type { TargetHand } from "$lib/shared/create/state/panel-coordination-sta
 import { Letter } from "$lib/shared/foundation/domain/models/letter";
 
 /**
- * Derive the static letter (α, β, γ) from a grid placement.
- * Start placements always have static letters based on location.
+ * Derive the static letter (α, β, γ, ζ, η) from a grid placement.
+ * Start placements always have static letters based on location. Zeta and
+ * eta are the skewed-frame starts a single-hand 45° rotation lands on.
  */
 function deriveLetterFromGridPlacement(
   placement: GridPlacement | null | undefined
@@ -47,6 +48,8 @@ function deriveLetterFromGridPlacement(
   const placementStr = placement.toString().toLowerCase();
   if (placementStr.startsWith("beta")) return Letter.BETA;
   if (placementStr.startsWith("gamma")) return Letter.GAMMA;
+  if (placementStr.startsWith("zeta")) return Letter.ZETA;
+  if (placementStr.startsWith("eta")) return Letter.ETA;
   return Letter.ALPHA;
 }
 
