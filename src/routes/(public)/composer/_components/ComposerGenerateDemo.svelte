@@ -55,12 +55,14 @@
     leftPropType,
     rightPropType,
     active = true,
+    embedded = false,
   }: {
     sequence: SequenceData | null;
     onGenerated?: (sequence: SequenceData) => void;
     leftPropType?: PropType;
     rightPropType?: PropType;
     active?: boolean;
+    embedded?: boolean;
   } = $props();
 
   let current = $state<SequenceData | null>(null);
@@ -138,7 +140,7 @@
   }
 </script>
 
-<div class="generate-demo" use:activatePreview>
+<div class="generate-demo" class:embedded use:activatePreview>
   <div class="stages">
     <!-- The notation: the real workspace grid, cascading in on each draw.
          fitAllSteps scales the cells to the box instead of sizing them from the
@@ -244,6 +246,14 @@
       transparent
     );
     box-shadow: 0 2rem 5rem oklch(0.04 0.03 270 / 0.28);
+  }
+
+  .generate-demo.embedded {
+    padding: clamp(1rem, 1.8cqw, 1.5rem);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
   }
 
   .word-slot {

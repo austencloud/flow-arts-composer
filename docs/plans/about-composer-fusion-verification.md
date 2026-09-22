@@ -3,6 +3,52 @@
 Updated 2026-09-22. Worktree: `E:/tka-about-composer-fusion`.
 Branch: `codex/about-composer-fusion`. Implementation is not yet integrated.
 
+## September 22 connected-picker and minimum-size pass
+
+Preview: `https://localhost:5174/about`. This pass supersedes the practice
+picker's detached-card layout described below.
+
+- The hero has a permanent `Props: <selection>` button beneath its animation.
+  Wide screens open the inline picker; narrower screens use the native sheet.
+  Closing the desktop picker returns focus to that button. The sheet also
+  returned focus after selecting Trigeng from the Triad family on tablet.
+- Practice now owns one frame containing its result and full-height prop rail.
+  The canonical comfortable grid retains two readable columns and scrolls.
+  Build and Generate remain mounted. Their words (`SRVN` and `MYΩN` in the
+  observed session) survived switching modes and selecting Fan.
+- Height follows the result's allocated width, including when the rail makes
+  the constructor stack. At 1440px the stacked frame measured 832px high.
+  At 1920, 2560 and 3840px, the frame measured 672px and its rail and picker
+  both measured 670.3px inside the border.
+- Existing policy remains 44px targets, 14px essential text and 12px
+  supplementary text. Letter-type and tunnel controls now use the standard
+  size. At 375px, all four letter-type tabs measured about 53x44px with 14px
+  text. Removing the unused settings slot made room for those targets.
+  The hero prop button measured about 218x50px with 14px text.
+- The letter utility disclosure anchors to the actual header height instead
+  of a fixed offset. Hero bottom spacing reserves room for the enlarged scroll
+  control; at 820px it cleared the theme button by 9px.
+
+Evidence: 15 focused tests pass across presentation state, viewer isolation,
+hero seeding and letter-type navigation. The seed regression test now targets
+the extracted shared experience, retaining the same fixture assertions.
+Final `npm run check` reports 0 errors and 0 warnings.
+
+Browser observations cover phone, short horizontal, tablet and laptop layouts,
+plus geometry at the three wide tiers. No horizontal overflow was measured.
+The independent VR-1 reviewer found no visual blocker in the inspected hero,
+practice and phone frames. This is not a full WCAG AAA certification or owner
+acceptance. The review remains NOT CALIBRATED.
+
+Current frames in the existing `pickers` evidence directory use the `polish-`
+prefix: `laptop-build`, `laptop-generate`, `phone-build`, `laptop-hero-open`,
+and `landscape-controls` (all WebP). They are scrolled crops. The tablet capture
+repeated its content beyond the browser's native compositor area, so it is not
+complete visual evidence. The wide-capture and actual 200% browser-zoom limits
+below still block the complete integration gate. Phone checks used keyboard
+activation, not verified touch coordinates. One test tab timed out during a
+reduced-motion check; the remaining checks used a fresh task-owned tab.
+
 ## September 22 picker and Ocean revision
 
 Preview ready at `https://localhost:5174/about`. This section supersedes older

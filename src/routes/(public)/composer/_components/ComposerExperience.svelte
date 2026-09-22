@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { activateWhenNear } from "$lib/actions/activate-when-near";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
@@ -76,6 +76,7 @@
   let propPickerOpen = $state(false);
   let propPickerLoaded = $state(false);
   let inlinePickerTarget = $state<"hero" | "practice" | "tunnel" | null>(null);
+  let heroPropButton = $state<HTMLButtonElement | null>(null);
   const propName = $derived(getPropTypeDisplayInfo(selectedProp).label);
 
   function openPropPicker(): void {
@@ -94,8 +95,20 @@
     inlinePickerTarget = target;
   }
 
+  function openHeroProps(): void {
+    if (wideHeroPicker.current) {
+      openInlinePicker("hero");
+      return;
+    }
+    openPropPicker();
+  }
+
   function closeInlinePicker(): void {
+    const closedTarget = inlinePickerTarget;
     inlinePickerTarget = null;
+    if (closedTarget === "hero") {
+      void tick().then(() => heroPropButton?.focus());
+    }
   }
   const reduceMotion = new MediaQuery("(prefers-reduced-motion: reduce)");
   // Keep this in lockstep with the opening's 70rem CSS handoff. A picker that
@@ -181,11 +194,12 @@
   </PanelButton>
 {/snippet}
 
-{#snippet inlinePropPicker()}
+{#snippet inlinePropPicker(docked = false)}
   <ComposerInlinePropPicker
     selectedPropType={selectedProp}
     onSelect={selectProp}
     onDone={closeInlinePicker}
+    {docked}
   />
 {/snippet}
 
@@ -309,9 +323,6 @@
                 Start composing
                 <i class="fas fa-arrow-right" aria-hidden="true"></i>
               </a>
-              <PanelButton onclick={() => openInlinePicker("hero")}
-                >Props: {propName}</PanelButton
-              >
             </div>
 
             <p class="opening-note">
@@ -340,7 +351,24 @@
         cornerToggle={true}
         loadPriority="immediate"
       />
-      <div class="hero-props">{@render propControl()}</div>
+      <div class="hero-props">
+        <PanelButton
+          onclick={openHeroProps}
+          bind:ref={heroPropButton}
+          ariaLabel={`Change props. Current: ${propName}`}
+          ariaExpanded={wideHeroPicker.current
+            ? heroPickerOpen
+            : propPickerOpen}
+        >
+          <PropCompositionPreview
+            propType={selectedProp}
+            size={28}
+            useSavedOverrides={false}
+          />
+          <span>Props: {propName}</span>
+          <i class="fas fa-chevron-down" aria-hidden="true"></i>
+        </PanelButton>
+      </div>
       <ComposerBackgroundCycle />
     </div>
 
@@ -521,7 +549,7 @@
     grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
     align-items: center;
     gap: clamp(2rem, 4.5vw, 80px);
-    padding: clamp(0.75rem, 2vw, 28px) 0 clamp(3rem, 4vw, 3.5rem);
+    padding: clamp(0.75rem, 2vw, 28px) 0 clamp(4.5rem, 5vw, 5rem);
   }
 
   /* Quiet fold marker. Sits in the hero's bottom padding, out of flow. */
@@ -531,13 +559,15 @@
     bottom: 0.65rem;
     transform: translateX(-50%);
     display: inline-flex;
+    min-block-size: var(--min-touch-target, 44px);
+    box-sizing: border-box;
     flex-direction: column;
     align-items: center;
     gap: 0.3rem;
     padding: 0.4rem 0.75rem;
     border-radius: var(--settings-radius-lg, 0.85rem);
     color: oklch(0.72 0.018 270);
-    font-size: var(--font-size-compact, 0.75rem);
+    font-size: var(--font-size-min, 0.875rem);
     letter-spacing: 0.14em;
     text-transform: uppercase;
     text-decoration: none;
@@ -699,7 +729,7 @@
   }
 
   .hero-props {
-    display: none;
+    display: flex;
     justify-content: center;
     margin-top: var(--spacing-md, 16px);
   }
@@ -1032,14 +1062,6 @@
       display: none;
     }
 
-    .hero-copy-support :global(.panel-btn) {
-      display: none;
-    }
-
-    .hero-props {
-      display: flex;
-    }
-
     h1,
     .opening-lede {
       margin-inline: auto;
@@ -1149,7 +1171,7 @@
 
     .opening-note {
       margin-top: 0.55rem;
-      font-size: var(--font-size-compact, 0.75rem);
+      font-size: var(--font-size-min, 0.875rem);
     }
 
     /* Short and wide: the fold is not worth a shrunken player here, so the

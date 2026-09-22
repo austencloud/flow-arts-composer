@@ -27,12 +27,13 @@
     leftPropType?: PropType;
     rightPropType?: PropType;
     propControl?: Snippet;
-    inlinePropPicker?: Snippet;
+    inlinePropPicker?: Snippet<[boolean?]>;
     onOpenProps?: () => void;
   } = $props();
 
   let mode = $state<PracticeMode>("build");
   let practiceWidth = $state(0);
+  let resultWidth = $state(0);
   const options = [
     {
       value: "build" as const,
@@ -63,6 +64,13 @@
         ]
       : [{ id: "result", content: practiceResult, defaultSize: 1 }]
   );
+  // Construct changes from its wide two-column workspace to a stacked layout
+  // at 1100px of its own container. The prop dock reduces that container while
+  // the overall practice surface remains wide, so size the shared stage from
+  // the result panel rather than from the outer surface.
+  const needsCompactResultStage = $derived(
+    resultWidth > 0 && resultWidth < 1100
+  );
 </script>
 
 {#snippet buildPanel()}
@@ -75,6 +83,7 @@
     <ConstructSection
       presentationMode="guided-build"
       active={mode === "build"}
+      embedded={true}
       {leftPropType}
       {rightPropType}
       onVisitorComposed={onSequenceChange}
@@ -92,6 +101,7 @@
     <ComposerGenerateDemo
       {sequence}
       active={mode === "generate"}
+      embedded={true}
       {leftPropType}
       {rightPropType}
       onGenerated={onSequenceChange}
@@ -100,7 +110,7 @@
 {/snippet}
 
 {#snippet practiceResult()}
-  <div class="practice-result">
+  <div class="practice-result" bind:clientWidth={resultWidth}>
     <DualSourceCrossfade
       active={mode === "build" ? "first" : "second"}
       first={buildPanel}
@@ -114,7 +124,7 @@
     class="practice-inline-props"
     aria-label="Props for the practice result"
   >
-    {@render inlinePropPicker?.()}
+    {@render inlinePropPicker?.(true)}
   </aside>
 {/snippet}
 
@@ -142,12 +152,15 @@
     {/if}
   </div>
 
-  <div class="practice-stage">
+  <div
+    class="practice-stage"
+    class:compact-result-stage={needsCompactResultStage}
+  >
     <PanelGroup
       direction="horizontal"
       panels={workspacePanels}
       flattened={workspacePanels.length === 1}
-      gap={16}
+      gap={0}
     />
   </div>
 </section>
@@ -185,12 +198,30 @@
     display: flex;
     height: clamp(34rem, 42cqw, 42rem);
     min-height: 0;
+    overflow: hidden;
+    border: 1px solid var(--theme-stroke);
+    border-radius: var(--settings-radius-lg, 0.85rem);
+    background: var(--theme-panel-bg);
   }
 
   .practice-result,
   .practice-inline-props {
     min-width: 0;
     min-height: 0;
+  }
+
+  .practice-stage
+    :global(.panel-wrapper + .resize-handle-slot + .panel-wrapper),
+  .practice-stage :global(.panel-wrapper + .panel-wrapper) {
+    border-left: 1px solid var(--theme-stroke);
+  }
+
+  /* This is driven by the allocated result panel, not the outer practice
+     width. A 352px dock leaves a 938px constructor at a 1293px surface; the
+     constructor stacks at that inner width and needs the same tall stage as a
+     truly narrow practice surface. Both tabs remain mounted in this one frame. */
+  .practice-stage.compact-result-stage {
+    height: clamp(52rem, 90svh, 62rem);
   }
 
   @media (max-width: 895.98px) {

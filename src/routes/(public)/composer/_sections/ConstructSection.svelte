@@ -75,12 +75,14 @@
     leftPropType,
     rightPropType,
     active = true,
+    embedded = false,
   }: {
     presentationMode?: ConstructPresentationMode;
     onVisitorComposed?: (sequence: SequenceData) => void;
     leftPropType?: PropType;
     rightPropType?: PropType;
     active?: boolean;
+    embedded?: boolean;
   } = $props();
 
   const isGuidedBuild = $derived(presentationMode === "guided-build");
@@ -592,6 +594,7 @@
   class:play-phase={phase === "play"}
   class:guided-build={isGuidedBuild}
   class:continuous-workspace={isContinuous}
+  class:embedded
   bind:this={bandEl}
   onpointerdowncapture={takeover}
   onfocusincapture={takeover}
@@ -604,7 +607,7 @@
           value={compactPane}
           onchange={(pane) => (compactPane = pane)}
           color="accent"
-          size="sm"
+          size="md"
           semantics="tabs"
           ariaLabel="Construct demo view"
         />
@@ -993,6 +996,13 @@
     max-width: none;
   }
 
+  .construct-demo.embedded .demo-shell {
+    padding: clamp(1rem, 1.8cqw, 1.5rem);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
   .guided-build,
   .guided-build .demo-shell {
     height: 100%;
@@ -1217,7 +1227,7 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-size: 0.8rem;
+    font-size: var(--font-size-min, 0.875rem);
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
@@ -1590,7 +1600,7 @@
   .ws-empty {
     margin: 0;
     text-align: center;
-    font-size: 0.85rem;
+    font-size: var(--font-size-min, 0.875rem);
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.35));
   }
 

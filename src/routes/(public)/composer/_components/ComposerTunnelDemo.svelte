@@ -201,7 +201,7 @@
     onchange={(v) => (fold = Number(v))}
     ariaLabel="Tunnel performers"
     color="accent"
-    size="sm"
+    size="md"
   />
 {/snippet}
 
@@ -242,7 +242,7 @@
           onchange={(v) => (arrangement = v as Arrangement)}
           ariaLabel="Tunnel arrangement"
           color="accent"
-          size="sm"
+          size="md"
         />
       </div>
     </div>
