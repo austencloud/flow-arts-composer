@@ -407,6 +407,8 @@ export interface WorkerRendererBootMetrics {
   warmReuse?: boolean;
   retainedRuntimeBytes?: number;
   retainedRuntimeCount?: number;
+  cacheCandidateBytes?: number;
+  cacheSkipReason?: string;
   acceptedAt: number;
   rendererReadyAt: number;
   environmentReadyAt: number;

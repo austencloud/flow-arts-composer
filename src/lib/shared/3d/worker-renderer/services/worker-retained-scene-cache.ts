@@ -2,6 +2,7 @@ export interface WorkerRetainedScene {
   environment: string;
   reducedMotion: boolean;
   estimatedBytes: number;
+  cacheSkipReason?: string | null;
   dispose(): void;
 }
 
@@ -12,6 +13,8 @@ export interface WorkerRetainedScene {
  */
 export class WorkerRetainedSceneCache<T extends WorkerRetainedScene> {
   private entry: T | null = null;
+  private candidateBytes = 0;
+  private skipReason: string | null = null;
 
   constructor(private readonly maxEstimatedBytes: number) {}
 
@@ -23,9 +26,22 @@ export class WorkerRetainedSceneCache<T extends WorkerRetainedScene> {
     return this.entry?.estimatedBytes ?? 0;
   }
 
+  get lastCandidateBytes(): number {
+    return this.candidateBytes;
+  }
+
+  get lastSkipReason(): string | null {
+    return this.skipReason;
+  }
+
   retain(candidate: T): boolean {
     this.clear();
-    if (candidate.estimatedBytes > this.maxEstimatedBytes) {
+    this.candidateBytes = candidate.estimatedBytes;
+    this.skipReason = candidate.cacheSkipReason ?? null;
+    if (this.skipReason || candidate.estimatedBytes > this.maxEstimatedBytes) {
+      if (!this.skipReason) {
+        this.skipReason = "estimated runtime exceeds cache budget";
+      }
       candidate.dispose();
       return false;
     }

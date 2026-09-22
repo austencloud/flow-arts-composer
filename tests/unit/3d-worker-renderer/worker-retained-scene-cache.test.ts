@@ -41,7 +41,23 @@ describe("worker retained scene cache", () => {
 
     expect(cache.retain(oversized)).toBe(false);
     expect(oversized.dispose).toHaveBeenCalledOnce();
+    expect(cache.lastCandidateBytes).toBe(101);
+    expect(cache.lastSkipReason).toBe("estimated runtime exceeds cache budget");
     expect(cache.take("ocean", false)).toBeNull();
+  });
+
+  it("reports an unmeasurable allocation instead of retaining it", () => {
+    const cache = new WorkerRetainedSceneCache(100);
+    const unknown = {
+      ...retainedScene("ocean", 80),
+      cacheSkipReason: "texture dimensions are unavailable (Texture)",
+    };
+
+    expect(cache.retain(unknown)).toBe(false);
+    expect(unknown.dispose).toHaveBeenCalledOnce();
+    expect(cache.lastSkipReason).toBe(
+      "texture dimensions are unavailable (Texture)"
+    );
   });
 
   it("disposes a cached scene when its motion configuration is stale", () => {
