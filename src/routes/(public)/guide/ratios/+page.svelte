@@ -98,7 +98,30 @@
     };
   }
 
-  const floatFlower = buildFloatAxis()[0]!;
+  /** Float's four starts: pointing in, out, clockwise, and counter. */
+  const floatFlowers = buildFloatAxis();
+  const ORI_WORDS: Record<string, string> = {
+    in: "In",
+    out: "Out",
+    clock: "Clock",
+    counter: "Counter",
+  };
+
+  /**
+   * The starts a card shows. A ratio that closes in one hand circle draws a
+   * different flower from each start, so its card shows in and out. Quarter
+   * turns take two circles, and there the out start retraces the in start's
+   * path, so one start covers both.
+   */
+  function cardStarts(turns: number) {
+    const oris: RotatingFlowerOri[] = Number.isInteger(turns * 2)
+      ? ["in", "out"]
+      : ["in"];
+    return oris.map((ori) => ({
+      ori,
+      flowers: [rotating(turns, "pro", ori), rotating(turns, "anti", ori)],
+    }));
+  }
 
   /** One row per turn value the Kinetic Alphabet can carry, Float included. */
   const ladder = matrixTurnsForLevel(4).map((turns: TurnValue) => ({
@@ -108,8 +131,7 @@
     turnLabel: turns === "fl" ? "Float" : String(turns),
     turnWords: turns === "fl" ? "Float" : turnWords(turns as number),
     family: turns === 0 || turns === 1 || turns === 2,
-    pro: turns === "fl" ? null : rotating(turns as number, "pro"),
-    anti: turns === "fl" ? null : rotating(turns as number, "anti"),
+    starts: turns === "fl" ? null : cardStarts(turns as number),
   }));
 
   /* The ladder groups by level, because that is the order a reader meets
@@ -146,11 +168,10 @@
   }));
 
   /**
-   * The board is a grid of equal cards, four or eight across. Each level
-   * spans as many tracks as it has cards, up to the full row, plus one row for
-   * its heading. Levels 2 to 4 hold 4, 4, and 8 cards, notes included, so
-   * they tile both widths with no cell left over: 4 and 4 and 4 + 4 at four
-   * across, 4 + 4 and 8 at eight across.
+   * The board is a grid of equal cards, two, four, or eight across. Each
+   * level spans as many tracks as it has cards, up to the full row, plus one
+   * row for its heading. Levels 2 to 4 hold 4, 4, and 8 cards, notes
+   * included, so they tile every width with no cell left over.
    */
   function boardSpan(cells: number, columns: number): string {
     const span = Math.min(cells, columns);
@@ -517,10 +538,11 @@
           the cards under it.
         </p>
         <p>
-          At Level 1 the two starts draw four different base motions, so its
-          cards show a start pointing in and a start pointing out. Higher up,
-          starting out draws the same flower turned half a petal, and at quarter
-          turns the very same flower, so those cards show the start pointing in.
+          Through Level 3 each ratio shows four flowers: prospin and antispin,
+          each from a start pointing in and a start pointing out. At Level 1
+          those are four different base motions. From Level 2 on, starting out
+          draws the in flower turned half a petal. At Level 4's quarter turns it
+          draws the very same flower, so those cards show one start.
         </p>
         <p class="ladder-note">
           Tinted cards are the three ratios of the original matrix.
@@ -579,10 +601,12 @@
             <section
               class="level-group"
               aria-labelledby={`level-${group.level}-heading`}
-              style="{boardSpan(group.cells, 4)}; {boardSpan(
+              style="{boardSpan(group.cells, 2)}; {boardSpan(
                 group.cells,
-                8
-              )}; --level-tint: {levelTint(group.level)}"
+                4
+              )}; {boardSpan(group.cells, 8)}; --level-tint: {levelTint(
+                group.level
+              )}"
             >
               <header class="level-head">
                 <DifficultyBadge level={group.level} size="2rem" />
@@ -601,40 +625,56 @@
                       <span class="card-ratio">{row.ratio}</span>
                       <span class="card-turns">{row.turnWords}</span>
                     </p>
-                    {#if row.pro && row.anti}
-                      <div class="card-flowers">
-                        {#each [row.pro, row.anti] as flower (flowerKey(flower))}
-                          <div class="card-flower">
+                    {#if row.starts}
+                      {@const paired = row.starts.length > 1}
+                      <div class="card-grid" class:card-paired={paired}>
+                        {#if paired}<span aria-hidden="true"></span>{/if}
+                        <span class="card-style">Prospin</span>
+                        <span class="card-style">Antispin</span>
+                        {#each row.starts as start (start.ori)}
+                          {#if paired}
+                            <span class="card-start"
+                              >{ORI_WORDS[start.ori]}</span
+                            >
+                          {/if}
+                          {#each start.flowers as flower (flowerKey(flower))}
                             <span class="still">
                               <ShapeMatrixMandalaArt
                                 paint={paintFlower(flower)}
                                 artKey={flowerKey(flower)}
-                                alt={flowerLabel(flower)}
+                                alt={`${row.ratio} ${styleWord(flower.style).toLowerCase()}, starts ${start.ori}: ${petalWord(flower.petals).toLowerCase()}`}
                               />
                             </span>
-                            <span class="card-style"
-                              >{styleWord(flower.style)}</span
-                            >
-                            <span class="card-petals"
-                              >{petalWord(flower.petals)}</span
-                            >
-                          </div>
+                          {/each}
+                        {/each}
+                        {#if paired}<span aria-hidden="true"></span>{/if}
+                        {#each row.starts[0]?.flowers ?? [] as flower (flowerKey(flower))}
+                          <span class="card-petals"
+                            >{petalWord(flower.petals)}</span
+                          >
                         {/each}
                       </div>
                     {:else}
-                      <div class="card-flowers card-float">
-                        <div class="card-flower">
-                          <span class="still">
-                            <ShapeMatrixMandalaArt
-                              paint={paintFlower(floatFlower)}
-                              artKey={flowerKey(floatFlower)}
-                              alt={flowerLabel(floatFlower)}
-                            />
-                          </span>
-                          <span class="card-petals float-words">
-                            Holds one angle while the hand circles.
-                          </span>
+                      <div class="card-float">
+                        <div class="float-grid">
+                          {#each floatFlowers as flower (flowerKey(flower))}
+                            <div class="float-start">
+                              <span class="still">
+                                <ShapeMatrixMandalaArt
+                                  paint={paintFlower(flower)}
+                                  artKey={flowerKey(flower)}
+                                  alt={`${row.ratio} float, starts ${flower.ori}`}
+                                />
+                              </span>
+                              <span class="card-start"
+                                >{ORI_WORDS[flower.ori]}</span
+                              >
+                            </div>
+                          {/each}
                         </div>
+                        <span class="float-words">
+                          Holds one angle while the hand circles.
+                        </span>
                       </div>
                     {/if}
                   </li>
@@ -1382,13 +1422,57 @@
     margin-bottom: 0.2rem;
   }
 
-  .card-float .card-flower {
-    grid-column: 1 / -1;
+  /* A card's flowers as a table: styles across the top, one row per start,
+     petal counts along the foot, since a ratio's two starts share them. */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-items: center;
+    align-items: center;
+    gap: 0.3rem 0.5rem;
+    min-inline-size: 0;
+    text-align: center;
   }
 
-  /* Float draws one flower, kept the size of either half of a pair. */
-  .card-float .still {
-    inline-size: min(calc((100% - 0.5rem) / 2), var(--card-still));
+  .card-grid.card-paired {
+    grid-template-columns: 1.4rem repeat(2, minmax(0, 1fr));
+    column-gap: 0.4rem;
+  }
+
+  .card-grid .still,
+  .float-start .still {
+    inline-size: min(100%, var(--card-still));
+  }
+
+  .card-start {
+    color: var(--ink-faint);
+    font-size: 0.64rem;
+    font-weight: 640;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  /* Float's four starts in two by two, each labelled under its circle. */
+  .card-float {
+    display: grid;
+    justify-items: center;
+    gap: 0.5rem;
+    min-inline-size: 0;
+    text-align: center;
+  }
+
+  .float-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.3rem 0.5rem;
+    inline-size: 100%;
+  }
+
+  .float-start {
+    display: grid;
+    justify-items: center;
+    gap: 0.1rem;
+    min-inline-size: 0;
   }
 
   .card-style {
@@ -1405,10 +1489,10 @@
     font-weight: 600;
   }
 
-  .card-petals.float-words {
+  .float-words {
     max-inline-size: 16rem;
     color: var(--ink-dim);
-    font-weight: 400;
+    font-size: var(--font-size-compact, 0.78rem);
     line-height: 1.35;
   }
 
@@ -1422,21 +1506,28 @@
     line-height: 1.45;
   }
 
-  /* Four across. Every level spans its own tracks on a shared grid and
-     borrows the grid's rows through subgrid, so the headings on one row sit
-     on one line and every card on a row is the same height. Levels 2 and 3
-     fill a row each and Level 4 fills two. */
+  /* Two across on a tablet, then four, then eight. Every level spans its own
+     tracks on a shared grid and borrows the grid's rows through subgrid, so
+     the headings on one row sit on one line and every card on a row is the
+     same height.
+
+     A tray's padding and its tighter gap come out of the tracks at its
+     edges, so its end cards run a little narrower than its middle ones. The
+     flowers take one size from the board's width instead of filling their
+     card, sized for an end card, so every flower on the board matches:
+     half of a track, less the tray padding, the gap difference, the card
+     padding, and the start labels. */
   @container ladder-board (min-width: 34rem) {
     /* Trays sit further apart than the cards inside them, which a subgrid's
        own gap allows. */
     .ladder-grid {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 0.9rem;
     }
 
     .level-group {
-      grid-column: span var(--span-4);
-      grid-row: span var(--rows-4);
+      grid-column: span var(--span-2);
+      grid-row: span var(--rows-2);
       grid-template-columns: subgrid;
       grid-template-rows: subgrid;
       gap: 0.5rem;
@@ -1451,9 +1542,9 @@
       display: contents;
     }
 
-    /* Wide card: ratio and turns across the top, the pair under them. */
+    /* Wide card: ratio and turns across the top, the flowers under them. */
     .ratio-card {
-      --card-still: 7.5rem;
+      --card-still: min(7.5rem, calc((100cqi - 0.9rem) / 4 - 2.35rem));
       grid-template-columns: minmax(0, 1fr);
       grid-template-rows: auto 1fr;
       align-items: start;
@@ -1475,24 +1566,19 @@
     }
   }
 
-  /* Four across on a tablet leaves each track about 8rem, so the note sets
-     and the style labels set smaller to stay inside a card. */
-  @container ladder-board (min-width: 34rem) and (max-width: 52rem) {
-    /* A tablet track is about 8rem, so the trays keep a thin edge. */
+  /* Four across: Levels 2 and 3 fill a row each and Level 4 fills two. */
+  @container ladder-board (min-width: 52rem) {
+    .ladder-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
     .level-group {
-      padding: 0.35rem;
-      gap: 0.35rem;
+      grid-column: span var(--span-4);
+      grid-row: span var(--rows-4);
     }
 
-    .card-style {
-      font-size: 0.64rem;
-      letter-spacing: 0.02em;
-    }
-
-    .ladder-aside {
-      padding: 0.6rem;
-      font-size: 0.7rem;
-      line-height: 1.4;
+    .ratio-card {
+      --card-still: min(7.5rem, calc((100cqi - 2.7rem) / 8 - 2.35rem));
     }
   }
 
@@ -1506,6 +1592,10 @@
     .level-group {
       grid-column: span var(--span-8);
       grid-row: span var(--rows-8);
+    }
+
+    .ratio-card {
+      --card-still: min(7.5rem, calc((100cqi - 6.3rem) / 16 - 2.35rem));
     }
   }
 
