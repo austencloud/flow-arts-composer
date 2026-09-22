@@ -27,6 +27,7 @@
   const LETTER_GAP_RATIO = 0.12;
   const DOT_SIZE_RATIO = 0.15;
   const GROUP_GAP_RATIO = 0.35;
+  const BRACE_HEIGHT_RATIO = 0.95;
 
   // Glyph images exist for letters only; braces are drawn as text. A word
   // that is one whole skewed span (every rotate-45 fuse) gets a pair around
@@ -89,7 +90,7 @@
       bind:offsetWidth={naturalWidth}
     >
     {#if wholeWordSkewed}
-      <span class="skew-brace" style="font-size: {height * 0.95}px; margin-right: {height * LETTER_GAP_RATIO}px;">&#123;</span>
+      <span class="skew-brace" style="font-size: {height * BRACE_HEIGHT_RATIO}px; margin-right: {height * LETTER_GAP_RATIO}px;">&#123;</span>
     {/if}
     {#each segments as segment, segIdx}
       {#if segIdx > 0 && hasCompression}
@@ -124,7 +125,7 @@
       </span>
     {/each}
     {#if wholeWordSkewed}
-      <span class="skew-brace" style="font-size: {height * 0.95}px; margin-left: {height * LETTER_GAP_RATIO}px;">&#125;</span>
+      <span class="skew-brace" style="font-size: {height * BRACE_HEIGHT_RATIO}px; margin-left: {height * LETTER_GAP_RATIO}px;">&#125;</span>
     {/if}
     </div>
   </div>
@@ -201,7 +202,6 @@
     font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
     font-weight: 500;
     line-height: 1;
-    color: currentColor;
     flex-shrink: 0;
   }
 

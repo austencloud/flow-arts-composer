@@ -5,6 +5,7 @@
      and the colour is carried on the element so exports keep it. -->
 <script lang="ts">
   import { getSkewBraceLayout } from "../utils/skew-brace-layout";
+  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
 
   const FILL_LIGHT = "#231f20";
   const FILL_DARK = "#d9d9d9";
@@ -12,6 +13,8 @@
   interface Props {
     letter: string;
     letterDimensions: { width: number; height: number };
+    /** Extra width to clear on the closing side - see getTurnsColumnRightExtent. */
+    rightExtent?: number;
     x?: number;
     y?: number;
     scale?: number;
@@ -24,17 +27,34 @@
   let {
     letter,
     letterDimensions,
+    rightExtent = 0,
     x = 50,
     y = 800,
     scale = 1,
     visible = true,
     previewMode = false,
     animateVisibility = false,
-    darkMode = false,
+    darkMode = undefined,
   }: Props = $props();
 
-  const layout = $derived(getSkewBraceLayout(letter, letterDimensions));
-  const fill = $derived(darkMode ? FILL_DARK : FILL_LIGHT);
+  // Same centralized visibility-manager pattern as DirectionDot/TKAGlyph: an
+  // undefined darkMode prop falls back to the live app theme instead of
+  // silently resolving to the light fill on a dark background.
+  const visibilityManager = getAnimationVisibilityManager();
+  let localDarkMode = $state(visibilityManager.isDarkMode());
+  $effect(() => {
+    const handler = () => {
+      localDarkMode = visibilityManager.isDarkMode();
+    };
+    visibilityManager.registerObserver(handler);
+    return () => visibilityManager.unregisterObserver(handler);
+  });
+  const effectiveDarkMode = $derived(darkMode ?? localDarkMode);
+
+  const layout = $derived(
+    getSkewBraceLayout(letter, letterDimensions, { rightExtent })
+  );
+  const fill = $derived(effectiveDarkMode ? FILL_DARK : FILL_LIGHT);
 </script>
 
 {#if visible || previewMode || animateVisibility}

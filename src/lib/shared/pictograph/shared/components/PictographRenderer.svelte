@@ -42,6 +42,7 @@ Usage:
   import SkewBraces from "../../tka-glyph/components/SkewBraces.svelte";
   import { isSkewedFrameBeat } from "$lib/shared/foundation/services/skewed-frame";
   import { parseTurnsTuple } from "../../tka-glyph/utils/turn-tuple-parser";
+  import { getTurnsColumnRightExtent } from "../../tka-glyph/utils/turn-position-calculator";
   import ReversalIndicators from "./ReversalIndicators.svelte";
   import ElementalGlyph from "./ElementalGlyph.svelte";
   import PlacementGlyph from "./PlacementGlyph.svelte";
@@ -475,8 +476,26 @@ Usage:
   // Use loaded dimensions for DirectionDot positioning
   const letterDimensions = $derived(loadedLetterDimensions);
 
+  // True once loadedLetterDimensions holds a real measurement rather than the
+  // 100x100 placeholder it starts at (same sentinel the effect above and
+  // TKAGlyph's/TurnsColumn's own dimension caches already use - no letter SVG
+  // in static/images/letters_trimmed ships a 100x100 viewBox, so this never
+  // false-negatives on real data). Gates SkewBraces so it cannot flash at the
+  // wrong width before the letter's true dimensions load, then jump.
+  const letterDimensionsReady = $derived(
+    loadedLetterDimensions.width !== 100 || loadedLetterDimensions.height !== 100
+  );
+
   // Parse direction from turns tuple for direction dot
-  const parsedDirection = $derived(parseTurnsTuple(turnsTuple).direction);
+  const parsedTurns = $derived(parseTurnsTuple(turnsTuple));
+  const parsedDirection = $derived(parsedTurns.direction);
+
+  // Extra width the turns column reserves to the right of the letter+dash
+  // edge, so the skew braces' closing brace clears the turn numbers (and any
+  // halved-motion mark) instead of painting under them.
+  const braceRightExtent = $derived(
+    skewedFrame ? getTurnsColumnRightExtent(parsedTurns) : 0
+  );
   const effectiveLeftColor = $derived(
     leftColorOverride ?? getSettings().primaryPropColors?.left
   );
@@ -690,7 +709,8 @@ Usage:
         <SkewBraces
           letter={pictograph.letter}
           {letterDimensions}
-          visible={showTKA && !poseOnly}
+          rightExtent={braceRightExtent}
+          visible={showTKA && !poseOnly && letterDimensionsReady}
           {previewMode}
           {animateVisibility}
           {darkMode}
