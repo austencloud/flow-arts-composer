@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from "svelte";
   import SceneFeatureTiles from "../scene-features/components/SceneFeatureTiles.svelte";
   import { tryGetSceneFeatureContext } from "../scene-features/context/scene-feature-context";
   import { tryGetViewer3DContext } from "../context/viewer-3d-context";
@@ -28,6 +29,14 @@
     value ?? viewer?.environmentId ?? DEFAULT_SCENE_ENVIRONMENT_ID
   );
   const hasSceneFeatures = tryGetSceneFeatureContext() !== undefined;
+  let warmTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function cancelWarm() {
+    if (warmTimer !== null) clearTimeout(warmTimer);
+    warmTimer = null;
+  }
+
+  onDestroy(cancelWarm);
 
   // Switching scenes starts with a cold module fetch, then the models that
   // module asks for, and only after both does anything render. Pointing at a
@@ -38,19 +47,24 @@
     warmDecoderRuntimes();
   });
 
-  // A pointer crossing the grid is not a choice, but the chunk is small enough
-  // to fetch for every tile it touches. The models deliberately do NOT ride
-  // along: a warm-up cannot hand them to the loader, so it would only download
-  // them twice (see `warmSceneCode`).
+  // A brief pause or keyboard focus signals intent. The worker can hand its
+  // bounded model cache directly to the loader; legacy viewers still warm code.
   function warmTile(environmentId: SceneEnvironmentId) {
-    const rendererKey = SCENE_ENVIRONMENTS.find(
-      ({ id }) => id === environmentId
-    )?.rendererKey;
-    if (rendererKey !== undefined) warmSceneCode(rendererKey);
+    cancelWarm();
+    if (environmentId === currentEnvironment) return;
+    warmTimer = setTimeout(() => {
+      warmTimer = null;
+      if (viewer?.prepareEnvironment(environmentId)) return;
+      const rendererKey = SCENE_ENVIRONMENTS.find(
+        ({ id }) => id === environmentId
+      )?.rendererKey;
+      if (rendererKey !== undefined) warmSceneCode(rendererKey);
+    }, 180);
   }
 
   function selectScene(e: MouseEvent, environmentId: SceneEnvironmentId) {
     e.stopPropagation();
+    cancelWarm();
     const previous = currentEnvironment;
     if (onchange) onchange(environmentId);
     else viewer?.setEnvironmentId(environmentId);
@@ -71,7 +85,9 @@
       class:active={currentEnvironment === environment.id}
       onclick={(e) => selectScene(e, environment.id)}
       onpointerenter={() => warmTile(environment.id)}
+      onpointerleave={cancelWarm}
       onfocus={() => warmTile(environment.id)}
+      onblur={cancelWarm}
       aria-pressed={currentEnvironment === environment.id}
       aria-label={environment.label}
       title={environment.label}

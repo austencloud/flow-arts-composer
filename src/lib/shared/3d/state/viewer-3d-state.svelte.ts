@@ -1822,6 +1822,8 @@ function buildViewer3DState(
 
   // Camera snap callback - registered by Viewer3DCamera, called by Viewer3DViewPresets
   let _snapToFn: CameraSnapTo | null = null;
+  let prepareEnvironment: ((environment: SceneEnvironmentId) => void) | null =
+    null;
 
   // ---------------------------------------------------------------
   // Persistence effects - serialize state to localStorage reactively.
@@ -2218,6 +2220,7 @@ function buildViewer3DState(
    */
   function dispose() {
     _disposed = true;
+    prepareEnvironment = null;
     unsubscribeFromUndo();
     performerManager.destroy();
   }
@@ -2288,6 +2291,19 @@ function buildViewer3DState(
       return environmentId;
     },
     setEnvironmentId: applyEnvironmentId,
+    prepareEnvironment(environment: SceneEnvironmentId): boolean {
+      if (!prepareEnvironment) return false;
+      prepareEnvironment(environment);
+      return true;
+    },
+    registerEnvironmentPreparation(
+      prepare: (environment: SceneEnvironmentId) => void
+    ) {
+      prepareEnvironment = prepare;
+      return () => {
+        if (prepareEnvironment === prepare) prepareEnvironment = null;
+      };
+    },
     /**
      * Compatibility for older preview harnesses. Production controls use
      * `environmentId` and `setEnvironmentId` for every viewer.
