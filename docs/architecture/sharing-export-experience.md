@@ -724,3 +724,29 @@ Acceptance requires observing actual animation frames before pressing Download,
 then a playable downloaded file. Check both directions of Card/Video switching,
 close/reopen, cancellation, and a replacement sequence. A placeholder, spinner,
 static frame, or test that mocks the player cannot establish this behavior.
+
+### September 22 card dialog clipping regression
+
+The live development server returned raw Svelte component source inside the
+`BaseModal` stylesheet response. The browser discarded its uncompiled `:global`
+selectors, including the intrinsic wrapper's `flex: 0 0 auto` rule. The wrapper
+then shrank to the sharing menu's retained height, so `ResizeObserver` could not
+detect the larger card view. The card and download footer extended below the
+dialog's clipped edge. A page reload did not repair the server's cached response.
+
+The same components worked in Vitest's independent Vite instance. Changing the
+share sheet's percentage height was investigated and rejected: `ShareSheetFrame`
+already overrides it with natural sizing. Do not mask a malformed stylesheet
+with feature-local sizing rules or descendant-height arithmetic.
+
+When the live route and browser component tests disagree, inspect the loaded
+stylesheet and computed wrapper flex before changing layout. Run
+`node scripts/verify-dev-styles.mjs` against the existing local server to detect
+raw component source in the layout, modal, and sharing styles. This probe does
+not start or restart a server. Follow the server ownership rule for recovery.
+
+Regression verification must start with the settled sharing menu, then open
+Download a file and switch Card/Video in both directions. Check the footer and
+complete preview against the dialog bounds, including small landscape and a
+large desktop viewport. A smooth height animation alone does not establish
+that its destination contains the content.
