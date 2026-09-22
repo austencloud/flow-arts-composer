@@ -98,14 +98,36 @@
     };
   }
 
-  /** Float's four starts: pointing in, out, clockwise, and counter. */
+  /**
+   * Float's four starts. The prop holds the angle it starts at, so the
+   * circle it draws sits off the hand's circle toward that side: up from a
+   * start pointing in, down from out, left from clock, right from counter.
+   */
   const floatFlowers = buildFloatAxis();
-  const ORI_WORDS: Record<string, string> = {
-    in: "In",
-    out: "Out",
-    clock: "Clock",
-    counter: "Counter",
+  const FLOAT_FACING: Record<string, string> = {
+    in: "Up",
+    out: "Down",
+    clock: "Left",
+    counter: "Right",
   };
+
+  /**
+   * How a flower sits, in the words spinners use for it: a petal up or down,
+   * two or six petals vertical or horizontal, four petals in diamond or box.
+   * Through Level 3 the hand closes one circle from the bottom of its path.
+   * Prospin started in and antispin started out put a petal at that bottom,
+   * the downbeat VTG counts from, and the other two starts turn the flower
+   * half a petal. Checked against every Level 1 to 3 path the Shape Engine
+   * draws. Eight petals have no common name, so they read upright or tilted.
+   */
+  function flowerFacing(flower: RotatingFlower): string {
+    const atBottom = (flower.style === "pro") === (flower.ori === "in");
+    const petals = flower.petals;
+    if (petals % 2 === 1) return atBottom ? "Petal down" : "Petal up";
+    if (petals % 4 === 2) return atBottom ? "Vertical" : "Horizontal";
+    if (petals === 4) return atBottom ? "Diamond" : "Box";
+    return atBottom ? "Upright" : "Tilted";
+  }
 
   /**
    * The starts a card shows. A ratio that closes in one hand circle draws a
@@ -162,7 +184,10 @@
       const flower = rotating(0, style, ori);
       return {
         flower,
-        meta: style === "pro" ? BASE_NAMES[ori] : petalWord(flower.petals),
+        meta:
+          style === "pro"
+            ? BASE_NAMES[ori]
+            : `${petalWord(flower.petals)}, ${flowerFacing(flower).toLowerCase()}`,
       };
     }),
   }));
@@ -539,10 +564,13 @@
         </p>
         <p>
           Through Level 3 each ratio shows four flowers: prospin and antispin,
-          each from a start pointing in and a start pointing out. At Level 1
-          those are four different base motions. From Level 2 on, starting out
-          draws the in flower turned half a petal. At Level 4's quarter turns it
-          draws the very same flower, so those cards show one start.
+          each from a start with the prop pointing in and a start pointing out.
+          At Level 1 those are four different base motions. From Level 2 on, the
+          second start draws the first flower turned half a petal, so each
+          flower is named by how it sits: a petal pointing up or down, petals
+          stacked vertical or lying horizontal, four petals in diamond or box.
+          At Level 4's quarter turns both starts draw the very same flower, so
+          those cards show one.
         </p>
         <p class="ladder-note">
           Tinted cards are the three ratios of the original matrix.
@@ -627,27 +655,30 @@
                     </p>
                     {#if row.starts}
                       {@const paired = row.starts.length > 1}
-                      <div class="card-grid" class:card-paired={paired}>
-                        {#if paired}<span aria-hidden="true"></span>{/if}
+                      <div class="card-grid">
                         <span class="card-style">Prospin</span>
                         <span class="card-style">Antispin</span>
                         {#each row.starts as start (start.ori)}
-                          {#if paired}
-                            <span class="card-start"
-                              >{ORI_WORDS[start.ori]}</span
-                            >
-                          {/if}
                           {#each start.flowers as flower (flowerKey(flower))}
+                            {@const facing = paired
+                              ? flowerFacing(flower).toLowerCase()
+                              : ""}
                             <span class="still">
                               <ShapeMatrixMandalaArt
                                 paint={paintFlower(flower)}
                                 artKey={flowerKey(flower)}
-                                alt={`${row.ratio} ${styleWord(flower.style).toLowerCase()}, starts ${start.ori}: ${petalWord(flower.petals).toLowerCase()}`}
+                                alt={`${row.ratio} ${styleWord(flower.style).toLowerCase()}${facing ? `, ${facing}` : ""}: ${petalWord(flower.petals).toLowerCase()}`}
                               />
                             </span>
                           {/each}
+                          {#if paired}
+                            {#each start.flowers as flower (flowerKey(flower))}
+                              <span class="card-facing" aria-hidden="true"
+                                >{flowerFacing(flower)}</span
+                              >
+                            {/each}
+                          {/if}
                         {/each}
-                        {#if paired}<span aria-hidden="true"></span>{/if}
                         {#each row.starts[0]?.flowers ?? [] as flower (flowerKey(flower))}
                           <span class="card-petals"
                             >{petalWord(flower.petals)}</span
@@ -663,11 +694,11 @@
                                 <ShapeMatrixMandalaArt
                                   paint={paintFlower(flower)}
                                   artKey={flowerKey(flower)}
-                                  alt={`${row.ratio} float, starts ${flower.ori}`}
+                                  alt={`${row.ratio} float, circle ${FLOAT_FACING[flower.ori]?.toLowerCase()}`}
                                 />
                               </span>
-                              <span class="card-start"
-                                >{ORI_WORDS[flower.ori]}</span
+                              <span class="card-facing" aria-hidden="true"
+                                >{FLOAT_FACING[flower.ori]}</span
                               >
                             </div>
                           {/each}
@@ -1422,8 +1453,9 @@
     margin-bottom: 0.2rem;
   }
 
-  /* A card's flowers as a table: styles across the top, one row per start,
-     petal counts along the foot, since a ratio's two starts share them. */
+  /* A card's flowers as a table: styles across the top, one row per start
+     with each flower's facing under it, and petal counts along the foot,
+     since a ratio's two starts share them. */
   .card-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1434,17 +1466,12 @@
     text-align: center;
   }
 
-  .card-grid.card-paired {
-    grid-template-columns: 1.4rem repeat(2, minmax(0, 1fr));
-    column-gap: 0.4rem;
-  }
-
   .card-grid .still,
   .float-start .still {
     inline-size: min(100%, var(--card-still));
   }
 
-  .card-start {
+  .card-facing {
     color: var(--ink-faint);
     font-size: 0.64rem;
     font-weight: 640;
@@ -1516,7 +1543,7 @@
      flowers take one size from the board's width instead of filling their
      card, sized for an end card, so every flower on the board matches:
      half of a track, less the tray padding, the gap difference, the card
-     padding, and the start labels. */
+     padding, and the gap between the two flowers. */
   @container ladder-board (min-width: 34rem) {
     /* Trays sit further apart than the cards inside them, which a subgrid's
        own gap allows. */
@@ -1544,7 +1571,7 @@
 
     /* Wide card: ratio and turns across the top, the flowers under them. */
     .ratio-card {
-      --card-still: min(7.5rem, calc((100cqi - 0.9rem) / 4 - 2.35rem));
+      --card-still: min(7.5rem, calc((100cqi - 0.9rem) / 4 - 1.5rem));
       grid-template-columns: minmax(0, 1fr);
       grid-template-rows: auto 1fr;
       align-items: start;
@@ -1578,7 +1605,7 @@
     }
 
     .ratio-card {
-      --card-still: min(7.5rem, calc((100cqi - 2.7rem) / 8 - 2.35rem));
+      --card-still: min(7.5rem, calc((100cqi - 2.7rem) / 8 - 1.5rem));
     }
   }
 
@@ -1595,7 +1622,7 @@
     }
 
     .ratio-card {
-      --card-still: min(7.5rem, calc((100cqi - 6.3rem) / 16 - 2.35rem));
+      --card-still: min(7.5rem, calc((100cqi - 6.3rem) / 16 - 1.5rem));
     }
   }
 
