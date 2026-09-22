@@ -206,8 +206,15 @@ export type {
 export {
   HAND_COLOR_KEY,
   calculateHandColorKeyLayout,
+  drawHandColorKey,
+  getHandKeyGlyphPath,
+  HAND_KEY_GLYPH_FONT_SIZE,
+  renderHandColorKeySvg,
 } from "./calculations/hand-color-key.js";
 export type {
+  DrawHandColorKeyOptions,
   HandColorKeyEntry,
+  HandColorKeyCanvasContext,
   HandColorKeyLayout,
+  RenderHandColorKeySvgOptions,
 } from "./calculations/hand-color-key.js";

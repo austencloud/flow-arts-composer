@@ -13,13 +13,19 @@
  * viewer, the choreo card back and MCP images all bake in the same key.
  */
 
+import {
+  drawHandKeyGlyph,
+  getHandKeyGlyphPath,
+  type HandKeyGlyphContext,
+} from "./hand-key-glyphs.js";
+
 export const HAND_COLOR_KEY = {
   /** Vertical centre of the bottom glyph band (grid ends at 800, box at 950). */
   CENTER_Y: 875,
   /** Swatch radius. Smaller than the old 28 so the pair reads as a label, not a prop. */
   SWATCH_RADIUS: 20,
   /** Same family and weight as the step number and the letter fallback. */
-  FONT_FAMILY: "Georgia, serif",
+  FONT_FAMILY: "Gelasio, Georgia, serif",
   FONT_WEIGHT: "bold",
   FONT_SIZE: 64,
   /** Gap from swatch edge to the letter's left side. */
@@ -47,6 +53,39 @@ export interface HandColorKeyLayout {
   /** Text baseline y for the labels. */
   baselineY: number;
   entries: HandColorKeyEntry[];
+}
+
+/** The small Canvas 2D surface shared by browser and NAPI canvas renderers. */
+export interface HandColorKeyCanvasContext extends HandKeyGlyphContext {
+  save(): void;
+  restore(): void;
+  arc(
+    x: number,
+    y: number,
+    radius: number,
+    startAngle: number,
+    endAngle: number
+  ): void;
+  fillStyle: unknown;
+}
+
+export interface DrawHandColorKeyOptions {
+  showLeft: boolean;
+  showRight: boolean;
+  /** Output pixels per 950-unit viewBox. */
+  scale: number;
+  /** Output-pixel centre of the 950-unit viewBox. */
+  centerX: number;
+  textColor: string;
+  colorForHand: (hand: HandColorKeyEntry["hand"]) => string;
+}
+
+export interface RenderHandColorKeySvgOptions {
+  showLeft: boolean;
+  showRight: boolean;
+  centerX: number;
+  textColor: string;
+  colorForHand: (hand: HandColorKeyEntry["hand"]) => string;
 }
 
 /**
@@ -93,3 +132,63 @@ export function calculateHandColorKeyLayout(
     entries,
   };
 }
+
+/** Draws the key onto any Canvas 2D-compatible context without runtime-specific types. */
+export function drawHandColorKey(
+  context: HandColorKeyCanvasContext,
+  options: DrawHandColorKeyOptions
+): void {
+  const layout = calculateHandColorKeyLayout(
+    options.showLeft,
+    options.showRight
+  );
+  if (layout.entries.length === 0) return;
+
+  context.save();
+  for (const entry of layout.entries) {
+    context.fillStyle = options.colorForHand(entry.hand);
+    context.beginPath();
+    context.arc(
+      options.centerX + entry.swatchX * options.scale,
+      layout.centerY * options.scale,
+      layout.swatchRadius * options.scale,
+      0,
+      Math.PI * 2
+    );
+    context.fill();
+    context.fillStyle = options.textColor;
+    drawHandKeyGlyph(
+      context,
+      entry.label,
+      options.centerX + entry.labelX * options.scale,
+      layout.baselineY * options.scale,
+      options.scale
+    );
+  }
+  context.restore();
+}
+
+/** Serializes the SVG form used by standalone renderers from the same layout and styling. */
+export function renderHandColorKeySvg(
+  options: RenderHandColorKeySvgOptions
+): string {
+  const layout = calculateHandColorKeyLayout(
+    options.showLeft,
+    options.showRight
+  );
+  if (layout.entries.length === 0) return "";
+
+  const parts = layout.entries.map((entry) => {
+    const fill = options.colorForHand(entry.hand);
+    return (
+      `<circle cx="${entry.swatchX}" cy="${layout.centerY}" r="${layout.swatchRadius}" fill="${fill}"/>` +
+      `<path d="${getHandKeyGlyphPath(entry.label)}" transform="translate(${entry.labelX} ${layout.baselineY})"/>`
+    );
+  });
+  return `<g class="hand-color-key" transform="translate(${options.centerX}, 0)" fill="${options.textColor}">${parts.join("")}</g>`;
+}
+
+export {
+  getHandKeyGlyphPath,
+  HAND_KEY_GLYPH_FONT_SIZE,
+} from "./hand-key-glyphs.js";

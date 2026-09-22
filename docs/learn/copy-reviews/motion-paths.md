@@ -401,3 +401,39 @@ Ownership ledger: PathShapePanel gains a `fill` prop for the explorer's preview 
 Evidence: browser pass at 2560×1340, 1920×950, 1440×900, 1250×900, 1440×800 and 375×667. At 2560 the workspace is 1368×1252 under the header, the tiles 267×290, the canvas 558, the matrix 542 with 107px cells (its original size) and the chips 218×84, all without a scroll. At 1440×900 the tiles are 147×170, the canvas 318 and the matrix 342, still on one screen; at 1250 the transport wraps and the canvas is 266. At 1440×800 and on the phone the layout is the one shipped on September 17, button and all. Switching sources in fit mode leaves the scroll position where it was. Console clean apart from the PostHog notice.
 
 Found in passing, not fixed here: the shared Crossfade's `animateHeight` freezes at the outgoing layer's height when a key reverts to a layer that is still fading out (Svelte resumes that layer without re-running the tracking action). Reproduced by switching the chooser's source back and forth within the fade; logged as its own task.
+
+## September 18: the captions go, the canvas names the timing
+
+Austen, on the fit-mode layout at 2560×1440: better, but he is not going to read captions like the tiles' note or the "Left hand pro, 1 turn" line, so they go; the timing chips can be taller with icons that grow with them; and the canvas should stop showing the beat number and the positions and show the prop and hand timing-and-direction glyphs instead. He also wondered whether the matrix's top-left corner could carry the turn controls, as the shape engine's does.
+
+Strings removed: the tiles' note ("Only the hand's path between positions changes. The positions and the spin stay the same."), the now-playing line under the canvas (kept as a visually hidden live region, so assistive technology still hears what plays), and the chooser's idle instructions ("Rows are left-hand shapes, columns are right-hand shapes…", "One hand on its own…", "Switch the path while it plays."). The status strip keeps its height and now carries only a build in progress or an error with its retry. No strings added.
+
+Canvas: the beat number and the α/β/γ positions are off; the hand relationship glyph (bottom right) and the prop relationship glyph (top right) are on, beside the letter and its turns. A solo takes both relationship glyphs off with the letter, since each describes a pair.
+
+Chips: in fit mode the controls fill their row (the crossfade fills instead of measuring) and the chip row takes what the turn picker leaves; ElementChipRow's new `fill` makes the row a size container and RelationshipChoiceChip reads its icon and word sizes from it, so a taller chip gets a bigger icon (about half the chip) rather than more air. Stacked and phone hosts keep the compact row shape; the shape engine's drill sets no sizes and is unchanged.
+
+Ownership ledger: ElementChipRow `fill`, RelationshipChoiceChip `--choice-icon-size` and `--choice-copy-size` fallbacks. The glyph overlay already owned both relationship glyphs behind the scope's visibility flags; the explorer state sets them. No new owners.
+
+Evidence: browser pass at 2560×1340 (chips 218×182 with 82px icons, tiles 281×305, canvas 610, matrix 542), 1920×1080 (chips 218×123, icons 61px, canvas 469, matrix 423), 1440×900 (chips 177×82, icons 42px, canvas 370, matrix 342), 1440×800 (stacked flow, button at the right of its row, compact chips 177×45 with 34px icons, the crossfade back on its measured height) and 375×667 (compact chips 95×45). Solo removes both relationship glyphs and the chip row; picking a pair brings them back. Source switches in fit mode leave the scroll where it was. Console clean apart from the PostHog notice. The drill could not be opened on the task server: `/shape-engine` fails to boot until the primary installs `svelte-awesome-color-picker`, a dependency main added on September 18.
+
+Corner as a control surface: not built. The shape engine's corner holds Surprise and two axis steppers because its cells reach 320px; the explorer's corner is 107px at 2560, 72px at 1920 and 68px at 1440, which cannot hold two 44px steppers, so the turns stay in the controls column.
+
+## September 22: the intro's hand never waits or crawls
+
+Austen, stepping through the intro: after the grid stage, Next into Arc left the hand still for a moment before it traveled, and Next pressed while a path was drawing brought the next path in slowly, as if it were finishing the old motion from wherever the hand was.
+
+Measured on the live page: entering Arc ran a 700 ms reshape from the arc route to the same arc route before the hand could move. Each later stage kept the hand's leftover progress: a 700 ms reshape with the hand nearly still, a 1.4 s slide back along the new path, then a 1.4 s redraw, 3.6 s in all when interrupted.
+
+Interaction now: every path stage is one motion. The route reshapes toward the new path while the hand slides back along it to the start (700 ms from the end, proportionally less from partway), then the hand draws the new path at the animator's even pace. Next pressed at any moment starts that motion from wherever the hand and route are. Arc starts drawing on the first frame, and its destination pulses until the hand arrives. The closing comparison lets a draw in flight finish along its own line. Reduced motion still jumps each stage to its end state. No strings changed.
+
+Evidence: task server, frame-by-frame hand positions. Arc moves on the first frame and arrives in 1.4 s. Next at 60% of Linear returns in about 0.4 s, then Concave draws in 1.4 s. Next during the grid glide, two Nexts 150 ms apart and Next mid-draw into the comparison all stay continuous (largest step between frames 12 units of a 330-unit drawing). Reduced motion lands every stage at once.
+
+## September 22: the hand lifts and sets down instead of rewinding
+
+Austen, after the single-motion version: on Next the hand slid back to the east start point, and the slide looked rushed. He asked for the clearest effect available.
+
+Chosen: a lift and set-down, the way a teacher starts a demonstration over. On Next the hand fades and shrinks slightly where it is (200 ms), reappears at the start point slightly large and settles (350 ms), then draws the new path at the animator's even pace (1.4 s). It never travels backward along a path, so nothing can read as a replay. The finished path fades off and stays behind as a faint line, so Linear is drawn beside Arc and Concave beside both, and the closing comparison colors all three. Start again lifts the hand and sets it down at the center. Next pressed mid-lift carries on from the hand's current fade instead of popping it back to full. Reduced motion still jumps each stage to its end state. No strings changed.
+
+Options weighed: sliding back along the path (read as a hurried replay), drawing each new path from the end back to the start (reverses the shift's direction between stages), and a continuous loop (Next would wait for the lap). The lift keeps one direction and answers Next at once.
+
+Evidence: task server, frame-by-frame hand position, opacity and scale. Arc draws on the first frame. Linear: the hand is gone at 200 ms, back at the start and settled by 500 ms, and draws 550 to 1950 ms. A second Next 100 ms into a lift, Next mid-draw into the comparison, and Start again all change opacity by at most 0.23 per frame, and the hand never jumps while visible. Ghost counts are 1 on Linear, 2 on Concave, and 0 once the comparison shows.

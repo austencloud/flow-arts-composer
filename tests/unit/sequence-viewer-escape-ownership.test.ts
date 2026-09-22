@@ -1,5 +1,8 @@
-import { beforeEach, describe, expect, it } from "vitest";
-import { shouldSequenceViewerDeferEscape } from "$lib/shared/sequence-viewer/domain/sequence-viewer-escape-ownership";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  runSequenceViewerEscapeFallback,
+  shouldSequenceViewerDeferEscape,
+} from "$lib/shared/sequence-viewer/domain/sequence-viewer-escape-ownership";
 
 function escapeEvent(): KeyboardEvent {
   return new KeyboardEvent("keydown", {
@@ -78,5 +81,62 @@ describe("sequence viewer Escape ownership", () => {
     expect(shouldSequenceViewerDeferEscape(escapeEvent(), testDocument)).toBe(
       false
     );
+  });
+});
+
+function appendVisibleTarget(label: string): HTMLButtonElement {
+  const button = testDocument.createElement("button");
+  button.setAttribute("data-escape-shortcut", "");
+  button.setAttribute("aria-label", label);
+  Object.defineProperty(button, "getClientRects", {
+    configurable: true,
+    value: () => ({ length: 1 }) as DOMRectList,
+  });
+  testDocument.body.append(button);
+  return button;
+}
+
+describe("sequence viewer Escape fallback", () => {
+  function fallbackActions() {
+    return {
+      isFullscreen: () => false,
+      exitFullscreen: vi.fn(),
+      close: vi.fn(),
+    };
+  }
+
+  it("closes the share panel rather than leaving the viewer", () => {
+    const header = testDocument.createElement("header");
+    const share = testDocument.createElement("button");
+    header.append(share);
+    testDocument.body.append(header);
+    const closeShare = appendVisibleTarget("Close share");
+    const clicked = vi.fn();
+    closeShare.addEventListener("click", clicked);
+    setActiveElement(testDocument, share);
+    const actions = fallbackActions();
+
+    runSequenceViewerEscapeFallback(actions, testDocument);
+
+    expect(clicked).toHaveBeenCalledOnce();
+    expect(actions.close).not.toHaveBeenCalled();
+  });
+
+  it("leaves the viewer when nothing inside it takes Escape", () => {
+    const actions = fallbackActions();
+
+    runSequenceViewerEscapeFallback(actions, testDocument);
+
+    expect(actions.close).toHaveBeenCalledOnce();
+  });
+
+  it("exits browser fullscreen first", () => {
+    appendVisibleTarget("Close share");
+    const actions = { ...fallbackActions(), isFullscreen: () => true };
+
+    runSequenceViewerEscapeFallback(actions, testDocument);
+
+    expect(actions.exitFullscreen).toHaveBeenCalledOnce();
+    expect(actions.close).not.toHaveBeenCalled();
   });
 });

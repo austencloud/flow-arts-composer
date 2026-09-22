@@ -7,7 +7,7 @@
   Features:
   - Title with optional beat number
   - Tab/mode buttons (optional)
-  - Action buttons (optional, e.g., Export GIF)
+  - Action buttons (optional, e.g., Export video)
   - Close button (always present)
 -->
 <script lang="ts">
@@ -26,7 +26,7 @@
     isMobile?: boolean;
     onClose: () => void;
     tabButtons?: Snippet; // Optional snippet for tab/mode buttons (e.g., Remove/Adjust in Edit)
-    actionButtons?: Snippet; // Optional snippet for action buttons (e.g., Export GIF)
+    actionButtons?: Snippet; // Optional snippet for action buttons (e.g., Export video)
   } = $props();
 </script>
 

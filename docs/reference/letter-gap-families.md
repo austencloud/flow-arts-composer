@@ -282,23 +282,31 @@ cannot see that difference; the count bucket can (it is what separates the
 4-count from the 16-count). The two numbers measure different things — do not
 expect one to predict the other.
 
-## The 45° case (skew) — real but undescribed
+## The 45° case (skew)
 
 Rotating one hand 45° puts it on the diagonals while the other stays cardinal.
 Austen built a working closed 4-step skewed loop this way (`G F A L` in eta/zeta
 placements), and skew **keeps the original letter names** — the skew generator
 applies skew to existing diamond/box pictographs and preserves the letter.
 
-But `SkewedPictographDataframe.csv` (byte-identical in `static/data/pictographs/`
-and `mcp-server-pkg/assets/data/pictographs/`, 5120 rows) contains **no rows that
-start from a skewed placement**. Its start placements are only alpha/beta/gamma.
-`scripts/generate-skewed-dataframe.ts` builds it by applying skew to existing
-diamond and box pictographs, so it can describe stepping *into* skew and never
-describes continuing *within* it.
+Before 2026-09-21, `SkewedPictographDataframe.csv` (byte-identical in
+`static/data/pictographs/` and `mcp-server-pkg/assets/data/pictographs/`, 5120
+rows) contained **no rows that start from a skewed placement**. Its start
+placements were only alpha/beta/gamma. `scripts/generate-skewed-dataframe.ts`
+built it by applying skew to existing diamond and box pictographs, so it
+described stepping *into* skew and never continuing *within* it.
 
-Consequence: a closed loop that stays in skew cannot be expressed from the
-shipped data, even though it is performable. Extending the generator to cover
-skew→skew transitions is the unlock for skewed LOOPs.
+Consequence at the time: a closed loop that stays in skew could not be
+expressed from the shipped data, even though it was performable. Extending
+the generator to cover skew→skew transitions was the unlock for skewed LOOPs.
+
+Described as of 2026-09-21: the skewed alphabet in
+`docs/superpowers/specs/2026-09-21-skewed-frame-lettering-design.md` letters
+all 1152 skewed-frame beats with 38 letters. The generator writes those rows
+to `static/data/pictographs/SkewedPictographDataframe.csv` (6272 rows: 3072
+category 1, 2048 category 2, 1152 category 3). The
+`mcp-server-pkg/assets/data/pictographs/` copy is a mirror of that file, kept
+in sync by copying it over, and now carries the category 3 rows too.
 
 ## What this changes
 

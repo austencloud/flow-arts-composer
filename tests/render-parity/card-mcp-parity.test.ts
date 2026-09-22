@@ -8,6 +8,14 @@ import {
 } from "./card-parity-metrics";
 import { renderComposerCard } from "./render-composer-card";
 
+declare const __MCP_PACKED_ROOT__: boolean;
+
+const adapters = [
+  "source",
+  "packaged",
+  ...(__MCP_PACKED_ROOT__ ? ["installed"] : []),
+] as const;
+
 async function decodePng(base64: string): Promise<ImageData> {
   const image = new Image();
   image.src = `data:image/png;base64,${base64}`;
@@ -35,10 +43,27 @@ async function canvasImage(
 }
 
 describe("Composer ⇄ MCP card PNG parity", () => {
+  it.each(["composer-light", "print-footer"])(
+    "negative control: removing the hand-color key fails its own region (%s)",
+    async (name) => {
+      const testCase = cardParityCases().find((entry) => entry.name === name)!;
+      const withKey = await canvasImage(await renderComposerCard(testCase));
+      const withoutKey = await canvasImage(
+        await renderComposerCard(testCase, { hideHandColorKey: true })
+      );
+      const key = cardParityMetrics(withKey, withoutKey, testCase).find(
+        (region) => region.name === "handColorKey"
+      )!;
+      expect(key.percent).toBeGreaterThan(CARD_PARITY_LIMITS.handColorKey!);
+      expect(() => assertCardParity([key], "missing hand-color key")).toThrow(
+        "handColorKey"
+      );
+    }
+  );
   for (const testCase of cardParityCases()) {
     it(`${testCase.name}: reports strict per-region parity for both adapters`, async () => {
       const composer = await canvasImage(await renderComposerCard(testCase));
-      for (const adapter of ["source", "packaged"] as const) {
+      for (const adapter of adapters) {
         const base64 = await commands.renderMcpCard(
           adapter,
           testCase.sequence,

@@ -88,9 +88,7 @@ describe("buugeng chirality is owned by the prop picker", () => {
     expect(grid).toContain("chirality?: PropChiralitySeam");
     // Gated on the prop actually being buugeng-family, so staff users never
     // see a control that would do nothing.
-    expect(grid).toMatch(
-      /\{#if chirality && selectedPropType !== null && isBuugengFamilyProp\(/
-    );
+    expect(grid).toMatch(/\{#if chirality && isBuugengFamilyProp\(drill\.prop\)\}/);
   });
 
   it("the row routes to SegmentedControl rather than a hand-rolled toggle", () => {
@@ -156,12 +154,14 @@ describe("buugeng chirality is owned by the prop picker", () => {
     expect(arena).not.toContain("onClose");
   });
 
-  it("puts chirality before the prop catalogue in compact drawers", () => {
+  it("opens a detail screen for buugeng props so chirality is reachable", () => {
+    // Chirality lives on the prop's detail screen, not above the catalogue,
+    // so a buugeng tile must drill in whenever the chirality seam is wired.
     const grid = read(GRID_BODY_PATH);
-    expect(grid).toContain("class:flat");
     expect(grid).toMatch(
-      /\.prop-grid-root\.flat \.chirality-dock\s*\{\s*order: -1;/
+      /chirality !== undefined && isBuugengFamilyProp\(prop\)/
     );
+    expect(grid).not.toContain("chirality-dock");
   });
 
   it("no seam ever writes one hand's chirality onto the other", () => {

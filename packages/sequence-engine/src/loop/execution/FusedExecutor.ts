@@ -12,6 +12,8 @@ export interface FusedTransformFlags {
   readonly flip: boolean;
   readonly swap: boolean;
   readonly invert: boolean;
+  /** ROTATED is folded into this fused stage and must advance copy passes too. */
+  readonly rotate?: boolean;
 }
 
 export class FusedExecutor {
@@ -29,7 +31,8 @@ export class FusedExecutor {
 
   execute(sequence: SequenceStep[], period: number): SequenceStep[] {
     const startPlacement = sequence.shift();
-    if (!startPlacement) throw new Error("Sequence must have a start placement");
+    if (!startPlacement)
+      throw new Error("Sequence must have a start placement");
 
     const partialLength = sequence.length;
     const stepsToGenerate = partialLength * (period - 1);
@@ -83,15 +86,19 @@ export class FusedExecutor {
       rightMotion.endLocation
     );
 
-    const letter = this.flags.invert
-      ? (getInvertedLetter(sourceStep.letter ?? "") as SequenceStep["letter"])
-      : sourceStep.letter;
+    // QR seeds omit derived letters. Their motion data still fully defines
+    // inversion; the presentation boundary recovers a letter when it needs one.
+    const letter =
+      this.flags.invert && sourceStep.letter
+        ? (getInvertedLetter(sourceStep.letter) as SequenceStep["letter"])
+        : sourceStep.letter;
 
     return {
       ...sourceStep,
       stepNumber,
       letter,
-      startPlacement: previousStep.endPlacement as SequenceStep["startPlacement"],
+      startPlacement:
+        previousStep.endPlacement as SequenceStep["startPlacement"],
       endPlacement: endPlacement as SequenceStep["endPlacement"],
       motions: { left: leftMotion, right: rightMotion },
     };
@@ -115,6 +122,9 @@ export class FusedExecutor {
 
     return {
       ...matchingMotion,
+      // Swapped transforms borrow the opposite source motion, but the new
+      // motion still belongs to the destination hand.
+      hand: previousMotion.hand,
       startLocation: startLocation as MotionData["startLocation"],
       endLocation: endLocation as MotionData["endLocation"],
       rotationDirection: rotationDirection as MotionData["rotationDirection"],
@@ -153,23 +163,40 @@ export class FusedExecutor {
     previousStep: SequenceStep,
     stepNumber: number
   ): SequenceStep {
+    const leftMotion = this.copyMotion(
+      sourceStep.motions.left,
+      previousStep.motions.left
+    );
+    const rightMotion = this.copyMotion(
+      sourceStep.motions.right,
+      previousStep.motions.right
+    );
     return {
       ...sourceStep,
       stepNumber,
-      startPlacement: previousStep.endPlacement as SequenceStep["startPlacement"],
-      endPlacement: sourceStep.endPlacement as SequenceStep["endPlacement"],
-      motions: {
-        left: {
-          ...sourceStep.motions.left,
-          startLocation: previousStep.motions.left
-            .endLocation as MotionData["startLocation"],
-        },
-        right: {
-          ...sourceStep.motions.right,
-          startLocation: previousStep.motions.right
-            .endLocation as MotionData["startLocation"],
-        },
-      },
+      startPlacement:
+        previousStep.endPlacement as SequenceStep["startPlacement"],
+      endPlacement: gridPlacementDeriver.getGridPlacementFromLocations(
+        leftMotion.endLocation,
+        rightMotion.endLocation
+      ) as SequenceStep["endPlacement"],
+      motions: { left: leftMotion, right: rightMotion },
+    };
+  }
+
+  private copyMotion(
+    sourceMotion: MotionData,
+    previousMotion: MotionData
+  ): MotionData {
+    const startLocation = previousMotion.endLocation;
+    const endLocation = this.flags.rotate
+      ? this.computeEndLocation(sourceMotion, startLocation)
+      : sourceMotion.endLocation;
+    return {
+      ...sourceMotion,
+      hand: previousMotion.hand,
+      startLocation: startLocation as MotionData["startLocation"],
+      endLocation: endLocation as MotionData["endLocation"],
     };
   }
 }

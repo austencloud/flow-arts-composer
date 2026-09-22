@@ -326,10 +326,16 @@ export function createEffectsConfigState(
   // landing previews) that must not clobber the user's global effects config.
   const persist = options.persist ?? true;
   const stored = persist ? loadStoredConfig() : null;
+  // The VM-key migration reads and rewrites the viewer's shared
+  // `animation-visibility-settings` entry, so non-persisted instances skip it.
   let config = $state<EffectsConfig>(
     normalizeEffectsConfig(
       stored ??
-        migrateFromVmStorageOnce(migrateEffectsConfig(structuredClone(initial)))
+        (persist
+          ? migrateFromVmStorageOnce(
+              migrateEffectsConfig(structuredClone(initial))
+            )
+          : migrateEffectsConfig(structuredClone(initial)))
     )
   );
   let version = $state(0);
@@ -342,24 +348,29 @@ export function createEffectsConfigState(
   let defaultsTimer: ReturnType<typeof setTimeout> | null = null;
   const sceneUndo = getSceneUndoManager();
 
-  sceneUndo.registerDomain("effects", {
-    capture: () => {
-      try {
-        return structuredClone(config);
-      } catch {
-        return JSON.parse(JSON.stringify(config));
-      }
-    },
-    restore: (snapshot) => {
-      try {
-        config = normalizeEffectsConfig(structuredClone(snapshot));
-      } catch {
-        config = normalizeEffectsConfig(JSON.parse(JSON.stringify(snapshot)));
-      }
-      version++;
-      scheduleSave();
-    },
-  });
+  // registerDomain replaces the previous "effects" handler on the shared undo
+  // manager, so only the persisted instance registers; otherwise the last card
+  // preview to mount would become the app-wide effects undo target.
+  if (persist) {
+    sceneUndo.registerDomain("effects", {
+      capture: () => {
+        try {
+          return structuredClone(config);
+        } catch {
+          return JSON.parse(JSON.stringify(config));
+        }
+      },
+      restore: (snapshot) => {
+        try {
+          config = normalizeEffectsConfig(structuredClone(snapshot));
+        } catch {
+          config = normalizeEffectsConfig(JSON.parse(JSON.stringify(snapshot)));
+        }
+        version++;
+        scheduleSave();
+      },
+    });
+  }
 
   function scheduleSave() {
     version++;

@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { compressForQR, decompressFromQR } from "$lib/shared/navigation/services/sequence-codec";
-import { encodeSequence, decodeSequence, encodeSequenceForQR, decodeSequenceFromQR, isInlineEncoded } from "$lib/shared/navigation/services/sequence-encoder";
+import {
+  compressForQR,
+  decompressFromQR,
+} from "$lib/shared/navigation/services/sequence-codec";
+import {
+  encodeSequence,
+  decodeSequence,
+  encodeSequenceForQR,
+  decodeSequenceFromQR,
+  isInlineEncoded,
+} from "$lib/shared/navigation/services/sequence-encoder";
 import { CompositionalDecoder } from "$lib/shared/qr/services/compositional-decoder";
 import { CompositionalEncoder } from "$lib/shared/qr/services/compositional-encoder";
 import {
@@ -10,7 +19,11 @@ import {
 } from "$lib/shared/qr/services/types";
 import { computeRecipeHash } from "$lib/shared/qr/services/compositional-utils";
 import { registerLoopDetector } from "$lib/shared/create/get-loop-detector";
-import { strictRotatedLOOPExecutor } from "$lib/features/create/generate/circular/services/strict-rotated-loop-executor";
+import {
+  LOOPType as EngineLOOPType,
+  Period as EnginePeriod,
+  loopExecutorSelector,
+} from "@tka/sequence-engine/loop";
 import { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
 import {
   createSequenceData,
@@ -163,7 +176,6 @@ function buildSimple3StepSequence(): SequenceData {
 }
 
 describe("CompositionalEncoding", () => {
-
   describe("LOOP_TYPE_TAGS", () => {
     it("maps all single-transform LOOP types to compact tags", () => {
       expect(LOOP_TYPE_TAGS["rotated"]).toBe("sr");
@@ -202,7 +214,9 @@ describe("CompositionalEncoding", () => {
       expect(encoded.startsWith("s~r1:")).toBe(false);
       const payload = encoded.slice(2);
       expect(
-        payload.startsWith("q1:") || payload.startsWith("d1:") || payload.startsWith("raw:")
+        payload.startsWith("q1:") ||
+          payload.startsWith("d1:") ||
+          payload.startsWith("raw:")
       ).toBe(true);
     });
 
@@ -266,10 +280,9 @@ describe("CompositionalEncoding", () => {
         endPlacement: GridPlacement.ALPHA3,
         duration: 5,
       };
-      const completed = strictRotatedLOOPExecutor.executeLOOP(
-        [startPlacement, seed],
-        Period.QUARTERED
-      );
+      const completed = loopExecutorSelector
+        .getExecutor(EngineLOOPType.ROTATED)
+        .executeLOOP([startPlacement, seed], EnginePeriod.QUARTERED);
       const sequence = buildTestSequence(completed);
 
       registerLoopDetector({
@@ -301,8 +314,7 @@ describe("CompositionalEncoding", () => {
         { encode: (s) => encodeSequence(s) },
         { decode: (s) => decodeSequence(s) },
         {
-          decompressString: (s) =>
-            decompressFromQR(s),
+          decompressString: (s) => decompressFromQR(s),
         }
       );
 
@@ -320,9 +332,9 @@ describe("CompositionalEncoding", () => {
         }
       );
 
-      await expect(
-        decoder.decode("r1:xx:abc12345:data")
-      ).rejects.toThrow('Unknown LOOP type tag: "xx"');
+      await expect(decoder.decode("r1:xx:abc12345:data")).rejects.toThrow(
+        'Unknown LOOP type tag: "xx"'
+      );
     });
 
     it("rejects malformed recipe strings", async () => {

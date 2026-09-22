@@ -55,7 +55,7 @@
   });
 
   function signIn(): void {
-    authDrawerState.show("signin");
+    authDrawerState.show("signin", "community-map");
   }
 
   function openPicker(trigger: HTMLButtonElement | null): void {

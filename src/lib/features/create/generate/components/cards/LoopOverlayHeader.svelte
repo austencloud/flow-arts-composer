@@ -2,13 +2,14 @@
   interface Props {
     onClose: () => void;
     onDisable?: () => void;
+    titleId?: string;
   }
 
   const props: Props = $props();
 </script>
 
 <div class="overlay-header">
-  <h3 class="overlay-title">Select LOOP Type</h3>
+  <h3 class="overlay-title" id={props.titleId}>Select LOOP Type</h3>
   <div class="header-actions">
     {#if props.onDisable}
       <button
@@ -107,8 +108,11 @@
     align-items: center;
     justify-content: center;
     padding: 8px;
-    width: var(--min-touch-target);
-    height: var(--min-touch-target);
+    width: max(var(--min-touch-target, 44px), 44px);
+    height: max(var(--min-touch-target, 44px), 44px);
+    min-width: 44px;
+    min-height: 44px;
+    flex-shrink: 0;
     transition: all var(--duration-normal) ease;
   }
 

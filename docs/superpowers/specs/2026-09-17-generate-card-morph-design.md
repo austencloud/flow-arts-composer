@@ -32,7 +32,9 @@ backdrop, no bottom sheet.
 One morph, two destinations:
 
 - Side-by-side layouts (`isDesktopLayout`): the card fills the bento grid
-  stage (`.card-grid-stage`). The Level toolbar above the grid stays visible.
+  (`.card-grid`, the cards' own centered, breakpoint-capped footprint; not
+  the wider `.card-grid-stage` around it). The Level toolbar above the grid
+  stays visible.
 - Stacked layouts (portrait phones, portrait tablets): the same card fills
   the viewport, bottom nav included. Measured on 2026-09-17 at 375x812 with a
   sequence on screen, the settings panel is 375x341; a Customize drill or
@@ -94,11 +96,13 @@ the content callbacks each panel needs today (the same values
 - Reads `panelState.openGenerateCard` (see state below) and renders exactly
   one of `CustomizeExpandedOverlay`, `LOOPExpandedOverlay`, `SetupsPanel`, or
   `TnDPanel` (companion spec).
-- Destination: on side-by-side it renders in place as a child of
-  `.card-grid-stage`, `position: absolute; inset: 0`. On stacked layouts it
-  renders through the existing `portal` action (`modals/portal.ts`) at body
-  level, `position: fixed; inset: 0`, above the bottom nav at the z-index the
-  retired drawers used. A `position: fixed` element cannot live inside the
+- Destination: on side-by-side it renders in place as an absolutely
+  positioned child of `.card-grid` (`position: absolute; inset: 0`; the grid
+  is `position: relative`), out of flow so it takes no track. On stacked
+  layouts it renders through the existing `portal` action
+  (`modals/portal.ts`) at body level, `position: fixed; inset: 0`, above the
+  bottom nav at the z-index the retired drawers used. A `position: fixed`
+  element cannot live inside the
   settings container: `container-type: size` applies layout containment,
   which makes the container the containing block for fixed descendants.
 - Stamps `generate-card-<id>` on its root with `claimedViewTransitionName`.
@@ -127,10 +131,13 @@ the panel.
 
 ### Retired
 
-`modals/CustomizeDrawer.svelte`, `modals/LOOPDrawer.svelte`,
-`presets/PresetDrawer.svelte`, and the three `<…Drawer>` mounts in
-`GeneratePanel.svelte`. `GenerationSettingsDrawer.svelte` and
-`modals/portal.ts` stay (Fuse and the stacked destination use them).
+`presets/PresetDrawer.svelte` and the three `<…Drawer>` mounts in
+`GeneratePanel.svelte`. `modals/CustomizeDrawer.svelte` and
+`modals/LOOPDrawer.svelte` stay for now: the public Composer demo
+(`src/routes/(public)/composer/_sections/GenerateSection.svelte`) composes its
+own card grid and mounts them; migrating the demo to the morph is a
+follow-up. `GenerationSettingsDrawer.svelte` and `modals/portal.ts` stay (Fuse
+and the stacked destination use them).
 
 ## State
 
@@ -150,9 +157,9 @@ already behave that way through `closeAllPanels`).
 ## Layout while a card is open
 
 The grid keeps rendering underneath the grown card on side-by-side layouts.
-Level changes still reflow the grid; the panel is a sibling of `.card-grid`
-inside the stage and is not part of the `{#each}` flip. The grown card's
-inner layout is the panel's own (`LOOPExpandedOverlay layout="responsive"`,
+Level changes still reflow the grid; the panel is rendered after the
+`{#each}` block inside `.card-grid` and is not part of its flip. The grown
+card's inner layout is the panel's own (`LOOPExpandedOverlay layout="responsive"`,
 `SettingsDrillPanel` in Customize), sized by the stage instead of the drawer
 width. Both were designed for a card-sized region before the drawer existed.
 

@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>About direction | The Kinetic Alphabet</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #111018;
+        --surface: #1b1924;
+        --surface-2: #24212d;
+        --ink: #f2eff8;
+        --muted: #beb8ca;
+        --line: #3c3649;
+        --violet: #bca4ff;
+        --violet-dim: #7862a8;
+        --serif: Georgia, "Times New Roman", serif;
+        --sans:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font: 16px/1.6 var(--sans);
+      }
+      main {
+        width: min(1180px, calc(100% - 32px));
+        margin: auto;
+        padding: 32px 0 80px;
+      }
+      a {
+        color: #d5c6ff;
+        text-underline-offset: 3px;
+      }
+      a:focus-visible,
+      summary:focus-visible {
+        outline: 3px solid var(--violet);
+        outline-offset: 3px;
+      }
+      .label {
+        color: var(--violet);
+        font-size: 0.77rem;
+        font-weight: 750;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+      }
+      header {
+        display: grid;
+        grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
+        gap: 32px;
+        align-items: end;
+        padding: 20px 0 36px;
+        border-bottom: 1px solid var(--line);
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--serif);
+        line-height: 1.05;
+        font-weight: 500;
+      }
+      h1 {
+        max-width: 12ch;
+        margin: 0.35rem 0 1rem;
+        font-size: clamp(2.75rem, 7vw, 5.9rem);
+        letter-spacing: -0.04em;
+      }
+      h2 {
+        margin: 0 0 1rem;
+        font-size: clamp(1.8rem, 3vw, 2.65rem);
+        letter-spacing: -0.025em;
+      }
+      h3 {
+        margin: 0;
+        font-size: 1.35rem;
+      }
+      p {
+        max-width: 72ch;
+        margin: 0.75rem 0;
+      }
+      .lede {
+        max-width: 52ch;
+        color: var(--muted);
+        font-size: 1.12rem;
+      }
+      .status {
+        padding: 20px;
+        border: 1px solid var(--violet-dim);
+        border-radius: 12px;
+        background: var(--surface);
+      }
+      .status p {
+        margin: 0.4rem 0 0;
+        font-size: 0.92rem;
+      }
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 18px;
+        margin: 22px 0 0;
+      }
+      nav a,
+      .button {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        font-weight: 700;
+      }
+      section {
+        padding: 42px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .recommendation {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 28px;
+      }
+      .callout {
+        padding: 22px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--surface);
+      }
+      .callout strong {
+        color: var(--violet);
+      }
+      .outline {
+        margin: 0;
+        padding-left: 1.25rem;
+      }
+      .outline li {
+        margin: 0.65rem 0;
+        padding-left: 0.35rem;
+      }
+      .copy {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+      }
+      .copy article,
+      .stage {
+        padding: 20px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--surface);
+      }
+      .copy article:first-child {
+        grid-column: 1/-1;
+      }
+      blockquote {
+        margin: 12px 0 0;
+        color: var(--muted);
+        font-family: var(--serif);
+        font-size: 1.14rem;
+      }
+      .table {
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 12px 10px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+        text-align: left;
+      }
+      th {
+        color: var(--violet);
+        font-size: 0.78rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      details {
+        margin-top: 12px;
+        padding: 0 16px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--surface-2);
+      }
+      summary {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        color: var(--ink);
+        font-weight: 700;
+      }
+      details p {
+        padding-bottom: 12px;
+        color: var(--muted);
+      }
+      .stages {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .stage span {
+        color: var(--violet);
+        font-weight: 750;
+      }
+      .fine {
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+      footer {
+        padding-top: 28px;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      @media (max-width: 700px) {
+        main {
+          width: min(100% - 24px, 1180px);
+          padding-top: 16px;
+        }
+        header,
+        .recommendation {
+          grid-template-columns: 1fr;
+          gap: 20px;
+        }
+        .copy,
+        .stages {
+          grid-template-columns: 1fr;
+        }
+        .copy article:first-child {
+          grid-column: auto;
+        }
+        th,
+        td {
+          min-width: 140px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <span class="label">Planning artifact · September 2026</span>
+          <h1>What is The Kinetic Alphabet?</h1>
+          <p class="lede">
+            A revised direction for About: first-read explanation and project
+            authorship in one page, with a clear handoff to the software tour.
+          </p>
+          <nav aria-label="Plan sections">
+            <a href="#recommendation">Recommendation</a
+            ><a href="#copy">Proposed copy</a
+            ><a href="#corrections">Corrections</a
+            ><a href="#delivery">Delivery</a>
+          </nav>
+        </div>
+        <aside class="status">
+          <span class="label">Decision status</span>
+          <p>
+            <strong>Draft strategy, not approved biography.</strong> The product
+            framing below is proposed. Creator motivation, portrait, performance
+            media, testimonials, adoption, and outcome claims are deliberately
+            absent until supplied and permissioned.
+          </p>
+        </aside>
+      </header>
+
+      <section id="recommendation" class="recommendation">
+        <div>
+          <span class="label">Recommendation</span>
+          <h2>
+            Make About the answer to the homepage question, then make its
+            boundary useful.
+          </h2>
+          <p>
+            The homepage already sends a stranger to
+            <a href="/about" target="_blank" rel="noopener">“What is TKA?”</a>
+            after showing a live sequence and notation strip. About should give
+            that visitor the missing meaning: TKA is a pictographic notation for
+            flow-arts choreography, and one picture records a movement step so a
+            sequence can be revisited, compared, changed, or shared. It should
+            then state the project’s purpose, realistic prop scope, authorship,
+            and next door.
+          </p>
+          <p>
+            A compact picture-and-sequence explanation honors the incoming
+            promise. Give the creator room to explain the project, and leave
+            step-by-step instruction to the Guide. Alpha, Beta, and Gamma can
+            enter when someone chooses to learn the notation.
+          </p>
+        </div>
+        <aside class="callout">
+          <strong>Primary next step: Explore Flow Arts Composer.</strong>
+          <p>
+            For a curious cold visitor,
+            <a href="/composer" target="_blank" rel="noopener"
+              >the software tour</a
+            >
+            sets expectations before the direct application. Keep
+            <a href="/guide" target="_blank" rel="noopener">Guide</a> secondary
+            and
+            <a href="/create" target="_blank" rel="noopener"
+              >Open Flow Arts Composer</a
+            >
+            available but visually quieter. This is a product judgment, not a
+            conversion claim.
+          </p>
+          <details>
+            <summary>Decision record</summary>
+            <p>
+              <strong>Keep:</strong> the direct definition, creator credit, 2022
+              date, and grant source. <strong>Change:</strong> lead with
+              explanation and purpose, then scope.
+              <strong>Defer:</strong> portrait, origin story in Austen’s voice,
+              social proof, and any background effect fix.
+            </p>
+          </details>
+        </aside>
+      </section>
+
+      <section>
+        <span class="label">Story outline</span>
+        <h2>Five beats, each with one job.</h2>
+        <ol class="outline">
+          <li>
+            <strong>Hero, “What is The Kinetic Alphabet?”</strong> Direct
+            definition. Explain the distinction between the notation and Flow
+            Arts Composer.
+          </li>
+          <li>
+            <strong>Purpose with one real artifact.</strong> Place an existing
+            sequence image or player beside one use case: preserve a phrase,
+            change a step, and compare what follows. Video remains useful; no
+            replacement or superiority promise. Any animation starts only when
+            the visitor asks.
+          </li>
+          <li>
+            <strong>Scope.</strong> Double staves are canonical. The notation
+            can apply to dual static props such as fans, clubs, and buugeng; a
+            Composer visual is not a claim of universal physical validity.
+          </li>
+          <li>
+            <strong>Creator and project.</strong> Credit Austen Cloud, state
+            2022, and link the 2024–25 Seed Fund grant beside that fact. Do not
+            invent motives.
+          </li>
+          <li>
+            <strong>One next step.</strong> Lead to Composer’s tour; retain
+            Guide, History, FAQ, and a quiet direct-app link for the visitor who
+            already knows what they want.
+          </li>
+        </ol>
+      </section>
+
+      <section id="copy">
+        <span class="label"
+          >Proposed copy, grounded in current About and FAQ</span
+        >
+        <h2>Short enough to leave room for the artifact.</h2>
+        <div class="copy">
+          <article>
+            <h3>Hero</h3>
+            <blockquote>
+              “The Kinetic Alphabet is a way to write flow arts choreography in
+              pictures. Each picture records a movement step. Put them together
+              to record a sequence. Flow Arts Composer is the browser app for
+              composing, playing, and sharing sequences in this notation.”
+            </blockquote>
+          </article>
+          <article>
+            <h3>Purpose</h3>
+            <blockquote>
+              “A video can show a performance. TKA gives a sequence a form you
+              can return to, change, compare, and pass along.”
+            </blockquote>
+          </article>
+          <article>
+            <h3>Scope</h3>
+            <blockquote>
+              “TKA was designed around double staves. It also applies to paired
+              static props such as fans, clubs, and buugeng. Tosses, contact
+              rolling, grip changes, and momentum-based props are outside that
+              core scope. A prop’s appearance in Composer does not establish
+              that every sequence can be performed with it.”
+            </blockquote>
+          </article>
+        </div>
+        <p class="fine">
+          Factual boundaries come from the
+          <a href="/about" target="_blank" rel="noopener">current About page</a>
+          and the
+          <a href="/faq" target="_blank" rel="noopener">canonical FAQ</a>,
+          checked against their repository sources. These are draft lines for
+          review. The purpose line proposes product framing; Austen’s personal
+          origin story still needs his own words.
+        </p>
+      </section>
+
+      <section id="corrections">
+        <span class="label">Adversarial corrections</span>
+        <h2>Corrections to the audit, and risks in the revision.</h2>
+        <div class="table">
+          <table>
+            <thead>
+              <tr>
+                <th>Earlier finding or revision risk</th>
+                <th>Better treatment</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Correction: the page allegedly omits its purpose.</td>
+                <td>
+                  Current copy already explains keeping choreography readable
+                  instead of scattered across video, notes, and memory. Make
+                  that purpose concrete and include composing new work.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  Risk: the proposed annotated example grows into another
+                  lesson.
+                </td>
+                <td>
+                  The “See how a pictograph reads” link does overpromise its
+                  text-only destination. Relabel it or add one compact example.
+                  The Guide owns instruction; About still answers the homepage’s
+                  “What is TKA?” link.
+                </td>
+              </tr>
+              <tr>
+                <td>Risk: asking the grant to prove too much.</td>
+                <td>
+                  Keep the independent award source. Add evidence of usefulness
+                  through a real sequence, without implying the award verifies
+                  effectiveness.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  Risk: treating a thin creator section as a demand for a
+                  portrait or social proof.
+                </td>
+                <td>
+                  The useful missing material is the project’s origin in
+                  Austen’s voice. A portrait and testimonials are optional;
+                  invented motives and usage figures have no place here.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  Qualification: inferred confusion and visual distraction.
+                </td>
+                <td>
+                  Greek-letter confusion is a plausible hypothesis, not an
+                  observed user finding. Starfield distraction is a visual
+                  judgment; no contrast failure was measured. Cached
+                  service-worker performance cannot support speed claims.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  Reduced-motion screenshots, a zoom proxy, or successful HTTP
+                  prove behavior.
+                </td>
+                <td>
+                  A hash does not isolate motion. Test the canvas and
+                  initial-load preference. A half-width viewport is not actual
+                  200% browser zoom. HTTP success does not verify the
+                  destination experience.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <details>
+          <summary>Why the tour, not direct Create, is primary</summary>
+          <p>
+            The homepage may rightly offer direct creation. On About, a visitor
+            has asked for meaning after seeing an animated example. A tour is
+            the more legible first handoff because it explains the app before
+            asking for action. This remains a recommendation to test, not
+            evidence of improved conversion.
+          </p>
+        </details>
+      </section>
+
+      <section id="delivery">
+        <span class="label">Delivery plan</span>
+        <h2>Prove the page before replacing the page.</h2>
+        <div class="stages">
+          <article class="stage">
+            <span>A</span>
+            <h3>Approve boundaries</h3>
+            <p>
+              Confirm narrative, facts, route ownership, and the
+              no-invented-biography rule.
+            </p>
+          </article>
+          <article class="stage">
+            <span>B</span>
+            <h3>Preview in isolation</h3>
+            <p>
+              Build <code>/test/about-preview</code> with real marketing chrome,
+              shared components, and an existing artifact renderer. Use the same
+              real sequence in every view. No fabricated diagrams.
+            </p>
+          </article>
+          <article class="stage">
+            <span>C</span>
+            <h3>Targeted proof</h3>
+            <p>
+              Check behavior, seven responsive tiers plus actual 200% zoom,
+              keyboard, reduced motion on initial load and toggle, no autoplay,
+              mobile parity, and screenshots.
+            </p>
+          </article>
+          <article class="stage">
+            <span>D</span>
+            <h3>Replace only then</h3>
+            <p>
+              Move the approved page to <code>/about</code> with metadata
+              matching visible claims. Give any shared-background repair its own
+              scope and owner.
+            </p>
+          </article>
+        </div>
+        <h3 style="margin-top: 28px">Acceptance and open inputs</h3>
+        <p>
+          A stranger should be able to say what the notation is versus what the
+          app is, name a use case and realistic prop scope, identify the author,
+          and choose a next step. Optional inputs that enrich, but never block,
+          the factually grounded version: Austen’s own two- or three-sentence
+          origin and permissioned portrait or performance media.
+        </p>
+        <p class="fine">
+          Related destinations:
+          <a href="/guide" target="_blank" rel="noopener">Guide</a> teaches,
+          <a href="/composer" target="_blank" rel="noopener">Composer</a> tours
+          the software,
+          <a href="/history" target="_blank" rel="noopener">History</a> archives
+          comparisons, and
+          <a href="/faq" target="_blank" rel="noopener">FAQ</a> handles detailed
+          practical questions. The independent
+          <a
+            href="https://fundtheflowarts.org/announcing-2024-25-seed-fund-grant-recipients/"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Fund the Flow Arts announcement</a
+          >, published March 15, 2025, lists Austen Cloud and The Kinetic
+          Alphabet. The 2022 date remains sourced to the current site About
+          page.
+        </p>
+      </section>
+      <footer>
+        Planning document only. It does not implement or approve a new About
+        page.
+      </footer>
+    </main>
+  </body>
+</html>

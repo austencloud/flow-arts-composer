@@ -14,6 +14,7 @@ import {
   type SequenceData,
 } from "$lib/shared/foundation/domain/models/sequence-data";
 import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
+import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
 import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { TnDMode } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { deriveTnDFromPictograph } from "$lib/shared/pictograph/shared/domain/utils/tnd-deriver";
@@ -52,7 +53,7 @@ export function selectTogetherOppositeLoops(
 ): TogetherOppositeLoop[] {
   return GROUPS.flatMap(({ gridMode, words }) =>
     words.map((word, index) => {
-      const source = sequences.find((sequence) => sequence.word === word);
+      const source = sequences.find((sequence) => stripWordNotation(sequence.word) === word);
       if (!source)
         throw new Error(`The canonical ${word} sequence is unavailable.`);
       // The box versions change timing under rotation; the word alone cannot

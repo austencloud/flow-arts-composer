@@ -20,6 +20,7 @@
  * the Smart Collection builder — the mutation runs exactly as it does today.
  */
 import { flushSync } from "svelte";
+import { reducedMotion } from "./motion";
 import { ignoreViewTransitionSkip } from "./named-route-morph-state.svelte";
 import {
   captureResultsMotionState,
@@ -82,10 +83,10 @@ function morphUnavailable(): boolean {
   if (typeof document === "undefined") return true;
   if (!document.startViewTransition) return true;
   if (inFlight) return true;
-  return (
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  );
+  // The app's own Reduce Motion setting (data-motion-preference on <html>)
+  // counts as much as the OS query; the global CSS override cannot reach the
+  // ::view-transition pseudo-elements, so the gate has to be here.
+  return reducedMotion();
 }
 
 /**

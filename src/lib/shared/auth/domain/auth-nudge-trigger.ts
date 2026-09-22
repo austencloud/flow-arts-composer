@@ -5,6 +5,16 @@ export type AuthNudgeTrigger =
   | "save-limit"
   | "step-cap-guest"
   | "patterns-guest"
+  | "extend-sequence"
+  | "turn-pattern"
+  | "rotation-direction"
+  | "duration-pattern"
+  | "choose-start"
+  | "rewind-sequence"
+  | "loop-step-cap-guest"
+  | "setup-step-cap-guest"
+  | "sync-library"
+  | "community-map"
   | "export"
   | "module:learn"
   | "module:library"
@@ -13,7 +23,7 @@ export type AuthNudgeTrigger =
   | "loop-locked-guest"
   | "community-setups"
   | "saved-setups"
-  | "share-setup"
+  | "save-setup"
   | "share-sequence"
   | "share-collection"
   | "viewer-signin-publish"
@@ -38,15 +48,31 @@ export interface AuthPromptContent {
 // (2026-06-18 finding, closed 2026-07-18).
 export const AUTH_NUDGE_TEXTS: Record<AuthNudgeTrigger, string> = {
   "save-limit": `Guests can save ${GUEST_SAVE_CAP} sequences on this device. Create a free account to save more.`,
-  save: `Guests can save ${GUEST_SAVE_CAP} sequences. Create a free account to save more.`,
+  save: "Create a free account to save this sequence in your library.",
   "step-cap-guest":
     "Guests can create sequences up to 8 steps. Create a free account for up to 64 steps.",
-  // Sequence Actions panel: the Patterns section (Turn Pattern, Direction,
-  // Duration, Choose Start, Rewind) is an account perk; Transform and Edit stay
-  // free so guests still feel the product. Extend routes to step-cap-guest
-  // instead — it adds steps, so the cap copy names the real unlock.
   "patterns-guest":
     "Create a free account to use pattern tools like Turn Pattern, Direction, and Duration.",
+  "extend-sequence":
+    "Create a free account to extend this sequence with a LOOP.",
+  "turn-pattern":
+    "Create a free account to apply turn patterns across this sequence.",
+  "rotation-direction":
+    "Create a free account to set a rotation direction pattern for this sequence.",
+  "duration-pattern":
+    "Create a free account to set a duration pattern for this sequence.",
+  "choose-start":
+    "Create a free account to choose a new start pose for this sequence.",
+  "rewind-sequence":
+    "Create a free account to rewind this sequence from its ending pose.",
+  "loop-step-cap-guest":
+    "This LOOP needs more than 8 steps. Create a free account for sequences up to 64 steps.",
+  "setup-step-cap-guest":
+    "This setup needs more than 8 steps. Create a free account for sequences up to 64 steps.",
+  "sync-library":
+    "Create a free account to keep saved sequences and collections across devices.",
+  "community-map":
+    "Sign in or create a free account to add your city to the map.",
   export: "Create a free account to export your sequences.",
   "module:learn": "Create a free account to start learning TKA notation.",
   "module:library":
@@ -63,14 +89,15 @@ export const AUTH_NUDGE_TEXTS: Record<AuthNudgeTrigger, string> = {
   "community-setups":
     "Create a free account to use community setups and build sequences up to 64 steps.",
   "saved-setups": "Create a free account to keep setups across sessions.",
-  // Community cards show the creator's name and avatar, so sharing a setup
-  // needs a full account. The state layer blocks the write as a second gate.
-  "share-setup":
-    "Create a free account to share your setup with the community.",
+  // Every saved setup is public and shows the creator's name and avatar, so
+  // saving needs a full account. Firestore rules block the write as a second
+  // gate.
+  "save-setup":
+    "Create a free account to save setups. Saved setups are shared with the community.",
   "share-sequence":
     "Create a free account to send sequences, make links, and share or download Choreo Cards.",
   // Guests can build collections, but sending one through the inbox names the
-  // sender, so it needs a full account just like sharing a setup does.
+  // sender, so it needs a full account just like saving a setup does.
   "share-collection": "Create a free account to share your collections.",
   // Sequence viewer / /q scan funnel - the three reasons that actually reach
   // the shared AuthModal (publish/download require a full account per
@@ -109,8 +136,8 @@ const AUTH_PROMPT_CONTENTS: Record<AuthNudgeTrigger, AuthPromptContent> = {
   },
   save: {
     key: "save",
-    title: "Keep saving sequences",
-    body: "A free account keeps every sequence in your library and opens it on any device.",
+    title: "Save this sequence",
+    body: "Create a free account to save this sequence in your library.",
   },
   "step-cap-guest": {
     key: "step-cap-guest",
@@ -121,6 +148,56 @@ const AUTH_PROMPT_CONTENTS: Record<AuthNudgeTrigger, AuthPromptContent> = {
     key: "patterns-guest",
     title: "Use pattern tools",
     body: "A free account adds Turn Pattern, Direction, Duration, Choose Start, and Rewind.",
+  },
+  "extend-sequence": {
+    key: "extend-sequence",
+    title: "Extend this sequence",
+    body: "Create a free account to extend this sequence with a LOOP.",
+  },
+  "turn-pattern": {
+    key: "turn-pattern",
+    title: "Apply a turn pattern",
+    body: "Create a free account to apply turn patterns across this sequence.",
+  },
+  "rotation-direction": {
+    key: "rotation-direction",
+    title: "Set rotation directions",
+    body: "Create a free account to set a rotation direction pattern for this sequence.",
+  },
+  "duration-pattern": {
+    key: "duration-pattern",
+    title: "Set step durations",
+    body: "Create a free account to set a duration pattern for this sequence.",
+  },
+  "choose-start": {
+    key: "choose-start",
+    title: "Choose a new start",
+    body: "Create a free account to choose a new start pose for this sequence.",
+  },
+  "rewind-sequence": {
+    key: "rewind-sequence",
+    title: "Rewind this sequence",
+    body: "Create a free account to rewind this sequence from its ending pose.",
+  },
+  "loop-step-cap-guest": {
+    key: "loop-step-cap-guest",
+    title: "Generate this LOOP",
+    body: "This LOOP needs more than 8 steps. Create a free account for sequences up to 64 steps.",
+  },
+  "setup-step-cap-guest": {
+    key: "setup-step-cap-guest",
+    title: "Use this setup",
+    body: "This setup needs more than 8 steps. Create a free account for sequences up to 64 steps.",
+  },
+  "sync-library": {
+    key: "sync-library",
+    title: "Open your library on any device",
+    body: "A free account keeps saved sequences and collections across devices.",
+  },
+  "community-map": {
+    key: "community-map",
+    title: "Add your city to the map",
+    body: "Sign in or create a free account to add your city to the map.",
   },
   export: {
     key: "export",
@@ -162,10 +239,10 @@ const AUTH_PROMPT_CONTENTS: Record<AuthNudgeTrigger, AuthPromptContent> = {
     title: "Keep your setups",
     body: "Sign in or create an account to keep setups across sessions.",
   },
-  "share-setup": {
-    key: "share-setup",
-    title: "Share this setup",
-    body: "Sign in or create an account to share this setup with the community.",
+  "save-setup": {
+    key: "save-setup",
+    title: "Save this setup",
+    body: "Sign in or create an account to save it. Saved setups are shared with the community.",
   },
   "share-sequence": {
     key: "share-sequence",
@@ -194,7 +271,7 @@ const AUTH_PROMPT_CONTENTS: Record<AuthNudgeTrigger, AuthPromptContent> = {
   },
   "guest-first-save": {
     key: "guest-first-save",
-    title: "Save this sequence",
+    title: "Open this sequence anywhere",
     body: "A free account keeps it in your library and opens it on any device.",
   },
   "prop-collection": {

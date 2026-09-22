@@ -166,7 +166,7 @@ Last audit: 2025-12-27
     preloadAdditionalLayers?: AdditionalLayerProps[];
     tunnelSpectrum?: boolean;
     tunnelPropColors?: TunnelPropColorPair | null;
-    primaryPropColors?: TunnelPropColorPair;
+    primaryPropColors?: TunnelPropColorPair | null;
     tunnelSelectedLayer?: number | readonly number[] | null;
     gridVisible?: boolean;
     /** Optional externally choreographed grid alpha. The Sequence Viewer uses
@@ -1044,12 +1044,6 @@ Last audit: 2025-12-27
       {onToggle3DView}
       extraItems={extraContextMenuItems}
       {visibilityManager}
-      canvas={liveCanvas}
-      {currentStep}
-      {isPlaying}
-      {bpm}
-      {onPlaybackToggle}
-      {onProgressBarSeek}
     />
   {/if}
 </div>

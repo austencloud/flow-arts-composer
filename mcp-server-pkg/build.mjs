@@ -12,8 +12,14 @@ execSync(
   [
     `"${esbuildBin}"`,
     "index.ts",
+    "card-renderer.ts",
     "--bundle",
-    "--outfile=dist/index.js",
+    "--outdir=dist",
+    "--splitting",
+    // Asset-aware modules use import.meta.url to walk one level from dist/ to
+    // the package assets. Keep every shared chunk directly in dist/ so that
+    // relationship stays true for both MCP entry points.
+    "--chunk-names=chunk-[hash]",
     "--platform=node",
     "--target=node20",
     "--format=esm",
@@ -46,4 +52,4 @@ execSync(
   { cwd: __dirname, stdio: "inherit" }
 );
 
-console.log("Built dist/index.js (bundled)");
+console.log("Built dist/index.js and dist/card-renderer.js (bundled)");

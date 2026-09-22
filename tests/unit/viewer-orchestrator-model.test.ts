@@ -5,6 +5,7 @@ import {
   buildViewerWebUrl,
   buildViewerShareDetails,
   calculateSinglePlayDuration,
+  extractViewerStateQuery,
   hasSameResolvedCardLayout,
   resolveCurrentStepData,
   resolveEditingPane,
@@ -92,6 +93,19 @@ describe("viewer orchestrator model", () => {
         sequenceLength: 3,
       },
     });
+  });
+
+  it("lifts only the viewer-owned state out of a share link", () => {
+    expect(
+      extractViewerStateQuery(
+        "https://tka.run/sequence/OMY3?v=OMY3&bp=staff&pane=animation&fx=trail&s=abc%2Bdef&utm=x"
+      )
+    ).toBe("pane=animation&fx=trail&s=abc%2Bdef");
+    expect(extractViewerStateQuery("/sequence/OMY3?split=card,animation")).toBe(
+      "split=card%2Canimation"
+    );
+    expect(extractViewerStateQuery("/sequence/OMY3?v=OMY3")).toBeNull();
+    expect(extractViewerStateQuery("")).toBeNull();
   });
 
   it("preserves pending actions in the Android browser handoff", () => {

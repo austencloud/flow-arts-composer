@@ -119,6 +119,8 @@
     ".agents/skills/tile-layout/dimension-flip-reference.md",
     ".agents/skills/tile-layout/movement-reference.md",
     ".agents/skills/tile-layout/museum-spatial-reference.md",
+    ".agents/skills/ui-bust/SKILL.md",
+    ".agents/skills/ui-bust/agents/openai.yaml",
     ".agents/skills/voice-review/SKILL.md",
     ".agents/skills/voice-review/agents/openai.yaml",
     ".codex/agents/accessibility-auditor.toml",

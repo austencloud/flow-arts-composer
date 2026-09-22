@@ -15,6 +15,7 @@ import type { PictographData } from "$lib/shared/pictograph/shared/domain/models
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
 
 import type { LetterTransitionGraph } from "./letter-transition-graph";
 import type { StartPlacementValidator } from "./start-placement-validator";
@@ -189,7 +190,7 @@ export class WordSequenceGenerator {
 
           // Build updated expandedWord and letterSources from the extended sequence
           // The extended sequence has the correct letters derived from motion data
-          const extendedExpandedWord = sequence.word || sequence.steps.map(s => s.letter || "").join("");
+          const extendedExpandedWord = sequence.word || deriveWordFromBeats(sequence.steps);
           const originalStepCount = expandedLetters.length;
           const extendedLetterSources: LetterSource[] = sequence.steps.map((step, index) => ({
             letter: (step.letter || "") as Letter,
@@ -560,7 +561,7 @@ export class WordSequenceGenerator {
     return {
       id: crypto.randomUUID(),
       name,
-      word: steps.map((b) => b.letter || "").join(""),
+      word: deriveWordFromBeats(steps),
       steps,
       startPlacement: startPlacementData, // Primary field for orientation propagation
       startingPlacement: startPlacementData, // Legacy field for backward compatibility

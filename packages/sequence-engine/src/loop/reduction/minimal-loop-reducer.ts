@@ -49,6 +49,17 @@ export interface MinimalLoopResult {
   reduced: boolean;
 }
 
+export interface MinimalLoopOptions {
+  /**
+   * Smallest complete loop that may be emitted. Extension callers use this to
+   * retain the authored seed and its first derived pass when a later pass is a
+   * literal copy.
+   */
+  readonly minimumLetterSteps?: number;
+  /** Number of authored leading letter steps whose IDs and numbering stay intact. */
+  readonly preservePrefixSteps?: number;
+}
+
 /**
  * Reduce a sequence to its shortest literally-repeating closing loop.
  *
@@ -57,7 +68,10 @@ export interface MinimalLoopResult {
  * @returns The reduced steps and a report. Idempotent — a sequence that is
  *   already minimal is returned unchanged (a new array, same content).
  */
-export function reduceToMinimalLoop(steps: readonly Step[]): MinimalLoopResult {
+export function reduceToMinimalLoop(
+  steps: readonly Step[],
+  options: MinimalLoopOptions = {}
+): MinimalLoopResult {
   const startStep = steps.find((s) => s.stepNumber === 0) ?? null;
   const letterSteps = steps.filter((s) => s.stepNumber > 0);
   const n = letterSteps.length;
@@ -73,12 +87,19 @@ export function reduceToMinimalLoop(steps: readonly Step[]): MinimalLoopResult {
   if (n < 2) return unchanged();
 
   // Smallest proper divisor first → the SHORTEST repeating unit wins.
+  const minimumLetterSteps = options.minimumLetterSteps ?? 1;
   for (const period of properDivisors(n)) {
+    if (period < minimumLetterSteps) continue;
     if (!isLiteralRepeat(letterSteps, period)) continue;
     if (!prefixClosesSeamlessly(letterSteps, period)) continue;
 
-    const reducedLetters = renumber(letterSteps.slice(0, period));
-    const outSteps = startStep ? [startStep, ...reducedLetters] : reducedLetters;
+    const reducedLetters = renumber(
+      letterSteps.slice(0, period),
+      options.preservePrefixSteps ?? 0
+    );
+    const outSteps = startStep
+      ? [startStep, ...reducedLetters]
+      : reducedLetters;
     return {
       steps: outSteps,
       originalLength: n,
@@ -100,8 +121,9 @@ function properDivisors(n: number): number[] {
 }
 
 /**
- * True when `steps` is `period`-periodic: every step equals the step one
- * period earlier, in all motion fields including orientation.
+ * True when `steps` is `period`-periodic in every semantic field. IDs,
+ * letters, and step numbers are intentionally omitted: IDs are regenerated
+ * bookkeeping and a caller may enrich derived letters after completion.
  */
 function isLiteralRepeat(steps: readonly Step[], period: number): boolean {
   for (let i = period; i < steps.length; i++) {
@@ -117,7 +139,10 @@ function isLiteralRepeat(steps: readonly Step[], period: number): boolean {
  * assume — a sequence could be periodic without the whole thing being a valid
  * seamless loop, and we must never emit a broken shorter loop.)
  */
-function prefixClosesSeamlessly(steps: readonly Step[], period: number): boolean {
+function prefixClosesSeamlessly(
+  steps: readonly Step[],
+  period: number
+): boolean {
   const first = steps[0]!;
   const last = steps[period - 1]!;
 
@@ -135,30 +160,35 @@ function prefixClosesSeamlessly(steps: readonly Step[], period: number): boolean
 
 /** Per-hand motion equality across the fields that define a step's identity. */
 function stepMotionsEqual(a: Step, b: Step): boolean {
-  for (const hand of ["left", "right"] as const) {
-    const ma = a.motions[hand];
-    const mb = b.motions[hand];
-    if (!ma || !mb) return ma === mb;
-    if (
-      ma.motionType !== mb.motionType ||
-      ma.startLocation !== mb.startLocation ||
-      ma.endLocation !== mb.endLocation ||
-      ma.rotationDirection !== mb.rotationDirection ||
-      ma.startOrientation !== mb.startOrientation ||
-      ma.endOrientation !== mb.endOrientation ||
-      ma.turns !== mb.turns
-    ) {
-      return false;
-    }
+  return semanticValue(a) === semanticValue(b);
+}
+
+function semanticValue(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map(semanticValue).join(",")}]`;
   }
-  return true;
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value as Record<string, unknown>)
+      .filter((key) => key !== "id" && key !== "letter" && key !== "stepNumber")
+      .sort()
+      .map((key) => {
+        const record = value as Record<string, unknown>;
+        return `${JSON.stringify(key)}:${semanticValue(record[key])}`;
+      })
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
 }
 
 /** Re-emit steps with contiguous 1-based stepNumbers and stable ids. */
-function renumber(letterSteps: readonly Step[]): Step[] {
+function renumber(
+  letterSteps: readonly Step[],
+  preservePrefixSteps: number
+): Step[] {
   return letterSteps.map((s, i) => ({
     ...s,
-    stepNumber: i + 1,
-    id: `step-${i + 1}`,
+    ...(i < preservePrefixSteps
+      ? {}
+      : { stepNumber: i + 1, id: `step-${i + 1}` }),
   }));
 }

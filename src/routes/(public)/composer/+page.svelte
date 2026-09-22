@@ -24,6 +24,7 @@
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import ComposerGenerateDemo from "./_components/ComposerGenerateDemo.svelte";
   import ComposerBackgroundCycle from "./_components/ComposerBackgroundCycle.svelte";
+  import { resolveComposerCarriedSequence } from "./_components/composer-sequence-ownership";
   import "$lib/shared/landing/styles/editorial-measure.css";
 
   const TITLE = "Flow Arts Composer | Free Flow Arts Software for Choreography";
@@ -115,20 +116,17 @@
   const heroAct = createHeroAct({ initialSequence: FALLBACK_DEMO });
 
   // A sequence the visitor composed or generated further down the page takes
-  // over the carry; until then the bands hold the hero's FIRST draw.
+  // over the carry; until then the bands open on the baked sequence and later
+  // adopt the hero's first live draw.
   let visitorSequence = $state<SequenceData | null>(null);
 
   // The hero keeps auto-advancing every loop pass. The tunnel and the 3D
-  // viewer must NOT follow it: rebuilding a Threlte scene under a reader every
+  // viewer must not follow it: rebuilding a Threlte scene under a reader every
   // ~16 seconds is churn on its own, and a teardown landing mid-compileAsync
-  // throws inside three's timer where nothing can catch it. So the bands latch
-  // the first live hero draw and hold it until the visitor makes one.
-  //
-  // The baked opening is skipped here on purpose: the hero shows it for one
-  // pass and moves on, but whatever the
-  // bands latch is what they show for the entire visit, so it has to be a live
-  // draw rather than the fixture every visitor sees. Compared by id because
-  // `heroAct.sequence` is a $state proxy and never identity-equal to the import.
+  // throws inside three's timer where nothing can catch it. The bands hold the
+  // first live hero draw after opening on the baked fixture. Compared by id
+  // because `heroAct.sequence` is a $state proxy and never identity-equal to
+  // the import.
   let latchedHeroSequence = $state<SequenceData | null>(null);
   $effect(() => {
     const first = heroAct.sequence;
@@ -136,7 +134,13 @@
       latchedHeroSequence = first;
     }
   });
-  const carriedSequence = $derived(visitorSequence ?? latchedHeroSequence);
+  const carriedSequence = $derived(
+    resolveComposerCarriedSequence(
+      visitorSequence,
+      latchedHeroSequence,
+      FALLBACK_DEMO
+    )
+  );
   const reduceMotion = new MediaQuery("(prefers-reduced-motion: reduce)");
   let constructActive = $state(false);
   let outputsActive = $state(false);
@@ -341,7 +345,11 @@
 
     <!-- Absolutely positioned, so revealing it cannot move the hero content.
          It marks where the fold is; the section below starts under it. -->
-    <a class="scroll-cue" href="#making-title" aria-label="Scroll to Build the sequence">
+    <a
+      class="scroll-cue"
+      href="#making-title"
+      aria-label="Scroll to Build the sequence"
+    >
       <span>Scroll</span>
       <i class="fas fa-chevron-down" aria-hidden="true"></i>
     </a>

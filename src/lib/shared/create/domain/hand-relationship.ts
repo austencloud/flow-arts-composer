@@ -1,170 +1,178 @@
 /**
- * How the left hand relates to the right hand inside each generated step.
+ * Timing and direction for the hands and for the props inside each generated
+ * step. This is the app's vocabulary for the engine's HandRelationshipConstraint
+ * and PropRelationshipConstraint.
  *
- * This is the app's vocabulary for the engine's HandRelationshipConstraint.
- * It sits beside generation-style.ts but is not part of GenerationStylePolicy:
- * Generate is the only surface that offers it, so Fuse and the public Composer
- * demo keep their untouched recipe unchanged.
+ * A selection is Free or one of the six VTG modes (TS, TO, SS, SO, QS, QO):
+ * the first letter is timing (Together, Split, Quarter), the second is
+ * direction (Same, Opposite). Hands and props are independent selections. The
+ * engine's inverted flag is no longer a user input; it is derived from the
+ * pair (see deriveHandInversion).
  *
- * Turns, floats, orientations and dash spin stay independent per hand unless
- * "Match turns" is on. The relationship itself is about hand paths and motion
- * types only; matching turns is the separate toggle that completes the mirror.
+ * Generate is the only surface that offers these, so Fuse and the public
+ * Composer demo keep their untouched recipe unchanged.
  */
-import type {
-  HandRelationshipMap,
-  HandRelationshipOptions,
+import {
+  HAND_RELATIONSHIP_LOCATION_MAPS,
+  isReflectionMap,
+  type HandRelationshipMap,
+  type HandRelationshipOptions,
+  type PropRelationshipOptions,
 } from "@tka/sequence-engine/generation";
 import type { ReflectionAxis } from "@tka/sequence-engine/loop";
 import {
-  ElementalType,
-  TnDMode,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { TND_TO_ELEMENTAL } from "$lib/shared/pictograph/shared/domain/utils/tnd-calculator";
+  MODE_ORDER,
+  MODE_WORDS,
+  type VtgMode,
+} from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
 
-export type HandRelationship =
-  | "free"
-  | "mirrored"
-  | "flipped"
-  | "unison"
-  | "opposite";
+export type TnDSelection = "free" | VtgMode;
 
-export const HAND_RELATIONSHIPS: readonly HandRelationship[] = [
-  "free",
-  "mirrored",
-  "flipped",
-  "unison",
-  "opposite",
-];
+export const TND_SELECTIONS: readonly TnDSelection[] = ["free", ...MODE_ORDER];
 
-export const DEFAULT_HAND_RELATIONSHIP: HandRelationship = "free";
+export const DEFAULT_TND_SELECTION: TnDSelection = "free";
 
-export function isHandRelationship(value: unknown): value is HandRelationship {
+export function isTnDSelection(value: unknown): value is TnDSelection {
   return (
     typeof value === "string" &&
-    (HAND_RELATIONSHIPS as readonly string[]).includes(value)
+    (TND_SELECTIONS as readonly string[]).includes(value)
   );
 }
 
 /**
- * The LOOP reflection axis a reflection relationship keeps. Mirrored and
- * Flipped only survive LOOP transforms that commute with them: rotate 180,
- * the two cardinal reflections, swap, invert, rewind. A 90-degree rotation or
- * a diagonal axis does not, and resolveLoopConfig coerces those to this axis.
- * Null for Free, Unison and Opposite, which commute with every LOOP.
+ * The four names Generate used before the TnD card. Each was one quadrant
+ * (hand-relationship-tnd.test.ts reads the dataframes to prove it), so a
+ * stored config migrates without loss.
  */
-export function relationshipReflectionAxis(
-  relationship: HandRelationship
-): ReflectionAxis | null {
-  if (relationship === "mirrored") return "north-south";
-  if (relationship === "flipped") return "east-west";
-  return null;
-}
+export const LEGACY_HAND_RELATIONSHIP_MODES: Readonly<Record<string, VtgMode>> =
+  {
+    mirrored: "TO",
+    flipped: "SO",
+    unison: "TS",
+    opposite: "SS",
+  };
 
-const ENGINE_MAP: Record<
-  Exclude<HandRelationship, "free">,
-  HandRelationshipMap
+/**
+ * The engine maps that realize each hand mode. Direction: a reflection
+ * reverses one hand's arc, so the Opposite modes are reflections and the Same
+ * modes are rotations. Timing: identity and the N-S mirror keep South fixed
+ * (Together); the 180 turn and the E-W flip swap North and South (Split); the
+ * 90 degree turns and the diagonal reflections move it a quarter (Quarter).
+ * QS and QO each have two senses; handModeToEngine picks one.
+ */
+export const HAND_MODE_MAPS: Readonly<
+  Record<VtgMode, readonly HandRelationshipMap[]>
 > = {
-  mirrored: "reflect-north-south",
-  flipped: "reflect-east-west",
-  unison: "identity",
-  opposite: "rotate-180",
+  TS: ["identity"],
+  TO: ["reflect-north-south"],
+  SS: ["rotate-180"],
+  SO: ["reflect-east-west"],
+  QS: ["rotate-90-cw", "rotate-90-ccw"],
+  QO: ["reflect-northeast-southwest", "reflect-northwest-southeast"],
 };
 
-/** The engine option for a relationship, or undefined for Free. */
-export function handRelationshipToEngine(
-  relationship: HandRelationship,
-  inverted: boolean
+export function handModeMaps(mode: VtgMode): readonly HandRelationshipMap[] {
+  return HAND_MODE_MAPS[mode];
+}
+
+export function isReflectionMode(mode: VtgMode): boolean {
+  return isReflectionMap(HAND_MODE_MAPS[mode][0]!);
+}
+
+export function propDirectionOf(
+  mode: VtgMode
+): PropRelationshipOptions["direction"] {
+  return mode.charAt(1) === "S" ? "same" : "opp";
+}
+
+export function propTimingOf(
+  mode: VtgMode
+): NonNullable<PropRelationshipOptions["timing"]> {
+  const letter = mode.charAt(0);
+  if (letter === "T") return "tog";
+  if (letter === "S") return "split";
+  return "quarter";
+}
+
+/** The engine prop option for a selection, or undefined for Free. */
+export function propModeToEngine(
+  selection: TnDSelection
+): PropRelationshipOptions | undefined {
+  if (selection === "free") return undefined;
+  return {
+    direction: propDirectionOf(selection),
+    timing: propTimingOf(selection),
+  };
+}
+
+/**
+ * The prop-direction law: props spin opposite exactly when the hand map is a
+ * reflection or the motion types are inverted, not both. So a requested prop
+ * direction fixes the inversion. With Free props the engine keeps its natural
+ * sense (reflection gives opposite spin, rotation gives same spin).
+ */
+export function deriveHandInversion(
+  hand: TnDSelection,
+  prop: TnDSelection
+): boolean {
+  if (hand === "free" || prop === "free") return false;
+  return isReflectionMode(hand) !== (propDirectionOf(prop) === "opp");
+}
+
+const DIAGONAL_AXIS_MAP: Partial<Record<ReflectionAxis, HandRelationshipMap>> =
+  {
+    "northeast-southwest": "reflect-northeast-southwest",
+    "northwest-southeast": "reflect-northwest-southeast",
+  };
+
+export interface HandModeContext {
+  prop: TnDSelection;
+  /** The reflection axis of a mirrored or flipped LOOP, when one is set. */
+  loopAxis?: ReflectionAxis | null;
+  /** Grid locations of the pinned start placement, when one is set. */
+  startLocations?: { left: string; right: string } | null;
+  /** Injectable for tests; defaults to Math.random. */
+  random?: () => number;
+}
+
+/**
+ * The engine option for a hand selection, or undefined for Free. QS and QO
+ * have two senses. A pinned start decides: the sense whose map sends the right
+ * hand's start location onto the left's. Otherwise a diagonal LOOP axis
+ * decides for QO (the reflection must be the LOOP's own). Otherwise a random
+ * sense per build, so consecutive generations differ.
+ */
+export function handModeToEngine(
+  hand: TnDSelection,
+  context: HandModeContext
 ): HandRelationshipOptions | undefined {
-  if (relationship === "free") return undefined;
-  return { map: ENGINE_MAP[relationship], inverted };
+  if (hand === "free") return undefined;
+  const maps = HAND_MODE_MAPS[hand];
+  const inverted = deriveHandInversion(hand, context.prop);
+  if (maps.length === 1) return { map: maps[0]!, inverted };
+
+  const start = context.startLocations;
+  const pinned = start
+    ? maps.find(
+        (map) =>
+          HAND_RELATIONSHIP_LOCATION_MAPS[map][start.right] === start.left
+      )
+    : undefined;
+  if (pinned) return { map: pinned, inverted };
+
+  const fromLoop = context.loopAxis
+    ? DIAGONAL_AXIS_MAP[context.loopAxis]
+    : undefined;
+  if (fromLoop && maps.includes(fromLoop)) return { map: fromLoop, inverted };
+
+  const random = context.random ?? Math.random;
+  const index = Math.min(maps.length - 1, Math.floor(random() * maps.length));
+  return { map: maps[index]!, inverted };
 }
 
-/**
- * Each relationship is one VTG timing and direction quadrant, in both grids
- * (hand-relationship-tnd.test.ts reads the dataframes to prove it).
- * Direction: a reflection reverses one hand's arc, so Mirrored and Flipped
- * are opposite; identity and the 180 turn keep it, so Unison and Opposite are
- * same. Timing: the N-S mirror and identity keep South fixed, so both hands
- * reach the downbeat together; the E-W flip and the 180 turn swap North and
- * South, so the hands are half a cycle apart. The 90-degree rotations and the
- * diagonal reflections would be the quarter-time pair (Sun, Moon).
- */
-export const HAND_RELATIONSHIP_TND: Record<
-  Exclude<HandRelationship, "free">,
-  TnDMode
-> = {
-  mirrored: TnDMode.TOG_OPP,
-  flipped: TnDMode.SPLIT_OPP,
-  unison: TnDMode.TOG_SAME,
-  opposite: TnDMode.SPLIT_SAME,
-};
-
-/** The element a relationship reads as, via the app's own T&D table. */
-export function handRelationshipElement(
-  relationship: HandRelationship
-): ElementalType | null {
-  if (relationship === "free") return null;
-  return TND_TO_ELEMENTAL[HAND_RELATIONSHIP_TND[relationship]];
-}
-
-/** Row tag wording: "Together, opposite". */
-export const TND_ROW_LABELS: Record<TnDMode, string> = {
-  [TnDMode.TOG_OPP]: "Together, opposite",
-  [TnDMode.SPLIT_OPP]: "Split, opposite",
-  [TnDMode.TOG_SAME]: "Together, same",
-  [TnDMode.SPLIT_SAME]: "Split, same",
-  [TnDMode.QUARTER_SAME]: "Quarter, same",
-  [TnDMode.QUARTER_OPP]: "Quarter, opposite",
-};
-
-export const ELEMENT_ROW_LABELS: Record<ElementalType, string> = {
-  [ElementalType.AIR]: "Air",
-  [ElementalType.FIRE]: "Fire",
-  [ElementalType.EARTH]: "Earth",
-  [ElementalType.WATER]: "Water",
-  [ElementalType.SUN]: "Sun",
-  [ElementalType.MOON]: "Moon",
-};
-
-export const HAND_RELATIONSHIP_LABELS: Record<HandRelationship, string> = {
-  free: "Free",
-  mirrored: "Mirrored",
-  flipped: "Flipped",
-  unison: "Unison",
-  opposite: "Opposite",
-};
-
-export const HAND_RELATIONSHIP_HINTS: Record<HandRelationship, string> = {
-  free: "Each hand is chosen on its own.",
-  mirrored:
-    "The left hand traces the mirror image of the right, side to side.",
-  flipped:
-    "The left hand traces the mirror image of the right, top to bottom.",
-  unison: "Both hands move through the same point in the same direction.",
-  opposite: "Hands stay across from each other and arc the same way.",
-};
-
-export const HAND_RELATIONSHIP_INVERTED_HINT =
-  "The left hand uses the other motion type. Pro on the right is anti on the left.";
-
-export const MATCH_HAND_TURNS_LABEL = "Match turns";
-
-export const MATCH_HAND_TURNS_HINT =
-  "Both hands take the same turns on every step, and a mirrored dash spins the mirror way.";
-
-export const MATCH_HAND_TURNS_LEVEL_HINT = "Level 1 has no turns to match.";
-
-/**
- * Row and summary wording: "Free", "Mirrored", "Mirrored, inverted",
- * "Mirrored, inverted, matched turns".
- */
-export function describeHandRelationship(
-  relationship: HandRelationship,
-  inverted: boolean,
-  matchTurns = false
-): string {
-  const parts = [HAND_RELATIONSHIP_LABELS[relationship]];
-  if (relationship !== "free" && inverted) parts.push("inverted");
-  if (matchTurns) parts.push("matched turns");
-  return parts.join(", ");
+/** Card and summary wording: "Free", "Together Same", "Quarter Opposite". */
+export function describeTnDSelection(selection: TnDSelection): string {
+  if (selection === "free") return "Free";
+  const words = MODE_WORDS[selection];
+  return `${words.timing} ${words.direction}`;
 }

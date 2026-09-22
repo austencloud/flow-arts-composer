@@ -74,7 +74,9 @@
 
 <div class="workspace-playback" data-testid="workspace-playback">
   <div class="playback-layout">
-    <div class="playback-media">
+    <!-- Foreground for the workspace's click-background-to-close: taps here
+         pause, seek, or scrub instead. -->
+    <div class="playback-media" data-playback-foreground>
       <div class="player-stage">
         <InlineAnimationPlayer
           {sequence}
@@ -82,6 +84,7 @@
           chrome="minimal"
           fill
           scrubbable
+          videoDownload
           showScrubberPlaybackControl
           hoverHint="none"
           autoPlay={active}
@@ -153,6 +156,7 @@
     container-type: size;
   }
   .playback-media {
+    cursor: default;
     /* The seek target has its own reserved row; the canvas stays square. */
     --canvas-size: min(
       100cqw,

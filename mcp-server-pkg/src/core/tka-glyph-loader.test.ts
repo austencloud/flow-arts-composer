@@ -28,9 +28,15 @@ function sha256(path: string): string {
 
 describe("packaged TKA word glyphs", () => {
   it("keeps the built renderer on shared composition and package-relative assets", () => {
-    const builtRenderer = join(process.cwd(), "dist/index.js");
+    const distDirectory = join(process.cwd(), "dist");
+    const builtRenderer = join(distDirectory, "index.js");
+    const cardRenderer = join(distDirectory, "card-renderer.js");
     expect(existsSync(builtRenderer)).toBe(true);
-    const bundle = readFileSync(builtRenderer, "utf8");
+    expect(existsSync(cardRenderer)).toBe(true);
+    const bundle = readdirSync(distDirectory)
+      .filter((entry) => entry.endsWith(".js"))
+      .map((entry) => readFileSync(join(distDirectory, entry), "utf8"))
+      .join("\n");
 
     expect(bundle).toContain("function renderStepNumber");
     expect(bundle).toContain("function renderHeader");
