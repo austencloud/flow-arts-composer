@@ -3,6 +3,7 @@
   import type { PrintRenderOptions } from "$lib/features/choreo-card/services/types";
   import { renderCardBack } from "$lib/features/choreo-card/services/card-back-dom-renderer";
   import { buildBackJob } from "$lib/features/choreo-card/services/card-back/card-back-job-builder";
+  import { resolveCardBackAppearance, type CardBackAppearance } from "$lib/features/choreo-card/services/card-back/card-back-appearance";
   import { paintBackJob } from "$lib/features/choreo-card/services/card-back/card-back-raster";
   import { buildFrontComposeOptions } from "$lib/features/choreo-card/services/build-front-compose-options";
   import { wrapContentInCardFrame } from "$lib/features/choreo-card/services/card-front-frame";
@@ -164,13 +165,15 @@
 
   async function renderBackNew(
     seq: SequenceData,
-    theme: string
+    theme: string,
+    appearance: CardBackAppearance
   ): Promise<HTMLCanvasElement> {
     const job = await buildBackJob(seq, {
       width: OUT_W,
       height: OUT_H,
       bleedPx: LOGICAL_BLEED * SCALE,
       theme,
+      ...appearance,
     });
     return normalizeToCanvas(
       paintBackJob(job) as CanvasImageSource,
@@ -181,13 +184,15 @@
 
   async function renderBackOld(
     seq: SequenceData,
-    theme: string
+    theme: string,
+    appearance: CardBackAppearance
   ): Promise<HTMLCanvasElement> {
     const c = await renderCardBack(seq, {
       width: LOGICAL_W,
       height: LOGICAL_H,
       bleedPx: LOGICAL_BLEED,
       theme,
+      ...appearance,
     });
     return normalizeToCanvas(c as CanvasImageSource, OUT_W, OUT_H);
   }
@@ -195,6 +200,7 @@
   function makeRun(): ParityRun {
     const runMode = mode;
     const deckNumber = selectedDeck;
+    const backAppearance = resolveCardBackAppearance();
     return {
       async run(ctx) {
         if (deckNumber == null) {
@@ -280,8 +286,8 @@
                 qr?.close();
               }
             } else {
-              oldCanvas = await renderBackOld(card.sequence, deck.theme);
-              newCanvas = await renderBackNew(card.sequence, deck.theme);
+              oldCanvas = await renderBackOld(card.sequence, deck.theme, backAppearance);
+              newCanvas = await renderBackNew(card.sequence, deck.theme, backAppearance);
             }
             const d = diff(oldCanvas, newCanvas, OUT_W, OUT_H);
             worst = Math.max(worst, d.diffPct);

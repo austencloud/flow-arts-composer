@@ -19,6 +19,7 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import DifficultyBadge from "$lib/shared/components/DifficultyBadge.svelte";
   import CardBackDecorations from "./CardBackDecorations.svelte";
   import { deriveCardBackData } from "./card-back-data";
@@ -70,8 +71,9 @@
      * viewer's own prop settings — right for an in-app preview of the viewer's
      * sequence, wrong for a storefront showing a physical product.
      */
-    leftPropTypeOverride?: string;
-    rightPropTypeOverride?: string;
+    leftPropTypeOverride?: PropType;
+    rightPropTypeOverride?: PropType;
+    primaryPropColorsOverride?: { left: string; right: string } | null;
   }
   let {
     sequence,
@@ -81,6 +83,7 @@
     onMandalaBox,
     leftPropTypeOverride,
     rightPropTypeOverride,
+    primaryPropColorsOverride,
   }: Props = $props();
 
   let mandalaAnchorEl = $state<HTMLDivElement | null>(null);
@@ -232,6 +235,7 @@
             pathShape="arc"
             {leftPropType}
             {rightPropType}
+            primaryPropColors={primaryPropColorsOverride}
           />
         </div>
       </div>
@@ -282,7 +286,7 @@
     <!-- BOTTOM-LEFT: start placement pictograph -->
     <div class="corner bottom-left">
       {#if startPlacement}
-        <StartPlacementPictograph pictographData={startPlacement} darkMode={isDarkTheme} />
+        <StartPlacementPictograph pictographData={startPlacement} darkMode={isDarkTheme} {leftPropType} {rightPropType} primaryPropColors={primaryPropColorsOverride} />
       {/if}
     </div>
 

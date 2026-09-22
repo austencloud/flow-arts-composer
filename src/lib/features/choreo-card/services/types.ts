@@ -10,6 +10,9 @@ export interface CardBackDomRenderOptions {
   height: number;
   bleedPx: number;
   theme: string;
+  leftPropType?: PropType;
+  rightPropType?: PropType;
+  primaryPropColors?: { left: string; right: string } | null;
 }
 
 /**
@@ -99,6 +102,7 @@ export interface PrintRenderOptions {
   /** Override prop types (reads from settings when not provided) */
   leftPropType?: PropType;
   rightPropType?: PropType;
+  primaryPropColors?: { left: string; right: string } | null;
   /** TnD elemental theme for front frame coloring. Omit for neutral gray. */
   tndElement?: TnDElement;
   /**
