@@ -51,21 +51,26 @@ const TKA_LETTER_UNITS: ReadonlySet<string> = new Set<string>(
  *
  * Skew braces are respected: `{STSSTS}` becomes `{STS}` and a skewed unit
  * never matches an unskewed one.
+ *
+ * The result is canonical notation only when a simplification actually
+ * fires. An input with nothing to simplify is returned unchanged, not
+ * renormalized: `"{A}{B}C"` (two separate one-letter spans, no repeat) stays
+ * `"{A}{B}C"` rather than becoming the canonical `"{AB}C"`.
  */
 export function simplifyRepeatedWord(word: string): string {
   if (!word) return word;
   const units = parseWordNotation(word);
-  if (units.length === 0) return simplifyPortableWord(word);
+  const hasBraces = word.includes(SKEW_SPAN_OPEN) || word.includes(SKEW_SPAN_CLOSE);
+  // A braced string never reaches the brace-unaware portable simplifier,
+  // which would silently delete the braces, whether or not it has any
+  // letters at all ("{}{}" included).
+  if (units.length === 0) return hasBraces ? word : simplifyPortableWord(word);
   const letters = units.map((unit) => unit.letter).join("");
   if (letters !== stripWordNotation(word)) {
     // A character outside the letter class was dropped: genuinely malformed
-    // input, or a name with spaces, digits, or punctuation. A braced string
-    // never reaches the brace-unaware portable simplifier, which would
-    // silently delete the braces; an unbraced one keeps the portable
-    // simplifier's exact historical behaviour.
-    return word.includes(SKEW_SPAN_OPEN) || word.includes(SKEW_SPAN_CLOSE)
-      ? word
-      : simplifyPortableWord(word);
+    // input, or a name with spaces, digits, or punctuation. An unbraced
+    // input keeps the portable simplifier's exact historical behaviour.
+    return hasBraces ? word : simplifyPortableWord(word);
   }
   // The letters are intact even when the brace layout is not canonical
   // (two adjacent spans like "{ST}{TS}" instead of one run); the unit
@@ -115,6 +120,11 @@ function simplifyRepeatedUnits(units: readonly WordUnit[]): readonly WordUnit[] 
  * - "AW-B" → ["A", "W-", "B"] (3 letters, not 4)
  * - "Φ-Ψ-Ω-" → ["Φ-", "Ψ-", "Ω-"] (3 letters)
  * - "A-B-C" → ["A-", "B-", "C"] (3 letters)
+ *
+ * Delegates to the package tokenizer as-is, which drops skew braces: its
+ * only caller, sequence-letter-occurrence.ts, asks whether a word contains
+ * a given letter at all, and a letter's identity does not change when it is
+ * skewed, so ignoring braces here is by design, not an oversight.
  */
 export function splitIntoLetterUnits(word: string): string[] {
   return splitWordLetterUnits(word);

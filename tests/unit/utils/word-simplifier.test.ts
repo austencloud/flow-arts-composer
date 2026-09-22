@@ -314,6 +314,15 @@ describe("simplifyRepeatedWord matches the portable simplifier for unbraced word
       }
     }
   });
+
+  // 5 is the bound because length 6 would add 262144 more words (8^6). The
+  // mirror branch's groupSize >= 2 case needs at least 3 groups to ever fire
+  // (2 groups force groups[0] === groups[1], which the guard forbids), so it
+  // needs length >= 6 and is covered by the explicit case below instead.
+  it("agrees with the portable simplifier on a multi-unit mirror", () => {
+    expect(simplifyRepeatedWord("ABCDAB")).toBe(simplifyPortableWord("ABCDAB"));
+    expect(simplifyRepeatedWord("{ABCDAB}")).toBe("{ABCD}");
+  });
 });
 
 describe("simplifyAndTruncate with skew notation", () => {
