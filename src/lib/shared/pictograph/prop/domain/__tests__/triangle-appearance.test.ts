@@ -10,7 +10,6 @@ import {
 } from "../triangle-appearance";
 import {
   basePropTypeOfRenderKey,
-  hasModelSprite,
   resolvePropRenderKey,
 } from "../prop-look";
 import { getPropDimensions } from "$lib/shared/animation-engine/services/IPropTextureLoader";
@@ -62,18 +61,14 @@ describe("triangle grip appearance", () => {
     expect(resolvePropRenderKey("triangle", { triangleGrip: "side" })).toBe(
       "triangle__side"
     );
-    // Pinned to whichever the sprite registry actually has today: the glyph
-    // key until Task 10 captures the side sprite, then the model key.
+    // Both grips have a captured model sprite, so the model look resolves to
+    // the side sprite's model key.
     expect(
       resolvePropRenderKey("triangle", {
         triangleGrip: "side",
         propLook: "model",
       })
-    ).toBe(
-      hasModelSprite("triangle_side")
-        ? "triangle_side__model"
-        : "triangle__side"
-    );
+    ).toBe("triangle_side__model");
     expect(resolvePropRenderKey("minihoop", { triangleGrip: "side" })).toBe(
       "minihoop"
     );
