@@ -179,6 +179,15 @@ describe.runIf(avatarAssetsPresent())("relaxed strict-contact grip", () => {
       required.every((finger) => finger.supported === true),
       JSON.stringify({ required, palmResidualM: first.palmResidualM })
     ).toBe(true);
+    expect(first.worldPoints[5]!.y - first.worldPoints[4]!.y).toBeGreaterThan(
+      0.014
+    );
+    expect(
+      first.worldPoints[14]!.distanceTo(first.worldPoints[8]!)
+    ).toBeLessThan(0.055);
+    expect(first.worldPoints[2]!.y - first.worldPoints[0]!.y).toBeGreaterThan(
+      0.06
+    );
     expect(
       first.fingers.filter((finger) => finger.required === false)
     ).toHaveLength(3);

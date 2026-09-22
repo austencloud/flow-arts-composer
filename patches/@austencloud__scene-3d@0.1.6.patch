@@ -12739,10 +12739,10 @@ index d42bcd447471742c09a421dc92e9eb63986abbb4..b448e44004d3680ebcee15b0e40c3b04
 +    }
  }
 diff --git a/dist/lib/services/implementations/FingerAnimator.d.ts b/dist/lib/services/implementations/FingerAnimator.d.ts
-index d49f92aedabc5145aac812b52d74784fc1b5429c..cb9d19a3a79883cd313c057e97161ea42571acce 100644
+index d49f92aedabc5145aac812b52d74784fc1b5429c..3088408b4638d4412a29c74ce7249a9dccc3a68c 100644
 --- a/dist/lib/services/implementations/FingerAnimator.d.ts
 +++ b/dist/lib/services/implementations/FingerAnimator.d.ts
-@@ -1,22 +1,78 @@
+@@ -1,22 +1,79 @@
 +import { Vector3 } from "three";
 +import type { SkinnedMesh } from "three";
  import type { IFingerAnimator } from "../contracts/IFingerAnimator";
@@ -12764,6 +12764,7 @@ index d49f92aedabc5145aac812b52d74784fc1b5429c..cb9d19a3a79883cd313c057e97161ea4
      private readonly scratchQuat;
 -    initialize(fingerChains: FingerChains): void;
 +    private readonly scratchDelta;
++    private readonly scratchEuler;
 +    private leftCylinder;
 +    private rightCylinder;
 +    private strictCylinderContact;
@@ -12828,10 +12829,10 @@ diff --git a/dist/lib/services/implementations/FingerAnimator.d.ts.map b/dist/li
 deleted file mode 100644
 index c81171af6db42d1aee03e56854cbd3557e1a6695..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/FingerAnimator.js b/dist/lib/services/implementations/FingerAnimator.js
-index 6c2e8693da61c08f226c11b78b90cc1439db718f..022fecb8ea4825fccd04cf6d5e581b1a9ae8a642 100644
+index 6c2e8693da61c08f226c11b78b90cc1439db718f..85e54a45e3aa27a30ede82fcff066369eba93d87 100644
 --- a/dist/lib/services/implementations/FingerAnimator.js
 +++ b/dist/lib/services/implementations/FingerAnimator.js
-@@ -1,15 +1,117 @@
+@@ -1,15 +1,119 @@
 -import { Quaternion } from "three";
 +import { Euler, Quaternion, Triangle, Vector3 } from "three";
  import { GripType, FINGER_BONES, } from "../../domain/models/GripPose";
@@ -12890,6 +12891,7 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..022fecb8ea4825fccd04cf6d5e581b1a
 +const FINGER_STARTS = [0, 3, 6, 9, 12];
 +const RELAXED_REQUIRED_FINGERS = new Set(["thumb", "index"]);
 +const RELAXED_FINGER_SQUARE_WEIGHTS = [1, 0.35, 0.2, 0.12, 0.08];
++const RELAXED_INDEX_EXTENSION_RAD = [0.18, -0.7, -0.2];
 +/**
 + * The taxonomy pose describes a human thumb, but different exporters give the
 + * thumb base a different local frame. These bounded candidates let the posed
@@ -12930,6 +12932,7 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..022fecb8ea4825fccd04cf6d5e581b1a
 -        this.leftHand = this.createHandState(fingerChains.left);
 -        this.rightHand = this.createHandState(fingerChains.right);
 +    scratchDelta = new Quaternion();
++    scratchEuler = new Euler();
 +    leftCylinder = null;
 +    rightCylinder = null;
 +    strictCylinderContact = false;
@@ -12953,7 +12956,7 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..022fecb8ea4825fccd04cf6d5e581b1a
          this.ready = true;
          this.applyPoseImmediate(this.leftHand, GripType.IDLE, "left");
          this.applyPoseImmediate(this.rightHand, GripType.IDLE, "right");
-@@ -27,9 +129,50 @@ export class FingerAnimator {
+@@ -27,9 +131,50 @@ export class FingerAnimator {
          this.setGrip("left", leftGrip);
          this.setGrip("right", rightGrip);
      }
@@ -13004,7 +13007,7 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..022fecb8ea4825fccd04cf6d5e581b1a
          this.updateHand(this.leftHand, "left", deltaTime);
          this.updateHand(this.rightHand, "right", deltaTime);
      }
-@@ -44,54 +187,1077 @@ export class FingerAnimator {
+@@ -44,54 +189,1089 @@ export class FingerAnimator {
          this.leftHand = null;
          this.rightHand = null;
          this.ready = false;
@@ -13054,14 +13057,17 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..022fecb8ea4825fccd04cf6d5e581b1a
 +            skinSamples: [],
 +            skinTriangles: [],
 +            relaxedProfiles: new Map(),
-+        };
+         };
 +        for (const mesh of meshes) {
 +            mesh.updateWorldMatrix(true, false);
 +            mesh.updateMatrixWorld(true);
 +        }
 +        state.skinRadii = this.measureSkinSupportRadii(state, meshes);
 +        return state;
-+    }
+     }
+-    // Writes the target rotation for boneIndex into scratchQuat, mirroring for right hand.
+-    // Right-hand mirror negates Y and Z to reflect across the YZ plane.
+-    writeTargetRotation(gripType, boneIndex, hand) {
 +    /** Cache the visible skin's radial support for each phalanx. */
 +    measureSkinSupportRadii(state, meshes) {
 +        const samples = state.bones.map(() => []);
@@ -13192,7 +13198,7 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..022fecb8ea4825fccd04cf6d5e581b1a
 +                state.bones[index].quaternion.copy(this.scratchQuat);
 +            }
 +            palm.updateWorldMatrix(true, true);
-         };
++        };
 +        try {
 +            applyDefaultSquare();
 +            const defaultDistance = thumbPosition
@@ -13242,10 +13248,7 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..022fecb8ea4825fccd04cf6d5e581b1a
 +        finally {
 +            restore();
 +        }
-     }
--    // Writes the target rotation for boneIndex into scratchQuat, mirroring for right hand.
--    // Right-hand mirror negates Y and Z to reflect across the YZ plane.
--    writeTargetRotation(gripType, boneIndex, hand) {
++    }
 +    // Grip poses are joint deltas, not replacement local rotations. Keeping each
 +    // character's imported reference pose is what lets the same curl work on
 +    // Mixamo, Unreal, and other rigs whose finger axes start differently.
@@ -13735,6 +13738,14 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..022fecb8ea4825fccd04cf6d5e581b1a
 +        const after = profile[high];
 +        const blend = after.amount === before.amount ? 0 : (relaxation - before.amount) / (after.amount - before.amount);
 +        state.bones.forEach((bone, joint) => bone.quaternion.copy(before.pose[joint]).slerp(after.pose[joint], blend));
++        // At the upright hold, the index rests alongside the shaft instead of
++        // curling across its front. Bring this in late so the traveling pinch
++        // never lets go while the hand rotates toward North.
++        const uprightHold = relaxation ** 4;
++        for (let indexJoint = 0; indexJoint < 3; indexJoint++) {
++            const joint = 3 + indexJoint;
++            state.bones[joint].quaternion.multiply(this.scratchDelta.setFromAxisAngle(state.hingeAxes[joint], RELAXED_INDEX_EXTENSION_RAD[indexJoint] * uprightHold));
++        }
 +        hand.updateWorldMatrix(true, true);
 +    }
 +    projectRelaxedContact(state, cylinder, authored) {
@@ -14088,8 +14099,12 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..022fecb8ea4825fccd04cf6d5e581b1a
 +        const finger = Math.floor(boneIndex / 3);
 +        const square = this.scratchQuat.clone();
 +        this.writeTargetRotation(state, GripType.IDLE, boneIndex, hand);
++        const joint = boneIndex % 3;
 +        const weight = 1 - state.contactRelaxation * (1 - RELAXED_FINGER_SQUARE_WEIGHTS[finger]);
 +        this.scratchQuat.slerp(square, weight);
++        if (joint === 0 && finger >= 3) {
++            this.scratchQuat.multiply(this.scratchDelta.setFromEuler(this.scratchEuler.set(0.2 * state.contactRelaxation, 0, (finger === 3 ? -0.3 : -0.5) * state.contactRelaxation)));
++        }
 +    }
  }
 diff --git a/dist/lib/services/implementations/FootPlanter.d.ts b/dist/lib/services/implementations/FootPlanter.d.ts
@@ -33324,7 +33339,7 @@ index 626111debe6cf0d4a8846c94e3b6847e3aa2758f..beac36ea1ba8dcd58f43158c07c6e709
 +  }
  }
 diff --git a/src/lib/services/implementations/FingerAnimator.ts b/src/lib/services/implementations/FingerAnimator.ts
-index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..c5220164ed516d189d658e3f44fce52d47bb40c7 100644
+index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..e829abab102dab096434babd461654568e3678c5 100644
 --- a/src/lib/services/implementations/FingerAnimator.ts
 +++ b/src/lib/services/implementations/FingerAnimator.ts
 @@ -1,5 +1,5 @@
@@ -33335,7 +33350,7 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..c5220164ed516d189d658e3f44fce52d
  import type { IFingerAnimator } from "../contracts/IFingerAnimator";
  import {
    GripType,
-@@ -8,23 +8,163 @@ import {
+@@ -8,23 +8,165 @@ import {
    type FingerChains,
  } from "../../domain/models/GripPose";
  import { STAFF_GRIP_POSES } from "../../data/grip-poses/staff-grip-poses";
@@ -33434,6 +33449,7 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..c5220164ed516d189d658e3f44fce52d
 +const FINGER_STARTS = [0, 3, 6, 9, 12] as const;
 +const RELAXED_REQUIRED_FINGERS = new Set(["thumb", "index"] as const);
 +const RELAXED_FINGER_SQUARE_WEIGHTS = [1, 0.35, 0.2, 0.12, 0.08] as const;
++const RELAXED_INDEX_EXTENSION_RAD = [0.18, -0.7, -0.2] as const;
 +
 +/**
 + * The taxonomy pose describes a human thumb, but different exporters give the
@@ -33475,6 +33491,7 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..c5220164ed516d189d658e3f44fce52d
    private ready = false;
    private readonly scratchQuat = new Quaternion();
 +  private readonly scratchDelta = new Quaternion();
++  private readonly scratchEuler = new Euler();
 +  private leftCylinder: FingerCylinderContactInput | null = null;
 +  private rightCylinder: FingerCylinderContactInput | null = null;
 +  private strictCylinderContact = false;
@@ -33502,7 +33519,7 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..c5220164ed516d189d658e3f44fce52d
      this.ready = true;
  
      this.applyPoseImmediate(this.leftHand, GripType.IDLE, "left");
-@@ -47,9 +187,57 @@ export class FingerAnimator implements IFingerAnimator {
+@@ -47,9 +189,57 @@ export class FingerAnimator implements IFingerAnimator {
      this.setGrip("right", rightGrip);
    }
  
@@ -33560,7 +33577,7 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..c5220164ed516d189d658e3f44fce52d
      this.updateHand(this.leftHand, "left", deltaTime);
      this.updateHand(this.rightHand, "right", deltaTime);
    }
-@@ -67,11 +255,20 @@ export class FingerAnimator implements IFingerAnimator {
+@@ -67,11 +257,20 @@ export class FingerAnimator implements IFingerAnimator {
      this.leftHand = null;
      this.rightHand = null;
      this.ready = false;
@@ -33582,7 +33599,7 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..c5220164ed516d189d658e3f44fce52d
  
      for (const boneName of FINGER_BONES) {
        const bone = boneMap.get(boneName);
-@@ -79,31 +276,291 @@ export class FingerAnimator implements IFingerAnimator {
+@@ -79,31 +278,291 @@ export class FingerAnimator implements IFingerAnimator {
          throw new Error(`Missing finger bone: ${boneName}`);
        }
        bones.push(bone);
@@ -33617,15 +33634,17 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..c5220164ed516d189d658e3f44fce52d
 +      skinSamples: [],
 +      skinTriangles: [],
 +      relaxedProfiles: new Map(),
-+    };
+     };
 +    for (const mesh of meshes) {
 +      mesh.updateWorldMatrix(true, false);
 +      mesh.updateMatrixWorld(true);
 +    }
 +    state.skinRadii = this.measureSkinSupportRadii(state, meshes);
 +    return state;
-+  }
-+
+   }
+ 
+-  // Writes the target rotation for boneIndex into scratchQuat, mirroring for right hand.
+-  // Right-hand mirror negates Y and Z to reflect across the YZ plane.
 +  /** Cache the visible skin's radial support for each phalanx. */
 +  private measureSkinSupportRadii(
 +    state: HandState,
@@ -33748,7 +33767,7 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..c5220164ed516d189d658e3f44fce52d
 +        bone.quaternion.copy(savedRotations[index]!)
 +      );
 +      palm.updateWorldMatrix(true, true);
-     };
++    };
 +    const applyDefaultSquare = () => {
 +      state.squareThumbDeltas = null;
 +      for (let index = 0; index < FINGER_BONES.length; index++) {
@@ -33825,10 +33844,8 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..c5220164ed516d189d658e3f44fce52d
 +    } finally {
 +      restore();
 +    }
-   }
- 
--  // Writes the target rotation for boneIndex into scratchQuat, mirroring for right hand.
--  // Right-hand mirror negates Y and Z to reflect across the YZ plane.
++  }
++
 +  // Grip poses are joint deltas, not replacement local rotations. Keeping each
 +  // character's imported reference pose is what lets the same curl work on
 +  // Mixamo, Unreal, and other rigs whose finger axes start differently.
@@ -33880,7 +33897,7 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..c5220164ed516d189d658e3f44fce52d
    }
  
    private updateHand(
-@@ -115,13 +572,820 @@ export class FingerAnimator implements IFingerAnimator {
+@@ -115,13 +574,833 @@ export class FingerAnimator implements IFingerAnimator {
      const alpha = Math.min(1, this.blendSpeed * deltaTime);
  
      for (let i = 0; i < FINGER_BONES.length; i++) {
@@ -34318,6 +34335,19 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..c5220164ed516d189d658e3f44fce52d
 +    const after = profile[high]!;
 +    const blend = after.amount === before.amount ? 0 : (relaxation - before.amount) / (after.amount - before.amount);
 +    state.bones.forEach((bone, joint) => bone.quaternion.copy(before.pose[joint]!).slerp(after.pose[joint]!, blend));
++    // At the upright hold, the index rests alongside the shaft instead of
++    // curling across its front. Bring this in late so the traveling pinch
++    // never lets go while the hand rotates toward North.
++    const uprightHold = relaxation ** 4;
++    for (let indexJoint = 0; indexJoint < 3; indexJoint++) {
++      const joint = 3 + indexJoint;
++      state.bones[joint]!.quaternion.multiply(
++        this.scratchDelta.setFromAxisAngle(
++          state.hingeAxes[joint]!,
++          RELAXED_INDEX_EXTENSION_RAD[indexJoint]! * uprightHold
++        )
++      );
++    }
 +    hand.updateWorldMatrix(true, true);
 +  }
 +
@@ -34702,7 +34732,7 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..c5220164ed516d189d658e3f44fce52d
    private applyPoseImmediate(
      state: HandState,
      gripType: GripType,
-@@ -129,10 +1393,32 @@ export class FingerAnimator implements IFingerAnimator {
+@@ -129,10 +1408,42 @@ export class FingerAnimator implements IFingerAnimator {
    ): void {
      state.targetGrip = gripType;
      for (let i = 0; i < FINGER_BONES.length; i++) {
@@ -34732,8 +34762,18 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..c5220164ed516d189d658e3f44fce52d
 +    const finger = Math.floor(boneIndex / 3);
 +    const square = this.scratchQuat.clone();
 +    this.writeTargetRotation(state, GripType.IDLE, boneIndex, hand);
++    const joint = boneIndex % 3;
 +    const weight = 1 - state.contactRelaxation * (1 - RELAXED_FINGER_SQUARE_WEIGHTS[finger]!);
 +    this.scratchQuat.slerp(square, weight);
++    if (joint === 0 && finger >= 3) {
++      this.scratchQuat.multiply(
++        this.scratchDelta.setFromEuler(this.scratchEuler.set(
++          0.2 * state.contactRelaxation,
++          0,
++          (finger === 3 ? -0.3 : -0.5) * state.contactRelaxation
++        ))
++      );
++    }
 +  }
  }
 diff --git a/src/lib/services/implementations/FootPlanter.ts b/src/lib/services/implementations/FootPlanter.ts
