@@ -36,7 +36,6 @@ export default {
     "src/lib/shared/sequence-viewer/components/CardGridLayout.svelte",
     "src/lib/shared/sequence-viewer/components/MandalaExportTakeover.svelte",
     "src/lib/shared/sequence-viewer/components/MandalaPane.svelte",
-    "src/lib/features/choreo-card/components/card-back/CardBack.svelte",
     "src/lib/features/create/generate/components/cards/GenerateButtonCard.svelte",
     "src/lib/features/create/shared/workspace-panel/sequence-display/components/WorkspaceGrid.svelte",
   ],
