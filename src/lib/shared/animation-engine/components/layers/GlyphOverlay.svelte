@@ -89,6 +89,10 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
 
   // Cross-fade duration in ms
   const FADE_DURATION = DURATION.normal;
+  // The step number swaps instead of cross-fading (see the markup comment),
+  // so its out and in phases each take half the envelope. Both overlays then
+  // start and finish their step transition at the same instants.
+  const STEP_NUMBER_PHASE_DURATION = FADE_DURATION / 2;
 
   // Track letter dimensions with reactive state that updates when cache is populated
   // We use $state + $effect because $derived only evaluates once per change,
@@ -295,10 +299,13 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
          overlapping, both-legible words mid-transition — most visible on the
          Start/End swap. The Crossfade component itself can't wrap this: it
          renders an HTML <div>, invalid inside this <svg>/<g> tree. This ports
-         its "swap" mode's timing by hand (out fully completes before in
+         its "swap" mode's sequencing by hand (out fully completes before in
          starts — in:fade delay = out's full duration, matching Crossfade's
          own inDelay = duration computation for mode="swap") so the words
          never overlap. See crossfade-primitive.md.
+         Each phase runs for half of FADE_DURATION so the whole swap fits the
+         same envelope as the letter glyph's cross-fade below-left; a full
+         duration per phase made the number visibly lag the glyph.
          The Start/End words are step labels too: the step-numbers toggle hides
          all three, matching the export compositor's single showStepNumbers gate. -->
     {#if stepNumbersVisible}
@@ -306,12 +313,12 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
         <g
           class="beat-number-group"
           in:fade={{
-            duration: motionDuration(FADE_DURATION),
-            delay: motionDuration(FADE_DURATION),
+            duration: motionDuration(STEP_NUMBER_PHASE_DURATION),
+            delay: motionDuration(STEP_NUMBER_PHASE_DURATION),
             easing: cubicOut,
           }}
           out:fade={{
-            duration: motionDuration(FADE_DURATION),
+            duration: motionDuration(STEP_NUMBER_PHASE_DURATION),
             easing: cubicOut,
           }}
         >
