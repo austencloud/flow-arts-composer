@@ -14,6 +14,7 @@ import { getDuetPersister } from "$lib/shared/3d/get-duet-persister";
   import type { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
   import type { DuetPersister } from "../../services/duet-persister";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
   import type {
     DuetPositioning,
     CreateDuetInput,
@@ -54,7 +55,7 @@ import { getDuetPersister } from "$lib/shared/3d/get-duet-persister";
       if (!searchQuery.trim()) return true;
       const query = searchQuery.toLowerCase();
       return (
-        seq.word?.toLowerCase().includes(query) ||
+        stripWordNotation(seq.word).toLowerCase().includes(query) ||
         seq.name?.toLowerCase().includes(query) ||
         seq.author?.toLowerCase().includes(query)
       );

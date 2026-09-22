@@ -2,7 +2,7 @@
      viewer. Rendering stays asynchronous, and fixed preview/status geometry
      prevents state changes from moving the sheet. -->
 <script lang="ts">
-  import { onDestroy, untrack } from "svelte";
+  import { onDestroy, untrack, type Snippet } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { growFade } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
@@ -151,6 +151,8 @@
     /** A live 3D take temporarily hides this sheet, then resumes its draft. */
     preserveSession?: boolean;
     onSessionResumed?: () => void;
+    /** A host-owned animation stage shown before its encoded video is ready. */
+    liveVideoPreview?: Snippet;
   }
 
   let {
@@ -185,6 +187,7 @@
     initialEntry = "chooser",
     preserveSession = false,
     onSessionResumed,
+    liveVideoPreview,
   }: Props = $props();
 
   const postDeliveryState = createPostDeliveryState({
@@ -505,6 +508,11 @@
   // A previous file must disappear while an explicit retry replaces it.
   const activeVideoUrl = $derived(
     videoStatus === "ready" ? videoBlobUrl : null
+  );
+  // This stays mounted while a render reports progress or settles. The encoded
+  // file replaces it only once there is a usable URL.
+  const showingLiveVideoPreview = $derived(
+    artifact === "video" && !!liveVideoPreview && !activeVideoUrl && !qrDataUrl
   );
   /**
    * Parent context objects are rebuilt during playback. Track the primitive
@@ -2002,7 +2010,9 @@
                 class:download-route={true}
                 class:card-preparation={artifact === "card"}
                 class:video-preparation={artifact === "video"}
-                class:has-preview={previewReady || !!animationPreviewUrl}
+                class:has-preview={previewReady ||
+                  !!animationPreviewUrl ||
+                  showingLiveVideoPreview}
               >
                 <div class="preview-column">
                   {#if !qrDataUrl}
@@ -2041,10 +2051,13 @@
                   >
                     <div
                       class="stage"
-                      class:showing-media={!!previewReady}
+                      class:showing-media={!!previewReady ||
+                        showingLiveVideoPreview}
                       class:video-placeholder={artifact === "video" &&
                         !activeVideoUrl &&
+                        !showingLiveVideoPreview &&
                         !qrDataUrl}
+                      class:live-video-stage={showingLiveVideoPreview}
                       class:live-card-stage={artifact === "card" &&
                         !!cardPreview.request}
                     >
@@ -2075,9 +2088,15 @@
                         <Crossfade
                           key={qrDataUrl
                             ? "phone"
-                            : `video:${activeVideoUrl ? "ready" : openerPreviewUrl ? "opener" : videoStatus}`}
+                            : `video:${activeVideoUrl ? "ready" : showingLiveVideoPreview ? "live" : openerPreviewUrl ? "opener" : videoStatus}`}
                           duration={DURATION.normal}
-                          fill
+                          fill={!!(
+                            qrDataUrl ||
+                            activeVideoUrl ||
+                            showingLiveVideoPreview ||
+                            openerPreviewUrl
+                          )}
+                          animateHeight
                         >
                           {#if qrDataUrl}
                             <div class="qr-view">
@@ -2111,6 +2130,10 @@
                               muted
                               playsinline
                             ></video>
+                          {:else if showingLiveVideoPreview && liveVideoPreview}
+                            <div class="live-video-preview">
+                              {@render liveVideoPreview()}
+                            </div>
                           {:else if artifact === "video" && openerPreviewUrl}
                             <!-- This capture belongs to the viewer. The sheet only presents
                        it, and it is the exact image the clip opens with. -->
@@ -2131,12 +2154,12 @@
                               <strong
                                 >{videoStatus === "failed"
                                   ? "Video could not be rendered"
-                                  : "Animation preview unavailable"}</strong
+                                  : "Animation preview"}</strong
                               >
                               <span
                                 >{videoStatus === "failed"
                                   ? "Check the settings and try again."
-                                  : "The viewer did not provide a current-view capture."}</span
+                                  : "Your video preview appears after rendering."}</span
                               >
                             </div>
                           {:else}
@@ -3471,6 +3494,24 @@
     min-height: 0;
     object-fit: contain;
     border-radius: 0.25rem;
+  }
+  .sheet-scroll.video-preparation .stage {
+    height: clamp(14rem, 48dvh, 28rem);
+  }
+  .stage.live-video-stage {
+    padding: 0.5rem;
+  }
+  /* The supplied stage lives in the host's style scope, so this boundary owns
+     the dimensions that keep the canvas useful across share-sheet layouts. */
+  .stage :global(.live-video-preview) {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+  @media (max-height: 480px) {
+    .sheet-scroll.video-preparation .stage {
+      height: min(52dvh, 16rem);
+    }
   }
   .stage-pending {
     text-align: center;

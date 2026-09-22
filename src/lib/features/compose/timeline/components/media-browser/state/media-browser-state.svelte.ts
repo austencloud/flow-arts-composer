@@ -14,6 +14,7 @@ import type { DifficultyLevel } from "$lib/shared/domain/models/sequence-paramet
 import { BrowseSortMethod } from "$lib/shared/browse/domain/enums/browse-enums";
 import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
 import { getBrowseThumbnailProvider } from "$lib/shared/browse/get-browse-thumbnail-provider";
+import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
 
 const BATCH_SIZE = 24;
 
@@ -84,7 +85,7 @@ export function createMediaBrowserState() {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
         (seq) =>
-          seq.word?.toLowerCase().includes(query) ||
+          stripWordNotation(seq.word).toLowerCase().includes(query) ||
           seq.name?.toLowerCase().includes(query) ||
           seq.author?.toLowerCase().includes(query)
       );

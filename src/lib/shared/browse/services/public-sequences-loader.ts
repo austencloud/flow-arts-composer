@@ -25,6 +25,7 @@ import {
   getPublicSequencesPath,
 } from "$lib/shared/library/data/firestore-paths";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
 import type { PublicSequenceIndex } from "$lib/shared/foundation/domain/models/public-sequence-index";
 import { hydrate } from "$lib/shared/foundation/services/sequence-hydrator";
 import type { ErrorHandler } from "$lib/shared/application/services/error-handler";
@@ -270,7 +271,7 @@ export class PublicSequencesLoader {
       if (!sourceRef) {
         const match = this.cachedSequences?.find(
           (sequence) =>
-            sequence.name === sequenceName || sequence.word === sequenceName
+            sequence.name === sequenceName || stripWordNotation(sequence.word) === sequenceName
         );
         if (match?.ownerId && match.id) {
           sourceRef = `users/${match.ownerId}/sequences/${match.id}`;
@@ -325,7 +326,7 @@ export class PublicSequencesLoader {
     const match = this.cachedSequences?.find((sequence) =>
       sequenceId
         ? sequence.id === sequenceId
-        : sequence.name === sequenceName || sequence.word === sequenceName
+        : sequence.name === sequenceName || stripWordNotation(sequence.word) === sequenceName
     );
     return match && (match.steps?.length ?? 0) > 0 ? match : null;
   }

@@ -224,6 +224,10 @@ export class SequenceModalExporter {
 
     try {
       const orchestrator = await this.resolveVideoExportOrchestrator();
+      // Loading the deferred orchestrator is asynchronous. A sheet can close
+      // while that import resolves; do not let its stale request start an
+      // expensive offscreen render after cancellation.
+      if (exportVersion !== this._exportVersion) return;
       const blob = await orchestrator.executeExport(
         deps.canvas,
         deps.playbackController,

@@ -257,9 +257,11 @@ for every choice, and the page's footer button renders and delivers the file.
 Share → Download a file → Video hands off to that page and closes the sheet,
 the way Post Studio takes over from the sheet; the sheet's own download route
 keeps Card, plus Video for hosts with their own exporters (Mandala, Tunnel,
-3D takes, Post Studio renders), where the file type is a chip row. The sheet
-never mounts a second animation engine: a frozen capture behind a modal was
-the reason the download moved.
+3D takes, Post Studio renders), where the file type is a chip row. The viewer
+never mounts a second animation engine behind its share sheet: a frozen capture
+behind a modal was the reason the download moved. The Create workspace has a
+static card behind sharing, so its download sheet supplies its own live preview
+using the existing inline animation player.
 
 ### The image a clip opens with
 
@@ -667,3 +669,48 @@ Task-local frame traces, viewport geometry, browser captures, and test logs are
 retained in `E:/tka-share-layout-motion-evidence`. Some captures from the in-app
 browser have compositor cropping/scaling artifacts; geometry records and direct
 interaction, rather than those image edges, establish viewport containment.
+
+### September 21 workspace animation availability
+
+The Create workspace opened `PostShareSheet` with `availableArtifacts: ["card"]`
+and no video callbacks. Its home action promised a video or card image, but
+Download a file had no File type selector. Viewer-only acceptance checks missed
+this entry-point difference.
+
+The workspace must offer Card and Video in the existing sheet. It composes
+`SequenceModalExporter` and the canonical offscreen `VideoExportOrchestrator`
+with an independent playback controller and an ephemeral panel state. A sizing
+canvas supplies the existing export layout calculation; it does not mount a
+second live renderer or open the full sequence viewer behind the dialog. Shared
+export settings continue to own resolution, frame rate, and repeat count.
+
+Opening sharing or selecting Video must not start rendering. Only an explicit
+download/render action may load the export runtime and prepare the file. That
+request owns its sequence snapshot, progress, cancellation, and blob lifetime.
+Closing, replacing the sequence, or canceling during lazy startup must retire
+the request before it can render or deliver an old file. The isolated controller
+must not change the workspace playhead or persisted playback preferences.
+
+Verify this through the workspace Share button as well as the viewer entry:
+choose Download a file, switch both file types, change video settings, download
+an animation, cancel and retry, then replace the sequence and reopen sharing.
+Showing a Video option without a working renderer is not acceptance.
+
+### September 22 workspace preview completion
+
+The first workspace repair verified rendering and delivery but left text where
+the live animation belonged. Austen rejected that result. A successful encoder
+test is not evidence that the pre-download experience is complete.
+
+Selecting Video must show the current sequence moving before any export starts.
+The existing `InlineAnimationPlayer` owns playback and canvas rendering; the
+workspace supplies it to the share sheet's preview slot. Its state must be local
+to the preview, use the export's tempo and presentation settings, and stop when
+the person leaves Video or closes sharing. Progress and cancellation must not
+remount it. The finished file replaces the player in the same reserved media
+area through the shared transition primitive.
+
+Acceptance requires observing actual animation frames before pressing Download,
+then a playable downloaded file. Check both directions of Card/Video switching,
+close/reopen, cancellation, and a replacement sequence. A placeholder, spinner,
+static frame, or test that mocks the player cannot establish this behavior.

@@ -496,7 +496,7 @@ export class ExportFrameCompositor {
     opacity: number
   ): void {
     const gridScaleFactor = canvasSize / 950;
-    const x = 50 * gridScaleFactor;
+    const x = (50 - glyph.xOffset) * gridScaleFactor;
     const y = (800 - glyph.yOffset) * gridScaleFactor;
     const scaledWidth = glyph.dimensions.width * gridScaleFactor;
     const scaledHeight = glyph.dimensions.height * gridScaleFactor;
