@@ -91,17 +91,19 @@ export class PlacementAnalyzer {
     }
 
     // Calculate the difference (accounting for circular wraparound)
-    // Gamma, zeta, eta, and tau have 16 numbered placements; alpha and beta
-    // have 8. Terra has only one placement (terra1), so it never reaches
-    // this branch with a meaningful rotation and is left out.
-    //
-    // "half" and "quarter" below are index distances within a 16-placement
-    // group (index+8 and index+4 respectively), the convention gamma has
-    // always used and that zeta, eta, and tau mirror here. For these
-    // two-family groups, index+8 is the hand-swapped placement (e.g. TAU1-8
-    // is blue-center/red-perimeter, TAU9-16 is red-center/blue-perimeter,
-    // per grid-enums.ts), not a geometric 180 degree rotation. A geometric
-    // model is a separate change.
+    // Gamma, zeta, eta, and tau have 16 placements; alpha/beta have 8;
+    // terra has 1 and never reaches this branch.
+    // "half"/"quarter" are index distances (index+8, index+4), gamma's
+    // convention before 2026-09-21, mirrored here for zeta, eta, and tau.
+    // circular-placement-maps.ts disagrees for three of the four groups:
+    // HALF_PLACEMENT_MAP steps GAMMA1/ZETA1/ETA1 by index+4 (TAU1 alone by
+    // index+8); QUARTER_PLACEMENT_MAP_CW steps them by index+2. So this
+    // function's "quarter" is the maps' "half" for those three, feeding
+    // bridge-finder.ts and calculateResultingLength (2x length for half,
+    // 4x for quarter) with an off estimate (pre-existing for gamma, new
+    // for zeta/eta, which used to return null). The fix: read the maps
+    // here instead of index math; that also changes gamma's estimate,
+    // so it is a separate change.
     const sixteenSlots =
       startGroup === GridPlacementGroup.GAMMA ||
       startGroup === GridPlacementGroup.ZETA ||

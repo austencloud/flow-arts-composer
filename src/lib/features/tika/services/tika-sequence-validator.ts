@@ -7,6 +7,7 @@
 
 import type { TikaPictographLoader } from "./tika-pictograph-loader";
 import { LETTER_TO_TYPE } from "@tka/domain";
+import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
 
 export interface SequenceTransition {
   from: string;
@@ -145,18 +146,21 @@ export class TikaSequenceValidator {
   }
 
   parseWordToLetters(word: string): string[] {
+    // Strip skew-frame braces first: they mark a span of the word, not a
+    // letter, and the scan below has no notation awareness of its own.
+    const bareWord = stripWordNotation(word);
     const letters: string[] = [];
     let i = 0;
 
-    while (i < word.length) {
-      const char = word[i];
+    while (i < bareWord.length) {
+      const char = bareWord[i];
       if (!char) {
         i++;
         continue;
       }
 
       // Check if next char is a dash (for Type 3/5 letters)
-      const nextChar = word[i + 1];
+      const nextChar = bareWord[i + 1];
       if (nextChar === "-") {
         letters.push(char + "-");
         i += 2;

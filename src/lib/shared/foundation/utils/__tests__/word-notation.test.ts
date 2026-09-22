@@ -5,6 +5,7 @@ import {
   stripWordNotation,
   rotateWordUnits,
   areWordUnitsCircularEquivalent,
+  findWordUnitsRotationOffset,
 } from "../word-notation";
 import { splitWordLetterUnits } from "@tka/render-composition";
 import { Letter } from "$lib/shared/foundation/domain/models/letter";
@@ -74,6 +75,11 @@ describe("stripWordNotation", () => {
     expect(stripWordNotation("plain")).toBe("plain");
     expect(stripWordNotation("")).toBe("");
   });
+
+  it("returns null and undefined as an empty string", () => {
+    expect(stripWordNotation(null)).toBe("");
+    expect(stripWordNotation(undefined)).toBe("");
+  });
 });
 
 describe("parseWordNotation against the canonical tokenizer", () => {
@@ -140,6 +146,24 @@ describe("areWordUnitsCircularEquivalent", () => {
     expect(areWordUnitsCircularEquivalent("STS", "STSS")).toBe(false);
     expect(areWordUnitsCircularEquivalent("", "")).toBe(true);
     expect(areWordUnitsCircularEquivalent(null, undefined)).toBe(true);
+  });
+});
+
+describe("findWordUnitsRotationOffset", () => {
+  it("finds the smallest offset that aligns letters and skew flags", () => {
+    expect(findWordUnitsRotationOffset("{STS}", "{TSS}")).toBe(1);
+    expect(findWordUnitsRotationOffset("STS", "{STS}")).toBe(null);
+    expect(findWordUnitsRotationOffset("A{ST}B", "{ST}BA")).toBe(1);
+  });
+
+  it("returns null for a unit-length mismatch and 0 for two empties", () => {
+    expect(findWordUnitsRotationOffset("STS", "STSS")).toBe(null);
+    expect(findWordUnitsRotationOffset("", "")).toBe(0);
+    expect(findWordUnitsRotationOffset(null, undefined)).toBe(0);
+  });
+
+  it("returns 0 when no rotation is needed", () => {
+    expect(findWordUnitsRotationOffset("A{ST}B", "A{ST}B")).toBe(0);
   });
 });
 

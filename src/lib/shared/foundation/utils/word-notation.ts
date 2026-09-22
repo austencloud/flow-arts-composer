@@ -68,7 +68,9 @@ export function renderWordNotation(units: readonly WordUnit[]): string {
 
 /** The word without its skew braces, for indexing, sorting, and searching. */
 export function stripWordNotation(word: string | null | undefined): string {
-  return (word ?? "").replace(SKEW_SPAN_PATTERN, "");
+  if (word == null) return "";
+  if (!word.includes(SKEW_SPAN_OPEN) && !word.includes(SKEW_SPAN_CLOSE)) return word;
+  return word.replace(SKEW_SPAN_PATTERN, "");
 }
 
 /**
@@ -87,19 +89,26 @@ export function rotateWordUnits(
 }
 
 /**
- * True when wordB is some rotation of wordA where both the letters and
- * which of them are skewed line up. A letter-only rotation match with a
- * mismatched skew mask (e.g. "STS" vs "{STS}") does not count: the skew
- * span is part of the sequence identity, not just its letters.
+ * The smallest rotation offset that turns wordA's units into wordB's, matching
+ * both letter and skew flag at every position; null when the unit counts
+ * differ or no rotation matches. A letter-only rotation match with a
+ * mismatched skew mask (e.g. "STS" vs "{STS}") does not count: the skew span
+ * is part of the sequence identity, not just its letters.
+ *
+ * The offset is a *unit* index, not a *beat* index: a dash is part of its
+ * letter's token (see parseWordNotation), so a word with a dash letter has
+ * fewer units than beats. Callers that feed this into a beat-indexed rotation
+ * check (verifyCircularRotation) must account for that, same caveat as the
+ * character-rotation offset in sequence-canonicalizer.ts.
  */
-export function areWordUnitsCircularEquivalent(
+export function findWordUnitsRotationOffset(
   wordA: string | null | undefined,
   wordB: string | null | undefined
-): boolean {
+): number | null {
   const unitsA = parseWordNotation(wordA);
   const unitsB = parseWordNotation(wordB);
-  if (unitsA.length !== unitsB.length) return false;
-  if (unitsA.length === 0) return true;
+  if (unitsA.length !== unitsB.length) return null;
+  if (unitsA.length === 0) return 0;
 
   for (let offset = 0; offset < unitsA.length; offset++) {
     const rotated = rotateWordUnits(unitsA, offset);
@@ -110,8 +119,20 @@ export function areWordUnitsCircularEquivalent(
           unit.skewed === unitsB[index]!.skewed
       )
     ) {
-      return true;
+      return offset;
     }
   }
-  return false;
+  return null;
+}
+
+/**
+ * True when wordB is some rotation of wordA where both the letters and
+ * which of them are skewed line up. See findWordUnitsRotationOffset for the
+ * matching rule; this is just its not-null check.
+ */
+export function areWordUnitsCircularEquivalent(
+  wordA: string | null | undefined,
+  wordB: string | null | undefined
+): boolean {
+  return findWordUnitsRotationOffset(wordA, wordB) !== null;
 }

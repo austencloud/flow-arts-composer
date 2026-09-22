@@ -11,6 +11,7 @@
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { SequenceCanonicalizer } from "./sequence-canonicalizer";
+import { findWordUnitsRotationOffset } from "$lib/shared/foundation/utils/word-notation";
 
 /**
  * Result of equivalence comparison
@@ -267,16 +268,19 @@ export class SequenceEquivalenceDetector {
     seqA: SequenceData,
     seqB: SequenceData
   ): EquivalenceResult {
-    const wordResult = this.wordCyclicEquivalenceDetector.areCyclicEquivalent(
-      seqA.word,
-      seqB.word
-    );
+    // Word-unit rotation, not wordCyclicEquivalenceDetector: that operates on
+    // raw characters, so a skew brace counts as if it were its own beat and
+    // desyncs the offset from the step array below. findWordUnitsRotationOffset
+    // parses the braces out first. The result is a beat index for brace-and
+    // -no-dash words; a dash-lettered word has fewer units than characters, and
+    // a multi-dash word can still return an offset tied to the wrong rotation
+    // (same limitation noted for canonicalizeCircularWord in
+    // sequence-canonicalizer.ts).
+    const offset = findWordUnitsRotationOffset(seqA.word, seqB.word);
 
-    if (!wordResult.isEquivalent) {
+    if (offset === null) {
       return this.notEquivalent();
     }
-
-    const offset = wordResult.rotationOffset ?? 0;
 
     // Verify that the actual step data matches when rotated
     if (!this.verifyCircularRotation(seqA, seqB, offset)) {
