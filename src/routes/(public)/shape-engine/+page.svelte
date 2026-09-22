@@ -28,6 +28,7 @@
     "axis",
     "labels",
     "prop",
+    "rp",
     "driver",
     "size",
     "blue",

@@ -44,7 +44,7 @@
     {#if state.loadError}
       <div class="status error" role="alert">
         <p>The matrix could not be built.</p>
-        <button type="button" onclick={state.load}>Try again</button>
+        <button type="button" onclick={() => state.load()}>Try again</button>
       </div>
     {:else if !state.data}
       <p class="status" aria-live="polite">Building the matrix…</p>

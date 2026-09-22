@@ -167,7 +167,7 @@ export function cellArtworkSrc(
 ): string {
   const size = Math.round(sizePx);
   if (!(size > 0)) return "";
-  const key = `cell|${painter.cacheKey ?? "custom"}|${data.propType}|${data.geometryKey ?? "arc:tips"}|${flowerKey(left)}|${flowerKey(right)}|${size}|${currentDpr()}`;
+  const key = `cell|${painter.cacheKey ?? "custom"}|${data.props.left}|${data.props.right}|${data.geometryKey ?? "arc:tips"}|${flowerKey(left)}|${flowerKey(right)}|${size}|${currentDpr()}`;
   return cacheFor(painter).get(key, () =>
     painter.cell(
       data.left.get(flowerKey(left))!,
@@ -188,7 +188,7 @@ export function headerArtworkSrc(
 ): string {
   const size = Math.round(sizePx);
   if (!(size > 0)) return "";
-  const key = `head|${painter.cacheKey ?? "custom"}|${data.propType}|${data.geometryKey ?? "arc:tips"}|${hand}|${flowerKey(flower)}|${size}|${currentDpr()}`;
+  const key = `head|${painter.cacheKey ?? "custom"}|${data.props.left}|${data.props.right}|${data.geometryKey ?? "arc:tips"}|${hand}|${flowerKey(flower)}|${size}|${currentDpr()}`;
   return cacheFor(painter).get(key, () =>
     painter.header(
       (hand === "left" ? data.left : data.right).get(flowerKey(flower))!,
