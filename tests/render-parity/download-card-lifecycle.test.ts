@@ -194,6 +194,14 @@ afterEach(() => {
   deliverCard.mockClear();
 });
 
+function chooseFileType(group: Element, label: "Card" | "Video"): void {
+  const button = [...group.querySelectorAll<HTMLButtonElement>("button")].find(
+    (candidate) => candidate.textContent?.trim() === label
+  );
+  expect(button).toBeDefined();
+  button!.click();
+}
+
 describe("Download card with real live pictographs", () => {
   it("contains the video status when the workspace has no live animation capture", async () => {
     renderCard.mockReturnValue(new Promise<Blob>(() => {}));
@@ -201,9 +209,7 @@ describe("Download card with real live pictographs", () => {
       availableArtifacts: ["card", "video"],
     });
     try {
-      await page
-        .getByRole("combobox", { name: "File type" })
-        .selectOptions("video");
+      await page.getByRole("button", { name: "Video", exact: true }).click();
       for (const [width, height] of [
         [375, 667],
         [960, 412],
@@ -240,21 +246,18 @@ describe("Download card with real live pictographs", () => {
       const dialog = document.querySelector<HTMLDialogElement>(
         "dialog.share-sheet-modal"
       );
-      const fileType =
-        document.querySelector<HTMLSelectElement>(".file-type select");
+      const fileType = document.querySelector(".file-type");
       expect(dialog).not.toBeNull();
       expect(fileType).not.toBeNull();
       const cardHeight = await settledDialogHeight(dialog!);
 
-      fileType!.value = "video";
-      fileType!.dispatchEvent(new Event("change", { bubbles: true }));
+      chooseFileType(fileType!, "Video");
       const cardToVideo = await sampleDialogHeights(dialog!, 14, cardHeight);
       assertContinuousHeightMotion(cardToVideo, "shrinking", "Card → Video");
 
       // Reverse while the return transition is still in flight: the dialog must
       // continue from its displayed height instead of flashing to either end.
-      fileType!.value = "card";
-      fileType!.dispatchEvent(new Event("change", { bubbles: true }));
+      chooseFileType(fileType!, "Card");
       const videoToCard = await sampleDialogHeights(
         dialog!,
         14,
@@ -285,14 +288,12 @@ describe("Download card with real live pictographs", () => {
       const reducedDialog = document.querySelector<HTMLDialogElement>(
         "dialog.share-sheet-modal"
       );
-      const reducedFileType =
-        document.querySelector<HTMLSelectElement>(".file-type select");
+      const reducedFileType = document.querySelector(".file-type");
       await expect
         .poll(() => reducedDialog?.getBoundingClientRect().height ?? 0)
         .toBeGreaterThan(0);
       const reducedCardHeight = await settledDialogHeight(reducedDialog!);
-      reducedFileType!.value = "video";
-      reducedFileType!.dispatchEvent(new Event("change", { bubbles: true }));
+      chooseFileType(reducedFileType!, "Video");
       await nextFrame();
       expect(reducedDialog!.getBoundingClientRect().height).toBeLessThan(
         reducedCardHeight - 20
@@ -313,11 +314,9 @@ describe("Download card with real live pictographs", () => {
     });
     await expect.poll(() => renderCard.mock.calls.length).toBeGreaterThan(0);
 
-    const fileType =
-      document.querySelector<HTMLSelectElement>(".file-type select");
+    const fileType = document.querySelector(".file-type");
     expect(fileType).not.toBeNull();
-    fileType!.value = "video";
-    fileType!.dispatchEvent(new Event("change", { bubbles: true }));
+    chooseFileType(fileType!, "Video");
     await expect
       .poll(() => document.querySelector(".video-settings"))
       .not.toBeNull();
@@ -326,8 +325,7 @@ describe("Download card with real live pictographs", () => {
         .length
     ).toBeGreaterThan(0);
 
-    fileType!.value = "card";
-    fileType!.dispatchEvent(new Event("change", { bubbles: true }));
+    chooseFileType(fileType!, "Card");
     await expect
       .poll(() => document.querySelector(".card-settings"))
       .not.toBeNull();
