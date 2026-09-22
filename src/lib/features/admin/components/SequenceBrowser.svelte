@@ -6,6 +6,7 @@
    */
 
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
 
   // Props
   let {
@@ -29,7 +30,7 @@
     return sequences.filter(
       (seq) =>
         seq.name.toLowerCase().includes(query) ||
-        seq.word.toLowerCase().includes(query)
+        stripWordNotation(seq.word).toLowerCase().includes(query)
     );
   });
 </script>

@@ -87,6 +87,28 @@ describe("message attachment presentation", () => {
     expect(findUndefinedPaths(attachment)).toEqual([]);
   });
 
+  it("carries the sender's view on the attachment and its scan link", () => {
+    const sequence = createSequenceData({
+      id: "configured-view",
+      name: "Configured view",
+      word: "AB",
+    });
+    const viewParams = "pane=animation&fx=trail&s=abc%2Bdef";
+
+    const attachment = buildSequenceMessageAttachment(sequence, "AB3D", {
+      viewParams,
+    });
+
+    expect(attachment.url).toBe(`/q/AB3D?${viewParams}`);
+    expect(attachment.metadata?.sequenceViewParams).toBe(viewParams);
+    expect(findUndefinedPaths(attachment)).toEqual([]);
+
+    // Messages sent from a surface with no viewer state stay as they were.
+    const plain = buildSequenceMessageAttachment(sequence, "AB3D", {});
+    expect(plain.url).toBe("/q/AB3D");
+    expect(plain.metadata).not.toHaveProperty("sequenceViewParams");
+  });
+
   it("keeps the source sequence available to the send sheet for short-code minting", () => {
     const sequence = createSequenceData({
       id: "sequence-for-send-sheet",

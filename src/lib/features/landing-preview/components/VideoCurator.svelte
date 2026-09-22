@@ -11,6 +11,7 @@ import * as videoCuratorPersister from "$lib/features/landing-preview/services/v
    */
   import { onMount } from "svelte";
   import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
   import { getVideoCache } from "$lib/shared/video";
   import VideoEditorOverlay from "./video-editor/VideoEditorOverlay.svelte";
@@ -124,7 +125,7 @@ import * as videoCuratorPersister from "$lib/features/landing-preview/services/v
         (v) =>
           v.shortcode.toLowerCase().includes(query) ||
           v.title?.toLowerCase().includes(query) ||
-          v.linkedSequences.some((s) => s.word.toLowerCase().includes(query)) ||
+          v.linkedSequences.some((s) => stripWordNotation(s.word).toLowerCase().includes(query)) ||
           v.performers.some((p) => p.displayName.toLowerCase().includes(query)) ||
           v.tags.some((t) => t.toLowerCase().includes(query))
       );

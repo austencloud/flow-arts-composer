@@ -16,6 +16,7 @@ import { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/serv
 import { getViewerAnimationPropConfig } from "$lib/shared/animation-engine/get-viewer-animation-prop-config";
 import { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
 import type { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+import type { AnimationPlaybackControllerOptions } from "$lib/shared/animation-engine/services/animation-playback-controller";
 
 /**
  * @param visibilityManager Optional per-instance visibility manager. When
@@ -27,7 +28,8 @@ import type { AnimationVisibilityStateManager } from "$lib/shared/animation-engi
  * so the two disagree.
  */
 export function createAnimationPlaybackController(
-  visibilityManager?: AnimationVisibilityStateManager
+  visibilityManager?: AnimationVisibilityStateManager,
+  options?: AnimationPlaybackControllerOptions
 ): AnimationPlaybackController {
   const animationStateManager = new AnimationStateManager();
   const animationLoop = new AnimationLoop();
@@ -40,5 +42,5 @@ export function createAnimationPlaybackController(
     orchestrator.setVisibilityManager(visibilityManager);
   }
 
-  return new AnimationPlaybackController(orchestrator, animationLoop);
+  return new AnimationPlaybackController(orchestrator, animationLoop, options);
 }

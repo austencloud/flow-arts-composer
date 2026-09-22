@@ -3,6 +3,7 @@
   import type { PrintRenderOptions } from "$lib/features/choreo-card/services/types";
   import { renderCardBack } from "$lib/features/choreo-card/services/card-back-dom-renderer";
   import { buildBackJob } from "$lib/features/choreo-card/services/card-back/card-back-job-builder";
+  import { resolveCardBackAppearance, type CardBackAppearance } from "$lib/features/choreo-card/services/card-back/card-back-appearance";
   import { paintBackJob } from "$lib/features/choreo-card/services/card-back/card-back-raster";
   import { buildFrontComposeOptions } from "$lib/features/choreo-card/services/build-front-compose-options";
   import { wrapContentInCardFrame } from "$lib/features/choreo-card/services/card-front-frame";
@@ -14,10 +15,7 @@
   } from "$lib/features/choreo-card/services/parity-deck-source";
   import { getImageComposer } from "$lib/shared/render/get-image-composer";
   import { getCompositionDispatcher } from "$lib/shared/render/get-composition-dispatcher";
-  import { CompositionDispatcher } from "$lib/shared/render/services/composition-dispatcher";
-  import { getCardAssetBundle } from "$lib/shared/render/services/get-card-asset-bundle";
-  import { buildOverridePlacementBundle } from "$lib/shared/render/services/override-placement-bundle";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { seedCardPool } from "$lib/shared/render/services/card-pool-prewarm";
   import { onMount } from "svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import CardParityViewer from "$lib/shared/parity/CardParityViewer.svelte";
@@ -91,9 +89,9 @@
   type Composed = ReturnType<typeof buildFrontComposeOptions>;
 
   // The QR is generated on the main thread (the QR generator uses new Image() and
-  // Firebase, neither available in the worker) and the SAME bitmap is fed to both
-  // renders — main via options.qrImageBitmap, worker via the transfer param — so
-  // the QR cell is byte-identical instead of present-on-one-side-only.
+  // Firebase, neither available in the worker). It is rasterized once below so
+  // both columns draw identical pixels rather than an SVG image on one side and
+  // a fresh bitmap decode on the other.
   async function generateQr(
     deck: ParityDeck,
     card: ParityDeck["cards"][number],
@@ -120,7 +118,7 @@
   async function renderFrontMain(
     card: ParityDeck["cards"][number],
     composed: Composed,
-    qr: HTMLImageElement | null
+    qr: ImageBitmap | null
   ): Promise<HTMLCanvasElement> {
     const opts = qr
       ? ({
@@ -146,26 +144,36 @@
   async function renderFrontWorker(
     card: ParityDeck["cards"][number],
     composed: Composed,
-    qr: HTMLImageElement | null
+    qr: ImageBitmap | null
   ): Promise<HTMLCanvasElement> {
     const qrBitmap = qr ? await createImageBitmap(qr) : null;
-    const bmp = await getCompositionDispatcher().composeFrontBitmap(
-      card.sequence,
-      { ...composed.composeOptions, frontCardFrame: composed.frame },
-      qrBitmap
-    );
-    return normalizeToCanvas(bmp as CanvasImageSource, OUT_W, OUT_H);
+    try {
+      const bmp = await getCompositionDispatcher().composeFrontBitmap(
+        card.sequence,
+        { ...composed.composeOptions, frontCardFrame: composed.frame },
+        qrBitmap
+      );
+      try {
+        return normalizeToCanvas(bmp as CanvasImageSource, OUT_W, OUT_H);
+      } finally {
+        bmp.close();
+      }
+    } finally {
+      qrBitmap?.close();
+    }
   }
 
   async function renderBackNew(
     seq: SequenceData,
-    theme: string
+    theme: string,
+    appearance: CardBackAppearance
   ): Promise<HTMLCanvasElement> {
     const job = await buildBackJob(seq, {
       width: OUT_W,
       height: OUT_H,
       bleedPx: LOGICAL_BLEED * SCALE,
       theme,
+      ...appearance,
     });
     return normalizeToCanvas(
       paintBackJob(job) as CanvasImageSource,
@@ -176,13 +184,15 @@
 
   async function renderBackOld(
     seq: SequenceData,
-    theme: string
+    theme: string,
+    appearance: CardBackAppearance
   ): Promise<HTMLCanvasElement> {
     const c = await renderCardBack(seq, {
       width: LOGICAL_W,
       height: LOGICAL_H,
       bleedPx: LOGICAL_BLEED,
       theme,
+      ...appearance,
     });
     return normalizeToCanvas(c as CanvasImageSource, OUT_W, OUT_H);
   }
@@ -190,6 +200,7 @@
   function makeRun(): ParityRun {
     const runMode = mode;
     const deckNumber = selectedDeck;
+    const backAppearance = resolveCardBackAppearance();
     return {
       async run(ctx) {
         if (deckNumber == null) {
@@ -215,40 +226,35 @@
           const handPathProfile = deck.cards.every(
             (card) => card.cardProfile === "hand-path"
           );
-          ctx.onProgress({ phase: "probing worker support" });
-          const ok = await CompositionDispatcher.probeWorkerSupport();
-          if (!ok) {
-            return {
-              verdict: "FAIL",
-              summary: "worker probe failed",
-              gates: [],
-              result: { error: "worker probe failed" },
-            };
-          }
-          ctx.onProgress({ phase: "building asset bundle" });
-          const bundle = await getCardAssetBundle(
-            deck.cards.map((c) => c.sequence),
-            {
-              leftPropType: handPathProfile ? PropType.HAND : deck.leftPropType,
-              rightPropType: handPathProfile
-                ? PropType.HAND
-                : deck.rightPropType,
+          ctx.onProgress({ phase: "seeding worker pool" });
+          try {
+            await seedCardPool({
+              sequences: deck.cards.map((card) => card.sequence),
+              leftPropType: deck.leftPropType,
+              rightPropType: deck.rightPropType,
               theme: deck.theme,
               iconPaths: deck.cards
-                .map((c) => c.footer.iconPath)
+                .map((card) => card.footer.iconPath)
                 .filter(Boolean) as string[],
-            }
-          );
-          getCompositionDispatcher().setAssetBundle(bundle);
-          getCompositionDispatcher().setOverrideBundle(
-            buildOverridePlacementBundle()
-          );
+              handPathMode: handPathProfile,
+            });
+          } catch (error) {
+            return {
+              verdict: "FAIL",
+              summary: "worker pool setup failed",
+              gates: [],
+              result: {
+                error: error instanceof Error ? error.message : String(error),
+              },
+            };
+          }
         }
 
         const total = deck.cards.length;
         let done = 0;
         let worst = 0;
         let worstMaxDelta = 0;
+        let renderFailures = 0;
         const summaryRows: Record<string, unknown>[] = [];
 
         for (const [idx, card] of deck.cards.entries()) {
@@ -271,12 +277,17 @@
                 card.sequence,
                 printOptionsFor(deck, card)
               );
-              const qr = await generateQr(deck, card, composed);
-              oldCanvas = await renderFrontMain(card, composed, qr);
-              newCanvas = await renderFrontWorker(card, composed, qr);
+              const qrImage = await generateQr(deck, card, composed);
+              const qr = qrImage ? await createImageBitmap(qrImage) : null;
+              try {
+                oldCanvas = await renderFrontMain(card, composed, qr);
+                newCanvas = await renderFrontWorker(card, composed, qr);
+              } finally {
+                qr?.close();
+              }
             } else {
-              oldCanvas = await renderBackOld(card.sequence, deck.theme);
-              newCanvas = await renderBackNew(card.sequence, deck.theme);
+              oldCanvas = await renderBackOld(card.sequence, deck.theme, backAppearance);
+              newCanvas = await renderBackNew(card.sequence, deck.theme, backAppearance);
             }
             const d = diff(oldCanvas, newCanvas, OUT_W, OUT_H);
             worst = Math.max(worst, d.diffPct);
@@ -309,6 +320,7 @@
               maxDelta: d.maxDelta,
             });
           } catch (err) {
+            renderFailures++;
             const msg = err instanceof Error ? err.message : String(err);
             const blank = document.createElement("canvas");
             blank.width = OUT_W;
@@ -324,11 +336,23 @@
           }
         }
 
-        const verdict: ParityVerdict["verdict"] = worst <= 1 ? "PASS" : "FAIL";
+        const passed = renderFailures === 0 && worst <= 1;
+        const verdict: ParityVerdict["verdict"] = passed ? "PASS" : "FAIL";
         return {
           verdict,
-          summary: `worst diff ${worst.toFixed(3)}% across ${summaryRows.length} cards`,
+          summary:
+            renderFailures > 0
+              ? `${renderFailures} card render failure${renderFailures === 1 ? "" : "s"}`
+              : `worst diff ${worst.toFixed(3)}% across ${summaryRows.length} cards`,
           gates: [
+            {
+              label: "all cards rendered",
+              pass: renderFailures === 0,
+              detail:
+                renderFailures === 0
+                  ? "all cards rendered"
+                  : `${renderFailures} render failure${renderFailures === 1 ? "" : "s"}`,
+            },
             {
               label: "diff ≤ 1%",
               pass: worst <= 1,

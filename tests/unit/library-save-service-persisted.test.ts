@@ -86,8 +86,45 @@ vi.mock("$lib/shared/settings/state/settings-state.svelte", () => ({
       leftPropType: "club",
       rightPropType: "club",
       catDogMode: false,
+      primaryPropColors: { left: "#123456", right: "#abcdef" },
     },
   },
+}));
+vi.mock(
+  "$lib/shared/animation-engine/state/animation-settings-state.svelte",
+  () => ({
+    animationSettings: {
+      trail: {
+        mode: "loop_clear",
+        effect: "glow",
+        fadeDurationMs: 2500,
+        maxPoints: 1000,
+        lineWidth: 4,
+        glowBlur: 2.5,
+        leftColor: "#000000",
+        rightColor: "#ffffff",
+        additionalLayerColors: [],
+        minOpacity: 0.25,
+        maxOpacity: 1,
+        trackingMode: "both_ends",
+        hideProps: false,
+        usePathCache: true,
+        previewMode: false,
+        tailLength: 20,
+      },
+    },
+  })
+);
+vi.mock("$lib/shared/effects/state/effects-config-state.svelte", () => ({
+  loadPersistedEffectsConfig: () => ({
+    version: 38,
+    tipEffectMap: { "*": { effect: "sparkles" } },
+    activePresets: {},
+    activeEffect: "sparkles",
+    effectLayerOverrides: {},
+    sparkles: { density: 2 },
+    fire: { intensity: 1 },
+  }),
 }));
 
 const { LibrarySaveService } =
@@ -376,6 +413,9 @@ describe("LibrarySaveService.saveSequence - publication-moment intent capture", 
     expect(dbPutMock.mock.calls[0]?.[0]).toMatchObject({
       creatorIntent: { propConfig: recorded },
     });
+    const written = dbPutMock.mock.calls[0]?.[0];
+    expect(written.intendedProp).toBeUndefined();
+    expect(written.creatorIntent.presentation).toBeDefined();
   });
 
   it("does not stamp intent on a private save", async () => {
@@ -398,5 +438,91 @@ describe("LibrarySaveService.saveSequence - publication-moment intent capture", 
     const written = dbPutMock.mock.calls[0]?.[0];
     expect(written.creatorIntent).toBeUndefined();
     expect(written.intendedProp).toBeUndefined();
+  });
+
+  it("stamps the creator's active look on a public save with no presentation", async () => {
+    const service = new LibrarySaveService(null, null, makeRepository(), null);
+    await service.saveSequence(makeSequence({ steps: publicSteps }), {
+      ...makeOptions(),
+      visibility: "public",
+    });
+    const stored = dbPutMock.mock.calls[0]?.[0];
+    expect(stored.creatorIntent.presentation.primaryPropColors).toEqual({
+      left: "#123456",
+      right: "#abcdef",
+    });
+    expect(stored.creatorIntent.presentation.trail.mode).toBe("loop_clear");
+    expect(stored.creatorIntent.presentation.effects.sparkles).toEqual({
+      density: 2,
+    });
+    expect(stored.creatorIntent.presentation.effects).not.toHaveProperty(
+      "fire"
+    );
+  });
+
+  it("never restamps a recorded or default-look presentation", async () => {
+    const service = new LibrarySaveService(null, null, makeRepository(), null);
+    await service.saveSequence(
+      makeSequence({
+        steps: publicSteps,
+        creatorIntent: { presentation: null },
+      }),
+      { ...makeOptions(), visibility: "public" }
+    );
+    expect(dbPutMock.mock.calls[0]?.[0].creatorIntent.presentation).toBeNull();
+  });
+
+  it("does not stamp presentation on a private save", async () => {
+    const service = new LibrarySaveService(null, null, makeRepository(), null);
+    await service.saveSequence(makeSequence({ steps: publicSteps }), {
+      ...makeOptions(),
+      visibility: "private",
+    });
+    expect(dbPutMock.mock.calls[0]?.[0].creatorIntent ?? {}).not.toHaveProperty(
+      "presentation"
+    );
+  });
+
+  it("never restamps a recorded presentation snapshot", async () => {
+    const recorded = {
+      primaryPropColors: null,
+      trail: { mode: "off" },
+      effects: {
+        version: 38,
+        tipEffectMap: {},
+        activePresets: {},
+        activeEffect: "none",
+        effectLayerOverrides: {},
+      },
+    };
+    const service = new LibrarySaveService(null, null, makeRepository(), null);
+    await service.saveSequence(
+      makeSequence({
+        steps: publicSteps,
+        creatorIntent: { presentation: recorded },
+      }),
+      { ...makeOptions(), visibility: "public" }
+    );
+    // toEqual, not toBe: the service clones via JSON round-trip before the
+    // Dexie put, so the stored object is never reference-identical to the
+    // original even when untouched.
+    expect(dbPutMock.mock.calls[0]?.[0].creatorIntent.presentation).toEqual(
+      recorded
+    );
+  });
+
+  it("keeps a malformed presentation instead of restamping it", async () => {
+    const malformed = { trail: "x", effects: 1 };
+    const service = new LibrarySaveService(null, null, makeRepository(), null);
+    await service.saveSequence(
+      makeSequence({
+        steps: publicSteps,
+        creatorIntent: { presentation: malformed },
+      }),
+      { ...makeOptions(), visibility: "public" }
+    );
+    expect(dbPutMock.mock.calls[0]?.[0].creatorIntent.presentation).toEqual(
+      malformed
+    );
   });
 });

@@ -3,9 +3,15 @@ import { decodeSequenceWithCompression } from "$lib/shared/navigation/services/s
 import type { MessageAttachment } from "$lib/shared/messaging/domain/models/message-models";
 import { buildSequenceSharePayload } from "./build-sequence-share-payload";
 
+export interface SequenceMessageAttachmentOptions {
+  /** The sender's viewer state as a share-link query; see the metadata field. */
+  viewParams?: string;
+}
+
 export function buildSequenceMessageAttachment(
   sequence: SequenceData,
-  shortCode: string
+  shortCode: string,
+  options: SequenceMessageAttachmentOptions = {}
 ): MessageAttachment {
   const payload = buildSequenceSharePayload(sequence);
   const metadata: NonNullable<MessageAttachment["metadata"]> = {
@@ -25,10 +31,17 @@ export function buildSequenceMessageAttachment(
   if (payload.sequenceStepCount) {
     metadata.sequenceStepCount = payload.sequenceStepCount;
   }
+  // The scan route forwards its query to the viewer, so the plain link opens
+  // on the sender's view as well as the in-app card.
+  let url = `/q/${encodeURIComponent(shortCode)}`;
+  if (options.viewParams) {
+    metadata.sequenceViewParams = options.viewParams;
+    url += `?${options.viewParams}`;
+  }
 
   const attachment: MessageAttachment = {
     type: "sequence",
-    url: `/q/${encodeURIComponent(shortCode)}`,
+    url,
     name: payload.sequenceWord,
     metadata,
   };

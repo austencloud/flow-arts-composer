@@ -21,6 +21,7 @@
   import { RETRO_ICONS } from "../../rendering/retro-icons";
   import { saveRetroSequence } from "../../../adapters/notation-adapter";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
 
   /* Props                                                               */
 
@@ -229,7 +230,7 @@
   function handleSequenceGenerated(sequenceData: SequenceData) {
     currentSequenceData = sequenceData;
     hasSavedOnce = false;
-    saveFilename = sequenceData.word.slice(0, 8).toUpperCase() || "UNTITLED";
+    saveFilename = stripWordNotation(sequenceData.word).slice(0, 8).toUpperCase() || "UNTITLED";
   }
 
   function handleClear() {

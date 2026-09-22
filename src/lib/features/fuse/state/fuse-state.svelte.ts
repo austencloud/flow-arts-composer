@@ -23,7 +23,10 @@ import {
   extractRightSoloProp,
 } from "$lib/shared/foundation/services/sequence-decomposer";
 import { createSoloProp } from "$lib/shared/foundation/services/solo-prop-factory";
-import { getSequenceDisplayName } from "$lib/shared/foundation/services/word-deriver";
+import {
+  deriveWordFromBeats,
+  getSequenceDisplayName,
+} from "$lib/shared/foundation/services/word-deriver";
 import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
 import {
   GridLocation,
@@ -2147,10 +2150,9 @@ export function createFuseState({
         return null;
       }
 
-      const word = derived.steps
-        .map((step) => step.letter)
-        .join("")
-        .toUpperCase();
+      // The shared builder braces skewed spans. No case change: letter identity
+      // includes alphabet and case (α is not Α).
+      const word = deriveWordFromBeats(derived.steps);
       const name = fusedDisplayName(word);
       const stepPairings = derived.stepPairings?.map((pair, index) => ({
         ...pair,

@@ -892,6 +892,28 @@ describe("Fuse state", () => {
     expect(showUserError).toHaveBeenCalledOnce();
   });
 
+  it("keeps Greek letters intact in the built word", async () => {
+    const source = makeSequence("source", 8);
+    const state = createState(createLoader([source]), {
+      deriveLetters: async (sequence) => ({
+        ...sequence,
+        steps: sequence.steps.map((step, index) => ({
+          ...step,
+          letter: (index === 0 ? "α" : "A") as StepData["letter"],
+        })),
+        word: "αA",
+      }),
+    });
+
+    await state.initialize();
+    const result = await state.buildFusedSequence();
+
+    // buildFusedSequence recomputes the word from derived.steps (not the
+    // injected `word` field above), so all 8 lettered steps show up.
+    expect(result?.word).toBe("αAAAAAAA");
+    expect(result?.name).toBe("αAAAAAAA");
+  });
+
   it("locks final-action re-entry while derivation is pending", async () => {
     const source = makeSequence("source", 8);
     const derivation = deferred<SequenceData>();

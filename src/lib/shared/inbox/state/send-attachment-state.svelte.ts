@@ -53,6 +53,12 @@ interface SendAttachmentInputs {
    * thread" and would pull the drawer out of the picker.
    */
   directShareConversationId?: string | null;
+  /**
+   * The sender's viewer state, read when Send is pressed. The viewer's share
+   * panel stays open while the person changes views, so the message carries
+   * the view on stage at that moment rather than when the panel opened.
+   */
+  getSequenceViewParams?: () => string | undefined;
 }
 
 interface SendAttachmentDependencies {
@@ -186,6 +192,21 @@ export function createSendAttachmentState(
     }
   });
 
+  /** The attachment as it leaves: a sequence picks up the view on stage now. */
+  function resolveOutgoingAttachment(): PendingMessageAttachment {
+    if (attachment.type !== "sequence" || !inputs.getSequenceViewParams) {
+      return attachment;
+    }
+    const viewParams = inputs.getSequenceViewParams();
+    const { sequenceViewParams: _stale, ...payload } = attachment.payload;
+    return {
+      ...attachment,
+      payload: viewParams
+        ? { ...payload, sequenceViewParams: viewParams }
+        : payload,
+    };
+  }
+
   function conversationName(conversation: ConversationPreview): string {
     return conversation.type === "group"
       ? conversation.groupName || "Unnamed group"
@@ -272,19 +293,20 @@ export function createSendAttachmentState(
    */
   async function deliverTo(
     conversationId: string,
+    outgoing: PendingMessageAttachment,
     sequenceAttachment: ReturnType<typeof buildSequenceMessageAttachment> | null
   ): Promise<void> {
     // Each image recipient needs distinct stable IDs. Reusing the IDs on the
     // share-intake attachment would collapse several destinations into one
     // outbox row.
     const queuedAttachment: PendingMessageAttachment =
-      attachment.type === "image"
+      outgoing.type === "image"
         ? {
-            ...attachment,
+            ...outgoing,
             messageId: crypto.randomUUID(),
             attachmentId: crypto.randomUUID(),
           }
-        : attachment;
+        : outgoing;
 
     await dependencies.delivery.queueMessage({
       conversationId,
@@ -307,6 +329,7 @@ export function createSendAttachmentState(
     const conversations = [...selectedConversations];
     const users = [...selectedUsers];
     const haptics = dependencies.getHaptics();
+    const outgoing = resolveOutgoingAttachment();
 
     phase = "sending";
 
@@ -319,14 +342,15 @@ export function createSendAttachmentState(
       let sequenceAttachment: ReturnType<
         typeof buildSequenceMessageAttachment
       > | null = null;
-      if (attachment.type === "sequence") {
+      if (outgoing.type === "sequence") {
         const { code } = await getShortCodeManager().createShortCode(
-          attachment.payload.sequence,
+          outgoing.payload.sequence,
           { embedSequenceData: true }
         );
         sequenceAttachment = buildSequenceMessageAttachment(
-          attachment.payload.sequence,
-          code
+          outgoing.payload.sequence,
+          code,
+          { viewParams: outgoing.payload.sequenceViewParams }
         );
       }
 
@@ -343,7 +367,7 @@ export function createSendAttachmentState(
       ): Promise<void> => {
         try {
           const id = await resolve();
-          await deliverTo(id, sequenceAttachment);
+          await deliverTo(id, outgoing, sequenceAttachment);
           queuedFor.push(id);
         } catch (caught) {
           failures.push(label);
@@ -446,6 +470,10 @@ export function createSendAttachmentState(
     },
     get recentConversations() {
       return recentConversations;
+    },
+    /** Recents are still on their way; an empty list means nothing yet. */
+    get recentsLoading() {
+      return !inboxState.conversationsLoaded;
     },
     get excludeUserIds() {
       return excludeUserIds;

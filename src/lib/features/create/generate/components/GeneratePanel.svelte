@@ -44,6 +44,8 @@ Card-based architecture with integrated Generate button:
     type GeneratorVoiceRef,
   } from "$lib/shared/create/state/generator-voice-ref.svelte";
   import { uiConfigToGenerationOptions } from "../shared/utils/config-mapper";
+  import { generationOrchestrator } from "$lib/shared/create/services/generation-orchestrator";
+  import type { StartFeasibilityResult } from "$lib/shared/create/domain/start-feasibility";
   import type { GenerationOptions } from "../shared/domain/models/generate-models";
   import { LOOPType, Period } from "../circular/domain/models/circular-models";
   import { handModesBlockedByLoop } from "$lib/shared/create/services/loop-type-utils";
@@ -109,6 +111,36 @@ Card-based architecture with integrated Generate button:
     undefined,
     configState.config.gridMode
   );
+  let startFeasibility = $state<StartFeasibilityResult | null>(null);
+
+  // This checks only whether a first step exists in the real variation data.
+  // It does not promise that the full sequence or LOOP can be completed.
+  $effect(() => {
+    if (hasWord) {
+      startFeasibility = null;
+      return;
+    }
+    const options = uiConfigToGenerationOptions(
+      configState.config,
+      PropTypeEnum.FAN,
+      startEndState.options
+    );
+    let current = true;
+    startFeasibility = null;
+    void generationOrchestrator.checkStartFeasibility(options).then(
+      (result) => {
+        if (current) startFeasibility = result;
+      },
+      () => {
+        // A loading failure is not evidence that the recipe is impossible.
+        // Let the normal generation path report its own error.
+        if (current) startFeasibility = null;
+      }
+    );
+    return () => {
+      current = false;
+    };
+  });
 
   // A LOOP owns its endpoint. Keep the Customize state honest across every
   // enable path, including the LOOP picker, saved setups, and restored sessions.
@@ -134,11 +166,12 @@ Card-based architecture with integrated Generate button:
   );
   // Every guest gate goes straight to the auth screen — no intermediate
   // nudge; the modal's contextual copy carries the why (Austen, 2026-08-10).
-  // Category locks ask for every LOOP type; length locks are step-cap asks.
+  // Name the selected LOOP even when its minimum length is the restriction.
+  // Choosing a configuration is not an encounter with the current sequence cap.
   function openLoopGateAuth(kind: GuestLoopLockKind) {
     authDrawerState.show(
       "signup",
-      kind === "length" ? "step-cap-guest" : "loop-locked-guest"
+      kind === "length" ? "loop-step-cap-guest" : "loop-locked-guest"
     );
   }
 
@@ -177,7 +210,7 @@ Card-based architecture with integrated Generate button:
       return;
     }
     if (accessTier === "guest" && saved.config.length > getMaxSteps("guest")) {
-      authDrawerState.show("signup", "step-cap-guest");
+      authDrawerState.show("signup", "setup-step-cap-guest");
       return;
     }
 
@@ -339,6 +372,7 @@ Card-based architecture with integrated Generate button:
       onGenerateClicked={handleGenerate}
       {startEndState}
       {hasSettingsChanged}
+      {startFeasibility}
       wordInputValue={spellModeState.inputWord}
       onWordInput={(v) => spellModeState.setInputWord(v)}
       onWordSubmit={() => handleGenerate(null)}
@@ -406,6 +440,7 @@ Card-based architecture with integrated Generate button:
                   ? configState.config.loopType
                   : null
               ),
+              startFeasibility,
               onHandRelationshipChange: (value) =>
                 configState.updateConfig({ handRelationship: value }),
               onPropRelationshipChange: (value) =>

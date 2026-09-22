@@ -161,7 +161,7 @@ describe("LOOPExpandedOverlay live single selection", () => {
 
     await page
       .getByRole("button", {
-        name: /Swapped - Blue and red hands swap roles - not selected/,
+        name: /Swapped - Left and right hands swap roles - not selected/,
       })
       .click();
 
@@ -180,7 +180,7 @@ describe("LOOPExpandedOverlay live single selection", () => {
     await page.getByRole("button", { name: "Combo" }).click();
     await page
       .getByRole("button", {
-        name: /Swapped - Blue and red hands swap roles - not selected/,
+        name: /Swapped - Left and right hands swap roles - not selected/,
       })
       .click();
 

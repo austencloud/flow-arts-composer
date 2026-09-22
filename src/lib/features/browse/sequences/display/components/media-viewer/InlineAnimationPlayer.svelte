@@ -94,6 +94,8 @@
         if (posLower.startsWith("alpha")) return Letter.ALPHA;
         if (posLower.startsWith("beta")) return Letter.BETA;
         if (posLower.startsWith("gamma")) return Letter.GAMMA;
+        if (posLower.startsWith("zeta")) return Letter.ZETA;
+        if (posLower.startsWith("eta")) return Letter.ETA;
       }
     }
 
@@ -101,7 +103,7 @@
   }
 
   /**
-   * Greek letter (α, β, γ) for the FINAL held position — mirror of
+   * Greek letter (α, β, γ, ζ, η) for the FINAL held position — mirror of
    * getStartPlacementLetter for the end-hold phase. At the End the hand isn't
    * mid-letter; it holds the last step's end position, so the glyph should read
    * that position, not the previous step's letter.
@@ -115,6 +117,8 @@
       if (posLower.startsWith("alpha")) return Letter.ALPHA;
       if (posLower.startsWith("beta")) return Letter.BETA;
       if (posLower.startsWith("gamma")) return Letter.GAMMA;
+      if (posLower.startsWith("zeta")) return Letter.ZETA;
+      if (posLower.startsWith("eta")) return Letter.ETA;
     }
     return null;
   }
@@ -175,6 +179,7 @@
     glyphFrame = "pictograph",
     initialQualityTier = undefined,
     initialStep = null,
+    ephemeral = false,
   }: {
     sequence: SequenceData;
     /** Distinguishes a deliberate host reload when selections share an ID. */
@@ -323,11 +328,10 @@
     /** Suppress the canvas right-click / long-press settings menu so a locked
      *  public embed can't have its prop/effort/BPM changed out from under it. */
     disableContextMenu?: boolean;
-    /** Adds "Download as a video" to the canvas right-click menu, beside the
-     *  GIF item. Opt-in: this player owns the canvas, controller and panel
-     *  state the video pipeline needs, but a gallery tile or a locked public
-     *  hero has no business handing out an MP4 render. Create's workspace
-     *  playback turns it on. */
+    /** Adds "Download as a video" to the canvas right-click menu. Opt-in: this
+     *  player owns the canvas, controller and panel state the video pipeline
+     *  needs, but a gallery tile or a locked public hero has no business
+     *  handing out an MP4 render. Create's workspace playback turns it on. */
     videoDownload?: boolean;
     /** Display-only mode. False strips ALL playback input from the minimal
      *  chrome — no tap-to-toggle, no hover play/pause badge, no progress line —
@@ -369,7 +373,7 @@
      *  visitor's in-app settings nor mutates them. Forwarded to AnimatorCanvas
      *  so the engine-side reads scope the same way. */
     visibilityManagerOverride?: AnimationVisibilityStateManager;
-    primaryPropColors?: ViewerCustomColorPair;
+    primaryPropColors?: ViewerCustomColorPair | null;
     /** Optional prop timing/direction relationship for the canvas's top-right corner. */
     propElementalType?: ElementalType | null;
     /** Let annotation chrome use a rectangular host while preserving the
@@ -379,6 +383,8 @@
     initialQualityTier?: QualityTier;
     /** Fractional playback position applied immediately after each load. */
     initialStep?: number | null;
+    /** Scoped embeds must not inherit or write the user's playback defaults. */
+    ephemeral?: boolean;
   } = $props();
 
   const minimal = $derived(chrome === "minimal");
@@ -401,16 +407,16 @@
   let error = $state<string | null>(null);
 
   // Animation state - each player gets its own
-  const animationState = createAnimationPanelState();
+  const animationState = createAnimationPanelState({ ephemeral });
   let appliedExternalPlaybackMode: PlaybackMode | null = null;
 
   // Right-click on a <canvas> is a dead gesture: unlike a real <video>, the
   // browser has no "Save video as..." to offer, so nothing about the animation
-  // says it can leave the page. The GIF item already fills that gap; this adds
-  // the artifact people actually post — the same MP4 the export panel renders,
-  // reached without opening it. This player owns all three things the video
-  // pipeline needs (live canvas, controller, panel state), so it runs the
-  // export itself rather than routing through the drawer.
+  // says it can leave the page. This adds the artifact people actually post —
+  // the same MP4 the export panel renders, reached without opening it. This
+  // player owns all three things the video pipeline needs (live canvas,
+  // controller, panel state), so it runs the export itself rather than
+  // routing through the drawer.
   let liveCanvas = $state<HTMLCanvasElement | null>(null);
   let isVideoExporting = $state(false);
 

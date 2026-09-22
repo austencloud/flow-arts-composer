@@ -77,7 +77,10 @@ describe("orientation cycle ownership", () => {
   });
 
   it("emits repeated steps until orientations close", () => {
-    const result = closeOrientationCycle(closedPlacementPattern(1), {
+    const seed = closedPlacementPattern(1);
+    seed[0]!.id = "authored-start";
+    seed[1]!.id = "authored-step";
+    const result = closeOrientationCycle(seed, {
       seedStepCount: 1,
     });
 
@@ -90,6 +93,7 @@ describe("orientation cycle ownership", () => {
     expect(result.steps[2]!.motions.left.endOrientation).toBe("in");
     expect(result.steps[2]!.motions.right.endOrientation).toBe("in");
     expect(new Set(result.steps.map((step) => step.id)).size).toBe(3);
+    expect(result.steps.slice(0, 2)).toEqual(seed);
   });
 
   it("honors the larger multiplier chosen for an exact total length", () => {
@@ -113,8 +117,6 @@ describe("orientation cycle ownership", () => {
       endPlacement: "beta3",
     };
 
-    expect(() => closeOrientationCycle(open)).toThrow(
-      /open placement pattern/
-    );
+    expect(() => closeOrientationCycle(open)).toThrow(/open placement pattern/);
   });
 });
