@@ -63,7 +63,8 @@
     },
     {
       title: "Three paths",
-      caption: "All three start and end at the same points. Only the path changes.",
+      caption:
+        "All three start and end at the same points. Only the path changes.",
     },
   ];
   const COMPARISON_PATHS: readonly IntroPath[] = ["arc", "linear", "concave"];
@@ -72,9 +73,15 @@
     { path: "linear", x: -30, label: "Linear" },
     { path: "concave", x: 66, label: "Concave" },
   ];
-  const MORPH_DURATION = DURATION.dramatic * 2;
   const TRAVERSE_DURATION = DURATION.dramatic * 4;
   const ARRIVAL_DURATION = DURATION.dramatic * 2;
+  // Starting a path over, the hand lifts off where it is and sets down at the
+  // start, the way a teacher begins a demonstration again. It never travels
+  // backward along a path, which read as a hurried replay.
+  const LIFT_DURATION = DURATION.normal;
+  const SET_DOWN_DURATION = DURATION.dramatic;
+  const LIFTED_SCALE = 0.8;
+  const SET_DOWN_SCALE = 1.15;
   const gate = createRenderActivityGate({
     name: "motion-path-intro",
     rootMargin: "0px",
@@ -84,6 +91,8 @@
   let routePoints = $state<readonly IntroPoint[]>(INTRO_PATHS.arc);
   let hand = $state<IntroPoint>(INTRO_CENTER);
   let traceProgress = $state(0);
+  let handOpacity = $state(1);
+  let handScale = $state(1);
   let pulseActive = $state(false);
   let isReducedMotion = $state(reducedMotion());
   let frame: number | null = null;
@@ -100,9 +109,16 @@
   const FIRST_PATH_STAGE = 2;
   const endpointsVisible = $derived(stage >= FIRST_PATH_STAGE);
   const routeVisible = $derived(stage >= FIRST_PATH_STAGE && !isFinal);
-  // The destination pulses while Arc waits at its start, before the hand moves.
+  // On Arc the destination pulses until the hand reaches it.
   const destinationPending = $derived(
-    stage === FIRST_PATH_STAGE && traceProgress === 0
+    stage === FIRST_PATH_STAGE && traceProgress < 1
+  );
+  // Each path already drawn stays as a faint line, so the next one is drawn
+  // beside it; the closing comparison colors all three.
+  const ghostPaths = $derived(
+    STAGES.slice(FIRST_PATH_STAGE, stage).flatMap((item) =>
+      item.path ? [item.path] : []
+    )
   );
   const shiftStart = introPointAt(INTRO_PATHS.arc, 0);
   const shiftEnd = introPointAt(INTRO_PATHS.arc, 1);
@@ -125,20 +141,6 @@
     pulseActive = false;
   }
 
-  function interpolateRoute(
-    from: readonly IntroPoint[],
-    to: readonly IntroPoint[],
-    progress: number
-  ): readonly IntroPoint[] {
-    return from.map((point, index) => {
-      const destination = to[index]!;
-      return {
-        x: point.x + (destination.x - point.x) * progress,
-        y: point.y + (destination.y - point.y) * progress,
-      };
-    });
-  }
-
   function interpolatePoint(
     from: IntroPoint,
     to: IntroPoint,
@@ -153,6 +155,8 @@
   function settle(): void {
     cancelFrame();
     pulseActive = false;
+    handOpacity = 1;
+    handScale = 1;
     const path = current.path ?? (isFinal ? "concave" : "arc");
     routePoints = INTRO_PATHS[path];
     traceProgress = stage >= FIRST_PATH_STAGE ? 1 : 0;
@@ -188,84 +192,76 @@
     frame = requestAnimationFrame(animate);
   }
 
-  function runStage(nextPath: IntroPath, retrace = false): void {
-    cancelFrame();
-    const epoch = ++stageEpoch;
-    const from = routePoints;
-    const destination = INTRO_PATHS[nextPath];
-    const handOrigin = hand;
-    const nearest = from.reduce(
-      (best, point, index) =>
-        Math.hypot(point.x - hand.x, point.y - hand.y) <
-        Math.hypot(from[best]!.x - hand.x, from[best]!.y - hand.y)
-          ? index
-          : best,
-      0
-    );
-    const startProgress = nearest / (from.length - 1);
+  // The hand lifts off (fades and shrinks) where it is, then sets down at
+  // `destination` (fades in and settles). Interrupted halfway, it carries on
+  // from its current opacity and scale rather than popping back to full.
+  // A hand already at the destination skips the lift and finishes settling.
+  function liftTo(
+    destination: IntroPoint,
+    epoch: number,
+    landed: (now: number) => void
+  ): void {
+    const lifts =
+      Math.hypot(hand.x - destination.x, hand.y - destination.y) > 0.5;
+    const fromOpacity = handOpacity;
+    const fromScale = handScale;
+    const liftMs = lifts ? motionDuration(LIFT_DURATION) * fromOpacity : 0;
+    const settleFrom = lifts ? 0 : fromOpacity;
+    const settleScale = lifts ? SET_DOWN_SCALE : fromScale;
+    const setMs = motionDuration(SET_DOWN_DURATION) * (1 - settleFrom);
     const start = performance.now();
-    traceProgress = retrace ? 1 : 0;
 
-    const animate = (now: number): void => {
+    const step = (now: number): void => {
       if (epoch !== stageEpoch || !gate.active) return;
-      const rawMorphProgress = Math.min(
-        1,
-        (now - start) / motionDuration(MORPH_DURATION)
-      );
-      const morphProgress = cubicInOut(rawMorphProgress);
-      routePoints = interpolateRoute(from, destination, morphProgress);
-      hand = interpolatePoint(
-        handOrigin,
-        introPointAt(destination, startProgress),
-        morphProgress
-      );
-
-      if (rawMorphProgress < 1) {
-        frame = requestAnimationFrame(animate);
+      const elapsed = now - start;
+      if (elapsed < liftMs) {
+        const progress = cubicInOut(elapsed / liftMs);
+        handOpacity = fromOpacity * (1 - progress);
+        handScale = fromScale + (LIFTED_SCALE - fromScale) * progress;
+        frame = requestAnimationFrame(step);
         return;
       }
-
-      const traversalStart = now;
-      const traverse = (traverseNow: number): void => {
-        if (epoch !== stageEpoch || !gate.active) return;
-        const rawProgress = Math.min(
-          1,
-          (traverseNow - traversalStart) / motionDuration(TRAVERSE_DURATION)
-        );
-        const progress = retrace
-          ? startProgress * (1 - rawProgress)
-          : startProgress + (1 - startProgress) * rawProgress;
-        traceProgress = progress;
-        hand = introPointAt(destination, progress);
-        if (rawProgress < 1) {
-          frame = requestAnimationFrame(traverse);
-          return;
-        }
-        if (retrace) {
-          const redrawStart = traverseNow;
-          const redraw = (redrawNow: number): void => {
-            if (epoch !== stageEpoch || !gate.active) return;
-            const redrawProgress = Math.min(
-              1,
-              (redrawNow - redrawStart) / motionDuration(TRAVERSE_DURATION)
-            );
-            traceProgress = redrawProgress;
-            hand = introPointAt(destination, redrawProgress);
-            if (redrawProgress < 1) {
-              frame = requestAnimationFrame(redraw);
-              return;
-            }
-            completeRoute(epoch, destination);
-          };
-          frame = requestAnimationFrame(redraw);
-          return;
-        }
-        completeRoute(epoch, destination);
-      };
-      frame = requestAnimationFrame(traverse);
+      hand = destination;
+      const progress = setMs
+        ? cubicInOut(Math.min(1, (elapsed - liftMs) / setMs))
+        : 1;
+      handOpacity = settleFrom + (1 - settleFrom) * progress;
+      handScale = settleScale + (1 - settleScale) * progress;
+      if (progress < 1) {
+        frame = requestAnimationFrame(step);
+        return;
+      }
+      landed(now);
     };
 
-    frame = requestAnimationFrame(animate);
+    if (!lifts && !setMs) landed(start);
+    else frame = requestAnimationFrame(step);
+  }
+
+  // A path stage: the new route appears, the hand sets down at its start and
+  // draws it at the animator's even pace. Next pressed at any moment starts
+  // this again from wherever the hand is.
+  function playPath(nextPath: IntroPath): void {
+    cancelFrame();
+    const epoch = ++stageEpoch;
+    const route = INTRO_PATHS[nextPath];
+    routePoints = route;
+    traceProgress = 0;
+    liftTo(introPointAt(route, 0), epoch, (drawStart) => {
+      const drawMs = motionDuration(TRAVERSE_DURATION);
+      const draw = (now: number): void => {
+        if (epoch !== stageEpoch || !gate.active) return;
+        const progress = drawMs ? Math.min(1, (now - drawStart) / drawMs) : 1;
+        traceProgress = progress;
+        hand = introPointAt(route, progress);
+        if (progress < 1) {
+          frame = requestAnimationFrame(draw);
+          return;
+        }
+        completeRoute(epoch, route);
+      };
+      frame = requestAnimationFrame(draw);
+    });
   }
 
   function completeRoute(
@@ -284,8 +280,16 @@
   function advance(): void {
     if (isFinal) {
       stage = 0;
-      stageEpoch += 1;
-      settle();
+      if (isReducedMotion || !gate.active) {
+        stageEpoch += 1;
+        settle();
+        return;
+      }
+      cancelFrame();
+      const epoch = ++stageEpoch;
+      routePoints = INTRO_PATHS.arc;
+      traceProgress = 0;
+      liftTo(INTRO_CENTER, epoch, () => (frame = null));
       return;
     }
 
@@ -296,11 +300,16 @@
       return;
     }
     const nextPath = STAGES[stage]?.path;
-    if (!nextPath || isReducedMotion || !gate.active) {
+    if (isReducedMotion || !gate.active) {
       settle();
       return;
     }
-    runStage(nextPath, stage > FIRST_PATH_STAGE);
+    // The comparison lets a draw in flight finish along its own line.
+    if (!nextPath) {
+      if (frame === null) settle();
+      return;
+    }
+    playPath(nextPath);
   }
 
   onMount(() => {
@@ -333,146 +342,169 @@
 </script>
 
 <div class="intro-frame">
-<section
-  class="motion-path-intro"
-  aria-labelledby="motion-path-intro-heading"
-  use:renderGateTarget={gate}
-  style:--hand-color={handColor}
-  style:--arrival-duration={`${ARRIVAL_DURATION}ms`}
->
-  <div class="intro-copy" aria-live="polite">
-    <Crossfade key={stage} duration={DURATION.normal} mode="swap" motion="step">
-      <div class="copy-layer">
-        <h2 id="motion-path-intro-heading">{current.title}</h2>
-        <p>{current.caption}</p>
-      </div>
-    </Crossfade>
-  </div>
+  <section
+    class="motion-path-intro"
+    aria-labelledby="motion-path-intro-heading"
+    use:renderGateTarget={gate}
+    style:--hand-color={handColor}
+    style:--arrival-duration={`${ARRIVAL_DURATION}ms`}
+  >
+    <div class="intro-copy" aria-live="polite">
+      <Crossfade
+        key={stage}
+        duration={DURATION.normal}
+        mode="swap"
+        motion="step"
+      >
+        <div class="copy-layer">
+          <h2 id="motion-path-intro-heading">{current.title}</h2>
+          <p>{current.caption}</p>
+        </div>
+      </Crossfade>
+    </div>
 
-  <div class="route-stage">
-    <svg
-      viewBox="-165 -165 330 330"
-      role="img"
-      aria-label={current.caption}
-      preserveAspectRatio="xMidYMid meet"
-    >
-      {#if gridVisible}
-        <g
-          class="grid-art"
-          in:fade={{ duration: motionDuration(DURATION.normal) }}
-        >
-          <g transform={`scale(${INTRO_RADIUS / 300}) translate(-475 -475)`}>
-            <GridSvg
-              gridMode={GridMode.DIAMOND}
-              darkMode={true}
-              handPointVisibility="none"
-              showNonRadialPoints={false}
+    <div class="route-stage">
+      <svg
+        viewBox="-165 -165 330 330"
+        role="img"
+        aria-label={current.caption}
+        preserveAspectRatio="xMidYMid meet"
+      >
+        {#if gridVisible}
+          <g
+            class="grid-art"
+            in:fade={{ duration: motionDuration(DURATION.normal) }}
+          >
+            <g transform={`scale(${INTRO_RADIUS / 300}) translate(-475 -475)`}>
+              <GridSvg
+                gridMode={GridMode.DIAMOND}
+                darkMode={true}
+                handPointVisibility="none"
+                showNonRadialPoints={false}
+              />
+            </g>
+            <circle
+              class="center-circle"
+              cx={INTRO_CENTER.x}
+              cy={INTRO_CENTER.y}
+              r={INTRO_RADIUS}
+            />
+            <text class="center-label" x="-12" y="-14" text-anchor="end"
+              >Center</text
+            >
+          </g>
+        {/if}
+
+        {#if isFinal}
+          {#each COMPARISON_PATHS as path (path)}
+            <path
+              class="comparison-route"
+              style:stroke={PATH_SHAPE_COLORS[path]}
+              d={introPathD(INTRO_PATHS[path])}
+              in:fade={{ duration: motionDuration(DURATION.normal) }}
+            />
+          {/each}
+        {/if}
+
+        {#if routeVisible}
+          {#each ghostPaths as path (path)}
+            <path
+              class="ghost-route"
+              d={introPathD(INTRO_PATHS[path])}
+              in:fade={{ duration: motionDuration(SET_DOWN_DURATION) }}
+            />
+          {/each}
+          <!-- Keyed by stage so the finished path fades off as the next one
+               fades in; the outgoing copy keeps the trace it had drawn. -->
+          {#key stage}
+            <g
+              in:fade={{ duration: motionDuration(SET_DOWN_DURATION) }}
+              out:fade={{ duration: motionDuration(SET_DOWN_DURATION) }}
+            >
+              <path class="route-shadow" d={routeD} />
+              <path class="route" d={routeD} />
+              {#if traceD}<path class="trace" d={traceD} />{/if}
+            </g>
+          {/key}
+        {/if}
+
+        {#if isFinal}
+          <g
+            class="route-legend"
+            in:fade={{ duration: motionDuration(DURATION.normal) }}
+          >
+            {#each LEGEND as item (item.path)}
+              <g transform={`translate(${item.x} 148)`}>
+                <path
+                  class="legend-line"
+                  style:stroke={PATH_SHAPE_COLORS[item.path]}
+                  d="M0 0h20"
+                />
+                <text class="route-label" x="26" y="5">{item.label}</text>
+              </g>
+            {/each}
+          </g>
+        {/if}
+
+        <foreignObject x={hand.x - 24} y={hand.y - 24} width="48" height="48">
+          <div
+            class:pulsing={pulseActive}
+            class="hand-art"
+            xmlns="http://www.w3.org/1999/xhtml"
+            style:opacity={handOpacity}
+            style:scale={handScale}
+          >
+            <PropCompositionPreview
+              propType={PropType.HAND}
+              singleHand="left"
+              pairedGlyph
+              size={48}
+              darkBackground
+              colors={getSettings().primaryPropColors}
+              useSavedOverrides={false}
+            />
+          </div>
+        </foreignObject>
+
+        {#if endpointsVisible}
+          <!-- Drawn after the hand so the point stays visible when the hand lands on it. -->
+          <g
+            class="endpoints"
+            in:fade={{ duration: motionDuration(DURATION.normal) }}
+          >
+            <circle
+              class="endpoint start"
+              cx={shiftStart.x}
+              cy={shiftStart.y}
+              r="7"
+            />
+            <circle
+              class="endpoint end"
+              class:arriving={destinationPending}
+              cx={shiftEnd.x}
+              cy={shiftEnd.y}
+              r="7"
             />
           </g>
-          <circle
-            class="center-circle"
-            cx={INTRO_CENTER.x}
-            cy={INTRO_CENTER.y}
-            r={INTRO_RADIUS}
-          />
-          <text class="center-label" x="-12" y="-14" text-anchor="end"
-            >Center</text
-          >
-        </g>
-      {/if}
+        {/if}
+      </svg>
+    </div>
 
-      {#if isFinal}
-        {#each COMPARISON_PATHS as path (path)}
-          <path
-            class="comparison-route"
-            style:stroke={PATH_SHAPE_COLORS[path]}
-            d={introPathD(INTRO_PATHS[path])}
-            in:fade={{ duration: motionDuration(DURATION.normal) }}
-          />
-        {/each}
-      {/if}
-
-      {#if routeVisible}
-        <path class="route-shadow" d={routeD} />
-        <path class="route" d={routeD} />
-        {#if traceD}<path class="trace" d={traceD} />{/if}
-      {/if}
-
-      {#if isFinal}
-        <g
-          class="route-legend"
-          in:fade={{ duration: motionDuration(DURATION.normal) }}
-        >
-          {#each LEGEND as item (item.path)}
-            <g transform={`translate(${item.x} 148)`}>
-              <path
-                class="legend-line"
-                style:stroke={PATH_SHAPE_COLORS[item.path]}
-                d="M0 0h20"
-              />
-              <text class="route-label" x="26" y="5">{item.label}</text>
-            </g>
-          {/each}
-        </g>
-      {/if}
-
-      <foreignObject x={hand.x - 24} y={hand.y - 24} width="48" height="48">
-        <div
-          class:pulsing={pulseActive}
-          class="hand-art"
-          xmlns="http://www.w3.org/1999/xhtml"
-        >
-          <PropCompositionPreview
-            propType={PropType.HAND}
-            singleHand="left"
-            pairedGlyph
-            size={48}
-            darkBackground
-            colors={getSettings().primaryPropColors}
-            useSavedOverrides={false}
-          />
-        </div>
-      </foreignObject>
-
-      {#if endpointsVisible}
-        <!-- Drawn after the hand so the point stays visible when the hand lands on it. -->
-        <g
-          class="endpoints"
-          in:fade={{ duration: motionDuration(DURATION.normal) }}
-        >
-          <circle
-            class="endpoint start"
-            cx={shiftStart.x}
-            cy={shiftStart.y}
-            r="7"
-          />
-          <circle
-            class="endpoint end"
-            class:arriving={destinationPending}
-            cx={shiftEnd.x}
-            cy={shiftEnd.y}
-            r="7"
-          />
-        </g>
-      {/if}
-    </svg>
-  </div>
-
-  <!-- The production SSR build stubs every features/learn component to null,
+    <!-- The production SSR build stubs every features/learn component to null,
        so the controls only render in the browser; the explanation itself still
        prerenders. -->
-  <div class="intro-controls">
-    {#if browser}
-      <LessonStageControls
-        label={isFinal ? "Start again" : "Next"}
-        currentStep={stage + 1}
-        totalSteps={STAGES.length}
-        progressAppearance="steps"
-        onAction={advance}
-      />
-    {/if}
-  </div>
-</section>
+    <div class="intro-controls">
+      {#if browser}
+        <LessonStageControls
+          label={isFinal ? "Start again" : "Next"}
+          currentStep={stage + 1}
+          totalSteps={STAGES.length}
+          progressAppearance="steps"
+          onAction={advance}
+        />
+      {/if}
+    </div>
+  </section>
 </div>
 
 <style>
@@ -577,6 +609,14 @@
   .trace {
     stroke: var(--hand-color);
     stroke-width: 4;
+  }
+
+  .ghost-route {
+    fill: none;
+    stroke: color-mix(in srgb, var(--theme-text-dim) 45%, transparent);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
   /* Three equal choices: same weight, each in the color the path panel uses. */

@@ -1,0 +1,11 @@
+# Project defaults survive changes to the shared user default. Explicit
+# per-task model/effort choices still take precedence.
+model_reasoning_effort = "high"
+
+# Summarize history before it repeatedly approaches the full model window.
+model_auto_compact_token_limit = 120000
+tool_output_token_limit = 4000
+
+[agents]
+default_subagent_model = "gpt-5.6-terra"
+default_subagent_reasoning_effort = "medium"

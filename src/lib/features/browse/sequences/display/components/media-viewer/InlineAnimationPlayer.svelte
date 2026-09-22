@@ -179,6 +179,7 @@
     glyphFrame = "pictograph",
     initialQualityTier = undefined,
     initialStep = null,
+    ephemeral = false,
   }: {
     sequence: SequenceData;
     /** Distinguishes a deliberate host reload when selections share an ID. */
@@ -383,6 +384,8 @@
     initialQualityTier?: QualityTier;
     /** Fractional playback position applied immediately after each load. */
     initialStep?: number | null;
+    /** Scoped embeds must not inherit or write the user's playback defaults. */
+    ephemeral?: boolean;
   } = $props();
 
   const minimal = $derived(chrome === "minimal");
@@ -405,7 +408,7 @@
   let error = $state<string | null>(null);
 
   // Animation state - each player gets its own
-  const animationState = createAnimationPanelState();
+  const animationState = createAnimationPanelState({ ephemeral });
   let appliedExternalPlaybackMode: PlaybackMode | null = null;
 
   // Right-click on a <canvas> is a dead gesture: unlike a real <video>, the

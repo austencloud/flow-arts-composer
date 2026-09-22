@@ -23,6 +23,7 @@ import {
 } from "../placement-maps/strict-loop-placement-maps.js";
 import {
   QUARTER_PLACEMENT_MAP_CW,
+  LOCATION_MAP_COUNTER_CLOCKWISE,
   LOCATION_MAP_CLOCKWISE,
 } from "../placement-maps/circular-placement-maps.js";
 import { LOOPType, Period } from "../loop-types.js";
@@ -160,6 +161,46 @@ export function determineEndPlacementForSpec(
   spec: LOOPSpec,
   startPlacement: string
 ): string | null {
+  return determineEndPlacementForSpecWithRotationMap(
+    spec,
+    startPlacement,
+    LOCATION_MAP_CLOCKWISE
+  );
+}
+
+/** Return every valid placement seam; period-four rotation can orbit either way. */
+export function determineEndPlacementsForSpec(
+  spec: LOOPSpec,
+  startPlacement: string
+): readonly string[] {
+  const clockwise = determineEndPlacementForSpecWithRotationMap(
+    spec,
+    startPlacement,
+    LOCATION_MAP_CLOCKWISE
+  );
+  const rotation = (spec.left ?? spec.right)?.components.get(
+    CanonicalLOOPComponent.ROTATED
+  );
+  if (rotation?.period !== 4) return clockwise === null ? [] : [clockwise];
+  const counterClockwise = determineEndPlacementForSpecWithRotationMap(
+    spec,
+    startPlacement,
+    LOCATION_MAP_COUNTER_CLOCKWISE
+  );
+  return [
+    ...new Set(
+      [clockwise, counterClockwise].filter(
+        (value): value is string => value !== null
+      )
+    ),
+  ];
+}
+
+function determineEndPlacementForSpecWithRotationMap(
+  spec: LOOPSpec,
+  startPlacement: string,
+  rotationMap: Record<string, string>
+): string | null {
   if (!specsAreEqual(spec.left, spec.right)) return null;
 
   const [leftStart, rightStart] =
@@ -180,13 +221,10 @@ export function determineEndPlacementForSpec(
   // swap/inversion group absorbs it. Later reflection stages receive the
   // already-closed inner sequence, so they do not constrain the original
   // seed seam.
-  if (
-    rotation &&
-    (!fuseableAtRotationPeriod || reflectionAtRotationPeriod)
-  ) {
+  if (rotation && (!fuseableAtRotationPeriod || reflectionAtRotationPeriod)) {
     return derivePlacement(
-      rotateLocation(leftStart, rotation.period),
-      rotateLocation(rightStart, rotation.period)
+      rotateLocation(leftStart, rotation.period, rotationMap),
+      rotateLocation(rightStart, rotation.period, rotationMap)
     );
   }
 
@@ -197,8 +235,8 @@ export function determineEndPlacementForSpec(
   let rightEnd: string | null = rightStart;
 
   if (rotation?.period === firstPeriod) {
-    leftEnd = rotateLocation(leftEnd, rotation.period);
-    rightEnd = rotateLocation(rightEnd, rotation.period);
+    leftEnd = rotateLocation(leftEnd, rotation.period, rotationMap);
+    rightEnd = rotateLocation(rightEnd, rotation.period, rotationMap);
   }
 
   for (const component of [
@@ -232,10 +270,7 @@ function derivePlacement(
   );
 }
 
-function hasFuseableAtPeriod(
-  spec: PropLOOPSpec,
-  period: number
-): boolean {
+function hasFuseableAtPeriod(spec: PropLOOPSpec, period: number): boolean {
   for (const [component, componentSpec] of spec.components) {
     if (componentSpec.mode === "overlay") continue;
     if (
@@ -251,19 +286,13 @@ function hasFuseableAtPeriod(
   return false;
 }
 
-function hasReflectionAtPeriod(
-  spec: PropLOOPSpec,
-  period: number
-): boolean {
+function hasReflectionAtPeriod(spec: PropLOOPSpec, period: number): boolean {
   for (const component of [
     CanonicalLOOPComponent.MIRRORED,
     CanonicalLOOPComponent.FLIPPED,
   ]) {
     const componentSpec = spec.components.get(component);
-    if (
-      componentSpec?.mode !== "overlay" &&
-      componentSpec?.period === period
-    ) {
+    if (componentSpec?.mode !== "overlay" && componentSpec?.period === period) {
       return true;
     }
   }
@@ -296,20 +325,27 @@ function firstFuseablePeriod(spec: PropLOOPSpec): number | null {
     groups.set(componentSpec.period, current);
   }
 
-  const ordered = [...groups.entries()].sort(([periodA, groupA], [periodB, groupB]) => {
-    const inversionRankA = groupA.invertOnly ? 1 : 0;
-    const inversionRankB = groupB.invertOnly ? 1 : 0;
-    if (inversionRankA !== inversionRankB) return inversionRankA - inversionRankB;
-    return periodA - periodB;
-  });
+  const ordered = [...groups.entries()].sort(
+    ([periodA, groupA], [periodB, groupB]) => {
+      const inversionRankA = groupA.invertOnly ? 1 : 0;
+      const inversionRankB = groupB.invertOnly ? 1 : 0;
+      if (inversionRankA !== inversionRankB)
+        return inversionRankA - inversionRankB;
+      return periodA - periodB;
+    }
+  );
   return ordered[0]?.[0] ?? null;
 }
 
-function rotateLocation(loc: string, period: number): string | null {
+function rotateLocation(
+  loc: string,
+  period: number,
+  rotationMap: Record<string, string>
+): string | null {
   if (period === 2) {
-    const quarterTurn = LOCATION_MAP_CLOCKWISE[loc];
-    return quarterTurn ? LOCATION_MAP_CLOCKWISE[quarterTurn] ?? null : null;
+    const quarterTurn = rotationMap[loc];
+    return quarterTurn ? (rotationMap[quarterTurn] ?? null) : null;
   }
-  if (period === 4) return LOCATION_MAP_CLOCKWISE[loc] ?? null;
+  if (period === 4) return rotationMap[loc] ?? null;
   return null;
 }

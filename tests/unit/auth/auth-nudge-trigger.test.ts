@@ -31,15 +31,22 @@ describe("AUTH_NUDGE_TEXTS — one phrasing for the account ask", () => {
       [
         "step-cap-guest",
         "community-setups",
+        "community-map",
+        "choose-start",
+        "duration-pattern",
         "edit-community",
+        "extend-sequence",
         "export",
         "guest-first-save",
+        "loop-step-cap-guest",
         "loop-locked-guest",
         "module:learn",
         "module:library",
         "module:settings",
         "patterns-guest",
         "prop-collection",
+        "rewind-sequence",
+        "rotation-direction",
         "save",
         "save-limit",
         "saved-setups",
@@ -47,6 +54,9 @@ describe("AUTH_NUDGE_TEXTS — one phrasing for the account ask", () => {
         "share-image-signin",
         "share-sequence",
         "save-setup",
+        "setup-step-cap-guest",
+        "sync-library",
+        "turn-pattern",
         "viewer-signin-account",
         "viewer-signin-download",
         "viewer-signin-publish",
@@ -80,8 +90,8 @@ describe("AUTH_NUDGE_TEXTS — one phrasing for the account ask", () => {
     }
   });
 
-  it("the save cap nudge interpolates GUEST_SAVE_CAP, not a hardcoded number", () => {
-    expect(AUTH_NUDGE_TEXTS.save).toContain(`${GUEST_SAVE_CAP}`);
+  it("the save-limit cap nudge interpolates GUEST_SAVE_CAP, not a hardcoded number", () => {
+    expect(AUTH_NUDGE_TEXTS["save-limit"]).toContain(`${GUEST_SAVE_CAP}`);
   });
 
   it("the loop-locked-guest nudge leads with the ask, not a rotated-LOOP lesson", () => {
@@ -112,18 +122,33 @@ describe("contextual auth prompt copy", () => {
     }
   });
 
-  it("keeps the approved share, library, and sequence-limit prompts", () => {
+  it("keeps the approved share, account-action, and sequence-limit prompts", () => {
     expect(getAuthPromptContent("share-sequence", "signup")).toMatchObject({
       title: "Share this sequence",
       body: "Sign in or create an account to send it, make a link, or download a Choreo Card.",
     });
     expect(getAuthPromptContent("guest-first-save", "signup")).toMatchObject({
-      title: "Save this sequence",
+      title: "Open this sequence anywhere",
       body: "A free account keeps it in your library and opens it on any device.",
     });
     expect(getAuthPromptContent("step-cap-guest", "signup")).toMatchObject({
       title: "Eight is the guest limit.",
       body: "A free account gets you up to 64 steps.",
+    });
+  });
+
+  it("names the action that opened each sequence or cross-device prompt", () => {
+    expect(getAuthPromptContent("extend-sequence", "signup")).toMatchObject({
+      title: "Extend this sequence",
+      body: "Create a free account to extend this sequence with a LOOP.",
+    });
+    expect(getAuthPromptContent("sync-library", "signup")).toMatchObject({
+      title: "Open your library on any device",
+      body: "A free account keeps saved sequences and collections across devices.",
+    });
+    expect(getAuthPromptContent("community-map", "signin")).toMatchObject({
+      title: "Add your city to the map",
+      body: "Sign in or create a free account to add your city to the map.",
     });
   });
 

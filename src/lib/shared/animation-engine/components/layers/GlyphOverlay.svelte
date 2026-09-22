@@ -94,11 +94,11 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
 
   // Cross-fade duration in ms
   const FADE_DURATION = DURATION.normal;
-  // The step number swaps instead of cross-fading (see the markup comment),
-  // so its out and in phases each take half the envelope. Both overlays then
-  // start and finish their step transition at the same instants.
+  // A seam that involves the Start or End word swaps instead of cross-fading
+  // (see the markup comment). Its out and in phases each take half the
+  // envelope, so even that seam starts and finishes with the letter glyph.
   const STEP_NUMBER_PHASE_DURATION = FADE_DURATION / 2;
-  // The incoming number settles from slightly oversized to its rest size
+  // The incoming label settles from slightly oversized to its rest size
   // while it fades in: one easing curve, no direction reversal, and nothing
   // still moving once the fade has finished.
   const STEP_NUMBER_SETTLE_SCALE = 1.06;
@@ -187,6 +187,33 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
         ? "end"
         : (displayedStepNumber?.toString() ?? null)
   );
+
+  const isWordLabel = (key: string | null) => key === "start" || key === "end";
+
+  // The label that was showing before the current one. Svelte evaluates
+  // transition parameters lazily, at the instant each transition starts, so
+  // at a seam both the outgoing and the incoming label group read this and
+  // stepKey together and agree on the seam's timing. $effect.pre runs before
+  // the keyed block swaps, which is what keeps the handover ordered.
+  let previousStepKey = $state<string | null>(null);
+  $effect.pre(() => {
+    const key = stepKey;
+    return () => {
+      previousStepKey = key;
+    };
+  });
+
+  // Number-to-number seams cross-fade on the glyph's clock. Seams touching
+  // Start or End run the sequential swap: out completes, then in begins.
+  function stepLabelTiming(): { duration: number; delay: number } {
+    const swap = isWordLabel(stepKey) || isWordLabel(previousStepKey);
+    return swap
+      ? {
+          duration: motionDuration(STEP_NUMBER_PHASE_DURATION),
+          delay: motionDuration(STEP_NUMBER_PHASE_DURATION),
+        }
+      : { duration: motionDuration(FADE_DURATION), delay: 0 };
+  }
 
   // The artwork itself is keyed by element. Consecutive steps that share the
   // same symbol stay visually steady; an actual symbol change crossfades once.
@@ -345,22 +372,22 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
       />
     {/if}
 
-    <!-- Step number cross-fade. Both texts sit at the SAME svg coordinates
-         (StepNumber.svelte: x=50,y=50), so a simultaneous in+out fade (the
-         Crossfade primitive's default "crossfade" mode) double-exposes two
-         overlapping, both-legible words mid-transition — most visible on the
-         Start/End swap. The Crossfade component itself can't wrap this: it
-         renders an HTML <div>, invalid inside this <svg>/<g> tree. This ports
-         its "swap" mode's sequencing by hand (out fully completes before in
-         starts — in:fade delay = out's full duration, matching Crossfade's
-         own inDelay = duration computation for mode="swap") so the words
-         never overlap. See crossfade-primitive.md.
-         Each phase runs for half of FADE_DURATION so the whole swap fits the
-         same envelope as the letter glyph's cross-fade below-left; a full
-         duration per phase made the number visibly lag the glyph.
+    <!-- Step label transition. Numbers cross-fade exactly like the letter
+         glyph below-left: simultaneous in+out over FADE_DURATION, same easing,
+         so the two overlays dissolve on one clock. A sequential swap here read
+         as the number vanishing and a new one popping in.
+         All labels sit at the SAME svg coordinates (StepNumber.svelte:
+         x=50,y=50), and the Start/End words are long enough that a
+         simultaneous fade double-exposes two legible words, so a seam that
+         involves either word keeps the Crossfade primitive's "swap" timing
+         (out fully completes, then in begins: delay = out duration, matching
+         its inDelay computation for mode="swap"), ported by hand because the
+         Crossfade component renders an HTML <div>, invalid inside this
+         <svg>/<g> tree. See crossfade-primitive.md. The swap's two phases
+         share FADE_DURATION so it still ends with the glyph.
          The in transition is scale (fade + settle) rather than a CSS keyframe
          pulse: a dip-and-return pulse on a remounting group played its dip
-         while the number was still invisible, so only the grow-back showed,
+         while the label was still invisible, so only the grow-back showed,
          late and with a velocity kick at the reversal.
          The Start/End words are step labels too: the step-numbers toggle hides
          all three, matching the export compositor's single showStepNumbers gate. -->
@@ -371,12 +398,11 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
           in:scale={{
             start: STEP_NUMBER_SETTLE_SCALE,
             opacity: 0,
-            duration: motionDuration(STEP_NUMBER_PHASE_DURATION),
-            delay: motionDuration(STEP_NUMBER_PHASE_DURATION),
+            ...stepLabelTiming(),
             easing: cubicOut,
           }}
           out:fade={{
-            duration: motionDuration(STEP_NUMBER_PHASE_DURATION),
+            duration: stepLabelTiming().duration,
             easing: cubicOut,
           }}
         >
