@@ -925,7 +925,7 @@ instead of showing an empty shell.
           </PanelButton>
           <PanelButton
             variant="secondary"
-            onclick={() => authDrawerState.show("signup", "module:library")}
+            onclick={() => authDrawerState.show("signup", "sync-library")}
           >
             Create account
           </PanelButton>
