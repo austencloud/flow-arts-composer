@@ -69,19 +69,19 @@ export async function deriveLettersForSequence(
   // never happen SILENTLY: a partial word like "GI" from a 12-step sequence
   // misrepresents the sequence everywhere it's displayed or saved. Warn with
   // counts so callers (and logs) can see the word is incomplete.
-  const letters = stepsWithLetters.map((step) => step.letter ?? "");
-  const missingCount = letters.filter((l) => l === "").length;
-  if (missingCount > 0) {
-    console.warn(
-      `[letter-deriver] ${missingCount}/${letters.length} steps derived no letter — ` +
-        `word "${letters.join("")}" omits them and is incomplete`
-    );
-  }
   // Letter identity includes both alphabet and case: Latin B and Greek β are
   // different TKA letters. Each beat is already canonical, so changing the
   // assembled word's case would change the sequence the title describes.
   // Skewed spans get their braces from the shared builder.
   const word = deriveWordFromBeats(stepsWithLetters);
+  const letters = stepsWithLetters.map((step) => step.letter ?? "");
+  const missingCount = letters.filter((l) => l === "").length;
+  if (missingCount > 0) {
+    console.warn(
+      `[letter-deriver] ${missingCount}/${letters.length} steps derived no letter — ` +
+        `word "${word}" omits them and is incomplete`
+    );
+  }
 
   return {
     ...sequence,

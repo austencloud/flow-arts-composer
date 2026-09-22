@@ -9,12 +9,22 @@
  * Category 3 rows enumerate every beat that starts in the skewed frame (zeta/eta)
  * and letter it with src/lib/shared/pictograph/skew/skewed-frame-letter.ts.
  *
+ * If classifySkewedFrameLetter changes, the category 3 rows in
+ * SkewedPictographDataframe.csv go stale. tests/unit/pictograph/skewed-frame-dataframe.test.ts
+ * pins the CSV against a fresh generateSkewedFrameRows() call and fails when
+ * they drift. The fix is to regenerate (run this script), not to edit the test.
+ *
+ * mcp-server-pkg/assets/data/pictographs/SkewedPictographDataframe.csv is a
+ * hand-maintained mirror of the static CSV (mcp-server-pkg ships its assets
+ * separately from static/). Copy the regenerated file over it by hand:
+ *   cp static/data/pictographs/SkewedPictographDataframe.csv mcp-server-pkg/assets/data/pictographs/SkewedPictographDataframe.csv
+ *
  * Run with: npx tsx scripts/generate-skewed-dataframe.ts
  */
 
 import * as fs from "fs";
 import * as path from "path";
-import { fileURLToPath } from "url";
+import { fileURLToPath, pathToFileURL } from "url";
 import {
   classifySkewedFrameLetter,
   type SkewFrameLocation,
@@ -24,22 +34,14 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Location types
-type CardinalLocation = "n" | "e" | "s" | "w";
-type IntercardinalLocation = "ne" | "se" | "sw" | "nw";
-type Location = CardinalLocation | IntercardinalLocation;
+// Location type. Aliased to the classifier's SkewFrameLocation (imported
+// above) rather than redeclared: both describe the same 8-point grid, and
+// aliasing means classifySkewedFrameLetter's inputs need no cast and the two
+// unions cannot drift apart.
+type Location = SkewFrameLocation;
 
 // Grid location cycle (8 positions, 45° apart)
-const LOCATION_CYCLE: Location[] = [
-  "n",
-  "ne",
-  "e",
-  "se",
-  "s",
-  "sw",
-  "w",
-  "nw",
-];
+const LOCATION_CYCLE: Location[] = ["n", "ne", "e", "se", "s", "sw", "w", "nw"];
 
 const CARDINAL_LOCATIONS = new Set<Location>(["n", "e", "s", "w"]);
 const INTERCARDINAL_LOCATIONS = new Set<Location>(["ne", "se", "sw", "nw"]);
@@ -64,7 +66,7 @@ interface PictographRow {
   rightEndLocation: Location;
 }
 
-interface SkewedRow extends PictographRow {
+export interface SkewedRow extends PictographRow {
   leftSkewDir: SkewDir;
   rightSkewDir: SkewDir;
   leftHandPath: HandPath;
@@ -97,11 +99,22 @@ function getLocationIndex(loc: Location): number {
 }
 
 // Apply skew to a location (cross grid boundary)
+//
+// Kept separate from moveLocation below: a skew step is always a single
+// +/-1 hop (one grid boundary crossing), not one of the four FrameHandSteps
+// values moveLocation accepts, so the two cannot share a signature without
+// widening moveLocation's step type back out to plain `number`.
 function applySkew(loc: Location, skewDir: "+" | "-"): Location {
   const idx = getLocationIndex(loc);
   const offset = skewDir === "+" ? 1 : -1;
   const newIdx = (idx + offset + 8) % 8;
-  return LOCATION_CYCLE[newIdx];
+  const next = LOCATION_CYCLE[newIdx];
+  if (next === undefined) {
+    throw new Error(
+      `applySkew: no location at cycle index ${newIdx} (from ${loc} ${skewDir})`
+    );
+  }
+  return next;
 }
 
 // Check if location is cardinal
@@ -372,7 +385,6 @@ function generateSkewedVariants(base: PictographRow): SkewedRow[] {
       // Skip the case where neither hand skews
       if (leftSkewDir === "" && rightSkewDir === "") continue;
 
-
       // Calculate new end locations
       const newLeftEnd =
         leftSkewDir !== ""
@@ -389,7 +401,8 @@ function generateSkewedVariants(base: PictographRow): SkewedRow[] {
         leftSkewDir !== "" &&
         crossesBoundary(base.leftStartLocation, newLeftEnd);
       const rightCrosses =
-        rightSkewDir !== "" && crossesBoundary(base.rightStartLocation, newRightEnd);
+        rightSkewDir !== "" &&
+        crossesBoundary(base.rightStartLocation, newRightEnd);
 
       if (!leftCrosses && !rightCrosses) continue;
 
@@ -404,11 +417,21 @@ function generateSkewedVariants(base: PictographRow): SkewedRow[] {
         continue;
       }
 
-      const category = classifyCategory(newEndPlacement, leftSkewDir, rightSkewDir);
+      const category = classifyCategory(
+        newEndPlacement,
+        leftSkewDir,
+        rightSkewDir
+      );
 
       // Determine if each motion actually crossed the boundary (cardinal <-> intercardinal)
-      const leftActuallyCrossed = crossesBoundary(base.leftStartLocation, newLeftEnd);
-      const rightActuallyCrossed = crossesBoundary(base.rightStartLocation, newRightEnd);
+      const leftActuallyCrossed = crossesBoundary(
+        base.leftStartLocation,
+        newLeftEnd
+      );
+      const rightActuallyCrossed = crossesBoundary(
+        base.rightStartLocation,
+        newRightEnd
+      );
 
       // Derive the correct rotation direction for the new paths
       // For pro: rotation direction = hand path direction
@@ -492,10 +515,12 @@ function generateSkewedVariants(base: PictographRow): SkewedRow[] {
 // frames); direction is same/opp for two shifts and none otherwise.
 // ---------------------------------------------------------------------------
 
+/** Steps of 45 degrees around LOCATION_CYCLE, clockwise positive. */
+type FrameHandSteps = 0 | 2 | -2 | 4;
+
 interface FrameHandOption {
   motionType: SkewFrameMotionType;
-  /** Steps of 45 degrees around LOCATION_CYCLE, clockwise positive. */
-  steps: 0 | 2 | -2 | 4;
+  steps: FrameHandSteps;
 }
 
 const FRAME_HAND_OPTIONS: FrameHandOption[] = [
@@ -507,8 +532,18 @@ const FRAME_HAND_OPTIONS: FrameHandOption[] = [
   { motionType: "dash", steps: 4 },
 ];
 
-function moveLocation(loc: Location, steps: number): Location {
-  return LOCATION_CYCLE[(LOCATION_CYCLE.indexOf(loc) + steps + 8) % 8];
+// Narrowed to FrameHandSteps (rather than plain number) so frameRotationDirection
+// and frameHandPath below, which branch on steps > 0, cannot silently accept a
+// new step value that neither of them has a case for.
+function moveLocation(loc: Location, steps: FrameHandSteps): Location {
+  const newIndex = (getLocationIndex(loc) + steps + 8) % 8;
+  const next = LOCATION_CYCLE[newIndex];
+  if (next === undefined) {
+    throw new Error(
+      `moveLocation: no location at cycle index ${newIndex} (from ${loc} + ${steps})`
+    );
+  }
+  return next;
 }
 
 function frameRotationDirection(option: FrameHandOption): string {
@@ -530,7 +565,7 @@ function frameDirection(blue: FrameHandOption, red: FrameHandOption): string {
   return blue.steps === red.steps ? "same" : "opp";
 }
 
-function generateSkewedFrameRows(): SkewedRow[] {
+export function generateSkewedFrameRows(): SkewedRow[] {
   const rows: SkewedRow[] = [];
   for (const blueStart of LOCATION_CYCLE) {
     for (const redStart of LOCATION_CYCLE) {
@@ -539,16 +574,19 @@ function generateSkewedFrameRows(): SkewedRow[] {
         for (const red of FRAME_HAND_OPTIONS) {
           const blueEnd = moveLocation(blueStart, blue.steps);
           const redEnd = moveLocation(redStart, red.steps);
+          // Location and SkewFrameLocation are the same 8-member string union
+          // (just declared independently, one per module), so no cast is
+          // needed to pass one where the other is expected.
           const letter = classifySkewedFrameLetter({
             left: {
               motionType: blue.motionType,
-              startLocation: blueStart as SkewFrameLocation,
-              endLocation: blueEnd as SkewFrameLocation,
+              startLocation: blueStart,
+              endLocation: blueEnd,
             },
             right: {
               motionType: red.motionType,
-              startLocation: redStart as SkewFrameLocation,
-              endLocation: redEnd as SkewFrameLocation,
+              startLocation: redStart,
+              endLocation: redEnd,
             },
           });
           if (!letter) {
@@ -693,14 +731,21 @@ function main() {
 
   for (const v of uniqueVariants) {
     byLetter.set(v.letter, (byLetter.get(v.letter) || 0) + 1);
-    byEndPlacement.set(v.endPlacement, (byEndPlacement.get(v.endPlacement) || 0) + 1);
+    byEndPlacement.set(
+      v.endPlacement,
+      (byEndPlacement.get(v.endPlacement) || 0) + 1
+    );
     byCategory.set(v.category, (byCategory.get(v.category) || 0) + 1);
   }
 
   console.log("\n=== CATEGORY DISTRIBUTION ===");
   console.log(`  Category 1 (ends skewed): ${byCategory.get(1) || 0}`);
-  console.log(`  Category 2 (both skew, ends normal): ${byCategory.get(2) || 0}`);
-  console.log(`  Category 3 (starts and ends in the skewed frame): ${byCategory.get(3) || 0}`);
+  console.log(
+    `  Category 2 (both skew, ends normal): ${byCategory.get(2) || 0}`
+  );
+  console.log(
+    `  Category 3 (starts and ends in the skewed frame): ${byCategory.get(3) || 0}`
+  );
 
   console.log("\nVariants by letter (top 10):");
   [...byLetter.entries()]
@@ -714,4 +759,13 @@ function main() {
     .forEach(([pos, count]) => console.log(`  ${pos}: ${count}`));
 }
 
-main();
+// Only run when invoked directly (npx tsx scripts/generate-skewed-dataframe.ts),
+// not when generateSkewedFrameRows is imported (tests do this to cross-check
+// the CSV without regenerating it).
+const isEntryPoint =
+  process.argv[1] !== undefined &&
+  pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url;
+
+if (isEntryPoint) {
+  main();
+}

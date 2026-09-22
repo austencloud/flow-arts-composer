@@ -207,8 +207,11 @@ describe("fused sequence word derivation", () => {
     // Beat 1: blue pro s->e and red anti sw->se both travel counter-clockwise;
     // blue is ahead and is the pro hand, so the pro hand leads: U.
     expect(letters[0]).toBe("U");
-    expect(derived.word).toBe(`{${letters.join("")}}`);
-    expect(fusedDisplayName(derived.word)).toMatch(/^\{[^{}]+\}$/);
+    // Pin the literal brace-aware output across the six-unit repeat rather
+    // than a shape-only regex, so a regression in the simplifier itself
+    // (not just a missing brace) fails this test.
+    expect(derived.word).toBe("{UUQVVNUUQVVN}");
+    expect(fusedDisplayName(derived.word)).toBe("{UUQVVN}");
   });
 });
 
