@@ -148,6 +148,7 @@ let animationFrame = 0;
 let frameCount = 0;
 let previousFrameAt = 0;
 let visible = true;
+let retainSceneCache = true;
 let disposed = false;
 let qualityTier: WorkerEffectQualityTier = "medium";
 let preparingFirstFrame = true;
@@ -426,7 +427,7 @@ function renderFrame(now: number): void {
       deltaMs,
     });
   }
-  animationFrame = scope.requestAnimationFrame(renderFrame);
+  if (visible) animationFrame = scope.requestAnimationFrame(renderFrame);
 }
 
 async function nextWorkerFrame(): Promise<number> {
@@ -719,7 +720,7 @@ async function prepareScene(sceneRequest: SceneRequest): Promise<boolean> {
         ...rendererMemory(),
       },
     });
-    animationFrame = scope.requestAnimationFrame(renderFrame);
+    if (visible) animationFrame = scope.requestAnimationFrame(renderFrame);
     return true;
   } finally {
     if (renderer === activeRenderer) {
@@ -836,7 +837,7 @@ async function presentRetainedScene(
         cacheSkipReason: retainedScenes.lastSkipReason ?? undefined,
       },
     });
-    animationFrame = scope.requestAnimationFrame(renderFrame);
+    if (visible) animationFrame = scope.requestAnimationFrame(renderFrame);
     return true;
   } finally {
     if (renderer === activeRenderer)
@@ -872,7 +873,10 @@ async function runTransition(): Promise<void> {
       }
       const outgoingRuntime = detachSceneRuntime();
       if (retainedRuntime) attachSceneRuntime(retainedRuntime);
-      if (outgoingRuntime) retainedScenes.retain(outgoingRuntime);
+      if (outgoingRuntime) {
+        if (retainSceneCache) retainedScenes.retain(outgoingRuntime);
+        else outgoingRuntime.dispose();
+      }
       let prepared = false;
       try {
         prepared = retainedRuntime
@@ -918,6 +922,8 @@ async function initialize(
   latestRequestedId = message.requestId;
   environment = message.environment;
   qualityTier = message.qualityTier;
+  retainSceneCache = message.retainSceneCache ?? true;
+  if (!retainSceneCache) retainedScenes.clear();
   performerSnapshots = message.performers;
   externalEffects = message.effects ?? { playing: false, sources: [] };
   disposed = false;
@@ -1093,8 +1099,15 @@ scope.onmessage = (event: MessageEvent<WorkerRendererInMessage>) => {
       break;
     }
     case "visibility":
+      if (message.visible) requestId = message.requestId;
       visible = message.visible;
       previousFrameAt = performance.now();
+      if (!visible && animationFrame) {
+        scope.cancelAnimationFrame(animationFrame);
+        animationFrame = 0;
+      } else if (visible && !animationFrame && world && !preparingFirstFrame) {
+        animationFrame = scope.requestAnimationFrame(renderFrame);
+      }
       break;
     case "dispose":
       dispose();
