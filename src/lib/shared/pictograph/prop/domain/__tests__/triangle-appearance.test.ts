@@ -8,10 +8,7 @@ import {
   triangleAppearanceArtwork,
   triangleSpriteKey,
 } from "../triangle-appearance";
-import {
-  basePropTypeOfRenderKey,
-  resolvePropRenderKey,
-} from "../prop-look";
+import { basePropTypeOfRenderKey, resolvePropRenderKey } from "../prop-look";
 import { getPropDimensions } from "$lib/shared/animation-engine/services/IPropTextureLoader";
 import { resolvePropSvgPath } from "$lib/shared/animation-engine/services/svg-generator";
 import { getTipPointsBaseline } from "$lib/shared/animation-engine/domain/types/prop-tip-points";

@@ -154,20 +154,32 @@ describe("propTileArtwork", () => {
     expect(side.href).toContain("triangle-side.svg");
     expect(side).toMatchObject({ styled: false, prelit: false });
     expect(
-      propGlyphArtwork("triangle", "left", { triangleGrip: "side" as const }, glyph)
-        .href
+      propGlyphArtwork(
+        "triangle",
+        "left",
+        { triangleGrip: "side" as const },
+        glyph
+      ).href
     ).toContain("triangle-side.svg");
   });
 
   it("keeps the fallback glyph for a corner-grip triangle or no grip set", () => {
     expect(
-      propTileArtwork("triangle", "left", { triangleGrip: "corner" as const }, glyph)
-        .href
+      propTileArtwork(
+        "triangle",
+        "left",
+        { triangleGrip: "corner" as const },
+        glyph
+      ).href
     ).toBe(glyph);
     expect(propTileArtwork("triangle", "left", {}, glyph).href).toBe(glyph);
     expect(
-      propGlyphArtwork("triangle", "left", { triangleGrip: "corner" as const }, glyph)
-        .href
+      propGlyphArtwork(
+        "triangle",
+        "left",
+        { triangleGrip: "corner" as const },
+        glyph
+      ).href
     ).toBe(glyph);
     expect(propGlyphArtwork("triangle", "left", {}, glyph).href).toBe(glyph);
   });

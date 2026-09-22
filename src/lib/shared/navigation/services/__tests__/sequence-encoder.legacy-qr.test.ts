@@ -73,7 +73,9 @@ describe("legacy QR payload compatibility", () => {
       expect(decoded.startPlacement?.motions.left?.propType).toBe(
         PropType.STAFF
       );
-      expect(decoded.startPlacement?.motions.right?.propType).toBe(PropType.STAFF);
+      expect(decoded.startPlacement?.motions.right?.propType).toBe(
+        PropType.STAFF
+      );
       expect(encodeLegacySequence(decoded, format)).toBe(encoded);
     }
   );
@@ -138,8 +140,12 @@ describe("legacy QR payload compatibility", () => {
     const sequence = await decodeSequenceFromQR(PRODUCTION_NUMERIC_FLOAT_QR);
 
     expect(sequence.steps).toHaveLength(16);
-    expect(sequence.startPlacement?.motions.left?.propType).toBe(PropType.STAFF);
-    expect(sequence.startPlacement?.motions.right?.propType).toBe(PropType.STAFF);
+    expect(sequence.startPlacement?.motions.left?.propType).toBe(
+      PropType.STAFF
+    );
+    expect(sequence.startPlacement?.motions.right?.propType).toBe(
+      PropType.STAFF
+    );
 
     const numericFloat = sequence.steps[0]?.motions.right;
     expect(numericFloat?.motionType).toBe(MotionType.FLOAT);

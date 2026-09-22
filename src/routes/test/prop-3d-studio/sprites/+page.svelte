@@ -138,7 +138,10 @@
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ finalize: true }),
       });
-      const payload = (await response.json()) as { ok: boolean; error?: string };
+      const payload = (await response.json()) as {
+        ok: boolean;
+        error?: string;
+      };
       log = [
         ...log,
         payload.ok
