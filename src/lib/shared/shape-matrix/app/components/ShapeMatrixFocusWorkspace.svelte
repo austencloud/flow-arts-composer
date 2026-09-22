@@ -2,8 +2,7 @@
   import { tick } from "svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import BentoPropGrid from "$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
-  import CatDogToggle from "$lib/shared/settings/components/tabs/prop-type/CatDogToggle.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import HandPropToolbar from "$lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
   import { viewingPropLabel } from "$lib/shared/foundation/services/prop-viewing";
   import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
   import { getEscapeLayerManager } from "$lib/shared/keyboard/get-escape-layer-manager";
@@ -83,6 +82,10 @@
     </PanelButton>
   {/snippet}
   {#if propsOpen}
+    <!-- Its own row above the grid, not the heading: the heading shares its
+         line with the Standard/Big size toggle and Done, which leaves no
+         room for the chip and hand segments at phone width. -->
+    <HandPropToolbar handProps={app.handProps} />
     <BentoPropGrid
       selectedPropType={app.addressedPropType}
       onSelect={(next) => void app.setPropType(next)}
@@ -93,26 +96,6 @@
       layout="rail"
     >
       {#snippet heading()}
-        <!-- The same chip and segments the animation panel shows, so the
-             inline grid picks a pair the way the panel does. -->
-        <div class="hand-toolbar">
-          <CatDogToggle
-            catDogMode={app.catDog}
-            onToggle={app.handProps.onToggleCatDog}
-          />
-          {#if app.catDog}
-            <SegmentedControl
-              options={[
-                { value: "left", label: "Left", tone: "blue" },
-                { value: "right", label: "Right", tone: "red" },
-              ]}
-              value={app.propHand}
-              onchange={app.setPropHand}
-              ariaLabel="Prop hand selection"
-              semantics="radiogroup"
-            />
-          {/if}
-        </div>
         <strong class="selection" aria-live="polite">{selectedName}</strong>
       {/snippet}
       {#snippet actions()}
@@ -157,6 +140,9 @@
 <style>
   .focus-workspace {
     display: flex;
+    /* The props branch stacks the hand toolbar above the grid; the settings
+       branch switches to grid below and ignores this. */
+    flex-direction: column;
     height: 100%;
     min-height: 0;
     overflow: hidden;
@@ -200,12 +186,5 @@
     min-width: 0;
     font-size: var(--font-size-min, 0.875rem);
     overflow-wrap: anywhere;
-  }
-  .hand-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5rem;
-    margin-block-end: 0.5rem;
   }
 </style>
