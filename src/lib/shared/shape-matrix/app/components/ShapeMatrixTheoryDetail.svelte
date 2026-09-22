@@ -22,6 +22,7 @@
   import { traceScaledPath } from "$lib/shared/notation/qft/qft-model";
   import { propReachInHandRadii } from "$lib/shared/shape-matrix/services/theory-matrix-artwork";
   import { shapeMatrixTipPoint } from "$lib/shared/shape-matrix/services/shape-matrix-flowers";
+  import { foldUntraceablePropPair } from "$lib/shared/shape-matrix/domain/prop-pair";
   import {
     isStationaryRatio,
     theoryKnobs,
@@ -84,25 +85,51 @@
   const THEORY_EFFECTS = ["trails", ...CANVAS2D_HOSTED_EFFECTS] as const;
 
   /*
-   * The prop's reach, in hand-orbit radii. The tiles in the grid are already
+   * Each hand's reach, in hand-orbit radii. The tiles in the grid are already
    * drawn at it, and drawing the animation at a flat one prop length gave the
    * same flower different proportions in the two places. Theory paths come from
    * the model rather than from a realized sequence, so the grid can render
    * before the pictograph data lands; the standard staff covers that wait,
    * exactly as it does for the tiles.
    */
-  const propReach = $derived(
-    propReachInHandRadii(app.data?.clubTipDx ?? MANDALA_STANDARD_TIP_DX)
+  const propReach = $derived({
+    left: propReachInHandRadii(app.data?.reach.left ?? MANDALA_STANDARD_TIP_DX),
+    right: propReachInHandRadii(
+      app.data?.reach.right ?? MANDALA_STANDARD_TIP_DX
+    ),
+  });
+
+  /*
+   * What the stage actually draws, as opposed to what the picker is aimed at.
+   * A pair reload is in flight between the moment a prop is chosen and the
+   * moment `app.data` catches up, and during that gap the state's hand
+   * getters already name the new prop while the loaded geometry (and its
+   * sprites) is still the old one. Falling back to the state only covers the
+   * first load, before any pair has landed at all, and that fallback is
+   * folded: the state's own props are the user's raw pick and can name a
+   * prop the engine cannot trace a path for (a bare hand, a single contact
+   * ball), which would ask this stage for a sprite that does not exist.
+   */
+  const drawnProps = $derived(
+    app.data?.props ??
+      foldUntraceablePropPair({ left: app.leftPropType, right: app.rightPropType })
   );
 
   /*
-   * Where the tracked tip sits inside the prop's own artwork. The trail follows
-   * one point per prop and the drawing has to point AT that point, which is a
-   * different bearing on a staff than on a fan.
+   * Where each hand's tracked tip sits inside its own prop's artwork. The
+   * trail follows one point per prop and the drawing has to point AT that
+   * point, which is a different bearing on a staff than on a fan. This reads
+   * `drawnProps` rather than `data.tips`: under `trace: "hands"` the tip pair
+   * is zero, and the sprite still needs its real bearing regardless of what
+   * the trace is tracking.
    */
-  const tipAngle = $derived.by(() => {
-    const tip = shapeMatrixTipPoint(app.propType);
+  function tipAngleFor(prop: PropType): number {
+    const tip = shapeMatrixTipPoint(prop);
     return tip ? Math.atan2(tip.dy, tip.dx) : 0;
+  }
+  const tipAngle = $derived({
+    left: tipAngleFor(drawnProps.left),
+    right: tipAngleFor(drawnProps.right),
   });
 
   /*
@@ -202,7 +229,7 @@
       propPhase: knobs.phase ?? 0,
       trailCycles: closureCycles(flower),
       side: hand,
-      guide: traceScaledPath(knobs, { hand: 1, prop: propReach }),
+      guide: traceScaledPath(knobs, { hand: 1, prop: propReach[hand] }),
     };
   }
 
@@ -408,7 +435,8 @@
                 {tipAngle}
                 paused={!animationState.playing}
                 playbackMode={animationState.playbackMode}
-                propType={app.propType}
+                leftPropType={drawnProps.left}
+                rightPropType={drawnProps.right}
                 {propColors}
               />
             </button>
@@ -474,8 +502,9 @@
           onPlaybackModeChange={animationState.setPlaybackMode}
           onBpmChange={animationState.setBpm}
           showEffectsPlayback={false}
-          selectedPropType={app.propType}
+          selectedPropType={app.addressedPropType}
           onPropChange={(next: PropType) => void app.setPropType(next)}
+          handProps={app.handProps}
           onPropPickerRequest={app.togglePropPicker}
           propPickerActive={app.propPickerOpen}
           sequence={null}
