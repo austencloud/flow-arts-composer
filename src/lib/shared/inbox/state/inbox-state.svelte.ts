@@ -41,6 +41,11 @@ class InboxState {
 
   // Message state
   conversations = $state<ConversationPreview[]>([]);
+  /**
+   * The first conversation snapshot for the signed-in user has arrived. Until
+   * then an empty list means "not loaded yet", not "no conversations".
+   */
+  conversationsLoaded = $state(false);
   selectedConversation = $state<Conversation | null>(null);
   messages = $state<Message[]>([]);
 
@@ -371,6 +376,12 @@ class InboxState {
   // Update methods for subscriptions
   setConversations(conversations: ConversationPreview[]) {
     this.conversations = conversations;
+    this.conversationsLoaded = true;
+  }
+
+  /** A new subscription (sign-in, account switch) has not reported yet. */
+  markConversationsPending() {
+    this.conversationsLoaded = false;
   }
 
   setMessages(messages: Message[]) {
