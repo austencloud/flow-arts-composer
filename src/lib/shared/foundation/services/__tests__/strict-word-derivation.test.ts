@@ -374,6 +374,7 @@ describe("skewed spans in the derived word", () => {
       pairing("G", { startPlacement: "alpha5", endPlacement: "alpha7" }),
     ];
 
+    expect(deriveWordStatusFromSteps(steps).word).toBe("A{S}G");
     expect(deriveWordStatusFromSteps(steps).word).toBe(
       deriveWordStatusFromStepPairings(pairings).word
     );

@@ -473,17 +473,32 @@ Usage:
     }
   });
 
-  // Use loaded dimensions for DirectionDot positioning
-  const letterDimensions = $derived(loadedLetterDimensions);
+  // Effective letter dimensions: synchronous cache lookup + async fallback.
+  // Uses $derived.by (not $derived(loadedLetterDimensions)) so a letter
+  // that's already in the cache is available on the SAME frame it renders,
+  // matching TurnsColumn's effectiveLetterDimensions and TKAGlyph's
+  // effectiveDimensions (both read the getLetterDimensions cache the same
+  // way) - otherwise SkewBraces sees the 100x100 placeholder for one frame
+  // even on a cached letter, then jumps to the real width.
+  const letterDimensions = $derived.by(() => {
+    const currentLetter = pictograph?.letter;
+    if (currentLetter) {
+      const cached = getLetterDimensions(currentLetter);
+      if (cached.width !== 100 || cached.height !== 100) {
+        return cached;
+      }
+    }
+    return loadedLetterDimensions;
+  });
 
-  // True once loadedLetterDimensions holds a real measurement rather than the
+  // True once letterDimensions holds a real measurement rather than the
   // 100x100 placeholder it starts at (same sentinel the effect above and
   // TKAGlyph's/TurnsColumn's own dimension caches already use - no letter SVG
   // in static/images/letters_trimmed ships a 100x100 viewBox, so this never
   // false-negatives on real data). Gates SkewBraces so it cannot flash at the
   // wrong width before the letter's true dimensions load, then jump.
   const letterDimensionsReady = $derived(
-    loadedLetterDimensions.width !== 100 || loadedLetterDimensions.height !== 100
+    letterDimensions.width !== 100 || letterDimensions.height !== 100
   );
 
   // Parse direction from turns tuple for direction dot

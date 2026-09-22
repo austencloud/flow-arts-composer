@@ -98,6 +98,11 @@ export interface TurnSlots {
  * edge clears exactly what the turns column actually paints - no more, no
  * less. Single source of truth for that clearance; don't re-derive it in a
  * consumer.
+ *
+ * Deliberate divergence: reserves what the column reserves, not what it
+ * paints - TurnsColumn's isColorHidden viewer-visibility term (a motion
+ * toggled off in the viewer) is not considered, so worst case is extra
+ * whitespace in the already-dimmed state, never an overlap.
  */
 export function getTurnsColumnRightExtent(slots: TurnSlots): number {
   const willDisplay =

@@ -142,5 +142,6 @@ describe("TKAWordGlyph skew braces", () => {
     const rowRect = row.getBoundingClientRect();
     expect(rowRect.left).toBeGreaterThanOrEqual(hostRect.left - 0.5);
     expect(rowRect.right).toBeLessThanOrEqual(hostRect.right + 0.5);
+    expect(row.style.transform).not.toBe("scale(1)");
   });
 });
