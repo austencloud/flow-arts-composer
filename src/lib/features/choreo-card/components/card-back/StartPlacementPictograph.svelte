@@ -14,13 +14,17 @@
   import type { PreparedPictographData } from "$lib/shared/pictograph/shared/domain/models/prepared-pictograph-data";
   import { pictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
   import PictographRenderer from "$lib/shared/pictograph/shared/components/PictographRenderer.svelte";
+  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 
   interface Props {
     pictographData: PictographData;
     darkMode?: boolean;
+    leftPropType?: PropType;
+    rightPropType?: PropType;
+    primaryPropColors?: { left: string; right: string } | null;
   }
 
-  let { pictographData, darkMode = true }: Props = $props();
+  let { pictographData, darkMode = true, leftPropType, rightPropType, primaryPropColors }: Props = $props();
 
   let prepared: PreparedPictographData | null = $state(null);
 
@@ -32,6 +36,8 @@
       try {
         const result = await pictographPreparer.prepareSingle(data, {
           themeMode: darkMode ? "dark" : "light",
+          leftPropType,
+          rightPropType,
         });
         prepared = result;
       } catch (err) {
@@ -47,6 +53,8 @@
     {#if prepared}
       <PictographRenderer
         pictograph={prepared}
+        leftColorOverride={primaryPropColors?.left}
+        rightColorOverride={primaryPropColors?.right}
         transparentBackground={true}
         showGrid={true}
         showTKA={false}

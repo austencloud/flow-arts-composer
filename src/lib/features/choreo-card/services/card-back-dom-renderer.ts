@@ -3,9 +3,11 @@ import CardBack from "../components/card-back/CardBack.svelte";
 import { getCardBackThemeVisuals } from "../components/card-back/card-back-theme-visuals";
 import type { CardBackDomRenderOptions } from "./types";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { resolveCardBackAppearance } from "./card-back/card-back-appearance";
 
 export async function renderCardBack(sequence: SequenceData, options: CardBackDomRenderOptions): Promise<HTMLCanvasElement> {
   const { width, height, theme } = options;
+  const appearance = resolveCardBackAppearance(options);
 
   const container = document.createElement("div");
   container.style.position = "fixed";
@@ -23,7 +25,13 @@ export async function renderCardBack(sequence: SequenceData, options: CardBackDo
       : undefined;
     const component = mount(CardBack, {
       target: container,
-      props: { sequence, themeOverride },
+      props: {
+        sequence,
+        themeOverride,
+        leftPropTypeOverride: appearance.leftPropType,
+        rightPropTypeOverride: appearance.rightPropType,
+        primaryPropColorsOverride: appearance.primaryPropColors,
+      },
     });
 
     await new Promise((resolve) => requestAnimationFrame(() =>
