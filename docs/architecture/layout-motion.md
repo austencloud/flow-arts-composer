@@ -2,9 +2,9 @@
 
 Layout motion is an interaction contract, not decoration. It connects two
 states so the eye can follow what moved, appeared, disappeared, or changed
-size. TKA prevents meaningless movement and animates meaningful movement.
+size. Flow Arts Composer prevents meaningless movement and animates meaningful movement.
 
-## One system, five routes
+## One system, shared owners
 
 | Geometry change                                          | Owner                                    | Why                                                                            |
 | -------------------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------ |
@@ -13,6 +13,7 @@ size. TKA prevents meaningless movement and animates meaningful movement.
 | Flex workspace panel enters/leaves or changes allocation | `PanelGroup.svelte` + `flexPresence()`   | Moves the neighbouring panels on the same clock as the entering/leaving panel  |
 | Keyed list reorder                                       | Svelte `animate:flip` + `flipDuration()` | Svelte already owns stable keyed geometry                                      |
 | Several surviving elements recompose                     | `createLayoutMotion()`                   | Captures old rectangles and animates survivors across grids or keyed families  |
+| A content-sized dialog changes its natural height        | `BaseModal` with `animateSize`           | Keeps the dialog frame continuous without scaling or remounting its contents   |
 
 Small non-reflowing overlays use `flyFade()` or `popIn()`. Route/module
 navigation keeps using the native view-transition rules in the app CSS.
@@ -62,6 +63,22 @@ not use it for a single conditional row or for pointer-driven movement.
 
 ## Verification
 
+Content-sized dialogs opt into `BaseModal.animateSize`; the shared
+`createIntrinsicHeightMotion()` controller owns their height. A CSS transition
+on `height: fit-content` does not animate a content change when the declared
+height value stays the same. Do not add a feature-local observer or layer a
+second CSS height transition over the controller. Keep width changes with the
+existing shell owner and leave direct pointer resizing immediate.
+The frame keeps its measured height between observations; its nonshrinking
+content wrapper remains the independent source of natural geometry. Clear the
+owned height on teardown, not between transitions. Observe both the OS setting
+and the app's `data-motion-preference` setting, including changes mid-animation.
+
+Outgoing `Crossfade` layers remain painted during their outro but become inert
+and hidden from assistive technology. Rapid reversal must restore only the
+current controls. Heavy live cards and video players retain their existing
+lifetime; a settings change is not a reason to remount their rendering subtree.
+
 For every structural change:
 
 - exercise the trigger in a real browser;
@@ -72,6 +89,11 @@ For every structural change:
   `visual-verification-mandatory.md` and confirm that controls do not resize
   their neighbours while labels/icons swap;
 - check for console errors.
+
+For intrinsic resizing, sample frames after the actual input. Require heights
+between the two endpoints and test interruption, settlement, and viewport
+containment. Final screenshots, declarations of `transition`, and intercepting
+an `animate()` call cannot establish that the visible dialog moved correctly.
 
 The source contract test keeps the routing rule, canonical exports, shared
 PanelGroup integration, and Stage's single mounted timeline connected.

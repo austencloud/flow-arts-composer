@@ -7,6 +7,7 @@ import type { PendingActionType } from "./pending-action-queue";
 import type { ViewerMode } from "../state/viewer-state.svelte";
 import type { ExportType } from "../domain/viewer-orchestrator-context";
 import type { ViewerUrlParamPatch } from "./viewer-url-state-codec";
+import { VIEWER_STATE_PARAM_NAMES } from "./viewer-url-state-params";
 
 export type ViewerEditingPane = "animation" | "image" | "video-upload" | null;
 
@@ -84,6 +85,28 @@ interface ViewerShareDetailsInput {
    * the fallback path, since both converge on the same `url` variable below.
    */
   getStateParams?: () => ViewerUrlParamPatch;
+}
+
+/**
+ * The viewer-owned state of a share link (pane, split, effect, columns, the
+ * `s` blob) as one query string, or null when the link carries none. A sent
+ * message stores this so the recipient opens on the sender's view rather
+ * than their own defaults; the sequence identity params are not part of it.
+ */
+export function extractViewerStateQuery(shareUrl: string): string | null {
+  let params: URLSearchParams;
+  try {
+    params = new URL(shareUrl, "https://viewer.invalid").searchParams;
+  } catch {
+    return null;
+  }
+  const query = new URLSearchParams();
+  for (const name of VIEWER_STATE_PARAM_NAMES) {
+    const value = params.get(name);
+    if (value) query.set(name, value);
+  }
+  const encoded = query.toString();
+  return encoded || null;
 }
 
 export function buildViewerShareDetails(

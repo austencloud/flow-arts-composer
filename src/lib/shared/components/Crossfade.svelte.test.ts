@@ -29,6 +29,45 @@ function stepLayers(container: HTMLElement): HTMLElement[] {
 }
 
 describe("Crossfade interruption", () => {
+  it("settles an active swap when the in-app reduced motion setting changes", async () => {
+    const { container } = render(CrossfadeTestHarness);
+    await settle();
+    await page.getByRole("button", { name: "Show gamma" }).click();
+    try {
+      document.documentElement.dataset.motionPreference = "reduce";
+      await new Promise((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve))
+      );
+      expect(
+        container
+          .getAnimations({ subtree: true })
+          .filter((animation) => animation.playState === "running")
+      ).toHaveLength(0);
+      expect(layers(container)).toHaveLength(1);
+      expect(layers(container)[0]?.textContent).toContain("gamma panel");
+    } finally {
+      delete document.documentElement.dataset.motionPreference;
+    }
+  });
+
+  it("keeps only the current controls interactive while outgoing layers fade", async () => {
+    const { container } = render(CrossfadeTestHarness);
+    await page
+      .getByRole("button", { name: "Measure interactive layers" })
+      .click();
+    await settle();
+    expect(page.getByTestId("observed-overlap").element().textContent).toBe(
+      "true"
+    );
+    expect(
+      Number(page.getByTestId("interactive-layer-count").element().textContent)
+    ).toBe(1);
+    const current = layers(container);
+    expect(current).toHaveLength(1);
+    expect(current[0]?.inert).toBe(false);
+    expect(current[0]?.hasAttribute("aria-hidden")).toBe(false);
+  });
+
   it("measures layout height without inheriting an ancestor's visual scale", async () => {
     const { container } = render(CrossfadeTestHarness);
     await settle();

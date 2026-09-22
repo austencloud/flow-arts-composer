@@ -6,6 +6,7 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { ICreateModuleState } from "../../types/create-module-types";
+import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
 
 /** Beat 0 = start placement, steps 1+ are in the sequence */
 export const START_PLACEMENT_BEAT_NUMBER = 0;
@@ -38,10 +39,7 @@ export function updateSequenceWord(
   const sequence = createModuleState.sequenceState.currentSequence;
   if (!sequence?.steps) return;
 
-  const word = sequence.steps
-    .map((step) => step.letter ?? "")
-    .join("")
-    .toUpperCase();
+  const word = deriveWordFromBeats(sequence.steps);
 
   const updatedSequence: SequenceData = {
     ...sequence,

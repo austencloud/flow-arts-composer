@@ -20,12 +20,14 @@ Always renders as a pure button. Word input is now in WordInputCard.
     onGenerateClicked,
     config,
     startEndOptions = null,
+    suspendPulse = false,
   } = $props<{
     isGenerating: boolean;
     hasSettingsChanged?: boolean;
     onGenerateClicked: (options: GenerationOptions) => Promise<void>;
     config: UIGenerationConfig;
     startEndOptions?: StartEndOptions | null;
+    suspendPulse?: boolean;
   }>();
 
   const isDisabled = $derived(isGenerating);
@@ -38,9 +40,29 @@ Always renders as a pure button. Word input is now in WordInputCard.
         : t("generator_button")
   );
 
-  let buttonIcon = $derived(hasSettingsChanged && !isGenerating ? "arrows-rotate" : "dice");
+  let buttonIcon = $derived(
+    hasSettingsChanged && !isGenerating ? "arrows-rotate" : "dice"
+  );
 
   let hapticService: HapticFeedback | null = $state(null);
+  let buttonElement: HTMLButtonElement | undefined = $state();
+  let wasPulseSuspended = false;
+
+  $effect.pre(() => {
+    if (!suspendPulse) {
+      wasPulseSuspended = false;
+      return;
+    }
+
+    if (wasPulseSuspended || !buttonElement) return;
+
+    const liveTransform = getComputedStyle(buttonElement).transform;
+    buttonElement.style.setProperty(
+      "--generate-pulse-settle-from",
+      liveTransform === "none" ? "scale(1)" : liveTransform
+    );
+    wasPulseSuspended = true;
+  });
 
   onMount(() => {
     hapticService = getHapticFeedback();
@@ -59,8 +81,10 @@ Always renders as a pure button. Word input is now in WordInputCard.
 </script>
 
 <button
+  bind:this={buttonElement}
   class="generate-button-card"
   class:dirty={hasSettingsChanged && !isGenerating}
+  class:pulse-suspended={suspendPulse}
   onclick={handleClick}
   disabled={isDisabled}
   type="button"
@@ -140,7 +164,6 @@ Always renders as a pure button. Word input is now in WordInputCard.
     outline-offset: 2px;
   }
 
-
   .generate-button-card.dirty {
     box-shadow:
       0 0 0 3px var(--semantic-warning, #f59e0b),
@@ -184,6 +207,12 @@ Always renders as a pure button. Word input is now in WordInputCard.
       0 0 25px color-mix(in srgb, var(--theme-text) 40%, transparent);
 
     animation-duration: 6s, 1.5s;
+  }
+
+  .generate-button-card.pulse-suspended:not(:disabled) {
+    animation:
+      meshGradientFlow 8s ease infinite,
+      settlePulse var(--duration-emphasis) var(--ease-out) both;
   }
 
   .generate-button-card:active:not(:disabled) {
@@ -239,6 +268,16 @@ Always renders as a pure button. Word input is now in WordInputCard.
     }
     50% {
       transform: scale(1.015);
+    }
+  }
+
+  @keyframes settlePulse {
+    from {
+      transform: var(--generate-pulse-settle-from, scale(1));
+    }
+
+    to {
+      transform: scale(1);
     }
   }
 

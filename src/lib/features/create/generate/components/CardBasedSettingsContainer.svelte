@@ -681,7 +681,11 @@ Delegates ALL logic to services (SRP compliant)
   </div>
 
   <div class="card-grid-stage">
-    <div class="card-grid" data-level={selectedLevel}>
+    <div
+      class="card-grid"
+      data-level={selectedLevel}
+      data-expanded-card={panelState.openGenerateCard ?? undefined}
+    >
       {#if levelCardEntry}
         <div class="compact-level-card" data-card-id={levelCardEntry.id}>
           <LevelCard
@@ -778,6 +782,7 @@ Delegates ALL logic to services (SRP compliant)
           {:else if card.id === "generate-button"}
             <GenerateButtonCard
               {...card.props as ComponentProps<typeof GenerateButtonCard>}
+              suspendPulse={panelState.openGenerateCard !== null}
             />
           {/if}
         </div>

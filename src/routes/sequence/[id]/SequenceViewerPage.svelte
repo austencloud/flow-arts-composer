@@ -24,6 +24,7 @@
   } from "$lib/shared/qr/services/short-code-manager";
   import { isInlineEncoded } from "$lib/shared/navigation/services/inline-qr-envelope";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
   import { hydrateSequence } from "$lib/shared/navigation/services/sequence-hydrator";
   import { createRouteLoadFence } from "$lib/shared/navigation/services/route-load-fence";
   import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
@@ -409,7 +410,7 @@
   function seeInGuide(): void {
     if (!sequence) return;
     const label =
-      sequence.steps?.length === 1 ? (sequence.word ?? "").trim() : "";
+      sequence.steps?.length === 1 ? stripWordNotation(sequence.word).trim() : "";
     const target = label ? guideTargetForLetter(label) : null;
     if (target?.cellKey) {
       setGuideScanIntent({ slug: target.slug, cellKey: target.cellKey });

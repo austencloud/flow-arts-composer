@@ -36,6 +36,8 @@
   import { copyTextToClipboard } from "$lib/shared/share/services/link-share";
   import PoseHandles from "./PoseHandles.svelte";
   import PoseEditor from "./PoseEditor.svelte";
+  import KeyframeTimeline from "./KeyframeTimeline.svelte";
+  import GripLabShortcuts from "./GripLabShortcuts.svelte";
   import { allowedTipOffset, authoredBodyPose, TEACHING_ANCHOR_OFFSET, TRANSITIONS, type PoseHandle } from "./isolation-teaching";
   import {
     createContactInspectionState,
@@ -79,6 +81,37 @@
   let dragging = $state(false);
   let selectedHandle = $state<PoseHandle>("chest");
   let copyStatus = $state("");
+  let shortcutsOpen = $state(false);
+  let keyframeFeedback = $state("");
+  function deleteKeyframe() {
+    const selected = inspection.selectedKey;
+    if (inspection.removeKey()) {
+      keyframeFeedback = `Deleted keyframe ${selected!.phase.toFixed(3)}. Undo restores it.`;
+    } else {
+      keyframeFeedback = inspection.keys.length <= 1
+        ? "Keep at least one keyframe to hold the pose."
+        : "Select a keyframe diamond before deleting.";
+    }
+  }
+  function undoKeyframe() {
+    if (!inspection.canUndo) return;
+    inspection.undo();
+    keyframeFeedback = "Undid the last pose change.";
+  }
+  function redoKeyframe() {
+    if (!inspection.canRedo) return;
+    inspection.redo();
+    keyframeFeedback = "Redid the pose change.";
+  }
+  function addKeyframe() {
+    keyframeFeedback = inspection.addKey()
+      ? `Added keyframe ${inspection.phase.toFixed(3)}.`
+      : inspection.keys.length >= 100 ? "This loop already has 100 keyframes." : "There is already a keyframe here.";
+  }
+  function selectKeyframe(phase: number) {
+    inspection.seekPosition(phase);
+    keyframeFeedback = "";
+  }
   const taughtPose = $derived(inspection.pose);
   const tipOffset = $derived(allowedTipOffset(taughtPose, inspection.tolerance));
   const staffOffset = $derived<[number, number, number]>([
@@ -253,7 +286,14 @@
 </script>
 
 <svelte:head><title>Staff isolation · TKA</title></svelte:head>
-<main class="inspection">
+<main class="inspection" data-edit-history-shortcut-scope>
+<GripLabShortcuts bind:open={shortcutsOpen} blocked={characterDrawerOpen || diagnosticsOpen || dragging}
+  canUndo={inspection.canUndo} canRedo={inspection.canRedo}
+  onUndo={undoKeyframe} onRedo={redoKeyframe} onDelete={deleteKeyframe} onAdd={addKeyframe}
+  onPlay={() => ready && inspection.setPlaying(!inspection.playing)}
+  onStep={(direction) => inspection.setPhase(inspection.phase + direction * 0.01)}
+  onNeighbor={(direction) => { inspection.seekKeyframe(direction); keyframeFeedback = ""; }}
+  onStart={() => inspection.reset()} />
   <header class="page-header">
     <div>
       <h1>Staff isolation</h1>
@@ -264,6 +304,7 @@
         inspection.setPlaying(false);
       }}>Edit pose</PanelButton>
       <PanelButton onclick={copyPose}>Copy pose link</PanelButton>
+      <PanelButton onclick={() => shortcutsOpen = true}>Shortcuts</PanelButton>
       <button
         type="button"
         aria-label="Character"
@@ -357,25 +398,14 @@
     {#if editing}
       <aside class="pose-panel" aria-label="Teach this pose">
         <div class="pose-heading"><strong>{selectedPosition?.label ?? "Pose"} · {inspection.phase.toFixed(3)}</strong>
-          <span>{inspection.keys.length} saved poses</span></div>
+          <span>{inspection.selectedKey ? "Whole-pose keyframe" : "New keyframe on edit"}</span></div>
         <PoseEditor pose={taughtPose} selected={selectedHandle} onSelect={(value) => selectedHandle = value}
           onBegin={() => inspection.beginEdit()} onChange={(changes) => inspection.editPose(changes)}
           onEnd={() => inspection.endEdit()} tolerance={inspection.tolerance}
           onTolerance={(value) => inspection.setTolerance(value)} {tipDrift} />
         <div class="pose-actions">
-          <PanelButton disabled={!inspection.canUndo} onclick={() => inspection.undo()}>Undo pose</PanelButton>
           <PanelButton onclick={() => inspection.resetPose()}>Reset poses</PanelButton>
         </div>
-        <div class="keyframes" aria-label="Saved poses">
-          {#each inspection.keys as key (key.phase)}
-            <PanelButton ariaPressed={Math.abs(key.phase - (inspection.phase % 4)) < 0.005}
-              onclick={() => inspection.seekPosition(key.phase)}>
-              {key.phase.toFixed(2)}
-            </PanelButton>
-          {/each}
-        </div>
-        <PanelButton disabled={inspection.keys.length <= 1 || !inspection.keys.some((key) => Math.abs(key.phase - (inspection.phase % 4)) < 0.005)}
-          onclick={() => inspection.removeKey()}>Remove this pose</PanelButton>
       </aside>
     {/if}
   </section>
@@ -405,6 +435,14 @@
         /></label
       >
     </div>
+    <KeyframeTimeline keys={inspection.keys} phase={inspection.phase} range={inspection.range}
+      selectedKey={inspection.selectedKey} canUndo={inspection.canUndo} canRedo={inspection.canRedo}
+      feedback={keyframeFeedback} onSelect={selectKeyframe}
+      onNeighbor={(direction) => { inspection.seekKeyframe(direction); keyframeFeedback = ""; }}
+      onAdd={addKeyframe} onRemove={deleteKeyframe}
+      onUndo={undoKeyframe} onRedo={redoKeyframe} onMove={(from, to) => inspection.moveKey(from, to)}
+      onEdit={() => { inspection.setPlaying(false); editing = true; }}
+      onBegin={() => inspection.beginEdit()} onEnd={() => inspection.endEdit()} />
     <div class="control-grid">
       <div class="position-stops" bind:clientWidth={positionsWidth}>
         <SegmentedControl
@@ -476,14 +514,15 @@
 
 <style>
   .inspection {
-    --settings-page-max: 76rem;
     height: 100dvh;
     box-sizing: border-box;
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(18rem, 1fr) auto;
     gap: clamp(0.75rem, 2cqw, 1.25rem);
-    max-width: var(--settings-page-max);
-    margin: 0 auto;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
     padding: clamp(0.5rem, 1.5vw, 1rem);
     color: var(--theme-text);
     container-type: inline-size;
@@ -498,6 +537,7 @@
   .page-header {
     justify-content: space-between;
     gap: 1rem;
+    min-width: 0;
   }
   h1 {
     margin: 0;
@@ -506,6 +546,7 @@
   }
   .header-actions {
     gap: 0.5rem;
+    min-width: 0;
     flex-wrap: wrap;
     justify-content: flex-end;
   }
@@ -527,6 +568,7 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     position: relative;
+    min-width: 0;
     min-height: 0;
     overflow: hidden;
     border: 1px solid var(--theme-stroke);
@@ -537,14 +579,13 @@
       var(--theme-panel-bg)
     );
   }
-  .stage.editing { grid-template-columns: minmax(0, 1fr) 19rem; }
+  .stage.editing { grid-template-columns: minmax(0, 1fr) clamp(18rem, 20cqw, 24rem); }
   .scene { position: relative; min-width: 0; min-height: 0; overflow: hidden; }
   .pose-panel { overflow-y: auto; min-height: 0; padding: 0.85rem; background: var(--theme-panel-bg); display: flex; flex-direction: column; gap: 0.9rem; }
   .pose-panel :global(> *) { flex-shrink: 0; }
   .pose-heading { display: flex; justify-content: space-between; align-items: baseline; font-size: var(--font-size-min, 14px); gap: 0.5rem; }
   .pose-heading span { color: var(--theme-text-dim); font-size: var(--font-size-compact, 12px); }
-  .pose-actions, .keyframes { display: flex; gap: 0.4rem; flex-wrap: wrap; }
-  .keyframes { max-height: 6.5rem; overflow: auto; }
+  .pose-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
   .stage-directions { position: absolute; inset: auto 0.65rem 0.6rem; display: flex; justify-content: space-between; gap: 1rem; pointer-events: none; font-size: var(--font-size-compact, 12px); color: var(--theme-text-dim); }
   .reach-warning { position: absolute; inset: 0.6rem 0.6rem auto; width: fit-content; max-width: calc(100% - 1.2rem); margin: 0; padding: 0.5rem 0.7rem; box-sizing: border-box; border-radius: 0.5rem; background: var(--theme-panel-bg); color: var(--semantic-warning, #ffbf69); font-size: var(--font-size-min, 14px); }
   .copy-status { margin: 0; font-size: var(--font-size-min, 14px); }
@@ -565,6 +606,7 @@
   }
   .controls {
     display: grid;
+    min-width: 0;
     gap: 0.45rem;
     padding: 0.5rem 0.75rem;
     border: 1px solid var(--theme-stroke);
@@ -579,6 +621,7 @@
     grid-template-columns: auto minmax(16rem, 1fr);
     align-items: center;
     gap: 0.75rem;
+    min-width: 0;
   }
   .scrubber {
     display: grid;
@@ -588,6 +631,7 @@
     min-height: var(--min-touch-target, 44px);
     color: var(--theme-text-dim);
     font-size: var(--font-size-min, 14px);
+    min-width: 0;
   }
   input {
     width: 100%;
@@ -598,6 +642,7 @@
     grid-template-columns: minmax(18rem, 1fr) auto auto;
     align-items: center;
     gap: 0.5rem;
+    min-width: 0;
   }
   .position-stops { width: 100%; min-width: 0; }
   .drawer-content {
@@ -610,7 +655,8 @@
     .pose-panel { padding: 0.65rem; max-height: 26rem; }
     .stage-directions span { max-width: 8rem; }
     .inspection {
-      min-height: 30rem;
+      min-height: 48rem;
+      height: auto;
       grid-template-rows: auto minmax(8rem, 1fr) auto;
       padding: 0.5rem;
       gap: 0.5rem;
@@ -619,6 +665,7 @@
       align-items: center;
       gap: 0.5rem;
     }
+    .scene { height: clamp(16rem, 45dvh, 26rem); }
     .header-actions button {
       min-width: 44px;
       padding: 0.5rem;
@@ -647,7 +694,7 @@
       grid-column: 1 / -1;
     }
   }
-  @media (min-width: 701px) and (max-height: 560px) and (orientation: landscape) {
+  @media (min-width: 701px) and (max-height: 800px) and (orientation: landscape) {
     .stage.editing { grid-template-columns: minmax(0, 1fr); grid-template-rows: 22rem auto; }
     .pose-panel { max-height: 24rem; }
     .controls { align-content: start; }
@@ -685,6 +732,17 @@
     .control-grid {
       display: flex;
       flex-direction: column;
+    }
+  }
+  @media (min-width: 701px) and (min-height: 561px) and (max-height: 800px) and (orientation: landscape) {
+    .inspection:has(.stage.editing) { min-height: 0; height: 100dvh; }
+    .stage.editing { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(16rem, 1fr) minmax(0, 1fr); }
+    .pose-panel { max-height: none; }
+  }
+  @media (min-width: 1100px) and (min-height: 561px) and (max-height: 800px) and (orientation: landscape) {
+    .stage.editing {
+      grid-template-columns: minmax(0, 1fr) clamp(18rem, 20cqw, 24rem);
+      grid-template-rows: minmax(0, 1fr);
     }
   }
   @media (prefers-reduced-motion: reduce) {

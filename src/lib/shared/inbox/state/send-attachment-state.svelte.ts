@@ -326,7 +326,8 @@ export function createSendAttachmentState(
         );
         sequenceAttachment = buildSequenceMessageAttachment(
           attachment.payload.sequence,
-          code
+          code,
+          { viewParams: attachment.payload.sequenceViewParams }
         );
       }
 

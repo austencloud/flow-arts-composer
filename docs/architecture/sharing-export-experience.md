@@ -145,6 +145,21 @@ to a card merely because an old sheet default used that artifact.
 - Copy link performs one copy action and reports its progress/result at that
   control. It does not render media. A copied link should preserve the intended
   view and must not misrepresent who can open it.
+- A sent sequence carries the sender's view, not just the sequence. When send
+  mode opens, the viewer's state is snapshotted the way Copy link builds a
+  link (`extractViewerStateQuery` over `getShareUrl()`: the `pane`, `split`,
+  `fx`, `cols`, and `s` names) and rides on the attachment as
+  `metadata.sequenceViewParams`, additive to the existing sequence metadata.
+  It is a snapshot, not a live feed: the message means what the viewer showed
+  when the person chose Send, so later stage changes do not alter what was
+  sent. Opening the attachment seeds the recipient's viewer with that query
+  before it mounts (`sequence-viewer-overlay-state`'s `seedViewerStateParams`),
+  the same override path a followed share link takes, so they land on the
+  sender's pane, effects, and visibility as a view-only override of their own
+  saved values — which `closeSequenceOverlay` strips again on exit. The plain
+  `/q/<code>` link carries the same query so an out-of-app open matches; scan
+  handoff already forwards its query to the viewer. Absent on messages sent
+  before the field existed, which simply open on the recipient's defaults.
 - Sending to a friend in Flow Arts Composer uses the existing sequence-attachment
   workflow; it is not a social publishing operation. From the viewer it is a
   mode, not a dialog: the workspace morphs the way it does for Practice. The
@@ -211,7 +226,11 @@ to phone, prepared file, viewer source.
   rendered for the sender; the recipient still receives the sequence and its
   thumbnail. The outbox is the drawer's; hosts that mount the drawer lazily
   mount it on `inboxState.hostRequested`, and the workspace reads the
-  registered outbox from `message-delivery-context.ts`.
+  registered outbox from `message-delivery-context.ts`. The sender's view
+  travels with the send: `viewer-shell-share-state` snapshots it into the
+  `SequenceSendSession` at entry, `send-attachment-state` passes it to
+  `buildSequenceMessageAttachment`, and `SequenceMessageCard` hands it back to
+  `openSequenceViewer` for the recipient.
 - Existing post composition and publishing components remain their respective
   owners. Do not introduce a second renderer, modal stack, or delivery service.
 
@@ -229,25 +248,36 @@ failure, not a cancel; cancel is reserved for the user's own action. When the
 clipboard API is denied, copy link falls back to selection copy and, if that
 also fails, reveals the link in a selectable field.
 
+### Downloading the animation from the viewer
+
+The sequence animation is downloaded from the viewer's own Export page, not
+from a route inside the share sheet. The stage keeps playing beside the page
+(the same shape as Send mode), the settings stack in one column with chips
+for every choice, and the page's footer button renders and delivers the file.
+Share → Download a file → Video hands off to that page and closes the sheet,
+the way Post Studio takes over from the sheet; the sheet's own download route
+keeps Card, plus Video for hosts with their own exporters (Mandala, Tunnel,
+3D takes, Post Studio renders), where the file type is a chip row. The sheet
+never mounts a second animation engine: a frozen capture behind a modal was
+the reason the download moved.
+
 ### The image a clip opens with
 
-Players and file thumbnails show a video's first frame, so the download task
-lets the person choose it. One row under the stage, labelled `Opens with`,
-offers three choices: `First beat` (the sequence's start position), `This
-frame` (the pose on screen when the sheet opened), and `Mandala` (the
-sequence's mandala fingerprint). There is no scrubber. The stage shows exactly
-the chosen image, so what the person sees is what the clip opens on. The
-choice persists with the other video settings and marks an existing render
-stale like any other setting. `First beat` adds nothing, because the export
-already opens with one beat of the start position. The other two prepend a
-one-beat hold of the chosen image at the export speed, drawn contain-fit over
-black at output resolution, before the animation. The viewer owns the images:
-the sheet receives a capture callback per choice and hands the chosen data URL
-back with the render request, so the baked hold is the very image the stage
-showed. The row is hidden for hosts whose render cannot open on a chosen image
-(3D takes, art views, Post Studio renders). When an opener applies, the
-Instagram cover points at time zero unless the person picked a cover frame
-explicitly.
+Players and file thumbnails show a video's first frame, so the Export page
+lets the person choose it. A chip row labelled `Opens` offers three choices:
+`First beat` (the sequence's start position), `Current frame` (whatever the
+live stage shows when Download is pressed; pause where it looks right), and
+`Mandala` (the sequence's mandala fingerprint, drawn in the account's hand
+colours like the card back, with a thumbnail under the row). The choice
+persists with the other video settings. `First beat` adds nothing, because
+the export already opens with one beat of the start position. The other two
+prepend a one-beat hold of the chosen image at the export speed, drawn
+contain-fit over black at output resolution, before the animation. The export
+captures the image itself as the render starts; a share sheet that owns a
+render still hands its own capture with the request. The row is hidden for
+hosts whose render cannot open on a chosen image (3D takes, art views, Post
+Studio renders). When an opener applies, the Instagram cover points at time
+zero unless the person picked a cover frame explicitly.
 
 ## Acceptance and future evaluation
 
@@ -553,3 +583,113 @@ flow was inspected at phone, tablet, short landscape, desktop, and 4K viewport
 sizes; desktop settings opened automatically and the large desktop layouts had
 no unnecessary inner scrollbar. CI retains live/export/difference images so a
 future regression can be investigated without rebuilding this evidence manually.
+
+### September 21 sharing motion audit
+
+Austen reported that the File type selector abruptly changed the modal's height
+between Card and Video. The previous acceptance checks established the final
+layouts and file lifecycle, but did not measure the intervening frames. The
+baseline browser trace changed from approximately 846px to 416px in a single
+frame. A CSS height transition on an unchanged `fit-content` declaration did
+not cover intrinsic content changes.
+
+The audit covers this sheet's Home, Link, Download, phone-transfer, publishing,
+and Instagram review states, plus the card/video settings they expose. It does
+not certify the separate Post Studio editor or external operating-system and
+social-network interfaces.
+
+| State change                                                                                       | Motion or stability owner                                            |
+| -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Dialog changes natural height                                                                      | `BaseModal.animateSize` and shared `createIntrinsicHeightMotion`     |
+| Home / Link / Download / Publish and phone-transfer route                                          | Shared `Crossfade` for content; `BaseModal` owns frame height        |
+| Card / Video settings                                                                              | Shared `Crossfade`; live card settings do not key the heavy renderer |
+| Disclosure, custom footer, start-placement choices, stale/render/error status and delivery actions | Shared `growFade` for normal-flow presence                           |
+| Header title and download action label changes                                                     | Reserved geometry so copy does not push neighbouring controls        |
+| Review detail and recovery rows                                                                    | Shared `growFade`                                                    |
+
+An outgoing layer remains visible while fading, but must immediately become
+inert and hidden from assistive technology. Rapid reversal must leave one
+interactive branch. Preserve the live card's intrinsic stage sizing and its
+readiness signal: wrapping it in an absolutely positioned or height-pinned
+crossfade can stop PNG preparation even when the final screenshot looks
+plausible. The real-card lifecycle tests caught that failure during this audit.
+
+Treat nested motion as an integration problem. Animating the settings column
+does not establish that the taller preview column or modal frame animates.
+Checking for _any_ descendant animation is not a valid reason to skip the
+frame: a spinner, an opacity fade, or a small status row may be unrelated to
+the dimension that changes. Likewise, constraining an updated target to the
+last few milliseconds of an earlier transition can produce a large late jump.
+
+New transition checks must sample the actual sheet after native input, including
+Card to Video, reversal, and reduced motion. Keep the existing immediate-click,
+source replacement, retry, and Auto-layout tests. At short landscape sizes,
+assert the download dock remains inside the dialog and reachable; adding a
+crossfade wrapper must not break the scroll area's flex constraint. Final
+screenshots and tests that merely intercept `animate()` calls are insufficient.
+
+The frame retains its measured height between observations. Its nonshrinking
+content wrapper provides the next natural size independently. Releasing the
+frame to `auto` after every animation permits a first-frame reflow before the
+next observer notification. Do not infer a destination by summing animated
+descendants: columns, overlays, and viewport caps invalidate that arithmetic.
+The outer route Crossfades must not pin height or measure against their own
+previous height; keep their flex/scroll constraints and let the dialog own it.
+
+Verification for this audit: 12 actual-sheet browser regressions, 16 shared
+modal/Crossfade browser checks, and 35 focused sharing/motion logic tests pass.
+The tests include immediate download intent, source replacement, PNG retry,
+real pictographs, transition frame sampling, rapid reversals, inactive outgoing
+controls, short-landscape scrolling, and both initial and live changes to Reduce
+Motion. The initial source checks alone did not establish these behaviors.
+
+Browser inspection covered 375×667, 960×412, 820×1180, 1440×900, 1920×1080,
+2560×1440, and 3840×2160, plus 720×450 for 200% desktop reflow. Download actions
+remain visible; only constrained heights need a content scrollbar. At the large
+desktop sizes neither Card nor Video has an unnecessary inner scrollbar. The
+mobile Instagram Preview/Details switch keeps media mounted, fades the panes,
+and makes the inactive pane inert. Publishing/phone-transfer completion was not
+performed against a real account or recipient.
+
+Visual review: VR-1, evidence ledger checked 2026-09-21, calibration **NOT
+CALIBRATED**. Audience: a creator saving or sharing the current sequence. Owner
+constraint: smooth, consistent transitions without blank space or inaccessible
+controls. This is a motion repair within the existing composition, not a new
+visual design. Independent code review found the live Reduce Motion cancellation
+gap; its fix has a browser regression. Aesthetic inspection is **self-review —
+less independent**. Project specificity, hierarchy, grouping, real artifacts,
+craft, and product continuity are supported by the inspected download and review
+states: the current sequence remains the subject, the download action remains
+distinct, settings stay adjacent on desktop, and motion uses shared primitives.
+This is not a claim of universal aesthetic acceptance or external-app coverage.
+
+Task-local frame traces, viewport geometry, browser captures, and test logs are
+retained in `E:/tka-share-layout-motion-evidence`. Some captures from the in-app
+browser have compositor cropping/scaling artifacts; geometry records and direct
+interaction, rather than those image edges, establish viewport containment.
+
+### September 21 workspace animation availability
+
+The Create workspace opened `PostShareSheet` with `availableArtifacts: ["card"]`
+and no video callbacks. Its home action promised a video or card image, but
+Download a file had no File type selector. Viewer-only acceptance checks missed
+this entry-point difference.
+
+The workspace must offer Card and Video in the existing sheet. It composes
+`SequenceModalExporter` and the canonical offscreen `VideoExportOrchestrator`
+with an independent playback controller and an ephemeral panel state. A sizing
+canvas supplies the existing export layout calculation; it does not mount a
+second live renderer or open the full sequence viewer behind the dialog. Shared
+export settings continue to own resolution, frame rate, and repeat count.
+
+Opening sharing or selecting Video must not start rendering. Only an explicit
+download/render action may load the export runtime and prepare the file. That
+request owns its sequence snapshot, progress, cancellation, and blob lifetime.
+Closing, replacing the sequence, or canceling during lazy startup must retire
+the request before it can render or deliver an old file. The isolated controller
+must not change the workspace playhead or persisted playback preferences.
+
+Verify this through the workspace Share button as well as the viewer entry:
+choose Download a file, switch both file types, change video settings, download
+an animation, cancel and retry, then replace the sequence and reopen sharing.
+Showing a Video option without a working renderer is not acceptance.

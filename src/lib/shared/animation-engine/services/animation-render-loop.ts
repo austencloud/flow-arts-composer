@@ -360,6 +360,15 @@ export class AnimationRenderLoop {
     this.ledSampler = config.ledSampler ?? null;
     this.onEffectError = config.onEffectError ?? null;
     this.mandalaOverlay = config.mandalaOverlay ?? null;
+    // The lifecycle manager creates the overlay lazily, and the visibility
+    // subscription that creates it fires before the resizer exists, so the
+    // overlay may arrive at its 500px fallback square. The frame this loop is
+    // handed is the real one; the overlay follows it from the first frame,
+    // not only from the first resize.
+    this.mandalaOverlay?.resize(
+      this.canvasFrame.width,
+      this.canvasFrame.height
+    );
     this.previousLeftTrailPropType = undefined;
     this.previousRightTrailPropType = undefined;
 
@@ -413,11 +422,7 @@ export class AnimationRenderLoop {
       this.onEffectError = config.onEffectError ?? null;
     if (config.mandalaOverlay !== undefined) {
       this.mandalaOverlay = config.mandalaOverlay;
-      // The visibility toggle can create this canvas after the engine has
-      // already settled its first measured frame. Its initial buffer may still
-      // be the 500px bootstrap size while CSS stretches it across the live
-      // stage, which magnifies the guide independently of the props and their
-      // trails. Attach it at the render loop's current frame immediately.
+      // A newly enabled guide must match the already-measured prop canvas.
       this.mandalaOverlay?.resize(
         this.canvasFrame.width,
         this.canvasFrame.height

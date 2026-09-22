@@ -14,7 +14,7 @@ import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/servi
 export class PlacementAnalyzer {
 
   /**
-   * Get the placement group (Alpha, Beta, Gamma) from a GridPlacement
+   * Get the placement group (alpha, beta, gamma, zeta, eta, tau, terra) from a GridPlacement
    */
   getEndPlacementGroup(
     endPlacement: GridPlacement | null | undefined
@@ -26,6 +26,10 @@ export class PlacementAnalyzer {
     if (placementStr.startsWith("alpha")) return GridPlacementGroup.ALPHA;
     if (placementStr.startsWith("beta")) return GridPlacementGroup.BETA;
     if (placementStr.startsWith("gamma")) return GridPlacementGroup.GAMMA;
+    if (placementStr.startsWith("zeta")) return GridPlacementGroup.ZETA;
+    if (placementStr.startsWith("eta")) return GridPlacementGroup.ETA;
+    if (placementStr.startsWith("tau")) return GridPlacementGroup.TAU;
+    if (placementStr.startsWith("terra")) return GridPlacementGroup.TERRA;
 
     return null;
   }
@@ -87,10 +91,32 @@ export class PlacementAnalyzer {
     }
 
     // Calculate the difference (accounting for circular wraparound)
-    const isGamma = startGroup === GridPlacementGroup.GAMMA;
-    const totalPlacements = isGamma ? 16 : 8;
-    const quarterStep = isGamma ? 4 : 2;
-    const halfStep = isGamma ? 8 : 4;
+    // Gamma, zeta, eta, and tau have 16 placements; alpha/beta have 8;
+    // terra has 1 and never reaches this branch.
+    // "half"/"quarter" are index distances (index+8, index+4), gamma's
+    // convention before 2026-09-21, mirrored here for zeta, eta, and tau.
+    // circular-placement-maps.ts disagrees on "quarter" for all four
+    // 16-groups, tau included: QUARTER_PLACEMENT_MAP_CW steps every one of
+    // them by index+2, not this function's index+4. For gamma/zeta/eta that
+    // index+4 happens to equal HALF_PLACEMENT_MAP's own step, so this
+    // function's "quarter" is literally the maps' "half" there; tau's
+    // HALF_PLACEMENT_MAP instead steps by index+8, so this function's
+    // quarter matches neither map value for tau. The maps are not even
+    // self-consistent for tau: two quarters (+2 each) sum to +4, not their
+    // own half (+8), so a follow-up must resolve that before treating the
+    // maps as source of truth. This mismatch feeds bridge-finder.ts and
+    // calculateResultingLength (2x length for half, 4x for quarter) with an
+    // off estimate (pre-existing for gamma, new for zeta/eta, which used to
+    // return null). The fix: read the maps here instead of index math; that
+    // also changes gamma's estimate, so it is a separate change.
+    const sixteenSlots =
+      startGroup === GridPlacementGroup.GAMMA ||
+      startGroup === GridPlacementGroup.ZETA ||
+      startGroup === GridPlacementGroup.ETA ||
+      startGroup === GridPlacementGroup.TAU;
+    const totalPlacements = sixteenSlots ? 16 : 8;
+    const quarterStep = sixteenSlots ? 4 : 2;
+    const halfStep = sixteenSlots ? 8 : 4;
 
     // Calculate absolute difference, accounting for wraparound
     let diff = Math.abs(endNum - startNum);

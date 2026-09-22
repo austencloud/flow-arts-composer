@@ -6,17 +6,28 @@
   import { paintBackJob } from "$lib/features/choreo-card/services/card-back/card-back-raster";
   import { buildFrontComposeOptions } from "$lib/features/choreo-card/services/build-front-compose-options";
   import { wrapContentInCardFrame } from "$lib/features/choreo-card/services/card-front-frame";
-  import { loadParityDeck, listParityDecks, type ParityDeck, type ParityDeckSummary } from "$lib/features/choreo-card/services/parity-deck-source";
+  import {
+    loadParityDeck,
+    listParityDecks,
+    type ParityDeck,
+    type ParityDeckSummary,
+  } from "$lib/features/choreo-card/services/parity-deck-source";
   import { getImageComposer } from "$lib/shared/render/get-image-composer";
   import { getCompositionDispatcher } from "$lib/shared/render/get-composition-dispatcher";
-  import { CompositionDispatcher } from "$lib/shared/render/services/composition-dispatcher";
-  import { getCardAssetBundle } from "$lib/shared/render/services/get-card-asset-bundle";
-  import { buildOverridePlacementBundle } from "$lib/shared/render/services/override-placement-bundle";
+  import { seedCardPool } from "$lib/shared/render/services/card-pool-prewarm";
   import { onMount } from "svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import CardParityViewer from "$lib/shared/parity/CardParityViewer.svelte";
-  import { diff, normalizeToCanvas, AA_TOLERANCE } from "$lib/shared/parity/image-diff";
-  import type { ParityRun, ParityRow, ParityVerdict } from "$lib/shared/parity/parity-types";
+  import {
+    diff,
+    normalizeToCanvas,
+    AA_TOLERANCE,
+  } from "$lib/shared/parity/image-diff";
+  import type {
+    ParityRun,
+    ParityRow,
+    ParityVerdict,
+  } from "$lib/shared/parity/parity-types";
 
   // Logical MPC dimensions; both render paths end at scale-2 (1644x2244).
   const LOGICAL_W = 822;
@@ -50,7 +61,10 @@
     return c;
   }
 
-  function printOptionsFor(deck: ParityDeck, card: ParityDeck["cards"][number]): PrintRenderOptions {
+  function printOptionsFor(
+    deck: ParityDeck,
+    card: ParityDeck["cards"][number]
+  ): PrintRenderOptions {
     return {
       canvasWidth: OUT_W,
       canvasHeight: OUT_H,
@@ -62,6 +76,9 @@
       rightLabel: card.footer.right,
       notes: card.footer.center,
       iconPath: card.footer.iconPath,
+      qrUrl: card.qrUrl,
+      cardProfile: card.cardProfile,
+      customName: card.customName,
       leftPropType: deck.leftPropType,
       rightPropType: deck.rightPropType,
       deckName: deck.name,
@@ -71,57 +88,101 @@
   type Composed = ReturnType<typeof buildFrontComposeOptions>;
 
   // The QR is generated on the main thread (the QR generator uses new Image() and
-  // Firebase, neither available in the worker) and the SAME bitmap is fed to both
-  // renders — main via options.qrImageBitmap, worker via the transfer param — so
-  // the QR cell is byte-identical instead of present-on-one-side-only.
-  async function generateQr(deck: ParityDeck, card: ParityDeck["cards"][number], composed: Composed): Promise<HTMLImageElement | null> {
+  // Firebase, neither available in the worker). It is rasterized once below so
+  // both columns draw identical pixels rather than an SVG image on one side and
+  // a fresh bitmap decode on the other.
+  async function generateQr(
+    deck: ParityDeck,
+    card: ParityDeck["cards"][number],
+    composed: Composed
+  ): Promise<HTMLImageElement | null> {
     const qrGen = getImageComposer().qrGenerator;
-    if (!qrGen || !composed.composeOptions.visibilityOverrides?.showQRCode) return null;
-    return qrGen.generateAsImage(card.sequence, 600, {
+    if (!qrGen || !composed.composeOptions.visibilityOverrides?.showQRCode)
+      return null;
+    const qrOptions = {
       style: "modern",
       margin: 1,
       darkMode: false,
       leftPropType: deck.leftPropType,
       rightPropType: deck.rightPropType,
       deckName: deck.name,
-    });
+    } as const;
+    return card.qrUrl
+      ? qrGen.generateUrlAsImage(card.qrUrl, 600, qrOptions)
+      : qrGen.generateAsImage(card.sequence, 600, qrOptions);
   }
 
   // MAIN-THREAD real card front (the reference): production renderFront path with
   // the shared QR so it matches the worker byte-for-byte.
-  async function renderFrontMain(card: ParityDeck["cards"][number], composed: Composed, qr: HTMLImageElement | null): Promise<HTMLCanvasElement> {
+  async function renderFrontMain(
+    card: ParityDeck["cards"][number],
+    composed: Composed,
+    qr: ImageBitmap | null
+  ): Promise<HTMLCanvasElement> {
     const opts = qr
-      ? ({ ...composed.composeOptions, qrImageBitmap: qr } as typeof composed.composeOptions)
+      ? ({
+          ...composed.composeOptions,
+          qrImageBitmap: qr,
+        } as typeof composed.composeOptions)
       : composed.composeOptions;
-    const inner = await getImageComposer().composeSequenceImage(card.sequence, opts);
-    const framed = wrapContentInCardFrame(inner, composed.frame, htmlCanvas) as HTMLCanvasElement;
+    const inner = await getImageComposer().composeSequenceImage(
+      card.sequence,
+      opts
+    );
+    const framed = wrapContentInCardFrame(
+      inner,
+      composed.frame,
+      htmlCanvas
+    ) as HTMLCanvasElement;
     return normalizeToCanvas(framed as CanvasImageSource, OUT_W, OUT_H);
   }
 
   // WORKER real card front (the candidate): same composeOptions + frame, applied
   // off-thread (frontCardFrame triggers the in-worker frame wrap). The QR clone is
   // transferred via composeFrontBitmap's qrBitmap param.
-  async function renderFrontWorker(card: ParityDeck["cards"][number], composed: Composed, qr: HTMLImageElement | null): Promise<HTMLCanvasElement> {
+  async function renderFrontWorker(
+    card: ParityDeck["cards"][number],
+    composed: Composed,
+    qr: ImageBitmap | null
+  ): Promise<HTMLCanvasElement> {
     const qrBitmap = qr ? await createImageBitmap(qr) : null;
-    const bmp = await getCompositionDispatcher().composeFrontBitmap(
-      card.sequence,
-      { ...composed.composeOptions, frontCardFrame: composed.frame },
-      qrBitmap,
-    );
-    return normalizeToCanvas(bmp as CanvasImageSource, OUT_W, OUT_H);
+    try {
+      const bmp = await getCompositionDispatcher().composeFrontBitmap(
+        card.sequence,
+        { ...composed.composeOptions, frontCardFrame: composed.frame },
+        qrBitmap
+      );
+      try {
+        return normalizeToCanvas(bmp as CanvasImageSource, OUT_W, OUT_H);
+      } finally {
+        bmp.close();
+      }
+    } finally {
+      qrBitmap?.close();
+    }
   }
 
-  async function renderBackNew(seq: SequenceData, theme: string): Promise<HTMLCanvasElement> {
+  async function renderBackNew(
+    seq: SequenceData,
+    theme: string
+  ): Promise<HTMLCanvasElement> {
     const job = await buildBackJob(seq, {
       width: OUT_W,
       height: OUT_H,
       bleedPx: LOGICAL_BLEED * SCALE,
       theme,
     });
-    return normalizeToCanvas(paintBackJob(job) as CanvasImageSource, OUT_W, OUT_H);
+    return normalizeToCanvas(
+      paintBackJob(job) as CanvasImageSource,
+      OUT_W,
+      OUT_H
+    );
   }
 
-  async function renderBackOld(seq: SequenceData, theme: string): Promise<HTMLCanvasElement> {
+  async function renderBackOld(
+    seq: SequenceData,
+    theme: string
+  ): Promise<HTMLCanvasElement> {
     const c = await renderCardBack(seq, {
       width: LOGICAL_W,
       height: LOGICAL_H,
@@ -137,38 +198,57 @@
     return {
       async run(ctx) {
         if (deckNumber == null) {
-          return { verdict: "FAIL", summary: "no released decks", gates: [], result: { error: "no released decks" } };
+          return {
+            verdict: "FAIL",
+            summary: "no released decks",
+            gates: [],
+            result: { error: "no released decks" },
+          };
         }
         ctx.onProgress({ phase: "loading deck" });
         const deck = await loadParityDeck(deckNumber, 8);
         if (!deck || deck.cards.length === 0) {
-          return { verdict: "FAIL", summary: "deck has no renderable cards", gates: [], result: { error: "empty deck" } };
+          return {
+            verdict: "FAIL",
+            summary: "deck has no renderable cards",
+            gates: [],
+            result: { error: "empty deck" },
+          };
         }
 
         if (runMode === "front") {
-          ctx.onProgress({ phase: "probing worker support" });
-          const ok = await CompositionDispatcher.probeWorkerSupport();
-          if (!ok) {
-            return { verdict: "FAIL", summary: "worker probe failed", gates: [], result: { error: "worker probe failed" } };
-          }
-          ctx.onProgress({ phase: "building asset bundle" });
-          const bundle = await getCardAssetBundle(
-            deck.cards.map((c) => c.sequence),
-            {
+          const handPathProfile = deck.cards.every(
+            (card) => card.cardProfile === "hand-path"
+          );
+          ctx.onProgress({ phase: "seeding worker pool" });
+          try {
+            await seedCardPool({
+              sequences: deck.cards.map((card) => card.sequence),
               leftPropType: deck.leftPropType,
               rightPropType: deck.rightPropType,
               theme: deck.theme,
-              iconPaths: deck.cards.map((c) => c.footer.iconPath).filter(Boolean) as string[],
-            },
-          );
-          getCompositionDispatcher().setAssetBundle(bundle);
-          getCompositionDispatcher().setOverrideBundle(buildOverridePlacementBundle());
+              iconPaths: deck.cards
+                .map((card) => card.footer.iconPath)
+                .filter(Boolean) as string[],
+              handPathMode: handPathProfile,
+            });
+          } catch (error) {
+            return {
+              verdict: "FAIL",
+              summary: "worker pool setup failed",
+              gates: [],
+              result: {
+                error: error instanceof Error ? error.message : String(error),
+              },
+            };
+          }
         }
 
         const total = deck.cards.length;
         let done = 0;
         let worst = 0;
         let worstMaxDelta = 0;
+        let renderFailures = 0;
         const summaryRows: Record<string, unknown>[] = [];
 
         for (const [idx, card] of deck.cards.entries()) {
@@ -177,15 +257,28 @@
           // must include the position to stay unique.
           const rowId = `${card.sequence.id}:${idx}:${runMode}`;
           const label = card.word || card.sequence.word || card.sequence.id;
-          ctx.onProgress({ phase: "rendering", current: ++done, total, detail: `${label} (${deck.name})` });
+          ctx.onProgress({
+            phase: "rendering",
+            current: ++done,
+            total,
+            detail: `${label} (${deck.name})`,
+          });
           try {
             let oldCanvas: HTMLCanvasElement;
             let newCanvas: HTMLCanvasElement;
             if (runMode === "front") {
-              const composed = buildFrontComposeOptions(card.sequence, printOptionsFor(deck, card));
-              const qr = await generateQr(deck, card, composed);
-              oldCanvas = await renderFrontMain(card, composed, qr);
-              newCanvas = await renderFrontWorker(card, composed, qr);
+              const composed = buildFrontComposeOptions(
+                card.sequence,
+                printOptionsFor(deck, card)
+              );
+              const qrImage = await generateQr(deck, card, composed);
+              const qr = qrImage ? await createImageBitmap(qrImage) : null;
+              try {
+                oldCanvas = await renderFrontMain(card, composed, qr);
+                newCanvas = await renderFrontWorker(card, composed, qr);
+              } finally {
+                qr?.close();
+              }
             } else {
               oldCanvas = await renderBackOld(card.sequence, deck.theme);
               newCanvas = await renderBackNew(card.sequence, deck.theme);
@@ -199,28 +292,67 @@
               metrics: { "% diff": d.diffPct, "max Δ": d.maxDelta },
               bad: d.diffPct > 1,
               cells: [
-                { label: runMode === "front" ? "MAIN (main thread)" : "OLD (DOM)", canvas: oldCanvas },
-                { label: runMode === "front" ? "WORKER (pool)" : "NEW (BackJob)", canvas: newCanvas },
+                {
+                  label:
+                    runMode === "front" ? "MAIN (main thread)" : "OLD (DOM)",
+                  canvas: oldCanvas,
+                },
+                {
+                  label:
+                    runMode === "front" ? "WORKER (pool)" : "NEW (BackJob)",
+                  canvas: newCanvas,
+                },
                 { label: "DIFF", canvas: d.heat },
               ],
             };
             ctx.addRow(row);
-            summaryRows.push({ label, element: card.tndElement?.name, seqId: card.sequence.id, diffPct: Number(d.diffPct.toFixed(4)), maxDelta: d.maxDelta });
+            summaryRows.push({
+              label,
+              element: card.tndElement?.name,
+              seqId: card.sequence.id,
+              diffPct: Number(d.diffPct.toFixed(4)),
+              maxDelta: d.maxDelta,
+            });
           } catch (err) {
+            renderFailures++;
             const msg = err instanceof Error ? err.message : String(err);
             const blank = document.createElement("canvas");
             blank.width = OUT_W;
             blank.height = OUT_H;
-            ctx.addRow({ id: rowId, title: label, metrics: {}, error: msg, cells: [{ label: "ERROR", canvas: blank }] });
+            ctx.addRow({
+              id: rowId,
+              title: label,
+              metrics: {},
+              error: msg,
+              cells: [{ label: "ERROR", canvas: blank }],
+            });
             summaryRows.push({ label, seqId: card.sequence.id, error: msg });
           }
         }
 
-        const verdict: ParityVerdict["verdict"] = worst <= 1 ? "PASS" : "FAIL";
+        const passed = renderFailures === 0 && worst <= 1;
+        const verdict: ParityVerdict["verdict"] = passed ? "PASS" : "FAIL";
         return {
           verdict,
-          summary: `worst diff ${worst.toFixed(3)}% across ${summaryRows.length} cards`,
-          gates: [{ label: "diff ≤ 1%", pass: worst <= 1, detail: `${worst.toFixed(3)}% · Δ${worstMaxDelta}` }],
+          summary:
+            renderFailures > 0
+              ? `${renderFailures} card render failure${renderFailures === 1 ? "" : "s"}`
+              : `worst diff ${worst.toFixed(3)}% across ${summaryRows.length} cards`,
+          gates: [
+            {
+              label: "all cards rendered",
+              pass: renderFailures === 0,
+              detail:
+                renderFailures === 0
+                  ? "all cards rendered"
+                  : `${renderFailures} render failure${renderFailures === 1 ? "" : "s"}`,
+            },
+            {
+              label: "diff ≤ 1%",
+              pass: worst <= 1,
+              detail: `${worst.toFixed(3)}% · Δ${worstMaxDelta}`,
+            },
+          ],
           result: {
             mode: runMode,
             deck: deck.name,
@@ -238,7 +370,11 @@
 </script>
 
 <svelte:head>
-  <title>Card Parity — {mode === "front" ? "Front Worker vs Main" : "Back Old vs New"}</title>
+  <title
+    >Card Parity — {mode === "front"
+      ? "Front Worker vs Main"
+      : "Back Old vs New"}</title
+  >
 </svelte:head>
 
 <CardParityViewer
@@ -259,7 +395,10 @@
     />
     {#if decks.length > 0 && selectedDeck != null}
       <SegmentedControl
-        options={decks.map((d) => ({ value: String(d.deckNumber), label: d.name }))}
+        options={decks.map((d) => ({
+          value: String(d.deckNumber),
+          label: d.name,
+        }))}
         value={String(selectedDeck)}
         onchange={(v) => (selectedDeck = Number(v))}
         color="accent"

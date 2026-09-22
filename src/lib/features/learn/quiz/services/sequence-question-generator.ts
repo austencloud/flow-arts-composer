@@ -4,6 +4,7 @@ import { getCachedCatalogs, loadCatalogs, loadCatalogSequencesPage } from "$lib/
 import { QuizAnswerFormat, QuizQuestionFormat, QuizType } from "../domain/enums/quiz-enums";
 import type { QuizAnswerOption, QuizQuestionData } from "../domain/models/quiz-models";
 import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
 import { calculate as calculateMandalaGeometry } from "$lib/shared/mandala/services/mandala-geometry-calculator";
 import { shapeKey } from "$lib/shared/mandala/services/mandala-fingerprint";
 
@@ -285,7 +286,9 @@ function pickRandomSequence(wordLength?: number): SequenceData {
   // back to the unfiltered candidate pool when too few match.
   if (wordLength !== undefined) {
     const lengthMatches = candidates.filter(
-      (s) => simplifyRepeatedWord(s.word).length === wordLength
+      // simplifyRepeatedWord keeps the skew braces of a braced word; strip
+      // them back out before counting letters against the requested length.
+      (s) => stripWordNotation(simplifyRepeatedWord(s.word)).length === wordLength
     );
     if (lengthMatches.length >= 4) {
       candidates = lengthMatches;

@@ -7,6 +7,7 @@ import {
 import { classifyComposerGenerationFailure } from "../../src/routes/(public)/composer/_components/composer-generation-failure";
 import {
   isVisitorOwnedConstructSequence,
+  resolveComposerCarriedSequence,
   shouldAdoptCarriedSequence,
 } from "../../src/routes/(public)/composer/_components/composer-sequence-ownership";
 import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
@@ -187,6 +188,31 @@ describe("Composer presentation state", () => {
     expect(shouldAdoptCarriedSequence(incoming, incoming, false)).toBe(false);
     expect(shouldAdoptCarriedSequence(current, null, false)).toBe(false);
     expect(shouldAdoptCarriedSequence(current, incoming, true)).toBe(false);
+  });
+
+  it("provides the opening sequence before any live hero handoff", () => {
+    const opening = sequenceFixture();
+
+    expect(resolveComposerCarriedSequence(null, null, opening)).toBe(opening);
+  });
+
+  it("adopts the first live hero sequence after opening", () => {
+    const opening = sequenceFixture();
+    const liveHero = createSequenceData({ ...opening, id: "live-hero" });
+
+    expect(resolveComposerCarriedSequence(null, liveHero, opening)).toBe(
+      liveHero
+    );
+  });
+
+  it("keeps a visitor sequence ahead of the live hero and opening sequence", () => {
+    const opening = sequenceFixture();
+    const liveHero = createSequenceData({ ...opening, id: "live-hero" });
+    const visitor = createSequenceData({ ...opening, id: "visitor-generated" });
+
+    expect(resolveComposerCarriedSequence(visitor, liveHero, opening)).toBe(
+      visitor
+    );
   });
 
   it("keeps autonomous construct changes inside the construct panel", () => {

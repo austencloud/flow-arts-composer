@@ -45,6 +45,11 @@ export interface OpenSequenceViewerOptions {
   playOnOpen?: boolean;
   /** Open the viewer's canonical Share sheet as soon as the viewer mounts. */
   shareOnOpen?: boolean;
+  /**
+   * A share-link query (`pane=...&s=...`) that seeds the viewer as a followed
+   * link would: a sent sequence opens on the sender's pane and settings.
+   */
+  viewStateParams?: string;
 }
 
 /**
@@ -95,5 +100,6 @@ export function openSequenceViewer(
     handPathMode: options.handPathMode,
     playOnOpen: options.playOnOpen,
     shareOnOpen: options.shareOnOpen,
+    viewStateParams: options.viewStateParams,
   });
 }

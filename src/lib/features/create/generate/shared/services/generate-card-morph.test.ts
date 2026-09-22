@@ -20,6 +20,7 @@ beforeEach(() => {
   startMorph.mockReset();
   claims.mockReset();
   claims.mockReturnValue(0);
+  document.documentElement.className = "";
 });
 
 describe("generateCardMorphName", () => {
@@ -33,21 +34,53 @@ describe("generateCardMorphName", () => {
 });
 
 describe("morphGenerateCard", () => {
-  it("runs the mutation plainly when no card wrapper has claimed the name", () => {
+  it("runs the mutation plainly when no card wrapper has claimed the name", async () => {
     const mutate = vi.fn();
-    const ran = morphGenerateCard("customize", mutate);
+    const onSettled = vi.fn();
+    const ran = morphGenerateCard("customize", mutate, { onSettled });
     expect(mutate).toHaveBeenCalledOnce();
     expect(startMorph).not.toHaveBeenCalled();
+    expect(onSettled).not.toHaveBeenCalled();
+    await vi.waitFor(() => expect(onSettled).toHaveBeenCalledOnce());
     expect(ran).toBe(false);
     expect(lastGenerateCardMorphRan()).toBe(false);
   });
 
-  it("routes through startMorph when the name is claimed and reports whether a transition ran", () => {
+  it("waits for a real card morph to settle before continuing a handoff", async () => {
+    claims.mockReturnValue(1);
+    let finish!: () => void;
+    const finished = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+    startMorph.mockImplementation((mutate) => {
+      mutate();
+      return { finished } as ViewTransition;
+    });
+    const onSettled = vi.fn();
+
+    morphGenerateCard("customize", vi.fn(), { onSettled });
+    expect(onSettled).not.toHaveBeenCalled();
+    expect(document.documentElement).toHaveClass(
+      "generate-card-morph-active",
+      "generate-card-morph-customize"
+    );
+
+    finish();
+    await finished;
+    await Promise.resolve();
+    expect(onSettled).toHaveBeenCalledOnce();
+    expect(document.documentElement).not.toHaveClass(
+      "generate-card-morph-active",
+      "generate-card-morph-customize"
+    );
+  });
+
+  it("routes through startMorph when the name is claimed and reports whether a transition ran", async () => {
     claims.mockReturnValue(1);
     const mutate = vi.fn();
     startMorph.mockImplementation((m) => {
       m();
-      return {} as ViewTransition;
+      return { finished: Promise.resolve() } as ViewTransition;
     });
 
     expect(morphGenerateCard("loop", mutate)).toBe(true);
@@ -60,8 +93,11 @@ describe("morphGenerateCard", () => {
       return null;
     });
     const secondMutate = vi.fn();
-    expect(morphGenerateCard("loop", secondMutate)).toBe(false);
+    const onSettled = vi.fn();
+    expect(morphGenerateCard("loop", secondMutate, { onSettled })).toBe(false);
     expect(secondMutate).toHaveBeenCalledOnce();
+    expect(onSettled).not.toHaveBeenCalled();
+    await vi.waitFor(() => expect(onSettled).toHaveBeenCalledOnce());
     expect(lastGenerateCardMorphRan()).toBe(false);
   });
 });

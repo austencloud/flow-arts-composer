@@ -249,6 +249,9 @@
       if (nextTransition === currentTransition) return;
 
       if (requestedBackground !== currentTransition.mountedKey) {
+        // Capture while the outgoing world is still mounted. The next render
+        // may already be the empty gap, particularly with reduced motion.
+        transitionVisual?.retainFrame();
         transitionVisual?.setRendererReady(false);
       }
       transition = nextTransition;

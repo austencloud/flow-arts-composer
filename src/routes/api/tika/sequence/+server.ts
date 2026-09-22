@@ -10,6 +10,7 @@ import fs from "fs";
 import path from "path";
 import { RATE_LIMITS } from "$lib/server/security/rate-limiter";
 import { withRateLimit } from "$lib/server/security/withRateLimit";
+import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Types
@@ -132,18 +133,24 @@ function ensureDataLoaded() {
 const TYPE_6_LETTERS = ["α", "β", "γ"];
 
 function parseWordToLetters(word: string): string[] {
+  // Strip skew-frame braces first: they mark a span of the word, not a
+  // letter, and the scan below has no notation awareness of its own. This
+  // mirrors the same fix in tika-sequence-validator.ts's parseWordToLetters
+  // (this route builds its own letter list rather than importing that
+  // service's container, so the two copies are patched independently).
+  const bareWord = stripWordNotation(word);
   const letters: string[] = [];
   let i = 0;
 
-  while (i < word.length) {
-    const char = word[i];
+  while (i < bareWord.length) {
+    const char = bareWord[i];
     if (!char) {
       i++;
       continue;
     }
 
     // Check if next char is a dash (for Type 3/5 letters)
-    const nextChar = word[i + 1];
+    const nextChar = bareWord[i + 1];
     if (nextChar === "-") {
       letters.push(char + "-");
       i += 2;

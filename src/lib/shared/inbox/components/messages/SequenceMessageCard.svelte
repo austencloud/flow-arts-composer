@@ -160,6 +160,7 @@
         source: "inbox_message",
         returnPath: window.location.pathname,
         returnLabel: "Messages",
+        viewStateParams: attachment.metadata?.sequenceViewParams,
       });
     } catch (caught) {
       const failure =

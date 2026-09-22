@@ -46,6 +46,14 @@ function npm(args, cwd = packageRoot, env = {}, capture = false) {
 
 // Build before packing, then never rebuild between comparison and publication.
 npm(["run", "build:packages"], repositoryRoot);
+execFileSync(
+  process.execPath,
+  [join(packageRoot, "scripts/verify-hand-key-glyphs.mjs")],
+  {
+    cwd: repositoryRoot,
+    stdio: "inherit",
+  }
+);
 npm(["run", "typecheck"]);
 npm(["run", "build"]);
 npm(["run", "test:pack"]);

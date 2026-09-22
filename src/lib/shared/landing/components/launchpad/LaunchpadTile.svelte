@@ -469,7 +469,13 @@
 
   /* The first response always contains useful artwork. Live Svelte media can
      replace it after its own chunk settles, while slow links keep this layer
-     without paying for six decorative renderers. */
+     without paying for six decorative renderers.
+
+     Viewport tiers may dim the poster, but only through --poster-opacity,
+     never by setting `opacity` directly: a tier selector such as
+     `.tile.variant-home .static-media` outranks `.media-loaded .static-media`
+     and would keep the poster painted over the live media forever (the
+     2009-2022 timeline over the pictograph, "TKA" over the dictionary entry). */
   .static-media {
     position: absolute;
     inset: 0;
@@ -489,7 +495,7 @@
         color-mix(in oklch, var(--c) 9%, transparent),
         transparent 58%
       );
-    opacity: 1;
+    opacity: var(--poster-opacity, 1);
     transition: opacity 180ms ease;
   }
   .media-loaded .static-media {
@@ -1231,7 +1237,7 @@
     .tile.variant-home .static-media {
       place-items: center end;
       padding-right: 0.5rem;
-      opacity: 0.86;
+      --poster-opacity: 0.86;
     }
     .tile.variant-home .poster-orbit,
     .tile.variant-home .poster-card-stack {

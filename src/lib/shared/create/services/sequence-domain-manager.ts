@@ -15,6 +15,8 @@ import type {
 } from "$lib/shared/validation/validation-result";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
+import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
 
 import type { SequenceCreateRequest } from "$lib/shared/create/domain/sequence-models";
 
@@ -226,7 +228,7 @@ export function calculateSequenceWord(sequence: SequenceData): string {
   }
 
   // Extract letters from steps (desktop logic)
-  const word = sequence.steps.map((step) => step?.letter).join("");
+  const word = deriveWordFromBeats(sequence.steps);
 
   // Apply word simplification for circular sequences (desktop logic)
   return simplifyRepeatedWord(word);
@@ -235,32 +237,6 @@ export function calculateSequenceWord(sequence: SequenceData): string {
 // ============================================================================
 // MODULE-PRIVATE HELPERS
 // ============================================================================
-
-function simplifyRepeatedWord(word: string): string {
-  if (!word) return word;
-
-  const canFormByRepeating = (s: string, pattern: string): boolean => {
-    const patternLen = pattern.length;
-    for (let i = 0; i < s.length; i += patternLen) {
-      if (s.slice(i, i + patternLen) !== pattern) {
-        return false;
-      }
-    }
-    return true;
-  };
-
-  const n = word.length;
-
-  // Try each possible pattern length from smallest to largest
-  for (let i = 1; i <= Math.floor(n / 2); i++) {
-    const pattern = word.slice(0, i);
-    if (n % i === 0 && canFormByRepeating(word, pattern)) {
-      return pattern;
-    }
-  }
-
-  return word;
-}
 
 function createEmptyBeat(stepNumber: number): StepData {
   // Blank beat: the factory fills both hands with invisible static

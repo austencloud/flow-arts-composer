@@ -62,6 +62,8 @@ export function openSequenceOverlay(
     /** Open on the 2D animation surface and request playback. */
     playOnOpen?: boolean;
     shareOnOpen?: boolean;
+    /** Viewer state query to seed the viewer with; see `seedViewerStateParams`. */
+    viewStateParams?: string;
     fromUrl?: boolean;
     shortCode?: string;
     tunnelComposition?: TunnelComposition;
@@ -107,10 +109,33 @@ export function openSequenceOverlay(
         state: { sequenceOverlay: true },
       });
     }
+    if (options.viewStateParams) seedViewerStateParams(options.viewStateParams);
     void mintAndSyncShortCode(sequence, token);
   } else if (options.shortCode) {
     _activeShortCode = options.shortCode;
   }
+}
+
+/**
+ * Puts a sent sequence's view onto the address bar before the viewer mounts.
+ * The viewer seeds its URL session from `location.search` at construction,
+ * the same path a followed share link takes, so the recipient gets the
+ * sender's pane, effects, and settings as a view-only override of their own
+ * saved values. Only the viewer-owned names are copied; `closeSequenceOverlay`
+ * already strips them again.
+ */
+function seedViewerStateParams(viewStateParams: string): void {
+  const incoming = new URLSearchParams(viewStateParams);
+  mutateCurrentUrl(
+    (url) => {
+      for (const name of VIEWER_STATE_PARAM_NAMES) {
+        const value = incoming.get(name);
+        if (value) url.searchParams.set(name, value);
+        else url.searchParams.delete(name);
+      }
+    },
+    { state: { sequenceOverlay: true } }
+  );
 }
 
 async function waitForAuthSettled(timeoutMs = 5000): Promise<void> {

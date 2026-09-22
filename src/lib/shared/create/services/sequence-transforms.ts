@@ -509,10 +509,13 @@ function truncateToNewStart(
 }
 
 /**
- * Derive the static letter (α, β, γ) from a grid placement.
+ * Derive the static letter (α, β, γ, ζ, η) from a grid placement.
  * Alpha placements → Letter.ALPHA (α)
  * Beta placements → Letter.BETA (β)
  * Gamma placements → Letter.GAMMA (γ)
+ * Zeta placements → Letter.ZETA (ζ), eta placements → Letter.ETA (η): a
+ * skewed-frame start (one hand cardinal, the other intercardinal) after a
+ * 45° rotation.
  */
 function getStaticLetterFromGridPlacement(
   placement: GridPlacement | null | undefined
@@ -522,6 +525,8 @@ function getStaticLetterFromGridPlacement(
   const placementStr = placement.toString().toLowerCase();
   if (placementStr.startsWith("beta")) return Letter.BETA;
   if (placementStr.startsWith("gamma")) return Letter.GAMMA;
+  if (placementStr.startsWith("zeta")) return Letter.ZETA;
+  if (placementStr.startsWith("eta")) return Letter.ETA;
   return Letter.ALPHA; // Default for alpha placements
 }
 

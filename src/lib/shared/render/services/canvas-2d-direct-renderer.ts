@@ -17,6 +17,7 @@ import {
   drawTKAGlyph,
   drawTurnsColumn,
   drawDirectionDot,
+  drawSkewBracesGlyph,
   drawElementalGlyph,
   drawPropElementalGlyph,
   drawPlacementGlyph,
@@ -257,6 +258,25 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
       arrowsTime = performance.now() - arrowsStart; // eslint-disable-line @typescript-eslint/no-unused-vars
     }
 
+    // Computed once (when TKA is visible at all) and threaded through to
+    // both the braces and the turns column below, instead of each
+    // independently calling the generator - but still gated behind
+    // visibility.showTKA, matching both call sites' own guard, so a
+    // hidden-TKA batch render (e.g. option-picker thumbnails) still pays
+    // zero cost for this instead of one generator call per pictograph.
+    // null (distinct from the healthy "(s, 0, 0)" default) marks
+    // generation failure specifically, so drawDirectionDot below can skip
+    // itself instead of misreading a failure as the legitimate "nothing
+    // to show" tuple - see that call site for why the distinction matters.
+    let turnsTuple: string | null = "(s, 0, 0)";
+    if (visibility.showTKA) {
+      try {
+        turnsTuple = getTurnsTupleGenerator().generateTurnsTuple(preparedPictograph);
+      } catch {
+        turnsTuple = null;
+      }
+    }
+
     // 5. Draw TKA glyph (letter)
     let letterDimensions = { width: 100, height: 100 };
     let glyphTime = 0;
@@ -273,6 +293,21 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
       if (isDashLetter(preparedPictograph.letter)) {
         drawDash(ctx, letterDimensions, scale, isDarkMode);
       }
+
+      // 5b. Skew braces around the letter (skewed-frame beats only) - must
+      // come before the turns column so its rightExtent clearance can
+      // account for whatever the turns column is about to paint.
+      drawSkewBracesGlyph(
+        ctx,
+        preparedPictograph,
+        letterDimensions,
+        scale,
+        isDarkMode,
+        // Both draw functions are no-ops on the "nothing to show" default,
+        // so a failed generation (null) can keep using it here safely -
+        // only drawDirectionDot below needs to tell the two cases apart.
+        turnsTuple ?? "(s, 0, 0)"
+      );
     }
 
     // 6. Draw turn numbers (TurnsColumn - to the RIGHT of letter)
@@ -283,16 +318,23 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
         letterDimensions,
         scale,
         isDarkMode,
-        getTurnsTupleGenerator,
+        turnsTuple ?? "(s, 0, 0)",
         visibility
       );
     }
 
-    // 7. Draw direction dot (same/opp indicator)
+    // 7. Draw direction dot (same/opp indicator) - skipped outright when
+    // turnsTuple generation failed (null). drawDirectionDot paints a dot
+    // for direction "s", which is exactly what the healthy default
+    // "(s, 0, 0)" parses to, so falling back to that default here (like
+    // the two draw calls above do) would have a throwing generator paint
+    // a spurious dot where it used to paint nothing. A healthy generator
+    // is unaffected either way.
     if (
       visibility.showTKA &&
       preparedPictograph.letter &&
-      preparedPictograph.motions
+      preparedPictograph.motions &&
+      turnsTuple !== null
     ) {
       drawDirectionDot(
         ctx,
@@ -300,7 +342,7 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
         letterDimensions,
         scale,
         isDarkMode,
-        getTurnsTupleGenerator
+        turnsTuple
       );
     }
 

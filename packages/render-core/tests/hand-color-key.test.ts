@@ -72,8 +72,11 @@ describe("hand colour key renderers", () => {
       arc: (x: number, y: number, radius: number) =>
         operations.push(`circle:${x}:${y}:${radius}`),
       fill: () => operations.push(`fill:${context.fillStyle}`),
-      fillText: (text: string, x: number, y: number) =>
-        operations.push(`text:${text}:${x}:${y}:${context.fillStyle}`),
+      moveTo: (x: number, y: number) => operations.push(`move:${x}:${y}`),
+      lineTo: (x: number, y: number) => operations.push(`line:${x}:${y}`),
+      quadraticCurveTo: (cpx: number, cpy: number, x: number, y: number) =>
+        operations.push(`quadratic:${cpx}:${cpy}:${x}:${y}`),
+      closePath: () => operations.push("close"),
     };
     const colorForHand = (hand: "left" | "right") =>
       hand === "left" ? "#123456" : "#abcdef";
@@ -99,14 +102,15 @@ describe("hand colour key renderers", () => {
       `circle:${950 + entry.swatchX * 2}:${875 * 2}:${20 * 2}`
     );
     expect(operations).toContain(
-      `text:L:${950 + entry.labelX * 2}:${898 * 2}:#fedcba`
+      `move:${950 + (entry.labelX + 4.53125) * 2}:${898 * 2 - 0.75}`
     );
     expect(operations).toContain("fill:#123456");
     expect(svg).toContain('transform="translate(475, 0)"');
     expect(svg).toContain(
       `<circle cx="${entry.swatchX}" cy="875" r="20" fill="#123456"/>`
     );
-    expect(svg).toContain(`<text x="${entry.labelX}" y="898">L</text>`);
+    expect(svg).toContain(`<path d="M4.53125 -0.375`);
+    expect(svg).toContain(`transform="translate(${entry.labelX} 898)"`);
     expect(svg).toContain('fill="#fedcba"');
   });
 });

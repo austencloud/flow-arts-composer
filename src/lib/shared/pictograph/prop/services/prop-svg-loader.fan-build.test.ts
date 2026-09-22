@@ -107,6 +107,25 @@ describe("PropSvgLoader fan builds", () => {
     expect(fire.svgData!.viewBox).not.toEqual(big.svgData!.viewBox);
   });
 
+  it("loads a hand-specific model sprite without recoloring it or reusing notation artwork", async () => {
+    const loader = new StaticFileLoader();
+    const notation = await loader.loadPropSvg(placement, motion("buugeng", HandSide.LEFT), false, {
+      themeMode: "dark",
+      propLook: "pictograph",
+    });
+    const model = await loader.loadPropSvg(placement, motion("buugeng", HandSide.RIGHT), false, {
+      themeMode: "dark",
+      propLook: "model",
+    });
+    expect(loader.fetched).toEqual([
+      "/images/props/pictograph/buugeng.svg",
+      expect.stringMatching(/^\/images\/props\/appearances\/model\/buugeng-red\.svg\?v=/),
+    ]);
+    expect(notation.svgData!.svgContent).not.toEqual(model.svgData!.svgContent);
+    expect(model.svgData!.svgContent).toContain("buugeng 3D model sprite (red)");
+    expect(model.svgData!.viewBox).toEqual({ width: 262.6, height: 135.9 });
+  });
+
   it("hands a light pictograph the paper palette so the choreo sheet can read the fan", async () => {
     // The sheet and its PDF prepare with themeMode "light". The rod-built fans
     // were tuned on a dark pictograph, where pale kevlar wicks anchor the

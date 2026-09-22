@@ -270,6 +270,46 @@ describe("ExpandedCardStage", () => {
     }
   });
 
+  it("opens the step editor only after the expanded card has settled", async () => {
+    const stepButton = document.createElement("button");
+    stepButton.type = "button";
+    stepButton.textContent = "Edit step 5";
+    document.body.appendChild(stepButton);
+
+    try {
+      const state = createPanelCoordinationState();
+      render(ExpandedCardStage, props(state, true));
+      stepButton.addEventListener("click", () => state.openStepEditorPanel());
+
+      state.openTnDPanel();
+      flushSync();
+      await tick();
+
+      const startViewTransition = vi.spyOn(document, "startViewTransition");
+      stepButton.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      // The target's click handler asks for the editor first. The stage's
+      // bubbling listener immediately turns that into a pending handoff, so
+      // Svelte never paints the drawer on top of the returning card.
+      expect(state.isStepEditorPanelOpen).toBe(false);
+      await vi.waitFor(() => {
+        flushSync();
+        expect(state.openGenerateCard).toBeNull();
+      });
+
+      const closeTransition = startViewTransition.mock.results[0]
+        ?.value as ViewTransition;
+      expect(state.isStepEditorPanelOpen).toBe(false);
+      await closeTransition.finished;
+      await vi.waitFor(() => {
+        expect(state.isStepEditorPanelOpen).toBe(true);
+      });
+    } finally {
+      stepButton.remove();
+    }
+  });
+
   it("keeps the desktop stage open for interactions inside it", async () => {
     const state = createPanelCoordinationState();
     render(ExpandedCardStage, props(state, true));

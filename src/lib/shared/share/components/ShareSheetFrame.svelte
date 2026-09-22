@@ -36,6 +36,7 @@
   size={compact ? "fit" : "full"}
   position="center"
   animation="pop"
+  animateSize
   labelledBy={headingId}
   onclose={onClose}
   onclosed={onClosed}
@@ -64,10 +65,7 @@
     backdrop-filter: none;
     border: 1px solid var(--theme-stroke);
     border-radius: 1.25rem;
-    interpolate-size: allow-keywords;
-    transition:
-      width var(--transition-normal),
-      height var(--transition-normal);
+    transition: width var(--transition-normal);
   }
   :global(dialog.share-sheet-modal[data-size="full"] .modal-content-wrapper) {
     height: auto;
@@ -82,10 +80,21 @@
     overflow-y: hidden;
     overflow-x: hidden;
   }
-  :global(dialog.share-sheet-modal[data-size="full"] .modal-body > .sheet) {
+  :global(dialog.share-sheet-modal[data-size="full"] .modal-body > .crossfade),
+  :global(
+    dialog.share-sheet-modal[data-size="full"] .modal-body > .crossfade > .layer
+  ),
+  :global(
+    dialog.share-sheet-modal[data-size="full"]
+      .modal-body
+      > .crossfade
+      > .layer
+      > .sheet
+  ) {
     width: 100%;
     height: auto;
     max-height: inherit;
+    min-height: 0;
   }
   :global(dialog.base-modal.share-sheet-modal--narrow[data-size]) {
     width: min(30rem, calc(100vw - 2rem));

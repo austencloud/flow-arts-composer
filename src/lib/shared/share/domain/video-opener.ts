@@ -18,7 +18,7 @@ export const VIDEO_OPENER_OPTIONS: readonly {
   label: string;
 }[] = [
   { value: "first-beat", label: "First beat" },
-  { value: "this-frame", label: "This frame" },
+  { value: "this-frame", label: "Current frame" },
   { value: "mandala", label: "Mandala" },
 ];
 

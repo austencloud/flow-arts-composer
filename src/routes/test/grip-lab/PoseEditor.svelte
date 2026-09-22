@@ -141,7 +141,7 @@
       oninput={(event) => onTolerance(Number(event.currentTarget.value))}
     />
   </label>
-  <p>Edits save a pose here; motion blends between saved poses.</p>
+  <p>Edits save a whole-pose keyframe here.</p>
   {#if selected === "elbow"}<p>The handle guides the elbow’s direction; arm length still limits its position.</p>{/if}
 </section>
 

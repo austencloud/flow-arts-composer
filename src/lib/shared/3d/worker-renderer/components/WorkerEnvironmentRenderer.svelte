@@ -1,5 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
+  import { flyFade } from "$lib/shared/transitions/motion";
+  import { SCENE_ENVIRONMENTS } from "../../environments/domain/scene-environment";
 
   import { createJellyfishChime } from "../../environments/scenes/ocean/runtime/fauna/jellyfish/jellyfish-chime";
   import type { ApplicationThreadCameraSnapshot } from "../domain/application-thread-camera";
@@ -62,8 +65,11 @@
       snapshot: ApplicationThreadCameraSnapshot
     ) => void;
     onCameraChange?: (snapshot: ApplicationThreadCameraSnapshot) => void;
-    onCameraReady?: (controller: ApplicationThreadCameraController) => (() => void);
+    onCameraReady?: (
+      controller: ApplicationThreadCameraController
+    ) => () => void;
     onSnapshot?: (snapshot: WorkerSceneSwitchSnapshot) => void;
+    onRendererReady?: (renderer: WorkerEnvironmentRenderer) => () => void;
   }
 
   let {
@@ -88,6 +94,7 @@
     onCameraChange,
     onCameraReady,
     onSnapshot,
+    onRendererReady,
   }: Props = $props();
 
   let container = $state<HTMLDivElement>();
@@ -102,6 +109,30 @@
       draggingIndex: null,
     });
   let cameraInteractionActive = false;
+  let switchSnapshot = $state.raw<WorkerSceneSwitchSnapshot | null>(null);
+  let showPreparation = $state(false);
+  const pendingEnvironment = $derived(
+    switchSnapshot?.active &&
+      switchSnapshot.staging &&
+      switchSnapshot.phase === "booting"
+      ? switchSnapshot.staging
+      : null
+  );
+  const pendingLabel = $derived(
+    SCENE_ENVIRONMENTS.find(({ id }) => id === pendingEnvironment)?.label ??
+      "scene"
+  );
+
+  $effect(() => {
+    const pending = pendingEnvironment;
+    showPreparation = false;
+    if (!pending) return;
+    // A warm return should complete without flashing a loading notice.
+    const timer = setTimeout(() => {
+      showPreparation = true;
+    }, 220);
+    return () => clearTimeout(timer);
+  });
   const jellyfishChime = createJellyfishChime();
 
   const performerCameraArbiter: WorkerPerformerInteractionCameraArbiter = {
@@ -188,7 +219,10 @@
 
     renderer = new WorkerEnvironmentRenderer({
       container: mountedInteractionSurface,
-      onSnapshot,
+      onSnapshot: (snapshot) => {
+        switchSnapshot = snapshot;
+        onSnapshot?.(snapshot);
+      },
       onFrame,
       onInteraction: handleInteraction,
       qualityTier,
@@ -236,10 +270,15 @@
     renderer.setPerformers(performers);
     renderer.setEffects(effects);
     renderer.switchTo(environment);
+    const releasePreparation = onRendererReady?.(renderer);
 
     return () => {
+      releasePreparation?.();
       releaseCamera?.();
-      cameraController?.controls.removeEventListener("rest", publishSettledCamera);
+      cameraController?.controls.removeEventListener(
+        "rest",
+        publishSettledCamera
+      );
       if (cameraInteractionActive && cameraController) {
         onCameraInteractionEnd?.(cameraController.getSnapshot());
         cameraInteractionActive = false;
@@ -282,8 +321,23 @@
     bind:this={interactionSurface}
     role="application"
     aria-label="3D performer stage"
+    aria-busy={!!pendingEnvironment}
     tabindex={interactionViewer ? 0 : undefined}
   ></div>
+
+  {#if showPreparation && pendingEnvironment}
+    <div
+      class="scene-switch-status"
+      role="status"
+      aria-live="polite"
+      transition:flyFade
+    >
+      <span aria-hidden="true"
+        ><ProgressRing percent={-1} size={16} strokeWidth={2} /></span
+      >
+      <span>Preparing {pendingLabel}…</span>
+    </div>
+  {/if}
 
   {#if container && interactionSurface && cameraSnapshot && performerInteractionFrame && interactionViewer}
     {#key interactionViewer}
@@ -303,6 +357,26 @@
 </div>
 
 <style>
+  .scene-switch-status {
+    position: absolute;
+    z-index: 4;
+    top: 12px;
+    left: 50%;
+    translate: -50% 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: calc(100% - 24px);
+    padding: 8px 12px;
+    border: 1px solid var(--theme-stroke);
+    border-radius: 8px;
+    background: var(--theme-panel-bg);
+    color: var(--theme-text);
+    font-size: var(--font-size-min, 14px);
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
   .worker-environment-renderer {
     position: absolute;
     inset: 0;

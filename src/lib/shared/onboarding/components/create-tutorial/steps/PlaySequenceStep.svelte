@@ -17,6 +17,7 @@ import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get
     createSequenceData,
     type SequenceData,
   } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
   import { pictographDataToStepData } from "$lib/shared/pictograph/shared/domain/utils/step-pictograph-conversion";
   import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
@@ -66,7 +67,7 @@ import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get
       pictographDataToStepData(step, step.id ?? `tutorial-step-${i}`),
     );
 
-    const word = steps.map((b) => b.letter ?? "").join("");
+    const word = deriveWordFromBeats(sequenceSteps);
 
     return createSequenceData({
       name: "Tutorial",

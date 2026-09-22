@@ -52,6 +52,7 @@ durations or easing curves in feature code. Use `DURATION`, the global
 | A flex workspace panel entering/leaving                                  | `PanelGroup.svelte`, which owns `flexPresence`; do not reproduce its sizing transition in a feature     |
 | Keyed list reorder                                                       | Svelte `animate:flip` with `flipDuration()`                                                             |
 | Several survivors recomposing across grids, families, or keyed blocks    | `createLayoutMotion()` from `shared/transitions/layout-flip.ts`                                         |
+| Content-driven dialog height changes                                    | `BaseModal` with `animateSize`; `createIntrinsicHeightMotion()` in `shared/transitions/motion.ts`         |
 | Small overlay/control presence that does not reflow siblings             | `flyFade` or `popIn` from `shared/transitions/motion.ts`                                                |
 | Route/module navigation                                                  | the existing native view-transition/module-transition owner in `src/app.css` and `view-transitions.css` |
 

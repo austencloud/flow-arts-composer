@@ -26,6 +26,10 @@
   } from "./modal-stack";
   import { FocusTrap } from "../drawer/focus-trap";
   import { FocusRestore, focusFirstOrContainer } from "./helpers/focus-restore";
+  import {
+    createIntrinsicHeightMotion,
+    reducedMotion,
+  } from "$lib/shared/transitions/motion";
   import "./modal-tokens.css";
 
   type CloseReason = "backdrop" | "escape" | "programmatic" | "button";
@@ -62,6 +66,8 @@
     size?: ModalSize;
     position?: ModalPosition;
     animation?: ModalAnimation;
+    /** Animate content-driven dialog height changes without remounting its children. */
+    animateSize?: boolean;
 
     // Customization
     class?: string;
@@ -86,6 +92,7 @@
     size = "md",
     position = "center",
     animation = "pop",
+    animateSize = false,
     class: className = "",
     labelledBy,
     describedBy,
@@ -101,11 +108,100 @@
   let wasOpen = $state(false);
   let modalId = $state(generateModalId());
   let exitTimer: ReturnType<typeof setTimeout> | null = null;
+  let contentWrapper = $state<HTMLElement | null>(null);
 
   let focusRestore: FocusRestore | null = null;
   let focusTrap: FocusTrap | null = null;
   let handlersInitialized = false;
+  let intrinsicMotion: ReturnType<typeof createIntrinsicHeightMotion> | null =
+    null;
+  let sizeObserver: ResizeObserver | null = null;
+  let naturalDialogHeight = 0;
+  let activeSizeTarget: number | null = null;
 
+  function stopIntrinsicSizeMotion() {
+    sizeObserver?.disconnect();
+    sizeObserver = null;
+    intrinsicMotion?.cancel();
+    intrinsicMotion = null;
+    activeSizeTarget = null;
+  }
+
+  function measureIntrinsicSize() {
+    if (!dialogElement || !contentWrapper || !intrinsicMotion) return;
+    const style = getComputedStyle(dialogElement);
+    const chrome = [
+      style.borderTopWidth,
+      style.borderBottomWidth,
+      style.paddingTop,
+      style.paddingBottom,
+    ].reduce((sum, value) => sum + (Number.parseFloat(value) || 0), 0);
+    const cap = Number.parseFloat(style.maxHeight);
+    // The wrapper stays naturally sized while the dialog frame animates. This
+    // measures the actual grid/flex result, never a sum of descendant heights.
+    const target = Math.min(
+      contentWrapper.offsetHeight + chrome,
+      Number.isFinite(cap) ? cap : Infinity
+    );
+    if (activeSizeTarget !== null && Math.abs(activeSizeTarget - target) < 0.5)
+      return;
+    const source = intrinsicMotion.currentHeight() ?? naturalDialogHeight;
+    naturalDialogHeight = target;
+    activeSizeTarget = target;
+    const animation = intrinsicMotion.resize(source, target);
+    if (!animation) {
+      activeSizeTarget = null;
+      return;
+    }
+    animation.addEventListener(
+      "finish",
+      () => {
+        if (activeSizeTarget !== target) return;
+        activeSizeTarget = null;
+      },
+      { once: true }
+    );
+  }
+
+  $effect(() => {
+    if (
+      !animateSize ||
+      !hasEntered ||
+      isClosing ||
+      !dialogElement ||
+      !contentWrapper
+    ) {
+      stopIntrinsicSizeMotion();
+      return;
+    }
+    intrinsicMotion = createIntrinsicHeightMotion(dialogElement);
+    naturalDialogHeight = dialogElement.offsetHeight;
+    intrinsicMotion.resize(naturalDialogHeight, naturalDialogHeight);
+    // RO runs before paint. Establish the old frame immediately so a new
+    // intrinsic size cannot flash before its animation starts. Observing the
+    // non-shrinking wrapper avoids observing the animated frame itself.
+    sizeObserver = new ResizeObserver(measureIntrinsicSize);
+    sizeObserver.observe(contentWrapper);
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const handleMotionPreference = () => {
+      if (!reducedMotion() || !dialogElement) return;
+      intrinsicMotion?.cancel();
+      activeSizeTarget = null;
+      naturalDialogHeight = dialogElement.offsetHeight;
+      intrinsicMotion?.resize(naturalDialogHeight, naturalDialogHeight);
+    };
+    motionQuery.addEventListener("change", handleMotionPreference);
+    const preferenceObserver = new MutationObserver(handleMotionPreference);
+    preferenceObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-motion-preference"],
+    });
+    return () => {
+      motionQuery.removeEventListener("change", handleMotionPreference);
+      preferenceObserver.disconnect();
+      stopIntrinsicSizeMotion();
+    };
+  });
   function initializeHandlers() {
     if (handlersInitialized) return;
     handlersInitialized = true;
@@ -312,6 +408,7 @@
     data-entered={hasEntered}
     data-closing={isClosing}
     data-external-overlays={allowExternalOverlays}
+    data-intrinsic-size={animateSize}
     aria-modal="true"
     aria-labelledby={labelledBy}
     aria-describedby={describedBy}
@@ -324,6 +421,7 @@
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
       class="modal-content-wrapper"
+      bind:this={contentWrapper}
       onclick={(e) => e.stopPropagation()}
       onkeydown={() => {}}
     >
@@ -412,6 +510,12 @@
        below can become the scroll owner when content grows past the screen. */
     max-height: inherit;
     flex: 0 1 auto;
+  }
+
+  :global(dialog[data-intrinsic-size="true"]) .modal-content-wrapper {
+    height: auto;
+    flex: 0 0 auto;
+    max-height: inherit;
   }
 
   /* Header slot */

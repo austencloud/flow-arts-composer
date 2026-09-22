@@ -33,6 +33,7 @@ import {
   updatePublicThumbnails,
 } from "$lib/shared/library/services/public-sequence-persister";
 import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
+import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
 import type { FlaggedTerm } from "$lib/features/moderation/domain/models/content-moderation-models";
 
 interface ContentModerator {
@@ -482,8 +483,12 @@ export class PublicIndexSyncer {
       }
     }
 
-    // Layer 2: Check loop-labels collection for human-curated override
-    const curatedLoopType = await this.fetchLoopType(firestore, sequence.word);
+    // Layer 2: Check loop-labels collection for human-curated override.
+    // Loop labels are keyed by the sequence's bare letters, not its skew span.
+    const curatedLoopType = await this.fetchLoopType(
+      firestore,
+      stripWordNotation(sequence.word)
+    );
     if (curatedLoopType) {
       try {
         const detection = loopDetector.detectLOOPType(sequence);

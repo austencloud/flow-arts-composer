@@ -56,6 +56,12 @@ export interface MessageAttachment {
     sequenceThumbnail?: string;
     sequenceAuthor?: string;
     sequenceStepCount?: number;
+    /**
+     * The sender's viewer state as a share-link query (`pane=...&s=...`).
+     * Opening the attachment seeds the viewer with it, as a followed link
+     * would; absent on messages sent before it existed.
+     */
+    sequenceViewParams?: string;
     // Collection-specific fields
     collectionId?: string;
     collectionOwnerId?: string;

@@ -12,6 +12,7 @@ import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence
 import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import type { CardFooter, DeckRelease } from "../domain/models/DeckRelease";
 import type { TnDElement } from "../domain/tnd-element";
+import { getHandPathReferenceCards } from "../domain/hand-path-reference-cards";
 import { getAllReleases } from "./deck-release-store";
 import { loadSequencesByIds } from "./catalog-loader";
 import { applyVariationDescriptor } from "./deck-variation";
@@ -23,6 +24,9 @@ export interface ParityDeckCard {
   word: string;
   footer: CardFooter;
   tndElement: TnDElement | undefined;
+  qrUrl: string | undefined;
+  cardProfile: "sequence" | "hand-path";
+  customName: string | undefined;
 }
 
 export interface ParityDeck {
@@ -37,6 +41,39 @@ export interface ParityDeck {
 export interface ParityDeckSummary {
   deckNumber: number;
   name: string;
+}
+
+/**
+ * Keep the parity harness on the same released-card profile as the print
+ * preview. Reference decks identify their hands-only title and T&D element in
+ * the manifest; the catalog sequence alone is intentionally not enough.
+ */
+export function getParityCardPresentation(
+  release: DeckRelease,
+  sequenceId: string,
+  footer: CardFooter
+): Pick<ParityDeckCard, "cardProfile" | "customName" | "tndElement"> {
+  const referenceCard = release.handPathCards
+    ? getHandPathReferenceCards(release.handPathCards.cardIds).find(
+        (card) => card.sequence.id === sequenceId
+      )
+    : undefined;
+
+  if (referenceCard) {
+    return {
+      cardProfile: "hand-path",
+      customName: referenceCard.cardTitle,
+      tndElement: referenceCard.element,
+    };
+  }
+
+  return {
+    cardProfile: "sequence",
+    customName: undefined,
+    tndElement: footer.iconPath
+      ? (getTnDElementByIconPath(footer.iconPath) ?? undefined)
+      : undefined,
+  };
 }
 
 /** All released decks, newest first, as lightweight picker summaries. */
@@ -55,7 +92,7 @@ export async function listParityDecks(): Promise<ParityDeckSummary[]> {
  */
 export async function loadParityDeck(
   deckNumber?: number,
-  limit = 8,
+  limit = 8
 ): Promise<ParityDeck | null> {
   const releases = await getAllReleases();
   if (releases.length === 0) return null;
@@ -91,10 +128,18 @@ export async function loadParityDeck(
     const sequence = card.variation
       ? applyVariationDescriptor(base, card.variation, edges).sequence
       : base;
-    const tndElement = card.footer?.iconPath
-      ? getTnDElementByIconPath(card.footer.iconPath) ?? undefined
-      : undefined;
-    out.push({ sequence, word: card.word, footer: card.footer, tndElement });
+    const presentation = getParityCardPresentation(
+      release,
+      card.sequenceId,
+      card.footer
+    );
+    out.push({
+      sequence,
+      word: card.word,
+      footer: card.footer,
+      qrUrl: card.qrUrl,
+      ...presentation,
+    });
   }
 
   return {

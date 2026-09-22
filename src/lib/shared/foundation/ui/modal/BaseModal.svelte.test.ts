@@ -25,6 +25,7 @@ describe("BaseModal fit sizing", () => {
     document.documentElement.style.removeProperty("--viewport-height");
     document.documentElement.style.removeProperty("--viewport-offset-top");
     document.documentElement.style.removeProperty("--viewport-offset-bottom");
+    delete document.documentElement.dataset.motionPreference;
     await page.viewport(414, 896);
   });
 
@@ -145,6 +146,118 @@ describe("BaseModal fit sizing", () => {
     expect(dialog!.getBoundingClientRect().height).toBeLessThan(
       window.innerHeight / 2
     );
+  });
+
+  it("animates later intrinsic height changes from the visible size", async () => {
+    const capturedFrames: Keyframe[][] = [];
+    const nativeAnimate = HTMLElement.prototype.animate;
+    const nativeMatchMedia = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener() {},
+      removeEventListener() {},
+      addListener() {},
+      removeListener() {},
+      dispatchEvent: () => false,
+    })) as typeof window.matchMedia;
+    HTMLElement.prototype.animate = function (
+      frames: Keyframe[] | PropertyIndexedKeyframes,
+      options?: number | KeyframeAnimationOptions
+    ) {
+      if (this.matches("dialog.base-modal")) {
+        capturedFrames.push(Array.from(frames as Keyframe[]));
+      }
+      return nativeAnimate.call(this, frames, options);
+    };
+
+    try {
+      render(BaseModalTestHarness, { shortContent: true, animation: "none" });
+      await expect
+        .poll(
+          () => document.querySelector("dialog.base-modal")?.dataset.entered
+        )
+        .toBe("true");
+      await nextLayout();
+
+      // Opening establishes a baseline. It should not create a separate size
+      // animation before the user changes what the sheet contains.
+      expect(capturedFrames).toHaveLength(0);
+
+      await page.getByRole("button", { name: "Toggle content height" }).click();
+      await nextLayout();
+      expect(
+        document.querySelector("dialog.base-modal")?.style.height
+      ).not.toBe("");
+      await expect.poll(() => capturedFrames.length).toBe(1);
+      const grow = capturedFrames[0]!;
+      expect(grow[0]?.height).not.toBe(grow[1]?.height);
+
+      // Reverse while the grow animation is still visible. The next motion
+      // starts at that visible frame rather than jumping to the old endpoint.
+      await new Promise((resolve) => setTimeout(resolve, 60));
+      page
+        .getByRole("button", { name: "Toggle content height" })
+        .element()
+        .click();
+      await expect.poll(() => capturedFrames.length).toBe(2);
+      const shrink = capturedFrames[1]!;
+      expect(shrink[0]?.height).not.toBe(grow[1]?.height);
+      expect(shrink[0]?.height).not.toBe(shrink[1]?.height);
+
+      // The in-app preference must settle existing WAAPI motion too; changing
+      // only future durations or CSS does not stop an animation already running.
+      document.documentElement.dataset.motionPreference = "reduce";
+      await nextLayout();
+      const dialog = document.querySelector<HTMLElement>("dialog.base-modal")!;
+      expect(
+        dialog
+          .getAnimations()
+          .filter((animation) => animation.playState === "running")
+      ).toHaveLength(0);
+      expect(dialog.offsetHeight).toBe(
+        dialog.querySelector<HTMLElement>(".modal-content-wrapper")!
+          .offsetHeight
+      );
+    } finally {
+      HTMLElement.prototype.animate = nativeAnimate;
+      window.matchMedia = nativeMatchMedia;
+    }
+  });
+
+  it("settles content-sized changes immediately when motion is reduced", async () => {
+    const nativeAnimate = HTMLElement.prototype.animate;
+    let dialogAnimations = 0;
+    HTMLElement.prototype.animate = function (
+      frames: Keyframe[] | PropertyIndexedKeyframes,
+      options?: number | KeyframeAnimationOptions
+    ) {
+      if (this.matches("dialog.base-modal")) dialogAnimations += 1;
+      return nativeAnimate.call(this, frames, options);
+    };
+    document.documentElement.dataset.motionPreference = "reduce";
+
+    try {
+      render(BaseModalTestHarness, { shortContent: true, animation: "none" });
+      await expect
+        .poll(
+          () => document.querySelector("dialog.base-modal")?.dataset.entered
+        )
+        .toBe("true");
+      await nextLayout();
+      await page.getByRole("button", { name: "Toggle content height" }).click();
+      await nextLayout();
+
+      expect(dialogAnimations).toBe(0);
+      const dialog = document.querySelector<HTMLElement>("dialog.base-modal")!;
+      const wrapper = dialog.querySelector<HTMLElement>(
+        ".modal-content-wrapper"
+      )!;
+      expect(dialog.offsetHeight).toBe(wrapper.offsetHeight);
+    } finally {
+      HTMLElement.prototype.animate = nativeAnimate;
+    }
   });
 
   it("does not report opened when the modal closes before its delayed show", async () => {

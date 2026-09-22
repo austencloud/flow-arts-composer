@@ -28,6 +28,7 @@ import type { PreparedPictographData } from "../domain/models/prepared-pictograp
 import type { ThemeMode } from "../../../utils/svg-color-utils";
 import type { PropType } from "../../prop/domain/enums/prop-type";
 import type { FanAppearance } from "../../prop/domain/fan-appearance";
+import type { PropLook } from "../../prop/domain/prop-look";
 
 // Re-export for convenience
 export type { PreparedPictographData };
@@ -44,6 +45,11 @@ export interface PrepareOptions {
    * notation fan artwork.
    */
   fanAppearance?: FanAppearance;
+  /**
+   * The chosen artwork for non-fan props. The live workspace supplies this;
+   * exporters retain their explicit rendering policy unless they opt in.
+   */
+  propLook?: PropLook;
   /**
    * Explicit prop type for the performer's left hand.
    * When provided, this value is used directly. When omitted, falls back to global settings.

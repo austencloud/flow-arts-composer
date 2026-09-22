@@ -26,4 +26,10 @@ export interface SequenceSharePayload {
   sequencePreviewPending?: boolean;
   sequenceAuthor?: string;
   sequenceStepCount?: number;
+  /**
+   * The sender's viewer state as a share-link query (`pane`, `split`, `fx`,
+   * `cols`, `s`). Becomes `sequenceViewParams` on the attachment so the
+   * recipient opens the sequence the way the sender was looking at it.
+   */
+  sequenceViewParams?: string;
 }
