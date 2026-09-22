@@ -148,8 +148,10 @@ export function sortSequencesByKineticAlphabet<
   T extends { word: string; sequenceLength?: number },
 >(sequences: T[]): T[] {
   return [...sequences].sort((a, b) => {
-    const letterA = extractBaseLetter(a.word);
-    const letterB = extractBaseLetter(b.word);
+    const wordA = stripWordNotation(a.word);
+    const wordB = stripWordNotation(b.word);
+    const letterA = extractBaseLetter(wordA);
+    const letterB = extractBaseLetter(wordB);
 
     const letterCompare = compareKineticLetters(letterA, letterB);
     if (letterCompare !== 0) {
@@ -162,6 +164,7 @@ export function sortSequencesByKineticAlphabet<
       return lengthDiff;
     }
 
-    return a.word.localeCompare(b.word);
+    // Skew braces mark a span, not a letter: tie-break on the letters inside.
+    return wordA.localeCompare(wordB);
   });
 }

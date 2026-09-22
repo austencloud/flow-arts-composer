@@ -25,4 +25,16 @@ describe("sortSequencesByKineticAlphabet", () => {
     ]);
     expect(sorted.map((s) => s.word)).toEqual(["A", "T", "{US}"]);
   });
+
+  it("treats a braced word and its bare letters as equal in the tie-break", () => {
+    // Braces used to sort after every Latin letter in the raw localeCompare
+    // tie-break, so "{AB}" always landed after "AB" even though they name
+    // the same letters. Stripped, they are equal and the stable sort keeps
+    // input order either way round.
+    const bracedFirst = sortSequencesByKineticAlphabet([{ word: "{AB}" }, { word: "AB" }]);
+    expect(bracedFirst.map((s) => s.word)).toEqual(["{AB}", "AB"]);
+
+    const bareFirst = sortSequencesByKineticAlphabet([{ word: "AB" }, { word: "{AB}" }]);
+    expect(bareFirst.map((s) => s.word)).toEqual(["AB", "{AB}"]);
+  });
 });

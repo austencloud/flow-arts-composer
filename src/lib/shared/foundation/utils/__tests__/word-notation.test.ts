@@ -3,6 +3,8 @@ import {
   parseWordNotation,
   renderWordNotation,
   stripWordNotation,
+  rotateWordUnits,
+  areWordUnitsCircularEquivalent,
 } from "../word-notation";
 import { splitWordLetterUnits } from "@tka/render-composition";
 import { Letter } from "$lib/shared/foundation/domain/models/letter";
@@ -94,6 +96,48 @@ describe("parseWordNotation against the canonical tokenizer", () => {
       const braced = `{${letter}}`;
       expect(renderWordNotation(parseWordNotation(braced))).toBe(braced);
     }
+  });
+});
+
+describe("rotateWordUnits", () => {
+  it("rotates left by the given offset, wrapping around", () => {
+    const units = parseWordNotation("A{ST}B");
+    expect(rotateWordUnits(units, 0)).toEqual(units);
+    expect(rotateWordUnits(units, 2)).toEqual([
+      { letter: "T", skewed: true },
+      { letter: "B", skewed: false },
+      { letter: "A", skewed: false },
+      { letter: "S", skewed: true },
+    ]);
+    // Offset equal to length wraps back to the start.
+    expect(rotateWordUnits(units, units.length)).toEqual(units);
+  });
+
+  it("handles an empty unit array", () => {
+    expect(rotateWordUnits([], 3)).toEqual([]);
+  });
+});
+
+describe("areWordUnitsCircularEquivalent", () => {
+  it("matches plain words that are rotations of each other", () => {
+    expect(areWordUnitsCircularEquivalent("STS", "TSS")).toBe(true);
+    expect(areWordUnitsCircularEquivalent("STS", "SST")).toBe(true);
+    expect(areWordUnitsCircularEquivalent("STS", "STT")).toBe(false);
+  });
+
+  it("requires the skew mask to rotate along with the letters", () => {
+    // Same letters, same rotation, but one word is bare and the other skewed.
+    expect(areWordUnitsCircularEquivalent("STS", "{STS}")).toBe(false);
+    expect(areWordUnitsCircularEquivalent("{STS}", "{TSS}")).toBe(true);
+    // Only part of the word skewed: the skewed run must land in the same place.
+    expect(areWordUnitsCircularEquivalent("A{ST}B", "B{ST}A")).toBe(false);
+    expect(areWordUnitsCircularEquivalent("A{ST}B", "{ST}BA")).toBe(true);
+  });
+
+  it("rejects words of different letter length and accepts two empties", () => {
+    expect(areWordUnitsCircularEquivalent("STS", "STSS")).toBe(false);
+    expect(areWordUnitsCircularEquivalent("", "")).toBe(true);
+    expect(areWordUnitsCircularEquivalent(null, undefined)).toBe(true);
   });
 });
 

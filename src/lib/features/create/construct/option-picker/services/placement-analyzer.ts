@@ -94,6 +94,14 @@ export class PlacementAnalyzer {
     // Gamma, zeta, eta, and tau have 16 numbered placements; alpha and beta
     // have 8. Terra has only one placement (terra1), so it never reaches
     // this branch with a meaningful rotation and is left out.
+    //
+    // "half" and "quarter" below are index distances within a 16-placement
+    // group (index+8 and index+4 respectively), the convention gamma has
+    // always used and that zeta, eta, and tau mirror here. For these
+    // two-family groups, index+8 is the hand-swapped placement (e.g. TAU1-8
+    // is blue-center/red-perimeter, TAU9-16 is red-center/blue-perimeter,
+    // per grid-enums.ts), not a geometric 180 degree rotation. A geometric
+    // model is a separate change.
     const sixteenSlots =
       startGroup === GridPlacementGroup.GAMMA ||
       startGroup === GridPlacementGroup.ZETA ||

@@ -70,3 +70,48 @@ export function renderWordNotation(units: readonly WordUnit[]): string {
 export function stripWordNotation(word: string | null | undefined): string {
   return (word ?? "").replace(SKEW_SPAN_PATTERN, "");
 }
+
+/**
+ * Rotates a unit array left by `offset` positions, wrapping around. Mirrors
+ * the "doubled string, indexOf" rotation convention used elsewhere to find
+ * an offset, so a letter-based offset from that convention can be applied
+ * directly to the unit array a word was parsed into.
+ */
+export function rotateWordUnits(
+  units: readonly WordUnit[],
+  offset: number
+): WordUnit[] {
+  if (units.length === 0) return [];
+  const normalized = ((offset % units.length) + units.length) % units.length;
+  return [...units.slice(normalized), ...units.slice(0, normalized)];
+}
+
+/**
+ * True when wordB is some rotation of wordA where both the letters and
+ * which of them are skewed line up. A letter-only rotation match with a
+ * mismatched skew mask (e.g. "STS" vs "{STS}") does not count: the skew
+ * span is part of the sequence identity, not just its letters.
+ */
+export function areWordUnitsCircularEquivalent(
+  wordA: string | null | undefined,
+  wordB: string | null | undefined
+): boolean {
+  const unitsA = parseWordNotation(wordA);
+  const unitsB = parseWordNotation(wordB);
+  if (unitsA.length !== unitsB.length) return false;
+  if (unitsA.length === 0) return true;
+
+  for (let offset = 0; offset < unitsA.length; offset++) {
+    const rotated = rotateWordUnits(unitsA, offset);
+    if (
+      rotated.every(
+        (unit, index) =>
+          unit.letter === unitsB[index]!.letter &&
+          unit.skewed === unitsB[index]!.skewed
+      )
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
