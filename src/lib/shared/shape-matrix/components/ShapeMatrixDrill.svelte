@@ -38,7 +38,7 @@
   owns the hands-to-props explanation, so the animation area does not repeat it.
 -->
 <script lang="ts">
-  import { onDestroy, untrack, type ComponentProps } from "svelte";
+  import { onDestroy, untrack } from "svelte";
   import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import MandalaHeroLayer from "./MandalaHeroLayer.svelte";
@@ -77,6 +77,7 @@
   import { resolveRealizationEntryStep } from "../services/realization-phase-handoff";
   import type { ElementalType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
   import AnimationPanel from "$lib/shared/animation-panel/components/AnimationPanel.svelte";
+  import type { HandPropToolbarProps } from "$lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
   import type { ControlDockAction } from "$lib/shared/sequence-viewer/components/ControlDock.svelte";
   import { getShapeMatrixAnimationContext } from "../app/context/shape-matrix-animation-context";
   import { getOptionalShapeMatrixAppContext } from "../app/context/shape-matrix-app-context";
@@ -111,7 +112,7 @@
     selectedPropType?: PropType;
     onproptypechange?: (propType: PropType) => void;
     /** The cat dog chip and hand segments, when the host keeps a pair. */
-    handProps?: ComponentProps<typeof AnimationPanel>["handProps"];
+    handProps?: HandPropToolbarProps;
     /**
      * The prop catalogue lives over the grid pane (a sheet on compact hosts),
      * never on this stage: the animation, the element relationships and the

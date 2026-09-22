@@ -131,8 +131,6 @@ export interface ShapeMatrixAppPersistence {
   link?: (state: ShapeMatrixAppSnapshot) => string;
 }
 
-export type { ShapeMatrixPropHand } from "$lib/shared/shape-matrix/domain/prop-pair";
-
 /**
  * A host that owns the prop pair elsewhere (the Create module's Shape tab
  * mirrors settings). The engine adopts what the source says and reports its
@@ -156,13 +154,6 @@ interface ShapeMatrixAppDependencies {
    * and a superseded load never fires this at all.
    */
   onPropPairChange?: (pair: ShapeMatrixPropPair, catDog: boolean) => void;
-}
-
-/** A snapshot without the pair fills both hands from its legacy prop, or staff. */
-function snapshotPropPair(
-  snapshot: ShapeMatrixAppSnapshot
-): ShapeMatrixPropPair {
-  return propPairFromLegacy(snapshot);
 }
 
 const LEVEL_LANDING_TURN: Record<TurnLevel, TurnValue> = {
@@ -301,7 +292,7 @@ export function createShapeMatrixAppState(
   );
   let activeAxis = $state<ShapeMatrixAxisTarget>(initial.activeAxis);
   let labelMode = $state(initial.labelMode);
-  const initialPair = snapshotPropPair(initial);
+  const initialPair = propPairFromLegacy(initial);
   let leftPropType = $state(initialPair.left);
   let rightPropType = $state(initialPair.right);
   /** Whether the hand segments show; starts on when the restored pair differs. */
@@ -890,7 +881,7 @@ export function createShapeMatrixAppState(
     activeAxis = snapshot.activeAxis;
     labelMode = snapshot.labelMode;
     if (!options.keepPropPair) {
-      const pair = snapshotPropPair(snapshot);
+      const pair = propPairFromLegacy(snapshot);
       leftPropType = pair.left;
       rightPropType = pair.right;
       catDog = pair.left !== pair.right;
