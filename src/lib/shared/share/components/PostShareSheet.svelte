@@ -146,8 +146,9 @@
     onOpenVideoExport?: () => void;
     /** False for local-only guest flows that cannot mint an account-owned link. */
     canCreateLink?: boolean;
-    /** A dedicated Export or Download shortcut enters file preparation directly. */
-    initialEntry?: "chooser" | "download";
+    /** A host with its own share surface (the viewer's share panel) enters
+     * file preparation or publishing directly, with no chooser to go back to. */
+    initialEntry?: "chooser" | "download" | "publish";
     /** A live 3D take temporarily hides this sheet, then resumes its draft. */
     preserveSession?: boolean;
     onSessionResumed?: () => void;
@@ -863,12 +864,13 @@
     copyLinkMessage = "";
     revealedLinkUrl = null;
     shortUrl = seededShortUrl || null;
-    shareRoute = initialEntry === "download" ? "download" : "home";
+    shareRoute = initialEntry === "chooser" ? "home" : initialEntry;
     filePreparationOpen = shareRoute === "download";
     animationPreviewUrl = captureAnimationPreview() || null;
     openerPreviews = {};
     openerCaptureSession += 1;
     if (initialEntry === "download") shareDraft.selectArtifact(initialArtifact);
+    if (initialEntry === "publish") untrack(openPublish);
   });
 
   $effect(() => {
@@ -1113,6 +1115,12 @@
   function openCaption(): void {
     captionOpen = !captionOpen;
     if (captionOpen) preparePostLink();
+  }
+
+  function openPublish(): void {
+    shareRoute = "publish";
+    publishOpen = true;
+    if (postingAvailable && !needsAccountForFiles) preparePostLink();
   }
 
   function returnToChooser(): void {
@@ -1922,16 +1930,7 @@
                     <span>Share a link</span>
                     <small>Open this exact view or send it to a friend</small>
                   </button>
-                  <button
-                    type="button"
-                    class="intent"
-                    onclick={() => {
-                      shareRoute = "publish";
-                      publishOpen = true;
-                      if (postingAvailable && !needsAccountForFiles)
-                        preparePostLink();
-                    }}
-                  >
+                  <button type="button" class="intent" onclick={openPublish}>
                     <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
                     <span>Publish socially</span>
                     <small>Write a caption and choose a connected account</small
@@ -2017,7 +2016,7 @@
                 <div class="preview-column">
                   {#if !qrDataUrl}
                     <div class="preparation-toolbar">
-                      {#if initialEntry !== "download"}
+                      {#if initialEntry === "chooser"}
                         <button
                           type="button"
                           class="back-to-chooser"
@@ -2534,11 +2533,14 @@
               </footer>
             {:else if shareRoute === "publish"}
               <div class="sheet-scroll publish-route">
-                <button
-                  type="button"
-                  class="back-to-chooser"
-                  onclick={() => (shareRoute = "home")}>Back to sharing</button
-                >
+                {#if initialEntry !== "publish"}
+                  <button
+                    type="button"
+                    class="back-to-chooser"
+                    onclick={() => (shareRoute = "home")}
+                    >Back to sharing</button
+                  >
+                {/if}
                 <Crossfade
                   key={publishPreparationKey}
                   duration={DURATION.normal}
