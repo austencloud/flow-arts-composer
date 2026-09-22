@@ -171,6 +171,17 @@ describe("SequenceViewerShell host contract", () => {
       'openAppLabel = "Open Flow Arts Composer"'
     );
     expect(viewerHeaderSource).not.toContain("Open TKA");
+  });
+
+  it("hands Escape to the share panel instead of leaving the viewer", () => {
+    // Share keeps focus in the header, so a Back target there would be the
+    // nearest Escape owner and navigate away with the panel still open.
+    expect(
+      viewerHeaderSource.match(
+        /data-escape-shortcut=\{!sharePanelOpen \|\| undefined\}/g
+      )
+    ).toHaveLength(2);
+    expect(viewerHeaderSource).not.toMatch(/data-escape-shortcut\s*\n/);
     expect(overflowMenuSource).not.toContain("Open TKA");
   });
 
