@@ -2,7 +2,6 @@ import {
   ACESFilmicToneMapping,
   PerspectiveCamera,
   SRGBColorSpace,
-  Texture,
   Vector3,
   Vector4,
   WebGLRenderer,
@@ -62,10 +61,11 @@ import {
   type WorkerProgressReporter,
 } from "../services/worker-progress-reporter";
 import { WorkerRetainedSceneCache } from "../services/worker-retained-scene-cache";
+import { estimateWorkerRuntimeBytes } from "../services/worker-runtime-memory-estimate";
 import {
   clearWorkerSceneAssets,
   prefetchWorkerSceneAssets,
-  waitForWorkerSceneAssets,
+  selectWorkerSceneAssets,
 } from "../services/worker-scene-assets";
 
 const scope = self as unknown as DedicatedWorkerGlobalScope;
@@ -104,6 +104,7 @@ interface SceneRuntime {
   sceneEffectsRegistration: { dispose(): void };
   imperativeEffects: WorkerImperativeEffects3D;
   sceneEffectsFrame: SceneEffectRigFrame3D;
+  cacheSkipReason: string | null;
   rendererState: {
     outputColorSpace: WebGLRenderer["outputColorSpace"];
     toneMapping: WebGLRenderer["toneMapping"];
@@ -330,74 +331,6 @@ function restoreDefaultRendererState(): void {
   });
 }
 
-function estimateRuntimeBytes(
-  activeWorld: WorkerEnvironmentWorld
-): number | null {
-  const geometries = new Set<object>();
-  const textures = new Set<object>();
-  let bytes = 0;
-  let unknownTexture = false;
-  const addTexture = (value: unknown): void => {
-    if (!(value instanceof Texture) || textures.has(value)) return;
-    textures.add(value);
-    const image = value.image as
-      | { width?: number; height?: number; data?: ArrayBufferView }
-      | undefined;
-    if (image?.data) {
-      bytes += image.data.byteLength;
-      return;
-    }
-    if (!image?.width || !image.height) {
-      unknownTexture = true;
-      return;
-    }
-    // Decoded textures commonly allocate mip levels too, not just their base
-    // RGBA image. Treat each texture as 4/3 of the base allocation.
-    bytes += Math.ceil(image.width * image.height * 4 * (4 / 3));
-  };
-  activeWorld.scene.traverse((object) => {
-    const renderable = object as typeof object & {
-      geometry?: { attributes?: Record<string, { array?: ArrayBufferView }> };
-      material?: { [key: string]: unknown } | { [key: string]: unknown }[];
-    };
-    const geometry = renderable.geometry;
-    if (geometry && !geometries.has(geometry)) {
-      geometries.add(geometry);
-      for (const attribute of Object.values(geometry.attributes ?? {})) {
-        bytes += attribute.array?.byteLength ?? 0;
-      }
-      const index = (geometry as { index?: { array?: ArrayBufferView } }).index;
-      bytes += index?.array?.byteLength ?? 0;
-    }
-    const materials = Array.isArray(renderable.material)
-      ? renderable.material
-      : renderable.material
-        ? [renderable.material]
-        : [];
-    for (const material of materials) {
-      for (const value of Object.values(material)) {
-        addTexture(value);
-      }
-      const uniforms = (
-        material as { uniforms?: Record<string, { value?: unknown }> }
-      ).uniforms;
-      for (const uniform of Object.values(uniforms ?? {}))
-        addTexture(uniform.value);
-    }
-  });
-  addTexture(activeWorld.scene.background);
-  addTexture(activeWorld.scene.environment);
-  if (unknownTexture) return null;
-  const pixels =
-    requestedViewport.width *
-    requestedViewport.height *
-    requestedViewport.dpr ** 2;
-  // Composer targets and effect pools do not expose their allocations through
-  // Three's scene graph. Reserve four HDR-sized surfaces plus fixed driver
-  // overhead before deciding a prepared scene is safe to retain.
-  return bytes + Math.ceil(pixels * 32) + 8 * 1024 * 1024;
-}
-
 function detachSceneRuntime(): SceneRuntime | null {
   if (
     !world ||
@@ -413,11 +346,15 @@ function detachSceneRuntime(): SceneRuntime | null {
   previousFrameAt = 0;
   const rendererState = captureRendererState();
   if (!rendererState) return null;
-  const estimatedBytes = estimateRuntimeBytes(world);
+  const memoryEstimate = estimateWorkerRuntimeBytes(
+    world.scene,
+    requestedViewport
+  );
   const runtime: SceneRuntime = {
     environment: world.environment,
     reducedMotion: activeRuntimeReducedMotion,
-    estimatedBytes: estimatedBytes ?? MAX_RETAINED_RUNTIME_BYTES + 1,
+    estimatedBytes: memoryEstimate.bytes,
+    cacheSkipReason: memoryEstimate.skipReason,
     world,
     performerStage,
     postProcessing,
@@ -772,6 +709,8 @@ async function prepareScene(sceneRequest: SceneRequest): Promise<boolean> {
         warmReuse: false,
         retainedRuntimeBytes: retainedScenes.retainedBytes,
         retainedRuntimeCount: retainedScenes.count,
+        cacheCandidateBytes: retainedScenes.lastCandidateBytes,
+        cacheSkipReason: retainedScenes.lastSkipReason ?? undefined,
         ...rendererMemory(),
       },
     });
@@ -888,6 +827,8 @@ async function presentRetainedScene(
         warmReuse: true,
         retainedRuntimeBytes: retainedScenes.retainedBytes,
         retainedRuntimeCount: retainedScenes.count,
+        cacheCandidateBytes: retainedScenes.lastCandidateBytes,
+        cacheSkipReason: retainedScenes.lastSkipReason ?? undefined,
       },
     });
     animationFrame = scope.requestAnimationFrame(renderFrame);
@@ -914,7 +855,7 @@ async function runTransition(): Promise<void> {
         // Downloads happen while the current scene remains live. The loader
         // cache only stores encoded bytes; construction still belongs to the
         // selected request below.
-        await waitForWorkerSceneAssets(sceneRequest.environment);
+        await selectWorkerSceneAssets(sceneRequest.environment);
         if (isSuperseded(sceneRequest)) continue;
       }
       if (world && !posterInstalled) {
@@ -1066,9 +1007,7 @@ scope.onmessage = (event: MessageEvent<WorkerRendererInMessage>) => {
     case "switch-environment": {
       reducedMotion = message.reducedMotion ?? false;
       if (!renderer || disposed) break;
-      // Superseding the requested download aborts its low-priority transfer so
-      // a rapid final choice does not wait behind an obsolete scene's bytes.
-      prefetchWorkerSceneAssets(message.environment);
+      void selectWorkerSceneAssets(message.environment);
       const acceptedAt = performance.now();
       queueScene({
         requestId: message.requestId,

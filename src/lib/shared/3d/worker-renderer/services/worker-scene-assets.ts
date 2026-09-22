@@ -58,6 +58,16 @@ export class WorkerSceneAssetPreloader {
     return promise;
   }
 
+  select(key: string): Promise<void> {
+    if (this.pending?.key === key) return this.pending.promise;
+    this.pending?.controller.abort();
+    this.pending = null;
+    ++this.generation;
+    // A cold click uses the world's parallel loader directly. Pre-downloading
+    // all models here would add an extra stage to the user's critical path.
+    return Promise.resolve();
+  }
+
   clear(): void {
     ++this.generation;
     this.pending?.controller.abort();
@@ -174,6 +184,12 @@ export function prefetchWorkerSceneAssets(
   environment: WorkerEnvironmentKey
 ): void {
   void waitForWorkerSceneAssets(environment);
+}
+
+export function selectWorkerSceneAssets(
+  environment: WorkerEnvironmentKey
+): Promise<void> {
+  return preloader?.select(environment) ?? Promise.resolve();
 }
 
 export function clearWorkerSceneAssets(): void {
