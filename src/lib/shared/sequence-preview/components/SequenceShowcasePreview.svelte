@@ -8,7 +8,12 @@
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { resolveRecordedPropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
+  import {
+    captureActivePropConfig,
+    resolveRecordedPropConfig,
+  } from "$lib/shared/foundation/services/recorded-prop-intent";
+  import { resolveShowcasePropPair } from "$lib/shared/sequence-preview/services/showcase-prop-pair";
+  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import { resolveViewingPresentation } from "$lib/shared/sequence-preview/services/viewing-presentation";
   import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
   import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
@@ -104,6 +109,17 @@
   // prop pair. Null = no recorded intent; every layer then keeps its default
   // visitor-context behavior. Never written back to global Settings.
   const recordedPropConfig = $derived(resolveRecordedPropConfig(sequence));
+  // The card's prop pair, in the player's own fallback order. Without a
+  // recording the player animates the visitor's Settings props, so the card
+  // must read the same Settings rather than defaulting to staff.
+  const cardPropConfig = $derived(
+    resolveShowcasePropPair({
+      leftPropType,
+      rightPropType,
+      recorded: recordedPropConfig,
+      viewer: captureActivePropConfig(getSettings()),
+    })
+  );
 
   // Creator-recorded look (colors, trail, effects), resolved once per sequence
   // and pushed into this preview's own ephemeral scope. Mode-free: the
@@ -436,9 +452,9 @@
         {#if sequence}
           <PropAwareThumbnail
             {sequence}
-            leftPropType={recordedPropConfig?.leftPropType}
-            rightPropType={recordedPropConfig?.rightPropType}
-            catDogModeEnabled={recordedPropConfig?.catDogMode ?? false}
+            leftPropType={cardPropConfig.leftPropType}
+            rightPropType={cardPropConfig.rightPropType}
+            catDogModeEnabled={cardPropConfig.catDogMode}
             primaryPropColors={playerPropColors}
             eager
             {allowQR}

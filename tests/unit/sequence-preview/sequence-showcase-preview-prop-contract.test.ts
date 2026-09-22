@@ -23,7 +23,13 @@ describe("SequenceShowcasePreview card-art prop contract", () => {
       "const playerPropColors = $derived(\n    primaryPropColors !== undefined\n      ? primaryPropColors\n      : viewingPresentation.primaryPropColors\n  );"
     );
     expect(source).toMatch(
-      /<PropAwareThumbnail\s+\{sequence\}\s+leftPropType=\{recordedPropConfig\?\.leftPropType\}\s+rightPropType=\{recordedPropConfig\?\.rightPropType\}\s+catDogModeEnabled=\{recordedPropConfig\?\.catDogMode \?\? false\}\s+primaryPropColors=\{playerPropColors\}\s+eager\s+\{allowQR\}\s*\/>/
+      /<PropAwareThumbnail\s+\{sequence\}\s+leftPropType=\{cardPropConfig\.leftPropType\}\s+rightPropType=\{cardPropConfig\.rightPropType\}\s+catDogModeEnabled=\{cardPropConfig\.catDogMode\}\s+primaryPropColors=\{playerPropColors\}\s+eager\s+\{allowQR\}\s*\/>/
+    );
+  });
+
+  it("resolves the card's props in the player's fallback order (caller, recording, viewer Settings), never a staff default", () => {
+    expect(source).toMatch(
+      /const cardPropConfig = \$derived\(\s*resolveShowcasePropPair\(\{\s*leftPropType,\s*rightPropType,\s*recorded: recordedPropConfig,\s*viewer: captureActivePropConfig\(getSettings\(\)\),\s*\}\)\s*\);/
     );
   });
 });
