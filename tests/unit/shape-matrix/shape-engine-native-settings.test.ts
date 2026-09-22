@@ -35,6 +35,12 @@ describe("Shape Engine local renderer settings", () => {
     expect(settingsService.currentSettings.catDogMode).toBe(true);
   });
 
+  it("leaves an existing cat dog flag alone when the adopted hands match", async () => {
+    await updateSettings({ catDogMode: true });
+    await setCurrentPropPair({ left: PropType.STAFF, right: PropType.STAFF });
+    expect(settingsService.currentSettings.catDogMode).toBe(true);
+  });
+
   it("exposes fan updates to an already-mounted renderer and restores them from storage", async () => {
     const rendererSettings = settingsService.currentSettings;
     await updateSettings({

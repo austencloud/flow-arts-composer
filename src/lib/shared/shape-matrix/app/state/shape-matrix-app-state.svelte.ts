@@ -809,15 +809,40 @@ export function createShapeMatrixAppState(
   /**
    * The host's pair, taken as the truth: recorded at once, reloaded when the
    * matrix is already up, and never synced or announced back to the host.
+   *
+   * Checked against `requestedPropPair` and the live `catDog`, not against
+   * the committed `leftPropType`/`rightPropType`: a pick in flight has
+   * already moved the requested target away from what is on screen, and
+   * comparing against the still-landed pair would read a settings change
+   * that happens to match it as a no-op, dropping it. Adopting instead
+   * bumps the load token, so the pick's own in-flight load resolves
+   * superseded and never overwrites what settings just asked for.
    */
   function adoptPropPair(pair: ShapeMatrixPropPair, nextCatDog: boolean): void {
+    if (
+      pair.left === requestedPropPair.left &&
+      pair.right === requestedPropPair.right &&
+      nextCatDog === catDog
+    )
+      return;
     catDog = nextCatDog;
     if (!nextCatDog) propHand = "left";
-    if (pair.left === leftPropType && pair.right === rightPropType) return;
     leftPropType = pair.left;
     rightPropType = pair.right;
     requestedPropPair = pair;
     if (data || loading) void load();
+  }
+
+  /**
+   * The host that owns this state is going away (the Shape tab unmounts).
+   * Bumps the load token so any load already in flight -- a pick's own, or
+   * one an adopt fired in the background -- resolves as superseded instead
+   * of writing a dead instance's pair into state or settings once it lands,
+   * and clears `loading` so nothing keeps reading it as still in progress.
+   */
+  function dispose(): void {
+    loadToken += 1;
+    loading = false;
   }
 
   function restoreState(
@@ -1192,6 +1217,7 @@ export function createShapeMatrixAppState(
     setPropHand,
     toggleCatDog,
     adoptPropPair,
+    dispose,
     selectPair,
     setMode,
     setPropMode,

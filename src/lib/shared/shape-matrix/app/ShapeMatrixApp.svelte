@@ -92,7 +92,12 @@
 
     void state.load();
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      // An orphaned load resolving after this tab closes would otherwise
+      // still write its snapshot and its pair into settings.
+      state.dispose();
+    };
   });
 
   followPropSource(state, propSource);
