@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
   import ShapeMatrixGrid from "$lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte";
   import ShapeMatrixDrill from "$lib/shared/shape-matrix/components/ShapeMatrixDrill.svelte";
@@ -47,7 +48,11 @@
 
   onMount(async () => {
     try {
-      data = await loadShapeMatrix();
+      const settings = getSettings();
+      data = await loadShapeMatrix({
+        left: settings.leftPropType,
+        right: settings.rightPropType,
+      });
     } catch (error) {
       console.error("[ShapeMatrixTunnelSourcePicker] load failed", error);
       loadError = true;

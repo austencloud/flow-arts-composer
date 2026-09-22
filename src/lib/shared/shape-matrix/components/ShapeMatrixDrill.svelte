@@ -38,7 +38,7 @@
   owns the hands-to-props explanation, so the animation area does not repeat it.
 -->
 <script lang="ts">
-  import { onDestroy, untrack } from "svelte";
+  import { onDestroy, untrack, type ComponentProps } from "svelte";
   import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import MandalaHeroLayer from "./MandalaHeroLayer.svelte";
@@ -71,7 +71,7 @@
     SHAPE_MATRIX_STRIP_NAME,
   } from "../services/shape-matrix-artwork";
   import { getShapeMatrixTransitionRecorder } from "../debug/shape-matrix-transition-recorder";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
   import { QualityTier } from "$lib/shared/animation-engine/domain/types/quality-types";
   import { resolveRealizationEntryStep } from "../services/realization-phase-handoff";
@@ -104,8 +104,14 @@
     selectedPropMode?: VtgMode | null;
     onmodechange?: (mode: VtgMode | null) => void;
     onpropmodechange?: (mode: VtgMode | null) => void;
-    propType?: PropType;
+    /**
+     * The prop the Props pill addresses. The pair itself arrives with `data`;
+     * this is only which hand a pick lands on. Defaults to the left hand.
+     */
+    selectedPropType?: PropType;
     onproptypechange?: (propType: PropType) => void;
+    /** The cat dog chip and hand segments, when the host keeps a pair. */
+    handProps?: ComponentProps<typeof AnimationPanel>["handProps"];
     /**
      * The prop catalogue lives over the grid pane (a sheet on compact hosts),
      * never on this stage: the animation, the element relationships and the
@@ -132,8 +138,9 @@
     selectedPropMode = $bindable(null),
     onmodechange,
     onpropmodechange,
-    propType = PropType.STAFF,
+    selectedPropType,
     onproptypechange,
+    handProps,
     propPickerOpen = false,
     onproppickertoggle,
     mandalaTransition = { claim: false, handoff: false },
@@ -214,7 +221,8 @@
     realization: ModeRealization;
     paths: MandalaPaths;
     clubTipDx: number;
-    propType: PropType;
+    leftPropType: PropType;
+    rightPropType: PropType;
     transitionId: number;
     initialStep: number;
   }
@@ -275,7 +283,9 @@
   };
 
   const pairKey = $derived(
-    pair ? `${propType}|${flowerKey(pair.left)}|${flowerKey(pair.right)}` : null
+    pair
+      ? `${data.props.left}|${data.props.right}|${flowerKey(pair.left)}|${flowerKey(pair.right)}`
+      : null
   );
 
   // The live canvas that is visible plays THIS pair. Until then the still
@@ -989,7 +999,8 @@
           realization,
           paths,
           clubTipDx: data.clubTipDx,
-          propType,
+          leftPropType: data.props.left,
+          rightPropType: data.props.right,
           transitionId:
             activeBuildTransitionId || transitionRecorder.claimLatest(layerKey),
           initialStep: entryStepFor(realization, layerKey),
@@ -1135,8 +1146,8 @@
             // glyph would name a relationship that is not on stage.
             hideTkaGlyph: solo !== null,
             beatIndicators: false,
-            leftPropType: layer.propType,
-            rightPropType: layer.propType,
+            leftPropType: layer.leftPropType,
+            rightPropType: layer.rightPropType,
             trailSettingsOverride: effectiveTrailSettings,
             tipEffectMap: animationState.scope.effects.tipEffectMap,
             effectsConfigState: animationState.scope.effects,
@@ -1342,8 +1353,8 @@
               anchor: "center",
               orientation: "horizontal",
               loop: true,
-              leftPropType: propType,
-              rightPropType: propType,
+              leftPropType: data.props.left,
+              rightPropType: data.props.right,
               propElementalType: railPropElementalType,
               stepPulse: false,
               staggerCellUpdates: true,
@@ -1391,8 +1402,9 @@
         onPlaybackModeChange={animationState.setPlaybackMode}
         onBpmChange={animationState.setBpm}
         showEffectsPlayback={false}
-        selectedPropType={propType}
+        selectedPropType={selectedPropType ?? data.props.left}
         onPropChange={onproptypechange}
+        {handProps}
         onPropPickerRequest={onproppickertoggle}
         propPickerActive={propPickerOpen}
         sequence={captionRealization?.seq ?? null}
