@@ -89,12 +89,13 @@ describe("PropGrid fan look credit", () => {
     expect(onPropLookChange).toHaveBeenCalledWith("model");
   });
 
-  it("switches a family's styles between pictograph and 3D model", async () => {
+  it("lists every family style in each look as its own tile", async () => {
+    const onSelect = vi.fn();
     const onPropLookChange = vi.fn();
 
     render(PropGrid, {
       selectedPropType: PropType.TRIAD,
-      onSelect: vi.fn(),
+      onSelect,
       allowedProps: [PropType.TRIAD, PropType.TRIGENG],
       fanAppearance: { build: "fire", frameColor: "black", cover: "bare" },
       onFanAppearanceChange: vi.fn(),
@@ -103,12 +104,26 @@ describe("PropGrid fan look credit", () => {
     });
 
     await page.getByRole("button", { name: "Choose Triad style" }).click();
-    const look = page.getByRole("group", { name: "Prop look" });
-    await expect
-      .element(look.getByRole("button", { name: "Pictograph" }))
-      .toHaveAttribute("aria-pressed", "true");
+    for (const name of [
+      "Triad prop type",
+      "Trigeng prop type",
+      "Triad 3D",
+      "Trigeng 3D",
+    ]) {
+      await expect
+        .element(
+          page.getByRole("button", { name: `Select ${name}`, exact: true })
+        )
+        .toBeVisible();
+    }
+    expect(
+      page.getByRole("group", { name: "Prop look" }).elements()
+    ).toHaveLength(0);
 
-    await look.getByRole("button", { name: "3D model" }).click();
+    await page
+      .getByRole("button", { name: "Select Trigeng 3D", exact: true })
+      .click();
+    expect(onSelect).toHaveBeenCalledWith(PropType.TRIGENG);
     expect(onPropLookChange).toHaveBeenCalledWith("model");
   });
 

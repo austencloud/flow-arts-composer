@@ -397,9 +397,31 @@
   });
 
   const DRILL_GAP = 10;
-  const drillTileCount = $derived(
-    drill?.kind === "family" ? familyChoices(drill.base).length : 0
-  );
+  /**
+   * A family's styles, each in every look it has: a style with a captured 3D
+   * sprite gets a pictograph tile and a 3D tile, so one view holds every
+   * variation and a pick sets the prop and the (global) look together.
+   * Pictographs come first so the 3D row reads as the same set again.
+   */
+  type FamilyTile = { prop: PropType; look?: PropLook };
+  const familyTiles = $derived.by((): FamilyTile[] => {
+    if (drill?.kind !== "family") return [];
+    const choices = familyChoices(drill.base);
+    const withLooks =
+      showAppearance && onPropLookChange !== undefined
+        ? choices.filter((prop) => hasModelSprite(prop))
+        : [];
+    if (withLooks.length === 0) return choices.map((prop) => ({ prop }));
+    return [
+      ...choices.map((prop) =>
+        withLooks.includes(prop)
+          ? { prop, look: "pictograph" as const }
+          : { prop }
+      ),
+      ...withLooks.map((prop) => ({ prop, look: "model" as const })),
+    ];
+  });
+  const drillTileCount = $derived(familyTiles.length);
   /**
    * Tile grid for a drilled family in a bounded host: the column count that
    * makes the largest tile once rows share the height, so a two-style family
@@ -473,16 +495,11 @@
       onPropLookChange !== undefined &&
       hasModelSprite(detailProp)
   );
-  // A family's styles are drawn in the global look, so the styles view is
-  // where that look must be switchable: otherwise a Triad family in
-  // pictograph shows no hint that every style also has a 3D model.
-  const familyLookOptions = $derived(
-    drill?.kind === "family" &&
-      showAppearance &&
-      onPropLookChange !== undefined &&
-      familyChoices(drill.base).some((prop) => hasModelSprite(prop))
-      ? propLookOptions(drill.base)
-      : []
+  // A style picked from a family's look tiles already carries its look, so
+  // its details keep to what the tiles cannot show (size, chirality).
+  const detailLookFromTiles = $derived(
+    drill?.kind === "details" &&
+      familyChoices(getBasePropType(drill.prop)).length > 1
   );
   const currentPropLook = $derived(normalizePropLook(propLook));
   const selectedPropLookOption = $derived(
@@ -537,19 +554,23 @@
   // Track which paid prop (if any) is showing its upgrade nudge.
   let premiumNudgeFor = $state<PropType | null>(null);
 
-  function opensDetails(prop: PropType): boolean {
+  // A tile that already carries a look has nothing left to ask about it.
+  function opensDetails(prop: PropType, lookChosen: boolean): boolean {
     return (
       showAppearance &&
       (isFanPropType(prop) ||
         hasBigVariant(prop) ||
-        (onPropLookChange !== undefined && hasModelSprite(prop)) ||
+        (!lookChosen &&
+          onPropLookChange !== undefined &&
+          hasModelSprite(prop)) ||
         (chirality !== undefined && isBuugengFamilyProp(prop)))
     );
   }
 
-  function selectProp(prop: PropType): void {
+  function selectProp(prop: PropType, look?: PropLook): void {
     onSelect(prop);
-    if (!opensDetails(prop)) return;
+    if (look !== undefined) onPropLookChange?.(look);
+    if (!opensDetails(prop, look !== undefined)) return;
     void openDrill(
       isFanPropType(prop)
         ? { kind: "fan-look", prop }
@@ -565,11 +586,11 @@
    * - premium-nudge: toggles the upgrade callout; never calls onSelect.
    * - earn-tip: toggles the inline earn tip; never calls onSelect.
    */
-  function handleTileClick(prop: PropType) {
+  function handleTileClick(prop: PropType, look?: PropLook) {
     if (prop === PropType.HAND && includeBareHands) {
       lockedTipFor = null;
       premiumNudgeFor = null;
-      selectProp(prop);
+      selectProp(prop, look);
       return;
     }
 
@@ -577,7 +598,7 @@
     if (accessMode === "educational" && !premium) {
       lockedTipFor = null;
       premiumNudgeFor = null;
-      selectProp(prop);
+      selectProp(prop, look);
       return;
     }
     const route = premium
@@ -591,7 +612,7 @@
     if (route === "select") {
       lockedTipFor = null;
       premiumNudgeFor = null;
-      selectProp(prop);
+      selectProp(prop, look);
       return;
     }
 
@@ -632,19 +653,6 @@
         aria-pressed={sizeIsBig}
         onclick={() => chooseSize(true)}>Big</button
       >
-    </div>
-  {/snippet}
-  {#snippet familyLookControl()}
-    <div class="size-toggle" role="group" aria-label="Prop look">
-      {#each familyLookOptions as option (option.id)}
-        <button
-          type="button"
-          class="size-option"
-          class:active={currentPropLook === option.id}
-          aria-pressed={currentPropLook === option.id}
-          onclick={() => onPropLookChange?.(option.id)}>{option.label}</button
-        >
-      {/each}
     </div>
   {/snippet}
   {#snippet fanControl()}
@@ -736,7 +744,7 @@
     </header>
   {/if}
 
-  {#snippet tile(prop: PropType, columnStart?: number)}
+  {#snippet tile(prop: PropType, columnStart?: number, look?: PropLook)}
     <!--
       Each tile is wrapped in a relative-positioned container so the lock glyph,
       crown and earn-tip can be positioned over / below the button. The click
@@ -749,6 +757,10 @@
       only for sale.
     -->
     {@const premium = isPremiumCosmeticProp(prop)}
+    {@const label =
+      look === "model"
+        ? `${getPropTypeDisplayInfo(prop).label} 3D`
+        : getPropTypeDisplayInfo(prop).label}
     <div
       class="tile-wrapper"
       style:grid-column-start={columnStart}
@@ -757,12 +769,15 @@
     >
       <PropGridButton
         propType={prop}
-        selected={selectedPropType === prop}
+        {label}
+        actionLabel={look === "model" ? `Select ${label}` : undefined}
+        selected={selectedPropType === prop &&
+          (look === undefined || currentPropLook === look)}
         {color}
-        buttonProps={{ "data-prop-tile": prop }}
-        onSelect={() => handleTileClick(prop)}
+        buttonProps={{ "data-prop-tile": prop, "data-prop-look": look }}
+        onSelect={() => handleTileClick(prop, look)}
         fanAppearance={normalizedFanAppearance}
-        {propLook}
+        propLook={look ?? propLook}
         {recipeOverrides}
         {colors}
         previewPair={showAppearance}
@@ -877,7 +892,7 @@
                   {@render sizeControl()}
                 </div>
               {/if}
-              {#if showPropLook && onPropLookChange}
+              {#if showPropLook && onPropLookChange && !detailLookFromTiles}
                 <PropLookPicker
                   propType={drill.prop}
                   value={propLook}
@@ -903,15 +918,9 @@
               fill={fillHeight > 0}
             />
           {:else}
-            {#if familyLookOptions.length > 0}
-              <div class="detail-row">
-                <span class="look-label">Look</span>
-                {@render familyLookControl()}
-              </div>
-            {/if}
             <div
               class="drill-tiles"
-              style:--family-count={familyChoices(drill.base).length}
+              style:--family-count={familyTiles.length}
               class:comfortable={tileDensity === "comfortable"}
               class:fill={drillLayout !== null}
               class:flat-grid={flat && drillLayout === null}
@@ -922,12 +931,13 @@
                 : undefined}
               bind:this={tilesEl}
             >
-              {#each familyChoices(drill.base) as prop, index (prop)}
+              {#each familyTiles as entry, index (`${entry.prop}:${entry.look ?? ""}`)}
                 {@render tile(
-                  prop,
+                  entry.prop,
                   drillLayout && index === drillLayout.orphanIndex
                     ? drillLayout.orphanStart
-                    : undefined
+                    : undefined,
+                  entry.look
                 )}
               {/each}
             </div>

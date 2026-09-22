@@ -61,25 +61,28 @@ overflows horizontally. Reduced motion also disables the opening-track
 transition. The three composer presentation test files pass (11 tests), and
 `npm run check` reports 0 errors and 0 warnings. Commit `47b9647026`.
 
-## September 22 family look switch
+## September 22 family look tiles
 
 Austen reported that Triad styles showed Triad and Trigeng only as
-pictographs. Both have 3D sprites, and the tiles already follow the global
-look. However, nothing on the styles view let him switch that look.
+pictographs, even though both have 3D sprites. A first fix added a Look switch
+to the styles view. He rejected it as too many buttons and dials and asked for
+every variation in one place.
 
-- A family drill now shows a Look row (3D model / Pictograph) whenever a family
-  member has a captured sprite and the host passes `onPropLookChange`.
-- `drillLayout` now picks the column count that gives the largest tile. Two-
-  style families (Triad, Guitar, Triquetra) stack in the tall rail and sit side
-  by side in the wide sheet.
-- Evidence from the 2560×1250@1.5 rail: Triad and Guitar tiles are 451×333,
-  stacked. Club is 220×275, 2+1. Staff is 220×219, 2+2+1. No family overflows.
-  The switch changes the tile hrefs between notation SVG and `model/*.svg`. In
-  the 1200×800 sheet, Triad is 363×453 side by side, Club is 3 across, and
-  Staff is 3+2.
-- New component test: "switches a family's styles between pictograph and 3D
-  model". All 6 PropGrid component tests pass, and `npm run check` found 0
-  errors.
+- A family drill now lists each style once per look. Every style gets a
+  pictograph tile. A style with a captured sprite also gets a "<Style> 3D"
+  tile, listed after the pictographs. One tap sets the prop and the global look
+  together. The switch is gone. Triad styles show Triad, Trigeng, Triad 3D and
+  Trigeng 3D. Club styles show Club, Classic Club, Torch, Club 3D and Torch 3D.
+  Classic Club has no sprite.
+- A style picked from these tiles no longer repeats a look picker in its
+  details drill. Triad details show only Size.
+- `drillLayout` picks the column count that gives the largest tile.
+- Evidence from the 2560×1250@1.5 rail: Triad is 2×2 at 220×275. Club is 2+2+1
+  at 220×239 with the last tile centered. Neither drill scrolls. In the
+  1200×800 sheet, Club is 3+2 at 238×297 with no overflow. The console shows no
+  errors or warnings.
+- Component test "lists every family style in each look as its own tile".
+  PropGrid and BentoPropGrid component tests pass (8 of 8).
 
 ## September 22 drills fill the rail
 
