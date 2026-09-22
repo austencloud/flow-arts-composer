@@ -27,6 +27,9 @@
   import { createAnimationScope } from "$lib/shared/animation-engine/state/animation-scope.svelte";
   import { resolveRecordedPropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
   import { resolveViewingPresentation } from "$lib/shared/sequence-preview/services/viewing-presentation";
+  import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
+  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import WordHeader from "$lib/shared/animation-engine/components/layers/WordHeader.svelte";
   import type { LiveSlots, Medium } from "./live-slots.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
@@ -170,6 +173,16 @@
       : null
   );
   const viewingPresentation = $derived(resolveViewingPresentation(sequence));
+  // The step strip's pictographs fall back to the visitor's Settings colors
+  // when no override is given, so pin the creator's pair (or the theme pair).
+  const stripLeftColor = $derived(
+    viewingPresentation.primaryPropColors?.left ??
+      getMotionColor(HandSide.LEFT, "dark")
+  );
+  const stripRightColor = $derived(
+    viewingPresentation.primaryPropColors?.right ??
+      getMotionColor(HandSide.RIGHT, "dark")
+  );
   $effect(() => {
     const look = viewingPresentation;
     if (!tileAnimationScope) return;
@@ -298,6 +311,7 @@
               darkMode={!lightMode}
               leftPropType={seqPropTypes.left}
               rightPropType={seqPropTypes.right}
+              primaryPropColors={viewingPresentation.primaryPropColors}
               tipDx={overlayTipDx}
               size={320}
             />
@@ -345,6 +359,10 @@
               active
               props={{
                 sequence,
+                leftPropType: seqPropTypes.left as PropType,
+                rightPropType: seqPropTypes.right as PropType,
+                leftColorOverride: stripLeftColor,
+                rightColorOverride: stripRightColor,
                 currentStep: playbackStep,
                 bpm: 60,
                 density: "compact",

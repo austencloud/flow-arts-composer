@@ -38,6 +38,15 @@ describe("profile stage sequence prop contract", () => {
       /InlineAnimationPlayer\.svelte"[\s\S]{0,500}leftPropType: seqPropTypes\.left,[\s\S]{0,100}rightPropType: seqPropTypes\.right/
     );
 
+    // Same rule for color: an undefined primaryPropColors makes either layer
+    // fall back to the viewer's Settings, so both get the creator's look.
+    expect(artifactTile).toContain(
+      "primaryPropColors={viewingPresentation.primaryPropColors}"
+    );
+    expect(artifactTile).toContain(
+      "primaryPropColors: viewingPresentation.primaryPropColors,"
+    );
+
     // ArtifactTile must go through the resolver, never read the raw
     // creatorIntent field itself — resolveRecordedPropConfig is what owns
     // parsing and validating it (recorded-prop-intent.ts).
