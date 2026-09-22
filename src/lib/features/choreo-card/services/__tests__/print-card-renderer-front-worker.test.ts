@@ -24,7 +24,6 @@ vi.mock("../card-front-frame", async (importOriginal) => ({
 }));
 
 // Stub the back-render import graph (pulls Firebase/protobuf, irrelevant here).
-vi.mock("../card-back-dom-renderer", () => ({ renderCardBack: vi.fn() }));
 vi.mock("../info-card-canvas-renderer", () => ({
   renderInfoCardFront: vi.fn(),
   renderInfoCardBack: vi.fn(),
@@ -35,6 +34,7 @@ vi.mock("../card-back/card-back-job-builder", () => ({
 vi.mock("../card-back/card-back-raster", () => ({ paintBackJob: vi.fn() }));
 
 import { PrintCardRenderer } from "../PrintCardRenderer";
+import { buildBackJob } from "../card-back/card-back-job-builder";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { PrintRenderOptions } from "../types";
 
@@ -155,5 +155,14 @@ describe("PrintCardRenderer.renderFront worker path", () => {
       expect.objectContaining({ qrImageBitmap: qrImage }),
       undefined
     );
+  });
+});
+
+describe("PrintCardRenderer.renderBack", () => {
+  it("reports a BackJob failure to the export caller", async () => {
+    vi.mocked(buildBackJob).mockRejectedValueOnce(new Error("back render failed"));
+    const renderer = new PrintCardRenderer({} as never, "cosmic");
+
+    await expect(renderer.renderBack(seq, options)).rejects.toThrow("back render failed");
   });
 });
