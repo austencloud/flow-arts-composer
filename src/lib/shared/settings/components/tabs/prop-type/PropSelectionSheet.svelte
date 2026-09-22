@@ -20,6 +20,8 @@
   import PrimaryPropColorSettings from "./PrimaryPropColorSettings.svelte";
   import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
   import CatDogToggle from "./CatDogToggle.svelte";
+  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
 
   let {
     isOpen = $bindable(false),
@@ -34,6 +36,10 @@
     catDogEnabled = false,
     onCatDogToggle,
     chirality,
+    fanAppearance,
+    onFanAppearanceChange,
+    propLook,
+    onPropLookChange,
     primaryPropColors,
     onPrimaryPropColorsChange,
     darkMode = true,
@@ -64,6 +70,11 @@
      * hand only — blue A beside red B is the pairing that nests.
      */
     chirality?: PropChiralitySeam;
+    /** Host-owned appearance; unset edits the global settings. */
+    fanAppearance?: FanAppearance;
+    onFanAppearanceChange?: (appearance: FanAppearance) => void;
+    propLook?: PropLook;
+    onPropLookChange?: (look: PropLook) => void;
   }>();
 
   // Desktop (side-by-side layout, i.e. nav sidebar present) opens the picker as
@@ -203,6 +214,10 @@
         onDrillChange={(drilled) => (isDrilled = drilled)}
         onSelect={handlePropSelect}
         {chirality}
+        {fanAppearance}
+        {onFanAppearanceChange}
+        {propLook}
+        {onPropLookChange}
       />
     </div>
   </div>

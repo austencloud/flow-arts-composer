@@ -2,18 +2,32 @@
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import BentoPropGrid from "$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
+  import type { PropChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
+  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
 
   let {
     selectedPropType,
     onSelect,
     onDone,
     docked = false,
+    fanAppearance,
+    onFanAppearanceChange,
+    propLook,
+    onPropLookChange,
+    chirality,
   }: {
     selectedPropType: PropType;
     onSelect: (propType: PropType) => void;
     onDone?: () => void;
     /** Lets a containing workspace supply the surface chrome. */
     docked?: boolean;
+    /** Page-owned appearance: the public page has no app settings service. */
+    fanAppearance: FanAppearance;
+    onFanAppearanceChange: (appearance: FanAppearance) => void;
+    propLook: PropLook;
+    onPropLookChange: (look: PropLook) => void;
+    chirality: PropChiralitySeam;
   } = $props();
 </script>
 
@@ -30,7 +44,11 @@
     flat={true}
     tileDensity="comfortable"
     scrollMode="internal"
-    showAppearance={false}
+    {fanAppearance}
+    {onFanAppearanceChange}
+    {propLook}
+    {onPropLookChange}
+    {chirality}
     {onSelect}
   />
 </section>

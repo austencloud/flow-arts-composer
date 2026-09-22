@@ -43,6 +43,7 @@
     type ComposerGenerationResult,
   } from "./composer-generation-failure";
   import { shouldAdoptCarriedSequence } from "./composer-sequence-ownership";
+  import type { ComposerPropAppearance } from "./composer-prop-appearance";
 
   /** Four columns keep the real workspace cells legible at showcase scale. */
   const STEP_COLUMNS = 4;
@@ -54,6 +55,7 @@
     onGenerated,
     leftPropType,
     rightPropType,
+    appearance,
     active = true,
     embedded = false,
   }: {
@@ -61,6 +63,7 @@
     onGenerated?: (sequence: SequenceData) => void;
     leftPropType?: PropType;
     rightPropType?: PropType;
+    appearance?: ComposerPropAppearance;
     active?: boolean;
     embedded?: boolean;
   } = $props();
@@ -193,6 +196,7 @@
               resumeWhenPlaybackAllowed: true,
               leftPropType,
               rightPropType: rightPropType ?? leftPropType,
+              ...appearance,
               trailSettingsOverride: HERO_TRAIL_PRESET,
               tipEffectMap: HERO_TIP_EFFECT_MAP,
             }}

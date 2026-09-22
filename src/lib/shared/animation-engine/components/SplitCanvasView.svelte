@@ -52,6 +52,7 @@ WHAT THE PARENT (AnimatorCanvas) OWNS:
   import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
   import { untrack } from "svelte";
   import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
 
   let {
     leftProp,
@@ -72,6 +73,7 @@ WHAT THE PARENT (AnimatorCanvas) OWNS:
     rightPropType = null,
     primaryPropColors,
     fanAppearance = undefined,
+    propLook = undefined,
     tipEffectMap = undefined,
     visibilityManagerOverride = undefined,
     showNonRadialPoints = true,
@@ -108,6 +110,8 @@ WHAT THE PARENT (AnimatorCanvas) OWNS:
     primaryPropColors?: ViewerCustomColorPair;
     rightPropType?: string | null;
     fanAppearance?: FanAppearance;
+    /** Page-local 2D artwork look; unset falls back to the global setting. */
+    propLook?: PropLook;
     tipEffectMap?: TipEffectMap;
     visibilityManagerOverride?: AnimationVisibilityStateManager;
     showNonRadialPoints?: boolean;
@@ -195,6 +199,7 @@ WHAT THE PARENT (AnimatorCanvas) OWNS:
       {leftPropType}
       {rightPropType}
       {fanAppearance}
+      {propLook}
       {tipEffectMap}
       {visibilityManagerOverride}
       {showNonRadialPoints}
@@ -225,6 +230,7 @@ WHAT THE PARENT (AnimatorCanvas) OWNS:
       {leftPropType}
       {rightPropType}
       {fanAppearance}
+      {propLook}
       {tipEffectMap}
       {visibilityManagerOverride}
       {showNonRadialPoints}

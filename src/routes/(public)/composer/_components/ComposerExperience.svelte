@@ -9,6 +9,15 @@
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
   import {
+    DEFAULT_FAN_APPEARANCE,
+    type FanAppearance,
+  } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import {
+    DEFAULT_PROP_LOOK,
+    type PropLook,
+  } from "$lib/shared/pictograph/prop/domain/prop-look";
+  import type { PropChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
+  import {
     trackCtaClick,
     trackDemoInteraction,
     trackSectionView,
@@ -29,6 +38,7 @@
   import ComposerBackgroundCycle from "./ComposerBackgroundCycle.svelte";
   import ComposerInlinePropPicker from "./ComposerInlinePropPicker.svelte";
   import { resolveComposerCarriedSequence } from "./composer-sequence-ownership";
+  import type { ComposerPropAppearance } from "./composer-prop-appearance";
   import ProjectStory from "./ProjectStory.svelte";
   import "$lib/shared/landing/styles/editorial-measure.css";
 
@@ -73,6 +83,48 @@
     )
   );
   let selectedProp = $state<PropType>(PropType.STAFF);
+  // The fan build, the 2D artwork look and buugeng chirality ride with the
+  // prop and stay page-local like it. This public page runs without the app
+  // settings service, so the picker's default global writes would be dropped.
+  let fanAppearance = $state<FanAppearance>(DEFAULT_FAN_APPEARANCE);
+  let propLook = $state<PropLook>(DEFAULT_PROP_LOOK);
+  let buugengFlipped = $state({ left: false, right: false });
+  const chirality: PropChiralitySeam = {
+    hands: [
+      {
+        hand: "left",
+        get flipped() {
+          return buugengFlipped.left;
+        },
+      },
+      {
+        hand: "right",
+        get flipped() {
+          return buugengFlipped.right;
+        },
+      },
+    ],
+    onChange(hand, flipped) {
+      buugengFlipped[hand] = flipped;
+    },
+  };
+  const propAppearance = $derived<ComposerPropAppearance>({
+    fanAppearance,
+    propLook,
+    leftBuugengFlipped: buugengFlipped.left,
+    rightBuugengFlipped: buugengFlipped.right,
+  });
+  const pickerAppearance = {
+    get fanAppearance() {
+      return fanAppearance;
+    },
+    onFanAppearanceChange: (next: FanAppearance) => (fanAppearance = next),
+    get propLook() {
+      return propLook;
+    },
+    onPropLookChange: (next: PropLook) => (propLook = next),
+    chirality,
+  };
   let propPickerOpen = $state(false);
   let propPickerLoaded = $state(false);
   let inlinePickerTarget = $state<"hero" | "practice" | "tunnel" | null>(null);
@@ -85,10 +137,10 @@
   }
 
   function selectProp(prop: PropType): void {
+    // The sheet stays open after a pick, as it does in the app: fans, sizes,
+    // 3D looks and buugeng chirality open their details only after the prop
+    // is chosen. Closing is the sheet's own action (backdrop, X, Escape).
     selectedProp = prop;
-    // The sheet can drill into a family before it emits a final prop. Closing
-    // here, rather than inside the sheet, keeps that comparison step available.
-    propPickerOpen = false;
   }
 
   function openInlinePicker(target: "hero" | "practice" | "tunnel"): void {
@@ -210,6 +262,7 @@
     onSelect={selectProp}
     onDone={closeInlinePicker}
     {docked}
+    {...pickerAppearance}
   />
 {/snippet}
 
@@ -223,6 +276,7 @@
     title: "Props",
     onSelect: selectProp,
     onOpenChange: (open: boolean) => (propPickerOpen = open),
+    ...pickerAppearance,
   }}
 />
 
@@ -343,6 +397,7 @@
           rerolling={heroAct.rerolling}
           leftPropType={selectedProp}
           rightPropType={selectedProp}
+          {...propAppearance}
           onSequenceBoundary={heroAct.offerSequenceBoundary}
           note="a real sequence playing in Composer"
           trailSettingsOverride={HERO_TRAIL_PRESET}
@@ -428,6 +483,7 @@
           onSequenceChange: carryVisitorSequence,
           leftPropType: selectedProp,
           rightPropType: selectedProp,
+          appearance: propAppearance,
           propControl,
           inlinePropPicker:
             inlinePickerTarget === "practice" ? inlinePropPicker : undefined,
@@ -467,6 +523,7 @@
             layout: "band",
             leftPropType: selectedProp,
             rightPropType: selectedProp,
+            appearance: propAppearance,
             propControl,
             inlinePropPicker:
               inlinePickerTarget === "tunnel" ? inlinePropPicker : undefined,

@@ -61,6 +61,36 @@ overflows horizontally. Reduced motion also disables the opening-track
 transition. The three composer presentation test files pass (11 tests), and
 `npm run check` reports 0 errors and 0 warnings. Commit `47b9647026`.
 
+## September 22 full prop appearance
+
+Austen could not reach the 3D chicken or fan builds from the composer pickers.
+The hero rail passed `showAppearance={false}`, which hid four controls: prop
+size, the 3D-model/pictograph look, the fan build and buugeng chirality. Even
+with them shown, the picker wrote the global settings. The public page never
+starts that settings service, so each write was dropped with "Settings
+service not initialized". The composer now keeps fan appearance, prop look
+and chirality page-local, like the prop type. It passes them to the rail, the
+narrow sheet, the hero, Generate and the tunnel.
+BentoPropGrid and PropSelectionSheet accept host-owned appearance and fall
+back to the global settings, so the app's hosts are unchanged. The animation
+engine takes a `propLook` override beside its existing `fanAppearance` and
+chirality overrides. The sheet no longer closes on every pick. Its own
+contract keeps it open, and the fan, size and look details open only after a
+pick.
+
+Verified at 2560x1250@1.5:
+
+- Chicken → 3D model drew the model chickens in the hero.
+- Fan → Moon LED drew that build.
+- Big switched the prop to Big Fan.
+- Buugeng showed the look and A/B chirality per hand. The right prop took B.
+- The tunnel drew the 3D buugeng.
+
+At 1200x800 the sheet stayed open through Fan → Star Fire. No console
+warnings or errors. A new crossfade test fails without the engine override
+and passes with it. The composer and engine tests pass (20), and
+`npm run check` reports 0 errors and 0 warnings.
+
 ## September 22 connected-picker and minimum-size pass
 
 Preview: `https://localhost:5174/about`. This pass supersedes the practice

@@ -168,7 +168,7 @@ export class PropTypeManager {
         this.settingsService?.currentSettings?.fanAppearance
     );
     const nextLook = normalizePropLook(
-      this.settingsService?.currentSettings?.propArtwork
+      props.propLook ?? this.settingsService?.currentSettings?.propArtwork
     );
     const nextBaseColors =
       props.tunnelPropColors ?? props.primaryPropColors ?? null;

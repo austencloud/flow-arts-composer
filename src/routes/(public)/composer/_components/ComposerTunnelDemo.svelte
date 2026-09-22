@@ -22,6 +22,7 @@
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import TunnelArtView from "$lib/shared/sequence-viewer/tunnel/TunnelArtView.svelte";
+  import type { ComposerPropAppearance } from "./composer-prop-appearance";
   import { TunnelViewController } from "$lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte";
   import {
     loadTunnelViewState,
@@ -53,6 +54,7 @@
     layout = "square",
     leftPropType = "staff",
     rightPropType = "staff",
+    appearance,
     propControl,
     inlinePropPicker,
     onOpenProps,
@@ -61,6 +63,7 @@
     layout?: "square" | "band";
     leftPropType?: string;
     rightPropType?: string;
+    appearance?: ComposerPropAppearance;
     propControl?: Snippet;
     inlinePropPicker?: Snippet;
     onOpenProps?: () => void;
@@ -180,6 +183,7 @@
         bpm={60}
         {leftPropType}
         {rightPropType}
+        {...appearance}
         bind:playing
       />
     </div>

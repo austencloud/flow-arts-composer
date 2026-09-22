@@ -10,6 +10,7 @@
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import ConstructSection from "../_sections/ConstructSection.svelte";
   import ComposerGenerateDemo from "./ComposerGenerateDemo.svelte";
+  import type { ComposerPropAppearance } from "./composer-prop-appearance";
 
   type PracticeMode = "build" | "generate";
 
@@ -18,6 +19,7 @@
     onSequenceChange,
     leftPropType,
     rightPropType,
+    appearance,
     propControl,
     inlinePropPicker,
     onOpenProps,
@@ -26,6 +28,7 @@
     onSequenceChange?: (sequence: SequenceData) => void;
     leftPropType?: PropType;
     rightPropType?: PropType;
+    appearance?: ComposerPropAppearance;
     propControl?: Snippet;
     inlinePropPicker?: Snippet<[boolean?]>;
     onOpenProps?: () => void;
@@ -104,6 +107,7 @@
       embedded={true}
       {leftPropType}
       {rightPropType}
+      {appearance}
       onGenerated={onSequenceChange}
     />
   </div>

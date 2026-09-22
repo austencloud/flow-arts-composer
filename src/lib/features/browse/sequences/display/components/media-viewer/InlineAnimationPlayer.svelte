@@ -16,6 +16,8 @@
   } from "$lib/shared/render-gating/render-activity-gate";
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
   import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
   import BpmChips from "$lib/shared/animation-engine/components/controls/BpmChips.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
@@ -131,6 +133,10 @@
     showControls = true,
     leftPropType = null,
     rightPropType = null,
+    fanAppearance = undefined,
+    propLook = undefined,
+    leftBuugengFlipped = undefined,
+    rightBuugengFlipped = undefined,
     primaryPropColors,
     externalBpm = null,
     externalPlaying = null,
@@ -191,6 +197,12 @@
     showControls?: boolean;
     leftPropType?: string | null;
     rightPropType?: string | null;
+    /** Page-local prop appearance for hosts without the app settings service
+     *  (the public composer). Unset values fall back to the global settings. */
+    fanAppearance?: FanAppearance;
+    propLook?: PropLook;
+    leftBuugengFlipped?: boolean;
+    rightBuugengFlipped?: boolean;
     /** When provided, overrides internal BPM and controls playback speed externally */
     externalBpm?: number | null;
     /** Shared host playback intent. When present, hidden retained players pause
@@ -1043,6 +1055,10 @@
         {effectsConfigState}
         {leftPropType}
         {rightPropType}
+        {fanAppearance}
+        {propLook}
+        {leftBuugengFlipped}
+        {rightBuugengFlipped}
         {primaryPropColors}
         placementGlyphVisible={showPlacementGlyph}
         {propElementalType}
