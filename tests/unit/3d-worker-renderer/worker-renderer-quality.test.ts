@@ -131,6 +131,47 @@ describe("worker renderer adaptive quality", () => {
     flushFrame();
   }
 
+  it("prepares a likely choice without changing the selected scene or starting another worker", () => {
+    const { workers, renderer } = fixture();
+    renderer.switchTo("ocean");
+    const worker = workers[0]!;
+    renderer.prefetch("winter");
+    expect(
+      worker.postMessage.mock.calls.some(
+        ([message]) => message.type === "prefetch-environment"
+      )
+    ).toBe(false);
+    present(worker, 1, "ocean");
+    renderer.prefetch("winter");
+    expect(worker.postMessage).toHaveBeenLastCalledWith(
+      { type: "prefetch-environment", requestId: 1, environment: "winter" },
+      []
+    );
+    expect(renderer.snapshot).toMatchObject({
+      active: "ocean",
+      staging: null,
+      phase: "idle",
+      liveWorkers: 1,
+    });
+    expect(workers).toHaveLength(1);
+    renderer.dispose();
+  });
+
+  it("respects Data Saver when preparing an unselected scene", () => {
+    const { workers, renderer } = fixture();
+    renderer.switchTo("ocean");
+    const worker = workers[0]!;
+    present(worker, 1, "ocean");
+    vi.stubGlobal("navigator", {
+      onLine: true,
+      connection: { saveData: true },
+    });
+    worker.postMessage.mockClear();
+    renderer.prefetch("winter");
+    expect(worker.postMessage).not.toHaveBeenCalled();
+    renderer.dispose();
+  });
+
   it("reuses one worker while applying quality to this and later scenes", () => {
     const { workers, renderer } = fixture();
     renderer.switchTo("ocean");

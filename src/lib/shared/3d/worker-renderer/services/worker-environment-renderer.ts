@@ -26,6 +26,7 @@ interface PendingEnvironment {
 }
 
 export type WorkerSceneSwitchEventKind =
+  | "prefetch"
   | "requested"
   | "started"
   | "phase"
@@ -203,6 +204,46 @@ export class WorkerEnvironmentRenderer {
       lastMeasurement: this.lastMeasurement,
       history: [...this.history],
     };
+  }
+
+  prefetch(environment: WorkerEnvironmentKey): void {
+    if (
+      this.disposed ||
+      this.pending ||
+      !this.slot?.isLive ||
+      environment === this.liveEnvironment
+    )
+      return;
+    const connection = (
+      navigator as Navigator & {
+        connection?: { saveData?: boolean; effectiveType?: string };
+      }
+    ).connection;
+    if (
+      navigator.onLine === false ||
+      connection?.saveData ||
+      connection?.effectiveType === "slow-2g" ||
+      connection?.effectiveType === "2g"
+    )
+      return;
+    if (
+      this.slot.post({
+        type: "prefetch-environment",
+        requestId: this.latestRequestId,
+        environment,
+      })
+    ) {
+      this.recordEvent(
+        "prefetch",
+        {
+          requestId: this.latestRequestId,
+          environment,
+          requestedAt: performance.now(),
+        },
+        "assets"
+      );
+      this.publish();
+    }
   }
 
   switchTo(environment: WorkerEnvironmentKey): void {
@@ -393,12 +434,11 @@ export class WorkerEnvironmentRenderer {
         return;
       case "frame":
         if (
-          this.phase === "idle" &&
           !this.posterEnvironment &&
           this.liveEnvironment === message.environment
         ) {
           this.responsiveness.recordOutgoingFrame(message.deltaMs);
-          this.onFrame?.(message.deltaMs);
+          if (this.phase === "idle") this.onFrame?.(message.deltaMs);
         }
         return;
       case "error":
