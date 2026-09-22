@@ -15,6 +15,7 @@ import type {
 } from "$lib/shared/validation/validation-result";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
 
 import type { SequenceCreateRequest } from "$lib/shared/create/domain/sequence-models";
 
@@ -226,7 +227,7 @@ export function calculateSequenceWord(sequence: SequenceData): string {
   }
 
   // Extract letters from steps (desktop logic)
-  const word = sequence.steps.map((step) => step?.letter).join("");
+  const word = deriveWordFromBeats(sequence.steps);
 
   // Apply word simplification for circular sequences (desktop logic)
   return simplifyRepeatedWord(word);

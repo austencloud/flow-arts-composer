@@ -12,6 +12,7 @@ import type {
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
 import type { VariationConstraints } from "../domain/models/spell-models";
 import type { RandomSequenceGenerationOptions } from "./types";
@@ -975,9 +976,7 @@ export class RandomSequenceGenerator {
       // Build updated word and letterSources from the extended sequence
       // The extender has already derived correct letters for each step
       const extendedWord =
-        extended.word ||
-        extended.steps?.map((s) => s.letter || "").join("") ||
-        "";
+        extended.word || deriveWordFromBeats(extended.steps ?? []);
 
       // Build letterSources: preserve isOriginal from existing sources for first half,
       // mark LOOP-generated steps (second half) as not original
