@@ -31,6 +31,7 @@ import {
   drawDash,
 } from "./canvas-2d-transform-helper";
 import { createRenderCanvas } from "./create-render-canvas";
+import { drawTintedImage } from "@tka/render-composition";
 import type { RenderCanvas } from "./types";
 import { captureException } from "$lib/shared/analytics/services/posthog";
 import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
@@ -55,6 +56,11 @@ const BASE_GRID_POINTS = {
 
 const GRID_POINT_COLOR_LIGHT = "#000000";
 const GRID_POINT_COLOR_DARK = "#ffffff";
+// Dark-mode tint for the grid SVGs, which are black on transparent. White at
+// 85% alpha reproduces the old `invert(1) opacity(0.85)` canvas filter, but
+// through source-in compositing, because node-canvas (the pictograph CLI and
+// the server render route) ignores ctx.filter and drew the points black.
+const DARK_GRID_TINT = "rgba(255, 255, 255, 0.85)";
 const getTurnsTupleGenerator = () => turnsTupleGenerator;
 
 // One broken asset can be requested by every visible cell. Report each unique
@@ -418,13 +424,6 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
     if (gridImg) {
       ctx.save();
 
-      // Apply dark mode filter to match GridSvg.svelte's #d0d0d0 color
-      // The grid SVG is black on transparent - invert to white for dark mode
-      if (isDarkMode) {
-        ctx.filter = "invert(1) opacity(0.85)";
-      }
-      // Light mode: no filter - render grid as pure black
-
       if (needsRotation) {
         // Rotate 45 degrees around center for box mode
         const center = size / 2;
@@ -433,7 +432,12 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
         ctx.translate(-center, -center);
       }
 
-      ctx.drawImage(gridImg, 0, 0, size, size);
+      // Light mode draws the black grid as is; dark mode tints it light.
+      if (isDarkMode) {
+        drawTintedImage(ctx, gridImg, 0, 0, size, size, DARK_GRID_TINT);
+      } else {
+        ctx.drawImage(gridImg, 0, 0, size, size);
+      }
       ctx.restore();
     }
 
@@ -444,10 +448,6 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
       );
       if (nonRadialImg) {
         ctx.save();
-        if (isDarkMode) {
-          ctx.filter = "invert(1) opacity(0.85)";
-        }
-        // Light mode: no filter - render as pure black
 
         if (needsRotation) {
           const center = size / 2;
@@ -456,7 +456,11 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
           ctx.translate(-center, -center);
         }
 
-        ctx.drawImage(nonRadialImg, 0, 0, size, size);
+        if (isDarkMode) {
+          drawTintedImage(ctx, nonRadialImg, 0, 0, size, size, DARK_GRID_TINT);
+        } else {
+          ctx.drawImage(nonRadialImg, 0, 0, size, size);
+        }
         ctx.restore();
       }
     }

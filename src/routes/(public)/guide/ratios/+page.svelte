@@ -22,6 +22,7 @@
   import DifficultyBadge from "$lib/shared/components/DifficultyBadge.svelte";
   import {
     CLUB_ARTWORK_PAINTER,
+    cellArtworkSrc,
     headerArtworkSrc,
   } from "$lib/shared/shape-matrix/services/shape-matrix-artwork";
   import {
@@ -40,6 +41,7 @@
     type Flower,
     type FlowerStyle,
     type RotatingFlower,
+    type RotatingFlowerOri,
     type ShapePathStyle,
   } from "$lib/shared/shape-matrix/domain/flower-signature";
   import { matrixTurnsForLevel } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
@@ -51,6 +53,7 @@
     levelForTurnValue,
     levelForTurns,
     turnValueToKey,
+    type TurnLevel,
     type TurnValue,
   } from "$lib/shared/create/services/level-turn-values";
   import {
@@ -75,11 +78,15 @@
   /** Tracks the matrix draws: one header plus one per shape on each axis. */
   const MATRIX_TRACKS = originalAxis.length + 1;
 
-  function rotating(turns: number, style: FlowerStyle): RotatingFlower {
+  function rotating(
+    turns: number,
+    style: FlowerStyle,
+    ori: RotatingFlowerOri = "in"
+  ): RotatingFlower {
     return {
       style,
       turns,
-      ori: "in",
+      ori,
       grid: "diamond",
       petals: flowerPetals({ style, turns }),
     };
@@ -131,6 +138,83 @@
   }
 
   const example = { pro: rotating(1, "pro"), anti: rotating(1, "anti") };
+
+  /**
+   * One end against two. A staff's far end is its near end point-reflected
+   * through the hand, which is the near end started the other way, so a
+   * staff draws the in and out starts at once. At one hand cycle that is two
+   * different figures laid together. At two hand cycles the out start is the
+   * in start entered one circle later, the same curve, so the staff draws
+   * exactly what one end draws. The Matrix's quarter turn "out" slot holds a
+   * sideways start for that reason (flowerStartOrientation), so the 2:3 case
+   * repeats its in figure here rather than borrowing that slot.
+   */
+  interface EndsFrame {
+    flowers: RotatingFlower[];
+    label: string;
+    meta: string;
+  }
+
+  interface EndsCase {
+    ratio: string;
+    style: FlowerStyle;
+    level: TurnLevel;
+    frames: [EndsFrame, EndsFrame, EndsFrame];
+    summary: string;
+  }
+
+  function endsCase(
+    turns: number,
+    style: FlowerStyle,
+    names: { in: string; out: string; both: string } | null,
+    summary: string
+  ): EndsCase {
+    const near = rotating(turns, style, "in");
+    /* Quarter turns, and only quarter turns, reduce to two hand cycles. */
+    const twoCycles = !Number.isInteger(turns * 2);
+    const far = twoCycles ? near : rotating(turns, style, "out");
+    const both = twoCycles ? near.petals : near.petals * 2;
+    return {
+      ratio: ratioLabel(turns),
+      style,
+      level: levelForTurns(turns, turns),
+      frames: [
+        { flowers: [near], label: "Starts in", meta: names?.in ?? petalWord(near.petals) },
+        {
+          flowers: [far],
+          label: "Starts out",
+          meta: names?.out ?? (twoCycles ? "The same path" : petalWord(far.petals)),
+        },
+        {
+          flowers: twoCycles ? [near] : [near, far],
+          label: "Both ends",
+          meta: names?.both ?? petalWord(both),
+        },
+      ],
+      summary,
+    };
+  }
+
+  const endsCases: EndsCase[] = [
+    endsCase(
+      0,
+      "pro",
+      { in: "Isolation", out: "Extension", both: "Point in a circle" },
+      "The isolation and the extension are one staff motion."
+    ),
+    endsCase(0, "anti", null, "The two lines lie at right angles, so the staff draws a cross."),
+    endsCase(1, "pro", null, "Out is in turned half a petal, so 2 petals become 4."),
+    endsCase(
+      0.25,
+      "pro",
+      null,
+      "The far end retraces the near end, so the staff draws what a poi draws."
+    ),
+  ];
+
+  /** The pairing the matrix's reading figure takes apart. */
+  const anatomyLeft = rotating(1, "pro");
+  const anatomyRight = rotating(2, "anti");
 
   const families = FAMILY_TURNS.map((turns) => ({
     turns,
@@ -186,6 +270,44 @@
       data
         ? headerArtworkSrc(data, flower, "left", sizePx, CLUB_ARTWORK_PAINTER)
         : "";
+  }
+
+  /** A hand's own ink: blue rows are the left hand, red columns the right. */
+  function paintHand(flower: Flower, hand: "left" | "right") {
+    return (sizePx: number) =>
+      data
+        ? headerArtworkSrc(data, flower, hand, sizePx, CLUB_ARTWORK_PAINTER)
+        : "";
+  }
+
+  function paintCell(left: Flower, right: Flower) {
+    return (sizePx: number) =>
+      data ? cellArtworkSrc(data, left, right, sizePx, CLUB_ARTWORK_PAINTER) : "";
+  }
+
+  /**
+   * Several one-end paths drawn as one still: both ends of a staff. Every
+   * still shares the painter's standard extent, so laying the paths together
+   * keeps each at the size it has alone.
+   */
+  function paintTogether(flowers: RotatingFlower[]) {
+    if (flowers.length === 1) return paintFlower(flowers[0]!);
+    return (sizePx: number) => {
+      if (!data) return "";
+      const parts = flowers.map((flower) => data!.left.get(flowerKey(flower)));
+      if (parts.some((part) => !part)) return "";
+      const merged = {
+        left: parts.flatMap((part) => part!.left),
+        right: parts.flatMap((part) => part!.right),
+        purple: parts.flatMap((part) => part!.purple),
+      };
+      return CLUB_ARTWORK_PAINTER.header(
+        merged,
+        "left",
+        Math.round(sizePx),
+        data.clubTipDx
+      );
+    };
   }
 
   onMount(async () => {
@@ -267,9 +389,10 @@
           <p>
             The reduced ratio also fixes the petal count. A prospin flower draws
             <code>|P − H|</code> petals and an antispin flower draws
-            <code>P + H</code>. Both counts follow one tracked prop end. A two
-            ended prop such as a staff traces the mirrored figure as well, so
-            the drawing shows twice as many petals as the count.
+            <code>P + H</code>. Both counts follow one end of the prop. A staff
+            draws with both of its ends, and what the second end adds depends
+            on the ratio, as <a href="#ends-heading">One end or two</a> lays
+            out below.
           </p>
           <p>
             Float sits outside the arithmetic. The prop makes no rotation of its
@@ -308,8 +431,9 @@
         <p>
           Every turn value the Kinetic Alphabet carries, set out by the level
           that first allows it. Each card gives the ratio, the turns it names,
-          and the two flowers one hand draws at that ratio. A level keeps
-          everything the levels before it allow and adds the cards under it.
+          and the two flowers one hand draws at that ratio, following one end
+          of the prop from a start pointing in. A level keeps everything the
+          levels before it allow and adds the cards under it.
         </p>
         <p class="ladder-note">
           Tinted cards are the three ratios of the original matrix.
@@ -412,6 +536,8 @@
           The 1:1 prospin pair shows what the start does most plainly. Starting
           in holds the tracked end of the prop in one place, so it draws a
           point. Starting out carries that end around the whole hand circle.
+          On a staff the two starts are the two ends of one prop, so the
+          twelve fold into six.
         </p>
       </div>
 
@@ -451,6 +577,74 @@
       </div>
     </section>
 
+    <section class="ends" aria-labelledby="ends-heading">
+      <div class="ends-copy">
+        <h2 id="ends-heading">One end or two</h2>
+        <p>
+          Every flower above follows one end of the prop. A poi or a club is
+          held at one end and draws with the other, so that end is the whole
+          drawing. A staff is held in the middle, spun alone or as double
+          staff, and both of its ends draw.
+        </p>
+        <p>
+          The two ends of a staff point opposite ways, so when one starts in,
+          the other starts out. A staff draws the in figure and the out figure
+          at once: two one ended flowers become one staff flower that carries
+          both.
+        </p>
+        <p>
+          Level 1 shows it most plainly. Prospin started in is an isolation,
+          the end held in place as a point, and started out it is an extension
+          around the big circle. On a staff they are one motion. The two
+          antispin starts draw lines at right angles, and a staff draws both.
+        </p>
+        <p>
+          At every ratio with one hand cycle, the out figure is the in figure
+          turned half a petal, so a staff doubles the petals. Quarter turns are
+          the exception. After one hand circle the prop is back where it began
+          with its ends swapped, so the far end retraces the near end's path
+          and nothing doubles. In and out draw the same figure there, which is
+          why the {SHAPE_ENGINE_SHORT_NAME} fills its second quarter turn start
+          with the prop pointing along the hand path instead.
+        </p>
+      </div>
+
+      <div class="ends-board">
+        <ul class="ends-cards" role="list">
+          {#each endsCases as item (`${item.ratio}-${item.style}`)}
+            <li class="ends-card">
+              <p class="ends-head">
+                <DifficultyBadge level={item.level} size="1.35rem" />
+                <span class="ends-ratio">{item.ratio}</span>
+                <span class="ends-style">{styleWord(item.style)}</span>
+              </p>
+              <div class="ends-sum">
+                {#each item.frames as frame, index (frame.label)}
+                  <div class="ends-frame">
+                    <span class="still">
+                      {#if index > 0}
+                        <span class="sum-op" aria-hidden="true"
+                          >{index === 1 ? "+" : "="}</span
+                        >
+                      {/if}
+                      <ShapeMatrixMandalaArt
+                        paint={paintTogether(frame.flowers)}
+                        artKey={`ends-${frame.flowers.map((flower) => flowerKey(flower)).join("+")}`}
+                        alt={`${item.ratio} ${styleWord(item.style).toLowerCase()}, ${frame.label.toLowerCase()}: ${frame.meta.toLowerCase()}`}
+                      />
+                    </span>
+                    <span class="ends-label">{frame.label}</span>
+                    <span class="ends-meta">{frame.meta}</span>
+                  </div>
+                {/each}
+              </div>
+              <p class="ends-summary">{item.summary}</p>
+            </li>
+          {/each}
+        </ul>
+      </div>
+    </section>
+
     <section class="pairings" aria-labelledby="pairings-heading">
       <div class="pairings-copy">
         <h2 id="pairings-heading">The 144 pairings</h2>
@@ -470,6 +664,47 @@
         </p>
       </div>
 
+      <figure class="anatomy">
+        <div class="anatomy-sum">
+          <div class="anatomy-part">
+            <span class="still">
+              <ShapeMatrixMandalaArt
+                paint={paintHand(anatomyLeft, "left")}
+                artKey={`anatomy-left-${flowerKey(anatomyLeft)}`}
+                alt="1:3 prospin in the left hand's blue"
+              />
+            </span>
+            <span class="anatomy-label">Row, left hand</span>
+          </div>
+          <div class="anatomy-part">
+            <span class="still">
+              <span class="sum-op" aria-hidden="true">+</span>
+              <ShapeMatrixMandalaArt
+                paint={paintHand(anatomyRight, "right")}
+                artKey={`anatomy-right-${flowerKey(anatomyRight)}`}
+                alt="1:5 antispin in the right hand's red"
+              />
+            </span>
+            <span class="anatomy-label">Column, right hand</span>
+          </div>
+          <div class="anatomy-part anatomy-cell">
+            <span class="still">
+              <span class="sum-op" aria-hidden="true">=</span>
+              <ShapeMatrixMandalaArt
+                paint={paintCell(anatomyLeft, anatomyRight)}
+                artKey={`anatomy-cell-${flowerKey(anatomyLeft)}-${flowerKey(anatomyRight)}`}
+                alt="The cell: both paths drawn together"
+              />
+            </span>
+            <span class="anatomy-label">The cell</span>
+          </div>
+        </div>
+        <figcaption>
+          1:3 prospin in the left hand over 1:5 antispin in the right.
+          <a href={pairHref(anatomyLeft, anatomyRight)}>Open this pairing</a>
+        </figcaption>
+      </figure>
+
       <div class="matrix-stage">
         {#if loadError}
           <p class="load-status error">Drawings unavailable</p>
@@ -487,53 +722,51 @@
           />
         {/if}
       </div>
-    </section>
 
-    <div class="closing">
       <section class="beyond" aria-labelledby="beyond-heading">
-        <h2 id="beyond-heading">Past the original twelve</h2>
+        <h3 id="beyond-heading">Past the original twelve</h3>
         <p>
           The pairing does not stop at three ratios. Levels 3 and 4 bring in the
-          half turn, quarter turn, and Float rows from the tables above, and
+          half turn, quarter turn, and Float cards from the ladder above, and
           each hand picks its ratio on its own, so the two do not have to sit in
           the same family. Past the levels entirely, any two whole number ratios
           up to 15 on each side pair the same way.
         </p>
       </section>
+    </section>
 
-      <section class="sources" aria-labelledby="sources-heading">
-        <h2 id="sources-heading">Sources</h2>
-        <ul class="source-list">
-          <li>
-            <a
-              class="external"
-              href={ORIGINAL_SHAPE_MATRIX_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              >Lorq Nichols, {ORIGINAL_SHAPE_MATRIX_NAME}, on Spin Science<span
-                class="sr-only"
-              >
-                (opens in a new tab)</span
-              ></a
+    <section class="sources" aria-labelledby="sources-heading">
+      <h2 id="sources-heading">Sources</h2>
+      <ul class="source-list">
+        <li>
+          <a
+            class="external"
+            href={ORIGINAL_SHAPE_MATRIX_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            >Lorq Nichols, {ORIGINAL_SHAPE_MATRIX_NAME}, on Spin Science<span
+              class="sr-only"
             >
-          </li>
-          <li>
-            <a href="/history#archive-record-vtg"
-              >The Vulcan Tech Gospel record</a
-            >
-          </li>
-          <li>
-            <a href="/history#archive-record-lorq">The Lorq Nichols record</a>
-          </li>
-          <li><a href="/shape-engine">{SHAPE_ENGINE_SHORT_NAME}</a></li>
-        </ul>
-        <p class="attribution">
-          The {SHAPE_ENGINE_SHORT_NAME} was built independently by {KINETIC_SHAPE_ENGINE_AUTHOR}.
-          It does not reproduce Nichols' original diagram and is not an official
-          Spin Science release.
-        </p>
-      </section>
-    </div>
+              (opens in a new tab)</span
+            ></a
+          >
+        </li>
+        <li>
+          <a href="/history#archive-record-vtg"
+            >The Vulcan Tech Gospel record</a
+          >
+        </li>
+        <li>
+          <a href="/history#archive-record-lorq">The Lorq Nichols record</a>
+        </li>
+        <li><a href="/shape-engine">{SHAPE_ENGINE_SHORT_NAME}</a></li>
+      </ul>
+      <p class="attribution">
+        The {SHAPE_ENGINE_SHORT_NAME} was built independently by {KINETIC_SHAPE_ENGINE_AUTHOR}.
+        It does not reproduce Nichols' original diagram and is not an official
+        Spin Science release.
+      </p>
+    </section>
   </article>
 </GuideShell>
 
@@ -678,6 +911,7 @@
   .reading,
   .ladder,
   .twelve,
+  .ends,
   .pairings {
     display: grid;
     gap: var(--gutter);
@@ -1138,6 +1372,145 @@
     }
   }
 
+  /* One end or two. Each card is a sum: the in start plus the out start is
+     what a staff draws with both ends. */
+  .ends-copy p:last-child {
+    margin-bottom: 0;
+  }
+
+  .ends-board {
+    container: ends-board / inline-size;
+  }
+
+  .ends-cards {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @container ends-board (min-width: 40rem) {
+    .ends-cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .ends-card {
+    display: grid;
+    align-content: start;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 1rem;
+    border: 1px solid var(--rule);
+    border-radius: 14px;
+    background: var(--surface);
+  }
+
+  .ends-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+  }
+
+  .ends-ratio {
+    color: var(--ink);
+    font-size: 1.1rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 660;
+  }
+
+  .ends-style {
+    color: var(--ink-dim);
+    font-size: var(--font-size-min, 0.875rem);
+  }
+
+  /* Three equal frames with room between them for the operators. Each
+     operator sits in the still it leads into, centred on the gap before it,
+     so it lines up with the drawings rather than with the words under them. */
+  .ends-sum,
+  .anatomy-sum {
+    --op-gap: 1.5rem;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: var(--op-gap);
+  }
+
+  .ends-frame,
+  .anatomy-part {
+    display: grid;
+    justify-items: center;
+    align-content: start;
+    gap: 0.1rem;
+    min-inline-size: 0;
+    text-align: center;
+  }
+
+  .ends-frame .still,
+  .anatomy-part .still {
+    position: relative;
+    inline-size: 100%;
+    margin-bottom: 0.35rem;
+  }
+
+  .sum-op {
+    position: absolute;
+    top: 50%;
+    left: calc(var(--op-gap) / -2);
+    z-index: 1;
+    color: var(--ink-faint);
+    font-size: 1.25rem;
+    line-height: 1;
+    transform: translate(-50%, -50%);
+  }
+
+  .ends-label,
+  .anatomy-label {
+    color: var(--ink);
+    font-size: var(--font-size-min, 0.875rem);
+    font-weight: 620;
+  }
+
+  .ends-meta {
+    color: var(--ink-faint);
+    font-size: var(--font-size-compact, 0.78rem);
+  }
+
+  .ends-summary {
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: var(--font-size-min, 0.875rem);
+    line-height: 1.45;
+  }
+
+  /* Reading a cell: the row's flower plus the column's flower is the tile. */
+  .anatomy {
+    margin: 0;
+    padding: 1rem;
+    border: 1px solid var(--rule);
+    border-radius: 14px;
+    background: var(--surface);
+  }
+
+  .anatomy figcaption {
+    margin-top: 0.85rem;
+    color: var(--ink-dim);
+    font-size: var(--font-size-min, 0.875rem);
+    line-height: 1.45;
+  }
+
+  .beyond h3 {
+    margin: 0 0 0.6rem;
+    color: var(--ink);
+    font-size: 1.1rem;
+    font-weight: 660;
+  }
+
+  .beyond p {
+    margin: 0;
+  }
+
   /* The 144 pairings. ShapeMatrixGrid is container sized, so its stage owns
      an explicit box: a square that grows with the band up to the grid's
      largest tile, and never shrinks below the grid at its 44px touch floor.
@@ -1153,13 +1526,39 @@
     margin-bottom: 0;
   }
 
-  /* The matrix sits beside its prose only once the band can hold the whole
-     grid at its largest tile next to a reading column. Below that it drops
-     under the prose at full width, where it never has to scroll. */
-  @media (min-width: 96rem) {
+  /* Stacked, the cell figure keeps to a reading width so its flowers stay
+     the size of the ladder's rather than growing across the band. */
+  .anatomy {
+    max-inline-size: 40rem;
+  }
+
+  /* Once the band is wide enough, the cell figure stands beside the prose
+     and the matrix runs full width under both. */
+  @media (min-width: 80rem) and (max-width: 119.99rem) {
     .pairings {
       grid-template-columns: minmax(0, var(--copy)) minmax(0, 1fr);
-      align-items: start;
+      grid-template-areas:
+        "copy anatomy"
+        "stage stage"
+        "beyond beyond";
+      column-gap: var(--gutter);
+    }
+
+    .pairings-copy {
+      grid-area: copy;
+    }
+
+    .anatomy {
+      grid-area: anatomy;
+      align-self: center;
+    }
+
+    .matrix-stage {
+      grid-area: stage;
+    }
+
+    .beyond {
+      grid-area: beyond;
     }
   }
 
@@ -1216,12 +1615,6 @@
     color: var(--semantic-error, oklch(0.7 0.16 25));
   }
 
-  .closing {
-    display: grid;
-    gap: var(--section-gap);
-  }
-
-  .beyond,
   .sources {
     padding-top: clamp(1.75rem, 3vw, 2.75rem);
     border-top: 1px solid var(--rule);
@@ -1315,28 +1708,81 @@
       align-items: start;
     }
 
-    /* The matrix runs taller than its prose. Pinning the prose under the
-       site header keeps it beside the grid it describes instead of leaving
-       a blank column once the grid scrolls away. */
-    .pairings-copy {
-      position: sticky;
-      top: calc(64px + 1.5rem);
+    /* The sources list runs across the band instead of down a narrow
+       column with the rest of the width empty. */
+    .source-list {
+      display: flex;
+      flex-wrap: wrap;
+      column-gap: 2.5rem;
     }
+  }
 
-    /* The two closing sections share one band under one rule, so the page
-       ends on the same two tracks it opened with. */
-    .closing {
+  /* The matrix and the end cards sit beside their prose only once the band
+     holds a reading column and the whole grid at its 72px tiles, which the
+     guide's sidebar allows from about a 1920px screen. */
+  @media (min-width: 120rem) {
+    .ends,
+    .pairings {
       grid-template-columns: minmax(0, var(--copy)) minmax(0, 1fr);
       column-gap: var(--gutter);
-      align-items: start;
-      padding-top: clamp(1.75rem, 3vw, 2.75rem);
-      border-top: 1px solid var(--rule);
     }
 
-    .beyond,
-    .sources {
-      padding-top: 0;
-      border-top: 0;
+    .ends {
+      align-items: start;
+    }
+
+    /* The matrix runs taller than its prose, so the column beside it
+       carries the rest of the section: how to read one cell, then where the
+       pairing goes past the twelve. Spare height gathers around the cell
+       figure and the last paragraph ends level with the grid's foot. */
+    .pairings {
+      grid-template-areas:
+        "copy stage"
+        "anatomy stage"
+        "beyond stage";
+      grid-template-rows: auto 1fr auto;
+    }
+
+    .pairings-copy {
+      grid-area: copy;
+    }
+
+    .anatomy {
+      grid-area: anatomy;
+      align-self: center;
+      max-inline-size: none;
+    }
+
+    .matrix-stage {
+      grid-area: stage;
+    }
+
+    .beyond {
+      grid-area: beyond;
+      align-self: end;
+    }
+  }
+
+  /* With 88px tiles the matrix stands 1150px tall. The two hand flowers
+     stack in a narrow track and the cell they make takes the wide one, so
+     the cell reads larger and the column beside the matrix reaches its
+     foot. */
+  @media (min-width: 137.5rem) {
+    .anatomy-sum {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+      row-gap: 2rem;
+    }
+
+    .anatomy-cell {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+      align-self: center;
+    }
+
+    /* The plus sits in the gap under the first flower's label. */
+    .anatomy-part:nth-child(2) .sum-op {
+      top: -1rem;
+      left: 50%;
     }
   }
 </style>
