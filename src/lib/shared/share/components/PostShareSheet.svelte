@@ -2077,7 +2077,12 @@
                             ? "phone"
                             : `video:${activeVideoUrl ? "ready" : openerPreviewUrl ? "opener" : videoStatus}`}
                           duration={DURATION.normal}
-                          fill
+                          fill={!!(
+                            qrDataUrl ||
+                            activeVideoUrl ||
+                            openerPreviewUrl
+                          )}
+                          animateHeight
                         >
                           {#if qrDataUrl}
                             <div class="qr-view">
@@ -2131,12 +2136,12 @@
                               <strong
                                 >{videoStatus === "failed"
                                   ? "Video could not be rendered"
-                                  : "Animation preview unavailable"}</strong
+                                  : "Animation preview"}</strong
                               >
                               <span
                                 >{videoStatus === "failed"
                                   ? "Check the settings and try again."
-                                  : "The viewer did not provide a current-view capture."}</span
+                                  : "Your video preview appears after rendering."}</span
                               >
                             </div>
                           {:else}
