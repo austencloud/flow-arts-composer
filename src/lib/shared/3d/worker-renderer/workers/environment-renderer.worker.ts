@@ -61,7 +61,10 @@ import {
   type WorkerProgressReporter,
 } from "../services/worker-progress-reporter";
 import { WorkerRetainedSceneCache } from "../services/worker-retained-scene-cache";
-import { estimateWorkerRuntimeBytes } from "../services/worker-runtime-memory-estimate";
+import {
+  estimateWorkerRuntimeBytes,
+  retainedSceneBudgetBytes,
+} from "../services/worker-runtime-memory-estimate";
 import {
   clearWorkerSceneAssets,
   prefetchWorkerSceneAssets,
@@ -114,9 +117,11 @@ interface SceneRuntime {
   dispose(): void;
 }
 
-const MAX_RETAINED_RUNTIME_BYTES = 96 * 1024 * 1024;
 const retainedScenes = new WorkerRetainedSceneCache<SceneRuntime>(
-  MAX_RETAINED_RUNTIME_BYTES
+  retainedSceneBudgetBytes(
+    (scope.navigator as WorkerNavigator & { deviceMemory?: number })
+      .deviceMemory
+  )
 );
 
 let requestId = 0;

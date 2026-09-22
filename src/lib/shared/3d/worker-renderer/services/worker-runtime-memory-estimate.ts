@@ -4,6 +4,13 @@ import type { WorkerViewport } from "../domain/worker-renderer-protocol";
 const DRIVER_OVERHEAD_FACTOR = 1.25;
 const FIXED_RUNTIME_OVERHEAD_BYTES = 8 * 1024 * 1024;
 
+/** Keep one prepared scene within a conservative device-memory allowance. */
+export function retainedSceneBudgetBytes(deviceMemory?: number): number {
+  const memoryGiB = Number.isFinite(deviceMemory) ? (deviceMemory ?? 0) : 0;
+  const budgetMiB = memoryGiB >= 16 ? 320 : memoryGiB >= 8 ? 192 : 96;
+  return budgetMiB * 1024 * 1024;
+}
+
 export interface WorkerRuntimeMemoryEstimate {
   bytes: number;
   skipReason: string | null;
