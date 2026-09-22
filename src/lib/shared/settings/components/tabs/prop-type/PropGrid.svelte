@@ -33,6 +33,7 @@
   import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
   import {
     hasModelSprite,
+    normalizePropLook,
     propLookOptions,
   } from "$lib/shared/pictograph/prop/domain/prop-look";
   import type { CompositionRecipe } from "$lib/shared/pictograph/prop/domain/prop-composition-recipes";
@@ -400,18 +401,29 @@
     drill?.kind === "family" ? familyChoices(drill.base).length : 0
   );
   /**
-   * Tile grid for a drilled family in a bounded host: as many columns as the
-   * family warrants, rows sharing the height so the tiles own the space,
-   * capped so a two-prop family gets two generous cards rather than two
-   * towers. Null means the host is not bounded and the tiles keep their
-   * ordinary size.
+   * Tile grid for a drilled family in a bounded host: the column count that
+   * makes the largest tile once rows share the height, so a two-style family
+   * stacks in a tall rail and sits side by side in a wide sheet. Rows are
+   * capped at 1.25x the column width so tiles never become towers. Null means
+   * the host is not bounded and the tiles keep their ordinary size.
    */
   const drillLayout = $derived.by(() => {
     const n = drillTileCount;
     const { width, height } = tilesBox;
     if (n === 0 || fillHeight === 0 || width === 0 || height === 0) return null;
-    const phone = width < 440;
-    const cols = n <= 2 ? n : phone || n <= 4 ? 2 : n <= 9 ? 3 : 4;
+    let cols = 1;
+    let bestSize = 0;
+    for (let candidate = 1; candidate <= Math.min(n, 4); candidate += 1) {
+      const candidateRows = Math.ceil(n / candidate);
+      const candidateWidth = (width - DRILL_GAP * (candidate - 1)) / candidate;
+      const candidateHeight =
+        (height - DRILL_GAP * (candidateRows - 1)) / candidateRows;
+      const size = Math.min(candidateWidth, candidateHeight / 1.25);
+      if (size > bestSize + 0.5) {
+        bestSize = size;
+        cols = candidate;
+      }
+    }
     const rows = Math.ceil(n / cols);
     const colWidth = (width - DRILL_GAP * (cols - 1)) / cols;
     const rowHeight = Math.floor(
@@ -461,6 +473,18 @@
       onPropLookChange !== undefined &&
       hasModelSprite(detailProp)
   );
+  // A family's styles are drawn in the global look, so the styles view is
+  // where that look must be switchable: otherwise a Triad family in
+  // pictograph shows no hint that every style also has a 3D model.
+  const familyLookOptions = $derived(
+    drill?.kind === "family" &&
+      showAppearance &&
+      onPropLookChange !== undefined &&
+      familyChoices(drill.base).some((prop) => hasModelSprite(prop))
+      ? propLookOptions(drill.base)
+      : []
+  );
+  const currentPropLook = $derived(normalizePropLook(propLook));
   const selectedPropLookOption = $derived(
     selectedPropType === null
       ? undefined
@@ -608,6 +632,19 @@
         aria-pressed={sizeIsBig}
         onclick={() => chooseSize(true)}>Big</button
       >
+    </div>
+  {/snippet}
+  {#snippet familyLookControl()}
+    <div class="size-toggle" role="group" aria-label="Prop look">
+      {#each familyLookOptions as option (option.id)}
+        <button
+          type="button"
+          class="size-option"
+          class:active={currentPropLook === option.id}
+          aria-pressed={currentPropLook === option.id}
+          onclick={() => onPropLookChange?.(option.id)}>{option.label}</button
+        >
+      {/each}
     </div>
   {/snippet}
   {#snippet fanControl()}
@@ -866,6 +903,12 @@
               fill={fillHeight > 0}
             />
           {:else}
+            {#if familyLookOptions.length > 0}
+              <div class="detail-row">
+                <span class="look-label">Look</span>
+                {@render familyLookControl()}
+              </div>
+            {/if}
             <div
               class="drill-tiles"
               style:--family-count={familyChoices(drill.base).length}

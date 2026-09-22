@@ -89,6 +89,29 @@ describe("PropGrid fan look credit", () => {
     expect(onPropLookChange).toHaveBeenCalledWith("model");
   });
 
+  it("switches a family's styles between pictograph and 3D model", async () => {
+    const onPropLookChange = vi.fn();
+
+    render(PropGrid, {
+      selectedPropType: PropType.TRIAD,
+      onSelect: vi.fn(),
+      allowedProps: [PropType.TRIAD, PropType.TRIGENG],
+      fanAppearance: { build: "fire", frameColor: "black", cover: "bare" },
+      onFanAppearanceChange: vi.fn(),
+      propLook: "pictograph",
+      onPropLookChange,
+    });
+
+    await page.getByRole("button", { name: "Choose Triad style" }).click();
+    const look = page.getByRole("group", { name: "Prop look" });
+    await expect
+      .element(look.getByRole("button", { name: "Pictograph" }))
+      .toHaveAttribute("aria-pressed", "true");
+
+    await look.getByRole("button", { name: "3D model" }).click();
+    expect(onPropLookChange).toHaveBeenCalledWith("model");
+  });
+
   it("selects Buugeng and replaces the root grid with its persistent details", async () => {
     const onSelect = vi.fn();
     const onPropLookChange = vi.fn();

@@ -61,6 +61,26 @@ overflows horizontally. Reduced motion also disables the opening-track
 transition. The three composer presentation test files pass (11 tests), and
 `npm run check` reports 0 errors and 0 warnings. Commit `47b9647026`.
 
+## September 22 family look switch
+
+Austen reported that Triad styles showed Triad and Trigeng only as
+pictographs. Both have 3D sprites, and the tiles already follow the global
+look. However, nothing on the styles view let him switch that look.
+
+- A family drill now shows a Look row (3D model / Pictograph) whenever a family
+  member has a captured sprite and the host passes `onPropLookChange`.
+- `drillLayout` now picks the column count that gives the largest tile. Two-
+  style families (Triad, Guitar, Triquetra) stack in the tall rail and sit side
+  by side in the wide sheet.
+- Evidence from the 2560×1250@1.5 rail: Triad and Guitar tiles are 451×333,
+  stacked. Club is 220×275, 2+1. Staff is 220×219, 2+2+1. No family overflows.
+  The switch changes the tile hrefs between notation SVG and `model/*.svg`. In
+  the 1200×800 sheet, Triad is 363×453 side by side, Club is 3 across, and
+  Staff is 3+2.
+- New component test: "switches a family's styles between pictograph and 3D
+  model". All 6 PropGrid component tests pass, and `npm run check` found 0
+  errors.
+
 ## September 22 drills fill the rail
 
 Austen's screenshots showed the Club styles, Chicken details, and Fan look
