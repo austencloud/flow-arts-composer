@@ -32,6 +32,7 @@
     { value: "pelvis", label: "Pelvis" },
     { value: "elbow", label: "Elbow" },
     { value: "tip", label: "Tip" },
+    { value: "grip", label: "Grip" },
   ] as const;
   const degrees = 180 / Math.PI;
   const radians = Math.PI / 180;
@@ -66,6 +67,12 @@
   }
 
   const controls = $derived.by(() => {
+    if (selected === "grip") {
+      return [
+        slider("Relaxed grip", pose.gripRelaxation * 100, 0, 100, 1, (v) => update({ gripRelaxation: v / 100 }), "%"),
+        slider("Shaft angle in hand", pose.gripTilt * degrees, 0, 80, 1, (v) => update({ gripTilt: v * radians }), "°"),
+      ];
+    }
     if (selected === "chest") {
       return [
         slider("Turn toward stage left", pose.turn * degrees, -90, 90, 1, (v) => update({ turn: v * radians }), "°"),
@@ -143,6 +150,7 @@
   </label>
   <p>Edits save a whole-pose keyframe here.</p>
   {#if selected === "elbow"}<p>The handle guides the elbow’s direction; arm length still limits its position.</p>{/if}
+  {#if selected === "grip"}<p>At 100%, thumb and index hold while the other fingers relax.</p>{/if}
 </section>
 
 <style>

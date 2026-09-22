@@ -161,7 +161,9 @@ function sampleGripLab(
   phase: number,
   keys = defaultTeachingKeys()
 ) {
-  const pose = sampleTeachingPose(phase, keys);
+  // These regressions isolate the closed-grip elbow route. Relaxed-grip contact
+  // and transitions have their own rig tests.
+  const pose = { ...sampleTeachingPose(phase, keys), gripRelaxation: 0 };
   const tip = allowedTipOffset(pose, 0.13);
   return sample(rig, phase, authoredBodyPose(pose), ORIGIN, [
     tip[0] + TEACHING_ANCHOR_OFFSET[0],
