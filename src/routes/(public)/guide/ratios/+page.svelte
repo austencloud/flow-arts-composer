@@ -130,6 +130,18 @@
   }
 
   /**
+   * Level 4's quarter turns do not follow the Level 1 to 3 rule above, where
+   * facing splits on style and start. Sampling every engine path for the
+   * point farthest from the hand center found a petal tip sitting at (0, +r)
+   * for all fourteen quarter-turn flowers this page shows: both styles across
+   * all seven quarter-turn ratios, -0.25 through 2.75. A petal always points
+   * straight down, so the caption does not depend on the flower at all.
+   */
+  function quarterTurnFacing(): string {
+    return "Petal down";
+  }
+
+  /**
    * The starts a card shows. A ratio that closes in one hand circle draws a
    * different flower from each start, so its card shows in and out. Quarter
    * turns take two circles, and there the out start retraces the in start's
@@ -570,7 +582,8 @@
           flower is named by how it sits: a petal pointing up or down, petals
           stacked vertical or lying horizontal, four petals in diamond or box.
           At Level 4's quarter turns both starts draw the very same flower, so
-          those cards show one.
+          those cards show one, and every one of them puts a petal straight
+          down, prospin and antispin alike.
         </p>
         <p class="ladder-note">
           Tinted cards are the three ratios of the original matrix.
@@ -660,24 +673,26 @@
                         <span class="card-style">Antispin</span>
                         {#each row.starts as start (start.ori)}
                           {#each start.flowers as flower (flowerKey(flower))}
-                            {@const facing = paired
-                              ? flowerFacing(flower).toLowerCase()
-                              : ""}
+                            {@const facing = (
+                              paired
+                                ? flowerFacing(flower)
+                                : quarterTurnFacing()
+                            ).toLowerCase()}
                             <span class="still">
                               <ShapeMatrixMandalaArt
                                 paint={paintFlower(flower)}
                                 artKey={flowerKey(flower)}
-                                alt={`${row.ratio} ${styleWord(flower.style).toLowerCase()}${facing ? `, ${facing}` : ""}: ${petalWord(flower.petals).toLowerCase()}`}
+                                alt={`${row.ratio} ${styleWord(flower.style).toLowerCase()}, ${facing}: ${petalWord(flower.petals).toLowerCase()}`}
                               />
                             </span>
                           {/each}
-                          {#if paired}
-                            {#each start.flowers as flower (flowerKey(flower))}
-                              <span class="card-facing" aria-hidden="true"
-                                >{flowerFacing(flower)}</span
-                              >
-                            {/each}
-                          {/if}
+                          {#each start.flowers as flower (flowerKey(flower))}
+                            <span class="card-facing" aria-hidden="true"
+                              >{paired
+                                ? flowerFacing(flower)
+                                : quarterTurnFacing()}</span
+                            >
+                          {/each}
                         {/each}
                         {#each row.starts[0]?.flowers ?? [] as flower (flowerKey(flower))}
                           <span class="card-petals"
