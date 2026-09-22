@@ -1,13 +1,20 @@
 import {
   Camera,
+  FramebufferTexture,
+  LinearFilter,
   Mesh,
   MeshBasicMaterial,
   Object3D,
   OrthographicCamera,
   PlaneGeometry,
   Scene,
+  Vector2,
   type WebGLRenderer,
 } from "three";
+import {
+  ENVIRONMENT_VEIL_MAX_OPACITY,
+  type EnvironmentTransitionPhase,
+} from "../domain/environment-transition";
 
 /** The ordinary scene layer rendered by the primary camera pass. */
 export const BASE_SCENE_LAYER = 0;
@@ -31,10 +38,12 @@ export function protectPerformerTree(root: Object3D): void {
 }
 
 /**
- * Draws the set veil and then redraws the protected performer layer on top.
- * The main scene, camera, and renderer are restored before returning.
+ * Holds a complete picture while the next environment loads, then fades it
+ * out. Hosts without a retained frame use the performer-preserving veil.
  */
 export class EnvironmentTransitionCompositor {
+  private retainedFrame: FramebufferTexture | null = null;
+  private readonly size = new Vector2();
   private readonly veilScene = new Scene();
   private readonly veilCamera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
   private readonly veilGeometry = new PlaneGeometry(2, 2);
@@ -53,12 +62,67 @@ export class EnvironmentTransitionCompositor {
     this.veilScene.add(veil);
   }
 
+  get hasRetainedFrame(): boolean {
+    return this.retainedFrame !== null;
+  }
+
+  capture(renderer: WebGLRenderer): void {
+    // Rapid choices keep the last complete scene, never a half-built world.
+    if (this.retainedFrame) return;
+    renderer.getDrawingBufferSize(this.size);
+    if (this.size.x < 1 || this.size.y < 1) return;
+    const frame = new FramebufferTexture(this.size.x, this.size.y);
+    frame.colorSpace = renderer.outputColorSpace;
+    frame.minFilter = LinearFilter;
+    frame.magFilter = LinearFilter;
+    try {
+      renderer.copyFramebufferToTexture(frame);
+    } catch (error) {
+      frame.dispose();
+      throw error;
+    }
+    this.retainedFrame = frame;
+    this.veilMaterial.map = frame;
+    this.veilMaterial.color.setHex(0xffffff);
+    this.veilMaterial.needsUpdate = true;
+  }
+
+  private releaseFrame(): void {
+    if (!this.retainedFrame) return;
+    this.veilMaterial.map = null;
+    this.veilMaterial.color.setHex(0x080c12);
+    this.veilMaterial.needsUpdate = true;
+    this.retainedFrame.dispose();
+    this.retainedFrame = null;
+  }
+
   render(
     renderer: WebGLRenderer,
     scene: Scene,
     camera: Camera,
-    opacity: number
+    opacity: number,
+    phase?: EnvironmentTransitionPhase
   ): void {
+    if (this.retainedFrame) {
+      if (phase === "idle") {
+        this.releaseFrame();
+        return;
+      }
+      const previousAutoClear = renderer.autoClear;
+      try {
+        renderer.autoClear = false;
+        // The entire outgoing picture stays opaque until the new world has
+        // loaded and warmed up. Its original resolution also survives resize.
+        this.veilMaterial.opacity =
+          phase === "revealing"
+            ? Math.max(0, Math.min(1, opacity / ENVIRONMENT_VEIL_MAX_OPACITY))
+            : 1;
+        renderer.render(this.veilScene, this.veilCamera);
+      } finally {
+        renderer.autoClear = previousAutoClear;
+      }
+      return;
+    }
     const clampedOpacity = Math.max(0, Math.min(1, opacity));
     if (clampedOpacity <= 0) return;
 
@@ -88,6 +152,7 @@ export class EnvironmentTransitionCompositor {
   }
 
   dispose(): void {
+    this.releaseFrame();
     this.veilGeometry.dispose();
     this.veilMaterial.dispose();
   }

@@ -12,6 +12,7 @@ import {
   sequenceDisplayName,
 } from "../domain/mandala-primitive-reference";
 import type { MandalaPrimitiveRef } from "../domain/sticker-types";
+import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
 
 export type CatalogShapeScope = "solo" | "combined";
 export type SoloProp = "left" | "right";
@@ -106,6 +107,8 @@ export function sortCatalogShapeGroups(
   return [...groups.values()].sort(
     (a, b) =>
       b.members.length - a.members.length ||
-      a.representative.word.localeCompare(b.representative.word)
+      stripWordNotation(a.representative.word).localeCompare(
+        stripWordNotation(b.representative.word)
+      )
   );
 }

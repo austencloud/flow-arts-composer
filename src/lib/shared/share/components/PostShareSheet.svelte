@@ -140,6 +140,10 @@
     resolvedCardAutoLayout?: ResolvedAutoLayout | null;
     /** Omitted when the host cannot switch its viewer body to Post Studio. */
     onOpenPostStudio?: () => void;
+    /** The host's own animation export: its Export page beside the live
+     * stage. When present, an animation download leaves the sheet for it
+     * instead of preparing a render behind a frozen capture here. */
+    onOpenVideoExport?: () => void;
     /** False for local-only guest flows that cannot mint an account-owned link. */
     canCreateLink?: boolean;
     /** A dedicated Export or Download shortcut enters file preparation directly. */
@@ -176,6 +180,7 @@
     onSaveCardPresentation,
     resolvedCardAutoLayout = null,
     onOpenPostStudio,
+    onOpenVideoExport,
     canCreateLink = true,
     initialEntry = "chooser",
     preserveSession = false,
@@ -990,8 +995,24 @@
     statusMessage = "";
   }
 
-  function beginDownload(next: ShareArtifact): void {
+  /**
+   * Picks the file to download. Where the host exports the animation itself
+   * (the viewer's Export page, stage still playing) the video choice goes
+   * there, the same way Post Studio takes over from the sheet, and the sheet
+   * is done. Returns false when it handed off.
+   */
+  function chooseArtifact(next: ShareArtifact): boolean {
+    if (next === "video" && onOpenVideoExport) {
+      onOpenVideoExport();
+      onClose();
+      return false;
+    }
     handleArtifactChange(next);
+    return true;
+  }
+
+  function beginDownload(next: ShareArtifact): void {
+    if (!chooseArtifact(next)) return;
     beginFilePreparation();
   }
 
@@ -1998,23 +2019,17 @@
                         </button>
                       {/if}
                       {#if availableArtifacts.length > 1}
-                        <label class="file-type">
-                          <span>File type</span>
-                          <select
+                        <fieldset class="file-type" disabled={videoBusy}>
+                          <span id="share-file-type">File type</span>
+                          <SegmentedControl
+                            options={artifactOptions}
                             value={artifact}
-                            disabled={videoBusy}
-                            onchange={(event) =>
-                              handleArtifactChange(
-                                event.currentTarget.value as ShareArtifact
-                              )}
-                          >
-                            {#each artifactOptions as option (option.value)}
-                              <option value={option.value}
-                                >{option.label}</option
-                              >
-                            {/each}
-                          </select>
-                        </label>
+                            onchange={(value) => chooseArtifact(value)}
+                            color="accent"
+                            size="sm"
+                            ariaLabelledby="share-file-type"
+                          />
+                        </fieldset>
                       {/if}
                     </div>
                   {/if}
@@ -3407,20 +3422,13 @@
     align-items: center;
     gap: 0.5rem;
     min-height: var(--min-touch-target, 44px);
-    margin-left: auto;
+    margin: 0 0 0 auto;
+    padding: 0;
+    border: 0;
     color: var(--theme-text-secondary);
     font-size: var(--font-size-min, 0.875rem);
   }
-  .file-type select {
-    min-height: var(--min-touch-target, 44px);
-    padding: 0 2rem 0 0.625rem;
-    border: 1px solid var(--theme-stroke);
-    border-radius: 0.5rem;
-    background: var(--theme-card-bg);
-    color: var(--theme-text);
-    font: inherit;
-  }
-  .file-type select:disabled {
+  .file-type:disabled {
     opacity: 0.55;
   }
   .delivery-column {

@@ -629,6 +629,38 @@
   const takeoverWord = $derived(simplifyRepeatedWord(takeoverLabel));
 
   /**
+   * A share of the sequence animation itself, as opposed to an art render, a
+   * 3D take, or a Post Studio composition. Only this one can open on a chosen
+   * image, and only this one downloads from the viewer's own Export page.
+   */
+  const ordinaryAnimationShare = $derived(
+    !share.artShare &&
+      !share.postShare &&
+      !share.sceneShare &&
+      ctx.renderMode !== "3d"
+  );
+  let exportSectionRequest = $state(0);
+
+  /**
+   * Share → Download a file → Video lands here instead of on a route inside
+   * the sheet: the stage keeps playing beside the Export page, so the frame
+   * the clip opens with is chosen by pausing where it looks right, not from a
+   * capture taken when the sheet opened. Same shape as Post Studio's handoff;
+   * the sheet closes itself after calling this.
+   */
+  function openVideoExportFromShare(): void {
+    if (ctx.editingPane !== "animation") {
+      if (ctx.viewerState.viewerMode === "animation") {
+        ctx.viewerState.enterExport("animation-export", "animation");
+      } else {
+        layout.selectViewerMode("animation");
+      }
+    }
+    animatorInspector.select("export");
+    exportSectionRequest += 1;
+  }
+
+  /**
    * Share sheet ⇄ 3D scene take.
    *
    * Picking Video in the share sheet asks the viewer to export. In 2D that is a
@@ -837,8 +869,13 @@
         studioSurfaces.controls?.setBpm(bpm);
         interactions.handleBpmChange(bpm, "video_export");
       }}
-      onExport={studioSurfaces.active ? undefined : share.openFilePreparation}
-      exportOpensPreparation
+      onExport={studioSurfaces.active
+        ? undefined
+        : () => interactions.handleVideoExport()}
+      captureVideoOpener={studioSurfaces.active || ctx.renderMode === "3d"
+        ? undefined
+        : ctx.captureVideoOpener}
+      {exportSectionRequest}
       onCancel={interactions.handleCancelVideoExport}
       onSettingChange={scanInstrumentationEnabled
         ? interactions.handleViewerControlSetting
@@ -1576,12 +1613,12 @@
       : share.postShare
         ? () => ""
         : ctx.captureAnimationPreview}
-    captureVideoOpener={share.artShare ||
-    share.postShare ||
-    share.sceneShare ||
-    ctx.renderMode === "3d"
-      ? undefined
-      : ctx.captureVideoOpener}
+    captureVideoOpener={ordinaryAnimationShare
+      ? ctx.captureVideoOpener
+      : undefined}
+    onOpenVideoExport={ordinaryAnimationShare
+      ? openVideoExportFromShare
+      : undefined}
     is3DExport={ctx.renderMode === "3d"}
     videoSourceKey={`${ctx.effectiveSequence?.id ?? ctx.effectiveSequence?.word ?? "unsaved"}:${share.getShareUrl()}:${viewerVideoSourceIdentity(share.videoSourceKind, share.postShare ? postStudioVideoUrl : null)}:${ctx.renderMode}`}
     initialArtifact={share.artShare ||

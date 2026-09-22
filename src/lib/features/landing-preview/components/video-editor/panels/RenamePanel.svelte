@@ -9,6 +9,7 @@
   import type { VideoEditorController } from "../../../state/video-editor-controller.svelte";
   import type { ShowcaseVideo, MatchedSequence } from "../../../types";
   import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
 
   interface Props {
     video: ShowcaseVideo;
@@ -77,7 +78,7 @@
       sequenceCandidates = results.slice(0, 6);
       // Auto-select if exact match
       const exactMatch = sequenceCandidates.find(
-        s => s.word.toUpperCase() === query.toUpperCase()
+        s => stripWordNotation(s.word).toUpperCase() === query.toUpperCase()
       );
       if (exactMatch) {
         selectedSequence = exactMatch;
@@ -209,7 +210,7 @@
 
   // Check if a candidate is an exact match
   function isExactMatch(seq: MatchedSequence): boolean {
-    return seq.word.toUpperCase() === editedTitle.toUpperCase();
+    return stripWordNotation(seq.word).toUpperCase() === editedTitle.toUpperCase();
   }
 </script>
 

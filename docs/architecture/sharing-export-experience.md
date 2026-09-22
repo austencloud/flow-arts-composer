@@ -145,6 +145,21 @@ to a card merely because an old sheet default used that artifact.
 - Copy link performs one copy action and reports its progress/result at that
   control. It does not render media. A copied link should preserve the intended
   view and must not misrepresent who can open it.
+- A sent sequence carries the sender's view, not just the sequence. When send
+  mode opens, the viewer's state is snapshotted the way Copy link builds a
+  link (`extractViewerStateQuery` over `getShareUrl()`: the `pane`, `split`,
+  `fx`, `cols`, and `s` names) and rides on the attachment as
+  `metadata.sequenceViewParams`, additive to the existing sequence metadata.
+  It is a snapshot, not a live feed: the message means what the viewer showed
+  when the person chose Send, so later stage changes do not alter what was
+  sent. Opening the attachment seeds the recipient's viewer with that query
+  before it mounts (`sequence-viewer-overlay-state`'s `seedViewerStateParams`),
+  the same override path a followed share link takes, so they land on the
+  sender's pane, effects, and visibility as a view-only override of their own
+  saved values — which `closeSequenceOverlay` strips again on exit. The plain
+  `/q/<code>` link carries the same query so an out-of-app open matches; scan
+  handoff already forwards its query to the viewer. Absent on messages sent
+  before the field existed, which simply open on the recipient's defaults.
 - Sending to a friend in Flow Arts Composer uses the existing sequence-attachment
   workflow; it is not a social publishing operation. From the viewer it is a
   mode, not a dialog: the workspace morphs the way it does for Practice. The
@@ -211,7 +226,11 @@ to phone, prepared file, viewer source.
   rendered for the sender; the recipient still receives the sequence and its
   thumbnail. The outbox is the drawer's; hosts that mount the drawer lazily
   mount it on `inboxState.hostRequested`, and the workspace reads the
-  registered outbox from `message-delivery-context.ts`.
+  registered outbox from `message-delivery-context.ts`. The sender's view
+  travels with the send: `viewer-shell-share-state` snapshots it into the
+  `SequenceSendSession` at entry, `send-attachment-state` passes it to
+  `buildSequenceMessageAttachment`, and `SequenceMessageCard` hands it back to
+  `openSequenceViewer` for the recipient.
 - Existing post composition and publishing components remain their respective
   owners. Do not introduce a second renderer, modal stack, or delivery service.
 
@@ -229,25 +248,36 @@ failure, not a cancel; cancel is reserved for the user's own action. When the
 clipboard API is denied, copy link falls back to selection copy and, if that
 also fails, reveals the link in a selectable field.
 
+### Downloading the animation from the viewer
+
+The sequence animation is downloaded from the viewer's own Export page, not
+from a route inside the share sheet. The stage keeps playing beside the page
+(the same shape as Send mode), the settings stack in one column with chips
+for every choice, and the page's footer button renders and delivers the file.
+Share → Download a file → Video hands off to that page and closes the sheet,
+the way Post Studio takes over from the sheet; the sheet's own download route
+keeps Card, plus Video for hosts with their own exporters (Mandala, Tunnel,
+3D takes, Post Studio renders), where the file type is a chip row. The sheet
+never mounts a second animation engine: a frozen capture behind a modal was
+the reason the download moved.
+
 ### The image a clip opens with
 
-Players and file thumbnails show a video's first frame, so the download task
-lets the person choose it. One row under the stage, labelled `Opens with`,
-offers three choices: `First beat` (the sequence's start position), `This
-frame` (the pose on screen when the sheet opened), and `Mandala` (the
-sequence's mandala fingerprint). There is no scrubber. The stage shows exactly
-the chosen image, so what the person sees is what the clip opens on. The
-choice persists with the other video settings and marks an existing render
-stale like any other setting. `First beat` adds nothing, because the export
-already opens with one beat of the start position. The other two prepend a
-one-beat hold of the chosen image at the export speed, drawn contain-fit over
-black at output resolution, before the animation. The viewer owns the images:
-the sheet receives a capture callback per choice and hands the chosen data URL
-back with the render request, so the baked hold is the very image the stage
-showed. The row is hidden for hosts whose render cannot open on a chosen image
-(3D takes, art views, Post Studio renders). When an opener applies, the
-Instagram cover points at time zero unless the person picked a cover frame
-explicitly.
+Players and file thumbnails show a video's first frame, so the Export page
+lets the person choose it. A chip row labelled `Opens` offers three choices:
+`First beat` (the sequence's start position), `Current frame` (whatever the
+live stage shows when Download is pressed; pause where it looks right), and
+`Mandala` (the sequence's mandala fingerprint, drawn in the account's hand
+colours like the card back, with a thumbnail under the row). The choice
+persists with the other video settings. `First beat` adds nothing, because
+the export already opens with one beat of the start position. The other two
+prepend a one-beat hold of the chosen image at the export speed, drawn
+contain-fit over black at output resolution, before the animation. The export
+captures the image itself as the render starts; a share sheet that owns a
+render still hands its own capture with the request. The row is hidden for
+hosts whose render cannot open on a chosen image (3D takes, art views, Post
+Studio renders). When an opener applies, the Instagram cover points at time
+zero unless the person picked a cover frame explicitly.
 
 ## Acceptance and future evaluation
 

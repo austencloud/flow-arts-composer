@@ -8,6 +8,7 @@
   import LinkedSequenceChip from "../../LinkedSequenceChip.svelte";
   import type { MatchedSequence, LinkedSequence } from "../../../types";
   import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
 
   interface Props {
     linkedSequences: LinkedSequence[];
@@ -50,7 +51,7 @@
 
   // Is the best match an exact match with the video title?
   const hasExactMatch = $derived(
-    bestMatch && searchQuery && bestMatch.word.toUpperCase() === searchQuery.toUpperCase()
+    bestMatch && searchQuery && stripWordNotation(bestMatch.word).toUpperCase() === searchQuery.toUpperCase()
   );
 
   let showManualSearch = $state(false);

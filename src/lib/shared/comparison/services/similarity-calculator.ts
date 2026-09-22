@@ -10,6 +10,10 @@
  */
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import {
+  areWordUnitsCircularEquivalent,
+  stripWordNotation,
+} from "$lib/shared/foundation/utils/word-notation";
 import type {
   SimilarityReport,
   CommonSubsequence,
@@ -113,9 +117,12 @@ export class SimilarityCalculator {
       return { score: 0.95, likelyEquivalent: true, confidence: 0.9 };
     }
 
-    // Check if words are rotations of each other (for circular sequences)
+    // Check if words are rotations of each other (for circular sequences).
+    // The rotation has to line up both the letters and which of them are
+    // skewed: a skewed run is part of the sequence identity, so "STS" and
+    // "{STS}" are not equivalent even though their letters match exactly.
     if (seqA.isCircular && seqB.isCircular) {
-      if (this.areWordsCircularEquivalent(seqA.word, seqB.word)) {
+      if (areWordUnitsCircularEquivalent(seqA.word, seqB.word)) {
         return { score: 0.9, likelyEquivalent: true, confidence: 0.85 };
       }
     }
@@ -347,8 +354,10 @@ export class SimilarityCalculator {
     factors++;
 
     // Word length similarity
-    const maxWordLen = Math.max(seqA.word.length, seqB.word.length, 1);
-    const minWordLen = Math.min(seqA.word.length, seqB.word.length);
+    const strippedWordA = stripWordNotation(seqA.word);
+    const strippedWordB = stripWordNotation(seqB.word);
+    const maxWordLen = Math.max(strippedWordA.length, strippedWordB.length, 1);
+    const minWordLen = Math.min(strippedWordA.length, strippedWordB.length);
     score += minWordLen / maxWordLen;
     factors++;
 
@@ -471,7 +480,7 @@ export class SimilarityCalculator {
       lengthDifference: lengthDiff,
       circularityMatch: seqA.isCircular === seqB.isCircular,
       wordMatch: seqA.word === seqB.word,
-      wordEditDistance: this.levenshteinDistance(seqA.word, seqB.word),
+      wordEditDistance: this.levenshteinDistance(stripWordNotation(seqA.word), stripWordNotation(seqB.word)),
       motionTypeMatches,
       motionTypeMismatches,
       placementGroupMatches,
@@ -483,19 +492,6 @@ export class SimilarityCalculator {
   }
 
   // PRIVATE: Quick Comparison
-
-  private areWordsCircularEquivalent(wordA: string, wordB: string): boolean {
-    if (wordA.length !== wordB.length) {
-      return false;
-    }
-
-    if (wordA.length === 0) {
-      return true;
-    }
-
-    const doubled = wordA + wordA;
-    return doubled.includes(wordB);
-  }
 
   private quickMotionCompare(seqA: SequenceData, seqB: SequenceData): number {
     const stepsA = seqA.steps;

@@ -2,6 +2,7 @@ import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence
 import { handSwapSequence } from "$lib/shared/create/services/sequence-transforms";
 import type { VtgMode } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
 import { normalizeLegacySequence } from "@tka/tka-types";
+import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
 
 /**
  * Pure base-word index for shape-matrix realizations (firebase-free).
@@ -77,7 +78,7 @@ export function buildBaseIndex(
   }[] = [];
   for (const raw of seqs) {
     const s = normalizeLegacySequence(raw);
-    const mode = WORD_MODE[(s.word ?? "").toUpperCase()];
+    const mode = WORD_MODE[stripWordNotation(s.word ?? "").toUpperCase()];
     if (!mode) continue;
     const pair = stylePairOf(s);
     if (!pair) continue;

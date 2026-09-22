@@ -17,6 +17,7 @@ import {
   type SequenceData,
 } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
 import { loopStatus } from "./sheet-continuity";
 
 export function buildActSequence(
@@ -33,7 +34,7 @@ export function buildActSequence(
   }
   if (steps.length === 0) return null;
 
-  const word = steps.map((s) => s.letter ?? "").join("");
+  const word = deriveWordFromBeats(steps);
 
   return createSequenceData({
     name,
