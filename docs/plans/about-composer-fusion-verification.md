@@ -1,7 +1,82 @@
 # About / Composer fusion verification
 
-2026-09-21. Worktree: `E:/tka-about-composer-fusion`.
+Updated 2026-09-22. Worktree: `E:/tka-about-composer-fusion`.
 Branch: `codex/about-composer-fusion`. Implementation is not yet integrated.
+
+## September 22 picker and Ocean revision
+
+Preview ready at `https://localhost:5174/about`. This section supersedes older
+picker and process details below. The same experience is also on `/composer`.
+
+- Ocean initialization now requests on-screen fish and awaits asynchronous
+  initialization before revealing the incoming crossfade canvas. Stale async
+  completion cannot restart a disposed controller. This is part of the existing
+  `@austencloud/backgrounds@0.7.12` package patch, with its lockfile hash updated.
+- The manual `Theme:` menu offers all ten registry themes: Cosmic, Winter,
+  Ocean, Ember, Blossom, Forest, Autumn, Rainbow, Celestial and Void. It reuses
+  package card artwork; the menu scrolls within available viewport height.
+- Wide layouts place the canonical prop grid beside the hero, practice result,
+  or tunnel. Family drill-in remains native. Selection stays page-local and
+  updates the shared demonstrations without closing the desktop comparison.
+- Narrow layouts retain the canonical prop sheet. Drilling into a family keeps
+  it open; choosing a specific prop closes it. Desktop-to-narrow resizing
+  restores hero supporting copy and preserves the practice sequence.
+- Hero and tunnel swaps use Crossfade; practice uses keyed PanelGroup panels.
+  Comfortable prop tiles scroll instead of squeezing the entire registry into
+  a small frame. The fixed-height fill layout is intentionally not combined
+  with the grid's comfortable density.
+
+### Current evidence
+
+- `npm run check`: 0 errors and 0 warnings after the final implementation.
+- 43 tests pass across nine focused files: background lifecycle (7), Ocean
+  interactions (5), quality recovery (2), background hold (4), mandala alignment
+  (8), guide crossfade (7), overlay attachment (1), presentation state (8), and
+  viewer isolation (1). Existing multiple-Three.js warning only.
+- Fresh-page laptop inspection: readable native prop tiles beside the hero,
+  generated notation and animation beside the practice family chooser, and
+  desktop theme menu contained within the viewport. Ocean fish are visibly
+  populated; precise asynchronous reveal ordering is covered by tests.
+- Keyboard interaction at 375x667, including reduced motion: Triad family
+  drill-in followed by Trigeng selection closes the sheet and updates the shared
+  triggers. All ten theme items were enumerated in the rendered menu and Ocean
+  was selected. This is not a claim of verified phone touch targeting.
+- Generated word `T` survived selecting Club, opening/closing the picker, and
+  resizing the practice layout from 1440x900 to 960x412. The narrow result had no
+  leftover empty picker column. Earlier interaction also preserved `OΛSS`.
+- Zero horizontal overflow measured at all seven CSS tiers: 375x667, 960x412,
+  820x1180, 1440x900, 1920x1080, 2560x1440 and 3840x2160. Geometry measurements
+  are not seven complete visual approvals.
+- Evidence: `C:/Users/Austen/.codex/visualizations/2026/09/21/01a0c19d-9d73-7a21-a1c4-4c2b282c9483/pickers`.
+  Final desktop frames use `laptop-props-final.webp`,
+  `laptop-practice-final.webp`, `laptop-tunnel-final.webp`, and
+  `laptop-themes-final.webp`. Earlier frames
+  may show intermediate density and are not final evidence.
+
+The ui-bust/VR-1 review used the evidence ledger checked 2026-09-21 and the
+owner's explicit beside-canvas/native-control constraints. It is limited visual
+judgment, not AI-authorship detection or owner acceptance. Calibration remains
+NOT CALIBRATED. The previously recorded wide-capture and actual 200% zoom
+limitations remain; the complete visual integration gate is not claimed.
+An independent review of the final hero, practice and theme frames found no
+visual blocker in those observed desktop states; the parent separately checked
+the final tunnel. Interaction claims above come from live checks, not that
+screenshot review.
+
+### Current live preview ownership
+
+- Detached Vite PID **102308**, port **5174**, rooted in this exact worktree.
+- Command: `node node_modules/vite/bin/vite.js --host :: --port 5174 --strictPort`.
+- Logs: `.fusion-preview-20260922.out.log` and
+  `.fusion-preview-20260922.err.log` in the worktree.
+- Private dependencies installed with `pnpm install --frozen-lockfile
+  --ignore-scripts --offline`; workspace packages built. The former shared
+  dependency junction is preserved at
+  `E:/tka-about-composer-fusion-dependencies/shared-node_modules-link`.
+- Main's Composer startup ownership fix is included through merge
+  `466b72c34f`. Port 5173 and other tasks' previews remain untouched.
+- Keep this preview and its delivered browser tab alive. Integration remains
+  pending the complete visual gate; do not report this version as on main.
 
 ## September 21 owner-feedback revision
 
@@ -165,7 +240,7 @@ initially occupied by other tasks, so a local production build was attempted.
 A slot then freed up; the task-owned build (PID91788) was stopped and the normal
 worktree preview started. No build was deployed.
 
-## Live delivery preview
+## September 21 live preview (historical; superseded above)
 
 - URL: `https://localhost:5174/about` (also `/composer`).
 - Worktree: `E:/tka-about-composer-fusion`.

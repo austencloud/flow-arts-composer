@@ -19,6 +19,8 @@
   import { MediaQuery } from "svelte/reactivity";
   import { onDestroy, type Snippet } from "svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import TunnelArtView from "$lib/shared/sequence-viewer/tunnel/TunnelArtView.svelte";
   import { TunnelViewController } from "$lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte";
   import {
@@ -52,12 +54,16 @@
     leftPropType = "staff",
     rightPropType = "staff",
     propControl,
+    inlinePropPicker,
+    onOpenProps,
   }: {
     sequence: SequenceData;
     layout?: "square" | "band";
     leftPropType?: string;
     rightPropType?: string;
     propControl?: Snippet;
+    inlinePropPicker?: Snippet;
+    onOpenProps?: () => void;
   } = $props();
 
   const reduceMotion = new MediaQuery("(prefers-reduced-motion: reduce)");
@@ -206,7 +212,24 @@
     </div>
     <div class="band-controls">
       <h3 class="band-title">Tunnel</h3>
-      {@render propControl?.()}
+      <div class="band-prop-control">{@render propControl?.()}</div>
+      <div class="desktop-prop-swap">
+        <Crossfade
+          key={inlinePropPicker ? "picker" : "trigger"}
+          animateHeight
+          mode="swap"
+        >
+          {#if inlinePropPicker}
+            <div class="band-inline-props">
+              {@render inlinePropPicker()}
+            </div>
+          {:else if onOpenProps}
+            <div class="desktop-prop-trigger">
+              <PanelButton onclick={onOpenProps}>Choose props</PanelButton>
+            </div>
+          {/if}
+        </Crossfade>
+      </div>
       <div class="control-row">
         <span class="control-label">Performers</span>
         {@render performers()}
@@ -336,7 +359,13 @@
     max-width: 30rem;
     width: 100%;
   }
-  .band-controls > :global(.panel-btn) {
+  .band-prop-control {
+    align-self: flex-start;
+  }
+  .band-prop-control {
+    display: none;
+  }
+  .desktop-prop-trigger {
     align-self: flex-start;
   }
   .band-title {
@@ -367,6 +396,12 @@
       align-items: center;
       text-align: center;
       margin-inline: auto;
+    }
+    .desktop-prop-swap {
+      display: none;
+    }
+    .band-prop-control {
+      display: block;
     }
     /* Stacked: the control keeps a real track, not its intrinsic width,
        so three short labels never collapse into 29px segments. */

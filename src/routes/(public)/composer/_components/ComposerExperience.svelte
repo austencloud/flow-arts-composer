@@ -3,6 +3,7 @@
   import { MediaQuery } from "svelte/reactivity";
   import { activateWhenNear } from "$lib/actions/activate-when-near";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
+  import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -26,6 +27,8 @@
   import { runAfterNamedRouteMorphIdle } from "$lib/shared/transitions/named-route-morph-state.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import ComposerBackgroundCycle from "./ComposerBackgroundCycle.svelte";
+  import ComposerInlinePropPicker from "./ComposerInlinePropPicker.svelte";
+  import { resolveComposerCarriedSequence } from "./composer-sequence-ownership";
   import ProjectStory from "./ProjectStory.svelte";
   import "$lib/shared/landing/styles/editorial-measure.css";
 
@@ -53,17 +56,8 @@
   // over the carry; until then the bands hold the hero's FIRST draw.
   let visitorSequence = $state<SequenceData | null>(null);
 
-  // The hero keeps auto-advancing every loop pass. The tunnel and the 3D
-  // viewer must NOT follow it: rebuilding a Threlte scene under a reader every
-  // ~16 seconds is churn on its own, and a teardown landing mid-compileAsync
-  // throws inside three's timer where nothing can catch it. So the bands latch
-  // the first live hero draw and hold it until the visitor makes one.
-  //
-  // The baked opening is skipped here on purpose: the hero shows it for one
-  // pass and moves on, but whatever the
-  // bands latch is what they show for the entire visit, so it has to be a live
-  // draw rather than the fixture every visitor sees. Compared by id because
-  // `heroAct.sequence` is a $state proxy and never identity-equal to the import.
+  // The lower demos hold one live hero draw. Rebuilding their readers on every
+  // hero loop is distracting, and a visitor's own sequence always takes over.
   let latchedHeroSequence = $state<SequenceData | null>(null);
   $effect(() => {
     const first = heroAct.sequence;
@@ -72,18 +66,45 @@
     }
   });
   const carriedSequence = $derived(
-    visitorSequence ?? latchedHeroSequence ?? FALLBACK_DEMO
+    resolveComposerCarriedSequence(
+      visitorSequence,
+      latchedHeroSequence,
+      FALLBACK_DEMO
+    )
   );
   let selectedProp = $state<PropType>(PropType.STAFF);
   let propPickerOpen = $state(false);
   let propPickerLoaded = $state(false);
+  let inlinePickerTarget = $state<"hero" | "practice" | "tunnel" | null>(null);
   const propName = $derived(getPropTypeDisplayInfo(selectedProp).label);
 
   function openPropPicker(): void {
     propPickerLoaded = true;
     propPickerOpen = true;
   }
+
+  function selectProp(prop: PropType): void {
+    selectedProp = prop;
+    // The sheet can drill into a family before it emits a final prop. Closing
+    // here, rather than inside the sheet, keeps that comparison step available.
+    propPickerOpen = false;
+  }
+
+  function openInlinePicker(target: "hero" | "practice" | "tunnel"): void {
+    inlinePickerTarget = target;
+  }
+
+  function closeInlinePicker(): void {
+    inlinePickerTarget = null;
+  }
   const reduceMotion = new MediaQuery("(prefers-reduced-motion: reduce)");
+  // Keep this in lockstep with the opening's 70rem CSS handoff. A picker that
+  // was open on desktop must return to its ordinary copy before the narrow
+  // layout exposes the player-owned sheet trigger.
+  const wideHeroPicker = new MediaQuery("(min-width: 70.0625rem)");
+  const heroPickerOpen = $derived(
+    inlinePickerTarget === "hero" && wideHeroPicker.current
+  );
   let constructActive = $state(false);
   let outputsActive = $state(false);
   let shelfActive = $state(false);
@@ -160,6 +181,14 @@
   </PanelButton>
 {/snippet}
 
+{#snippet inlinePropPicker()}
+  <ComposerInlinePropPicker
+    selectedPropType={selectedProp}
+    onSelect={selectProp}
+    onDone={closeInlinePicker}
+  />
+{/snippet}
+
 <LazyMount
   loader={() =>
     import("$lib/shared/settings/components/tabs/prop-type/PropSelectionSheet.svelte")}
@@ -168,7 +197,7 @@
     isOpen: propPickerOpen,
     selectedPropType: selectedProp,
     title: "Props",
-    onSelect: (prop: PropType) => (selectedProp = prop),
+    onSelect: selectProp,
     onOpenChange: (open: boolean) => (propPickerOpen = open),
   }}
 />
@@ -255,28 +284,42 @@
   >
     <div class="opening-copy">
       <h1 id="composer-title">Flow Arts <span>Composer</span></h1>
-      <!-- The cut sentence described where the pictographs sit relative to the
-           animation — which the demo two inches to the right is doing. -->
-      <p class="opening-lede">
-        Choose the moves or generate a 16-count loop. Composer is the browser
-        app for The Kinetic Alphabet, where notation and movement stay together.
-      </p>
+      <Crossfade
+        key={heroPickerOpen ? "props" : "copy"}
+        animateHeight
+        mode="swap"
+      >
+        {#if heroPickerOpen}
+          <div class="hero-inline-props">{@render inlinePropPicker()}</div>
+        {:else}
+          <div class="hero-copy-support">
+            <p class="opening-lede">
+              Choose the moves or generate a 16-count loop. Composer is the
+              browser app for The Kinetic Alphabet, where notation and movement
+              stay together.
+            </p>
 
-      <div class="opening-actions">
-        <a
-          href="/create"
-          class="primary-action"
-          data-sveltekit-reload
-          onclick={() => trackOpenComposer()}
-        >
-          Start composing
-          <i class="fas fa-arrow-right" aria-hidden="true"></i>
-        </a>
-      </div>
+            <div class="opening-actions">
+              <a
+                href="/create"
+                class="primary-action"
+                data-sveltekit-reload
+                onclick={() => trackOpenComposer()}
+              >
+                Start composing
+                <i class="fas fa-arrow-right" aria-hidden="true"></i>
+              </a>
+              <PanelButton onclick={() => openInlinePicker("hero")}
+                >Props: {propName}</PanelButton
+              >
+            </div>
 
-      <p class="opening-note">
-        Free in your browser. Guest saves stay on this device.
-      </p>
+            <p class="opening-note">
+              Free in your browser. Guest saves stay on this device.
+            </p>
+          </div>
+        {/if}
+      </Crossfade>
     </div>
 
     <div class="opening-player">
@@ -340,6 +383,9 @@
           leftPropType: selectedProp,
           rightPropType: selectedProp,
           propControl,
+          inlinePropPicker:
+            inlinePickerTarget === "practice" ? inlinePropPicker : undefined,
+          onOpenProps: () => openInlinePicker("practice"),
         }}
         error={constructLoadError}
         debugName="composer guided construct"
@@ -376,6 +422,9 @@
             leftPropType: selectedProp,
             rightPropType: selectedProp,
             propControl,
+            inlinePropPicker:
+              inlinePickerTarget === "tunnel" ? inlinePropPicker : undefined,
+            onOpenProps: () => openInlinePicker("tunnel"),
           }}
           error={tunnelLoadError}
           debugName="composer tunnel"
@@ -650,9 +699,14 @@
   }
 
   .hero-props {
-    display: flex;
+    display: none;
     justify-content: center;
     margin-top: var(--spacing-md, 16px);
+  }
+
+  .hero-inline-props {
+    margin-top: 1.5rem;
+    max-width: 22rem;
   }
 
   .opening-player::before {
@@ -972,6 +1026,18 @@
 
     .opening-copy {
       text-align: center;
+    }
+
+    .hero-inline-props {
+      display: none;
+    }
+
+    .hero-copy-support :global(.panel-btn) {
+      display: none;
+    }
+
+    .hero-props {
+      display: flex;
     }
 
     h1,

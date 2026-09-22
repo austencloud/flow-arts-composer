@@ -1,89 +1,207 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
+  import { DropdownMenu } from "bits-ui";
+  import type { HTMLButtonAttributes } from "svelte/elements";
   import type { BackgroundType } from "@austencloud/backgrounds";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import { getCardMetadata } from "@austencloud/backgrounds/card";
   import { ANIMATED_BACKGROUNDS } from "$lib/shared/settings/utils/public-page-backgrounds";
   import { marketingBackground } from "$lib/shared/landing/state/marketing-background-state.svelte";
 
-  const ORDER = ["cosmic", "ocean", "autumn", "winter"];
-  const options = ORDER.map((type) => {
-    const bg = ANIMATED_BACKGROUNDS.find((entry) => entry.type === type)!;
-    return {
-      value: bg.type as string,
-      label: bg.label,
-      icon: bg.icon,
-      ariaLabel: `${bg.label} background`,
-    };
-  });
+  let open = $state(false);
+  const active = $derived(marketingBackground.type);
+  const backgrounds = ANIMATED_BACKGROUNDS.map((background) => ({
+    ...background,
+    card: getCardMetadata(background.type),
+  }));
+  const current = $derived(
+    backgrounds.find((background) => background.type === active) ??
+      backgrounds[0]
+  );
 
-  const active = $derived(marketingBackground.type as string);
-
-  function select(value: string): void {
-    marketingBackground.set(value as BackgroundType);
+  function asButtonAttributes(props: unknown): HTMLButtonAttributes {
+    return props as HTMLButtonAttributes;
   }
 
+  function select(type: BackgroundType): void {
+    marketingBackground.set(type);
+  }
+
+  // This is a visit-local art direction choice. Leaving Composer restores the
+  // default marketing environment and never writes a settings preference.
   onDestroy(() => marketingBackground.reset());
 </script>
 
 <div class="bg-cycle">
-  <span class="theme-label">Theme:</span>
-  <div class="bg-cycle-row">
-    <SegmentedControl
-      {options}
-      value={active}
-      onchange={select}
-      ariaLabel="Theme"
-      color="accent"
-      size="sm"
-    >
-      {#snippet optionContent(value)}
-        {@const option = options.find((entry) => entry.value === value)!}
-        <span class="bg-option">
-          <i class="fas {option.icon}" aria-hidden="true"></i>
-          <span>{option.label}</span>
-        </span>
+  <DropdownMenu.Root {open} onOpenChange={(nextOpen) => (open = nextOpen)}>
+    <DropdownMenu.Trigger>
+      {#snippet child({ props })}
+        {@const triggerProps = asButtonAttributes(props)}
+        <button {...triggerProps} type="button" class="theme-trigger">
+          <span class="theme-label">Theme:</span>
+          <i class="fas {current.icon}" aria-hidden="true"></i>
+          <span>{current.label}</span>
+          <i class="fas fa-chevron-down theme-chevron" aria-hidden="true"></i>
+        </button>
       {/snippet}
-    </SegmentedControl>
-  </div>
+    </DropdownMenu.Trigger>
+
+    <DropdownMenu.Portal>
+      <DropdownMenu.Content
+        side="bottom"
+        align="center"
+        sideOffset={8}
+        collisionPadding={12}
+        class="composer-theme-menu"
+        aria-label="Choose page theme"
+      >
+        {#each backgrounds as background (background.type)}
+          <DropdownMenu.Item
+            class={background.type === active
+              ? "composer-theme-option active"
+              : "composer-theme-option"}
+            style={`--card-accent: ${background.card?.accentColor ?? "#8b8cff"}; --card-gradient: ${background.card?.gradient ?? "linear-gradient(145deg, #25253a, #101018)"};`}
+            data-theme={background.type}
+            textValue={background.label}
+            onSelect={() => select(background.type)}
+          >
+            <span class="theme-name">
+              <span class="theme-icon" aria-hidden="true">
+                {@html background.card?.iconSvg ?? ""}
+              </span>
+              {background.label}
+            </span>
+            {#if background.type === active}
+              <i class="fas fa-check" aria-hidden="true"></i>
+            {/if}
+          </DropdownMenu.Item>
+        {/each}
+      </DropdownMenu.Content>
+    </DropdownMenu.Portal>
+  </DropdownMenu.Root>
 </div>
 
 <style>
-  .bg-cycle {
-    display: flex;
-    flex-wrap: wrap;
+  .theme-trigger {
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: var(--spacing-sm, 8px);
+    gap: 0.5rem;
+    min-height: var(--min-touch-target, 48px);
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--theme-stroke, rgb(255 255 255 / 0.12));
+    border-radius: var(--settings-radius-lg, 0.85rem);
+    background: var(--theme-card-bg, rgb(255 255 255 / 0.05));
+    color: var(--theme-text, #fff);
+    cursor: pointer;
+    font: inherit;
+    font-size: var(--font-size-min, 0.875rem);
+    font-weight: 650;
+  }
+
+  .bg-cycle {
+    display: flex;
+    justify-content: center;
+    min-height: var(--min-touch-target, 48px);
     margin-top: var(--spacing-md, 16px);
   }
 
+  .theme-trigger:hover {
+    border-color: var(--theme-stroke-strong, rgb(255 255 255 / 0.22));
+    background: var(--theme-card-hover-bg, rgb(255 255 255 / 0.08));
+  }
+
+  .theme-trigger:focus-visible {
+    outline: 2px solid var(--theme-accent, #8b8cff);
+    outline-offset: 3px;
+  }
+
   .theme-label {
-    color: var(--theme-text-secondary);
-    font-size: var(--font-size-sm);
+    color: var(--theme-text-dim, rgb(255 255 255 / 0.72));
+    font-weight: 500;
   }
 
-  /* The four segments hold one fixed row, so switching the active option can
-     never change the control's footprint or move the caption. */
-  .bg-cycle-row {
-    display: flex;
-    justify-content: center;
-    min-height: max(var(--min-touch-target, 48px), 48px);
-    max-width: 100%;
+  .theme-chevron {
+    font-size: 0.7em;
+    color: var(--theme-text-dim, rgb(255 255 255 / 0.72));
   }
 
-  /* Four short labels size to their labels, not to the hero column. The
-     primitive's width: 100% wins over flex sizing, so cap it here. */
-  .bg-cycle-row :global(.segmented-control) {
-    width: min(100%, 30rem);
+  :global(.composer-theme-menu) {
+    z-index: var(--z-dropdown, 1000);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: min(25rem, calc(100vw - 24px));
+    box-sizing: border-box;
+    max-height: min(
+      31rem,
+      calc(100dvh - 24px),
+      var(--bits-dropdown-menu-content-available-height, 100dvh)
+    );
+    gap: 0.45rem;
+    padding: 4px;
+    border: 1px solid var(--theme-stroke-strong, rgb(255 255 255 / 0.2));
+    border-radius: var(--settings-radius-lg, 0.85rem);
+    overflow-y: auto;
+    background: var(--theme-panel-bg, #12121a);
+    box-shadow: 0 16px 42px var(--theme-shadow, rgb(0 0 0 / 0.42));
+    outline: none;
   }
 
-  .bg-cycle-row :global(.segment) {
-    min-height: max(var(--min-touch-target, 48px), 48px);
+  :global(.composer-theme-option) {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 1.25rem;
+    align-items: center;
+    min-height: 5.25rem;
+    overflow: hidden;
+    padding: 0.65rem;
+    border-radius: 0.6rem;
+    border: 1px solid rgb(255 255 255 / 0.08);
+    background: var(--card-gradient);
+    color: var(--theme-text, #fff);
+    cursor: pointer;
+    font-size: var(--font-size-min, 0.875rem);
+    outline: none;
+    user-select: none;
   }
 
-  .bg-option {
+  :global(.composer-theme-option[data-highlighted]),
+  :global(.composer-theme-option.active) {
+    border-color: color-mix(in srgb, var(--card-accent) 78%, white 10%);
+    box-shadow: 0 0 0 1px
+      color-mix(in srgb, var(--card-accent) 42%, transparent);
+  }
+
+  :global(.composer-theme-option > i:last-child) {
+    z-index: 1;
+    color: color-mix(in srgb, var(--card-accent) 78%, white);
+    text-align: right;
+  }
+
+  :global(.theme-name) {
+    z-index: 1;
     display: inline-flex;
     align-items: center;
-    gap: 0.45rem;
+    gap: 0.5rem;
+    font-weight: 650;
+    text-shadow: 0 1px 0.8rem rgb(0 0 0 / 0.8);
+  }
+
+  :global(.theme-icon) {
+    display: grid;
+    width: 1.2rem;
+    place-items: center;
+    color: color-mix(in srgb, var(--card-accent) 78%, white);
+  }
+
+  :global(.theme-icon svg) {
+    width: 1.1rem;
+    height: 1.1rem;
+    fill: currentcolor;
+  }
+
+  @media (max-width: 26rem) {
+    :global(.composer-theme-menu) {
+      grid-template-columns: 1fr;
+    }
   }
 </style>
