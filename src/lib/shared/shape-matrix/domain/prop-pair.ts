@@ -7,6 +7,9 @@ export interface ShapeMatrixPropPair {
   right: PropType;
 }
 
+/** The hand a prop picker addresses while cat dog is on. */
+export type ShapeMatrixPropHand = "left" | "right";
+
 /** The tracked source point inside each hand's own prop artwork. */
 export interface ShapeMatrixTipPair {
   left: TipPoint;

@@ -748,6 +748,26 @@ describe("shape matrix app state", () => {
   });
 });
 
+function heldOpenLoad(loadMatrix: ReturnType<typeof vi.fn>): () => void {
+  let release: () => void = () => {};
+  loadMatrix.mockImplementationOnce(
+    (props: { left: PropType; right: PropType }) =>
+      new Promise((resolve) => {
+        release = () =>
+          resolve({
+            axis: [],
+            left: new Map(),
+            right: new Map(),
+            props,
+            tips: { left: { dx: 100, dy: 0 }, right: { dx: 100, dy: 0 } },
+            reach: { left: 100, right: 100 },
+            clubTipDx: 100,
+          });
+      })
+  );
+  return () => release();
+}
+
 describe("shape matrix prop pair state", () => {
   it("starts with cat dog off for an equal pair and on for a mixed pair", () => {
     expect(createState(false).state.catDog).toBe(false);
@@ -804,6 +824,41 @@ describe("shape matrix prop pair state", () => {
     await state.load();
     syncState.mockClear();
     await state.setPropType(PropType.STAFF);
+    expect(syncState).not.toHaveBeenCalled();
+    expect(onPropPairChange).not.toHaveBeenCalled();
+  });
+
+  it("lands on a quick re-pick made while the first pick is still loading", async () => {
+    const { state, loadMatrix } = createState(false);
+    await state.load();
+    const releaseClub = heldOpenLoad(loadMatrix);
+
+    const clubPick = state.setPropType(PropType.CLUB);
+    const staffPick = state.setPropType(PropType.STAFF);
+    releaseClub();
+    await Promise.all([clubPick, staffPick]);
+
+    expect(state.leftPropType).toBe(PropType.STAFF);
+    expect(state.data?.props).toEqual({
+      left: PropType.STAFF,
+      right: PropType.STAFF,
+    });
+  });
+
+  it("does not sync or notify the host when a prop load fails", async () => {
+    const onPropPairChange = vi.fn();
+    const { state, syncState, loadMatrix } = createState(false, {
+      onPropPairChange,
+    });
+    await state.load();
+    syncState.mockClear();
+    loadMatrix.mockRejectedValueOnce(new Error("boom"));
+
+    await state.setPropType(PropType.CLUB);
+
+    expect(state.loadError).toBe("boom");
+    expect(state.leftPropType).toBe(PropType.STAFF);
+    expect(state.rightPropType).toBe(PropType.STAFF);
     expect(syncState).not.toHaveBeenCalled();
     expect(onPropPairChange).not.toHaveBeenCalled();
   });
@@ -896,6 +951,37 @@ describe("shape matrix prop pair state", () => {
       })
     );
     expect(state.loading).toBe(false);
+    expect(state.leftPropType).toBe(PropType.CLUB);
+  });
+
+  it("never reports a fold when a competing adopt wins the race", async () => {
+    // toggleCatDog starts a fold load, but adoptPropPair pushes in a
+    // different pair before it lands. The fold's load is superseded, so it
+    // must not flip catDog, sync, or notify the host once it resolves.
+    const onPropPairChange = vi.fn();
+    const { state, loadMatrix } = createState(false, {
+      left: PropType.STAFF,
+      right: PropType.FAN,
+      onPropPairChange,
+    });
+    await state.load();
+    const releaseFold = heldOpenLoad(loadMatrix);
+
+    const toggle = state.toggleCatDog();
+    state.adoptPropPair({ left: PropType.CLUB, right: PropType.FAN }, true);
+    releaseFold();
+    await toggle;
+    await vi.waitFor(() =>
+      expect(state.data?.props).toEqual({
+        left: PropType.CLUB,
+        right: PropType.FAN,
+      })
+    );
+
+    expect(state.catDog).toBe(true);
+    expect(state.leftPropType).toBe(PropType.CLUB);
+    expect(state.rightPropType).toBe(PropType.FAN);
+    expect(onPropPairChange).not.toHaveBeenCalledWith(expect.anything(), false);
   });
 
   it("restores a legacy single prop into both hands", () => {
@@ -920,6 +1006,68 @@ describe("shape matrix prop pair state", () => {
     expect(state.leftPropType).toBe(PropType.CLUB);
     expect(state.rightPropType).toBe(PropType.CLUB);
     expect(state.catDog).toBe(false);
+  });
+
+  it("falls the right hand back to the left when only the left prop is saved", () => {
+    const { state } = createState(false);
+    state.restoreState({
+      surface: "matrix",
+      theoryLeftRatio: { propRotations: 1, handCycles: 3 },
+      theoryRightRatio: { propRotations: 1, handCycles: 3 },
+      theoryMode: "SS",
+      theoryPair: null,
+      level: 2,
+      leftTurn: 0,
+      rightTurn: 0,
+      activeAxis: "both",
+      labelMode: "turns",
+      leftPropType: PropType.FAN,
+      pair: null,
+      mode: null,
+      propMode: null,
+      solo: null,
+    } as unknown as Parameters<typeof state.restoreState>[0]);
+    expect(state.leftPropType).toBe(PropType.FAN);
+    expect(state.rightPropType).toBe(PropType.FAN);
+    expect(state.catDog).toBe(false);
+  });
+
+  it("cancels an in-flight load on restore instead of leaving it stuck", async () => {
+    const { state, loadMatrix } = createState(false);
+    const releaseStale = heldOpenLoad(loadMatrix);
+    const stalePromise = state.load({
+      left: PropType.CLUB,
+      right: PropType.CLUB,
+    });
+
+    state.restoreState({
+      surface: "matrix",
+      theoryLeftRatio: { propRotations: 1, handCycles: 3 },
+      theoryRightRatio: { propRotations: 1, handCycles: 3 },
+      theoryMode: "SS",
+      theoryPair: null,
+      level: 2,
+      leftTurn: 0,
+      rightTurn: 0,
+      activeAxis: "both",
+      labelMode: "turns",
+      leftPropType: PropType.FAN,
+      rightPropType: PropType.FAN,
+      pair: null,
+      mode: null,
+      propMode: null,
+      solo: null,
+    });
+
+    expect(state.loading).toBe(false);
+    expect(state.leftPropType).toBe(PropType.FAN);
+
+    releaseStale();
+    expect(await stalePromise).toBe(false);
+    expect(state.loading).toBe(false);
+    expect(state.leftPropType).toBe(PropType.FAN);
+    expect(state.rightPropType).toBe(PropType.FAN);
+    expect(state.data).toBeNull();
   });
 
   it("restores a mixed pair with cat dog on, and keeps the pair when told to", () => {

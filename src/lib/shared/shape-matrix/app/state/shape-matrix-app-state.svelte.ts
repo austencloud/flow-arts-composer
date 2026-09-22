@@ -24,7 +24,10 @@ import {
   type VtgMode,
 } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { ShapeMatrixPropPair } from "$lib/shared/shape-matrix/domain/prop-pair";
+import type {
+  ShapeMatrixPropHand,
+  ShapeMatrixPropPair,
+} from "$lib/shared/shape-matrix/domain/prop-pair";
 import { requestShapeMatrixTransition } from "$lib/shared/shape-matrix/debug/shape-matrix-transition-recorder";
 import { spinRatioEquals, type SpinRatio } from "@vtg/domain";
 import {
@@ -127,7 +130,7 @@ export interface ShapeMatrixAppPersistence {
   link?: (state: ShapeMatrixAppSnapshot) => string;
 }
 
-export type ShapeMatrixPropHand = "left" | "right";
+export type { ShapeMatrixPropHand } from "$lib/shared/shape-matrix/domain/prop-pair";
 
 interface ShapeMatrixAppDependencies {
   loadMatrix: (props: ShapeMatrixPropPair) => Promise<ShapeMatrixData>;
@@ -135,7 +138,8 @@ interface ShapeMatrixAppDependencies {
   link?: (state: ShapeMatrixAppSnapshot) => string;
   /**
    * A pick made inside the engine (a prop, or the cat dog chip), for a host
-   * that mirrors the pair somewhere else. Adopted pairs never come back out.
+   * that mirrors the pair somewhere else. Adopted pairs never come back out,
+   * and a superseded load never fires this at all.
    */
   onPropPairChange?: (pair: ShapeMatrixPropPair, catDog: boolean) => void;
 }
@@ -147,7 +151,7 @@ function snapshotPropPair(
   const legacy = snapshot.propType ?? PropType.STAFF;
   return {
     left: snapshot.leftPropType ?? legacy,
-    right: snapshot.rightPropType ?? legacy,
+    right: snapshot.rightPropType ?? snapshot.leftPropType ?? legacy,
   };
 }
 
@@ -296,6 +300,17 @@ export function createShapeMatrixAppState(
   let propHand = $state<ShapeMatrixPropHand>("left");
   /* A load is a request for one pair; a later request supersedes it. */
   let loadToken = 0;
+  /**
+   * The pair the most recent load was asked for, updated the instant that
+   * load is requested rather than when it resolves. A no-op check compares
+   * against this, not against `leftPropType`/`rightPropType`, so a re-pick
+   * made while an earlier one is still in flight is judged against what was
+   * just asked for and never against a value that has not landed yet.
+   */
+  let requestedPropPair: ShapeMatrixPropPair = {
+    left: initialPair.left,
+    right: initialPair.right,
+  };
   let selectedPair = $state(initial.pair);
   let rememberedVariants = $state<{
     left: SemanticVariant;
@@ -349,21 +364,30 @@ export function createShapeMatrixAppState(
     data ? applyFilter(data.axis, filters.right, false) : []
   );
 
+  /**
+   * Resolves true only when this call's pair is the one that landed: this
+   * token was still current when the fetch came back, and it came back
+   * clean. False covers both a superseded request and a failed one, so a
+   * caller can treat "not the winner" as a single case.
+   */
   async function load(
     nextPair: ShapeMatrixPropPair = { left: leftPropType, right: rightPropType }
-  ): Promise<void> {
+  ): Promise<boolean> {
     const token = ++loadToken;
+    requestedPropPair = nextPair;
     loading = true;
     loadError = null;
     try {
       const nextData = await dependencies.loadMatrix(nextPair);
-      if (token !== loadToken) return;
+      if (token !== loadToken) return false;
       data = nextData;
       leftPropType = nextPair.left;
       rightPropType = nextPair.right;
+      return true;
     } catch (error) {
-      if (token !== loadToken) return;
+      if (token !== loadToken) return false;
       loadError = error instanceof Error ? error.message : String(error);
+      return false;
     } finally {
       if (token === loadToken) loading = false;
     }
@@ -728,12 +752,15 @@ export function createShapeMatrixAppState(
     hand: ShapeMatrixPropHand | "both" = catDog ? propHand : "both"
   ): Promise<void> {
     const next = {
-      left: hand === "right" ? leftPropType : prop,
-      right: hand === "left" ? rightPropType : prop,
+      left: hand === "right" ? requestedPropPair.left : prop,
+      right: hand === "left" ? requestedPropPair.right : prop,
     };
-    if (next.left === leftPropType && next.right === rightPropType) return;
-    await load(next);
-    if (loadError) return;
+    if (
+      next.left === requestedPropPair.left &&
+      next.right === requestedPropPair.right
+    )
+      return;
+    if (!(await load(next))) return;
     syncState();
     dependencies.onPropPairChange?.(
       { left: leftPropType, right: rightPropType },
@@ -750,9 +777,9 @@ export function createShapeMatrixAppState(
    * Settings performs; entering it changes nothing until a hand is picked.
    */
   async function toggleCatDog(): Promise<void> {
-    if (catDog && rightPropType !== leftPropType) {
-      await load({ left: leftPropType, right: leftPropType });
-      if (loadError) return;
+    if (catDog && requestedPropPair.right !== requestedPropPair.left) {
+      const target = requestedPropPair.left;
+      if (!(await load({ left: target, right: target }))) return;
       syncState();
     }
     catDog = !catDog;
@@ -773,6 +800,7 @@ export function createShapeMatrixAppState(
     if (pair.left === leftPropType && pair.right === rightPropType) return;
     leftPropType = pair.left;
     rightPropType = pair.right;
+    requestedPropPair = pair;
     if (data || loading) void load();
   }
 
@@ -780,6 +808,14 @@ export function createShapeMatrixAppState(
     snapshot: ShapeMatrixAppSnapshot,
     options: { keepPropPair?: boolean } = {}
   ): void {
+    // A restore is a fresh state, not a continuation of whatever was in
+    // flight before it. Bumping the token makes any pending load's own
+    // check fail when it lands, so it can never overwrite what is restored
+    // here; clearing loading and the error is what stops that dropped load
+    // from leaving the banner stuck on.
+    loadToken += 1;
+    loading = false;
+    loadError = null;
     surface = snapshot.surface ?? "matrix";
     level = snapshot.level;
     const restoredLeftRatio = snapshot.theoryLeftRatio ?? DEFAULT_THEORY_RATIO;
@@ -817,6 +853,7 @@ export function createShapeMatrixAppState(
       catDog = pair.left !== pair.right;
       propHand = "left";
     }
+    requestedPropPair = { left: leftPropType, right: rightPropType };
     if (snapshot.pair) {
       rememberedVariants = {
         left: semanticVariant(snapshot.pair.left),
