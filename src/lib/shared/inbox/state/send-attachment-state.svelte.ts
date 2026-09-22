@@ -471,6 +471,10 @@ export function createSendAttachmentState(
     get recentConversations() {
       return recentConversations;
     },
+    /** Recents are still on their way; an empty list means nothing yet. */
+    get recentsLoading() {
+      return !inboxState.conversationsLoaded;
+    },
     get excludeUserIds() {
       return excludeUserIds;
     },

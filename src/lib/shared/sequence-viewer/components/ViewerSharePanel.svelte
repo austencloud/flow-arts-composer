@@ -7,6 +7,10 @@
   The rail picks what is shared (Card, 2D, Tunnel, Post Studio, ...); this
   panel only offers where: a link, a file, the OS share sheet, or a friend.
 
+  Download leads: a file is the share most people want, so it is the one
+  primary action. Link, the system share sheet, and Publish sit in a row
+  under it, and sending to a friend follows below the divider.
+
   Files still prepare in the share sheet: rendering a card or a video needs
   its preview and settings, which is more than a column holds.
 -->
@@ -51,6 +55,8 @@
   }: Props = $props();
 
   const headingId = $props.id();
+
+  const downloadText = $derived(`Download ${downloadLabel.toLowerCase()}`);
 </script>
 
 <section class="share-panel" aria-labelledby={headingId}>
@@ -75,7 +81,14 @@
     </button>
   </header>
 
-  <div class="actions" role="group" aria-label="Share options">
+  <div class="primary-action">
+    <PanelButton variant="primary" fullWidth onclick={onDownload}>
+      <i class="fa-solid fa-download" aria-hidden="true"></i>
+      {downloadText}
+    </PanelButton>
+  </div>
+
+  <div class="actions" role="group" aria-label="Other ways to share">
     <PanelButton onclick={onCopyLink}>
       <i
         class="fa-solid {linkCopied ? 'fa-check' : 'fa-link'}"
@@ -83,14 +96,10 @@
       ></i>
       {linkCopied ? "Link copied" : "Copy link"}
     </PanelButton>
-    <PanelButton onclick={onDownload} ariaLabel={`Download ${downloadLabel}`}>
-      <i class="fa-solid fa-download" aria-hidden="true"></i>
-      {downloadLabel}
-    </PanelButton>
     {#if onNativeShare}
-      <PanelButton onclick={onNativeShare} ariaLabel="More ways to share">
+      <PanelButton onclick={onNativeShare} ariaLabel="Share to other apps">
         <i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i>
-        More
+        Other apps
       </PanelButton>
     {/if}
     {#if onPublish}
@@ -117,7 +126,7 @@
       <div class="guest-send">
         <h3>Send to a friend</h3>
         <p>Friends open it on this same view, in Flow Arts Composer.</p>
-        <PanelButton variant="primary" onclick={onRequestAccount}>
+        <PanelButton onclick={onRequestAccount}>
           <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
           Sign up to send
         </PanelButton>
@@ -133,7 +142,7 @@
     container-type: inline-size;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: max-content max-content minmax(0, 1fr);
+    grid-template-rows: max-content max-content max-content minmax(0, 1fr);
     width: 100%;
     height: 100%;
     min-width: 0;
@@ -210,17 +219,25 @@
     outline-offset: 2px;
   }
 
-  .actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
+  .primary-action {
     padding: 0.75rem 1rem 0;
   }
 
+  /* Equal tracks, so "Copy link" becoming "Link copied" moves nothing. */
+  .actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+    gap: 0.5rem;
+    padding: 0.5rem 1rem 0;
+  }
+
+  /* A neutral divider: sending is its own task, after the file and link. */
   .recipients {
     display: flex;
     min-width: 0;
     min-height: 0;
+    margin-top: 1rem;
+    border-top: 1px solid var(--theme-stroke);
   }
 
   .guest-send {
