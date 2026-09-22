@@ -38,6 +38,29 @@ focused tests pass and `npm run check` reports 0 errors and 0 warnings.
 Owner acceptance of the new placement is still pending. The full seven-tier
 matrix and 200% zoom gate below still apply to the whole page.
 
+## September 22 wide-screen composition
+
+Austen's 4K screenshot showed the copy pinned far left, with both columns'
+slack pooled between it and the stage. The rail also had room for more than
+two tile columns. From 120rem, each opening track now hugs its content: the
+copy's own measure and the stage's exact width. The pair is centred. Opening
+the rail widens the player track by the rail width, so the whole composition
+glides and re-centres as one unit. The stage keeps its full width and does
+not move vertically, which supersedes the 1920 figure above (it was 551 → 539
+and is now 551 → 551). The rail is 22rem from 120rem and 30rem from 150rem.
+
+| Viewport      | Closed copy x / stage x, side margins | Open rail                                   |
+| ------------- | ------------------------------------- | ------------------------------------------- |
+| 1920x1080     | 324 / 1035, margins 324 · 334         | 352px, two 150px columns, stage 551 kept    |
+| 2560x1250@1.5 | 581 / 1331, margins 408 · 409         | 480px, three 139px columns, stage 638 kept  |
+| 3840x2160     | 1121 / 1877, margins 1121 · 1131      | 480px, three 142px columns, stage 832 kept  |
+
+1440x900, 1280x800 and 1280x540 match the rail correction above. At 1280x800
+the stage goes 376 → 324, and at 1280x540 the 18rem cap still holds. No tier
+overflows horizontally. Reduced motion also disables the opening-track
+transition. The three composer presentation test files pass (11 tests), and
+`npm run check` reports 0 errors and 0 warnings. Commit `47b9647026`.
+
 ## September 22 connected-picker and minimum-size pass
 
 Preview: `https://localhost:5174/about`. This pass supersedes the practice
