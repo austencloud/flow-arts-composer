@@ -329,7 +329,9 @@ What shipped:
   form.
 - D E F / J K L / M N O / P Q R are chosen by start spacing plus the crossed
   pure position: a converging pair crosses beta, a diverging pair crosses
-  alpha.
+  alpha. Superseded 2026-09-22 by the landmark rule in
+  `docs/superpowers/specs/2026-09-22-multigrid-lettering-design.md`; the
+  classifier has not been updated yet.
 - Type 2 is chosen by the start-to-end spacing pair: W X are zeta to zeta,
   Y Z are eta to eta, Σ Δ are zeta to eta, Θ Ω are eta to zeta.
 - Type 3 is the Type 2 partner with the dash flipping the end spacing.

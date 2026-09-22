@@ -3,6 +3,12 @@
 Date: 2026-09-21. Brainstormed with Austen from the Illustrator guide masters
 (see `docs/reference/skew-notation.md` for the source pages).
 
+Amended 2026-09-22: the opposite-direction families (D E F, J K L, M N O,
+P Q R) now follow the landmark rule in
+`docs/superpowers/specs/2026-09-22-multigrid-lettering-design.md`, and
+same-letter variants are numbered by start spacing. The tables below still
+describe the shipped classifier until it is updated.
+
 ## Problem
 
 A Rotate 45° fuse puts one hand on the cardinal points and the other on the
