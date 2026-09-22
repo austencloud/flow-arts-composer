@@ -20,6 +20,9 @@
   import ShapeMatrixGrid from "$lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte";
   import ShapeMatrixMandalaArt from "$lib/shared/shape-matrix/components/ShapeMatrixMandalaArt.svelte";
   import DifficultyBadge from "$lib/shared/components/DifficultyBadge.svelte";
+  import RatioSwapMotion, {
+    type RatioSwapPanel,
+  } from "./_components/RatioSwapMotion.svelte";
   import { DIFFICULTY_LEVELS } from "$lib/shared/config/difficulty-styles";
   import {
     CLUB_ARTWORK_PAINTER,
@@ -193,11 +196,16 @@
       ratio: ratioLabel(turns),
       style,
       frames: [
-        { flowers: [near], label: "Starts in", meta: names?.in ?? petalWord(near.petals) },
+        {
+          flowers: [near],
+          label: "Starts in",
+          meta: names?.in ?? petalWord(near.petals),
+        },
         {
           flowers: [far],
           label: "Starts out",
-          meta: names?.out ?? (twoCycles ? "The same path" : petalWord(far.petals)),
+          meta:
+            names?.out ?? (twoCycles ? "The same path" : petalWord(far.petals)),
         },
         {
           flowers: twoCycles ? [near] : [near, far],
@@ -209,7 +217,11 @@
   }
 
   /** One ratio per level, prospin beside antispin, the ladder's own pairs. */
-  function endsLevel(turns: number, summary: string, proNames: Parameters<typeof endsCase>[2] = null): EndsLevel {
+  function endsLevel(
+    turns: number,
+    summary: string,
+    proNames: Parameters<typeof endsCase>[2] = null
+  ): EndsLevel {
     const level = levelForTurns(turns, turns);
     return {
       level,
@@ -226,7 +238,10 @@
       { in: "Isolation", out: "Extension", both: "Point in a circle" }
     ),
     endsLevel(1, "Out is in turned half a petal, so each flower doubles."),
-    endsLevel(0.5, "The same doubling at a half turn: 1 petal becomes 2, and 3 become 6."),
+    endsLevel(
+      0.5,
+      "The same doubling at a half turn: 1 petal becomes 2, and 3 become 6."
+    ),
     endsLevel(
       0.25,
       "Two hand circles: the far end retraces the near end, so a staff draws what a poi draws."
@@ -235,20 +250,24 @@
 
   /**
    * 1:2 and 2:1 share their petal counts because the counts use the two
-   * numbers together. The laps are the hand's count: the engine's hand circle
-   * (radius 80) is wider than the staff tip's reach (67.4), so the drawn path
-   * winds around the center once per hand circle, measured at every turn
-   * value from -0.25 to 3.
+   * numbers together. Set moving side by side, the hand's count shows: the
+   * engine's hand circle (radius 80) is wider than the staff tip's reach
+   * (67.4), so the drawing winds around the center once per hand circle,
+   * measured at every turn value from -0.25 to 3.
    */
-  const swapRows = [
-    { turns: 0.5, laps: 1 },
-    { turns: -0.25, laps: 2 },
-  ].map(({ turns, laps }) => ({
-    ratio: ratioLabel(turns),
-    level: levelForTurnValue(turns),
-    laps,
-    flowers: [rotating(turns, "pro"), rotating(turns, "anti")],
-  }));
+  const swapPanels: RatioSwapPanel[] = [
+    { turns: 0.5, hand: 1, prop: 2 },
+    { turns: -0.25, hand: 2, prop: 1 },
+  ].map(({ turns, hand, prop }) => {
+    const level = levelForTurnValue(turns);
+    return {
+      ratio: ratioLabel(turns),
+      level,
+      hand,
+      prop,
+      tint: levelTint(level),
+    };
+  });
 
   /** The pairing the matrix's reading figure takes apart. */
   const anatomyLeft = rotating(1, "pro");
@@ -320,7 +339,9 @@
 
   function paintCell(left: Flower, right: Flower) {
     return (sizePx: number) =>
-      data ? cellArtworkSrc(data, left, right, sizePx, CLUB_ARTWORK_PAINTER) : "";
+      data
+        ? cellArtworkSrc(data, left, right, sizePx, CLUB_ARTWORK_PAINTER)
+        : "";
   }
 
   /**
@@ -428,9 +449,8 @@
             The reduced ratio also fixes the petal count. A prospin flower draws
             <code>|P − H|</code> petals and an antispin flower draws
             <code>P + H</code>. Both counts follow one end of the prop. A staff
-            draws with both of its ends, and what the second end adds depends
-            on the ratio, as <a href="#ends-heading">One end or two</a> lays
-            out below.
+            draws with both of its ends, and what the second end adds depends on
+            the ratio, as <a href="#ends-heading">One end or two</a> lays out below.
           </p>
           <p>
             Float sits outside the arithmetic. The prop makes no rotation of its
@@ -469,9 +489,9 @@
         <p>
           Every turn value the Kinetic Alphabet carries, set out by the level
           that first allows it. Each card gives the ratio, the turns it names,
-          and the two flowers one hand draws at that ratio, following one end
-          of the prop from a start pointing in. A level keeps everything the
-          levels before it allow and adds the cards under it.
+          and the two flowers one hand draws at that ratio, following one end of
+          the prop from a start pointing in. A level keeps everything the levels
+          before it allow and adds the cards under it.
         </p>
         <p class="ladder-note">
           Tinted cards are the three ratios of the original matrix.
@@ -487,7 +507,10 @@
             <section
               class="level-group"
               aria-labelledby={`level-${group.level}-heading`}
-              style="{boardSpan(group.cells, 4)}; {boardSpan(group.cells, 8)}; --level-tint: {levelTint(group.level)}"
+              style="{boardSpan(group.cells, 4)}; {boardSpan(
+                group.cells,
+                8
+              )}; --level-tint: {levelTint(group.level)}"
             >
               <header class="level-head">
                 <DifficultyBadge level={group.level} size="2rem" />
@@ -548,9 +571,9 @@
 
               {#if group.level === QUARTER_TURN_LEVEL}
                 <p class="ladder-aside">
-                  Quarter turns need two hand circles to bring the prop back,
-                  so they are written over 2. At 2:1 the prop turns slower than
-                  the hand: a quarter turn backwards.
+                  Quarter turns need two hand circles to bring the prop back, so
+                  they are written over 2. At 2:1 the prop turns slower than the
+                  hand: a quarter turn backwards.
                 </p>
               {/if}
             </section>
@@ -562,18 +585,24 @@
         <div class="swap-copy">
           <h3 id="swap-heading">Same petals, different laps</h3>
           <p>
-            1:2 and 2:1 draw the same counts, one petal prospin and three
-            antispin, though they move nothing alike. At 1:2 the prop spins
-            twice for each hand circle. At 2:1 the hand circles twice while the
-            prop turns once.
+            1:2 and 2:1 draw the same number of petals, one prospin and three
+            antispin, yet they move nothing alike. Watch the hand, the solid dot
+            on the dashed circle, and the prop, the line from it out to the blue
+            end that draws.
           </p>
           <p>
-            The petal count uses the two numbers together, <code>|P − H|</code>
-            for prospin and <code>P + H</code> for antispin, so it cannot tell
-            which number belongs to the hand. The laps can. The hand circle is
-            wider than the prop's reach in these drawings, so the path goes
-            around the center once for every hand circle: once at 1:2, twice
-            at 2:1.
+            At 1:2 the hand goes around once while the prop spins twice, and the
+            drawing meets its start after that one lap. At 2:1 the prop turns
+            once while the hand goes around twice, so the drawing laps the
+            center twice before it closes. The 1:2 side finishes first and
+            waits.
+          </p>
+          <p>
+            The petal count uses the two numbers together,
+            <code>|P − H|</code> for prospin and <code>P + H</code> for antispin,
+            so swapping them leaves it alone. The laps tell them apart: here the hand
+            circle is wider than the prop's reach, so the drawing goes around the
+            center once for every hand circle.
           </p>
           <p>
             Every quarter turn ratio laps twice. That second lap is also why a
@@ -582,32 +611,7 @@
           </p>
         </div>
 
-        <ul class="swap-rows" role="list">
-          {#each swapRows as row (row.ratio)}
-            <li class="swap-row" style="--level-tint: {levelTint(row.level)}">
-              <p class="swap-head">
-                <DifficultyBadge level={row.level} size="1.5rem" />
-                <span class="swap-ratio">{row.ratio}</span>
-                <span class="swap-laps"
-                  >{row.laps === 1 ? "1 lap" : `${row.laps} laps`}</span
-                >
-              </p>
-              {#each row.flowers as flower (flowerKey(flower))}
-                <div class="swap-flower">
-                  <span class="still">
-                    <ShapeMatrixMandalaArt
-                      paint={paintFlower(flower)}
-                      artKey={`swap-${flowerKey(flower)}`}
-                      alt={`${row.ratio} ${flowerLabel(flower)}`}
-                    />
-                  </span>
-                  <span class="card-style">{styleWord(flower.style)}</span>
-                  <span class="card-petals">{petalWord(flower.petals)}</span>
-                </div>
-              {/each}
-            </li>
-          {/each}
-        </ul>
+        <RatioSwapMotion panels={swapPanels} />
       </section>
     </section>
 
@@ -625,9 +629,9 @@
         <p>
           The 1:1 prospin pair shows what the start does most plainly. Starting
           in holds the tracked end of the prop in one place, so it draws a
-          point. Starting out carries that end around the whole hand circle.
-          On a staff the two starts are the two ends of one prop, so the
-          twelve fold into six.
+          point. Starting out carries that end around the whole hand circle. On
+          a staff the two starts are the two ends of one prop, so the twelve
+          fold into six.
         </p>
       </div>
 
@@ -673,8 +677,8 @@
         <p>
           Every flower above follows one end of the prop. A poi or a club is
           held at one end and draws with the other, so that end is the whole
-          drawing. A staff is held in the middle, spun alone or as double
-          staff, and both of its ends draw.
+          drawing. A staff is held in the middle, spun alone or as double staff,
+          and both of its ends draw.
         </p>
         <p>
           The two ends of a staff point opposite ways, so when one starts in,
@@ -683,8 +687,8 @@
           both.
         </p>
         <p>
-          Level 1 shows it most plainly. Prospin started in is an isolation,
-          the end held in place as a point, and started out it is an extension
+          Level 1 shows it most plainly. Prospin started in is an isolation, the
+          end held in place as a point, and started out it is an extension
           around the big circle. On a staff they are one motion. The two
           antispin starts draw lines at right angles, and a staff draws both.
         </p>
@@ -693,9 +697,9 @@
           figure is the in figure turned half a petal, so a staff doubles the
           petals. Level 4's quarter turns take two. After the first circle the
           prop is back where it began with its ends swapped, so the far end
-          retraces the near end's path and nothing doubles. In and out draw the same figure there, which is
-          why the {SHAPE_ENGINE_SHORT_NAME} fills its second quarter turn start
-          with the prop pointing along the hand path instead.
+          retraces the near end's path and nothing doubles. In and out draw the
+          same figure there, which is why the {SHAPE_ENGINE_SHORT_NAME} fills its
+          second quarter turn start with the prop pointing along the hand path instead.
         </p>
       </div>
 
@@ -855,8 +859,7 @@
           >
         </li>
         <li>
-          <a href="/history#archive-record-vtg"
-            >The Vulcan Tech Gospel record</a
+          <a href="/history#archive-record-vtg">The Vulcan Tech Gospel record</a
           >
         </li>
         <li>
@@ -1133,8 +1136,7 @@
   /* A level's tray. Each level on the page sits in its own tray, tinted with
      its badge colour, so the levels read apart even where they share a row. */
   .level-group,
-  .ends-level,
-  .swap-row {
+  .ends-level {
     border: 1px solid color-mix(in srgb, var(--level-tint) 30%, transparent);
     border-radius: 18px;
     background: color-mix(in srgb, var(--level-tint) 7%, transparent);
@@ -1167,7 +1169,8 @@
     align-items: center;
     gap: 0.7rem;
     padding-bottom: 0.6rem;
-    border-bottom: 1px solid color-mix(in srgb, var(--level-tint) 26%, transparent);
+    border-bottom: 1px solid
+      color-mix(in srgb, var(--level-tint) 26%, transparent);
   }
 
   .level-title {
@@ -1528,7 +1531,8 @@
     align-items: center;
     gap: 0.6rem;
     padding: 0.1rem 0.25rem 0.6rem;
-    border-bottom: 1px solid color-mix(in srgb, var(--level-tint) 26%, transparent);
+    border-bottom: 1px solid
+      color-mix(in srgb, var(--level-tint) 26%, transparent);
   }
 
   .ends-cards {
@@ -1672,10 +1676,9 @@
     line-height: 1.45;
   }
 
-  /* Same petals, different laps: 1:2 and 2:1 side by side, each in its own
-     level's tray, with the lap count beside the ratio. */
+  /* Same petals, different laps: 1:2 and 2:1 moving side by side, each in
+     its own level's tray. */
   .swap {
-    container: swap / inline-size;
     display: grid;
     gap: 1.25rem;
     padding-top: 0.5rem;
@@ -1696,66 +1699,6 @@
   .swap-copy p:last-child {
     margin-bottom: 0;
   }
-
-  .swap-rows {
-    display: grid;
-    gap: 0.9rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  @container swap (min-width: 34rem) {
-    .swap-rows {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
-  .swap-row {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem 0.5rem;
-    margin: 0;
-    padding: 0.75rem 0.75rem 1rem;
-  }
-
-  .swap-head {
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: center;
-    gap: 0.55rem;
-    margin: 0;
-    padding: 0 0.25rem 0.6rem;
-    border-bottom: 1px solid color-mix(in srgb, var(--level-tint) 26%, transparent);
-  }
-
-  .swap-ratio {
-    color: var(--ink);
-    font-size: 1.1rem;
-    font-variant-numeric: tabular-nums;
-    font-weight: 660;
-  }
-
-  .swap-laps {
-    margin-left: auto;
-    color: var(--ink);
-    font-size: var(--font-size-min, 0.875rem);
-    font-weight: 620;
-  }
-
-  .swap-flower {
-    display: grid;
-    justify-items: center;
-    gap: 0.1rem;
-    min-inline-size: 0;
-    text-align: center;
-  }
-
-  .swap-flower .still {
-    inline-size: min(100%, 11rem);
-    margin-bottom: 0.3rem;
-  }
-
 
   .beyond p {
     margin: 0;
