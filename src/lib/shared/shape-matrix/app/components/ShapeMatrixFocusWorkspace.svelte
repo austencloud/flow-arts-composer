@@ -2,6 +2,9 @@
   import { tick } from "svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import BentoPropGrid from "$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
+  import CatDogToggle from "$lib/shared/settings/components/tabs/prop-type/CatDogToggle.svelte";
+  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import { viewingPropLabel } from "$lib/shared/foundation/services/prop-viewing";
   import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
   import { getEscapeLayerManager } from "$lib/shared/keyboard/get-escape-layer-manager";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
@@ -24,7 +27,16 @@
   );
   const theory = $derived(app.surface === "theory");
   const theoryEffects = ["trails", ...CANVAS2D_HOSTED_EFFECTS] as const;
-  const selectedName = $derived(getPropTypeDisplayInfo(app.propType).label);
+  // The pair when cat dog is on ("Staff / Fan"), the one prop otherwise.
+  const selectedName = $derived(
+    app.catDog
+      ? viewingPropLabel({
+          leftPropType: app.leftPropType,
+          rightPropType: app.rightPropType,
+          catDogMode: true,
+        })
+      : getPropTypeDisplayInfo(app.leftPropType).label
+  );
   let done: HTMLButtonElement | null = $state(null);
 
   function close(): void {
@@ -72,7 +84,7 @@
   {/snippet}
   {#if propsOpen}
     <BentoPropGrid
-      selectedPropType={app.propType}
+      selectedPropType={app.addressedPropType}
       onSelect={(next) => void app.setPropType(next)}
       variant="inline"
       accessMode="educational"
@@ -81,6 +93,26 @@
       layout="rail"
     >
       {#snippet heading()}
+        <!-- The same chip and segments the animation panel shows, so the
+             inline grid picks a pair the way the panel does. -->
+        <div class="hand-toolbar">
+          <CatDogToggle
+            catDogMode={app.catDog}
+            onToggle={app.handProps.onToggleCatDog}
+          />
+          {#if app.catDog}
+            <SegmentedControl
+              options={[
+                { value: "left", label: "Left", tone: "blue" },
+                { value: "right", label: "Right", tone: "red" },
+              ]}
+              value={app.propHand}
+              onchange={app.setPropHand}
+              ariaLabel="Prop hand selection"
+              semantics="radiogroup"
+            />
+          {/if}
+        </div>
         <strong class="selection" aria-live="polite">{selectedName}</strong>
       {/snippet}
       {#snippet actions()}
@@ -108,8 +140,9 @@
         onPlaybackModeChange={animation.setPlaybackMode}
         onBpmChange={animation.setBpm}
         showEffectsPlayback={false}
-        selectedPropType={app.propType}
+        selectedPropType={app.addressedPropType}
         onPropChange={(next) => void app.setPropType(next)}
+        handProps={app.handProps}
         sequence={theory ? null : animation.previewSequence}
         showPathShape={false}
         showMotionVisibility={true}
@@ -167,5 +200,12 @@
     min-width: 0;
     font-size: var(--font-size-min, 0.875rem);
     overflow-wrap: anywhere;
+  }
+  .hand-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-block-end: 0.5rem;
   }
 </style>
