@@ -20,10 +20,15 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
   import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import TKAGlyph from "$lib/shared/pictograph/tka-glyph/components/TKAGlyph.svelte";
   import TurnsColumn from "$lib/shared/pictograph/tka-glyph/components/TurnsColumn.svelte";
+  import SkewBraces from "$lib/shared/pictograph/tka-glyph/components/SkewBraces.svelte";
   import StepNumber from "$lib/shared/pictograph/shared/components/StepNumber.svelte";
   import PlacementGlyph from "$lib/shared/pictograph/shared/components/PlacementGlyph.svelte";
   import ElementalGlyph from "$lib/shared/pictograph/shared/components/ElementalGlyph.svelte";
   import { getLetterDimensions } from "$lib/shared/pictograph/tka-glyph/components/TKAGlyph.svelte";
+  import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+  import { isSkewedFrameBeat } from "$lib/shared/foundation/services/skewed-frame";
+  import { parseTurnsTuple } from "$lib/shared/pictograph/tka-glyph/utils/turn-tuple-parser";
+  import { getTurnsColumnRightExtent } from "$lib/shared/pictograph/tka-glyph/utils/turn-position-calculator";
   import { deriveTnDFromPictograph } from "$lib/shared/pictograph/shared/domain/utils/tnd-deriver";
   import { derivePropElementalTypeForStep } from "$lib/shared/shape-matrix/domain/prop-relationship";
   import { DURATION } from "$lib/shared/transitions/transitions";
@@ -134,9 +139,40 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
     return () => clearInterval(interval);
   });
 
+  // True once letterDimensions holds a real measurement rather than the
+  // 100x100 placeholder. The braces below lay themselves out against the
+  // letter's width, so they wait for it instead of drawing at the wrong size.
+  const letterDimensionsReady = $derived(
+    letterDimensions.width !== 100 || letterDimensions.height !== 100
+  );
+
+  // A beat that starts or ends in a zeta/eta position wears braces around its
+  // letter: the same gate PictographRenderer and the hidden GlyphRenderer use,
+  // so the live canvas agrees with the pictographs and with exports. This
+  // overlay is its own Svelte tree, so the braces have to be mounted here too.
+  const skewedFrame = $derived(
+    !!stepData &&
+      isVisibleMotion(stepData.motions?.left) &&
+      isVisibleMotion(stepData.motions?.right) &&
+      isSkewedFrameBeat(stepData.motions.left, stepData.motions.right)
+  );
+
+  // Width the turn numbers occupy to the right of the letter, so the closing
+  // brace clears them instead of painting under them.
+  const braceRightExtent = $derived(
+    skewedFrame
+      ? getTurnsColumnRightExtent(parseTurnsTuple(displayedTurnsTuple))
+      : 0
+  );
+
   // Create a composite key for glyph changes to trigger cross-fade
-  // Includes letter and turns tuple so changing either triggers a transition
-  const glyphKey = $derived(letter ? `${letter}-${displayedTurnsTuple}` : null);
+  // Includes letter, turns tuple, and skew so changing any of them triggers a
+  // transition (the same letter can appear in and out of the skewed frame).
+  const glyphKey = $derived(
+    letter
+      ? `${letter}-${displayedTurnsTuple}-${skewedFrame ? "skew" : "plain"}`
+      : null
+  );
 
   const elementalInfo = $derived(deriveTnDFromPictograph(stepData));
   const elementalLetter = $derived(
@@ -229,6 +265,18 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
             {darkMode}
             instantAppear={true}
           />
+          {#if skewedFrame}
+            <SkewBraces
+              {letter}
+              {letterDimensions}
+              rightExtent={braceRightExtent}
+              x={50}
+              y={800}
+              scale={1}
+              visible={letterDimensionsReady}
+              {darkMode}
+            />
+          {/if}
         </g>
       {/key}
     {/if}

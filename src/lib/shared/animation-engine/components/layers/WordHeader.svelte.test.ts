@@ -143,3 +143,85 @@ describe("WordHeader title transitions", () => {
     );
   });
 });
+
+describe("WordHeader skewed spans", () => {
+  /**
+   * A rotate-45 fuse stores its word as one braced span, "{ΨΩZ-VΦΔW-T}". The
+   * braces are notation, not beats: the highlight has to walk the eight
+   * letters, and the braces have to read as brackets around them, drawn at the
+   * letters' own height rather than as two more dim letters.
+   */
+  const SKEWED_WORD = "{ΨΩZ-VΦΔW-T}";
+
+  it("renders the braces as span marks, not as letter units", async () => {
+    render(WordHeader, { word: SKEWED_WORD, visible: true });
+
+    await vi.waitFor(() => {
+      expect(document.querySelectorAll(".letter").length).toBe(8);
+    });
+    const braces = [...document.querySelectorAll(".skew-brace")].map(
+      (el) => el.textContent?.trim()
+    );
+    expect(braces).toEqual(["{", "}"]);
+    expect(
+      [...document.querySelectorAll(".letter")].map((el) => el.textContent?.trim())
+    ).toEqual(["Ψ", "Ω", "Z-", "V", "Φ", "Δ", "W-", "T"]);
+  });
+
+  it("highlights the beat's own letter and wraps on the letter count", async () => {
+    const activeLetter = () =>
+      document.querySelector(".letter.active")?.textContent?.trim() ?? null;
+
+    const screen = render(WordHeader, {
+      word: SKEWED_WORD,
+      visible: true,
+      activeStepNumber: 1,
+    });
+    await vi.waitFor(() => expect(activeLetter()).toBe("Ψ"), { timeout: 1500 });
+
+    await screen.rerender({ word: SKEWED_WORD, visible: true, activeStepNumber: 8 });
+    await vi.waitFor(() => expect(activeLetter()).toBe("T"));
+
+    await screen.rerender({ word: SKEWED_WORD, visible: true, activeStepNumber: 9 });
+    await vi.waitFor(() => expect(activeLetter()).toBe("Ψ"));
+
+    expect(document.querySelector(".skew-brace.active")).toBeNull();
+  });
+
+  it("draws the braces at least as tall as the letters", async () => {
+    render(WordHeader, { word: SKEWED_WORD, visible: true });
+
+    await vi.waitFor(() => {
+      expect(document.querySelector(".skew-brace")).not.toBeNull();
+    });
+    const wordText = document.querySelector(".word-text") as HTMLElement;
+    const brace = document.querySelector(".skew-brace") as HTMLElement;
+    const letterEm = parseFloat(getComputedStyle(wordText).fontSize);
+    const braceEm = parseFloat(getComputedStyle(brace).fontSize);
+    expect(braceEm).toBeGreaterThanOrEqual(letterEm);
+    expect(getComputedStyle(brace).fontFamily).not.toContain("TKA Letters");
+  });
+
+  it("wraps a compressed whole-word span in one brace pair", async () => {
+    render(WordHeader, {
+      word: "{STSSTS}",
+      visible: true,
+      activeStepNumber: 4,
+    });
+
+    await vi.waitFor(() => {
+      expect(document.querySelectorAll(".letter").length).toBe(3);
+    });
+    expect(document.querySelectorAll(".skew-brace").length).toBe(2);
+    await vi.waitFor(() =>
+      expect(
+        document.querySelector(".letter.active")?.textContent?.trim()
+      ).toBe("S")
+    );
+    expect(
+      [...document.querySelectorAll(".letter")].indexOf(
+        document.querySelector(".letter.active")!
+      )
+    ).toBe(0);
+  });
+});
