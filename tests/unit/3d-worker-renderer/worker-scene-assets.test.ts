@@ -52,11 +52,31 @@ describe("worker scene asset preparation", () => {
         })
     );
     const hover = cache.prepare("ocean", ["reef.glb"]);
-    const selection = cache.prepare("ocean", ["reef.glb"]);
+    const selection = cache.select("ocean");
     expect(selection).toBe(hover);
     finish(response(4));
     await selection;
     expect(transport.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("never adds a speculative download to a cold selection", async () => {
+    const { cache, transport } = fixture();
+    await cache.select("cold");
+    expect(transport.fetch).not.toHaveBeenCalled();
+    let finish!: (value: Response) => void;
+    transport.fetch.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        })
+    );
+    const pending = cache.prepare("old", ["old.glb"]);
+    const signal = transport.fetch.mock.calls[0][1];
+    await cache.select("cold");
+    expect(signal.aborted).toBe(true);
+    finish(response(4));
+    await pending;
+    expect(cache.resolve("old.glb")).toBe("old.glb");
   });
 
   it("evicts the least recently used bytes and revokes their object URLs", async () => {

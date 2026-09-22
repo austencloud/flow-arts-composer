@@ -434,12 +434,11 @@ export class WorkerEnvironmentRenderer {
         return;
       case "frame":
         if (
-          this.phase === "idle" &&
           !this.posterEnvironment &&
           this.liveEnvironment === message.environment
         ) {
           this.responsiveness.recordOutgoingFrame(message.deltaMs);
-          this.onFrame?.(message.deltaMs);
+          if (this.phase === "idle") this.onFrame?.(message.deltaMs);
         }
         return;
       case "error":
