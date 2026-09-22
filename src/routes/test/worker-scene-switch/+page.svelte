@@ -27,7 +27,9 @@
   // The first worker must stage the same complete frame as every replacement.
   // Starting empty would let it report readiness before the avatar exists, then
   // load the performer through the live-update path after the canvas is visible.
-  let performers = $state<readonly WorkerPerformerSnapshot[]>([performerAt(0)]);
+  let performers = $state.raw<readonly WorkerPerformerSnapshot[]>([
+    performerAt(0),
+  ]);
   let heartbeat: HTMLDivElement;
   let heartbeatRequest = 0;
   let heartbeatCount = 0;
@@ -40,6 +42,8 @@
       centerPathAngle: angle,
       staffRotationAngle: spin,
       plane: "wall",
+      handAnchor: [0, 0, 0],
+      flipped: false,
       worldPosition: [
         Math.sin(angle) * pathRadius,
         Math.cos(angle) * pathRadius,
@@ -61,6 +65,12 @@
       groundY: -1.5,
       staffLength: 0.8636,
       staffThickness: 0.0125,
+      propBuild: {
+        finish: "fire",
+        fanBuild: "pictograph",
+        fanFrameColor: "black",
+        fanCover: "bare",
+      },
       leftPropType: "staff",
       rightPropType: "staff",
       leftProp: propAt(beat, 0),
@@ -186,10 +196,9 @@
       <p class="eyebrow">OffscreenCanvas worker proof</p>
       <h1>Atomic world handoff</h1>
       <p>
-        The visible worker keeps drawing the environment, avatar, and live
-        Choreo prop transforms while a second worker prepares the requested
-        world. The canvas flips only after the replacement reports a rendered
-        frame.
+        The last complete picture stays visible while the worker prepares the
+        requested scene. The new scene appears after its first complete frame.
+        Timings below separate asset loading, shaders, and presentation.
       </p>
     </header>
 

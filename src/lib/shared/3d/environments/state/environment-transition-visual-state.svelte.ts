@@ -4,6 +4,14 @@ export function createEnvironmentTransitionVisualState() {
   let opacity = $state(0);
   let phase = $state<EnvironmentTransitionPhase>("idle");
   let rendererReady = $state(false);
+  let captureFrame: (() => void) | null = null;
+
+  function registerFrameCapture(capture: () => void): () => void {
+    captureFrame = capture;
+    return () => {
+      if (captureFrame === capture) captureFrame = null;
+    };
+  }
 
   function setFrame(
     nextOpacity: number,
@@ -38,6 +46,8 @@ export function createEnvironmentTransitionVisualState() {
     },
     setFrame,
     setRendererReady,
+    registerFrameCapture,
+    retainFrame: () => captureFrame?.(),
     reset,
   };
 }
