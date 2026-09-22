@@ -135,6 +135,71 @@ describe("GlyphOverlay skewed-frame braces", () => {
     expect(texts).toEqual(["{", "}"]);
   });
 
+  // The brace glyphs come from the system font, so only a real rasterisation
+  // shows where their ink lands. The letter stub is 80x100 at the glyph frame
+  // origin (50, 800): its centre line is y 850, its left edge x 50 and its
+  // right edge x 130.
+  it("centres the rendered brace ink on the letter, one gap either side", async () => {
+    const screen = render(GlyphOverlay, {
+      letter: "S" as never,
+      stepData: skewedStep as never,
+      tkaGlyphVisible: true,
+    });
+    await vi.waitFor(
+      () =>
+        expect(
+          screen.container.querySelector(".glyph-group [data-skew-braces]")
+        ).not.toBeNull(),
+      { timeout: 4000 }
+    );
+    const group = screen.container.querySelector("[data-skew-braces]")!;
+
+    // Rasterise the brace group alone at one pixel per glyph unit.
+    const view = { x: -50, y: 750, width: 400, height: 200 };
+    const svg =
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${view.width}" height="${view.height}" ` +
+      `viewBox="${view.x} ${view.y} ${view.width} ${view.height}">${group.outerHTML}</svg>`;
+    const image = new Image();
+    image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+    await image.decode();
+    const canvas = document.createElement("canvas");
+    canvas.width = view.width;
+    canvas.height = view.height;
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(image, 0, 0);
+    const { data } = ctx.getImageData(0, 0, view.width, view.height);
+
+    // Ink box of everything painted between two glyph-unit x bounds.
+    const inkBox = (fromX: number, toX: number) => {
+      let top = Infinity;
+      let bottom = -Infinity;
+      let left = Infinity;
+      let right = -Infinity;
+      for (let row = 0; row < view.height; row++) {
+        for (let col = fromX - view.x; col < toX - view.x; col++) {
+          if (data[(row * view.width + col) * 4 + 3]! > 96) {
+            top = Math.min(top, row);
+            bottom = Math.max(bottom, row + 1);
+            left = Math.min(left, col);
+            right = Math.max(right, col + 1);
+          }
+        }
+      }
+      return {
+        centreY: view.y + (top + bottom) / 2,
+        left: view.x + left,
+        right: view.x + right,
+      };
+    };
+    const open = inkBox(-50, 50);
+    const close = inkBox(130, 350);
+
+    expect(Math.abs(open.centreY - 850)).toBeLessThanOrEqual(1.5);
+    expect(Math.abs(close.centreY - 850)).toBeLessThanOrEqual(1.5);
+    expect(Math.abs(open.right - (50 - 14))).toBeLessThanOrEqual(1.5);
+    expect(Math.abs(close.left - (130 + 14))).toBeLessThanOrEqual(1.5);
+  });
+
   it("draws no braces for a pure-frame beat", async () => {
     const screen = render(GlyphOverlay, {
       letter: "S" as never,

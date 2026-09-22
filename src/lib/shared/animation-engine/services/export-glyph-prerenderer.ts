@@ -67,7 +67,11 @@ import {
   calculateTurnPositions,
   getTurnsColumnRightExtent,
 } from "$lib/shared/pictograph/tka-glyph/utils/turn-position-calculator";
-import { getSkewBraceLayout } from "$lib/shared/pictograph/tka-glyph/utils/skew-brace-layout";
+import {
+  getSkewBraceInk,
+  getSkewBraceLayout,
+  placeSkewBraceGlyphs,
+} from "$lib/shared/pictograph/tka-glyph/utils/skew-brace-layout";
 import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import { isSkewedFrameBeat } from "$lib/shared/foundation/services/skewed-frame";
 import {
@@ -76,6 +80,9 @@ import {
   SKEW_BRACE_FONT_FAMILY,
   SKEW_BRACE_FONT_WEIGHT,
 } from "$lib/shared/render/utils/draw-skew-braces";
+
+/** Glyph units of clear space kept beside a brace's measured ink. */
+const BRACE_INK_MARGIN = 4;
 
 // Constants matching Dash.svelte
 const DASH_WIDTH = 70;
@@ -393,6 +400,11 @@ export class ExportGlyphPrerenderer {
           rightExtent: getTurnsColumnRightExtent(parsed),
         })
       : null;
+    // Same ink placement SkewBraces.svelte uses. The composite is rasterised
+    // on this page, with this page's fonts, so the page's measurement holds.
+    const braceGlyphs = braceLayout
+      ? placeSkewBraceGlyphs(braceLayout, getSkewBraceInk())
+      : null;
 
     // A slot shows if it has a displayable number OR is halved - a halved
     // 0-turn motion shows the mark alone (matches TurnsColumn.svelte and
@@ -433,10 +445,15 @@ export class ExportGlyphPrerenderer {
       maxRight = Math.max(maxRight, braceLayout.closeX + braceLayout.fontSize);
     }
 
-    // A skewed beat's opening brace sits left of the letter's own x=0 origin
-    // (openX is negative) - shift the whole composite right by that amount so
-    // nothing paints outside the SVG viewBox on the left edge either.
-    const xPadLeft = braceLayout ? Math.max(0, Math.ceil(-braceLayout.openX)) : 0;
+    // A skewed beat's opening brace sits left of the letter's own x=0 origin.
+    // Shift the whole composite right far enough that the brace's ink, not
+    // just the gap before it, lands inside the SVG viewBox: padding by the
+    // gap alone left the glyph entirely at negative x, clipped from every
+    // exported frame. The margin covers anti-aliasing and the 1/64em rounding
+    // of measured ink.
+    const xPadLeft = braceGlyphs
+      ? Math.max(0, Math.ceil(-braceGlyphs.inkLeft + BRACE_INK_MARGIN))
+      : 0;
 
     const yPadTop = hasTurns ? TURN_Y_PADDING : 0;
     const yPadBottom = hasTurns ? TURN_Y_PADDING : 0;
@@ -489,19 +506,19 @@ export class ExportGlyphPrerenderer {
     // dash's fixed color, which the CSS invert flips into a dark-mode
     // approximation, these use SkewBraces.svelte's exact dark/light hex so
     // there is no drift from an inverted #231f20 not quite matching #d9d9d9) ---
-    if (braceLayout) {
+    if (braceLayout && braceGlyphs) {
       const braceFill = isDarkMode ? SKEW_BRACE_FILL_DARK : SKEW_BRACE_FILL_LIGHT;
-      const braceY = braceLayout.y + yPadTop;
       const braceAttrs =
+        `text-anchor="start" dominant-baseline="alphabetic" ` +
         `font-family="${SKEW_BRACE_FONT_FAMILY}" font-weight="${SKEW_BRACE_FONT_WEIGHT}" ` +
         `font-size="${braceLayout.fontSize}" fill="${braceFill}"`;
       parts.push(
-        `<text x="${braceLayout.openX + xPadLeft}" y="${braceY}" ` +
-          `text-anchor="end" dominant-baseline="central" ${braceAttrs}>{</text>`
+        `<text x="${braceGlyphs.open.x + xPadLeft}" y="${braceGlyphs.open.y + yPadTop}" ` +
+          `${braceAttrs}>{</text>`
       );
       parts.push(
-        `<text x="${braceLayout.closeX + xPadLeft}" y="${braceY}" ` +
-          `text-anchor="start" dominant-baseline="central" ${braceAttrs}>}</text>`
+        `<text x="${braceGlyphs.close.x + xPadLeft}" y="${braceGlyphs.close.y + yPadTop}" ` +
+          `${braceAttrs}>}</text>`
       );
     }
 

@@ -7,6 +7,11 @@
     stripWordNotation,
     type CompressedSegment,
   } from "$lib/shared/foundation/utils/word-simplifier";
+  import {
+    getSkewBraceInk,
+    SKEW_BRACE_FONT_SCALE,
+    skewBraceLineBoxDrop,
+  } from "$lib/shared/pictograph/tka-glyph/utils/skew-brace-layout";
 
   interface Props {
     word: string;
@@ -27,7 +32,10 @@
   const LETTER_GAP_RATIO = 0.12;
   const DOT_SIZE_RATIO = 0.15;
   const GROUP_GAP_RATIO = 0.35;
-  const BRACE_HEIGHT_RATIO = 0.95;
+  // The pictograph's brace-to-letter ratio, so the brace ink stands as tall as
+  // the letters. Centring the brace's box centres the font's ascent+descent,
+  // not its ink, so each brace is raised by the measured drop (in brace em).
+  const BRACE_DROP = skewBraceLineBoxDrop(getSkewBraceInk());
 
   // Glyph images exist for letters only; braces are drawn as text. A word
   // that is one whole skewed span (every rotate-45 fuse) gets a pair around
@@ -90,7 +98,7 @@
       bind:offsetWidth={naturalWidth}
     >
     {#if wholeWordSkewed}
-      <span class="skew-brace" style="font-size: {height * BRACE_HEIGHT_RATIO}px; margin-right: {height * LETTER_GAP_RATIO}px;">&#123;</span>
+      <span class="skew-brace" style="font-size: {height * SKEW_BRACE_FONT_SCALE}px; height: {height}px; top: {-BRACE_DROP}em; margin-right: {height * LETTER_GAP_RATIO}px;">&#123;</span>
     {/if}
     {#each segments as segment, segIdx}
       {#if segIdx > 0 && hasCompression}
@@ -125,7 +133,7 @@
       </span>
     {/each}
     {#if wholeWordSkewed}
-      <span class="skew-brace" style="font-size: {height * BRACE_HEIGHT_RATIO}px; margin-left: {height * LETTER_GAP_RATIO}px;">&#125;</span>
+      <span class="skew-brace" style="font-size: {height * SKEW_BRACE_FONT_SCALE}px; height: {height}px; top: {-BRACE_DROP}em; margin-left: {height * LETTER_GAP_RATIO}px;">&#125;</span>
     {/if}
     </div>
   </div>
@@ -198,7 +206,13 @@
     filter: invert(0.9);
   }
 
+  /* Held to the letter height so the taller glyph overflows evenly instead of
+     growing the row; `top` (inline) lifts the ink onto the letters' centre. */
   .skew-brace {
+    display: inline-flex;
+    align-items: center;
+    position: relative;
+    overflow: visible;
     font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
     font-weight: 500;
     line-height: 1;
