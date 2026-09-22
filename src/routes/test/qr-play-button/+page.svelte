@@ -6,7 +6,7 @@
   options, errorCorrectionLevel H) and the printed-card caption cell (mirroring
   image-composer's renderQRCode caption math). No Firestore — uses a sample URL —
   so it renders without a signed-in session. The real card render lives at
-  /test/card-back-parity (Front mode), which needs auth for released decks.
+  /test/card-back-parity, which needs auth for released decks.
 -->
 <script lang="ts">
   import { onMount } from "svelte";
