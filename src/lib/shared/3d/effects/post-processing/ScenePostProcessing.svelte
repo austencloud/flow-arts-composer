@@ -137,12 +137,17 @@
     pipeline?.render(delta, {
       forceBaseRender,
       transitionOpacity: transitionVisual?.opacity ?? 0,
+      transitionPhase: transitionVisual?.phase ?? "idle",
     });
   }
 
   const unregisterCanvasFrameProvider = registerInteractiveCanvasFrameProvider(
     canvas,
     () => renderCurrentFrame(0, true)
+  );
+
+  const unregisterFrameCapture = transitionVisual?.registerFrameCapture(() =>
+    pipeline?.captureTransitionFrame()
   );
 
   useTask((delta) => renderCurrentFrame(delta), {
@@ -153,6 +158,7 @@
 
   onDestroy(() => {
     unregisterCanvasFrameProvider();
+    unregisterFrameCapture?.();
     pipeline?.dispose();
     pipeline = null;
   });

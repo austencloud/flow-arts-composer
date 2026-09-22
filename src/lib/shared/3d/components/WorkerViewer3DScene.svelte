@@ -13,7 +13,10 @@
   import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
   import { getPerformerColor } from "../constants/performer-colors";
   import { getViewer3DContext } from "../context/viewer-3d-context";
-  import { resolvePerformerStepSource, synchronizePerformerPlayback } from "../domain/performer-step-timing";
+  import {
+    resolvePerformerStepSource,
+    synchronizePerformerPlayback,
+  } from "../domain/performer-step-timing";
   import { toScenePropType } from "../domain/scene-prop-type";
   import { getSceneEnvironmentRendererKey } from "../environments/domain/scene-environment";
   import { getStageCoordinateFrame } from "../environments/domain/stage-coordinate-frame";
@@ -32,7 +35,10 @@
     WorkerPerformerInteractionStateSnapshot,
   } from "../worker-renderer/components/WorkerPerformerInteractionAdapter.svelte";
   import type { ApplicationThreadCameraSnapshot } from "../worker-renderer/domain/application-thread-camera";
-  import { toViewerCameraSnapshot, toWorkerCameraSnapshot } from "../worker-renderer/domain/worker-camera-bridge";
+  import {
+    toViewerCameraSnapshot,
+    toWorkerCameraSnapshot,
+  } from "../worker-renderer/domain/worker-camera-bridge";
   import type {
     WorkerEnvironmentKey,
     WorkerPerformerSnapshot,
@@ -55,8 +61,8 @@
     sequenceData: SequenceData;
     currentStep: number;
     isPlaying: boolean;
-    leftPropType: string;
-    rightPropType: string;
+    leftPropType?: string | null;
+    rightPropType?: string | null;
     hideSceneMarkers?: boolean;
     hidePerformerBadges?: boolean;
     enableEffects?: boolean;
@@ -80,8 +86,8 @@
     sequenceData,
     currentStep,
     isPlaying,
-    leftPropType,
-    rightPropType,
+    leftPropType = null,
+    rightPropType = null,
     hideSceneMarkers = false,
     hidePerformerBadges = false,
     enableEffects = true,
@@ -165,15 +171,15 @@
     const resolvedLeft = toScenePropType(
       resolvePerformerProp(
         performer,
-        leftPropType as PropType,
-        leftPropType as PropType
+        PropType.STAFF,
+        leftPropType as PropType | null
       )
     );
     const resolvedRight = toScenePropType(
       resolvePerformerProp(
         performer,
-        rightPropType as PropType,
-        rightPropType as PropType
+        PropType.STAFF,
+        rightPropType as PropType | null
       )
     );
     const present =
@@ -233,8 +239,7 @@
             propBuild: performer.effectivePropBuild,
             leftPropType: resolvedLeft,
             rightPropType: resolvedRight,
-            staffHalfLength:
-              resolveWorkerPerformerStaffLength(performer) / 2,
+            staffHalfLength: resolveWorkerPerformerStaffLength(performer) / 2,
             tipEffectMap,
             globalTipEffectMap: {},
             effectsConfig: currentEffects,
@@ -333,8 +338,7 @@
             0.15,
         },
       })),
-      groundY:
-        userProportionsState.groundY + coordinateFrame.performerAnchorY,
+      groundY: userProportionsState.groundY + coordinateFrame.performerAnchorY,
       stageBounds: { width: stageBounds.width, depth: stageBounds.depth },
     };
     renderReady = true;
@@ -355,10 +359,7 @@
   }
 
   function dismissInteractionHint(): void {
-    localStorage.setItem(
-      "tka-performer-direct-manipulation-hint",
-      "dismissed"
-    );
+    localStorage.setItem("tka-performer-direct-manipulation-hint", "dismissed");
     window.dispatchEvent(
       new CustomEvent("tka-performer-interaction-hint-dismissed")
     );
@@ -401,7 +402,7 @@
     {effects}
     initialCamera={camera}
     initialCameraRoll={(viewer.cameraRollDeg * Math.PI) / 180}
-    maxOrbitDistance={maxOrbitDistance}
+    {maxOrbitDistance}
     {cameraFov}
     {pixelRatio}
     qualityTier={renderQualityTier}
@@ -419,10 +420,12 @@
     onCameraChange={handleCameraChange}
     onCameraReady={(controller) => {
       configureViewerOrbitNavigation(controller.controls);
-      return viewer.registerSnapTo((position, target, spherical, animate = true) => {
-        void controller.snapTo(position, target, spherical, animate);
-        if (!animate) handleCameraChange(controller.getSnapshot());
-      });
+      return viewer.registerSnapTo(
+        (position, target, spherical, animate = true) => {
+          void controller.snapTo(position, target, spherical, animate);
+          if (!animate) handleCameraChange(controller.getSnapshot());
+        }
+      );
     }}
     {onSnapshot}
   />

@@ -372,6 +372,7 @@ let reducedMotion = false;
 
 async function prepareScene(sceneRequest: SceneRequest): Promise<boolean> {
   if (!renderer || !camera) return false;
+  const activeRenderer = renderer;
   requestId = sceneRequest.requestId;
   environment = sceneRequest.environment;
   // Ember's simple valley extends beyond the close performer environment.
@@ -400,10 +401,7 @@ async function prepareScene(sceneRequest: SceneRequest): Promise<boolean> {
   if (world.useViewerBaseLighting !== false) {
     world.scene.add(
       createViewerBaseLightingGroup(
-        resolveViewerBaseLighting(
-          true,
-          sceneRequest.environment === "ocean"
-        )
+        resolveViewerBaseLighting(true, sceneRequest.environment === "ocean")
       )
     );
   }
@@ -424,150 +422,159 @@ async function prepareScene(sceneRequest: SceneRequest): Promise<boolean> {
   postProgress("performer", 1);
   applyCurrentEffects();
   postProcessing = createPostProcessingPipeline(sceneRequest.environment);
-  const previousRenderTarget = renderer.getRenderTarget();
+  const previousRenderTarget = activeRenderer.getRenderTarget();
   const sceneRenderTarget = postProcessing?.sceneRenderTarget ?? null;
-  renderer.setRenderTarget(sceneRenderTarget);
+  activeRenderer.setRenderTarget(sceneRenderTarget);
 
-  postProgress("compile", 0);
-  const compileTargets = await warmWorkerRenderer(
-    { renderer, scene: world.scene, camera },
-    {
-      onProgress(fraction) {
-        postProgress("compile", fraction);
-      },
-      async yieldBetween() {
-        await nextWorkerFrame();
-      },
-      shouldStop: () => isSuperseded(sceneRequest),
-    }
-  );
-  if (isSuperseded(sceneRequest)) return false;
-  const compiledAt = performance.now();
-  const memoryAfterCompile = rendererMemory();
-
-  postProgress("prime", 0);
-  const primeTargets = await primeWorkerRenderer(
-    { renderer, scene: world.scene, camera },
-    {
-      onProgress(fraction) {
-        postProgress("prime", fraction);
-      },
-      async yieldBetween() {
-        await nextWorkerFrame();
-      },
-      shouldStop: () => isSuperseded(sceneRequest),
-    }
-  );
-  if (isSuperseded(sceneRequest)) return false;
-  const primedAt = performance.now();
-  const memoryAfterPrime = rendererMemory();
-
-  postProgress("finalize", 0);
-  await renderer.compileAsync(world.scene, camera);
-  if (isSuperseded(sceneRequest)) return false;
-  const finalizedAt = performance.now();
-  const memoryAfterFinalize = rendererMemory();
-  postProgress("finalize", 1);
-  renderer.setRenderTarget(previousRenderTarget);
-
-  postProgress("preflight", 0);
-  const previousViewport = renderer.getViewport(new Vector4());
-  renderer.setViewport(0, 0, 1, 1);
+  // A later scene can supersede this one at any await below. Always put the
+  // renderer back on its canvas before the superseded world's render targets
+  // are disposed, otherwise the next scene can draw into a released target.
   try {
-    world.update(0, finalizedAt / 1000);
+    postProgress("compile", 0);
+    const compileTargets = await warmWorkerRenderer(
+      { renderer, scene: world.scene, camera },
+      {
+        onProgress(fraction) {
+          postProgress("compile", fraction);
+        },
+        async yieldBetween() {
+          await nextWorkerFrame();
+        },
+        shouldStop: () => isSuperseded(sceneRequest),
+      }
+    );
+    if (isSuperseded(sceneRequest)) return false;
+    const compiledAt = performance.now();
+    const memoryAfterCompile = rendererMemory();
+
+    postProgress("prime", 0);
+    const primeTargets = await primeWorkerRenderer(
+      { renderer, scene: world.scene, camera },
+      {
+        onProgress(fraction) {
+          postProgress("prime", fraction);
+        },
+        async yieldBetween() {
+          await nextWorkerFrame();
+        },
+        shouldStop: () => isSuperseded(sceneRequest),
+      }
+    );
+    if (isSuperseded(sceneRequest)) return false;
+    const primedAt = performance.now();
+    const memoryAfterPrime = rendererMemory();
+
+    postProgress("finalize", 0);
+    await renderer.compileAsync(world.scene, camera);
+    if (isSuperseded(sceneRequest)) return false;
+    const finalizedAt = performance.now();
+    const memoryAfterFinalize = rendererMemory();
+    postProgress("finalize", 1);
+    activeRenderer.setRenderTarget(previousRenderTarget);
+
+    postProgress("preflight", 0);
+    const previousViewport = renderer.getViewport(new Vector4());
+    renderer.setViewport(0, 0, 1, 1);
+    try {
+      world.update(0, finalizedAt / 1000);
+      performerStage.update(0);
+      applyCurrentEffects();
+      renderCurrentFrame(0);
+    } finally {
+      renderer.setViewport(previousViewport);
+    }
+    const preflightedAt = performance.now();
+    const memoryAfterPreflight = rendererMemory();
+    postProgress("preflight", 1);
+
+    postProgress("first-frame", 0);
+    preparingFirstFrame = false;
+    applyViewport(requestedViewport);
+    const firstRenderStartedAt = performance.now();
+    world.update(0, compiledAt / 1000);
     performerStage.update(0);
     applyCurrentEffects();
     renderCurrentFrame(0);
-  } finally {
-    renderer.setViewport(previousViewport);
-  }
-  const preflightedAt = performance.now();
-  const memoryAfterPreflight = rendererMemory();
-  postProgress("preflight", 1);
+    const firstRenderCompletedAt = performance.now();
+    const memoryAfterFirstRender = rendererMemory();
+    await nextWorkerFrame();
+    const presentedAt = performance.now();
+    if (
+      isSuperseded(sceneRequest) ||
+      !renderer ||
+      !camera ||
+      !world ||
+      !performerStage
+    ) {
+      return false;
+    }
+    world.update(
+      Math.min((presentedAt - compiledAt) / 1000, 0.1),
+      presentedAt / 1000
+    );
+    performerStage.update(Math.min((presentedAt - compiledAt) / 1000, 0.1));
+    applyCurrentEffects();
+    renderCurrentFrame(Math.min((presentedAt - compiledAt) / 1000, 0.1));
+    const firstFrameAt = performance.now();
+    frameCount = 1;
+    previousFrameAt = firstFrameAt;
+    const performerDiagnostics = performerStage.getDiagnostics();
+    const projectedCenter = performerDiagnostics.boundsCenter
+      ? new Vector3(...performerDiagnostics.boundsCenter)
+          .project(camera)
+          .toArray()
+      : null;
 
-  postProgress("first-frame", 0);
-  preparingFirstFrame = false;
-  applyViewport(requestedViewport);
-  const firstRenderStartedAt = performance.now();
-  world.update(0, compiledAt / 1000);
-  performerStage.update(0);
-  applyCurrentEffects();
-  renderCurrentFrame(0);
-  const firstRenderCompletedAt = performance.now();
-  const memoryAfterFirstRender = rendererMemory();
-  await nextWorkerFrame();
-  const presentedAt = performance.now();
-  if (
-    isSuperseded(sceneRequest) ||
-    !renderer ||
-    !camera ||
-    !world ||
-    !performerStage
-  ) {
-    return false;
-  }
-  world.update(
-    Math.min((presentedAt - compiledAt) / 1000, 0.1),
-    presentedAt / 1000
-  );
-  performerStage.update(Math.min((presentedAt - compiledAt) / 1000, 0.1));
-  applyCurrentEffects();
-  renderCurrentFrame(Math.min((presentedAt - compiledAt) / 1000, 0.1));
-  const firstFrameAt = performance.now();
-  frameCount = 1;
-  previousFrameAt = firstFrameAt;
-  const performerDiagnostics = performerStage.getDiagnostics();
-  const projectedCenter = performerDiagnostics.boundsCenter
-    ? new Vector3(...performerDiagnostics.boundsCenter)
-        .project(camera)
-        .toArray()
-    : null;
-
-  postProgress("first-frame", 1);
-  post({
-    type: "first-frame",
-    requestId: sceneRequest.requestId,
-    environment: world.environment,
-    metrics: {
-      acceptedAt: sceneRequest.acceptedAt,
-      rendererReadyAt: sceneRequest.rendererReadyAt,
-      environmentReadyAt,
-      performerReadyAt,
-      worldReadyAt,
-      compiledAt,
-      primedAt,
-      finalizedAt,
-      preflightedAt,
-      firstFrameAt,
-      rendererMs: sceneRequest.rendererReadyAt - sceneRequest.acceptedAt,
-      environmentMs: environmentReadyAt - sceneRequest.rendererReadyAt,
-      performerMs: performerReadyAt - environmentReadyAt,
-      worldMs: worldReadyAt - sceneRequest.acceptedAt,
-      compileMs: compiledAt - worldReadyAt,
-      primeMs: primedAt - compiledAt,
-      primeTargets,
-      finalizeCompileMs: finalizedAt - primedAt,
-      preflightMs: preflightedAt - finalizedAt,
-      firstRenderMs: firstRenderCompletedAt - firstRenderStartedAt,
-      presentationWaitMs: presentedAt - firstRenderCompletedAt,
-      confirmationRenderMs: firstFrameAt - presentedAt,
-      firstFrameWaitMs: firstFrameAt - preflightedAt,
-      firstFrameMs: firstFrameAt - sceneRequest.acceptedAt,
-      compileTargets,
-      memoryAfterCompile,
-      memoryAfterPrime,
-      memoryAfterFinalize,
-      memoryAfterPreflight,
-      memoryAfterFirstRender,
-      performers: {
-        ...performerDiagnostics,
-        projectedCenter,
+    postProgress("first-frame", 1);
+    post({
+      type: "first-frame",
+      requestId: sceneRequest.requestId,
+      environment: world.environment,
+      metrics: {
+        acceptedAt: sceneRequest.acceptedAt,
+        rendererReadyAt: sceneRequest.rendererReadyAt,
+        environmentReadyAt,
+        performerReadyAt,
+        worldReadyAt,
+        compiledAt,
+        primedAt,
+        finalizedAt,
+        preflightedAt,
+        firstFrameAt,
+        rendererMs: sceneRequest.rendererReadyAt - sceneRequest.acceptedAt,
+        environmentMs: environmentReadyAt - sceneRequest.rendererReadyAt,
+        performerMs: performerReadyAt - environmentReadyAt,
+        worldMs: worldReadyAt - sceneRequest.acceptedAt,
+        compileMs: compiledAt - worldReadyAt,
+        primeMs: primedAt - compiledAt,
+        primeTargets,
+        finalizeCompileMs: finalizedAt - primedAt,
+        preflightMs: preflightedAt - finalizedAt,
+        firstRenderMs: firstRenderCompletedAt - firstRenderStartedAt,
+        presentationWaitMs: presentedAt - firstRenderCompletedAt,
+        confirmationRenderMs: firstFrameAt - presentedAt,
+        firstFrameWaitMs: firstFrameAt - preflightedAt,
+        firstFrameMs: firstFrameAt - sceneRequest.acceptedAt,
+        compileTargets,
+        memoryAfterCompile,
+        memoryAfterPrime,
+        memoryAfterFinalize,
+        memoryAfterPreflight,
+        memoryAfterFirstRender,
+        performers: {
+          ...performerDiagnostics,
+          projectedCenter,
+        },
+        ...rendererMemory(),
       },
-      ...rendererMemory(),
-    },
-  });
-  animationFrame = scope.requestAnimationFrame(renderFrame);
-  return true;
+    });
+    animationFrame = scope.requestAnimationFrame(renderFrame);
+    return true;
+  } finally {
+    if (renderer === activeRenderer) {
+      activeRenderer.setRenderTarget(previousRenderTarget);
+    }
+  }
 }
 
 async function runTransition(): Promise<void> {

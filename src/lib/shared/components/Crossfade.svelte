@@ -239,13 +239,7 @@
     });
   }
 
-  /**
-   * Claims the currently-mounted layer. `bind:this` cannot be used here: the
-   * outgoing block's binding tears down AFTER its outro, which would null out
-   * the reference to the layer that replaced it. Clearing only when the node
-   * being destroyed is still the live one keeps the newest layer authoritative.
-   */
-  function trackLayer(node: HTMLElement) {
+  function claimLayer(node: HTMLElement): void {
     liveLayer = node;
     if (heightEnabled) {
       cancelScheduledMeasure();
@@ -254,6 +248,30 @@
       observer.observe(node);
       measure();
     }
+  }
+
+  /**
+   * The layer the current key put on screen. Svelte marks a leaving layer
+   * `inert` on the same commit that mounts or resumes the arriving one, so the
+   * one layer that is not inert is the one the user is about to see.
+   */
+  function shownLayer(): HTMLElement | null {
+    if (!box) return null;
+    for (const child of box.children) {
+      const layer = child as HTMLElement;
+      if (layer.classList.contains("layer") && !layer.inert) return layer;
+    }
+    return null;
+  }
+
+  /**
+   * Claims the currently-mounted layer. `bind:this` cannot be used here: the
+   * outgoing block's binding tears down AFTER its outro, which would null out
+   * the reference to the layer that replaced it. Clearing only when the node
+   * being destroyed is still the live one keeps the newest layer authoritative.
+   */
+  function trackLayer(node: HTMLElement) {
+    claimLayer(node);
     return {
       destroy() {
         if (liveLayer !== node) return;
@@ -274,6 +292,20 @@
     animateNextMeasure = true;
   });
 
+  // A key that returns to a layer still fading out RESUMES that layer's block
+  // instead of remounting it, so `use:trackLayer` never runs again and the box
+  // would stay tracked to the layer now leaving — frozen at its height once
+  // that layer is destroyed. This runs after the block has committed: the
+  // resumed layer is the one not inert, so claim it and ease the box back to
+  // its height on the same clock as its fade-in.
+  $effect(() => {
+    void key;
+    const shown = shownLayer();
+    if (!shown || shown === liveLayer) return;
+    if (heightEnabled) animateNextMeasure = true;
+    claimLayer(shown);
+  });
+
   $effect(() => {
     if (!heightEnabled) {
       // Releasing control has to hand the box back to content sizing, or it
@@ -286,7 +318,7 @@
       if (box) box.style.height = "";
       return;
     }
-    if (!observer && liveLayer) trackLayer(liveLayer);
+    if (!observer && liveLayer) claimLayer(liveLayer);
     return () => {
       heightAnimation?.cancel();
       heightAnimation = null;

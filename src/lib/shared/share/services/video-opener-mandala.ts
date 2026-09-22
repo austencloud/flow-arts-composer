@@ -10,6 +10,7 @@ import {
   DARK_MOTION_RED_STROKE,
   MANDALA_STANDARD_TIP_DX,
 } from "$lib/shared/mandala/domain/mandala-constants";
+import { applyMandalaHandColors } from "$lib/shared/mandala/domain/mandala-palette";
 import { calculate } from "$lib/shared/mandala/services/mandala-geometry-calculator";
 import { renderMandalaToCanvas } from "$lib/shared/mandala/services/mandala-renderer";
 import { pairTipEnds } from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
@@ -23,6 +24,17 @@ const OPENER_PALETTE: MandalaPalette = {
   purpleStroke: DARK_MOTION_PURPLE_STROKE,
   purpleFill: DARK_MOTION_PURPLE_FILL,
 };
+
+/**
+ * The dark palette worn in the account's hand colours, the same step the card
+ * back takes in the image composer, so the opener matches the props in the
+ * clip that follows it. Without chosen colours it stays the default blue/red.
+ */
+export function resolveOpenerPalette(
+  handColors?: { left: string; right: string } | null
+): MandalaPalette {
+  return applyMandalaHandColors(OPENER_PALETTE, handColors ?? null);
+}
 
 const MANDALA_REF_SIZE = 380;
 const GLOW_STDDEV = 3;
@@ -39,7 +51,11 @@ const OPENER_INSET = 0.08;
  */
 export function renderMandalaOpener(
   sequence: Pick<SequenceData, "steps">,
-  props: { leftPropType?: string; rightPropType?: string },
+  props: {
+    leftPropType?: string;
+    rightPropType?: string;
+    handColors?: { left: string; right: string } | null;
+  },
   size = OPENER_SIZE
 ): string {
   if (typeof document === "undefined") return "";
@@ -71,7 +87,7 @@ export function renderMandalaOpener(
     size: drawSize,
     style: "stroke",
     show: "both",
-    palette: OPENER_PALETTE,
+    palette: resolveOpenerPalette(props.handColors),
     strokeWidth: 2.5,
     tipDx: MANDALA_STANDARD_TIP_DX,
     offsetX: offset,

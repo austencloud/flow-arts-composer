@@ -212,7 +212,7 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
    * The image a shared clip opens with, as a data URL for the sheet's stage.
    * "First beat" reuses the export's own start-up dance: pause, jump to the
    * start position, let the live canvas paint it, capture, and put playback
-   * back where it was. "This frame" is the plain current-view capture and
+   * back where it was. "Current frame" is the plain current-view capture and
    * "Mandala" is drawn from the sequence, so neither touches playback.
    */
   async function captureVideoOpener(
@@ -235,6 +235,7 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
           settingsService.settings.rightPropType ??
           settingsService.settings.propType ??
           "staff",
+        handColors: settingsService.settings.primaryPropColors ?? null,
       });
     }
     if (kind === "this-frame" || !playbackController || !animationCanvas) {
@@ -258,6 +259,21 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
     playbackController.jumpToStep(step);
     if (wasPlaying) playbackController.togglePlayback();
     return url;
+  }
+
+  /** The Export page's "Opens with" choice as the request a share sheet would send. */
+  async function captureOwnOpener(
+    playbackController: AnimationPlaybackController | null,
+    panelState: AnimationPanelState,
+    sequence: SequenceData | null
+  ): Promise<VideoOpenerRequest> {
+    const kind = exportOptions.videoOpener;
+    return {
+      kind,
+      imageUrl: openerAddsHold(kind)
+        ? await captureVideoOpener(kind, playbackController, panelState, sequence)
+        : "",
+    };
   }
 
   function handleCancelExport() {
@@ -886,11 +902,19 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
     if (exportType === "animation" && playbackController && animationCanvas) {
       const opts = exportOptions.getVideoOptions();
       const motion = getMotionVisibility?.();
-      // The opener hold is baked from the very image the sheet showed, so the
-      // clip's first frame is exactly the thumbnail the person chose.
-      const openerRequest = options?.opener;
+      // The opener hold is baked from the very image the person chose. A
+      // share sheet hands its own capture with the request; the viewer's
+      // Download button hands nothing, so the Export page's choice is
+      // captured here, before the render moves the stage.
+      const openerRequest =
+        options?.opener ??
+        (await captureOwnOpener(
+          playbackController,
+          modalAnimationState,
+          effectiveSequence
+        ));
       const openerImage =
-        openerRequest && openerAddsHold(openerRequest.kind)
+        openerAddsHold(openerRequest.kind) && openerRequest.imageUrl
           ? await loadOpenerImage(openerRequest.imageUrl)
           : null;
       await sequenceModalExporter.exportAnimation(
