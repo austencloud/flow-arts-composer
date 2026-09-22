@@ -861,6 +861,56 @@ describe("shape matrix prop pair state", () => {
     expect(state.rightPropType).toBe(PropType.STAFF);
     expect(syncState).not.toHaveBeenCalled();
     expect(onPropPairChange).not.toHaveBeenCalled();
+
+    // The failed pick never became the requested pair, so asking for Club
+    // again is a fresh request, not a no-op against a target that never
+    // landed.
+    await state.setPropType(PropType.CLUB);
+    expect(loadMatrix).toHaveBeenCalledTimes(3);
+    expect(state.leftPropType).toBe(PropType.CLUB);
+    expect(state.rightPropType).toBe(PropType.CLUB);
+    expect(onPropPairChange).toHaveBeenCalledWith(
+      { left: PropType.CLUB, right: PropType.CLUB },
+      false
+    );
+  });
+
+  it("keeps the fold available after a failed pick on a mixed pair", async () => {
+    // A failed right-hand pick must not leave requestedPropPair pointing at
+    // the target that never landed: otherwise turning cat dog off reads the
+    // hands as already equal, skips the fold load, and reports the stale
+    // mixed pair as if it were the new single-prop one.
+    const onPropPairChange = vi.fn();
+    const { state, loadMatrix } = createState(false, {
+      left: PropType.STAFF,
+      right: PropType.FAN,
+      onPropPairChange,
+    });
+    await state.load();
+    state.setPropHand("right");
+    loadMatrix.mockRejectedValueOnce(new Error("boom"));
+
+    await state.setPropType(PropType.STAFF);
+    expect(state.loadError).toBe("boom");
+    expect(state.rightPropType).toBe(PropType.FAN);
+
+    await state.toggleCatDog();
+
+    expect(state.catDog).toBe(false);
+    expect(state.leftPropType).toBe(PropType.STAFF);
+    expect(state.rightPropType).toBe(PropType.STAFF);
+    expect(loadMatrix).toHaveBeenLastCalledWith({
+      left: PropType.STAFF,
+      right: PropType.STAFF,
+    });
+    expect(onPropPairChange).not.toHaveBeenCalledWith(
+      { left: PropType.STAFF, right: PropType.FAN },
+      false
+    );
+    expect(onPropPairChange).toHaveBeenLastCalledWith(
+      { left: PropType.STAFF, right: PropType.STAFF },
+      false
+    );
   });
 
   it("folds the right hand onto the left when cat dog turns off", async () => {
@@ -1032,7 +1082,7 @@ describe("shape matrix prop pair state", () => {
     expect(state.catDog).toBe(false);
   });
 
-  it("cancels an in-flight load on restore instead of leaving it stuck", async () => {
+  it("cancels an in-flight load on restore, then asks again for the restored pair", async () => {
     const { state, loadMatrix } = createState(false);
     const releaseStale = heldOpenLoad(loadMatrix);
     const stalePromise = state.load({
@@ -1059,14 +1109,51 @@ describe("shape matrix prop pair state", () => {
       solo: null,
     });
 
-    expect(state.loading).toBe(false);
+    // The restored pair is in place at once, ahead of any fetch.
     expect(state.leftPropType).toBe(PropType.FAN);
+    expect(state.rightPropType).toBe(PropType.FAN);
 
+    // The cancelled Club fetch must never win, no matter when it lands.
     releaseStale();
     expect(await stalePromise).toBe(false);
+
+    // A load was in flight for a reason: restoring asks again, this time
+    // for the pair that was actually restored.
+    await vi.waitFor(() =>
+      expect(state.data?.props).toEqual({
+        left: PropType.FAN,
+        right: PropType.FAN,
+      })
+    );
     expect(state.loading).toBe(false);
     expect(state.leftPropType).toBe(PropType.FAN);
     expect(state.rightPropType).toBe(PropType.FAN);
+  });
+
+  it("does not start a load on restore when none was in flight", () => {
+    const { state, loadMatrix } = createState(false);
+
+    state.restoreState({
+      surface: "matrix",
+      theoryLeftRatio: { propRotations: 1, handCycles: 3 },
+      theoryRightRatio: { propRotations: 1, handCycles: 3 },
+      theoryMode: "SS",
+      theoryPair: null,
+      level: 2,
+      leftTurn: 0,
+      rightTurn: 0,
+      activeAxis: "both",
+      labelMode: "turns",
+      leftPropType: PropType.FAN,
+      rightPropType: PropType.FAN,
+      pair: null,
+      mode: null,
+      propMode: null,
+      solo: null,
+    });
+
+    expect(loadMatrix).not.toHaveBeenCalled();
+    expect(state.loading).toBe(false);
     expect(state.data).toBeNull();
   });
 

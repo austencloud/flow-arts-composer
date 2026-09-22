@@ -386,6 +386,12 @@ export function createShapeMatrixAppState(
       return true;
     } catch (error) {
       if (token !== loadToken) return false;
+      // The failed pair never became real, so the "most recently requested"
+      // pointer falls back to what is actually on screen. Left stale at the
+      // failed target, a re-pick of that same target would read as a no-op,
+      // and a mixed pair's cat dog fold would judge itself against a hand
+      // that never landed.
+      requestedPropPair = { left: leftPropType, right: rightPropType };
       loadError = error instanceof Error ? error.message : String(error);
       return false;
     } finally {
@@ -812,7 +818,9 @@ export function createShapeMatrixAppState(
     // flight before it. Bumping the token makes any pending load's own
     // check fail when it lands, so it can never overwrite what is restored
     // here; clearing loading and the error is what stops that dropped load
-    // from leaving the banner stuck on.
+    // from leaving the banner stuck on. A load was in flight for a reason,
+    // though, so once the restored pair is in place the state asks again.
+    const cancelled = loading;
     loadToken += 1;
     loading = false;
     loadError = null;
@@ -873,6 +881,7 @@ export function createShapeMatrixAppState(
       ? snapshot.propMode
       : null;
     soloHand = selectedPair ? snapshot.solo : null;
+    if (cancelled) void load();
   }
 
   function selectPair(
