@@ -95,15 +95,20 @@ export class PlacementAnalyzer {
     // terra has 1 and never reaches this branch.
     // "half"/"quarter" are index distances (index+8, index+4), gamma's
     // convention before 2026-09-21, mirrored here for zeta, eta, and tau.
-    // circular-placement-maps.ts disagrees for three of the four groups:
-    // HALF_PLACEMENT_MAP steps GAMMA1/ZETA1/ETA1 by index+4 (TAU1 alone by
-    // index+8); QUARTER_PLACEMENT_MAP_CW steps them by index+2. So this
-    // function's "quarter" is the maps' "half" for those three, feeding
-    // bridge-finder.ts and calculateResultingLength (2x length for half,
-    // 4x for quarter) with an off estimate (pre-existing for gamma, new
-    // for zeta/eta, which used to return null). The fix: read the maps
-    // here instead of index math; that also changes gamma's estimate,
-    // so it is a separate change.
+    // circular-placement-maps.ts disagrees on "quarter" for all four
+    // 16-groups, tau included: QUARTER_PLACEMENT_MAP_CW steps every one of
+    // them by index+2, not this function's index+4. For gamma/zeta/eta that
+    // index+4 happens to equal HALF_PLACEMENT_MAP's own step, so this
+    // function's "quarter" is literally the maps' "half" there; tau's
+    // HALF_PLACEMENT_MAP instead steps by index+8, so this function's
+    // quarter matches neither map value for tau. The maps are not even
+    // self-consistent for tau: two quarters (+2 each) sum to +4, not their
+    // own half (+8), so a follow-up must resolve that before treating the
+    // maps as source of truth. This mismatch feeds bridge-finder.ts and
+    // calculateResultingLength (2x length for half, 4x for quarter) with an
+    // off estimate (pre-existing for gamma, new for zeta/eta, which used to
+    // return null). The fix: read the maps here instead of index math; that
+    // also changes gamma's estimate, so it is a separate change.
     const sixteenSlots =
       startGroup === GridPlacementGroup.GAMMA ||
       startGroup === GridPlacementGroup.ZETA ||

@@ -95,11 +95,18 @@ export function rotateWordUnits(
  * mismatched skew mask (e.g. "STS" vs "{STS}") does not count: the skew span
  * is part of the sequence identity, not just its letters.
  *
- * The offset is a *unit* index, not a *beat* index: a dash is part of its
- * letter's token (see parseWordNotation), so a word with a dash letter has
- * fewer units than beats. Callers that feed this into a beat-indexed rotation
- * check (verifyCircularRotation) must account for that, same caveat as the
- * character-rotation offset in sequence-canonicalizer.ts.
+ * This searches unit rotations directly, never a character offset, so the
+ * result is always a valid unit rotation, dashes included ("AW-BW-" vs
+ * "W-BW-A" correctly returns 1).
+ *
+ * The residual caveat is unlettered beats, not dashes: parseWordNotation
+ * emits no unit for a beat with no letter (deriveWordFromBeats documents
+ * that a skew span merges across it), so a sequence with an unlettered beat
+ * has units.length < steps.length, and this offset is then a unit offset,
+ * not a step offset for that sequence. sequence-equivalence-detector.ts's
+ * verifyCircularRotation takes its loop length from seqA.steps.length alone,
+ * so it must not receive this offset unless neither sequence has an
+ * unlettered beat.
  */
 export function findWordUnitsRotationOffset(
   wordA: string | null | undefined,

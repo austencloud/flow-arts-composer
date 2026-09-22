@@ -103,7 +103,7 @@ describe("BuildResultTransformer word calculation", () => {
     expect(result.word).toBe("AB");
   });
 
-  it("braces a step whose start placement is a zeta placement", async () => {
+  it("braces a step whose hands sit on a mixed cardinal/intercardinal location pair", async () => {
     const stepA = createStep({
       letter: Letter.A,
       startPlacement: GridPlacement.alpha1,
@@ -145,4 +145,16 @@ describe("BuildResultTransformer word calculation", () => {
 
     expect(result.word).toBe("AB{C}");
   });
+
+  // A third case for isSkewedFrameStep's placement-string fallback (a zeta
+  // startPlacement with a non-mixed motion pair) was considered and dropped.
+  // That branch only runs when a hand is not "present" (missing, or
+  // isVisible === false; see isPresentHand in skewed-frame.ts). mapMotion
+  // above always calls createMotionData without an isVisible field, so
+  // createMotionData defaults every mapped hand to isVisible: true
+  // (motion-data.ts); the engine's own Motion type has no isVisible field to
+  // set on a SequenceStep in the first place. So no input reachable through
+  // convertToSequenceData can produce an invisible hand, and the fallback
+  // branch is dead code for this transformer. A third test would only
+  // re-exercise the location-based branch above under a different name.
 });
