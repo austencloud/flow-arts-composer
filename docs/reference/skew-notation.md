@@ -249,6 +249,10 @@ letters that depend on "opposite" split into variants: `{C1}` `{C2}`, `{M1}`
 could not decode. The **trigrid** (three points, 120°) has no alpha at all, so
 its Tier 1 page runs G through Z plus β and Γ.
 
+A proposed lettering for all three grids, with a cell-by-cell mapping of
+these sheets and a decode of the `l`/`f` and `ˣ`/`ₓ` marks, is in
+`docs/superpowers/specs/2026-09-22-multigrid-lettering-design.md`.
+
 ![Pentagrid, Tier 1 Skewed](skew-notation/06-pentagrid-tier1-skewed.png)
 ![Pentagrid Skews, Plus](skew-notation/07-pentagrid-skews-plus.png)
 ![Trigrid, Tier 1](skew-notation/08-trigrid-tier1.png)
