@@ -91,18 +91,25 @@
    * before the pictograph data lands; the standard staff covers that wait,
    * exactly as it does for the tiles.
    */
-  const propReach = $derived(
-    propReachInHandRadii(app.data?.clubTipDx ?? MANDALA_STANDARD_TIP_DX)
-  );
+  const propReach = $derived({
+    left: propReachInHandRadii(app.data?.reach.left ?? MANDALA_STANDARD_TIP_DX),
+    right: propReachInHandRadii(
+      app.data?.reach.right ?? MANDALA_STANDARD_TIP_DX
+    ),
+  });
 
   /*
-   * Where the tracked tip sits inside the prop's own artwork. The trail follows
-   * one point per prop and the drawing has to point AT that point, which is a
-   * different bearing on a staff than on a fan.
+   * Where each hand's tracked tip sits inside its own prop's artwork. The
+   * trail follows one point per prop and the drawing has to point AT that
+   * point, which is a different bearing on a staff than on a fan.
    */
-  const tipAngle = $derived.by(() => {
-    const tip = shapeMatrixTipPoint(app.propType);
+  function tipAngleFor(prop: PropType): number {
+    const tip = shapeMatrixTipPoint(prop);
     return tip ? Math.atan2(tip.dy, tip.dx) : 0;
+  }
+  const tipAngle = $derived({
+    left: tipAngleFor(app.leftPropType),
+    right: tipAngleFor(app.rightPropType),
   });
 
   /*
@@ -202,7 +209,7 @@
       propPhase: knobs.phase ?? 0,
       trailCycles: closureCycles(flower),
       side: hand,
-      guide: traceScaledPath(knobs, { hand: 1, prop: propReach }),
+      guide: traceScaledPath(knobs, { hand: 1, prop: propReach[hand] }),
     };
   }
 
@@ -408,7 +415,8 @@
                 {tipAngle}
                 paused={!animationState.playing}
                 playbackMode={animationState.playbackMode}
-                propType={app.propType}
+                leftPropType={app.leftPropType}
+                rightPropType={app.rightPropType}
                 {propColors}
               />
             </button>
@@ -474,8 +482,9 @@
           onPlaybackModeChange={animationState.setPlaybackMode}
           onBpmChange={animationState.setBpm}
           showEffectsPlayback={false}
-          selectedPropType={app.propType}
+          selectedPropType={app.addressedPropType}
           onPropChange={(next: PropType) => void app.setPropType(next)}
+          handProps={app.handProps}
           onPropPickerRequest={app.togglePropPicker}
           propPickerActive={app.propPickerOpen}
           sequence={null}

@@ -98,16 +98,17 @@
     playbackMode?: PlaybackMode;
     /** Bumping this returns every phase to its start and clears the trails. */
     alignToken?: number;
-    /** Prop reach in hand-orbit radii, so the stick matches the real prop. */
-    propReach?: number;
+    /** Each hand's prop reach in hand-orbit radii, so the stick matches the real prop. */
+    propReach?: { left: number; right: number };
     /**
-     * Bearing of the tracked tip inside the prop's own artwork, in radians from
-     * its +x axis. The sprite is rotated by the difference, so the tip the trail
-     * follows is the tip the drawing points at.
+     * Bearing of each hand's tracked tip inside its prop's own artwork, in
+     * radians from its +x axis. The sprite is rotated by the difference, so
+     * the tip the trail follows is the tip the drawing points at.
      */
-    tipAngle?: number;
-    /** Which prop to draw. Its sprite is loaded once per type per side. */
-    propType?: string;
+    tipAngle?: { left: number; right: number };
+    /** Which prop each hand draws. A sprite is loaded per type per side. */
+    leftPropType?: string;
+    rightPropType?: string;
     /**
      * The account's saved hand colours, or null for the theme's motion
      * colours. The sprites are recoloured through the engine's own prop
@@ -123,9 +124,10 @@
     paused = false,
     playbackMode = "continuous",
     alignToken = 0,
-    propReach = PROP_LENGTH,
-    tipAngle = 0,
-    propType = "staff",
+    propReach = { left: PROP_LENGTH, right: PROP_LENGTH },
+    tipAngle = { left: 0, right: 0 },
+    leftPropType = "staff",
+    rightPropType = "staff",
     propColors = null,
   }: Props = $props();
 
@@ -228,11 +230,12 @@
   /*
    * The real prop, in the real colours, at the real proportions.
    *
-   * Scale is exactly 1/ENGINE_GRID_RADIUS and never per-prop: `propReach` is
-   * this prop's own tracked tip measured in the same units the artwork is
-   * authored in, so drawing the artwork at grid scale lands its tip on the curve
-   * the guide and the grid tile already drew. Choosing a longer prop opens the
-   * whole figure rather than sliding the drawing off it.
+   * Scale is exactly 1/ENGINE_GRID_RADIUS and never per-prop: each hand's
+   * `propReach` is its own prop's tracked tip measured in the same units the
+   * artwork is authored in, so drawing that artwork at grid scale lands its
+   * tip on the curve the guide and the grid tile already drew. A longer prop
+   * in one hand opens that hand's figure rather than sliding the drawing off
+   * it.
    */
   interface PropSprite {
     image: HTMLImageElement;
@@ -267,18 +270,18 @@
   }
 
   $effect(() => {
-    const wanted = propType;
+    const wanted = { left: leftPropType, right: rightPropType };
     const inks = propColors;
     let cancelled = false;
     void (async () => {
       try {
         const [left, right] = await Promise.all([
           inks
-            ? generatePropSvg(wanted, inks.left, "dark", "left")
-            : generateLeftPropSvg(wanted, true),
+            ? generatePropSvg(wanted.left, inks.left, "dark", "left")
+            : generateLeftPropSvg(wanted.left, true),
           inks
-            ? generatePropSvg(wanted, inks.right, "dark", "right")
-            : generateRightPropSvg(wanted, true),
+            ? generatePropSvg(wanted.right, inks.right, "dark", "right")
+            : generateRightPropSvg(wanted.right, true),
         ]);
         const [leftSprite, rightSprite] = await Promise.all([
           decodeSvg(left.svg, left.width, left.height),
@@ -514,8 +517,9 @@
          */
         const handX = Math.sin(handAngle) * hand.radius;
         const handY = -Math.cos(handAngle) * hand.radius;
-        const reachX = Math.sin(propAngle) * propReach;
-        const reachY = -Math.cos(propAngle) * propReach;
+        const reach = propReach[hand.side];
+        const reachX = Math.sin(propAngle) * reach;
+        const reachY = -Math.cos(propAngle) * reach;
         const headX = handX + reachX;
         const headY = handY + reachY;
         const tailX = handX - reachX;
@@ -665,7 +669,7 @@
           // The artwork's +x axis carries the tracked tip at `tipAngle`, and the
           // tip has to land on the head bearing, which is a quarter turn behind
           // the model's straight-up-is-zero angle.
-          context.rotate(propAngle - Math.PI / 2 - tipAngle);
+          context.rotate(propAngle - Math.PI / 2 - tipAngle[hand.side]);
           context.drawImage(
             sprite.image,
             -spriteWidth / 2,
