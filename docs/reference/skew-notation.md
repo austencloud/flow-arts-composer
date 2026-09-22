@@ -253,20 +253,26 @@ its Tier 1 page runs G through Z plus β and Γ.
 ![Pentagrid Skews, Plus](skew-notation/07-pentagrid-skews-plus.png)
 ![Trigrid, Tier 1](skew-notation/08-trigrid-tier1.png)
 
-## 7. What the app already models
+## 7. State of the repo before the 2026-09-21 change
+
+This section describes the repository as it stood before the change and is
+kept as the historical baseline. Sections 4 and 8 describe the shipped state,
+where the CSV has 6,272 rows, 1,152 of them category 3 rows that start from
+zeta or eta, and every skew-to-skew beat is lettered by the classifier in
+`src/lib/shared/pictograph/skew/skewed-frame-letter.ts`.
 
 Verified against the repo on 2026-09-21.
 
-- `static/data/pictographs/SkewedPictographDataframe.csv` has 5,120 rows with
+- `static/data/pictographs/SkewedPictographDataframe.csv` had 5,120 rows with
   per-hand `SkewDir` (+, −, blank), `SkewSteps` (0 or 1) and `HandPath`. All
   eight sign combinations are present. This is the guide's modifier system,
   one row per pictograph.
 - Every row starts from alpha, beta or gamma. End placements are zeta (1,536),
   eta (1,536), gamma (1,024), alpha (512), beta (512). Category 1 ends
   skewed, category 2 is a mode change (Full Plus, Full Minus, Plus/Minus).
-- **No row starts from zeta or eta.** The Tier 1 Skewed page, skew to skew,
-  has zero coverage. So does leaving a skewed frame.
-  `scripts/generate-skewed-dataframe.ts` builds the file by applying skew to
+- **No row started from zeta or eta.** The Tier 1 Skewed page, skew to skew,
+  had zero coverage. So did leaving a skewed frame.
+  `scripts/generate-skewed-dataframe.ts` built the file by applying skew to
   diamond and box rows, which is why.
 - Placements are numbered: alpha1 to 8, beta1 to 8, gamma1 to 16, zeta1 to 16,
   eta1 to 16.
@@ -275,12 +281,12 @@ Verified against the repo on 2026-09-21.
   different families. Correct, and it matches the braces rule.
 - `MotionQueryHandler` searches the skewed dataframe for SKEWED beats and
   falls back to the diamond rows only when the skewed file is empty. A
-  skew-to-skew beat therefore matches nothing and gets no letter.
+  skew-to-skew beat therefore matched nothing and got no letter.
 - The fuse rule (`src/lib/features/fuse/domain/fuse-rule.ts`) stores the
   follower's rotation as clockwise 45° steps, 0 to 7. Odd steps put the
   follower on the other family for the whole path. That is a known, uniform
-  offset for every beat, which is precisely the state section 4 says the
-  frame needs.
+  offset for every beat, which was the state section 4 described at the
+  time.
 - `buildFusedSequence` in `src/lib/features/fuse/state/fuse-state.svelte.ts`
   treats any unlettered step as fatal ("Couldn't identify every fused step")
   and the word and display name are built from letters. Nothing downstream in
@@ -295,8 +301,9 @@ What shipped:
   row, so the runtime lookup and the option picker need no special casing.
 - Braces mark the skewed span in the stored word (`A{STS}GA`; consecutive
   skewed beats share one pair; the entry and exit beats are inside the span;
-  step letters stay plain). The word is built only by `deriveWordFromBeats` /
-  `deriveWordStatusFromSteps` in
+  step letters stay plain). The word is built by `deriveWordFromBeats`, the
+  `stepPairings` branch of `deriveWord`, `deriveWordStatusFromSteps`, and
+  `deriveWordStatusFromStepPairings`, all in
   `src/lib/shared/foundation/services/word-deriver.ts`.
 - Sites that index, sort, or search words strip the braces with
   `stripWordNotation` (`src/lib/shared/foundation/utils/word-notation.ts`).

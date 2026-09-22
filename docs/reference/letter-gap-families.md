@@ -302,8 +302,11 @@ the generator to cover skew→skew transitions was the unlock for skewed LOOPs.
 
 Described as of 2026-09-21: the skewed alphabet in
 `docs/superpowers/specs/2026-09-21-skewed-frame-lettering-design.md` letters
-all 1152 skewed-frame beats with 38 letters, and the dataframe now carries
-them as category 3 rows.
+all 1152 skewed-frame beats with 38 letters. The generator writes those rows
+to `static/data/pictographs/SkewedPictographDataframe.csv` (6272 rows: 3072
+category 1, 2048 category 2, 1152 category 3). The
+`mcp-server-pkg/assets/data/pictographs/` copy is a mirror of that file, kept
+in sync by copying it over, and now carries the category 3 rows too.
 
 ## What this changes
 
