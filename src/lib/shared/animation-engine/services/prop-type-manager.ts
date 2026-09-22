@@ -67,6 +67,9 @@ export class PropTypeManager {
   private lastTunnelPropColorSig = "";
   private lastBasePropColorSig = "";
   private currentBaseColors: TunnelPropColorPair | null = null;
+  // The base colors are exact tunnel colors, which only the recolorable
+  // pictograph artwork can match.
+  private exactBaseColors = false;
   // Per-layer prop-type signature. A performer-set change (a copy swapping its
   // prop) must regenerate that layer's sprite even when count + spectrum hold.
   private lastLayerPropSig = "";
@@ -136,16 +139,18 @@ export class PropTypeManager {
    * Render key for the base prop pair. Model sprites are baked in the blue and
    * red motion colors, so exact tunnel colors fall back to the recolorable
    * pictograph artwork; additional tunnel layers always use that path.
+   * Custom prop colors do not: a picked model draws as captured, the same way
+   * its picker tile shows it.
    */
   private baseRenderKey(
     propType: string,
     appearance: FanAppearance,
     look: PropLook,
-    baseColors: TunnelPropColorPair | null = this.currentBaseColors
+    exactColors: boolean = this.exactBaseColors
   ): string {
     return resolvePropRenderKey(propType, {
       fanAppearance: appearance,
-      propLook: baseColors ? "pictograph" : look,
+      propLook: exactColors ? "pictograph" : look,
     });
   }
 
@@ -170,19 +175,18 @@ export class PropTypeManager {
     const nextLook = normalizePropLook(
       props.propLook ?? this.settingsService?.currentSettings?.propArtwork
     );
-    const nextBaseColors =
-      props.tunnelPropColors ?? props.primaryPropColors ?? null;
+    const nextExactColors = props.tunnelPropColors != null;
     const newLeftRender = this.baseRenderKey(
       newLeft,
       nextAppearance,
       nextLook,
-      nextBaseColors
+      nextExactColors
     );
     const newRightRender = this.baseRenderKey(
       newRight,
       nextAppearance,
       nextLook,
-      nextBaseColors
+      nextExactColors
     );
 
     // Check if overrides changed
@@ -248,7 +252,8 @@ export class PropTypeManager {
       this.loadPropTextures(
         state,
         prevDarkMode,
-        props.tunnelPropColors ?? props.primaryPropColors ?? null
+        props.tunnelPropColors ?? props.primaryPropColors ?? null,
+        nextExactColors
       ).then(() => {
         // Clear trails again after texture load to discard any points
         // captured during the async gap with old prop dimensions
@@ -276,9 +281,11 @@ export class PropTypeManager {
     state: AnimatorState,
     getFrameParams: FrameParamsProvider,
     prevDarkMode: boolean,
-    colors: TunnelPropColorPair | null = null
+    colors: TunnelPropColorPair | null = null,
+    exactColors = false
   ): boolean {
     this.latestFrameParamsProvider = getFrameParams;
+    this.exactBaseColors = exactColors;
     // No overrides - use settings via propTypeChangeService
     this.propTypeChangeService?.checkForChanges(this.settingsService);
 
@@ -408,6 +415,7 @@ export class PropTypeManager {
     const baseColors = exactColors ?? props.primaryPropColors ?? null;
     const layerColors = exactColors ?? (spectrum ? null : baseColors);
     this.currentBaseColors = baseColors;
+    this.exactBaseColors = exactColors !== null;
     const colorSig = layerColors ? JSON.stringify(layerColors) : "";
     // Signature of every layer's per-hand prop type. Empty entries fall back to
     // the global prop, so an all-default set yields "|"-joined blanks — a
@@ -621,7 +629,8 @@ export class PropTypeManager {
   async loadPropTextures(
     state: AnimatorState,
     prevDarkMode: boolean,
-    colors?: TunnelPropColorPair | null
+    colors?: TunnelPropColorPair | null,
+    exactColors?: boolean
   ): Promise<void> {
     if (!this.propTextureService) return;
 
@@ -660,18 +669,10 @@ export class PropTypeManager {
     const effectiveColors =
       colors === undefined ? this.currentBaseColors : colors;
     this.currentBaseColors = effectiveColors;
-    const leftRenderType = this.baseRenderKey(
-      leftPropType,
-      appearance,
-      look,
-      effectiveColors
-    );
-    const rightRenderType = this.baseRenderKey(
-      rightPropType,
-      appearance,
-      look,
-      effectiveColors
-    );
+    this.exactBaseColors =
+      effectiveColors !== null && (exactColors ?? this.exactBaseColors);
+    const leftRenderType = this.baseRenderKey(leftPropType, appearance, look);
+    const rightRenderType = this.baseRenderKey(rightPropType, appearance, look);
     this.renderPropTypeLeft = leftRenderType;
     this.renderPropTypeRight = rightRenderType;
     if (colors !== undefined) {

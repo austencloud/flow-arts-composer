@@ -172,20 +172,23 @@ export class Canvas2DImageLoader {
     this.requestedRightPropType = rightPropType;
     try {
       // Generate blue and red prop SVGs with different types
-      // Pass darkMode to use local preview state instead of global
+      // Pass darkMode to use local preview state instead of global. The hand
+      // picks a model capture's sprite; a custom color must not.
       const [leftPropData, rightPropData] = await Promise.all([
         colors
           ? generatePropSvg(
               leftPropType,
               colors.left,
-              darkMode === undefined ? undefined : darkMode ? "dark" : "light"
+              darkMode === undefined ? undefined : darkMode ? "dark" : "light",
+              "left"
             )
           : generateLeftPropSvg(leftPropType, darkMode),
         colors
           ? generatePropSvg(
               rightPropType,
               colors.right,
-              darkMode === undefined ? undefined : darkMode ? "dark" : "light"
+              darkMode === undefined ? undefined : darkMode ? "dark" : "light",
+              "right"
             )
           : generateRightPropSvg(rightPropType, darkMode),
       ]);

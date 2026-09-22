@@ -475,3 +475,18 @@ found two causes.
   the centre wick.
 - Still open: the torch and big torch model tips sit on the shaft about 40
   units short of the wick head, which needs its own calibration.
+
+## September 22 3D model look with custom prop colors
+
+- Picking a 3D model tile sometimes left the canvas on the pictograph artwork.
+  The animator treated any base color pair as exact tunnel colors and forced
+  the recolorable pictograph, so a viewer with custom prop colors saw the model
+  tile checked while the canvas drew recolored pictographs.
+- Only exact tunnel colors now force the pictograph artwork. A picked model
+  draws as captured, as its tile shows it, and custom colors still drive the
+  trails. The image loader also picks each hand's capture by hand, so a custom
+  color can no longer swap the blue and red sprites.
+- Evidence: the new PropTypeManager tests failed before the fix and pass after
+  it. 331 animation-engine and video-export tests passed, and `npm run check`
+  reported 0 errors. On 5174 `/composer`, with custom purple/blue prop colors
+  set, choosing Double Star 3D model switched the canvas to the model capture.

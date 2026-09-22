@@ -498,10 +498,12 @@ export class AnimationEngine {
     this.state.setRightPropType(right);
     this.state.setLegacyPropType(left);
     // Load textures + sync dimensions into state via the canonical manager path.
+    // Export colors are the tunnel's exact pair.
     await this.propSystem.propPipeline.loadTextures(
       this.state,
       darkMode,
-      colors
+      colors,
+      colors !== null
     );
   }
 
