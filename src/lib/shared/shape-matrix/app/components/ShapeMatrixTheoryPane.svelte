@@ -87,7 +87,7 @@
       claimSelected={appState.compact && appState.activeView === "matrix"}
       keyOf={theoryFlowerKey}
       labelOf={theoryFlowerLabel}
-      paintHeader={(flower, hand, sizePx, painter) =>
+      paintHeader={(flower, hand: "left" | "right", sizePx, painter) =>
         theoryHeaderArtworkSrc(flower, hand, reach[hand], scale, sizePx, painter)}
       paintCell={(left, right, sizePx, painter) =>
         theoryCellArtworkSrc(left, right, reach, scale, sizePx, painter)}
