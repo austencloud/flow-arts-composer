@@ -78,7 +78,10 @@
     onSave?: () => void;
     onRemix?: () => void;
     onPracticeToggle?: () => void;
-    /** The share panel is open; Share closes it again. */
+    /**
+     * The share panel is open; Share closes it again. Escape then belongs to
+     * the panel's close button, so leaving the viewer stops claiming it.
+     */
     sharePanelOpen?: boolean;
     canToggleMotionVisibility?: boolean;
     onMotionToggleLeft?: () => void;
@@ -238,7 +241,7 @@
         <button
           type="button"
           class="viewer-action navigation-action"
-          data-escape-shortcut
+          data-escape-shortcut={!sharePanelOpen || undefined}
           data-escape-shortcut-label="Viewer"
           onclick={onClose}
           aria-label={navigation.label}
@@ -584,7 +587,7 @@
         <button
           type="button"
           class="viewer-action close-action"
-          data-escape-shortcut
+          data-escape-shortcut={!sharePanelOpen || undefined}
           data-escape-shortcut-label="Viewer"
           data-ghost="safe"
           data-ghost-kind="close-overlay"
