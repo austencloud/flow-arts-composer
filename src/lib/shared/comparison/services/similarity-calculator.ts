@@ -10,6 +10,7 @@
  */
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
 import type {
   SimilarityReport,
   CommonSubsequence,
@@ -115,7 +116,7 @@ export class SimilarityCalculator {
 
     // Check if words are rotations of each other (for circular sequences)
     if (seqA.isCircular && seqB.isCircular) {
-      if (this.areWordsCircularEquivalent(seqA.word, seqB.word)) {
+      if (this.areWordsCircularEquivalent(stripWordNotation(seqA.word), stripWordNotation(seqB.word))) {
         return { score: 0.9, likelyEquivalent: true, confidence: 0.85 };
       }
     }
@@ -347,8 +348,8 @@ export class SimilarityCalculator {
     factors++;
 
     // Word length similarity
-    const maxWordLen = Math.max(seqA.word.length, seqB.word.length, 1);
-    const minWordLen = Math.min(seqA.word.length, seqB.word.length);
+    const maxWordLen = Math.max(stripWordNotation(seqA.word).length, stripWordNotation(seqB.word).length, 1);
+    const minWordLen = Math.min(stripWordNotation(seqA.word).length, stripWordNotation(seqB.word).length);
     score += minWordLen / maxWordLen;
     factors++;
 
@@ -471,7 +472,7 @@ export class SimilarityCalculator {
       lengthDifference: lengthDiff,
       circularityMatch: seqA.isCircular === seqB.isCircular,
       wordMatch: seqA.word === seqB.word,
-      wordEditDistance: this.levenshteinDistance(seqA.word, seqB.word),
+      wordEditDistance: this.levenshteinDistance(stripWordNotation(seqA.word), stripWordNotation(seqB.word)),
       motionTypeMatches,
       motionTypeMismatches,
       placementGroupMatches,

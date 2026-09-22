@@ -252,7 +252,7 @@ class LibraryStateManager {
       result = result.filter(
         (seq) =>
           seq.name.toLowerCase().includes(query) ||
-          seq.word.toLowerCase().includes(query) ||
+          stripWordNotation(seq.word).toLowerCase().includes(query) ||
           seq.displayName?.toLowerCase().includes(query)
       );
     }

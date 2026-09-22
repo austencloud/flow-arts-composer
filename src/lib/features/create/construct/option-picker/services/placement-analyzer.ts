@@ -91,11 +91,14 @@ export class PlacementAnalyzer {
     }
 
     // Calculate the difference (accounting for circular wraparound)
-    // Gamma, zeta, and eta have 16 numbered placements; alpha and beta have 8.
+    // Gamma, zeta, eta, and tau have 16 numbered placements; alpha and beta
+    // have 8. Terra has only one placement (terra1), so it never reaches
+    // this branch with a meaningful rotation and is left out.
     const sixteenSlots =
       startGroup === GridPlacementGroup.GAMMA ||
       startGroup === GridPlacementGroup.ZETA ||
-      startGroup === GridPlacementGroup.ETA;
+      startGroup === GridPlacementGroup.ETA ||
+      startGroup === GridPlacementGroup.TAU;
     const totalPlacements = sixteenSlots ? 16 : 8;
     const quarterStep = sixteenSlots ? 4 : 2;
     const halfStep = sixteenSlots ? 8 : 4;

@@ -84,8 +84,8 @@ export function getSequencesForNavigationItem(
     }
 
     case "letter":
-      return allSequences.filter(
-        (seq) => seq.word?.startsWith(item.value as string)
+      return allSequences.filter((seq) =>
+        stripWordNotation(seq.word ?? "").startsWith(item.value as string)
       );
 
     case "level":
@@ -160,9 +160,10 @@ export function filterSequencesByNavigation(
         // Filter by starting letter
         if (typeof item === "object" && item && "value" in item) {
           const letter = (item as { value: string }).value;
-          return sequences.filter(
-            (seq) =>
-              seq.word?.toLowerCase().startsWith(letter.toLowerCase())
+          return sequences.filter((seq) =>
+            stripWordNotation(seq.word ?? "")
+              .toLowerCase()
+              .startsWith(letter.toLowerCase())
           );
         }
         break;
