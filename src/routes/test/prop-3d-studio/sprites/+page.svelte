@@ -87,7 +87,16 @@
     queue
       .flatMap((prop) => {
         const looks = [
-          { key: prop as string, build: undefined },
+          {
+            key: prop as string,
+            // The scene default grip isn't guaranteed to be corner; state it
+            // explicitly so this job always captures the corner look, the
+            // same way the side job states its own override below.
+            build:
+              prop === PropType.TRIANGLE
+                ? ({ triangleGrip: "corner" } as Partial<PropBuild>)
+                : undefined,
+          },
           ...(EXTRA_LOOKS[prop] ?? []),
         ];
         return looks.flatMap((look) =>
