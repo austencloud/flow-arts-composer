@@ -257,9 +257,11 @@ for every choice, and the page's footer button renders and delivers the file.
 Share → Download a file → Video hands off to that page and closes the sheet,
 the way Post Studio takes over from the sheet; the sheet's own download route
 keeps Card, plus Video for hosts with their own exporters (Mandala, Tunnel,
-3D takes, Post Studio renders), where the file type is a chip row. The sheet
-never mounts a second animation engine: a frozen capture behind a modal was
-the reason the download moved.
+3D takes, Post Studio renders), where the file type is a chip row. The viewer
+never mounts a second animation engine behind its share sheet: a frozen capture
+behind a modal was the reason the download moved. The Create workspace has a
+static card behind sharing, so its download sheet supplies its own live preview
+using the existing inline animation player.
 
 ### The image a clip opens with
 
@@ -693,3 +695,22 @@ Verify this through the workspace Share button as well as the viewer entry:
 choose Download a file, switch both file types, change video settings, download
 an animation, cancel and retry, then replace the sequence and reopen sharing.
 Showing a Video option without a working renderer is not acceptance.
+
+### September 22 workspace preview completion
+
+The first workspace repair verified rendering and delivery but left text where
+the live animation belonged. Austen rejected that result. A successful encoder
+test is not evidence that the pre-download experience is complete.
+
+Selecting Video must show the current sequence moving before any export starts.
+The existing `InlineAnimationPlayer` owns playback and canvas rendering; the
+workspace supplies it to the share sheet's preview slot. Its state must be local
+to the preview, use the export's tempo and presentation settings, and stop when
+the person leaves Video or closes sharing. Progress and cancellation must not
+remount it. The finished file replaces the player in the same reserved media
+area through the shared transition primitive.
+
+Acceptance requires observing actual animation frames before pressing Download,
+then a playable downloaded file. Check both directions of Card/Video switching,
+close/reopen, cancellation, and a replacement sequence. A placeholder, spinner,
+static frame, or test that mocks the player cannot establish this behavior.

@@ -41,6 +41,9 @@
   import WorkspaceShareControl from "./WorkspaceShareControl.svelte";
   import PostShareSheet from "$lib/shared/share/components/PostShareSheet.svelte";
   import { getExportOptionsState } from "$lib/shared/animation-panel/state/export-options-state.svelte";
+  import InlineAnimationPlayer from "$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
+  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
   import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
   import type { AnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
   import type { SequenceModalExporter } from "$lib/shared/sequence-viewer/services/sequence-modal-exporter.svelte";
@@ -63,6 +66,7 @@
   const sharer = getSharer();
   const shortCodeManager = getShortCodeManager();
   const exportOptions = getExportOptionsState();
+  const animationVisibility = getAnimationVisibilityManager();
   // These stay unloaded until a person requests a file. Their controller never
   // publishes into the workspace playhead or saves playback preferences.
   let workspaceVideoState: AnimationPanelState | null = null;
@@ -166,6 +170,12 @@
         options: exportOptions.getVideoOptions(),
       })
     )
+  );
+  // Playback only reloads when the choreography changes. Export dimensions and
+  // loop count alter the eventual file, not the live motion a person is using
+  // to decide whether to download it.
+  const workspaceVideoPreviewKey = $derived.by(() =>
+    hashString(JSON.stringify(sequence))
   );
   const workspaceVideoUrl = $derived(
     workspaceVideoExporter?.state.previewBlobUrl ?? null
@@ -776,6 +786,11 @@
         includeStartPlacement: options.includeStartPlacement,
         includeEndHold: options.includeEndHold,
         quality: options.quality,
+        // The offscreen exporter calls this tunnel-shaped input for any custom
+        // pair. Supplying the workspace pair keeps its downloaded file aligned
+        // with the live animation, including non-blue/red prop choices.
+        tunnelPropColors:
+          settingsService.settings.primaryPropColors ?? undefined,
       },
       {
         canvas: layoutCanvas,
@@ -798,6 +813,38 @@
     return !!exporter.state.previewBlobUrl;
   }
 </script>
+
+{#snippet workspaceLiveVideoPreview()}
+  {#if sequence}
+    <div class="workspace-live-video-preview">
+      <InlineAnimationPlayer
+        {sequence}
+        sequenceLoadKey={workspaceVideoPreviewKey}
+        chrome="minimal"
+        fill={true}
+        showControls={false}
+        autoPlay={true}
+        autoPlayDelay={0}
+        externalBpm={60}
+        interactive={true}
+        cornerToggle={true}
+        hoverHint="none"
+        playbackAllowed={postSheetOpen}
+        ephemeral={true}
+        visibilityManagerOverride={animationVisibility}
+        effectsConfigState={animationVisibility.effectsConfigState ?? undefined}
+        gridVisible={animationVisibility.isGridVisible()}
+        showWordHeader={animationVisibility.getVisibility("wordHeader")}
+        hideTkaGlyph={!animationVisibility.getVisibility("tkaGlyph")}
+        hideStepNumbers={!animationVisibility.getVisibility("stepNumbers")}
+        leftPropType={settingsService.settings.leftPropType}
+        rightPropType={settingsService.settings.rightPropType}
+        primaryPropColors={settingsService.settings.primaryPropColors ??
+          undefined}
+      />
+    </div>
+  {/if}
+{/snippet}
 
 <WorkspaceShareControl
   bind:open={menuOpen}
@@ -828,6 +875,7 @@
   videoBlobUrl={workspaceVideoUrl}
   isExportingVideo={workspaceVideoExporting}
   exportProgress={workspaceVideoProgress}
+  liveVideoPreview={workspaceLiveVideoPreview}
   onRequestVideo={requestWorkspaceVideo}
   onCancelVideo={cancelWorkspaceVideo}
   onPrepareFile={(artifact) => {
@@ -846,3 +894,11 @@
     postSheetOpen = false;
   }}
 />
+
+<style>
+  .workspace-live-video-preview {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+</style>
