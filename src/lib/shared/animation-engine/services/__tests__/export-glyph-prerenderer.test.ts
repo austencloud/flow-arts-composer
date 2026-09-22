@@ -15,7 +15,11 @@ import {
   getSlotOffsetX,
   MARK_GAP,
 } from "$lib/shared/pictograph/tka-glyph/utils/turn-tuple-parser";
-import { getSkewBraceLayout } from "$lib/shared/pictograph/tka-glyph/utils/skew-brace-layout";
+import {
+  DEFAULT_SKEW_BRACE_INK,
+  getSkewBraceLayout,
+  placeSkewBraceGlyphs,
+} from "$lib/shared/pictograph/tka-glyph/utils/skew-brace-layout";
 import { calculateTurnPositions } from "$lib/shared/pictograph/tka-glyph/utils/turn-position-calculator";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 
@@ -197,7 +201,7 @@ describe("ExportGlyphPrerenderer - skew braces", () => {
     ).buildAndCacheGlyph.bind(prerenderer);
   }
 
-  it("draws both braces for a skewed-frame beat and widens the composite on both edges", async () => {
+  it("draws both braces for a skewed-frame beat with their ink inside the composite, centred on the letter", async () => {
     const { converter, getCaptured } = makeConverter();
     const prerenderer = new ExportGlyphPrerenderer(converter);
     const buildAndCacheGlyph = bindBuildAndCacheGlyph(prerenderer);
@@ -237,28 +241,51 @@ describe("ExportGlyphPrerenderer - skew braces", () => {
     expect(asset).not.toBeNull();
 
     const composite = getCaptured();
-    // Both braces are emitted as SVG <text> glyphs.
-    expect(composite).toContain("{</text>");
-    expect(composite).toContain("}</text>");
+    const braceText = (glyph: "{" | "}") => {
+      const end = composite.indexOf(`>${glyph}</text>`);
+      expect(end, `${glyph} brace`).toBeGreaterThan(0);
+      const attrs = composite.slice(composite.lastIndexOf("<text ", end), end);
+      const attr = (name: string) => attrs.match(new RegExp(`${name}="([^"]+)"`))?.[1];
+      return {
+        x: Number(attr("x")),
+        y: Number(attr("y")),
+        anchor: attr("text-anchor"),
+        baseline: attr("dominant-baseline"),
+      };
+    };
+    const open = braceText("{");
+    const close = braceText("}");
 
-    // "(s, 0, 0)" displays no turns, so getTurnsColumnRightExtent is 0 and
-    // getSkewBraceLayout's own dash-extent term is 0 for a non-dash letter
-    // (Letter.A) - closeX + fontSize always dominates the plain letter
-    // width in the composite's right-bound math (see buildAndCacheGlyph's
-    // maxRight computation), so it is also the composite's pre-pad width.
+    // "(s, 0, 0)" displays no turns, so nothing pads the composite
+    // vertically and the closing brace clears only the plain letter.
+    // Node has no canvas to measure with, so the default ink applies.
     const braceLayout = getSkewBraceLayout(Letter.A, { width: 100, height: 100 }, {
       rightExtent: 0,
     });
-    const expectedXOffset = Math.max(0, Math.ceil(-braceLayout.openX));
-    const expectedWidth =
-      Math.ceil(braceLayout.closeX + braceLayout.fontSize) + expectedXOffset;
+    const ink = DEFAULT_SKEW_BRACE_INK;
+    const fontSize = braceLayout.fontSize;
+    const glyphs = placeSkewBraceGlyphs(braceLayout, ink);
 
-    expect(asset!.xOffset).toBe(expectedXOffset);
-    expect(asset!.dimensions.width).toBe(expectedWidth);
-    // Widened past the bare 100-unit letter on both edges: xOffset alone
-    // already exceeds 0, and the right edge clears the letter width too.
-    expect(expectedXOffset).toBeGreaterThan(0);
-    expect(asset!.dimensions.width).toBeGreaterThan(100 + expectedXOffset);
+    // Start-anchored on the alphabetic baseline: the only baseline whose
+    // position against the glyph's ink the ink metrics describe.
+    for (const brace of [open, close]) {
+      expect(brace.anchor).toBe("start");
+      expect(brace.baseline).toBe("alphabetic");
+    }
+    expect(open.x).toBeCloseTo(glyphs.open.x + asset!.xOffset);
+    expect(close.x).toBeCloseTo(glyphs.close.x + asset!.xOffset);
+
+    // Ink centred on the 100-unit letter.
+    expect(open.y - ((ink.open.ascent - ink.open.descent) / 2) * fontSize).toBeCloseTo(50);
+    expect(close.y - ((ink.close.ascent - ink.close.descent) / 2) * fontSize).toBeCloseTo(50);
+
+    // The letter shifts by the same pad the caller is told about...
+    expect(composite).toContain(`<g transform="translate(${asset!.xOffset}, 0)"`);
+    // ...and that pad keeps the opening brace's ink inside the viewBox. A pad
+    // of just the 14-unit gap left the whole glyph at negative x, where the
+    // rasterised composite clipped it away.
+    expect(open.x - ink.open.left * fontSize).toBeGreaterThanOrEqual(0);
+    expect(close.x + ink.close.right * fontSize).toBeLessThanOrEqual(asset!.dimensions.width);
   });
 
   it("leaves a plain (non-skewed) beat's composite exactly as before the skew-brace feature", async () => {
