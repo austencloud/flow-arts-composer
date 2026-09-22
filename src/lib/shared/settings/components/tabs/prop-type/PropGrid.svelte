@@ -845,6 +845,7 @@
                   propType={drill.prop}
                   value={propLook}
                   onchange={onPropLookChange}
+                  fill={fillHeight > 0}
                 />
               {/if}
               {#if chirality && isBuugengFamilyProp(drill.prop)}
@@ -862,6 +863,7 @@
               propType={selectedPropType}
               value={propLook}
               onchange={onPropLookChange}
+              fill={fillHeight > 0}
             />
           {:else}
             <div
@@ -1226,11 +1228,13 @@
     gap: 8px;
   }
 
-  .flat-grid.comfortable {
+  /* A fill grid already sizes its tiles to the host; comfortable only sets
+     the unbounded grid's track floor and tile shape. */
+  .flat-grid.comfortable:not(.fill) {
     grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
     gap: 0.6rem;
   }
-  .flat-grid.comfortable :global(.prop-button) {
+  .flat-grid.comfortable:not(.fill) :global(.prop-button) {
     min-height: 6.75rem;
     aspect-ratio: 1.25;
     padding: 0.5rem;
@@ -1349,6 +1353,8 @@
   .detail-options.fill {
     flex: 1;
     min-height: 0;
+    /* Vertical only: a subpixel card edge must not raise a sideways bar. */
+    overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior-y: contain;
     scrollbar-width: thin;

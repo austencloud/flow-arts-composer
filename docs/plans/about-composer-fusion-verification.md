@@ -61,6 +61,39 @@ overflows horizontally. Reduced motion also disables the opening-track
 transition. The three composer presentation test files pass (11 tests), and
 `npm run check` reports 0 errors and 0 warnings. Commit `47b9647026`.
 
+## September 22 drills fill the rail
+
+Austen's screenshots showed the Club styles, Chicken details, and Fan look
+drills stopping near the top of the rail with a large empty area below.
+
+- The composer picker now runs PropGrid in `fill` mode. Family drills size
+  their tiles to the rail. The all-props grid picks the column count that gives
+  the largest tile. PropGrid's `comfortable` density no longer overrides a fill
+  grid's tracks.
+- The prop-look cards (PropLookPicker → PropBuildPicker `fill`) stack and share
+  the remaining height, with a 7rem row floor.
+- Look cards frame the painted window through the existing measured crops
+  (`modelSpriteCrop`, `NOTATION_GLYPH_CROPS`). The chicken sprites paint only
+  one half of their 325-wide box, so without the crop both cards sat off-center.
+- `.detail-options.fill` clips x overflow, which removes a 1px horizontal
+  scrollbar under the fan builds.
+
+Evidence, from the DevTools DOM and screenshots:
+
+- 2560×1250@1.5 rail (480px): the all-props grid is 4 columns with 122px rows
+  and no scroll (819/819). The 3 Club tiles are 220×275 each (two plus a
+  centered orphan). The two Chicken look cards are 445×281 each, stacked, with
+  the art centered. The fan look is 3×3 with no x scrollbar. In Buugeng, the
+  look cards plus the chirality row fit.
+- 1920×1080 rail (352px): the Chicken cards are 319×275, with no overflow
+  (652/652).
+- 1200×800 sheet: Club tiles are 363×311. The Chicken cards stack at 731×265.
+- `prop-look.test.ts` adds a crop contract for chicken, and it passes.
+  `npm run check` found 0 errors and 0 warnings.
+- `prop-chirality-picker-contract.test.ts` has 2 failures. The same failures
+  occur on main, whose PropGrid has no `chirality-dock`, so this change did not
+  cause them.
+
 ## September 22 full prop appearance
 
 Austen could not reach the 3D chicken or fan builds from the composer pickers.

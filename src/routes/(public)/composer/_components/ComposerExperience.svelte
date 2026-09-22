@@ -898,7 +898,7 @@
     padding-inline: 0.375rem;
   }
 
-  .hero-prop-rail :global(.flat-grid.comfortable) {
+  .hero-prop-rail :global(.flat-grid.comfortable:not(.fill)) {
     grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
   }
 

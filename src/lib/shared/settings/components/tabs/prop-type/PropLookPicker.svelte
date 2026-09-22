@@ -11,10 +11,13 @@
     propType,
     value,
     onchange,
+    fill = false,
   }: {
     propType: string;
     value?: PropLook | null;
     onchange: (look: PropLook) => void;
+    /** Share a bounded host's height; see PropBuildPicker. */
+    fill?: boolean;
   } = $props();
 
   const look = $derived(normalizePropLook(value));
@@ -25,10 +28,17 @@
 {#if available}
   <div
     class="prop-look-picker"
+    class:fill
     style:--prop-picker-accent="var(--theme-accent, #8b7cf6)"
     style:--prop-picker-stroke="var(--theme-stroke, rgba(255, 255, 255, 0.12))"
   >
-    <PropBuildPicker label="Prop look" value={look} {options} {onchange} />
+    <PropBuildPicker
+      label="Prop look"
+      value={look}
+      {options}
+      {onchange}
+      {fill}
+    />
   </div>
 {/if}
 
@@ -38,5 +48,12 @@
     container-type: inline-size;
     display: grid;
     min-width: 0;
+  }
+
+  .prop-look-picker.fill {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
   }
 </style>

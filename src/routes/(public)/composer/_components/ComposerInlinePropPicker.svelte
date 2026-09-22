@@ -44,6 +44,7 @@
     flat={true}
     tileDensity="comfortable"
     scrollMode="internal"
+    fill
     {fanAppearance}
     {onFanAppearanceChange}
     {propLook}

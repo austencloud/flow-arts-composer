@@ -397,20 +397,25 @@ export interface PropLookOption {
   id: PropLook;
   label: string;
   image: string;
+  /** Grip-centred art paints half its box; the card frames the painted part. */
+  crop?: PropTileCrop;
 }
 
 export function propLookOptions(propType: string): readonly PropLookOption[] {
   const normalized = propType.toLowerCase();
+  const sprite = PROP_MODEL_SPRITES[normalized];
   return [
     {
       id: "model",
       label: "3D model",
       image: modelSpriteArtwork(normalized, "left"),
+      crop: sprite ? modelSpriteCrop(sprite) : undefined,
     },
     {
       id: "pictograph",
       label: "Pictograph",
       image: `/images/props/buttons/${normalized}.svg`,
+      crop: NOTATION_GLYPH_CROPS[normalized],
     },
   ];
 }
