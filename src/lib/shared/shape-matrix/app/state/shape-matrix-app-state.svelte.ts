@@ -25,6 +25,7 @@ import {
 } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
 import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import {
+  foldUntraceablePropPair,
   propPairFromLegacy,
   type ShapeMatrixPropHand,
   type ShapeMatrixPropPair,
@@ -292,7 +293,7 @@ export function createShapeMatrixAppState(
   );
   let activeAxis = $state<ShapeMatrixAxisTarget>(initial.activeAxis);
   let labelMode = $state(initial.labelMode);
-  const initialPair = propPairFromLegacy(initial);
+  const initialPair = foldUntraceablePropPair(propPairFromLegacy(initial));
   let leftPropType = $state(initialPair.left);
   let rightPropType = $state(initialPair.right);
   /** Whether the hand segments show; starts on when the restored pair differs. */
@@ -808,19 +809,27 @@ export function createShapeMatrixAppState(
    * that happens to match it as a no-op, dropping it. Adopting instead
    * bumps the load token, so the pick's own in-flight load resolves
    * superseded and never overwrites what settings just asked for.
+   *
+   * The incoming pair is folded before any of that: settings may hold a
+   * prop the engine cannot trace (bare hand, a single contact ball), and
+   * drawing it would leave the matrix stuck on its error state. The folded
+   * pair is what gets compared, loaded and stored, so a settings value that
+   * folds to what is already on screen is correctly seen as unchanged
+   * instead of looping through a reload every time this fires.
    */
   function adoptPropPair(pair: ShapeMatrixPropPair, nextCatDog: boolean): void {
+    const folded = foldUntraceablePropPair(pair);
     if (
-      pair.left === requestedPropPair.left &&
-      pair.right === requestedPropPair.right &&
+      folded.left === requestedPropPair.left &&
+      folded.right === requestedPropPair.right &&
       nextCatDog === catDog
     )
       return;
     catDog = nextCatDog;
     if (!nextCatDog) propHand = "left";
-    leftPropType = pair.left;
-    rightPropType = pair.right;
-    requestedPropPair = pair;
+    leftPropType = folded.left;
+    rightPropType = folded.right;
+    requestedPropPair = folded;
     if (data || loading) void load();
   }
 

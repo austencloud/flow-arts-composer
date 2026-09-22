@@ -21,6 +21,7 @@ import type { ShapeMatrixAppSnapshot } from "$lib/shared/shape-matrix/app/state/
 import type { ShapeMatrixAxisTarget } from "$lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte";
 import type { ShapeMatrixSurface } from "$lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { foldUntraceableProp } from "$lib/shared/shape-matrix/domain/prop-pair";
 import { spinRatioEquals, spinRatioKey, type SpinRatio } from "@vtg/domain";
 import {
   parseTheoryFlowerKey,
@@ -132,10 +133,12 @@ export function readShapeMatrixRouteState(
   ) as ShapeMatrixAxisTarget | null;
   const requestedProp = params.get("prop") as PropType | null;
   const requestedRightProp = params.get("rp") as PropType | null;
-  const leftPropType =
-    requestedProp && PROP_TYPES.has(requestedProp)
-      ? requestedProp
-      : PropType.STAFF;
+  // Folded so a link carrying a prop the engine cannot trace (bare hand, a
+  // single contact ball) still draws instead of leaving the matrix stuck on
+  // its error state.
+  const leftPropType = foldUntraceableProp(
+    requestedProp && PROP_TYPES.has(requestedProp) ? requestedProp : PropType.STAFF
+  );
 
   const surface: ShapeMatrixSurface =
     params.get("theory") === "1" ? "theory" : "matrix";
@@ -178,10 +181,11 @@ export function readShapeMatrixRouteState(
     leftPropType,
     // `rp` is written only when the hands differ, so an absent or unknown
     // value means both hands hold the left prop.
-    rightPropType:
+    rightPropType: foldUntraceableProp(
       requestedRightProp && PROP_TYPES.has(requestedRightProp)
         ? requestedRightProp
-        : leftPropType,
+        : leftPropType
+    ),
     pair,
     solo: pair ? solo : null,
     mode:

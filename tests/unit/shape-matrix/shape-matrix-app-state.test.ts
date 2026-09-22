@@ -936,6 +936,38 @@ describe("shape matrix prop pair state", () => {
     );
   });
 
+  it("folds an untraceable adopted prop to staff instead of breaking the matrix", async () => {
+    const { state, loadMatrix } = createState(false, {
+      left: PropType.STAFF,
+      right: PropType.STAFF,
+    });
+    await state.load();
+    loadMatrix.mockClear();
+
+    // Bare hand has no tracked tip; the engine cannot trace it. Settings can
+    // still hold it (a global choice), but adopting it must not hand the
+    // matrix a prop it cannot build.
+    state.adoptPropPair({ left: PropType.HAND, right: PropType.CLUB }, true);
+    expect(state.leftPropType).toBe(PropType.STAFF);
+    expect(state.rightPropType).toBe(PropType.CLUB);
+    await vi.waitFor(() =>
+      expect(state.data?.props).toEqual({
+        left: PropType.STAFF,
+        right: PropType.CLUB,
+      })
+    );
+    expect(loadMatrix).toHaveBeenLastCalledWith({
+      left: PropType.STAFF,
+      right: PropType.CLUB,
+    });
+
+    // The same untraceable pair again folds to the same thing already on
+    // screen, so it must read as unchanged rather than looping a reload.
+    loadMatrix.mockClear();
+    state.adoptPropPair({ left: PropType.HAND, right: PropType.CLUB }, true);
+    expect(loadMatrix).not.toHaveBeenCalled();
+  });
+
   it("adopts a pair from the host without syncing or notifying", async () => {
     const onPropPairChange = vi.fn();
     const { state, syncState, loadMatrix } = createState(false, {

@@ -394,6 +394,21 @@ describe("shape matrix URL state", () => {
     });
   });
 
+  it("folds a prop the engine cannot trace to staff instead of breaking the matrix", () => {
+    // Bare hand and a single contact ball have no tracked tip; a shared link
+    // carrying either must still draw, not leave the matrix on its error state.
+    expect(readShapeMatrixRouteState("?prop=hand&rp=club")).toMatchObject({
+      leftPropType: PropType.STAFF,
+      rightPropType: PropType.CLUB,
+    });
+    expect(
+      readShapeMatrixRouteState("?prop=club&rp=contactball")
+    ).toMatchObject({
+      leftPropType: PropType.CLUB,
+      rightPropType: PropType.STAFF,
+    });
+  });
+
   it("writes rp only when the hands differ", () => {
     const url = new URL("https://tkaflowarts.com/shape-engine?rp=fan");
     writeShapeMatrixRouteState(url, {
