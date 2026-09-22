@@ -108,7 +108,10 @@
   import { getScanCardCloudProbe } from "$lib/shared/sequence-viewer/scan-card-cloud-context";
   import { isViewerReadyToAutoplay } from "$lib/shared/sequence-viewer/services/viewer-autoplay-readiness";
   import { shouldAutoplayViewer } from "$lib/shared/sequence-viewer/services/viewer-autoplay-policy";
-  import { shouldSequenceViewerDeferEscape } from "$lib/shared/sequence-viewer/domain/sequence-viewer-escape-ownership";
+  import {
+    runSequenceViewerEscapeFallback,
+    shouldSequenceViewerDeferEscape,
+  } from "$lib/shared/sequence-viewer/domain/sequence-viewer-escape-ownership";
   import { createModalAccessibilityHelper } from "$lib/shared/sequence-viewer/services/modal-accessibility-helper.svelte";
   import { saveSequenceHandoff } from "$lib/shared/coordinators/sequence-handoff.svelte";
   import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
@@ -1037,11 +1040,11 @@
       queueMicrotask(() => {
         if (event.defaultPrevented) return;
 
-        if (fullscreen.isFullscreen) {
-          fullscreen.exitFullscreen();
-        } else {
-          handleClose();
-        }
+        runSequenceViewerEscapeFallback({
+          isFullscreen: () => fullscreen.isFullscreen,
+          exitFullscreen: () => fullscreen.exitFullscreen(),
+          close: handleClose,
+        });
       });
       return;
     }
