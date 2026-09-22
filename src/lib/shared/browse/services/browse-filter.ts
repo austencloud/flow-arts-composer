@@ -19,6 +19,7 @@ import { resolveBrowseDate } from "$lib/shared/browse/services/browse-date";
 import { deriveTnDFromPictograph } from "$lib/shared/pictograph/shared/domain/utils/tnd-deriver";
 import { TnDMode } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { filterSequencesByExactLetter } from "$lib/shared/browse/services/sequence-letter-occurrence";
+import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
 
 // Collection membership
 // COLLECTION filters need a collection's member ids — feature data this pure
@@ -158,7 +159,7 @@ function filterByStartingLetter(
   if (filterValue.length === 2 && filterValue[1] === "-") {
     const target = filterValue.toUpperCase();
     return sequences.filter(
-      (seq) => seq.word.slice(0, 2).toUpperCase() === target
+      (seq) => stripWordNotation(seq.word).slice(0, 2).toUpperCase() === target
     );
   }
 
@@ -169,11 +170,10 @@ function filterByStartingLetter(
 
   // Handle single letter. A bare letter must NOT swallow its dash variant —
   // "W" means W-words, not W- words (legacy treats them as separate sections).
-  return sequences.filter(
-    (seq) =>
-      seq.word[0]?.toUpperCase() === filterValue.toUpperCase() &&
-      seq.word[1] !== "-"
-  );
+  return sequences.filter((seq) => {
+    const bare = stripWordNotation(seq.word);
+    return bare[0]?.toUpperCase() === filterValue.toUpperCase() && bare[1] !== "-";
+  });
 }
 
 function filterByLetterRange(
@@ -186,7 +186,7 @@ function filterByLetterRange(
   }
 
   return sequences.filter((seq) => {
-    const firstLetter = seq.word[0]?.toUpperCase();
+    const firstLetter = stripWordNotation(seq.word)[0]?.toUpperCase();
     return firstLetter && firstLetter >= start && firstLetter <= end;
   });
 }
@@ -204,7 +204,7 @@ function filterByContainsLetters(
   // Sort sequences to prioritize those starting with the searchTerm
   return sequences
     .filter((seq) => {
-      const word = seq.word.toLowerCase();
+      const word = stripWordNotation(seq.word).toLowerCase();
       const name = seq.name.toLowerCase();
       const intended = seq.intendedWord?.toLowerCase() || "";
       const display = seq.displayName?.toLowerCase() || "";
@@ -218,8 +218,8 @@ function filterByContainsLetters(
     })
     .sort((a, b) => {
       // Primary priority: Word starts with search term
-      const aStarts = a.word.toLowerCase().startsWith(searchTerm);
-      const bStarts = b.word.toLowerCase().startsWith(searchTerm);
+      const aStarts = stripWordNotation(a.word).toLowerCase().startsWith(searchTerm);
+      const bStarts = stripWordNotation(b.word).toLowerCase().startsWith(searchTerm);
       if (aStarts && !bStarts) return -1;
       if (!aStarts && bStarts) return 1;
 

@@ -14,6 +14,7 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
+import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
 import {
   GridLocation,
   GridMode,
@@ -153,7 +154,7 @@ export async function generateChooChoo(
 
   // Generate sequence
   const sequenceId = crypto.randomUUID();
-  const word = steps.map((b) => b.letter || "?").join("");
+  const word = deriveWordFromBeats(steps);
 
   return {
     id: sequenceId,

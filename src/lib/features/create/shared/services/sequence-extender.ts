@@ -7,6 +7,7 @@
 
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import {
   GridMode,
@@ -363,7 +364,7 @@ export class SequenceExtender {
     const newSteps = [...(sequence.steps || []), ...stepsWithDerivedLetters];
 
     // Build the updated word from all step letters
-    const word = newSteps.map((step) => step.letter ?? "").join("");
+    const word = deriveWordFromBeats(newSteps);
 
     let extendedSequence: SequenceData = {
       ...sequence,

@@ -9,6 +9,7 @@
   import type { VideoEditorController } from "../../../state/video-editor-controller.svelte";
   import type { ShowcaseVideo, MatchedSequence } from "../../../types";
   import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
 
   interface Props {
     video: ShowcaseVideo;
@@ -175,7 +176,7 @@
   const hasExactMatch = $derived(
     topMatches.length > 0 &&
     video.title &&
-    topMatches[0]?.word.toUpperCase() === video.title.toUpperCase()
+    stripWordNotation(topMatches[0]?.word ?? "").toUpperCase() === video.title.toUpperCase()
   );
 </script>
 
@@ -203,7 +204,7 @@
         {#if showTitleSuggestions && titleSuggestions.length > 0}
           <div class="title-suggestions" role="listbox">
             {#each titleSuggestions as seq, i (seq.id)}
-              {@const isExactMatch = seq.word.toUpperCase() === editedTitle.toUpperCase()}
+              {@const isExactMatch = stripWordNotation(seq.word).toUpperCase() === editedTitle.toUpperCase()}
               <button
                 type="button"
                 class="title-suggestion"

@@ -345,7 +345,7 @@ function drawWordHeader(
 ): void {
   if (!word || word.trim() === "") return;
 
-  const displayText = simplifyRepeatedWord(word).toUpperCase();
+  const displayText = simplifyRepeatedWord(word);
 
   const headerHeight = canvasSize * 0.07;
 

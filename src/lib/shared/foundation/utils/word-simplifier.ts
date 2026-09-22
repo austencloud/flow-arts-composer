@@ -16,6 +16,21 @@ import {
   simplifyRepeatedWord as simplifyPortableWord,
   splitWordLetterUnits,
 } from "@tka/render-composition";
+import {
+  parseWordNotation,
+  renderWordNotation,
+  stripWordNotation,
+  SKEW_SPAN_OPEN,
+  SKEW_SPAN_CLOSE,
+  type WordUnit,
+} from "./word-notation";
+
+export {
+  parseWordNotation,
+  renderWordNotation,
+  stripWordNotation,
+  type WordUnit,
+} from "./word-notation";
 
 /** Every canonical letter value, for {@link isTkaWord}'s membership test. */
 const TKA_LETTER_UNITS: ReadonlySet<string> = new Set<string>(
@@ -33,9 +48,68 @@ const TKA_LETTER_UNITS: ReadonlySet<string> = new Set<string>(
  * 2. For each pattern length, check if the word is formed by repeating that pattern
  * 3. Return the first (shortest) repeating pattern found
  * 4. If no pattern found, return the original word
+ *
+ * Skew braces are respected: `{STSSTS}` becomes `{STS}` and a skewed unit
+ * never matches an unskewed one.
+ *
+ * The result is canonical notation only when a simplification actually
+ * fires. An input with nothing to simplify is returned unchanged, not
+ * renormalized: `"{A}{B}C"` (two separate one-letter spans, no repeat) stays
+ * `"{A}{B}C"` rather than becoming the canonical `"{AB}C"`.
  */
 export function simplifyRepeatedWord(word: string): string {
-  return simplifyPortableWord(word);
+  if (!word) return word;
+  const units = parseWordNotation(word);
+  const hasBraces = word.includes(SKEW_SPAN_OPEN) || word.includes(SKEW_SPAN_CLOSE);
+  // A braced string never reaches the brace-unaware portable simplifier,
+  // which would silently delete the braces, whether or not it has any
+  // letters at all ("{}{}" included).
+  if (units.length === 0) return hasBraces ? word : simplifyPortableWord(word);
+  const letters = units.map((unit) => unit.letter).join("");
+  if (letters !== stripWordNotation(word)) {
+    // A character outside the letter class was dropped: genuinely malformed
+    // input, or a name with spaces, digits, or punctuation. An unbraced
+    // input keeps the portable simplifier's exact historical behaviour.
+    return hasBraces ? word : simplifyPortableWord(word);
+  }
+  // The letters are intact even when the brace layout is not canonical
+  // (two adjacent spans like "{ST}{TS}" instead of one run); the unit
+  // simplifier below handles both the canonical and non-canonical layouts.
+  const simplified = simplifyRepeatedUnits(units);
+  return simplified === units ? word : renderWordNotation(simplified);
+}
+
+/** A unit's identity for repeat detection: letter plus skew flag. */
+function unitKey(unit: WordUnit): string {
+  return unit.skewed ? `{${unit.letter}` : unit.letter;
+}
+
+/**
+ * Unit-level port of the portable simplifier: a full repeat collapses to its
+ * pattern ("ABCABC" to "ABC"); otherwise a mirrored group list keeps its first
+ * half ("ABBA" to "AB"). Returns the same array when nothing applies.
+ */
+function simplifyRepeatedUnits(units: readonly WordUnit[]): readonly WordUnit[] {
+  const keys = units.map(unitKey);
+  for (let length = 1; length <= Math.floor(keys.length / 2); length++) {
+    if (keys.length % length !== 0) continue;
+    const pattern = keys.slice(0, length);
+    const repeats = keys.every((key, index) => key === pattern[index % length]);
+    if (repeats) return units.slice(0, length);
+  }
+  for (let groupSize = 1; groupSize <= Math.floor(keys.length / 2); groupSize++) {
+    if (keys.length % groupSize !== 0) continue;
+    const groups = Array.from({ length: keys.length / groupSize }, (_, index) =>
+      keys.slice(index * groupSize, (index + 1) * groupSize).join("|")
+    );
+    if (
+      groups[0] !== groups[1] &&
+      groups.every((group, index) => group === groups[groups.length - 1 - index])
+    ) {
+      return units.slice(0, Math.ceil(groups.length / 2) * groupSize);
+    }
+  }
+  return units;
 }
 
 /**
@@ -46,6 +120,11 @@ export function simplifyRepeatedWord(word: string): string {
  * - "AW-B" → ["A", "W-", "B"] (3 letters, not 4)
  * - "Φ-Ψ-Ω-" → ["Φ-", "Ψ-", "Ω-"] (3 letters)
  * - "A-B-C" → ["A-", "B-", "C"] (3 letters)
+ *
+ * Delegates to the package tokenizer as-is, which drops skew braces: its
+ * only caller, sequence-letter-occurrence.ts, asks whether a word contains
+ * a given letter at all, and a letter's identity does not change when it is
+ * skewed, so ignoring braces here is by design, not an oversight.
  */
 export function splitIntoLetterUnits(word: string): string[] {
   return splitWordLetterUnits(word);
@@ -71,17 +150,20 @@ export function simplifyAndTruncate(
   // First simplify the word
   const simplified = simplifyRepeatedWord(word);
 
-  // Split into letter units
-  const letterUnits = splitIntoLetterUnits(simplified);
+  // Split into letter units, skew braces included
+  const units = parseWordNotation(simplified);
 
   // If within limit, return as-is
-  if (letterUnits.length <= maxLetters) {
+  if (units.length <= maxLetters) {
     return simplified;
   }
 
-  // Truncate to maxLetters units and add ellipsis
-  const truncatedUnits = letterUnits.slice(0, maxLetters);
-  return truncatedUnits.join("") + "...";
+  // Truncate to maxLetters units and add ellipsis. Re-rendering the kept
+  // slice (rather than joining raw letters) keeps an open skew brace closed,
+  // so a truncated span stays legible: "A{BCDEFGHIJ}K" at 8 becomes
+  // "A{BCDEFGH}...".
+  const truncatedUnits = units.slice(0, maxLetters);
+  return renderWordNotation(truncatedUnits) + "...";
 }
 
 export interface CompressedSegment {
@@ -129,13 +211,15 @@ export function compressedToDisplayString(
  * strict on both ends — no whitespace, no punctuation, and every unit has to be
  * an actual member of {@link Letter}. Lowercase Latin fails on membership
  * (`Letter.ALPHA` is "α", never "a"), which is what keeps ordinary English words
- * out even though the tokenizer happily splits them.
+ * out even though the tokenizer happily splits them. A word may carry skew
+ * braces around a span (`A{STS}B`); they must be well formed.
  */
 export function isTkaWord(text: string): boolean {
   if (!text) return false;
-  const units = splitIntoLetterUnits(text);
-  // The tokenizer skips characters it does not recognize; rejoining proves that
-  // nothing was dropped, so "A B" and "A!" fail here rather than passing as "AB".
-  if (units.length === 0 || units.join("") !== text) return false;
-  return units.every((unit) => TKA_LETTER_UNITS.has(unit));
+  const units = parseWordNotation(text);
+  // The parser skips characters it does not recognize; re-rendering proves that
+  // nothing was dropped and that any braces are well formed, so "A B", "A!",
+  // "{}" and "{A}{B}" fail here rather than passing as words.
+  if (units.length === 0 || renderWordNotation(units) !== text) return false;
+  return units.every((unit) => TKA_LETTER_UNITS.has(unit.letter));
 }
