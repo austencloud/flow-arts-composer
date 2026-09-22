@@ -32,7 +32,7 @@
 
 set -euo pipefail
 
-MODEL="${CODEX_ASK_MODEL:-gpt-5.6-terra}"
+MODEL="${CODEX_ASK_MODEL:-gpt-6-sol}"
 
 # Defaults favor bounded, routine review. Set either environment variable for a
 # task that needs a different model or effort.
