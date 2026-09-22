@@ -637,3 +637,29 @@ Task-local frame traces, viewport geometry, browser captures, and test logs are
 retained in `E:/tka-share-layout-motion-evidence`. Some captures from the in-app
 browser have compositor cropping/scaling artifacts; geometry records and direct
 interaction, rather than those image edges, establish viewport containment.
+
+### September 21 workspace animation availability
+
+The Create workspace opened `PostShareSheet` with `availableArtifacts: ["card"]`
+and no video callbacks. Its home action promised a video or card image, but
+Download a file had no File type selector. Viewer-only acceptance checks missed
+this entry-point difference.
+
+The workspace must offer Card and Video in the existing sheet. It composes
+`SequenceModalExporter` and the canonical offscreen `VideoExportOrchestrator`
+with an independent playback controller and an ephemeral panel state. A sizing
+canvas supplies the existing export layout calculation; it does not mount a
+second live renderer or open the full sequence viewer behind the dialog. Shared
+export settings continue to own resolution, frame rate, and repeat count.
+
+Opening sharing or selecting Video must not start rendering. Only an explicit
+download/render action may load the export runtime and prepare the file. That
+request owns its sequence snapshot, progress, cancellation, and blob lifetime.
+Closing, replacing the sequence, or canceling during lazy startup must retire
+the request before it can render or deliver an old file. The isolated controller
+must not change the workspace playhead or persisted playback preferences.
+
+Verify this through the workspace Share button as well as the viewer entry:
+choose Download a file, switch both file types, change video settings, download
+an animation, cancel and retry, then replace the sequence and reopen sharing.
+Showing a Video option without a working renderer is not acceptance.

@@ -195,6 +195,39 @@ afterEach(() => {
 });
 
 describe("Download card with real live pictographs", () => {
+  it("contains the video status when the workspace has no live animation capture", async () => {
+    renderCard.mockReturnValue(new Promise<Blob>(() => {}));
+    const screen = await openCard(realSequence(8), 2, {
+      availableArtifacts: ["card", "video"],
+    });
+    try {
+      await page
+        .getByRole("combobox", { name: "File type" })
+        .selectOptions("video");
+      for (const [width, height] of [
+        [375, 667],
+        [960, 412],
+        [1920, 1080],
+      ]) {
+        await page.viewport(width!, height!);
+        const dialog = document.querySelector<HTMLDialogElement>(
+          "dialog.share-sheet-modal"
+        )!;
+        await settledDialogHeight(dialog);
+        const stage = document.querySelector(".stage.video-placeholder")!;
+        const message = stage.querySelector(".stage-refused")!;
+        const frame = stage.getBoundingClientRect();
+        const content = message.getBoundingClientRect();
+        expect(content.height).toBeGreaterThan(20);
+        expect(content.top).toBeGreaterThanOrEqual(frame.top);
+        expect(content.bottom).toBeLessThanOrEqual(frame.bottom);
+      }
+      expect(deliverCard).not.toHaveBeenCalled();
+    } finally {
+      await screen.unmount();
+    }
+  });
+
   it("moves the actual sheet height through Card and Video instead of snapping", async () => {
     renderCard.mockReturnValue(new Promise<Blob>(() => {}));
     const screen = await openCard(realSequence(), 2, {
