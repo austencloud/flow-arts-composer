@@ -105,7 +105,7 @@ WHAT THE PARENT (AnimatorCanvas) OWNS:
     ledConfig?: Partial<LedOverlayConfig>;
     trailSettings?: TrailSettings;
     leftPropType?: string | null;
-    primaryPropColors?: ViewerCustomColorPair;
+    primaryPropColors?: ViewerCustomColorPair | null;
     rightPropType?: string | null;
     fanAppearance?: FanAppearance;
     tipEffectMap?: TipEffectMap;
