@@ -258,16 +258,20 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
       arrowsTime = performance.now() - arrowsStart; // eslint-disable-line @typescript-eslint/no-unused-vars
     }
 
-    // Computed once and threaded through to both the braces and the turns
-    // column below - they used to each call the generator independently,
-    // producing the same tuple for the same pictograph twice on every
-    // skewed beat.
+    // Computed once (when TKA is visible at all) and threaded through to
+    // both the braces and the turns column below, instead of each
+    // independently calling the generator - but still gated behind
+    // visibility.showTKA, matching both call sites' own guard, so a
+    // hidden-TKA batch render (e.g. option-picker thumbnails) still pays
+    // zero cost for this instead of one generator call per pictograph.
     let turnsTuple = "(s, 0, 0)";
-    try {
-      turnsTuple = getTurnsTupleGenerator().generateTurnsTuple(preparedPictograph);
-    } catch {
-      // Use default - a failing generator just means no turns-column
-      // clearance/rendering below, not that the letter itself should disappear.
+    if (visibility.showTKA) {
+      try {
+        turnsTuple = getTurnsTupleGenerator().generateTurnsTuple(preparedPictograph);
+      } catch {
+        // Use default - a failing generator just means no turns-column
+        // clearance/rendering below, not that the letter itself should disappear.
+      }
     }
 
     // 5. Draw TKA glyph (letter)
@@ -325,7 +329,7 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
         letterDimensions,
         scale,
         isDarkMode,
-        getTurnsTupleGenerator
+        turnsTuple
       );
     }
 

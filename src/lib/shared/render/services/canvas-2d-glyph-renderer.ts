@@ -30,7 +30,6 @@ import {
   calculateReversalPositions,
   drawHandColorKey as drawSharedHandColorKey,
 } from "../core";
-import type { TurnsTupleGenerator } from "../../pictograph/arrow/positioning/placement/services/turns-tuple-generator";
 import type { GridPlacement } from "../../pictograph/grid/domain/enums/grid-enums";
 import { isVisibleMotion, type MotionData } from "../../pictograph/shared/domain/models/motion-data";
 import { isSkewedFrameBeat } from "$lib/shared/foundation/services/skewed-frame";
@@ -127,20 +126,8 @@ export function drawDirectionDot(
   letterDimensions: { width: number; height: number },
   scale: number,
   isDarkMode: boolean,
-  turnsTupleGeneratorGetter?: () => TurnsTupleGenerator | undefined
+  turnsTuple: string
 ): void {
-  let turnsTuple = "(s, 0, 0)";
-  try {
-    const generator = turnsTupleGeneratorGetter?.();
-    if (generator) {
-      turnsTuple = generator.generateTurnsTuple(pictograph);
-    } else {
-      return;
-    }
-  } catch {
-    return;
-  }
-
   const parsed = parseTurnsTuple(turnsTuple);
   const direction = parsed.direction;
 

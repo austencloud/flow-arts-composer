@@ -521,10 +521,17 @@ export class LayerCompositor {
 
     const scale = options.size / VIEWBOX_SIZE;
 
-    // Computed once and threaded through to both the braces and the turns
-    // column below - they used to each call this independently, generating
-    // the same tuple for the same pictograph twice on every skewed beat.
-    const turnsTuple = this.getTurnsTuple(pictograph);
+    // Computed once (when either consumer below could need it) and threaded
+    // through to both the braces and the turns column, instead of each
+    // calling this independently and generating the same tuple twice on
+    // every skewed beat. Still gated on pictograph.letter/.motions, matching
+    // each block's own guard, so a pictograph with neither (this method's
+    // caller already gates on showTKA && pictograph.letter, but stays
+    // defensive here) pays zero cost, same as before the dedupe.
+    let turnsTuple = "(s, 0, 0)";
+    if (pictograph.letter || pictograph.motions) {
+      turnsTuple = this.getTurnsTuple(pictograph);
+    }
 
     let letterDimensions = { width: 100, height: 100 };
     if (pictograph.letter) {

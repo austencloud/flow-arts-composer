@@ -34,6 +34,11 @@ export interface GlyphAsset {
   /** Pixels the image extends above the standard glyph origin (50, 800).
    *  When turns are present, the top turn number sits above the letter. */
   yOffset: number;
+  /** Pixels the image extends left of the standard glyph origin (50, 800).
+   *  A skewed-frame beat's opening brace sits left of the letter's own
+   *  x=0, so the composite is padded and shifted right by this amount -
+   *  the caller must shift its draw position left by the same amount. */
+  xOffset: number;
 }
 
 export interface ElementalGlyphAsset {
@@ -566,6 +571,7 @@ export class ExportGlyphPrerenderer {
         image,
         dimensions: { width: totalWidth, height: totalHeight },
         yOffset: yPadTop,
+        xOffset: xPadLeft,
       });
     } catch (err) {
       console.error(`Failed to prerender glyph for "${data.letter}":`, err);
