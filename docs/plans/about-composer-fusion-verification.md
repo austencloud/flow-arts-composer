@@ -451,3 +451,27 @@ After the remaining visual checks, bring the branch current with local main,
 repeat only invalidated checks, and use the guarded project finish workflow:
 `npm run wt:finish -- codex/about-composer-fusion --route /about` from the primary
 checkout. Do not claim the updated page is on5173 until that integration succeeds.
+
+## September 22 tip alignment across looks
+
+Austen reported that trails missed the prop tips on Triad and Big Triad 3D and on
+Big Fan builds. A runtime census of every model sprite against its tip table
+found two causes.
+
+- Model captures of radial and hooped props (triad, big triad, trigeng, mini and
+  big hoop, triquetra, triquetra2) and the sword painted on the opposite side
+  of the hand from their tip tables. The rotation rule covered only axial
+  props. `modelSpriteFacesAwayFromTips` now turns any capture whose painted
+  bias opposes the table's tip bias. An invariant test covers every sprite.
+- Trails, LEDs, and the live mandala guide looked up the notation table
+  (`bigfan`, primary tip 297) instead of the loaded build (`bigfan__fire_bare`,
+  219.8). The render loop now passes the loaded render keys to the trail
+  capturer, both trail overlays, the LED sampler, and the mandala tip offsets.
+  Fire already used them. Tunnel layers keep the notation type, as the fire
+  tracker does.
+- Evidence: 69 focused tests and 622 related tests passed, and `npm run check`
+  reported 0 errors. Paused, zoomed hero frames on 5174 showed Triad 3D, Big
+  Triad 3D, and Big Fan DoodleGrip Fire trails ending on the drawn arm caps and
+  the centre wick.
+- Still open: the torch and big torch model tips sit on the shaft about 40
+  units short of the wick head, which needs its own calibration.
