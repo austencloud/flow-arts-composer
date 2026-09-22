@@ -1,6 +1,7 @@
 import { render } from "vitest-browser-svelte";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import WordHeader from "./WordHeader.svelte";
+import { measureHtmlBraceInk } from "$lib/shared/pictograph/tka-glyph/utils/__tests__/html-brace-ink";
 
 const glyphCacheState = vi.hoisted(() => ({
   loaded: new Set<string>(),
@@ -200,6 +201,31 @@ describe("WordHeader skewed spans", () => {
     const braceEm = parseFloat(getComputedStyle(brace).fontSize);
     expect(braceEm).toBeGreaterThanOrEqual(letterEm);
     expect(getComputedStyle(brace).fontFamily).not.toContain("TKA Letters");
+  });
+
+  it("centres each brace's ink on the letters and matches their height", async () => {
+    render(WordHeader, { word: SKEWED_WORD, visible: true });
+
+    await vi.waitFor(() => {
+      expect(document.querySelectorAll(".skew-brace")).toHaveLength(2);
+    });
+    // Retried until the entrance transitions settle at rest.
+    await vi.waitFor(() => {
+      const letter = document.querySelector(".letter") as HTMLElement;
+      const letterBox = letter.getBoundingClientRect();
+      const letterCentre = (letterBox.top + letterBox.bottom) / 2;
+      for (const brace of document.querySelectorAll<HTMLElement>(".skew-brace")) {
+        const ink = measureHtmlBraceInk(brace);
+        // A line-height box centres the font's whole ascent+descent, which
+        // put the brace ink about 0.17 letter-heights low.
+        expect(Math.abs(ink.centreY - letterCentre)).toBeLessThanOrEqual(
+          0.03 * letterBox.height
+        );
+        expect(Math.abs(ink.height - letterBox.height)).toBeLessThanOrEqual(
+          0.06 * letterBox.height
+        );
+      }
+    });
   });
 
   it("wraps a compressed whole-word span in one brace pair", async () => {
