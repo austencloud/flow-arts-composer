@@ -368,20 +368,24 @@
         app for The Kinetic Alphabet, where notation and movement stay together.
       </p>
 
+      <!-- The demos on this page are real but partial, so the way into the
+           app itself has to be the one thing on the first screen nobody can
+           mistake for another demo control. -->
       <div class="opening-actions">
         <a
           href="/create"
-          class="primary-action"
+          class="primary-action open-app"
           data-sveltekit-reload
           onclick={() => trackOpenComposer()}
         >
-          Start composing
+          Open the app
           <i class="fas fa-arrow-right" aria-hidden="true"></i>
         </a>
       </div>
 
       <p class="opening-note">
-        Free in your browser. Guest saves stay on this device.
+        Free in your browser, no account needed. Guests keep three sequences on
+        this device.
       </p>
     </div>
 
@@ -785,6 +789,25 @@
   .demo-load-error button:focus-visible {
     outline: 2px solid var(--theme-accent, #8b8cff);
     outline-offset: 3px;
+  }
+
+  /* The way into the app is the first screen's one primary control, sized to
+     read against the display title instead of like the demo buttons beside
+     the player. Floor in rem, ceiling in px, like the title. */
+  .open-app {
+    min-height: max(3.5rem, 56px);
+    gap: 0.8rem;
+    padding: 0.8em 1.6em;
+    font-size: clamp(1.0625rem, 0.98rem + 0.3vw, 22px);
+    font-weight: 700;
+  }
+
+  .open-app i {
+    transition: transform 160ms ease;
+  }
+
+  .open-app:hover i {
+    transform: translateX(0.2em);
   }
 
   .opening-note {
@@ -1329,6 +1352,11 @@
       margin-top: 0.9rem;
     }
 
+    .open-app {
+      min-height: max(var(--min-touch-target, 48px), 48px);
+      font-size: 1rem;
+    }
+
     .opening-note {
       margin-top: 0.55rem;
       font-size: var(--font-size-min, 0.875rem);
@@ -1420,6 +1448,7 @@
     }
 
     .primary-action,
+    .open-app i,
     .demo-load-error button,
     .opening,
     .opening-player {

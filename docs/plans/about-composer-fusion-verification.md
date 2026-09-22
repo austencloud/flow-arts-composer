@@ -490,3 +490,27 @@ found two causes.
   it. 331 animation-engine and video-export tests passed, and `npm run check`
   reported 0 errors. On 5174 `/composer`, with custom purple/blue prop colors
   set, choosing Double Star 3D model switched the canvas to the model capture.
+
+## September 22 way into the app
+
+The hero's primary control now reads "Open the app" with an arrow, links to
+`/create` with a full reload, and sits directly under the definition. It is
+sized against the display title (rem floor, 22px ceiling) so it cannot be
+mistaken for the demo controls beside the player. The note under it says the
+app is free in the browser with no account and that guests keep three
+sequences on this device. The header's "Open Flow Arts Composer" pill is
+unchanged.
+
+Measured in the agent browser after the icon font loaded:
+
+| Viewport | Button | Font | First screen |
+| --- | --- | --- | --- |
+| 375x812 mobile | 56px tall, top 353 | 17px | yes, no horizontal overflow |
+| 960x412 landscape | 50.9px | 16px | note ends at 404 of 412 |
+| 1440x900 | 206x63px, top 586 | 20px | yes |
+| 2560x1250 | 69.5px | 22px | yes |
+| 3840x2160 | 253x70px, left edge on the title | 22px | yes |
+
+`check:fast` reports no diagnostics in ComposerExperience.svelte. Its composer
+errors in ComposerArcadeDemo (unused) and ComposerBackgroundCycle already exist
+on main.
