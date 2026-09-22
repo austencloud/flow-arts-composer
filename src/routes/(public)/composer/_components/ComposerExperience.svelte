@@ -303,6 +303,7 @@
 <main class="composer-page">
   <section
     class="opening"
+    class:props-open={heroPickerOpen}
     aria-labelledby="composer-title"
     style:view-transition-name="launchpad-composer"
   >
@@ -561,6 +562,11 @@
      narrow viewports below let it grow rather than clip the player. */
   .opening {
     position: relative;
+    /* Stage and rail sizing live here, not on the player, because the
+       wide-screen composition sizes this grid's tracks from them too. */
+    --hero-card-cap: min(45rem, 47svh);
+    --hero-rail-w: 17.5rem;
+    --hero-rail-gap: 1rem;
     min-height: calc(100dvh - var(--marketing-header-h, 64px) - 1.25rem);
     display: grid;
     grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
@@ -745,9 +751,6 @@
      rather than covering it. */
   .opening-player {
     position: relative;
-    --hero-card-cap: min(45rem, 47svh);
-    --hero-rail-w: 17.5rem;
-    --hero-rail-gap: 1rem;
     --hero-demo-max-width: min(100%, var(--hero-card-cap));
     width: min(100%, 45rem);
     margin-inline: auto;
@@ -1245,6 +1248,7 @@
       grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
       gap: 1.8rem;
       padding: 0.25rem 0 1rem;
+      --hero-card-cap: 18rem;
     }
 
     .opening-copy {
@@ -1277,7 +1281,6 @@
        hero grows past the viewport and the demo keeps a legible size. */
     .opening-player {
       width: min(100%, 18rem);
-      --hero-card-cap: 18rem;
     }
   }
 
@@ -1295,20 +1298,58 @@
     }
   }
 
-  /* From 1920px the column has room for a wider rail, and the stage keeps
-     its full width beside it. */
-  @media (min-width: 120rem) {
-    .opening-player {
-      --hero-rail-w: 22rem;
-    }
-  }
-
   /* SequenceHeroDemo switches to its wide max-width only at this height too,
      so the cap the rail arithmetic reads has to switch with it. */
   @media (min-width: 105rem) and (min-height: 56.25rem) {
-    .opening-player {
+    .opening {
       --hero-card-cap: min(52rem, 51svh);
+    }
+
+    .opening-player {
       --hero-demo-wide-max-width: min(100%, var(--hero-card-cap));
+    }
+  }
+
+  /* From 1920px the page is wider than the hero needs. Proportional columns
+     left the copy against the page edge with the slack of both columns
+     pooled between it and the stage. Here each track hugs its content (the
+     copy's own measure, the stage's exact width) and the pair is centred.
+     Opening the rail widens the player track by the rail, so the whole
+     composition re-centres as one unit instead of anything being covered or
+     squeezed. The wider rail fits two 150px tile columns. */
+  @media (min-width: 120rem) {
+    .opening {
+      --hero-rail-w: 22rem;
+      grid-template-columns: fit-content(48rem) minmax(0, var(--hero-card-cap));
+      justify-content: center;
+      column-gap: clamp(5rem, 6vw, 10rem);
+      transition: grid-template-columns 260ms ease;
+    }
+
+    .opening.props-open {
+      grid-template-columns:
+        fit-content(48rem)
+        minmax(
+          0,
+          calc(var(--hero-card-cap) + var(--hero-rail-gap) + var(--hero-rail-w))
+        );
+    }
+
+    /* The track already includes the rail, so the stage never shrinks and
+       needs no height compensation. Left on, that padding would read the
+       track mid-animation and bob the hero vertically. */
+    .opening-player,
+    .opening-player.props-open {
+      width: 100%;
+      padding-block-end: 0;
+    }
+  }
+
+  /* From 2400px the centred composition still leaves room for three tile
+     columns in the rail, with the stage at full size beside it. */
+  @media (min-width: 150rem) {
+    .opening {
+      --hero-rail-w: 30rem;
     }
   }
 
@@ -1323,6 +1364,7 @@
 
     .primary-action,
     .demo-load-error button,
+    .opening,
     .opening-player {
       transition: none;
     }
