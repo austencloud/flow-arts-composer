@@ -2,357 +2,192 @@
 /**
  * Standalone Pictograph CLI
  *
- * Renders pictographs using Canvas2DDirectRenderer in Node.js
- * No browser, no auth, no dev server required
+ * Renders pictographs to PNG with the app's own Canvas2DDirectRenderer in
+ * Node.js. No browser, no auth, no dev server.
  *
  * Usage:
- *   npm run pictograph A
+ *   npm run pictograph U
  *   npm run pictograph A B C
- *   npm run pictograph --all
+ *   npm run pictograph -- --all
+ *   npm run pictograph -- U --dark
+ *
+ * Flags need the `--` separator. Without it npm reads --all and --dark as its
+ * own config options and the script never sees them.
+ *
+ * Output: static/images/grant-feature/pictograph-<letter>[-dark].png
+ *
+ * How it runs: the render pipeline imports through `$lib`, `$app/*` and
+ * `$env/*`, reads `import.meta.env`, and depends on rune-based .svelte.ts
+ * state modules. tsx resolves none of that, so this launcher boots an
+ * in-process Vite server with the SvelteKit plugin and SSR-loads
+ * scripts/node/render-pictograph.ts through it. That is the same compile
+ * path the app uses, so the CLI keeps working as the pipeline evolves.
+ *
+ * The Vite instance is deliberately inert: no port, no HMR, no file watcher,
+ * no dependency discovery, and a temp cache dir so it never touches the
+ * node_modules/.vite cache that Austen's dev server on 5173 owns.
  */
 
-// CRITICAL: Load Svelte runes mock FIRST (before any .svelte.ts file imports)
-import "./svelte-runes-mock";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { createCanvas, Image } from "canvas";
+import { JSDOM } from "jsdom";
+import type { RenderPictographOptions, RenderPictographResult } from "./node/render-pictograph";
 
-import { fileURLToPath } from "url";
-import path from "path";
-import { createCanvas, Canvas as NodeCanvas, Image } from "canvas";
-import fs from "fs";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const PROJECT_ROOT = path.resolve(__dirname, "..");
+const STATIC_ROOT = path.join(PROJECT_ROOT, "static");
+const OUTPUT_DIR = path.join(STATIC_ROOT, "images", "grant-feature");
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+type RenderModule = {
+  renderPictograph: (
+    letter: string,
+    options: RenderPictographOptions
+  ) => Promise<RenderPictographResult>;
+};
 
-// Provide global Canvas, Image, and DOMParser for Node.js context
-if (typeof global !== "undefined") {
-  (global as any).Canvas = NodeCanvas;
-  (global as any).Image = Image;
+/**
+ * Browser globals the render pipeline expects. Installed once, after the Vite
+ * server exists and before the pipeline is loaded. The order matters: the
+ * SvelteKit dev plugin replaces globalThis.fetch during server creation with
+ * a guard that rejects relative URLs, so a shim installed earlier would be
+ * discarded. Installed afterwards, the shim serves /images and /data itself
+ * and hands everything else to that guard.
+ *
+ * - fetch: root-relative asset URLs (/images/..., /data/...) are read from
+ *   static/, the way the dev server serves them. Mirrors
+ *   tests/setup/vitest-setup.ts. Anything else goes to Node's own fetch.
+ * - document.createElement("canvas"): node-canvas, for createRenderCanvas.
+ * - Image: node-canvas, for SVG decoding.
+ * - DOMParser: jsdom, for arrow SVG parsing.
+ *
+ * `window` stays undefined on purpose so the pipeline takes its Node code
+ * paths (file-backed image decoding instead of Blob URLs).
+ */
+function installNodeGlobals(): void {
+  const CONTENT_TYPES: Record<string, string> = {
+    json: "application/json",
+    svg: "image/svg+xml",
+    txt: "text/plain",
+  };
+  const upstreamFetch = globalThis.fetch;
 
-  // Mock document for Canvas2DDirectRenderer isSupported() check
-  if (typeof (global as any).document === "undefined") {
-    (global as any).document = {
-      createElement: (tag: string) => {
-        if (tag === "canvas") return createCanvas(1, 1);
-        return {};
-      },
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = typeof input === "string" ? input : input.toString();
+    if (!url.startsWith("/")) {
+      return upstreamFetch(input, init);
+    }
+    const relativePath = url.slice(1).split("?")[0] ?? "";
+    const extension = relativePath.split(".").pop()?.toLowerCase() ?? "";
+    try {
+      const body = await fs.promises.readFile(
+        path.join(STATIC_ROOT, relativePath),
+        "utf8"
+      );
+      return new Response(body, {
+        status: 200,
+        headers: {
+          "content-type": CONTENT_TYPES[extension] ?? "application/octet-stream",
+        },
+      });
+    } catch {
+      return new Response("Not found", {
+        status: 404,
+        headers: { "content-type": "text/plain" },
+      });
+    }
+  }) as typeof globalThis.fetch;
+
+  const g = globalThis as Record<string, unknown>;
+  if (typeof g.document === "undefined") {
+    g.document = {
+      createElement: (tag: string) =>
+        tag === "canvas" ? createCanvas(1, 1) : {},
     };
   }
-
-  // Provide DOMParser for SVG parsing (ArrowSvgParser needs this)
-  if (typeof (global as any).DOMParser === "undefined") {
-    const { JSDOM } = await import("jsdom");
-    (global as any).DOMParser = new JSDOM().window.DOMParser;
+  if (typeof g.Image === "undefined") {
+    g.Image = Image;
+  }
+  if (typeof g.DOMParser === "undefined") {
+    g.DOMParser = new JSDOM().window.DOMParser;
   }
 }
 
-const OUTPUT_DIR = path.join(
-  __dirname,
-  "..",
-  "static",
-  "images",
-  "grant-feature"
-);
+async function loadRenderModule(): Promise<{
+  module: RenderModule;
+  close: () => Promise<void>;
+}> {
+  // SvelteKit sets Vite's root to process.cwd() (and warns if the config
+  // passes one), and several of its modules capture the cwd when they are
+  // first imported. So pin the cwd, then import Vite and the plugin. npm run
+  // already starts in the project root; this covers running from elsewhere.
+  process.chdir(PROJECT_ROOT);
+  const { createServer } = await import("vite");
+  const { sveltekit } = await import("@sveltejs/kit/vite");
 
-interface PictographData {
-  id: string;
-  letter: string;
-  motions: {
-    left: MotionData;
-    right: MotionData;
-  };
-}
-
-interface MotionData {
-  motionType: string;
-  rotationDirection: string;
-  startLocation: string;
-  endLocation: string;
-  startOrientation: string;
-  endOrientation: string;
-  turns: number;
-  propType: string;
-  propPlacementData: {
-    propType: string;
-  };
-}
-
-async function loadPictographData(
-  letter: string,
-  startPos?: string,
-  endPos?: string
-): Promise<PictographData> {
-  const csvPath = path.join(
-    __dirname,
-    "..",
-    "static",
-    "data",
-    "pictographs",
-    "DiamondPictographDataframe.csv"
-  );
-  const csvData = fs.readFileSync(csvPath, "utf-8");
-  const lines = csvData.split(/\r?\n/); // Handle both Unix and Windows line endings
-  const headers = lines[0].split(",").map((h) => h.trim());
-
-  let row: string[] | null = null;
-  for (let i = 1; i < lines.length; i++) {
-    const r = lines[i].split(",").map((v) => v.trim());
-    // Match by letter and optionally by start/end positions
-    if (r[0] === letter) {
-      // If positions specified, filter by them
-      if (startPos && endPos) {
-        const rowStartPos = r[headers.indexOf("startPlacement")];
-        const rowEndPos = r[headers.indexOf("endPlacement")];
-        if (rowStartPos === startPos && rowEndPos === endPos) {
-          row = r;
-          break;
-        }
-      } else {
-        // No position filter, take first match
-        row = r;
-        break;
-      }
-    }
-  }
-
-  if (!row) {
-    throw new Error(
-      `No data found for letter ${letter}${startPos ? ` (${startPos}→${endPos})` : ""}`
-    );
-  }
-
-  // CSV already contains abbreviated locations (w, e, n, s, etc.)
-  // These match GridLocation enum values and should NOT be expanded
-  const leftEndLocation = row[headers.indexOf("blueEndLocation")];
-  const rightEndLocation = row[headers.indexOf("redEndLocation")];
-  const leftStartLocation = row[headers.indexOf("blueStartLocation")];
-  const rightStartLocation = row[headers.indexOf("redStartLocation")];
-
-  // Calculate turns based on rotation direction
-  const leftRotDir = row[headers.indexOf("blueRotationDirection")];
-  const rightRotDir = row[headers.indexOf("redRotationDirection")];
-  const leftTurns = leftRotDir === "noRotation" ? 0 : 1;
-  const rightTurns = rightRotDir === "noRotation" ? 0 : 1;
-
-  return {
-    id: `pictograph-${letter}`,
-    letter: letter,
-    motions: {
-      left: {
-        hand: "left", // CRITICAL: Required for color transformation
-        motionType: row[headers.indexOf("blueMotionType")],
-        rotationDirection: leftRotDir,
-        startLocation: leftStartLocation,
-        endLocation: leftEndLocation,
-        startOrientation: "in",
-        endOrientation: "in",
-        turns: leftTurns,
-        propType: "staff",
-        propPlacementData: {
-          propType: "staff",
-          positionX: 0, // Will be calculated by PropPlacer
-          positionY: 0,
-          rotationAngle: 0,
-        },
-        // Placeholder arrow placement data (will be calculated by ArrowLifecycleManager)
-        arrowPlacementData: {
-          positionX: 0,
-          positionY: 0,
-          rotationAngle: 0,
-          coordinates: null,
-          svgCenter: null,
-          svgMirrored: false,
-        },
-      },
-      right: {
-        hand: "right", // CRITICAL: Required for color transformation
-        motionType: row[headers.indexOf("redMotionType")],
-        rotationDirection: rightRotDir,
-        startLocation: rightStartLocation,
-        endLocation: rightEndLocation,
-        startOrientation: "in",
-        endOrientation: "in",
-        turns: rightTurns,
-        propType: "staff",
-        propPlacementData: {
-          propType: "staff",
-          positionX: 0, // Will be calculated by PropPlacer
-          positionY: 0,
-          rotationAngle: 0,
-        },
-        // Placeholder arrow placement data (will be calculated by ArrowLifecycleManager)
-        arrowPlacementData: {
-          positionX: 0,
-          positionY: 0,
-          rotationAngle: 0,
-          coordinates: null,
-          svgCenter: null,
-          svgMirrored: false,
-        },
-      },
+  const server = await createServer({
+    configFile: false,
+    plugins: [sveltekit()],
+    appType: "custom",
+    logLevel: "error",
+    clearScreen: false,
+    cacheDir: path.join(os.tmpdir(), "tka-pictograph-cli", ".vite"),
+    server: {
+      middlewareMode: true,
+      hmr: false,
+      ws: false,
     },
-  };
-}
-
-async function renderPictograph(
-  letter: string,
-  options: {
-    startPos?: string;
-    endPos?: string;
-    themeMode?: "light" | "dark";
-  } = {}
-): Promise<string> {
-  const placementLabel = options.startPos
-    ? ` (${options.startPos}→${options.endPos})`
-    : "";
-  console.log(`\n🎨 Rendering pictograph ${letter}${placementLabel}...`);
-
-  const pictographData = await loadPictographData(
-    letter,
-    options.startPos,
-    options.endPos
-  );
-  console.log(`  ✓ Loaded data`);
-
-  // Import Node.js preparer factory
-  console.log(`  📦 Loading preparer...`);
-  const { createNodePictographPreparer } = await import(
-    pathToFileURL(
-      path.join(__dirname, "node", "create-node-pictograph-preparer.ts")
-    ).href
-  );
-  console.log(`  ✓ Preparer module loaded`);
-  const { pictographPreparer, turnsTupleGenerator } =
-    createNodePictographPreparer();
-  console.log(`  ✓ Created preparer instance`);
-
-  // Dynamically import Canvas2DDirectRenderer
-  const rendererPath = pathToFileURL(
-    path.join(
-      __dirname,
-      "..",
-      "src",
-      "lib",
-      "shared",
-      "render",
-      "services",
-      "implementations",
-      "Canvas2DDirectRenderer.ts"
-    )
-  ).href;
-  const { Canvas2DDirectRenderer } = await import(rendererPath);
-  console.log(`  ✓ Loaded renderer`);
-
-  // Create renderer WITH preparer
-  const renderer = new Canvas2DDirectRenderer(pictographPreparer);
-
-  // Set global turn tuple generator for turn numbers
-  Canvas2DDirectRenderer.setGlobalTurnsTupleGeneratorGetter(
-    () => turnsTupleGenerator
-  );
-
-  await renderer.initialize();
-  console.log(`  ✓ Initialized renderer`);
-
-  // Render pictograph (grid + glyph + props + arrows)
-  console.log(`  🎨 Rendering pictograph...`);
-  const themeMode = options.themeMode ?? "light";
-  const isDarkMode = themeMode === "dark";
-
-  // DEBUG: Check if pictograph has prepared data before rendering
-  const asPrepared = pictographData as any;
-  console.log(
-    `  [DEBUG] Has _prepared before render: ${!!asPrepared._prepared}`
-  );
-
-  const canvas = await renderer.renderPictograph(pictographData as any, {
-    size: 950,
-    visibility: {
-      showGrid: true,
-      showTKA: true,
-      showTND: false,
-      showElemental: false,
-      showPlacements: false,
-      showReversals: false,
-      showNonRadialPoints: false,
-      darkMode: isDarkMode,
-      handPointVisibility: "active",
-      // Explicitly pass prop types to avoid needing global settings
-      leftPropType: "staff" as any,
-      rightPropType: "staff" as any,
+    optimizeDeps: {
+      noDiscovery: true,
+      include: [],
     },
-    themeMode, // Pass theme mode for prop/arrow color selection
   });
 
-  console.log(`  ✓ Rendered (${canvas.width}x${canvas.height})`);
+  // The SvelteKit plugin sets server.watch.ignored, which re-enables the
+  // watcher even when this config passes watch: null. A one-shot CLI has no
+  // use for a watcher over 20k files, so close it before loading anything.
+  await server.watcher.close();
 
-  // DEBUG: Check if pictograph was prepared during render
-  console.log(
-    `  [DEBUG] Has _prepared after render: ${!!asPrepared._prepared}`
-  );
-  if (asPrepared._prepared) {
-    console.log(
-      `  [DEBUG] Has arrowPositions: ${!!asPrepared._prepared.arrowPositions}`
-    );
-    console.log(
-      `  [DEBUG] Has arrowAssets: ${!!asPrepared._prepared.arrowAssets}`
-    );
-    if (asPrepared._prepared.arrowPositions) {
-      console.log(
-        `  [DEBUG] Blue arrow position:`,
-        asPrepared._prepared.arrowPositions.left
-      );
-      console.log(
-        `  [DEBUG] Red arrow position:`,
-        asPrepared._prepared.arrowPositions.right
-      );
-    }
-  }
+  installNodeGlobals();
 
-  // Save to file
-  const buffer = canvas.toBuffer("image/png");
+  const module = (await server.ssrLoadModule(
+    "/scripts/node/render-pictograph.ts"
+  )) as RenderModule;
 
-  if (!fs.existsSync(OUTPUT_DIR)) {
-    fs.mkdirSync(OUTPUT_DIR, { recursive: true });
-  }
-
-  const themeSuffix = themeMode === "dark" ? "-dark" : "";
-  const outputPath = path.join(
-    OUTPUT_DIR,
-    `pictograph-${letter}${themeSuffix}.png`
-  );
-  fs.writeFileSync(outputPath, buffer);
-
-  console.log(`  ✅ Saved: ${outputPath}`);
-
-  return outputPath;
+  return { module, close: () => server.close() };
 }
 
-async function main() {
-  const args = process.argv.slice(2);
-
-  if (args.length === 0) {
-    console.log("Usage: npm run pictograph A B C");
-    console.log("   Or: npm run pictograph --all");
-    process.exit(1);
-  }
-
-  // Check for theme mode flag
-  const themeMode: "light" | "dark" = args.includes("--dark")
-    ? "dark"
-    : "light";
-
-  // Filter out flags from arguments to get actual letters
-  let letters = args.filter((arg) => !arg.startsWith("--"));
-
-  if (args[0] === "--all") {
+function parseArgs(argv: string[]): {
+  letters: string[];
+  themeMode: "light" | "dark";
+} {
+  const themeMode: "light" | "dark" = argv.includes("--dark") ? "dark" : "light";
+  let letters = argv.filter((arg) => !arg.startsWith("--"));
+  if (argv.includes("--all")) {
     letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
   }
+  return { letters, themeMode };
+}
 
-  console.log("═══════════════════════════════════════════════════════");
-  console.log("  TKA Pictograph CLI");
-  console.log("═══════════════════════════════════════════════════════");
-  console.log(`\n📝 Generating ${letters.length} pictograph(s)...`);
+async function main(): Promise<number> {
+  const { letters, themeMode } = parseArgs(process.argv.slice(2));
+
+  if (letters.length === 0) {
+    console.log("Usage: npm run pictograph A B C");
+    console.log("   Or: npm run pictograph -- A B C --dark");
+    console.log("   Or: npm run pictograph -- --all [--dark]");
+    return 1;
+  }
+
+  console.log("TKA Pictograph CLI");
+  console.log(`Rendering ${letters.length} pictograph(s), ${themeMode} theme`);
 
   const startTime = Date.now();
+  const { module, close } = await loadRenderModule();
+  console.log(`Render pipeline loaded (${Date.now() - startTime}ms)`);
+
   const results: {
     letter: string;
     success: boolean;
@@ -360,56 +195,59 @@ async function main() {
     error?: string;
   }[] = [];
 
-  for (const letter of letters) {
-    try {
-      // For letters A, B, C use alpha1→alpha3 variation for grant feature
-      const options: any = { themeMode };
+  try {
+    for (const letter of letters) {
+      const options: RenderPictographOptions = {
+        projectRoot: PROJECT_ROOT,
+        outputDir: OUTPUT_DIR,
+        themeMode,
+      };
+      // The grant feature uses the alpha1 to alpha3 variation for A, B, C.
       if (["A", "B", "C"].includes(letter)) {
         options.startPos = "alpha1";
         options.endPos = "alpha3";
       }
 
-      const outputPath = await renderPictograph(letter, options);
-      results.push({ letter, success: true, path: outputPath });
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      console.error(`  ❌ Failed: ${errorMsg}`);
-      if (error instanceof Error && error.stack) {
-        console.error(error.stack);
+      try {
+        const result = await module.renderPictograph(letter, options);
+        console.log(
+          `  ${letter}: ${result.width}x${result.height} -> ${result.outputPath}`
+        );
+        results.push({ letter, success: true, path: result.outputPath });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error(`  ${letter}: FAILED ${message}`);
+        if (error instanceof Error && error.stack) {
+          console.error(error.stack);
+        }
+        results.push({ letter, success: false, error: message });
       }
-      results.push({ letter, success: false, error: errorMsg });
     }
+  } finally {
+    await close();
   }
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-
-  // Summary
-  console.log("\n═══════════════════════════════════════════════════════");
-  console.log("  Summary");
-  console.log("═══════════════════════════════════════════════════════");
-
-  const successful = results.filter((r) => r.success);
   const failed = results.filter((r) => !r.success);
 
-  console.log(`\n✅ Successful: ${successful.length}/${letters.length}`);
+  console.log("");
+  console.log(
+    `Done: ${results.length - failed.length}/${letters.length} rendered in ${elapsed}s`
+  );
   if (failed.length > 0) {
-    console.log(`❌ Failed: ${failed.length}`);
-    failed.forEach((f) => console.log(`  - ${f.letter}: ${f.error}`));
+    console.log(`Failed: ${failed.map((f) => f.letter).join(", ")}`);
   }
+  console.log(`Output: ${OUTPUT_DIR}`);
 
-  console.log(`\n⏱️  Total time: ${elapsed}s`);
-  console.log(`📁 Output: ${OUTPUT_DIR}\n`);
-
-  process.exit(failed.length > 0 ? 1 : 0);
+  return failed.length > 0 ? 1 : 0;
 }
 
-// Helper to convert path to file URL
-function pathToFileURL(filePath: string): URL {
-  return new URL(`file:///${filePath.replace(/\\/g, "/")}`);
-}
-
-main().catch((error) => {
-  console.error("\n❌ Fatal error:", error);
-  console.error(error.stack);
-  process.exit(1);
-});
+main()
+  .then((code) => process.exit(code))
+  .catch((error) => {
+    console.error("Fatal error:", error);
+    if (error instanceof Error && error.stack) {
+      console.error(error.stack);
+    }
+    process.exit(1);
+  });
