@@ -549,7 +549,7 @@ export class LayerCompositor {
     }
 
     if (pictograph.letter && pictograph.motions) {
-      this.drawDirectionDot(ctx, pictograph, letterDimensions, scale, options.darkMode);
+      this.drawDirectionDot(ctx, pictograph, letterDimensions, scale, options.darkMode, turnsTuple);
     }
 
     return canvas;
@@ -898,12 +898,17 @@ export class LayerCompositor {
 
   private drawDirectionDot(
     ctx: RenderContext2D,
-    pictograph: PreparedPictographData,
+    // Unused now that the tuple is passed in rather than recomputed here -
+    // kept (prefixed, matching drawTurnsColumn's _darkMode convention in
+    // this same file) instead of dropped, so this method's signature stays
+    // parallel with its two siblings (drawSkewBracesOverlay,
+    // drawTurnsColumn) at the shared call site above.
+    _pictograph: PreparedPictographData,
     letterDimensions: { width: number; height: number },
     scale: number,
-    darkMode: boolean
+    darkMode: boolean,
+    turnsTuple: string
   ): void {
-    const turnsTuple = this.getTurnsTuple(pictograph);
     const parsed = parseTurnsTuple(turnsTuple);
     const direction = parsed.direction;
 

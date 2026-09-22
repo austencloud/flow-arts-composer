@@ -264,13 +264,16 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
     // visibility.showTKA, matching both call sites' own guard, so a
     // hidden-TKA batch render (e.g. option-picker thumbnails) still pays
     // zero cost for this instead of one generator call per pictograph.
-    let turnsTuple = "(s, 0, 0)";
+    // null (distinct from the healthy "(s, 0, 0)" default) marks
+    // generation failure specifically, so drawDirectionDot below can skip
+    // itself instead of misreading a failure as the legitimate "nothing
+    // to show" tuple - see that call site for why the distinction matters.
+    let turnsTuple: string | null = "(s, 0, 0)";
     if (visibility.showTKA) {
       try {
         turnsTuple = getTurnsTupleGenerator().generateTurnsTuple(preparedPictograph);
       } catch {
-        // Use default - a failing generator just means no turns-column
-        // clearance/rendering below, not that the letter itself should disappear.
+        turnsTuple = null;
       }
     }
 
@@ -300,7 +303,10 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
         letterDimensions,
         scale,
         isDarkMode,
-        turnsTuple
+        // Both draw functions are no-ops on the "nothing to show" default,
+        // so a failed generation (null) can keep using it here safely -
+        // only drawDirectionDot below needs to tell the two cases apart.
+        turnsTuple ?? "(s, 0, 0)"
       );
     }
 
@@ -312,16 +318,23 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
         letterDimensions,
         scale,
         isDarkMode,
-        turnsTuple,
+        turnsTuple ?? "(s, 0, 0)",
         visibility
       );
     }
 
-    // 7. Draw direction dot (same/opp indicator)
+    // 7. Draw direction dot (same/opp indicator) - skipped outright when
+    // turnsTuple generation failed (null). drawDirectionDot paints a dot
+    // for direction "s", which is exactly what the healthy default
+    // "(s, 0, 0)" parses to, so falling back to that default here (like
+    // the two draw calls above do) would have a throwing generator paint
+    // a spurious dot where it used to paint nothing. A healthy generator
+    // is unaffected either way.
     if (
       visibility.showTKA &&
       preparedPictograph.letter &&
-      preparedPictograph.motions
+      preparedPictograph.motions &&
+      turnsTuple !== null
     ) {
       drawDirectionDot(
         ctx,

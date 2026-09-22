@@ -465,10 +465,21 @@ Usage:
       // Already cached - use immediately
       loadedLetterDimensions = cachedDims;
     } else {
-      // Not cached yet - trigger async load and wait for it
+      // Not cached yet - drop the previous (now-stale) letter's resolved
+      // size before the load starts, so it can't leak into this cold
+      // letter's dimensions while the fetch is in flight (see
+      // GlyphRenderer.svelte's identical guard for the full failure mode -
+      // here it only mispositions one frame of the live pictograph instead
+      // of poisoning a permanent cache, but keep both components consistent).
+      loadedLetterDimensions = { width: 100, height: 100 };
+      // Trigger async load and wait for it
       preloadLetterDimensions([currentLetter]).then(() => {
-        // After loading completes, get from cache and update state
-        loadedLetterDimensions = getLetterDimensions(currentLetter);
+        // Ignore a superseded load: if the letter moved on again before
+        // this resolved, applying it now would overwrite dimensions for
+        // whichever letter is current at that point.
+        if (pictograph?.letter === currentLetter) {
+          loadedLetterDimensions = getLetterDimensions(currentLetter);
+        }
       });
     }
   });

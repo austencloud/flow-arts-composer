@@ -107,8 +107,22 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
     if (cachedDims.width !== 100 || cachedDims.height !== 100) {
       loadedLetterDimensions = cachedDims;
     } else {
+      // Drop the previous (now-stale) letter's resolved size before the
+      // load starts. Without this reset, loadedLetterDimensions still held
+      // the PRIOR letter's real width while this cold letter's fetch was in
+      // flight, letterDimensions fell back to that stale value, and
+      // letterDimensionsReady read true immediately - serializing (and
+      // permanently caching) this letter's skewed-beat braces at the wrong
+      // width. This effect only reads `letter`, so writing state here
+      // cannot re-trigger it.
+      loadedLetterDimensions = { width: 100, height: 100 };
       preloadLetterDimensions([currentLetter]).then(() => {
-        loadedLetterDimensions = getLetterDimensions(currentLetter);
+        // Ignore a superseded load: if `letter` moved on again before this
+        // resolved, applying it now would overwrite dimensions for
+        // whichever letter is current at that point.
+        if (letter === currentLetter) {
+          loadedLetterDimensions = getLetterDimensions(currentLetter);
+        }
       });
     }
   });
@@ -160,19 +174,21 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
       // and rightExtent clearance - reading letterDimensionsReady only in
       // this branch means a plain beat (which never renders SkewBraces)
       // never tracks it as a dependency, so it keeps serializing
-      // immediately exactly as before. A skewed beat with a cold letter
-      // skips this run (and does not cache) so the sentinel width can't
-      // stick in serializedGlyphCache under this beat's key; once
-      // letterDimensionsReady flips true this effect reruns and serializes
-      // for real.
-      if (currentSkewed && !letterDimensionsReady) {
-        return;
-      }
+      // immediately exactly as before. A skewed beat with a cold or
+      // permanently-failed letter fetch still serializes below (the letter
+      // and turns render now, braces use whatever provisional
+      // letterDimensions the template already has - the 100x100 sentinel)
+      // instead of leaving the canvas blank forever, but shouldCache is
+      // false so that provisional result never gets baked into
+      // serializedGlyphCache under this beat's key. Once
+      // letterDimensionsReady flips true this effect reruns (tracked via
+      // the read below) and serializes again for real, caching that one.
+      const shouldCache = !(currentSkewed && !letterDimensionsReady);
 
       // Serialize immediately - transition timing is controlled by GlyphTransitionController
       // Using requestAnimationFrame ensures DOM is ready without artificial delay
       requestAnimationFrame(() => {
-        serializeAndNotify();
+        serializeAndNotify(shouldCache);
       });
     }
   });
@@ -181,7 +197,7 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
     isReady = true;
   });
 
-  async function serializeAndNotify() {
+  async function serializeAndNotify(shouldCache: boolean = true) {
     if (!svgElement || !onSvgReady) {
       return;
     }
@@ -305,14 +321,19 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
       const serializer = new XMLSerializer();
       const svgString = serializer.serializeToString(svgCopy);
 
-      // Store in cache so subsequent visits to this letter skip getBBox/cloning/serialization
-      if (serializedGlyphCache.size >= MAX_GLYPH_CACHE) {
-        const oldest = serializedGlyphCache.keys().next().value;
-        if (oldest !== undefined) serializedGlyphCache.delete(oldest);
+      // Store in cache so subsequent visits to this letter skip getBBox/cloning/serialization.
+      // Skipped when shouldCache is false (a skewed beat serialized early
+      // with provisional, not-yet-ready letterDimensions) so the eventual
+      // real-dimensions serialization isn't shadowed by this one.
+      if (shouldCache) {
+        if (serializedGlyphCache.size >= MAX_GLYPH_CACHE) {
+          const oldest = serializedGlyphCache.keys().next().value;
+          if (oldest !== undefined) serializedGlyphCache.delete(oldest);
+        }
+        serializedGlyphCache.set(glyphCacheKey, {
+          svgString, width: viewBoxWidth, height: viewBoxHeight, x: viewBoxX, y: viewBoxY,
+        });
       }
-      serializedGlyphCache.set(glyphCacheKey, {
-        svgString, width: viewBoxWidth, height: viewBoxHeight, x: viewBoxX, y: viewBoxY,
-      });
 
       if (onSvgReady) {
         // Pass the glyph bbox dimensions so AnimatorCanvas knows where to draw it

@@ -2,12 +2,21 @@ import { describe, it, expect, vi } from "vitest";
 import { ExportGlyphPrerenderer } from "../export-glyph-prerenderer";
 import { SvgImageConverter } from "$lib/shared/foundation/services/svg-image-converter";
 import { Letter } from "$lib/shared/foundation/domain/models/letter";
-import { getLetterImagePath } from "$lib/shared/pictograph/tka-glyph/utils/letter-image-getter";
+import {
+  getLetterImagePath,
+  isDashLetter,
+} from "$lib/shared/pictograph/tka-glyph/utils/letter-image-getter";
 import {
   getTurnNumberImagePath,
   HALF_MARK_IMAGE_PATH,
+  parseTurnsTuple,
+  getTurnNumberWidth,
+  getSlotUnitWidth,
+  getSlotOffsetX,
+  MARK_GAP,
 } from "$lib/shared/pictograph/tka-glyph/utils/turn-tuple-parser";
 import { getSkewBraceLayout } from "$lib/shared/pictograph/tka-glyph/utils/skew-brace-layout";
+import { calculateTurnPositions } from "$lib/shared/pictograph/tka-glyph/utils/turn-position-calculator";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 
 // Coverage for the halved-motion mark parity fix
@@ -295,4 +304,157 @@ describe("ExportGlyphPrerenderer - skew braces", () => {
     expect(asset!.xOffset).toBe(0);
     expect(asset!.dimensions.width).toBe(100);
   });
+
+  // Coverage for the follow-up fix to 0ccb4822ab: xOffset was proven correct
+  // for the composite's own bounds (the tests above), but the four x
+  // coordinates the same threading actually shifts - a top/bottom turn
+  // number's <g transform> and a top/bottom halved-motion mark's <g
+  // transform>, per buildAndCacheGlyph's appendTurnNumber/appendHalfMark
+  // calls - were never individually exercised. "(s, 1/, 2/)" both displays a
+  // number and carries the halved marker on both slots, so a single tuple
+  // exercises all four.
+  it("shifts a turn number's and half mark's x by xOffset for a real turns tuple on a skewed step", async () => {
+    const { converter, getCaptured } = makeConverter();
+    const prerenderer = new ExportGlyphPrerenderer(converter);
+    const buildAndCacheGlyph = bindBuildAndCacheGlyph(prerenderer);
+
+    const letterPath = getLetterImagePath(Letter.A);
+    const topPath = getTurnNumberImagePath(1);
+    const bottomPath = getTurnNumberImagePath(2);
+    const svgTextCache = new Map<string, string>([
+      [letterPath, `<svg viewBox="0 0 100 100"><path d="M0 0"/></svg>`],
+      [topPath, `<svg viewBox="0 0 30 45"><path id="TOP_NUMBER" d="M1 1"/></svg>`],
+      [bottomPath, `<svg viewBox="0 0 30 45"><path id="BOTTOM_NUMBER" d="M2 2"/></svg>`],
+      [
+        HALF_MARK_IMAGE_PATH,
+        `<svg viewBox="0 0 16 45"><path id="HALF_MARK" d="M3 3"/></svg>`,
+      ],
+    ]);
+    const svgDimsCache = new Map();
+
+    const skewedStep = {
+      motions: {
+        left: { isVisible: true, startLocation: "n", endLocation: "n" },
+        right: { isVisible: true, startLocation: "ne", endLocation: "ne" },
+      },
+    } as unknown as StepData;
+
+    await buildAndCacheGlyph(
+      "test-key-skewed-turns",
+      {
+        letter: Letter.A,
+        turnsTuple: "(s, 1/, 2/)",
+        topColor: "#3575E2",
+        bottomColor: "#ED1C24",
+        step: skewedStep,
+      },
+      false,
+      svgTextCache,
+      svgDimsCache
+    );
+
+    const asset = prerenderer.getGlyph("test-key-skewed-turns");
+    expect(asset).not.toBeNull();
+    expect(asset!.xOffset).toBeGreaterThan(0);
+
+    const { topNumberBaseX, topHalfMarkBaseX, bottomNumberBaseX, bottomHalfMarkBaseX } =
+      computeUnpaddedTurnXs(Letter.A, "(s, 1/, 2/)");
+    const [topNumberX, topHalfMarkX, bottomNumberX, bottomHalfMarkX] =
+      extractTurnGroupXs(getCaptured());
+
+    expect(topNumberX).toBe(topNumberBaseX + asset!.xOffset);
+    expect(topHalfMarkX).toBe(topHalfMarkBaseX + asset!.xOffset);
+    expect(bottomNumberX).toBe(bottomNumberBaseX + asset!.xOffset);
+    expect(bottomHalfMarkX).toBe(bottomHalfMarkBaseX + asset!.xOffset);
+  });
+
+  it("leaves the same turns tuple's turn-number and half-mark x unchanged (xOffset 0) on a plain step", async () => {
+    const { converter, getCaptured } = makeConverter();
+    const prerenderer = new ExportGlyphPrerenderer(converter);
+    const buildAndCacheGlyph = bindBuildAndCacheGlyph(prerenderer);
+
+    const letterPath = getLetterImagePath(Letter.A);
+    const topPath = getTurnNumberImagePath(1);
+    const bottomPath = getTurnNumberImagePath(2);
+    const svgTextCache = new Map<string, string>([
+      [letterPath, `<svg viewBox="0 0 100 100"><path d="M0 0"/></svg>`],
+      [topPath, `<svg viewBox="0 0 30 45"><path id="TOP_NUMBER" d="M1 1"/></svg>`],
+      [bottomPath, `<svg viewBox="0 0 30 45"><path id="BOTTOM_NUMBER" d="M2 2"/></svg>`],
+      [
+        HALF_MARK_IMAGE_PATH,
+        `<svg viewBox="0 0 16 45"><path id="HALF_MARK" d="M3 3"/></svg>`,
+      ],
+    ]);
+    const svgDimsCache = new Map();
+
+    await buildAndCacheGlyph(
+      "test-key-plain-turns",
+      {
+        letter: Letter.A,
+        turnsTuple: "(s, 1/, 2/)",
+        topColor: "#3575E2",
+        bottomColor: "#ED1C24",
+        step: {} as StepData,
+      },
+      false,
+      svgTextCache,
+      svgDimsCache
+    );
+
+    const asset = prerenderer.getGlyph("test-key-plain-turns");
+    expect(asset).not.toBeNull();
+    expect(asset!.xOffset).toBe(0);
+
+    const { topNumberBaseX, topHalfMarkBaseX, bottomNumberBaseX, bottomHalfMarkBaseX } =
+      computeUnpaddedTurnXs(Letter.A, "(s, 1/, 2/)");
+    const [topNumberX, topHalfMarkX, bottomNumberX, bottomHalfMarkX] =
+      extractTurnGroupXs(getCaptured());
+
+    expect(topNumberX).toBe(topNumberBaseX);
+    expect(topHalfMarkX).toBe(topHalfMarkBaseX);
+    expect(bottomNumberX).toBe(bottomNumberBaseX);
+    expect(bottomHalfMarkX).toBe(bottomHalfMarkBaseX);
+  });
 });
+
+// Recomputes the four unpadded (pre-xOffset) x coordinates
+// buildAndCacheGlyph derives for a turns tuple's top/bottom number and
+// top/bottom half mark, using the same real helpers the source does
+// (calculateTurnPositions, getSlotOffsetX, getTurnNumberWidth, MARK_GAP)
+// rather than hardcoded numbers, so this stays correct if those constants
+// ever change.
+function computeUnpaddedTurnXs(letter: Letter, turnsTuple: string) {
+  const letterDims = { width: 100, height: 100 };
+  const parsed = parseTurnsTuple(turnsTuple);
+  const hasDash = isDashLetter(letter);
+  const turnPositions = calculateTurnPositions(letterDims, 45, hasDash);
+
+  const topOwnWidth = getTurnNumberWidth(parsed.top);
+  const bottomOwnWidth = getTurnNumberWidth(parsed.bottom);
+  const topUnit = getSlotUnitWidth(topOwnWidth, parsed.topHalved);
+  const bottomUnit = getSlotUnitWidth(bottomOwnWidth, parsed.bottomHalved);
+  const columnWidth = Math.max(topUnit, bottomUnit);
+  const topOffsetX = getSlotOffsetX(columnWidth, topOwnWidth, parsed.topHalved);
+  const bottomOffsetX = getSlotOffsetX(columnWidth, bottomOwnWidth, parsed.bottomHalved);
+
+  const topNumberBaseX = turnPositions.top.x + topOffsetX;
+  const topHalfMarkBaseX = topNumberBaseX + topOwnWidth + MARK_GAP;
+  const bottomNumberBaseX = turnPositions.bottom.x + bottomOffsetX;
+  const bottomHalfMarkBaseX = bottomNumberBaseX + bottomOwnWidth + MARK_GAP;
+
+  return { topNumberBaseX, topHalfMarkBaseX, bottomNumberBaseX, bottomHalfMarkBaseX };
+}
+
+// Pulls the x from each of the composite's four turn/mark <g transform>
+// groups in source order (buildAndCacheGlyph always pushes top number, top
+// half mark, bottom number, bottom half mark in that order - see the
+// appendTurnNumber/appendHalfMark call sequence).
+function extractTurnGroupXs(composite: string): number[] {
+  const groups = [
+    ...composite.matchAll(
+      /<g transform="translate\(([-\d.]+), [-\d.]+\)" filter="url\(#(?:top|bottom)-color\)">/g
+    ),
+  ];
+  expect(groups).toHaveLength(4);
+  return groups.map((m) => parseFloat(m[1]!));
+}
