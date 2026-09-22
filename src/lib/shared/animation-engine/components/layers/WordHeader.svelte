@@ -17,7 +17,11 @@ Supports letter highlighting during animation playback.
     stripWordNotation,
     type WordUnit,
   } from "$lib/shared/foundation/utils/word-simplifier";
-  import { SKEW_BRACE_FONT_SCALE } from "$lib/shared/pictograph/tka-glyph/utils/skew-brace-layout";
+  import {
+    getSkewBraceInk,
+    SKEW_BRACE_FONT_SCALE,
+    skewBraceLineBoxDrop,
+  } from "$lib/shared/pictograph/tka-glyph/utils/skew-brace-layout";
   import { untrack } from "svelte";
   import DifficultyBadge from "$lib/shared/components/DifficultyBadge.svelte";
   import LOOPIconStrip from "$lib/shared/components/LOOPIconStrip.svelte";
@@ -250,6 +254,10 @@ Supports letter highlighting during animation playback.
     | { kind: "dot" }
     | { kind: "brace"; side: "open" | "close" };
 
+  // How far the brace glyph's ink hangs below the middle of its box, measured
+  // once for this page's fonts. The .skew-brace rule raises it by this much.
+  const BRACE_DROP = skewBraceLineBoxDrop(getSkewBraceInk()).toFixed(4);
+
   const OPEN_BRACE: DisplayUnit = { kind: "brace", side: "open" };
   const CLOSE_BRACE: DisplayUnit = { kind: "brace", side: "close" };
 
@@ -402,7 +410,7 @@ Supports letter highlighting during animation playback.
          flex squeeze the glyphs individually. See .word-text. -->
     <span
       class="word-text"
-      style="--word-em: {wordEmWidth.toFixed(2)}; --brace-scale: {SKEW_BRACE_FONT_SCALE}"
+      style="--word-em: {wordEmWidth.toFixed(2)}; --brace-scale: {SKEW_BRACE_FONT_SCALE}; --brace-drop: {BRACE_DROP}"
     >
       {#if hasActiveHighlighting && displayUnits.length > 0 && animationPhase === "idle"}
         {#each displayUnits as unit, index (index)}
@@ -702,12 +710,16 @@ Supports letter highlighting during animation playback.
      brace-to-letter ratio (SkewBraces.svelte, via --brace-scale) so they read
      as brackets around the letters instead of as two more, smaller letters.
      The box is held to the letters' 1em so the taller glyph overflows evenly
-     rather than growing the header. During playback they rest at the
-     group-dot's weight: structure, not a beat. */
+     rather than growing the header. Centring the box centres the font's
+     ascent+descent, not the brace's ink, so the brace is raised by the
+     measured difference (--brace-drop, in brace em). During playback they
+     rest at the group-dot's weight: structure, not a beat. */
   .skew-brace {
     display: inline-flex;
     align-items: center;
     flex-shrink: 0;
+    position: relative;
+    top: calc(-1em * var(--brace-drop, 0));
     height: calc(1em / var(--brace-scale, 1));
     overflow: visible;
     font-family: system-ui, -apple-system, "Segoe UI", sans-serif;

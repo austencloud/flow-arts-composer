@@ -2,6 +2,7 @@ import { render } from "vitest-browser-svelte";
 import { page } from "vitest/browser";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import TKAWordGlyphHarness from "./__tests__/TKAWordGlyphHarness.svelte";
+import { measureHtmlBraceInk } from "$lib/shared/pictograph/tka-glyph/utils/__tests__/html-brace-ink";
 
 const glyphCacheState = vi.hoisted(() => ({
   loaded: new Set<string>(),
@@ -108,6 +109,30 @@ describe("TKAWordGlyph skew braces", () => {
 
     expect(host.querySelectorAll(".skew-brace")).toHaveLength(2);
     expect(host.querySelectorAll(".glyph-fallback")).toHaveLength(0);
+  });
+
+  it("centres each brace's ink on the letters and matches their height", async () => {
+    render(TKAWordGlyphHarness, { width: 280, word: "{AB}" });
+
+    const host = page.getByTestId("glyph-host").element() as HTMLElement;
+    await vi.waitFor(() => {
+      expect(host.querySelectorAll("img")).toHaveLength(2);
+    });
+
+    const letterBox = host.querySelector("img")!.getBoundingClientRect();
+    const letterCentre = (letterBox.top + letterBox.bottom) / 2;
+    const braces = [...host.querySelectorAll<HTMLElement>(".skew-brace")];
+    expect(braces).toHaveLength(2);
+    for (const brace of braces) {
+      const ink = measureHtmlBraceInk(brace);
+      expect(Math.abs(ink.centreY - letterCentre)).toBeLessThanOrEqual(
+        0.03 * letterBox.height
+      );
+      // Same brace-to-letter ratio as the pictograph: ink as tall as the letter.
+      expect(Math.abs(ink.height - letterBox.height)).toBeLessThanOrEqual(
+        0.06 * letterBox.height
+      );
+    }
   });
 
   it("leaves a partial skewed span unbraced", async () => {
