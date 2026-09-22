@@ -10,6 +10,7 @@
     type ShapeMatrixAppPersistence,
     type ShapeMatrixPropSource,
   } from "./state/shape-matrix-app-state.svelte";
+  import { followPropSource } from "./state/follow-prop-source.svelte";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { DEFAULT_THEORY_RATIO } from "$lib/shared/shape-matrix/domain/theory-ratio";
 
@@ -94,15 +95,7 @@
     return () => observer.disconnect();
   });
 
-  // Settings to engine. The state ignores an unchanged pair, and an adopted
-  // pair is never announced back, so a pick made here does not echo.
-  $effect(() => {
-    if (!propSource) return;
-    state.adoptPropPair(
-      { left: propSource.left, right: propSource.right },
-      propSource.catDog
-    );
-  });
+  followPropSource(state, propSource);
 </script>
 
 <div class="shape-matrix-app-host" bind:this={host}>
