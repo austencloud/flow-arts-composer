@@ -138,11 +138,15 @@ export async function updateSettings(
   await settingsService.updateSettings(updates);
 }
 
-export function setCurrentPropType(propType: PropType): Promise<void> {
+export function setCurrentPropPair(pair: {
+  left: PropType;
+  right: PropType;
+}): Promise<void> {
   return updateSettings({
-    propType,
-    leftPropType: propType,
-    rightPropType: propType,
+    propType: pair.left,
+    leftPropType: pair.left,
+    rightPropType: pair.right,
+    ...(pair.left !== pair.right ? { catDogMode: true } : {}),
   });
 }
 
