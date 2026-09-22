@@ -166,7 +166,7 @@ Last audit: 2025-12-27
     preloadAdditionalLayers?: AdditionalLayerProps[];
     tunnelSpectrum?: boolean;
     tunnelPropColors?: TunnelPropColorPair | null;
-    primaryPropColors?: TunnelPropColorPair;
+    primaryPropColors?: TunnelPropColorPair | null;
     tunnelSelectedLayer?: number | readonly number[] | null;
     gridVisible?: boolean;
     /** Optional externally choreographed grid alpha. The Sequence Viewer uses
