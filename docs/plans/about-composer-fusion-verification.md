@@ -3,6 +3,41 @@
 Updated 2026-09-22. Worktree: `E:/tka-about-composer-fusion`.
 Branch: `codex/about-composer-fusion`. Implementation is not yet integrated.
 
+## September 22 hero prop rail correction
+
+Austen rejected the hero picker opening in the copy column, where it replaced
+the introduction and sat away from its trigger. The earlier "no visual
+blocker" review below missed that relationship and does not stand for it.
+
+- The picker is now a rail inside `.opening-player`, docked against the
+  stage's right edge. It starts level with the stage top and ends level with
+  the Props button, whose chevron points at it. The copy column no longer
+  swaps content; heading, lede, Start composing and the guest note stay put.
+- Opening widens the player by the rail and its gap. The stage shrinks only by
+  the width the column lacks, and matching bottom padding keeps the centred
+  copy still. Measured stage width closed → open: 1280x800 376 → 324,
+  1440x900 423 → 404, 1680x1050 536 → 515, 1920x1080 551 → 539,
+  2560x1440 734 → 734, 3840x2160 832 → 832. The lede moved at most 1px, the
+  scroll position stayed 0, and the stage canvas node did not change.
+- Rail 17.5rem (22rem from 120rem). Host insets are trimmed and the
+  comfortable track floor is 7rem inside the rail only, so it holds two
+  columns: 114x108 tiles, 150px from 1920. Labels are 14px; "Double Contact
+  Ball" wraps to two lines. Done is 67x44.
+- Below 80rem the trigger opens the native sheet (checked at 1200x800 and
+  375x812). Narrowing past 80rem while open unmounts the rail and clears it;
+  no orphan panel, copy intact, no horizontal overflow.
+- Triad drill-in and Trigeng selection worked inside the rail. Fan selected in
+  the rail reached Build/Generate and tunnel controls. Done and a second
+  trigger click close it; focus returns to the trigger. Keyboard Enter opens
+  it and Tab moves from the trigger to Done with a visible 2.67px outline.
+- Theme menu at 1920 (989–1389px) cleared the rail (1481px+). `/composer`
+  behaves identically. No console errors or warnings.
+
+Evidence: agent Chrome on 9222 through DevTools MCP, task-owned tab. The 15
+focused tests pass and `npm run check` reports 0 errors and 0 warnings.
+Owner acceptance of the new placement is still pending. The full seven-tier
+matrix and 200% zoom gate below still apply to the whole page.
+
 ## September 22 connected-picker and minimum-size pass
 
 Preview: `https://localhost:5174/about`. This pass supersedes the practice

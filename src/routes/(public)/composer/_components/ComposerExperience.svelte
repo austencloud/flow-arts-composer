@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
+  import { fade } from "svelte/transition";
   import { activateWhenNear } from "$lib/actions/activate-when-near";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -95,12 +95,14 @@
     inlinePickerTarget = target;
   }
 
-  function openHeroProps(): void {
-    if (wideHeroPicker.current) {
+  function toggleHeroProps(): void {
+    if (!wideHeroPicker.current) {
+      openPropPicker();
+    } else if (heroPickerOpen) {
+      closeInlinePicker();
+    } else {
       openInlinePicker("hero");
-      return;
     }
-    openPropPicker();
   }
 
   function closeInlinePicker(): void {
@@ -111,13 +113,21 @@
     }
   }
   const reduceMotion = new MediaQuery("(prefers-reduced-motion: reduce)");
-  // Keep this in lockstep with the opening's 70rem CSS handoff. A picker that
-  // was open on desktop must return to its ordinary copy before the narrow
-  // layout exposes the player-owned sheet trigger.
-  const wideHeroPicker = new MediaQuery("(min-width: 70.0625rem)");
+  // The rail docks beside the stage, so it needs the two-column opening plus
+  // enough player width that the stage does not shrink much to make room.
+  // Below this the same trigger opens the canonical sheet; a rail that was
+  // open simply unmounts, and the copy column never depended on it.
+  const wideHeroPicker = new MediaQuery("(min-width: 80rem)");
   const heroPickerOpen = $derived(
     inlinePickerTarget === "hero" && wideHeroPicker.current
   );
+  // Narrowing past the rail's breakpoint closes it for good, so widening again
+  // later does not resurrect a panel the visitor has not asked for since.
+  $effect(() => {
+    if (!wideHeroPicker.current && inlinePickerTarget === "hero") {
+      inlinePickerTarget = null;
+    }
+  });
   let constructActive = $state(false);
   let outputsActive = $state(false);
   let shelfActive = $state(false);
@@ -298,78 +308,85 @@
   >
     <div class="opening-copy">
       <h1 id="composer-title">Flow Arts <span>Composer</span></h1>
-      <Crossfade
-        key={heroPickerOpen ? "props" : "copy"}
-        animateHeight
-        mode="swap"
-      >
-        {#if heroPickerOpen}
-          <div class="hero-inline-props">{@render inlinePropPicker()}</div>
-        {:else}
-          <div class="hero-copy-support">
-            <p class="opening-lede">
-              Choose the moves or generate a 16-count loop. Composer is the
-              browser app for The Kinetic Alphabet, where notation and movement
-              stay together.
-            </p>
+      <p class="opening-lede">
+        Choose the moves or generate a 16-count loop. Composer is the browser
+        app for The Kinetic Alphabet, where notation and movement stay together.
+      </p>
 
-            <div class="opening-actions">
-              <a
-                href="/create"
-                class="primary-action"
-                data-sveltekit-reload
-                onclick={() => trackOpenComposer()}
-              >
-                Start composing
-                <i class="fas fa-arrow-right" aria-hidden="true"></i>
-              </a>
-            </div>
+      <div class="opening-actions">
+        <a
+          href="/create"
+          class="primary-action"
+          data-sveltekit-reload
+          onclick={() => trackOpenComposer()}
+        >
+          Start composing
+          <i class="fas fa-arrow-right" aria-hidden="true"></i>
+        </a>
+      </div>
 
-            <p class="opening-note">
-              Free in your browser. Guest saves stay on this device.
-            </p>
-          </div>
-        {/if}
-      </Crossfade>
+      <p class="opening-note">
+        Free in your browser. Guest saves stay on this device.
+      </p>
     </div>
 
-    <div class="opening-player">
-      <SequenceHeroDemo
-        sequence={heroAct.sequence}
-        element={heroAct.element}
-        onReroll={handleReroll}
-        rerolling={heroAct.rerolling}
-        leftPropType={selectedProp}
-        rightPropType={selectedProp}
-        onSequenceBoundary={heroAct.offerSequenceBoundary}
-        note="a real sequence playing in Composer"
-        trailSettingsOverride={HERO_TRAIL_PRESET}
-        tipEffectMap={HERO_TIP_EFFECT_MAP}
-        showNotationStrip={true}
-        showWordHeader={true}
-        autoPlay={!reduceMotion.current}
-        cornerToggle={true}
-        loadPriority="immediate"
-      />
-      <div class="hero-props">
-        <PanelButton
-          onclick={openHeroProps}
-          bind:ref={heroPropButton}
-          ariaLabel={`Change props. Current: ${propName}`}
-          ariaExpanded={wideHeroPicker.current
-            ? heroPickerOpen
-            : propPickerOpen}
-        >
-          <PropCompositionPreview
-            propType={selectedProp}
-            size={28}
-            useSavedOverrides={false}
-          />
-          <span>Props: {propName}</span>
-          <i class="fas fa-chevron-down" aria-hidden="true"></i>
-        </PanelButton>
+    <!-- The prop rail belongs to the player it changes: it docks against the
+         stage's right edge and runs down to the Props button, the same way the
+         practice workspace docks its rail beside its result. -->
+    <div class="opening-player" class:props-open={heroPickerOpen}>
+      <div class="player-main">
+        <SequenceHeroDemo
+          sequence={heroAct.sequence}
+          element={heroAct.element}
+          onReroll={handleReroll}
+          rerolling={heroAct.rerolling}
+          leftPropType={selectedProp}
+          rightPropType={selectedProp}
+          onSequenceBoundary={heroAct.offerSequenceBoundary}
+          note="a real sequence playing in Composer"
+          trailSettingsOverride={HERO_TRAIL_PRESET}
+          tipEffectMap={HERO_TIP_EFFECT_MAP}
+          showNotationStrip={true}
+          showWordHeader={true}
+          autoPlay={!reduceMotion.current}
+          cornerToggle={true}
+          loadPriority="immediate"
+        />
+        <div class="hero-props">
+          <PanelButton
+            onclick={toggleHeroProps}
+            bind:ref={heroPropButton}
+            ariaLabel={`Change props. Current: ${propName}`}
+            ariaExpanded={wideHeroPicker.current
+              ? heroPickerOpen
+              : propPickerOpen}
+            ariaControls={heroPickerOpen ? "hero-prop-rail" : undefined}
+          >
+            <PropCompositionPreview
+              propType={selectedProp}
+              size={28}
+              useSavedOverrides={false}
+            />
+            <span>Props: {propName}</span>
+            <i
+              class="fas fa-chevron-{heroPickerOpen ? 'right' : 'down'}"
+              aria-hidden="true"
+            ></i>
+          </PanelButton>
+        </div>
       </div>
-      <ComposerBackgroundCycle />
+      <div class="hero-rail-slot">
+        {#if heroPickerOpen}
+          <div
+            id="hero-prop-rail"
+            class="hero-prop-rail"
+            transition:fade={{ duration: reduceMotion.current ? 0 : 180 }}
+          >
+            {@render inlinePropPicker(true)}
+          </div>
+        {/if}
+      </div>
+      <div class="player-theme"><ComposerBackgroundCycle /></div>
     </div>
 
     <!-- Absolutely positioned, so revealing it cannot move the hero content.
@@ -721,11 +738,58 @@
      stack (square + notation strip + controls + background row), so on a short
      desktop window its width has to come down rather than push the fold away.
      Sizing goes through the demo's own max-width tokens, as HomeHero does. */
+  /* --hero-card-cap is the stage's own width ceiling. Opening the prop rail
+     widens the player by exactly the rail and its gap, so the stage keeps its
+     size wherever the column has room and gives up only the difference where
+     it does not. The rail column animates from zero, sliding the stage aside
+     rather than covering it. */
   .opening-player {
     position: relative;
+    --hero-card-cap: min(45rem, 47svh);
+    --hero-rail-w: 17.5rem;
+    --hero-rail-gap: 1rem;
+    --hero-demo-max-width: min(100%, var(--hero-card-cap));
     width: min(100%, 45rem);
     margin-inline: auto;
-    --hero-demo-max-width: min(100%, 45rem, 47svh);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 0rem;
+    column-gap: 0rem;
+    transition:
+      width 260ms ease,
+      grid-template-columns 260ms ease,
+      column-gap 260ms ease,
+      padding-block-end 260ms ease;
+  }
+
+  .opening-player.props-open {
+    width: min(
+      100%,
+      calc(var(--hero-card-cap) + var(--hero-rail-gap) + var(--hero-rail-w))
+    );
+    grid-template-columns: minmax(0, 1fr) var(--hero-rail-w);
+    column-gap: var(--hero-rail-gap);
+    /* The square stage loses height one-for-one with the width it gives up.
+       Padding refers to the column's width, so this returns exactly that
+       height and the vertically centred copy does not drift when the rail
+       opens. Zero wherever the column already had room. */
+    padding-block-end: max(
+      0px,
+      calc(
+        var(--hero-card-cap) + var(--hero-rail-gap) + var(--hero-rail-w) - 100%
+      )
+    );
+  }
+
+  .player-main {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+  }
+
+  .player-theme {
+    grid-column: 1;
+    grid-row: 2;
+    min-width: 0;
   }
 
   .hero-props {
@@ -734,9 +798,48 @@
     margin-top: var(--spacing-md, 16px);
   }
 
-  .hero-inline-props {
-    margin-top: 1.5rem;
-    max-width: 22rem;
+  /* The slot takes the row's height without contributing to it, so opening
+     the rail never changes the hero's height or moves the fold. */
+  .hero-rail-slot {
+    grid-column: 2;
+    grid-row: 1;
+    position: relative;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  /* Fixed at the final rail width while the column animates, so the grid
+     lays out once instead of reflowing through every intermediate width.
+     The top offset matches SequenceHeroDemo's .with-notation-strip margin:
+     the rail starts level with the stage and ends level with the Props
+     button. */
+  .hero-prop-rail {
+    position: absolute;
+    top: 1.8rem;
+    bottom: 0;
+    left: 0;
+    width: var(--hero-rail-w);
+    box-sizing: border-box;
+    border: 1px solid var(--theme-stroke, oklch(0.45 0.03 270 / 0.2));
+    border-radius: 18px;
+    background: var(--theme-panel-bg, oklch(0.13 0.025 270 / 0.94));
+  }
+
+  /* Every inset between the rail edge and the tiles (host, scroller, grid)
+     was sized for a drawer. Stacked in a rail they spent 76px and dropped
+     the comfortable grid to one oversized column. Trimmed here, plus a 7rem
+     track floor, the rail holds two readable columns at 17.5rem, so the
+     stage gives up little or no width to make room. Labels keep their 14px. */
+  .hero-prop-rail :global(.inline-prop-picker.docked) {
+    padding-inline: 0.5rem;
+  }
+
+  .hero-prop-rail :global(.grid-scroll) {
+    padding-inline: 0.375rem;
+  }
+
+  .hero-prop-rail :global(.flat-grid.comfortable) {
+    grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
   }
 
   .opening-player::before {
@@ -1058,10 +1161,6 @@
       text-align: center;
     }
 
-    .hero-inline-props {
-      display: none;
-    }
-
     h1,
     .opening-lede {
       margin-inline: auto;
@@ -1178,7 +1277,7 @@
        hero grows past the viewport and the demo keeps a legible size. */
     .opening-player {
       width: min(100%, 18rem);
-      --hero-demo-max-width: min(100%, 18rem);
+      --hero-card-cap: 18rem;
     }
   }
 
@@ -1193,7 +1292,23 @@
 
     .opening-player {
       width: min(100%, 52rem);
-      --hero-demo-wide-max-width: min(52rem, 51svh);
+    }
+  }
+
+  /* From 1920px the column has room for a wider rail, and the stage keeps
+     its full width beside it. */
+  @media (min-width: 120rem) {
+    .opening-player {
+      --hero-rail-w: 22rem;
+    }
+  }
+
+  /* SequenceHeroDemo switches to its wide max-width only at this height too,
+     so the cap the rail arithmetic reads has to switch with it. */
+  @media (min-width: 105rem) and (min-height: 56.25rem) {
+    .opening-player {
+      --hero-card-cap: min(52rem, 51svh);
+      --hero-demo-wide-max-width: min(100%, var(--hero-card-cap));
     }
   }
 
@@ -1207,7 +1322,8 @@
     }
 
     .primary-action,
-    .demo-load-error button {
+    .demo-load-error button,
+    .opening-player {
       transition: none;
     }
   }
