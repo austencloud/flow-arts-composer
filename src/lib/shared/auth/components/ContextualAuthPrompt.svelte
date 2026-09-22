@@ -207,7 +207,11 @@
     padding: clamp(1.35rem, 3.2cqw, 3.25rem);
     overflow: hidden;
     color: var(--theme-text, #f8fafc);
-    background: color-mix(in srgb, var(--theme-panel-bg, #0b0d12) 20%, #0b0d12);
+    background: color-mix(
+      in srgb,
+      rgb(from var(--theme-panel-bg, #0b0d12) r g b / 1) 20%,
+      #0b0d12
+    );
     border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.16));
     border-radius: clamp(1rem, 1.4cqw, 1.5rem);
     box-shadow:
