@@ -13,6 +13,7 @@ import { getDefaultTrailPointConfig } from "$lib/shared/animation-engine/domain/
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import {
   asPropPair,
+  foldUntraceablePropPair,
   type ShapeMatrixPropPair,
   type ShapeMatrixReachPair,
   type ShapeMatrixTipPair,
@@ -90,13 +91,14 @@ class LazyPathMap extends Map<string, MandalaPaths> {
  * both hands' single builds and stitches them: the left map from the left
  * prop, the right map from the right prop. The maps are lazy, so composition
  * is cheap and is not cached on its own; switching one hand reuses the other
- * hand's warm build.
+ * hand's warm build. A prop with no tracked tip loads as staff, so every
+ * caller (the engine, the tunnel picker) draws instead of failing.
  */
 export function loadShapeMatrix(
   props: PropType | ShapeMatrixPropPair = PropType.STAFF,
   options: ShapeMatrixLoadOptions = {}
 ): Promise<ShapeMatrixData> {
-  const pair = asPropPair(props);
+  const pair = foldUntraceablePropPair(asPropPair(props));
   if (pair.left === pair.right) return loadSingle(pair.left, options);
   return Promise.all([
     loadSingle(pair.left, options),
