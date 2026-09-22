@@ -106,7 +106,6 @@ function overlayFor(pair: {
       staffTip
     ).left,
     tips: { left: staffTip, right: staffTip },
-    clubTipDx: Math.hypot(staffTip.dx, staffTip.dy),
   };
 }
 
@@ -327,7 +326,6 @@ describe("exact flower parity", () => {
       left: [],
       right: [],
       tips: { left: { dx: 0, dy: 0 }, right: { dx: 0, dy: 0 } },
-      clubTipDx: 0,
     };
     const unequal = {
       left: flower("pro", 0.25, "out"),

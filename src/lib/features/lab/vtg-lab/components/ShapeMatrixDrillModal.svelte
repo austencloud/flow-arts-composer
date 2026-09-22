@@ -35,7 +35,6 @@
       left: data.left.get(flowerKey(p.left))?.left ?? [],
       right: data.right.get(flowerKey(p.right))?.right ?? [],
       tips: data.tips,
-      clubTipDx: data.clubTipDx,
     };
     let cancelled = false;
     loading = true;

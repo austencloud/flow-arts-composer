@@ -12,7 +12,6 @@ export interface FlowerParityTarget {
   left: SVGPathData[];
   right: SVGPathData[];
   tips: ShapeMatrixTipPair;
-  clubTipDx: number;
 }
 
 export interface PropRelationshipPhaseSolution {

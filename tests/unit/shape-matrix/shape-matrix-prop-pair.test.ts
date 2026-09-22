@@ -84,7 +84,6 @@ describe("shape matrix prop pair", () => {
       left: data.left.get(flowerKey(left))?.left ?? [],
       right: data.right.get(flowerKey(right))?.right ?? [],
       tips: data.tips,
-      clubTipDx: data.clubTipDx,
     };
     const candidates = await buildModeRealizationCandidates(
       { left, right },

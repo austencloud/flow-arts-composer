@@ -20,7 +20,6 @@ export interface CellOverlay {
   left: SVGPathData[];
   right: SVGPathData[];
   tips: ShapeMatrixTipPair;
-  clubTipDx: number;
 }
 
 // Staves hide orientation read on these single-hand flowers (both ends look

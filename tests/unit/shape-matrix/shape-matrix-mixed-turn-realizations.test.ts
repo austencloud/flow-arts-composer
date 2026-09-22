@@ -36,7 +36,6 @@ async function candidatesFor(leftKey: string, rightKey: string) {
     left: data.left.get(leftKey)?.left ?? [],
     right: data.right.get(rightKey)?.right ?? [],
     tips: data.tips,
-    clubTipDx: data.clubTipDx,
   };
   const counts: Record<string, number> = {};
   for (const mode of MODE_ORDER) {
