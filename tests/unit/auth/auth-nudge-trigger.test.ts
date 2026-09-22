@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 import {
   AUTH_NUDGE_TEXTS,
   getAuthPromptContent,
+  moduleNudgeTrigger,
   type AuthNudgeTrigger,
 } from "$lib/shared/auth/domain/auth-nudge-trigger";
 import { GUEST_SAVE_CAP } from "$lib/shared/auth/domain/guest-access-config";
@@ -37,7 +38,9 @@ describe("AUTH_NUDGE_TEXTS — one phrasing for the account ask", () => {
         "loop-locked-guest",
         "module:learn",
         "module:library",
+        "module:other",
         "module:settings",
+        "module:stage",
         "patterns-guest",
         "prop-collection",
         "save",
@@ -132,5 +135,31 @@ describe("contextual auth prompt copy", () => {
       "Create your account"
     );
     expect(getAuthPromptContent(null, "signin").title).toBe("Welcome back");
+  });
+});
+
+describe("module gate prompt", () => {
+  it("names 3D Studio when a guest opens Stage", () => {
+    expect(moduleNudgeTrigger("stage")).toBe("module:stage");
+    expect(AUTH_NUDGE_TEXTS["module:stage"]).toContain("3D Studio");
+    expect(getAuthPromptContent("module:stage", "signup").title).toContain(
+      "3D Studio"
+    );
+  });
+
+  it("keeps the dedicated Learn and Settings prompts", () => {
+    expect(moduleNudgeTrigger("learn")).toBe("module:learn");
+    expect(moduleNudgeTrigger("settings")).toBe("module:settings");
+  });
+
+  // The Library module was folded into Browse, so no gated module is the
+  // Library. Its "your saved sequences live here" copy greeted guests on
+  // Stage, Feedback and every other module without an entry.
+  it("never gives another module the Library's saved-sequences copy", () => {
+    for (const moduleId of ["feedback", "museum", "compose", "unknown"]) {
+      const trigger = moduleNudgeTrigger(moduleId);
+      expect(trigger).toBe("module:other");
+      expect(AUTH_NUDGE_TEXTS[trigger]).not.toContain("saved sequences");
+    }
   });
 });

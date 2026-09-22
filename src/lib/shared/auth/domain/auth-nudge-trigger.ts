@@ -9,6 +9,8 @@ export type AuthNudgeTrigger =
   | "module:learn"
   | "module:library"
   | "module:settings"
+  | "module:stage"
+  | "module:other"
   | "edit-community"
   | "loop-locked-guest"
   | "community-setups"
@@ -52,6 +54,9 @@ export const AUTH_NUDGE_TEXTS: Record<AuthNudgeTrigger, string> = {
   "module:library":
     "Your saved sequences live here. Log in or create a free account to see them.",
   "module:settings": "Create a free account to customize your settings.",
+  "module:stage":
+    "Create a free account to use 3D Studio and choreograph sequences in 3D.",
+  "module:other": "Create a free account to open this part of the app.",
   "edit-community": "Create a free account to edit and remix sequences.",
   // Lead with the ask, never with a definition. A guest hits this after
   // tapping Mirrored/Inverted/etc., so opening with "Rotated LOOPs are
@@ -143,6 +148,16 @@ const AUTH_PROMPT_CONTENTS: Record<AuthNudgeTrigger, AuthPromptContent> = {
     title: "Save your settings",
     body: "Sign in or create an account to customize your settings.",
   },
+  "module:stage": {
+    key: "module:stage",
+    title: "Open 3D Studio",
+    body: "Sign in or create an account to build and choreograph sequences in 3D.",
+  },
+  "module:other": {
+    key: "module:other",
+    title: "Open this part of the app",
+    body: "Sign in or create an account to continue.",
+  },
   "edit-community": {
     key: "edit-community",
     title: "Edit this sequence",
@@ -209,6 +224,19 @@ const AUTH_PROMPT_CONTENTS: Record<AuthNudgeTrigger, AuthPromptContent> = {
     body: "Sign in to send this image. It is saved and will send when you return.",
   },
 };
+
+// The prompt a guest sees on a module outside their allowlist. The Library
+// module was folded into Browse, so a module without its own entry gets the
+// neutral ask, never the Library's "your saved sequences live here".
+const MODULE_NUDGE_TRIGGERS: Partial<Record<string, AuthNudgeTrigger>> = {
+  learn: "module:learn",
+  settings: "module:settings",
+  stage: "module:stage",
+};
+
+export function moduleNudgeTrigger(moduleId: string): AuthNudgeTrigger {
+  return MODULE_NUDGE_TRIGGERS[moduleId] ?? "module:other";
+}
 
 const GENERIC_AUTH_PROMPTS: Record<AuthMode, AuthPromptContent> = {
   signup: {
