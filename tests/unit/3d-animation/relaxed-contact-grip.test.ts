@@ -8,6 +8,7 @@ import {
   allowedTipOffset,
   authoredBodyPose,
   defaultTeachingKeys,
+  isolationPalmRoll,
   sampleTeachingPose,
   TEACHING_ANCHOR_OFFSET,
   upsertTeachingKey,
@@ -43,7 +44,7 @@ describe.runIf(avatarAssetsPresent())("relaxed strict-contact grip", () => {
     services.animator.setContactMode("prop-authoritative");
 
     let keys = defaultTeachingKeys();
-    const sample = (phase: number, relaxation: number) => {
+    const sample = (phase: number, relaxation: number, rollOverride?: number) => {
       const teaching = sampleTeachingPose(phase, keys);
       const tip = allowedTipOffset(teaching, 0.13);
       const authored = sampleStaffIsolation(phase, [
@@ -62,9 +63,10 @@ describe.runIf(avatarAssetsPresent())("relaxed strict-contact grip", () => {
         .normalize();
       const a = center.clone().addScaledVector(axis, -0.45);
       const b = center.clone().addScaledVector(axis, 0.45);
-      const pose = authoredBodyPose(teaching);
+      const pose = authoredBodyPose(teaching, phase);
       pose.gripRelaxation = relaxation;
       pose.gripTiltRad = 1.0472;
+      if (rollOverride !== undefined) pose.gripPalmRollRad = rollOverride;
       services.animator.setAuthoredContactPose(pose);
       services.animator.setPropsAndBlend(
         null,
@@ -97,8 +99,16 @@ describe.runIf(avatarAssetsPresent())("relaxed strict-contact grip", () => {
             .getWorldPosition(new Vector3())
         )
         .normalize();
+      const fingers = state.fingerChains!.right;
+      const wristPoint = state.rightArmChain!.effector.getWorldPosition(new Vector3());
+      const middlePoint = fingers.get("Middle1")!.getWorldPosition(new Vector3());
+      const palmNormal = fingers.get("Pinky1")!.getWorldPosition(new Vector3())
+        .sub(fingers.get("Index1")!.getWorldPosition(new Vector3()))
+        .cross(middlePoint.clone().sub(wristPoint)).normalize();
+      if (palmNormal.dot(fingers.get("Thumb1")!.getWorldPosition(new Vector3()).sub(middlePoint)) < 0) palmNormal.negate();
       return {
         phase,
+        palmNormal,
         wrist: state.rightArmChain!.effector.getWorldPosition(new Vector3()),
         fingers: services.fingers
           .getCylinderContactReport("right")
@@ -117,10 +127,17 @@ describe.runIf(avatarAssetsPresent())("relaxed strict-contact grip", () => {
       };
     };
 
-    const closed = sample(2, 0);
+    const closed = sample(2, 0, 0);
     const first = sample(2, 1);
-    const closedAgain = sample(2, 0);
+    const closedAgain = sample(2, 0, 0);
     const second = sample(2, 1);
+    expect(first.palmNormal.x).toBeGreaterThan(0.9);
+    expect(first.palmNormal.z).toBeGreaterThan(0);
+    expect(closed.palmNormal.x).toBeLessThan(-0.9);
+    expect(isolationPalmRoll(1)).toBeCloseTo((Math.PI - 0.18) / 2);
+    expect(isolationPalmRoll(2)).toBeCloseTo(Math.PI - 0.18);
+    expect(isolationPalmRoll(2.5)).toBeCloseTo(Math.PI - 0.18);
+    expect(isolationPalmRoll(3)).toBe(0);
     second.rotations.forEach((rotation, index) =>
       expect(
         rotation
@@ -172,7 +189,7 @@ describe.runIf(avatarAssetsPresent())("relaxed strict-contact grip", () => {
         `phase ${frame.phase}`
       ).toBeGreaterThanOrEqual(-0.001);
     }
-    const transition = Array.from({ length: 104 }, (_, i) => {
+    const transition = Array.from({ length: 204 }, (_, i) => {
       const phase = 0.99 + i / 100;
       return sample(phase, sampleTeachingPose(phase, keys).gripRelaxation);
     });

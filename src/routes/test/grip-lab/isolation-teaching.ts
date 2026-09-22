@@ -176,7 +176,18 @@ export function upsertTeachingKey(
     { ...pose, phase: t },
   ].sort((a, b) => a.phase - b.phase);
 }
-export function authoredBodyPose(pose: TeachingPose): AuthoredContactPose {
+/** A right-hand isolation starts turning the palm before the North pinch.
+ * It stays stage-left through NW, where a half-turned hand cannot reach the
+ * shaft, then returns to its closed-grip frame before West. */
+export function isolationPalmRoll(phase: number): number {
+  const t = wrapStaffIsolationPhase(phase);
+  const stageLeftRoll = Math.PI - 0.18;
+  if (t < 2) return (t / 2) * stageLeftRoll;
+  if (t < 2.5) return stageLeftRoll;
+  if (t < 3) return (3 - t) * 2 * stageLeftRoll;
+  return 0;
+}
+export function authoredBodyPose(pose: TeachingPose, phase = 0): AuthoredContactPose {
   return {
     pelvisOffset: { x: pose.pelvisX, y: pose.pelvisY, z: pose.pelvisZ },
     torsoYawRad: pose.turn,
@@ -185,6 +196,7 @@ export function authoredBodyPose(pose: TeachingPose): AuthoredContactPose {
     elbowPole: { x: pose.elbowX, y: pose.elbowY, z: pose.elbowZ },
     gripRelaxation: pose.gripRelaxation,
     gripTiltRad: pose.gripTilt,
+    gripPalmRollRad: isolationPalmRoll(phase),
   };
 }
 /** Bound the actual tip displacement, including depth, rather than loosening the grip. */

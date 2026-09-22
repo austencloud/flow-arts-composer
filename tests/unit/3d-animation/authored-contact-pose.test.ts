@@ -159,13 +159,14 @@ function sample(
 function sampleGripLab(
   rig: Awaited<ReturnType<typeof setup>>,
   phase: number,
-  keys = defaultTeachingKeys()
+  keys = defaultTeachingKeys(),
+  withPalmRoll = false
 ) {
   // These regressions isolate the closed-grip elbow route. Relaxed-grip contact
   // and transitions have their own rig tests.
   const pose = { ...sampleTeachingPose(phase, keys), gripRelaxation: 0 };
   const tip = allowedTipOffset(pose, 0.13);
-  return sample(rig, phase, authoredBodyPose(pose), ORIGIN, [
+  return sample(rig, phase, authoredBodyPose(pose, withPalmRoll ? phase : 0), ORIGIN, [
     tip[0] + TEACHING_ANCHOR_OFFSET[0],
     tip[1] + TEACHING_ANCHOR_OFFSET[1],
     tip[2] + TEACHING_ANCHOR_OFFSET[2],
@@ -173,6 +174,19 @@ function sampleGripLab(
 }
 
 describe.runIf(avatarAssetsPresent())("authored contact body pose", () => {
+  it("keeps the right elbow continuous while the palm starts turning before North", async () => {
+    const rig = await setup();
+    const keys = defaultTeachingKeys();
+    const frames = Array.from({ length: 201 }, (_, index) =>
+      sampleGripLab(rig, index / 200, keys, true)
+    );
+    const maxElbowStep = Math.max(...frames.slice(1).map((frame, index) =>
+      frame.elbows[1]!.distanceTo(frames[index]!.elbows[1]!)
+    ));
+    expect(maxElbowStep).toBeLessThan(0.02);
+    expect(Math.max(...frames.map(frame => frame.palmResidualM))).toBeLessThan(0.001);
+    expect(Math.min(...frames.map(frame => frame.contact.clearanceM))).toBeGreaterThanOrEqual(0);
+  }, 30_000);
   it("keeps the Grip Lab right elbow on one authored-pole route through S to E", async () => {
     const rig = await setup();
     const keys = defaultTeachingKeys();

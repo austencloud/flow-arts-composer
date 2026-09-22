@@ -120,7 +120,7 @@
     tipOffset[2] + TEACHING_ANCHOR_OFFSET[2],
   ]);
   const tipDrift = $derived(Math.hypot(...tipOffset));
-  const bodyPose = $derived(authoredBodyPose(taughtPose));
+  const bodyPose = $derived(authoredBodyPose(taughtPose, inspection.hand === "right" ? inspection.phase : 0));
   const reachGap = $derived((inspection.hand === "right" ? report?.right : report?.left)?.palmResidualM ?? 0);
   // A measurement belongs to one posed frame, never the next scrub position.
   $effect(() => {
