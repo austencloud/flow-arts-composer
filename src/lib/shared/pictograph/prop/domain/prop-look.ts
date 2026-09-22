@@ -16,6 +16,7 @@ import {
   normalizeTriangleGrip,
   parseTriangleRenderKey,
   resolveTriangleRenderKey,
+  triangleAppearanceArtwork,
   triangleSpriteKey,
   type TriangleGrip,
 } from "./triangle-appearance";
@@ -345,6 +346,18 @@ export function propTileArtwork(
       styled: true,
       prelit: true,
       crop: modelSpriteCrop(PROP_MODEL_SPRITES[spriteKey]!),
+    };
+  }
+  if (isTrianglePropType(normalized)) {
+    // The default pictograph look otherwise ignores appearance, but the
+    // triangle's grip changes which glyph is correct even here. The sprite
+    // generator writes byte-identical SVGs into buttons/ and pictograph/, so
+    // the side appearance artwork doubles as the side notation tile.
+    const grip = normalizeTriangleGrip(appearance.triangleGrip);
+    return {
+      href: triangleAppearanceArtwork(grip) ?? fallback,
+      styled: false,
+      prelit: false,
     };
   }
   return { href: fallback, styled: false, prelit: false };

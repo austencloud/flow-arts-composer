@@ -144,6 +144,34 @@ describe("propTileArtwork", () => {
     expect(propTileArtwork("energy_saber", "left", {}, glyph).href).toBe(glyph);
   });
 
+  it("swaps in the side glyph for a side-grip triangle under the pictograph look", () => {
+    const side = propTileArtwork(
+      "triangle",
+      "left",
+      { triangleGrip: "side" as const },
+      glyph
+    );
+    expect(side.href).toContain("triangle-side.svg");
+    expect(side).toMatchObject({ styled: false, prelit: false });
+    expect(
+      propGlyphArtwork("triangle", "left", { triangleGrip: "side" as const }, glyph)
+        .href
+    ).toContain("triangle-side.svg");
+  });
+
+  it("keeps the fallback glyph for a corner-grip triangle or no grip set", () => {
+    expect(
+      propTileArtwork("triangle", "left", { triangleGrip: "corner" as const }, glyph)
+        .href
+    ).toBe(glyph);
+    expect(propTileArtwork("triangle", "left", {}, glyph).href).toBe(glyph);
+    expect(
+      propGlyphArtwork("triangle", "left", { triangleGrip: "corner" as const }, glyph)
+        .href
+    ).toBe(glyph);
+    expect(propGlyphArtwork("triangle", "left", {}, glyph).href).toBe(glyph);
+  });
+
   it("draws the rendered preview of the chosen fan build", () => {
     const fire = propTileArtwork("bigfan", "right", {}, glyph);
     expect(fire.href).toMatch(/build-previews\/fan-fire-bare-complete\.webp/);
