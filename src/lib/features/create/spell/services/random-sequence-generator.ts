@@ -896,10 +896,7 @@ export class RandomSequenceGenerator {
     }>
   ): SequenceData {
     // Extract word from step letters
-    const word = steps
-      .map((step) => step.letter || "")
-      .filter((letter) => letter)
-      .join("");
+    const word = deriveWordFromBeats(steps);
 
     // Convert the start placement pictograph to StartPlacementData
     const startPlacement = this.stepConverter.convertToStartPlacement(
