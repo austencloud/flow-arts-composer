@@ -326,10 +326,21 @@ export function createEffectsConfigState(
   // landing previews) that must not clobber the user's global effects config.
   const persist = options.persist ?? true;
   const stored = persist ? loadStoredConfig() : null;
+  // The VM-key migration reads and writes the viewer's shared
+  // `animation-visibility-settings` localStorage entry, which is exactly the
+  // global state a non-persisted instance must never touch — a gallery of N
+  // ephemeral card previews would otherwise each read (and rewrite) that one
+  // key. Only a persist:true instance without a stored config runs it; a
+  // persist:false instance just migrates the caller-supplied `initial`
+  // in-memory.
   let config = $state<EffectsConfig>(
     normalizeEffectsConfig(
       stored ??
-        migrateFromVmStorageOnce(migrateEffectsConfig(structuredClone(initial)))
+        (persist
+          ? migrateFromVmStorageOnce(
+              migrateEffectsConfig(structuredClone(initial))
+            )
+          : migrateEffectsConfig(structuredClone(initial)))
     )
   );
   let version = $state(0);
@@ -342,24 +353,33 @@ export function createEffectsConfigState(
   let defaultsTimer: ReturnType<typeof setTimeout> | null = null;
   const sceneUndo = getSceneUndoManager();
 
-  sceneUndo.registerDomain("effects", {
-    capture: () => {
-      try {
-        return structuredClone(config);
-      } catch {
-        return JSON.parse(JSON.stringify(config));
-      }
-    },
-    restore: (snapshot) => {
-      try {
-        config = normalizeEffectsConfig(structuredClone(snapshot));
-      } catch {
-        config = normalizeEffectsConfig(JSON.parse(JSON.stringify(snapshot)));
-      }
-      version++;
-      scheduleSave();
-    },
-  });
+  // `registerDomain` overwrites whatever handler is already registered under
+  // "effects" on the shared, module-level undo manager — the last instance
+  // constructed wins. Every ephemeral preview (a Recent Work grid, a gallery
+  // card, this profile stage's tiles) creates one of these per mount, so
+  // letting them register would silently retarget the app-wide effects undo
+  // stack at whichever card mounted last. Only the one persisted instance
+  // (the visitor's own live effects config) is a legitimate undo domain.
+  if (persist) {
+    sceneUndo.registerDomain("effects", {
+      capture: () => {
+        try {
+          return structuredClone(config);
+        } catch {
+          return JSON.parse(JSON.stringify(config));
+        }
+      },
+      restore: (snapshot) => {
+        try {
+          config = normalizeEffectsConfig(structuredClone(snapshot));
+        } catch {
+          config = normalizeEffectsConfig(JSON.parse(JSON.stringify(snapshot)));
+        }
+        version++;
+        scheduleSave();
+      },
+    });
+  }
 
   function scheduleSave() {
     version++;
