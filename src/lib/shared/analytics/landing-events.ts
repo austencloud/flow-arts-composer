@@ -67,6 +67,7 @@ export function trackSectionView(section: string, page: string): void {
 export type CtaLocation =
   | "hero"
   | "viewer_3d"
+  | "section"
   | "footer"
   | "header_desktop"
   | "header_mobile";

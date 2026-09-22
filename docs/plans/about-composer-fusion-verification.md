@@ -514,3 +514,19 @@ Measured in the agent browser after the icon font loaded:
 `check:fast` reports no diagnostics in ComposerExperience.svelte. Its composer
 errors in ComposerArcadeDemo (unused) and ComposerBackgroundCycle already exist
 on main.
+
+## September 22 section entries and centred creator block
+
+Each demo now hands off to the matching part of the app, centred under the
+demo: "Construct a sequence" goes to `/create/construct` (opens the start
+placement picker) and "See community tunnels" goes to
+`/browse/explore/visuals/tunnels` (loads for a guest). Clicks are tracked as
+`landing_cta_click` with location `section`. The 3D band has no entry yet:
+`/stage` shows guests a sign-in prompt and "Not now" drops them into Create's
+method chooser. The gallery keeps its existing "Browse the Gallery" entry.
+
+The creator block was left-weighted because its fractional copy track was
+wider than the name and sentence it holds. Both tracks now hug their content
+and the pair centres: content midpoint 715 of 1430 at 1440px and 1275 of 2550
+at 2560px. At 900px the portrait caps at 36vw so the name stays on one line;
+at 375px everything stacks centred with no horizontal overflow.

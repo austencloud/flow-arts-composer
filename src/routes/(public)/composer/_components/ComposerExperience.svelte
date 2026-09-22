@@ -50,6 +50,15 @@
     });
   }
 
+  // Each demo section hands off to the part of the app it previews.
+  function trackSectionEntry(ctaType: string, destination: string): void {
+    trackCtaClick("section", {
+      page: analyticsRoute(),
+      cta_type: ctaType,
+      destination,
+    });
+  }
+
   // Opens on the baked fixture, exactly as HomeHero does, then rolls live
   // sequences forever. 5d637dc105 dropped the seed here believing that mirrored
   // HomeHero; HomeHero has always passed `initialSequence: FALLBACK_DEMO`, so
@@ -501,6 +510,18 @@
         {/snippet}
       </LazyMount>
     </div>
+
+    <div class="section-entry">
+      <a
+        href="/create/construct"
+        class="primary-action"
+        data-sveltekit-reload
+        onclick={() => trackSectionEntry("construct", "/create/construct")}
+      >
+        Construct a sequence
+        <i class="fas fa-arrow-right" aria-hidden="true"></i>
+      </a>
+    </div>
   </section>
 
   <section
@@ -541,6 +562,24 @@
           {/snippet}
         </LazyMount>
       </div>
+    </div>
+
+    <!-- The 3D band gets no entry yet: 3D Studio still sends guests to a
+         sign-in prompt, so a button there would dead-end. -->
+    <div class="section-entry">
+      <a
+        href="/browse/explore/visuals/tunnels"
+        class="primary-action"
+        data-sveltekit-reload
+        onclick={() =>
+          trackSectionEntry(
+            "community_tunnels",
+            "/browse/explore/visuals/tunnels"
+          )}
+      >
+        See community tunnels
+        <i class="fas fa-arrow-right" aria-hidden="true"></i>
+      </a>
     </div>
 
     <div class="viewer-output">
@@ -1058,6 +1097,22 @@
     margin-top: clamp(2rem, 3.5vw, 3.5rem);
   }
 
+  /* The way from a demo into the matching part of the app, centred under the
+     demo like the section titles above it. */
+  .section-entry {
+    display: flex;
+    justify-content: center;
+    margin-top: clamp(1.25rem, 2.2vw, 2rem);
+  }
+
+  .section-entry i {
+    transition: transform 160ms ease;
+  }
+
+  .section-entry a:hover i {
+    transform: translateX(0.2em);
+  }
+
   .product-frame {
     min-width: 0;
     padding: clamp(0.75rem, 1.7vw, 1.4rem);
@@ -1449,6 +1504,7 @@
 
     .primary-action,
     .open-app i,
+    .section-entry i,
     .demo-load-error button,
     .opening,
     .opening-player {

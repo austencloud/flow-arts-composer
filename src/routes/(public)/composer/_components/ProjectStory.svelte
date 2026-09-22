@@ -31,9 +31,16 @@
 </section>
 
 <style>
+  /* Both tracks hug their content and the pair centres as one unit. A
+     fractional copy track was wider than the name and one sentence it holds,
+     which left the empty half on the right and pushed the portrait left. */
   .project-story {
     display: grid;
-    grid-template-columns: minmax(14rem, 0.72fr) minmax(0, 1.28fr);
+    grid-template-columns: minmax(14rem, min(28rem, 36vw)) minmax(
+        0,
+        max-content
+      );
+    justify-content: center;
     gap: clamp(2rem, 5vw, 80px);
     align-items: center;
     max-width: min(100%, 82rem);
