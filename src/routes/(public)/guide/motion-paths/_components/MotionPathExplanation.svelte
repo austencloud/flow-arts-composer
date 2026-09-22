@@ -73,12 +73,15 @@
     { path: "linear", x: -30, label: "Linear" },
     { path: "concave", x: 66, label: "Concave" },
   ];
-  const MORPH_DURATION = DURATION.dramatic * 2;
   const TRAVERSE_DURATION = DURATION.dramatic * 4;
   const ARRIVAL_DURATION = DURATION.dramatic * 2;
-  // The hand slides back to the start while the route reshapes, so a full
-  // return and a full reshape end together.
-  const RETURN_DURATION = MORPH_DURATION;
+  // Starting a path over, the hand lifts off where it is and sets down at the
+  // start, the way a teacher begins a demonstration again. It never travels
+  // backward along a path, which read as a hurried replay.
+  const LIFT_DURATION = DURATION.normal;
+  const SET_DOWN_DURATION = DURATION.dramatic;
+  const LIFTED_SCALE = 0.8;
+  const SET_DOWN_SCALE = 1.15;
   const gate = createRenderActivityGate({
     name: "motion-path-intro",
     rootMargin: "0px",
@@ -88,6 +91,8 @@
   let routePoints = $state<readonly IntroPoint[]>(INTRO_PATHS.arc);
   let hand = $state<IntroPoint>(INTRO_CENTER);
   let traceProgress = $state(0);
+  let handOpacity = $state(1);
+  let handScale = $state(1);
   let pulseActive = $state(false);
   let isReducedMotion = $state(reducedMotion());
   let frame: number | null = null;
@@ -107,6 +112,13 @@
   // On Arc the destination pulses until the hand reaches it.
   const destinationPending = $derived(
     stage === FIRST_PATH_STAGE && traceProgress < 1
+  );
+  // Each path already drawn stays as a faint line, so the next one is drawn
+  // beside it; the closing comparison colors all three.
+  const ghostPaths = $derived(
+    STAGES.slice(FIRST_PATH_STAGE, stage).flatMap((item) =>
+      item.path ? [item.path] : []
+    )
   );
   const shiftStart = introPointAt(INTRO_PATHS.arc, 0);
   const shiftEnd = introPointAt(INTRO_PATHS.arc, 1);
@@ -129,20 +141,6 @@
     pulseActive = false;
   }
 
-  function interpolateRoute(
-    from: readonly IntroPoint[],
-    to: readonly IntroPoint[],
-    progress: number
-  ): readonly IntroPoint[] {
-    return from.map((point, index) => {
-      const destination = to[index]!;
-      return {
-        x: point.x + (destination.x - point.x) * progress,
-        y: point.y + (destination.y - point.y) * progress,
-      };
-    });
-  }
-
   function interpolatePoint(
     from: IntroPoint,
     to: IntroPoint,
@@ -157,6 +155,8 @@
   function settle(): void {
     cancelFrame();
     pulseActive = false;
+    handOpacity = 1;
+    handScale = 1;
     const path = current.path ?? (isFinal ? "concave" : "arc");
     routePoints = INTRO_PATHS[path];
     traceProgress = stage >= FIRST_PATH_STAGE ? 1 : 0;
@@ -192,61 +192,76 @@
     frame = requestAnimationFrame(animate);
   }
 
-  // Every path stage is one motion. The route reshapes toward the new path
-  // while the hand slides back along it to the start, then the hand draws the
-  // new path at the animator's steady pace. Next pressed mid-motion starts the
-  // same motion from wherever the hand and route are, so the hand never waits
-  // on a shape that is not changing and never inherits a half-spent draw.
+  // The hand lifts off (fades and shrinks) where it is, then sets down at
+  // `destination` (fades in and settles). Interrupted halfway, it carries on
+  // from its current opacity and scale rather than popping back to full.
+  // A hand already at the destination skips the lift and finishes settling.
+  function liftTo(
+    destination: IntroPoint,
+    epoch: number,
+    landed: (now: number) => void
+  ): void {
+    const lifts =
+      Math.hypot(hand.x - destination.x, hand.y - destination.y) > 0.5;
+    const fromOpacity = handOpacity;
+    const fromScale = handScale;
+    const liftMs = lifts ? motionDuration(LIFT_DURATION) * fromOpacity : 0;
+    const settleFrom = lifts ? 0 : fromOpacity;
+    const settleScale = lifts ? SET_DOWN_SCALE : fromScale;
+    const setMs = motionDuration(SET_DOWN_DURATION) * (1 - settleFrom);
+    const start = performance.now();
+
+    const step = (now: number): void => {
+      if (epoch !== stageEpoch || !gate.active) return;
+      const elapsed = now - start;
+      if (elapsed < liftMs) {
+        const progress = cubicInOut(elapsed / liftMs);
+        handOpacity = fromOpacity * (1 - progress);
+        handScale = fromScale + (LIFTED_SCALE - fromScale) * progress;
+        frame = requestAnimationFrame(step);
+        return;
+      }
+      hand = destination;
+      const progress = setMs
+        ? cubicInOut(Math.min(1, (elapsed - liftMs) / setMs))
+        : 1;
+      handOpacity = settleFrom + (1 - settleFrom) * progress;
+      handScale = settleScale + (1 - settleScale) * progress;
+      if (progress < 1) {
+        frame = requestAnimationFrame(step);
+        return;
+      }
+      landed(now);
+    };
+
+    if (!lifts && !setMs) landed(start);
+    else frame = requestAnimationFrame(step);
+  }
+
+  // A path stage: the new route appears, the hand sets down at its start and
+  // draws it at the animator's even pace. Next pressed at any moment starts
+  // this again from wherever the hand is.
   function playPath(nextPath: IntroPath): void {
     cancelFrame();
     const epoch = ++stageEpoch;
-    const fromRoute = routePoints;
-    const toRoute = INTRO_PATHS[nextPath];
-    const morphMs = fromRoute === toRoute ? 0 : motionDuration(MORPH_DURATION);
-    const fromProgress = traceProgress;
-    // A hand still gliding in from the center is off the route; the gap
-    // closes before the draw starts.
-    const onRoute = introPointAt(fromRoute, fromProgress);
-    const offset = { x: hand.x - onRoute.x, y: hand.y - onRoute.y };
-    const offsetMs =
-      Math.hypot(offset.x, offset.y) > 0.5
-        ? motionDuration(ARRIVAL_DURATION)
-        : 0;
-    const returnMs = Math.max(
-      motionDuration(RETURN_DURATION) * fromProgress,
-      offsetMs
-    );
-    const drawMs = motionDuration(TRAVERSE_DURATION);
-    const start = performance.now();
-
-    const animate = (now: number): void => {
-      if (epoch !== stageEpoch || !gate.active) return;
-      const elapsed = now - start;
-      const morph = morphMs ? Math.min(1, elapsed / morphMs) : 1;
-      const route =
-        morph < 1
-          ? interpolateRoute(fromRoute, toRoute, cubicInOut(morph))
-          : toRoute;
-      // The return eases; the draw keeps the animator's even pace.
-      const progress =
-        elapsed < returnMs
-          ? fromProgress * (1 - cubicInOut(elapsed / returnMs))
-          : Math.min(1, (elapsed - returnMs) / drawMs);
-      const gap = offsetMs
-        ? 1 - cubicInOut(Math.min(1, elapsed / offsetMs))
-        : 0;
-      const point = introPointAt(route, progress);
-      routePoints = route;
-      traceProgress = progress;
-      hand = { x: point.x + offset.x * gap, y: point.y + offset.y * gap };
-      if (progress < 1 || morph < 1) {
-        frame = requestAnimationFrame(animate);
-        return;
-      }
-      completeRoute(epoch, toRoute);
-    };
-
-    frame = requestAnimationFrame(animate);
+    const route = INTRO_PATHS[nextPath];
+    routePoints = route;
+    traceProgress = 0;
+    liftTo(introPointAt(route, 0), epoch, (drawStart) => {
+      const drawMs = motionDuration(TRAVERSE_DURATION);
+      const draw = (now: number): void => {
+        if (epoch !== stageEpoch || !gate.active) return;
+        const progress = drawMs ? Math.min(1, (now - drawStart) / drawMs) : 1;
+        traceProgress = progress;
+        hand = introPointAt(route, progress);
+        if (progress < 1) {
+          frame = requestAnimationFrame(draw);
+          return;
+        }
+        completeRoute(epoch, route);
+      };
+      frame = requestAnimationFrame(draw);
+    });
   }
 
   function completeRoute(
@@ -265,8 +280,16 @@
   function advance(): void {
     if (isFinal) {
       stage = 0;
-      stageEpoch += 1;
-      settle();
+      if (isReducedMotion || !gate.active) {
+        stageEpoch += 1;
+        settle();
+        return;
+      }
+      cancelFrame();
+      const epoch = ++stageEpoch;
+      routePoints = INTRO_PATHS.arc;
+      traceProgress = 0;
+      liftTo(INTRO_CENTER, epoch, () => (frame = null));
       return;
     }
 
@@ -384,9 +407,25 @@
         {/if}
 
         {#if routeVisible}
-          <path class="route-shadow" d={routeD} />
-          <path class="route" d={routeD} />
-          {#if traceD}<path class="trace" d={traceD} />{/if}
+          {#each ghostPaths as path (path)}
+            <path
+              class="ghost-route"
+              d={introPathD(INTRO_PATHS[path])}
+              in:fade={{ duration: motionDuration(SET_DOWN_DURATION) }}
+            />
+          {/each}
+          <!-- Keyed by stage so the finished path fades off as the next one
+               fades in; the outgoing copy keeps the trace it had drawn. -->
+          {#key stage}
+            <g
+              in:fade={{ duration: motionDuration(SET_DOWN_DURATION) }}
+              out:fade={{ duration: motionDuration(SET_DOWN_DURATION) }}
+            >
+              <path class="route-shadow" d={routeD} />
+              <path class="route" d={routeD} />
+              {#if traceD}<path class="trace" d={traceD} />{/if}
+            </g>
+          {/key}
         {/if}
 
         {#if isFinal}
@@ -412,6 +451,8 @@
             class:pulsing={pulseActive}
             class="hand-art"
             xmlns="http://www.w3.org/1999/xhtml"
+            style:opacity={handOpacity}
+            style:scale={handScale}
           >
             <PropCompositionPreview
               propType={PropType.HAND}
@@ -568,6 +609,14 @@
   .trace {
     stroke: var(--hand-color);
     stroke-width: 4;
+  }
+
+  .ghost-route {
+    fill: none;
+    stroke: color-mix(in srgb, var(--theme-text-dim) 45%, transparent);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
   /* Three equal choices: same weight, each in the color the path panel uses. */
