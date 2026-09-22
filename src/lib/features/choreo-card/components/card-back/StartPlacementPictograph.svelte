@@ -15,6 +15,7 @@
   import { pictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
   import PictographRenderer from "$lib/shared/pictograph/shared/components/PictographRenderer.svelte";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { resolveStartPlacementColorOverrides } from "$lib/features/choreo-card/services/card-back/card-back-appearance";
 
   interface Props {
     pictographData: PictographData;
@@ -27,6 +28,7 @@
   let { pictographData, darkMode = true, leftPropType, rightPropType, primaryPropColors }: Props = $props();
 
   let prepared: PreparedPictographData | null = $state(null);
+  let colorOverrides = $derived(resolveStartPlacementColorOverrides(primaryPropColors, darkMode));
 
   $effect(() => {
     const data = pictographData;
@@ -53,8 +55,8 @@
     {#if prepared}
       <PictographRenderer
         pictograph={prepared}
-        leftColorOverride={primaryPropColors?.left}
-        rightColorOverride={primaryPropColors?.right}
+        leftColorOverride={colorOverrides.left}
+        rightColorOverride={colorOverrides.right}
         transparentBackground={true}
         showGrid={true}
         showTKA={false}
