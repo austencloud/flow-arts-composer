@@ -358,6 +358,13 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
   {#if letter}
     <TKAGlyph {letter} {pictographData} x={50} y={800} scale={1} />
     {#if skewedFrame}
+      <!-- visible gates on letterDimensionsReady (not just true) so a
+           provisional, not-yet-cached serialization (see shouldCache above)
+           emits the letter and turns with no braces at all, matching what
+           PictographRenderer shows during the same cold-letter window,
+           instead of braces laid out against the 100x100 sentinel. The real
+           braces arrive on the re-serialization that does get cached once
+           dimensions resolve. -->
       <SkewBraces
         {letter}
         {letterDimensions}
@@ -365,7 +372,7 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
         x={50}
         y={800}
         scale={1}
-        visible={true}
+        visible={letterDimensionsReady}
       />
     {/if}
     <TurnsColumn
