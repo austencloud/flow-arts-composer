@@ -128,6 +128,21 @@ export class SequenceCanonicalizer {
    * Dash letters (e.g. "W-") are two characters wide, so a letter offset
    * already diverges from a beat index for those words. That mismatch
    * predates this method and is not addressed here.
+   *
+   * It has a second consequence: because that character offset is applied
+   * to the unit array, this method is not rotation-invariant for words with
+   * more than one dash letter. For example, "AW-BW-" and "W-BW-A" (a
+   * rotation of it) both canonicalize to "W-BW-A", but "BW-AW-" and
+   * "W-AW-B" (also a rotation of the same underlying sequence) both
+   * canonicalize to "AW-BW-" instead. So haveSameCanonicalForm can return
+   * false for two rotations of one multi-dash sequence, depending on which
+   * rotation each one started from. This is pre-existing: the old
+   * character-by-character rotation had the same problem, producing a
+   * mid-unit canonical string and an equally wrong offset. Fixing it means
+   * running the rotation search over the unit array itself (double the
+   * units, pick the lexicographically smallest rotation by letter
+   * sequence) so the offset becomes a unit index instead of a character
+   * index; that is a separate change from this one.
    */
   private canonicalizeCircularWord(word: string): {
     canonicalWord: string;

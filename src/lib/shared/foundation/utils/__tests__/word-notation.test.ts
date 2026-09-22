@@ -129,8 +129,10 @@ describe("areWordUnitsCircularEquivalent", () => {
     // Same letters, same rotation, but one word is bare and the other skewed.
     expect(areWordUnitsCircularEquivalent("STS", "{STS}")).toBe(false);
     expect(areWordUnitsCircularEquivalent("{STS}", "{TSS}")).toBe(true);
-    // Only part of the word skewed: the skewed run must land in the same place.
-    expect(areWordUnitsCircularEquivalent("A{ST}B", "B{ST}A")).toBe(false);
+    // Same letters (no rotation needed, "ASTB" both times), but the skewed
+    // run sits over a different pair of letters: the mask alone must fail.
+    expect(areWordUnitsCircularEquivalent("A{ST}B", "AS{TB}")).toBe(false);
+    // Rotation by 1 keeps the mask aligned with the same letters.
     expect(areWordUnitsCircularEquivalent("A{ST}B", "{ST}BA")).toBe(true);
   });
 
