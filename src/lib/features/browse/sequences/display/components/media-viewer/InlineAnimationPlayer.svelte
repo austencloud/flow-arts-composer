@@ -328,11 +328,10 @@
     /** Suppress the canvas right-click / long-press settings menu so a locked
      *  public embed can't have its prop/effort/BPM changed out from under it. */
     disableContextMenu?: boolean;
-    /** Adds "Download as a video" to the canvas right-click menu, beside the
-     *  GIF item. Opt-in: this player owns the canvas, controller and panel
-     *  state the video pipeline needs, but a gallery tile or a locked public
-     *  hero has no business handing out an MP4 render. Create's workspace
-     *  playback turns it on. */
+    /** Adds "Download as a video" to the canvas right-click menu. Opt-in: this
+     *  player owns the canvas, controller and panel state the video pipeline
+     *  needs, but a gallery tile or a locked public hero has no business
+     *  handing out an MP4 render. Create's workspace playback turns it on. */
     videoDownload?: boolean;
     /** Display-only mode. False strips ALL playback input from the minimal
      *  chrome — no tap-to-toggle, no hover play/pause badge, no progress line —
@@ -413,11 +412,11 @@
 
   // Right-click on a <canvas> is a dead gesture: unlike a real <video>, the
   // browser has no "Save video as..." to offer, so nothing about the animation
-  // says it can leave the page. The GIF item already fills that gap; this adds
-  // the artifact people actually post — the same MP4 the export panel renders,
-  // reached without opening it. This player owns all three things the video
-  // pipeline needs (live canvas, controller, panel state), so it runs the
-  // export itself rather than routing through the drawer.
+  // says it can leave the page. This adds the artifact people actually post —
+  // the same MP4 the export panel renders, reached without opening it. This
+  // player owns all three things the video pipeline needs (live canvas,
+  // controller, panel state), so it runs the export itself rather than
+  // routing through the drawer.
   let liveCanvas = $state<HTMLCanvasElement | null>(null);
   let isVideoExporting = $state(false);
 

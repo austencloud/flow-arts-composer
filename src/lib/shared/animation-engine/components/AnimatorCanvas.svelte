@@ -1044,12 +1044,6 @@ Last audit: 2025-12-27
       {onToggle3DView}
       extraItems={extraContextMenuItems}
       {visibilityManager}
-      canvas={liveCanvas}
-      {currentStep}
-      {isPlaying}
-      {bpm}
-      {onPlaybackToggle}
-      {onProgressBarSeek}
     />
   {/if}
 </div>
