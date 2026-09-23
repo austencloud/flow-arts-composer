@@ -1520,6 +1520,8 @@
                         downloadLabel={shareDownloadLabel}
                         linkCopied={share.linkCopied}
                         onCopyLink={() => void share.copyShareLink()}
+                        embedCopied={share.embedCopied}
+                        onCopyEmbed={() => void share.copyEmbedSnippet()}
                         onDownload={() => void downloadFromShare()}
                         downloadDetail={shareDownloadDetail}
                         downloadProgress={shareRendersDirectly &&

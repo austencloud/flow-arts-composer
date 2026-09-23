@@ -12,6 +12,48 @@ import {
   createLandingPageTransformer,
   shouldPreloadRouteAsset,
 } from "$lib/server/performance/landing-preload-policy";
+import { normalizeModuleId } from "$lib/shared/navigation/config/module-definitions";
+
+/**
+ * `/[...appPath]` (src/routes/[...appPath]/+layout.ts) is the client-only app
+ * shell (ssr=false) for every module path — /create, /browse, /settings, and
+ * so on. Before this guard, ANY unmatched path fell through to it and got a
+ * 200 with the empty SPA shell: a soft 404 that let junk URLs (typos, dead
+ * links, scraper noise) sit in Search Console as "indexed, not really".
+ *
+ * This can't be gated from a `+layout.server.ts`/`+page.server.ts` load
+ * function under that route: with ssr=false, SvelteKit skips running server
+ * load functions for the initial document request entirely (verified by
+ * curling a junk path against a dev server — a `load` there never executes,
+ * confirmed via debug logging before this fix landed) and defers them to a
+ * client-side fetch after hydration, so a `load`-level `error(404)` never
+ * reaches the initial HTTP response. `handle` has no such caveat: it runs for
+ * every request regardless of ssr, and `event.route.id`/`event.params` are
+ * already populated when it's called — confirmed the same way — so the gate
+ * lives here and answers with a real 404 before `resolve()` ever runs.
+ *
+ * Reuses `normalizeModuleId`, the exact function the client already uses to
+ * decide whether a URL's first path segment is a real module (current
+ * ModuleId values in MODULE_DEFINITIONS, plus every legacy alias in
+ * MODULE_ID_MIGRATIONS — e.g. /discover, /dashboard, /realm). Because it's
+ * the same registry the app routes with, this can't reject a path the app
+ * itself would accept — see app-path-registry-guard.test.ts, which enumerates
+ * every registered id and alias and asserts none 404 here.
+ */
+export function rejectUnknownAppPath(
+  routeId: string | null | undefined,
+  appPath: string | undefined
+): Response | undefined {
+  if (routeId !== "/[...appPath]") return undefined;
+
+  const firstSegment = appPath?.split("/").filter(Boolean)[0]?.toLowerCase();
+  if (firstSegment && normalizeModuleId(firstSegment)) return undefined;
+
+  return new Response("Not found", {
+    status: 404,
+    headers: { "content-type": "text/plain" },
+  });
+}
 
 /**
  * Check if a request is for a font file that needs CORS headers.
@@ -72,6 +114,15 @@ export const handle: Handle = async ({ event, resolve }) => {
     }
   }
 
+  // Soft-404 gate for the /[...appPath] SPA shell — see rejectUnknownAppPath.
+  // Runs after the proxies above: /__/auth/* and the Meta OAuth paths have no
+  // route of their own, so they match /[...appPath] and would 404 here.
+  const appPathRejection = rejectUnknownAppPath(
+    event.route?.id,
+    event.params?.appPath
+  );
+  if (appPathRejection) return appPathRejection;
+
   // Resolve the request with security headers
   const routePath = event.route?.id === "/" ? "/" : event.url.pathname;
   const response = await resolve(event, {
@@ -104,8 +155,17 @@ export const handle: Handle = async ({ event, resolve }) => {
   // COEP header - allows cross-origin resources needed for OAuth
   response.headers.set("Cross-Origin-Embedder-Policy", "unsafe-none");
 
-  // Additional security headers for production-ready app
-  response.headers.set("X-Frame-Options", "SAMEORIGIN");
+  // `/embed/*` is the embeddable sequence player: other sites frame it in an
+  // <iframe>, which is the entire point of the feature, so it is the one
+  // family of routes exempt from same-origin framing. XFO has no per-path
+  // syntax (SAMEORIGIN or nothing), so it is set for every other route and
+  // simply skipped here; CSP's frame-ancestors below carries the actual
+  // embed policy and takes precedence over XFO in every browser that reads
+  // both.
+  const isEmbedRoute = pathname.startsWith("/embed/");
+  if (!isEmbedRoute) {
+    response.headers.set("X-Frame-Options", "SAMEORIGIN");
+  }
 
   response.headers.set("X-Content-Type-Options", "nosniff");
 
@@ -133,6 +193,9 @@ export const handle: Handle = async ({ event, resolve }) => {
       "font-src 'self' https://fonts.gstatic.com",
       // firebaseio.com: RTDB falls back to an iframe transport when its websocket fails
       "frame-src 'self' blob: https://accounts.google.com https://*.firebaseapp.com https://*.firebaseio.com https://*.posthog.com",
+      // Any site may frame an embed page; every other route stays
+      // same-origin-only (matches the X-Frame-Options set above it).
+      isEmbedRoute ? "frame-ancestors *" : "frame-ancestors 'self'",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
