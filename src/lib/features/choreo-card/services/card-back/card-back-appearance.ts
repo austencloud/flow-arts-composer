@@ -1,6 +1,6 @@
 import { getSettings } from "$lib/shared/application/state/app-state.svelte";
 import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
 
 export interface CardBackAppearance {
@@ -16,8 +16,8 @@ export function resolveCardBackAppearance(
     ? getSettings().primaryPropColors
     : options.primaryPropColors;
   return {
-    leftPropType: options.leftPropType ?? settingsService.settings.leftPropType,
-    rightPropType: options.rightPropType ?? settingsService.settings.rightPropType,
+    leftPropType: options.leftPropType ?? settingsService.settings.leftPropType ?? PropType.STAFF,
+    rightPropType: options.rightPropType ?? settingsService.settings.rightPropType ?? PropType.STAFF,
     primaryPropColors: colors ? { left: colors.left, right: colors.right } : null,
   };
 }
