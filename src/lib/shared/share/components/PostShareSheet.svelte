@@ -1423,14 +1423,26 @@
     }
   });
 
+  // Closing the sheet retires its pending work, once, on the close itself.
+  // The sheet stays mounted while closed, and the viewer's own Download render
+  // flips isExportingVideo too. Tracking those flags here cancelled that
+  // render the instant it started, so the Export page's button did nothing.
+  let sheetWasActive = false;
   $effect(() => {
-    if (isOpen || preserveSession) return;
-    pendingDownload = false;
-    pendingDownloadVersion = null;
-    pendingDownloadSettingsKey = null;
-    pendingDownloadSourceKey = null;
-    pendingCardDownloadRevision = null;
-    if (videoBusy || isExportingVideo || isRecordingScene) cancelVideo();
+    if (isOpen || preserveSession) {
+      sheetWasActive = true;
+      return;
+    }
+    if (!sheetWasActive) return;
+    sheetWasActive = false;
+    untrack(() => {
+      pendingDownload = false;
+      pendingDownloadVersion = null;
+      pendingDownloadSettingsKey = null;
+      pendingDownloadSourceKey = null;
+      pendingCardDownloadRevision = null;
+      if (videoBusy || isExportingVideo || isRecordingScene) cancelVideo();
+    });
   });
 
   function applyPreset(text: string): void {

@@ -32,6 +32,25 @@ describe("GlyphOverlay step labels", () => {
     expect(screen.container.textContent).not.toContain("Start");
   });
 
+  // Leaving the start position, isAtStartPlacement clears a frame before
+  // displayedStepNumber advances past 0. Both states render "Start", so the
+  // label group must stay mounted instead of remounting a second "Start".
+  it("keeps the Start group when the step number is still 0", async () => {
+    const screen = render(GlyphOverlay, {
+      stepNumbersVisible: true,
+      isAtStartPlacement: true,
+      displayedStepNumber: 0,
+    });
+    await expect.element(screen.getByText("Start")).toBeInTheDocument();
+    const group = screen.container.querySelector(".beat-number-group");
+
+    await screen.rerender({ isAtStartPlacement: false, displayedStepNumber: 0 });
+
+    const groups = screen.container.querySelectorAll(".beat-number-group");
+    expect(groups).toHaveLength(1);
+    expect(groups[0]).toBe(group);
+  });
+
   it("hides End when step numbers are off", async () => {
     const screen = render(GlyphOverlay, {
       stepNumbersVisible: false,

@@ -55,7 +55,10 @@ describe("shape matrix mandala continuity", () => {
     // box; no CSS align scale, no glow the live guide does not have.
     const hero = read("components/MandalaHeroLayer.svelte");
     const art = read("components/ShapeMatrixMandalaArt.svelte");
-    expect(hero).toContain("pathsArtworkSrc(paths, sizePx, tipDx)");
+    expect(hero).toContain("pathsArtworkSrc(paths, sizePx, tipDx, painter)");
+    expect(hero).toContain(
+      "shapeMatrixArtworkPainterForColors(getSettings().primaryPropColors)"
+    );
     expect(hero).toContain("engineExtentBoxRatio(paths, tipDx)");
     expect(hero).toContain("calc(100% * var(--extent-ratio))");
     expect(hero).not.toMatch(/alignScale|glowColor/);
@@ -78,7 +81,13 @@ describe("shape matrix mandala continuity", () => {
     );
     expect(render).toContain("export function engineExtentBoxRatio");
     const artwork = read("services/shape-matrix-artwork.ts");
-    expect(artwork).toMatch(/renderExtentFit\(paths, size, tipDx\)/);
+    // The hero floor is extent fit in the default palette and in every saved
+    // palette alike.
+    expect(artwork).toContain("extent: renderExtentFit,");
+    expect(artwork).toMatch(
+      /renderExtentFit\(paths, sizePx, tipDx, \{ colors: palette \}\)/
+    );
+    expect(artwork).toContain("painter.extent ?? renderExtentFit");
 
     // The word header lives above the square in a drill-owned band, so the
     // hero frame IS the canvas region and both inscribed squares coincide.

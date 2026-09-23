@@ -65,6 +65,8 @@ export interface ShapeMatrixArtworkPainter {
     sizePx: number,
     tipDx: number
   ) => string;
+  /** The detail hero's cold floor: already-merged paths at extent fit. */
+  extent?: (paths: MandalaPaths, sizePx: number, tipDx: number) => string;
   /**
    * Separates rasters painted with different hand colors. Custom painters
    * already have isolated caches by object identity, but palette painters can
@@ -76,6 +78,7 @@ export interface ShapeMatrixArtworkPainter {
 export const CLUB_ARTWORK_PAINTER: ShapeMatrixArtworkPainter = {
   cell: renderCell,
   header: renderHeader,
+  extent: renderExtentFit,
   cacheKey: "hero",
 };
 
@@ -108,6 +111,8 @@ export function shapeMatrixArtworkPainterForColors(
       renderCell(left, right, sizePx, tipDx, { colors: palette }),
     header: (paths, hand, sizePx, tipDx) =>
       renderHeader(paths, hand, sizePx, tipDx, { colors: palette }),
+    extent: (paths, sizePx, tipDx) =>
+      renderExtentFit(paths, sizePx, tipDx, { colors: palette }),
   };
   palettePainters.set(cacheKey, painter);
   if (palettePainters.size > PALETTE_PAINTER_LIMIT) {
@@ -220,14 +225,14 @@ function pathsId(paths: MandalaPaths): number {
 export function pathsArtworkSrc(
   paths: MandalaPaths,
   sizePx: number,
-  tipDx: number
+  tipDx: number,
+  painter: ShapeMatrixArtworkPainter = CLUB_ARTWORK_PAINTER
 ): string {
   const size = Math.round(sizePx);
   if (!(size > 0)) return "";
-  const key = `paths|${pathsId(paths)}|${size}|${tipDx}|${currentDpr()}`;
-  return cacheFor(CLUB_ARTWORK_PAINTER).get(key, () =>
-    renderExtentFit(paths, size, tipDx)
-  );
+  const paintExtent = painter.extent ?? renderExtentFit;
+  const key = `paths|${painter.cacheKey ?? "custom"}|${pathsId(paths)}|${size}|${tipDx}|${currentDpr()}`;
+  return cacheFor(painter).get(key, () => paintExtent(paths, size, tipDx));
 }
 
 /**

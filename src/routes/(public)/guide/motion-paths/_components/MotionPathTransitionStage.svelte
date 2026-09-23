@@ -11,6 +11,7 @@
     DEFAULT_TRAIL_SETTINGS,
     TrackingMode,
   } from "$lib/shared/animation-engine/domain/types/trail-types";
+  import { foldTrailIntentIntoSettings } from "$lib/shared/effects/translators/canvas2d-translator";
 
   type Source = "first" | "second";
 
@@ -26,6 +27,7 @@
     transitionKey: string;
     scope: AnimationScope;
     playing: boolean;
+    bpm: number;
     trace: "hands" | "tips";
     leftPropType: PropType;
     rightPropType: PropType;
@@ -46,6 +48,7 @@
     transitionKey,
     scope,
     playing,
+    bpm,
     trace,
     leftPropType,
     rightPropType,
@@ -81,14 +84,21 @@
   });
   let firstCanvasInitialized = false;
   let secondCanvasInitialized = false;
-  // This stage has no trail-tip assignments. Disabling path-cache construction
-  // avoids deriving invisible trails before a replacement can crossfade.
-  const motionPathTrailSettings = $derived({
-    ...DEFAULT_TRAIL_SETTINGS,
-    usePathCache: false,
-    trackingMode:
-      trace === "hands" ? TrackingMode.HAND : TrackingMode.RIGHT_END,
-  });
+  // Trace picks the point the mandala and any trail follow. The Trails look
+  // (thickness, brightness, colors) comes from the scope's effects, which the
+  // toy box edits. Live capture draws the trail, so no path cache is built
+  // before a replacement can crossfade.
+  const motionPathTrailSettings = $derived(
+    foldTrailIntentIntoSettings(
+      {
+        ...DEFAULT_TRAIL_SETTINGS,
+        usePathCache: false,
+        trackingMode:
+          trace === "hands" ? TrackingMode.HAND : TrackingMode.RIGHT_END,
+      },
+      scope.effects.trails
+    )
+  );
 
   function layerFor(source: Source): Layer | null {
     return source === "first" ? first : second;
@@ -307,8 +317,7 @@
       visibilityManagerOverride={scope.visibility}
       effectsConfigState={scope.effects}
       trailSettingsOverride={motionPathTrailSettings}
-      tipEffectMap={{}}
-      tipEffortMap={{}}
+      tipEffectMap={scope.effects.tipEffectMap}
       {leftPropType}
       {rightPropType}
       chrome="minimal"
@@ -318,7 +327,7 @@
       externalStep={waiting === source && releasing !== source
         ? handoffStep(layer)
         : null}
-      externalBpm={48}
+      externalBpm={bpm}
       backgroundAlpha={0}
       onExternalPlayingChange={onplayingchange}
       {...callbacks}

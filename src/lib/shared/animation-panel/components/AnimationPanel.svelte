@@ -184,6 +184,8 @@
     /** Hide the four sequence-only edge marks (TKA glyph, element, step number,
      *  word) for a host animating something with no letter and no steps. */
     showSequenceMarks?: boolean;
+    /** Leave out the Word tile for a host that never draws a word header. */
+    showWordToggle?: boolean;
     /** Restrict the effect roster to what the host's renderer can actually
      *  draw. Omit for the full roster. */
     availableEffects?: readonly string[];
@@ -239,6 +241,7 @@
     showInlineExportProgress = true,
     showMotionVisibility = false,
     showSequenceMarks = true,
+    showWordToggle = true,
     availableEffects,
     showPathShape = true,
     onSettingChange,
@@ -992,6 +995,7 @@
       <DisplayPanel
         {showMotionVisibility}
         {showSequenceMarks}
+        {showWordToggle}
         {sequence}
         propType={selectedPropType}
         fill={layout === "sidebar"}
