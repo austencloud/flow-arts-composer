@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { toFirestoreFields } from "../../src/lib/shared/firestore/firestore-value-codec";
 
 const mocks = vi.hoisted(() => ({
+  getDocument: vi.fn(),
   listDocuments: vi.fn(),
   getFirestoreRest: vi.fn(),
 }));
@@ -18,12 +19,26 @@ vi.mock("$lib/server/firestore/firestore-rest", async () => {
 
 import { GET } from "../../src/routes/sitemap.xml/+server";
 
+const CATALOG_ID = "l1-tnd-motions";
+
 function manifestDoc(name: string, sequenceIds: string[]) {
   return {
     name: `projects/test/databases/(default)/documents/deckReleases/counter/manifests/${name}`,
     fields: toFirestoreFields({
-      sequences: sequenceIds.map((sequenceId) => ({ sequenceId })),
+      sequences: sequenceIds.map((sequenceId) => ({
+        sequenceId,
+        sourceCatalogId: CATALOG_ID,
+        stepCount: 4,
+      })),
     }),
+  };
+}
+
+/** A released catalog record; `author: null` is what renders a card noindex. */
+function catalogDoc(word: string, author: string | null = "TKA System") {
+  return {
+    name: `projects/test/databases/(default)/documents/catalogs/${CATALOG_ID}/sequences/${word}`,
+    fields: toFirestoreFields({ word, author, steps: [{}, {}, {}, {}] }),
   };
 }
 
@@ -39,8 +54,14 @@ describe("sitemap.xml curated sequence URLs", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getFirestoreRest.mockReturnValue({
+      getDocument: mocks.getDocument,
       listDocuments: mocks.listDocuments,
     });
+    mocks.getDocument.mockImplementation(async (path: string) =>
+      path.startsWith(`catalogs/${CATALOG_ID}/sequences/`)
+        ? catalogDoc(path.split("/").pop() ?? "")
+        : null
+    );
   });
 
   it("lists a card URL for every released sequenceId, resolved over the REST client with the platform credential", async () => {
@@ -71,6 +92,26 @@ describe("sitemap.xml curated sequence URLs", () => {
       "deckReleases/counter/manifests",
       expect.objectContaining({ pageSize: 200 })
     );
+  });
+
+  it("leaves out a released card the page would serve as noindex", async () => {
+    mocks.listDocuments.mockResolvedValue({
+      documents: [
+        manifestDoc("1", ["tnd-split-same-aaaa", "hand-path-reference-ss"]),
+      ],
+    });
+    mocks.getDocument.mockImplementation(async (path: string) => {
+      if (path.endsWith("/tnd-split-same-aaaa")) return catalogDoc("AAAA");
+      if (path.endsWith("/hand-path-reference-ss")) {
+        return catalogDoc("Split-Same", null);
+      }
+      return null;
+    });
+
+    const xml = await (await GET(event())).text();
+
+    expect(xml).toContain("sequence/tnd-split-same-aaaa</loc>");
+    expect(xml).not.toContain("hand-path-reference-ss");
   });
 
   it("de-duplicates a sequenceId released into more than one deck", async () => {

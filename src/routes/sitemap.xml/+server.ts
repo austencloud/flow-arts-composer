@@ -1,10 +1,14 @@
 import { LANDING_DOMAIN } from "../../config/domains";
 import { GUIDE_BODY_PAGES } from "../(public)/guide/level-1/_data/guide-manifest";
 import { TIMING_DIRECTION_ARTICLE_SLUGS } from "../(public)/timing-and-direction/_data/timing-direction-articles";
+import { getFirestoreRest } from "$lib/server/firestore/firestore-rest";
 import {
-  fromFirestoreFields,
-  getFirestoreRest,
-} from "$lib/server/firestore/firestore-rest";
+  emptySequenceMeta,
+  isSafeFirestoreDocumentId,
+  listReleaseManifests,
+  resolvePublishedMeta,
+} from "../sequence/[id]/published-meta";
+import { isSequenceIndexable } from "../sequence/[id]/sequence-seo";
 import type { RequestHandler } from "./$types";
 
 interface SitemapEntry {
@@ -115,26 +119,41 @@ async function getCuratedSequenceUrls(
 ): Promise<string[]> {
   try {
     const firestore = getFirestoreRest(platformCredential);
-    const { documents } = await firestore.listDocuments(
-      "deckReleases/counter/manifests",
-      { pageSize: 200, fieldPaths: ["sequences"] }
-    );
+    const manifests = await listReleaseManifests(firestore);
 
     const ids = new Set<string>();
-    outer: for (const doc of documents) {
-      const manifest = fromFirestoreFields(doc.fields ?? {});
+    outer: for (const manifest of manifests) {
       const sequences = Array.isArray(manifest.sequences)
         ? (manifest.sequences as { sequenceId?: unknown }[])
         : [];
       for (const card of sequences) {
-        if (typeof card?.sequenceId === "string" && card.sequenceId) {
+        if (
+          typeof card?.sequenceId === "string" &&
+          isSafeFirestoreDocumentId(card.sequenceId)
+        ) {
           ids.add(card.sequenceId);
         }
         if (ids.size >= 200) break outer;
       }
     }
 
-    return [...ids].map((id) => `sequence/${encodeURIComponent(id)}`);
+    // List only what the card page will actually serve as indexable: a
+    // released card without a word or creator renders noindex, and a noindex
+    // URL in the sitemap is a Search Console error.
+    const resolved = await Promise.allSettled(
+      [...ids].map((id) =>
+        resolvePublishedMeta(firestore, manifests, id, emptySequenceMeta())
+      )
+    );
+
+    return [...ids]
+      .filter((_, index) => {
+        const result = resolved[index];
+        return (
+          result?.status === "fulfilled" && isSequenceIndexable(result.value)
+        );
+      })
+      .map((id) => `sequence/${encodeURIComponent(id)}`);
   } catch (error) {
     // Non-fatal: the sitemap must never 500 on a Firestore/credentials
     // outage, but a silent catch here is exactly how this went unnoticed —
