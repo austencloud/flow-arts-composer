@@ -19,10 +19,11 @@
    * can highlight the in-view Level 2 section.
    */
   import type { Snippet } from "svelte";
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
   import { browser } from "$app/environment";
   import { page } from "$app/state";
   import GuideSidebar from "./GuideSidebar.svelte";
+  import { setGuideChromeContext } from "./guide-chrome-context";
   import SiteHeader from "$lib/shared/landing/components/SiteHeader.svelte";
   import SiteFooter from "$lib/shared/landing/components/SiteFooter.svelte";
   import "../level-1/_styles/guide.css";
@@ -61,6 +62,23 @@
     else if (delta < -6) pillTucked = false;
   }
 
+  // A page region that takes the whole viewport keeps the pill tucked while
+  // it is open, whichever way the page scrolls to show it. Holds are taken
+  // from effects, so the count is changed untracked: reading it there would
+  // make the caller's effect rerun on its own hold.
+  let pillHolds = $state(0);
+  setGuideChromeContext({
+    holdPillAway() {
+      untrack(() => (pillHolds += 1));
+      let released = false;
+      return () => {
+        if (released) return;
+        released = true;
+        untrack(() => (pillHolds -= 1));
+      };
+    },
+  });
+
   onMount(() => {
     if (!browser || !ownsStandaloneChrome) return;
     void (async () => {
@@ -83,7 +101,7 @@
 <div class="guide-layout">
   <button
     class="mobile-menu-btn"
-    class:tucked={pillTucked && !sidebarOpen}
+    class:tucked={(pillTucked || pillHolds > 0) && !sidebarOpen}
     onclick={() => (sidebarOpen = !sidebarOpen)}
     aria-label={sidebarOpen ? "Close Guide contents" : "Open Guide contents"}
     aria-expanded={sidebarOpen}
