@@ -35,6 +35,7 @@ import { drawTintedImage } from "@tka/render-composition";
 import type { RenderCanvas } from "./types";
 import { captureException } from "$lib/shared/analytics/services/posthog";
 import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { applyModelSpriteColor } from "$lib/shared/pictograph/prop/domain/prop-preview-color";
 
 import {
   applyColorToSvg,
@@ -277,7 +278,8 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
     let turnsTuple: string | null = "(s, 0, 0)";
     if (visibility.showTKA) {
       try {
-        turnsTuple = getTurnsTupleGenerator().generateTurnsTuple(preparedPictograph);
+        turnsTuple =
+          getTurnsTupleGenerator().generateTurnsTuple(preparedPictograph);
       } catch {
         turnsTuple = null;
       }
@@ -568,20 +570,25 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
         const viewBoxHeight = viewBoxParts[1] || 100;
 
         const displayColor = options.visibility.primaryPropColors?.[color];
+        // Model captures are rasters: the fill rewrite leaves them alone and
+        // the chroma tint does the recolor.
         const artwork = displayColor
-          ? applyColorToSvg(assets.imageSrc, displayColor, {
-              sourceColors: [
-                getMotionColor(color, "dark"),
-                getMotionColor(color, "light"),
-              ],
-              selectiveColorMode: (
-                SELECTIVE_COLOR_PROP_TYPES as readonly string[]
-              ).includes(
-                String(
-                  assets.propType ?? pictograph.motions?.[color]?.propType
-                ).toLowerCase()
-              ),
-            })
+          ? applyModelSpriteColor(
+              applyColorToSvg(assets.imageSrc, displayColor, {
+                sourceColors: [
+                  getMotionColor(color, "dark"),
+                  getMotionColor(color, "light"),
+                ],
+                selectiveColorMode: (
+                  SELECTIVE_COLOR_PROP_TYPES as readonly string[]
+                ).includes(
+                  String(
+                    assets.propType ?? pictograph.motions?.[color]?.propType
+                  ).toLowerCase()
+                ),
+              }),
+              displayColor
+            )
           : assets.imageSrc;
         const wrapped = wrapSvgContent(
           artwork,

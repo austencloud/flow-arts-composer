@@ -76,16 +76,21 @@
   } = $props();
 
   const id = $props.id();
-  const palette = $derived(
-    resolveViewerCustomColorPair(colors, {
-      left: getMotionColor(HandSide.LEFT, darkBackground ? "dark" : "light"),
-      right: getMotionColor(HandSide.RIGHT, darkBackground ? "dark" : "light"),
-    })
-  );
 
   type GetSettings =
     (typeof import("$lib/shared/application/state/app-state.svelte"))["getSettings"];
   let getSettings = $state<GetSettings | null>(null);
+
+  // Hosts that don't pass colors show the user's chosen prop colors.
+  const palette = $derived(
+    resolveViewerCustomColorPair(
+      colors !== undefined ? colors : getSettings?.().primaryPropColors,
+      {
+        left: getMotionColor(HandSide.LEFT, darkBackground ? "dark" : "light"),
+        right: getMotionColor(HandSide.RIGHT, darkBackground ? "dark" : "light"),
+      }
+    )
+  );
 
   onMount(() => {
     if (!useSavedOverrides) return;
@@ -126,14 +131,19 @@
   );
   let sources = $state<Record<string, string>>({});
   $effect(() => {
-    if (!pairedGlyph) return;
+    const drawn = pairedGlyph
+      ? [leftGlyph, rightGlyph]
+      : neutral
+        ? []
+        : [leftArt, rightArt];
     const paths = [
       ...new Set(
-        [leftGlyph, rightGlyph]
-          .filter((art) => !art.prelit)
+        drawn
+          .filter((art) => !art.prelit && !art.fill && art.href)
           .map((art) => art.href)
       ),
     ];
+    if (!paths.length) return;
     let current = true;
     void Promise.all(
       paths.map(async (path) => {
@@ -192,6 +202,21 @@
     settingsReady
       ? propTileArtwork(propType, "right", lookAppearance, displayInfo.image)
       : plainArt
+  );
+  // Tiles draw in the hand colors once the artwork text has loaded; until then
+  // they show the stock artwork rather than an empty square.
+  const tileLeft = $derived(
+    leftArt.prelit || !sources[leftArt.href]
+      ? leftArt
+      : coloredArtwork(leftArt, propType, palette.left)
+  );
+  const tileRight = $derived(
+    rightArt.prelit || !sources[rightArt.href]
+      ? rightArt
+      : coloredArtwork(rightArt, propType, palette.right)
+  );
+  const tileRecolored = $derived(
+    tileLeft !== leftArt || leftArt.prelit
   );
 
   // Check for persisted overrides from the Prop Button Lab
@@ -263,6 +288,27 @@
   {/if}
 {/snippet}
 
+{#snippet handFilters()}
+  {#each ["left", "right"] as hand}
+    <filter
+      id={`${id}-${hand}`}
+      x="-10%"
+      y="-10%"
+      width="120%"
+      height="120%"
+      color-interpolation-filters="sRGB"
+    >
+      <feColorMatrix
+        type="matrix"
+        values={modelPreviewColorMatrix(
+          hand === "left" ? palette.left : palette.right,
+          hand as "left" | "right"
+        )}
+      />
+    </filter>
+  {/each}
+{/snippet}
+
 {#if pairedGlyph}
   <svg
     class="prop-composition-preview"
@@ -272,24 +318,7 @@
     aria-hidden="true"
   >
     <defs>
-      {#each ["left", "right"] as hand}
-        <filter
-          id={`${id}-${hand}`}
-          x="-10%"
-          y="-10%"
-          width="120%"
-          height="120%"
-          color-interpolation-filters="sRGB"
-        >
-          <feColorMatrix
-            type="matrix"
-            values={modelPreviewColorMatrix(
-              hand === "left" ? palette.left : palette.right,
-              hand as "left" | "right"
-            )}
-          />
-        </filter>
-      {/each}
+      {@render handFilters()}
       <!-- Only tiny fan spokes need extra alpha coverage. Preserve their RGB
            detail and never expand the edges of the larger picker artwork. -->
       <filter id={`${id}-fan-coverage`} color-interpolation-filters="sRGB">
@@ -379,7 +408,7 @@
   <svg
     class="prop-composition-preview"
     class:dark-bg={darkBackground}
-    class:styled={leftArt.styled}
+    class:styled={leftArt.styled || tileRecolored}
     width={size}
     height={size}
     viewBox="0 0 100 100"
@@ -406,12 +435,19 @@
         />
       </svg>
     {:else}
-      <g transform={leftTransform}>
-        {@render propImage(leftArt, false)}
+      <defs>{@render handFilters()}</defs>
+      <g
+        transform={leftTransform}
+        filter={leftArt.prelit ? `url(#${id}-left)` : undefined}
+      >
+        {@render propImage(tileLeft, false)}
       </g>
 
-      <g transform={rightTransform}>
-        {@render propImage(rightArt, true)}
+      <g
+        transform={rightTransform}
+        filter={rightArt.prelit ? `url(#${id}-right)` : undefined}
+      >
+        {@render propImage(tileRight, tileRight === rightArt && !rightArt.prelit)}
       </g>
     {/if}
   </svg>
