@@ -12,10 +12,12 @@
    *    `/guide/level-1/<slug>` routes, one per topic. Row label = the same
    *    `seoForSlug(id, title).h1` the guide hub's TOC uses, so the two surfaces
    *    read identically.
-   *  - Level 2: `LEVEL2_SECTION_ANCHORS` (level-2 guide-manifest.ts) - the real
-   *    `<GuideSection id="...">` ids rendered on `/guide/level-2/turns` and
-   *    `/guide/level-2/double-turns` today (level-2's per-topic URL split is a
-   *    later phase; see the design doc).
+   *  - Level 2: `LEVEL2_SECTION_ANCHORS` (level-2 guide-manifest.ts) for the
+   *    grouping/labels - the real `<GuideSection id="...">` ids, now split
+   *    across real `/guide/level-2/<slug>` topic routes (level2-topic-manifest.ts,
+   *    `LEVEL2_ANCHOR_ROUTE_SLUG`) instead of living as in-page anchors on
+   *    `/guide/level-2/turns` / `/guide/level-2/double-turns` (those two are
+   *    chapter-overview hubs now, same shape as `/guide/level-1`).
    *
    * Active state: the current route highlights by `page.url.pathname` for
    * Level 1 rows + Codex; the current in-page section highlights via
@@ -37,6 +39,7 @@
     LEVEL2_SECTION_ANCHORS,
     LEVEL2_GROUP_TITLES,
   } from "../level-2/_data/guide-manifest";
+  import { LEVEL2_ANCHOR_ROUTE_SLUG } from "../level-2/_data/level2-topic-manifest";
 
   let {
     activeSectionId = "",
@@ -233,7 +236,7 @@
                     aria-current={activeSectionId === section.id
                       ? "location"
                       : undefined}
-                    href={`/guide/level-2/${route.slug}#${section.id}`}
+                    href={`/guide/level-2/${LEVEL2_ANCHOR_ROUTE_SLUG[section.id] ?? route.slug}#${section.id}`}
                     onclick={() => onLinkClick?.()}
                   >
                     {section.title}

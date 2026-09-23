@@ -1,26 +1,16 @@
 <script lang="ts">
-  import { setGuideData } from "../../level-1/_data/guide-data-context";
-  import chapterData from "../_data/turns.json";
-  import type { GuideChapterData } from "../../level-1/_data/guide-types";
-
-  import TurnShifts from "../_sections/ch20/TurnShifts.svelte";
-  import TurnDashes from "../_sections/ch20/TurnDashes.svelte";
-  import TurnStatic from "../_sections/ch20/TurnStatic.svelte";
-  import GlyphsPADS from "../_sections/ch20/GlyphsPADS.svelte";
-  import Type1Turns from "../_sections/ch20/Type1Turns.svelte";
-  import SandT from "../_sections/ch20/SandT.svelte";
-  import Type2Turns from "../_sections/ch20/Type2Turns.svelte";
-  import Type3Turns from "../_sections/ch20/Type3Turns.svelte";
-  import Type4Turns from "../_sections/ch20/Type4Turns.svelte";
-  import OpeningClosing from "../_sections/ch20/OpeningClosing.svelte";
-  import Type5Turns from "../_sections/ch20/Type5Turns.svelte";
-  import Type6Turns from "../_sections/ch20/Type6Turns.svelte";
-  import OneOneTurns from "../_sections/ch20/OneOneTurns.svelte";
-
+  /**
+   * Chapter hub for 1-Turns. Used to concatenate all 13 ch20 GuideSection
+   * components into one long page; each now has its own crawlable
+   * `/guide/level-2/<slug>` route (see level2-topic-manifest.ts for the
+   * section → route mapping and why), so this page becomes an overview +
+   * links, mirroring `/guide/level-2`'s own hub pattern. Kept at this URL
+   * (rather than 301'd) since it already carries inbound/search traffic.
+   */
   import GuideSeo from "../../level-1/_components/GuideSeo.svelte";
-  import GuideCompanionHost from "../../_components/GuideCompanionHost.svelte";
+  import { level2TopicPagesForChapter } from "../_data/level2-topic-manifest";
 
-  setGuideData(chapterData as unknown as GuideChapterData);
+  const topics = level2TopicPagesForChapter("turns");
 </script>
 
 <GuideSeo
@@ -36,40 +26,70 @@
   ]}
 />
 
-<GuideCompanionHost pageTitle="1-Turns" levelLabel="Level 2">
+<div class="chapter-hub">
   <h1>1-Turns</h1>
+  <p class="intro">
+    Level 2 chapter on 1-turns: 180° prop rotations layered onto shifts, dashes, and static
+    motions, with glyphs, PADS ordering, and Types 1–6 with turns.
+  </p>
 
-  <TurnShifts />
-  <TurnDashes />
-  <TurnStatic />
-  <GlyphsPADS />
-  <Type1Turns />
-  <SandT />
-  <Type2Turns />
-  <Type3Turns />
-  <Type4Turns />
-  <OpeningClosing />
-  <Type5Turns />
-  <Type6Turns />
-  <OneOneTurns />
-</GuideCompanionHost>
+  <nav class="topic-list" aria-label="1-Turns topics">
+    <ol>
+      {#each topics as topic (topic.slug)}
+        <li>
+          <a href="/guide/level-2/{topic.slug}">
+            <strong>{topic.h1}</strong>
+            <span>{topic.description}</span>
+          </a>
+        </li>
+      {/each}
+    </ol>
+  </nav>
+</div>
 
 <style>
-  /* Ink contract for this dark host (P2, guide-shell parity spec): declares
-     --ink/--ink-dim/--glyph-invert on the ambient `.guide-content` grid
-     (painted by GuideShell/`.guide-layout` in level-1/_styles/guide.css) so
-     TurnStrip and SequenceShowcase read authoritative values instead of
-     falling back to their own hardcoded dark-host guesses (see TurnStrip.svelte's
-     top-of-file comment). NO background/light-mode override here: `.guide-layout`
-     paints an UNCONDITIONAL dark background (oklch(0.13 0.015 270), no
-     prefers-color-scheme/data-theme branch - guide.css:72-79) - level-2's shell
-     has no light variant to switch to, unlike level-1's GuidePageHost route
-     (which owns its own light/dark background and toggles both). Adding a
-     light-ink override without a matching light background would make text
-     invisible, so this only declares the one value the shell actually renders. */
-  :global(.guide-content) {
-    --ink: #ececf2;
-    --ink-dim: #a8a8b4;
-    --glyph-invert: 1;
+  .chapter-hub {
+    max-width: 44rem;
+    margin: 0 auto;
+    padding-bottom: 2rem;
+  }
+  .intro {
+    text-align: center;
+    max-width: 36rem;
+    margin: 0 auto 2rem;
+  }
+  .topic-list ol {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+  .topic-list a {
+    display: block;
+    padding: 1rem 1.25rem;
+    background: oklch(0.18 0.02 270 / 0.6);
+    border: 1px solid oklch(0.45 0.04 270 / 0.35);
+    border-radius: 8px;
+    text-decoration: none;
+    color: inherit;
+    transition:
+      border-color 0.15s,
+      box-shadow 0.15s;
+  }
+  .topic-list a:hover {
+    border-color: #4ea7e8;
+    box-shadow: 0 2px 8px rgba(78, 167, 232, 0.25);
+  }
+  .topic-list strong {
+    display: block;
+    color: oklch(0.9 0.02 270);
+  }
+  .topic-list span {
+    display: block;
+    font-size: 0.9rem;
+    color: oklch(0.68 0.02 270);
+    margin-top: 0.25rem;
   }
 </style>
