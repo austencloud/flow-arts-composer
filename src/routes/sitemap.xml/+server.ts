@@ -1,6 +1,7 @@
 import { LANDING_DOMAIN } from "../../config/domains";
 import { GUIDE_BODY_PAGES } from "../(public)/guide/level-1/_data/guide-manifest";
 import { TIMING_DIRECTION_ARTICLE_SLUGS } from "../(public)/timing-and-direction/_data/timing-direction-articles";
+import { TKA_CONCEPTS } from "$lib/features/learn/domain/concepts";
 import { getFirestoreRest } from "$lib/server/firestore/firestore-rest";
 import {
   emptySequenceMeta,
@@ -30,6 +31,7 @@ const pages: SitemapEntry[] = [
   { url: "shop" },
   { url: "shop/loop-deck" },
   { url: "shop/tnd-trilogy" },
+  { url: "shop/starter-pack" },
   // /shop/choreography-cards redirects (308) to /shop after the explainer moved
   // into the product pages. A redirected URL doesn't self-list.
   // Pillar pages (SEO content roadmap)
@@ -78,7 +80,12 @@ const pages: SitemapEntry[] = [
   { url: "guide/level-2/turns" },
   { url: "guide/level-2/double-turns" },
   { url: "guide/ratios" },
+  { url: "guide/motion-paths" },
   { url: "guide/codex" },
+  // The interactive lesson course. The index is the course landing; each
+  // lesson also gets a stable deep link — see learnConceptsEntries below,
+  // derived from TKA_CONCEPTS so a new lesson is listed automatically.
+  { url: "learn/concepts" },
 ];
 
 /**
@@ -92,6 +99,16 @@ const guideLevel1Entries = GUIDE_BODY_PAGES.map((p) => ({
 
 const timingDirectionEntries = TIMING_DIRECTION_ARTICLE_SLUGS.map((slug) => ({
   url: `timing-and-direction/${slug}`,
+}));
+
+/**
+ * Every interactive lesson (/learn/concepts/<id>), enumerated from the same
+ * TKA_CONCEPTS registry PublicConceptCourse.svelte reads to resolve a lesson
+ * by id, so a new lesson is listed here automatically and this can't drift
+ * from the routes that actually exist.
+ */
+const learnConceptsEntries = TKA_CONCEPTS.map((concept) => ({
+  url: `learn/concepts/${concept.id}`,
 }));
 
 /**
@@ -180,6 +197,7 @@ export const GET: RequestHandler = async (event) => {
     ...pages,
     ...timingDirectionEntries,
     ...guideLevel1Entries,
+    ...learnConceptsEntries,
     ...curatedUrls.map((url) => ({ url })),
   ];
 
