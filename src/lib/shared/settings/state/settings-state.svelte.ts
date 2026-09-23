@@ -12,6 +12,11 @@ import {
   type AppSettings,
   type PropPreset,
 } from "../domain/app-settings";
+import {
+  healPropPair,
+  isPropPairKey,
+  normalizePropPatch,
+} from "../domain/prop-pair-rule";
 import { DEFAULT_FAN_APPEARANCE } from "../../pictograph/prop/domain/fan-appearance";
 import { DEFAULT_PROP_LOOK } from "../../pictograph/prop/domain/prop-look";
 // Dynamic import: posthog-activity-logger → posthog → $env/dynamic/public.
@@ -119,7 +124,8 @@ const initialSettings = (() => {
     // A timestamp without an owning UID cannot establish that browser-global
     // settings are newer than the account Firebase is about to restore.
     delete parsed._localTimestamp;
-    return { ...DEFAULT_SETTINGS, ...parsed };
+    const merged = { ...DEFAULT_SETTINGS, ...parsed };
+    return { ...merged, ...healPropPair(merged) };
   } catch {
     return DEFAULT_SETTINGS;
   }
@@ -454,6 +460,11 @@ class SettingsState {
         ] as never;
       }
     }
+    // The pair fields are excluded from realtime sync but legacy propType is
+    // not, so a remote document can land a propType that disagrees with the
+    // local left hand.
+    Object.assign(settingsState, healPropPair(settingsState));
+
     // Optional account slices must be cleared when the authoritative document
     // omits them; a shallow defaults merge cannot remove a stale local value.
     if (!this.hasUnsavedLocalEdit("imageExport", userId)) {
@@ -606,6 +617,12 @@ class SettingsState {
       return;
     }
 
+    // Pair fields carry companions (the other hand, the flag, propType), so
+    // they go through the normalized patch path and are marked edited together.
+    if (isPropPairKey(key)) {
+      return this.updateSettings({ [key]: value } as Partial<AppSettings>);
+    }
+
     const isSceneUndoable = key === "backgroundType" || key === "gridMode";
     if (isSceneUndoable) {
       const sceneUndo = getSceneUndoManager();
@@ -644,6 +661,7 @@ class SettingsState {
   }
 
   async updateSettings(newSettings: Partial<AppSettings>): Promise<void> {
+    newSettings = normalizePropPatch(settingsState, newSettings);
     const oldBackgroundType = settingsState.backgroundType;
     const newBackgroundType = newSettings.backgroundType;
     const backgroundTypeChanged =
@@ -1009,6 +1027,7 @@ class SettingsState {
         developerMode?: boolean;
       };
       const merged = { ...DEFAULT_SETTINGS, ...parsed };
+      Object.assign(merged, healPropPair(merged));
 
       if ("_localTimestamp" in merged) {
         delete merged._localTimestamp;

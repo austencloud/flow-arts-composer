@@ -297,10 +297,13 @@
   function handleInlineSelect(propType: PropType) {
     hapticService?.trigger("selection");
     selectedLeftPropType = propType;
-    onUpdate?.({ key: "leftPropType", value: propType });
-    if (!catDogMode) {
+    if (catDogMode) {
+      onUpdate?.({ key: "leftPropType", value: propType });
+    } else {
+      // One write for both hands: two single-hand writes would read as a
+      // mixed pair in between and turn cat dog on.
       selectedRightPropType = propType;
-      onUpdate?.({ key: "rightPropType", value: propType });
+      onUpdate?.({ key: "propType", value: propType });
     }
     updateCurrentPreset();
   }
@@ -319,10 +322,12 @@
     if (hand === "left") {
       const next = toggleBigVariant(selectedLeftPropType);
       selectedLeftPropType = next;
-      onUpdate?.({ key: "leftPropType", value: next });
-      if (!catDogMode) {
+      if (catDogMode) {
+        onUpdate?.({ key: "leftPropType", value: next });
+      } else {
+        // One write for both hands, same reason as handleInlineSelect.
         selectedRightPropType = next;
-        onUpdate?.({ key: "rightPropType", value: next });
+        onUpdate?.({ key: "propType", value: next });
       }
     } else {
       const next = toggleBigVariant(selectedRightPropType);
