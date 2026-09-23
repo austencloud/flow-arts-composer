@@ -1,7 +1,9 @@
 # Export Reliability — Video/GIF Export Lifecycle
 
 **Scope:** `src/lib/shared/video-export`, `src/lib/shared/export-panel`, and the
-export-orchestration tests that belong to them.
+export-orchestration tests that belong to them — plus, on request, the GIF
+export path (`animation-engine/services/live-canvas-gif-exporter.ts`), which the
+first pass wrongly skipped despite "video/GIF" in the brief.
 **Base SHA:** `c4be1619` (`origin/main`, "Merge pull request #48 …hand-tunnel-toy")
 **Branch:** `claude/fix-export-lifecycle-issues-y7c45a`
 **Date:** 2026-09-13
@@ -186,6 +188,75 @@ timeout, which is the defect exactly.
 
 ---
 
+## GIF export
+
+The brief said "video/GIF export" and the first pass covered only MP4. The GIF
+path is a separate implementation with a separate owner:
+`animation-engine/services/live-canvas-gif-exporter.ts`, reached from the
+animator's canvas context menu (`CanvasContextMenuHost.downloadAnimationGif`),
+not through `ExportOrchestrator` at all. None of the video-path work touches it.
+
+Its only test covered one helper (`waitForAnimationFrame`'s abort). The capture
+loop itself — frame count, timing, aborts, refusals, blob-URL disposal — had no
+coverage. It does now: fourteen assertions in
+`live-canvas-gif-exporter.test.ts`, driven by a hand-owned `requestAnimationFrame`
+clock and a stubbed `gifenc` so the encoder is observable (which frames were
+written, with what delay, whether the GIF was ever finished).
+
+What they pin, against the brief's priority list:
+
+| Priority          | Assertion                                                                                                                                                                                             |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Frame count       | 500 ms → 5 frames; 250 ms rounds up to 3 rather than truncating; a 10 ms sequence still yields 2, never a one-frame GIF that is really a still image                                                  |
+| Timing            | every frame carries `delay: 100` (10 fps), so the played-back GIF lasts as long as the animation; a 400 ms hitch makes the capture refuse rather than silently emit a GIF whose timing does not match |
+| Dimensions        | a 768 px canvas captures at the 384 px cap, and every frame agrees with the header the encoder was given                                                                                              |
+| Cancel — setup    | abort before the first frame writes nothing and finishes nothing                                                                                                                                      |
+| Cancel — capture  | abort mid-loop stops at the frames already written, leaves no orphaned `requestAnimationFrame`, and never calls `finish()` — so no truncated file can reach a download                                |
+| Cancel — encoding | abort landing inside `applyPalette` (the last step before `writeFrame`) drops that frame instead of writing it                                                                                        |
+| Repeated cancel   | three aborts behave as one                                                                                                                                                                            |
+| Retry after abort | a fresh export after a cancelled one produces a complete 5-frame GIF, inheriting no encoder or frames                                                                                                 |
+| Refusals          | a zero-dimension canvas says the animation is still loading; a hidden tab refuses to start and stops a capture already running                                                                        |
+| Object URL        | `downloadGif` creates one blob URL and revokes it (after the click, on a timer)                                                                                                                       |
+
+**No defect found.** All fifteen assertions pass against unmodified code. The one
+failure during development was my own test — a 400 ms jump that landed on the
+frame which merely _establishes_ the clock origin, so nothing was actually late.
+The exporter's lifecycle is sound: aborts clean up their frame handles, no
+partial GIF can be finished, and nothing is shared between runs.
+
+### Observed in the GIF path, not changed
+
+**`downloadGif` is a second implementation of a capability that has an owner.**
+`foundation/services/file-downloader` owns blob delivery: `downloadBlob` →
+`shareOrDownloadBlob` gates on the **device**, opening the native share sheet on
+mobile so the file lands somewhere the user can find it, and falling back to
+`anchorDownload` on desktop. The MP4 path uses it. `downloadGif` hand-rolls
+`anchorDownload`'s anchor-click instead and skips the gate entirely, so a GIF
+exported on a phone takes the blind background download the shared owner exists
+to avoid — on iOS Safari an `<a download>` on a blob URL commonly opens the file
+in a tab rather than saving it.
+
+Not fixed here: the brief excludes download-UI work, and changing where an
+exported file lands on mobile is a product decision, not a lifecycle repair. The
+new test pins only that the blob URL is created and revoked, so it does not
+stand in the way of routing `downloadGif` through `shareOrDownloadBlob` later.
+
+**GIF export has no user-facing cancel.** The abort path exists and works, but
+the only `abort()` call is in the host's `onDestroy` — navigating away mid-export
+is the only way to reach it. While exporting, the menu item just goes disabled
+("Building GIF…"). That is a missing affordance rather than a broken one.
+
+**The host's `finally` runs after unmount.** When `onDestroy` aborts an in-flight
+export, `downloadAnimationGif`'s `finally` still calls `stopGifPlayback()`,
+`onProgressBarSeek?.(previousStep)` and `onPlaybackToggle?.()` — parent callbacks
+invoked after the component is gone. It already guards its own state correctly
+(`if (gifExportAbortController === abortController)`, the same run-identity shape
+this branch added to `ExportOrchestrator`), so this is a suspicion rather than a
+reproduced defect; confirming it needs a component test that is not justified
+here.
+
+---
+
 ## Design notes on the fix
 
 - **Run identity, not a message match.** `ExportRun` carries `canceled` and a
@@ -274,6 +345,9 @@ so the next pass does not re-derive them.
 | same command, review additions, **against `08796d0b`'s `export-orchestrator.ts`**                                                                                                      | **1 failed / 11 passed** — _honours a cancel aimed at an attempt that is still queued_ hangs to the 30 s timeout, because the queued attempt starts a run nobody settles                                                                                              |
 | same command **after the correction**                                                                                                                                                  | **12 passed**                                                                                                                                                                                                                                                         |
 | `npx vitest run … src/lib/shared/video-export src/lib/shared/export-panel`                                                                                                             | **7 files, 47 tests passed** (the 5 pre-existing suites in these directories plus the new one)                                                                                                                                                                        |
+| `npm run build:packages`                                                                                                                                                               | ok — required before any `animation-engine` suite can even collect: without the workspace `@tka/tka-types` build, ~30 files fail to import. Worth knowing before reading a red run as a regression.                                                                   |
+| `npx vitest run … src/lib/shared/animation-engine src/lib/shared/video-export src/lib/shared/export-panel`                                                                             | **40 files, 256 tests passed** — the GIF suite plus every animation-engine and export suite                                                                                                                                                                           |
+| GIF suite against unmodified `live-canvas-gif-exporter.ts`                                                                                                                             | **15 passed** — coverage, not a fix; there was no defect to reproduce                                                                                                                                                                                                 |
 | `npm run check:fast`                                                                                                                                                                   | 645 errors / 44 warnings project-wide, unchanged from before this branch; **zero diagnostics on any changed file** (`export-panel`, `video-export`, `SequenceDrawerHost`)                                                                                             |
 | `npx eslint <changed files>`                                                                                                                                                           | clean (`SequenceDrawerHost.svelte` matches an eslint ignore pattern)                                                                                                                                                                                                  |
 | `npx prettier --check <changed files>`                                                                                                                                                 | new test file clean. `export-orchestrator.ts` and `SequenceDrawerHost.svelte` still fail `--check`, as both did **before** this branch (each verified against its `HEAD` copy); reformatting either wholesale would bury the behavioural diff under an unrelated one. |
