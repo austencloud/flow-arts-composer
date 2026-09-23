@@ -7,6 +7,7 @@ import {
   placeSkewBraceGlyphs,
   SKEW_BRACE_FONT_SCALE,
   SKEW_BRACE_GAP,
+  skewBraceInkFontScale,
   skewBraceLineBoxDrop,
   type SkewBraceInk,
 } from "../skew-brace-layout";
@@ -162,6 +163,25 @@ describe("skewBraceLineBoxDrop", () => {
     // below its top; the ink centre sits (ascent - descent) / 2 above that.
     expect(skewBraceLineBoxDrop(SEGOE_LIKE_INK)).toBeCloseTo(
       (1.08 - 0.25) / 2 - (0.7 - 0.17) / 2
+    );
+  });
+});
+
+describe("skewBraceInkFontScale", () => {
+  const inkHeight = (ink: SkewBraceInk) => ink.open.ascent + ink.open.descent;
+
+  it("keeps the pictograph scale for the Segoe UI ink it was tuned on", () => {
+    expect(skewBraceInkFontScale(DEFAULT_SKEW_BRACE_INK)).toBeCloseTo(SKEW_BRACE_FONT_SCALE);
+  });
+
+  it("shrinks a taller-inked face so its brace stands as tall as Segoe UI's", () => {
+    // DejaVu Sans, the Linux system-ui fallback: its "{" inks 0.9375em.
+    const dejaVu: SkewBraceInk = {
+      ...DEFAULT_SKEW_BRACE_INK,
+      open: { ...DEFAULT_SKEW_BRACE_INK.open, ascent: 0.76, descent: 0.1775 },
+    };
+    expect(skewBraceInkFontScale(dejaVu) * inkHeight(dejaVu)).toBeCloseTo(
+      SKEW_BRACE_FONT_SCALE * inkHeight(DEFAULT_SKEW_BRACE_INK)
     );
   });
 });
