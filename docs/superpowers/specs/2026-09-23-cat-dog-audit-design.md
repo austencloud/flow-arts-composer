@@ -39,8 +39,8 @@ the current stored values. Cases:
   added.
 - Patch sets both hands equal and says nothing about `catDogMode`: the flag is
   left alone (rule 3).
-- Patch sets `propType` only (legacy writers): both hands follow it, flag left
-  alone unless it would contradict rule 2.
+- Patch sets `propType` only (legacy writers): both hands follow it; the flag
+  is left alone (rule 3).
 - Patch touches none of the four fields: returned unchanged (same object).
 
 Apply it at every write and load boundary in
@@ -50,9 +50,11 @@ Apply it at every write and load boundary in
 - `updateSetting(key, value)`: when `key` is one of the four pair fields,
   route through the normalized patch so the companion fields are written and
   marked locally edited too.
-- `loadSettingsFromStorage()` and `applyRemoteSettings()`: normalize the
-  loaded pair (treat it as a patch against defaults) so old stored or synced
-  data with a stale flag is healed on read.
+- `loadSettingsFromStorage()` and `applyRemoteSettings()`: heal the loaded
+  pair with `healPropPair(fields)` from the same module. Differing hands win
+  over a stale flag (`catDogMode` becomes true, matching
+  `captureActivePropConfig`), and `propType` follows the left hand. Nothing
+  else about loading changes.
 
 This fixes the Construct step editor's per-hand picker
 (`StepEditorCoordinator.svelte` `handlePropSelect`, which writes one hand
