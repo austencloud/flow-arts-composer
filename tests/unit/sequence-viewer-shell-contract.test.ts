@@ -204,6 +204,16 @@ describe("SequenceViewerShell host contract", () => {
     expect(viewerHeaderSource).not.toContain("onSendTo={handleSendTo}");
   });
 
+  it("leaves the 2D video file to Share", () => {
+    // The Export page keeps its settings but loses its own render button, so
+    // the file has one route and cannot drift between two flows. 3D keeps
+    // Record Scene until its own pattern is decided.
+    expect(shellSource).toContain('showExportAction={ctx.renderMode === "3d"}');
+    expect(shellSource).toContain(
+      "onDownload={() => void downloadFromShare()}"
+    );
+  });
+
   it("keeps More compact-only and limits the primary row to four actions", () => {
     expect(viewerHeaderSource).toMatch(
       /\{#if compactChrome\}[\s\S]*?<ViewerOverflowMenu/
