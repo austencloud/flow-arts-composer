@@ -13,6 +13,7 @@
  */
 import {
   fromFirestoreFields,
+  getFirestoreRest,
   type FirestoreDocument,
   type FirestoreRest,
 } from "$lib/server/firestore/firestore-rest";
@@ -246,6 +247,46 @@ export async function resolvePublishedMeta(
       deckName: releases[0].deckName,
       deckNumber: releases[0].deckNumber,
     };
+  }
+
+  return fallback;
+}
+
+/**
+ * One sequence id's crawlable metadata, or `fallback` when it is not a safe
+ * document id or Firestore fails. Used by the page loader, the embed page,
+ * and `/oembed`.
+ */
+export async function loadPublishedMeta(
+  requestedId: string,
+  fallback: SequenceRouteMeta,
+  platformCredential?: string
+): Promise<SequenceRouteMeta> {
+  const sequenceId = canonicalSequenceId(requestedId);
+  if (!isSafeFirestoreDocumentId(sequenceId)) return fallback;
+
+  try {
+    const firestore = getFirestoreRest(platformCredential);
+    const [publicDoc, manifests] = await Promise.all([
+      firestore.getDocument(`publicSequences/${sequenceId}`),
+      listReleaseManifests(firestore),
+    ]);
+    return await resolvePublishedMeta(
+      firestore,
+      manifests,
+      sequenceId,
+      fallback,
+      publicDoc
+    );
+  } catch (error) {
+    // Non-fatal: the viewer can still resolve inline, short-code, and
+    // signed-in library data. But it must not be silent again — a swallowed
+    // failure here is exactly how every released card went noindex in
+    // production with no trace.
+    console.error(
+      `[sequence-seo] loadPublishedMeta failed for "${sequenceId}":`,
+      error instanceof Error ? error.message : error
+    );
   }
 
   return fallback;

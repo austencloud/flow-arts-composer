@@ -6,14 +6,10 @@
  * owner for "what an embedded sequence looks like" (see
  * `$lib/shared/share/services/embed-snippet.ts`).
  *
- * Deliberately does not resolve the sequence's word/creator from Firestore:
- * that lookup lives in `../sequence/[id]/+page.server.ts`, which another
- * change is editing concurrently, and duplicating its catalog/public
- * resolution here would be a second owner for the same data (see
- * `.claude/rules/never-hand-roll.md`). The fallback word this endpoint uses
- * ("Sequence") is the same one the hand-copied embed snippet already falls
- * back to for the same reason — honest about what it doesn't know, per
- * `.claude/rules/no-fabrication.md`, rather than a guessed title.
+ * The title uses the sequence's published word, resolved by the same
+ * `loadPublishedMeta` the `/sequence/[id]` page uses. An inline-encoded id or
+ * an unknown sequence falls back to "Sequence", the same fallback the
+ * hand-copied snippet uses, rather than a guessed title.
  */
 import { json, error } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
@@ -21,6 +17,11 @@ import {
   buildEmbedSnippet,
   embedDisplayWord,
 } from "$lib/shared/share/services/embed-snippet";
+import { parseSequenceRouteId } from "$lib/shared/navigation/services/sequence-encoder";
+import {
+  emptySequenceMeta,
+  loadPublishedMeta,
+} from "../sequence/[id]/published-meta";
 
 const SITE_HOST = "tkaflowarts.com";
 const SITE_URL = "https://tkaflowarts.com";
@@ -60,7 +61,22 @@ function extractSequenceCode(rawUrl: string): string | null {
   }
 }
 
-export const GET: RequestHandler = ({ url }) => {
+/** A published sequence's word; an inline-encoded id has no record to read. */
+async function resolvePublishedWord(
+  code: string,
+  platformCredential?: string
+): Promise<string | null> {
+  const { legacyId } = parseSequenceRouteId(code);
+  if (!legacyId) return null;
+  const meta = await loadPublishedMeta(
+    legacyId,
+    emptySequenceMeta(),
+    platformCredential
+  );
+  return meta.word;
+}
+
+export const GET: RequestHandler = async ({ url, platform }) => {
   const targetUrl = url.searchParams.get("url");
   if (!targetUrl) {
     error(400, "Missing required 'url' parameter");
@@ -87,7 +103,12 @@ export const GET: RequestHandler = ({ url }) => {
   if (maxheight) size = Math.min(size, maxheight);
   size = Math.max(size, MIN_SIZE);
 
-  const word = embedDisplayWord(null);
+  const word = embedDisplayWord(
+    await resolvePublishedWord(
+      code,
+      platform?.env?.FIREBASE_SERVICE_ACCOUNT_JSON
+    )
+  );
   const html = buildEmbedSnippet({ code, word, width: size, height: size });
 
   return json({

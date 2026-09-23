@@ -1,5 +1,17 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { HttpError } from "@sveltejs/kit";
+
+const loadPublishedMeta = vi.hoisted(() =>
+  vi.fn(async (id: string, fallback: Record<string, unknown>) =>
+    id === "tnd-quarter-opp-mpmp" ? { ...fallback, word: "MPMP" } : fallback
+  )
+);
+
+vi.mock("../../src/routes/sequence/[id]/published-meta", () => ({
+  emptySequenceMeta: () => ({ word: null }),
+  loadPublishedMeta,
+}));
+
 import { GET } from "../../src/routes/oembed/+server";
 
 function requestEvent(searchParams: Record<string, string>) {
@@ -47,9 +59,9 @@ describe("/oembed", () => {
   });
 
   it("returns a rich oEmbed document for a valid sequence URL", async () => {
-    const response = GET(
+    const response = (await GET(
       requestEvent({ url: "https://tkaflowarts.com/sequence/P3WN" })
-    ) as Response;
+    )) as Response;
     expect(response.status).toBe(200);
 
     const body = await response.json();
@@ -67,13 +79,31 @@ describe("/oembed", () => {
     );
   });
 
+  it("titles a published sequence with its word", async () => {
+    const response = (await GET(
+      requestEvent({
+        url: "https://tkaflowarts.com/sequence/tnd-quarter-opp-mpmp",
+      })
+    )) as Response;
+    const body = await response.json();
+    expect(body.title).toBe("MP — Flow Arts Composer sequence player");
+  });
+
+  it("falls back to a generic title when the sequence has no published word", async () => {
+    const response = (await GET(
+      requestEvent({ url: "https://tkaflowarts.com/sequence/P3WN" })
+    )) as Response;
+    const body = await response.json();
+    expect(body.title).toBe("Sequence — Flow Arts Composer sequence player");
+  });
+
   it("clamps width/height to maxwidth while keeping the square aspect", async () => {
-    const response = GET(
+    const response = (await GET(
       requestEvent({
         url: "https://tkaflowarts.com/sequence/P3WN",
         maxwidth: "300",
       })
-    ) as Response;
+    )) as Response;
     const body = await response.json();
     expect(body.width).toBe(300);
     expect(body.height).toBe(300);
@@ -82,37 +112,37 @@ describe("/oembed", () => {
   });
 
   it("clamps to the tighter of maxwidth/maxheight", async () => {
-    const response = GET(
+    const response = (await GET(
       requestEvent({
         url: "https://tkaflowarts.com/sequence/P3WN",
         maxwidth: "400",
         maxheight: "200",
       })
-    ) as Response;
+    )) as Response;
     const body = await response.json();
     expect(body.width).toBe(200);
     expect(body.height).toBe(200);
   });
 
   it("never clamps below the minimum usable size", async () => {
-    const response = GET(
+    const response = (await GET(
       requestEvent({
         url: "https://tkaflowarts.com/sequence/P3WN",
         maxwidth: "10",
       })
-    ) as Response;
+    )) as Response;
     const body = await response.json();
     expect(body.width).toBe(120);
     expect(body.height).toBe(120);
   });
 
   it("ignores a non-numeric maxwidth instead of erroring", async () => {
-    const response = GET(
+    const response = (await GET(
       requestEvent({
         url: "https://tkaflowarts.com/sequence/P3WN",
         maxwidth: "not-a-number",
       })
-    ) as Response;
+    )) as Response;
     expect(response.status).toBe(200);
   });
 
@@ -130,11 +160,11 @@ describe("/oembed", () => {
 
   it("decodes and round-trips an inline-encoded sequence id", async () => {
     const code = "s~q1:abc|def";
-    const response = GET(
+    const response = (await GET(
       requestEvent({
         url: `https://tkaflowarts.com/sequence/${encodeURIComponent(code)}`,
       })
-    ) as Response;
+    )) as Response;
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body.html).toContain(
