@@ -20,10 +20,16 @@
   import { detectPlatformAndBrowser } from "$lib/shared/mobile/services/platform-detector";
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
+  import { replaceState } from "$app/navigation";
+  import { page } from "$app/state";
   import type { Platform, Browser } from "../config/pwa-install-instructions";
-  import { getInstallInstructions } from "../config/pwa-install-instructions";
+  import {
+    getInstallInstructions,
+    resolveInstallVariant,
+  } from "../config/pwa-install-instructions";
   import { createViewportMeasurement } from "../utils/viewport-measurement.svelte";
   import PlatformInstructions from "./PlatformInstructions.svelte";
+  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
 
   // Props
   let {
@@ -32,27 +38,77 @@
     showGuide?: boolean;
   } = $props();
 
-  // Platform/Browser detection state
-  let platform = $state<Platform>("desktop");
-  let browser = $state<Browser>("other");
+  const PILLS: { value: Platform; label: string }[] = [
+    { value: "ios", label: "iPhone" },
+    { value: "android", label: "Android" },
+    { value: "desktop", label: "Computer" },
+  ];
+
+  // What the device actually is, detected once on mount. Never changes after.
+  let detected = $state<{ platform: Platform; browser: Browser }>({
+    platform: "desktop",
+    browser: "other",
+  });
+
+  // Which pill is selected right now. Starts on the detected platform and
+  // can be changed by tapping a pill; the choice round-trips through the
+  // ?install= URL param.
+  let selectedPill = $state<Platform>("desktop");
 
   // Viewport measurement
   const viewport = createViewportMeasurement({ initialDelay: 100 });
 
-  // Detect platform and browser on mount
   onMount(() => {
-    const detected = detectPlatformAndBrowser();
-    platform = detected.platform;
-    browser = detected.browser;
+    const info = detectPlatformAndBrowser();
+    detected = { platform: info.platform, browser: info.browser };
+    selectedPill = detected.platform;
   });
 
-  // Get instructions based on detected platform/browser
-  const instructions = $derived(getInstallInstructions(platform, browser));
+  // Reading the URL only matters once the sheet is actually open — the app
+  // shell can also open this sheet, and a stale ?install= param from a
+  // previous visit shouldn't silently override the detected default before
+  // the visitor ever sees a pill.
+  $effect(() => {
+    if (!showGuide) return;
+    const param = page.url.searchParams.get("install");
+    if (param === "ios" || param === "android" || param === "desktop") {
+      selectedPill = param;
+    } else {
+      selectedPill = detected.platform;
+    }
+  });
+
+  const variant = $derived(resolveInstallVariant(selectedPill, detected));
+  const instructions = $derived(
+    getInstallInstructions(variant.platform, variant.browser)
+  );
+
+  function selectPill(value: Platform) {
+    selectedPill = value;
+    const url = new URL(page.url);
+    url.searchParams.set("install", value);
+    replaceState(url, page.state);
+  }
 
   function handleClose() {
     showGuide = false;
+    if (page.url.searchParams.has("install")) {
+      const url = new URL(page.url);
+      url.searchParams.delete("install");
+      replaceState(url, page.state);
+    }
   }
 </script>
+
+{#snippet pillContent(value: Platform)}
+  {@const pill = PILLS.find((p) => p.value === value)}
+  <span class="pill-label">
+    {pill?.label}
+    {#if value === detected.platform}
+      <span class="pill-device-tag">(this device)</span>
+    {/if}
+  </span>
+{/snippet}
 
 {#if showGuide}
   <!-- Backdrop -->
@@ -81,6 +137,19 @@
       <button class="close-btn" onclick={handleClose} aria-label="Close guide">
         <i class="fas fa-times" aria-hidden="true"></i>
       </button>
+    </div>
+
+    <div class="platform-picker" class:compact={viewport.needsCompactMode}>
+      <SegmentedControl
+        options={PILLS}
+        value={selectedPill}
+        onchange={selectPill}
+        semantics="radiogroup"
+        color="accent"
+        size={viewport.needsCompactMode ? "sm" : "md"}
+        ariaLabel="Choose a device to see its install steps"
+        optionContent={pillContent}
+      />
     </div>
 
     <div class="guide-content" bind:this={viewport.contentElement}>
@@ -208,6 +277,29 @@
 
   .compact .guide-header h2 {
     font-size: var(--font-size-base);
+  }
+
+  /* Platform picker */
+  .platform-picker {
+    padding: 14px 24px 0;
+    flex-shrink: 0;
+  }
+
+  .platform-picker.compact {
+    padding: 10px 20px 0;
+  }
+
+  .pill-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.2;
+  }
+
+  .pill-device-tag {
+    font-size: var(--font-size-compact, 0.7rem);
+    font-weight: 500;
+    color: var(--theme-text-dim);
   }
 
   .close-btn {

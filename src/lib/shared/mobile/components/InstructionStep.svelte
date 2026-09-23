@@ -36,7 +36,11 @@
        box is worse than no box. -->
   {#if !compact && step.image}
     <div class="step-image-container">
-      <img src={step.image} alt="Step {index + 1}" class="step-image" />
+      <img
+        src={step.image}
+        alt={step.alt ?? `Step ${index + 1}`}
+        class="step-image"
+      />
     </div>
   {/if}
 </div>
@@ -114,7 +118,9 @@
     border-radius: clamp(6px, 1.5cqw, 8px);
     overflow: hidden;
     border: 1px solid var(--theme-stroke);
-    max-width: clamp(152px, 40cqw, 200px);
+    /* Android capture crops are tall relative to their width (tablet-layout
+       screenshots); 200px left small text like menu items hard to read. */
+    max-width: clamp(152px, 44cqw, 280px);
   }
 
   .step-image {
