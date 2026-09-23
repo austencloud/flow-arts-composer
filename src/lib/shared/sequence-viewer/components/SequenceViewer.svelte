@@ -24,6 +24,7 @@
 	import PropAwareThumbnail from "$lib/shared/browse/components/PropAwareThumbnail.svelte";
 	import ChoreoCard from "./ChoreoCard.svelte";
 	import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+	import { resolveViewingProps } from "$lib/shared/foundation/services/prop-viewing";
 	import { tryGetAnimationExportContext } from "$lib/shared/export-panel/context/animation-export-context.svelte";
 	import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
 	import { browser } from "$app/environment";
@@ -139,10 +140,14 @@
 	// LOOP glyph visibility
 	const showLoopGlyph = $derived(showVisibilitySettings ? localShowLoopGlyph : (globalImageExport?.showLoopGlyph ?? true));
 
-	// Prop type settings for PropAwareThumbnail
-	const leftPropType = $derived(settingsService.settings.leftPropType);
-	const rightPropType = $derived(settingsService.settings.rightPropType);
-	const catDogMode = $derived(settingsService.settings.catDogMode);
+	// The same pair the viewer header and animation tab show, including
+	// "as saved" viewing mode. The raw flag can lag a mixed pair.
+	const viewingProps = $derived(
+		resolveViewingProps(settingsService.settings, sequence).config
+	);
+	const leftPropType = $derived(viewingProps.leftPropType);
+	const rightPropType = $derived(viewingProps.rightPropType);
+	const catDogMode = $derived(viewingProps.catDogMode);
 
 	// Image settings toggle handlers
 	function toggleWord() {
@@ -335,7 +340,7 @@
 							{handPathMode}
 							{darkMode}
 							{leftPropType}
-							rightPropType={catDogMode ? rightPropType : leftPropType}
+							{rightPropType}
 							catDogModeEnabled={catDogMode}
 						/>
 					{:else}
@@ -343,7 +348,7 @@
 						<PropAwareThumbnail
 							{sequence}
 							{leftPropType}
-							rightPropType={catDogMode ? rightPropType : leftPropType}
+							{rightPropType}
 							catDogModeEnabled={catDogMode}
 							lightMode={!darkMode}
 							{addWord}
