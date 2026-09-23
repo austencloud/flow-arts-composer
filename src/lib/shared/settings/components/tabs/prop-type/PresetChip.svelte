@@ -37,8 +37,10 @@
   const rightInfo = $derived(
     preset ? getPropTypeDisplayInfo(preset.rightPropType) : null
   );
+  // Differing hands are cat dog even when an older preset's flag says false;
+  // applying the preset heals it the same way.
   const isCatDog = $derived(
-    preset && preset.catDogMode && preset.leftPropType !== preset.rightPropType
+    preset && preset.leftPropType !== preset.rightPropType
   );
   const leftNoRotate = $derived(preset ? NO_ROTATE_PROPS.has(preset.leftPropType) : false);
   const rightNoRotate = $derived(preset ? NO_ROTATE_PROPS.has(preset.rightPropType) : false);

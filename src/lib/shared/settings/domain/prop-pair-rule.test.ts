@@ -108,6 +108,16 @@ describe("normalizePropPatch", () => {
     });
     expect("leftPropType" in result).toBe(false);
   });
+
+  it("drops undefined pair keys when no pair key carries a value", () => {
+    const result = normalizePropPatch(mixed, {
+      leftPropType: undefined,
+      catDogMode: undefined,
+    });
+    expect(result).toEqual({});
+    expect("leftPropType" in result).toBe(false);
+    expect("catDogMode" in result).toBe(false);
+  });
 });
 
 describe("healPropPair", () => {

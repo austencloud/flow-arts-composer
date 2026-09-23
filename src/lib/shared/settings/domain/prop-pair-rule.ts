@@ -37,7 +37,11 @@ export function normalizePropPatch<P extends PropPairFields>(
   current: PropPairFields,
   patch: P
 ): P {
-  if (!PROP_PAIR_KEYS.some((key) => sets(patch, key))) return patch;
+  if (!PROP_PAIR_KEYS.some((key) => sets(patch, key))) {
+    return PROP_PAIR_KEYS.some((key) => key in patch)
+      ? withoutUndefinedPairKeys({ ...patch })
+      : patch;
+  }
 
   const out: P = { ...patch };
   let left = sets(patch, "leftPropType") ? patch.leftPropType : undefined;
@@ -62,11 +66,15 @@ export function normalizePropPatch<P extends PropPairFields>(
   }
   out.propType = nextLeft;
 
-  // An explicit `undefined` on a pair key (e.g. a caller spreading a partial
-  // patch) must not survive into the assignment loop in updateSettings,
-  // which would overwrite the stored hand with undefined.
+  return withoutUndefinedPairKeys(out);
+}
+
+/** An explicit `undefined` on a pair key (e.g. a caller spreading a partial
+ * patch) must not survive into the assignment loop in updateSettings, which
+ * would overwrite the stored hand with undefined. */
+function withoutUndefinedPairKeys<P extends PropPairFields>(out: P): P {
   for (const key of PROP_PAIR_KEYS) {
-    if (out[key] === undefined) delete out[key];
+    if (key in out && out[key] === undefined) delete out[key];
   }
   return out;
 }
