@@ -17,6 +17,7 @@ export function applyHandColorOverride(
   propType: string,
   color: string
 ): string {
+  if (MODEL_SPRITE_TAG.test(svg)) return applyModelSpriteColor(svg, color);
   return applyColorToSvg(svg, color, {
     makeClassNamesUnique: true,
     colorSuffix: color.replace(/[^a-z0-9]/gi, ""),
@@ -82,4 +83,36 @@ export function modelPreviewColorMatrix(
     1,
     0,
   ].join(" ");
+}
+
+const MODEL_SPRITE_TAG = /<svg\b(?=[^>]*\bdata-prop-look="model")[^>]*>/i;
+const MODEL_TINT_DEFS = /<defs data-model-tint="">[\s\S]*?<\/defs>/;
+const MODEL_TINT_BODY = /<g data-model-tint-body="" filter="url\(#[^)]*\)">/;
+
+/**
+ * Paint a captured model sprite in a hand color. The capture is a raster, so
+ * the fill rewrite every other prop uses finds nothing to change; this wraps
+ * the capture in the same chroma matrix the picker previews use. The capture
+ * file says which palette it was lit in. A second call replaces the first
+ * tint instead of stacking on it, because the matrix is only correct against
+ * the original capture colors. Any other SVG passes through unchanged.
+ */
+export function applyModelSpriteColor(svg: string, color: string): string {
+  const open = MODEL_SPRITE_TAG.exec(svg);
+  const hex = /^#[0-9a-f]{6}$/i.test(color) ? color.toLowerCase() : null;
+  if (!open || !hex) return svg;
+  const side = /\bdata-motion-color="red"/i.test(open[0]) ? "right" : "left";
+  const id = `model-tint-${side}-${hex.slice(1)}`;
+  const defs =
+    `<defs data-model-tint=""><filter id="${id}" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">` +
+    `<feColorMatrix type="matrix" values="${modelPreviewColorMatrix(hex, side)}"/>` +
+    `</filter></defs>`;
+  const body = `<g data-model-tint-body="" filter="url(#${id})">`;
+  if (MODEL_TINT_DEFS.test(svg) && MODEL_TINT_BODY.test(svg)) {
+    return svg.replace(MODEL_TINT_DEFS, defs).replace(MODEL_TINT_BODY, body);
+  }
+  const start = open.index + open[0].length;
+  const end = svg.lastIndexOf("</svg>");
+  if (end < start) return svg;
+  return `${svg.slice(0, start)}${defs}${body}${svg.slice(start, end)}</g>${svg.slice(end)}`;
 }

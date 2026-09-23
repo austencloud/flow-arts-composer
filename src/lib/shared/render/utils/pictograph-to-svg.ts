@@ -142,6 +142,12 @@ export async function renderPictographToSVG(
       componentProps.fanAppearanceOverride = visibilityOptions.fanAppearance;
       componentProps.leftPropTypeOverride = visibilityOptions.leftPropType;
       componentProps.rightPropTypeOverride = visibilityOptions.rightPropType;
+      if (visibilityOptions.primaryPropColors) {
+        componentProps.leftColorOverride =
+          visibilityOptions.primaryPropColors.left;
+        componentProps.rightColorOverride =
+          visibilityOptions.primaryPropColors.right;
+      }
       if (visibilityOptions.showLeftMotion !== undefined) {
         componentProps.showLeftMotion = visibilityOptions.showLeftMotion;
       }
