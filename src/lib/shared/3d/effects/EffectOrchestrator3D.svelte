@@ -62,6 +62,8 @@
     type PropBuild,
   } from "@austencloud/scene-3d";
   import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
+  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+  import { resolveTrailColors } from "$lib/shared/animation-engine/domain/resolve-trail-colors";
   import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
   import {
     resolveTrails3D,
@@ -1284,7 +1286,9 @@
 </script>
 
 {#each leftTrailTips as tip (tip.sourceId)}
-  {@const resolvedTrails = resolveTrails3D(effectsState.trails)}
+  {@const resolvedTrails = resolveTrails3D(
+    resolveTrailColors(effectsState.trails, getSettings().primaryPropColors)
+  )}
   <Trail3D
     tipPosition={tip.position}
     color={resolvedTrails.rainbow ? "rainbow" : resolvedTrails.leftColor}
@@ -1302,7 +1306,9 @@
 {/each}
 
 {#each rightTrailTips as tip (tip.sourceId)}
-  {@const resolvedTrails = resolveTrails3D(effectsState.trails)}
+  {@const resolvedTrails = resolveTrails3D(
+    resolveTrailColors(effectsState.trails, getSettings().primaryPropColors)
+  )}
   <Trail3D
     tipPosition={tip.position}
     color={resolvedTrails.rainbow ? "rainbow" : resolvedTrails.rightColor}

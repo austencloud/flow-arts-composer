@@ -5,6 +5,7 @@ import {
   type TipEffectMap,
 } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
 import type { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
+import { resolveTrailColors } from "$lib/shared/animation-engine/domain/resolve-trail-colors";
 import { resolvePropTipAnchors3D } from "$lib/shared/3d/effects/prop-tip-geometry-3d";
 import type { EffectsConfig } from "$lib/shared/effects/domain/effects-config";
 import {
@@ -49,6 +50,8 @@ export interface WorkerPerformerEffectIntentInput {
   effectsConfig: EffectsConfig;
   /** The trail source owner is animation settings, not EffectsConfig. */
   trailTrackingMode: TrackingMode;
+  /** The user's hand colors, which default-colored trails follow. */
+  handColors?: { left: string; right: string } | null;
 }
 
 /**
@@ -138,9 +141,10 @@ export function createWorkerPerformerEffectIntent(
     qualityTier: input.qualityTier,
     propBuild,
     tips,
-    trails: resolveTrails3D(input.effectsConfig.trails, {
-      trackingMode: input.trailTrackingMode,
-    }),
+    trails: resolveTrails3D(
+      resolveTrailColors(input.effectsConfig.trails, input.handColors),
+      { trackingMode: input.trailTrackingMode }
+    ),
     led: resolveLed3D(input.effectsConfig.led),
     pooled,
   };

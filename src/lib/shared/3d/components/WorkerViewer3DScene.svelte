@@ -5,6 +5,7 @@
   import { BackgroundType } from "@austencloud/backgrounds";
 
   import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
+  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import type { TipEffectMap } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
   import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
@@ -245,6 +246,7 @@
             globalTipEffectMap: {},
             effectsConfig: currentEffects,
             trailTrackingMode: animationSettings.trail.trackingMode,
+            handColors: getSettings().primaryPropColors,
           })
         : null,
     };
