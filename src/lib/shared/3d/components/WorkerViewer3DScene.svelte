@@ -425,13 +425,19 @@
     }}
     onCameraChange={handleCameraChange}
     onCameraReady={(controller) => {
-      configureViewerOrbitNavigation(controller.controls);
-      return viewer.registerSnapTo(
+      const stopOrbitNavigation = configureViewerOrbitNavigation(
+        controller.controls
+      );
+      const unregisterSnapTo = viewer.registerSnapTo(
         (position, target, spherical, animate = true) => {
           void controller.snapTo(position, target, spherical, animate);
           if (!animate) handleCameraChange(controller.getSnapshot());
         }
       );
+      return () => {
+        stopOrbitNavigation();
+        unregisterSnapTo();
+      };
     }}
     {onSnapshot}
   />
