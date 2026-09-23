@@ -22,6 +22,7 @@ import {
 import type { Letter } from "$lib/shared/foundation/domain/models/letter";
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
 import { orientationCycleExtender } from "$lib/features/create/generate/circular/services/orientation-cycle-extender";
+import { recalculateAllOrientations } from "$lib/shared/create/services/orientation-propagation";
 
 /**
  * Describes the type of extension available for a sequence
@@ -545,7 +546,8 @@ export class SequenceExtender {
 
 function toEngineLOOPType(loopType: LOOPType): EngineLOOPType {
   if (loopType === LOOPType.STRICT_REWOUND) return EngineLOOPType.REWOUND;
-  return loopType as EngineLOOPType;
+  // Every other app LOOP type shares its string value with the engine enum.
+  return loopType as unknown as EngineLOOPType;
 }
 
 // ============================================================================
