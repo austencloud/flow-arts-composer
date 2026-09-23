@@ -108,12 +108,26 @@ describe("FuseRelationshipComposer", () => {
     render(FuseRelationshipComposerTestHarness, { state });
 
     await page.getByRole("button", { name: /^Split Opposite/ }).click();
-    await page.getByRole("button", { name: /^Invert/ }).click();
+    await page.getByRole("switch", { name: /^Invert/ }).click();
 
     expect(state.previewRelationship).toHaveBeenLastCalledWith(
       "left",
       createFuseRule({ rotationSteps: 0, reflect: "flip", invert: true })
     );
+  });
+
+  it("says what each operation does to the rebuilt path", async () => {
+    const state = relationshipState();
+    render(FuseRelationshipComposerTestHarness, { state });
+
+    await expect
+      .element(page.getByRole("switch", { name: /^Rewind/ }))
+      .toHaveAccessibleDescription(
+        "Right plays Left backwards, last beat first"
+      );
+    await expect
+      .element(page.getByRole("switch", { name: /^Invert/ }))
+      .toHaveAttribute("aria-checked", "false");
   });
 
   it("leads the result with the mode name", async () => {

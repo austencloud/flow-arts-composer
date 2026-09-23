@@ -112,4 +112,23 @@ describe("applyModelSpriteColor", () => {
       applyHandColorOverride(sprite("red"), HandSide.RIGHT, "staff", "#a855f7")
     ).toBe(applyModelSpriteColor(sprite("red"), "#a855f7"));
   });
+
+  it("repaints the inner markup the prop loader hands to PropSvg", () => {
+    // The loader tints in the default hand color, then keeps only the markup
+    // inside the outer <svg>, which carries the data-prop-look marker.
+    const loaded = applyModelSpriteColor(sprite("blue"), "#3575e2");
+    const inner = loaded.match(/<svg\b[^>]*>([\s\S]*)<\/svg\s*>/i)![1]!;
+    const painted = applyHandColorOverride(
+      inner,
+      HandSide.LEFT,
+      "staff",
+      "#a855f7"
+    );
+    expect(painted).toContain(
+      `values="${modelPreviewColorMatrix("#a855f7", "left")}"`
+    );
+    expect(painted).toContain('filter="url(#model-tint-left-a855f7)"');
+    expect(painted).not.toContain("3575e2");
+    expect(painted.match(/data-model-tint-body/g)).toHaveLength(1);
+  });
 });

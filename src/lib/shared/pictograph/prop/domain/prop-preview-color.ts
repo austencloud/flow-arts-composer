@@ -17,7 +17,7 @@ export function applyHandColorOverride(
   propType: string,
   color: string
 ): string {
-  if (MODEL_SPRITE_TAG.test(svg)) return applyModelSpriteColor(svg, color);
+  if (isModelSprite(svg)) return applyModelSpriteColor(svg, color);
   return applyColorToSvg(svg, color, {
     makeClassNamesUnique: true,
     colorSuffix: color.replace(/[^a-z0-9]/gi, ""),
@@ -87,7 +87,14 @@ export function modelPreviewColorMatrix(
 
 const MODEL_SPRITE_TAG = /<svg\b(?=[^>]*\bdata-prop-look="model")[^>]*>/i;
 const MODEL_TINT_DEFS = /<defs data-model-tint="">[\s\S]*?<\/defs>/;
-const MODEL_TINT_BODY = /<g data-model-tint-body="" filter="url\(#[^)]*\)">/;
+// Later id rewrites may suffix the filter id, so only its side prefix is fixed.
+const MODEL_TINT_BODY =
+  /<g data-model-tint-body="" filter="url\(#model-tint-(left|right)-[^)]*\)">/;
+
+/** A model capture, whole or as the inner markup the prop loader passes on. */
+export function isModelSprite(svg: string): boolean {
+  return MODEL_SPRITE_TAG.test(svg) || MODEL_TINT_BODY.test(svg);
+}
 
 /**
  * Paint a captured model sprite in a hand color. The capture is a raster, so
@@ -95,22 +102,31 @@ const MODEL_TINT_BODY = /<g data-model-tint-body="" filter="url\(#[^)]*\)">/;
  * the capture in the same chroma matrix the picker previews use. The capture
  * file says which palette it was lit in. A second call replaces the first
  * tint instead of stacking on it, because the matrix is only correct against
- * the original capture colors. Any other SVG passes through unchanged.
+ * the original capture colors; a tinted capture is recognized by its tint
+ * even after the loader strips the outer tag. Any other SVG passes through
+ * unchanged.
  */
 export function applyModelSpriteColor(svg: string, color: string): string {
-  const open = MODEL_SPRITE_TAG.exec(svg);
   const hex = /^#[0-9a-f]{6}$/i.test(color) ? color.toLowerCase() : null;
-  if (!open || !hex) return svg;
-  const side = /\bdata-motion-color="red"/i.test(open[0]) ? "right" : "left";
+  if (!hex) return svg;
+  const tinted = MODEL_TINT_BODY.exec(svg);
+  const open = MODEL_SPRITE_TAG.exec(svg);
+  if (!tinted && !open) return svg;
+  const side = tinted
+    ? (tinted[1] as "left" | "right")
+    : /\bdata-motion-color="red"/i.test(open![0])
+      ? "right"
+      : "left";
   const id = `model-tint-${side}-${hex.slice(1)}`;
   const defs =
     `<defs data-model-tint=""><filter id="${id}" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">` +
     `<feColorMatrix type="matrix" values="${modelPreviewColorMatrix(hex, side)}"/>` +
     `</filter></defs>`;
   const body = `<g data-model-tint-body="" filter="url(#${id})">`;
-  if (MODEL_TINT_DEFS.test(svg) && MODEL_TINT_BODY.test(svg)) {
+  if (tinted && MODEL_TINT_DEFS.test(svg)) {
     return svg.replace(MODEL_TINT_DEFS, defs).replace(MODEL_TINT_BODY, body);
   }
+  if (!open) return svg;
   const start = open.index + open[0].length;
   const end = svg.lastIndexOf("</svg>");
   if (end < start) return svg;

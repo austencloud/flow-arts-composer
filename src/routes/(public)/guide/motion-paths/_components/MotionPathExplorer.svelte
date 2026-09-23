@@ -2,13 +2,18 @@
   import { onMount, untrack } from "svelte";
   import { SequenceViewerVisibilityState } from "$lib/shared/sequence-viewer/state/viewer-visibility-state.svelte";
   import { setViewerVisibilityContext } from "$lib/shared/sequence-viewer/context/viewer-visibility-context";
-  import { growFade } from "$lib/shared/transitions/motion";
+  import { flyFade, growFade } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import { browser } from "$app/environment";
   import MotionPathTransitionStage from "./MotionPathTransitionStage.svelte";
   import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
   import PathShapePanel from "$lib/shared/animation-engine/components/settings-panels/PathShapePanel.svelte";
   import { setAnimationVisibilityContext } from "$lib/shared/animation-engine/state/animation-visibility-context";
+  import { setAnimationScopeContext } from "$lib/shared/animation-engine/state/animation-scope-context";
+  import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
+  import AnimationPanel from "$lib/shared/animation-panel/components/AnimationPanel.svelte";
+  import type { ControlDockAction } from "$lib/shared/sequence-viewer/components/ControlDock.svelte";
+  import type { PillId } from "$lib/shared/animation-panel/pill-nav/pill-types";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
@@ -46,8 +51,18 @@
   import type { MandalaPathShape } from "$lib/shared/mandala/domain/mandala-types";
 
   const explorer = createMotionPathExplorerState();
-  const matrixTipDx = shapeMatrixTipPoint(PropType.STAFF)?.dx;
+  const matrixTipDx = $derived(shapeMatrixTipPoint(explorer.propType)?.dx);
+  // The toy box under the canvas (Effects, Props, Effort, Playback, Display)
+  // is the shared animation panel, bound to this surface's own scope.
+  setAnimationScopeContext(explorer.scope);
   setAnimationVisibilityContext(explorer.scope.visibility);
+  setEffectsConfigContext(explorer.scope.effects);
+  const playbackAction = $derived<ControlDockAction>({
+    icon: explorer.playing ? "fa-pause" : "fa-play",
+    label: explorer.playing ? "Pause" : "Play",
+    onClick: () => (explorer.playing = !explorer.playing),
+    disabled: !ready || playerFailed,
+  });
   let pickerOpen = $state(false);
   // The lesson is the path. Everything that picks what plays (the matrix, a
   // browsed sequence, turns, timing) waits behind one button.
@@ -63,6 +78,19 @@
   let explorerWidth = $state(0);
   let viewportTall = $state(false);
   const fitMode = $derived(explorerWidth >= FIT_MIN_CONTAINER && viewportTall);
+  // The toy box section that is open. Stacked, the dock's own tray opens
+  // under the canvas and the page grows. In fit mode the canvas is sized to
+  // its quadrant, so a tray would shrink it; the open section covers the
+  // chooser band instead, the way the Shape Engine's settings cover its grid.
+  let toySection = $state<PillId | null>(null);
+  const TOY_SECTION_LABELS: Partial<Record<PillId, string>> = {
+    effects: "Effects",
+    props: "Props",
+    effort: "Effort",
+    playback: "Playback",
+    display: "Display",
+  };
+  const toySectionCovers = $derived(fitMode && toySection !== null);
   // Which hands the canvas draws. The animator owns per-hand motion
   // visibility; this surface scopes its own instance so a header's solo hides
   // the other prop and its trail through that owner, as the Shape Engine does.
@@ -172,10 +200,12 @@
     );
   }
 
+  // A prop change reloads the matrix for that prop's tips. The current grid
+  // stays on screen until the new one is ready, and the selection is kept.
   async function loadMatrix(): Promise<void> {
     const request = ++matrixRequest;
+    const propType = explorer.propType;
     matrixError = null;
-    matrixData = null;
     try {
       const paths: MandalaPathShape[] = ["arc", "linear", "concave", "hybrid"];
       const previews = await Promise.all(
@@ -184,7 +214,7 @@
             ? (["arc", "linear", "concave"] as const)
             : (["arc"] as const)
           ).map(async (hybridFallback) => {
-            const data = await loadShapeMatrix(PropType.STAFF, {
+            const data = await loadShapeMatrix(propType, {
               pathShape,
               trace: "tips",
               hybridFallback,
@@ -222,6 +252,12 @@
       mode
     );
     return realization?.seq ?? null;
+  }
+
+  function choosePropType(propType: PropType): void {
+    if (propType === explorer.propType) return;
+    explorer.propType = propType;
+    void loadMatrix();
   }
 
   onMount(() => {
@@ -267,8 +303,8 @@
             {size}
             mode="gallery"
             darkMode
-            leftPropType={PropType.STAFF}
-            rightPropType={PropType.STAFF}
+            leftPropType={explorer.propType}
+            rightPropType={explorer.propType}
             tipEnds={1}
             tipDx={explorer.trace === "hands" ? 0 : matrixTipDx}
             animate={false}
@@ -278,23 +314,10 @@
     </div>
 
     <div class="motion-column">
-      <!-- Trace sits with the other drawing switches. It also brings the two
-           columns to about the same height; the button then pins to the
-           bottom of the row so the chooser opens right under it. -->
+      <!-- Trace is the lesson's own switch: which point the mandala follows.
+           Everything else about the canvas lives in the toy box under it. -->
       <div class="transport">
         <span class="stage-label">Animation</span>
-        <div class="transport-buttons">
-          <PanelButton
-            disabled={!ready || playerFailed}
-            onclick={() => (explorer.playing = !explorer.playing)}
-          >
-            {explorer.playing ? "Pause" : "Play"}
-          </PanelButton>
-          <PanelButton
-            ariaPressed={explorer.guides}
-            onclick={explorer.toggleGuides}>Path lines</PanelButton
-          >
-        </div>
         <div class="trace-choice">
           <span class="control-label">Trace</span>
           <SegmentedControl
@@ -316,9 +339,10 @@
               transitionKey={explorer.transitionKey}
               scope={explorer.scope}
               playing={explorer.playing}
+              bpm={explorer.bpm}
               trace={explorer.trace}
-              leftPropType={PropType.STAFF}
-              rightPropType={PropType.STAFF}
+              leftPropType={explorer.propType}
+              rightPropType={explorer.propType}
               hideGlyph={explorer.soloHand !== null}
               onplayingchange={(value) => (explorer.playing = value)}
               onstepchange={(value) => (explorer.liveStep = value)}
@@ -336,6 +360,30 @@
               >Loading animation…</span
             >{/if}
         </div>
+      </div>
+      <!-- The toy box: the same controls the viewer and the Shape Engine
+           offer, scoped to this canvas. Path shape is left out because the
+           tiles beside the canvas are that control here. -->
+      <div class="toy-box">
+        <AnimationPanel
+          isExporting={false}
+          layout="bottom"
+          isPlaying={explorer.playing}
+          bpm={explorer.bpm}
+          onBpmChange={explorer.setBpm}
+          onPlaybackToggle={() => (explorer.playing = !explorer.playing)}
+          showEffectsPlayback={false}
+          showPathShape={false}
+          showWordToggle={false}
+          selectedPropType={explorer.propType}
+          onPropChange={choosePropType}
+          sequence={explorer.sequence}
+          dockTrailingAction={playbackAction}
+          presentation={fitMode ? "navigation" : "full"}
+          controlledSection={fitMode ? toySection : undefined}
+          onActiveSectionChange={(section) => (toySection = section)}
+          regionLabel="Animation controls"
+        />
       </div>
       <span class="sr-only" aria-live="polite">{nowPlaying}</span>
       {#if !fitMode}
@@ -362,7 +410,9 @@
       <section
         id="motion-path-chooser"
         class="chooser"
+        class:covered={toySectionCovers}
         aria-label="Change what plays"
+        inert={toySectionCovers}
         transition:growFade={{ axis: "y", duration: DURATION.normal }}
       >
         <div class="source-controls">
@@ -494,8 +544,8 @@
                   showNotes={false}
                   showLoopGlyph={false}
                   darkMode
-                  leftPropType={PropType.STAFF}
-                  rightPropType={PropType.STAFF}
+                  leftPropType={explorer.propType}
+                  rightPropType={explorer.propType}
                   hideSoloHeader
                   forceContain
                   fitWidth
@@ -503,6 +553,38 @@
               </div>
             {/if}
           </Crossfade>
+        </div>
+      </section>
+    {/if}
+
+    {#if toySectionCovers && toySection}
+      <section
+        class="toy-section"
+        aria-label={TOY_SECTION_LABELS[toySection] ?? "Animation settings"}
+        transition:flyFade={{ duration: DURATION.normal }}
+      >
+        <header class="toy-section-header">
+          <strong>{TOY_SECTION_LABELS[toySection]}</strong>
+          <PanelButton onclick={() => (toySection = null)}>Done</PanelButton>
+        </header>
+        <div class="toy-section-body">
+          <AnimationPanel
+            isExporting={false}
+            layout="bottom"
+            presentation="content"
+            controlledSection={toySection}
+            isPlaying={explorer.playing}
+            bpm={explorer.bpm}
+            onBpmChange={explorer.setBpm}
+            onPlaybackToggle={() => (explorer.playing = !explorer.playing)}
+            showEffectsPlayback={false}
+            showPathShape={false}
+            showWordToggle={false}
+            selectedPropType={explorer.propType}
+            onPropChange={choosePropType}
+            sequence={explorer.sequence}
+            regionLabel="Animation settings"
+          />
         </div>
       </section>
     {/if}
@@ -552,7 +634,6 @@
   }
   .picker-heading,
   .transport,
-  .transport-buttons,
   .now-playing {
     display: flex;
     align-items: center;
@@ -670,6 +751,50 @@
   .now-playing {
     justify-content: flex-end;
     margin-top: var(--spacing-sm, 8px);
+  }
+  .toy-box {
+    flex-shrink: 0;
+    min-width: 0;
+    margin-top: var(--spacing-sm, 8px);
+  }
+  /* Fit mode only: the open toy box section takes the chooser's grid cell.
+     The chooser keeps its box, so nothing moves, but is hidden under it. */
+  .chooser.covered {
+    visibility: hidden;
+    opacity: 0;
+  }
+  .toy-section {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-column: 1 / -1;
+    grid-row: 2;
+    align-self: stretch;
+    z-index: 1;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    border: 1px solid var(--theme-stroke);
+    border-radius: 12px;
+    background: var(--theme-panel-bg);
+  }
+  .toy-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm, 8px);
+    padding: var(--spacing-xs, 4px) var(--spacing-sm, 8px)
+      var(--spacing-xs, 4px) var(--spacing-md, 16px);
+    font-size: var(--font-size-min, 14px);
+  }
+  /* A short section (Display's one row) sits in the middle of the band
+     rather than under a strip of empty panel; a tall one scrolls from its
+     top. The inset is the dock tray's, which these sections are drawn for. */
+  .toy-section-body {
+    display: grid;
+    align-content: safe center;
+    min-height: 0;
+    overflow: auto;
+    padding: 0 14px 8px;
   }
   .now-playing > :global(button) {
     flex-shrink: 0;
