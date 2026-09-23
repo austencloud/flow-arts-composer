@@ -70,7 +70,7 @@ export function getInstallInstructions(
 const INSTRUCTIONS_MAP: Record<string, InstallInstructions> = {
   "ios-safari": {
     title: "Install Flow Arts Composer on iPhone/iPad",
-    icon: "fab fa-apple",
+    icon: "fas fa-mobile-screen-button",
     steps: [
       {
         text: "Tap the <strong>Share</strong> button. On iOS 26 and later, tap <strong>⋯</strong> next to the address bar first, then <strong>Share</strong>.",
@@ -106,11 +106,11 @@ const INSTRUCTIONS_MAP: Record<string, InstallInstructions> = {
 
   "ios-other": {
     title: "Install Flow Arts Composer on iPhone/iPad",
-    icon: "fab fa-apple",
+    icon: "fas fa-mobile-screen-button",
     steps: [
       {
         text: "Open this page in <strong>Safari</strong>",
-        icon: "fab fa-safari",
+        icon: "fas fa-compass",
         image: null,
         alt: "Open this page in Safari",
       },
@@ -148,7 +148,7 @@ const INSTRUCTIONS_MAP: Record<string, InstallInstructions> = {
 
   "android-chrome": {
     title: "Install Flow Arts Composer on Android",
-    icon: "fab fa-android",
+    icon: "fas fa-mobile-screen",
     steps: [
       {
         text: "Tap the <strong>⋮</strong> menu next to the address bar.",
@@ -188,7 +188,7 @@ const INSTRUCTIONS_MAP: Record<string, InstallInstructions> = {
 
   "android-samsung": {
     title: "Install Flow Arts Composer on Android (Samsung Internet)",
-    icon: "fab fa-android",
+    icon: "fas fa-mobile-screen",
     steps: [
       {
         text: "Tap the <strong>menu (☰)</strong> at the bottom",

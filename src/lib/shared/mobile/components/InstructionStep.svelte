@@ -118,9 +118,9 @@
     border-radius: clamp(6px, 1.5cqw, 8px);
     overflow: hidden;
     border: 1px solid var(--theme-stroke);
-    /* Android capture crops are tall relative to their width (tablet-layout
-       screenshots); 200px left small text like menu items hard to read. */
-    max-width: clamp(152px, 44cqw, 280px);
+    /* Full card width: the captures are wide crops of real phone UI, and
+       their menu labels are only legible at the card's full width. */
+    max-width: 100%;
   }
 
   .step-image {
