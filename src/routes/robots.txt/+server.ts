@@ -23,9 +23,7 @@ Disallow: /grant-feature
 Disallow: /1989
 Disallow: /1995
 Disallow: /1998
-Disallow: /2003
-
-Crawl-delay: 1`;
+Disallow: /2003`;
 
   return new Response(robots, {
     headers: {

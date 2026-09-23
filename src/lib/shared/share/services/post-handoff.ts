@@ -223,6 +223,11 @@ export function copyLink(url: string): Promise<HandoffResult> {
   return copyText(url, "Link");
 }
 
+/** The pasteable embed `<iframe>` + attribution snippet, not a bare URL. */
+export function copyEmbedCode(html: string): Promise<HandoffResult> {
+  return copyText(html, "Embed code");
+}
+
 /**
  * Starts a text clipboard write while a post link is still being prepared.
  * Safari keeps a click's clipboard permission only for work begun in that
