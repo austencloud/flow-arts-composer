@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   clearStoredSettings,
   getSettings,
-  setCurrentPropType,
+  setCurrentPropPair,
   settingsService,
   updateSettings,
 } from "../../../apps/shape-engine/src/native-settings.svelte";
@@ -16,13 +16,29 @@ describe("Shape Engine local renderer settings", () => {
       fanAppearance: { build: "day", frameColor: "white", cover: "covered" },
       leftBuugengFlipped: true,
     });
-    await setCurrentPropType(PropType.FAN);
+    await setCurrentPropPair({ left: PropType.FAN, right: PropType.FAN });
     expect(getSettings().fanAppearance).toEqual({
-      build: "day", frameColor: "white", cover: "covered",
+      build: "day",
+      frameColor: "white",
+      cover: "covered",
     });
     expect(getSettings().leftBuugengFlipped).toBe(true);
     expect(settingsService.currentSettings.leftPropType).toBe(PropType.FAN);
     expect(settingsService.currentSettings.rightPropType).toBe(PropType.FAN);
+  });
+
+  it("saves each hand's own prop and flags cat dog when they differ", async () => {
+    await setCurrentPropPair({ left: PropType.STAFF, right: PropType.FAN });
+    expect(settingsService.currentSettings.leftPropType).toBe(PropType.STAFF);
+    expect(settingsService.currentSettings.rightPropType).toBe(PropType.FAN);
+    expect(settingsService.currentSettings.propType).toBe(PropType.STAFF);
+    expect(settingsService.currentSettings.catDogMode).toBe(true);
+  });
+
+  it("leaves an existing cat dog flag alone when the adopted hands match", async () => {
+    await updateSettings({ catDogMode: true });
+    await setCurrentPropPair({ left: PropType.STAFF, right: PropType.STAFF });
+    expect(settingsService.currentSettings.catDogMode).toBe(true);
   });
 
   it("exposes fan updates to an already-mounted renderer and restores them from storage", async () => {
@@ -31,7 +47,11 @@ describe("Shape Engine local renderer settings", () => {
       fanAppearance: { build: "lotus", frameColor: "black", cover: "bare" },
     });
     expect(rendererSettings.fanAppearance?.build).toBe("lotus");
-    rendererSettings.fanAppearance = { build: "fire", frameColor: "black", cover: "bare" };
+    rendererSettings.fanAppearance = {
+      build: "fire",
+      frameColor: "black",
+      cover: "bare",
+    };
     await settingsService.loadSettings();
     expect(rendererSettings.fanAppearance?.build).toBe("lotus");
   });

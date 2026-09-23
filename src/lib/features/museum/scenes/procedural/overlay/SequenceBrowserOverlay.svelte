@@ -5,6 +5,7 @@
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
   import type { BrowseThumbnailProvider } from "$lib/shared/browse/services/browse-thumbnail-provider";
+  import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
 
   interface Props {
     visible: boolean;
@@ -50,7 +51,7 @@
     } else {
       filteredSequences = sequences.filter(
         (s) =>
-          s.word?.toLowerCase().includes(query) ||
+          stripWordNotation(s.word).toLowerCase().includes(query) ||
           s.name?.toLowerCase().includes(query) ||
           s.tags?.some((t) => t.toLowerCase().includes(query))
       );

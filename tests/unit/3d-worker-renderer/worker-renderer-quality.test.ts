@@ -1,8 +1,5 @@
 // @vitest-environment jsdom
-
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { WorkerEnvironmentRenderer } from "$lib/shared/3d/worker-renderer/services/worker-environment-renderer";
 
 class FakeWorker {
@@ -12,52 +9,16 @@ class FakeWorker {
   terminate = vi.fn();
 }
 
-function fakeCanvas(kind: "render" | "poster") {
-  const bitmapContext = { transferFromImageBitmap: vi.fn() };
-  return {
-    canvas: {
-      className: "",
-      style: {} as CSSStyleDeclaration,
-      width: 300,
-      height: 150,
-      setAttribute: vi.fn(),
-      transferControlToOffscreen: vi.fn(() => ({ width: 1, height: 1 })),
-      getContext: vi.fn((type: string) =>
-        kind === "poster" && type === "bitmaprenderer"
-          ? bitmapContext
-          : null
-      ),
-      remove: vi.fn(),
-    } as unknown as HTMLCanvasElement,
-    bitmapContext,
-  };
-}
-
-describe("worker renderer adaptive quality", () => {
-  let frames: Array<{ id: number; callback: FrameRequestCallback }>;
-  let nextFrameId: number;
+describe("live worker scene handoff", () => {
+  let workers: FakeWorker[];
+  let canvases: HTMLCanvasElement[];
+  let frames: FrameRequestCallback[];
 
   beforeEach(() => {
+    workers = [];
+    canvases = [];
     frames = [];
-    nextFrameId = 1;
     vi.stubGlobal("Worker", FakeWorker);
-    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
-      const id = nextFrameId++;
-      frames.push({ id, callback });
-      return id;
-    });
-    vi.stubGlobal("cancelAnimationFrame", (id: number) => {
-      frames = frames.filter((frame) => frame.id !== id);
-    });
-    vi.spyOn(document, "createElement");
-    Object.defineProperty(
-      window.HTMLCanvasElement.prototype,
-      "transferControlToOffscreen",
-      {
-        configurable: true,
-        value: vi.fn(),
-      }
-    );
     vi.stubGlobal(
       "ResizeObserver",
       class {
@@ -65,46 +26,58 @@ describe("worker renderer adaptive quality", () => {
         disconnect = vi.fn();
       }
     );
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+      frames.push(callback);
+      return frames.length;
+    });
+    vi.stubGlobal("cancelAnimationFrame", vi.fn());
+    Object.defineProperty(
+      HTMLCanvasElement.prototype,
+      "transferControlToOffscreen",
+      {
+        configurable: true,
+        value: vi.fn(() => ({})),
+      }
+    );
+    vi.spyOn(document, "createElement").mockImplementation((name: string) => {
+      const element = document.createElementNS(
+        "http://www.w3.org/1999/xhtml",
+        name
+      );
+      if (name === "canvas") {
+        const canvas = element as HTMLCanvasElement;
+        vi.spyOn(canvas, "getContext").mockReturnValue(null);
+        canvases.push(canvas);
+      }
+      return element;
+    });
   });
 
   afterEach(() => {
     delete (
-      window.HTMLCanvasElement.prototype as HTMLCanvasElement & {
+      HTMLCanvasElement.prototype as HTMLCanvasElement & {
         transferControlToOffscreen?: unknown;
       }
     ).transferControlToOffscreen;
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
-  function flushFrame() {
-    frames.shift()?.callback(performance.now());
-  }
-
   function fixture() {
-    const workers: FakeWorker[] = [];
-    const render = fakeCanvas("render");
-    const poster = fakeCanvas("poster");
-    vi.mocked(document.createElement)
-      .mockReturnValueOnce(render.canvas)
-      .mockReturnValueOnce(poster.canvas);
-    const onSnapshot = vi.fn();
+    const container = document.createElementNS(
+      "http://www.w3.org/1999/xhtml",
+      "div"
+    ) as HTMLElement;
+    vi.spyOn(container, "getBoundingClientRect").mockReturnValue({
+      width: 640,
+      height: 360,
+      left: 0,
+      top: 0,
+    } as DOMRect);
     const onFrame = vi.fn();
-    const container = {
-      append: vi.fn(),
-      insertBefore: vi.fn(),
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      getBoundingClientRect: vi.fn(() => ({
-        width: 640,
-        height: 360,
-        left: 0,
-        top: 0,
-      })),
-    } as unknown as HTMLElement;
     const renderer = new WorkerEnvironmentRenderer({
       container,
-      onSnapshot,
       onFrame,
       createWorker: () => {
         const worker = new FakeWorker();
@@ -112,271 +85,372 @@ describe("worker renderer adaptive quality", () => {
         return worker as unknown as Worker;
       },
     });
-    return { workers, render, poster, renderer, onSnapshot, onFrame };
+    return { renderer, onFrame };
   }
 
-  function send(
-    worker: FakeWorker,
-    data: Record<string, unknown>
-  ): void {
+  function send(worker: FakeWorker, data: Record<string, unknown>) {
     worker.onmessage?.(new MessageEvent("message", { data }));
   }
 
-  function present(
-    worker: FakeWorker,
-    requestId: number,
-    environment: string
-  ): void {
-    send(worker, {
-      type: "first-frame",
-      requestId,
-      environment,
-      metrics: {},
-    });
+  function flushFrame() {
+    frames.shift()?.(performance.now());
+  }
+
+  function present(worker: FakeWorker, requestId: number, environment: string) {
+    send(worker, { type: "first-frame", requestId, environment, metrics: {} });
     flushFrame();
   }
 
-  it("reuses one worker while applying quality to this and later scenes", () => {
-    const { workers, renderer } = fixture();
-    renderer.switchTo("ocean");
-    const worker = workers[0]!;
-
-    renderer.setQualityTier("low");
-    expect(worker.postMessage).toHaveBeenLastCalledWith(
-      { type: "quality", requestId: 1, qualityTier: "low" },
-      []
-    );
-    present(worker, 1, "ocean");
-
-    renderer.switchTo("rainbow");
-    expect(workers).toHaveLength(1);
-    expect(worker.postMessage).toHaveBeenLastCalledWith(
-      {
-        type: "switch-environment",
-        requestId: 2,
-        environment: "rainbow",
-        // Every environment start carries the motion preference now, not just
-        // the first slot boot (5cb43b1e80). jsdom reports no reduce request.
-        reducedMotion: false,
-      },
-      []
-    );
-    renderer.dispose();
-  });
-
-  it("reports cadence only while the worker canvas is the live surface", () => {
-    const { workers, renderer, onFrame } = fixture();
-    renderer.switchTo("ocean");
-    const worker = workers[0]!;
-    present(worker, 1, "ocean");
-
+  function frame(worker: FakeWorker, requestId: number, environment: string) {
     send(worker, {
       type: "frame",
-      requestId: 1,
-      environment: "ocean",
+      requestId,
+      environment,
       frame: 2,
-      renderedAt: 100,
-      deltaMs: 24,
+      renderedAt: performance.now(),
+      deltaMs: 16,
     });
-    renderer.switchTo("rainbow");
-    send(worker, {
-      type: "frame",
-      requestId: 1,
-      environment: "ocean",
-      frame: 3,
-      renderedAt: 120,
-      deltaMs: 99,
-    });
+  }
 
-    expect(onFrame).toHaveBeenCalledOnce();
-    expect(onFrame).toHaveBeenCalledWith(24);
-    renderer.dispose();
-  });
-
-  it("holds a real bitmap poster while the same worker builds the next scene", () => {
-    const { workers, poster, renderer } = fixture();
+  it("keeps outgoing motion and state updates live throughout staging", () => {
+    const { renderer, onFrame } = fixture();
     renderer.switchTo("ocean");
-    const worker = workers[0]!;
-    present(worker, 1, "ocean");
+    present(workers[0]!, 1, "ocean");
     renderer.switchTo("rainbow");
-    const bitmap = { close: vi.fn() } as unknown as ImageBitmap;
-
-    send(worker, {
-      type: "poster",
-      requestId: 2,
-      environment: "ocean",
-      bitmap,
-    });
-
-    expect(workers).toHaveLength(1);
-    expect(worker.terminate).not.toHaveBeenCalled();
-    expect(poster.bitmapContext.transferFromImageBitmap).toHaveBeenCalledWith(
-      bitmap
-    );
+    expect(workers).toHaveLength(2);
     expect(renderer.snapshot).toMatchObject({
       active: "ocean",
       staging: "rainbow",
-      heldFrame: "ocean",
+      liveWorkers: 2,
+      heldFrame: null,
+    });
+    renderer.setPerformers([]);
+    expect(workers[0]!.postMessage.mock.calls.at(-1)?.[0]).toMatchObject({
+      type: "performers",
+      requestId: 1,
+    });
+    expect(workers[1]!.postMessage.mock.calls.at(-1)?.[0]).toMatchObject({
+      type: "performers",
+      requestId: 2,
+    });
+    frame(workers[0]!, 1, "ocean");
+    expect(onFrame).toHaveBeenCalledOnce();
+    expect(canvases[0]!.style.opacity).toBe("1");
+    expect(canvases[2]!.style.opacity).toBe("0");
+    present(workers[1]!, 2, "rainbow");
+    expect(renderer.snapshot.lastMeasurement).toMatchObject({
+      outgoingVisualMode: "animated",
+      outgoingFrameSamples: 1,
+    });
+    renderer.dispose();
+  });
+
+  it("fans out camera, effects, quality, and viewport updates while staging", () => {
+    const { renderer } = fixture();
+    renderer.switchTo("ocean");
+    present(workers[0]!, 1, "ocean");
+    renderer.switchTo("rainbow");
+    const camera = { fov: 50 } as Parameters<typeof renderer.setCamera>[0];
+    renderer.setCamera(camera);
+    renderer.setEffects({ playing: true, sources: [] });
+    renderer.setQualityTier("low");
+    renderer.setPixelRatio(1.5);
+    for (const worker of workers) {
+      const messages = worker.postMessage.mock.calls.map(
+        ([message]) => message
+      );
+      expect(messages).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ type: "camera", camera }),
+          expect.objectContaining({
+            type: "effects",
+            effects: { playing: true, sources: [] },
+          }),
+          expect.objectContaining({ type: "quality", qualityTier: "low" }),
+          expect.objectContaining({
+            type: "resize",
+            viewport: { width: 640, height: 360, dpr: 1.5 },
+          }),
+        ])
+      );
+    }
+    expect(workers[1]!.postMessage.mock.calls[0]?.[0]).toMatchObject({
+      type: "initialize",
+      retainSceneCache: false,
+    });
+    renderer.dispose();
+  });
+
+  it("does not pass frame continuity when outgoing worker goes silent", () => {
+    const { renderer } = fixture();
+    renderer.switchTo("ocean");
+    present(workers[0]!, 1, "ocean");
+    renderer.switchTo("rainbow");
+    present(workers[1]!, 2, "rainbow");
+    expect(renderer.snapshot.lastMeasurement).toMatchObject({
+      outgoingFrameSamples: 0,
+      outgoingVisualMode: "held-frame",
+      passedFrameGate: false,
+    });
+    renderer.dispose();
+  });
+
+  it("bounds rapid superseded choices to two live workers", () => {
+    const { renderer } = fixture();
+    renderer.switchTo("ocean");
+    present(workers[0]!, 1, "ocean");
+    renderer.switchTo("rainbow");
+    renderer.switchTo("celestial");
+    expect(workers).toHaveLength(3);
+    expect(workers[1]!.terminate).toHaveBeenCalledOnce();
+    expect(renderer.snapshot).toMatchObject({
+      active: "ocean",
+      staging: "celestial",
+      liveWorkers: 2,
+    });
+    renderer.switchTo("ocean");
+    expect(workers[2]!.terminate).toHaveBeenCalledOnce();
+    expect(renderer.snapshot).toMatchObject({
+      active: "ocean",
+      staging: null,
       liveWorkers: 1,
     });
-    flushFrame();
-    expect(worker.postMessage).toHaveBeenLastCalledWith(
-      { type: "poster-ready", requestId: 2 },
-      []
-    );
+    renderer.dispose();
+  });
 
-    present(worker, 2, "rainbow");
-    expect(poster.canvas.style.opacity).toBe("0");
+  it("finishes an interrupted fade before staging another scene", () => {
+    const { renderer } = fixture();
+    renderer.switchTo("ocean");
+    present(workers[0]!, 1, "ocean");
+    renderer.switchTo("rainbow");
+    present(workers[1]!, 2, "rainbow");
+    expect(canvases[0]!.style.opacity).toBe("1");
+    expect(canvases[2]!.style.zIndex).toBe("2");
+    renderer.switchTo("celestial");
+    expect(canvases[2]!.style.opacity).toBe("1");
+    expect(canvases[2]!.style.transition).toBe("none");
+    expect(renderer.snapshot.liveWorkers).toBe(2);
+    renderer.dispose();
+  });
+
+  it("keeps the outgoing scene animated after staging failure and retries", () => {
+    const { renderer, onFrame } = fixture();
+    renderer.switchTo("ocean");
+    present(workers[0]!, 1, "ocean");
+    renderer.switchTo("rainbow");
+    send(workers[1]!, {
+      type: "error",
+      requestId: 2,
+      environment: "rainbow",
+      message: "failed",
+    });
+    expect(workers[1]!.terminate).toHaveBeenCalledOnce();
+    expect(workers).toHaveLength(3);
+    frame(workers[0]!, 1, "ocean");
+    expect(onFrame).toHaveBeenCalledOnce();
+    send(workers[2]!, {
+      type: "error",
+      requestId: 2,
+      environment: "rainbow",
+      message: "failed again",
+    });
+    expect(renderer.snapshot).toMatchObject({
+      active: "ocean",
+      phase: "error",
+      liveWorkers: 1,
+    });
+    frame(workers[0]!, 1, "ocean");
+    expect(onFrame).toHaveBeenCalledTimes(2);
+    renderer.dispose();
+  });
+
+  it("resumes a hidden previous world only after its next live frame", () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const { renderer } = fixture();
+    renderer.switchTo("ocean");
+    present(workers[0]!, 1, "ocean");
+    renderer.switchTo("rainbow");
+    present(workers[1]!, 2, "rainbow");
+    vi.advanceTimersByTime(160);
+    expect(renderer.snapshot.liveWorkers).toBe(2);
+    renderer.switchTo("ocean");
+    expect(workers).toHaveLength(2);
+    expect(renderer.snapshot.active).toBe("rainbow");
+    frame(workers[0]!, 1, "ocean");
+    expect(renderer.snapshot.phase).toBe("booting");
+    frame(workers[0]!, 3, "ocean");
+    flushFrame();
+    expect(renderer.snapshot.active).toBe("ocean");
+    expect(renderer.snapshot.lastMeasurement?.workerBoot.warmReuse).toBe(true);
+    renderer.dispose();
+  });
+
+  it("rebuilds a third scene in the idle worker without booting another context", () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const { renderer, onFrame } = fixture();
+    renderer.switchTo("ocean");
+    present(workers[0]!, 1, "ocean");
+    renderer.switchTo("rainbow");
+    present(workers[1]!, 2, "rainbow");
+    vi.advanceTimersByTime(160);
+
+    renderer.setEffects({ playing: true, sources: [] });
+    renderer.switchTo("celestial");
+    expect(workers).toHaveLength(2);
+    expect(workers[0]!.terminate).not.toHaveBeenCalled();
+    expect(
+      workers[0]!.postMessage.mock.calls.map(([message]) => message)
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: "camera",
+          requestId: 3,
+        }),
+        expect.objectContaining({
+          type: "switch-environment",
+          requestId: 3,
+          environment: "celestial",
+          backgroundPreparation: true,
+        }),
+        expect.objectContaining({
+          type: "effects",
+          effects: { playing: true, sources: [] },
+        }),
+      ])
+    );
     expect(renderer.snapshot).toMatchObject({
       active: "rainbow",
-      staging: null,
-      heldFrame: null,
-      liveWorkers: 1,
+      staging: "celestial",
+      liveWorkers: 2,
+    });
+    frame(workers[1]!, 2, "rainbow");
+    expect(onFrame).toHaveBeenCalledOnce();
+
+    send(workers[0]!, {
+      type: "first-frame",
+      requestId: 3,
+      environment: "celestial",
+      metrics: { warmReuse: false, rendererMs: 0 },
+    });
+    expect(renderer.snapshot.active).toBe("rainbow");
+    expect(workers[0]!.postMessage.mock.calls.at(-1)?.[0]).toMatchObject({
+      type: "visibility",
+      requestId: 3,
+      visible: true,
+    });
+    frame(workers[0]!, 1, "ocean");
+    expect(renderer.snapshot.active).toBe("rainbow");
+    frame(workers[0]!, 3, "celestial");
+    flushFrame();
+    expect(renderer.snapshot).toMatchObject({
+      active: "celestial",
+      liveWorkers: 2,
       lastMeasurement: {
-        outgoingVisualMode: "held-frame",
-        liveWorkersAtSwap: 1,
-        liveWorkersAfterCleanup: 1,
-        passedWorkerBound: true,
+        liveWorkersAtSwap: 2,
+        workerBoot: { warmReuse: false },
       },
     });
     renderer.dispose();
   });
 
-  it("cancels obsolete rapid choices under the installed poster", () => {
-    const { workers, poster, renderer } = fixture();
+  it("cancels idle worker rebuilding when the active scene is reselected", () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const { renderer, onFrame } = fixture();
     renderer.switchTo("ocean");
-    const worker = workers[0]!;
-    present(worker, 1, "ocean");
-
+    present(workers[0]!, 1, "ocean");
     renderer.switchTo("rainbow");
+    present(workers[1]!, 2, "rainbow");
+    vi.advanceTimersByTime(160);
     renderer.switchTo("celestial");
-    const replacement = fakeCanvas("render");
-    vi.mocked(document.createElement).mockReturnValueOnce(replacement.canvas);
-    const bitmap = { close: vi.fn() } as unknown as ImageBitmap;
-    send(worker, {
-      type: "poster",
-      requestId: 2,
-      environment: "ocean",
-      bitmap,
-    });
-    flushFrame();
-
+    renderer.switchTo("rainbow");
     expect(workers).toHaveLength(2);
-    expect(worker.terminate).toHaveBeenCalledOnce();
-    expect(poster.canvas.style.opacity).toBe("1");
-    expect(workers[1]?.postMessage.mock.calls[0]?.[0]).toMatchObject({
-      type: "initialize",
-      requestId: 3,
-      environment: "celestial",
-    });
+    expect(workers[0]!.terminate).toHaveBeenCalledOnce();
     expect(renderer.snapshot).toMatchObject({
-      active: "ocean",
-      staging: "celestial",
-      heldFrame: "ocean",
+      active: "rainbow",
+      staging: null,
       liveWorkers: 1,
     });
-    send(workers[1]!, {
-      type: "first-frame",
+    frame(workers[1]!, 2, "rainbow");
+    expect(onFrame).toHaveBeenCalledOnce();
+    renderer.dispose();
+  });
+
+  it("retries a failed idle-worker rebuild without stopping the outgoing scene", () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const { renderer, onFrame } = fixture();
+    renderer.switchTo("ocean");
+    present(workers[0]!, 1, "ocean");
+    renderer.switchTo("rainbow");
+    present(workers[1]!, 2, "rainbow");
+    vi.advanceTimersByTime(160);
+    renderer.switchTo("celestial");
+    send(workers[0]!, {
+      type: "error",
       requestId: 3,
       environment: "celestial",
-      metrics: {},
+      message: "scene failed",
     });
-    flushFrame();
-
-    expect(poster.canvas.style.opacity).toBe("0");
+    expect(workers[0]!.terminate).toHaveBeenCalledOnce();
+    expect(workers).toHaveLength(3);
     expect(renderer.snapshot).toMatchObject({
-      active: "celestial",
-      staging: null,
-      heldFrame: null,
+      active: "rainbow",
+      staging: "celestial",
+      liveWorkers: 2,
     });
+    frame(workers[1]!, 2, "rainbow");
+    expect(onFrame).toHaveBeenCalledOnce();
     renderer.dispose();
   });
 
-  it("retains the poster across the one allowed context-loss recovery", () => {
-    const { workers, render, poster, renderer } = fixture();
+  it("discards a lost cached context before returning to that scene", () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const { renderer } = fixture();
     renderer.switchTo("ocean");
-    const firstWorker = workers[0]!;
-    present(firstWorker, 1, "ocean");
+    present(workers[0]!, 1, "ocean");
     renderer.switchTo("rainbow");
-    send(firstWorker, {
-      type: "poster",
-      requestId: 2,
-      environment: "ocean",
-      bitmap: { close: vi.fn() } as unknown as ImageBitmap,
-    });
-    flushFrame();
-
-    const replacement = fakeCanvas("render");
-    vi.mocked(document.createElement).mockReturnValueOnce(replacement.canvas);
-    send(firstWorker, {
-      type: "context-lost",
-      requestId: 2,
-      environment: "rainbow",
-    });
-
-    expect(workers).toHaveLength(2);
-    expect(firstWorker.terminate).toHaveBeenCalledOnce();
-    expect(render.canvas.remove).toHaveBeenCalledOnce();
-    expect(poster.canvas.remove).not.toHaveBeenCalled();
-    expect(poster.canvas.style.opacity).toBe("1");
-    expect(workers[1]?.postMessage.mock.calls[0]?.[0]).toMatchObject({
-      type: "initialize",
-      requestId: 2,
-      environment: "rainbow",
-    });
-    renderer.dispose();
-  });
-
-  it("coalesces worker progress into one application update per frame", () => {
-    const { workers, renderer, onSnapshot } = fixture();
+    present(workers[1]!, 2, "rainbow");
+    vi.advanceTimersByTime(160);
+    send(workers[0]!, { type: "context-lost", requestId: 1 });
+    expect(workers[0]!.terminate).toHaveBeenCalledOnce();
     renderer.switchTo("ocean");
-    const beforeProgress = onSnapshot.mock.calls.length;
+    expect(workers).toHaveLength(3);
+    expect(renderer.snapshot.liveWorkers).toBe(2);
+    renderer.dispose();
+  });
 
-    for (const fraction of [0.1, 0.2, 0.3, 0.4]) {
-      send(workers[0]!, {
-        type: "progress",
-        requestId: 1,
-        phase: "prime",
-        fraction,
-      });
-    }
-
-    expect(onSnapshot).toHaveBeenCalledTimes(beforeProgress);
-    expect(frames).toHaveLength(1);
-    flushFrame();
-    expect(onSnapshot).toHaveBeenCalledTimes(beforeProgress + 1);
+  it("clears a failed active worker so the caller can fall back", () => {
+    const { renderer } = fixture();
+    renderer.switchTo("ocean");
+    present(workers[0]!, 1, "ocean");
+    send(workers[0]!, {
+      type: "context-lost",
+      requestId: 1,
+      environment: "ocean",
+    });
+    expect(workers[0]!.terminate).toHaveBeenCalledOnce();
     expect(renderer.snapshot).toMatchObject({
-      progressPhase: "prime",
-      progress: 0.4,
+      active: null,
+      phase: "error",
+      liveWorkers: 0,
     });
     renderer.dispose();
   });
 
-  it("keeps the worker's authored Ocean defaults while applying tier gates", () => {
-    const source = readFileSync(
-      resolve(
-        process.cwd(),
-        "src/lib/shared/3d/worker-renderer/workers/environment-renderer.worker.ts"
-      ),
-      "utf8"
-    );
-
-    expect(source).toContain("enabled: quality.composerEnabled");
-    expect(source).toContain("tierBloom: quality.tierBloom");
-    expect(source).toContain("enableShadows: quality.enableShadows");
-    expect(source).toContain(
-      "tierBloomResolutionScale: quality.bloomResolutionScale"
-    );
-    expect(source).toContain("tierBloomLevels: quality.bloomLevels");
-    expect(source).toContain("oceanBloom: true");
-    expect(source).toContain("oceanWaterTint: true");
-    expect(source).toContain("oceanWaterTintStrength: 0.8");
-    expect(source).toContain("oceanUnderwaterDistortion: false");
-    expect(source).toContain("? WORKER_PREPARATION_VIEWPORT");
-    expect(source).toContain("preparingFirstFrame = false");
-    expect(source.indexOf("preparingFirstFrame = false")).toBeLessThan(
-      source.indexOf("const firstRenderStartedAt")
-    );
-    expect(source).toContain('case "quality":');
+  it("keeps a live outgoing worker when creating staging fails", () => {
+    const { renderer, onFrame } = fixture();
+    renderer.switchTo("ocean");
+    present(workers[0]!, 1, "ocean");
+    vi.spyOn(document, "createElement").mockImplementationOnce(() => {
+      throw new Error("no canvas");
+    });
+    renderer.switchTo("rainbow");
+    expect(renderer.snapshot).toMatchObject({
+      active: "ocean",
+      phase: "error",
+      liveWorkers: 1,
+    });
+    frame(workers[0]!, 1, "ocean");
+    expect(onFrame).toHaveBeenCalledOnce();
+    renderer.dispose();
   });
 });

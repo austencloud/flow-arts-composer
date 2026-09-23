@@ -717,7 +717,7 @@ export class AnimationEngine {
     });
   }
 
-  /** The live render target used for direct, settings-faithful GIF capture. */
+  /** The live render target used for direct, settings-faithful frame capture. */
   getCanvas(): HTMLCanvasElement | null {
     return this.lifecycleManager.animationRenderer?.getCanvas() ?? null;
   }

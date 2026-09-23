@@ -3,6 +3,7 @@
  */
 import type { MatchedSequence } from "../types";
 import { getFirestoreInstance } from "$lib/shared/auth/firebase";
+import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
 
 // Known user ID for Austen (primary sequence creator)
 const AUSTEN_USER_ID = "PBp3GSBO6igCKPwJyLZNmVEmamI3";
@@ -64,7 +65,9 @@ export class SequenceMatcher {
     // Sort by score (higher = better), then by word length (shorter = better)
     scored.sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
-      return a.sequence.word.length - b.sequence.word.length;
+      return (
+        stripWordNotation(a.sequence.word).length - stripWordNotation(b.sequence.word).length
+      );
     });
 
     return scored.map((s) => s.sequence);
@@ -75,7 +78,8 @@ export class SequenceMatcher {
     query: string,
     vtgPatterns?: string[]
   ): ScoredMatch | null {
-    const word = seq.word.toUpperCase();
+    // Skew braces mark a span, not a letter: match against the letters inside.
+    const word = stripWordNotation(seq.word).toUpperCase();
     const name = seq.name.toUpperCase();
 
     // Exact word match (highest priority)

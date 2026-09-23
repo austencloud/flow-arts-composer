@@ -21,7 +21,7 @@ const FUSEABLE = new Set([
 
 export function executeSymmetricSpec(
   sequence: SequenceStep[],
-  spec: PropLOOPSpec,
+  spec: PropLOOPSpec
 ): SequenceStep[] {
   if (spec.components.size === 0) return sequence;
 
@@ -48,7 +48,10 @@ export function executeSymmetricSpec(
   if (spec.components.has(LOOPComponent.ROTATED)) {
     const rotatedPeriod = spec.components.get(LOOPComponent.ROTATED)!.period;
     const fuseableAtSamePeriod = hasFuseableAtPeriod(spec, rotatedPeriod);
-    const mirrorOrFlipAtSamePeriod = hasMirrorOrFlipAtPeriod(spec, rotatedPeriod);
+    const mirrorOrFlipAtSamePeriod = hasMirrorOrFlipAtPeriod(
+      spec,
+      rotatedPeriod
+    );
 
     // Run ROTATED as a separate stage only when:
     // - there are no fuseable components at the same period (pure rotation), OR
@@ -64,7 +67,12 @@ export function executeSymmetricSpec(
 
   const groups = groupFuseableByPeriod(spec);
   for (const [period, flags] of groups) {
-    const executor = new FusedExecutor(flags);
+    const rotated = spec.components.get(LOOPComponent.ROTATED);
+    const absorbedRotation =
+      rotated?.period === period &&
+      hasFuseableAtPeriod(spec, period) &&
+      !hasMirrorOrFlipAtPeriod(spec, period);
+    const executor = new FusedExecutor({ ...flags, rotate: absorbedRotation });
     result = executor.execute(result, period);
   }
 
@@ -83,7 +91,7 @@ export function executeSymmetricSpec(
 
 export function executeLOOPSpec(
   sequence: SequenceStep[],
-  spec: LOOPSpec,
+  spec: LOOPSpec
 ): SequenceStep[] {
   const leftSpec = spec.left ?? EMPTY_PROP_SPEC;
   const rightSpec = spec.right ?? EMPTY_PROP_SPEC;
@@ -94,7 +102,7 @@ export function executeLOOPSpec(
 
   throw new Error(
     "Asymmetric LOOPSpec execution not yet implemented. " +
-      "Per-prop independent execution requires Phase 3b follow-on.",
+      "Per-prop independent execution requires Phase 3b follow-on."
   );
 }
 
@@ -114,7 +122,7 @@ export function getLOOPSpecExpansionMultiplier(spec: LOOPSpec): number {
   if (!specsAreEqual(leftSpec, rightSpec)) {
     throw new Error(
       "Asymmetric LOOPSpec expansion is not yet implemented. " +
-        "A single seed-length multiplier requires symmetric execution.",
+        "A single seed-length multiplier requires symmetric execution."
     );
   }
 
@@ -130,7 +138,7 @@ export function getLOOPSpecExpansionMultiplier(spec: LOOPSpec): number {
     const fuseableAtSamePeriod = hasFuseableAtPeriod(leftSpec, rotated.period);
     const mirrorOrFlipAtSamePeriod = hasMirrorOrFlipAtPeriod(
       leftSpec,
-      rotated.period,
+      rotated.period
     );
 
     if (!fuseableAtSamePeriod || mirrorOrFlipAtSamePeriod) {
@@ -177,7 +185,7 @@ function hasMirrorOrFlipAtPeriod(spec: PropLOOPSpec, period: number): boolean {
 }
 
 function groupFuseableByPeriod(
-  spec: PropLOOPSpec,
+  spec: PropLOOPSpec
 ): Map<number, FusedTransformFlags> {
   const groups = new Map<
     number,
@@ -214,6 +222,6 @@ function groupFuseableByPeriod(
       const invOnlyB = fb.invert && !fb.mirror && !fb.flip && !fb.swap ? 1 : 0;
       if (invOnlyA !== invOnlyB) return invOnlyA - invOnlyB;
       return pa - pb;
-    }),
+    })
   ) as Map<number, FusedTransformFlags>;
 }

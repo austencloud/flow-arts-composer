@@ -2,24 +2,32 @@
 
 Applies to every subagent, workflow, agent-team, or Codex dispatch.
 
-- Pass an explicit `model` on every dispatch. A subagent must never inherit
-  the session model by omission; the session model is usually the most
-  expensive tier, and the subagent cannot see why it was chosen.
-- Pick the cheapest tier that can finish the job: `haiku` for census, greps,
-  and mechanical edits; `sonnet` for implementation, tests, and research
-  summaries; `opus` for planning, debugging, and review. Use the session
-  model for a subagent only when the task needs its judgment, and say why.
-- Effort inherits the session level. Set `effort` in a custom agent's
-  frontmatter only for a role that needs more, and re-run a failed task at a
-  higher level instead of starting every task high.
-- Delegate for context isolation (verbose tests, logs, greps, web research)
-  or for genuinely independent coarse chunks. Do not fan out sequential,
-  visual, or single-file work; naive fan-out costs three to six times more.
-- Brief by file path, never by pasting content. Every subagent boots with the
-  full instruction stack, so send one census first and one focused brief.
-- Offload bulk second opinions and long reviews to Codex through
-  `scripts/codex-ask.sh`; it draws on a separate quota. Set `CODEX_ASK_EFFORT`
-  per task instead of defaulting to the highest level.
-- Change model, MCP servers, and effort at session start, not mid-task; each
-  change rewrites the whole cached prefix. Hand off and start fresh instead of
-  resuming a session idle for more than an hour.
+Use delegation for context isolation or genuinely independent, coarse work. Keep
+sequential, visual, and single-file work together. A brief names the owned
+paths, objective, acceptance checks, and relevant constraints; refer to files
+instead of pasting them.
+
+For native Codex workers, use `model: gpt-6-sol`,
+`reasoning_effort: medium`, and `fork_turns: none` for bounded implementation,
+debugging, tests, and documentation. Use `gpt-6-luna` for focused, repeatable
+tasks when its result can be checked cheaply. Raise Sol to `high` for complex
+logic or edge cases; use `gpt-6-astra` when difficult diagnosis or cross-cutting
+judgment warrants it. State why when departing from the ordinary default.
+
+For Claude dispatches, keep its routing separate: use `haiku` for censuses and
+mechanical edits, `sonnet` for implementation, tests, and research summaries,
+and `opus` for planning, debugging, or review. Set the model explicitly and
+raise effort only after evidence warrants it.
+
+Delegate one bounded chunk at a time unless independent chunks justify more.
+Do not create reciprocal status or polling loops. A worker reports once at a
+natural completed-work boundary with changed paths and ranges, verification
+run, and any blocker. The coordinator does not reread completed implementation
+except for focused final review, integration, or evidence needed to resolve a
+specific risk. Retest when a relevant change or failure creates new risk, then
+move to the next task at completed-work boundaries, not timers.
+
+`scripts/codex-ask.sh` is for a bounded CLI second opinion or long review. It
+uses the signed-in Codex account and defaults to Sol/medium; override its
+model or effort per task when justified. Do not claim that another Codex
+process has a separate account quota.

@@ -1,7 +1,17 @@
 <script lang="ts">
   import { getGlyphCache } from "$lib/shared/render/get-glyph-cache";
   import { isDashLetter, getBaseLetter } from "$lib/shared/pictograph/tka-glyph/utils/letter-image-getter";
-  import { compressWord, type CompressedSegment } from "$lib/shared/foundation/utils/word-simplifier";
+  import {
+    compressWord,
+    parseWordNotation,
+    stripWordNotation,
+    type CompressedSegment,
+  } from "$lib/shared/foundation/utils/word-simplifier";
+  import {
+    getSkewBraceInk,
+    skewBraceInkFontScale,
+    skewBraceLineBoxDrop,
+  } from "$lib/shared/pictograph/tka-glyph/utils/skew-brace-layout";
 
   interface Props {
     word: string;
@@ -22,8 +32,21 @@
   const LETTER_GAP_RATIO = 0.12;
   const DOT_SIZE_RATIO = 0.15;
   const GROUP_GAP_RATIO = 0.35;
+  // Brace ink as tall as the letters in whatever face system-ui resolves to.
+  // Centring the brace's box centres the font's ascent+descent, not its ink,
+  // so each brace is raised by the measured drop (in brace em).
+  const BRACE_INK = getSkewBraceInk();
+  const BRACE_SCALE = skewBraceInkFontScale(BRACE_INK);
+  const BRACE_DROP = skewBraceLineBoxDrop(BRACE_INK);
 
-  const segments = $derived(word ? compressWord(word) : []);
+  // Glyph images exist for letters only; braces are drawn as text. A word
+  // that is one whole skewed span (every rotate-45 fuse) gets a pair around
+  // the row. Partial spans render their letters without braces here.
+  const segments = $derived(word ? compressWord(stripWordNotation(word)) : []);
+  const wholeWordSkewed = $derived.by(() => {
+    const units = parseWordNotation(word ?? "");
+    return units.length > 0 && units.every((unit) => unit.skewed);
+  });
   const hasCompression = $derived(segments.some((s: CompressedSegment) => s.repeat > 1));
   const neededBaseLetters = $derived.by(() => [
     ...new Set(
@@ -76,6 +99,9 @@
       style="transform: scale({fitScale});"
       bind:offsetWidth={naturalWidth}
     >
+    {#if wholeWordSkewed}
+      <span class="skew-brace" style="font-size: {height * BRACE_SCALE}px; height: {height}px; top: {-BRACE_DROP}em; margin-right: {height * LETTER_GAP_RATIO}px;">&#123;</span>
+    {/if}
     {#each segments as segment, segIdx}
       {#if segIdx > 0 && hasCompression}
         <span
@@ -108,6 +134,9 @@
         {/each}
       </span>
     {/each}
+    {#if wholeWordSkewed}
+      <span class="skew-brace" style="font-size: {height * BRACE_SCALE}px; height: {height}px; top: {-BRACE_DROP}em; margin-left: {height * LETTER_GAP_RATIO}px;">&#125;</span>
+    {/if}
     </div>
   </div>
 {/if}
@@ -177,6 +206,19 @@
 
   .dark-mode .glyph img {
     filter: invert(0.9);
+  }
+
+  /* Held to the letter height so the taller glyph overflows evenly instead of
+     growing the row; `top` (inline) lifts the ink onto the letters' centre. */
+  .skew-brace {
+    display: inline-flex;
+    align-items: center;
+    position: relative;
+    overflow: visible;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-weight: 500;
+    line-height: 1;
+    flex-shrink: 0;
   }
 
   .dash-bar {

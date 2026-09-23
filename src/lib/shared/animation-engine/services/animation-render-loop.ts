@@ -360,6 +360,15 @@ export class AnimationRenderLoop {
     this.ledSampler = config.ledSampler ?? null;
     this.onEffectError = config.onEffectError ?? null;
     this.mandalaOverlay = config.mandalaOverlay ?? null;
+    // The lifecycle manager creates the overlay lazily, and the visibility
+    // subscription that creates it fires before the resizer exists, so the
+    // overlay may arrive at its 500px fallback square. The frame this loop is
+    // handed is the real one; the overlay follows it from the first frame,
+    // not only from the first resize.
+    this.mandalaOverlay?.resize(
+      this.canvasFrame.width,
+      this.canvasFrame.height
+    );
     this.previousLeftTrailPropType = undefined;
     this.previousRightTrailPropType = undefined;
 
@@ -413,6 +422,10 @@ export class AnimationRenderLoop {
       this.onEffectError = config.onEffectError ?? null;
     if (config.mandalaOverlay !== undefined) {
       this.mandalaOverlay = config.mandalaOverlay;
+      this.mandalaOverlay?.resize(
+        this.canvasFrame.width,
+        this.canvasFrame.height
+      );
       this.mandalaPathPreparer.clearCache();
       this.previousMandalaPaths = null;
     }

@@ -385,8 +385,6 @@
       !stageExtent &&
       !onPerformanceSample &&
       !gaitProbeState.enabled &&
-      leftPropType !== null &&
-      rightPropType !== null &&
       viewer3DState.performerManager.renderablePerformers.every(
         ({ presencePhase }) => presencePhase === "present"
       )
@@ -478,6 +476,7 @@
   let effectsRuntimeReady = $state(!enableEffects);
   let sceneReady = $state(false);
   let environmentSettled = $state(true);
+  let workerHasLiveScene = $state(false);
   let readyPerformerCount = $state(0);
   let totalPerformerCount = $state(0);
   const performersReady = $derived(
@@ -536,6 +535,7 @@
       `[Viewer3DCanvas] worker renderer fell back for ${background}: ${reasons.join(", ")}`
     );
     workerRuntimeFailedFor = background;
+    workerHasLiveScene = false;
     rendererReady = false;
     effectsRuntimeReady = !enableEffects;
     environmentSettled = true;
@@ -551,8 +551,12 @@
         __workerSceneSwitch?: WorkerSceneSwitchSnapshot;
       }
     ).__workerSceneSwitch = snapshot;
+    workerHasLiveScene = snapshot.active !== null;
 
-    if (snapshot.phase === "unsupported" || snapshot.phase === "error") {
+    if (
+      snapshot.phase === "unsupported" ||
+      (snapshot.phase === "error" && !workerHasLiveScene)
+    ) {
       failWorkerRenderer([snapshot.lastError ?? snapshot.phase]);
       return;
     }
@@ -563,6 +567,20 @@
     const mounted = snapshot.active
       ? getBackgroundTypeForWorkerEnvironment(snapshot.active)
       : null;
+    if (snapshot.phase === "error" && mounted) {
+      // A failed replacement leaves the outgoing worker usable. Preserve its
+      // canvas and clock instead of unmounting it for the legacy renderer.
+      lastWorkerPhase = "error";
+      handleRendererReadyChange(true);
+      environmentSettled = true;
+      onEnvironmentTransitionChange?.({
+        requestedKey: requested,
+        mountedKey: mounted,
+        phase: "idle",
+        settled: true,
+      });
+      return;
+    }
     if (snapshot.phase === "booting" || snapshot.phase === "swapping") {
       if (lastWorkerPhase !== "booting" && snapshot.phase === "booting") {
         sceneFeatureState.resetReady("environment");
@@ -647,11 +665,8 @@
     if (snapshot) onCameraStateChange?.(snapshot);
   });
 
-  // Hold playback through every renderer preparation, including worker scene
-  // swaps. Letting the shared clock and all of its DOM consumers keep repainting
-  // while a replacement WebGL context uploads resources forced main-thread
-  // layouts and made an otherwise off-thread switch feel locked. Preserve the
-  // current beat and resume only after the complete replacement frame is live.
+  // Hold only when there is no playable scene. Worker replacements prepare
+  // alongside the live outgoing scene, which must keep receiving moving poses.
   let heldForSceneLoad = false;
   function synchronizeSceneLoadingPlayback(playing: boolean): void {
     if (onSystemPlaybackChange) {
@@ -671,6 +686,7 @@
     }
     const transition = sceneLoadingPlaybackTransition({
       sceneReady: sceneReady && environmentSettled,
+      hasLiveScene: workerHostExact && sceneReady && workerHasLiveScene,
       isPlaying,
       held: heldForSceneLoad,
     });
@@ -705,7 +721,7 @@
          root so it still covers the transport during the scene-load hold. -->
     <div class="stage-area">
       {#if renderEmptyScene || canvasMountReady || initialRevealMode === "streaming"}
-        {#if workerHostExact && workerEnvironment && sequenceData && leftPropType && rightPropType}
+        {#if workerHostExact && workerEnvironment && sequenceData}
           <WorkerViewer3DScene
             environment={workerEnvironment}
             {sequenceData}

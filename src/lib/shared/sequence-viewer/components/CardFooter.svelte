@@ -7,6 +7,8 @@
 <script lang="ts">
   import { fade, fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
+  import { TextRenderer } from "$lib/shared/render/services/text-renderer";
+  import { ensureCardFonts } from "$lib/shared/render/services/gelasio-fonts";
   import type { HandLegend } from "../services/hand-legend";
 
   interface Props {
@@ -18,6 +20,8 @@
     footerFontSize: number;
     footerMargin: number;
     activeDarkMode: boolean;
+    /** The downloaded artifact uses the canvas card palette exactly. */
+    exportPresentation?: boolean;
     /** Which color is the viewer's right hand. Only beside performance footage. */
     handLegend?: HandLegend | null;
   }
@@ -31,42 +35,92 @@
     footerFontSize,
     footerMargin,
     activeDarkMode,
+    exportPresentation = false,
     handLegend = null,
   }: Props = $props();
+
+  const exportTextRenderer = new TextRenderer();
+  let exportCanvas = $state<HTMLCanvasElement>();
+  let exportCanvasWidth = $state(0);
+
+  $effect(() => {
+    const canvas = exportCanvas;
+    if (!exportPresentation || !canvas || exportCanvasWidth < 1) return;
+    const width = Math.round(exportCanvasWidth);
+    const height = Math.round(scaledFooterHeight);
+    if (height < 1) return;
+    const snapshot = {
+      customNotesText,
+      footerHeight: height,
+      darkMode: activeDarkMode,
+      showNotes,
+    };
+    let cancelled = false;
+    void (async () => {
+      await ensureCardFonts();
+      if (cancelled) return;
+      canvas.width = width;
+      canvas.height = height;
+      await exportTextRenderer.renderCardFooter({ canvas, ...snapshot });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  });
 </script>
 
 {#if showFooter}
   <div
     class="footer-section"
     class:dark-mode={activeDarkMode}
+    class:export-presentation={exportPresentation}
+    role={exportPresentation ? "img" : undefined}
+    aria-label={exportPresentation
+      ? showNotes && customNotesText.trim()
+        ? customNotesText
+        : "Card footer"
+      : undefined}
     style="height: {scaledFooterHeight}px; padding-left: {footerMargin}px; padding-right: {footerMargin}px; font-size: max(var(--font-size-compact, 12px), {footerFontSize}px);"
-    transition:fly|local={{ y: 20, duration: 250, easing: cubicOut }}
+    transition:fly|local={{
+      y: 20,
+      duration: exportPresentation ? 0 : 250,
+      easing: cubicOut,
+    }}
   >
-    {#if handLegend}
-      <span
-        class="footer-hand-legend"
-        data-hand-legend
-        role="img"
-        aria-label={handLegend.spoken}
-      >
-        {handLegend.lead}
+    {#if exportPresentation}
+      <canvas
+        class="export-footer-canvas"
+        bind:this={exportCanvas}
+        bind:clientWidth={exportCanvasWidth}
+        aria-hidden="true"
+      ></canvas>
+    {:else}
+      {#if handLegend}
         <span
-          class="hand-swatch"
-          style="background: {handLegend.swatch};"
-          aria-hidden="true"
-        ></span>
-        {handLegend.rest}
-      </span>
-    {/if}
+          class="footer-hand-legend"
+          data-hand-legend
+          role="img"
+          aria-label={handLegend.spoken}
+        >
+          {handLegend.lead}
+          <span
+            class="hand-swatch"
+            style="background: {handLegend.swatch};"
+            aria-hidden="true"
+          ></span>
+          {handLegend.rest}
+        </span>
+      {/if}
 
-    {#if showNotes}
-      <span class="footer-notes" transition:fade|local={{ duration: 200 }}>
-        {customNotesText}
-      </span>
-    {/if}
+      {#if showNotes}
+        <span class="footer-notes" transition:fade|local={{ duration: 200 }}>
+          {customNotesText}
+        </span>
+      {/if}
 
-    {#if hasPathShapeMetadata}
-      <span class="footer-path-shape">Linear shifts</span>
+      {#if hasPathShapeMetadata}
+        <span class="footer-path-shape">Linear shifts</span>
+      {/if}
     {/if}
   </div>
 {/if}
@@ -98,6 +152,18 @@
     background: rgba(10, 10, 15, 0.98);
     border-top-color: var(--theme-stroke, rgba(255, 255, 255, 0.15));
     color: white;
+  }
+
+  .footer-section.export-presentation {
+    background: transparent;
+    border-top: 0;
+    padding: 0 !important;
+  }
+
+  .export-footer-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
   }
 
   .footer-notes {

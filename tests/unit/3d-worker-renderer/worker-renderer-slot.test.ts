@@ -34,6 +34,7 @@ describe("worker renderer slot", () => {
   });
 
   afterEach(() => {
+    delete document.documentElement.dataset.motionPreference;
     vi.useRealTimers();
     vi.restoreAllMocks();
   });
@@ -85,10 +86,7 @@ describe("worker renderer slot", () => {
   it("transfers one render canvas and keeps a separate hidden poster", () => {
     const { workers, render, poster, container } = fixture();
 
-    expect(container.append).toHaveBeenCalledWith(
-      render.canvas,
-      poster.canvas
-    );
+    expect(container.append).toHaveBeenCalledWith(render.canvas, poster.canvas);
     expect(workers[0]?.postMessage).toHaveBeenCalledTimes(1);
     expect(workers[0]?.postMessage.mock.calls[0]?.[0]).toMatchObject({
       type: "initialize",
@@ -114,6 +112,45 @@ describe("worker renderer slot", () => {
 
     slot.clearPoster();
     expect(poster.canvas.style.opacity).toBe("0");
+  });
+
+  it("fades a completed poster while keeping it available for an interrupted switch", () => {
+    const { poster, slot } = fixture();
+    const bitmap = { close: vi.fn() } as unknown as ImageBitmap;
+    const replacement = fakeCanvas("render");
+    vi.mocked(document.createElement).mockReturnValueOnce(replacement.canvas);
+    slot.installPoster(bitmap);
+
+    slot.clearPoster();
+    expect(poster.canvas.style.opacity).toBe("0");
+    expect(slot.isPosterVisible).toBe(true);
+
+    slot.restart({
+      state: {
+        id: "a",
+        requestId: 8,
+        environment: "ocean",
+        status: "booting",
+      },
+      viewport: { width: 800, height: 450, dpr: 1 },
+      camera: { position: [0, 3, 9], target: [0, 0, 0], fov: 50 },
+      qualityTier: "high",
+    });
+    vi.advanceTimersByTime(200);
+
+    expect(poster.canvas.style.opacity).toBe("1");
+    expect(slot.isPosterVisible).toBe(true);
+  });
+
+  it("reveals immediately when reduced motion is requested", () => {
+    const { poster, slot } = fixture();
+    slot.installPoster({ close: vi.fn() } as unknown as ImageBitmap);
+    document.documentElement.dataset.motionPreference = "reduce";
+
+    slot.clearPoster();
+
+    expect(poster.canvas.style.opacity).toBe("0");
+    expect(slot.isPosterVisible).toBe(false);
   });
 
   it("keeps the poster while replacing a failed worker session", () => {
@@ -168,6 +205,23 @@ describe("worker renderer slot", () => {
       },
       []
     );
+  });
+
+  it("keeps the current canvas when a non-cloneable session update is rejected", () => {
+    const { workers, render, slot } = fixture();
+    workers[0]?.postMessage.mockImplementationOnce(() => {
+      throw new DOMException("Could not be cloned", "DataCloneError");
+    });
+
+    const sent = slot.post({
+      type: "performers",
+      requestId: 7,
+      performers: [],
+    });
+
+    expect(sent).toBe(false);
+    expect(render.canvas.remove).not.toHaveBeenCalled();
+    expect(workers[0]?.terminate).not.toHaveBeenCalled();
   });
 
   it("destroys once when the worker acknowledges terminal disposal", () => {

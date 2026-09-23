@@ -232,6 +232,143 @@ describe("ExpandedCardStage", () => {
     );
   });
 
+  it("closes the desktop stage after an outside control receives its click", async () => {
+    const outsideAction = vi.fn();
+    const outsideButton = document.createElement("button");
+    outsideButton.type = "button";
+    outsideButton.textContent = "Change level";
+    outsideButton.addEventListener("click", outsideAction);
+    document.body.appendChild(outsideButton);
+
+    try {
+      const state = createPanelCoordinationState();
+      const { container } = render(ExpandedCardStage, props(state, true));
+
+      state.openTnDPanel();
+      flushSync();
+      await tick();
+
+      expect(
+        container.querySelector<HTMLElement>(".expanded-card-stage")?.dataset
+          .destination
+      ).toBe("stage");
+
+      const startViewTransition = vi.spyOn(document, "startViewTransition");
+      outsideButton.click();
+
+      expect(outsideAction).toHaveBeenCalledOnce();
+      await vi.waitFor(() => {
+        flushSync();
+        expect(state.openGenerateCard).toBeNull();
+      });
+      const closeTransition = startViewTransition.mock.results[0]
+        ?.value as ViewTransition;
+      await closeTransition.finished;
+      await tick();
+    } finally {
+      outsideButton.remove();
+    }
+  });
+
+  it("opens the step editor only after the expanded card has settled", async () => {
+    const stepButton = document.createElement("button");
+    stepButton.type = "button";
+    stepButton.textContent = "Edit step 5";
+    document.body.appendChild(stepButton);
+
+    try {
+      const state = createPanelCoordinationState();
+      render(ExpandedCardStage, props(state, true));
+      stepButton.addEventListener("click", () => state.openStepEditorPanel());
+
+      state.openTnDPanel();
+      flushSync();
+      await tick();
+
+      const startViewTransition = vi.spyOn(document, "startViewTransition");
+      stepButton.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      // The target's click handler asks for the editor first. The stage's
+      // bubbling listener immediately turns that into a pending handoff, so
+      // Svelte never paints the drawer on top of the returning card.
+      expect(state.isStepEditorPanelOpen).toBe(false);
+      await vi.waitFor(() => {
+        flushSync();
+        expect(state.openGenerateCard).toBeNull();
+      });
+
+      const closeTransition = startViewTransition.mock.results[0]
+        ?.value as ViewTransition;
+      expect(state.isStepEditorPanelOpen).toBe(false);
+      await closeTransition.finished;
+      await vi.waitFor(() => {
+        expect(state.isStepEditorPanelOpen).toBe(true);
+      });
+    } finally {
+      stepButton.remove();
+    }
+  });
+
+  it("keeps the desktop stage open for interactions inside it", async () => {
+    const state = createPanelCoordinationState();
+    render(ExpandedCardStage, props(state, true));
+
+    state.openTnDPanel();
+    flushSync();
+    await tick();
+
+    await userEvent.click(page.getByRole("button", { name: "Free hands" }));
+
+    expect(state.openGenerateCard).toBe("tnd");
+  });
+
+  it("keeps a new expanded card opened by the outside click", async () => {
+    const outsideButton = document.createElement("button");
+    outsideButton.type = "button";
+    outsideButton.textContent = "Open setups instead";
+    document.body.appendChild(outsideButton);
+
+    try {
+      const state = createPanelCoordinationState();
+      render(ExpandedCardStage, props(state, true));
+      outsideButton.addEventListener("click", () => state.openPresetDrawer());
+
+      state.openTnDPanel();
+      flushSync();
+      await tick();
+
+      outsideButton.click();
+      flushSync();
+
+      expect(state.openGenerateCard).toBe("preset");
+    } finally {
+      outsideButton.remove();
+    }
+  });
+
+  it("does not install click-away dismissal for the full-screen stage", async () => {
+    const outsideButton = document.createElement("button");
+    outsideButton.type = "button";
+    outsideButton.textContent = "Outside the viewport stage";
+    document.body.appendChild(outsideButton);
+
+    try {
+      const state = createPanelCoordinationState();
+      render(ExpandedCardStage, props(state, false));
+
+      state.openTnDPanel();
+      flushSync();
+      await tick();
+
+      outsideButton.click();
+
+      expect(state.openGenerateCard).toBe("tnd");
+    } finally {
+      outsideButton.remove();
+    }
+  });
+
   it("removes the portaled node and releases the claim on unmount", () => {
     const state = createPanelCoordinationState();
     const screen = render(ExpandedCardStage, props(state, false));
@@ -275,6 +412,7 @@ describe("ExpandedCardStage", () => {
     // the root's own onkeydown handler (the stage is a non-modal dialog and
     // owns the first Escape), not by the app's global keyboard shortcut
     // coordinator, which this isolated component render does not mount.
+    const startViewTransition = vi.spyOn(document, "startViewTransition");
     await userEvent.keyboard("{Escape}");
 
     // Chromium's View Transitions API runs the update callback (which is
@@ -296,6 +434,10 @@ describe("ExpandedCardStage", () => {
     await vi.waitFor(() => {
       expect(countViewTransitionNameClaims("generate-card-preset")).toBe(0);
     });
+    const closeTransition = startViewTransition.mock.results[0]
+      ?.value as ViewTransition;
+    await closeTransition.finished;
+    await tick();
   });
 
   it("returns focus to the trigger after a morph close", async () => {

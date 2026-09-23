@@ -39,7 +39,10 @@ Usage:
   } from "../../tka-glyph/components/TKAGlyph.svelte";
   import TurnsColumn from "../../tka-glyph/components/TurnsColumn.svelte";
   import DirectionDot from "../../tka-glyph/components/DirectionDot.svelte";
+  import SkewBraces from "../../tka-glyph/components/SkewBraces.svelte";
+  import { isSkewedFrameBeat } from "$lib/shared/foundation/services/skewed-frame";
   import { parseTurnsTuple } from "../../tka-glyph/utils/turn-tuple-parser";
+  import { getTurnsColumnRightExtent } from "../../tka-glyph/utils/turn-position-calculator";
   import ReversalIndicators from "./ReversalIndicators.svelte";
   import ElementalGlyph from "./ElementalGlyph.svelte";
   import PlacementGlyph from "./PlacementGlyph.svelte";
@@ -52,8 +55,8 @@ Usage:
   import type { TurnsTupleGenerator } from "$lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator";
   import { GridMode, GridLocation } from "../../grid/domain/enums/grid-enums";
   import {
-    HAND_COLOR_KEY,
     calculateHandColorKeyLayout,
+    getHandKeyGlyphPath,
   } from "@tka/render-core";
   import {
     type ElementalType,
@@ -340,6 +343,13 @@ Usage:
   const renderedGlyphs = $derived(
     pictograph.letter ? [{ letter: pictograph.letter, data: pictograph }] : []
   );
+  // A beat that starts or ends in a zeta/eta position wears braces around its
+  // letter, matching the "{...}" span in the word.
+  const skewedFrame = $derived(
+    isVisibleMotion(pictograph.motions?.left) &&
+      isVisibleMotion(pictograph.motions?.right) &&
+      isSkewedFrameBeat(pictograph.motions.left, pictograph.motions.right)
+  );
   const contentDuration = () =>
     animateContent && !printMode ? motionDuration(DURATION.normal) : 0;
 
@@ -455,19 +465,67 @@ Usage:
       // Already cached - use immediately
       loadedLetterDimensions = cachedDims;
     } else {
-      // Not cached yet - trigger async load and wait for it
+      // Not cached yet - drop the previous (now-stale) letter's resolved
+      // size before the load starts, so it can't leak into this cold
+      // letter's dimensions while the fetch is in flight (see
+      // GlyphRenderer.svelte's identical guard for the full failure mode -
+      // here it only mispositions one frame of the live pictograph instead
+      // of poisoning a permanent cache, but keep both components consistent).
+      loadedLetterDimensions = { width: 100, height: 100 };
+      // Trigger async load and wait for it
+      // Ignore a superseded load: the effect's cleanup runs when the letter
+      // moves on or the renderer unmounts. Reading the pictograph prop here
+      // instead would chase a parent getter that may already be torn down.
+      let superseded = false;
       preloadLetterDimensions([currentLetter]).then(() => {
-        // After loading completes, get from cache and update state
-        loadedLetterDimensions = getLetterDimensions(currentLetter);
+        if (!superseded) {
+          loadedLetterDimensions = getLetterDimensions(currentLetter);
+        }
       });
+      return () => {
+        superseded = true;
+      };
     }
   });
 
-  // Use loaded dimensions for DirectionDot positioning
-  const letterDimensions = $derived(loadedLetterDimensions);
+  // Effective letter dimensions: synchronous cache lookup + async fallback.
+  // Uses $derived.by (not $derived(loadedLetterDimensions)) so a letter
+  // that's already in the cache is available on the SAME frame it renders,
+  // matching TurnsColumn's effectiveLetterDimensions and TKAGlyph's
+  // effectiveDimensions (both read the getLetterDimensions cache the same
+  // way) - otherwise SkewBraces sees the 100x100 placeholder for one frame
+  // even on a cached letter, then jumps to the real width.
+  const letterDimensions = $derived.by(() => {
+    const currentLetter = pictograph?.letter;
+    if (currentLetter) {
+      const cached = getLetterDimensions(currentLetter);
+      if (cached.width !== 100 || cached.height !== 100) {
+        return cached;
+      }
+    }
+    return loadedLetterDimensions;
+  });
+
+  // True once letterDimensions holds a real measurement rather than the
+  // 100x100 placeholder it starts at (same sentinel the effect above and
+  // TKAGlyph's/TurnsColumn's own dimension caches already use - no letter SVG
+  // in static/images/letters_trimmed ships a 100x100 viewBox, so this never
+  // false-negatives on real data). Gates SkewBraces so it cannot flash at the
+  // wrong width before the letter's true dimensions load, then jump.
+  const letterDimensionsReady = $derived(
+    letterDimensions.width !== 100 || letterDimensions.height !== 100
+  );
 
   // Parse direction from turns tuple for direction dot
-  const parsedDirection = $derived(parseTurnsTuple(turnsTuple).direction);
+  const parsedTurns = $derived(parseTurnsTuple(turnsTuple));
+  const parsedDirection = $derived(parsedTurns.direction);
+
+  // Extra width the turns column reserves to the right of the letter+dash
+  // edge, so the skew braces' closing brace clears the turn numbers (and any
+  // halved-motion mark) instead of painting under them.
+  const braceRightExtent = $derived(
+    skewedFrame ? getTurnsColumnRightExtent(parsedTurns) : 0
+  );
   const effectiveLeftColor = $derived(
     leftColorOverride ?? getSettings().primaryPropColors?.left
   );
@@ -671,6 +729,25 @@ Usage:
       </g>
     {/each}
 
+    <!-- Skew braces (skewed-frame beats only) - fades in lockstep with the TKA glyph above -->
+    {#if pictograph.letter && skewedFrame}
+      <g
+        opacity={glyphOpacity}
+        transform="translate({tkaOffset}, 0)"
+        transition:fade={{ duration: contentDuration() }}
+      >
+        <SkewBraces
+          letter={pictograph.letter}
+          {letterDimensions}
+          rightExtent={braceRightExtent}
+          visible={showTKA && !poseOnly && letterDimensionsReady}
+          {previewMode}
+          {animateVisibility}
+          {darkMode}
+        />
+      </g>
+    {/if}
+
     <!-- Turns Column (part of TKA) -->
     <g opacity={glyphOpacity} transform="translate({tkaOffset}, 0)">
       <TurnsColumn
@@ -720,9 +797,6 @@ Usage:
         class:visible={handColorKeyShown}
         transform="translate({expandedWidth / 2}, 0)"
         aria-label="Left and right prop colors"
-        font-family={HAND_COLOR_KEY.FONT_FAMILY}
-        font-size={HAND_COLOR_KEY.FONT_SIZE}
-        font-weight={HAND_COLOR_KEY.FONT_WEIGHT}
         fill={darkMode === undefined
           ? "var(--dm-text-color)"
           : darkMode
@@ -738,7 +812,10 @@ Usage:
               ? (effectiveLeftColor ?? "var(--dm-motion-blue)")
               : (effectiveRightColor ?? "var(--dm-motion-red)")}
           />
-          <text x={entry.labelX} y={handColorKey.baselineY}>{entry.label}</text>
+          <path
+            d={getHandKeyGlyphPath(entry.label)}
+            transform="translate({entry.labelX} {handColorKey.baselineY})"
+          />
         {/each}
       </g>
     {/if}

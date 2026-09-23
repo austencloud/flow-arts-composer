@@ -67,6 +67,7 @@
     "lint:fix": "prettier --write . && eslint . --fix",
     "format": "prettier --write .",
     "test:ci": "vitest run --config tests/config/vitest.config.ts",
+    "test:contact-lab-acceptance": "vitest run --config tests/config/vitest.contact-lab.config.ts",
     "test:packages": "pnpm --recursive --filter \"./packages/*\" run test",
     "//test:packages": "Workspace packages carry their own vitest configs and are NOT matched by tests/config/vitest.config.ts. Without this, 464 passing assertions across sequence-engine, render-composition, tka-types and render-core ran nowhere — sequence-engine did not even have a test script. Wired into web-ci.yml.",
     "test:components": "vitest --config tests/config/vitest.components.config.ts",
@@ -74,6 +75,7 @@
     "test:qr-critical:components": "vitest run --config tests/config/vitest.components.config.ts src/lib/features/choreo-card/components/scan-activity/RecentScansList.svelte.test.ts src/lib/features/choreo-card/components/scan-activity/ScanCardPeek.svelte.test.ts src/lib/features/choreo-card/components/scan-activity/ScanCellWarmControls.svelte.test.ts src/lib/shared/choreo-card/components/TKAWordGlyph.svelte.test.ts",
     "test:render-parity": "vitest run --config tests/config/vitest.render-parity.config.ts",
     "test:card-mcp-parity": "vitest run --config tests/config/vitest.card-mcp-parity.config.ts",
+    "test:live-card-png-parity": "vitest run --config tests/config/vitest.card-mcp-parity.config.ts tests/render-parity/live-card-png-parity.test.ts",
     "test:render-parity:capture": "cross-env RENDER_PARITY_MODE=capture vitest run --config tests/config/vitest.render-parity.config.ts",
     "test:render-parity:compare": "cross-env RENDER_PARITY_MODE=compare vitest run --config tests/config/vitest.render-parity.config.ts",
     "test:rules": "npm run test:rules:core && npm run test:rules:parity && npm run test:rules:artifacts",
@@ -197,7 +199,6 @@
     "@vitest/browser": "^4.0.16",
     "@vitest/browser-playwright": "^4.0.18",
     "axe-core": "^4.12.1",
-    "canvas": "^3.2.0",
     "cross-env": "^10.1.0",
     "csv-parse": "7.0.1",
     "csv-stringify": "6.8.1",
@@ -362,7 +363,6 @@
     "fflate": "^0.8.2",
     "firebase": "^12.13.0",
     "firebase-admin": "^13.10.0",
-    "gifenc": "1.0.3",
     "globe.gl": "^2.45.3",
     "google-auth-library": "^10.6.2",
     "h264-mp4-encoder": "^1.0.12",
@@ -391,5 +391,8 @@
     "threlte-postprocessing": "^0.0.10",
     "wavesurfer.js": "^7.12.1",
     "zod": "^4.2.1"
+  },
+  "optionalDependencies": {
+    "canvas": "^3.2.0"
   }
 }

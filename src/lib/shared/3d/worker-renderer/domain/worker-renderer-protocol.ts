@@ -404,6 +404,11 @@ export interface WorkerPerformerDiagnostics {
 }
 
 export interface WorkerRendererBootMetrics {
+  warmReuse?: boolean;
+  retainedRuntimeBytes?: number;
+  retainedRuntimeCount?: number;
+  cacheCandidateBytes?: number;
+  cacheSkipReason?: string;
   acceptedAt: number;
   rendererReadyAt: number;
   environmentReadyAt: number;
@@ -457,6 +462,7 @@ export interface InitializeWorkerRendererMessage {
   performers: readonly WorkerPerformerSnapshot[];
   effects?: WorkerSceneEffectsSnapshot;
   reducedMotion?: boolean;
+  retainSceneCache?: boolean;
 }
 
 export interface SwitchWorkerRendererEnvironmentMessage {
@@ -464,11 +470,19 @@ export interface SwitchWorkerRendererEnvironmentMessage {
   requestId: number;
   environment: WorkerEnvironmentKey;
   reducedMotion?: boolean;
+  /** Prepare a hidden replacement without requiring a visible-frame poster. */
+  backgroundPreparation?: boolean;
 }
 
 export interface PosterReadyWorkerRendererMessage {
   type: "poster-ready";
   requestId: number;
+}
+
+export interface PrefetchWorkerEnvironmentMessage {
+  type: "prefetch-environment";
+  requestId: number;
+  environment: WorkerEnvironmentKey;
 }
 
 export interface LivePresentedWorkerRendererMessage {
@@ -527,6 +541,7 @@ export interface DisposeWorkerRendererMessage {
 
 export type WorkerRendererInMessage =
   | InitializeWorkerRendererMessage
+  | PrefetchWorkerEnvironmentMessage
   | SwitchWorkerRendererEnvironmentMessage
   | PosterReadyWorkerRendererMessage
   | LivePresentedWorkerRendererMessage

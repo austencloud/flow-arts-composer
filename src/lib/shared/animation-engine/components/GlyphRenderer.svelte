@@ -25,13 +25,20 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
 </script>
 
 <script lang="ts">
-  import TKAGlyph from "$lib/shared/pictograph/tka-glyph/components/TKAGlyph.svelte";
+  import TKAGlyph, {
+    getLetterDimensions,
+    preloadLetterDimensions,
+  } from "$lib/shared/pictograph/tka-glyph/components/TKAGlyph.svelte";
   import TurnsColumn from "$lib/shared/pictograph/tka-glyph/components/TurnsColumn.svelte";
+  import SkewBraces from "$lib/shared/pictograph/tka-glyph/components/SkewBraces.svelte";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
   import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
   import { turnsTupleGenerator } from "$lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator";
   import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+  import { isSkewedFrameBeat } from "$lib/shared/foundation/services/skewed-frame";
+  import { parseTurnsTuple } from "$lib/shared/pictograph/tka-glyph/utils/turn-tuple-parser";
+  import { getTurnsColumnRightExtent } from "$lib/shared/pictograph/tka-glyph/utils/turn-position-calculator";
   import { onMount } from "svelte";
 
   let {
@@ -64,6 +71,97 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
     return turnsTupleGenerator.generateTurnsTuple(stepData);
   });
 
+  // A beat that starts or ends in a zeta/eta position wears braces around its
+  // letter - matches PictographRenderer.svelte's own skewedFrame gate, so the
+  // animation canvas (this component's serialized output) agrees with the
+  // live pictograph. GlyphRenderer only serializes the TKAGlyph subtree it
+  // owns, so SkewBraces (a sibling of TKAGlyph in PictographRenderer) has to
+  // be mounted here directly rather than reused from there.
+  const skewedFrame = $derived(
+    !!stepData &&
+      isVisibleMotion(stepData.motions?.left) &&
+      isVisibleMotion(stepData.motions?.right) &&
+      isSkewedFrameBeat(stepData.motions.left, stepData.motions.right)
+  );
+
+  // Track loaded letter dimensions with $state for reactivity - mirrors
+  // PictographRenderer.svelte's loadedLetterDimensions so an async load
+  // (cold letter, not yet in TKAGlyph's cache) can trigger a re-run of the
+  // serialization effect below once the real size resolves.
+  let loadedLetterDimensions = $state<{ width: number; height: number }>({
+    width: 100,
+    height: 100,
+  });
+
+  // Load letter dimensions when the letter changes - same cache TKAGlyph
+  // itself reads, so a letter already seen this session resolves on the
+  // same synchronous pass via letterDimensions below; a cold letter falls
+  // through to preloadLetterDimensions and updates state when it resolves.
+  $effect(() => {
+    const currentLetter = letter;
+    if (!currentLetter) {
+      loadedLetterDimensions = { width: 100, height: 100 };
+      return;
+    }
+    const cachedDims = getLetterDimensions(currentLetter);
+    if (cachedDims.width !== 100 || cachedDims.height !== 100) {
+      loadedLetterDimensions = cachedDims;
+    } else {
+      // Drop the previous (now-stale) letter's resolved size before the
+      // load starts. Without this reset, loadedLetterDimensions still held
+      // the PRIOR letter's real width while this cold letter's fetch was in
+      // flight, letterDimensions fell back to that stale value, and
+      // letterDimensionsReady read true immediately - serializing (and
+      // permanently caching) this letter's skewed-beat braces at the wrong
+      // width. This effect only reads `letter`, so writing state here
+      // cannot re-trigger it.
+      loadedLetterDimensions = { width: 100, height: 100 };
+      // Ignore a superseded load: the effect's cleanup runs when `letter`
+      // moves on or the renderer unmounts, so a late resolve can't overwrite
+      // the current letter's dimensions or touch a destroyed component.
+      let superseded = false;
+      preloadLetterDimensions([currentLetter]).then(() => {
+        if (!superseded) {
+          loadedLetterDimensions = getLetterDimensions(currentLetter);
+        }
+      });
+      return () => {
+        superseded = true;
+      };
+    }
+  });
+
+  // Effective letter dimensions: synchronous cache lookup + async fallback -
+  // mirrors PictographRenderer.svelte's letterDimensions derived exactly, so
+  // a cached letter's real size is available the same frame it renders
+  // instead of one frame late.
+  const letterDimensions = $derived.by(() => {
+    const currentLetter = letter;
+    if (currentLetter) {
+      const cached = getLetterDimensions(currentLetter);
+      if (cached.width !== 100 || cached.height !== 100) {
+        return cached;
+      }
+    }
+    return loadedLetterDimensions;
+  });
+
+  // True once letterDimensions holds a real measurement rather than the
+  // 100x100 placeholder - same sentinel PictographRenderer's
+  // letterDimensionsReady uses. Gates serialization below so a skewed
+  // beat's braces (which read letterDimensions) can't get baked into the
+  // serialized-glyph cache at the wrong width before the real size loads.
+  const letterDimensionsReady = $derived(
+    letterDimensions.width !== 100 || letterDimensions.height !== 100
+  );
+
+  // Extra width the turns column reserves to the right of the letter+dash
+  // edge, so the closing brace clears the turn numbers instead of painting
+  // under them - same rightExtent PictographRenderer computes.
+  const braceRightExtent = $derived(
+    skewedFrame ? getTurnsColumnRightExtent(parseTurnsTuple(turnsTuple)) : 0
+  );
+
   let svgElement: SVGSVGElement | null = $state(null);
   let isReady = $state(false);
 
@@ -72,12 +170,29 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
     // Track all dependencies that should trigger re-serialization
     const currentLetter = letter;
     const currentTurnsTuple = turnsTuple;
+    const currentSkewed = skewedFrame;
+    const currentExtent = braceRightExtent;
 
     if (currentLetter && svgElement && isReady) {
+      // A skewed beat's braces read letterDimensions for their own layout
+      // and rightExtent clearance - reading letterDimensionsReady only in
+      // this branch means a plain beat (which never renders SkewBraces)
+      // never tracks it as a dependency, so it keeps serializing
+      // immediately exactly as before. A skewed beat with a cold or
+      // permanently-failed letter fetch still serializes below (the letter
+      // and turns render now, braces use whatever provisional
+      // letterDimensions the template already has - the 100x100 sentinel)
+      // instead of leaving the canvas blank forever, but shouldCache is
+      // false so that provisional result never gets baked into
+      // serializedGlyphCache under this beat's key. Once
+      // letterDimensionsReady flips true this effect reruns (tracked via
+      // the read below) and serializes again for real, caching that one.
+      const shouldCache = !(currentSkewed && !letterDimensionsReady);
+
       // Serialize immediately - transition timing is controlled by GlyphTransitionController
       // Using requestAnimationFrame ensures DOM is ready without artificial delay
       requestAnimationFrame(() => {
-        serializeAndNotify();
+        serializeAndNotify(shouldCache);
       });
     }
   });
@@ -86,14 +201,17 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
     isReady = true;
   });
 
-  async function serializeAndNotify() {
+  async function serializeAndNotify(shouldCache: boolean = true) {
     if (!svgElement || !onSvgReady) {
       return;
     }
 
     try {
-      // Check serialized glyph cache first - avoids getBBox() + DOM cloning + serialization
-      const glyphCacheKey = `${letter}|${turnsTuple}`;
+      // Check serialized glyph cache first - avoids getBBox() + DOM cloning + serialization.
+      // A skewed-frame beat wears braces a non-skewed beat of the same
+      // letter/turns does not, so the flag has to be part of the key -
+      // otherwise the two would collide on one cached (un)braced SVG string.
+      const glyphCacheKey = `${letter}|${turnsTuple}|${skewedFrame ? "skew" : "plain"}`;
       const cached = serializedGlyphCache.get(glyphCacheKey);
       if (cached) {
         onSvgReady(cached.svgString, cached.width, cached.height, cached.x, cached.y);
@@ -207,14 +325,19 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
       const serializer = new XMLSerializer();
       const svgString = serializer.serializeToString(svgCopy);
 
-      // Store in cache so subsequent visits to this letter skip getBBox/cloning/serialization
-      if (serializedGlyphCache.size >= MAX_GLYPH_CACHE) {
-        const oldest = serializedGlyphCache.keys().next().value;
-        if (oldest !== undefined) serializedGlyphCache.delete(oldest);
+      // Store in cache so subsequent visits to this letter skip getBBox/cloning/serialization.
+      // Skipped when shouldCache is false (a skewed beat serialized early
+      // with provisional, not-yet-ready letterDimensions) so the eventual
+      // real-dimensions serialization isn't shadowed by this one.
+      if (shouldCache) {
+        if (serializedGlyphCache.size >= MAX_GLYPH_CACHE) {
+          const oldest = serializedGlyphCache.keys().next().value;
+          if (oldest !== undefined) serializedGlyphCache.delete(oldest);
+        }
+        serializedGlyphCache.set(glyphCacheKey, {
+          svgString, width: viewBoxWidth, height: viewBoxHeight, x: viewBoxX, y: viewBoxY,
+        });
       }
-      serializedGlyphCache.set(glyphCacheKey, {
-        svgString, width: viewBoxWidth, height: viewBoxHeight, x: viewBoxX, y: viewBoxY,
-      });
 
       if (onSvgReady) {
         // Pass the glyph bbox dimensions so AnimatorCanvas knows where to draw it
@@ -238,6 +361,24 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
 >
   {#if letter}
     <TKAGlyph {letter} {pictographData} x={50} y={800} scale={1} />
+    {#if skewedFrame}
+      <!-- visible gates on letterDimensionsReady (not just true) so a
+           provisional, not-yet-cached serialization (see shouldCache above)
+           emits the letter and turns with no braces at all, matching what
+           PictographRenderer shows during the same cold-letter window,
+           instead of braces laid out against the 100x100 sentinel. The real
+           braces arrive on the re-serialization that does get cached once
+           dimensions resolve. -->
+      <SkewBraces
+        {letter}
+        {letterDimensions}
+        rightExtent={braceRightExtent}
+        x={50}
+        y={800}
+        scale={1}
+        visible={letterDimensionsReady}
+      />
+    {/if}
     <TurnsColumn
       {turnsTuple}
       {letter}

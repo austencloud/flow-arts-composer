@@ -3,6 +3,7 @@ import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { GridMode } from "../../pictograph/grid/domain/enums/grid-enums";
 import { getSvgImageCache, type DrawableImage } from "./svg-image-cache";
 import { getSvgAssetLoader } from "./svg-asset-loader";
+import { loadRasterImage } from "./raster-image-loader";
 import {
   getLetterImagePath,
   isDashLetter,
@@ -24,15 +25,15 @@ import {
   BLUE_HEX,
   RED_HEX,
 } from "../../pictograph/tka-glyph/services/turn-color-interpreter";
-import { calculateTurnPositions } from "../../pictograph/tka-glyph/utils/turn-position-calculator";
+import { calculateTurnPositions, getTurnsColumnRightExtent } from "../../pictograph/tka-glyph/utils/turn-position-calculator";
 import { deriveTnDFromPictograph } from "../../pictograph/shared/domain/utils/tnd-deriver";
 import {
   calculateReversalPositions,
   drawHandColorKey as drawSharedHandColorKey,
 } from "../core";
-import type { TurnsTupleGenerator } from "../../pictograph/arrow/positioning/placement/services/turns-tuple-generator";
 import type { GridPlacement } from "../../pictograph/grid/domain/enums/grid-enums";
-import type { MotionData } from "../../pictograph/shared/domain/models/motion-data";
+import { isVisibleMotion, type MotionData } from "../../pictograph/shared/domain/models/motion-data";
+import { isSkewedFrameBeat } from "$lib/shared/foundation/services/skewed-frame";
 import {
   HandSide,
   getElementImagePath,
@@ -44,6 +45,7 @@ import {
 import { derivePropElementalTypeForStep } from "$lib/shared/shape-matrix/domain/prop-relationship";
 import { getMotionColor } from "../../utils/svg-color-utils";
 import { drawMonochromeImage, drawTintedImage } from "@tka/render-composition";
+import { drawSkewBraces } from "../utils/draw-skew-braces";
 
 const VIEWBOX_SIZE = 950;
 
@@ -55,10 +57,6 @@ const DOT_PADDING = 10;
 const DOT_SIZE = 25;
 
 const TURN_NUMBER_HEIGHT = 45;
-
-const TND_GLYPH_WIDTH = 201.24;
-const TND_GLYPH_HEIGHT = 133.6;
-const TND_OFFSET_PERCENTAGE = 0.04;
 
 const POSITION_GLYPH_Y = 50;
 const POSITION_SCALE_FACTOR = 0.75;
@@ -125,20 +123,8 @@ export function drawDirectionDot(
   letterDimensions: { width: number; height: number },
   scale: number,
   isDarkMode: boolean,
-  turnsTupleGeneratorGetter?: () => TurnsTupleGenerator | undefined
+  turnsTuple: string
 ): void {
-  let turnsTuple = "(s, 0, 0)";
-  try {
-    const generator = turnsTupleGeneratorGetter?.();
-    if (generator) {
-      turnsTuple = generator.generateTurnsTuple(pictograph);
-    } else {
-      return;
-    }
-  } catch {
-    return;
-  }
-
   const parsed = parseTurnsTuple(turnsTuple);
   const direction = parsed.direction;
 
@@ -209,31 +195,55 @@ export async function drawTKAGlyph(
   return drawTKAGlyphText(ctx, String(letter), size, isDarkMode);
 }
 
+/**
+ * Skew braces ("{" / "}") around the letter of a skewed-frame beat - the
+ * canvas mirror of SkewBraces.svelte, gated the same way PictographRenderer
+ * gates the DOM component (isVisibleMotion on both hands, then
+ * isSkewedFrameBeat). Callers draw this after the letter/dash and before the
+ * turns column so the rightExtent clearance below can account for whatever
+ * the turns column is about to paint.
+ */
+export function drawSkewBracesGlyph(
+  ctx: CanvasRenderingContext2D,
+  pictograph: PictographData,
+  letterDimensions: { width: number; height: number },
+  scale: number,
+  isDarkMode: boolean,
+  turnsTuple: string
+): void {
+  if (!pictograph.letter) return;
+  const left = pictograph.motions?.left;
+  const right = pictograph.motions?.right;
+  if (!isVisibleMotion(left) || !isVisibleMotion(right)) return;
+  if (!isSkewedFrameBeat(left, right)) return;
+
+  const parsed = parseTurnsTuple(turnsTuple);
+  const rightExtent = getTurnsColumnRightExtent(parsed);
+
+  drawSkewBraces(ctx, {
+    letter: pictograph.letter,
+    letterDimensions,
+    rightExtent,
+    darkMode: isDarkMode,
+    originX: TKA_GLYPH_X * scale,
+    originY: TKA_GLYPH_Y * scale,
+    scale,
+  });
+}
+
 export async function drawTurnsColumn(
   ctx: CanvasRenderingContext2D,
   pictograph: PictographData,
   letterDimensions: { width: number; height: number },
   scale: number,
   isDarkMode: boolean,
-  turnsTupleGeneratorGetter?: () => TurnsTupleGenerator | undefined,
+  turnsTuple: string,
   motionVisibility?: {
     showLeftMotion?: boolean;
     showRightMotion?: boolean;
     primaryPropColors?: { left: string; right: string } | null;
   }
 ): Promise<void> {
-  let turnsTuple = "(s, 0, 0)";
-  try {
-    const generator = turnsTupleGeneratorGetter?.();
-    if (generator) {
-      turnsTuple = generator.generateTurnsTuple(pictograph);
-    } else {
-      return;
-    }
-  } catch {
-    // Use default
-  }
-
   const parsed = parseTurnsTuple(turnsTuple);
   // A slot renders if it has a displayable number OR is halved - a halved
   // 0-turn motion shows the mark alone (matches TurnsColumn.svelte's showTop/
@@ -415,55 +425,6 @@ export async function drawTurnsColumn(
   }
 }
 
-export async function drawTnDGlyph(
-  ctx: CanvasRenderingContext2D,
-  pictograph: PictographData,
-  _gridMode: GridMode,
-  size: number,
-  isDarkMode: boolean
-): Promise<void> {
-  if (!pictograph.letter) return;
-
-  try {
-    const letterType = getLetterType(pictograph.letter as Letter);
-    if (letterType !== LetterType.TYPE1) return;
-  } catch {
-    return;
-  }
-
-  const tndResult = deriveTnDFromPictograph(pictograph);
-  if (!tndResult.tndMode) return;
-
-  const scale = size / VIEWBOX_SIZE;
-  const svgCache = getSvgImageCache();
-
-  const offset = VIEWBOX_SIZE * TND_OFFSET_PERCENTAGE;
-  const x = (VIEWBOX_SIZE - TND_GLYPH_WIDTH - offset) * scale;
-  const y = (VIEWBOX_SIZE - TND_GLYPH_HEIGHT - offset) * scale;
-
-  try {
-    const tndPath = `/images/vtg_glyphs/${tndResult.tndMode}.svg`;
-    const response = await fetch(tndPath);
-    if (!response.ok) return;
-
-    const svgText = await response.text();
-    const cacheKey = `tnd_${tndResult.tndMode}_${isDarkMode}`;
-    const img = await svgCache.getImage(svgText, cacheKey);
-
-    const drawWidth = TND_GLYPH_WIDTH * scale;
-    const drawHeight = TND_GLYPH_HEIGHT * scale;
-
-    ctx.save();
-    if (isDarkMode) {
-      ctx.filter = "invert(1)";
-    }
-    ctx.drawImage(img, x, y, drawWidth, drawHeight);
-    ctx.restore();
-  } catch (error) {
-    console.warn(`[Canvas2D] Failed to draw TnD glyph:`, error);
-  }
-}
-
 export async function drawElementalGlyph(
   ctx: CanvasRenderingContext2D,
   pictograph: PictographData,
@@ -486,12 +447,10 @@ export async function drawElementalGlyph(
   const box = getElementalGlyphBox(size);
 
   try {
-    const elementalPath = getElementImagePath(tndResult.elementalType);
-    const response = await fetch(elementalPath);
-    if (!response.ok) return;
-
-    const blob = await response.blob();
-    const img = await createImageBitmap(blob);
+    const img = await loadRasterImage(
+      getElementImagePath(tndResult.elementalType)
+    );
+    if (!img) return;
 
     const fitted = containElementalGlyph(box, img.width, img.height);
     if (!fitted) return;
@@ -520,9 +479,8 @@ export async function drawPropElementalGlyph(
   const box = getElementalGlyphBox(size, 0, "top-right");
 
   try {
-    const response = await fetch(getElementImagePath(elementalType));
-    if (!response.ok) return;
-    const img = await createImageBitmap(await response.blob());
+    const img = await loadRasterImage(getElementImagePath(elementalType));
+    if (!img) return;
     const fitted = containElementalGlyph(box, img.width, img.height);
     if (!fitted) return;
 

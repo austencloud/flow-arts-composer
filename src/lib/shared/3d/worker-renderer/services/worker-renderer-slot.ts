@@ -1,4 +1,6 @@
 import type { WorkerRendererSlotState } from "../domain/worker-renderer-handoff";
+import { motionDuration } from "$lib/shared/transitions/motion";
+import { DURATION } from "$lib/shared/transitions/transitions";
 import {
   isWorkerRendererOutMessage,
   type WorkerCameraSnapshot,
@@ -20,6 +22,7 @@ export interface WorkerRendererSlotStart {
   performers?: readonly WorkerPerformerSnapshot[];
   effects?: WorkerSceneEffectsSnapshot;
   reducedMotion?: boolean;
+  retainSceneCache?: boolean;
 }
 
 export interface WorkerRendererSlotOptions extends WorkerRendererSlotStart {
@@ -74,6 +77,8 @@ export class WorkerRendererSlot {
   private readonly onError: WorkerRendererSlotOptions["onError"];
   private readonly onDestroyed: WorkerRendererSlotOptions["onDestroyed"];
   private cleanupTimer: ReturnType<typeof setTimeout> | null = null;
+  private posterFadeTimer: ReturnType<typeof setTimeout> | null = null;
+  private posterHeld = false;
   private destroyed = false;
   private readonly afterDestroy = new Set<() => void>();
 
@@ -97,14 +102,32 @@ export class WorkerRendererSlot {
   }
 
   get isPosterVisible(): boolean {
-    return this.posterCanvas.style.opacity === "1";
+    return this.posterHeld;
+  }
+
+  setPresentation(active: boolean, fadeMs = 0): void {
+    this.canvas.style.transition =
+      fadeMs > 0
+        ? `opacity ${fadeMs}ms var(--transition-easing, ease)`
+        : "none";
+    this.canvas.style.opacity = active ? "1" : "0";
+    this.canvas.style.zIndex = active ? "2" : "1";
   }
 
   post(
     message: WorkerRendererInMessage,
     transfer: Transferable[] = []
-  ): void {
-    if (!this.destroyed) this.worker?.postMessage(message, transfer);
+  ): boolean {
+    if (this.destroyed || !this.worker) return false;
+    try {
+      this.worker.postMessage(message, transfer);
+      return true;
+    } catch {
+      // postMessage can reject a stale Svelte proxy or a detached transfer.
+      // The caller decides whether that message is essential to a transition;
+      // keeping the slot alive preserves its already-painted frame.
+      return false;
+    }
   }
 
   installPoster(bitmap: ImageBitmap): void {
@@ -131,11 +154,31 @@ export class WorkerRendererSlot {
       context.drawImage(bitmap, 0, 0);
       bitmap.close();
     }
-    this.posterCanvas.style.opacity = "1";
+    this.showPosterImmediately();
   }
 
   clearPoster(): void {
+    if (!this.posterHeld) return;
+    const duration = motionDuration(DURATION.fast);
+    if (duration === 0) {
+      this.cancelPosterFade();
+      this.posterHeld = false;
+      this.posterCanvas.style.opacity = "0";
+      return;
+    }
+
+    // The new worker frame is already complete. Keep this poster logically
+    // held until its gentle reveal finishes so an interrupted selection can
+    // restore it instantly instead of exposing a canvas mid-transition.
+    this.posterCanvas.style.transition = `opacity ${duration}ms var(--transition-easing, ease)`;
     this.posterCanvas.style.opacity = "0";
+    const timer = setTimeout(() => {
+      if (this.posterFadeTimer !== timer) return;
+      this.posterFadeTimer = null;
+      this.posterHeld = false;
+      this.posterCanvas.style.transition = "none";
+    }, duration);
+    this.posterFadeTimer = timer;
   }
 
   /**
@@ -144,6 +187,7 @@ export class WorkerRendererSlot {
    */
   restart(start: WorkerRendererSlotStart): void {
     if (this.destroyed) return;
+    if (this.posterHeld) this.showPosterImmediately();
     this.stopWorker();
     this.canvas.remove();
     this.state = start.state;
@@ -207,6 +251,7 @@ export class WorkerRendererSlot {
         performers: start.performers ?? [],
         effects: start.effects,
         reducedMotion: start.reducedMotion,
+        retainSceneCache: start.retainSceneCache,
       };
       worker.postMessage(message, [offscreen]);
     } catch (error) {
@@ -229,6 +274,7 @@ export class WorkerRendererSlot {
   private finishDestroy(): void {
     if (this.destroyed) return;
     this.destroyed = true;
+    this.cancelPosterFade();
     if (this.cleanupTimer !== null) clearTimeout(this.cleanupTimer);
     this.cleanupTimer = null;
     this.stopWorker();
@@ -241,5 +287,17 @@ export class WorkerRendererSlot {
   private flushAfterDestroy(): void {
     for (const callback of this.afterDestroy) callback();
     this.afterDestroy.clear();
+  }
+
+  private showPosterImmediately(): void {
+    this.cancelPosterFade();
+    this.posterHeld = true;
+    this.posterCanvas.style.transition = "none";
+    this.posterCanvas.style.opacity = "1";
+  }
+
+  private cancelPosterFade(): void {
+    if (this.posterFadeTimer !== null) clearTimeout(this.posterFadeTimer);
+    this.posterFadeTimer = null;
   }
 }

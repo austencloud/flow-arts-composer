@@ -30,6 +30,13 @@ import {
   normalizeFanAppearance,
   scaleFanAppearanceForBigFan,
 } from "../domain/fan-appearance";
+import {
+  modelSpriteArtwork,
+  parseModelRenderKey,
+  resolvePropRenderKey,
+} from "../domain/prop-look";
+import { orientModelSpriteToTips } from "$lib/shared/animation-engine/services/svg-generator";
+import { applyModelSpriteColor } from "../domain/prop-preview-color";
 import { getMotionColor } from "../../../utils/svg-color-utils";
 import { getAnimationVisibilityManager } from "../../../animation-engine/state/animation-visibility-state.svelte";
 import { assetFetch } from "../../../net/asset-fetch";
@@ -116,15 +123,25 @@ export class PropSvgLoader {
           ? fanAppearanceArtwork(fanAppearance.build, fanAppearance.cover)
           : null;
 
+      const renderKey = resolvePropRenderKey(propType, {
+        fanAppearance: options?.fanAppearance,
+        propLook: options?.propLook,
+      });
+      const modelRenderKey = parseModelRenderKey(renderKey);
+
       // Create cache key including color AND theme mode for transformed prop cache
       // Two prop SVG folders:
       //   /images/props/animated/    → animation canvas (wider viewBox for rotation)
       //   /images/props/pictograph/  → pictograph grid rendering
-      const path =
-        fanArtworkPath ??
-        (useGridVersion
-          ? `/images/props/animated/${propType}.svg`
-          : `/images/props/pictograph/${propType}.svg`);
+      const path = modelRenderKey
+        ? modelSpriteArtwork(
+            modelRenderKey.propType,
+            color === HandSide.RIGHT ? "right" : "left"
+          )
+        : (fanArtworkPath ??
+          (useGridVersion
+            ? `/images/props/animated/${propType}.svg`
+            : `/images/props/pictograph/${propType}.svg`));
       // The prop type is part of the key because fan and bigfan share one
       // appearance file and differ only in the sizing applied below.
       const transformedCacheKey = `${path}:${propType}:${color}:${themeMode}`;
@@ -163,15 +180,23 @@ export class PropSvgLoader {
       // takes the hand color; the generic recolor would paint the wicks too.
       // Those materials were tuned on a dark pictograph; a light one (the
       // choreo sheet, its PDF) gets the paper palette so the fan still reads.
-      const coloredSvgText = fanArtworkPath
-        ? applyFanPaperContrast(
-            applyFanFrameColor(
-              originalSvgText,
-              getMotionColor(color, themeMode)
-            ),
-            themeMode
+      // A model capture is a raster, so it takes the hand color through a
+      // chroma filter rather than the fill rewrite; PropSvg and the card
+      // raster replace that tint with the user's color the same way.
+      const coloredSvgText = modelRenderKey
+        ? applyModelSpriteColor(
+            orientModelSpriteToTips(modelRenderKey.propType, originalSvgText),
+            getMotionColor(color, themeMode)
           )
-        : this.applyColorToSvg(originalSvgText, color, themeMode, propType);
+        : fanArtworkPath
+          ? applyFanPaperContrast(
+              applyFanFrameColor(
+                originalSvgText,
+                getMotionColor(color, themeMode)
+              ),
+              themeMode
+            )
+          : this.applyColorToSvg(originalSvgText, color, themeMode, propType);
       const sizedSvgText =
         fanArtworkPath && propType.toLowerCase() === "bigfan"
           ? scaleFanAppearanceForBigFan(coloredSvgText)
@@ -190,7 +215,8 @@ export class PropSvgLoader {
       // torch treatment grows the box around the flame, and Big Fan sizing
       // swaps the box entirely; the shared path-keyed metadata cache would
       // hand back the pre-treatment box.
-      const treated = contrastAdjustedSvgText !== coloredSvgText;
+      const treated =
+        contrastAdjustedSvgText !== coloredSvgText || modelRenderKey !== null;
       const { viewBox, center } = treated
         ? this.parsePropSvg(contrastAdjustedSvgText)
         : this.parsePropSvgCached(originalSvgText, path);

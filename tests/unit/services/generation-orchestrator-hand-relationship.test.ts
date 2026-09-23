@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { loadDiamondVariations } from "../../../packages/sequence-engine/tests/helpers/csv-variations";
 
 // Only SequenceBuilder is stubbed so the test can read what reaches build().
 // Everything else on the generation subpath (the location maps
@@ -46,8 +47,11 @@ function circular(overrides: Partial<GenerationOptions>): GenerationOptions {
 }
 
 function makeOrchestrator() {
+  // The start-feasibility gate reads the real production diamond rows, so
+  // the hand relationship it resolves is the one generation would use.
   const stubVariationProvider = {
     initialize: vi.fn().mockResolvedValue(undefined),
+    getAllVariationsForGrid: vi.fn(async () => loadDiamondVariations()),
   };
   const stubTransformer = {
     convertToSequenceData: vi.fn().mockResolvedValue({ id: "stub" }),

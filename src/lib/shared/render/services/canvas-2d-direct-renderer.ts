@@ -17,6 +17,7 @@ import {
   drawTKAGlyph,
   drawTurnsColumn,
   drawDirectionDot,
+  drawSkewBracesGlyph,
   drawElementalGlyph,
   drawPropElementalGlyph,
   drawPlacementGlyph,
@@ -30,9 +31,11 @@ import {
   drawDash,
 } from "./canvas-2d-transform-helper";
 import { createRenderCanvas } from "./create-render-canvas";
+import { drawTintedImage } from "@tka/render-composition";
 import type { RenderCanvas } from "./types";
 import { captureException } from "$lib/shared/analytics/services/posthog";
 import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { applyModelSpriteColor } from "$lib/shared/pictograph/prop/domain/prop-preview-color";
 
 import {
   applyColorToSvg,
@@ -54,6 +57,11 @@ const BASE_GRID_POINTS = {
 
 const GRID_POINT_COLOR_LIGHT = "#000000";
 const GRID_POINT_COLOR_DARK = "#ffffff";
+// Dark-mode tint for the grid SVGs, which are black on transparent. White at
+// 85% alpha reproduces the old `invert(1) opacity(0.85)` canvas filter, but
+// through source-in compositing, because node-canvas (the pictograph CLI and
+// the server render route) ignores ctx.filter and drew the points black.
+const DARK_GRID_TINT = "rgba(255, 255, 255, 0.85)";
 const getTurnsTupleGenerator = () => turnsTupleGenerator;
 
 // One broken asset can be requested by every visible cell. Report each unique
@@ -257,6 +265,26 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
       arrowsTime = performance.now() - arrowsStart; // eslint-disable-line @typescript-eslint/no-unused-vars
     }
 
+    // Computed once (when TKA is visible at all) and threaded through to
+    // both the braces and the turns column below, instead of each
+    // independently calling the generator - but still gated behind
+    // visibility.showTKA, matching both call sites' own guard, so a
+    // hidden-TKA batch render (e.g. option-picker thumbnails) still pays
+    // zero cost for this instead of one generator call per pictograph.
+    // null (distinct from the healthy "(s, 0, 0)" default) marks
+    // generation failure specifically, so drawDirectionDot below can skip
+    // itself instead of misreading a failure as the legitimate "nothing
+    // to show" tuple - see that call site for why the distinction matters.
+    let turnsTuple: string | null = "(s, 0, 0)";
+    if (visibility.showTKA) {
+      try {
+        turnsTuple =
+          getTurnsTupleGenerator().generateTurnsTuple(preparedPictograph);
+      } catch {
+        turnsTuple = null;
+      }
+    }
+
     // 5. Draw TKA glyph (letter)
     let letterDimensions = { width: 100, height: 100 };
     let glyphTime = 0;
@@ -273,6 +301,21 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
       if (isDashLetter(preparedPictograph.letter)) {
         drawDash(ctx, letterDimensions, scale, isDarkMode);
       }
+
+      // 5b. Skew braces around the letter (skewed-frame beats only) - must
+      // come before the turns column so its rightExtent clearance can
+      // account for whatever the turns column is about to paint.
+      drawSkewBracesGlyph(
+        ctx,
+        preparedPictograph,
+        letterDimensions,
+        scale,
+        isDarkMode,
+        // Both draw functions are no-ops on the "nothing to show" default,
+        // so a failed generation (null) can keep using it here safely -
+        // only drawDirectionDot below needs to tell the two cases apart.
+        turnsTuple ?? "(s, 0, 0)"
+      );
     }
 
     // 6. Draw turn numbers (TurnsColumn - to the RIGHT of letter)
@@ -283,16 +326,23 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
         letterDimensions,
         scale,
         isDarkMode,
-        getTurnsTupleGenerator,
+        turnsTuple ?? "(s, 0, 0)",
         visibility
       );
     }
 
-    // 7. Draw direction dot (same/opp indicator)
+    // 7. Draw direction dot (same/opp indicator) - skipped outright when
+    // turnsTuple generation failed (null). drawDirectionDot paints a dot
+    // for direction "s", which is exactly what the healthy default
+    // "(s, 0, 0)" parses to, so falling back to that default here (like
+    // the two draw calls above do) would have a throwing generator paint
+    // a spurious dot where it used to paint nothing. A healthy generator
+    // is unaffected either way.
     if (
       visibility.showTKA &&
       preparedPictograph.letter &&
-      preparedPictograph.motions
+      preparedPictograph.motions &&
+      turnsTuple !== null
     ) {
       drawDirectionDot(
         ctx,
@@ -300,7 +350,7 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
         letterDimensions,
         scale,
         isDarkMode,
-        getTurnsTupleGenerator
+        turnsTuple
       );
     }
 
@@ -376,13 +426,6 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
     if (gridImg) {
       ctx.save();
 
-      // Apply dark mode filter to match GridSvg.svelte's #d0d0d0 color
-      // The grid SVG is black on transparent - invert to white for dark mode
-      if (isDarkMode) {
-        ctx.filter = "invert(1) opacity(0.85)";
-      }
-      // Light mode: no filter - render grid as pure black
-
       if (needsRotation) {
         // Rotate 45 degrees around center for box mode
         const center = size / 2;
@@ -391,7 +434,12 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
         ctx.translate(-center, -center);
       }
 
-      ctx.drawImage(gridImg, 0, 0, size, size);
+      // Light mode draws the black grid as is; dark mode tints it light.
+      if (isDarkMode) {
+        drawTintedImage(ctx, gridImg, 0, 0, size, size, DARK_GRID_TINT);
+      } else {
+        ctx.drawImage(gridImg, 0, 0, size, size);
+      }
       ctx.restore();
     }
 
@@ -402,10 +450,6 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
       );
       if (nonRadialImg) {
         ctx.save();
-        if (isDarkMode) {
-          ctx.filter = "invert(1) opacity(0.85)";
-        }
-        // Light mode: no filter - render as pure black
 
         if (needsRotation) {
           const center = size / 2;
@@ -414,7 +458,11 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
           ctx.translate(-center, -center);
         }
 
-        ctx.drawImage(nonRadialImg, 0, 0, size, size);
+        if (isDarkMode) {
+          drawTintedImage(ctx, nonRadialImg, 0, 0, size, size, DARK_GRID_TINT);
+        } else {
+          ctx.drawImage(nonRadialImg, 0, 0, size, size);
+        }
         ctx.restore();
       }
     }
@@ -522,20 +570,25 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
         const viewBoxHeight = viewBoxParts[1] || 100;
 
         const displayColor = options.visibility.primaryPropColors?.[color];
+        // Model captures are rasters: the fill rewrite leaves them alone and
+        // the chroma tint does the recolor.
         const artwork = displayColor
-          ? applyColorToSvg(assets.imageSrc, displayColor, {
-              sourceColors: [
-                getMotionColor(color, "dark"),
-                getMotionColor(color, "light"),
-              ],
-              selectiveColorMode: (
-                SELECTIVE_COLOR_PROP_TYPES as readonly string[]
-              ).includes(
-                String(
-                  assets.propType ?? pictograph.motions?.[color]?.propType
-                ).toLowerCase()
-              ),
-            })
+          ? applyModelSpriteColor(
+              applyColorToSvg(assets.imageSrc, displayColor, {
+                sourceColors: [
+                  getMotionColor(color, "dark"),
+                  getMotionColor(color, "light"),
+                ],
+                selectiveColorMode: (
+                  SELECTIVE_COLOR_PROP_TYPES as readonly string[]
+                ).includes(
+                  String(
+                    assets.propType ?? pictograph.motions?.[color]?.propType
+                  ).toLowerCase()
+                ),
+              }),
+              displayColor
+            )
           : assets.imageSrc;
         const wrapped = wrapSvgContent(
           artwork,

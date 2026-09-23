@@ -29,6 +29,8 @@ interface CardPreviewInputs {
   getSequence: () => SequenceData | null | undefined;
   /** False suspends rendering, so a surface that never opens never pays it. */
   getEnabled: () => boolean;
+  /** Keep the live request visible while its host resolves geometry/paints. */
+  getRenderEnabled?: () => boolean;
   /**
    * The dark-mode flag the ON-SCREEN card preview is using. Not the
    * composition manager's own copy — the file has to match the card the user
@@ -41,14 +43,18 @@ interface CardPreviewInputs {
   onError?: (error: unknown) => void;
 }
 
-interface CardRenderRequest {
-  target: SequenceData;
+export interface CardPreviewRequest {
+  sequence: SequenceData;
+  options: Partial<SequenceExportOptions>;
+  revision: string;
+  sourceRevision: string;
+}
+
+interface CardRenderRequest extends CardPreviewRequest {
   darkMode: boolean;
   resolvedAutoLayout: ResolvedAutoLayout | null;
   cardPresentation: CardPresentation | undefined;
-  options: Partial<SequenceExportOptions>;
   identity: string;
-  revision: string;
 }
 
 export function createCardPreviewState(inputs: CardPreviewInputs) {
@@ -92,20 +98,27 @@ export function createCardPreviewState(inputs: CardPreviewInputs) {
     const darkMode = inputs.getDarkMode();
     const resolvedAutoLayout = inputs.getResolvedAutoLayout();
     const cardPresentation = inputs.getCardPresentation?.();
-    const options = buildCardRenderOptions(target, {
-      darkMode,
-      isHandPath: !!target.metadata?.isHandPathVisualization,
-      resolvedAutoLayout,
-      cardPresentation,
-    });
+    // Snapshot drops proxies but keeps the same option values; its mapped
+    // type just cannot express bitmaps and other class instances.
+    const options = $state.snapshot(
+      buildCardRenderOptions(target, {
+        darkMode,
+        isHandPath:
+          target.sequenceKind === "hand-path" ||
+          !!target.metadata?.isHandPathVisualization,
+        resolvedAutoLayout,
+        cardPresentation,
+      })
+    ) as Partial<SequenceExportOptions>;
     const settingsKey = buildCardPreviewRenderKey(
       options,
       visibility.getState()
     );
 
-    const identity = `${canonicalJSON(target)}|${settingsKey}|${resetVersion}`;
+    const source = canonicalJSON(target);
+    const identity = `${source}|${settingsKey}|${resetVersion}`;
     return {
-      target,
+      sequence: target,
       darkMode,
       resolvedAutoLayout,
       cardPresentation,
@@ -114,6 +127,7 @@ export function createCardPreviewState(inputs: CardPreviewInputs) {
       // reference. The file must follow its content, not either shortcut.
       identity,
       revision: hashString(identity),
+      sourceRevision: hashString(source),
     };
   });
 
@@ -128,6 +142,7 @@ export function createCardPreviewState(inputs: CardPreviewInputs) {
   $effect(() => {
     const request = requestedRender;
     if (!request || request.identity === renderedIdentity) return;
+    if (inputs.getRenderEnabled?.() === false) return;
 
     // A retry after re-opening or reset should announce preparation again.
     failedIdentity = null;
@@ -136,10 +151,11 @@ export function createCardPreviewState(inputs: CardPreviewInputs) {
 
     void (async () => {
       try {
-        const rendered = await getSharer().getCardImageBlob(request.target, {
+        const rendered = await getSharer().getCardImageBlob(request.sequence, {
           darkMode: request.darkMode,
           resolvedAutoLayout: request.resolvedAutoLayout,
           cardPresentation: request.cardPresentation,
+          resolvedRenderOptions: request.options,
         });
         // A render may finish between an input change and the effect cleanup.
         // Check the live request too, so that small window cannot put the
@@ -172,6 +188,15 @@ export function createCardPreviewState(inputs: CardPreviewInputs) {
   });
 
   return {
+    /** The current live presentation exists before its downloadable PNG. */
+    get request(): CardPreviewRequest | null {
+      return requestedRender;
+    },
+    get hasError() {
+      return (
+        requestedRender !== null && requestedRender.identity === failedIdentity
+      );
+    },
     get blob() {
       return requestedRender?.identity === renderedIdentity ? blob : null;
     },

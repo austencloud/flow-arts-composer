@@ -106,7 +106,6 @@
 <div class="background-tab themed-scrollbar">
   <section class="theme-workspace" aria-labelledby="theme-heading">
     <header class="theme-intro">
-      <p class="eyebrow">Appearance</p>
       <h3 id="theme-heading">{t("tab_settings_theme")}</h3>
       <p>Choose the moving backdrop for your composer.</p>
     </header>
@@ -129,10 +128,23 @@
         </div>
       </section>
 
-      <aside class="theme-rail" aria-label="Theme choices">
-        <div class="rail-heading">
-          <p class="eyebrow">Choose a theme</p>
-          <span>{BACKGROUND_CARD_REGISTRY.length} available</span>
+      <section class="theme-controls" aria-label="Theme choices">
+        <div class="controls-heading">
+          <div>
+            <p class="eyebrow">Choose a theme</p>
+            <span>{BACKGROUND_CARD_REGISTRY.length} available</span>
+          </div>
+          <button
+            type="button"
+            class="apply-theme"
+            class:applied={previewIsCurrent}
+            onclick={applyPreview}
+            disabled={!canApplyPreview}
+          >
+            {canApplyPreview ? `Use ${preview.label}` : "Current theme"}
+            {#if !canApplyPreview}<i class="fas fa-check" aria-hidden="true"
+              ></i>{/if}
+          </button>
         </div>
 
         <div class="theme-choices" aria-label="Choose a theme">
@@ -149,48 +161,43 @@
                 style:background={theme.gradient}
                 aria-hidden="true"
               >
-                <span class="choice-icon">{@html theme.iconSvg}</span>
-              </span>
-              <span class="choice-name" aria-hidden="true">{theme.label}</span>
-              <span class="choice-marker" aria-hidden="true">
-                {#if currentType === theme.type}<i class="fas fa-check"
-                  ></i>{/if}
+                <img src={`/images/theme-previews/${theme.type}.webp`} alt="" />
+                <span class="choice-scrim"></span>
+                <span class="choice-name">{theme.label}</span>
+                {#if currentType === theme.type}
+                  <span class="choice-current">Current</span>
+                {/if}
               </span>
             </button>
           {/each}
         </div>
-
-        <button
-          type="button"
-          class="apply-theme"
-          class:applied={previewIsCurrent}
-          onclick={applyPreview}
-          disabled={!canApplyPreview}
-        >
-          {canApplyPreview ? `Use ${preview.label}` : "Current theme"}
-          {#if !canApplyPreview}<i class="fas fa-check" aria-hidden="true"
-            ></i>{/if}
-        </button>
-      </aside>
+      </section>
     </div>
   </section>
 </div>
 
 <style>
   .background-tab {
-    --settings-gap: clamp(12px, 2cqi, 20px);
+    --settings-gap: clamp(8px, 1cqi, 12px);
     container-type: inline-size;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(min-content, 1fr);
     min-height: 0;
     height: 100%;
     overflow: auto;
     padding: var(--settings-gap);
-    padding-bottom: calc(var(--settings-gap) + 16px);
   }
   .theme-workspace {
-    width: min(1180px, 100%);
-    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    min-width: 0;
   }
   .theme-intro {
+    flex: none;
     margin-bottom: var(--settings-gap);
   }
   .eyebrow {
@@ -214,17 +221,19 @@
     font-size: 14px;
   }
   .theme-composition {
-    display: grid;
-    grid-template-columns: minmax(0, 2fr) minmax(340px, 1fr);
-    gap: var(--settings-gap);
-    align-items: stretch;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
   }
   .theme-stage {
     position: relative;
-    min-height: clamp(320px, 48cqw, 570px);
+    flex: 1 0 280px;
+    min-height: 280px;
     overflow: hidden;
     border: 1px solid var(--theme-stroke);
-    border-radius: 18px;
+    border-radius: 18px 18px 0 0;
     isolation: isolate;
     background: var(--theme-panel-bg);
   }
@@ -258,7 +267,7 @@
   .stage-title-wrap h4 {
     margin: 0;
     font-family: system-ui, sans-serif;
-    font-size: clamp(42px, 8cqi, 82px);
+    font-size: clamp(36px, 5cqi, 64px);
     line-height: 0.9;
     letter-spacing: -0.05em;
   }
@@ -269,63 +278,64 @@
     font-size: 14px;
     line-height: 1.4;
   }
-  .theme-rail {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+  .theme-controls {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    flex: none;
     min-width: 0;
     padding: 14px;
     border: 1px solid var(--theme-stroke);
-    border-radius: 16px;
+    border-top: 0;
+    border-radius: 0 0 18px 18px;
     background: var(--theme-card-bg);
   }
-  .rail-heading {
+  .controls-heading {
     display: flex;
-    align-items: baseline;
+    align-items: center;
+    flex-wrap: wrap;
     justify-content: space-between;
-    gap: 8px;
+    gap: 12px;
+    margin-bottom: 12px;
   }
-  .rail-heading .eyebrow {
+  .controls-heading .eyebrow {
+    margin-bottom: 2px;
     color: var(--theme-text);
   }
-  .rail-heading span {
+  .controls-heading span {
     color: var(--theme-text-dim);
     font-size: 12px;
   }
   .theme-choices {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    min-height: 0;
     gap: 8px;
   }
   .theme-choices button {
-    display: grid;
-    grid-template-columns: 30px minmax(0, 1fr) 16px;
-    align-items: center;
-    min-height: 48px;
-    gap: 8px;
-    padding: 5px;
+    position: relative;
+    display: block;
+    min-width: 0;
+    min-height: 104px;
+    padding: 0;
     overflow: hidden;
     color: var(--theme-text);
     text-align: left;
-    background: transparent;
+    background: var(--theme-card-bg);
     border: 1px solid var(--theme-stroke);
     border-radius: 10px;
     cursor: pointer;
     transition:
       border-color var(--transition-fast),
-      background var(--transition-fast);
+      background var(--transition-fast),
+      box-shadow var(--transition-fast);
   }
   .theme-choices button:hover {
-    background: var(--theme-card-hover-bg);
     border-color: var(--theme-stroke-strong);
+    box-shadow: 0 0 0 1px var(--theme-stroke-strong);
   }
   .theme-choices button.previewing {
     border-color: var(--theme-accent);
-    background: color-mix(
-      in srgb,
-      var(--theme-accent) 12%,
-      var(--theme-card-bg)
-    );
+    box-shadow: 0 0 0 2px var(--theme-accent);
   }
   .theme-choices button:focus-visible,
   .apply-theme:focus-visible {
@@ -333,52 +343,77 @@
     outline-offset: 2px;
   }
   .choice-art {
-    display: grid;
-    width: 30px;
-    height: 36px;
-    place-items: center;
-    border-radius: 6px;
-    color: white;
+    position: absolute;
+    inset: 0;
+    display: block;
+    overflow: hidden;
+    isolation: isolate;
+    background: var(--theme-card-bg);
   }
-  .choice-icon {
-    width: 15px;
-    height: 15px;
-  }
-  .choice-icon :global(svg) {
+  .choice-art img {
     display: block;
     width: 100%;
     height: 100%;
+    object-fit: cover;
+    transition: transform var(--transition-fast);
+  }
+  .choice-scrim {
+    position: absolute;
+    z-index: 1;
+    inset: 35% 0 0;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+    pointer-events: none;
+  }
+  .theme-choices button:hover .choice-art img,
+  .theme-choices button:focus-visible .choice-art img {
+    transform: scale(1.04);
+  }
+  .theme-choices button:active .choice-art img {
+    transform: scale(1.01);
   }
   .choice-name {
+    position: absolute;
+    z-index: 2;
+    right: 10px;
+    bottom: 9px;
+    left: 10px;
     overflow: hidden;
+    color: #fff;
     font-size: 14px;
-    font-weight: 650;
+    font-weight: 700;
+    line-height: 1.2;
     text-overflow: ellipsis;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
     white-space: nowrap;
   }
-  .choice-marker {
-    display: grid;
-    width: 16px;
-    height: 16px;
-    place-items: center;
-    color: var(--theme-text);
-    font-size: 10px;
-  }
-  .choice-marker:empty {
-    border: 1px solid var(--theme-stroke-strong);
-    border-radius: 50%;
+  .choice-current {
+    position: absolute;
+    z-index: 2;
+    top: 8px;
+    left: 8px;
+    padding: 3px 6px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.2;
+    background: rgba(0, 0, 0, 0.68);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 5px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
   }
   .apply-theme {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     min-height: 44px;
+    min-width: 164px;
     gap: 8px;
-    margin-top: auto;
-    padding: 8px 12px;
+    flex: 0 0 auto;
+    padding: 8px 14px;
     color: var(--theme-button-text, #fff);
     font: inherit;
     font-weight: 700;
+    white-space: nowrap;
     background: var(--theme-accent);
     border: 1px solid var(--theme-accent);
     border-radius: 10px;
@@ -396,27 +431,67 @@
     border-color: var(--theme-stroke-strong);
     cursor: default;
   }
-  @container (max-width: 700px) {
-    .theme-composition {
-      grid-template-columns: 1fr;
-    }
+  @container (max-width: 759px) {
     .theme-stage {
-      min-height: min(60vh, 440px);
+      flex-basis: clamp(220px, 38dvh, 380px);
+      min-height: clamp(220px, 38dvh, 380px);
     }
-    .theme-rail {
+    .theme-controls {
       padding: 12px;
     }
-  }
-  @media (max-height: 650px) and (min-width: 701px) {
-    .theme-stage {
-      min-height: 310px;
+    .theme-choices {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-    .theme-rail {
-      max-height: 420px;
+    .theme-choices button {
+      min-height: 120px;
+    }
+    .controls-heading {
+      align-items: flex-start;
+    }
+    .apply-theme {
+      min-height: 44px;
+    }
+  }
+  @container (min-width: 600px) and (max-width: 759px) {
+    .theme-choices {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+  }
+  @media (max-height: 650px) and (min-width: 760px) {
+    .theme-stage {
+      flex-basis: 220px;
+      min-height: 220px;
+    }
+  }
+  @media (min-aspect-ratio: 1/1) {
+    @container (min-width: 1000px) {
+      .theme-composition {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) clamp(360px, 36cqi, 640px);
+        gap: var(--settings-gap);
+        min-height: 620px;
+      }
+      .theme-stage {
+        min-height: 0;
+        border-radius: 18px;
+      }
+      .theme-controls {
+        min-height: 0;
+        border-top: 1px solid var(--theme-stroke);
+        border-radius: 18px;
+      }
+      .theme-choices {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-rows: repeat(5, minmax(100px, 1fr));
+      }
+      .controls-heading {
+        align-items: center;
+      }
     }
   }
   @media (prefers-reduced-motion: reduce) {
     .theme-choices button,
+    .choice-art img,
     .apply-theme {
       transition: none;
     }

@@ -105,8 +105,7 @@ function overlayFor(pair: {
       { tipEnds: 1, pathShape: "arc" },
       staffTip
     ).left,
-    tipPoint: staffTip,
-    clubTipDx: Math.hypot(staffTip.dx, staffTip.dy),
+    tips: { left: staffTip, right: staffTip },
   };
 }
 
@@ -326,7 +325,7 @@ describe("exact flower parity", () => {
     const emptyTarget: FlowerParityTarget = {
       left: [],
       right: [],
-      clubTipDx: 0,
+      tips: { left: { dx: 0, dy: 0 }, right: { dx: 0, dy: 0 } },
     };
     const unequal = {
       left: flower("pro", 0.25, "out"),

@@ -107,6 +107,10 @@ export class MandalaOverlayCanvas {
 
 	resize(width: number, height: number): void {
 		if (!this.canvas) return;
+		// The render loop sizes a freshly attached overlay to its frame; one that
+		// was already allocated at that frame keeps its raster instead of
+		// clearing to a blank canvas over the same pixels.
+		if (width === this.width && height === this.height) return;
 
 		const dpr = this.dpr;
 		this.canvas.width = width * dpr;

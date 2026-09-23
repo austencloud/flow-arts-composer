@@ -47,4 +47,39 @@ describe("viewer playback correctness", () => {
       })
     ).toEqual({ held: false, syncTo: null });
   });
+
+  it("keeps playback running throughout live scene replacement and failure", () => {
+    for (const sceneReady of [true, false, false, true]) {
+      expect(
+        sceneLoadingPlaybackTransition({
+          sceneReady,
+          hasLiveScene: true,
+          isPlaying: true,
+          held: false,
+        })
+      ).toEqual({ held: false, syncTo: null });
+    }
+  });
+
+  it("preserves the user's pause while a live replacement prepares", () => {
+    expect(
+      sceneLoadingPlaybackTransition({
+        sceneReady: false,
+        hasLiveScene: true,
+        isPlaying: false,
+        held: false,
+      })
+    ).toEqual({ held: false, syncTo: null });
+  });
+
+  it("holds again if the live renderer is lost", () => {
+    expect(
+      sceneLoadingPlaybackTransition({
+        sceneReady: false,
+        hasLiveScene: false,
+        isPlaying: true,
+        held: false,
+      })
+    ).toEqual({ held: true, syncTo: false });
+  });
 });

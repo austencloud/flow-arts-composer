@@ -227,7 +227,7 @@ the gallery's, and the source is pinned to my-library with no toggle.
             label: "Create account",
             description:
               "Create a free account to access your collections on other devices.",
-            onClick: () => authDrawerState.show("signup"),
+            onClick: () => authDrawerState.show("signup", "sync-library"),
           }
         : undefined,
   });
@@ -257,7 +257,7 @@ the gallery's, and the source is pinned to my-library with no toggle.
         {onBack}
         onBrowse={emptyAction.onClick}
         onCreateAccount={!authState.isFullAccount
-          ? () => authDrawerState.show("signup")
+          ? () => authDrawerState.show("signup", "sync-library")
           : undefined}
       />
     </div>

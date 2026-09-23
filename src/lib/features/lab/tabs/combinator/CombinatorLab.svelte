@@ -23,12 +23,15 @@
 	import { BASE_SEQUENCES } from "$lib/shared/combination/domain/base-sequence-registry";
 	import { findLOOPCombinations } from "$lib/shared/combination/services/loop-combinator";
 	import type { LOOPCombinatorReport } from "$lib/shared/combination/services/loop-combinator";
+	import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
 
 	// Roster-confirmed bases first; placeholders stay selectable but read as
 	// provisional, because their letter data is canon-grounded and only their
 	// MEMBERSHIP is open (see base-sequence-registry).
 	const ROSTER = [...BASE_SEQUENCES].sort(
-		(a, b) => Number(b.rosterConfirmed) - Number(a.rosterConfirmed) || a.word.localeCompare(b.word),
+		(a, b) =>
+			Number(b.rosterConfirmed) - Number(a.rosterConfirmed) ||
+			stripWordNotation(a.word).localeCompare(stripWordNotation(b.word)),
 	);
 
 	let cardA = $state<string | null>("AA");

@@ -12,7 +12,7 @@ When darkMode prop is provided, it overrides global state.
 CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
 -->
 <script lang="ts">
-  import { fade } from "svelte/transition";
+  import { fade, scale } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import type { Letter } from "$lib/shared/foundation/domain/models/letter";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
@@ -20,10 +20,15 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
   import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import TKAGlyph from "$lib/shared/pictograph/tka-glyph/components/TKAGlyph.svelte";
   import TurnsColumn from "$lib/shared/pictograph/tka-glyph/components/TurnsColumn.svelte";
+  import SkewBraces from "$lib/shared/pictograph/tka-glyph/components/SkewBraces.svelte";
   import StepNumber from "$lib/shared/pictograph/shared/components/StepNumber.svelte";
   import PlacementGlyph from "$lib/shared/pictograph/shared/components/PlacementGlyph.svelte";
   import ElementalGlyph from "$lib/shared/pictograph/shared/components/ElementalGlyph.svelte";
   import { getLetterDimensions } from "$lib/shared/pictograph/tka-glyph/components/TKAGlyph.svelte";
+  import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+  import { isSkewedFrameBeat } from "$lib/shared/foundation/services/skewed-frame";
+  import { parseTurnsTuple } from "$lib/shared/pictograph/tka-glyph/utils/turn-tuple-parser";
+  import { getTurnsColumnRightExtent } from "$lib/shared/pictograph/tka-glyph/utils/turn-position-calculator";
   import { deriveTnDFromPictograph } from "$lib/shared/pictograph/shared/domain/utils/tnd-deriver";
   import { derivePropElementalTypeForStep } from "$lib/shared/shape-matrix/domain/prop-relationship";
   import { DURATION } from "$lib/shared/transitions/transitions";
@@ -89,6 +94,14 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
 
   // Cross-fade duration in ms
   const FADE_DURATION = DURATION.normal;
+  // A seam that involves the Start or End word swaps instead of cross-fading
+  // (see the markup comment). Its out and in phases each take half the
+  // envelope, so even that seam starts and finishes with the letter glyph.
+  const STEP_NUMBER_PHASE_DURATION = FADE_DURATION / 2;
+  // The incoming label settles from slightly oversized to its rest size
+  // while it fades in: one easing curve, no direction reversal, and nothing
+  // still moving once the fade has finished.
+  const STEP_NUMBER_SETTLE_SCALE = 1.06;
 
   // Track letter dimensions with reactive state that updates when cache is populated
   // We use $state + $effect because $derived only evaluates once per change,
@@ -126,23 +139,90 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
     return () => clearInterval(interval);
   });
 
+  // True once letterDimensions holds a real measurement rather than the
+  // 100x100 placeholder. The braces below lay themselves out against the
+  // letter's width, so they wait for it instead of drawing at the wrong size.
+  const letterDimensionsReady = $derived(
+    letterDimensions.width !== 100 || letterDimensions.height !== 100
+  );
+
+  // A beat that starts or ends in a zeta/eta position wears braces around its
+  // letter: the same gate PictographRenderer and the hidden GlyphRenderer use,
+  // so the live canvas agrees with the pictographs and with exports. This
+  // overlay is its own Svelte tree, so the braces have to be mounted here too.
+  const skewedFrame = $derived(
+    !!stepData &&
+      isVisibleMotion(stepData.motions?.left) &&
+      isVisibleMotion(stepData.motions?.right) &&
+      isSkewedFrameBeat(stepData.motions.left, stepData.motions.right)
+  );
+
+  // Width the turn numbers occupy to the right of the letter, so the closing
+  // brace clears them instead of painting under them.
+  const braceRightExtent = $derived(
+    skewedFrame
+      ? getTurnsColumnRightExtent(parseTurnsTuple(displayedTurnsTuple))
+      : 0
+  );
+
   // Create a composite key for glyph changes to trigger cross-fade
-  // Includes letter and turns tuple so changing either triggers a transition
-  const glyphKey = $derived(letter ? `${letter}-${displayedTurnsTuple}` : null);
+  // Includes letter, turns tuple, and skew so changing any of them triggers a
+  // transition (the same letter can appear in and out of the skewed frame).
+  const glyphKey = $derived(
+    letter
+      ? `${letter}-${displayedTurnsTuple}-${skewedFrame ? "skew" : "plain"}`
+      : null
+  );
 
   const elementalInfo = $derived(deriveTnDFromPictograph(stepData));
   const elementalLetter = $derived(
     stepData?.letter ?? displayedLetter ?? letter
   );
 
-  // Create a key for step number changes
-  const stepKey = $derived(
-    isAtStartPlacement
-      ? "start"
-      : isAtEndPlacement
-        ? "end"
-        : (displayedStepNumber?.toString() ?? null)
+  // The value StepNumber renders: 0 draws "Start" and -2 draws "End".
+  const stepLabelValue = $derived(
+    isAtStartPlacement ? 0 : isAtEndPlacement ? -2 : displayedStepNumber
   );
+
+  // The key follows the label on screen, not the input that produced it.
+  // Leaving the start position, the placement flag clears a frame before the
+  // step number advances, so the inputs pass through 0 on the way to 1.
+  // Keyed on the inputs, that frame remounted a second "Start" group and
+  // turned the Start-to-1 swap into a ghost fade plus a number cross-fade.
+  const stepKey = $derived(
+    stepLabelValue === 0
+      ? "start"
+      : stepLabelValue === -2
+        ? "end"
+        : (stepLabelValue?.toString() ?? null)
+  );
+
+  const isWordLabel = (key: string | null) => key === "start" || key === "end";
+
+  // The label that was showing before the current one. Svelte evaluates
+  // transition parameters lazily, at the instant each transition starts, so
+  // at a seam both the outgoing and the incoming label group read this and
+  // stepKey together and agree on the seam's timing. $effect.pre runs before
+  // the keyed block swaps, which is what keeps the handover ordered.
+  let previousStepKey = $state<string | null>(null);
+  $effect.pre(() => {
+    const key = stepKey;
+    return () => {
+      previousStepKey = key;
+    };
+  });
+
+  // Number-to-number seams cross-fade on the glyph's clock. Seams touching
+  // Start or End run the sequential swap: out completes, then in begins.
+  function stepLabelTiming(): { duration: number; delay: number } {
+    const swap = isWordLabel(stepKey) || isWordLabel(previousStepKey);
+    return swap
+      ? {
+          duration: motionDuration(STEP_NUMBER_PHASE_DURATION),
+          delay: motionDuration(STEP_NUMBER_PHASE_DURATION),
+        }
+      : { duration: motionDuration(FADE_DURATION), delay: 0 };
+  }
 
   // The artwork itself is keyed by element. Consecutive steps that share the
   // same symbol stay visually steady; an actual symbol change crossfades once.
@@ -221,6 +301,18 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
             {darkMode}
             instantAppear={true}
           />
+          {#if skewedFrame}
+            <SkewBraces
+              {letter}
+              {letterDimensions}
+              rightExtent={braceRightExtent}
+              x={50}
+              y={800}
+              scale={1}
+              visible={letterDimensionsReady}
+              {darkMode}
+            />
+          {/if}
         </g>
       {/key}
     {/if}
@@ -289,40 +381,41 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
       />
     {/if}
 
-    <!-- Step number cross-fade. Both texts sit at the SAME svg coordinates
-         (StepNumber.svelte: x=50,y=50), so a simultaneous in+out fade (the
-         Crossfade primitive's default "crossfade" mode) double-exposes two
-         overlapping, both-legible words mid-transition — most visible on the
-         Start/End swap. The Crossfade component itself can't wrap this: it
-         renders an HTML <div>, invalid inside this <svg>/<g> tree. This ports
-         its "swap" mode's timing by hand (out fully completes before in
-         starts — in:fade delay = out's full duration, matching Crossfade's
-         own inDelay = duration computation for mode="swap") so the words
-         never overlap. See crossfade-primitive.md.
+    <!-- Step label transition. Numbers cross-fade exactly like the letter
+         glyph below-left: simultaneous in+out over FADE_DURATION, same easing,
+         so the two overlays dissolve on one clock. A sequential swap here read
+         as the number vanishing and a new one popping in.
+         All labels sit at the SAME svg coordinates (StepNumber.svelte:
+         x=50,y=50), and the Start/End words are long enough that a
+         simultaneous fade double-exposes two legible words, so a seam that
+         involves either word keeps the Crossfade primitive's "swap" timing
+         (out fully completes, then in begins: delay = out duration, matching
+         its inDelay computation for mode="swap"), ported by hand because the
+         Crossfade component renders an HTML <div>, invalid inside this
+         <svg>/<g> tree. See crossfade-primitive.md. The swap's two phases
+         share FADE_DURATION so it still ends with the glyph.
+         The in transition is scale (fade + settle) rather than a CSS keyframe
+         pulse: a dip-and-return pulse on a remounting group played its dip
+         while the label was still invisible, so only the grow-back showed,
+         late and with a velocity kick at the reversal.
          The Start/End words are step labels too: the step-numbers toggle hides
          all three, matching the export compositor's single showStepNumbers gate. -->
     {#if stepNumbersVisible}
       {#key stepKey}
         <g
           class="beat-number-group"
-          in:fade={{
-            duration: motionDuration(FADE_DURATION),
-            delay: motionDuration(FADE_DURATION),
+          in:scale={{
+            start: STEP_NUMBER_SETTLE_SCALE,
+            opacity: 0,
+            ...stepLabelTiming(),
             easing: cubicOut,
           }}
           out:fade={{
-            duration: motionDuration(FADE_DURATION),
+            duration: stepLabelTiming().duration,
             easing: cubicOut,
           }}
         >
-          <StepNumber
-            stepNumber={isAtStartPlacement
-              ? 0
-              : isAtEndPlacement
-                ? -2
-                : displayedStepNumber}
-            {darkMode}
-          />
+          <StepNumber stepNumber={stepLabelValue} {darkMode} />
         </g>
       {/key}
     {/if}
@@ -357,24 +450,11 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
     transition: filter var(--duration-fast) ease-out !important;
   }
 
-  /* Beat pulse on the step number: the group remounts on every step (keyed on
-     stepKey), so this mount animation replays at every seam — in time with the
-     golden step ring (same 400ms as guideStepRingIn). */
+  /* The in:scale settle transforms this SVG group; give it a real box and a
+     centered origin so it scales about the number, not the svg origin. */
   .beat-number-group {
     transform-box: fill-box;
     transform-origin: center;
-    animation: step-number-pulse 400ms ease-out;
-  }
-  @keyframes step-number-pulse {
-    0% {
-      transform: scale(1);
-    }
-    50% {
-      transform: scale(0.91);
-    }
-    100% {
-      transform: scale(1);
-    }
   }
 
   /* Dark-mode glyph recoloring is handled INSIDE TKAGlyph by swapping the

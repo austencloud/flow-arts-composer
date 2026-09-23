@@ -171,6 +171,12 @@ export class StartPlacementDeriver {
     if (positionStr.startsWith("gamma")) {
       return Letter.GAMMA;
     }
+    if (positionStr.startsWith("zeta")) {
+      return Letter.ZETA;
+    }
+    if (positionStr.startsWith("eta")) {
+      return Letter.ETA;
+    }
 
     console.warn(
       `Unknown grid position type: ${position}, defaulting to ALPHA`

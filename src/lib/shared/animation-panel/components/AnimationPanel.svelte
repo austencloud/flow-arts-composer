@@ -11,7 +11,6 @@
 -->
 <script lang="ts">
   import { fade } from "svelte/transition";
-  import { growFade } from "$lib/shared/transitions/motion";
   import type { ExportOptionsStateManager } from "../state/export-options-state.svelte";
   import type { VideoExportProgress } from "$lib/shared/compose/domain/video-export-types";
   import {
@@ -41,9 +40,10 @@
   import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
   import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
   import type { PropChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
-  import CatDogToggle from "$lib/shared/settings/components/tabs/prop-type/CatDogToggle.svelte";
+  import HandPropToolbar, {
+    type HandPropToolbarProps,
+  } from "$lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
   import PrimaryPropColorSettings from "$lib/shared/settings/components/tabs/prop-type/PrimaryPropColorSettings.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import {
     getSettings,
     updateSetting,
@@ -75,6 +75,10 @@
     computePropsSummary,
   } from "../pill-nav/pill-summaries";
   import { onDestroy, untrack } from "svelte";
+  import {
+    VIDEO_OPENER_OPTIONS,
+    type VideoOpener,
+  } from "$lib/shared/share/domain/video-opener";
   import {
     reportViewerControlChange,
     type ViewerControlSink,
@@ -146,14 +150,7 @@
      * one local prop (Post Studio, profile photo, landing) omit this and keep
      * the single grid.
      */
-    handProps?: {
-      catDog: boolean;
-      hand: "left" | "right";
-      leftPropType: PropType;
-      rightPropType: PropType;
-      onToggleCatDog: () => void;
-      onHandChange: (hand: "left" | "right") => void;
-    };
+    handProps?: HandPropToolbarProps;
     /**
      * Put the account's primary prop colours above the prop grid, the way the
      * global prop drawer does, for a host whose canvas draws the props in
@@ -162,8 +159,13 @@
      */
     showPropColors?: boolean;
     onExport?: () => void;
-    /** The host opens the shared file preview instead of rendering immediately. */
-    exportOpensPreparation?: boolean;
+    /** The image the clip opens with, per choice, for the Export page's
+     * "Opens" row. Omitted by hosts whose render cannot open on a chosen
+     * image (3D scenes, art views), which hides the row. */
+    captureVideoOpener?: (kind: VideoOpener) => Promise<string>;
+    /** Bump to open the Export page from outside the panel (Share → Download
+     * a file → Video lands here). Works in the sidebar and the phone dock. */
+    exportSectionRequest?: number;
     onCancel?: () => void;
     secondaryActions?: (ControlDockLink | ControlDockAction)[];
     /** Compact action at the end of the bottom dock. Export still takes this
@@ -182,6 +184,8 @@
     /** Hide the four sequence-only edge marks (TKA glyph, element, step number,
      *  word) for a host animating something with no letter and no steps. */
     showSequenceMarks?: boolean;
+    /** Leave out the Word tile for a host that never draws a word header. */
+    showWordToggle?: boolean;
     /** Restrict the effect roster to what the host's renderer can actually
      *  draw. Omit for the full roster. */
     availableEffects?: readonly string[];
@@ -229,13 +233,15 @@
     handProps,
     showPropColors = false,
     onExport,
-    exportOpensPreparation = false,
+    captureVideoOpener,
+    exportSectionRequest = 0,
     onCancel,
     secondaryActions = [],
     dockTrailingAction,
     showInlineExportProgress = true,
     showMotionVisibility = false,
     showSequenceMarks = true,
+    showWordToggle = true,
     availableEffects,
     showPathShape = true,
     onSettingChange,
@@ -247,7 +253,7 @@
   const viewerAnimatorInspector = getOptionalViewerAnimatorInspectorContext();
 
   const exportButtonLabel = $derived(
-    renderMode === "3d" ? "Record Scene" : "Export Animation"
+    renderMode === "3d" ? "Record Scene" : "Download animation"
   );
 
   // Export is host-optional: both the state manager and the handler must be
@@ -394,6 +400,47 @@
     exportOptions.setVideoLoopCount(value);
     reportSetting("video_export", "loop_count", previous, value);
   }
+
+  function setVideoOpener(value: VideoOpener): void {
+    if (!exportOptions) return;
+    const previous = exportOptions.videoOpener;
+    exportOptions.setVideoOpener(value);
+    reportSetting("video_export", "opener", previous, value);
+  }
+
+  /** The row is offered only where the host can bake the image into the render. */
+  const openerRowEnabled = $derived(
+    !!captureVideoOpener && renderMode !== "3d" && !!exportOptions
+  );
+  /**
+   * The mandala is the one choice the live stage cannot show, so it gets a
+   * thumbnail. The current frame IS the stage, and the first beat is one
+   * press of restart away; capturing it would jump the stage on every visit.
+   * Redrawn when the sequence, its props, or the hand colours change.
+   */
+  let mandalaOpenerUrl = $state<string | null>(null);
+  $effect(() => {
+    if (!openerRowEnabled || resolvedPill !== "export") return;
+    if (exportOptions?.videoOpener !== "mandala") return;
+    void sequence;
+    void selectedPropType;
+    void getSettings().primaryPropColors;
+    const capture = captureVideoOpener;
+    if (!capture) return;
+    let current = true;
+    mandalaOpenerUrl = null;
+    capture("mandala").then(
+      (url) => {
+        if (current) mandalaOpenerUrl = url || null;
+      },
+      (error) => {
+        console.error("[AnimationPanel] Could not draw the mandala opener:", error);
+      }
+    );
+    return () => {
+      current = false;
+    };
+  });
 
   let pillNavEl = $state<HTMLElement | null>(null);
   let panelScrollEl = $state<HTMLElement | null>(null);
@@ -543,18 +590,30 @@
   const exportDisabled = $derived(isExporting || !canvasReady);
 
   // The download button asks before it renders. From any other section the
-  // first press opens the Export page (fps, resolution, timing, loops) and the
-  // same button confirms from there; pressing it while Export is already up
-  // exports at once. The bottom dock's trailing download icon shares this, so
-  // it opens the Export tray first and the tray carries its own confirm.
+  // first press opens the Export page (opener, fps, resolution, timing, loops)
+  // and the same button confirms from there; pressing it while Export is
+  // already up renders at once. The bottom dock's trailing download icon
+  // shares this, so it opens the Export tray first and the tray carries its
+  // own confirm.
   function handleExportTrigger(): void {
     if (!onExport) return;
-    if (!exportOpensPreparation && resolvedPill !== "export") {
+    if (resolvedPill !== "export") {
       handlePillSelect("export");
       return;
     }
     onExport();
   }
+
+  let handledExportSectionRequest = exportSectionRequest;
+  $effect(() => {
+    const request = exportSectionRequest;
+    if (request === handledExportSectionRequest) return;
+    handledExportSectionRequest = request;
+    untrack(() => {
+      if (!exportEnabled || resolvedPill === "export") return;
+      handlePillSelect("export");
+    });
+  });
 
   function formatDuration(seconds: number): string {
     if (seconds <= 0) return "";
@@ -752,28 +811,7 @@
 {#snippet pillBody()}
   {#if resolvedPill === "props" && onPropChange && selectedPropType !== undefined}
     {#if handProps}
-      <!-- Same chip and hand segments as the global prop drawer, so the viewer
-           picks a pair the way every other settings-backed picker does. -->
-      <div class="hand-toolbar">
-        <CatDogToggle
-          catDogMode={handProps.catDog}
-          onToggle={handProps.onToggleCatDog}
-        />
-        {#if handProps.catDog}
-          <div transition:growFade={{ axis: "y" }}>
-            <SegmentedControl
-              options={[
-                { value: "left", label: "Left", tone: "blue" },
-                { value: "right", label: "Right", tone: "red" },
-              ]}
-              value={handProps.hand}
-              onchange={handProps.onHandChange}
-              ariaLabel="Prop hand selection"
-              semantics="radiogroup"
-            />
-          </div>
-        {/if}
-      </div>
+      <HandPropToolbar {handProps} />
     {/if}
     {#if showPropColors}
       <!-- The same control the global prop drawer puts above its grid: the
@@ -957,6 +995,7 @@
       <DisplayPanel
         {showMotionVisibility}
         {showSequenceMarks}
+        {showWordToggle}
         {sequence}
         propType={selectedPropType}
         fill={layout === "sidebar"}
@@ -969,6 +1008,42 @@
 {#snippet exportBody()}
   {#if exportOptions}
     <div class="section-pad export-fields">
+      {#if openerRowEnabled}
+        <div class="field">
+          <span class="field-label">Opens</span>
+          <div class="rt-chip-row opener-row">
+            {#each VIDEO_OPENER_OPTIONS as option (option.value)}
+              <button
+                type="button"
+                class="rt-chip"
+                aria-pressed={exportOptions.videoOpener === option.value}
+                onclick={() => setVideoOpener(option.value)}
+                >{option.label}</button
+              >
+            {/each}
+          </div>
+        </div>
+        <div class="opener-note">
+          {#if exportOptions.videoOpener === "mandala"}
+            {#if mandalaOpenerUrl}
+              <img
+                class="opener-thumb"
+                src={mandalaOpenerUrl}
+                alt="Mandala the clip opens with"
+              />
+            {/if}
+            <span>Holds the sequence's mandala for a beat, then plays.</span>
+          {:else if exportOptions.videoOpener === "this-frame"}
+            <span
+              >Holds the frame on the stage when you press Download. Pause
+              where it looks right.</span
+            >
+          {:else}
+            <span>Opens on the start position.</span>
+          {/if}
+        </div>
+      {/if}
+
       <div class="field">
         <span class="field-label">FPS</span>
         <div class="rt-chip-row">
@@ -1375,18 +1450,6 @@
     min-height: 140px;
   }
 
-  /* Cat Dog chip and hand segments above the grid; mirrors the global prop
-     drawer's toolbar so the pair reads the same wherever it is picked. */
-  .hand-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 8px 16px 4px;
-    flex-shrink: 0;
-  }
-
   /* The colour pair above the grid, on the prop drawer's own inset. */
   .prop-colors {
     padding: 8px 16px 4px;
@@ -1413,8 +1476,27 @@
     flex: 1;
     gap: 6px;
   }
-  .export-fields .rt-chip-row.res-row {
+  .export-fields .rt-chip-row.res-row,
+  .export-fields .rt-chip-row.opener-row {
     flex-wrap: wrap;
+  }
+  /* Under the Opens chips, aligned with the chip column like the meta row. */
+  .export-fields .opener-note {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-left: 74px;
+    font-size: var(--font-size-compact, 12px);
+    line-height: 1.35;
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
+  }
+  .export-fields .opener-thumb {
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    object-fit: cover;
+    background: #000;
   }
   .export-fields .export-meta {
     display: flex;

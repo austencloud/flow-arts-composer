@@ -13,6 +13,12 @@
  * viewer, the choreo card back and MCP images all bake in the same key.
  */
 
+import {
+  drawHandKeyGlyph,
+  getHandKeyGlyphPath,
+  type HandKeyGlyphContext,
+} from "./hand-key-glyphs.js";
+
 export const HAND_COLOR_KEY = {
   /** Vertical centre of the bottom glyph band (grid ends at 800, box at 950). */
   CENTER_Y: 875,
@@ -50,10 +56,9 @@ export interface HandColorKeyLayout {
 }
 
 /** The small Canvas 2D surface shared by browser and NAPI canvas renderers. */
-export interface HandColorKeyCanvasContext {
+export interface HandColorKeyCanvasContext extends HandKeyGlyphContext {
   save(): void;
   restore(): void;
-  beginPath(): void;
   arc(
     x: number,
     y: number,
@@ -61,11 +66,6 @@ export interface HandColorKeyCanvasContext {
     startAngle: number,
     endAngle: number
   ): void;
-  fill(): void;
-  fillText(text: string, x: number, y: number): void;
-  font: string;
-  textAlign: string;
-  textBaseline: string;
   fillStyle: unknown;
 }
 
@@ -145,9 +145,6 @@ export function drawHandColorKey(
   if (layout.entries.length === 0) return;
 
   context.save();
-  context.font = `${HAND_COLOR_KEY.FONT_WEIGHT} ${HAND_COLOR_KEY.FONT_SIZE * options.scale}px ${HAND_COLOR_KEY.FONT_FAMILY}`;
-  context.textAlign = "start";
-  context.textBaseline = "alphabetic";
   for (const entry of layout.entries) {
     context.fillStyle = options.colorForHand(entry.hand);
     context.beginPath();
@@ -160,10 +157,12 @@ export function drawHandColorKey(
     );
     context.fill();
     context.fillStyle = options.textColor;
-    context.fillText(
+    drawHandKeyGlyph(
+      context,
       entry.label,
       options.centerX + entry.labelX * options.scale,
-      layout.baselineY * options.scale
+      layout.baselineY * options.scale,
+      options.scale
     );
   }
   context.restore();
@@ -183,8 +182,13 @@ export function renderHandColorKeySvg(
     const fill = options.colorForHand(entry.hand);
     return (
       `<circle cx="${entry.swatchX}" cy="${layout.centerY}" r="${layout.swatchRadius}" fill="${fill}"/>` +
-      `<text x="${entry.labelX}" y="${layout.baselineY}">${entry.label}</text>`
+      `<path d="${getHandKeyGlyphPath(entry.label)}" transform="translate(${entry.labelX} ${layout.baselineY})"/>`
     );
   });
-  return `<g class="hand-color-key" transform="translate(${options.centerX}, 0)" font-family="${HAND_COLOR_KEY.FONT_FAMILY}" font-size="${HAND_COLOR_KEY.FONT_SIZE}" font-weight="${HAND_COLOR_KEY.FONT_WEIGHT}" fill="${options.textColor}">${parts.join("")}</g>`;
+  return `<g class="hand-color-key" transform="translate(${options.centerX}, 0)" fill="${options.textColor}">${parts.join("")}</g>`;
 }
+
+export {
+  getHandKeyGlyphPath,
+  HAND_KEY_GLYPH_FONT_SIZE,
+} from "./hand-key-glyphs.js";
