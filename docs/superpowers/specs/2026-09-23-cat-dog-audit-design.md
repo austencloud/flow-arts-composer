@@ -70,12 +70,11 @@ viewing mode), both in `src/lib/shared/foundation/services/`.
 
 - **Sequence viewer image tab** (`src/lib/shared/sequence-viewer/components/SequenceViewer.svelte`,
   the `ChoreoCard` and `PropAwareThumbnail` props at ~338 and ~346): stop
-  gating the right hand on the raw `catDogMode`. Use the pair the orchestrator
-  already resolves for the header (the viewer orchestrator context carries
-  `leftPropType`, `rightPropType`, `catDogModeEnabled` from
-  `resolveViewingProps`) when that context is present; otherwise call
-  `resolveViewingProps(settings, sequence)` directly. The image tab then
-  matches the header and the animation tab, including "as saved" mode.
+  gating the right hand on the raw `catDogMode` and use
+  `captureActivePropConfig(settings)`. This legacy viewer renders only in the
+  Create drawer, where the animation tab, export preview, and real export all
+  use the performer's own pair, so it does not follow "as saved" viewing mode
+  (amended 2026-09-23 after review: it never sits under the orchestrator).
 - **Export static preview** (`src/lib/shared/export-panel/components/single-media/StaticPreview.svelte` ~98-124):
   pass the same pair the real image export uses. Find the export path's prop
   source and share it, so preview and export cannot disagree. If the export

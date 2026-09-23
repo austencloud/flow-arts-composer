@@ -24,7 +24,7 @@
 	import PropAwareThumbnail from "$lib/shared/browse/components/PropAwareThumbnail.svelte";
 	import ChoreoCard from "./ChoreoCard.svelte";
 	import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-	import { resolveViewingProps } from "$lib/shared/foundation/services/prop-viewing";
+	import { captureActivePropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
 	import { tryGetAnimationExportContext } from "$lib/shared/export-panel/context/animation-export-context.svelte";
 	import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
 	import { browser } from "$app/environment";
@@ -140,10 +140,10 @@
 	// LOOP glyph visibility
 	const showLoopGlyph = $derived(showVisibilitySettings ? localShowLoopGlyph : (globalImageExport?.showLoopGlyph ?? true));
 
-	// The same pair the viewer header and animation tab show, including
-	// "as saved" viewing mode. The raw flag can lag a mixed pair.
+	// The performer's own pair, the same one the animation tab, the export
+	// preview, and the real export use in the Create drawer.
 	const viewingProps = $derived(
-		resolveViewingProps(settingsService.settings, sequence).config
+		captureActivePropConfig(settingsService.settings)
 	);
 	const leftPropType = $derived(viewingProps.leftPropType);
 	const rightPropType = $derived(viewingProps.rightPropType);
