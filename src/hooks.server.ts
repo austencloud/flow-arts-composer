@@ -12,6 +12,48 @@ import {
   createLandingPageTransformer,
   shouldPreloadRouteAsset,
 } from "$lib/server/performance/landing-preload-policy";
+import { normalizeModuleId } from "$lib/shared/navigation/config/module-definitions";
+
+/**
+ * `/[...appPath]` (src/routes/[...appPath]/+layout.ts) is the client-only app
+ * shell (ssr=false) for every module path — /create, /browse, /settings, and
+ * so on. Before this guard, ANY unmatched path fell through to it and got a
+ * 200 with the empty SPA shell: a soft 404 that let junk URLs (typos, dead
+ * links, scraper noise) sit in Search Console as "indexed, not really".
+ *
+ * This can't be gated from a `+layout.server.ts`/`+page.server.ts` load
+ * function under that route: with ssr=false, SvelteKit skips running server
+ * load functions for the initial document request entirely (verified by
+ * curling a junk path against a dev server — a `load` there never executes,
+ * confirmed via debug logging before this fix landed) and defers them to a
+ * client-side fetch after hydration, so a `load`-level `error(404)` never
+ * reaches the initial HTTP response. `handle` has no such caveat: it runs for
+ * every request regardless of ssr, and `event.route.id`/`event.params` are
+ * already populated when it's called — confirmed the same way — so the gate
+ * lives here and answers with a real 404 before `resolve()` ever runs.
+ *
+ * Reuses `normalizeModuleId`, the exact function the client already uses to
+ * decide whether a URL's first path segment is a real module (current
+ * ModuleId values in MODULE_DEFINITIONS, plus every legacy alias in
+ * MODULE_ID_MIGRATIONS — e.g. /discover, /dashboard, /realm). Because it's
+ * the same registry the app routes with, this can't reject a path the app
+ * itself would accept — see app-path-registry-guard.test.ts, which enumerates
+ * every registered id and alias and asserts none 404 here.
+ */
+export function rejectUnknownAppPath(
+  routeId: string | null | undefined,
+  appPath: string | undefined
+): Response | undefined {
+  if (routeId !== "/[...appPath]") return undefined;
+
+  const firstSegment = appPath?.split("/").filter(Boolean)[0]?.toLowerCase();
+  if (firstSegment && normalizeModuleId(firstSegment)) return undefined;
+
+  return new Response("Not found", {
+    status: 404,
+    headers: { "content-type": "text/plain" },
+  });
+}
 
 /**
  * Check if a request is for a font file that needs CORS headers.
@@ -36,6 +78,13 @@ function isCssRequest(pathname: string): boolean {
 }
 
 export const handle: Handle = async ({ event, resolve }) => {
+  // Soft-404 gate for the /[...appPath] SPA shell — see rejectUnknownAppPath.
+  const appPathRejection = rejectUnknownAppPath(
+    event.route?.id,
+    event.params?.appPath
+  );
+  if (appPathRejection) return appPathRejection;
+
   // Firebase OAuth handler reverse proxy. MUST run before resolve(): it serves
   // /__/auth/* first-party on the app host so the Google/Facebook popup completes
   // (see firebase-auth-handler-proxy.ts). Returning here also skips SvelteKit's
