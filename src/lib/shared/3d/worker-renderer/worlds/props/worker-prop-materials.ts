@@ -5,12 +5,11 @@ import {
   MeshStandardMaterial,
   SphereGeometry,
 } from "three";
+import { PROP_COLORS, paintWithPropHand } from "@austencloud/scene-3d/worker";
 import type { WorkerPropColor } from "./worker-prop-factory-types";
 
-export const PROP_PALETTES = {
-  blue: { main: "#3b82f6", dark: "#1d4ed8", light: "#60a5fa" },
-  red: { main: "#ef4444", dark: "#b91c1c", light: "#f87171" },
-} as const;
+/** The live hand palettes; the application sets them through the snapshot. */
+export const PROP_PALETTES = PROP_COLORS;
 
 export const METAL_COLORS = {
   blade: "#c0c0c0",
@@ -64,11 +63,10 @@ const torchMaterials = new Map<WorkerPropColor, TorchMaterials>();
 const frameMaterials = new Map<string, FrameMaterials>();
 
 function trail(color: WorkerPropColor): MeshBasicMaterial {
-  return new MeshBasicMaterial({
-    color: PROP_PALETTES[color].main,
-    opacity: 0.3,
-    transparent: true,
-  });
+  return paintWithPropHand(
+    new MeshBasicMaterial({ opacity: 0.3, transparent: true }),
+    color
+  );
 }
 
 export function getPlateMaterials(color: WorkerPropColor): PlateMaterials {
@@ -76,18 +74,25 @@ export function getPlateMaterials(color: WorkerPropColor): PlateMaterials {
   if (cached) return cached;
   const palette = PROP_PALETTES[color];
   const value = {
-    face: new MeshPhysicalMaterial({
-      color: palette.main,
-      roughness: 0.26,
-      metalness: 0.12,
-      clearcoat: 0.7,
-      clearcoatRoughness: 0.16,
-    }),
-    edge: new MeshStandardMaterial({
-      color: new Color(palette.main).lerp(new Color(palette.dark), 0.6),
-      roughness: 0.42,
-      metalness: 0.1,
-    }),
+    face: paintWithPropHand(
+      new MeshPhysicalMaterial({
+        color: palette.main,
+        roughness: 0.26,
+        metalness: 0.12,
+        clearcoat: 0.7,
+        clearcoatRoughness: 0.16,
+      }),
+      color
+    ),
+    edge: paintWithPropHand(
+      new MeshStandardMaterial({
+        color: new Color(palette.main).lerp(new Color(palette.dark), 0.6),
+        roughness: 0.42,
+        metalness: 0.1,
+      }),
+      color,
+      (hand) => new Color(hand.main).lerp(new Color(hand.dark), 0.6)
+    ),
     trail: trail(color),
   };
   plateMaterials.set(color, value);
@@ -113,13 +118,16 @@ export function getClubMaterials(color: WorkerPropColor): ClubMaterials {
       roughness: 0.88,
       metalness: 0.02,
     }),
-    body: new MeshPhysicalMaterial({
-      color: PROP_PALETTES[color].main,
-      roughness: 0.3,
-      metalness: 0.06,
-      clearcoat: 0.7,
-      clearcoatRoughness: 0.18,
-    }),
+    body: paintWithPropHand(
+      new MeshPhysicalMaterial({
+        color: PROP_PALETTES[color].main,
+        roughness: 0.3,
+        metalness: 0.06,
+        clearcoat: 0.7,
+        clearcoatRoughness: 0.18,
+      }),
+      color
+    ),
     trail: trail(color),
   };
   clubMaterials.set(color, value);
@@ -130,16 +138,19 @@ export function getHoopMaterials(color: WorkerPropColor): HoopMaterials {
   const cached = hoopMaterials.get(color);
   if (cached) return cached;
   const value = {
-    tube: new MeshPhysicalMaterial({
-      color: PROP_PALETTES[color].main,
-      roughness: 0.22,
-      metalness: 0.02,
-      clearcoat: 0.85,
-      clearcoatRoughness: 0.1,
-      transmission: 0.12,
-      thickness: 0.015875,
-      ior: 1.5,
-    }),
+    tube: paintWithPropHand(
+      new MeshPhysicalMaterial({
+        color: PROP_PALETTES[color].main,
+        roughness: 0.22,
+        metalness: 0.02,
+        clearcoat: 0.85,
+        clearcoatRoughness: 0.1,
+        transmission: 0.12,
+        thickness: 0.015875,
+        ior: 1.5,
+      }),
+      color
+    ),
     trail: trail(color),
   };
   hoopMaterials.set(color, value);
@@ -160,13 +171,16 @@ export function getTorchMaterials(color: WorkerPropColor): TorchMaterials {
       roughness: 0.86,
       metalness: 0.03,
     }),
-    flare: new MeshPhysicalMaterial({
-      color: PROP_PALETTES[color].main,
-      roughness: 0.26,
-      metalness: 0.08,
-      clearcoat: 0.85,
-      clearcoatRoughness: 0.12,
-    }),
+    flare: paintWithPropHand(
+      new MeshPhysicalMaterial({
+        color: PROP_PALETTES[color].main,
+        roughness: 0.26,
+        metalness: 0.08,
+        clearcoat: 0.85,
+        clearcoatRoughness: 0.12,
+      }),
+      color
+    ),
     shaft: new MeshStandardMaterial({
       color: "#b9bec6",
       roughness: 0.22,
@@ -193,13 +207,16 @@ export function getFrameMaterials(
   const palette = PROP_PALETTES[color];
   const fire = variant === "fire";
   const value = {
-    spine: new MeshPhysicalMaterial({
-      color: palette.main,
-      roughness: fire ? 0.24 : 0.62,
-      metalness: fire ? 0.18 : 0.04,
-      clearcoat: fire ? 0.8 : 0,
-      clearcoatRoughness: 0.14,
-    }),
+    spine: paintWithPropHand(
+      new MeshPhysicalMaterial({
+        color: palette.main,
+        roughness: fire ? 0.24 : 0.62,
+        metalness: fire ? 0.18 : 0.04,
+        clearcoat: fire ? 0.8 : 0,
+        clearcoatRoughness: 0.14,
+      }),
+      color
+    ),
     hub: new MeshStandardMaterial({
       color: fire ? "#c8ced8" : palette.dark,
       roughness: fire ? 0.28 : 0.58,
@@ -230,6 +247,11 @@ export function getFrameMaterials(
         }),
     trail: trail(color),
   };
+  if (!fire) {
+    paintWithPropHand(value.hub, color, "dark");
+    paintWithPropHand(value.ring, color, "dark");
+    paintWithPropHand(value.tip, color, "main", "emissive");
+  }
   frameMaterials.set(key, value);
   return value;
 }

@@ -438,11 +438,7 @@
     source.totalSteps = totalSteps;
     source.seamlesslyLoopable = seamlesslyLoopable;
     source.propColor =
-      propIndex === 0
-        ? PROP_COLORS.blue.main
-        : source.effect === "fire"
-          ? "#ff2410"
-          : PROP_COLORS.red.main;
+      propIndex === 0 ? PROP_COLORS.blue.main : PROP_COLORS.red.main;
     pooledFrame.sources.push(source);
   }
 
@@ -700,18 +696,12 @@
     }
 
     const resolvedLed = resolveLed3D(effectsState.led);
-    // Fire's Color slider tints toward the physical staff color — always the
-    // canonical prop colors, independent of the LED effect's color mode (the
-    // blue/redBaseColor above are LED-derived and would leak LED hues onto the
-    // flame, e.g. green when LED is unified).
-    //
-    // Blue (#3b82f6) reads vividly as-is. The red staff (#ef4444) carries ~0.27
-    // in both green and blue, so under the flame's additive overlap it washes
-    // toward pink and reads muddy. Use a saturated fire-red for the red tint —
-    // still clearly the red staff's color, just pure enough to stay vivid as an
-    // emissive flame.
+    // Fire's Color slider tints toward the physical staff color — the hand
+    // colors the props are painted in, independent of the LED effect's color
+    // mode (the blue/redBaseColor above are LED-derived and would leak LED
+    // hues onto the flame, e.g. green when LED is unified).
     const firePropLeft = hexToRgb(PROP_COLORS.blue.main);
-    const firePropRight = hexToRgb("#ff2410");
+    const firePropRight = hexToRgb(PROP_COLORS.red.main);
 
     // The 2D sampler is handed the rAF timestamp, so reading the same clock
     // here (not a mount-relative one) puts both backends on the same frame of

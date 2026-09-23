@@ -18,7 +18,8 @@
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { PROP_DIMENSIONS } from "$lib/shared/animation-engine/services/IPropTextureLoader";
   import { toScenePropType } from "$lib/shared/3d/domain/scene-prop-type";
-  import { PropType as ScenePropType } from "@austencloud/scene-3d";
+  import { PropType as ScenePropType, setPropHandColors } from "@austencloud/scene-3d";
+  import { onMount } from "svelte";
   import SpriteCaptureScene, {
     type SpriteCaptureResult,
   } from "./SpriteCaptureScene.svelte";
@@ -26,6 +27,10 @@
   /** Long axis of the sprite in canvas pixels. */
   const TARGET_WIDTH_PX = 1024;
   const COLORS = ["blue", "red"] as const;
+
+  // The model look recolors these sprites from the palette they were lit in,
+  // so capture in the props' authored colors, never the user's.
+  onMount(() => setPropHandColors({}));
 
   const SCENE_VALUES = new Set<string>(Object.values(ScenePropType));
 

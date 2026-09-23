@@ -3674,7 +3674,7 @@ diff --git a/dist/lib/components/props/Eightrings3D.svelte.d.ts.map b/dist/lib/c
 deleted file mode 100644
 index fadf6104b043722cb8415eb47964e1527ee8a117..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Fan3D.svelte b/dist/lib/components/props/Fan3D.svelte
-index dc635e752d11561cb585cbaaffa05b1e525d31e8..16426cf4a056edb4fa4c633632c324d0f24b0404 100644
+index dc635e752d..8e83233d5b 100644
 --- a/dist/lib/components/props/Fan3D.svelte
 +++ b/dist/lib/components/props/Fan3D.svelte
 @@ -1,29 +1,58 @@
@@ -3725,7 +3725,8 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..16426cf4a056edb4fa4c633632c324d0
 +  import { useGltf } from "@threlte/extras";
 +  import type { Material, Mesh, MeshStandardMaterial, Object3D } from "three";
    import type { Prop3DProps } from "./Prop3DProps";
-   import { PROP_COLORS } from "./Prop3DProps";
+-  import { PROP_COLORS } from "./Prop3DProps";
++  import { reactivePropHandPalette } from "./prop-hand-palette-state.svelte";
    import { computePropRotation } from "./prop3d-transforms";
 +  import { getPlateMaterials, PLATE_TRAIL_GEOMETRY } from "./plate-materials";
 +  import { propFinishState } from "../../state/prop-finish-state.svelte";
@@ -3751,7 +3752,7 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..16426cf4a056edb4fa4c633632c324d0
  
    let {
      propState,
-@@ -33,156 +62,124 @@
+@@ -33,156 +62,125 @@
      thickness,
      isActivePlayer = false,
      scale = 1,
@@ -3902,11 +3903,12 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..16426cf4a056edb4fa4c633632c324d0
 +    forEachMaterial(scene, "TKA_Fan_Day_Frame", (material) => {
 +      material.color?.set(DAY_FRAME_COLORS[build.fanFrameColor]);
 +    });
++    const handMain = reactivePropHandPalette(color).main;
 +    forEachMaterial(scene, "TKA_Fan_Cover_Solid_Recolor", (material) => {
-+      material.color?.set(PROP_COLORS[color].main);
++      material.color?.set(handMain);
 +    });
 +    forEachMaterial(scene, "TKA_Fan_Moon_Frame", (material) => {
-+      material.color?.set(PROP_COLORS[color].main);
++      material.color?.set(handMain);
 +    });
 +  });
  </script>
@@ -4020,10 +4022,49 @@ diff --git a/dist/lib/components/props/Fan3D.svelte.d.ts.map b/dist/lib/componen
 deleted file mode 100644
 index cf1c0579171cb7ee0dfd0cb6e9e64a3c7aac8660..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/GltfProp3D.svelte b/dist/lib/components/props/GltfProp3D.svelte
-index 9ed038d07d35b4d5d340c578e100415154ac1178..2048adf7ec318ffb9501f56a7e507503390b6999 100644
+index 9ed038d07d..cfbdde6e30 100644
 --- a/dist/lib/components/props/GltfProp3D.svelte
 +++ b/dist/lib/components/props/GltfProp3D.svelte
-@@ -68,17 +68,29 @@
+@@ -13,6 +13,7 @@
+   import { useGltf } from "@threlte/extras";
+   import { untrack } from "svelte";
+   import { recolorPropModel } from "./prop-model-recolor";
++  import { reactivePropHandPaletteVersion } from "./prop-hand-palette-state.svelte";
+   import { computePropRotation } from "./prop3d-transforms";
+   import { userProportionsState } from "../../state/user-proportions-state.svelte";
+   import {
+@@ -44,6 +45,7 @@
+   // We need a fresh clone for each color to avoid shared material mutation.
+   let coloredScene = $state<Object3D | null>(null);
+   let lastColor = $state<string>("");
++  let lastPaletteVersion = -1;
+ 
+   $effect(() => {
+     const loaded = $gltf;
+@@ -52,8 +54,13 @@
+       return;
+     }
+ 
+-    // Re-clone whenever the color changes
+-    if (props.color !== lastColor || !coloredScene) {
++    // Re-clone whenever the hand or the app's hand palette changes
++    const paletteVersion = reactivePropHandPaletteVersion();
++    if (
++      props.color !== lastColor ||
++      paletteVersion !== lastPaletteVersion ||
++      !coloredScene
++    ) {
+       const clone = loaded.scene.clone(true);
+       recolorPropModel(clone, props.color);
+       // Enable shadow casting on all prop meshes
+@@ -62,23 +69,36 @@
+       });
+       coloredScene = clone;
+       lastColor = props.color;
++      lastPaletteVersion = paletteVersion;
+     }
+   });
+ 
    // Rotation only - position is handled by the parent PerformerRig scene graph
    const rotation = $derived(computePropRotation(props.propState));
  
@@ -5622,245 +5663,207 @@ index 0000000000000000000000000000000000000000..5abfbe088d175d0a66a1213ac8931ef7
 +}
 diff --git a/dist/lib/components/props/frame-materials.js b/dist/lib/components/props/frame-materials.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..19bae60371108ca32a8941f5d133fffc899d3762
+index 0000000000..2f993ae985
 --- /dev/null
 +++ b/dist/lib/components/props/frame-materials.js
-@@ -0,0 +1,235 @@
-+/**
-+ * Assembled-prop finish
-+ *
-+ * Props that are built rather than cut — a hub with spines and wicks, a torch —
-+ * are made of several real materials at once, and the finish has to say which
-+ * is which: kevlar reads dry and matte, a steel spine reads hard and bright, a
-+ * printed hub reads soft and matte, a glow head reads lit from inside.
-+ *
-+ * Two builds of the same prop, matching what people actually own:
-+ *
-+ *   fire  — steel frame, bare spines, unburnt kevlar wicks, a chrome finger
-+ *           ring. Colour lives on the spines, which is the only part long
-+ *           enough to tell blue from red across a dark stage.
-+ *   day   — a printed hub with a fat finger ring, textured grip tube, and
-+ *           translucent heads. The heads glow in the prop's colour, because an
-+ *           LED practice prop does exactly that and it doubles as identity.
-+ *
-+ * Metalness stays low on the big coloured parts for the same reason as
-+ * `plate-materials.ts`: a metal's diffuse response is black, so in these dark
-+ * scenes a metallic body goes muddy while the staffs beside it stay saturated.
-+ * Real metal is reserved for the small steel bits, where it belongs.
-+ */
-+import { Color, MeshBasicMaterial, MeshPhysicalMaterial, MeshStandardMaterial, } from "three";
+@@ -0,0 +1,197 @@
++import {
++  Color,
++  MeshBasicMaterial,
++  MeshPhysicalMaterial,
++  MeshStandardMaterial
++} from "three";
 +import { HOOP_TUBE_DIAMETER_M } from "./hoop-geometry";
-+const PALETTES = {
-+    blue: { main: "#3b82f6", dark: "#1d4ed8" },
-+    red: { main: "#ef4444", dark: "#b91c1c" },
-+};
-+/**
-+ * Unburnt kevlar, a pale sand — not the black of a used wick. Measured off the
-+ * wick in `torch.svg`, which is the one piece of prop artwork that draws the
-+ * material in colour rather than as a pictograph silhouette.
-+ */
++import { paintWithPropHand } from "./prop-hand-paint";
++import { propHandPalette } from "./prop-hand-palette";
 +const KEVLAR = "#f6e5b6";
-+/** Polished spine steel. */
 +const STEEL = "#c8ced8";
-+/** The near-black of a moulded sleeve. */
 +const SLEEVE = "#26262a";
-+const materialSets = new Map();
-+export function getFrameMaterials(color, variant) {
-+    const key = `${color}:${variant}`;
-+    const cached = materialSets.get(key);
-+    if (cached)
-+        return cached;
-+    const palette = PALETTES[color];
-+    const fire = variant === "fire";
-+    const materials = {
-+        spine: new MeshPhysicalMaterial({
-+            color: palette.main,
-+            // A bare fire spine is hard and bright; a day grip is wrapped in
-+            // textured tube, which kills the highlight almost completely.
-+            roughness: fire ? 0.24 : 0.62,
-+            metalness: fire ? 0.18 : 0.04,
-+            clearcoat: fire ? 0.8 : 0,
-+            clearcoatRoughness: 0.14,
-+        }),
-+        hub: new MeshStandardMaterial({
-+            color: fire ? STEEL : palette.dark,
-+            roughness: fire ? 0.28 : 0.58,
-+            metalness: fire ? 0.62 : 0.05,
-+        }),
-+        ring: new MeshStandardMaterial({
-+            color: fire ? STEEL : palette.dark,
-+            roughness: fire ? 0.2 : 0.58,
-+            metalness: fire ? 0.7 : 0.05,
-+        }),
-+        collar: new MeshStandardMaterial({
-+            color: SLEEVE,
-+            roughness: 0.78,
-+            metalness: 0.05,
-+        }),
-+        tip: fire
-+            ? new MeshStandardMaterial({
-+                color: KEVLAR,
-+                roughness: 0.95,
-+                metalness: 0,
-+            })
-+            : new MeshStandardMaterial({
-+                color: "#f7f7fa",
-+                roughness: 0.46,
-+                metalness: 0,
-+                emissive: new Color(palette.main),
-+                emissiveIntensity: 0.55,
-+            }),
-+        trail: new MeshBasicMaterial({
-+            color: palette.main,
-+            opacity: 0.3,
-+            transparent: true,
-+        }),
-+    };
-+    materialSets.set(key, materials);
-+    return materials;
++const materialSets = /* @__PURE__ */ new Map();
++function getFrameMaterials(color, variant) {
++  const key = `${color}:${variant}`;
++  const cached = materialSets.get(key);
++  if (cached) return cached;
++  const palette = propHandPalette(color);
++  const fire = variant === "fire";
++  const materials = {
++    spine: new MeshPhysicalMaterial({
++      color: palette.main,
++      // A bare fire spine is hard and bright; a day grip is wrapped in
++      // textured tube, which kills the highlight almost completely.
++      roughness: fire ? 0.24 : 0.62,
++      metalness: fire ? 0.18 : 0.04,
++      clearcoat: fire ? 0.8 : 0,
++      clearcoatRoughness: 0.14
++    }),
++    hub: new MeshStandardMaterial({
++      color: fire ? STEEL : palette.dark,
++      roughness: fire ? 0.28 : 0.58,
++      metalness: fire ? 0.62 : 0.05
++    }),
++    ring: new MeshStandardMaterial({
++      color: fire ? STEEL : palette.dark,
++      roughness: fire ? 0.2 : 0.58,
++      metalness: fire ? 0.7 : 0.05
++    }),
++    collar: new MeshStandardMaterial({
++      color: SLEEVE,
++      roughness: 0.78,
++      metalness: 0.05
++    }),
++    tip: fire ? new MeshStandardMaterial({
++      color: KEVLAR,
++      roughness: 0.95,
++      metalness: 0
++    }) : new MeshStandardMaterial({
++      color: "#f7f7fa",
++      roughness: 0.46,
++      metalness: 0,
++      emissive: new Color(palette.main),
++      emissiveIntensity: 0.55
++    }),
++    trail: new MeshBasicMaterial({
++      color: palette.main,
++      opacity: 0.3,
++      transparent: true
++    })
++  };
++  paintWithPropHand(materials.spine, color);
++  paintWithPropHand(materials.trail, color);
++  if (!fire) {
++    paintWithPropHand(materials.hub, color, "dark");
++    paintWithPropHand(materials.ring, color, "dark");
++    paintWithPropHand(materials.tip, color, "main", "emissive");
++  }
++  materialSets.set(key, materials);
++  return materials;
 +}
-+const torchSets = new Map();
-+/**
-+ * A torch is one build, not two: the fire and practice versions of this prop
-+ * are the same object with a different wick, so there is no `variant` here.
-+ */
-+export function getTorchMaterials(color) {
-+    const cached = torchSets.get(color);
-+    if (cached)
-+        return cached;
-+    const palette = PALETTES[color];
-+    const materials = {
-+        hardware: new MeshStandardMaterial({
-+            color: "#e6e8ec",
-+            roughness: 0.3,
-+            metalness: 0.45,
-+        }),
-+        grip: new MeshStandardMaterial({
-+            color: "#231f20",
-+            // Grip tape and knurling: no highlight at all, or it reads as plastic.
-+            roughness: 0.86,
-+            metalness: 0.03,
-+        }),
-+        flare: new MeshPhysicalMaterial({
-+            color: palette.main,
-+            // The real cone is anodized or moulded acrylic under a gloss coat, and
-+            // the clearcoat is what separates it from the matte grip below it.
-+            roughness: 0.26,
-+            metalness: 0.08,
-+            clearcoat: 0.85,
-+            clearcoatRoughness: 0.12,
-+        }),
-+        shaft: new MeshStandardMaterial({
-+            color: "#b9bec6",
-+            roughness: 0.22,
-+            metalness: 0.72,
-+        }),
-+        wick: new MeshStandardMaterial({
-+            color: KEVLAR,
-+            roughness: 0.95,
-+            metalness: 0,
-+        }),
-+        trail: new MeshBasicMaterial({
-+            color: palette.main,
-+            opacity: 0.3,
-+            transparent: true,
-+        }),
-+    };
-+    torchSets.set(color, materials);
-+    return materials;
++const torchSets = /* @__PURE__ */ new Map();
++function getTorchMaterials(color) {
++  const cached = torchSets.get(color);
++  if (cached) return cached;
++  const palette = propHandPalette(color);
++  const materials = {
++    hardware: new MeshStandardMaterial({
++      color: "#e6e8ec",
++      roughness: 0.3,
++      metalness: 0.45
++    }),
++    grip: new MeshStandardMaterial({
++      color: "#231f20",
++      // Grip tape and knurling: no highlight at all, or it reads as plastic.
++      roughness: 0.86,
++      metalness: 0.03
++    }),
++    flare: new MeshPhysicalMaterial({
++      color: palette.main,
++      // The real cone is anodized or moulded acrylic under a gloss coat, and
++      // the clearcoat is what separates it from the matte grip below it.
++      roughness: 0.26,
++      metalness: 0.08,
++      clearcoat: 0.85,
++      clearcoatRoughness: 0.12
++    }),
++    shaft: new MeshStandardMaterial({
++      color: "#b9bec6",
++      roughness: 0.22,
++      metalness: 0.72
++    }),
++    wick: new MeshStandardMaterial({
++      color: KEVLAR,
++      roughness: 0.95,
++      metalness: 0
++    }),
++    trail: new MeshBasicMaterial({
++      color: palette.main,
++      opacity: 0.3,
++      transparent: true
++    })
++  };
++  paintWithPropHand(materials.flare, color);
++  paintWithPropHand(materials.trail, color);
++  torchSets.set(color, materials);
++  return materials;
 +}
-+const clubSets = new Map();
-+/**
-+ * A club is one turned body whose colour changes along its length, so unlike
-+ * the frame props there is no `variant` here: every build people own — moulded,
-+ * LED, practice — shares this material split and differs only in the body.
-+ */
-+export function getClubMaterials(color) {
-+    const cached = clubSets.get(color);
-+    if (cached)
-+        return cached;
-+    const palette = PALETTES[color];
-+    const materials = {
-+        knob: new MeshStandardMaterial({
-+            color: "#1b1b1e",
-+            // Moulded rubber, so it keeps a little sheen the tape ring does not.
-+            roughness: 0.72,
-+            metalness: 0.02,
-+        }),
-+        handle: new MeshStandardMaterial({
-+            color: "#eceef1",
-+            roughness: 0.55,
-+            metalness: 0.02,
-+        }),
-+        marker: new MeshStandardMaterial({
-+            color: "#141416",
-+            // Vinyl tape: flatter than the knob, and it should read as a decal.
-+            roughness: 0.88,
-+            metalness: 0.02,
-+        }),
-+        body: new MeshPhysicalMaterial({
-+            color: palette.main,
-+            // Blow-moulded polyethylene under a gloss skin. Same reasoning as the
-+            // torch's flare: the clearcoat is what separates it from the matte
-+            // handle it sits against.
-+            roughness: 0.3,
-+            metalness: 0.06,
-+            clearcoat: 0.7,
-+            clearcoatRoughness: 0.18,
-+        }),
-+        trail: new MeshBasicMaterial({
-+            color: palette.main,
-+            opacity: 0.3,
-+            transparent: true,
-+        }),
-+    };
-+    clubSets.set(color, materials);
-+    return materials;
++const clubSets = /* @__PURE__ */ new Map();
++function getClubMaterials(color) {
++  const cached = clubSets.get(color);
++  if (cached) return cached;
++  const palette = propHandPalette(color);
++  const materials = {
++    knob: new MeshStandardMaterial({
++      color: "#1b1b1e",
++      // Moulded rubber, so it keeps a little sheen the tape ring does not.
++      roughness: 0.72,
++      metalness: 0.02
++    }),
++    handle: new MeshStandardMaterial({
++      color: "#eceef1",
++      roughness: 0.55,
++      metalness: 0.02
++    }),
++    marker: new MeshStandardMaterial({
++      color: "#141416",
++      // Vinyl tape: flatter than the knob, and it should read as a decal.
++      roughness: 0.88,
++      metalness: 0.02
++    }),
++    body: new MeshPhysicalMaterial({
++      color: palette.main,
++      // Blow-moulded polyethylene under a gloss skin. Same reasoning as the
++      // torch's flare: the clearcoat is what separates it from the matte
++      // handle it sits against.
++      roughness: 0.3,
++      metalness: 0.06,
++      clearcoat: 0.7,
++      clearcoatRoughness: 0.18
++    }),
++    trail: new MeshBasicMaterial({
++      color: palette.main,
++      opacity: 0.3,
++      transparent: true
++    })
++  };
++  paintWithPropHand(materials.body, color);
++  paintWithPropHand(materials.trail, color);
++  clubSets.set(color, materials);
++  return materials;
 +}
-+const hoopSets = new Map();
-+/**
-+ * A mini hoop is a single extrusion of coloured HDPE bent into a circle, so it
-+ * gets ONE material — there is no band structure to describe the way a club's
-+ * knob, handle and body need one. Vendors do sell grips (sanded inside, an inner
-+ * line, spiral tape), but those are options on an otherwise uniform ring and the
-+ * stock product photos show the ring bare.
-+ *
-+ * The finish comes off those photos: a bright, tight specular line runs the whole
-+ * inner curve of the tube with the body colour reading through underneath, which
-+ * is a glossy translucent plastic and not a painted one. Hence a low roughness
-+ * with clearcoat on top, and `transmission` low but non-zero so the tube picks up
-+ * a little light through itself instead of going flat where it turns away.
-+ *
-+ * Metalness stays near zero for the same reason as the rest of this module: a
-+ * metal's diffuse response is black, and these are dark scenes.
-+ */
-+export function getHoopMaterials(color) {
-+    const cached = hoopSets.get(color);
-+    if (cached)
-+        return cached;
-+    const palette = PALETTES[color];
-+    const materials = {
-+        tube: new MeshPhysicalMaterial({
-+            color: palette.main,
-+            roughness: 0.22,
-+            metalness: 0.02,
-+            clearcoat: 0.85,
-+            clearcoatRoughness: 0.1,
-+            // Extruded HDPE is not clear, but it is not opaque either — the photos
-+            // show the colour lifting where the tube thins toward its silhouette.
-+            transmission: 0.12,
-+            thickness: HOOP_TUBE_DIAMETER_M,
-+            ior: 1.5,
-+        }),
-+        trail: new MeshBasicMaterial({
-+            color: palette.main,
-+            opacity: 0.3,
-+            transparent: true,
-+        }),
-+    };
-+    hoopSets.set(color, materials);
-+    return materials;
++const hoopSets = /* @__PURE__ */ new Map();
++function getHoopMaterials(color) {
++  const cached = hoopSets.get(color);
++  if (cached) return cached;
++  const palette = propHandPalette(color);
++  const materials = {
++    tube: new MeshPhysicalMaterial({
++      color: palette.main,
++      roughness: 0.22,
++      metalness: 0.02,
++      clearcoat: 0.85,
++      clearcoatRoughness: 0.1,
++      // Extruded HDPE is not clear, but it is not opaque either — the photos
++      // show the colour lifting where the tube thins toward its silhouette.
++      transmission: 0.12,
++      thickness: HOOP_TUBE_DIAMETER_M,
++      ior: 1.5
++    }),
++    trail: new MeshBasicMaterial({
++      color: palette.main,
++      opacity: 0.3,
++      transparent: true
++    })
++  };
++  paintWithPropHand(materials.tube, color);
++  paintWithPropHand(materials.trail, color);
++  hoopSets.set(color, materials);
++  return materials;
 +}
++export {
++  getClubMaterials,
++  getFrameMaterials,
++  getHoopMaterials,
++  getTorchMaterials
++};
 diff --git a/dist/lib/components/props/geng-profile.js b/dist/lib/components/props/geng-profile.js
 new file mode 100644
 index 0000000000000000000000000000000000000000..e22eff0c745fb150ec9e194b6722a5a95c7fd0bb
@@ -6183,67 +6186,73 @@ index 0000000000000000000000000000000000000000..286ab745e01e31fdbe6d2b0eb06693f2
 +}
 diff --git a/dist/lib/components/props/plate-materials.js b/dist/lib/components/props/plate-materials.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..04c333769c76c253057d83d6e99a8b5da539a49a
+index 0000000000..8e6bdb8a0c
 --- /dev/null
 +++ b/dist/lib/components/props/plate-materials.js
-@@ -0,0 +1,57 @@
-+/**
-+ * Flat-prop finish
-+ *
-+ * Every plate prop wears the same finish, so they read as one family of objects
-+ * cut from the same stock. Shared and cached per colour: the meshes differ, the
-+ * material does not.
-+ */
-+import { Color, MeshBasicMaterial, MeshPhysicalMaterial, MeshStandardMaterial, SphereGeometry, } from "three";
-+const PALETTES = {
-+    blue: { main: "#3b82f6", dark: "#1d4ed8" },
-+    red: { main: "#ef4444", dark: "#b91c1c" },
-+};
-+const materialSets = new Map();
-+export function getPlateMaterials(color) {
-+    const cached = materialSets.get(color);
-+    if (cached)
-+        return cached;
-+    const palette = PALETTES[color];
-+    const materials = {
-+        // Faces read as polished anodized plate: a clearcoat lobe on top of the
-+        // base specular keeps a crisp highlight travelling across the prop as it
-+        // turns, which is what sells the shape in motion.
-+        //
-+        // Metalness stays low on purpose. A metal's diffuse response is black — it
-+        // can only show what the environment reflects — and these scenes run dark
-+        // with few lights, so a metallic plate goes muddy while the staffs beside
-+        // it stay saturated. Keep the base dielectric like Staff3D and let the
-+        // clearcoat carry the shine.
-+        face: new MeshPhysicalMaterial({
-+            color: palette.main,
-+            roughness: 0.26,
-+            metalness: 0.12,
-+            clearcoat: 0.7,
-+            clearcoatRoughness: 0.16,
-+        }),
-+        // The rim tells the eye this is solid plate rather than a sticker, so it
-+        // sits clearly below the face — but only part way to the palette's dark
-+        // endpoint. On a ribbon this narrow the rim covers a lot of the silhouette
-+        // whenever the plate tilts, and the full dark red turns the whole prop
-+        // murky while the same treatment in blue barely shows. Meeting the face 60%
-+        // of the way down keeps both colours reading as themselves.
-+        edge: new MeshStandardMaterial({
-+            color: new Color(palette.main).lerp(new Color(palette.dark), 0.6),
-+            roughness: 0.42,
-+            metalness: 0.1,
-+        }),
-+        trail: new MeshBasicMaterial({
-+            color: palette.main,
-+            opacity: 0.3,
-+            transparent: true,
-+        }),
-+    };
-+    materialSets.set(color, materials);
-+    return materials;
+@@ -0,0 +1,63 @@
++import {
++  Color,
++  MeshBasicMaterial,
++  MeshPhysicalMaterial,
++  MeshStandardMaterial,
++  SphereGeometry
++} from "three";
++import { paintWithPropHand } from "./prop-hand-paint";
++import { propHandPalette } from "./prop-hand-palette";
++const materialSets = /* @__PURE__ */ new Map();
++function getPlateMaterials(color) {
++  const cached = materialSets.get(color);
++  if (cached) return cached;
++  const palette = propHandPalette(color);
++  const materials = {
++    // Faces read as polished anodized plate: a clearcoat lobe on top of the
++    // base specular keeps a crisp highlight travelling across the prop as it
++    // turns, which is what sells the shape in motion.
++    //
++    // Metalness stays low on purpose. A metal's diffuse response is black — it
++    // can only show what the environment reflects — and these scenes run dark
++    // with few lights, so a metallic plate goes muddy while the staffs beside
++    // it stay saturated. Keep the base dielectric like Staff3D and let the
++    // clearcoat carry the shine.
++    face: new MeshPhysicalMaterial({
++      color: palette.main,
++      roughness: 0.26,
++      metalness: 0.12,
++      clearcoat: 0.7,
++      clearcoatRoughness: 0.16
++    }),
++    // The rim tells the eye this is solid plate rather than a sticker, so it
++    // sits clearly below the face — but only part way to the palette's dark
++    // endpoint. On a ribbon this narrow the rim covers a lot of the silhouette
++    // whenever the plate tilts, and the full dark red turns the whole prop
++    // murky while the same treatment in blue barely shows. Meeting the face 60%
++    // of the way down keeps both colours reading as themselves.
++    edge: new MeshStandardMaterial({
++      color: new Color(palette.main).lerp(new Color(palette.dark), 0.6),
++      roughness: 0.42,
++      metalness: 0.1
++    }),
++    trail: new MeshBasicMaterial({
++      color: palette.main,
++      opacity: 0.3,
++      transparent: true
++    })
++  };
++  paintWithPropHand(materials.face, color);
++  paintWithPropHand(
++    materials.edge,
++    color,
++    (hand) => new Color(hand.main).lerp(new Color(hand.dark), 0.6)
++  );
++  paintWithPropHand(materials.trail, color);
++  materialSets.set(color, materials);
++  return materials;
 +}
-+/** Shared marker geometry for the trail indicator. */
-+export const PLATE_TRAIL_GEOMETRY = new SphereGeometry(0.015, 8, 8);
++const PLATE_TRAIL_GEOMETRY = new SphereGeometry(0.015, 8, 8);
++export {
++  PLATE_TRAIL_GEOMETRY,
++  getPlateMaterials
++};
 diff --git a/dist/lib/components/props/prop-lathe.js b/dist/lib/components/props/prop-lathe.js
 new file mode 100644
 index 0000000000000000000000000000000000000000..c64a9ff1cc0b06fd18785ea4e606b06eb6011b8a
@@ -7461,7 +7470,7 @@ diff --git a/dist/lib/getAngleMathCalculator.d.ts.map b/dist/lib/getAngleMathCal
 deleted file mode 100644
 index 75095405aba26fc2283c5f24258534f8bd8ee21f..0000000000000000000000000000000000000000
 diff --git a/dist/lib/index.d.ts b/dist/lib/index.d.ts
-index b6c16afd12..551749f5cf 100644
+index b6c16afd12..b5cd047ff1 100644
 --- a/dist/lib/index.d.ts
 +++ b/dist/lib/index.d.ts
 @@ -48,13 +48,16 @@ export { PRESET_VALID_COUNTS, createFormationFromPreset, FORMATION_PRESET_INFO }
@@ -7520,9 +7529,14 @@ index b6c16afd12..551749f5cf 100644
  export { LegAnimator } from "./services/implementations/LegAnimator";
  export { solveCylinderGrasp } from "./services/implementations/CylinderGraspSolver";
  export type { GraspResult } from "./services/implementations/CylinderGraspSolver";
-@@ -112,4 +118,4 @@ export { PROP_MODEL_REGISTRY } from "./components/props/prop-model-registry";
+@@ -111,5 +117,9 @@ export { installMocapDebugHooks } from "./debug/mocap-debug";
+ export { PROP_MODEL_REGISTRY } from "./components/props/prop-model-registry";
  export type { Prop3DProps } from "./components/props/Prop3DProps";
  export { PROP_COLORS, METAL_COLORS } from "./components/props/Prop3DProps";
++export { DEFAULT_PROP_HAND_PALETTES, derivePropHandPalette, propHandPalette, propHandPaletteVersion, setPropHandColors, subscribePropHandColors } from "./components/props/prop-hand-palette";
++export type { PropHand, PropHandPalette } from "./components/props/prop-hand-palette";
++export { paintWithPropHand, propHandColor } from "./components/props/prop-hand-paint";
++export { reactivePropHandPalette, reactivePropHandPaletteVersion } from "./components/props/prop-hand-palette-state.svelte";
  export { STAFF_GRIP_POSES } from "./data/grip-poses/staff-grip-poses";
 -//# sourceMappingURL=index.d.ts.map
 \ No newline at end of file
@@ -7531,7 +7545,7 @@ diff --git a/dist/lib/index.d.ts.map b/dist/lib/index.d.ts.map
 deleted file mode 100644
 index e65326b49a5b788b837220aaf39614a7876831ce..0000000000000000000000000000000000000000
 diff --git a/dist/lib/index.js b/dist/lib/index.js
-index 10260a0233..fa389c19e2 100644
+index 10260a0233..6e9d3623cc 100644
 --- a/dist/lib/index.js
 +++ b/dist/lib/index.js
 @@ -47,9 +47,14 @@ export { SCALE, STAGE, WORLDS } from "./scale/scale-constants";
@@ -7575,8 +7589,13 @@ index 10260a0233..fa389c19e2 100644
  export { LegAnimator } from "./services/implementations/LegAnimator";
  export { solveCylinderGrasp } from "./services/implementations/CylinderGraspSolver";
  export { createPerformerSynchronizer } from "./services/implementations/PerformerSynchronizer";
-@@ -89,3 +99,6 @@ export { PROP_MODEL_REGISTRY } from "./components/props/prop-model-registry";
+@@ -87,5 +97,11 @@ export { installMocapDebugHooks } from "./debug/mocap-debug";
+ // Prop utilities
+ export { PROP_MODEL_REGISTRY } from "./components/props/prop-model-registry";
  export { PROP_COLORS, METAL_COLORS } from "./components/props/Prop3DProps";
++export { DEFAULT_PROP_HAND_PALETTES, derivePropHandPalette, propHandPalette, propHandPaletteVersion, setPropHandColors, subscribePropHandColors } from "./components/props/prop-hand-palette";
++export { paintWithPropHand, propHandColor } from "./components/props/prop-hand-paint";
++export { reactivePropHandPalette, reactivePropHandPaletteVersion } from "./components/props/prop-hand-palette-state.svelte";
  // Data
  export { STAFF_GRIP_POSES } from "./data/grip-poses/staff-grip-poses";
 +// The .d.ts already declares this; the runtime half was missing, which broke
@@ -7611,10 +7630,10 @@ index 0000000000000000000000000000000000000000..67b207b0e66a87be71a2e24fbdaede76
 +export declare function createStaffObject(options: StaffObjectOptions): StaffObject;
 diff --git a/dist/lib/rendering/create-staff-object.js b/dist/lib/rendering/create-staff-object.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..729ccd6c0de315244566ed57ac9e0eba770bfea2
+index 0000000000..9ff2cdad3b
 --- /dev/null
 +++ b/dist/lib/rendering/create-staff-object.js
-@@ -0,0 +1,117 @@
+@@ -0,0 +1,122 @@
 +import {
 +  CylinderGeometry,
 +  Euler,
@@ -7626,6 +7645,8 @@ index 0000000000000000000000000000000000000000..729ccd6c0de315244566ed57ac9e0eba
 +  SphereGeometry,
 +  TorusGeometry
 +} from "three";
++import { paintWithPropHand } from "../components/props/prop-hand-paint";
++import { propHandPalette } from "../components/props/prop-hand-palette";
 +const geometrySets = /* @__PURE__ */ new Map();
 +const materialSets = /* @__PURE__ */ new Map();
 +const trailGeometry = new SphereGeometry(0.015, 8, 8);
@@ -7650,7 +7671,7 @@ index 0000000000000000000000000000000000000000..729ccd6c0de315244566ed57ac9e0eba
 +function getStaffMaterialSet(color) {
 +  const cached = materialSets.get(color);
 +  if (cached) return cached;
-+  const palette = color === "blue" ? { main: "#3b82f6", dark: "#1d4ed8" } : { main: "#ef4444", dark: "#b91c1c" };
++  const palette = propHandPalette(color);
 +  const materials = {
 +    main: new MeshStandardMaterial({
 +      color: palette.main,
@@ -7673,6 +7694,9 @@ index 0000000000000000000000000000000000000000..729ccd6c0de315244566ed57ac9e0eba
 +      transparent: true
 +    })
 +  };
++  paintWithPropHand(materials.main, color);
++  paintWithPropHand(materials.dark, color, "dark");
++  paintWithPropHand(materials.trail, color);
 +  materialSets.set(color, materials);
 +  return materials;
 +}
@@ -18228,10 +18252,10 @@ deleted file mode 100644
 index a8fd5a41c1434bf568841daf28c8443ba1515e65..0000000000000000000000000000000000000000
 diff --git a/dist/worker.d.ts b/dist/worker.d.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..310726f1cbb2603cd52a54f37a549c6d57aba7c8
+index 0000000000..533ef6d662
 --- /dev/null
 +++ b/dist/worker.d.ts
-@@ -0,0 +1,19 @@
+@@ -0,0 +1,22 @@
 +export { getAvatarModelPath } from "./lib/config/avatar-definitions";
 +export { cmToUnits } from "./lib/config/avatar-proportions";
 +export { GRID_OFFSETS, PLANE_MODE_CONFIGS } from "./lib/domain/constants/plane-mode-configs";
@@ -18240,6 +18264,9 @@ index 0000000000000000000000000000000000000000..310726f1cbb2603cd52a54f37a549c6d
 +export { PropType } from "./lib/domain/enums/PropType";
 +export { GripType } from "./lib/domain/models/GripPose";
 +export { PROP_COLORS } from "./lib/components/props/Prop3DProps";
++export { DEFAULT_PROP_HAND_PALETTES, derivePropHandPalette, propHandPalette, propHandPaletteVersion, setPropHandColors, subscribePropHandColors } from "./lib/components/props/prop-hand-palette";
++export { paintWithPropHand, propHandColor } from "./lib/components/props/prop-hand-paint";
++export type { PropHand, PropHandPalette } from "./lib/components/props/prop-hand-palette";
 +export { PRESET_VALID_COUNTS, createFormationFromPreset } from "./lib/config/formation-presets";
 +export { STAGE } from "./lib/scale/scale-constants";
 +export { SeatedAudienceLoader, seatedAudienceLoader } from "./lib/services/implementations/SeatedAudienceLoader";
@@ -18253,10 +18280,10 @@ index 0000000000000000000000000000000000000000..310726f1cbb2603cd52a54f37a549c6d
 +export type { AvatarServices } from "./lib/services/implementations/AvatarServicesFactory";
 diff --git a/dist/worker.js b/dist/worker.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..8ddd87dd426b6d9fb1e41ce13b0ae9791f8e173a
+index 0000000000..05151322fc
 --- /dev/null
 +++ b/dist/worker.js
-@@ -0,0 +1,13 @@
+@@ -0,0 +1,15 @@
 +export { getAvatarModelPath } from "./lib/config/avatar-definitions";
 +export { cmToUnits } from "./lib/config/avatar-proportions";
 +export { GRID_OFFSETS, PLANE_MODE_CONFIGS } from "./lib/domain/constants/plane-mode-configs";
@@ -18265,19 +18292,25 @@ index 0000000000000000000000000000000000000000..8ddd87dd426b6d9fb1e41ce13b0ae979
 +export { PropType } from "./lib/domain/enums/PropType";
 +export { GripType } from "./lib/domain/models/GripPose";
 +export { PROP_COLORS } from "./lib/components/props/Prop3DProps";
++export { DEFAULT_PROP_HAND_PALETTES, derivePropHandPalette, propHandPalette, propHandPaletteVersion, setPropHandColors, subscribePropHandColors } from "./lib/components/props/prop-hand-palette";
++export { paintWithPropHand, propHandColor } from "./lib/components/props/prop-hand-paint";
 +export { PRESET_VALID_COUNTS, createFormationFromPreset } from "./lib/config/formation-presets";
 +export { STAGE } from "./lib/scale/scale-constants";
 +export { SeatedAudienceLoader, seatedAudienceLoader } from "./lib/services/implementations/SeatedAudienceLoader";
 +export { createStaffObject } from "./lib/rendering/create-staff-object";
 +export { createAvatarServices } from "./lib/services/implementations/AvatarServicesFactory";
 diff --git a/package.json b/package.json
-index 525808ca7068a828865a64e176f7bbd641ccc013..ff0ffc3ad65cb6c617fb582992f392fa0a447971 100644
+index 525808ca70..c7749e7724 100644
 --- a/package.json
 +++ b/package.json
-@@ -15,6 +15,11 @@
+@@ -15,6 +15,15 @@
      "./state": {
        "svelte": "./src/lib/state/user-proportions-state.svelte.ts",
        "import": "./dist/state/user-proportions-state.svelte.js"
++    },
++    "./prop-hand-palette": {
++      "svelte": "./src/lib/components/props/prop-hand-palette.ts",
++      "import": "./dist/lib/components/props/prop-hand-palette.js"
 +    },
 +    "./worker": {
 +      "types": "./dist/worker.d.ts",
@@ -21667,7 +21700,7 @@ index 12a776e2dc4cc4cf8f484afde470d094690a6dc0..e99e626aef531d417e49111acc3fed41
 +  />
  {/if}
 diff --git a/src/lib/components/props/Fan3D.svelte b/src/lib/components/props/Fan3D.svelte
-index dc635e752d11561cb585cbaaffa05b1e525d31e8..16426cf4a056edb4fa4c633632c324d0f24b0404 100644
+index dc635e752d..8e83233d5b 100644
 --- a/src/lib/components/props/Fan3D.svelte
 +++ b/src/lib/components/props/Fan3D.svelte
 @@ -1,29 +1,58 @@
@@ -21718,7 +21751,8 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..16426cf4a056edb4fa4c633632c324d0
 +  import { useGltf } from "@threlte/extras";
 +  import type { Material, Mesh, MeshStandardMaterial, Object3D } from "three";
    import type { Prop3DProps } from "./Prop3DProps";
-   import { PROP_COLORS } from "./Prop3DProps";
+-  import { PROP_COLORS } from "./Prop3DProps";
++  import { reactivePropHandPalette } from "./prop-hand-palette-state.svelte";
    import { computePropRotation } from "./prop3d-transforms";
 +  import { getPlateMaterials, PLATE_TRAIL_GEOMETRY } from "./plate-materials";
 +  import { propFinishState } from "../../state/prop-finish-state.svelte";
@@ -21744,7 +21778,7 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..16426cf4a056edb4fa4c633632c324d0
  
    let {
      propState,
-@@ -33,156 +62,124 @@
+@@ -33,156 +62,125 @@
      thickness,
      isActivePlayer = false,
      scale = 1,
@@ -21895,11 +21929,12 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..16426cf4a056edb4fa4c633632c324d0
 +    forEachMaterial(scene, "TKA_Fan_Day_Frame", (material) => {
 +      material.color?.set(DAY_FRAME_COLORS[build.fanFrameColor]);
 +    });
++    const handMain = reactivePropHandPalette(color).main;
 +    forEachMaterial(scene, "TKA_Fan_Cover_Solid_Recolor", (material) => {
-+      material.color?.set(PROP_COLORS[color].main);
++      material.color?.set(handMain);
 +    });
 +    forEachMaterial(scene, "TKA_Fan_Moon_Frame", (material) => {
-+      material.color?.set(PROP_COLORS[color].main);
++      material.color?.set(handMain);
 +    });
 +  });
  </script>
@@ -22007,10 +22042,49 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..16426cf4a056edb4fa4c633632c324d0
 +  />
  {/if}
 diff --git a/src/lib/components/props/GltfProp3D.svelte b/src/lib/components/props/GltfProp3D.svelte
-index 9ed038d07d35b4d5d340c578e100415154ac1178..2048adf7ec318ffb9501f56a7e507503390b6999 100644
+index 9ed038d07d..cfbdde6e30 100644
 --- a/src/lib/components/props/GltfProp3D.svelte
 +++ b/src/lib/components/props/GltfProp3D.svelte
-@@ -68,17 +68,29 @@
+@@ -13,6 +13,7 @@
+   import { useGltf } from "@threlte/extras";
+   import { untrack } from "svelte";
+   import { recolorPropModel } from "./prop-model-recolor";
++  import { reactivePropHandPaletteVersion } from "./prop-hand-palette-state.svelte";
+   import { computePropRotation } from "./prop3d-transforms";
+   import { userProportionsState } from "../../state/user-proportions-state.svelte";
+   import {
+@@ -44,6 +45,7 @@
+   // We need a fresh clone for each color to avoid shared material mutation.
+   let coloredScene = $state<Object3D | null>(null);
+   let lastColor = $state<string>("");
++  let lastPaletteVersion = -1;
+ 
+   $effect(() => {
+     const loaded = $gltf;
+@@ -52,8 +54,13 @@
+       return;
+     }
+ 
+-    // Re-clone whenever the color changes
+-    if (props.color !== lastColor || !coloredScene) {
++    // Re-clone whenever the hand or the app's hand palette changes
++    const paletteVersion = reactivePropHandPaletteVersion();
++    if (
++      props.color !== lastColor ||
++      paletteVersion !== lastPaletteVersion ||
++      !coloredScene
++    ) {
+       const clone = loaded.scene.clone(true);
+       recolorPropModel(clone, props.color);
+       // Enable shadow casting on all prop meshes
+@@ -62,23 +69,36 @@
+       });
+       coloredScene = clone;
+       lastColor = props.color;
++      lastPaletteVersion = paletteVersion;
+     }
+   });
+ 
    // Rotation only - position is handled by the parent PerformerRig scene graph
    const rotation = $derived(computePropRotation(props.propState));
  
@@ -22325,18 +22399,19 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..430d531bb26bd6616f2084155bfb60c8
    {:else if propType === PropType.TORCH}
      <Torch3D {propState} {color} {visible} {isActivePlayer} {length} />
 diff --git a/src/lib/components/props/Prop3DProps.ts b/src/lib/components/props/Prop3DProps.ts
-index a31ce7d182d1d2b7f4be226346abc023e5ed7254..1ebc15149950e4e71bfbb689b889328452b73cde 100644
+index a31ce7d182..9d000a6400 100644
 --- a/src/lib/components/props/Prop3DProps.ts
 +++ b/src/lib/components/props/Prop3DProps.ts
-@@ -7,6 +7,7 @@
+@@ -7,6 +7,8 @@
   */
  
  import type { PropState3D } from "../../domain/models/PropState3D";
 +import type { PropBuild } from "../../state/prop-finish-state.svelte";
++import { PROP_HAND_PALETTES } from "./prop-hand-palette";
  
  export interface Prop3DProps {
    /** Prop state with position and rotation */
-@@ -29,6 +30,8 @@ export interface Prop3DProps {
+@@ -29,13 +31,15 @@ export interface Prop3DProps {
    isActivePlayer?: boolean;
    /** Scale multiplier for "big" variants (default: 1) */
    scale?: number;
@@ -22344,7 +22419,19 @@ index a31ce7d182d1d2b7f4be226346abc023e5ed7254..1ebc15149950e4e71bfbb689b8893284
 +  build?: PropBuild;
  }
  
- /** Standard color palettes matching the 2D prop colors */
+-/** Standard color palettes matching the 2D prop colors */
+-export const PROP_COLORS = {
+-  blue: { main: "#3b82f6", dark: "#1d4ed8", light: "#60a5fa" },
+-  red: { main: "#ef4444", dark: "#b91c1c", light: "#f87171" },
+-} as const;
++/**
++ * The live hand palettes. Read an entry when painting rather than holding it:
++ * the host app repaints the hands with `setPropHandColors`.
++ */
++export const PROP_COLORS = PROP_HAND_PALETTES;
+ 
+ /** Metallic material palette (for swords, etc.) */
+ export const METAL_COLORS = {
 diff --git a/src/lib/components/props/Torch3D.svelte b/src/lib/components/props/Torch3D.svelte
 index dd84811c1cc9986fb72430bd3e94e3233da61684..9c5934551096a8124821406d3ea0e3a008bdee91 100644
 --- a/src/lib/components/props/Torch3D.svelte
@@ -23638,10 +23725,10 @@ index 0000000000000000000000000000000000000000..0da37239a8053b7b14d4224987f64838
 +}
 diff --git a/src/lib/components/props/frame-materials.ts b/src/lib/components/props/frame-materials.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..7b254520dfe4f142d276bd7ed4d6643449ed1788
+index 0000000000..aec7a8c9c9
 --- /dev/null
 +++ b/src/lib/components/props/frame-materials.ts
-@@ -0,0 +1,321 @@
+@@ -0,0 +1,336 @@
 +/**
 + * Assembled-prop finish
 + *
@@ -23672,6 +23759,8 @@ index 0000000000000000000000000000000000000000..7b254520dfe4f142d276bd7ed4d66434
 +  MeshStandardMaterial,
 +} from "three";
 +import { HOOP_TUBE_DIAMETER_M } from "./hoop-geometry";
++import { paintWithPropHand } from "./prop-hand-paint";
++import { propHandPalette } from "./prop-hand-palette";
 +
 +export type FrameVariant = "fire" | "day";
 +
@@ -23689,11 +23778,6 @@ index 0000000000000000000000000000000000000000..7b254520dfe4f142d276bd7ed4d66434
 +  /** Path-visualization marker at the prop's position. */
 +  readonly trail: MeshBasicMaterial;
 +}
-+
-+const PALETTES = {
-+  blue: { main: "#3b82f6", dark: "#1d4ed8" },
-+  red: { main: "#ef4444", dark: "#b91c1c" },
-+} as const;
 +
 +/**
 + * Unburnt kevlar, a pale sand — not the black of a used wick. Measured off the
@@ -23716,7 +23800,7 @@ index 0000000000000000000000000000000000000000..7b254520dfe4f142d276bd7ed4d66434
 +  const cached = materialSets.get(key);
 +  if (cached) return cached;
 +
-+  const palette = PALETTES[color];
++  const palette = propHandPalette(color);
 +  const fire = variant === "fire";
 +
 +  const materials: FrameMaterialSet = {
@@ -23764,6 +23848,15 @@ index 0000000000000000000000000000000000000000..7b254520dfe4f142d276bd7ed4d66434
 +    }),
 +  };
 +
++  // The cache outlives any one hand color; keep the colored parts painted.
++  paintWithPropHand(materials.spine, color);
++  paintWithPropHand(materials.trail, color);
++  if (!fire) {
++    paintWithPropHand(materials.hub, color, "dark");
++    paintWithPropHand(materials.ring, color, "dark");
++    paintWithPropHand(materials.tip, color, "main", "emissive");
++  }
++
 +  materialSets.set(key, materials);
 +  return materials;
 +}
@@ -23796,7 +23889,7 @@ index 0000000000000000000000000000000000000000..7b254520dfe4f142d276bd7ed4d66434
 +  const cached = torchSets.get(color);
 +  if (cached) return cached;
 +
-+  const palette = PALETTES[color];
++  const palette = propHandPalette(color);
 +
 +  const materials: TorchMaterialSet = {
 +    hardware: new MeshStandardMaterial({
@@ -23836,6 +23929,9 @@ index 0000000000000000000000000000000000000000..7b254520dfe4f142d276bd7ed4d66434
 +    }),
 +  };
 +
++  paintWithPropHand(materials.flare, color);
++  paintWithPropHand(materials.trail, color);
++
 +  torchSets.set(color, materials);
 +  return materials;
 +}
@@ -23868,7 +23964,7 @@ index 0000000000000000000000000000000000000000..7b254520dfe4f142d276bd7ed4d66434
 +  const cached = clubSets.get(color);
 +  if (cached) return cached;
 +
-+  const palette = PALETTES[color];
++  const palette = propHandPalette(color);
 +
 +  const materials: ClubMaterialSet = {
 +    knob: new MeshStandardMaterial({
@@ -23905,6 +24001,9 @@ index 0000000000000000000000000000000000000000..7b254520dfe4f142d276bd7ed4d66434
 +    }),
 +  };
 +
++  paintWithPropHand(materials.body, color);
++  paintWithPropHand(materials.trail, color);
++
 +  clubSets.set(color, materials);
 +  return materials;
 +}
@@ -23938,7 +24037,7 @@ index 0000000000000000000000000000000000000000..7b254520dfe4f142d276bd7ed4d66434
 +  const cached = hoopSets.get(color);
 +  if (cached) return cached;
 +
-+  const palette = PALETTES[color];
++  const palette = propHandPalette(color);
 +
 +  const materials: HoopMaterialSet = {
 +    tube: new MeshPhysicalMaterial({
@@ -23959,6 +24058,9 @@ index 0000000000000000000000000000000000000000..7b254520dfe4f142d276bd7ed4d66434
 +      transparent: true,
 +    }),
 +  };
++
++  paintWithPropHand(materials.tube, color);
++  paintWithPropHand(materials.trail, color);
 +
 +  hoopSets.set(color, materials);
 +  return materials;
@@ -24328,10 +24430,10 @@ index 0000000000000000000000000000000000000000..3b093299f8fd46afc2d5e303492b3c15
 +}
 diff --git a/src/lib/components/props/plate-materials.ts b/src/lib/components/props/plate-materials.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..f3f717d6d8a7efdc77f9883984bb7f89aacdb388
+index 0000000000..3b87db752c
 --- /dev/null
 +++ b/src/lib/components/props/plate-materials.ts
-@@ -0,0 +1,77 @@
+@@ -0,0 +1,79 @@
 +/**
 + * Flat-prop finish
 + *
@@ -24347,6 +24449,8 @@ index 0000000000000000000000000000000000000000..f3f717d6d8a7efdc77f9883984bb7f89
 +  MeshStandardMaterial,
 +  SphereGeometry,
 +} from "three";
++import { paintWithPropHand } from "./prop-hand-paint";
++import { propHandPalette } from "./prop-hand-palette";
 +
 +export interface PlateMaterialSet {
 +  /** The two flat faces (extrusion group 0). */
@@ -24357,18 +24461,13 @@ index 0000000000000000000000000000000000000000..f3f717d6d8a7efdc77f9883984bb7f89
 +  readonly trail: MeshBasicMaterial;
 +}
 +
-+const PALETTES = {
-+  blue: { main: "#3b82f6", dark: "#1d4ed8" },
-+  red: { main: "#ef4444", dark: "#b91c1c" },
-+} as const;
-+
 +const materialSets = new Map<"blue" | "red", PlateMaterialSet>();
 +
 +export function getPlateMaterials(color: "blue" | "red"): PlateMaterialSet {
 +  const cached = materialSets.get(color);
 +  if (cached) return cached;
 +
-+  const palette = PALETTES[color];
++  const palette = propHandPalette(color);
 +  const materials: PlateMaterialSet = {
 +    // Faces read as polished anodized plate: a clearcoat lobe on top of the
 +    // base specular keeps a crisp highlight travelling across the prop as it
@@ -24403,6 +24502,11 @@ index 0000000000000000000000000000000000000000..f3f717d6d8a7efdc77f9883984bb7f89
 +      transparent: true,
 +    }),
 +  };
++  paintWithPropHand(materials.face, color);
++  paintWithPropHand(materials.edge, color, (hand) =>
++    new Color(hand.main).lerp(new Color(hand.dark), 0.6)
++  );
++  paintWithPropHand(materials.trail, color);
 +  materialSets.set(color, materials);
 +  return materials;
 +}
@@ -25765,7 +25869,7 @@ index a6a29aa9b928eb98fc102f572da1ed2035c658ba..08994c5b2a1f5816db497d58a030af04
  	BIGTORCH = "bigtorch",
  	POI = "poi",
 diff --git a/src/lib/index.ts b/src/lib/index.ts
-index 68c4a74d3b..4764c7f17c 100644
+index 68c4a74d3b..65039a4a5e 100644
 --- a/src/lib/index.ts
 +++ b/src/lib/index.ts
 @@ -71,6 +71,16 @@ export { LAYER_WORLD, LAYER_PLAYER_BODY, LAYER_VIEWMODEL, getCameraLayers, shoul
@@ -25888,7 +25992,30 @@ index 68c4a74d3b..4764c7f17c 100644
  export { LegAnimator } from "./services/implementations/LegAnimator";
  export { solveCylinderGrasp } from "./services/implementations/CylinderGraspSolver";
  export type { GraspResult } from "./services/implementations/CylinderGraspSolver";
-@@ -151,3 +217,7 @@ export { PROP_COLORS, METAL_COLORS } from "./components/props/Prop3DProps";
+@@ -148,6 +214,30 @@ export { PROP_MODEL_REGISTRY } from "./components/props/prop-model-registry";
+ // Prop types
+ export type { Prop3DProps } from "./components/props/Prop3DProps";
+ export { PROP_COLORS, METAL_COLORS } from "./components/props/Prop3DProps";
++export {
++  DEFAULT_PROP_HAND_PALETTES,
++  derivePropHandPalette,
++  propHandPalette,
++  propHandPaletteVersion,
++  setPropHandColors,
++  subscribePropHandColors,
++} from "./components/props/prop-hand-palette";
++export type {
++  PropHand,
++  PropHandPalette,
++} from "./components/props/prop-hand-palette";
++export {
++  paintWithPropHand,
++  propHandColor,
++} from "./components/props/prop-hand-paint";
++export {
++  reactivePropHandPalette,
++  reactivePropHandPaletteVersion,
++} from "./components/props/prop-hand-palette-state.svelte";
  
  // Data
  export { STAFF_GRIP_POSES } from "./data/grip-poses/staff-grip-poses";
@@ -25898,10 +26025,10 @@ index 68c4a74d3b..4764c7f17c 100644
 +export { prepareSharedGltf, prepareAvatarForDisplay } from "./services/shared-gltf-cache";
 diff --git a/src/lib/rendering/create-staff-object.ts b/src/lib/rendering/create-staff-object.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..ecfaca907a475b4d454e2352e63601da4dfa3a97
+index 0000000000..c6c8f61d24
 --- /dev/null
 +++ b/src/lib/rendering/create-staff-object.ts
-@@ -0,0 +1,181 @@
+@@ -0,0 +1,184 @@
 +import {
 +  CylinderGeometry,
 +  Euler,
@@ -25914,6 +26041,8 @@ index 0000000000000000000000000000000000000000..ecfaca907a475b4d454e2352e63601da
 +  TorusGeometry,
 +} from "three";
 +import type { PropState3D } from "../domain/models/PropState3D";
++import { paintWithPropHand } from "../components/props/prop-hand-paint";
++import { propHandPalette } from "../components/props/prop-hand-palette";
 +
 +interface StaffGeometrySet {
 +  shaft: CylinderGeometry;
@@ -25974,10 +26103,7 @@ index 0000000000000000000000000000000000000000..ecfaca907a475b4d454e2352e63601da
 +  const cached = materialSets.get(color);
 +  if (cached) return cached;
 +
-+  const palette =
-+    color === "blue"
-+      ? { main: "#3b82f6", dark: "#1d4ed8" }
-+      : { main: "#ef4444", dark: "#b91c1c" };
++  const palette = propHandPalette(color);
 +  const materials = {
 +    main: new MeshStandardMaterial({
 +      color: palette.main,
@@ -26000,6 +26126,10 @@ index 0000000000000000000000000000000000000000..ecfaca907a475b4d454e2352e63601da
 +      transparent: true,
 +    }),
 +  };
++  // Shared by every staff of this hand, so it follows the hand color in place.
++  paintWithPropHand(materials.main, color);
++  paintWithPropHand(materials.dark, color, "dark");
++  paintWithPropHand(materials.trail, color);
 +  materialSets.set(color, materials);
 +  return materials;
 +}
@@ -39232,10 +39362,10 @@ index 0000000000000000000000000000000000000000..2d8771aef15544bee0353f1f88f76736
 +}
 diff --git a/src/worker.ts b/src/worker.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..108dfc81b254b53496d83fb551b0aea1c1f64a0d
+index 0000000000..1c85721a30
 --- /dev/null
 +++ b/src/worker.ts
-@@ -0,0 +1,32 @@
+@@ -0,0 +1,48 @@
 +export { getAvatarModelPath } from "./lib/config/avatar-definitions";
 +export { cmToUnits } from "./lib/config/avatar-proportions";
 +export {
@@ -39247,6 +39377,22 @@ index 0000000000000000000000000000000000000000..108dfc81b254b53496d83fb551b0aea1
 +export { PropType } from "./lib/domain/enums/PropType";
 +export { GripType } from "./lib/domain/models/GripPose";
 +export { PROP_COLORS } from "./lib/components/props/Prop3DProps";
++export {
++  DEFAULT_PROP_HAND_PALETTES,
++  derivePropHandPalette,
++  propHandPalette,
++  propHandPaletteVersion,
++  setPropHandColors,
++  subscribePropHandColors,
++} from "./lib/components/props/prop-hand-palette";
++export type {
++  PropHand,
++  PropHandPalette,
++} from "./lib/components/props/prop-hand-palette";
++export {
++  paintWithPropHand,
++  propHandColor,
++} from "./lib/components/props/prop-hand-paint";
 +export {
 +  PRESET_VALID_COUNTS,
 +  createFormationFromPreset,
@@ -39288,3 +39434,673 @@ index 059e119199..09ff76fe43 100644
  
    /** Whether initialize() has been called with valid finger chains. */
    isReady(): boolean;
+diff --git a/dist/lib/components/props/Ball3D.svelte b/dist/lib/components/props/Ball3D.svelte
+index e9f884d02b..57f99ad936 100644
+--- a/dist/lib/components/props/Ball3D.svelte
++++ b/dist/lib/components/props/Ball3D.svelte
+@@ -11,7 +11,7 @@
+ 
+   import { T } from "@threlte/core";
+   import type { Prop3DProps } from "./Prop3DProps";
+-  import { PROP_COLORS } from "./Prop3DProps";
++  import { reactivePropHandPalette } from "./prop-hand-palette-state.svelte";
+   import { computePropRotation } from "./prop3d-transforms";
+   import { userProportionsState } from "../../state/user-proportions-state.svelte";
+   import {
+@@ -30,7 +30,7 @@
+   }: Prop3DProps = $props();
+ 
+   const propLayer = $derived(isActivePlayer ? LAYER_PLAYER_BODY : LAYER_WORLD);
+-  const palette = $derived(PROP_COLORS[color]);
++  const palette = $derived(reactivePropHandPalette(color));
+ 
+   const staffRadius = $derived(
+     thickness
+diff --git a/dist/lib/components/props/Chicken3D.svelte b/dist/lib/components/props/Chicken3D.svelte
+index d8d33e5d4a..81c9db47e7 100644
+--- a/dist/lib/components/props/Chicken3D.svelte
++++ b/dist/lib/components/props/Chicken3D.svelte
+@@ -14,7 +14,7 @@
+ 
+   import { T } from "@threlte/core";
+   import type { Prop3DProps } from "./Prop3DProps";
+-  import { PROP_COLORS } from "./Prop3DProps";
++  import { reactivePropHandPalette } from "./prop-hand-palette-state.svelte";
+   import { computePropRotation } from "./prop3d-transforms";
+   import { userProportionsState } from "../../state/user-proportions-state.svelte";
+   import {
+@@ -48,7 +48,7 @@
+       scale
+   );
+ 
+-  const palette = $derived(PROP_COLORS[color]);
++  const palette = $derived(reactivePropHandPalette(color));
+ 
+   const rotation = $derived(computePropRotation(propState));
+ 
+diff --git a/dist/lib/components/props/Guitar3D.svelte b/dist/lib/components/props/Guitar3D.svelte
+index 5dc4004b59..28e8ebf3ce 100644
+--- a/dist/lib/components/props/Guitar3D.svelte
++++ b/dist/lib/components/props/Guitar3D.svelte
+@@ -16,7 +16,7 @@
+ 
+   import { T } from "@threlte/core";
+   import type { Prop3DProps } from "./Prop3DProps";
+-  import { PROP_COLORS } from "./Prop3DProps";
++  import { reactivePropHandPalette } from "./prop-hand-palette-state.svelte";
+   import { computePropRotation } from "./prop3d-transforms";
+   import { userProportionsState } from "../../state/user-proportions-state.svelte";
+   import {
+@@ -43,7 +43,7 @@
+     (thickness ?? userProportionsState.dimensions.staffRadius) * scale
+   );
+ 
+-  const palette = $derived(PROP_COLORS[color]);
++  const palette = $derived(reactivePropHandPalette(color));
+ 
+   const rotation = $derived(computePropRotation(propState));
+ 
+diff --git a/dist/lib/components/props/Poi3D.svelte b/dist/lib/components/props/Poi3D.svelte
+index 8a455aeebd..7cb29372ae 100644
+--- a/dist/lib/components/props/Poi3D.svelte
++++ b/dist/lib/components/props/Poi3D.svelte
+@@ -16,7 +16,7 @@
+ 
+   import { T } from "@threlte/core";
+   import type { Prop3DProps } from "./Prop3DProps";
+-  import { PROP_COLORS } from "./Prop3DProps";
++  import { reactivePropHandPalette } from "./prop-hand-palette-state.svelte";
+   import { computePropRotation } from "./prop3d-transforms";
+   import { userProportionsState } from "../../state/user-proportions-state.svelte";
+   import {
+@@ -46,7 +46,7 @@
+     (thickness ?? userProportionsState.dimensions.staffRadius) * scale
+   );
+ 
+-  const palette = $derived(PROP_COLORS[color]);
++  const palette = $derived(reactivePropHandPalette(color));
+ 
+   const rotation = $derived(computePropRotation(propState));
+ 
+diff --git a/dist/lib/components/props/Prop3DProps.js b/dist/lib/components/props/Prop3DProps.js
+index 36215e345e..6e3f369ece 100644
+--- a/dist/lib/components/props/Prop3DProps.js
++++ b/dist/lib/components/props/Prop3DProps.js
+@@ -1,18 +1,11 @@
+-/**
+- * Shared props interface for all 3D prop components.
+- *
+- * Every prop (Staff3D, Club3D, Fan3D, etc.) receives the same set of
+- * positioning/visibility props. The only thing that changes between
+- * prop types is the geometry rendered inside the group.
+- */
+-/** Standard color palettes matching the 2D prop colors */
+-export const PROP_COLORS = {
+-    blue: { main: "#3b82f6", dark: "#1d4ed8", light: "#60a5fa" },
+-    red: { main: "#ef4444", dark: "#b91c1c", light: "#f87171" },
++import { PROP_HAND_PALETTES } from "./prop-hand-palette";
++const PROP_COLORS = PROP_HAND_PALETTES;
++const METAL_COLORS = {
++  blade: "#c0c0c0",
++  guard: "#ffd540",
++  grip: "#8B4513"
+ };
+-/** Metallic material palette (for swords, etc.) */
+-export const METAL_COLORS = {
+-    blade: "#c0c0c0",
+-    guard: "#ffd540",
+-    grip: "#8B4513",
++export {
++  METAL_COLORS,
++  PROP_COLORS
+ };
+diff --git a/dist/lib/components/props/Sword3D.svelte b/dist/lib/components/props/Sword3D.svelte
+index 144b8c19a4..c05304d264 100644
+--- a/dist/lib/components/props/Sword3D.svelte
++++ b/dist/lib/components/props/Sword3D.svelte
+@@ -11,7 +11,8 @@
+ 
+   import { T } from "@threlte/core";
+   import type { Prop3DProps } from "./Prop3DProps";
+-  import { PROP_COLORS, METAL_COLORS } from "./Prop3DProps";
++  import { METAL_COLORS } from "./Prop3DProps";
++  import { reactivePropHandPalette } from "./prop-hand-palette-state.svelte";
+   import { computePropRotation } from "./prop3d-transforms";
+   import { userProportionsState } from "../../state/user-proportions-state.svelte";
+   import {
+@@ -30,7 +31,7 @@
+   }: Prop3DProps = $props();
+ 
+   const propLayer = $derived(isActivePlayer ? LAYER_PLAYER_BODY : LAYER_WORLD);
+-  const palette = $derived(PROP_COLORS[color]);
++  const palette = $derived(reactivePropHandPalette(color));
+ 
+   const staffLength = $derived(length ?? userProportionsState.staffLength);
+   const staffRadius = $derived(
+diff --git a/dist/lib/components/props/prop-hand-paint.js b/dist/lib/components/props/prop-hand-paint.js
+new file mode 100644
+index 0000000000..d084a75803
+--- /dev/null
++++ b/dist/lib/components/props/prop-hand-paint.js
+@@ -0,0 +1,30 @@
++import { Color } from "three";
++import {
++  propHandPalette,
++  subscribePropHandColors
++} from "./prop-hand-palette";
++const bindings = [];
++function resolvePaint(hand, paint) {
++  const palette = propHandPalette(hand);
++  return typeof paint === "function" ? paint(palette) : palette[paint];
++}
++function apply(binding) {
++  const target = binding.material[binding.channel];
++  target?.set(resolvePaint(binding.hand, binding.paint));
++}
++subscribePropHandColors(() => {
++  for (const binding of bindings) apply(binding);
++});
++function paintWithPropHand(material, hand, paint = "main", channel = "color") {
++  const binding = { material, hand, paint, channel };
++  bindings.push(binding);
++  apply(binding);
++  return material;
++}
++function propHandColor(hand, paint = "main") {
++  return new Color(resolvePaint(hand, paint));
++}
++export {
++  paintWithPropHand,
++  propHandColor
++};
+diff --git a/dist/lib/components/props/prop-hand-palette-state.svelte.js b/dist/lib/components/props/prop-hand-palette-state.svelte.js
+new file mode 100644
+index 0000000000..5c4a4736dd
+--- /dev/null
++++ b/dist/lib/components/props/prop-hand-palette-state.svelte.js
+@@ -0,0 +1,20 @@
++import {
++  propHandPalette,
++  propHandPaletteVersion,
++  subscribePropHandColors
++} from "./prop-hand-palette";
++const state = $state({ version: propHandPaletteVersion() });
++subscribePropHandColors(() => {
++  state.version = propHandPaletteVersion();
++});
++function reactivePropHandPalette(hand) {
++  void state.version;
++  return propHandPalette(hand);
++}
++function reactivePropHandPaletteVersion() {
++  return state.version;
++}
++export {
++  reactivePropHandPalette,
++  reactivePropHandPaletteVersion
++};
+diff --git a/dist/lib/components/props/prop-hand-palette.js b/dist/lib/components/props/prop-hand-palette.js
+new file mode 100644
+index 0000000000..ea2b5c7f1d
+--- /dev/null
++++ b/dist/lib/components/props/prop-hand-palette.js
+@@ -0,0 +1,90 @@
++const DEFAULT_PROP_HAND_PALETTES = {
++  blue: { main: "#3b82f6", dark: "#1d4ed8", light: "#60a5fa" },
++  red: { main: "#ef4444", dark: "#b91c1c", light: "#f87171" }
++};
++const PROP_HAND_PALETTES = {
++  ...DEFAULT_PROP_HAND_PALETTES
++};
++const listeners = /* @__PURE__ */ new Set();
++let version = 0;
++function propHandPalette(hand) {
++  return PROP_HAND_PALETTES[hand];
++}
++function propHandPaletteVersion() {
++  return version;
++}
++function normalizeHex(value) {
++  if (typeof value !== "string") return null;
++  const hex = value.trim().toLowerCase();
++  if (/^#[0-9a-f]{6}$/.test(hex)) return hex;
++  if (/^#[0-9a-f]{3}$/.test(hex)) {
++    return `#${[...hex.slice(1)].map((c) => c + c).join("")}`;
++  }
++  return null;
++}
++function hexToHsl(hex) {
++  const [r, g, b] = [1, 3, 5].map(
++    (start) => parseInt(hex.slice(start, start + 2), 16) / 255
++  );
++  const max = Math.max(r, g, b);
++  const min = Math.min(r, g, b);
++  const l = (max + min) / 2;
++  if (max === min) return [0, 0, l];
++  const d = max - min;
++  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
++  const h = max === r ? ((g - b) / d + (g < b ? 6 : 0)) / 6 : max === g ? ((b - r) / d + 2) / 6 : ((r - g) / d + 4) / 6;
++  return [h, s, l];
++}
++function hslToHex(h, s, l) {
++  const hue = (p2, q2, t) => {
++    const u = t < 0 ? t + 1 : t > 1 ? t - 1 : t;
++    if (u < 1 / 6) return p2 + (q2 - p2) * 6 * u;
++    if (u < 1 / 2) return q2;
++    if (u < 2 / 3) return p2 + (q2 - p2) * (2 / 3 - u) * 6;
++    return p2;
++  };
++  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
++  const p = 2 * l - q;
++  const channels = s === 0 ? [l, l, l] : [h + 1 / 3, h, h - 1 / 3].map((t) => hue(p, q, t));
++  return `#${channels.map(
++    (v) => Math.round(Math.min(1, Math.max(0, v)) * 255).toString(16).padStart(2, "0")
++  ).join("")}`;
++}
++function derivePropHandPalette(color) {
++  const main = normalizeHex(color) ?? DEFAULT_PROP_HAND_PALETTES.blue.main;
++  const [h, s, l] = hexToHsl(main);
++  return {
++    main,
++    dark: hslToHex(h, s, l * 0.72),
++    light: hslToHex(h, s, l + (1 - l) * 0.28)
++  };
++}
++function setPropHandColors(colors) {
++  let changed = false;
++  for (const hand of ["blue", "red"]) {
++    const hex = normalizeHex(colors[hand]);
++    const next = hex ? derivePropHandPalette(hex) : DEFAULT_PROP_HAND_PALETTES[hand];
++    const current = PROP_HAND_PALETTES[hand];
++    if (current.main === next.main && current.dark === next.dark && current.light === next.light) {
++      continue;
++    }
++    PROP_HAND_PALETTES[hand] = next;
++    changed = true;
++  }
++  if (!changed) return;
++  version += 1;
++  for (const listener of listeners) listener();
++}
++function subscribePropHandColors(listener) {
++  listeners.add(listener);
++  return () => listeners.delete(listener);
++}
++export {
++  DEFAULT_PROP_HAND_PALETTES,
++  PROP_HAND_PALETTES,
++  derivePropHandPalette,
++  propHandPalette,
++  propHandPaletteVersion,
++  setPropHandColors,
++  subscribePropHandColors
++};
+diff --git a/src/lib/components/props/Ball3D.svelte b/src/lib/components/props/Ball3D.svelte
+index e9f884d02b..57f99ad936 100644
+--- a/src/lib/components/props/Ball3D.svelte
++++ b/src/lib/components/props/Ball3D.svelte
+@@ -11,7 +11,7 @@
+ 
+   import { T } from "@threlte/core";
+   import type { Prop3DProps } from "./Prop3DProps";
+-  import { PROP_COLORS } from "./Prop3DProps";
++  import { reactivePropHandPalette } from "./prop-hand-palette-state.svelte";
+   import { computePropRotation } from "./prop3d-transforms";
+   import { userProportionsState } from "../../state/user-proportions-state.svelte";
+   import {
+@@ -30,7 +30,7 @@
+   }: Prop3DProps = $props();
+ 
+   const propLayer = $derived(isActivePlayer ? LAYER_PLAYER_BODY : LAYER_WORLD);
+-  const palette = $derived(PROP_COLORS[color]);
++  const palette = $derived(reactivePropHandPalette(color));
+ 
+   const staffRadius = $derived(
+     thickness
+diff --git a/src/lib/components/props/Chicken3D.svelte b/src/lib/components/props/Chicken3D.svelte
+index d8d33e5d4a..81c9db47e7 100644
+--- a/src/lib/components/props/Chicken3D.svelte
++++ b/src/lib/components/props/Chicken3D.svelte
+@@ -14,7 +14,7 @@
+ 
+   import { T } from "@threlte/core";
+   import type { Prop3DProps } from "./Prop3DProps";
+-  import { PROP_COLORS } from "./Prop3DProps";
++  import { reactivePropHandPalette } from "./prop-hand-palette-state.svelte";
+   import { computePropRotation } from "./prop3d-transforms";
+   import { userProportionsState } from "../../state/user-proportions-state.svelte";
+   import {
+@@ -48,7 +48,7 @@
+       scale
+   );
+ 
+-  const palette = $derived(PROP_COLORS[color]);
++  const palette = $derived(reactivePropHandPalette(color));
+ 
+   const rotation = $derived(computePropRotation(propState));
+ 
+diff --git a/src/lib/components/props/Guitar3D.svelte b/src/lib/components/props/Guitar3D.svelte
+index 5dc4004b59..28e8ebf3ce 100644
+--- a/src/lib/components/props/Guitar3D.svelte
++++ b/src/lib/components/props/Guitar3D.svelte
+@@ -16,7 +16,7 @@
+ 
+   import { T } from "@threlte/core";
+   import type { Prop3DProps } from "./Prop3DProps";
+-  import { PROP_COLORS } from "./Prop3DProps";
++  import { reactivePropHandPalette } from "./prop-hand-palette-state.svelte";
+   import { computePropRotation } from "./prop3d-transforms";
+   import { userProportionsState } from "../../state/user-proportions-state.svelte";
+   import {
+@@ -43,7 +43,7 @@
+     (thickness ?? userProportionsState.dimensions.staffRadius) * scale
+   );
+ 
+-  const palette = $derived(PROP_COLORS[color]);
++  const palette = $derived(reactivePropHandPalette(color));
+ 
+   const rotation = $derived(computePropRotation(propState));
+ 
+diff --git a/src/lib/components/props/Poi3D.svelte b/src/lib/components/props/Poi3D.svelte
+index 8a455aeebd..7cb29372ae 100644
+--- a/src/lib/components/props/Poi3D.svelte
++++ b/src/lib/components/props/Poi3D.svelte
+@@ -16,7 +16,7 @@
+ 
+   import { T } from "@threlte/core";
+   import type { Prop3DProps } from "./Prop3DProps";
+-  import { PROP_COLORS } from "./Prop3DProps";
++  import { reactivePropHandPalette } from "./prop-hand-palette-state.svelte";
+   import { computePropRotation } from "./prop3d-transforms";
+   import { userProportionsState } from "../../state/user-proportions-state.svelte";
+   import {
+@@ -46,7 +46,7 @@
+     (thickness ?? userProportionsState.dimensions.staffRadius) * scale
+   );
+ 
+-  const palette = $derived(PROP_COLORS[color]);
++  const palette = $derived(reactivePropHandPalette(color));
+ 
+   const rotation = $derived(computePropRotation(propState));
+ 
+diff --git a/src/lib/components/props/Sword3D.svelte b/src/lib/components/props/Sword3D.svelte
+index 144b8c19a4..c05304d264 100644
+--- a/src/lib/components/props/Sword3D.svelte
++++ b/src/lib/components/props/Sword3D.svelte
+@@ -11,7 +11,8 @@
+ 
+   import { T } from "@threlte/core";
+   import type { Prop3DProps } from "./Prop3DProps";
+-  import { PROP_COLORS, METAL_COLORS } from "./Prop3DProps";
++  import { METAL_COLORS } from "./Prop3DProps";
++  import { reactivePropHandPalette } from "./prop-hand-palette-state.svelte";
+   import { computePropRotation } from "./prop3d-transforms";
+   import { userProportionsState } from "../../state/user-proportions-state.svelte";
+   import {
+@@ -30,7 +31,7 @@
+   }: Prop3DProps = $props();
+ 
+   const propLayer = $derived(isActivePlayer ? LAYER_PLAYER_BODY : LAYER_WORLD);
+-  const palette = $derived(PROP_COLORS[color]);
++  const palette = $derived(reactivePropHandPalette(color));
+ 
+   const staffLength = $derived(length ?? userProportionsState.staffLength);
+   const staffRadius = $derived(
+diff --git a/src/lib/components/props/prop-hand-paint.ts b/src/lib/components/props/prop-hand-paint.ts
+new file mode 100644
+index 0000000000..a8772bf4d1
+--- /dev/null
++++ b/src/lib/components/props/prop-hand-paint.ts
+@@ -0,0 +1,73 @@
++/**
++ * Hand paint for module-cached prop materials.
++ *
++ * The staff, frame, plate, club and torch material sets are built once per
++ * hand and shared by every performer, so a new hand color has to reach the
++ * existing materials rather than a rebuild. Each material registers the part
++ * of the palette it wears; a palette change repaints them in place.
++ */
++
++import { Color, type ColorRepresentation } from "three";
++import {
++  propHandPalette,
++  subscribePropHandColors,
++  type PropHand,
++  type PropHandPalette,
++} from "./prop-hand-palette";
++
++/** A palette entry, or a mix of entries such as a rim between main and dark. */
++export type PropHandPaint =
++  | keyof PropHandPalette
++  | ((palette: PropHandPalette) => ColorRepresentation);
++
++interface HandPaintedMaterial {
++  color?: Color;
++  emissive?: Color;
++}
++
++interface Binding {
++  material: HandPaintedMaterial;
++  hand: PropHand;
++  paint: PropHandPaint;
++  channel: "color" | "emissive";
++}
++
++const bindings: Binding[] = [];
++
++function resolvePaint(hand: PropHand, paint: PropHandPaint): ColorRepresentation {
++  const palette = propHandPalette(hand);
++  return typeof paint === "function" ? paint(palette) : palette[paint];
++}
++
++function apply(binding: Binding): void {
++  const target = binding.material[binding.channel];
++  target?.set(resolvePaint(binding.hand, binding.paint));
++}
++
++subscribePropHandColors(() => {
++  for (const binding of bindings) apply(binding);
++});
++
++/**
++ * Paint `material` in its hand's current color and keep it painted. Use only
++ * for materials that live as long as the module cache; per-instance clones
++ * should recolor on `propHandPaletteVersion()` instead.
++ */
++export function paintWithPropHand<M extends HandPaintedMaterial>(
++  material: M,
++  hand: PropHand,
++  paint: PropHandPaint = "main",
++  channel: "color" | "emissive" = "color"
++): M {
++  const binding: Binding = { material, hand, paint, channel };
++  bindings.push(binding);
++  apply(binding);
++  return material;
++}
++
++export function propHandColor(
++  hand: PropHand,
++  paint: PropHandPaint = "main"
++): Color {
++  return new Color(resolvePaint(hand, paint));
++}
+diff --git a/src/lib/components/props/prop-hand-palette-state.svelte.ts b/src/lib/components/props/prop-hand-palette-state.svelte.ts
+new file mode 100644
+index 0000000000..cc390b69b1
+--- /dev/null
++++ b/src/lib/components/props/prop-hand-palette-state.svelte.ts
+@@ -0,0 +1,27 @@
++/**
++ * Svelte view of the hand palettes. Reading `reactivePropHandPalette` inside a
++ * `$derived` or `$effect` re-runs it when the host app repaints the hands.
++ */
++
++import {
++  propHandPalette,
++  propHandPaletteVersion,
++  subscribePropHandColors,
++  type PropHand,
++  type PropHandPalette,
++} from "./prop-hand-palette";
++
++const state = $state({ version: propHandPaletteVersion() });
++
++subscribePropHandColors(() => {
++  state.version = propHandPaletteVersion();
++});
++
++export function reactivePropHandPalette(hand: PropHand): PropHandPalette {
++  void state.version;
++  return propHandPalette(hand);
++}
++
++export function reactivePropHandPaletteVersion(): number {
++  return state.version;
++}
+diff --git a/src/lib/components/props/prop-hand-palette.ts b/src/lib/components/props/prop-hand-palette.ts
+new file mode 100644
+index 0000000000..b19ee4aca8
+--- /dev/null
++++ b/src/lib/components/props/prop-hand-palette.ts
+@@ -0,0 +1,140 @@
++/**
++ * The two hand colors every prop is painted in.
++ *
++ * Props keep "blue" and "red" as their hand identity, but the paint behind
++ * those names belongs to the host app: it pushes the user's chosen left and
++ * right colors in with `setPropHandColors`, and every material and component
++ * that reads a hand palette follows. This module has no three.js dependency so
++ * an app shell can set the colors without loading the renderer.
++ */
++
++export type PropHand = "blue" | "red";
++
++export interface PropHandPalette {
++  readonly main: string;
++  readonly dark: string;
++  readonly light: string;
++}
++
++/** The palettes props were authored against, used until the host sets colors. */
++export const DEFAULT_PROP_HAND_PALETTES: Readonly<
++  Record<PropHand, PropHandPalette>
++> = {
++  blue: { main: "#3b82f6", dark: "#1d4ed8", light: "#60a5fa" },
++  red: { main: "#ef4444", dark: "#b91c1c", light: "#f87171" },
++};
++
++/** Live palettes. Entries are replaced, never mutated, so identity marks a change. */
++export const PROP_HAND_PALETTES: Record<PropHand, PropHandPalette> = {
++  ...DEFAULT_PROP_HAND_PALETTES,
++};
++
++const listeners = new Set<() => void>();
++let version = 0;
++
++export function propHandPalette(hand: PropHand): PropHandPalette {
++  return PROP_HAND_PALETTES[hand];
++}
++
++/** Bumped on every palette change; lets caches and effects key on it. */
++export function propHandPaletteVersion(): number {
++  return version;
++}
++
++function normalizeHex(value: string | null | undefined): string | null {
++  if (typeof value !== "string") return null;
++  const hex = value.trim().toLowerCase();
++  if (/^#[0-9a-f]{6}$/.test(hex)) return hex;
++  if (/^#[0-9a-f]{3}$/.test(hex)) {
++    return `#${[...hex.slice(1)].map((c) => c + c).join("")}`;
++  }
++  return null;
++}
++
++function hexToHsl(hex: string): [number, number, number] {
++  const [r, g, b] = [1, 3, 5].map(
++    (start) => parseInt(hex.slice(start, start + 2), 16) / 255
++  ) as [number, number, number];
++  const max = Math.max(r, g, b);
++  const min = Math.min(r, g, b);
++  const l = (max + min) / 2;
++  if (max === min) return [0, 0, l];
++  const d = max - min;
++  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
++  const h =
++    max === r
++      ? ((g - b) / d + (g < b ? 6 : 0)) / 6
++      : max === g
++        ? ((b - r) / d + 2) / 6
++        : ((r - g) / d + 4) / 6;
++  return [h, s, l];
++}
++
++function hslToHex(h: number, s: number, l: number): string {
++  const hue = (p: number, q: number, t: number) => {
++    const u = t < 0 ? t + 1 : t > 1 ? t - 1 : t;
++    if (u < 1 / 6) return p + (q - p) * 6 * u;
++    if (u < 1 / 2) return q;
++    if (u < 2 / 3) return p + (q - p) * (2 / 3 - u) * 6;
++    return p;
++  };
++  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
++  const p = 2 * l - q;
++  const channels = s === 0 ? [l, l, l] : [h + 1 / 3, h, h - 1 / 3].map((t) => hue(p, q, t));
++  return `#${channels
++    .map((v) =>
++      Math.round(Math.min(1, Math.max(0, v)) * 255)
++        .toString(16)
++        .padStart(2, "0")
++    )
++    .join("")}`;
++}
++
++/**
++ * The shade and highlight props use beside the main color, placed where the
++ * authored palettes sit relative to theirs (Tailwind 500 to 700 and 400).
++ */
++export function derivePropHandPalette(color: string): PropHandPalette {
++  const main = normalizeHex(color) ?? DEFAULT_PROP_HAND_PALETTES.blue.main;
++  const [h, s, l] = hexToHsl(main);
++  return {
++    main,
++    dark: hslToHex(h, s, l * 0.72),
++    light: hslToHex(h, s, l + (1 - l) * 0.28),
++  };
++}
++
++/**
++ * Paint the hands. A null or invalid color restores that hand's authored
++ * palette. Listeners run only when a palette actually changes.
++ */
++export function setPropHandColors(colors: {
++  blue?: string | null;
++  red?: string | null;
++}): void {
++  let changed = false;
++  for (const hand of ["blue", "red"] as const) {
++    const hex = normalizeHex(colors[hand]);
++    const next = hex
++      ? derivePropHandPalette(hex)
++      : DEFAULT_PROP_HAND_PALETTES[hand];
++    const current = PROP_HAND_PALETTES[hand];
++    if (
++      current.main === next.main &&
++      current.dark === next.dark &&
++      current.light === next.light
++    ) {
++      continue;
++    }
++    PROP_HAND_PALETTES[hand] = next;
++    changed = true;
++  }
++  if (!changed) return;
++  version += 1;
++  for (const listener of listeners) listener();
++}
++
++export function subscribePropHandColors(listener: () => void): () => void {
++  listeners.add(listener);
++  return () => listeners.delete(listener);
++}

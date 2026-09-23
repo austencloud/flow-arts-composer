@@ -20,6 +20,7 @@ import {
   createAvatarServices,
   getAvatarModelPath,
   type AvatarServices,
+  setPropHandColors,
   type PropState3D,
 } from "@austencloud/scene-3d/worker";
 import type {
@@ -297,6 +298,8 @@ export class WorkerPerformer {
       snapshot.propBuild.fanFrameColor ===
         this.snapshot.propBuild.fanFrameColor &&
       snapshot.propBuild.fanCover === this.snapshot.propBuild.fanCover &&
+      snapshot.handColors?.blue === this.snapshot.handColors?.blue &&
+      snapshot.handColors?.red === this.snapshot.handColors?.red &&
       (snapshot.locomotion != null) === (this.snapshot.locomotion != null)
     );
   }
@@ -681,6 +684,9 @@ export class WorkerPerformerStage {
 
   async setSnapshots(next: readonly WorkerPerformerSnapshot[]): Promise<void> {
     if (this.disposed) return;
+    // Hand paint is scene-wide. Set it before any prop is built or rebuilt so
+    // new materials and the shared cached ones agree.
+    if (next[0]) setPropHandColors(next[0].handColors ?? {});
     const byId = new Map(next.map((snapshot) => [snapshot.id, snapshot]));
     this.snapshots = byId;
 
