@@ -3,17 +3,24 @@
 Enumerates every two-hand beat on the trigrid, diamond, pentagrid, skewed
 diamond (one hand on each 4-point family) and skewed pentagrid (one hand on
 each pentagon), groups the beats into classes up to rotation, mirror and
-blue/red swap, and letters each class with the rules proposed in
+blue/red swap, and letters each class with the rules approved in
 docs/superpowers/specs/2026-09-22-multigrid-lettering-design.md.
 
-It then checks those rules against the two shipped dataframes:
+It then checks those rules against the shipped dataframes:
   - DiamondPictographDataframe.csv (every Type 1-3 row)
   - SkewedPictographDataframe.csv, category 3 (the skewed-frame classifier)
+  - TrigridPictographDataframe.csv (every Type 1-2 row)
+
+The app's copy of the rule is
+src/lib/shared/pictograph/lettering/multigrid-lettering.ts, which letters the
+skewed and trigrid dataframes. This script implements the rule separately,
+so when the two agree on a dataframe, each checks the other.
 
 Run from the repository root:
     python scripts/notation/multigrid-lettering-census.py
     python scripts/notation/multigrid-lettering-census.py --classes   # list every class
     python scripts/notation/multigrid-lettering-census.py --catalog   # markdown catalog with sheet cells
+    python scripts/notation/multigrid-lettering-census.py --members   # one beat per class, for the app's test
 
 Research tool only. Nothing in the app imports it.
 """
@@ -192,8 +199,9 @@ def opposite_path(grid: Grid, beat):
 
 
 def opposite_letter_landmark(grid: Grid, beat):
-    """Proposed rule: D E F and J K L only where the hands start or end at a
-    pure placement; otherwise the placement they pass picks M N O or P Q R."""
+    """The landmark rule (approved 2026-09-22, implemented 2026-09-23): D E F
+    and J K L only where the hands start or end at a pure placement; otherwise
+    the placement they pass picks M N O or P Q R."""
     (_, _, bm), (_, _, rm) = beat
     d0, d1 = opposite_path(grid, beat)
     start, end = at_landmark(grid, d0), at_landmark(grid, d1)
@@ -210,9 +218,9 @@ def opposite_letter_landmark(grid: Grid, beat):
 
 
 def opposite_letter_near_far(grid: Grid, beat):
-    """The shipped skewed-frame rule written for any grid: the last pure
-    placement reached after the start, and whether the start spacing is on
-    that placement's side of 90 degrees."""
+    """The skewed-frame rule used until 2026-09-23, written for any grid: the
+    last pure placement reached after the start, and whether the start spacing
+    is on that placement's side of 90 degrees. Kept for comparison."""
     (_, _, bm), (_, _, rm) = beat
     d0, d1 = opposite_path(grid, beat)
     reached = [name for t, name in landmarks(grid, d0, d1) if t > 0]
@@ -474,15 +482,43 @@ def catalog_class(grid: Grid, beat) -> str:
     return text
 
 
+def catalog_rows(grid: Grid):
+    """Every Type 1 to 3 class as (canonical beat, member beat, label), in
+    catalog order. Variants of one letter are numbered by start spacing,
+    narrowest first. The start spacing is read on the class path, so a Type 3
+    class counts its dashing hand where the dash ends."""
+    classes = {}
+    for beat in all_beats(grid):
+        if kind(beat) in KINDS:
+            classes.setdefault(canonical(grid, beat), beat)
+
+    def start_spacing(beat):
+        return spacing_deg(grid, Fraction(catalog_class(grid, beat).split(" ")[0]) / grid.step_deg)
+
+    def order(item):
+        beat = item[1]
+        return (KINDS.index(kind(beat)), ALPHABET.index(letter(grid, beat)), start_spacing(beat))
+
+    rows = sorted(classes.items(), key=order)
+    by_letter = defaultdict(list)
+    for key, beat in rows:
+        by_letter[letter(grid, beat)].append(key)
+    variant = {}
+    for base, keys in by_letter.items():
+        spacings = [start_spacing(classes[k]) for k in keys]
+        assert len(set(spacings)) == len(spacings), (grid.name, base, spacings)
+        for number, key in enumerate(keys, 1):
+            variant[key] = base if len(keys) == 1 else base[0] + str(number) + base[1:]
+    return [(key, beat, variant[key]) for key, beat in rows]
+
+
 def catalog():
     grids = {g.name: g for g in GRIDS}
     distinct = grids["skewed pentagrid, pentagons distinct"]
     for name, (page, cells) in SHEETS.items():
         grid = grids[name]
-        classes = {}
-        for beat in all_beats(grid):
-            if kind(beat) in KINDS:
-                classes.setdefault(canonical(grid, beat), beat)
+        rows = catalog_rows(grid)
+        classes = {key for key, _, _ in rows}
         drawn = defaultdict(list)
         for label, blue, red in cells:
             drawn[canonical(grid, sheet_beat(grid, (blue, red)))].append(label)
@@ -495,36 +531,18 @@ def catalog():
                     seen.add(key)
                     splits[canonical(grid, beat)] += 1
 
-        def start_spacing(beat):
-            return spacing_deg(grid, Fraction(catalog_class(grid, beat).split(" ")[0]) / grid.step_deg)
-
-        def order(item):
-            beat = item[1]
-            return (KINDS.index(kind(beat)), ALPHABET.index(letter(grid, beat)), start_spacing(beat))
-
-        # Variants of one letter are numbered by start spacing, narrowest first.
-        by_letter = defaultdict(list)
-        for key, beat in sorted(classes.items(), key=order):
-            by_letter[letter(grid, beat)].append(key)
-        variant = {}
-        for base, keys in by_letter.items():
-            spacings = [start_spacing(classes[k]) for k in keys]
-            assert len(set(spacings)) == len(spacings), (name, base, spacings)
-            for number, key in enumerate(keys, 1):
-                variant[key] = base if len(keys) == 1 else base[0] + str(number) + base[1:]
-
         print(f"\n### {name[0].upper() + name[1:]}: {len(classes)} classes, sheet {page}\n")
         head = ["Letter", "Type", "Motions", "Class", "Near/far", "Sheet"]
         if grid.mixed:
             head.append("Distinct pentagons")
         print("| " + " | ".join(head) + " |")
         print("|" + " --- |" * len(head))
-        for key, beat in sorted(classes.items(), key=order):
+        for key, beat, label in rows:
             got = letter(grid, beat)
             (_, _, bm), (_, _, rm) = beat
             motions = f"{bm}/{rm}" if bm == rm else "/".join(sorted({bm, rm}, key=[PRO, ANTI, STATIC, DASH].index))
             near_far = opposite_letter_near_far(grid, beat) if kind(beat) == "type 1 opposite" else got
-            row = [variant[key], KIND_LABEL[kind(beat)], motions, catalog_class(grid, beat),
+            row = [label, KIND_LABEL[kind(beat)], motions, catalog_class(grid, beat),
                    "" if near_far == got else near_far, " ".join(drawn.get(key, [])) or "not drawn"]
             if grid.mixed:
                 row.append(str(splits[key]))
@@ -534,8 +552,33 @@ def catalog():
             print(f"\nSheet cells outside Types 1 to 3: {' '.join(stray)}")
 
 
+# The grids of LETTER_GRIDS in src/lib/shared/pictograph/lettering/multigrid-lettering.ts.
+APP_GRIDS = {
+    "trigrid": "trigrid",
+    "diamond": "diamond",
+    "pentagrid": "pentagrid",
+    "skewed diamond": "skewedDiamond",
+    "skewed pentagrid, pentagons interchangeable": "skewedPentagrid",
+}
+
+
+def members():
+    """One beat per class and its label, as CLASS_MEMBERS in
+    src/lib/shared/pictograph/lettering/__tests__/multigrid-lettering.test.ts.
+    Each line is the label, the blue hand, the red hand and the class path."""
+    grids = {g.name: g for g in GRIDS}
+    for name, app_name in APP_GRIDS.items():
+        grid = grids[name]
+        print(f"  {app_name}: `")
+        for _, beat, label in catalog_rows(grid):
+            hands = [f"{m} {s}>{(s + d) % grid.points}" for s, d, m in beat]
+            print(f"    {label:4} {hands[0]:10} {hands[1]:10} # {catalog_class(grid, beat)}")
+        print("  `,")
+
+
 # ------------------------------------------------------------- validations
 
+TRIGRID_INDEX = {"n": 0, "se": 1, "sw": 2}
 DIAMOND_INDEX = {"n": 0, "e": 1, "s": 2, "w": 3}
 EIGHT_INDEX = {"n": 0, "ne": 1, "e": 2, "se": 3, "s": 4, "sw": 5, "w": 6, "nw": 7}
 
@@ -577,16 +620,21 @@ def main():
     if "--catalog" in sys.argv:
         catalog()
         return
+    if "--members" in sys.argv:
+        members()
+        return
     census("--classes" in sys.argv)
     print("\n=== validation against shipped dataframes")
+    trigrid = GRIDS[0]
     diamond = GRIDS[1]
     skewed8 = GRIDS[3]
     rules = {
-        "proposed rules": letter,
+        "approved rules": letter,
         "opposite by near/far": opposite_only(opposite_letter_near_far),
     }
     validate(DATA / "DiamondPictographDataframe.csv", diamond, DIAMOND_INDEX, lambda r: True, rules)
     validate(DATA / "SkewedPictographDataframe.csv", skewed8, EIGHT_INDEX, lambda r: r["category"] == "3", rules)
+    validate(DATA / "TrigridPictographDataframe.csv", trigrid, TRIGRID_INDEX, lambda r: True, rules)
 
 
 if __name__ == "__main__":
