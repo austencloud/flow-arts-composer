@@ -135,7 +135,7 @@ describe("skewed-frame dataframe rows", () => {
     }
   });
 
-  it("covers the 38-letter skewed alphabet and nothing else", () => {
+  it("covers the 32-letter skewed alphabet and nothing else", () => {
     const letters = new Set(frameRows.map((row) => row.letter));
     expect([...letters].sort()).toEqual([...SKEWED_FRAME_LETTERS].sort());
   });
