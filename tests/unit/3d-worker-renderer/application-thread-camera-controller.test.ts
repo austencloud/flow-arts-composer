@@ -5,6 +5,7 @@ import {
   CameraControls,
   configureViewerOrbitNavigation,
   resolveCameraControlsRightAction,
+  VIEWER_ORBIT_REST_DISTANCE,
 } from "$lib/shared/3d/camera/camera-controls-runtime";
 import type { ApplicationThreadCameraFrameScheduler } from "$lib/shared/3d/worker-renderer/domain/application-thread-camera";
 import { ApplicationThreadCameraController } from "$lib/shared/3d/worker-renderer/services/application-thread-camera-controller";
@@ -61,6 +62,22 @@ function createElement(): HTMLElement {
   return element as HTMLElement;
 }
 
+function pressLeftButton(element: HTMLElement): void {
+  // jsdom has no PointerEvent; camera-controls only reads these fields.
+  const down = new MouseEvent("pointerdown", {
+    button: 0,
+    buttons: 1,
+    clientX: 400,
+    clientY: 200,
+    bubbles: true,
+  });
+  Object.defineProperties(down, {
+    pointerId: { value: 1 },
+    pointerType: { value: "mouse" },
+  });
+  element.dispatchEvent(down);
+}
+
 describe("ApplicationThreadCameraController", () => {
   it("keeps wheel travel moving past a panned target without collapsing the orbit", () => {
     const element = createElement();
@@ -91,6 +108,69 @@ describe("ApplicationThreadCameraController", () => {
     expect(
       Math.hypot(...after.position.map((value, i) => value - after.target[i]!))
     ).toBeCloseTo(1, 4);
+    controller.dispose();
+  });
+
+  it("moves a travel-pushed pivot back out before the next rotate", () => {
+    const element = createElement();
+    const scheduler = new ManualFrameScheduler();
+    const controller = new ApplicationThreadCameraController(element, {
+      initialPosition: [0, 2.47, -2.64],
+      initialTarget: [0, 1.1, 0],
+      frameScheduler: scheduler,
+    });
+    configureViewerOrbitNavigation(controller.controls);
+    let now = 0;
+    scheduler.step(now);
+    for (let tick = 0; tick < 40; tick++) {
+      element.dispatchEvent(
+        new WheelEvent("wheel", { deltaY: -120, clientX: 400, clientY: 200 })
+      );
+      scheduler.step((now += 16));
+    }
+    for (let frame = 0; frame < 120; frame++) scheduler.step((now += 16));
+    expect(controller.controls.distance).toBeCloseTo(1, 2);
+    const before = controller.getSnapshot();
+
+    pressLeftButton(element);
+
+    const after = controller.getSnapshot();
+    expect(controller.controls.distance).toBeCloseTo(
+      VIEWER_ORBIT_REST_DISTANCE,
+      4
+    );
+    // Same camera, same view ray: re-seating is invisible until the drag.
+    for (let i = 0; i < 3; i++) {
+      expect(after.position[i]).toBeCloseTo(before.position[i]!, 6);
+    }
+    const ray = (s: typeof before) => {
+      const d = s.target.map((v, i) => v - s.position[i]!);
+      const len = Math.hypot(...d);
+      return d.map((v) => v / len);
+    };
+    ray(after).forEach((v, i) => expect(v).toBeCloseTo(ray(before)[i]!, 6));
+    controller.dispose();
+  });
+
+  it("keeps a pivot the wheel stopped on without travelling past it", () => {
+    const element = createElement();
+    const scheduler = new ManualFrameScheduler();
+    const controller = new ApplicationThreadCameraController(element, {
+      initialPosition: [0, 1.1, -1],
+      initialTarget: [0, 1.1, 0],
+      frameScheduler: scheduler,
+    });
+    configureViewerOrbitNavigation(controller.controls);
+    scheduler.step(0);
+    scheduler.step(16);
+
+    pressLeftButton(element);
+
+    const target = controller.getSnapshot().target;
+    expect(target[0]).toBeCloseTo(0, 6);
+    expect(target[1]).toBeCloseTo(1.1, 6);
+    expect(target[2]).toBeCloseTo(0, 6);
+    expect(controller.controls.distance).toBeCloseTo(1, 4);
     controller.dispose();
   });
 
