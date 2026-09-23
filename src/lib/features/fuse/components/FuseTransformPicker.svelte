@@ -144,12 +144,21 @@
 </script>
 
 <div class="transform-picker">
-  <div class="field" role="group" aria-label="Path you will edit">
+  <!-- Named for what it does to both paths, not for the one it leaves alone.
+       "Path you will edit" read as a view toggle, so switching it looked like
+       the workspace had swapped to a different fuse: it is a source-of-truth
+       switch, and the path that stops leading stops being shown. Neither
+       sequence is lost — each side keeps its own in its pool, and the one that
+       leads is the one on screen — but the control has to say that changing it
+       replaces the other path rather than just moving the cursor. -->
+  <div class="field" role="group" aria-label="Which path leads">
     <div class="field-heading">
       <span class="step-number">1</span>
       <div>
-        <span class="field-label">Path you will edit</span>
-        <span class="field-help">{driverLabel} stays editable</span>
+        <span class="field-label">Which path leads</span>
+        <span class="field-help">
+          {driverLabel} keeps its own path; {followerLabel} is rebuilt from it
+        </span>
       </div>
     </div>
     <div class="field-control driver-control">

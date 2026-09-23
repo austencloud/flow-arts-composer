@@ -150,7 +150,11 @@
         <span class="path-node" data-side={draftDriver}>
           <span class="node-dot" aria-hidden="true"></span>
           <span class="node-copy">
-            <span class="node-role">You edit</span>
+            <!-- "Leads", echoing the control in step 1, and the pair reads
+                 Leads / Rebuilds in one voice. "You edit" named the same path
+                 from the other end and left the chain saying what the user
+                 does beside what the app does. -->
+            <span class="node-role">Leads</span>
             <strong>{draftDriverLabel}</strong>
           </span>
         </span>
