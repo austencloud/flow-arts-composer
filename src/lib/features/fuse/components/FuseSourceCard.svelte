@@ -576,15 +576,21 @@
         </PanelButton>
       </div>
     {:else}
+      <!-- Three weights in one row: Regenerate is the card's verb and the
+           only filled button, Edit path is the deliberate second choice, and
+           Previous and More are ways back and ways out, drawn quiet so they
+           stop reading as four equal options. -->
       <div class="source-actions">
-        <PanelButton
-          variant="secondary"
-          fullWidth={true}
-          disabled={sourceControlsDisabled || !source.canGoBack}
-          onclick={() => fuseState.previous(side)}
-        >
-          Previous
-        </PanelButton>
+        <div class="quiet-action">
+          <PanelButton
+            variant="secondary"
+            fullWidth={true}
+            disabled={sourceControlsDisabled || !source.canGoBack}
+            onclick={() => fuseState.previous(side)}
+          >
+            Previous
+          </PanelButton>
+        </div>
         <!-- The one button most people will press, and the only way to get a
              new path without deciding anything first. It was the smallest thing
              in the row — same ghost variant as its six neighbours and shorter
@@ -605,7 +611,7 @@
           disabled={sourceControlsDisabled || !source.sequence}
           {onChooseFirstStep}
         />
-        <div class="source-more">
+        <div class="source-more quiet-action">
           <OverflowMenu
             items={sourceMenuItems}
             disabled={sourceControlsDisabled}
@@ -889,6 +895,27 @@
     min-width: 0;
     padding-inline: 10px;
     white-space: nowrap;
+  }
+
+  /* The quiet tier: no fill, a faint outline, dimmer words, and the
+     secondary surface back on hover so it still answers the pointer. */
+  .source-actions > .quiet-action:not(.source-more) {
+    display: contents;
+  }
+
+  .quiet-action :global(.panel-btn),
+  .quiet-action :global(.overflow-trigger.labelled-trigger) {
+    border-color: color-mix(in srgb, var(--theme-stroke) 60%, transparent);
+    background: transparent;
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.7));
+  }
+
+  .quiet-action :global(.panel-btn:hover:not(:disabled)),
+  .quiet-action
+    :global(.overflow-trigger.labelled-trigger:not(:disabled):hover) {
+    border-color: var(--theme-stroke);
+    background: var(--theme-card-bg);
+    color: var(--theme-text, #fff);
   }
 
   .first-step-toolbar {
