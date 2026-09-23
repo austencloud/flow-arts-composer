@@ -11,6 +11,7 @@
   import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { AppSettings, PropPreset } from "../../domain/app-settings";
+  import { healPropPair } from "../../domain/prop-pair-rule";
   import { PropType } from "../../../pictograph/prop/domain/enums/prop-type";
   import { toggleBigVariant } from "../../../pictograph/prop/domain/prop-type-display-registry";
   import type { HapticFeedback } from "../../../application/services/haptic-feedback";
@@ -171,17 +172,22 @@
     const preset = propPresets[index];
     if (!preset) return;
 
+    // A preset saved before this branch can hold a contradictory pair (equal
+    // hands but catDogMode true, or differing hands but catDogMode false).
+    // Heal it the same way a loaded settings profile is healed.
+    const healed = healPropPair(preset);
+
     selectedPresetIndex = index;
-    selectedLeftPropType = preset.leftPropType;
-    selectedRightPropType = preset.rightPropType;
-    catDogMode = preset.catDogMode;
+    selectedLeftPropType = healed.leftPropType;
+    selectedRightPropType = healed.rightPropType;
+    catDogMode = healed.catDogMode;
     leftBuugengFlipped = preset.leftBuugengFlipped ?? false;
     rightBuugengFlipped = preset.rightBuugengFlipped ?? false;
 
     onUpdate?.({ key: "selectedPresetIndex", value: index });
-    onUpdate?.({ key: "leftPropType", value: preset.leftPropType });
-    onUpdate?.({ key: "rightPropType", value: preset.rightPropType });
-    onUpdate?.({ key: "catDogMode", value: preset.catDogMode });
+    onUpdate?.({ key: "leftPropType", value: healed.leftPropType });
+    onUpdate?.({ key: "rightPropType", value: healed.rightPropType });
+    onUpdate?.({ key: "catDogMode", value: healed.catDogMode });
     onUpdate?.({ key: "leftBuugengFlipped", value: leftBuugengFlipped });
     onUpdate?.({ key: "rightBuugengFlipped", value: rightBuugengFlipped });
   }

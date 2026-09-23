@@ -100,6 +100,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   catDogMode: false,
   leftPropType: PropType.STAFF,
   rightPropType: PropType.STAFF,
+  propType: PropType.STAFF,
   fanAppearance: DEFAULT_FAN_APPEARANCE,
   propArtwork: DEFAULT_PROP_LOOK,
   primaryPropColors: null,
@@ -125,7 +126,10 @@ const initialSettings = (() => {
     // settings are newer than the account Firebase is about to restore.
     delete parsed._localTimestamp;
     const merged = { ...DEFAULT_SETTINGS, ...parsed };
-    return { ...merged, ...healPropPair(merged) };
+    // Heal the stored fields, not the defaults-merged object: DEFAULT_SETTINGS
+    // always has both hands, which would mask a legacy propType-only profile
+    // that never recorded a right hand.
+    return { ...merged, ...healPropPair(parsed) };
   } catch {
     return DEFAULT_SETTINGS;
   }
@@ -619,8 +623,15 @@ class SettingsState {
 
     // Pair fields carry companions (the other hand, the flag, propType), so
     // they go through the normalized patch path and are marked edited together.
+    // The analytics call still fires here, same as the single-key path below.
     if (isPropPairKey(key)) {
-      return this.updateSettings({ [key]: value } as Partial<AppSettings>);
+      await this.updateSettings({ [key]: value } as Partial<AppSettings>);
+      try {
+        void logSettingChange(key, String(previousValue), String(value));
+      } catch {
+        // Silent
+      }
+      return;
     }
 
     const isSceneUndoable = key === "backgroundType" || key === "gridMode";
@@ -1027,7 +1038,9 @@ class SettingsState {
         developerMode?: boolean;
       };
       const merged = { ...DEFAULT_SETTINGS, ...parsed };
-      Object.assign(merged, healPropPair(merged));
+      // Heal the stored fields, not the defaults-merged object: see
+      // initialSettings above for why.
+      Object.assign(merged, healPropPair(parsed));
 
       if ("_localTimestamp" in merged) {
         delete merged._localTimestamp;

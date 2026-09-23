@@ -100,6 +100,14 @@ describe("normalizePropPatch", () => {
     const once = normalizePropPatch(mixed, { catDogMode: false });
     expect(normalizePropPatch(mixed, once)).toEqual(once);
   });
+
+  it("drops an explicit undefined pair key instead of writing over the stored hand", () => {
+    const result = normalizePropPatch(mixed, {
+      leftPropType: undefined,
+      rightPropType: PropType.CLUB,
+    });
+    expect("leftPropType" in result).toBe(false);
+  });
 });
 
 describe("healPropPair", () => {

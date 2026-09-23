@@ -19,6 +19,7 @@ import {
   getSettings,
   updateSettings,
 } from "$lib/shared/application/state/app-state.svelte";
+import { healPropPair } from "$lib/shared/settings/domain/prop-pair-rule";
 import type { SequenceTransformCommandId } from "$lib/shared/create/domain/sequence-action-types";
 import { getAllPropTypes } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
 import { filterPremiumCosmeticProps } from "$lib/shared/subscription/domain/premium-prop-access";
@@ -92,12 +93,17 @@ async function applyPropPreset(presetIndex: number): Promise<void> {
   const hapticService = getHapticFeedback();
   hapticService?.trigger("selection");
 
+  // A preset saved before this branch can hold a contradictory pair (equal
+  // hands but catDogMode true, or differing hands but catDogMode false).
+  // Heal it the same way a loaded settings profile is healed.
+  const healed = healPropPair(preset);
+
   // Apply the preset settings
   await updateSettings({
     selectedPresetIndex: presetIndex,
-    leftPropType: preset.leftPropType,
-    rightPropType: preset.rightPropType,
-    catDogMode: preset.catDogMode,
+    leftPropType: healed.leftPropType,
+    rightPropType: healed.rightPropType,
+    catDogMode: healed.catDogMode,
     leftBuugengFlipped: preset.leftBuugengFlipped ?? false,
     rightBuugengFlipped: preset.rightBuugengFlipped ?? false,
   });

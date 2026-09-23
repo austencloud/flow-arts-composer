@@ -61,6 +61,13 @@ export function normalizePropPatch<P extends PropPairFields>(
     out.catDogMode = true;
   }
   out.propType = nextLeft;
+
+  // An explicit `undefined` on a pair key (e.g. a caller spreading a partial
+  // patch) must not survive into the assignment loop in updateSettings,
+  // which would overwrite the stored hand with undefined.
+  for (const key of PROP_PAIR_KEYS) {
+    if (out[key] === undefined) delete out[key];
+  }
   return out;
 }
 

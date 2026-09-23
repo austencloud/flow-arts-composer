@@ -22,6 +22,7 @@ import { isPremiumOrAbove } from "../../auth/domain/models/user-role";
 import { quickFeedbackState } from "$lib/shared/feedback/state/quick-feedback-state.svelte";
 import { adminToolbarState } from "../../debug/state/admin-toolbar-state.svelte";
 import { settingsService } from "../../settings/state/settings-state.svelte";
+import { healPropPair } from "../../settings/domain/prop-pair-rule";
 import { getAnimationVisibilityManager } from "../../animation-engine/state/animation-visibility-state.svelte";
 import { getImageCompositionManager } from "../../share/state/image-composition-state.svelte";
 import {
@@ -216,13 +217,15 @@ export function registerGlobalShortcuts(
       const presets = settingsService.settings.propPresets || [];
       const preset = presets[0];
       if (preset) {
+        // Heal a preset saved before this branch, same as a loaded profile.
+        const healed = healPropPair(preset);
         settingsService.updateSettings({
           selectedPresetIndex: 0,
-          leftPropType: preset.leftPropType,
-          rightPropType: preset.rightPropType,
-          catDogMode: preset.catDogMode,
+          leftPropType: healed.leftPropType,
+          rightPropType: healed.rightPropType,
+          catDogMode: healed.catDogMode,
         });
-        toast.info(`Preset 1: ${preset.leftPropType}`, 1500);
+        toast.info(`Preset 1: ${healed.leftPropType}`, 1500);
       }
     },
   });
@@ -241,13 +244,15 @@ export function registerGlobalShortcuts(
       const presets = settingsService.settings.propPresets || [];
       const preset = presets[1];
       if (preset) {
+        // Heal a preset saved before this branch, same as a loaded profile.
+        const healed = healPropPair(preset);
         settingsService.updateSettings({
           selectedPresetIndex: 1,
-          leftPropType: preset.leftPropType,
-          rightPropType: preset.rightPropType,
-          catDogMode: preset.catDogMode,
+          leftPropType: healed.leftPropType,
+          rightPropType: healed.rightPropType,
+          catDogMode: healed.catDogMode,
         });
-        toast.info(`Preset 2: ${preset.leftPropType}`, 1500);
+        toast.info(`Preset 2: ${healed.leftPropType}`, 1500);
       }
     },
   });
@@ -266,13 +271,15 @@ export function registerGlobalShortcuts(
       const presets = settingsService.settings.propPresets || [];
       const preset = presets[2];
       if (preset) {
+        // Heal a preset saved before this branch, same as a loaded profile.
+        const healed = healPropPair(preset);
         settingsService.updateSettings({
           selectedPresetIndex: 2,
-          leftPropType: preset.leftPropType,
-          rightPropType: preset.rightPropType,
-          catDogMode: preset.catDogMode,
+          leftPropType: healed.leftPropType,
+          rightPropType: healed.rightPropType,
+          catDogMode: healed.catDogMode,
         });
-        toast.info(`Preset 3: ${preset.leftPropType}`, 1500);
+        toast.info(`Preset 3: ${healed.leftPropType}`, 1500);
       }
     },
   });
