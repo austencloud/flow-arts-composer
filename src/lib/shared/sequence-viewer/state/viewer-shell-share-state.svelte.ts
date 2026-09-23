@@ -5,6 +5,8 @@ import { extractViewerStateQuery } from "../services/viewer-orchestrator-model";
 import type { MandalaViewerController } from "./mandala-viewer-controller.svelte";
 import type { TunnelViewController } from "../tunnel/tunnel-view-controller.svelte";
 import type { ShareArtifact } from "$lib/shared/share/services/post-handoff";
+import { copyEmbedCode } from "$lib/shared/share/services/post-handoff";
+import { buildEmbedSnippet } from "$lib/shared/share/services/embed-snippet";
 import type { SequenceSendSession } from "$lib/shared/inbox/state/send-sequence-state.svelte";
 
 type ViewerShareActionId = "share-sequence" | "send-sequence" | "copy-link";
@@ -89,6 +91,8 @@ export function createViewerShellShareState(
    */
   let sceneTakeSuspended = $state(false);
   let shareLinkFeedbackTimer: ReturnType<typeof setTimeout> | null = null;
+  let embedCodeCopied = $state(false);
+  let embedFeedbackTimer: ReturnType<typeof setTimeout> | null = null;
   /**
    * The share panel: Share opens in the viewer's inspector column instead of
    * a dialog, so the stage keeps showing what is being shared. The rail
@@ -106,6 +110,21 @@ export function createViewerShellShareState(
 
   function destroy(): void {
     if (shareLinkFeedbackTimer) clearTimeout(shareLinkFeedbackTimer);
+    if (embedFeedbackTimer) clearTimeout(embedFeedbackTimer);
+  }
+
+  /** The bare `/sequence/<code>` path segment a share URL resolved to, short
+   *  code when one exists, else the inline-encoded id — the same identity
+   *  Copy Link already carries, just without its view-state query string. */
+  function currentSequenceCode(): string | null {
+    try {
+      const parsed = new URL(inputs.getContext().getShareUrl());
+      const match = parsed.pathname.match(/\/sequence\/([^/]+)\/?$/);
+      const code = match?.[1];
+      return code ? decodeURIComponent(code) : null;
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -284,6 +303,28 @@ export function createViewerShellShareState(
   }
 
   /**
+   * Copies the paste-ready `<iframe>` + attribution snippet for the sequence
+   * on stage. Mirrors `copyShareLink`'s feedback timing so the button swaps
+   * its label the same way "Copy link" does.
+   */
+  async function copyEmbedSnippet(): Promise<void> {
+    dependencies.captureScanAction("copy_embed");
+    const code = currentSequenceCode();
+    if (!code) return;
+
+    const html = buildEmbedSnippet({ code, word: inputs.getSequence().word });
+    const result = await copyEmbedCode(html);
+    if (result.status !== "done") return;
+
+    embedCodeCopied = true;
+    if (embedFeedbackTimer) clearTimeout(embedFeedbackTimer);
+    embedFeedbackTimer = setTimeout(() => {
+      embedCodeCopied = false;
+      embedFeedbackTimer = null;
+    }, 1800);
+  }
+
+  /**
    * The panel's Download (or Publish), resolved against the view on stage.
    *
    * The file follows the rail: the mandala from the Mandala pane, the tunnel
@@ -393,6 +434,9 @@ export function createViewerShellShareState(
     get linkCopied() {
       return shareLinkCopied;
     },
+    get embedCopied() {
+      return embedCodeCopied;
+    },
     /** The user opening or dismissing the sheet. Dismissing ends the session. */
     setPostSheetOpen(open: boolean) {
       postSheetOpen = open;
@@ -432,6 +476,7 @@ export function createViewerShellShareState(
     resetSendSession,
     currentViewParams,
     copyShareLink,
+    copyEmbedSnippet,
     shareLinkNatively,
     downloadCurrentView: () => prepareCurrentView("download"),
     publishCurrentView: () => prepareCurrentView("publish"),

@@ -155,8 +155,17 @@ export const handle: Handle = async ({ event, resolve }) => {
   // COEP header - allows cross-origin resources needed for OAuth
   response.headers.set("Cross-Origin-Embedder-Policy", "unsafe-none");
 
-  // Additional security headers for production-ready app
-  response.headers.set("X-Frame-Options", "SAMEORIGIN");
+  // `/embed/*` is the embeddable sequence player: other sites frame it in an
+  // <iframe>, which is the entire point of the feature, so it is the one
+  // family of routes exempt from same-origin framing. XFO has no per-path
+  // syntax (SAMEORIGIN or nothing), so it is set for every other route and
+  // simply skipped here; CSP's frame-ancestors below carries the actual
+  // embed policy and takes precedence over XFO in every browser that reads
+  // both.
+  const isEmbedRoute = pathname.startsWith("/embed/");
+  if (!isEmbedRoute) {
+    response.headers.set("X-Frame-Options", "SAMEORIGIN");
+  }
 
   response.headers.set("X-Content-Type-Options", "nosniff");
 
@@ -184,6 +193,9 @@ export const handle: Handle = async ({ event, resolve }) => {
       "font-src 'self' https://fonts.gstatic.com",
       // firebaseio.com: RTDB falls back to an iframe transport when its websocket fails
       "frame-src 'self' blob: https://accounts.google.com https://*.firebaseapp.com https://*.firebaseio.com https://*.posthog.com",
+      // Any site may frame an embed page; every other route stays
+      // same-origin-only (matches the X-Frame-Options set above it).
+      isEmbedRoute ? "frame-ancestors *" : "frame-ancestors 'self'",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",

@@ -5,7 +5,6 @@ import {
   decodeSequenceFromQR,
   decodeSequenceWithCompression,
 } from "$lib/shared/navigation/services/sequence-encoder";
-import { getFirestoreRest } from "$lib/server/firestore/firestore-rest";
 import {
   buildSequenceSeo,
   cleanSequenceText,
@@ -13,12 +12,9 @@ import {
   type SequenceRouteMeta,
 } from "./sequence-seo";
 import {
-  canonicalSequenceId,
   emptySequenceMeta,
   firstTrustedThumbnail,
-  isSafeFirestoreDocumentId,
-  listReleaseManifests,
-  resolvePublishedMeta,
+  loadPublishedMeta,
 } from "./published-meta";
 
 function createUnverifiedMeta(url: URL): SequenceRouteMeta {
@@ -28,41 +24,6 @@ function createUnverifiedMeta(url: URL): SequenceRouteMeta {
     creator: cleanSequenceText(url.searchParams.get("creator"), 120),
     difficulty: cleanSequenceText(url.searchParams.get("difficulty"), 40),
   };
-}
-
-async function loadPublishedMeta(
-  requestedId: string,
-  fallback: SequenceRouteMeta,
-  platformCredential?: string
-): Promise<SequenceRouteMeta> {
-  const sequenceId = canonicalSequenceId(requestedId);
-  if (!isSafeFirestoreDocumentId(sequenceId)) return fallback;
-
-  try {
-    const firestore = getFirestoreRest(platformCredential);
-    const [publicDoc, manifests] = await Promise.all([
-      firestore.getDocument(`publicSequences/${sequenceId}`),
-      listReleaseManifests(firestore),
-    ]);
-    return await resolvePublishedMeta(
-      firestore,
-      manifests,
-      sequenceId,
-      fallback,
-      publicDoc
-    );
-  } catch (error) {
-    // Non-fatal: the viewer can still resolve inline, short-code, and
-    // signed-in library data. But it must not be silent again — a swallowed
-    // failure here is exactly how every released card went noindex in
-    // production with no trace.
-    console.error(
-      `[sequence-seo] loadPublishedMeta failed for "${sequenceId}":`,
-      error instanceof Error ? error.message : error
-    );
-  }
-
-  return fallback;
 }
 
 function buildInlineMeta(
