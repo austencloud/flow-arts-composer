@@ -362,7 +362,7 @@ describe("viewer-3d-state: selection scope", () => {
       scoped().every((performer) => performer.characterId === "y-bot")
     ).toBe(true);
 
-    expectAtomic(() => state.setPropBuildScoped({}));
+    expectAtomic(() => state.mergePropBuildScoped({}));
     expect(scoped().map((performer) => performer.settings.propBuild)).toEqual([
       {},
       {},

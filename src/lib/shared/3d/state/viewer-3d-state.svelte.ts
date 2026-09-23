@@ -1264,11 +1264,20 @@ function buildViewer3DState(
     return true;
   }
 
-  function setPropBuildScoped(propBuild: Partial<PropBuild>): boolean {
+  /**
+   * Merges the changed parts into each scoped performer's own override. A
+   * part no control has set stays absent, so it keeps following the scene
+   * default (the global Grip pills reach the triangle grip this way).
+   */
+  function mergePropBuildScoped(patch: Partial<PropBuild>): boolean {
     return applyScopedPerformerEdit(
       "change-prop-build",
       "Prop build",
-      (performer) => performer.setPropBuild(propBuild)
+      (performer) =>
+        performer.setPropBuild({
+          ...(performer.settings.propBuild ?? {}),
+          ...patch,
+        })
     );
   }
 
@@ -2400,7 +2409,7 @@ function buildViewer3DState(
     setCharacterScoped,
     setPropScoped,
     applyPerformerAppearanceAssignments,
-    setPropBuildScoped,
+    mergePropBuildScoped,
     setEffortScoped,
     setEffectScoped,
     setHandEffectsScoped,
