@@ -17,15 +17,24 @@ export const POSE_CHANNELS = [
   "tipZ",
   "gripRelaxation",
   "gripTilt",
+  "wristBend",
+  "wristTwist",
+  "thumbSpread",
+  "thumbCurl",
+  "indexCurl",
+  "middleCurl",
+  "ringCurl",
+  "pinkyCurl",
 ] as const;
-// Phase plus the twelve body/prop channels in links created before grip editing.
+// Preserve links created before grip editing and before individual hand editing.
 const LEGACY_POSE_ROW_LENGTH = 13;
+const PRE_HAND_POSE_ROW_LENGTH = 15;
 export type PoseChannel = (typeof POSE_CHANNELS)[number];
 export type TeachingPose = Record<PoseChannel, number>;
 export interface TeachingKey extends TeachingPose {
   phase: number;
 }
-export type PoseHandle = "chest" | "pelvis" | "elbow" | "tip" | "grip";
+export type PoseHandle = "chest" | "pelvis" | "elbow" | "tip" | "grip" | "fingers";
 export const TEACHING_KEY_PHASE_TOLERANCE = 0.005;
 // Place this teaching circle within arm reach; drift measures movement around this fixed anchor.
 export const TEACHING_ANCHOR_OFFSET: [number, number, number] = [0, 0, -0.25];
@@ -52,12 +61,20 @@ const NEUTRAL: TeachingPose = {
   tipZ: 0,
   gripRelaxation: 0,
   gripTilt: 1.0472,
+  wristBend: 0,
+  wristTwist: 0,
+  thumbSpread: 0,
+  thumbCurl: 0,
+  indexCurl: 0,
+  middleCurl: 0,
+  ringCurl: 0,
+  pinkyCurl: 0,
 };
 export function defaultTeachingKeys(): TeachingKey[] {
   return [
     { ...NEUTRAL, phase: 0, tipY: 0.09 },
     { ...NEUTRAL, phase: 1 },
-    { ...NEUTRAL, phase: 2, gripRelaxation: 1 },
+    { ...NEUTRAL, phase: 2, gripRelaxation: 1, thumbSpread: 0.4363 },
     {
       ...NEUTRAL,
       phase: 3,
@@ -144,6 +161,9 @@ export function canMoveTeachingKey(
   );
 }
 export function channelLimit(channel: PoseChannel): number {
+  if (channel === "wristBend" || channel === "wristTwist") return Math.PI / 6;
+  if (channel === "thumbSpread") return Math.PI / 4;
+  if (channel.endsWith("Curl")) return Math.PI / 4;
   if (channel === "gripRelaxation") return 1;
   if (channel === "gripTilt") return (80 * Math.PI) / 180;
   if (channel === "turn") return Math.PI / 2;
@@ -163,7 +183,7 @@ export function upsertTeachingKey(
     const next = changes[channel];
     if (next !== undefined && Number.isFinite(next)) {
       pose[channel] = Math.max(
-        channel.startsWith("grip") ? 0 : -channelLimit(channel),
+        (channel === "gripRelaxation" || channel === "gripTilt") ? 0 : -channelLimit(channel),
         Math.min(channelLimit(channel), next)
       );
     }
@@ -231,8 +251,7 @@ export function decodeTeachingKeys(raw: string | null): TeachingKey[] {
     for (const row of rows) {
       if (
         !Array.isArray(row) ||
-        (row.length !== POSE_CHANNELS.length + 1 &&
-          row.length !== LEGACY_POSE_ROW_LENGTH) ||
+        ![POSE_CHANNELS.length + 1, PRE_HAND_POSE_ROW_LENGTH, LEGACY_POSE_ROW_LENGTH].includes(row.length) ||
         !row.every(
           (value) => typeof value === "number" && Number.isFinite(value)
         ) ||
@@ -249,7 +268,9 @@ export function decodeTeachingKeys(raw: string | null): TeachingKey[] {
         Object.fromEntries(
           POSE_CHANNELS.map((channel, i) => [
             channel,
-            legacy && channel === "gripRelaxation"
+            i + 1 >= row.length
+              ? NEUTRAL[channel]
+              : legacy && channel === "gripRelaxation"
               ? 0
               : legacy && channel === "gripTilt"
                 ? NEUTRAL.gripTilt

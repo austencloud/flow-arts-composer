@@ -78,7 +78,7 @@
   $effect(() => {
     const current = controls;
     const target = selectedProxy();
-    const enabled = visible && !!root && selected !== "grip";
+    const enabled = visible && !!root && selected !== "grip" && selected !== "fingers";
     const mode = selected === "chest" ? "rotate" : "translate";
     const activeCamera = camera.current;
     if (!current) return;

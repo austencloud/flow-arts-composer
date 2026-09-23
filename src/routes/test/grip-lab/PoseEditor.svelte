@@ -33,6 +33,7 @@
     { value: "elbow", label: "Elbow" },
     { value: "tip", label: "Tip" },
     { value: "grip", label: "Grip" },
+    { value: "fingers", label: "Fingers" },
   ] as const;
   const degrees = 180 / Math.PI;
   const radians = Math.PI / 180;
@@ -54,6 +55,22 @@
     onEnd();
   }
 
+  function usePhotoHand(): void {
+    onBegin();
+    onChange({
+      gripRelaxation: 1,
+      wristBend: 0,
+      wristTwist: 0,
+      thumbSpread: 25 * radians,
+      thumbCurl: 0,
+      indexCurl: 0,
+      middleCurl: 0,
+      ringCurl: 0,
+      pinkyCurl: 0,
+    });
+    onEnd();
+  }
+
   function slider(
     label: string,
     value: number,
@@ -71,6 +88,17 @@
       return [
         slider("Relaxed grip", pose.gripRelaxation * 100, 0, 100, 1, (v) => update({ gripRelaxation: v / 100 }), "%"),
         slider("Shaft angle in hand", pose.gripTilt * degrees, 0, 80, 1, (v) => update({ gripTilt: v * radians }), "°"),
+        slider("Wrist bend", pose.wristBend * degrees, -30, 30, 1, (v) => update({ wristBend: v * radians }), "°"),
+        slider("Wrist twist", pose.wristTwist * degrees, -30, 30, 1, (v) => update({ wristTwist: v * radians }), "°"),
+      ];
+    }
+    if (selected === "fingers") {
+      return [
+        slider("Thumb open", pose.thumbSpread * degrees, -45, 45, 1, (v) => update({ thumbSpread: v * radians }), "°"),
+        ...(["thumb", "index", "middle", "ring", "pinky"] as const).map((finger) =>
+          slider(`${finger[0]!.toUpperCase()}${finger.slice(1)} curl`, pose[`${finger}Curl`] * degrees, -45, 45, 1,
+            (v) => update({ [`${finger}Curl`]: v * radians }), "°")
+        ),
       ];
     }
     if (selected === "chest") {
@@ -106,9 +134,14 @@
   <SegmentedControl
     options={handles}
     value={selected}
+    columns={3}
     onchange={(value) => onSelect(value as PoseHandle)}
     ariaLabel="Pose handle"
   />
+
+  {#if selected === "fingers"}
+    <button class="photo-pose" type="button" onclick={usePhotoHand}>Use photo hand</button>
+  {/if}
 
   <div class="sliders">
     {#each controls as control (control.label)}
@@ -150,7 +183,8 @@
   </label>
   <p>Edits save a whole-pose keyframe here.</p>
   {#if selected === "elbow"}<p>The handle guides the elbow’s direction; arm length still limits its position.</p>{/if}
-  {#if selected === "grip"}<p>At 100%, thumb and index hold while the other fingers relax.</p>{/if}
+  {#if selected === "grip"}<p>Relax the hand, then adjust the shaft angle and wrist.</p>{/if}
+  {#if selected === "fingers"}<p>Start with the photo hand, then shape each finger. Check the shaft from the side too.</p>{/if}
 </section>
 
 <style>
@@ -166,6 +200,9 @@
   output { color: var(--theme-text-dim); font-variant-numeric: tabular-nums; font-size: var(--font-size-compact, 12px); }
   input { grid-column: 1 / -1; width: 100%; accent-color: var(--theme-accent); }
   .tolerance { padding-top: 0.5rem; border-top: 1px solid var(--theme-stroke); }
+  .photo-pose { min-height: 44px; border: 1px solid var(--theme-stroke); border-radius: var(--radius-md, 8px); background: var(--theme-surface); color: var(--theme-text); font: inherit; cursor: pointer; }
+  .photo-pose:hover { border-color: var(--theme-accent); }
+  .photo-pose:focus-visible { outline: 2px solid var(--theme-accent); outline-offset: 2px; }
   p { margin: 0; color: var(--theme-text-dim); font-size: var(--font-size-min, 14px); }
   @container (max-width: 22rem) { label { grid-template-columns: 1fr; gap: 0.15rem; } }
 </style>

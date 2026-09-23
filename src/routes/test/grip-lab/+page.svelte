@@ -38,6 +38,7 @@
   import PoseEditor from "./PoseEditor.svelte";
   import KeyframeTimeline from "./KeyframeTimeline.svelte";
   import GripLabShortcuts from "./GripLabShortcuts.svelte";
+  import { sculptHand } from "./hand-sculpt";
   import { allowedTipOffset, authoredBodyPose, TEACHING_ANCHOR_OFFSET, TRANSITIONS, type PoseHandle } from "./isolation-teaching";
   import {
     createContactInspectionState,
@@ -372,6 +373,7 @@
         onReady={markReady}
         onReport={(next) => (report = { ...next })}
         onGeometry={(root, next) => {
+          sculptHand(root, inspection.hand, taughtPose);
           avatarRoot = root;
           report = { ...next };
         }}
