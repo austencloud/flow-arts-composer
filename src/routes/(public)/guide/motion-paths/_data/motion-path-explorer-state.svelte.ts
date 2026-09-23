@@ -3,6 +3,7 @@ import { createAnimationScope } from "$lib/shared/animation-engine/state/animati
 import { applySequencePathPreview } from "$lib/shared/sequence-viewer/services/sequence-path-policy";
 import type { AnimationPathPolicy } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
 import type { MandalaPathShape } from "$lib/shared/mandala/domain/mandala-types";
+import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import {
   flowerKey,
   type Flower,
@@ -44,6 +45,17 @@ export function createMotionPathExplorerState() {
   // Hybrid first: the default pair mixes pro with anti, so the first thing on
   // screen is the rule at work, one hand on Arc and the other on Concave.
   scope.visibility.setPathPolicy({ pathShape: "arc", motionAwarePaths: true });
+  // The toy box under the canvas drives this scope. The mandala already draws
+  // the whole path, so the canvas opens with no effect on top of it; picking
+  // one in Effects assigns it to every tip.
+  const DEFAULT_BPM = 48;
+  scope.settings.setBpm(DEFAULT_BPM);
+  scope.visibility.setBpm(DEFAULT_BPM);
+  scope.effects.replace({
+    ...scope.effects.config,
+    activeEffect: "none",
+    tipEffectMap: {},
+  });
   let original = $state<SequenceData>(motionPathExamples[2]!);
   let source = $state<ExplorerSource>("matrix");
   // The last sequence taken from the picker. It starts as the mixed frozen
@@ -53,17 +65,34 @@ export function createMotionPathExplorerState() {
   // A matrix header plays one hand of the pair on its own. The other hand
   // keeps building so the pair stays solvable; the surfaces hide it.
   let soloHand = $state<"left" | "right" | null>(null);
-  let guides = $state(true);
-  // Path lines follow the guides toggle per hand, so a solo takes the other
-  // hand's line with it; the visibility context hides that hand's prop. The
-  // timing glyphs describe a pair, so a solo takes them off too.
+  // Display's Hand paths tile sets both hands' path lines. A solo takes the
+  // other hand's line with it (the viewer visibility context hides that
+  // hand's prop, but the path-line overlay does not read it), and keeps it
+  // off if Hand paths is switched on during the solo. The timing glyphs
+  // describe a pair, so a solo takes them off too.
+  function pathLinesOn(): boolean {
+    return (
+      scope.visibility.getVisibility("leftPathLines") ||
+      scope.visibility.getVisibility("rightPathLines")
+    );
+  }
   function setSolo(hand: "left" | "right" | null) {
+    const lines = pathLinesOn();
     soloHand = hand;
-    scope.visibility.setVisibility("leftPathLines", guides && hand !== "right");
-    scope.visibility.setVisibility("rightPathLines", guides && hand !== "left");
+    scope.visibility.setVisibility("leftPathLines", lines && hand !== "right");
+    scope.visibility.setVisibility("rightPathLines", lines && hand !== "left");
     scope.visibility.setVisibility("elementalGlyph", hand === null);
     scope.visibility.setVisibility("propElementalGlyph", hand === null);
   }
+  scope.visibility.registerObserver(() => {
+    if (soloHand === null) return;
+    const hidden = soloHand === "left" ? "rightPathLines" : "leftPathLines";
+    if (scope.visibility.getVisibility(hidden))
+      scope.visibility.setVisibility(hidden, false);
+  });
+  // One prop for both hands, as the matrix is built for one prop.
+  let propType = $state<PropType>(PropType.STAFF);
+  let bpm = $state(DEFAULT_BPM);
   let selectedMode = $state<VtgMode | null>("SS");
   let pickerStatus = $state<PickerStatus>("idle");
   let pickerError = $state<string | null>(null);
@@ -249,8 +278,19 @@ export function createMotionPathExplorerState() {
     set trace(value: "hands" | "tips") {
       trace = value;
     },
-    get guides() {
-      return guides;
+    get propType() {
+      return propType;
+    },
+    set propType(value: PropType) {
+      propType = value;
+    },
+    get bpm() {
+      return bpm;
+    },
+    setBpm(value: number) {
+      bpm = value;
+      scope.settings.setBpm(value);
+      scope.visibility.setBpm(value);
     },
     get playing() {
       return playing;
@@ -320,10 +360,6 @@ export function createMotionPathExplorerState() {
     showMatrix(fallback: MatrixPair, builder: MotionPathRealizationBuilder) {
       source = "matrix";
       chooseMatrixPair(selectedPair ?? fallback, builder);
-    },
-    toggleGuides() {
-      guides = !guides;
-      setSolo(soloHand);
     },
   };
 }
