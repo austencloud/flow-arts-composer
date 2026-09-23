@@ -1,5 +1,6 @@
 import { LANDING_DOMAIN } from "../../config/domains";
 import { GUIDE_BODY_PAGES } from "../(public)/guide/level-1/_data/guide-manifest";
+import { LEVEL2_TOPIC_PAGES } from "../(public)/guide/level-2/_data/level2-topic-manifest";
 import { TIMING_DIRECTION_ARTICLE_SLUGS } from "../(public)/timing-and-direction/_data/timing-direction-articles";
 import type { RequestHandler } from "./$types";
 
@@ -82,6 +83,15 @@ const guideLevel1Entries = GUIDE_BODY_PAGES.map((p) => ({
   url: `guide/level-1/${p.id}`,
 }));
 
+/**
+ * Every Level-2 topic route (/guide/level-2/<slug>), enumerated from
+ * level2-topic-manifest.ts so a new topic page is listed automatically -
+ * mirrors guideLevel1Entries above.
+ */
+const guideLevel2TopicEntries = LEVEL2_TOPIC_PAGES.map((p) => ({
+  url: `guide/level-2/${p.slug}`,
+}));
+
 const timingDirectionEntries = TIMING_DIRECTION_ARTICLE_SLUGS.map((slug) => ({
   url: `timing-and-direction/${slug}`,
 }));
@@ -131,6 +141,7 @@ export const GET: RequestHandler = async () => {
     ...pages,
     ...timingDirectionEntries,
     ...guideLevel1Entries,
+    ...guideLevel2TopicEntries,
     ...curatedUrls.map((url) => ({ url })),
   ];
 
