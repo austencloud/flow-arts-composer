@@ -11,8 +11,10 @@
   primary action. Link, the system share sheet, and Publish sit in a row
   under it, and sending to a friend follows below the divider.
 
-  Files still prepare in the share sheet: rendering a card or a video needs
-  its preview and settings, which is more than a column holds.
+  On the 2D animation Download renders right here: the line under it says
+  what it will make, Settings opens the Export page that decides that, and
+  the button carries the render's progress. Other views still prepare their
+  file in the share sheet.
 -->
 <script lang="ts">
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
@@ -27,6 +29,13 @@
     linkCopied: boolean;
     onCopyLink: () => void;
     onDownload: () => void;
+    /** What Download makes, e.g. "1080p • 30 fps • ~1m 12s". */
+    downloadDetail?: string;
+    /** 0-1 while Download's render runs; null when idle. */
+    downloadProgress?: number | null;
+    downloadDisabled?: boolean;
+    /** Opens the settings that shape the file. */
+    onDownloadSettings?: () => void;
     /** Omitted where the browser has no share sheet. */
     onNativeShare?: () => void;
     /** Omitted while social publishing is unavailable. */
@@ -45,6 +54,10 @@
     linkCopied,
     onCopyLink,
     onDownload,
+    downloadDetail,
+    downloadProgress = null,
+    downloadDisabled = false,
+    onDownloadSettings,
     onNativeShare,
     onPublish,
     session,
@@ -57,6 +70,10 @@
   const headingId = $props.id();
 
   const downloadText = $derived(`Download ${downloadLabel.toLowerCase()}`);
+  const rendering = $derived(downloadProgress !== null);
+  const renderPercent = $derived(
+    Math.round(Math.max(0, Math.min(1, downloadProgress ?? 0)) * 100)
+  );
 </script>
 
 <section class="share-panel" aria-labelledby={headingId}>
@@ -82,10 +99,50 @@
   </header>
 
   <div class="primary-action">
-    <PanelButton variant="primary" fullWidth onclick={onDownload}>
-      <i class="fa-solid fa-download" aria-hidden="true"></i>
-      {downloadText}
+    <PanelButton
+      variant="primary"
+      fullWidth
+      onclick={onDownload}
+      disabled={rendering || downloadDisabled}
+      ariaBusy={rendering}
+    >
+      <!-- One cell for both labels, so the button keeps its width while the
+           percentage counts up. -->
+      <span class="download-label">
+        <span
+          class="label-state"
+          class:shown={!rendering}
+          aria-hidden={rendering}
+        >
+          <i class="fa-solid fa-download" aria-hidden="true"></i>
+          {downloadText}
+        </span>
+        <span
+          class="label-state"
+          class:shown={rendering}
+          aria-hidden={!rendering}
+        >
+          <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
+          Rendering <span class="percent">{renderPercent}%</span>
+        </span>
+      </span>
     </PanelButton>
+    {#if downloadDetail}
+      <div class="download-detail">
+        <span>{downloadDetail}</span>
+        {#if onDownloadSettings}
+          <button
+            type="button"
+            class="settings"
+            onclick={onDownloadSettings}
+            aria-label="Video export settings"
+          >
+            <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+            Settings
+          </button>
+        {/if}
+      </div>
+    {/if}
   </div>
 
   <div class="actions" role="group" aria-label="Other ways to share">
@@ -220,7 +277,75 @@
   }
 
   .primary-action {
+    display: grid;
+    gap: 0.375rem;
     padding: 0.75rem 1rem 0;
+  }
+
+  .download-label {
+    display: inline-grid;
+  }
+
+  .label-state {
+    grid-area: 1 / 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    visibility: hidden;
+  }
+
+  .label-state.shown {
+    visibility: visible;
+  }
+
+  .percent {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .download-detail {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    min-width: 0;
+    color: var(--theme-text-dim);
+    font-size: var(--font-size-sm, 0.875rem);
+  }
+
+  .download-detail > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .settings {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 0.4rem;
+    min-height: 44px;
+    padding: 0 0.75rem;
+    background: transparent;
+    border: 1px solid var(--theme-stroke);
+    border-radius: 0.625rem;
+    color: var(--theme-text);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      background var(--duration-fast, 150ms) ease,
+      border-color var(--duration-fast, 150ms) ease;
+  }
+
+  .settings:hover {
+    background: var(--theme-card-bg);
+  }
+
+  .settings:focus-visible {
+    outline: 2px solid var(--theme-accent, var(--semantic-info));
+    outline-offset: 2px;
   }
 
   /* Equal tracks, so "Copy link" becoming "Link copied" moves nothing. */
@@ -263,7 +388,8 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .close {
+    .close,
+    .settings {
       transition: none;
     }
   }
