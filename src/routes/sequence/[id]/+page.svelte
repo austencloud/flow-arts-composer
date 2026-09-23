@@ -23,6 +23,12 @@
   const sequenceJsonLd = $derived(
     seo.jsonLd ? JSON.stringify(seo.jsonLd).replace(/</g, "\\u003c") : null
   );
+  // oEmbed discovery: lets a site that only knows how to paste a link (Slack,
+  // WordPress, Notion, ...) auto-embed the player by fetching this endpoint,
+  // instead of requiring the hand-copied <iframe> snippet from Share > Embed.
+  const oembedUrl = $derived(
+    `https://tkaflowarts.com/oembed?format=json&url=${encodeURIComponent(seo.canonical)}`
+  );
 </script>
 
 <Seo
@@ -33,6 +39,12 @@
   ogImageAlt={seo.ogImageAlt}
   noindex={!seo.indexable}
 >
+  <link
+    rel="alternate"
+    type="application/json+oembed"
+    href={oembedUrl}
+    title={seo.title}
+  />
   {#if sequenceJsonLd}
     {@html `<script type="application/ld+json">${sequenceJsonLd}</script>`}
   {/if}
