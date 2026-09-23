@@ -356,6 +356,14 @@
     padding: 0.5rem 1rem 0;
   }
 
+  /* Three labels need about 28rem of panel. Narrower, they pair up, and an
+     odd one out takes the whole row instead of sitting at half width. */
+  @container (max-width: 27.999rem) {
+    .actions > :global(:last-child:nth-child(odd)) {
+      grid-column: 1 / -1;
+    }
+  }
+
   /* A neutral divider: sending is its own task, after the file and link. */
   .recipients {
     display: flex;
