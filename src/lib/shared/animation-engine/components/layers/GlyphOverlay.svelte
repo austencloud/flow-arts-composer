@@ -179,13 +179,22 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
     stepData?.letter ?? displayedLetter ?? letter
   );
 
-  // Create a key for step number changes
+  // The value StepNumber renders: 0 draws "Start" and -2 draws "End".
+  const stepLabelValue = $derived(
+    isAtStartPlacement ? 0 : isAtEndPlacement ? -2 : displayedStepNumber
+  );
+
+  // The key follows the label on screen, not the input that produced it.
+  // Leaving the start position, the placement flag clears a frame before the
+  // step number advances, so the inputs pass through 0 on the way to 1.
+  // Keyed on the inputs, that frame remounted a second "Start" group and
+  // turned the Start-to-1 swap into a ghost fade plus a number cross-fade.
   const stepKey = $derived(
-    isAtStartPlacement
+    stepLabelValue === 0
       ? "start"
-      : isAtEndPlacement
+      : stepLabelValue === -2
         ? "end"
-        : (displayedStepNumber?.toString() ?? null)
+        : (stepLabelValue?.toString() ?? null)
   );
 
   const isWordLabel = (key: string | null) => key === "start" || key === "end";
@@ -406,14 +415,7 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
             easing: cubicOut,
           }}
         >
-          <StepNumber
-            stepNumber={isAtStartPlacement
-              ? 0
-              : isAtEndPlacement
-                ? -2
-                : displayedStepNumber}
-            {darkMode}
-          />
+          <StepNumber stepNumber={stepLabelValue} {darkMode} />
         </g>
       {/key}
     {/if}
