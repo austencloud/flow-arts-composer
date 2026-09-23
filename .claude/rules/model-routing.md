@@ -7,11 +7,12 @@ sequential, visual, and single-file work together. A brief names the owned
 paths, objective, acceptance checks, and relevant constraints; refer to files
 instead of pasting them.
 
-For native Codex workers, set `model: gpt-5.6-terra`,
+For native Codex workers, use `model: gpt-6-sol`,
 `reasoning_effort: medium`, and `fork_turns: none` for bounded implementation,
-debugging, tests, and documentation. Use `gpt-6-astra` with `high` only when
-cross-cutting planning, difficult diagnosis, or failed evidence warrants its
-judgment. State why when departing from these defaults.
+debugging, tests, and documentation. Use `gpt-6-luna` for focused, repeatable
+tasks when its result can be checked cheaply. Raise Sol to `high` for complex
+logic or edge cases; use `gpt-6-astra` when difficult diagnosis or cross-cutting
+judgment warrants it. State why when departing from the ordinary default.
 
 For Claude dispatches, keep its routing separate: use `haiku` for censuses and
 mechanical edits, `sonnet` for implementation, tests, and research summaries,
@@ -27,6 +28,6 @@ specific risk. Retest when a relevant change or failure creates new risk, then
 move to the next task at completed-work boundaries, not timers.
 
 `scripts/codex-ask.sh` is for a bounded CLI second opinion or long review. It
-uses the signed-in Codex account and defaults to Terra/medium; override its
+uses the signed-in Codex account and defaults to Sol/medium; override its
 model or effort per task when justified. Do not claim that another Codex
 process has a separate account quota.

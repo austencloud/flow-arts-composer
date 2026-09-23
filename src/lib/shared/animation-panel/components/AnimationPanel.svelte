@@ -11,7 +11,6 @@
 -->
 <script lang="ts">
   import { fade } from "svelte/transition";
-  import { growFade } from "$lib/shared/transitions/motion";
   import type { ExportOptionsStateManager } from "../state/export-options-state.svelte";
   import type { VideoExportProgress } from "$lib/shared/compose/domain/video-export-types";
   import {
@@ -41,9 +40,10 @@
   import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
   import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
   import type { PropChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
-  import CatDogToggle from "$lib/shared/settings/components/tabs/prop-type/CatDogToggle.svelte";
+  import HandPropToolbar, {
+    type HandPropToolbarProps,
+  } from "$lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
   import PrimaryPropColorSettings from "$lib/shared/settings/components/tabs/prop-type/PrimaryPropColorSettings.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import {
     getSettings,
     updateSetting,
@@ -150,14 +150,7 @@
      * one local prop (Post Studio, profile photo, landing) omit this and keep
      * the single grid.
      */
-    handProps?: {
-      catDog: boolean;
-      hand: "left" | "right";
-      leftPropType: PropType;
-      rightPropType: PropType;
-      onToggleCatDog: () => void;
-      onHandChange: (hand: "left" | "right") => void;
-    };
+    handProps?: HandPropToolbarProps;
     /**
      * Put the account's primary prop colours above the prop grid, the way the
      * global prop drawer does, for a host whose canvas draws the props in
@@ -191,6 +184,8 @@
     /** Hide the four sequence-only edge marks (TKA glyph, element, step number,
      *  word) for a host animating something with no letter and no steps. */
     showSequenceMarks?: boolean;
+    /** Leave out the Word tile for a host that never draws a word header. */
+    showWordToggle?: boolean;
     /** Restrict the effect roster to what the host's renderer can actually
      *  draw. Omit for the full roster. */
     availableEffects?: readonly string[];
@@ -246,6 +241,7 @@
     showInlineExportProgress = true,
     showMotionVisibility = false,
     showSequenceMarks = true,
+    showWordToggle = true,
     availableEffects,
     showPathShape = true,
     onSettingChange,
@@ -815,28 +811,7 @@
 {#snippet pillBody()}
   {#if resolvedPill === "props" && onPropChange && selectedPropType !== undefined}
     {#if handProps}
-      <!-- Same chip and hand segments as the global prop drawer, so the viewer
-           picks a pair the way every other settings-backed picker does. -->
-      <div class="hand-toolbar">
-        <CatDogToggle
-          catDogMode={handProps.catDog}
-          onToggle={handProps.onToggleCatDog}
-        />
-        {#if handProps.catDog}
-          <div transition:growFade={{ axis: "y" }}>
-            <SegmentedControl
-              options={[
-                { value: "left", label: "Left", tone: "blue" },
-                { value: "right", label: "Right", tone: "red" },
-              ]}
-              value={handProps.hand}
-              onchange={handProps.onHandChange}
-              ariaLabel="Prop hand selection"
-              semantics="radiogroup"
-            />
-          </div>
-        {/if}
-      </div>
+      <HandPropToolbar {handProps} />
     {/if}
     {#if showPropColors}
       <!-- The same control the global prop drawer puts above its grid: the
@@ -1020,6 +995,7 @@
       <DisplayPanel
         {showMotionVisibility}
         {showSequenceMarks}
+        {showWordToggle}
         {sequence}
         propType={selectedPropType}
         fill={layout === "sidebar"}
@@ -1472,18 +1448,6 @@
     align-items: center;
     justify-content: center;
     min-height: 140px;
-  }
-
-  /* Cat Dog chip and hand segments above the grid; mirrors the global prop
-     drawer's toolbar so the pair reads the same wherever it is picked. */
-  .hand-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 8px 16px 4px;
-    flex-shrink: 0;
   }
 
   /* The colour pair above the grid, on the prop drawer's own inset. */

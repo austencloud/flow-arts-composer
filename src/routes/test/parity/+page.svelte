@@ -24,11 +24,11 @@
     },
     {
       href: "/test/card-back-parity",
-      title: "Card Parity",
-      desc: "Card back (old DOM vs new BackJob paint) and front (worker pool vs main thread), pixel-diffed across a sequence matrix.",
+      title: "Card Front Parity",
+      desc: "Card fronts rendered through the worker pool and main thread, pixel-diffed across a sequence matrix.",
       accent: "#14b8a6",
       glyph: "cards",
-      tags: ["image diff", "1 gate", "back + front"],
+      tags: ["image diff", "1 gate", "front"],
     },
     {
       href: "/test/guide-proof",

@@ -23,11 +23,11 @@ describe("worker renderer responsiveness accounting", () => {
   it("keeps the worst outgoing-scene frame gap during a handoff", () => {
     const state = createWorkerRendererResponsivenessState(9, 200);
 
-    recordOutgoingWorkerFrame(state, 16.7);
+    recordOutgoingWorkerFrame(state, 16.7, 216.7);
     state.currentPhase = "compile";
-    recordOutgoingWorkerFrame(state, 84.2);
+    recordOutgoingWorkerFrame(state, 84.2, 300.9);
     state.currentPhase = "first-frame";
-    recordOutgoingWorkerFrame(state, 33.4);
+    recordOutgoingWorkerFrame(state, 33.4, 334.3);
 
     expect(state.outgoingWorkerMaxFrameGapMs).toBe(84.2);
     expect(state.outgoingWorkerMaxFrameGapPhase).toBe("compile");

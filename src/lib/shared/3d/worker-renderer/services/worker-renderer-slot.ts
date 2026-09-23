@@ -22,6 +22,7 @@ export interface WorkerRendererSlotStart {
   performers?: readonly WorkerPerformerSnapshot[];
   effects?: WorkerSceneEffectsSnapshot;
   reducedMotion?: boolean;
+  retainSceneCache?: boolean;
 }
 
 export interface WorkerRendererSlotOptions extends WorkerRendererSlotStart {
@@ -102,6 +103,15 @@ export class WorkerRendererSlot {
 
   get isPosterVisible(): boolean {
     return this.posterHeld;
+  }
+
+  setPresentation(active: boolean, fadeMs = 0): void {
+    this.canvas.style.transition =
+      fadeMs > 0
+        ? `opacity ${fadeMs}ms var(--transition-easing, ease)`
+        : "none";
+    this.canvas.style.opacity = active ? "1" : "0";
+    this.canvas.style.zIndex = active ? "2" : "1";
   }
 
   post(
@@ -241,6 +251,7 @@ export class WorkerRendererSlot {
         performers: start.performers ?? [],
         effects: start.effects,
         reducedMotion: start.reducedMotion,
+        retainSceneCache: start.retainSceneCache,
       };
       worker.postMessage(message, [offscreen]);
     } catch (error) {

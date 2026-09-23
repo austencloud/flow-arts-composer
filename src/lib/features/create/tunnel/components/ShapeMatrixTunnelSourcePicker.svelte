@@ -1,10 +1,12 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
   import ShapeMatrixGrid from "$lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte";
   import ShapeMatrixDrill from "$lib/shared/shape-matrix/components/ShapeMatrixDrill.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import { applyFilter } from "$lib/shared/shape-matrix/domain/filter-flower-axis";
+  import { propPairFromLegacy } from "$lib/shared/shape-matrix/domain/prop-pair";
   import {
     matrixFiltersForSize,
     type MatrixSize,
@@ -47,7 +49,8 @@
 
   onMount(async () => {
     try {
-      data = await loadShapeMatrix();
+      const settings = getSettings();
+      data = await loadShapeMatrix(propPairFromLegacy(settings));
     } catch (error) {
       console.error("[ShapeMatrixTunnelSourcePicker] load failed", error);
       loadError = true;

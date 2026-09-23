@@ -23,10 +23,17 @@ export class BrowserVariationProvider {
   private allVariationsList: EnginePictographData[] = [];
   private initialized = false;
   private initializedGridMode: string | null = null;
+  private loadQueue: Promise<void> = Promise.resolve();
 
   constructor(private readonly letterQueryHandler: ILetterQueryHandler) {}
 
   async initialize(gridMode: string): Promise<void> {
+    const load = this.loadQueue.then(() => this.loadGrid(gridMode));
+    this.loadQueue = load.catch(() => undefined);
+    await load;
+  }
+
+  private async loadGrid(gridMode: string): Promise<void> {
     if (this.initialized && this.initializedGridMode === gridMode) return;
 
     // Clear previous data when switching grid modes
@@ -58,6 +65,24 @@ export class BrowserVariationProvider {
 
     this.initialized = true;
     this.initializedGridMode = gridMode;
+  }
+
+  /**
+   * Return a stable data snapshot for an async feasibility check. Another
+   * caller may load a different grid immediately after this, so exposing the
+   * mutable backing array would make a card report the wrong grid's options.
+   */
+  async getAllVariationsForGrid(
+    gridMode: string
+  ): Promise<readonly EnginePictographData[]> {
+    let snapshot: EnginePictographData[] = [];
+    const read = this.loadQueue.then(async () => {
+      await this.loadGrid(gridMode);
+      snapshot = [...this.allVariationsList];
+    });
+    this.loadQueue = read.catch(() => undefined);
+    await read;
+    return snapshot;
   }
 
   isInitialized(): boolean {

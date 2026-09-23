@@ -462,6 +462,7 @@ export interface InitializeWorkerRendererMessage {
   performers: readonly WorkerPerformerSnapshot[];
   effects?: WorkerSceneEffectsSnapshot;
   reducedMotion?: boolean;
+  retainSceneCache?: boolean;
 }
 
 export interface SwitchWorkerRendererEnvironmentMessage {
@@ -469,6 +470,8 @@ export interface SwitchWorkerRendererEnvironmentMessage {
   requestId: number;
   environment: WorkerEnvironmentKey;
   reducedMotion?: boolean;
+  /** Prepare a hidden replacement without requiring a visible-frame poster. */
+  backgroundPreparation?: boolean;
 }
 
 export interface PosterReadyWorkerRendererMessage {

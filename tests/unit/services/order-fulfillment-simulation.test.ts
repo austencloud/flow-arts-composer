@@ -65,6 +65,7 @@ function makeProvider() {
     async initialize(grid: string) { cur = grid; load(grid); },
     isInitialized() { return cache.has(cur); },
     getAllVariations(grid: string) { load(grid); return cache.get(grid)!; },
+    async getAllVariationsForGrid(grid: string) { load(grid); return [...cache.get(grid)!]; },
     getVariations(letter: string, pos: string, grid: string) { load(grid); return idx.get(grid)!.get(`${letter}:${pos}`) ?? []; },
   } as never;
 }

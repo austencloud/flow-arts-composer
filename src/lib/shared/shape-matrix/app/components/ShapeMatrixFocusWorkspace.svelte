@@ -2,6 +2,8 @@
   import { tick } from "svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import BentoPropGrid from "$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
+  import HandPropToolbar from "$lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
+  import { viewingPropLabel } from "$lib/shared/foundation/services/prop-viewing";
   import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
   import { getEscapeLayerManager } from "$lib/shared/keyboard/get-escape-layer-manager";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
@@ -24,7 +26,16 @@
   );
   const theory = $derived(app.surface === "theory");
   const theoryEffects = ["trails", ...CANVAS2D_HOSTED_EFFECTS] as const;
-  const selectedName = $derived(getPropTypeDisplayInfo(app.propType).label);
+  // The pair when cat dog is on ("Staff / Fan"), the one prop otherwise.
+  const selectedName = $derived(
+    app.catDog
+      ? viewingPropLabel({
+          leftPropType: app.leftPropType,
+          rightPropType: app.rightPropType,
+          catDogMode: true,
+        })
+      : getPropTypeDisplayInfo(app.leftPropType).label
+  );
   let done: HTMLButtonElement | null = $state(null);
 
   function close(): void {
@@ -71,8 +82,12 @@
     </PanelButton>
   {/snippet}
   {#if propsOpen}
+    <!-- Its own row above the grid, not the heading: the heading shares its
+         line with the Standard/Big size toggle and Done, which leaves no
+         room for the chip and hand segments at phone width. -->
+    <HandPropToolbar handProps={app.handProps} />
     <BentoPropGrid
-      selectedPropType={app.propType}
+      selectedPropType={app.addressedPropType}
       onSelect={(next) => void app.setPropType(next)}
       variant="inline"
       accessMode="educational"
@@ -108,8 +123,9 @@
         onPlaybackModeChange={animation.setPlaybackMode}
         onBpmChange={animation.setBpm}
         showEffectsPlayback={false}
-        selectedPropType={app.propType}
+        selectedPropType={app.addressedPropType}
         onPropChange={(next) => void app.setPropType(next)}
+        handProps={app.handProps}
         sequence={theory ? null : animation.previewSequence}
         showPathShape={false}
         showMotionVisibility={true}
@@ -124,6 +140,9 @@
 <style>
   .focus-workspace {
     display: flex;
+    /* The props branch stacks the hand toolbar above the grid; the settings
+       branch switches to grid below and ignores this. */
+    flex-direction: column;
     height: 100%;
     min-height: 0;
     overflow: hidden;

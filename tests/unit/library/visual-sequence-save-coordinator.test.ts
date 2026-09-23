@@ -2,6 +2,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { LibraryError } from "$lib/shared/library/domain/library-error";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { DEFAULT_TRAIL_SETTINGS } from "$lib/shared/animation-engine/domain/types/trail-types";
+import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import type { PresentationIntent } from "$lib/shared/foundation/domain/models/presentation-intent";
 
 const { computeHash, showToast, removeToast, onGuestSaveSucceeded } =
   vi.hoisted(() => ({
@@ -131,5 +134,88 @@ describe("VisualSequenceSaveCoordinator", () => {
 
     expect(outcome.status).toBe("already-saved");
     expect(showToast).toHaveBeenCalledWith("Already in library", "info");
+  });
+
+  const PRESENTATION = {
+    primaryPropColors: { left: "#00ff00", right: "#ff00ff" },
+    trail: DEFAULT_TRAIL_SETTINGS,
+    effects: DEFAULT_EFFECTS_CONFIG,
+  } satisfies PresentationIntent;
+
+  it("writes a recorded presentation onto creatorIntent", async () => {
+    const saveSequence = vi.fn(async () => ({
+      persisted: true,
+      sequenceId: "seq-1",
+    }));
+    const coordinator = new VisualSequenceSaveCoordinator({ saveSequence });
+    await coordinator.save(SEQUENCE, { presentation: PRESENTATION });
+    const stored = saveSequence.mock.calls[0]?.[0] as SequenceData;
+    expect(stored.creatorIntent?.presentation).toEqual(PRESENTATION);
+  });
+
+  it("writes an explicit null when the creator chose the default look", async () => {
+    const saveSequence = vi.fn(async () => ({
+      persisted: true,
+      sequenceId: "seq-1",
+    }));
+    const coordinator = new VisualSequenceSaveCoordinator({ saveSequence });
+    await coordinator.save(SEQUENCE, { presentation: null });
+    const stored = saveSequence.mock.calls[0]?.[0] as SequenceData;
+    expect(stored.creatorIntent).toHaveProperty("presentation");
+    expect(stored.creatorIntent?.presentation).toBeNull();
+  });
+
+  it("leaves a saved presentation alone when the intent omits it", async () => {
+    const saveSequence = vi.fn(async () => ({
+      persisted: true,
+      sequenceId: "seq-1",
+    }));
+    const coordinator = new VisualSequenceSaveCoordinator({ saveSequence });
+    await coordinator.save(
+      {
+        ...SEQUENCE,
+        creatorIntent: { presentation: PRESENTATION },
+      } as SequenceData,
+      {}
+    );
+    const stored = saveSequence.mock.calls[0]?.[0] as SequenceData;
+    expect(stored.creatorIntent?.presentation).toEqual(PRESENTATION);
+  });
+
+  it("carries a saved explicit null when the intent omits it", async () => {
+    const saveSequence = vi.fn(async () => ({
+      persisted: true,
+      sequenceId: "seq-1",
+    }));
+    const coordinator = new VisualSequenceSaveCoordinator({ saveSequence });
+    await coordinator.save(
+      { ...SEQUENCE, creatorIntent: { presentation: null } } as SequenceData,
+      {}
+    );
+    const stored = saveSequence.mock.calls[0]?.[0] as SequenceData;
+    expect(stored.creatorIntent).toHaveProperty("presentation");
+    expect(stored.creatorIntent?.presentation).toBeNull();
+  });
+
+  it("does not add a presentation key when nothing was saved or captured", async () => {
+    const saveSequence = vi.fn(async () => ({
+      persisted: true,
+      sequenceId: "seq-1",
+    }));
+    const coordinator = new VisualSequenceSaveCoordinator({ saveSequence });
+    await coordinator.save(SEQUENCE, {});
+    const stored = saveSequence.mock.calls[0]?.[0] as SequenceData;
+    expect(stored.creatorIntent).not.toHaveProperty("presentation");
+  });
+
+  it("treats an explicit undefined presentation as absent", async () => {
+    const saveSequence = vi.fn(async () => ({
+      persisted: true,
+      sequenceId: "seq-1",
+    }));
+    const coordinator = new VisualSequenceSaveCoordinator({ saveSequence });
+    await coordinator.save(SEQUENCE, { presentation: undefined });
+    const stored = saveSequence.mock.calls[0]?.[0] as SequenceData;
+    expect(stored.creatorIntent).not.toHaveProperty("presentation");
   });
 });

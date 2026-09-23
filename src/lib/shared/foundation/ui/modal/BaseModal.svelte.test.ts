@@ -176,7 +176,7 @@ describe("BaseModal fit sizing", () => {
       render(BaseModalTestHarness, { shortContent: true, animation: "none" });
       await expect
         .poll(
-          () => document.querySelector("dialog.base-modal")?.dataset.entered
+          () => document.querySelector<HTMLDialogElement>("dialog.base-modal")?.dataset.entered
         )
         .toBe("true");
       await nextLayout();
@@ -188,7 +188,7 @@ describe("BaseModal fit sizing", () => {
       await page.getByRole("button", { name: "Toggle content height" }).click();
       await nextLayout();
       expect(
-        document.querySelector("dialog.base-modal")?.style.height
+        document.querySelector<HTMLDialogElement>("dialog.base-modal")?.style.height
       ).not.toBe("");
       await expect.poll(() => capturedFrames.length).toBe(1);
       const grow = capturedFrames[0]!;
@@ -200,7 +200,7 @@ describe("BaseModal fit sizing", () => {
       page
         .getByRole("button", { name: "Toggle content height" })
         .element()
-        .click();
+        .dispatchEvent(new MouseEvent("click", { bubbles: true }));
       await expect.poll(() => capturedFrames.length).toBe(2);
       const shrink = capturedFrames[1]!;
       expect(shrink[0]?.height).not.toBe(grow[1]?.height);
@@ -242,7 +242,7 @@ describe("BaseModal fit sizing", () => {
       render(BaseModalTestHarness, { shortContent: true, animation: "none" });
       await expect
         .poll(
-          () => document.querySelector("dialog.base-modal")?.dataset.entered
+          () => document.querySelector<HTMLDialogElement>("dialog.base-modal")?.dataset.entered
         )
         .toBe("true");
       await nextLayout();

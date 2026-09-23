@@ -239,6 +239,8 @@
     font-weight: 800;
     cursor: pointer;
     transition:
+      background-color var(--duration-fast, 150ms) ease,
+      color var(--duration-fast, 150ms) ease,
       filter var(--duration-fast, 150ms) ease,
       transform var(--duration-fast, 150ms) ease,
       opacity var(--duration-fast, 150ms) ease;
@@ -253,9 +255,13 @@
     transform: translateY(0);
   }
 
+  /* Until someone is picked the panel's primary action is Download, so an
+     idle Send stays neutral instead of a second accent block. */
   .send-button:disabled {
     cursor: not-allowed;
-    opacity: 0.45;
+    background: var(--theme-card-bg);
+    border-color: var(--theme-stroke);
+    color: var(--theme-text-dim);
   }
 
   .send-button:focus-visible {

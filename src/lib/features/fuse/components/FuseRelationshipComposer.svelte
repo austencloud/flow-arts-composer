@@ -48,6 +48,25 @@
     return checkFuseTnD(sequence, draftSelection.mode);
   });
   const rewindBreaksAt = $derived(draftCheck?.firstMismatchBeat ?? null);
+  // Rewind pairs follower beat b with driver beat n + 1 - b (see
+  // fuse-tnd-check.ts), so the note can name the two beats that disagree.
+  const rewindNote = $derived.by(() => {
+    if (!draftCheck) return null;
+    if (rewindBreaksAt === null) {
+      return {
+        text: "Timing and direction still hold on every beat.",
+        breaks: false,
+      };
+    }
+    const beats = fuseState.previewSequence?.steps.length ?? 0;
+    const follower = draftDriver === "left" ? "Right" : "Left";
+    const leader = draftDriver === "left" ? "Left" : "Right";
+    const pairedBeat = beats + 1 - rewindBreaksAt;
+    return {
+      text: `Rewind pairs ${follower}'s beat ${rewindBreaksAt} with ${leader}'s beat ${pairedBeat}. They don't line up, so ${draftModeLabel} breaks at beat ${rewindBreaksAt}.`,
+      breaks: true,
+    };
+  });
   const resultModeLabel = $derived(
     rewindBreaksAt === null
       ? draftModeLabel
@@ -125,15 +144,10 @@
   <FuseTransformPicker
     driver={draftDriver}
     rule={draftRule}
+    {rewindNote}
     onDriverChange={chooseDriver}
     onRuleChange={chooseRule}
   />
-
-  {#if rewindBreaksAt !== null}
-    <p class="rule-note" role="status">
-      Rewind breaks {draftModeLabel} at beat {rewindBreaksAt}.
-    </p>
-  {/if}
 
   {#if fuseState.ruleAdjusted}
     <p class="rule-note" role="status">Rule adjusted to the nearest timing.</p>
@@ -150,7 +164,11 @@
         <span class="path-node" data-side={draftDriver}>
           <span class="node-dot" aria-hidden="true"></span>
           <span class="node-copy">
-            <span class="node-role">You edit</span>
+            <!-- "Leads", echoing the control in step 1, and the pair reads
+                 Leads / Rebuilds in one voice. "You edit" named the same path
+                 from the other end and left the chain saying what the user
+                 does beside what the app does. -->
+            <span class="node-role">Leads</span>
             <strong>{draftDriverLabel}</strong>
           </span>
         </span>
