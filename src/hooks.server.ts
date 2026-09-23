@@ -78,13 +78,6 @@ function isCssRequest(pathname: string): boolean {
 }
 
 export const handle: Handle = async ({ event, resolve }) => {
-  // Soft-404 gate for the /[...appPath] SPA shell — see rejectUnknownAppPath.
-  const appPathRejection = rejectUnknownAppPath(
-    event.route?.id,
-    event.params?.appPath
-  );
-  if (appPathRejection) return appPathRejection;
-
   // Firebase OAuth handler reverse proxy. MUST run before resolve(): it serves
   // /__/auth/* first-party on the app host so the Google/Facebook popup completes
   // (see firebase-auth-handler-proxy.ts). Returning here also skips SvelteKit's
@@ -120,6 +113,15 @@ export const handle: Handle = async ({ event, resolve }) => {
       }
     }
   }
+
+  // Soft-404 gate for the /[...appPath] SPA shell — see rejectUnknownAppPath.
+  // Runs after the proxies above: /__/auth/* and the Meta OAuth paths have no
+  // route of their own, so they match /[...appPath] and would 404 here.
+  const appPathRejection = rejectUnknownAppPath(
+    event.route?.id,
+    event.params?.appPath
+  );
+  if (appPathRejection) return appPathRejection;
 
   // Resolve the request with security headers
   const routePath = event.route?.id === "/" ? "/" : event.url.pathname;

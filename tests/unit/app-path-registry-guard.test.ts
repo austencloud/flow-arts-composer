@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("$lib/server/auth/firebase-auth-handler-proxy", () => ({
-  isFirebaseAuthHandlerPath: () => false,
-  proxyFirebaseAuthHandler: vi.fn(),
+  isFirebaseAuthHandlerPath: (pathname: string) =>
+    pathname.startsWith("/__/auth/"),
+  proxyFirebaseAuthHandler: vi.fn(async () => new Response("auth handler")),
 }));
 
 vi.mock("$lib/server/auth/meta-oauth-proxy", () => ({
@@ -106,6 +107,14 @@ describe("handle() wiring", () => {
     const res = await response;
     expect(res.status).toBe(404);
     expect(wasResolved()).toBe(false);
+  });
+
+  it("lets the Firebase auth proxy answer /__/auth/* before the gate", async () => {
+    // No route owns /__/auth/handler, so SvelteKit matches it to the catch-all.
+    const { response } = requestTo("/__/auth/handler", "__/auth/handler");
+    const res = await response;
+    expect(res.status).toBe(200);
+    expect(await res.text()).toBe("auth handler");
   });
 
   it("calls resolve() normally for a registered module path", async () => {
