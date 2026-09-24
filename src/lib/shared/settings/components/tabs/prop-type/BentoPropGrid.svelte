@@ -53,17 +53,24 @@
   // A drilled family or detail screen takes the whole picker, as the sheet's
   // own toolbar already does.
   let drilled = $state(false);
+  // A rail is its host's main control in a short strip, so the props stay
+  // first and the colours follow them.
+  const colorsAfter = $derived(props.layout === "rail");
 </script>
 
-{#if showColors && !drilled}
-  <div class="prop-colors" transition:growFade={{ axis: "y" }}>
-    <PrimaryPropColorSettings
-      colors={settings.primaryPropColors}
-      darkMode={settings.darkMode}
-      onchange={(colors) => updateSetting("primaryPropColors", colors)}
-    />
-  </div>
-{/if}
+{#snippet colorControl()}
+  {#if showColors && !drilled}
+    <div class="prop-colors" transition:growFade={{ axis: "y" }}>
+      <PrimaryPropColorSettings
+        colors={settings.primaryPropColors}
+        darkMode={settings.darkMode}
+        onchange={(colors) => updateSetting("primaryPropColors", colors)}
+      />
+    </div>
+  {/if}
+{/snippet}
+
+{#if !colorsAfter}{@render colorControl()}{/if}
 <PropGrid
   {...props}
   onDrillChange={(next) => {
@@ -90,6 +97,7 @@
     <PremiumNudge nudge={PREMIUM_COSMETIC_NUDGE} onDismiss={dismiss} />
   {/snippet}
 </PropGrid>
+{#if colorsAfter}{@render colorControl()}{/if}
 
 <style>
   .prop-colors {

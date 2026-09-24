@@ -154,6 +154,16 @@
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
   }
+  /* The rail keeps the room it needs for readable tiles, and the colours
+     below it scroll into view on a short phone instead of squeezing it. */
+  .focus-workspace:not(.settings) {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .focus-workspace:not(.settings) > :global(.prop-grid-root) {
+    flex: 1 0 16rem;
+    min-height: 16rem;
+  }
   .toolbar {
     display: flex;
     align-items: center;
