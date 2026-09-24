@@ -59,7 +59,7 @@ inside it (2 columns at that width).
 ### Tile grid
 
 - A pure function owns the column choice:
-  `src/lib/shared/navigation/domain/module-grid-columns.ts`.
+  `src/lib/shared/navigation/domain/module-grid-layout.ts`.
   - `maxCols = clamp(floor((width + gap) / (minTileWidth + gap)), 1, 5)`
   - `rows = ceil(count / maxCols)`, `cols = ceil(count / rows)`
   - This picks the fewest rows, then the fewest empty slots.
@@ -72,12 +72,14 @@ inside it (2 columns at that width).
   | 7       | 4 + 3       | 3 + 3 + 1   |
   | 13      | 5 + 5 + 3   | 3+3+3+3+1   |
 
-- Layout is a wrapping flex row with `justify-content: center`; each tile's
-  basis is `(100% - (cols - 1) * gap) / cols`, so full rows fill the width and
-  a short last row centers.
+- Layout is a CSS grid on half-column tracks (`2 * cols` tracks, each tile
+  spans two). Full rows fill the width; the first tile of a short last row
+  starts after `cols - lastRowCount` half-tracks, which centers that row
+  exactly without rounding wraps.
 - `ModuleList` measures its own width (`bind:clientWidth`) and passes it with
-  the module count to the function, writing `--cols` on the grid. The dev
-  section, when present, uses the same function with its own count.
+  the module count to the function, writing the track count and gap on the
+  grid. The dev section, when present, uses the same function with its own
+  count.
 - One tile size everywhere: fixed minimum height, icon and label on the global
   type tokens (`--font-size-sm` label). Tiles may grow if a translated label
   wraps. A short-viewport media query (`max-height: 500px`) may reduce tile
@@ -105,7 +107,7 @@ stays as is.
 
 ## Verification
 
-- Unit tests for `module-grid-columns.ts`: counts 1–16 across phone, side
+- Unit tests for `module-grid-layout.ts`: counts 1–16 across phone, side
   drawer, and 720px widths; no row except the last is short; `cols ≤ maxCols`.
 - Dev harness `src/routes/test/module-switcher/` renders the real
   `ModuleSwitcher` with a selectable module count (3, 5, 7, 13) built from
