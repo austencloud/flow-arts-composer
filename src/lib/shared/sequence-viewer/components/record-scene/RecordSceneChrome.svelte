@@ -35,13 +35,11 @@
 
   type CameraMode = "free" | "auto-orbit";
 
-  const cameraModeOptions: {
-    value: CameraMode;
-    label: string;
-    icon: string;
-  }[] = [
-    { value: "free", label: "Free", icon: "fas fa-hand-paper" },
-    { value: "auto-orbit", label: "Orbit", icon: "fas fa-sync-alt" },
+  // Words, not icons: SegmentedControl shows only the icon when one is set,
+  // and a hand and two arrows over a busy scene do not say "camera mode".
+  const cameraModeOptions: { value: CameraMode; label: string }[] = [
+    { value: "free", label: "Free" },
+    { value: "auto-orbit", label: "Orbit" },
   ];
 
   const currentMode = $derived<CameraMode>(
@@ -113,7 +111,8 @@
   .bottom-right {
     position: absolute;
     display: flex;
-    align-items: center;
+    /* Stretch, so Record matches the toggle's height beside it. */
+    align-items: stretch;
     gap: 0.5rem;
     pointer-events: auto;
     /* The host sets --record-scene-right / --record-scene-bottom to clear
@@ -126,10 +125,8 @@
   /* The toggle sits over the live scene, so it carries the same dark glass
      as the scene rail beside it; bare segments vanish into a bright sky. */
   .camera-mode {
-    padding: 2px;
-    border-radius: 999px;
+    border-radius: 9px;
     background: rgba(12, 12, 20, 0.72);
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.15));
     backdrop-filter: blur(8px);
   }
 
@@ -139,7 +136,7 @@
     gap: 10px;
     min-height: var(--min-touch-target, 44px);
     padding: 0 20px;
-    border-radius: 999px;
+    border-radius: 10px;
     background: linear-gradient(
       180deg,
       rgba(239, 68, 68, 0.95) 0%,
