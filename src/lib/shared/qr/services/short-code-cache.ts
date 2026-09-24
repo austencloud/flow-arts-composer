@@ -23,8 +23,12 @@ import { browser } from "$app/environment";
 /** Bump to invalidate every cached code (e.g. if the URL scheme changes).
  *  v2 (2026-07-05): values became code-only — URLs are derived per caller
  *  from their own options, and keys dropped the bp/rp/vm discriminants.
- *  The bump also flushes codes that diverged during the dup-mint-race era. */
-export const SHORT_CODE_CACHE_SCHEMA = "v2";
+ *  The bump also flushes codes that diverged during the dup-mint-race era.
+ *  v3 (2026-09-23): word and hand-path keys became the choreography digest
+ *  (`d:<digest>`), and only codes verified to play that choreography are
+ *  cached. v2 entries keyed by encoderHash could map two different
+ *  choreographies that share a hash to one code. */
+export const SHORT_CODE_CACHE_SCHEMA = "v3";
 
 const DB_NAME = "short-code-cache";
 const STORE_NAME = "codes";
