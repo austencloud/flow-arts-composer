@@ -153,6 +153,24 @@ The owners have deliberately different jobs:
     less than the walk (7.05 cm): the pack's run and walk lift the pelvis
     within 4% of each other, and holding stances exactly on the floor trims
     the run's by 6%.
+
+    The terminal stops are not walks and are not baked. Until 2026-09-24
+    they borrowed the forward walk's `pelvisDrop`, which the bake had left
+    at about zero, so the stop's captured standing pose (knees about 150
+    degrees against idle's 163 to 167) hung under a pelvis held at rest
+    height and every rig settled with both soles 3.6 to 5.3 cm up (Remy
+    7.0). `analyzeTerminalStop()` now measures each stop on the rig at
+    `createActions()`: a drop curve per sidecar frame, from the higher sole
+    over the feet the sidecar declares down, smoothed by six [1, 2, 1]
+    passes, and `blendedPelvisDrop()` samples it at the frame the stop is
+    showing. A curve here and not the walks' mean because a stop ends in a
+    held pose: a mean over the braking steps leaves that pose a centimetre
+    off the floor for as long as it is held, and the bounce that rejected
+    the walks' curve is two steps long here, not every stride. Settled
+    soles are now within 1.5% of hip height on all five Walk Lab rigs, and
+    the settled pelvis sits about 3 cm below idle because the capture's
+    standing knees are bent. Contract in
+    `tests/unit/3d/terminal-stop-stance.test.ts`.
 11. **Clip loop seams and the mixer's write skip** are owned by
     `LocomotionAnimator`. The pack's converted clips key from one frame in
     (0.0333 s at 30 Hz) while their duration counts from zero, and their last
@@ -269,6 +287,24 @@ for a frame, and every rig's ankles jumped 2.5 to 4.6 m/s (7 to 11 m/s with
 planting off) on the first frame of the shuttle's about-face.
 `tests/unit/3d/terminal-stop-release.test.ts` pins the release on every rig.
 
+Where a stop leaves the feet is measured on the rig, in two parts, both from
+2026-09-24. First, the braking stride scale divides the plan's step distances
+by the ground the stop's declared stance feet cover on this rig
+(`analyzeTerminalStop().travel`), not by the sidecar's `nativeTravelMeters`,
+which is the capture's own metres: Remy covers 1.51 m on a stop the sidecar
+calls 0.78, so its scale sat on the 1.75 clamp and its planted ankles ended
+0.34 and 0.79 m ahead of the settled pose, which the about-face then tore back
+at 6 to 7 m/s. Second, the stride warp scales a foot's offset from the pelvis,
+which is neutral only for a foot the body walks over; a stop's last feet settle
+ahead of the pelvis (the ball of the foot 15 to 25 cm ahead on ch01), so even a
+correct scale of 1.27 planted them 7 cm ahead. `getSettlingPlants()` hands
+`FootPlanter` the shift each foot's final plant needs instead: the root's
+remaining plan distance less that anchor's remaining retreat under the body in
+the clip, taken at the landing and faded in across the foot's last swing, live
+once it is down. Every rig now plants within about a centimetre of the settled
+pose, with no rise in peak swing speed. Contract in
+`tests/unit/3d/terminal-stop-stance.test.ts`.
+
 ### Step turns, spin turns, pivots, and facing
 
 Turning is foot placement plus weight transfer and braking. Root yaw alone is
@@ -351,7 +387,10 @@ complete contact model.
 TKA decision: **Shipped** for late contact locks and leg IK. **Adopted** for
 source contact labels, toe-aware anchors, confidence, per-rig reach limits, and
 contact-aware retargeting. Foot locks must release safely when the correction
-would break the source pose. Pulling the pelvis down until every foot reaches is
+would break the source pose. A stride warp is a correction about the pelvis for
+cyclic steps; a transition that ends in a held stance supplies each final
+plant's shift (`FootPlanterInput.settlingPlants`) rather than letting the warp
+scale a stance it does not walk over. Pulling the pelvis down until every foot reaches is
 not acceptable motion quality.
 
 ### Motion matching, warping, and learned controllers
@@ -614,6 +653,9 @@ itself is pinned by an assertion so the claim cannot go stale silently.
 | Setting velocity to zero is a terminal transition        | Human gait termination is phase- and speed-dependent and can require another placement.                                                                |
 | Zeroing a clip's weight releases it                      | three.js fills any weight the actions leave missing with the bind pose. A release has to hand the weight to the next clip, not drop it.                 |
 | A scripted root can keep its speed through a stop        | The stop clip decelerates before its terminal plant. A root that does not follow its distance curve drags the declared stance feet across the floor.   |
+| A sidecar's source travel fits every rig                 | Retargeting keeps rotations, so ground covered grows with the leg. Remy covers twice the capture's 0.78 m; scaling against the sidecar planted its feet up to 0.79 m off. |
+| A stop can borrow the walk's pelvis dip                  | The walks carry their dip inside the baked clip, so the borrowed residual is about zero and the stop's bent-knee settle hung 4 to 5 cm over the floor. |
+| Scaling a stride about the pelvis keeps a stop's stance   | A stop's last feet settle ahead of the pelvis, so any scale other than 1 moves the settled stance by that offset times the scale's excess.              |
 | Rotating the root under the avatar is a turn             | A believable turn selects support, places a foot, transfers weight, and rotates through an authored or data-covered window.                            |
 | Negative leg order is always collision                   | Intentional front and back crossovers reverse left/right foot order. Collision requires geometry and continuity evidence.                              |
 | IK can turn a sidestep into a grapevine                  | IK can correct a target near a valid source pose. It cannot supply the missing swing path, support sequence, pelvis action, or self-contact semantics. |
