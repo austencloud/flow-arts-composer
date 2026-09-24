@@ -15,7 +15,11 @@ import {
   MODULE_DEFINITIONS,
   MODULE_ID_MIGRATIONS,
 } from "$lib/shared/navigation/config/module-definitions";
-import { handle, rejectUnknownAppPath } from "../../src/hooks.server";
+import {
+  handle,
+  rejectUnknownAppPath,
+  robotsTagForRoute,
+} from "../../src/hooks.server";
 
 /**
  * Every first path segment the app itself will accept as a module: every
@@ -137,5 +141,23 @@ describe("handle() wiring", () => {
       resolve: async () => new Response("ok"),
     } as Parameters<typeof handle>[0]);
     expect(res.status).not.toBe(404);
+    // Public landing pages stay indexable: only the app shell is noindex.
+    expect(res.headers.get("X-Robots-Tag")).toBeNull();
+  });
+
+  it("marks an app surface noindex (Search Console soft 404 on /browse)", async () => {
+    const { response } = requestTo("/browse", "browse");
+    const res = await response;
+    expect(res.headers.get("X-Robots-Tag")).toBe("noindex");
+  });
+});
+
+describe("robotsTagForRoute", () => {
+  it("noindexes only the [...appPath] app shell", () => {
+    expect(robotsTagForRoute("/[...appPath]")).toBe("noindex");
+    expect(robotsTagForRoute("/(public)/shop/loop-deck")).toBeUndefined();
+    expect(robotsTagForRoute("/")).toBeUndefined();
+    expect(robotsTagForRoute(null)).toBeUndefined();
+    expect(robotsTagForRoute(undefined)).toBeUndefined();
   });
 });

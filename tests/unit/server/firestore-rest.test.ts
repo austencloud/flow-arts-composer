@@ -114,6 +114,37 @@ describe("FirestoreRest requests", () => {
     });
   });
 
+  it("projects a query onto the requested fields", async () => {
+    const fetchImpl = vi.fn(() =>
+      Promise.resolve(Response.json([{ readTime: "2026-09-23T00:00:00Z" }]))
+    ) as unknown as typeof fetch;
+    const authorizer = new ServiceAccountAuthorizer(
+      {
+        project_id: "test",
+        client_email: "cards@example.invalid",
+        private_key: "not-used-by-this-test",
+      },
+      fetchImpl
+    );
+    vi.spyOn(authorizer, "getAccessToken").mockResolvedValue("cached-token");
+    const firestore = new FirestoreRest(authorizer);
+
+    await expect(
+      firestore.queryDocuments({
+        collectionId: "products",
+        fieldPath: "status",
+        value: "active",
+        fieldPaths: ["name", "price"],
+      })
+    ).resolves.toEqual([]);
+
+    const [, init] = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock
+      .calls[0] as [string, RequestInit];
+    expect(JSON.parse(String(init.body)).structuredQuery.select).toEqual({
+      fields: [{ fieldPath: "name" }, { fieldPath: "price" }],
+    });
+  });
+
   it("makes no request for an empty batch", async () => {
     const fetchImpl = vi.fn() as unknown as typeof fetch;
     const authorizer = new ServiceAccountAuthorizer(
