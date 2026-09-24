@@ -9,11 +9,16 @@ describe("SwipeToDismiss nested swipe blocks", () => {
     document.body.innerHTML = "";
   });
 
-  it("lets a rail own touch gestures while the tray still swipes down", () => {
+  it("keeps downward gestures across the prop picker from dismissing the tray", () => {
     document.body.innerHTML = `
       <div data-swipe-block>
         <div id="tray">
-          <div data-swipe-block><button id="prop">Prop</button></div>
+          <div id="picker" data-swipe-block>
+            <header id="toolbar">Options</header>
+            <div id="padding">Padding</div>
+            <div id="rail"><button id="prop">Prop</button></div>
+            <section id="drill">Details</section>
+          </div>
           <button id="handle">Handle</button>
         </div>
       </div>`;
@@ -38,11 +43,13 @@ describe("SwipeToDismiss nested swipe blocks", () => {
       document.querySelector(selector)!.dispatchEvent(event);
     };
 
-    touch("#prop", "touchstart", 100);
-    touch("#prop", "touchmove", 300);
-    touch("#prop", "touchend", 300);
-    expect(swipe.getIsDragging()).toBe(false);
-    expect(onDismiss).not.toHaveBeenCalled();
+    for (const target of ["#prop", "#toolbar", "#padding", "#drill"]) {
+      touch(target, "touchstart", 100);
+      touch(target, "touchmove", 300);
+      touch(target, "touchend", 300);
+      expect(swipe.getIsDragging()).toBe(false);
+      expect(onDismiss).not.toHaveBeenCalled();
+    }
 
     touch("#handle", "touchstart", 100);
     expect(swipe.getIsDragging()).toBe(true);
