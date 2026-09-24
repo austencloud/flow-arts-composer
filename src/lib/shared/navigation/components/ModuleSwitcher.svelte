@@ -54,6 +54,14 @@
   let isOpen = $state(false);
   let selectedModuleId = $state<ModuleId | null>(null);
 
+  // The list region is the only part of the sheet that scrolls, and only when
+  // the sheet reaches its height cap. Each view starts at the top.
+  let listScroller = $state<HTMLElement | null>(null);
+
+  function resetListScroll() {
+    listScroller?.scrollTo({ top: 0 });
+  }
+
   const selectedModule = $derived(
     modules.find((module) => module.id === selectedModuleId) ?? null
   );
@@ -95,6 +103,7 @@
   function openDrawer() {
     hapticService?.trigger("selection");
     selectedModuleId = null;
+    resetListScroll();
     isOpen = true;
   }
 
@@ -137,6 +146,7 @@
 
     const sections = getAccessibleSectionsForModule(moduleId);
     if (module.home || sections.length > 1) {
+      resetListScroll();
       selectedModuleId = moduleId;
       return;
     }
@@ -158,6 +168,7 @@
 
   function handleDrillBack() {
     hapticService?.trigger("selection");
+    resetListScroll();
     selectedModuleId = null;
   }
 
@@ -254,17 +265,20 @@
       </button>
     </div>
 
-    <!-- Content -->
-    <div class="module-switcher-content">
+    <!-- Content: sized by the list; scrolls only at the sheet's height cap -->
+    <div
+      class="module-switcher-content themed-scrollbar"
+      bind:this={listScroller}
+    >
       <Crossfade
         key={selectedModuleId ?? "__modules__"}
         mode="swap"
         motion="step"
         direction={drillDirection}
         duration={DURATION.normal}
-        fill={true}
+        animateHeight={true}
       >
-        <div class="navigator-scroll themed-scrollbar">
+        <div class="navigator-body">
           {#if selectedModule}
             <ModuleDestinationList
               module={selectedModule}
@@ -364,24 +378,18 @@
     box-sizing: border-box;
   }
 
-  /* Bottom placement: Full width, content-adaptive height.
-     left/right/width match the Drawer bottom defaults, so they're dropped.
-     A fixed height is needed (Drawer bottom only sets min/max-height); Drawer
-     doesn't set `height`, so it wins on its own. max-height routes through
-     --sheet-max-height. */
+  /* Bottom placement: the sheet is as tall as its header, list, and footer,
+     up to the height cap, and no wider than 720px (centered past that, like
+     iPad and Material bottom sheets). The list region scrolls at the cap. */
   :global(.module-switcher-drawer[data-placement="bottom"]) {
     --sheet-max-height: 100dvh;
-    /* Default: full height on narrow mobile */
-    height: 100vh;
-    height: 100dvh;
+    --sheet-max-width: 720px;
+    --sheet-min-height: 0px;
   }
 
-  /* The animated list has no intrinsic height. Keep a definite sheet height
-     on unfolded phones too, or the footer squeezes the modules out of view. */
   @media (min-width: 700px) and (min-height: 500px) {
     :global(.module-switcher-drawer[data-placement="bottom"]) {
       --sheet-max-height: 85dvh;
-      height: 85dvh;
       border-radius: var(--sheet-radius-large, 20px)
         var(--sheet-radius-large, 20px) 0 0;
     }
@@ -555,32 +563,23 @@
     background: var(--theme-card-hover-bg, var(--theme-card-bg));
   }
 
+  /* Shrinks below its content only when the sheet hits its height cap; the
+     header and footer never shrink. The gutter is reserved on both edges so
+     the grid width (and so its column count) never flips when a scrollbar
+     appears. */
   .module-switcher-content {
-    position: relative;
-    overflow: hidden;
-    flex: 1;
+    flex: 0 1 auto;
     min-height: 0;
-  }
-
-  /* Keep both animation layers inside the space between header and footer. */
-  .module-switcher-content :global(.crossfade.fill) {
-    position: absolute;
-    inset: 0;
-    width: auto;
-    height: auto;
-  }
-
-  .navigator-scroll {
-    width: 100%;
-    height: 100%;
-    box-sizing: border-box;
-    padding: 20px 20px 40px;
-    overflow-y: auto;
     overflow-x: hidden;
+    overflow-y: auto;
     overscroll-behavior-y: contain;
-    container-type: inline-size;
-    scroll-behavior: smooth;
+    scrollbar-gutter: stable both-edges;
     -webkit-overflow-scrolling: touch;
+  }
+
+  .navigator-body {
+    box-sizing: border-box;
+    padding: 12px 20px 16px;
   }
 
   /* Landscape mobile - optimize for left drawer */
@@ -597,8 +596,8 @@
       font-size: var(--font-size-compact);
     }
 
-    .navigator-scroll {
-      padding: 14px 16px 24px;
+    .navigator-body {
+      padding: 10px 16px 12px;
     }
 
     :global(.module-switcher-drawer[data-placement="left"]) {
@@ -622,17 +621,17 @@
       font-size: var(--font-size-sm); /* Maintain readability */
     }
 
-    .navigator-scroll {
-      padding: 16px 16px 32px; /* Maintain generous padding on mobile */
+    .navigator-body {
+      padding: 12px 16px 16px;
+    }
+
+    .account-footer {
+      padding-inline: 16px;
     }
   }
 
   /* Widescreen bottom drawer: tighten padding so content is compact */
   @media (min-width: 700px) and (min-height: 500px) {
-    .navigator-scroll {
-      padding: 12px 20px 16px;
-    }
-
     .module-switcher-header {
       padding: 12px 16px 10px;
     }
@@ -664,11 +663,11 @@
 
   .account-footer {
     flex-shrink: 0;
-    padding: 12px 20px max(20px, env(safe-area-inset-bottom));
+    padding: 10px 20px max(12px, env(safe-area-inset-bottom));
     border-top: 1px solid var(--theme-stroke);
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
   }
 
   .drawer-action {
@@ -681,7 +680,7 @@
     box-sizing: border-box; /* Keep padding and borders inside each equal share. */
     min-width: 0; /* allow equal narrow columns to shrink without overflow */
     min-height: var(--min-touch-target, 50px);
-    padding: 8px 4px;
+    padding: 6px 4px;
     background: var(--theme-card-bg);
     border: 1px solid var(--theme-stroke);
     border-radius: 12px;
