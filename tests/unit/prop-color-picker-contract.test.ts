@@ -27,6 +27,16 @@ const GRID_PATH = `${PROP_TYPE_DIR}/BentoPropGrid.svelte`;
 const SHEET_PATH = `${PROP_TYPE_DIR}/PropSelectionSheet.svelte`;
 const PANEL_PATH =
   "src/lib/shared/animation-panel/components/AnimationPanel.svelte";
+const PAIR_FIELD_PATH =
+  "src/lib/shared/pictograph/prop/components/PropPairField.svelte";
+const VIEWING_CONTROL_PATH =
+  "src/lib/shared/browse/components/PropViewingControl.svelte";
+/** PropPairField hosts that pick props to save, not props on screen. */
+const SAVE_PAIR_HOSTS = [
+  "src/lib/features/create/shared/components/SaveToLibraryDialog.svelte",
+  "src/lib/features/create/shared/components/SaveToLibraryPanel.svelte",
+  "src/lib/shared/library/components/SavePropDialog.svelte",
+];
 
 /**
  * Surfaces whose picker shows the colour control. Each renders its props in
@@ -67,8 +77,6 @@ const NON_HOSTS: Record<string, string> = {
   // Saved prop metadata, not a live render.
   "collection prop field":
     "src/lib/features/library/components/CollectionPropField.svelte",
-  "save with props field":
-    "src/lib/shared/pictograph/prop/components/PropPairField.svelte",
   // Tunnel layers take performer colours; the 3D scene uses its own materials.
   "viewer tunnel art settings":
     "src/lib/shared/sequence-viewer/components/art-settings/TunnelArtSettings.svelte",
@@ -103,6 +111,19 @@ describe("the prop colour control is owned by the prop picker", () => {
 
   it("the animation panel shows the control unless its host opts out", () => {
     expect(read(PANEL_PATH)).toMatch(/showPropColors = true/);
+  });
+
+  it("the prop pair field shows the control only for the props on screen", () => {
+    // A saved pair is metadata; the account colours are not saved with it.
+    const field = read(PAIR_FIELD_PATH);
+    expect(field).toMatch(/showColors = false/);
+    expect(field).toContain("{showColors}");
+    for (const host of SAVE_PAIR_HOSTS) {
+      expect(read(host), host).not.toMatch(/<PropPairField[^>]*showColors/);
+    }
+    // The viewer header and gallery "Viewing props" dialog picks the props
+    // every sequence renders with, so its colours belong beside it.
+    expect(read(VIEWING_CONTROL_PATH)).toMatch(/<PropPairField[^>]*showColors/);
   });
 
   for (const [label, file] of Object.entries(HOSTS)) {
