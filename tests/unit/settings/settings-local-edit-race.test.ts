@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BackgroundType } from "@austencloud/backgrounds";
+import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 
 type RemoteSettings = Record<string, unknown>;
 
@@ -716,5 +717,238 @@ describe("session lifecycle fencing", () => {
 
     addListener.mockRestore();
     removeListener.mockRestore();
+  });
+});
+
+describe("prop choices follow the account", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    localStorage.clear();
+    auth.currentUser = { uid: "user-b" };
+    persister.loadSettings.mockReset();
+    persister.loadSettings.mockResolvedValue({
+      leftPropType: PropType.STAFF,
+      rightPropType: PropType.STAFF,
+      propType: PropType.STAFF,
+      catDogMode: false,
+    });
+    persister.saveSettings.mockReset();
+    persister.saveSettings.mockResolvedValue();
+    persister.onSettingsChange.mockReset();
+    persister.listener = null;
+    persister.subscribeCount = 0;
+    persister.unsubscribeCount = 0;
+    persister.onSettingsChange.mockImplementation(
+      (listener: (settings: RemoteSettings) => void) => {
+        persister.subscribeCount += 1;
+        persister.listener = listener;
+        return () => {
+          persister.unsubscribeCount += 1;
+          persister.listener = null;
+        };
+      }
+    );
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("restores the account's props at sign-in", async () => {
+    persister.loadSettings.mockResolvedValue({
+      leftPropType: PropType.FAN,
+      rightPropType: PropType.CLUB,
+      propType: PropType.FAN,
+      catDogMode: true,
+    });
+
+    const service = await loadSettingsService();
+    await service.initializeFirebaseSync();
+    await flushMicrotasks();
+
+    expect(service.currentSettings).toMatchObject({
+      leftPropType: PropType.FAN,
+      rightPropType: PropType.CLUB,
+      catDogMode: true,
+    });
+  });
+
+  it("switches props when another tab changes them", async () => {
+    const service = await loadSettingsService();
+    await service.initializeFirebaseSync();
+    await flushMicrotasks();
+
+    persister.listener?.({
+      leftPropType: PropType.FAN,
+      rightPropType: PropType.FAN,
+      propType: PropType.FAN,
+      catDogMode: false,
+    });
+    await flushMicrotasks();
+
+    expect(service.currentSettings).toMatchObject({
+      leftPropType: PropType.FAN,
+      rightPropType: PropType.FAN,
+    });
+    // A reload starts from this browser copy, so it must not keep the old prop.
+    expect(
+      JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}")
+    ).toMatchObject({
+      leftPropType: PropType.FAN,
+      rightPropType: PropType.FAN,
+    });
+  });
+
+  it("keeps the newest Shift+P prop when its upload fails and an older copy arrives", async () => {
+    const service = await loadSettingsService();
+    await service.initializeFirebaseSync();
+    await flushMicrotasks();
+
+    const firstSave = deferred<void>();
+    const secondSave = deferred<void>();
+    persister.saveSettings
+      .mockReturnValueOnce(firstSave.promise)
+      .mockReturnValueOnce(secondSave.promise);
+
+    await service.updateSettings({
+      leftPropType: PropType.FAN,
+      rightPropType: PropType.FAN,
+    });
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    await flushMicrotasks();
+
+    // Two more presses while the first write is still open.
+    await service.updateSettings({
+      leftPropType: PropType.CLUB,
+      rightPropType: PropType.CLUB,
+    });
+    await service.updateSettings({
+      leftPropType: PropType.BIGSTAFF,
+      rightPropType: PropType.BIGSTAFF,
+    });
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    await flushMicrotasks();
+
+    firstSave.resolve();
+    await flushMicrotasks();
+    expect(persister.saveSettings).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        leftPropType: PropType.BIGSTAFF,
+        rightPropType: PropType.BIGSTAFF,
+      })
+    );
+
+    // The last press fails to upload. That frees the write slot, so the next
+    // snapshot is applied while the account still holds the first press.
+    secondSave.reject(new Error("offline"));
+    await flushMicrotasks();
+
+    persister.listener?.({
+      leftPropType: PropType.FAN,
+      rightPropType: PropType.FAN,
+      propType: PropType.FAN,
+      catDogMode: false,
+      hapticFeedback: false,
+    });
+    await flushMicrotasks();
+
+    // The snapshot landed, but the unconfirmed prop outranks it.
+    expect(service.currentSettings.hapticFeedback).toBe(false);
+    expect(service.currentSettings).toMatchObject({
+      leftPropType: PropType.BIGSTAFF,
+      rightPropType: PropType.BIGSTAFF,
+    });
+  });
+
+  it("keeps a one-hand pick whole while the account document loads", async () => {
+    const load = deferred<RemoteSettings | null>();
+    persister.loadSettings.mockReturnValue(load.promise);
+
+    const service = await loadSettingsService();
+    const syncing = service.initializeFirebaseSync();
+    await flushMicrotasks();
+
+    // A left-hand pick: the right hand stays a staff and cat dog turns on.
+    await service.updateSettings({ leftPropType: PropType.FAN });
+
+    load.resolve({
+      leftPropType: PropType.CLUB,
+      rightPropType: PropType.CLUB,
+      propType: PropType.CLUB,
+      catDogMode: false,
+    });
+    await syncing;
+    await flushMicrotasks();
+
+    // The account's right hand must not be spliced onto the local left.
+    expect(service.currentSettings).toMatchObject({
+      leftPropType: PropType.FAN,
+      rightPropType: PropType.STAFF,
+      catDogMode: true,
+    });
+  });
+
+  it("uploads a prop picked before the account sync started", async () => {
+    const service = await loadSettingsService();
+
+    // Signed in, but the sync has not started, so nothing can be written yet.
+    await service.updateSettings({
+      leftPropType: PropType.FAN,
+      rightPropType: PropType.FAN,
+    });
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    expect(persister.saveSettings).not.toHaveBeenCalled();
+
+    await service.initializeFirebaseSync();
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    await flushMicrotasks();
+
+    expect(service.currentSettings.leftPropType).toBe(PropType.FAN);
+    expect(persister.saveSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        leftPropType: PropType.FAN,
+        rightPropType: PropType.FAN,
+      })
+    );
+
+    // With the pick on the server, other tabs' changes land here again.
+    persister.listener?.({
+      leftPropType: PropType.CLUB,
+      rightPropType: PropType.CLUB,
+      propType: PropType.CLUB,
+      catDogMode: false,
+    });
+    await flushMicrotasks();
+    expect(service.currentSettings.leftPropType).toBe(PropType.CLUB);
+  });
+
+  it("keeps this device's props off the account when the account read fails", async () => {
+    localStorage.setItem(
+      SETTINGS_KEY,
+      JSON.stringify({
+        leftPropType: PropType.CLUB,
+        rightPropType: PropType.CLUB,
+        propType: PropType.CLUB,
+        catDogMode: false,
+      })
+    );
+    persister.loadSettings.mockRejectedValue(new Error("client is offline"));
+
+    const service = await loadSettingsService();
+    await service.initializeFirebaseSync();
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    await flushMicrotasks();
+
+    expect(persister.saveSettings).not.toHaveBeenCalled();
+
+    // The account's copy still lands once the connection is back.
+    persister.listener?.({
+      leftPropType: PropType.FAN,
+      rightPropType: PropType.FAN,
+      propType: PropType.FAN,
+      catDogMode: false,
+    });
+    await flushMicrotasks();
+    expect(service.currentSettings.leftPropType).toBe(PropType.FAN);
   });
 });
