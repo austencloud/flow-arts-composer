@@ -202,10 +202,8 @@ dialog.drawer-content {
   /* Consumers can cap sheet height via --sheet-max-height (replaces
      per-consumer `max-height: …vh !important` skins). */
   max-height: var(--sheet-max-height, 100vh);
-  max-height: var(
-    --sheet-max-height,
-    100dvh
-  ); /* Modern: iPhone browser chrome */
+  /* Modern: iPhone browser chrome */
+  max-height: var(--sheet-max-height, 100dvh);
   /* Prevent bottom sheets from appearing as tiny slivers on mobile.
      A sheet that sizes to its own content sets --sheet-min-height. */
   min-height: var(--sheet-min-height, 50vh);
