@@ -4,6 +4,7 @@ import type {
   DeckReleaseCard,
   DeckRecipe,
 } from "../../../domain/models/DeckRelease";
+import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import {
   extractReleasedSequenceIds,
   findDuplicateRelease,
@@ -19,6 +20,7 @@ export interface DeckReleaseStateDependencies {
   getNextNumber(): Promise<number>;
   create(
     cards: DeckReleaseCard[],
+    sequences: SequenceData[],
     theme: string,
     notes: string,
     metadata: {
@@ -30,25 +32,48 @@ export interface DeckReleaseStateDependencies {
     recipe: DeckRecipe
   ): Promise<DeckRelease>;
   updateMetadata(deckNumber: number, metadata: { name: string }): Promise<void>;
-  delete(deckNumber: number): Promise<void>;
+  /** Soft-delete: hide a released deck from the default list. Restorable. */
+  archive(deckNumber: number): Promise<void>;
+  /** Undo `archive` — the deck reappears in the default list. */
+  restore(deckNumber: number): Promise<void>;
+  /**
+   * Surface a non-fatal warning to the admin (e.g. a visible toast). Used
+   * when `create` succeeds but the release's exact reprint data failed to
+   * save — the release itself is still good, but until this is seen and
+   * acted on, a reprint of this deck falls back to by-id resolution instead
+   * of the durable saved-data path.
+   */
+  warn(message: string): void;
 }
 
 export function createDeckReleaseState(
   deck: DeckReleaserState,
   deps: DeckReleaseStateDependencies
 ) {
-  let releases = $state<DeckRelease[]>([]);
+  /** Every release fetched from Firestore, active and archived alike. */
+  let allReleases = $state<DeckRelease[]>([]);
   let isLoading = $state(true);
+
+  // Archived decks are hidden from the default history/browse lists — the
+  // task's "keep old releases working" and "hide, don't erase" requirements
+  // both key off this single filter.
+  const releases = $derived(allReleases.filter((release) => !release.archived));
+  const archivedReleases = $derived(
+    allReleases.filter((release) => release.archived)
+  );
 
   const tndReleases = $derived(releases.filter(isTnDRelease));
   const handPathReleases = $derived(releases.filter(isHandPathRelease));
   const galleryReleases = $derived(releases.filter(isGalleryRelease));
   const loopReleases = $derived(releases.filter(isLoopRelease));
-  const releasedSequenceIds = $derived(extractReleasedSequenceIds(releases));
+  // Duplicate-detection and id-pruning must see archived decks too — an
+  // archived deck's sequences are still "released" (its short codes still
+  // scan), so this deliberately reads from allReleases, not the active list.
+  const releasedSequenceIds = $derived(extractReleasedSequenceIds(allReleases));
 
   async function load(): Promise<void> {
     try {
-      releases = await deps.getAll();
+      allReleases = await deps.getAll();
     } finally {
       isLoading = false;
     }
@@ -66,11 +91,15 @@ export function createDeckReleaseState(
     return findDuplicateRelease(cards, releases);
   }
 
+  /** Soft-delete: archive the release so it drops out of the default list. */
   async function remove(deckNumber: number): Promise<unknown | null> {
     try {
-      await deps.delete(deckNumber);
-      releases = releases.filter(
-        (release) => release.deckNumber !== deckNumber
+      await deps.archive(deckNumber);
+      const archivedAt = new Date().toISOString();
+      allReleases = allReleases.map((release) =>
+        release.deckNumber === deckNumber
+          ? { ...release, archived: true, archivedAt }
+          : release
       );
       if (deck.viewingRelease?.deckNumber === deckNumber) {
         deck.viewingRelease = null;
@@ -86,6 +115,21 @@ export function createDeckReleaseState(
     }
   }
 
+  /** Undo `remove` — the deck reappears in the default list. */
+  async function restore(deckNumber: number): Promise<unknown | null> {
+    try {
+      await deps.restore(deckNumber);
+      allReleases = allReleases.map((release) =>
+        release.deckNumber === deckNumber
+          ? { ...release, archived: false, archivedAt: null }
+          : release
+      );
+      return null;
+    } catch (error) {
+      return error;
+    }
+  }
+
   async function create(
     name: string,
     description: string
@@ -94,6 +138,7 @@ export function createDeckReleaseState(
     try {
       const release = await deps.create(
         deck.cards,
+        deck.sequences,
         deck.theme,
         deck.notes,
         {
@@ -108,9 +153,20 @@ export function createDeckReleaseState(
       deck.description = description;
       deck.releasedNumber = release.deckNumber;
       deck.nextDeckNumber = release.deckNumber + 1;
-      releases = [release, ...releases];
+      allReleases = [release, ...allReleases];
       deck.step = "released";
       deck.persist();
+      if (release.cardDataSaved !== true) {
+        // The release itself succeeded — deck.step already advanced above —
+        // but releaseDeck's best-effort card-data save failed (or skipped)
+        // and only logged to the console. That's invisible to an admin who
+        // isn't watching devtools, so surface it here where it's certain to
+        // be seen: this deck's reprint currently falls back to by-id
+        // resolution instead of the durable saved-data path.
+        deps.warn(
+          `Deck #${String(release.deckNumber).padStart(3, "0")} released, but its reprint data wasn't saved. Reprints will re-read the source sequences.`
+        );
+      }
       return release;
     } finally {
       deck.isReleasing = false;
@@ -123,7 +179,7 @@ export function createDeckReleaseState(
 
     const deckNumber = deck.viewingRelease.deckNumber;
     deck.name = trimmed;
-    releases = releases.map((release) =>
+    allReleases = allReleases.map((release) =>
       release.deckNumber === deckNumber
         ? { ...release, name: trimmed }
         : release
@@ -184,10 +240,14 @@ export function createDeckReleaseState(
     get releasedSequenceIds() {
       return releasedSequenceIds;
     },
+    get archivedReleases() {
+      return archivedReleases;
+    },
     load,
     loadNextNumber,
     findDuplicate,
     remove,
+    restore,
     create,
     rename,
     activate,

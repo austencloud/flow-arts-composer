@@ -11,6 +11,7 @@ import {
   toPositiveInteger,
   type SequenceRouteMeta,
 } from "./sequence-seo";
+import { readScanSequenceCode } from "$lib/shared/qr/services/scan-sequence-handoff";
 import {
   emptySequenceMeta,
   firstTrustedThumbnail,
@@ -75,7 +76,14 @@ export const load: PageServerLoad = async ({ params, url, platform }) => {
       } catch {
         meta = { ...fallback, source: "inline" };
       }
-    } else if (parsed.legacyId) {
+    } else if (
+      parsed.legacyId &&
+      !readScanSequenceCode(params.id, url.searchParams)
+    ) {
+      // A `/q` scan handoff skips this lookup: the scan page already decoded
+      // the sequence and passed it to the viewer, a shortcode never has
+      // release metadata, and the visit is not a crawl target. Waiting on
+      // Firestore here held every scanned card on a loading screen.
       meta = await loadPublishedMeta(
         parsed.legacyId,
         fallback,

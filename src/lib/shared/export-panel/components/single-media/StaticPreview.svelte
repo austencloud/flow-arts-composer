@@ -18,6 +18,7 @@
   import type { SequenceRenderer } from "$lib/shared/render/services/sequence-renderer";
   import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
   import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+  import { captureActivePropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
   import { onMount } from "svelte";
   import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
 
@@ -94,10 +95,9 @@
     const _notes = showNotes;
     const _darkMode = darkMode;
     const _version = renderVersion;
-    // Track prop type settings for reactivity
-    const _catDogMode = settingsService.settings.catDogMode;
-    const _leftPropType = settingsService.settings.leftPropType;
-    const _rightPropType = settingsService.settings.rightPropType;
+    // The real image export reads the settings pair directly, so the preview
+    // resolves the same pair (reading the fields here also tracks them).
+    const _props = captureActivePropConfig(settingsService.settings);
     if (!sequence || !service) {
       previewDataUrl = null;
       return;
@@ -120,8 +120,8 @@
         addDifficultyLevel: _diff,
         showNotes: _notes,
         // Include prop type settings so preview updates when prop type changes
-        leftPropTypeOverride: _leftPropType,
-        rightPropTypeOverride: _catDogMode ? _rightPropType : _leftPropType,
+        leftPropTypeOverride: _props.leftPropType,
+        rightPropTypeOverride: _props.rightPropType,
         // Pass dark mode as visibility override
         visibilityOverrides: {
           darkMode: _darkMode,

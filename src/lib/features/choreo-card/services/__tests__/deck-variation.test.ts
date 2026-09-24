@@ -6,6 +6,7 @@ import {
   resolveDeckSequences,
   parseTurnUnit,
   DEFAULT_VARIATION_CONFIG,
+  MissingDeckSequenceError,
   type Rng,
 } from "../deck-variation";
 import type { VariationConfig } from "../deck-variation";
@@ -174,6 +175,51 @@ describe("resolveDeckSequences (positional seam)", () => {
     const out = resolveDeckSequences([{ sequenceId: "TEST", sourceCatalogId: "cat" }], map, []);
     expect(out[0]!.sequence).toBe(base);
     expect(out[0]!.turnLoopClosed).toBe(true);
+  });
+
+  it("silently drops a card with a missing base by default (legacy behavior)", () => {
+    const map = new Map<string, SequenceData>(); // empty — nothing resolves
+    const out = resolveDeckSequences(
+      [{ sequenceId: "GONE", sourceCatalogId: "cat" }],
+      map,
+      []
+    );
+    expect(out).toHaveLength(0);
+  });
+
+  it("throws MissingDeckSequenceError naming the card in strict mode instead of dropping it", () => {
+    const base = twoStepSeq();
+    const map = new Map([["cat::TEST", base]]);
+    const cards = [
+      { sequenceId: "TEST", sourceCatalogId: "cat", word: "AB", position: 1 },
+      { sequenceId: "GONE", sourceCatalogId: "cat", word: "CD", position: 2 },
+    ];
+    expect(() => resolveDeckSequences(cards, map, [], { strict: true })).toThrow(
+      MissingDeckSequenceError
+    );
+    try {
+      resolveDeckSequences(cards, map, [], { strict: true });
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(MissingDeckSequenceError);
+      const message = (error as Error).message;
+      expect(message).toContain("#2");
+      expect(message).toContain("CD");
+      expect(message).toContain("GONE");
+    }
+  });
+
+  it("strict mode still resolves normally when every card's base is present", () => {
+    const base = twoStepSeq();
+    const map = new Map([["cat::TEST", base]]);
+    const out = resolveDeckSequences(
+      [{ sequenceId: "TEST", sourceCatalogId: "cat" }],
+      map,
+      [],
+      { strict: true }
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0]!.sequence).toBe(base);
   });
 });
 

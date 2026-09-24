@@ -31,6 +31,8 @@ vi.mock("$lib/shared/offline/state/network-status-state.svelte", () => ({
 import { applyFilter } from "$lib/shared/browse/services/browse-filter";
 import { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
 import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
+import { resolveRecordedPropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
+import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -180,5 +182,80 @@ describe("PublicSequencesLoader exact-ID resolution", () => {
     await expect(
       loader.loadFullSequenceDataStrict("seq-offline", "seq-offline")
     ).rejects.toThrow("never reached the server");
+  });
+});
+
+describe("PublicSequencesLoader recorded prop intent", () => {
+  async function loadSourceDoc(sourceData: Record<string, unknown>) {
+    const loader = new PublicSequencesLoader();
+    loader.warmFromCache([], new Map());
+    mocks.getDoc
+      .mockResolvedValueOnce({
+        id: "seq-props",
+        exists: () => true,
+        data: () => ({
+          name: "Recorded props",
+          word: "AB",
+          sourceRef: "users/owner-1/sequences/seq-props",
+        }),
+        metadata: { fromCache: false },
+      })
+      .mockResolvedValueOnce({
+        id: "seq-props",
+        exists: () => true,
+        data: () => ({
+          name: "Recorded props",
+          word: "AB",
+          steps: [{ stepNumber: 1, letter: "A", motions: {} }],
+          ...sourceData,
+        }),
+        metadata: { fromCache: false },
+      });
+    return loader.loadFullSequenceData("AB", "seq-props");
+  }
+
+  it("keeps a recorded staff/fan pair from the source document", async () => {
+    const sequence = await loadSourceDoc({
+      creatorIntent: {
+        propConfig: {
+          leftPropType: "staff",
+          rightPropType: "fan",
+          catDogMode: true,
+        },
+      },
+    });
+
+    expect(resolveRecordedPropConfig(sequence)).toEqual({
+      leftPropType: PropType.STAFF,
+      rightPropType: PropType.FAN,
+      catDogMode: true,
+    });
+  });
+
+  it("keeps the legacy intendedProp field", async () => {
+    const sequence = await loadSourceDoc({
+      intendedProp: {
+        leftPropType: "staff",
+        rightPropType: "fan",
+        catDogMode: false,
+      },
+    });
+
+    expect(resolveRecordedPropConfig(sequence)).toEqual({
+      leftPropType: PropType.STAFF,
+      rightPropType: PropType.FAN,
+      catDogMode: true,
+    });
+  });
+
+  it("drops intent fields that are not objects", async () => {
+    const sequence = await loadSourceDoc({
+      creatorIntent: "staff",
+      intendedProp: ["fan"],
+    });
+
+    expect(sequence?.creatorIntent).toBeUndefined();
+    expect(sequence?.intendedProp).toBeUndefined();
+    expect(resolveRecordedPropConfig(sequence)).toBeNull();
   });
 });

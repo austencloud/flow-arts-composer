@@ -21,7 +21,7 @@ const canonicalPropRoot = path.join(
  */
 const CANONICAL_PROP_SOURCE_HASHES = {
   "Prop3D.svelte":
-    "6bae71b6f5bd3274d7c022b1202cc61c5b76d22d048eaac7302f784218b47009",
+    "dbb650c26dc0de198ec3e52d8372eed4c0776e736fff1333c4b45aa7919955c3",
   "GltfProp3D.svelte":
     "62a715d89eb98785be287061b9720bcf7cc88c4bd19731433b931902e06bd96b",
   // Flat-grip (43bf94fc40) and Star builds: the component picks the build's
@@ -41,7 +41,13 @@ const CANONICAL_PROP_SOURCE_HASHES = {
   "eightrings-profile.ts":
     "c943eabe2b40464e514f396ef7bcf97c0fa961587eee7320425edb360f95a4a5",
   "hoop-geometry.ts":
-    "5fdc56cb354a242428066c95b6f64891b10e709461d79f758aaf369d0e9be172",
+    "0b922d83644f0f28acae6e46341df7177e779e0c372c82c7c353a48a848c14e9",
+  "Hoop3D.svelte":
+    "595e3b940deae41c5310333bf419fe35d9d050cd88c34b68b16d20ebdef2b8f2",
+  "triangle-geometry.ts":
+    "36762a38aeed51d029989565b91089b7e627652a06955f80429ad5ea75ef3d2d",
+  "Triangle3D.svelte":
+    "157d34332346f1c239a7d950ff4de389d48859fe78a9b87a0a0d9e1e924e0a91",
   "torch-profile.ts":
     "d9337b9071279ec8f22e109e26e12fcb1892211b3ce590da50a03cac385a4bc3",
   "triad-frame.ts":
@@ -53,7 +59,7 @@ const CANONICAL_PROP_SOURCE_HASHES = {
   "plate-materials.ts":
     "709956b8ee633bf32244344ca4d8f703f1dc92db06fee7e00e8b09f5bf4d45f0",
   "frame-materials.ts":
-    "e395ac1f9319fab678a5c002fdd5b6b58de2422090aec8c6f741bb1bd0da8a72",
+    "52d0690a0f49e4120f0a8512091eb9017dfbee309acb54081ffee7eb36d518b9",
   "prop-model-registry.ts":
     "203495aac2e641cb0e69a1d467884d769eab7dd6bbdb1f4faf3dd5365800cd15",
   "prop-model-recolor.ts":

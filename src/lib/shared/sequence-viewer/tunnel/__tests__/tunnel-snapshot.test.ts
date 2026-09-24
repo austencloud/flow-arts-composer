@@ -117,6 +117,20 @@ describe("TunnelSnapshotSchema", () => {
     });
   });
 
+  it("keeps props.catDogMode through parsing", () => {
+    // zod strips unknown keys, so success alone would not prove the field is
+    // declared; drafts and collection tunnels depend on it surviving.
+    const withFlag = {
+      ...validSnapshot,
+      props: { ...validSnapshot.props, catDogMode: true },
+    };
+    expect(TunnelSnapshotSchema.parse(withFlag).props.catDogMode).toBe(true);
+  });
+
+  it("accepts a snapshot without props.catDogMode", () => {
+    expect(TunnelSnapshotSchema.safeParse(validSnapshot).success).toBe(true);
+  });
+
   it("rejects a snapshot missing the tunnel block", () => {
     const { tunnel: _drop, ...rest } = validSnapshot;
     expect(TunnelSnapshotSchema.safeParse(rest).success).toBe(false);
@@ -216,6 +230,7 @@ describe("captureTunnelSnapshot", () => {
     expect(snap.props).toEqual({
       leftPropType: "fan",
       rightPropType: "club",
+      catDogMode: true,
       leftBuugengFlipped: true,
       rightBuugengFlipped: false,
     });
@@ -237,6 +252,102 @@ describe("captureTunnelSnapshot", () => {
   });
 });
 
+function fakeDepsWithSettings(
+  overrides: Record<string, unknown>
+): SnapshotDeps {
+  const deps = fakeDeps();
+  return {
+    ...deps,
+    settings: {
+      ...deps.settings,
+      ...overrides,
+    } as unknown as SnapshotDeps["settings"],
+  };
+}
+
+describe("captureTunnelSnapshot catDogMode", () => {
+  it("turns cat dog on when the hands differ and no flag is stored", () => {
+    const snap = captureTunnelSnapshot(
+      fakeDepsWithSettings({
+        leftPropType: "staff",
+        rightPropType: "fan",
+        catDogMode: undefined,
+      })
+    );
+    expect(snap.props.catDogMode).toBe(true);
+  });
+
+  it("keeps cat dog on for an equal pair with the flag set", () => {
+    const snap = captureTunnelSnapshot(
+      fakeDepsWithSettings({
+        leftPropType: "staff",
+        rightPropType: "staff",
+        catDogMode: true,
+      })
+    );
+    expect(snap.props.catDogMode).toBe(true);
+  });
+
+  it("keeps cat dog off for an equal pair with no flag stored", () => {
+    const snap = captureTunnelSnapshot(
+      fakeDepsWithSettings({
+        leftPropType: "staff",
+        rightPropType: "staff",
+        catDogMode: undefined,
+      })
+    );
+    expect(snap.props.catDogMode).toBe(false);
+  });
+});
+
+describe("applyTunnelSnapshot catDogMode", () => {
+  function depsWithUpdateSpy(): {
+    deps: SnapshotDeps;
+    updateSettings: ReturnType<typeof vi.fn>;
+  } {
+    const updateSettings = vi.fn();
+    const deps = fakeDeps();
+    return {
+      deps: {
+        ...deps,
+        settings: {
+          ...deps.settings,
+          updateSettings,
+        } as unknown as SnapshotDeps["settings"],
+      },
+      updateSettings,
+    };
+  }
+
+  it("infers cat dog on for a legacy snapshot with differing hands and no flag", () => {
+    const { deps, updateSettings } = depsWithUpdateSpy();
+    const snap: TunnelSnapshot = {
+      ...validSnapshot,
+      props: { leftPropType: "staff", rightPropType: "fan" },
+    } as TunnelSnapshot;
+    applyTunnelSnapshot(deps, snap);
+    expect(updateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({ catDogMode: true })
+    );
+  });
+
+  it("passes an explicit flag through for an equal pair", () => {
+    const { deps, updateSettings } = depsWithUpdateSpy();
+    const snap: TunnelSnapshot = {
+      ...validSnapshot,
+      props: {
+        leftPropType: "staff",
+        rightPropType: "staff",
+        catDogMode: true,
+      },
+    } as TunnelSnapshot;
+    applyTunnelSnapshot(deps, snap);
+    expect(updateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({ catDogMode: true })
+    );
+  });
+});
+
 describe("applyTunnelSnapshot", () => {
   it("fans the snapshot out through the per-store setters", () => {
     const store = {
@@ -255,6 +366,7 @@ describe("applyTunnelSnapshot", () => {
       rightLines: false,
       leftPropType: "staff",
       rightPropType: "staff",
+      catDogMode: false,
       leftBuugengFlipped: false,
       rightBuugengFlipped: false,
       bpm: 60,
@@ -330,6 +442,9 @@ describe("applyTunnelSnapshot", () => {
         get rightPropType() {
           return store.rightPropType;
         },
+        get catDogMode() {
+          return store.catDogMode;
+        },
         get leftBuugengFlipped() {
           return store.leftBuugengFlipped;
         },
@@ -386,6 +501,7 @@ describe("applyTunnelSnapshot", () => {
       props: {
         leftPropType: "fan",
         rightPropType: "club",
+        catDogMode: true,
         leftBuugengFlipped: true,
         rightBuugengFlipped: false,
       },

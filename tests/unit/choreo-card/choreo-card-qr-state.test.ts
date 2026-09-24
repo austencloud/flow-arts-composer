@@ -14,6 +14,25 @@ const sequence = {
   metadata: {},
 } as unknown as SequenceData;
 
+/** The review fixture with its first step's left hand patched onto a location
+ * the encoder has no wire code for. */
+function withFirstLeftMotion(patch: Record<string, unknown>): SequenceData {
+  return {
+    ...TRANSITION_REVIEW_SEQUENCE,
+    steps: TRANSITION_REVIEW_SEQUENCE.steps.map((step, i) =>
+      i
+        ? step
+        : {
+            ...step,
+            motions: {
+              ...step.motions,
+              left: { ...step.motions.left, ...patch },
+            },
+          }
+    ),
+  } as SequenceData;
+}
+
 function qrResult(label: string): QRCodeResult {
   return {
     svg: `<svg>${label}</svg>`,
@@ -174,6 +193,64 @@ describe("choreo card QR state", () => {
 
       await Promise.resolve();
       expect(harness.qrState.dataUrl).toBe("data:image/svg+xml,club");
+    } finally {
+      harness.dispose();
+    }
+  });
+
+  it("leaves the card without a QR when a motion cannot be encoded, warning once", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const generateForSequence = vi.fn();
+    const harness = createChoreoCardQrStateHarness({
+      sequence: withFirstLeftMotion({ startLocation: "nowhere" }),
+      leftPropType: PropType.STAFF,
+      rightPropType: PropType.STAFF,
+      generateForSequence,
+    });
+    try {
+      flushSync();
+      await Promise.resolve();
+      expect(generateForSequence).not.toHaveBeenCalled();
+      expect(harness.qrState.dataUrl).toBeNull();
+      expect(harness.qrState.pending).toBe(false);
+      // Export waits on `settled`; a card with no QR must not hang it.
+      expect(harness.qrState.settled).toBe(true);
+
+      // Re-deriving the key for the same broken sequence stays quiet.
+      harness.setProps(PropType.CLUB, PropType.CLUB);
+      flushSync();
+      expect(harness.qrState.settled).toBe(true);
+      const qrWarnings = warn.mock.calls.filter(([message]) =>
+        String(message).includes("without a QR")
+      );
+      expect(qrWarnings).toHaveLength(1);
+      expect(qrWarnings[0]![1]).toMatchObject({
+        field: "startLocation",
+        value: "nowhere",
+      });
+    } finally {
+      harness.dispose();
+      warn.mockRestore();
+    }
+  });
+
+  it("still throws encoder failures that are not an unencodable motion", () => {
+    const harness = createChoreoCardQrStateHarness({
+      sequence: {
+        ...TRANSITION_REVIEW_SEQUENCE,
+        steps: TRANSITION_REVIEW_SEQUENCE.steps.map((step, i) =>
+          i ? step : { ...step, duration: 0 }
+        ),
+      },
+      leftPropType: PropType.STAFF,
+      rightPropType: PropType.STAFF,
+      generateForSequence: vi.fn(),
+    });
+    try {
+      expect(() => {
+        flushSync();
+        void harness.qrState.settled;
+      }).toThrow(/Invalid step duration/);
     } finally {
       harness.dispose();
     }

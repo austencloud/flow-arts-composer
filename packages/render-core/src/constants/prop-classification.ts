@@ -22,6 +22,7 @@ const SMALL_UNILATERAL_PROPS = [
   "club",
   "classic_club",
   "minihoop",
+  "triangle",
   "triad",
   "ukulele",
   "triquetra",

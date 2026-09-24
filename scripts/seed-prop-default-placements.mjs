@@ -21,6 +21,7 @@ const SEED_PROPS = [
   "bigtriad",
   "minihoop",
   "bighoop",
+  "triangle",
   "buugeng",
   "bigbuugeng",
   "doublestar",

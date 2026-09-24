@@ -8,7 +8,7 @@ import {
   emptySequenceMeta,
   isSafeFirestoreDocumentId,
   listReleaseManifests,
-  resolvePublishedMeta,
+  resolvePublishedMetaBatch,
 } from "../sequence/[id]/published-meta";
 import { isSequenceIndexable } from "../sequence/[id]/sequence-seo";
 import type { RequestHandler } from "./$types";
@@ -136,10 +136,12 @@ const learnConceptsEntries = TKA_CONCEPTS.map((concept) => ({
  * codes are minted lazily by client interaction and are not guaranteed to
  * exist for a freshly released deck).
  *
- * Firestore REST query (the admin-SDK client reads `process.env` directly,
- * which is unset on Cloudflare Pages — the platform-scoped credential lives
- * on `event.platform.env` instead), capped at 200, falls back to [] on any
- * failure so a Firestore/credentials outage never 500s the sitemap.
+ * Firestore REST with the request's `event.platform.env` credential, not the
+ * admin SDK: production had FIREBASE_SERVICE_ACCOUNT_JSON configured, yet the
+ * admin-SDK version of this took 8-9 s per uncached request and listed zero
+ * cards (2026-09-23). Capped at 200 ids, a fixed number of requests however
+ * many decks ship (see `resolvePublishedMetaBatch`), and falls back to [] on
+ * any failure so a Firestore/credentials outage never 500s the sitemap.
  */
 async function getCuratedSequenceUrls(
   platformCredential?: string
@@ -167,18 +169,17 @@ async function getCuratedSequenceUrls(
     // List only what the card page will actually serve as indexable: a
     // released card without a word or creator renders noindex, and a noindex
     // URL in the sitemap is a Search Console error.
-    const resolved = await Promise.allSettled(
-      [...ids].map((id) =>
-        resolvePublishedMeta(firestore, manifests, id, emptySequenceMeta())
-      )
+    const resolved = await resolvePublishedMetaBatch(
+      firestore,
+      manifests,
+      [...ids],
+      emptySequenceMeta()
     );
 
     return [...ids]
-      .filter((_, index) => {
-        const result = resolved[index];
-        return (
-          result?.status === "fulfilled" && isSequenceIndexable(result.value)
-        );
+      .filter((id) => {
+        const meta = resolved.get(id);
+        return meta !== undefined && isSequenceIndexable(meta);
       })
       .map((id) => `sequence/${encodeURIComponent(id)}`);
   } catch (error) {

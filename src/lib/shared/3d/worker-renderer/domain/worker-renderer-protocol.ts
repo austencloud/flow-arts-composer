@@ -91,6 +91,7 @@ export const WORKER_PERFORMER_PROP_TYPES = [
   "bigtriad",
   "minihoop",
   "bighoop",
+  "triangle",
   "fractalgeng",
   "triquetra",
   "triquetra2",

@@ -1,0 +1,60 @@
+name: Scan Health Check
+
+# Nothing else watches the chain a printed card depends on: tka.run (Worker)
+# -> 302 -> tkaflowarts.com/q/{code} -> Firestore shortcode lookup -> sequence
+# hydration. Cloudflare, Firestore and Pages each watch their own piece, but a
+# break in the chain itself (wrong redirect target, a code that no longer
+# resolves, a payload that no longer hydrates) only ever reached
+# console.error. Real precedent: July 2026 saw 7 failed scans out of 35 real
+# attempts with zero trace anywhere. This hits production read-only a few
+# times a day so the next one shows up as a red run + email instead of a
+# quiet support ticket.
+#
+# This never opens https://tkaflowarts.com/q/... — that route logs a scan and
+# feeds the app's own scan analytics. See scripts/verify-scan-health.ts for
+# the full safety rationale and what each check does.
+
+on:
+  schedule:
+    - cron: "22 2,8,14,20 * * *" # 4x/day, offset from offline-kit-prod-check's :17
+  workflow_dispatch:
+
+jobs:
+  verify-scan-health:
+    name: Verify tka.run scan chain
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "pnpm"
+
+      - name: Copy env template
+        run: cp .env.example .env
+
+      # verify-scan-health.ts imports the app's own resolver/hydrator
+      # ($lib/shared/qr/services/public-short-code-record-reader,
+      # $lib/server/scan/scan-viewer-payload-preparer) so it exercises the
+      # exact code path /q/[code] uses, not a reimplementation of it — that
+      # needs the full dependency tree and workspace packages built, unlike
+      # offline-kit-prod-check.yml's dependency-free verifier.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build workspace packages
+        run: pnpm run build:packages
+
+      - name: Sync SvelteKit generated types
+        run: pnpm exec svelte-kit sync
+
+      - name: Verify scan health
+        run: npm run scan:health

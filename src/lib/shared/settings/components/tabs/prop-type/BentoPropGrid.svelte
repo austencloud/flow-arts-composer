@@ -13,6 +13,7 @@
   } from "$lib/shared/subscription/domain/premium-prop-access";
   import type { ComponentProps } from "svelte";
   import PropGrid from "./PropGrid.svelte";
+  import { DEFAULT_TRIANGLE_GRIP } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
 
   let props: Omit<
     ComponentProps<typeof PropGrid>,
@@ -27,6 +28,8 @@
     | "onPropLookChange"
     | "recipeOverrides"
     | "colors"
+    | "triangleGrip"
+    | "onTriangleGripChange"
   > = $props();
   const settings = $derived(getSettings());
 </script>
@@ -43,6 +46,8 @@
   onPropLookChange={(propArtwork) => void updateSettings({ propArtwork })}
   recipeOverrides={settings.compositionRecipeOverrides}
   colors={settings.primaryPropColors}
+  triangleGrip={settings.triangleGrip ?? DEFAULT_TRIANGLE_GRIP}
+  onTriangleGripChange={(triangleGrip) => void updateSettings({ triangleGrip })}
 >
   {#snippet premiumBadge()}
     <PremiumBadge tooltip="Premium prop" />

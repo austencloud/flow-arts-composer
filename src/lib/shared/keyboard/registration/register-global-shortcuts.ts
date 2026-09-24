@@ -30,6 +30,13 @@ import {
   isSettingsPreviewMode,
 } from "../../application/state/app-state.svelte";
 import { toast } from "../../toast/state/toast-state.svelte";
+import {
+  PROP_PRESET_SLOT_COUNT,
+  presetLabel,
+  presetSettingsPatch,
+  presetShortcutKey,
+  presetSlots,
+} from "../../settings/domain/prop-presets";
 import { BackgroundType } from "@austencloud/backgrounds";
 import { BACKGROUND_CARD_REGISTRY } from "@austencloud/backgrounds/card";
 import { applyThemeFromColors } from "../../settings/utils/background-theme-calculator";
@@ -202,80 +209,27 @@ export function registerGlobalShortcuts(
 
   // ==================== Prop Preset Shortcuts ====================
 
-  // Alt+1 - Switch to Prop Preset 1
-  service.register({
-    id: "global.prop-preset-1",
-    label: "Prop Preset 1",
-    description: "Switch to prop preset 1 (Alt+1)",
-    key: "1",
-    modifiers: ["alt"],
-    context: "global",
-    scope: "action",
-    priority: "high", // Higher priority than module navigation
-    action: () => {
-      const presets = settingsService.settings.propPresets || [];
-      const preset = presets[0];
-      if (preset) {
-        settingsService.updateSettings({
-          selectedPresetIndex: 0,
-          leftPropType: preset.leftPropType,
-          rightPropType: preset.rightPropType,
-          catDogMode: preset.catDogMode,
-        });
-        toast.info(`Preset 1: ${preset.leftPropType}`, 1500);
-      }
-    },
-  });
-
-  // Alt+2 - Switch to Prop Preset 2
-  service.register({
-    id: "global.prop-preset-2",
-    label: "Prop Preset 2",
-    description: "Switch to prop preset 2 (Alt+2)",
-    key: "2",
-    modifiers: ["alt"],
-    context: "global",
-    scope: "action",
-    priority: "high", // Higher priority than module navigation
-    action: () => {
-      const presets = settingsService.settings.propPresets || [];
-      const preset = presets[1];
-      if (preset) {
-        settingsService.updateSettings({
-          selectedPresetIndex: 1,
-          leftPropType: preset.leftPropType,
-          rightPropType: preset.rightPropType,
-          catDogMode: preset.catDogMode,
-        });
-        toast.info(`Preset 2: ${preset.leftPropType}`, 1500);
-      }
-    },
-  });
-
-  // Alt+3 - Switch to Prop Preset 3
-  service.register({
-    id: "global.prop-preset-3",
-    label: "Prop Preset 3",
-    description: "Switch to prop preset 3 (Alt+3)",
-    key: "3",
-    modifiers: ["alt"],
-    context: "global",
-    scope: "action",
-    priority: "high", // Higher priority than module navigation
-    action: () => {
-      const presets = settingsService.settings.propPresets || [];
-      const preset = presets[2];
-      if (preset) {
-        settingsService.updateSettings({
-          selectedPresetIndex: 2,
-          leftPropType: preset.leftPropType,
-          rightPropType: preset.rightPropType,
-          catDogMode: preset.catDogMode,
-        });
-        toast.info(`Preset 3: ${preset.leftPropType}`, 1500);
-      }
-    },
-  });
+  // Alt+1..9, Alt+0 - Apply prop preset 1-10. Works in every module; high
+  // priority so it wins over module navigation.
+  for (let index = 0; index < PROP_PRESET_SLOT_COUNT; index++) {
+    const key = presetShortcutKey(index);
+    service.register({
+      id: `global.prop-preset-${index + 1}`,
+      label: `Prop Preset ${index + 1}`,
+      description: `Switch to prop preset ${index + 1} (Alt+${key})`,
+      key,
+      modifiers: ["alt"],
+      context: "global",
+      scope: "action",
+      priority: "high",
+      action: () => {
+        const preset = presetSlots(getSettings().propPresets)[index];
+        if (!preset) return;
+        void updateSettings(presetSettingsPatch(preset, index));
+        toast.info(`Preset ${index + 1}: ${presetLabel(preset)}`, 1500);
+      },
+    });
+  }
 
   // ==================== Prop Drawer Toggle ====================
 

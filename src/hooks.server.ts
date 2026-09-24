@@ -56,6 +56,24 @@ export function rejectUnknownAppPath(
 }
 
 /**
+ * The robots directive for a response, by the route that rendered it.
+ *
+ * A real module path under `/[...appPath]` (/browse, /create, /settings, ...)
+ * is an app surface, not a landing page: the server sends an empty SPA shell
+ * and everything on screen is signed-in, client-rendered state. None of them
+ * are in the sitemap, yet Google found /browse through links and filed it as
+ * a soft 404 (Search Console, 2026-09-23). The public pages that should rank
+ * live in their own server-rendered routes; this keeps the app shells out of
+ * the index. A header rather than a meta tag, because with ssr=false the
+ * server never renders the page's <svelte:head>.
+ */
+export function robotsTagForRoute(
+  routeId: string | null | undefined
+): string | undefined {
+  return routeId === "/[...appPath]" ? "noindex" : undefined;
+}
+
+/**
  * Check if a request is for a font file that needs CORS headers.
  * PostHog session replay needs to load these files from their replay domain.
  */
@@ -168,6 +186,9 @@ export const handle: Handle = async ({ event, resolve }) => {
   }
 
   response.headers.set("X-Content-Type-Options", "nosniff");
+
+  const robotsTag = robotsTagForRoute(event.route?.id);
+  if (robotsTag) response.headers.set("X-Robots-Tag", robotsTag);
 
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
 

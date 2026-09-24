@@ -69,6 +69,12 @@ const FAMILY_RECIPES: Partial<Record<PropType, CompositionRecipe>> = {
     right: { x: 62, y: 50, rotation: 0, scale: 0.5 },
     pairScale: 1,
   },
+  // Triangles: the two frames interlock the way the photographed pair does.
+  [PropType.TRIANGLE]: {
+    left: { x: 40, y: 50, rotation: 0, scale: 0.5 },
+    right: { x: 60, y: 50, rotation: 180, scale: 0.5 },
+    pairScale: 1,
+  },
   // Triads: rotational offset
   [PropType.TRIAD]: {
     left: { x: 38, y: 50, rotation: 0, scale: 0.45 },
@@ -274,7 +280,8 @@ const COMPACT_RECIPES: Partial<Record<PropType, CompositionRecipe>> = {
 
 /**
  * Gets the composition recipe for a prop type.
- * Variants inherit from their base family.
+ * Variants inherit from their base family, except the triangle, whose
+ * interlocked-pair composition is its own and not the mini hoop's.
  */
 export function getCompositionRecipe(
   propType: PropType,
@@ -289,6 +296,7 @@ export function getCompositionRecipe(
       FAMILY_RECIPES[base] ??
       DEFAULT_RECIPE
     );
+  if (propType === PropType.TRIANGLE) return FAMILY_RECIPES[propType]!;
   return FAMILY_RECIPES[base] ?? FAMILY_RECIPES[propType] ?? DEFAULT_RECIPE;
 }
 

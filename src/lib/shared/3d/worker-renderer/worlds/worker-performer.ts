@@ -192,9 +192,7 @@ export async function createWorkerPerformerProp(
       state.worldPosition.fromArray(next.worldPosition);
       state.worldRotation.fromArray(next.worldRotation);
       state.gripType = next.gripType as PropState3D["gripType"];
-      anchor.position
-        .fromArray(next.handAnchor)
-        .add(state.worldPosition);
+      anchor.position.fromArray(next.handAnchor).add(state.worldPosition);
       correction.scale.x = next.flipped ? -1 : 1;
       visual.setState(state);
     },
@@ -297,6 +295,8 @@ export class WorkerPerformer {
       snapshot.propBuild.fanFrameColor ===
         this.snapshot.propBuild.fanFrameColor &&
       snapshot.propBuild.fanCover === this.snapshot.propBuild.fanCover &&
+      snapshot.propBuild.triangleGrip ===
+        this.snapshot.propBuild.triangleGrip &&
       (snapshot.locomotion != null) === (this.snapshot.locomotion != null)
     );
   }

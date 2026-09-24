@@ -53,6 +53,10 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
   });
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 export class PublicSequencesLoader {
   private cachedSequences: SequenceData[] | null = null;
   private loadPromise: Promise<SequenceData[]> | null = null;
@@ -647,6 +651,17 @@ export class PublicSequencesLoader {
       rightPathHash: data.rightPathHash as string | undefined,
       leftSoloHash: data.leftSoloHash as string | undefined,
       rightSoloHash: data.rightSoloHash as string | undefined,
+      // Creator-recorded presentation intent. Without it "as saved" viewing
+      // and museum performers fall back to the visitor's props online while
+      // the public-index path shows the recorded pair. Wire data is untrusted:
+      // only the object shape is checked here, resolveRecordedPropConfig
+      // parses the prop values.
+      ...(isRecord(data.intendedProp) && {
+        intendedProp: data.intendedProp as SequenceData["intendedProp"],
+      }),
+      ...(isRecord(data.creatorIntent) && {
+        creatorIntent: data.creatorIntent as SequenceData["creatorIntent"],
+      }),
     };
 
     // If compositional fields are present, derive steps from them so

@@ -2236,6 +2236,14 @@ service cloud.firestore {
       match /manifests/{manifestId} {
         allow read: if isAuthenticated();
         allow write: if isAdmin();
+
+        // Per-card exact-reprint data (full SequenceData), one doc per card,
+        // so a saved release never risks the 1 MiB manifest-document limit.
+        // Same access as the manifest itself.
+        match /cards/{cardId} {
+          allow read: if isAuthenticated();
+          allow write: if isAdmin();
+        }
       }
     }
 

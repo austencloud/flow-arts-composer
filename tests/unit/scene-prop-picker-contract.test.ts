@@ -153,6 +153,16 @@ describe("scene prop picker contract", () => {
     }
   });
 
+  it("follows the triangle grip setting into the scene unconditionally", () => {
+    const picker = read(PICKER_PATH);
+    // The sync must not sit behind a buildOverride guard: every real host
+    // passes a resolved build, so a guarded effect never ran in the Prop
+    // Studio. The behaviour lives in scene-prop-picker-grip-sync.svelte.ts and
+    // is tested there; this pins the mount site.
+    expect(picker).toContain("$effect(syncTriangleGripToScene)");
+    expect(picker).not.toMatch(/if \(buildOverride\) return;/);
+  });
+
   it("adapts mixed selection, host scrolling, bare hands, and chirality without another grid", () => {
     const picker = read(PICKER_PATH);
     const canonicalGrid = read(BENTO_GRID_BODY_PATH);

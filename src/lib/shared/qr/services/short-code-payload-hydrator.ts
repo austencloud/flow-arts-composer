@@ -70,7 +70,9 @@ export async function decodeWordShortCodePayload(
   code: string,
   data: ShortCodeData
 ): Promise<SequenceData | null> {
-  if (!data.encoded) return null;
+  // A blob that failed the mint-time round trip is never played. New lossy
+  // records store no blob at all; this guards any record that carries both.
+  if (!data.encoded || data.encodedFidelity === "lossy") return null;
 
   try {
     const decoded = graftPrefloatFromEmbedded(
@@ -232,6 +234,9 @@ export async function hydrateSoloShortCodePayload(
   const sequence = soloPropToSequence(
     {
       ...soloData,
+      // Same identity as the blob path: an artifact that was never saved has
+      // no library id a recipient could reference.
+      id: data.sourceSoloPropId ?? `shortcode-${code}`,
       contentHash: data.payloadContentHash,
       name: title,
       authoredHand: data.authoredHand,

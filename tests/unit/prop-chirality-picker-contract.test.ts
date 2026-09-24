@@ -212,11 +212,14 @@ describe("buugeng chirality is owned by the prop picker", () => {
   });
 
   it("the settings readout no longer carries a second flip control", () => {
-    // CompactPropDisplay sits inches from the picker in the same view; keeping
-    // its own toggle there put two controls for one setting on one screen.
-    const compact = read(`${PROP_TYPE_DIR}/CompactPropDisplay.svelte`);
-    expect(compact).not.toContain("onToggleFlip");
+    // The Props tab draws the current props inches from the picker; a toggle
+    // there would put two controls for one setting on one screen.
+    const tab = read(
+      "src/lib/shared/settings/components/tabs/PropTypeTab.svelte"
+    );
+    expect(tab).not.toContain("onToggleFlip");
     // It still MIRRORS the art, so the readout keeps showing the state.
-    expect(compact).toContain("class:flipped=");
+    expect(tab).toContain("leftFlipped={pair.leftFlipped}");
+    expect(tab).toContain("rightFlipped={pair.rightFlipped}");
   });
 });

@@ -31,6 +31,8 @@
   import { toScenePropType } from "$lib/shared/3d/domain/scene-prop-type";
   import EffectOrchestrator3D from "$lib/shared/3d/effects/EffectOrchestrator3D.svelte";
   import { buildTipEffectMap } from "$lib/shared/animation-engine/domain/tip-effect-map";
+  import { museumPropPair } from "$lib/features/museum/services/museum-prop-pair";
+  import type { ActivePropSettings } from "$lib/shared/foundation/services/recorded-prop-intent";
 
   interface Props {
     stationId: string;
@@ -210,26 +212,19 @@
 
   onDestroy(() => performerState?.destroy());
 
-  // Prop type: prefer the sequence's intended prop, fall back to global settings.
-  // This way Shift+P cycles the museum performers too.
-  const leftPropType = $derived.by((): PropType => {
-    if (resolvedSequence?.intendedProp?.leftPropType)
-      return resolvedSequence.intendedProp.leftPropType;
+  // Prop pair: the sequence's recorded pair, else global settings, as a whole
+  // (never mixed per hand). Shift+P still cycles performers whose sequence
+  // recorded nothing.
+  function activeSettings(): ActivePropSettings | null {
     try {
-      return settingsService.settings.leftPropType ?? PropType.STAFF;
+      return settingsService.settings;
     } catch {
-      return PropType.STAFF;
+      return null;
     }
-  });
-  const rightPropType = $derived.by((): PropType => {
-    if (resolvedSequence?.intendedProp?.rightPropType)
-      return resolvedSequence.intendedProp.rightPropType;
-    try {
-      return settingsService.settings.rightPropType ?? PropType.STAFF;
-    } catch {
-      return PropType.STAFF;
-    }
-  });
+  }
+  const propPair = $derived(museumPropPair(resolvedSequence, activeSettings()));
+  const leftPropType = $derived<PropType>(propPair.leftPropType);
+  const rightPropType = $derived<PropType>(propPair.rightPropType);
 
   const platformColor = new Color(0x3a3028);
 </script>

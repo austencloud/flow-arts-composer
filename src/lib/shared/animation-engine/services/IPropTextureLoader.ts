@@ -11,6 +11,8 @@ import type { ISVGGenerator } from "$lib/shared/animation-engine/services/ISVGGe
 import type { ITrailCapturer } from "$lib/shared/animation-engine/services/ITrailCapturer";
 import { parseFanRenderKey } from "$lib/shared/pictograph/prop/domain/fan-appearance";
 import { parseModelRenderKey } from "$lib/shared/pictograph/prop/domain/prop-look";
+import { HOOP_FAMILY_BOXES } from "$lib/shared/pictograph/prop/domain/hoop-family-geometry.generated";
+import { parseTriangleRenderKey } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
 
 /**
  * Prop dimensions
@@ -57,8 +59,9 @@ export const PROP_DIMENSIONS: Record<string, PropDimensions> = {
   bigtriad: { width: 600, height: 523.5 },
 
   // Hoop family
-  minihoop: { width: 257.9, height: 138.2 },
-  bighoop: { width: 600, height: 300 },
+  minihoop: HOOP_FAMILY_BOXES.minihoop,
+  bighoop: HOOP_FAMILY_BOXES.bighoop,
+  triangle: HOOP_FAMILY_BOXES.triangle,
 
   // Buugeng family
   buugeng: { width: 262.6, height: 135.9 },
@@ -171,7 +174,13 @@ export function getPropDimensions(propType: string): PropDimensions {
   // A model sprite is captured into the same box as its pictograph artwork.
   const modelRenderKey = parseModelRenderKey(normalized);
   const baseType = modelRenderKey?.propType ?? normalized;
-  return PROP_DIMENSIONS[baseType] ?? { ...DEFAULT_PROP_DIMENSIONS };
+  // Both triangle grips share one grip-centred box (spec section 2).
+  const triangleKey = parseTriangleRenderKey(baseType);
+  return (
+    PROP_DIMENSIONS[triangleKey?.propType ?? baseType] ?? {
+      ...DEFAULT_PROP_DIMENSIONS,
+    }
+  );
 }
 
 /**

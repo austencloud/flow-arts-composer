@@ -29,6 +29,7 @@ export const SMALL_UNILATERAL_PROPS = [
   "club",
   "classic_club",
   "minihoop",
+  "triangle",
   "triad", // ← TRIAD IS UNILATERAL!
   "ukulele",
   "triquetra",

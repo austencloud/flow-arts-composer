@@ -43,6 +43,7 @@ describe("fan appearance state", () => {
       fanBuild: "day",
       fanFrameColor: "white",
       fanCover: "covered",
+      triangleGrip: "corner",
     });
 
     propFinishState.set("fire");

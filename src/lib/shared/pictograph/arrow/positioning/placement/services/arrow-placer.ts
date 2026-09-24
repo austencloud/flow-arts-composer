@@ -72,6 +72,7 @@ export class ArrowPlacer {
     "bigtriad",
     "minihoop",
     "bighoop",
+    "triangle",
     "buugeng",
     "bigbuugeng",
     "doublestar",

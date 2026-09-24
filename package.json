@@ -86,6 +86,7 @@
     "test:offline": "vitest run --config tests/config/vitest.config.ts tests/unit/sw-offline-behavior.test.ts tests/unit/offline-cache-orchestrator.test.ts tests/unit/svg-precache-manifest.test.ts",
     "verify:offline": "node scripts/verify-offline-deploy.mjs",
     "verify:offline:prod": "node scripts/verify-offline-deploy.mjs --url https://tkaflowarts.com",
+    "scan:health": "tsx --tsconfig scripts/tsconfig.json scripts/verify-scan-health.ts",
     "validate": "npm run lint && npm run check && npm run test:ci",
     "validate:seo": "vitest run --config tests/config/vitest.config.ts tests/unit/seo-head-contract.test.ts tests/unit/seo-indexing-controls.test.ts tests/unit/seo-measurement.test.ts tests/unit/seo-funnel-analytics.test.ts tests/unit/web-vitals-analytics.test.ts src/routes/sequence/[id]/__tests__/sequence-seo.test.ts",
     "test:seo-live": "tsx scripts/verify-seo.ts --url https://tkaflowarts.com",
