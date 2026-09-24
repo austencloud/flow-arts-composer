@@ -9,13 +9,13 @@ The module navigation sheet (`ModuleSwitcher.svelte` + `ModuleList.svelte`) has
 a fixed height: `100dvh` below 700×500 and `85dvh` above it. Tiles sit at the
 top and the rest of the sheet is empty. Measured in the running app:
 
-| Case                                      | Result                                                           |
-| ----------------------------------------- | ---------------------------------------------------------------- |
-| Guest, 3 modules, 820×1180                | 76px of tiles in a 739px content area (about 90% empty)          |
-| Admin, 13 modules, 820×1180               | 4 columns, 4+4+4+1, content 372px of 739px                       |
-| Admin, 13 modules, 1270×1300 (screenshot) | same, tiles stretched to 440px wide                              |
-| Admin, 13 modules, 375×667                | 2 columns, needs 664px, gets 402px, footer takes 164px           |
-| Guest on a phone, any landscape phone     | acceptable                                                       |
+| Case                                      | Result                                                  |
+| ----------------------------------------- | ------------------------------------------------------- |
+| Guest, 3 modules, 820×1180                | 76px of tiles in a 739px content area (about 90% empty) |
+| Admin, 13 modules, 820×1180               | 4 columns, 4+4+4+1, content 372px of 739px              |
+| Admin, 13 modules, 1270×1300 (screenshot) | same, tiles stretched to 440px wide                     |
+| Admin, 13 modules, 375×667                | 2 columns, needs 664px, gets 402px, footer takes 164px  |
+| Guest on a phone, any landscape phone     | acceptable                                              |
 
 Contributing causes:
 
