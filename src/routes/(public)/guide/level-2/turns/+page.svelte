@@ -14,7 +14,7 @@
 </script>
 
 <GuideSeo
-  title="2.0 1-Turns · Level 2 Guide · The Kinetic Alphabet"
+  title="2.0 1-Turns · Level 2 · Flow Arts Notation Guide"
   description="Level 2 chapter on 1-turns: 180° prop rotations layered onto shifts, dashes, and static motions, with glyphs, PADS ordering, and Types 1–6 with turns."
   path="/guide/level-2/turns"
   partOf={{ name: "Level 2 Guide: Turns", path: "/guide/level-2" }}
