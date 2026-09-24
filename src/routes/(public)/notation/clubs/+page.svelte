@@ -70,7 +70,7 @@
       <div class="duo-demo">
         <SequenceHeroDemo
           sequence={demoSequence}
-          note="the demo sequence, on clubs"
+          note="one club per hand follows the staff pattern"
           leftPropType="club"
           rightPropType="club"
         />
@@ -100,7 +100,7 @@
       <div class="duo-demo">
         <MandalaContrast
           sequence={demoSequence}
-          note="same sequence, both staff ends vs a club's single end"
+          note="staves trace both ends; clubs trace one"
         />
       </div>
     </div>
@@ -111,10 +111,9 @@
     heading="Club grip technique needs a spinner's account"
   >
     <p>
-      The notation grew from double staves. It covers club geometry, but the
-      club grip section still needs work on finger spinning and grip changes.
+      The notation shows the path of each club, but the grip section still needs
+      examples of finger spinning and grip changes from club spinners.
     </p>
-    <p>Club spinners who teach those transitions can help document them.</p>
   </OpenChapter>
 
   <div class="cta-card">
