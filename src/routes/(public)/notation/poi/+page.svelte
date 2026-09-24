@@ -47,11 +47,9 @@
       <p>
         The Kinetic Alphabet was built around held props that can pause at any
         orientation, move to another grid position, or reverse direction. A poi
-        head hangs from a tether and keeps moving with swing and gravity. The
-        alphabet can generate lots and lots of patterns, but poi can perform the
-        subset whose rotational value stays relatively consistent. Holds, hard
-        reversals, and abrupt speed changes fall outside what a tethered head
-        can do.
+        head hangs from a tether and keeps moving with swing and gravity. Poi
+        can use TKA patterns with fairly steady rotation. Holds, hard reversals,
+        and abrupt speed changes fall outside what a tethered head can do.
       </p>
       <p>
         The Kinetic Alphabet measures each orientation radially, from the prop
@@ -72,7 +70,7 @@
           href="/guide">guide</a
         >
         explains the notation, and the <a href="/atlas">Kinetic Atlas</a> defines
-        its terms. Some sequences made in the composer can be spun with poi now.
+        its terms.
       </p>
     </div>
   </section>
