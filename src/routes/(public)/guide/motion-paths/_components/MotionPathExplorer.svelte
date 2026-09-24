@@ -150,6 +150,10 @@
   let toySectionElement = $state<HTMLElement>();
   let cardMotion = $state<IntrinsicHeightMotion | null>(null);
   let cardRowHeight = 0;
+  // A card that would stop this close to the canvas group's bottom edge
+  // takes the whole height, so the two bottoms line up instead of missing
+  // by a few pixels.
+  const CARD_FULL_SNAP = 48;
   $effect(() => {
     const element = toySectionElement;
     if (!element || !studioSideBySide) return;
@@ -171,8 +175,8 @@
     if (!motion || !element || page === undefined || row <= 0) return;
     untrack(() => {
       const border = element.offsetHeight - element.clientHeight;
-      const target =
-        page === null ? row : Math.min(header + page + border, row);
+      const natural = page === null ? row : header + page + border;
+      const target = natural >= row - CARD_FULL_SNAP ? row : natural;
       // A page that changed height animates there. A room that changed size
       // (a resized window, the card's first page) takes the card with it.
       const from =

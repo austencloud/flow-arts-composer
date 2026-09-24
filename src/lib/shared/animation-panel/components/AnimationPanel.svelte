@@ -1045,7 +1045,7 @@
        its own tab in the dock, and both already name it. The label was earned
        back when this block sat inside the merged Motion page, where a heading
        named for something else needed correcting. -->
-  <div class="section-pad display-rows">
+  <div class="section-pad display-rows" class:content-sized={!!onPageHeight}>
     <div class="rt-section" role="region" aria-label="Visibility">
       <DisplayPanel
         {showMotionVisibility}
@@ -1768,6 +1768,14 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
+  }
+
+  /* A host sizing its panel to the page reads the page's height from these
+     rows, so they take their tiles' height instead of sharing one they were
+     handed. From a zero basis they measured as nothing. */
+  .display-rows.content-sized,
+  .display-rows.content-sized .rt-section {
+    flex: none;
   }
 
   .section-hint {
