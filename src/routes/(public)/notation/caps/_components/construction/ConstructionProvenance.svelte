@@ -43,8 +43,8 @@
           loading="lazy"
         />
         <figcaption>
-          The archived image is shown as provenance. The live construction above
-          is rebuilt from the published parameters.
+          Damien's archived plot. The interactive version above uses his
+          published parameters.
         </figcaption>
       </figure>
       <div class="provenance-copy">

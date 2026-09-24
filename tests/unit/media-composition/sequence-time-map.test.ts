@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
 import {
   SequenceTimeMapSchema,
+  createBpmTimeMap,
   createTempoGridTimeMap,
   mediaTimeToSequencePosition,
   migrateLegacyStepMap,
@@ -38,6 +39,97 @@ const OM_LAM_XJ_MARKS = [
 const OM_LAM_XJ_END = 40.81;
 
 describe("SequenceTimeMap", () => {
+  it("aligns every repeated move landing to weighted BPM beats without stretching", () => {
+    const timeMap = createBpmTimeMap({
+      sequenceRef,
+      mediaSourceId: "video-a",
+      mediaDurationSeconds: 6.25,
+      motionDurations: [1, 2],
+      bpm: 60,
+      firstBeatSeconds: 1,
+      updatedAt: 1,
+    });
+
+    expect(timeMap.positionConvention).toBe("arrival");
+    expect(timeMap.anchors).toEqual([
+      { mediaTimeSeconds: 0, sequencePosition: 0 },
+      { mediaTimeSeconds: 1, sequencePosition: 1 },
+      { mediaTimeSeconds: 3, sequencePosition: 2 },
+      { mediaTimeSeconds: 4, sequencePosition: 3 },
+      { mediaTimeSeconds: 6, sequencePosition: 4 },
+      { mediaTimeSeconds: 6.25, sequencePosition: 4.25 },
+    ]);
+    expect(mediaTimeToSequencePosition(timeMap, 5)).toBe(3.5);
+  });
+
+  it("keeps the first beat at zero or near the start without duplicate times", () => {
+    const atZero = createBpmTimeMap({
+      sequenceRef,
+      mediaSourceId: "video-a",
+      mediaDurationSeconds: 1,
+      motionDurations: [1],
+      bpm: 60,
+      firstBeatSeconds: 0,
+    });
+    expect(atZero.anchors).toEqual([
+      { mediaTimeSeconds: 0, sequencePosition: 1 },
+      { mediaTimeSeconds: 1, sequencePosition: 2 },
+    ]);
+
+    const nearStart = createBpmTimeMap({
+      sequenceRef,
+      mediaSourceId: "video-a",
+      mediaDurationSeconds: 2,
+      motionDurations: [1],
+      bpm: 60,
+      firstBeatSeconds: 0.25,
+    });
+    expect(nearStart.anchors[0]).toEqual({
+      mediaTimeSeconds: 0,
+      sequencePosition: 0.75,
+    });
+    expect(mediaTimeToSequencePosition(nearStart, 0.25)).toBe(1);
+    expect(SequenceTimeMapSchema.safeParse(nearStart).success).toBe(true);
+  });
+
+  it("places an 87 BPM landing one beat after Beat 1", () => {
+    const timeMap = createBpmTimeMap({
+      sequenceRef,
+      mediaSourceId: "video-a",
+      mediaDurationSeconds: 3,
+      motionDurations: [1, 1],
+      bpm: 87,
+      firstBeatSeconds: 0.5,
+    });
+    expect(sequencePositionToMediaTime(timeMap, 2)).toBeCloseTo(
+      0.5 + 60 / 87,
+      10
+    );
+    expect(sequencePositionToMediaTime(timeMap, 3)).toBeCloseTo(
+      0.5 + 120 / 87,
+      10
+    );
+  });
+
+  it("rejects invalid BPM alignment inputs", () => {
+    const valid = {
+      sequenceRef,
+      mediaSourceId: "video-a",
+      mediaDurationSeconds: 2,
+      motionDurations: [1],
+      bpm: 87,
+      firstBeatSeconds: 0.5,
+    };
+    expect(() => createBpmTimeMap({ ...valid, bpm: 0 })).toThrow("BPM");
+    expect(() => createBpmTimeMap({ ...valid, bpm: Infinity })).toThrow("BPM");
+    expect(() => createBpmTimeMap({ ...valid, firstBeatSeconds: 3 })).toThrow(
+      "Beat 1"
+    );
+    expect(() => createBpmTimeMap({ ...valid, motionDurations: [0] })).toThrow(
+      "Motion durations"
+    );
+  });
+
   it("creates a duration-aware editable tempo grid", () => {
     const timeMap = createTempoGridTimeMap({
       sequenceRef,

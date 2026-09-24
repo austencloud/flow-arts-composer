@@ -327,6 +327,9 @@ describe("createMediaCompositionState", () => {
     expect(state.frameLayers).toHaveLength(3);
     expect(
       new Set(state.frameLayers.map((layer) => layer.sequencePosition))
+    ).toEqual(new Set([4]));
+    expect(
+      new Set(state.frameLayers.map((layer) => layer.carouselPosition))
     ).toEqual(new Set([3]));
   });
 
@@ -459,6 +462,9 @@ describe("createMediaCompositionState", () => {
 
     expect(
       new Set(state.frameLayers.map((layer) => layer.sequencePosition))
+    ).toEqual(new Set([4]));
+    expect(
+      new Set(state.frameLayers.map((layer) => layer.carouselPosition))
     ).toEqual(new Set([3]));
   });
 

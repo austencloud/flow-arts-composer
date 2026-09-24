@@ -54,6 +54,7 @@
   import VideoPreviewPanel from "./VideoPreviewPanel.svelte";
   import PracticeBar from "./PracticeBar.svelte";
   import PostStudioPane from "./PostStudioPane.svelte";
+  import type { PostStudioShareExport } from "$lib/shared/share/components/post-studio/post-studio-share-export";
   import { POST_STUDIO_STAGE_MIN_WIDTH } from "../services/viewer-shell-model";
   import { createPaneKeepAlive } from "./pane-keep-alive.svelte";
   import PracticeSetupBar from "./PracticeSetupBar.svelte";
@@ -527,6 +528,8 @@
    * tunnel bake takes the slot when the share came from those surfaces.
    */
   let postStudioVideoUrl = $state<string | null>(null);
+  let postStudioSharePreviewTarget = $state<HTMLElement | null>(null);
+  let postStudioShareExport: PostStudioShareExport | null = null;
   function adoptPostStudioRender(blob: Blob): void {
     if (postStudioVideoUrl) URL.revokeObjectURL(postStudioVideoUrl);
     postStudioVideoUrl = URL.createObjectURL(blob);
@@ -538,16 +541,15 @@
   const artShareVideo = $derived.by(() => {
     const target = share.artShare;
 
-    if (postStudioVideoUrl && share.postShare && !target) {
+    if (share.postShare && !target) {
       return {
         blobUrl: postStudioVideoUrl,
         exporting: false,
         progress: null,
         label: "Post",
-        // Post Studio owns re-rendering; the sheet must not kick off an
-        // animation export that would replace the composed post.
-        request: () => Promise.resolve(),
-        cancel: () => {},
+        request: () =>
+          postStudioShareExport?.render() ?? Promise.resolve(false),
+        cancel: () => postStudioShareExport?.cancel(),
       };
     }
 
@@ -1264,6 +1266,9 @@
                       resolvedCardAutoLayout={ctx.resolvedCardAutoLayout}
                       onExported={adoptPostStudioRender}
                       onSharePost={share.openPanel}
+                      previewTarget={postStudioSharePreviewTarget}
+                      onRegisterShareExport={(controls) =>
+                        (postStudioShareExport = controls)}
                       sharing={share.panelOpen}
                     />
                   {/if}
@@ -1788,6 +1793,13 @@
        the mandala's own worker render; from Tunnel it is the kaleidoscope bake
        (which already lands in the shared exporter's preview slot, so only the
        request differs); otherwise it is the sequence animation. -->
+  {#snippet postStudioSharePreview()}
+    <div
+      class="post-studio-share-target"
+      bind:this={postStudioSharePreviewTarget}
+    ></div>
+  {/snippet}
+
   <PostShareSheet
     isOpen={share.postSheetOpen}
     sequence={ctx.effectiveSequence ?? null}
@@ -1811,9 +1823,11 @@
     onOpenVideoExport={!share.artShare && !share.postShare
       ? openVideoDownloadFromSheet
       : undefined}
+    liveVideoPreview={share.postShare ? postStudioSharePreview : undefined}
+    videoSettingsAvailable={!share.postShare}
     is3DExport={ctx.renderMode === "3d"}
-    videoSourceKey={`${ctx.effectiveSequence?.id ?? ctx.effectiveSequence?.word ?? "unsaved"}:${share.getShareUrl()}:${viewerVideoSourceIdentity(share.videoSourceKind, share.postShare ? postStudioVideoUrl : null)}:${ctx.renderMode}`}
-    initialArtifact={share.artShare || (share.postShare && !!postStudioVideoUrl)
+    videoSourceKey={`${ctx.effectiveSequence?.id ?? ctx.effectiveSequence?.word ?? "unsaved"}:${share.getShareUrl()}:${viewerVideoSourceIdentity(share.videoSourceKind, null)}:${ctx.renderMode}`}
+    initialArtifact={share.artShare || share.postShare
       ? "video"
       : ctx.viewerState.viewerMode === "card"
         ? "card"
@@ -1836,6 +1850,12 @@
 </div>
 
 <style>
+  .post-studio-share-target {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+  }
   .shared-inspector-parking {
     display: none;
   }

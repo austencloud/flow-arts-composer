@@ -6,6 +6,9 @@
  * semanticToCharcoalParams, passing color overrides if present.
  *
  * Colors are RGB 0-255 (the renderer normalizes to 0-1 for GPU).
+ *
+ * Every preset sets `emissionStyle`. A preset that leaves it out keeps the
+ * previous preset's emission, so Hot Coal picked after Cinder Fan drew a fan.
  */
 
 import type { EffectPreset, EffectPresetGroup } from "./types";
@@ -83,6 +86,7 @@ export const CHARCOAL_PRESETS: EffectPreset<"charcoal">[] = [
       intensity: 0.5,
       spread: 0.5,
       glow: 0.6,
+      emissionStyle: "steel-wool",
       coreColor: [230, 180, 255], // bright lavender
       midColor: [160, 60, 220], // violet
       coolColor: [80, 10, 120], // deep purple
@@ -102,6 +106,7 @@ export const CHARCOAL_PRESETS: EffectPreset<"charcoal">[] = [
       intensity: 0.24,
       spread: 0.85,
       glow: 0.85,
+      emissionStyle: "steel-wool",
       coreColor: [255, 240, 200],
       midColor: [255, 80, 20],
       coolColor: [180, 20, 0],
@@ -115,6 +120,7 @@ export const CHARCOAL_PRESETS: EffectPreset<"charcoal">[] = [
       intensity: 0.4,
       spread: 0.7,
       glow: 0.5,
+      emissionStyle: "steel-wool",
       coreColor: [200, 255, 220], // bright mint
       midColor: [40, 200, 120], // emerald
       coolColor: [10, 90, 50], // dark green
@@ -131,6 +137,7 @@ export const CHARCOAL_PRESETS: EffectPreset<"charcoal">[] = [
       intensity: 0.3,
       spread: 0.55,
       glow: 0.3,
+      emissionStyle: "steel-wool",
       coreColor: [220, 220, 230], // near-white
       midColor: [140, 140, 155], // medium gray
       coolColor: [60, 60, 70], // dark gray
