@@ -46,7 +46,11 @@
   import HandPropToolbar, {
     type HandPropToolbarProps,
   } from "$lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+  import PrimaryPropColorSettings from "$lib/shared/settings/components/tabs/prop-type/PrimaryPropColorSettings.svelte";
+  import {
+    getSettings,
+    updateSetting,
+  } from "$lib/shared/application/state/app-state.svelte";
   import { viewingPropLabel } from "$lib/shared/foundation/services/prop-viewing";
   import AnimatorInspectorShell from "./AnimatorInspectorShell.svelte";
   import AnimatorInspectorFooter from "./AnimatorInspectorFooter.svelte";
@@ -205,6 +209,12 @@
     closeRequest?: number;
     /** Accessible region name for non-export hosts. */
     regionLabel?: string;
+    /** A sidebar host that sizes its panel to the page (the motion-path
+     *  studio's card) gets each page's own height, or null for a page laid
+     *  out in whatever height it is handed (Props, Effects). Display then
+     *  lays its tiles out by width instead of fitting them to a height the
+     *  page itself is now setting. */
+    onPageHeight?: (height: number | null) => void;
   }
 
   let {
@@ -252,6 +262,7 @@
     onActiveSectionChange,
     closeRequest = 0,
     regionLabel = "Animation controls",
+    onPageHeight,
   }: Props = $props();
 
   const viewerAnimatorInspector = getOptionalViewerAnimatorInspectorContext();
@@ -259,6 +270,7 @@
   const exportButtonLabel = $derived(
     renderMode === "3d" ? "Record Scene" : "Download animation"
   );
+  const appSettings = $derived(getSettings());
 
   // Export is host-optional: both the state manager and the handler must be
   // wired for the Export pill, footer button, and dock trailing icon to render.
@@ -837,30 +849,54 @@
 
 {#snippet pillBody()}
   {#if resolvedPill === "props" && onPropChange && selectedPropType !== undefined}
-    {#if handProps}
-      <HandPropToolbar {handProps} />
-    {/if}
-    {#await import("$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte")}
-      <!-- Reserve space while the chunk loads so the body doesn't render
-           as a blank slot and then jump when the grid arrives. -->
-      <div class="pill-pending">
-        <PanelSpinner />
-      </div>
-    {:then mod}
-      <!-- The wide sidebar hands the picker its whole page, so the tiles
-           share the height instead of huddling in the top third of it. The
-           tray and the compact sheet grow with their content and keep the
-           dense grid. -->
-      <mod.default
-        {selectedPropType}
-        onSelect={onPropChange}
-        chirality={propChirality}
-        showColors={showPropColors}
-        variant="inline"
-        flat
-        fill={layout === "sidebar"}
-      />
-    {/await}
+    <div
+      class:bottom-prop-picker={layout === "bottom"}
+      class:sidebar-prop-picker={layout === "sidebar"}
+    >
+      {#if layout === "sidebar" && handProps}
+        <HandPropToolbar {handProps} />
+      {/if}
+      {#await import("$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte")}
+        <div class="pill-pending"><PanelSpinner /></div>
+      {:then mod}
+        <mod.default
+          {selectedPropType}
+          onSelect={onPropChange}
+          chirality={propChirality}
+          showColors={layout === "sidebar" && showPropColors}
+          layout={layout === "bottom" ? "rail" : "grid"}
+          variant="inline"
+          flat
+          fill={layout === "sidebar"}
+        >
+          {#snippet heading()}
+            {#if layout === "bottom"}
+              {#if handProps}
+                <HandPropToolbar {handProps} compact>
+                  {#snippet actions()}
+                    {#if showPropColors}
+                      <PrimaryPropColorSettings
+                        compact
+                        colors={appSettings.primaryPropColors}
+                        darkMode={appSettings.darkMode}
+                        onchange={(colors) => updateSetting("primaryPropColors", colors)}
+                      />
+                    {/if}
+                  {/snippet}
+                </HandPropToolbar>
+              {:else if showPropColors}
+                <PrimaryPropColorSettings
+                  compact
+                  colors={appSettings.primaryPropColors}
+                  darkMode={appSettings.darkMode}
+                  onchange={(colors) => updateSetting("primaryPropColors", colors)}
+                />
+              {/if}
+            {/if}
+          {/snippet}
+        </mod.default>
+      {/await}
+    </div>
   {:else if resolvedPill === "effects"}
     <EffectsPanel
       layout={layout === "bottom" ? "strip" : "sidebar"}
@@ -899,7 +935,7 @@
            showTempoControls={false}; with no playback mode either, Tempo and
            Mode have nothing to hold and Paths runs the full width above
            Effort instead of stranding an empty second column. -->
-      <div class="motion-stack">
+      <div class="motion-stack" class:effort-only={!playbackHasPage}>
         {#if showPathShape}
           {#if showTempoControls || onPlaybackModeChange}
             <div class="motion-col">
@@ -1009,7 +1045,7 @@
        its own tab in the dock, and both already name it. The label was earned
        back when this block sat inside the merged Motion page, where a heading
        named for something else needed correcting. -->
-  <div class="section-pad display-rows">
+  <div class="section-pad display-rows" class:content-sized={!!onPageHeight}>
     <div class="rt-section" role="region" aria-label="Visibility">
       <DisplayPanel
         {showMotionVisibility}
@@ -1017,7 +1053,7 @@
         {showWordToggle}
         {sequence}
         propType={selectedPropType}
-        fill={layout === "sidebar"}
+        fill={layout === "sidebar" && !onPageHeight}
         {onSettingChange}
       />
     </div>
@@ -1298,7 +1334,9 @@
         {secondaryActions}
         trayMaxHeight={resolvedPill === "effects"
           ? "min(54vh, 360px)"
-          : "min(35vh, 250px)"}
+          : resolvedPill === "props"
+            ? "min(80dvh, 380px)"
+            : "min(35vh, 250px)"}
         tray={presentation === "full" ? dockTray : undefined}
       />
     {/if}
@@ -1311,11 +1349,12 @@
     onSelect={handlePillSelect}
     direction={panelDirection}
     {reduceMotion}
-    fillBody={resolvedPill === "display" ||
+    fillBody={(resolvedPill === "display" && !onPageHeight) ||
       resolvedPill === "effects" ||
       resolvedPill === "props"}
     fluidBody={resolvedPill === "props"}
     pageOnly={presentation === "content"}
+    {onPageHeight}
     regionLabel={presentation === "content"
       ? activePillLabel || regionLabel
       : "Animation export settings"}
@@ -1348,6 +1387,36 @@
 {/if}
 
 <style>
+  .sidebar-prop-picker {
+    display: contents;
+  }
+  .bottom-prop-picker {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: min(340px, calc(80dvh - 36px));
+    min-height: 0;
+    overflow: hidden;
+  }
+  .bottom-prop-picker :global(.rail-toolbar .rail-heading:empty),
+  .bottom-prop-picker :global(.rail-toolbar .rail-actions:empty) {
+    display: none;
+  }
+  .bottom-prop-picker :global(.rail-toolbar .size-toggle) {
+    margin-left: auto;
+  }
+  @media (max-width: 500px) {
+    .bottom-prop-picker :global(.rail-toolbar .rail-heading),
+    .bottom-prop-picker :global(.rail-toolbar .hand-toolbar.compact) {
+      display: contents;
+    }
+    .bottom-prop-picker :global(.rail-toolbar .size-toggle) {
+      margin-left: 0;
+    }
+    .bottom-prop-picker :global(.rail-toolbar .look-name) {
+      display: none;
+    }
+  }
   .external-section-body {
     min-width: 0;
     min-height: 0;
@@ -1425,17 +1494,18 @@
        first-time viewer understands last. Four across in two rows instead of
        two across in four, without the descriptions: 386px down to ~150px,
        which is what keeps a 315px rail from scrolling. Both come back with the
-       second column, where the room exists. */
-    .motion-stack :global(.effort-sub) {
+       second column, where the room exists. Effort alone on the page keeps
+       them: it is the whole page, and the descriptions are what it teaches. */
+    .motion-stack:not(.effort-only) :global(.effort-sub) {
       display: none;
     }
 
-    .motion-stack :global(.effort-btn.with-sub) {
+    .motion-stack:not(.effort-only) :global(.effort-btn.with-sub) {
       padding: 8px 4px;
       min-height: 40px;
     }
 
-    .motion-stack :global(.effort-grid) {
+    .motion-stack:not(.effort-only) :global(.effort-grid) {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
@@ -1642,33 +1712,6 @@
     flex: 1;
     min-width: 0;
   }
-  /* BentoPropGrid */
-  .dock-dense :global(.grid-scroll) {
-    padding: 6px 12px;
-  }
-  .dock-dense :global(.section-label) {
-    padding: 4px 4px 2px;
-  }
-  .dock-dense :global(.section-buttons) {
-    gap: 4px;
-  }
-  .dock-dense :global(.grid-content) {
-    gap: 2px;
-  }
-  /* Shrink prop tiles ~79->60px (square) so more fit per row + shorter rows.
-     Higher specificity than BentoPropGrid's own width + container-query rules. */
-  .dock-dense :global(.section-buttons .prop-button),
-  .dock-dense :global(.popover-trigger-wrap .prop-button),
-  .dock-dense :global(.popover-trigger-wrap) {
-    width: 60px;
-  }
-  .dock-dense :global(.prop-button) {
-    aspect-ratio: 1 / 1;
-    padding: 5px 3px 4px;
-    gap: 2px;
-  }
-  /* .prop-label keeps its base var(--font-size-compact, 12px); it ellipsizes
-     (nowrap + hidden overflow) inside the 60px tile, so no sub-floor override. */
   /* EffortPanel (56px tile -> 48, still >=44) */
   .dock-dense :global(.effort-btn) {
     min-height: 48px;
@@ -1725,6 +1768,14 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
+  }
+
+  /* A host sizing its panel to the page reads the page's height from these
+     rows, so they take their tiles' height instead of sharing one they were
+     handed. From a zero basis they measured as nothing. */
+  .display-rows.content-sized,
+  .display-rows.content-sized .rt-section {
+    flex: none;
   }
 
   .section-hint {

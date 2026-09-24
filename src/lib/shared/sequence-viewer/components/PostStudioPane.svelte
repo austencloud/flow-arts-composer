@@ -4,6 +4,7 @@
   import { getExportOptionsState } from "$lib/shared/animation-panel/state/export-options-state.svelte";
   import { createCardPreviewState } from "$lib/shared/share/state/card-preview-state.svelte";
   import PostStudio from "$lib/shared/share/components/post-studio/PostStudio.svelte";
+  import type { PostStudioShareExport } from "$lib/shared/share/components/post-studio/post-studio-share-export";
 
   /**
    * Post Studio as a sequence-viewer surface.
@@ -22,6 +23,8 @@
     onExported: (blob: Blob) => void;
     /** Opens the shell's share sheet on the render just handed over. */
     onSharePost: () => void;
+    previewTarget?: HTMLElement | null;
+    onRegisterShareExport?: (controls: PostStudioShareExport | null) => void;
     /** The shell's share panel is open beside or under the studio. */
     sharing?: boolean;
   }
@@ -32,6 +35,8 @@
     resolvedCardAutoLayout,
     onExported,
     onSharePost,
+    previewTarget = null,
+    onRegisterShareExport,
     sharing = false,
   }: Props = $props();
 
@@ -60,6 +65,8 @@
     onRequestAnimation={() => undefined}
     {onExported}
     {onSharePost}
+    {previewTarget}
+    {onRegisterShareExport}
     {sharing}
   />
 </div>

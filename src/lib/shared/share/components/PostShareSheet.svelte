@@ -149,6 +149,8 @@
     initialEntry?: "chooser" | "download" | "publish";
     /** A host-owned animation stage shown before its encoded video is ready. */
     liveVideoPreview?: Snippet;
+    /** Hide controls when the host owns a fixed video format. */
+    videoSettingsAvailable?: boolean;
   }
 
   let {
@@ -181,6 +183,7 @@
     canCreateLink = true,
     initialEntry = "chooser",
     liveVideoPreview,
+    videoSettingsAvailable = true,
   }: Props = $props();
 
   const postDeliveryState = createPostDeliveryState({
@@ -741,14 +744,16 @@
 
   /** Detect setting changes without automatically replacing an expensive render. */
   const videoSettingsKey = $derived(
-    videoDownloadSettingsKey({
-      resolution: exportOptions.videoResolution,
-      fps: exportOptions.videoFps,
-      repeats: exportOptions.videoLoopCount,
-      quality: exportOptions.videoQuality,
-      is3DExport,
-      opener: openerEnabled ? opener : undefined,
-    })
+    videoSettingsAvailable
+      ? videoDownloadSettingsKey({
+          resolution: exportOptions.videoResolution,
+          fps: exportOptions.videoFps,
+          repeats: exportOptions.videoLoopCount,
+          quality: exportOptions.videoQuality,
+          is3DExport,
+          opener: openerEnabled ? opener : undefined,
+        })
+      : "host-video-format"
   );
   let renderedVideoKey = $state<string | null>(null);
   let renderedVideoSourceKey = $state<string | null>(null);
@@ -1818,7 +1823,7 @@
     : shareRoute === "link"
       ? "Share a link"
       : shareRoute === "download"
-        ? `Download ${artifact === "video" ? "animation" : "card"}`
+        ? `Download ${artifact === "video" ? (videoSettingsAvailable ? "animation" : "post") : "card"}`
         : "Share sequence"}
   {onClose}
   onClosed={runPendingHandoff}
@@ -1871,7 +1876,7 @@
                   : shareRoute === "link"
                     ? "Share a link"
                     : shareRoute === "download"
-                      ? `Download ${artifact === "video" ? "animation" : "card"}`
+                      ? `Download ${artifact === "video" ? (videoSettingsAvailable ? "animation" : "post") : "card"}`
                       : "Share sequence"}
               </h2>
               <div class="sequence-identity">
@@ -2289,7 +2294,7 @@
                           {/if}
                         </fieldset>
                       {/if}
-                      {#if artifact === "video" && sequence}
+                      {#if artifact === "video" && sequence && videoSettingsAvailable}
                         <fieldset
                           class="video-settings"
                           aria-label="Video settings"

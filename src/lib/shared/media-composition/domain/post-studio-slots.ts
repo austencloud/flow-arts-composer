@@ -54,7 +54,9 @@ export function slotOccupancy(preset: MediaCompositionPreset): SlotOccupancy {
   const forSlot = (slot: PostStudioSlotId): PostStudioRoleKey[] =>
     preset.clips
       .filter((clip) => isVisual(clip) && clip.regionId === slot)
-      .map((clip) => (clip as VisualPresetClip).sourceRole as PostStudioRoleKey);
+      .map(
+        (clip) => (clip as VisualPresetClip).sourceRole as PostStudioRoleKey
+      );
   return { top: forSlot("top"), bottom: forSlot("bottom") };
 }
 
@@ -72,7 +74,8 @@ export function slotIsOccupied(
  */
 export function slotSplit(preset: MediaCompositionPreset): number {
   const top = preset.regions.find((region) => region.id === "top");
-  const bothFilled = slotIsOccupied(preset, "top") && slotIsOccupied(preset, "bottom");
+  const bothFilled =
+    slotIsOccupied(preset, "top") && slotIsOccupied(preset, "bottom");
   if (!top || !bothFilled) return DEFAULT_SLOT_SPLIT;
   return clampSplit(top.height);
 }
@@ -189,7 +192,10 @@ function durationForClips(
     (clip) => clip.sourceRole === POST_STUDIO_ROLE.performance
   );
   if (holdsPerformance) {
-    return { mode: "follow-source-role", sourceRole: POST_STUDIO_ROLE.performance };
+    return {
+      mode: "follow-source-role",
+      sourceRole: POST_STUDIO_ROLE.performance,
+    };
   }
   if (duration.mode !== "follow-source-role") return duration;
   const present = clips.some((clip) => clip.sourceRole === duration.sourceRole);
@@ -204,14 +210,22 @@ function rebuild(
   const occupancy: SlotOccupancy = {
     top: clips
       .filter((clip) => isVisual(clip) && clip.regionId === "top")
-      .map((clip) => (clip as VisualPresetClip).sourceRole as PostStudioRoleKey),
+      .map(
+        (clip) => (clip as VisualPresetClip).sourceRole as PostStudioRoleKey
+      ),
     bottom: clips
       .filter((clip) => isVisual(clip) && clip.regionId === "bottom")
-      .map((clip) => (clip as VisualPresetClip).sourceRole as PostStudioRoleKey),
+      .map(
+        (clip) => (clip as VisualPresetClip).sourceRole as PostStudioRoleKey
+      ),
   };
 
+  // Motion tracks name regions by id, and the slot model renames regions and
+  // derives their rects from occupancy. A slot post does not move.
+  const { regionMotion: _motion, ...still } = preset;
+
   return MediaCompositionPresetSchema.parse({
-    ...preset,
+    ...still,
     duration: durationForClips(preset.duration, clips),
     sourceRoles: rolesForClips(clips),
     regions: regionsForOccupancy(occupancy, split, preset.regions),
@@ -238,6 +252,8 @@ function rebuild(
 export function normalizePresetToSlots(
   preset: MediaCompositionPreset
 ): MediaCompositionPreset {
+  // A free layout keeps its own regions; see `layoutModel`.
+  if (preset.layoutModel === "free") return preset;
   const ordered = [...preset.regions].sort((left, right) => left.y - right.y);
   if (ordered.length === 0) return preset;
 

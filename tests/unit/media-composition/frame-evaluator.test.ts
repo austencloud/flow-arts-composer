@@ -20,6 +20,7 @@ const timeMap: SequenceTimeMap = {
     { mediaTimeSeconds: 10, sequencePosition: 5 },
   ],
   source: "manual",
+  positionConvention: "engine",
   boundaryPolicy: "clamp",
   updatedAt: 1,
 };
@@ -103,6 +104,29 @@ describe("evaluatePresetFrame", () => {
     );
   });
 
+  it("advances the animation from tapped arrivals while the card marks the landed pose", () => {
+    const arrivalMap: SequenceTimeMap = {
+      ...timeMap,
+      positionConvention: "arrival",
+    };
+    const layer = evaluatePresetFrame(performancePreset, 10, 5, {
+      timeMap: arrivalMap,
+      steps: variableDurationSteps,
+      startPlacementDuration: 1,
+    })[0];
+
+    expect(layer?.sequencePosition).toBe(4);
+    expect(layer?.carouselPosition).toBe(3);
+    expect(layer?.displayedBeatNumber).toBe(3);
+    expect(layer?.animationTimeSeconds).toBe(4);
+    const opening = evaluatePresetFrame(performancePreset, 10, 0, {
+      timeMap: arrivalMap,
+      steps: variableDurationSteps,
+      startPlacementDuration: 1,
+    })[0];
+    expect(opening?.carouselPosition).toBe(0);
+  });
+
   it("folds a multi-pass take back into one cycle of the sequence", () => {
     // Two passes over the same four steps: the opening pose at zero, then
     // eight landings, and one sequence of four on screen.
@@ -120,12 +144,13 @@ describe("evaluatePresetFrame", () => {
         { mediaTimeSeconds: 8, sequencePosition: 8 },
       ],
     };
-    const positionAt = (seconds: number) =>
+    const frameAt = (seconds: number) =>
       evaluatePresetFrame(performancePreset, 10, seconds, {
         timeMap: twoPassMap,
         steps: variableDurationSteps,
         startPlacementDuration: 1,
-      })[0]?.sequencePosition;
+      })[0];
+    const positionAt = (seconds: number) => frameAt(seconds)?.sequencePosition;
 
     // The opening pose is position zero and stays itself - every pass after
     // the first closes back onto it.
@@ -138,6 +163,9 @@ describe("evaluatePresetFrame", () => {
     // Pass 2 closes on move 4 again, and holds there past the last anchor.
     expect(positionAt(8)).toBe(4);
     expect(positionAt(9.5)).toBe(4);
+    expect(frameAt(4)?.sequencePassIndex).toBe(0);
+    expect(frameAt(5)?.sequencePassIndex).toBe(1);
+    expect(frameAt(6.5)?.sequencePassIndex).toBe(1);
   });
 
   it("rejects an invalid project duration", () => {
