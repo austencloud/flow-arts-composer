@@ -14,7 +14,7 @@
 </script>
 
 <GuideSeo
-  title="2.1 2-Turns · Level 2 Guide · The Kinetic Alphabet"
+  title="2.1 2-Turns · Level 2 · Flow Arts Notation Guide"
   description="Level 2 chapter on 2-turns: 360° prop rotations on shifts, dashes, and static motions, plus the codex reference pages for double-turning letters."
   path="/guide/level-2/double-turns"
   partOf={{ name: "Level 2 Guide: Turns", path: "/guide/level-2" }}

@@ -201,10 +201,25 @@
           seen.add(base);
           bases.push(base);
         }
-        return { label: section.label, bases };
+        return {
+          label: section.label,
+          bases,
+          columns: balancedColumns(bases.length),
+        };
       })
       .filter((section) => section.bases.length > 0);
   });
+
+  // The column count a section uses at each width tier: as many as the tier
+  // allows, less any that would only leave a short last row. Ten props at an
+  // eight-column tier sit five and five, not eight and a stray two.
+  const COLUMN_TIERS = [2, 3, 4, 6, 8, 10, 12] as const;
+  function balancedColumns(count: number): string {
+    return COLUMN_TIERS.map((max) => {
+      const rows = Math.ceil(count / max);
+      return `--c${max}: ${Math.max(1, Math.ceil(count / rows))}`;
+    }).join("; ");
+  }
 
   const allBases = $derived(sections.flatMap((section) => section.bases));
   const selectedBase = $derived(
@@ -866,6 +881,7 @@
           {:else}
             <div
               class="drill-tiles"
+              style={balancedColumns(familyChoices(drill.base).length)}
               style:--family-count={familyChoices(drill.base).length}
               class:comfortable={tileDensity === "comfortable"}
               class:fill={drillLayout !== null}
@@ -922,6 +938,7 @@
               <div
                 class="section-buttons"
                 class:single={section.bases.length === 1}
+                style={section.columns}
               >
                 {#each section.bases as base (base)}
                   {@render familyTile(base)}
@@ -1256,9 +1273,12 @@
     padding-top: 2px;
   }
 
+  /* Sections and the drilled family grid read their balanced counts
+     (--c2 ... --c12) from balancedColumns; the fallbacks are each tier's
+     full count. */
   .section-buttons {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 124px));
+    grid-template-columns: repeat(var(--c2, 2), minmax(0, 124px));
     gap: 10px;
     justify-content: center;
     padding: 0 2px;
@@ -1521,19 +1541,19 @@
 
   @container prop-grid (min-width: 360px) {
     .section-buttons:not(.single) {
-      grid-template-columns: repeat(3, minmax(0, 124px));
+      grid-template-columns: repeat(var(--c3, 3), minmax(0, 124px));
     }
   }
 
   @container prop-grid (min-width: 550px) {
     .section-buttons:not(.single) {
-      grid-template-columns: repeat(4, minmax(0, 118px));
+      grid-template-columns: repeat(var(--c4, 4), minmax(0, 118px));
     }
   }
 
   @container prop-grid (min-width: 700px) {
     .section-buttons:not(.single) {
-      grid-template-columns: repeat(6, minmax(0, 112px));
+      grid-template-columns: repeat(var(--c6, 6), minmax(0, 112px));
     }
 
     .prop-grid-root.fluid-sections .grid-content {
@@ -1547,7 +1567,21 @@
 
   @container prop-grid (min-width: 850px) {
     .section-buttons:not(.single) {
-      grid-template-columns: repeat(8, minmax(0, 112px));
+      grid-template-columns: repeat(var(--c8, 8), minmax(0, 112px));
+    }
+  }
+
+  /* A wide monitor's picker: more of each section on one row instead of
+     the same eight tiles stranded in the middle of the card. */
+  @container prop-grid (min-width: 1250px) {
+    .section-buttons:not(.single) {
+      grid-template-columns: repeat(var(--c10, 10), minmax(0, 112px));
+    }
+  }
+
+  @container prop-grid (min-width: 1500px) {
+    .section-buttons:not(.single) {
+      grid-template-columns: repeat(var(--c12, 12), minmax(0, 112px));
     }
   }
 

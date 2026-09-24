@@ -85,7 +85,7 @@ export const LEVEL2_TOPIC_PAGES: Level2TopicPage[] = [
     slug: "turn-shifts",
     chapter: "turns",
     h1: "1-Turns: Shifts",
-    title: "1-Turns: Shifts · Level 2 Guide · The Kinetic Alphabet",
+    title: "1-Turns: Shifts · Level 2 · Flow Arts Notation Guide",
     description:
       "A turn is a 180° rotation that occurs during a motion. Let's add a single turn to a shift.",
     sections: [TurnShifts],
@@ -95,7 +95,7 @@ export const LEVEL2_TOPIC_PAGES: Level2TopicPage[] = [
     slug: "turns-dashes-static",
     chapter: "turns",
     h1: "1-Turns: Dashes / Static",
-    title: "1-Turns: Dashes / Static · Level 2 Guide · The Kinetic Alphabet",
+    title: "1-Turns: Dashes / Static · Level 2 · Flow Arts Notation Guide",
     description:
       "You can also add a turn to a dash. During the prop rotation, move the hand directly in a straight line.",
     sections: [TurnDashes, TurnStatic],
@@ -105,7 +105,7 @@ export const LEVEL2_TOPIC_PAGES: Level2TopicPage[] = [
     slug: "glyphs-pads",
     chapter: "turns",
     h1: "Glyphs / PADS",
-    title: "Glyphs / PADS · Level 2 Guide · The Kinetic Alphabet",
+    title: "Glyphs / PADS · Level 2 · Flow Arts Notation Guide",
     description:
       "A glyph is a letter combined with other characters, such as numbers or symbols.",
     sections: [GlyphsPADS],
@@ -115,7 +115,7 @@ export const LEVEL2_TOPIC_PAGES: Level2TopicPage[] = [
     slug: "types-1-6-turns",
     chapter: "turns",
     h1: "1-Turns: Types 1–6",
-    title: "1-Turns: Types 1–6 · Level 2 Guide · The Kinetic Alphabet",
+    title: "1-Turns: Types 1–6 · Level 2 · Flow Arts Notation Guide",
     description:
       "When motion types are exactly the same, put left in the high slot and right in the low slot.",
     sections: [
@@ -139,7 +139,7 @@ export const LEVEL2_TOPIC_PAGES: Level2TopicPage[] = [
     slug: "s-and-t",
     chapter: "turns",
     h1: "S and T",
-    title: "S and T · Level 2 Guide · The Kinetic Alphabet",
+    title: "S and T · Level 2 · Flow Arts Notation Guide",
     description:
       "S and T are a different type of hybrid. Even though their motions are a matching shift type (pro|pro, anti|anti), each has one hand leading and the other following.",
     sections: [SandT],
@@ -149,7 +149,7 @@ export const LEVEL2_TOPIC_PAGES: Level2TopicPage[] = [
     slug: "opening-closing",
     chapter: "turns",
     h1: "Opening / Closing",
-    title: "Opening / Closing · Level 2 Guide · The Kinetic Alphabet",
+    title: "Opening / Closing · Level 2 · Flow Arts Notation Guide",
     description:
       "Because of Gamma's asymmetry, Λ (Lam) presents an extra variation when adding a turn.",
     sections: [OpeningClosing],
@@ -159,7 +159,7 @@ export const LEVEL2_TOPIC_PAGES: Level2TopicPage[] = [
     slug: "one-one-turns",
     chapter: "turns",
     h1: "1|1 Turns",
-    title: "1|1 Turns · Level 2 Guide · The Kinetic Alphabet",
+    title: "1|1 Turns · Level 2 · Flow Arts Notation Guide",
     description:
       "For a turn on both props, add a \"1\" in both the high and the low slot. This can also be written as 1|1.",
     sections: [OneOneTurns],
@@ -171,7 +171,7 @@ export const LEVEL2_TOPIC_PAGES: Level2TopicPage[] = [
     slug: "double-turn-shifts",
     chapter: "double-turns",
     h1: "2-Turns: Shifts",
-    title: "2-Turns: Shifts · Level 2 Guide · The Kinetic Alphabet",
+    title: "2-Turns: Shifts · Level 2 · Flow Arts Notation Guide",
     description: "2 turns add a 360 degree rotation to a motion.",
     sections: [DoubleTurnShifts],
     anchorIds: ["double-turn-shifts"],
@@ -180,7 +180,7 @@ export const LEVEL2_TOPIC_PAGES: Level2TopicPage[] = [
     slug: "double-turn-dashes",
     chapter: "double-turns",
     h1: "2-Turns: Dashes",
-    title: "2-Turns: Dashes · Level 2 Guide · The Kinetic Alphabet",
+    title: "2-Turns: Dashes · Level 2 · Flow Arts Notation Guide",
     description:
       "Now let's add a double turn to a dash. It's relatively complex, so we'll break it down into four parts.",
     sections: [DoubleTurnDashes],
@@ -190,7 +190,7 @@ export const LEVEL2_TOPIC_PAGES: Level2TopicPage[] = [
     slug: "double-turn-static",
     chapter: "double-turns",
     h1: "2-Turns: Static / Codex Pages",
-    title: "2-Turns: Static / Codex Pages · Level 2 Guide · The Kinetic Alphabet",
+    title: "2-Turns: Static / Codex Pages · Level 2 · Flow Arts Notation Guide",
     description:
       "A static motion with 2 turns is simply a 360° turn in place. It's necessary to use negative space or a turn to achieve this.",
     sections: [DoubleTurnStatic, CodexPages],

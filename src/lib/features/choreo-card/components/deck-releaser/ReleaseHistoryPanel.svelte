@@ -13,8 +13,12 @@
     isLoading: boolean;
     activeDeckNumber: number | null;
     onSelectRelease: (release: DeckRelease) => void;
-    /** Permanently delete a deck. Omit to hide delete affordances. */
+    /** Archive (soft-delete) a deck — hides it from this list; restorable. Omit
+     *  to hide the archive affordance. */
     onDeleteRelease?: (deckNumber: number) => void;
+    /** Restore a previously archived deck back into the default list. Presence
+     *  switches this row's action to a one-click restore instead of archive. */
+    onRestoreRelease?: (deckNumber: number) => void;
     /** Load a deck's stamped recipe back into Configure. Omit to hide reuse. */
     onReuseRecipe?: (recipe: DeckRecipe) => void;
     /** Section heading. Defaults to "Released Decks". */
@@ -27,9 +31,15 @@
     activeDeckNumber,
     onSelectRelease,
     onDeleteRelease,
+    onRestoreRelease,
     onReuseRecipe,
     title = "Released Decks",
   }: Props = $props();
+
+  function restore(e: MouseEvent, deckNumber: number) {
+    e.stopPropagation();
+    onRestoreRelease?.(deckNumber);
+  }
 
   function reuse(e: MouseEvent, recipe: DeckRecipe) {
     e.stopPropagation();
@@ -137,7 +147,7 @@
             </div>
           </button>
 
-          {#if onDeleteRelease || (onReuseRecipe && release.recipe)}
+          {#if onDeleteRelease || onRestoreRelease || (onReuseRecipe && release.recipe)}
             <div class="row-actions">
               <Crossfade
                 key={confirmingDelete === release.deckNumber}
@@ -149,7 +159,7 @@
                       type="button"
                       class="confirm-btn confirm-yes"
                       onclick={(e) => confirmDelete(e, release.deckNumber)}
-                      aria-label="Confirm delete Deck {release.deckNumber}"
+                      aria-label="Confirm archive Deck {release.deckNumber}"
                     >
                       <i class="fas fa-check" aria-hidden="true"></i>
                     </button>
@@ -157,7 +167,7 @@
                       type="button"
                       class="confirm-btn confirm-no"
                       onclick={cancelConfirm}
-                      aria-label="Cancel delete"
+                      aria-label="Cancel archive"
                     >
                       <i class="fas fa-times" aria-hidden="true"></i>
                     </button>
@@ -173,15 +183,25 @@
                         <i class="fas fa-rotate" aria-hidden="true"></i>
                       </button>
                     {/if}
-                    {#if onDeleteRelease}
+                    {#if onRestoreRelease}
+                      <button
+                        type="button"
+                        class="reuse-btn"
+                        onclick={(e) => restore(e, release.deckNumber)}
+                        aria-label="Restore Deck {release.deckNumber}"
+                        title="Restore deck to the active list"
+                      >
+                        <i class="fas fa-box-open" aria-hidden="true"></i>
+                      </button>
+                    {:else if onDeleteRelease}
                       <button
                         type="button"
                         class="trash-btn"
                         onclick={(e) => startConfirm(e, release.deckNumber)}
-                        aria-label="Delete Deck {release.deckNumber}"
-                        title="Delete deck"
+                        aria-label="Archive Deck {release.deckNumber}"
+                        title="Archive deck (hides it here; restorable later)"
                       >
-                        <i class="fas fa-trash" aria-hidden="true"></i>
+                        <i class="fas fa-box-archive" aria-hidden="true"></i>
                       </button>
                     {/if}
                   {/if}
