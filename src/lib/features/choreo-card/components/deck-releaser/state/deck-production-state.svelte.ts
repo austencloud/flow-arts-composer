@@ -20,6 +20,7 @@ import {
   applyVariationDescriptor,
   resolveDeckSequences,
   rollVariation,
+  MissingDeckSequenceError,
 } from "../../../services/deck-variation";
 import { hashRecipe } from "../../../services/deck-recipe";
 import { makeRng, childSeed } from "$lib/shared/foundation/utils/seeded-rng";
@@ -58,6 +59,16 @@ export interface DeckProductionStateDependencies {
     rightOrientation: Orientation
   ): PictographData[];
   loadArchivedDeck(refNumber: number): Promise<ArchivedDeckPayload | null>;
+  /**
+   * Saved exact reprint data for a release (see `DeckRelease.cardDataSaved`),
+   * ordered by card position — or null when the release predates this
+   * feature. Throws naming missing card positions when the manifest claims
+   * the data was saved but the subcollection turns out incomplete.
+   */
+  loadReleaseCardData(
+    deckNumber: number,
+    expectedCardCount: number
+  ): Promise<{ sequence: SequenceData; turnLoopClosed?: boolean }[] | null>;
   getReleasedSequenceIds(): Set<string>;
   info(message: string): void;
   success(message: string): void;
@@ -471,7 +482,29 @@ export function createDeckProductionState(
 
   async function loadSelectedSequences(generation: number): Promise<void> {
     deck.isLoadingSequences = true;
+    const release = deck.viewingRelease;
     try {
+      // Reprint fast path: a release with saved exact card data renders
+      // straight from it — never re-reads the source catalog/gallery, so a
+      // since-pruned or generated-LOOP source can't drop a card.
+      if (release?.cardDataSaved) {
+        const saved = await deps.loadReleaseCardData(
+          release.deckNumber,
+          deck.cards.length
+        );
+        if (generation !== deck.drawGeneration) return;
+        if (saved) {
+          deck.sequences = saved.map((item) => item.sequence);
+          deck.brokenLoopCount = saved.filter(
+            (item) => item.turnLoopClosed === false
+          ).length;
+          return;
+        }
+        // saved === null: the subcollection came back empty even though the
+        // manifest claims it was written. Fall through to the legacy by-id
+        // path below rather than failing a deck that might still resolve.
+      }
+
       const byCatalog = new Map<string, string[]>();
       const seen = new Set<string>();
       for (const card of deck.cards) {
@@ -499,12 +532,28 @@ export function createDeckProductionState(
       const edges = needsVariation ? await deps.loadDiamondEdges() : [];
       if (generation !== deck.drawGeneration) return;
 
-      const resolved = resolveDeckSequences(deck.cards, baseByKey, edges);
+      // Reprinting a release must never silently ship a deck short a card —
+      // strict mode throws instead of dropping it. Fresh composition (no
+      // release yet) keeps the historical skip-on-missing behavior.
+      const resolved = resolveDeckSequences(deck.cards, baseByKey, edges, {
+        strict: release != null,
+      });
       deck.sequences = resolved.map((item) => item.sequence);
       deck.brokenLoopCount = resolved.filter(
         (item) => !item.turnLoopClosed
       ).length;
     } catch (error) {
+      if (generation === deck.drawGeneration && release != null) {
+        // Reprinting a release: surface loudly and leave deck.sequences at
+        // its previous value rather than rendering/printing a partial deck.
+        const message =
+          error instanceof MissingDeckSequenceError
+            ? error.message
+            : error instanceof Error
+              ? `Couldn't reprint Deck #${release.deckNumber}: ${error.message}`
+              : `Couldn't reprint Deck #${release.deckNumber}.`;
+        deps.error(message);
+      }
       console.warn("Failed to load sequences:", error);
     } finally {
       deck.isLoadingSequences = false;

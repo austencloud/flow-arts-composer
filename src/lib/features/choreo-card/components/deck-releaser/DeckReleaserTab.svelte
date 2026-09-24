@@ -17,7 +17,11 @@
     releaseDeck,
     getAllReleases,
     updateDeckMeta,
-    deleteDeck,
+    getDeckReleaseCardData,
+    // Aliased: deck-archive-store below also exports an unrelated `archiveDeck`
+    // (local IndexedDB archive for unreleased/generated decks).
+    archiveDeck as archiveDeckRelease,
+    restoreDeck as restoreDeckRelease,
   } from "../../services/deck-release-store";
   import ConfigureStep from "./ConfigureStep.svelte";
   import ReviewStep from "./ReviewStep.svelte";
@@ -136,7 +140,8 @@
     getNextNumber: getNextDeckNumber,
     create: releaseDeck,
     updateMetadata: updateDeckMeta,
-    delete: deleteDeck,
+    archive: archiveDeckRelease,
+    restore: restoreDeckRelease,
   });
 
   const production = createDeckProductionState(rs, {
@@ -168,6 +173,7 @@
       ),
     loadArchivedDeck: archive.load,
     getReleasedSequenceIds: () => releaseHistory.releasedSequenceIds,
+    loadReleaseCardData: getDeckReleaseCardData,
     info: (message) => toast.info(message),
     success: (message) => toast.success(message),
     error: (message) => toast.error(message),
@@ -372,16 +378,32 @@
   async function handleDeleteRelease(deckNumber: number) {
     const error = await releaseHistory.remove(deckNumber);
     if (!error) {
-      toast.success(`Deck #${String(deckNumber).padStart(3, "0")} deleted`);
+      toast.success(`Deck #${String(deckNumber).padStart(3, "0")} archived`);
       return;
     }
-    const message = error instanceof Error ? error.message : "Delete failed";
+    const message = error instanceof Error ? error.message : "Archive failed";
     const isPermission =
       message.includes("permission") || message.includes("PERMISSION_DENIED");
     toast.error(
       isPermission
-        ? "Admin access required to delete decks."
-        : `Delete failed: ${message}`
+        ? "Admin access required to archive decks."
+        : `Archive failed: ${message}`
+    );
+  }
+
+  async function handleRestoreRelease(deckNumber: number) {
+    const error = await releaseHistory.restore(deckNumber);
+    if (!error) {
+      toast.success(`Deck #${String(deckNumber).padStart(3, "0")} restored`);
+      return;
+    }
+    const message = error instanceof Error ? error.message : "Restore failed";
+    const isPermission =
+      message.includes("permission") || message.includes("PERMISSION_DENIED");
+    toast.error(
+      isPermission
+        ? "Admin access required to restore decks."
+        : `Restore failed: ${message}`
     );
   }
 
@@ -398,9 +420,16 @@
 
   function restoreViewedRelease(deckNumber: number | null) {
     if (!deckNumber || rs.viewingRelease) return;
-    const match = releaseHistory.releases.find(
-      (release) => release.deckNumber === deckNumber
-    );
+    // Check archived too: a session left open on a deck that got archived
+    // elsewhere should still reopen it on refresh rather than silently
+    // dropping back to Configure.
+    const match =
+      releaseHistory.releases.find(
+        (release) => release.deckNumber === deckNumber
+      ) ??
+      releaseHistory.archivedReleases.find(
+        (release) => release.deckNumber === deckNumber
+      );
     if (match) handleSelectRelease(match);
   }
 
@@ -771,6 +800,16 @@
                 onSelectRelease={handleSelectRelease}
                 onDeleteRelease={handleDeleteRelease}
                 onReuseRecipe={handleReuseRecipe}
+              />
+            {/if}
+            {#if releaseHistory.archivedReleases.length > 0}
+              <ReleaseHistoryPanel
+                title="Archived Decks"
+                releases={releaseHistory.archivedReleases}
+                isLoading={releaseHistory.isLoading}
+                activeDeckNumber={rs.viewingRelease?.deckNumber ?? null}
+                onSelectRelease={handleSelectRelease}
+                onRestoreRelease={handleRestoreRelease}
               />
             {/if}
           </div>
