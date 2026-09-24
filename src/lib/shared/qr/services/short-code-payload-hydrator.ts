@@ -268,7 +268,10 @@ export async function hydrateSelfContainedShortCodePayload(
     )
       return null;
     const title = data.payloadTitle || sequence.displayName || sequence.name;
-    return { ...sequence, word: "", name: title, displayName: title };
+    return withRecordIdentity(
+      { ...sequence, word: "", name: title, displayName: title },
+      data
+    );
   }
   if (data.payloadKind === "solo") {
     return hydrateSoloShortCodePayload(code, data);
@@ -278,8 +281,22 @@ export async function hydrateSelfContainedShortCodePayload(
   // created. Prefer it whenever it is complete; the compact blob deliberately
   // omits fields that can be derived later, and displaying that lean form can
   // make a valid saved sequence look unnamed or non-circular.
-  return (
+  const sequence =
     hydrateEmbeddedWordShortCodePayload(code, data) ??
-    (await decodeWordShortCodePayload(code, data))
-  );
+    (await decodeWordShortCodePayload(code, data));
+  return sequence && withRecordIdentity(sequence, data);
+}
+
+/**
+ * A record minted from a saved sequence names that document in `sequenceId`.
+ * The viewer keys performances, and anything else attached to the sequence, by
+ * its id, so a played copy must carry the document's id rather than the code;
+ * otherwise every short-code visit reads and writes attachments under the code.
+ * Records without a source document keep the code as their only identity.
+ */
+function withRecordIdentity(
+  sequence: SequenceData,
+  data: ShortCodeData
+): SequenceData {
+  return data.sequenceId ? { ...sequence, id: data.sequenceId } : sequence;
 }

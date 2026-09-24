@@ -205,6 +205,12 @@
     closeRequest?: number;
     /** Accessible region name for non-export hosts. */
     regionLabel?: string;
+    /** A sidebar host that sizes its panel to the page (the motion-path
+     *  studio's card) gets each page's own height, or null for a page laid
+     *  out in whatever height it is handed (Props, Effects). Display then
+     *  lays its tiles out by width instead of fitting them to a height the
+     *  page itself is now setting. */
+    onPageHeight?: (height: number | null) => void;
   }
 
   let {
@@ -252,6 +258,7 @@
     onActiveSectionChange,
     closeRequest = 0,
     regionLabel = "Animation controls",
+    onPageHeight,
   }: Props = $props();
 
   const viewerAnimatorInspector = getOptionalViewerAnimatorInspectorContext();
@@ -546,6 +553,11 @@
   const effortSummary = $derived(activeEffort.label);
   const effortAccent = $derived(activeEffort.color);
 
+  // What the Playback page (and the merged Motion page above Effort) holds.
+  const playbackHasPage = $derived(
+    showTempoControls || !!onPlaybackModeChange || showPathShape
+  );
+
   const playbackSummary = $derived.by(() => {
     void vmVersion;
     return showTempoControls
@@ -690,12 +702,19 @@
           summary: effortSummary,
           accentColor: effortAccent,
         },
-        playback: {
-          icon: "fa-route",
-          label: "Playback",
-          summary: playbackSummary,
-          accentColor: RAIL_CATEGORY_ACCENTS.playback,
-        },
+        // A host whose canvas has its own transport owns tempo there and
+        // passes showTempoControls={false}. With no mode and no path shape
+        // either, the Playback page would be empty, so it has no pill.
+        ...(playbackHasPage
+          ? {
+              playback: {
+                icon: "fa-route",
+                label: "Playback",
+                summary: playbackSummary,
+                accentColor: RAIL_CATEGORY_ACCENTS.playback,
+              },
+            }
+          : {}),
         display: {
           icon: "fa-eye",
           label: "Display",
@@ -887,7 +906,7 @@
            showTempoControls={false}; with no playback mode either, Tempo and
            Mode have nothing to hold and Paths runs the full width above
            Effort instead of stranding an empty second column. -->
-      <div class="motion-stack">
+      <div class="motion-stack" class:effort-only={!playbackHasPage}>
         {#if showPathShape}
           {#if showTempoControls || onPlaybackModeChange}
             <div class="motion-col">
@@ -904,7 +923,8 @@
             {@render tempoModeBody()}
           </div>
         {/if}
-        {@render effortBody(true)}
+        <!-- Effort alone is the whole page, so it needs no label of its own. -->
+        {@render effortBody(playbackHasPage)}
       </div>
     </div>
   {:else if resolvedPill === "export" && exportOptions}
@@ -912,11 +932,11 @@
   {/if}
 {/snippet}
 
-<!-- `labelled` is set only by the merged Motion page. On its own page the h2
-     names the section and a label under it would say the same word twice; on
-     the merged page Tempo, Mode and Visibility all carry one, and the effort
-     tiles were the single unlabelled block under a heading named for something
-     else. -->
+<!-- `labelled` is set only by a merged Motion page with more than Effort on it.
+     On its own page the h2 names the section and a label under it would say
+     the same word twice; on the merged page Tempo, Mode and Visibility all
+     carry one, and the effort tiles were the single unlabelled block under a
+     heading named for something else. -->
 {#snippet effortBody(labelled = false)}
   <div class="section-pad">
     {#if labelled}
@@ -1004,7 +1024,7 @@
         {showWordToggle}
         {sequence}
         propType={selectedPropType}
-        fill={layout === "sidebar"}
+        fill={layout === "sidebar" && !onPageHeight}
         {onSettingChange}
       />
     </div>
@@ -1298,11 +1318,12 @@
     onSelect={handlePillSelect}
     direction={panelDirection}
     {reduceMotion}
-    fillBody={resolvedPill === "display" ||
+    fillBody={(resolvedPill === "display" && !onPageHeight) ||
       resolvedPill === "effects" ||
       resolvedPill === "props"}
     fluidBody={resolvedPill === "props"}
     pageOnly={presentation === "content"}
+    {onPageHeight}
     regionLabel={presentation === "content"
       ? activePillLabel || regionLabel
       : "Animation export settings"}
@@ -1412,17 +1433,18 @@
        first-time viewer understands last. Four across in two rows instead of
        two across in four, without the descriptions: 386px down to ~150px,
        which is what keeps a 315px rail from scrolling. Both come back with the
-       second column, where the room exists. */
-    .motion-stack :global(.effort-sub) {
+       second column, where the room exists. Effort alone on the page keeps
+       them: it is the whole page, and the descriptions are what it teaches. */
+    .motion-stack:not(.effort-only) :global(.effort-sub) {
       display: none;
     }
 
-    .motion-stack :global(.effort-btn.with-sub) {
+    .motion-stack:not(.effort-only) :global(.effort-btn.with-sub) {
       padding: 8px 4px;
       min-height: 40px;
     }
 
-    .motion-stack :global(.effort-grid) {
+    .motion-stack:not(.effort-only) :global(.effort-grid) {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }

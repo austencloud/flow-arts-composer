@@ -1,38 +1,29 @@
 <script lang="ts">
-  /**
-   * OpenChapter — the "this chapter is waiting for its author" block on
-   * per-prop notation pages (fans, clubs, buugeng). TKA's per-prop grip
-   * language is deliberately unwritten for props Austen didn't train; this
-   * block makes that honesty a designed feature instead of an apology.
-   * The dashed border is the point: an unfinished manuscript, on purpose.
-   *
-   * Grep evidence (2026-07-16): no existing callout/invitation primitive in
-   * src/lib/shared/landing/components or src/lib/shared/components; closest
-   * is public-editorial.css's .cta-card, which is a conversion CTA.
-   */
   import type { Snippet } from "svelte";
 
   let {
     prop,
+    heading,
     children,
   }: {
-    /** Display name used in the heading and mailto subject, e.g. "Fans". */
+    /** Display name used in the mailto subject, e.g. "Fans". */
     prop: string;
+    heading: string;
     children: Snippet;
   } = $props();
 
-  const mailto = `mailto:tkaflowarts@gmail.com?subject=${encodeURIComponent(`${prop} chapter`)}`;
+  const mailto = `mailto:tkaflowarts@gmail.com?subject=${encodeURIComponent(`${prop} notation contribution`)}`;
 </script>
 
 <aside class="open-chapter" aria-labelledby="open-chapter-heading">
-  <p class="kicker">Open chapter</p>
-  <h2 class="heading" id="open-chapter-heading">The {prop.toLowerCase()} chapter is waiting for its author</h2>
+  <p class="kicker">Contribute</p>
+  <h2 class="heading" id="open-chapter-heading">{heading}</h2>
   <div class="body">
     {@render children()}
   </div>
   <a class="write-btn" href={mailto}>
     <i class="fas fa-pen-nib" aria-hidden="true"></i>
-    <span>Write this chapter</span>
+    <span>Get in touch</span>
   </a>
 </aside>
 
