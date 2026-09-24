@@ -36,7 +36,11 @@ import {
   readScanPhysicalCardId,
   recordCardScanAfterAuth,
 } from "../../../src/lib/shared/qr/services/card-scan-ingest";
-import { POST } from "../../../src/routes/api/physical-cards/scan/+server";
+import { recordNativeCardScan } from "../../../src/lib/shared/qr/services/native-card-scan";
+import {
+  OPTIONS,
+  POST,
+} from "../../../src/routes/api/physical-cards/scan/+server";
 import worker from "../../../cloudflare/workers/shortcode-redirect.js";
 
 /**
@@ -115,7 +119,9 @@ class FakeFirestore {
 
   scanEvents(shortCode: string): Record<string, unknown>[] {
     return [...this.docs.entries()]
-      .filter(([path]) => path.startsWith(`shortcodes/${shortCode}/scanEvents/`))
+      .filter(([path]) =>
+        path.startsWith(`shortcodes/${shortCode}/scanEvents/`)
+      )
       .map(([, data]) => data);
   }
 }
@@ -156,11 +162,14 @@ function seedSerializedCard(
 }
 
 function scanEvent(body: unknown) {
-  const request = new Request("https://tkaflowarts.com/api/physical-cards/scan", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: typeof body === "string" ? body : JSON.stringify(body),
-  });
+  const request = new Request(
+    "https://tkaflowarts.com/api/physical-cards/scan",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: typeof body === "string" ? body : JSON.stringify(body),
+    }
+  );
   return {
     request,
     url: new URL(request.url),
@@ -202,7 +211,10 @@ describe("POST /api/physical-cards/scan", () => {
   it("records a serialized scan with its card identity and bumps both counters", async () => {
     seedSerializedCard();
 
-    const result = await postScan({ shortCode: SHORT_CODE, physicalCardId: PID });
+    const result = await postScan({
+      shortCode: SHORT_CODE,
+      physicalCardId: PID,
+    });
 
     expect(result).toEqual({
       status: 201,
@@ -233,7 +245,10 @@ describe("POST /api/physical-cards/scan", () => {
     seedSerializedCard();
     firestore.docs.delete(`physicalCards/${PID}`);
 
-    const result = await postScan({ shortCode: SHORT_CODE, physicalCardId: PID });
+    const result = await postScan({
+      shortCode: SHORT_CODE,
+      physicalCardId: PID,
+    });
 
     expect(result.status).toBe(404);
     expect(result.body.code).toBe("unknown_physical_card");
@@ -243,7 +258,10 @@ describe("POST /api/physical-cards/scan", () => {
   it("rejects a card identity scanned under a different shortcode", async () => {
     seedSerializedCard("ready", "ELYW");
 
-    const result = await postScan({ shortCode: SHORT_CODE, physicalCardId: PID });
+    const result = await postScan({
+      shortCode: SHORT_CODE,
+      physicalCardId: PID,
+    });
 
     expect(result.status).toBe(400);
     expect(result.body.code).toBe("card_code_mismatch");
@@ -253,8 +271,14 @@ describe("POST /api/physical-cards/scan", () => {
   it("converges a repeat scan from the same device, day, and city on one record", async () => {
     seedSerializedCard();
 
-    const first = await postScan({ shortCode: SHORT_CODE, physicalCardId: PID });
-    const repeat = await postScan({ shortCode: SHORT_CODE, physicalCardId: PID });
+    const first = await postScan({
+      shortCode: SHORT_CODE,
+      physicalCardId: PID,
+    });
+    const repeat = await postScan({
+      shortCode: SHORT_CODE,
+      physicalCardId: PID,
+    });
 
     expect(first.status).toBe(201);
     expect(repeat).toEqual({
@@ -284,7 +308,10 @@ describe("POST /api/physical-cards/scan", () => {
     // One 2026-08-11 run (475 identities) is still "allocated" in production.
     seedSerializedCard("allocated");
 
-    const result = await postScan({ shortCode: SHORT_CODE, physicalCardId: PID });
+    const result = await postScan({
+      shortCode: SHORT_CODE,
+      physicalCardId: PID,
+    });
 
     expect(result.status).toBe(409);
     expect(result.body.code).toBe("card_not_ready");
@@ -294,7 +321,10 @@ describe("POST /api/physical-cards/scan", () => {
   it("records a legacy scan of a pre-uppercase mixed-case shortcode", async () => {
     firestore.docs.set("shortcodes/07JPcN", { sequence: "encoded" });
 
-    const result = await postScan({ shortCode: "07JPcN", physicalCardId: null });
+    const result = await postScan({
+      shortCode: "07JPcN",
+      physicalCardId: null,
+    });
 
     expect(result).toEqual({
       status: 201,
@@ -444,5 +474,162 @@ describe("serialized card URL through the Worker and /q to the ingest write", ()
       scanKind: "legacy",
     });
     vi.useRealTimers();
+  });
+});
+
+describe("serialized card URL opened in the installed Android app", () => {
+  const APP_ORIGIN = "https://localhost";
+  const SITE_SCAN_ENDPOINT = "https://tkaflowarts.com/api/physical-cards/scan";
+
+  // The app claims each card once per five minutes in session storage.
+  beforeEach(() => {
+    sessionStorage.clear();
+  });
+
+  function endpointEvent(request: Request) {
+    return {
+      request,
+      url: new URL(request.url),
+      platform: {
+        env: { FIREBASE_SERVICE_ACCOUNT_JSON: "service-account-json" },
+        cf: { country: "US", city: "Chicago" },
+      },
+      getClientAddress: () => "203.0.113.7",
+    } as never;
+  }
+
+  function preflight(origin: string) {
+    return OPTIONS(
+      endpointEvent(
+        new Request(SITE_SCAN_ENDPOINT, {
+          method: "OPTIONS",
+          headers: {
+            Origin: origin,
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+          },
+        })
+      )
+    );
+  }
+
+  /**
+   * Plays the WebView: the app's JSON POST goes out cross-origin from
+   * https://localhost, so it is preflighted, and the app can read the answer
+   * only if the endpoint grants its origin.
+   */
+  function routeAppPostsToEndpoint(): Array<Record<string, unknown>> {
+    const posted: Array<Record<string, unknown>> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        expect(String(input)).toBe(SITE_SCAN_ENDPOINT);
+        const grant = await preflight(APP_ORIGIN);
+        expect(grant.status).toBe(204);
+        expect(grant.headers.get("access-control-allow-origin")).toBe(
+          APP_ORIGIN
+        );
+
+        const headers = new Headers(init?.headers);
+        headers.set("Origin", APP_ORIGIN);
+        const request = new Request(String(input), { ...init, headers });
+        posted.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
+        const response = await POST(endpointEvent(request));
+        expect(response.headers.get("access-control-allow-origin")).toBe(
+          APP_ORIGIN
+        );
+        return response;
+      })
+    );
+    return posted;
+  }
+
+  it("records the scan with its pid from the link the phone camera opened", async () => {
+    seedSerializedCard();
+    const posted = routeAppPostsToEndpoint();
+    const printedUrl = withPhysicalCardId(
+      `HTTPS://TKA.RUN/${SHORT_CODE}?bp=staff&rp=staff`,
+      PID
+    );
+
+    const outcome = await recordNativeCardScan(printedUrl, {
+      deviceId: () => DEVICE_ID,
+      waitForAuth: async () => undefined,
+    });
+
+    expect(posted).toEqual([
+      {
+        schemaVersion: 1,
+        shortCode: SHORT_CODE,
+        physicalCardId: PID,
+        deviceId: DEVICE_ID,
+      },
+    ]);
+    expect(outcome).toEqual({ outcome: "recorded", scanKind: "serialized" });
+    const [event] = firestore.scanEvents(SHORT_CODE);
+    expect(event).toMatchObject({
+      scanKind: "serialized",
+      physicalCardId: PID,
+      printRunId: PRINT_RUN_ID,
+      city: "Chicago",
+    });
+    expect(firestore.docs.get(`physicalCards/${PID}`)?.scanCount).toBe(1);
+  });
+
+  it("lets the app read a refusal instead of a blanket network error", async () => {
+    seedSerializedCard("allocated");
+    routeAppPostsToEndpoint();
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const outcome = await recordNativeCardScan(
+      `https://tka.run/${SHORT_CODE}?bp=staff&rp=staff&pid=${PID}`,
+      { deviceId: () => DEVICE_ID, waitForAuth: async () => undefined }
+    );
+
+    expect(outcome).toEqual({
+      outcome: "failed",
+      status: 409,
+      code: "card_not_ready",
+    });
+  });
+
+  it("grants CORS to the app's origin only", async () => {
+    const denied = await preflight("https://evil.example");
+    expect(denied.status).toBe(403);
+    expect(denied.headers.get("access-control-allow-origin")).toBeNull();
+
+    // Another origin's POST still runs server-side (anyone can call a public
+    // endpoint), but its page is not allowed to read the answer.
+    seedSerializedCard();
+    const foreign = await POST(
+      endpointEvent(
+        new Request(SITE_SCAN_ENDPOINT, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Origin: "https://evil.example",
+          },
+          body: JSON.stringify({
+            schemaVersion: 1,
+            shortCode: SHORT_CODE,
+            physicalCardId: PID,
+            deviceId: DEVICE_ID,
+          }),
+        })
+      )
+    );
+    expect(foreign.headers.get("access-control-allow-origin")).toBeNull();
+
+    // The site's own /q post is same-origin and needs no grant.
+    const sameOrigin = await POST(
+      scanEvent({
+        schemaVersion: 1,
+        shortCode: SHORT_CODE,
+        physicalCardId: PID,
+        deviceId: "0b6f1d2e-3c4a-4b5c-8d6e-7f8091a2b3c4",
+      })
+    );
+    expect(sameOrigin.status).toBe(201);
+    expect(sameOrigin.headers.get("access-control-allow-origin")).toBeNull();
   });
 });
