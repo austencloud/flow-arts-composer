@@ -39,7 +39,17 @@ The complete placement cascade then runs in that canonical context:
 6. one 45-degree clockwise vector rotation when the displayed grid is box
 7. manual per-pictograph adjustment in screen space
 
-Diamond and non-rotational grid modes keep their existing behavior. Half-motion arrows keep their existing glyph-local path.
+Diamond and non-rotational grid modes keep their existing behavior. Half-motion arrows keep their existing glyph-local path. Skewed beats follow the rule below.
+
+## Skewed beats
+
+Added 2026-09-24. A skewed beat mixes hands of three kinds: a hand that stays on the diamond points (cardinal start and end), a hand that stays on the box points (intercardinal start and end), and a hand that crosses between the grids. The first two kinds are ordinary Diamond and Box arrows, so each takes the anchor and the adjustment its own grid gives it:
+
+- a diamond-point arrow uses the diamond anchors and the canonical frame unrotated;
+- a box-point arrow uses the box anchors and the box canonicalization above: locations turn one step counter-clockwise and the final vector turns 45 degrees clockwise. The one difference is that `gridMode` stays `skewed` on the pictograph and both motions;
+- an arrow that crosses between the grids keeps the skewed anchors and is not rotated.
+
+Keeping `gridMode` skewed keeps the `skewed` placement-frame identity, so special, global, and prop-geometry data authored for skewed beats stays apart from canonical data. Before this rule, a box-point shift arrow in a skewed beat started from the skewed anchor, 62 px closer to the center than the box anchor, and took the legacy box directional tuples, so it could sit on top of its own prop (lettering review tile O2-11). Static and dash box-point arrows landed in the same place under both rules.
 
 ## Authoring and persistence
 
@@ -76,7 +86,8 @@ Automated tests must prove:
 - vector magnitude is preserved by the 45-degree transform;
 - a full box adjustment equals a rigidly rotated canonical adjustment for default and special-tier cases;
 - diamond presentation output is unchanged;
-- skewed and half-motion paths are unchanged;
+- half-motion paths and skewed arrows that cross between the grids are unchanged;
+- a skewed beat's diamond-point and box-point arrows land exactly where Diamond and Box put the same arrow;
 - canonical special, global, default, and prop-geometry identities contain no display-grid segment;
 - inverse WASD editing moves the rendered box arrow in the requested screen direction.
 - static and dash glyph angles preserve the expected 45-degree presentation relationship;
