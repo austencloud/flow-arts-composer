@@ -43,6 +43,8 @@
     showTransport?: boolean;
     showExportControls?: boolean;
     layout?: "sidebar" | "strip" | "grid";
+    /** Off when the host already titles this page "Effects". */
+    showHeading?: boolean;
     /** Restrict the roster to what the host can draw. Omit for everything. */
     availableEffects?: readonly string[];
     animationSettingsState?: AnimationSettingsState;
@@ -68,6 +70,7 @@
     showTransport = true,
     showExportControls = false,
     layout = "sidebar",
+    showHeading = true,
     availableEffects,
     animationSettingsState = animationSettings,
     children,
@@ -509,7 +512,9 @@
       {#if sidebarView === "browser"}
         <div class="sb-section sb-browser">
           <div class="sb-browser-head">
-            <span class="sb-label">Effects</span>
+            {#if showHeading}
+              <span class="sb-label">Effects</span>
+            {/if}
             <button
               type="button"
               class="sb-off-btn"
@@ -826,6 +831,7 @@
     justify-content: center;
     gap: 7px;
     max-width: 70%;
+    margin-inline-start: auto;
     padding: 0 12px;
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 10px;
