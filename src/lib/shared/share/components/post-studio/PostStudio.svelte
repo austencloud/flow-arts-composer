@@ -910,6 +910,7 @@
     {audioMode}
     {canKeepOriginalAudio}
     onAudioModeChange={setAudioMode}
+    onChoosePerformance={() => (performancePickerOpen = true)}
     onFixMissing={fixFirstMissingSource}
     onRender={renderPost}
     onCancelExport={cancelExport}
