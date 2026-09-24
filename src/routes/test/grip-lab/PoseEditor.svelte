@@ -64,6 +64,7 @@
       gripRelaxation: 1,
       wristBend: 0,
       wristTwist: 0,
+      wristRaise: 0,
       thumbSpread: 25 * radians,
       thumbCurl: 0,
       indexCurl: 0,
@@ -94,6 +95,7 @@
         slider("Shaft angle in hand", pose.gripTilt * degrees, 0, 80, 1, (v) => update({ gripTilt: v * radians }), "°"),
         slider("Wrist bend", pose.wristBend * degrees, -30, 30, 1, (v) => update({ wristBend: v * radians }), "°"),
         slider("Wrist twist", pose.wristTwist * degrees, -30, 30, 1, (v) => update({ wristTwist: v * radians }), "°"),
+        slider("Wrist up along staff", pose.wristRaise * 100, -8, 8, 0.5, (v) => update({ wristRaise: v / 100 }), "cm"),
       ];
     }
     if (selected === "fingers") {
@@ -196,7 +198,7 @@
   </label>
   <p>Edits save a whole-pose keyframe here.</p>
   {#if selected === "elbow"}<p>The handle guides the elbow’s direction; arm length still limits its position.</p>{/if}
-  {#if selected === "grip"}<p>Relax the hand, then adjust the shaft angle and wrist.</p>{/if}
+  {#if selected === "grip"}<p>Wrist height slides the grip along the shaft; the elbow follows.</p>{/if}
   {#if selected === "fingers"}<p>Select a finger, then bend its base, middle, or tip. These edits blend between keyframes.</p>{/if}
 </section>
 

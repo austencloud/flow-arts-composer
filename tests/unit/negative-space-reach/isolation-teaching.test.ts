@@ -79,6 +79,15 @@ describe("taught isolation poses", () => {
     expect(restored[2]?.middleJoint2).toBe(0);
     expect(restored[2]?.thumbSpread).toBeCloseTo(0.4363);
   });
+  it("retains older hand-pose links and keyframes wrist height independently", () => {
+    const keys = upsertTeachingKey(defaultTeachingKeys(), 2, { wristRaise: 0.04 });
+    expect(decodeTeachingKeys(encodeTeachingKeys(keys))).toEqual(keys);
+    const oldRows = keys.map((key) => JSON.parse(encodeTeachingKeys([key]))[0].slice(0, -1));
+    const restored = decodeTeachingKeys(JSON.stringify(oldRows));
+    expect(restored[2]?.wristRaise).toBe(0);
+    expect(restored[2]?.gripRelaxation).toBe(1);
+    expect(restored[2]?.thumbSpread).toBeCloseTo(0.4363);
+  });
   it("turns only after North, countershifts stage right, and returns continuously at South", () => {
     const keys = defaultTeachingKeys();
     for (const phase of [0, 0.5, 1, 1.5, 2])

@@ -30,11 +30,13 @@ export const POSE_CHANNELS = [
   "middleJoint1", "middleJoint2", "middleJoint3",
   "ringJoint1", "ringJoint2", "ringJoint3",
   "pinkyJoint1", "pinkyJoint2", "pinkyJoint3",
+  "wristRaise",
 ] as const;
 // Preserve links created before grip editing and before individual hand editing.
 const LEGACY_POSE_ROW_LENGTH = 13;
 const PRE_HAND_POSE_ROW_LENGTH = 15;
 const PRE_JOINT_POSE_ROW_LENGTH = 23;
+const PRE_WRIST_RAISE_POSE_ROW_LENGTH = POSE_CHANNELS.length - 1;
 export type PoseChannel = (typeof POSE_CHANNELS)[number];
 export type TeachingPose = Record<PoseChannel, number>;
 export interface TeachingKey extends TeachingPose {
@@ -80,6 +82,7 @@ const NEUTRAL: TeachingPose = {
   middleJoint1: 0, middleJoint2: 0, middleJoint3: 0,
   ringJoint1: 0, ringJoint2: 0, ringJoint3: 0,
   pinkyJoint1: 0, pinkyJoint2: 0, pinkyJoint3: 0,
+  wristRaise: 0,
 };
 export function defaultTeachingKeys(): TeachingKey[] {
   return [
@@ -172,6 +175,7 @@ export function canMoveTeachingKey(
   );
 }
 export function channelLimit(channel: PoseChannel): number {
+  if (channel === "wristRaise") return 0.08;
   if (channel === "wristBend" || channel === "wristTwist") return Math.PI / 6;
   if (channel === "thumbSpread") return Math.PI / 4;
   if (channel.endsWith("Curl")) return Math.PI / 4;
@@ -232,6 +236,7 @@ export function authoredBodyPose(
     gripRelaxation: pose.gripRelaxation,
     gripTiltRad: pose.gripTilt,
     gripPalmRollRad: isolationPalmRoll(phase),
+    gripRiseM: pose.wristRaise,
   };
 }
 /** Bound the actual tip displacement, including depth, rather than loosening the grip. */
@@ -263,7 +268,7 @@ export function decodeTeachingKeys(raw: string | null): TeachingKey[] {
     for (const row of rows) {
       if (
         !Array.isArray(row) ||
-        ![POSE_CHANNELS.length + 1, PRE_JOINT_POSE_ROW_LENGTH, PRE_HAND_POSE_ROW_LENGTH, LEGACY_POSE_ROW_LENGTH].includes(row.length) ||
+        ![POSE_CHANNELS.length + 1, PRE_WRIST_RAISE_POSE_ROW_LENGTH, PRE_JOINT_POSE_ROW_LENGTH, PRE_HAND_POSE_ROW_LENGTH, LEGACY_POSE_ROW_LENGTH].includes(row.length) ||
         !row.every(
           (value) => typeof value === "number" && Number.isFinite(value)
         ) ||

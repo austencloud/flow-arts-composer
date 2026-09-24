@@ -13,13 +13,22 @@ type Finger = "thumb" | "index" | "middle" | "ring" | "pinky";
 
 const X = new Vector3(1, 0, 0);
 const Y = new Vector3(0, 1, 0);
+const Z = new Vector3(0, 0, 1);
 const jointWeights = [0.5, 0.35, 0.15] as const;
 const PHOTO_THUMB_SPREAD = (25 * Math.PI) / 180;
 const NORTH_THUMB_OPPOSITION = 0.45;
 // At North the index tip must not curl back into a hook; the other fingertips
 // can rest against the shaft without making a closed fist.
-const NORTH_INDEX_TIP_RELEASE = 0.65;
+const NORTH_INDEX_TIP_RELEASE = 1.05;
 const NORTH_SUPPORT_CURL = 0.42;
+// Draw the four fingers into a loose, curved wall instead of a broad fan.
+// Their knuckles stay in place; only the rays from each knuckle converge.
+const NORTH_FINGER_SPLAY: Partial<Record<Finger, number>> = {
+  index: 0.12,
+  middle: 0.06,
+  ring: -0.06,
+  pinky: -0.12,
+};
 interface HandBone {
   bone: Bone;
   bindRotation: Quaternion;
@@ -108,6 +117,14 @@ export function sculptHand(
           X, curl * jointWeights[joint - 1]! + indexRelease + supportCurl + jointEdit
         )
       );
+      if (joint === 1 && finger !== "thumb") {
+        bone.quaternion.multiply(
+          new Quaternion().setFromAxisAngle(
+            Z,
+            (NORTH_FINGER_SPLAY[finger] ?? 0) * northWeight
+          )
+        );
+      }
       if (finger === "thumb" && joint === 1 && pose.gripRelaxation > 0) {
         bone.quaternion.multiply(
           new Quaternion().setFromAxisAngle(

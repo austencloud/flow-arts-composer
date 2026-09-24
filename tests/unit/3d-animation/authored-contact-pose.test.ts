@@ -180,6 +180,19 @@ function sampleGripLab(
 }
 
 describe.runIf(avatarAssetsPresent())("authored contact body pose", () => {
+  it("moves the North wrist along the shaft before IK so the elbow follows", async () => {
+    const baselineRig = await setup();
+    const raisedRig = await setup();
+    const baselinePose = authoredBodyPose(sampleTeachingPose(2, defaultTeachingKeys()), 2);
+    const raisedPose = { ...baselinePose, gripRiseM: 0.04 };
+    const baseline = sample(baselineRig, 2, baselinePose);
+    const raised = sample(raisedRig, 2, raisedPose);
+    const baselinePalm = baselineRig.services.animator.getPalmWorldPoint!("right", new Vector3());
+    const raisedPalm = raisedRig.services.animator.getPalmWorldPoint!("right", new Vector3());
+    expect(raisedPalm.distanceTo(baselinePalm)).toBeGreaterThan(0.025);
+    expect(raisedPalm.y - baselinePalm.y).toBeGreaterThan(0.02);
+    expect(raised.elbows[1]!.distanceTo(baseline.elbows[1]!)).toBeGreaterThan(0.005);
+  });
   it("keeps the right elbow continuous while the palm starts turning before North", async () => {
     const rig = await setup();
     const keys = defaultTeachingKeys();

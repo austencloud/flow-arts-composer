@@ -14,6 +14,9 @@ describe.runIf(avatarAssetsPresent())("Grip Lab photo hand", () => {
     const indexTip = scene.getObjectByName("mixamorig8RightHandIndex3") as Bone;
     const thumb = scene.getObjectByName("mixamorig8RightHandThumb1") as Bone;
     const ring = scene.getObjectByName("mixamorig8RightHandRing1") as Bone;
+    const pinkyTip = scene.getObjectByName("mixamorig8RightHandPinky4") as Bone;
+    const indexEnd = scene.getObjectByName("mixamorig8RightHandIndex4") as Bone;
+    const wrist = scene.getObjectByName("mixamorig8RightHand") as Bone;
     expect(finger).toBeDefined();
     expect(thumb).toBeDefined();
     expect(ring).toBeDefined();
@@ -33,17 +36,20 @@ describe.runIf(avatarAssetsPresent())("Grip Lab photo hand", () => {
 
     const pose = sampleTeachingPose(2, defaultTeachingKeys());
     sculptHand(scene, "right", pose);
-    expect(finger.quaternion.angleTo(contactIndex)).toBeLessThan(1e-4);
-    expect(indexTip.quaternion.angleTo(contactIndexTip)).toBeCloseTo(0.65, 2);
+    expect(finger.quaternion.angleTo(contactIndex)).toBeCloseTo(0.12, 2);
+    expect(indexTip.quaternion.angleTo(contactIndexTip)).toBeCloseTo(1.05, 2);
     expect(thumb.quaternion.angleTo(contactThumb)).toBeCloseTo(0.45, 2);
-    expect(ring.quaternion.angleTo(bindRing)).toBeCloseTo(0.42, 2);
+    expect(ring.quaternion.angleTo(bindRing)).toBeGreaterThan(0.42);
+    const tipX = (bone: Bone) => wrist.worldToLocal(bone.getWorldPosition(new Vector3())).x;
+    expect(tipX(indexEnd) - tipX(pinkyTip)).toBeLessThan(0.06);
+    const firstIndex = finger.quaternion.clone();
     const firstThumb = thumb.quaternion.clone();
     const firstIndexTip = indexTip.quaternion.clone();
     finger.quaternion.copy(contactIndex);
     indexTip.quaternion.copy(contactIndexTip);
     thumb.quaternion.copy(contactThumb);
     sculptHand(scene, "right", pose);
-    expect(finger.quaternion.angleTo(contactIndex)).toBeLessThan(1e-4);
+    expect(finger.quaternion.angleTo(firstIndex)).toBeLessThan(1e-4);
     expect(indexTip.quaternion.angleTo(firstIndexTip)).toBeLessThan(1e-4);
     expect(thumb.quaternion.angleTo(firstThumb)).toBeLessThan(1e-4);
     thumb.quaternion.copy(contactThumb);
