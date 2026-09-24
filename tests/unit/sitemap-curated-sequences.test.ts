@@ -2,7 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { toFirestoreFields } from "../../src/lib/shared/firestore/firestore-value-codec";
 
 const mocks = vi.hoisted(() => ({
+  // The Firestore data both read paths serve; tests set it per path.
+  documentAt: vi.fn(),
   getDocument: vi.fn(),
+  batchGetDocuments: vi.fn(),
   listDocuments: vi.fn(),
   getFirestoreRest: vi.fn(),
 }));
@@ -55,9 +58,17 @@ describe("sitemap.xml curated sequence URLs", () => {
     vi.clearAllMocks();
     mocks.getFirestoreRest.mockReturnValue({
       getDocument: mocks.getDocument,
+      batchGetDocuments: mocks.batchGetDocuments,
       listDocuments: mocks.listDocuments,
     });
     mocks.getDocument.mockImplementation(async (path: string) =>
+      mocks.documentAt(path)
+    );
+    mocks.batchGetDocuments.mockImplementation(
+      async (paths: readonly string[]) =>
+        new Map(paths.map((path) => [path, mocks.documentAt(path)]))
+    );
+    mocks.documentAt.mockImplementation((path: string) =>
       path.startsWith(`catalogs/${CATALOG_ID}/sequences/`)
         ? catalogDoc(path.split("/").pop() ?? "")
         : null
@@ -85,9 +96,7 @@ describe("sitemap.xml curated sequence URLs", () => {
     expect(xml).toContain(
       "<loc>https://tkaflowarts.com/sequence/tnd-split-same-cccc</loc>"
     );
-    expect(mocks.getFirestoreRest).toHaveBeenCalledWith(
-      "service-account-json"
-    );
+    expect(mocks.getFirestoreRest).toHaveBeenCalledWith("service-account-json");
     expect(mocks.listDocuments).toHaveBeenCalledWith(
       "deckReleases/counter/manifests",
       expect.objectContaining({ pageSize: 200 })
@@ -100,7 +109,7 @@ describe("sitemap.xml curated sequence URLs", () => {
         manifestDoc("1", ["tnd-split-same-aaaa", "hand-path-reference-ss"]),
       ],
     });
-    mocks.getDocument.mockImplementation(async (path: string) => {
+    mocks.documentAt.mockImplementation((path: string) => {
       if (path.endsWith("/tnd-split-same-aaaa")) return catalogDoc("AAAA");
       if (path.endsWith("/hand-path-reference-ss")) {
         return catalogDoc("Split-Same", null);
@@ -112,6 +121,56 @@ describe("sitemap.xml curated sequence URLs", () => {
 
     expect(xml).toContain("sequence/tnd-split-same-aaaa</loc>");
     expect(xml).not.toContain("hand-path-reference-ss");
+  });
+
+  it("resolves every released card in a fixed number of Firestore requests", async () => {
+    // Past Cloudflare's 50-subrequest cap on Workers Free: one read per card
+    // would fail every fetch after the 50th and silently drop those cards.
+    const ids = Array.from({ length: 60 }, (_, i) => `tnd-card-${i}`);
+    mocks.listDocuments.mockResolvedValue({
+      documents: [
+        manifestDoc("1", ids.slice(0, 30)),
+        manifestDoc("2", ids.slice(30)),
+      ],
+    });
+
+    const xml = await (await GET(event("service-account-json"))).text();
+
+    for (const id of ids) expect(xml).toContain(`sequence/${id}</loc>`);
+    expect(mocks.batchGetDocuments).toHaveBeenCalledTimes(1);
+    expect(mocks.getDocument).not.toHaveBeenCalled();
+  });
+
+  it("falls back to a card's public copy in one more batch when no catalog record exists", async () => {
+    mocks.listDocuments.mockResolvedValue({
+      documents: [manifestDoc("1", ["user-made-word", "tnd-split-same-aaaa"])],
+    });
+    mocks.documentAt.mockImplementation((path: string) => {
+      if (path === `catalogs/${CATALOG_ID}/sequences/tnd-split-same-aaaa`) {
+        return catalogDoc("AAAA");
+      }
+      if (path === "publicSequences/user-made-word") {
+        return {
+          name: "projects/test/databases/(default)/documents/publicSequences/user-made-word",
+          fields: toFirestoreFields({
+            word: "WORD",
+            ownerDisplayName: "A Creator",
+            steps: [{}, {}],
+          }),
+        };
+      }
+      return null;
+    });
+
+    const xml = await (await GET(event("service-account-json"))).text();
+
+    expect(xml).toContain("sequence/user-made-word</loc>");
+    expect(xml).toContain("sequence/tnd-split-same-aaaa</loc>");
+    expect(mocks.batchGetDocuments).toHaveBeenCalledTimes(2);
+    expect(mocks.batchGetDocuments.mock.calls[1]?.[0]).toEqual([
+      "publicSequences/user-made-word",
+    ]);
+    expect(mocks.getDocument).not.toHaveBeenCalled();
   });
 
   it("de-duplicates a sequenceId released into more than one deck", async () => {

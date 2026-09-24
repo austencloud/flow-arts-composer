@@ -13,10 +13,8 @@ import { GridMode } from "../../pictograph/grid/domain/enums/grid-enums";
 import { PropType } from "../../pictograph/prop/domain/enums/prop-type";
 import { DEFAULT_FAN_APPEARANCE } from "../../pictograph/prop/domain/fan-appearance";
 import { DEFAULT_PROP_LOOK } from "../../pictograph/prop/domain/prop-look";
-import type {
-  AppSettings,
-  PropPreset,
-} from "../../settings/domain/app-settings";
+import type { AppSettings } from "../../settings/domain/app-settings";
+import { healPropPair } from "../../settings/domain/prop-pair-rule";
 import {
   getIsInitialized,
   getIsInitializing,
@@ -38,22 +36,12 @@ import {
   resetUIState,
 } from "./ui/ui-state.svelte";
 import { userPreviewState } from "../../debug/state/user-preview-state.svelte";
+import { defaultPropPresets } from "../../settings/domain/prop-presets";
 
 // HMR Test Comment - This should trigger a full reload
 
 // Default prop presets for new users (10 commonly-used configurations)
-const DEFAULT_PROP_PRESETS: PropPreset[] = [
-  { leftPropType: PropType.STAFF, rightPropType: PropType.STAFF, catDogMode: false },
-  { leftPropType: PropType.FAN, rightPropType: PropType.FAN, catDogMode: false },
-  { leftPropType: PropType.CLUB, rightPropType: PropType.CLUB, catDogMode: false },
-  { leftPropType: PropType.BUUGENG, rightPropType: PropType.BUUGENG, catDogMode: false },
-  { leftPropType: PropType.MINIHOOP, rightPropType: PropType.MINIHOOP, catDogMode: false },
-  { leftPropType: PropType.TRIAD, rightPropType: PropType.TRIAD, catDogMode: false },
-  { leftPropType: PropType.DOUBLESTAR, rightPropType: PropType.DOUBLESTAR, catDogMode: false },
-  { leftPropType: PropType.BIGDOUBLESTAR, rightPropType: PropType.BIGDOUBLESTAR, catDogMode: false },
-  { leftPropType: PropType.QUIAD, rightPropType: PropType.QUIAD, catDogMode: false },
-  { leftPropType: PropType.STAFF, rightPropType: PropType.FAN, catDogMode: true },
-];
+const DEFAULT_PROP_PRESETS = defaultPropPresets();
 
 // Default settings returned when services aren't initialized
 const DEFAULT_SETTINGS: AppSettings = {
@@ -95,7 +83,11 @@ function getPreloadedSettings(): AppSettings {
       return DEFAULT_SETTINGS;
     }
     const parsed = JSON.parse(stored);
-    const merged: AppSettings = { ...DEFAULT_SETTINGS, ...parsed };
+    const merged: AppSettings = {
+      ...DEFAULT_SETTINGS,
+      ...parsed,
+      ...healPropPair(parsed),
+    };
     preloadedSettingsCache = merged;
     return merged;
   } catch {
@@ -117,7 +109,11 @@ export function getSettings() {
   // This allows admins to see how the app looks with another user's configuration
   if (userPreviewState.isActive && userPreviewState.data.settings) {
     // Merge with defaults to ensure all required fields are present
-    return { ...DEFAULT_SETTINGS, ...userPreviewState.data.settings };
+    return {
+      ...DEFAULT_SETTINGS,
+      ...userPreviewState.data.settings,
+      ...healPropPair(userPreviewState.data.settings),
+    };
   }
 
   // Return the reactive settings object directly (NOT a snapshot)
