@@ -313,9 +313,9 @@
     );
   }
 
-  function handlePropBuildChange(propBuild: PropBuild): void {
-    writeParameter({ field: "propBuild", value: propBuild }, () =>
-      viewer.setPropBuildScoped(propBuild)
+  function handlePropBuildChange(patch: Partial<PropBuild>): void {
+    writeParameter({ field: "propBuild", value: patch }, () =>
+      viewer.mergePropBuildScoped(patch)
     );
   }
 

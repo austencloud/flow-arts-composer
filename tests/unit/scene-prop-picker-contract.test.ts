@@ -29,6 +29,8 @@ const repoRoot = path.resolve(
 
 const PICKER_PATH =
   "src/lib/shared/3d/components/controls/ScenePropPicker.svelte";
+const BUILD_WRITES_PATH =
+  "src/lib/shared/3d/components/controls/scene-prop-build-writes.ts";
 const CATALOG_PATH = "src/lib/shared/3d/domain/scene-prop-catalog.ts";
 const VIEWER_SCENE_PATH = "src/lib/shared/3d/components/Viewer3DScene.svelte";
 // BentoPropGrid is the app-wired entry; PropGrid is the picker's own markup.
@@ -141,15 +143,23 @@ describe("scene prop picker contract", () => {
 
   it("supports performer build overrides while preserving the scene-default fallback", () => {
     const picker = read(PICKER_PATH);
-    expect(picker).toContain("onBuildChange?: (build: PropBuild) => void");
+    const writes = read(BUILD_WRITES_PATH);
+    expect(picker).toContain("onBuildChange?: PropBuildPatchSink");
     expect(picker).toContain("buildOverride ?? propFinishState.build");
+    // A performer override receives only the changed parts. Spreading the
+    // resolved build into it would pin the triangle grip away from the
+    // global Grip pills; the behaviour is tested in
+    // hoop-family/performer-build-override-grip.test.ts.
+    expect(picker).not.toMatch(/onBuildChange\(\{\s*\.\.\.build/);
+    expect(picker).toContain("writeFinish(finish, onBuildChange)");
+    expect(picker).toContain("writeFanAppearance(appearance, onBuildChange)");
     for (const setter of [
       "propFinishState.set(",
       "propFinishState.setFanBuild(",
       "propFinishState.setFanFrameColor(",
       "propFinishState.setFanCover(",
     ]) {
-      expect(picker, `picker must call ${setter}`).toContain(setter);
+      expect(writes, `build writes must call ${setter}`).toContain(setter);
     }
   });
 
