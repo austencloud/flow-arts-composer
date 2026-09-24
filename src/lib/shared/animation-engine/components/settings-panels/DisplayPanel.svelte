@@ -38,6 +38,10 @@
      *  steps — the shape-matrix theory stage traces a bare spin ratio — turns
      *  them off rather than offering four tiles that toggle nothing. */
     showSequenceMarks = true,
+    /** The word header is drawn by the host, not the canvas. A host that
+     *  never shows one (a fill-mode player on a single transition) leaves the
+     *  Word tile out rather than offering a toggle that changes nothing. */
+    showWordToggle = true,
     onSettingChange,
   }: {
     showMotionVisibility?: boolean;
@@ -48,6 +52,7 @@
     propType?: string;
     fill?: boolean;
     showSequenceMarks?: boolean;
+    showWordToggle?: boolean;
     onSettingChange?: ViewerControlSink;
   } = $props();
 
@@ -244,7 +249,9 @@
   const chips: Chip[] = $derived([
     ...(showPropChips ? propChips : [masterPropsChip]),
     ...fieldChips,
-    ...(showSequenceMarks ? markChips : []),
+    ...(showSequenceMarks
+      ? markChips.filter((chip) => showWordToggle || chip.id !== "wordHeader")
+      : []),
   ]);
 
   /**

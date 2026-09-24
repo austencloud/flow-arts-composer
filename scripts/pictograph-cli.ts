@@ -10,11 +10,15 @@
  *   npm run pictograph A B C
  *   npm run pictograph -- --all
  *   npm run pictograph -- U --dark
+ *   npm run pictograph -- U --tnd
  *
- * Flags need the `--` separator. Without it npm reads --all and --dark as its
- * own config options and the script never sees them.
+ * Flags need the `--` separator. Without it npm reads --all, --dark and --tnd
+ * as its own config options and the script never sees them.
  *
- * Output: static/images/grant-feature/pictograph-<letter>[-dark].png
+ * --tnd adds the fused Elemental/TnD glyph (Type 1 letters only) and writes
+ * to a separate -tnd file so the grant images are never overwritten.
+ *
+ * Output: static/images/grant-feature/pictograph-<letter>[-tnd][-dark].png
  *
  * How it runs: the render pipeline imports through `$lib`, `$app/*` and
  * `$env/*`, reads `import.meta.env`, and depends on rune-based .svelte.ts
@@ -162,27 +166,31 @@ async function loadRenderModule(): Promise<{
 function parseArgs(argv: string[]): {
   letters: string[];
   themeMode: "light" | "dark";
+  showTnD: boolean;
 } {
   const themeMode: "light" | "dark" = argv.includes("--dark") ? "dark" : "light";
+  const showTnD = argv.includes("--tnd");
   let letters = argv.filter((arg) => !arg.startsWith("--"));
   if (argv.includes("--all")) {
     letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
   }
-  return { letters, themeMode };
+  return { letters, themeMode, showTnD };
 }
 
 async function main(): Promise<number> {
-  const { letters, themeMode } = parseArgs(process.argv.slice(2));
+  const { letters, themeMode, showTnD } = parseArgs(process.argv.slice(2));
 
   if (letters.length === 0) {
     console.log("Usage: npm run pictograph A B C");
     console.log("   Or: npm run pictograph -- A B C --dark");
-    console.log("   Or: npm run pictograph -- --all [--dark]");
+    console.log("   Or: npm run pictograph -- --all [--dark] [--tnd]");
     return 1;
   }
 
   console.log("TKA Pictograph CLI");
-  console.log(`Rendering ${letters.length} pictograph(s), ${themeMode} theme`);
+  console.log(
+    `Rendering ${letters.length} pictograph(s), ${themeMode} theme${showTnD ? ", TnD glyph on" : ""}`
+  );
 
   const startTime = Date.now();
   const { module, close } = await loadRenderModule();
@@ -201,6 +209,7 @@ async function main(): Promise<number> {
         projectRoot: PROJECT_ROOT,
         outputDir: OUTPUT_DIR,
         themeMode,
+        showTnD,
       };
       // The grant feature uses the alpha1 to alpha3 variation for A, B, C.
       if (["A", "B", "C"].includes(letter)) {

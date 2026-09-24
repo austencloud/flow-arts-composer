@@ -10,8 +10,12 @@ import { PropType } from "../../pictograph/prop/domain/enums/prop-type";
 import {
   normalizeLegacyAppSettings,
   type AppSettings,
-  type PropPreset,
 } from "../domain/app-settings";
+import {
+  healPropPair,
+  isPropPairKey,
+  normalizePropPatch,
+} from "../domain/prop-pair-rule";
 import { DEFAULT_FAN_APPEARANCE } from "../../pictograph/prop/domain/fan-appearance";
 import { DEFAULT_PROP_LOOK } from "../../pictograph/prop/domain/prop-look";
 import { DEFAULT_TRIANGLE_GRIP } from "../../pictograph/prop/domain/triangle-appearance";
@@ -28,6 +32,7 @@ async function logSettingChange(
 }
 import type { FirebaseSettingsPersister } from "../services/firebase-settings-persister";
 import { normalizeBackgroundType } from "../domain/background-type-migration";
+import { defaultPropPresets } from "../domain/prop-presets";
 import { auth } from "../../auth/firebase";
 import { createComponentLogger } from "$lib/shared/utils/debug-logger";
 import { getAnimationVisibilityManager } from "../../animation-engine/state/animation-visibility-state.svelte";
@@ -41,50 +46,7 @@ const debug = createComponentLogger("SettingsState");
 const SETTINGS_STORAGE_KEY = "tka-modern-web-settings";
 const OFFLINE_QUEUE_KEY = "tka-settings-offline-queue";
 
-const DEFAULT_PROP_PRESETS: PropPreset[] = [
-  {
-    leftPropType: PropType.STAFF,
-    rightPropType: PropType.STAFF,
-    catDogMode: false,
-  },
-  { leftPropType: PropType.FAN, rightPropType: PropType.FAN, catDogMode: false },
-  {
-    leftPropType: PropType.CLUB,
-    rightPropType: PropType.CLUB,
-    catDogMode: false,
-  },
-  {
-    leftPropType: PropType.BUUGENG,
-    rightPropType: PropType.BUUGENG,
-    catDogMode: false,
-  },
-  {
-    leftPropType: PropType.MINIHOOP,
-    rightPropType: PropType.MINIHOOP,
-    catDogMode: false,
-  },
-  {
-    leftPropType: PropType.TRIAD,
-    rightPropType: PropType.TRIAD,
-    catDogMode: false,
-  },
-  {
-    leftPropType: PropType.DOUBLESTAR,
-    rightPropType: PropType.DOUBLESTAR,
-    catDogMode: false,
-  },
-  {
-    leftPropType: PropType.BIGDOUBLESTAR,
-    rightPropType: PropType.BIGDOUBLESTAR,
-    catDogMode: false,
-  },
-  {
-    leftPropType: PropType.QUIAD,
-    rightPropType: PropType.QUIAD,
-    catDogMode: false,
-  },
-  { leftPropType: PropType.STAFF, rightPropType: PropType.FAN, catDogMode: true },
-];
+const DEFAULT_PROP_PRESETS = defaultPropPresets();
 
 export const DEFAULT_SETTINGS: AppSettings = {
   gridMode: GridMode.DIAMOND,
@@ -96,6 +58,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   catDogMode: false,
   leftPropType: PropType.STAFF,
   rightPropType: PropType.STAFF,
+  propType: PropType.STAFF,
   fanAppearance: DEFAULT_FAN_APPEARANCE,
   triangleGrip: DEFAULT_TRIANGLE_GRIP,
   propArtwork: DEFAULT_PROP_LOOK,
@@ -121,7 +84,11 @@ const initialSettings = (() => {
     // A timestamp without an owning UID cannot establish that browser-global
     // settings are newer than the account Firebase is about to restore.
     delete parsed._localTimestamp;
-    return { ...DEFAULT_SETTINGS, ...parsed };
+    const merged = { ...DEFAULT_SETTINGS, ...parsed };
+    // Heal the stored fields, not the defaults-merged object: DEFAULT_SETTINGS
+    // always has both hands, which would mask a legacy propType-only profile
+    // that never recorded a right hand.
+    return { ...merged, ...healPropPair(parsed) };
   } catch {
     return DEFAULT_SETTINGS;
   }
@@ -456,6 +423,11 @@ class SettingsState {
         ] as never;
       }
     }
+    // The pair fields are excluded from realtime sync but legacy propType is
+    // not, so a remote document can land a propType that disagrees with the
+    // local left hand.
+    Object.assign(settingsState, healPropPair(settingsState));
+
     // Optional account slices must be cleared when the authoritative document
     // omits them; a shallow defaults merge cannot remove a stale local value.
     if (!this.hasUnsavedLocalEdit("imageExport", userId)) {
@@ -604,6 +576,22 @@ class SettingsState {
   ): Promise<void> {
     const previousValue = settingsState[key];
 
+    // Pair fields carry companions (the other hand, the flag, propType), so
+    // they go through the normalized patch path and are marked edited together.
+    // This must run before the no-op short-circuit below: a legacy propType
+    // write that matches the stored propType (e.g. propType already reflects
+    // the left hand) can still need to fold the right hand into line, and
+    // normalizePropPatch is what handles that no-op-looking patch correctly.
+    if (isPropPairKey(key)) {
+      await this.updateSettings({ [key]: value } as Partial<AppSettings>);
+      try {
+        void logSettingChange(key, String(previousValue), String(value));
+      } catch {
+        // Silent
+      }
+      return;
+    }
+
     if (previousValue === value) {
       return;
     }
@@ -646,6 +634,7 @@ class SettingsState {
   }
 
   async updateSettings(newSettings: Partial<AppSettings>): Promise<void> {
+    newSettings = normalizePropPatch(settingsState, newSettings);
     const oldBackgroundType = settingsState.backgroundType;
     const newBackgroundType = newSettings.backgroundType;
     const backgroundTypeChanged =
@@ -1011,6 +1000,9 @@ class SettingsState {
         developerMode?: boolean;
       };
       const merged = { ...DEFAULT_SETTINGS, ...parsed };
+      // Heal the stored fields, not the defaults-merged object: see
+      // initialSettings above for why.
+      Object.assign(merged, healPropPair(parsed));
 
       if ("_localTimestamp" in merged) {
         delete merged._localTimestamp;

@@ -23,7 +23,7 @@ interface ViewerShellLayoutInputs {
    * takes the inspector track for the recipient column, so it is an inspector
    * profile here rather than a workspace takeover.
    */
-  getSendModeActive: () => boolean;
+  getSharePanelOpen: () => boolean;
   getWorkspaceElement: () => HTMLElement | null;
   startInSplit: boolean;
   startInCardThenSplit: boolean;
@@ -64,7 +64,7 @@ export function createViewerShellLayoutState(
   const isMobile = $derived(inputs.getIsMobile());
   const isLandscape = $derived(responsiveSettings?.isLandscapeMobile ?? false);
   const compactChrome = $derived(isMobile || bodyWidth < 1080);
-  const sendModeActive = $derived(inputs.getSendModeActive());
+  const sharePanelOpen = $derived(inputs.getSharePanelOpen());
 
   const isVideoExportActive = $derived(
     inputs.getContext().editingPane === "animation"
@@ -136,10 +136,10 @@ export function createViewerShellLayoutState(
       bodyWidth <
         resolveExportSidebarMinWidth(persistedRailWidth, "performance")
   );
-  const sendInspectorNarrow = $derived(
-    sendModeActive &&
+  const shareInspectorNarrow = $derived(
+    sharePanelOpen &&
       !isMobile &&
-      bodyWidth < resolveExportSidebarMinWidth(persistedRailWidth, "send")
+      bodyWidth < resolveExportSidebarMinWidth(persistedRailWidth, "share")
   );
   const effectiveMobile = $derived(
     isMobile ||
@@ -147,13 +147,13 @@ export function createViewerShellLayoutState(
       videoExportNarrow ||
       artInspectorNarrow ||
       performanceInspectorNarrow ||
-      sendInspectorNarrow
+      shareInspectorNarrow
   );
-  // Send wins over every other inspector: the recipients are the decision
-  // the viewer is making, and the stage keeps showing the view being sent.
+  // Share wins over every other inspector: where it goes is the decision the
+  // viewer is making, and the stage keeps showing the view being shared.
   const inspectorProfile = $derived<ViewerInspectorProfile>(
-    sendModeActive
-      ? "send"
+    sharePanelOpen
+      ? "share"
       : isImageExportActive
         ? "card"
         : isVideoExportActive
@@ -163,7 +163,7 @@ export function createViewerShellLayoutState(
             : "art"
   );
   const isWorkspaceInspectorActive = $derived(
-    sendModeActive ||
+    sharePanelOpen ||
       isSidebarExportActive ||
       showVideoGallery ||
       (isArtInspectorActive && !effectiveMobile)

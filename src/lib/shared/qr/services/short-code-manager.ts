@@ -19,10 +19,12 @@ import {
   query,
   where,
   getDocs,
+  limit,
   updateDoc,
   increment,
   runTransaction,
   type Firestore,
+  type QueryConstraint,
 } from "firebase/firestore";
 import { getFirestoreInstance } from "$lib/shared/auth/firebase";
 import { type SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
@@ -68,9 +70,16 @@ import {
   hydrateEmbeddedWordShortCodePayload,
   hydrateSelfContainedShortCodePayload,
   hydrateSoloShortCodePayload,
-  verifyEncodedSoloPayload,
 } from "./short-code-payload-hydrator";
 import { fetchPublicShortCodeRecord } from "./public-short-code-record-reader";
+import {
+  choreographyDigest,
+  contentStepsOf,
+  findChoreographyMismatch,
+  projectChoreography,
+  verifyEncodedChoreography,
+  type ChoreographyProjection,
+} from "./choreography-fidelity";
 
 export type { ShortCodeData } from "./types";
 
@@ -91,8 +100,29 @@ export const MAX_SHORT_CODE_LENGTH = MIN_CODE_LENGTH + 2;
  */
 /** Firestore `in` query operand cap. Batch reads chunk to this. */
 const FIRESTORE_IN_LIMIT = 30;
+/** Word-fallback and payloadDigest dedup read at most this many candidates.
+ *  Every candidate is verified by hydrating it, so a small page suffices. */
+const DEDUP_CANDIDATE_LIMIT = 10;
+/** A stored loss reason is a diagnostic, not payload. */
+const MAX_LOSS_REASON_LENGTH = 200;
+
+/** An existing code that dedup may hand back once it proves what it plays. */
+interface CodeCandidate {
+  code: string;
+  createdAt: string;
+  data: ShortCodeData;
+}
+
+/** Oldest first; the smaller code breaks a createdAt tie. Every lookup path
+ *  uses this order so two clients converge on the same code. */
+function oldestFirst(a: CodeCandidate, b: CodeCandidate): number {
+  if (a.createdAt !== b.createdAt) return a.createdAt < b.createdAt ? -1 : 1;
+  return a.code < b.code ? -1 : a.code > b.code ? 1 : 0;
+}
 
 const ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const CODE_COLLISION = "__CODE_COLLISION__";
+const HASH_CLAIM_MISMATCH = "__HASH_CLAIM_MISMATCH__";
 
 /**
  * Network budgets for the scan critical path (ms).
@@ -482,7 +512,12 @@ export class ShortCodeManager {
       );
     }
 
-    const allocKey = encoderHash ?? `w:${fallbackId}`;
+    // Cache and single-flight key on what the sequence PLAYS, not on the
+    // lossy encoder hash: two sequences can share an encoderHash and still
+    // play different choreography (HFWmmG / EPcIm6), and must not share a
+    // cached code.
+    const digest = await choreographyDigest(sequence);
+    const allocKey = `d:${digest}`;
 
     // Persistent-cache short-circuit. A sequence's code is global + content-
     // addressed, so once resolved it never changes — read it locally and skip
@@ -500,7 +535,13 @@ export class ShortCodeManager {
 
     let inflight = this.inflightByKey.get(allocKey);
     if (!inflight) {
-      inflight = this.allocateCode(sequence, options, encoderHash, fallbackId)
+      inflight = this.allocateCode(
+        sequence,
+        options,
+        encoderHash,
+        fallbackId,
+        digest
+      )
         .then((result) => {
           // Write through the persistent cache so the next render (this
           // session or future) skips Firestore.
@@ -594,11 +635,12 @@ export class ShortCodeManager {
     encoderHash: string,
     sourceSoloPropId: string | undefined
   ): Promise<{ code: string; isNew: boolean }> {
-    const firestore = await this.ensureFirestore();
-    const existingCode = await this.findExistingCodeByHash(encoderHash);
-    if (existingCode) return { code: existingCode, isNew: false };
+    const expected = projectChoreography(
+      soloPropToSequence(soloProp, authoredHand)
+    );
+    const existing = await this.findPlayingCode(expected, { encoderHash });
+    if (existing.code) return { code: existing.code, isNew: false };
 
-    const viewSequence = soloPropToSequence(soloProp, authoredHand);
     const record: Record<string, unknown> = {
       sequence: title,
       sequenceName: title,
@@ -612,6 +654,11 @@ export class ShortCodeManager {
       createdAt: new Date().toISOString(),
       createdBy: "system",
       scanCount: 0,
+      // The canonical solo prop is the authoritative payload on every mint.
+      // Readers verify it against payloadContentHash, so it plays exactly or
+      // not at all. The rules accept `encoded` OR `soloData`, never both, so a
+      // new solo record carries no blob.
+      soloData: JSON.parse(JSON.stringify({ ...soloProp, authoredHand })),
     };
     if (sourceSoloPropId) record.sourceSoloPropId = sourceSoloPropId;
     if (soloProp.ownerId) record.ownerId = soloProp.ownerId;
@@ -626,74 +673,240 @@ export class ShortCodeManager {
       record.catDogMode = options.catDogMode;
     }
 
+    return this.commitNewCode(
+      record,
+      existing.hashTaken ? undefined : encoderHash,
+      expected,
+      "solo short code"
+    );
+  }
+
+  /**
+   * Whether a stored record plays `expected`, hydrated exactly as a scan
+   * hydrates it (embedded copy first, then the blob). A record that cannot be
+   * hydrated from its own fields proves nothing and never matches.
+   */
+  private async recordPlays(
+    code: string,
+    data: ShortCodeData | null | undefined,
+    expected: ChoreographyProjection
+  ): Promise<boolean> {
+    if (!data) return false;
     try {
-      const encoded = await encodeSequenceForQR(viewSequence);
-      const verified = await verifyEncodedSoloPayload(
-        encoded,
-        soloProp.contentHash,
-        soloProp.steps.length,
-        authoredHand,
-        soloProp.id,
-        "pending"
+      const hydrated = await hydrateSelfContainedShortCodePayload(code, data);
+      return (
+        !!hydrated &&
+        findChoreographyMismatch(expected, projectChoreography(hydrated)) ===
+          null
       );
-      if (verified) {
-        record.encoded = encoded;
-      } else {
-        record.soloData = JSON.parse(
-          JSON.stringify({ ...soloProp, authoredHand })
+    } catch {
+      return false;
+    }
+  }
+
+  private async firstPlaying(
+    candidates: readonly CodeCandidate[],
+    expected: ChoreographyProjection
+  ): Promise<CodeCandidate | null> {
+    for (const candidate of candidates) {
+      if (await this.recordPlays(candidate.code, candidate.data, expected)) {
+        return candidate;
+      }
+    }
+    return null;
+  }
+
+  /** Short-code docs matching one equality filter, oldest first. */
+  private async queryCandidates(
+    field: "encoderHash" | "payloadDigest" | "sequence",
+    value: string,
+    ...constraints: QueryConstraint[]
+  ): Promise<CodeCandidate[]> {
+    const firestore = await this.ensureFirestore();
+    const snapshot = await getDocs(
+      query(
+        collection(firestore, SHORTCODES_COLLECTION),
+        where(field, "==", value),
+        ...constraints
+      )
+    );
+    return snapshot.docs
+      .map((d) => {
+        const data = d.data() as ShortCodeData;
+        return { code: d.id, createdAt: data.createdAt ?? "", data };
+      })
+      .sort(oldestFirst);
+  }
+
+  /**
+   * The existing code that plays `expected`, if any.
+   *
+   * An encoderHash is a hash of the lossy wire blob, so a hash match alone is
+   * not proof: real records share a hash while playing different
+   * choreography. Every candidate is hydrated and compared field by field,
+   * and the oldest one that plays the sequence wins. `hashTaken` reports that
+   * some record already carries this encoderHash, in which case a new code
+   * must not claim the hash index.
+   */
+  private async findPlayingCode(
+    expected: ChoreographyProjection,
+    keys: { encoderHash?: string; fallbackWord?: string; digest?: string }
+  ): Promise<{ code: string | null; hashTaken: boolean }> {
+    let hashTaken = false;
+
+    if (keys.encoderHash) {
+      const candidates = await this.queryCandidates(
+        "encoderHash",
+        keys.encoderHash
+      );
+      hashTaken = candidates.length > 0;
+      const winner = await this.firstPlaying(candidates, expected);
+      if (winner) {
+        // Lazy heal: point the hash index at the canonical code so future
+        // allocations hit the transaction path directly. Only the canonical
+        // (oldest) code is ever indexed, matching every other client.
+        if (winner === candidates[0]) {
+          void this.healHashIndex(
+            keys.encoderHash,
+            winner.code,
+            winner.createdAt
+          );
+        }
+        return { code: winner.code, hashTaken };
+      }
+      if (hashTaken) {
+        console.warn(
+          "[ShortCode] encoderHash is shared by code(s) that play different choreography; minting a separate code.",
+          {
+            encoderHash: keys.encoderHash,
+            codes: candidates.map((c) => c.code),
+          }
         );
       }
-    } catch (error) {
-      console.warn(
-        "[ShortCode] Solo payload could not prove its round-trip; storing canonical solo data.",
-        { soloPropId: soloProp.id, error }
+    } else if (keys.fallbackWord) {
+      const winner = await this.firstPlaying(
+        await this.queryCandidates(
+          "sequence",
+          keys.fallbackWord,
+          limit(DEDUP_CANDIDATE_LIMIT)
+        ),
+        expected
       );
-      record.soloData = JSON.parse(
-        JSON.stringify({ ...soloProp, authoredHand })
-      );
+      if (winner) return { code: winner.code, hashTaken };
     }
 
-    const maxAttemptsPerLength = 10;
-    const maxCodeLength = MAX_SHORT_CODE_LENGTH;
-    const indexRef = doc(firestore, HASH_INDEX_COLLECTION, encoderHash);
-    let codeLength = MIN_CODE_LENGTH;
+    if (keys.digest) {
+      const winner = await this.firstPlaying(
+        await this.queryCandidates(
+          "payloadDigest",
+          keys.digest,
+          limit(DEDUP_CANDIDATE_LIMIT)
+        ),
+        expected
+      );
+      if (winner) return { code: winner.code, hashTaken };
+    }
 
-    while (codeLength <= maxCodeLength) {
+    return { code: null, hashTaken };
+  }
+
+  /**
+   * Allocate a unique code for `record`. The transaction enforces BOTH
+   * invariants atomically: the code doc path is unclaimed (collision retry),
+   * and no other writer has claimed this hash (index doc). Two clients racing:
+   * both read a nonexistent index doc, both try to write it; Firestore's
+   * serializable transactions force the loser to retry, whose re-read then
+   * sees the winner and adopts its code instead of minting a duplicate.
+   *
+   * An index claim is adopted only when the claimed record plays `expected`.
+   * A claim held by different choreography sends the mint down the hash-less
+   * path instead (no encoderHash, no claim), which the rules allow.
+   */
+  private async commitNewCode(
+    record: Record<string, unknown>,
+    claimHash: string | undefined,
+    expected: ChoreographyProjection,
+    label: string
+  ): Promise<{ code: string; isNew: boolean }> {
+    const firestore = await this.ensureFirestore();
+    const maxAttemptsPerLength = 10;
+    let codeLength = MIN_CODE_LENGTH;
+    let indexRef = claimHash
+      ? doc(firestore, HASH_INDEX_COLLECTION, claimHash)
+      : null;
+    // The rules tie a stored encoderHash to its index claim in the same
+    // write, so a hash-less mint carries no encoderHash field.
+    if (!indexRef) delete record.encoderHash;
+
+    while (codeLength <= MAX_SHORT_CODE_LENGTH) {
       for (let attempts = 0; attempts < maxAttemptsPerLength; attempts++) {
         const code = this.generateCode(codeLength);
         const docRef = doc(firestore, SHORTCODES_COLLECTION, code);
+
         let adoptedCode: string | null = null;
         try {
           await runTransaction(firestore, async (tx) => {
+            // Reset on every (re-)run: Firestore re-invokes this callback on
+            // write-write contention, and a stale value from a prior run must
+            // not leak.
             adoptedCode = null;
-            const indexSnap = await tx.get(indexRef);
-            if (indexSnap.exists()) {
-              adoptedCode = (indexSnap.data() as { code: string }).code;
-              return;
+            if (indexRef) {
+              const indexSnap = await tx.get(indexRef);
+              if (indexSnap.exists()) {
+                const claimed = (indexSnap.data() as { code: string }).code;
+                const claimedSnap = await tx.get(
+                  doc(firestore, SHORTCODES_COLLECTION, claimed)
+                );
+                if (
+                  claimedSnap.exists() &&
+                  (await this.recordPlays(
+                    claimed,
+                    claimedSnap.data() as ShortCodeData,
+                    expected
+                  ))
+                ) {
+                  adoptedCode = claimed;
+                  return;
+                }
+                throw new Error(HASH_CLAIM_MISMATCH);
+              }
             }
             const snap = await tx.get(docRef);
-            if (snap.exists()) throw new Error("__CODE_COLLISION__");
+            if (snap.exists()) {
+              throw new Error(CODE_COLLISION);
+            }
             tx.set(docRef, record);
-            tx.set(indexRef, { code, createdAt: record.createdAt });
+            if (indexRef) {
+              tx.set(indexRef, { code, createdAt: record.createdAt });
+            }
           });
-        } catch (error) {
-          if (
-            (error instanceof Error ? error.message : String(error)) ===
-            "__CODE_COLLISION__"
-          ) {
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          if (msg === CODE_COLLISION) continue;
+          if (msg === HASH_CLAIM_MISMATCH) {
+            console.warn(
+              `[ShortCode] ${label}: the hash index names a code that plays different choreography; minting without a hash claim.`,
+              { encoderHash: claimHash }
+            );
+            indexRef = null;
+            delete record.encoderHash;
             continue;
           }
-          throw error;
+          throw err;
         }
 
         if (adoptedCode) return { code: adoptedCode, isNew: false };
         return { code, isNew: true };
       }
-      codeLength += 1;
+
+      codeLength++;
+      console.warn(
+        `[ShortCode] Exhausted ${maxAttemptsPerLength} attempts at length ${codeLength - 1}, bumping to ${codeLength}`
+      );
     }
 
     throw new Error(
-      "Failed to generate a unique solo short code after exhausting all length tiers"
+      `Failed to generate a unique ${label} after exhausting all length tiers`
     );
   }
 
@@ -715,15 +928,15 @@ export class ShortCodeManager {
     if (sequences.length === 0) return;
 
     try {
-      // 1. Compute the content hash + cache key for every sequence.
+      // 1. Compute the content hash (the batch query key) and the choreography
+      //    cache key for every sequence.
       const items = await Promise.all(
         sequences.map(async (seq) => {
           const hash = await this.tryComputeHash(seq);
-          const fallbackId = seq.word || seq.name || seq.id;
-          const hashOrWord = hash ?? `w:${fallbackId ?? ""}`;
           return {
+            seq,
             hash,
-            cacheKey: this.buildCacheKey(hashOrWord),
+            cacheKey: this.buildCacheKey(`d:${await choreographyDigest(seq)}`),
           };
         })
       );
@@ -743,7 +956,7 @@ export class ShortCodeManager {
 
       onProgress?.(0, missHashes.length);
       const firestore = await this.ensureFirestore();
-      const hashToCode = new Map<string, { code: string; createdAt: string }>();
+      const candidatesByHash = new Map<string, CodeCandidate[]>();
 
       // 4. Chunked `in` queries (Firestore caps the `in` list at 30).
       for (let i = 0; i < missHashes.length; i += FIRESTORE_IN_LIMIT) {
@@ -758,20 +971,13 @@ export class ShortCodeManager {
           const data = docSnap.data() as ShortCodeData;
           const hash = data.encoderHash;
           if (!hash) continue;
-          const prev = hashToCode.get(hash);
-          const created = data.createdAt ?? "";
-          // Legacy duplicate groups: keep the OLDEST doc per hash so batch
-          // resolution converges on the same canonical code as single lookups.
-          // Tie-break on smaller doc id when createdAt is equal (0ms-apart
-          // dups exist in real data) so a deck-prewarmed client and a
-          // viewer-only client provably pick the SAME code.
-          if (
-            !prev ||
-            created < prev.createdAt ||
-            (created === prev.createdAt && docSnap.id < prev.code)
-          ) {
-            hashToCode.set(hash, { code: docSnap.id, createdAt: created });
-          }
+          const list = candidatesByHash.get(hash) ?? [];
+          list.push({
+            code: docSnap.id,
+            createdAt: data.createdAt ?? "",
+            data,
+          });
+          candidatesByHash.set(hash, list);
         }
         onProgress?.(
           Math.min(i + FIRESTORE_IN_LIMIT, missHashes.length),
@@ -779,13 +985,23 @@ export class ShortCodeManager {
         );
       }
 
-      // 5. Populate the cache for every miss whose code already exists.
+      // 5. Populate the cache for every miss whose code already exists AND
+      //    plays that card's choreography. Oldest first, smaller id on a tie,
+      //    so a deck-prewarmed client and a viewer-only client pick the SAME
+      //    code. A hash shared by different choreography is left to
+      //    createShortCode, which mints the card its own code.
       await Promise.all(
-        misses.map((item) => {
-          if (!item.hash) return Promise.resolve();
-          const winner = hashToCode.get(item.hash);
-          if (!winner) return Promise.resolve(); // genuinely new — created at render
-          return this.codeCache.set(item.cacheKey, { code: winner.code });
+        misses.map(async (item) => {
+          if (!item.hash) return;
+          const candidates = [...(candidatesByHash.get(item.hash) ?? [])].sort(
+            oldestFirst
+          );
+          const winner = await this.firstPlaying(
+            candidates,
+            projectChoreography(item.seq)
+          );
+          if (!winner) return; // genuinely new — created at render
+          await this.codeCache.set(item.cacheKey, { code: winner.code });
         })
       );
     } catch (error) {
@@ -801,17 +1017,22 @@ export class ShortCodeManager {
     sequence: SequenceData,
     options: ShortCodeURLOptions | undefined,
     encoderHash: string | undefined,
-    fallbackId: string | undefined
+    fallbackId: string | undefined,
+    digest: string
   ): Promise<{ code: string; isNew: boolean }> {
     const firestore = await this.ensureFirestore();
+    const expected = projectChoreography(sequence);
 
-    // Check if this sequence already has a short code (by hash or word).
-    // Catches codes created before the hash index existed and codes written
-    // by other tabs/devices whose index doc hasn't been healed yet.
-    const existingCode = encoderHash
-      ? await this.findExistingCodeByHash(encoderHash)
-      : await this.findExistingCode(fallbackId!);
-    if (existingCode) {
+    // Reuse an existing code only when its stored payload provably plays this
+    // sequence. Catches codes created before the hash index existed, codes
+    // written by other tabs/devices, and hash-less codes (by payloadDigest).
+    const existing = await this.findPlayingCode(expected, {
+      encoderHash,
+      fallbackWord: encoderHash ? undefined : fallbackId,
+      digest,
+    });
+    if (existing.code) {
+      const existingCode = existing.code;
       // Backfill ownerId and sequenceId on legacy records that lack them.
       // Without these, the resolver can't load unpublished sequences directly.
       if (sequence.ownerId || sequence.id) {
@@ -845,12 +1066,11 @@ export class ShortCodeManager {
     // collision-retry attempt.
     //
     // The label is derived from the SOURCE PAYLOAD STEPS through the strict
-    // word API. The candidate blob is decoded and independently re-derived
-    // below; it is omitted unless the same complete word survives.
-    // Never `sequence.word || deriveWordFromBeats(...)`: the stored word can be
-    // an auto-title ("Sequence 2:21:45 PM", "Assemble Sequence") or stale, and
-    // the payload is the authority even when `sequence.word` is non-empty. A
-    // partial fallback word would bake a wrong label into an immutable record.
+    // word API. Never `sequence.word || deriveWordFromBeats(...)`: the stored
+    // word can be an auto-title ("Sequence 2:21:45 PM", "Assemble Sequence")
+    // or stale, and the payload is the authority even when `sequence.word` is
+    // non-empty. A partial fallback word would bake a wrong label into an
+    // immutable record.
     const payloadSteps = sequence.steps ?? [];
     const wordStatus = deriveWordStatusFromSteps(payloadSteps);
     const handPath = isHandPathSequence(sequence);
@@ -866,6 +1086,7 @@ export class ShortCodeManager {
       payloadWord,
       payloadStepCount: wordStatus.stepCount,
       payloadSchemaVersion: SHORTCODE_PAYLOAD_SCHEMA_VERSION,
+      payloadDigest: digest,
       createdAt: new Date().toISOString(),
       createdBy: "system",
       scanCount: 0,
@@ -893,214 +1114,125 @@ export class ShortCodeManager {
       record.catDogMode = options.catDogMode;
     }
 
-    const shouldEmbed = options?.embedSequenceData || !sequence.ownerId;
-    let embeddedSequenceData: Record<string, unknown> | null = null;
-    if (!handPath && sequence.steps && sequence.steps.length > 0) {
-      const seqData: Record<string, unknown> = { steps: sequence.steps };
+    Object.assign(
+      record,
+      handPath
+        ? await buildHandPathShortCodePayload(sequence)
+        : await this.buildWordPayload(
+            sequence,
+            payloadWord,
+            wordStatus.stepCount
+          )
+    );
+    // buildHandPathShortCodePayload sets its own digest; keep the one the
+    // cache and single-flight key were derived from.
+    record.payloadDigest = digest;
+
+    if (!record.sequenceData) {
+      throw new Error(
+        "[ShortCode] Refusing to create a shortcode without its embedded sequence copy."
+      );
+    }
+
+    return this.commitNewCode(
+      record,
+      existing.hashTaken ? undefined : encoderHash,
+      expected,
+      "short code"
+    );
+  }
+
+  /**
+   * The payload of a word record: the embedded sequence copy on every mint
+   * (the authoritative payload), plus the compact blob only when decoding it
+   * plays the same choreography field by field AND re-derives the same word.
+   *
+   * The offline snapshot serves `encoded` alone, so a blob that plays
+   * anything else is never stored; `encodedFidelity: "lossy"` records why the
+   * record has none. An unencodable motion (UnencodableMotionError) fails the
+   * mint instead of silently dropping a hand.
+   */
+  private async buildWordPayload(
+    sequence: SequenceData,
+    payloadWord: string,
+    payloadStepCount: number
+  ): Promise<Record<string, unknown>> {
+    const startBeat =
+      sequence.startPlacement ??
+      sequence.startingPlacement ??
+      sequence.steps.find((step) => step.stepNumber === 0);
+    const embed: Record<string, unknown> = {
+      // The rules require steps.size() == payloadStepCount, which counts only
+      // the steps that play. Beat 0 travels as the start placement.
+      steps: contentStepsOf(sequence.steps),
       // The immutable payload word comes from these steps. A stale mutable
       // sequence.word must not survive inside an otherwise-correct embed.
-      seqData.word = payloadWord;
-      if (sequence.startPlacement != null)
-        seqData.startPlacement = sequence.startPlacement;
-      if (sequence.gridMode != null) seqData.gridMode = sequence.gridMode;
-      if (sequence.isCircular != null) seqData.isCircular = sequence.isCircular;
-      if (sequence.loopType != null) seqData.loopType = sequence.loopType;
-      embeddedSequenceData = JSON.parse(JSON.stringify(seqData));
-    }
+      word: payloadWord,
+    };
+    if (startBeat != null) embed.startPlacement = startBeat;
+    if (sequence.gridMode != null) embed.gridMode = sequence.gridMode;
+    if (sequence.isCircular != null) embed.isCircular = sequence.isCircular;
+    if (sequence.loopType != null) embed.loopType = sequence.loopType;
+    const payload: Record<string, unknown> = {
+      sequenceData: JSON.parse(JSON.stringify(embed)),
+    };
 
-    let faithfulEncodedPayload: string | null = null;
-    if (!handPath && sequence.steps && sequence.steps.length > 0) {
-      const encodedPayload = await encodeSequenceForQR(sequence);
-      try {
-        const decodedPayload = await decodeSequenceFromQR(encodedPayload);
-        const decodedWithLetters =
-          await deriveLettersForSequence(decodedPayload);
-        const decodedWordStatus = deriveWordStatusFromSteps(
-          decodedWithLetters.steps
-        );
-        const encodedPayloadIsFaithful =
-          decodedWordStatus.complete &&
-          decodedWordStatus.word === payloadWord &&
-          decodedWordStatus.stepCount === wordStatus.stepCount;
-
-        if (encodedPayloadIsFaithful) {
-          faithfulEncodedPayload = encodedPayload;
-        } else {
-          // The offline snapshot carries only encoded blobs. Keeping one that
-          // changes the sequence would make an offline scan play different
-          // motion, so this mint stays embed-only instead.
-          console.warn(
-            "[ShortCode] Encoded payload changed during round-trip; storing embed-only.",
-            {
-              sequenceId: sequence.id,
-              expectedWord: payloadWord,
-              decodedWord: decodedWordStatus.word,
-              expectedStepCount: wordStatus.stepCount,
-              decodedStepCount: decodedWordStatus.stepCount,
-              decodedComplete: decodedWordStatus.complete,
-            }
-          );
-        }
-      } catch (error) {
-        // A payload that cannot be decoded and re-derived cannot prove that it
-        // matches the immutable label. Firestore can still serve the exact
-        // embedded sequence.
-        console.warn(
-          "[ShortCode] Encoded payload could not be verified; storing embed-only.",
-          { sequenceId: sequence.id, error }
-        );
-      }
-    }
-
-    if (faithfulEncodedPayload) {
-      record.encoded = faithfulEncodedPayload;
-    }
-    if ((shouldEmbed || !faithfulEncodedPayload) && embeddedSequenceData) {
-      record.sequenceData = embeddedSequenceData;
-    }
-
-    if (handPath)
-      Object.assign(record, await buildHandPathShortCodePayload(sequence));
-
-    if (!record.encoded && !record.sequenceData) {
-      throw new Error(
-        `[ShortCode] Refusing to create a shortcode without encoded blob or embedded sequenceData - would produce an unresolvable zombie document.`
+    const encoded = await encodeSequenceForQR(sequence);
+    const fidelity = await this.checkWordBlob(
+      sequence,
+      encoded,
+      payloadWord,
+      payloadStepCount
+    );
+    if (fidelity.exact) {
+      payload.encoded = encoded;
+      payload.encodedFidelity = "exact";
+    } else {
+      payload.encodedFidelity = "lossy";
+      payload.encodedLossReason = fidelity.reason.slice(
+        0,
+        MAX_LOSS_REASON_LENGTH
       );
-    }
-
-    // Allocate a unique code. The transaction enforces BOTH invariants
-    // atomically: the code doc path is unclaimed (collision retry), and no
-    // other writer has claimed this hash (index doc). Two clients racing:
-    // both read a nonexistent index doc, both try to write it — Firestore's
-    // serializable transactions force the loser to retry, whose re-read then
-    // sees the winner and adopts its code instead of minting a duplicate.
-    const maxAttemptsPerLength = 10;
-    const maxCodeLength = MAX_SHORT_CODE_LENGTH;
-    let codeLength = MIN_CODE_LENGTH;
-    const indexRef = encoderHash
-      ? doc(firestore, HASH_INDEX_COLLECTION, encoderHash)
-      : null;
-
-    while (codeLength <= maxCodeLength) {
-      for (let attempts = 0; attempts < maxAttemptsPerLength; attempts++) {
-        const code = this.generateCode(codeLength);
-        const docRef = doc(firestore, SHORTCODES_COLLECTION, code);
-
-        let adoptedCode: string | null = null;
-        try {
-          await runTransaction(firestore, async (tx) => {
-            // Reset on every (re-)run: Firestore re-invokes this callback on
-            // write-write contention, and a stale value from a prior run must
-            // not leak. Also documents the immutable-index invariant — hardens
-            // against a future rules change allowing index deletes.
-            adoptedCode = null;
-            if (indexRef) {
-              const indexSnap = await tx.get(indexRef);
-              if (indexSnap.exists()) {
-                adoptedCode = (indexSnap.data() as { code: string }).code;
-                return;
-              }
-            }
-            const snap = await tx.get(docRef);
-            if (snap.exists()) {
-              throw new Error("__CODE_COLLISION__");
-            }
-            tx.set(docRef, record);
-            if (indexRef) {
-              tx.set(indexRef, { code, createdAt: record.createdAt });
-            }
-          });
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          if (msg === "__CODE_COLLISION__") continue;
-          throw err;
-        }
-
-        if (adoptedCode) return { code: adoptedCode, isNew: false };
-        return { code, isNew: true };
-      }
-
-      codeLength++;
       console.warn(
-        `[ShortCode] Exhausted ${maxAttemptsPerLength} attempts at length ${codeLength - 1}, bumping to ${codeLength}`
+        "[ShortCode] Encoded payload does not play the saved choreography; storing the embedded copy only.",
+        { sequenceId: sequence.id, reason: fidelity.reason }
       );
     }
-
-    throw new Error(
-      "Failed to generate unique short code after exhausting all length tiers"
-    );
+    return payload;
   }
 
-  /**
-   * Find an existing short code by word/name (legacy fallback)
-   */
-  private async findExistingCode(encoded: string): Promise<string | null> {
-    const firestore = await this.ensureFirestore();
-    const q = query(
-      collection(firestore, SHORTCODES_COLLECTION),
-      where("sequence", "==", encoded)
-    );
-
-    const snapshot = await getDocs(q);
-    if (!snapshot.empty) {
-      return snapshot.docs[0]!.id;
-    }
-
-    return null;
-  }
-
-  /**
-   * Find an existing short code by encoderHash (content-addressed).
-   *
-   * Legacy data contains duplicate groups (pre-2026-07-05 mint race), so the
-   * query can return several docs. Pick the OLDEST so every client converges
-   * on the same code — `docs[0]` order is arbitrary and made two browsers
-   * show different codes for the same sequence.
-   */
-  /**
-   * The canonical code for a hash, read-only. Oldest wins; tie-break on the
-   * smaller doc id when `createdAt` matches (0ms-apart duplicates exist in
-   * real data) so every client — single lookup, deck-prewarmed batch, or the
-   * read-only lookup below — provably converges on the SAME code.
-   */
-  private async queryCanonicalCodeByHash(
-    hash: string
-  ): Promise<{ code: string; createdAt: string } | null> {
-    const firestore = await this.ensureFirestore();
-    const snapshot = await getDocs(
-      query(
-        collection(firestore, SHORTCODES_COLLECTION),
-        where("encoderHash", "==", hash)
-      )
-    );
-    if (snapshot.empty) return null;
-
-    let best = snapshot.docs[0]!;
-    let bestCreated = (best.data() as ShortCodeData).createdAt ?? "";
-    for (const d of snapshot.docs.slice(1)) {
-      const created = (d.data() as ShortCodeData).createdAt ?? "";
+  private async checkWordBlob(
+    sequence: SequenceData,
+    encoded: string,
+    payloadWord: string,
+    payloadStepCount: number
+  ): Promise<{ exact: true } | { exact: false; reason: string }> {
+    const motions = await verifyEncodedChoreography(encoded, sequence);
+    if (!motions.exact) return motions;
+    try {
+      const decodedWithLetters = await deriveLettersForSequence(
+        motions.decoded
+      );
+      const decodedWordStatus = deriveWordStatusFromSteps(
+        decodedWithLetters.steps
+      );
       if (
-        created < bestCreated ||
-        (created === bestCreated && d.id < best.id)
+        !decodedWordStatus.complete ||
+        decodedWordStatus.word !== payloadWord ||
+        decodedWordStatus.stepCount !== payloadStepCount
       ) {
-        best = d;
-        bestCreated = created;
+        return {
+          exact: false,
+          reason: `word: ${payloadWord} vs ${decodedWordStatus.complete ? decodedWordStatus.word : "(incomplete)"}`,
+        };
       }
+    } catch (error) {
+      return {
+        exact: false,
+        reason: `letters: ${error instanceof Error ? error.message : String(error)}`,
+      };
     }
-    return { code: best.id, createdAt: bestCreated };
-  }
-
-  private async findExistingCodeByHash(hash: string): Promise<string | null> {
-    const winner = await this.queryCanonicalCodeByHash(hash);
-    if (!winner) return null;
-
-    // Lazy heal: point the hash index at the canonical code so future
-    // allocations hit the transaction path directly. Fire-and-forget —
-    // resolution must never block on it. Thread the canonical doc's own
-    // createdAt so the healed index matches the transaction path + backfill.
-    void this.healHashIndex(hash, winner.code, winner.createdAt);
-
-    return winner.code;
+    return { exact: true };
   }
 
   /**
@@ -1115,16 +1247,31 @@ export class ShortCodeManager {
    * the write path — a depicting surface calls this instead and simply shows
    * nothing when the answer is null.
    *
-   * Deliberately NOT `findExistingCodeByHash`: that one heals the hash index,
-   * which is a Firestore create.
+   * Like allocation, it returns only a code whose stored payload plays this
+   * sequence; a code that merely shares the encoderHash is not an answer.
    */
   async findExistingCodeForSequence(
     sequence: SequenceData
   ): Promise<string | null> {
-    const hash = await this.tryComputeHash(sequence);
-    if (!hash) return null;
     try {
-      return (await this.queryCanonicalCodeByHash(hash))?.code ?? null;
+      const expected = projectChoreography(sequence);
+      const hash = await this.tryComputeHash(sequence);
+      if (hash) {
+        const byHash = await this.firstPlaying(
+          await this.queryCandidates("encoderHash", hash),
+          expected
+        );
+        if (byHash) return byHash.code;
+      }
+      const byDigest = await this.firstPlaying(
+        await this.queryCandidates(
+          "payloadDigest",
+          await choreographyDigest(sequence),
+          limit(DEDUP_CANDIDATE_LIMIT)
+        ),
+        expected
+      );
+      return byDigest?.code ?? null;
     } catch {
       // A depiction is never worth an error surface; the caller shows nothing.
       return null;

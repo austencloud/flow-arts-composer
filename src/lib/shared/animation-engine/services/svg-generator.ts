@@ -1,6 +1,7 @@
 import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { modelSpriteFacesAwayFromTips } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
 import { PROP_MODEL_SPRITES } from "$lib/shared/pictograph/prop/domain/prop-model-sprites.generated";
+import { applyModelSpriteColor } from "$lib/shared/pictograph/prop/domain/prop-preview-color";
 import type { PropSvgData } from "$lib/shared/animation-engine/domain/types/svg-types";
 
 export type { PropSvgData } from "$lib/shared/animation-engine/domain/types/svg-types";
@@ -331,14 +332,19 @@ export async function generatePropSvg(
   const propTypeLower = propType.toLowerCase();
   const modelRenderKey = parseModelRenderKey(propTypeLower);
   if (modelRenderKey) {
-    // Baked 3D capture: material colors are part of the image. No recolor.
+    // Baked 3D capture: a raster lit in the blue or red capture palette. The
+    // chroma filter moves that paint to the requested color and leaves the
+    // neutral materials and shading alone.
     const path = resolvePropSvgPath(
       propTypeLower,
       side ?? spriteSideForColor(color)
     );
-    const svg = orientModelSpriteToTips(
-      modelRenderKey.propType,
-      await fetchPropSvg(path)
+    const svg = applyModelSpriteColor(
+      orientModelSpriteToTips(
+        modelRenderKey.propType,
+        await fetchPropSvg(path)
+      ),
+      color
     );
     const { width, height } = extractViewBoxDimensions(svg);
     return { svg, width, height };

@@ -63,8 +63,8 @@
         resizeLabel:
           inspectorProfile === "performance"
             ? "Resize viewer and performances"
-            : inspectorProfile === "send"
-              ? "Resize viewer and recipients"
+            : inspectorProfile === "share"
+              ? "Resize viewer and share panel"
               : `Resize viewer and ${inspectorProfile} settings`,
       },
     ];

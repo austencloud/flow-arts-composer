@@ -171,6 +171,17 @@ describe("SequenceViewerShell host contract", () => {
       'openAppLabel = "Open Flow Arts Composer"'
     );
     expect(viewerHeaderSource).not.toContain("Open TKA");
+  });
+
+  it("hands Escape to the share panel instead of leaving the viewer", () => {
+    // Share keeps focus in the header, so a Back target there would be the
+    // nearest Escape owner and navigate away with the panel still open.
+    expect(
+      viewerHeaderSource.match(
+        /data-escape-shortcut=\{!sharePanelOpen \|\| undefined\}/g
+      )
+    ).toHaveLength(2);
+    expect(viewerHeaderSource).not.toMatch(/data-escape-shortcut\s*\n/);
     expect(overflowMenuSource).not.toContain("Open TKA");
   });
 
@@ -191,6 +202,16 @@ describe("SequenceViewerShell host contract", () => {
     );
     expect(shellShareStateSource).toContain("shareLinkCopied = true");
     expect(viewerHeaderSource).not.toContain("onSendTo={handleSendTo}");
+  });
+
+  it("leaves the 2D video file to Share", () => {
+    // The Export page keeps its settings but loses its own render button, so
+    // the file has one route and cannot drift between two flows. 3D keeps
+    // Record Scene until its own pattern is decided.
+    expect(shellSource).toContain('showExportAction={ctx.renderMode === "3d"}');
+    expect(shellSource).toContain(
+      "onDownload={() => void downloadFromShare()}"
+    );
   });
 
   it("keeps More compact-only and limits the primary row to four actions", () => {

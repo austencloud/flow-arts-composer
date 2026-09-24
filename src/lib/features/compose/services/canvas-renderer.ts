@@ -47,7 +47,7 @@ export function renderScene(
   // Clear canvas exactly as in standalone
   ctx.clearRect(0, 0, canvasSize, canvasSize);
 
-  // Draw white background (required for GIF export)
+  // Draw white background (required for export)
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, canvasSize, canvasSize);
 
@@ -78,7 +78,7 @@ export function renderScene(
 
 /**
  * Render a letter glyph onto the canvas at the standard position
- * This is called separately during GIF export to overlay the glyph
+ * This is called separately during export to overlay the glyph
  */
 export function renderLetterToCanvas(
   ctx: CanvasRenderingContext2D,

@@ -25,6 +25,14 @@ async function openLeft() {
   await page.getByRole("button", { name: `Edit Left prop, ${LEFT.toUpperCase()}` }).click();
 }
 
+/** Waits out the editor's open animation, as a person reaching the field would. */
+async function settled(container: HTMLElement) {
+  const editor = container.querySelector<HTMLElement>(".color-editor")!;
+  await expect
+    .poll(() => editor.getAnimations().filter((a) => a.playState === "running").length)
+    .toBe(0);
+}
+
 describe("LabeledColorPairPicker", () => {
   it("applies a swatch to the hand being edited", async () => {
     const { onchange } = renderPicker();
@@ -69,6 +77,21 @@ describe("LabeledColorPairPicker", () => {
     expect(onchange).not.toHaveBeenCalledWith("left", "#12");
     await field.fill("#123456");
     expect(onchange).toHaveBeenCalledWith("left", "#123456");
+  });
+
+  it("accepts hex without the hash, and shorthand once committed", async () => {
+    const { screen, onchange } = renderPicker();
+    await openLeft();
+    await settled(screen.container);
+    const field = page.getByRole("textbox", { name: "Left prop hex color" });
+    await field.fill("12ab56");
+    expect(onchange).toHaveBeenLastCalledWith("left", "#12ab56");
+    // Shorthand waits for the commit, so typing a six-digit value that
+    // starts with three valid digits is never cut short.
+    await field.fill("#f0a");
+    expect(onchange).not.toHaveBeenCalledWith("left", "#ff00aa");
+    await userEvent.keyboard("{Enter}");
+    expect(onchange).toHaveBeenLastCalledWith("left", "#ff00aa");
   });
 
   it("moves the hue with the keyboard", async () => {
@@ -145,6 +168,40 @@ describe("LabeledColorPairPicker", () => {
     expect(screen.container.contains(editor)).toBe(true);
     expect(running()).toBeGreaterThan(0);
     await expect.poll(() => screen.container.contains(editor)).toBe(false);
+  });
+
+  it("reverses from where it is when reopened mid-close", async () => {
+    const { screen } = renderPicker();
+    await openLeft();
+    await settled(screen.container);
+    const editor = screen.container.querySelector<HTMLElement>(".color-editor")!;
+    const running = () =>
+      editor.getAnimations().filter((a) => a.playState === "running").length;
+    const height = () => editor.getBoundingClientRect().height;
+    const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+    const full = height();
+
+    const control = page.getByRole("button", { name: /^Edit Left prop/ }).element() as HTMLElement;
+    control.click();
+    await new Promise((resolve) => setTimeout(resolve, 90));
+    const interrupted = height();
+    control.click();
+
+    const heights: number[] = [];
+    do {
+      await nextFrame();
+      heights.push(height());
+    } while (running() > 0 && heights.length < 60);
+
+    expect(interrupted).toBeGreaterThan(0);
+    expect(interrupted).toBeLessThan(full);
+    // Separate in:/out: transitions re-measured the half-closed editor, so
+    // the reopen restarted from zero, grew to that height, then jumped to
+    // full in one frame.
+    const jumps = heights.slice(1).map((h, i) => h - heights[i]!);
+    expect(Math.min(...heights)).toBeGreaterThan(0);
+    expect(Math.max(...jumps)).toBeLessThan(full / 2);
+    expect(heights.at(-1)).toBeCloseTo(full, 0);
   });
 
   it("emits exactly once for a swatch click", async () => {

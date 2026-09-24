@@ -382,6 +382,25 @@
     white-space: nowrap;
   }
 
+  /* Open viewer is the stage's one filled button: it builds the combined
+     sequence and opens it where it can be played, saved, shared and
+     exported. Save result is the direct second choice. Disassemble changes
+     how the preview is drawn and Share is a shortcut into the viewer, so both
+     sit in the quiet tier: no fill, faint outline, dimmer words. */
+  .assembly-control :global(.panel-btn),
+  .share-slot :global(.panel-btn) {
+    border-color: color-mix(in srgb, var(--theme-stroke) 60%, transparent);
+    background: transparent;
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.7));
+  }
+
+  .assembly-control :global(.panel-btn:hover:not(:disabled)),
+  .share-slot :global(.panel-btn:hover:not(:disabled)) {
+    border-color: var(--theme-stroke);
+    background: var(--theme-card-bg);
+    color: var(--theme-text, #fff);
+  }
+
   .preview-heading h3 {
     color: var(--theme-text, #fff);
     font-size: 1rem;

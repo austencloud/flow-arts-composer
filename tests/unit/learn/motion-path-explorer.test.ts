@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createMotionPathExplorerState } from "../../../src/routes/(public)/guide/motion-paths/_data/motion-path-explorer-state.svelte";
 import { motionPathExamples } from "../../../src/routes/(public)/guide/motion-paths/_data/motion-path-examples";
 import { MotionType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import type { Flower } from "$lib/shared/shape-matrix/domain/flower-signature";
 import { MODE_ORDER } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
 
@@ -74,15 +75,50 @@ describe("motion path guide isolation", () => {
         motionAwarePaths: true,
       });
       first.syncPolicy();
-      first.toggleGuides();
+      first.scope.visibility.setVisibility("leftPathLines", false);
+      first.setBpm(90);
+      first.propType = PropType.FAN;
       first.trace = "hands";
       first.chooseSequence(structuredClone(motionPathExamples[1]!));
       expect(second.selectedPath).toBe("hybrid");
-      expect(second.guides).toBe(true);
+      expect(second.scope.visibility.getVisibility("leftPathLines")).toBe(true);
+      expect(second.bpm).toBe(48);
+      expect(second.propType).toBe(PropType.STAFF);
       expect(spy).not.toHaveBeenCalled();
     } finally {
       spy.mockRestore();
     }
+  });
+
+  it("opens the toy box with no effect over the mandala", () => {
+    const explorer = createMotionPathExplorerState();
+    expect(explorer.scope.effects.activeEffect).toBe("none");
+    expect(explorer.scope.effects.tipEffectMap).toEqual({});
+    expect(explorer.bpm).toBe(48);
+  });
+
+  it("keeps a solo's other hand path line off when Hand paths turns on", () => {
+    const explorer = createMotionPathExplorerState();
+    const visibility = explorer.scope.visibility;
+    const builder = () => new Promise<never>(() => {});
+    explorer.chooseMatrixSolo(
+      "right",
+      proIn,
+      { left: proIn, right: proIn },
+      builder
+    );
+    expect(visibility.getVisibility("leftPathLines")).toBe(false);
+    expect(visibility.getVisibility("rightPathLines")).toBe(true);
+
+    visibility.setVisibility("rightPathLines", false);
+    visibility.setVisibility("leftPathLines", true);
+    visibility.setVisibility("rightPathLines", true);
+    expect(visibility.getVisibility("leftPathLines")).toBe(false);
+    expect(visibility.getVisibility("rightPathLines")).toBe(true);
+
+    explorer.clearMatrixPair();
+    expect(visibility.getVisibility("leftPathLines")).toBe(true);
+    expect(visibility.getVisibility("rightPathLines")).toBe(true);
   });
 
   it("keeps the newest matrix realization when an older build finishes late", async () => {

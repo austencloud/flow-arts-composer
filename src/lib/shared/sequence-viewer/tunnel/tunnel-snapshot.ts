@@ -14,6 +14,7 @@ import {
   resolveTunnelPropColorState,
   type TunnelPropColorState,
 } from "./tunnel-prop-colors";
+import { safeClone } from "$lib/shared/foundation/utils/safe-clone";
 
 export const SNAPSHOT_VERSION = 3;
 
@@ -45,6 +46,9 @@ export interface TunnelSnapshot {
   props: {
     leftPropType: string;
     rightPropType: string;
+    /** Optional for snapshots saved before per-hand Tunnel props. A missing
+     * flag is inferred from the hands on load. */
+    catDogMode?: boolean;
     /** Optional only for snapshots saved before creator draft v4. */
     leftBuugengFlipped?: boolean;
     rightBuugengFlipped?: boolean;
@@ -187,6 +191,7 @@ const RawTunnelSnapshotSchema = z.preprocess(
       props: z.object({
         leftPropType: z.string(),
         rightPropType: z.string(),
+        catDogMode: z.boolean().optional(),
         leftBuugengFlipped: z.boolean().optional(),
         rightBuugengFlipped: z.boolean().optional(),
       }),
@@ -218,11 +223,13 @@ export interface SnapshotDeps {
   settings: {
     leftPropType: string;
     rightPropType: string;
+    catDogMode?: boolean;
     leftBuugengFlipped?: boolean;
     rightBuugengFlipped?: boolean;
     updateSettings: (p: {
       leftPropType?: string;
       rightPropType?: string;
+      catDogMode?: boolean;
       leftBuugengFlipped?: boolean;
       rightBuugengFlipped?: boolean;
     }) => unknown;
@@ -235,14 +242,6 @@ export interface SnapshotDeps {
   animationPanel: { playbackMode: PlaybackMode };
   getBpm: () => number;
 }
-
-const clone = <T>(v: T): T => {
-  try {
-    return structuredClone(v);
-  } catch {
-    return JSON.parse(JSON.stringify(v));
-  }
-};
 
 export function captureTunnelSnapshot(deps: SnapshotDeps): TunnelSnapshot {
   const {
@@ -257,13 +256,13 @@ export function captureTunnelSnapshot(deps: SnapshotDeps): TunnelSnapshot {
   return {
     version: SNAPSHOT_VERSION,
     tunnel: {
-      config: clone(controller.config),
+      config: safeClone(controller.config),
       gridVisible: controller.gridVisible,
-      colors: clone(controller.colors),
+      colors: safeClone(controller.colors),
       section: controller.section,
       presetRecipe: controller.presetRecipe,
     },
-    effects: clone(effects.config),
+    effects: safeClone(effects.config),
     effort: visibility.getEffortPreset(),
     paths: {
       pathShape: visibility.getPathShape(),
@@ -275,10 +274,13 @@ export function captureTunnelSnapshot(deps: SnapshotDeps): TunnelSnapshot {
     props: {
       leftPropType: settings.leftPropType,
       rightPropType: settings.rightPropType,
+      catDogMode:
+        (settings.catDogMode ?? false) ||
+        settings.leftPropType !== settings.rightPropType,
       leftBuugengFlipped: settings.leftBuugengFlipped ?? false,
       rightBuugengFlipped: settings.rightBuugengFlipped ?? false,
     },
-    trailRender: clone(animationSettings.trail),
+    trailRender: safeClone(animationSettings.trail),
   };
 }
 
@@ -323,6 +325,9 @@ export function applyTunnelSnapshot(
   settings.updateSettings({
     leftPropType: snap.props.leftPropType,
     rightPropType: snap.props.rightPropType,
+    catDogMode:
+      (snap.props.catDogMode ?? false) ||
+      snap.props.leftPropType !== snap.props.rightPropType,
     ...(snap.props.leftBuugengFlipped !== undefined
       ? { leftBuugengFlipped: snap.props.leftBuugengFlipped }
       : {}),

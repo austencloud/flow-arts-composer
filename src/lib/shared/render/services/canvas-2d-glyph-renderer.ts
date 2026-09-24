@@ -3,6 +3,7 @@ import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { GridMode } from "../../pictograph/grid/domain/enums/grid-enums";
 import { getSvgImageCache, type DrawableImage } from "./svg-image-cache";
 import { getSvgAssetLoader } from "./svg-asset-loader";
+import { loadRasterImage } from "./raster-image-loader";
 import {
   getLetterImagePath,
   isDashLetter,
@@ -56,10 +57,6 @@ const DOT_PADDING = 10;
 const DOT_SIZE = 25;
 
 const TURN_NUMBER_HEIGHT = 45;
-
-const TND_GLYPH_WIDTH = 201.24;
-const TND_GLYPH_HEIGHT = 133.6;
-const TND_OFFSET_PERCENTAGE = 0.04;
 
 const POSITION_GLYPH_Y = 50;
 const POSITION_SCALE_FACTOR = 0.75;
@@ -428,55 +425,6 @@ export async function drawTurnsColumn(
   }
 }
 
-export async function drawTnDGlyph(
-  ctx: CanvasRenderingContext2D,
-  pictograph: PictographData,
-  _gridMode: GridMode,
-  size: number,
-  isDarkMode: boolean
-): Promise<void> {
-  if (!pictograph.letter) return;
-
-  try {
-    const letterType = getLetterType(pictograph.letter as Letter);
-    if (letterType !== LetterType.TYPE1) return;
-  } catch {
-    return;
-  }
-
-  const tndResult = deriveTnDFromPictograph(pictograph);
-  if (!tndResult.tndMode) return;
-
-  const scale = size / VIEWBOX_SIZE;
-  const svgCache = getSvgImageCache();
-
-  const offset = VIEWBOX_SIZE * TND_OFFSET_PERCENTAGE;
-  const x = (VIEWBOX_SIZE - TND_GLYPH_WIDTH - offset) * scale;
-  const y = (VIEWBOX_SIZE - TND_GLYPH_HEIGHT - offset) * scale;
-
-  try {
-    const tndPath = `/images/vtg_glyphs/${tndResult.tndMode}.svg`;
-    const response = await fetch(tndPath);
-    if (!response.ok) return;
-
-    const svgText = await response.text();
-    const cacheKey = `tnd_${tndResult.tndMode}_${isDarkMode}`;
-    const img = await svgCache.getImage(svgText, cacheKey);
-
-    const drawWidth = TND_GLYPH_WIDTH * scale;
-    const drawHeight = TND_GLYPH_HEIGHT * scale;
-
-    ctx.save();
-    if (isDarkMode) {
-      ctx.filter = "invert(1)";
-    }
-    ctx.drawImage(img, x, y, drawWidth, drawHeight);
-    ctx.restore();
-  } catch (error) {
-    console.warn(`[Canvas2D] Failed to draw TnD glyph:`, error);
-  }
-}
-
 export async function drawElementalGlyph(
   ctx: CanvasRenderingContext2D,
   pictograph: PictographData,
@@ -499,12 +447,10 @@ export async function drawElementalGlyph(
   const box = getElementalGlyphBox(size);
 
   try {
-    const elementalPath = getElementImagePath(tndResult.elementalType);
-    const response = await fetch(elementalPath);
-    if (!response.ok) return;
-
-    const blob = await response.blob();
-    const img = await createImageBitmap(blob);
+    const img = await loadRasterImage(
+      getElementImagePath(tndResult.elementalType)
+    );
+    if (!img) return;
 
     const fitted = containElementalGlyph(box, img.width, img.height);
     if (!fitted) return;
@@ -533,9 +479,8 @@ export async function drawPropElementalGlyph(
   const box = getElementalGlyphBox(size, 0, "top-right");
 
   try {
-    const response = await fetch(getElementImagePath(elementalType));
-    if (!response.ok) return;
-    const img = await createImageBitmap(await response.blob());
+    const img = await loadRasterImage(getElementImagePath(elementalType));
+    if (!img) return;
     const fitted = containElementalGlyph(box, img.width, img.height);
     if (!fitted) return;
 

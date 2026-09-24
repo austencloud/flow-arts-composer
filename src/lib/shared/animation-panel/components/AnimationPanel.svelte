@@ -6,17 +6,19 @@
   - Mobile (layout="bottom"): compact control dock + export action.
   - Desktop (layout="sidebar"): shared Animator inspector shell with a
     scrollable section body and export action pinned in its footer.
+  - presentation="content": one section's page for a host that navigates from
+    its own controls. The bottom layout gives the dock tray's dense page, the
+    sidebar layout the inspector's page without its rail or title.
 
   Sections: Effects → Props → Motion → Display → Export.
 -->
 <script lang="ts">
   import { fade } from "svelte/transition";
-  import { growFade } from "$lib/shared/transitions/motion";
   import type { ExportOptionsStateManager } from "../state/export-options-state.svelte";
   import type { VideoExportProgress } from "$lib/shared/compose/domain/video-export-types";
   import {
-    estimateExportTime,
-    hasDeviceMetrics,
+    formatExportDuration,
+    formatExportTimeEstimate,
   } from "../state/export-timing-tracker";
   import EffectsPanel from "$lib/shared/animation-engine/components/effects-panel/EffectsPanel.svelte";
   import PlaybackModeToggle from "$lib/shared/animation-engine/components/controls/PlaybackModeToggle.svelte";
@@ -41,9 +43,10 @@
   import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
   import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
   import type { PropChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
-  import CatDogToggle from "$lib/shared/settings/components/tabs/prop-type/CatDogToggle.svelte";
+  import HandPropToolbar, {
+    type HandPropToolbarProps,
+  } from "$lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
   import PrimaryPropColorSettings from "$lib/shared/settings/components/tabs/prop-type/PrimaryPropColorSettings.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import {
     getSettings,
     updateSetting,
@@ -106,6 +109,10 @@
     singlePlayDuration?: number;
     /** Keep the editor geometry while another workspace owns export. */
     reserveExportSpace?: boolean;
+    /** Show the panel's own render button (footer, dock icon, tray confirm).
+     *  The sequence viewer turns it off: there Share is the one way to get
+     *  the file, and the Export page only holds its settings. */
+    showExportAction?: boolean;
     isPlaying?: boolean;
     bpm?: number;
     renderMode?: "2d" | "3d";
@@ -150,14 +157,7 @@
      * one local prop (Post Studio, profile photo, landing) omit this and keep
      * the single grid.
      */
-    handProps?: {
-      catDog: boolean;
-      hand: "left" | "right";
-      leftPropType: PropType;
-      rightPropType: PropType;
-      onToggleCatDog: () => void;
-      onHandChange: (hand: "left" | "right") => void;
-    };
+    handProps?: HandPropToolbarProps;
     /**
      * Put the account's primary prop colours above the prop grid, the way the
      * global prop drawer does, for a host whose canvas draws the props in
@@ -191,6 +191,8 @@
     /** Hide the four sequence-only edge marks (TKA glyph, element, step number,
      *  word) for a host animating something with no letter and no steps. */
     showSequenceMarks?: boolean;
+    /** Leave out the Word tile for a host that never draws a word header. */
+    showWordToggle?: boolean;
     /** Restrict the effect roster to what the host's renderer can actually
      *  draw. Omit for the full roster. */
     availableEffects?: readonly string[];
@@ -219,6 +221,7 @@
     controlledSection,
     singlePlayDuration = 0,
     reserveExportSpace = false,
+    showExportAction = true,
     isPlaying = false,
     bpm = 60,
     renderMode = "2d",
@@ -246,6 +249,7 @@
     showInlineExportProgress = true,
     showMotionVisibility = false,
     showSequenceMarks = true,
+    showWordToggle = true,
     availableEffects,
     showPathShape = true,
     onSettingChange,
@@ -438,7 +442,10 @@
         if (current) mandalaOpenerUrl = url || null;
       },
       (error) => {
-        console.error("[AnimationPanel] Could not draw the mandala opener:", error);
+        console.error(
+          "[AnimationPanel] Could not draw the mandala opener:",
+          error
+        );
       }
     );
     return () => {
@@ -619,31 +626,16 @@
     });
   });
 
-  function formatDuration(seconds: number): string {
-    if (seconds <= 0) return "";
-    if (seconds < 60) return `${seconds.toFixed(1)}s`;
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.round(seconds % 60);
-    return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
-  }
-
-  const estimatedTime = $derived.by(() => {
-    if (singlePlayDuration <= 0 || !exportOptions) return null;
-    return estimateExportTime(
-      exportOptions.videoResolution,
-      exportOptions.videoFps,
-      singlePlayDuration,
-      exportOptions.videoLoopCount
-    );
-  });
-
-  const timeEstimateLabel = $derived.by(() => {
-    if (estimatedTime === null || !exportOptions) return "";
-    const label = formatDuration(estimatedTime);
-    if (!label) return "";
-    const isEstimate = !hasDeviceMetrics(exportOptions.videoResolution);
-    return isEstimate ? `~${label} est.` : `~${label}`;
-  });
+  const timeEstimateLabel = $derived(
+    exportOptions
+      ? formatExportTimeEstimate(
+          exportOptions.videoResolution,
+          exportOptions.videoFps,
+          singlePlayDuration,
+          exportOptions.videoLoopCount
+        )
+      : ""
+  );
 
   const totalVideoDuration = $derived.by(() => {
     if (singlePlayDuration <= 0 || !exportOptions) return "";
@@ -654,7 +646,7 @@
     const endHold = exportOptions.videoIncludeEndHold ? unitSeconds : 0;
     const total =
       startHold + singlePlayDuration * exportOptions.videoLoopCount + endHold;
-    return formatDuration(total);
+    return formatExportDuration(total);
   });
 
   // ── Pill specs ──
@@ -758,6 +750,23 @@
   );
   const resolvedPill = $derived(resolveActivePill(requestedPill, availableIds));
 
+  // A host that drives the page from its own controls changes sections
+  // without handlePillSelect, so the page's slide follows the change itself:
+  // later in the pill order rises from below, earlier drops from above. Pre,
+  // so the direction is set before the page's transition reads it.
+  let directedPill: PillId | null = null;
+  $effect.pre(() => {
+    const next = resolvedPill;
+    const previous = directedPill;
+    directedPill = next;
+    if (controlledSection === undefined || !previous || !next) return;
+    if (previous === next) return;
+    const ids = untrack(() => availableIds);
+    const from = ids.indexOf(previous);
+    const to = ids.indexOf(next);
+    if (from !== -1 && to !== -1) panelDirection = to > from ? 1 : -1;
+  });
+
   // The effect reads pillSpecs (through resolvedPill), which recomputes on
   // every BPM tick and effect change, so an unguarded save wrote the same
   // string to localStorage on every control tweak.
@@ -766,7 +775,13 @@
     if (!resolvedPill) return;
     // Write back so the rail, the dock and persistence agree on one id.
     if (activePill !== resolvedPill) activePill = resolvedPill;
-    if (layout === "sidebar" && savedPill !== resolvedPill) {
+    // A page the host frames and navigates is the host's choice, not the
+    // viewer inspector's remembered page.
+    if (
+      layout === "sidebar" &&
+      presentation !== "content" &&
+      savedPill !== resolvedPill
+    ) {
       savedPill = resolvedPill;
       saveActivePill(resolvedPill);
     }
@@ -791,7 +806,7 @@
     }))
   );
   const dockTrailing = $derived<ControlDockAction | undefined>(
-    exportEnabled && onExport
+    exportEnabled && onExport && showExportAction
       ? {
           icon: renderMode === "3d" ? "fa-circle" : "fa-download",
           label: exportButtonLabel,
@@ -815,28 +830,7 @@
 {#snippet pillBody()}
   {#if resolvedPill === "props" && onPropChange && selectedPropType !== undefined}
     {#if handProps}
-      <!-- Same chip and hand segments as the global prop drawer, so the viewer
-           picks a pair the way every other settings-backed picker does. -->
-      <div class="hand-toolbar">
-        <CatDogToggle
-          catDogMode={handProps.catDog}
-          onToggle={handProps.onToggleCatDog}
-        />
-        {#if handProps.catDog}
-          <div transition:growFade={{ axis: "y" }}>
-            <SegmentedControl
-              options={[
-                { value: "left", label: "Left", tone: "blue" },
-                { value: "right", label: "Right", tone: "red" },
-              ]}
-              value={handProps.hand}
-              onchange={handProps.onHandChange}
-              ariaLabel="Prop hand selection"
-              semantics="radiogroup"
-            />
-          </div>
-        {/if}
-      </div>
+      <HandPropToolbar {handProps} />
     {/if}
     {#if showPropColors}
       <!-- The same control the global prop drawer puts above its grid: the
@@ -1020,6 +1014,7 @@
       <DisplayPanel
         {showMotionVisibility}
         {showSequenceMarks}
+        {showWordToggle}
         {sequence}
         propType={selectedPropType}
         fill={layout === "sidebar"}
@@ -1059,8 +1054,8 @@
             <span>Holds the sequence's mandala for a beat, then plays.</span>
           {:else if exportOptions.videoOpener === "this-frame"}
             <span
-              >Holds the frame on the stage when you press Download. Pause
-              where it looks right.</span
+              >Holds the frame on the stage when you press Download. Pause where
+              it looks right.</span
             >
           {:else}
             <span>Opens on the start position.</span>
@@ -1206,7 +1201,7 @@
         </div>
       {/if}
 
-      {#if layout === "bottom" && onExport}
+      {#if layout === "bottom" && onExport && showExportAction}
         <!-- The dock's download icon opened this tray, so the confirm sits on
              the same surface as the options it applies. The sidebar keeps its
              footer button instead. -->
@@ -1236,10 +1231,9 @@
   </div>
 {/snippet}
 
-{#if presentation === "content"}
+{#if presentation === "content" && layout === "bottom"}
   <div
-    class="external-section-body"
-    class:dock-dense={layout === "bottom"}
+    class="external-section-body dock-dense"
     role="region"
     aria-label={activePillLabel || regionLabel}
   >
@@ -1321,7 +1315,10 @@
       resolvedPill === "effects" ||
       resolvedPill === "props"}
     fluidBody={resolvedPill === "props"}
-    regionLabel="Animation export settings"
+    pageOnly={presentation === "content"}
+    regionLabel={presentation === "content"
+      ? activePillLabel || regionLabel
+      : "Animation export settings"}
     onNavMount={(element) => {
       pillNavEl = element;
     }}
@@ -1331,7 +1328,7 @@
   >
     {#snippet body()}{@render pillBody()}{/snippet}
     {#snippet footer()}
-      {#if (exportEnabled && onExport) || reserveExportSpace}
+      {#if (exportEnabled && onExport && showExportAction) || reserveExportSpace}
         <AnimatorInspectorFooter
           onAction={handleExportTrigger}
           concealed={reserveExportSpace}
@@ -1472,18 +1469,6 @@
     align-items: center;
     justify-content: center;
     min-height: 140px;
-  }
-
-  /* Cat Dog chip and hand segments above the grid; mirrors the global prop
-     drawer's toolbar so the pair reads the same wherever it is picked. */
-  .hand-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 8px 16px 4px;
-    flex-shrink: 0;
   }
 
   /* The colour pair above the grid, on the prop drawer's own inset. */

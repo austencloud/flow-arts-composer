@@ -5,14 +5,13 @@
  * specifications (822x1122px at 300 DPI with 36px bleed).
  *
  * Fronts: delegates to ImageComposer, then wraps in bleed canvas.
- * Backs: delegates to CardBackCanvasRenderer.
+ * Backs: builds and paints the shared BackJob.
  * Info cards: delegates to InfoCardCanvasRenderer.
  */
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { ImageComposer } from "../../../shared/render/services/image-composer";
 import type { PrintRenderOptions } from "./types";
-import { renderCardBack } from "./card-back-dom-renderer";
 import {
   renderInfoCardFront,
   renderInfoCardBack,
@@ -22,6 +21,7 @@ import {
   renderSignupCardBack,
 } from "./signup-card-canvas-renderer";
 import { buildBackJob } from "./card-back/card-back-job-builder";
+import { resolveCardBackAppearance } from "./card-back/card-back-appearance";
 import { paintBackJob } from "./card-back/card-back-raster";
 import { buildFrontComposeOptions } from "./build-front-compose-options";
 import { wrapContentInCardFrame } from "./card-front-frame";
@@ -176,39 +176,24 @@ export class PrintCardRenderer {
     const canvasHeight = options.canvasHeight ?? MPC_HEIGHT;
     const bleedPx = options.bleedPx ?? MPC_BLEED;
     const theme = options.theme ?? this.theme;
+    const appearance = resolveCardBackAppearance(options);
 
-    // The back currently rasterizes at scale 2 (the DOM renderer's
-    // modern-screenshot scale:2) → 1644x2244. Match that with the new BackJob
-    // path so the CardPair seam + print output stay pixel-identical in size.
+    // The CardPair seam and print output use a scale-2 raster (1644x2244).
     const scale = 2;
-    try {
-      const job = await buildBackJob(sequence, {
-        width: canvasWidth * scale,
-        height: canvasHeight * scale,
-        bleedPx: bleedPx * scale,
-        theme,
-        leftPropType: options.leftPropType,
-        rightPropType: options.rightPropType,
-      });
-      const off = paintBackJob(job);
-      // Convert OffscreenCanvas → HTMLCanvasElement for the CardPair seam.
-      const out = document.createElement("canvas");
-      out.width = off.width;
-      out.height = off.height;
-      out.getContext("2d")!.drawImage(off, 0, 0);
-      return out;
-    } catch (err) {
-      console.warn(
-        "[PrintCardRenderer] new back path failed, falling back to DOM renderer:",
-        err
-      );
-      return renderCardBack(sequence, {
-        width: canvasWidth,
-        height: canvasHeight,
-        bleedPx,
-        theme,
-      });
-    }
+    const job = await buildBackJob(sequence, {
+      width: canvasWidth * scale,
+      height: canvasHeight * scale,
+      bleedPx: bleedPx * scale,
+      theme,
+      ...appearance,
+    });
+    const off = paintBackJob(job);
+    // Convert OffscreenCanvas → HTMLCanvasElement for the CardPair seam.
+    const out = document.createElement("canvas");
+    out.width = off.width;
+    out.height = off.height;
+    out.getContext("2d")!.drawImage(off, 0, 0);
+    return out;
   }
 
   async renderInfoCardFront(
