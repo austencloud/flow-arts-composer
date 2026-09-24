@@ -196,7 +196,7 @@
           Damien called the elementary families rosettes and cycloids. In
           standard curve language they belong to the centered trochoid family;
           his cycloid cases are the cusp-forming epicycloids or hypocycloids.
-          The clean plots below are reconstructed from his published parameters.
+          The plots below use his published parameters.
         </p>
         <p class="atlas-credit">
           The animated reference illustrations Damien linked were by
@@ -256,9 +256,9 @@
         <div>
           <h3>What survives</h3>
           <p>
-            The forum discussion survives, but old playlists and image hosts
-            have disappeared. This exhibit keeps the mathematics readable while
-            sending visitors back to the remaining originals.
+            The forum discussion and Damien's mathematical framework survive.
+            Some playlists and image hosts linked from the thread have
+            disappeared.
           </p>
         </div>
       </li>
@@ -359,9 +359,6 @@
         </p>
       </article>
     </div>
-    <p class="relationship-note">
-      Both describe repeatable patterns using different units.
-    </p>
   </section>
 
   <section id="watch" class="editorial-section" style="--accent: #a78bfa">
@@ -694,7 +691,6 @@
   }
 
   .credit-footnote,
-  .relationship-note,
   .media-footnote {
     margin: 1.25rem 0 0;
     color: var(--theme-text-dim, #aab4c3);

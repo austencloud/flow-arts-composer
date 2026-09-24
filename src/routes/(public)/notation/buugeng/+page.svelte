@@ -10,7 +10,7 @@
 
   const TITLE = "Buugeng Notation | The Kinetic Alphabet for Buugeng";
   const DESCRIPTION =
-    "How The Kinetic Alphabet applies to buugeng: dual-ended like staves, so the notation carries over directly, with finger spinning welcomed where the staff pedagogy is strict.";
+    "How double-staff notation carries over to buugeng, including two-ended geometry, finger spins, and grip changes.";
   const URL = "https://tkaflowarts.com/notation/buugeng";
 </script>
 
@@ -61,19 +61,18 @@
             family.
           </p>
           <p>
-            Buugeng can be strange and unwieldy because they curve around the
-            body. Finger spinning is well established with them. Some Kinetic
-            Alphabet patterns may be hard to finger spin, but you can finger
-            spin to your heart's desire. The fixed thumb reference is a staff
-            teaching method; once you can read the turn value in a pictograph,
-            you can change grip as the prop allows.
+            Buugeng curve around the body, and many artists turn them with their
+            fingers. Some Kinetic Alphabet patterns may be awkward to finger
+            spin. The fixed thumb reference is a staff teaching method. Buugeng
+            spinners can change grip while following the same positions and turn
+            values.
           </p>
         </div>
       </div>
       <div class="duo-demo">
         <SequenceHeroDemo
           sequence={demoSequence}
-          note="the demo sequence, on buugeng"
+          note="both curved ends follow the staff positions"
           leftPropType="buugeng"
           rightPropType="buugeng"
         />
@@ -83,11 +82,9 @@
 
   <OpenChapter prop="Buugeng" heading="How buugeng artists handle the curves">
     <p>
-      The notation was worked out on double staves. It still needs a buugeng
-      artist's account of grips, finger spinning, and how the curves change body
-      mechanics.
+      The notation records where each end points. A buugeng artist could add
+      examples of finger spins, grip changes, and movement around the curves.
     </p>
-    <p>Buugeng artists can contribute those details.</p>
   </OpenChapter>
 
   <div class="cta-card">
