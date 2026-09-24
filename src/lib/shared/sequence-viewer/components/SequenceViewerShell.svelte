@@ -54,6 +54,7 @@
   import VideoPreviewPanel from "./VideoPreviewPanel.svelte";
   import PracticeBar from "./PracticeBar.svelte";
   import PostStudioPane from "./PostStudioPane.svelte";
+  import { POST_STUDIO_STAGE_MIN_WIDTH } from "../services/viewer-shell-model";
   import { createPaneKeepAlive } from "./pane-keep-alive.svelte";
   import PracticeSetupBar from "./PracticeSetupBar.svelte";
   import ViewerSharePanel from "./ViewerSharePanel.svelte";
@@ -1111,6 +1112,7 @@
           class:performance-inspector={layout.inspectorProfile ===
             "performance"}
           class:share-inspector={layout.inspectorProfile === "share"}
+          class:studio-stage={layout.showPostStudio}
           class:desktop={!layout.effectiveMobile}
           class:stacked-rail={layout.stackedExportWithRail}
           class:sidebar-collapsed={layout.exportSidebarCollapsed &&
@@ -1175,6 +1177,9 @@
               : layout.showVideoGallery
                 ? "var(--performance-inspector-height)"
                 : "auto"}
+            stageMinSize={layout.showPostStudio
+              ? POST_STUDIO_STAGE_MIN_WIDTH
+              : undefined}
             takeover={workspaceTakeover}
             takeoverActive={workspaceTakeoverActive}
           >
@@ -1188,6 +1193,7 @@
                       resolvedCardAutoLayout={ctx.resolvedCardAutoLayout}
                       onExported={adoptPostStudioRender}
                       onSharePost={share.openPanel}
+                      sharing={share.panelOpen}
                     />
                   {/if}
                 {/snippet}
@@ -2316,6 +2322,22 @@
   .viewer-and-export {
     --performance-inspector-height: min(46vh, 30rem);
     --share-inspector-height: min(54vh, 34rem);
+  }
+
+  /* Post Studio stacks share only on a phone-width body. Its stage is a 9:16
+     frame between the studio's action bar and transport, so the general dock
+     height left a 1x2px preview on a 375x667 phone. This height keeps the
+     panel's actions in view and scrolls its list; the frame keeps the rest. */
+  .viewer-and-export.studio-stage {
+    --share-inspector-height: min(34dvh, 22rem);
+  }
+
+  @media (min-height: 34.0625rem) {
+    .viewer-and-export.studio-stage:not(.desktop)
+      .share-layer
+      > .share-layer-content {
+      min-height: 12rem;
+    }
   }
 
   @media (max-height: 34rem) {

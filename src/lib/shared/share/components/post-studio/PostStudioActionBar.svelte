@@ -164,7 +164,7 @@
   );
 </script>
 
-<div class="actionbar">
+<div class="actionbar" class:crowded={exporting || !!exportedUrl}>
   <div class="slots">
     {#each slotEntries as slot (slot.id)}
       <div class="slot-picker" class:selected={slot.selected}>
@@ -700,7 +700,8 @@
       min-width: 0;
     }
 
-    .render-button {
+    .render-button,
+    .download-button {
       white-space: nowrap;
     }
 
@@ -711,6 +712,23 @@
     .rerender-button,
     .export-progress {
       display: none;
+    }
+  }
+
+  /* After a render the bar holds Share post and Download MP4 side by side. On
+     a 707px unfolded Fold the pair did not fit, and "Download MP4" wrapped
+     onto two lines and made the bar 76px tall. Share post keeps its words
+     because it is the next step. The download keeps its icon, and its text
+     stays in the link as the accessible name. */
+  @container post-studio (max-width: 48rem) {
+    .download-button {
+      width: 2.75rem;
+      padding: 0;
+      font-size: 0;
+    }
+
+    .download-button i {
+      font-size: var(--font-size-min);
     }
   }
 
@@ -836,6 +854,25 @@
 
     .missing-state i {
       font-size: var(--font-size-min);
+    }
+  }
+
+  /* Beside an unfolded Fold's share column the studio is 339px wide. Once the
+     row also carries Share and Download (or Cancel), each picker keeps about
+     67px and the name clipped to "A…" and "Ch…", which says nothing. There the
+     source's own icon stands in for the name; the trigger's aria-label still
+     names the source and the menu spells it out. */
+  @container post-studio (max-width: 22rem) {
+    .actionbar.crowded .slot-picker :global(.slot-trigger) {
+      justify-content: center;
+    }
+
+    .actionbar.crowded .slot-label {
+      display: none;
+    }
+
+    .actionbar.crowded .slot-icon {
+      display: inline;
     }
   }
 

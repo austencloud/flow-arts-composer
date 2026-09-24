@@ -6,6 +6,7 @@ import {
   buildVideoExportAnalyticsConfig,
   buildViewerShareActions,
   resolveExportSidebarMinWidth,
+  resolvePostStudioShareDockMinWidth,
   viewerInspectorConstraints,
 } from "$lib/shared/sequence-viewer/services/viewer-shell-model";
 
@@ -43,6 +44,29 @@ describe("viewer shell model", () => {
     expect(resolveExportSidebarMinWidth(null, "performance")).toBe(1188);
     expect(resolveExportSidebarMinWidth(null, "performance")).toBeLessThan(
       resolveExportSidebarMinWidth(null, "motion")
+    );
+  });
+
+  it("docks share beside Post Studio on an unfolded Fold", () => {
+    // Stacking share under the 9:16 frame left a 1x2px preview at 707x676.
+    // The Fold's inner screen (707 or 884 wide) must fit share beside it.
+    expect(resolvePostStudioShareDockMinWidth(null, "hidden")).toBe(648);
+    expect(resolvePostStudioShareDockMinWidth(null, "compact")).toBe(720);
+    expect(resolvePostStudioShareDockMinWidth(null, "full")).toBe(828);
+    expect(resolvePostStudioShareDockMinWidth("300", "full")).toBe(948);
+    expect(resolvePostStudioShareDockMinWidth("wide", "full")).toBe(828);
+    expect(
+      resolvePostStudioShareDockMinWidth(null, "hidden")
+    ).toBeLessThanOrEqual(707);
+    expect(
+      resolvePostStudioShareDockMinWidth(null, "compact")
+    ).toBeLessThanOrEqual(884);
+    // A phone portrait still stacks.
+    expect(resolvePostStudioShareDockMinWidth(null, "hidden")).toBeGreaterThan(
+      430
+    );
+    expect(resolvePostStudioShareDockMinWidth(null, "compact")).toBeLessThan(
+      resolveExportSidebarMinWidth(null, "share")
     );
   });
 
