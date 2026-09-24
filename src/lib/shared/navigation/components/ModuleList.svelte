@@ -1,25 +1,26 @@
 <!--
-  ModuleList - Module switching UI component (2026 Premium Compact Grid)
+  ModuleList - Module grid for the navigation sheet
 
-  Displays a compact 2-column grid of available modules for quick selection.
-  Optimized for mobile viewports - all modules visible without scrolling.
+  One tile size on every screen. getModuleGridLayout() picks the column count:
+  the fewest rows the width allows, where only the last row may be short. The
+  grid runs on half-column tracks (each tile spans two), so a short last row
+  sits centered instead of hanging off the left edge.
 
-  Features:
-  - Compact 2-column grid layout - fits all modules in viewport
-  - Module-specific gradient colors extracted from icon HTML
-  - Premium glassmorphic card design with layered backgrounds
-  - Icon-focused design with labels (no descriptions for compactness)
-  - Active state with subtle glow border
-  - Touch-optimized tap targets
+  Keeps module-colored tiles, the active glow, the staggered entrance,
+  link-out entries, and the drag-vs-tap guard for swipes that start on a tile.
 -->
 <script lang="ts">
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { ModuleDefinition, ModuleId } from "../domain/types";
   import type { HapticFeedback } from "../../application/services/haptic-feedback";
-import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
   import { onMount } from "svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte";
   import { getReactiveLocale } from "$lib/shared/i18n/locale-state.svelte";
+  import {
+    getModuleGridLayout,
+    MODULE_GRID_GAP,
+    type ModuleGridLayout,
+  } from "../domain/module-grid-layout";
 
   // Reactive locale for re-rendering translations
   const locale = $derived(getReactiveLocale());
@@ -51,8 +52,8 @@ import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
     hapticService = getHapticFeedback();
   });
 
-  // Filter to main modules and dev modules - static order from module-definitions.ts
-  // Settings is accessed via account footer, not shown in module grid
+  // Static order from module-definitions.ts. Settings lives in the account
+  // footer, not the module grid.
   const mainModules = $derived(
     modules.filter((m: ModuleDefinition) => m.isMain)
   );
@@ -60,21 +61,30 @@ import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
     modules.filter((m: ModuleDefinition) => !m.isMain && m.id !== "settings")
   );
 
-  // Determine grid layout class based on module count
-  // This enables adaptive layouts that fill space better with fewer modules
-  const gridLayoutClass = $derived(() => {
-    const count = mainModules.length;
-    if (count <= 3) return "layout-few"; // Large cells, single column or row
-    if (count === 4) return "layout-quad"; // 2×2 grid with larger cells
-    if (count === 5) return "layout-five"; // Asymmetric 3+2 or 2+3
-    if (count === 6) return "layout-six"; // Balanced 2×3 or 3×2
-    return "layout-many"; // Default compact grid for 7+
-  });
+  // Each grid measures its own width; the layout follows width and count.
+  let mainGridWidth = $state(0);
+  let devGridWidth = $state(0);
+  const mainLayout = $derived(
+    getModuleGridLayout(mainModules.length, mainGridWidth)
+  );
+  const devLayout = $derived(
+    getModuleGridLayout(devModules.length, devGridWidth)
+  );
+
+  /** Start track for the first tile of a short last row, which centers it. */
+  function columnStart(
+    layout: ModuleGridLayout,
+    index: number
+  ): string | undefined {
+    return index === layout.lastRowStart && layout.lastRowIndent > 0
+      ? String(layout.lastRowIndent + 1)
+      : undefined;
+  }
 
   /**
-   * 🎨 Extract primary color from module icon HTML
+   * Extract primary color from module icon HTML
    * Parses gradient/color values from icon SVG or inline styles
-   * Falls back to purple gradient if no color found
+   * Falls back to purple if no color found
    */
   function extractModuleColor(iconHtml: string): string {
     // Try to find gradient color in SVG or inline styles
@@ -85,7 +95,7 @@ import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
     const colorMatch = iconHtml.match(/color[:\s=]\s*["']?([#\w]+)/);
     if (colorMatch?.[1]) return colorMatch[1];
 
-    // Default fallback gradient color
+    // Default fallback color
     return "#667eea";
   }
 
@@ -135,7 +145,6 @@ import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
     onModuleSelect?.(moduleId);
   }
 
-
   /**
    * Get badge count for a module
    * Currently unused - notifications are shown in inbox drawer
@@ -153,73 +162,75 @@ import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
   }
 </script>
 
-<!-- Main Modules Section - Adaptive Grid based on module count -->
-<section class="module-section" data-module-count={mainModules.length}>
+<!-- Main Modules Section -->
+<section class="module-section">
   <h3 class="section-title">Modules</h3>
   {#key locale}
-  <div class="module-grid {gridLayoutClass()}">
-    {#each mainModules as module, index}
-      {@const moduleColor = module.color || extractModuleColor(module.icon)}
-      {@const isActive = currentModule === module.id}
-      {@const isDisabled = module.disabled ?? false}
-      {@const badgeCount = getModuleBadgeCount(module.id)}
+    <div
+      class="module-grid"
+      bind:clientWidth={mainGridWidth}
+      style:--module-grid-tracks={mainLayout.columns * 2}
+      style:--module-grid-gap="{MODULE_GRID_GAP}px"
+    >
+      {#each mainModules as module, index}
+        {@const moduleColor = module.color || extractModuleColor(module.icon)}
+        {@const isActive = currentModule === module.id}
+        {@const isDisabled = module.disabled ?? false}
+        {@const badgeCount = getModuleBadgeCount(module.id)}
 
-      {#if module.linkHref}
-        <!-- Link-out entry (e.g. Shop): plain navigation, never activates the
-             module renderer. Same cell markup/classes as a module button so it
-             looks and sizes identically (44px+ touch target inherited from
-             .module-cell). -->
-        <a
-          class="module-cell"
-          href={module.linkHref}
-          style="--module-color: {moduleColor}; --stagger-index: {index};"
-        >
-          <div class="cell-background"></div>
-          <div class="cell-glow"></div>
+        {#if module.linkHref}
+          <!-- Link-out entry (e.g. Shop): plain navigation, never activates the
+               module renderer. Same cell markup/classes as a module button so it
+               looks and sizes identically. -->
+          <a
+            class="module-cell"
+            href={module.linkHref}
+            style="--module-color: {moduleColor}; --stagger-index: {index};"
+            style:grid-column-start={columnStart(mainLayout, index)}
+          >
+            <div class="cell-background"></div>
+            <div class="cell-glow"></div>
 
-          <div class="cell-content">
-            <span class="cell-icon">{@html module.icon}</span>
-            <span class="cell-label">{t(module.labelKey)}</span>
-          </div>
-        </a>
-      {:else}
-        <button
-          class="module-cell"
-          class:active={isActive}
-          class:disabled={isDisabled}
-          class:has-badge={badgeCount > 0}
-          onpointerdown={handlePointerDown}
-          onpointermove={handlePointerMove}
-          onclick={(e) => handleModuleClick(module.id, e, isDisabled)}
-          style="--module-color: {moduleColor}; --stagger-index: {index};"
-          aria-disabled={isDisabled}
-          disabled={isDisabled}
-        >
-          <!-- Premium layered background -->
-          <div class="cell-background"></div>
-          <div class="cell-glow"></div>
+            <div class="cell-content">
+              <span class="cell-icon">{@html module.icon}</span>
+              <span class="cell-label">{t(module.labelKey)}</span>
+            </div>
+          </a>
+        {:else}
+          <button
+            class="module-cell"
+            class:active={isActive}
+            class:disabled={isDisabled}
+            class:has-badge={badgeCount > 0}
+            onpointerdown={handlePointerDown}
+            onpointermove={handlePointerMove}
+            onclick={(e) => handleModuleClick(module.id, e, isDisabled)}
+            style="--module-color: {moduleColor}; --stagger-index: {index};"
+            style:grid-column-start={columnStart(mainLayout, index)}
+            aria-disabled={isDisabled}
+            disabled={isDisabled}
+          >
+            <div class="cell-background"></div>
+            <div class="cell-glow"></div>
 
-          <!-- Content layer -->
-          <div class="cell-content">
-            <span class="cell-icon">{@html module.icon}</span>
-            <span class="cell-label">{t(module.labelKey)}</span>
+            <div class="cell-content">
+              <span class="cell-icon">{@html module.icon}</span>
+              <span class="cell-label">{t(module.labelKey)}</span>
 
-            <!-- Unread badge -->
-            {#if badgeCount > 0}
-              <span class="unread-badge" aria-label="{badgeCount} unread">
-                {formatBadgeCount(badgeCount)}
-              </span>
-            {/if}
+              {#if badgeCount > 0}
+                <span class="unread-badge" aria-label="{badgeCount} unread">
+                  {formatBadgeCount(badgeCount)}
+                </span>
+              {/if}
 
-            <!-- Disabled badge or active indicator -->
-            {#if isDisabled && module.disabledMessage}
-              <div class="cell-badge">{module.disabledMessage}</div>
-            {/if}
-          </div>
-        </button>
-      {/if}
-    {/each}
-  </div>
+              {#if isDisabled && module.disabledMessage}
+                <div class="cell-badge">{module.disabledMessage}</div>
+              {/if}
+            </div>
+          </button>
+        {/if}
+      {/each}
+    </div>
   {/key}
 </section>
 
@@ -228,63 +239,52 @@ import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
   <section class="module-section dev-section">
     <h3 class="section-title">Developer</h3>
     {#key locale}
-    <div class="module-grid dev-grid">
-      {#each devModules as module}
-        {@const moduleColor = module.color || extractModuleColor(module.icon)}
-        {@const isActive = currentModule === module.id}
-        {@const isDisabled = module.disabled ?? false}
+      <div
+        class="module-grid"
+        bind:clientWidth={devGridWidth}
+        style:--module-grid-tracks={devLayout.columns * 2}
+        style:--module-grid-gap="{MODULE_GRID_GAP}px"
+      >
+        {#each devModules as module, index}
+          {@const moduleColor = module.color || extractModuleColor(module.icon)}
+          {@const isActive = currentModule === module.id}
+          {@const isDisabled = module.disabled ?? false}
 
-        <button
-          class="module-cell"
-          class:active={isActive}
-          class:disabled={isDisabled}
-          onpointerdown={handlePointerDown}
-          onpointermove={handlePointerMove}
-          onclick={(e) => handleModuleClick(module.id, e, isDisabled)}
-          style="--module-color: {moduleColor};"
-          aria-disabled={isDisabled}
-          disabled={isDisabled}
-        >
-          <!-- Premium layered background -->
-          <div class="cell-background"></div>
-          <div class="cell-glow"></div>
+          <button
+            class="module-cell"
+            class:active={isActive}
+            class:disabled={isDisabled}
+            onpointerdown={handlePointerDown}
+            onpointermove={handlePointerMove}
+            onclick={(e) => handleModuleClick(module.id, e, isDisabled)}
+            style="--module-color: {moduleColor};"
+            style:grid-column-start={columnStart(devLayout, index)}
+            aria-disabled={isDisabled}
+            disabled={isDisabled}
+          >
+            <div class="cell-background"></div>
+            <div class="cell-glow"></div>
 
-          <!-- Content layer -->
-          <div class="cell-content">
-            <span class="cell-icon">{@html module.icon}</span>
-            <span class="cell-label">{t(module.labelKey)}</span>
+            <div class="cell-content">
+              <span class="cell-icon">{@html module.icon}</span>
+              <span class="cell-label">{t(module.labelKey)}</span>
 
-            <!-- Disabled badge -->
-            {#if isDisabled && module.disabledMessage}
-              <div class="cell-badge">{module.disabledMessage}</div>
-            {/if}
-          </div>
-        </button>
-      {/each}
-    </div>
+              {#if isDisabled && module.disabledMessage}
+                <div class="cell-badge">{module.disabledMessage}</div>
+              {/if}
+            </div>
+          </button>
+        {/each}
+      </div>
     {/key}
   </section>
 {/if}
 
 <style>
-  /* ============================================================================
-     2026 PREMIUM COMPACT GRID DESIGN
-     Optimized for mobile - all modules visible without scrolling
-     ============================================================================ */
-
   .module-section {
-    margin-bottom: 16px; /* Compact section spacing */
     display: flex;
     flex-direction: column;
-  }
-
-  /* Main modules section fills available space, but never shrinks below its
-     natural height — shrinking is what collapsed the grid and made non-shrinkable
-     cells overflow/overlap on narrow (2-col) portrait. flex-grow fills extra
-     space for few-module layouts; flex-shrink:0 forces the scroll container to
-     scroll instead of overlapping when rows exceed the viewport. */
-  .module-section:first-child {
-    flex: 1 0 auto;
+    margin-bottom: 16px;
   }
 
   .module-section:last-child {
@@ -292,12 +292,12 @@ import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
   }
 
   .dev-section {
-    padding-top: 20px; /* More space before dev section */
+    padding-top: 16px;
     border-top: 1px solid var(--theme-stroke);
   }
 
   .section-title {
-    margin: 0 0 16px 4px; /* More space before grid for better visual hierarchy */
+    margin: 0 0 10px 4px;
     font-size: var(--font-size-compact);
     font-weight: 600;
     text-transform: uppercase;
@@ -305,50 +305,35 @@ import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
     color: var(--theme-text-dim);
   }
 
-  /* ============================================================================
-     2-COLUMN GRID LAYOUT - Compact to fit all modules
-     ============================================================================ */
+  /* Half-column tracks: every tile spans two, so a short last row can start
+     on an odd track and sit centered. ModuleList writes the track count and
+     the gap from module-grid-layout.ts. */
   .module-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px; /* Compact spacing to fit more modules */
-    /* grow to fill, never shrink below row-track total — see .module-section
-       note above. Shrinking collapsed the box under non-shrinkable cells. */
-    flex: 1 0 auto;
-    align-content: start; /* Align content to top to allow scrolling */
-    grid-auto-rows: minmax(72px, auto); /* Min row height with auto expansion */
+    grid-template-columns: repeat(var(--module-grid-tracks, 4), minmax(0, 1fr));
+    gap: var(--module-grid-gap, 10px);
   }
 
-  /* Developer grid - full width for any number of items */
-  .dev-grid {
-    grid-template-columns: repeat(2, 1fr);
-    flex: 0; /* Don't grow dev section */
+  .module-grid > .module-cell {
+    grid-column: auto / span 2;
   }
 
-  /* Single item in dev grid expands to full width */
-  .dev-grid .module-cell:only-child {
-    grid-column: 1 / -1;
-  }
-
-  /* ============================================================================
-     MODULE CELL - COMPACT CARD DESIGN (Fluid Responsive)
-     Uses clamp() for truly fluid sizing across all viewports
-     ============================================================================ */
+  /* One logical tile size everywhere. A translated label that wraps may
+     make its row taller; nothing scales with the viewport. */
   .module-cell {
     position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    /* Reduced min-height to fit more modules: min 72px, preferred 10vh, max 120px */
-    min-height: clamp(72px, 10vh, 120px);
-    height: 100%; /* Fill the grid cell to expand vertically */
+    min-width: 0;
+    min-height: 84px;
     padding: 0;
     background: transparent;
     border: none;
     border-radius: 14px;
     text-decoration: none; /* anchors (linkHref entries) shouldn't underline */
-    color: var(--theme-text, var(--theme-text));
+    color: var(--theme-text);
     cursor: pointer;
     text-align: center;
     overflow: hidden;
@@ -360,7 +345,6 @@ import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
     animation: cellEntrance 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     animation-delay: calc(var(--stagger-index, 0) * 50ms + 100ms);
 
-    /* Smooth transitions for interactions */
     transition:
       transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
       box-shadow 0.2s ease;
@@ -377,7 +361,6 @@ import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
     }
   }
 
-  /* Layered Background System - With prominent module-colored accent */
   .cell-background {
     position: absolute;
     inset: 0;
@@ -388,7 +371,7 @@ import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
     );
     border: 1px solid
       color-mix(in srgb, var(--module-color) 25%, var(--theme-stroke));
-    border-radius: 16px; /* Match parent border-radius */
+    border-radius: 16px;
     transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 0;
   }
@@ -401,23 +384,23 @@ import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
       var(--module-color, #667eea) 0%,
       transparent 60%
     );
-    opacity: 0.1; /* Prominent default glow */
+    opacity: 0.1;
     transition: opacity var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 1;
     mix-blend-mode: screen;
   }
 
-  /* Content Layer */
   .cell-content {
     position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 6px; /* Compact spacing */
-    padding: 12px 8px; /* Reduced padding for compact design */
+    gap: 6px;
+    padding: 12px 8px;
     width: 100%;
     height: 100%;
+    box-sizing: border-box;
     z-index: 2;
   }
 
@@ -445,10 +428,7 @@ import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
     transform: scale(1.02);
   }
 
-  /* ============================================================================
-     ACTIVE STATE - Current module is visually prominent
-     Larger, brighter, with a subtle breathing pulse
-     ============================================================================ */
+  /* Current module: brighter border, soft glow, gentle pulse */
   .module-cell.active {
     transform: scale(1.05);
     z-index: 2;
@@ -458,9 +438,14 @@ import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
     background: linear-gradient(
       145deg,
       color-mix(in srgb, var(--module-color) 25%, rgba(255, 255, 255, 0.08)) 0%,
-      color-mix(in srgb, var(--module-color) 15%, rgba(255, 255, 255, 0.03)) 100%
+      color-mix(in srgb, var(--module-color) 15%, rgba(255, 255, 255, 0.03))
+        100%
     );
-    border-color: color-mix(in srgb, var(--module-color) 50%, rgba(255, 255, 255, 0.2));
+    border-color: color-mix(
+      in srgb,
+      var(--module-color) 50%,
+      rgba(255, 255, 255, 0.2)
+    );
     border-width: 2px;
     box-shadow:
       0 0 20px color-mix(in srgb, var(--module-color) 25%, transparent),
@@ -473,8 +458,13 @@ import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
   }
 
   @keyframes activeGlowPulse {
-    0%, 100% { opacity: 0.15; }
-    50% { opacity: 0.22; }
+    0%,
+    100% {
+      opacity: 0.15;
+    }
+    50% {
+      opacity: 0.22;
+    }
   }
 
   .module-cell.active .cell-icon {
@@ -486,10 +476,9 @@ import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
   }
 
   .cell-icon {
-    /* Compact icons: min 24px, preferred 3.5vh, max 36px */
-    font-size: clamp(24px, 3.5vh, 36px);
-    width: clamp(36px, 5vh, 44px);
-    height: clamp(36px, 5vh, 44px);
+    font-size: 1.75rem;
+    width: 2.25rem;
+    height: 2.25rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -500,7 +489,6 @@ import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
     transform: scale(1.1);
   }
 
-  /* Icon shadow and glow - subtle */
   .cell-icon :global(svg),
   .cell-icon :global(i) {
     filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
@@ -514,17 +502,14 @@ import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
   }
 
   .cell-label {
-    /* Compact labels: min 11px, preferred 1.6vh, max 14px */
-    font-size: clamp(11px, 1.6vh, 14px);
+    max-width: 100%;
+    font-size: var(--font-size-sm);
     font-weight: 600;
     color: var(--theme-text);
     letter-spacing: 0.01em;
     line-height: 1.2;
+    overflow-wrap: break-word;
     transition: color var(--duration-normal) ease;
-  }
-
-  .module-cell.active .cell-label {
-    color: var(--theme-text);
   }
 
   .cell-badge {
@@ -537,15 +522,12 @@ import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
     padding: 2px 5px;
     border-radius: 4px;
     background: var(--theme-card-bg);
-    color: var(--theme-text-dim, var(--theme-text-dim));
-    border: 1px solid var(--theme-stroke-strong, var(--theme-stroke-strong));
+    color: var(--theme-text-dim);
+    border: 1px solid var(--theme-stroke-strong);
     letter-spacing: 0.4px;
     z-index: 3;
   }
 
-  /* ============================================================================
-     UNREAD BADGE (for inbox module)
-     ============================================================================ */
   .unread-badge {
     position: absolute;
     top: 6px;
@@ -553,7 +535,7 @@ import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
     min-width: 18px;
     height: 18px;
     padding: 0 5px;
-    background: var(--semantic-error, var(--semantic-error));
+    background: var(--semantic-error);
     border-radius: 9px;
     color: white;
     font-size: var(--font-size-compact);
@@ -577,9 +559,6 @@ import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
     }
   }
 
-  /* ============================================================================
-     PRESS/ACTIVE INTERACTION
-     ============================================================================ */
   .module-cell:active {
     transform: scale(0.96);
   }
@@ -599,7 +578,7 @@ import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
       var(--theme-card-hover-bg) 0%,
       var(--theme-card-bg) 100%
     );
-    border-color: var(--theme-stroke, var(--theme-stroke));
+    border-color: var(--theme-stroke);
   }
 
   .module-cell.disabled:hover .cell-glow {
@@ -610,296 +589,22 @@ import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
     transform: none;
   }
 
-  /* ============================================================================
-     ADAPTIVE LAYOUTS - Based on module count
-     Modules expand to fill space when there are fewer of them
-     ============================================================================ */
-
-  /* Few modules (1-3): Large cells, vertically centered.
-     Gap must clear each card's edge glow (.cell-background border + .cell-glow
-     radial) so adjacent cards read as separate, not overlapping. */
-  .module-grid.layout-few {
-    grid-template-columns: 1fr;
-    gap: 24px;
-    align-content: center;
-    justify-content: center;
-  }
-
-  .module-grid.layout-few .module-cell {
-    min-height: clamp(88px, 14vh, 150px);
-    max-width: 400px;
-    margin: 0 auto;
-    width: 100%;
-  }
-
-  /* Quad layout (4 modules): 2×2 grid with larger cells */
-  .module-grid.layout-quad {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-    align-content: center;
-  }
-
-  .module-grid.layout-quad .module-cell {
-    min-height: clamp(100px, 20vh, 180px);
-  }
-
-  /* Five modules: 2×2 + 1 centered, or 3+2 on wider screens */
-  .module-grid.layout-five {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 14px;
-    align-content: center;
-  }
-
-  .module-grid.layout-five .module-cell {
-    min-height: clamp(90px, 16vh, 150px);
-  }
-
-  /* Center the 5th item (odd one out) */
-  .module-grid.layout-five .module-cell:nth-child(5) {
-    grid-column: 1 / -1;
-    width: 100%;
-    max-width: calc(50% - 7px);
-    justify-self: center;
-  }
-
-  /* Six modules: 2×3 grid with balanced sizing */
-  .module-grid.layout-six {
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(3, 1fr);
-    gap: 14px;
-    align-content: stretch;
-  }
-
-  .module-grid.layout-six .module-cell {
-    min-height: clamp(85px, 14vh, 140px);
-  }
-
-  /* Many modules (7+): Compact default layout */
-  .module-grid.layout-many {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    align-content: start;
-  }
-
-  /* ============================================================================
-     RESPONSIVE - Wider screen adaptations for each layout
-     ============================================================================ */
-  @container (min-width: 360px) {
-    /* Few modules on wide screens: horizontal row */
-    .module-grid.layout-few {
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    }
-
-    .module-grid.layout-few .module-cell {
-      min-height: clamp(120px, 25vh, 200px);
-      max-width: none;
-    }
-
-    /* Quad on wide screens: stays 2×2 but larger */
-    .module-grid.layout-quad {
-      gap: 20px;
-    }
-
-    .module-grid.layout-quad .module-cell {
-      min-height: clamp(120px, 25vh, 200px);
-    }
-
-    /* Five modules on wide: 3+2 layout */
-    .module-grid.layout-five {
-      grid-template-columns: repeat(6, minmax(0, 1fr));
-      gap: 16px;
-    }
-
-    .module-grid.layout-five .module-cell {
-      min-height: clamp(100px, 18vh, 160px);
-      grid-column: span 2;
-    }
-
-    /* 4th and 5th items span to center the bottom row */
-    .module-grid.layout-five .module-cell:nth-child(4) {
-      grid-column: 2 / span 2;
-    }
-
-    .module-grid.layout-five .module-cell:nth-child(5) {
-      grid-column: 4 / span 2;
-      max-width: none;
-    }
-
-    /* Six modules on wide: 3×2 grid */
-    .module-grid.layout-six {
-      grid-template-columns: repeat(3, 1fr);
-      grid-template-rows: repeat(2, 1fr);
-      gap: 16px;
-    }
-
-    .module-grid.layout-six .module-cell {
-      min-height: clamp(100px, 18vh, 160px);
-    }
-
-    /* Many modules: 3 columns */
-    .module-grid.layout-many {
-      grid-template-columns: repeat(3, 1fr);
-    }
-  }
-
+  /* Landscape phones: same type and icon size, less padding, so more rows
+     fit in the side drawer before it scrolls. */
   @media (max-height: 500px) and (orientation: landscape) {
-    .module-grid.layout-few,
-    .module-grid.layout-quad,
-    .module-grid.layout-five,
-    .module-grid.layout-six {
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 12px;
-      max-width: none;
+    .module-cell {
+      min-height: 68px;
     }
 
-    .module-grid:is(
-        .layout-few,
-        .layout-quad,
-        .layout-five,
-        .layout-six,
-        .layout-many,
-        .dev-grid
-      )
-      .module-cell {
-      min-height: clamp(70px, 12vh, 100px);
+    .cell-content {
+      gap: 4px;
+      padding: 8px;
     }
   }
 
-  /* ============================================================================
-     TALL SCREENS (tablets in portrait) - Use vertical space
-     ============================================================================ */
-  @media (min-height: 800px) {
-    .module-grid.layout-few .module-cell,
-    .module-grid.layout-quad .module-cell {
-      min-height: clamp(140px, 20vh, 220px);
-    }
-
-    .module-grid.layout-five .module-cell,
-    .module-grid.layout-six .module-cell {
-      min-height: clamp(120px, 16vh, 180px);
-    }
-  }
-
-  /* Three stacked modules should share the space that remains between the
-     drawer header and account footer. Viewport-sized cards ignore that chrome
-     and push the last card below the footer on narrow, tall phones. */
-  @container (max-width: 359.98px) {
-    .module-section[data-module-count="3"] {
-      flex: 1 1 0;
-      min-height: 0;
-    }
-
-    .module-section[data-module-count="3"] .module-grid.layout-few {
-      flex: 1 1 0;
-      min-height: 0;
-      grid-auto-rows: minmax(72px, 1fr);
-      align-content: stretch;
-    }
-
-    .module-section[data-module-count="3"] .module-cell {
-      min-height: 72px;
-    }
-  }
-
-  .module-grid.layout-few .cell-icon,
-  .module-grid.layout-quad .cell-icon {
-    font-size: clamp(32px, 5vh, 48px);
-    width: clamp(48px, 7vh, 64px);
-    height: clamp(48px, 7vh, 64px);
-  }
-
-  .module-grid.layout-few .cell-label,
-  .module-grid.layout-quad .cell-label {
-    font-size: clamp(14px, 2vh, 18px);
-  }
-
-  .module-grid.layout-five .cell-icon,
-  .module-grid.layout-six .cell-icon {
-    font-size: clamp(28px, 4vh, 40px);
-    width: clamp(40px, 6vh, 56px);
-    height: clamp(40px, 6vh, 56px);
-  }
-
-  .module-grid.layout-five .cell-label,
-  .module-grid.layout-six .cell-label {
-    font-size: clamp(13px, 1.8vh, 16px);
-  }
-
-  /* Restore compact sizing for landscape mobile */
-  @media (max-height: 500px) and (orientation: landscape) {
-    .module-grid .cell-icon {
-      font-size: clamp(24px, 3.5vh, 32px);
-      width: clamp(32px, 5vh, 40px);
-      height: clamp(32px, 5vh, 40px);
-    }
-
-    .module-grid .cell-label {
-      font-size: clamp(11px, 1.5vh, 13px);
-    }
-  }
-
-  /* A wide viewport can still contain a narrow side drawer. Let the list
-     respond to its allocated width, after all count-specific size rules. */
-  @container (min-width: 660px) {
-    .section-title {
-      margin: 0 0 8px 4px;
-    }
-
-    .dev-section {
-      padding-top: 10px;
-    }
-
-    .module-section {
-      margin-bottom: 10px;
-    }
-
-    /* Force 4 columns on all layout variants to reduce row count */
-    .module-grid,
-    .module-grid.layout-few,
-    .module-grid.layout-quad,
-    .module-grid.layout-five,
-    .module-grid.layout-six,
-    .module-grid.layout-many {
-      flex: 0 1 auto;
-      grid-template-columns: repeat(4, 1fr);
-      grid-template-rows: auto;
-      align-content: start;
-      gap: 10px;
-    }
-
-    /* Each module occupies one column in the wide drawer. */
-    .module-grid.layout-five .module-cell,
-    .module-grid.layout-five .module-cell:nth-child(4),
-    .module-grid.layout-five .module-cell:nth-child(5) {
-      grid-column: auto;
-      max-width: none;
-      width: 100%;
-      margin: 0;
-      justify-self: auto;
-    }
-
-    .module-grid:is(
-        .layout-few,
-        .layout-quad,
-        .layout-five,
-        .layout-six,
-        .layout-many,
-        .dev-grid
-      )
-      .module-cell {
-      min-height: 72px;
-      max-height: none;
-    }
-
-    .module-grid .module-cell .cell-icon {
-      font-size: clamp(22px, 2.8vw, 32px);
-      width: clamp(32px, 4vw, 44px);
-      height: clamp(32px, 4vw, 44px);
-    }
-
-    .module-grid .module-cell .cell-label {
-      font-size: clamp(11px, 1.3vw, 14px);
-    }
+  .module-cell:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--theme-accent) 60%, transparent);
+    outline-offset: 2px;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -917,20 +622,17 @@ import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
     }
 
     .module-cell:hover,
-    .module-cell:active {
-      transform: none !important;
-    }
-
+    .module-cell:active,
     .module-cell.active {
       transform: none !important;
     }
 
-    .module-cell.active .cell-glow {
+    .module-cell.active .cell-glow,
+    .unread-badge {
       animation: none !important;
     }
   }
 
-  /* High contrast mode */
   @media (prefers-contrast: high) {
     .cell-background {
       background: var(
@@ -946,19 +648,6 @@ import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
         rgba(255, 255, 255, 0.25)
       ) !important;
       border: 2px solid white !important;
-    }
-  }
-
-  /* Focus styles for keyboard navigation */
-  .module-cell:focus-visible {
-    outline: 2px solid color-mix(in srgb, var(--theme-accent) 60%, transparent);
-    outline-offset: 2px;
-  }
-
-  /* Accessibility: Respect user's motion preferences (WCAG AAA) */
-  @media (prefers-reduced-motion: reduce) {
-    .unread-badge {
-      animation: none;
     }
   }
 </style>
