@@ -51,7 +51,10 @@ export class FirebaseSettingsPersister {
   }
 
   /**
-   * Load settings from Firestore
+   * Load settings from Firestore. Null means the account has no document yet;
+   * a failed read rejects. Offline with nothing cached, getDoc rejects, and
+   * reporting that as "no document" made the caller upload this device's
+   * whole copy over the account's newer settings once it reconnected.
    */
   async loadSettings(): Promise<AppSettings | null> {
     const docRef = await this.getSettingsDocRef();
@@ -59,27 +62,19 @@ export class FirebaseSettingsPersister {
       return null;
     }
 
-    try {
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        // Remove Firestore metadata fields
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      // Remove Firestore metadata fields
 
-        const {
-          updatedAt: _updatedAt,
-          createdAt: _createdAt,
-          ...settings
-        } = data;
-        return normalizeLegacyAppSettings(settings);
-      }
-      return null;
-    } catch (error) {
-      console.error(
-        "❌ [FirebaseSettingsPersister] Failed to load settings:",
-        error
-      );
-      return null;
+      const {
+        updatedAt: _updatedAt,
+        createdAt: _createdAt,
+        ...settings
+      } = data;
+      return normalizeLegacyAppSettings(settings);
     }
+    return null;
   }
 
   /**
@@ -271,9 +266,19 @@ export class FirebaseSettingsPersister {
                 clearedAt: _clearedAt,
                 ...settings
               } = data;
+              const remote = normalizeLegacyAppSettings(settings);
+              // A tab that moved the account to another prop also moved the
+              // mirror, so this tab's record of what it last mirrored is stale
+              // and must not skip its next write of that prop.
+              if (
+                this.lastMirroredActiveProp &&
+                this.lastMirroredActiveProp.activeProp !== remote.leftPropType
+              ) {
+                this.lastMirroredActiveProp = null;
+              }
               // An existing document with no settings is still authoritative:
               // subscribers must clear stale optional slices such as imageExport.
-              callback(normalizeLegacyAppSettings(settings));
+              callback(remote);
             }
           },
           (error) => {
