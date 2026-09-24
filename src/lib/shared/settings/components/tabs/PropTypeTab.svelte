@@ -284,9 +284,20 @@
   const bothHands = chiralitySeam("left", "right");
   const leftHand = chiralitySeam("left");
   const rightHand = chiralitySeam("right");
+
+  // Side by side (the props-tab query in the styles), the picker card has a
+  // definite height, so its grids size their tiles to fill it. Stacked, the
+  // tab scrolls and a grid measuring its host would grow what it measures.
+  const SIDE_BY_SIDE_REM = 54;
+  let tabWidth = $state(0);
+  let remPx = $state(16);
+  onMount(() => {
+    remPx = parseFloat(getComputedStyle(document.documentElement).fontSize);
+  });
+  const pickerBounded = $derived(tabWidth >= SIDE_BY_SIDE_REM * remPx);
 </script>
 
-<div class="prop-type-tab">
+<div class="prop-type-tab" bind:clientWidth={tabWidth}>
   <div class="tab-grid">
     <section class="card setup-card" aria-labelledby="{uid}-setup">
       <h3 class="card-title" id="{uid}-setup">
@@ -408,6 +419,7 @@
               : t("settings_props_select_prop")}
             onSelect={handleInlineSelect}
             chirality={catDogMode ? leftHand : bothHands}
+            fill={pickerBounded}
           />
         </div>
         {#if catDogMode}
@@ -423,6 +435,7 @@
               title={t("settings_props_right_hand")}
               onSelect={handleInlineSelectRed}
               chirality={rightHand}
+              fill={pickerBounded}
             />
           </div>
         {/if}
