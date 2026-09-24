@@ -192,6 +192,7 @@
       scrollMode="host"
       allowedProps={SCENE_PROP_TYPES}
       showColors={false}
+      showPropLook={false}
       includeBareHands={showBareHands}
       {chirality}
     />

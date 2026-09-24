@@ -81,3 +81,42 @@ describe("BentoPropGrid style drill-down", () => {
     await expect.element(trigger).toHaveAttribute("aria-expanded", "false");
   });
 });
+
+describe("BentoPropGrid prop look", () => {
+  beforeEach(async () => {
+    await page.viewport(760, 800);
+    document.body.style.margin = "0";
+  });
+
+  async function openBuugengDetails(showPropLook?: boolean): Promise<void> {
+    render(BentoPropGrid, {
+      selectedPropType: PropType.BUUGENG,
+      onSelect: vi.fn(),
+      allowedProps: [PropType.BUUGENG, PropType.BIGBUUGENG],
+      ...(showPropLook === undefined ? {} : { showPropLook }),
+    });
+    await page
+      .getByRole("button", { name: "Select Buugeng prop type" })
+      .click();
+    await expect
+      .element(page.getByRole("button", { name: "Big" }))
+      .toBeVisible();
+  }
+
+  it("offers the 2D artwork choice by default", async () => {
+    await openBuugengDetails();
+    await expect
+      .element(page.getByRole("radio", { name: "3D model" }))
+      .toBeVisible();
+  });
+
+  it("leaves it out when the host renders in 3D", async () => {
+    await openBuugengDetails(false);
+    await expect
+      .element(page.getByRole("radio", { name: "3D model" }))
+      .not.toBeInTheDocument();
+    await expect
+      .element(page.getByRole("radio", { name: "Pictograph" }))
+      .not.toBeInTheDocument();
+  });
+});
