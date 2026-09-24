@@ -16,6 +16,10 @@ const Y = new Vector3(0, 1, 0);
 const jointWeights = [0.5, 0.35, 0.15] as const;
 const PHOTO_THUMB_SPREAD = (25 * Math.PI) / 180;
 const NORTH_THUMB_OPPOSITION = 0.45;
+// At North the index tip must not curl back into a hook; the other fingertips
+// can rest against the shaft without making a closed fist.
+const NORTH_INDEX_TIP_RELEASE = 0.65;
+const NORTH_SUPPORT_CURL = 0.42;
 interface HandBone {
   bone: Bone;
   bindRotation: Quaternion;
@@ -93,8 +97,16 @@ export function sculptHand(
       if (finger !== "thumb" && finger !== "index") {
         bone.quaternion.slerp(bindRotation, pose.gripRelaxation);
       }
+      const northWeight = pose.gripRelaxation;
+      const indexRelease = finger === "index" && joint === 3
+        ? NORTH_INDEX_TIP_RELEASE * northWeight : 0;
+      const supportCurl = finger !== "thumb" && finger !== "index" && joint <= 2
+        ? NORTH_SUPPORT_CURL * northWeight : 0;
+      const jointEdit = pose[`${finger}Joint${joint as 1 | 2 | 3}`];
       bone.quaternion.multiply(
-        new Quaternion().setFromAxisAngle(X, curl * jointWeights[joint - 1]!)
+        new Quaternion().setFromAxisAngle(
+          X, curl * jointWeights[joint - 1]! + indexRelease + supportCurl + jointEdit
+        )
       );
       if (finger === "thumb" && joint === 1 && pose.gripRelaxation > 0) {
         bone.quaternion.multiply(

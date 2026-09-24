@@ -37,6 +37,9 @@
   ] as const;
   const degrees = 180 / Math.PI;
   const radians = Math.PI / 180;
+  const fingers = ["thumb", "index", "middle", "ring", "pinky"] as const;
+  type Finger = (typeof fingers)[number];
+  let selectedFinger = $state<Finger>("index");
   let editing = false;
 
   function update(changes: Partial<TeachingPose>): void {
@@ -67,6 +70,7 @@
       middleCurl: 0,
       ringCurl: 0,
       pinkyCurl: 0,
+      ...Object.fromEntries(fingers.flatMap((finger) => [1, 2, 3].map((joint) => [`${finger}Joint${joint}`, 0]))),
     });
     onEnd();
   }
@@ -94,10 +98,12 @@
     }
     if (selected === "fingers") {
       return [
-        slider("Thumb across shaft", pose.thumbSpread * degrees, -45, 45, 1, (v) => update({ thumbSpread: v * radians }), "°"),
-        ...(["thumb", "index", "middle", "ring", "pinky"] as const).map((finger) =>
-          slider(`${finger[0]!.toUpperCase()}${finger.slice(1)} curl`, pose[`${finger}Curl`] * degrees, -45, 45, 1,
-            (v) => update({ [`${finger}Curl`]: v * radians }), "°")
+        ...(selectedFinger === "thumb" ? [slider("Thumb across shaft", pose.thumbSpread * degrees, -45, 45, 1, (v) => update({ thumbSpread: v * radians }), "°")] : []),
+        slider("Whole finger curl", pose[`${selectedFinger}Curl`] * degrees, -45, 45, 1,
+          (v) => update({ [`${selectedFinger}Curl`]: v * radians }), "°"),
+        ...([1, 2, 3] as const).map((joint) =>
+          slider(["", "Base", "Middle", "Tip"][joint]!, pose[`${selectedFinger}Joint${joint}`] * degrees, -60, 60, 1,
+            (v) => update({ [`${selectedFinger}Joint${joint}`]: v * radians }), "°")
         ),
       ];
     }
@@ -141,6 +147,13 @@
 
   {#if selected === "fingers"}
     <button class="photo-pose" type="button" onclick={usePhotoHand}>Use photo hand</button>
+    <SegmentedControl
+      options={fingers.map((finger) => ({ value: finger, label: finger[0]!.toUpperCase() + finger.slice(1) }))}
+      value={selectedFinger}
+      columns={3}
+      onchange={(value) => selectedFinger = value as Finger}
+      ariaLabel="Finger to adjust"
+    />
   {/if}
 
   <div class="sliders">
@@ -184,7 +197,7 @@
   <p>Edits save a whole-pose keyframe here.</p>
   {#if selected === "elbow"}<p>The handle guides the elbow’s direction; arm length still limits its position.</p>{/if}
   {#if selected === "grip"}<p>Relax the hand, then adjust the shaft angle and wrist.</p>{/if}
-  {#if selected === "fingers"}<p>Start with the photo hand, then shape each finger. Check the shaft from the side too.</p>{/if}
+  {#if selected === "fingers"}<p>Select a finger, then bend its base, middle, or tip. These edits blend between keyframes.</p>{/if}
 </section>
 
 <style>

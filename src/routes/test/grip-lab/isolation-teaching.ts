@@ -25,10 +25,16 @@ export const POSE_CHANNELS = [
   "middleCurl",
   "ringCurl",
   "pinkyCurl",
+  "thumbJoint1", "thumbJoint2", "thumbJoint3",
+  "indexJoint1", "indexJoint2", "indexJoint3",
+  "middleJoint1", "middleJoint2", "middleJoint3",
+  "ringJoint1", "ringJoint2", "ringJoint3",
+  "pinkyJoint1", "pinkyJoint2", "pinkyJoint3",
 ] as const;
 // Preserve links created before grip editing and before individual hand editing.
 const LEGACY_POSE_ROW_LENGTH = 13;
 const PRE_HAND_POSE_ROW_LENGTH = 15;
+const PRE_JOINT_POSE_ROW_LENGTH = 23;
 export type PoseChannel = (typeof POSE_CHANNELS)[number];
 export type TeachingPose = Record<PoseChannel, number>;
 export interface TeachingKey extends TeachingPose {
@@ -69,6 +75,11 @@ const NEUTRAL: TeachingPose = {
   middleCurl: 0,
   ringCurl: 0,
   pinkyCurl: 0,
+  thumbJoint1: 0, thumbJoint2: 0, thumbJoint3: 0,
+  indexJoint1: 0, indexJoint2: 0, indexJoint3: 0,
+  middleJoint1: 0, middleJoint2: 0, middleJoint3: 0,
+  ringJoint1: 0, ringJoint2: 0, ringJoint3: 0,
+  pinkyJoint1: 0, pinkyJoint2: 0, pinkyJoint3: 0,
 };
 export function defaultTeachingKeys(): TeachingKey[] {
   return [
@@ -164,6 +175,7 @@ export function channelLimit(channel: PoseChannel): number {
   if (channel === "wristBend" || channel === "wristTwist") return Math.PI / 6;
   if (channel === "thumbSpread") return Math.PI / 4;
   if (channel.endsWith("Curl")) return Math.PI / 4;
+  if (channel.includes("Joint")) return Math.PI / 3;
   if (channel === "gripRelaxation") return 1;
   if (channel === "gripTilt") return (80 * Math.PI) / 180;
   if (channel === "turn") return Math.PI / 2;
@@ -242,7 +254,7 @@ export function encodeTeachingKeys(keys: readonly TeachingKey[]): string {
   );
 }
 export function decodeTeachingKeys(raw: string | null): TeachingKey[] {
-  if (!raw || raw.length > 24000) return defaultTeachingKeys();
+  if (!raw || raw.length > 48000) return defaultTeachingKeys();
   try {
     const rows: unknown = JSON.parse(raw);
     if (!Array.isArray(rows) || !rows.length || rows.length > 100)
@@ -251,7 +263,7 @@ export function decodeTeachingKeys(raw: string | null): TeachingKey[] {
     for (const row of rows) {
       if (
         !Array.isArray(row) ||
-        ![POSE_CHANNELS.length + 1, PRE_HAND_POSE_ROW_LENGTH, LEGACY_POSE_ROW_LENGTH].includes(row.length) ||
+        ![POSE_CHANNELS.length + 1, PRE_JOINT_POSE_ROW_LENGTH, PRE_HAND_POSE_ROW_LENGTH, LEGACY_POSE_ROW_LENGTH].includes(row.length) ||
         !row.every(
           (value) => typeof value === "number" && Number.isFinite(value)
         ) ||

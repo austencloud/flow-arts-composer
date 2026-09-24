@@ -336,8 +336,8 @@
           ><OrbitControls
             bind:ref={cameraControls}
             enabled={!dragging}
-            enablePan={false}
-            rightDragAction="rotate"
+            enablePan={true}
+            rightDragAction="pan"
             target={shot.target}
             minDistance={0.25}
             maxDistance={10}

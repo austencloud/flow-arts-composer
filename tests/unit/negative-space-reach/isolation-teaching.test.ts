@@ -65,6 +65,20 @@ describe("taught isolation poses", () => {
     expect(restored[2]?.thumbSpread).toBe(0);
     expect(restored[2]?.wristBend).toBe(0);
   });
+  it("round-trips finger joints and retains pre-joint pose links", () => {
+    const keys = upsertTeachingKey(defaultTeachingKeys(), 2, {
+      indexJoint3: 0.35,
+      middleJoint2: 0.2,
+      pinkyJoint1: -0.1,
+    });
+    expect(decodeTeachingKeys(encodeTeachingKeys(keys))).toEqual(keys);
+    const oldRows = keys.map((key) => JSON.parse(encodeTeachingKeys([key]))[0].slice(0, 23));
+    const restored = decodeTeachingKeys(JSON.stringify(oldRows));
+    expect(restored[2]?.gripRelaxation).toBe(1);
+    expect(restored[2]?.indexJoint3).toBe(0);
+    expect(restored[2]?.middleJoint2).toBe(0);
+    expect(restored[2]?.thumbSpread).toBeCloseTo(0.4363);
+  });
   it("turns only after North, countershifts stage right, and returns continuously at South", () => {
     const keys = defaultTeachingKeys();
     for (const phase of [0, 0.5, 1, 1.5, 2])
