@@ -33,6 +33,7 @@
   import {
     FILL_MAX_TILE,
     balancedCount,
+    centeredOrphan,
     sectionFillLayout,
   } from "./section-fill-layout";
   import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
@@ -333,7 +334,11 @@
       return;
     }
     const probe = probeEl;
-    const measure = () => (fillHeight = probe.offsetHeight);
+    // Floored, not offsetHeight: the scroller's height is often fractional,
+    // and rounding it up overflows the content by a fraction of a pixel,
+    // which pins an empty scrollbar beside the filled grid.
+    const measure = () =>
+      (fillHeight = Math.floor(probe.getBoundingClientRect().height));
     const observer = new ResizeObserver(measure);
     observer.observe(probe);
     measure();
@@ -990,6 +995,12 @@
           bind:this={sectionsEl}
         >
           {#each sections as section, i}
+            {@const fillCols = sectionLayout
+              ? balancedCount(section.bases.length, sectionLayout.cols)
+              : 0}
+            {@const orphan = sectionLayout
+              ? centeredOrphan(section.bases.length, fillCols)
+              : null}
             <div class="prop-section" class:primary={i === 0}>
               <div class="section-label" class:first={i === 0}>
                 {section.label}
@@ -998,12 +1009,13 @@
                 class="section-buttons"
                 class:single={section.bases.length === 1}
                 style={section.columns}
-                style:--fill-cols={sectionLayout
-                  ? balancedCount(section.bases.length, sectionLayout.cols)
-                  : undefined}
+                style:--fill-cols={sectionLayout ? fillCols : undefined}
               >
-                {#each section.bases as base (base)}
-                  {@render familyTile(base)}
+                {#each section.bases as base, index (base)}
+                  {@render familyTile(
+                    base,
+                    index === orphan?.index ? orphan.start : undefined
+                  )}
                 {/each}
               </div>
             </div>
@@ -1376,8 +1388,18 @@
     justify-content: center;
   }
 
+  /* Doubled tracks, as the drilled and flat grids use, so a short last row
+     can start one track in and sit centred under the full ones. */
   .grid-content.fill .section-buttons {
-    grid-template-columns: repeat(var(--fill-cols), var(--fill-tile));
+    grid-template-columns: repeat(
+      calc(var(--fill-cols) * 2),
+      calc((var(--fill-tile) - 10px) / 2)
+    );
+  }
+
+  .grid-content.fill .section-buttons > :global(*) {
+    /* End-only, so an inline column start on the orphan keeps its span. */
+    grid-column-end: span 2;
   }
 
   /* Reports the scroller's bounded height to script; see fillHeight. */
