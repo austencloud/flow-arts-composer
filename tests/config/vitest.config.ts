@@ -59,6 +59,15 @@ export default defineConfig({
         "tests/setup/stubs/app-stores.ts"
       ),
       $shared: path.resolve(projectRoot, "src/lib/shared"),
+      // node_modules/@tka/render-core is a symlink into the PRIMARY checkout's
+      // packages/ (pnpm links the workspace package once and worktrees share
+      // the junction), so a worktree's edits under packages/render-core/src
+      // were invisible to its own tests until merged. Resolve the package to
+      // this checkout's source so tests exercise the code beside them.
+      "@tka/render-core": path.resolve(
+        projectRoot,
+        "packages/render-core/src/index.ts"
+      ),
     },
 
     // Vitest 4.0: poolOptions deprecated, use pool config directly

@@ -126,6 +126,7 @@
     normalizeFanAppearance,
     type FanAppearance,
   } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import { normalizeTriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
 
   import { createPlaybackController } from "./playback-controller.svelte";
   import { createExportCoordinator } from "./export-coordinator.svelte";
@@ -390,11 +391,18 @@
     );
   });
 
-  // AppSettings owns the shared fan appearance. The scene package keeps a
-  // legacy default-build adapter for performer inheritance, so synchronize the
-  // two without replacing performer-scoped overrides.
-  let lastSettingsFanSignature: string | null = null;
-  let lastSceneFanSignature: string | null = null;
+  // AppSettings owns the shared fan appearance and triangle grip. The scene
+  // package keeps a legacy default-build adapter for performer inheritance,
+  // so synchronize the two without replacing performer-scoped overrides. The
+  // grip rides the same signature as the fan appearance rather than its own
+  // effect, because both are one shared "build" concept and a second effect
+  // racing this one could each see the other's write as the tie-breaker and
+  // loop. ScenePropPicker's syncTriangleGripToScene (in
+  // scene-prop-picker-grip-sync.svelte.ts) reads the same scene state but is
+  // strictly one way, settings to scene, and never writes AppSettings, so it
+  // cannot race this two-way effect.
+  let lastSettingsBuildSignature: string | null = null;
+  let lastSceneBuildSignature: string | null = null;
   $effect(() => {
     const settingsAppearance = normalizeFanAppearance(
       getSettings().fanAppearance
@@ -404,27 +412,32 @@
       frameColor: propFinishState.fanFrameColor,
       cover: propFinishState.fanCover,
     };
-    const settingsSignature = fanAppearanceSignature(settingsAppearance);
-    const sceneSignature = fanAppearanceSignature(sceneAppearance);
+    const settingsGrip = normalizeTriangleGrip(getSettings().triangleGrip);
+    const settingsSignature = `${fanAppearanceSignature(settingsAppearance)}|${settingsGrip}`;
+    const sceneSignature = `${fanAppearanceSignature(sceneAppearance)}|${propFinishState.triangleGrip}`;
 
     if (
-      lastSettingsFanSignature === null ||
-      settingsSignature !== lastSettingsFanSignature
+      lastSettingsBuildSignature === null ||
+      settingsSignature !== lastSettingsBuildSignature
     ) {
       if (sceneSignature !== settingsSignature) {
         propFinishState.setFanBuild(settingsAppearance.build);
         propFinishState.setFanFrameColor(settingsAppearance.frameColor);
         propFinishState.setFanCover(settingsAppearance.cover);
+        propFinishState.setTriangleGrip(settingsGrip);
       }
-      lastSettingsFanSignature = settingsSignature;
-      lastSceneFanSignature = settingsSignature;
+      lastSettingsBuildSignature = settingsSignature;
+      lastSceneBuildSignature = settingsSignature;
       return;
     }
 
-    if (sceneSignature !== lastSceneFanSignature) {
-      lastSceneFanSignature = sceneSignature;
-      lastSettingsFanSignature = sceneSignature;
-      void updateSettings({ fanAppearance: sceneAppearance });
+    if (sceneSignature !== lastSceneBuildSignature) {
+      lastSceneBuildSignature = sceneSignature;
+      lastSettingsBuildSignature = sceneSignature;
+      void updateSettings({
+        fanAppearance: sceneAppearance,
+        triangleGrip: propFinishState.triangleGrip,
+      });
     }
   });
 

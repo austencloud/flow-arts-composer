@@ -41,6 +41,8 @@ const PROP_ALIASES: Record<string, string> = {
   ukulele: "ukulele",
   "mini hoop": "minihoop",
   minihoop: "minihoop",
+  triangle: "triangle",
+  triangles: "triangle",
 };
 
 // Patterns

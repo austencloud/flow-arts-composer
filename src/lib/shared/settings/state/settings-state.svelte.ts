@@ -18,6 +18,7 @@ import {
 } from "../domain/prop-pair-rule";
 import { DEFAULT_FAN_APPEARANCE } from "../../pictograph/prop/domain/fan-appearance";
 import { DEFAULT_PROP_LOOK } from "../../pictograph/prop/domain/prop-look";
+import { DEFAULT_TRIANGLE_GRIP } from "../../pictograph/prop/domain/triangle-appearance";
 // Dynamic import: posthog-activity-logger → posthog → $env/dynamic/public.
 // Static import crashes the composition worker (no globalThis.__sveltekit_dev).
 async function logSettingChange(
@@ -47,7 +48,7 @@ const OFFLINE_QUEUE_KEY = "tka-settings-offline-queue";
 
 const DEFAULT_PROP_PRESETS = defaultPropPresets();
 
-const DEFAULT_SETTINGS: AppSettings = {
+export const DEFAULT_SETTINGS: AppSettings = {
   gridMode: GridMode.DIAMOND,
   backgroundType: BackgroundType.COSMIC,
   backgroundQuality: "medium",
@@ -59,6 +60,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   rightPropType: PropType.STAFF,
   propType: PropType.STAFF,
   fanAppearance: DEFAULT_FAN_APPEARANCE,
+  triangleGrip: DEFAULT_TRIANGLE_GRIP,
   propArtwork: DEFAULT_PROP_LOOK,
   primaryPropColors: null,
   blockedStartPlacements: [],

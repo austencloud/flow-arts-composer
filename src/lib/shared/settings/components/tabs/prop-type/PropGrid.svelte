@@ -59,6 +59,12 @@
   import { isBuugengFamilyProp } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
   import type { Snippet } from "svelte";
   import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
+  import {
+    TRIANGLE_GRIP_OPTIONS,
+    isTrianglePropType,
+    normalizeTriangleGrip,
+    type TriangleGrip,
+  } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
 
   let {
     selectedPropType,
@@ -90,6 +96,8 @@
     onPropLookChange,
     recipeOverrides,
     colors,
+    triangleGrip,
+    onTriangleGripChange,
     isActive = true,
     onDrillChange,
   } = $props<{
@@ -159,6 +167,8 @@
     onPropLookChange?: (look: PropLook) => void;
     recipeOverrides?: Partial<Record<PropType, CompositionRecipe>>;
     colors?: ViewerCustomColorPair | null;
+    triangleGrip: TriangleGrip;
+    onTriangleGripChange: (grip: TriangleGrip) => void;
     /** A sheet can reset this transient route when it closes. */
     isActive?: boolean;
     /** Lets a sheet temporarily reclaim root-only control space while drilled. */
@@ -529,6 +539,17 @@
       : selectedPropType
   );
 
+  // The triangle's grip is a look on top of the tile, like the fan build. It
+  // shows as a two-pill row in the triangle's details and on the rail.
+  const showGrip = $derived(
+    showAppearance && detailProp !== null && isTrianglePropType(detailProp)
+  );
+  const currentGrip = $derived(normalizeTriangleGrip(triangleGrip));
+  function chooseGrip(grip: TriangleGrip) {
+    if (currentGrip === grip) return;
+    onTriangleGripChange(grip);
+  }
+
   // Size is a property of the current prop, not a prop of its own. Every big
   // prop is reached from here, which is why the grid can fold them away.
   const showSize = $derived(
@@ -572,6 +593,7 @@
       showAppearance &&
       (isFanPropType(prop) ||
         hasBigVariant(prop) ||
+        isTrianglePropType(prop) ||
         (onPropLookChange !== undefined && hasModelSprite(prop)) ||
         (chirality !== undefined && isBuugengFamilyProp(prop)))
     );
@@ -664,6 +686,20 @@
       >
     </div>
   {/snippet}
+  {#snippet gripControl()}
+    <div class="size-toggle" role="group" aria-label="Triangle grip">
+      {#each TRIANGLE_GRIP_OPTIONS as option (option.id)}
+        <button
+          type="button"
+          class="size-option"
+          class:active={currentGrip === option.id}
+          aria-pressed={currentGrip === option.id}
+          data-testid={`triangle-grip-${option.id}`}
+          onclick={() => chooseGrip(option.id)}>{option.label}</button
+        >
+      {/each}
+    </div>
+  {/snippet}
   {#snippet fanControl()}
     <button
       type="button"
@@ -741,6 +777,7 @@
       {:else}
         <div class="rail-heading">{@render heading?.()}</div>
         {#if showSize}{@render sizeControl()}{/if}
+        {#if showGrip}{@render gripControl()}{/if}
         {#if showFanLook}{@render fanControl()}{/if}
         {#if showPropLook}{@render propLookControl()}{/if}
       {/if}
@@ -780,6 +817,7 @@
         onSelect={() => handleTileClick(prop)}
         fanAppearance={normalizedFanAppearance}
         {propLook}
+        triangleGrip={currentGrip}
         {recipeOverrides}
         {colors}
         previewPair={showAppearance}
@@ -823,6 +861,7 @@
         {color}
         fanAppearance={normalizedFanAppearance}
         {propLook}
+        triangleGrip={currentGrip}
         {recipeOverrides}
         {colors}
         previewPair={showAppearance}
@@ -892,6 +931,12 @@
                 <div class="detail-row">
                   <span class="look-label">Size</span>
                   {@render sizeControl()}
+                </div>
+              {/if}
+              {#if showGrip}
+                <div class="detail-row">
+                  <span class="look-label">Grip</span>
+                  {@render gripControl()}
                 </div>
               {/if}
               {#if showPropLook && onPropLookChange}
