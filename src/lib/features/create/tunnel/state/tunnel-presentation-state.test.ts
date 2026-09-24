@@ -292,6 +292,21 @@ describe("tunnel presentation state", () => {
     });
   });
 
+  it("addresses only the selected hand's chirality seam while cat dog is on", () => {
+    const state = freshState();
+    expect(state.chirality.hands.map((hand) => hand.hand)).toEqual([
+      "left",
+      "right",
+    ]);
+
+    state.toggleCatDog();
+    state.selectPropHand("right");
+    expect(state.chirality.hands.map((hand) => hand.hand)).toEqual(["right"]);
+
+    state.selectPropHand("left");
+    expect(state.chirality.hands.map((hand) => hand.hand)).toEqual(["left"]);
+  });
+
   it("starts a new tunnel from the settings pair and flag", () => {
     expect(freshState({ initialCatDogMode: true }).catDog).toBe(true);
     expect(

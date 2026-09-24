@@ -136,8 +136,8 @@
     );
   }
 
-  // The active prop for the Props grid's highlight. Tunnel uses a single prop for
-  // both hands (like the 2D Download panel), so blue is the source of truth.
+  // The active prop for the Props grid's highlight: the addressed hand's prop
+  // when the host passes handProps, otherwise the left prop.
   const selectedPropType = $derived<PropType>(
     (leftPropType as PropType | null) ?? PropType.STAFF
   );
@@ -352,14 +352,14 @@
       />
     {/if}
   {:else if id === "props"}
-    <!-- Prop selection — the same BentoPropGrid the 2D Download panel uses. The
+    <!-- Prop selection: the same BentoPropGrid the 2D Download panel uses. The
          chosen prop goes to onPropChange; the host routes it (Tunnel routes it
          to the addressed hand, the viewer host keeps its own handling). -->
+    {#if onPropChange && handProps}
+      <HandPropToolbar {handProps} />
+    {/if}
     <div class="section-pad props-pad">
       {#if onPropChange}
-        {#if handProps}
-          <HandPropToolbar {handProps} />
-        {/if}
         <BentoPropGrid
           {selectedPropType}
           onSelect={onPropChange}
