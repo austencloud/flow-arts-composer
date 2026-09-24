@@ -46,7 +46,11 @@
   import HandPropToolbar, {
     type HandPropToolbarProps,
   } from "$lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+  import PrimaryPropColorSettings from "$lib/shared/settings/components/tabs/prop-type/PrimaryPropColorSettings.svelte";
+  import {
+    getSettings,
+    updateSetting,
+  } from "$lib/shared/application/state/app-state.svelte";
   import { viewingPropLabel } from "$lib/shared/foundation/services/prop-viewing";
   import AnimatorInspectorShell from "./AnimatorInspectorShell.svelte";
   import AnimatorInspectorFooter from "./AnimatorInspectorFooter.svelte";
@@ -266,6 +270,7 @@
   const exportButtonLabel = $derived(
     renderMode === "3d" ? "Record Scene" : "Download animation"
   );
+  const appSettings = $derived(getSettings());
 
   // Export is host-optional: both the state manager and the handler must be
   // wired for the Export pill, footer button, and dock trailing icon to render.
@@ -844,30 +849,51 @@
 
 {#snippet pillBody()}
   {#if resolvedPill === "props" && onPropChange && selectedPropType !== undefined}
-    {#if handProps}
-      <HandPropToolbar {handProps} />
-    {/if}
-    {#await import("$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte")}
-      <!-- Reserve space while the chunk loads so the body doesn't render
-           as a blank slot and then jump when the grid arrives. -->
-      <div class="pill-pending">
-        <PanelSpinner />
-      </div>
-    {:then mod}
-      <!-- The wide sidebar hands the picker its whole page, so the tiles
-           share the height instead of huddling in the top third of it. The
-           tray and the compact sheet grow with their content and keep the
-           dense grid. -->
-      <mod.default
-        {selectedPropType}
-        onSelect={onPropChange}
-        chirality={propChirality}
-        showColors={showPropColors}
-        variant="inline"
-        flat
-        fill={layout === "sidebar"}
-      />
-    {/await}
+    <div
+      class:bottom-prop-picker={layout === "bottom"}
+      class:sidebar-prop-picker={layout === "sidebar"}
+    >
+      {#if handProps}
+        {#if layout === "bottom" && showPropColors}
+          <HandPropToolbar {handProps}>
+            {#snippet actions()}
+              <PrimaryPropColorSettings
+                compact
+                colors={appSettings.primaryPropColors}
+                darkMode={appSettings.darkMode}
+                onchange={(colors) =>
+                  updateSetting("primaryPropColors", colors)}
+              />
+            {/snippet}
+          </HandPropToolbar>
+        {:else}
+          <HandPropToolbar {handProps} />
+        {/if}
+      {:else if layout === "bottom" && showPropColors}
+        <div class="bottom-prop-actions">
+          <PrimaryPropColorSettings
+            compact
+            colors={appSettings.primaryPropColors}
+            darkMode={appSettings.darkMode}
+            onchange={(colors) => updateSetting("primaryPropColors", colors)}
+          />
+        </div>
+      {/if}
+      {#await import("$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte")}
+        <div class="pill-pending"><PanelSpinner /></div>
+      {:then mod}
+        <mod.default
+          {selectedPropType}
+          onSelect={onPropChange}
+          chirality={propChirality}
+          showColors={layout === "sidebar" && showPropColors}
+          layout={layout === "bottom" ? "rail" : "grid"}
+          variant="inline"
+          flat
+          fill={layout === "sidebar"}
+        />
+      {/await}
+    </div>
   {:else if resolvedPill === "effects"}
     <EffectsPanel
       layout={layout === "bottom" ? "strip" : "sidebar"}
@@ -1305,7 +1331,9 @@
         {secondaryActions}
         trayMaxHeight={resolvedPill === "effects"
           ? "min(54vh, 360px)"
-          : "min(35vh, 250px)"}
+          : resolvedPill === "props"
+            ? "min(80dvh, 380px)"
+            : "min(35vh, 250px)"}
         tray={presentation === "full" ? dockTray : undefined}
       />
     {/if}
@@ -1356,6 +1384,29 @@
 {/if}
 
 <style>
+  .sidebar-prop-picker {
+    display: contents;
+  }
+  .bottom-prop-picker {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: min(340px, calc(80dvh - 36px));
+    min-height: 0;
+    overflow: hidden;
+  }
+  .bottom-prop-picker :global(.rail-toolbar .rail-heading:empty),
+  .bottom-prop-picker :global(.rail-toolbar .rail-actions:empty) {
+    display: none;
+  }
+  .bottom-prop-picker :global(.rail-toolbar .size-toggle) {
+    margin-left: auto;
+  }
+  .bottom-prop-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding: 8px 12px 4px;
+  }
   .external-section-body {
     min-width: 0;
     min-height: 0;
@@ -1651,33 +1702,6 @@
     flex: 1;
     min-width: 0;
   }
-  /* BentoPropGrid */
-  .dock-dense :global(.grid-scroll) {
-    padding: 6px 12px;
-  }
-  .dock-dense :global(.section-label) {
-    padding: 4px 4px 2px;
-  }
-  .dock-dense :global(.section-buttons) {
-    gap: 4px;
-  }
-  .dock-dense :global(.grid-content) {
-    gap: 2px;
-  }
-  /* Shrink prop tiles ~79->60px (square) so more fit per row + shorter rows.
-     Higher specificity than BentoPropGrid's own width + container-query rules. */
-  .dock-dense :global(.section-buttons .prop-button),
-  .dock-dense :global(.popover-trigger-wrap .prop-button),
-  .dock-dense :global(.popover-trigger-wrap) {
-    width: 60px;
-  }
-  .dock-dense :global(.prop-button) {
-    aspect-ratio: 1 / 1;
-    padding: 5px 3px 4px;
-    gap: 2px;
-  }
-  /* .prop-label keeps its base var(--font-size-compact, 12px); it ellipsizes
-     (nowrap + hidden overflow) inside the 60px tile, so no sub-floor override. */
   /* EffortPanel (56px tile -> 48, still >=44) */
   .dock-dense :global(.effort-btn) {
     min-height: 48px;
