@@ -9,7 +9,7 @@
 
   const TITLE = "Double Staff Notation | The Kinetic Alphabet for Staves";
   const DESCRIPTION =
-    "How The Kinetic Alphabet notates double staff spinning: why the system started on staves, the isolation and antispin collapse, and why fewer visual combinations make it the fastest prop to learn on.";
+    "How The Kinetic Alphabet notates double staff spinning, including its paper origins, dual-end geometry, and fixed-reference teaching method.";
   const URL = "https://tkaflowarts.com/notation/staves";
 </script>
 
@@ -50,19 +50,15 @@
   <section class="editorial-section" style="--accent: #22c55e">
     <div class="prose">
       <p>
-        Before the software existed, The Kinetic Alphabet was made with pens. Pens are
-        essentially double staves you can hold in one hand, so for the first couple of
-        years the whole system lived on paper: draw a little grid, spend a long time
-        building a sequence with a red pen and a blue pen, then draw the arrows in the
-        same two colors. When a sequence worked, it got a page. That's the entire origin
-        story. Not a whiteboard, not an app. Two pens.
+        The Kinetic Alphabet began on paper with a red pen and a blue pen. A pen
+        works like a small staff: each has two visible ends. For the first
+        couple of years, sequences were built on a hand-drawn grid, with arrows
+        drawn in the same two colors. Working sequences got their own pages.
       </p>
       <p>
-        Staves stuck because staves are geometry. A staff is a straight line, or a
-        combination of lines if you count the thumb end, so it's easy to draw and it
-        stays out of the arrows' way, which is why staff pictographs read so clean. Put
-        two staves next to each other and they form one extra-long straight line. Easy to
-        visualize. Easy to remember.
+        A staff's straight shape is easy to draw without covering the arrows in
+        a pictograph. Two staves placed end to end form one longer line, which
+        makes their orientations easy to see on the grid.
       </p>
     </div>
   </section>
@@ -72,32 +68,28 @@
       <div class="duo-copy">
         <div class="prose">
           <p>
-            The deeper reason the system starts on staves takes a minute to see, and it
-            starts with the fact that each staff has two visible ends, a thumb end and a
-            pinky end. Hold a staff with the thumb end at center and perform an
-            isolation. While the thumb end isolates, the pinky end performs an extension.
-            One motion, both shapes at once. Try the same move with a club and you have
-            to pick, because a club only has one end that can do a thing at a time,
-            which is why club spinners have two moves, an isolation and an extension,
-            that look completely different despite identical underlying geometry. On a
-            staff they collapse into one thing. Antispin folds the same way: the
-            vertical-flower and horizontal-flower variants that VTG names for one-ended
-            props are always both covered on a staff. The
-            <a href="/notation/clubs">club page</a> walks the other side of this story.
+            Each staff has a thumb end and a pinky end. Hold the thumb end at
+            center during an isolation and the pinky end performs an extension
+            at the same time. A club has one visible end, so its isolation and
+            extension are separate moves, despite sharing the same geometry. The <a
+              href="/notation/clubs">club comparison</a
+            > shows the difference. A staff also covers both the vertical-flower and
+            horizontal-flower antispin variants that VTG names for one-ended props.
           </p>
           <p>
-            The collapse runs all the way down. A fan or a club visibly points in one of
-            eight directions, all the information on display. A staff radiating from
-            center makes those eight orientations look like four, and since orientation
-            never changes which letter a pictograph is, patterns get easier to tell apart
-            and the concepts get easier to absorb. Single-ended props show more and
-            explore the wider complexity range. Staves show less.
+            A fan or club visibly points in one of eight directions. A staff
+            radiating from center makes those eight orientations look like four.
+            Orientation does not change the letter in a pictograph, so the
+            reduced visual detail makes patterns easier to distinguish while
+            learning.
           </p>
-          <p>That's the whole trick. Less to look at, faster to learn.</p>
         </div>
       </div>
       <div class="duo-demo">
-        <SequenceHeroDemo sequence={demoSequence} note="the demo sequence, on staves" />
+        <SequenceHeroDemo
+          sequence={demoSequence}
+          note="both ends of each staff stay visible"
+        />
       </div>
     </div>
   </section>
@@ -105,23 +97,18 @@
   <section class="editorial-section" style="--accent: #8b5cf6">
     <div class="prose">
       <p>
-        One admission, better stated here than discovered later: the staff pedagogy is
-        strict on purpose. No finger spinning, no grip changes. You keep your thumb and
-        pinky references by using the negative space above and below the shoulder, and by
-        turning your body to pass into the plane behind you. Other props require finger
-        spinning and grip changes, and the system recognizes and allows that. The
-        strictness belongs to how staves are taught, and even there it's a
-        scaffold, not a law. Once you've absorbed the math of how orientations change
-        well enough to spot the turn value in any pictograph, the strictness stops
-        mattering and it becomes about what the prop can effectively do under its own
-        limitations.
+        Staff lessons keep the thumb and pinky ends as fixed references. The
+        spinner uses the space above and below the shoulder, and turns into the
+        plane behind the body, without finger spinning or changing grip. The
+        notation also allows finger spins and grip changes. Those are left out
+        of the staff lessons so the turn value stays easy to follow.
       </p>
       <p>
         When you're ready to learn the notation, the <a href="/guide">guide</a>
         introduces every concept in order, the
         <a href="/guide/codex">Double Staff Codex</a> collects the pictographs
-        themselves, and the <a href="/atlas">Kinetic Atlas</a> defines every term used on this
-        page.
+        themselves, and the <a href="/atlas">Kinetic Atlas</a> defines every term
+        used on this page.
       </p>
     </div>
   </section>

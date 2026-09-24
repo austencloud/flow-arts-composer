@@ -18,6 +18,9 @@
     sequenceSteps: number | null;
     canRemove: boolean;
     onRemove: () => void;
+    /** One-line hint for the current tab when no performer is selected. */
+    emptyHint?: string | null;
+    onSelectAll?: () => void;
     onSettingChange?: ViewerControlSink;
   }
 
@@ -31,6 +34,8 @@
     sequenceSteps,
     canRemove,
     onRemove,
+    emptyHint = null,
+    onSelectAll,
     onSettingChange,
   }: Props = $props();
 
@@ -143,6 +148,32 @@
         <span>Remove {selectedCount}</span>
       </button>
     {/if}
+  {:else if selectedCount === 0}
+    <div class="identity">
+      <div class="character-circle empty-mode" aria-hidden="true">
+        <i class="fas fa-user-slash"></i>
+      </div>
+      <div class="identity-meta">
+        <span class="performer-name">No performers selected</span>
+        {#if emptyHint}
+          <div class="sub-row">
+            <span class="all-hint" role="status">{emptyHint}</span>
+          </div>
+        {/if}
+      </div>
+    </div>
+    {#if onSelectAll}
+      <button
+        class="select-all-button"
+        type="button"
+        onclick={onSelectAll}
+        aria-label="Select all performers"
+        title="Select all performers"
+      >
+        <i class="fas fa-users" aria-hidden="true"></i>
+        <span>Select all</span>
+      </button>
+    {/if}
   {:else if performer}
     <div class="identity">
       <div class="character-circle" aria-hidden="true">
@@ -238,6 +269,13 @@
   }
   .character-circle.all-mode {
     color: color-mix(in srgb, var(--performer-color) 60%, white);
+    font-size: 14px;
+  }
+  .character-circle.empty-mode {
+    border: 2px dashed var(--theme-stroke);
+    background: transparent;
+    box-shadow: none;
+    color: var(--theme-text-dim);
     font-size: 14px;
   }
   .character-initials {
@@ -369,6 +407,27 @@
     border-color: var(--theme-danger-hover-border);
     color: var(--theme-text);
   }
+  .select-all-button {
+    min-width: 88px;
+    min-height: 44px;
+    padding: 0 14px;
+    border: 1px solid color-mix(in srgb, var(--theme-accent) 50%, transparent);
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--theme-accent) 16%, transparent);
+    color: var(--theme-accent-text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    flex-shrink: 0;
+    font-size: 14px;
+    font-weight: 700;
+    transition: background-color var(--transition-fast);
+  }
+  .select-all-button:hover {
+    background: color-mix(in srgb, var(--theme-accent) 26%, transparent);
+  }
   button:focus-visible {
     outline: 2px solid var(--performer-color);
     outline-offset: 2px;
@@ -377,12 +436,14 @@
     .header {
       padding-right: 52px;
     }
-    .remove-button {
+    .remove-button,
+    .select-all-button {
       min-width: 44px;
       width: 44px;
       padding: 0;
     }
-    .remove-button span {
+    .remove-button span,
+    .select-all-button span {
       position: absolute;
       width: 1px;
       height: 1px;

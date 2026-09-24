@@ -509,7 +509,9 @@
     border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     /* Snap-back after a below-threshold swipe; disabled while the finger owns it. */
     transition: transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
-    touch-action: pan-y;
+    /* Descendant rails can claim horizontal touch panning. The drawer handler
+       still owns downward swipes outside those rails. */
+    touch-action: auto;
   }
   .tray.tray-dragging {
     transition: none;

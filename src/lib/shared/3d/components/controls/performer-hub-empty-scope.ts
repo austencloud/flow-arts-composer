@@ -14,26 +14,14 @@ export interface PerformerHubEmptyScope {
   locksTab: boolean;
 }
 
+// Shown as the header's one-line hint, so each stays short.
 const EMPTY_SCOPE: Record<PerformerHubTab, PerformerHubEmptyScope> = {
-  character: {
-    message: "Pick a performer to change characters.",
-    locksTab: true,
-  },
-  sequence: {
-    message: "Pick a performer to load a sequence.",
-    locksTab: true,
-  },
-  prop: { message: "Pick a performer to change props.", locksTab: true },
-  effort: { message: "Pick a performer to change effort.", locksTab: true },
-  planes: {
-    message:
-      "Pick a performer to move hand planes. Showing or hiding a plane still works.",
-    locksTab: false,
-  },
-  effects: {
-    message: "No performer picked, so effects change the scene default.",
-    locksTab: false,
-  },
+  character: { message: "Pick a performer to swap characters", locksTab: true },
+  sequence: { message: "Pick a performer to load a sequence", locksTab: true },
+  prop: { message: "Pick a performer to change props", locksTab: true },
+  effort: { message: "Pick a performer to change effort", locksTab: true },
+  planes: { message: "Pick a performer to move hands", locksTab: false },
+  effects: { message: "Effects change the scene default", locksTab: false },
 };
 
 export function resolvePerformerHubEmptyScope(
