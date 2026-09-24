@@ -18,22 +18,29 @@
 </script>
 
 <script lang="ts">
+  import type { Snippet } from "svelte";
   import CatDogToggle from "./CatDogToggle.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import { growFade } from "$lib/shared/transitions/motion";
 
-  let { handProps }: { handProps: HandPropToolbarProps } = $props();
+  let {
+    handProps,
+    actions,
+  }: { handProps: HandPropToolbarProps; actions?: Snippet } = $props();
 </script>
 
 <!-- Same chip and hand segments as the global prop drawer, so the viewer
      picks a pair the way every other settings-backed picker does. -->
-<div class="hand-toolbar">
-  <CatDogToggle
-    catDogMode={handProps.catDog}
-    onToggle={handProps.onToggleCatDog}
-  />
+<div class="hand-toolbar" class:with-actions={!!actions}>
+  <div class="cat-dog-control">
+    <CatDogToggle
+      catDogMode={handProps.catDog}
+      onToggle={handProps.onToggleCatDog}
+    />
+  </div>
+  {#if actions}<div class="toolbar-actions">{@render actions()}</div>{/if}
   {#if handProps.catDog}
-    <div transition:growFade={{ axis: "y" }}>
+    <div class="hand-segments" transition:growFade={{ axis: "y" }}>
       <SegmentedControl
         options={[
           { value: "left", label: "Left", tone: "blue" },
@@ -59,5 +66,29 @@
     gap: 10px;
     padding: 8px 16px 4px;
     flex-shrink: 0;
+  }
+  .hand-toolbar.with-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    justify-items: center;
+    padding: 8px 12px 4px;
+  }
+  .cat-dog-control {
+    min-width: 0;
+  }
+  .with-actions .cat-dog-control {
+    grid-column: 2;
+  }
+  .toolbar-actions {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+  }
+  .hand-segments {
+    min-width: 0;
+  }
+  .with-actions .hand-segments {
+    grid-column: 1 / -1;
+    justify-self: center;
   }
 </style>
