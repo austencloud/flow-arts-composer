@@ -44,6 +44,7 @@ function savedSnapshot(): TunnelSnapshot {
     props: {
       leftPropType: "buugeng",
       rightPropType: "buugeng",
+      catDogMode: false,
       leftBuugengFlipped: true,
       rightBuugengFlipped: false,
     },
@@ -229,6 +230,92 @@ describe("tunnel presentation state", () => {
     expect(create(savedSnapshot())).toEqual({
       mode: "custom",
       custom: { left: "#123456", right: "#abcdef" },
+    });
+  });
+
+  function freshState(
+    overrides: Partial<Parameters<typeof createTunnelPresentationState>[0]> = {}
+  ) {
+    return createTunnelPresentationState({
+      effects: createEffectsConfigState(undefined, { persist: false }),
+      visibility: new AnimationVisibilityStateManager({ ephemeral: true }),
+      animationSettings: createAnimationSettingsState({ ephemeral: true }),
+      initialLeftPropType: "staff",
+      initialRightPropType: "staff",
+      initialLeftBuugengFlipped: false,
+      initialRightBuugengFlipped: false,
+      ...overrides,
+    });
+  }
+
+  it("picks per hand while cat dog is on", () => {
+    const state = freshState();
+    state.toggleCatDog();
+    state.selectPropHand("right");
+    state.setPropType("fan");
+    expect([state.leftPropType, state.rightPropType]).toEqual(["staff", "fan"]);
+    expect(state.addressedPropType).toBe("fan");
+    state.selectPropHand("left");
+    state.setPropType("club");
+    expect([state.leftPropType, state.rightPropType]).toEqual(["club", "fan"]);
+  });
+
+  it("sets both hands while cat dog is off", () => {
+    const state = freshState();
+    state.setPropType("fan");
+    expect([state.leftPropType, state.rightPropType]).toEqual(["fan", "fan"]);
+  });
+
+  it("folds the right hand to the left when cat dog turns off", () => {
+    const state = freshState();
+    state.toggleCatDog();
+    state.selectPropHand("right");
+    state.setPropType("fan");
+    state.toggleCatDog();
+    expect(state.catDog).toBe(false);
+    expect([state.leftPropType, state.rightPropType]).toEqual([
+      "staff",
+      "staff",
+    ]);
+    expect(state.propHand).toBe("left");
+  });
+
+  it("exposes handProps shaped for HandPropToolbar", () => {
+    const state = freshState();
+    state.handProps.onToggleCatDog();
+    state.handProps.onHandChange("right");
+    expect(state.handProps).toMatchObject({
+      catDog: true,
+      hand: "right",
+      leftPropType: "staff",
+      rightPropType: "staff",
+    });
+  });
+
+  it("starts a new tunnel from the settings pair and flag", () => {
+    expect(freshState({ initialCatDogMode: true }).catDog).toBe(true);
+    expect(
+      freshState({ initialRightPropType: "fan", initialCatDogMode: false }).catDog
+    ).toBe(true);
+  });
+
+  it("round-trips the flag through capture", () => {
+    const state = freshState();
+    state.toggleCatDog();
+    expect(state.capture().props.catDogMode).toBe(true);
+  });
+
+  it("infers the flag for an old snapshot without one", () => {
+    const snapshot = savedSnapshot();
+    delete (snapshot.props as { catDogMode?: boolean }).catDogMode;
+    snapshot.props.rightPropType = "fan";
+    const state = freshState({ initialSnapshot: snapshot });
+    state.attachController(controllerFor());
+    expect(state.catDog).toBe(true);
+    expect(state.capture().props).toMatchObject({
+      leftPropType: "buugeng",
+      rightPropType: "fan",
+      catDogMode: true,
     });
   });
 });
