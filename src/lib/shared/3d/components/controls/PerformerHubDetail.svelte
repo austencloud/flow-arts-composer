@@ -32,6 +32,7 @@
     PerformerHubEdit,
     PerformerHubTab,
   } from "./performer-hub-types";
+  import { resolvePerformerHubEmptyScope } from "./performer-hub-empty-scope";
 
   interface Props {
     onSettingChange?: ViewerControlSink;
@@ -222,6 +223,23 @@
 
   const TABS = ALL_TABS;
   const tabIndex = $derived(TABS.findIndex((t) => t.id === activeTab));
+
+  // None is a real selection state. Scoped writes drop every edit then, so the
+  // hub says so and locks the tabs that would otherwise swallow clicks.
+  const emptyScope = $derived(
+    resolvePerformerHubEmptyScope(activeTab, selectedPerformers.length)
+  );
+
+  function selectAllFromEmptyScope(): void {
+    viewer.selectAllPerformers();
+    reportViewerControlChange(
+      onSettingChange,
+      "viewer_3d_performer",
+      "scope",
+      "none",
+      "all"
+    );
+  }
 
   function selectTab(tab: PerformerHubTab): void {
     const previous = activeTab;
@@ -416,130 +434,152 @@
   <div class="header-divider" aria-hidden="true"></div>
 
   <div class="tab-content">
-    {#if activeTab === "character"}
-      <div
-        id="hub-panel-character"
-        class="tab-pane active"
-        role="tabpanel"
-        aria-labelledby="hub-tab-character"
-      >
-        <div class="character-section">
-          <CharacterSelectWorkspace
-            {currentCharacterId}
-            {pendingCharacterId}
-            {performerColor}
-            {previewPerformer}
-            {previewPerformerNumber}
-            onIntent={queueCharacterSelectionIntent}
-            onCancelIntent={cancelCharacterSelectionIntent}
-            onSelect={(id) => void pickCharacter(id)}
+    {#if emptyScope}
+      <div class="empty-scope">
+        <p class="empty-scope-text" role="status">
+          <i class="fas fa-circle-info" aria-hidden="true"></i>
+          {emptyScope.message}
+        </p>
+        <button
+          class="empty-scope-action"
+          type="button"
+          onclick={selectAllFromEmptyScope}
+        >
+          Select all
+        </button>
+      </div>
+    {/if}
+
+    <div
+      class="scoped-panes"
+      class:locked={emptyScope?.locksTab}
+      inert={emptyScope?.locksTab ?? false}
+    >
+      {#if activeTab === "character"}
+        <div
+          id="hub-panel-character"
+          class="tab-pane active"
+          role="tabpanel"
+          aria-labelledby="hub-tab-character"
+        >
+          <div class="character-section">
+            <CharacterSelectWorkspace
+              {currentCharacterId}
+              {pendingCharacterId}
+              {performerColor}
+              {previewPerformer}
+              {previewPerformerNumber}
+              onIntent={queueCharacterSelectionIntent}
+              onCancelIntent={cancelCharacterSelectionIntent}
+              onSelect={(id) => void pickCharacter(id)}
+            />
+          </div>
+        </div>
+      {/if}
+
+      {#if activeTab === "sequence"}
+        <div
+          id="hub-panel-sequence"
+          class="tab-pane active"
+          role="tabpanel"
+          aria-labelledby="hub-tab-sequence"
+        >
+          <PerformerSequencePanel
+            {performerName}
+            {sequenceWord}
+            {sequenceSteps}
+            hasSequence={hasAnySequence}
+            onSelect={chooseSequence}
+            onClear={clearSequence}
           />
         </div>
-      </div>
-    {/if}
+      {/if}
 
-    {#if activeTab === "sequence"}
-      <div
-        id="hub-panel-sequence"
-        class="tab-pane active"
-        role="tabpanel"
-        aria-labelledby="hub-tab-sequence"
-      >
-        <PerformerSequencePanel
-          {performerName}
-          {sequenceWord}
-          {sequenceSteps}
-          hasSequence={hasAnySequence}
-          onSelect={chooseSequence}
-          onClear={clearSequence}
-        />
-      </div>
-    {/if}
+      {#if activeTab === "prop"}
+        <div
+          id="hub-panel-prop"
+          class="tab-pane active"
+          role="tabpanel"
+          aria-labelledby="hub-tab-prop"
+        >
+          <div class="prop-section">
+            <ScenePropPicker
+              {currentProp}
+              build={currentPropBuild}
+              onBuildChange={handlePropBuildChange}
+              accentColor={performerColor}
+              onSelect={handlePropSelect}
+            />
 
-    {#if activeTab === "prop"}
-      <div
-        id="hub-panel-prop"
-        class="tab-pane active"
-        role="tabpanel"
-        aria-labelledby="hub-tab-prop"
-      >
-        <div class="prop-section">
-          <ScenePropPicker
-            {currentProp}
-            build={currentPropBuild}
-            onBuildChange={handlePropBuildChange}
-            accentColor={performerColor}
-            onSelect={handlePropSelect}
-          />
-
-          <!-- The slider reads its displayed size from one performer; in
+            <!-- The slider reads its displayed size from one performer; in
                All-Performers mode that is the first. Writing always goes
                through handlePropSizeChange so the scope and the host sink
                apply in both modes. -->
-          {#if performer ?? selectedPerformers[0]}
-            <PerformerPropSizeSlider
-              performer={performer ?? selectedPerformers[0]!}
-              mixed={propSizeMixed}
-              onSizeChange={handlePropSizeChange}
+            {#if performer ?? selectedPerformers[0]}
+              <PerformerPropSizeSlider
+                performer={performer ?? selectedPerformers[0]!}
+                mixed={propSizeMixed}
+                onSizeChange={handlePropSizeChange}
+                {onSettingChange}
+              />
+            {/if}
+          </div>
+        </div>
+      {/if}
+
+      {#if activeTab === "planes"}
+        <div
+          id="hub-panel-planes"
+          class="tab-pane active"
+          role="tabpanel"
+          aria-labelledby="hub-tab-planes"
+        >
+          <div class="planes-section">
+            <PlanesPopover {onSettingChange} />
+          </div>
+        </div>
+      {/if}
+
+      {#if activeTab === "effort"}
+        <div
+          id="hub-panel-effort"
+          class="tab-pane active"
+          role="tabpanel"
+          aria-labelledby="hub-tab-effort"
+        >
+          <div class="effort-section">
+            <EffortPalette
+              selectedEffort={currentEffort}
+              onSelect={handleEffortSelect}
+            />
+          </div>
+        </div>
+      {/if}
+
+      {#if activeTab === "effects"}
+        <div
+          id="hub-panel-effects"
+          class="tab-pane active"
+          role="tabpanel"
+          aria-labelledby="hub-tab-effects"
+        >
+          <div class="effects-section">
+            <EffectsSettingsPanel
+              performer={selectedPerformers.length === 1 ? performer : null}
+              performers={selectedPerformers.length > 1
+                ? selectedPerformers
+                : null}
+              presentation="performer-hub"
+              onEffectEdit={(effect) =>
+                writeParameter({ field: "effect", value: effect }, () =>
+                  viewer.setEffectScoped(effect)
+                )}
               {onSettingChange}
             />
-          {/if}
+          </div>
         </div>
-      </div>
-    {/if}
-
-    {#if activeTab === "planes"}
-      <div
-        id="hub-panel-planes"
-        class="tab-pane active"
-        role="tabpanel"
-        aria-labelledby="hub-tab-planes"
-      >
-        <div class="planes-section">
-          <PlanesPopover {onSettingChange} />
-        </div>
-      </div>
-    {/if}
-
-    {#if activeTab === "effort"}
-      <div
-        id="hub-panel-effort"
-        class="tab-pane active"
-        role="tabpanel"
-        aria-labelledby="hub-tab-effort"
-      >
-        <div class="effort-section">
-          <EffortPalette
-            selectedEffort={currentEffort}
-            onSelect={handleEffortSelect}
-          />
-        </div>
-      </div>
-    {/if}
-
-    {#if activeTab === "effects"}
-      <div
-        id="hub-panel-effects"
-        class="tab-pane active"
-        role="tabpanel"
-        aria-labelledby="hub-tab-effects"
-      >
-        <div class="effects-section">
-          <EffectsSettingsPanel
-            performer={selectedPerformers.length === 1 ? performer : null}
-            performers={selectedPerformers.length > 1
-              ? selectedPerformers
-              : null}
-            presentation="performer-hub"
-            onEffectEdit={(effect) =>
-              writeParameter({ field: "effect", value: effect }, () =>
-                viewer.setEffectScoped(effect)
-              )}
-            {onSettingChange}
-          />
-        </div>
-      </div>
-    {/if}
+      {/if}
+    </div>
   </div>
 
   {#if showTabBar}
@@ -722,6 +762,55 @@
   .tab-bar,
   .hub-detail > :global(.header) {
     flex: none;
+  }
+
+  /* ─── Empty selection ─── */
+  .empty-scope {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 8px 8px 8px 12px;
+    border-radius: 10px;
+    background: var(--surface-inset-deep);
+    border: 1px solid color-mix(in srgb, var(--theme-text) 6%, transparent);
+  }
+
+  .empty-scope-text {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.35;
+    color: var(--theme-text);
+  }
+
+  .empty-scope-text i {
+    margin-right: 6px;
+    color: var(--theme-text-dim);
+  }
+
+  .empty-scope-action {
+    flex: none;
+    min-height: 44px;
+    padding: 0 16px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--theme-accent) 50%, transparent);
+    background: color-mix(in srgb, var(--theme-accent) 16%, transparent);
+    color: var(--theme-accent-text);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+  }
+
+  .empty-scope-action:hover {
+    background: color-mix(in srgb, var(--theme-accent) 26%, transparent);
+  }
+
+  .scoped-panes.locked {
+    opacity: 0.4;
+    filter: saturate(0.4);
   }
 
   .tab-pane {

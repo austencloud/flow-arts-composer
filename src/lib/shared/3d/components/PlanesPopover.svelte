@@ -29,6 +29,9 @@
   );
   const scopedPerformers = $derived(viewer.scopedPerformers());
   const isMultiMode = $derived(scopedPerformers.length > 1 && !isAllMode);
+  // With None selected a hand-plane write has no target, so the chips go
+  // inert instead of dropping the click. Plane visibility stays scene-wide.
+  const noScope = $derived(scopedPerformers.length === 0);
 
   // The full nine-plane catalog, derived from the enum so a new plane can
   // never be missing here. Enum order already groups the fusion planes by
@@ -302,6 +305,7 @@
             class="hand-chip blue"
             class:filled={leftPlane === plane}
             onclick={(e) => handleHandSlotClick(e, "left", plane)}
+            disabled={noScope}
             aria-pressed={leftPlane === plane}
             aria-label={`Left hand on ${label}`}
           >
@@ -311,6 +315,7 @@
             class="hand-chip red"
             class:filled={rightPlane === plane}
             onclick={(e) => handleHandSlotClick(e, "right", plane)}
+            disabled={noScope}
             aria-pressed={rightPlane === plane}
             aria-label={`Right hand on ${label}`}
           >
@@ -580,6 +585,10 @@
       color 180ms cubic-bezier(0.2, 0, 0.13, 1.5);
     flex-shrink: 0;
   }
+  .hand-chip:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
   .hand-chip.blue {
     border-color: color-mix(
       in srgb,
@@ -596,11 +605,11 @@
     );
     color: color-mix(in srgb, var(--prop-red) 55%, var(--theme-text));
   }
-  .hand-chip:hover:not(.filled).blue {
+  .hand-chip:hover:not(.filled):not(:disabled).blue {
     border-color: color-mix(in srgb, var(--prop-blue) 75%, transparent);
     box-shadow: 0 0 10px color-mix(in srgb, var(--prop-blue) 20%, transparent);
   }
-  .hand-chip:hover:not(.filled).red {
+  .hand-chip:hover:not(.filled):not(:disabled).red {
     border-color: color-mix(in srgb, var(--prop-red) 75%, transparent);
     box-shadow: 0 0 10px color-mix(in srgb, var(--prop-red) 20%, transparent);
   }
