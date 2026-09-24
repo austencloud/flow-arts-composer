@@ -41,6 +41,8 @@ describe("getModuleGridLayout", () => {
         const layout = getModuleGridLayout(count, width);
         const rows = rowLengths(count, width);
         expect(layout.columns).toBeLessThanOrEqual(max);
+        // Fewest columns for those rows: one fewer would need another row.
+        expect((layout.columns - 1) * layout.rows).toBeLessThan(count);
         expect(rows).toHaveLength(Math.ceil(count / max));
         expect(rows.slice(0, -1).every((n) => n === layout.columns)).toBe(true);
         expect(rows.at(-1)).toBeGreaterThan(0);
@@ -61,6 +63,13 @@ describe("getModuleGridLayout", () => {
       lastRowStart: 5,
       lastRowIndent: 0,
     });
+  });
+
+  it("adds a column only once a whole tile and gap fit", () => {
+    expect(getModuleGridMaxColumns(307)).toBe(2);
+    expect(getModuleGridMaxColumns(308)).toBe(3);
+    expect(getModuleGridMaxColumns(519)).toBe(4);
+    expect(getModuleGridMaxColumns(520)).toBe(5);
   });
 
   it("caps wide sheets at the maximum column count", () => {

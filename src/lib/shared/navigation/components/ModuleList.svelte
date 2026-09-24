@@ -9,6 +9,14 @@
   Keeps module-colored tiles, the active glow, the staggered entrance,
   link-out entries, and the drag-vs-tap guard for swipes that start on a tile.
 -->
+<script module lang="ts">
+  // Drill-in unmounts the grid and back remounts it. Crossfade measures the
+  // remounted grid before bind:clientWidth reports, so a grid that started at
+  // width 0 would lay out as one tall column and the sheet would ease toward
+  // that height. Laying out at the last real width keeps the measurement true.
+  let lastGridWidth = 0;
+</script>
+
 <script lang="ts">
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { ModuleDefinition, ModuleId } from "../domain/types";
@@ -62,14 +70,19 @@
   );
 
   // Each grid measures its own width; the layout follows width and count.
+  // A hidden or just-mounted grid reports 0 and keeps the last real layout.
   let mainGridWidth = $state(0);
   let devGridWidth = $state(0);
   const mainLayout = $derived(
-    getModuleGridLayout(mainModules.length, mainGridWidth)
+    getModuleGridLayout(mainModules.length, mainGridWidth || lastGridWidth)
   );
   const devLayout = $derived(
-    getModuleGridLayout(devModules.length, devGridWidth)
+    getModuleGridLayout(devModules.length, devGridWidth || lastGridWidth)
   );
+
+  $effect(() => {
+    if (mainGridWidth > 0) lastGridWidth = mainGridWidth;
+  });
 
   /** Start track for the first tile of a short last row, which centers it. */
   function columnStart(

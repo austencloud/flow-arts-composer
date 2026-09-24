@@ -146,7 +146,6 @@
 
     const sections = getAccessibleSectionsForModule(moduleId);
     if (module.home || sections.length > 1) {
-      resetListScroll();
       selectedModuleId = moduleId;
       return;
     }
@@ -168,7 +167,6 @@
 
   function handleDrillBack() {
     hapticService?.trigger("selection");
-    resetListScroll();
     selectedModuleId = null;
   }
 
@@ -265,10 +263,14 @@
       </button>
     </div>
 
-    <!-- Content: sized by the list; scrolls only at the sheet's height cap -->
+    <!-- Content: sized by the list; scrolls only at the sheet's height cap.
+         Drill-in and back return to the top when the incoming list starts
+         (introstart does not bubble, so listen in the capture phase). A reset
+         on click would jump the outgoing list while it is still fading. -->
     <div
       class="module-switcher-content themed-scrollbar"
       bind:this={listScroller}
+      onintrostartcapture={resetListScroll}
     >
       <Crossfade
         key={selectedModuleId ?? "__modules__"}
@@ -577,6 +579,14 @@
     -webkit-overflow-scrolling: touch;
   }
 
+  /* This scroller already clips at the Crossfade box's edge. The box's own
+     clip margin only lets a taller incoming list count as overflow while the
+     box grows, which flashes a scrollbar through every drill. Chrome drops a
+     unitless 0 for this property, so the unit stays. */
+  .module-switcher-content :global(.crossfade.animate-height) {
+    overflow-clip-margin: 0px;
+  }
+
   .navigator-body {
     box-sizing: border-box;
     padding: 12px 20px 16px;
@@ -663,6 +673,8 @@
 
   .account-footer {
     flex-shrink: 0;
+    /* The side drawer is full height; keep the footer at its bottom edge. */
+    margin-top: auto;
     padding: 10px 20px max(12px, env(safe-area-inset-bottom));
     border-top: 1px solid var(--theme-stroke);
     display: flex;
