@@ -217,6 +217,55 @@ function layerElementForClip(
   );
 }
 
+/** Wait for the current pictograph's preparation, grid, and layout to commit. */
+export function waitForPictographMotion(
+  layerElement: HTMLElement,
+  timeoutMs = 5_000
+): Promise<{ element: HTMLElement; bounds: DOMRect }> {
+  return new Promise((resolve, reject) => {
+    let frame = 0;
+    let timer = 0;
+    let settled = false;
+    const observer = new MutationObserver(check);
+    const cleanup = () => {
+      settled = true;
+      observer.disconnect();
+      cancelAnimationFrame(frame);
+      clearTimeout(timer);
+    };
+    function check() {
+      if (settled) return;
+      const element = layerElement.querySelector<HTMLElement>(
+        "[data-pictograph-motion]"
+      );
+      const ready = element?.querySelector<HTMLElement>(
+        '[data-pictograph-render-ready="true"]'
+      );
+      if (!element || !ready) return;
+      const bounds = element.getBoundingClientRect();
+      if (bounds.width <= 0 || bounds.height <= 0) return;
+      cleanup();
+      resolve({ element, bounds });
+    }
+    function checkLayout() {
+      check();
+      if (!settled) frame = requestAnimationFrame(checkLayout);
+    }
+    observer.observe(layerElement, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["data-pictograph-render-ready"],
+    });
+    timer = window.setTimeout(() => {
+      cleanup();
+      reject(new Error("The pictograph motion layer was not ready to render."));
+    }, timeoutMs);
+    check();
+    if (!settled) frame = requestAnimationFrame(checkLayout);
+  });
+}
+
 /**
  * A painted layer draws straight into the output at output resolution, so the
  * file never inherits the preview canvas's size.
@@ -350,6 +399,26 @@ export async function renderPostStudioFrame(
         geometry.region.width,
         geometry.region.height
       );
+      const pictographMotion = layerElement.querySelector(
+        "[data-pictograph-motion]"
+      );
+      const expectsPictograph = Boolean(
+        pictographMotion ||
+        (layer.sequencePassIndex !== undefined &&
+          layer.sequencePassIndex % 2 === 0 &&
+          (layerElement.querySelector("[data-studio-breakdown-mandala]") ||
+            !layerElement.querySelector("canvas")))
+      );
+      if (expectsPictograph) {
+        const { element, bounds } = await waitForPictographMotion(layerElement);
+        const { domToCanvas } = await import("modern-screenshot");
+        const image = await domToCanvas(element, {
+          width: bounds.width,
+          height: bounds.height,
+          scale: Math.max(1, regionPixels.width / bounds.width),
+        });
+        drawSource(context, image, geometry);
+      }
       const canvases = [...layerElement.querySelectorAll("canvas")].sort(
         (left, right) =>
           Number.parseFloat(getComputedStyle(left).zIndex || "0") -
