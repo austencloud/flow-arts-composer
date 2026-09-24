@@ -5,11 +5,12 @@
  * Search Console reported /shop/loop-deck and /shop/starter-pack as soft 404s
  * (2026-09-23): the server sent "Loading the deck..." and the real page only
  * appeared after the browser SDK finished its Firestore read, 3-11 s later.
- * The /shop catalog tried to do this with the admin SDK, but that reads
- * `process.env`, which Cloudflare Pages never populates, so production has
- * been server-rendering an empty catalog. This goes through the Firestore
- * REST owner with the request's platform credential instead, the same path
- * the sitemap and card pages use.
+ * The /shop catalog tried to do this with the admin SDK, and production served
+ * it empty (`products: []` in the live HTML, 2026-09-23). The sitemap's
+ * admin-SDK read failed the same way; the exact cause was never pinned down,
+ * since the credential secret is set. This goes through the Firestore REST
+ * owner with the request's platform credential instead, the same path the
+ * sitemap and card pages use.
  *
  * Cover cards stay behind: each one carries a full sequence document, and the
  * page would ship roughly half a megabyte of JSON for art the browser fetches
