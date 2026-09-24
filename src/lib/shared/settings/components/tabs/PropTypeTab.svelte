@@ -417,6 +417,7 @@
             variant="inline"
             selectedPropType={selectedLeftPropType}
             color="blue"
+            showColors={false}
             title={catDogMode
               ? t("settings_props_left_hand")
               : t("settings_props_select_prop")}
@@ -435,6 +436,7 @@
               variant="inline"
               selectedPropType={selectedRightPropType}
               color="red"
+              showColors={false}
               title={t("settings_props_right_hand")}
               onSelect={handleInlineSelectRed}
               chirality={rightHand}

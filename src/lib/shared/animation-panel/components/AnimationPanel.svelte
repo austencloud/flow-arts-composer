@@ -46,11 +46,7 @@
   import HandPropToolbar, {
     type HandPropToolbarProps,
   } from "$lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
-  import PrimaryPropColorSettings from "$lib/shared/settings/components/tabs/prop-type/PrimaryPropColorSettings.svelte";
-  import {
-    getSettings,
-    updateSetting,
-  } from "$lib/shared/application/state/app-state.svelte";
+  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import { viewingPropLabel } from "$lib/shared/foundation/services/prop-viewing";
   import AnimatorInspectorShell from "./AnimatorInspectorShell.svelte";
   import AnimatorInspectorFooter from "./AnimatorInspectorFooter.svelte";
@@ -159,10 +155,10 @@
      */
     handProps?: HandPropToolbarProps;
     /**
-     * Put the account's primary prop colours above the prop grid, the way the
-     * global prop drawer does, for a host whose canvas draws the props in
-     * those colours and has no other way to reach them. Hosts whose header
-     * already offers the control leave it off.
+     * The prop grid's own primary-colour control (BentoPropGrid's
+     * showColors). On by default: every canvas this panel drives draws its
+     * props in the account colours unless the host passes its own pair, and
+     * such a host turns this off.
      */
     showPropColors?: boolean;
     onExport?: () => void;
@@ -239,7 +235,7 @@
     propPickerActive = false,
     propChirality,
     handProps,
-    showPropColors = false,
+    showPropColors = true,
     onExport,
     captureVideoOpener,
     exportSectionRequest = 0,
@@ -832,17 +828,6 @@
     {#if handProps}
       <HandPropToolbar {handProps} />
     {/if}
-    {#if showPropColors}
-      <!-- The same control the global prop drawer puts above its grid: the
-           pair's colours are chosen where the pair is chosen. -->
-      <div class="prop-colors">
-        <PrimaryPropColorSettings
-          colors={getSettings().primaryPropColors}
-          darkMode={getSettings().darkMode}
-          onchange={(colors) => updateSetting("primaryPropColors", colors)}
-        />
-      </div>
-    {/if}
     {#await import("$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte")}
       <!-- Reserve space while the chunk loads so the body doesn't render
            as a blank slot and then jump when the grid arrives. -->
@@ -858,6 +843,7 @@
         {selectedPropType}
         onSelect={onPropChange}
         chirality={propChirality}
+        showColors={showPropColors}
         variant="inline"
         flat
         fill={layout === "sidebar"}
@@ -1469,12 +1455,6 @@
     align-items: center;
     justify-content: center;
     min-height: 140px;
-  }
-
-  /* The colour pair above the grid, on the prop drawer's own inset. */
-  .prop-colors {
-    padding: 8px 16px 4px;
-    flex-shrink: 0;
   }
 
   /* Compact Export body: label-left rows instead of stacked sections. */

@@ -1,6 +1,7 @@
 <script lang="ts">
   import {
     getSettings,
+    updateSetting,
     updateSettings,
   } from "$lib/shared/application/state/app-state.svelte";
   import { isPropUnlocked } from "$lib/shared/gamification/state/prop-collection-state.svelte";
@@ -13,9 +14,15 @@
   } from "$lib/shared/subscription/domain/premium-prop-access";
   import type { ComponentProps } from "svelte";
   import PropGrid from "./PropGrid.svelte";
+  import PrimaryPropColorSettings from "./PrimaryPropColorSettings.svelte";
+  import { growFade } from "$lib/shared/transitions/motion";
   import { DEFAULT_TRIANGLE_GRIP } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
 
-  let props: Omit<
+  let {
+    showColors = true,
+    onDrillChange,
+    ...props
+  }: Omit<
     ComponentProps<typeof PropGrid>,
     | "fanAppearance"
     | "onFanAppearanceChange"
@@ -30,12 +37,39 @@
     | "colors"
     | "triangleGrip"
     | "onTriangleGripChange"
-  > = $props();
+    | "onDrillChange"
+  > & {
+    /**
+     * The account's primary prop colours above the catalogue: the pair's
+     * colours are chosen where the pair is chosen, on every picker. A host
+     * turns it off only when its render ignores those colours (tunnel
+     * performer colours, 3D materials, canonical print cards, saved prop
+     * metadata) or the page already shows the control beside the grid.
+     */
+    showColors?: boolean;
+    onDrillChange?: (drilled: boolean) => void;
+  } = $props();
   const settings = $derived(getSettings());
+  // A drilled family or detail screen takes the whole picker, as the sheet's
+  // own toolbar already does.
+  let drilled = $state(false);
 </script>
 
+{#if showColors && !drilled}
+  <div class="prop-colors" transition:growFade={{ axis: "y" }}>
+    <PrimaryPropColorSettings
+      colors={settings.primaryPropColors}
+      darkMode={settings.darkMode}
+      onchange={(colors) => updateSetting("primaryPropColors", colors)}
+    />
+  </div>
+{/if}
 <PropGrid
   {...props}
+  onDrillChange={(next) => {
+    drilled = next;
+    onDrillChange?.(next);
+  }}
   fanAppearance={settings.fanAppearance}
   onFanAppearanceChange={(fanAppearance) =>
     void updateSettings({ fanAppearance })}
@@ -56,3 +90,11 @@
     <PremiumNudge nudge={PREMIUM_COSMETIC_NUDGE} onDismiss={dismiss} />
   {/snippet}
 </PropGrid>
+
+<style>
+  .prop-colors {
+    /* Hosts align it with their own inset; the default matches the grid's. */
+    padding: var(--prop-colors-inset, 8px 16px 4px);
+    flex-shrink: 0;
+  }
+</style>
