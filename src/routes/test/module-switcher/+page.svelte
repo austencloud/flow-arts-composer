@@ -52,6 +52,7 @@
 
 <style>
   .harness {
+    box-sizing: border-box;
     min-height: 100dvh;
     padding: 24px;
     display: flex;
