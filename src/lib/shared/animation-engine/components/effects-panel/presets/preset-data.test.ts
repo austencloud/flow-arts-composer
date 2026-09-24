@@ -32,6 +32,7 @@ import { BUBBLES_PRESET_GROUP } from "./bubbles-presets";
 import { PETALS_PRESET_GROUP } from "./petals-presets";
 import { SMOKE_PRESET_GROUP } from "./smoke-presets";
 import { INK_PRESET_GROUP, INK_PRESETS } from "./ink-presets";
+import { FROST_PRESET_GROUP } from "./frost-presets";
 import { SILK_PRESET_GROUP } from "./silk-presets";
 import { ANIMAL_PRESET_GROUP } from "./animal-presets";
 import { PULSE_PRESET_GROUP } from "./pulse-presets";
@@ -50,14 +51,67 @@ const GROUPS: EffectPresetGroup[] = [
   PETALS_PRESET_GROUP,
   SMOKE_PRESET_GROUP,
   INK_PRESET_GROUP,
+  FROST_PRESET_GROUP,
   SILK_PRESET_GROUP,
   ANIMAL_PRESET_GROUP,
   PULSE_PRESET_GROUP,
 ];
 
+/**
+ * Fields a look may leave unset, and the condition that makes leaving it safe.
+ * Every other field that a sibling look sets must be set by every look in the
+ * group.
+ */
+const SAFE_OMISSIONS: Record<
+  string,
+  Record<string, (patch: Record<string, unknown>) => boolean>
+> = {
+  // The blend slider applies to every fire look; only Liquid Fire resets it.
+  fire: { colorBlend: () => true },
+  // Sparkles draws `color` only in solid mode and `palette` only in palette mode.
+  sparkles: {
+    color: (patch) => patch.colorMode !== "solid",
+    palette: (patch) => patch.colorMode !== "palette",
+  },
+  // Pulse reads `beatInterval` only on the beat trigger and
+  // `velocityThreshold` only on the velocity trigger.
+  pulse: {
+    beatInterval: (patch) => patch.trigger !== "beat",
+    velocityThreshold: (patch) => patch.trigger !== "velocity",
+  },
+};
+
 describe("effect preset data", () => {
-  it("registers all 16 effect groups", () => {
-    expect(GROUPS).toHaveLength(16);
+  it("registers all 17 effect groups", () => {
+    expect(GROUPS).toHaveLength(17);
+  });
+
+  it("every look sets each field its sibling looks set", () => {
+    // applyPreset merges a look over the current config, so a field the look
+    // leaves out keeps whatever the previous look set. Storm after Tesla kept
+    // Tesla's glow and jitter; Hot Coal after Cinder Fan kept the fan emission.
+    const leaks: string[] = [];
+    for (const group of GROUPS) {
+      const patches = group.presets.map((preset) => ({
+        id: preset.id,
+        patch: (preset.patch ?? {}) as Record<string, unknown>,
+      }));
+      const fields = new Set(
+        patches.flatMap(({ patch }) => Object.keys(patch))
+      );
+      const safe = SAFE_OMISSIONS[group.effectType] ?? {};
+      for (const { id, patch } of patches) {
+        for (const field of fields) {
+          if (field in patch) continue;
+          if (safe[field]?.(patch)) continue;
+          leaks.push(`${id}.${field}`);
+        }
+      }
+    }
+    expect(
+      leaks,
+      `looks that inherit the previous look: ${leaks.join(", ")}`
+    ).toEqual([]);
   });
 
   it("every effect except Ghost offers at least one named preset", () => {

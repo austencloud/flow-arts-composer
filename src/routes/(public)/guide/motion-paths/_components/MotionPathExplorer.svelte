@@ -3,10 +3,12 @@
   import { SequenceViewerVisibilityState } from "$lib/shared/sequence-viewer/state/viewer-visibility-state.svelte";
   import { setViewerVisibilityContext } from "$lib/shared/sequence-viewer/context/viewer-visibility-context";
   import {
+    createIntrinsicHeightMotion,
     flyFade,
     growFade,
     motionDuration,
     reducedMotion,
+    type IntrinsicHeightMotion,
   } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import { createLayoutMotion } from "$lib/shared/transitions/layout-flip";
@@ -20,7 +22,9 @@
   import { setAnimationScopeContext } from "$lib/shared/animation-engine/state/animation-scope-context";
   import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
   import AnimationPanel from "$lib/shared/animation-panel/components/AnimationPanel.svelte";
-  import type { ControlDockAction } from "$lib/shared/sequence-viewer/components/ControlDock.svelte";
+  import UnifiedTimeline from "$lib/shared/timeline/UnifiedTimeline.svelte";
+  import { createAnimatorPlaybackAdapter } from "$lib/shared/timeline/adapters/animator-playback-adapter.svelte";
+  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { PillId } from "$lib/shared/animation-panel/pill-nav/pill-types";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
@@ -60,16 +64,24 @@
 
   const explorer = createMotionPathExplorerState();
   const matrixTipDx = $derived(shapeMatrixTipPoint(explorer.propType)?.dx);
-  // The toy box under the canvas (Effects, Props, Effort, Playback, Display)
-  // is the shared animation panel, bound to this surface's own scope.
+  // The toy box under the canvas (Effects, Props, Effort, Display) is the
+  // shared animation panel, bound to this surface's own scope.
   setAnimationScopeContext(explorer.scope);
   setAnimationVisibilityContext(explorer.scope.visibility);
   setEffectsConfigContext(explorer.scope.effects);
-  const playbackAction = $derived<ControlDockAction>({
-    icon: explorer.playing ? "fa-pause" : "fa-play",
-    label: explorer.playing ? "Pause" : "Play",
-    onClick: () => (explorer.playing = !explorer.playing),
-    disabled: !ready || playerFailed,
+  // The canvas's own transport, the viewer's: play, the scrubber, and tempo
+  // behind its "…" button. It follows the canvas on screen, so while a
+  // replacement path loads it still scrubs the one being shown.
+  let seekDisplayed: ((step: number) => void) | null = null;
+  let displayedSequence = $state.raw<SequenceData | null>(null);
+  const transport = createAnimatorPlaybackAdapter({
+    getCurrentStep: () => explorer.liveStep,
+    getSteps: () => (displayedSequence ?? explorer.sequence).steps,
+    getIsPlaying: () => explorer.playing,
+    onSeek: (step) => seekDisplayed?.(step),
+    onTogglePlay: () => (explorer.playing = !explorer.playing),
+    getBpm: () => explorer.bpm,
+    onBpmChange: (bpm) => explorer.setBpm(bpm),
   });
   let pickerOpen = $state(false);
   // The lesson is the path. Everything that picks what plays (the matrix, a
@@ -112,7 +124,6 @@
     effects: "Effects",
     props: "Props",
     effort: "Effort",
-    playback: "Playback",
     display: "Display",
   };
   const shownLabel = $derived(TOY_SECTION_LABELS[shownSection] ?? "Animation");
@@ -128,6 +139,54 @@
   const studioSideBySide = $derived(
     explorerWidth >= STUDIO_SIDE_MIN_CONTAINER && landscape
   );
+  // Side by side, the canvas group sets the studio's height and the card
+  // beside it takes the height of the page it shows. A short page (Effort,
+  // Display) gets a card its own size instead of one stretched down the
+  // canvas; a page laid out in whatever room it has (Props, Effects) gets
+  // all of it and scrolls. Undefined until the page first reports.
+  let studioPageHeight = $state<number | null>();
+  let studioRowHeight = $state(0);
+  let toySectionHeaderHeight = $state(0);
+  let toySectionElement = $state<HTMLElement>();
+  let cardMotion = $state<IntrinsicHeightMotion | null>(null);
+  let cardRowHeight = 0;
+  // A card that would stop this close to the canvas group's bottom edge
+  // takes the whole height, so the two bottoms line up instead of missing
+  // by a few pixels.
+  const CARD_FULL_SNAP = 48;
+  $effect(() => {
+    const element = toySectionElement;
+    if (!element || !studioSideBySide) return;
+    const motion = createIntrinsicHeightMotion(element);
+    cardMotion = motion;
+    return () => {
+      motion.cancel();
+      cardMotion = null;
+      cardRowHeight = 0;
+      studioPageHeight = undefined;
+    };
+  });
+  $effect(() => {
+    const motion = cardMotion;
+    const element = toySectionElement;
+    const page = studioPageHeight;
+    const row = studioRowHeight;
+    const header = toySectionHeaderHeight;
+    if (!motion || !element || page === undefined || row <= 0) return;
+    untrack(() => {
+      const border = element.offsetHeight - element.clientHeight;
+      const natural = page === null ? row : header + page + border;
+      const target = natural >= row - CARD_FULL_SNAP ? row : natural;
+      // A page that changed height animates there. A room that changed size
+      // (a resized window, the card's first page) takes the card with it.
+      const from =
+        row === cardRowHeight
+          ? (motion.currentHeight() ?? element.offsetHeight)
+          : target;
+      cardRowHeight = row;
+      motion.resize(from, target);
+    });
+  });
   let explorerElement = $state<HTMLElement>();
   let phaseTimer: ReturnType<typeof setTimeout> | undefined;
   // The canvas and the dock are what the two layouts share, so they fly
@@ -140,7 +199,10 @@
   });
   const dockMotion = createLayoutMotion({
     getRoot: () => explorerElement,
-    groups: [{ selector: "[data-studio-dock]", datasetKey: "studioDock" }],
+    groups: [
+      { selector: "[data-studio-transport]", datasetKey: "studioTransport" },
+      { selector: "[data-studio-dock]", datasetKey: "studioDock" },
+    ],
     getDuration: () => motionDuration(DURATION.emphasis),
     resize: "layout",
   });
@@ -453,11 +515,15 @@
     onBpmChange={explorer.setBpm}
     onPlaybackToggle={() => (explorer.playing = !explorer.playing)}
     showEffectsPlayback={false}
+    showTempoControls={false}
     showPathShape={false}
     showWordToggle={false}
     selectedPropType={explorer.propType}
     onPropChange={choosePropType}
     sequence={explorer.sequence}
+    onPageHeight={layout === "sidebar"
+      ? (height) => (studioPageHeight = height)
+      : undefined}
   />
 {/snippet}
 
@@ -499,7 +565,7 @@
       </PathShapePanel>
     </div>
 
-    <div class="motion-column">
+    <div class="motion-column" bind:clientHeight={studioRowHeight}>
       <!-- Trace is the lesson's own switch: which point the mandala follows.
            Everything else about the canvas lives in the toy box under it. -->
       <div class="transport" data-rest-only inert={restFaded}>
@@ -532,6 +598,8 @@
               hideGlyph={explorer.soloHand !== null}
               onplayingchange={(value) => (explorer.playing = value)}
               onstepchange={(value) => (explorer.liveStep = value)}
+              onseekref={(seek) => (seekDisplayed = seek)}
+              ondisplayedsequencechange={(shown) => (displayedSequence = shown)}
               onready={() => {
                 ready = true;
                 playerFailed = false;
@@ -547,10 +615,14 @@
             >{/if}
         </div>
       </div>
+      <div class="canvas-transport" data-studio-transport>
+        <UnifiedTimeline playback={transport} compact />
+      </div>
       <!-- The toy box: the same controls the viewer and the Shape Engine
            offer, scoped to this canvas. Path shape is left out because the
-           tiles beside the canvas are that control here. Its pills open the
-           studio and stay its section tabs. -->
+           tiles beside the canvas are that control here, and tempo because
+           the transport above holds it. Its pills open the studio and stay
+           its section tabs. -->
       <div class="toy-box" data-studio-dock>
         <AnimationPanel
           isExporting={false}
@@ -560,12 +632,12 @@
           onBpmChange={explorer.setBpm}
           onPlaybackToggle={() => (explorer.playing = !explorer.playing)}
           showEffectsPlayback={false}
+          showTempoControls={false}
           showPathShape={false}
           showWordToggle={false}
           selectedPropType={explorer.propType}
           onPropChange={choosePropType}
           sequence={explorer.sequence}
-          dockTrailingAction={playbackAction}
           presentation="navigation"
           controlledSection={toySection}
           onActiveSectionChange={chooseToySection}
@@ -751,8 +823,12 @@
         class="toy-section"
         aria-label="{shownLabel} settings"
         transition:flyFade={{ y: 8, duration: DURATION.fast }}
+        bind:this={toySectionElement}
       >
-        <header class="toy-section-header">
+        <header
+          class="toy-section-header"
+          bind:offsetHeight={toySectionHeaderHeight}
+        >
           <PanelButton onclick={leaveStudio}>
             <i class="fas fa-arrow-left" aria-hidden="true"></i>
             <span>Back to paths</span>
@@ -936,6 +1012,15 @@
     justify-content: flex-end;
     margin-top: var(--spacing-sm, 8px);
   }
+  /* The transport sits on the canvas's bottom edge, as in the viewer. It
+     counts the steps of the path that is loading, so its row is there from
+     the first paint and nothing moves when the canvas arrives. */
+  .canvas-transport {
+    flex-shrink: 0;
+    min-width: 0;
+    overflow: hidden;
+    border-radius: 12px;
+  }
   .toy-box {
     flex-shrink: 0;
     min-width: 0;
@@ -1083,7 +1168,8 @@
       flex-direction: column;
       align-self: stretch;
     }
-    .motion-stage {
+    /* The transport stays on the canvas; the room left over goes under it. */
+    .canvas-transport {
       margin-bottom: auto;
     }
     .path-column :global(.path-shape-grid) {
@@ -1200,7 +1286,15 @@
     align-items: stretch;
     gap: var(--spacing-md, 16px);
   }
+  /* Side by side, the canvas group sets the height: a square canvas as wide
+     as its column, its transport and its pills, up to the room under the
+     site header. A wide column no longer leaves a band of empty stage above
+     and below the canvas, and the section card is placed beside it without
+     sizing the row (see .toy-section below). */
   .explorer-workspace.studio.side {
+    position: relative;
+    height: auto;
+    max-height: min(calc(100dvh - 56px - 2 * var(--spacing-md, 16px)), 1400px);
     grid-template-columns: clamp(18rem, 40%, 40rem) minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr);
   }
@@ -1221,8 +1315,17 @@
   .studio.side .motion-column {
     grid-column: 2;
   }
+  /* Positioned in its grid area rather than placed in it, so its content
+     never stretches the row. The script sets its height to the page's own
+     height, capped at the canvas group's, and animates the change when the
+     section changes. Both lines are named: a positioned box with an open
+     end line reaches the grid's edge instead of its track's. */
   .studio.side .toy-section {
-    grid-row: 1;
+    position: absolute;
+    inset: 0 0 auto;
+    grid-column: 1 / 2;
+    grid-row: 1 / 2;
+    max-height: 100%;
   }
   /* The canvas is the largest square the room holds. */
   .studio .motion-stage {
@@ -1238,6 +1341,17 @@
     width: min(100cqw, 100cqh);
     height: auto;
     max-width: none;
+  }
+  /* Its own square first. A room too short for it squeezes the stage, and
+     the canvas inside takes the stage's shorter side. */
+  .studio.side .motion-stage {
+    flex: 0 1 auto;
+    aspect-ratio: 1;
+    max-height: none;
+  }
+  /* The canvas, its transport and the pills stay one centered group. */
+  .studio .canvas-transport {
+    margin-bottom: 0;
   }
   @media (prefers-reduced-motion: reduce) {
     [data-rest-only] {

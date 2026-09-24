@@ -4,7 +4,10 @@ import {
   type SequenceRevisionRef,
   type SequenceTimeMap,
 } from "$lib/shared/media-composition/domain/sequence-time-map";
-import type { CollaborativeVideo } from "$lib/shared/video-collaboration/domain/collaborative-video";
+import type {
+  CollaborativeVideo,
+  StepMap,
+} from "$lib/shared/video-collaboration/domain/collaborative-video";
 import {
   resolveHandLabeling,
   DEFAULT_HAND_LABELING,
@@ -14,7 +17,8 @@ import {
 export type PerformanceAlignmentStatus =
   | "saved-manual"
   | "assisted"
-  | "unmapped";
+  | "unmapped"
+  | "local-manual";
 
 export interface PostStudioPerformanceSelection {
   id: string;
@@ -27,6 +31,21 @@ export interface PostStudioPerformanceSelection {
   sequenceTimeMap: SequenceTimeMap | null;
   alignmentStatus: PerformanceAlignmentStatus;
   alignmentDetail: string;
+}
+
+/**
+ * What the performance picker needs to offer beat-tapping for the local file
+ * that is the CURRENT performance. Null when the current performance is a
+ * catalog video, a linked-but-uncataloged URL, or nothing is chosen yet.
+ */
+export interface LocalPerformanceInfo {
+  url: string;
+  duration: number;
+  /** Storage key from `localStepMapKey`, scoping a tapped map to this
+   *  (sequence, file) pairing. */
+  key: string;
+  label: string;
+  stepMap: StepMap | null;
 }
 
 export function createPostStudioSequenceRef(
@@ -97,5 +116,38 @@ export function createCatalogPerformanceSelection(
       ...createUnmappedPerformanceSelection(base),
       alignmentDetail: "Saved map needs repair · even timing preview",
     };
+  }
+}
+
+/**
+ * Attaches a beat-tapped local StepMap to a selection. Building the
+ * SequenceTimeMap goes through the same migration a saved catalog map does,
+ * which needs a real media duration - a local file whose duration could not
+ * be read cannot be migrated, so migration is left to throw (RangeError) and
+ * that is the signal to hand the selection back unchanged rather than
+ * half-updated. The caller (PostStudio's `applyLocalStepMap`) tells success
+ * from failure by checking whether `alignmentStatus` actually became
+ * "local-manual".
+ */
+export function withLocalStepMap(
+  selection: PostStudioPerformanceSelection,
+  stepMap: StepMap,
+  sequenceRef: SequenceRevisionRef
+): PostStudioPerformanceSelection {
+  try {
+    const sequenceTimeMap = migrateLegacyStepMap({
+      stepMap,
+      sequenceRef,
+      mediaSourceId: selection.id,
+      mediaDurationSeconds: selection.duration ?? NaN,
+    });
+    return {
+      ...selection,
+      sequenceTimeMap,
+      alignmentStatus: "local-manual",
+      alignmentDetail: "Tapped on this device",
+    };
+  } catch {
+    return selection;
   }
 }

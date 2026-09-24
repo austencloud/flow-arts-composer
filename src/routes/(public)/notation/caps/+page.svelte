@@ -11,9 +11,10 @@
   // Suffix is deliberately NOT "| The Kinetic Alphabet". CAPs are not TKA's,
   // and a brand suffix on a title is the strongest ownership signal a reader
   // or an indexer sees — it reads exactly like "Hooks | React".
-  const TITLE = "CAPs: Continuous Assembly Patterns | Flow Arts Notation Archive";
+  const TITLE =
+    "CAPs: Continuous Assembly Patterns | Flow Arts Notation Archive";
   const DESCRIPTION =
-    "Explore the history and mathematics of Continuous Assembly Patterns through reconstructed curves, live geometric models, and original sources.";
+    "The history and mathematics of Continuous Assembly Patterns, with reconstructed curves, geometric models, and original sources.";
   const URL = "https://tkaflowarts.com/notation/caps";
   const THREAD_URL =
     "https://www.homeofpoi.com/en/community/forums/topics/891193/What-are-CAP-s";
@@ -195,7 +196,7 @@
           Damien called the elementary families rosettes and cycloids. In
           standard curve language they belong to the centered trochoid family;
           his cycloid cases are the cusp-forming epicycloids or hypocycloids.
-          The clean plots below are reconstructed from his published parameters.
+          The plots below use his published parameters.
         </p>
         <p class="atlas-credit">
           The animated reference illustrations Damien linked were by
@@ -215,7 +216,7 @@
 
   <section id="origin" class="editorial-section" style="--accent: #f472b6">
     <span class="section-kicker">Origin chronology</span>
-    <h2 class="section-title">Named on a forum, built at a burn</h2>
+    <h2 class="section-title">From Burning Man to Home of Poi</h2>
     <ol class="chronology">
       <li>
         <time>2007</time>
@@ -253,11 +254,11 @@
       <li>
         <time>Today</time>
         <div>
-          <h3>The sources still matter</h3>
+          <h3>What survives</h3>
           <p>
-            The forum discussion survives, but old playlists and image hosts
-            have disappeared. This exhibit keeps the mathematics readable while
-            sending visitors back to the remaining originals.
+            The forum discussion and Damien's mathematical framework survive.
+            Some playlists and image hosts linked from the thread have
+            disappeared.
           </p>
         </div>
       </li>
@@ -266,7 +267,7 @@
 
   <section id="credits" class="editorial-section" style="--accent: #38bdf8">
     <span class="section-kicker">The people</span>
-    <h2 class="section-title">Credit where it started</h2>
+    <h2 class="section-title">People behind CAPs</h2>
     <div class="credits-layout">
       <article class="credit-primary">
         <span class="credit-role">Term, notation, and mathematics</span>
@@ -342,7 +343,7 @@
     <div class="relationship-grid">
       <article>
         <span>CAPs</span>
-        <h3>Compose trajectories</h3>
+        <h3>A path for one prop</h3>
         <p>
           CAPs serially assemble elementary paths for one prop. Each hand's
           trajectory is defined independently, then two-hand movement can be
@@ -351,17 +352,13 @@
       </article>
       <article>
         <span>LOOPs</span>
-        <h3>Compose snapshots</h3>
+        <h3>A letter for both hands</h3>
         <p>
           Each TKA letter records both hands at one step. LOOP transformations
           combine those letters into speakable words that return to their start.
         </p>
       </article>
     </div>
-    <p class="relationship-note">
-      Both answer the desire for patterns that can repeat forever. They are
-      parallel concepts, not parent and child. Neither contains the other.
-    </p>
   </section>
 
   <section id="watch" class="editorial-section" style="--accent: #a78bfa">
@@ -694,7 +691,6 @@
   }
 
   .credit-footnote,
-  .relationship-note,
   .media-footnote {
     margin: 1.25rem 0 0;
     color: var(--theme-text-dim, #aab4c3);

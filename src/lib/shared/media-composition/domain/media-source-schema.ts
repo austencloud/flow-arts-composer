@@ -12,6 +12,7 @@ export const MediaSourceKindSchema = z.enum([
   "tunnel",
   "scene-3d",
   "mandala",
+  "beat-carousel",
   "image",
   "audio",
 ]);
@@ -26,6 +27,7 @@ export const SEQUENCE_DERIVED_SOURCE_KINDS = [
   "tunnel",
   "scene-3d",
   "mandala",
+  "beat-carousel",
 ] as const;
 
 export type MediaSourceKind = z.infer<typeof MediaSourceKindSchema>;

@@ -693,23 +693,21 @@ with pre-prepared data for better performance.
   // need a report each time their content genuinely changes, and used to get
   // exactly one for the life of the cell.
   let reportedReadySignature: string | null = null;
+  const renderReady = $derived(
+    Boolean(
+      preparedData &&
+      prepareKey &&
+      appliedPrepareKey === prepareKey &&
+      (!effectiveShowGrid || gridReady) &&
+      (motionProgress === null ||
+        !motionStartData ||
+        preparedStartData?._prepared)
+    )
+  );
   $effect(() => {
     const key = prepareKey;
     const signature = `${readyEpoch}|${key}`;
-    const gridSettled = !effectiveShowGrid || gridReady;
-    const motionGeometryReady =
-      motionProgress === null ||
-      !motionStartData ||
-      Boolean(preparedStartData?._prepared);
-    if (
-      preparedData &&
-      key &&
-      appliedPrepareKey === key &&
-      gridSettled &&
-      motionGeometryReady &&
-      reportedReadySignature !== signature &&
-      onReady
-    ) {
+    if (renderReady && reportedReadySignature !== signature && onReady) {
       reportedReadySignature = signature;
       void tick().then(() => onReady());
     }
@@ -721,7 +719,8 @@ with pre-prepared data for better performance.
   class:loading={isLoading}
   role={hasA11yLabel ? "img" : undefined}
   aria-label={hasA11yLabel ? a11yLabel : undefined}
-  aria-busy={Boolean(pictographData) && !preparedData}
+  aria-busy={Boolean(pictographData) && !renderReady}
+  data-pictograph-render-ready={renderReady}
 >
   {#if preparedData}
     {#if disableTransitions}

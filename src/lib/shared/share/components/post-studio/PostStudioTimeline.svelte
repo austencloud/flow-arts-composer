@@ -32,7 +32,11 @@
     point: Parameters<typeof resolvePresetTimePoint>[0]
   ): number {
     return (
-      (resolvePresetTimePoint(point, composition.durationSeconds) /
+      (resolvePresetTimePoint(
+        point,
+        composition.durationSeconds,
+        composition.activePreset.markers
+      ) /
         composition.durationSeconds) *
       100
     );
@@ -77,7 +81,11 @@
     clip: (typeof lanes)[number]["clips"][number],
     boundary: "start" | "end"
   ): number {
-    return resolvePresetTimePoint(clip[boundary], composition.durationSeconds);
+    return resolvePresetTimePoint(
+      clip[boundary],
+      composition.durationSeconds,
+      composition.activePreset.markers
+    );
   }
 
   function secondsAtPointer(event: PointerEvent, track: HTMLElement): number {
@@ -142,107 +150,107 @@
 </script>
 
 <section class="timeline" aria-label="Clip timeline">
-    <div class="advanced-panel">
-      <!-- Trim comes first because it sets the length everything below is
+  <div class="advanced-panel">
+    <!-- Trim comes first because it sets the length everything below is
            measured against: cutting the head off the take reshapes the ruler,
            the lanes, and the scrubber under it. -->
-      <PostStudioSourceTrim />
+    <PostStudioSourceTrim />
 
-      <p class="timeline-help">
-        Drag clip edges to change when each source appears. Arrow keys move 0.1
-        seconds; hold Shift for 1 second.
-      </p>
-      <div class="ruler" aria-hidden="true">
-        <span>{formatTime(0)}</span>
-        <span>{formatTime(composition.durationSeconds * 0.25)}</span>
-        <span>{formatTime(composition.durationSeconds * 0.5)}</span>
-        <span>{formatTime(composition.durationSeconds * 0.75)}</span>
-        <span>{formatTime(composition.durationSeconds)}</span>
-      </div>
-
-      <div class="lanes">
-        {#each lanes as lane (lane.region.id)}
-          <div class="lane">
-            <span class="lane-label">{lane.region.label}</span>
-            <div class="lane-track">
-              {#each lane.clips as clip (clip.id)}
-                <button
-                  type="button"
-                  class="clip"
-                  class:selected={composition.selectedRegion?.id ===
-                    lane.region.id}
-                  data-role={clip.sourceRole}
-                  style={clipStyle(clip)}
-                  aria-label={`Edit ${roleLabel(clip.sourceRole)}, ${clipTimeLabel(clip)}`}
-                  title={`${roleLabel(clip.sourceRole)} · ${clipTimeLabel(clip)}`}
-                  onclick={() => composition.selectRole(clip.sourceRole)}
-                >
-                  <strong>{roleLabel(clip.sourceRole)}</strong>
-                  <span class="clip-time">{clipTimeLabel(clip)}</span>
-                </button>
-                {@const clipStartPercent = percent(clip.start)}
-                {@const clipEndPercent = percent(clip.end)}
-                <button
-                  type="button"
-                  role="slider"
-                  class="trim-handle trim-start"
-                  class:at-leading={clipStartPercent < 0.5}
-                  style:left={`${clipStartPercent}%`}
-                  aria-label={`Trim ${roleLabel(clip.sourceRole)} start`}
-                  aria-valuemin="0"
-                  aria-valuemax={composition.durationSeconds}
-                  aria-valuenow={boundarySeconds(clip, "start")}
-                  aria-valuetext={formatTime(boundarySeconds(clip, "start"))}
-                  title="Drag to change when this starts"
-                  onpointerdown={(event) => beginTrim(event, clip.id, "start")}
-                  onkeydown={(event) => nudgeTrim(event, clip, "start")}
-                ></button>
-                <button
-                  type="button"
-                  role="slider"
-                  class="trim-handle trim-end"
-                  class:at-trailing={clipEndPercent > 99.5}
-                  style:left={`${clipEndPercent}%`}
-                  aria-label={`Trim ${roleLabel(clip.sourceRole)} end`}
-                  aria-valuemin="0"
-                  aria-valuemax={composition.durationSeconds}
-                  aria-valuenow={boundarySeconds(clip, "end")}
-                  aria-valuetext={formatTime(boundarySeconds(clip, "end"))}
-                  title="Drag to change when this ends"
-                  onpointerdown={(event) => beginTrim(event, clip.id, "end")}
-                  onkeydown={(event) => nudgeTrim(event, clip, "end")}
-                ></button>
-              {/each}
-              {#each composition.activePreset.transitions.filter( (transition) => lane.clips.some((clip) => clip.id === transition.outgoingClipId) ) as transition (transition.id)}
-                <span
-                  class="transition"
-                  style={transitionStyle(transition)}
-                  title="Crossfade"
-                  aria-hidden="true"
-                ></span>
-              {/each}
-            </div>
-          </div>
-        {/each}
-      </div>
-
-      <div class="scrubber">
-        <input
-          type="range"
-          min="0"
-          max={composition.durationSeconds}
-          step="0.01"
-          value={composition.previewSeconds}
-          aria-label="Preview time"
-          oninput={onScrub}
-        />
-        <span
-          class="playhead"
-          style:left={`${(composition.previewSeconds / composition.durationSeconds) * 100}%`}
-          aria-hidden="true"
-        ></span>
-      </div>
+    <p class="timeline-help">
+      Drag clip edges to change when each source appears. Arrow keys move 0.1
+      seconds; hold Shift for 1 second.
+    </p>
+    <div class="ruler" aria-hidden="true">
+      <span>{formatTime(0)}</span>
+      <span>{formatTime(composition.durationSeconds * 0.25)}</span>
+      <span>{formatTime(composition.durationSeconds * 0.5)}</span>
+      <span>{formatTime(composition.durationSeconds * 0.75)}</span>
+      <span>{formatTime(composition.durationSeconds)}</span>
     </div>
+
+    <div class="lanes">
+      {#each lanes as lane (lane.region.id)}
+        <div class="lane">
+          <span class="lane-label">{lane.region.label}</span>
+          <div class="lane-track">
+            {#each lane.clips as clip (clip.id)}
+              <button
+                type="button"
+                class="clip"
+                class:selected={composition.selectedRegion?.id ===
+                  lane.region.id}
+                data-role={clip.sourceRole}
+                style={clipStyle(clip)}
+                aria-label={`Edit ${roleLabel(clip.sourceRole)}, ${clipTimeLabel(clip)}`}
+                title={`${roleLabel(clip.sourceRole)} · ${clipTimeLabel(clip)}`}
+                onclick={() => composition.selectRole(clip.sourceRole)}
+              >
+                <strong>{roleLabel(clip.sourceRole)}</strong>
+                <span class="clip-time">{clipTimeLabel(clip)}</span>
+              </button>
+              {@const clipStartPercent = percent(clip.start)}
+              {@const clipEndPercent = percent(clip.end)}
+              <button
+                type="button"
+                role="slider"
+                class="trim-handle trim-start"
+                class:at-leading={clipStartPercent < 0.5}
+                style:left={`${clipStartPercent}%`}
+                aria-label={`Trim ${roleLabel(clip.sourceRole)} start`}
+                aria-valuemin="0"
+                aria-valuemax={composition.durationSeconds}
+                aria-valuenow={boundarySeconds(clip, "start")}
+                aria-valuetext={formatTime(boundarySeconds(clip, "start"))}
+                title="Drag to change when this starts"
+                onpointerdown={(event) => beginTrim(event, clip.id, "start")}
+                onkeydown={(event) => nudgeTrim(event, clip, "start")}
+              ></button>
+              <button
+                type="button"
+                role="slider"
+                class="trim-handle trim-end"
+                class:at-trailing={clipEndPercent > 99.5}
+                style:left={`${clipEndPercent}%`}
+                aria-label={`Trim ${roleLabel(clip.sourceRole)} end`}
+                aria-valuemin="0"
+                aria-valuemax={composition.durationSeconds}
+                aria-valuenow={boundarySeconds(clip, "end")}
+                aria-valuetext={formatTime(boundarySeconds(clip, "end"))}
+                title="Drag to change when this ends"
+                onpointerdown={(event) => beginTrim(event, clip.id, "end")}
+                onkeydown={(event) => nudgeTrim(event, clip, "end")}
+              ></button>
+            {/each}
+            {#each composition.activePreset.transitions.filter( (transition) => lane.clips.some((clip) => clip.id === transition.outgoingClipId) ) as transition (transition.id)}
+              <span
+                class="transition"
+                style={transitionStyle(transition)}
+                title="Crossfade"
+                aria-hidden="true"
+              ></span>
+            {/each}
+          </div>
+        </div>
+      {/each}
+    </div>
+
+    <div class="scrubber">
+      <input
+        type="range"
+        min="0"
+        max={composition.durationSeconds}
+        step="0.01"
+        value={composition.previewSeconds}
+        aria-label="Preview time"
+        oninput={onScrub}
+      />
+      <span
+        class="playhead"
+        style:left={`${(composition.previewSeconds / composition.durationSeconds) * 100}%`}
+        aria-hidden="true"
+      ></span>
+    </div>
+  </div>
 </section>
 
 <style>
