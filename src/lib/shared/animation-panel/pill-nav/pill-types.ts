@@ -85,12 +85,14 @@ export function resolveActivePill(
   if (availableIds.includes(active)) return active;
   const parts = MOTION_PARTS as readonly PillId[];
   // Merging sends the parts to Motion; unmerging sends Motion back to the
-  // first part the rail offers. A remembered "display" needs neither hop — it
-  // is a member of the rail in both modes.
+  // first part the rail offers. A part the host leaves out (Playback beside a
+  // canvas with its own transport) goes to the part that is left. A remembered
+  // "display" needs neither hop — it is a member of the rail in both modes.
   if (parts.includes(active)) {
-    return availableIds.includes("motion")
-      ? "motion"
-      : (availableIds[0] ?? null);
+    if (availableIds.includes("motion")) return "motion";
+    return (
+      availableIds.find((id) => parts.includes(id)) ?? availableIds[0] ?? null
+    );
   }
   if (active === "motion") {
     return (

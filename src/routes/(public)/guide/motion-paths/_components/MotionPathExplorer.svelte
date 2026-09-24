@@ -20,7 +20,9 @@
   import { setAnimationScopeContext } from "$lib/shared/animation-engine/state/animation-scope-context";
   import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
   import AnimationPanel from "$lib/shared/animation-panel/components/AnimationPanel.svelte";
-  import type { ControlDockAction } from "$lib/shared/sequence-viewer/components/ControlDock.svelte";
+  import UnifiedTimeline from "$lib/shared/timeline/UnifiedTimeline.svelte";
+  import { createAnimatorPlaybackAdapter } from "$lib/shared/timeline/adapters/animator-playback-adapter.svelte";
+  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { PillId } from "$lib/shared/animation-panel/pill-nav/pill-types";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
@@ -60,16 +62,24 @@
 
   const explorer = createMotionPathExplorerState();
   const matrixTipDx = $derived(shapeMatrixTipPoint(explorer.propType)?.dx);
-  // The toy box under the canvas (Effects, Props, Effort, Playback, Display)
-  // is the shared animation panel, bound to this surface's own scope.
+  // The toy box under the canvas (Effects, Props, Effort, Display) is the
+  // shared animation panel, bound to this surface's own scope.
   setAnimationScopeContext(explorer.scope);
   setAnimationVisibilityContext(explorer.scope.visibility);
   setEffectsConfigContext(explorer.scope.effects);
-  const playbackAction = $derived<ControlDockAction>({
-    icon: explorer.playing ? "fa-pause" : "fa-play",
-    label: explorer.playing ? "Pause" : "Play",
-    onClick: () => (explorer.playing = !explorer.playing),
-    disabled: !ready || playerFailed,
+  // The canvas's own transport, the viewer's: play, the scrubber, and tempo
+  // behind its "…" button. It follows the canvas on screen, so while a
+  // replacement path loads it still scrubs the one being shown.
+  let seekDisplayed: ((step: number) => void) | null = null;
+  let displayedSequence = $state.raw<SequenceData | null>(null);
+  const transport = createAnimatorPlaybackAdapter({
+    getCurrentStep: () => explorer.liveStep,
+    getSteps: () => (displayedSequence ?? explorer.sequence).steps,
+    getIsPlaying: () => explorer.playing,
+    onSeek: (step) => seekDisplayed?.(step),
+    onTogglePlay: () => (explorer.playing = !explorer.playing),
+    getBpm: () => explorer.bpm,
+    onBpmChange: (bpm) => explorer.setBpm(bpm),
   });
   let pickerOpen = $state(false);
   // The lesson is the path. Everything that picks what plays (the matrix, a
@@ -112,7 +122,6 @@
     effects: "Effects",
     props: "Props",
     effort: "Effort",
-    playback: "Playback",
     display: "Display",
   };
   const shownLabel = $derived(TOY_SECTION_LABELS[shownSection] ?? "Animation");
@@ -140,7 +149,10 @@
   });
   const dockMotion = createLayoutMotion({
     getRoot: () => explorerElement,
-    groups: [{ selector: "[data-studio-dock]", datasetKey: "studioDock" }],
+    groups: [
+      { selector: "[data-studio-transport]", datasetKey: "studioTransport" },
+      { selector: "[data-studio-dock]", datasetKey: "studioDock" },
+    ],
     getDuration: () => motionDuration(DURATION.emphasis),
     resize: "layout",
   });
@@ -453,6 +465,7 @@
     onBpmChange={explorer.setBpm}
     onPlaybackToggle={() => (explorer.playing = !explorer.playing)}
     showEffectsPlayback={false}
+    showTempoControls={false}
     showPathShape={false}
     showWordToggle={false}
     selectedPropType={explorer.propType}
@@ -532,6 +545,8 @@
               hideGlyph={explorer.soloHand !== null}
               onplayingchange={(value) => (explorer.playing = value)}
               onstepchange={(value) => (explorer.liveStep = value)}
+              onseekref={(seek) => (seekDisplayed = seek)}
+              ondisplayedsequencechange={(shown) => (displayedSequence = shown)}
               onready={() => {
                 ready = true;
                 playerFailed = false;
@@ -547,10 +562,14 @@
             >{/if}
         </div>
       </div>
+      <div class="canvas-transport" data-studio-transport>
+        <UnifiedTimeline playback={transport} compact />
+      </div>
       <!-- The toy box: the same controls the viewer and the Shape Engine
            offer, scoped to this canvas. Path shape is left out because the
-           tiles beside the canvas are that control here. Its pills open the
-           studio and stay its section tabs. -->
+           tiles beside the canvas are that control here, and tempo because
+           the transport above holds it. Its pills open the studio and stay
+           its section tabs. -->
       <div class="toy-box" data-studio-dock>
         <AnimationPanel
           isExporting={false}
@@ -560,12 +579,12 @@
           onBpmChange={explorer.setBpm}
           onPlaybackToggle={() => (explorer.playing = !explorer.playing)}
           showEffectsPlayback={false}
+          showTempoControls={false}
           showPathShape={false}
           showWordToggle={false}
           selectedPropType={explorer.propType}
           onPropChange={choosePropType}
           sequence={explorer.sequence}
-          dockTrailingAction={playbackAction}
           presentation="navigation"
           controlledSection={toySection}
           onActiveSectionChange={chooseToySection}
@@ -936,6 +955,15 @@
     justify-content: flex-end;
     margin-top: var(--spacing-sm, 8px);
   }
+  /* The transport sits on the canvas's bottom edge, as in the viewer. It
+     counts the steps of the path that is loading, so its row is there from
+     the first paint and nothing moves when the canvas arrives. */
+  .canvas-transport {
+    flex-shrink: 0;
+    min-width: 0;
+    overflow: hidden;
+    border-radius: 12px;
+  }
   .toy-box {
     flex-shrink: 0;
     min-width: 0;
@@ -1083,7 +1111,8 @@
       flex-direction: column;
       align-self: stretch;
     }
-    .motion-stage {
+    /* The transport stays on the canvas; the room left over goes under it. */
+    .canvas-transport {
       margin-bottom: auto;
     }
     .path-column :global(.path-shape-grid) {
@@ -1238,6 +1267,10 @@
     width: min(100cqw, 100cqh);
     height: auto;
     max-width: none;
+  }
+  /* The canvas, its transport and the pills stay one centered group. */
+  .studio .canvas-transport {
+    margin-bottom: 0;
   }
   @media (prefers-reduced-motion: reduce) {
     [data-rest-only] {
