@@ -88,7 +88,7 @@
       <div class="duo-demo">
         <SequenceHeroDemo
           sequence={demoSequence}
-          note="the demo sequence, on staves"
+          note="both ends of each staff stay visible"
         />
       </div>
     </div>
@@ -99,10 +99,9 @@
       <p>
         Staff lessons keep the thumb and pinky ends as fixed references. The
         spinner uses the space above and below the shoulder, and turns into the
-        plane behind the body, without finger spinning or changing grip. Other
-        props use those techniques, and the notation allows them. Once you can
-        read the turn value in a pictograph, the staff teaching constraint no
-        longer needs to govern how you move.
+        plane behind the body, without finger spinning or changing grip. The
+        notation also allows finger spins and grip changes. Those are left out
+        of the staff lessons so the turn value stays easy to follow.
       </p>
       <p>
         When you're ready to learn the notation, the <a href="/guide">guide</a>

@@ -46,7 +46,7 @@
       id: "relationship",
       href: "#relationship",
       heading: "CAPs and LOOPs",
-      descriptor: "Parallel systems, different base units.",
+      descriptor: "CAPs follow one prop; LOOPs join two-hand letters.",
       span: "1x1",
       color: "#22d3ee",
       icon: "fa-diagram-project",
@@ -78,10 +78,7 @@
   <header class="hub-head">
     <span class="eyebrow">Continuous Assembly Patterns</span>
     <h1>CAPs</h1>
-    <p>
-      A prop-spinning path assembled from pieces of simpler patterns, looped
-      forever.
-    </p>
+    <p>Watch a prop trace an extension, then return through antispin.</p>
   </header>
 
   <div class="hub-stage">
