@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from "svelte";
   import {
     getVideosForSequence,
     updateStepMap,
@@ -12,6 +13,7 @@
   import {
     createCatalogPerformanceSelection,
     createUnmappedPerformanceSelection,
+    type LocalPerformanceInfo,
     type PostStudioPerformanceSelection,
   } from "./post-studio-performance-selection";
 
@@ -24,6 +26,18 @@
     onClose: () => void;
     onSelect: (selection: PostStudioPerformanceSelection) => void;
     onChooseFile: (file: File) => Promise<void>;
+    /** The current performance's local-file info, or null when it is a
+     *  catalog video, a linked-but-uncataloged URL, or nothing chosen yet. */
+    localPerformance: LocalPerformanceInfo | null;
+    onLocalStepMap: (stepMap: StepMap) => void;
+    /** Skips the video list and opens straight into tapping the current local
+     *  file's beats - set when "Tap beats" was reached from outside the
+     *  picker, e.g. the transport bar's nudge. */
+    mapCurrentOnOpen?: boolean;
+    /** Where a fresh marking run should seek before the first tap - a hint
+     *  for where the interesting footage starts. Ignored once a draft or an
+     *  existing map gives the editor a real position to resume from. */
+    tapStartSeconds?: number;
   }
 
   let {
@@ -35,6 +49,10 @@
     onClose,
     onSelect,
     onChooseFile,
+    localPerformance,
+    onLocalStepMap,
+    mapCurrentOnOpen = false,
+    tapStartSeconds,
   }: Props = $props();
 
   let videos = $state<CollaborativeVideo[]>([]);
@@ -43,6 +61,9 @@
   let actionError = $state("");
   let uploadOpen = $state(false);
   let mappingVideo = $state<CollaborativeVideo | null>(null);
+  /** Mapping the CURRENT local performance rather than a catalog video - see
+   *  `localPerformance`. Mutually exclusive with `mappingVideo`. */
+  let mappingLocal = $state(false);
   let fileInput = $state<HTMLInputElement | null>(null);
   let requestVersion = 0;
 
@@ -52,7 +73,13 @@
     loadError = "";
     try {
       const nextVideos = await getVideosForSequence(sequenceId);
-      if (version === requestVersion) videos = nextVideos;
+      if (version === requestVersion) {
+        videos = nextVideos;
+        if (mapCurrentOnOpen && !localPerformance && currentUrl) {
+          mappingVideo =
+            nextVideos.find((video) => video.videoUrl === currentUrl) ?? null;
+        }
+      }
     } catch (error) {
       if (version !== requestVersion) return;
       loadError =
@@ -68,6 +95,14 @@
     if (!open) return;
     const sequenceId = sequence.id;
     actionError = "";
+    mappingVideo = null;
+    // Untracked: this should fire only on the open transition, not every time
+    // mapCurrentOnOpen or localPerformance happens to change while the picker
+    // stays open (saving a local map updates localPerformance, and re-running
+    // this at that instant would fight the deliberate close in saveLocalMap).
+    untrack(() => {
+      mappingLocal = mapCurrentOnOpen && localPerformance !== null;
+    });
     void loadVideos(sequenceId);
   });
 
@@ -75,8 +110,12 @@
     if (!open) return;
     const handleKeydown = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || uploadOpen) return;
-      if (mappingVideo) mappingVideo = null;
-      else onClose();
+      if (mappingVideo || mappingLocal) {
+        mappingVideo = null;
+        mappingLocal = false;
+      } else {
+        onClose();
+      }
     };
     window.addEventListener("keydown", handleKeydown);
     return () => window.removeEventListener("keydown", handleKeydown);
@@ -88,7 +127,19 @@
 
   function closePicker(): void {
     mappingVideo = null;
+    mappingLocal = false;
     onClose();
+  }
+
+  /** Step back from either mapping workspace to the video list. */
+  function backFromMapping(): void {
+    mappingVideo = null;
+    mappingLocal = false;
+  }
+
+  async function saveLocalMap(stepMap: StepMap): Promise<void> {
+    onLocalStepMap(stepMap);
+    mappingLocal = false;
   }
 
   function selectLinkedVideo(): void {
@@ -184,7 +235,7 @@
       aria-modal="true"
       aria-labelledby="performance-picker-title"
     >
-      {#if mappingVideo}
+      {#if mappingVideo || mappingLocal}
         <header>
           <div>
             <span class="eyebrow">Performance timing</span>
@@ -198,22 +249,40 @@
             type="button"
             class="close-button"
             aria-label="Back to performance videos"
-            onclick={() => (mappingVideo = null)}
+            onclick={backFromMapping}
           >
             <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
           </button>
         </header>
         <div class="mapping-workspace">
-          <StepMapEditor
-            videoUrl={mappingVideo.videoUrl}
-            videoDuration={mappingVideo.duration}
-            steps={sequence.steps}
-            startPlacement={sequence.startPlacement ?? sequence.startingPlacement}
-            initialStepMap={mappingVideo.beatMap}
-            {bpm}
-            onSave={saveMappedVideo}
-            onClose={() => (mappingVideo = null)}
-          />
+          {#if mappingVideo}
+            <StepMapEditor
+              videoUrl={mappingVideo.videoUrl}
+              videoDuration={mappingVideo.duration}
+              steps={sequence.steps}
+              startPlacement={sequence.startPlacement ??
+                sequence.startingPlacement}
+              initialStepMap={mappingVideo.beatMap}
+              initialTime={tapStartSeconds}
+              {bpm}
+              onSave={saveMappedVideo}
+              onClose={backFromMapping}
+            />
+          {:else if localPerformance}
+            <StepMapEditor
+              videoUrl={localPerformance.url}
+              videoDuration={localPerformance.duration}
+              steps={sequence.steps}
+              startPlacement={sequence.startPlacement ??
+                sequence.startingPlacement}
+              initialStepMap={localPerformance.stepMap ?? undefined}
+              draftKey={`post-studio-local:${localPerformance.key}`}
+              initialTime={tapStartSeconds}
+              {bpm}
+              onSave={saveLocalMap}
+              onClose={backFromMapping}
+            />
+          {/if}
         </div>
       {:else}
         <header>
@@ -265,6 +334,49 @@
 
         {#if actionError}
           <p class="error-message" role="alert">{actionError}</p>
+        {/if}
+
+        {#if localPerformance}
+          <section
+            class="linked-video"
+            aria-labelledby="local-performance-title"
+          >
+            <div class="section-heading">
+              <h3 id="local-performance-title">This device</h3>
+            </div>
+            <article class="video-card local-performance-card">
+              <div class="video-card-main static">
+                <span class="thumbnail">
+                  <i class="fa-solid fa-mobile-screen" aria-hidden="true"></i>
+                  <span>{formatDuration(localPerformance.duration)}</span>
+                </span>
+                <span class="video-copy">
+                  <strong>{localPerformance.label}</strong>
+                  <small>From this device</small>
+                  <span
+                    class:mapped={!!localPerformance.stepMap}
+                    class="alignment-badge"
+                  >
+                    {localPerformance.stepMap
+                      ? "Tapped on this device"
+                      : "Not tapped yet"}
+                  </span>
+                </span>
+                {#if currentUrl === localPerformance.url}
+                  <i class="fa-solid fa-check selected-check" aria-hidden="true"
+                  ></i>
+                {/if}
+              </div>
+              <button
+                type="button"
+                class="map-action"
+                onclick={() => (mappingLocal = true)}
+              >
+                <i class="fa-solid fa-hand-pointer" aria-hidden="true"></i>
+                {localPerformance.stepMap ? "Re-tap beats" : "Tap beats"}
+              </button>
+            </article>
+          </section>
         {/if}
 
         {#if sequence.performanceVideoUrl}
@@ -626,6 +738,12 @@
     font: inherit;
     text-align: left;
     cursor: pointer;
+  }
+
+  /* The local-performance card's info area is a plain div, not a button - it
+     is already the current performance, so there is nothing to select. */
+  .video-card-main.static {
+    cursor: default;
   }
 
   .alignment-badge {

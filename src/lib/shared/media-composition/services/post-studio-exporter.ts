@@ -4,6 +4,7 @@ import type { EvaluatedFrameLayer } from "$lib/shared/media-composition/services
 import type { MediaCompositionPreset } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
 import { renderPostStudioFrame } from "$lib/shared/media-composition/services/post-studio-frame-compositor";
 import { CanvasFrameCapturer } from "$lib/shared/video-export/services/canvas-frame-capturer";
+import type { PostStudioLayerPainter } from "$lib/shared/media-composition/services/post-studio-layer-painter";
 
 export interface PostStudioExportProgress {
   completedFrames: number;
@@ -17,6 +18,8 @@ export interface ExportPostStudioVideoInput {
   durationSeconds: number;
   getLayers: () => readonly EvaluatedFrameLayer[];
   seek: (seconds: number) => void;
+  /** Painted sources by role; they draw at output resolution. */
+  painters?: ReadonlyMap<string, PostStudioLayerPainter>;
   originalAudioUrl?: string | null;
   /**
    * Where the kept span starts inside the audio's own file. The picture already
@@ -105,6 +108,7 @@ export async function exportPostStudioVideo(
         preset: input.preset,
         layers: input.getLayers(),
         cardFrameCache,
+        painters: input.painters,
       });
 
       const timestampMicros = Math.round((frameIndex / frameRate) * 1_000_000);

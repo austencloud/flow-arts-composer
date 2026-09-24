@@ -20,6 +20,7 @@ const timeMap: SequenceTimeMap = {
     { mediaTimeSeconds: 10, sequencePosition: 5 },
   ],
   source: "manual",
+  positionConvention: "engine",
   boundaryPolicy: "clamp",
   updatedAt: 1,
 };
@@ -101,6 +102,29 @@ describe("evaluatePresetFrame", () => {
     expect(layer?.sequencePosition).toBe(
       Math.floor(continuous!.sequencePosition!)
     );
+  });
+
+  it("advances the animation from tapped arrivals while the card marks the landed pose", () => {
+    const arrivalMap: SequenceTimeMap = {
+      ...timeMap,
+      positionConvention: "arrival",
+    };
+    const layer = evaluatePresetFrame(performancePreset, 10, 5, {
+      timeMap: arrivalMap,
+      steps: variableDurationSteps,
+      startPlacementDuration: 1,
+    })[0];
+
+    expect(layer?.sequencePosition).toBe(4);
+    expect(layer?.carouselPosition).toBe(3);
+    expect(layer?.displayedBeatNumber).toBe(3);
+    expect(layer?.animationTimeSeconds).toBe(4);
+    const opening = evaluatePresetFrame(performancePreset, 10, 0, {
+      timeMap: arrivalMap,
+      steps: variableDurationSteps,
+      startPlacementDuration: 1,
+    })[0];
+    expect(opening?.carouselPosition).toBe(0);
   });
 
   it("folds a multi-pass take back into one cycle of the sequence", () => {
