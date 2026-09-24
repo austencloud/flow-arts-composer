@@ -44,6 +44,11 @@ export const SequenceTimeMapSchema = z
     boundaryPolicy: z.literal("clamp"),
     confidence: z.number().finite().min(0).max(1).optional(),
     updatedAt: z.number().finite().int().nonnegative(),
+    /**
+     * What a whole-number position means. See `sequenceTimeMapConvention`.
+     * Optional so maps stored before it parse; absent is inferred from source.
+     */
+    positionConvention: z.enum(["arrival", "engine"]).optional(),
   })
   .strict()
   .superRefine((timeMap, context) => {
@@ -70,6 +75,29 @@ export const SequenceTimeMapSchema = z
   });
 
 export type SequenceTimeMap = z.infer<typeof SequenceTimeMapSchema>;
+
+export type SequencePositionConvention = "arrival" | "engine";
+
+/**
+ * Two ways of counting run through the studio, and they differ by one move.
+ *
+ * - "arrival": what a performer taps. Position 0 is the opening pose and k is
+ *   the landing of move k, so move k + 1 is in flight across (k, k + 1).
+ * - "engine": what the animation engine reads. [0, 1) holds the start
+ *   placement and [k, k + 1) is move k in flight.
+ *
+ * Handing an arrival position to the engine unconverted shows every move one
+ * move late. Tempo grids were built in the engine's terms; everything measured
+ * against footage counts arrivals.
+ */
+export function sequenceTimeMapConvention(
+  timeMap: SequenceTimeMap
+): SequencePositionConvention {
+  return (
+    timeMap.positionConvention ??
+    (timeMap.source === "tempo-grid" ? "engine" : "arrival")
+  );
+}
 
 type AnchorAxis = (anchor: SequenceTimeAnchor) => number;
 
@@ -236,6 +264,98 @@ export function createTempoGridTimeMap(
     boundaryPolicy: "clamp",
     confidence: 0.25,
     updatedAt,
+    positionConvention: "engine",
+  });
+}
+
+export interface SectionTimeMapInput {
+  sequenceRef: SequenceRevisionRef;
+  mediaSourceId: string;
+  /** Media seconds where the performer leaves the opening pose. */
+  startSeconds: number;
+  /** Media seconds where the final move lands. */
+  endSeconds: number;
+  motionDurations: readonly number[];
+  /** Times the sequence runs through inside the section. */
+  passes?: number;
+  id?: string;
+  updatedAt?: number;
+}
+
+/**
+ * An even grid over one section of a take: the stand-in for tapped beats when
+ * a breakdown has none yet. It counts arrivals, as a tapped map does, so a
+ * later tap over the same section replaces it without changing what any
+ * position means. Position 0 is the opening pose at the section start and the
+ * last move lands at its end; each move gets a share of the span weighted by
+ * its duration. Outside the section the clamp holds the nearest pose.
+ */
+export function createSectionTimeMap(
+  input: SectionTimeMapInput
+): SequenceTimeMap {
+  const {
+    sequenceRef,
+    mediaSourceId,
+    startSeconds,
+    endSeconds,
+    motionDurations,
+    passes = 1,
+    id = `${mediaSourceId}:section-grid:v1`,
+    updatedAt = Date.now(),
+  } = input;
+
+  if (!Number.isFinite(startSeconds) || startSeconds < 0) {
+    throw new RangeError("Section start must be a finite, nonnegative time");
+  }
+  if (!Number.isFinite(endSeconds) || endSeconds <= startSeconds) {
+    throw new RangeError("Section end must come after its start");
+  }
+  if (!Number.isInteger(passes) || passes < 1) {
+    throw new RangeError("A section needs a whole number of passes");
+  }
+  if (
+    motionDurations.length === 0 ||
+    motionDurations.some(
+      (duration) => !Number.isFinite(duration) || duration <= 0
+    )
+  ) {
+    throw new RangeError("Motion durations must be positive finite numbers");
+  }
+
+  const passUnits = motionDurations.reduce(
+    (total, duration) => total + duration,
+    0
+  );
+  const totalUnits = passUnits * passes;
+  const span = endSeconds - startSeconds;
+  const anchors: SequenceTimeAnchor[] = [
+    { mediaTimeSeconds: startSeconds, sequencePosition: 0 },
+  ];
+  let elapsedUnits = 0;
+  for (let pass = 0; pass < passes; pass += 1) {
+    motionDurations.forEach((duration, index) => {
+      elapsedUnits += duration;
+      anchors.push({
+        mediaTimeSeconds: startSeconds + (elapsedUnits / totalUnits) * span,
+        sequencePosition: pass * motionDurations.length + index + 1,
+      });
+    });
+  }
+  // Accumulated fractions can land a hair off the marked end; the end is the
+  // one moment the user placed, so it wins.
+  anchors[anchors.length - 1]!.mediaTimeSeconds = endSeconds;
+
+  return SequenceTimeMapSchema.parse({
+    schemaVersion: 1,
+    id,
+    sequenceRef,
+    mediaSourceId,
+    anchors,
+    source: "tempo-grid",
+    boundaryPolicy: "clamp",
+    confidence: 0.25,
+    updatedAt,
+    positionConvention: "arrival",
   });
 }
 
@@ -346,5 +466,6 @@ export function migrateLegacyStepMap(
     source: legacyStepMapSource(stepMap.source),
     boundaryPolicy: "clamp",
     updatedAt: stepMap.updatedAt.getTime(),
+    positionConvention: "arrival",
   });
 }

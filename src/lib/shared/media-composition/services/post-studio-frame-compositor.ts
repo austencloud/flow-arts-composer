@@ -1,6 +1,10 @@
 import type { MediaCompositionPreset } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
 import type { LayoutRegion } from "$lib/shared/media-composition/domain/media-layout-schema";
-import type { EvaluatedFrameLayer } from "$lib/shared/media-composition/services/frame-evaluator";
+import {
+  regionRectIsOnFrame,
+  type EvaluatedFrameLayer,
+} from "$lib/shared/media-composition/services/frame-evaluator";
+import type { PostStudioLayerPainter } from "$lib/shared/media-composition/services/post-studio-layer-painter";
 import {
   calculateMediaFit,
   resolvePanOffset,
@@ -23,6 +27,8 @@ export interface RenderPostStudioFrameInput {
   preset: MediaCompositionPreset;
   layers: readonly EvaluatedFrameLayer[];
   cardFrameCache: Map<string, HTMLCanvasElement>;
+  /** Painted sources by role. A painted layer never reads the DOM. */
+  painters?: ReadonlyMap<string, PostStudioLayerPainter>;
 }
 
 function outputRegion(
@@ -124,6 +130,11 @@ async function syncVideo(
   if (Math.abs(video.currentTime - target) > 1 / 240) {
     video.currentTime = target;
     await waitForEvent(video, "seeked");
+  } else if (video.seeking) {
+    // The preview's own sync can start this very seek a moment earlier, which
+    // leaves currentTime already on target while the old frame is still the
+    // one decoded. Drawing now would bake the previous frame into the file.
+    await waitForEvent(video, "seeked");
   }
 }
 
@@ -207,6 +218,46 @@ function layerElementForClip(
 }
 
 /**
+ * A painted layer draws straight into the output at output resolution, so the
+ * file never inherits the preview canvas's size.
+ */
+async function drawPaintedLayer(
+  context: CanvasRenderingContext2D,
+  preset: MediaCompositionPreset,
+  region: LayoutRegion,
+  layer: EvaluatedFrameLayer,
+  painter: PostStudioLayerPainter
+): Promise<void> {
+  const pixels = outputRegion(preset, region);
+  const width = Math.round(pixels.width);
+  const height = Math.round(pixels.height);
+  if (width <= 0 || height <= 0) return;
+  await painter.prepare({ width, height });
+
+  const geometry = resolveFrameLayerGeometry({
+    preset,
+    region,
+    sourceWidth: pixels.width,
+    sourceHeight: pixels.height,
+    transform: layer.transform,
+  });
+  context.save();
+  context.beginPath();
+  context.rect(pixels.x, pixels.y, pixels.width, pixels.height);
+  context.clip();
+  context.globalAlpha = layer.opacity;
+  applyLayerTransform(context, geometry);
+  painter.paint(context, geometry.drawRect, {
+    sequencePosition: layer.sequencePosition,
+    carouselPosition: layer.carouselPosition,
+    displayedBeatNumber: layer.displayedBeatNumber,
+    projectProgress: layer.projectProgress,
+    sourceTimeSeconds: layer.sourceTimeSeconds,
+  });
+  context.restore();
+}
+
+/**
  * Draws one evaluated timestamp into the MP4 canvas. It intentionally reads
  * only source surfaces from the DOM; visibility, timing, opacity, region order,
  * fit, and transforms all come from the shared evaluator and preset model.
@@ -243,16 +294,34 @@ export async function renderPostStudioFrame(
   );
 
   for (const layer of orderedLayers) {
-    const region = input.preset.regions.find(
+    const staticRegion = input.preset.regions.find(
       (candidate) => candidate.id === layer.regionId
     );
     const clip = input.preset.clips.find(
       (candidate) => candidate.id === layer.clipId
     );
-    const layerElement = layerElementForClip(input.root, layer.clipId);
-    if (!region || clip?.kind !== "visual" || !layerElement) continue;
+    if (!staticRegion || clip?.kind !== "visual") continue;
+    // Where the region sits NOW. A region in motion carries its rect on the
+    // layer; the static rect is only where it rests.
+    const region: LayoutRegion = { ...staticRegion, ...layer.regionRect };
+    if (!regionRectIsOnFrame(region)) continue;
 
     const regionPixels = outputRegion(input.preset, region);
+    const painter = input.painters?.get(layer.sourceRole);
+    if (painter) {
+      await drawPaintedLayer(context, input.preset, region, layer, painter);
+      continue;
+    }
+
+    const layerElement = layerElementForClip(input.root, layer.clipId);
+    if (!layerElement) {
+      // A visible layer with nothing mounted to read would render as an
+      // empty region, and a file that is quietly missing a layer is worse
+      // than one that fails and says why.
+      throw new Error(
+        `The ${staticRegion.label ?? layer.sourceRole} layer was not ready to render.`
+      );
+    }
     context.save();
     context.beginPath();
     context.rect(
