@@ -3,6 +3,7 @@ import {
   GRID_OFFSETS,
   PlaneMode,
   PLANE_MODE_CONFIGS,
+  PROP_COLORS,
   userProportionsState,
 } from "@austencloud/scene-3d";
 import type { CharacterInstanceState } from "../../state/character-instance-state.svelte";
@@ -176,6 +177,7 @@ export function createWorkerPerformerSnapshot(
     staffLength,
     staffThickness: userProportionsState.dimensions.staffRadius,
     propBuild: { ...options.propBuild },
+    handColors: { blue: PROP_COLORS.blue.main, red: PROP_COLORS.red.main },
     leftPropType: options.leftPropType,
     rightPropType: options.rightPropType,
     leftProp: performer.showLeft

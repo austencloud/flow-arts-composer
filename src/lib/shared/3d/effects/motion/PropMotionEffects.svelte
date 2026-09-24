@@ -10,6 +10,7 @@
    */
 
   import { Vector3 } from "three";
+  import { reactivePropHandPalette } from "@austencloud/scene-3d";
   import MotionBlur from "./MotionBlur.svelte";
   import SpeedLines from "./SpeedLines.svelte";
 
@@ -37,9 +38,10 @@
     threshold = 5,
   }: Props = $props();
 
-  // Color mapping
-  const colorHex = $derived(hand === "left" ? "#3b82f6" : "#ef4444");
-  const colorLight = $derived(hand === "left" ? "#60a5fa" : "#f87171");
+  // The hand's prop colors
+  const palette = $derived(reactivePropHandPalette(hand === "left" ? "blue" : "red"));
+  const colorHex = $derived(palette.main);
+  const colorLight = $derived(palette.light);
 
   // Track previous position internally - synced with position on mount
   let previousPosition = $state(new Vector3());

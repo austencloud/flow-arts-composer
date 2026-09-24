@@ -231,6 +231,12 @@ export interface WorkerPerformerLocomotionSnapshot {
   turnRequest: TurnRequest | null;
 }
 
+/** The colors the application paints the "blue" and "red" prop hands in. */
+export interface WorkerPropHandColors {
+  blue: string;
+  red: string;
+}
+
 export interface WorkerPerformerSnapshot {
   id: string;
   avatarId: string;
@@ -241,6 +247,8 @@ export interface WorkerPerformerSnapshot {
   staffLength: number;
   staffThickness: number;
   propBuild: WorkerPropBuild;
+  /** Absent means the props' authored palette. */
+  handColors?: WorkerPropHandColors | null;
   leftPropType: WorkerPerformerPropType;
   rightPropType: WorkerPerformerPropType;
   leftProp: WorkerPropSnapshot | null;
