@@ -46,6 +46,9 @@ export interface TunnelSnapshot {
   props: {
     leftPropType: string;
     rightPropType: string;
+    /** Optional for snapshots saved before per-hand Tunnel props. A missing
+     * flag is inferred from the hands on load. */
+    catDogMode?: boolean;
     /** Optional only for snapshots saved before creator draft v4. */
     leftBuugengFlipped?: boolean;
     rightBuugengFlipped?: boolean;
@@ -188,6 +191,7 @@ const RawTunnelSnapshotSchema = z.preprocess(
       props: z.object({
         leftPropType: z.string(),
         rightPropType: z.string(),
+        catDogMode: z.boolean().optional(),
         leftBuugengFlipped: z.boolean().optional(),
         rightBuugengFlipped: z.boolean().optional(),
       }),
@@ -219,11 +223,13 @@ export interface SnapshotDeps {
   settings: {
     leftPropType: string;
     rightPropType: string;
+    catDogMode?: boolean;
     leftBuugengFlipped?: boolean;
     rightBuugengFlipped?: boolean;
     updateSettings: (p: {
       leftPropType?: string;
       rightPropType?: string;
+      catDogMode?: boolean;
       leftBuugengFlipped?: boolean;
       rightBuugengFlipped?: boolean;
     }) => unknown;
@@ -268,6 +274,9 @@ export function captureTunnelSnapshot(deps: SnapshotDeps): TunnelSnapshot {
     props: {
       leftPropType: settings.leftPropType,
       rightPropType: settings.rightPropType,
+      catDogMode:
+        (settings.catDogMode ?? false) ||
+        settings.leftPropType !== settings.rightPropType,
       leftBuugengFlipped: settings.leftBuugengFlipped ?? false,
       rightBuugengFlipped: settings.rightBuugengFlipped ?? false,
     },
@@ -316,6 +325,9 @@ export function applyTunnelSnapshot(
   settings.updateSettings({
     leftPropType: snap.props.leftPropType,
     rightPropType: snap.props.rightPropType,
+    catDogMode:
+      (snap.props.catDogMode ?? false) ||
+      snap.props.leftPropType !== snap.props.rightPropType,
     ...(snap.props.leftBuugengFlipped !== undefined
       ? { leftBuugengFlipped: snap.props.leftBuugengFlipped }
       : {}),

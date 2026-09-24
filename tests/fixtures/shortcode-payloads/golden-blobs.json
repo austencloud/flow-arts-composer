@@ -1,0 +1,1100 @@
+[
+ {
+  "code": "006C",
+  "format": "q1/current",
+  "encoded": "s~q1:HYPQN1Z0M/2Q 5Q:66USPU7Q-HAV%3YG00QPPQI4TDWAGT-KF:A5JL/MVW$3*$5K72K7JS9HF29W$7",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "s in staff",
+    "right": "n in staff"
+   },
+   "steps": [
+    "dash noRotation 0 s>n in>out | anti cw 1 n>w in>in",
+    "dash ccw 1 n>s out>out | pro cw 1 w>n in>out",
+    "dash noRotation 0 s>n out>in | pro cw 1 n>e out>in",
+    "dash ccw 1 n>s in>in | anti cw 1 e>n in>in",
+    "dash noRotation 0 s>n in>out | anti cw 1 n>w in>in",
+    "dash ccw 1 n>s out>out | pro cw 1 w>n in>out",
+    "dash noRotation 0 s>n out>in | pro cw 1 n>e out>in",
+    "dash ccw 1 n>s in>in | anti cw 1 e>n in>in"
+   ]
+  }
+ },
+ {
+  "code": "00FK",
+  "format": "q1/current",
+  "encoded": "s~q1:HYPQN1Z0MJ0AC3A:66FLG868ZID3DJ66J JDVTIS51%2T+5LBMG+IFRIP0/ANGHF+ISQV%HL-$3ARV",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "w in staff",
+    "right": "w in staff"
+   },
+   "steps": [
+    "dash noRotation 0 w>e in>out | anti ccw 0 w>n in>out",
+    "static noRotation 0 e>e out>out | anti ccw 0 n>e out>in",
+    "anti cw 0 e>n out>in | dash noRotation 0 e>w in>out",
+    "anti cw 0 n>w in>out | static noRotation 0 w>w out>out",
+    "dash noRotation 0 w>e out>in | anti ccw 0 w>n out>in",
+    "static noRotation 0 e>e in>in | anti ccw 0 n>e in>out",
+    "anti cw 0 e>n in>out | dash noRotation 0 e>w out>in",
+    "anti cw 0 n>w out>in | static noRotation 0 w>w in>in"
+   ]
+  }
+ },
+ {
+  "code": "00JE",
+  "format": "q1/current",
+  "encoded": "s~q1:VY6396Z-O021T5MQRDIJQAR8UL8763A1BI.S0CSG:E FMKXO*EUNF7IA3WQ1+$61NOCY7UQ5* 367JJ+O/UIYE4I5IED9DG773N/1K:%DQATV7MLZK0J9G59XNK$0EOU0TCT%HCGOK1 PLKSOE3WCH58P%*F3SFB2BZ7F3M4MPAF78W:L4Z230",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "s in staff",
+    "right": "e in staff"
+   },
+   "steps": [
+    "dash noRotation 0 s>n in>out | pro cw 1 e>s in>out",
+    "pro cw 0 n>e out>out | pro ccw 0 s>e out>out",
+    "pro cw 1 e>s out>in | anti cw 0 e>n out>in",
+    "pro ccw 1 s>e in>out | pro ccw 0 n>w in>in",
+    "pro cw 0 e>s out>out | pro cw 0 w>n in>in",
+    "dash ccw 1 s>n out>out | static noRotation 0 n>n in>in",
+    "anti ccw 1 n>e out>out | dash ccw 1 n>s in>in",
+    "anti cw 1 e>n out>out | pro cw 1 s>w in>out",
+    "dash noRotation 0 n>s out>in | pro cw 1 w>n out>in",
+    "pro cw 0 s>w in>in | pro ccw 0 n>w in>in",
+    "pro cw 1 w>n in>out | anti cw 0 w>s in>out",
+    "pro ccw 1 n>w out>in | pro ccw 0 s>e out>out",
+    "pro cw 0 w>n in>in | pro cw 0 e>s out>out",
+    "dash ccw 1 n>s in>in | static noRotation 0 s>s out>out",
+    "anti ccw 1 s>w in>in | dash ccw 1 s>n out>out",
+    "anti cw 1 w>s in>in | pro cw 1 n>e out>in"
+   ]
+  }
+ },
+ {
+  "code": "084K",
+  "format": "q1/current",
+  "encoded": "s~q1:Y:NAHM:COZO1DMQLCK T1*FMSU2UFN5AI4T7CUD8EBUE1CMUV8T80SH%G2DD9EQE/BO72R$NGEGG8IIVGUXNWNEK+K%YKSDNQFN7%2J4BD2E6+SLVNNRNA UQSBAVUIUFG1",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "s in staff",
+    "right": "e in staff"
+   },
+   "steps": [
+    "anti cw 0 s>e in>out | anti ccw 0 e>s in>out",
+    "anti cw 1 e>n out>out | anti ccw 1 s>w out>out",
+    "dash cw 1 n>s out>out | static noRotation 0 w>w out>out",
+    "pro cw 0 s>w out>out | pro ccw 1 w>s out>in",
+    "anti cw 0 w>s out>in | anti ccw 0 s>w in>out",
+    "anti cw 1 s>e in>in | anti ccw 1 w>n out>out",
+    "static noRotation 0 e>e in>in | dash ccw 1 n>s out>out",
+    "pro cw 1 e>s in>out | pro ccw 0 s>e out>out",
+    "anti cw 0 s>e out>in | anti ccw 0 e>s out>in",
+    "anti cw 1 e>n in>in | anti ccw 1 s>w in>in",
+    "dash cw 1 n>s in>in | static noRotation 0 w>w in>in",
+    "pro cw 0 s>w in>in | pro ccw 1 w>s in>out",
+    "anti cw 0 w>s in>out | anti ccw 0 s>w out>in",
+    "anti cw 1 s>e out>out | anti ccw 1 w>n in>in",
+    "static noRotation 0 e>e out>out | dash ccw 1 n>s in>in",
+    "pro cw 1 e>s out>in | pro ccw 0 s>e in>in"
+   ]
+  }
+ },
+ {
+  "code": "0I0B",
+  "format": "q1/current",
+  "encoded": "s~q1:HYPQN1Z0M/2Q 5Q:66VH93T9PYLH504WU/L92IGQSUG54HJCJQILD2JEQS+MO:9YE1U33FNO5*Q$ZMWDNXZ9PI5B32+80/GLXSRU0HX8LZ*4O73CNMX:RBAJ2*RYBN2*RAR400",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "s in staff",
+    "right": "e in staff"
+   },
+   "steps": [
+    "dash ccw 1 s>n in>in | dash ccw 1 e>w in>in d2",
+    "static ccw 0.5 n>n in>clock | static ccw 0.5 w>w in>clock d2",
+    "float noRotation fl n>w clock>in pre:pro/ccw | static ccw 0.5 w>w clock>out",
+    "float noRotation fl w>s in>counter pre:pro/ccw | static ccw 0.5 w>w out>counter",
+    "static ccw 0.5 s>s counter>in | static ccw 0.5 w>w counter>in d2",
+    "dash ccw 1 s>n in>in | dash ccw 1 w>e in>in d2",
+    "static ccw 0.5 n>n in>clock | static ccw 0.5 e>e in>clock d2",
+    "float noRotation fl n>w clock>in pre:pro/ccw | static ccw 0.5 e>e clock>out",
+    "float noRotation fl w>s in>counter pre:pro/ccw | static ccw 0.5 e>e out>counter",
+    "static ccw 0.5 s>s counter>in | static ccw 0.5 e>e counter>in d2"
+   ]
+  }
+ },
+ {
+  "code": "0N9A",
+  "format": "q1/current",
+  "encoded": "s~q1:VY6396B9GFN1U6OQO5JESFA3C%O5Z1/B1T8I%OI0XC3:E/0UO9UPO6ZT3TQMOGS8BR:YU0F6/HJG8FR03I/0$Q5PJT/KR441*3IILKS*9+P7:44EJKH:6.MNGL4U21MYOR*42-J GIA8NCDN7UM/3603VE2H/G21/9.EKMXV:/G6R61Y0NAW20",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "s in staff",
+    "right": "s in staff"
+   },
+   "steps": [
+    "pro ccw 1 s>e in>out | dash noRotation 0 s>n in>out",
+    "static noRotation 0 e>e out>out | float noRotation fl n>e out>counter pre:anti/ccw",
+    "pro ccw 1 e>n out>in | dash noRotation 0 e>w counter>clock",
+    "static noRotation 0 n>n in>in | float noRotation fl w>n clock>out pre:anti/ccw",
+    "pro ccw 1 n>w in>out | dash noRotation 0 n>s out>in",
+    "static noRotation 0 w>w out>out | float noRotation fl s>w in>clock pre:anti/ccw",
+    "pro ccw 1 w>s out>in | dash noRotation 0 w>e clock>counter",
+    "static noRotation 0 s>s in>in | float noRotation fl e>s counter>in pre:anti/ccw",
+    "dash noRotation 0 s>n in>out | pro ccw 1 s>e in>out",
+    "float noRotation fl n>e out>counter pre:anti/ccw | static noRotation 0 e>e out>out",
+    "dash noRotation 0 e>w counter>clock | pro ccw 1 e>n out>in",
+    "float noRotation fl w>n clock>out pre:anti/ccw | static noRotation 0 n>n in>in",
+    "dash noRotation 0 n>s out>in | pro ccw 1 n>w in>out",
+    "float noRotation fl s>w in>clock pre:anti/ccw | static noRotation 0 w>w out>out",
+    "dash noRotation 0 w>e clock>counter | pro ccw 1 w>s out>in",
+    "float noRotation fl e>s counter>in pre:anti/ccw | static noRotation 0 s>s in>in"
+   ]
+  }
+ },
+ {
+  "code": "O1FC",
+  "format": "q1/current",
+  "encoded": "s~q1:RX4AHM410Q01V0BHX5.SC+R2159FC12KQ2.VHXF2 HPBN6 JM+I$0SWJHRU4$L1RQK+91HKUL8M:+LW8PHOHT.BDZ4G:VRIBF8V/922XFD8RFW56H8H5L",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "n in staff hidden",
+    "right": "n in staff hidden"
+   },
+   "steps": [
+    "dash ccw 1 w>e in>in | anti cw 0 w>s in>out",
+    "anti ccw 0 e>s in>out | pro cw 0 s>w out>out",
+    "dash ccw 1 s>n out>out | dash cw 1 w>e out>out",
+    "anti ccw 0 n>e out>in | static cw 1 e>e out>in",
+    "dash ccw 1 e>w in>in | anti ccw 0 e>s in>out",
+    "anti ccw 0 w>n in>out | pro ccw 0 s>e out>out",
+    "dash ccw 1 n>s out>out | dash ccw 1 e>w out>out",
+    "anti ccw 0 s>w out>in | static ccw 1 w>w out>in"
+   ]
+  }
+ },
+ {
+  "code": "4C1913",
+  "format": "q1/current+hand-path",
+  "encoded": "s~q1:HYPLYH3JU$C5/16S6M6EMO6AK.BEH5J/0NMDQRAS68 42A$4Q:77B21RGCZ6NGHL F+B1",
+  "expected": {
+   "kind": "hand-path",
+   "start": {
+    "left": "s in hand",
+    "right": "s in hand"
+   },
+   "steps": [
+    "anti noRotation 0 s>w in>out | anti noRotation 0 s>w in>out",
+    "anti noRotation 0 w>n out>in | anti noRotation 0 w>n out>in",
+    "anti noRotation 0 n>e in>out | anti noRotation 0 n>e in>out",
+    "anti noRotation 0 e>s out>in | anti noRotation 0 e>s out>in"
+   ]
+  }
+ },
+ {
+  "code": "63243F",
+  "format": "q1/current+hand-path",
+  "encoded": "s~q1:HYPLYH3JU$C5/16S6M+CMXY9* 93369VULQA%ZNGCKXZ9/G55RMEH0M7RU0T-XIG-IWKGV*Q3*4B:UGPG10",
+  "expected": {
+   "kind": "hand-path",
+   "start": {
+    "left": "s in hand",
+    "right": "e in hand"
+   },
+   "steps": [
+    "anti noRotation 0 s>w in>out | pro noRotation 0 e>n in>in",
+    "anti noRotation 0 w>n out>in | pro noRotation 0 n>w in>in",
+    "anti noRotation 0 n>e in>out | pro noRotation 0 w>s in>in",
+    "anti noRotation 0 e>s out>in | pro noRotation 0 s>e in>in"
+   ]
+  }
+ },
+ {
+  "code": "D14B4D",
+  "format": "q1/current+hand-path",
+  "encoded": "s~q1:HYPLYH3JU$C5/16S6M6EMO6AK.BEH5K7JQ51G-IE6T+%SOJ2QTAS$3AEQ7:1$XK+V6H$L Q7*Q800",
+  "expected": {
+   "kind": "hand-path",
+   "start": {
+    "left": "s in hand",
+    "right": "s in hand"
+   },
+   "steps": [
+    "anti noRotation 0 s>w in>out | pro noRotation 0 s>e in>in",
+    "anti noRotation 0 w>n out>in | pro noRotation 0 e>n in>in",
+    "anti noRotation 0 n>e in>out | pro noRotation 0 n>w in>in",
+    "anti noRotation 0 e>s out>in | pro noRotation 0 w>s in>in"
+   ]
+  }
+ },
+ {
+  "code": "L29U",
+  "format": "q1/current+hand-path",
+  "encoded": "s~q1:9 9XHNFDO221L2BE-P4:B.OM-Z96R5$56W+7LNKNFTV+14KJ64IMDFQ:QUI6QIKC3U:2P85V$.B%EG8T9JVA RP9QLX*A.9F1JPI/6C+4F6SCUB PI SFY.E.+FSDUN0",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "n out bighoop",
+    "right": "n out bighoop"
+   },
+   "steps": [
+    "pro ccw 0 n>w out>out | pro cw 0 n>e out>out",
+    "pro cw 0 w>n out>out | pro cw 0 e>s out>out",
+    "pro cw 0 n>e out>out | pro cw 0 s>w out>out",
+    "pro cw 0 e>s out>out | pro cw 0 w>n out>out",
+    "anti cw 0 s>e out>in | anti cw 0 n>w out>in",
+    "anti cw 0 e>n in>out | anti cw 0 w>s in>out",
+    "anti cw 0 n>w out>in | anti cw 0 s>e out>in",
+    "anti cw 0 w>s in>out | anti cw 0 e>n in>out",
+    "pro ccw 0 s>e out>out | anti ccw 0 n>e out>in",
+    "anti ccw 0 e>s out>in | anti cw 0 e>n in>out",
+    "dash noRotation 0 s>n in>out | static noRotation 0 n>n out>out"
+   ]
+  }
+ },
+ {
+  "code": "9XAK",
+  "format": "q1/current+numeric-float",
+  "encoded": "s~q1:A 9396V$GYO1%4AOAOC.V4DR6N0:UU.OQIU23K0WDW.J0MJLU/JEMNG1NE.4TKF7UJ.7797LIPD02SC6IS7GKBM::2SB82BKA+H4Q2FF9HG4/NM0+44*P940ERE/ISIIGY13BTKJ9A4ZU%*J$S755V$%2E/B8.BVMM+4AWYT2Z8Z84%FBY8L.Q8/.T70",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "e in staff",
+    "right": "w in staff"
+   },
+   "steps": [
+    "pro cw 0 e>s in>in | float noRotation fl w>n in>clock pre:pro/cw",
+    "pro cw 0 s>w in>in | float noRotation fl n>e clock>out pre:pro/cw",
+    "pro cw 0 w>n in>in | float noRotation fl e>s out>counter pre:pro/cw",
+    "pro cw 0 n>e in>in | float noRotation fl s>w counter>in pre:pro/cw",
+    "float noRotation fl e>s in>clock pre:pro/cw | dash cw 0 w>e in>out",
+    "float noRotation fl s>w clock>out pre:pro/cw | float noRotation fl e>n out>clock pre:anti/cw",
+    "float noRotation fl w>n out>counter pre:pro/cw | dash cw 0 n>s clock>counter",
+    "float noRotation fl n>e counter>in pre:pro/cw | float noRotation fl s>e counter>out pre:anti/cw",
+    "dash cw 0 e>w in>out | dash cw 0 e>w out>in",
+    "float noRotation fl w>n out>counter pre:pro/cw | float noRotation fl w>s in>counter pre:anti/cw",
+    "dash cw 0 n>s counter>clock | dash cw 0 s>n counter>clock",
+    "float noRotation fl s>w clock>out pre:pro/cw | float noRotation fl n>w clock>in pre:anti/cw",
+    "dash cw 0 w>e out>in | pro ccw 0 w>s in>in",
+    "float noRotation fl e>s in>clock pre:pro/cw | pro ccw 0 s>e in>in",
+    "dash cw 0 s>n clock>counter | pro ccw 0 e>n in>in",
+    "float noRotation fl n>e counter>in pre:pro/cw | pro ccw 0 n>w in>in"
+   ]
+  }
+ },
+ {
+  "code": "0017",
+  "format": "q1/v1",
+  "encoded": "s~q1:SZ5396J-OFN1BEQ MO9QD4G0I7KHU0MI80 1Z-VP+J+*IM-NDQ5  H33J--5L7RJYUZ47-CMK5DWPOE4KDV3B1HKULV-23*0-SUEQT6/TH M4F7D-RLUQ6$TONFQ-5T0VW9BRUQ2NTDP8/7R PC+B5CTFJJMR*LUQA-:D/RO6$77YP9:S2NTKFBKS2V0R*AE-3CX3MK21W9BDMF*AE+$14WPFMTO697YP:2TZ KVO505W",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "s in staff",
+    "right": "e in staff"
+   },
+   "steps": [
+    "anti ccw 0 s>w in>out | pro cw 0 e>s in>in",
+    "static ccw 1 w>w out>in | dash noRotation 0 s>n in>out",
+    "pro ccw 1 w>s in>out | dash cw 1 n>s out>out",
+    "pro ccw 1 s>e out>in | dash noRotation 0 s>n out>in",
+    "anti ccw 0 e>s in>out | pro cw 0 n>e in>in",
+    "static ccw 1 s>s out>in | dash noRotation 0 e>w in>out",
+    "pro ccw 1 s>e in>out | dash cw 1 w>e out>out",
+    "pro ccw 1 e>n out>in | dash noRotation 0 e>w out>in",
+    "anti ccw 0 n>e in>out | pro cw 0 w>n in>in",
+    "static ccw 1 e>e out>in | dash noRotation 0 n>s in>out",
+    "pro ccw 1 e>n in>out | dash cw 1 s>n out>out",
+    "pro ccw 1 n>w out>in | dash noRotation 0 n>s out>in",
+    "anti ccw 0 w>n in>out | pro cw 0 s>w in>in",
+    "static ccw 1 n>n out>in | dash noRotation 0 w>e in>out",
+    "pro ccw 1 n>w in>out | dash cw 1 e>w out>out",
+    "pro ccw 1 w>s out>in | dash noRotation 0 w>e out>in"
+   ]
+  }
+ },
+ {
+  "code": "00C0",
+  "format": "q1/v1",
+  "encoded": "s~q1: %E3964 OR01TBO6URQFU.DQA$GR$6L%G9LV.801113EEXH844D5K8+YVX%MZ%OFBCEGV+VU1TH6D9G+3.ZO*3O-XM7NB3Q1W6S084J5I6-0N/8-8CMI2C7NUQBDI7SXNA$0Y+IBVBCSC12L82U6XM4UR-5FHJHWXQPJP8LE24895N4UR-5FDE6QBA937YOF",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "s in staff",
+    "right": "s in staff"
+   },
+   "steps": [
+    "anti cw 0 s>e in>out | anti cw 0 s>e in>out",
+    "anti cw 0 e>n out>in | anti cw 0 e>n out>in",
+    "dash noRotation 0 n>s in>out | anti cw 0 n>w in>out",
+    "pro cw 0 s>w out>out | static noRotation 0 w>w out>out",
+    "anti cw 0 w>s out>in | anti cw 0 w>s out>in",
+    "anti cw 0 s>e in>out | anti cw 0 s>e in>out",
+    "dash noRotation 0 e>w out>in | anti cw 0 e>n out>in",
+    "pro cw 0 w>n in>in | static noRotation 0 n>n in>in",
+    "anti cw 0 n>w in>out | anti cw 0 n>w in>out",
+    "anti cw 0 w>s out>in | anti cw 0 w>s out>in",
+    "dash noRotation 0 s>n in>out | anti cw 0 s>e in>out",
+    "pro cw 0 n>e out>out | static noRotation 0 e>e out>out",
+    "anti cw 0 e>n out>in | anti cw 0 e>n out>in",
+    "anti cw 0 n>w in>out | anti cw 0 n>w in>out",
+    "dash noRotation 0 w>e out>in | anti cw 0 w>s out>in",
+    "pro cw 0 e>s in>in | static noRotation 0 s>s in>in"
+   ]
+  }
+ },
+ {
+  "code": "0395",
+  "format": "q1/v1",
+  "encoded": "s~q1:7$80A8XZOHN1+DQC+IVKQPAMU71.-4$RSZ$0YGRV3HD5G3KTI%79$FQ*6X3JB:NNZEVXSR2L/XP%+5OFKGQJ$HBCW1VLD*-RW0AFONSL61T38%N4DA7RFH16XZBFD7/85ALBS2NGEW/GG1WMC1S LBCAJ-3N+8LVQSK-T4G52XUP-DF+78*P0%B8P0M4QLZRYYQ POU8RKYOOP7:+8/+TEC9A+C+V2M4QLZRTZQ9RT*TDKYDO1FN*1WBWC%T",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "s in staff",
+    "right": "s in staff"
+   },
+   "steps": [
+    "anti cw 0.5 s>e in>clock | anti ccw 0 s>w in>out",
+    "float noRotation fl e>n clock>clock pre:-/- | float noRotation fl w>s out>out pre:-/-",
+    "static noRotation 0 n>n clock>clock | dash ccw 1 s>n out>out",
+    "anti cw 1 n>w clock>clock | pro ccw 1.5 n>w out>in",
+    "anti cw 0.5 w>s clock>clock | anti ccw 0 w>n in>out",
+    "float noRotation fl s>e clock>clock pre:-/- | float noRotation fl n>w out>out pre:-/-",
+    "static noRotation 0 e>e clock>clock | dash ccw 1 w>e out>out",
+    "anti cw 1 e>n clock>clock | pro ccw 1.5 e>n out>in",
+    "anti cw 0.5 n>w clock>clock | anti ccw 0 n>e in>out",
+    "float noRotation fl w>s clock>clock pre:-/- | float noRotation fl e>n out>out pre:-/-",
+    "static noRotation 0 s>s clock>clock | dash ccw 1 n>s out>out",
+    "anti cw 1 s>e clock>clock | pro ccw 1.5 s>e out>in",
+    "anti cw 0.5 e>n clock>clock | anti ccw 0 e>s in>out",
+    "float noRotation fl n>w clock>clock pre:-/- | float noRotation fl s>e out>out pre:-/-",
+    "static noRotation 0 w>w clock>clock | dash ccw 1 e>w out>out",
+    "anti cw 1 w>s clock>clock | pro ccw 1.5 w>s out>in"
+   ]
+  }
+ },
+ {
+  "code": "051P",
+  "format": "q1/v1",
+  "encoded": "s~q1:Y A0A8IUOGN1G4GRZFKZ41DPTO0$B408FA-9F$1KYFYMIMEPTT5EAD:0II DZN907JH3JE0RPMCTFVM69RZJ2 Q$P3GDP7CG8ZFS G0STA.BKUPG.GQ+9+0BL9PLBLUIIB8FYXVBN972S9S7MW0WTRAS0VYR0TSK69D6JL8UOXIG-K2HT5MTCTEH1RUJJ T65CDBBK51Q99J*6AKHD%J1LUR%2Q-.EYUES76XS5YZ7:M1V0",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "s in staff",
+    "right": "n in staff"
+   },
+   "steps": [
+    "float noRotation fl s>e in>in pre:-/- | static noRotation 0 n>n in>in",
+    "float noRotation fl e>s in>in pre:-/- | anti ccw 0 n>e in>out",
+    "dash noRotation 0 s>n in>out | anti ccw 0.5 e>s out>clock",
+    "float noRotation fl n>w out>out pre:-/- | float noRotation fl s>e clock>clock pre:-/-",
+    "float noRotation fl w>s out>out pre:-/- | static noRotation 0 e>e clock>clock",
+    "float noRotation fl s>w out>out pre:-/- | anti ccw 0 e>s clock>counter",
+    "dash noRotation 0 w>e out>in | anti ccw 0.5 s>w counter>clock",
+    "float noRotation fl e>n in>in pre:-/- | float noRotation fl w>s clock>clock pre:-/-",
+    "float noRotation fl n>w in>in pre:-/- | static noRotation 0 s>s clock>clock",
+    "float noRotation fl w>n in>in pre:-/- | anti ccw 0 s>w clock>counter",
+    "dash noRotation 0 n>s in>out | anti ccw 0.5 w>n counter>clock",
+    "float noRotation fl s>e out>out pre:-/- | float noRotation fl n>w clock>clock pre:-/-",
+    "float noRotation fl e>n out>out pre:-/- | static noRotation 0 w>w clock>clock",
+    "float noRotation fl n>e out>out pre:-/- | anti ccw 0 w>n clock>counter",
+    "dash noRotation 0 e>w out>in | anti ccw 0.5 n>e counter>clock",
+    "float noRotation fl w>s in>in pre:-/- | float noRotation fl e>n clock>clock pre:-/-"
+   ]
+  }
+ },
+ {
+  "code": "EPcIm6",
+  "format": "q1/v1",
+  "encoded": "s~q1:XZ80A8IUOGN1G4GRZFKZ41DP7V93MGNLUR.TUT37IVEV4MKNWZC2UMM09CA5JVTDTQQUSKL7J$TTMVS 71%BI/JBI9VDVM/F5.HJZBRKMF2F7RTOZ7JFFTI7D40HADQ1RYMA4H4%IBX4C43MTKLHQNCIK4V4670:5OPQRRZ4FSHXNHPQ4RGC%GP7LBSRV1BSEVGHXC%NC1:78YOS*UPPP/5LALP VD-4L6RT63Q8M37Q0TKE:1F",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "s in staff",
+    "right": "n in staff"
+   },
+   "steps": [
+    "float noRotation fl s>e in>in pre:-/- | float noRotation fl n>e in>in pre:-/-",
+    "static noRotation 0 e>e in>in | pro ccw 0 e>n in>in",
+    "float noRotation fl e>s in>in pre:-/- | dash noRotation 0 n>s in>out",
+    "anti cw 0.5 s>e in>clock | float noRotation fl s>w out>out pre:-/-",
+    "float noRotation fl e>n clock>clock pre:-/- | float noRotation fl w>n out>out pre:-/-",
+    "static noRotation 0 n>n clock>clock | pro ccw 0 n>w out>out",
+    "float noRotation fl n>e clock>clock pre:-/- | dash noRotation 0 w>e out>in",
+    "anti cw 0.5 e>n clock>out | float noRotation fl e>s in>in pre:-/-",
+    "float noRotation fl n>w out>out pre:-/- | float noRotation fl s>w in>in pre:-/-",
+    "static noRotation 0 w>w out>out | pro ccw 0 w>s in>in",
+    "float noRotation fl w>n out>out pre:-/- | dash noRotation 0 s>n in>out",
+    "anti cw 0.5 n>w out>counter | float noRotation fl n>e out>out pre:-/-",
+    "float noRotation fl w>s counter>counter pre:-/- | float noRotation fl e>s out>out pre:-/-",
+    "static noRotation 0 s>s counter>counter | pro ccw 0 s>e out>out",
+    "float noRotation fl s>w counter>counter pre:-/- | dash noRotation 0 e>w out>in",
+    "anti cw 0.5 w>s counter>in | float noRotation fl w>n in>in pre:-/-"
+   ]
+  }
+ },
+ {
+  "code": "HFWmmG",
+  "format": "q1/v1",
+  "encoded": "s~q1:XZ80A8IUOGN1G4GWNEKZ41DPTU83MGNLU4.SUT3KHVE5RZ5EXXH/TD.Q1-ZJWW39Q8A8FNTA :7*9SW2V34P7KLL*USEBE:GOFW5:57X1HAI1SA44S$+Q67V4SPQL39-45 M3U9AGL%SQ/TQ8332YUKO7*K8US6-3TV4F 55M/HW.PHM8W.P+1WMFD1UE0CBVVQKW1L6T:UQQ/2ETQPSKG$6-T9YXF25TFK43ALULT-0A8HK1SS-0O",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "s in staff",
+    "right": "n in staff"
+   },
+   "steps": [
+    "float noRotation fl s>e in>counter pre:-/- | float noRotation fl n>e in>clock pre:-/-",
+    "static noRotation 0 e>e counter>counter | pro ccw 0 e>n clock>clock",
+    "float noRotation fl e>s counter>in pre:-/- | dash noRotation 0 n>s clock>counter",
+    "anti cw 0.5 s>e in>clock | float noRotation fl s>w counter>in pre:-/-",
+    "float noRotation fl e>n clock>in pre:-/- | float noRotation fl w>n in>clock pre:-/-",
+    "static noRotation 0 n>n in>in | pro ccw 0 n>w clock>clock",
+    "float noRotation fl n>e in>clock pre:-/- | dash noRotation 0 w>e clock>counter",
+    "anti cw 0.5 e>n clock>out | float noRotation fl e>s counter>in pre:-/-",
+    "float noRotation fl n>w out>clock pre:-/- | float noRotation fl s>w in>clock pre:-/-",
+    "static noRotation 0 w>w clock>clock | pro ccw 0 w>s clock>clock",
+    "float noRotation fl w>n clock>out pre:-/- | dash noRotation 0 s>n clock>counter",
+    "anti cw 0.5 n>w out>counter | float noRotation fl n>e counter>in pre:-/-",
+    "float noRotation fl w>s counter>out pre:-/- | float noRotation fl e>s in>clock pre:-/-",
+    "static noRotation 0 s>s out>out | pro ccw 0 s>e clock>clock",
+    "float noRotation fl s>w out>counter pre:-/- | dash noRotation 0 e>w clock>counter",
+    "anti cw 0.5 w>s counter>in | float noRotation fl w>n counter>in pre:-/-"
+   ]
+  }
+ },
+ {
+  "code": "00HF",
+  "format": "q1/v1+start-only",
+  "encoded": "s~q1:9O5/166CQPYL*2512NXY9:Z9436",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "s in staff",
+    "right": "e in staff"
+   },
+   "steps": []
+  }
+ },
+ {
+  "code": "00SB",
+  "format": "q1/v1+start-only",
+  "encoded": "s~q1:9O5/166CQPYL*2512NXY9:Z9436",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "s in staff",
+    "right": "e in staff"
+   },
+   "steps": []
+  }
+ },
+ {
+  "code": "Kuofvw",
+  "format": "q1/v1+start-only",
+  "encoded": "s~q1:9O5/166CQPYL*2512NXY9:Z9436",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "s in staff",
+    "right": "e in staff"
+   },
+   "steps": []
+  }
+ },
+ {
+  "code": "022B",
+  "format": "q1/v3",
+  "encoded": "s~q1:SY65TNFDO121L2B5ZI%W6A80K75+48E%SZW07CTFW8KXESDV2B6*FNY:NIO7%KTE99-3PO%CXZCY5U568-YG5KHEE2/RBY5UOBGGZR3X9RJN:ZJPF0Q643X93 PY8L210E21Z2",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "s in staff",
+    "right": "n in staff"
+   },
+   "steps": [
+    "dash cw 1 s>n in>in | anti cw 0 n>w in>out",
+    "anti cw 0 n>w in>out | dash cw 1 w>e out>out",
+    "dash cw 1 w>e out>out | pro ccw 0 e>n out>out",
+    "pro ccw 0 e>n out>out | dash ccw 1 n>s out>out",
+    "dash ccw 1 n>s out>out | anti cw 0 s>e out>in",
+    "anti cw 0 s>e out>in | dash cw 1 e>w in>in",
+    "dash cw 1 e>w in>in | pro ccw 0 w>s in>in",
+    "pro ccw 0 w>s in>in | dash ccw 1 s>n in>in"
+   ]
+  }
+ },
+ {
+  "code": "0420",
+  "format": "q1/v3",
+  "encoded": "s~q1:YK5F4MG*P:95XW5B+L*25C3N8A6NI4T-KXMF4FH5LM*$QFRK8CK1EFFS9%.5*CPLJHW$I3Y4RMC458A7C/AKC768:S/$4CN1",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "se in staff",
+    "right": "se in staff"
+   },
+   "steps": [
+    "anti ccw 1.5 se>sw in>clock | pro ccw 2 se>ne in>in",
+    "anti ccw 1.5 sw>nw clock>out | pro ccw 2 ne>nw in>in",
+    "anti ccw 1.5 nw>ne out>counter | pro ccw 2 nw>sw in>in",
+    "anti ccw 1.5 ne>se counter>in | pro ccw 2 sw>se in>in"
+   ]
+  }
+ },
+ {
+  "code": "04CF",
+  "format": "q1/v3",
+  "encoded": "s~q1:YK5F4MG*P:95XW5B+L*25C3N8A6NI4 %KXMF4FH5LM*$QNM8IUQOCK1EFNS9%.5WFP DHW$I+U22$8WIG$DKW78:6C1WIOHJ AA",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "se in staff",
+    "right": "se in staff"
+   },
+   "steps": [
+    "anti ccw 0.5 se>sw in>counter | pro ccw 1.5 se>ne in>counter",
+    "anti ccw 0.5 sw>nw counter>out | pro ccw 1.5 ne>nw counter>out",
+    "anti ccw 0.5 nw>ne out>clock | pro ccw 1.5 nw>sw out>clock",
+    "anti ccw 0.5 ne>se clock>in | pro ccw 1.5 sw>se clock>in"
+   ]
+  }
+ },
+ {
+  "code": "0WTD",
+  "format": "q1/v3",
+  "encoded": "s~q1:YK5F4MG*P:95XW5B+L*25C3N8A6NI41KPXMF7T05LM*$Q276K3LUQ7R*4K7JB0B1Y2AO5SO9WHH803IZ8N.8BS9G064LJ00",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "se in staff",
+    "right": "se in staff"
+   },
+   "steps": [
+    "pro cw 2.5 se>sw in>counter | pro ccw 2.5 se>ne in>clock",
+    "pro cw 2.5 sw>nw counter>out | pro ccw 2.5 ne>nw clock>out",
+    "pro cw 2.5 nw>ne out>clock | pro ccw 2.5 nw>sw out>counter",
+    "pro cw 2.5 ne>se clock>in | pro ccw 2.5 sw>se counter>in"
+   ]
+  }
+ },
+ {
+  "code": "002S",
+  "format": "r1/current",
+  "encoded": "s~r1:sr:8e6429c9:q1:LY3AHMW00121DMQ$CK$T1774MC1Q0MHY0N3H5X5N8W XMGI25/D*76A2JXGK DT$OIH6T5-IXJHJ3Q9-JSOIFT8QIP",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "s in staff",
+    "right": "e in staff"
+   },
+   "steps": [
+    "static cw 1 s>s in>out | pro ccw 1 e>n in>out",
+    "dash noRotation 0 s>n out>in | anti ccw 1 n>e out>out",
+    "anti cw 0 n>w in>out | dash noRotation 0 e>w out>in",
+    "static cw 1 w>w out>in | pro ccw 0 w>s in>in",
+    "static cw 1 w>w in>out | pro ccw 1 s>e in>out",
+    "dash noRotation 0 w>e out>in | anti ccw 1 e>s out>out",
+    "anti cw 0 e>n in>out | dash noRotation 0 s>n out>in",
+    "static cw 1 n>n out>in | pro ccw 0 n>w in>in",
+    "static cw 1 n>n in>out | pro ccw 1 w>s in>out",
+    "dash noRotation 0 n>s out>in | anti ccw 1 s>w out>out",
+    "anti cw 0 s>e in>out | dash noRotation 0 w>e out>in",
+    "static cw 1 e>e out>in | pro ccw 0 e>n in>in",
+    "static cw 1 e>e in>out | pro ccw 1 n>w in>out",
+    "dash noRotation 0 e>w out>in | anti ccw 1 w>n out>out",
+    "anti cw 0 w>s in>out | dash noRotation 0 n>s out>in",
+    "static cw 1 s>s out>in | pro ccw 0 s>e in>in"
+   ]
+  }
+ },
+ {
+  "code": "0090",
+  "format": "r1/current",
+  "encoded": "s~r1:sr:9e0da66f:q1:HYPQN1Z0M/2Q 5Q:66FLG8689KDLH684JGTSN*4+5LRK3%2TX7J-/I000",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "s in staff",
+    "right": "s in staff"
+   },
+   "steps": [
+    "anti cw 0 s>e in>out | dash noRotation 0 s>n in>out",
+    "dash cw 1 e>w out>out | pro ccw 0 n>w out>out",
+    "anti cw 0 w>s out>in | dash noRotation 0 w>e out>in",
+    "dash cw 1 s>n in>in | pro ccw 0 e>n in>in",
+    "anti cw 0 n>w in>out | dash noRotation 0 n>s in>out",
+    "dash cw 1 w>e out>out | pro ccw 0 s>e out>out",
+    "anti cw 0 e>n out>in | dash noRotation 0 e>w out>in",
+    "dash cw 1 n>s in>in | pro ccw 0 w>s in>in"
+   ]
+  }
+ },
+ {
+  "code": "00AU",
+  "format": "r1/current",
+  "encoded": "s~r1:sr:147d1773:q1:HYPQN1Z0MX$5Q+5:66UF5XW5B+LG507IA:*H%ZN72400",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "sw in staff",
+    "right": "se in staff"
+   },
+   "steps": [
+    "pro ccw 2 sw>se in>in | pro ccw 2 se>ne in>in",
+    "pro ccw 2 se>ne in>in | pro ccw 2 ne>nw in>in",
+    "pro ccw 2 ne>nw in>in | pro ccw 2 nw>sw in>in",
+    "pro ccw 2 nw>sw in>in | pro ccw 2 sw>se in>in"
+   ]
+  }
+ },
+ {
+  "code": "00IV",
+  "format": "r1/current",
+  "encoded": "s~r1:sr:2d7f548c:q1:HYPQN1Z0M/2Q 5Q:66FLG868WFF7HL6BIC2K8VDVPANOJ5CJY6DOMKCN1",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "s in staff",
+    "right": "s in staff"
+   },
+   "steps": [
+    "anti ccw 1 s>w in>in | pro cw 0 s>w in>in",
+    "dash cw 1 w>e in>in | dash noRotation 0 w>e in>out",
+    "anti ccw 1 e>s in>in | pro cw 0 e>s out>out",
+    "dash cw 1 s>n in>in | dash noRotation 0 s>n out>in",
+    "anti ccw 1 n>e in>in | pro cw 0 n>e in>in",
+    "dash cw 1 e>w in>in | dash noRotation 0 e>w in>out",
+    "anti ccw 1 w>n in>in | pro cw 0 w>n out>out",
+    "dash cw 1 n>s in>in | dash noRotation 0 n>s out>in"
+   ]
+  }
+ },
+ {
+  "code": "0AT0",
+  "format": "r1/current",
+  "encoded": "s~r1:sr:386f9501:q1:HYPQN1Z0M/2Q 5Q:66FLG868WFFDJLY:JO9IJTCW5R7ALS/SPK3ND8JMJ$DK:HA:VLE/VB$OWO8+TR4%O$ZMNWL9R8%+2",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "s in staff",
+    "right": "s in staff"
+   },
+   "steps": [
+    "anti ccw 0.5 s>w in>counter | anti ccw 1 s>w in>in",
+    "pro cw 0 w>n counter>counter | pro cw 0 w>n in>in",
+    "dash ccw 1 n>s counter>counter | pro cw 1 n>e in>out",
+    "float noRotation fl s>e counter>out pre:pro/ccw | static cw 1 e>e out>in",
+    "anti ccw 0.5 e>s out>clock | anti ccw 1 e>s in>in",
+    "pro cw 0 s>w clock>clock | pro cw 0 s>w in>in",
+    "dash ccw 1 w>e clock>clock | pro cw 1 w>n in>out",
+    "float noRotation fl e>n clock>in pre:pro/ccw | static cw 1 n>n out>in",
+    "anti ccw 0.5 n>e in>counter | anti ccw 1 n>e in>in",
+    "pro cw 0 e>s counter>counter | pro cw 0 e>s in>in",
+    "dash ccw 1 s>n counter>counter | pro cw 1 s>w in>out",
+    "float noRotation fl n>w counter>out pre:pro/ccw | static cw 1 w>w out>in",
+    "anti ccw 0.5 w>n out>clock | anti ccw 1 w>n in>in",
+    "pro cw 0 n>e clock>clock | pro cw 0 n>e in>in",
+    "dash ccw 1 e>w clock>clock | pro cw 1 e>s in>out",
+    "float noRotation fl w>s clock>in pre:pro/ccw | static cw 1 s>s out>in"
+   ]
+  }
+ },
+ {
+  "code": "0EM0",
+  "format": "r1/current",
+  "encoded": "s~r1:sr:b2419ad9:q1:HYPQN1Z0M/2Q 5Q:66USPU7Q-HAK.B:LDHHGKB5/3CAKBH0JVPAFC1376VF5YY9IO0.RGA74P$QBBK$DMZIDS5B:LK00",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "s in staff",
+    "right": "n in staff"
+   },
+   "steps": [
+    "pro cw 0.5 s>w in>counter | float noRotation fl n>w in>counter pre:anti/cw",
+    "static cw 1 w>w counter>clock | dash noRotation 0 w>e counter>clock",
+    "static cw 0.5 w>w clock>in | float noRotation fl e>s clock>out pre:pro/cw",
+    "dash cw 0.5 w>e in>clock | pro cw 0 s>w out>out",
+    "pro cw 0.5 e>s clock>in | float noRotation fl w>s out>clock pre:anti/cw",
+    "static cw 1 s>s in>out | dash noRotation 0 s>n clock>counter",
+    "static cw 0.5 s>s out>clock | float noRotation fl n>e counter>in pre:pro/cw",
+    "dash cw 0.5 s>n clock>out | pro cw 0 e>s in>in",
+    "pro cw 0.5 n>e out>clock | float noRotation fl s>e in>counter pre:anti/cw",
+    "static cw 1 e>e clock>counter | dash noRotation 0 e>w counter>clock",
+    "static cw 0.5 e>e counter>out | float noRotation fl w>n clock>out pre:pro/cw",
+    "dash cw 0.5 e>w out>counter | pro cw 0 n>e out>out",
+    "pro cw 0.5 w>n counter>out | float noRotation fl e>n out>clock pre:anti/cw",
+    "static cw 1 n>n out>in | dash noRotation 0 n>s clock>counter",
+    "static cw 0.5 n>n in>counter | float noRotation fl s>w counter>in pre:pro/cw",
+    "dash cw 0.5 n>s counter>in | pro cw 0 w>n in>in"
+   ]
+  }
+ },
+ {
+  "code": "VFZ4",
+  "format": "r1/current",
+  "encoded": "s~r1:sr:e26789d8:q1:HYPQN1Z0MJ0AC3A:66VH93T9PYLH50LPHWRI%ZN.34TPA+7KS/1GYPN.5MGA",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "w in staff",
+    "right": "e in staff"
+   },
+   "steps": [
+    "anti cw 0 w>s in>out | anti cw 0 e>n in>out",
+    "dash noRotation 0 s>n out>in | dash noRotation 0 n>s out>in",
+    "anti cw 0 n>w in>out | anti cw 0 s>e in>out",
+    "dash noRotation 0 w>e out>in | dash noRotation 0 e>w out>in",
+    "anti cw 0 e>n in>out | anti cw 0 w>s in>out",
+    "dash noRotation 0 n>s out>in | dash noRotation 0 s>n out>in",
+    "anti cw 0 s>e in>out | anti cw 0 n>w in>out",
+    "dash noRotation 0 e>w out>in | dash noRotation 0 w>e out>in"
+   ]
+  }
+ },
+ {
+  "code": "MWSF",
+  "format": "r1/current+hand-path",
+  "encoded": "s~r1:sr:9369ca79:q1:HYPJ/UTBL/2Q 5Q:66VH93T9PYLH502AG5IBABI%0KYLD/2DVTI3DJX+1E45QZ5P/5A004$SR.QRK3RY2OH0+CGX7JB 49+GWQU",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "s in bighoop",
+    "right": "e in bighoop"
+   },
+   "steps": [
+    "float noRotation fl s>e in>counter pre:anti/cw | dash ccw 1.5 e>w in>clock",
+    "float noRotation fl e>n counter>out pre:anti/cw | pro ccw 0.5 w>s clock>out",
+    "dash cw 1 n>s out>out | anti ccw 0 s>w out>in",
+    "pro cw 0.5 s>w out>clock | pro ccw 0 w>s in>in",
+    "float noRotation fl w>s clock>in pre:anti/cw | dash ccw 1.5 s>n in>clock",
+    "float noRotation fl s>e in>counter pre:anti/cw | pro ccw 0.5 n>w clock>out",
+    "dash cw 1 e>w counter>counter | anti ccw 0 w>n out>in",
+    "pro cw 0.5 w>n counter>out | pro ccw 0 n>w in>in",
+    "float noRotation fl n>w out>clock pre:anti/cw | dash ccw 1.5 w>e in>clock",
+    "float noRotation fl w>s clock>in pre:anti/cw | pro ccw 0.5 e>n clock>out",
+    "dash cw 1 s>n in>in | anti ccw 0 n>e out>in",
+    "pro cw 0.5 n>e in>counter | pro ccw 0 e>n in>in",
+    "float noRotation fl e>n counter>out pre:anti/cw | dash ccw 1.5 n>s in>clock",
+    "float noRotation fl n>w out>clock pre:anti/cw | pro ccw 0.5 s>e clock>out",
+    "dash cw 1 w>e clock>clock | anti ccw 0 e>s out>in",
+    "pro cw 0.5 e>s clock>in | pro ccw 0 s>e in>in"
+   ]
+  }
+ },
+ {
+  "code": "OXSM",
+  "format": "r1/current+hand-path",
+  "encoded": "s~r1:sm:0e53ff90:q1:TY6AHM410Q01O3B02QAEB8PO D3S6AFKH1BWFKVKI7$+9DSD3QDGLFLCG+5HQYKRYE3W2:TDD 68KS2DT3XEBQ1M955611VBD1I%9O9OFO5MV-TF0",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "s in bighoop",
+    "right": "e in bighoop"
+   },
+   "steps": [
+    "dash noRotation 0 s>n in>out | pro ccw 0 e>n in>in",
+    "pro ccw 0 n>w out>out | pro ccw 0 n>w in>in",
+    "static noRotation 0 w>w out>out | pro ccw 0 w>s in>in",
+    "dash noRotation 0 w>e out>in | pro ccw 0 s>e in>in",
+    "dash noRotation 0 e>w in>out | pro ccw 0 e>n in>in",
+    "anti ccw 0 w>n out>in | pro ccw 0 n>w in>in",
+    "dash noRotation 0 n>s in>out | pro ccw 0 w>s in>in",
+    "static noRotation 0 s>s out>out | anti ccw 0 s>w in>out",
+    "dash noRotation 0 s>n out>in | pro cw 0 w>n out>out",
+    "pro cw 0 n>e in>in | pro cw 0 n>e out>out",
+    "static noRotation 0 e>e in>in | pro cw 0 e>s out>out",
+    "dash noRotation 0 e>w in>out | pro cw 0 s>w out>out",
+    "dash noRotation 0 w>e out>in | pro cw 0 w>n out>out",
+    "anti cw 0 e>n in>out | pro cw 0 n>e out>out",
+    "dash noRotation 0 n>s out>in | pro cw 0 e>s out>out",
+    "static noRotation 0 s>s in>in | anti cw 0 s>e out>in"
+   ]
+  }
+ },
+ {
+  "code": "003N",
+  "format": "r1/v1",
+  "encoded": "s~r1:sr:147a169a:q1:TK5I/56CQPYL*25*4NAQ9SO9K56QOH+ UOP6PQI0J1:PK%HL*1L%A800",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "sw in staff",
+    "right": "ne in staff"
+   },
+   "steps": [
+    "pro cw 1 sw>nw in>out | pro cw 3 ne>se in>out",
+    "pro cw 1 nw>ne out>in | pro cw 3 se>sw out>in",
+    "pro cw 1 ne>se in>out | pro cw 3 sw>nw in>out",
+    "pro cw 1 se>sw out>in | pro cw 3 nw>ne out>in"
+   ]
+  }
+ },
+ {
+  "code": "00AI",
+  "format": "r1/v1",
+  "encoded": "s~r1:sr:97557d7c:q1:4%A:86:COO22.JQ2EBWU1VFM1+2K67AY80PSAXU6Y8T07.%3NH9H$RDPB/QEZET11RP$JPH7*EFW5DPB49:CX3N.RC9KJ*ZIB%Q- 84:FF0",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "s in staff",
+    "right": "e in staff"
+   },
+   "steps": [
+    "static noRotation 0 s>s in>in | pro ccw 0 e>n in>in",
+    "pro cw 0 s>w in>in | anti ccw 0 n>e in>out",
+    "anti cw 0 w>s in>out | anti ccw 0 e>s out>in",
+    "pro cw 0 s>w out>out | static noRotation 0 s>s in>in",
+    "static noRotation 0 w>w out>out | pro ccw 0 s>e in>in",
+    "pro cw 0 w>n out>out | anti ccw 0 e>s in>out",
+    "anti cw 0 n>w out>in | anti ccw 0 s>w out>in",
+    "pro cw 0 w>n in>in | static noRotation 0 w>w in>in",
+    "static noRotation 0 n>n in>in | pro ccw 0 w>s in>in",
+    "pro cw 0 n>e in>in | anti ccw 0 s>w in>out",
+    "anti cw 0 e>n in>out | anti ccw 0 w>n out>in",
+    "pro cw 0 n>e out>out | static noRotation 0 n>n in>in",
+    "static noRotation 0 e>e out>out | pro ccw 0 n>w in>in",
+    "pro cw 0 e>s out>out | anti ccw 0 w>n in>out",
+    "anti cw 0 s>e out>in | anti ccw 0 n>e out>in",
+    "pro cw 0 e>s in>in | static noRotation 0 e>e in>in"
+   ]
+  }
+ },
+ {
+  "code": "013Z",
+  "format": "r1/v1",
+  "encoded": "s~r1:sr:54579240:q1:9O5/166CQPYL*2512NXY9:Z9K56LPHVVPCL6PQIUD1GV82PAJNDPQI%D2DOK/5A28B-+7381.QJ Q64041%6O13",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "s in staff",
+    "right": "e in staff"
+   },
+   "steps": [
+    "pro cw 0 s>w in>in | static noRotation 0 e>e in>in",
+    "anti cw 0 w>s in>out | anti cw 0 e>n in>out",
+    "pro cw 0 s>w out>out | dash noRotation 0 n>s out>in",
+    "pro cw 0 w>n out>out | static noRotation 0 s>s in>in",
+    "anti cw 0 n>w out>in | anti cw 0 s>e in>out",
+    "pro cw 0 w>n in>in | dash noRotation 0 e>w out>in",
+    "pro cw 0 n>e in>in | static noRotation 0 w>w in>in",
+    "anti cw 0 e>n in>out | anti cw 0 w>s in>out",
+    "pro cw 0 n>e out>out | dash noRotation 0 s>n out>in",
+    "pro cw 0 e>s out>out | static noRotation 0 n>n in>in",
+    "anti cw 0 s>e out>in | anti cw 0 n>w in>out",
+    "pro cw 0 e>s in>in | dash noRotation 0 w>e out>in"
+   ]
+  }
+ },
+ {
+  "code": "01R1",
+  "format": "r1/v1",
+  "encoded": "s~r1:sr:c731da53:q1:9O5/166CQPYL*2512NXY9:Z9K56LPHVVPOP6/L9%D2DOK948 %KXW0R 6NLL/LLUNVH.M/MV$-M+W0GPK FH +4HVGJS2QSUU9IL2400",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "s in staff",
+    "right": "e in staff"
+   },
+   "steps": [
+    "anti ccw 0 s>w in>out | pro ccw 0 e>n in>in",
+    "static noRotation 0 w>w out>out | anti ccw 0 n>e in>out",
+    "static noRotation 0 w>w out>out | dash noRotation 0 e>w out>in",
+    "static noRotation 0 w>w out>out | pro ccw 0 w>s in>in",
+    "anti ccw 0 w>n out>in | pro ccw 0 s>e in>in",
+    "static noRotation 0 n>n in>in | anti ccw 0 e>s in>out",
+    "static noRotation 0 n>n in>in | dash noRotation 0 s>n out>in",
+    "static noRotation 0 n>n in>in | pro ccw 0 n>w in>in",
+    "anti ccw 0 n>e in>out | pro ccw 0 w>s in>in",
+    "static noRotation 0 e>e out>out | anti ccw 0 s>w in>out",
+    "static noRotation 0 e>e out>out | dash noRotation 0 w>e out>in",
+    "static noRotation 0 e>e out>out | pro ccw 0 e>n in>in",
+    "anti ccw 0 e>s out>in | pro ccw 0 n>w in>in",
+    "static noRotation 0 s>s in>in | anti ccw 0 w>n in>out",
+    "static noRotation 0 s>s in>in | dash noRotation 0 n>s out>in",
+    "static noRotation 0 s>s in>in | pro ccw 0 s>e in>in"
+   ]
+  }
+ },
+ {
+  "code": "0KUH",
+  "format": "r1/v1",
+  "encoded": "s~r1:sr:484acf49:q1:TZ80A8:COGN1G4GW.UWUHKFUTLO0222CBG9H8XFOMATJFA2HD965T8WEM%/FR1H/JG-YRLJTI0U4W0H01XP5AYKD*5Q%R6*4W Q 1I62TGQ6:0GGKEM9Q+KJHSI",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "s in staff",
+    "right": "s in staff"
+   },
+   "steps": [
+    "pro cw 1 s>w in>out | static ccw 1 s>s in>out",
+    "anti ccw 0 w>n out>in | anti cw 0 s>e out>in",
+    "pro cw 1 n>e in>out | pro ccw 0.5 e>n in>clock",
+    "dash ccw 1 e>w out>out | float noRotation fl n>w clock>in pre:-/-",
+    "pro cw 1 w>n out>in | static ccw 1 w>w in>out",
+    "anti ccw 0 n>e in>out | anti cw 0 w>s out>in",
+    "pro cw 1 e>s out>in | pro ccw 0.5 s>e in>clock",
+    "dash ccw 1 s>n in>in | float noRotation fl e>n clock>in pre:-/-",
+    "pro cw 1 n>e in>out | static ccw 1 n>n in>out",
+    "anti ccw 0 e>s out>in | anti cw 0 n>w out>in",
+    "pro cw 1 s>w in>out | pro ccw 0.5 w>s in>clock",
+    "dash ccw 1 w>e out>out | float noRotation fl s>e clock>in pre:-/-",
+    "pro cw 1 e>s out>in | static ccw 1 e>e in>out",
+    "anti ccw 0 s>w in>out | anti cw 0 e>n out>in",
+    "pro cw 1 w>n out>in | pro ccw 0.5 n>w in>clock",
+    "dash ccw 1 n>s in>in | float noRotation fl w>s clock>in pre:-/-"
+   ]
+  }
+ },
+ {
+  "code": "0TSI",
+  "format": "r1/v1",
+  "encoded": "s~r1:sr:c93e26e2:q1:TZ80A8B9GGN1D3GY3VS/K3FT3LGX3133M 3JSDIWXRXGSR4FO8B0C86$4WOVE-D%R5M4L6WK:WQVQ5ADNKHBEMHRDMV69UMO:UCK6F GKWE4GL2OFK9XTLN03$R",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "s in staff",
+    "right": "s in staff"
+   },
+   "steps": [
+    "pro cw 0 s>w in>in | static ccw 0.5 s>s in>clock",
+    "anti ccw 0.5 w>n in>counter | pro cw 0 s>w clock>clock",
+    "float noRotation fl n>e counter>in pre:-/- | float noRotation fl w>n clock>out pre:-/-",
+    "static ccw 1 e>e in>out | pro cw 0 n>e out>out",
+    "pro cw 0 e>s out>out | static ccw 0.5 e>e out>counter",
+    "anti ccw 0.5 s>w out>clock | pro cw 0 e>s counter>counter",
+    "float noRotation fl w>n clock>out pre:-/- | float noRotation fl s>w counter>in pre:-/-",
+    "static ccw 1 n>n out>in | pro cw 0 w>n in>in",
+    "pro cw 0 n>e in>in | static ccw 0.5 n>n in>clock",
+    "anti ccw 0.5 e>s in>counter | pro cw 0 n>e clock>clock",
+    "float noRotation fl s>w counter>in pre:-/- | float noRotation fl e>s clock>out pre:-/-",
+    "static ccw 1 w>w in>out | pro cw 0 s>w out>out",
+    "pro cw 0 w>n out>out | static ccw 0.5 w>w out>counter",
+    "anti ccw 0.5 n>e out>clock | pro cw 0 w>n counter>counter",
+    "float noRotation fl e>s clock>out pre:-/- | float noRotation fl n>e counter>in pre:-/-",
+    "static ccw 1 s>s out>in | pro cw 0 e>s in>in"
+   ]
+  }
+ },
+ {
+  "code": "4IXT",
+  "format": "r1/v2",
+  "encoded": "s~r1:sr:2f43b479:q1:YK51NLX*9X*9MHL*25J0N+KMYA87BI:EF*HLHF4$YLOXNV88-Q6O13",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "se counter staff",
+    "right": "se clock staff"
+   },
+   "steps": [
+    "anti ccw 0 se>sw counter>clock | anti ccw 0.5 se>sw clock>in",
+    "anti ccw 0 sw>nw clock>counter | anti ccw 0.5 sw>nw in>counter",
+    "anti ccw 0 nw>ne counter>clock | anti ccw 0.5 nw>ne counter>out",
+    "anti ccw 0 ne>se clock>counter | anti ccw 0.5 ne>se out>clock"
+   ]
+  }
+ },
+ {
+  "code": "XEH8",
+  "format": "r1/v2",
+  "encoded": "s~r1:sr:2f43b479:q1:YK51NLX*9X*9MHL*25J0N+KMYA87BI:EF*HLHF4$YLOXNV88-Q6O13",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "se counter staff",
+    "right": "se clock staff"
+   },
+   "steps": [
+    "anti ccw 0 se>sw counter>clock | anti ccw 0.5 se>sw clock>in",
+    "anti ccw 0 sw>nw clock>counter | anti ccw 0.5 sw>nw in>counter",
+    "anti ccw 0 nw>ne counter>clock | anti ccw 0.5 nw>ne counter>out",
+    "anti ccw 0 ne>se clock>counter | anti ccw 0.5 ne>se out>clock"
+   ]
+  }
+ },
+ {
+  "code": "01QA",
+  "format": "r1/v3",
+  "encoded": "s~r1:sr:b829be49:q1:YK5F4MK+5C95I/5S6M*25*4NAQ9ZL9RB65G4J1T.+8I2L:54IUS:HAK1200",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "sw clock staff",
+    "right": "ne counter staff"
+   },
+   "steps": [
+    "anti ccw 2.5 sw>nw clock>in | anti ccw 1.5 ne>se counter>in",
+    "anti ccw 2.5 nw>ne in>counter | anti ccw 1.5 se>sw in>clock",
+    "anti ccw 2.5 ne>se counter>out | anti ccw 1.5 sw>nw clock>out",
+    "anti ccw 2.5 se>sw out>clock | anti ccw 1.5 nw>ne out>counter"
+   ]
+  }
+ },
+ {
+  "code": "057P",
+  "format": "r1/v3",
+  "encoded": "s~r1:sr:e9719e4d:q1:YK5F4MK+5C95I/5S6M*25*4NAQ9ZL9RB65G4J1TK4PC54PRS41200",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "sw clock staff",
+    "right": "ne counter staff"
+   },
+   "steps": [
+    "anti ccw 3 sw>nw clock>clock | anti ccw 3 ne>se counter>counter",
+    "anti ccw 3 nw>ne clock>clock | anti ccw 3 se>sw counter>counter",
+    "anti ccw 3 ne>se clock>clock | anti ccw 3 sw>nw counter>counter",
+    "anti ccw 3 se>sw clock>clock | anti ccw 3 nw>ne counter>counter"
+   ]
+  }
+ },
+ {
+  "code": "3I2J",
+  "format": "r1/v3",
+  "encoded": "s~r1:sr:decf0dff:q1:YK5F4MG*P$C5/16S6M*25C3NRB65G4T58MD1:P4QD6634RCNS16GU7R*Q%645F5CIMCU2KS0",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "s in staff",
+    "right": "s in staff"
+   },
+   "steps": [
+    "dash noRotation 0 s>n in>out | anti cw 0 s>e in>out",
+    "pro ccw 0 n>w out>out | dash noRotation 0 e>w out>in",
+    "dash noRotation 0 w>e out>in | anti cw 0 w>s in>out",
+    "pro ccw 0 e>n in>in | dash noRotation 0 s>n out>in",
+    "dash noRotation 0 n>s in>out | anti cw 0 n>w in>out",
+    "pro ccw 0 s>e out>out | dash noRotation 0 w>e out>in",
+    "dash noRotation 0 e>w out>in | anti cw 0 e>n in>out",
+    "pro ccw 0 w>s in>in | dash noRotation 0 n>s out>in"
+   ]
+  }
+ },
+ {
+  "code": "70I5",
+  "format": "r1/v3",
+  "encoded": "s~r1:sr:b8ee42ba:q1:YK5F4MG*P$C5/16S6M*2512NXY96X9RB68H42IHBY0C54DVSRTC6SKKZ6GU7GOODZ4QF1O13",
+  "expected": {
+   "kind": "prop",
+   "start": {
+    "left": "s in staff",
+    "right": "e in staff"
+   },
+   "steps": [
+    "pro ccw 0 s>e in>in | pro cw 0 e>s in>in",
+    "dash noRotation 0 e>w in>out | static noRotation 0 s>s in>in",
+    "pro ccw 0 w>s out>out | pro cw 0 s>w in>in",
+    "dash noRotation 0 s>n out>in | static noRotation 0 w>w in>in",
+    "pro ccw 0 n>w in>in | pro cw 0 w>n in>in",
+    "dash noRotation 0 w>e in>out | static noRotation 0 n>n in>in",
+    "pro ccw 0 e>n out>out | pro cw 0 n>e in>in",
+    "dash noRotation 0 n>s out>in | static noRotation 0 e>e in>in"
+   ]
+  }
+ }
+]

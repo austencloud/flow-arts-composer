@@ -33,8 +33,10 @@
   import {
     FILL_MAX_TILE,
     balancedCount,
+    centeredOrphan,
     sectionFillLayout,
   } from "./section-fill-layout";
+  import { drillFillLayout } from "./drill-fill-layout";
   import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
   import {
     hasModelSprite,
@@ -333,7 +335,11 @@
       return;
     }
     const probe = probeEl;
-    const measure = () => (fillHeight = probe.offsetHeight);
+    // Floored, not offsetHeight: the scroller's height is often fractional,
+    // and rounding it up overflows the content by a fraction of a pixel,
+    // which pins an empty scrollbar beside the filled grid.
+    const measure = () =>
+      (fillHeight = Math.floor(probe.getBoundingClientRect().height));
     const observer = new ResizeObserver(measure);
     observer.observe(probe);
     measure();
@@ -416,38 +422,20 @@
     };
   });
 
-  const DRILL_GAP = 10;
   const drillTileCount = $derived(
     drill?.kind === "family" ? familyChoices(drill.base).length : 0
   );
   /**
-   * Tile grid for a drilled family in a bounded host: as many columns as the
-   * family warrants, rows sharing the height so the tiles own the space,
-   * capped so a two-prop family gets two generous cards rather than two
-   * towers. Null means the host is not bounded and the tiles keep their
-   * ordinary size.
+   * Tile grid for a drilled family in a bounded host (see drill-fill-layout).
+   * The tiles sit on a doubled track grid (two tracks each) so a short last
+   * row can start one track in and centre itself. Null means the host is not
+   * bounded and the tiles keep their ordinary size.
    */
-  const drillLayout = $derived.by(() => {
-    const n = drillTileCount;
-    const { width, height } = tilesBox;
-    if (n === 0 || fillHeight === 0 || width === 0 || height === 0) return null;
-    const phone = width < 440;
-    const cols = n <= 2 ? n : phone || n <= 4 ? 2 : n <= 9 ? 3 : 4;
-    const rows = Math.ceil(n / cols);
-    const colWidth = (width - DRILL_GAP * (cols - 1)) / cols;
-    const rowHeight = Math.floor(
-      Math.min((height - DRILL_GAP * (rows - 1)) / rows, colWidth * 1.25)
-    );
-    // The tiles sit on a doubled track grid (two tracks each) so a short
-    // last row can start one track in and centre itself.
-    const orphans = n % cols;
-    return {
-      cols,
-      rowHeight,
-      orphanIndex: orphans === 0 ? -1 : n - orphans,
-      orphanStart: cols - orphans + 1,
-    };
-  });
+  const drillLayout = $derived(
+    fillHeight === 0
+      ? null
+      : drillFillLayout(drillTileCount, tilesBox.width, tilesBox.height)
+  );
 
   // The sectioned grid's width and the height its labels take, which do not
   // change with the tile size, so the layout below can fit the tiles to the
@@ -990,6 +978,12 @@
           bind:this={sectionsEl}
         >
           {#each sections as section, i}
+            {@const fillCols = sectionLayout
+              ? balancedCount(section.bases.length, sectionLayout.cols)
+              : 0}
+            {@const orphan = sectionLayout
+              ? centeredOrphan(section.bases.length, fillCols)
+              : null}
             <div class="prop-section" class:primary={i === 0}>
               <div class="section-label" class:first={i === 0}>
                 {section.label}
@@ -998,12 +992,13 @@
                 class="section-buttons"
                 class:single={section.bases.length === 1}
                 style={section.columns}
-                style:--fill-cols={sectionLayout
-                  ? balancedCount(section.bases.length, sectionLayout.cols)
-                  : undefined}
+                style:--fill-cols={sectionLayout ? fillCols : undefined}
               >
-                {#each section.bases as base (base)}
-                  {@render familyTile(base)}
+                {#each section.bases as base, index (base)}
+                  {@render familyTile(
+                    base,
+                    index === orphan?.index ? orphan.start : undefined
+                  )}
                 {/each}
               </div>
             </div>
@@ -1376,8 +1371,18 @@
     justify-content: center;
   }
 
+  /* Doubled tracks, as the drilled and flat grids use, so a short last row
+     can start one track in and sit centred under the full ones. */
   .grid-content.fill .section-buttons {
-    grid-template-columns: repeat(var(--fill-cols), var(--fill-tile));
+    grid-template-columns: repeat(
+      calc(var(--fill-cols) * 2),
+      calc((var(--fill-tile) - 10px) / 2)
+    );
+  }
+
+  .grid-content.fill .section-buttons > :global(*) {
+    /* End-only, so an inline column start on the orphan keeps its span. */
+    grid-column-end: span 2;
   }
 
   /* Reports the scroller's bounded height to script; see fillHeight. */
