@@ -1,8 +1,12 @@
 <script lang="ts">
   // Nav + cosmic background come from the (public)/shop +layout.svelte.
-  // The configurator is browser-only (canvas + firebase), so it loads behind
-  // {#if browser}; the server renders the SEO head + a crawlable shell only.
-  import { browser } from "$app/environment";
+  // The configurator renders on the server too, seeded with the catalog
+  // snapshot (+page.server.ts): a crawler reading the HTML gets the real
+  // product page, not a loading line. See +page.ts.
+  import LoopDeckConfiguratorPage from "$lib/features/store/LoopDeckConfiguratorPage.svelte";
+  import type { PageData } from "./$types";
+
+  let { data }: { data: PageData } = $props();
 
   const DESCRIPTION =
     "54 flow sequences printed as playing cards. Pick a transformation flavor and build your LOOP deck.";
@@ -50,32 +54,4 @@
   {@html `<script type="application/ld+json">${jsonLd}</script>`}
 </svelte:head>
 
-{#if browser}
-  {#await import("$lib/features/store/LoopDeckConfiguratorPage.svelte") then { default: LoopDeckConfiguratorPage }}
-    <LoopDeckConfiguratorPage />
-  {/await}
-{:else}
-  <div class="seo-shell">
-    <h1>LOOP Deck</h1>
-    <p>{DESCRIPTION}</p>
-  </div>
-{/if}
-
-<style>
-  .seo-shell {
-    max-width: 760px;
-    margin: 0 auto;
-    padding: 120px 24px;
-    text-align: center;
-    color: #ece9f5;
-  }
-  .seo-shell h1 {
-    font-size: clamp(2rem, 5vw, 3rem);
-    margin: 0 0 16px;
-  }
-  .seo-shell p {
-    font-size: 1.1rem;
-    line-height: 1.6;
-    color: rgba(236, 233, 245, 0.7);
-  }
-</style>
+<LoopDeckConfiguratorPage seedProducts={data.products} />

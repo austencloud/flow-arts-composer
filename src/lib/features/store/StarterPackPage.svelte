@@ -11,6 +11,7 @@
 -->
 <script lang="ts">
   import "./styles/config-page.css";
+  import { untrack } from "svelte";
   import * as singleBuyCheckoutCreator from "$lib/features/store/services/single-buy-checkout-creator";
   import { getProductLoader } from "$lib/features/store/get-product-loader";
   import { createStoreState } from "./state/store-state.svelte";
@@ -29,12 +30,20 @@
   import { trackPropSelected } from "./analytics/shop-funnel";
   import { trackViewOnceLoaded } from "./analytics/shop-funnel-view.svelte";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { Product } from "./domain/models/product";
+
+  interface Props {
+    /** The server's catalog snapshot, so the first HTML is the real page. */
+    seedProducts?: readonly Product[];
+  }
+
+  let { seedProducts = [] }: Props = $props();
 
   // Named `store`, not `state`: a local binding called `state` collides with the
   // $state rune (svelte store_rune_conflict).
   const store = createStoreState(getProductLoader(), singleBuyCheckoutCreator);
   setStoreContext({ state: store });
-  store.loadProducts(false);
+  store.loadProducts(false, untrack(() => seedProducts));
 
   const pack = $derived(
     store.products.find(

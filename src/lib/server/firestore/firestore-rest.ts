@@ -52,6 +52,8 @@ export interface FirestoreQuery {
   fieldPath: string;
   value: unknown;
   limit?: number;
+  /** Projection: return only these fields. Omit for whole documents. */
+  fieldPaths?: readonly string[];
 }
 
 export interface FirestoreDocumentPage {
@@ -247,6 +249,13 @@ export class FirestoreRest {
       body: JSON.stringify({
         structuredQuery: {
           from: [{ collectionId: query.collectionId }],
+          ...(query.fieldPaths?.length
+            ? {
+                select: {
+                  fields: query.fieldPaths.map((fieldPath) => ({ fieldPath })),
+                },
+              }
+            : {}),
           where: {
             fieldFilter: {
               field: { fieldPath: query.fieldPath },
