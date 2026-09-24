@@ -74,6 +74,9 @@ export function stageTunnelSnapshotForViewer(
     ...(snapshot.props.rightBuugengFlipped !== undefined
       ? { rightBuugengFlipped: snapshot.props.rightBuugengFlipped }
       : {}),
+    ...(snapshot.props.catDogMode !== undefined
+      ? { catDogMode: snapshot.props.catDogMode }
+      : {}),
   });
 
   saveViewState({

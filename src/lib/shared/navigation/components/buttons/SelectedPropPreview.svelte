@@ -4,13 +4,13 @@
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { getBasePropType } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
   import { isBuugengFamilyProp } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
+  import { captureActivePropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
 
   let { size = 40 }: { size?: number } = $props();
   const settings = $derived(getSettings());
-  const left = $derived(settings.leftPropType ?? PropType.STAFF);
-  const right = $derived(
-    settings.catDogMode ? (settings.rightPropType ?? left) : left
-  );
+  const pair = $derived(captureActivePropConfig(settings));
+  const left = $derived(pair.leftPropType);
+  const right = $derived(pair.rightPropType);
 </script>
 
 <PropCompositionPreview
