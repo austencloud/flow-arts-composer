@@ -853,31 +853,8 @@
       class:bottom-prop-picker={layout === "bottom"}
       class:sidebar-prop-picker={layout === "sidebar"}
     >
-      {#if handProps}
-        {#if layout === "bottom" && showPropColors}
-          <HandPropToolbar {handProps}>
-            {#snippet actions()}
-              <PrimaryPropColorSettings
-                compact
-                colors={appSettings.primaryPropColors}
-                darkMode={appSettings.darkMode}
-                onchange={(colors) =>
-                  updateSetting("primaryPropColors", colors)}
-              />
-            {/snippet}
-          </HandPropToolbar>
-        {:else}
-          <HandPropToolbar {handProps} />
-        {/if}
-      {:else if layout === "bottom" && showPropColors}
-        <div class="bottom-prop-actions">
-          <PrimaryPropColorSettings
-            compact
-            colors={appSettings.primaryPropColors}
-            darkMode={appSettings.darkMode}
-            onchange={(colors) => updateSetting("primaryPropColors", colors)}
-          />
-        </div>
+      {#if layout === "sidebar" && handProps}
+        <HandPropToolbar {handProps} />
       {/if}
       {#await import("$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte")}
         <div class="pill-pending"><PanelSpinner /></div>
@@ -891,7 +868,33 @@
           variant="inline"
           flat
           fill={layout === "sidebar"}
-        />
+        >
+          {#snippet heading()}
+            {#if layout === "bottom"}
+              {#if handProps}
+                <HandPropToolbar {handProps} compact>
+                  {#snippet actions()}
+                    {#if showPropColors}
+                      <PrimaryPropColorSettings
+                        compact
+                        colors={appSettings.primaryPropColors}
+                        darkMode={appSettings.darkMode}
+                        onchange={(colors) => updateSetting("primaryPropColors", colors)}
+                      />
+                    {/if}
+                  {/snippet}
+                </HandPropToolbar>
+              {:else if showPropColors}
+                <PrimaryPropColorSettings
+                  compact
+                  colors={appSettings.primaryPropColors}
+                  darkMode={appSettings.darkMode}
+                  onchange={(colors) => updateSetting("primaryPropColors", colors)}
+                />
+              {/if}
+            {/if}
+          {/snippet}
+        </mod.default>
       {/await}
     </div>
   {:else if resolvedPill === "effects"}
@@ -1402,10 +1405,17 @@
   .bottom-prop-picker :global(.rail-toolbar .size-toggle) {
     margin-left: auto;
   }
-  .bottom-prop-actions {
-    display: flex;
-    justify-content: flex-end;
-    padding: 8px 12px 4px;
+  @media (max-width: 500px) {
+    .bottom-prop-picker :global(.rail-toolbar .rail-heading),
+    .bottom-prop-picker :global(.rail-toolbar .hand-toolbar.compact) {
+      display: contents;
+    }
+    .bottom-prop-picker :global(.rail-toolbar .size-toggle) {
+      margin-left: 0;
+    }
+    .bottom-prop-picker :global(.rail-toolbar .look-name) {
+      display: none;
+    }
   }
   .external-section-body {
     min-width: 0;
