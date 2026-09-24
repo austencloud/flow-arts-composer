@@ -1950,13 +1950,19 @@ function buildViewer3DState(
     const savedFormation = loadPersistedActiveFormation();
     if (savedFormation) activeFormation = savedFormation;
     if (!options.performerSelection) {
-      const savedSelection = seeded(
-        seed?.selectedPerformerIndices,
-        loadPersistedSelectedIndices
-      );
+      // Either selection field seeds the whole selection. A seed with only the
+      // legacy single index must not pick up the real viewer's stored list,
+      // or a stored "[]" leaves the preview with nobody to edit.
+      const selectionSeeded =
+        seed?.selectedPerformerIndices !== undefined ||
+        seed?.selectedPerformerIndex !== undefined;
+      const savedSelection = selectionSeeded
+        ? (seed?.selectedPerformerIndices ?? null)
+        : loadPersistedSelectedIndices();
       if (savedSelection !== null) {
-        const savedPrimary =
-          seed?.selectedPerformerIndex ?? loadPersistedSelectedIndex();
+        const savedPrimary = selectionSeeded
+          ? (seed?.selectedPerformerIndex ?? null)
+          : loadPersistedSelectedIndex();
         if (
           savedPrimary === null &&
           savedSelection.length === performerManager.performers.length
