@@ -294,7 +294,7 @@ def burstiness(path, body):
     if mean >= 12.0 and sd < 5.0:
         return [dict(file=path, line=1, pattern="low burstiness", severity="MEDIUM",
                      text="%d sentences, mean %.1f words, stdev %.1f" % (len(lengths), mean, sd),
-                     fix="JUDGMENT: vary sentence length, human prose usually runs stdev above 6")]
+                     fix="JUDGMENT: let length follow the content (human prose usually runs stdev above 6); never add fragments to raise it")]
     return []
 
 
