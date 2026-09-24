@@ -26,12 +26,13 @@
   let {
     handProps,
     actions,
-  }: { handProps: HandPropToolbarProps; actions?: Snippet } = $props();
+    compact = false,
+  }: { handProps: HandPropToolbarProps; actions?: Snippet; compact?: boolean } = $props();
 </script>
 
 <!-- Same chip and hand segments as the global prop drawer, so the viewer
      picks a pair the way every other settings-backed picker does. -->
-<div class="hand-toolbar" class:with-actions={!!actions}>
+<div class="hand-toolbar" class:with-actions={!!actions} class:compact>
   <div class="cat-dog-control">
     <CatDogToggle
       catDogMode={handProps.catDog}
@@ -90,5 +91,19 @@
   .with-actions .hand-segments {
     grid-column: 1 / -1;
     justify-self: center;
+  }
+  .hand-toolbar.compact,
+  .hand-toolbar.compact.with-actions {
+    display: flex;
+    justify-content: flex-start;
+    gap: 6px;
+    padding: 0;
+  }
+  .compact .toolbar-actions,
+  .compact.with-actions .cat-dog-control,
+  .compact.with-actions .hand-segments {
+    grid-column: auto;
+    grid-row: auto;
+    justify-self: auto;
   }
 </style>
