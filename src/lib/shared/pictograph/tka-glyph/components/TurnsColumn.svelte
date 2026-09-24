@@ -162,16 +162,22 @@ Props:
       // writing state here cannot re-trigger it.
       loadedLetterDimensions = { width: 100, height: 100 };
       // Trigger async load and wait for it
+      // Ignore a superseded load: the effect's cleanup runs when the letter
+      // moves on or the column unmounts, and applying a stale load would
+      // overwrite the current letter's dimensions. Reading the `letter` prop
+      // here instead would chase a parent getter that may already be torn
+      // down (a live card unmounted mid-load threw from its cell getter).
+      let superseded = false;
       preloadLetterDimensions([currentLetter]).then(() => {
-        // Ignore a superseded load: if the letter moved on again before
-        // this resolved, applying it now would overwrite dimensions/ready
-        // state for whichever letter is current at that point.
-        if (letter !== currentLetter) return;
+        if (superseded) return;
         // After loading completes, get from cache and update state
         const dims = getLetterDimensions(currentLetter);
         loadedLetterDimensions = dims;
         dimensionsReady = dims.width !== 100 || dims.height !== 100;
       });
+      return () => {
+        superseded = true;
+      };
     }
   });
 
