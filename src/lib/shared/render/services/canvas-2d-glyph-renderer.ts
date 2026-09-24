@@ -22,6 +22,7 @@ import {
 } from "../../pictograph/tka-glyph/utils/turn-tuple-parser";
 import {
   interpretTurnColors,
+  resolveTurnColor,
   BLUE_HEX,
   RED_HEX,
 } from "../../pictograph/tka-glyph/services/turn-color-interpreter";
@@ -257,11 +258,11 @@ export async function drawTurnsColumn(
   const turnColors = interpretTurnColors(pictograph.letter, pictograph);
 
   const displayColor = (color: string) =>
-    color === BLUE_HEX
-      ? (motionVisibility?.primaryPropColors?.left ?? color)
+    (color === BLUE_HEX
+      ? motionVisibility?.primaryPropColors?.left
       : color === RED_HEX
-        ? (motionVisibility?.primaryPropColors?.right ?? color)
-        : color;
+        ? motionVisibility?.primaryPropColors?.right
+        : undefined) ?? resolveTurnColor(color, isDarkMode);
 
   const isColorHidden = (color: string) => {
     if (color === BLUE_HEX && motionVisibility?.showLeftMotion === false)
