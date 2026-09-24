@@ -90,7 +90,7 @@
   </button>
   <BaseModal
     bind:open={editorOpen}
-    size="sm"
+    size="full"
     labelledBy={modalTitleId}
     onclose={() => (editorOpen = false)}
   >
@@ -166,8 +166,6 @@
     border-radius: 50%;
   }
   .modal-color-editor {
-    max-height: min(70dvh, 620px);
-    overflow-y: auto;
     padding: 12px 16px 20px;
   }
 </style>

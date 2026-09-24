@@ -381,9 +381,14 @@
   let suppressRailClick = false;
 
   function handleRailPointerDown(event: PointerEvent) {
-    if (layout !== "rail" || event.pointerType !== "mouse" || event.button !== 0)
+    if (
+      layout !== "rail" ||
+      event.pointerType !== "mouse" ||
+      event.button !== 0
+    )
       return;
     const rail = event.currentTarget as HTMLDivElement;
+    if (rail.scrollWidth <= rail.clientWidth) return;
     railPointer = {
       id: event.pointerId,
       x: event.clientX,
@@ -982,7 +987,16 @@
               />
             </div>
           {:else if drill.kind === "details"}
-            <div class="detail-options" class:fill={fillHeight > 0}>
+            <div
+              class="detail-options"
+              class:fill={fillHeight > 0}
+              class:dragging={railDragging}
+              onpointerdown={handleRailPointerDown}
+              onpointermove={handleRailPointerMove}
+              onpointerup={endRailPointer}
+              onpointercancel={endRailPointer}
+              onclickcapture={handleRailClick}
+            >
               {#if showSize}
                 <div class="detail-row">
                   <span class="look-label">Size</span>
@@ -1021,6 +1035,7 @@
           {:else}
             <div
               class="drill-tiles"
+              class:dragging={railDragging}
               style={balancedColumns(familyChoices(drill.base).length)}
               style:--family-count={familyChoices(drill.base).length}
               class:comfortable={tileDensity === "comfortable"}
@@ -1032,6 +1047,11 @@
                 ? `${drillLayout.rowHeight}px`
                 : undefined}
               bind:this={tilesEl}
+              onpointerdown={handleRailPointerDown}
+              onpointermove={handleRailPointerMove}
+              onpointerup={endRailPointer}
+              onpointercancel={endRailPointer}
+              onclickcapture={handleRailClick}
             >
               {#each familyChoices(drill.base) as prop, index (prop)}
                 {@render tile(
@@ -1235,31 +1255,89 @@
   .rail .drill-view {
     height: 100%;
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
-    gap: 0.375rem;
-  }
-  /* Fan Look has no inner back bar or modifier row. Give its one choice rail
-     the entire drilled area instead of preserving the family drill's auto row. */
-  .rail .drill-view.fan-look-drill,
-  .rail .drill-view.prop-look-drill {
     grid-template-rows: minmax(0, 1fr);
   }
-  .rail .drill-view.fan-look-drill > :global(.fan-style-options) {
-    height: 100%;
-  }
   .rail .drill-view > .detail-options {
+    height: 100%;
     min-height: 0;
   }
+  .rail .drill-view:not(.fan-look-drill) > .detail-options {
+    flex-direction: row;
+    align-items: stretch;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+    touch-action: pan-x pinch-zoom;
+    cursor: grab;
+  }
+  .rail .drill-view:not(.fan-look-drill) > .detail-options.dragging,
+  .rail .drill-tiles.flat-grid.dragging {
+    cursor: grabbing;
+    scroll-snap-type: none;
+    user-select: none;
+  }
+  .rail .drill-view:not(.fan-look-drill) > .detail-options > * {
+    scroll-snap-align: start;
+  }
+  .rail .drill-view:not(.fan-look-drill) > .detail-options > .detail-row {
+    flex: 0 0 13rem;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .rail
+    .drill-view:not(.fan-look-drill)
+    > .detail-options
+    > :global(.prop-look-picker) {
+    flex: 0 0 min(22rem, 80cqw);
+    align-self: center;
+  }
+  .rail
+    .drill-view:not(.fan-look-drill)
+    > .detail-options
+    > :global(.chirality-row) {
+    flex: 0 0 24.5rem;
+    align-self: center;
+    margin: 0;
+  }
   .rail .drill-view.fan-look-drill > .detail-options {
-    height: 100%;
+    overflow: hidden;
+  }
+  .rail
+    .drill-view.fan-look-drill
+    > .detail-options
+    > :global(.fan-style-options) {
+    flex: 1 1 0;
+    height: auto;
+    min-height: 0;
   }
   .rail .drill-view.prop-look-drill > :global(.prop-look-picker) {
     align-self: center;
     width: min(32rem, 100%);
   }
   .rail .drill-tiles.flat-grid {
-    grid-template-columns: repeat(var(--family-count), minmax(8.5rem, 1fr));
+    height: 100%;
+    min-height: 0;
+    grid-template-columns: none;
     grid-template-rows: minmax(0, 1fr);
+    grid-auto-flow: column;
+    grid-auto-columns: clamp(8.5rem, 24cqw, 12rem);
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+    touch-action: pan-x pinch-zoom;
+    cursor: grab;
+  }
+  .rail .drill-tiles.flat-grid > :global(*) {
+    scroll-snap-align: start;
+  }
+  .rail .drill-tiles.flat-grid :global(.prop-button) {
+    height: 100%;
+    min-height: 0;
+    aspect-ratio: auto;
   }
   .rail .drill-view > :global(.fan-style-options) {
     flex: 1;

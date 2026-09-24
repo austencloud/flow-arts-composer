@@ -34,13 +34,72 @@
   function change(next: FanAppearance): void {
     onchange(normalizeFanAppearance(next));
   }
+
+  let dragging = $state(false);
+  let pointer: {
+    id: number;
+    x: number;
+    scrollLeft: number;
+    dragging: boolean;
+  } | null = null;
+  let suppressClick = false;
+
+  function pointerDown(event: PointerEvent) {
+    if (!horizontal || event.pointerType !== "mouse" || event.button !== 0)
+      return;
+    const rail = event.currentTarget as HTMLDivElement;
+    if (rail.scrollWidth <= rail.clientWidth) return;
+    pointer = {
+      id: event.pointerId,
+      x: event.clientX,
+      scrollLeft: rail.scrollLeft,
+      dragging: false,
+    };
+  }
+
+  function pointerMove(event: PointerEvent) {
+    if (!pointer || event.pointerId !== pointer.id) return;
+    const distance = event.clientX - pointer.x;
+    if (!pointer.dragging && Math.abs(distance) < 6) return;
+    const rail = event.currentTarget as HTMLDivElement;
+    if (!pointer.dragging) {
+      pointer.dragging = true;
+      dragging = true;
+      rail.setPointerCapture(event.pointerId);
+    }
+    rail.scrollLeft = pointer.scrollLeft - distance;
+    event.preventDefault();
+  }
+
+  function pointerEnd(event: PointerEvent) {
+    if (!pointer || event.pointerId !== pointer.id) return;
+    if (pointer.dragging) {
+      suppressClick = true;
+      setTimeout(() => (suppressClick = false), 0);
+    }
+    pointer = null;
+    dragging = false;
+  }
+
+  function clickCapture(event: MouseEvent) {
+    if (!suppressClick) return;
+    suppressClick = false;
+    event.preventDefault();
+    event.stopPropagation();
+  }
 </script>
 
 <div
   class="fan-style-options"
   class:fill
   class:horizontal
+  class:dragging
   data-testid="fan-style-options"
+  onpointerdown={pointerDown}
+  onpointermove={pointerMove}
+  onpointerup={pointerEnd}
+  onpointercancel={pointerEnd}
+  onclickcapture={clickCapture}
 >
   <FanAppearancePicker
     value={normalizedAppearance}
@@ -173,7 +232,14 @@
     overflow-y: hidden;
     overscroll-behavior-x: contain;
     scroll-snap-type: x proximity;
+    touch-action: pan-x pinch-zoom;
+    cursor: grab;
     padding: 2px 2px 8px;
+  }
+  .fan-style-options.horizontal.dragging {
+    cursor: grabbing;
+    scroll-snap-type: none;
+    user-select: none;
   }
   .fan-style-options.horizontal :global(.fan-appearance-picker) {
     container-type: normal;
