@@ -42,6 +42,7 @@ import { sequenceTransformer } from "$lib/shared/create/services/sequence-transf
 
   import { getEffectDescriptor } from "../domain/effect-descriptor";
   import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
+  import { foldTrailIntentIntoSettings } from "$lib/shared/effects/translators/canvas2d-translator";
 
   import EffectsPanel from "$lib/shared/animation-engine/components/effects-panel/EffectsPanel.svelte";
   import SourceControls from "$lib/shared/animation-engine/components/SourceControls.svelte";
@@ -61,6 +62,11 @@ import { sequenceTransformer } from "$lib/shared/create/services/sequence-transf
   // frame so slider changes flow straight to the canvas.
   const effectsConfigState = createEffectsConfigState();
   setEffectsConfigContext(effectsConfigState);
+  // The trail look (width, brightness, colours) lives on the effects config,
+  // which the trail renderer never reads, so fold it into the trail settings.
+  const trailSettings = $derived(
+    foldTrailIntentIntoSettings(animationSettings.trail, effectsConfigState.trails)
+  );
 
   // ─── Persisted state (playback only - effect params managed by VM) ────
   interface EffectsLabPersistedState {
@@ -474,7 +480,7 @@ import { sequenceTransformer } from "$lib/shared/create/services/sequence-transf
             word={sequence?.word || sequence?.name || null}
             backgroundAlpha={0}
             focused={true}
-            trailSettings={animationSettings.trail}
+            {trailSettings}
             {effectsConfigState}
           />
         </div>
