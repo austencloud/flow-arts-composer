@@ -323,6 +323,7 @@ export class WorkerPerformerLocomotion {
           : (locomotion.getFootPlantConfidence?.() ?? 1),
         strideScale: locomotion.getStrideScale?.() ?? 1,
         travelDirection,
+        settlingPlants: locomotion.getSettlingPlants?.() ?? undefined,
       });
     }
 
