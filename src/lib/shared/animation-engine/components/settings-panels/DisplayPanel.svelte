@@ -33,6 +33,13 @@
      *  third of the column empty underneath. Where it is not, the width-only
      *  rules below apply unchanged. */
     fill = false,
+    /** With `fill`: the box is bounded by something else on screen (the
+     *  motion-path studio's card matches the canvas beside it), not a rail
+     *  as tall as the window. The pictures then take the room the box has
+     *  instead of the short-side share that keeps a free-standing rail's
+     *  toggles modest, so the grid spends the card rather than sitting in
+     *  the middle of it. */
+    grow = false,
     /** The four edge marks (TKA glyph, element, step number, word) describe a
      *  realized sequence. A host animating something that has no letter and no
      *  steps — the shape-matrix theory stage traces a bare spin ratio — turns
@@ -51,6 +58,7 @@
     } | null;
     propType?: string;
     fill?: boolean;
+    grow?: boolean;
     showSequenceMarks?: boolean;
     showWordToggle?: boolean;
     onSettingChange?: ViewerControlSink;
@@ -310,10 +318,10 @@
     // is going spare. Tied to the box's short side so a phone tray and a 4K
     // rail read as the same control at different sizes, and bounded at both
     // ends — a panel does not get to spend 2186px of rail on eight toggles.
-    const cap = Math.min(
-      176,
-      Math.max(72, Math.round(Math.min(width, height) * 0.2))
-    );
+    // A host that bounds the box itself (`grow`) lifts the cap.
+    const cap = grow
+      ? Number.POSITIVE_INFINITY
+      : Math.min(176, Math.max(72, Math.round(Math.min(width, height) * 0.2)));
     const boxAspect = width / height;
     const count = chips.length;
     let best = { cols: 0, art: 0, skew: Number.POSITIVE_INFINITY };
@@ -366,6 +374,7 @@
   $effect(() => {
     void chips.length;
     void fill;
+    void grow;
     measureFit();
   });
 

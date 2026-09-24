@@ -209,12 +209,12 @@
     closeRequest?: number;
     /** Accessible region name for non-export hosts. */
     regionLabel?: string;
-    /** A sidebar host that sizes its panel to the page (the motion-path
-     *  studio's card) gets each page's own height, or null for a page laid
-     *  out in whatever height it is handed (Props, Effects). Display then
-     *  lays its tiles out by width instead of fitting them to a height the
-     *  page itself is now setting. */
-    onPageHeight?: (height: number | null) => void;
+    /** A sidebar host whose panel height is set by something else on
+     *  screen (the motion-path studio's card matches the canvas beside it)
+     *  wants every page to spend that height rather than sit at the top of
+     *  it. Display's pictures grow into it, and Effort alone on its page
+     *  shares it between its tiles, each drawing its timing curve. */
+    fillPages?: boolean;
   }
 
   let {
@@ -262,7 +262,7 @@
     onActiveSectionChange,
     closeRequest = 0,
     regionLabel = "Animation controls",
-    onPageHeight,
+    fillPages = false,
   }: Props = $props();
 
   const viewerAnimatorInspector = getOptionalViewerAnimatorInspectorContext();
@@ -561,6 +561,10 @@
   // What the Playback page (and the merged Motion page above Effort) holds.
   const playbackHasPage = $derived(
     showTempoControls || !!onPlaybackModeChange || showPathShape
+  );
+  // Effort alone on a page the host asked to be filled.
+  const effortFills = $derived(
+    fillPages && layout === "sidebar" && !playbackHasPage
   );
 
   const playbackSummary = $derived.by(() => {
@@ -930,7 +934,7 @@
          put visibility toggles under a heading that claimed they were motion;
          it has its own pill again. Sidebar only; the mobile dock still gets
          separate tabs, where one tall merged tray would not fit. -->
-    <div class="motion-scope">
+    <div class="motion-scope" class:fills={effortFills}>
       <!-- A host with its own transport bar owns tempo there and passes
            showTempoControls={false}; with no playback mode either, Tempo and
            Mode have nothing to hold and Paths runs the full width above
@@ -977,6 +981,7 @@
     <EffortPanel
       columns={layout === "sidebar" ? 2 : 4}
       showSubtitles={layout === "sidebar"}
+      fill={effortFills}
       onSettingChange={(previous, value) =>
         reportSetting("effort", "preset", previous, value)}
     />
@@ -1045,7 +1050,7 @@
        its own tab in the dock, and both already name it. The label was earned
        back when this block sat inside the merged Motion page, where a heading
        named for something else needed correcting. -->
-  <div class="section-pad display-rows" class:content-sized={!!onPageHeight}>
+  <div class="section-pad display-rows">
     <div class="rt-section" role="region" aria-label="Visibility">
       <DisplayPanel
         {showMotionVisibility}
@@ -1053,7 +1058,8 @@
         {showWordToggle}
         {sequence}
         propType={selectedPropType}
-        fill={layout === "sidebar" && !onPageHeight}
+        fill={layout === "sidebar"}
+        grow={fillPages}
         {onSettingChange}
       />
     </div>
@@ -1349,12 +1355,12 @@
     onSelect={handlePillSelect}
     direction={panelDirection}
     {reduceMotion}
-    fillBody={(resolvedPill === "display" && !onPageHeight) ||
+    fillBody={resolvedPill === "display" ||
       resolvedPill === "effects" ||
-      resolvedPill === "props"}
+      resolvedPill === "props" ||
+      (resolvedPill === "motion" && effortFills)}
     fluidBody={resolvedPill === "props"}
     pageOnly={presentation === "content"}
-    {onPageHeight}
     regionLabel={presentation === "content"
       ? activePillLabel || regionLabel
       : "Animation export settings"}
@@ -1435,6 +1441,17 @@
   .motion-scope {
     container-name: motion-stack;
     container-type: inline-size;
+  }
+
+  /* Effort alone on a page the host fills: each wrapper hands the height down
+     so the tiles can share it. */
+  .motion-scope.fills,
+  .motion-scope.fills .motion-stack,
+  .motion-scope.fills .motion-stack > :global(.section-pad) {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   /* The merged sections keep their own internal padding; the stack only
@@ -1768,14 +1785,6 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-  }
-
-  /* A host sizing its panel to the page reads the page's height from these
-     rows, so they take their tiles' height instead of sharing one they were
-     handed. From a zero basis they measured as nothing. */
-  .display-rows.content-sized,
-  .display-rows.content-sized .rt-section {
-    flex: none;
   }
 
   .section-hint {
