@@ -15,6 +15,7 @@ import {
   healPropPair,
   isPropPairKey,
   normalizePropPatch,
+  PROP_PAIR_KEYS,
 } from "../domain/prop-pair-rule";
 import { DEFAULT_FAN_APPEARANCE } from "../../pictograph/prop/domain/fan-appearance";
 import { DEFAULT_PROP_LOOK } from "../../pictograph/prop/domain/prop-look";
@@ -403,10 +404,6 @@ class SettingsState {
       "backgroundColor",
       "gradientColors",
       "gradientDirection",
-      "leftPropType",
-      "rightPropType",
-      "catDogMode",
-      "selectedPresetIndex",
       "compositionRecipeOverrides",
       "visibility",
     ]);
@@ -416,6 +413,7 @@ class SettingsState {
         Object.prototype.hasOwnProperty.call(merged, key) &&
         key !== "_localTimestamp" &&
         !excludeFromRealtimeSync.has(key) &&
+        !isPropPairKey(key) &&
         !this.hasUnsavedLocalEdit(key as keyof AppSettings, userId)
       ) {
         settingsState[key as keyof AppSettings] = merged[
@@ -423,10 +421,13 @@ class SettingsState {
         ] as never;
       }
     }
-    // The pair fields are excluded from realtime sync but legacy propType is
-    // not, so a remote document can land a propType that disagrees with the
-    // local left hand.
-    Object.assign(settingsState, healPropPair(settingsState));
+    // The prop pair is one choice, so it lands whole or not at all: a hand
+    // picked here that the server has not confirmed keeps the local pair.
+    // It heals from the remote fields, not the defaults merge, which would
+    // mask a legacy propType-only document.
+    if (!PROP_PAIR_KEYS.some((key) => this.hasUnsavedLocalEdit(key, userId))) {
+      Object.assign(settingsState, healPropPair(remoteWithoutMeta));
+    }
 
     // Optional account slices must be cleared when the authoritative document
     // omits them; a shallow defaults merge cannot remove a stale local value.
