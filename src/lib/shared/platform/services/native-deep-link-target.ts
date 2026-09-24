@@ -1,3 +1,21 @@
+const SHORT_DOMAIN_HOSTS = ["tka.run", "www.tka.run"];
+
+/**
+ * The short code a printed-card link opens: `tka.run/{code}` (what cards
+ * encode) or `/q/{code}` (where the Worker sends a browser). Null for every
+ * other link the app claims, including the `/store/open` handoff that a
+ * browser scan uses after `/q` has already recorded the scan.
+ */
+export function scanLinkCode(url: URL): string | null {
+  const qMatch = url.pathname.match(/^\/q\/([^/?#]+)/);
+  const shortDomainMatch = SHORT_DOMAIN_HOSTS.includes(
+    url.hostname.toLowerCase()
+  )
+    ? url.pathname.match(/^\/([^/?#]+)\/?$/)
+    : null;
+  return qMatch?.[1] ?? shortDomainMatch?.[1] ?? null;
+}
+
 export function resolveNativeDeepLinkTarget(url: string): string | null {
   let parsed: URL;
   try {
@@ -9,13 +27,7 @@ export function resolveNativeDeepLinkTarget(url: string): string | null {
   const originalTarget = parsed.pathname + parsed.search + parsed.hash;
   if (!originalTarget || originalTarget === "/") return null;
 
-  const qMatch = parsed.pathname.match(/^\/q\/([^/?#]+)/);
-  const shortDomainMatch = ["tka.run", "www.tka.run"].includes(
-    parsed.hostname.toLowerCase()
-  )
-    ? parsed.pathname.match(/^\/([^/?#]+)\/?$/)
-    : null;
-  const scanCode = qMatch?.[1] ?? shortDomainMatch?.[1];
+  const scanCode = scanLinkCode(parsed);
   if (!scanCode) return originalTarget;
 
   // A printed card carries its prop pair and physical-card identity in the

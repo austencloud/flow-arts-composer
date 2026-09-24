@@ -184,6 +184,28 @@ describe("physical card identity", () => {
     ).toBe(false);
   });
 
+  it("accepts a scan of a legacy mixed-case shortcode but never mints one", () => {
+    // Shape of the ~3,000 pre-uppercase codes still in `shortcodes`.
+    const legacyScan = {
+      schemaVersion: PHYSICAL_CARD_SCHEMA_VERSION,
+      shortCode: "07JPcN",
+      physicalCardId: null,
+      deviceId: "79312e84-8b18-4a43-bf8f-9cddc7816cf5",
+    };
+
+    expect(validateCardScanIngestRequest(legacyScan)).toEqual({
+      ok: true,
+      value: legacyScan,
+    });
+    expect(isShortCode("07JPcN")).toBe(false);
+    expect(
+      validateCardScanIngestRequest({ ...legacyScan, shortCode: "07JP/N" }).ok
+    ).toBe(false);
+    expect(
+      validateCardScanIngestRequest({ ...legacyScan, shortCode: "07JPcNX" }).ok
+    ).toBe(false);
+  });
+
   it("validates terminal print-run results without accepting invented states", () => {
     const printRunId = createPrintRunId(deterministicBytes);
     expect(

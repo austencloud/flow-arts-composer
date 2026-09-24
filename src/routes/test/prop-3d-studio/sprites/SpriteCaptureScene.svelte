@@ -26,6 +26,7 @@
     Plane,
     Prop3D,
     propFinishState,
+    type PropBuild,
     type PropType as ScenePropType,
   } from "@austencloud/scene-3d";
   import { getRoomEnvironmentTexture } from "$lib/shared/3d/rendering/room-environment";
@@ -50,12 +51,21 @@
     box: { width: number; height: number };
     /** Canvas pixels per 2D prop unit. */
     pixelsPerUnit: number;
+    /** Build fields to apply over the scene default (the side-grip capture). */
+    build?: Partial<PropBuild>;
     oncaptured: (result: SpriteCaptureResult) => void;
     onempty: () => void;
   }
 
-  let { propType, color, box, pixelsPerUnit, oncaptured, onempty }: Props =
-    $props();
+  let {
+    propType,
+    color,
+    box,
+    pixelsPerUnit,
+    build: buildOverride,
+    oncaptured,
+    onempty,
+  }: Props = $props();
 
   const FRAMES_STABLE = 24;
   const FRAMES_GIVE_UP = 600;
@@ -77,24 +87,37 @@
 
   let propGroup = $state<Group | undefined>(undefined);
   let camera = $state<OrthographicCamera | undefined>(undefined);
-  const propBuild = $derived(propFinishState.build);
+  const propBuild = $derived({
+    ...propFinishState.build,
+    ...(buildOverride ?? {}),
+  });
 
   const bounds = new Box3();
-  const meshBounds = new Box3();
+  const vertexScratch = new Vector3();
   const probe = document.createElement("canvas");
   const probeCtx = probe.getContext("2d", { willReadFrequently: true });
 
-  /** Box3.setFromObject counts hidden placeholders; only visible meshes matter. */
+  /**
+   * Box3.setFromObject counts hidden placeholders; only visible meshes matter.
+   * Transforming the mesh's local geometry.boundingBox by matrixWorld (rather
+   * than measuring transformed vertices) overstates a rotated partial torus:
+   * the bowed arcs of the triangle's frame get an axis-aligned local box far
+   * larger than the arc itself, and rotating that oversized box world-space
+   * makes the capture frame the prop too small. Walk each vertex instead so
+   * the union is the true world-space extent.
+   */
   function visibleBounds(root: Group): Box3 {
     bounds.makeEmpty();
     root.updateWorldMatrix(true, true);
     root.traverseVisible((object) => {
       if (!(object instanceof Mesh) || !object.geometry) return;
-      const geometry = object.geometry;
-      if (!geometry.boundingBox) geometry.computeBoundingBox();
-      if (!geometry.boundingBox) return;
-      meshBounds.copy(geometry.boundingBox).applyMatrix4(object.matrixWorld);
-      bounds.union(meshBounds);
+      const position = object.geometry.getAttribute("position");
+      if (!position) return;
+      for (let i = 0; i < position.count; i += 1) {
+        vertexScratch.fromBufferAttribute(position, i);
+        vertexScratch.applyMatrix4(object.matrixWorld);
+        bounds.expandByPoint(vertexScratch);
+      }
     });
     return bounds;
   }

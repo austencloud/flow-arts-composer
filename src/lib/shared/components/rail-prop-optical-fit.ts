@@ -44,6 +44,9 @@ const PRESENTATIONS: Partial<
   [PropType.BIGTRIAD]: { scale: 1.32 },
   [PropType.MINIHOOP]: { scale: 1.38 },
   [PropType.BIGHOOP]: { scale: 1.72 },
+  // Copied from minihoop; the triangle box is 283x162 to minihoop's 258x138,
+  // tune after sprites land.
+  [PropType.TRIANGLE]: { scale: 1.38 },
   [PropType.BUUGENG]: { scale: 1.38 },
   [PropType.BIGBUUGENG]: { scale: 1.54 },
   [PropType.TRIGENG]: { scale: 1.3 },

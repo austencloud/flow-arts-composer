@@ -44,16 +44,21 @@ describe("profile prop catalog", () => {
     );
   });
 
-  it("keeps mini hoop and big hoop as different skills", () => {
+  it("keeps mini hoop, big hoop and triangle as different skills", () => {
     const hoop = getProfilePropFamily(PropType.MINIHOOP);
 
     expect(hoop?.choices.map((choice) => choice.prop)).toEqual([
       PropType.MINIHOOP,
       PropType.BIGHOOP,
+      PropType.TRIANGLE,
     ]);
     expect(
-      normalizeProfileSkills([PropType.MINIHOOP, PropType.BIGHOOP])
-    ).toEqual([PropType.MINIHOOP, PropType.BIGHOOP]);
+      normalizeProfileSkills([
+        PropType.MINIHOOP,
+        PropType.BIGHOOP,
+        PropType.TRIANGLE,
+      ])
+    ).toEqual([PropType.MINIHOOP, PropType.BIGHOOP, PropType.TRIANGLE]);
   });
 
   it("does not offer rendering novelties as ordinary setup families", () => {

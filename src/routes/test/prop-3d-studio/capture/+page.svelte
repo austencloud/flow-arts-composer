@@ -11,6 +11,7 @@
   - fanBuild: pictograph | fire | lotus | day | moon | flat-grip | star
   - fanFrameColor: black | white
   - fanCover: bare | covered
+  - triangleGrip: corner | side
   - rx/ry/rz: presentation rotation in degrees
   - zoom:   camera distance multiplier (default 1)
   - effect: led mounts the production LED orchestrator and live diffuser
@@ -29,6 +30,7 @@
     type FanCover,
     type FanFrameColor,
     type PropFinish,
+    type TriangleGrip,
   } from "@austencloud/scene-3d";
   import CaptureScene from "./CaptureScene.svelte";
 
@@ -61,6 +63,7 @@
       params.get("fanBuild") ?? "",
       params.get("fanFrameColor") ?? "",
       params.get("fanCover") ?? "",
+      params.get("triangleGrip") ?? "",
       params.get("effect") ?? "",
       params.get("ledPattern") ?? "",
     ].join(":")
@@ -90,6 +93,10 @@
     const fanCover = params.get("fanCover");
     if (fanCover === "bare" || fanCover === "covered") {
       propFinishState.setFanCover(fanCover satisfies FanCover);
+    }
+    const triangleGrip = params.get("triangleGrip");
+    if (triangleGrip === "corner" || triangleGrip === "side") {
+      propFinishState.setTriangleGrip(triangleGrip satisfies TriangleGrip);
     }
   });
 </script>

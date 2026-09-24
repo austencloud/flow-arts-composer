@@ -77,6 +77,7 @@ export const PROFILE_PROP_FAMILIES: readonly ProfilePropFamily[] = [
     choices: [
       skill(PropType.MINIHOOP, "Mini Hoop", [PropType.MINIHOOP]),
       skill(PropType.BIGHOOP, "Big Hoop", [PropType.BIGHOOP]),
+      skill(PropType.TRIANGLE, "Triangle", [PropType.TRIANGLE]),
     ],
   },
   {

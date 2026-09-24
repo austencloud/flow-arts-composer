@@ -58,6 +58,8 @@
   import PracticeSetupBar from "./PracticeSetupBar.svelte";
   import ViewerSharePanel from "./ViewerSharePanel.svelte";
   import { META_POSTING_ENABLED } from "$lib/shared/share/services/meta-publish";
+  import { computeExportSummary } from "$lib/shared/animation-panel/pill-nav/pill-summaries";
+  import { formatExportTimeEstimate } from "$lib/shared/animation-panel/state/export-timing-tracker";
   import { VIEWER_MODE_OPTIONS } from "../services/viewer-modes";
   import Recording3DOverlay from "./Recording3DOverlay.svelte";
   import ExportTakeover from "$lib/shared/video-export/components/ExportTakeover.svelte";
@@ -608,9 +610,74 @@
     if (!armedExportForShare) return;
     // Not while the sheet is up, and not during a live take — the sheet is only
     // hidden then, and exiting would tear down the export the take is feeding.
-    if (share.postSheetOpen || awaitingSceneTake) return;
+    // Not during a render Share started either, for the same reason.
+    if (share.postSheetOpen || awaitingSceneTake || shareRenderInFlight) return;
     armedExportForShare = false;
     ctx.viewerState.exitExport();
+  });
+
+  /**
+   * Share → Download on the 2D animation renders at once, with the settings
+   * on the Export page, and the render shows its progress over the stage.
+   * It used to open the share sheet, which then opened the Export page, whose
+   * own button finally rendered: two routes to one file, one of them three
+   * steps long. Share is now the only way to the file; the Export page keeps
+   * the settings. Other views (card, tunnel, 3D, Post Studio) still prepare
+   * their file in the share sheet.
+   */
+  const shareRendersDirectly = $derived(
+    ctx.viewerState.viewerMode === "animation" && ctx.renderMode !== "3d"
+  );
+  let shareRenderInFlight = $state(false);
+
+  async function downloadFromShare(): Promise<void> {
+    if (!shareRendersDirectly) {
+      share.downloadCurrentView();
+      return;
+    }
+    if (interactions.videoBusy || shareRenderInFlight) return;
+    if (ctx.editingPane !== "animation") {
+      ctx.viewerState.setExportContext("animation-export");
+      armedExportForShare = true;
+    }
+    shareRenderInFlight = true;
+    try {
+      await interactions.handleVideoExport();
+    } finally {
+      shareRenderInFlight = false;
+    }
+  }
+
+  /**
+   * The sheet's Video choice (reached from Card's Download, say) comes back to
+   * the panel on the 2D animation, where Download renders that video, rather
+   * than rendering from inside the sheet. Same shape as Post Studio's handoff;
+   * the sheet closes itself after calling this.
+   */
+  function openVideoDownloadFromSheet(): void {
+    if (ctx.viewerState.viewerMode !== "animation") {
+      layout.selectViewerMode("animation");
+    }
+    share.openPanel();
+  }
+
+  /** What Download will render, read from the Export page's settings. */
+  const shareDownloadDetail = $derived.by(() => {
+    const options = ctx.exportOptions;
+    if (!shareRendersDirectly || !options) return undefined;
+    const summary = computeExportSummary({
+      resolution: options.videoResolution,
+      fps: options.videoFps,
+      loopCount: options.videoLoopCount,
+      renderMode: "2d",
+    });
+    const estimate = formatExportTimeEstimate(
+      options.videoResolution,
+      options.videoFps,
+      ctx.singlePlayDuration,
+      options.videoLoopCount
+    );
+    return estimate ? `${summary} • ${estimate}` : summary;
   });
 
   onMount(() => {
@@ -665,13 +732,12 @@
   let exportSectionRequest = $state(0);
 
   /**
-   * Share → Download a file → Video lands here instead of on a route inside
-   * the sheet: the stage keeps playing beside the Export page, so the frame
-   * the clip opens with is chosen by pausing where it looks right, not from a
-   * capture taken when the sheet opened. Same shape as Post Studio's handoff;
-   * the sheet closes itself after calling this.
+   * The share panel's Settings: the Export page that decides what Download
+   * renders. The stage keeps playing beside it, so the frame the clip opens
+   * with is chosen by pausing where it looks right. The page has no render
+   * button of its own; Share is how the file comes out.
    */
-  function openVideoExportFromShare(): void {
+  function openVideoExportSettings(): void {
     // The Export page takes the inspector track the share panel holds.
     share.closePanel();
     if (ctx.editingPane !== "animation") {
@@ -895,6 +961,7 @@
       onExport={studioSurfaces.active
         ? undefined
         : () => interactions.handleVideoExport()}
+      showExportAction={ctx.renderMode === "3d"}
       captureVideoOpener={studioSurfaces.active || ctx.renderMode === "3d"
         ? undefined
         : ctx.captureVideoOpener}
@@ -1453,7 +1520,20 @@
                         downloadLabel={shareDownloadLabel}
                         linkCopied={share.linkCopied}
                         onCopyLink={() => void share.copyShareLink()}
-                        onDownload={share.downloadCurrentView}
+                        embedCopied={share.embedCopied}
+                        onCopyEmbed={() => void share.copyEmbedSnippet()}
+                        onDownload={() => void downloadFromShare()}
+                        downloadDetail={shareDownloadDetail}
+                        downloadProgress={shareRendersDirectly &&
+                        interactions.videoBusy
+                          ? (interactions.videoProgress?.progress ?? 0)
+                          : null}
+                        downloadDisabled={shareRendersDirectly &&
+                          !ctx.canvasReady}
+                        onDownloadSettings={shareRendersDirectly &&
+                        ctx.exportOptions
+                          ? openVideoExportSettings
+                          : undefined}
                         onNativeShare={canShareNatively
                           ? share.shareLinkNatively
                           : undefined}
@@ -1654,7 +1734,7 @@
       ? ctx.captureVideoOpener
       : undefined}
     onOpenVideoExport={ordinaryAnimationShare
-      ? openVideoExportFromShare
+      ? openVideoDownloadFromSheet
       : undefined}
     is3DExport={ctx.renderMode === "3d"}
     videoSourceKey={`${ctx.effectiveSequence?.id ?? ctx.effectiveSequence?.word ?? "unsaved"}:${share.getShareUrl()}:${viewerVideoSourceIdentity(share.videoSourceKind, share.postShare ? postStudioVideoUrl : null)}:${ctx.renderMode}`}

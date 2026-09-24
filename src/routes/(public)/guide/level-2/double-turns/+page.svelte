@@ -1,21 +1,20 @@
 <script lang="ts">
-  import { setGuideData } from "../../level-1/_data/guide-data-context";
-  import chapterData from "../_data/double-turns.json";
-  import type { GuideChapterData } from "../../level-1/_data/guide-types";
-
-  import DoubleTurnShifts from "../_sections/ch21/DoubleTurnShifts.svelte";
-  import DoubleTurnDashes from "../_sections/ch21/DoubleTurnDashes.svelte";
-  import DoubleTurnStatic from "../_sections/ch21/DoubleTurnStatic.svelte";
-  import CodexPages from "../_sections/ch21/CodexPages.svelte";
-
+  /**
+   * Chapter hub for 2-Turns. Used to concatenate all 4 ch21 GuideSection
+   * components into one long page; each now has its own crawlable
+   * `/guide/level-2/<slug>` route (see level2-topic-manifest.ts for the
+   * section → route mapping and why), so this page becomes an overview +
+   * links, mirroring `/guide/level-2`'s own hub pattern. Kept at this URL
+   * (rather than 301'd) since it already carries inbound/search traffic.
+   */
   import GuideSeo from "../../level-1/_components/GuideSeo.svelte";
-  import GuideCompanionHost from "../../_components/GuideCompanionHost.svelte";
+  import { level2TopicPagesForChapter } from "../_data/level2-topic-manifest";
 
-  setGuideData(chapterData as unknown as GuideChapterData);
+  const topics = level2TopicPagesForChapter("double-turns");
 </script>
 
 <GuideSeo
-  title="2.1 2-Turns · Level 2 Guide · The Kinetic Alphabet"
+  title="2.1 2-Turns · Level 2 · Flow Arts Notation Guide"
   description="Level 2 chapter on 2-turns: 360° prop rotations on shifts, dashes, and static motions, plus the codex reference pages for double-turning letters."
   path="/guide/level-2/double-turns"
   partOf={{ name: "Level 2 Guide: Turns", path: "/guide/level-2" }}
@@ -27,24 +26,70 @@
   ]}
 />
 
-<GuideCompanionHost pageTitle="2-Turns" levelLabel="Level 2">
+<div class="chapter-hub">
   <h1>2-Turns</h1>
+  <p class="intro">
+    Level 2 chapter on 2-turns: 360° prop rotations on shifts, dashes, and static motions, plus
+    the codex reference pages for double-turning letters.
+  </p>
 
-  <DoubleTurnShifts />
-  <DoubleTurnDashes />
-  <DoubleTurnStatic />
-  <CodexPages />
-</GuideCompanionHost>
+  <nav class="topic-list" aria-label="2-Turns topics">
+    <ol>
+      {#each topics as topic (topic.slug)}
+        <li>
+          <a href="/guide/level-2/{topic.slug}">
+            <strong>{topic.h1}</strong>
+            <span>{topic.description}</span>
+          </a>
+        </li>
+      {/each}
+    </ol>
+  </nav>
+</div>
 
 <style>
-  /* Ink contract for this dark host - see turns/+page.svelte for the full
-     rationale (P2, guide-shell parity spec). No light-mode override: the
-     `.guide-layout` shell paints an unconditional dark background
-     (guide.css:72-79), so this only declares the dark values the shell
-     actually renders. */
-  :global(.guide-content) {
-    --ink: #ececf2;
-    --ink-dim: #a8a8b4;
-    --glyph-invert: 1;
+  .chapter-hub {
+    max-width: 44rem;
+    margin: 0 auto;
+    padding-bottom: 2rem;
+  }
+  .intro {
+    text-align: center;
+    max-width: 36rem;
+    margin: 0 auto 2rem;
+  }
+  .topic-list ol {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+  .topic-list a {
+    display: block;
+    padding: 1rem 1.25rem;
+    background: oklch(0.18 0.02 270 / 0.6);
+    border: 1px solid oklch(0.45 0.04 270 / 0.35);
+    border-radius: 8px;
+    text-decoration: none;
+    color: inherit;
+    transition:
+      border-color 0.15s,
+      box-shadow 0.15s;
+  }
+  .topic-list a:hover {
+    border-color: #4ea7e8;
+    box-shadow: 0 2px 8px rgba(78, 167, 232, 0.25);
+  }
+  .topic-list strong {
+    display: block;
+    color: oklch(0.9 0.02 270);
+  }
+  .topic-list span {
+    display: block;
+    font-size: 0.9rem;
+    color: oklch(0.68 0.02 270);
+    margin-top: 0.25rem;
   }
 </style>

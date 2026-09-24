@@ -1,6 +1,7 @@
 import { PropType } from "@austencloud/scene-3d/worker";
 import { propTipEnds } from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
 import { getTipPointsBaseline } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
+import { HOOP_FAMILY_REACH_M } from "$lib/shared/pictograph/prop/domain/hoop-family-geometry.generated";
 import {
   resolveBuildTipAnchors3D,
   type PropBuildTipGeometry3D,
@@ -66,11 +67,19 @@ const TORCH_REACH_RATIO = 0.59335;
 const SWORD_REACH_RATIO = 0.61706;
 
 /**
- * Hand to the far rim, as a fraction of staff length. `Hoop3D.svelte` grips the
- * BOTTOM of the ring and offsets the torus centre up by one ring radius
- * (0.35 x staffLength), so the far rim sits at two radii.
+ * Hand to the far tube centreline, in metres, from the hoop family station
+ * table. A hoop is sold in inch sizes and a triangle is three cut lengths of
+ * tubing: both are fixed-size objects, so like the club their reach is
+ * absolute. The old `0.7 x staffLength` ratio described the earlier
+ * staff-proportional Hoop3D, sized at 0.35x the staff length, and never
+ * matched the 18.5in ring: at the default staff length that ratio gives
+ * 0.605m against the ring's actual 0.454m reach. The 2D tip tables sit on
+ * the tube centreline too, so the reach is measured to the centreline, not
+ * the outer edge.
  */
-const HOOP_REACH_RATIO = 0.7;
+const HOOP_REACH_M = HOOP_FAMILY_REACH_M.minihoop;
+const BIGHOOP_REACH_M = HOOP_FAMILY_REACH_M.bighoop;
+const TRIANGLE_REACH_M = HOOP_FAMILY_REACH_M.triangle;
 
 /**
  * Single-ended props whose 3D mesh reaches somewhere other than half a staff.
@@ -94,9 +103,9 @@ const SINGLE_ENDED_REACH_3D: Partial<
 
   [PropType.SWORD]: (staffLength) => staffLength * SWORD_REACH_RATIO,
 
-  [PropType.MINIHOOP]: (staffLength) => staffLength * HOOP_REACH_RATIO,
-  [PropType.BIGHOOP]: (staffLength) =>
-    staffLength * HOOP_REACH_RATIO * BIG_SCALE,
+  [PropType.MINIHOOP]: () => HOOP_REACH_M,
+  [PropType.BIGHOOP]: () => BIGHOOP_REACH_M,
+  [PropType.TRIANGLE]: () => TRIANGLE_REACH_M,
 };
 
 /**

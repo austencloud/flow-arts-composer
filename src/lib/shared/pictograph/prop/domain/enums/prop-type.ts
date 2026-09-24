@@ -40,6 +40,8 @@ export enum PropType {
 
   MINIHOOP = "minihoop",
   BIGHOOP = "bighoop",
+  // Bowed equilateral frame of 5/8in hoop tubing; a mini hoop variant.
+  TRIANGLE = "triangle",
 
   BUUGENG = "buugeng",
   BIGBUUGENG = "bigbuugeng",

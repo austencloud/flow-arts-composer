@@ -1,0 +1,83 @@
+{
+  "_": "Hoop family stations, real millimetres unless the key says units. Hand-authored; scripts/build-hoop-family-svgs.mjs reads it, the 3D builders mirror it, and tests pin the mirrors. Every number names its source.",
+  "tube_od_mm": {
+    "value": 15.875,
+    "source": "5/8in HDPE hoop tubing, the only size that holds an 18.5in ring (hoop-geometry.ts)"
+  },
+  "hoop_od_mm": {
+    "value": 469.9,
+    "source": "18.5in, MoodHoops' smallest 5/8in mini (hoop-geometry.ts)"
+  },
+  "big_scale": {
+    "value": 1.4,
+    "source": "Prop3D.svelte BIG_SCALE, the factor every big variant uses"
+  },
+  "hoop_join_tape_mm": {
+    "value": 45,
+    "source": "gaffer band over the insert connector, measured on a hoop in hand"
+  },
+  "hoop_button_mm": {
+    "value": 6,
+    "source": "push button showing through the join tape"
+  },
+  "hoop_button_glyph_units": {
+    "value": 2.5,
+    "source": "floor for the button radius at the mini scale; the real 6 mm button rounds to 0.8 units and would vanish"
+  },
+  "hoop_grip_tape_mm": {
+    "value": 150,
+    "source": "grip wrap opposite the join, measured on a hoop in hand"
+  },
+  "hardware_ratio": {
+    "value": 1.3,
+    "source": "printed elbow sleeve OD over tube OD in the triangle photo; tape bands use the same ratio"
+  },
+  "triangle_side_mm": {
+    "value": 558.8,
+    "source": "22in; the photo's tube-to-side ratio of 0.028 at a 5/8in tube"
+  },
+  "triangle_sagitta_mm": {
+    "value": 22.35,
+    "source": "4% of the chord, the outward bow of each side in the photo"
+  },
+  "elbow_leg_mm": {
+    "value": 50,
+    "source": "how far the printed elbow reaches along each side, photo"
+  },
+  "glyph_tube_units": {
+    "value": 10,
+    "source": "notation weight, about 2x the real tube at the mini glyph's scale (the old drawing used 16)"
+  },
+  "big_glyph_tube_units": {
+    "value": 15,
+    "source": "the largest weight that keeps the big ring inside its 600x300 box"
+  },
+  "mini_glyph": {
+    "box": [257.9, 138.2],
+    "centre_dx": 59.4,
+    "radius": 60.6,
+    "source": "the shipped minihoop box and the centreline its tip points measure"
+  },
+  "big_glyph": {
+    "box": [600, 300],
+    "centre_dx": 149.8,
+    "radius": 142.4,
+    "source": "the shipped bighoop box and the centreline its tip points measure"
+  },
+  "grip_band_hex": {
+    "value": "#C9AC68",
+    "source": "the gold the triad and quiad glyphs already use for their grip"
+  },
+  "hardware_hex": {
+    "value": "#1C1C1F",
+    "source": "matte black printed PLA and gaffer tape; dark enough for selective recolor to preserve"
+  },
+  "button_hex": {
+    "value": "#3A3A3F",
+    "source": "the push button, a shade lighter than the tape so it reads on top of it"
+  },
+  "tube_hex": {
+    "value": "#9A9A9A",
+    "source": "neutral gray placeholder that selective recolor repaints in the hand colour"
+  }
+}

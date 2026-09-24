@@ -1,3 +1,4 @@
+import { browser } from "$app/environment";
 import type { Product } from "../domain/models/product";
 import type { LoopConfig } from "../domain/loop-config";
 import { trackCheckoutStarted } from "../analytics/shop-funnel";
@@ -47,13 +48,20 @@ export function createStoreState(
   // Cache-first: if this set was already loaded, paint it synchronously (no loading
   // state) and revalidate in the background. Only the first visit shows loading.
   // This keeps a back-navigation instant so the reverse view-transition morph lands.
-  async function loadProducts(includeAll = false) {
+  //
+  // `seed` is the server's catalog snapshot (no cover cards). It stands in for
+  // the cache on a first visit, so the server renders a real product page and
+  // hydration paints that same page, then the fetch below brings the covers.
+  // The server itself never fetches: the browser SDK has no place in an SSR
+  // request, and its answer could not reach the HTML anyway.
+  async function loadProducts(includeAll = false, seed: readonly Product[] = []) {
     const key = includeAll ? "all" : "active";
-    const cached = productsCache.get(key);
+    const cached = productsCache.get(key) ?? (seed.length > 0 ? [...seed] : null);
     if (cached) {
       products = cached;
       isLoading = false;
       error = null;
+      if (!browser) return;
       void fetchProducts(includeAll)
         .then((fresh) => {
           products = fresh;
@@ -64,6 +72,7 @@ export function createStoreState(
     }
     isLoading = true;
     error = null;
+    if (!browser) return;
     try {
       const fresh = await fetchProducts(includeAll);
       products = fresh;

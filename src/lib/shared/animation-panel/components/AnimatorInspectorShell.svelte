@@ -29,6 +29,7 @@
     exporting = false,
     artPanel = false,
     regionLabel = "Animation controls",
+    pageOnly = false,
     onNavMount,
     onScrollMount,
   }: {
@@ -47,6 +48,10 @@
     exporting?: boolean;
     artPanel?: boolean;
     regionLabel?: string;
+    /** A host that navigates from its own controls and frames the page itself
+     *  (a dock under its stage, a panel with its own heading) gets the page
+     *  alone: no rail, no page title and no sidebar surface of its own. */
+    pageOnly?: boolean;
     onNavMount?: (element: HTMLElement | null) => void;
     onScrollMount?: (element: HTMLElement | null) => void;
   } = $props();
@@ -62,6 +67,7 @@
 <div
   class="animator-inspector export-panel sidebar"
   class:art-settings-panel={artPanel}
+  class:page-only={pageOnly}
   class:exporting
   transition:fade={{ duration: reduceMotion ? 0 : 200 }}
   role="region"
@@ -69,7 +75,15 @@
   inert={exporting || undefined}
 >
   <div class="sidebar-rail-layout">
-    <IconRailNav {pills} {activeId} {onSelect} {onNavMount} reservedSlots={6} />
+    {#if !pageOnly}
+      <IconRailNav
+        {pills}
+        {activeId}
+        {onSelect}
+        {onNavMount}
+        reservedSlots={6}
+      />
+    {/if}
 
     <div class="sidebar-main">
       <div class="panel-scroll" bind:this={panelScrollElement}>
@@ -93,7 +107,9 @@
                   class:fill-body={fillBody}
                   class:fluid-body={fluidBody}
                 >
-                  <h2 class="panel-title">{activeLabel}</h2>
+                  {#if !pageOnly}
+                    <h2 class="panel-title">{activeLabel}</h2>
+                  {/if}
                   {@render body()}
                 </div>
               </div>
@@ -128,6 +144,12 @@
     width: clamp(300px, 38%, 420px);
     min-width: 300px;
     flex: 0 0 auto;
+  }
+
+  /* The host's panel is the surface; the page sits on it. */
+  .animator-inspector.page-only {
+    border-left: 0;
+    background: transparent;
   }
 
   .animator-inspector.exporting {

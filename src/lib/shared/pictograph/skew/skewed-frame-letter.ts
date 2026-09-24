@@ -10,19 +10,27 @@
  * classifySkewedFrameLetter and writes the result to
  * SkewedPictographDataframe.csv as category 3 rows.
  *
- * Rules: docs/superpowers/specs/2026-09-21-skewed-frame-lettering-design.md.
+ * Types 1 to 3 follow the multigrid rule (../lettering/multigrid-lettering.ts,
+ * approved in docs/superpowers/specs/2026-09-22-multigrid-lettering-design.md),
+ * the same rule that letters the diamond, trigrid and pentagrids. Types 4 to 6
+ * follow docs/superpowers/specs/2026-09-21-skewed-frame-lettering-design.md.
  * The letter is a pure function of the two hand motions. Blue = left, red =
  * right. Inputs are plain strings so the generator script can call this
  * without the app's enums.
  */
 import { Letter } from "../../foundation/domain/models/letter";
 import { isMixedPair } from "../../foundation/services/skewed-frame";
+import {
+  LETTER_GRIDS,
+  letterLabelOnGrid,
+  letterOnGrid,
+  type GridBeat,
+  type GridHand,
+} from "../lettering/multigrid-lettering";
 
 export type SkewFrameLocation = "n" | "ne" | "e" | "se" | "s" | "sw" | "w" | "nw";
 export type SkewFrameMotionType = "pro" | "anti" | "static" | "dash";
 export type FrameSpacing = "eta" | "zeta";
-export type CrossedPosition = "alpha" | "beta";
-type Travel = 90 | -90;
 type HandTurn = 0 | 90 | -90 | 180;
 
 export interface SkewFrameHand {
@@ -61,41 +69,6 @@ export function frameSpacing(a: SkewFrameLocation, b: SkewFrameLocation): FrameS
   return null;
 }
 
-/** Red measured clockwise from blue, in degrees 0-315. */
-function redClockwiseFromBlue(blue: SkewFrameLocation, red: SkewFrameLocation): number {
-  return (ANGLE[red] - ANGLE[blue] + 360) % 360;
-}
-
-/**
- * Which hand is ahead when both travel the same way: the one its partner
- * trails by the smaller arc. Clockwise travel puts red ahead when red sits
- * fewer than 180° clockwise from blue; counter-clockwise travel flips it.
- */
-export function leadingHand(
-  blue: SkewFrameLocation,
-  red: SkewFrameLocation,
-  travel: Travel
-): "left" | "right" {
-  const ahead = redClockwiseFromBlue(blue, red);
-  if (travel === 90) return ahead < 180 ? "right" : "left";
-  return ahead > 180 ? "right" : "left";
-}
-
-/**
- * The pure position the hands pass through when they travel opposite ways.
- * Converging hands meet (beta); diverging hands pass through opposite (alpha).
- * `blueTravel` is blue's direction; red travels the other way.
- */
-export function crossedPosition(
-  blue: SkewFrameLocation,
-  red: SkewFrameLocation,
-  blueTravel: Travel
-): CrossedPosition {
-  const ahead = redClockwiseFromBlue(blue, red);
-  const converging = blueTravel === 90 ? ahead < 180 : ahead > 180;
-  return converging ? "beta" : "alpha";
-}
-
 /** Signed hand-path turn, clockwise positive: 0, ±90, 180. Null for 45°/135° arcs. */
 function handTurn(hand: SkewFrameHand): HandTurn | null {
   const delta = (ANGLE[hand.endLocation] - ANGLE[hand.startLocation] + 360) % 360;
@@ -119,64 +92,28 @@ function motionAgreesWithPath(hand: SkewFrameHand, turn: HandTurn): boolean {
   }
 }
 
-/** Narrows a hand turn to a travel direction. True only for the ±90 cases. */
-function isTravel(turn: HandTurn): turn is Travel {
-  return turn === 90 || turn === -90;
+function isShift(hand: SkewFrameHand): boolean {
+  return hand.motionType === "pro" || hand.motionType === "anti";
 }
 
-type SpinTriple = readonly [pro: Letter, anti: Letter, hybrid: Letter];
-type SpinPair = readonly [pro: Letter, anti: Letter];
-type ShiftMotionType = "pro" | "anti";
-
-/** Opposite-direction families by start spacing and crossed position. */
-const OPPOSITE_FAMILIES: Record<FrameSpacing, Record<CrossedPosition, SpinTriple>> = {
-  eta: {
-    alpha: [Letter.D, Letter.E, Letter.F],
-    beta: [Letter.P, Letter.Q, Letter.R],
-  },
-  zeta: {
-    beta: [Letter.J, Letter.K, Letter.L],
-    alpha: [Letter.M, Letter.N, Letter.O],
-  },
-};
-
-/** Shift + static by start->end spacing. */
-const SHIFT_STATIC: Record<FrameSpacing, Record<FrameSpacing, SpinPair>> = {
-  zeta: {
-    zeta: [Letter.W, Letter.X],
-    eta: [Letter.SIGMA, Letter.DELTA],
-  },
-  eta: {
-    eta: [Letter.Y, Letter.Z],
-    zeta: [Letter.THETA, Letter.OMEGA],
-  },
-};
+/** The frame as the multigrid rule sees it: eight points, n = 0, counting clockwise. */
+function toGridBeat({ left, right }: SkewFrameBeat): GridBeat {
+  const toGridHand = (hand: SkewFrameHand): GridHand => ({
+    motionType: hand.motionType,
+    start: SKEW_FRAME_LOCATIONS.indexOf(hand.startLocation),
+    end: SKEW_FRAME_LOCATIONS.indexOf(hand.endLocation),
+  });
+  return { blue: toGridHand(left), red: toGridHand(right) };
+}
 
 /**
- * Shift + dash by start->end spacing. A Type 3 letter is the Type 2 pictograph
- * with a dash arrow on the formerly static hand, which in the standard alphabet
- * pairs W- with Y's pictograph and Σ- with Θ's; the same relation applied here.
+ * The 32 letters that can describe a skewed-frame beat. The hands are never
+ * together or opposite at either end of a beat here, so the frame has no
+ * A B C, G H I, D E F or J K L: every opposite-direction shift passes one of
+ * those placements mid-beat and is M N O (opposite) or P Q R (together).
  */
-const SHIFT_DASH: Record<FrameSpacing, Record<FrameSpacing, SpinPair>> = {
-  eta: {
-    zeta: [Letter.W_DASH, Letter.X_DASH],
-    eta: [Letter.SIGMA_DASH, Letter.DELTA_DASH],
-  },
-  zeta: {
-    eta: [Letter.Y_DASH, Letter.Z_DASH],
-    zeta: [Letter.THETA_DASH, Letter.OMEGA_DASH],
-  },
-};
-
-function pickSpin(triple: SpinTriple, a: ShiftMotionType, b: ShiftMotionType): Letter {
-  if (a === b) return a === "pro" ? triple[0] : triple[1];
-  return triple[2];
-}
-
-/** The 38 letters that can describe a skewed-frame beat. */
 export const SKEWED_FRAME_LETTERS: readonly Letter[] = [
   Letter.S, Letter.T, Letter.U, Letter.V,
-  Letter.D, Letter.E, Letter.F, Letter.J, Letter.K, Letter.L,
   Letter.M, Letter.N, Letter.O, Letter.P, Letter.Q, Letter.R,
   Letter.W, Letter.X, Letter.Y, Letter.Z, Letter.SIGMA, Letter.DELTA, Letter.THETA, Letter.OMEGA,
   Letter.W_DASH, Letter.X_DASH, Letter.Y_DASH, Letter.Z_DASH,
@@ -200,41 +137,31 @@ export function classifySkewedFrameLetter(beat: SkewFrameBeat): Letter | null {
   if (leftTurn === null || rightTurn === null) return null;
   if (!motionAgreesWithPath(left, leftTurn) || !motionAgreesWithPath(right, rightTurn)) return null;
 
-  const start = frameSpacing(left.startLocation, right.startLocation);
-  const end = frameSpacing(left.endLocation, right.endLocation);
+  if (isShift(left) || isShift(right)) {
+    return letterOnGrid(LETTER_GRIDS.skewedDiamond, toGridBeat(beat));
+  }
+
   // Motions move by multiples of 90, so a mixed start pair stays mixed and
   // both spacings are always defined. The guard only narrows the type.
+  const start = frameSpacing(left.startLocation, right.startLocation);
+  const end = frameSpacing(left.endLocation, right.endLocation);
   if (!start || !end) return null;
-
-  const leftShifts = left.motionType === "pro" || left.motionType === "anti";
-  const rightShifts = right.motionType === "pro" || right.motionType === "anti";
-
-  if (leftShifts && rightShifts) {
-    // motionAgreesWithPath already forced the turn to +/-90 for a shifting
-    // hand. The guard only narrows the type.
-    if (!isTravel(leftTurn)) return null;
-    const blueTravel = leftTurn;
-    if (leftTurn === rightTurn) {
-      if (left.motionType === right.motionType) {
-        return left.motionType === "pro" ? Letter.S : Letter.T;
-      }
-      const leader = leadingHand(left.startLocation, right.startLocation, blueTravel);
-      const leaderType = leader === "left" ? left.motionType : right.motionType;
-      return leaderType === "pro" ? Letter.U : Letter.V;
-    }
-    const crossed = crossedPosition(left.startLocation, right.startLocation, blueTravel);
-    return pickSpin(OPPOSITE_FAMILIES[start][crossed], left.motionType, right.motionType);
-  }
-
-  if (leftShifts || rightShifts) {
-    const shifting = leftShifts ? left : right;
-    const partner = leftShifts ? right : left;
-    const pair = partner.motionType === "static" ? SHIFT_STATIC[start][end] : SHIFT_DASH[start][end];
-    return shifting.motionType === "pro" ? pair[0] : pair[1];
-  }
 
   const dashes = Number(left.motionType === "dash") + Number(right.motionType === "dash");
   if (dashes === 2) return start === "zeta" ? Letter.PHI_DASH : Letter.PSI_DASH;
   if (dashes === 1) return start === "eta" ? Letter.PHI : Letter.PSI;
   return start === "zeta" ? Letter.ZETA : Letter.ETA;
+}
+
+/**
+ * The letter as it is written, with its variant number. S T U V, M N O and
+ * P Q R occur from both spacings in this frame, so they are numbered 1 from
+ * eta (45°) and 2 from zeta (135°): S1, S2, M1, M2. Every other letter
+ * occurs from one spacing only and comes back plain. Null where
+ * classifySkewedFrameLetter is null.
+ */
+export function skewedFrameLetterLabel(beat: SkewFrameBeat): string | null {
+  const letter = classifySkewedFrameLetter(beat);
+  if (letter === null) return null;
+  return letterLabelOnGrid(LETTER_GRIDS.skewedDiamond, toGridBeat(beat)) ?? letter;
 }

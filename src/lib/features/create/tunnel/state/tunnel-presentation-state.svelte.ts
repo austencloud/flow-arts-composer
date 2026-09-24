@@ -1,3 +1,4 @@
+import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import type { PlaybackMode } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
 import {
   PLAYBACK_MAX_BPM,
@@ -32,6 +33,8 @@ interface TunnelPresentationInputs {
   animationSettings: AnimationSettingsState;
   initialLeftPropType: string;
   initialRightPropType: string;
+  /** The settings flag for a new tunnel. Saved tunnels use their snapshot. */
+  initialCatDogMode?: boolean;
   initialLeftBuugengFlipped: boolean;
   initialRightBuugengFlipped: boolean;
 }
@@ -75,6 +78,13 @@ export function createTunnelPresentationState(
     initialSnapshot?.props.rightBuugengFlipped ??
       inputs.initialRightBuugengFlipped
   );
+  // Differing hands mean cat dog, whatever an older flag says.
+  let catDog = $state(
+    (initialSnapshot
+      ? (initialSnapshot.props.catDogMode ?? false)
+      : (inputs.initialCatDogMode ?? false)) || leftPropType !== rightPropType
+  );
+  let propHand = $state<"left" | "right">("left");
   let unattachedTunnel = $state({
     config: clone(
       initialSnapshot?.tunnel.config ??
@@ -107,6 +117,9 @@ export function createTunnelPresentationState(
     get rightBuugengFlipped() {
       return rightBuugengFlipped;
     },
+    get catDogMode() {
+      return catDog;
+    },
     updateSettings(patch) {
       if (patch.leftPropType !== undefined) leftPropType = patch.leftPropType;
       if (patch.rightPropType !== undefined)
@@ -117,6 +130,9 @@ export function createTunnelPresentationState(
       if (patch.rightBuugengFlipped !== undefined) {
         rightBuugengFlipped = patch.rightBuugengFlipped;
       }
+      if (patch.catDogMode !== undefined) catDog = patch.catDogMode;
+      if (leftPropType !== rightPropType) catDog = true;
+      if (!catDog) propHand = "left";
     },
   };
 
@@ -212,11 +228,23 @@ export function createTunnelPresentationState(
       props: {
         leftPropType,
         rightPropType,
+        catDogMode: catDog,
         leftBuugengFlipped,
         rightBuugengFlipped,
       },
       trailRender: clone(inputs.animationSettings.trail),
     };
+  }
+
+  function toggleCatDog(): void {
+    catDog = !catDog;
+    propHand = "left";
+    if (!catDog) rightPropType = leftPropType;
+    inputs.animationSettings.setCurrentPropType(leftPropType);
+  }
+
+  function selectPropHand(hand: "left" | "right"): void {
+    if (catDog) propHand = hand;
   }
 
   return {
@@ -241,6 +269,32 @@ export function createTunnelPresentationState(
     get rightBuugengFlipped() {
       return rightBuugengFlipped;
     },
+    get catDog() {
+      return catDog;
+    },
+    get propHand() {
+      return propHand;
+    },
+    /** The prop the picker grid shows as selected: the addressed hand's. */
+    get addressedPropType() {
+      return catDog && propHand === "right" ? rightPropType : leftPropType;
+    },
+    // Not annotated as HandPropToolbarProps: that type lives in a real .svelte
+    // component's module block, which a plain .ts file's typechecker cannot
+    // resolve as a named export. The shape below matches it structurally, and
+    // the .svelte hosts that consume it (TunnelLayout) check the match there.
+    get handProps() {
+      return {
+        catDog,
+        hand: propHand,
+        leftPropType: leftPropType as PropType,
+        rightPropType: rightPropType as PropType,
+        onToggleCatDog: toggleCatDog,
+        onHandChange: selectPropHand,
+      };
+    },
+    toggleCatDog,
+    selectPropHand,
     get chirality(): PropChiralitySeam {
       const handState = (hand: ChiralityHand) => ({
         hand,
@@ -249,7 +303,9 @@ export function createTunnelPresentationState(
         },
       });
       return {
-        hands: [handState("left"), handState("right")],
+        hands: catDog
+          ? [handState(propHand)]
+          : [handState("left"), handState("right")],
         onChange(hand, flipped) {
           if (hand === "left") leftBuugengFlipped = flipped;
           else rightBuugengFlipped = flipped;
@@ -283,9 +339,13 @@ export function createTunnelPresentationState(
       playing = !playing;
     },
     setPropType(propType: string) {
-      leftPropType = propType;
-      rightPropType = propType;
-      inputs.animationSettings.setCurrentPropType(propType);
+      if (catDog && propHand === "right") rightPropType = propType;
+      else if (catDog) leftPropType = propType;
+      else {
+        leftPropType = propType;
+        rightPropType = propType;
+      }
+      inputs.animationSettings.setCurrentPropType(leftPropType);
     },
   };
 }

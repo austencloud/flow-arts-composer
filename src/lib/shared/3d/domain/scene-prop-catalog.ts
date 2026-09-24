@@ -88,6 +88,15 @@ export const SCENE_PROP_FAMILIES: readonly ScenePropFamily[] = [
       { id: PropType.TRIGENG, label: "Trigeng" },
     ],
   },
+  {
+    tileLabel: "Hoop",
+    controlLabel: "Hoop build",
+    representative: PropType.MINIHOOP,
+    variants: [
+      { id: PropType.MINIHOOP, label: "Mini Hoop" },
+      { id: PropType.TRIANGLE, label: "Triangle" },
+    ],
+  },
 ] as const;
 
 export const SCENE_PROP_REPRESENTATIVES = [
@@ -107,11 +116,17 @@ export const SCENE_PROP_REPRESENTATIVES = [
   PropType.GUITAR,
 ] as const;
 
+// A family representative (TRIAD, SWORD, STAFF, ...) also names itself as one
+// of its own family's variants, so the raw concatenation below repeats it.
+// The Set dedupes every such repeat in one place rather than special-casing
+// each representative that happens to head a family.
 export const SCENE_PROP_TYPES: readonly PropType[] = [
-  ...SCENE_PROP_REPRESENTATIVES,
-  ...SCENE_PROP_FAMILIES.flatMap((family) =>
-    family.variants.map((variant) => variant.id)
-  ),
+  ...new Set([
+    ...SCENE_PROP_REPRESENTATIVES,
+    ...SCENE_PROP_FAMILIES.flatMap((family) =>
+      family.variants.map((variant) => variant.id)
+    ),
+  ]),
 ];
 
 const SCENE_PROP_TYPE_SET = new Set<PropType>(SCENE_PROP_TYPES);
