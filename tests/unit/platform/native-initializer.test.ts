@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { NativeInitializer } from "$lib/shared/platform/services/native-initializer";
 
 const mocks = vi.hoisted(() => ({
@@ -90,6 +90,13 @@ vi.mock("$lib/shared/qr/services/card-scan-ingest", async (importActual) => ({
 
 const PID = "k7Qm2XpR9aBc";
 const SITE_SCAN_ENDPOINT = "https://tkaflowarts.com/api/physical-cards/scan";
+
+// The initializer loads the scan recorder with an unawaited dynamic import.
+// Load that module graph once up front: a slow first import (a loaded CI
+// runner) otherwise lets one test's recording land in the next test's mocks.
+beforeAll(async () => {
+  await import("$lib/shared/qr/services/native-card-scan");
+});
 
 type DeepLinkHandler = {
   handleDeepLink(url: string, coverWithSplash?: boolean): Promise<boolean>;
