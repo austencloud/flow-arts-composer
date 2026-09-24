@@ -4,12 +4,12 @@
  * indexability decision from the same data. Lives beside `+page.server.ts`
  * because SvelteKit only allows its reserved exports from that file.
  *
- * The admin SDK (`$lib/server/firebaseAdmin`) reads `process.env` directly,
- * which Cloudflare Pages never populates — the service-account secret lives
- * on `event.platform.env` for a request. Callers pass that credential to
- * `getFirestoreRest`, which falls back to `$env/dynamic/private` (and, in
- * local dev only, `serviceAccountKey.json`) the way the physical card scan
- * endpoint already does.
+ * Not the admin SDK (`$lib/server/firebaseAdmin`): with the service-account
+ * secret configured in production, its version of these reads returned
+ * nothing on Cloudflare Pages (2026-09-23). Callers pass the request's
+ * `event.platform.env` credential to `getFirestoreRest`, which falls back to
+ * `$env/dynamic/private` (and, in local dev only, `serviceAccountKey.json`)
+ * the way the physical card scan endpoint already does.
  *
  * The page loader sits in front of the viewer, so its lookup is bounded:
  * `publicSequences` is world-readable and is fetched without an OAuth token
@@ -33,6 +33,9 @@ import {
 } from "./sequence-seo";
 
 export type FirestoreRecord = Record<string, unknown>;
+
+/** The single-document read `resolvePublishedMeta` resolves through. */
+type DocumentReader = Pick<FirestoreRest, "getDocument">;
 
 interface ReleasedSequenceMatch {
   catalogId: string | null;
@@ -158,6 +161,21 @@ export function isSafeFirestoreDocumentId(value: string): boolean {
   );
 }
 
+/** Where a release's catalog record lives, or null when it names no safe catalog. */
+function catalogDocumentPath(
+  release: ReleasedSequenceMatch,
+  sequenceId: string
+): string | null {
+  if (!release.catalogId || !isSafeFirestoreDocumentId(release.catalogId)) {
+    return null;
+  }
+  return `catalogs/${release.catalogId}/sequences/${sequenceId}`;
+}
+
+function publicSequencePath(sequenceId: string): string {
+  return `publicSequences/${sequenceId}`;
+}
+
 /**
  * The canonical spelling of a sequence id.
  *
@@ -244,7 +262,7 @@ export function getReleaseManifests(
 const FIRESTORE_HOST = "https://firestore.googleapis.com/v1";
 
 // Exactly the fields `buildResolvedMeta` reads.
-const PUBLIC_SEQUENCE_FIELDS = [
+const PUBLISHED_META_FIELDS = [
   "word",
   "name",
   "ownerDisplayName",
@@ -267,7 +285,7 @@ export async function fetchPublicSequenceDocument(
   sequenceId: string,
   signal?: AbortSignal
 ): Promise<FirestoreDocument | null> {
-  const mask = PUBLIC_SEQUENCE_FIELDS.map(
+  const mask = PUBLISHED_META_FIELDS.map(
     (field) => `mask.fieldPaths=${encodeURIComponent(field)}`
   ).join("&");
   const url =
@@ -293,7 +311,7 @@ export async function fetchPublicSequenceDocument(
  * Firestore errors propagate; callers decide how to degrade.
  */
 export async function resolvePublishedMeta(
-  firestore: FirestoreRest,
+  firestore: DocumentReader,
   manifests: readonly FirestoreRecord[],
   sequenceId: string,
   fallback: SequenceRouteMeta,
@@ -302,13 +320,10 @@ export async function resolvePublishedMeta(
   const releases = getReleasedMatches(manifests, sequenceId);
 
   for (const release of releases) {
-    if (!release.catalogId || !isSafeFirestoreDocumentId(release.catalogId)) {
-      continue;
-    }
+    const catalogPath = catalogDocumentPath(release, sequenceId);
+    if (!catalogPath) continue;
 
-    const catalogDoc = await firestore.getDocument(
-      `catalogs/${release.catalogId}/sequences/${sequenceId}`
-    );
+    const catalogDoc = await firestore.getDocument(catalogPath);
 
     if (catalogDoc) {
       return buildResolvedMeta(
@@ -321,7 +336,7 @@ export async function resolvePublishedMeta(
 
   const publicRecord =
     publicDoc === undefined
-      ? await firestore.getDocument(`publicSequences/${sequenceId}`)
+      ? await firestore.getDocument(publicSequencePath(sequenceId))
       : publicDoc;
 
   if (publicRecord) {
@@ -342,6 +357,63 @@ export async function resolvePublishedMeta(
   }
 
   return fallback;
+}
+
+/**
+ * `resolvePublishedMeta` for many ids in at most two Firestore requests: every
+ * candidate catalog record in one batch read, then the public copy of each id
+ * no catalog record resolved. Cloudflare caps a Workers Free invocation at 50
+ * subrequests and fails every fetch past it, so one read per id would start
+ * dropping cards from the sitemap at roughly 48 released sequences (25 on
+ * 2026-09-23, and each deck release adds more).
+ */
+export async function resolvePublishedMetaBatch(
+  firestore: FirestoreRest,
+  manifests: readonly FirestoreRecord[],
+  sequenceIds: readonly string[],
+  fallback: SequenceRouteMeta
+): Promise<Map<string, SequenceRouteMeta>> {
+  const catalogPaths = new Map(
+    sequenceIds.map((id) => [
+      id,
+      getReleasedMatches(manifests, id).flatMap(
+        (release) => catalogDocumentPath(release, id) ?? []
+      ),
+    ])
+  );
+  const prefetched = await firestore.batchGetDocuments(
+    [...catalogPaths.values()].flat(),
+    PUBLISHED_META_FIELDS
+  );
+
+  const unresolved = sequenceIds.filter(
+    (id) => !catalogPaths.get(id)?.some((path) => prefetched.get(path))
+  );
+  if (unresolved.length > 0) {
+    const publicDocs = await firestore.batchGetDocuments(
+      unresolved.map(publicSequencePath),
+      PUBLISHED_META_FIELDS
+    );
+    for (const [path, doc] of publicDocs) prefetched.set(path, doc);
+  }
+
+  // Resolution order stays in resolvePublishedMeta; a path the batches did not
+  // answer still resolves with its own read.
+  const reader: DocumentReader = {
+    getDocument: (path) =>
+      prefetched.has(path)
+        ? Promise.resolve(prefetched.get(path) ?? null)
+        : firestore.getDocument(path),
+  };
+
+  const resolved = new Map<string, SequenceRouteMeta>();
+  for (const id of sequenceIds) {
+    resolved.set(
+      id,
+      await resolvePublishedMeta(reader, manifests, id, fallback)
+    );
+  }
+  return resolved;
 }
 
 /**
