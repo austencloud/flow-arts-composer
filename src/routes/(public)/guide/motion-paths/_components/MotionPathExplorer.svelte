@@ -3,12 +3,10 @@
   import { SequenceViewerVisibilityState } from "$lib/shared/sequence-viewer/state/viewer-visibility-state.svelte";
   import { setViewerVisibilityContext } from "$lib/shared/sequence-viewer/context/viewer-visibility-context";
   import {
-    createIntrinsicHeightMotion,
     flyFade,
     growFade,
     motionDuration,
     reducedMotion,
-    type IntrinsicHeightMotion,
   } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import { createLayoutMotion } from "$lib/shared/transitions/layout-flip";
@@ -139,54 +137,6 @@
   const studioSideBySide = $derived(
     explorerWidth >= STUDIO_SIDE_MIN_CONTAINER && landscape
   );
-  // Side by side, the canvas group sets the studio's height and the card
-  // beside it takes the height of the page it shows. A short page (Effort,
-  // Display) gets a card its own size instead of one stretched down the
-  // canvas; a page laid out in whatever room it has (Props, Effects) gets
-  // all of it and scrolls. Undefined until the page first reports.
-  let studioPageHeight = $state<number | null>();
-  let studioRowHeight = $state(0);
-  let toySectionHeaderHeight = $state(0);
-  let toySectionElement = $state<HTMLElement>();
-  let cardMotion = $state<IntrinsicHeightMotion | null>(null);
-  let cardRowHeight = 0;
-  // A card that would stop this close to the canvas group's bottom edge
-  // takes the whole height, so the two bottoms line up instead of missing
-  // by a few pixels.
-  const CARD_FULL_SNAP = 48;
-  $effect(() => {
-    const element = toySectionElement;
-    if (!element || !studioSideBySide) return;
-    const motion = createIntrinsicHeightMotion(element);
-    cardMotion = motion;
-    return () => {
-      motion.cancel();
-      cardMotion = null;
-      cardRowHeight = 0;
-      studioPageHeight = undefined;
-    };
-  });
-  $effect(() => {
-    const motion = cardMotion;
-    const element = toySectionElement;
-    const page = studioPageHeight;
-    const row = studioRowHeight;
-    const header = toySectionHeaderHeight;
-    if (!motion || !element || page === undefined || row <= 0) return;
-    untrack(() => {
-      const border = element.offsetHeight - element.clientHeight;
-      const natural = page === null ? row : header + page + border;
-      const target = natural >= row - CARD_FULL_SNAP ? row : natural;
-      // A page that changed height animates there. A room that changed size
-      // (a resized window, the card's first page) takes the card with it.
-      const from =
-        row === cardRowHeight
-          ? (motion.currentHeight() ?? element.offsetHeight)
-          : target;
-      cardRowHeight = row;
-      motion.resize(from, target);
-    });
-  });
   let explorerElement = $state<HTMLElement>();
   let phaseTimer: ReturnType<typeof setTimeout> | undefined;
   // The canvas and the dock are what the two layouts share, so they fly
@@ -521,9 +471,7 @@
     selectedPropType={explorer.propType}
     onPropChange={choosePropType}
     sequence={explorer.sequence}
-    onPageHeight={layout === "sidebar"
-      ? (height) => (studioPageHeight = height)
-      : undefined}
+    fillPages={layout === "sidebar"}
   />
 {/snippet}
 
@@ -565,7 +513,7 @@
       </PathShapePanel>
     </div>
 
-    <div class="motion-column" bind:clientHeight={studioRowHeight}>
+    <div class="motion-column">
       <!-- Trace is the lesson's own switch: which point the mandala follows.
            Everything else about the canvas lives in the toy box under it. -->
       <div class="transport" data-rest-only inert={restFaded}>
@@ -823,12 +771,8 @@
         class="toy-section"
         aria-label="{shownLabel} settings"
         transition:flyFade={{ y: 8, duration: DURATION.fast }}
-        bind:this={toySectionElement}
       >
-        <header
-          class="toy-section-header"
-          bind:offsetHeight={toySectionHeaderHeight}
-        >
+        <header class="toy-section-header">
           <PanelButton onclick={leaveStudio}>
             <i class="fas fa-arrow-left" aria-hidden="true"></i>
             <span>Back to paths</span>
@@ -1316,16 +1260,15 @@
     grid-column: 2;
   }
   /* Positioned in its grid area rather than placed in it, so its content
-     never stretches the row. The script sets its height to the page's own
-     height, capped at the canvas group's, and animates the change when the
-     section changes. Both lines are named: a positioned box with an open
-     end line reaches the grid's edge instead of its track's. */
+     never stretches the row: the card is exactly as tall as the canvas group
+     beside it, and every page spends that height (see fillPages). Both lines
+     are named: a positioned box with an open end line reaches the grid's
+     edge instead of its track's. */
   .studio.side .toy-section {
     position: absolute;
-    inset: 0 0 auto;
+    inset: 0;
     grid-column: 1 / 2;
     grid-row: 1 / 2;
-    max-height: 100%;
   }
   /* The canvas is the largest square the room holds. */
   .studio .motion-stage {
