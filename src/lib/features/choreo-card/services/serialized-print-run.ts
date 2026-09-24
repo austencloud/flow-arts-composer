@@ -2,6 +2,7 @@ import { authedFetch } from "$lib/shared/auth/services/authed-fetch";
 import { getQRCodeGenerator } from "$lib/shared/qr/get-qr-code-generator";
 import { getShortCodeManager } from "$lib/shared/qr/get-short-code-manager";
 import {
+  PHYSICAL_CARD_ID_LENGTH,
   PHYSICAL_CARD_SCHEMA_VERSION,
   isPhysicalCardId,
   isPrintRunId,
@@ -14,7 +15,17 @@ import {
 } from "$lib/shared/qr/domain/physical-card";
 import type { CardSizeId } from "../domain/card-sizes";
 import type { CardPair } from "./types";
-import { renderSerializedCardFront } from "./serialized-card-front";
+import {
+  getSerializedQrPlacement,
+  renderSerializedCardFront,
+  type SerializedQrPlacement,
+} from "./serialized-card-front";
+import {
+  PRINT_SERVICE_PIXELS_PER_INCH,
+  assertPlannedQrFits,
+  homePrintPixelsPerInch,
+  verifyPrintedQr,
+} from "./print-qr-guard";
 
 export interface PrepareSerializedPrintRunOptions {
   pairs: CardPair[];
@@ -185,6 +196,17 @@ function instanceKey(cardIndex: number, copyIndex: number): string {
   return `${cardIndex}:${copyIndex}`;
 }
 
+/**
+ * Stand-in physical ID for sizing a QR before identities exist. Every issued
+ * ID has this length, so the serialized payload has the same byte length and
+ * therefore the same QR version.
+ */
+const PLACEHOLDER_PHYSICAL_CARD_ID = "2".repeat(PHYSICAL_CARD_ID_LENGTH);
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 export async function prepareSerializedPrintRun(
   options: PrepareSerializedPrintRunOptions
 ): Promise<PreparedSerializedPrintRun> {
@@ -219,6 +241,32 @@ export async function prepareSerializedPrintRun(
       });
       return { code: result.code, url: result.url };
     })
+  );
+
+  // Refuse the run before any physical identity is issued when a card's QR
+  // cell is too small to print a scannable serialized code.
+  const pixelsPerInchFor = (front: HTMLCanvasElement): number =>
+    options.outputMode === "zip"
+      ? PRINT_SERVICE_PIXELS_PER_INCH
+      : homePrintPixelsPerInch(front, options.cardSize);
+  const placements: SerializedQrPlacement[] = options.pairs.map(
+    (pair, cardIndex) => {
+      const meta = pair.renderMeta!;
+      const placement = getSerializedQrPlacement(meta.sequence, meta.options);
+      if (!placement) {
+        throw new Error(`Card "${pair.label}" has no QR cell to serialize`);
+      }
+      assertPlannedQrFits(
+        pair.label,
+        withPhysicalCardId(
+          resolvedUrls[cardIndex]!.url,
+          PLACEHOLDER_PHYSICAL_CARD_ID
+        ),
+        placement.size,
+        pixelsPerInchFor(pair.front)
+      );
+      return placement;
+    }
   );
 
   const request: PhysicalCardIssueRequest = {
@@ -299,13 +347,27 @@ export async function prepareSerializedPrintRun(
         resolvedUrls[cardIndex]!.url,
         instance.physicalCardId
       );
-      return renderSerializedCardFront(
-        pair.front,
-        meta.sequence,
-        meta.options,
-        serializedUrl,
-        qrGenerator
-      );
+      let front: HTMLCanvasElement;
+      try {
+        front = await renderSerializedCardFront(
+          pair.front,
+          meta.sequence,
+          meta.options,
+          serializedUrl,
+          qrGenerator
+        );
+      } catch (error) {
+        throw new Error(
+          `Card "${pair.label}": its QR code failed to render (${errorMessage(error)})`
+        );
+      }
+      await verifyPrintedQr(front, {
+        label: pair.label,
+        placement: placements[cardIndex]!,
+        pixelsPerInch: pixelsPerInchFor(front),
+        expectedPayload: serializedUrl,
+      });
+      return front;
     },
   };
 }

@@ -1,10 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { authedFetch } from "$lib/shared/auth/services/authed-fetch";
 import { PHYSICAL_CARD_SCHEMA_VERSION } from "$lib/shared/qr/domain/physical-card";
+import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { getShortCodeManager } from "$lib/shared/qr/get-short-code-manager";
+import { PrintedQrError } from "../print-qr-guard";
+import { getSerializedQrPlacement } from "../serialized-card-front";
 import {
   createPhysicalCardPrintRunFinalizer,
   finalizePhysicalCardPrintRun,
+  prepareSerializedPrintRun,
 } from "../serialized-print-run";
+import type { CardPair } from "../types";
 
 vi.mock("$lib/shared/auth/services/authed-fetch", () => ({
   authedFetch: vi.fn(),
@@ -16,6 +22,7 @@ vi.mock("$lib/shared/qr/get-short-code-manager", () => ({
   getShortCodeManager: vi.fn(),
 }));
 vi.mock("../serialized-card-front", () => ({
+  getSerializedQrPlacement: vi.fn(),
   renderSerializedCardFront: vi.fn(),
 }));
 
@@ -109,5 +116,52 @@ describe("physical card print-run finalization", () => {
     ).rejects.toThrow(
       "Physical-card finalization returned an invalid response"
     );
+  });
+});
+
+describe("physical card print-run QR preflight", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it("refuses a card whose QR cell is too small before issuing identities", async () => {
+    vi.mocked(getShortCodeManager).mockReturnValue({
+      createShortCode: vi.fn().mockResolvedValue({
+        code: "K7QM",
+        url: "https://tka.run/K7QM?bp=staff&rp=staff",
+      }),
+    } as unknown as ReturnType<typeof getShortCodeManager>);
+    // The eight-step catalog column leaves a 121 px QR slot.
+    vi.mocked(getSerializedQrPlacement).mockReturnValue({
+      x: 600,
+      y: 600,
+      size: 121,
+    });
+    const pair: CardPair = {
+      front: { width: 822, height: 1122 } as HTMLCanvasElement,
+      back: { width: 1644, height: 2244 } as HTMLCanvasElement,
+      label: "ABCDEFGH",
+      renderMeta: {
+        sequence: { id: "eight", word: "ABCDEFGH" } as SequenceData,
+        options: { includeStartPlacement: true },
+      },
+    };
+
+    const run = prepareSerializedPrintRun({
+      pairs: [pair],
+      deckId: "deck-1",
+      deckName: "Deck 001",
+      deckReleaseNumber: 1,
+      cardSize: "poker",
+      copies: 1,
+      groupByElement: false,
+      outputMode: "zip",
+    });
+
+    await expect(run).rejects.toBeInstanceOf(PrintedQrError);
+    await expect(run).rejects.toThrow(
+      'Card "ABCDEFGH": its QR code would print'
+    );
+    expect(authedFetch).not.toHaveBeenCalled();
   });
 });
