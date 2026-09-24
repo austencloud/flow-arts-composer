@@ -402,26 +402,25 @@
     }
   }
 
-  /* One panel at a time below 70rem, so the frame gets the whole body height
-     and should use it. Sizing off a viewport fraction (45dvh) instead left a
-     820x1180 tablet with a 350px frame under 300px of empty stage — the width
-     cap is a ceiling, not the driver. */
+  /* Below 70rem the frame column is sized to the frame, so the stage height
+     drives it. Sizing off a viewport fraction (45dvh) instead left a 820x1180
+     tablet with a 350px frame under 300px of empty stage — the width cap is a
+     ceiling, not the driver. The column's own width is the only other limit.
+     A 21rem phone-width ceiling used to hold the frame beside the share panel
+     on an 884x1028 Fold to 336px wide; without it the frame is 412x732. */
   @container post-studio (max-width: 70rem) {
     .preview-shell {
       --preview-width: min(100%, calc((100cqb - 2.75rem) * 0.5625), 34rem);
     }
   }
 
-  @container post-studio (max-width: 38rem) {
+  /* A short stage (a landscape phone, or a phone with the share panel docked
+     under the studio) drops the meta line so the frame takes the stage's full
+     height rather than reserving a row for it. Asked of the stage, not the
+     viewport: a 667px-tall phone is not short, but its stage above an open
+     share panel is. */
+  @container post-studio-stage (max-height: 20rem) {
     .preview-shell {
-      --preview-width: min(100%, calc((100cqb - 2.75rem) * 0.5625), 21rem);
-    }
-  }
-
-  @media (max-height: 40rem) {
-    .preview-shell {
-      /* The meta line is hidden here, so the frame takes the stage's full
-         height rather than reserving a row for it. */
       --preview-width: min(100%, calc((100cqb - 0.5rem) * 0.5625));
     }
 
