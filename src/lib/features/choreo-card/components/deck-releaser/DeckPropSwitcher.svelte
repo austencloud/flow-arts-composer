@@ -54,6 +54,7 @@
     <BentoPropGrid
       selectedPropType={rs.leftPropType}
       variant="inline"
+      showColors={false}
       title="Select Prop"
       onSelect={(p: PropType) => {
         rs.selectedPropType = p;
