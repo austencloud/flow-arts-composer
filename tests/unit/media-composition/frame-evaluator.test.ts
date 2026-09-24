@@ -144,12 +144,13 @@ describe("evaluatePresetFrame", () => {
         { mediaTimeSeconds: 8, sequencePosition: 8 },
       ],
     };
-    const positionAt = (seconds: number) =>
+    const frameAt = (seconds: number) =>
       evaluatePresetFrame(performancePreset, 10, seconds, {
         timeMap: twoPassMap,
         steps: variableDurationSteps,
         startPlacementDuration: 1,
-      })[0]?.sequencePosition;
+      })[0];
+    const positionAt = (seconds: number) => frameAt(seconds)?.sequencePosition;
 
     // The opening pose is position zero and stays itself - every pass after
     // the first closes back onto it.
@@ -162,6 +163,9 @@ describe("evaluatePresetFrame", () => {
     // Pass 2 closes on move 4 again, and holds there past the last anchor.
     expect(positionAt(8)).toBe(4);
     expect(positionAt(9.5)).toBe(4);
+    expect(frameAt(4)?.sequencePassIndex).toBe(0);
+    expect(frameAt(5)?.sequencePassIndex).toBe(1);
+    expect(frameAt(6.5)?.sequencePassIndex).toBe(1);
   });
 
   it("rejects an invalid project duration", () => {

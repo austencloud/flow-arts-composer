@@ -359,6 +359,113 @@ export function createSectionTimeMap(
   });
 }
 
+export interface BpmTimeMapInput {
+  sequenceRef: SequenceRevisionRef;
+  mediaSourceId: string;
+  mediaDurationSeconds: number;
+  motionDurations: readonly number[];
+  /** The landing of move 1, in media seconds. */
+  firstBeatSeconds: number;
+  bpm: number;
+  id?: string;
+  updatedAt?: number;
+}
+
+/**
+ * Align every move landing to a fixed tempo, repeating the sequence for the
+ * length of the clip. Motion durations are beat weights; no pass is stretched
+ * to fit the video. Position 0 is the opening pose and position 1 is Beat 1.
+ */
+export function createBpmTimeMap(input: BpmTimeMapInput): SequenceTimeMap {
+  const {
+    sequenceRef,
+    mediaSourceId,
+    mediaDurationSeconds,
+    motionDurations,
+    firstBeatSeconds,
+    bpm,
+    id = `${mediaSourceId}:bpm-grid:v1`,
+    updatedAt = Date.now(),
+  } = input;
+
+  if (!Number.isFinite(mediaDurationSeconds) || mediaDurationSeconds <= 0) {
+    throw new RangeError("Media duration must be a positive finite number");
+  }
+  if (!Number.isFinite(bpm) || bpm <= 0) {
+    throw new RangeError("BPM must be a positive finite number");
+  }
+  if (
+    !Number.isFinite(firstBeatSeconds) ||
+    firstBeatSeconds < 0 ||
+    firstBeatSeconds > mediaDurationSeconds
+  ) {
+    throw new RangeError("Beat 1 must be within the media duration");
+  }
+  if (
+    motionDurations.length === 0 ||
+    motionDurations.some(
+      (duration) => !Number.isFinite(duration) || duration <= 0
+    )
+  ) {
+    throw new RangeError("Motion durations must be positive finite numbers");
+  }
+
+  const secondsPerBeat = 60 / bpm;
+  const firstInterval = motionDurations[0]! * secondsPerBeat;
+  if (!Number.isFinite(firstInterval) || firstInterval <= 0) {
+    throw new RangeError("BPM grid needs finite beat intervals");
+  }
+
+  const anchors: SequenceTimeAnchor[] = [];
+  if (firstBeatSeconds > 0) {
+    anchors.push({
+      mediaTimeSeconds: Math.max(0, firstBeatSeconds - firstInterval),
+      sequencePosition: Math.max(0, 1 - firstBeatSeconds / firstInterval),
+    });
+  }
+  anchors.push({ mediaTimeSeconds: firstBeatSeconds, sequencePosition: 1 });
+
+  let time = firstBeatSeconds;
+  let position = 1;
+  while (time < mediaDurationSeconds) {
+    if (anchors.length > 100_000) {
+      throw new RangeError("BPM grid exceeds the supported number of beats");
+    }
+    const interval =
+      motionDurations[position % motionDurations.length]! * secondsPerBeat;
+    const nextTime = time + interval;
+    if (!Number.isFinite(nextTime) || nextTime <= time) {
+      throw new RangeError("BPM grid needs strictly increasing beat times");
+    }
+    if (nextTime >= mediaDurationSeconds) {
+      anchors.push({
+        mediaTimeSeconds: mediaDurationSeconds,
+        sequencePosition:
+          nextTime === mediaDurationSeconds
+            ? position + 1
+            : position + (mediaDurationSeconds - time) / interval,
+      });
+      break;
+    }
+    time = nextTime;
+    position += 1;
+    anchors.push({ mediaTimeSeconds: time, sequencePosition: position });
+  }
+
+  return SequenceTimeMapSchema.parse({
+    schemaVersion: 1,
+    id,
+    sequenceRef,
+    mediaSourceId,
+    anchors,
+    source: "tempo-grid",
+    boundaryPolicy: "clamp",
+    confidence: 0.5,
+    updatedAt,
+    positionConvention: "arrival",
+  });
+}
+
 /**
  * Turns the old one-timestamp-per-beat record into a complete fractional map.
  *
