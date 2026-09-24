@@ -29,6 +29,19 @@ export function balancedCount(count: number, max: number): number {
   return Math.max(1, Math.ceil(count / rows));
 }
 
+/** The short last row of `count` tiles in `cols` columns, on a doubled
+ *  track grid (two tracks per tile): its first tile's index and the track
+ *  it starts on to sit centred under the full rows. Null when no row is
+ *  short. */
+export function centeredOrphan(
+  count: number,
+  cols: number
+): { index: number; start: number } | null {
+  const orphans = count % cols;
+  if (orphans === 0) return null;
+  return { index: count - orphans, start: cols - orphans + 1 };
+}
+
 export interface SectionFillBox {
   /** Tiles in each section, in order. */
   counts: readonly number[];
@@ -76,8 +89,7 @@ export function sectionFillLayout(
     const rows = counts.map((n) => Math.ceil(n / cols));
     const totalRows = rows.reduce((sum, r) => sum + r, 0);
     const widest = Math.max(...counts.map((n) => balancedCount(n, cols)));
-    const byWidth =
-      (width - INLINE_PAD - TILE_GAP * (widest - 1)) / widest;
+    const byWidth = (width - INLINE_PAD - TILE_GAP * (widest - 1)) / widest;
     const byHeight =
       (tileHeight - TILE_GAP * (totalRows - counts.length)) /
       totalRows /
