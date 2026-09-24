@@ -11,10 +11,17 @@
     value = $bindable(),
     label = "Save with props",
     disabled = false,
+    showColors = false,
   }: {
     value: ResolvedPropConfig;
     label?: string;
     disabled?: boolean;
+    /**
+     * The picker's account colour control. Off by default: a saved pair is
+     * metadata, and the account colours are not saved with it. A field that
+     * picks the props the user is looking at turns it on.
+     */
+    showColors?: boolean;
   } = $props();
   let choosing = $state(false);
   let hand = $state<"both" | "left" | "right">("both");
@@ -56,7 +63,7 @@
       variant="inline"
       scrollMode="host"
       showAppearance={false}
-      showColors={false}
+      {showColors}
       onSelect={(prop) => {
         const leftPropType = hand === "right" ? value.leftPropType : prop;
         const rightPropType = hand === "left" ? value.rightPropType : prop;
