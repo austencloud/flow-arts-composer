@@ -45,10 +45,10 @@ section starts clean.
 
 ### Output geometry (1080×1920, 30 fps)
 
-| Region            | Rect in pixels, during the section | Fractions (x, y, w, h)              |
-| ----------------- | ---------------------------------- | ----------------------------------- |
-| `performance`     | 0, 0, 1080, 1420                   | 0, 0, 1, 0.739583                   |
-| `strip-animation` | 0, 1420, 500, 500                  | 0, 0.739583, 0.462963, 0.260417     |
+| Region            | Rect in pixels, during the section | Fractions (x, y, w, h)                 |
+| ----------------- | ---------------------------------- | -------------------------------------- |
+| `performance`     | 0, 0, 1080, 1420                   | 0, 0, 1, 0.739583                      |
+| `strip-animation` | 0, 1420, 500, 500                  | 0, 0.739583, 0.462963, 0.260417        |
 | `strip-carousel`  | 500, 1420, 580, 500                | 0.462963, 0.739583, 0.537037, 0.260417 |
 
 Outside the section:
@@ -270,16 +270,16 @@ Motion uses the shared `growFade` owner. No raw durations.
 Searches covered: keyframe, region motion, carousel, StepStrip, strip-window,
 painter, renderPictograph, tempo grid, marker, step map, easing.
 
-| Capability | Closest existing | Decision |
-| --- | --- | --- |
-| Region geometry over time | `ClipTransform` (pan clamped to overscan); `camera-keyframe-interpolator` (3D camera values) | Extend the preset and frame-evaluator owner with region motion; reuse the evaluator's easing |
-| Section boundaries | none (clips carry absolute or fraction times) | Extend `PresetTimePoint` with marker references |
-| Read-ahead beat strip | `StepStrip.svelte` (DOM/SVG, not exportable) plus `strip-window.ts` | Compose: extract the spotlight curves into `strip-window.ts`; the painted carousel is a new presentation of the same capability |
-| Pictograph pixels | `Canvas2DDirectRenderer.renderPictograph` | Reuse |
-| Frame-derived drawing | compositor branches that read DOM canvases | Create `PostStudioLayerPainter` as the owner for painted layers |
-| Local-file beat taps | `StepMapEditor` (catalog videos only) | Reuse, with an in-memory and local `onSave` |
-| Section even timing | `createTempoGridTimeMap` (whole media only) | Extend with a media start offset |
-| Clip fades | crossfade transitions (pairs only) | Extend visual clips with fade fields in the same evaluator |
+| Capability                | Closest existing                                                                             | Decision                                                                                                                        |
+| ------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Region geometry over time | `ClipTransform` (pan clamped to overscan); `camera-keyframe-interpolator` (3D camera values) | Extend the preset and frame-evaluator owner with region motion; reuse the evaluator's easing                                    |
+| Section boundaries        | none (clips carry absolute or fraction times)                                                | Extend `PresetTimePoint` with marker references                                                                                 |
+| Read-ahead beat strip     | `StepStrip.svelte` (DOM/SVG, not exportable) plus `strip-window.ts`                          | Compose: extract the spotlight curves into `strip-window.ts`; the painted carousel is a new presentation of the same capability |
+| Pictograph pixels         | `Canvas2DDirectRenderer.renderPictograph`                                                    | Reuse                                                                                                                           |
+| Frame-derived drawing     | compositor branches that read DOM canvases                                                   | Create `PostStudioLayerPainter` as the owner for painted layers                                                                 |
+| Local-file beat taps      | `StepMapEditor` (catalog videos only)                                                        | Reuse, with an in-memory and local `onSave`                                                                                     |
+| Section even timing       | `createTempoGridTimeMap` (whole media only)                                                  | Extend with a media start offset                                                                                                |
+| Clip fades                | crossfade transitions (pairs only)                                                           | Extend visual clips with fade fields in the same evaluator                                                                      |
 
 ## Risks
 
