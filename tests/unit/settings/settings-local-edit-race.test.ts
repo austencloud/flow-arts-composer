@@ -799,7 +799,7 @@ describe("prop choices follow the account", () => {
     });
   });
 
-  it("keeps the newest prop when Shift+P outruns the sync", async () => {
+  it("keeps the newest Shift+P prop when its upload fails and an older copy arrives", async () => {
     const service = await loadSettingsService();
     await service.initializeFirebaseSync();
     await flushMicrotasks();
@@ -831,21 +831,6 @@ describe("prop choices follow the account", () => {
 
     firstSave.resolve();
     await flushMicrotasks();
-    expect(persister.saveSettings).toHaveBeenCalledTimes(2);
-
-    // Firestore echoes the document as of the first press only.
-    persister.listener?.({
-      leftPropType: PropType.FAN,
-      rightPropType: PropType.FAN,
-      propType: PropType.FAN,
-      catDogMode: false,
-    });
-    await flushMicrotasks();
-
-    expect(service.currentSettings).toMatchObject({
-      leftPropType: PropType.BIGSTAFF,
-      rightPropType: PropType.BIGSTAFF,
-    });
     expect(persister.saveSettings).toHaveBeenLastCalledWith(
       expect.objectContaining({
         leftPropType: PropType.BIGSTAFF,
@@ -853,8 +838,26 @@ describe("prop choices follow the account", () => {
       })
     );
 
-    secondSave.resolve();
+    // The last press fails to upload. That frees the write slot, so the next
+    // snapshot is applied while the account still holds the first press.
+    secondSave.reject(new Error("offline"));
     await flushMicrotasks();
+
+    persister.listener?.({
+      leftPropType: PropType.FAN,
+      rightPropType: PropType.FAN,
+      propType: PropType.FAN,
+      catDogMode: false,
+      hapticFeedback: false,
+    });
+    await flushMicrotasks();
+
+    // The snapshot landed, but the unconfirmed prop outranks it.
+    expect(service.currentSettings.hapticFeedback).toBe(false);
+    expect(service.currentSettings).toMatchObject({
+      leftPropType: PropType.BIGSTAFF,
+      rightPropType: PropType.BIGSTAFF,
+    });
   });
 
   it("keeps a one-hand pick whole while the account document loads", async () => {
@@ -883,5 +886,69 @@ describe("prop choices follow the account", () => {
       rightPropType: PropType.STAFF,
       catDogMode: true,
     });
+  });
+
+  it("uploads a prop picked before the account sync started", async () => {
+    const service = await loadSettingsService();
+
+    // Signed in, but the sync has not started, so nothing can be written yet.
+    await service.updateSettings({
+      leftPropType: PropType.FAN,
+      rightPropType: PropType.FAN,
+    });
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    expect(persister.saveSettings).not.toHaveBeenCalled();
+
+    await service.initializeFirebaseSync();
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    await flushMicrotasks();
+
+    expect(service.currentSettings.leftPropType).toBe(PropType.FAN);
+    expect(persister.saveSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        leftPropType: PropType.FAN,
+        rightPropType: PropType.FAN,
+      })
+    );
+
+    // With the pick on the server, other tabs' changes land here again.
+    persister.listener?.({
+      leftPropType: PropType.CLUB,
+      rightPropType: PropType.CLUB,
+      propType: PropType.CLUB,
+      catDogMode: false,
+    });
+    await flushMicrotasks();
+    expect(service.currentSettings.leftPropType).toBe(PropType.CLUB);
+  });
+
+  it("keeps this device's props off the account when the account read fails", async () => {
+    localStorage.setItem(
+      SETTINGS_KEY,
+      JSON.stringify({
+        leftPropType: PropType.CLUB,
+        rightPropType: PropType.CLUB,
+        propType: PropType.CLUB,
+        catDogMode: false,
+      })
+    );
+    persister.loadSettings.mockRejectedValue(new Error("client is offline"));
+
+    const service = await loadSettingsService();
+    await service.initializeFirebaseSync();
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    await flushMicrotasks();
+
+    expect(persister.saveSettings).not.toHaveBeenCalled();
+
+    // The account's copy still lands once the connection is back.
+    persister.listener?.({
+      leftPropType: PropType.FAN,
+      rightPropType: PropType.FAN,
+      propType: PropType.FAN,
+      catDogMode: false,
+    });
+    await flushMicrotasks();
+    expect(service.currentSettings.leftPropType).toBe(PropType.FAN);
   });
 });

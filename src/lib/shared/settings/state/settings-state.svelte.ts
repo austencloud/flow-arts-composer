@@ -220,6 +220,16 @@ class SettingsState {
         return;
       }
 
+      // An edit made after sign-in but before this sync existed is pinned
+      // with no write behind it. Until something uploads it, the pin keeps
+      // every remote change to that setting out of this tab.
+      if (
+        this.unsavedLocalOwner === syncUserId &&
+        this.unsavedLocalKeys.size > 0
+      ) {
+        this.debouncedSaveToFirebase();
+      }
+
       if (this.firebasePersistence.onSettingsChange) {
         const unsubscribe = this.firebasePersistence.onSettingsChange(
           (remoteSettings) => {
