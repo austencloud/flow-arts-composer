@@ -1363,7 +1363,7 @@ export class ShortCodeManager {
    * Resolve a scanned card for FILING into a collection, not viewing.
    *
    * resolveShortCode prefers the self-contained encoded blob (fastest to
-   * show) and returns id = code — but a collection member must be a
+   * show) and trusts the record's sequenceId — but a collection member must be a
    * Firestore sequence doc the member-loader can find later (own or
    * public). So this resolver runs identity-first: public index, then
    * sequenceId-as-word, then direct doc load; the blob and embedded data
