@@ -322,6 +322,7 @@
       {rightPropType}
       chrome="minimal"
       fill
+      hoverHint="none"
       autoPlay={false}
       externalPlaying={playing}
       externalStep={waiting === source && releasing !== source
