@@ -28,6 +28,8 @@
     downloadLabel: string;
     linkCopied: boolean;
     onCopyLink: () => void;
+    embedCopied: boolean;
+    onCopyEmbed: () => void;
     onDownload: () => void;
     /** What Download makes, e.g. "1080p • 30 fps • ~1m 12s". */
     downloadDetail?: string;
@@ -53,6 +55,8 @@
     downloadLabel,
     linkCopied,
     onCopyLink,
+    embedCopied,
+    onCopyEmbed,
     onDownload,
     downloadDetail,
     downloadProgress = null,
@@ -152,6 +156,13 @@
         aria-hidden="true"
       ></i>
       {linkCopied ? "Link copied" : "Copy link"}
+    </PanelButton>
+    <PanelButton onclick={onCopyEmbed} ariaLabel="Copy embed code">
+      <i
+        class="fa-solid {embedCopied ? 'fa-check' : 'fa-code'}"
+        aria-hidden="true"
+      ></i>
+      {embedCopied ? "Code copied" : "Embed"}
     </PanelButton>
     {#if onNativeShare}
       <PanelButton onclick={onNativeShare} ariaLabel="Share to other apps">

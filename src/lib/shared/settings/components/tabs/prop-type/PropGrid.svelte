@@ -30,6 +30,11 @@
   import { tick } from "svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import PropGridButton from "./PropGridButton.svelte";
+  import {
+    FILL_MAX_TILE,
+    balancedCount,
+    sectionFillLayout,
+  } from "./section-fill-layout";
   import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
   import {
     hasModelSprite,
@@ -112,11 +117,11 @@
     scrollMode?: "internal" | "host";
     /**
      * The host bounds the internal scroller to a definite height (the Change
-     * Prop drawer, the phone sheet, the wide sidebar). A drilled view then
-     * claims that whole height and sizes its tiles to share it, and so does
-     * the flat grid. Only a host with a definite height may opt in: in an
-     * auto-height host the measurement would feed back into the content it
-     * measures.
+     * Prop drawer, the phone sheet, the wide sidebar, the Props page side by
+     * side). A drilled view then claims that whole height and sizes its
+     * tiles to share it, and so do the flat and sectioned grids. Only a host
+     * with a definite height may opt in: in an auto-height host the
+     * measurement would feed back into the content it measures.
      */
     fill?: boolean;
     /** Adds the scene-only no-prop choice using the same canonical card. */
@@ -201,10 +206,24 @@
           seen.add(base);
           bases.push(base);
         }
-        return { label: section.label, bases };
+        return {
+          label: section.label,
+          bases,
+          columns: balancedColumns(bases.length),
+        };
       })
       .filter((section) => section.bases.length > 0);
   });
+
+  // The column count a section uses at each width tier: as many as the tier
+  // allows, less any that would only leave a short last row. Ten props at an
+  // eight-column tier sit five and five, not eight and a stray two.
+  const COLUMN_TIERS = [2, 3, 4, 6, 8, 10, 12] as const;
+  function balancedColumns(count: number): string {
+    return COLUMN_TIERS.map(
+      (max) => `--c${max}: ${balancedCount(count, max)}`
+    ).join("; ");
+  }
 
   const allBases = $derived(sections.flatMap((section) => section.bases));
   const selectedBase = $derived(
@@ -307,7 +326,12 @@
   let tilesBox = $state({ width: 0, height: 0 });
 
   $effect(() => {
-    if (!probeEl) return;
+    // A host that stops bounding the grid (the Props page stacking its
+    // cards) takes the probe away; the last height must not linger.
+    if (!probeEl) {
+      fillHeight = 0;
+      return;
+    }
     const probe = probeEl;
     const measure = () => (fillHeight = probe.offsetHeight);
     const observer = new ResizeObserver(measure);
@@ -343,9 +367,6 @@
   });
 
   const FLAT_GAP = 8;
-  /* A tile never grows past this: a wall-sized pane gets a composed block
-     with margins rather than tiles the size of playing cards. */
-  const FLAT_MAX_TILE = 288;
   /* Below this the dense grid and its scrollbar read better than tiles
      squeezed to fit a short host. */
   const FLAT_MIN_TILE = 52;
@@ -373,7 +394,7 @@
       const rows = Math.ceil(n / cols);
       const colWidth = Math.min(
         (width - FLAT_GAP * (cols - 1)) / cols,
-        FLAT_MAX_TILE
+        FILL_MAX_TILE
       );
       const rowHeight = Math.min(
         (height - FLAT_GAP * (rows - 1)) / rows,
@@ -426,6 +447,51 @@
       orphanIndex: orphans === 0 ? -1 : n - orphans,
       orphanStart: cols - orphans + 1,
     };
+  });
+
+  // The sectioned grid's width and the height its labels take, which do not
+  // change with the tile size, so the layout below can fit the tiles to the
+  // rest of the bounded height without measuring what it sizes.
+  let sectionsEl = $state<HTMLDivElement | null>(null);
+  let sectionsBox = $state({ width: 0, labels: 0 });
+
+  $effect(() => {
+    if (!sectionsEl) return;
+    const content = sectionsEl;
+    // Compared locally so the effect does not subscribe to what it writes;
+    // the tiles resizing fires the observer without changing either value.
+    let last = { width: -1, labels: -1 };
+    const measure = () => {
+      let labels = 0;
+      for (const label of content.querySelectorAll<HTMLElement>(
+        ".section-label"
+      )) {
+        labels += label.offsetHeight;
+      }
+      const width = content.clientWidth;
+      if (width === last.width && labels === last.labels) return;
+      last = { width, labels };
+      sectionsBox = last;
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(content);
+    measure();
+    return () => observer.disconnect();
+  });
+
+  /**
+   * Tile grid for the sectioned picker in a bounded host (see
+   * section-fill-layout). Null means the host is not bounded, a family is
+   * drilled open, or the host is too small, and the tiered grid stands.
+   */
+  const sectionLayout = $derived.by(() => {
+    if (!fill || flat || drill !== null || fillHeight === 0) return null;
+    return sectionFillLayout({
+      counts: sections.map((section) => section.bases.length),
+      width: sectionsBox.width,
+      height: fillHeight,
+      labels: sectionsBox.labels,
+    });
   });
 
   function handleDrillKeydown(event: KeyboardEvent): void {
@@ -866,6 +932,7 @@
           {:else}
             <div
               class="drill-tiles"
+              style={balancedColumns(familyChoices(drill.base).length)}
               style:--family-count={familyChoices(drill.base).length}
               class:comfortable={tileDensity === "comfortable"}
               class:fill={drillLayout !== null}
@@ -913,7 +980,15 @@
           {/each}
         </div>
       {:else}
-        <div class="grid-content">
+        <div
+          class="grid-content"
+          class:fill={sectionLayout !== null}
+          style:min-height={sectionLayout ? `${fillHeight}px` : undefined}
+          style:--fill-tile={sectionLayout
+            ? `${sectionLayout.tile}px`
+            : undefined}
+          bind:this={sectionsEl}
+        >
           {#each sections as section, i}
             <div class="prop-section" class:primary={i === 0}>
               <div class="section-label" class:first={i === 0}>
@@ -922,6 +997,10 @@
               <div
                 class="section-buttons"
                 class:single={section.bases.length === 1}
+                style={section.columns}
+                style:--fill-cols={sectionLayout
+                  ? balancedCount(section.bases.length, sectionLayout.cols)
+                  : undefined}
               >
                 {#each section.bases as base (base)}
                   {@render familyTile(base)}
@@ -1256,9 +1335,12 @@
     padding-top: 2px;
   }
 
+  /* Sections and the drilled family grid read their balanced counts
+     (--c2 ... --c12) from balancedColumns; the fallbacks are each tier's
+     full count. */
   .section-buttons {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 124px));
+    grid-template-columns: repeat(var(--c2, 2), minmax(0, 124px));
     gap: 10px;
     justify-content: center;
     padding: 0 2px;
@@ -1285,6 +1367,17 @@
 
   .section-buttons :global(.prop-button) {
     width: 100%;
+  }
+
+  /* A bounded host hands the sections its whole height (see sectionLayout):
+     one tile size for every section, each balanced within the column cap,
+     and the block centred in whatever the size cap leaves. */
+  .grid-content.fill {
+    justify-content: center;
+  }
+
+  .grid-content.fill .section-buttons {
+    grid-template-columns: repeat(var(--fill-cols), var(--fill-tile));
   }
 
   /* Reports the scroller's bounded height to script; see fillHeight. */
@@ -1521,19 +1614,19 @@
 
   @container prop-grid (min-width: 360px) {
     .section-buttons:not(.single) {
-      grid-template-columns: repeat(3, minmax(0, 124px));
+      grid-template-columns: repeat(var(--c3, 3), minmax(0, 124px));
     }
   }
 
   @container prop-grid (min-width: 550px) {
     .section-buttons:not(.single) {
-      grid-template-columns: repeat(4, minmax(0, 118px));
+      grid-template-columns: repeat(var(--c4, 4), minmax(0, 118px));
     }
   }
 
   @container prop-grid (min-width: 700px) {
     .section-buttons:not(.single) {
-      grid-template-columns: repeat(6, minmax(0, 112px));
+      grid-template-columns: repeat(var(--c6, 6), minmax(0, 112px));
     }
 
     .prop-grid-root.fluid-sections .grid-content {
@@ -1547,7 +1640,21 @@
 
   @container prop-grid (min-width: 850px) {
     .section-buttons:not(.single) {
-      grid-template-columns: repeat(8, minmax(0, 112px));
+      grid-template-columns: repeat(var(--c8, 8), minmax(0, 112px));
+    }
+  }
+
+  /* A wide monitor's picker: more of each section on one row instead of
+     the same eight tiles stranded in the middle of the card. */
+  @container prop-grid (min-width: 1250px) {
+    .section-buttons:not(.single) {
+      grid-template-columns: repeat(var(--c10, 10), minmax(0, 112px));
+    }
+  }
+
+  @container prop-grid (min-width: 1500px) {
+    .section-buttons:not(.single) {
+      grid-template-columns: repeat(var(--c12, 12), minmax(0, 112px));
     }
   }
 

@@ -10,7 +10,6 @@ import { PropType } from "../../pictograph/prop/domain/enums/prop-type";
 import {
   normalizeLegacyAppSettings,
   type AppSettings,
-  type PropPreset,
 } from "../domain/app-settings";
 import {
   healPropPair,
@@ -32,6 +31,7 @@ async function logSettingChange(
 }
 import type { FirebaseSettingsPersister } from "../services/firebase-settings-persister";
 import { normalizeBackgroundType } from "../domain/background-type-migration";
+import { defaultPropPresets } from "../domain/prop-presets";
 import { auth } from "../../auth/firebase";
 import { createComponentLogger } from "$lib/shared/utils/debug-logger";
 import { getAnimationVisibilityManager } from "../../animation-engine/state/animation-visibility-state.svelte";
@@ -45,50 +45,7 @@ const debug = createComponentLogger("SettingsState");
 const SETTINGS_STORAGE_KEY = "tka-modern-web-settings";
 const OFFLINE_QUEUE_KEY = "tka-settings-offline-queue";
 
-const DEFAULT_PROP_PRESETS: PropPreset[] = [
-  {
-    leftPropType: PropType.STAFF,
-    rightPropType: PropType.STAFF,
-    catDogMode: false,
-  },
-  { leftPropType: PropType.FAN, rightPropType: PropType.FAN, catDogMode: false },
-  {
-    leftPropType: PropType.CLUB,
-    rightPropType: PropType.CLUB,
-    catDogMode: false,
-  },
-  {
-    leftPropType: PropType.BUUGENG,
-    rightPropType: PropType.BUUGENG,
-    catDogMode: false,
-  },
-  {
-    leftPropType: PropType.MINIHOOP,
-    rightPropType: PropType.MINIHOOP,
-    catDogMode: false,
-  },
-  {
-    leftPropType: PropType.TRIAD,
-    rightPropType: PropType.TRIAD,
-    catDogMode: false,
-  },
-  {
-    leftPropType: PropType.DOUBLESTAR,
-    rightPropType: PropType.DOUBLESTAR,
-    catDogMode: false,
-  },
-  {
-    leftPropType: PropType.BIGDOUBLESTAR,
-    rightPropType: PropType.BIGDOUBLESTAR,
-    catDogMode: false,
-  },
-  {
-    leftPropType: PropType.QUIAD,
-    rightPropType: PropType.QUIAD,
-    catDogMode: false,
-  },
-  { leftPropType: PropType.STAFF, rightPropType: PropType.FAN, catDogMode: true },
-];
+const DEFAULT_PROP_PRESETS = defaultPropPresets();
 
 const DEFAULT_SETTINGS: AppSettings = {
   gridMode: GridMode.DIAMOND,

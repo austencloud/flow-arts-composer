@@ -108,23 +108,24 @@
         event.value as AppSettings[keyof AppSettings]
       );
 
-      // Show success toast briefly
-      showToast = true;
-      toastMessage = "Saved";
-
-      // Auto-hide toast after 1.5 seconds
-      setTimeout(() => {
-        showToast = false;
-      }, 1500);
+      flashToast("Saved", 1500);
     } catch (error) {
       console.error("Settings save failed:", error);
-      showToast = true;
-      toastMessage = "Save failed";
       // Keep error toast visible longer
-      setTimeout(() => {
-        showToast = false;
-      }, 3000);
+      flashToast("Save failed", 3000);
     }
+  }
+
+  // One timer for the whole burst: a preset writes six keys at once, and a
+  // timer per write let an early one hide the toast while later saves ran.
+  let toastTimer: ReturnType<typeof setTimeout> | undefined;
+  function flashToast(message: string, duration: number) {
+    toastMessage = message;
+    showToast = true;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      showToast = false;
+    }, duration);
   }
 
   // Use navigation state's active tab

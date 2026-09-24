@@ -388,22 +388,55 @@ interface ResolvableCard {
   sequenceId: string;
   sourceCatalogId: string;
   variation?: CardVariation;
+  /** Optional display context for a strict-mode error message. */
+  word?: string;
+  position?: number;
+}
+
+/**
+ * Thrown by `resolveDeckSequences` in strict mode when a card's base sequence
+ * isn't in `baseByKey`. Reprint paths must not silently ship a deck short a
+ * card — this names exactly which one so the failure is actionable.
+ */
+export class MissingDeckSequenceError extends Error {
+  constructor(public readonly card: ResolvableCard) {
+    super(
+      `Card ${card.position != null ? `#${card.position} ` : ""}"${card.word ?? card.sequenceId}" (sequenceId "${card.sequenceId}" in source "${card.sourceCatalogId}") could not be resolved — its source sequence is missing.`
+    );
+    this.name = "MissingDeckSequenceError";
+  }
+}
+
+export interface ResolveDeckSequencesOptions {
+  /**
+   * Throw `MissingDeckSequenceError` naming the card instead of silently
+   * skipping it when its base sequence is missing. Used by reprint paths,
+   * where a silently dropped card ships an incomplete physical deck without
+   * anyone noticing. Default false preserves the historical skip-on-missing
+   * behavior relied on by composition/preview callers.
+   */
+  strict?: boolean;
 }
 
 /**
  * Resolve every card POSITIONALLY (by index) against a preloaded base map keyed
  * `${sourceCatalogId}::${sequenceId}`. Cards sharing a base id each get their own
- * variant — never collapsed. Cards whose base is missing are skipped.
+ * variant — never collapsed. Cards whose base is missing are skipped, UNLESS
+ * `options.strict` is set, in which case resolution throws naming the card.
  */
 export function resolveDeckSequences(
   cards: ResolvableCard[],
   baseByKey: Map<string, SequenceData>,
   edges: CsvEdge[],
+  options: ResolveDeckSequencesOptions = {},
 ): ResolvedDeckSequence[] {
   const out: ResolvedDeckSequence[] = [];
   for (const card of cards) {
     const base = baseByKey.get(`${card.sourceCatalogId}::${card.sequenceId}`);
-    if (!base) continue;
+    if (!base) {
+      if (options.strict) throw new MissingDeckSequenceError(card);
+      continue;
+    }
     if (!card.variation) {
       out.push({ sequence: base, turnLoopClosed: true });
       continue;

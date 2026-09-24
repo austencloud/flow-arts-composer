@@ -1,159 +1,98 @@
 <!--
-  PresetChip.svelte - Compact preset chip for 10-slot system
+  PresetChip.svelte - One of the ten prop preset slots.
 
-  Empty: Shows slot number with + icon, tap to save current config
-  Filled: Shows mini prop icon(s), tap to apply, long-press to clear
-  Desktop: Shows keyboard shortcut badge (1-9, 0)
+  A filled slot shows the saved props in the performer's own colors, so a
+  preset reads the way the props will look once applied. An empty slot shows
+  a plus. What a click does belongs to the shelf (PresetChipBar): apply, save,
+  or choose a slot to manage. This button only reports the click.
 -->
 <script lang="ts">
+  import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
+  import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
   import type { PropPreset } from "../../../domain/app-settings";
-  import { getPropTypeDisplayInfo } from "./prop-type-registry";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-
-  const NO_ROTATE_PROPS = new Set([PropType.HAND]);
+  import { previewPair } from "./prop-preview-pair";
 
   let {
     preset,
-    index,
-    selected = false,
-    showKeyboardBadge = false,
-    onSelect,
-    onSave,
-    onClear,
-  } = $props<{
+    label,
+    slotLabel,
+    active = false,
+    target = false,
+    managing = false,
+    colors,
+    darkMode = true,
+    onclick,
+  }: {
     preset: PropPreset | null;
-    index: number;
-    selected?: boolean;
-    showKeyboardBadge?: boolean;
-    onSelect?: () => void;
-    onSave?: () => void;
-    onClear?: () => void;
-  }>();
+    /** Accessible name; the shelf words it for the current mode. */
+    label: string;
+    /** The visible slot mark: the Alt key on keyboards, the slot number otherwise. */
+    slotLabel: string;
+    /** The current props are exactly this preset. */
+    active?: boolean;
+    /** Chosen as the slot to change while managing. */
+    target?: boolean;
+    managing?: boolean;
+    colors?: ViewerCustomColorPair | null;
+    darkMode?: boolean;
+    onclick: () => void;
+  } = $props();
 
-  const isEmpty = $derived(!preset);
-  const leftInfo = $derived(
-    preset ? getPropTypeDisplayInfo(preset.leftPropType) : null
-  );
-  const rightInfo = $derived(
-    preset ? getPropTypeDisplayInfo(preset.rightPropType) : null
-  );
-  // Differing hands are cat dog even when an older preset's flag says false;
-  // applying the preset heals it the same way.
-  const isCatDog = $derived(
-    preset && preset.leftPropType !== preset.rightPropType
-  );
-  const leftNoRotate = $derived(preset ? NO_ROTATE_PROPS.has(preset.leftPropType) : false);
-  const rightNoRotate = $derived(preset ? NO_ROTATE_PROPS.has(preset.rightPropType) : false);
-
-  // Keyboard shortcut label (1-9, then 0 for slot 10)
-  const keyLabel = $derived(index < 9 ? String(index + 1) : "0");
-
-  // Long-press tracking for clear action
-  let longPressTimer: ReturnType<typeof setTimeout> | null = null;
-  let isLongPress = false;
-
-  function handlePointerDown() {
-    if (isEmpty) return;
-
-    isLongPress = false;
-    longPressTimer = setTimeout(() => {
-      isLongPress = true;
-      onClear?.();
-    }, 600);
-  }
-
-  function handlePointerUp() {
-    if (longPressTimer) {
-      clearTimeout(longPressTimer);
-      longPressTimer = null;
-    }
-
-    // Only trigger click if it wasn't a long press
-    if (!isLongPress) {
-      handleClick();
-    }
-    isLongPress = false;
-  }
-
-  function handlePointerLeave() {
-    if (longPressTimer) {
-      clearTimeout(longPressTimer);
-      longPressTimer = null;
-    }
-  }
-
-  function handleClick() {
-    if (isEmpty) {
-      onSave?.();
-    } else {
-      onSelect?.();
-    }
-  }
+  const pair = $derived(preset ? previewPair(preset) : null);
 </script>
 
 <button
+  type="button"
   class="preset-chip"
-  class:empty={isEmpty}
-  class:selected
-  onpointerdown={handlePointerDown}
-  onpointerup={handlePointerUp}
-  onpointerleave={handlePointerLeave}
-  onpointercancel={handlePointerLeave}
-  aria-label={isEmpty
-    ? `Save to slot ${index + 1}`
-    : isCatDog
-      ? `Preset ${index + 1}: ${leftInfo?.label} and ${rightInfo?.label}`
-      : `Preset ${index + 1}: ${leftInfo?.label}`}
-  aria-pressed={!isEmpty && selected}
-  title={isEmpty
-    ? "Save current props"
-    : isCatDog
-      ? `${leftInfo?.label} / ${rightInfo?.label} (hold to clear)`
-      : `${leftInfo?.label} (hold to clear)`}
+  class:empty={!preset}
+  class:active
+  class:target
+  class:managing
+  aria-label={label}
+  aria-current={active && !managing ? "true" : undefined}
+  aria-pressed={managing ? target : undefined}
+  title={label}
+  {onclick}
 >
-  <!-- Keyboard badge (desktop only) -->
-  {#if showKeyboardBadge}
-    <span class="keyboard-badge">{keyLabel}</span>
-  {/if}
-
-  <!-- Content -->
-  <span class="chip-content">
-    {#if isEmpty}
-      <span class="slot-number">{index + 1}</span>
-      <i class="fas fa-plus empty-icon" aria-hidden="true"></i>
-    {:else if isCatDog && leftInfo && rightInfo}
-      <div class="dual-props">
-        <img src={leftInfo.image} alt="" class="mini-prop" class:no-rotate={leftNoRotate} />
-        <img src={rightInfo.image} alt="" class="mini-prop red" class:no-rotate={rightNoRotate} />
-      </div>
-    {:else if leftInfo}
-      <img src={leftInfo.image} alt="" class="mini-prop single" class:no-rotate={leftNoRotate} />
+  <span class="art" aria-hidden="true">
+    {#if pair}
+      <PropCompositionPreview
+        propType={pair.left}
+        rightPropType={pair.right}
+        size={64}
+        pairedGlyph
+        darkBackground={darkMode}
+        {colors}
+        leftFlipped={pair.leftFlipped}
+        rightFlipped={pair.rightFlipped}
+      />
+    {:else}
+      <i class="fas fa-plus"></i>
     {/if}
   </span>
-
-  <!-- Selection indicator -->
-  {#if selected}
-    <span class="selection-ring"></span>
-  {/if}
+  <span class="slot" aria-hidden="true">{slotLabel}</span>
 </button>
 
 <style>
   .preset-chip {
     position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: grid;
+    place-items: center;
     width: 100%;
     aspect-ratio: 1;
-    padding: 6px;
-    background: var(--theme-card-bg);
-    border: 2px solid var(--theme-stroke);
+    padding: 0.625rem;
+    border: 1px solid var(--theme-stroke);
     border-radius: 12px;
+    background: var(--theme-card-bg);
+    color: var(--theme-text-dim);
     cursor: pointer;
-    transition: all var(--duration-fast) ease;
+    box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
-    box-sizing: border-box;
+    transition:
+      background-color var(--transition-fast),
+      border-color var(--transition-fast),
+      box-shadow var(--transition-fast);
   }
 
   .preset-chip:hover {
@@ -161,172 +100,79 @@
     border-color: var(--theme-stroke-strong);
   }
 
-  .preset-chip:active {
-    transform: scale(0.95);
+  .preset-chip:focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 2px;
   }
 
-  /* Empty slot styling */
   .preset-chip.empty {
     border-style: dashed;
     background: transparent;
   }
 
   .preset-chip.empty:hover {
-    background: color-mix(in srgb, var(--theme-accent) 8%, transparent);
     border-color: var(--theme-accent);
-  }
-
-  /* Selected state */
-  .preset-chip.selected {
-    background: color-mix(in srgb, var(--theme-accent) 15%, transparent);
-    border-color: var(--theme-accent);
-    border-style: solid;
-  }
-
-  /* Selection ring animation */
-  .selection-ring {
-    position: absolute;
-    inset: -4px;
-    border: 2px solid var(--theme-accent);
-    border-radius: 14px;
-    opacity: 0.6;
-    animation: pulse-ring 2s ease-in-out infinite;
-    pointer-events: none;
-  }
-
-  @keyframes pulse-ring {
-    0%, 100% { opacity: 0.3; transform: scale(1); }
-    50% { opacity: 0.6; transform: scale(1.02); }
-  }
-
-  /* Keyboard badge */
-  .keyboard-badge {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    min-width: 20px;
-    height: 20px;
-    padding: 0 5px;
-    border-radius: 6px;
-    background: var(--theme-text-dim);
-    font-size: 11px;
-    font-weight: 700;
-    font-family: ui-monospace, SFMono-Regular, monospace;
-    color: var(--theme-panel-bg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2;
-    opacity: 0.8;
-    transition: opacity var(--duration-fast) ease;
-  }
-
-  .preset-chip:hover .keyboard-badge {
-    opacity: 1;
-  }
-
-  .preset-chip.selected .keyboard-badge {
-    background: var(--theme-accent);
-    color: white;
-    opacity: 1;
-  }
-
-  /* Chip content */
-  .chip-content {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-    width: 100%;
-    height: 100%;
-  }
-
-  .slot-number {
-    position: absolute;
-    top: 4px;
-    left: 6px;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--theme-text-dim);
-    opacity: 0.8;
-  }
-
-  .empty-icon {
-    font-size: 18px;
-    color: var(--theme-text-dim);
-    transition: color var(--duration-fast) ease;
-  }
-
-  .preset-chip.empty:hover .empty-icon {
     color: var(--theme-accent);
   }
 
-  /* Mini prop icons - rotated vertical for better fit in cells */
-  .mini-prop {
-    width: 60%;
-    height: 60%;
-    max-width: 70px;
-    max-height: 70px;
-    object-fit: contain;
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    user-select: none;
-    pointer-events: none;
-    transform: rotate(-90deg);
+  /* The current props: a solid accent edge and tint. No pulse; the state is
+     information, not decoration. */
+  .preset-chip.active {
+    border-color: var(--theme-accent);
+    background: color-mix(in srgb, var(--theme-accent) 14%, var(--theme-card-bg));
+    box-shadow: inset 0 0 0 1px var(--theme-accent);
   }
 
-  .mini-prop.no-rotate {
-    transform: none;
+  /* While managing, "current" steps back so the chosen slot is the only
+     emphasised one. */
+  .preset-chip.managing.active {
+    border-color: var(--theme-stroke-strong);
+    background: var(--theme-card-bg);
+    box-shadow: none;
   }
 
-  .mini-prop.single {
-    width: 65%;
-    height: 65%;
-    max-width: 80px;
-    max-height: 80px;
+  .preset-chip.managing.target {
+    border-color: var(--theme-text);
+    border-style: solid;
+    box-shadow: inset 0 0 0 1px var(--theme-text);
   }
 
-  .dual-props {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
+  .art {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .art :global(.prop-composition-preview) {
     width: 100%;
     height: 100%;
   }
 
-  .dual-props .mini-prop {
-    width: 55%;
-    height: 40%;
-    max-width: 50px;
-    max-height: 40px;
+  .art i {
+    font-size: 1rem;
   }
 
-  .dual-props .mini-prop.red {
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3)) hue-rotate(125deg) saturate(1.2);
+  .slot {
+    position: absolute;
+    top: 4px;
+    left: 6px;
+    font-size: var(--font-size-compact, 0.75rem);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    color: var(--theme-text-dim);
   }
 
-  /* Focus state */
-  .preset-chip:focus-visible {
-    outline: 2px solid var(--theme-accent);
-    outline-offset: 2px;
+  .preset-chip.active:not(.managing) .slot {
+    color: var(--theme-accent);
   }
 
-  /* Reduced motion */
   @media (prefers-reduced-motion: reduce) {
     .preset-chip {
       transition: none;
-    }
-
-    .preset-chip:active {
-      transform: none;
-    }
-
-    .selection-ring {
-      animation: none;
-      opacity: 0.5;
     }
   }
 </style>

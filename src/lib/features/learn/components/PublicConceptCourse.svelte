@@ -3,24 +3,93 @@
   import { page } from "$app/state";
   import LearnTab from "../LearnTab.svelte";
   import { getConceptById } from "../domain/concepts";
+  import { buildConceptPath, CONCEPT_LIST_PATH } from "../domain/concept-routes";
+  import Seo from "$lib/shared/components/Seo.svelte";
+  import { LANDING_DOMAIN } from "../../../../config/domains";
+
+  const COURSE_NAME = "Interactive TKA Lessons";
+  const COURSE_DESCRIPTION =
+    "Learn The Kinetic Alphabet through the interactive lessons currently available in Flow Arts Composer.";
 
   const concept = $derived(
     page.params.conceptId ? getConceptById(page.params.conceptId) : undefined
   );
   const title = $derived(
+    concept ? `${concept.name} | Interactive TKA Lesson` : COURSE_NAME
+  );
+  // Every lesson already carries its own author-written blurb
+  // (concepts.ts `description`) — reuse it verbatim instead of writing new
+  // per-lesson copy. The course-level description stays the existing one.
+  const description = $derived(concept?.description ?? COURSE_DESCRIPTION);
+  // Same builder the router uses to resolve a lesson URL, so this page can
+  // never advertise a canonical the app itself wouldn't route to.
+  const canonicalPath = $derived(buildConceptPath(concept?.id));
+  const canonical = $derived(`${LANDING_DOMAIN}${canonicalPath}`);
+
+  const breadcrumbNames = $derived(
     concept
-      ? `${concept.name} | Interactive TKA Lesson`
-      : "Interactive TKA Lessons"
+      ? [
+          { name: "Home", path: "/" },
+          { name: COURSE_NAME, path: CONCEPT_LIST_PATH },
+          { name: concept.name, path: canonicalPath },
+        ]
+      : [
+          { name: "Home", path: "/" },
+          { name: COURSE_NAME, path: CONCEPT_LIST_PATH },
+        ]
+  );
+  const breadcrumbJsonLd = $derived(
+    JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: breadcrumbNames.map((crumb, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: crumb.name,
+        item: `${LANDING_DOMAIN}${crumb.path}`,
+      })),
+    }).replace(/</g, "\\u003c")
+  );
+
+  const mainJsonLd = $derived(
+    JSON.stringify(
+      concept
+        ? {
+            "@context": "https://schema.org",
+            "@type": "LearningResource",
+            name: concept.name,
+            description: concept.description,
+            url: canonical,
+            learningResourceType: "Interactive lesson",
+            educationalUse: "instruction",
+            inLanguage: "en",
+            isPartOf: {
+              "@type": "Course",
+              name: COURSE_NAME,
+              url: `${LANDING_DOMAIN}${CONCEPT_LIST_PATH}`,
+            },
+          }
+        : {
+            "@context": "https://schema.org",
+            "@type": "Course",
+            name: COURSE_NAME,
+            description: COURSE_DESCRIPTION,
+            url: canonical,
+            provider: {
+              "@type": "Organization",
+              name: "The Kinetic Alphabet",
+              url: `${LANDING_DOMAIN}/`,
+            },
+            inLanguage: "en",
+          }
+    ).replace(/</g, "\\u003c")
   );
 </script>
 
-<svelte:head>
-  <title>{title}</title>
-  <meta
-    name="description"
-    content="Learn The Kinetic Alphabet through the interactive lessons currently available in Flow Arts Composer."
-  />
-</svelte:head>
+<Seo {title} {description} {canonical}>
+  {@html `<script type="application/ld+json">${mainJsonLd}</script>`}
+  {@html `<script type="application/ld+json">${breadcrumbJsonLd}</script>`}
+</Seo>
 
 <section class="public-course" aria-label="Interactive TKA lessons">
   {#if browser}

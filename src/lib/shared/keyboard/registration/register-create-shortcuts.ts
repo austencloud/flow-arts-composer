@@ -19,7 +19,6 @@ import {
   getSettings,
   updateSettings,
 } from "$lib/shared/application/state/app-state.svelte";
-import { healPropPair } from "$lib/shared/settings/domain/prop-pair-rule";
 import type { SequenceTransformCommandId } from "$lib/shared/create/domain/sequence-action-types";
 import { getAllPropTypes } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
 import { filterPremiumCosmeticProps } from "$lib/shared/subscription/domain/premium-prop-access";
@@ -73,42 +72,6 @@ async function executeSequenceShortcut(
     targetHand: "both",
     ...(stepNumber === undefined ? {} : { stepNumber }),
   });
-}
-
-/**
- * Apply a prop preset from settings by index
- */
-async function applyPropPreset(presetIndex: number): Promise<void> {
-  const settings = getSettings();
-  const propPresets = settings?.propPresets || [];
-
-  // Check if this preset slot is filled
-  const preset = propPresets[presetIndex];
-  if (!preset) {
-    debug.log(`Preset ${presetIndex} is empty, ignoring`);
-    return;
-  }
-
-  // Trigger haptic feedback
-  const hapticService = getHapticFeedback();
-  hapticService?.trigger("selection");
-
-  // A preset saved before this branch can hold a contradictory pair (equal
-  // hands but catDogMode true, or differing hands but catDogMode false).
-  // Heal it the same way a loaded settings profile is healed.
-  const healed = healPropPair(preset);
-
-  // Apply the preset settings
-  await updateSettings({
-    selectedPresetIndex: presetIndex,
-    leftPropType: healed.leftPropType,
-    rightPropType: healed.rightPropType,
-    catDogMode: healed.catDogMode,
-    leftBuugengFlipped: preset.leftBuugengFlipped ?? false,
-    rightBuugengFlipped: preset.rightBuugengFlipped ?? false,
-  });
-
-  debug.log(`Applied prop preset ${presetIndex}:`, preset);
 }
 
 export function registerCreateShortcuts(
@@ -593,28 +556,6 @@ export function registerCreateShortcuts(
     },
     action: () => executeSequenceShortcut("rotate_counterclockwise"),
   });
-
-  // ==================== Prop Presets ====================
-
-  // Alt+1 through Alt+9,0 - Select prop presets
-  for (let i = 0; i < 10; i++) {
-    const displayKey = i === 9 ? "0" : String(i + 1);
-    const presetIndex = i;
-
-    service.register({
-      id: `create.select-preset-${presetIndex}`,
-      label: `Select Prop Preset ${displayKey}`,
-      description: `Apply prop preset ${displayKey}`,
-      key: displayKey,
-      modifiers: ["alt"],
-      context: "create",
-      scope: "sequence-management",
-      priority: "medium",
-      action: async () => {
-        await applyPropPreset(presetIndex);
-      },
-    });
-  }
 
   // ==================== Edit Panel Adjustments ====================
 
