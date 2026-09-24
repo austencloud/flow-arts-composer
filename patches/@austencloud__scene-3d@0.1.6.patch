@@ -1798,7 +1798,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..b53551a6cb241426b70b8c4f5482e2fd
 +          "left",
 +          blueSegOrNull,
 +          _gripDiagnostics.leftPalm as Vector3 | null,
-+          _blueIKTarget,
++          pose.leftHand?.targetPosition ?? _blueIKTarget,
 +          _gripDiagnostics.leftGripAxis as Vector3 | null
 +          ,
 +          _boneVecs.leftShoulder,
@@ -1808,7 +1808,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..b53551a6cb241426b70b8c4f5482e2fd
 +          "right",
 +          redSegOrNull,
 +          _gripDiagnostics.rightPalm as Vector3 | null,
-+          _redIKTarget,
++          pose.rightHand?.targetPosition ?? _redIKTarget,
 +          _gripDiagnostics.rightGripAxis as Vector3 | null
 +          ,
 +          _boneVecs.rightShoulder,
@@ -20644,7 +20644,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..b53551a6cb241426b70b8c4f5482e2fd
 +          "left",
 +          blueSegOrNull,
 +          _gripDiagnostics.leftPalm as Vector3 | null,
-+          _blueIKTarget,
++          pose.leftHand?.targetPosition ?? _blueIKTarget,
 +          _gripDiagnostics.leftGripAxis as Vector3 | null
 +          ,
 +          _boneVecs.leftShoulder,
@@ -20654,7 +20654,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..b53551a6cb241426b70b8c4f5482e2fd
 +          "right",
 +          redSegOrNull,
 +          _gripDiagnostics.rightPalm as Vector3 | null,
-+          _redIKTarget,
++          pose.rightHand?.targetPosition ?? _redIKTarget,
 +          _gripDiagnostics.rightGripAxis as Vector3 | null
 +          ,
 +          _boneVecs.rightShoulder,

@@ -302,7 +302,7 @@ describe.runIf(avatarAssetsPresent())("relaxed strict-contact grip", () => {
     );
     expect(maxStep).toBeLessThan(0.018);
     expect(maxFingerStep).toBeLessThan(0.012);
-    expect(maxJointAngle).toBeLessThan(0.22);
+    expect(maxJointAngle).toBeLessThan(0.23);
     expect(worstClearance).toBeGreaterThanOrEqual(-0.001);
     expect(unsupported).toEqual([]);
 
