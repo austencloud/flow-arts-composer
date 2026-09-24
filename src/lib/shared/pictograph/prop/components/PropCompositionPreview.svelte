@@ -116,6 +116,7 @@
     appearanceOverride ?? {
       propLook: getSettings?.().propArtwork ?? null,
       fanAppearance: getSettings?.().fanAppearance ?? null,
+      triangleGrip: getSettings?.().triangleGrip ?? null,
     }
   );
   const leftGlyph = $derived(

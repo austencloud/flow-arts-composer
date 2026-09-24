@@ -5,6 +5,7 @@
   import type { CompositionRecipe } from "$lib/shared/pictograph/prop/domain/prop-composition-recipes";
   import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
   import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
+  import type { TriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
   import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
 
   let {
@@ -15,6 +16,7 @@
     neutral = false,
     fanAppearance,
     propLook,
+    triangleGrip,
     recipeOverrides = {},
     colors,
     singleHand,
@@ -28,6 +30,7 @@
     neutral?: boolean;
     fanAppearance: FanAppearance;
     propLook?: PropLook;
+    triangleGrip?: TriangleGrip;
     recipeOverrides?: Partial<Record<PropType, CompositionRecipe>>;
     colors?: ViewerCustomColorPair | null;
     singleHand?: "left" | "right";
@@ -49,7 +52,7 @@
   {leftFlipped}
   {rightFlipped}
   useSavedOverrides={false}
-  appearanceOverride={{ fanAppearance, propLook }}
+  appearanceOverride={{ fanAppearance, propLook, triangleGrip }}
   recipeOverride={recipeOverride ??
     recipeOverrides[getBasePropType(propType)] ??
     recipeOverrides[propType]}

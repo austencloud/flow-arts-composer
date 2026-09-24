@@ -5,3 +5,11 @@ patchedDependencies:
   '@austencloud/backgrounds@0.7.12': patches/@austencloud__backgrounds@0.7.12.patch
   '@austencloud/scene-3d@0.1.6': patches/@austencloud__scene-3d@0.1.6.patch
   svelte-fast-check@0.4.5: patches/svelte-fast-check@0.4.5.patch
+
+# canvas ships a native binding that only its install script provides
+# (prebuild-install downloads a prebuilt, falling back to node-gyp, which
+# needs cairo). It is an optional dependency, so a failed download leaves
+# canvas unbuilt instead of failing the install. Node rendering (npm run
+# pictograph, /api/render-pictograph in dev) needs it; the app does not.
+allowBuilds:
+  canvas: true

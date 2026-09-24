@@ -6,8 +6,12 @@
   static/images/props/appearances/model/<prop>-<color>.svg and regenerates
   prop-model-sprites.generated.ts. Dev only.
 
-    /test/prop-3d-studio/sprites            capture everything
-    /test/prop-3d-studio/sprites?prop=sword capture one prop
+    /test/prop-3d-studio/sprites                    capture everything
+    /test/prop-3d-studio/sprites?prop=sword          capture one prop
+    /test/prop-3d-studio/sprites?prop=triangle       capture all four Triangle
+                                                      jobs (corner/side x blue/red)
+    /test/prop-3d-studio/sprites?prop=triangle_side  capture only the side-grip
+                                                      pair (blue/red)
 
   document.body.dataset.spriteCaptureDone flips to "1" when the run ends.
 -->
@@ -18,7 +22,12 @@
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { PROP_DIMENSIONS } from "$lib/shared/animation-engine/services/IPropTextureLoader";
   import { toScenePropType } from "$lib/shared/3d/domain/scene-prop-type";
-  import { PropType as ScenePropType, setPropHandColors } from "@austencloud/scene-3d";
+  import { triangleSpriteKey } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
+  import {
+    PropType as ScenePropType,
+    type PropBuild,
+    setPropHandColors,
+  } from "@austencloud/scene-3d";
   import { onMount } from "svelte";
   import SpriteCaptureScene, {
     type SpriteCaptureResult,
@@ -47,6 +56,23 @@
     return SCENE_VALUES.has(toScenePropType(prop) as string);
   }
 
+  /** The sprite key is the prop, except where one prop captures more than one look. */
+  type Job = {
+    prop: PropType;
+    key: string;
+    color: (typeof COLORS)[number];
+    build?: Partial<PropBuild>;
+  };
+
+  /** Extra looks captured under their own sprite key. */
+  const EXTRA_LOOKS: Partial<
+    Record<PropType, { key: string; build: Partial<PropBuild> }[]>
+  > = {
+    [PropType.TRIANGLE]: [
+      { key: triangleSpriteKey("side"), build: { triangleGrip: "side" } },
+    ],
+  };
+
   const requested = $derived(page.url.searchParams.get("prop"));
   /** ?force=1 skips the candidate filter (orientation checks against fan artwork). */
   const force = $derived(page.url.searchParams.get("force") === "1");
@@ -55,13 +81,48 @@
       force && requested ? true : isCaptureCandidate(prop)
     );
     return requested
-      ? all.filter((prop) => (prop as string) === requested)
+      ? all.filter(
+          (prop) =>
+            (prop as string) === requested ||
+            (EXTRA_LOOKS[prop] ?? []).some((look) => look.key === requested)
+        )
       : all;
   });
 
-  type Job = { prop: PropType; color: (typeof COLORS)[number] };
   const jobs = $derived(
-    queue.flatMap((prop) => COLORS.map((color) => ({ prop, color }) as Job))
+    queue
+      .flatMap((prop) => {
+        const looks = [
+          {
+            key: prop as string,
+            // The scene default grip isn't guaranteed to be corner; state it
+            // explicitly so this job always captures the corner look, the
+            // same way the side job states its own override below.
+            build:
+              prop === PropType.TRIANGLE
+                ? ({ triangleGrip: "corner" } as Partial<PropBuild>)
+                : undefined,
+          },
+          ...(EXTRA_LOOKS[prop] ?? []),
+        ];
+        return looks.flatMap((look) =>
+          COLORS.map((color) => ({
+            prop,
+            key: look.key,
+            color,
+            build: look.build,
+          }))
+        );
+      })
+      // queue already narrowed by prop; a requested EXTRA_LOOKS key (e.g.
+      // triangle_side) still shares its prop with the plain-look job, so this
+      // second filter drops that plain job and keeps only the matching look.
+      .filter(
+        (job) =>
+          !requested ||
+          job.key === requested ||
+          (job.prop as string) === requested
+      )
   );
 
   let index = $state(0);
@@ -83,7 +144,10 @@
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ finalize: true }),
       });
-      const payload = (await response.json()) as { ok: boolean; error?: string };
+      const payload = (await response.json()) as {
+        ok: boolean;
+        error?: string;
+      };
       log = [
         ...log,
         payload.ok
@@ -105,7 +169,7 @@
   async function handleCaptured(job: Job, result: SpriteCaptureResult) {
     const dims = PROP_DIMENSIONS[job.prop as string];
     if (!dims) {
-      advance(`${job.prop} ${job.color}: no PROP_DIMENSIONS entry`);
+      advance(`${job.key} ${job.color}: no PROP_DIMENSIONS entry`);
       return;
     }
     try {
@@ -113,7 +177,7 @@
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          prop: job.prop,
+          prop: job.key,
           color: job.color,
           width: dims.width,
           height: dims.height,
@@ -130,16 +194,16 @@
       };
       advance(
         payload.ok
-          ? `${job.prop} ${job.color}: saved (fit ${result.fit.toFixed(1)} u/m, extent ${result.extent.x.toFixed(3)}x${result.extent.y.toFixed(3)} m)`
-          : `${job.prop} ${job.color}: SAVE FAILED ${payload.error ?? ""}`
+          ? `${job.key} ${job.color}: saved (fit ${result.fit.toFixed(1)} u/m, extent ${result.extent.x.toFixed(3)}x${result.extent.y.toFixed(3)} m)`
+          : `${job.key} ${job.color}: SAVE FAILED ${payload.error ?? ""}`
       );
     } catch (error) {
-      advance(`${job.prop} ${job.color}: SAVE FAILED ${String(error)}`);
+      advance(`${job.key} ${job.color}: SAVE FAILED ${String(error)}`);
     }
   }
 
   function handleEmpty(job: Job) {
-    advance(`${job.prop} ${job.color}: EMPTY (no geometry after timeout)`);
+    advance(`${job.key} ${job.color}: EMPTY (no geometry after timeout)`);
   }
 
   function createRenderer(canvas: HTMLCanvasElement) {
@@ -165,13 +229,14 @@
     style:height="{stageHeight}px"
   >
     {#if current && box}
-      {#key `${current.prop}:${current.color}`}
+      {#key `${current.key}:${current.color}`}
         <Canvas {createRenderer} dpr={1}>
           <SpriteCaptureScene
             propType={toScenePropType(current.prop)}
             color={current.color}
             {box}
             {pixelsPerUnit}
+            build={current.build}
             oncaptured={(result) => handleCaptured(current, result)}
             onempty={() => handleEmpty(current)}
           />

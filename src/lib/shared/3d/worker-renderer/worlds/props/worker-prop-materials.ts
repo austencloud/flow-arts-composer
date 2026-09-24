@@ -35,6 +35,8 @@ export interface ClubMaterials {
 
 export interface HoopMaterials {
   tube: MeshPhysicalMaterial;
+  hardware: MeshStandardMaterial;
+  button: MeshStandardMaterial;
   trail: MeshBasicMaterial;
 }
 
@@ -151,6 +153,16 @@ export function getHoopMaterials(color: WorkerPropColor): HoopMaterials {
       }),
       color
     ),
+    hardware: new MeshStandardMaterial({
+      color: "#1c1c1f",
+      roughness: 0.72,
+      metalness: 0.04,
+    }),
+    button: new MeshStandardMaterial({
+      color: "#3a3a3f",
+      roughness: 0.72,
+      metalness: 0.04,
+    }),
     trail: trail(color),
   };
   hoopMaterials.set(color, value);

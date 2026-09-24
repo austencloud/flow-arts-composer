@@ -157,7 +157,6 @@
   const rightPropType = $derived(
     creator.presentation.rightPropType as PropType
   );
-  const propType = $derived(leftPropType ? String(leftPropType) : "staff");
   const generationAnimationTarget: GenerationAnimationTarget = {
     clear() {
       const targetId = creator.generationTargetId;
@@ -339,7 +338,8 @@
         onBpmChange={creator.presentation.setBpm}
         onPlaybackModeChange={creator.presentation.setPlaybackMode}
         onPlaybackToggle={creator.presentation.togglePlaying}
-        leftPropType={propType}
+        leftPropType={creator.presentation.addressedPropType}
+        handProps={creator.presentation.handProps}
         onPropChange={changeProp}
         propChirality={creator.presentation.chirality}
         animationSettingsState={creator.presentation.animationSettings}
@@ -494,8 +494,8 @@
             sequence={creator.leadSequence}
             {controller}
             bpm={creator.presentation.bpm}
-            leftPropType={propType}
-            rightPropType={propType}
+            {leftPropType}
+            {rightPropType}
             leftBuugengFlipped={creator.presentation.leftBuugengFlipped}
             rightBuugengFlipped={creator.presentation.rightBuugengFlipped}
             playing={creator.presentation.playing}

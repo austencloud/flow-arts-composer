@@ -178,9 +178,19 @@ export interface ShortCodeData {
   soloData?: SoloPropData;
   sourceSequenceId?: string;
   sourceProjectionRevision?: number;
+  /** Embedded sequence copy. Every new word and hand-path record carries it,
+   *  and it is the authoritative payload wherever it is present. */
   sequenceData?: Record<string, unknown>;
   /** Self-contained sequence blob used by the no-network resolver path. */
   encoded?: string;
+  /** Whether the blob decodes to exactly the saved choreography, checked
+   *  field by field at mint. "lossy" records store no blob; the reason says
+   *  which field the wire format could not carry. Absent on older records. */
+  encodedFidelity?: "exact" | "lossy";
+  encodedLossReason?: string;
+  /** Digest of the choreography the record plays (choreography-fidelity).
+   *  Dedup key for records minted without an encoderHash claim. */
+  payloadDigest?: string;
   deckId?: string;
   deckName?: string;
   leftPropType?: string;
@@ -240,11 +250,8 @@ export interface ShortCodeURLOptions {
   catDogMode?: boolean;
   /** View mode to encode in URL (e.g., "hsb" = legacy wire code for left-hand solo) */
   viewMode?: string;
-  /** Force-embed the full sequenceData in the shortcode record even when
-   *  ownerId is set. Use this for URL-sync flows where the sequence may
-   *  never be persisted (e.g., playing a generated-but-unsaved sequence);
-   *  without it the resolver would fail because users/{uid}/sequences/{id}
-   *  doesn't exist yet. */
+  /** No longer changes anything: every new record embeds its full
+   *  sequenceData. Kept so existing callers compile. */
   embedSequenceData?: boolean;
   /** Deck ID this card belongs to (stamped at deck composition time) */
   deckId?: string;

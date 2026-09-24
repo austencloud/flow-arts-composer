@@ -112,7 +112,9 @@ What the page establishes:
 - **Position families map across.** In the skewed frame, alpha letters run
   zeta to zeta, beta letters eta to eta, D E F run eta to zeta, J K L run
   zeta to eta, and gamma letters run between zeta and eta. Rows verified
-  against the diamond dataframe's start and end placements.
+  against the diamond dataframe's start and end placements. These are the
+  page's names; the shipped alphabet below letters each beat by its own shape,
+  so most of them change.
 - **Skewed frames can be sustained indefinitely.** A closed loop that never
   leaves the skewed frame is performable and drawable.
 
@@ -139,22 +141,27 @@ Leader: the hand that is ahead in the direction of travel by the smaller arc.
 Verified against `DiamondPictographDataframe.csv`: every U row's leader is its
 pro hand, every V row's leader is its anti hand.
 
-### Type 1, opposite direction: D E F, J K L, M N O, P Q R
+S T U V occur at both spacings, so each is numbered by start spacing,
+narrowest first: S1 from eta, S2 from zeta.
+
+### Type 1, opposite direction: M N O, P Q R
 
 Opposite shifts flip the spacing (eta↔zeta) and pass through exactly one pure
 position on the way: converging hands meet (cross beta), diverging hands pass
-through opposite (cross alpha). Start spacing plus the crossed position picks
-the family; pro/anti picks the member (pro/pro, anti/anti, hybrid).
+through opposite (cross alpha). The hands are never together or opposite at
+either end of a beat in this frame, so the crossed position alone picks the
+family, from either spacing; pro/anti picks the member (pro/pro, anti/anti,
+hybrid).
 
-| Start | Crosses | Family |
-| --- | --- | --- |
-| eta | alpha | D E F |
-| eta | beta | P Q R |
-| zeta | beta | J K L |
-| zeta | alpha | M N O |
+| Crosses | Family |
+| --- | --- |
+| alpha | M N O |
+| beta | P Q R |
 
-Verified against the diamond CSV: every M row crosses alpha, every P row
-crosses beta (the same rule applied to gamma starts).
+Numbered like S T U V: M1 from eta, M2 from zeta. This is the landmark rule
+of `docs/superpowers/specs/2026-09-22-multigrid-lettering-design.md`,
+implemented 2026-09-23. The 2026-09-21 version also used the start spacing and lettered
+eta through alpha D E F and zeta through beta J K L.
 
 ### Type 2 (shift + static) by start→end spacing
 
@@ -194,12 +201,15 @@ zeta→zeta = Φ-, eta→eta = Ψ-. No Λ-.
 
 ### Count
 
-4 + 12 + 8 + 8 + 2 + 2 + 2 = 38. Every combination of
+4 + 6 + 8 + 8 + 2 + 2 + 2 = 32. Every combination of
 {pro cw, pro ccw, anti cw, anti ccw, static, dash} per hand over the 32 mixed
 start pairs is a valid skewed-frame beat: 32 × 36 = 1152 beats, all lettered.
 
-The classifier is `src/lib/shared/pictograph/skew/skewed-frame-letter.ts`; the
-dataframe rows are category 3 in `SkewedPictographDataframe.csv`.
+The classifier is `src/lib/shared/pictograph/skew/skewed-frame-letter.ts`. It
+hands Types 1 to 3 to the multigrid rule in
+`src/lib/shared/pictograph/lettering/multigrid-lettering.ts`, and
+`skewedFrameLetterLabel` adds the variant number. The dataframe rows are
+category 3 in `SkewedPictographDataframe.csv`.
 
 ## 5. The neighbours: Halves, Atomics, Staggers
 
@@ -249,9 +259,11 @@ letters that depend on "opposite" split into variants: `{C1}` `{C2}`, `{M1}`
 could not decode. The **trigrid** (three points, 120°) has no alpha at all, so
 its Tier 1 page runs G through Z plus β and Γ.
 
-A proposed lettering for all three grids, with a cell-by-cell mapping of
+The approved lettering for all three grids, with a cell-by-cell mapping of
 these sheets and a decode of the `l`/`f` and `ˣ`/`ₓ` marks, is in
-`docs/superpowers/specs/2026-09-22-multigrid-lettering-design.md`.
+`docs/superpowers/specs/2026-09-22-multigrid-lettering-design.md`. Since
+2026-09-23 one module letters every grid:
+`src/lib/shared/pictograph/lettering/multigrid-lettering.ts`.
 
 ![Pentagrid, Tier 1 Skewed](skew-notation/06-pentagrid-tier1-skewed.png)
 ![Pentagrid Skews, Plus](skew-notation/07-pentagrid-skews-plus.png)
@@ -330,8 +342,9 @@ What shipped:
 - D E F / J K L / M N O / P Q R are chosen by start spacing plus the crossed
   pure position: a converging pair crosses beta, a diverging pair crosses
   alpha. Superseded 2026-09-22 by the landmark rule in
-  `docs/superpowers/specs/2026-09-22-multigrid-lettering-design.md`; the
-  classifier has not been updated yet.
+  `docs/superpowers/specs/2026-09-22-multigrid-lettering-design.md` and
+  implemented 2026-09-23: the frame now uses M N O through alpha and P Q R
+  through beta from either spacing, and D E F / J K L do not occur.
 - Type 2 is chosen by the start-to-end spacing pair: W X are zeta to zeta,
   Y Z are eta to eta, Σ Δ are zeta to eta, Θ Ω are eta to zeta.
 - Type 3 is the Type 2 partner with the dash flipping the end spacing.

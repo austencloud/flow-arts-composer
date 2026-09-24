@@ -1,6 +1,16 @@
 import { LANDING_DOMAIN } from "../../config/domains";
 import { GUIDE_BODY_PAGES } from "../(public)/guide/level-1/_data/guide-manifest";
+import { LEVEL2_TOPIC_PAGES } from "../(public)/guide/level-2/_data/level2-topic-manifest";
 import { TIMING_DIRECTION_ARTICLE_SLUGS } from "../(public)/timing-and-direction/_data/timing-direction-articles";
+import { TKA_CONCEPTS } from "$lib/features/learn/domain/concepts";
+import { getFirestoreRest } from "$lib/server/firestore/firestore-rest";
+import {
+  emptySequenceMeta,
+  isSafeFirestoreDocumentId,
+  listReleaseManifests,
+  resolvePublishedMetaBatch,
+} from "../sequence/[id]/published-meta";
+import { isSequenceIndexable } from "../sequence/[id]/sequence-seo";
 import type { RequestHandler } from "./$types";
 
 interface SitemapEntry {
@@ -22,6 +32,7 @@ const pages: SitemapEntry[] = [
   { url: "shop" },
   { url: "shop/loop-deck" },
   { url: "shop/tnd-trilogy" },
+  { url: "shop/starter-pack" },
   // /shop/choreography-cards redirects (308) to /shop after the explainer moved
   // into the product pages. A redirected URL doesn't self-list.
   // Pillar pages (SEO content roadmap)
@@ -70,7 +81,12 @@ const pages: SitemapEntry[] = [
   { url: "guide/level-2/turns" },
   { url: "guide/level-2/double-turns" },
   { url: "guide/ratios" },
+  { url: "guide/motion-paths" },
   { url: "guide/codex" },
+  // The interactive lesson course. The index is the course landing; each
+  // lesson also gets a stable deep link — see learnConceptsEntries below,
+  // derived from TKA_CONCEPTS so a new lesson is listed automatically.
+  { url: "learn/concepts" },
 ];
 
 /**
@@ -82,8 +98,27 @@ const guideLevel1Entries = GUIDE_BODY_PAGES.map((p) => ({
   url: `guide/level-1/${p.id}`,
 }));
 
+/**
+ * Every Level-2 topic route (/guide/level-2/<slug>), enumerated from
+ * level2-topic-manifest.ts so a new topic page is listed automatically -
+ * mirrors guideLevel1Entries above.
+ */
+const guideLevel2TopicEntries = LEVEL2_TOPIC_PAGES.map((p) => ({
+  url: `guide/level-2/${p.slug}`,
+}));
+
 const timingDirectionEntries = TIMING_DIRECTION_ARTICLE_SLUGS.map((slug) => ({
   url: `timing-and-direction/${slug}`,
+}));
+
+/**
+ * Every interactive lesson (/learn/concepts/<id>), enumerated from the same
+ * TKA_CONCEPTS registry PublicConceptCourse.svelte reads to resolve a lesson
+ * by id, so a new lesson is listed here automatically and this can't drift
+ * from the routes that actually exist.
+ */
+const learnConceptsEntries = TKA_CONCEPTS.map((concept) => ({
+  url: `learn/concepts/${concept.id}`,
 }));
 
 /**
@@ -91,46 +126,90 @@ const timingDirectionEntries = TIMING_DIRECTION_ARTICLE_SLUGS.map((slug) => ({
  * (`deckReleases/counter/manifests/{deckNumber}`, written by the deck
  * releaser — see DeckRelease.ts) are the released-deck definition of
  * "curated." Each manifest's `sequences[].sequenceId` is a real published
- * sequence, linkable at /sequence/{sequenceId} (same URL shape used
- * elsewhere, e.g. NearbySyncBanner.svelte, InboxNotificationItem.svelte).
- * Admin SDK query, capped at 200, falls back to [] on any failure so a
- * Firestore/credentials outage never 500s the sitemap.
+ * sequence, linkable at /sequence/{sequenceId} — the exact document id the
+ * `/sequence/[id]` loader (`+page.server.ts`'s `loadPublishedMeta`) already
+ * resolves meta from, and the id `buildSequenceSeo` echoes back as its own
+ * `<link rel="canonical">` (self-referential: canonical = whatever id the
+ * route was requested with). Emitting that same id here means the sitemap
+ * URL and the page's declared canonical are byte-identical — no redirect
+ * chain — without depending on a short code existing for every card (short
+ * codes are minted lazily by client interaction and are not guaranteed to
+ * exist for a freshly released deck).
+ *
+ * Firestore REST with the request's `event.platform.env` credential, not the
+ * admin SDK: production had FIREBASE_SERVICE_ACCOUNT_JSON configured, yet the
+ * admin-SDK version of this took 8-9 s per uncached request and listed zero
+ * cards (2026-09-23). Capped at 200 ids, a fixed number of requests however
+ * many decks ship (see `resolvePublishedMetaBatch`), and falls back to [] on
+ * any failure so a Firestore/credentials outage never 500s the sitemap.
  */
-async function getCuratedSequenceUrls(): Promise<string[]> {
+async function getCuratedSequenceUrls(
+  platformCredential?: string
+): Promise<string[]> {
   try {
-    const { getAdminDb } = await import("$lib/server/firebaseAdmin");
-    const db = getAdminDb();
-    const snapshot = await db
-      .collection("deckReleases/counter/manifests")
-      .get();
+    const firestore = getFirestoreRest(platformCredential);
+    const manifests = await listReleaseManifests(firestore);
 
     const ids = new Set<string>();
-    for (const doc of snapshot.docs) {
-      const sequences = doc.data()?.sequences as
-        | { sequenceId?: string }[]
-        | undefined;
-      if (!Array.isArray(sequences)) continue;
+    outer: for (const manifest of manifests) {
+      const sequences = Array.isArray(manifest.sequences)
+        ? (manifest.sequences as { sequenceId?: unknown }[])
+        : [];
       for (const card of sequences) {
-        if (card?.sequenceId) ids.add(card.sequenceId);
-        if (ids.size >= 200) break;
+        if (
+          typeof card?.sequenceId === "string" &&
+          isSafeFirestoreDocumentId(card.sequenceId)
+        ) {
+          ids.add(card.sequenceId);
+        }
+        if (ids.size >= 200) break outer;
       }
-      if (ids.size >= 200) break;
     }
 
-    return [...ids].map((id) => `sequence/${encodeURIComponent(id)}`);
-  } catch {
-    // Non-fatal: admin creds may be absent in preview/dev environments.
+    // List only what the card page will actually serve as indexable: a
+    // released card without a word or creator renders noindex, and a noindex
+    // URL in the sitemap is a Search Console error.
+    const resolved = await resolvePublishedMetaBatch(
+      firestore,
+      manifests,
+      [...ids],
+      emptySequenceMeta()
+    );
+
+    return [...ids]
+      .filter((id) => {
+        const meta = resolved.get(id);
+        return meta !== undefined && isSequenceIndexable(meta);
+      })
+      .map((id) => `sequence/${encodeURIComponent(id)}`);
+  } catch (error) {
+    // Non-fatal: the sitemap must never 500 on a Firestore/credentials
+    // outage, but a silent catch here is exactly how this went unnoticed —
+    // production served zero /sequence/ URLs with no trace. Log with
+    // context so a future regression shows up in server logs instead.
+    console.error(
+      "[sitemap] getCuratedSequenceUrls failed:",
+      error instanceof Error ? error.message : error
+    );
     return [];
   }
 }
 
-export const GET: RequestHandler = async () => {
-  const curatedUrls = await getCuratedSequenceUrls();
+export const GET: RequestHandler = async (event) => {
+  // Optional chaining starts at `event` itself, not just `.platform`: an
+  // existing unit test (tests/unit/seo-indexing-controls.test.ts) calls this
+  // handler with no arguments at all to check the static entries, same as it
+  // did before this handler read anything off the request event.
+  const curatedUrls = await getCuratedSequenceUrls(
+    event?.platform?.env?.FIREBASE_SERVICE_ACCOUNT_JSON
+  );
 
   const allEntries: SitemapEntry[] = [
     ...pages,
     ...timingDirectionEntries,
     ...guideLevel1Entries,
+    ...guideLevel2TopicEntries,
+    ...learnConceptsEntries,
     ...curatedUrls.map((url) => ({ url })),
   ];
 

@@ -17,6 +17,7 @@ import type { TimeSignatureKey } from "../../foundation/domain/models/time-signa
 import { normalizeLegacyPropConfig } from "@tka/tka-types";
 import type { FanAppearance } from "../../pictograph/prop/domain/fan-appearance";
 import type { PropLook } from "../../pictograph/prop/domain/prop-look";
+import type { TriangleGrip } from "../../pictograph/prop/domain/triangle-appearance";
 import { resolveViewerCustomColorPair, type ViewerCustomColorPair } from "../../sequence-viewer/domain/viewer-custom-colors";
 
 /**
@@ -44,6 +45,8 @@ export interface AppSettings {
   primaryPropColors?: ViewerCustomColorPair | null;
   /** Shared visual build for fan/bigfan across 2D, Tunnel, 3D, and rails. */
   fanAppearance?: FanAppearance;
+  /** Where the hand holds the triangle: the printed elbow or a side's bow point. */
+  triangleGrip?: TriangleGrip;
   /** How the 2D canvas draws every non-fan prop: flat 3D-model sprite or pictograph. */
   /**
    * How the 2D canvas draws props. Named propArtwork (not propLook) on

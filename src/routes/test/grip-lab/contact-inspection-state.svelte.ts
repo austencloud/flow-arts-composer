@@ -53,7 +53,7 @@ export function createContactInspectionState() {
   let hand = $state<InspectionHand>(
     option(url.searchParams.get("hand"), ["right", "left"], "right")
   );
-  let transition = $state(
+  let transition = $state<KeyUndoSnapshot["transition"]>(
     option(url.searchParams.get("segment"), ["all", "0", "1", "2", "3"], "all")
   );
   let keys = $state(decodeTeachingKeys(url.searchParams.get("poses")));

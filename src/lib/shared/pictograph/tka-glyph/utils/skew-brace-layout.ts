@@ -194,3 +194,14 @@ export function placeSkewBraceGlyphs(
 export function skewBraceLineBoxDrop(ink: SkewBraceInk = DEFAULT_SKEW_BRACE_INK): number {
   return (ink.fontAscent - ink.fontDescent) / 2 - (ink.open.ascent - ink.open.descent) / 2;
 }
+
+/**
+ * Brace font size per unit of letter height that inks the brace as tall as
+ * SKEW_BRACE_FONT_SCALE does in Segoe UI, the face it was tuned on. The fixed
+ * scale draws a taller brace wherever system-ui resolves to a face whose "{"
+ * inks more of the em (DejaVu Sans on Linux about 8% taller, Roboto 6%).
+ */
+export function skewBraceInkFontScale(ink: SkewBraceInk = DEFAULT_SKEW_BRACE_INK): number {
+  const tuned = DEFAULT_SKEW_BRACE_INK.open;
+  return (SKEW_BRACE_FONT_SCALE * (tuned.ascent + tuned.descent)) / (ink.open.ascent + ink.open.descent);
+}

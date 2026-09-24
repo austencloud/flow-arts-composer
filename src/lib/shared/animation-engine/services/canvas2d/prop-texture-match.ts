@@ -1,3 +1,5 @@
+import { basePropTypeOfRenderKey } from "$lib/shared/pictograph/prop/domain/prop-look";
+
 /**
  * Whether the sprite the image loader holds for a hand is the one the current
  * frame describes.
@@ -20,9 +22,4 @@ export function propTextureMatchesRequest(args: {
   const paramsType = args.paramsPropType?.toLowerCase();
   if (paramsType == null) return true;
   return basePropTypeOfRenderKey(loaded) === paramsType;
-}
-
-function basePropTypeOfRenderKey(key: string): string {
-  const separator = key.indexOf("__");
-  return separator === -1 ? key : key.slice(0, separator);
 }

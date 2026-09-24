@@ -53,7 +53,7 @@
   import { DEFAULT_SHOP_PROP, bakedCoverUrl } from "./domain/shop-prop-options";
   import ShopPropPicker from "./components/ShopPropPicker.svelte";
   import { loopPreviewCards } from "./services/loop-preview-cards";
-  import type { CoverCard } from "./domain/models/product";
+  import type { CoverCard, Product } from "./domain/models/product";
   import {
     AVAILABLE_LENGTHS,
     availableFlavors,
@@ -80,11 +80,18 @@
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 
+  interface Props {
+    /** The server's catalog snapshot, so the first HTML is the real page. */
+    seedProducts?: readonly Product[];
+  }
+
+  let { seedProducts = [] }: Props = $props();
+
   // Named `store`, not `state`: a local binding called `state` collides with the
   // $state rune (svelte store_rune_conflict).
   const store = createStoreState(getProductLoader(), singleBuyCheckoutCreator);
   setStoreContext({ state: store });
-  store.loadProducts(false);
+  store.loadProducts(false, untrack(() => seedProducts));
 
   // The ONE purchasable SKU. Flat $30 regardless of dials.
   const customSku = $derived(

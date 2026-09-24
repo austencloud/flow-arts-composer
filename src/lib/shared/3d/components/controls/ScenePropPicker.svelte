@@ -29,6 +29,7 @@
   } from "../../domain/scene-prop-catalog";
   import { toScenePropType } from "../../domain/scene-prop-type";
   import PropBuildPicker from "./PropBuildPicker.svelte";
+  import { syncTriangleGripToScene } from "./scene-prop-picker-grip-sync.svelte";
 
   interface Props {
     /** Null means All Performers currently contains more than one prop type. */
@@ -54,6 +55,11 @@
 
   const build = $derived(buildOverride ?? propFinishState.build);
   const chirality = createGlobalChiralitySeam();
+
+  // One way, settings to scene: see scene-prop-picker-grip-sync.svelte.ts.
+  // A performer-scoped host still keeps its own build in `build` above; this
+  // effect only ever writes the scene default, never a performer override.
+  $effect(syncTriangleGripToScene);
   const scenePropType = $derived(
     currentProp === null ? null : toScenePropType(currentProp)
   );
@@ -182,6 +188,7 @@
       variant="inline"
       scrollMode="host"
       allowedProps={SCENE_PROP_TYPES}
+      showColors={false}
       includeBareHands={showBareHands}
       {chirality}
     />

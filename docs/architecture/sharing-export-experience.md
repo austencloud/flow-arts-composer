@@ -163,13 +163,14 @@ to a card merely because an old sheet default used that artifact.
 - In the viewer, Share is not a dialog. It toggles a share panel in the
   inspector track beside the live stage, the way the Export page sits there.
   The rail item the person has selected is what gets shared; the panel names
-  it and follows rail changes while it stays open. The panel holds Copy link,
-  a Download action named for that subject (Card image, Video, Post video),
-  More for the system share sheet where the browser supports it, Publish in
-  development builds, and the Send to a friend recipients. Download and
-  Publish open the file sheet directly at that task, not at its chooser, and
-  the panel is still there when the sheet closes. Share again, the close
-  button, or Escape closes the panel.
+  it and follows rail changes while it stays open. Download leads the panel,
+  named for that subject (Card image, Video, Post video); under it sit Copy
+  link, Other apps for the system share sheet where the browser supports it,
+  and Publish in development builds; Send to a friend follows below a divider.
+  On the 2D animation Download renders at once (see below). Elsewhere
+  Download and Publish open the file sheet directly at that task, not at its
+  chooser, and the panel is still there when the sheet closes. Share again,
+  the close button, or Escape closes the panel.
 - Sending to a friend in Flow Arts Composer uses the existing sequence-attachment
   workflow; it is not a social publishing operation. In the viewer it lives in
   the share panel, not in the file sheet. Choosing who must not change what, so
@@ -260,12 +261,17 @@ also fails, reveals the link in a selectable field.
 
 ### Downloading the animation from the viewer
 
-The sequence animation is downloaded from the viewer's own Export page, not
-from a route inside the share sheet. The stage keeps playing beside the page
-(the same shape as the share panel), the settings stack in one column with chips
-for every choice, and the page's footer button renders and delivers the file.
-Share → Download a file → Video hands off to that page and closes the sheet,
-the way Post Studio takes over from the sheet; the sheet's own download route
+Share is the only way to download the 2D sequence animation. The share
+panel's Download renders at once with the Export page's settings, names what
+it will make (resolution, fps, loops, and the expected render time), and
+carries the render's progress; its Settings button opens the Export page. The
+page holds the settings only: the stage keeps playing beside it (the same shape
+as the share panel) and they stack in one column with chips for every choice,
+but it has no render button of its own, so the file cannot come out of two
+different flows. 3D keeps Record Scene on that page until the live-capture
+pattern is decided. The share sheet's Video choice closes the sheet and
+returns to the share panel on the 2D animation, the way Post Studio takes over
+from the sheet; the sheet's own download route
 keeps Card, plus Video for hosts with their own exporters (Mandala, Tunnel,
 3D takes, Post Studio renders), where the file type is a chip row. The viewer
 never mounts a second animation engine behind its share sheet: a frozen capture

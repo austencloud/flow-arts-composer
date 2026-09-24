@@ -35,7 +35,7 @@ import {
  * Maps old (invalid) module IDs to their current canonical form.
  * Used to handle stale data from localStorage/Firestore.
  */
-const MODULE_ID_MIGRATIONS: Record<string, ModuleId> = {
+export const MODULE_ID_MIGRATIONS: Record<string, ModuleId> = {
   write: "choreo", // Module id + route renamed write -> choreo (Jul 2026); dir stays features/write internally
   TIKA: "tika", // Module renamed back to lowercase for cleaner URLs
   discover: "browse", // Module renamed from Discover to Browse (Jan 2026)

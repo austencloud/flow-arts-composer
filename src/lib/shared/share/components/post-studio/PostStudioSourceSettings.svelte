@@ -118,6 +118,22 @@
     background: transparent;
   }
 
+  /* The Props page fills the rail: prop colours on top, then the prop grid
+     takes whatever height is left. On a short rail (a 707x676 unfolded Fold)
+     the colours stack to about 300px and left the grid a 24px strip. A floor
+     keeps two rows of props in view, and the page scrolls instead. */
+  .animation-settings :global(.panel-center-inner.fluid-body) {
+    min-height: 34rem;
+  }
+
+  /* The shell keeps the viewer's export row as a concealed spacer while the
+     inspector is borrowed, so the panel keeps the 3D viewer's height. In the
+     studio rail that spacer was a 119px blank band under the controls on a
+     707x676 Fold; the controls take that height here instead. */
+  .animation-settings :global(.panel-footer.concealed) {
+    display: none;
+  }
+
   /* Same reasoning as .animation-settings — the rail is the surface. */
   .card-settings {
     height: 100%;

@@ -357,8 +357,7 @@
         updateSetting("rightPropType", propType);
       }
     } else {
-      updateSetting("leftPropType", propType);
-      updateSetting("rightPropType", propType);
+      updateSettings({ leftPropType: propType, rightPropType: propType });
     }
   }
 
@@ -778,10 +777,6 @@
     {#if propDrawerState.isOpen}
       {#await import("../../settings/components/tabs/prop-type/PropSelectionSheet.svelte") then mod}
         <mod.default
-          primaryPropColors={settings.primaryPropColors}
-          darkMode={settings.darkMode}
-          onPrimaryPropColorsChange={(value) =>
-            updateSetting("primaryPropColors", value)}
           bind:isOpen={propDrawerState.isOpen}
           selectedPropType={propDrawerSelectedPropType}
           color={catDogMode && propDrawerActiveTab === "right" ? "red" : "blue"}

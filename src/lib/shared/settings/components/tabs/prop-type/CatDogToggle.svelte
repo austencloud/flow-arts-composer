@@ -10,12 +10,13 @@
 </script>
 
 <button
+  type="button"
   class="catdog-chip"
   class:active={catDogMode}
   onclick={onToggle}
   role="switch"
   aria-checked={catDogMode}
-  aria-label="Toggle CatDog Mode - different props per hand"
+  aria-label="Cat Dog: different props per hand"
 >
   <span class="chip-icons">
     <i class="fas fa-cat" aria-hidden="true"></i>
@@ -40,7 +41,12 @@
     font-family:
       -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
     cursor: pointer;
-    transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background-color var(--transition-normal),
+      border-color var(--transition-normal),
+      color var(--transition-normal),
+      box-shadow var(--transition-normal),
+      transform var(--transition-fast);
     -webkit-tap-highlight-color: transparent;
     flex-shrink: 0;
     align-self: flex-start;
@@ -71,10 +77,6 @@
     font-size: var(--font-size-sm);
     line-height: 1;
     color: inherit;
-  }
-
-  .chip-icons i {
-    transition: transform var(--duration-normal) ease;
   }
 
   .catdog-chip.active .chip-icons i:first-child {
