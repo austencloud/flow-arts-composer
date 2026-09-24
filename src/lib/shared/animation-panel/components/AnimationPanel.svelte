@@ -546,6 +546,11 @@
   const effortSummary = $derived(activeEffort.label);
   const effortAccent = $derived(activeEffort.color);
 
+  // What the Playback page (and the merged Motion page above Effort) holds.
+  const playbackHasPage = $derived(
+    showTempoControls || !!onPlaybackModeChange || showPathShape
+  );
+
   const playbackSummary = $derived.by(() => {
     void vmVersion;
     return showTempoControls
@@ -690,12 +695,19 @@
           summary: effortSummary,
           accentColor: effortAccent,
         },
-        playback: {
-          icon: "fa-route",
-          label: "Playback",
-          summary: playbackSummary,
-          accentColor: RAIL_CATEGORY_ACCENTS.playback,
-        },
+        // A host whose canvas has its own transport owns tempo there and
+        // passes showTempoControls={false}. With no mode and no path shape
+        // either, the Playback page would be empty, so it has no pill.
+        ...(playbackHasPage
+          ? {
+              playback: {
+                icon: "fa-route",
+                label: "Playback",
+                summary: playbackSummary,
+                accentColor: RAIL_CATEGORY_ACCENTS.playback,
+              },
+            }
+          : {}),
         display: {
           icon: "fa-eye",
           label: "Display",
@@ -904,7 +916,8 @@
             {@render tempoModeBody()}
           </div>
         {/if}
-        {@render effortBody(true)}
+        <!-- Effort alone is the whole page, so it needs no label of its own. -->
+        {@render effortBody(playbackHasPage)}
       </div>
     </div>
   {:else if resolvedPill === "export" && exportOptions}
@@ -912,11 +925,11 @@
   {/if}
 {/snippet}
 
-<!-- `labelled` is set only by the merged Motion page. On its own page the h2
-     names the section and a label under it would say the same word twice; on
-     the merged page Tempo, Mode and Visibility all carry one, and the effort
-     tiles were the single unlabelled block under a heading named for something
-     else. -->
+<!-- `labelled` is set only by a merged Motion page with more than Effort on it.
+     On its own page the h2 names the section and a label under it would say
+     the same word twice; on the merged page Tempo, Mode and Visibility all
+     carry one, and the effort tiles were the single unlabelled block under a
+     heading named for something else. -->
 {#snippet effortBody(labelled = false)}
   <div class="section-pad">
     {#if labelled}
