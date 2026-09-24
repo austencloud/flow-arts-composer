@@ -251,6 +251,15 @@ facing, and a root-distance curve or authored stop motion. The animator owns the
 window. FootPlanter may preserve the declared support anchor. Freezing an
 arbitrary walk-loop phase and blending to idle is **Rejected**.
 
+Every caller's root follows the stop's distance curve once braking begins:
+destination walks through `sampleDestinationWalkPlan`, time-scripted walk
+patterns through `samplePatternTerminalTravel`. The captured stop has nearly
+halted before its terminal foot lands, so a root held at walking speed to the
+mark drags the planted feet and the plant slides them to catch up after landing
+(23 cm in 0.13 s on the 2026-09-24 shuttle). A pattern arms on the gait boundary
+nearest a one-and-a-half-stride stop and scales the braking cadence so the root
+enters the brake at the same pace a destination walk does.
+
 ### Step turns, spin turns, pivots, and facing
 
 Turning is foot placement plus weight transfer and braking. Root yaw alone is
@@ -594,6 +603,7 @@ itself is pinned by an assertion so the claim cannot go stale silently.
 | Motion matching naturally plants feet                    | Selection only chooses from available data. Contacts, coverage, retargeting, blending, and correction remain explicit concerns.                        |
 | Inertialization or a crossfade can create a missing stop | Blending removes a small pose discontinuity. It does not create braking, final foot placement, or weight transfer.                                     |
 | Setting velocity to zero is a terminal transition        | Human gait termination is phase- and speed-dependent and can require another placement.                                                                |
+| A scripted root can keep its speed through a stop        | The stop clip decelerates before its terminal plant. A root that does not follow its distance curve drags the declared stance feet across the floor.   |
 | Rotating the root under the avatar is a turn             | A believable turn selects support, places a foot, transfers weight, and rotates through an authored or data-covered window.                            |
 | Negative leg order is always collision                   | Intentional front and back crossovers reverse left/right foot order. Collision requires geometry and continuity evidence.                              |
 | IK can turn a sidestep into a grapevine                  | IK can correct a target near a valid source pose. It cannot supply the missing swing path, support sequence, pelvis action, or self-contact semantics. |

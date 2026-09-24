@@ -117,15 +117,47 @@ def bake_trimmed_action(
     reflection = Matrix.Diagonal((-1.0, 1.0, 1.0, 1.0))
     ordered_bones = sorted(armature.pose.bones, key=bone_depth)
     for output_frame, matrices in enumerate(source_samples):
+        # Solve each local transform against the parent's pose on THIS frame.
+        # Assigning PoseBone.matrix instead converts against the parent's last
+        # evaluated pose, which was the final source frame, and keyed every
+        # leg relative to a pelvis already standing at the end of the clip.
+        wanted: dict[str, Matrix] = {}
         for target in ordered_bones:
             source_name = mirrored_bone_name(target.name) if mirror else target.name
             source_matrix = matrices.get(source_name)
             if source_matrix is None:
                 continue
-            target.rotation_mode = "QUATERNION"
-            target.matrix = (
+            wanted[target.name] = (
                 reflection @ source_matrix @ reflection if mirror else source_matrix
             )
+        # LocomotionAnimator drops every Hips rotation track, because Mixamo
+        # exports bake the character's base orientation into it. This capture
+        # also pitches its pelvis 10-13 degrees while braking, and dropped with
+        # the track that pitch swings both legs back round the hip. Keep the
+        # pelvis at rest here and let its children carry the rotation: every
+        # other bone's world pose is unchanged.
+        for target in ordered_bones:
+            pose = wanted.get(target.name)
+            if target.parent is None and pose is not None:
+                wanted[target.name] = Matrix.LocRotScale(
+                    pose.to_translation(),
+                    target.bone.matrix_local.to_quaternion(),
+                    None,
+                )
+        for target in ordered_bones:
+            pose = wanted.get(target.name)
+            if pose is None:
+                continue
+            rest = target.bone.matrix_local
+            parent = target.parent
+            if parent is None:
+                basis = rest.inverted() @ pose
+            else:
+                parent_pose = wanted.get(parent.name, parent.matrix)
+                offset = parent.bone.matrix_local.inverted() @ rest
+                basis = offset.inverted() @ parent_pose.inverted() @ pose
+            target.rotation_mode = "QUATERNION"
+            target.matrix_basis = basis
         for target in ordered_bones:
             target.keyframe_insert("location", frame=output_frame, group=target.name)
             target.keyframe_insert(
@@ -140,16 +172,19 @@ def bake_trimmed_action(
 
 
 def smooth_contacts(raw: list[float]) -> list[float]:
+    # Both ramps sit inside the planted span. FootPlanter pins the toe on the
+    # first frame that reaches 0.6, so a ramp written ahead of touchdown pinned
+    # a foot still swinging in; one written ahead of lift-off only lets go early.
     result = list(raw)
     for index in range(1, len(raw)):
         if raw[index] == raw[index - 1]:
             continue
         entering = raw[index] > raw[index - 1]
-        for offset in range(BLEND_FRAMES, 0, -1):
-            target = index - offset
-            if target < 0:
+        for step in range(BLEND_FRAMES):
+            target = index + step if entering else index - BLEND_FRAMES + step
+            if target < 0 or target >= len(raw) or raw[target] != 1.0:
                 continue
-            progress = (BLEND_FRAMES - offset + 1) / (BLEND_FRAMES + 1)
+            progress = (step + 1) / (BLEND_FRAMES + 1)
             result[target] = (
                 0.5 + 0.5 * progress if entering else 0.5 * (1 - progress)
             )
