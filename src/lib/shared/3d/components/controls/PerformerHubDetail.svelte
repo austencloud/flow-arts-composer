@@ -225,7 +225,8 @@
   const tabIndex = $derived(TABS.findIndex((t) => t.id === activeTab));
 
   // None is a real selection state. Scoped writes drop every edit then, so the
-  // hub says so and locks the tabs that would otherwise swallow clicks.
+  // header says so and the hub locks the tabs that would otherwise swallow
+  // clicks.
   const emptyScope = $derived(
     resolvePerformerHubEmptyScope(activeTab, selectedPerformers.length)
   );
@@ -428,28 +429,14 @@
     {sequenceSteps}
     {canRemove}
     onRemove={() => (removeConfirmOpen = true)}
+    emptyHint={emptyScope?.message ?? null}
+    onSelectAll={selectAllFromEmptyScope}
     {onSettingChange}
   />
 
   <div class="header-divider" aria-hidden="true"></div>
 
   <div class="tab-content">
-    {#if emptyScope}
-      <div class="empty-scope">
-        <p class="empty-scope-text" role="status">
-          <i class="fas fa-circle-info" aria-hidden="true"></i>
-          {emptyScope.message}
-        </p>
-        <button
-          class="empty-scope-action"
-          type="button"
-          onclick={selectAllFromEmptyScope}
-        >
-          Select all
-        </button>
-      </div>
-    {/if}
-
     <div
       class="scoped-panes"
       class:locked={emptyScope?.locksTab}
@@ -764,50 +751,6 @@
     flex: none;
   }
 
-  /* ─── Empty selection ─── */
-  .empty-scope {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 12px;
-    padding: 8px 8px 8px 12px;
-    border-radius: 10px;
-    background: var(--surface-inset-deep);
-    border: 1px solid color-mix(in srgb, var(--theme-text) 6%, transparent);
-  }
-
-  .empty-scope-text {
-    flex: 1;
-    min-width: 0;
-    margin: 0;
-    font-size: 14px;
-    line-height: 1.35;
-    color: var(--theme-text);
-  }
-
-  .empty-scope-text i {
-    margin-right: 6px;
-    color: var(--theme-text-dim);
-  }
-
-  .empty-scope-action {
-    flex: none;
-    min-height: 44px;
-    padding: 0 16px;
-    border-radius: 999px;
-    border: 1px solid color-mix(in srgb, var(--theme-accent) 50%, transparent);
-    background: color-mix(in srgb, var(--theme-accent) 16%, transparent);
-    color: var(--theme-accent-text);
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color var(--transition-fast);
-  }
-
-  .empty-scope-action:hover {
-    background: color-mix(in srgb, var(--theme-accent) 26%, transparent);
-  }
-
   .scoped-panes.locked {
     opacity: 0.4;
     filter: saturate(0.4);
@@ -907,6 +850,21 @@
     }
     .tab-pane {
       animation: none;
+    }
+  }
+
+  /* Six side-by-side icon + label pairs overflow their 1/6 column below this
+     width ("Character" ran into the Sequence icon), so stack them. */
+  @container (max-width: 620px) {
+    .tab-btn {
+      flex-direction: column;
+      gap: 2px;
+      padding: 6px 2px;
+    }
+
+    .tab-label {
+      font-size: 12px;
+      letter-spacing: 0;
     }
   }
 

@@ -585,10 +585,6 @@
       color 180ms cubic-bezier(0.2, 0, 0.13, 1.5);
     flex-shrink: 0;
   }
-  .hand-chip:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
   .hand-chip.blue {
     border-color: color-mix(
       in srgb,
@@ -624,6 +620,15 @@
     border-color: color-mix(in srgb, var(--prop-red) 85%, black);
     color: white;
     box-shadow: 0 0 12px color-mix(in srgb, var(--prop-red) 50%, transparent);
+  }
+  .hand-chip:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  .hand-chip:disabled:not(.filled) {
+    border-color: var(--theme-stroke);
+    color: var(--theme-text-dim);
   }
   @container planes-popover (max-width: 460px) {
     .planes-body {
