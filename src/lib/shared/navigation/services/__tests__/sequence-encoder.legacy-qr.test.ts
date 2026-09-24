@@ -88,7 +88,9 @@ describe("legacy QR payload compatibility", () => {
       // free digit after the other standard-size variants. Swap every motion
       // onto it and confirm the code survives the round trip like any other
       // prop.
-      const mutated = JSON.parse(JSON.stringify(source)) as typeof source;
+      // A plain JSON clone: SequenceData is deeply readonly, and this test
+      // deliberately rewrites every motion's prop in place.
+      const mutated = JSON.parse(JSON.stringify(source));
       if (mutated.startPlacement) {
         mutated.startPlacement.motions.left.propType = PropType.TRIANGLE;
         mutated.startPlacement.motions.right.propType = PropType.TRIANGLE;

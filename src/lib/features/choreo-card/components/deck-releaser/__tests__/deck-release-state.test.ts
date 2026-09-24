@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import {
   createDeckReleaseState,
   type DeckReleaseStateDependencies,
@@ -34,7 +34,7 @@ function baseRelease(overrides: Partial<DeckRelease> = {}): DeckRelease {
 
 function makeDeps(
   create: DeckReleaseStateDependencies["create"]
-): DeckReleaseStateDependencies & { warn: ReturnType<typeof vi.fn> } {
+): DeckReleaseStateDependencies & { warn: Mock<(message: string) => void> } {
   return {
     getAll: vi.fn(async () => []),
     getNextNumber: vi.fn(async () => 1),
@@ -42,7 +42,7 @@ function makeDeps(
     updateMetadata: vi.fn(async () => undefined),
     archive: vi.fn(async () => undefined),
     restore: vi.fn(async () => undefined),
-    warn: vi.fn(),
+    warn: vi.fn<(message: string) => void>(),
   };
 }
 
