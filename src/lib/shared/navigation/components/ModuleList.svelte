@@ -339,10 +339,11 @@
     overflow: hidden;
     isolation: isolate;
 
-    /* Staggered entrance animation */
-    opacity: 0;
-    transform: translateY(20px) scale(0.95);
-    animation: cellEntrance 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    /* Staggered entrance. `backwards` holds the first keyframe through the
+       delay, then hands transform back to the hover, press, and active rules;
+       `forwards` pinned transform over them. The rise stays inside the list's
+       bottom padding so the entrance never makes the list scrollable. */
+    animation: cellEntrance 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
     animation-delay: calc(var(--stagger-index, 0) * 50ms + 100ms);
 
     transition:
@@ -353,11 +354,7 @@
   @keyframes cellEntrance {
     from {
       opacity: 0;
-      transform: translateY(20px) scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
+      transform: translateY(10px) scale(0.95);
     }
   }
 
