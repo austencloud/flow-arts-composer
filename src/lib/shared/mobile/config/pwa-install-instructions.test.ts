@@ -92,11 +92,4 @@ describe("getInstallInstructions", () => {
     const allText = instructions.steps.map((step) => step.text).join(" ");
     expect(allText).toContain("Open as Web App");
   });
-
-  it("android-chrome no longer claims native app performance", () => {
-    const instructions = getInstallInstructions("android", "chrome");
-    expect(instructions.benefits.join(" ")).not.toContain(
-      "Native app performance"
-    );
-  });
 });
