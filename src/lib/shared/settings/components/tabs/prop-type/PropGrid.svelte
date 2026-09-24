@@ -989,6 +989,8 @@
           {:else if drill.kind === "details"}
             <div
               class="detail-options"
+              role="group"
+              aria-label={`${drillTitle} options`}
               class:fill={fillHeight > 0}
               class:dragging={railDragging}
               onpointerdown={handleRailPointerDown}
@@ -1035,6 +1037,8 @@
           {:else}
             <div
               class="drill-tiles"
+              role="group"
+              aria-label={`${drillTitle} choices`}
               class:dragging={railDragging}
               style={balancedColumns(familyChoices(drill.base).length)}
               style:--family-count={familyChoices(drill.base).length}

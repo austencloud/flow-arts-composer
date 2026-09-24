@@ -91,6 +91,8 @@
 
 <div
   class="fan-style-options"
+  role="group"
+  aria-label="Fan appearance choices"
   class:fill
   class:horizontal
   class:dragging
