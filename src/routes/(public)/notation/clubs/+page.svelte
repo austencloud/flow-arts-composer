@@ -11,7 +11,7 @@
 
   const TITLE = "Club Spinning Notation | The Kinetic Alphabet for Clubs";
   const DESCRIPTION =
-    "How The Kinetic Alphabet applies to club spinning: the one-sentence translation rule from staves, why one end splits isolation from extension, and the grip questions still open.";
+    "How The Kinetic Alphabet applies to dual-wielded club spinning, including staff translation, one-ended isolation and extension, and open grip questions.";
   const URL = "https://tkaflowarts.com/notation/clubs";
 </script>
 
@@ -54,22 +54,16 @@
       <div class="duo-copy">
         <div class="prose">
           <p>
-            First, what this page is not about: toss juggling. This is
-            dual-wielded club spinning, one club in each hand, gripped the whole
-            time. Held that way, clubs are the base prop of the single-ended
-            family. They're the easiest prop to explain the single-ended story
-            with, and they're the core of Vulcan Tech Gospel, the framework The
-            Kinetic Alphabet is built on. The lineage lives on the <a
-              href="/history">history page</a
-            >.
+            This is dual-wielded club spinning: one club in each hand, held
+            throughout the move. Clubs are the base prop of the single-ended
+            family and central to Vulcan Tech Gospel, the framework The Kinetic
+            Alphabet builds on. The <a href="/history">history page</a> traces that
+            lineage.
           </p>
           <p>
-            Translating the alphabet from staves to clubs takes one sentence.
-            Pretend you're holding a staff whose other end is invisible, or got
-            cut off, and do everything exactly the way you would with the staff.
-            A club's orientation is the staff's thumb orientation, and the rest
-            follows: same grid, same letters, same timing, as the player beside
-            this shows.
+            To read a club pictograph, imagine the pinky end of a staff is
+            invisible. The club's orientation follows the staff's thumb end. The
+            grid, letters, and timing stay the same, as the player shows.
           </p>
         </div>
       </div>
@@ -92,17 +86,14 @@
           <p>
             The two mandalas trace the identical sequence. In the staff render,
             both ends of each prop leave a path. In the club render, one does.
-            Half the pattern is gone, and that missing half is where the
-            single-ended vocabulary comes from. On a staff, an isolation and an
-            extension are one motion, the thumb end isolating while the pinky
-            end extends. A club can only do one at a time, so club spinners know
-            them as two moves that look nothing alike despite identical
-            underlying geometry. Antispin splits too: a club's antispin reads as
-            a vertical or a horizontal flower depending on its orientation
-            through the pattern, which is exactly what VTG's vertical antispin
-            and horizontal antispin name. On a staff those distinctions fold
-            away. The
-            <a href="/notation/staves">staff page</a> tells that side.
+            On a staff, the thumb end isolates while the pinky end extends. A
+            club can perform either path, so club spinners learn isolation and
+            extension as separate moves with the same underlying geometry. A
+            club's antispin reads as a vertical or a horizontal flower depending
+            on its orientation through the pattern. VTG calls these vertical
+            antispin and horizontal antispin. Both are visible at once on a <a
+              href="/notation/staves">staff</a
+            >.
           </p>
         </div>
       </div>
@@ -115,16 +106,15 @@
     </div>
   </section>
 
-  <OpenChapter prop="Clubs">
+  <OpenChapter
+    prop="Clubs"
+    heading="Club grip technique needs a spinner's account"
+  >
     <p>
-      The geometry above is solid ground. Club grip technique is not: the
-      alphabet grew up on double staves, and clubs ask for finger spinning and
-      grip changes the staff pedagogy deliberately avoids.
+      The notation grew from double staves. It covers club geometry, but the
+      club grip section still needs work on finger spinning and grip changes.
     </p>
-    <p>
-      That vocabulary deserves an author who lives in it. If clubs are your
-      language, this chapter is yours to write.
-    </p>
+    <p>Club spinners who teach those transitions can help document them.</p>
   </OpenChapter>
 
   <div class="cta-card">
