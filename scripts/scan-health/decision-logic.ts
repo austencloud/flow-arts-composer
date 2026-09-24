@@ -24,7 +24,7 @@ export interface DeckCode {
 }
 
 export interface SourcedDeckCode extends DeckCode {
-  source: "live" | "fallback";
+  source: "printed" | "live";
 }
 
 /**
@@ -57,23 +57,33 @@ export function pickOneCodePerDeck(
 }
 
 /**
- * Combine a live-discovered deck-code list with the static fallback list:
- * live entries win on a code collision, the result is capped at `maxCodes`
- * total, and fallback entries only fill in once live entries are exhausted.
- * Used whether live discovery found nothing (network/query failure — `live`
- * is `[]`) or found fewer decks than the fallback list covers.
+ * Combine the fixed, always-checked `printed` deck-code list with an
+ * optional live-discovered supplement: every `printed` entry is always
+ * included (that's the whole point — a real printed deck must be checked
+ * every run, not just when live discovery happens to surface it), and
+ * `live` entries only add coverage for a deck the printed list doesn't
+ * already name — either a different code (deduped by `code`) or, more
+ * usefully, a deck that isn't in the printed list yet at all (deduped by
+ * `deckName`, so live discovery's value is catching a newly released deck,
+ * not redundantly re-checking one already covered). Capped at `maxCodes`
+ * total; callers must keep `maxCodes >= printed.length` or printed entries
+ * — the ones that must never be skipped — would be the ones trimmed.
  */
 export function mergeCodesToCheck(
+  printed: readonly DeckCode[],
   live: readonly DeckCode[],
-  fallback: readonly DeckCode[],
   maxCodes: number
 ): SourcedDeckCode[] {
-  const seen = new Set(live.map((entry) => entry.code));
+  const printedCodes = new Set(printed.map((entry) => entry.code));
+  const printedDecks = new Set(printed.map((entry) => entry.deckName));
   const merged: SourcedDeckCode[] = [
-    ...live.map((entry) => ({ ...entry, source: "live" as const })),
-    ...fallback
-      .filter((entry) => !seen.has(entry.code))
-      .map((entry) => ({ ...entry, source: "fallback" as const })),
+    ...printed.map((entry) => ({ ...entry, source: "printed" as const })),
+    ...live
+      .filter(
+        (entry) =>
+          !printedCodes.has(entry.code) && !printedDecks.has(entry.deckName)
+      )
+      .map((entry) => ({ ...entry, source: "live" as const })),
   ];
   return merged.slice(0, maxCodes);
 }

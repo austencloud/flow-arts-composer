@@ -24,8 +24,9 @@
  * target `/q/...` URL is never actually requested.
  *
  * Firestore cost: one bounded `runQuery` (limit, see MAX_LIVE_DOCS below)
- * plus one `getDocument` per code checked (capped at MAX_CODES_PER_RUN) — a
- * handful of document reads per run, run a few times a day. See
+ * plus one `getDocument` per code checked — PRINTED_CODES always checks 3
+ * fixed codes, plus up to MAX_CODES_PER_RUN - 3 more from live discovery —
+ * a handful of document reads per run, run a few times a day. See
  * .claude/rules/firestore-cost-discipline.md.
  *
  * Usage:
@@ -61,28 +62,55 @@ const HUMAN_UA =
 const MARKER_PARAM = "healthcheck";
 const MARKER_VALUE = "1";
 
-// Bounded live discovery — see firestore-cost-discipline.md. Recently
-// print-minted codes carry `deckName`; older decks whose codes were minted
-// long ago fall outside this recent window and rely on FALLBACK_CODES below.
+// Bounded live discovery — see firestore-cost-discipline.md. This only ever
+// supplements PRINTED_CODES below with a deck it doesn't already cover (see
+// mergeCodesToCheck's doc comment); it is not load-bearing for the core
+// guarantee this script makes.
 const MAX_LIVE_DOCS = 25;
 const MAX_DECKS_LIVE = 5;
-const MAX_CODES_PER_RUN = 6;
+// PRINTED_CODES.length (currently 3) must always fit inside this cap, with
+// headroom left for live discovery's extra decks — see mergeCodesToCheck.
+const MAX_CODES_PER_RUN = 8;
 
 /**
- * Known-good printed-deck short codes, used when live discovery (below)
- * can't find a deck-tagged code for a given run — either the read failed, or
- * the recent-N window it scans didn't happen to contain that deck's codes.
- * Each entry here was confirmed live via the public `shortcodes/{code}` REST
- * read (the same one this script uses) before being added — never guessed.
- * Add more as other decks' codes are verified the same way; a stale entry
- * here is safe (short codes are permanent, per firestore.rules) but a wrong
- * one would produce a false alarm, so verify before adding.
+ * One real, verified code per printed deck — always checked, every run.
+ * This is the actual guarantee this script makes; live discovery above is a
+ * bonus, not a substitute: every deck with physical cards in circulation
+ * gets checked, every time, regardless of what live discovery happens to
+ * find in a given run.
  *
- * Verified 2026-09-23 against production:
- *   ZRRQ -> LOOP Deck #11, "ΦKΦKΦKΦK", 8 steps, system-minted at print time.
+ * Sourced from a one-time, read-only local audit of every place a printed
+ * code can come from — the `physicalCards` collection (cards actually
+ * issued through `/api/physical-cards/issue`), each `deckReleases/*`
+ * manifest's `cards`/`sequences` arrays, and the hand-path reference card
+ * manifest (`src/lib/features/choreo-card/domain/hand-path-reference-card-manifest.ts`)
+ * — which found 79 distinct printed codes across exactly 3 decks as of
+ * 2026-09-23: a 6-code hand-path reference set (deck-10 manifest), 19 codes
+ * issued for deck release #4, and 54 codes issued for a later-generated
+ * deck (physicalCards' `deckId: "generated:11"`). One representative code
+ * was kept per deck. No other `deckReleases` manifest contributed a code,
+ * meaning no other deck has evidence of an actually printed/issued physical
+ * card yet — extend this list as new decks are printed, using the same
+ * audit method (grep `deckReleases`/`physicalCards`/the hand-path manifest
+ * for codes), never by guessing.
+ *
+ * Each entry below was then independently confirmed live via the public
+ * `shortcodes/{code}` REST read (the same one this script uses) before
+ * being added. `deckName` here is each code's own `shortcodes` doc
+ * `deckName` field (public data), which is why it can read slightly
+ * differently than the audit's `physicalCards.deckName` for the same deck
+ * (e.g. "LOOP Deck #10" vs. physicalCards' "Deck #011") — both name the
+ * same deck; the discrepancy is pre-existing data, not a bug here.
+ *
+ * Verified 2026-09-23 against production (GET .../shortcodes/{code}):
+ *   DACF4E -> "Timing & Direction Hand Paths" (deck 10 hand-path reference)
+ *   ELYW   -> "LOOP Deck #4"  (19 physicalCards-issued codes, release #4)
+ *   MGO6   -> "LOOP Deck #10" (54 physicalCards-issued codes, generated:11)
  */
-const FALLBACK_CODES: DeckCode[] = [
-  { code: "ZRRQ", deckName: "LOOP Deck #11" },
+const PRINTED_CODES: DeckCode[] = [
+  { code: "DACF4E", deckName: "Timing & Direction Hand Paths" },
+  { code: "ELYW", deckName: "LOOP Deck #4" },
+  { code: "MGO6", deckName: "LOOP Deck #10" },
 ];
 
 interface Finding {
@@ -135,13 +163,17 @@ async function discoverCodesToCheck() {
   try {
     live = await discoverDeckCodesLive();
   } catch (error) {
+    // Non-fatal: PRINTED_CODES alone still gives full deck coverage. Live
+    // discovery only adds decks not already in PRINTED_CODES, so losing it
+    // for a run just means a newly released deck isn't checked until the
+    // fixed list is updated or the next run's live discovery succeeds.
     console.error(
-      `[scan-health] live shortcode discovery failed, falling back to the known-code list: ${
+      `[scan-health] live shortcode discovery failed (non-fatal — PRINTED_CODES still covers every known printed deck): ${
         error instanceof Error ? error.message : error
       }`
     );
   }
-  return mergeCodesToCheck(live, FALLBACK_CODES, MAX_CODES_PER_RUN);
+  return mergeCodesToCheck(PRINTED_CODES, live, MAX_CODES_PER_RUN);
 }
 
 // ---------------------------------------------------------------------------
@@ -257,8 +289,11 @@ async function main() {
   const findings: Finding[] = [];
 
   if (codes.length === 0) {
+    // Should be unreachable — PRINTED_CODES is always non-empty and always
+    // included by mergeCodesToCheck — but guarded defensively in case that
+    // invariant is ever broken (e.g. PRINTED_CODES emptied by mistake).
     console.log(
-      "FAILING: no short codes available to check — live discovery found none and FALLBACK_CODES is empty."
+      "FAILING: no short codes available to check — PRINTED_CODES is empty."
     );
     console.log("SCAN HEALTH: BROKEN (0 codes checked)");
     process.exit(1);

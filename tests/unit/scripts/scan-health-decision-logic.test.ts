@@ -57,46 +57,63 @@ describe("pickOneCodePerDeck", () => {
 });
 
 describe("mergeCodesToCheck", () => {
-  const fallback = [
-    { code: "ZRRQ", deckName: "LOOP Deck #11" },
-    { code: "OLDCODE", deckName: "Starter Pack" },
+  const printed = [
+    { code: "DACF4E", deckName: "Timing & Direction Hand Paths" },
+    { code: "ELYW", deckName: "LOOP Deck #4" },
   ];
 
-  it("prefers live results and tags each entry with its source", () => {
+  it("always includes every printed entry, tagged with its source", () => {
     const live = [{ code: "FRESH1", deckName: "LOOP Deck #12" }];
-    const merged = mergeCodesToCheck(live, fallback, 10);
+    const merged = mergeCodesToCheck(printed, live, 10);
     expect(merged).toEqual([
+      {
+        code: "DACF4E",
+        deckName: "Timing & Direction Hand Paths",
+        source: "printed",
+      },
+      { code: "ELYW", deckName: "LOOP Deck #4", source: "printed" },
       { code: "FRESH1", deckName: "LOOP Deck #12", source: "live" },
-      { code: "ZRRQ", deckName: "LOOP Deck #11", source: "fallback" },
-      { code: "OLDCODE", deckName: "Starter Pack", source: "fallback" },
     ]);
   });
 
-  it("falls back entirely when live discovery found nothing", () => {
-    const merged = mergeCodesToCheck([], fallback, 10);
-    expect(merged.every((entry) => entry.source === "fallback")).toBe(true);
-    expect(merged.map((entry) => entry.code)).toEqual(["ZRRQ", "OLDCODE"]);
+  it("still includes every printed entry when live discovery found nothing", () => {
+    const merged = mergeCodesToCheck(printed, [], 10);
+    expect(merged.every((entry) => entry.source === "printed")).toBe(true);
+    expect(merged.map((entry) => entry.code)).toEqual(["DACF4E", "ELYW"]);
   });
 
-  it("drops a fallback entry that live discovery already found (same code)", () => {
-    const live = [{ code: "ZRRQ", deckName: "LOOP Deck #11" }];
-    const merged = mergeCodesToCheck(live, fallback, 10);
+  it("drops a live entry whose code duplicates a printed one", () => {
+    const live = [{ code: "ELYW", deckName: "LOOP Deck #4" }];
+    const merged = mergeCodesToCheck(printed, live, 10);
     expect(merged).toHaveLength(2);
-    expect(merged.filter((entry) => entry.code === "ZRRQ")).toHaveLength(1);
-    expect(merged[0]).toEqual({
-      code: "ZRRQ",
-      deckName: "LOOP Deck #11",
-      source: "live",
+    expect(merged.filter((entry) => entry.code === "ELYW")).toHaveLength(1);
+    expect(merged.find((entry) => entry.code === "ELYW")).toEqual({
+      code: "ELYW",
+      deckName: "LOOP Deck #4",
+      source: "printed",
     });
   });
 
-  it("caps the combined total", () => {
+  it("drops a live entry for a deck already covered by a printed entry, even under a different code", () => {
+    // Live discovery finding a newer code for a deck PRINTED_CODES already
+    // checks isn't useful extra coverage — it would just spend quota
+    // re-checking a deck instead of catching a genuinely new one.
+    const live = [{ code: "NEWCODE", deckName: "LOOP Deck #4" }];
+    const merged = mergeCodesToCheck(printed, live, 10);
+    expect(merged).toHaveLength(2);
+    expect(merged.some((entry) => entry.code === "NEWCODE")).toBe(false);
+  });
+
+  it("caps the combined total without trimming printed entries first", () => {
     const live = [
       { code: "L1", deckName: "D1" },
       { code: "L2", deckName: "D2" },
     ];
-    const merged = mergeCodesToCheck(live, fallback, 3);
+    const merged = mergeCodesToCheck(printed, live, 3);
     expect(merged).toHaveLength(3);
+    expect(merged.filter((entry) => entry.source === "printed")).toHaveLength(
+      2
+    );
   });
 });
 
