@@ -3,7 +3,7 @@
   import { getViewerStudioSurfaces } from "$lib/shared/sequence-viewer/context/viewer-studio-surfaces-context";
   import { reparentToInspector } from "$lib/shared/sequence-viewer/components/reparent-to-inspector";
   import { sequencePositionToMediaTime } from "$lib/shared/media-composition/domain/sequence-time-map";
-  import { onDestroy } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
   import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
@@ -53,6 +53,7 @@
     type PsSlicePayload,
   } from "$lib/shared/sequence-viewer/services/viewer-url-slices/ps-slice";
   import PostStudioActionBar from "./PostStudioActionBar.svelte";
+  import type { PostStudioShareExport } from "./post-studio-share-export";
   import PostStudioPreview from "./PostStudioPreview.svelte";
   import PostStudioInspector from "./PostStudioInspector.svelte";
   import PostStudioTransport from "./PostStudioTransport.svelte";
@@ -96,6 +97,8 @@
      * sheet pass it (the viewer shell); without it the bar ends at Download.
      */
     onSharePost?: () => void;
+    previewTarget?: HTMLElement | null;
+    onRegisterShareExport?: (controls: PostStudioShareExport | null) => void;
     /**
      * The host's share panel is open. Sending owns the tools track, exactly as
      * it owns the shell's inspector track on desktop: the studio shows the post
@@ -119,6 +122,8 @@
     onRequestAnimation,
     onExported,
     onSharePost,
+    previewTarget = null,
+    onRegisterShareExport,
     sharing = false,
   }: Props = $props();
 
@@ -675,8 +680,8 @@
     focusedPanel = "edit";
   }
 
-  async function renderPost(): Promise<void> {
-    if (!previewRoot || !composition.isReady || exporting) return;
+  async function renderPost(): Promise<boolean> {
+    if (!previewRoot || !composition.isReady || exporting) return false;
     const previousTime = composition.previewSeconds;
     const wasPlaying = composition.isPlaying;
     composition.pause();
@@ -710,6 +715,7 @@
       if (exportedUrl) URL.revokeObjectURL(exportedUrl);
       exportedUrl = URL.createObjectURL(blob);
       onExported?.(blob);
+      return true;
     } catch (error) {
       if (!exportCancelled) {
         console.error("[PostStudio] Export failed:", error);
@@ -718,6 +724,7 @@
             ? error.message
             : "The post could not be rendered.";
       }
+      return false;
     } finally {
       exportProgress = null;
       composition.seek(previousTime);
@@ -728,6 +735,11 @@
   function cancelExport(): void {
     exportCancelled = true;
   }
+
+  onMount(() => {
+    onRegisterShareExport?.({ render: renderPost, cancel: cancelExport });
+    return () => onRegisterShareExport?.(null);
+  });
 
   function toggleTimingAdvanced(): void {
     timingAdvanced = !timingAdvanced;
@@ -821,17 +833,23 @@
   {#snippet canvasPanel()}
     <main class="canvas-panel" aria-label="Post canvas">
       <div class="canvas-stage">
-        <PostStudioPreview
-          sequence={displaySequence}
-          qrSequence={sequence}
-          handLabeling={labeledCard.labeling}
-          cardRenderOptions={synchronizedCardRenderOptions}
-          durationLabel={`${composition.durationSeconds.toFixed(1)}s`}
-          onRootReady={setPreviewRoot}
-          onEditRegion={() => {
-            if (!externalInspector) focusedPanel = "edit";
-          }}
-        />
+        <div
+          class="post-studio-preview-host"
+          inert={!!previewTarget}
+          use:reparentToInspector={previewTarget}
+        >
+          <PostStudioPreview
+            sequence={displaySequence}
+            qrSequence={sequence}
+            handLabeling={labeledCard.labeling}
+            cardRenderOptions={synchronizedCardRenderOptions}
+            durationLabel={`${composition.durationSeconds.toFixed(1)}s`}
+            onRootReady={setPreviewRoot}
+            onEditRegion={() => {
+              if (!externalInspector) focusedPanel = "edit";
+            }}
+          />
+        </div>
       </div>
       <!-- Docked under the frame it drives, exactly as the 2D animation canvas
            and the 3D viewer dock the same bar under theirs. It is the same
@@ -1152,6 +1170,16 @@
     min-height: 0;
     padding: var(--studio-canvas-padding);
     overflow: hidden;
+  }
+
+  .post-studio-preview-host {
+    container-type: size;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
   }
 
   .timeline-dock {
