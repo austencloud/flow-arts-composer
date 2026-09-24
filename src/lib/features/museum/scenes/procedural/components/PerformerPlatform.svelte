@@ -14,10 +14,11 @@
   import { PerformerRig } from "@austencloud/scene-3d";
   import { Plane } from "@austencloud/scene-3d";
   import { PlaneMode } from "@austencloud/scene-3d";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { createCharacterInstanceState, makeStandaloneDeps } from "$lib/shared/3d/state/character-instance-state.svelte";
   import { userProportionsState } from "@austencloud/scene-3d";
   import { toScenePropType } from "$lib/shared/3d/domain/scene-prop-type";
+  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+  import { museumPropPair } from "$lib/features/museum/services/museum-prop-pair";
   interface Props {
     slot: ExhibitSlot;
     isPopulated: boolean;
@@ -26,6 +27,8 @@
   }
 
   let { slot, isPopulated, playerPosition, sequence = null }: Props = $props();
+
+  const propPair = $derived(museumPropPair(sequence, settingsService.settings));
 
   const ACTIVATION_DISTANCE = 15; // meters
   const PLATFORM_HEIGHT = 0.3;    // matches cylinder geometry
@@ -89,8 +92,8 @@
         avatarState={performerState}
         showGrid={false}
         visiblePlanes={new Set([Plane.WALL])}
-        leftPropType={toScenePropType(PropType.STAFF)}
-        rightPropType={toScenePropType(PropType.STAFF)}
+        leftPropType={toScenePropType(propPair.leftPropType)}
+        rightPropType={toScenePropType(propPair.rightPropType)}
         {groundOffset}
       />
     {:else if isPopulated && isActive}

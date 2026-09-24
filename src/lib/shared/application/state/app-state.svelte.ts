@@ -14,6 +14,7 @@ import { PropType } from "../../pictograph/prop/domain/enums/prop-type";
 import { DEFAULT_FAN_APPEARANCE } from "../../pictograph/prop/domain/fan-appearance";
 import { DEFAULT_PROP_LOOK } from "../../pictograph/prop/domain/prop-look";
 import type { AppSettings } from "../../settings/domain/app-settings";
+import { healPropPair } from "../../settings/domain/prop-pair-rule";
 import {
   getIsInitialized,
   getIsInitializing,
@@ -82,7 +83,11 @@ function getPreloadedSettings(): AppSettings {
       return DEFAULT_SETTINGS;
     }
     const parsed = JSON.parse(stored);
-    const merged: AppSettings = { ...DEFAULT_SETTINGS, ...parsed };
+    const merged: AppSettings = {
+      ...DEFAULT_SETTINGS,
+      ...parsed,
+      ...healPropPair(parsed),
+    };
     preloadedSettingsCache = merged;
     return merged;
   } catch {
@@ -104,7 +109,11 @@ export function getSettings() {
   // This allows admins to see how the app looks with another user's configuration
   if (userPreviewState.isActive && userPreviewState.data.settings) {
     // Merge with defaults to ensure all required fields are present
-    return { ...DEFAULT_SETTINGS, ...userPreviewState.data.settings };
+    return {
+      ...DEFAULT_SETTINGS,
+      ...userPreviewState.data.settings,
+      ...healPropPair(userPreviewState.data.settings),
+    };
   }
 
   // Return the reactive settings object directly (NOT a snapshot)

@@ -344,8 +344,7 @@
         updateSetting("rightPropType", propType);
       }
     } else {
-      updateSetting("leftPropType", propType);
-      updateSetting("rightPropType", propType);
+      updateSettings({ leftPropType: propType, rightPropType: propType });
     }
   }
 
