@@ -7,10 +7,11 @@
   half beside its unchanged partner and a diamond beat with the same letter.
   Every other frame letter follows, one beat each until expanded. Tapping a
   tile flags it, and the flag bar copies the flagged beats as JSON so they can
-  be pasted to Claude.
+  be pasted to Claude, or shows them as selected text where the browser blocks
+  copying.
 -->
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
@@ -24,12 +25,47 @@
     readonly previous: string | null;
   }
 
+  // Flags, the expand toggle and the scroll position are kept for this tab.
+  // Another session merging into main hot-updates the app's root layout, which
+  // remounts this page; without this, a half-finished review would be wiped
+  // and scrolled back to the top.
+  const SAVED_KEY = "lettering-review";
+  const SCROLL_KEY = "lettering-review:scroll";
+
+  function readSaved(): { flagged: string[]; showEveryOther: boolean } {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(SAVED_KEY) ?? "null");
+      return {
+        flagged: Array.isArray(saved?.flagged)
+          ? saved.flagged.filter((id: unknown): id is string => typeof id === "string")
+          : [],
+        showEveryOther: saved?.showEveryOther === true,
+      };
+    } catch {
+      return { flagged: [], showEveryOther: false };
+    }
+  }
+
+  const saved = readSaved();
+
   let review = $state.raw<LetteringReview | null>(null);
   let loadError = $state<string | null>(null);
-  let flagged = $state<string[]>([]);
+  let flagged = $state<string[]>(saved.flagged);
   let drawn = $state<Record<string, boolean>>({});
-  let showEveryOther = $state(false);
-  let copyState = $state<"idle" | "copied" | "failed">("idle");
+  let showEveryOther = $state(saved.showEveryOther);
+  let copied = $state(false);
+  let copyText = $state<string | null>(null);
+  let pageElement = $state<HTMLDivElement>();
+  let copyBox = $state<HTMLTextAreaElement>();
+
+  $effect(() => {
+    const snapshot = JSON.stringify({ flagged, showEveryOther });
+    try {
+      sessionStorage.setItem(SAVED_KEY, snapshot);
+    } catch {
+      // Blocked storage only means flags last until the next remount.
+    }
+  });
 
   const tilesById = $derived.by(() => {
     const tiles = new Map<string, TileEntry>();
@@ -74,8 +110,25 @@
       review = buildLetteringReview(skewed, diamond);
     } catch (error) {
       loadError = error instanceof Error ? error.message : String(error);
+      return;
+    }
+    await tick();
+    try {
+      const top = Number(sessionStorage.getItem(SCROLL_KEY));
+      if (pageElement && top > 0) pageElement.scrollTop = top;
+    } catch {
+      // Nothing saved, so the review starts at the top.
     }
   });
+
+  function rememberScroll() {
+    if (!pageElement) return;
+    try {
+      sessionStorage.setItem(SCROLL_KEY, String(Math.round(pageElement.scrollTop)));
+    } catch {
+      // Blocked storage only means a remount starts at the top.
+    }
+  }
 
   // Hundreds of pictographs are too many to draw at once, so a tile draws
   // when it scrolls near the screen and stays drawn after that.
@@ -95,12 +148,14 @@
 
   function toggleFlag(id: string) {
     flagged = flagged.includes(id) ? flagged.filter((f) => f !== id) : [...flagged, id];
-    copyState = "idle";
+    copied = false;
+    copyText = null;
   }
 
   function clearFlags() {
     flagged = [];
-    copyState = "idle";
+    copied = false;
+    copyText = null;
   }
 
   function describeHand(pictograph: PictographData, side: HandSide): string {
@@ -131,10 +186,16 @@
     const text = JSON.stringify(report, null, 2);
     try {
       await navigator.clipboard.writeText(text);
-      copyState = "copied";
+      copied = true;
+      copyText = null;
     } catch {
-      console.log("[lettering-review]", text);
-      copyState = "failed";
+      // The browser pane in the Claude app refuses clipboard writes, so the
+      // details appear as selected text to copy by hand.
+      copied = false;
+      copyText = text;
+      await tick();
+      copyBox?.focus();
+      copyBox?.select();
     }
   }
 </script>
@@ -166,7 +227,7 @@
   </div>
 {/snippet}
 
-<div class="page">
+<div class="page" bind:this={pageElement} onscroll={rememberScroll}>
   <header class="intro">
     <h1>Lettering review</h1>
     <p class="lede">
@@ -174,9 +235,22 @@
       pictograph that looks wrong, then copy the list at the bottom and paste
       it to Claude.
     </p>
+    <p class="lede">
+      Why letters changed: D E F and J K L need the hands to start or end
+      exactly together or exactly opposite. In this frame the hands always
+      start and end 45° or 135° apart, so those beats now take their letter
+      from the moment inside the beat when the hands are opposite (M N O) or
+      together (P Q R).
+    </p>
     <ul class="legend">
-      <li><strong>M N O</strong> hands pass through α (opposite) mid-beat</li>
-      <li><strong>P Q R</strong> hands pass through β (together) mid-beat</li>
+      <li>
+        <strong>M N O</strong> hands opposite (α) for a moment inside the beat; the two
+        arrows sit on different sides
+      </li>
+      <li>
+        <strong>P Q R</strong> hands together (β) for a moment inside the beat; the two
+        arrows sit side by side
+      </li>
       <li><strong>M P</strong> both pro · <strong>N Q</strong> both anti · <strong>O R</strong> one of each</li>
       <li><strong>1</strong> hands start 45° apart (η) · <strong>2</strong> start 135° apart (ζ)</li>
     </ul>
@@ -284,13 +358,19 @@
   {:else}
     <span class="flag-list">{flagged.length} flagged: {flagged.join(", ")}</span>
     <button type="button" class="action" onclick={copyFlagged}>
-      {copyState === "copied"
-        ? "Copied. Paste it to Claude"
-        : copyState === "failed"
-          ? "Copy failed; the list is in the console"
-          : "Copy for Claude"}
+      {copied ? "Copied. Paste it to Claude" : "Copy for Claude"}
     </button>
     <button type="button" class="action quiet" onclick={clearFlags}>Clear</button>
+    {#if copyText}
+      <div class="copy-fallback">
+        <p>
+          This browser does not let the page copy. The details below are
+          selected: press Ctrl+C and paste them to Claude, or just tell Claude
+          the names above.
+        </p>
+        <textarea bind:this={copyBox} readonly rows="6" value={copyText}></textarea>
+      </div>
+    {/if}
   {/if}
 </footer>
 
@@ -545,6 +625,31 @@
     flex: 1 1 240px;
     min-width: 0;
     overflow-wrap: anywhere;
+  }
+
+  .copy-fallback {
+    display: flex;
+    flex: 1 1 100%;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .copy-fallback p {
+    margin: 0;
+    color: #fbbf24;
+  }
+
+  .copy-fallback textarea {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #4b5563;
+    border-radius: 8px;
+    background: #0f1117;
+    color: inherit;
+    font-family: ui-monospace, monospace;
+    font-size: 0.75rem;
+    resize: vertical;
   }
 
   @media (max-width: 700px) {

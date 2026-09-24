@@ -76,19 +76,45 @@ const PREVIOUS_LETTER: Readonly<Record<string, string>> = {
 
 const RETIRED_LETTERS = new Set(["D", "E", "F", "J", "K", "L"]);
 
-const FAMILY_NOTES: Readonly<Record<string, { passes: string; motions: string }>> = {
-  M: { passes: "through α (opposite)", motions: "both pro" },
-  N: { passes: "through α (opposite)", motions: "both anti" },
-  O: { passes: "through α (opposite)", motions: "one pro, one anti" },
-  P: { passes: "through β (together)", motions: "both pro" },
-  Q: { passes: "through β (together)", motions: "both anti" },
-  R: { passes: "through β (together)", motions: "one pro, one anti" },
+interface FamilyNote {
+  readonly landmark: "alpha" | "beta";
+  readonly motions: string;
+}
+
+interface StartNote {
+  readonly spacing: string;
+  readonly alphaAt: string;
+  readonly betaAt: string;
+}
+
+const FAMILY_NOTES: Readonly<Record<string, FamilyNote>> = {
+  M: { landmark: "alpha", motions: "both pro" },
+  N: { landmark: "alpha", motions: "both anti" },
+  O: { landmark: "alpha", motions: "one pro, one anti" },
+  P: { landmark: "beta", motions: "both pro" },
+  Q: { landmark: "beta", motions: "both anti" },
+  R: { landmark: "beta", motions: "one pro, one anti" },
 };
 
-const START_SPACING: Readonly<Record<string, string>> = {
-  "1": "start 45° apart (η)",
-  "2": "start 135° apart (ζ)",
+// Each hand shifts 90 degrees the other way from its partner, so the gap
+// between the hands changes by 180 degrees over the beat. Starting 45 degrees
+// apart, the hands are opposite three quarters of the way through, or together
+// a quarter of the way through; starting 135 degrees apart, the other way
+// round. On the diamond both moments fall exactly mid-beat. Checked against
+// every M to R frame row of the CSV on 2026-09-23: each crosses its landmark
+// once, at these fractions.
+const START: Readonly<Record<string, StartNote>> = {
+  "1": { spacing: "start 45° apart (η)", alphaAt: "¾", betaAt: "¼" },
+  "2": { spacing: "start 135° apart (ζ)", alphaAt: "¼", betaAt: "¾" },
 };
+
+function familyNote({ landmark, motions }: FamilyNote, { spacing, alphaAt, betaAt }: StartNote): string {
+  const crossing =
+    landmark === "alpha"
+      ? `hands opposite (α) ${alphaAt} of the way through`
+      : `hands together (β) ${betaAt} of the way through`;
+  return `${crossing} · ${motions} · ${spacing}`;
+}
 
 const OTHER_SECTIONS: readonly { title: string; letters: readonly string[] }[] = [
   {
@@ -186,15 +212,11 @@ export function buildLetteringReview(
     })),
   });
 
-  const families: ReviewFamily[] = Object.entries(FAMILY_NOTES).map(
-    ([letter, { passes, motions }]) => ({
-      letter,
-      reference: diamond.find((p) => String(p.letter) === letter) ?? null,
-      rows: ["1", "2"].map((n) =>
-        row(`${letter}${n}`, `${passes} · ${motions} · ${START_SPACING[n]}`)
-      ),
-    })
-  );
+  const families: ReviewFamily[] = Object.entries(FAMILY_NOTES).map(([letter, family]) => ({
+    letter,
+    reference: diamond.find((p) => String(p.letter) === letter) ?? null,
+    rows: Object.entries(START).map(([n, start]) => row(`${letter}${n}`, familyNote(family, start))),
+  }));
 
   const others: ReviewSection[] = OTHER_SECTIONS.map(({ title, letters }) => ({
     title,
