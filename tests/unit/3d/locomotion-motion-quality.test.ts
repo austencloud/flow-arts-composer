@@ -59,6 +59,8 @@
  */
 
 import { beforeAll, describe, expect, it } from "vitest";
+import { Vector3 } from "three";
+import { getClipFootprint } from "@austencloud/scene-3d";
 
 import type { GaitFrame } from "$lib/shared/3d/diagnostics/gait/gait-frame";
 import {
@@ -66,6 +68,8 @@ import {
   avatarAssetsPresent,
   driveRig,
   loadPackClips,
+  loadRig,
+  REFERENCE_RIG,
   RIGS,
 } from "./locomotion-harness";
 
@@ -83,6 +87,25 @@ function bobCm(frames: GaitFrame[]): number {
 }
 
 const last = (values: number[]) => values[values.length - 1] ?? 0;
+
+/**
+ * Peak-to-peak pelvis travel a clip was authored with, in centimetres on the
+ * reference rig: the footprint's hip heights are in leg lengths, and the bake
+ * writes them onto this rig's legs.
+ */
+async function authoredBobCm(key: string): Promise<number> {
+  const clip = (await loadPackClips()).get(key);
+  const footprint = clip ? getClipFootprint(clip) : null;
+  expect(footprint, `${key} footprint`).toBeTruthy();
+  const { leftLeg } = await loadRig(REFERENCE_RIG);
+  const at = (bone: { getWorldPosition(v: Vector3): Vector3 }) =>
+    bone.getWorldPosition(new Vector3());
+  const legLength =
+    at(leftLeg.root).distanceTo(at(leftLeg.middle)) +
+    at(leftLeg.middle).distanceTo(at(leftLeg.effector));
+  const hips = Array.from(footprint!.hips);
+  return (Math.max(...hips) - Math.min(...hips)) * legLength * 100;
+}
 
 /**
  * Flow Fest walks at 1.7 and sprints at 3.91. These sit either side of the
@@ -112,13 +135,21 @@ describe.skipIf(!present)("locomotion motion quality", () => {
     }, 120_000);
 
     it("keeps the bob once the run tier has taken over", async () => {
-      const walk = await driveRig({ speedAt: () => WALK_SPEED, seconds: 6 });
       const run = await driveRig({ speedAt: () => RUN_SPEED, seconds: 6 });
       expect(bobCm(run.frames)).toBeGreaterThan(4);
-      // A run displaces the pelvis further than a walk, never less. Blending
-      // toward a clip that had lost its vertical track would show up here as
-      // the run bobbing less than the walk it replaced.
-      expect(bobCm(run.frames)).toBeGreaterThan(bobCm(walk.frames));
+      // Blending toward a clip that had lost its vertical track would show up
+      // here as the run keeping little of the pelvis travel it was authored
+      // with. Measured against the run clip itself, not against the walk: the
+      // pack's run lifts its pelvis 0.0890 leg lengths peak to peak and its
+      // walk 0.0852, only 4% apart, and holding every planted foot exactly on
+      // the floor trims the run's pelvis 6% and the walk's not at all. On ch01
+      // that is a 6.89 cm run against a 7.05 cm walk, with the run keeping 94%
+      // of its authored 7.32 cm (2026-09-24). "The run bobs more than the
+      // walk" was a margin inside the bake's own correction, not a property
+      // of the clips.
+      expect(bobCm(run.frames)).toBeGreaterThan(
+        0.9 * (await authoredBobCm("runForward"))
+      );
     }, 120_000);
 
     it("bobs by the same amount on every shipped rig", async () => {
