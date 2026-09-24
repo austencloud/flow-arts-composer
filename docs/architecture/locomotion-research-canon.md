@@ -131,6 +131,28 @@ The owners have deliberately different jobs:
     clamp) is a leg-proportion mismatch that a retargeter with foot IK goals
     would absorb in the knees; that is the open gap, and it is not the
     pelvis. Contract in `tests/unit/3d/locomotion-pelvis-drop.test.ts`.
+
+    Since 2026-09-07 (e086abff42) that retargeter exists:
+    `bakeContactPreservedLegs` in `ContactRetargeter` solves every stance onto
+    the rig's legs and writes a pelvis track that stands them on the floor, so
+    the bake carries almost all of the dip and `pelvisDrop` is the residual
+    the baked clip still leaves. The pelvis-drop bands were not re-derived
+    when that landed and the suite stayed red locally (CI skips it without
+    the rigs) until 2026-09-24. The bake also had a real defect: it scaled
+    the ankle's height over the floor with the leg, so every rig's planted
+    ankle came out at the source's 0.109 leg lengths rather than its own,
+    and the residual took up the error with the whole body (ch07 -0.043 and
+    a planted sole 5.1 cm in the air, ch34 +0.024). The bake now measures hip
+    heights up from `legBase`, the floor raised by the rig's own bind ankle
+    height and lowered by the source's planted-ankle median. Measured
+    2026-09-24 across the twelve rigs, as the whole dip (baked track mean
+    under rest plus residual): walks 0.045-0.074, strafes 0.057-0.076, runs
+    0.128-0.150, run strafes 0.098-0.141; forward and strafe residuals within
+    0.017 of zero; planted sole at most 1.8 cm over the floor. The run bobs
+    94% of its authored pelvis travel on ch01 (6.89 of 7.32 cm) and a little
+    less than the walk (7.05 cm): the pack's run and walk lift the pelvis
+    within 4% of each other, and holding stances exactly on the floor trims
+    the run's by 6%.
 11. **Clip loop seams and the mixer's write skip** are owned by
     `LocomotionAnimator`. The pack's converted clips key from one frame in
     (0.0333 s at 30 Hz) while their duration counts from zero, and their last

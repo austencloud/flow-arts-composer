@@ -11769,10 +11769,10 @@ deleted file mode 100644
 index 5040c8a93fa8a008b51c602fb2e84cea444643b3..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/ContactRetargeter.js b/dist/lib/services/implementations/ContactRetargeter.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..cedd9ed2aeacbe3adad1a19f524a39e1b42f228a
+index 0000000000000000000000000000000000000000..19c3b968c6e5a66d9e33ae0803bead81ec60ac2e
 --- /dev/null
 +++ b/dist/lib/services/implementations/ContactRetargeter.js
-@@ -0,0 +1,517 @@
+@@ -0,0 +1,552 @@
 +import { AnimationClip, AnimationMixer, Matrix4, Quaternion, QuaternionKeyframeTrack, Vector3, VectorKeyframeTrack, } from "three";
 +import { buildTwoBoneChain } from "../leg-geometry";
 +import { HingeConstrainedLegIKSolver } from "./HingeConstrainedLegIKSolver";
@@ -11836,7 +11836,7 @@ index 0000000000000000000000000000000000000000..cedd9ed2aeacbe3adad1a19f524a39e1
 + * the bake and restored before returning.
 + */
 +export function bakeContactPreservedLegs(clip, footprint, root, modelPrefix) {
-+    const rig = resolveRig(root, modelPrefix);
++    const rig = resolveRig(root, modelPrefix, footprint);
 +    if (!rig)
 +        return clip;
 +    const pose = capturePose(root);
@@ -11855,7 +11855,7 @@ index 0000000000000000000000000000000000000000..cedd9ed2aeacbe3adad1a19f524a39e1
 + * every number here is a bind-pose property, and reading them off a posed rig
 + * gives leg lengths that change as the character moves.
 + */
-+function resolveRig(root, prefix) {
++function resolveRig(root, prefix, footprint) {
 +    const bone = (name) => root.getObjectByName(`${prefix}${name}`) ?? null;
 +    const hips = bone("Hips");
 +    if (!hips)
@@ -11892,15 +11892,50 @@ index 0000000000000000000000000000000000000000..cedd9ed2aeacbe3adad1a19f524a39e1
 +    if (!(left.chain.totalLength > 0))
 +        return null;
 +    const frame = hips.parent ?? root;
++    const legLength = legLengthIn(frame, left.chain);
++    const floor = restFloor(frame, left.toe, right.toe);
++    const ankleHeight = (heightIn(frame, left.chain.effector) +
++        heightIn(frame, right.chain.effector)) /
++        2 -
++        floor;
 +    return {
 +        hips,
 +        hipsRest: hips.position.clone(),
 +        frame,
-+        legLength: legLengthIn(frame, left.chain),
-+        floor: restFloor(frame, left.toe, right.toe),
++        legLength,
++        floor,
++        // The leg stands on this rig's own ankle, not the source's. An ankle's
++        // height over the floor is shoe and heel and does not scale with the
++        // leg, so hip heights in leg lengths are measured up from the floor
++        // raised by this rig's ankle and lowered by the source's planted one.
++        legBase: floor + ankleHeight - plantedAnkleHeight(footprint) * legLength,
 +        left,
 +        right,
 +    };
++}
++function heightIn(frame, bone) {
++    const toLocal = new Matrix4().copy(frame.matrixWorld).invert();
++    return bone.getWorldPosition(new Vector3()).applyMatrix4(toLocal).y;
++}
++/**
++ * How high the source's ankle rides while its foot is down, in leg lengths.
++ *
++ * The median over every sample either foot is on the floor. Heel strike and
++ * toe-off carry the ankle up off the height it stands at flat, at the two ends
++ * of every stance, and a median reads through both.
++ */
++function plantedAnkleHeight(footprint) {
++    const heights = [];
++    for (const track of [footprint.left, footprint.right]) {
++        for (let i = 0; i < footprint.samples; i++) {
++            if (track.contact[i])
++                heights.push(track.hip[i] + track.ankle[i * 3 + 1]);
++        }
++    }
++    if (heights.length === 0)
++        return 0;
++    heights.sort((a, b) => a - b);
++    return heights[Math.floor(heights.length / 2)];
 +}
 +/**
 + * The axis the ankle flexes about, in the foot's own space, signed so that a
@@ -12021,7 +12056,7 @@ index 0000000000000000000000000000000000000000..cedd9ed2aeacbe3adad1a19f524a39e1
 +        rig.hips.position.add(rig.hipsRest);
 +        // Ride at the height the walk rides at rather than the height the rig
 +        // stands at. Travel across the floor stays with the track that had it.
-+        rig.hips.position.y = rig.floor + footprint.hips[i] * rig.legLength;
++        rig.hips.position.y = rig.legBase + footprint.hips[i] * rig.legLength;
 +        root.updateMatrixWorld(true);
 +        alignPelvis(rig, sides, i);
 +        root.updateMatrixWorld(true);
@@ -12082,7 +12117,7 @@ index 0000000000000000000000000000000000000000..cedd9ed2aeacbe3adad1a19f524a39e1
 +    let lift = 0;
 +    for (const side of sides) {
 +        side.chain.root.getWorldPosition(hipJoint).applyMatrix4(hipSpace);
-+        const want = rig.floor + side.track.hip[index] * rig.legLength;
++        const want = rig.legBase + side.track.hip[index] * rig.legLength;
 +        lift += want - hipJoint.y;
 +        if (side.track.contact[index]) {
 +            plantedLift += want - hipJoint.y;
@@ -31642,10 +31677,10 @@ index 7bcee43c7bd19f3e7aa820ab57f8902cd7e90ca9..145b22db339a0b1197cbd5228c7be949
    private segmentToSegmentDistance(a0: Vector3, a1: Vector3, b0: Vector3, b1: Vector3): number {
 diff --git a/src/lib/services/implementations/ContactRetargeter.ts b/src/lib/services/implementations/ContactRetargeter.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..24e7a20a44bc0cb00bd8cd29c941db6cd5f4cef6
+index 0000000000000000000000000000000000000000..7187a0547969aa1a7e503a53c37445efb94c774c
 --- /dev/null
 +++ b/src/lib/services/implementations/ContactRetargeter.ts
-@@ -0,0 +1,864 @@
+@@ -0,0 +1,920 @@
 +import {
 +  AnimationClip,
 +  AnimationMixer,
@@ -31754,7 +31789,7 @@ index 0000000000000000000000000000000000000000..24e7a20a44bc0cb00bd8cd29c941db6c
 +  modelPrefix: string,
 +  options: ContactRetargetOptions = {}
 +): AnimationClip {
-+  const rig = resolveRig(root, modelPrefix);
++  const rig = resolveRig(root, modelPrefix, footprint);
 +  if (!rig) return clip;
 +
 +  const pose = capturePose(root);
@@ -31793,6 +31828,25 @@ index 0000000000000000000000000000000000000000..24e7a20a44bc0cb00bd8cd29c941db6c
 +  /** In `frame`'s space, like every other length here. */
 +  legLength: number;
 +  floor: number;
++  /**
++   * The height every hip joint in the footprint is measured up from.
++   *
++   * The footprint puts the hips and the feet in leg lengths, which is right
++   * for the leg and wrong for the foot. How far an ankle stands over the floor
++   * is shoe and heel, not shin, and it does not scale with the leg: the
++   * shipped rigs stand their ankles 0.068 to 0.178 leg lengths up, against
++   * 0.109 on the source clips' planted feet. Stacking the leg straight on the
++   * floor put every planted ankle at the source's height instead of its own -
++   * 5.6 cm low on ch07, whose foot the lift then pitched toes-up to keep the
++   * shoe out of the floor, and 3.6 cm high on ch34 (measured 2026-09-24). The
++   * animator's pelvis correction took up the difference with the whole body
++   * and left ch07's planted sole 5 cm in the air.
++   *
++   * So the leg stands on the rig's own ankle: this is the floor, raised by the
++   * rig's ankle height and lowered by the source's, so a planted ankle comes
++   * out at the height this rig's ankle stands at.
++   */
++  legBase: number;
 +  left: Omit<Side, "track">;
 +  right: Omit<Side, "track">;
 +}
@@ -31804,7 +31858,11 @@ index 0000000000000000000000000000000000000000..24e7a20a44bc0cb00bd8cd29c941db6c
 + * every number here is a bind-pose property, and reading them off a posed rig
 + * gives leg lengths that change as the character moves.
 + */
-+function resolveRig(root: Object3D, prefix: string): Rig | null {
++function resolveRig(
++  root: Object3D,
++  prefix: string,
++  footprint: ClipFootprint
++): Rig | null {
 +  const bone = (name: string): Bone | null =>
 +    (root.getObjectByName(`${prefix}${name}`) as Bone | undefined) ?? null;
 +
@@ -31843,15 +31901,48 @@ index 0000000000000000000000000000000000000000..24e7a20a44bc0cb00bd8cd29c941db6c
 +  if (!(left.chain.totalLength > 0)) return null;
 +
 +  const frame = hips.parent ?? root;
++  const legLength = legLengthIn(frame, left.chain);
++  const floor = restFloor(frame, left.toe, right.toe);
++  const ankleHeight =
++    (heightIn(frame, left.chain.effector) +
++      heightIn(frame, right.chain.effector)) /
++      2 -
++    floor;
 +  return {
 +    hips,
 +    hipsRest: hips.position.clone(),
 +    frame,
-+    legLength: legLengthIn(frame, left.chain),
-+    floor: restFloor(frame, left.toe, right.toe),
++    legLength,
++    floor,
++    legBase: floor + ankleHeight - plantedAnkleHeight(footprint) * legLength,
 +    left,
 +    right,
 +  };
++}
++
++function heightIn(frame: Object3D, bone: Object3D): number {
++  const toLocal = new Matrix4().copy(frame.matrixWorld).invert();
++  return bone.getWorldPosition(new Vector3()).applyMatrix4(toLocal).y;
++}
++
++/**
++ * How high the source's ankle rides while its foot is down, in leg lengths.
++ *
++ * The median over every sample either foot is on the floor. Heel strike and
++ * toe-off carry the ankle up off the height it stands at flat, at the two ends
++ * of every stance, and a median reads through both.
++ */
++function plantedAnkleHeight(footprint: ClipFootprint): number {
++  const heights: number[] = [];
++  for (const track of [footprint.left, footprint.right]) {
++    for (let i = 0; i < footprint.samples; i++) {
++      if (track.contact[i])
++        heights.push(track.hip[i]! + track.ankle[i * 3 + 1]!);
++    }
++  }
++  if (heights.length === 0) return 0;
++  heights.sort((a, b) => a - b);
++  return heights[Math.floor(heights.length / 2)]!;
 +}
 +
 +/**
@@ -32006,7 +32097,7 @@ index 0000000000000000000000000000000000000000..24e7a20a44bc0cb00bd8cd29c941db6c
 +    rig.hips.position.add(rig.hipsRest);
 +    // Ride at the height the walk rides at rather than the height the rig
 +    // stands at. Travel across the floor stays with the track that had it.
-+    rig.hips.position.y = rig.floor + footprint.hips[i]! * rig.legLength;
++    rig.hips.position.y = rig.legBase + footprint.hips[i]! * rig.legLength;
 +    root.updateMatrixWorld(true);
 +    alignPelvis(rig, sides, i);
 +    root.updateMatrixWorld(true);
@@ -32158,7 +32249,7 @@ index 0000000000000000000000000000000000000000..24e7a20a44bc0cb00bd8cd29c941db6c
 +  rig.hips.position.set(0, 0, 0);
 +  mixer.setTime(time);
 +  rig.hips.position.add(rig.hipsRest);
-+  rig.hips.position.y = rig.floor + hipsHeight * rig.legLength;
++  rig.hips.position.y = rig.legBase + hipsHeight * rig.legLength;
 +  rig.frame.updateMatrixWorld(true);
 +  alignPelvis(rig, sides, index);
 +  rootUpdate(rig);
@@ -32253,7 +32344,7 @@ index 0000000000000000000000000000000000000000..24e7a20a44bc0cb00bd8cd29c941db6c
 +  let lift = 0;
 +  for (const side of sides) {
 +    side.chain.root.getWorldPosition(hipJoint).applyMatrix4(hipSpace);
-+    const want = rig.floor + side.track.hip[index]! * rig.legLength;
++    const want = rig.legBase + side.track.hip[index]! * rig.legLength;
 +    lift += want - hipJoint.y;
 +    if (side.track.contact[index]) {
 +      plantedLift += want - hipJoint.y;
