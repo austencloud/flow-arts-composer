@@ -188,6 +188,7 @@
       variant="inline"
       scrollMode="host"
       allowedProps={SCENE_PROP_TYPES}
+      showColors={false}
       includeBareHands={showBareHands}
       {chirality}
     />

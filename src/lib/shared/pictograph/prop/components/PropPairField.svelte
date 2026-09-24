@@ -56,6 +56,7 @@
       variant="inline"
       scrollMode="host"
       showAppearance={false}
+      showColors={false}
       onSelect={(prop) => {
         const leftPropType = hand === "right" ? value.leftPropType : prop;
         const rightPropType = hand === "left" ? value.rightPropType : prop;

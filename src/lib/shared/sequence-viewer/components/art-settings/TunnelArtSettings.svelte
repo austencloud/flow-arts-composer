@@ -365,6 +365,7 @@
           onSelect={onPropChange}
           variant="inline"
           flat
+          showColors={false}
           chirality={propChirality}
         />
       {/if}

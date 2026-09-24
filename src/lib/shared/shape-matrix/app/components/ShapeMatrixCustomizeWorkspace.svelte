@@ -150,7 +150,6 @@
         selectedPropType={appState.addressedPropType}
         onPropChange={(propType) => void appState.setPropType(propType)}
         handProps={appState.handProps}
-        showPropColors={true}
         showPathShape={false}
         showMotionVisibility={true}
         showSequenceMarks={!theory}
