@@ -1046,6 +1046,7 @@
           class="flat-grid"
           role="group"
           aria-label="Prop choices"
+          data-swipe-block={layout === "rail" ? "" : undefined}
           class:dragging={railDragging}
           class:comfortable={tileDensity === "comfortable"}
           class:fill={flatLayout !== null}
@@ -1211,6 +1212,7 @@
     scroll-snap-type: x proximity;
     scroll-padding-inline: 0.25rem;
     overscroll-behavior-x: contain;
+    touch-action: pan-x pinch-zoom;
     scrollbar-width: thin;
     cursor: grab;
   }
