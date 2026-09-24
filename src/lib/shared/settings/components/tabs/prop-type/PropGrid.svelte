@@ -711,6 +711,8 @@
   }
 </script>
 
+<!-- The rail picker owns gestures from its toolbar, gaps, tiles, and drill views.
+     The dock's separate grab handle remains available to dismiss the tray. -->
 <div
   bind:this={rootEl}
   class="prop-grid-root"
@@ -720,6 +722,7 @@
   class:rail={layout === "rail"}
   class:host-scroll={scrollMode === "host"}
   class:fluid-sections={fluidSections}
+  data-swipe-block={layout === "rail" ? "" : undefined}
 >
   {#snippet sizeControl()}
     <div class="size-toggle" role="group" aria-label="Prop size">
@@ -1046,7 +1049,6 @@
           class="flat-grid"
           role="group"
           aria-label="Prop choices"
-          data-swipe-block={layout === "rail" ? "" : undefined}
           class:dragging={railDragging}
           class:comfortable={tileDensity === "comfortable"}
           class:fill={flatLayout !== null}
