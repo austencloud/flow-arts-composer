@@ -204,14 +204,17 @@ describe("SequenceViewerShell host contract", () => {
     expect(viewerHeaderSource).not.toContain("onSendTo={handleSendTo}");
   });
 
-  it("leaves the 2D video file to Share", () => {
+  it("leaves the video file to Share and the 3D take to the stage", () => {
     // The Export page keeps its settings but loses its own render button, so
-    // the file has one route and cannot drift between two flows. 3D keeps
-    // Record Scene until its own pattern is decided.
-    expect(shellSource).toContain('showExportAction={ctx.renderMode === "3d"}');
+    // the file has one route and cannot drift between two flows. A 3D take is
+    // filmed with the stage's Record button; Share hands over the film.
+    expect(shellSource).toContain("showExportAction={false}");
     expect(shellSource).toContain(
       "onDownload={() => void downloadFromShare()}"
     );
+    expect(shellSource).toContain("ctx.saveRetainedFilm(film.id)");
+    expect(shellSource).toContain('text: "Record a take"');
+    expect(shellSource).not.toContain("suspendForSceneTake");
   });
 
   it("keeps More compact-only and limits the primary row to four actions", () => {

@@ -268,16 +268,31 @@ carries the render's progress; its Settings button opens the Export page. The
 page holds the settings only: the stage keeps playing beside it (the same shape
 as the share panel) and they stack in one column with chips for every choice,
 but it has no render button of its own, so the file cannot come out of two
-different flows. 3D keeps Record Scene on that page until the live-capture
-pattern is decided. The share sheet's Video choice closes the sheet and
-returns to the share panel on the 2D animation, the way Post Studio takes over
+different flows. The share sheet's Video choice closes the sheet and
+returns to the share panel on the animation, the way Post Studio takes over
 from the sheet; the sheet's own download route
 keeps Card, plus Video for hosts with their own exporters (Mandala, Tunnel,
-3D takes, Post Studio renders), where the file type is a chip row. The viewer
+Post Studio renders), where the file type is a chip row. The viewer
 never mounts a second animation engine behind its share sheet: a frozen capture
 behind a modal was the reason the download moved. The Create workspace has a
 static card behind sharing, so its download sheet supplies its own live preview
 using the existing inline animation player.
+
+### Filming the 3D scene
+
+A 3D video is a performance, not a render: the camera moves live while the
+person watches, so it is filmed where they are looking. The stage holds the
+only Record control, a red button with a Free/Orbit segmented choice for the
+camera beside it. The quality (Draft, Final, Cinema) is picked once, on the
+card that appears after Stop; the recording is already saved by then, so
+backing out costs nothing. Share never starts a take. In 3D the share
+panel's Download hands over the newest film kept on the device for this
+sequence, named `Download film` with its length, frame, and rate on the line
+beneath and `New take` beside them. With no film yet it reads
+`Record a take` and returns the person to the stage. Publish from 3D opens the
+card sheet. The earlier pattern, where the share sheet hid itself during a
+take and resumed afterward, is retired: it showed a hung "Rendering video..."
+over a scene the person could neither see nor stop.
 
 ### The image a clip opens with
 
