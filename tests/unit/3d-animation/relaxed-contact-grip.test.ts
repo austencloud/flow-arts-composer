@@ -13,6 +13,7 @@ import {
   TEACHING_ANCHOR_OFFSET,
   upsertTeachingKey,
 } from "../../../src/routes/test/grip-lab/isolation-teaching";
+import { sculptHand } from "../../../src/routes/test/grip-lab/hand-sculpt";
 
 const ORIGIN = new Vector3(0, 1.5621, 0.3);
 const STAFF_RADIUS_M = 0.0102125;
@@ -47,7 +48,8 @@ describe.runIf(avatarAssetsPresent())("relaxed strict-contact grip", () => {
     const sample = (
       phase: number,
       relaxation: number,
-      rollOverride?: number
+      rollOverride?: number,
+      postSculpt = false
     ) => {
       const teaching = sampleTeachingPose(phase, keys);
       const tip = allowedTipOffset(teaching, 0.13);
@@ -93,6 +95,10 @@ describe.runIf(avatarAssetsPresent())("relaxed strict-contact grip", () => {
         lengthM: 0.9,
       });
       services.fingers.solveCylinderContacts();
+      const contactReport = services.fingers
+        .getCylinderContactReport("right")
+        .map((finger) => ({ ...finger }));
+      if (postSculpt) sculptHand(scene, "right", teaching);
       root.updateWorldMatrix(true, true);
       const indexDirection = state
         .fingerChains!.right.get("Index3")!
@@ -127,11 +133,11 @@ describe.runIf(avatarAssetsPresent())("relaxed strict-contact grip", () => {
         palmNormal.negate();
       return {
         phase,
+        center,
+        axis,
         palmNormal,
         wrist: state.rightArmChain!.effector.getWorldPosition(new Vector3()),
-        fingers: services.fingers
-          .getCylinderContactReport("right")
-          .map((finger) => ({ ...finger })),
+        fingers: contactReport,
         rotations: [...state.fingerChains!.right.values()].map((bone) =>
           bone.quaternion.clone()
         ),
@@ -147,9 +153,21 @@ describe.runIf(avatarAssetsPresent())("relaxed strict-contact grip", () => {
     };
 
     const closed = sample(2, 0, 0);
-    const first = sample(2, 1);
+    const solved = sample(2, 1);
+    const first = sample(2, 1, undefined, true);
     const closedAgain = sample(2, 0, 0);
-    const second = sample(2, 1);
+    const second = sample(2, 1, undefined, true);
+    const radial = (point: Vector3) => {
+      const fromStaff = point.clone().sub(first.center);
+      return fromStaff
+        .addScaledVector(first.axis, -fromStaff.dot(first.axis))
+        .normalize();
+    };
+    // Check the final visible hand, after the lab's sculpt pass: the shaft
+    // must separate the thumb pad and index finger rather than sit beside both.
+    expect(
+      radial(first.worldPoints[2]!).dot(radial(first.worldPoints[4]!))
+    ).toBeLessThan(-0.15);
     expect(first.palmNormal.x).toBeGreaterThan(0.9);
     expect(first.palmNormal.z).toBeGreaterThan(0);
     expect(closed.palmNormal.x).toBeLessThan(-0.9);
@@ -185,7 +203,7 @@ describe.runIf(avatarAssetsPresent())("relaxed strict-contact grip", () => {
     expect(
       first.worldPoints[14]!.distanceTo(first.worldPoints[8]!)
     ).toBeLessThan(0.055);
-    expect(first.worldPoints[2]!.y - first.worldPoints[0]!.y).toBeGreaterThan(
+    expect(solved.worldPoints[2]!.y - solved.worldPoints[0]!.y).toBeGreaterThan(
       0.06
     );
     expect(
@@ -199,7 +217,12 @@ describe.runIf(avatarAssetsPresent())("relaxed strict-contact grip", () => {
     );
     const travel = Array.from({ length: 9 }, (_, i) => {
       const phase = 1 + i / 4;
-      return sample(phase, sampleTeachingPose(phase, keys).gripRelaxation);
+      return sample(
+        phase,
+        sampleTeachingPose(phase, keys).gripRelaxation,
+        undefined,
+        true
+      );
     });
     for (const frame of travel) {
       expect(Number.isFinite(frame.palmResidualM)).toBe(true);
@@ -219,7 +242,12 @@ describe.runIf(avatarAssetsPresent())("relaxed strict-contact grip", () => {
     }
     const transition = Array.from({ length: 204 }, (_, i) => {
       const phase = 0.99 + i / 100;
-      return sample(phase, sampleTeachingPose(phase, keys).gripRelaxation);
+      return sample(
+        phase,
+        sampleTeachingPose(phase, keys).gripRelaxation,
+        undefined,
+        true
+      );
     });
     const maxStep = Math.max(
       ...transition

@@ -94,7 +94,7 @@
     }
     if (selected === "fingers") {
       return [
-        slider("Thumb open", pose.thumbSpread * degrees, -45, 45, 1, (v) => update({ thumbSpread: v * radians }), "°"),
+        slider("Thumb across shaft", pose.thumbSpread * degrees, -45, 45, 1, (v) => update({ thumbSpread: v * radians }), "°"),
         ...(["thumb", "index", "middle", "ring", "pinky"] as const).map((finger) =>
           slider(`${finger[0]!.toUpperCase()}${finger.slice(1)} curl`, pose[`${finger}Curl`] * degrees, -45, 45, 1,
             (v) => update({ [`${finger}Curl`]: v * radians }), "°")
