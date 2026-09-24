@@ -36,6 +36,7 @@
     centeredOrphan,
     sectionFillLayout,
   } from "./section-fill-layout";
+  import { drillFillLayout } from "./drill-fill-layout";
   import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
   import {
     hasModelSprite,
@@ -421,38 +422,20 @@
     };
   });
 
-  const DRILL_GAP = 10;
   const drillTileCount = $derived(
     drill?.kind === "family" ? familyChoices(drill.base).length : 0
   );
   /**
-   * Tile grid for a drilled family in a bounded host: as many columns as the
-   * family warrants, rows sharing the height so the tiles own the space,
-   * capped so a two-prop family gets two generous cards rather than two
-   * towers. Null means the host is not bounded and the tiles keep their
-   * ordinary size.
+   * Tile grid for a drilled family in a bounded host (see drill-fill-layout).
+   * The tiles sit on a doubled track grid (two tracks each) so a short last
+   * row can start one track in and centre itself. Null means the host is not
+   * bounded and the tiles keep their ordinary size.
    */
-  const drillLayout = $derived.by(() => {
-    const n = drillTileCount;
-    const { width, height } = tilesBox;
-    if (n === 0 || fillHeight === 0 || width === 0 || height === 0) return null;
-    const phone = width < 440;
-    const cols = n <= 2 ? n : phone || n <= 4 ? 2 : n <= 9 ? 3 : 4;
-    const rows = Math.ceil(n / cols);
-    const colWidth = (width - DRILL_GAP * (cols - 1)) / cols;
-    const rowHeight = Math.floor(
-      Math.min((height - DRILL_GAP * (rows - 1)) / rows, colWidth * 1.25)
-    );
-    // The tiles sit on a doubled track grid (two tracks each) so a short
-    // last row can start one track in and centre itself.
-    const orphans = n % cols;
-    return {
-      cols,
-      rowHeight,
-      orphanIndex: orphans === 0 ? -1 : n - orphans,
-      orphanStart: cols - orphans + 1,
-    };
-  });
+  const drillLayout = $derived(
+    fillHeight === 0
+      ? null
+      : drillFillLayout(drillTileCount, tilesBox.width, tilesBox.height)
+  );
 
   // The sectioned grid's width and the height its labels take, which do not
   // change with the tile size, so the layout below can fit the tiles to the
