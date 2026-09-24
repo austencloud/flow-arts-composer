@@ -8,6 +8,12 @@ const hubSource = readFileSync(
   resolve("src/lib/shared/3d/components/controls/PerformerHubDetail.svelte"),
   "utf8"
 );
+const headerSource = readFileSync(
+  resolve(
+    "src/lib/shared/3d/components/controls/PerformerIdentityHeader.svelte"
+  ),
+  "utf8"
+);
 const planesSource = readFileSync(
   resolve("src/lib/shared/3d/components/PlanesPopover.svelte"),
   "utf8"
@@ -32,7 +38,7 @@ describe("performer hub with no performers selected", () => {
 
   it("locks the prop picker and explains why", () => {
     expect(resolvePerformerHubEmptyScope("prop", 0)).toEqual({
-      message: "Pick a performer to change props.",
+      message: "Pick a performer to change props",
       locksTab: true,
     });
   });
@@ -48,10 +54,12 @@ describe("performer hub with no performers selected", () => {
     expect(resolvePerformerHubEmptyScope("effects", 0)?.locksTab).toBe(false);
   });
 
-  it("gives every tab a message without em dashes", () => {
+  it("gives every tab a one-line header hint without em dashes", () => {
     for (const tab of TABS) {
       const message = resolvePerformerHubEmptyScope(tab, 0)?.message ?? "";
       expect(message.length).toBeGreaterThan(0);
+      // The hint shares the header row with the Select all button.
+      expect(message.length).toBeLessThanOrEqual(36);
       expect(message).not.toContain("—");
     }
   });
@@ -61,8 +69,15 @@ describe("performer hub with no performers selected", () => {
       "resolvePerformerHubEmptyScope(activeTab, selectedPerformers.length)"
     );
     expect(hubSource).toContain("inert={emptyScope?.locksTab ?? false}");
-    expect(hubSource).toContain('role="status"');
-    expect(hubSource).toContain("onclick={selectAllFromEmptyScope}");
+  });
+
+  it("states the empty selection in the header, not a second card", () => {
+    expect(hubSource).toContain("emptyHint={emptyScope?.message ?? null}");
+    expect(hubSource).toContain("onSelectAll={selectAllFromEmptyScope}");
+    expect(hubSource).not.toContain('class="empty-scope"');
+    expect(headerSource).toContain("{:else if selectedCount === 0}");
+    expect(headerSource).toContain("No performers selected");
+    expect(headerSource).toContain('role="status">{emptyHint}');
   });
 
   it("disables hand-plane chips when the scope is empty", () => {
