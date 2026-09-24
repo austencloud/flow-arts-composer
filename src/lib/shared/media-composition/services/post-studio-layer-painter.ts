@@ -13,9 +13,14 @@ export interface PaintRect {
 
 /** The slice of an evaluated frame layer a painter may read. */
 export interface PaintFrame {
-  /** Continuous position in one pass: 0 is the opening pose, k the landing of move k. */
+  /**
+   * Engine convention, folded into one pass: [0, 1) holds the start
+   * placement, [k, k + 1) is move k in flight, and N + 1 is the last landing.
+   */
   sequencePosition?: number;
-  /** The beat the notation highlights: the pose most recently landed. */
+  /** Position measured at beat landings; 0 is the opening pose. */
+  carouselPosition?: number;
+  /** The beat the card highlights: the pose most recently landed. */
   displayedBeatNumber?: number;
   /** 0→1 across the clip's span in the post. */
   projectProgress: number;

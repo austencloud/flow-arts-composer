@@ -23,6 +23,7 @@
   import type { SequenceTimeMap } from "$lib/shared/media-composition/domain/sequence-time-map";
   import { createTempoGridTimeMap } from "$lib/shared/media-composition/domain/sequence-time-map";
   import {
+    BREAKDOWN_POST_LAYOUT,
     DEFAULT_POST_LAYOUT,
     POST_STUDIO_ROLE,
   } from "$lib/shared/media-composition/domain/post-studio-presets";
@@ -58,12 +59,22 @@
   import PostStudioTransport from "./PostStudioTransport.svelte";
   import PostStudioTimeline from "./PostStudioTimeline.svelte";
   import PostStudioPerformancePicker from "./PostStudioPerformancePicker.svelte";
+  import PostStudioBreakdownControls from "./PostStudioBreakdownControls.svelte";
+  import { createBeatCarouselPainter } from "$lib/shared/media-composition/services/beat-carousel-painter";
   import {
     createCatalogPerformanceSelection,
     createPostStudioSequenceRef,
     createUnmappedPerformanceSelection,
+    withLocalStepMap,
+    type LocalPerformanceInfo,
     type PostStudioPerformanceSelection,
   } from "./post-studio-performance-selection";
+  import {
+    localStepMapKey,
+    loadLocalStepMap,
+    saveLocalStepMap,
+  } from "./local-performance-step-maps";
+  import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
   import PanelGroup from "$lib/shared/panels/PanelGroup.svelte";
   import { withPostStudioPropType } from "./post-studio-prop-render-options";
   import {
@@ -159,10 +170,24 @@
   let chosenPerformance = $state<PostStudioPerformanceSelection | null>(null);
   let performanceSelectionTouched = false;
   let localPerformanceUrl: string | null = null;
+  /** The (sequence, file) storage key for the current local performance, or
+   *  null when it is not a local file. Set and cleared in lockstep with
+   *  chosenPerformance - see choosePerformanceFile and choosePerformance. */
+  let localPerformanceKey: string | null = null;
+  /** The raw legacy StepMap behind chosenPerformance.sequenceTimeMap when the
+   *  current performance is a tapped local file - StepMapEditor speaks this
+   *  shape, not the migrated one. */
+  let localStepMap: StepMap | null = null;
   let performancePickerOpen = $state(false);
   let performanceLibraryError = $state("");
   let focusedPanel = $state<FocusedPanel>("canvas");
   let timingAdvanced = $state(false);
+  /** Opens the performance picker straight into tapping the current local
+   *  file's beats, skipping its video list. Reset once the picker closes. */
+  let mapCurrentOnOpen = $state(false);
+  $effect(() => {
+    if (!performancePickerOpen) mapCurrentOnOpen = false;
+  });
   let performanceHasAudio = $state<boolean | null>(null);
   let audioInspectionVersion = 0;
   let workspaceWidth = $state(0);
@@ -210,6 +235,27 @@
       return "Assisted candidate";
     }
     return "Unmapped · even timing preview";
+  });
+
+  /**
+   * The current performance's local-file info for the picker, or null when it
+   * is a catalog video, a linked-but-uncataloged URL, or nothing chosen yet.
+   * `localPerformanceKey` is a plain (non-reactive) variable, but it is always
+   * written in the same synchronous step as `chosenPerformance` (see
+   * choosePerformanceFile, choosePerformance, applyLocalStepMap), so reading
+   * it here is safe: this derived only needs to recompute when
+   * `chosenPerformance` itself changes, and it does.
+   */
+  const localPerformanceInfo = $derived.by((): LocalPerformanceInfo | null => {
+    if (!chosenPerformance || !localPerformanceKey) return null;
+    if (chosenPerformance.duration === undefined) return null;
+    return {
+      url: chosenPerformance.url,
+      duration: chosenPerformance.duration,
+      key: localPerformanceKey,
+      label: chosenPerformance.label,
+      stepMap: localStepMap,
+    };
   });
 
   // The shared per-sequence store, not a private read: an upload or a saved
@@ -292,6 +338,19 @@
     workspaceSizes = [canvas, Math.max(inspectorFloor, available - canvas)];
   });
 
+  const handLabeling = $derived<HandLabeling | null>(
+    performanceUrl
+      ? (chosenPerformance?.handLabeling ?? DEFAULT_HAND_LABELING)
+      : null
+  );
+  const labeledCard = createHandLabeledCard({
+    getSequence: () => sequence,
+    getLabeling: () => handLabeling,
+  });
+  const displaySequence = $derived(labeledCard.sequence);
+  const carouselPainter = $derived(createBeatCarouselPainter(displaySequence));
+  const handLabelingPending = $derived(labeledCard.pending);
+
   const bindings = $derived.by((): CompositionSourceBinding[] => [
     {
       roleKey: POST_STUDIO_ROLE.performance,
@@ -321,6 +380,16 @@
               ? "preparing"
               : "missing",
       missingMessage: "No sequence motion",
+    },
+    {
+      roleKey: POST_STUDIO_ROLE.carousel,
+      kind: "beat-carousel",
+      label: "Beat carousel",
+      previewUrl: null,
+      renderMode: "painted",
+      painter: carouselPainter,
+      status: sequence.steps.length > 0 ? "ready" : "missing",
+      missingMessage: "No sequence moves",
     },
     {
       roleKey: POST_STUDIO_ROLE.card,
@@ -379,7 +448,7 @@
   // second way to say the same thing, and a worse one, since it can only offer
   // the pairings someone thought to enumerate.
   const composition = createMediaCompositionState({
-    presets: [DEFAULT_POST_LAYOUT],
+    presets: [DEFAULT_POST_LAYOUT, BREAKDOWN_POST_LAYOUT],
     initialPresetId: DEFAULT_POST_LAYOUT.id,
     getBindings: () => bindings,
     getSequenceSteps: () => sequence.steps,
@@ -430,18 +499,6 @@
    * performance on the canvas there is no labeling and the notation is
    * canonical.
    */
-  const handLabeling = $derived<HandLabeling | null>(
-    performanceUrl
-      ? (chosenPerformance?.handLabeling ?? DEFAULT_HAND_LABELING)
-      : null
-  );
-  const labeledCard = createHandLabeledCard({
-    getSequence: () => sequence,
-    getLabeling: () => handLabeling,
-  });
-  const displaySequence = $derived(labeledCard.sequence);
-  const handLabelingPending = $derived(labeledCard.pending);
-
   /**
    * Flip between mirror me and as performed. A catalog video remembers the
    * choice; a local file keeps it for this session only.
@@ -644,6 +701,8 @@
       URL.revokeObjectURL(localPerformanceUrl);
       localPerformanceUrl = null;
     }
+    localPerformanceKey = null;
+    localStepMap = null;
     performanceSelectionTouched = true;
     chosenPerformance = selection;
     performanceLibraryError = "";
@@ -662,17 +721,54 @@
     const metadata = await getVideoFileMetadata(file);
     if (localPerformanceUrl) URL.revokeObjectURL(localPerformanceUrl);
     localPerformanceUrl = URL.createObjectURL(file);
-    performanceSelectionTouched = true;
-    chosenPerformance = createUnmappedPerformanceSelection({
+    const key = localStepMapKey(sequence.id, file);
+    localPerformanceKey = key;
+    const storedMap = loadLocalStepMap(key, sequence.steps.length);
+    localStepMap = storedMap;
+    const unmapped = createUnmappedPerformanceSelection({
       id: `local-performance:${file.name}:${file.size}:${file.lastModified}`,
       url: localPerformanceUrl,
       duration: metadata.duration,
       label: file.name,
     });
+    performanceSelectionTouched = true;
+    // A prior tap on this exact file restores straight away rather than
+    // showing an even-timing preview until the user notices and re-taps.
+    chosenPerformance = storedMap
+      ? withLocalStepMap(unmapped, storedMap, sequenceRef)
+      : unmapped;
     performanceLibraryError = "";
     performancePickerOpen = false;
     composition.selectRole(POST_STUDIO_ROLE.performance);
     focusedPanel = "edit";
+  }
+
+  /**
+   * Applies a freshly tapped map to the CURRENT local performance and saves
+   * it. This updates `chosenPerformance` directly rather than going through
+   * `choosePerformance` - that function revokes `localPerformanceUrl`, which
+   * would tear down the very video this map belongs to.
+   */
+  function applyLocalStepMap(stepMap: StepMap): void {
+    if (!chosenPerformance || !localPerformanceKey) return;
+    const updated = withLocalStepMap(chosenPerformance, stepMap, sequenceRef);
+    if (updated.alignmentStatus !== "local-manual") {
+      performanceLibraryError =
+        "That timing could not be saved. The video's length could not be read.";
+      return;
+    }
+    chosenPerformance = updated;
+    localStepMap = stepMap;
+    performanceLibraryError = "";
+    saveLocalStepMap(localPerformanceKey, stepMap);
+  }
+
+  /** Opens the performance picker straight into tapping the current local
+   *  file's beats - the transport bar's "Map performance" nudge uses this
+   *  when the performance is already a local file. */
+  function requestLocalBeatTapping(): void {
+    mapCurrentOnOpen = true;
+    performancePickerOpen = true;
   }
 
   async function renderPost(): Promise<void> {
@@ -697,6 +793,7 @@
         durationSeconds: composition.durationSeconds,
         getLayers: () => composition.frameLayers,
         seek: composition.seek,
+        painters: new Map([[POST_STUDIO_ROLE.carousel, carouselPainter]]),
         originalAudioUrl:
           audioMode === "original" && canKeepOriginalAudio
             ? performanceBinding?.previewUrl
@@ -813,7 +910,9 @@
       {performanceAlignmentDetail}
       {showAdvancedToggle}
       {selected}
-      onMapPerformance={() => (performancePickerOpen = true)}
+      onMapPerformance={localPerformanceInfo
+        ? requestLocalBeatTapping
+        : () => (performancePickerOpen = true)}
       onToggleAdvanced={toggleTimingAdvanced}
     />
   {/snippet}
@@ -856,6 +955,24 @@
       inert={sharing || undefined}
       aria-label="Selected layer settings"
     >
+      <PostStudioBreakdownControls
+        layout={composition.activePresetId === BREAKDOWN_POST_LAYOUT.id
+          ? "breakdown"
+          : "split"}
+        section={composition.breakdownSection}
+        framing={composition.breakdownFraming}
+        playheadSeconds={composition.previewSeconds}
+        timingDetail={performanceAlignmentDetail}
+        onLayout={(layout) =>
+          composition.selectPreset(
+            layout === "breakdown"
+              ? BREAKDOWN_POST_LAYOUT.id
+              : DEFAULT_POST_LAYOUT.id
+          )}
+        onMarker={composition.setBreakdownMarker}
+        onFraming={composition.setBreakdownFraming}
+        onTapBeats={requestLocalBeatTapping}
+      />
       <PostStudioInspector
         sequence={displaySequence}
         {exportOptions}
@@ -990,9 +1107,13 @@
     {sequenceRef}
     bpm={composition.tempoBpm ?? 60}
     currentUrl={performanceUrl}
+    localPerformance={localPerformanceInfo}
+    {mapCurrentOnOpen}
+    tapStartSeconds={composition.breakdownSection?.startSeconds}
     onClose={() => (performancePickerOpen = false)}
     onSelect={choosePerformance}
     onChooseFile={choosePerformanceFile}
+    onLocalStepMap={applyLocalStepMap}
   />
 </section>
 

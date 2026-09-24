@@ -24,6 +24,7 @@ export const ROLE_ICON: Record<PostStudioRoleKey, string> = {
   "sequence-tunnel": "fa-solid fa-circle-notch",
   "sequence-scene-3d": "fa-solid fa-cube",
   "sequence-mandala": "fa-solid fa-asterisk",
+  "sequence-carousel": "fa-solid fa-film",
 };
 
 /** Icon for a binding kind, used by the empty-slot placeholder in the frame. */
@@ -34,6 +35,7 @@ export function sourceIcon(kind: string): string {
   if (kind === "tunnel") return "fa-solid fa-circle-notch";
   if (kind === "scene-3d") return "fa-solid fa-cube";
   if (kind === "mandala") return "fa-solid fa-asterisk";
+  if (kind === "beat-carousel") return "fa-solid fa-film";
   return "fa-solid fa-photo-film";
 }
 
