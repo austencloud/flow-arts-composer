@@ -57,7 +57,7 @@ export function normalizePropPatch<P extends PropPairFields>(
   const nextLeft =
     left ?? current.leftPropType ?? current.propType ?? PropType.STAFF;
   const nextRight =
-    right ?? current.rightPropType ?? current.propType ?? PropType.STAFF;
+    right ?? current.rightPropType ?? current.propType ?? nextLeft;
 
   if (sets(patch, "catDogMode")) {
     if (patch.catDogMode === false) out.rightPropType = nextLeft;
@@ -87,7 +87,7 @@ export function healPropPair(
   const leftPropType =
     fields.leftPropType ?? fields.propType ?? PropType.STAFF;
   const rightPropType =
-    fields.rightPropType ?? fields.propType ?? PropType.STAFF;
+    fields.rightPropType ?? fields.propType ?? leftPropType;
   return {
     leftPropType,
     rightPropType,

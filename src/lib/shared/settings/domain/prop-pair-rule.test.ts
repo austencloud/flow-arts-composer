@@ -96,6 +96,17 @@ describe("normalizePropPatch", () => {
     });
   });
 
+  it("keeps cat dog on for a single-hand patch that makes the hands equal", () => {
+    // Equal hands with cat dog on is valid, so a patch that only narrows the
+    // gap must not turn the flag off; it simply leaves catDogMode untouched.
+    expect(
+      normalizePropPatch(mixed, { rightPropType: PropType.STAFF })
+    ).toEqual({
+      rightPropType: PropType.STAFF,
+      propType: PropType.STAFF,
+    });
+  });
+
   it("is idempotent", () => {
     const once = normalizePropPatch(mixed, { catDogMode: false });
     expect(normalizePropPatch(mixed, once)).toEqual(once);
@@ -157,6 +168,15 @@ describe("healPropPair", () => {
     expect(healPropPair({ ...plain, propType: PropType.CLUB }).propType).toBe(
       PropType.STAFF
     );
+  });
+
+  it("heals a lone left hand to itself instead of a staff default", () => {
+    expect(healPropPair({ leftPropType: PropType.FAN })).toEqual({
+      leftPropType: PropType.FAN,
+      rightPropType: PropType.FAN,
+      propType: PropType.FAN,
+      catDogMode: false,
+    });
   });
 });
 

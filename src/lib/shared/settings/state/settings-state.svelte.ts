@@ -617,13 +617,12 @@ class SettingsState {
   ): Promise<void> {
     const previousValue = settingsState[key];
 
-    if (previousValue === value) {
-      return;
-    }
-
     // Pair fields carry companions (the other hand, the flag, propType), so
     // they go through the normalized patch path and are marked edited together.
-    // The analytics call still fires here, same as the single-key path below.
+    // This must run before the no-op short-circuit below: a legacy propType
+    // write that matches the stored propType (e.g. propType already reflects
+    // the left hand) can still need to fold the right hand into line, and
+    // normalizePropPatch is what handles that no-op-looking patch correctly.
     if (isPropPairKey(key)) {
       await this.updateSettings({ [key]: value } as Partial<AppSettings>);
       try {
@@ -631,6 +630,10 @@ class SettingsState {
       } catch {
         // Silent
       }
+      return;
+    }
+
+    if (previousValue === value) {
       return;
     }
 

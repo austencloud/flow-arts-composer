@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { AppSettings } from "$lib/shared/settings/domain/app-settings";
 
 vi.mock("$app/environment", () => ({
   browser: true,
@@ -94,6 +95,58 @@ describe("settings enforce the prop pair rule", () => {
       leftPropType: PropType.STAFF,
       rightPropType: PropType.FAN,
       catDogMode: true,
+      propType: PropType.STAFF,
+    });
+  });
+
+  it("folds the right hand when a legacy propType write already matches the stored value", async () => {
+    // propType already reads "staff" (it follows the left hand), so the naive
+    // previousValue === value short-circuit would treat this as a no-op and
+    // never fold the right hand back in line.
+    await settingsService.updateSettings({
+      leftPropType: PropType.STAFF,
+      rightPropType: PropType.FAN,
+      catDogMode: true,
+    });
+    expect(settingsService.settings.propType).toBe(PropType.STAFF);
+
+    await settingsService.updateSetting("propType", PropType.STAFF);
+
+    expect(settingsService.settings).toMatchObject({
+      leftPropType: PropType.STAFF,
+      rightPropType: PropType.STAFF,
+      propType: PropType.STAFF,
+    });
+  });
+
+  it("heals a remote document whose propType disagrees with the stored left hand", () => {
+    // leftPropType/rightPropType/catDogMode are excluded from the realtime
+    // merge inside applyRemoteSettings (a live snapshot must not fight a
+    // local hand pick mid-edit), but legacy propType is not excluded, so a
+    // remote document can land a propType that disagrees with the stored
+    // hands. applyRemoteSettings is private; cast past that to reach it the
+    // same way a live onSettingsChange snapshot or the initial
+    // syncFromFirebase load would.
+    const applyRemoteSettings = (
+      settingsService as unknown as {
+        applyRemoteSettings: (settings: AppSettings, userId: string) => void;
+      }
+    ).applyRemoteSettings.bind(settingsService);
+
+    applyRemoteSettings(
+      {
+        leftPropType: PropType.FAN,
+        rightPropType: PropType.FAN,
+        catDogMode: false,
+        propType: PropType.FAN,
+      } as AppSettings,
+      "test-user"
+    );
+
+    expect(settingsService.settings).toMatchObject({
+      leftPropType: PropType.STAFF,
+      rightPropType: PropType.STAFF,
+      catDogMode: false,
       propType: PropType.STAFF,
     });
   });
