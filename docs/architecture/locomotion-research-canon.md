@@ -260,6 +260,15 @@ mark drags the planted feet and the plant slides them to catch up after landing
 nearest a one-and-a-half-stride stop and scales the braking cadence so the root
 enters the brake at the same pace a destination walk does.
 
+Letting go of a stop is part of the stop. Clearing the plan, which a turn or the
+next walk does on its first frame, hands the held stance to idle or walking on
+the same spring the other clips blend on, so the outgoing weight and the
+incoming weight always sum to one. Before 2026-09-24 the clear zeroed the stop
+clip while idle was still at zero, three.js filled the gap with the bind pose
+for a frame, and every rig's ankles jumped 2.5 to 4.6 m/s (7 to 11 m/s with
+planting off) on the first frame of the shuttle's about-face.
+`tests/unit/3d/terminal-stop-release.test.ts` pins the release on every rig.
+
 ### Step turns, spin turns, pivots, and facing
 
 Turning is foot placement plus weight transfer and braking. Root yaw alone is
@@ -603,6 +612,7 @@ itself is pinned by an assertion so the claim cannot go stale silently.
 | Motion matching naturally plants feet                    | Selection only chooses from available data. Contacts, coverage, retargeting, blending, and correction remain explicit concerns.                        |
 | Inertialization or a crossfade can create a missing stop | Blending removes a small pose discontinuity. It does not create braking, final foot placement, or weight transfer.                                     |
 | Setting velocity to zero is a terminal transition        | Human gait termination is phase- and speed-dependent and can require another placement.                                                                |
+| Zeroing a clip's weight releases it                      | three.js fills any weight the actions leave missing with the bind pose. A release has to hand the weight to the next clip, not drop it.                 |
 | A scripted root can keep its speed through a stop        | The stop clip decelerates before its terminal plant. A root that does not follow its distance curve drags the declared stance feet across the floor.   |
 | Rotating the root under the avatar is a turn             | A believable turn selects support, places a foot, transfers weight, and rotates through an authored or data-covered window.                            |
 | Negative leg order is always collision                   | Intentional front and back crossovers reverse left/right foot order. Collision requires geometry and continuity evidence.                              |
