@@ -299,6 +299,21 @@ describe("tunnel presentation state", () => {
     ).toBe(true);
   });
 
+  it("keeps an equal pair saved with cat dog on", () => {
+    const snapshot = savedSnapshot();
+    snapshot.props.catDogMode = true;
+    const state = freshState({ initialSnapshot: snapshot });
+    state.attachController(controllerFor());
+    expect(state.catDog).toBe(true);
+    expect(state.capture().props.catDogMode).toBe(true);
+  });
+
+  it("ignores a hand selection while cat dog is off", () => {
+    const state = freshState();
+    state.selectPropHand("right");
+    expect(state.propHand).toBe("left");
+  });
+
   it("round-trips the flag through capture", () => {
     const state = freshState();
     state.toggleCatDog();

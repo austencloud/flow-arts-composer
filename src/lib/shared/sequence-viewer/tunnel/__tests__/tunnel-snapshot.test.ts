@@ -117,12 +117,14 @@ describe("TunnelSnapshotSchema", () => {
     });
   });
 
-  it("accepts a snapshot with props.catDogMode", () => {
+  it("keeps props.catDogMode through parsing", () => {
+    // zod strips unknown keys, so success alone would not prove the field is
+    // declared; drafts and collection tunnels depend on it surviving.
     const withFlag = {
       ...validSnapshot,
       props: { ...validSnapshot.props, catDogMode: true },
     };
-    expect(TunnelSnapshotSchema.safeParse(withFlag).success).toBe(true);
+    expect(TunnelSnapshotSchema.parse(withFlag).props.catDogMode).toBe(true);
   });
 
   it("accepts a snapshot without props.catDogMode", () => {
