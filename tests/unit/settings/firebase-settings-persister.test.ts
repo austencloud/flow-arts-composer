@@ -14,10 +14,11 @@ const firestoreDoc = vi.hoisted(() => vi.fn((_db: unknown, path: string) => ({
 })));
 const onSnapshot = vi.hoisted(() => vi.fn(() => vi.fn()));
 const setDoc = vi.hoisted(() => vi.fn(async () => {}));
+const getDoc = vi.hoisted(() => vi.fn());
 
 vi.mock("firebase/firestore", () => ({
   doc: firestoreDoc,
-  getDoc: vi.fn(),
+  getDoc,
   setDoc,
   onSnapshot,
   serverTimestamp: () => "server-time",
@@ -167,5 +168,41 @@ describe("FirebaseSettingsPersister async boundaries", () => {
     );
     // An unscoped "last mirrored prop" cache would skip user-b entirely.
     expect(paths).toContain("users/user-b");
+  });
+
+  it("mirrors a prop again after another tab moved the account off it", async () => {
+    let deliver: ((snapshot: unknown) => void) | null = null;
+    onSnapshot.mockImplementation((...args: unknown[]) => {
+      deliver = args[1] as (snapshot: unknown) => void;
+      return vi.fn();
+    });
+    const persister = new FirebaseSettingsPersister();
+    persister.onSettingsChange(() => {});
+    await flushMicrotasks();
+
+    await persister.saveSettings({ leftPropType: PropType.FAN } as never);
+    // Another tab picked club, which also moved the public mirror to club.
+    deliver?.({
+      exists: () => true,
+      data: () => ({ leftPropType: PropType.CLUB }),
+    });
+    await persister.saveSettings({ leftPropType: PropType.FAN } as never);
+
+    const mirrored = setDoc.mock.calls
+      .filter(([ref]) => (ref as { path?: string })?.path === "users/user-a")
+      .map(([, data]) => (data as { activeProp: string }).activeProp);
+    expect(mirrored).toEqual([PropType.FAN, PropType.FAN]);
+  });
+
+  it("tells a failed read apart from a missing document", async () => {
+    const persister = new FirebaseSettingsPersister();
+
+    getDoc.mockResolvedValueOnce({ exists: () => false });
+    await expect(persister.loadSettings()).resolves.toBeNull();
+
+    // Offline with nothing cached, getDoc rejects. Reading that as "no
+    // document" made the caller upload this device's copy over the account's.
+    getDoc.mockRejectedValueOnce(new Error("client is offline"));
+    await expect(persister.loadSettings()).rejects.toThrow("client is offline");
   });
 });

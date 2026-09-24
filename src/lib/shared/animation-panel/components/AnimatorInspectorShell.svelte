@@ -30,7 +30,6 @@
     artPanel = false,
     regionLabel = "Animation controls",
     pageOnly = false,
-    onPageHeight,
     onNavMount,
     onScrollMount,
   }: {
@@ -53,33 +52,11 @@
      *  (a dock under its stage, a panel with its own heading) gets the page
      *  alone: no rail, no page title and no sidebar surface of its own. */
     pageOnly?: boolean;
-    /** A host that sizes its panel to the page it shows gets the page's own
-     *  height here, or null for a page laid out in whatever height it is
-     *  handed (`fillBody`). The shell's layout does not change: the host sets
-     *  the height, and a page taller than that scrolls as it always has. */
-    onPageHeight?: (height: number | null) => void;
     onNavMount?: (element: HTMLElement | null) => void;
     onScrollMount?: (element: HTMLElement | null) => void;
   } = $props();
 
   let panelScrollElement = $state<HTMLElement>();
-
-  // Each keyed page reports for itself while it is the active one, so the
-  // page flying out cannot overwrite the height of the page flying in.
-  function reportPageHeight(pageId: T | null) {
-    return (inner: HTMLElement) => {
-      if (!onPageHeight || pageId !== activeId) return;
-      if (fillBody) {
-        onPageHeight(null);
-        return;
-      }
-      const observer = new ResizeObserver(() => {
-        if (pageId === activeId) onPageHeight?.(inner.offsetHeight);
-      });
-      observer.observe(inner, { box: "border-box" });
-      return () => observer.disconnect();
-    };
-  }
 
   $effect(() => {
     onScrollMount?.(panelScrollElement ?? null);
@@ -129,7 +106,6 @@
                   class="panel-center-inner"
                   class:fill-body={fillBody}
                   class:fluid-body={fluidBody}
-                  {@attach reportPageHeight(activeId)}
                 >
                   {#if !pageOnly}
                     <h2 class="panel-title">{activeLabel}</h2>

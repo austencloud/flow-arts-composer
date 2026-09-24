@@ -196,18 +196,20 @@ dialog.drawer-content {
   left: 0;
   right: 0;
   width: 100%;
-  max-width: 100%;
+  /* Consumers can cap sheet width via --sheet-max-width. Both edges are
+     pinned and the side margins are auto, so a capped sheet centers. */
+  max-width: var(--sheet-max-width, 100%);
   /* Consumers can cap sheet height via --sheet-max-height (replaces
      per-consumer `max-height: …vh !important` skins). */
   max-height: var(--sheet-max-height, 100vh);
-  max-height: var(--sheet-max-height, 100dvh); /* Modern: iPhone browser chrome */
+  /* Modern: iPhone browser chrome */
+  max-height: var(--sheet-max-height, 100dvh);
   /* Prevent bottom sheets from appearing as tiny slivers on mobile.
-     Components can override with their own height/max-height if they
-     intentionally want a shorter sheet (e.g. animation settings). */
-  min-height: 50vh;
-  min-height: 50dvh;
+     A sheet that sizes to its own content sets --sheet-min-height. */
+  min-height: var(--sheet-min-height, 50vh);
+  min-height: var(--sheet-min-height, 50dvh);
 
-  margin: 0;
+  margin: 0 auto;
   border-top-left-radius: var(
     --sheet-border-radius-top-left,
     var(--sheet-radius-large, 20px)
@@ -587,7 +589,6 @@ dialog.drawer-content {
     opacity: 0;
   }
 }
-
 
 /* Spring timing function - approximates spring physics */
 .drawer-content.spring-animation {
