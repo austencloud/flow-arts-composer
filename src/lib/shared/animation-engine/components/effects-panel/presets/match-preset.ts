@@ -56,6 +56,25 @@ export function configMatchesPatch(
 }
 
 /**
+ * The look the user clicked (`activePresets[effect]`), while the live config
+ * still carries its patch; otherwise null. Value matching alone can't tell a
+ * clicked look from the factory default when the two are equal (Bubbles,
+ * Smoke and Silk Classic), so it lit the Original chip after Classic.
+ */
+export function pickedPresetId(
+  group: EffectPresetGroup,
+  effectConfig: Record<string, unknown>,
+  picked: string | null | undefined,
+): string | null {
+  if (!picked) return null;
+  const preset = (group.presets as EffectPreset[]).find((p) => p.id === picked);
+  if (!preset?.patch || preset.resolvePatch) return null;
+  return configMatchesPatch(effectConfig, preset.patch as Record<string, unknown>)
+    ? picked
+    : null;
+}
+
+/**
  * The id of the preset whose static patch the live `effectConfig` matches, or
  * null when none does. First match wins (preset ids are unique; patches don't
  * overlap on every field, so at most one matches in practice).
