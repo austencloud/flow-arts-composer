@@ -691,7 +691,6 @@
   }
 
   .credit-footnote,
-  .relationship-note,
   .media-footnote {
     margin: 1.25rem 0 0;
     color: var(--theme-text-dim, #aab4c3);
