@@ -95,10 +95,11 @@ export const DEFAULT_EFFECTS_CONFIG: EffectsConfig = {
     afterglow: 0.5,
   },
 
-  // Goo (renamed from water 2026-06-28). surfaceTension is the Viscosity knob:
-  // 0 is watery and sheds drips, 1 congeals and clings. motionEmission is
-  // Amount (stream mass). clarity/spewStyle/ambientEmission are inert legacy
-  // droplet knobs kept for shape stability.
+  // Goo (renamed from water 2026-06-28). In 2D, surfaceTension is the Viscosity
+  // knob: 0 is watery and sheds drips, 1 congeals and clings. motionEmission is
+  // Amount (stream mass). ambientEmission and clarity only reach the 3D
+  // viewer's goo, and spewStyle is read by nothing; it stays for shape
+  // stability. See GooIntent for the per-renderer split.
   goo: {
     ambientEmission: 0.4,
     motionEmission: 0.6,

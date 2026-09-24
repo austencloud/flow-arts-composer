@@ -222,11 +222,16 @@ export const EFFECT_CONTROLS: Record<EffectId, ControlDescriptor[]> = {
       { value: "blood", label: "Blood" }, { value: "spirit", label: "Spirit" }, { value: "custom", label: "Custom" },
     ]),
     slider("goo", "intensity", "Intensity", { tier: "primary" }),
+    // This list feeds the 2D panels and the 3D viewer, but the two goo
+    // renderers read different fields (see GooIntent). Ambient only changes
+    // the 3D viewer; the 2D canvas ignores it. Viscosity (surfaceTension) is
+    // the reverse: it sets the 2D drip rate, body length and taper, 3D ignores
+    // it, and it is not listed here, so these surfaces can change it only by
+    // picking a look. clarity (3D-only opacity) and spewStyle (read by
+    // nothing) are not listed either.
     slider("goo", "ambientEmission", "Ambient", { tier: "primary" }),
     slider("goo", "motionEmission", "Motion", { tier: "primary" }),
     { id: "goo-track", label: "Track", type: "segmented", field: "trackingMode", options: TRACK_OPTS, tier: "tracking" },
-    // spewStyle/clarity/surfaceTension trimmed: droplet-era fields the current
-    // goo renderer ignores (inert), and the flat panel already omitted them.
   ],
   bubbles: [
     ...paletteColor("bubbles", [
