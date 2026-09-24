@@ -179,6 +179,9 @@
                     {handLabeling}
                     {qrSequence}
                     sequencePosition={layer.sequencePosition}
+                    sequencePassIndex={layer.sequencePassIndex}
+                    animationTimeSeconds={layer.animationTimeSeconds}
+                    breakdownMotion={region.id === "strip-animation"}
                     displayedBeatNumber={layer.displayedBeatNumber}
                     clipId={layer.clipId}
                     transform={layer.transform}

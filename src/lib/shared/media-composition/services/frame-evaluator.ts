@@ -62,6 +62,8 @@ export interface EvaluatedFrameLayer {
    * in flight, whatever convention the time map counted in.
    */
   sequencePosition?: number;
+  /** Zero-based repetition of the sequence before its position is folded. */
+  sequencePassIndex?: number;
   /** Arrival-counted position for the beat carousel: 0 is the start pose. */
   carouselPosition?: number;
   animationTimeSeconds?: number;
@@ -229,12 +231,19 @@ export function evaluatePresetFrame(
   // counting past the sequence's length, so it is folded back into one pass
   // here - before anything derives from it, so the card, the animation clock,
   // and the animation layer all cycle together.
-  const mappedPosition = alignment
-    ? wrapSequencePosition(
-        mediaTimeToSequencePosition(alignment.timeMap, mappedTime),
-        beatsPerPass
-      )
+  const rawPosition = alignment
+    ? mediaTimeToSequencePosition(alignment.timeMap, mappedTime)
     : undefined;
+  const sequencePassIndex =
+    rawPosition !== undefined &&
+    Number.isFinite(rawPosition) &&
+    beatsPerPass > 0
+      ? Math.max(0, Math.floor((Math.max(0, rawPosition) - 1) / beatsPerPass))
+      : 0;
+  const mappedPosition =
+    rawPosition !== undefined
+      ? wrapSequencePosition(rawPosition, beatsPerPass)
+      : undefined;
   // The animation engine counts moves in flight, so a map that counts
   // arrivals is converted before the engine sees it. Skipping this ran the
   // animation exactly one move behind the performer.
@@ -323,6 +332,7 @@ export function evaluatePresetFrame(
         ...(clip.useResolvedTimeMap && sequencePosition !== undefined
           ? {
               sequencePosition,
+              sequencePassIndex,
               carouselPosition: mappedPosition,
               animationTimeSeconds,
               displayedBeatNumber: cardBeatNumber,

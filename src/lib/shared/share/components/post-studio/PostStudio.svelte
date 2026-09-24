@@ -21,7 +21,11 @@
   import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
   import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
   import type { SequenceTimeMap } from "$lib/shared/media-composition/domain/sequence-time-map";
-  import { createTempoGridTimeMap } from "$lib/shared/media-composition/domain/sequence-time-map";
+  import {
+    createBpmTimeMap,
+    createSectionTimeMap,
+    createTempoGridTimeMap,
+  } from "$lib/shared/media-composition/domain/sequence-time-map";
   import {
     BREAKDOWN_POST_LAYOUT,
     DEFAULT_POST_LAYOUT,
@@ -61,6 +65,7 @@
   import PostStudioTimeline from "./PostStudioTimeline.svelte";
   import PostStudioPerformancePicker from "./PostStudioPerformancePicker.svelte";
   import PostStudioBreakdownControls from "./PostStudioBreakdownControls.svelte";
+  import PostStudioBreakdownDetail from "./PostStudioBreakdownDetail.svelte";
   import { createBeatCarouselPainter } from "$lib/shared/media-composition/services/beat-carousel-painter";
   import {
     createCatalogPerformanceSelection,
@@ -75,6 +80,11 @@
     loadLocalStepMap,
     saveLocalStepMap,
   } from "./local-performance-step-maps";
+  import {
+    loadBpmAlignment,
+    saveBpmAlignment,
+    type BpmAlignment,
+  } from "./local-performance-bpm-alignments";
   import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
   import PanelGroup from "$lib/shared/panels/PanelGroup.svelte";
   import { withPostStudioPropType } from "./post-studio-prop-render-options";
@@ -83,7 +93,7 @@
     setPostStudioArtContext,
   } from "./post-studio-art-context.svelte";
   import ExportTakeover from "$lib/shared/video-export/components/ExportTakeover.svelte";
-  import { growFade } from "$lib/shared/transitions/motion";
+  import { flyFade, growFade } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
 
   type FocusedPanel = "canvas" | "edit" | "timing";
@@ -183,6 +193,8 @@
    *  current performance is a tapped local file - StepMapEditor speaks this
    *  shape, not the migrated one. */
   let localStepMap: StepMap | null = null;
+  let bpmAlignment = $state<BpmAlignment | null>(null);
+  let bpmAlignmentKey = $state<string | null>(null);
   let performancePickerOpen = $state(false);
   let performanceLibraryError = $state("");
   let focusedPanel = $state<FocusedPanel>("canvas");
@@ -228,8 +240,50 @@
   const resolvedSequenceTimeMap = $derived(
     chosenPerformance ? chosenPerformance.sequenceTimeMap : sequenceTimeMap
   );
+  const performanceAlignmentKey = $derived(
+    chosenPerformance
+      ? (localPerformanceKey ??
+          `${sequence.id}:catalog:${chosenPerformance.videoId ?? chosenPerformance.id}`)
+      : null
+  );
+  const activeBpmAlignment = $derived(
+    bpmAlignmentKey === performanceAlignmentKey ? bpmAlignment : null
+  );
+  $effect(() => {
+    const key = performanceAlignmentKey;
+    bpmAlignmentKey = key;
+    bpmAlignment = key ? loadBpmAlignment(key) : null;
+  });
+  const bpmTimeMap = $derived.by(() => {
+    const alignment = activeBpmAlignment;
+    const duration = performanceDuration;
+    if (
+      !performanceUrl ||
+      !alignment ||
+      alignment.firstBeatSeconds === null ||
+      !duration
+    ) {
+      return null;
+    }
+    try {
+      return createBpmTimeMap({
+        sequenceRef,
+        mediaSourceId: chosenPerformance?.id ?? `performance:${sequence.id}`,
+        mediaDurationSeconds: duration,
+        motionDurations: sequence.steps.map((step) => step.duration ?? 1),
+        bpm: alignment.bpm,
+        firstBeatSeconds: alignment.firstBeatSeconds,
+      });
+    } catch {
+      return null;
+    }
+  });
   const performanceAlignmentDetail = $derived.by(() => {
     if (!performanceUrl) return null;
+    if (bpmTimeMap && activeBpmAlignment) {
+      return `${activeBpmAlignment.bpm} BPM · Beat 1 aligned`;
+    }
+    if (activeBpmAlignment) return "BPM set · align Beat 1 at the playhead";
     if (chosenPerformance) return chosenPerformance.alignmentDetail;
     if (sequenceTimeMap?.source === "manual") return "Saved manual map";
     if (
@@ -278,8 +332,8 @@
 
   /**
    * The performance to open on: whichever video the sequence links to, else the
-   * newest one carrying a timing map. A video with no map would boot the studio
-   * into an even-timing preview, which looks synced for about a second.
+   * newest one carrying a timing map. A linked video can also open before its
+   * timing is aligned, so the performer can use the playhead to set Beat 1.
    */
   const libraryPerformance = $derived.by(() => {
     const store = videoLibrary;
@@ -457,18 +511,31 @@
     initialPresetId: DEFAULT_POST_LAYOUT.id,
     getBindings: () => bindings,
     getSequenceSteps: () => sequence.steps,
-    getSequenceTimeMap: (durationSeconds) =>
-      resolvedSequenceTimeMap ??
-      createTempoGridTimeMap({
+    getSequenceTimeMap: (durationSeconds, context) => {
+      if (bpmTimeMap) return bpmTimeMap;
+      if (resolvedSequenceTimeMap) return resolvedSequenceTimeMap;
+      const mediaSourceId =
+        chosenPerformance?.id ??
+        (performanceUrl
+          ? `performance:${sequence.id}`
+          : `animation:${sequence.id}`);
+      const motionDurations = sequence.steps.map((step) => step.duration ?? 1);
+      if (context.section) {
+        return createSectionTimeMap({
+          sequenceRef,
+          mediaSourceId,
+          startSeconds: context.section.startSeconds,
+          endSeconds: context.section.endSeconds,
+          motionDurations,
+        });
+      }
+      return createTempoGridTimeMap({
         sequenceRef,
-        mediaSourceId:
-          chosenPerformance?.id ??
-          (performanceUrl
-            ? `performance:${sequence.id}`
-            : `animation:${sequence.id}`),
+        mediaSourceId,
         mediaDurationSeconds: durationSeconds,
-        motionDurations: sequence.steps.map((step) => step.duration ?? 1),
-      }),
+        motionDurations,
+      });
+    },
     requestSource: (roleKey) => {
       if (roleKey === POST_STUDIO_ROLE.performance) {
         performancePickerOpen = true;
@@ -479,15 +546,18 @@
   });
   setMediaCompositionContext(composition);
 
-  // The default arrangement is animation over card, because that is the one
-  // every sequence can draw. A sequence that HAS mapped footage has something
-  // better to open on, and it resolves a moment after mount rather than in time
-  // to seed the preset — so the top slot is swapped once, on arrival, and never
-  // again. Anything the user does to the slots afterwards stands.
+  // The default arrangement is animation over card, because every sequence can
+  // draw it. A linked performance or one with saved timing opens in the top
+  // slot once it arrives. The user can then align an unmapped linked take.
   let bootedToPerformance = false;
   $effect(() => {
     if (bootedToPerformance || performanceSelectionTouched) return;
-    if (!libraryPerformance?.beatMap) return;
+    if (
+      !libraryPerformance ||
+      (!libraryPerformance.beatMap &&
+        libraryPerformance.videoUrl !== sequence.performanceVideoUrl)
+    )
+      return;
     bootedToPerformance = true;
     composition.setSlotSource("top", POST_STUDIO_ROLE.performance);
   });
@@ -696,6 +766,57 @@
     selectedPropType = propType;
   }
 
+  function updateBpmAlignment(next: BpmAlignment | null): void {
+    const key = performanceAlignmentKey;
+    bpmAlignmentKey = key;
+    bpmAlignment = next;
+    if (key) saveBpmAlignment(key, next);
+  }
+
+  function setAlignedBpm(bpm: number | null): void {
+    if (bpm === null) {
+      updateBpmAlignment(null);
+      return;
+    }
+    if (!Number.isFinite(bpm) || bpm < 20 || bpm > 300) return;
+    updateBpmAlignment({
+      bpm,
+      firstBeatSeconds: activeBpmAlignment?.firstBeatSeconds ?? null,
+    });
+  }
+
+  function alignFirstBeat(): void {
+    const alignment = activeBpmAlignment;
+    if (!alignment || !performanceUrl || !performanceDuration) return;
+    composition.pause();
+    const trimIn =
+      composition.sourceTrimFor(POST_STUDIO_ROLE.performance)?.inSeconds ?? 0;
+    updateBpmAlignment({
+      bpm: alignment.bpm,
+      firstBeatSeconds: Math.min(
+        performanceDuration,
+        composition.previewSeconds + trimIn
+      ),
+    });
+  }
+
+  function nudgeFirstBeat(deltaSeconds: number): void {
+    const alignment = activeBpmAlignment;
+    if (
+      !alignment ||
+      alignment.firstBeatSeconds === null ||
+      !performanceDuration
+    )
+      return;
+    updateBpmAlignment({
+      bpm: alignment.bpm,
+      firstBeatSeconds: Math.min(
+        performanceDuration,
+        Math.max(0, alignment.firstBeatSeconds + deltaSeconds)
+      ),
+    });
+  }
+
   function fixFirstMissingSource(): void {
     if (!firstMissingSource) return;
     composition.requestSource(firstMissingSource.roleKey);
@@ -764,6 +885,7 @@
     }
     chosenPerformance = updated;
     localStepMap = stepMap;
+    updateBpmAlignment(null);
     performanceLibraryError = "";
     saveLocalStepMap(localPerformanceKey, stepMap);
   }
@@ -885,6 +1007,26 @@
   onDestroy(() => {
     if (frameRequest !== null) cancelAnimationFrame(frameRequest);
   });
+
+  function selectPostLayout(layout: "split" | "breakdown") {
+    const previousSeconds = composition.previewSeconds;
+    composition.selectPreset(
+      layout === "breakdown" ? BREAKDOWN_POST_LAYOUT.id : DEFAULT_POST_LAYOUT.id
+    );
+    if (layout === "breakdown") {
+      const section = composition.breakdownSection;
+      if (section) {
+        composition.seek(
+          previousSeconds >= section.startSeconds &&
+            previousSeconds < section.endSeconds
+            ? previousSeconds
+            : section.startSeconds + 0.05
+        );
+        return;
+      }
+    }
+    composition.seek(previousSeconds);
+  }
 </script>
 
 <section
@@ -932,7 +1074,13 @@
 
   {#snippet canvasPanel()}
     <main class="canvas-panel" aria-label="Post canvas">
-      <div class="canvas-stage">
+      <div
+        class="canvas-stage"
+        class:with-detail={composition.activePresetId ===
+          BREAKDOWN_POST_LAYOUT.id &&
+          !previewTarget &&
+          !sharing}
+      >
         <div
           class="post-studio-preview-host"
           inert={!!previewTarget}
@@ -950,6 +1098,17 @@
             }}
           />
         </div>
+        {#if composition.activePresetId === BREAKDOWN_POST_LAYOUT.id && !previewTarget && !sharing}
+          <div
+            class="breakdown-detail-host"
+            transition:flyFade={{ duration: DURATION.fast, x: 8 }}
+          >
+            <PostStudioBreakdownDetail
+              sequence={displaySequence}
+              cardRenderOptions={synchronizedCardRenderOptions}
+            />
+          </div>
+        {/if}
       </div>
       <!-- Docked under the frame it drives, exactly as the 2D animation canvas
            and the 3D viewer dock the same bar under theirs. It is the same
@@ -982,15 +1141,17 @@
         framing={composition.breakdownFraming}
         playheadSeconds={composition.previewSeconds}
         timingDetail={performanceAlignmentDetail}
-        onLayout={(layout) =>
-          composition.selectPreset(
-            layout === "breakdown"
-              ? BREAKDOWN_POST_LAYOUT.id
-              : DEFAULT_POST_LAYOUT.id
-          )}
+        alignedBpm={activeBpmAlignment?.bpm ?? null}
+        firstBeatSeconds={activeBpmAlignment?.firstBeatSeconds ?? null}
+        hasPerformance={!!performanceUrl}
+        onLayout={selectPostLayout}
         onMarker={composition.setBreakdownMarker}
         onFraming={composition.setBreakdownFraming}
         onTapBeats={requestLocalBeatTapping}
+        onBpmChange={setAlignedBpm}
+        onAlignFirstBeat={alignFirstBeat}
+        onNudgeFirstBeat={nudgeFirstBeat}
+        onClearBpmAlignment={() => updateBpmAlignment(null)}
       />
       <PostStudioInspector
         sequence={displaySequence}
@@ -1216,14 +1377,10 @@
   .inspector-rail {
     display: grid;
     grid-area: inspector;
-    /* `minmax(0, 1fr)` alone capped the inspector at whatever the delivery
-       panel left over and let its contents spill out on top of that panel — the
-       inspector is a grid with visible overflow, so nothing clipped or scrolled
-       it. The min-content floor lets it size to its controls and hands the
-       scrolling to this rail, which already asks for it below. One scroller,
-       no overlap. */
-    grid-template-rows: minmax(min-content, 1fr);
-    align-content: stretch;
+    /* Both sections keep their natural height. Stretching the first row to fill
+       the rail turned each Breakdown control into a huge, disconnected band. */
+    grid-template-rows: max-content max-content;
+    align-content: start;
     gap: var(--studio-panel-gap);
     min-width: 0;
     min-height: 0;
@@ -1233,7 +1390,7 @@
     overscroll-behavior: contain;
     border-left: 1px solid var(--theme-stroke);
     background: var(--theme-panel-bg);
-    scrollbar-width: none;
+    scrollbar-width: thin;
   }
 
   .inspector-rail.external {
@@ -1258,7 +1415,6 @@
     height: auto;
   }
 
-  .inspector-rail::-webkit-scrollbar,
   .timeline-dock::-webkit-scrollbar {
     display: none;
   }
@@ -1284,6 +1440,7 @@
   }
 
   .canvas-stage {
+    position: relative;
     container-name: post-studio-stage;
     container-type: size;
     display: grid;
@@ -1302,6 +1459,35 @@
     height: 100%;
     min-width: 0;
     min-height: 0;
+  }
+
+  /* The post and its larger strip detail form one centered workspace. The
+     detail is editor-only; the 9:16 post remains the exported composition. */
+  .canvas-stage.with-detail {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: clamp(1rem, 2.5cqi, 2rem);
+  }
+
+  .breakdown-detail-host {
+    display: none;
+    flex: 0 0 clamp(15rem, 28cqi, 21rem);
+    height: min(100%, 42rem);
+    min-height: 0;
+    align-items: center;
+    pointer-events: none;
+  }
+
+  @container post-studio-stage (min-width: 55rem) and (min-aspect-ratio: 6/5) {
+    .canvas-stage.with-detail .post-studio-preview-host {
+      flex: 0 1 auto;
+      width: min(100%, calc((100cqh - 3rem) * 0.5625));
+    }
+
+    .breakdown-detail-host {
+      display: flex;
+    }
   }
 
   .timeline-dock {

@@ -1,6 +1,10 @@
-import { describe, expect, it } from "vitest";
+// @vitest-environment jsdom
+import { describe, expect, it, vi } from "vitest";
 import { POST_STUDIO_PRESETS } from "$lib/shared/media-composition/domain/post-studio-presets";
-import { resolveFrameLayerGeometry } from "$lib/shared/media-composition/services/post-studio-frame-compositor";
+import {
+  resolveFrameLayerGeometry,
+  waitForPictographMotion,
+} from "$lib/shared/media-composition/services/post-studio-frame-compositor";
 
 const preset = POST_STUDIO_PRESETS.find(
   (candidate) => candidate.id === "performance-breakdown"
@@ -78,5 +82,45 @@ describe("resolveFrameLayerGeometry", () => {
 
     expect(geometry.translateX).toBeCloseTo(0);
     expect(geometry.translateY).toBeCloseTo(0);
+  });
+});
+
+describe("waitForPictographMotion", () => {
+  it("waits through a remount and ignores a stale, unready pictograph", async () => {
+    const createDiv = () =>
+      document.createElementNS(
+        "http://www.w3.org/1999/xhtml",
+        "div"
+      ) as HTMLElement;
+    const layer = createDiv();
+    const pending = waitForPictographMotion(layer, 1_000);
+    const motion = createDiv();
+    motion.dataset.pictographMotion = "";
+    const container = createDiv();
+    container.dataset.pictographRenderReady = "false";
+    motion.append(container);
+    layer.append(motion);
+    vi.spyOn(motion, "getBoundingClientRect").mockReturnValue({
+      width: 200,
+      height: 200,
+    } as DOMRect);
+
+    let resolved = false;
+    void pending.then(() => (resolved = true));
+    await Promise.resolve();
+    expect(resolved).toBe(false);
+
+    container.dataset.pictographRenderReady = "true";
+    await expect(pending).resolves.toMatchObject({ element: motion });
+  });
+
+  it("fails with a bounded readiness error", async () => {
+    const layer = document.createElementNS(
+      "http://www.w3.org/1999/xhtml",
+      "div"
+    ) as HTMLElement;
+    await expect(waitForPictographMotion(layer, 10)).rejects.toThrow(
+      "The pictograph motion layer was not ready to render."
+    );
   });
 });
