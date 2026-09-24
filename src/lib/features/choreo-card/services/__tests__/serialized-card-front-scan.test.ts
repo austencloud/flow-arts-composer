@@ -6,6 +6,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PRINT_QR_RENDER_SIZE } from "@tka/render-composition";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { buildSerializedCardUrl } from "$lib/shared/qr/domain/physical-card";
 import type { QRCodeGenerator } from "$lib/shared/qr/services/qr-code-generator";
 import type { TkaQrDetector } from "$lib/shared/qr/services/tka-qr-detector";
 import {
@@ -37,10 +38,13 @@ const BLEED = 36;
 
 /** What the deck's non-serialized front already carries in the QR cell. */
 const SHARED_URL = "HTTPS://TKA.RUN/K7QM?bp=staff&rp=staff";
+/** Cards printed before the props moved to the physical card record. */
 const TYPICAL_URL = "https://tka.run/K7QM?bp=staff&rp=staff&pid=k7Qm2XpR9aBc";
 /** Six-character code plus the longest prop name on both hands. */
 const LONGEST_URL =
   "https://tka.run/K7QM2X?bp=bigdoublecontactball&rp=bigdoublecontactball&pid=k7Qm2XpR9aBc";
+/** What serialized cards carry now: the code and physical ID only. */
+const SERIALIZED_URL = buildSerializedCardUrl("K7QM2X", "k7Qm2XpR9aBc");
 
 function sequence(stepCount: number): SequenceData {
   return {
@@ -119,6 +123,13 @@ const CASES: ScanCase[] = [
     stepCount: 8,
     layout: bestFitLayout(8),
     url: TYPICAL_URL,
+    printable: true,
+  },
+  {
+    name: "8-step best-fit column with the current serialized URL",
+    stepCount: 8,
+    layout: bestFitLayout(8),
+    url: SERIALIZED_URL,
     printable: true,
   },
   {

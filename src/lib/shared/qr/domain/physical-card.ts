@@ -5,6 +5,7 @@
  * export. It does not claim that a printer produced exactly one piece of paper:
  * reprinting the same downloaded file necessarily reproduces the same ID.
  */
+import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 
 const PHYSICAL_CARD_ALPHABET =
   "23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
@@ -14,6 +15,12 @@ const PRINT_RUN_ALPHABET =
 export const PHYSICAL_CARD_ID_LENGTH = 12;
 export const PRINT_RUN_ID_LENGTH = 20;
 export const PHYSICAL_CARD_SCHEMA_VERSION = 1 as const;
+
+/**
+ * Origin of every printed card URL; the tka.run Worker forwards it to /q.
+ * Uppercase like every code URL the shortcode manager prints.
+ */
+export const SERIALIZED_CARD_URL_ORIGIN = "HTTPS://TKA.RUN";
 
 const PHYSICAL_CARD_ID_PATTERN =
   /^[23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{12}$/;
@@ -33,6 +40,11 @@ export interface PhysicalCardIssueCard {
   /** One-based position in this exported artwork set. Deck manifests may use a
    *  different authored order when print grouping is enabled. */
   printPosition: number;
+  /** The card's printed prop pair. Serialized QRs no longer carry `bp`/`rp`,
+   *  so a scan reads them back from the physical card record. Null when the
+   *  export did not choose one (the scan then falls back to the shortcode). */
+  leftPropType: PropType | null;
+  rightPropType: PropType | null;
 }
 
 export interface PhysicalCardIssueRequest {
@@ -111,6 +123,21 @@ function boundedString(
     };
   }
   return { ok: true, value: normalized };
+}
+
+const PROP_TYPE_VALUES = new Set<string>(Object.values(PropType));
+
+/** A stored or submitted prop value, only when it is a current PropType. */
+export function readPhysicalCardPropType(value: unknown): PropType | null {
+  return typeof value === "string" && PROP_TYPE_VALUES.has(value)
+    ? (value as PropType)
+    : null;
+}
+
+/** Absent or null means "not chosen"; anything else must be a PropType. */
+function optionalPropType(value: unknown): PropType | null | undefined {
+  if (value === undefined || value === null) return null;
+  return readPhysicalCardPropType(value) ?? undefined;
 }
 
 export function validatePhysicalCardIssueRequest(
@@ -229,6 +256,14 @@ export function validatePhysicalCardIssueRequest(
       };
     }
     printPositions.add(printPosition);
+    const leftPropType = optionalPropType(card.leftPropType);
+    if (leftPropType === undefined) {
+      return { ok: false, error: `cards[${index}].leftPropType is invalid` };
+    }
+    const rightPropType = optionalPropType(card.rightPropType);
+    if (rightPropType === undefined) {
+      return { ok: false, error: `cards[${index}].rightPropType is invalid` };
+    }
 
     cards.push({
       cardIndex: index,
@@ -236,6 +271,8 @@ export function validatePhysicalCardIssueRequest(
       sequenceId: sequenceId.value,
       word: word.value,
       printPosition,
+      leftPropType,
+      rightPropType,
     });
   }
 
@@ -373,15 +410,21 @@ export function isDeviceId(value: unknown): value is string {
   return typeof value === "string" && DEVICE_ID_PATTERN.test(value);
 }
 
-export function withPhysicalCardId(
-  shortUrl: string,
+/**
+ * The URL a serialized card's QR encodes: the short code and the card's
+ * identity, nothing else. Its length no longer depends on the card's props
+ * (they live on `physicalCards/{pid}`), so every serialized QR has the same,
+ * smallest symbol version.
+ */
+export function buildSerializedCardUrl(
+  shortCode: string,
   physicalCardId: string
 ): string {
+  if (!isShortCode(shortCode)) {
+    throw new Error("Invalid short code");
+  }
   if (!isPhysicalCardId(physicalCardId)) {
     throw new Error("Invalid physical card ID");
   }
-
-  const url = new URL(shortUrl);
-  url.searchParams.set("pid", physicalCardId);
-  return url.toString();
+  return `${SERIALIZED_CARD_URL_ORIGIN}/${shortCode}?pid=${physicalCardId}`;
 }

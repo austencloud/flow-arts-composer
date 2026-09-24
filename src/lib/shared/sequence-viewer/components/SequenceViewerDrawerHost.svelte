@@ -23,6 +23,12 @@
   } from "../state/sequence-viewer-overlay-state.svelte";
   import { getShortCodeManager } from "$lib/shared/qr/get-short-code-manager";
   import { resolveScanPropConfig } from "$lib/shared/qr/services/scan-prop-resolver";
+  import {
+    fetchPhysicalCardProps,
+    physicalCardIdNeedingProps,
+  } from "$lib/shared/qr/services/physical-card-props";
+  import { isNative } from "$lib/shared/platform/services/platform-detector";
+  import { APP_DOMAIN } from "../../../../config/domains";
   import { authState } from "$lib/shared/auth/state/auth-state.svelte";
   import { updateSettings } from "$lib/shared/application/state/app-state.svelte";
   import { parsePropsFromURL } from "$lib/shared/navigation/services/sequence-encoder";
@@ -226,6 +232,19 @@
     let openedSuccessfully = false;
     let failureReason: string | null = null;
     try {
+      // A serialized card's link names only code + pid; its props live on the
+      // physical card record. Fetch them alongside the shortcode, not after.
+      const physicalCardId = physicalCardIdNeedingProps(
+        code,
+        new URL(window.location.href).searchParams
+      );
+      const physicalCardPropsLookup = physicalCardId
+        ? fetchPhysicalCardProps(code, physicalCardId, {
+            // The app's bundle is local, so the lookup goes to the site.
+            origin: isNative() ? APP_DOMAIN : "",
+          })
+        : Promise.resolve(null);
+
       markNativeScanTransitionStage(code, "shortcode-resolve-start");
       const manager = getShortCodeManager();
       const { sequence: resolved, record } =
@@ -282,6 +301,7 @@
       const propConfig = resolveScanPropConfig(
         hydrated,
         parsePropsFromURL(currentUrl.searchParams),
+        await physicalCardPropsLookup,
         record
       );
       await updateSettings({

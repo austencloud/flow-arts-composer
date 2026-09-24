@@ -12,7 +12,8 @@ import {
   validateCardScanIngestRequest,
   validatePhysicalCardCompletionRequest,
   validatePhysicalCardIssueRequest,
-  withPhysicalCardId,
+  buildSerializedCardUrl,
+  readPhysicalCardPropType,
 } from "./physical-card";
 
 function deterministicBytes(bytes: Uint8Array): Uint8Array {
@@ -42,20 +43,33 @@ describe("physical card identity", () => {
     expect(isDeviceId("browser-1")).toBe(false);
   });
 
-  it("adds pid without losing prop or view parameters", () => {
+  it("builds a serialized card URL from only the code and physical ID", () => {
     const physicalCardId = createPhysicalCardId(deterministicBytes);
-    const result = new URL(
-      withPhysicalCardId(
-        "https://tka.run/q/AB12?bp=P&rp=S&vm=hsb",
-        physicalCardId
-      )
-    );
+    const printed = buildSerializedCardUrl("AB12", physicalCardId);
+    const result = new URL(printed);
 
-    expect(result.pathname).toBe("/q/AB12");
-    expect(result.searchParams.get("bp")).toBe("P");
-    expect(result.searchParams.get("rp")).toBe("S");
-    expect(result.searchParams.get("vm")).toBe("hsb");
-    expect(result.searchParams.get("pid")).toBe(physicalCardId);
+    expect(printed).toBe(`HTTPS://TKA.RUN/AB12?pid=${physicalCardId}`);
+    expect(result.origin).toBe("https://tka.run");
+    expect(result.pathname).toBe("/AB12");
+    expect([...result.searchParams.keys()]).toEqual(["pid"]);
+  });
+
+  it("refuses to build a card URL around a malformed identity", () => {
+    const physicalCardId = createPhysicalCardId(deterministicBytes);
+
+    expect(() => buildSerializedCardUrl("ab12", physicalCardId)).toThrow(
+      "Invalid short code"
+    );
+    expect(() => buildSerializedCardUrl("AB12", "too-short")).toThrow(
+      "Invalid physical card ID"
+    );
+  });
+
+  it("reads back only current prop types", () => {
+    expect(readPhysicalCardPropType("staff")).toBe("staff");
+    expect(readPhysicalCardPropType("not-a-prop")).toBeNull();
+    expect(readPhysicalCardPropType(7)).toBeNull();
+    expect(readPhysicalCardPropType(null)).toBeNull();
   });
 
   it("validates a bounded, index-stable issuance request", () => {
@@ -81,6 +95,51 @@ describe("physical card identity", () => {
     });
 
     expect(result.ok).toBe(true);
+  });
+
+  it("carries each card's props and treats missing props as unchosen", () => {
+    const request = (card: Record<string, unknown>) => ({
+      schemaVersion: PHYSICAL_CARD_SCHEMA_VERSION,
+      exportKind: "home-print-pdf",
+      outputMode: "fronts",
+      deckId: "deck-7",
+      deckName: "Deck #007",
+      deckReleaseNumber: 7,
+      cardSize: "poker",
+      copies: 1,
+      groupByElement: false,
+      cards: [
+        {
+          cardIndex: 0,
+          shortCode: "AB12",
+          sequenceId: "sequence-1",
+          word: "ABCD",
+          printPosition: 1,
+          ...card,
+        },
+      ],
+    });
+
+    const withProps = validatePhysicalCardIssueRequest(
+      request({ leftPropType: "staff", rightPropType: "bigdoublecontactball" })
+    );
+    expect(withProps.ok && withProps.value.cards[0]).toMatchObject({
+      leftPropType: "staff",
+      rightPropType: "bigdoublecontactball",
+    });
+
+    const withoutProps = validatePhysicalCardIssueRequest(request({}));
+    expect(withoutProps.ok && withoutProps.value.cards[0]).toMatchObject({
+      leftPropType: null,
+      rightPropType: null,
+    });
+
+    expect(
+      validatePhysicalCardIssueRequest(request({ leftPropType: "not-a-prop" }))
+    ).toEqual({ ok: false, error: "cards[0].leftPropType is invalid" });
+    expect(
+      validatePhysicalCardIssueRequest(request({ rightPropType: 3 }))
+    ).toEqual({ ok: false, error: "cards[0].rightPropType is invalid" });
   });
 
   it("rejects mismatched output semantics and spoofed card indexes", () => {

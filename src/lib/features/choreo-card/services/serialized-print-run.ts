@@ -4,9 +4,9 @@ import { getShortCodeManager } from "$lib/shared/qr/get-short-code-manager";
 import {
   PHYSICAL_CARD_ID_LENGTH,
   PHYSICAL_CARD_SCHEMA_VERSION,
+  buildSerializedCardUrl,
   isPhysicalCardId,
   isPrintRunId,
-  withPhysicalCardId,
   type AllocatedPhysicalCard,
   type PhysicalCardCompletionResult,
   type PhysicalCardIssueRequest,
@@ -50,10 +50,6 @@ export interface PreparedSerializedPrintRun {
   ): Promise<HTMLCanvasElement>;
 }
 
-interface ResolvedCardUrl {
-  code: string;
-  url: string;
-}
 
 async function parseErrorResponse(
   response: Response,
@@ -219,7 +215,10 @@ export async function prepareSerializedPrintRun(
   }
 
   const shortCodeManager = getShortCodeManager();
-  const resolvedUrls: ResolvedCardUrl[] = await Promise.all(
+  // The printed URL carries only the code and the physical ID. The props still
+  // go to the shortcode so a newly minted code records them, but the scan reads
+  // this card's props from its physical-card record.
+  const shortCodes: string[] = await Promise.all(
     options.pairs.map(async (pair) => {
       const meta = pair.renderMeta;
       if (!meta) {
@@ -239,7 +238,7 @@ export async function prepareSerializedPrintRun(
         deckId: options.deckId,
         deckName: options.deckName,
       });
-      return { code: result.code, url: result.url };
+      return result.code;
     })
   );
 
@@ -258,8 +257,8 @@ export async function prepareSerializedPrintRun(
       }
       assertPlannedQrFits(
         pair.label,
-        withPhysicalCardId(
-          resolvedUrls[cardIndex]!.url,
+        buildSerializedCardUrl(
+          shortCodes[cardIndex]!,
           PLACEHOLDER_PHYSICAL_CARD_ID
         ),
         placement.size,
@@ -281,13 +280,15 @@ export async function prepareSerializedPrintRun(
     copies,
     groupByElement: options.groupByElement,
     cards: options.pairs.map((pair, cardIndex) => {
-      const sequence = pair.renderMeta!.sequence;
+      const { sequence, options: renderOptions } = pair.renderMeta!;
       return {
         cardIndex,
-        shortCode: resolvedUrls[cardIndex]!.code,
+        shortCode: shortCodes[cardIndex]!,
         sequenceId: sequence.id ?? null,
         word: sequence.word ?? sequence.name ?? pair.label,
         printPosition: cardIndex + 1,
+        leftPropType: renderOptions.leftPropType ?? null,
+        rightPropType: renderOptions.rightPropType ?? null,
       };
     }),
   };
@@ -314,7 +315,7 @@ export async function prepareSerializedPrintRun(
       instance.cardIndex >= options.pairs.length ||
       instance.copyIndex < 0 ||
       instance.copyIndex >= copies ||
-      instance.shortCode !== resolvedUrls[instance.cardIndex]!.code
+      instance.shortCode !== shortCodes[instance.cardIndex]
     ) {
       throw new Error("Physical-card issuance returned an unknown print slot");
     }
@@ -343,8 +344,8 @@ export async function prepareSerializedPrintRun(
           `No physical identity was allocated for card ${cardIndex + 1}, copy ${copyIndex + 1}`
         );
       }
-      const serializedUrl = withPhysicalCardId(
-        resolvedUrls[cardIndex]!.url,
+      const serializedUrl = buildSerializedCardUrl(
+        shortCodes[cardIndex]!,
         instance.physicalCardId
       );
       let front: HTMLCanvasElement;
