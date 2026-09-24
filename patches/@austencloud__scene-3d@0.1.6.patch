@@ -15440,10 +15440,10 @@ diff --git a/dist/lib/services/implementations/LocomotionAnimator.d.ts.map b/dis
 deleted file mode 100644
 index e2ad276197cfcb019800a407b2fe3d4739b38861..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/LocomotionAnimator.js b/dist/lib/services/implementations/LocomotionAnimator.js
-index 56279f173c..e86ef1ce44 100644
+index 56279f173c..d44ab61dd1 100644
 --- a/dist/lib/services/implementations/LocomotionAnimator.js
 +++ b/dist/lib/services/implementations/LocomotionAnimator.js
-@@ -1,554 +1,1609 @@
+@@ -1,554 +1,1665 @@
 -/**
 - * LocomotionAnimator
 - *
@@ -16283,6 +16283,8 @@ index 56279f173c..e86ef1ce44 100644
 +  terminalEntryContactRight = -1;
 +  terminalContactLeft = -1;
 +  terminalContactRight = -1;
++  releasedStopKey = null;
++  releasedStopVelocity = 0;
 +  initialized = false;
 +  clipsLoaded = false;
 +  config = {
@@ -16427,6 +16429,8 @@ index 56279f173c..e86ef1ce44 100644
 +    this.crouchAction = null;
 +    this.stopActions.stopLeft = null;
 +    this.stopActions.stopRight = null;
++    this.releasedStopKey = null;
++    this.releasedStopVelocity = 0;
 +    for (const key of Object.keys(this.walkActions)) {
 +      this.walkActions[key] = null;
 +      this.gaits[key] = null;
@@ -16831,6 +16835,14 @@ index 56279f173c..e86ef1ce44 100644
 +        throw new RangeError("terminal step plan is invalid");
 +      }
 +    }
++    const outgoing = this.terminalPlan;
++    let released = null;
++    if (outgoing && (this.terminalStatus === "braking" || this.terminalStatus === "landed" || this.terminalStatus === "settled")) {
++      const key = terminalKey(outgoing.terminalFoot);
++      if ((this.stopActions[key]?.getEffectiveWeight() ?? 0) > 1e-4) {
++        released = key;
++      }
++    }
 +    this.terminalPlan = plan;
 +    this.terminalPlanId = plan?.id ?? null;
 +    this.terminalStatus = plan ? "armed" : null;
@@ -16843,8 +16855,13 @@ index 56279f173c..e86ef1ce44 100644
 +    this.terminalEntryContactRight = -1;
 +    this.terminalContactLeft = -1;
 +    this.terminalContactRight = -1;
-+    for (const action of Object.values(this.stopActions)) {
-+      if (!action) continue;
++    if (released) {
++      this.releasedStopKey = released;
++      this.releasedStopVelocity = 0;
++    }
++    for (const key of ["stopLeft", "stopRight"]) {
++      const action = this.stopActions[key];
++      if (!action || key === this.releasedStopKey) continue;
 +      action.setEffectiveWeight(0);
 +      action.time = 0;
 +    }
@@ -16879,8 +16896,10 @@ index 56279f173c..e86ef1ce44 100644
 +      this.applyTerminalWeights(blendFactor);
 +    } else if (this.activeState !== null) {
 +      this.applyStateWeights(delta, blendFactor);
++      this.fadeReleasedStop(delta);
 +    } else {
 +      this.applyLegacyWeights(delta);
++      this.fadeReleasedStop(delta);
 +    }
 +    const hips = this.hipsBone;
 +    if (hips && this.hipsRest) {
@@ -16962,6 +16981,8 @@ index 56279f173c..e86ef1ce44 100644
 +      action.setEffectiveWeight(0);
 +      action.time = 0;
 +    }
++    this.releasedStopKey = null;
++    this.releasedStopVelocity = 0;
 +    for (const action of [
 +      this.crouchAction,
 +      this.jumpAction,
@@ -17269,7 +17290,11 @@ index 56279f173c..e86ef1ce44 100644
 +    } else {
 +      this.gaitCadence = plan.cadence;
 +      this.terminalStatus = "braking";
-+    }
+     }
+-    applyLegacyWeights(blendFactor) {
+-        this.currentIdleWeight +=
+-            (this.targetIdleWeight - this.currentIdleWeight) * blendFactor;
+-        this.idleAction?.setEffectiveWeight(this.currentIdleWeight);
 +    if (this.terminalPhase >= 1) {
 +      this.terminalStatus = "settled";
 +      this.contactLeft = this.terminalContactLeft;
@@ -17446,6 +17471,8 @@ index 56279f173c..e86ef1ce44 100644
 +    if (!motion) return;
 +    const entryBlend = terminalEntryBlend(motion, this.terminalPhase);
 +    this.currentTerminalWeight = entryBlend;
++    this.releasedStopKey = null;
++    this.releasedStopVelocity = 0;
 +    this.currentIdleWeight = 0;
 +    this.currentIdleVelocity = 0;
 +    this.idleAction?.setEffectiveWeight(this.currentIdleWeight);
@@ -17503,11 +17530,7 @@ index 56279f173c..e86ef1ce44 100644
 +      this.currentDirWeights[key] = newWeight;
 +      this.dirWeightVelocities[key] = velocity;
 +      this.walkActions[key]?.setEffectiveWeight(newWeight);
-     }
--    applyLegacyWeights(blendFactor) {
--        this.currentIdleWeight +=
--            (this.targetIdleWeight - this.currentIdleWeight) * blendFactor;
--        this.idleAction?.setEffectiveWeight(this.currentIdleWeight);
++    }
 +    this.blendAction(this.crouchAction, wantCrouch, blendFactor);
 +    this.blendAction(this.jumpAction, wantJump, blendFactor);
 +    this.blendAction(this.fallAction, wantFall, blendFactor);
@@ -17543,12 +17566,7 @@ index 56279f173c..e86ef1ce44 100644
 +        this.fallAction?.setEffectiveWeight(0);
 +      }
 +      this.currentActiveState = state;
-     }
--    blendAction(action, targetWeight, blendFactor) {
--        if (!action)
--            return;
--        const current = action.getEffectiveWeight();
--        action.setEffectiveWeight(current + (targetWeight - current) * blendFactor);
++    }
 +  }
 +  applyLegacyWeights(delta) {
 +    [this.currentIdleWeight, this.currentIdleVelocity] = springWeight(
@@ -17571,7 +17589,45 @@ index 56279f173c..e86ef1ce44 100644
 +      this.currentDirWeights[key] = newWeight;
 +      this.dirWeightVelocities[key] = velocity;
 +      this.walkActions[key]?.setEffectiveWeight(newWeight);
++    }
++  }
++  /**
++   * Take a released stop's held pose down to zero.
++   *
++   * Same spring and smooth time as the idle and walk weights, and the spring
++   * is linear, so whatever those gain this loses: the sum stays at one and
++   * the mixer never mixes in the bind pose.
++   */
++  fadeReleasedStop(delta) {
++    const key = this.releasedStopKey;
++    if (!key) return;
++    const action = this.stopActions[key];
++    if (!action) {
++      this.releasedStopKey = null;
++      this.releasedStopVelocity = 0;
++      return;
      }
+-    blendAction(action, targetWeight, blendFactor) {
+-        if (!action)
+-            return;
+-        const current = action.getEffectiveWeight();
+-        action.setEffectiveWeight(current + (targetWeight - current) * blendFactor);
++    const [weight, velocity] = springWeight(
++      action.getEffectiveWeight(),
++      this.releasedStopVelocity,
++      0,
++      this.config.blendTime,
++      delta
++    );
++    if (weight <= 1e-4) {
++      action.setEffectiveWeight(0);
++      action.time = 0;
++      this.releasedStopKey = null;
++      this.releasedStopVelocity = 0;
++      return;
+     }
++    action.setEffectiveWeight(weight);
++    this.releasedStopVelocity = velocity;
 +  }
 +  blendAction(action, targetWeight, blendFactor) {
 +    if (!action) return;
@@ -36833,7 +36889,7 @@ index ce05b8a425..0d04a3e7f6 100644
    }
  }
 diff --git a/src/lib/services/implementations/LocomotionAnimator.ts b/src/lib/services/implementations/LocomotionAnimator.ts
-index 25b0660fc5..8402469181 100644
+index 25b0660fc5..ba70a68b9f 100644
 --- a/src/lib/services/implementations/LocomotionAnimator.ts
 +++ b/src/lib/services/implementations/LocomotionAnimator.ts
 @@ -13,17 +13,210 @@
@@ -37205,7 +37261,7 @@ index 25b0660fc5..8402469181 100644
          const values = cloned.values as Float32Array;
          for (let i = 0; i < values.length; i++) {
            values[i]! *= 0.01;
-@@ -167,37 +438,517 @@ function remapClipToSkeleton(
+@@ -167,37 +438,524 @@ function remapClipToSkeleton(
    return new AnimationClip(clip.name, clip.duration, tracks);
  }
  
@@ -37721,6 +37777,13 @@ index 25b0660fc5..8402469181 100644
 +  private terminalEntryContactRight = -1;
 +  private terminalContactLeft = -1;
 +  private terminalContactRight = -1;
++  /**
++   * A stop clip still on screen after its plan was cleared, fading out on the
++   * same spring that brings idle or walking in. Zeroing it on release left
++   * idle at zero too, and three filled the missing weight with the bind pose.
++   */
++  private releasedStopKey: TerminalKey | null = null;
++  private releasedStopVelocity = 0;
    private initialized = false;
    private clipsLoaded = false;
  
@@ -37731,7 +37794,7 @@ index 25b0660fc5..8402469181 100644
      animationWalkSpeed: 1.57,
      enableRootMotion: false,
      stripLegBones: false,
-@@ -205,46 +956,215 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -205,46 +963,217 @@ export class LocomotionAnimator implements ILocomotionAnimator {
  
    // Blend weights (smoothed each frame)
    private currentIdleWeight = 1;
@@ -37922,6 +37985,8 @@ index 25b0660fc5..8402469181 100644
 +    this.crouchAction = null;
 +    this.stopActions.stopLeft = null;
 +    this.stopActions.stopRight = null;
++    this.releasedStopKey = null;
++    this.releasedStopVelocity = 0;
 +    for (const key of Object.keys(this.walkActions) as DirectionKey[]) {
 +      this.walkActions[key] = null;
 +      this.gaits[key] = null;
@@ -37966,7 +38031,7 @@ index 25b0660fc5..8402469181 100644
    }
  
    async loadAnimations(urls: AnimationUrls): Promise<void> {
-@@ -255,21 +1175,39 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -255,21 +1184,39 @@ export class LocomotionAnimator implements ILocomotionAnimator {
        { key: "strafeLeft", url: urls.strafeLeft },
        { key: "strafeRight", url: urls.strafeRight },
      ];
@@ -38014,7 +38079,7 @@ index 25b0660fc5..8402469181 100644
          return { key, clip };
        })
      );
-@@ -280,6 +1218,23 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -280,6 +1227,23 @@ export class LocomotionAnimator implements ILocomotionAnimator {
        }
      }
  
@@ -38038,7 +38103,7 @@ index 25b0660fc5..8402469181 100644
      this.clipsLoaded = true;
      if (this.initialized && this.mixer) {
        this.createActions();
-@@ -300,23 +1255,75 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -300,23 +1264,75 @@ export class LocomotionAnimator implements ILocomotionAnimator {
      // - Crouch: keep Hips position as-is (absolute Y IS the crouched height)
      // - Everything else: strip Hips position (would teleport the avatar)
      const isLocomotionClip =
@@ -38078,7 +38143,8 @@ index 25b0660fc5..8402469181 100644
 +
 +    const existing = variants.get(cacheKey);
 +    if (existing) return existing;
-+
+ 
+-    return remapClipToSkeleton(raw, this.modelPrefix, hipsMode, stripLegs);
 +    let prepared = remapClipToSkeleton(
 +      raw,
 +      this.modelPrefix,
@@ -38086,8 +38152,7 @@ index 25b0660fc5..8402469181 100644
 +      stripLegs,
 +      preservePelvisSway
 +    );
- 
--    return remapClipToSkeleton(raw, this.modelPrefix, hipsMode, stripLegs);
++
 +    // Renaming the tracks is only half of a retarget. The rotations that come
 +    // across put this rig's feet somewhere its own proportions decide, which
 +    // is not where the animator put them - see ContactRetargeter for what that
@@ -38121,7 +38186,7 @@ index 25b0660fc5..8402469181 100644
    }
  
    /**
-@@ -327,6 +1334,19 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -327,6 +1343,19 @@ export class LocomotionAnimator implements ILocomotionAnimator {
    private createActions(): void {
      if (!this.mixer) return;
  
@@ -38141,7 +38206,7 @@ index 25b0660fc5..8402469181 100644
  
      // Idle - starts at weight 1
      const idleClip = this.prepareClip("idle");
-@@ -338,7 +1358,7 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -338,7 +1367,7 @@ export class LocomotionAnimator implements ILocomotionAnimator {
      }
  
      // Walk directions - start at weight 0
@@ -38150,7 +38215,7 @@ index 25b0660fc5..8402469181 100644
        const clip = this.prepareClip(key);
        if (clip && !this.walkActions[key]) {
          const action = this.mixer.clipAction(clip);
-@@ -346,6 +1366,22 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -346,6 +1375,22 @@ export class LocomotionAnimator implements ILocomotionAnimator {
          this.setWeight(action, 0);
          action.play();
          this.walkActions[key] = action;
@@ -38173,7 +38238,7 @@ index 25b0660fc5..8402469181 100644
        }
      }
  
-@@ -386,6 +1422,20 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -386,6 +1431,20 @@ export class LocomotionAnimator implements ILocomotionAnimator {
        this.setWeight(this.crouchAction, 0);
        this.crouchAction.play();
      }
@@ -38194,7 +38259,7 @@ index 25b0660fc5..8402469181 100644
    }
  
    /**
-@@ -398,19 +1448,77 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -398,19 +1457,99 @@ export class LocomotionAnimator implements ILocomotionAnimator {
    }
  
    setLocomotion(input: LocomotionInput): void {
@@ -38238,6 +38303,23 @@ index 25b0660fc5..8402469181 100644
 +      }
 +    }
 +
++    // A stop that owns the pose keeps its held frame and fades out from
++    // there; the next update's crossfade brings the incoming clips up as it
++    // goes, so the weights on screen still add up to one.
++    const outgoing = this.terminalPlan;
++    let released: TerminalKey | null = null;
++    if (
++      outgoing &&
++      (this.terminalStatus === "braking" ||
++        this.terminalStatus === "landed" ||
++        this.terminalStatus === "settled")
++    ) {
++      const key = terminalKey(outgoing.terminalFoot);
++      if ((this.stopActions[key]?.getEffectiveWeight() ?? 0) > 1e-4) {
++        released = key;
++      }
++    }
++
 +    this.terminalPlan = plan;
 +    this.terminalPlanId = plan?.id ?? null;
 +    this.terminalStatus = plan ? "armed" : null;
@@ -38250,8 +38332,13 @@ index 25b0660fc5..8402469181 100644
 +    this.terminalEntryContactRight = -1;
 +    this.terminalContactLeft = -1;
 +    this.terminalContactRight = -1;
-+    for (const action of Object.values(this.stopActions)) {
-+      if (!action) continue;
++    if (released) {
++      this.releasedStopKey = released;
++      this.releasedStopVelocity = 0;
++    }
++    for (const key of ["stopLeft", "stopRight"] as const) {
++      const action = this.stopActions[key];
++      if (!action || key === this.releasedStopKey) continue;
 +      action.setEffectiveWeight(0);
 +      action.time = 0;
 +    }
@@ -38276,7 +38363,7 @@ index 25b0660fc5..8402469181 100644
    setActiveState(state: LocomotionState): void {
      this.activeState = state;
    }
-@@ -422,19 +1530,155 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -422,19 +1561,159 @@ export class LocomotionAnimator implements ILocomotionAnimator {
      const blendSpeed = 1 / Math.max(0.01, this.config.blendTime);
      const blendFactor = 1 - Math.exp(-blendSpeed * delta);
  
@@ -38308,8 +38395,10 @@ index 25b0660fc5..8402469181 100644
 +      this.applyTerminalWeights(blendFactor);
 +    } else if (this.activeState !== null) {
 +      this.applyStateWeights(delta, blendFactor);
++      this.fadeReleasedStop(delta);
 +    } else {
 +      this.applyLegacyWeights(delta);
++      this.fadeReleasedStop(delta);
 +    }
 +
 +    // The bone holds the bare track value across the mixer, and the rig's
@@ -38419,6 +38508,8 @@ index 25b0660fc5..8402469181 100644
 +      action.setEffectiveWeight(0);
 +      action.time = 0;
 +    }
++    this.releasedStopKey = null;
++    this.releasedStopVelocity = 0;
 +    for (const action of [
 +      this.crouchAction,
 +      this.jumpAction,
@@ -38436,7 +38527,7 @@ index 25b0660fc5..8402469181 100644
    configure(config: LocomotionConfig): void {
      this.config = { ...this.config, ...config };
    }
-@@ -447,40 +1691,15 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -447,40 +1726,15 @@ export class LocomotionAnimator implements ILocomotionAnimator {
    }
  
    dispose(): void {
@@ -38478,7 +38569,7 @@ index 25b0660fc5..8402469181 100644
    private updateDirectionalTargets(input: LocomotionInput): void {
      const dir = input.moveDirection ?? { x: 0, z: 1 };
      const fw = Math.max(0, dir.z);
-@@ -493,20 +1712,92 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -493,20 +1747,92 @@ export class LocomotionAnimator implements ILocomotionAnimator {
      // pose. The physics still moves diagonally - only the animation is pure
      // backward. This matches how most third-person games handle it.
      if (bw > 0) {
@@ -38578,7 +38669,7 @@ index 25b0660fc5..8402469181 100644
    }
  
    private updatePlaybackSpeed(speed: number): void {
-@@ -521,15 +1812,531 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -521,15 +1847,535 @@ export class LocomotionAnimator implements ILocomotionAnimator {
        return;
      }
  
@@ -39073,6 +39164,10 @@ index 25b0660fc5..8402469181 100644
 +    // into the legs moved both planted feet and recreated footskate.
 +    const entryBlend = terminalEntryBlend(motion, this.terminalPhase);
 +    this.currentTerminalWeight = entryBlend;
++    // The stop weights below are written outright, which supersedes any
++    // earlier stop still fading out.
++    this.releasedStopKey = null;
++    this.releasedStopVelocity = 0;
 +    this.currentIdleWeight = 0;
 +    this.currentIdleVelocity = 0;
 +    this.idleAction?.setEffectiveWeight(this.currentIdleWeight);
@@ -39115,7 +39210,7 @@ index 25b0660fc5..8402469181 100644
      const state = this.activeState!;
  
      // Phase-based jump: each state has its own clip.
-@@ -545,22 +2352,35 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -545,22 +2391,35 @@ export class LocomotionAnimator implements ILocomotionAnimator {
      // "hunched walk" without needing a dedicated crouch-walk animation clip.
      // Without movement, 100% crouch-idle plays normally.
      const isCrouching = state === LocomotionState.CROUCHING;
@@ -39156,7 +39251,7 @@ index 25b0660fc5..8402469181 100644
        this.walkActions[key]?.setEffectiveWeight(newWeight);
      }
  
-@@ -573,12 +2393,17 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -573,12 +2432,17 @@ export class LocomotionAnimator implements ILocomotionAnimator {
      // On state entry: snap weights for instant transitions on one-shot clips.
      if (state !== this.currentActiveState) {
        // Zero out ground animations instantly when entering any airborne state
@@ -39175,7 +39270,7 @@ index 25b0660fc5..8402469181 100644
          }
        }
        // Reset one-shot clips on entry
-@@ -601,16 +2426,27 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -601,20 +2465,65 @@ export class LocomotionAnimator implements ILocomotionAnimator {
      }
    }
  
@@ -39208,6 +39303,44 @@ index 25b0660fc5..8402469181 100644
        this.walkActions[key]?.setEffectiveWeight(newWeight);
      }
    }
+ 
++  /**
++   * Take a released stop's held pose down to zero.
++   *
++   * Same spring and smooth time as the idle and walk weights, and the spring
++   * is linear, so whatever those gain this loses: the sum stays at one and
++   * the mixer never mixes in the bind pose.
++   */
++  private fadeReleasedStop(delta: number): void {
++    const key = this.releasedStopKey;
++    if (!key) return;
++    const action = this.stopActions[key];
++    if (!action) {
++      this.releasedStopKey = null;
++      this.releasedStopVelocity = 0;
++      return;
++    }
++    const [weight, velocity] = springWeight(
++      action.getEffectiveWeight(),
++      this.releasedStopVelocity,
++      0,
++      this.config.blendTime,
++      delta
++    );
++    if (weight <= 1e-4) {
++      action.setEffectiveWeight(0);
++      action.time = 0;
++      this.releasedStopKey = null;
++      this.releasedStopVelocity = 0;
++      return;
++    }
++    action.setEffectiveWeight(weight);
++    this.releasedStopVelocity = velocity;
++  }
++
+   private blendAction(
+     action: AnimationAction | null,
+     targetWeight: number,
 diff --git a/src/lib/services/implementations/RootMotionExtractor.ts b/src/lib/services/implementations/RootMotionExtractor.ts
 index 4040db93ea..cca0f04c28 100644
 --- a/src/lib/services/implementations/RootMotionExtractor.ts
