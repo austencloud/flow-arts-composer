@@ -3,6 +3,14 @@
 Date: 2026-09-21. Brainstormed with Austen from the Illustrator guide masters
 (see `docs/reference/skew-notation.md` for the source pages).
 
+Amended 2026-09-22 and implemented 2026-09-23: the opposite-direction
+families follow the landmark rule in
+`docs/superpowers/specs/2026-09-22-multigrid-lettering-design.md`, and
+same-letter variants are numbered by start spacing. The frame now has 32
+letters, not 38: D E F and J K L no longer occur, and 128 category 3 rows of
+`SkewedPictographDataframe.csv` changed letter. The tables below describe the
+classifier as implemented.
+
 ## Problem
 
 A Rotate 45° fuse puts one hand on the cardinal points and the other on the
@@ -38,7 +46,7 @@ identify every fused step." Skewed fuses cannot be kept.
    reference doc). Skew *entry* beats keep their existing letters and skew
    columns.
 
-## The skewed alphabet (38 letters)
+## The skewed alphabet (32 letters)
 
 Blue = left hand, red = right hand. Spacing is the angle between the hands:
 eta = 45°, zeta = 135°. A hand "shifts" when it is pro or anti (a 90° arc),
@@ -61,22 +69,31 @@ Leader: the hand that is ahead in the direction of travel by the smaller arc.
 Verified against `DiamondPictographDataframe.csv`: every U row's leader is its
 pro hand, every V row's leader is its anti hand.
 
-### Type 1, opposite direction: D E F, J K L, M N O, P Q R
+S T U V occur at both spacings, so each is numbered by start spacing,
+narrowest first: S1 from eta, S2 from zeta.
+
+### Type 1, opposite direction: M N O, P Q R
 
 Opposite shifts flip the spacing (eta↔zeta) and pass through exactly one pure
 position on the way: converging hands meet (cross beta), diverging hands pass
-through opposite (cross alpha). Start spacing plus the crossed position picks
-the family; pro/anti picks the member (pro/pro, anti/anti, hybrid).
+through opposite (cross alpha). The hands never start or end at a pure
+position in this frame, so the crossed position alone picks the family, from
+either spacing; pro/anti picks the member (pro/pro, anti/anti, hybrid).
 
-| Start | Crosses | Family |
-| --- | --- | --- |
-| eta | alpha | D E F |
-| eta | beta | P Q R |
-| zeta | beta | J K L |
-| zeta | alpha | M N O |
+| Crosses | Family |
+| --- | --- |
+| alpha | M N O |
+| beta | P Q R |
 
-Verified against the diamond CSV: every M row crosses alpha, every P row
-crosses beta (the same rule applied to gamma starts).
+Numbered like S T U V: M1 from eta, M2 from zeta. This is the landmark rule,
+which letters the diamond's gamma starts the same way: every diamond M row
+crosses alpha and every P row crosses beta.
+
+The first version of this design split the families by start spacing too:
+eta through alpha was D E F and zeta through beta was J K L. Austen reversed
+that on 2026-09-22 (decision 4 of the multigrid spec), because D E F and J K L
+need the hands exactly together or opposite at an endpoint, which never
+happens here.
 
 ### Type 2 (shift + static) by start→end spacing
 
@@ -116,7 +133,7 @@ zeta→zeta = Φ-, eta→eta = Ψ-. No Λ-.
 
 ### Count
 
-4 + 12 + 8 + 8 + 2 + 2 + 2 = 38. Every combination of
+4 + 6 + 8 + 8 + 2 + 2 + 2 = 32. Every combination of
 {pro cw, pro ccw, anti cw, anti ccw, static, dash} per hand over the 32 mixed
 start pairs is a valid skewed-frame beat: 32 × 36 = 1152 beats, all lettered.
 
@@ -150,10 +167,13 @@ start pairs is a valid skewed-frame beat: 32 × 36 = 1152 beats, all lettered.
 ### Classifier (new)
 
 `src/lib/shared/pictograph/skew/skewed-frame-letter.ts` exports
-`classifySkewedFrameLetter(beat)` plus the geometry helpers `frameSpacing`,
-`leadingHand`, `crossedPosition`, `isSkewedFramePair`, and the constant
-`SKEWED_FRAME_LETTERS` (the 38). Inputs are plain strings so the generator
-script and the app share it.
+`classifySkewedFrameLetter(beat)`, `skewedFrameLetterLabel(beat)` (the letter
+with its variant number, such as S1 or M2), the geometry helpers
+`frameSpacing` and `isSkewedFramePair`, and the constant
+`SKEWED_FRAME_LETTERS` (the 32). Types 1 to 3 go through the multigrid rule in
+`src/lib/shared/pictograph/lettering/multigrid-lettering.ts`, which letters
+every grid. Inputs are plain strings so the generator script and the app
+share it.
 
 ### Skewed-frame predicate (new)
 

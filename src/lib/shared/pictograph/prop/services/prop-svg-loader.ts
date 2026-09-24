@@ -36,6 +36,7 @@ import {
   resolvePropRenderKey,
 } from "../domain/prop-look";
 import { orientModelSpriteToTips } from "$lib/shared/animation-engine/services/svg-generator";
+import { applyModelSpriteColor } from "../domain/prop-preview-color";
 import { getMotionColor } from "../../../utils/svg-color-utils";
 import { getAnimationVisibilityManager } from "../../../animation-engine/state/animation-visibility-state.svelte";
 import { assetFetch } from "../../../net/asset-fetch";
@@ -179,8 +180,14 @@ export class PropSvgLoader {
       // takes the hand color; the generic recolor would paint the wicks too.
       // Those materials were tuned on a dark pictograph; a light one (the
       // choreo sheet, its PDF) gets the paper palette so the fan still reads.
+      // A model capture is a raster, so it takes the hand color through a
+      // chroma filter rather than the fill rewrite; PropSvg and the card
+      // raster replace that tint with the user's color the same way.
       const coloredSvgText = modelRenderKey
-        ? orientModelSpriteToTips(modelRenderKey.propType, originalSvgText)
+        ? applyModelSpriteColor(
+            orientModelSpriteToTips(modelRenderKey.propType, originalSvgText),
+            getMotionColor(color, themeMode)
+          )
         : fanArtworkPath
           ? applyFanPaperContrast(
               applyFanFrameColor(

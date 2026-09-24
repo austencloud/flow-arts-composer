@@ -98,16 +98,17 @@
     playbackMode?: PlaybackMode;
     /** Bumping this returns every phase to its start and clears the trails. */
     alignToken?: number;
-    /** Prop reach in hand-orbit radii, so the stick matches the real prop. */
-    propReach?: number;
+    /** Each hand's prop reach in hand-orbit radii, so the stick matches the real prop. */
+    propReach?: { left: number; right: number };
     /**
-     * Bearing of the tracked tip inside the prop's own artwork, in radians from
-     * its +x axis. The sprite is rotated by the difference, so the tip the trail
-     * follows is the tip the drawing points at.
+     * Bearing of each hand's tracked tip inside its prop's own artwork, in
+     * radians from its +x axis. The sprite is rotated by the difference, so
+     * the tip the trail follows is the tip the drawing points at.
      */
-    tipAngle?: number;
-    /** Which prop to draw. Its sprite is loaded once per type per side. */
-    propType?: string;
+    tipAngle?: { left: number; right: number };
+    /** Which prop each hand draws. A sprite is loaded per type per side. */
+    leftPropType?: string;
+    rightPropType?: string;
     /**
      * The account's saved hand colours, or null for the theme's motion
      * colours. The sprites are recoloured through the engine's own prop
@@ -123,9 +124,10 @@
     paused = false,
     playbackMode = "continuous",
     alignToken = 0,
-    propReach = PROP_LENGTH,
-    tipAngle = 0,
-    propType = "staff",
+    propReach = { left: PROP_LENGTH, right: PROP_LENGTH },
+    tipAngle = { left: 0, right: 0 },
+    leftPropType = "staff",
+    rightPropType = "staff",
     propColors = null,
   }: Props = $props();
 
@@ -228,16 +230,20 @@
   /*
    * The real prop, in the real colours, at the real proportions.
    *
-   * Scale is exactly 1/ENGINE_GRID_RADIUS and never per-prop: `propReach` is
-   * this prop's own tracked tip measured in the same units the artwork is
-   * authored in, so drawing the artwork at grid scale lands its tip on the curve
-   * the guide and the grid tile already drew. Choosing a longer prop opens the
-   * whole figure rather than sliding the drawing off it.
+   * Scale is exactly 1/ENGINE_GRID_RADIUS and never per-prop: each hand's
+   * `propReach` is its own prop's tracked tip measured in the same units the
+   * artwork is authored in, so drawing that artwork at grid scale lands its
+   * tip on the curve the guide and the grid tile already drew. A longer prop
+   * in one hand opens that hand's figure rather than sliding the drawing off
+   * it.
    */
   interface PropSprite {
     image: HTMLImageElement;
     width: number;
     height: number;
+    /** Which prop this sprite was generated for, so a stale load never draws
+     *  as the prop that superseded it. */
+    prop: string;
   }
   const sprites = $state<{ left: PropSprite | null; right: PropSprite | null }>(
     {
@@ -249,7 +255,8 @@
   function decodeSvg(
     svg: string,
     width: number,
-    height: number
+    height: number,
+    prop: string
   ): Promise<PropSprite> {
     return new Promise((resolve, reject) => {
       const image = new Image();
@@ -258,7 +265,7 @@
       // every prop that is not one.
       image.width = width;
       image.height = height;
-      image.onload = () => resolve({ image, width, height });
+      image.onload = () => resolve({ image, width, height, prop });
       image.onerror = () => reject(new Error("prop sprite failed to decode"));
       image.src = `data:image/svg+xml;base64,${btoa(
         unescape(encodeURIComponent(svg))
@@ -267,35 +274,46 @@
   }
 
   $effect(() => {
-    const wanted = propType;
+    const wanted = { left: leftPropType, right: rightPropType };
     const inks = propColors;
     let cancelled = false;
-    void (async () => {
+
+    /*
+     * One side at a time, so a fan that fails to decode on the right never
+     * takes the left staff down with it. Each side's own catch also means a
+     * slow left load does not wait on a fast right one, or the reverse.
+     */
+    async function loadSide(
+      side: "left" | "right",
+      prop: string
+    ): Promise<void> {
       try {
-        const [left, right] = await Promise.all([
-          inks
-            ? generatePropSvg(wanted, inks.left, "dark", "left")
-            : generateLeftPropSvg(wanted, true),
-          inks
-            ? generatePropSvg(wanted, inks.right, "dark", "right")
-            : generateRightPropSvg(wanted, true),
-        ]);
-        const [leftSprite, rightSprite] = await Promise.all([
-          decodeSvg(left.svg, left.width, left.height),
-          decodeSvg(right.svg, right.width, right.height),
-        ]);
+        const generated =
+          side === "left"
+            ? inks
+              ? await generatePropSvg(prop, inks.left, "dark", "left")
+              : await generateLeftPropSvg(prop, true)
+            : inks
+              ? await generatePropSvg(prop, inks.right, "dark", "right")
+              : await generateRightPropSvg(prop, true);
+        const sprite = await decodeSvg(
+          generated.svg,
+          generated.width,
+          generated.height,
+          prop
+        );
         if (cancelled) return;
-        sprites.left = leftSprite;
-        sprites.right = rightSprite;
+        sprites[side] = sprite;
       } catch {
         // The stick fallback below is a complete drawing on its own, so a
-        // prop that will not decode costs the artwork nothing.
-        if (!cancelled) {
-          sprites.left = null;
-          sprites.right = null;
-        }
+        // prop that will not decode costs only this hand's artwork.
+        if (!cancelled) sprites[side] = null;
       }
-    })();
+    }
+
+    void loadSide("left", wanted.left);
+    void loadSide("right", wanted.right);
+
     return () => {
       cancelled = true;
     };
@@ -514,8 +532,9 @@
          */
         const handX = Math.sin(handAngle) * hand.radius;
         const handY = -Math.cos(handAngle) * hand.radius;
-        const reachX = Math.sin(propAngle) * propReach;
-        const reachY = -Math.cos(propAngle) * propReach;
+        const reach = propReach[hand.side];
+        const reachX = Math.sin(propAngle) * reach;
+        const reachY = -Math.cos(propAngle) * reach;
         const headX = handX + reachX;
         const headY = handY + reachY;
         const tailX = handX - reachX;
@@ -656,7 +675,14 @@
 
         if (!showProps) continue;
 
-        const sprite = hand.side === "left" ? sprites.left : sprites.right;
+        const handPropType =
+          hand.side === "left" ? leftPropType : rightPropType;
+        const loaded = hand.side === "left" ? sprites.left : sprites.right;
+        // A sprite made for the prop this hand USED to hold is not this
+        // hand's prop any more: drawing it rotated by the new prop's
+        // `tipAngle` would point a stale drawing at the wrong tip. The stick
+        // fallback covers the gap until the matching sprite lands.
+        const sprite = loaded && loaded.prop === handPropType ? loaded : null;
         if (sprite) {
           const spriteWidth = sprite.width / ENGINE_GRID_RADIUS;
           const spriteHeight = sprite.height / ENGINE_GRID_RADIUS;
@@ -665,7 +691,7 @@
           // The artwork's +x axis carries the tracked tip at `tipAngle`, and the
           // tip has to land on the head bearing, which is a quarter turn behind
           // the model's straight-up-is-zero angle.
-          context.rotate(propAngle - Math.PI / 2 - tipAngle);
+          context.rotate(propAngle - Math.PI / 2 - tipAngle[hand.side]);
           context.drawImage(
             sprite.image,
             -spriteWidth / 2,

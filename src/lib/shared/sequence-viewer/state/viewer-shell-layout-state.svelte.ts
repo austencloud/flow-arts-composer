@@ -7,6 +7,7 @@ import type { SelectableViewerMode } from "../services/viewer-modes";
 import type { OrchestratorContext } from "../domain/viewer-orchestrator-context";
 import {
   resolveExportSidebarMinWidth,
+  resolvePostStudioShareDockMinWidth,
   type ViewerInspectorProfile,
 } from "../services/viewer-shell-model";
 import { withViewerModeDissolve } from "$lib/shared/transitions/viewer-mode-dissolve";
@@ -23,7 +24,7 @@ interface ViewerShellLayoutInputs {
    * takes the inspector track for the recipient column, so it is an inspector
    * profile here rather than a workspace takeover.
    */
-  getSendModeActive: () => boolean;
+  getSharePanelOpen: () => boolean;
   getWorkspaceElement: () => HTMLElement | null;
   startInSplit: boolean;
   startInCardThenSplit: boolean;
@@ -64,7 +65,7 @@ export function createViewerShellLayoutState(
   const isMobile = $derived(inputs.getIsMobile());
   const isLandscape = $derived(responsiveSettings?.isLandscapeMobile ?? false);
   const compactChrome = $derived(isMobile || bodyWidth < 1080);
-  const sendModeActive = $derived(inputs.getSendModeActive());
+  const sharePanelOpen = $derived(inputs.getSharePanelOpen());
 
   const isVideoExportActive = $derived(
     inputs.getContext().editingPane === "animation"
@@ -136,24 +137,39 @@ export function createViewerShellLayoutState(
       bodyWidth <
         resolveExportSidebarMinWidth(persistedRailWidth, "performance")
   );
-  const sendInspectorNarrow = $derived(
-    sendModeActive &&
+  // Post Studio's stage is a 9:16 frame, so the share column docks beside it
+  // on any body that can hold both, phone hosts included. Stacked, the panel
+  // took the height the frame is sized from.
+  const shareDocksBesideStudio = $derived(
+    sharePanelOpen &&
+      showPostStudio &&
+      bodyWidth >=
+        resolvePostStudioShareDockMinWidth(
+          persistedRailWidth,
+          isMobile ? "hidden" : compactChrome ? "compact" : "full"
+        )
+  );
+  const shareInspectorNarrow = $derived(
+    sharePanelOpen &&
       !isMobile &&
-      bodyWidth < resolveExportSidebarMinWidth(persistedRailWidth, "send")
+      !shareDocksBesideStudio &&
+      bodyWidth < resolveExportSidebarMinWidth(persistedRailWidth, "share")
   );
+  // "Mobile" here means the workspace stacks its inspector under the stage.
   const effectiveMobile = $derived(
-    isMobile ||
-      cardExportNarrow ||
-      videoExportNarrow ||
-      artInspectorNarrow ||
-      performanceInspectorNarrow ||
-      sendInspectorNarrow
+    !shareDocksBesideStudio &&
+      (isMobile ||
+        cardExportNarrow ||
+        videoExportNarrow ||
+        artInspectorNarrow ||
+        performanceInspectorNarrow ||
+        shareInspectorNarrow)
   );
-  // Send wins over every other inspector: the recipients are the decision
-  // the viewer is making, and the stage keeps showing the view being sent.
+  // Share wins over every other inspector: where it goes is the decision the
+  // viewer is making, and the stage keeps showing the view being shared.
   const inspectorProfile = $derived<ViewerInspectorProfile>(
-    sendModeActive
-      ? "send"
+    sharePanelOpen
+      ? "share"
       : isImageExportActive
         ? "card"
         : isVideoExportActive
@@ -163,7 +179,7 @@ export function createViewerShellLayoutState(
             : "art"
   );
   const isWorkspaceInspectorActive = $derived(
-    sendModeActive ||
+    sharePanelOpen ||
       isSidebarExportActive ||
       showVideoGallery ||
       (isArtInspectorActive && !effectiveMobile)

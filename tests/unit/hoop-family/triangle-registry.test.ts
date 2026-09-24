@@ -105,7 +105,10 @@ describe("triangle registry membership", () => {
         `static/data/arrow_placement/default/triangle/default_${mt}_placements.json`,
         "utf8"
       );
-      expect(b, mt).toBe(a);
+      // Compare content, not line endings: a Windows checkout with autocrlf
+      // can hold the long-lived mini hoop files as CRLF and the new copies as LF.
+      const lf = (text: string) => text.replace(/\r\n/g, "\n");
+      expect(lf(b), mt).toBe(lf(a));
     }
   });
 

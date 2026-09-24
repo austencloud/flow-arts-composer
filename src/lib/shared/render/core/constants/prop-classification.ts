@@ -7,7 +7,7 @@ const BIG_UNILATERAL_PROPS = [
 ] as const;
 
 const SMALL_UNILATERAL_PROPS = [
-  "fan", "club", "minihoop", "triangle", "triad", "ukulele",
+  "fan", "club", "classic_club", "minihoop", "triangle", "triad", "ukulele",
   "triquetra", "triquetra2", "chicken", "torch", "contactball", "poi",
 ] as const;
 
@@ -49,7 +49,7 @@ export function getBetaOffsetSize(propType: string, gridMode?: GridMode): number
   const t = propType.toLowerCase();
   let base: number;
 
-  if (t === "club" || t === "eightrings") {
+  if (t === "club" || t === "classic_club" || t === "eightrings") {
     base = VIEWBOX_SIZE / 60;       
   } else if (t === "doublestar") {
     base = VIEWBOX_SIZE / 50;       

@@ -152,8 +152,8 @@ captureEffectDiagnostics to the context menu.
     preloadAdditionalLayers?: AdditionalLayerProps[];
     tunnelSpectrum?: boolean;
     tunnelPropColors?: TunnelPropColorPair | null;
-    /** Embedded teaching surfaces can pin colors without changing saved preferences. */
-    primaryPropColors?: TunnelPropColorPair;
+    /** undefined = fall back to the viewer's Settings; null = theme default. */
+    primaryPropColors?: TunnelPropColorPair | null;
     tunnelSelectedLayer?: number | readonly number[] | null;
     gridVisible?: boolean;
     gridOpacity?: number;
@@ -465,6 +465,14 @@ captureEffectDiagnostics to the context menu.
     };
   });
 
+  // undefined = viewer's Settings; null = theme default. Resolved once so the
+  // engine props and the PathLinesOverlay agree on the same pair.
+  const resolvedPrimaryPropColors = $derived(
+    primaryPropColors !== undefined
+      ? primaryPropColors
+      : (getSettings().primaryPropColors ?? null)
+  );
+
   // Single effect to pass all props to engine
   $effect(() => {
     // Resizing clears the canvas even while paused. Read the completed-resize
@@ -482,8 +490,7 @@ captureEffectDiagnostics to the context menu.
       onAdditionalLayerTextureStatusChange,
       tunnelSpectrum,
       tunnelPropColors,
-      primaryPropColors:
-        primaryPropColors ?? getSettings().primaryPropColors ?? null,
+      primaryPropColors: resolvedPrimaryPropColors,
       tunnelSelectedLayer,
       gridVisible,
       gridOpacity,
@@ -600,7 +607,7 @@ captureEffectDiagnostics to the context menu.
          its own fade in/out, so the overlay must stay in the tree for its
          out-transition to play when the Paths toggle flips off. -->
     <PathLinesOverlay
-      {primaryPropColors}
+      primaryPropColors={resolvedPrimaryPropColors}
       {sequenceData}
       {currentStep}
       {stepData}

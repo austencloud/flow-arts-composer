@@ -231,6 +231,12 @@ export interface WorkerPerformerLocomotionSnapshot {
   turnRequest: TurnRequest | null;
 }
 
+/** The colors the application paints the "blue" and "red" prop hands in. */
+export interface WorkerPropHandColors {
+  blue: string;
+  red: string;
+}
+
 export interface WorkerPerformerSnapshot {
   id: string;
   avatarId: string;
@@ -241,6 +247,8 @@ export interface WorkerPerformerSnapshot {
   staffLength: number;
   staffThickness: number;
   propBuild: WorkerPropBuild;
+  /** Absent means the props' authored palette. */
+  handColors?: WorkerPropHandColors | null;
   leftPropType: WorkerPerformerPropType;
   rightPropType: WorkerPerformerPropType;
   leftProp: WorkerPropSnapshot | null;
@@ -463,6 +471,7 @@ export interface InitializeWorkerRendererMessage {
   performers: readonly WorkerPerformerSnapshot[];
   effects?: WorkerSceneEffectsSnapshot;
   reducedMotion?: boolean;
+  retainSceneCache?: boolean;
 }
 
 export interface SwitchWorkerRendererEnvironmentMessage {
@@ -470,6 +479,8 @@ export interface SwitchWorkerRendererEnvironmentMessage {
   requestId: number;
   environment: WorkerEnvironmentKey;
   reducedMotion?: boolean;
+  /** Prepare a hidden replacement without requiring a visible-frame poster. */
+  backgroundPreparation?: boolean;
 }
 
 export interface PosterReadyWorkerRendererMessage {

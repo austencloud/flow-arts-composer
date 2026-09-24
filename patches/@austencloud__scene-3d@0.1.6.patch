@@ -2674,7 +2674,7 @@ diff --git a/dist/lib/components/PerformerRig.svelte.d.ts.map b/dist/lib/compone
 deleted file mode 100644
 index 9ec67da0c77ac3ae765e84157869663c61696d90..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/Staff3D.svelte b/dist/lib/components/Staff3D.svelte
-index c483f07b26cd339a40a34fafe5c34d9f003d5d05..5b12a19efcebdbbd549a6a31186b6c166bbe23cc 100644
+index c483f07b26..5b12a19efc 100644
 --- a/dist/lib/components/Staff3D.svelte
 +++ b/dist/lib/components/Staff3D.svelte
 @@ -13,8 +13,11 @@
@@ -2815,6 +2815,28 @@ index f49448d6ac0130932b08c1a3687d9c6177c9c779..00000000000000000000000000000000
 diff --git a/dist/lib/components/Staff3D.svelte.d.ts.map b/dist/lib/components/Staff3D.svelte.d.ts.map
 deleted file mode 100644
 index cc74d06dc485af8253fcbf8c958003bdcb71a76e..0000000000000000000000000000000000000000
+diff --git a/dist/lib/components/props/Ball3D.svelte b/dist/lib/components/props/Ball3D.svelte
+index e9f884d02b..57f99ad936 100644
+--- a/dist/lib/components/props/Ball3D.svelte
++++ b/dist/lib/components/props/Ball3D.svelte
+@@ -11,7 +11,7 @@
+ 
+   import { T } from "@threlte/core";
+   import type { Prop3DProps } from "./Prop3DProps";
+-  import { PROP_COLORS } from "./Prop3DProps";
++  import { reactivePropHandPalette } from "./prop-hand-palette-state.svelte";
+   import { computePropRotation } from "./prop3d-transforms";
+   import { userProportionsState } from "../../state/user-proportions-state.svelte";
+   import {
+@@ -30,7 +30,7 @@
+   }: Prop3DProps = $props();
+ 
+   const propLayer = $derived(isActivePlayer ? LAYER_PLAYER_BODY : LAYER_WORLD);
+-  const palette = $derived(PROP_COLORS[color]);
++  const palette = $derived(reactivePropHandPalette(color));
+ 
+   const staffRadius = $derived(
+     thickness
 diff --git a/dist/lib/components/props/Ball3D.svelte.d.ts b/dist/lib/components/props/Ball3D.svelte.d.ts
 deleted file mode 100644
 index d8a8ee067eff9744e93383230af4a52674c607ee..0000000000000000000000000000000000000000
@@ -2822,7 +2844,7 @@ diff --git a/dist/lib/components/props/Ball3D.svelte.d.ts.map b/dist/lib/compone
 deleted file mode 100644
 index 327431ea46a84fb115d068c545ef21b86c50713e..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Buugeng3D.svelte b/dist/lib/components/props/Buugeng3D.svelte
-index 8b02d7960387431387d12a655ba4dddbeaf575a1..b43b1deb5a863256cafd1f03e4254148b34594b8 100644
+index 8b02d79603..b43b1deb5a 100644
 --- a/dist/lib/components/props/Buugeng3D.svelte
 +++ b/dist/lib/components/props/Buugeng3D.svelte
 @@ -1,14 +1,65 @@
@@ -3023,6 +3045,28 @@ index 54ac81cf0a5602c1039495b82de06ba5ca59645b..00000000000000000000000000000000
 diff --git a/dist/lib/components/props/Buugeng3D.svelte.d.ts.map b/dist/lib/components/props/Buugeng3D.svelte.d.ts.map
 deleted file mode 100644
 index 81b3160b2c4ff60d93b2297775f9145752cd879a..0000000000000000000000000000000000000000
+diff --git a/dist/lib/components/props/Chicken3D.svelte b/dist/lib/components/props/Chicken3D.svelte
+index d8d33e5d4a..81c9db47e7 100644
+--- a/dist/lib/components/props/Chicken3D.svelte
++++ b/dist/lib/components/props/Chicken3D.svelte
+@@ -14,7 +14,7 @@
+ 
+   import { T } from "@threlte/core";
+   import type { Prop3DProps } from "./Prop3DProps";
+-  import { PROP_COLORS } from "./Prop3DProps";
++  import { reactivePropHandPalette } from "./prop-hand-palette-state.svelte";
+   import { computePropRotation } from "./prop3d-transforms";
+   import { userProportionsState } from "../../state/user-proportions-state.svelte";
+   import {
+@@ -48,7 +48,7 @@
+       scale
+   );
+ 
+-  const palette = $derived(PROP_COLORS[color]);
++  const palette = $derived(reactivePropHandPalette(color));
+ 
+   const rotation = $derived(computePropRotation(propState));
+ 
 diff --git a/dist/lib/components/props/Chicken3D.svelte.d.ts b/dist/lib/components/props/Chicken3D.svelte.d.ts
 deleted file mode 100644
 index 04221a05866ed6f99a273dc8be7061021666bf23..0000000000000000000000000000000000000000
@@ -3030,7 +3074,7 @@ diff --git a/dist/lib/components/props/Chicken3D.svelte.d.ts.map b/dist/lib/comp
 deleted file mode 100644
 index 66f308949cacc8790fcdd3ebf2b165815cb75b80..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Club3D.svelte b/dist/lib/components/props/Club3D.svelte
-index d51a323611e6b9f7b7b2c914182620b41cdfff72..761c1a03d04dcbf468df1d35954f69f4e146c4ff 100644
+index d51a323611..761c1a03d0 100644
 --- a/dist/lib/components/props/Club3D.svelte
 +++ b/dist/lib/components/props/Club3D.svelte
 @@ -1,149 +1,120 @@
@@ -3278,7 +3322,7 @@ diff --git a/dist/lib/components/props/Club3D.svelte.d.ts.map b/dist/lib/compone
 deleted file mode 100644
 index 91b522bfdf7a43f024e5c236a7eb948178ff748b..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Doublestar3D.svelte b/dist/lib/components/props/Doublestar3D.svelte
-index 68efc24af1180e24a9900e1943857a75c6b63e62..87ebb8fb8243dbea8fc32479bb320409ec6b7aed 100644
+index 68efc24af1..87ebb8fb82 100644
 --- a/dist/lib/components/props/Doublestar3D.svelte
 +++ b/dist/lib/components/props/Doublestar3D.svelte
 @@ -1,25 +1,53 @@
@@ -3508,7 +3552,7 @@ diff --git a/dist/lib/components/props/Doublestar3D.svelte.d.ts.map b/dist/lib/c
 deleted file mode 100644
 index 0c43a1c1f3364ea7bb9f6b17da197bda69cf9bee..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Eightrings3D.svelte b/dist/lib/components/props/Eightrings3D.svelte
-index 12a776e2dc4cc4cf8f484afde470d094690a6dc0..e99e626aef531d417e49111acc3fed414820f121 100644
+index 12a776e2dc..e99e626aef 100644
 --- a/dist/lib/components/props/Eightrings3D.svelte
 +++ b/dist/lib/components/props/Eightrings3D.svelte
 @@ -1,23 +1,65 @@
@@ -3674,7 +3718,7 @@ diff --git a/dist/lib/components/props/Eightrings3D.svelte.d.ts.map b/dist/lib/c
 deleted file mode 100644
 index fadf6104b043722cb8415eb47964e1527ee8a117..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Fan3D.svelte b/dist/lib/components/props/Fan3D.svelte
-index dc635e752d11561cb585cbaaffa05b1e525d31e8..16426cf4a056edb4fa4c633632c324d0f24b0404 100644
+index dc635e752d..8e83233d5b 100644
 --- a/dist/lib/components/props/Fan3D.svelte
 +++ b/dist/lib/components/props/Fan3D.svelte
 @@ -1,29 +1,58 @@
@@ -3725,7 +3769,8 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..16426cf4a056edb4fa4c633632c324d0
 +  import { useGltf } from "@threlte/extras";
 +  import type { Material, Mesh, MeshStandardMaterial, Object3D } from "three";
    import type { Prop3DProps } from "./Prop3DProps";
-   import { PROP_COLORS } from "./Prop3DProps";
+-  import { PROP_COLORS } from "./Prop3DProps";
++  import { reactivePropHandPalette } from "./prop-hand-palette-state.svelte";
    import { computePropRotation } from "./prop3d-transforms";
 +  import { getPlateMaterials, PLATE_TRAIL_GEOMETRY } from "./plate-materials";
 +  import { propFinishState } from "../../state/prop-finish-state.svelte";
@@ -3751,7 +3796,7 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..16426cf4a056edb4fa4c633632c324d0
  
    let {
      propState,
-@@ -33,156 +62,124 @@
+@@ -33,156 +62,125 @@
      thickness,
      isActivePlayer = false,
      scale = 1,
@@ -3902,11 +3947,12 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..16426cf4a056edb4fa4c633632c324d0
 +    forEachMaterial(scene, "TKA_Fan_Day_Frame", (material) => {
 +      material.color?.set(DAY_FRAME_COLORS[build.fanFrameColor]);
 +    });
++    const handMain = reactivePropHandPalette(color).main;
 +    forEachMaterial(scene, "TKA_Fan_Cover_Solid_Recolor", (material) => {
-+      material.color?.set(PROP_COLORS[color].main);
++      material.color?.set(handMain);
 +    });
 +    forEachMaterial(scene, "TKA_Fan_Moon_Frame", (material) => {
-+      material.color?.set(PROP_COLORS[color].main);
++      material.color?.set(handMain);
 +    });
 +  });
  </script>
@@ -4020,10 +4066,49 @@ diff --git a/dist/lib/components/props/Fan3D.svelte.d.ts.map b/dist/lib/componen
 deleted file mode 100644
 index cf1c0579171cb7ee0dfd0cb6e9e64a3c7aac8660..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/GltfProp3D.svelte b/dist/lib/components/props/GltfProp3D.svelte
-index 9ed038d07d35b4d5d340c578e100415154ac1178..2048adf7ec318ffb9501f56a7e507503390b6999 100644
+index 9ed038d07d..cfbdde6e30 100644
 --- a/dist/lib/components/props/GltfProp3D.svelte
 +++ b/dist/lib/components/props/GltfProp3D.svelte
-@@ -68,17 +68,29 @@
+@@ -13,6 +13,7 @@
+   import { useGltf } from "@threlte/extras";
+   import { untrack } from "svelte";
+   import { recolorPropModel } from "./prop-model-recolor";
++  import { reactivePropHandPaletteVersion } from "./prop-hand-palette-state.svelte";
+   import { computePropRotation } from "./prop3d-transforms";
+   import { userProportionsState } from "../../state/user-proportions-state.svelte";
+   import {
+@@ -44,6 +45,7 @@
+   // We need a fresh clone for each color to avoid shared material mutation.
+   let coloredScene = $state<Object3D | null>(null);
+   let lastColor = $state<string>("");
++  let lastPaletteVersion = -1;
+ 
+   $effect(() => {
+     const loaded = $gltf;
+@@ -52,8 +54,13 @@
+       return;
+     }
+ 
+-    // Re-clone whenever the color changes
+-    if (props.color !== lastColor || !coloredScene) {
++    // Re-clone whenever the hand or the app's hand palette changes
++    const paletteVersion = reactivePropHandPaletteVersion();
++    if (
++      props.color !== lastColor ||
++      paletteVersion !== lastPaletteVersion ||
++      !coloredScene
++    ) {
+       const clone = loaded.scene.clone(true);
+       recolorPropModel(clone, props.color);
+       // Enable shadow casting on all prop meshes
+@@ -62,23 +69,36 @@
+       });
+       coloredScene = clone;
+       lastColor = props.color;
++      lastPaletteVersion = paletteVersion;
+     }
+   });
+ 
    // Rotation only - position is handled by the parent PerformerRig scene graph
    const rotation = $derived(computePropRotation(props.propState));
  
@@ -4061,6 +4146,28 @@ index d5128e1b8dea87688e853775301ae31c86112b06..00000000000000000000000000000000
 diff --git a/dist/lib/components/props/GltfProp3D.svelte.d.ts.map b/dist/lib/components/props/GltfProp3D.svelte.d.ts.map
 deleted file mode 100644
 index df86e200b113876764f0acac5538c3e711ea892d..0000000000000000000000000000000000000000
+diff --git a/dist/lib/components/props/Guitar3D.svelte b/dist/lib/components/props/Guitar3D.svelte
+index 5dc4004b59..28e8ebf3ce 100644
+--- a/dist/lib/components/props/Guitar3D.svelte
++++ b/dist/lib/components/props/Guitar3D.svelte
+@@ -16,7 +16,7 @@
+ 
+   import { T } from "@threlte/core";
+   import type { Prop3DProps } from "./Prop3DProps";
+-  import { PROP_COLORS } from "./Prop3DProps";
++  import { reactivePropHandPalette } from "./prop-hand-palette-state.svelte";
+   import { computePropRotation } from "./prop3d-transforms";
+   import { userProportionsState } from "../../state/user-proportions-state.svelte";
+   import {
+@@ -43,7 +43,7 @@
+     (thickness ?? userProportionsState.dimensions.staffRadius) * scale
+   );
+ 
+-  const palette = $derived(PROP_COLORS[color]);
++  const palette = $derived(reactivePropHandPalette(color));
+ 
+   const rotation = $derived(computePropRotation(propState));
+ 
 diff --git a/dist/lib/components/props/Guitar3D.svelte.d.ts b/dist/lib/components/props/Guitar3D.svelte.d.ts
 deleted file mode 100644
 index dc466b7b47f93c2e724b7521dd170451f3d12784..0000000000000000000000000000000000000000
@@ -4068,7 +4175,7 @@ diff --git a/dist/lib/components/props/Guitar3D.svelte.d.ts.map b/dist/lib/compo
 deleted file mode 100644
 index 2bce990797cf1d0499fdc3a1e7ee926dd28a491e..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Hoop3D.svelte b/dist/lib/components/props/Hoop3D.svelte
-index 9ffc2413236b11d28d99f53884e6a696741e3333..753bdde1f61dddf9c478523845318907046dcaba 100644
+index 9ffc241323..753bdde1f6 100644
 --- a/dist/lib/components/props/Hoop3D.svelte
 +++ b/dist/lib/components/props/Hoop3D.svelte
 @@ -1,20 +1,60 @@
@@ -4221,6 +4328,28 @@ index 745d0e4562386dd661be2e4b549ee01bebf84a92..00000000000000000000000000000000
 diff --git a/dist/lib/components/props/Hoop3D.svelte.d.ts.map b/dist/lib/components/props/Hoop3D.svelte.d.ts.map
 deleted file mode 100644
 index 32d6218a715be0a64cba07b0f0b60f4272fd9e40..0000000000000000000000000000000000000000
+diff --git a/dist/lib/components/props/Poi3D.svelte b/dist/lib/components/props/Poi3D.svelte
+index 8a455aeebd..7cb29372ae 100644
+--- a/dist/lib/components/props/Poi3D.svelte
++++ b/dist/lib/components/props/Poi3D.svelte
+@@ -16,7 +16,7 @@
+ 
+   import { T } from "@threlte/core";
+   import type { Prop3DProps } from "./Prop3DProps";
+-  import { PROP_COLORS } from "./Prop3DProps";
++  import { reactivePropHandPalette } from "./prop-hand-palette-state.svelte";
+   import { computePropRotation } from "./prop3d-transforms";
+   import { userProportionsState } from "../../state/user-proportions-state.svelte";
+   import {
+@@ -46,7 +46,7 @@
+     (thickness ?? userProportionsState.dimensions.staffRadius) * scale
+   );
+ 
+-  const palette = $derived(PROP_COLORS[color]);
++  const palette = $derived(reactivePropHandPalette(color));
+ 
+   const rotation = $derived(computePropRotation(propState));
+ 
 diff --git a/dist/lib/components/props/Poi3D.svelte.d.ts b/dist/lib/components/props/Poi3D.svelte.d.ts
 deleted file mode 100644
 index be230d94b7ec6fca52f50ef8b6ffafeb78a278df..0000000000000000000000000000000000000000
@@ -4228,7 +4357,7 @@ diff --git a/dist/lib/components/props/Poi3D.svelte.d.ts.map b/dist/lib/componen
 deleted file mode 100644
 index 4c2d4a9b12da3596bfed1803e1a6d6649fa0dfd9..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Prop3D.svelte b/dist/lib/components/props/Prop3D.svelte
-index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..430d531bb26bd6616f2084155bfb60c839546c3c 100644
+index 8f023f7b8a..430d531bb2 100644
 --- a/dist/lib/components/props/Prop3D.svelte
 +++ b/dist/lib/components/props/Prop3D.svelte
 @@ -13,6 +13,8 @@
@@ -4373,6 +4502,61 @@ index 0793069c758c3a730cbd7bf37069b3f4222a90d2..00000000000000000000000000000000
 diff --git a/dist/lib/components/props/Prop3DProps.d.ts.map b/dist/lib/components/props/Prop3DProps.d.ts.map
 deleted file mode 100644
 index fc8b675084cf6f91287dd935c44f8e7ca573c317..0000000000000000000000000000000000000000
+diff --git a/dist/lib/components/props/Prop3DProps.js b/dist/lib/components/props/Prop3DProps.js
+index 36215e345e..6e3f369ece 100644
+--- a/dist/lib/components/props/Prop3DProps.js
++++ b/dist/lib/components/props/Prop3DProps.js
+@@ -1,18 +1,11 @@
+-/**
+- * Shared props interface for all 3D prop components.
+- *
+- * Every prop (Staff3D, Club3D, Fan3D, etc.) receives the same set of
+- * positioning/visibility props. The only thing that changes between
+- * prop types is the geometry rendered inside the group.
+- */
+-/** Standard color palettes matching the 2D prop colors */
+-export const PROP_COLORS = {
+-    blue: { main: "#3b82f6", dark: "#1d4ed8", light: "#60a5fa" },
+-    red: { main: "#ef4444", dark: "#b91c1c", light: "#f87171" },
++import { PROP_HAND_PALETTES } from "./prop-hand-palette";
++const PROP_COLORS = PROP_HAND_PALETTES;
++const METAL_COLORS = {
++  blade: "#c0c0c0",
++  guard: "#ffd540",
++  grip: "#8B4513"
+ };
+-/** Metallic material palette (for swords, etc.) */
+-export const METAL_COLORS = {
+-    blade: "#c0c0c0",
+-    guard: "#ffd540",
+-    grip: "#8B4513",
++export {
++  METAL_COLORS,
++  PROP_COLORS
+ };
+diff --git a/dist/lib/components/props/Sword3D.svelte b/dist/lib/components/props/Sword3D.svelte
+index 144b8c19a4..c05304d264 100644
+--- a/dist/lib/components/props/Sword3D.svelte
++++ b/dist/lib/components/props/Sword3D.svelte
+@@ -11,7 +11,8 @@
+ 
+   import { T } from "@threlte/core";
+   import type { Prop3DProps } from "./Prop3DProps";
+-  import { PROP_COLORS, METAL_COLORS } from "./Prop3DProps";
++  import { METAL_COLORS } from "./Prop3DProps";
++  import { reactivePropHandPalette } from "./prop-hand-palette-state.svelte";
+   import { computePropRotation } from "./prop3d-transforms";
+   import { userProportionsState } from "../../state/user-proportions-state.svelte";
+   import {
+@@ -30,7 +31,7 @@
+   }: Prop3DProps = $props();
+ 
+   const propLayer = $derived(isActivePlayer ? LAYER_PLAYER_BODY : LAYER_WORLD);
+-  const palette = $derived(PROP_COLORS[color]);
++  const palette = $derived(reactivePropHandPalette(color));
+ 
+   const staffLength = $derived(length ?? userProportionsState.staffLength);
+   const staffRadius = $derived(
 diff --git a/dist/lib/components/props/Sword3D.svelte.d.ts b/dist/lib/components/props/Sword3D.svelte.d.ts
 deleted file mode 100644
 index 10a8ad2f87ac2651579f0be4c0a3b978354dfc50..0000000000000000000000000000000000000000
@@ -4380,7 +4564,7 @@ diff --git a/dist/lib/components/props/Sword3D.svelte.d.ts.map b/dist/lib/compon
 deleted file mode 100644
 index fa557fd5e8d807aa3c414da08e9925517de486d7..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Torch3D.svelte b/dist/lib/components/props/Torch3D.svelte
-index dd84811c1cc9986fb72430bd3e94e3233da61684..9c5934551096a8124821406d3ea0e3a008bdee91 100644
+index dd84811c1c..9c59345510 100644
 --- a/dist/lib/components/props/Torch3D.svelte
 +++ b/dist/lib/components/props/Torch3D.svelte
 @@ -1,142 +1,119 @@
@@ -4619,7 +4803,7 @@ diff --git a/dist/lib/components/props/Torch3D.svelte.d.ts.map b/dist/lib/compon
 deleted file mode 100644
 index 70643cfc402ccbf6963bfdf3117009e83b14fbad..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Triad3D.svelte b/dist/lib/components/props/Triad3D.svelte
-index f2e76efafe1854c93461f47e9b16c32400ca3dca..b3f79749eee31ad401d6191162af556e17468711 100644
+index f2e76efafe..b3f79749ee 100644
 --- a/dist/lib/components/props/Triad3D.svelte
 +++ b/dist/lib/components/props/Triad3D.svelte
 @@ -1,152 +1,196 @@
@@ -4942,7 +5126,7 @@ diff --git a/dist/lib/components/props/Triad3D.svelte.d.ts.map b/dist/lib/compon
 deleted file mode 100644
 index d4eff8de3676b87e729420fc04beba7a9c390745..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Triquetra3D.svelte b/dist/lib/components/props/Triquetra3D.svelte
-index 43ff1c3d090621bff1e77af4d1b9834ac29821be..c05aecf863070202be34f6db930c6879f8c48117 100644
+index 43ff1c3d09..c05aecf863 100644
 --- a/dist/lib/components/props/Triquetra3D.svelte
 +++ b/dist/lib/components/props/Triquetra3D.svelte
 @@ -1,23 +1,69 @@
@@ -5134,7 +5318,7 @@ deleted file mode 100644
 index da4a1eff264d7f5f6c34253d48a278a18c48df43..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/club-profile.js b/dist/lib/components/props/club-profile.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..23d9827eb937b880d7ee13cb7dc9b68967d5b86c
+index 0000000000..23d9827eb9
 --- /dev/null
 +++ b/dist/lib/components/props/club-profile.js
 @@ -0,0 +1,166 @@
@@ -5306,7 +5490,7 @@ index 0000000000000000000000000000000000000000..23d9827eb937b880d7ee13cb7dc9b689
 +export const CLUB_REACH_M = 0.50343;
 diff --git a/dist/lib/components/props/doublestar-profile.js b/dist/lib/components/props/doublestar-profile.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..b6349edf5f347f63d46296705563f0eb26feac2b
+index 0000000000..b6349edf5f
 --- /dev/null
 +++ b/dist/lib/components/props/doublestar-profile.js
 @@ -0,0 +1,82 @@
@@ -5394,7 +5578,7 @@ index 0000000000000000000000000000000000000000..b6349edf5f347f63d46296705563f0eb
 +}
 diff --git a/dist/lib/components/props/eightrings-profile.js b/dist/lib/components/props/eightrings-profile.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..297fcdc8243808898327df2ee1d7367cebbaeb68
+index 0000000000..297fcdc824
 --- /dev/null
 +++ b/dist/lib/components/props/eightrings-profile.js
 @@ -0,0 +1,76 @@
@@ -5476,7 +5660,7 @@ index 0000000000000000000000000000000000000000..297fcdc8243808898327df2ee1d7367c
 +}
 diff --git a/dist/lib/components/props/fan-profile.js b/dist/lib/components/props/fan-profile.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..5abfbe088d175d0a66a1213ac8931ef761e5a86f
+index 0000000000..5abfbe088d
 --- /dev/null
 +++ b/dist/lib/components/props/fan-profile.js
 @@ -0,0 +1,140 @@
@@ -5622,248 +5806,210 @@ index 0000000000000000000000000000000000000000..5abfbe088d175d0a66a1213ac8931ef7
 +}
 diff --git a/dist/lib/components/props/frame-materials.js b/dist/lib/components/props/frame-materials.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..19bae60371108ca32a8941f5d133fffc899d3762
+index 0000000000..2f993ae985
 --- /dev/null
 +++ b/dist/lib/components/props/frame-materials.js
-@@ -0,0 +1,235 @@
-+/**
-+ * Assembled-prop finish
-+ *
-+ * Props that are built rather than cut — a hub with spines and wicks, a torch —
-+ * are made of several real materials at once, and the finish has to say which
-+ * is which: kevlar reads dry and matte, a steel spine reads hard and bright, a
-+ * printed hub reads soft and matte, a glow head reads lit from inside.
-+ *
-+ * Two builds of the same prop, matching what people actually own:
-+ *
-+ *   fire  — steel frame, bare spines, unburnt kevlar wicks, a chrome finger
-+ *           ring. Colour lives on the spines, which is the only part long
-+ *           enough to tell blue from red across a dark stage.
-+ *   day   — a printed hub with a fat finger ring, textured grip tube, and
-+ *           translucent heads. The heads glow in the prop's colour, because an
-+ *           LED practice prop does exactly that and it doubles as identity.
-+ *
-+ * Metalness stays low on the big coloured parts for the same reason as
-+ * `plate-materials.ts`: a metal's diffuse response is black, so in these dark
-+ * scenes a metallic body goes muddy while the staffs beside it stay saturated.
-+ * Real metal is reserved for the small steel bits, where it belongs.
-+ */
-+import { Color, MeshBasicMaterial, MeshPhysicalMaterial, MeshStandardMaterial, } from "three";
+@@ -0,0 +1,197 @@
++import {
++  Color,
++  MeshBasicMaterial,
++  MeshPhysicalMaterial,
++  MeshStandardMaterial
++} from "three";
 +import { HOOP_TUBE_DIAMETER_M } from "./hoop-geometry";
-+const PALETTES = {
-+    blue: { main: "#3b82f6", dark: "#1d4ed8" },
-+    red: { main: "#ef4444", dark: "#b91c1c" },
-+};
-+/**
-+ * Unburnt kevlar, a pale sand — not the black of a used wick. Measured off the
-+ * wick in `torch.svg`, which is the one piece of prop artwork that draws the
-+ * material in colour rather than as a pictograph silhouette.
-+ */
++import { paintWithPropHand } from "./prop-hand-paint";
++import { propHandPalette } from "./prop-hand-palette";
 +const KEVLAR = "#f6e5b6";
-+/** Polished spine steel. */
 +const STEEL = "#c8ced8";
-+/** The near-black of a moulded sleeve. */
 +const SLEEVE = "#26262a";
-+const materialSets = new Map();
-+export function getFrameMaterials(color, variant) {
-+    const key = `${color}:${variant}`;
-+    const cached = materialSets.get(key);
-+    if (cached)
-+        return cached;
-+    const palette = PALETTES[color];
-+    const fire = variant === "fire";
-+    const materials = {
-+        spine: new MeshPhysicalMaterial({
-+            color: palette.main,
-+            // A bare fire spine is hard and bright; a day grip is wrapped in
-+            // textured tube, which kills the highlight almost completely.
-+            roughness: fire ? 0.24 : 0.62,
-+            metalness: fire ? 0.18 : 0.04,
-+            clearcoat: fire ? 0.8 : 0,
-+            clearcoatRoughness: 0.14,
-+        }),
-+        hub: new MeshStandardMaterial({
-+            color: fire ? STEEL : palette.dark,
-+            roughness: fire ? 0.28 : 0.58,
-+            metalness: fire ? 0.62 : 0.05,
-+        }),
-+        ring: new MeshStandardMaterial({
-+            color: fire ? STEEL : palette.dark,
-+            roughness: fire ? 0.2 : 0.58,
-+            metalness: fire ? 0.7 : 0.05,
-+        }),
-+        collar: new MeshStandardMaterial({
-+            color: SLEEVE,
-+            roughness: 0.78,
-+            metalness: 0.05,
-+        }),
-+        tip: fire
-+            ? new MeshStandardMaterial({
-+                color: KEVLAR,
-+                roughness: 0.95,
-+                metalness: 0,
-+            })
-+            : new MeshStandardMaterial({
-+                color: "#f7f7fa",
-+                roughness: 0.46,
-+                metalness: 0,
-+                emissive: new Color(palette.main),
-+                emissiveIntensity: 0.55,
-+            }),
-+        trail: new MeshBasicMaterial({
-+            color: palette.main,
-+            opacity: 0.3,
-+            transparent: true,
-+        }),
-+    };
-+    materialSets.set(key, materials);
-+    return materials;
++const materialSets = /* @__PURE__ */ new Map();
++function getFrameMaterials(color, variant) {
++  const key = `${color}:${variant}`;
++  const cached = materialSets.get(key);
++  if (cached) return cached;
++  const palette = propHandPalette(color);
++  const fire = variant === "fire";
++  const materials = {
++    spine: new MeshPhysicalMaterial({
++      color: palette.main,
++      // A bare fire spine is hard and bright; a day grip is wrapped in
++      // textured tube, which kills the highlight almost completely.
++      roughness: fire ? 0.24 : 0.62,
++      metalness: fire ? 0.18 : 0.04,
++      clearcoat: fire ? 0.8 : 0,
++      clearcoatRoughness: 0.14
++    }),
++    hub: new MeshStandardMaterial({
++      color: fire ? STEEL : palette.dark,
++      roughness: fire ? 0.28 : 0.58,
++      metalness: fire ? 0.62 : 0.05
++    }),
++    ring: new MeshStandardMaterial({
++      color: fire ? STEEL : palette.dark,
++      roughness: fire ? 0.2 : 0.58,
++      metalness: fire ? 0.7 : 0.05
++    }),
++    collar: new MeshStandardMaterial({
++      color: SLEEVE,
++      roughness: 0.78,
++      metalness: 0.05
++    }),
++    tip: fire ? new MeshStandardMaterial({
++      color: KEVLAR,
++      roughness: 0.95,
++      metalness: 0
++    }) : new MeshStandardMaterial({
++      color: "#f7f7fa",
++      roughness: 0.46,
++      metalness: 0,
++      emissive: new Color(palette.main),
++      emissiveIntensity: 0.55
++    }),
++    trail: new MeshBasicMaterial({
++      color: palette.main,
++      opacity: 0.3,
++      transparent: true
++    })
++  };
++  paintWithPropHand(materials.spine, color);
++  paintWithPropHand(materials.trail, color);
++  if (!fire) {
++    paintWithPropHand(materials.hub, color, "dark");
++    paintWithPropHand(materials.ring, color, "dark");
++    paintWithPropHand(materials.tip, color, "main", "emissive");
++  }
++  materialSets.set(key, materials);
++  return materials;
 +}
-+const torchSets = new Map();
-+/**
-+ * A torch is one build, not two: the fire and practice versions of this prop
-+ * are the same object with a different wick, so there is no `variant` here.
-+ */
-+export function getTorchMaterials(color) {
-+    const cached = torchSets.get(color);
-+    if (cached)
-+        return cached;
-+    const palette = PALETTES[color];
-+    const materials = {
-+        hardware: new MeshStandardMaterial({
-+            color: "#e6e8ec",
-+            roughness: 0.3,
-+            metalness: 0.45,
-+        }),
-+        grip: new MeshStandardMaterial({
-+            color: "#231f20",
-+            // Grip tape and knurling: no highlight at all, or it reads as plastic.
-+            roughness: 0.86,
-+            metalness: 0.03,
-+        }),
-+        flare: new MeshPhysicalMaterial({
-+            color: palette.main,
-+            // The real cone is anodized or moulded acrylic under a gloss coat, and
-+            // the clearcoat is what separates it from the matte grip below it.
-+            roughness: 0.26,
-+            metalness: 0.08,
-+            clearcoat: 0.85,
-+            clearcoatRoughness: 0.12,
-+        }),
-+        shaft: new MeshStandardMaterial({
-+            color: "#b9bec6",
-+            roughness: 0.22,
-+            metalness: 0.72,
-+        }),
-+        wick: new MeshStandardMaterial({
-+            color: KEVLAR,
-+            roughness: 0.95,
-+            metalness: 0,
-+        }),
-+        trail: new MeshBasicMaterial({
-+            color: palette.main,
-+            opacity: 0.3,
-+            transparent: true,
-+        }),
-+    };
-+    torchSets.set(color, materials);
-+    return materials;
++const torchSets = /* @__PURE__ */ new Map();
++function getTorchMaterials(color) {
++  const cached = torchSets.get(color);
++  if (cached) return cached;
++  const palette = propHandPalette(color);
++  const materials = {
++    hardware: new MeshStandardMaterial({
++      color: "#e6e8ec",
++      roughness: 0.3,
++      metalness: 0.45
++    }),
++    grip: new MeshStandardMaterial({
++      color: "#231f20",
++      // Grip tape and knurling: no highlight at all, or it reads as plastic.
++      roughness: 0.86,
++      metalness: 0.03
++    }),
++    flare: new MeshPhysicalMaterial({
++      color: palette.main,
++      // The real cone is anodized or moulded acrylic under a gloss coat, and
++      // the clearcoat is what separates it from the matte grip below it.
++      roughness: 0.26,
++      metalness: 0.08,
++      clearcoat: 0.85,
++      clearcoatRoughness: 0.12
++    }),
++    shaft: new MeshStandardMaterial({
++      color: "#b9bec6",
++      roughness: 0.22,
++      metalness: 0.72
++    }),
++    wick: new MeshStandardMaterial({
++      color: KEVLAR,
++      roughness: 0.95,
++      metalness: 0
++    }),
++    trail: new MeshBasicMaterial({
++      color: palette.main,
++      opacity: 0.3,
++      transparent: true
++    })
++  };
++  paintWithPropHand(materials.flare, color);
++  paintWithPropHand(materials.trail, color);
++  torchSets.set(color, materials);
++  return materials;
 +}
-+const clubSets = new Map();
-+/**
-+ * A club is one turned body whose colour changes along its length, so unlike
-+ * the frame props there is no `variant` here: every build people own — moulded,
-+ * LED, practice — shares this material split and differs only in the body.
-+ */
-+export function getClubMaterials(color) {
-+    const cached = clubSets.get(color);
-+    if (cached)
-+        return cached;
-+    const palette = PALETTES[color];
-+    const materials = {
-+        knob: new MeshStandardMaterial({
-+            color: "#1b1b1e",
-+            // Moulded rubber, so it keeps a little sheen the tape ring does not.
-+            roughness: 0.72,
-+            metalness: 0.02,
-+        }),
-+        handle: new MeshStandardMaterial({
-+            color: "#eceef1",
-+            roughness: 0.55,
-+            metalness: 0.02,
-+        }),
-+        marker: new MeshStandardMaterial({
-+            color: "#141416",
-+            // Vinyl tape: flatter than the knob, and it should read as a decal.
-+            roughness: 0.88,
-+            metalness: 0.02,
-+        }),
-+        body: new MeshPhysicalMaterial({
-+            color: palette.main,
-+            // Blow-moulded polyethylene under a gloss skin. Same reasoning as the
-+            // torch's flare: the clearcoat is what separates it from the matte
-+            // handle it sits against.
-+            roughness: 0.3,
-+            metalness: 0.06,
-+            clearcoat: 0.7,
-+            clearcoatRoughness: 0.18,
-+        }),
-+        trail: new MeshBasicMaterial({
-+            color: palette.main,
-+            opacity: 0.3,
-+            transparent: true,
-+        }),
-+    };
-+    clubSets.set(color, materials);
-+    return materials;
++const clubSets = /* @__PURE__ */ new Map();
++function getClubMaterials(color) {
++  const cached = clubSets.get(color);
++  if (cached) return cached;
++  const palette = propHandPalette(color);
++  const materials = {
++    knob: new MeshStandardMaterial({
++      color: "#1b1b1e",
++      // Moulded rubber, so it keeps a little sheen the tape ring does not.
++      roughness: 0.72,
++      metalness: 0.02
++    }),
++    handle: new MeshStandardMaterial({
++      color: "#eceef1",
++      roughness: 0.55,
++      metalness: 0.02
++    }),
++    marker: new MeshStandardMaterial({
++      color: "#141416",
++      // Vinyl tape: flatter than the knob, and it should read as a decal.
++      roughness: 0.88,
++      metalness: 0.02
++    }),
++    body: new MeshPhysicalMaterial({
++      color: palette.main,
++      // Blow-moulded polyethylene under a gloss skin. Same reasoning as the
++      // torch's flare: the clearcoat is what separates it from the matte
++      // handle it sits against.
++      roughness: 0.3,
++      metalness: 0.06,
++      clearcoat: 0.7,
++      clearcoatRoughness: 0.18
++    }),
++    trail: new MeshBasicMaterial({
++      color: palette.main,
++      opacity: 0.3,
++      transparent: true
++    })
++  };
++  paintWithPropHand(materials.body, color);
++  paintWithPropHand(materials.trail, color);
++  clubSets.set(color, materials);
++  return materials;
 +}
-+const hoopSets = new Map();
-+/**
-+ * A mini hoop is a single extrusion of coloured HDPE bent into a circle, so it
-+ * gets ONE material — there is no band structure to describe the way a club's
-+ * knob, handle and body need one. Vendors do sell grips (sanded inside, an inner
-+ * line, spiral tape), but those are options on an otherwise uniform ring and the
-+ * stock product photos show the ring bare.
-+ *
-+ * The finish comes off those photos: a bright, tight specular line runs the whole
-+ * inner curve of the tube with the body colour reading through underneath, which
-+ * is a glossy translucent plastic and not a painted one. Hence a low roughness
-+ * with clearcoat on top, and `transmission` low but non-zero so the tube picks up
-+ * a little light through itself instead of going flat where it turns away.
-+ *
-+ * Metalness stays near zero for the same reason as the rest of this module: a
-+ * metal's diffuse response is black, and these are dark scenes.
-+ */
-+export function getHoopMaterials(color) {
-+    const cached = hoopSets.get(color);
-+    if (cached)
-+        return cached;
-+    const palette = PALETTES[color];
-+    const materials = {
-+        tube: new MeshPhysicalMaterial({
-+            color: palette.main,
-+            roughness: 0.22,
-+            metalness: 0.02,
-+            clearcoat: 0.85,
-+            clearcoatRoughness: 0.1,
-+            // Extruded HDPE is not clear, but it is not opaque either — the photos
-+            // show the colour lifting where the tube thins toward its silhouette.
-+            transmission: 0.12,
-+            thickness: HOOP_TUBE_DIAMETER_M,
-+            ior: 1.5,
-+        }),
-+        trail: new MeshBasicMaterial({
-+            color: palette.main,
-+            opacity: 0.3,
-+            transparent: true,
-+        }),
-+    };
-+    hoopSets.set(color, materials);
-+    return materials;
++const hoopSets = /* @__PURE__ */ new Map();
++function getHoopMaterials(color) {
++  const cached = hoopSets.get(color);
++  if (cached) return cached;
++  const palette = propHandPalette(color);
++  const materials = {
++    tube: new MeshPhysicalMaterial({
++      color: palette.main,
++      roughness: 0.22,
++      metalness: 0.02,
++      clearcoat: 0.85,
++      clearcoatRoughness: 0.1,
++      // Extruded HDPE is not clear, but it is not opaque either — the photos
++      // show the colour lifting where the tube thins toward its silhouette.
++      transmission: 0.12,
++      thickness: HOOP_TUBE_DIAMETER_M,
++      ior: 1.5
++    }),
++    trail: new MeshBasicMaterial({
++      color: palette.main,
++      opacity: 0.3,
++      transparent: true
++    })
++  };
++  paintWithPropHand(materials.tube, color);
++  paintWithPropHand(materials.trail, color);
++  hoopSets.set(color, materials);
++  return materials;
 +}
++export {
++  getClubMaterials,
++  getFrameMaterials,
++  getHoopMaterials,
++  getTorchMaterials
++};
 diff --git a/dist/lib/components/props/geng-profile.js b/dist/lib/components/props/geng-profile.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..e22eff0c745fb150ec9e194b6722a5a95c7fd0bb
+index 0000000000..e22eff0c74
 --- /dev/null
 +++ b/dist/lib/components/props/geng-profile.js
 @@ -0,0 +1,134 @@
@@ -6003,7 +6149,7 @@ index 0000000000000000000000000000000000000000..e22eff0c745fb150ec9e194b6722a5a9
 +}
 diff --git a/dist/lib/components/props/hoop-geometry.js b/dist/lib/components/props/hoop-geometry.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..a2b871a8a9b362b2f280ca0da42a728ba6c92520
+index 0000000000..a2b871a8a9
 --- /dev/null
 +++ b/dist/lib/components/props/hoop-geometry.js
 @@ -0,0 +1,108 @@
@@ -6117,7 +6263,7 @@ index 0000000000000000000000000000000000000000..a2b871a8a9b362b2f280ca0da42a728b
 +export const HOOP_REACH_M = 2 * HOOP_CENTERLINE_RADIUS_M + HOOP_TUBE_RADIUS_M;
 diff --git a/dist/lib/components/props/plate-extrude.js b/dist/lib/components/props/plate-extrude.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..286ab745e01e31fdbe6d2b0eb06693f22630d8ce
+index 0000000000..286ab745e0
 --- /dev/null
 +++ b/dist/lib/components/props/plate-extrude.js
 @@ -0,0 +1,60 @@
@@ -6183,70 +6329,234 @@ index 0000000000000000000000000000000000000000..286ab745e01e31fdbe6d2b0eb06693f2
 +}
 diff --git a/dist/lib/components/props/plate-materials.js b/dist/lib/components/props/plate-materials.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..04c333769c76c253057d83d6e99a8b5da539a49a
+index 0000000000..8e6bdb8a0c
 --- /dev/null
 +++ b/dist/lib/components/props/plate-materials.js
-@@ -0,0 +1,57 @@
-+/**
-+ * Flat-prop finish
-+ *
-+ * Every plate prop wears the same finish, so they read as one family of objects
-+ * cut from the same stock. Shared and cached per colour: the meshes differ, the
-+ * material does not.
-+ */
-+import { Color, MeshBasicMaterial, MeshPhysicalMaterial, MeshStandardMaterial, SphereGeometry, } from "three";
-+const PALETTES = {
-+    blue: { main: "#3b82f6", dark: "#1d4ed8" },
-+    red: { main: "#ef4444", dark: "#b91c1c" },
-+};
-+const materialSets = new Map();
-+export function getPlateMaterials(color) {
-+    const cached = materialSets.get(color);
-+    if (cached)
-+        return cached;
-+    const palette = PALETTES[color];
-+    const materials = {
-+        // Faces read as polished anodized plate: a clearcoat lobe on top of the
-+        // base specular keeps a crisp highlight travelling across the prop as it
-+        // turns, which is what sells the shape in motion.
-+        //
-+        // Metalness stays low on purpose. A metal's diffuse response is black — it
-+        // can only show what the environment reflects — and these scenes run dark
-+        // with few lights, so a metallic plate goes muddy while the staffs beside
-+        // it stay saturated. Keep the base dielectric like Staff3D and let the
-+        // clearcoat carry the shine.
-+        face: new MeshPhysicalMaterial({
-+            color: palette.main,
-+            roughness: 0.26,
-+            metalness: 0.12,
-+            clearcoat: 0.7,
-+            clearcoatRoughness: 0.16,
-+        }),
-+        // The rim tells the eye this is solid plate rather than a sticker, so it
-+        // sits clearly below the face — but only part way to the palette's dark
-+        // endpoint. On a ribbon this narrow the rim covers a lot of the silhouette
-+        // whenever the plate tilts, and the full dark red turns the whole prop
-+        // murky while the same treatment in blue barely shows. Meeting the face 60%
-+        // of the way down keeps both colours reading as themselves.
-+        edge: new MeshStandardMaterial({
-+            color: new Color(palette.main).lerp(new Color(palette.dark), 0.6),
-+            roughness: 0.42,
-+            metalness: 0.1,
-+        }),
-+        trail: new MeshBasicMaterial({
-+            color: palette.main,
-+            opacity: 0.3,
-+            transparent: true,
-+        }),
-+    };
-+    materialSets.set(color, materials);
-+    return materials;
+@@ -0,0 +1,63 @@
++import {
++  Color,
++  MeshBasicMaterial,
++  MeshPhysicalMaterial,
++  MeshStandardMaterial,
++  SphereGeometry
++} from "three";
++import { paintWithPropHand } from "./prop-hand-paint";
++import { propHandPalette } from "./prop-hand-palette";
++const materialSets = /* @__PURE__ */ new Map();
++function getPlateMaterials(color) {
++  const cached = materialSets.get(color);
++  if (cached) return cached;
++  const palette = propHandPalette(color);
++  const materials = {
++    // Faces read as polished anodized plate: a clearcoat lobe on top of the
++    // base specular keeps a crisp highlight travelling across the prop as it
++    // turns, which is what sells the shape in motion.
++    //
++    // Metalness stays low on purpose. A metal's diffuse response is black — it
++    // can only show what the environment reflects — and these scenes run dark
++    // with few lights, so a metallic plate goes muddy while the staffs beside
++    // it stay saturated. Keep the base dielectric like Staff3D and let the
++    // clearcoat carry the shine.
++    face: new MeshPhysicalMaterial({
++      color: palette.main,
++      roughness: 0.26,
++      metalness: 0.12,
++      clearcoat: 0.7,
++      clearcoatRoughness: 0.16
++    }),
++    // The rim tells the eye this is solid plate rather than a sticker, so it
++    // sits clearly below the face — but only part way to the palette's dark
++    // endpoint. On a ribbon this narrow the rim covers a lot of the silhouette
++    // whenever the plate tilts, and the full dark red turns the whole prop
++    // murky while the same treatment in blue barely shows. Meeting the face 60%
++    // of the way down keeps both colours reading as themselves.
++    edge: new MeshStandardMaterial({
++      color: new Color(palette.main).lerp(new Color(palette.dark), 0.6),
++      roughness: 0.42,
++      metalness: 0.1
++    }),
++    trail: new MeshBasicMaterial({
++      color: palette.main,
++      opacity: 0.3,
++      transparent: true
++    })
++  };
++  paintWithPropHand(materials.face, color);
++  paintWithPropHand(
++    materials.edge,
++    color,
++    (hand) => new Color(hand.main).lerp(new Color(hand.dark), 0.6)
++  );
++  paintWithPropHand(materials.trail, color);
++  materialSets.set(color, materials);
++  return materials;
 +}
-+/** Shared marker geometry for the trail indicator. */
-+export const PLATE_TRAIL_GEOMETRY = new SphereGeometry(0.015, 8, 8);
++const PLATE_TRAIL_GEOMETRY = new SphereGeometry(0.015, 8, 8);
++export {
++  PLATE_TRAIL_GEOMETRY,
++  getPlateMaterials
++};
+diff --git a/dist/lib/components/props/prop-hand-paint.js b/dist/lib/components/props/prop-hand-paint.js
+new file mode 100644
+index 0000000000..d084a75803
+--- /dev/null
++++ b/dist/lib/components/props/prop-hand-paint.js
+@@ -0,0 +1,30 @@
++import { Color } from "three";
++import {
++  propHandPalette,
++  subscribePropHandColors
++} from "./prop-hand-palette";
++const bindings = [];
++function resolvePaint(hand, paint) {
++  const palette = propHandPalette(hand);
++  return typeof paint === "function" ? paint(palette) : palette[paint];
++}
++function apply(binding) {
++  const target = binding.material[binding.channel];
++  target?.set(resolvePaint(binding.hand, binding.paint));
++}
++subscribePropHandColors(() => {
++  for (const binding of bindings) apply(binding);
++});
++function paintWithPropHand(material, hand, paint = "main", channel = "color") {
++  const binding = { material, hand, paint, channel };
++  bindings.push(binding);
++  apply(binding);
++  return material;
++}
++function propHandColor(hand, paint = "main") {
++  return new Color(resolvePaint(hand, paint));
++}
++export {
++  paintWithPropHand,
++  propHandColor
++};
+diff --git a/dist/lib/components/props/prop-hand-palette-state.svelte.js b/dist/lib/components/props/prop-hand-palette-state.svelte.js
+new file mode 100644
+index 0000000000..5c4a4736dd
+--- /dev/null
++++ b/dist/lib/components/props/prop-hand-palette-state.svelte.js
+@@ -0,0 +1,20 @@
++import {
++  propHandPalette,
++  propHandPaletteVersion,
++  subscribePropHandColors
++} from "./prop-hand-palette";
++const state = $state({ version: propHandPaletteVersion() });
++subscribePropHandColors(() => {
++  state.version = propHandPaletteVersion();
++});
++function reactivePropHandPalette(hand) {
++  void state.version;
++  return propHandPalette(hand);
++}
++function reactivePropHandPaletteVersion() {
++  return state.version;
++}
++export {
++  reactivePropHandPalette,
++  reactivePropHandPaletteVersion
++};
+diff --git a/dist/lib/components/props/prop-hand-palette.js b/dist/lib/components/props/prop-hand-palette.js
+new file mode 100644
+index 0000000000..ea2b5c7f1d
+--- /dev/null
++++ b/dist/lib/components/props/prop-hand-palette.js
+@@ -0,0 +1,90 @@
++const DEFAULT_PROP_HAND_PALETTES = {
++  blue: { main: "#3b82f6", dark: "#1d4ed8", light: "#60a5fa" },
++  red: { main: "#ef4444", dark: "#b91c1c", light: "#f87171" }
++};
++const PROP_HAND_PALETTES = {
++  ...DEFAULT_PROP_HAND_PALETTES
++};
++const listeners = /* @__PURE__ */ new Set();
++let version = 0;
++function propHandPalette(hand) {
++  return PROP_HAND_PALETTES[hand];
++}
++function propHandPaletteVersion() {
++  return version;
++}
++function normalizeHex(value) {
++  if (typeof value !== "string") return null;
++  const hex = value.trim().toLowerCase();
++  if (/^#[0-9a-f]{6}$/.test(hex)) return hex;
++  if (/^#[0-9a-f]{3}$/.test(hex)) {
++    return `#${[...hex.slice(1)].map((c) => c + c).join("")}`;
++  }
++  return null;
++}
++function hexToHsl(hex) {
++  const [r, g, b] = [1, 3, 5].map(
++    (start) => parseInt(hex.slice(start, start + 2), 16) / 255
++  );
++  const max = Math.max(r, g, b);
++  const min = Math.min(r, g, b);
++  const l = (max + min) / 2;
++  if (max === min) return [0, 0, l];
++  const d = max - min;
++  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
++  const h = max === r ? ((g - b) / d + (g < b ? 6 : 0)) / 6 : max === g ? ((b - r) / d + 2) / 6 : ((r - g) / d + 4) / 6;
++  return [h, s, l];
++}
++function hslToHex(h, s, l) {
++  const hue = (p2, q2, t) => {
++    const u = t < 0 ? t + 1 : t > 1 ? t - 1 : t;
++    if (u < 1 / 6) return p2 + (q2 - p2) * 6 * u;
++    if (u < 1 / 2) return q2;
++    if (u < 2 / 3) return p2 + (q2 - p2) * (2 / 3 - u) * 6;
++    return p2;
++  };
++  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
++  const p = 2 * l - q;
++  const channels = s === 0 ? [l, l, l] : [h + 1 / 3, h, h - 1 / 3].map((t) => hue(p, q, t));
++  return `#${channels.map(
++    (v) => Math.round(Math.min(1, Math.max(0, v)) * 255).toString(16).padStart(2, "0")
++  ).join("")}`;
++}
++function derivePropHandPalette(color) {
++  const main = normalizeHex(color) ?? DEFAULT_PROP_HAND_PALETTES.blue.main;
++  const [h, s, l] = hexToHsl(main);
++  return {
++    main,
++    dark: hslToHex(h, s, l * 0.72),
++    light: hslToHex(h, s, l + (1 - l) * 0.28)
++  };
++}
++function setPropHandColors(colors) {
++  let changed = false;
++  for (const hand of ["blue", "red"]) {
++    const hex = normalizeHex(colors[hand]);
++    const next = hex ? derivePropHandPalette(hex) : DEFAULT_PROP_HAND_PALETTES[hand];
++    const current = PROP_HAND_PALETTES[hand];
++    if (current.main === next.main && current.dark === next.dark && current.light === next.light) {
++      continue;
++    }
++    PROP_HAND_PALETTES[hand] = next;
++    changed = true;
++  }
++  if (!changed) return;
++  version += 1;
++  for (const listener of listeners) listener();
++}
++function subscribePropHandColors(listener) {
++  listeners.add(listener);
++  return () => listeners.delete(listener);
++}
++export {
++  DEFAULT_PROP_HAND_PALETTES,
++  PROP_HAND_PALETTES,
++  derivePropHandPalette,
++  propHandPalette,
++  propHandPaletteVersion,
++  setPropHandColors,
++  subscribePropHandColors
++};
 diff --git a/dist/lib/components/props/prop-lathe.js b/dist/lib/components/props/prop-lathe.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..c64a9ff1cc0b06fd18785ea4e606b06eb6011b8a
+index 0000000000..c64a9ff1cc
 --- /dev/null
 +++ b/dist/lib/components/props/prop-lathe.js
 @@ -0,0 +1,72 @@
@@ -6329,7 +6639,7 @@ diff --git a/dist/lib/components/props/prop-model-recolor.d.ts.map b/dist/lib/co
 deleted file mode 100644
 index 7ff7c28e2920dcf89f8428417b3d27ecdc543ce1..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/prop-model-recolor.js b/dist/lib/components/props/prop-model-recolor.js
-index 202c7626491817532b35a1e4572dbf417ca12c51..75d2fc737bbda14a30a74cc36398e09278613dc1 100644
+index 202c762649..75d2fc737b 100644
 --- a/dist/lib/components/props/prop-model-recolor.js
 +++ b/dist/lib/components/props/prop-model-recolor.js
 @@ -1,9 +1,10 @@
@@ -6432,7 +6742,7 @@ diff --git a/dist/lib/components/props/prop-model-registry.d.ts.map b/dist/lib/c
 deleted file mode 100644
 index 61d578d9780308efad435cde03d59b9a1636564f..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/prop-model-registry.js b/dist/lib/components/props/prop-model-registry.js
-index d26cd3a0b4aecdbc58a6132f134f8d0965a94ebf..5798f38500594260911b358577cd8f90e011a010 100644
+index d26cd3a0b4..5798f38500 100644
 --- a/dist/lib/components/props/prop-model-registry.js
 +++ b/dist/lib/components/props/prop-model-registry.js
 @@ -25,6 +25,39 @@ function modelUrl(filename) {
@@ -6637,7 +6947,7 @@ deleted file mode 100644
 index f888e82e7c0d12cce70582ba6aeb518e0d85302c..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/torch-profile.js b/dist/lib/components/props/torch-profile.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..90dee722a0dfff7df7587571f03dc01bc73d368d
+index 0000000000..90dee722a0
 --- /dev/null
 +++ b/dist/lib/components/props/torch-profile.js
 @@ -0,0 +1,125 @@
@@ -6768,7 +7078,7 @@ index 0000000000000000000000000000000000000000..90dee722a0dfff7df7587571f03dc01b
 +export const TORCH_REACH = 0.59335;
 diff --git a/dist/lib/components/props/triad-frame.js b/dist/lib/components/props/triad-frame.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..77dae684f0a8eaa4d6f07dab53ce6f995a93f79f
+index 0000000000..77dae684f0
 --- /dev/null
 +++ b/dist/lib/components/props/triad-frame.js
 @@ -0,0 +1,79 @@
@@ -6853,7 +7163,7 @@ index 0000000000000000000000000000000000000000..77dae684f0a8eaa4d6f07dab53ce6f99
 +};
 diff --git a/dist/lib/components/props/triquetra-profile.js b/dist/lib/components/props/triquetra-profile.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..30632a0b02ca68d577ec7aa281c7d89257373bfc
+index 0000000000..30632a0b02
 --- /dev/null
 +++ b/dist/lib/components/props/triquetra-profile.js
 @@ -0,0 +1,146 @@
@@ -7010,7 +7320,7 @@ diff --git a/dist/lib/config/avatar-definitions.d.ts.map b/dist/lib/config/avata
 deleted file mode 100644
 index 00bac5f8e9f0e499668207b35e5eb79c49861922..0000000000000000000000000000000000000000
 diff --git a/dist/lib/config/avatar-definitions.js b/dist/lib/config/avatar-definitions.js
-index 6625f568525aa5f1f2dc0560861e3627aff5d1e2..f5814637ca3adc515f36cb83e8c38072f5bb7b4e 100644
+index 6625f56852..f5814637ca 100644
 --- a/dist/lib/config/avatar-definitions.js
 +++ b/dist/lib/config/avatar-definitions.js
 @@ -7,17 +7,34 @@
@@ -7122,7 +7432,7 @@ diff --git a/dist/lib/debug/avatar-debug-hooks.d.ts.map b/dist/lib/debug/avatar-
 deleted file mode 100644
 index 70ce276e7527dc8e6de72fd4c07fcd3385954343..0000000000000000000000000000000000000000
 diff --git a/dist/lib/debug/avatar-debug-hooks.js b/dist/lib/debug/avatar-debug-hooks.js
-index e08ff448270430534dff2ca7acd9b56e7cbd2b5a..918148662c96c60440bae13caccc9da5891577ce 100644
+index e08ff44827..918148662c 100644
 --- a/dist/lib/debug/avatar-debug-hooks.js
 +++ b/dist/lib/debug/avatar-debug-hooks.js
 @@ -7,6 +7,11 @@ export function installAvatarDebugHooks(args) {
@@ -7200,7 +7510,7 @@ index e08ff448270430534dff2ca7acd9b56e7cbd2b5a..918148662c96c60440bae13caccc9da5
  }
 diff --git a/dist/lib/debug/avatar-load-instrumentation.js b/dist/lib/debug/avatar-load-instrumentation.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..3da407076bbad414d93cdac0dd1f84ba44abfb56
+index 0000000000..3da407076b
 --- /dev/null
 +++ b/dist/lib/debug/avatar-load-instrumentation.js
 @@ -0,0 +1,121 @@
@@ -7374,7 +7684,7 @@ diff --git a/dist/lib/domain/enums/PropType.d.ts.map b/dist/lib/domain/enums/Pro
 deleted file mode 100644
 index b7409eb0c5a99e845b2969440b9c08331729704d..0000000000000000000000000000000000000000
 diff --git a/dist/lib/domain/enums/PropType.js b/dist/lib/domain/enums/PropType.js
-index 15844ec32763c63fe4955b8c893dbcdd5156ff4b..9efeec83ae295374887406039ab5fcd1b1d40c96 100644
+index 15844ec327..9efeec83ae 100644
 --- a/dist/lib/domain/enums/PropType.js
 +++ b/dist/lib/domain/enums/PropType.js
 @@ -20,6 +20,7 @@ export var PropType;
@@ -7461,7 +7771,7 @@ diff --git a/dist/lib/getAngleMathCalculator.d.ts.map b/dist/lib/getAngleMathCal
 deleted file mode 100644
 index 75095405aba26fc2283c5f24258534f8bd8ee21f..0000000000000000000000000000000000000000
 diff --git a/dist/lib/index.d.ts b/dist/lib/index.d.ts
-index b6c16afd12..551749f5cf 100644
+index b6c16afd12..b5cd047ff1 100644
 --- a/dist/lib/index.d.ts
 +++ b/dist/lib/index.d.ts
 @@ -48,13 +48,16 @@ export { PRESET_VALID_COUNTS, createFormationFromPreset, FORMATION_PRESET_INFO }
@@ -7520,9 +7830,14 @@ index b6c16afd12..551749f5cf 100644
  export { LegAnimator } from "./services/implementations/LegAnimator";
  export { solveCylinderGrasp } from "./services/implementations/CylinderGraspSolver";
  export type { GraspResult } from "./services/implementations/CylinderGraspSolver";
-@@ -112,4 +118,4 @@ export { PROP_MODEL_REGISTRY } from "./components/props/prop-model-registry";
+@@ -111,5 +117,9 @@ export { installMocapDebugHooks } from "./debug/mocap-debug";
+ export { PROP_MODEL_REGISTRY } from "./components/props/prop-model-registry";
  export type { Prop3DProps } from "./components/props/Prop3DProps";
  export { PROP_COLORS, METAL_COLORS } from "./components/props/Prop3DProps";
++export { DEFAULT_PROP_HAND_PALETTES, derivePropHandPalette, propHandPalette, propHandPaletteVersion, setPropHandColors, subscribePropHandColors } from "./components/props/prop-hand-palette";
++export type { PropHand, PropHandPalette } from "./components/props/prop-hand-palette";
++export { paintWithPropHand, propHandColor } from "./components/props/prop-hand-paint";
++export { reactivePropHandPalette, reactivePropHandPaletteVersion } from "./components/props/prop-hand-palette-state.svelte";
  export { STAFF_GRIP_POSES } from "./data/grip-poses/staff-grip-poses";
 -//# sourceMappingURL=index.d.ts.map
 \ No newline at end of file
@@ -7531,7 +7846,7 @@ diff --git a/dist/lib/index.d.ts.map b/dist/lib/index.d.ts.map
 deleted file mode 100644
 index e65326b49a5b788b837220aaf39614a7876831ce..0000000000000000000000000000000000000000
 diff --git a/dist/lib/index.js b/dist/lib/index.js
-index 10260a0233..fa389c19e2 100644
+index 10260a0233..6e9d3623cc 100644
 --- a/dist/lib/index.js
 +++ b/dist/lib/index.js
 @@ -47,9 +47,14 @@ export { SCALE, STAGE, WORLDS } from "./scale/scale-constants";
@@ -7575,8 +7890,13 @@ index 10260a0233..fa389c19e2 100644
  export { LegAnimator } from "./services/implementations/LegAnimator";
  export { solveCylinderGrasp } from "./services/implementations/CylinderGraspSolver";
  export { createPerformerSynchronizer } from "./services/implementations/PerformerSynchronizer";
-@@ -89,3 +99,6 @@ export { PROP_MODEL_REGISTRY } from "./components/props/prop-model-registry";
+@@ -87,5 +97,11 @@ export { installMocapDebugHooks } from "./debug/mocap-debug";
+ // Prop utilities
+ export { PROP_MODEL_REGISTRY } from "./components/props/prop-model-registry";
  export { PROP_COLORS, METAL_COLORS } from "./components/props/Prop3DProps";
++export { DEFAULT_PROP_HAND_PALETTES, derivePropHandPalette, propHandPalette, propHandPaletteVersion, setPropHandColors, subscribePropHandColors } from "./components/props/prop-hand-palette";
++export { paintWithPropHand, propHandColor } from "./components/props/prop-hand-paint";
++export { reactivePropHandPalette, reactivePropHandPaletteVersion } from "./components/props/prop-hand-palette-state.svelte";
  // Data
  export { STAFF_GRIP_POSES } from "./data/grip-poses/staff-grip-poses";
 +// The .d.ts already declares this; the runtime half was missing, which broke
@@ -7590,7 +7910,7 @@ deleted file mode 100644
 index e289ae7771cbefc1f8f071fac3b62b1241d79704..0000000000000000000000000000000000000000
 diff --git a/dist/lib/rendering/create-staff-object.d.ts b/dist/lib/rendering/create-staff-object.d.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..67b207b0e66a87be71a2e24fbdaede769803c1c1
+index 0000000000..67b207b0e6
 --- /dev/null
 +++ b/dist/lib/rendering/create-staff-object.d.ts
 @@ -0,0 +1,15 @@
@@ -7611,10 +7931,10 @@ index 0000000000000000000000000000000000000000..67b207b0e66a87be71a2e24fbdaede76
 +export declare function createStaffObject(options: StaffObjectOptions): StaffObject;
 diff --git a/dist/lib/rendering/create-staff-object.js b/dist/lib/rendering/create-staff-object.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..729ccd6c0de315244566ed57ac9e0eba770bfea2
+index 0000000000..9ff2cdad3b
 --- /dev/null
 +++ b/dist/lib/rendering/create-staff-object.js
-@@ -0,0 +1,117 @@
+@@ -0,0 +1,122 @@
 +import {
 +  CylinderGeometry,
 +  Euler,
@@ -7626,6 +7946,8 @@ index 0000000000000000000000000000000000000000..729ccd6c0de315244566ed57ac9e0eba
 +  SphereGeometry,
 +  TorusGeometry
 +} from "three";
++import { paintWithPropHand } from "../components/props/prop-hand-paint";
++import { propHandPalette } from "../components/props/prop-hand-palette";
 +const geometrySets = /* @__PURE__ */ new Map();
 +const materialSets = /* @__PURE__ */ new Map();
 +const trailGeometry = new SphereGeometry(0.015, 8, 8);
@@ -7650,7 +7972,7 @@ index 0000000000000000000000000000000000000000..729ccd6c0de315244566ed57ac9e0eba
 +function getStaffMaterialSet(color) {
 +  const cached = materialSets.get(color);
 +  if (cached) return cached;
-+  const palette = color === "blue" ? { main: "#3b82f6", dark: "#1d4ed8" } : { main: "#ef4444", dark: "#b91c1c" };
++  const palette = propHandPalette(color);
 +  const materials = {
 +    main: new MeshStandardMaterial({
 +      color: palette.main,
@@ -7673,6 +7995,9 @@ index 0000000000000000000000000000000000000000..729ccd6c0de315244566ed57ac9e0eba
 +      transparent: true
 +    })
 +  };
++  paintWithPropHand(materials.main, color);
++  paintWithPropHand(materials.dark, color, "dark");
++  paintWithPropHand(materials.trail, color);
 +  materialSets.set(color, materials);
 +  return materials;
 +}
@@ -7740,7 +8065,7 @@ deleted file mode 100644
 index 1f4d9296f2d356f677d1a21f8e955b437c53f394..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/bone-name-normalization.js b/dist/lib/services/bone-name-normalization.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..1cf469d4a9529c870e130e7a7771a69058731f85
+index 0000000000..1cf469d4a9
 --- /dev/null
 +++ b/dist/lib/services/bone-name-normalization.js
 @@ -0,0 +1,37 @@
@@ -7783,7 +8108,7 @@ index 0000000000000000000000000000000000000000..1cf469d4a9529c870e130e7a7771a690
 +}
 diff --git a/dist/lib/services/clip-footprint.js b/dist/lib/services/clip-footprint.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..3e460c8c3eb4b80f91a49ee55d275edad40b3e3f
+index 0000000000..3e460c8c3e
 --- /dev/null
 +++ b/dist/lib/services/clip-footprint.js
 @@ -0,0 +1,261 @@
@@ -8368,7 +8693,7 @@ diff --git a/dist/lib/services/contracts/ILegIKSolver.d.ts.map b/dist/lib/servic
 deleted file mode 100644
 index b09b7c3d5cb9dc8d2b545762fcec09c075822fb9..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/contracts/ILegIKSolver.js b/dist/lib/services/contracts/ILegIKSolver.js
-index 9a43033503a12ddfbcca45fe3d399f645e673afe..637adda95754af001f1c126978caf149305fa2cf 100644
+index 9a43033503..637adda957 100644
 --- a/dist/lib/services/contracts/ILegIKSolver.js
 +++ b/dist/lib/services/contracts/ILegIKSolver.js
 @@ -9,9 +9,11 @@
@@ -8436,7 +8761,7 @@ deleted file mode 100644
 index 8d0262d3ce741f36f066d69fc14af57691e8d939..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/geometry/BodyCollisionGeometry.js b/dist/lib/services/geometry/BodyCollisionGeometry.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..889d20576124946b866af1508231ba9e2d19d0a5
+index 0000000000..889d205761
 --- /dev/null
 +++ b/dist/lib/services/geometry/BodyCollisionGeometry.js
 @@ -0,0 +1,43 @@
@@ -8485,7 +8810,7 @@ index 0000000000000000000000000000000000000000..889d20576124946b866af1508231ba9e
 +}
 diff --git a/dist/lib/services/geometry/CylindricalGripGeometry.js b/dist/lib/services/geometry/CylindricalGripGeometry.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..4ab1d613c594dcd5fa440b99e6eb802ef2df81ea
+index 0000000000..4ab1d613c5
 --- /dev/null
 +++ b/dist/lib/services/geometry/CylindricalGripGeometry.js
 @@ -0,0 +1,81 @@
@@ -10962,7 +11287,7 @@ diff --git a/dist/lib/services/implementations/AvatarSkeletonBuilder.d.ts.map b/
 deleted file mode 100644
 index c12c9d64f6cc6e7e5dca20f2c415f3d3f215eee0..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/AvatarSkeletonBuilder.js b/dist/lib/services/implementations/AvatarSkeletonBuilder.js
-index 7c5875a96eec7fc59a6bc9206d933b7273a3dffd..84b262dda923399fc9f1bf1e4952c1d8ff8138cd 100644
+index 7c5875a96e..84b262dda9 100644
 --- a/dist/lib/services/implementations/AvatarSkeletonBuilder.js
 +++ b/dist/lib/services/implementations/AvatarSkeletonBuilder.js
 @@ -5,8 +5,11 @@
@@ -11487,7 +11812,7 @@ diff --git a/dist/lib/services/implementations/ClipBasedTurnAnimator.d.ts.map b/
 deleted file mode 100644
 index 3ce9411f76cdc543c069b5d288fe7b8bd0c0f02d..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/ClipBasedTurnAnimator.js b/dist/lib/services/implementations/ClipBasedTurnAnimator.js
-index 5cb91c6048b30298d298d923213fcf3037dda852..1989b6783709edde7c9d6d214b4c8a3fc2692bd7 100644
+index 5cb91c6048..1989b67837 100644
 --- a/dist/lib/services/implementations/ClipBasedTurnAnimator.js
 +++ b/dist/lib/services/implementations/ClipBasedTurnAnimator.js
 @@ -18,7 +18,7 @@
@@ -11638,7 +11963,7 @@ diff --git a/dist/lib/services/implementations/CollisionDetector.d.ts.map b/dist
 deleted file mode 100644
 index 589730c42dd77154bad8305e67d5804bdf805018..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/CollisionDetector.js b/dist/lib/services/implementations/CollisionDetector.js
-index bdf2062fc3ee834f003879c49286b6dd7a282887..b7b227ff8a407f134d1a556ffe518ab4aa936c47 100644
+index bdf2062fc3..b7b227ff8a 100644
 --- a/dist/lib/services/implementations/CollisionDetector.js
 +++ b/dist/lib/services/implementations/CollisionDetector.js
 @@ -18,12 +18,7 @@
@@ -11769,10 +12094,10 @@ deleted file mode 100644
 index 5040c8a93fa8a008b51c602fb2e84cea444643b3..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/ContactRetargeter.js b/dist/lib/services/implementations/ContactRetargeter.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..cedd9ed2aeacbe3adad1a19f524a39e1b42f228a
+index 0000000000..19c3b968c6
 --- /dev/null
 +++ b/dist/lib/services/implementations/ContactRetargeter.js
-@@ -0,0 +1,517 @@
+@@ -0,0 +1,552 @@
 +import { AnimationClip, AnimationMixer, Matrix4, Quaternion, QuaternionKeyframeTrack, Vector3, VectorKeyframeTrack, } from "three";
 +import { buildTwoBoneChain } from "../leg-geometry";
 +import { HingeConstrainedLegIKSolver } from "./HingeConstrainedLegIKSolver";
@@ -11836,7 +12161,7 @@ index 0000000000000000000000000000000000000000..cedd9ed2aeacbe3adad1a19f524a39e1
 + * the bake and restored before returning.
 + */
 +export function bakeContactPreservedLegs(clip, footprint, root, modelPrefix) {
-+    const rig = resolveRig(root, modelPrefix);
++    const rig = resolveRig(root, modelPrefix, footprint);
 +    if (!rig)
 +        return clip;
 +    const pose = capturePose(root);
@@ -11855,7 +12180,7 @@ index 0000000000000000000000000000000000000000..cedd9ed2aeacbe3adad1a19f524a39e1
 + * every number here is a bind-pose property, and reading them off a posed rig
 + * gives leg lengths that change as the character moves.
 + */
-+function resolveRig(root, prefix) {
++function resolveRig(root, prefix, footprint) {
 +    const bone = (name) => root.getObjectByName(`${prefix}${name}`) ?? null;
 +    const hips = bone("Hips");
 +    if (!hips)
@@ -11892,15 +12217,50 @@ index 0000000000000000000000000000000000000000..cedd9ed2aeacbe3adad1a19f524a39e1
 +    if (!(left.chain.totalLength > 0))
 +        return null;
 +    const frame = hips.parent ?? root;
++    const legLength = legLengthIn(frame, left.chain);
++    const floor = restFloor(frame, left.toe, right.toe);
++    const ankleHeight = (heightIn(frame, left.chain.effector) +
++        heightIn(frame, right.chain.effector)) /
++        2 -
++        floor;
 +    return {
 +        hips,
 +        hipsRest: hips.position.clone(),
 +        frame,
-+        legLength: legLengthIn(frame, left.chain),
-+        floor: restFloor(frame, left.toe, right.toe),
++        legLength,
++        floor,
++        // The leg stands on this rig's own ankle, not the source's. An ankle's
++        // height over the floor is shoe and heel and does not scale with the
++        // leg, so hip heights in leg lengths are measured up from the floor
++        // raised by this rig's ankle and lowered by the source's planted one.
++        legBase: floor + ankleHeight - plantedAnkleHeight(footprint) * legLength,
 +        left,
 +        right,
 +    };
++}
++function heightIn(frame, bone) {
++    const toLocal = new Matrix4().copy(frame.matrixWorld).invert();
++    return bone.getWorldPosition(new Vector3()).applyMatrix4(toLocal).y;
++}
++/**
++ * How high the source's ankle rides while its foot is down, in leg lengths.
++ *
++ * The median over every sample either foot is on the floor. Heel strike and
++ * toe-off carry the ankle up off the height it stands at flat, at the two ends
++ * of every stance, and a median reads through both.
++ */
++function plantedAnkleHeight(footprint) {
++    const heights = [];
++    for (const track of [footprint.left, footprint.right]) {
++        for (let i = 0; i < footprint.samples; i++) {
++            if (track.contact[i])
++                heights.push(track.hip[i] + track.ankle[i * 3 + 1]);
++        }
++    }
++    if (heights.length === 0)
++        return 0;
++    heights.sort((a, b) => a - b);
++    return heights[Math.floor(heights.length / 2)];
 +}
 +/**
 + * The axis the ankle flexes about, in the foot's own space, signed so that a
@@ -12021,7 +12381,7 @@ index 0000000000000000000000000000000000000000..cedd9ed2aeacbe3adad1a19f524a39e1
 +        rig.hips.position.add(rig.hipsRest);
 +        // Ride at the height the walk rides at rather than the height the rig
 +        // stands at. Travel across the floor stays with the track that had it.
-+        rig.hips.position.y = rig.floor + footprint.hips[i] * rig.legLength;
++        rig.hips.position.y = rig.legBase + footprint.hips[i] * rig.legLength;
 +        root.updateMatrixWorld(true);
 +        alignPelvis(rig, sides, i);
 +        root.updateMatrixWorld(true);
@@ -12082,7 +12442,7 @@ index 0000000000000000000000000000000000000000..cedd9ed2aeacbe3adad1a19f524a39e1
 +    let lift = 0;
 +    for (const side of sides) {
 +        side.chain.root.getWorldPosition(hipJoint).applyMatrix4(hipSpace);
-+        const want = rig.floor + side.track.hip[index] * rig.legLength;
++        const want = rig.legBase + side.track.hip[index] * rig.legLength;
 +        lift += want - hipJoint.y;
 +        if (side.track.contact[index]) {
 +            plantedLift += want - hipJoint.y;
@@ -12303,7 +12663,7 @@ diff --git a/dist/lib/services/implementations/ElbowPoleComputer.d.ts.map b/dist
 deleted file mode 100644
 index 173449a757714cbbd61602f8af64218d423e9c39..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/ElbowPoleComputer.js b/dist/lib/services/implementations/ElbowPoleComputer.js
-index d42bcd447471742c09a421dc92e9eb63986abbb4..b448e44004d3680ebcee15b0e40c3b0472b8137d 100644
+index d42bcd4474..b448e44004 100644
 --- a/dist/lib/services/implementations/ElbowPoleComputer.js
 +++ b/dist/lib/services/implementations/ElbowPoleComputer.js
 @@ -12,57 +12,206 @@
@@ -13561,7 +13921,7 @@ diff --git a/dist/lib/services/implementations/FootPlanter.d.ts.map b/dist/lib/s
 deleted file mode 100644
 index 756125321be9ddfe04e11cf726909db56ac0a0d6..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/FootPlanter.js b/dist/lib/services/implementations/FootPlanter.js
-index f213a2d8d9f708fd48280b934fc3c9cf0ac4d5cf..dbdfef9e3d110c001a2152a2114366cc9840261e 100644
+index f213a2d8d9..dbdfef9e3d 100644
 --- a/dist/lib/services/implementations/FootPlanter.js
 +++ b/dist/lib/services/implementations/FootPlanter.js
 @@ -8,18 +8,42 @@
@@ -14562,7 +14922,7 @@ diff --git a/dist/lib/services/implementations/HingeConstrainedLegIKSolver.d.ts.
 deleted file mode 100644
 index 5b379fcec3e0caa1a6f0d3a4fea4d4c4d08a2569..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/HingeConstrainedLegIKSolver.js b/dist/lib/services/implementations/HingeConstrainedLegIKSolver.js
-index d5beba55a02f869e87510a90c38af430a2d34278..5c9249336b67bad4cd9b1162ae27ee0673ee69cd 100644
+index d5beba55a0..5c9249336b 100644
 --- a/dist/lib/services/implementations/HingeConstrainedLegIKSolver.js
 +++ b/dist/lib/services/implementations/HingeConstrainedLegIKSolver.js
 @@ -18,8 +18,27 @@ import { Vector3, Quaternion, Matrix4 } from "three";
@@ -14922,7 +15282,7 @@ diff --git a/dist/lib/services/implementations/KneeHingeAxisCalibrator.d.ts.map 
 deleted file mode 100644
 index 47c2bd2070a7f0e11cfe987085b9b9f5e928a9d1..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/KneeHingeAxisCalibrator.js b/dist/lib/services/implementations/KneeHingeAxisCalibrator.js
-index d3bfef52fae5be915356c52a5547027d328ce240..3949de097b577e1c0bb01fc23de2bf76a4b30406 100644
+index d3bfef52fa..3949de097b 100644
 --- a/dist/lib/services/implementations/KneeHingeAxisCalibrator.js
 +++ b/dist/lib/services/implementations/KneeHingeAxisCalibrator.js
 @@ -1,25 +1,121 @@
@@ -15080,7 +15440,7 @@ diff --git a/dist/lib/services/implementations/LocomotionAnimator.d.ts.map b/dis
 deleted file mode 100644
 index e2ad276197cfcb019800a407b2fe3d4739b38861..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/LocomotionAnimator.js b/dist/lib/services/implementations/LocomotionAnimator.js
-index 56279f173c47d912a9cb02a35e4e27abc07c41d6..e86ef1ce44b587ccf5321f9c6b39cb0c48d7bb30 100644
+index 56279f173c..e86ef1ce44 100644
 --- a/dist/lib/services/implementations/LocomotionAnimator.js
 +++ b/dist/lib/services/implementations/LocomotionAnimator.js
 @@ -1,554 +1,1609 @@
@@ -17247,7 +17607,7 @@ diff --git a/dist/lib/services/implementations/SpineTwister.d.ts.map b/dist/lib/
 deleted file mode 100644
 index c5582b590245342854ad42a5c3c33315d7b1ddd8..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/SpineTwister.js b/dist/lib/services/implementations/SpineTwister.js
-index 29809adb0b6cd2e639a532bc3c7794224d7bc79c..2bbaae392151488470a0d0a28bb61c925f381321 100644
+index 29809adb0b..2bbaae3921 100644
 --- a/dist/lib/services/implementations/SpineTwister.js
 +++ b/dist/lib/services/implementations/SpineTwister.js
 @@ -7,10 +7,12 @@
@@ -17439,7 +17799,7 @@ deleted file mode 100644
 index 52f3da6d8d8bb5c429baa2320f0ab202453922d7..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/leg-geometry.js b/dist/lib/services/leg-geometry.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..f771f48ce98f1349c33231a654cbfe189b43473d
+index 0000000000..f771f48ce9
 --- /dev/null
 +++ b/dist/lib/services/leg-geometry.js
 @@ -0,0 +1,270 @@
@@ -17715,7 +18075,7 @@ index 0000000000000000000000000000000000000000..f771f48ce98f1349c33231a654cbfe18
 +}
 diff --git a/dist/lib/services/rendered-staff-geometry.js b/dist/lib/services/rendered-staff-geometry.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..e364fd6d6933b782cea226cd2600b077f6a832b4
+index 0000000000..e364fd6d69
 --- /dev/null
 +++ b/dist/lib/services/rendered-staff-geometry.js
 @@ -0,0 +1,14 @@
@@ -17741,7 +18101,7 @@ deleted file mode 100644
 index 4df37febb302cec3ee854e39419ca73a4cb8257d..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/shared-gltf-cache.js b/dist/lib/services/shared-gltf-cache.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..c80b51b5c41e5f8afc35cb59b8be64287df197be
+index 0000000000..c80b51b5c4
 --- /dev/null
 +++ b/dist/lib/services/shared-gltf-cache.js
 @@ -0,0 +1,392 @@
@@ -18139,7 +18499,7 @@ index 0000000000000000000000000000000000000000..c80b51b5c41e5f8afc35cb59b8be6428
 +}
 diff --git a/dist/lib/state/prop-finish-state.svelte.js b/dist/lib/state/prop-finish-state.svelte.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..cc7439e4625543c4c5d2bd6062a44b85dbb0678b
+index 0000000000..cc7439e462
 --- /dev/null
 +++ b/dist/lib/state/prop-finish-state.svelte.js
 @@ -0,0 +1,77 @@
@@ -18228,10 +18588,10 @@ deleted file mode 100644
 index a8fd5a41c1434bf568841daf28c8443ba1515e65..0000000000000000000000000000000000000000
 diff --git a/dist/worker.d.ts b/dist/worker.d.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..310726f1cbb2603cd52a54f37a549c6d57aba7c8
+index 0000000000..533ef6d662
 --- /dev/null
 +++ b/dist/worker.d.ts
-@@ -0,0 +1,19 @@
+@@ -0,0 +1,22 @@
 +export { getAvatarModelPath } from "./lib/config/avatar-definitions";
 +export { cmToUnits } from "./lib/config/avatar-proportions";
 +export { GRID_OFFSETS, PLANE_MODE_CONFIGS } from "./lib/domain/constants/plane-mode-configs";
@@ -18240,6 +18600,9 @@ index 0000000000000000000000000000000000000000..310726f1cbb2603cd52a54f37a549c6d
 +export { PropType } from "./lib/domain/enums/PropType";
 +export { GripType } from "./lib/domain/models/GripPose";
 +export { PROP_COLORS } from "./lib/components/props/Prop3DProps";
++export { DEFAULT_PROP_HAND_PALETTES, derivePropHandPalette, propHandPalette, propHandPaletteVersion, setPropHandColors, subscribePropHandColors } from "./lib/components/props/prop-hand-palette";
++export { paintWithPropHand, propHandColor } from "./lib/components/props/prop-hand-paint";
++export type { PropHand, PropHandPalette } from "./lib/components/props/prop-hand-palette";
 +export { PRESET_VALID_COUNTS, createFormationFromPreset } from "./lib/config/formation-presets";
 +export { STAGE } from "./lib/scale/scale-constants";
 +export { SeatedAudienceLoader, seatedAudienceLoader } from "./lib/services/implementations/SeatedAudienceLoader";
@@ -18253,10 +18616,10 @@ index 0000000000000000000000000000000000000000..310726f1cbb2603cd52a54f37a549c6d
 +export type { AvatarServices } from "./lib/services/implementations/AvatarServicesFactory";
 diff --git a/dist/worker.js b/dist/worker.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..8ddd87dd426b6d9fb1e41ce13b0ae9791f8e173a
+index 0000000000..05151322fc
 --- /dev/null
 +++ b/dist/worker.js
-@@ -0,0 +1,13 @@
+@@ -0,0 +1,15 @@
 +export { getAvatarModelPath } from "./lib/config/avatar-definitions";
 +export { cmToUnits } from "./lib/config/avatar-proportions";
 +export { GRID_OFFSETS, PLANE_MODE_CONFIGS } from "./lib/domain/constants/plane-mode-configs";
@@ -18265,19 +18628,25 @@ index 0000000000000000000000000000000000000000..8ddd87dd426b6d9fb1e41ce13b0ae979
 +export { PropType } from "./lib/domain/enums/PropType";
 +export { GripType } from "./lib/domain/models/GripPose";
 +export { PROP_COLORS } from "./lib/components/props/Prop3DProps";
++export { DEFAULT_PROP_HAND_PALETTES, derivePropHandPalette, propHandPalette, propHandPaletteVersion, setPropHandColors, subscribePropHandColors } from "./lib/components/props/prop-hand-palette";
++export { paintWithPropHand, propHandColor } from "./lib/components/props/prop-hand-paint";
 +export { PRESET_VALID_COUNTS, createFormationFromPreset } from "./lib/config/formation-presets";
 +export { STAGE } from "./lib/scale/scale-constants";
 +export { SeatedAudienceLoader, seatedAudienceLoader } from "./lib/services/implementations/SeatedAudienceLoader";
 +export { createStaffObject } from "./lib/rendering/create-staff-object";
 +export { createAvatarServices } from "./lib/services/implementations/AvatarServicesFactory";
 diff --git a/package.json b/package.json
-index 525808ca7068a828865a64e176f7bbd641ccc013..ff0ffc3ad65cb6c617fb582992f392fa0a447971 100644
+index 525808ca70..c7749e7724 100644
 --- a/package.json
 +++ b/package.json
-@@ -15,6 +15,11 @@
+@@ -15,6 +15,15 @@
      "./state": {
        "svelte": "./src/lib/state/user-proportions-state.svelte.ts",
        "import": "./dist/state/user-proportions-state.svelte.js"
++    },
++    "./prop-hand-palette": {
++      "svelte": "./src/lib/components/props/prop-hand-palette.ts",
++      "import": "./dist/lib/components/props/prop-hand-palette.js"
 +    },
 +    "./worker": {
 +      "types": "./dist/worker.d.ts",
@@ -20709,7 +21078,7 @@ index 99a40cd26b..067d8045e7 100644
        {@render effectsSlot({
          bluePropState,
 diff --git a/src/lib/components/Staff3D.svelte b/src/lib/components/Staff3D.svelte
-index c483f07b26cd339a40a34fafe5c34d9f003d5d05..5b12a19efcebdbbd549a6a31186b6c166bbe23cc 100644
+index c483f07b26..5b12a19efc 100644
 --- a/src/lib/components/Staff3D.svelte
 +++ b/src/lib/components/Staff3D.svelte
 @@ -13,8 +13,11 @@
@@ -20844,8 +21213,30 @@ index c483f07b26cd339a40a34fafe5c34d9f003d5d05..5b12a19efcebdbbd549a6a31186b6c16
 +{#if visible && staff}
 +  <T is={staff.root} dispose={false} />
  {/if}
+diff --git a/src/lib/components/props/Ball3D.svelte b/src/lib/components/props/Ball3D.svelte
+index e9f884d02b..57f99ad936 100644
+--- a/src/lib/components/props/Ball3D.svelte
++++ b/src/lib/components/props/Ball3D.svelte
+@@ -11,7 +11,7 @@
+ 
+   import { T } from "@threlte/core";
+   import type { Prop3DProps } from "./Prop3DProps";
+-  import { PROP_COLORS } from "./Prop3DProps";
++  import { reactivePropHandPalette } from "./prop-hand-palette-state.svelte";
+   import { computePropRotation } from "./prop3d-transforms";
+   import { userProportionsState } from "../../state/user-proportions-state.svelte";
+   import {
+@@ -30,7 +30,7 @@
+   }: Prop3DProps = $props();
+ 
+   const propLayer = $derived(isActivePlayer ? LAYER_PLAYER_BODY : LAYER_WORLD);
+-  const palette = $derived(PROP_COLORS[color]);
++  const palette = $derived(reactivePropHandPalette(color));
+ 
+   const staffRadius = $derived(
+     thickness
 diff --git a/src/lib/components/props/Buugeng3D.svelte b/src/lib/components/props/Buugeng3D.svelte
-index 8b02d7960387431387d12a655ba4dddbeaf575a1..b43b1deb5a863256cafd1f03e4254148b34594b8 100644
+index 8b02d79603..b43b1deb5a 100644
 --- a/src/lib/components/props/Buugeng3D.svelte
 +++ b/src/lib/components/props/Buugeng3D.svelte
 @@ -1,14 +1,65 @@
@@ -21040,8 +21431,30 @@ index 8b02d7960387431387d12a655ba4dddbeaf575a1..b43b1deb5a863256cafd1f03e4254148
 +    dispose={false}
 +  />
  {/if}
+diff --git a/src/lib/components/props/Chicken3D.svelte b/src/lib/components/props/Chicken3D.svelte
+index d8d33e5d4a..81c9db47e7 100644
+--- a/src/lib/components/props/Chicken3D.svelte
++++ b/src/lib/components/props/Chicken3D.svelte
+@@ -14,7 +14,7 @@
+ 
+   import { T } from "@threlte/core";
+   import type { Prop3DProps } from "./Prop3DProps";
+-  import { PROP_COLORS } from "./Prop3DProps";
++  import { reactivePropHandPalette } from "./prop-hand-palette-state.svelte";
+   import { computePropRotation } from "./prop3d-transforms";
+   import { userProportionsState } from "../../state/user-proportions-state.svelte";
+   import {
+@@ -48,7 +48,7 @@
+       scale
+   );
+ 
+-  const palette = $derived(PROP_COLORS[color]);
++  const palette = $derived(reactivePropHandPalette(color));
+ 
+   const rotation = $derived(computePropRotation(propState));
+ 
 diff --git a/src/lib/components/props/Club3D.svelte b/src/lib/components/props/Club3D.svelte
-index d51a323611e6b9f7b7b2c914182620b41cdfff72..761c1a03d04dcbf468df1d35954f69f4e146c4ff 100644
+index d51a323611..761c1a03d0 100644
 --- a/src/lib/components/props/Club3D.svelte
 +++ b/src/lib/components/props/Club3D.svelte
 @@ -1,149 +1,120 @@
@@ -21283,7 +21696,7 @@ index d51a323611e6b9f7b7b2c914182620b41cdfff72..761c1a03d04dcbf468df1d35954f69f4
 +  />
  {/if}
 diff --git a/src/lib/components/props/Doublestar3D.svelte b/src/lib/components/props/Doublestar3D.svelte
-index 68efc24af1180e24a9900e1943857a75c6b63e62..87ebb8fb8243dbea8fc32479bb320409ec6b7aed 100644
+index 68efc24af1..87ebb8fb82 100644
 --- a/src/lib/components/props/Doublestar3D.svelte
 +++ b/src/lib/components/props/Doublestar3D.svelte
 @@ -1,25 +1,53 @@
@@ -21507,7 +21920,7 @@ index 68efc24af1180e24a9900e1943857a75c6b63e62..87ebb8fb8243dbea8fc32479bb320409
 +  />
  {/if}
 diff --git a/src/lib/components/props/Eightrings3D.svelte b/src/lib/components/props/Eightrings3D.svelte
-index 12a776e2dc4cc4cf8f484afde470d094690a6dc0..e99e626aef531d417e49111acc3fed414820f121 100644
+index 12a776e2dc..e99e626aef 100644
 --- a/src/lib/components/props/Eightrings3D.svelte
 +++ b/src/lib/components/props/Eightrings3D.svelte
 @@ -1,23 +1,65 @@
@@ -21667,7 +22080,7 @@ index 12a776e2dc4cc4cf8f484afde470d094690a6dc0..e99e626aef531d417e49111acc3fed41
 +  />
  {/if}
 diff --git a/src/lib/components/props/Fan3D.svelte b/src/lib/components/props/Fan3D.svelte
-index dc635e752d11561cb585cbaaffa05b1e525d31e8..16426cf4a056edb4fa4c633632c324d0f24b0404 100644
+index dc635e752d..8e83233d5b 100644
 --- a/src/lib/components/props/Fan3D.svelte
 +++ b/src/lib/components/props/Fan3D.svelte
 @@ -1,29 +1,58 @@
@@ -21718,7 +22131,8 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..16426cf4a056edb4fa4c633632c324d0
 +  import { useGltf } from "@threlte/extras";
 +  import type { Material, Mesh, MeshStandardMaterial, Object3D } from "three";
    import type { Prop3DProps } from "./Prop3DProps";
-   import { PROP_COLORS } from "./Prop3DProps";
+-  import { PROP_COLORS } from "./Prop3DProps";
++  import { reactivePropHandPalette } from "./prop-hand-palette-state.svelte";
    import { computePropRotation } from "./prop3d-transforms";
 +  import { getPlateMaterials, PLATE_TRAIL_GEOMETRY } from "./plate-materials";
 +  import { propFinishState } from "../../state/prop-finish-state.svelte";
@@ -21744,7 +22158,7 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..16426cf4a056edb4fa4c633632c324d0
  
    let {
      propState,
-@@ -33,156 +62,124 @@
+@@ -33,156 +62,125 @@
      thickness,
      isActivePlayer = false,
      scale = 1,
@@ -21895,11 +22309,12 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..16426cf4a056edb4fa4c633632c324d0
 +    forEachMaterial(scene, "TKA_Fan_Day_Frame", (material) => {
 +      material.color?.set(DAY_FRAME_COLORS[build.fanFrameColor]);
 +    });
++    const handMain = reactivePropHandPalette(color).main;
 +    forEachMaterial(scene, "TKA_Fan_Cover_Solid_Recolor", (material) => {
-+      material.color?.set(PROP_COLORS[color].main);
++      material.color?.set(handMain);
 +    });
 +    forEachMaterial(scene, "TKA_Fan_Moon_Frame", (material) => {
-+      material.color?.set(PROP_COLORS[color].main);
++      material.color?.set(handMain);
 +    });
 +  });
  </script>
@@ -22007,10 +22422,49 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..16426cf4a056edb4fa4c633632c324d0
 +  />
  {/if}
 diff --git a/src/lib/components/props/GltfProp3D.svelte b/src/lib/components/props/GltfProp3D.svelte
-index 9ed038d07d35b4d5d340c578e100415154ac1178..2048adf7ec318ffb9501f56a7e507503390b6999 100644
+index 9ed038d07d..cfbdde6e30 100644
 --- a/src/lib/components/props/GltfProp3D.svelte
 +++ b/src/lib/components/props/GltfProp3D.svelte
-@@ -68,17 +68,29 @@
+@@ -13,6 +13,7 @@
+   import { useGltf } from "@threlte/extras";
+   import { untrack } from "svelte";
+   import { recolorPropModel } from "./prop-model-recolor";
++  import { reactivePropHandPaletteVersion } from "./prop-hand-palette-state.svelte";
+   import { computePropRotation } from "./prop3d-transforms";
+   import { userProportionsState } from "../../state/user-proportions-state.svelte";
+   import {
+@@ -44,6 +45,7 @@
+   // We need a fresh clone for each color to avoid shared material mutation.
+   let coloredScene = $state<Object3D | null>(null);
+   let lastColor = $state<string>("");
++  let lastPaletteVersion = -1;
+ 
+   $effect(() => {
+     const loaded = $gltf;
+@@ -52,8 +54,13 @@
+       return;
+     }
+ 
+-    // Re-clone whenever the color changes
+-    if (props.color !== lastColor || !coloredScene) {
++    // Re-clone whenever the hand or the app's hand palette changes
++    const paletteVersion = reactivePropHandPaletteVersion();
++    if (
++      props.color !== lastColor ||
++      paletteVersion !== lastPaletteVersion ||
++      !coloredScene
++    ) {
+       const clone = loaded.scene.clone(true);
+       recolorPropModel(clone, props.color);
+       // Enable shadow casting on all prop meshes
+@@ -62,23 +69,36 @@
+       });
+       coloredScene = clone;
+       lastColor = props.color;
++      lastPaletteVersion = paletteVersion;
+     }
+   });
+ 
    // Rotation only - position is handled by the parent PerformerRig scene graph
    const rotation = $derived(computePropRotation(props.propState));
  
@@ -22042,6 +22496,28 @@ index 9ed038d07d35b4d5d340c578e100415154ac1178..2048adf7ec318ffb9501f56a7e507503
        position.y={props.modelEntry.gripOffsetY}
      >
        <T is={coloredScene} />
+diff --git a/src/lib/components/props/Guitar3D.svelte b/src/lib/components/props/Guitar3D.svelte
+index 5dc4004b59..28e8ebf3ce 100644
+--- a/src/lib/components/props/Guitar3D.svelte
++++ b/src/lib/components/props/Guitar3D.svelte
+@@ -16,7 +16,7 @@
+ 
+   import { T } from "@threlte/core";
+   import type { Prop3DProps } from "./Prop3DProps";
+-  import { PROP_COLORS } from "./Prop3DProps";
++  import { reactivePropHandPalette } from "./prop-hand-palette-state.svelte";
+   import { computePropRotation } from "./prop3d-transforms";
+   import { userProportionsState } from "../../state/user-proportions-state.svelte";
+   import {
+@@ -43,7 +43,7 @@
+     (thickness ?? userProportionsState.dimensions.staffRadius) * scale
+   );
+ 
+-  const palette = $derived(PROP_COLORS[color]);
++  const palette = $derived(reactivePropHandPalette(color));
+ 
+   const rotation = $derived(computePropRotation(propState));
+ 
 diff --git a/src/lib/components/props/Hoop3D.svelte b/src/lib/components/props/Hoop3D.svelte
 index 9ffc241323..cad34bdf1d 100644
 --- a/src/lib/components/props/Hoop3D.svelte
@@ -22252,6 +22728,28 @@ index 9ffc241323..cad34bdf1d 100644
 +    dispose={false}
 +  />
  {/if}
+diff --git a/src/lib/components/props/Poi3D.svelte b/src/lib/components/props/Poi3D.svelte
+index 8a455aeebd..7cb29372ae 100644
+--- a/src/lib/components/props/Poi3D.svelte
++++ b/src/lib/components/props/Poi3D.svelte
+@@ -16,7 +16,7 @@
+ 
+   import { T } from "@threlte/core";
+   import type { Prop3DProps } from "./Prop3DProps";
+-  import { PROP_COLORS } from "./Prop3DProps";
++  import { reactivePropHandPalette } from "./prop-hand-palette-state.svelte";
+   import { computePropRotation } from "./prop3d-transforms";
+   import { userProportionsState } from "../../state/user-proportions-state.svelte";
+   import {
+@@ -46,7 +46,7 @@
+     (thickness ?? userProportionsState.dimensions.staffRadius) * scale
+   );
+ 
+-  const palette = $derived(PROP_COLORS[color]);
++  const palette = $derived(reactivePropHandPalette(color));
+ 
+   const rotation = $derived(computePropRotation(propState));
+ 
 diff --git a/src/lib/components/props/Prop3D.svelte b/src/lib/components/props/Prop3D.svelte
 index 8f023f7b8a..2cb9849334 100644
 --- a/src/lib/components/props/Prop3D.svelte
@@ -22400,18 +22898,19 @@ index 8f023f7b8a..2cb9849334 100644
    {:else if propType === PropType.TORCH}
      <Torch3D {propState} {color} {visible} {isActivePlayer} {length} />
 diff --git a/src/lib/components/props/Prop3DProps.ts b/src/lib/components/props/Prop3DProps.ts
-index a31ce7d182d1d2b7f4be226346abc023e5ed7254..1ebc15149950e4e71bfbb689b889328452b73cde 100644
+index a31ce7d182..9d000a6400 100644
 --- a/src/lib/components/props/Prop3DProps.ts
 +++ b/src/lib/components/props/Prop3DProps.ts
-@@ -7,6 +7,7 @@
+@@ -7,6 +7,8 @@
   */
  
  import type { PropState3D } from "../../domain/models/PropState3D";
 +import type { PropBuild } from "../../state/prop-finish-state.svelte";
++import { PROP_HAND_PALETTES } from "./prop-hand-palette";
  
  export interface Prop3DProps {
    /** Prop state with position and rotation */
-@@ -29,6 +30,8 @@ export interface Prop3DProps {
+@@ -29,13 +31,15 @@ export interface Prop3DProps {
    isActivePlayer?: boolean;
    /** Scale multiplier for "big" variants (default: 1) */
    scale?: number;
@@ -22419,9 +22918,44 @@ index a31ce7d182d1d2b7f4be226346abc023e5ed7254..1ebc15149950e4e71bfbb689b8893284
 +  build?: PropBuild;
  }
  
- /** Standard color palettes matching the 2D prop colors */
+-/** Standard color palettes matching the 2D prop colors */
+-export const PROP_COLORS = {
+-  blue: { main: "#3b82f6", dark: "#1d4ed8", light: "#60a5fa" },
+-  red: { main: "#ef4444", dark: "#b91c1c", light: "#f87171" },
+-} as const;
++/**
++ * The live hand palettes. Read an entry when painting rather than holding it:
++ * the host app repaints the hands with `setPropHandColors`.
++ */
++export const PROP_COLORS = PROP_HAND_PALETTES;
+ 
+ /** Metallic material palette (for swords, etc.) */
+ export const METAL_COLORS = {
+diff --git a/src/lib/components/props/Sword3D.svelte b/src/lib/components/props/Sword3D.svelte
+index 144b8c19a4..c05304d264 100644
+--- a/src/lib/components/props/Sword3D.svelte
++++ b/src/lib/components/props/Sword3D.svelte
+@@ -11,7 +11,8 @@
+ 
+   import { T } from "@threlte/core";
+   import type { Prop3DProps } from "./Prop3DProps";
+-  import { PROP_COLORS, METAL_COLORS } from "./Prop3DProps";
++  import { METAL_COLORS } from "./Prop3DProps";
++  import { reactivePropHandPalette } from "./prop-hand-palette-state.svelte";
+   import { computePropRotation } from "./prop3d-transforms";
+   import { userProportionsState } from "../../state/user-proportions-state.svelte";
+   import {
+@@ -30,7 +31,7 @@
+   }: Prop3DProps = $props();
+ 
+   const propLayer = $derived(isActivePlayer ? LAYER_PLAYER_BODY : LAYER_WORLD);
+-  const palette = $derived(PROP_COLORS[color]);
++  const palette = $derived(reactivePropHandPalette(color));
+ 
+   const staffLength = $derived(length ?? userProportionsState.staffLength);
+   const staffRadius = $derived(
 diff --git a/src/lib/components/props/Torch3D.svelte b/src/lib/components/props/Torch3D.svelte
-index dd84811c1cc9986fb72430bd3e94e3233da61684..9c5934551096a8124821406d3ea0e3a008bdee91 100644
+index dd84811c1c..9c59345510 100644
 --- a/src/lib/components/props/Torch3D.svelte
 +++ b/src/lib/components/props/Torch3D.svelte
 @@ -1,142 +1,119 @@
@@ -22654,7 +23188,7 @@ index dd84811c1cc9986fb72430bd3e94e3233da61684..9c5934551096a8124821406d3ea0e3a0
 +  />
  {/if}
 diff --git a/src/lib/components/props/Triad3D.svelte b/src/lib/components/props/Triad3D.svelte
-index f2e76efafe1854c93461f47e9b16c32400ca3dca..b3f79749eee31ad401d6191162af556e17468711 100644
+index f2e76efafe..b3f79749ee 100644
 --- a/src/lib/components/props/Triad3D.svelte
 +++ b/src/lib/components/props/Triad3D.svelte
 @@ -1,152 +1,196 @@
@@ -22970,7 +23504,7 @@ index f2e76efafe1854c93461f47e9b16c32400ca3dca..b3f79749eee31ad401d6191162af556e
 +    dispose={false}
 +  />
  {/if}
-diff --git a/Y/src/lib/components/props/Triangle3D.svelte b/src/lib/components/props/Triangle3D.svelte
+diff --git a/src/lib/components/props/Triangle3D.svelte b/src/lib/components/props/Triangle3D.svelte
 new file mode 100644
 index 0000000000..564b9376d7
 --- /dev/null
@@ -23106,7 +23640,7 @@ index 0000000000..564b9376d7
 +  />
 +{/if}
 diff --git a/src/lib/components/props/Triquetra3D.svelte b/src/lib/components/props/Triquetra3D.svelte
-index 43ff1c3d090621bff1e77af4d1b9834ac29821be..c05aecf863070202be34f6db930c6879f8c48117 100644
+index 43ff1c3d09..c05aecf863 100644
 --- a/src/lib/components/props/Triquetra3D.svelte
 +++ b/src/lib/components/props/Triquetra3D.svelte
 @@ -1,23 +1,69 @@
@@ -23292,7 +23826,7 @@ index 43ff1c3d090621bff1e77af4d1b9834ac29821be..c05aecf863070202be34f6db930c6879
  {/if}
 diff --git a/src/lib/components/props/club-profile.ts b/src/lib/components/props/club-profile.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..863f3bbbc67406a457aac1bb0e1ca9bf8be338ce
+index 0000000000..863f3bbbc6
 --- /dev/null
 +++ b/src/lib/components/props/club-profile.ts
 @@ -0,0 +1,179 @@
@@ -23477,7 +24011,7 @@ index 0000000000000000000000000000000000000000..863f3bbbc67406a457aac1bb0e1ca9bf
 +export const CLUB_REACH_M = 0.50343;
 diff --git a/src/lib/components/props/doublestar-profile.ts b/src/lib/components/props/doublestar-profile.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..6c1a0cff0b24c07b96e584153f27b064107955eb
+index 0000000000..6c1a0cff0b
 --- /dev/null
 +++ b/src/lib/components/props/doublestar-profile.ts
 @@ -0,0 +1,100 @@
@@ -23583,7 +24117,7 @@ index 0000000000000000000000000000000000000000..6c1a0cff0b24c07b96e584153f27b064
 +}
 diff --git a/src/lib/components/props/eightrings-profile.ts b/src/lib/components/props/eightrings-profile.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..c08bdcb8934b579eb722aef21cc56cd33dfd966a
+index 0000000000..c08bdcb893
 --- /dev/null
 +++ b/src/lib/components/props/eightrings-profile.ts
 @@ -0,0 +1,84 @@
@@ -23673,7 +24207,7 @@ index 0000000000000000000000000000000000000000..c08bdcb8934b579eb722aef21cc56cd3
 +}
 diff --git a/src/lib/components/props/fan-profile.ts b/src/lib/components/props/fan-profile.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..0da37239a8053b7b14d4224987f648381ff7a220
+index 0000000000..0da37239a8
 --- /dev/null
 +++ b/src/lib/components/props/fan-profile.ts
 @@ -0,0 +1,169 @@
@@ -23846,12 +24380,12 @@ index 0000000000000000000000000000000000000000..0da37239a8053b7b14d4224987f64838
 +  ];
 +  return shape;
 +}
-diff --git a/Y/src/lib/components/props/frame-materials.ts b/src/lib/components/props/frame-materials.ts
+diff --git a/src/lib/components/props/frame-materials.ts b/src/lib/components/props/frame-materials.ts
 new file mode 100644
-index 0000000000..83ec9b56dc
+index 0000000000..66942a8f53
 --- /dev/null
 +++ b/src/lib/components/props/frame-materials.ts
-@@ -0,0 +1,335 @@
+@@ -0,0 +1,350 @@
 +/**
 + * Assembled-prop finish
 + *
@@ -23882,6 +24416,8 @@ index 0000000000..83ec9b56dc
 +  MeshStandardMaterial,
 +} from "three";
 +import { HOOP_TUBE_DIAMETER_M } from "./hoop-geometry";
++import { paintWithPropHand } from "./prop-hand-paint";
++import { propHandPalette } from "./prop-hand-palette";
 +
 +export type FrameVariant = "fire" | "day";
 +
@@ -23899,11 +24435,6 @@ index 0000000000..83ec9b56dc
 +  /** Path-visualization marker at the prop's position. */
 +  readonly trail: MeshBasicMaterial;
 +}
-+
-+const PALETTES = {
-+  blue: { main: "#3b82f6", dark: "#1d4ed8" },
-+  red: { main: "#ef4444", dark: "#b91c1c" },
-+} as const;
 +
 +/**
 + * Unburnt kevlar, a pale sand — not the black of a used wick. Measured off the
@@ -23926,7 +24457,7 @@ index 0000000000..83ec9b56dc
 +  const cached = materialSets.get(key);
 +  if (cached) return cached;
 +
-+  const palette = PALETTES[color];
++  const palette = propHandPalette(color);
 +  const fire = variant === "fire";
 +
 +  const materials: FrameMaterialSet = {
@@ -23974,6 +24505,15 @@ index 0000000000..83ec9b56dc
 +    }),
 +  };
 +
++  // The cache outlives any one hand color; keep the colored parts painted.
++  paintWithPropHand(materials.spine, color);
++  paintWithPropHand(materials.trail, color);
++  if (!fire) {
++    paintWithPropHand(materials.hub, color, "dark");
++    paintWithPropHand(materials.ring, color, "dark");
++    paintWithPropHand(materials.tip, color, "main", "emissive");
++  }
++
 +  materialSets.set(key, materials);
 +  return materials;
 +}
@@ -24006,7 +24546,7 @@ index 0000000000..83ec9b56dc
 +  const cached = torchSets.get(color);
 +  if (cached) return cached;
 +
-+  const palette = PALETTES[color];
++  const palette = propHandPalette(color);
 +
 +  const materials: TorchMaterialSet = {
 +    hardware: new MeshStandardMaterial({
@@ -24046,6 +24586,9 @@ index 0000000000..83ec9b56dc
 +    }),
 +  };
 +
++  paintWithPropHand(materials.flare, color);
++  paintWithPropHand(materials.trail, color);
++
 +  torchSets.set(color, materials);
 +  return materials;
 +}
@@ -24078,7 +24621,7 @@ index 0000000000..83ec9b56dc
 +  const cached = clubSets.get(color);
 +  if (cached) return cached;
 +
-+  const palette = PALETTES[color];
++  const palette = propHandPalette(color);
 +
 +  const materials: ClubMaterialSet = {
 +    knob: new MeshStandardMaterial({
@@ -24114,6 +24657,9 @@ index 0000000000..83ec9b56dc
 +      transparent: true,
 +    }),
 +  };
++
++  paintWithPropHand(materials.body, color);
++  paintWithPropHand(materials.trail, color);
 +
 +  clubSets.set(color, materials);
 +  return materials;
@@ -24152,7 +24698,7 @@ index 0000000000..83ec9b56dc
 +  const cached = hoopSets.get(color);
 +  if (cached) return cached;
 +
-+  const palette = PALETTES[color];
++  const palette = propHandPalette(color);
 +
 +  const materials: HoopMaterialSet = {
 +    tube: new MeshPhysicalMaterial({
@@ -24184,12 +24730,15 @@ index 0000000000..83ec9b56dc
 +    }),
 +  };
 +
++  paintWithPropHand(materials.tube, color);
++  paintWithPropHand(materials.trail, color);
++
 +  hoopSets.set(color, materials);
 +  return materials;
 +}
 diff --git a/src/lib/components/props/geng-profile.ts b/src/lib/components/props/geng-profile.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..e6a8fa5c7212231654c232b99f1946477a62166f
+index 0000000000..e6a8fa5c72
 --- /dev/null
 +++ b/src/lib/components/props/geng-profile.ts
 @@ -0,0 +1,156 @@
@@ -24349,7 +24898,7 @@ index 0000000000000000000000000000000000000000..e6a8fa5c7212231654c232b99f194647
 +export function buildTrigengShape(staffLength: number): Shape {
 +  return trace(TRIGENG_OUTLINE, staffLength);
 +}
-diff --git a/Y/src/lib/components/props/hoop-geometry.ts b/src/lib/components/props/hoop-geometry.ts
+diff --git a/src/lib/components/props/hoop-geometry.ts b/src/lib/components/props/hoop-geometry.ts
 new file mode 100644
 index 0000000000..e94aeb4ca5
 --- /dev/null
@@ -24485,7 +25034,7 @@ index 0000000000..e94aeb4ca5
 +}
 diff --git a/src/lib/components/props/plate-extrude.ts b/src/lib/components/props/plate-extrude.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..3b093299f8fd46afc2d5e303492b3c156594e571
+index 0000000000..3b093299f8
 --- /dev/null
 +++ b/src/lib/components/props/plate-extrude.ts
 @@ -0,0 +1,72 @@
@@ -24563,10 +25112,10 @@ index 0000000000000000000000000000000000000000..3b093299f8fd46afc2d5e303492b3c15
 +}
 diff --git a/src/lib/components/props/plate-materials.ts b/src/lib/components/props/plate-materials.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..f3f717d6d8a7efdc77f9883984bb7f89aacdb388
+index 0000000000..3b87db752c
 --- /dev/null
 +++ b/src/lib/components/props/plate-materials.ts
-@@ -0,0 +1,77 @@
+@@ -0,0 +1,79 @@
 +/**
 + * Flat-prop finish
 + *
@@ -24582,6 +25131,8 @@ index 0000000000000000000000000000000000000000..f3f717d6d8a7efdc77f9883984bb7f89
 +  MeshStandardMaterial,
 +  SphereGeometry,
 +} from "three";
++import { paintWithPropHand } from "./prop-hand-paint";
++import { propHandPalette } from "./prop-hand-palette";
 +
 +export interface PlateMaterialSet {
 +  /** The two flat faces (extrusion group 0). */
@@ -24592,18 +25143,13 @@ index 0000000000000000000000000000000000000000..f3f717d6d8a7efdc77f9883984bb7f89
 +  readonly trail: MeshBasicMaterial;
 +}
 +
-+const PALETTES = {
-+  blue: { main: "#3b82f6", dark: "#1d4ed8" },
-+  red: { main: "#ef4444", dark: "#b91c1c" },
-+} as const;
-+
 +const materialSets = new Map<"blue" | "red", PlateMaterialSet>();
 +
 +export function getPlateMaterials(color: "blue" | "red"): PlateMaterialSet {
 +  const cached = materialSets.get(color);
 +  if (cached) return cached;
 +
-+  const palette = PALETTES[color];
++  const palette = propHandPalette(color);
 +  const materials: PlateMaterialSet = {
 +    // Faces read as polished anodized plate: a clearcoat lobe on top of the
 +    // base specular keeps a crisp highlight travelling across the prop as it
@@ -24638,15 +25184,278 @@ index 0000000000000000000000000000000000000000..f3f717d6d8a7efdc77f9883984bb7f89
 +      transparent: true,
 +    }),
 +  };
++  paintWithPropHand(materials.face, color);
++  paintWithPropHand(materials.edge, color, (hand) =>
++    new Color(hand.main).lerp(new Color(hand.dark), 0.6)
++  );
++  paintWithPropHand(materials.trail, color);
 +  materialSets.set(color, materials);
 +  return materials;
 +}
 +
 +/** Shared marker geometry for the trail indicator. */
 +export const PLATE_TRAIL_GEOMETRY = new SphereGeometry(0.015, 8, 8);
+diff --git a/src/lib/components/props/prop-hand-paint.ts b/src/lib/components/props/prop-hand-paint.ts
+new file mode 100644
+index 0000000000..a8772bf4d1
+--- /dev/null
++++ b/src/lib/components/props/prop-hand-paint.ts
+@@ -0,0 +1,73 @@
++/**
++ * Hand paint for module-cached prop materials.
++ *
++ * The staff, frame, plate, club and torch material sets are built once per
++ * hand and shared by every performer, so a new hand color has to reach the
++ * existing materials rather than a rebuild. Each material registers the part
++ * of the palette it wears; a palette change repaints them in place.
++ */
++
++import { Color, type ColorRepresentation } from "three";
++import {
++  propHandPalette,
++  subscribePropHandColors,
++  type PropHand,
++  type PropHandPalette,
++} from "./prop-hand-palette";
++
++/** A palette entry, or a mix of entries such as a rim between main and dark. */
++export type PropHandPaint =
++  | keyof PropHandPalette
++  | ((palette: PropHandPalette) => ColorRepresentation);
++
++interface HandPaintedMaterial {
++  color?: Color;
++  emissive?: Color;
++}
++
++interface Binding {
++  material: HandPaintedMaterial;
++  hand: PropHand;
++  paint: PropHandPaint;
++  channel: "color" | "emissive";
++}
++
++const bindings: Binding[] = [];
++
++function resolvePaint(hand: PropHand, paint: PropHandPaint): ColorRepresentation {
++  const palette = propHandPalette(hand);
++  return typeof paint === "function" ? paint(palette) : palette[paint];
++}
++
++function apply(binding: Binding): void {
++  const target = binding.material[binding.channel];
++  target?.set(resolvePaint(binding.hand, binding.paint));
++}
++
++subscribePropHandColors(() => {
++  for (const binding of bindings) apply(binding);
++});
++
++/**
++ * Paint `material` in its hand's current color and keep it painted. Use only
++ * for materials that live as long as the module cache; per-instance clones
++ * should recolor on `propHandPaletteVersion()` instead.
++ */
++export function paintWithPropHand<M extends HandPaintedMaterial>(
++  material: M,
++  hand: PropHand,
++  paint: PropHandPaint = "main",
++  channel: "color" | "emissive" = "color"
++): M {
++  const binding: Binding = { material, hand, paint, channel };
++  bindings.push(binding);
++  apply(binding);
++  return material;
++}
++
++export function propHandColor(
++  hand: PropHand,
++  paint: PropHandPaint = "main"
++): Color {
++  return new Color(resolvePaint(hand, paint));
++}
+diff --git a/src/lib/components/props/prop-hand-palette-state.svelte.ts b/src/lib/components/props/prop-hand-palette-state.svelte.ts
+new file mode 100644
+index 0000000000..cc390b69b1
+--- /dev/null
++++ b/src/lib/components/props/prop-hand-palette-state.svelte.ts
+@@ -0,0 +1,27 @@
++/**
++ * Svelte view of the hand palettes. Reading `reactivePropHandPalette` inside a
++ * `$derived` or `$effect` re-runs it when the host app repaints the hands.
++ */
++
++import {
++  propHandPalette,
++  propHandPaletteVersion,
++  subscribePropHandColors,
++  type PropHand,
++  type PropHandPalette,
++} from "./prop-hand-palette";
++
++const state = $state({ version: propHandPaletteVersion() });
++
++subscribePropHandColors(() => {
++  state.version = propHandPaletteVersion();
++});
++
++export function reactivePropHandPalette(hand: PropHand): PropHandPalette {
++  void state.version;
++  return propHandPalette(hand);
++}
++
++export function reactivePropHandPaletteVersion(): number {
++  return state.version;
++}
+diff --git a/src/lib/components/props/prop-hand-palette.ts b/src/lib/components/props/prop-hand-palette.ts
+new file mode 100644
+index 0000000000..b19ee4aca8
+--- /dev/null
++++ b/src/lib/components/props/prop-hand-palette.ts
+@@ -0,0 +1,140 @@
++/**
++ * The two hand colors every prop is painted in.
++ *
++ * Props keep "blue" and "red" as their hand identity, but the paint behind
++ * those names belongs to the host app: it pushes the user's chosen left and
++ * right colors in with `setPropHandColors`, and every material and component
++ * that reads a hand palette follows. This module has no three.js dependency so
++ * an app shell can set the colors without loading the renderer.
++ */
++
++export type PropHand = "blue" | "red";
++
++export interface PropHandPalette {
++  readonly main: string;
++  readonly dark: string;
++  readonly light: string;
++}
++
++/** The palettes props were authored against, used until the host sets colors. */
++export const DEFAULT_PROP_HAND_PALETTES: Readonly<
++  Record<PropHand, PropHandPalette>
++> = {
++  blue: { main: "#3b82f6", dark: "#1d4ed8", light: "#60a5fa" },
++  red: { main: "#ef4444", dark: "#b91c1c", light: "#f87171" },
++};
++
++/** Live palettes. Entries are replaced, never mutated, so identity marks a change. */
++export const PROP_HAND_PALETTES: Record<PropHand, PropHandPalette> = {
++  ...DEFAULT_PROP_HAND_PALETTES,
++};
++
++const listeners = new Set<() => void>();
++let version = 0;
++
++export function propHandPalette(hand: PropHand): PropHandPalette {
++  return PROP_HAND_PALETTES[hand];
++}
++
++/** Bumped on every palette change; lets caches and effects key on it. */
++export function propHandPaletteVersion(): number {
++  return version;
++}
++
++function normalizeHex(value: string | null | undefined): string | null {
++  if (typeof value !== "string") return null;
++  const hex = value.trim().toLowerCase();
++  if (/^#[0-9a-f]{6}$/.test(hex)) return hex;
++  if (/^#[0-9a-f]{3}$/.test(hex)) {
++    return `#${[...hex.slice(1)].map((c) => c + c).join("")}`;
++  }
++  return null;
++}
++
++function hexToHsl(hex: string): [number, number, number] {
++  const [r, g, b] = [1, 3, 5].map(
++    (start) => parseInt(hex.slice(start, start + 2), 16) / 255
++  ) as [number, number, number];
++  const max = Math.max(r, g, b);
++  const min = Math.min(r, g, b);
++  const l = (max + min) / 2;
++  if (max === min) return [0, 0, l];
++  const d = max - min;
++  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
++  const h =
++    max === r
++      ? ((g - b) / d + (g < b ? 6 : 0)) / 6
++      : max === g
++        ? ((b - r) / d + 2) / 6
++        : ((r - g) / d + 4) / 6;
++  return [h, s, l];
++}
++
++function hslToHex(h: number, s: number, l: number): string {
++  const hue = (p: number, q: number, t: number) => {
++    const u = t < 0 ? t + 1 : t > 1 ? t - 1 : t;
++    if (u < 1 / 6) return p + (q - p) * 6 * u;
++    if (u < 1 / 2) return q;
++    if (u < 2 / 3) return p + (q - p) * (2 / 3 - u) * 6;
++    return p;
++  };
++  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
++  const p = 2 * l - q;
++  const channels = s === 0 ? [l, l, l] : [h + 1 / 3, h, h - 1 / 3].map((t) => hue(p, q, t));
++  return `#${channels
++    .map((v) =>
++      Math.round(Math.min(1, Math.max(0, v)) * 255)
++        .toString(16)
++        .padStart(2, "0")
++    )
++    .join("")}`;
++}
++
++/**
++ * The shade and highlight props use beside the main color, placed where the
++ * authored palettes sit relative to theirs (Tailwind 500 to 700 and 400).
++ */
++export function derivePropHandPalette(color: string): PropHandPalette {
++  const main = normalizeHex(color) ?? DEFAULT_PROP_HAND_PALETTES.blue.main;
++  const [h, s, l] = hexToHsl(main);
++  return {
++    main,
++    dark: hslToHex(h, s, l * 0.72),
++    light: hslToHex(h, s, l + (1 - l) * 0.28),
++  };
++}
++
++/**
++ * Paint the hands. A null or invalid color restores that hand's authored
++ * palette. Listeners run only when a palette actually changes.
++ */
++export function setPropHandColors(colors: {
++  blue?: string | null;
++  red?: string | null;
++}): void {
++  let changed = false;
++  for (const hand of ["blue", "red"] as const) {
++    const hex = normalizeHex(colors[hand]);
++    const next = hex
++      ? derivePropHandPalette(hex)
++      : DEFAULT_PROP_HAND_PALETTES[hand];
++    const current = PROP_HAND_PALETTES[hand];
++    if (
++      current.main === next.main &&
++      current.dark === next.dark &&
++      current.light === next.light
++    ) {
++      continue;
++    }
++    PROP_HAND_PALETTES[hand] = next;
++    changed = true;
++  }
++  if (!changed) return;
++  version += 1;
++  for (const listener of listeners) listener();
++}
++
++export function subscribePropHandColors(listener: () => void): () => void {
++  listeners.add(listener);
++  return () => listeners.delete(listener);
++}
 diff --git a/src/lib/components/props/prop-lathe.ts b/src/lib/components/props/prop-lathe.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..2653ce5702094760a785e7352b9a245835d43cb0
+index 0000000000..2653ce5702
 --- /dev/null
 +++ b/src/lib/components/props/prop-lathe.ts
 @@ -0,0 +1,116 @@
@@ -24767,7 +25576,7 @@ index 0000000000000000000000000000000000000000..2653ce5702094760a785e7352b9a2458
 +  return new LatheGeometry(profile, radialSegments);
 +}
 diff --git a/src/lib/components/props/prop-model-recolor.ts b/src/lib/components/props/prop-model-recolor.ts
-index 6d8e91ce13c491ba06883641fbabc36adb2beeb0..d4e3f130bcf51597c60f8e19a7b66eee32c791e2 100644
+index 6d8e91ce13..d4e3f130bc 100644
 --- a/src/lib/components/props/prop-model-recolor.ts
 +++ b/src/lib/components/props/prop-model-recolor.ts
 @@ -1,9 +1,10 @@
@@ -24880,7 +25689,7 @@ index 6d8e91ce13c491ba06883641fbabc36adb2beeb0..d4e3f130bcf51597c60f8e19a7b66eee
    });
  }
 diff --git a/src/lib/components/props/prop-model-registry.ts b/src/lib/components/props/prop-model-registry.ts
-index 899e076e7e08becffb11b36d6651a9099ab43d6c..a79703a0e472bc442440c2d2de4b6f0ebe4b71d0 100644
+index 899e076e7e..a79703a0e4 100644
 --- a/src/lib/components/props/prop-model-registry.ts
 +++ b/src/lib/components/props/prop-model-registry.ts
 @@ -20,6 +20,16 @@ export interface PropModelEntry {
@@ -25106,7 +25915,7 @@ index 899e076e7e08becffb11b36d6651a9099ab43d6c..a79703a0e472bc442440c2d2de4b6f0e
    if (bigVariant) {
 diff --git a/src/lib/components/props/torch-profile.ts b/src/lib/components/props/torch-profile.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..764b15386348c9e9bdd2ae3701d14199856e40fa
+index 0000000000..764b153863
 --- /dev/null
 +++ b/src/lib/components/props/torch-profile.ts
 @@ -0,0 +1,142 @@
@@ -25254,7 +26063,7 @@ index 0000000000000000000000000000000000000000..764b15386348c9e9bdd2ae3701d14199
 +export const TORCH_REACH = 0.59335;
 diff --git a/src/lib/components/props/triad-frame.ts b/src/lib/components/props/triad-frame.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..c3e88a14abd46aa706641905aad0885d801a6c71
+index 0000000000..c3e88a14ab
 --- /dev/null
 +++ b/src/lib/components/props/triad-frame.ts
 @@ -0,0 +1,134 @@
@@ -25392,7 +26201,7 @@ index 0000000000000000000000000000000000000000..c3e88a14abd46aa706641905aad0885d
 +  ringTube: 0.03,
 +  fillet: 0.016,
 +};
-diff --git a/Y/src/lib/components/props/triangle-geometry.ts b/src/lib/components/props/triangle-geometry.ts
+diff --git a/src/lib/components/props/triangle-geometry.ts b/src/lib/components/props/triangle-geometry.ts
 new file mode 100644
 index 0000000000..dc19d062e7
 --- /dev/null
@@ -25509,7 +26318,7 @@ index 0000000000..dc19d062e7
 +}
 diff --git a/src/lib/components/props/triquetra-profile.ts b/src/lib/components/props/triquetra-profile.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..e78e9296e60edb2d417b43b47b32edff55684d48
+index 0000000000..e78e9296e6
 --- /dev/null
 +++ b/src/lib/components/props/triquetra-profile.ts
 @@ -0,0 +1,186 @@
@@ -25700,7 +26509,7 @@ index 0000000000000000000000000000000000000000..e78e9296e60edb2d417b43b47b32edff
 +  return shape;
 +}
 diff --git a/src/lib/config/avatar-definitions.ts b/src/lib/config/avatar-definitions.ts
-index e3c577e94a6b79bbca1bc222fd79886eaf88962b..b3d4bd79bb2801c45c3f1636290ad38e2707da90 100644
+index e3c577e94a..b3d4bd79bb 100644
 --- a/src/lib/config/avatar-definitions.ts
 +++ b/src/lib/config/avatar-definitions.ts
 @@ -9,11 +9,29 @@
@@ -25790,7 +26599,7 @@ index e3c577e94a6b79bbca1bc222fd79886eaf88962b..b3d4bd79bb2801c45c3f1636290ad38e
  
  /**
 diff --git a/src/lib/debug/avatar-debug-hooks.ts b/src/lib/debug/avatar-debug-hooks.ts
-index 7a39174683bca72ec068a727f5e748a7269cb528..7a4e8296c490761589c8da9bf3efe82e1fb6bd10 100644
+index 7a39174683..7a4e8296c4 100644
 --- a/src/lib/debug/avatar-debug-hooks.ts
 +++ b/src/lib/debug/avatar-debug-hooks.ts
 @@ -7,15 +7,18 @@ import type {
@@ -25908,7 +26717,7 @@ index 7a39174683bca72ec068a727f5e748a7269cb528..7a4e8296c490761589c8da9bf3efe82e
  }
 diff --git a/src/lib/debug/avatar-load-instrumentation.ts b/src/lib/debug/avatar-load-instrumentation.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..7533d55eb9587dc3eda6ea149de226fc48749af5
+index 0000000000..7533d55eb9
 --- /dev/null
 +++ b/src/lib/debug/avatar-load-instrumentation.ts
 @@ -0,0 +1,181 @@
@@ -26123,7 +26932,7 @@ index a6a29aa9b9..fe47e78001 100644
  	BIGTORCH = "bigtorch",
  	POI = "poi",
 diff --git a/src/lib/index.ts b/src/lib/index.ts
-index 68c4a74d3b..04d5463e95 100644
+index 68c4a74d3b..d56b30f8d6 100644
 --- a/src/lib/index.ts
 +++ b/src/lib/index.ts
 @@ -71,6 +71,17 @@ export { LAYER_WORLD, LAYER_PLAYER_BODY, LAYER_VIEWMODEL, getCameraLayers, shoul
@@ -26247,7 +27056,30 @@ index 68c4a74d3b..04d5463e95 100644
  export { LegAnimator } from "./services/implementations/LegAnimator";
  export { solveCylinderGrasp } from "./services/implementations/CylinderGraspSolver";
  export type { GraspResult } from "./services/implementations/CylinderGraspSolver";
-@@ -151,3 +218,7 @@ export { PROP_COLORS, METAL_COLORS } from "./components/props/Prop3DProps";
+@@ -148,6 +215,30 @@ export { PROP_MODEL_REGISTRY } from "./components/props/prop-model-registry";
+ // Prop types
+ export type { Prop3DProps } from "./components/props/Prop3DProps";
+ export { PROP_COLORS, METAL_COLORS } from "./components/props/Prop3DProps";
++export {
++  DEFAULT_PROP_HAND_PALETTES,
++  derivePropHandPalette,
++  propHandPalette,
++  propHandPaletteVersion,
++  setPropHandColors,
++  subscribePropHandColors,
++} from "./components/props/prop-hand-palette";
++export type {
++  PropHand,
++  PropHandPalette,
++} from "./components/props/prop-hand-palette";
++export {
++  paintWithPropHand,
++  propHandColor,
++} from "./components/props/prop-hand-paint";
++export {
++  reactivePropHandPalette,
++  reactivePropHandPaletteVersion,
++} from "./components/props/prop-hand-palette-state.svelte";
  
  // Data
  export { STAFF_GRIP_POSES } from "./data/grip-poses/staff-grip-poses";
@@ -26257,10 +27089,10 @@ index 68c4a74d3b..04d5463e95 100644
 +export { prepareSharedGltf, prepareAvatarForDisplay } from "./services/shared-gltf-cache";
 diff --git a/src/lib/rendering/create-staff-object.ts b/src/lib/rendering/create-staff-object.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..ecfaca907a475b4d454e2352e63601da4dfa3a97
+index 0000000000..c6c8f61d24
 --- /dev/null
 +++ b/src/lib/rendering/create-staff-object.ts
-@@ -0,0 +1,181 @@
+@@ -0,0 +1,184 @@
 +import {
 +  CylinderGeometry,
 +  Euler,
@@ -26273,6 +27105,8 @@ index 0000000000000000000000000000000000000000..ecfaca907a475b4d454e2352e63601da
 +  TorusGeometry,
 +} from "three";
 +import type { PropState3D } from "../domain/models/PropState3D";
++import { paintWithPropHand } from "../components/props/prop-hand-paint";
++import { propHandPalette } from "../components/props/prop-hand-palette";
 +
 +interface StaffGeometrySet {
 +  shaft: CylinderGeometry;
@@ -26333,10 +27167,7 @@ index 0000000000000000000000000000000000000000..ecfaca907a475b4d454e2352e63601da
 +  const cached = materialSets.get(color);
 +  if (cached) return cached;
 +
-+  const palette =
-+    color === "blue"
-+      ? { main: "#3b82f6", dark: "#1d4ed8" }
-+      : { main: "#ef4444", dark: "#b91c1c" };
++  const palette = propHandPalette(color);
 +  const materials = {
 +    main: new MeshStandardMaterial({
 +      color: palette.main,
@@ -26359,6 +27190,10 @@ index 0000000000000000000000000000000000000000..ecfaca907a475b4d454e2352e63601da
 +      transparent: true,
 +    }),
 +  };
++  // Shared by every staff of this hand, so it follows the hand color in place.
++  paintWithPropHand(materials.main, color);
++  paintWithPropHand(materials.dark, color, "dark");
++  paintWithPropHand(materials.trail, color);
 +  materialSets.set(color, materials);
 +  return materials;
 +}
@@ -26444,7 +27279,7 @@ index 0000000000000000000000000000000000000000..ecfaca907a475b4d454e2352e63601da
 +}
 diff --git a/src/lib/services/bone-name-normalization.ts b/src/lib/services/bone-name-normalization.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..164a88b402d8501ad7b09fa33e727f75550e8999
+index 0000000000..164a88b402
 --- /dev/null
 +++ b/src/lib/services/bone-name-normalization.ts
 @@ -0,0 +1,37 @@
@@ -26487,7 +27322,7 @@ index 0000000000000000000000000000000000000000..164a88b402d8501ad7b09fa33e727f75
 +}
 diff --git a/src/lib/services/clip-footprint.ts b/src/lib/services/clip-footprint.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..98e57dea0dd008683a1a784921519a3208f3af52
+index 0000000000..98e57dea0d
 --- /dev/null
 +++ b/src/lib/services/clip-footprint.ts
 @@ -0,0 +1,369 @@
@@ -27077,7 +27912,7 @@ index 42a46ac294..8f0d78fdcd 100644
     * Enable/disable smooth blending between poses
     */
 diff --git a/src/lib/services/contracts/IAvatarSkeletonBuilder.ts b/src/lib/services/contracts/IAvatarSkeletonBuilder.ts
-index 666a20b6ddead4b33f695ce341c854f937eaabb6..e0b23efe86d24cb2ffedebf41579906dcb7beb9b 100644
+index 666a20b6dd..e0b23efe86 100644
 --- a/src/lib/services/contracts/IAvatarSkeletonBuilder.ts
 +++ b/src/lib/services/contracts/IAvatarSkeletonBuilder.ts
 @@ -30,9 +30,11 @@ export type BoneName =
@@ -27117,7 +27952,7 @@ index 666a20b6ddead4b33f695ce341c854f937eaabb6..e0b23efe86d24cb2ffedebf41579906d
     * Dispose of the loaded model and free resources
     */
 diff --git a/src/lib/services/contracts/ICollisionDetector.ts b/src/lib/services/contracts/ICollisionDetector.ts
-index 4f198331785178e696142a56f0f2b6675d020abe..cea61ed8d9c1d3c71fa8da423d443e8d7b752800 100644
+index 4f19833178..cea61ed8d9 100644
 --- a/src/lib/services/contracts/ICollisionDetector.ts
 +++ b/src/lib/services/contracts/ICollisionDetector.ts
 @@ -17,6 +17,8 @@ export type CollisionZone =
@@ -27169,7 +28004,7 @@ index 4f198331785178e696142a56f0f2b6675d020abe..cea61ed8d9c1d3c71fa8da423d443e8d
  export interface BodySnapshot {
    /**
 diff --git a/src/lib/services/contracts/IElbowPoleComputer.ts b/src/lib/services/contracts/IElbowPoleComputer.ts
-index e1d06d6b7212d8689bbd087c62c023714629d718..c51692237501de565e3550f3761aad9d5f237708 100644
+index e1d06d6b72..c516922375 100644
 --- a/src/lib/services/contracts/IElbowPoleComputer.ts
 +++ b/src/lib/services/contracts/IElbowPoleComputer.ts
 @@ -10,6 +10,40 @@
@@ -27253,8 +28088,28 @@ index e1d06d6b7212d8689bbd087c62c023714629d718..c51692237501de565e3550f3761aad9d
 +    context: ForearmFaceClearanceContext
    ): Vector3;
  }
+diff --git a/src/lib/services/contracts/IFingerAnimator.ts b/src/lib/services/contracts/IFingerAnimator.ts
+index 059e119199..09ff76fe43 100644
+--- a/src/lib/services/contracts/IFingerAnimator.ts
++++ b/src/lib/services/contracts/IFingerAnimator.ts
+@@ -1,5 +1,6 @@
+ // src/lib/shared/3d/services/contracts/IFingerAnimator.ts
+ import type { GripType, FingerChains } from "../../domain/models/GripPose";
++import type { SkinnedMesh } from "three";
+ 
+ /**
+  * Animates finger bones by slerping between grip pose presets.
+@@ -8,7 +9,7 @@ import type { GripType, FingerChains } from "../../domain/models/GripPose";
+  */
+ export interface IFingerAnimator {
+   /** Bind to a skeleton's finger bone chains. Call after model loads. */
+-  initialize(fingerChains: FingerChains): void;
++  initialize(fingerChains: FingerChains, meshes?: readonly SkinnedMesh[]): void;
+ 
+   /** Whether initialize() has been called with valid finger chains. */
+   isReady(): boolean;
 diff --git a/src/lib/services/contracts/IFootPlanter.ts b/src/lib/services/contracts/IFootPlanter.ts
-index 90ba82c982d73882ebf0ab4456ac422b1468ab37..02271f92174f542c620e89397fbe766270015b6e 100644
+index 90ba82c982..02271f9217 100644
 --- a/src/lib/services/contracts/IFootPlanter.ts
 +++ b/src/lib/services/contracts/IFootPlanter.ts
 @@ -35,6 +35,26 @@ export interface FootPlanterInput {
@@ -27320,7 +28175,7 @@ index 90ba82c982d73882ebf0ab4456ac422b1468ab37..02271f92174f542c620e89397fbe7662
     * Whether the foot planter is initialized and has valid leg chains.
     */
 diff --git a/src/lib/services/contracts/ILegIKSolver.ts b/src/lib/services/contracts/ILegIKSolver.ts
-index df13878005926639ee48b400e7eb19647b92b020..d68905bd3ebda71325e9a332f633a38c0effe02a 100644
+index df13878005..d68905bd3e 100644
 --- a/src/lib/services/contracts/ILegIKSolver.ts
 +++ b/src/lib/services/contracts/ILegIKSolver.ts
 @@ -10,14 +10,16 @@
@@ -27435,7 +28290,7 @@ index df13878005926639ee48b400e7eb19647b92b020..d68905bd3ebda71325e9a332f633a38c
 +  solve(input: LegIKInput): LegIKResult;
  }
 diff --git a/src/lib/services/contracts/ILocomotionAnimator.ts b/src/lib/services/contracts/ILocomotionAnimator.ts
-index 3ad8e04464bd5aa48ee1277b5ad81ee0bfad19aa..c11d976d2836702055614983acac0c472e6b671e 100644
+index 3ad8e04464..c11d976d28 100644
 --- a/src/lib/services/contracts/ILocomotionAnimator.ts
 +++ b/src/lib/services/contracts/ILocomotionAnimator.ts
 @@ -11,6 +11,9 @@
@@ -27658,7 +28513,7 @@ index 3ad8e04464bd5aa48ee1277b5ad81ee0bfad19aa..c11d976d2836702055614983acac0c47
     * Clean up all resources (mixer, actions, clips)
     */
 diff --git a/src/lib/services/contracts/ISpineTwister.ts b/src/lib/services/contracts/ISpineTwister.ts
-index 2627f729e9f27d0eafff53491ea15d219472ac24..486597269ab9d8e29cadfb88c69b67e8e2512b16 100644
+index 2627f729e9..486597269a 100644
 --- a/src/lib/services/contracts/ISpineTwister.ts
 +++ b/src/lib/services/contracts/ISpineTwister.ts
 @@ -15,6 +15,20 @@
@@ -27710,7 +28565,7 @@ index 2627f729e9f27d0eafff53491ea15d219472ac24..486597269ab9d8e29cadfb88c69b67e8
    ): SpineTwistResult;
  }
 diff --git a/src/lib/services/contracts/ITurnAnimator.ts b/src/lib/services/contracts/ITurnAnimator.ts
-index f906b396cdb9f1a924c617f9a44c5978f9cfd46b..d78c415dce9399f16b6c8654b88ba70ac93d8c82 100644
+index f906b396cd..d78c415dce 100644
 --- a/src/lib/services/contracts/ITurnAnimator.ts
 +++ b/src/lib/services/contracts/ITurnAnimator.ts
 @@ -20,6 +20,8 @@ import type { Quaternion, Vector3 } from "three";
@@ -27748,7 +28603,7 @@ index f906b396cdb9f1a924c617f9a44c5978f9cfd46b..d78c415dce9399f16b6c8654b88ba70a
    /** Per-foot contact state: 0 = airborne, 1 = fully planted. */
 diff --git a/src/lib/services/geometry/BodyCollisionGeometry.ts b/src/lib/services/geometry/BodyCollisionGeometry.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..804080e43f4dc206951115861d4b871fe92f612e
+index 0000000000..804080e43f
 --- /dev/null
 +++ b/src/lib/services/geometry/BodyCollisionGeometry.ts
 @@ -0,0 +1,68 @@
@@ -27822,7 +28677,7 @@ index 0000000000000000000000000000000000000000..804080e43f4dc206951115861d4b871f
 +}
 diff --git a/src/lib/services/geometry/CylindricalGripGeometry.ts b/src/lib/services/geometry/CylindricalGripGeometry.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..2ffaba50d596d64feda7d3a54922536fe31c1bb5
+index 0000000000..2ffaba50d5
 --- /dev/null
 +++ b/src/lib/services/geometry/CylindricalGripGeometry.ts
 @@ -0,0 +1,115 @@
@@ -30455,7 +31310,7 @@ index c73bcabe86..b01bf88254 100644
    toggleClavicleRaise(): boolean {
      this._clavicleRaiseEnabled = !this._clavicleRaiseEnabled;
 diff --git a/src/lib/services/implementations/AvatarSkeletonBuilder.ts b/src/lib/services/implementations/AvatarSkeletonBuilder.ts
-index d2f43b6b63eacb247573543f3d15c29118926882..bc98e1993809abb5e6a48e10345b1292fa06f389 100644
+index d2f43b6b63..bc98e19938 100644
 --- a/src/lib/services/implementations/AvatarSkeletonBuilder.ts
 +++ b/src/lib/services/implementations/AvatarSkeletonBuilder.ts
 @@ -5,9 +5,8 @@
@@ -31055,7 +31910,7 @@ index d2f43b6b63eacb247573543f3d15c29118926882..bc98e1993809abb5e6a48e10345b1292
      this.state = {
        isLoaded: false,
 diff --git a/src/lib/services/implementations/ClipBasedTurnAnimator.ts b/src/lib/services/implementations/ClipBasedTurnAnimator.ts
-index f8a2b8ddba4717fa9c4594e099d623a2c3ac14e5..a2cde2dada0e28f612e0a683532b902b90f7c79a 100644
+index f8a2b8ddba..a2cde2dada 100644
 --- a/src/lib/services/implementations/ClipBasedTurnAnimator.ts
 +++ b/src/lib/services/implementations/ClipBasedTurnAnimator.ts
 @@ -19,10 +19,14 @@
@@ -31473,7 +32328,7 @@ index f8a2b8ddba4717fa9c4594e099d623a2c3ac14e5..a2cde2dada0e28f612e0a683532b902b
          bestDist = dist;
          best = clip;
 diff --git a/src/lib/services/implementations/CollisionDetector.ts b/src/lib/services/implementations/CollisionDetector.ts
-index 7bcee43c7bd19f3e7aa820ab57f8902cd7e90ca9..145b22db339a0b1197cbd5228c7be949a2a9e62e 100644
+index 7bcee43c7b..145b22db33 100644
 --- a/src/lib/services/implementations/CollisionDetector.ts
 +++ b/src/lib/services/implementations/CollisionDetector.ts
 @@ -27,14 +27,16 @@ import type {
@@ -31642,10 +32497,10 @@ index 7bcee43c7bd19f3e7aa820ab57f8902cd7e90ca9..145b22db339a0b1197cbd5228c7be949
    private segmentToSegmentDistance(a0: Vector3, a1: Vector3, b0: Vector3, b1: Vector3): number {
 diff --git a/src/lib/services/implementations/ContactRetargeter.ts b/src/lib/services/implementations/ContactRetargeter.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..24e7a20a44bc0cb00bd8cd29c941db6cd5f4cef6
+index 0000000000..7187a05479
 --- /dev/null
 +++ b/src/lib/services/implementations/ContactRetargeter.ts
-@@ -0,0 +1,864 @@
+@@ -0,0 +1,920 @@
 +import {
 +  AnimationClip,
 +  AnimationMixer,
@@ -31754,7 +32609,7 @@ index 0000000000000000000000000000000000000000..24e7a20a44bc0cb00bd8cd29c941db6c
 +  modelPrefix: string,
 +  options: ContactRetargetOptions = {}
 +): AnimationClip {
-+  const rig = resolveRig(root, modelPrefix);
++  const rig = resolveRig(root, modelPrefix, footprint);
 +  if (!rig) return clip;
 +
 +  const pose = capturePose(root);
@@ -31793,6 +32648,25 @@ index 0000000000000000000000000000000000000000..24e7a20a44bc0cb00bd8cd29c941db6c
 +  /** In `frame`'s space, like every other length here. */
 +  legLength: number;
 +  floor: number;
++  /**
++   * The height every hip joint in the footprint is measured up from.
++   *
++   * The footprint puts the hips and the feet in leg lengths, which is right
++   * for the leg and wrong for the foot. How far an ankle stands over the floor
++   * is shoe and heel, not shin, and it does not scale with the leg: the
++   * shipped rigs stand their ankles 0.068 to 0.178 leg lengths up, against
++   * 0.109 on the source clips' planted feet. Stacking the leg straight on the
++   * floor put every planted ankle at the source's height instead of its own -
++   * 5.6 cm low on ch07, whose foot the lift then pitched toes-up to keep the
++   * shoe out of the floor, and 3.6 cm high on ch34 (measured 2026-09-24). The
++   * animator's pelvis correction took up the difference with the whole body
++   * and left ch07's planted sole 5 cm in the air.
++   *
++   * So the leg stands on the rig's own ankle: this is the floor, raised by the
++   * rig's ankle height and lowered by the source's, so a planted ankle comes
++   * out at the height this rig's ankle stands at.
++   */
++  legBase: number;
 +  left: Omit<Side, "track">;
 +  right: Omit<Side, "track">;
 +}
@@ -31804,7 +32678,11 @@ index 0000000000000000000000000000000000000000..24e7a20a44bc0cb00bd8cd29c941db6c
 + * every number here is a bind-pose property, and reading them off a posed rig
 + * gives leg lengths that change as the character moves.
 + */
-+function resolveRig(root: Object3D, prefix: string): Rig | null {
++function resolveRig(
++  root: Object3D,
++  prefix: string,
++  footprint: ClipFootprint
++): Rig | null {
 +  const bone = (name: string): Bone | null =>
 +    (root.getObjectByName(`${prefix}${name}`) as Bone | undefined) ?? null;
 +
@@ -31843,15 +32721,48 @@ index 0000000000000000000000000000000000000000..24e7a20a44bc0cb00bd8cd29c941db6c
 +  if (!(left.chain.totalLength > 0)) return null;
 +
 +  const frame = hips.parent ?? root;
++  const legLength = legLengthIn(frame, left.chain);
++  const floor = restFloor(frame, left.toe, right.toe);
++  const ankleHeight =
++    (heightIn(frame, left.chain.effector) +
++      heightIn(frame, right.chain.effector)) /
++      2 -
++    floor;
 +  return {
 +    hips,
 +    hipsRest: hips.position.clone(),
 +    frame,
-+    legLength: legLengthIn(frame, left.chain),
-+    floor: restFloor(frame, left.toe, right.toe),
++    legLength,
++    floor,
++    legBase: floor + ankleHeight - plantedAnkleHeight(footprint) * legLength,
 +    left,
 +    right,
 +  };
++}
++
++function heightIn(frame: Object3D, bone: Object3D): number {
++  const toLocal = new Matrix4().copy(frame.matrixWorld).invert();
++  return bone.getWorldPosition(new Vector3()).applyMatrix4(toLocal).y;
++}
++
++/**
++ * How high the source's ankle rides while its foot is down, in leg lengths.
++ *
++ * The median over every sample either foot is on the floor. Heel strike and
++ * toe-off carry the ankle up off the height it stands at flat, at the two ends
++ * of every stance, and a median reads through both.
++ */
++function plantedAnkleHeight(footprint: ClipFootprint): number {
++  const heights: number[] = [];
++  for (const track of [footprint.left, footprint.right]) {
++    for (let i = 0; i < footprint.samples; i++) {
++      if (track.contact[i])
++        heights.push(track.hip[i]! + track.ankle[i * 3 + 1]!);
++    }
++  }
++  if (heights.length === 0) return 0;
++  heights.sort((a, b) => a - b);
++  return heights[Math.floor(heights.length / 2)]!;
 +}
 +
 +/**
@@ -32006,7 +32917,7 @@ index 0000000000000000000000000000000000000000..24e7a20a44bc0cb00bd8cd29c941db6c
 +    rig.hips.position.add(rig.hipsRest);
 +    // Ride at the height the walk rides at rather than the height the rig
 +    // stands at. Travel across the floor stays with the track that had it.
-+    rig.hips.position.y = rig.floor + footprint.hips[i]! * rig.legLength;
++    rig.hips.position.y = rig.legBase + footprint.hips[i]! * rig.legLength;
 +    root.updateMatrixWorld(true);
 +    alignPelvis(rig, sides, i);
 +    root.updateMatrixWorld(true);
@@ -32158,7 +33069,7 @@ index 0000000000000000000000000000000000000000..24e7a20a44bc0cb00bd8cd29c941db6c
 +  rig.hips.position.set(0, 0, 0);
 +  mixer.setTime(time);
 +  rig.hips.position.add(rig.hipsRest);
-+  rig.hips.position.y = rig.floor + hipsHeight * rig.legLength;
++  rig.hips.position.y = rig.legBase + hipsHeight * rig.legLength;
 +  rig.frame.updateMatrixWorld(true);
 +  alignPelvis(rig, sides, index);
 +  rootUpdate(rig);
@@ -32253,7 +33164,7 @@ index 0000000000000000000000000000000000000000..24e7a20a44bc0cb00bd8cd29c941db6c
 +  let lift = 0;
 +  for (const side of sides) {
 +    side.chain.root.getWorldPosition(hipJoint).applyMatrix4(hipSpace);
-+    const want = rig.floor + side.track.hip[index]! * rig.legLength;
++    const want = rig.legBase + side.track.hip[index]! * rig.legLength;
 +    lift += want - hipJoint.y;
 +    if (side.track.contact[index]) {
 +      plantedLift += want - hipJoint.y;
@@ -32511,7 +33422,7 @@ index 0000000000000000000000000000000000000000..24e7a20a44bc0cb00bd8cd29c941db6c
 +  }
 +}
 diff --git a/src/lib/services/implementations/ElbowPoleComputer.ts b/src/lib/services/implementations/ElbowPoleComputer.ts
-index 626111debe6cf0d4a8846c94e3b6847e3aa2758f..beac36ea1ba8dcd58f43158c07c6e7091cda4e38 100644
+index 626111debe..beac36ea1b 100644
 --- a/src/lib/services/implementations/ElbowPoleComputer.ts
 +++ b/src/lib/services/implementations/ElbowPoleComputer.ts
 @@ -12,8 +12,21 @@
@@ -33982,7 +34893,7 @@ index 0b10e18f56..8a188307fb 100644
        state.currentRotations[i]!.copy(this.scratchQuat);
        state.bones[i]!.quaternion.copy(this.scratchQuat);
 diff --git a/src/lib/services/implementations/FootPlanter.ts b/src/lib/services/implementations/FootPlanter.ts
-index a47113296e4edce51a40e2a1c3498c4f13969e4f..5ba47207fcc96128e6c77d89ea63f5baf5676c01 100644
+index a47113296e..5ba47207fc 100644
 --- a/src/lib/services/implementations/FootPlanter.ts
 +++ b/src/lib/services/implementations/FootPlanter.ts
 @@ -8,27 +8,65 @@
@@ -35361,7 +36272,7 @@ index a47113296e4edce51a40e2a1c3498c4f13969e4f..5ba47207fcc96128e6c77d89ea63f5ba
 +  }
  }
 diff --git a/src/lib/services/implementations/HingeConstrainedLegIKSolver.ts b/src/lib/services/implementations/HingeConstrainedLegIKSolver.ts
-index 732eb4430c365103d55b3453f8cd8f6fe097ecbb..605270cc1d1b04401b253e61778aaa16faf17889 100644
+index 732eb4430c..605270cc1d 100644
 --- a/src/lib/services/implementations/HingeConstrainedLegIKSolver.ts
 +++ b/src/lib/services/implementations/HingeConstrainedLegIKSolver.ts
 @@ -1,7 +1,11 @@
@@ -35773,7 +36684,7 @@ index 732eb4430c365103d55b3453f8cd8f6fe097ecbb..605270cc1d1b04401b253e61778aaa16
    }
  }
 diff --git a/src/lib/services/implementations/KneeHingeAxisCalibrator.ts b/src/lib/services/implementations/KneeHingeAxisCalibrator.ts
-index ce05b8a4253eadc12a846226c96a9d83f63063bc..0d04a3e7f6340dc401dcdf68b59f6af055426ca6 100644
+index ce05b8a425..0d04a3e7f6 100644
 --- a/src/lib/services/implementations/KneeHingeAxisCalibrator.ts
 +++ b/src/lib/services/implementations/KneeHingeAxisCalibrator.ts
 @@ -1,26 +1,125 @@
@@ -35922,7 +36833,7 @@ index ce05b8a4253eadc12a846226c96a9d83f63063bc..0d04a3e7f6340dc401dcdf68b59f6af0
    }
  }
 diff --git a/src/lib/services/implementations/LocomotionAnimator.ts b/src/lib/services/implementations/LocomotionAnimator.ts
-index 25b0660fc5e3c3b71f7dede872aa86fe78a16162..8402469181c65a56d0d29d6c42f36001abf6aeb1 100644
+index 25b0660fc5..8402469181 100644
 --- a/src/lib/services/implementations/LocomotionAnimator.ts
 +++ b/src/lib/services/implementations/LocomotionAnimator.ts
 @@ -13,17 +13,210 @@
@@ -38298,7 +39209,7 @@ index 25b0660fc5e3c3b71f7dede872aa86fe78a16162..8402469181c65a56d0d29d6c42f36001
      }
    }
 diff --git a/src/lib/services/implementations/RootMotionExtractor.ts b/src/lib/services/implementations/RootMotionExtractor.ts
-index 4040db93ea9b7f2b6418120c045c9639cb321b33..cca0f04c288b8d878691c675ec365da738014bb0 100644
+index 4040db93ea..cca0f04c28 100644
 --- a/src/lib/services/implementations/RootMotionExtractor.ts
 +++ b/src/lib/services/implementations/RootMotionExtractor.ts
 @@ -40,6 +40,7 @@ export class RootMotionExtractor implements IRootMotionExtractor {
@@ -38336,7 +39247,7 @@ index 4040db93ea9b7f2b6418120c045c9639cb321b33..cca0f04c288b8d878691c675ec365da7
      return delta;
    }
 diff --git a/src/lib/services/implementations/SpineTwister.ts b/src/lib/services/implementations/SpineTwister.ts
-index f6212ea61c00417a102adf86799b7d4d93b2d1c9..359acdf3d54d932409ca055b0f0aafcdcfd3c3c9 100644
+index f6212ea61c..359acdf3d5 100644
 --- a/src/lib/services/implementations/SpineTwister.ts
 +++ b/src/lib/services/implementations/SpineTwister.ts
 @@ -7,10 +7,12 @@
@@ -38593,7 +39504,7 @@ index f6212ea61c00417a102adf86799b7d4d93b2d1c9..359acdf3d54d932409ca055b0f0aafcd
    }
 diff --git a/src/lib/services/leg-geometry.ts b/src/lib/services/leg-geometry.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..659491c87669856c213fd41dabbf8171b30282bd
+index 0000000000..659491c876
 --- /dev/null
 +++ b/src/lib/services/leg-geometry.ts
 @@ -0,0 +1,366 @@
@@ -38965,7 +39876,7 @@ index 0000000000000000000000000000000000000000..659491c87669856c213fd41dabbf8171
 +}
 diff --git a/src/lib/services/rendered-staff-geometry.ts b/src/lib/services/rendered-staff-geometry.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..1388eb2e3be5cd3be548c934db37d821e0cab147
+index 0000000000..1388eb2e3b
 --- /dev/null
 +++ b/src/lib/services/rendered-staff-geometry.ts
 @@ -0,0 +1,22 @@
@@ -38993,7 +39904,7 @@ index 0000000000000000000000000000000000000000..1388eb2e3be5cd3be548c934db37d821
 +}
 diff --git a/src/lib/services/shared-gltf-cache.ts b/src/lib/services/shared-gltf-cache.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..30ccfb4de78798dd472a76de1d3aa7c2b12f410a
+index 0000000000..30ccfb4de7
 --- /dev/null
 +++ b/src/lib/services/shared-gltf-cache.ts
 @@ -0,0 +1,473 @@
@@ -39470,7 +40381,7 @@ index 0000000000000000000000000000000000000000..30ccfb4de78798dd472a76de1d3aa7c2
 +    context.preparedRoots.clear();
 +  }
 +}
-diff --git a/Y/src/lib/state/prop-finish-state.svelte.ts b/src/lib/state/prop-finish-state.svelte.ts
+diff --git a/src/lib/state/prop-finish-state.svelte.ts b/src/lib/state/prop-finish-state.svelte.ts
 new file mode 100644
 index 0000000000..e2e21cf354
 --- /dev/null
@@ -39604,10 +40515,10 @@ index 0000000000..e2e21cf354
 +}
 diff --git a/src/worker.ts b/src/worker.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..108dfc81b254b53496d83fb551b0aea1c1f64a0d
+index 0000000000..1c85721a30
 --- /dev/null
 +++ b/src/worker.ts
-@@ -0,0 +1,32 @@
+@@ -0,0 +1,48 @@
 +export { getAvatarModelPath } from "./lib/config/avatar-definitions";
 +export { cmToUnits } from "./lib/config/avatar-proportions";
 +export {
@@ -39619,6 +40530,22 @@ index 0000000000000000000000000000000000000000..108dfc81b254b53496d83fb551b0aea1
 +export { PropType } from "./lib/domain/enums/PropType";
 +export { GripType } from "./lib/domain/models/GripPose";
 +export { PROP_COLORS } from "./lib/components/props/Prop3DProps";
++export {
++  DEFAULT_PROP_HAND_PALETTES,
++  derivePropHandPalette,
++  propHandPalette,
++  propHandPaletteVersion,
++  setPropHandColors,
++  subscribePropHandColors,
++} from "./lib/components/props/prop-hand-palette";
++export type {
++  PropHand,
++  PropHandPalette,
++} from "./lib/components/props/prop-hand-palette";
++export {
++  paintWithPropHand,
++  propHandColor,
++} from "./lib/components/props/prop-hand-paint";
 +export {
 +  PRESET_VALID_COUNTS,
 +  createFormationFromPreset,
@@ -39640,23 +40567,3 @@ index 0000000000000000000000000000000000000000..108dfc81b254b53496d83fb551b0aea1
 +  StaffObjectOptions,
 +} from "./lib/rendering/create-staff-object";
 +export type { AvatarServices } from "./lib/services/implementations/AvatarServicesFactory";
-diff --git a/src/lib/services/contracts/IFingerAnimator.ts b/src/lib/services/contracts/IFingerAnimator.ts
-index 059e119199..09ff76fe43 100644
---- a/src/lib/services/contracts/IFingerAnimator.ts
-+++ b/src/lib/services/contracts/IFingerAnimator.ts
-@@ -1,5 +1,6 @@
- // src/lib/shared/3d/services/contracts/IFingerAnimator.ts
- import type { GripType, FingerChains } from "../../domain/models/GripPose";
-+import type { SkinnedMesh } from "three";
- 
- /**
-  * Animates finger bones by slerping between grip pose presets.
-@@ -8,7 +9,7 @@ import type { GripType, FingerChains } from "../../domain/models/GripPose";
-  */
- export interface IFingerAnimator {
-   /** Bind to a skeleton's finger bone chains. Call after model loads. */
--  initialize(fingerChains: FingerChains): void;
-+  initialize(fingerChains: FingerChains, meshes?: readonly SkinnedMesh[]): void;
- 
-   /** Whether initialize() has been called with valid finger chains. */
-   isReady(): boolean;

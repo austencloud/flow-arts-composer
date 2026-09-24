@@ -275,6 +275,7 @@
       matchHandTurns={tnd.matchHandTurns}
       level={tnd.level}
       blockedHandModes={tnd.blockedHandModes}
+      startFeasibility={tnd.startFeasibility}
       onHandRelationshipChange={tnd.onHandRelationshipChange}
       onPropRelationshipChange={tnd.onPropRelationshipChange}
       onMatchHandTurnsChange={tnd.onMatchHandTurnsChange}

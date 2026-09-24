@@ -147,9 +147,9 @@
         onPlaybackModeChange={animationState.setPlaybackMode}
         onBpmChange={animationState.setBpm}
         showEffectsPlayback={false}
-        selectedPropType={appState.propType}
+        selectedPropType={appState.addressedPropType}
         onPropChange={(propType) => void appState.setPropType(propType)}
-        showPropColors={true}
+        handProps={appState.handProps}
         showPathShape={false}
         showMotionVisibility={true}
         showSequenceMarks={!theory}

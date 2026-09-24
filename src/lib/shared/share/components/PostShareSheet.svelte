@@ -93,8 +93,6 @@
     shareUrl: string;
     videoBlobUrl: string | null;
     isExportingVideo: boolean;
-    /** Distinguishes a user-driven scene take from background export work. */
-    isRecordingScene?: boolean;
     exportProgress: number | null;
     /** `false` means no render started, so the sheet must stop waiting. The
      * request carries the chosen opener image so the render opens on it. */
@@ -146,11 +144,9 @@
     onOpenVideoExport?: () => void;
     /** False for local-only guest flows that cannot mint an account-owned link. */
     canCreateLink?: boolean;
-    /** A dedicated Export or Download shortcut enters file preparation directly. */
-    initialEntry?: "chooser" | "download";
-    /** A live 3D take temporarily hides this sheet, then resumes its draft. */
-    preserveSession?: boolean;
-    onSessionResumed?: () => void;
+    /** A host with its own share surface (the viewer's share panel) enters
+     * file preparation or publishing directly, with no chooser to go back to. */
+    initialEntry?: "chooser" | "download" | "publish";
     /** A host-owned animation stage shown before its encoded video is ready. */
     liveVideoPreview?: Snippet;
   }
@@ -161,7 +157,6 @@
     shareUrl,
     videoBlobUrl,
     isExportingVideo,
-    isRecordingScene = false,
     exportProgress,
     onRequestVideo = () => false,
     onCancelVideo,
@@ -185,8 +180,6 @@
     onOpenVideoExport,
     canCreateLink = true,
     initialEntry = "chooser",
-    preserveSession = false,
-    onSessionResumed,
     liveVideoPreview,
   }: Props = $props();
 
@@ -774,7 +767,6 @@
     artifact === "video" &&
       hasVideo &&
       !isExportingVideo &&
-      !isRecordingScene &&
       renderedVideoKey !== null &&
       (renderedVideoKey !== videoSettingsKey ||
         renderedVideoSourceKey !== videoSourceKey)
@@ -797,8 +789,6 @@
 
   const progressLabel = $derived.by(() => {
     if (!videoBusy) return "";
-    // A user-driven scene take is recording, not background rendering.
-    if (isRecordingScene) return "Recording the scene…";
     if (isExportingVideo && exportProgress !== null) {
       return `Rendering ${videoLabel.toLowerCase()}… ${Math.round(exportProgress * 100)}%`;
     }
@@ -831,10 +821,6 @@
     if (isOpen === wasOpen) return;
     wasOpen = isOpen;
     if (!isOpen) return;
-    if (preserveSession) {
-      onSessionResumed?.();
-      return;
-    }
     pendingHandoff = null;
     shareDraft.start({
       availableArtifacts,
@@ -863,12 +849,13 @@
     copyLinkMessage = "";
     revealedLinkUrl = null;
     shortUrl = seededShortUrl || null;
-    shareRoute = initialEntry === "download" ? "download" : "home";
+    shareRoute = initialEntry === "chooser" ? "home" : initialEntry;
     filePreparationOpen = shareRoute === "download";
     animationPreviewUrl = captureAnimationPreview() || null;
     openerPreviews = {};
     openerCaptureSession += 1;
     if (initialEntry === "download") shareDraft.selectArtifact(initialArtifact);
+    if (initialEntry === "publish") untrack(openPublish);
   });
 
   $effect(() => {
@@ -918,7 +905,7 @@
 
   $effect(() => {
     if (videoStatus === "canceled") return;
-    if (isExportingVideo || isRecordingScene) {
+    if (isExportingVideo) {
       sawExternalVideoExport = true;
       // A delivered URL can finish loading before the source flips its active
       // flag. Keep the usable result ready instead of bouncing back to a
@@ -981,7 +968,7 @@
     if (
       next !== artifact &&
       artifact === "video" &&
-      (videoBusy || isExportingVideo || isRecordingScene)
+      (videoBusy || isExportingVideo)
     ) {
       cancelVideo();
     }
@@ -1115,8 +1102,14 @@
     if (captionOpen) preparePostLink();
   }
 
+  function openPublish(): void {
+    shareRoute = "publish";
+    publishOpen = true;
+    if (postingAvailable && !needsAccountForFiles) preparePostLink();
+  }
+
   function returnToChooser(): void {
-    if (videoBusy || isExportingVideo || isRecordingScene) cancelVideo();
+    if (videoBusy || isExportingVideo) cancelVideo();
     filePreparationOpen = false;
     shareRoute = "home";
     captionOpen = false;
@@ -1239,7 +1232,7 @@
    */
   function requestVideo(): void {
     if (!shareDraft.availableArtifacts.includes("video")) return;
-    if (videoBusy || isExportingVideo || isRecordingScene) return;
+    if (videoBusy || isExportingVideo) return;
     statusMessage = "";
     const requestVersion = ++videoRequestVersion;
     sawExternalVideoExport = false;
@@ -1267,7 +1260,6 @@
         if (
           requestVersion === videoRequestVersion &&
           !isExportingVideo &&
-          !isRecordingScene &&
           !videoBlobUrl
         ) {
           videoStatus = "failed";
@@ -1281,7 +1273,7 @@
         if (requestVersion !== videoRequestVersion) return;
         if (ok === false) {
           videoStatus = "failed";
-        } else if (!videoBlobUrl && !isExportingVideo && !isRecordingScene) {
+        } else if (!videoBlobUrl && !isExportingVideo) {
           // A source that settled without a delivered file is an unsuccessful
           // render; this also prevents a canceled source from spinning forever.
           videoStatus = "failed";
@@ -1293,7 +1285,7 @@
   }
 
   function cancelVideo(): void {
-    if (!videoBusy && !isExportingVideo && !isRecordingScene) return;
+    if (!videoBusy && !isExportingVideo) return;
     statusMessage = "";
     videoRequestVersion += 1;
     sawExternalVideoExport = false;
@@ -1328,7 +1320,7 @@
   }
 
   function downloadVideo(): void {
-    if (videoBusy || isExportingVideo || isRecordingScene) return;
+    if (videoBusy || isExportingVideo) return;
     const plan = planFileRequest({
       needsAccount: needsAccountForFiles,
       hasFreshFile: hasVideo && !videoSettingsStale && !!activeBlob,
@@ -1415,14 +1407,26 @@
     }
   });
 
+  // Closing the sheet retires its pending work, once, on the close itself.
+  // The sheet stays mounted while closed, and the viewer's own Download render
+  // flips isExportingVideo too. Tracking those flags here cancelled that
+  // render the instant it started, so the Export page's button did nothing.
+  let sheetWasActive = false;
   $effect(() => {
-    if (isOpen || preserveSession) return;
-    pendingDownload = false;
-    pendingDownloadVersion = null;
-    pendingDownloadSettingsKey = null;
-    pendingDownloadSourceKey = null;
-    pendingCardDownloadRevision = null;
-    if (videoBusy || isExportingVideo || isRecordingScene) cancelVideo();
+    if (isOpen) {
+      sheetWasActive = true;
+      return;
+    }
+    if (!sheetWasActive) return;
+    sheetWasActive = false;
+    untrack(() => {
+      pendingDownload = false;
+      pendingDownloadVersion = null;
+      pendingDownloadSettingsKey = null;
+      pendingDownloadSourceKey = null;
+      pendingCardDownloadRevision = null;
+      if (videoBusy || isExportingVideo) cancelVideo();
+    });
   });
 
   function applyPreset(text: string): void {
@@ -1922,16 +1926,7 @@
                     <span>Share a link</span>
                     <small>Open this exact view or send it to a friend</small>
                   </button>
-                  <button
-                    type="button"
-                    class="intent"
-                    onclick={() => {
-                      shareRoute = "publish";
-                      publishOpen = true;
-                      if (postingAvailable && !needsAccountForFiles)
-                        preparePostLink();
-                    }}
-                  >
+                  <button type="button" class="intent" onclick={openPublish}>
                     <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
                     <span>Publish socially</span>
                     <small>Write a caption and choose a connected account</small
@@ -2017,7 +2012,7 @@
                 <div class="preview-column">
                   {#if !qrDataUrl}
                     <div class="preparation-toolbar">
-                      {#if initialEntry !== "download"}
+                      {#if initialEntry === "chooser"}
                         <button
                           type="button"
                           class="back-to-chooser"
@@ -2534,11 +2529,14 @@
               </footer>
             {:else if shareRoute === "publish"}
               <div class="sheet-scroll publish-route">
-                <button
-                  type="button"
-                  class="back-to-chooser"
-                  onclick={() => (shareRoute = "home")}>Back to sharing</button
-                >
+                {#if initialEntry !== "publish"}
+                  <button
+                    type="button"
+                    class="back-to-chooser"
+                    onclick={() => (shareRoute = "home")}
+                    >Back to sharing</button
+                  >
+                {/if}
                 <Crossfade
                   key={publishPreparationKey}
                   duration={DURATION.normal}

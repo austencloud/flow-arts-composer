@@ -71,6 +71,8 @@
     setPostStudioArtContext,
   } from "./post-studio-art-context.svelte";
   import ExportTakeover from "$lib/shared/video-export/components/ExportTakeover.svelte";
+  import { growFade } from "$lib/shared/transitions/motion";
+  import { DURATION } from "$lib/shared/transitions/transitions";
 
   type FocusedPanel = "canvas" | "edit" | "timing";
 
@@ -94,6 +96,12 @@
      * sheet pass it (the viewer shell); without it the bar ends at Download.
      */
     onSharePost?: () => void;
+    /**
+     * The host's share panel is open. Sending owns the tools track, exactly as
+     * it owns the shell's inspector track on desktop: the studio shows the post
+     * and its transport, and the layer settings, clip lanes and tool tabs wait.
+     */
+    sharing?: boolean;
   }
 
   let {
@@ -111,6 +119,7 @@
     onRequestAnimation,
     onExported,
     onSharePost,
+    sharing = false,
   }: Props = $props();
 
   const exportOptions = getExportOptionsState();
@@ -158,26 +167,26 @@
   let audioInspectionVersion = 0;
   let workspaceWidth = $state(0);
   let workspaceHeight = $state(0);
-  let viewportHeight = $state(0);
   let workspaceWasAdjusted = $state(false);
   let workspaceSizes = $state([72, 44]);
 
   /**
    * True when the one-panel-at-a-time layout is showing. It has to mirror the
-   * two CSS conditions that produce it exactly — `@container post-studio
-   * (max-width: 70rem)` and `@media (max-height: 40rem)` — because it decides
-   * which column carries the transport, and a disagreement renders two or none.
+   * CSS condition that produces it exactly — `@container post-studio
+   * (max-width: 37.5rem)` — because it decides which column carries the
+   * transport, and a disagreement renders two or none.
    *
-   * The height term reads the VIEWPORT, not the workspace element: opening the
-   * clip lanes shortens the workspace without changing the viewport, so the
-   * element's height said "compact" while the CSS still had both columns up.
+   * Only a phone-width studio takes turns. A 9:16 frame needs height, not
+   * width, so anything wider (an unfolded Fold, a tablet, a landscape phone)
+   * holds the frame column beside the layer settings. The old 70rem and
+   * 40rem-tall cut-offs put a 707px Fold behind tabs, which spent a 60px row
+   * of them on showing one thing at a time on a screen with room for two.
    */
   const compactWorkspace = $derived(
-    !externalInspector &&
-      (workspaceWidth === 0 ||
-        workspaceWidth <= 1120 ||
-        (viewportHeight > 0 && viewportHeight <= 640))
+    !externalInspector && (workspaceWidth === 0 || workspaceWidth <= 600)
   );
+  /** Sending shows the post itself, whatever tab was last open. */
+  const shownPanel = $derived<FocusedPanel>(sharing ? "canvas" : focusedPanel);
 
   const sequenceRef = $derived(createPostStudioSequenceRef(sequence));
   const performanceUrl = $derived(
@@ -241,6 +250,17 @@
     chosenPerformance = createCatalogPerformanceSelection(video, ref);
   });
 
+  /**
+   * The frame column's floor. Below the 70rem desktop tier it is sized to a
+   * 9:16 frame over the transport rather than to a desktop canvas: a 480px
+   * floor on a 707px Fold would leave the layer settings 219px, under their
+   * own 320px floor.
+   */
+  function workspaceCanvasFloor(width: number): number {
+    if (width >= 1680) return 640;
+    return width > 1120 ? 480 : 280;
+  }
+
   $effect(() => {
     const width = workspaceWidth;
     const height = workspaceHeight;
@@ -255,7 +275,7 @@
     // columns rather than a wider gutter). The reverse split gave the canvas
     // 1123px to hold a 395px frame.
     const frame = height > 0 ? (height - 44) * 0.5625 : 480;
-    const canvasFloor = width >= 1680 ? 640 : 480;
+    const canvasFloor = workspaceCanvasFloor(width);
     const inspectorFloor = width >= 1680 ? 720 : 320;
     const inspectorCap = width >= 2600 ? 1600 : 1280;
     // Matting around the frame is the stage and it should be generous, but past
@@ -758,12 +778,11 @@
   });
 </script>
 
-<svelte:window bind:innerHeight={viewportHeight} />
-
 <section
   class="post-studio"
-  data-mobile-panel={focusedPanel}
+  data-mobile-panel={shownPanel}
   data-external-inspector={!!externalInspector}
+  data-sharing={sharing}
   aria-label={`Post Studio, ${sequenceName}`}
 >
   <PostStudioActionBar
@@ -818,8 +837,8 @@
            and the 3D viewer dock the same bar under theirs. It is the same
            component; the studio no longer keeps a transport of its own. -->
       {@render transport(
-        !compactWorkspace,
-        !compactWorkspace || focusedPanel !== "timing"
+        !compactWorkspace && !sharing,
+        !compactWorkspace || shownPanel !== "timing"
       )}
     </main>
   {/snippet}
@@ -834,6 +853,7 @@
       class="inspector-rail"
       class:external={!!externalInspector}
       use:reparentToInspector={externalInspector}
+      inert={sharing || undefined}
       aria-label="Selected layer settings"
     >
       <PostStudioInspector
@@ -847,11 +867,14 @@
   {/snippet}
 
   {#snippet timelinePanel()}
-    <div class="timeline-dock">
+    <div
+      class="timeline-dock"
+      transition:growFade={{ duration: DURATION.emphasis }}
+    >
       <!-- Compact Timing is another destination for the same transport; it
            does not mount a second player while the canvas column is hidden. -->
       {#if compactWorkspace}
-        {@render transport(false, focusedPanel === "timing")}
+        {@render transport(false, shownPanel === "timing")}
       {/if}
       <PostStudioTimeline />
     </div>
@@ -881,7 +904,8 @@
                 id: "canvas",
                 content: canvasPanel,
                 defaultSize: workspaceSizes[0],
-                minSize: workspaceWidth >= 1680 ? 640 : 480,
+                minSize: workspaceCanvasFloor(workspaceWidth),
+                resizable: !sharing,
               },
               {
                 id: "inspector",
@@ -889,11 +913,15 @@
                 defaultSize: workspaceSizes[1],
                 minSize: workspaceWidth >= 1680 ? 720 : 320,
                 maxSize: workspaceWidth >= 2600 ? 1600 : 1280,
+                // Held at zero rather than removed: the settings keep their
+                // scroll and drill-in for when the send is done, and the seam
+                // travels on PanelGroup's clock alongside the share column.
+                fixedSize: sharing ? "0px" : undefined,
               },
             ]}
         bind:sizes={workspaceSizes}
         onSizesChange={() => (workspaceWasAdjusted = true)}
-        gap={8}
+        gap={sharing ? 0 : 8}
         flattened={compactWorkspace}
       />
     </div>
@@ -902,7 +930,7 @@
          are drag targets measured against a ruler, so they want every pixel.
          The transport is not that — it belongs under the frame, which is where
          every other playback surface in the app puts it. -->
-    {#if timingAdvanced}
+    {#if timingAdvanced && !sharing}
       {@render timelinePanel()}
     {/if}
   </div>
@@ -911,42 +939,50 @@
     {@render inspectorPanel()}
   {/if}
 
-  <nav
-    class="focused-nav"
-    class:external={!!externalInspector}
-    aria-label="Post Studio tools"
-  >
-    <button
-      type="button"
-      class:active={focusedPanel === "canvas"}
-      aria-pressed={focusedPanel === "canvas"}
-      onclick={() => (focusedPanel = "canvas")}
+  <!-- The tabs exist only at phone width. Beside an unfolded Fold's share
+       column the studio passes through phone width while the column moves, so
+       the tabs return after it has settled (a wider studio hides them before
+       they show) and leave at once when they were not on screen. -->
+  {#if !sharing}
+    <nav
+      class="focused-nav"
+      class:external={!!externalInspector}
+      aria-label="Post Studio tools"
+      in:growFade={{ duration: DURATION.emphasis, delay: DURATION.emphasis }}
+      out:growFade={{ duration: compactWorkspace ? DURATION.emphasis : 0 }}
     >
-      <i class="fa-solid fa-mobile-screen" aria-hidden="true"></i>
-      Canvas
-    </button>
-    <button
-      type="button"
-      class:active={focusedPanel === "edit"}
-      aria-pressed={focusedPanel === "edit"}
-      onclick={() => (focusedPanel = "edit")}
-    >
-      <i class="fa-solid fa-sliders" aria-hidden="true"></i>
-      Edit
-    </button>
-    <button
-      type="button"
-      class:active={focusedPanel === "timing"}
-      aria-pressed={focusedPanel === "timing"}
-      onclick={() => {
-        timingAdvanced = true;
-        focusedPanel = "timing";
-      }}
-    >
-      <i class="fa-solid fa-scissors" aria-hidden="true"></i>
-      Timing
-    </button>
-  </nav>
+      <button
+        type="button"
+        class:active={focusedPanel === "canvas"}
+        aria-pressed={focusedPanel === "canvas"}
+        onclick={() => (focusedPanel = "canvas")}
+      >
+        <i class="fa-solid fa-mobile-screen" aria-hidden="true"></i>
+        Canvas
+      </button>
+      <button
+        type="button"
+        class:active={focusedPanel === "edit"}
+        aria-pressed={focusedPanel === "edit"}
+        onclick={() => (focusedPanel = "edit")}
+      >
+        <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+        Edit
+      </button>
+      <button
+        type="button"
+        class:active={focusedPanel === "timing"}
+        aria-pressed={focusedPanel === "timing"}
+        onclick={() => {
+          timingAdvanced = true;
+          focusedPanel = "timing";
+        }}
+      >
+        <i class="fa-solid fa-scissors" aria-hidden="true"></i>
+        Timing
+      </button>
+    </nav>
+  {/if}
 
   <PostStudioPerformancePicker
     open={performancePickerOpen}
@@ -1175,10 +1211,11 @@
     }
   }
 
-  @container post-studio (max-width: 70rem) {
-    /* One panel at a time, each filling the body. The timing bar is a sibling
-       of the columns now, so the columns step aside when timing is showing
-       rather than collapsing to an empty row above it. */
+  /* Phone width only: one panel at a time, each filling the body. Anything
+     wider keeps the frame column beside the settings (see compactWorkspace).
+     The timing bar is a sibling of the columns, so the columns step aside
+     when timing is showing rather than collapsing to an empty row above it. */
+  @container post-studio (max-width: 37.5rem) {
     .studio-body,
     .workspace {
       position: relative;
@@ -1251,55 +1288,12 @@
     }
   }
 
+  /* Short screens keep whichever layout the width chose; they only tighten
+     it. The tabs (phone width) lay their icon beside the label. */
   @media (max-height: 40rem) {
-    .post-studio {
-      grid-template-rows: auto minmax(0, 1fr) auto;
-    }
-
-    .studio-body,
-    .workspace {
-      position: relative;
-      display: block;
-      min-height: 0;
-      overflow: hidden;
-    }
-
-    .workspace {
-      height: 100%;
-    }
-
-    .post-studio[data-mobile-panel="timing"] .workspace {
-      display: none;
-    }
-
-    .canvas-panel,
-    .inspector-rail,
-    .timeline-dock {
-      display: none;
-      width: 100%;
-      height: 100%;
-      border: 0;
-    }
-
-    .post-studio[data-mobile-panel="canvas"] .canvas-panel {
-      display: grid;
-    }
-
-    .post-studio[data-mobile-panel="edit"] .inspector-rail,
-    .post-studio[data-mobile-panel="timing"] .timeline-dock {
-      display: grid;
-    }
-
     .inspector-rail,
     .timeline-dock {
       padding: var(--spacing-sm) var(--spacing-md);
-    }
-
-    .focused-nav {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      border-top: 1px solid var(--theme-stroke);
-      background: var(--theme-panel-bg);
     }
 
     .focused-nav button {
@@ -1308,24 +1302,6 @@
       justify-content: center;
       gap: var(--spacing-sm);
       min-height: 3rem;
-      padding: var(--spacing-xs);
-      border: 0;
-      border-top: 2px solid transparent;
-      background: transparent;
-      color: var(--theme-text-dim);
-      font: inherit;
-      font-size: var(--font-size-compact);
-      cursor: pointer;
-    }
-
-    .focused-nav button.active {
-      border-top-color: var(--theme-accent);
-      color: var(--theme-text);
-    }
-
-    .focused-nav button:focus-visible {
-      outline: 3px solid var(--theme-accent);
-      outline-offset: -4px;
     }
   }
 </style>

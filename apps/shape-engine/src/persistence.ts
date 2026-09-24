@@ -1,5 +1,5 @@
 import type { ShapeMatrixAppPersistence } from "$lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte";
-import { setCurrentPropType } from "./native-settings.svelte";
+import { setCurrentPropPair } from "./native-settings.svelte";
 import {
   readShapeMatrixRouteState,
   writeShapeMatrixRouteState,
@@ -18,7 +18,10 @@ export const persistence: ShapeMatrixAppPersistence = {
     }
   },
   persist(snapshot) {
-    void setCurrentPropType(snapshot.propType);
+    void setCurrentPropPair({
+      left: snapshot.leftPropType,
+      right: snapshot.rightPropType,
+    });
     const url = new URL(SHAPE_ENGINE_WEB_URL);
     writeShapeMatrixRouteState(url, snapshot);
     try {

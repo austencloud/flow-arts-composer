@@ -12,6 +12,42 @@ const propBuild = {
 } as const;
 
 describe("createWorkerPerformerEffectIntent", () => {
+  it("paints default trails in the hand colors and keeps custom ones", () => {
+    const input = {
+      playing: true,
+      sampledAtMs: 0,
+      currentStep: 0,
+      totalSteps: 8,
+      seamlesslyLoopable: true,
+      qualityTier: "high" as const,
+      propBuild,
+      leftPropType: "staff",
+      rightPropType: "staff",
+      staffHalfLength: 0.5,
+      trailTrackingMode: TrackingMode.HAND,
+      handColors: { left: "#a855f7", right: "#22c55e" },
+    };
+    const byDefault = createWorkerPerformerEffectIntent({
+      ...input,
+      effectsConfig: structuredClone(DEFAULT_EFFECTS_CONFIG),
+    });
+    expect(byDefault.trails).toMatchObject({
+      leftColor: "#a855f7",
+      rightColor: "#22c55e",
+    });
+
+    const custom = structuredClone(DEFAULT_EFFECTS_CONFIG);
+    custom.trails.rightColor = "#fbbf24";
+    const customized = createWorkerPerformerEffectIntent({
+      ...input,
+      effectsConfig: custom,
+    });
+    expect(customized.trails).toMatchObject({
+      leftColor: "#a855f7",
+      rightColor: "#fbbf24",
+    });
+  });
+
   it("preserves the canonical per-tip effect precedence and duplicates", () => {
     const intent = createWorkerPerformerEffectIntent({
       playing: true,

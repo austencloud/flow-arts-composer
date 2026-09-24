@@ -68,6 +68,17 @@
     if (next !== current.toLowerCase()) onchange(hand, next);
   }
 
+  /** Reads "#RRGGBB" with or without the hash. The "#RGB" shorthand only
+      counts once the edit is committed, so typing a six-digit value is never
+      cut short after its first three digits. */
+  function parseHex(raw: string, allowShorthand: boolean): string | null {
+    const digits = raw.trim().replace(/^#/, "").toLowerCase();
+    if (/^[0-9a-f]{6}$/.test(digits)) return `#${digits}`;
+    if (allowShorthand && /^[0-9a-f]{3}$/.test(digits)) {
+      return `#${[...digits].map((digit) => digit + digit).join("")}`;
+    }
+    return null;
+  }
 </script>
 
 <div class="color-pair" role="group" aria-label={groupLabel}>
@@ -133,13 +144,15 @@
   </div>
   {#if editing}
     {@const entry = entries.find((item) => item.hand === editing)!}
+    <!-- One bidirectional transition, so an interrupted open or close reverses
+         from where it is. Params are read as each run starts: longer open,
+         shorter close. -->
     <div
       class="color-editor"
       id={editorId}
       role="group"
       aria-label={`${entry.label} color`}
-      in:growFade={{ duration: DURATION.emphasis }}
-      out:growFade={{ duration: DURATION.normal }}
+      transition:growFade={{ duration: editing ? DURATION.emphasis : DURATION.normal }}
     >
       <div class="preset-block">
         <div
@@ -189,13 +202,13 @@
               type="text"
               value={entry.value.toUpperCase()}
               maxlength="7"
-              pattern={"#[0-9a-fA-F]{6}"}
+              pattern={"#?([0-9a-fA-F]{3}){1,2}"}
               spellcheck="false"
               autocomplete="off"
-              oninput={(event) => {
-                const value = event.currentTarget.value;
-                if (/^#[0-9a-f]{6}$/i.test(value)) onchange(entry.hand, value.toLowerCase());
-              }}
+              oninput={(event) =>
+                applyPicked(entry.hand, entry.value, parseHex(event.currentTarget.value, false))}
+              onchange={(event) =>
+                applyPicked(entry.hand, entry.value, parseHex(event.currentTarget.value, true))}
               onblur={(event) => {
                 event.currentTarget.value = entry.value.toUpperCase();
               }}

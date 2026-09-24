@@ -36,6 +36,7 @@ vi.mock("firebase/firestore", () => ({
   ),
   query: vi.fn(() => ({})),
   where: vi.fn(),
+  limit: vi.fn(),
   getDocs: vi.fn(async () => ({
     empty: queryResults.length === 0,
     docs: queryResults.map((r) => ({ id: r.id, data: () => r.data })),
@@ -139,6 +140,40 @@ const SEQUENCE = {
   steps: [{ id: "step-1", stepNumber: 1, letter: "A" }],
 } as unknown as SequenceData;
 
+/** Stored fields of an existing record that plays SEQUENCE. Dedup adopts an
+ *  existing code only after hydrating it and comparing what it plays. */
+const PLAYS_SEQUENCE = {
+  sequenceData: { steps: SEQUENCE.steps, word: "A" },
+  payloadStepCount: 1,
+};
+
+/** A record that shares SEQUENCE's encoderHash but plays something else. */
+const PLAYS_OTHER = {
+  sequenceData: {
+    word: "A",
+    steps: [
+      {
+        id: "other-1",
+        stepNumber: 1,
+        letter: "A",
+        motions: {
+          left: {
+            motionType: "pro",
+            rotationDirection: "cw",
+            turns: 0,
+            startLocation: "s",
+            endLocation: "w",
+            startOrientation: "in",
+            endOrientation: "in",
+            isVisible: true,
+          },
+        },
+      },
+    ],
+  },
+  payloadStepCount: 1,
+};
+
 const SOLO_PROP = createSoloProp(
   [
     {
@@ -211,6 +246,9 @@ describe("ShortCodeManager allocation", () => {
       payloadKind: "hand-path",
       payloadWord: "",
       payloadTitle: "Tog-Opp",
+      encoded: "s~test-blob",
+      encodedFidelity: "exact",
+      payloadDigest: expect.any(String),
       sequenceData: {
         sequenceKind: "hand-path",
         word: "",
@@ -243,19 +281,96 @@ describe("ShortCodeManager allocation", () => {
 
   it("adopts the code from an existing hash-index doc instead of minting", async () => {
     store.set("shortcodeHashes/HASH_A", { code: "OLD1" });
+    store.set("shortcodes/OLD1", {
+      encoderHash: "HASH_A",
+      createdAt: "2026-05-01T00:00:00.000Z",
+      ...PLAYS_SEQUENCE,
+    });
     const manager = makeManager();
 
     const result = await manager.createShortCode(SEQUENCE, {});
 
     expect(result.code).toBe("OLD1");
     expect(result.isNew).toBe(false);
-    expect(docsIn("shortcodes")).toHaveLength(0);
+    expect(docsIn("shortcodes")).toEqual(["shortcodes/OLD1"]);
+  });
+
+  it("mints a hash-less code when the hash index names different choreography", async () => {
+    store.set("shortcodeHashes/HASH_A", { code: "OTHR" });
+    store.set("shortcodes/OTHR", {
+      encoderHash: "HASH_A",
+      createdAt: "2026-05-01T00:00:00.000Z",
+      ...PLAYS_OTHER,
+    });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const manager = makeManager();
+
+    const result = await manager.createShortCode(SEQUENCE, {});
+    const record = store.get(`shortcodes/${result.code}`);
+
+    expect(result.code).not.toBe("OTHR");
+    expect(result.isNew).toBe(true);
+    expect(record?.encoderHash).toBeUndefined();
+    expect(record?.sequenceData).toEqual(PLAYS_SEQUENCE.sequenceData);
+    expect(store.get("shortcodeHashes/HASH_A")).toEqual({ code: "OTHR" });
+    warn.mockRestore();
+  });
+
+  it("mints a separate code when every hash match plays different choreography", async () => {
+    // HFWmmG and EPcIm6 share an encoderHash in production while playing
+    // different orientations. A hash match alone must never be handed back.
+    queryResults = [
+      {
+        id: "OTHR",
+        data: {
+          encoderHash: "HASH_A",
+          createdAt: "2026-05-01T00:00:00.000Z",
+          ...PLAYS_OTHER,
+        },
+      },
+    ];
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const manager = makeManager();
+
+    const result = await manager.createShortCode(SEQUENCE, {});
+    const record = store.get(`shortcodes/${result.code}`);
+
+    expect(result.code).not.toBe("OTHR");
+    expect(result.isNew).toBe(true);
+    // The hash already belongs to OTHR, so the new code claims no index.
+    expect(record?.encoderHash).toBeUndefined();
+    expect(docsIn("shortcodeHashes")).toHaveLength(0);
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining("play different choreography"),
+      expect.objectContaining({ codes: ["OTHR"] })
+    );
+    warn.mockRestore();
+  });
+
+  it("skips a hash match whose record cannot be hydrated", async () => {
+    queryResults = [
+      { id: "BARE", data: { createdAt: "2026-05-01T00:00:00.000Z" } },
+    ];
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const manager = makeManager();
+
+    const result = await manager.createShortCode(SEQUENCE, {});
+
+    expect(result.code).not.toBe("BARE");
+    expect(result.isNew).toBe(true);
+    warn.mockRestore();
   });
 
   it("picks the OLDEST doc when legacy duplicates exist for a hash", async () => {
     queryResults = [
-      { id: "NEW1", data: { createdAt: "2026-06-01T00:00:00.000Z" } },
-      { id: "OLD9", data: { createdAt: "2026-05-01T00:00:00.000Z" } },
+      {
+        id: "NEW1",
+        data: { createdAt: "2026-06-01T00:00:00.000Z", ...PLAYS_SEQUENCE },
+      },
+      {
+        id: "OLD9",
+        data: { createdAt: "2026-05-01T00:00:00.000Z", ...PLAYS_SEQUENCE },
+      },
     ];
     const manager = makeManager();
 
@@ -294,7 +409,11 @@ describe("ShortCodeManager allocation", () => {
       competitorDocs: [
         [
           "shortcodes/COMP1",
-          { encoderHash: "HASH_A", createdAt: "2026-07-05T00:00:00.000Z" },
+          {
+            encoderHash: "HASH_A",
+            createdAt: "2026-07-05T00:00:00.000Z",
+            ...PLAYS_SEQUENCE,
+          },
         ],
         [
           "shortcodeHashes/HASH_A",
@@ -324,8 +443,14 @@ describe("ShortCodeManager allocation", () => {
     // clients could converge on different codes for the same hash. Smaller id
     // wins — regardless of the arbitrary query order.
     queryResults = [
-      { id: "ZZ99", data: { createdAt: "2026-05-01T00:00:00.000Z" } },
-      { id: "AA11", data: { createdAt: "2026-05-01T00:00:00.000Z" } },
+      {
+        id: "ZZ99",
+        data: { createdAt: "2026-05-01T00:00:00.000Z", ...PLAYS_SEQUENCE },
+      },
+      {
+        id: "AA11",
+        data: { createdAt: "2026-05-01T00:00:00.000Z", ...PLAYS_SEQUENCE },
+      },
     ];
     const manager = makeManager();
 
@@ -335,14 +460,21 @@ describe("ShortCodeManager allocation", () => {
     expect(result.isNew).toBe(false);
   });
 
-  it("keeps a blob only when decoded motions re-derive the strict source word", async () => {
+  it("stores the embedded copy on every mint, and the blob beside it when it plays exactly", async () => {
     const manager = makeManager();
 
     const result = await manager.createShortCode(SEQUENCE, {});
     const record = store.get(`shortcodes/${result.code}`);
 
     expect(record?.encoded).toBe("s~test-blob");
-    expect(record?.sequenceData).toBeUndefined();
+    expect(record?.encodedFidelity).toBe("exact");
+    expect(record?.encodedLossReason).toBeUndefined();
+    expect(record?.payloadDigest).toEqual(expect.any(String));
+    expect(record?.sequenceData).toEqual({
+      steps: SEQUENCE.steps,
+      // The source fixture deliberately carries stale word "TEST".
+      word: "A",
+    });
     expect(record?.payloadWord).toBe("A");
     expect(record?.payloadStepCount).toBe(1);
     expect(deriveLettersForSequence).toHaveBeenCalledWith(
@@ -371,6 +503,8 @@ describe("ShortCodeManager allocation", () => {
     const record = store.get(`shortcodes/${result.code}`);
 
     expect(record?.encoded).toBeUndefined();
+    expect(record?.encodedFidelity).toBe("lossy");
+    expect(record?.encodedLossReason).toBe("word: A vs B");
     expect(record?.sequenceData).toEqual({
       steps: SEQUENCE.steps,
       // The source fixture deliberately carries stale word "TEST".
@@ -378,11 +512,8 @@ describe("ShortCodeManager allocation", () => {
     });
     expect(record?.payloadWord).toBe("A");
     expect(warn).toHaveBeenCalledWith(
-      expect.stringContaining("storing embed-only"),
-      expect.objectContaining({
-        expectedWord: "A",
-        decodedWord: "B",
-      })
+      expect.stringContaining("storing the embedded copy only"),
+      expect.objectContaining({ reason: "word: A vs B" })
     );
     warn.mockRestore();
   });
@@ -406,11 +537,10 @@ describe("ShortCodeManager allocation", () => {
       steps: SEQUENCE.steps,
       word: "A",
     });
+    expect(record?.encodedLossReason).toBe("word: A vs (incomplete)");
     expect(warn).toHaveBeenCalledWith(
-      expect.stringContaining("storing embed-only"),
-      expect.objectContaining({
-        decodedComplete: false,
-      })
+      expect.stringContaining("storing the embedded copy only"),
+      expect.objectContaining({ reason: "word: A vs (incomplete)" })
     );
     warn.mockRestore();
   });
@@ -430,11 +560,45 @@ describe("ShortCodeManager allocation", () => {
       steps: SEQUENCE.steps,
       word: "A",
     });
+    expect(record?.encodedLossReason).toBe("decode failed: unreadable payload");
     expect(warn).toHaveBeenCalledWith(
-      expect.stringContaining("storing embed-only"),
+      expect.stringContaining("storing the embedded copy only"),
       expect.objectContaining({ sequenceId: "seq-1" })
     );
     warn.mockRestore();
+  });
+
+  it("stores no blob when the decoded choreography differs from the source", async () => {
+    vi.mocked(decodeSequenceFromQR).mockResolvedValueOnce({
+      steps: [
+        { id: "decoded-step-1", stepNumber: 1, letter: null },
+        { id: "decoded-step-2", stepNumber: 2, letter: null },
+      ],
+    } as never);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const manager = makeManager();
+
+    const result = await manager.createShortCode(SEQUENCE, {});
+    const record = store.get(`shortcodes/${result.code}`);
+
+    expect(record?.encoded).toBeUndefined();
+    expect(record?.encodedFidelity).toBe("lossy");
+    expect(record?.encodedLossReason).toContain("step count");
+    expect(record?.sequenceData).toEqual(PLAYS_SEQUENCE.sequenceData);
+    warn.mockRestore();
+  });
+
+  it("fails the mint loudly when the encoder rejects a motion", async () => {
+    vi.mocked(encodeSequenceForQR).mockRejectedValueOnce(
+      new Error('Cannot encode motion: unknown startLocation "q"')
+    );
+    const manager = makeManager();
+
+    await expect(manager.createShortCode(SEQUENCE, {})).rejects.toThrow(
+      "Cannot encode motion"
+    );
+    expect(docsIn("shortcodes")).toHaveLength(0);
+    expect(docsIn("shortcodeHashes")).toHaveLength(0);
   });
 
   it("mints and resolves schema-3 solo choreography without inventing a word", async () => {
@@ -460,8 +624,10 @@ describe("ShortCodeManager allocation", () => {
       payloadStepCount: 1,
       authoredHand: "left",
       sourceSoloPropId: SOLO_PROP.id,
-      encoded: "s~test-blob",
+      soloData: { id: SOLO_PROP.id, contentHash: SOLO_PROP.contentHash },
     });
+    // The canonical solo prop is the payload; the rules forbid both at once.
+    expect(record?.encoded).toBeUndefined();
     expect(record?.payloadWord).toBeUndefined();
     expect(getSequenceMotionProfile(resolved!)).toEqual({
       kind: "solo",

@@ -52,6 +52,22 @@ function isAvailable(): boolean {
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
+const listeners = new Set<() => void>();
+
+/**
+ * Called after a film is kept, deleted, or pruned, so a surface that offers
+ * the latest film (the share panel's Download film) stays current without
+ * polling the database.
+ */
+export function onRenderedFilmsChanged(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function notifyChanged(): void {
+  for (const listener of listeners) listener();
+}
+
 function getDb(): Promise<IDBDatabase> {
   if (dbPromise) return dbPromise;
   dbPromise = new Promise((resolve, reject) => {
@@ -119,14 +135,19 @@ export function selectRenderedFilmsToPrune(
   return doomed;
 }
 
-export async function putRenderedFilm(record: RenderedFilmRecord): Promise<void> {
+export async function putRenderedFilm(
+  record: RenderedFilmRecord
+): Promise<void> {
   if (!isAvailable()) return;
   const db = await getDb();
   const tx = db.transaction(STORE_NAME, "readwrite");
   await request(tx.objectStore(STORE_NAME).put(record));
+  notifyChanged();
 }
 
-export async function getRenderedFilm(id: string): Promise<RenderedFilmRecord | null> {
+export async function getRenderedFilm(
+  id: string
+): Promise<RenderedFilmRecord | null> {
   if (!isAvailable()) return null;
   const db = await getDb();
   const tx = db.transaction(STORE_NAME, "readonly");
@@ -175,6 +196,7 @@ export async function deleteRenderedFilm(id: string): Promise<void> {
     const db = await getDb();
     const tx = db.transaction(STORE_NAME, "readwrite");
     await request(tx.objectStore(STORE_NAME).delete(id));
+    notifyChanged();
   } catch (error) {
     console.warn("[RenderedFilms] Could not delete a retained film:", error);
   }

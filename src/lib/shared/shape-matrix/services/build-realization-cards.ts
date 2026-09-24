@@ -1,6 +1,6 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { SVGPathData } from "$lib/shared/mandala/domain/mandala-types";
-import type { TipPoint } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
+import type { ShapeMatrixTipPair } from "../domain/prop-pair";
 import { loadDiamondEdges } from "$lib/features/choreo-card/services/pictograph-letter-lookup";
 import { TND_BY_FAMILY } from "$lib/features/choreo-card/domain/tnd-element";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -15,12 +15,11 @@ import {
 } from "./shape-matrix-realizations";
 import { type Flower } from "../domain/flower-signature";
 
-/** The cell overlay loci a realization must reproduce (single-tip club geometry). */
+/** The cell overlay loci a realization must reproduce, with each hand's tracked source. */
 export interface CellOverlay {
   left: SVGPathData[];
   right: SVGPathData[];
-  tipPoint?: TipPoint;
-  clubTipDx: number;
+  tips: ShapeMatrixTipPair;
 }
 
 // Staves hide orientation read on these single-hand flowers (both ends look
@@ -96,7 +95,7 @@ export async function buildModeCards(
           overlay.left,
           overlay.right,
           edges,
-          overlay.tipPoint ?? overlay.clubTipDx
+          overlay.tips
         );
         const sequence = parity.sequence;
         const [frontUrl, backUrl] = await Promise.all([

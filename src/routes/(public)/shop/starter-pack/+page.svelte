@@ -2,6 +2,9 @@
   // Nav + cosmic background come from the (public)/shop +layout.svelte.
   import StarterPackPage from "$lib/features/store/StarterPackPage.svelte";
   import Seo from "$lib/shared/components/Seo.svelte";
+  import type { PageData } from "./$types";
+
+  let { data }: { data: PageData } = $props();
 </script>
 
 <Seo
@@ -10,4 +13,4 @@
   canonical="https://tkaflowarts.com/shop/starter-pack"
 />
 
-<StarterPackPage />
+<StarterPackPage seedProducts={data.products} />
