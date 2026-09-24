@@ -101,6 +101,15 @@
     margin-inline: auto;
   }
 
+  /* Four columns leave a narrow rail (an unfolded Fold's settings column is
+     about 195px) 34px per label, which clips "Sparkle" and "Bubbles". Three
+     columns keep every name whole. */
+  @container effect-selector (max-width: 15.5rem) {
+    .effect-selector:not(.tray) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
   @container effect-selector (min-width: 44rem) {
     .effect-selector.tray {
       grid-template-columns: repeat(8, minmax(0, 1fr));

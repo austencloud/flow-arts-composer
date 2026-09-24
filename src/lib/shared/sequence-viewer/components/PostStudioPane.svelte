@@ -22,6 +22,8 @@
     onExported: (blob: Blob) => void;
     /** Opens the shell's share sheet on the render just handed over. */
     onSharePost: () => void;
+    /** The shell's share panel is open beside or under the studio. */
+    sharing?: boolean;
   }
 
   let {
@@ -30,6 +32,7 @@
     resolvedCardAutoLayout,
     onExported,
     onSharePost,
+    sharing = false,
   }: Props = $props();
 
   const exportOptions = getExportOptionsState();
@@ -57,6 +60,7 @@
     onRequestAnimation={() => undefined}
     {onExported}
     {onSharePost}
+    {sharing}
   />
 </div>
 
