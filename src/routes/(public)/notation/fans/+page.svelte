@@ -65,7 +65,7 @@
       <div class="duo-demo">
         <SequenceHeroDemo
           sequence={demoSequence}
-          note="the demo sequence, on fans"
+          note="the staff pattern played with two fans"
           leftPropType="fan"
           rightPropType="fan"
         />
@@ -88,12 +88,8 @@
 
   <OpenChapter prop="Fans" heading="Fan folds and grips need documentation">
     <p>
-      The Kinetic Alphabet was developed on double staves. Its letters and
-      timing carry over to fans, and Flow Arts Composer renders them today.
-    </p>
-    <p>
-      A fan spinner's account of grips, folds, and body mechanics would fill in
-      what staff technique cannot explain.
+      Fan spinners can help document the grips and hand turns used in folds,
+      with examples of movements the current pictographs cannot record.
     </p>
   </OpenChapter>
 
