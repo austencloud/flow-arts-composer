@@ -20,6 +20,7 @@
 
   let {
     showColors = true,
+    showPropLook = true,
     onDrillChange,
     ...props
   }: Omit<
@@ -47,6 +48,11 @@
      * metadata) or the page already shows the control beside the grid.
      */
     showColors?: boolean;
+    /**
+     * The 3D model / Pictograph choice is how the 2D canvas draws a prop. A 3D
+     * scene always renders the model, so its picker turns the choice off.
+     */
+    showPropLook?: boolean;
     onDrillChange?: (drilled: boolean) => void;
   } = $props();
   const settings = $derived(getSettings());
@@ -84,7 +90,9 @@
   premiumVisible={isPremiumCosmeticVisible()}
   premiumAllowed={checkPremiumCosmeticAccess().allowed}
   propLook={settings.propArtwork}
-  onPropLookChange={(propArtwork) => void updateSettings({ propArtwork })}
+  onPropLookChange={showPropLook
+    ? (propArtwork) => void updateSettings({ propArtwork })
+    : undefined}
   recipeOverrides={settings.compositionRecipeOverrides}
   colors={settings.primaryPropColors}
   triangleGrip={settings.triangleGrip ?? DEFAULT_TRIANGLE_GRIP}
