@@ -53,21 +53,20 @@
       <div class="duo-copy">
         <div class="prose">
           <p>
-            Good news: this is the shortest prop page, because buugeng have two ends, and
-            that single fact does most of the work. Everything on the
-            <a href="/notation/staves">staff page</a> transfers whole. The isolation and
-            antispin collapse, the two visible references, the grid, the letters, the
-            timing. Eight rings and double contact ball sit in the same dual-ended family
-            and inherit the same way.
+            Buugeng have two visible ends, so the <a href="/notation/staves"
+              >staff notation</a
+            > carries over, including the isolation and antispin relationships. The
+            two end references still apply, as do the grid positions and timing of
+            each letter. Eight rings and double contact ball belong to the same dual-ended
+            family.
           </p>
           <p>
-            Two things are worth saying anyway. Buugeng are large, and sometimes strange
-            and unwieldy, because they curve around. And finger spinning with buugeng is
-            well established. A lot of Kinetic Alphabet patterns might be hard to finger
-            spin. Definitely not impossible. So, plainly: finger spin to your heart's
-            desire. The strict thumb-orientation
-            discipline belongs to how staves are taught, and once you can read the turn
-            value off any pictograph it stops mattering even there.
+            Buugeng can be strange and unwieldy because they curve around the
+            body. Finger spinning is well established with them. Some Kinetic
+            Alphabet patterns may be hard to finger spin, but you can finger
+            spin to your heart's desire. The fixed thumb reference is a staff
+            teaching method; once you can read the turn value in a pictograph,
+            you can change grip as the prop allows.
           </p>
         </div>
       </div>
@@ -82,14 +81,13 @@
     </div>
   </section>
 
-  <OpenChapter prop="Buugeng">
+  <OpenChapter prop="Buugeng" heading="How buugeng artists handle the curves">
     <p>
-      What this page doesn't cover is the part buugeng artists care most about: the grip
-      vocabulary, the finger spinning technique, the way the curves change body
-      mechanics. The notation was worked out on double staves, and that chapter needs
-      someone who trained buugeng.
+      The notation was worked out on double staves. It still needs a buugeng
+      artist's account of grips, finger spinning, and how the curves change body
+      mechanics.
     </p>
-    <p>If buugeng are your language, come write it.</p>
+    <p>Buugeng artists can contribute those details.</p>
   </OpenChapter>
 
   <div class="cta-card">
