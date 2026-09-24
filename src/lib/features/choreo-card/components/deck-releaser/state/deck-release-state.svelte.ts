@@ -36,6 +36,14 @@ export interface DeckReleaseStateDependencies {
   archive(deckNumber: number): Promise<void>;
   /** Undo `archive` — the deck reappears in the default list. */
   restore(deckNumber: number): Promise<void>;
+  /**
+   * Surface a non-fatal warning to the admin (e.g. a visible toast). Used
+   * when `create` succeeds but the release's exact reprint data failed to
+   * save — the release itself is still good, but until this is seen and
+   * acted on, a reprint of this deck falls back to by-id resolution instead
+   * of the durable saved-data path.
+   */
+  warn(message: string): void;
 }
 
 export function createDeckReleaseState(
@@ -148,6 +156,17 @@ export function createDeckReleaseState(
       allReleases = [release, ...allReleases];
       deck.step = "released";
       deck.persist();
+      if (release.cardDataSaved !== true) {
+        // The release itself succeeded — deck.step already advanced above —
+        // but releaseDeck's best-effort card-data save failed (or skipped)
+        // and only logged to the console. That's invisible to an admin who
+        // isn't watching devtools, so surface it here where it's certain to
+        // be seen: this deck's reprint currently falls back to by-id
+        // resolution instead of the durable saved-data path.
+        deps.warn(
+          `Deck #${String(release.deckNumber).padStart(3, "0")} released, but its reprint data wasn't saved. Reprints will re-read the source sequences.`
+        );
+      }
       return release;
     } finally {
       deck.isReleasing = false;

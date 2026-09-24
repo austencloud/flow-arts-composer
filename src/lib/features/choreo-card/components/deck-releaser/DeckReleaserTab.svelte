@@ -142,6 +142,7 @@
     updateMetadata: updateDeckMeta,
     archive: archiveDeckRelease,
     restore: restoreDeckRelease,
+    warn: (message) => toast.warning(message),
   });
 
   const production = createDeckProductionState(rs, {

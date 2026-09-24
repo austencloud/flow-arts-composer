@@ -501,8 +501,14 @@ export function createDeckProductionState(
           return;
         }
         // saved === null: the subcollection came back empty even though the
-        // manifest claims it was written. Fall through to the legacy by-id
-        // path below rather than failing a deck that might still resolve.
+        // manifest claims it was written — a data inconsistency (partial
+        // write, or the doc was deleted out from under the flag). Fall
+        // through to the legacy by-id path below rather than failing a deck
+        // that might still resolve, but log it: this deck silently lost its
+        // durability guarantee and nothing else surfaces that fact.
+        console.warn(
+          `[deck-releaser] Deck #${release.deckNumber} has cardDataSaved=true but no saved card data was found. Falling back to by-id resolution.`
+        );
       }
 
       const byCatalog = new Map<string, string[]>();
