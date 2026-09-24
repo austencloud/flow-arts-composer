@@ -231,6 +231,28 @@ export function getDeckReleaseManifestPath(deckNumber: number): string {
   return `deckReleases/counter/manifests/${String(deckNumber).padStart(3, "0")}`;
 }
 
+/**
+ * Per-card exact-reprint data for a release, keyed by the card's 0-based
+ * position in `DeckRelease.sequences[]`. Kept out of the manifest document so
+ * a deck's saved SequenceData never risks the 1 MiB Firestore document limit
+ * (a manifest holding hundreds of full SequenceData objects inline could
+ * exceed it; one doc per card cannot).
+ * @example "deckReleases/counter/manifests/003/cards"
+ */
+export function getDeckReleaseCardsPath(deckNumber: number): string {
+  return `${getDeckReleaseManifestPath(deckNumber)}/cards`;
+}
+
+/**
+ * @example "deckReleases/counter/manifests/003/cards/7"
+ */
+export function getDeckReleaseCardPath(
+  deckNumber: number,
+  cardIndex: number
+): string {
+  return `${getDeckReleaseCardsPath(deckNumber)}/${cardIndex}`;
+}
+
 // ============================================================================
 // CONSTANTS
 // ============================================================================
