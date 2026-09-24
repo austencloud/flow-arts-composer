@@ -292,9 +292,7 @@ export function createViewerShellShareState(
    */
   function prepareCurrentView(entry: FileEntry): void {
     const viewerMode = inputs.getContext().viewerState.viewerMode;
-    // In the studio the file is the post. If nothing has been rendered yet
-    // the shell falls back to the plain card/video sheet, but the session
-    // still records where it came from.
+    // In the studio the file is the post, including before its first render.
     if (viewerMode === "post-studio") {
       sharePost(entry);
       return;
