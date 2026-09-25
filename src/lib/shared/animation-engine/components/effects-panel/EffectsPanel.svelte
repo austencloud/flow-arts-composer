@@ -10,7 +10,11 @@
   import EffectDock from "./EffectDock.svelte";
   import { EFFECT_LABELS, getRegistration } from "./effect-registry";
   import type { EffectRegistration } from "./effect-registry";
-  import { matchPresetId, valuesEqual } from "./presets/match-preset";
+  import {
+    matchPresetId,
+    pickedPresetId,
+    valuesEqual,
+  } from "./presets/match-preset";
   import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
   import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
@@ -112,10 +116,11 @@
   );
 
   // Honest highlight. Priority:
+  //   0. the look you clicked, while the config still carries it
   //   1. live config == factory default            → Default chip (canonical anchor)
   //   2. live config matches a named preset's patch → that preset
   //   3. live config == your captured custom look   → Custom chip
-  // Tuning away from all three lights nothing.
+  // Tuning away from all of these lights nothing.
   const activePresetId = $derived.by(() => {
     if (activeEffect === "none" || !registration) return null;
     const fx = activeEffect as EffectId;
@@ -123,6 +128,14 @@
       string,
       unknown
     >;
+    // 0. The clicked look. A Classic that equals the factory default would
+    //    otherwise light the Default chip instead.
+    const picked = pickedPresetId(
+      registration.presetGroup,
+      effectConfig,
+      effectsConfigState.activePresets[fx]
+    );
+    if (picked) return picked;
     // 1. The factory default look → the synthetic Default chip.
     const factory = (
       DEFAULT_EFFECTS_CONFIG as unknown as Record<string, unknown>

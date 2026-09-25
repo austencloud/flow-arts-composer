@@ -13,7 +13,7 @@ structural restatement and may have drifted — correct it rather than trusting 
 
 ## 1. The problem this explains
 
-The 3D performer now grips the staff consistently. It still cannot *reach* the
+The 3D performer now grips the staff consistently. It still cannot _reach_ the
 positions the notation asks for.
 
 > "when they try to go to their opposite point, in other words when their right
@@ -188,7 +188,7 @@ Two things fall out of this that were not obvious from §§1–7:
   while it is open, not before or after.
 - **Getting through it may require leaving the notated hand point.** Leaning
   back, pushing the elbow downstage, and raising the arm above the plain North
-  point are named as things the avatar may need to do *only* to clear the
+  point are named as things the avatar may need to do _only_ to clear the
   pocket — not as errors to correct once the through-pass works.
 
 The filmstrip built from this — four frozen frames at 0%, 25%, 35% and 100% of
@@ -241,3 +241,127 @@ The grip lab's front camera sits on world +Z looking toward -Z. Its screen-right
 axis is world +X, so its explicit adapter maps stage left to +X and stage right
 to -X; downstage is +Z. The older `Stage3D.svelte` stage-side comment uses the
 opposite lateral labels and must not be used to invert this teaching surface.
+
+## 10. Answers to the performer contact review (2026-09-24)
+
+Source: Austen, written answers to the multiple-choice questions in
+[the performer contact review](../architecture/performer-contact-review.md).
+Free-text answers are quoted exactly; bracketed words are editorial.
+
+### How the two solving families work
+
+Austen rejected "full extension" as a route. §5 describes what the arm is
+forced into without negative space; it is not a strategy.
+
+> "the two ways we solve sequences are negative space and body turns [...]
+> negative space involves facing the performer and body turns involve rotating
+> the torso or the legs or even rotating all the way around on the floor in
+> order to make the negative space occur on the other side of the body itself
+> to solve twist us and weaves negative space above and below the arm and
+> shoulder on the top and bottom or above and behind the elbow on either side
+> is also valid and often times you can do moves which combine the usage of
+> negative space and body turns to be in a fuzzy halfway area where you're not
+> sure if you're doing one or the other or both We're going to need to really
+> dive deep into that topic before we land"
+
+### Why a finite map, and why it cascades
+
+> "if I were to take any given sequence and then take any given step on that
+> sequence not only would that given step have a different set of
+> possibilities but those possibilities cascade into the next several sets in
+> other words whether if I use negative space at one point instead of another
+> point it's going to change what the next beat or the next step has to do in
+> order to get through itself and possibly the other hand [...] every sequence
+> sort of branches off into many different pathways of possibilities but they
+> all seem to converge around A trunk of the sequence itself, Which is what the
+> notation in the kinetic alphabet communicates and codifies [...] we need to
+> be able to tell you the ground truth because that lives in my body"
+
+He expects the situations to reduce to "a finite number of variables" through
+enough question-and-answer sessions. The map is built with him, not inferred
+from training data.
+
+### What clipping actually is
+
+> "I think the issue is mostly just that if I were to bring the hands to the
+> props and make them hold the props they would have to clip in order to make
+> it happen because it doesn't know anatomically how to treat the rest of the
+> body like something that can allow you to find that space such as negative
+> space behind the head space under the leg space left and right you know the
+> mechanics of a prop doing a weave in a hand that can only hold a finite
+> number of orientations"
+
+Asked where he saw hands clip, he answered that the hands "clip through the
+prop all the time because there's not anything to prevent that." Nothing else
+visibly clips today, because the hands let go before they collide.
+
+### How far a staff may leave its point
+
+> "it's on the right line radially coming out from the center like if it's
+> supposed to be at the east point it could be further out to the east but we
+> would not want it to be like at the southeast point it can be closer into the
+> center at the east but it would not want to be at the northeast point [...]
+> there's a lot of wiggle room as long as it's wiggle room in the right
+> direction"
+
+Depth (toward or away from the audience) is free: "Yes, freely."
+
+So the allowed error is radial and depth, never angular. This refines §9's
+"controlled amount of positional error."
+
+### East, crossing and the under arm
+
+East is the performer's right: blue at East with red at West is the crossed
+case. On which arm goes under in a crossed weave:
+
+> "in a crossed weave like B where you're facing the audience the whole time
+> you can sneak your way around it which produces a motion path which is more
+> concave than it is arc based allowing you to get through the motion even
+> though it doesn't keep you on a strict round playing field"
+
+This is the §2 concave path again. The rule for which arm goes under still
+needs mapping.
+
+### Beta pairs need depth lanes
+
+> "if both of them are at N performing that real [reel] at the same time then
+> the thumb and pinky and are all are staying on their corresponding side which
+> is either upstage or downstage from this viewpoint and naturally what has to
+> happen for that to be possible is one hand has to be closer to the audience
+> than the other in order to provide enough clearance for both of them to fill
+> in the space but there's variation because what if the thumb end of one is in
+> the inside or the inky [pinky] end of the other is on the inside as well we
+> just need to make sure all different variations are taken into consideration
+> involving the orientation and then we get into Level 3 stuff and we can have
+> that + that can rotate in place which is pretty sweet and that has its own
+> map of how it uses negative space to go through the motion"
+
+### Two frames for the same move
+
+> "when a [p]erformer is doing wall plane move and then they turn their head to
+> face stage left or stage right Then they're now doing a wheel plane move
+> according to their own orientation but if you're using the original
+> placement where you're facing out of your audience as your official
+> designation of where wall wheel and floor come from then that's not how it
+> works but you know we have to keep in mind there's these two sides of the
+> coin"
+
+### Short answers
+
+- Pro 0-turn isolation: the inner end stays nearly still; slight drift is fine.
+- The relaxed thumb-and-index pinch (§4, open question 5 in §7) happens both
+  deliberately and when the wrist runs out of turn.
+- He will film short reference clips soon.
+
+### What this settles and what stays open
+
+Settled: East = performer's right; drift is radial and depth only; depth is
+free; beta pairs at one point take separate depth lanes; the pinch is both a
+choice and a forced state; §7 question 3 is reframed from "negative space or
+full extension" to "which negative-space pocket or body turn, or a blend."
+
+Open, for mapping sessions: which pocket or turn each situation uses and how
+the choice constrains later beats and the other hand; which arm goes under in
+crossed weaves; which beta hand is downstage for each orientation; the Level 3
+rotate-in-place map; how the audience frame and the performer frame are both
+carried.

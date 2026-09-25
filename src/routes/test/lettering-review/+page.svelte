@@ -12,6 +12,7 @@
 -->
 <script lang="ts">
   import { onMount, tick } from "svelte";
+  import { initializeAppServices } from "$lib/shared/application/state/services.svelte";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
@@ -102,6 +103,11 @@
   );
 
   onMount(async () => {
+    // Tiles read the prop through getSettings(), which stays a frozen copy
+    // until the settings service exists. The app shell starts it through
+    // MainApplication; /test/* routes start it themselves so a prop change
+    // anywhere redraws these tiles.
+    void initializeAppServices();
     try {
       const [skewed, diamond] = await Promise.all([
         letterQueryHandler.getAllPictographVariations(GridMode.SKEWED),

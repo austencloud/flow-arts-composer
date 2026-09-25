@@ -140,11 +140,13 @@ describe("Sequence Viewer transition orchestration contract", () => {
     expect(tunnelArtSettings).toContain("<AnimatorInspectorFooter");
     // 7672b256d7 gave the wide-sidebar Props page its whole page too (the
     // 18-tile picker needed the room the old two-way condition didn't grant),
-    // reformatting the three-way check across lines.
+    // reformatting the three-way check across lines. The fourth arm is Effort
+    // alone on a page its host fills (the motion-path studio's card).
     expect(animationPanel).toContain(
       'fillBody={resolvedPill === "display" ||\n' +
         '      resolvedPill === "effects" ||\n' +
-        '      resolvedPill === "props"}'
+        '      resolvedPill === "props" ||\n' +
+        '      (resolvedPill === "motion" && effortFills)}'
     );
     expect(tunnelArtSettings).toContain(
       'fillBody={tunnelSection === "display" || tunnelSection === "effects"}'

@@ -19,7 +19,13 @@
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import type { ElementalType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
   import { buildNotationCells, type NotationCell } from "./notation-cell";
-  import { buildStripWindow, nextLoopOffset } from "./strip-window";
+  import {
+    buildStripWindow,
+    nextLoopOffset,
+    cellOpacity,
+    cellScale,
+    stripHeroScale,
+  } from "./strip-window";
 
   let {
     cells = null,
@@ -149,9 +155,7 @@
   const displayedStep = $derived(
     Math.max(0, (currentStep ?? 0) - (includeStartPlacement ? 0 : 1))
   );
-  const heroScale = $derived(
-    presentation === "strip" ? 1 : density === "compact" ? 1.15 : 1.32
-  );
+  const heroScale = $derived(stripHeroScale(presentation, density));
   const vertical = $derived(orientation === "vertical");
 
   let currentStepNumber = $derived(Math.floor(displayedStep));
@@ -310,17 +314,6 @@
     )
   );
 
-  function cellOpacity(dist: number) {
-    if (presentation === "strip") return dist === 0 ? 1 : 0.85;
-    if (dist === 0) return 1;
-    return Math.max(0.14, 0.66 - (dist - 1) * 0.18);
-  }
-  function cellScale(dist: number) {
-    if (presentation === "strip") return 1;
-    if (dist === 0) return heroScale;
-    return Math.max(0.62, 0.84 - (dist - 1) * 0.09);
-  }
-
   $effect(() => {
     const el = stepStripEl;
     if (!el) return;
@@ -375,7 +368,7 @@
           data-step-number={item.cell.stepNumber}
           data-cell-instance={item.primary ? "primary" : "repeat"}
           style="{vertical ? 'top' : 'left'}: {item.vi *
-            STRIDE}px; opacity: {cellOpacity(item.dist)}"
+            STRIDE}px; opacity: {cellOpacity(presentation, item.dist)}"
           role={onCellClick ? "button" : undefined}
           tabindex={onCellClick ? 0 : undefined}
           onclick={onCellClick
@@ -392,7 +385,11 @@
         >
           <div
             class="step-pictograph"
-            style="transform: scale({cellScale(item.dist)})"
+            style="transform: scale({cellScale(
+              presentation,
+              heroScale,
+              item.dist
+            )})"
           >
             <PictographContainer
               pictographData={item.cell.data}

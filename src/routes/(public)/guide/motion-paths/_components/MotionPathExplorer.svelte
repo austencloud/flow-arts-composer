@@ -471,6 +471,7 @@
     selectedPropType={explorer.propType}
     onPropChange={choosePropType}
     sequence={explorer.sequence}
+    fillPages={layout === "sidebar"}
   />
 {/snippet}
 
@@ -1229,7 +1230,15 @@
     align-items: stretch;
     gap: var(--spacing-md, 16px);
   }
+  /* Side by side, the canvas group sets the height: a square canvas as wide
+     as its column, its transport and its pills, up to the room under the
+     site header. A wide column no longer leaves a band of empty stage above
+     and below the canvas, and the section card is placed beside it without
+     sizing the row (see .toy-section below). */
   .explorer-workspace.studio.side {
+    position: relative;
+    height: auto;
+    max-height: min(calc(100dvh - 56px - 2 * var(--spacing-md, 16px)), 1400px);
     grid-template-columns: clamp(18rem, 40%, 40rem) minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr);
   }
@@ -1250,8 +1259,16 @@
   .studio.side .motion-column {
     grid-column: 2;
   }
+  /* Positioned in its grid area rather than placed in it, so its content
+     never stretches the row: the card is exactly as tall as the canvas group
+     beside it, and every page spends that height (see fillPages). Both lines
+     are named: a positioned box with an open end line reaches the grid's
+     edge instead of its track's. */
   .studio.side .toy-section {
-    grid-row: 1;
+    position: absolute;
+    inset: 0;
+    grid-column: 1 / 2;
+    grid-row: 1 / 2;
   }
   /* The canvas is the largest square the room holds. */
   .studio .motion-stage {
@@ -1267,6 +1284,13 @@
     width: min(100cqw, 100cqh);
     height: auto;
     max-width: none;
+  }
+  /* Its own square first. A room too short for it squeezes the stage, and
+     the canvas inside takes the stage's shorter side. */
+  .studio.side .motion-stage {
+    flex: 0 1 auto;
+    aspect-ratio: 1;
+    max-height: none;
   }
   /* The canvas, its transport and the pills stay one centered group. */
   .studio .canvas-transport {

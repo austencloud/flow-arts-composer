@@ -15,6 +15,7 @@
     resolvePanOffset,
   } from "$lib/shared/media-composition/services/media-fit";
   import VisualSequenceSaveContextMenuHost from "$lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
+  import { onDestroy } from "svelte";
 
   interface Props {
     binding: CompositionSourceBinding;
@@ -27,6 +28,9 @@
     qrSequence?: SequenceData;
     cardRenderOptions?: Partial<SequenceExportOptions> | null;
     sequencePosition?: number;
+    sequencePassIndex?: number;
+    animationTimeSeconds?: number;
+    breakdownMotion?: boolean;
     displayedBeatNumber?: number;
     clipId: string;
     transform: EvaluatedFrameLayer["transform"];
@@ -43,12 +47,19 @@
     qrSequence,
     cardRenderOptions = null,
     sequencePosition,
+    sequencePassIndex,
+    animationTimeSeconds,
+    breakdownMotion,
     displayedBeatNumber,
     clipId,
     transform,
   }: Props = $props();
   const composition = getMediaCompositionContext();
   let video = $state<HTMLVideoElement | null>(null);
+  let pausedFrameRequest: { element: HTMLVideoElement; id: number } | null =
+    null;
+  let pausedFrameGeneration = 0;
+  let primingVideo: HTMLVideoElement | null = null;
   let saveMenuHost: VisualSequenceSaveContextMenuHost | undefined = $state();
 
   /**
@@ -89,12 +100,43 @@
     });
   });
 
-  function syncVideoTime(): void {
+  function syncVideoTime(): boolean {
     if (!video || video.readyState < 1 || !Number.isFinite(sourceTimeSeconds))
-      return;
+      return false;
     const ceiling = Math.max(0, video.duration - 1 / 60);
     const target = Math.min(ceiling, Math.max(0, sourceTimeSeconds));
-    if (Math.abs(video.currentTime - target) > 0.12) video.currentTime = target;
+    if (Math.abs(video.currentTime - target) <= 0.12) return false;
+    video.currentTime = target;
+    return true;
+  }
+
+  function cancelPausedFrame(): void {
+    pausedFrameGeneration += 1;
+    if (pausedFrameRequest) {
+      pausedFrameRequest.element.cancelVideoFrameCallback(
+        pausedFrameRequest.id
+      );
+      pausedFrameRequest = null;
+    }
+    primingVideo = null;
+  }
+
+  function showPausedFrame(element: HTMLVideoElement): void {
+    cancelPausedFrame();
+    const generation = pausedFrameGeneration;
+    primingVideo = element;
+    // A newly mounted, paused video can stay at HAVE_METADATA after a seek.
+    // Let it decode one frame, then return it to the paused preview state.
+    const id = element.requestVideoFrameCallback(() => {
+      if (generation !== pausedFrameGeneration) return;
+      pausedFrameRequest = null;
+      primingVideo = null;
+      if (video === element && !playing) element.pause();
+    });
+    pausedFrameRequest = { element, id };
+    void element.play().catch(() => {
+      if (generation === pausedFrameGeneration) cancelPausedFrame();
+    });
   }
 
   function onMetadata(): void {
@@ -103,6 +145,7 @@
     sourceHeight = video.videoHeight;
     composition.setSourceDuration(binding.roleKey, video.duration);
     syncVideoTime();
+    if (!playing) showPausedFrame(video);
   }
 
   function onImageLoad(event: Event): void {
@@ -120,14 +163,22 @@
   $effect(() => {
     sourceTimeSeconds;
     playing;
-    syncVideoTime();
-    if (!video) return;
+    const seeked = syncVideoTime();
+    if (!video) {
+      cancelPausedFrame();
+      return;
+    }
     if (playing) {
+      cancelPausedFrame();
       if (video.paused) void video.play().catch(() => undefined);
-    } else if (!video.paused) {
+    } else if (seeked) {
+      showPausedFrame(video);
+    } else if (primingVideo !== video && !video.paused) {
       video.pause();
     }
   });
+
+  onDestroy(cancelPausedFrame);
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -146,6 +197,9 @@
     <PostStudioSequenceAnimationLayer
       {sequence}
       {sequencePosition}
+      {sequencePassIndex}
+      {animationTimeSeconds}
+      {breakdownMotion}
       {playing}
       leftPropType={cardRenderOptions?.leftPropTypeOverride ??
         cardRenderOptions?.propTypeOverride}

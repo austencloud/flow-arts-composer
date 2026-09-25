@@ -1,14 +1,7 @@
 <!--
-  Visual harness for the real Post Studio surface, on the real multi-pass take.
-
-  Same material as /test/step-map-editor: the published LOOP ΩΛ-XJ and the phone
-  clip of it being performed four times through, marked by hand at all 64
-  arrivals. Seeding the shared per-sequence video store is all it takes to reach
-  Post Studio now — the studio reads that store, so the footage arrives the same
-  way an upload in the viewer would.
-
-  The clip lives at static/word-videos/OmLam-XJ.mp4 and is gitignored along with
-  every other .mp4, so this route needs that file copied in from _WORD_VIDEOS.
+  Visual harness for Post Studio with the published DCKΨ- sequence and a local
+  copy of Austen's clean September 6 phone take. The clip is gitignored, so the route also
+  works when that local media is absent: choose another performance in the UI.
 -->
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
@@ -25,28 +18,17 @@
   import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
   import { registerLoopDetector } from "$lib/shared/create/get-loop-detector";
   import { buildCardRenderOptions } from "$lib/shared/share/services/card-render-options";
+  import {
+    loadBpmAlignment,
+    saveBpmAlignment,
+  } from "$lib/shared/share/components/post-studio/local-performance-bpm-alignments";
 
-  /** OmLam-XJ: the published LOOP whose word simplifies to ΩΛ-XJ. */
-  const SEQUENCE_WORD = "ΩΛ-XJΩΛ-XJΩΛ-XJΩΛ-XJ";
-  const SEQUENCE_ID = "ΩΛ-XJ";
-  const VIDEO_URL = "/word-videos/OmLam-XJ.mp4";
-  /** ffprobe: 43.667239s, 720x1280, 29.68fps. */
-  const VIDEO_DURATION = 43.667;
-
-  /**
-   * The take Austen marked on 2026-08-16: 64 arrivals over four passes of the
-   * 16-move LOOP, plus the final one. Same numbers as
-   * tests/unit/media-composition/sequence-time-map.test.ts.
-   */
-  const RECORDED_MARKS = [
-    0.0, 0.86, 1.55, 2.07, 2.69, 3.4, 3.94, 4.59, 5.18, 5.76, 6.45, 7.11, 7.7,
-    8.36, 8.94, 9.49, 10.17, 10.8, 11.36, 12.0, 12.61, 13.23, 14.02, 14.54,
-    15.17, 15.88, 16.46, 17.09, 17.71, 18.33, 18.89, 19.49, 20.26, 20.86, 21.52,
-    22.15, 22.83, 23.42, 24.05, 24.66, 25.32, 26.0, 26.61, 27.19, 27.89, 28.48,
-    29.07, 29.65, 30.37, 31.04, 31.69, 32.37, 32.93, 33.64, 34.25, 34.89, 35.57,
-    36.21, 36.87, 37.54, 38.21, 39.03, 39.67, 40.24,
-  ];
-  const RECORDED_END = 40.81;
+  const SEQUENCE_WORD = "DCKΨ-DCKΨ-DCKΨ-DCKΨ-";
+  const SEQUENCE_ID = "DCKΨ-";
+  const VIDEO_URL = "/word-videos/DCK-Psi-performance.mp4";
+  /** ffprobe of the local browser copy: 22.635s, 720x1280, 30fps. */
+  const VIDEO_DURATION = 22.635;
+  const VIDEO_ID = "post-studio-dck-psi-local-example";
 
   let sequence = $state<SequenceData | null>(null);
   let cardPreviewUrl = $state<string | null>(null);
@@ -62,9 +44,9 @@
   function seedPerformance(sequenceId: string): void {
     const now = new Date();
     const record: CollaborativeVideo = {
-      id: "slice-omlam-xj",
+      id: VIDEO_ID,
       videoUrl: VIDEO_URL,
-      storagePath: "slice/OmLam-XJ.mp4",
+      storagePath: "local-example/DCK-Psi-performance.mp4",
       duration: VIDEO_DURATION,
       fileSize: 0,
       mimeType: "video/mp4",
@@ -74,14 +56,7 @@
       collaborators: [],
       pendingInvites: [],
       visibility: "private",
-      description: "Phone clip, four times through.",
-      beatMap: {
-        beatTimestamps: RECORDED_MARKS,
-        endTimestamp: RECORDED_END,
-        stepCount: 16,
-        source: "manual",
-        updatedAt: now,
-      },
+      description: "DCKΨ- clean phone take · align Beat 1",
       createdAt: now,
       updatedAt: now,
     };
@@ -107,6 +82,10 @@
         throw new Error("The visual fixture is no longer published.");
       const hydrated = await hydrateSequence(loaded);
       seedPerformance(hydrated.id);
+      const alignmentKey = `${hydrated.id}:catalog:${VIDEO_ID}`;
+      if (!loadBpmAlignment(alignmentKey)) {
+        saveBpmAlignment(alignmentKey, { bpm: 87, firstBeatSeconds: null });
+      }
       sequence = { ...hydrated, performanceVideoUrl: VIDEO_URL };
       cardRenderOptions = buildCardRenderOptions(sequence, { darkMode: true });
 

@@ -2,6 +2,7 @@
   import type { EvaluatedFrameLayer } from "$lib/shared/media-composition/services/frame-evaluator";
   import { getMediaCompositionContext } from "$lib/shared/media-composition/state/media-composition-context";
   import PostStudioMediaLayer from "./PostStudioMediaLayer.svelte";
+  import PostStudioPaintedLayer from "./PostStudioPaintedLayer.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
   import type { PostStudioSlotId } from "$lib/shared/media-composition/domain/post-studio-slots";
@@ -41,11 +42,12 @@
   );
 
   function regionStyle(region: (typeof orderedRegions)[number]): string {
+    const rect = composition.regionRects.get(region.id) ?? region;
     return [
-      `left:${region.x * 100}%`,
-      `top:${region.y * 100}%`,
-      `width:${region.width * 100}%`,
-      `height:${region.height * 100}%`,
+      `left:${rect.x * 100}%`,
+      `top:${rect.y * 100}%`,
+      `width:${rect.width * 100}%`,
+      `height:${rect.height * 100}%`,
       `z-index:${region.zIndex + 1}`,
     ].join(";");
   }
@@ -153,21 +155,38 @@
             {@const layerBinding = composition.bindingForRole(layer.sourceRole)}
             {#if layerBinding?.status === "ready" && (layerBinding.previewUrl || layerBinding.renderMode !== "external-media")}
               <span class="rendered-media" aria-hidden="true">
-                <PostStudioMediaLayer
-                  binding={layerBinding}
-                  fit={region.fit}
-                  opacity={layer.opacity}
-                  sourceTimeSeconds={layer.sourceTimeSeconds}
-                  playing={composition.isPlaying}
-                  {sequence}
-                  {cardRenderOptions}
-                  {handLabeling}
-                  {qrSequence}
-                  sequencePosition={layer.sequencePosition}
-                  displayedBeatNumber={layer.displayedBeatNumber}
-                  clipId={layer.clipId}
-                  transform={layer.transform}
-                />
+                {#if layerBinding.renderMode === "painted" && layerBinding.painter}
+                  <PostStudioPaintedLayer
+                    painter={layerBinding.painter}
+                    opacity={layer.opacity}
+                    frame={{
+                      sequencePosition: layer.sequencePosition,
+                      carouselPosition: layer.carouselPosition,
+                      displayedBeatNumber: layer.displayedBeatNumber,
+                      projectProgress: layer.projectProgress,
+                      sourceTimeSeconds: layer.sourceTimeSeconds,
+                    }}
+                  />
+                {:else}
+                  <PostStudioMediaLayer
+                    binding={layerBinding}
+                    fit={region.fit}
+                    opacity={layer.opacity}
+                    sourceTimeSeconds={layer.sourceTimeSeconds}
+                    playing={composition.isPlaying}
+                    {sequence}
+                    {cardRenderOptions}
+                    {handLabeling}
+                    {qrSequence}
+                    sequencePosition={layer.sequencePosition}
+                    sequencePassIndex={layer.sequencePassIndex}
+                    animationTimeSeconds={layer.animationTimeSeconds}
+                    breakdownMotion={region.id === "strip-animation"}
+                    displayedBeatNumber={layer.displayedBeatNumber}
+                    clipId={layer.clipId}
+                    transform={layer.transform}
+                  />
+                {/if}
               </span>
             {/if}
           {/each}
