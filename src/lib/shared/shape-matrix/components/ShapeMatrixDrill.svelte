@@ -101,7 +101,7 @@
     onselectRealization?: (realization: ModeRealization) => void;
     selectLabel?: string;
     onopenRealization?: (realization: ModeRealization) => void;
-    onplayRealization?: (realization: ModeRealization) => void;
+    onsaveRealization?: (realization: ModeRealization) => void;
     onshareRealization?: (realization: ModeRealization) => void;
     /** Optional externally-owned mode for URL-restored app state. */
     selectedMode?: VtgMode | null;
@@ -139,7 +139,7 @@
     onselectRealization,
     selectLabel = "Use this realization",
     onopenRealization,
-    onplayRealization,
+    onsaveRealization,
     onshareRealization,
     selectedMode = $bindable(null),
     selectedPropMode = $bindable(null),
@@ -1436,7 +1436,7 @@
     </div>
   {/if}
 
-  {#if onselectRealization || onopenRealization || onplayRealization || onshareRealization}
+  {#if onselectRealization || onopenRealization || onsaveRealization || onshareRealization}
     <div class="select-action" class:available={visibleRealization !== null}>
       {#if onselectRealization}
         <PanelButton
@@ -1461,15 +1461,15 @@
           Open<span class="action-suffix"> in viewer</span>
         </PanelButton>
       {/if}
-      {#if onplayRealization}
+      {#if onsaveRealization}
         <PanelButton
-          ariaLabel="Play realization in viewer"
+          ariaLabel="Save realization to library"
           disabled={!visibleRealization}
           onclick={() =>
-            visibleRealization && onplayRealization(visibleRealization)}
+            visibleRealization && onsaveRealization(visibleRealization)}
         >
-          <i class="fas fa-play" aria-hidden="true"></i>
-          Play<span class="action-suffix"> in viewer</span>
+          <i class="fas fa-bookmark" aria-hidden="true"></i>
+          Save<span class="action-suffix"> to library</span>
         </PanelButton>
       {/if}
       {#if onshareRealization}

@@ -6,7 +6,7 @@
   interface Props {
     onrealizationAction: (
       realization: ModeRealization,
-      action: "open" | "play" | "share"
+      action: "open" | "save" | "share"
     ) => void;
   }
 
@@ -37,8 +37,8 @@
         onproppickertoggle={state.togglePropPicker}
         onopenRealization={(realization) =>
           onrealizationAction(realization, "open")}
-        onplayRealization={(realization) =>
-          onrealizationAction(realization, "play")}
+        onsaveRealization={(realization) =>
+          onrealizationAction(realization, "save")}
         onshareRealization={(realization) =>
           onrealizationAction(realization, "share")}
         mandalaTransition={{
