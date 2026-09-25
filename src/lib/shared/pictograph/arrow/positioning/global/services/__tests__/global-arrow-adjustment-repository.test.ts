@@ -83,7 +83,7 @@ async function repoOver(docs: GlobalArrowAdjustment[]) {
   return { repo, collection };
 }
 
-// Staff on both hands reads the no-prop layer, where the January nudges live.
+// Nudges saved without a prop are read only when both hands hold staffs.
 function lookup(repo: GlobalArrowAdjustmentRepository, arrowKey: string) {
   return (
     repo.getAdjustmentCascading(key(arrowKey), "staff", "staff")?.adjustment ??
