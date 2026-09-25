@@ -20,8 +20,10 @@
 
   let {
     showColors = true,
+    compactColors = false,
     showPropLook = true,
     onDrillChange,
+    actions: hostActions,
     ...props
   }: Omit<
     ComponentProps<typeof PropGrid>,
@@ -49,6 +51,11 @@
      */
     showColors?: boolean;
     /**
+     * A rail with no room beneath its strip (the viewer's bottom tray) shows
+     * the colours as a button in its toolbar that opens the full editor.
+     */
+    compactColors?: boolean;
+    /**
      * The 3D model / Pictograph choice is how the 2D canvas draws a prop. A 3D
      * scene always renders the model, so its picker turns the choice off.
      */
@@ -60,25 +67,42 @@
   // own toolbar already does.
   let drilled = $state(false);
   // A rail is its host's main control in a short strip, so the props stay
-  // first and the colours follow them.
-  const colorsAfter = $derived(props.layout === "rail");
+  // first and the colours follow them, or sit in its toolbar when compact.
+  const colorsPlace = $derived(
+    props.layout !== "rail" ? "before" : compactColors ? "toolbar" : "after"
+  );
 </script>
+
+{#snippet colorSettings(compact: boolean)}
+  <PrimaryPropColorSettings
+    {compact}
+    colors={settings.primaryPropColors}
+    darkMode={settings.darkMode}
+    onchange={(colors) => updateSetting("primaryPropColors", colors)}
+  />
+{/snippet}
 
 {#snippet colorControl()}
   {#if showColors && !drilled}
-    <div class="prop-colors" transition:growFade={{ axis: "y" }}>
-      <PrimaryPropColorSettings
-        colors={settings.primaryPropColors}
-        darkMode={settings.darkMode}
-        onchange={(colors) => updateSetting("primaryPropColors", colors)}
-      />
-    </div>
+    {#if colorsPlace === "toolbar"}
+      {@render colorSettings(true)}
+    {:else}
+      <div class="prop-colors" transition:growFade={{ axis: "y" }}>
+        {@render colorSettings(false)}
+      </div>
+    {/if}
   {/if}
 {/snippet}
 
-{#if !colorsAfter}{@render colorControl()}{/if}
+{#snippet toolbarActions()}
+  {@render hostActions?.()}
+  {@render colorControl()}
+{/snippet}
+
+{#if colorsPlace === "before"}{@render colorControl()}{/if}
 <PropGrid
   {...props}
+  actions={colorsPlace === "toolbar" ? toolbarActions : hostActions}
   onDrillChange={(next) => {
     drilled = next;
     onDrillChange?.(next);
@@ -105,7 +129,7 @@
     <PremiumNudge nudge={PREMIUM_COSMETIC_NUDGE} onDismiss={dismiss} />
   {/snippet}
 </PropGrid>
-{#if colorsAfter}{@render colorControl()}{/if}
+{#if colorsPlace === "after"}{@render colorControl()}{/if}
 
 <style>
   .prop-colors {
