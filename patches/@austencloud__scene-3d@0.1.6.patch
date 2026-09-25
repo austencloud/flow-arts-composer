@@ -9344,7 +9344,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..fb77502dfb0c5a079adf853e97f7ab56
 +            gripTiltRad: Math.max(0, Math.min(1.4, finite(pose.gripTiltRad ?? 0, 1.4))),
 +            gripPalmRollRad: pose.gripPalmRollRad === undefined
 +                ? undefined
-+                : Math.max(0, Math.min(Math.PI, finite(pose.gripPalmRollRad, Math.PI))),
++                : Math.max(-2 * Math.PI, Math.min(2 * Math.PI, finite(pose.gripPalmRollRad, Math.PI))),
 +        };
 +    }
 +    /**
@@ -9740,7 +9740,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..fb77502dfb0c5a079adf853e97f7ab56
 +        if (authoredPole) {
 +            // Near North, an authored wrist edit must keep its chosen staff-facing
 +            // roll. Fade out the extra reach-search roll while that edit is active.
-+            const northBlend = Math.max(0, Math.min(1, (palmRoll - 2) / 0.5));
++            const northBlend = Math.max(0, Math.min(1, (Math.abs(palmRoll) - 2) / 0.5));
 +            const wristMagnitude = Math.hypot(this.authoredContactPose?.wristBendRad ?? 0, this.authoredContactPose?.wristTwistRad ?? 0);
 +            const editBlend = Math.max(0, Math.min(1, wristMagnitude / 0.1));
 +            const northWeight = northBlend * northBlend * (3 - 2 * northBlend) * editBlend * editBlend * (3 - 2 * editBlend);
@@ -28852,7 +28852,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..2502c85b3b1a4da19f5243950b61086a
 +      gripTiltRad: Math.max(0, Math.min(1.4, finite(pose.gripTiltRad ?? 0, 1.4))),
 +      gripPalmRollRad: pose.gripPalmRollRad === undefined
 +        ? undefined
-+        : Math.max(0, Math.min(Math.PI, finite(pose.gripPalmRollRad, Math.PI))),
++        : Math.max(-2 * Math.PI, Math.min(2 * Math.PI, finite(pose.gripPalmRollRad, Math.PI))),
 +    };
 +  }
 +
@@ -29262,7 +29262,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..2502c85b3b1a4da19f5243950b61086a
 +    if (authoredPole) {
 +      // Near North, an authored wrist edit must keep its chosen staff-facing
 +      // roll. Fade out the extra reach-search roll while that edit is active.
-+      const northBlend = Math.max(0, Math.min(1, (palmRoll - 2) / 0.5));
++      const northBlend = Math.max(0, Math.min(1, (Math.abs(palmRoll) - 2) / 0.5));
 +      const wristMagnitude = Math.hypot(this.authoredContactPose?.wristBendRad ?? 0, this.authoredContactPose?.wristTwistRad ?? 0);
 +      const editBlend = Math.max(0, Math.min(1, wristMagnitude / 0.1));
 +      const northWeight = northBlend * northBlend * (3 - 2 * northBlend) * editBlend * editBlend * (3 - 2 * editBlend);

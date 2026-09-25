@@ -139,7 +139,8 @@
   const bodyPose = $derived({
     ...authoredBodyPose(
       taughtPose,
-      inspection.hand === "right" ? inspection.phase : 0
+      inspection.hand === "right" ? inspection.phase : 0,
+      inspection.keys
     ),
     wristBendRad: taughtPose.wristBend,
     wristTwistRad: taughtPose.wristTwist,

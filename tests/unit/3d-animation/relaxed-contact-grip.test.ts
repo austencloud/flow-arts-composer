@@ -75,7 +75,7 @@ describe.runIf(avatarAssetsPresent())("relaxed strict-contact grip", () => {
             .normalize();
           const a = center.clone().addScaledVector(axis, -0.45);
           const b = center.clone().addScaledVector(axis, 0.45);
-          const pose = authoredBodyPose(teaching, phase);
+          const pose = authoredBodyPose(teaching, phase, keys);
           pose.gripRelaxation = relaxation;
           pose.gripTiltRad = teaching.gripTilt;
           pose.wristBendRad = teaching.wristBend;
@@ -449,6 +449,18 @@ describe.runIf(avatarAssetsPresent())("relaxed strict-contact grip", () => {
             frame.palmResidualM,
             `approach phase ${frame.phase}`
           ).toBeLessThan(0.006);
+        }
+        // On the East-to-North approach the vein side of the wrist must not
+        // fold outward while the staff remains seated against the palm.
+        for (const phase of [1.43, 1.5, 1.6, 1.702]) {
+          const frame = sample(
+            phase,
+            sampleTeachingPose(phase, keys).gripRelaxation,
+            undefined,
+            true
+          );
+          expect(frame.wristAngleRad, `phase ${phase}`).toBeLessThan(0.7);
+          expect(frame.palmResidualM, `phase ${phase}`).toBeLessThan(0.006);
         }
         const savedTransition = Array.from(
           { length: 31 },
