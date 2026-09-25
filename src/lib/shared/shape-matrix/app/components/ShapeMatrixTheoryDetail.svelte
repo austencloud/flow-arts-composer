@@ -45,8 +45,9 @@
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import AnimationPanel from "$lib/shared/animation-panel/components/AnimationPanel.svelte";
   import ShapeMatrixStageActions from "$lib/shared/shape-matrix/components/ShapeMatrixStageActions.svelte";
+  import UnifiedTimeline from "$lib/shared/timeline/UnifiedTimeline.svelte";
+  import type { UnifiedPlaybackContext } from "$lib/shared/timeline/unified-playback-context";
   import { registerShapeMatrixPlaybackShortcut } from "../services/shape-matrix-playback-shortcut";
-  import type { ControlDockAction } from "$lib/shared/sequence-viewer/components/ControlDock.svelte";
   import { growFade } from "$lib/shared/transitions/motion";
   import { CANVAS2D_HOSTED_EFFECTS } from "$lib/shared/effects/services/canvas2d-effect-host";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -112,7 +113,10 @@
    */
   const drawnProps = $derived(
     app.data?.props ??
-      foldUntraceablePropPair({ left: app.leftPropType, right: app.rightPropType })
+      foldUntraceablePropPair({
+        left: app.leftPropType,
+        right: app.rightPropType,
+      })
   );
 
   /*
@@ -134,9 +138,56 @@
 
   /*
    * One hand cycle is four beats, the four cardinal points, so the tempo the
-   * dock sets is the tempo the hands travel at. 60 BPM is a second a beat.
+   * transport sets is the tempo the hands travel at. 60 BPM is a second a beat.
    */
   const handPeriod = $derived((4 * 60000) / Math.max(1, animationState.bpm));
+  let cycleProgress = $state(0);
+  let seekCycle: ((progress: number) => void) | null = null;
+  function handleCycleProgress(progress: number): void {
+    cycleProgress = progress;
+  }
+  function handleSeekRef(seek: ((progress: number) => void) | null): void {
+    seekCycle = seek;
+  }
+  const playbackAdapter: UnifiedPlaybackContext = {
+    get overallProgress() {
+      return cycleProgress;
+    },
+    get currentStep() {
+      return Math.min(4, Math.floor(cycleProgress * 4) + 1);
+    },
+    get totalSteps() {
+      return 4;
+    },
+    get isPlaying() {
+      return animationState.playing;
+    },
+    get isLooping() {
+      return undefined;
+    },
+    get duration() {
+      return handPeriod / 1000;
+    },
+    get elapsed() {
+      return (cycleProgress * handPeriod) / 1000;
+    },
+    get beatMarkerPositions() {
+      return [0.25, 0.5, 0.75];
+    },
+    get bpm() {
+      return animationState.bpm;
+    },
+    get playbackMode() {
+      return animationState.playbackMode;
+    },
+    seek(progress) {
+      seekCycle?.(progress);
+    },
+    togglePlay: animationState.togglePlaying,
+    toggleLoop() {},
+    onBpmChange: animationState.setBpm,
+    onPlaybackModeChange: animationState.setPlaybackMode,
+  };
 
   let alignToken = $state(0);
   let boundaryOpen = $state(false);
@@ -286,11 +337,6 @@
     propRelationship?.element?.accentColor ?? handAccent
   );
 
-  /*
-   * Play/pause lives in the dock's trailing slot, where the Matrix drill keeps
-   * it, rather than in a pair of buttons under this stage. One transport
-   * control, in one place, on both surfaces.
-   */
   /* Space is the stage's click, reached without a mouse. Through the app's
      shortcut registry, so it stands aside for text fields and dialogs. The
      Level Matrix drill is mounted beside this one and binds the same key, so
@@ -299,15 +345,12 @@
     registerShapeMatrixPlaybackShortcut(
       "theory",
       () => animationState.togglePlaying(),
-      () => app.surface === "theory" && Boolean(pair)
+      () =>
+        app.surface === "theory" &&
+        Boolean(pair) &&
+        !document.activeElement?.closest("[data-shape-matrix-transport]")
     )
   );
-
-  const playbackAction = $derived<ControlDockAction>({
-    icon: animationState.playing ? "fa-pause" : "fa-play",
-    label: animationState.playing ? "Pause" : "Play",
-    onClick: animationState.togglePlaying,
-  });
 
   /*
    * An open control panel takes the room the reading rows were using, the same
@@ -431,6 +474,8 @@
                 {hands}
                 {handPeriod}
                 {alignToken}
+                onCycleProgress={handleCycleProgress}
+                onSeekRef={handleSeekRef}
                 {propReach}
                 {tipAngle}
                 paused={!animationState.playing}
@@ -440,6 +485,12 @@
                 {propColors}
               />
             </button>
+            <div class="canvas-transport" data-shape-matrix-transport>
+              <UnifiedTimeline
+                playback={playbackAdapter}
+                compact={app.compact}
+              />
+            </div>
           </div>
         {/if}
 
@@ -499,8 +550,8 @@
           bpm={animationState.bpm}
           playbackMode={animationState.playbackMode}
           onPlaybackToggle={animationState.togglePlaying}
-          onPlaybackModeChange={animationState.setPlaybackMode}
           onBpmChange={animationState.setBpm}
+          showTempoControls={false}
           showEffectsPlayback={false}
           selectedPropType={app.addressedPropType}
           onPropChange={(next: PropType) => void app.setPropType(next)}
@@ -508,7 +559,6 @@
           onPropPickerRequest={app.togglePropPicker}
           propPickerActive={app.propPickerOpen}
           sequence={null}
-          dockTrailingAction={playbackAction}
           showPathShape={false}
           showMotionVisibility={true}
           showSequenceMarks={false}
@@ -739,6 +789,14 @@
     flex: 1 1 0;
     min-width: 0;
     min-height: 9rem;
+  }
+
+  .canvas-transport {
+    position: absolute;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    z-index: 5;
+    width: min(70rem, calc(100% - 1.5rem));
   }
 
   .stage-window {

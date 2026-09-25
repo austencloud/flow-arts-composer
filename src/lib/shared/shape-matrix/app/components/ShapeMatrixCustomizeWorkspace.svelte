@@ -145,8 +145,8 @@
         bpm={animationState.bpm}
         playbackMode={animationState.playbackMode}
         onPlaybackToggle={animationState.togglePlaying}
-        onPlaybackModeChange={animationState.setPlaybackMode}
         onBpmChange={animationState.setBpm}
+        showTempoControls={false}
         showEffectsPlayback={false}
         selectedPropType={appState.addressedPropType}
         sequence={theory ? null : animationState.previewSequence}

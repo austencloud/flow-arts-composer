@@ -121,8 +121,8 @@
         bpm={animation.bpm}
         playbackMode={animation.playbackMode}
         onPlaybackToggle={animation.togglePlaying}
-        onPlaybackModeChange={animation.setPlaybackMode}
         onBpmChange={animation.setBpm}
+        showTempoControls={false}
         showEffectsPlayback={false}
         selectedPropType={app.addressedPropType}
         onPropChange={(next) => void app.setPropType(next)}
@@ -176,25 +176,6 @@
   .settings-body {
     min-height: 0;
     overflow: hidden;
-  }
-  .settings-body.effort :global(.section-pad) {
-    height: 100%;
-  }
-  .settings-body.effort :global(.effort-grid) {
-    flex: 1;
-    grid-auto-rows: minmax(56px, 1fr);
-  }
-  .settings-body.effort :global(.effort-btn) {
-    font-size: var(--font-size-min, 14px);
-  }
-  .settings-body.effort :global(.effort-curve) {
-    flex: 1 1 22px;
-    min-height: 22px;
-  }
-  @container shape-matrix-app (max-width: 30rem) {
-    .settings-body.effort :global(.effort-grid) {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
   }
   .selection {
     display: block;
