@@ -3,12 +3,12 @@
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import { TND_BY_FAMILY } from "$lib/features/choreo-card/domain/tnd-element";
   import { MODE_FAMILY_ID } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
-  import { TRICK_GROUPS, TRICK_NAMES } from "./_data/trick-names";
+  import { TRICK_NAMES } from "./_data/trick-names";
   import "$lib/shared/landing/styles/public-editorial.css";
 
-  const TITLE = "Poi and Staff Trick Names: Weaves, Butterflies, Antispin";
+  const TITLE = "Poi and Staff Trick Names: Weave, Butterfly, Antispin";
   const DESCRIPTION =
-    "Common poi and staff trick names explained: three-beat weave, butterfly, windmill, isolation, extension, antispin, flowers, and CAPs.";
+    "Common poi and staff trick names explained: weave, windmill, butterfly, isolation, extension, and antispin, each linked to a full explanation.";
   const URL = "https://tkaflowarts.com/tricks";
 
   const jsonLd = {
@@ -66,62 +66,53 @@
     </p>
   </header>
 
-  <div class="groups">
-    {#each TRICK_GROUPS as group (group.id)}
-      <section class="editorial-section" aria-labelledby={group.id}>
-        <h2 class="section-title" id={group.id}>{group.title}</h2>
-        <ul class="trick-grid" class:six={group.tricks.length === 6}>
-          {#each group.tricks as trick (trick.id)}
-            {@const mode = element(trick.mode)}
-            <li
-              class="trick"
-              class:timed={mode !== undefined}
-              id={trick.id}
-              style:--accent={mode?.accentColor}
-            >
-              <div class="trick-head">
-                {#if mode}
-                  <img src={mode.iconPath} alt="" width="40" height="40" />
-                {/if}
-                <div class="trick-name">
-                  {#if trick.modeName}
-                    <span class="trick-mode">{trick.modeName}</span>
-                  {/if}
-                  <h3>{trick.name}</h3>
-                </div>
-              </div>
-              <p class="usage">{trick.usage}</p>
-              {#if trick.detail}
-                <p class="detail">{trick.detail}</p>
+  <div class="tricks">
+    <ul class="trick-grid">
+      {#each TRICK_NAMES as trick (trick.id)}
+        {@const mode = element(trick.mode)}
+        <li
+          class="trick"
+          class:timed={mode !== undefined}
+          id={trick.id}
+          style:--accent={mode?.accentColor}
+        >
+          <div class="trick-head">
+            {#if mode}
+              <img src={mode.iconPath} alt="" width="40" height="40" />
+            {/if}
+            <div class="trick-name">
+              {#if trick.modeName}
+                <span class="trick-mode">{trick.modeName}</span>
               {/if}
-              <div class="trick-link">
-                <!-- Several tricks share a destination, so the accessible
-                     name adds the trick to keep a link list unambiguous. -->
-                <PanelButton
-                  href={trick.link.href}
-                  accentColor={mode?.accentColor}
-                  ariaLabel={`${trick.link.label}: ${trick.name}`}
-                  >{trick.link.label}<i
-                    class="fa-solid fa-arrow-right"
-                    aria-hidden="true"
-                  ></i></PanelButton
-                >
-              </div>
-            </li>
-          {/each}
-        </ul>
-      </section>
-    {/each}
+              <h2>{trick.name}</h2>
+            </div>
+          </div>
+          <p class="usage">{trick.usage}</p>
+          {#if trick.detail}
+            <p class="detail">{trick.detail}</p>
+          {/if}
+          <div class="trick-link">
+            <!-- Several tricks share a destination, so the accessible
+                 name adds the trick to keep a link list unambiguous. -->
+            <PanelButton
+              href={trick.link.href}
+              accentColor={mode?.accentColor}
+              ariaLabel={`${trick.link.label}: ${trick.name}`}
+              >{trick.link.label}<i
+                class="fa-solid fa-arrow-right"
+                aria-hidden="true"
+              ></i></PanelButton
+            >
+          </div>
+        </li>
+      {/each}
+    </ul>
   </div>
 </div>
 
 <style>
-  .groups {
+  .tricks {
     container: tricks / inline-size;
-  }
-
-  .tricks-page .editorial-section:last-child {
-    margin-bottom: 0;
   }
 
   .trick-grid {
@@ -180,7 +171,7 @@
     color: color-mix(in oklch, var(--accent) 62%, oklch(0.78 0.01 270));
   }
 
-  h3 {
+  h2 {
     margin: 0;
     font-size: clamp(1.15rem, 1.05rem + 0.3vw, 1.375rem);
     font-weight: 660;
@@ -224,20 +215,16 @@
     }
   }
 
+  /* Three across keeps the two-hand timing names in one row and the prop
+     spin names in the next. */
   @container tricks (min-width: 56rem) {
-    .trick-grid.six {
+    .trick-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
 
-  @container tricks (min-width: 90rem) {
-    .trick-grid:not(.six) {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-  }
-
   @container tricks (min-width: 128rem) {
-    .trick-grid.six {
+    .trick-grid {
       grid-template-columns: repeat(6, minmax(0, 1fr));
     }
   }
