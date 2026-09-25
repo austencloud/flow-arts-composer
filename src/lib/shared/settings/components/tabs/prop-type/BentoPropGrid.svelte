@@ -23,7 +23,7 @@
     compactColors = false,
     showPropLook = true,
     onDrillChange,
-    actions: hostActions,
+    heading: hostHeading,
     ...props
   }: Omit<
     ComponentProps<typeof PropGrid>,
@@ -52,7 +52,8 @@
     showColors?: boolean;
     /**
      * A rail with no room beneath its strip (the viewer's bottom tray) shows
-     * the colours as a button in its toolbar that opens the full editor.
+     * the colours as a button at the head of its toolbar that opens the full
+     * editor.
      */
     compactColors?: boolean;
     /**
@@ -94,15 +95,21 @@
   {/if}
 {/snippet}
 
-{#snippet toolbarActions()}
-  {@render hostActions?.()}
-  {@render colorControl()}
+<!-- The compact button leads the toolbar beside the host's own heading (the
+     viewer's Cat Dog chip), in one row that a narrow host may flatten. -->
+{#snippet toolbarHeading()}
+  <div class="rail-lead">
+    {@render hostHeading?.()}
+    {@render colorControl()}
+  </div>
 {/snippet}
 
 {#if colorsPlace === "before"}{@render colorControl()}{/if}
 <PropGrid
   {...props}
-  actions={colorsPlace === "toolbar" ? toolbarActions : hostActions}
+  heading={colorsPlace === "toolbar" && showColors
+    ? toolbarHeading
+    : hostHeading}
   onDrillChange={(next) => {
     drilled = next;
     onDrillChange?.(next);
@@ -136,5 +143,11 @@
     /* Hosts align it with their own inset; the default matches the grid's. */
     padding: var(--prop-colors-inset, 8px 16px 4px);
     flex-shrink: 0;
+  }
+  .rail-lead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
   }
 </style>

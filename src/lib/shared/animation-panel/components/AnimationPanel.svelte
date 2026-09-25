@@ -1389,6 +1389,7 @@
   }
   @media (max-width: 500px) {
     .bottom-prop-picker :global(.rail-toolbar .rail-heading),
+    .bottom-prop-picker :global(.rail-toolbar .rail-lead),
     .bottom-prop-picker :global(.rail-toolbar .hand-toolbar.compact) {
       display: contents;
     }
