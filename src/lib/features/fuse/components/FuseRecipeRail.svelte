@@ -5,16 +5,10 @@
   a Fuse-local imitation. Fuse owns the wiring and arrangement; the shared
   cards own interaction, accessibility, and responsive behavior.
 
-  One width for all of them. These are answers to the same question — what is
-  this fuse made of — so the row is an even set rather than eight widths arguing
-  about which setting matters most. Two of the cards come and go: Turns has
-  nothing to cap at level 1, and Rule has nothing to name while the paths are
-  Separate. Those two grow their track from zero on the workspace's own clock,
-  so the Rule card arriving and the rule editor opening on the left read as one
-  move rather than two animations that happen to fire together.
+  The cards share one width. Turns grows its track from zero above level 1;
+  Linked rule controls live directly below this rail.
 -->
 <script lang="ts">
-  import BaseCard from "$lib/features/create/generate/components/cards/BaseCard.svelte";
   import GridModeCard from "$lib/features/create/generate/components/cards/GridModeCard.svelte";
   import LevelCard from "$lib/features/create/generate/components/cards/LevelCard.svelte";
   import ToggleCard from "$lib/features/create/generate/components/cards/ToggleCard.svelte";
@@ -28,8 +22,6 @@
   import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { getFuseContext } from "../context/fuse-context";
   import type { FuseRecipeDestination } from "../domain/fuse-recipe-destination";
-  import { fuseRuleLabel } from "../domain/fuse-rule";
-  import { fuseRuleMode, fuseTnDModeLabel } from "../domain/fuse-tnd-rule";
   import type { FuseRecipeSummaries } from "../domain/fuse-recipe-summaries";
   import { FUSE_LENGTHS, type FuseMode } from "../state/fuse-state.svelte";
   import FuseRecipePopover from "./FuseRecipePopover.svelte";
@@ -40,7 +32,6 @@
     activeSetting = null,
     onSettingOpenChange,
     onModeChange,
-    onEditRule,
   }: {
     summaries: FuseRecipeSummaries;
     disabled?: boolean;
@@ -50,7 +41,6 @@
       open: boolean
     ) => void;
     onModeChange: (mode: FuseMode) => void;
-    onEditRule: () => void;
   } = $props();
 
   const { state: fuseState } = getFuseContext();
@@ -70,7 +60,6 @@
   const minimumLength = FUSE_LENGTHS[0]!;
   const maximumLength = FUSE_LENGTHS[FUSE_LENGTHS.length - 1]!;
   const lengthIndex = $derived(FUSE_LENGTHS.indexOf(fuseState.requestedLength));
-  const linked = $derived(fuseState.mode === "symmetry");
   // Level 1 has no turns to cap, so the ceiling has nothing to say and the card
   // is not there. Above it the ceiling is a real second decision.
   const turnsVisible = $derived(fuseState.generationLevel > 1);
@@ -82,12 +71,6 @@
   const displayedTurnIntensity = $derived(
     fuseState.generationLevel === 1 ? 0 : fuseState.maxTurnIntensity
   );
-  const ruleLabel = $derived(fuseTnDModeLabel(fuseRuleMode(fuseState.rule)));
-  const ruleOperations = $derived(fuseRuleLabel(fuseState.rule));
-  const driverLabel = $derived(
-    fuseState.driverSide === "left" ? "Left" : "Right"
-  );
-
   function changeLength(offset: -1 | 1): void {
     if (disabled) return;
     const nextIndex = Math.max(
@@ -116,7 +99,6 @@
 
 <div
   class="recipe-rail"
-  class:linked
   class:turns={turnsVisible}
   class:disabled
   inert={disabled}
@@ -213,33 +195,6 @@
       headerFontSize="var(--rail-card-title-size)"
     />
   </div>
-
-  <div
-    class="card-slot swing-slot rule-slot"
-    class:visible={linked}
-    aria-hidden={!linked}
-    inert={!linked}
-  >
-    <BaseCard
-      title="Rule"
-      currentValue={ruleLabel}
-      appearance="quiet"
-      gridColumnSpan={1}
-      headerFontSize="var(--rail-card-title-size)"
-      ariaLabel="Change rule: {ruleLabel}. Rebuilds from {driverLabel} using {ruleOperations}."
-      onClick={onEditRule}
-    >
-      <div class="rule-details">
-        <span class="rule-operations" title={ruleOperations}
-          >{ruleOperations}</span
-        >
-        <span class="rule-action">
-          Change rule
-          <i class="fas fa-chevron-right" aria-hidden="true"></i>
-        </span>
-      </div>
-    </BaseCard>
-  </div>
 </div>
 
 <style>
@@ -269,64 +224,6 @@
     background: var(--theme-card-hover-bg);
   }
 
-  .rule-slot :global(.base-card) {
-    border-color: var(--theme-stroke-strong);
-  }
-
-  .rule-slot :global(.card-value) {
-    flex: 0 0 auto;
-    white-space: normal;
-  }
-
-  .rule-slot :global(.card-content) {
-    margin-top: 0;
-  }
-
-  .rule-slot :global(.click-indicator) {
-    display: none;
-  }
-
-  .rule-details {
-    display: grid;
-    justify-items: center;
-    gap: 6px;
-  }
-
-  .rule-operations {
-    display: -webkit-box;
-    overflow: hidden;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    color: var(--theme-text-dim);
-    font-size: var(--font-size-compact, 12px);
-    line-height: 1.2;
-  }
-
-  .rule-action {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 4px 10px;
-    border: 1px solid var(--theme-stroke-strong);
-    border-radius: var(--settings-radius-sm, 8px);
-    background: var(--theme-card-hover-bg);
-    color: var(--theme-text);
-    font-size: var(--font-size-min, 14px);
-    font-weight: 650;
-    line-height: 1.2;
-    white-space: nowrap;
-  }
-
-  .rule-action i {
-    font-size: var(--font-size-compact, 12px);
-  }
-
-  /* Two cards come and go with the recipe: Turns above level 1, Rule when the
-     paths are Linked. Linked also opens the rule editor as a track on the right
-     of the workspace, so that is two tracks widening at once and it has to read
-     as one gesture — same clock, same curve, no stagger. `--duration-emphasis`
-     on `--ease-out` is what the workspace itself uses; keep these in step with
-     the transition on `.fuse-workspace.full-card-workspace` in FuseLayout. */
   .swing-slot {
     overflow: clip;
     opacity: 0;
@@ -346,12 +243,10 @@
     .recipe-rail {
       order: 2;
       display: grid;
-      /* Eight tracks, always eight: CSS only interpolates track lists of equal
-         length, so the two conditional cards are present and zero-wide rather
-         than added and removed. Track 3 is Turns, track 8 is Rule. */
+      /* A stable track list lets Turns expand without shifting abruptly. */
       grid-template-columns:
         minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0fr) minmax(0, 1fr)
-        minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0fr);
+        minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
       /* Tall enough that the cards are read rather than deciphered. Below
          95px ToggleCard shrinks its icons to 12px and lays its options out
          side by side; below 65px it drops its title outright. At 84px — what
@@ -380,25 +275,7 @@
     .recipe-rail.turns {
       grid-template-columns:
         minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)
-        minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0fr);
-    }
-
-    .recipe-rail.linked {
-      grid-template-columns:
-        minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0fr) minmax(0, 1fr)
-        minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
-    }
-
-    /* Spelled out rather than `repeat(8, minmax(0, 1fr))`, which reads as the
-       same eight tracks and is not: the browser will not interpolate a repeat()
-       against an explicit list, so this — the state every open rail lands in —
-       snapped to its end value on frame one while the workspace beside it eased
-       over 280ms. The Rule card arrived at full width in a rail that had already
-       jumped, and only its fade was left to suggest it had moved. */
-    .recipe-rail.turns.linked {
-      grid-template-columns:
-        minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)
-        minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+        minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
     }
   }
 
