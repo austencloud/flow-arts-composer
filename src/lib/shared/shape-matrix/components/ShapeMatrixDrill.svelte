@@ -1332,14 +1332,6 @@
             second={secondPlayer}
             onsettled={finishCrossfade}
           />
-          {#if livePlayerShowsPair}
-            <div class="canvas-transport" data-shape-matrix-transport>
-              <UnifiedTimeline
-                playback={playbackAdapter}
-                compact={appState?.compact ?? false}
-              />
-            </div>
-          {/if}
           {#if playerLoadFailure}
             <div class="player-load-notice" role="alert">
               <p>Animation didn’t load.</p>
@@ -1357,6 +1349,16 @@
           </div>
         {/if}
       </div>
+      {#if pair && heroPaths}
+        <div class="canvas-transport" data-shape-matrix-transport>
+          {#if livePlayerShowsPair}
+            <UnifiedTimeline
+              playback={playbackAdapter}
+              compact={appState?.compact ?? false}
+            />
+          {/if}
+        </div>
+      {/if}
     </div>
 
     <!-- The carousel is its own card below the canvas box, never part of
@@ -1569,7 +1571,7 @@
     position: relative;
     min-height: 0;
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
     place-items: center;
     container-type: size;
     overflow: hidden;
@@ -1588,9 +1590,9 @@
       ),
       var(--theme-card-bg, #0a0f14);
   }
-  /* No header band on a solo, so the frame is the only row. */
+  /* A solo has no header band; the transport still has its own row. */
   .hero-stage.solo {
-    grid-template-rows: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
   }
 
   .strip-zone {
@@ -1633,11 +1635,10 @@
   }
 
   .canvas-transport {
-    position: absolute;
-    right: 0.75rem;
-    bottom: 0.75rem;
+    position: relative;
     z-index: 5;
-    width: min(70rem, calc(100% - 1.5rem));
+    width: 100%;
+    min-height: 4.125rem;
   }
 
   /* Ghost-sizer: the live header and a hidden one-letter header share one
