@@ -74,21 +74,32 @@
     return seconds >= windowStart - 0.05 && seconds <= windowEnd + 0.05;
   }
 
-  const landings = $derived(
-    (resolved?.sections ?? []).flatMap((section) =>
-      section.landings.map((landing) => ({
-        ...landing,
-        sectionId: section.id,
-        passStart:
-          landing.position > 0 && (landing.position - 1) % movesPerPass === 0,
-        isEnd: section.endPosition === landing.position,
-        label:
-          landing.position <= 0
-            ? "S"
-            : String(((landing.position - 1) % movesPerPass) + 1),
-      }))
-    )
-  );
+  // Each part also draws the landings just past its edges, so the moves
+  // across a cut run on; each landing shows once, in the part it falls in.
+  const landings = $derived.by(() => {
+    const sections = resolved?.sections ?? [];
+    return sections.flatMap((section, index) =>
+      section.landings
+        .filter(
+          (landing) =>
+            (index === 0 || landing.seconds >= section.startSeconds) &&
+            (index === sections.length - 1 ||
+              landing.seconds < section.endSeconds)
+        )
+        .map((landing) => ({
+          ...landing,
+          sectionId: section.id,
+          passStart:
+            landing.position > 0 &&
+            (landing.position - 1) % movesPerPass === 0,
+          isEnd: section.endPosition === landing.position,
+          label:
+            landing.position <= 0
+              ? "S"
+              : String(((landing.position - 1) % movesPerPass) + 1),
+        }))
+    );
+  });
 
   const taps = $derived(
     (resolved?.sections ?? []).flatMap((section) =>

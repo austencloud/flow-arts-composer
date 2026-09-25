@@ -142,6 +142,12 @@
         <i class="fa-solid fa-film" aria-hidden="true"></i>
         {exportedUrl ? "Render again" : "Render the post"}
       </PanelButton>
+      <!-- The render paints each frame on an animation frame, and a browser
+           stops those in a hidden tab. -->
+      <p class="help">
+        Keep this tab in front until the render finishes. It pauses while the
+        tab is hidden.
+      </p>
     {/if}
     {#if exportError}
       <p class="error" role="alert">{exportError}</p>
