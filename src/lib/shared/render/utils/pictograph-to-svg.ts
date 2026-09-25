@@ -79,6 +79,16 @@ export interface PictographVisibilityOptions {
   showLeftMotion?: boolean;
   /** Show red motion (prop + arrow). When false, renderer skips red entirely. Default: true. */
   showRightMotion?: boolean;
+  /**
+   * Paint the opaque background fill. Default: true. A painter that composites
+   * a transparent layer (e.g. an arrows-only sprite faded in over something
+   * else already drawn) sets this false so the rest of the canvas stays clear.
+   */
+  showBackground?: boolean;
+  /** Draw props. Default: true. A caller that positions props itself (e.g. mid-motion, interpolated) renders the pictograph without them and draws its own. */
+  showProps?: boolean;
+  /** Draw arrows. Default: true. */
+  showArrows?: boolean;
 }
 
 /**

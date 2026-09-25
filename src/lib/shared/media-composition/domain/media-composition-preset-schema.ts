@@ -204,6 +204,11 @@ const PresetClipTimingFields = {
   end: PresetTimePointSchema,
   sourceIn: PresetTimePointSchema,
   sourceOut: PresetTimePointSchema,
+  /**
+   * The rate the media element plays at. The source span always maps onto
+   * the clip's own span, so this should equal their ratio; it tells the
+   * player how fast to run, and the evaluator never scales by it.
+   */
   playbackRate: z.number().finite().positive(),
   loop: z.boolean(),
 };
@@ -222,6 +227,12 @@ export const PresetVisualClipSchema = z
     fadeOutSeconds: SecondsSchema.optional(),
     transform: ClipTransformSchema,
     useResolvedTimeMap: z.boolean(),
+    /**
+     * The take whose timing drives this clip's move. A clip drawn over or
+     * beside that take copies its timing fields, so its source time is the
+     * take's media time.
+     */
+    timeMapRole: NonEmptyIdSchema.optional(),
     syncGroupId: NonEmptyIdSchema.optional(),
   })
   .strict()

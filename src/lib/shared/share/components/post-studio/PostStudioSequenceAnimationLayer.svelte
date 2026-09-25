@@ -21,6 +21,7 @@
     sequencePassIndex = 0,
     animationTimeSeconds,
     breakdownMotion = false,
+    labelsPainted = false,
     playing,
     leftPropType,
     rightPropType,
@@ -30,6 +31,11 @@
     sequencePassIndex?: number;
     animationTimeSeconds?: number;
     breakdownMotion?: boolean;
+    /**
+     * The post paints the beat number, letter and element icon over this
+     * layer, so the animator's own copies would show twice.
+     */
+    labelsPainted?: boolean;
     playing: boolean;
     leftPropType?: PropType;
     rightPropType?: PropType;
@@ -55,6 +61,7 @@
             step: stepData,
             leftPropType,
             rightPropType,
+            labelsPainted,
           })),
     };
   }
@@ -95,9 +102,8 @@
           Math.min(1, sequencePosition - Math.floor(sequencePosition))
         )
   );
-  const arrowOpacity = $derived(
-    motionProgress === null ? 0 : Math.max(0, 1 - motionProgress)
-  );
+  // The arrow fades in as the move is made, as in the Construct audition.
+  const arrowOpacity = $derived(motionProgress ?? 0);
 
   $effect(() => {
     const target = sequence;
@@ -163,8 +169,11 @@
       previewDarkMode
       hideProgressBar
       hideHeader
+      hideTkaGlyph={labelsPainted}
+      hideStepNumbers={labelsPainted}
+      hideElementalGlyph={labelsPainted}
       fillContainer
-      virtualTime={!breakdownMotion || animationTimeSeconds === undefined
+      virtualTime={animationTimeSeconds === undefined
         ? undefined
         : animationTimeSeconds * 1000}
     />

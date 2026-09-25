@@ -12,3 +12,12 @@ export function getMediaCompositionContext(): MediaCompositionState {
   if (!state) throw new Error("Media composition context is not available");
   return state;
 }
+
+/** The composition, when a host set one; the tutorial builder does not. */
+export function tryGetMediaCompositionContext():
+  | MediaCompositionState
+  | undefined {
+  return getContext<MediaCompositionState | undefined>(
+    MEDIA_COMPOSITION_CONTEXT
+  );
+}
