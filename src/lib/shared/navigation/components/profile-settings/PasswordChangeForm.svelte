@@ -7,6 +7,7 @@
   Extracted from AccountSettingsSection for single responsibility.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { HapticFeedback } from "../../../application/services/haptic-feedback";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import { getProfileSettingsContext } from "../../state/profile-settings-context.svelte";
@@ -66,11 +67,11 @@
 
   const strengthLabel = $derived(
     passwordStrength === "strong"
-      ? "Strong"
+      ? t("nav_ui_strong")
       : passwordStrength === "medium"
-        ? "Good"
+        ? t("nav_ui_good")
         : passwordStrength === "weak"
-          ? "Weak"
+          ? t("nav_ui_weak")
           : ""
   );
 
@@ -109,10 +110,10 @@
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       if (msg === "WRONG_PASSWORD") {
-        errorMessage = "Current password is incorrect";
+        errorMessage = t("nav_ui_current_password_is_incorrect");
         hapticService?.trigger("error");
       } else {
-        errorMessage = "Failed to change password. Please try again.";
+        errorMessage = t("nav_ui_failed_to_change_password_please_try_again");
         hapticService?.trigger("error");
       }
     }
@@ -131,7 +132,7 @@
 
 <div class="section">
   {#if showLabel}
-    <span class="label">Password</span>
+    <span class="label">{t("auth_password")}</span>
   {/if}
   <Crossfade
     key={ctx.ui.showPasswordSection}
@@ -142,7 +143,7 @@
       <div>
         <button class="button button--secondary" onclick={handleExpand}>
           <i class="fas fa-lock" aria-hidden="true"></i>
-          Change password
+          {t("nav_ui_change_password")}
         </button>
       </div>
     {:else}
@@ -150,7 +151,7 @@
         {#if showSuccess}
           <div class="success-message" in:fade={{ duration: 200 }}>
             <i class="fas fa-check-circle" aria-hidden="true"></i>
-            Password updated
+            {t("nav_ui_password_updated")}
           </div>
         {:else}
           {#if errorMessage}
@@ -166,7 +167,7 @@
             style="--stagger: 0"
           >
             <label class="field-label" for="current-password">
-              Current password
+              {t("nav_ui_current_password")}
             </label>
             <div class="input-wrapper">
               <input
@@ -175,7 +176,7 @@
                 class="input input-with-toggle"
                 class:input-error={errorMessage.includes("incorrect")}
                 bind:value={ctx.password.current}
-                placeholder="Enter current password"
+                placeholder={t("nav_ui_enter_current_password")}
                 aria-required="true"
                 autocomplete="current-password"
                 oninput={() => (errorMessage = "")}
@@ -185,8 +186,8 @@
                 class="toggle-visibility"
                 onclick={toggleCurrentPassword}
                 aria-label={showCurrentPassword
-                  ? "Hide password"
-                  : "Show password"}
+                  ? t("auth_hide_password")
+                  : t("auth_show_password")}
               >
                 <i
                   class="fas {showCurrentPassword ? 'fa-eye-slash' : 'fa-eye'}"
@@ -201,7 +202,9 @@
             class:revealed={formRevealed}
             style="--stagger: 1"
           >
-            <label class="field-label" for="new-password">New password</label>
+            <label class="field-label" for="new-password"
+              >{t("nav_ui_new_password")}</label
+            >
             <div class="input-wrapper">
               <input
                 id="new-password"
@@ -209,7 +212,7 @@
                 class="input input-with-toggle"
                 bind:value={ctx.password.new}
                 bind:this={newPasswordInput}
-                placeholder="Enter new password"
+                placeholder={t("nav_ui_enter_new_password")}
                 aria-required="true"
                 autocomplete="new-password"
               />
@@ -217,7 +220,9 @@
                 type="button"
                 class="toggle-visibility"
                 onclick={toggleNewPassword}
-                aria-label={showNewPassword ? "Hide password" : "Show password"}
+                aria-label={showNewPassword
+                  ? t("auth_hide_password")
+                  : t("auth_show_password")}
               >
                 <i
                   class="fas {showNewPassword ? 'fa-eye-slash' : 'fa-eye'}"
@@ -228,7 +233,9 @@
             {#if passwordStrength}
               <div
                 class="strength-bar"
-                aria-label="Password strength: {strengthLabel}"
+                aria-label={t("nav_password_strength", {
+                  strength: strengthLabel,
+                })}
               >
                 <div class="strength-track">
                   <div class="strength-fill strength--{passwordStrength}"></div>
@@ -246,7 +253,7 @@
             style="--stagger: 2"
           >
             <button class="button button--secondary" onclick={handleCancel}>
-              Cancel
+              {t("action_cancel")}
             </button>
             <button
               class="button button--primary"
@@ -255,10 +262,10 @@
             >
               {#if ctx.ui.saving}
                 <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-                Updating...
+                {t("nav_ui_updating")}
               {:else}
                 <i class="fas fa-check" aria-hidden="true"></i>
-                Update password
+                {t("nav_ui_update_password")}
               {/if}
             </button>
           </div>

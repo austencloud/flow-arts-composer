@@ -54,6 +54,7 @@
   import { myPropsDrawerState } from "$lib/shared/navigation/components/account/my-props-drawer-state.svelte";
   import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
   import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
 
   import type {
@@ -410,26 +411,26 @@
               ><i class="fas fa-user" aria-hidden="true"></i></span
             >
             <span class="section-heading">
-              <h2>Personal details</h2>
-              <p>How this person appears across Flow Arts Composer.</p>
+              <h2>{t("profile_personal_details")}</h2>
+              <p>{t("profile_preview_appearance")}</p>
             </span>
           </header>
           <div class="section-body value-list">
             <AccountValueRow
-              label="Display name"
-              value={previewProfile.displayName || "Not set"}
+              label={t("profile_display_name")}
+              value={previewProfile.displayName || t("profile_not_set")}
               empty={!previewProfile.displayName}
             />
             <AccountValueRow
-              label="Username"
+              label={t("profile_username")}
               value={previewProfile.username
                 ? `@${previewProfile.username}`
-                : "Not set"}
+                : t("profile_not_set")}
               empty={!previewProfile.username}
             />
             <AccountValueRow
-              label="Email"
-              value={previewProfile.email || "Not set"}
+              label={t("auth_email")}
+              value={previewProfile.email || t("profile_not_set")}
               empty={!previewProfile.email}
             />
           </div>
@@ -442,8 +443,8 @@
                 ><i class="fas fa-link" aria-hidden="true"></i></span
               >
               <span class="section-heading">
-                <h2>Sign-in methods</h2>
-                <p>Providers connected to this account.</p>
+                <h2>{t("profile_sign_in_methods")}</h2>
+                <p>{t("profile_connected_providers")}</p>
               </span>
             </header>
             <div class="section-body">
@@ -461,27 +462,27 @@
                 ><i class="fas fa-shield-halved" aria-hidden="true"></i></span
               >
               <span class="section-heading">
-                <h2>Security</h2>
-                <p>Password status and protected account actions.</p>
+                <h2>{t("profile_security")}</h2>
+                <p>{t("profile_security_preview_desc")}</p>
               </span>
             </header>
             <div class="section-body value-list">
               <AccountValueRow
-                label="Password"
+                label={t("auth_password")}
                 value={previewAuthData?.providers.some(
                   (provider) => provider.providerId === "password"
                 )
-                  ? "Password sign-in enabled"
-                  : "No password sign-in"}
+                  ? t("profile_password_enabled")
+                  : t("profile_no_password")}
               />
               {#if previewAuthData && !previewAuthData.emailVerified}
                 <p class="security-note warning">
                   <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
-                  Email not yet verified
+                  {t("profile_email_unverified")}
                 </p>
               {/if}
               <p class="security-note">
-                Account actions are unavailable while previewing another user.
+                {t("profile_preview_actions_unavailable")}
               </p>
             </div>
           </section>
@@ -502,17 +503,14 @@
             <i class="fas fa-check"></i>
           </span>
           <span class="setup-complete-copy">
-            <strong>Profile setup complete</strong>
-            <span
-              >Your account details and flow identity are saved. You can change
-              them anytime.</span
-            >
+            <strong>{t("profile_setup_complete")}</strong>
+            <span>{t("profile_setup_saved")}</span>
           </span>
           <button
             type="button"
             class="dismiss-completion"
             onclick={() => (showSetupCompletion = false)}
-            aria-label="Dismiss profile setup confirmation"
+            aria-label={t("profile_dismiss_setup_confirmation")}
           >
             <i class="fas fa-xmark" aria-hidden="true"></i>
           </button>
@@ -520,14 +518,14 @@
       {:else if showAccountSetupUnavailable && accountSetupState}
         <section class="setup-unavailable" role="status">
           <span>
-            <strong>Profile setup status couldn’t be loaded.</strong>
-            Your account is still available.
+            <strong>{t("profile_setup_status_unavailable")}</strong>
+            {t("profile_account_still_available")}
           </span>
           <PanelButton
             variant="secondary"
             onclick={() => void accountSetupState.loadForCurrentUser()}
           >
-            Retry
+            {t("action_retry")}
           </PanelButton>
         </section>
       {/if}
@@ -553,8 +551,8 @@
               ><i class="fas fa-user" aria-hidden="true"></i></span
             >
             <span class="section-heading">
-              <h2>Personal details</h2>
-              <p>Control how people recognize you.</p>
+              <h2>{t("profile_personal_details")}</h2>
+              <p>{t("profile_personal_details_desc")}</p>
             </span>
           </header>
           <div class="section-body">
@@ -577,22 +575,26 @@
                 ><i class="fas fa-link" aria-hidden="true"></i></span
               >
               <span class="section-heading">
-                <h2>Sign-in methods</h2>
-                <p>Ways to access this account.</p>
+                <h2>{t("profile_sign_in_methods")}</h2>
+                <p>{t("profile_sign_in_methods_desc")}</p>
               </span>
               <span class="section-action">
                 <PanelButton
                   variant="secondary"
                   onclick={() => (manageSignInMethods = !manageSignInMethods)}
                   ariaLabel={manageSignInMethods
-                    ? "Finish managing sign-in methods"
-                    : "Manage sign-in methods"}
+                    ? t("profile_finish_manage_sign_in")
+                    : t("profile_manage_sign_in")}
                 >
                   <i
                     class={manageSignInMethods ? "fas fa-check" : "fas fa-gear"}
                     aria-hidden="true"
                   ></i>
-                  <span>{manageSignInMethods ? "Done" : "Manage"}</span>
+                  <span
+                    >{manageSignInMethods
+                      ? t("settings_presets_done")
+                      : t("settings_presets_manage")}</span
+                  >
                 </PanelButton>
               </span>
             </header>
@@ -610,8 +612,8 @@
                 ><i class="fas fa-shield-halved" aria-hidden="true"></i></span
               >
               <span class="section-heading">
-                <h2>Security</h2>
-                <p>Password and account access.</p>
+                <h2>{t("profile_security")}</h2>
+                <p>{t("profile_security_desc")}</p>
               </span>
             </header>
             <div class="section-body security-body">

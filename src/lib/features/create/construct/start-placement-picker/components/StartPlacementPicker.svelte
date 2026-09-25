@@ -4,6 +4,7 @@ Shows 3 start placements (Alpha, Beta, Gamma) with toggle to view all 16 variati
 Controls moved below the grid for better UX
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -38,10 +39,10 @@ Controls moved below the grid for better UX
   // Pre-rename key. Read-only fallback when the new key has nothing yet;
   // writes always go to STORAGE_KEY.
   const LEGACY_STORAGE_KEY = "tka-start-position-picker-prefs";
-  const START_PLACEMENT_PATHS = [
-    { value: "presets" as const, label: "Presets" },
-    { value: "build" as const, label: "Build" },
-  ];
+  const START_PLACEMENT_PATHS = $derived([
+    { value: "presets" as const, label: t("create_ui_presets") },
+    { value: "build" as const, label: t("create_ui_build") },
+  ]);
 
   // Props - receive navigation callbacks and layout detection
   const {
@@ -257,7 +258,7 @@ Controls moved below the grid for better UX
 
   // Derived labels for action-oriented toggles
   const viewModeLabel = $derived(
-    showAdvancedPicker ? "Simple" : "All Variations"
+    showAdvancedPicker ? t("create_ui_simple") : t("create_ui_all_variations")
   );
   // Expose state for parent components
   export function isShowingAdvanced() {
@@ -359,7 +360,9 @@ Controls moved below the grid for better UX
               {#if heading}
                 {@render heading()}
               {:else}
-                <p class="workspace-hint">Choose your start placement</p>
+                <p class="workspace-hint">
+                  {t("create_ui_choose_your_start_placement")}
+                </p>
               {/if}
             </div>
           {/if}
@@ -374,7 +377,7 @@ Controls moved below the grid for better UX
         onchange={handlePathChange}
         color="accent"
         size="md"
-        ariaLabel="Start placement method"
+        ariaLabel={t("create_ui_start_placement_method")}
       />
     </div>
   </div>
@@ -455,7 +458,7 @@ Controls moved below the grid for better UX
         <button
           class="control-button"
           onclick={handleToggleView}
-          aria-label={`Show ${viewModeLabel}`}
+          aria-label={t("create_ui_show_named", { name: viewModeLabel })}
         >
           <svg
             class="control-icon"

@@ -5,6 +5,7 @@
   Used when replacing an existing sequence in the Construct tab.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { Dialog as DialogPrimitive } from "bits-ui";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
@@ -103,7 +104,7 @@
         <!-- Current sequence (will be replaced) -->
         <div class="sequence-panel current" data-testid="current-sequence">
           <div class="panel-header">
-            <span class="panel-label">Will be replaced</span>
+            <span class="panel-label">{t("create_ui_will_be_replaced")}</span>
             <span class="step-count" data-testid="current-beat-count"
               >{currentStepCount} steps</span
             >
@@ -135,7 +136,7 @@
         <!-- Incoming sequence (will replace) -->
         <div class="sequence-panel incoming" data-testid="incoming-sequence">
           <div class="panel-header">
-            <span class="panel-label">New sequence</span>
+            <span class="panel-label">{t("create_ui_new_sequence")}</span>
             <span class="step-count" data-testid="incoming-beat-count"
               >{incomingStepCount} steps</span
             >

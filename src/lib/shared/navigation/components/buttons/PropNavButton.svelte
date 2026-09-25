@@ -1,6 +1,7 @@
 <!-- PropNavButton - Circular prop type button for bottom/side navigation -->
 <!-- Tap: toggle prop drawer. Long-press (touch only): open quick feedback panel. -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { onMount } from "svelte";
   import NavButton from "./NavButton.svelte";
@@ -77,11 +78,11 @@
   <div class="prop-button-container">
     <NavButton
       iconContent={propIcon}
-      label="Prop"
+      label={t("nav_ui_prop")}
       type="special"
       color="var(--theme-accent, #818cf8)"
       gradient="var(--theme-accent, #818cf8)"
-      ariaLabel="Change props. Current: {propLabel}"
+      ariaLabel={t("nav_change_props_current", { prop: propLabel })}
       active={false}
     />
   </div>

@@ -4,6 +4,7 @@
   Bottom control bar with play/pause, stop, speed, and loop controls.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type {
     PlaybackMode,
     StepPlaybackStepSize,
@@ -76,14 +77,18 @@
       <i class="fas fa-{isPlaying ? 'pause' : 'play'}" aria-hidden="true"></i>
     </button>
 
-    <button class="control-btn stop-btn" onclick={onStop} aria-label="Stop">
+    <button
+      class="control-btn stop-btn"
+      onclick={onStop}
+      aria-label={t("compose_ui_stop")}
+    >
       <i class="fas fa-stop" aria-hidden="true"></i>
     </button>
   </div>
 
   <!-- Center: Speed controls -->
   <div class="controls-center">
-    <span class="speed-label">Speed</span>
+    <span class="speed-label">{t("compose_ui_speed")}</span>
     <div class="speed-presets">
       {#each speedPresets as preset}
         <button
@@ -125,7 +130,7 @@
           class:active={stepPlaybackStepSize === 1}
           onclick={() => onStepPlaybackStepSizeChange(1)}
           disabled={playbackMode !== "step" || isPlaying}
-          aria-label="Step by full steps"
+          aria-label={t("compose_ui_step_by_full_steps")}
         >
           Beat
         </button>
@@ -134,7 +139,7 @@
           class:active={stepPlaybackStepSize === 0.5}
           onclick={() => onStepPlaybackStepSizeChange(0.5)}
           disabled={playbackMode !== "step" || isPlaying}
-          aria-label="Step by half steps"
+          aria-label={t("compose_ui_step_by_half_steps")}
         >
           Half
         </button>
@@ -148,7 +153,7 @@
       aria-label={shouldLoop ? "Disable loop" : "Enable loop"}
     >
       <i class="fas fa-repeat" aria-hidden="true"></i>
-      <span class="loop-label">Loop</span>
+      <span class="loop-label">{t("compose_ui_loop")}</span>
     </button>
   </div>
 </div>
@@ -211,27 +216,59 @@
   }
 
   .play-pause-btn {
-    background: color-mix(in srgb, var(--theme-accent, #8b5cf6) 20%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent, #8b5cf6) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 20%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 30%,
+      transparent
+    );
     color: var(--theme-accent, #a78bfa);
     font-size: 1.1rem;
   }
 
   .play-pause-btn:hover {
-    background: color-mix(in srgb, var(--theme-accent, #8b5cf6) 30%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent, #8b5cf6) 50%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 30%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 50%,
+      transparent
+    );
     color: var(--theme-accent, #c4b5fd);
   }
 
   .loop-btn.active {
-    background: color-mix(in srgb, var(--feature-view, #06b6d4) 20%, transparent);
-    border-color: color-mix(in srgb, var(--feature-view, #06b6d4) 40%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--feature-view, #06b6d4) 20%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--feature-view, #06b6d4) 40%,
+      transparent
+    );
     color: var(--feature-view, #22d3ee);
   }
 
   .mode-btn.active {
-    background: color-mix(in srgb, var(--semantic-warning-text, #fbbf24) 16%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-warning-text, #fbbf24) 35%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-warning-text, #fbbf24) 16%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-warning-text, #fbbf24) 35%,
+      transparent
+    );
     color: var(--semantic-warning-text-vivid, #fcd34d);
   }
 
@@ -285,8 +322,16 @@
   }
 
   .mini-btn.active {
-    background: color-mix(in srgb, var(--semantic-warning-text, #fbbf24) 14%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-warning-text, #fbbf24) 35%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-warning-text, #fbbf24) 14%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-warning-text, #fbbf24) 35%,
+      transparent
+    );
     color: var(--semantic-warning-text-vivid, #fcd34d);
   }
 
@@ -326,8 +371,16 @@
   }
 
   .speed-btn.active {
-    background: color-mix(in srgb, var(--theme-accent, #8b5cf6) 20%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent, #8b5cf6) 40%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 20%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 40%,
+      transparent
+    );
     color: var(--theme-accent, #a78bfa);
     font-weight: 600;
   }

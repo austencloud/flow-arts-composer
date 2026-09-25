@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { SmartFilterSpec } from "$lib/shared/library/domain/models/collection";
 
   interface Props {
@@ -71,7 +72,7 @@
   class="rule-summary"
   class:compact
   class:dense
-  aria-label="Smart Collection rule"
+  aria-label={t("library_ui_smart_collection_rule")}
 >
   {#if dense}
     <header class="dense-head">
@@ -96,21 +97,21 @@
       <span class="fact">
         <i class="fas fa-database" aria-hidden="true"></i>
         <span>
-          <span class="fact-label">Looks in</span>
+          <span class="fact-label">{t("library_ui_looks_in")}</span>
           <strong>{sourceLabel}</strong>
         </span>
       </span>
       <span class="fact">
         <i class="fas fa-arrow-down-wide-short" aria-hidden="true"></i>
         <span>
-          <span class="fact-label">Sorts by</span>
+          <span class="fact-label">{t("library_ui_sorts_by")}</span>
           <strong>{sortLabel}</strong>
         </span>
       </span>
     </div>
   {/if}
 
-  <div class="criteria" aria-label="Matching criteria">
+  <div class="criteria" aria-label={t("library_ui_matching_criteria")}>
     {#if spec.filters.length > 0}
       {#each spec.filters as filter (filter.key)}
         <span class="criterion" style:--criterion-color={filter.chipColor}>

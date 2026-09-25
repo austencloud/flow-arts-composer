@@ -9,6 +9,7 @@
   Gray = not possible (disabled).
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
   import { LOOP_COMPONENT_MAP } from "$lib/features/create/generate/shared/domain/constants/loop-constants";
   import { parseLoopComponents } from "$lib/shared/create/services/loop-type-utils";
@@ -59,7 +60,9 @@
     return set;
   });
 
-  function getComponentState(component: LOOPComponent): "active" | "available" | "unavailable" {
+  function getComponentState(
+    component: LOOPComponent
+  ): "active" | "available" | "unavailable" {
     if (activeComponents.has(component)) return "active";
     if (availableComponents.has(component)) return "available";
     return "unavailable";
@@ -90,9 +93,15 @@
   }
 </script>
 
-<div class="popover-content" role="region" aria-label="LOOP completion options">
+<div
+  class="popover-content"
+  role="region"
+  aria-label={t("create_ui_loop_completion_options")}
+>
   {#if !hasSufficientBeats}
-    <p class="empty-message">Add more steps to see LOOP options.</p>
+    <p class="empty-message">
+      {t("create_ui_add_more_steps_to_see_loop_options")}
+    </p>
   {:else}
     {#if currentLoopLabel}
       <div class="loop-status">

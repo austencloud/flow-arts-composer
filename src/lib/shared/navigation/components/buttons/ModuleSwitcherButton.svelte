@@ -1,5 +1,6 @@
 <!-- ModuleSwitcherButton - Menu Button for Module Navigation -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { onMount } from "svelte";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
@@ -71,9 +72,9 @@
   onpointerleave={clearLongPress}
   onpointercancel={clearLongPress}
   oncontextmenu={(e) => e.preventDefault()}
-  aria-label="Open menu{badgeCount > 0
-    ? `, ${badgeCount} unread notifications`
-    : ''}"
+  aria-label={badgeCount > 0
+    ? t("nav_menu_unread", { count: badgeCount })
+    : t("nav_ui_open_menu")}
 >
   <i class="fas fa-bars menu-icon" aria-hidden="true"></i>
   <!-- Inbox unread badge -->

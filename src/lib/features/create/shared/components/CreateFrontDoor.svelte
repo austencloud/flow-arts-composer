@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import type { Section } from "$lib/shared/navigation/domain/types";
   import type { CreateFrontDoorSource } from "$lib/shared/navigation/state/navigation-state.svelte";
@@ -75,10 +76,16 @@
 <section class="front-door" aria-labelledby="create-front-door-title">
   <div class="front-door-inner" class:two-methods={orderedMethods.length === 2}>
     <header class="front-door-header">
-      <h1 id="create-front-door-title">How do you want to create?</h1>
+      <h1 id="create-front-door-title">
+        {t("create_ui_how_do_you_want_to_create")}
+      </h1>
     </header>
 
-    <div class="method-index" role="list" aria-label="Creation methods">
+    <div
+      class="method-index"
+      role="list"
+      aria-label={t("create_ui_creation_methods")}
+    >
       {#each orderedMethods as method (method.id)}
         <div
           class="method-item"
@@ -93,7 +100,10 @@
             data-method-id={method.id}
             style:--method-color={method.color ?? "var(--theme-accent)"}
             aria-label={method.id === lastUsedMode
-              ? `${method.label}, last used on this device${method.description ? `. ${method.description}` : ""}`
+              ? t("create_ui_last_used_method", {
+                  name: t(method.labelKey),
+                  description: t(method.descKey),
+                })
               : undefined}
             onclick={(event) => selectMethod(method.id, event.currentTarget)}
           >
@@ -106,9 +116,9 @@
             </span>
 
             <span class="method-copy">
-              <span class="method-name">{method.label}</span>
-              {#if method.description}
-                <span class="method-description">{method.description}</span>
+              <span class="method-name">{t(method.labelKey)}</span>
+              {#if method.descKey}
+                <span class="method-description">{t(method.descKey)}</span>
               {/if}
             </span>
           </button>

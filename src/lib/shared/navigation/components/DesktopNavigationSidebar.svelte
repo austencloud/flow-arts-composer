@@ -337,12 +337,14 @@
           class="settings-back-button"
           class:collapsed={!expanded}
           onclick={handleSettingsBack}
-          aria-label="Back to modules"
+          aria-label={t("nav_ui_back_to_modules")}
         >
           <span class="back-icon">
             <i class="fas fa-arrow-left" aria-hidden="true"></i>
           </span>
-          <span class="back-label" aria-hidden={!expanded}>Back</span>
+          <span class="back-label" aria-hidden={!expanded}
+            >{t("learn_back")}</span
+          >
         </button>
       </div>
     {/if}

@@ -1,5 +1,6 @@
 <!-- InboxNavButton - Circular inbox button for bottom navigation -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import NavButton from "./NavButton.svelte";
   import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
 
@@ -50,13 +51,13 @@
   <div class="inbox-button-container" class:has-unread={hasUnread}>
     <NavButton
       icon="<i class='fas fa-inbox'></i>"
-      label="Inbox"
+      label={t("module_inbox")}
       type="special"
       color="rgba(255, 255, 255, 1)"
       gradient="rgba(255, 255, 255, 1)"
-      ariaLabel="Open inbox{hasUnread
-        ? `, ${inboxState.totalUnreadCount} unread`
-        : ''}"
+      ariaLabel={hasUnread
+        ? t("nav_inbox_unread", { count: inboxState.totalUnreadCount })
+        : t("nav_inbox_open")}
       active={false}
       onClick={handleClick}
       onpointerdown={startLongPress}

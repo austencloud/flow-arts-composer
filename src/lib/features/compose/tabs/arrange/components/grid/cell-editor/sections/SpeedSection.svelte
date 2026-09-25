@@ -5,6 +5,7 @@
   and 5 preset buttons. Values range from 0.25x to 2.0x.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   let {
     currentSpeed,
     onSetSpeed,
@@ -32,7 +33,7 @@
     step="0.25"
     value={currentSpeed}
     oninput={handleSlider}
-    aria-label="Speed multiplier"
+    aria-label={t("compose_ui_speed_multiplier")}
   />
 
   <div class="preset-row">
@@ -109,8 +110,16 @@
   }
 
   .preset-btn.active {
-    background: color-mix(in srgb, var(--theme-accent, #60a5fa) 12%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent, #60a5fa) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #60a5fa) 12%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #60a5fa) 30%,
+      transparent
+    );
     color: var(--theme-accent, #60a5fa);
   }
 

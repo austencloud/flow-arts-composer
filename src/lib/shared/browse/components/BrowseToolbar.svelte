@@ -9,6 +9,7 @@
   4. Result count (right-aligned, tabular-nums)
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount, onDestroy } from "svelte";
   import type { BrowseEngine } from "../engine/types";
   import { BrowseSortMethod } from "$lib/shared/browse/domain/enums/browse-enums";
@@ -60,7 +61,7 @@
     engine,
     showSourceToggle = false,
     onBack,
-    backLabel = "Start here",
+    backLabel,
     hideSearch = false,
     onOpenFilters,
     hideFilterChips = false,
@@ -69,6 +70,8 @@
     variant = "panel",
     resultTotal,
   }: Props = $props();
+
+  const effectiveBackLabel = $derived(backLabel ?? t("browse_ui_start_here"));
 
   const activeUserFilterCount = $derived(
     engine.allFilterChips.filter((c) => !c.locked).length
@@ -83,7 +86,7 @@
     icon: string;
   }
 
-  const SORT_OPTIONS: SortOption[] = [
+  const SORT_OPTIONS = $derived<SortOption[]>([
     {
       id: BrowseSortMethod.ALPHABETICAL,
       label: "A-Z",
@@ -92,23 +95,23 @@
     },
     {
       id: BrowseSortMethod.DATE_ADDED,
-      label: "Recent",
-      shortLabel: "Recent",
+      label: t("browse_ui_recent"),
+      shortLabel: t("browse_ui_recent"),
       icon: "fa-clock",
     },
     {
       id: BrowseSortMethod.DIFFICULTY_LEVEL,
-      label: "Level",
-      shortLabel: "Level",
+      label: t("browse_ui_level"),
+      shortLabel: t("browse_ui_level"),
       icon: "fa-signal",
     },
     {
       id: BrowseSortMethod.SEQUENCE_LENGTH,
-      label: "Length",
-      shortLabel: "Length",
+      label: t("browse_ui_length"),
+      shortLabel: t("browse_ui_length"),
       icon: "fa-ruler",
     },
-  ];
+  ]);
 
   let sortOpen = $state(false);
   let sortVisible = $state(false);
@@ -392,16 +395,20 @@
       type="button"
       class="back-pill"
       onclick={onBack}
-      aria-label={backLabel}
+      aria-label={effectiveBackLabel}
     >
       <i class="fas fa-arrow-left" aria-hidden="true"></i>
-      <span class="back-pill-label">{backLabel}</span>
+      <span class="back-pill-label">{effectiveBackLabel}</span>
     </button>
   {/if}
 
   <!-- 1. Source toggle -->
   {#if showSourceToggle && engine.canSwitchSource}
-    <div class="source-toggle" role="group" aria-label="Sequence source">
+    <div
+      class="source-toggle"
+      role="group"
+      aria-label={t("browse_ui_sequence_source")}
+    >
       <button
         type="button"
         class="source-btn"
@@ -454,7 +461,7 @@
         class:visible={sortVisible}
         bind:this={sortPopoverEl}
         role="listbox"
-        aria-label="Sort options"
+        aria-label={t("browse_sort_options")}
         aria-activedescendant={focusedIndex >= 0
           ? `sort-opt-${focusedIndex}`
           : undefined}
@@ -520,7 +527,11 @@
   <!-- 4. Inline filter chips (wide screens only; sheet pattern replaces them) -->
   {#if !onOpenFilters && !hideFilterChips}
     <span class="toolbar-divider" aria-hidden="true"></span>
-    <div class="inline-filters" role="toolbar" aria-label="Filter options">
+    <div
+      class="inline-filters"
+      role="toolbar"
+      aria-label={t("browse_ui_filter_options")}
+    >
       {#if !isHandsMode}
         <LevelFilterChip
           {activeLevel}
@@ -586,7 +597,7 @@
 
   {#if onEnterSelection}
     <FilterChipBase
-      label="Select"
+      label={t("browse_ui_select")}
       icon="fas fa-circle-check"
       mode="action"
       size="sm"
@@ -599,7 +610,7 @@
   <div
     class="zoom-control"
     role="group"
-    aria-label="Grid density"
+    aria-label={t("browse_ui_grid_density")}
     title="Grid density (Ctrl+scroll also works)"
   >
     <button
@@ -628,7 +639,7 @@
       <ExpandableSearchBar
         onSearch={(q) => withResultsMorph(() => engine.setSearch(q))}
         value={engine.searchQuery}
-        placeholder="Search sequences..."
+        placeholder={t("browse_ui_search_sequences")}
         expansionAnchor="end"
       />
     </div>

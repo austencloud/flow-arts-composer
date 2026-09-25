@@ -8,6 +8,7 @@
   Parent controls which prop is selected and handles the selection callback.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { onMount, onDestroy } from "svelte";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -128,7 +129,7 @@
   <div class="sheet-content">
     <DrawerHeader
       {title}
-      subtitle="Pick a prop or open a family to choose its style."
+      subtitle={t("settings_prop_sheet_help")}
       onClose={handleClose}
     />
 
@@ -146,7 +147,7 @@
             <div
               class="segment-control"
               role="tablist"
-              aria-label="Prop hand selection"
+              aria-label={t("settings_prop_hand_selection")}
               transition:growFade={{ axis: "y" }}
             >
               <button
@@ -158,7 +159,7 @@
                 onclick={() => handleTabChange("left")}
               >
                 <span class="color-dot blue" aria-hidden="true"></span>
-                Left
+                {t("settings_left")}
               </button>
               <button
                 type="button"
@@ -169,7 +170,7 @@
                 onclick={() => handleTabChange("right")}
               >
                 <span class="color-dot red" aria-hidden="true"></span>
-                Right
+                {t("settings_right")}
               </button>
             </div>
           {/if}

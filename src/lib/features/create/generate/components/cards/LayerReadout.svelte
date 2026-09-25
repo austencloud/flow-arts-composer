@@ -7,6 +7,7 @@ where every sequence sits in layer 1 from beginning to end and the reading
 carries no information.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   let {
     signature,
     uncertain = false,
@@ -15,7 +16,7 @@ carries no information.
 
 {#if signature}
   <div class="readout" aria-live="polite">
-    <span class="label">Layers</span>
+    <span class="label">{t("create_ui_layers")}</span>
     <span class="value" class:uncertain>{signature}</span>
     {#if uncertain}
       <span class="note">float, depends on the letters</span>

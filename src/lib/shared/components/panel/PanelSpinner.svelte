@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * PanelSpinner - Pulse dots loading indicator.
    *
@@ -21,7 +22,7 @@
   style:--dot-size="{size}px"
   style:--dot-color={color}
   role="status"
-  aria-label="Loading"
+  aria-label={t("common_loading")}
 >
   <span class="dot"></span>
   <span class="dot"></span>

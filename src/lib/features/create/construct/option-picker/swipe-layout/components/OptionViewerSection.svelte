@@ -7,6 +7,7 @@ Renders a section with:
 - Index-keyed slots so props/arrows transition in place on data change
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import {
     reversalDetector as _reversalDetector,
@@ -416,7 +417,7 @@ Renders a section with:
           data-ghost-kind="option"
           aria-label="Add {pictograph.letter ?? 'movement'}. Hold to preview."
           aria-keyshortcuts="Shift+Space"
-          title="Tap to add. Hold to preview."
+          title={t("create_ui_tap_to_add_hold_to_preview")}
           {@attach holdToAudition}
         >
           <OptionPictographCell

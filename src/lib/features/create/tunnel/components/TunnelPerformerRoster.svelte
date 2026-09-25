@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
@@ -277,7 +278,7 @@
     </div>
     <div class="roster-heading-actions">
       <div class="workflow-control">
-        <span id="tunnel-cast-pattern-label">Sequences</span>
+        <span id="tunnel-cast-pattern-label">{t("tab_browse_sequences")}</span>
         <SegmentedControl
           options={workflowOptions}
           value={creator.workflow}
@@ -289,7 +290,11 @@
         />
       </div>
       <div class="roster-toolbar">
-        <div class="performer-switcher" role="tablist" aria-label="Performers">
+        <div
+          class="performer-switcher"
+          role="tablist"
+          aria-label={t("create_ui_performers")}
+        >
           {#each creator.performerSlots as slot, index}
             <button
               id={performerTabId(index)}

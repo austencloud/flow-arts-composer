@@ -6,6 +6,7 @@ Built on Bits UI Dialog (same primitive as ConfirmDialog.svelte) for role=dialog
 aria-modal, focus trapping, Escape-to-close, and backdrop dismissal.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { Dialog as DialogPrimitive } from "bits-ui";
 
@@ -62,13 +63,13 @@ aria-modal, focus trapping, Escape-to-close, and backdrop dismissal.
       <!-- Header -->
       <div class="dialog-header">
         <DialogPrimitive.Title class="camera-dialog-title"
-          >Camera Settings</DialogPrimitive.Title
+          >{t("create_ui_camera_settings")}</DialogPrimitive.Title
         >
         <button
           class="close-button"
           onclick={handleClose}
-          title="Close settings"
-          aria-label="Close camera settings"
+          title={t("create_ui_close_settings")}
+          aria-label={t("create_ui_close_camera_settings")}
         >
           <span class="close-icon" aria-hidden="true">✕</span>
         </button>
@@ -79,7 +80,7 @@ aria-modal, focus trapping, Escape-to-close, and backdrop dismissal.
         <!-- Mirror Toggle -->
         <div class="setting-group">
           <span class="setting-label" id="mirror-toggle-label"
-            >Mirror Video</span
+            >{t("create_ui_mirror_video")}</span
           >
           <div class="setting-control">
             <button
@@ -104,7 +105,7 @@ aria-modal, focus trapping, Escape-to-close, and backdrop dismissal.
         {#if availableCameras.length > 1}
           <div class="setting-group">
             <label class="setting-label" for="camera-selector"
-              >Camera Source</label
+              >{t("create_ui_camera_source")}</label
             >
             <div class="setting-control">
               <select
@@ -125,7 +126,11 @@ aria-modal, focus trapping, Escape-to-close, and backdrop dismissal.
 
         <!-- Info Text -->
         <div class="info-text">
-          <p>Adjust your camera settings for the best recording experience.</p>
+          <p>
+            {t(
+              "create_ui_adjust_your_camera_settings_for_the_best_recording_experience"
+            )}
+          </p>
         </div>
       </div>
     </DialogPrimitive.Content>

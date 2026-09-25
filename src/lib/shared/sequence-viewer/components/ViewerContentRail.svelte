@@ -1,7 +1,9 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { ContentType, ViewerMode } from "../state/viewer-state.svelte";
   import {
     viewerModeOptions,
+    viewerModeLabel,
     PRACTICE_OPTION,
     type SelectableViewerMode,
   } from "../services/viewer-modes";
@@ -53,7 +55,7 @@
     ).map((m) => ({
       id: m.id,
       icon: m.icon,
-      label: m.label,
+      label: viewerModeLabel(m.id),
     })),
     // Practice is only listed when a toggle handler is wired (feature not ready — entry point withheld).
     ...(onPracticeToggle
@@ -61,7 +63,7 @@
           {
             id: "practice" as const,
             icon: PRACTICE_OPTION.icon,
-            label: PRACTICE_OPTION.label,
+            label: t("viewer_ui_practice"),
           },
         ]
       : []),
@@ -194,7 +196,7 @@
   class:collapsed
   class:dragging
   role="group"
-  aria-label="Sequence views"
+  aria-label={t("viewer_ui_sequence_views")}
   bind:this={navEl}
   style:width="{displayWidth}px"
 >

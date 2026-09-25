@@ -62,7 +62,9 @@
   // when two slots hold the same setup.
   const activeIndex = $derived.by(() => {
     if (selected && presetsMatch(selected, current)) return selectedIndex;
-    return slots.findIndex((slot) => slot !== null && presetsMatch(slot, current));
+    return slots.findIndex(
+      (slot) => slot !== null && presetsMatch(slot, current)
+    );
   });
 
   // The remembered preset no longer matches the props in use.
@@ -70,7 +72,9 @@
     !managing && selected && activeIndex === -1 ? selectedIndex : -1
   );
 
-  const targetPreset = $derived(target === null ? null : (slots[target] ?? null));
+  const targetPreset = $derived(
+    target === null ? null : (slots[target] ?? null)
+  );
 
   function slotNumber(index: number): number {
     return index + 1;

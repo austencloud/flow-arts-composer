@@ -19,6 +19,8 @@ const GUEST_MODULE_ACCESS: Record<string, string[]> = {
   create: ["assemble", "construct", "generate", "shape-engine"],
   browse: ["explore", "you"],
   creators: [],
+  // Language is a device preference and must remain available before sign-in.
+  settings: ["language"],
 };
 
 export function isModuleAccessible(

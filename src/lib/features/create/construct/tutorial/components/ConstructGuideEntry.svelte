@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
@@ -98,20 +99,22 @@
     {#if showOffer}
       <div class="guide-offer">
         <div class="offer-copy">
-          <p class="offer-title">New to Construct?</p>
-          <p class="offer-description">Build one move with a short guide.</p>
+          <p class="offer-title">{t("create_ui_new_to_construct")}</p>
+          <p class="offer-description">
+            {t("create_ui_build_one_move_with_a_short_guide")}
+          </p>
         </div>
         <div class="offer-actions">
           <PanelButton variant="primary" onclick={showGuide}>
-            Show guide
+            {t("create_ui_show_guide")}
           </PanelButton>
           <PanelButton variant="secondary" onclick={dismissOffer}>
-            Not now
+            {t("create_ui_not_now")}
           </PanelButton>
         </div>
       </div>
     {:else}
-      <p class="workspace-hint">Choose your start placement</p>
+      <p class="workspace-hint">{t("create_ui_choose_your_start_placement")}</p>
     {/if}
   </Crossfade>
 </div>

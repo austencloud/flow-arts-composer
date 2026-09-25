@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import PanelState from "$lib/shared/components/panel/PanelState.svelte";
@@ -77,69 +78,69 @@
     {/if}
   {:else}
     <header class="detail-head">
-    {#if showBack && onBack}
-      <button
-        type="button"
-        class="icon-button back-button"
-        aria-label="Back to collections"
-        onclick={onBack}
-      >
-        <i class="fas fa-arrow-left" aria-hidden="true"></i>
-      </button>
-    {/if}
+      {#if showBack && onBack}
+        <button
+          type="button"
+          class="icon-button back-button"
+          aria-label={t("browse_ui_back_to_collections")}
+          onclick={onBack}
+        >
+          <i class="fas fa-arrow-left" aria-hidden="true"></i>
+        </button>
+      {/if}
 
-    <span class="collection-icon" aria-hidden="true">
-      <i class={`fas ${icon}`}></i>
-    </span>
+      <span class="collection-icon" aria-hidden="true">
+        <i class={`fas ${icon}`}></i>
+      </span>
 
-    {#if editing && titleEditor}
-      <div class="title-editor">
-        {@render titleEditor()}
-      </div>
-    {:else}
-      <div class="title-block">
-        <div class="title-line">
-          <h2>{name}</h2>
-          {#if readOnly}
-            <span class="built-in-badge">
-              <i class="fas fa-lock" aria-hidden="true"></i>
-              Built in
-            </span>
+      {#if editing && titleEditor}
+        <div class="title-editor">
+          {@render titleEditor()}
+        </div>
+      {:else}
+        <div class="title-block">
+          <div class="title-line">
+            <h2>{name}</h2>
+            {#if readOnly}
+              <span class="built-in-badge">
+                <i class="fas fa-lock" aria-hidden="true"></i>
+                Built in
+              </span>
+            {/if}
+          </div>
+          <p>
+            {description ??
+              (readOnly
+                ? "A Smart Collection maintained by Flow Arts Composer."
+                : "A live collection built from saved filters.")}
+          </p>
+        </div>
+      {/if}
+
+      {#if !readOnly && !editing}
+        <div class="head-actions">
+          {#if onEdit}
+            <PanelButton
+              variant="secondary"
+              ariaLabel="Edit Smart Collection rule"
+              onclick={onEdit}
+            >
+              <i class="fas fa-sliders" aria-hidden="true"></i>
+              <span class="edit-label">{t("browse_ui_edit_rule")}</span>
+            </PanelButton>
+          {/if}
+          {#if onOptions}
+            <button
+              type="button"
+              class="icon-button"
+              aria-label={t("browse_ui_smart_collection_options")}
+              onclick={onOptions}
+            >
+              <i class="fas fa-ellipsis-vertical" aria-hidden="true"></i>
+            </button>
           {/if}
         </div>
-        <p>
-          {description ??
-            (readOnly
-              ? "A Smart Collection maintained by Flow Arts Composer."
-              : "A live collection built from saved filters.")}
-        </p>
-      </div>
-    {/if}
-
-    {#if !readOnly && !editing}
-      <div class="head-actions">
-        {#if onEdit}
-          <PanelButton
-            variant="secondary"
-            ariaLabel="Edit Smart Collection rule"
-            onclick={onEdit}
-          >
-            <i class="fas fa-sliders" aria-hidden="true"></i>
-            <span class="edit-label">Edit rule</span>
-          </PanelButton>
-        {/if}
-        {#if onOptions}
-          <button
-            type="button"
-            class="icon-button"
-            aria-label="Smart Collection options"
-            onclick={onOptions}
-          >
-            <i class="fas fa-ellipsis-vertical" aria-hidden="true"></i>
-          </button>
-        {/if}
-      </div>
-    {/if}
+      {/if}
     </header>
   {/if}
 
@@ -158,14 +159,14 @@
     {#if error}
       <PanelState
         type="error"
-        title="Couldn't load this Smart Collection"
+        title={t("browse_ui_couldn_t_load_this_smart_collection")}
         message="Check your connection, then try again."
         onretry={onRetry}
       />
     {:else if loading}
       <PanelState
         type="loading"
-        title="Checking the saved rule"
+        title={t("browse_ui_checking_the_saved_rule")}
         message={`Looking for matches in ${sourceLabel}.`}
       />
     {:else if empty}
@@ -173,7 +174,7 @@
         <PanelState
           type="empty"
           icon="fa-wand-magic-sparkles"
-          title="No sequences match this rule"
+          title={t("browse_ui_no_sequences_match_this_rule")}
           message="The rule is active, but its current source has no matches."
         >
           {#snippet actions()}
@@ -187,7 +188,7 @@
         <PanelState
           type="empty"
           icon="fa-wand-magic-sparkles"
-          title="No sequences match this rule"
+          title={t("browse_ui_no_sequences_match_this_rule")}
           message="Nothing in the current source matches this built-in rule."
         />
       {/if}
@@ -396,7 +397,6 @@
     .rule-wrap {
       padding: 0 10px 10px;
     }
-
   }
 
   @container smart-detail (max-width: 410px) {

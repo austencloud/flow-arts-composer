@@ -39,7 +39,9 @@
   let localeChanged = $state(false);
 
   // Initialize previousLocale on first run
-  $effect.pre(() => { previousLocale ||= currentLocale; });
+  $effect.pre(() => {
+    previousLocale ||= currentLocale;
+  });
 
   // Track locale changes for screen reader announcement
   $effect(() => {
@@ -88,7 +90,10 @@
 
     <div class="language-grid">
       {#each locales as locale}
-        {@const langInfo = languageNames[locale] || { native: locale, english: locale }}
+        {@const langInfo = languageNames[locale] || {
+          native: locale,
+          english: locale,
+        }}
         <button
           type="button"
           class="language-card"
@@ -103,7 +108,7 @@
             <i class="fas fa-check checkmark" aria-hidden="true"></i>
           {/if}
           {#if locale === baseLocale}
-            <span class="base-badge">Default</span>
+            <span class="base-badge">{t("settings_default_language")}</span>
           {/if}
         </button>
       {/each}
@@ -116,7 +121,11 @@
       <i class="fas fa-info-circle" aria-hidden="true"></i>
       <p>
         {t("settings_translation_note")}
-        <a href="https://github.com/austencloud/the-kinetic-alphabet" target="_blank" rel="noopener">
+        <a
+          href="https://github.com/austencloud/the-kinetic-alphabet"
+          target="_blank"
+          rel="noopener"
+        >
           {t("settings_help_translate")}
         </a>
       </p>
@@ -139,7 +148,9 @@
     padding: var(--spacing-lg, 24px);
     opacity: 0;
     transform: translateY(10px);
-    transition: opacity var(--duration-emphasis) ease, transform var(--duration-emphasis) ease;
+    transition:
+      opacity var(--duration-emphasis) ease,
+      transform var(--duration-emphasis) ease;
   }
 
   .language-tab.visible {

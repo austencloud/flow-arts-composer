@@ -5,6 +5,7 @@
   import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
   import { getAccountManager } from "$lib/shared/auth/get-account-manager";
   import { getOfflineCacheOrchestrator } from "$lib/shared/offline/get-offline-cache-orchestrator";
+  import { t } from "$lib/shared/i18n/i18n.svelte";
 
   import type { AccountManager } from "$lib/shared/auth/services/account-manager";
   import type {
@@ -52,7 +53,9 @@
       offlineStats = await orchestrator.getCacheStats();
     } catch (error) {
       downloadError =
-        error instanceof Error ? error.message : "Download failed. Try again.";
+        error instanceof Error
+          ? error.message
+          : t("settings_offline_download_failed");
     } finally {
       isDownloading = false;
       progress = null;
@@ -71,7 +74,7 @@
       resetError =
         error instanceof Error
           ? error.message
-          : "Local app data could not be reset. Try again.";
+          : t("settings_local_reset_failed");
       isResetting = false;
     }
   }
@@ -80,22 +83,26 @@
     const result = lastResult;
     if (!result) return null;
     if (!result.supported) {
-      return "Offline caching runs in the installed app or on tkaflowarts.com, not localhost.";
+      return t("settings_offline_only_installed");
     }
     if (result.reason === "offline") {
-      return "You're offline. Reconnect, then download.";
+      return t("settings_offline_reconnect");
     }
     if (result.reason === "empty-gallery") {
-      return "Nothing is ready to cache. Open Browse while online, then download.";
+      return t("settings_offline_empty_gallery");
     }
 
     const artNote = result.svgsCached
-      ? "Pictograph art is cached."
-      : "Pictograph art is still caching. Reload once while online to finish.";
+      ? t("settings_offline_art_cached")
+      : t("settings_offline_art_caching");
     if (result.warmed === 0) {
-      return `No cloud thumbnails needed downloading. ${artNote}`;
+      return t("settings_offline_no_thumbnails", { note: artNote });
     }
-    return `Downloaded ${result.warmed.toLocaleString()} of ${result.total.toLocaleString()} thumbnails. ${artNote}`;
+    return t("settings_offline_downloaded_count", {
+      done: result.warmed.toLocaleString(),
+      total: result.total.toLocaleString(),
+      note: artNote,
+    });
   });
 
   const resultIsInfo = $derived(
@@ -106,9 +113,12 @@
   const downloadLabel = $derived(
     isDownloading
       ? progress
-        ? `Downloading ${progress.done}/${progress.total}`
-        : "Preparing download"
-      : "Download for offline"
+        ? t("settings_offline_downloading", {
+            done: progress.done,
+            total: progress.total,
+          })
+        : t("settings_offline_preparing")
+      : t("settings_offline_download")
   );
 
   function formatBytes(bytes: number): string {
@@ -133,17 +143,19 @@
           : 'fa-cloud-download-alt'}"
         aria-hidden="true"
       ></i>
-      {offlineStats?.isOfflineReady ? "Offline ready" : "Not downloaded"}
+      {offlineStats?.isOfflineReady
+        ? t("settings_offline_ready")
+        : t("settings_offline_not_downloaded")}
     </span>
 
     {#if offlineStats}
       <dl class="cache-stats">
         <div class="stat-row">
-          <dt>Gallery sequences</dt>
+          <dt>{t("settings_offline_gallery_sequences")}</dt>
           <dd>{offlineStats.gallerySequenceCount.toLocaleString()}</dd>
         </div>
         <div class="stat-row">
-          <dt>Thumbnails</dt>
+          <dt>{t("settings_offline_thumbnails")}</dt>
           <dd>
             {offlineStats.thumbnailsCached.toLocaleString()}
             {#if offlineStats.thumbnailsSizeBytes > 0}
@@ -153,12 +165,14 @@
         </div>
         {#if offlineStats.storageUsedBytes !== null && offlineStats.storageQuotaBytes !== null}
           <div class="stat-row">
-            <dt>Device storage</dt>
+            <dt>{t("settings_offline_device_storage")}</dt>
             <dd>
-              {formatBytes(offlineStats.storageUsedBytes)} of {formatBytes(
-                offlineStats.storageQuotaBytes
-              )}
-              {#if offlineStats.storagePersisted}<span>protected</span>{/if}
+              {formatBytes(offlineStats.storageUsedBytes)}
+              {t("settings_offline_of")}
+              {formatBytes(offlineStats.storageQuotaBytes)}
+              {#if offlineStats.storagePersisted}<span
+                  >{t("settings_offline_protected")}</span
+                >{/if}
             </dd>
           </div>
         {/if}
@@ -168,10 +182,9 @@
 
   <div class="action-block">
     <div class="action-copy">
-      <h4>Offline download</h4>
+      <h4>{t("settings_offline_heading")}</h4>
       <p>
-        Keep pictograph art and gallery thumbnails available without a
-        connection.
+        {t("settings_offline_description")}
       </p>
     </div>
     <div class="action-control download-control">
@@ -203,17 +216,15 @@
     </p>
   {:else if !cachingSupported}
     <p class="message info" role="note">
-      Offline downloads are unavailable on localhost because the service worker
-      is disabled during development.
+      {t("settings_offline_localhost_unavailable")}
     </p>
   {/if}
 
   <div class="action-block reset-block">
     <div class="action-copy">
-      <h4>Reset local app data</h4>
+      <h4>{t("settings_local_reset_heading")}</h4>
       <p>
-        Sign out and remove data stored on this device. Cloud data stays in your
-        account.
+        {t("settings_local_reset_description")}
       </p>
     </div>
     <div class="action-control">
@@ -224,7 +235,11 @@
         ariaBusy={isResetting}
       >
         <i class="fas fa-rotate-left" aria-hidden="true"></i>
-        <span>{isResetting ? "Resetting" : "Reset local data"}</span>
+        <span
+          >{isResetting
+            ? t("settings_local_resetting")
+            : t("settings_local_reset")}</span
+        >
       </PanelButton>
     </div>
   </div>
@@ -237,10 +252,10 @@
 <ConfirmDialog
   bind:isOpen={showResetConfirm}
   variant="warning"
-  title="Reset local app data?"
-  message="This signs you out, clears data stored on this device, and reloads the app. Cloud data stays in your account."
-  confirmText="Reset local data"
-  cancelText="Cancel"
+  title={t("settings_local_reset_confirm_title")}
+  message={t("settings_local_reset_confirm_message")}
+  confirmText={t("settings_local_reset")}
+  cancelText={t("common_cancel")}
   onConfirm={performReset}
   onCancel={() => {}}
 />

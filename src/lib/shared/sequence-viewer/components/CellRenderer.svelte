@@ -7,6 +7,7 @@
   per-cell visual presentation.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import LiveCardPictograph from "./LiveCardPictograph.svelte";
   import { fade } from "svelte/transition";
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
@@ -73,7 +74,11 @@
     {exportPresentation}
   />
 {:else if cell.renderFailed}
-  <div class="cell-render-error" role="img" aria-label="Pictograph unavailable">
+  <div
+    class="cell-render-error"
+    role="img"
+    aria-label={t("viewer_ui_pictograph_unavailable")}
+  >
     <span aria-hidden="true">!</span>
   </div>
 {:else if cell.isLoaded}

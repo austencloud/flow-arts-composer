@@ -9,6 +9,7 @@
   shell, overlay open/close/dismiss routing, and URL bootstrap.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount, tick, type ComponentProps } from "svelte";
   import type SequenceViewerDrawerContent from "./SequenceViewerDrawerContent.svelte";
   import { afterNavigate, goto } from "$app/navigation";
@@ -406,7 +407,9 @@
 {#snippet viewerContentError(_error: unknown, retry: () => void)}
   <div class="viewer-content-state viewer-content-error" role="alert">
     <p>The sequence viewer couldn’t load.</p>
-    <PanelButton variant="secondary" onclick={retry}>Try again</PanelButton>
+    <PanelButton variant="secondary" onclick={retry}
+      >{t("viewer_ui_try_again")}</PanelButton
+    >
     <PanelButton variant="secondary" onclick={() => handleDismiss()}>
       Close viewer
     </PanelButton>

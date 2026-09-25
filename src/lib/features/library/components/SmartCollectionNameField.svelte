@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   interface Props {
     inputId: string;
     suggestedName: string;
@@ -52,7 +53,7 @@
 
 <div class="name-control" data-suggested={usingSuggestion}>
   <div class="name-label-row">
-    <label for={inputId}>Collection name</label>
+    <label for={inputId}>{t("library_ui_collection_name")}</label>
     <span
       id={suggestionStatusId}
       class="suggestion-status"

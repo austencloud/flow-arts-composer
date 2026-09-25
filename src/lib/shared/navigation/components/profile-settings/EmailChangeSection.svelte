@@ -6,6 +6,7 @@
   Sends verification email to new address.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { HapticFeedback } from "../../../application/services/haptic-feedback";
   import { getProfileSettingsContext } from "../../state/profile-settings-context.svelte";
 
@@ -25,11 +26,11 @@
     // Email validation - requires valid format with proper TLD
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!ctx.emailChange.newEmail) {
-      emailError = "Email is required";
+      emailError = t("nav_ui_email_is_required");
       return false;
     }
     if (!emailRegex.test(ctx.emailChange.newEmail)) {
-      emailError = "Please enter a valid email address";
+      emailError = t("nav_ui_please_enter_a_valid_email_address");
       return false;
     }
     emailError = "";
@@ -38,7 +39,7 @@
 
   function validatePassword() {
     if (!ctx.emailChange.password) {
-      passwordError = "Password is required for verification";
+      passwordError = t("nav_ui_password_is_required_for_verification");
       return false;
     }
     passwordError = "";
@@ -69,17 +70,18 @@
 >
   <div class="section-header">
     <i class="fas fa-envelope" aria-hidden="true"></i>
-    <h4>Change Email Address</h4>
+    <h4>{t("nav_ui_change_email_address")}</h4>
   </div>
 
   <p class="description">
-    Enter your new email address and current password to verify this change.
-    We'll send a verification email to your new address.
+    {t(
+      "nav_ui_enter_your_new_email_address_and_current_password_to_verify_this_change_we_ll_send_a_"
+    )}
   </p>
 
   <!-- New Email -->
   <div class="field">
-    <label class="label" for="new-email">New Email Address</label>
+    <label class="label" for="new-email">{t("nav_ui_new_email_address")}</label>
     <input
       id="new-email"
       type="email"
@@ -87,7 +89,7 @@
       class:error={emailError}
       bind:value={ctx.emailChange.newEmail}
       onblur={validateEmail}
-      placeholder="Enter new email address"
+      placeholder={t("nav_ui_enter_new_email_address")}
       disabled={ctx.ui.changingEmail}
       autocomplete="email"
       aria-invalid={!!emailError}
@@ -103,7 +105,9 @@
 
   <!-- Current Password -->
   <div class="field">
-    <label class="label" for="verify-password">Current Password</label>
+    <label class="label" for="verify-password"
+      >{t("nav_ui_current_password")}</label
+    >
     <input
       id="verify-password"
       type="password"
@@ -111,7 +115,7 @@
       class:error={passwordError}
       bind:value={ctx.emailChange.password}
       onblur={validatePassword}
-      placeholder="Enter your current password"
+      placeholder={t("nav_ui_enter_your_current_password")}
       disabled={ctx.ui.changingEmail}
       autocomplete="current-password"
       aria-invalid={!!passwordError}
@@ -133,7 +137,7 @@
       disabled={ctx.ui.changingEmail}
     >
       <i class="fas fa-times" aria-hidden="true"></i>
-      Cancel
+      {t("action_cancel")}
     </button>
     <button
       class="button button--primary"
@@ -142,7 +146,9 @@
       aria-busy={ctx.ui.changingEmail}
     >
       <i class="fas fa-paper-plane" aria-hidden="true"></i>
-      {ctx.ui.changingEmail ? "Sending..." : "Send Verification Email"}
+      {ctx.ui.changingEmail
+        ? t("auth_sending")
+        : t("nav_ui_send_verification_email")}
     </button>
   </div>
 </div>
@@ -287,7 +293,11 @@
   }
 
   .input.error {
-    border-color: color-mix(in srgb, var(--semantic-error, #ef4444) 60%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 60%,
+      transparent
+    );
   }
 
   .input:disabled {

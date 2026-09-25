@@ -9,24 +9,28 @@ Uses container queries to detect available height and switch layouts.
 Same functionality, different density.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import type { SequenceState } from "$lib/features/create/shared/state/sequence-state-orchestrator.svelte";
   import type { SpellTabState } from "../state/spell-tab-state.svelte";
-import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
+  import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
   import type { VariationExplorationOrchestrator } from "../services/variation-exploration-orchestrator";
   import type { RandomSequenceGenerator } from "../services/random-sequence-generator";
   import * as spellServiceLoaderModule from "../services/spell-service-loader";
   import { startPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
-  import type { DeviceDetector } from '$lib/shared/device/services/device-detector'
+  import type { DeviceDetector } from "$lib/shared/device/services/device-detector";
   import { UndoOperationType } from "../../shared/services/undo-manager";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import WordInput from "./WordInput.svelte";
   import SpellSettingsBar from "./SpellSettingsBar.svelte";
   import SpellInputToolbar from "./SpellInputToolbar.svelte";
-  import { loadSpellState, saveSpellState } from "../state/spell-persistence.svelte";
+  import {
+    loadSpellState,
+    saveSpellState,
+  } from "../state/spell-persistence.svelte";
   import { createConstraintSet } from "$lib/shared/sequence-engine/constraints";
   import { tryGetCreateModuleContext } from "$lib/features/create/shared/context/create-module-context";
   import { getVariationExplorationOrchestrator as getVariationExplorationOrchestratorGetter } from "$lib/features/create/spell/get-variation-exploration-orchestrator";
@@ -67,9 +71,7 @@ import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
   // shrinks → availableHeight drops → collapse again → infinite loop.
   // The `hasVirtualKeyboard` check already ensures this only fires on real mobile
   // devices with actual virtual keyboards, so the height check is unnecessary.
-  const shouldCollapseLayout = $derived(
-    isInputFocused && hasVirtualKeyboard
-  );
+  const shouldCollapseLayout = $derived(isInputFocused && hasVirtualKeyboard);
 
   // Legacy name for backwards compatibility with parent layout notification
   const isInputMode = $derived(shouldCollapseLayout);
@@ -94,7 +96,8 @@ import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
 
   async function getRandomGenerator(): Promise<RandomSequenceGenerator> {
     if (!randomGenerator) {
-      randomGenerator = await spellServiceLoaderModule.getRandomSequenceGenerator();
+      randomGenerator =
+        await spellServiceLoaderModule.getRandomSequenceGenerator();
     }
     return randomGenerator;
   }
@@ -153,8 +156,9 @@ import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
   });
 
   // Derived
-  const canGenerate = $derived(spellState.inputWord.trim().length > 0 && !spellState.isGenerating);
-
+  const canGenerate = $derived(
+    spellState.inputWord.trim().length > 0 && !spellState.isGenerating
+  );
 
   function deriveStartPlacement(sequence: SequenceData): SequenceData {
     if (sequence.startPlacement || !sequence.steps?.length) {
@@ -165,7 +169,8 @@ import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
     if (!firstStep) return sequence;
 
     try {
-    const derivedStartPlacement = startPlacementDeriver.deriveFromFirstStep(firstStep);
+      const derivedStartPlacement =
+        startPlacementDeriver.deriveFromFirstStep(firstStep);
       return {
         ...sequence,
         startPlacement: derivedStartPlacement,
@@ -176,7 +181,6 @@ import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
     }
   }
 
-
   function handleWordChange(value: string) {
     spellState.setInputWord(value);
   }
@@ -185,10 +189,9 @@ import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
     spellState.setGridMode(mode);
   }
 
-  function handlePreferenceChange<K extends keyof typeof spellState.preferences>(
-    key: K,
-    value: (typeof spellState.preferences)[K]
-  ) {
+  function handlePreferenceChange<
+    K extends keyof typeof spellState.preferences,
+  >(key: K, value: (typeof spellState.preferences)[K]) {
     spellState.updatePreference(key, value);
   }
 
@@ -214,51 +217,62 @@ import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
       }
 
       const letters = parseResult.expandedLetters;
-      spellState.setExpandedWord(parseResult.expandedWord || spellState.inputWord);
+      spellState.setExpandedWord(
+        parseResult.expandedWord || spellState.inputWord
+      );
 
       if (parseResult.letterSources) {
         spellState.setLetterSources(parseResult.letterSources);
       }
 
-      const constraintBuilder = await spellServiceLoaderModule.getVariationConstraintBuilder();
+      const constraintBuilder =
+        await spellServiceLoaderModule.getVariationConstraintBuilder();
       const constraints = constraintBuilder.buildConstraints(
         spellState.preferences,
         letters
       );
 
-      const constraintSet = createConstraintSet(spellState.preferences.constraintPreset, {
-        handPathMode: spellState.preferences.handPathMode,
-      });
-
-      // Generate sequence
-      const sequence = await generator.generateRandomSequence(
-        letters,
+      const constraintSet = createConstraintSet(
+        spellState.preferences.constraintPreset,
         {
-          gridMode: spellState.selectedGridMode,
-          constraints,
-          constraintSet,
-          letterSources: parseResult.letterSources,
+          handPathMode: spellState.preferences.handPathMode,
         }
       );
 
+      // Generate sequence
+      const sequence = await generator.generateRandomSequence(letters, {
+        gridMode: spellState.selectedGridMode,
+        constraints,
+        constraintSet,
+        letterSources: parseResult.letterSources,
+      });
+
       if (!sequence) {
         haptic.trigger("error");
-        spellState.setError("Could not generate a valid sequence. Try different settings.");
+        spellState.setError(
+          "Could not generate a valid sequence. Try different settings."
+        );
         return;
       }
 
       const sequenceWithStart = deriveStartPlacement(sequence);
 
       // Check if LOOP was applied (sequence has extended data in metadata)
-      const loopSpellData = sequenceWithStart.metadata?.spellData as {
-        expandedWord?: string;
-        letterSources?: typeof parseResult.letterSources;
-        appliedLOOPType?: string;
-      } | undefined;
+      const loopSpellData = sequenceWithStart.metadata?.spellData as
+        | {
+            expandedWord?: string;
+            letterSources?: typeof parseResult.letterSources;
+            appliedLOOPType?: string;
+          }
+        | undefined;
 
       // Use LOOP-extended data if available, otherwise use parse results
-      const finalExpandedWord = loopSpellData?.expandedWord || spellState.expandedWord || spellState.inputWord;
-      const finalLetterSources = loopSpellData?.letterSources || parseResult.letterSources || [];
+      const finalExpandedWord =
+        loopSpellData?.expandedWord ||
+        spellState.expandedWord ||
+        spellState.inputWord;
+      const finalLetterSources =
+        loopSpellData?.letterSources || parseResult.letterSources || [];
 
       // Update spell state with the final (possibly LOOP-extended) data
       spellState.setExpandedWord(finalExpandedWord);
@@ -275,13 +289,17 @@ import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
             originalWord: spellState.inputWord,
             expandedWord: finalExpandedWord,
             letterSources: finalLetterSources,
-            ...(loopSpellData?.appliedLOOPType && { appliedLOOPType: loopSpellData.appliedLOOPType }),
+            ...(loopSpellData?.appliedLOOPType && {
+              appliedLOOPType: loopSpellData.appliedLOOPType,
+            }),
           },
         },
       });
 
       if (sequenceWithStart.startPlacement) {
-        sequenceState.setSelectedStartPlacement(sequenceWithStart.startPlacement);
+        sequenceState.setSelectedStartPlacement(
+          sequenceWithStart.startPlacement
+        );
       }
 
       spellState.pushUndoSnapshot(UndoOperationType.SPELL_GENERATE, {
@@ -300,11 +318,12 @@ import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
           document.activeElement.blur();
         }
       }
-
     } catch (error) {
       console.error("Failed to generate sequence:", error);
       haptic.trigger("error");
-      spellState.setError(error instanceof Error ? error.message : "Generation failed");
+      spellState.setError(
+        error instanceof Error ? error.message : "Generation failed"
+      );
     } finally {
       spellState.setGenerating(false);
     }
@@ -334,7 +353,7 @@ import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
       <button
         class="error-dismiss"
         onclick={handleDismissError}
-        aria-label="Dismiss error"
+        aria-label={t("create_ui_dismiss_error")}
       >
         <i class="fas fa-times" aria-hidden="true"></i>
       </button>
@@ -342,10 +361,7 @@ import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
   {/if}
 
   <!-- Word Input - collapses when Loop chip takes over (CSS transition-delay) -->
-  <section
-    class="word-section"
-    class:loop-collapsed={isLoopExpanded}
-  >
+  <section class="word-section" class:loop-collapsed={isLoopExpanded}>
     <WordInput
       value={spellState.inputWord}
       onInput={handleWordChange}
@@ -377,10 +393,10 @@ import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
     >
       {#if spellState.isGenerating}
         <div class="generate-sweep"></div>
-        <span class="generate-label">Generating...</span>
+        <span class="generate-label">{t("generator_button_generating")}</span>
       {:else}
         <i class="fas fa-magic" aria-hidden="true"></i>
-        <span>Generate</span>
+        <span>{t("generator_button")}</span>
       {/if}
     </button>
   {/if}
@@ -589,24 +605,31 @@ import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
   }
 
   @keyframes generateSweep {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
   }
 
   @keyframes generatePulse {
     0% {
       transform: scale(1);
-      box-shadow: 0 0 0 0 color-mix(in srgb, var(--theme-accent, #6366f1) 50%, transparent);
+      box-shadow: 0 0 0 0
+        color-mix(in srgb, var(--theme-accent, #6366f1) 50%, transparent);
     }
     30% {
       transform: scale(0.97);
     }
     60% {
-      box-shadow: 0 0 0 8px color-mix(in srgb, var(--theme-accent, #6366f1) 0%, transparent);
+      box-shadow: 0 0 0 8px
+        color-mix(in srgb, var(--theme-accent, #6366f1) 0%, transparent);
     }
     100% {
       transform: scale(1);
-      box-shadow: 0 0 0 0 color-mix(in srgb, var(--theme-accent, #6366f1) 0%, transparent);
+      box-shadow: 0 0 0 0
+        color-mix(in srgb, var(--theme-accent, #6366f1) 0%, transparent);
     }
   }
 
@@ -616,7 +639,11 @@ import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
     align-items: center;
     gap: calc(8px * var(--spell-scale));
     padding: calc(8px * var(--spell-scale)) calc(12px * var(--spell-scale));
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 15%,
+      transparent
+    );
     border: 1.5px solid var(--semantic-error, #ef4444);
     border-radius: calc(var(--settings-radius-md, 12px) * var(--spell-scale));
     color: var(--theme-text, #ffffff);
@@ -641,7 +668,8 @@ import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
     justify-content: center;
     width: calc(48px * var(--spell-scale));
     height: calc(48px * var(--spell-scale));
-    margin: calc(-8px * var(--spell-scale)) calc(-8px * var(--spell-scale)) calc(-8px * var(--spell-scale)) 0;
+    margin: calc(-8px * var(--spell-scale)) calc(-8px * var(--spell-scale))
+      calc(-8px * var(--spell-scale)) 0;
     padding: 0;
     background: transparent;
     border: none;

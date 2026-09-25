@@ -14,6 +14,7 @@
   Domain: Export Panel - Single Media - Performance Video Format
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount, onDestroy } from "svelte";
   import { browser } from "$app/environment";
   import { getExportPanelState } from "../../state/export-panel-state.svelte";
@@ -131,8 +132,7 @@
       recordingState = "recording";
     } catch (err) {
       console.error("Failed to start recording:", err);
-      error =
-        err instanceof Error ? err.message : "Failed to start recording";
+      error = err instanceof Error ? err.message : "Failed to start recording";
     }
   }
 
@@ -274,7 +274,8 @@
     // an instance-wide stop() here would switch off a camera another surface
     // opened; anything still in flight is released by the acquisition path
     // above, which knows which handshake is ours.
-    if (cameraService && cameraStream) cameraService.releaseStream(cameraStream);
+    if (cameraService && cameraStream)
+      cameraService.releaseStream(cameraStream);
   });
 </script>
 
@@ -388,7 +389,7 @@
           disabled={!cameraInitialized}
         >
           <i class="fas fa-circle" aria-hidden="true"></i>
-          <span>Record</span>
+          <span>{t("browse_record")}</span>
         </button>
       {:else if recordingState === "recording"}
         <div class="recording-controls">
@@ -399,7 +400,7 @@
           <button
             class="control-button stop-button"
             onclick={stopRecording}
-            aria-label="Stop recording"
+            aria-label={t("export_ui_stop_recording")}
           >
             <i class="fas fa-stop" aria-hidden="true"></i>
           </button>
@@ -415,7 +416,7 @@
     {:else if !uploadedVideoUrl}
       <button class="control-button upload-button" onclick={triggerFileSelect}>
         <i class="fas fa-folder-open" aria-hidden="true"></i>
-        <span>Browse</span>
+        <span>{t("module_browse")}</span>
       </button>
     {/if}
 

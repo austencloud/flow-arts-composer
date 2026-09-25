@@ -415,7 +415,7 @@
   {#if loading}
     <div class="state-msg">
       <ProgressRing percent={-1} size={32} strokeWidth={3} /><span
-        >Loading animation...</span
+        >{t("loading_animation")}</span
       >
     </div>
   {:else if error}

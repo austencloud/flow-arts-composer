@@ -8,6 +8,7 @@ Features:
 - Haptic feedback on button interactions
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { getGreekSymbol } from "$lib/shared/keyboard/services/greek-key-mapper";
   import {
@@ -74,10 +75,12 @@ Features:
     }
 
     // Skip Greek mapping when modifiers held (Shift+1 = !, Ctrl+1 = shortcut)
-    if (event.shiftKey || event.ctrlKey || event.altKey || event.metaKey) return;
+    if (event.shiftKey || event.ctrlKey || event.altKey || event.metaKey)
+      return;
 
     // Skip numpad keys when NumLock is off
-    if (event.code.startsWith("Numpad") && !event.getModifierState("NumLock")) return;
+    if (event.code.startsWith("Numpad") && !event.getModifierState("NumLock"))
+      return;
 
     const symbol = getGreekSymbol(event.code);
     if (!symbol) return;
@@ -101,7 +104,7 @@ Features:
     <input
       type="text"
       class="word-input"
-      placeholder="Type your word..."
+      placeholder={t("create_ui_type_your_word")}
       {value}
       oninput={handleInput}
       onkeydown={handleKeydown}
@@ -118,8 +121,8 @@ Features:
         <button
           class="action-button"
           onclick={handleBackspace}
-          title="Backspace"
-          aria-label="Delete last character"
+          title={t("create_ui_backspace")}
+          aria-label={t("create_ui_delete_last_character")}
           {disabled}
         >
           <svg
@@ -138,8 +141,8 @@ Features:
         <button
           class="action-button"
           onclick={handleClear}
-          title="Clear all"
-          aria-label="Clear all text"
+          title={t("browse_clear_all")}
+          aria-label={t("create_ui_clear_all_text")}
           {disabled}
         >
           <svg
@@ -157,7 +160,6 @@ Features:
       {/if}
     </div>
   </div>
-
 </div>
 
 <style>
@@ -255,5 +257,4 @@ Features:
       transition: none;
     }
   }
-
 </style>

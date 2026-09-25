@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import FontAwesomeIcon from "$lib/shared/foundation/ui/FontAwesomeIcon.svelte";
   import type { LOOPComponentInfo } from "$lib/features/create/generate/shared/domain/constants/loop-components";
   import type { RhythmGate } from "$lib/shared/create/services/loop-rhythm-gating";
@@ -29,7 +30,7 @@
       type="button"
       class="loop-detail-back"
       onclick={props.onBack}
-      aria-label="Back to all LOOP types"
+      aria-label={t("create_ui_back_to_all_loop_types")}
     >
       <FontAwesomeIcon icon="fas fa-arrow-left" size="1em" />
     </button>

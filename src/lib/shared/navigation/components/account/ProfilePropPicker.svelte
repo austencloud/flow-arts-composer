@@ -1,5 +1,6 @@
 <!-- Optional presentation step for the skill featured beside a creator name. -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { getProfilePropLabel } from "$lib/shared/community/domain/profile-prop-catalog";
   import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
@@ -18,7 +19,7 @@
 <div
   class="profile-prop-picker"
   role="group"
-  aria-label="Choose a featured prop skill"
+  aria-label={t("nav_ui_choose_a_featured_prop_skill")}
 >
   {#each selectedProps as prop (prop)}
     {@const label = getProfilePropLabel(prop)}
@@ -36,9 +37,9 @@
   {/each}
 
   <PropSelectionButton
-    label="No featured skill"
+    label={t("nav_ui_no_featured_skill")}
     selected={value === null}
-    actionLabel="Do not feature a prop skill"
+    actionLabel={t("nav_ui_do_not_feature_a_prop_skill")}
     {disabled}
     onpress={() => onselect(null)}
   >

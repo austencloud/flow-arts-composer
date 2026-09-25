@@ -95,7 +95,7 @@
       acceptedRequestId = pending.requestId;
       email = pending.email;
       submittedEmail = pending.email;
-      success = `Email sent to ${pending.email}.`;
+      success = t("auth_email_sent_to", { email: pending.email });
     } catch {
       clearPendingRequest();
     }
@@ -112,8 +112,7 @@
   );
 
   const staysInThisApp = $derived(installedApp || inAppBrowser);
-  const hint =
-    "Enter your email. We'll send you a six-digit code. No password needed.";
+  const hint = $derived(t("auth_email_code_hint"));
 
   // The link is usually opened in a different browser than the one that
   // requested it, and localStorage does not cross that boundary — so an
@@ -231,21 +230,20 @@
         errorMessage.includes("Invalid email")
       ) {
         failureCode = "invalid_email";
-        error = "Invalid email address.";
-        toast.error("Invalid email address.");
+        error = t("auth_invalid_email_address");
+        toast.error(t("auth_invalid_email_address"));
       } else if (errorCode.includes("failed-precondition")) {
         failureCode = "service_not_configured";
-        error =
-          "Email service temporarily unavailable. Please try again later.";
-        toast.error("Email service unavailable. Please try again.");
+        error = t("auth_email_service_unavailable");
+        toast.error(t("auth_email_service_unavailable"));
       } else if (errorCode.includes("unavailable")) {
         failureCode = "provider_unavailable";
-        error = "Email service did not respond. Please try again.";
-        toast.error("Email service did not respond. Please try again.");
+        error = t("auth_email_service_no_response");
+        toast.error(t("auth_email_service_no_response"));
       } else {
         failureCode = errorCode ? "request_failed" : "network_failed";
-        error = "Failed to send email. Please try again.";
-        toast.error("Failed to send the email. Please try again.");
+        error = t("auth_email_send_failed");
+        toast.error(t("auth_email_send_failed"));
       }
 
       console.error("[email-link] Send failed", { code: failureCode });
@@ -318,12 +316,12 @@
       codeCompleted = true;
       acceptedRequestId = "";
       signInCode = "";
-      toast.success("Signed in! Welcome.");
+      toast.success(t("auth_signed_in_welcome"));
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code ?? "";
       codeError = code.includes("already-exists")
-        ? "That email belongs to another account. Contact support so we can merge it without losing your work."
-        : "That code is invalid or expired. Request a new email and try again.";
+        ? t("auth_email_other_account")
+        : t("auth_code_invalid_expired");
       trackAuthProviderResult("magic_link", "failed", "code_redemption_failed");
     } finally {
       codeLoading = false;
@@ -349,7 +347,7 @@
         <i class="fas fa-triangle-exclamation"></i>
       </span>
       <span class="delivery-copy">
-        <strong>The email was not sent</strong>
+        <strong>{t("auth_email_not_sent")}</strong>
         <span>{error}</span>
       </span>
     </div>
@@ -378,33 +376,31 @@
       </span>
       <span class="delivery-copy">
         {#if loading}
-          <strong>Sending your code</strong>
-          <span>
-            Sending an email to {submittedEmail}. This can take a few seconds.
-          </span>
+          <strong>{t("auth_sending_code")}</strong>
+          <span>{t("auth_sending_email_to", { email: submittedEmail })}</span>
         {:else if success}
           {#if codeCompleted}
-            <strong>Signed in</strong>
-            <span>You can close this screen and keep working.</span>
+            <strong>{t("auth_signed_in")}</strong>
+            <span>{t("auth_close_and_continue")}</span>
           {:else if compact}
-            <strong>Check your email</strong>
-            <span>Enter the code sent to {submittedEmail} here.</span>
+            <strong>{t("auth_check_email")}</strong>
+            <span
+              >{t("auth_enter_code_sent_to", { email: submittedEmail })}</span
+            >
           {:else}
-            <strong>Check your email</strong>
+            <strong>{t("auth_check_email")}</strong>
             {#if staysInThisApp}
-              <span>
-                We sent a code to {submittedEmail}. Check your email, then come
-                back here and enter it below.
-              </span>
+              <span
+                >{t("auth_code_sent_return", { email: submittedEmail })}</span
+              >
             {:else}
-              <span>
-                We sent a code to {submittedEmail}. Enter it below. The email
-                also has a button you can use in this browser.
-              </span>
+              <span
+                >{t("auth_code_sent_button", { email: submittedEmail })}</span
+              >
             {/if}
           {/if}
         {:else}
-          <strong>Sign in with an email code</strong>
+          <strong>{t("auth_sign_in_email_code")}</strong>
           <span>{hint}</span>
         {/if}
       </span>
@@ -413,7 +409,7 @@
 
   {#if pendingGuestDrafts && !compact}
     <p class="drift-warning" role="status">
-      Your work stays in this app. Check your email, then enter the code here.
+      {t("auth_work_stays_in_app")}
     </p>
   {/if}
 
@@ -425,7 +421,9 @@
       autocomplete="email"
       bind:this={emailInput}
       bind:value={email}
-      placeholder={compact ? "Email address" : t("form_placeholder_email")}
+      placeholder={compact
+        ? t("auth_email_address")
+        : t("form_placeholder_email")}
       required
       disabled={loading || !!success}
       aria-describedby={!compact || loading || success || error
@@ -436,7 +434,7 @@
 
   {#if success && acceptedRequestId}
     <div class="code-entry">
-      <label for="email-sign-in-code">Six-digit code</label>
+      <label for="email-sign-in-code">{t("auth_six_digit_code")}</label>
       <div class="code-row">
         <input
           id="email-sign-in-code"
@@ -459,7 +457,7 @@
           disabled={codeLoading || signInCode.length !== 6}
           aria-busy={codeLoading}
         >
-          {codeLoading ? "Signing in…" : "Sign in"}
+          {codeLoading ? t("auth_logging_in") : t("auth_sign_in")}
         </button>
       </div>
       {#if codeError}
@@ -489,9 +487,9 @@
           <i class="fas fa-envelope" aria-hidden="true"></i>
         {/if}
         {success
-          ? "Send another code"
+          ? t("auth_send_another_code")
           : compact
-            ? "Send a code"
+            ? t("auth_send_code")
             : t("auth_send_magic_link")}
       {/if}
     </button>
@@ -501,7 +499,7 @@
         class="different-email-button"
         onclick={useDifferentEmail}
       >
-        Use a different email
+        {t("auth_use_different_email")}
       </button>
     {/if}
   </div>

@@ -14,6 +14,7 @@
   Domain: Export Panel - Composite Mode - Controls
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getExportPanelState } from "../../state/export-panel-state.svelte";
 
   const hubState = getExportPanelState();
@@ -71,7 +72,7 @@
         aria-pressed={hubState.compositeLayout.piece1 === "animation"}
       >
         <i class="fas fa-play-circle" aria-hidden="true"></i>
-        <span>Animation</span>
+        <span>{t("export_ui_animation")}</span>
       </button>
       <button
         class="piece-option"
@@ -80,7 +81,7 @@
         aria-pressed={hubState.compositeLayout.piece1 === "static"}
       >
         <i class="fas fa-image" aria-hidden="true"></i>
-        <span>Static</span>
+        <span>{t("create_type_static")}</span>
       </button>
     </div>
   </div>
@@ -99,7 +100,7 @@
         aria-pressed={hubState.compositeLayout.piece2 === "grid"}
       >
         <i class="fas fa-th" aria-hidden="true"></i>
-        <span>Grid</span>
+        <span>{t("generator_grid")}</span>
       </button>
       <button
         class="piece-option"
@@ -108,7 +109,7 @@
         aria-pressed={hubState.compositeLayout.piece2 === "performance"}
       >
         <i class="fas fa-video" aria-hidden="true"></i>
-        <span>Performance</span>
+        <span>{t("export_ui_performance")}</span>
       </button>
     </div>
   </div>

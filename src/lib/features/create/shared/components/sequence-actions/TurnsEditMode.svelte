@@ -9,6 +9,7 @@
   Compact mode: Single-row controls with icon-only prop selector for mobile.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import {
     HandSide,
     RotationDirection,
@@ -34,10 +35,7 @@
     leftIsShift?: boolean;
     rightIsShift?: boolean;
     onTurnsChange: (color: HandSide, delta: number) => void;
-    onRotationChange: (
-      color: HandSide,
-      direction: RotationDirection
-    ) => void;
+    onRotationChange: (color: HandSide, direction: RotationDirection) => void;
     onOpenPropSheet?: (hand: "left" | "right") => void;
     onPathShapeChange?: (color: HandSide, shape: PathShapeValue) => void;
     onPathShapeClear?: (color: HandSide) => void;
@@ -68,7 +66,7 @@
 {#if !hasSelection}
   <div class="empty-state">
     <i class="fas fa-hand-pointer" aria-hidden="true"></i>
-    <p>Tap a step in the sequence to edit its turns</p>
+    <p>{t("create_ui_tap_a_step_in_the_sequence_to_edit_its_turns")}</p>
   </div>
 {:else}
   <PropControlPair {stacked} {compact}>

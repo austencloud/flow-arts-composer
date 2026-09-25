@@ -28,6 +28,7 @@
   with a real build in progress. Marketing-demo surface, not shipping chrome.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { onMount, onDestroy } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { createSimplifiedStartPlacementState } from "$lib/shared/create/state/start-placement-state.svelte";
@@ -526,7 +527,7 @@
 
 {#snippet propControl()}
   <div class="tool-group prop-group">
-    <span class="tool-label">Prop</span>
+    <span class="tool-label">{t("composer_demo_prop")}</span>
     <PropPicker
       value={demoProp}
       onchange={(p) => (demoProp = p)}
@@ -549,12 +550,12 @@
         }}
       >
         <i class="fas fa-arrow-left" aria-hidden="true"></i>
-        Keep building
+        {t("composer_demo_keep_building")}
       </button>
     {/if}
     <button type="button" class="cta-btn" data-demo-again onclick={reset}>
       <i class="fas fa-rotate-left" aria-hidden="true"></i>
-      Build another
+      {t("composer_demo_build_another")}
     </button>
   </div>
 {/snippet}
@@ -640,12 +641,12 @@
             class="continuous-preview"
             class:has-motion={!!playSequence}
             role="region"
-            aria-label="Live motion preview"
+            aria-label={t("composer_demo_live_preview")}
           >
             {#if playSequence}
               {@render player(playSequence)}
             {:else}
-              <p>Motion preview begins after the first step.</p>
+              <p>{t("composer_demo_preview_first_step")}</p>
             {/if}
           </div>
         {/if}
@@ -659,7 +660,7 @@
             class="demo-status word-label-area"
             aria-live={tookOver ? "polite" : "off"}
           >
-            <span class="region-label">Your sequence</span>
+            <span class="region-label">{t("composer_demo_your_sequence")}</span>
             <div class="status-content">
               {#if rawWord}
                 <WordLabel
@@ -735,7 +736,7 @@
               {/if}
             {:else}
               <p class="ws-empty" aria-hidden="true">
-                The sequence appears here as it's built.
+                {t("composer_demo_sequence_appears")}
               </p>
             {/if}
           </div>
@@ -804,10 +805,12 @@
                 class="history-button"
                 onclick={undo}
                 disabled={!canUndo}
-                title={canUndo ? "Undo the last change" : "Nothing to undo"}
+                title={canUndo
+                  ? t("composer_demo_undo")
+                  : t("composer_demo_nothing_undo")}
                 aria-label={canUndo
-                  ? "Undo the last change"
-                  : "Nothing to undo"}
+                  ? t("composer_demo_undo")
+                  : t("composer_demo_nothing_undo")}
               >
                 <UndoGlyph size={20} direction="undo" />
               </button>
@@ -942,17 +945,35 @@
 
         {#if isContinuous && isCompactDemo && phase !== "play"}
           <details class="continuous-settings">
-            <summary>Prop and turn settings</summary>
+            <summary>{t("composer_demo_prop_turn_settings")}</summary>
             <div class="continuous-settings-content">
               {@render propControl()}
               <div class="turns-pair">
                 <div class="tool-group turns-group blue">
-                  <span class="tool-label"><span class="hand-dot blue" aria-hidden="true"></span>Left turns</span>
-                  <SegmentedControl options={TURN_OPTIONS} value={leftTurnsValue} onchange={(v) => (leftTurnsValue = v)} color="blue" />
+                  <span class="tool-label"
+                    ><span class="hand-dot blue" aria-hidden="true"></span>{t(
+                      "composer_demo_left_turns"
+                    )}</span
+                  >
+                  <SegmentedControl
+                    options={TURN_OPTIONS}
+                    value={leftTurnsValue}
+                    onchange={(v) => (leftTurnsValue = v)}
+                    color="blue"
+                  />
                 </div>
                 <div class="tool-group turns-group red">
-                  <span class="tool-label"><span class="hand-dot red" aria-hidden="true"></span>Right turns</span>
-                  <SegmentedControl options={TURN_OPTIONS} value={rightTurnsValue} onchange={(v) => (rightTurnsValue = v)} color="red" />
+                  <span class="tool-label"
+                    ><span class="hand-dot red" aria-hidden="true"></span>{t(
+                      "composer_demo_right_turns"
+                    )}</span
+                  >
+                  <SegmentedControl
+                    options={TURN_OPTIONS}
+                    value={rightTurnsValue}
+                    onchange={(v) => (rightTurnsValue = v)}
+                    color="red"
+                  />
                 </div>
               </div>
             </div>

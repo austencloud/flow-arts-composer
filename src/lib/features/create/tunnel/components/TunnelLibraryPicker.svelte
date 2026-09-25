@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { flip } from "svelte/animate";
   import PanelHeader from "$lib/shared/create/components/PanelHeader.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
@@ -261,9 +262,9 @@
   });
 </script>
 
-<section class="tunnel-library" aria-label="Tunnels">
+<section class="tunnel-library" aria-label={t("create_ui_tunnels")}>
   <PanelHeader
-    title="Tunnels"
+    title={t("create_ui_tunnels")}
     subtitle={source === "mine"
       ? `${items.length} saved`
       : "Published by the community"}
@@ -286,13 +287,15 @@
   <div class="library-toolbar">
     <label class="search-field">
       <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
-      <span class="sr-only">Search tunnels by name, prop, or formation</span>
+      <span class="sr-only"
+        >{t("create_ui_search_tunnels_by_name_prop_or_formation")}</span
+      >
       <input
         id="tunnel-library-search"
         name="tunnel-library-search"
         type="search"
         bind:value={query}
-        placeholder="Name, prop, or formation"
+        placeholder={t("create_ui_name_prop_or_formation")}
         autocomplete="off"
       />
       {#if query}
@@ -300,7 +303,7 @@
           type="button"
           class="clear-search"
           onclick={() => (query = "")}
-          aria-label="Clear tunnel search"
+          aria-label={t("create_ui_clear_tunnel_search")}
         >
           <i class="fas fa-xmark" aria-hidden="true"></i>
         </button>
@@ -308,18 +311,18 @@
     </label>
 
     <label class="sort-field">
-      <span class="sr-only">Sort tunnels</span>
+      <span class="sr-only">{t("create_ui_sort_tunnels")}</span>
       <i class="fas fa-arrow-down-wide-short" aria-hidden="true"></i>
       <select
         id="tunnel-library-sort"
         name="tunnel-library-sort"
         bind:value={sort}
-        aria-label="Sort tunnels"
+        aria-label={t("create_ui_sort_tunnels")}
       >
-        <option value="recent">Recent</option>
-        <option value="name">Name</option>
-        <option value="performers">Most authored</option>
-        <option value="instances">Most on stage</option>
+        <option value="recent">{t("sort_recent")}</option>
+        <option value="name">{t("create_ui_name")}</option>
+        <option value="performers">{t("create_ui_most_authored")}</option>
+        <option value="instances">{t("create_ui_most_on_stage")}</option>
       </select>
     </label>
 
@@ -329,7 +332,7 @@
       ariaLabel="Start a new tunnel"
     >
       <i class="fas fa-plus" aria-hidden="true"></i>
-      <span class="new-label">New tunnel</span>
+      <span class="new-label">{t("create_ui_new_tunnel")}</span>
     </PanelButton>
   </div>
 
@@ -345,22 +348,27 @@
       {#if loading && items.length === 0}
         <div class="library-state" role="status">
           <PanelSpinner size={12} />
-          <strong>Loading your tunnels</strong>
+          <strong>{t("create_ui_loading_your_tunnels")}</strong>
         </div>
       {:else if items.length === 0}
         <div class="library-state">
           <i class="fas fa-fan state-icon" aria-hidden="true"></i>
-          <strong>No saved tunnels yet</strong>
-          <p>Build one here, open it in the viewer, then save it.</p>
+          <strong>{t("create_ui_no_saved_tunnels_yet")}</strong>
+          <p>
+            {t("create_ui_build_one_here_open_it_in_the_viewer_then_save_it")}
+          </p>
         </div>
       {:else if visibleItems.length === 0}
         <div class="library-state" role="status">
           <i class="fas fa-magnifying-glass state-icon" aria-hidden="true"></i>
-          <strong>No matching tunnels</strong>
-          <p>Try a name, prop, effect, or formation.</p>
+          <strong>{t("create_ui_no_matching_tunnels")}</strong>
+          <p>{t("create_ui_try_a_name_prop_effect_or_formation")}</p>
         </div>
       {:else}
-        <div class="library-grid" aria-label="Your saved tunnels">
+        <div
+          class="library-grid"
+          aria-label={t("create_ui_your_saved_tunnels")}
+        >
           {#each visibleItems as tunnel (tunnel.id)}
             <div animate:flip={{ duration: flipDuration() }}>
               <TunnelDiscoveryCard
@@ -382,7 +390,7 @@
     {:else if publicLoading && publicEntries.length === 0}
       <div class="library-state" role="status">
         <PanelSpinner size={12} />
-        <strong>Finding public tunnels</strong>
+        <strong>{t("create_ui_finding_public_tunnels")}</strong>
         <p>Loading the community’s current published artifacts.</p>
       </div>
     {:else if publicError}
@@ -401,17 +409,17 @@
     {:else if publicEntries.length === 0}
       <div class="library-state">
         <i class="fas fa-earth-americas state-icon" aria-hidden="true"></i>
-        <strong>No public tunnels yet</strong>
-        <p>Published Tunnel artifacts will appear here.</p>
+        <strong>{t("create_ui_no_public_tunnels_yet")}</strong>
+        <p>{t("create_ui_published_tunnel_artifacts_will_appear_here")}</p>
       </div>
     {:else if visiblePublicEntries.length === 0}
       <div class="library-state" role="status">
         <i class="fas fa-magnifying-glass state-icon" aria-hidden="true"></i>
-        <strong>No matching public tunnels</strong>
-        <p>Try a name, creator, prop, effect, or formation.</p>
+        <strong>{t("create_ui_no_matching_public_tunnels")}</strong>
+        <p>{t("create_ui_try_a_name_creator_prop_effect_or_formation")}</p>
       </div>
     {:else}
-      <div class="library-grid" aria-label="Public tunnels">
+      <div class="library-grid" aria-label={t("create_ui_public_tunnels")}>
         {#each visiblePublicEntries as entry (entry.envelope.artifactId)}
           <div animate:flip={{ duration: flipDuration() }}>
             <TunnelDiscoveryCard

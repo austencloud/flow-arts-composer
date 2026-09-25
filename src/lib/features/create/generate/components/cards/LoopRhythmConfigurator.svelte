@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import {
     LOOP_COMPONENTS,
@@ -150,7 +151,8 @@
       <div class="configurator-heading">
         <span
           class="configurator-title"
-          id={`${idPrefix}-inversion-timing-label`}>Invert when</span
+          id={`${idPrefix}-inversion-timing-label`}
+          >{t("create_ui_invert_when")}</span
         >
         <span class="configurator-selection">
           {inversionInterval === 4 ? "Every quarter" : "At halfway"}
@@ -177,7 +179,7 @@
 
     <div class="configurator-row">
       <span class="configurator-title" id={`${idPrefix}-inversion-length-label`}
-        >Build the sequence</span
+        >{t("create_ui_build_the_sequence")}</span
       >
       <SegmentedControl
         options={[

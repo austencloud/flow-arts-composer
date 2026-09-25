@@ -7,6 +7,7 @@
   GenerationSettingsOverlay, the same as Customize.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
   import SkeletonLoader from "$lib/shared/foundation/ui/SkeletonLoader.svelte";
   import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
@@ -127,7 +128,7 @@
 </script>
 
 <GenerationSettingsOverlay
-  title="Generator setups"
+  title={t("create_ui_generator_setups")}
   closeLabel="Close generator setups"
   {onClose}
   entrance="none"
@@ -164,16 +165,20 @@
     >
       {#if isPreview}
         <div class="preview-banner" role="status">
-          <strong>Previewing saved setups</strong>
-          <span>Apply is available. Changes are disabled in preview.</span>
+          <strong>{t("create_ui_previewing_saved_setups")}</strong>
+          <span
+            >{t(
+              "create_ui_apply_is_available_changes_are_disabled_in_preview"
+            )}</span
+          >
         </div>
       {/if}
 
       {#if isSignedOut}
         <div class="empty-state signed-out-state">
           <i class="fa-solid fa-bookmark" aria-hidden="true"></i>
-          <strong>Save generator setups</strong>
-          <span>Sign in to keep setups across sessions.</span>
+          <strong>{t("create_ui_save_generator_setups")}</strong>
+          <span>{t("create_ui_sign_in_to_keep_setups_across_sessions")}</span>
           <button type="button" class="save-button" onclick={onRequestSignIn}>
             Sign in
           </button>
@@ -193,7 +198,9 @@
             : "Save current setup"}
         </button>
 
-        <p class="share-note">Saved setups are shared with the community.</p>
+        <p class="share-note">
+          {t("create_ui_saved_setups_are_shared_with_the_community")}
+        </p>
 
         {#if favoriteState.setups.length >= 10}
           <p class="cap-message" role="status">
@@ -205,7 +212,7 @@
           <SkeletonLoader variant="rect" height="64px" count={3} />
         {:else if favoriteState.setupsLoadError}
           <div class="load-state error-state" role="alert">
-            <span>Saved setups could not load</span>
+            <span>{t("create_ui_saved_setups_could_not_load")}</span>
             <button
               type="button"
               class="retry-button"
@@ -217,9 +224,11 @@
         {:else if favoriteState.setups.length === 0}
           <div class="empty-state">
             <i class="fa-regular fa-bookmark" aria-hidden="true"></i>
-            <strong>No saved setups yet</strong>
+            <strong>{t("create_ui_no_saved_setups_yet")}</strong>
             <span
-              >Save the current controls so you can bring them back in one tap.</span
+              >{t(
+                "create_ui_save_the_current_controls_so_you_can_bring_them_back_in_one_tap"
+              )}</span
             >
           </div>
         {:else}
@@ -256,7 +265,7 @@
         <SkeletonLoader variant="rect" height="64px" count={3} />
       {:else if favoriteState.communityLoadError}
         <div class="load-state error-state" role="alert">
-          <span>Community setups could not load</span>
+          <span>{t("create_ui_community_setups_could_not_load")}</span>
           <button
             type="button"
             class="retry-button"
@@ -268,8 +277,8 @@
       {:else if favoriteState.communitySetups.length === 0}
         <div class="empty-state">
           <i class="fa-regular fa-heart" aria-hidden="true"></i>
-          <strong>No setups shared yet</strong>
-          <span>Setups people save appear here.</span>
+          <strong>{t("create_ui_no_setups_shared_yet")}</strong>
+          <span>{t("create_ui_setups_people_save_appear_here")}</span>
         </div>
       {:else}
         <div class="setup-list">

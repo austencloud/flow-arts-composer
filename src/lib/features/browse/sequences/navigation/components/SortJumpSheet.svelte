@@ -4,6 +4,7 @@ Sort & Jump Sheet - Mobile Bottom Sheet Version
 Touch-friendly interface for changing sort method and jumping to sections
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { onMount } from "svelte";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
@@ -71,7 +72,7 @@ Touch-friendly interface for changing sort method and jumping to sections
   <div class="section">
     <div class="section-header">
       <i class="fas fa-sort" aria-hidden="true"></i>
-      <h3>Sort By</h3>
+      <h3>{t("train_sort_by")}</h3>
     </div>
     <div class="sort-options">
       {#each sortOptions as option}
@@ -103,7 +104,7 @@ Touch-friendly interface for changing sort method and jumping to sections
     <div class="section">
       <div class="section-header">
         <i class="fas fa-rocket" aria-hidden="true"></i>
-        <h3>Quick Jump</h3>
+        <h3>{t("browse_ui_quick_jump")}</h3>
       </div>
       <div class="jump-sections">
         {#each availableSections as section}

@@ -5,6 +5,7 @@
   focus, outside-click dismissal, and viewport collision handling.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { Popover } from "bits-ui";
   import type { Snippet } from "svelte";
   import type { HTMLButtonAttributes } from "svelte/elements";
@@ -138,7 +139,7 @@
 
     if (onFavoriteToggle) {
       items.push({
-        label: isFavorite ? "Unfavorite" : "Favorite",
+        label: isFavorite ? t("viewer_ui_unfavorite") : t("viewer_ui_favorite"),
         icon: "fa-heart",
         action: onFavoriteToggle,
         className: isFavorite ? "favorited" : undefined,
@@ -146,7 +147,7 @@
     }
     if (onSave && !isSaved) {
       items.push({
-        label: isSaving ? "Saving…" : "Save",
+        label: isSaving ? t("viewer_ui_saving") : t("viewer_ui_save"),
         icon: isSaving ? "fa-spinner fa-spin" : "fa-bookmark",
         action: onSave,
         className: isSaving ? "saving" : undefined,
@@ -162,14 +163,14 @@
     }
     if (onSendTo) {
       items.push({
-        label: "Send sequence",
+        label: t("viewer_ui_send_sequence"),
         icon: "fa-paper-plane",
         action: onSendTo,
       });
     }
     if (onDownload) {
       items.push({
-        label: downloadBusy ? "Preparing…" : saveActionLabel(),
+        label: downloadBusy ? t("viewer_ui_preparing") : saveActionLabel(),
         icon: downloadBusy
           ? "fa-spinner fa-spin"
           : shareTarget.isMobile
@@ -197,7 +198,9 @@
     }
     if (onPracticeToggle) {
       items.push({
-        label: practiceActive ? "Stop Practice" : "Practice Mode",
+        label: practiceActive
+          ? t("viewer_ui_stop_practice")
+          : t("viewer_ui_practice_mode"),
         icon: practiceActive ? "fa-stop" : "fa-dumbbell",
         action: onPracticeToggle,
         className: practiceActive ? "practice-active" : undefined,
@@ -206,7 +209,7 @@
     }
     if (onVideoUpload) {
       items.push({
-        label: "Upload Video",
+        label: t("viewer_ui_upload_video_title"),
         icon: "fa-video",
         action: onVideoUpload,
       });
@@ -221,7 +224,7 @@
     }
     if (onCopyLink) {
       items.push({
-        label: linkCopied ? "Copied!" : "Copy Link",
+        label: linkCopied ? t("viewer_ui_copied") : t("viewer_ui_copy_link"),
         icon: linkCopied ? "fa-check" : "fa-link",
         action: onCopyLink,
         className: linkCopied ? "copied" : undefined,
@@ -230,7 +233,9 @@
     }
     if (onPublish || onUnpublish) {
       items.push({
-        label: isPublished ? "Make Private" : "Make Public",
+        label: isPublished
+          ? t("viewer_ui_make_private")
+          : t("viewer_ui_make_public"),
         icon: isPublished ? "fa-eye-slash" : "fa-eye",
         action: (isPublished ? onUnpublish : onPublish) ?? (() => {}),
         dividerBefore: !(onPropsOpen || onCopyLink) && items.length > 0,
@@ -238,7 +243,7 @@
     }
     if (onDeleteRequest) {
       items.push({
-        label: "Delete",
+        label: t("viewer_ui_delete"),
         icon: "fa-trash",
         action: onDeleteRequest,
         className: "delete",
@@ -267,13 +272,13 @@
               class:header-variant={variant === "header" && !trigger}
               class:labelled-trigger={showLabel && !trigger}
               class:title-variant={!!trigger}
-              aria-label="More actions"
+              aria-label={t("viewer_ui_more_actions")}
             >
               {#if trigger}
                 {@render trigger({ isOpen, hasMenu })}
               {:else}
                 <i class="fas fa-ellipsis-vertical" aria-hidden="true"></i>
-                {#if showLabel}<span>More</span>{/if}
+                {#if showLabel}<span>{t("viewer_ui_more")}</span>{/if}
               {/if}
             </button>
           {/snippet}
@@ -290,11 +295,11 @@
             sideOffset={8}
             collisionPadding={12}
             class="viewer-overflow-popover"
-            aria-label="More actions"
+            aria-label={t("viewer_ui_more_actions")}
           >
             {#if motionVisibility}
               <div class="motion-vis-section">
-                <span class="motion-vis-label">Motion</span>
+                <span class="motion-vis-label">{t("viewer_ui_motion")}</span>
                 <MotionColorChips
                   showLeft={motionVisibility.showLeft}
                   showRight={motionVisibility.showRight}

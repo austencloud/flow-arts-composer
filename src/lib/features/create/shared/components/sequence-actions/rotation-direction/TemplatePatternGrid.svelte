@@ -5,6 +5,7 @@
   Supports both mobile (segmented control) and desktop (grouped display) layouts.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import {
     getTemplatesForStepCount,
     getCategoryInfo,
@@ -43,7 +44,7 @@
 {#if nonUniformTemplates.length > 0}
   <div class="templates-section">
     <div class="templates-header">
-      <h3>Patterns</h3>
+      <h3>{t("create_ui_patterns")}</h3>
       <div class="category-filter" class:mobile-segmented={isMobile}>
         {#if !isMobile}
           <button

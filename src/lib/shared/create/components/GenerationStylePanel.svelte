@@ -4,6 +4,7 @@ GenerationStylePanel.svelte - shared 3-axis generation style control
 Used by Generate and Fuse so both tools expose one style vocabulary and policy.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
   import type {
     GenerationDashChoice,
@@ -108,7 +109,7 @@ Used by Generate and Fuse so both tools expose one style vocabulary and policy.
 <div class="style-panel">
   <div class="style-axis-group">
     <div class="style-axis">
-      <span class="style-axis-label">Props</span>
+      <span class="style-axis-label">{t("create_ui_props")}</span>
       <div class="style-axis-options">
         {#each propsOptions as opt}
           <button
@@ -138,7 +139,7 @@ Used by Generate and Fuse so both tools expose one style vocabulary and policy.
 
   <div class="style-axis-group">
     <div class="style-axis">
-      <span class="style-axis-label">Hands</span>
+      <span class="style-axis-label">{t("create_ui_hands")}</span>
       <div class="style-axis-options">
         {#each handsOptions as opt}
           <button
@@ -165,7 +166,7 @@ Used by Generate and Fuse so both tools expose one style vocabulary and policy.
 
   <div class="style-axis-group">
     <div class="style-axis">
-      <span class="style-axis-label">Dashes</span>
+      <span class="style-axis-label">{t("create_ui_dashes")}</span>
       <div class="style-axis-options">
         {#each dashOptions as opt}
           <button

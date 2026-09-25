@@ -5,6 +5,7 @@
   surface. Click grows it into TnDPanel through the card morph.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
   import { onMount, getContext } from "svelte";
@@ -82,7 +83,7 @@
     onkeydown={handleKeydown}
     aria-label={display.ariaLabel}
   >
-    <CardHeader title="Timing and direction" {headerFontSize} />
+    <CardHeader title={t("create_ui_timing_and_direction")} {headerFontSize} />
     <div class="tnd-body" aria-hidden="true">
       {#each [display.hands, display.props] as line (line.label)}
         <div

@@ -1,6 +1,7 @@
 <!-- Sidebar Footer Component -->
 <!-- Footer with settings, network status, prop switcher, account, and voice mic -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import NetworkStatusIndicator from "../../../offline/components/NetworkStatusIndicator.svelte";
   import { voiceControlState } from "../../../voice-control/state/voice-control-state.svelte";
@@ -152,13 +153,13 @@
       class="footer-button settings-button"
       class:collapsed={isCollapsed}
       onclick={handleSettingsClick}
-      aria-label="Open settings"
+      aria-label={t("nav_ui_open_settings")}
     >
       <div class="button-icon">
         <i class="fas fa-cog" aria-hidden="true"></i>
       </div>
       {#if !isCollapsed}
-        <span class="button-label">Settings</span>
+        <span class="button-label">{t("module_settings")}</span>
       {/if}
     </button>
 
@@ -168,15 +169,15 @@
       class="footer-button command-button"
       class:collapsed={isCollapsed}
       onclick={handleOpenCommandPalette}
-      aria-label="Open Jump to"
+      aria-label={t("nav_ui_open_jump_to")}
       aria-keyshortcuts={commandPaletteAriaKey}
-      title="Jump to · {commandPaletteKey}"
+      title={t("nav_jump_shortcut", { shortcut: commandPaletteKey })}
     >
       <div class="button-icon">
         <i class="fas fa-search" aria-hidden="true"></i>
       </div>
       {#if !isCollapsed}
-        <span class="button-label">Jump to</span>
+        <span class="button-label">{t("nav_ui_jump_to")}</span>
       {/if}
     </button>
 
@@ -187,9 +188,9 @@
         class:collapsed={isCollapsed}
         class:has-unread={hasUnread}
         onclick={handleInboxClick}
-        aria-label="Open inbox{hasUnread
-          ? `, ${inboxState.totalUnreadCount} unread`
-          : ''}"
+        aria-label={hasUnread
+          ? t("nav_inbox_unread", { count: inboxState.totalUnreadCount })
+          : t("nav_inbox_open")}
       >
         <div class="button-icon inbox-icon-wrapper">
           <i class="fas fa-inbox" aria-hidden="true"></i>
@@ -200,7 +201,7 @@
           {/if}
         </div>
         {#if !isCollapsed}
-          <span class="button-label">Inbox</span>
+          <span class="button-label">{t("module_inbox")}</span>
           {#if hasUnread}
             <span class="unread-label-badge">
               {badgeCount}
@@ -218,7 +219,7 @@
       class="footer-button prop-button"
       class:collapsed={isCollapsed}
       onclick={handlePropClick}
-      aria-label="Change props. Current: {propLabel}"
+      aria-label={t("nav_change_props_current", { prop: propLabel })}
     >
       <div class="button-icon">
         <SelectedPropPreview />

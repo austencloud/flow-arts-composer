@@ -5,6 +5,7 @@
   Includes resend functionality with cooldown timer.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   interface Props {
     email: string;
     checkCount: number;
@@ -42,14 +43,14 @@
   </div>
 
   <div class="verification-instructions">
-    <p>Click the link in the email we sent to verify your address.</p>
-    <p class="hint">Check your spam folder if you don't see it.</p>
+    <p>{t("auth_linking_click_email")}</p>
+    <p class="hint">{t("auth_linking_check_spam")}</p>
   </div>
 
   <div class="verification-status">
     <div class="status-indicator">
       <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-      <span>Waiting for verification...</span>
+      <span>{t("auth_linking_waiting")}</span>
     </div>
     <div class="progress-bar">
       <div class="progress-fill" style:width="{progressPercent}%"></div>
@@ -57,14 +58,14 @@
   </div>
 
   <div class="resend-section">
-    <p>Didn't receive the email?</p>
+    <p>{t("auth_linking_not_received")}</p>
     <button class="resend-btn" onclick={onResend} disabled={!canResend}>
       {#if resendCooldown > 0}
         <i class="fas fa-clock" aria-hidden="true"></i>
-        <span>Resend in {resendCooldown}s</span>
+        <span>{t("auth_linking_resend_in", { seconds: resendCooldown })}</span>
       {:else}
         <i class="fas fa-paper-plane" aria-hidden="true"></i>
-        <span>Resend Verification Email</span>
+        <span>{t("auth_linking_resend")}</span>
       {/if}
     </button>
   </div>
@@ -76,7 +77,9 @@
     </div>
   {/if}
 
-  <button class="skip-btn" onclick={onSkip}> I'll verify later </button>
+  <button class="skip-btn" onclick={onSkip}
+    >{t("auth_linking_verify_later")}</button
+  >
 </div>
 
 <style>

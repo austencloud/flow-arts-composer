@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { activateWhenNear } from "$lib/actions/activate-when-near";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
@@ -236,16 +237,15 @@
 
 {#snippet constructLoadError(_error: unknown, retry: () => void)}
   <div class="demo-load-error construct-error" role="alert">
-    <p>The step-by-step demonstration did not load.</p>
-    <button type="button" onclick={retry}>Try the builder again</button>
+    <p>{t("composer_build_demo_failed")}</p>
+    <button type="button" onclick={retry}>{t("composer_retry_builder")}</button>
   </div>
 {/snippet}
 
 {#snippet viewerPlaceholder()}
   <div class="viewer-placeholder">
     {#if outputsActive}
-      <span class="sr-only" role="status">Loading the live 3D performance.</span
-      >
+      <span class="sr-only" role="status">{t("composer_loading_3d")}</span>
     {/if}
     <!-- The viewer's controls now live on a rail INSIDE the stage, so the
          skeleton reserves the stage alone. Reserving control rows under it
@@ -258,15 +258,15 @@
 
 {#snippet tunnelLoadError(_error: unknown, retry: () => void)}
   <div class="demo-load-error" role="alert">
-    <p>The tunnel demonstration did not load.</p>
-    <button type="button" onclick={retry}>Try the tunnel again</button>
+    <p>{t("composer_tunnel_demo_failed")}</p>
+    <button type="button" onclick={retry}>{t("composer_retry_tunnel")}</button>
   </div>
 {/snippet}
 
 {#snippet viewerLoadError(_error: unknown, retry: () => void)}
   <div class="demo-load-error" role="alert">
-    <p>The 3D demonstration did not load.</p>
-    <button type="button" onclick={retry}>Try the 3D viewer again</button>
+    <p>{t("composer_3d_demo_failed")}</p>
+    <button type="button" onclick={retry}>{t("composer_retry_3d")}</button>
   </div>
 {/snippet}
 
@@ -282,8 +282,8 @@
 
 {#snippet galleryLoadError(_error: unknown, retry: () => void)}
   <div class="demo-load-error gallery-error" role="alert">
-    <p>The community gallery did not load.</p>
-    <button type="button" onclick={retry}>Try the gallery again</button>
+    <p>{t("composer_gallery_demo_failed")}</p>
+    <button type="button" onclick={retry}>{t("composer_retry_gallery")}</button>
   </div>
 {/snippet}
 
@@ -298,8 +298,7 @@
       <!-- The cut sentence described where the pictographs sit relative to the
            animation — which the demo two inches to the right is doing. -->
       <p class="opening-lede">
-        Choose the moves or generate a 16-count loop. Composer keeps the
-        notation and movement together.
+        {t("composer_intro")}
       </p>
 
       <div class="opening-actions">
@@ -309,13 +308,13 @@
           data-sveltekit-reload
           onclick={() => trackOpenComposer()}
         >
-          Start composing
+          {t("composer_start")}
           <i class="fas fa-arrow-right" aria-hidden="true"></i>
         </a>
       </div>
 
       <p class="opening-note">
-        Free in your browser. Guest saves stay on this device.
+        {t("composer_free_guest")}
       </p>
     </div>
 
@@ -328,7 +327,7 @@
         leftPropType={heroAct.propType}
         rightPropType={heroAct.propType}
         onSequenceBoundary={heroAct.offerSequenceBoundary}
-        note="a real sequence playing in Composer"
+        note={t("composer_hero_note")}
         trailSettingsOverride={HERO_TRAIL_PRESET}
         tipEffectMap={HERO_TIP_EFFECT_MAP}
         showNotationStrip={true}
@@ -347,9 +346,9 @@
     <a
       class="scroll-cue"
       href="#making-title"
-      aria-label="Scroll to Build the sequence"
+      aria-label={t("composer_scroll_build")}
     >
-      <span>Scroll</span>
+      <span>{t("composer_scroll")}</span>
       <i class="fas fa-chevron-down" aria-hidden="true"></i>
     </a>
   </section>
@@ -360,9 +359,9 @@
        narrates. The demos carry their own labels; the page does not need to
        introduce them twice. -->
   <section class="making" aria-labelledby="making-title">
-    <h2 id="making-title" class="making-title">Build the sequence.</h2>
+    <h2 id="making-title" class="making-title">{t("composer_build_title")}</h2>
     <p class="section-intro">
-      Start with a position. Composer keeps the next move workable.
+      {t("composer_build_intro")}
     </p>
 
     <div class="making-demos" use:activateConstruct>
@@ -397,10 +396,9 @@
     use:activateOutputs
   >
     <div class="changing-intro">
-      <h2 id="changing-title">See what you made.</h2>
+      <h2 id="changing-title">{t("composer_see_title")}</h2>
       <p>
-        The sequence you build above carries into the tunnel and the 3D player
-        below. Its notation comes with it.
+        {t("composer_see_intro")}
       </p>
     </div>
 
@@ -430,7 +428,7 @@
         {#if webglChecked && !webglAvailable}
           <div class="viewer-unavailable" role="status">
             <i class="fas fa-cube" aria-hidden="true"></i>
-            <p>3D is unavailable in this browser.</p>
+            <p>{t("composer_3d_unavailable")}</p>
           </div>
         {:else}
           <LazyMount
@@ -449,21 +447,21 @@
     </div>
 
     <p class="small-screen-3d-note">
-      The 3D viewer needs WebGL2 and a screen at least 600px in both directions.
+      {t("composer_3d_requirements")}
     </p>
   </section>
 
   <section class="keeping" aria-labelledby="keeping-title" use:activateShelf>
     <div class="keeping-intro">
-      <h2 id="keeping-title">Keep the sequence you made.</h2>
+      <h2 id="keeping-title">{t("composer_keep_title")}</h2>
       <div class="keeping-lede">
         <p>
-          Guests keep three sequences on this device. A full account keeps a
-          cloud library and collections. The gallery below is everyone's public
-          work, with the same filters the app uses.
+          {t("composer_keep_intro")}
         </p>
         <div class="keeping-actions">
-          <a href="/browse" class="primary-action">Browse the Gallery</a>
+          <a href="/browse" class="primary-action"
+            >{t("composer_browse_gallery")}</a
+          >
         </div>
       </div>
     </div>

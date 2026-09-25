@@ -23,6 +23,7 @@
     completeEmailLinkSignIn,
   } from "../services/email-link-completion";
   import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte";
 
   let pending = $state(false);
   let recipientEmail = $state<string | null>(null);
@@ -37,7 +38,7 @@
       void getPendingEmailLinkRecipient()
         .then((email) => {
           recipientEmail = email;
-          if (!email) error = "Request a new sign-in link to continue.";
+          if (!email) error = t("auth_link_request_new");
         })
         .catch((err: unknown) => {
           const code = (err as { code?: string })?.code;
@@ -47,8 +48,8 @@
           error =
             code === "functions/failed-precondition" ||
             code === "auth/invalid-action-code"
-              ? "This link is invalid or has expired. Request a new one."
-              : "Couldn't verify this sign-in link. Check your connection and try again.";
+              ? t("auth_link_invalid_expired")
+              : t("auth_link_check_failed");
         })
         .finally(() => {
           resolvingRecipient = false;
@@ -66,34 +67,30 @@
       const result = await completeEmailLinkSignIn();
       if (result.completed) {
         pending = false;
-        toast.success("Signed in! Welcome.");
+        toast.success(t("auth_link_signed_in"));
       } else if (result.errorCode === "auth/missing-email") {
-        error = "Request a new sign-in link to continue.";
+        error = t("auth_link_request_new");
       } else if (
         result.errorCode === "auth/invalid-action-code" ||
         result.errorCode === "auth/expired-action-code"
       ) {
-        error = "This link is invalid or has expired. Request a new one.";
-        toast.error(
-          "That sign-in link is invalid or expired. Request a new one."
-        );
+        error = t("auth_link_invalid_expired");
+        toast.error(t("auth_link_invalid_expired"));
       } else if (result.errorCode === "auth/invalid-email") {
-        error =
-          "That email doesn't match the sign-in link. Check it and try again.";
+        error = t("auth_link_email_mismatch");
       } else if (
         result.errorCode === "auth/credential-already-in-use" ||
         result.errorCode === "auth/email-already-in-use" ||
         result.errorCode === "auth/provider-already-linked"
       ) {
-        error =
-          "That email is connected to another account. Contact support and we’ll merge it without losing your work.";
+        error = t("auth_link_other_account");
       } else {
-        error = result.errorMessage || "Sign-in failed. Please try again.";
-        toast.error("Sign-in failed. Please try again.");
+        error = result.errorMessage || t("auth_link_signin_failed");
+        toast.error(t("auth_link_signin_failed"));
       }
     } catch (err) {
       console.error("❌ [EmailLinkConfirmModal] Unexpected error:", err);
-      error = "Something went wrong. Please try again.";
+      error = t("auth_link_unexpected_error");
     } finally {
       loading = false;
     }
@@ -115,21 +112,19 @@
   onclose={handleClose}
 >
   <div class="email-link-confirm-content">
-    <h2>Finish signing in</h2>
+    <h2>{t("auth_link_finish_signin")}</h2>
 
     {#if resolvingRecipient}
       <p class="email-link-confirm-copy" role="status" aria-live="polite">
-        Checking your sign-in link…
+        {t("auth_link_checking")}
       </p>
     {:else if recipientEmail}
       <p class="email-link-confirm-copy" role="status" aria-live="polite">
-        Continue as <strong>{recipientEmail}</strong>. Links expire after 30
-        minutes.
+        {t("auth_link_continue_as", { email: recipientEmail })}
       </p>
     {:else}
       <p class="email-link-confirm-copy" role="status" aria-live="polite">
-        Continue with the account this link was sent to. Links expire after 30
-        minutes.
+        {t("auth_link_continue_account")}
       </p>
     {/if}
 
@@ -143,7 +138,7 @@
       onclick={handleConfirm}
       disabled={!canSubmit}
     >
-      {loading ? "Signing in…" : "Finish signing in"}
+      {loading ? t("auth_link_signing_in") : t("auth_link_finish_signin")}
     </button>
   </div>
 </BaseModal>

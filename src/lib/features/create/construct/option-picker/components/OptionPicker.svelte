@@ -5,6 +5,7 @@ Single responsibility: Coordinate option loading, preparation, and selection.
 Delegates all rendering to child components.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getOptionFilter } from "$lib/features/create/construct/option-picker/get-option-filter";
   import { getOptionLoader } from "$lib/features/create/construct/option-picker/get-option-loader";
   import { organizePictographs } from "$lib/features/create/construct/option-picker/services/option-organizer";
@@ -533,14 +534,14 @@ Delegates all rendering to child components.
 {#if initError}
   <div class="error" role="alert">
     <p>Couldn't start the option picker: {initError}</p>
-    <button onclick={initialize}>Retry</button>
+    <button onclick={initialize}>{t("action_retry")}</button>
   </div>
 {:else if !isReady || isAwaitingFirstOptions}
-  <div class="loading">Loading options...</div>
+  <div class="loading">{t("create_ui_loading_options")}</div>
 {:else if pickerState?.error}
   <div class="error" role="alert">
     <p>Error: {pickerState.error}</p>
-    <button onclick={retryLoadOptions}>Retry</button>
+    <button onclick={retryLoadOptions}>{t("action_retry")}</button>
   </div>
 {:else}
   <OptionPickerContent

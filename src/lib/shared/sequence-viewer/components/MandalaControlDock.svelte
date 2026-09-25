@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import ControlDock, {
     type ControlDockAction,
     type ControlDockTab,
@@ -27,12 +28,12 @@
   let activeCategory = $state<MandalaCategory | null>(null);
 
   const tabs = $derived<ControlDockTab[]>([
-    { id: "speed", icon: "fa-gauge-high", label: "Speed" },
-    { id: "shape", icon: "fa-bezier-curve", label: "Shape" },
-    { id: "spin", icon: "fa-arrows-rotate", label: "Spin" },
-    { id: "colors", dots: ctrl.accentPair, label: "Colors" },
-    { id: "weight", icon: "fa-grip-lines", label: "Weight" },
-    { id: "depth", icon: "fa-wave-square", label: "Depth" },
+    { id: "speed", icon: "fa-gauge-high", label: t("viewer_ui_speed") },
+    { id: "shape", icon: "fa-bezier-curve", label: t("viewer_ui_shape") },
+    { id: "spin", icon: "fa-arrows-rotate", label: t("viewer_ui_spin") },
+    { id: "colors", dots: ctrl.accentPair, label: t("viewer_ui_colors") },
+    { id: "weight", icon: "fa-grip-lines", label: t("viewer_ui_weight") },
+    { id: "depth", icon: "fa-wave-square", label: t("viewer_ui_depth") },
   ]);
 
   function toggleCategory(id: string): void {
@@ -49,7 +50,7 @@
     showDownload
       ? {
           icon: "fa-download",
-          label: "Download options",
+          label: t("viewer_ui_download_options"),
           onClick: () => toggleCategory("download"),
           active: activeCategory === "download",
         }

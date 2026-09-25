@@ -14,6 +14,7 @@
     beats grouping.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import {
     PROP_PICKER_SECTIONS,
@@ -291,13 +292,32 @@
     drill === null
       ? ""
       : drill.kind === "family"
-        ? `${getPropTypeDisplayInfo(drill.base).label} styles`
+        ? t("settings_prop_styles", {
+            prop: getPropTypeDisplayInfo(drill.base).label,
+          })
         : drill.kind === "fan-look"
-          ? "Fan look"
+          ? t("settings_fan_look")
           : drill.kind === "details"
-            ? `${getPropTypeDisplayInfo(drill.prop).label} details`
-            : "Prop look"
+            ? t("settings_prop_details", {
+                prop: getPropTypeDisplayInfo(drill.prop).label,
+              })
+            : t("settings_prop_look")
   );
+
+  function sectionLabel(id: string, fallback: string): string {
+    switch (id) {
+      case "staves-clubs":
+        return t("settings_prop_section_staves_clubs");
+      case "curved":
+        return t("settings_prop_section_curved");
+      case "novelty":
+        return t("settings_prop_section_novelty");
+      case "singles":
+        return t("settings_prop_section_singles");
+      default:
+        return fallback;
+    }
+  }
 
   async function openDrill(next: Drill): Promise<void> {
     drill = next;
@@ -730,25 +750,29 @@
   data-swipe-block={layout === "rail" ? "" : undefined}
 >
   {#snippet sizeControl()}
-    <div class="size-toggle" role="group" aria-label="Prop size">
+    <div class="size-toggle" role="group" aria-label={t("settings_prop_size")}>
       <button
         type="button"
         class="size-option"
         class:active={!sizeIsBig}
         aria-pressed={!sizeIsBig}
-        onclick={() => chooseSize(false)}>Standard</button
+        onclick={() => chooseSize(false)}>{t("settings_prop_standard")}</button
       >
       <button
         type="button"
         class="size-option"
         class:active={sizeIsBig}
         aria-pressed={sizeIsBig}
-        onclick={() => chooseSize(true)}>Big</button
+        onclick={() => chooseSize(true)}>{t("settings_prop_big")}</button
       >
     </div>
   {/snippet}
   {#snippet gripControl()}
-    <div class="size-toggle" role="group" aria-label="Triangle grip">
+    <div
+      class="size-toggle"
+      role="group"
+      aria-label={t("settings_triangle_grip")}
+    >
       {#each TRIANGLE_GRIP_OPTIONS as option (option.id)}
         <button
           type="button"
@@ -812,7 +836,7 @@
         <button
           type="button"
           class="drill-back"
-          aria-label="Back to all props"
+          aria-label={t("settings_back_all_props")}
           onclick={() => void closeDrill()}
         >
           <i class="fas fa-arrow-left" aria-hidden="true"></i>
@@ -897,7 +921,7 @@
       {:else if prop !== PropType.HAND && !isUnlocked(prop)}
         <i class="fas fa-lock lock-glyph" aria-hidden="true"></i>
         {#if lockedTipFor === prop}
-          <span class="earn-tip">Earn by creating</span>
+          <span class="earn-tip">{t("settings_earn_by_creating")}</span>
         {/if}
       {/if}
     </div>
@@ -912,7 +936,9 @@
         propType={familyDisplayProp(base)}
         selected={selectedBase === base}
         badge={familyCount(base)}
-        actionLabel={`Choose ${getPropTypeDisplayInfo(base).label} style`}
+        actionLabel={t("settings_prop_choose_style", {
+          prop: getPropTypeDisplayInfo(base).label,
+        })}
         buttonProps={{
           "aria-expanded": drill?.kind === "family" && drill.base === base,
           "data-family-tile": base,
@@ -968,7 +994,7 @@
               <button
                 type="button"
                 class="drill-back"
-                aria-label="Back to all props"
+                aria-label={t("settings_back_all_props")}
                 onclick={() => void closeDrill()}
               >
                 <i class="fas fa-arrow-left" aria-hidden="true"></i>
@@ -1001,13 +1027,13 @@
             >
               {#if showSize}
                 <div class="detail-row">
-                  <span class="look-label">Size</span>
+                  <span class="look-label">{t("settings_size")}</span>
                   {@render sizeControl()}
                 </div>
               {/if}
               {#if showGrip}
                 <div class="detail-row">
-                  <span class="look-label">Grip</span>
+                  <span class="look-label">{t("settings_grip")}</span>
                   {@render gripControl()}
                 </div>
               {/if}
@@ -1072,7 +1098,7 @@
         <div
           class="flat-grid"
           role="group"
-          aria-label="Prop choices"
+          aria-label={t("settings_prop_choices")}
           class:dragging={railDragging}
           class:comfortable={tileDensity === "comfortable"}
           class:fill={flatLayout !== null}
@@ -1119,7 +1145,7 @@
               : null}
             <div class="prop-section" class:primary={i === 0}>
               <div class="section-label" class:first={i === 0}>
-                {section.label}
+                {sectionLabel(section.id, section.label)}
               </div>
               <div
                 class="section-buttons"

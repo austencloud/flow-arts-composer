@@ -5,6 +5,7 @@
   placement. Location changes transform the prop through the whole sequence.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
   import type { TargetHand } from "$lib/shared/create/domain/panel-types";
   import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
@@ -84,7 +85,7 @@
 )}
   <div class="prop-controls">
     <div class="control-field">
-      <span class="field-label">Location</span>
+      <span class="field-label">{t("create_ui_location")}</span>
       <PropLocationControl
         hand={hand === HandSide.LEFT ? "left" : "right"}
         {location}
@@ -97,7 +98,7 @@
     </div>
 
     <div class="control-field">
-      <span class="field-label">Orientation</span>
+      <span class="field-label">{t("create_ui_orientation")}</span>
       <PropOrientationControl
         hand={hand === HandSide.LEFT ? "left" : "right"}
         {orientation}
@@ -114,7 +115,7 @@
 {#if !startPlacementData}
   <div class="empty-state">
     <i class="fas fa-compass" aria-hidden="true"></i>
-    <p>No start placement selected</p>
+    <p>{t("create_ui_no_start_placement_selected")}</p>
   </div>
 {:else}
   <section
@@ -123,7 +124,9 @@
     class:focused
     aria-busy={isRepositioning}
   >
-    <p class="impact-message">Changes here update every step.</p>
+    <p class="impact-message">
+      {t("create_ui_changes_here_update_every_step")}
+    </p>
     <span class="screen-reader-status" aria-live="polite">
       {statusMessage}
     </span>

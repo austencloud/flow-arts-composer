@@ -5,6 +5,7 @@
   Displayed when a video has been successfully generated.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   let {
     currentMode = $bindable("live"),
     onModeChange,
@@ -30,7 +31,7 @@
     class:active={currentMode === "live"}
     onclick={switchToLive}
     type="button"
-    aria-label="Live playback mode"
+    aria-label={t("compose_ui_live_playback_mode")}
     aria-pressed={currentMode === "live"}
   >
     Live
@@ -40,7 +41,7 @@
     class:active={currentMode === "video"}
     onclick={switchToVideo}
     type="button"
-    aria-label="Video playback mode"
+    aria-label={t("compose_ui_video_playback_mode")}
     aria-pressed={currentMode === "video"}
   >
     Video

@@ -5,6 +5,7 @@
   Allows user to switch from live preview to video mode.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   let {
     onSwitchToVideo,
   }: {
@@ -13,12 +14,12 @@
 </script>
 
 <div class="video-ready-notification">
-  <span>Video ready!</span>
+  <span>{t("compose_ui_video_ready")}</span>
   <button
     class="switch-btn"
     onclick={onSwitchToVideo}
     type="button"
-    aria-label="Switch to video playback mode"
+    aria-label={t("compose_ui_switch_to_video_playback_mode")}
   >
     Switch to Video
   </button>

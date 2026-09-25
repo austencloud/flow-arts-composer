@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { authState } from "$lib/shared/auth/state/auth-state.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import DeleteConfirmDialog from "../DeleteConfirmDialog.svelte";
@@ -32,7 +33,7 @@
 >
   <header class="inspector-header">
     <div>
-      <span class="eyebrow">Performances</span>
+      <span class="eyebrow">{t("viewer_ui_performances")}</span>
       <h2>
         {workspace.videos.length} performance{workspace.videos.length === 1
           ? ""
@@ -66,7 +67,7 @@
       aria-labelledby="selected-performance-title"
     >
       <div class="selected-copy">
-        <span class="eyebrow">Selected performance</span>
+        <span class="eyebrow">{t("viewer_ui_selected_performance")}</span>
         <h3 id="selected-performance-title">
           {performanceCreatorName(workspace.selectedVideo)}
         </h3>

@@ -19,6 +19,7 @@ mean "card discovered in the wild"; filing your own deck would pollute
 the geo dashboard).
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount, onDestroy } from "svelte";
   import { fly } from "svelte/transition";
   import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
@@ -538,7 +539,7 @@ the geo dashboard).
       </div>
       <button type="button" class="done-btn" onclick={requestClose}>
         <i class="fas fa-check" aria-hidden="true"></i>
-        <span>Done</span>
+        <span>{t("train_filter_done")}</span>
       </button>
     </header>
 
@@ -589,7 +590,7 @@ the geo dashboard).
               onclick={() => void startCamera()}
             >
               <i class="fas fa-rotate-right" aria-hidden="true"></i>
-              <span>Try again</span>
+              <span>{t("browse_ui_try_again")}</span>
             </button>
           </div>
         {:else}

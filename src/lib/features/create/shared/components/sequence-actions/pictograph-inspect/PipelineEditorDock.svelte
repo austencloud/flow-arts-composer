@@ -7,6 +7,7 @@
   arrow; idle until an arrow is selected.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type {
     PipelineDiagnostics,
@@ -900,7 +901,7 @@
         <button
           class="btn btn-delete"
           onclick={handleDelete}
-          title="Revert to original"
+          title={t("create_ui_revert_to_original")}
           ><i class="fas fa-undo" aria-hidden="true"></i> Revert</button
         >
       {:else if editTarget === "default" && defaultHasValue}

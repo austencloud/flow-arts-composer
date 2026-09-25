@@ -1,5 +1,6 @@
 <!-- StartTile.svelte - Reusable start placement tile for all grid modes -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
   import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
@@ -66,12 +67,12 @@
 <div
   class="start-tile"
   class:has-pictograph={true}
-  title="Start Placement"
+  title={t("browse_start_placement")}
   role="button"
   tabindex="0"
   onclick={handleStartClick}
   onkeydown={handleKeydown}
-  aria-label="Start Placement"
+  aria-label={t("browse_start_placement")}
 >
   <StepCell
     step={startPlacement}

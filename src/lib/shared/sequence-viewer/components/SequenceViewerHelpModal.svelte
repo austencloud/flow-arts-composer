@@ -5,6 +5,7 @@
   Shows when user taps the help button in the sequence viewer header.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
   import ModalHeader from "$lib/shared/foundation/ui/modal/ModalHeader.svelte";
   import ModalFooter from "$lib/shared/foundation/ui/modal/ModalFooter.svelte";
@@ -37,7 +38,7 @@
 >
   {#snippet header()}
     <ModalHeader
-      title="Sequence Viewer"
+      title={t("viewer_sequence_viewer")}
       subtitle="Preview and export your sequence"
       icon="fa-eye"
       iconColor={accentColor}
@@ -51,7 +52,9 @@
       <HelpSection icon="fa-image" title="Image Mode" {accentColor}>
         <p>View your sequence as a static image showing all steps at once.</p>
         <ul>
-          <li><strong>Toggle options</strong> - Show/hide step numbers, word, grid</li>
+          <li>
+            <strong>Toggle options</strong> - Show/hide step numbers, word, grid
+          </li>
           <li><strong>Dark/light</strong> - Switch background for export</li>
         </ul>
       </HelpSection>
@@ -60,8 +63,13 @@
         <p>Watch your sequence animate with smooth prop movements.</p>
         <ul>
           <li><strong>Play/Pause</strong> - Control playback</li>
-          <li><strong>Speed</strong> - Adjust animation speed (0.5x - 2x)</li>
-          <li><strong>Loop</strong> - Set how many times to repeat</li>
+          <li>
+            <strong>{t("viewer_ui_speed")}</strong> - Adjust animation speed (0.5x
+            - 2x)
+          </li>
+          <li>
+            <strong>{t("viewer_ui_loop")}</strong> - Set how many times to repeat
+          </li>
         </ul>
       </HelpSection>
 
@@ -69,15 +77,17 @@
         <p>Save or share your sequence in different formats.</p>
         <ul>
           <li><strong>Image</strong> - Download as PNG</li>
-          <li><strong>Animation</strong> - Export as a video</li>
-          <li><strong>Copy</strong> - Copy image to clipboard</li>
+          <li>
+            <strong>{t("viewer_ui_animation")}</strong> - Export as a video
+          </li>
+          <li><strong>{t("browse_copy")}</strong> - Copy image to clipboard</li>
         </ul>
       </HelpSection>
 
       <HelpSection icon="fa-lightbulb" title="Tip" variant="tip">
         <p>
-          Use the toggle chips below the preview to customize what elements appear
-          in your export (step numbers, grid, word label).
+          Use the toggle chips below the preview to customize what elements
+          appear in your export (step numbers, grid, word label).
         </p>
       </HelpSection>
     </div>

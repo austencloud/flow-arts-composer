@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * TransferConfirmDialog - Confirmation dialog for sequence transfer
    * Renders as bottom sheet on mobile, modal dialog on desktop
@@ -38,13 +39,17 @@
   >
     {#snippet children()}
       <div class="transfer-confirmation-content">
-        <h3 class="confirmation-title">Replace Construct Content?</h3>
+        <h3 class="confirmation-title">
+          {t("create_ui_replace_construct_content")}
+        </h3>
         <p class="confirmation-message">
           The Construct workspace already has content. Transferring this
           sequence will replace it.
         </p>
         <div class="confirmation-actions">
-          <button class="cancel-button" onclick={handleCancel}>Cancel</button>
+          <button class="cancel-button" onclick={handleCancel}
+            >{t("action_cancel")}</button
+          >
           <button class="confirm-button" onclick={handleConfirm}>
             Replace & Transfer
           </button>
@@ -56,7 +61,7 @@
   <!-- Desktop: Confirm Dialog -->
   <ConfirmDialog
     bind:isOpen
-    title="Replace Construct Content?"
+    title={t("create_ui_replace_construct_content")}
     message="The Construct workspace already has content. Transferring this sequence will replace it."
     confirmText="Replace & Transfer"
     cancelText="Cancel"

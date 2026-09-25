@@ -1,13 +1,21 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   const { onDismiss } = $props<{ onDismiss: () => void }>();
 </script>
 
-<aside class="option-interaction-banner" aria-label="Option controls">
+<aside
+  class="option-interaction-banner"
+  aria-label={t("create_ui_option_controls")}
+>
   <span class="banner-copy">
-    <strong>Tap to add</strong>
-    <span>Hold to preview</span>
+    <strong>{t("create_ui_tap_to_add")}</strong>
+    <span>{t("create_ui_hold_to_preview")}</span>
   </span>
-  <button type="button" onclick={onDismiss} aria-label="Dismiss option hint">
+  <button
+    type="button"
+    onclick={onDismiss}
+    aria-label={t("create_ui_dismiss_option_hint")}
+  >
     <i class="fa-solid fa-xmark" aria-hidden="true"></i>
   </button>
 </aside>

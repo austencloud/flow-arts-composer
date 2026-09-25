@@ -5,6 +5,7 @@
   increment button, and "beats" label. Minimum value is 0.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   let {
     currentOffset,
     onSetOffset,
@@ -30,7 +31,7 @@
       class="stepper-btn"
       onclick={decrement}
       disabled={currentOffset <= 0}
-      aria-label="Decrease offset"
+      aria-label={t("compose_ui_decrease_offset")}
     >
       <i class="fas fa-minus" aria-hidden="true"></i>
     </button>
@@ -43,7 +44,7 @@
     <button
       class="stepper-btn"
       onclick={increment}
-      aria-label="Increase offset"
+      aria-label={t("compose_ui_increase_offset")}
     >
       <i class="fas fa-plus" aria-hidden="true"></i>
     </button>

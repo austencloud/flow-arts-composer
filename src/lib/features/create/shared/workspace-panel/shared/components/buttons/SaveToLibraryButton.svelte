@@ -5,6 +5,7 @@
   The workspace decides whether it is an icon button or a labeled pill.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import { WORKSPACE_BUTTON_ICON } from "../../workspace-button-layout";
@@ -54,7 +55,7 @@
   onclick={handleClick}
   disabled={isDisabled}
   title={tooltip}
-  aria-label="Save to Library"
+  aria-label={t("create_ui_save_to_library")}
 >
   <i class="fa-solid {WORKSPACE_BUTTON_ICON.save.icon}" aria-hidden="true"></i>
   <span class="workspace-action-label" aria-hidden="true">
