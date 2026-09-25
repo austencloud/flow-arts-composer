@@ -175,8 +175,14 @@
       ? seedFromPsSlice(psSeedPayload)
       : null;
 
-  let selectedPropType = $state<PropType>(
-    psSeed?.propType ?? settingsService.settings.leftPropType ?? PropType.STAFF
+  // Until a prop is picked in the studio, the studio shows the live settings
+  // prop, so a settings change (Shift+P, another tab or device) reaches it. A
+  // pick, or a URL seed, holds from then on. See `ps-slice.ts`, "Touched-flag
+  // diffing".
+  let pickedPropType = $state<PropType | undefined>(psSeed?.propType);
+  const propTypeTouched = $derived(pickedPropType !== undefined);
+  const selectedPropType = $derived(
+    pickedPropType ?? settingsService.settings.leftPropType ?? PropType.STAFF
   );
   const synchronizedCardRenderOptions = $derived(
     withPostStudioPropType(cardRenderOptions, selectedPropType)
@@ -726,16 +732,13 @@
     if (localPerformanceUrl) URL.revokeObjectURL(localPerformanceUrl);
   });
 
-  // ps slice: live capture. `defaultPropType` is read fresh on every capture
-  // (never cached), because it is the LIVE per-session baseline `propType`
-  // diffs against — see `ps-slice.ts`, "Diff baseline: per-session live
-  // value, not a fixed constant".
+  // ps slice: live capture. Both fields are captured on their touched flags,
+  // never by comparing values — see `ps-slice.ts`, "Touched-flag diffing".
   const capturePs = (options: { full?: boolean } = {}) =>
     capturePsSlice(
       {
         propType: selectedPropType,
-        defaultPropType:
-          settingsService.settings.leftPropType ?? PropType.STAFF,
+        propTypeTouched,
         audioMode,
         audioModeTouched,
       },
@@ -763,7 +766,7 @@
   }
 
   function setPropType(propType: PropType): void {
-    selectedPropType = propType;
+    pickedPropType = propType;
   }
 
   function updateBpmAlignment(next: BpmAlignment | null): void {

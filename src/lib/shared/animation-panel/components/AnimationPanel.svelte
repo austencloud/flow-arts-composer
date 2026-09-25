@@ -880,7 +880,9 @@
   {:else if resolvedPill === "effects"}
     <EffectsPanel
       layout={layout === "bottom" ? "strip" : "sidebar"}
-      showHeading={layout === "bottom" || presentation === "content"}
+      showHeading={layout === "bottom" ||
+        (presentation === "content" && !fillPages)}
+      fill={fillPages && layout === "sidebar"}
       {bpm}
       onBpmChange={onBpmChange ?? (() => {})}
       {isPlaying}
