@@ -1,11 +1,12 @@
 <script lang="ts">
   import { PATH_SHAPE_COLORS } from "$lib/shared/animation-engine/domain/path-shape-colors";
-  import { onDestroy, type Snippet } from "svelte";
+  import { onDestroy, tick, type Snippet } from "svelte";
   import { getAnimationVisibilityManager } from "../../state/animation-visibility-state.svelte";
   import { getAnimationVisibilityContext } from "../../state/animation-visibility-context";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import { getViewerPathContext } from "$lib/shared/sequence-viewer/context/viewer-path-context";
   import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { growFade } from "$lib/shared/transitions/motion";
 
   let {
     onSettingChange,
@@ -26,6 +27,7 @@
   let session = $state(vm.getPathSession());
   let previewWidth = $state(0);
   let previewHeight = $state(0);
+  let pathGrid: HTMLDivElement | undefined = $state();
 
   let pathShape = $state(vm.getPathShape());
   let motionAware = $state(vm.getMotionAwarePaths());
@@ -141,6 +143,12 @@
       showToast("Couldn't save the motion path default", "error");
     }
   }
+
+  async function resetPaths(): Promise<void> {
+    vm.restoreSavedPaths();
+    await tick();
+    pathGrid?.querySelector<HTMLButtonElement>('[aria-pressed="true"]')?.focus();
+  }
 </script>
 
 <!-- Header doubles as the explanation slot: section label left, the selected
@@ -157,6 +165,7 @@
   class="path-shape-grid"
   class:with-preview={!!preview}
   class:fill={!!preview && fill}
+  bind:this={pathGrid}
   bind:clientWidth={previewWidth}
   bind:clientHeight={previewHeight}
 >
@@ -193,26 +202,26 @@
 </div>
 
 {#if session}
-  <p class="path-scope" aria-live="polite">
-    {session.preview ? "Preview for this sequence" : "Saved paths"}
-    {#if session.overrideCount > 0}
-      · {session.overrideCount} step {session.overrideCount === 1
-        ? "exception"
-        : "exceptions"}{session.preview ? " overridden" : ""}
-    {/if}
-  </p>
+  {#if session.overrideCount > 0}
+    <p class="path-scope" aria-live="polite">
+      {session.overrideCount} step-specific {session.overrideCount === 1
+        ? "path"
+        : "paths"}{session.preview ? " replaced in this preview" : ""}
+    </p>
+  {/if}
+  {#if session.preview}
+    <div class="path-actions" transition:growFade>
+      <PanelButton onclick={resetPaths}>Reset paths</PanelButton>
+      {#if viewerPaths?.canSave}
+        <PanelButton
+          disabled={viewerPaths.saving}
+          onclick={() => viewerPaths.save()}
+          ariaBusy={viewerPaths.saving}>Save paths</PanelButton
+        >
+      {/if}
+    </div>
+  {/if}
   <div class="path-actions">
-    <PanelButton
-      disabled={!session.preview}
-      onclick={() => vm.restoreSavedPaths()}>Restore saved paths</PanelButton
-    >
-    {#if viewerPaths?.canSave}
-      <PanelButton
-        disabled={!session.preview || viewerPaths.saving}
-        onclick={() => viewerPaths.save()}
-        ariaBusy={viewerPaths.saving}>Save paths</PanelButton
-      >
-    {/if}
     <PanelButton onclick={makeDefault}>Make default</PanelButton>
   </div>
 {/if}
@@ -270,8 +279,7 @@
   .path-scope {
     color: var(--theme-text-muted);
     font-size: var(--font-size-sm, 14px);
-    min-height: 2.8em;
-    margin: 8px 0;
+    margin: 0;
   }
 
   .path-actions {
