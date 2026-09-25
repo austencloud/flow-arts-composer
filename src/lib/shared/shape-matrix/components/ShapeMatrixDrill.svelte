@@ -100,6 +100,9 @@
      *  pickers can receive the exact realization this drill already built. */
     onselectRealization?: (realization: ModeRealization) => void;
     selectLabel?: string;
+    onopenRealization?: (realization: ModeRealization) => void;
+    onplayRealization?: (realization: ModeRealization) => void;
+    onshareRealization?: (realization: ModeRealization) => void;
     /** Optional externally-owned mode for URL-restored app state. */
     selectedMode?: VtgMode | null;
     selectedPropMode?: VtgMode | null;
@@ -135,6 +138,9 @@
     data,
     onselectRealization,
     selectLabel = "Use this realization",
+    onopenRealization,
+    onplayRealization,
+    onshareRealization,
     selectedMode = $bindable(null),
     selectedPropMode = $bindable(null),
     onmodechange,
@@ -1430,17 +1436,53 @@
     </div>
   {/if}
 
-  {#if onselectRealization}
+  {#if onselectRealization || onopenRealization || onplayRealization || onshareRealization}
     <div class="select-action" class:available={visibleRealization !== null}>
-      <PanelButton
-        variant="primary"
-        disabled={!visibleRealization}
-        onclick={() =>
-          visibleRealization && onselectRealization(visibleRealization)}
-      >
-        <i class="fas fa-person-running" aria-hidden="true"></i>
-        {selectLabel}
-      </PanelButton>
+      {#if onselectRealization}
+        <PanelButton
+          variant="primary"
+          disabled={!visibleRealization}
+          onclick={() =>
+            visibleRealization && onselectRealization(visibleRealization)}
+        >
+          <i class="fas fa-person-running" aria-hidden="true"></i>
+          {selectLabel}
+        </PanelButton>
+      {/if}
+      {#if onopenRealization}
+        <PanelButton
+          variant="primary"
+          ariaLabel="Open realization in viewer"
+          disabled={!visibleRealization}
+          onclick={() =>
+            visibleRealization && onopenRealization(visibleRealization)}
+        >
+          <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
+          Open<span class="action-suffix"> in viewer</span>
+        </PanelButton>
+      {/if}
+      {#if onplayRealization}
+        <PanelButton
+          ariaLabel="Play realization in viewer"
+          disabled={!visibleRealization}
+          onclick={() =>
+            visibleRealization && onplayRealization(visibleRealization)}
+        >
+          <i class="fas fa-play" aria-hidden="true"></i>
+          Play<span class="action-suffix"> in viewer</span>
+        </PanelButton>
+      {/if}
+      {#if onshareRealization}
+        <PanelButton
+          ariaLabel="Share realization sequence"
+          disabled={!visibleRealization}
+          onclick={() =>
+            visibleRealization && onshareRealization(visibleRealization)}
+        >
+          <i class="fas fa-share-nodes" aria-hidden="true"></i>
+          Share<span class="action-suffix"> sequence</span>
+        </PanelButton>
+      {/if}
     </div>
   {/if}
 </section>
@@ -1713,18 +1755,33 @@
   .select-action {
     grid-area: action;
     min-height: var(--min-touch-target, 44px);
+    display: flex;
+    gap: 0.5rem;
     visibility: hidden;
   }
   .select-action.available {
     visibility: visible;
   }
   .select-action :global(.panel-btn) {
-    width: 100%;
+    flex: 1 1 0;
+    min-width: 0;
+    white-space: nowrap;
+  }
+  @container shape-matrix-drill (max-width: 42rem) {
+    .action-suffix {
+      display: none;
+    }
   }
   /* Phone-height realizations keep the live animation legible. The dedicated
      rail returns as soon as the host has enough width to show it without
      reducing the hero to a thumbnail. */
   @container shape-matrix-drill (max-width: 25rem) {
+    .select-action :global(.panel-btn) {
+      padding-inline: 0.5rem;
+    }
+    .select-action :global(.panel-btn i) {
+      display: none;
+    }
     .drill {
       grid-template-rows: auto minmax(0, 1fr) auto auto;
       grid-template-areas:
@@ -1766,6 +1823,13 @@
 
     .select-action {
       grid-area: action;
+    }
+    .select-action :global(.panel-btn) {
+      padding-inline: 0.5rem;
+    }
+    .select-action :global(.panel-btn i),
+    .action-suffix {
+      display: none;
     }
   }
 </style>
