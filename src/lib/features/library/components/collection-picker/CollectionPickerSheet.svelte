@@ -96,10 +96,9 @@ collection-picker-state for why.
 </Drawer>
 
 <style>
+  /* Drawer.css caps the bottom sheet at --sheet-max-width and centers it. */
   :global(.collection-picker-drawer[data-placement="bottom"]) {
-    max-width: 480px;
-    margin-left: auto;
-    margin-right: auto;
+    --sheet-max-width: 480px;
     border-radius: var(--sheet-radius-large, 20px)
       var(--sheet-radius-large, 20px) 0 0;
   }
