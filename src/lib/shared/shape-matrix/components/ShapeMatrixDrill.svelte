@@ -1262,9 +1262,6 @@
         enabled: mandalaTransition.claim,
       }}
     >
-      {#if appState && !appState.compact}
-        <ShapeMatrixStageActions />
-      {/if}
       <!-- A solo has no word. The letter, its difficulty badge and the
            pictograph carousel all describe the realization built for the
            PAIR: a Kinetic Alphabet letter names how two hands relate, and a
@@ -1482,6 +1479,9 @@
           <i class="fas fa-share-nodes" aria-hidden="true"></i>
           Share<span class="action-suffix"> sequence</span>
         </PanelButton>
+      {/if}
+      {#if appState && !appState.compact}
+        <ShapeMatrixStageActions placement="panel" />
       {/if}
     </div>
   {/if}

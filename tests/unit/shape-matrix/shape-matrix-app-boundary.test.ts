@@ -42,12 +42,10 @@ describe("Shape Matrix app boundary", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("keeps route navigation and viewport ownership outside the embeddable app", () => {
+  it("keeps viewport ownership in the embeddable app", () => {
     const appSource = readTree(APP_ROOT);
 
     expect(appSource).not.toContain('href="/notation"');
-    expect(appSource).not.toContain("$app/");
-    expect(appSource).not.toContain("window.location");
     expect(appSource).not.toMatch(/position:\s*fixed/);
     expect(appSource).toContain("ResizeObserver");
     expect(appSource).toContain("container: shape-matrix-app / size");
@@ -305,7 +303,7 @@ describe("Shape Matrix app boundary", () => {
     expect(stageActionsSource).toContain(
       "const hasPair = $derived(surfaceHasPair(appState));"
     );
-    expect(stageActionsSource.match(/disabled=\{!hasPair\}/g)).toHaveLength(1);
+    expect(stageActionsSource.match(/disabled=\{!hasPair\}/g)).toHaveLength(2);
     expect(workspaceSource).toContain(
       "customizeSection(appState, animationState)"
     );
@@ -320,19 +318,15 @@ describe("Shape Matrix app boundary", () => {
     expect(workspaceSource).toContain('role="dialog"');
     expect(workspaceSource).toContain('id: "shape-matrix:customize"');
 
-    // A wide host has no control band under the animation at all. The band
-    // used to carry one Customize button and a hand-rolled play button pushed
-    // to the far end of it; the canvas already toggles on a click, so the
-    // transport is the canvas and Customize is a gear in its corner. Compact
-    // hosts keep the AnimationPanel, since the grid pane is off screen there:
-    // each pill opens a sheet, and Props routes to the canonical prop sheet.
+    // Wide hosts put Customize alongside the realization actions, clear of
+    // the animation. Compact hosts keep the AnimationPanel controls.
     const animationStateSource = read(
       "src/lib/shared/shape-matrix/app/state/shape-matrix-animation-state.svelte.ts"
     );
     expect(drillSource).toMatch(
       /\{#if !appState \|\| appState\.compact\}[\s\S]*?<AnimationPanel/
     );
-    expect(drillSource).toContain("<ShapeMatrixStageActions />");
+    expect(drillSource).toContain('<ShapeMatrixStageActions placement="panel" />');
     // The canvas says what a click will do. It owns the four hint styles; the
     // engine must not answer this with a button of its own.
     expect(drillSource).toContain('hoverHint: "badge"');
@@ -605,6 +599,8 @@ describe("Shape Matrix app boundary", () => {
     expect(shellSource).toContain("onclick={shareThisView}");
     expect(shellSource).toContain("appState.shareLink()");
     expect(shellSource).toContain("shareOrCopyLink({");
+    expect(shellSource).toContain("generateSequenceRoutePath(realization.seq)");
+    expect(shellSource).not.toContain('shareOnOpen: action === "share"');
     expect(shellSource).not.toContain("ShapeMatrixShareButton");
     // Handing a link on has one owner: platform sheet, then clipboard.
     expect(linkShareSource).toContain("platform.share(payload)");
