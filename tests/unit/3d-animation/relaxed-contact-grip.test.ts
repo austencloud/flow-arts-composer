@@ -139,12 +139,15 @@ describe.runIf(avatarAssetsPresent())("relaxed strict-contact grip", () => {
           const middlePoint = fingers
             .get("Middle1")!
             .getWorldPosition(new Vector3());
-          const palmBase = fingers.get("Index1")!.getWorldPosition(new Vector3())
+          const palmBase = fingers
+            .get("Index1")!
+            .getWorldPosition(new Vector3())
             .add(fingers.get("Pinky1")!.getWorldPosition(new Vector3()))
             .multiplyScalar(0.5);
-          const wristAngleRad = wristPoint.clone().sub(elbowPoint).angleTo(
-            palmBase.sub(wristPoint)
-          );
+          const wristAngleRad = wristPoint
+            .clone()
+            .sub(elbowPoint)
+            .angleTo(palmBase.sub(wristPoint));
           const palmNormal = fingers
             .get("Pinky1")!
             .getWorldPosition(new Vector3())
