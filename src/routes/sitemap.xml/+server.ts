@@ -2,7 +2,7 @@ import { LANDING_DOMAIN } from "../../config/domains";
 import { GUIDE_BODY_PAGES } from "../(public)/guide/level-1/_data/guide-manifest";
 import { LEVEL2_TOPIC_PAGES } from "../(public)/guide/level-2/_data/level2-topic-manifest";
 import { TIMING_DIRECTION_ARTICLE_SLUGS } from "../(public)/timing-and-direction/_data/timing-direction-articles";
-import { TKA_CONCEPTS } from "$lib/features/learn/domain/concepts";
+import { getAvailableConcepts } from "$lib/features/learn/domain/concept-experience-registry";
 import { getFirestoreRest } from "$lib/server/firestore/firestore-rest";
 import {
   emptySequenceMeta,
@@ -85,7 +85,8 @@ const pages: SitemapEntry[] = [
   { url: "guide/codex" },
   // The interactive lesson course. The index is the course landing; each
   // lesson also gets a stable deep link — see learnConceptsEntries below,
-  // derived from TKA_CONCEPTS so a new lesson is listed automatically.
+  // derived from the published-lesson registry so a new lesson is listed
+  // automatically.
   { url: "learn/concepts" },
 ];
 
@@ -112,12 +113,12 @@ const timingDirectionEntries = TIMING_DIRECTION_ARTICLE_SLUGS.map((slug) => ({
 }));
 
 /**
- * Every interactive lesson (/learn/concepts/<id>), enumerated from the same
- * TKA_CONCEPTS registry PublicConceptCourse.svelte reads to resolve a lesson
- * by id, so a new lesson is listed here automatically and this can't drift
- * from the routes that actually exist.
+ * Every published interactive lesson (/learn/concepts/<id>). Only lessons in
+ * the experience registry are prerendered; a planned lesson from concepts.ts
+ * falls through to the noindex app shell and bounces to the course index, so
+ * listing it here was a "Submitted URL marked noindex" error for 20 URLs.
  */
-const learnConceptsEntries = TKA_CONCEPTS.map((concept) => ({
+const learnConceptsEntries = getAvailableConcepts().map((concept) => ({
   url: `learn/concepts/${concept.id}`,
 }));
 

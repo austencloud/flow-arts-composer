@@ -309,6 +309,16 @@
           Level 2 PDF
         </a>
       </li>
+      <li>
+        <a
+          class="section-link"
+          href="/guides/level-3.pdf"
+          download
+          onclick={() => onLinkClick?.()}
+        >
+          Level 3 PDF
+        </a>
+      </li>
     </ul>
   </div>
 </nav>

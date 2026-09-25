@@ -78,9 +78,11 @@ export class FirebaseSettingsPersister {
   }
 
   /**
-   * Save settings to Firestore
+   * Merge settings into the account document. Pass only the keys to change:
+   * merge:true leaves every other field as it is, and any key sent is a value
+   * this write puts back over whatever another tab or device stored there.
    */
-  async saveSettings(settings: AppSettings): Promise<void> {
+  async saveSettings(settings: Partial<AppSettings>): Promise<void> {
     // Captured before any await, so the whole save — including the activeProp
     // mirror that runs after the settings write — is pinned to the account
     // this write belongs to.
@@ -113,7 +115,11 @@ export class FirebaseSettingsPersister {
       throw error;
     }
 
-    await this.mirrorActiveProp(settings, ownerId);
+    // Not awaited. The caller holds its single write slot until this save
+    // settles, and the badge is a separate document the settings do not
+    // depend on; waiting on it kept every edit queued behind that slot
+    // waiting too.
+    void this.mirrorActiveProp(settings, ownerId);
   }
 
   /**
@@ -124,7 +130,7 @@ export class FirebaseSettingsPersister {
    * leaves a stale badge, not broken settings.
    */
   private async mirrorActiveProp(
-    settings: AppSettings,
+    settings: Partial<AppSettings>,
     ownerId: string
   ): Promise<void> {
     const activeProp = settings.leftPropType;
