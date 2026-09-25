@@ -37,7 +37,11 @@ export interface GlobalArrowAdjustment {
   /** Turns tuple: "(2, 0.5)", "(s, 1, 1)", etc. */
   readonly turnsTuple: string;
 
-  /** Arrow identifier: "blue", "red", "pro", "anti", etc. */
+  /**
+   * Arrow identifier: "left" or "right". Records saved before the hand
+   * rename still say "blue" or "red"; the repository reads them as left and
+   * right.
+   */
   readonly arrowKey: string;
 
   /** Prop type for this arrow (Layer 2+). Lowercase: "staff", "fan", "club", etc. */
