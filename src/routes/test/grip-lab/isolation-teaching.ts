@@ -125,7 +125,8 @@ export function defaultTeachingKeys(): TeachingKey[] {
       elbowY: -0.6,
       elbowZ: 1,
       tipX: -0.08,
-      tipZ: -0.05,
+      // Give the thumb end room to pass inside the right elbow at West.
+      tipZ: 0.1,
     },
     {
       ...NEUTRAL,
@@ -136,7 +137,7 @@ export function defaultTeachingKeys(): TeachingKey[] {
       pelvisZ: 0.0125,
       tipX: -0.1,
       tipY: 0.07,
-      tipZ: -0.025,
+      tipZ: 0.05,
     },
   ];
 }

@@ -206,11 +206,8 @@
     closeRequest?: number;
     /** Accessible region name for non-export hosts. */
     regionLabel?: string;
-    /** A sidebar host whose panel height is set by something else on
-     *  screen (the motion-path studio's card matches the canvas beside it)
-     *  wants every page to spend that height rather than sit at the top of
-     *  it. Display's pictures grow into it, and Effort alone on its page
-     *  shares it between its tiles, each drawing its timing curve. */
+    /** A height-bounded sidebar can give its visual pages the remaining room.
+     *  Auto-height hosts leave this off so their content sets the height. */
     fillPages?: boolean;
   }
 
@@ -564,9 +561,8 @@
   const playbackHasPage = $derived(
     showTempoControls || !!onPlaybackModeChange || showPathShape
   );
-  // Effort alone on a page the host asked to be filled.
-  const effortFills = $derived(
-    fillPages && layout === "sidebar" && !playbackHasPage
+  const visualPagesFill = $derived(
+    fillPages && (layout === "sidebar" || presentation === "content")
   );
 
   const playbackSummary = $derived.by(() => {
@@ -886,10 +882,10 @@
     </div>
   {:else if resolvedPill === "effects"}
     <EffectsPanel
-      layout={layout === "bottom" ? "strip" : "sidebar"}
-      showHeading={layout === "bottom" ||
+      layout={layout === "bottom" && !visualPagesFill ? "strip" : "sidebar"}
+      showHeading={(layout === "bottom" && !visualPagesFill) ||
         (presentation === "content" && !fillPages)}
-      fill={fillPages && layout === "sidebar"}
+      fill={visualPagesFill}
       {bpm}
       onBpmChange={onBpmChange ?? (() => {})}
       {isPlaying}
@@ -919,7 +915,7 @@
          put visibility toggles under a heading that claimed they were motion;
          it has its own pill again. Sidebar only; the mobile dock still gets
          separate tabs, where one tall merged tray would not fit. -->
-    <div class="motion-scope" class:fills={effortFills}>
+    <div class="motion-scope" class:fills={visualPagesFill}>
       <!-- A host with its own transport bar owns tempo there and passes
            showTempoControls={false}; with no playback mode either, Tempo and
            Mode have nothing to hold and Paths runs the full width above
@@ -956,7 +952,7 @@
      carry one, and the effort tiles were the single unlabelled block under a
      heading named for something else. -->
 {#snippet effortBody(labelled = false)}
-  <div class="section-pad">
+  <div class="section-pad" class:fill-effort={visualPagesFill}>
     {#if labelled}
       <span class="rt-section-label">{t("viewer_ui_effort")}</span>
     {/if}
@@ -968,7 +964,7 @@
     <EffortPanel
       columns={layout === "sidebar" ? 2 : 4}
       showSubtitles={layout === "sidebar"}
-      fill={effortFills}
+      fill={visualPagesFill}
       onSettingChange={(previous, value) =>
         reportSetting("effort", "preset", previous, value)}
     />
@@ -1049,7 +1045,7 @@
         {showWordToggle}
         {sequence}
         propType={selectedPropType}
-        fill={layout === "sidebar"}
+        fill={layout === "sidebar" || visualPagesFill}
         grow={fillPages}
         {onSettingChange}
       />
@@ -1267,6 +1263,7 @@
 {#if presentation === "content" && layout === "bottom"}
   <div
     class="external-section-body dock-dense"
+    class:fill={visualPagesFill}
     role="region"
     aria-label={activePillLabel || effectiveRegionLabel}
   >
@@ -1346,11 +1343,17 @@
     onSelect={handlePillSelect}
     direction={panelDirection}
     {reduceMotion}
-    fillBody={resolvedPill === "display" ||
+    fillBody={(resolvedPill === "effort" && visualPagesFill) ||
+      resolvedPill === "display" ||
       resolvedPill === "effects" ||
       resolvedPill === "props" ||
-      (resolvedPill === "motion" && effortFills)}
-    fluidBody={resolvedPill === "props"}
+      (resolvedPill === "motion" && visualPagesFill)}
+    fluidBody={resolvedPill === "props" ||
+      (visualPagesFill &&
+        (resolvedPill === "effects" ||
+          resolvedPill === "display" ||
+          resolvedPill === "motion" ||
+          resolvedPill === "effort"))}
     pageOnly={presentation === "content"}
     regionLabel={presentation === "content"
       ? activePillLabel || effectiveRegionLabel
@@ -1421,6 +1424,10 @@
     height: 100%;
     overflow: hidden auto;
   }
+  .external-section-body.fill {
+    display: flex;
+    flex-direction: column;
+  }
   .section-pad {
     display: flex;
     flex-direction: column;
@@ -1435,11 +1442,12 @@
     container-type: inline-size;
   }
 
-  /* Effort alone on a page the host fills: each wrapper hands the height down
-     so the tiles can share it. */
+  /* Height-bounded pages give their remaining room to the curve tiles. Tempo
+     and path controls keep their natural height above the merged Motion grid. */
   .motion-scope.fills,
   .motion-scope.fills .motion-stack,
-  .motion-scope.fills .motion-stack > :global(.section-pad) {
+  .motion-scope.fills .motion-stack > :global(.section-pad),
+  .section-pad.fill-effort {
     flex: 1 1 0;
     min-height: 0;
     display: flex;
@@ -1511,7 +1519,7 @@
 
     .motion-stack:not(.effort-only) :global(.effort-btn.with-sub) {
       padding: 8px 4px;
-      min-height: 40px;
+      min-height: 72px;
     }
 
     .motion-stack:not(.effort-only) :global(.effort-grid) {
@@ -1522,6 +1530,15 @@
   @container motion-stack (min-width: 528px) {
     .motion-stack {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .motion-scope.fills .motion-stack {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    .motion-scope.fills .motion-stack.effort-only {
+      grid-template-rows: minmax(0, 1fr);
     }
 
     /* A host with no Paths page (the shape matrix traces a fixed figure) has
@@ -1621,11 +1638,11 @@
      grouping the sidebar shows, in the shortest tray that can carry it. The
      previews come along; they are the point of the tile, and shrinking one is
      better than replacing it with a word. */
-  .dock-dense :global(.vis-grid) {
+  .dock-dense:not(.fill) :global(.vis-grid) {
     grid-template-columns: repeat(4, 1fr);
     gap: 4px;
   }
-  .dock-dense :global(.vis-grid > *:nth-child(n + 5)) {
+  .dock-dense:not(.fill) :global(.vis-grid > *:nth-child(n + 5)) {
     margin-top: 6px;
   }
   /* The cap is set above the column width on purpose, so the COLUMN binds and
@@ -1634,19 +1651,19 @@
      the grid read as eight smudges, which is the state this redesign replaced.
      4rem is the largest picture whose two rows still land inside the capped
      tray without scrolling. */
-  .dock-dense :global(.vis-grid .rt-chip) {
+  .dock-dense:not(.fill) :global(.vis-grid .rt-chip) {
     gap: 4px;
     padding: 6px 3px;
     --tile-art: 4rem;
   }
-  .dock-dense :global(.vis-grid .chip-label) {
+  .dock-dense:not(.fill) :global(.vis-grid .chip-label) {
     font-size: 0.68rem;
   }
   /* A tablet's dock is 776px wide with a 250px tray — 4rem is a phone's cap
      and leaves a 64px picture inside a 190px tile. 5rem is the largest picture
      whose two rows still clear that tray. */
   @container (min-width: 30rem) {
-    .dock-dense :global(.vis-grid .rt-chip) {
+    .dock-dense:not(.fill) :global(.vis-grid .rt-chip) {
       --tile-art: 5rem;
     }
   }
@@ -1664,16 +1681,16 @@
      under 44rem, which put it back on four columns of 171px tiles carrying an
      80px picture. */
   @container (min-width: 42rem) {
-    .dock-dense :global(.vis-grid) {
+    .dock-dense:not(.fill) :global(.vis-grid) {
       grid-template-columns: repeat(8, minmax(0, 1fr));
     }
-    .dock-dense :global(.vis-grid > *:nth-child(n + 5)) {
+    .dock-dense:not(.fill) :global(.vis-grid > *:nth-child(n + 5)) {
       margin-top: 0;
     }
-    .dock-dense :global(.vis-grid > *:nth-child(5)) {
+    .dock-dense:not(.fill) :global(.vis-grid > *:nth-child(5)) {
       margin-left: 8px;
     }
-    .dock-dense :global(.vis-grid .rt-chip) {
+    .dock-dense:not(.fill) :global(.vis-grid .rt-chip) {
       --tile-art: 6rem;
     }
   }
@@ -1693,6 +1710,11 @@
   .dock-dense .display-rows,
   .dock-dense .display-rows .rt-section {
     flex: 0 0 auto;
+  }
+  /* Full-page compact settings have a definite height, unlike a dock tray. */
+  .external-section-body.fill .display-rows,
+  .external-section-body.fill .display-rows .rt-section {
+    flex: 1 1 0;
   }
   /* Playback: 5 controls don't need four stacked bands. Label-left rows, and
      the two mode buttons sit side-by-side. Dock only — the sidebar keeps the
@@ -1721,13 +1743,16 @@
     flex: 1;
     min-width: 0;
   }
-  /* EffortPanel (56px tile -> 48, still >=44) */
+  /* The dock keeps the actual curves while its tray owns scrolling. */
   .dock-dense :global(.effort-btn) {
-    min-height: 48px;
-    padding: 10px 6px;
+    min-height: 72px;
+    padding: 6px 4px;
   }
   .dock-dense :global(.effort-grid) {
     gap: 4px;
+  }
+  .dock-dense :global(.effort-curve) {
+    height: 22px;
   }
   /* PathShapePanel */
   .dock-dense :global(.path-shape-grid) {

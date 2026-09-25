@@ -18,6 +18,8 @@
   import ContactIsolationPerformer from "$lib/shared/3d/performers/ContactIsolationPerformer.svelte";
   import {
     ISOLATION_ENDPOINT,
+    MIN_LAB_STAFF_LENGTH_M,
+    MAX_LAB_STAFF_LENGTH_M,
     sampleStaffIsolation,
   } from "$lib/shared/3d/performers/staff-isolation";
   import { auditFireStaffProfile } from "$lib/shared/3d/diagnostics/contact-correct/fire-staff-mesh-audit";
@@ -177,7 +179,9 @@
   setCharacterCatalogContext(() => catalog);
 
   const groundOffset = $derived(-userProportionsState.groundY);
-  const prop = $derived(sampleStaffIsolation(inspection.phase, staffOffset));
+  const prop = $derived(
+    sampleStaffIsolation(inspection.phase, staffOffset, inspection.staffLengthM)
+  );
   const handCenter = $derived<[number, number, number]>([
     prop.worldPosition.x,
     prop.worldPosition.y + groundOffset,
@@ -226,8 +230,18 @@
   // Once someone moves the camera or a pose handle, keep their chosen angle
   // instead of pulling the view back toward the moving hand.
   $effect(() => {
-    if (stageWidth > 0 && stageHeight > 0 && cameraControls && !cameraAdjusted && !dragging) {
-      void cameraControls.setLookAt(...framedShot.position, ...framedShot.target, false);
+    if (
+      stageWidth > 0 &&
+      stageHeight > 0 &&
+      cameraControls &&
+      !cameraAdjusted &&
+      !dragging
+    ) {
+      void cameraControls.setLookAt(
+        ...framedShot.position,
+        ...framedShot.target,
+        false
+      );
     }
   });
 
@@ -433,6 +447,7 @@
         <ContactIsolationPerformer
           characterId={inspection.characterId}
           phase={inspection.phase}
+          staffLengthM={inspection.staffLengthM}
           hand={inspection.hand}
           {bodyPose}
           tipOffset={staffOffset}
@@ -569,6 +584,27 @@
       onBegin={() => inspection.beginEdit()}
       onEnd={() => inspection.endEdit()}
     />
+    <label class="staff-length-control">
+      <span
+        >Staff length <strong
+          >{Math.round(inspection.staffLengthM * 100)} cm</strong
+        ></span
+      >
+      <input
+        aria-label="Staff length"
+        type="range"
+        min={MIN_LAB_STAFF_LENGTH_M * 100}
+        max={MAX_LAB_STAFF_LENGTH_M * 100}
+        step="1"
+        value={Math.round(inspection.staffLengthM * 100)}
+        onpointerdown={() => inspection.beginEdit()}
+        onpointerup={() => inspection.endEdit()}
+        onpointercancel={() => inspection.endEdit()}
+        onblur={() => inspection.endEdit()}
+        oninput={(event) =>
+          inspection.setStaffLengthM(Number(event.currentTarget.value) / 100)}
+      />
+    </label>
     <div class="control-grid">
       <div class="position-stops" bind:clientWidth={positionsWidth}>
         <SegmentedControl
@@ -663,6 +699,25 @@
   .control-grid {
     display: flex;
     align-items: center;
+  }
+  .staff-length-control {
+    display: grid;
+    grid-template-columns: auto minmax(8rem, 1fr);
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+    min-height: var(--min-touch-target, 44px);
+    color: var(--theme-text-dim);
+    font-size: var(--font-size-min, 14px);
+  }
+  .staff-length-control span {
+    display: flex;
+    gap: 0.5rem;
+    white-space: nowrap;
+  }
+  .staff-length-control strong {
+    color: var(--theme-text);
+    font-weight: 600;
   }
   .page-header {
     justify-content: space-between;
@@ -836,6 +891,10 @@
     padding: 0 1.25rem 1.5rem;
   }
   @media (max-width: 700px) {
+    .staff-length-control {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.25rem;
+    }
     .stage.editing {
       grid-template-columns: minmax(0, 1fr);
       grid-template-rows: auto auto;

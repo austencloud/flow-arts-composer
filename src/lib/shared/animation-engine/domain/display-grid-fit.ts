@@ -1,12 +1,12 @@
 /**
- * Fit Display's eight tiles to a box's shape, at a size the box does not get
+ * Fit Display's tiles to a box's shape, at a size the box does not get
  * to dictate.
  *
  * Two decisions, in this order. First how big a picture may be: a fraction of
  * the box's SHORT side, floored and ceilinged, so the control looks like the
- * same control on a phone tray and on a 4K rail. Then how to arrange eight
- * tiles: 2, 4 and 8 columns all keep the four square-field layers and the four
- * edge marks on whole rows, and the winner is whichever fits the biggest
+ * same control on a phone tray and on a 4K rail. Then how to arrange the
+ * tiles: whole rows keep a lone tile off the end, while the grouped variant
+ * keeps its four square-field layers and edge marks apart. The winner fits the biggest
  * picture, or, once the ceiling has settled that, whichever arrangement's own
  * proportions come closest to the box's, since that is the one that centres
  * without a lopsided margin down one axis.
@@ -29,6 +29,8 @@ export interface DisplayGridBox {
   gapY: number;
   count: number;
   grow?: boolean;
+  /** Tile index where the second visual group starts; null for one group. */
+  groupBoundary?: number | null;
 }
 
 export interface DisplayGridFit {
@@ -37,7 +39,6 @@ export interface DisplayGridFit {
   tile: number;
 }
 
-const COLUMN_CHOICES = [2, 4, 8];
 /** The breath between the square-field layers and the edge marks. */
 export const DISPLAY_GROUP_GAP = 10;
 /** Below this a picture stops reading as one. A box that cannot hold eight at
@@ -50,6 +51,14 @@ export function fitDisplayGrid(box: DisplayGridBox): DisplayGridFit | null {
   const { width, height, padX, chromeY, gapX, gapY, count } = box;
   if (width <= 0 || height <= 0 || count <= 0) return null;
 
+  const boundary = box.groupBoundary === undefined ? 4 : box.groupBoundary;
+  const grouped = boundary !== null && boundary > 0 && boundary < count;
+  const columnChoices = grouped
+    ? [2, 4, 8].filter((cols) => cols <= count)
+    : Array.from({ length: count - 1 }, (_, i) => i + 2).filter(
+        (cols) => count % cols === 0
+      );
+
   const cap = box.grow
     ? Number.POSITIVE_INFINITY
     : Math.min(176, Math.max(72, Math.round(Math.min(width, height) * 0.2)));
@@ -60,20 +69,31 @@ export function fitDisplayGrid(box: DisplayGridBox): DisplayGridFit | null {
   const chrome = Math.max(padX, chromeY);
   let best = { cols: 0, art: 0, skew: Number.POSITIVE_INFINITY };
 
-  for (const cols of COLUMN_CHOICES) {
-    if (cols > count) continue;
+  for (const cols of columnChoices) {
     const rows = Math.ceil(count / cols);
     // The group breath is a row gap when the boundary falls on a row edge,
     // and a column gap when one row holds everything.
     const tileW =
-      (width - gapX * (cols - 1) - (rows === 1 ? DISPLAY_GROUP_GAP : 0)) / cols;
+      (width -
+        gapX * (cols - 1) -
+        (grouped && rows === 1 ? DISPLAY_GROUP_GAP : 0)) /
+      cols;
     const tileH =
-      (height - gapY * (rows - 1) - (rows > 1 ? DISPLAY_GROUP_GAP : 0)) / rows;
+      (height -
+        gapY * (rows - 1) -
+        (grouped && rows > 1 ? DISPLAY_GROUP_GAP : 0)) /
+      rows;
     const art = Math.min(cap, tileW - chrome, tileH - chrome);
     if (art <= 0) continue;
     const tile = art + chrome;
-    const gridW = cols * tile + gapX * (cols - 1);
-    const gridH = rows * tile + gapY * (rows - 1);
+    const gridW =
+      cols * tile +
+      gapX * (cols - 1) +
+      (grouped && rows === 1 ? DISPLAY_GROUP_GAP : 0);
+    const gridH =
+      rows * tile +
+      gapY * (rows - 1) +
+      (grouped && rows > 1 ? DISPLAY_GROUP_GAP : 0);
     const skew = Math.abs(Math.log(gridW / gridH / boxAspect));
     // Biggest picture wins. Where the cap has already settled that, the shape
     // decides.
