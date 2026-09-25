@@ -145,6 +145,9 @@
       <div class="resource-row scope-links">
         <a href="/faq" class="resource-chip">Read common questions</a>
         <a href="/history" class="quiet-link">Read the notation history</a>
+        <a href="/roots/software" class="quiet-link"
+          >Read the software history</a
+        >
       </div>
     </div>
   </section>

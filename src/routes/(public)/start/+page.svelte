@@ -91,6 +91,8 @@
 
 <svelte:head>
   <title>Get Started · Flow Arts Composer</title>
+  <!-- The festival QR signup card: an account form, not a search landing page. -->
+  <meta name="robots" content="noindex" />
   <meta
     name="description"
     content="Create your Flow Arts Composer account. Build, animate, and save flow arts sequences with The Kinetic Alphabet."
