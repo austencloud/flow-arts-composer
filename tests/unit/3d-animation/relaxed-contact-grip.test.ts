@@ -133,9 +133,18 @@ describe.runIf(avatarAssetsPresent())("relaxed strict-contact grip", () => {
           const wristPoint = state.rightArmChain!.effector.getWorldPosition(
             new Vector3()
           );
+          const elbowPoint = state.rightArmChain!.middle.getWorldPosition(
+            new Vector3()
+          );
           const middlePoint = fingers
             .get("Middle1")!
             .getWorldPosition(new Vector3());
+          const palmBase = fingers.get("Index1")!.getWorldPosition(new Vector3())
+            .add(fingers.get("Pinky1")!.getWorldPosition(new Vector3()))
+            .multiplyScalar(0.5);
+          const wristAngleRad = wristPoint.clone().sub(elbowPoint).angleTo(
+            palmBase.sub(wristPoint)
+          );
           const palmNormal = fingers
             .get("Pinky1")!
             .getWorldPosition(new Vector3())
@@ -153,6 +162,7 @@ describe.runIf(avatarAssetsPresent())("relaxed strict-contact grip", () => {
             palmNormal.negate();
           return {
             phase,
+            wristAngleRad,
             center,
             axis,
             palmNormal,
@@ -448,6 +458,12 @@ describe.runIf(avatarAssetsPresent())("relaxed strict-contact grip", () => {
             true
           )
         );
+        // The saved North frame used to bend the hand more than 110 degrees
+        // back across the forearm despite keeping the palm socket on the staff.
+        // Check the visible hand direction after finger sculpt and contact.
+        for (const frame of savedTransition.slice(0, 5)) {
+          expect(frame.wristAngleRad, `phase ${frame.phase}`).toBeLessThan(1.4);
+        }
         for (const frame of savedTransition) {
           const { phase } = frame;
           const required = frame.fingers.filter(
