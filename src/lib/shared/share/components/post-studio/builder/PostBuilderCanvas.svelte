@@ -7,6 +7,7 @@
   import type { PostBuilderState } from "$lib/shared/media-composition/state/post-builder-state.svelte";
   import { toPaintFrame } from "$lib/shared/media-composition/services/post-studio-layer-painter";
   import {
+    ANIMATION_OVERLAY_ROLE,
     STRIP_AREA,
     stripModeFromRole,
   } from "$lib/shared/media-composition/domain/post-plan-compiler";
@@ -68,10 +69,23 @@
     };
   }
 
+  /** The split's labels are painted over the animation, not drawn by it. */
+  const labelsPainted = $derived(
+    Boolean(
+      preset?.clips.some((clip) => clip.sourceRole === ANIMATION_OVERLAY_ROLE)
+    ) && bindingFor(ANIMATION_OVERLAY_ROLE)?.status === "ready"
+  );
+
   const stripGuideVisible = $derived(
     showStripGuide &&
       builder.frameLayers.some((layer) => stripModeFromRole(layer.sourceRole))
   );
+
+  /**
+   * Until its take is mapped, a layer drawn from the sequence holds the
+   * opening pose, the engine's position 1, rather than going blank.
+   */
+  const OPENING_POSITION = 1;
 
   function pct(value: number): string {
     return `${value * 100}%`;
@@ -124,10 +138,13 @@
                   {cardRenderOptions}
                   {handLabeling}
                   {qrSequence}
-                  sequencePosition={layer.sequencePosition}
+                  sequencePosition={layer.sequencePosition ??
+                    (isVideo ? undefined : OPENING_POSITION)}
                   sequencePassIndex={layer.sequencePassIndex}
-                  animationTimeSeconds={layer.animationTimeSeconds}
+                  animationTimeSeconds={layer.animationTimeSeconds ??
+                    (isVideo ? undefined : 0)}
                   breakdownMotion={stripModeFromRole(clip.sourceRole) !== null}
+                  {labelsPainted}
                   displayedBeatNumber={layer.displayedBeatNumber ??
                     (binding.renderMode === "choreo-card" ? 0 : undefined)}
                   clipId={clip.id}

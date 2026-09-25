@@ -31,6 +31,8 @@
     sequencePassIndex?: number;
     animationTimeSeconds?: number;
     breakdownMotion?: boolean;
+    /** The post paints the animation's labels; see the animation layer. */
+    labelsPainted?: boolean;
     displayedBeatNumber?: number;
     clipId: string;
     transform: EvaluatedFrameLayer["transform"];
@@ -52,6 +54,7 @@
     sequencePassIndex,
     animationTimeSeconds,
     breakdownMotion,
+    labelsPainted = false,
     displayedBeatNumber,
     clipId,
     transform,
@@ -212,6 +215,7 @@
       {sequencePassIndex}
       {animationTimeSeconds}
       {breakdownMotion}
+      {labelsPainted}
       {playing}
       leftPropType={cardRenderOptions?.leftPropTypeOverride ??
         cardRenderOptions?.propTypeOverride}

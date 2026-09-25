@@ -21,6 +21,7 @@
     sequencePassIndex = 0,
     animationTimeSeconds,
     breakdownMotion = false,
+    labelsPainted = false,
     playing,
     leftPropType,
     rightPropType,
@@ -30,6 +31,11 @@
     sequencePassIndex?: number;
     animationTimeSeconds?: number;
     breakdownMotion?: boolean;
+    /**
+     * The post paints the beat number, letter and element icon over this
+     * layer, so the animator's own copies would show twice.
+     */
+    labelsPainted?: boolean;
     playing: boolean;
     leftPropType?: PropType;
     rightPropType?: PropType;
@@ -162,6 +168,9 @@
       previewDarkMode
       hideProgressBar
       hideHeader
+      hideTkaGlyph={labelsPainted}
+      hideStepNumbers={labelsPainted}
+      hideElementalGlyph={labelsPainted}
       fillContainer
       virtualTime={animationTimeSeconds === undefined
         ? undefined
