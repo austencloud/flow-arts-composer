@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { page } from "$app/state";
 import { createContactInspectionState } from "../../../src/routes/test/grip-lab/contact-inspection-state.svelte";
 import {
@@ -14,6 +14,67 @@ function createState(search = "") {
 }
 
 describe("Grip Lab keyframe state", () => {
+  beforeEach(() => window.sessionStorage.clear());
+
+  it("recovers an unfinished drag and its undo step after a reload", () => {
+    const search = "?phase=2.000&segment=2";
+    const state = createState(search);
+    const original = state.selectedKey!;
+    state.beginEdit();
+    state.editPose({ turn: 0.3 });
+    state.editPose({ turn: 0.4 });
+
+    const reloaded = createState(search);
+    reloaded.restoreDraft();
+    expect(reloaded.selectedKey?.turn).toBe(0.4);
+    reloaded.undo();
+    expect(reloaded.selectedKey).toEqual(original);
+    expect(reloaded.canUndo).toBe(false);
+    reloaded.redo();
+    expect(reloaded.selectedKey?.turn).toBe(0.4);
+  });
+
+  it("keeps completed edits and undo/redo history across reloads", () => {
+    const state = createState("?phase=2.000&segment=2");
+    state.editPose({ turn: 0.3 });
+    state.setTolerance(0.08);
+    state.undo();
+
+    const reloaded = createState(new URL(state.poseLink()).search);
+    reloaded.restoreDraft();
+    expect(reloaded.selectedKey?.turn).toBe(0.3);
+    expect(reloaded.tolerance).toBe(0.13);
+    expect(reloaded.canUndo).toBe(true);
+    expect(reloaded.canRedo).toBe(true);
+    reloaded.redo();
+    expect(reloaded.tolerance).toBe(0.08);
+  });
+
+  it("saves a newly added keyframe without an explicit save action", () => {
+    const state = createState("?phase=0.500&segment=0");
+    const originalCount = state.keys.length;
+    expect(state.addKey()).toBe(true);
+
+    const reloaded = createState(new URL(state.poseLink()).search);
+    reloaded.restoreDraft();
+    expect(reloaded.keys).toHaveLength(originalCount + 1);
+    expect(reloaded.selectedKey?.phase).toBe(0.5);
+    reloaded.undo();
+    expect(reloaded.keys).toHaveLength(originalCount);
+  });
+
+  it("respects a different explicit pose link instead of replacing it with a tab draft", () => {
+    const state = createState("?phase=2.000&segment=2");
+    state.editPose({ turn: 0.3 });
+    const other = createState(
+      "?phase=2.000&segment=2&poses=" +
+        encodeURIComponent(encodeTeachingKeys(defaultTeachingKeys()))
+    );
+    other.restoreDraft();
+    expect(other.selectedKey?.turn).toBe(defaultTeachingKeys()[2]!.turn);
+    expect(other.canUndo).toBe(false);
+  });
+
   it("keeps keyboard additions within the URL's 100-keyframe limit", () => {
     const state = createState();
     for (let i = 0; i < 200 && state.keys.length < 100; i++) {
@@ -24,7 +85,9 @@ describe("Grip Lab keyframe state", () => {
     state.setPhase(3.987);
     expect(state.canAddKey).toBe(false);
     expect(state.addKey()).toBe(false);
-    expect(decodeTeachingKeys(new URL(state.poseLink()).searchParams.get("poses"))).toHaveLength(100);
+    expect(
+      decodeTeachingKeys(new URL(state.poseLink()).searchParams.get("poses"))
+    ).toHaveLength(100);
   });
   it("retimes a whole pose without changing its authored channels or overwriting another key", () => {
     const state = createState("?phase=2.000&segment=2");
@@ -162,13 +225,13 @@ describe("Grip Lab keyframe state", () => {
     expect(state.canRedo).toBe(false);
   });
 
-  it("keeps only the latest thirty undoable changes", () => {
+  it("keeps the latest hundred undoable changes", () => {
     const state = createState();
 
-    for (let value = 1; value <= 32; value += 1) {
+    for (let value = 1; value <= 102; value += 1) {
       state.setTolerance(value / 1000);
     }
-    for (let count = 0; count < 30; count += 1) state.undo();
+    for (let count = 0; count < 100; count += 1) state.undo();
 
     expect(state.tolerance).toBe(0.002);
     expect(state.canUndo).toBe(false);
