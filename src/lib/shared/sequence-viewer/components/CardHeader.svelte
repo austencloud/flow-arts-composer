@@ -12,6 +12,7 @@
 </script>
 
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { fade, scale, slide } from "svelte/transition";
   import { TextRenderer } from "$lib/shared/render/services/text-renderer";
   import { ensureCardFonts } from "$lib/shared/render/services/gelasio-fonts";
@@ -112,7 +113,7 @@
     if (showLoopGlyph && loopComponents?.size) {
       parts.push(`LOOP ${[...loopComponents].join(", ")}`);
     }
-    return parts.join(". ") || "Card header";
+    return parts.join(". ") || t("viewer_detail_card_header");
   });
   $effect(() => {
     const canvas = exportCanvas;
@@ -184,8 +185,8 @@
           ? 'var(--prop-blue, #2196f3)'
           : 'var(--prop-red, #f44336)'};"
       >
-        {soloHand === "left" ? "Left" : "Right"}
-        {browseViewMode?.subject === "hands" ? "Hand Path" : "Prop Path"}
+        {soloHand === "left" ? t("viewer_detail_left") : t("viewer_detail_right")}
+        {browseViewMode?.subject === "hands" ? t("viewer_detail_hand_path") : t("viewer_detail_prop_path")}
       </span>
     {:else}
       {#if showDifficultyLevel}

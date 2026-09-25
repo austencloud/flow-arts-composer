@@ -2,6 +2,7 @@
 StaffQuizProgressBar - Progress indicator for staff quiz
 -->
 <script lang="ts">
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   let {
     currentQuestion,
     totalQuestions,
@@ -21,9 +22,12 @@ StaffQuizProgressBar - Progress indicator for staff quiz
   </div>
   <div class="progress-text">
     {#if !isComplete}
-      Question {currentQuestion + 1} of {totalQuestions}
+      {tDynamic("learn_staff_question_progress", {
+        current: currentQuestion + 1,
+        total: totalQuestions,
+      })}
     {:else}
-      Complete!
+      {tDynamic("learn_staff_complete")}
     {/if}
   </div>
 </div>
@@ -44,7 +48,11 @@ StaffQuizProgressBar - Progress indicator for staff quiz
 
   .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--theme-accent, #22d3ee), var(--theme-accent, #06b6d4));
+    background: linear-gradient(
+      90deg,
+      var(--theme-accent, #22d3ee),
+      var(--theme-accent, #06b6d4)
+    );
     border-radius: 3px;
     transition: width var(--duration-emphasis) ease;
   }

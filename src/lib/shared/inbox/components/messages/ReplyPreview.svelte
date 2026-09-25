@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { getReplyPreviewText } from "$lib/shared/messaging/domain/message-preview";
+  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { getReplyPreviewText } from "../../utils/message-preview";
   import type {
     MessageAttachmentType,
     ReplyPreview as ReplyPreviewType,
@@ -22,10 +23,10 @@
   }>();
 
   const previewText = $derived(
-    unavailable ? "Original message was deleted" : getReplyPreviewText(reply)
+    unavailable ? t("inbox_ui_original_message_was_deleted") : getReplyPreviewText(reply)
   );
   const senderLabel = $derived(
-    compact ? reply.senderName : `Replying to ${reply.senderName}`
+    compact ? reply.senderName : t("inbox_replying_person", { name: reply.senderName })
   );
 
   function getAttachmentIcon(type?: MessageAttachmentType): string {
@@ -76,8 +77,8 @@
     class:unavailable
     onclick={activate}
     aria-label={unavailable
-      ? `Go to deleted original message from ${reply.senderName}`
-      : `Go to original message from ${reply.senderName}`}
+      ? t("inbox_go_deleted", { name: reply.senderName })
+      : t("inbox_go_original", { name: reply.senderName })}
   >
     {@render previewContent()}
   </button>
@@ -96,7 +97,7 @@
         type="button"
         class="dismiss-button"
         onclick={dismiss}
-        aria-label="Cancel reply"
+        aria-label={t("inbox_ui_cancel_reply")}
       >
         <i class="fa-solid fa-xmark" aria-hidden="true"></i>
       </button>

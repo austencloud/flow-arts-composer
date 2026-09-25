@@ -308,20 +308,20 @@
         type="button"
         class="mode-switch-btn primary"
         onclick={() => selectMediaType("animation")}
-        aria-label="Play animation"
+        aria-label={t("viewer_detail_play_animation")}
       >
         <i class="fas fa-play" aria-hidden="true"></i>
-        <span>Play Animation</span>
+        <span>{t("viewer_detail_play_animation")}</span>
       </button>
     {:else if activeMediaType === "animation" && hasImages}
       <button
         type="button"
         class="mode-switch-btn secondary"
         onclick={() => selectMediaType("image")}
-        aria-label="View image"
+        aria-label={t("viewer_detail_view_image")}
       >
         <i class="fas fa-image" aria-hidden="true"></i>
-        <span>View Image</span>
+        <span>{t("viewer_detail_view_image")}</span>
       </button>
     {/if}
 
@@ -336,8 +336,8 @@
         disabled={isCopying}
         aria-label={t("browse_copy_to_clipboard")}
         title={copyError
-          ? "Copy failed - try again"
-          : "Copy image to clipboard"}
+          ? t("viewer_detail_copy_failed_try_again")
+          : t("viewer_detail_copy_image_to_clipboard")}
       >
         {#if isCopying}
           <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
@@ -401,7 +401,7 @@
               onclick={toggleWord}
               aria-pressed={addWord}
             >
-              Word
+              {t("viewer_detail_word")}
             </button>
             <button
               type="button"
@@ -410,7 +410,7 @@
               onclick={toggleStepNumbers}
               aria-pressed={addStepNumbers}
             >
-              Step #s
+              {t("viewer_detail_step_s")}
             </button>
             <button
               type="button"
@@ -419,7 +419,7 @@
               onclick={toggleStartPlacement}
               aria-pressed={includeStartPlacement}
             >
-              Start Pos
+              {t("viewer_detail_start_pos")}
             </button>
             <button
               type="button"
@@ -428,7 +428,7 @@
               onclick={toggleDifficulty}
               aria-pressed={addDifficultyLevel}
             >
-              Difficulty
+              {t("viewer_detail_difficulty")}
             </button>
             <button
               type="button"
@@ -436,7 +436,7 @@
               class:active={showLoopGlyph}
               onclick={toggleShowLoopGlyph}
               aria-pressed={showLoopGlyph}
-              title="LOOP constraint indicator"
+              title={t("viewer_detail_loop_constraint_indicator")}
             >
               LOOP
             </button>
@@ -447,7 +447,7 @@
               onclick={toggleShowNotes}
               aria-pressed={showNotes}
             >
-              Notes
+              {t("viewer_detail_notes")}
             </button>
           </div>
         {/if}
@@ -481,17 +481,17 @@
             oncontextmenu={handleVideoContextMenu}
           >
             <track kind="captions" />
-            Your browser does not support video playback.
+            {t("viewer_detail_your_browser_does_not_support_video_playback")}
           </video>
         {:else}
-          <div class="placeholder">No video available</div>
+          <div class="placeholder">{t("viewer_detail_no_video_available")}</div>
         {/if}
 
         <button
           type="button"
           class="back-btn"
           onclick={() => selectMediaType("image")}
-          aria-label="Close video"
+          aria-label={t("viewer_detail_close_video")}
         >
           <svg
             viewBox="0 0 24 24"

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import PropBuildPicker from "$lib/shared/3d/components/controls/PropBuildPicker.svelte";
   import {
     hasModelSprite,
@@ -28,7 +29,7 @@
     style:--prop-picker-accent="var(--theme-accent, #8b7cf6)"
     style:--prop-picker-stroke="var(--theme-stroke, rgba(255, 255, 255, 0.12))"
   >
-    <PropBuildPicker label="Prop look" value={look} {options} {onchange} />
+    <PropBuildPicker label={t("settings_prop_look")} value={look} {options} {onchange} />
   </div>
 {/if}
 

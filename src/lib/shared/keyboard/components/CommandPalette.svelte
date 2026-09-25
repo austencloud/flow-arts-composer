@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { getLocale, t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount, tick } from "svelte";
   import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
   import ModalHeader from "$lib/shared/foundation/ui/modal/ModalHeader.svelte";
@@ -31,7 +32,7 @@
     )
   );
   const resultsLabel = $derived(
-    commandPaletteState.query ? "Search results" : "Jump to suggestions"
+    commandPaletteState.query ? t("keyboard_palette_results") : t("keyboard_palette_suggestions")
   );
 
   onMount(() => {
@@ -41,7 +42,7 @@
       console.error("Failed to resolve command palette:", error);
       const failure = error instanceof Error ? error : new Error(String(error));
       getErrorHandler().showUserError({
-        message: "Jump to could not open.",
+        message: t("keyboard_palette_open_failed"),
         technicalDetails: failure.message,
         error: failure,
         context: { module: "keyboard", tab: "jump-to", action: "initialize" },
@@ -50,6 +51,7 @@
   });
 
   $effect(() => {
+    getLocale();
     const query = commandPaletteState.query;
     const service = paletteService;
 
@@ -140,7 +142,7 @@
     } catch (error) {
       const failure = error instanceof Error ? error : new Error(String(error));
       getErrorHandler().showUserError({
-        message: "That destination could not be opened.",
+        message: t("keyboard_palette_destination_failed"),
         technicalDetails: failure.message,
         error: failure,
         context: { module: "keyboard", tab: "jump-to", action: item.id },
@@ -163,6 +165,19 @@
 
   function categoryId(category: string): string {
     return `command-category-${category.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+  }
+
+  function translateCategory(category: string): string {
+    switch (category) {
+      case "Places": return t("keyboard_palette_places");
+      case "Actions": return t("keyboard_palette_actions");
+      case "Help": return t("keyboard_palette_help");
+      case "Recent": return t("keyboard_palette_recent");
+      case "Often used": return t("keyboard_palette_often_used");
+      case "Actions here": return t("keyboard_palette_actions_here");
+      case "Other": return t("keyboard_palette_other");
+      default: return category;
+    }
   }
 
   const groupedResults = $derived.by(() => {
@@ -192,8 +207,8 @@
   {#snippet header()}
     <ModalHeader
       id="command-palette-title"
-      title="Jump to"
-      subtitle="Open a page, tab, or action."
+      title={t("keyboard_palette_title")}
+      subtitle={t("keyboard_palette_subtitle")}
       icon="fa-magnifying-glass"
       onClose={close}
     />
@@ -201,9 +216,9 @@
 
   {#snippet footer()}
     <div class="command-palette__footer" aria-hidden="true">
-      <span><kbd>↑</kbd><kbd>↓</kbd> Move</span>
-      <span><kbd>Enter</kbd> Open</span>
-      <span><kbd>Esc</kbd> Close</span>
+      <span><kbd>↑</kbd><kbd>↓</kbd> {t("keyboard_palette_move")}</span>
+      <span><kbd>Enter</kbd> {t("keyboard_palette_open")}</span>
+      <span><kbd>Esc</kbd> {t("keyboard_palette_close")}</span>
     </div>
   {/snippet}
 
@@ -217,8 +232,8 @@
         id="command-palette-search"
         name="command-palette-search"
         maxWidth="none"
-        placeholder="Search pages, tabs, and actions"
-        ariaLabel="Search pages, tabs, and actions"
+        placeholder={t("keyboard_palette_search")}
+        ariaLabel={t("keyboard_palette_search")}
         role="combobox"
         ariaControls="command-palette-results"
         ariaExpanded={commandPaletteState.isOpen}
@@ -237,7 +252,7 @@
       aria-label={resultsLabel}
     >
       {#if commandPaletteState.isLoading}
-        <div class="command-palette__status">Searching…</div>
+        <div class="command-palette__status">{t("keyboard_palette_searching")}</div>
       {:else if commandPaletteState.results.length === 0}
         <div class="command-palette__empty">
           <span class="command-palette__empty-icon">
@@ -245,13 +260,13 @@
           </span>
           <strong>
             {commandPaletteState.query
-              ? `No matches for “${commandPaletteState.query}”.`
-              : "Search the app"}
+              ? t("keyboard_palette_no_matches", { query: commandPaletteState.query })
+              : t("keyboard_palette_search_app")}
           </strong>
           {#if commandPaletteState.query}
-            <span>Try a page, tab, or action.</span>
+            <span>{t("keyboard_palette_try_search")}</span>
           {:else}
-            <span>Type a page or tab name to jump straight there.</span>
+            <span>{t("keyboard_palette_empty_help")}</span>
           {/if}
         </div>
       {:else}
@@ -265,7 +280,7 @@
               id={categoryId(category)}
               class="command-palette__category-label"
             >
-              {category}
+              {translateCategory(category)}
             </h3>
             <div class="command-palette__category-items">
               {#each items as item (item.id)}

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount, tick } from "svelte";
   import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
   import PanelSearch from "$lib/shared/components/panel/PanelSearch.svelte";
@@ -17,6 +18,8 @@
     getShortcutContextLabel,
     type ShortcutCenterView,
   } from "../domain/shortcut-center-catalog";
+  import { localizeShortcut, localizeShortcutLabel } from "../domain/shortcut-presentation";
+  import { getLocale } from "$lib/shared/i18n/i18n.svelte.js";
 
   let registry: ShortcutRegistry | null = null;
   let customizer = $state<ShortcutCustomizer | null>(null);
@@ -33,7 +36,8 @@
   const allItems = $derived.by(() => {
     registryVersion;
     keyboardShortcutState.settings;
-    return customizer?.getAllShortcutsWithBindings() ?? [];
+    getLocale();
+    return (customizer?.getAllShortcutsWithBindings() ?? []).map(localizeShortcut);
   });
   const currentContext = $derived(keyboardShortcutState.context);
   const currentItems = $derived(
@@ -47,21 +51,21 @@
   const viewOptions = $derived([
     {
       value: "current" as const,
-      label: "This area",
+      label: t("keyboard_ui_this_area"),
       count: currentItems.length,
-      ariaLabel: `This area, ${currentItems.length} shortcuts`,
+      ariaLabel: t("keyboard_ui_view_count", { view: t("keyboard_ui_this_area"), count: currentItems.length }),
     },
     {
       value: "all" as const,
-      label: "All",
+      label: t("keyboard_ui_all"),
       count: allItems.length,
-      ariaLabel: `All, ${allItems.length} shortcuts`,
+      ariaLabel: t("keyboard_ui_view_count", { view: t("keyboard_ui_all"), count: allItems.length }),
     },
     {
       value: "changed" as const,
-      label: "Changed",
+      label: t("keyboard_ui_changed"),
       count: changedCount,
-      ariaLabel: `Changed, ${changedCount} shortcuts`,
+      ariaLabel: t("keyboard_ui_view_count", { view: t("keyboard_ui_changed"), count: changedCount }),
     },
   ]);
   const groups = $derived(
@@ -115,12 +119,12 @@
 
   function resetShortcut(item: ShortcutWithBinding): void {
     customizer?.resetBinding(item.shortcut.id);
-    announcement = `${item.shortcut.label} restored to its default.`;
+    announcement = t("keyboard_ui_restored_announcement", { name: item.shortcut.label });
   }
 
   function saveShortcut(item: ShortcutWithBinding, keyCombo: string): void {
     customizer?.setCustomBinding(item.shortcut.id, keyCombo);
-    announcement = `${item.shortcut.label} saved.`;
+    announcement = t("keyboard_ui_saved_announcement", { name: item.shortcut.label });
   }
 
   function replaceShortcut(item: ShortcutWithBinding, keyCombo: string): void {
@@ -129,11 +133,11 @@
     const firstReplacement = replaced[0];
     const suffix =
       replaced.length === 1 && firstReplacement
-        ? ` ${firstReplacement.existingShortcutLabel} was turned off.`
+        ? ` ${t("keyboard_ui_conflict_turned_off", { name: localizeShortcutLabel(firstReplacement.existingShortcutId, firstReplacement.existingShortcutLabel) })}`
         : replaced.length > 1
-          ? ` ${replaced.length} conflicting shortcuts were turned off.`
+          ? ` ${t("keyboard_ui_conflicts_turned_off", { count: replaced.length })}`
           : "";
-    announcement = `${item.shortcut.label} saved.${suffix}`;
+    announcement = t("keyboard_ui_saved_announcement", { name: item.shortcut.label }) + suffix;
   }
 
   function swapShortcut(
@@ -142,36 +146,36 @@
   ): boolean {
     const conflict = customizer?.swapBindings(item.shortcut.id, conflictId);
     if (conflict) {
-      announcement = `The swap would conflict with ${conflict.existingShortcutLabel}.`;
+      announcement = t("keyboard_ui_swap_conflict", { name: localizeShortcutLabel(conflict.existingShortcutId, conflict.existingShortcutLabel) });
       return false;
     }
 
-    announcement = `${item.shortcut.label} and the conflicting shortcut were swapped.`;
+    announcement = t("keyboard_ui_swapped_announcement", { name: item.shortcut.label });
     return true;
   }
 
   function disableShortcut(item: ShortcutWithBinding): void {
     customizer?.disableShortcut(item.shortcut.id);
-    announcement = `${item.shortcut.label} turned off.`;
+    announcement = t("keyboard_ui_turned_off_announcement", { name: item.shortcut.label });
   }
 
   function enableShortcut(item: ShortcutWithBinding): void {
     customizer?.enableShortcut(item.shortcut.id);
-    announcement = `${item.shortcut.label} turned on.`;
+    announcement = t("keyboard_ui_turned_on_announcement", { name: item.shortcut.label });
   }
 
   function resetAll(): void {
     customizer?.resetAllBindings();
     selectedShortcutId = null;
-    announcement = "All shortcuts restored to their defaults.";
+    announcement = t("keyboard_ui_all_restored");
   }
 
   function getEmptyMessage(): string {
-    if (query) return `No shortcuts match “${query}”.`;
+    if (query) return t("keyboard_ui_no_match", { query });
     if (view === "changed")
-      return "No shortcuts have been changed on this device.";
-    if (view === "current") return "No shortcuts are registered for this area.";
-    return "No shortcuts are registered.";
+      return t("keyboard_ui_no_changes");
+    if (view === "current") return t("keyboard_ui_none_in_area");
+    return t("keyboard_ui_none_registered");
   }
 </script>
 
@@ -181,8 +185,8 @@
       <i class="fas fa-keyboard"></i>
     </span>
     <span>
-      <h1 id="shortcut-center-title">Keyboard shortcuts</h1>
-      <p>Find a command, see where it works, or change its keys.</p>
+      <h1 id="shortcut-center-title">{t("keyboard_ui_title")}</h1>
+      <p>{t("keyboard_ui_subtitle")}</p>
     </span>
   </header>
 
@@ -192,8 +196,8 @@
         bind:value={query}
         bind:inputRef={searchInput}
         maxWidth="none"
-        placeholder="Search commands, areas, or keys"
-        ariaLabel="Search keyboard shortcuts"
+        placeholder={t("keyboard_ui_search_placeholder")}
+        ariaLabel={t("keyboard_ui_search_label")}
         autofocus={true}
       />
 
@@ -206,7 +210,7 @@
           size="sm"
           density="compact"
           semantics="radiogroup"
-          ariaLabel="Shortcut view"
+          ariaLabel={t("keyboard_ui_view_label")}
         />
       </div>
 
@@ -216,16 +220,16 @@
           class="reset-all-button"
           onclick={() => (showResetConfirmation = true)}
         >
-          Reset all
+          {t("keyboard_ui_reset_all")}
         </button>
       {/if}
     </div>
 
     <div class="result-summary" aria-live="polite">
-      <span>{visibleCount} {visibleCount === 1 ? "shortcut" : "shortcuts"}</span
+      <span>{t(visibleCount === 1 ? "keyboard_ui_one_shortcut" : "keyboard_ui_shortcuts_count", { count: visibleCount })}</span
       >
       {#if view === "current"}
-        <span>for {getShortcutContextLabel(currentContext)}</span>
+        <span>{t("keyboard_ui_for_context", { context: getShortcutContextLabel(currentContext) })}</span>
       {/if}
     </div>
 
@@ -254,10 +258,10 @@
             <h3>{getEmptyMessage()}</h3>
             {#if query}
               <button type="button" onclick={() => (query = "")}
-                >Clear search</button
+                >{t("keyboard_ui_clear_search")}</button
               >
             {:else if view === "changed"}
-              <p>Choose a shortcut from All to give it a different key.</p>
+              <p>{t("keyboard_ui_choose_from_all")}</p>
             {/if}
           </div>
         {/if}
@@ -289,10 +293,10 @@
 
 <ConfirmDialog
   bind:isOpen={showResetConfirmation}
-  title="Reset every keyboard shortcut?"
-  message="This removes every shortcut change saved on this device."
-  confirmText="Reset all"
-  cancelText="Keep changes"
+  title={t("keyboard_ui_reset_all_title")}
+  message={t("keyboard_ui_reset_all_message")}
+  confirmText={t("keyboard_ui_reset_all")}
+  cancelText={t("keyboard_ui_keep_changes")}
   variant="danger"
   onConfirm={resetAll}
   onCancel={() => (showResetConfirmation = false)}

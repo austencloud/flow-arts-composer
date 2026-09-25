@@ -5,6 +5,7 @@
   Auto-hides after 3 seconds and shows on tap.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import TransportControls from "$lib/shared/animation-engine/components/controls/TransportControls.svelte";
   import TempoControl from "$lib/shared/animation-panel/components/TempoControl.svelte";
 
@@ -44,7 +45,7 @@
     type="button"
     class="fs-close-btn"
     onclick={(e) => { e.stopPropagation(); onExit(); }}
-    aria-label="Exit fullscreen"
+    aria-label={t("viewer_ui_exit_fullscreen")}
   >
     <i class="fas fa-compress" aria-hidden="true"></i>
   </button>

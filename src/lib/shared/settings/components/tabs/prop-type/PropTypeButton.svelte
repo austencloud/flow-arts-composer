@@ -2,7 +2,8 @@
   import type { HTMLButtonAttributes } from "svelte/elements";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
-  import { getPropTypeDisplayInfo } from "./prop-type-registry";
+  import { localizedPropName } from "./localized-prop-name";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import PropSelectionButton from "./PropSelectionButton.svelte";
 
   let {
@@ -27,14 +28,14 @@
     onSelect?: (propType: PropType) => void;
   }>();
 
-  const displayInfo = $derived(getPropTypeDisplayInfo(propType));
+  const displayLabel = $derived(localizedPropName(propType));
   const resolvedActionLabel = $derived(
-    actionLabel ?? `Select ${displayInfo.label} prop type`
+    actionLabel ?? t("settings_select_prop_type", { prop: displayLabel })
   );
 </script>
 
 <PropSelectionButton
-  label={displayInfo.label}
+  label={displayLabel}
   {selected}
   {selectedLeft}
   {selectedRight}

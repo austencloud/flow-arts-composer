@@ -1,5 +1,7 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { ShortcutConflict } from "../../domain/types/keyboard-types";
+  import { localizeShortcutLabel } from "../../domain/shortcut-presentation";
 
   let {
     conflicts,
@@ -27,22 +29,22 @@
   <div class="conflict-info">
     <strong
       >{hasErrors
-        ? "This shortcut is already in use"
-        : "Context overlap"}</strong
+        ? t("keyboard_ui_conflict_in_use")
+        : t("keyboard_ui_context_overlap")}</strong
     >
     <ul>
       {#each conflicts as conflict (conflict.existingShortcutId)}
         <li>
-          {conflict.existingShortcutLabel}
+          {localizeShortcutLabel(conflict.existingShortcutId, conflict.existingShortcutLabel)}
           {#if conflict.severity === "warning"}
-            <span>can also be active here</span>
+            <span>{t("keyboard_ui_also_active")}</span>
           {/if}
         </li>
       {/each}
     </ul>
     {#if hasErrors}
       <p>
-        Replace turns the conflicting shortcut off. Swap exchanges both keys.
+        {t("keyboard_ui_conflict_help")}
       </p>
     {/if}
   </div>
@@ -51,12 +53,12 @@
     <div class="conflict-actions">
       {#if onSwap && errorConflicts.length === 1}
         <button class="conflict-button" type="button" onclick={onSwap}
-          >Swap</button
+          >{t("keyboard_ui_swap")}</button
         >
       {/if}
       {#if onReplace}
         <button class="conflict-button danger" type="button" onclick={onReplace}
-          >Replace</button
+          >{t("keyboard_ui_replace")}</button
         >
       {/if}
     </div>

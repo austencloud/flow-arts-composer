@@ -2,6 +2,7 @@
   import { BackgroundType } from "@austencloud/backgrounds";
   import { getCardMetadata } from "@austencloud/backgrounds/card";
   import { onMount } from "svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
@@ -109,7 +110,7 @@
       duration: 10_000,
       announcement: "polite",
       action: {
-        label: "Retry",
+        label: t("common_retry"),
         onClick: () => void accountSetupState.retrySave(),
       },
     });
@@ -162,9 +163,9 @@
 
   <header class="showroom-header">
     <div class="heading">
-      <span class="section-label">Appearance / Environments</span>
-      <h1>Choose your environment</h1>
-      <p>Preview the real scene, then make it yours.</p>
+      <span class="section-label">{t("settings_showroom_section")}</span>
+      <h1>{t("settings_showroom_heading")}</h1>
+      <p>{t("settings_showroom_intro")}</p>
     </div>
   </header>
 

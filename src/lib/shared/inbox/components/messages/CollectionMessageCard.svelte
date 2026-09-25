@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import type { MessageAttachment } from "$lib/shared/messaging/domain/models/message-models";
   import { goto } from "$app/navigation";
   import type { CollectionShareGrant } from "$lib/shared/library/domain/models/collection";
@@ -31,7 +32,7 @@
   const collectionId = $derived(metadata?.collectionId);
   const ownerId = $derived(metadata?.collectionOwnerId);
   const collectionName = $derived(
-    metadata?.collectionName || attachment.name || "Collection"
+    metadata?.collectionName || attachment.name || t("inbox_ui_collection")
   );
   const sequenceCount = $derived(metadata?.collectionSequenceCount ?? 0);
   let liveGrant = $state<CollectionShareGrant | null | undefined>(undefined);
@@ -65,10 +66,10 @@
   );
   const roleLabel = $derived(
     accessRole === null
-      ? "Access removed"
+      ? t("inbox_ui_access_removed")
       : accessRole === "editor"
-        ? "Can edit"
-        : "Can view"
+        ? t("inbox_ui_can_edit")
+        : t("inbox_ui_can_view")
   );
   const viewerIsOwner = $derived(Boolean(ownerId && currentUserId === ownerId));
   const hasTarget = $derived(
@@ -114,7 +115,7 @@
         failure
       );
       getErrorHandler().showUserError({
-        message: "This collection could not be opened.",
+        message: t("inbox_ui_this_collection_could_not_be_opened"),
         technicalDetails: failure.message,
         error: failure,
         severity: "error",
@@ -137,8 +138,8 @@
   onclick={openCollection}
   disabled={!canOpen || isOpening}
   aria-label={accessRole === null && !viewerIsOwner
-    ? `${collectionName} access removed`
-    : `Open ${collectionName}`}
+    ? t("inbox_collection_access_removed", { name: collectionName })
+    : t("inbox_open_collection", { name: collectionName })}
 >
   <span
     class="collection-icon"
@@ -148,7 +149,7 @@
     <i class={iconClass} aria-hidden="true"></i>
   </span>
   <span class="collection-info">
-    <span class="kicker">Shared collection</span>
+    <span class="kicker">{t("inbox_ui_shared_collection")}</span>
     <strong>{collectionName}</strong>
     <span class="details">
       {sequenceCount}
@@ -158,7 +159,7 @@
     </span>
   </span>
   <span class="open-hint">
-    Open
+    {t("inbox_ui_open")}
     <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
   </span>
 </button>

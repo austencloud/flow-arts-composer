@@ -415,7 +415,7 @@ Renders a section with:
           data-option-index={index}
           data-ghost="safe"
           data-ghost-kind="option"
-          aria-label="Add {pictograph.letter ?? 'movement'}. Hold to preview."
+          aria-label={t("create_option_add_preview", { letter: pictograph.letter ?? t("create_option_movement") })}
           aria-keyshortcuts="Shift+Space"
           title={t("create_ui_tap_to_add_hold_to_preview")}
           {@attach holdToAudition}

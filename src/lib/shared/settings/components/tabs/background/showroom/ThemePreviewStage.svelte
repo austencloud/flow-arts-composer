@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { ShowroomTheme } from "./theme-showroom-data";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import type { TranslationKey } from "$lib/shared/i18n/i18n-types";
   import ThemeSceneCanvas from "./ThemeSceneCanvas.svelte";
 
   interface Props {
@@ -25,6 +27,7 @@
   }: Props = $props();
 
   let sceneReady = $state(false);
+  const themeName = $derived(t(`settings_theme_${theme.id}` as TranslationKey));
 
   $effect(() => {
     theme.id;
@@ -35,7 +38,7 @@
 <section
   class="stage"
   data-theme={theme.id}
-  aria-label={`${theme.label} environment preview`}
+  aria-label={t("settings_previewing_theme", { theme: themeName })}
 >
   <div
     class="environment-art"
@@ -65,11 +68,11 @@
       <span class="status-dot" class:loading={livePreview && !sceneReady}
       ></span>
       {#if livePreview}
-        {sceneReady ? "Live environment" : "Building environment"}
+        {sceneReady ? t("settings_showroom_live") : t("settings_showroom_building")}
       {:else if fallbackReason === "connection"}
-        Low-data preview
+        {t("settings_showroom_low_data")}
       {:else}
-        Environment preview
+        {t("settings_showroom_preview")}
       {/if}
     </div>
   </div>
@@ -78,8 +81,8 @@
     <div class="theme-index">{theme.number} / 10</div>
     <div class="theme-title-row">
       <div>
-        <span class="preview-label">Previewing</span>
-        <h2>{theme.label}</h2>
+        <span class="preview-label">{t("settings_showroom_previewing")}</span>
+        <h2>{themeName}</h2>
       </div>
       <button
         type="button"
@@ -90,18 +93,16 @@
       >
         {#if confirmed}
           <i class="fas fa-check" aria-hidden="true"></i>
-          Selected
+          {t("settings_showroom_selected")}
         {:else if selected}
-          Confirm {theme.label}
+          {t("settings_showroom_confirm_theme", { theme: themeName })}
         {:else}
-          Use {theme.label}
+          {t("settings_use_theme", { theme: themeName })}
         {/if}
       </button>
     </div>
     <p class="interaction-note">
-      {livePreview
-        ? "Drag to look around. The scene resumes drifting after a moment."
-        : "A polished preview is shown while live rendering is unavailable."}
+      {livePreview ? t("settings_showroom_drag_hint") : t("settings_showroom_fallback_hint")}
     </p>
   </div>
 </section>

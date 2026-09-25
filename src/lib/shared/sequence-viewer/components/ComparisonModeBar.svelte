@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import type { ComparisonMode } from '../services/viewer-state-persistence';
 
   interface Props {
@@ -26,7 +27,7 @@
   }
 </script>
 
-<div class="comparison-bar" role="group" aria-label="Comparison mode">
+<div class="comparison-bar" role="group" aria-label={t("viewer_detail_comparison_mode")}>
   {#each modes as mode (mode.id)}
     <button
       type="button"

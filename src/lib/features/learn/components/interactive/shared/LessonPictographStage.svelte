@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
@@ -83,7 +84,7 @@
     {#if loading}
       <div class="loading-state">
         <ProgressRing percent={-1} size={34} strokeWidth={3} />
-        <span>Loading the real pictograph…</span>
+        <span>{tDynamic("learn_lesson_pictograph_loading")}</span>
       </div>
     {:else if pictograph}
       <PictographContainer
@@ -105,7 +106,7 @@
     {:else}
       <div class="error-state" role="status">
         <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
-        <span>Pictograph unavailable</span>
+        <span>{tDynamic("learn_lesson_pictograph_unavailable")}</span>
       </div>
     {/if}
   </div>
@@ -113,7 +114,7 @@
   {#if pictograph && motionStartData}
     <button class="replay-button" type="button" onclick={replay}>
       <i class="fa-solid fa-rotate-right" aria-hidden="true"></i>
-      Replay the motion
+      {tDynamic("learn_lesson_pictograph_replay")}
     </button>
   {/if}
 </div>

@@ -52,7 +52,7 @@
       <i class="fas fa-copy" aria-hidden="true"></i>
     {/if}
     <span
-      >{copySuccess ? "Copied!" : disabled ? "Preparing link..." : "Copy"}</span
+      >{copySuccess ? t("browse_copied") : disabled ? t("viewer_ui_preparing_link") : t("browse_copy")}</span
     >
   </button>
 
@@ -75,7 +75,7 @@
       class="share-btn"
       onclick={onNativeShare}
       {disabled}
-      aria-label="Share externally"
+      aria-label={t("viewer_ui_share_externally")}
     >
       <i class="fas fa-share-alt" aria-hidden="true"></i>
       <span>{t("viewer_share")}</span>

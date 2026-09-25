@@ -10,6 +10,7 @@
   inbox drawer's send sheet; this file is only the viewer-sized presentation.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
   import SendDestinationPicker from "$lib/shared/inbox/components/messages/SendDestinationPicker.svelte";
@@ -70,7 +71,7 @@
         queueMessage: (...args) => {
           if (!delivery) {
             return Promise.reject(
-              new Error("Message outbox is not available.")
+              new Error(t("viewer_detail_message_outbox_is_not_available"))
             );
           }
           return delivery.queueMessage(...args);
@@ -95,8 +96,8 @@
       <textarea
         class="note-input"
         bind:value={send.message}
-        aria-label="Note (optional)"
-        placeholder="Add a note"
+        aria-label={t("viewer_detail_note_optional")}
+        placeholder={t("viewer_detail_add_a_note")}
         maxlength={SEND_MESSAGE_MAX}
         rows={1}
         disabled={send.sending}

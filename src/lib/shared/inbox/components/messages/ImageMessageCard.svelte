@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { getBlob, ref } from "firebase/storage";
   import { getStorageInstance } from "$lib/shared/auth/firebase";
   import MediaSpotlight from "$lib/components/media/spotlight/MediaSpotlight.svelte";
@@ -15,7 +16,7 @@
   let loadError = $state(false);
   let spotlightOpen = $state(false);
 
-  const altText = $derived(caption.trim() || attachment.name || "Shared image");
+  const altText = $derived(caption.trim() || attachment.name || t("inbox_ui_shared_image"));
   const aspectRatio = $derived.by(() => {
     const width = attachment.width ?? attachment.metadata?.width;
     const height = attachment.height ?? attachment.metadata?.height;
@@ -83,7 +84,7 @@
       type="button"
       class="image-button"
       onclick={() => (spotlightOpen = true)}
-      aria-label="Open image"
+      aria-label={t("inbox_ui_open_image")}
     >
       <img src={imageUrl} alt={altText} />
       <span class="expand-hint" aria-hidden="true">
@@ -93,10 +94,10 @@
   {:else if loadError}
     <div class="image-state unavailable" role="status">
       <i class="fas fa-image" aria-hidden="true"></i>
-      <span>Image unavailable</span>
+      <span>{t("inbox_ui_image_unavailable")}</span>
     </div>
   {:else}
-    <div class="image-state" role="status" aria-label="Loading image">
+    <div class="image-state" role="status" aria-label={t("inbox_ui_loading_image")}>
       <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
     </div>
   {/if}

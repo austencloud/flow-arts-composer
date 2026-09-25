@@ -5,6 +5,7 @@
   Triggered by tapping "(edited)" indicator.
 -->
 <script lang="ts">
+  import { getLocale, t } from "$lib/shared/i18n/i18n.svelte";
   import { Dialog as DialogPrimitive } from "bits-ui";
   import type { MessageEdit } from "$lib/shared/messaging/domain/models/message-models";
 
@@ -20,7 +21,7 @@
 
   function formatDate(date: Date): string {
     const d = date instanceof Date ? date : new Date(date);
-    return d.toLocaleString(undefined, {
+    return d.toLocaleString(getLocale(), {
       month: "short",
       day: "numeric",
       hour: "numeric",
@@ -38,26 +39,26 @@
     <DialogPrimitive.Overlay class="history-backdrop" onclick={handleClose} />
     <DialogPrimitive.Content class="history-sheet">
       <div class="sheet-header">
-        <DialogPrimitive.Title class="sheet-title">Edit History</DialogPrimitive.Title>
+        <DialogPrimitive.Title class="sheet-title">{t("inbox_ui_edit_history")}</DialogPrimitive.Title>
         <button
           type="button"
           class="close-button"
           onclick={handleClose}
-          aria-label="Close"
+          aria-label={t("inbox_ui_close")}
         >
           <i class="fa-solid fa-xmark" aria-hidden="true"></i>
         </button>
       </div>
 
       <DialogPrimitive.Description class="sr-only">
-        View previous versions of this message
+        {t("inbox_ui_view_previous_versions_of_this_message")}
       </DialogPrimitive.Description>
 
       <div class="history-list">
         <!-- Current version -->
         <div class="history-item current">
           <div class="version-label">
-            <span class="version-badge">Current</span>
+            <span class="version-badge">{t("inbox_ui_current")}</span>
           </div>
           <p class="version-content">{currentContent}</p>
         </div>

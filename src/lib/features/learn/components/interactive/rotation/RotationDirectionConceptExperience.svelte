@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { getCodexLetterMappingRepo } from "$lib/features/learn/codex/get-codex-letter-mapping-repo";
   import {
@@ -65,6 +66,13 @@
   const feedbackRelationship = $derived(
     ROTATION_DIRECTION_LESSON.find((item) => item.id === selectedAnswer) ?? null
   );
+
+  function relationshipText(
+    id: RotationRelationship,
+    field: "cue" | "meaning" | "orientation"
+  ): string {
+    return tDynamic(`learn_rotation_${id}_${field}`);
+  }
 
   onMount(async () => {
     loading = true;
@@ -142,17 +150,13 @@
   {#if phase === 1}
     <section class="lesson-grid" aria-labelledby="rotation-title">
       <div class="lesson-copy">
-        <p class="eyebrow">Rotation direction</p>
-        <h1 id="rotation-title">With the arc or against it?</h1>
-        <p class="lede">
-          The hand follows a curved shift. The prop can rotate in the
-          <strong>same direction</strong> as that arc or in the
-          <strong>opposite direction</strong>.
-        </p>
+        <p class="eyebrow">{tDynamic("learn_rotation_eyebrow")}</p>
+        <h1 id="rotation-title">{tDynamic("learn_rotation_title")}</h1>
+        <p class="lede">{tDynamic("learn_rotation_intro")}</p>
 
         <div
           class="relationship-picker"
-          aria-label="Choose a prop relationship"
+          aria-label={tDynamic("learn_rotation_choose_relationship_aria")}
         >
           {#each ROTATION_DIRECTION_LESSON as item}
             <button
@@ -164,7 +168,7 @@
               onclick={() => chooseRelationship(item.id)}
             >
               <span class="choice-name">{item.name}</span>
-              <span class="choice-cue">{item.cue}</span>
+              <span class="choice-cue">{relationshipText(item.id, "cue")}</span>
             </button>
           {/each}
         </div>
@@ -175,14 +179,23 @@
         >
           <span
             class="definition-letter"
-            aria-label="Letter {activeRelationship.letter}"
+            aria-label={tDynamic("learn_rotation_letter_aria", {
+              letter: activeRelationship.letter,
+            })}
           >
             {activeRelationship.letter}
           </span>
           <div>
-            <strong>{activeRelationship.name}: {activeRelationship.cue}</strong>
-            <p>{activeRelationship.meaning}</p>
-            <small>{activeRelationship.orientationCue}</small>
+            <strong
+              >{activeRelationship.name}: {relationshipText(
+                activeRelationship.id,
+                "cue"
+              )}</strong
+            >
+            <p>{relationshipText(activeRelationship.id, "meaning")}</p>
+            <small
+              >{relationshipText(activeRelationship.id, "orientation")}</small
+            >
           </div>
         </div>
 
@@ -191,14 +204,14 @@
           type="button"
           onclick={() => goToPhase(2)}
         >
-          Try the direction check
+          {tDynamic("learn_rotation_try_check")}
           <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
         </button>
       </div>
 
       <div class="visual-column">
         <span class="visual-label"
-          >Same hand path · different prop relationship</span
+          >{tDynamic("learn_rotation_visual_label")}</span
         >
         <div class="visual-pair">
           {#each ROTATION_DIRECTION_LESSON as item}
@@ -209,7 +222,7 @@
             >
               <span class="option-label">
                 <strong>{item.letter}</strong>
-                {item.name} · {item.cue}
+                {item.name} · {relationshipText(item.id, "cue")}
               </span>
               <LessonPictographStage
                 pictograph={pictographs[item.letter] ?? null}
@@ -219,23 +232,22 @@
             </article>
           {/each}
         </div>
-        <p class="visual-note">
-          Letters A and B use the same alpha-to-alpha hand paths. Replay them
-          and watch how the props rotate relative to those paths.
-        </p>
+        <p class="visual-note">{tDynamic("learn_rotation_visual_note")}</p>
       </div>
     </section>
   {:else if phase === 2}
     <section class="challenge" aria-labelledby="rotation-check-title">
       <div class="challenge-header">
         <p class="eyebrow">
-          Direction check · {questionIndex + 1} of {ROTATION_DIRECTION_QUESTIONS.length}
+          {tDynamic("learn_rotation_direction_check", {
+            current: questionIndex + 1,
+            total: ROTATION_DIRECTION_QUESTIONS.length,
+          })}
         </p>
-        <h1 id="rotation-check-title">{activeQuestion.prompt}</h1>
-        <p>
-          Pro and anti describe a relationship to the hand arc, not a fixed
-          clock direction.
-        </p>
+        <h1 id="rotation-check-title">
+          {tDynamic(`learn_rotation_question_${questionIndex + 1}`)}
+        </h1>
+        <p>{tDynamic("learn_rotation_check_hint")}</p>
       </div>
 
       <div class="challenge-grid">
@@ -248,7 +260,10 @@
         </div>
 
         <div class="answer-panel">
-          <div class="answers" aria-label="Choose the rotation relationship">
+          <div
+            class="answers"
+            aria-label={tDynamic("learn_rotation_choose_answer_aria")}
+          >
             {#each ROTATION_DIRECTION_LESSON as item}
               <button
                 type="button"
@@ -263,7 +278,7 @@
                 onclick={() => answerQuestion(item.id)}
               >
                 <span>{item.name}</span>
-                <small>{item.cue}</small>
+                <small>{relationshipText(item.id, "cue")}</small>
               </button>
             {/each}
           </div>
@@ -272,9 +287,11 @@
             <div class="feedback wrong-feedback" role="status">
               <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
               <p>
-                <strong>{feedbackRelationship.name}</strong> means
-                {feedbackRelationship.meaning.toLowerCase()} This letter is
-                <strong>{questionRelationship.name.toLowerCase()}</strong>.
+                {tDynamic("learn_rotation_wrong_feedback", {
+                  selected: feedbackRelationship.name,
+                  meaning: relationshipText(feedbackRelationship.id, "meaning"),
+                  correct: questionRelationship.name,
+                })}
               </p>
             </div>
           {:else if answerState === "correct"}
@@ -282,7 +299,7 @@
               <i class="fa-solid fa-check" aria-hidden="true"></i>
               <p>
                 <strong>{questionRelationship.name}.</strong>
-                {questionRelationship.meaning}
+                {relationshipText(questionRelationship.id, "meaning")}
               </p>
             </div>
           {/if}
@@ -294,8 +311,8 @@
             onclick={nextQuestion}
           >
             {questionIndex === ROTATION_DIRECTION_QUESTIONS.length - 1
-              ? "See the relationship"
-              : "Next pictograph"}
+              ? tDynamic("learn_rotation_see_relationship")
+              : tDynamic("learn_rotation_next_pictograph")}
             <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
           </button>
         </div>
@@ -303,12 +320,11 @@
     </section>
   {:else}
     <section class="summary" aria-labelledby="rotation-summary-title">
-      <p class="eyebrow">Relationship found</p>
-      <h1 id="rotation-summary-title">Read the hand arc, then the prop</h1>
-      <p class="summary-lede">
-        Pro follows the hand arc. Anti works against it. Clockwise can be pro in
-        one path and anti in another, so always compare the two motions.
-      </p>
+      <p class="eyebrow">{tDynamic("learn_rotation_found")}</p>
+      <h1 id="rotation-summary-title">
+        {tDynamic("learn_rotation_summary_title")}
+      </h1>
+      <p class="summary-lede">{tDynamic("learn_rotation_summary")}</p>
 
       <div class="summary-grid">
         {#each ROTATION_DIRECTION_LESSON as item}
@@ -316,7 +332,7 @@
             <span class="summary-letter">{item.letter}</span>
             <div>
               <h2>{item.name}</h2>
-              <p>{item.meaning}</p>
+              <p>{relationshipText(item.id, "meaning")}</p>
             </div>
           </article>
         {/each}
@@ -324,10 +340,7 @@
 
       <aside class="base-rotation-note">
         <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
-        <p>
-          <strong>Zero additional turns is not zero motion.</strong> A shift still
-          has a base rotation: pro with the arc or anti against it.
-        </p>
+        <p>{tDynamic("learn_rotation_base_note")}</p>
       </aside>
 
       <button
@@ -335,7 +348,7 @@
         type="button"
         onclick={complete}
       >
-        Complete rotation direction
+        {tDynamic("learn_rotation_complete")}
         <i class="fa-solid fa-check" aria-hidden="true"></i>
       </button>
     </section>

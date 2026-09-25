@@ -100,7 +100,7 @@
 </script>
 
 <div class="tunnel-colors">
-  <span class="section-label">Tunnel colors</span>
+  <span class="section-label">{t("viewer_detail_tunnel_colors")}</span>
   <SegmentedControl
     options={colorOptions}
     value={controller.colorMode}
@@ -143,7 +143,7 @@
     {/if}
   </Crossfade>
   {#if selected}
-    <span class="section-label">Performer colors</span>
+    <span class="section-label">{t("viewer_detail_performer_colors")}</span>
     <SegmentedControl
       options={performerOptions}
       value={selected.id}
@@ -236,15 +236,15 @@
           />
           <div class="shade-preview">
             <span
-              ><i style:background={preview.left}></i>Left {preview.left.toUpperCase()}</span
+              ><i style:background={preview.left}></i>{t("viewer_detail_left")} {preview.left.toUpperCase()}</span
             >
             <span
-              ><i style:background={preview.right}></i>Right {preview.right.toUpperCase()}</span
+              ><i style:background={preview.right}></i>{t("viewer_detail_right")} {preview.right.toUpperCase()}</span
             >
           </div>
         </div>
       {:else}
-        <p class="section-hint">Uses the tunnel colors above.</p>
+        <p class="section-hint">{t("viewer_detail_uses_the_tunnel_colors_above")}</p>
       {/if}
     </Crossfade>
   {/if}

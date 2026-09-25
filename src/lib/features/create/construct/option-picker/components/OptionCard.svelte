@@ -78,7 +78,7 @@ Receives pre-calculated data, just renders it.
   data-ghost="safe"
   data-ghost-kind="option"
   data-ghost-label={pictograph.letter}
-  aria-label="Add {pictograph.letter}. Hold to preview."
+  aria-label={t("create_option_add_preview", { letter: pictograph.letter })}
   aria-keyshortcuts="Shift+Space"
   title={t("create_ui_tap_to_add_hold_to_preview")}
   {@attach holdToAudition}

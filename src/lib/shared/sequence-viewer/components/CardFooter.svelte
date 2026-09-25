@@ -5,6 +5,7 @@
   and record dates belong on the sequence record, not the portable card.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { fade, fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import { TextRenderer } from "$lib/shared/render/services/text-renderer";
@@ -78,7 +79,7 @@
     aria-label={exportPresentation
       ? showNotes && customNotesText.trim()
         ? customNotesText
-        : "Card footer"
+        : t("viewer_detail_card_footer")
       : undefined}
     style="height: {scaledFooterHeight}px; padding-left: {footerMargin}px; padding-right: {footerMargin}px; font-size: max(var(--font-size-compact, 12px), {footerFontSize}px);"
     transition:fly|local={{
@@ -119,7 +120,7 @@
       {/if}
 
       {#if hasPathShapeMetadata}
-        <span class="footer-path-shape">Linear shifts</span>
+        <span class="footer-path-shape">{t("viewer_detail_linear_shifts")}</span>
       {/if}
     {/if}
   </div>

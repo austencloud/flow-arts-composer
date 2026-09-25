@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import ShortcutRow from "./ShortcutRow.svelte";
   import type { ShortcutWithBinding } from "../../services/types";
   import type { ShortcutContext } from "../../domain/types/keyboard-types";
@@ -31,9 +32,9 @@
       <h2 id={headingId}>{label}</h2>
       <p>
         {shortcuts.length}
-        {shortcuts.length === 1 ? "command" : "commands"}
+        {shortcuts.length === 1 ? t("keyboard_ui_command") : t("keyboard_ui_commands")}
         {#if customizedCount > 0}
-          <span> · {customizedCount} changed</span>
+          <span> · {t("keyboard_ui_changed_count", { count: customizedCount })}</span>
         {/if}
       </p>
     </div>

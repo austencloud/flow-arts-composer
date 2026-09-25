@@ -1,5 +1,6 @@
 <!-- EditableChangelogItem - A changelog entry with inline editing for admins -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import type { ChangelogEntry } from "$lib/shared/versioning/domain/models/version-models";
   import type { Contributor } from "$lib/shared/versioning/domain/models/contributor-models";
   import { fly, scale } from "svelte/transition";
@@ -102,7 +103,7 @@
         onEndEdit();
       }
     } catch (err) {
-      error = err instanceof Error ? err.message : "Failed to delete";
+      error = t("settings_delete_failed");
       showDeleteConfirm = false;
     } finally {
       isDeleting = false;
@@ -111,7 +112,7 @@
 
   async function saveEdit() {
     if (!editText.trim()) {
-      error = "Text cannot be empty";
+      error = t("settings_text_empty");
       return;
     }
 
@@ -124,7 +125,7 @@
         onEndEdit();
       }
     } catch (err) {
-      error = err instanceof Error ? err.message : "Failed to save";
+      error = t("settings_save_failed");
     } finally {
       isSaving = false;
     }
@@ -164,7 +165,7 @@
       bind:this={textareaElement}
       bind:value={editText}
       onkeydown={handleKeydown}
-      placeholder="Enter changelog text..."
+      placeholder={t("settings_enter_changelog_text")}
       disabled={isSaving}
     ></textarea>
 
@@ -185,7 +186,7 @@
     {#if showDeleteConfirm}
       <div class="delete-confirm" in:fly={{ y: 10, duration: 200 }}>
         <span class="confirm-text"
-          >Delete? <span class="hint">(Del again or click)</span></span
+          >{t("settings_delete_confirm")} <span class="hint">{t("settings_delete_confirm_hint")}</span></span
         >
         <div class="confirm-actions">
           <button
@@ -199,7 +200,7 @@
             {:else}
               <i class="fas fa-trash" aria-hidden="true"></i>
             {/if}
-            Yes
+            {t("settings_yes")}
           </button>
           <button
             type="button"
@@ -207,7 +208,7 @@
             onclick={() => (showDeleteConfirm = false)}
             disabled={isDeleting}
           >
-            No
+            {t("common_no")}
           </button>
         </div>
       </div>
@@ -221,7 +222,7 @@
             disabled={isSaving}
           >
             <i class="fas fa-trash" aria-hidden="true"></i>
-            Delete
+            {t("action_delete")}
           </button>
         {/if}
 
@@ -237,7 +238,7 @@
             {:else}
               <i class="fas fa-check" aria-hidden="true"></i>
             {/if}
-            Save
+            {t("action_save")}
           </button>
         {/if}
 
@@ -248,7 +249,7 @@
           disabled={isSaving}
         >
           <i class="fas fa-times" aria-hidden="true"></i>
-          {hasChanges ? "Cancel" : "Close"}
+          {hasChanges ? t("action_cancel") : t("action_close")}
         </button>
       </div>
     {/if}
@@ -299,8 +300,8 @@
           e.stopPropagation();
           onOpenFeedback();
         }}
-        aria-label="View linked feedback"
-        title="View linked feedback"
+        aria-label={t("settings_view_linked_feedback")}
+        title={t("settings_view_linked_feedback")}
       >
         <i class="fas fa-external-link-alt" aria-hidden="true"></i>
       </button>
