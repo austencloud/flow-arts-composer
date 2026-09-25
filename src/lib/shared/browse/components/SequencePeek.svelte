@@ -9,10 +9,12 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import PropAwareThumbnail from "./PropAwareThumbnail.svelte";
+  import ShimmerBlock from "$lib/shared/components/loading/ShimmerBlock.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 
   interface Props {
     sequence?: SequenceData;
+    loading?: boolean;
     /** Reserved box width, px. */
     width: number;
     /** Reserved box height, px. */
@@ -31,6 +33,7 @@
   }
   let {
     sequence,
+    loading = false,
     width,
     height,
     tilt = 0,
@@ -52,6 +55,8 @@
          grid's default cache class (static/cloud hits) instead of forcing a
          custom-keyed local render per peek. -->
     <PropAwareThumbnail {sequence} {eager} allowQR={false} {lightMode} />
+  {:else if loading}
+    <ShimmerBlock height="100%" borderRadius="0" />
   {/if}
   {#if overlay}
     <span class="overlay">{@render overlay()}</span>

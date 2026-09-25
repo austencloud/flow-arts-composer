@@ -12,6 +12,8 @@ vi.mock("firebase/firestore", () => ({
   getDoc: mocks.getDoc,
   getDocs: mocks.getDocs,
   orderBy: vi.fn((field: string, direction: string) => ({ field, direction })),
+  limit: vi.fn((count: number) => ({ count })),
+  startAfter: vi.fn((cursor: unknown) => ({ cursor })),
   query: vi.fn((reference: unknown) => reference),
 }));
 
@@ -39,8 +41,68 @@ beforeEach(() => {
 });
 
 describe("PublicSequencesLoader grid mode mapping", () => {
+  it("publishes a bounded first page and reuses it for the complete refresh", async () => {
+    const makeDoc = (id: string) => ({
+      id,
+      data: () => ({
+        id,
+        sourceRef: `users/owner/sequences/${id}`,
+        ownerId: "owner",
+        ownerDisplayName: "Owner",
+        name: id,
+        word: id,
+        thumbnails: [],
+        tags: [],
+        isForked: false,
+      }),
+    });
+    const firstDocs = Array.from({ length: 150 }, (_, index) =>
+      makeDoc(`seq-${index}`)
+    );
+    let releaseLast!: (value: unknown) => void;
+    const lastPage = new Promise((resolve) => {
+      releaseLast = resolve;
+    });
+    mocks.getDocs
+      .mockResolvedValueOnce({
+        docs: firstDocs,
+        size: 150,
+        forEach: (visit: (doc: ReturnType<typeof makeDoc>) => void) =>
+          firstDocs.forEach(visit),
+      })
+      .mockReturnValueOnce(lastPage);
+
+    const loader = new PublicSequencesLoader();
+    const first = await loader.loadInitialSequenceMetadata();
+    expect(first).toHaveLength(150);
+    expect(mocks.getDocs).toHaveBeenCalledTimes(2);
+    mocks.getDoc.mockResolvedValueOnce({
+      id: "seq-0",
+      exists: () => true,
+      metadata: { fromCache: false },
+      data: () => ({ name: "seq-0", word: "seq-0", steps: [] }),
+    });
+    await loader.loadFullSequenceDataStrict("seq-0", "seq-0");
+    expect(mocks.doc).toHaveBeenCalledWith({}, "users/owner/sequences/seq-0");
+
+    const refresh = loader.refreshFromFirestore();
+    const lastDoc = makeDoc("seq-final");
+    releaseLast({
+      docs: [lastDoc],
+      size: 1,
+      forEach: (visit: (doc: ReturnType<typeof makeDoc>) => void) =>
+        visit(lastDoc),
+    });
+    const complete = await refresh;
+    expect(complete).toHaveLength(151);
+    expect(await loader.loadSequenceMetadata()).toHaveLength(151);
+    expect(mocks.getDocs).toHaveBeenCalledTimes(2);
+  });
+
   it("preserves Box so the gallery grid-mode filter can discover it", async () => {
     mocks.getDocs.mockResolvedValue({
+      docs: [{ id: "box-sequence" }],
+      size: 1,
       forEach: (visit: (doc: { id: string; data: () => unknown }) => void) => {
         visit({
           id: "box-sequence",
@@ -110,11 +172,17 @@ describe("PublicSequencesLoader exact-ID resolution", () => {
       metadata: { fromCache: false },
     });
 
-    const sequence = await loader.loadFullSequenceDataStrict("seq-cached", "seq-cached");
+    const sequence = await loader.loadFullSequenceDataStrict(
+      "seq-cached",
+      "seq-cached"
+    );
 
     expect(sequence?.id).toBe("seq-cached");
     expect(sequence?.steps).toHaveLength(1);
-    expect(mocks.doc).toHaveBeenCalledWith({}, "users/owner-1/sequences/seq-cached");
+    expect(mocks.doc).toHaveBeenCalledWith(
+      {},
+      "users/owner-1/sequences/seq-cached"
+    );
     expect(mocks.getDoc).toHaveBeenCalledTimes(1);
   });
 
