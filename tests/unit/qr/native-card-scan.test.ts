@@ -6,7 +6,7 @@ vi.mock("$lib/shared/auth/services/authed-fetch", () => ({
   authedFetch: vi.fn(),
 }));
 
-import { withPhysicalCardId } from "$lib/shared/qr/domain/physical-card";
+import { buildSerializedCardUrl } from "$lib/shared/qr/domain/physical-card";
 import {
   readCardScanLink,
   recordNativeCardScan,
@@ -68,10 +68,7 @@ describe("readCardScanLink: links Android opens in the app", () => {
 
   it("reads the uppercase URL a print export encodes", () => {
     // Exactly how a print export builds the QR payload.
-    const printed = withPhysicalCardId(
-      "HTTPS://TKA.RUN/K7QM?bp=staff&rp=staff",
-      PID
-    );
+    const printed = buildSerializedCardUrl("K7QM", PID);
 
     expect(readCardScanLink(printed)).toEqual({
       shortCode: "K7QM",

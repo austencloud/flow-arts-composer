@@ -3,6 +3,7 @@ import type { PDFFont, PDFImage, PDFPage } from 'pdf-lib';
 import { planPrintSlots, type PlannedSlot } from './print-slot-planner';
 import type { TnDElement } from '../domain/tnd-element';
 import type { CardPair } from './types';
+import { PRINT_SERVICE_PIXELS_PER_INCH, homePrintPixelsPerInch, verifyCardFrontQrs } from './print-qr-guard';
 import {
 	CARD_SIZES,
 	getPageLayout,
@@ -45,6 +46,8 @@ export async function exportDeckPDF(
 	// MPC page dimensions: canvas pixel dimensions converted to points at 300 DPI
 	const pageWidthPt = (size.canvasWidth / 300) * 72;
 	const pageHeightPt = (size.canvasHeight / 300) * 72;
+
+	await verifyCardFrontQrs(pairs, () => PRINT_SERVICE_PIXELS_PER_INCH);
 
 	const pdfDoc = await PDFDocument.create();
 	const allPairs = insertPair ? [insertPair, ...pairs] : pairs;
@@ -219,7 +222,9 @@ export interface HomePrintOptions {
 		deckSummary?: string;
 	};
 	/** Per-occurrence front renderer. Serialized exports provide this to replace
-	 *  the shared QR with the physical ID allocated for this exact print slot. */
+	 *  the shared QR with the physical ID allocated for this exact print slot.
+	 *  The renderer owns QR verification for the fronts it returns; without it,
+	 *  every front with a QR cell is decoded and size-checked before export. */
 	frontRenderer?: (context: {
 		pair: CardPair;
 		cardIndex: number;
@@ -263,12 +268,16 @@ export async function exportFixedSheetBatchPDF(
 		}
 	}
 
+	const includeFronts = mode === 'combined' || mode === 'fronts';
+	const includeBacks = mode === 'combined' || mode === 'backs';
+	if (includeFronts) {
+		await verifyCardFrontQrs(sheets.flat(), (front) => homePrintPixelsPerInch(front, cardSize));
+	}
+
 	const pdfDoc = await PDFDocument.create();
 	applyPrintViewerPrefs(pdfDoc);
 	const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 	const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-	const includeFronts = mode === 'combined' || mode === 'fronts';
-	const includeBacks = mode === 'combined' || mode === 'backs';
 	const progressTotal = sheets.length * ((includeFronts ? 1 : 0) + (includeBacks ? 1 : 0));
 	let progressCount = 0;
 
@@ -440,12 +449,16 @@ export async function exportHomePrintPDF(
 	const slots = [...insertSlots, ...plannedSlots];
 	const totalSheets = slots.length / cardsPerPage; // integer by construction
 
+	const includeFronts = mode === 'combined' || mode === 'fronts';
+	const includeBacks = mode === 'combined' || mode === 'backs';
+	if (includeFronts && !options.frontRenderer) {
+		await verifyCardFrontQrs(pairs, (front) => homePrintPixelsPerInch(front, cardSize));
+	}
+
 	const pdfDoc = await PDFDocument.create();
 	applyPrintViewerPrefs(pdfDoc);
 	const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 	const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-	const includeFronts = mode === 'combined' || mode === 'fronts';
-	const includeBacks = mode === 'combined' || mode === 'backs';
 	const progressTotal = ((includeFronts ? totalSheets : 0) + (includeBacks ? totalSheets : 0)) * jobCopies;
 	let progressCount = 0;
 
