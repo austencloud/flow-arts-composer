@@ -45,6 +45,8 @@
 
   interface Props {
     pool?: readonly SequenceData[];
+    loading?: boolean;
+    loadFailed?: boolean;
     /** Live count of results if this filter value were applied. */
     getCount: (type: BrowseFilterType, value: string | number) => number;
     /** Apply the chosen filter and hand off to the grid. Values with a
@@ -153,6 +155,8 @@
   }
   let {
     pool = [],
+    loading = false,
+    loadFailed = false,
     getCount,
     onApply,
     onShowAll,
@@ -632,6 +636,8 @@
             <GalleryLanding
               {catalog}
               poolSize={pool.length}
+              {loading}
+              {loadFailed}
               {showAll}
               {chooserTitle}
               {chooserHint}
