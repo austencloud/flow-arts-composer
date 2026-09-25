@@ -109,18 +109,20 @@
         )}
       </output>
       <span class="readout">{session.readout}</span>
-      <SegmentedControl
-        options={[
-          { value: "1", label: "1×", ariaLabel: "Full speed" },
-          { value: "0.75", label: "¾×", ariaLabel: "Three quarter speed" },
-          { value: "0.5", label: "½×", ariaLabel: "Half speed" },
-        ]}
-        value={session.speed}
-        onchange={(value) => (session.speed = value)}
-        size="sm"
-        density="compact"
-        ariaLabel="Playback speed"
-      />
+      <div class="picker">
+        <SegmentedControl
+          options={[
+            { value: "1", label: "1×", ariaLabel: "Full speed" },
+            { value: "0.75", label: "¾×", ariaLabel: "Three quarter speed" },
+            { value: "0.5", label: "½×", ariaLabel: "Half speed" },
+          ]}
+          value={session.speed}
+          onchange={(value) => (session.speed = value)}
+          size="sm"
+          density="compact"
+          ariaLabel="Playback speed"
+        />
+      </div>
     </div>
 
     <TakeTimingLane
@@ -141,18 +143,20 @@
     />
 
     <div class="options">
-      <SegmentedControl
-        options={[
-          { value: "4", label: "4 s" },
-          { value: "8", label: "8 s" },
-          { value: "16", label: "16 s" },
-        ]}
-        value={session.zoom}
-        onchange={(value) => (session.zoom = value)}
-        size="sm"
-        density="compact"
-        ariaLabel="Close-up width"
-      />
+      <div class="picker">
+        <SegmentedControl
+          options={[
+            { value: "4", label: "4 s" },
+            { value: "8", label: "8 s" },
+            { value: "16", label: "16 s" },
+          ]}
+          value={session.zoom}
+          onchange={(value) => (session.zoom = value)}
+          size="sm"
+          density="compact"
+          ariaLabel="Close-up width"
+        />
+      </div>
       {#if squarePainter}
         <label class="check">
           <input type="checkbox" bind:checked={session.showSquare} />
@@ -216,6 +220,10 @@
     align-items: center;
     gap: 0.5rem;
     min-width: 0;
+  }
+  /* The shared control fills its box; three short choices only need this much. */
+  .picker {
+    flex: 0 0 11rem;
   }
   .round {
     display: grid;
