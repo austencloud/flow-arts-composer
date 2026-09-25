@@ -314,10 +314,10 @@ async function drawPaintedLayer(
 export async function renderPostStudioFrame(
   input: RenderPostStudioFrameInput
 ): Promise<void> {
-  const context = input.canvas.getContext("2d", {
-    alpha: false,
-    desynchronized: true,
-  });
+  // Not desynchronized: that draws into the front buffer, so the VideoFrame
+  // captured from this canvas is no snapshot. The encoder read it while the
+  // next frame was half drawn, and the file had frames with a region missing.
+  const context = input.canvas.getContext("2d", { alpha: false });
   if (!context) throw new Error("Could not create the post export canvas");
 
   context.save();
