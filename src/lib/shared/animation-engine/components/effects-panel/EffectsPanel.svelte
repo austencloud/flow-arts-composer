@@ -147,12 +147,14 @@
       Math.floor((panelRect?.height ?? 0) - (footerBox?.[0]?.blockSize ?? 0))
     )
   );
-  const pictureHost = $derived(fill && !showPlayback && !children);
+  // Both bounded and intrinsic sidebars use the same visual roster. Only a
+  // bounded page can size the inactive catalog against the remaining height.
+  const pictureHost = $derived(!showPlayback && !children);
   const rosterWidth = $derived(
     Math.floor(panelRect?.width ?? 0) - CATALOG_CHROME_X
   );
   const catalogFit = $derived(
-    pictureHost && activeEffect === "none"
+    fill && pictureHost && activeEffect === "none"
       ? fitEffectCatalog({
           width: rosterWidth,
           height: catalogRoom - CATALOG_CHROME_Y,
