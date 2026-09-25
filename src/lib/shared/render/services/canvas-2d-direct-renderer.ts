@@ -8,6 +8,7 @@ import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { PreparedPictographData } from "../../pictograph/shared/domain/models/prepared-pictograph-data";
 import { GridMode } from "../../pictograph/grid/domain/enums/grid-enums";
 import { getSvgImageCache } from "./svg-image-cache";
+import type { DrawableImage } from "./svg-image-cache";
 import { getSvgAssetLoader } from "./svg-asset-loader";
 import { isDashLetter } from "../../pictograph/tka-glyph/utils/letter-image-getter";
 import type { Letter } from "../../foundation/domain/models/letter";
@@ -68,6 +69,52 @@ const getTurnsTupleGenerator = () => turnsTupleGenerator;
 // prop/browser failure once so PostHog gets the cause without a grid-sized
 // burst of duplicate exceptions.
 const reportedPropDrawFailures = new Set<string>();
+
+/**
+ * A prop's decoded artwork and the transform it draws with, without a
+ * position baked in. `preparePropSprite` resolves this ahead of time (async:
+ * it decodes and colors the SVG) so a caller can composite it synchronously
+ * later at a position of its own choosing - e.g. mid-motion, interpolated
+ * between two beats, where the draw itself has to happen inside a
+ * synchronous paint pass.
+ */
+export interface PreparedPropSprite {
+  img: DrawableImage;
+  centerX: number;
+  centerY: number;
+  viewBoxWidth: number;
+  viewBoxHeight: number;
+  mirror: boolean;
+}
+
+function reportPropDrawFailure(
+  color: HandSide,
+  propType: string | undefined,
+  viewBox: string | undefined,
+  error: unknown
+): void {
+  const normalizedError =
+    error instanceof Error ? error : new Error(String(error));
+  const failureKey = [
+    color,
+    propType ?? "unknown",
+    normalizedError.name,
+    normalizedError.message,
+  ].join(":");
+  if (reportedPropDrawFailures.has(failureKey)) return;
+  reportedPropDrawFailures.add(failureKey);
+  const details = {
+    renderer: "canvas2d",
+    render_surface: "pictograph",
+    prop_color: color,
+    prop_type: propType ?? "unknown",
+    prop_view_box: viewBox,
+    error_name: normalizedError.name,
+    error_message: normalizedError.message,
+  };
+  console.warn("[Canvas2D] Failed to draw prop", details, normalizedError);
+  captureException(normalizedError, details);
+}
 
 export class Canvas2DDirectRenderer implements IDirectRenderer {
   private initialized = false;
@@ -225,8 +272,10 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
     const _prepareTime = performance.now() - prepareStart;
 
     // 1. Draw background
-    ctx.fillStyle = isDarkMode ? "#0a0a0f" : "#ffffff";
-    ctx.fillRect(0, 0, size, size);
+    if (visibility.showBackground !== false) {
+      ctx.fillStyle = isDarkMode ? "#0a0a0f" : "#ffffff";
+      ctx.fillRect(0, 0, size, size);
+    }
 
     // 2. Draw grid (skipped entirely when the Grid toggle is off — hides the
     //    base grid, hand points, and non-radial points together)
@@ -251,7 +300,7 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
 
     // 3. Draw props (if prepared data exists)
     let propsTime = 0;
-    if (prepared) {
+    if (prepared && visibility.showProps !== false) {
       const propsStart = performance.now();
       await this.drawProps(ctx, prepared, size, preparedPictograph, options);
       propsTime = performance.now() - propsStart; // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -259,7 +308,7 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
 
     // 4. Draw arrows (if prepared data exists)
     let arrowsTime = 0;
-    if (prepared) {
+    if (prepared && visibility.showArrows !== false) {
       const arrowsStart = performance.now();
       await this.drawArrows(ctx, prepared, size, options);
       arrowsTime = performance.now() - arrowsStart; // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -548,8 +597,7 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
     pictograph: PreparedPictographData,
     options: DirectRenderOptions
   ): Promise<void> {
-    const { propPositions, propAssets } = prepared;
-    const svgCache = getSvgImageCache();
+    const { propPositions } = prepared;
     const scale = canvasSize / VIEWBOX_SIZE;
 
     const showLeft = options.visibility.showLeftMotion ?? true;
@@ -560,89 +608,104 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
       if (color === HandSide.RIGHT && !showRight) continue;
 
       const position = propPositions[color];
-      const assets = propAssets[color];
+      if (!position) continue;
 
-      if (!position || !assets?.imageSrc) continue;
+      const sprite = await this.preparePropSprite(
+        prepared,
+        color,
+        pictograph,
+        options
+      );
+      if (!sprite) continue;
 
       try {
-        const viewBoxParts = assets.viewBox.split(" ").map(Number);
-        const viewBoxWidth = viewBoxParts[0] || 100;
-        const viewBoxHeight = viewBoxParts[1] || 100;
-
-        const displayColor = options.visibility.primaryPropColors?.[color];
-        // Model captures are rasters: the fill rewrite leaves them alone and
-        // the chroma tint does the recolor.
-        const artwork = displayColor
-          ? applyModelSpriteColor(
-              applyColorToSvg(assets.imageSrc, displayColor, {
-                sourceColors: [
-                  getMotionColor(color, "dark"),
-                  getMotionColor(color, "light"),
-                ],
-                selectiveColorMode: (
-                  SELECTIVE_COLOR_PROP_TYPES as readonly string[]
-                ).includes(
-                  String(
-                    assets.propType ?? pictograph.motions?.[color]?.propType
-                  ).toLowerCase()
-                ),
-              }),
-              displayColor
-            )
-          : assets.imageSrc;
-        const wrapped = wrapSvgContent(
-          artwork,
-          viewBoxWidth,
-          viewBoxHeight,
-          false
-        );
-
-        const cacheKey = `prop_${color}_${this.hashString(wrapped.svg)}`;
-        const img = await svgCache.getImage(wrapped.svg, cacheKey);
-
-        const mirror = shouldMirrorProp(color, pictograph, options);
-
-        drawElementWithTransform(ctx, img, {
+        drawElementWithTransform(ctx, sprite.img, {
           x: position.x * scale,
           y: position.y * scale,
           rotation: position.rotation,
-          centerX: assets.center.x,
-          centerY: assets.center.y,
-          viewBoxWidth,
-          viewBoxHeight,
+          centerX: sprite.centerX,
+          centerY: sprite.centerY,
+          viewBoxWidth: sprite.viewBoxWidth,
+          viewBoxHeight: sprite.viewBoxHeight,
           scale,
-          shouldMirror: mirror,
+          shouldMirror: sprite.mirror,
         });
       } catch (error) {
-        const normalizedError =
-          error instanceof Error ? error : new Error(String(error));
-        const propType = assets.propType ?? "unknown";
-        const failureKey = [
+        reportPropDrawFailure(
           color,
-          propType,
-          normalizedError.name,
-          normalizedError.message,
-        ].join(":");
-
-        if (!reportedPropDrawFailures.has(failureKey)) {
-          reportedPropDrawFailures.add(failureKey);
-          const details = {
-            renderer: "canvas2d",
-            render_surface: "pictograph",
-            prop_color: color,
-            prop_type: propType,
-            prop_view_box: assets.viewBox,
-            error_name: normalizedError.name,
-            error_message: normalizedError.message,
-          };
-          console.warn(
-            "[Canvas2D] Failed to draw prop",
-            details,
-            normalizedError
-          );
-          captureException(normalizedError, details);
-        }
+          prepared.propAssets[color]?.propType,
+          prepared.propAssets[color]?.viewBox,
+          error
+        );
       }
+    }
+  }
+
+  /**
+   * Decodes and colors one hand's prop artwork without drawing it. `drawProps`
+   * uses this for its own (static-position) draw; a caller that needs to draw
+   * the same prop at a position `drawProps` doesn't know about - e.g.
+   * interpolated mid-motion - calls this directly and then positions the
+   * result itself with `drawElementWithTransform`. One place resolves a
+   * prop's artwork, color, and mirroring either way.
+   */
+  async preparePropSprite(
+    prepared: NonNullable<PreparedPictographData["_prepared"]>,
+    color: HandSide,
+    pictograph: PreparedPictographData,
+    options: DirectRenderOptions
+  ): Promise<PreparedPropSprite | null> {
+    const assets = prepared.propAssets[color];
+    if (!assets?.imageSrc) return null;
+
+    try {
+      const viewBoxParts = assets.viewBox.split(" ").map(Number);
+      const viewBoxWidth = viewBoxParts[0] || 100;
+      const viewBoxHeight = viewBoxParts[1] || 100;
+
+      const displayColor = options.visibility.primaryPropColors?.[color];
+      // Model captures are rasters: the fill rewrite leaves them alone and
+      // the chroma tint does the recolor.
+      const artwork = displayColor
+        ? applyModelSpriteColor(
+            applyColorToSvg(assets.imageSrc, displayColor, {
+              sourceColors: [
+                getMotionColor(color, "dark"),
+                getMotionColor(color, "light"),
+              ],
+              selectiveColorMode: (
+                SELECTIVE_COLOR_PROP_TYPES as readonly string[]
+              ).includes(
+                String(
+                  assets.propType ?? pictograph.motions?.[color]?.propType
+                ).toLowerCase()
+              ),
+            }),
+            displayColor
+          )
+        : assets.imageSrc;
+      const wrapped = wrapSvgContent(
+        artwork,
+        viewBoxWidth,
+        viewBoxHeight,
+        false
+      );
+
+      const cacheKey = `prop_${color}_${this.hashString(wrapped.svg)}`;
+      const img = await getSvgImageCache().getImage(wrapped.svg, cacheKey);
+      const mirror = shouldMirrorProp(color, pictograph, options);
+
+      return {
+        img,
+        centerX: assets.center.x,
+        centerY: assets.center.y,
+        viewBoxWidth,
+        viewBoxHeight,
+        mirror,
+      };
+    } catch (error) {
+      reportPropDrawFailure(color, assets.propType, assets.viewBox, error);
+      return null;
     }
   }
 
