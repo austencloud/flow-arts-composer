@@ -130,10 +130,8 @@
 }
 
 /* The crawl/flow route (GuidePageHost's <main>) spans the FULL content width so
-   its card rows can use wide / 4K screens. The reading column stays narrow -
-   FlowFrame caps prose to its own measure and centres it - while card rows break
-   out to the route width via container queries. Only this route opts in; the
-   reader-SPA children keep the default narrow prose column.
+   its prose and card rows can use wide / 4K screens. Only this route opts in;
+   the reader-SPA children keep the default prose column.
    Desktop only: on mobile the sidebar is gone (no 4K concern) and the `full`
    track is intentionally edge-to-edge, so the route stays in the narrow `prose`
    column there to avoid widening past the viewport. */

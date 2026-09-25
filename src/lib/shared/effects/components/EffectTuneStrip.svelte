@@ -7,17 +7,18 @@
    * screen; you scrub one knob at a time, Instagram-editor style.
    *
    * Data-driven off the shared EFFECT_CONTROLS manifest, so the strip is every
-   * control (essentials + advanced alike — the strip scrolls, so there is no
-   * Advanced fold to hide anything). The active control is rendered by the same
-   * EffectControlStack the 3D viewer uses (`only` = one id).
+   * control for its view (essentials + advanced alike — the strip scrolls, so
+   * there is no Advanced fold to hide anything). The active control is rendered
+   * by the same EffectControlStack the 3D viewer uses (`only` = one id).
    */
   import type {
     EffectsConfigState,
     EffectId,
   } from "$lib/shared/effects/state/effects-config-state.svelte";
   import {
-    EFFECT_CONTROLS,
+    controlsForView,
     type ControlDescriptor,
+    type EffectView,
   } from "$lib/shared/effects/domain/effect-control-manifest";
   import {
     formatEffectSliderValue,
@@ -28,6 +29,8 @@
   interface Props {
     effectId: EffectId;
     config: EffectsConfigState;
+    /** Which picture these controls tune; see EffectControlStack. */
+    view: EffectView;
     /** Prop whose end names should appear in tracking controls. */
     propType?: string | null;
     /** Cross-store field get/set overrides (e.g. Trails' animationSettings
@@ -44,6 +47,7 @@
   let {
     effectId,
     config,
+    view,
     propType = null,
     overrides,
     onSettingChange,
@@ -71,7 +75,7 @@
   // satisfied. The full desktop inspector also exposes fine optical controls
   // whose compact flag is false.
   const controls = $derived(
-    EFFECT_CONTROLS[effectId].filter(
+    controlsForView(effectId, view).filter(
       (c) => c.compact !== false && (!c.showWhen || c.showWhen(intentView))
     )
   );
@@ -149,6 +153,7 @@
       <EffectControlStack
         effect={effectId}
         {config}
+        {view}
         {propType}
         {overrides}
         only={[active.id]}

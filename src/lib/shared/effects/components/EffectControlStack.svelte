@@ -1,9 +1,11 @@
 <script lang="ts">
   /**
    * EffectControlStack - renders an effect's control descriptors (from the
-   * shared manifest) into the canonical primitives. Both the 2D customize
-   * panels and the 3D viewer popover mount this against the same
-   * EffectsConfigState, so the manifest is the single source of truth.
+   * shared manifest) into the canonical primitives. Both the 2D effects panel
+   * and the 3D viewer's panel mount this against the same EffectsConfigState,
+   * so the manifest is the single source of truth. Each mount names its view,
+   * which hides the few controls whose field only the other view's renderer
+   * reads.
    *
    * Single-selects route to the shared SegmentedControl (chip-primitives rule);
    * sliders/colors centralize the inline markup the 2D panels repeated (there is
@@ -16,9 +18,10 @@
     EffectId,
   } from "$lib/shared/effects/state/effects-config-state.svelte";
   import {
-    EFFECT_CONTROLS,
+    controlsForView,
     resolveEffectControlOptions,
     type ControlTier,
+    type EffectView,
   } from "$lib/shared/effects/domain/effect-control-manifest";
   import {
     formatEffectSliderValue,
@@ -28,6 +31,9 @@
   interface Props {
     effect: EffectId;
     config: EffectsConfigState;
+    /** Which picture these controls tune. A control tagged for the other view
+     *  is left out, since this view's renderer ignores its field. */
+    view: EffectView;
     /** Which tiers to render. Default = the Primary view. */
     tiers?: ControlTier[];
     /** Render ONLY these control ids (overrides `tiers`). Used by the tune-strip
@@ -55,6 +61,7 @@
   let {
     effect,
     config,
+    view,
     tiers = ["primary", "tracking"],
     only,
     hideLabel = false,
@@ -78,7 +85,7 @@
       : intent
   );
   const controls = $derived(
-    EFFECT_CONTROLS[effect].filter(
+    controlsForView(effect, view).filter(
       (c) =>
         (only ? only.includes(c.id) : tiers.includes(c.tier)) &&
         (!c.showWhen || c.showWhen(intentView))

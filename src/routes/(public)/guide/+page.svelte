@@ -157,10 +157,6 @@
     margin: 0 auto;
   }
 
-  .intro {
-    max-width: 60rem;
-  }
-
   .kicker {
     display: block;
     margin-bottom: 0.85rem;
@@ -190,7 +186,6 @@
   }
 
   .intro > p {
-    max-width: 46rem;
     margin: 1.4rem 0 0;
     color: var(--guide-text-dim);
     font-size: clamp(1rem, 1.35vw, 1.18rem);

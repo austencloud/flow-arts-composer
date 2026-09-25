@@ -109,6 +109,7 @@ export async function exportPostStudioVideo(
         layers: input.getLayers(),
         cardFrameCache,
         painters: input.painters,
+        timeSeconds,
       });
 
       const timestampMicros = Math.round((frameIndex / frameRate) * 1_000_000);

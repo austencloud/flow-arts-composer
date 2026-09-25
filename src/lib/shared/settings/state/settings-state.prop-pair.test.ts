@@ -119,35 +119,40 @@ describe("settings enforce the prop pair rule", () => {
     });
   });
 
-  it("heals a remote document whose propType disagrees with the stored left hand", () => {
-    // leftPropType/rightPropType/catDogMode are excluded from the realtime
-    // merge inside applyRemoteSettings (a live snapshot must not fight a
-    // local hand pick mid-edit), but legacy propType is not excluded, so a
-    // remote document can land a propType that disagrees with the stored
-    // hands. applyRemoteSettings is private; cast past that to reach it the
-    // same way a live onSettingsChange snapshot or the initial
-    // syncFromFirebase load would.
-    const applyRemoteSettings = (
+  // applyRemoteSettings is private; cast past that to reach it the same way a
+  // live onSettingsChange snapshot or the initial syncFromFirebase load would.
+  function applyRemoteSettings(settings: AppSettings): void {
+    (
       settingsService as unknown as {
         applyRemoteSettings: (settings: AppSettings, userId: string) => void;
       }
-    ).applyRemoteSettings.bind(settingsService);
+    ).applyRemoteSettings(settings, "test-user");
+  }
 
-    applyRemoteSettings(
-      {
-        leftPropType: PropType.FAN,
-        rightPropType: PropType.FAN,
-        catDogMode: false,
-        propType: PropType.FAN,
-      } as AppSettings,
-      "test-user"
-    );
-
-    expect(settingsService.settings).toMatchObject({
-      leftPropType: PropType.STAFF,
-      rightPropType: PropType.STAFF,
+  it("heals a remote pair whose legacy propType disagrees with its left hand", () => {
+    applyRemoteSettings({
+      leftPropType: PropType.FAN,
+      rightPropType: PropType.FAN,
       catDogMode: false,
       propType: PropType.STAFF,
+    } as AppSettings);
+
+    expect(settingsService.settings).toMatchObject({
+      leftPropType: PropType.FAN,
+      rightPropType: PropType.FAN,
+      catDogMode: false,
+      propType: PropType.FAN,
+    });
+  });
+
+  it("puts both hands on the prop of a legacy propType-only remote document", () => {
+    applyRemoteSettings({ propType: PropType.CLUB } as AppSettings);
+
+    expect(settingsService.settings).toMatchObject({
+      leftPropType: PropType.CLUB,
+      rightPropType: PropType.CLUB,
+      catDogMode: false,
+      propType: PropType.CLUB,
     });
   });
 

@@ -93,7 +93,10 @@ export function getPlateMaterials(color: WorkerPropColor): PlateMaterials {
         metalness: 0.1,
       }),
       color,
-      (hand) => new Color(hand.main).lerp(new Color(hand.dark), 0.6)
+      // Typed here because the package's compiled worker entry ships this
+      // helper without declarations, so plain tsc cannot infer `hand`.
+      (hand: { readonly main: string; readonly dark: string }) =>
+        new Color(hand.main).lerp(new Color(hand.dark), 0.6)
     ),
     trail: trail(color),
   };

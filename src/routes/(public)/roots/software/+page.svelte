@@ -856,7 +856,6 @@
   }
 
   .hero-subtitle {
-    max-inline-size: 38rem;
     margin: 0;
     color: var(--theme-text-dim, #a7a8b5);
     font-size: clamp(1.1rem, 1rem + 0.35vw, 1.35rem);
@@ -874,7 +873,6 @@
   }
 
   .hero-context > p {
-    max-inline-size: 42rem;
     margin: 0;
     color: var(--theme-text, #fff);
     font-size: var(--font-size-md, 1rem);

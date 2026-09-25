@@ -99,9 +99,8 @@
       <p>
         Staff lessons keep the thumb and pinky ends as fixed references. The
         spinner uses the space above and below the shoulder, and turns into the
-        plane behind the body, without finger spinning or changing grip. The
-        notation also allows finger spins and grip changes. Those are left out
-        of the staff lessons so the turn value stays easy to follow.
+        plane behind the body, without finger spinning or changing grip. Other
+        props use finger spins and grip changes, and the notation allows them.
       </p>
       <p>
         When you're ready to learn the notation, the <a href="/guide">guide</a>

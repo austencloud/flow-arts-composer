@@ -467,8 +467,11 @@
         window.__tkaLoadProgress?.(92, "Restoring workspace...");
 
         bootProfiler.mark("app:load-settings+theme");
+        // Stored settings are read here, never saved back. Passing them
+        // through updateSettings marks every key as the user's edit, and once
+        // sign-in has restored, that hides the account's copy and uploads this
+        // device's old one over it.
         await settingsService.loadSettings();
-        updateSettings(settingsService.currentSettings);
         initializeTheme();
 
         // Progress: Settings loaded, applying theme

@@ -1,10 +1,11 @@
 /**
  * ps slice — Post Studio setup <-> URL payload.
- * Capture: per-field diff vs the LIVE per-session default (never a fixed
- * constant — see "Diff baseline" below). Seed: validate + pass through; unlike
- * fx/t3/tn/cd there is no "merge onto a full default object" step, because
- * every field independently falls through to `PostStudio.svelte`'s OWN
- * existing default-computation when absent (see "No merge step" below).
+ * Capture: a field is emitted only once the user chose it, never by comparing
+ * its value with a default (see "Touched-flag diffing" below). Seed: validate
+ * + pass through; unlike fx/t3/tn/cd there is no "merge onto a full default
+ * object" step, because every field independently falls through to
+ * `PostStudio.svelte`'s OWN existing default-computation when absent (see "No
+ * merge step" below).
  *
  * ## What "setup" turned out to be
  *
@@ -24,14 +25,15 @@
  *
  * What remains — the component's OWN `$state` locals — is mostly transient UI
  * runtime (open pickers, focus, errors, measured/resizable panel geometry).
- * Three fields survive as genuine, durable, visual-setup choices a recipient
+ * Two fields survive as genuine, durable, visual-setup choices a recipient
  * should see:
  *
  * ENCODED:
  * - `propType` — `selectedPropType`, the prop rendered across every preview
- *   in the studio. Diffed against THIS SESSION's own live default (see below),
- *   never written to `settingsService` by Post Studio (`setPropType` only
- *   reassigns the local `$state`), so seeding it costs zero writes.
+ *   in the studio. Captured only when `propTypeTouched` (the studio's own
+ *   picker chose it, or a URL seeded it) — see "Touched-flag diffing" below.
+ *   Never written to `settingsService` by Post Studio (`setPropType` only
+ *   reassigns local `$state`), so seeding it costs zero writes.
  * - `audioMode` — `"original" | "instagram"`, captured only when
  *   `audioModeTouched` (the user explicitly picked one) — see "Touched-flag
  *   diffing" below. Never written to storage; `setAudioMode` only reassigns
@@ -74,36 +76,32 @@
  *   tempo, playback mode, safe-zone toggle): see "What 'setup' turned out to
  *   be" above.
  *
- * ## Diff baseline: per-session live value, not a fixed constant
+ * ## Touched-flag diffing
  *
- * `selectedPropType`'s fallback (`settingsService.settings.leftPropType ??
- * PropType.STAFF`) is PER-USER, not a fixed app default — unlike
- * `DEFAULT_EFFECTS_CONFIG.activeEffect` or `DEFAULT_TUNNEL_VIEW_STATE`. A
- * fixed-constant diff would be wrong in both directions: it would capture a
- * spurious override for every sender whose own prop preference differs from
- * `PropType.STAFF` (even though they never touched Post Studio's prop
- * picker), and a seeded viewer would need to out-rank the recipient's own
- * preference regardless. So `capturePsSlice` diffs `propType` against
- * `defaultPropType`, which callers MUST pass as the live
- * `settingsService.settings.leftPropType ?? PropType.STAFF` read at capture
- * time in THAT SAME session — never a stored/cached value. Because
- * `selectedPropType` is itself initialized from that identical expression
- * (absent a seed), a truly untouched mount always diffs to itself and never
- * emits `propType` — only an explicit `setPropType` call produces a diff.
+ * Neither field has a default that holds still, so neither is captured by
+ * comparing its value with one. `PostStudio.svelte` tracks each with a touched
+ * flag instead: touched means "the sender explicitly chose this," and an
+ * untouched field never emits a payload field.
  *
- * ## Touched-flag diffing (`audioMode`)
+ * `propType`: an untouched studio shows the settings prop
+ * (`settingsService.settings.leftPropType ?? PropType.STAFF`), which is
+ * PER-USER and LIVE: Shift+P, or another tab or device through the Firestore
+ * settings listener, can change it while the studio is open, and the
+ * untouched studio follows. A diff against a fixed constant would capture a
+ * spurious override for every sender whose prop is not `PropType.STAFF`. A
+ * diff against the settings value would turn a settings change under an open
+ * studio into an override the sender never chose, and a reload would then
+ * restore the old prop. So `propTypeTouched` is true only after a
+ * `setPropType` call (a prop picked in the studio) or when a URL seeded the
+ * prop, and only then is `propType` captured.
  *
- * `audioMode`'s own default is not a constant either — it is
- * `canKeepOriginalAudio ? "original" : "instagram"`, an async-derived value
- * (`canKeepOriginalAudio` depends on `hasDecodableAudioTrack`, a real decode
- * probe on the performance video) that is not knowable synchronously at
- * capture time. Recomputing it here to diff against would require redoing
- * that probe. `PostStudio.svelte` already tracks the distinction with
- * `audioModeTouched` — true only after an explicit `setAudioMode` call — so
- * capture uses THAT as the diff signal instead of the value: touched means
- * "the sender explicitly chose this, regardless of what auto-detection would
- * have picked," and untouched never emits a payload field, matching the
- * async-baseline the sender saw with no re-derivation needed.
+ * `audioMode`: its default is `canKeepOriginalAudio ? "original" :
+ * "instagram"`, an async-derived value (`canKeepOriginalAudio` depends on
+ * `hasDecodableAudioTrack`, a real decode probe on the performance video)
+ * that is not knowable synchronously at capture time. Recomputing it here to
+ * diff against would require redoing that probe. `audioModeTouched` is true
+ * only after an explicit `setAudioMode` call, so an untouched capture matches
+ * the async baseline the sender saw with no re-derivation needed.
  *
  * ## No merge step on seed
  *
@@ -124,13 +122,12 @@
  * `localStorage` key, no `settingsService` write — see the EXCLUDED write
  * paths above). `persistedPsSlice()` therefore always returns `null`: there is
  * no on-disk snapshot to reproduce for the comparison. Since `capturePsSlice`
- * on a truly untouched mount ALSO always returns `null` (see "Diff baseline"
- * and "Touched-flag diffing" above), `null` correctly reproduces what this
- * session's own fresh mount would capture — the own-link rule degenerates to
- * "any non-null seed is always an override," which is the right behavior:
- * reopening your OWN Post-Studio link should still show your chosen
- * prop/audio/mirror, because there is no disk state for it to fall back to
- * instead.
+ * on a truly untouched mount ALSO always returns `null` (see "Touched-flag
+ * diffing" above), `null` correctly reproduces what this session's own fresh
+ * mount would capture — the own-link rule degenerates to "any non-null seed
+ * is always an override," which is the right behavior: reopening your OWN
+ * Post-Studio link should still show your chosen prop/audio, because there is
+ * no disk state for it to fall back to instead.
  */
 import {
   PropType,
@@ -140,22 +137,21 @@ import {
 export type PsAudioMode = "original" | "instagram";
 
 export interface PsSlicePayload {
-  /** `selectedPropType`, elided when it matches this session's own live default. */
+  /** Present only when the studio's own prop was picked or seeded (`propTypeTouched`). */
   propType?: PropTypeValue;
   /** Present only when the sender explicitly picked a track (`audioModeTouched`). */
   audioMode?: PsAudioMode;
 }
 
-/** The live component state this slice reads, narrowed to the three encoded fields. */
+/** The live component state this slice reads, narrowed to the two encoded fields. */
 export interface PsSliceSource {
   propType: PropTypeValue;
   /**
-   * What THIS session's own fresh mount would resolve `propType` to absent
-   * any seed — read live (`settingsService.settings.leftPropType ??
-   * PropType.STAFF`) by the caller at capture time, never a stored constant.
-   * See the module doc comment, "Diff baseline".
+   * True once the studio's own picker chose `propType`, or a URL seeded it.
+   * Untouched, `propType` is only the live settings prop. See the module doc
+   * comment, "Touched-flag diffing".
    */
-  defaultPropType: PropTypeValue;
+  propTypeTouched: boolean;
   audioMode: PsAudioMode;
   audioModeTouched: boolean;
 }
@@ -173,10 +169,10 @@ export function capturePsSlice(
   const full = options.full === true;
   const payload: PsSlicePayload = {};
 
-  if (full || source.propType !== source.defaultPropType) {
+  // Touched-flag diffing, not value diffing — see the module doc comment.
+  if (full || source.propTypeTouched) {
     payload.propType = source.propType;
   }
-  // Touched-flag diffing, not value diffing — see the module doc comment.
   if (source.audioModeTouched) {
     payload.audioMode = source.audioMode;
   }

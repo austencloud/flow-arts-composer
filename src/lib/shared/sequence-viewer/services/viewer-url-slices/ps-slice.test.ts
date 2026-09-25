@@ -10,41 +10,41 @@ afterEach(() => {
 });
 
 describe("ps slice", () => {
-  it("returns null at post-normalize defaults", () => {
+  it("returns null when nothing was touched", () => {
     expect(
       capturePsSlice({
         propType: PropType.STAFF,
-        defaultPropType: PropType.STAFF,
+        propTypeTouched: false,
         audioMode: "original",
         audioModeTouched: false,
       })
     ).toBeNull();
   });
 
-  it("diffs propType against the LIVE session default, not a fixed constant", () => {
-    // A sender whose settingsService.leftPropType is already FAN (their own
-    // preference, never touched inside Post Studio) must not be captured as
-    // an override -- the default passed in is what THIS session would have
-    // resolved to on its own.
+  it("captures propType only when propTypeTouched -- never by value diff", () => {
+    // Untouched: the studio is showing the live settings prop, whatever it
+    // is. Shift+P or another tab or device may have set it while the studio
+    // was open; neither is a choice made in Post Studio, so neither may be
+    // captured as an override.
     expect(
       capturePsSlice({
         propType: PropType.FAN,
-        defaultPropType: PropType.FAN,
+        propTypeTouched: false,
         audioMode: "original",
         audioModeTouched: false,
       })
     ).toBeNull();
 
-    // The same propType value IS captured when it diverges from THAT
-    // session's own default -- an explicit setPropType call happened.
+    // Touched: an explicit setPropType call (or a URL seed) happened, even if
+    // the pick matches the settings prop at this moment.
     expect(
       capturePsSlice({
-        propType: PropType.FAN,
-        defaultPropType: PropType.STAFF,
+        propType: PropType.STAFF,
+        propTypeTouched: true,
         audioMode: "original",
         audioModeTouched: false,
       })
-    ).toEqual({ propType: PropType.FAN });
+    ).toEqual({ propType: PropType.STAFF });
   });
 
   it("captures audioMode only when audioModeTouched -- never by value diff", () => {
@@ -54,7 +54,7 @@ describe("ps slice", () => {
     expect(
       capturePsSlice({
         propType: PropType.STAFF,
-        defaultPropType: PropType.STAFF,
+        propTypeTouched: false,
         audioMode: "instagram",
         audioModeTouched: false,
       })
@@ -65,7 +65,7 @@ describe("ps slice", () => {
     expect(
       capturePsSlice({
         propType: PropType.STAFF,
-        defaultPropType: PropType.STAFF,
+        propTypeTouched: false,
         audioMode: "original",
         audioModeTouched: true,
       })
@@ -76,7 +76,7 @@ describe("ps slice", () => {
     expect(
       capturePsSlice({
         propType: PropType.CLUB,
-        defaultPropType: PropType.STAFF,
+        propTypeTouched: true,
         audioMode: "instagram",
         audioModeTouched: true,
       })
@@ -89,7 +89,7 @@ describe("ps slice", () => {
   it("round-trips: capture -> seed -> apply -> capture is identity", () => {
     const slice = capturePsSlice({
       propType: PropType.BUUGENG,
-      defaultPropType: PropType.STAFF,
+      propTypeTouched: true,
       audioMode: "instagram",
       audioModeTouched: true,
     });
@@ -99,7 +99,7 @@ describe("ps slice", () => {
     expect(
       capturePsSlice({
         propType: seed.propType ?? PropType.STAFF,
-        defaultPropType: PropType.STAFF,
+        propTypeTouched: seed.propType !== undefined,
         audioMode: seed.audioMode ?? "original",
         audioModeTouched: seed.audioMode !== undefined,
       })
@@ -138,12 +138,13 @@ describe("ps slice", () => {
     // PostStudio.svelte's initializers would.
     const slice = capturePsSlice({
       propType: PropType.TRIAD,
-      defaultPropType: PropType.STAFF,
+      propTypeTouched: true,
       audioMode: "instagram",
       audioModeTouched: true,
     });
     const seed = seedFromPsSlice(slice!);
     let selectedPropType = seed.propType ?? PropType.STAFF;
+    let propTypeTouched = seed.propType !== undefined;
     let audioMode = seed.audioMode ?? "original";
     let audioModeTouched = seed.audioMode !== undefined;
 
@@ -151,12 +152,13 @@ describe("ps slice", () => {
     // none of ps-slice's own functions has a storage sink to exercise, so
     // this also covers re-capturing after a local mutation.
     selectedPropType = PropType.QUIAD;
+    propTypeTouched = true;
     audioMode = "original";
     audioModeTouched = true;
     expect(
       capturePsSlice({
         propType: selectedPropType,
-        defaultPropType: PropType.STAFF,
+        propTypeTouched,
         audioMode,
         audioModeTouched,
       })
@@ -188,7 +190,7 @@ describe("ps slice", () => {
       const full = capturePsSlice(
         {
           propType: PropType.FAN,
-          defaultPropType: PropType.FAN,
+          propTypeTouched: false,
           audioMode: "original",
           audioModeTouched: false,
         },

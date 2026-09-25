@@ -8,8 +8,18 @@
   import EffectSelector from "./EffectSelector.svelte";
   import EffectsInspector from "./EffectsInspector.svelte";
   import EffectDock from "./EffectDock.svelte";
-  import { EFFECT_LABELS, getRegistration } from "./effect-registry";
+  import { EFFECTS, EFFECT_LABELS, getRegistration } from "./effect-registry";
   import type { EffectRegistration } from "./effect-registry";
+  import EffectPresetThumbnail from "./EffectPresetThumbnail.svelte";
+  import {
+    createEffectLookPreview,
+    type EffectLookPreviewModel,
+  } from "./effect-look-preview";
+  import type { EffectPreset } from "./presets/types";
+  import {
+    fitEffectCatalog,
+    fitEffectRoster,
+  } from "$lib/shared/animation-engine/domain/effect-catalog-fit";
   import {
     matchPresetId,
     pickedPresetId,
@@ -49,6 +59,13 @@
     layout?: "sidebar" | "strip" | "grid";
     /** Off when the host already titles this page "Effects". */
     showHeading?: boolean;
+    /**
+     * The host sets this panel's height from something else on screen (the
+     * motion-paths studio card matches its canvas) and wants the page to use
+     * all of it. While no effect is on, the roster turns into a catalog of
+     * pictures that fills the card. Sidebar layout only.
+     */
+    fill?: boolean;
     /** Restrict the roster to what the host can draw. Omit for everything. */
     availableEffects?: readonly string[];
     animationSettingsState?: AnimationSettingsState;
@@ -75,6 +92,7 @@
     showExportControls = false,
     layout = "sidebar",
     showHeading = true,
+    fill = false,
     availableEffects,
     animationSettingsState = animationSettings,
     children,
@@ -96,10 +114,105 @@
   // the panel drops you - landing in it is the same trap as navigating on
   // select, just triggered by boot instead of a click.
   let sidebarDetailOpen = $state(false);
+
+  // ── Catalog and roster (fill hosts) ────────────────────────────────────────
+  // In a card wide enough for four pictures across, every tile shows a picture
+  // of its effect's look, whether or not an effect is on (effect-catalog-fit.ts
+  // has the rule). With nothing on there is no dock, so the roster is the whole
+  // page and its tiles fill it (or, in a card too narrow for pictures, the names
+  // fill it as a list). Once an effect is on, the roster takes the height its
+  // tiles need and the dock the rest. That height depends on the width alone,
+  // so while you compare effects the grid stays still under the pointer (see
+  // .sb-footer). Only turning effects on or off changes the arrangement, and
+  // the view Crossfade animates that change.
+  // Fractional sizes, floored once at the end: a panel 736.5px tall reports a
+  // clientHeight of 737, and a catalog sized from that overflows by half a
+  // pixel and puts a scrollbar on the host.
+  let panelRect = $state<DOMRectReadOnly>();
+  let footerBox = $state<ResizeObserverSize[]>();
+  /** .sb-section padding, the row holding the Off button, and the gap under
+   *  it. The catalog grid gets what is left of the section. */
+  const CATALOG_CHROME_Y = 12 * 2 + 44 + 10;
+  const CATALOG_CHROME_X = 16 * 2;
+  const rosterCount = $derived(
+    availableEffects
+      ? EFFECTS.filter((effect) => availableEffects.includes(effect.id)).length
+      : EFFECTS.length
+  );
+  // The panel is size-contained in fill mode, so its height comes from the
+  // host alone and the catalog sized from it cannot feed back into it.
+  const catalogRoom = $derived(
+    Math.max(
+      0,
+      Math.floor((panelRect?.height ?? 0) - (footerBox?.[0]?.blockSize ?? 0))
+    )
+  );
+  const pictureHost = $derived(fill && !showPlayback && !children);
+  const rosterWidth = $derived(
+    Math.floor(panelRect?.width ?? 0) - CATALOG_CHROME_X
+  );
+  const catalogFit = $derived(
+    pictureHost && activeEffect === "none"
+      ? fitEffectCatalog({
+          width: rosterWidth,
+          height: catalogRoom - CATALOG_CHROME_Y,
+          count: rosterCount,
+        })
+      : null
+  );
+  const rosterFit = $derived(
+    pictureHost
+      ? fitEffectRoster({ width: rosterWidth, count: rosterCount })
+      : null
+  );
+
+  /** The look each tile shows: the one that effect is set to now, so the
+   *  picture shows what turning it on will look like (or, for the effect that
+   *  is on, the look you picked in the dock). An effect with no named looks
+   *  (Ghost) draws its motif from its defaults. */
+  const catalogLooks = $derived.by(() => {
+    // The list arrangement has names only.
+    if (!(catalogFit ? catalogFit.portrait : rosterFit)) return null;
+    void effectsConfigState.version;
+    const looks = new Map<
+      string,
+      { preset: EffectPreset; model: EffectLookPreviewModel }
+    >();
+    for (const meta of EFFECTS) {
+      const group = getRegistration(meta.id)?.presetGroup;
+      if (!group || !isEffectId(meta.id)) continue;
+      const config = effectsConfigState.effect(meta.id) as unknown as Record<
+        string,
+        unknown
+      >;
+      const current =
+        pickedPresetId(
+          group,
+          config,
+          effectsConfigState.activePresets[meta.id]
+        ) ?? matchPresetId(group, config);
+      const preset: EffectPreset = group.presets.find(
+        (candidate) => candidate.id === current
+      ) ??
+        group.presets[0] ?? {
+          id: `${meta.id}-default`,
+          name: meta.label,
+          previewColor: meta.color,
+        };
+      looks.set(meta.id, {
+        preset,
+        model: createEffectLookPreview(meta.id, preset),
+      });
+    }
+    return looks;
+  });
+
   const sidebarView = $derived(
     sidebarDetailOpen && activeEffect !== "none" && registration
       ? `detail-${activeEffect}`
-      : "browser"
+      : catalogFit
+        ? "catalog"
+        : "browser"
   );
 
   // Trails and fire keep a few values outside their effect intent. Both viewer
@@ -493,8 +606,24 @@
   </Crossfade>
 {/snippet}
 
+{#snippet catalogPortrait(effectId: string)}
+  {@const look = catalogLooks?.get(effectId)}
+  {#if look}
+    <EffectPresetThumbnail
+      effectType={effectId}
+      preset={look.preset}
+      legacyModel={look.model}
+    />
+  {/if}
+{/snippet}
+
 {#if layout === "sidebar"}
-  <div class="effects-panel" class:detail-view={sidebarView !== "browser"}>
+  <div
+    class="effects-panel"
+    class:fill
+    class:detail-view={sidebarView.startsWith("detail-")}
+    bind:contentRect={panelRect}
+  >
     {#if showPlayback}
       <EffectsPlaybackBar
         {bpm}
@@ -522,8 +651,14 @@
       mode="swap"
       duration={DURATION.fast}
     >
-      {#if sidebarView === "browser"}
-        <div class="sb-section sb-browser">
+      {#if sidebarView === "browser" || sidebarView === "catalog"}
+        <div
+          class="sb-section sb-browser"
+          class:catalog={sidebarView === "catalog"}
+          style:height={sidebarView === "catalog"
+            ? `${catalogRoom}px`
+            : undefined}
+        >
           <div class="sb-browser-head">
             {#if showHeading}
               <span class="sb-label">Effects</span>
@@ -549,13 +684,17 @@
             onPrewarm={handleEffectPrewarm}
             activeAction="tune"
             {availableEffects}
+            catalog={sidebarView === "catalog" ? catalogFit : rosterFit}
+            portrait={catalogPortrait}
           />
 
-          {@render effectDock(
-            () => (sidebarDetailOpen = true),
-            "Tune",
-            "tiles"
-          )}
+          {#if sidebarView === "browser"}
+            {@render effectDock(
+              () => (sidebarDetailOpen = true),
+              "Tune",
+              "tiles"
+            )}
+          {/if}
         </div>
       {:else if activeEffect !== "none" && registration}
         <EffectsInspector
@@ -586,7 +725,7 @@
 
     {#if children}{@render children()}{/if}
 
-    <div class="sb-section sb-footer">
+    <div class="sb-section sb-footer" bind:borderBoxSize={footerBox}>
       <button
         type="button"
         class="reset-all-btn"
@@ -655,7 +794,7 @@
                `tuneOverrides`. CustomizeComponent still loads as the readiness
                signal for this view but is no longer rendered. -->
           {#if activeEffect !== "none"}
-            {#if primaryControls(activeEffect).length === 0}
+            {#if primaryControls(activeEffect, "2d").length === 0}
               <!-- LED and anything else whose controls are structured config
                    rather than flat fields: the strip has nothing to show, so
                    the hand-built panel takes the view. -->
@@ -664,6 +803,7 @@
               <EffectTuneStrip
                 effectId={activeEffect}
                 config={effectsConfigState}
+                view="2d"
                 propType={animationSettingsState.currentPropType}
                 overrides={tuneOverrides}
                 onSettingChange={(setting, previousValue, value, coalesce) =>
@@ -828,6 +968,20 @@
   .sb-browser {
     display: grid;
     gap: 10px;
+  }
+
+  /* The host sets the height. Size containment keeps the panel's content out
+     of that height, so a tall dock overflows into the host's scroll instead of
+     stretching the panel that the catalog is sized from. */
+  .effects-panel.fill {
+    flex: 1 1 0;
+    min-height: 0;
+    container-type: size;
+  }
+
+  .sb-browser.catalog {
+    display: flex;
+    flex-direction: column;
   }
 
   .sb-browser-head {

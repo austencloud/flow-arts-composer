@@ -29,14 +29,8 @@
 </GuideSection>
 
 <style>
-  /* Prose measure + rhythm mirror level-1's FlowFrame `.flow-p`: capped at a
-     comfortable reading width and centred, rather than stretching to the
-     host's dark-theme `min(90ch, 100%)` prose track. TurnStrip stays OUTSIDE
-     this wrapper (a direct GuideSection child) so its own grid-column
-     breakout still applies - nesting it in here would make it a grid-item of
-     a plain div instead of the subgrid, losing the breakout. */
+  /* GuideSection owns text width; these rules set paragraph rhythm. */
   .section-body :global(p) {
-    max-width: 34rem;
     margin: 0 auto 1.1rem;
     text-align: center;
     text-wrap: balance;

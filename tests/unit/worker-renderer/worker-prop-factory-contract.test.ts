@@ -22,14 +22,20 @@ const canonicalPropRoot = path.join(
 const CANONICAL_PROP_SOURCE_HASHES = {
   "Prop3D.svelte":
     "dbb650c26dc0de198ec3e52d8372eed4c0776e736fff1333c4b45aa7919955c3",
+  // Hand colors (d11b2ce06c): the component re-clones when the hand palette
+  // changes. The worker recolors from the same live PROP_COLORS object and
+  // rebuilds a performer whose snapshot handColors differ, so it already
+  // matches. The unsquared scale and flipLongAxis were mirrored earlier.
   "GltfProp3D.svelte":
-    "62a715d89eb98785be287061b9720bcf7cc88c4bd19731433b931902e06bd96b",
+    "37842261e99ef7eac5cc88465ab954f69a5b20090d1aba6314b1b08cb4b9bc5e",
   // Flat-grip (43bf94fc40) and Star builds: the component picks the build's
   // own GLB through SEPARATE_BUILD_MODEL_URLS, and fanModelUrl() in
   // worker-gltf-props.ts makes the same choice from the same build.fanBuild
-  // value, so the worker is already in parity.
+  // value, so the worker is already in parity. Hand colors (d11b2ce06c) paint
+  // the cover and moon frame from the live hand palette; createFanModelWorkerProp
+  // reads the same live PROP_PALETTES for both.
   "Fan3D.svelte":
-    "bfd1d3ba446b5753c8ed4cc856a8a29197133b8be7a164e6a060a8b2b6088902",
+    "2ee4c18f29f0048242fe702da10fb79a704430617f540ddf0dfc6f6be1853d06",
   "club-profile.ts":
     "23e6db6928f508be7b6b15d915a6fd5bf22365418708075390edae2e74e796b1",
   "fan-profile.ts":
@@ -56,10 +62,13 @@ const CANONICAL_PROP_SOURCE_HASHES = {
     "61dc933031955dcad74cb18bc799f24c8f14f3d2b2f0ee8a9c1b02942309ce9e",
   "plate-extrude.ts":
     "a983dcf9a18ebe678402743e7194dc3aaaed9eab5d3cf3e8f69f3e1c5bca0fb0",
+  // Hand colors (d11b2ce06c): every part these paint with paintWithPropHand,
+  // worker-prop-materials.ts paints the same way, including the plate edge's
+  // 60% lerp toward the dark shade and the day frame's dark hub and lit tip.
   "plate-materials.ts":
-    "709956b8ee633bf32244344ca4d8f703f1dc92db06fee7e00e8b09f5bf4d45f0",
+    "802012b4eb486184939ecc7b51f4da29e154ec01dd7f6f72fefa81fe83b5fd45",
   "frame-materials.ts":
-    "52d0690a0f49e4120f0a8512091eb9017dfbee309acb54081ffee7eb36d518b9",
+    "b87df4094b88553c53cf560df7f741655284c52894a48f4b631d8d87336c3ceb",
   "prop-model-registry.ts":
     "203495aac2e641cb0e69a1d467884d769eab7dd6bbdb1f4faf3dd5365800cd15",
   "prop-model-recolor.ts":

@@ -206,7 +206,6 @@
 
   p {
     margin: 0;
-    max-inline-size: var(--measure-prose, 68ch);
   }
 
   p a {

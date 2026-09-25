@@ -195,7 +195,16 @@ export class CanvasLifecycleManager {
     // contract that AnimatorCanvasInitializer expects.
 
     const loadAnimatorServicesFn = async (): Promise<boolean> => {
-      return this._doLoadAnimatorServices(state, visibilityManagerOverride);
+      const loaded = await this._doLoadAnimatorServices(
+        state,
+        visibilityManagerOverride
+      );
+      // The first texture load runs before wire(); without settings it would
+      // paint the default prop look until the next update swapped it.
+      if (loaded) {
+        propTypeManager.updateRefs({ settingsService: this._settingsService });
+      }
+      return loaded;
     };
 
     const initPrecomputationFn = (): void => {

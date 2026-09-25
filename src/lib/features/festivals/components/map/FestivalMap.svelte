@@ -6,7 +6,7 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { PUBLIC_GOOGLE_MAPS_API_KEY } from "$env/static/public";
+  import { PUBLIC_GOOGLE_MAPS_API_KEY } from "$lib/shared/maps/google-maps-api-key";
   import { MarkerClusterer } from "@googlemaps/markerclusterer";
   import { getFestivalContext } from "../../context/festival-context";
   import FestivalMapPopup from "./FestivalMapPopup.svelte";

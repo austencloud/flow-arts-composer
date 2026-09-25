@@ -19,7 +19,12 @@
   {/if}
 
   {#if state}
-    <EffectControlStack effect="ghost" config={state} tiers={["primary"]} />
+    <EffectControlStack
+      effect="ghost"
+      config={state}
+      view="2d"
+      tiers={["primary"]}
+    />
   {:else}
     <p class="empty">Effect state unavailable.</p>
   {/if}

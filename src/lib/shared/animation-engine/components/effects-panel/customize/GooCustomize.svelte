@@ -25,12 +25,12 @@
     { value: "both_ends", label: "Both" },
   ];
 
-  // Goo reads surfaceTension (exposed as Viscosity — how much the liquid
-  // congeals), motionEmission (Amount — stream mass), intensity, palette and
-  // tracking. Drip rate is derived from viscosity rather than being its own
-  // knob: watery liquid sheds drops, thick liquid clings. The droplet-era
-  // spewStyle/clarity/ambientEmission fields remain on GooIntent for shape
-  // stability but no longer drive anything.
+  // The 2D goo renderer reads surfaceTension (exposed as Viscosity — how much
+  // the liquid congeals), motionEmission (Amount — stream mass), intensity,
+  // palette and tracking. Drip rate is derived from viscosity rather than being
+  // its own knob: watery liquid sheds drops, thick liquid clings. It ignores
+  // ambientEmission and clarity, which only the 3D viewer's goo reads, and
+  // spewStyle, which nothing reads.
 </script>
 
 <div class="customize-view">

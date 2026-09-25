@@ -9,7 +9,7 @@
   import UserDetailModal from "./UserDetailModal.svelte";
   import PanelGrid from "$lib/shared/components/panel/PanelGrid.svelte";
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import { PUBLIC_GOOGLE_MAPS_API_KEY } from "$env/static/public";
+  import { PUBLIC_GOOGLE_MAPS_API_KEY } from "$lib/shared/maps/google-maps-api-key";
   import GlobalUserMap from "$lib/features/community/components/GlobalUserMap.svelte";
   import { buildUserPins } from "$lib/features/admin/services/user-pins";
   import type { UserActivityTracker } from "../services/user-activity-tracker";

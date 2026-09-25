@@ -155,7 +155,6 @@
   }
 
   .atlas-intro p {
-    max-inline-size: 49rem;
     margin: 0;
     color: var(--theme-text-secondary, var(--theme-text-dim));
     font-size: clamp(1rem, 0.94rem + 0.2cqi, 1.18rem);

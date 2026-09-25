@@ -447,6 +447,25 @@
   }
 
   /**
+   * Until the settings service starts, getSettings() hands out the settings
+   * saved in this browser, frozen at first read. MainApplication starts it for
+   * the app shell, but standalone app routes (/coven, /endless-spinner, /test
+   * pages) never mount MainApplication, so without this their pictographs keep
+   * the prop they loaded with and ignore later changes, including one synced
+   * from another tab. Landing mode skips it on purpose: the service brings
+   * Firebase Auth and Firestore, which public pages never download. A landing
+   * route that needs live settings starts the service itself, as the sequence
+   * viewer does.
+   */
+  function startSettingsService(): void {
+    void import("$lib/shared/application/state/services.svelte")
+      .then(({ initializeAppServices }) => initializeAppServices())
+      .catch((error: unknown) =>
+        console.warn("[Layout] Settings service failed to start:", error)
+      );
+  }
+
+  /**
    * App mode init: full bootstrap - DI container, Firebase, auth, analytics.
    * Same logic as the original layout, but loaded dynamically.
    */
@@ -492,6 +511,7 @@
 
     // Mark container ready so children can render immediately
     containerReady = true;
+    startSettingsService();
 
     // Preload TKA letter glyph images (canvas word headers fall back to plain
     // text until these are ready). Decoding ~70 SVGs into canvas-ready images is
@@ -794,6 +814,7 @@
         .then(({ initRetroMode }) => initRetroMode())
         .then(() => {
           containerReady = true;
+          startSettingsService();
         })
         .catch((error) => {
           console.error("[Layout] Retro init failed:", error);

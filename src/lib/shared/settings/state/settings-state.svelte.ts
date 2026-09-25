@@ -15,6 +15,7 @@ import {
   healPropPair,
   isPropPairKey,
   normalizePropPatch,
+  PROP_PAIR_KEYS,
 } from "../domain/prop-pair-rule";
 import { DEFAULT_FAN_APPEARANCE } from "../../pictograph/prop/domain/fan-appearance";
 import { DEFAULT_PROP_LOOK } from "../../pictograph/prop/domain/prop-look";
@@ -45,6 +46,32 @@ const debug = createComponentLogger("SettingsState");
 
 const SETTINGS_STORAGE_KEY = "tka-modern-web-settings";
 const OFFLINE_QUEUE_KEY = "tka-settings-offline-queue";
+// Version 2 queues changes key by key. Unversioned entries held a whole copy
+// of the settings and are retired unreplayed.
+const OFFLINE_QUEUE_VERSION = 2;
+
+/** One setting a failed write could not upload, and the edit it came from. */
+interface QueuedChange {
+  value: unknown;
+  session: string;
+  sequence: number;
+}
+
+function isQueuedChanges(
+  value: unknown
+): value is Record<string, QueuedChange> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+  return Object.values(value).every(
+    (change) =>
+      typeof change === "object" &&
+      change !== null &&
+      "value" in change &&
+      typeof (change as QueuedChange).session === "string" &&
+      typeof (change as QueuedChange).sequence === "number"
+  );
+}
 
 const DEFAULT_PROP_PRESETS = defaultPropPresets();
 
@@ -108,13 +135,12 @@ class SettingsState {
   private lastRemoteApplication:
     { settings: AppSettings | null; userId: string } | undefined;
   private syncInitialized = false;
-  private isSavingToFirebase = false;
   // Keys the signed-in user changed here that Firestore has not confirmed yet.
   // The account document the initial load returns — and any snapshot echoing an
   // earlier write — predates these edits, so applying them wholesale reverts
-  // the choice the user just made. `isSavingToFirebase` cannot cover this: the
-  // UI is live during the initial load, and with two overlapping writes the
-  // first one's `finally` clears the flag while the second is still open.
+  // the choice the user just made. They are also the whole upload: a write
+  // carries only these keys, so it cannot send back a value this tab merely
+  // received from another tab or device.
   // Scoped to the editing UID: browser-local settings are shared by every
   // identity on this device, so a pre-sign-in edit still yields to the account
   // document. Each key carries the sequence number of its latest edit, so a
@@ -122,11 +148,9 @@ class SettingsState {
   private unsavedLocalKeys = new Map<keyof AppSettings, number>();
   private unsavedLocalOwner: string | null = null;
   private localEditSequence = 0;
-  // Newest edit inside the queued offline payload, so a successful replay
-  // releases exactly those pins instead of holding them for the session.
-  private queuedOfflineEdit: { userId: string; sequence: number } | null = null;
   // Distinguishes queue entries this page load wrote from ones a previous load
-  // left behind; edit sequence numbers are only comparable within a session.
+  // or another tab left behind; edit sequence numbers are only comparable
+  // within a session.
   private readonly sessionId = `${Date.now().toString(36)}-${Math.random()
     .toString(36)
     .slice(2, 10)}`;
@@ -140,8 +164,9 @@ class SettingsState {
   // older write's settlement cannot clear a newer one's flags.
   private activeSaveToken = 0;
   private saveTokenCounter = 0;
-  // A save requested while another is open. Every payload is a full snapshot,
-  // so one coalesced re-run after the open write settles carries everything.
+  // A save requested while another is open. Every write carries all the edits
+  // still unconfirmed when it starts, plus the offline queue, so one coalesced
+  // re-run after the open write settles covers everything.
   private resaveWhenIdle = false;
   private onlineHandler: (() => void) | null = null;
   private firebaseSaveDebounceTimer: ReturnType<typeof setTimeout> | null =
@@ -219,14 +244,27 @@ class SettingsState {
         return;
       }
 
+      // An edit made after sign-in but before this sync existed is pinned
+      // with no write behind it. Until something uploads it, the pin keeps
+      // every remote change to that setting out of this tab.
+      if (
+        this.unsavedLocalOwner === syncUserId &&
+        this.unsavedLocalKeys.size > 0
+      ) {
+        this.debouncedSaveToFirebase();
+      }
+
       if (this.firebasePersistence.onSettingsChange) {
         const unsubscribe = this.firebasePersistence.onSettingsChange(
           (remoteSettings) => {
+            // Applied even while a write is open or waiting to go: pins hold
+            // every key this tab has not had confirmed, and only those keys
+            // are uploaded. Dropping snapshots during a write left this tab
+            // holding another tab's old values — for a whole offline stretch,
+            // at worst — until its next write put them back on the account.
             if (
               this.lifecycleGeneration === generation &&
-              auth.currentUser?.uid === syncUserId &&
-              !this.isSavingToFirebase &&
-              !this.firebaseSaveDebounceTimer
+              auth.currentUser?.uid === syncUserId
             ) {
               this.applyRemoteSettings(remoteSettings, syncUserId);
             }
@@ -293,9 +331,12 @@ class SettingsState {
             applyThemeForBackground(migratedType);
             updateThemeService(migratedType);
             this.saveSettingsToStorage(settingsState);
-            await this.firebasePersistence.saveSettings(
-              this.getSettingsForPersistence(userId)
-            );
+            // Only the renamed key. A whole-settings write here would put this
+            // tab's copy of every other setting back over whatever another
+            // tab changed since the load.
+            await this.firebasePersistence.saveSettings({
+              backgroundType: migratedType,
+            });
           } else {
             settingsState.backgroundType = remoteBackgroundType;
             if (firebaseSettings.backgroundCategory) {
@@ -368,10 +409,10 @@ class SettingsState {
       : snapshot;
   }
 
-  private sanitizeImageExportForUser(
-    settings: AppSettings,
+  private sanitizeImageExportForUser<T extends Partial<AppSettings>>(
+    settings: T,
     userId: string
-  ): AppSettings {
+  ): T {
     const owner = getColumnCountPreferenceOwner({ uid: userId });
     const sanitized = sanitizeColumnCountPreference(
       settings.imageExport,
@@ -403,10 +444,6 @@ class SettingsState {
       "backgroundColor",
       "gradientColors",
       "gradientDirection",
-      "leftPropType",
-      "rightPropType",
-      "catDogMode",
-      "selectedPresetIndex",
       "compositionRecipeOverrides",
       "visibility",
     ]);
@@ -416,6 +453,7 @@ class SettingsState {
         Object.prototype.hasOwnProperty.call(merged, key) &&
         key !== "_localTimestamp" &&
         !excludeFromRealtimeSync.has(key) &&
+        !isPropPairKey(key) &&
         !this.hasUnsavedLocalEdit(key as keyof AppSettings, userId)
       ) {
         settingsState[key as keyof AppSettings] = merged[
@@ -423,10 +461,13 @@ class SettingsState {
         ] as never;
       }
     }
-    // The pair fields are excluded from realtime sync but legacy propType is
-    // not, so a remote document can land a propType that disagrees with the
-    // local left hand.
-    Object.assign(settingsState, healPropPair(settingsState));
+    // The prop pair is one choice, so it lands whole or not at all: a hand
+    // picked here that the server has not confirmed keeps the local pair.
+    // It heals from the remote fields, not the defaults merge, which would
+    // mask a legacy propType-only document.
+    if (!PROP_PAIR_KEYS.some((key) => this.hasUnsavedLocalEdit(key, userId))) {
+      Object.assign(settingsState, healPropPair(remoteWithoutMeta));
+    }
 
     // Optional account slices must be cleared when the authoritative document
     // omits them; a shallow defaults merge cannot remove a stale local value.
@@ -540,7 +581,6 @@ class SettingsState {
     // the next session's bookkeeping.
     this.lifecycleGeneration += 1;
     this.activeSaveToken = 0;
-    this.isSavingToFirebase = false;
     this.pendingFirebaseSave = null;
     this.resaveWhenIdle = false;
 
@@ -551,7 +591,6 @@ class SettingsState {
     // next account's document.
     this.unsavedLocalKeys.clear();
     this.unsavedLocalOwner = null;
-    this.queuedOfflineEdit = null;
     settingsState.imageExport = undefined;
     settingsState._localTimestamp = undefined;
     this.saveSettingsToStorage(settingsState);
@@ -696,36 +735,75 @@ class SettingsState {
     }
 
     // One write at a time. Overlapping writes could settle in either order,
-    // and an older one failing after a newer one succeeded would drop its
-    // stale full snapshot into the offline queue — reverting the newer values
-    // on the next reconnect. Serializing also means the flags below describe
-    // exactly one write. Every payload is a full snapshot, so a request that
-    // arrives mid-write is satisfied by one coalesced re-run afterwards.
+    // and an older one failing after a newer one succeeded would queue its
+    // stale values — reverting the newer ones on the next reconnect.
+    // Serializing also means the bookkeeping in writeToFirebase describes
+    // exactly one write. A request that arrives mid-write is satisfied by one
+    // coalesced re-run afterwards, which carries whatever is still unconfirmed.
     if (this.pendingFirebaseSave) {
       this.resaveWhenIdle = true;
       return;
     }
 
+    void this.writeToFirebase(userId);
+  }
+
+  /**
+   * Upload this tab's unconfirmed edits, and whatever the offline queue holds,
+   * as one merge write. Only edited keys travel. A whole-settings payload also
+   * carried this tab's copy of every other setting, so a change another tab or
+   * device had made — one this tab had not applied yet — went back to the old
+   * value on every device.
+   *
+   * Resolves once the write settles; a failure is handled here, never thrown.
+   */
+  private writeToFirebase(userId: string): Promise<void> {
+    const persistence = this.firebasePersistence;
+    if (!persistence) return Promise.resolve();
+
     const generation = this.lifecycleGeneration;
-    const saveToken = this.claimWriteSlot();
-
-    const settingsToSave = this.getSettingsForPersistence(userId);
-    // The payload is a snapshot, so only edits made up to this point are on
-    // their way to the server. The pins stay until the write is CONFIRMED: a
-    // snapshot that arrives while this write is still open is still older than
-    // local state. Anything edited after this line keeps its newer sequence
-    // number and stays pinned for the next write.
+    // Every edit made up to this point is in the payload. The pins stay until
+    // the write is CONFIRMED: a snapshot that arrives while it is still open is
+    // still older than local state. Anything edited after this line keeps its
+    // newer sequence number and stays pinned for the next write.
     const payloadSequence = this.localEditSequence;
+    const edits = this.collectUnsavedEdits(userId);
+    const queued = this.readOfflineQueue(userId);
 
-    debug.info("Saving settings to Firebase", {
-      propPresetsCount: settingsToSave.propPresets?.length ?? 0,
-      selectedPresetIndex: settingsToSave.selectedPresetIndex,
-      leftPropType: settingsToSave.leftPropType,
-      rightPropType: settingsToSave.rightPropType,
-    });
+    // Queued changes ride along unless a local edit to the same setting
+    // replaces them. The prop pair is one unit, so a local pair replaces the
+    // queued pair whole.
+    const editsPair = PROP_PAIR_KEYS.some((key) => key in edits);
+    const payload: Record<string, unknown> = {};
+    for (const [key, change] of Object.entries(queued)) {
+      if (editsPair && isPropPairKey(key)) continue;
+      payload[key] = change.value;
+    }
+    Object.assign(payload, edits);
 
-    this.pendingFirebaseSave = this.firebasePersistence
-      .saveSettings(settingsToSave)
+    if (Object.keys(payload).length === 0) {
+      // Nothing to carry. A pin whose value is unset has nothing to upload,
+      // and holding it would keep that setting's remote changes out for good.
+      this.releaseConfirmedLocalEdits(userId, payloadSequence);
+      return Promise.resolve();
+    }
+
+    const upload =
+      payload.imageExport === undefined
+        ? (payload as Partial<AppSettings>)
+        : this.sanitizeImageExportForUser(
+            payload as Partial<AppSettings>,
+            userId
+          );
+
+    debug.info("Saving settings to Firebase", { keys: Object.keys(upload) });
+
+    const saveToken = this.claimWriteSlot();
+    const write = persistence
+      .saveSettings(upload)
+      // Settle this write's bookkeeping BEFORE the slot is released. Releasing
+      // it synchronously starts the coalesced next write, which must not read
+      // back queue entries this one already delivered.
       .then(() => {
         debug.success("Settings saved to Firebase successfully");
         if (this.lifecycleGeneration !== generation) return;
@@ -737,36 +815,62 @@ class SettingsState {
           settingsState._localTimestamp = undefined;
           this.saveSettingsToStorage(settingsState);
         }
-        this.clearOfflineQueue(userId);
+        this.settleOfflineQueue(userId, queued);
       })
       .catch((error) => {
         console.error("❌ [SettingsState] Failed to save to Firebase:", error);
         if (this.lifecycleGeneration !== generation) return;
         // The pins stay: the server never took these edits, so the account
-        // document is still older than local state.
-        this.queueOfflineChange(settingsToSave, userId, payloadSequence);
+        // document is still older than local state. Only this tab's own edits
+        // are queued; the replayed changes never left the queue.
+        const failedEdits: Record<string, unknown> = {};
+        for (const key of Object.keys(edits)) {
+          failedEdits[key] = (upload as Record<string, unknown>)[key];
+        }
+        this.queueFailedEdits(userId, failedEdits, payloadSequence);
       })
       .finally(() => this.releaseWriteSlot(saveToken, generation));
+    this.pendingFirebaseSave = write;
+    return write;
   }
 
   /**
-   * Take exclusive ownership of the single write slot. Both the debounced save
-   * and the offline replay go through here: a replay that only *checked* the
-   * slot without claiming it left `pendingFirebaseSave` null, so an edit made
-   * mid-replay started a concurrent write — the exact overlap serialization
-   * exists to prevent.
+   * This tab's unconfirmed edits for `userId`, read from current state. A
+   * pinned pair key brings the whole prop pair: another tab must never receive
+   * one hand spliced onto its own copy of the other.
+   */
+  private collectUnsavedEdits(userId: string): Record<string, unknown> {
+    const edits: Record<string, unknown> = {};
+    if (this.unsavedLocalOwner !== userId) return edits;
+
+    const keys = new Set<keyof AppSettings>(this.unsavedLocalKeys.keys());
+    if (PROP_PAIR_KEYS.some((key) => keys.has(key))) {
+      for (const key of PROP_PAIR_KEYS) keys.add(key);
+    }
+    for (const key of keys) {
+      if (key === "_localTimestamp") continue;
+      const value = $state.snapshot(settingsState[key]);
+      // Firestore rejects undefined; an unset value has nothing to upload.
+      if (value !== undefined) edits[key] = value;
+    }
+    return edits;
+  }
+
+  /**
+   * Take exclusive ownership of the single write slot, before anything is
+   * awaited. A replay that only *checked* the slot left `pendingFirebaseSave`
+   * null, so an edit made mid-replay started a concurrent write — the exact
+   * overlap serialization exists to prevent.
    */
   private claimWriteSlot(): number {
     this.saveTokenCounter += 1;
     this.activeSaveToken = this.saveTokenCounter;
-    this.isSavingToFirebase = true;
     return this.activeSaveToken;
   }
 
   private releaseWriteSlot(saveToken: number, generation: number): void {
-    // Only the write that owns the flags may clear them.
+    // Only the write that owns the slot may clear it.
     if (this.activeSaveToken !== saveToken) return;
-    this.isSavingToFirebase = false;
     this.pendingFirebaseSave = null;
     this.activeSaveToken = 0;
 
@@ -781,174 +885,144 @@ class SettingsState {
     return `${OFFLINE_QUEUE_KEY}:${encodeURIComponent(userId)}`;
   }
 
-  private queueOfflineChange(
-    settings: AppSettings,
+  /**
+   * The queued changes for `userId`. Every tab on this device shares the one
+   * queue. An entry from before changes were queued key by key is retired
+   * unreplayed: it held a whole copy of the settings with nothing to say which
+   * values were edits, so replaying it put back every value in it.
+   */
+  private readOfflineQueue(userId: string): Record<string, QueuedChange> {
+    if (!browser) return {};
+
+    const storageKey = this.offlineQueueKey(userId);
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (!stored) return {};
+
+      const entry = JSON.parse(stored) as {
+        version?: unknown;
+        changes?: unknown;
+      } | null;
+      if (
+        entry?.version !== OFFLINE_QUEUE_VERSION ||
+        !isQueuedChanges(entry.changes)
+      ) {
+        localStorage.removeItem(storageKey);
+        return {};
+      }
+      return entry.changes;
+    } catch (error) {
+      console.error("Failed to read offline queue:", error);
+      return {};
+    }
+  }
+
+  private writeOfflineQueue(
     userId: string,
+    changes: Record<string, QueuedChange>
+  ): void {
+    const storageKey = this.offlineQueueKey(userId);
+    if (Object.keys(changes).length === 0) {
+      localStorage.removeItem(storageKey);
+      return;
+    }
+    localStorage.setItem(
+      storageKey,
+      JSON.stringify({ version: OFFLINE_QUEUE_VERSION, changes })
+    );
+  }
+
+  /**
+   * Queue the edits a failed write carried, merged key by key into whatever
+   * the queue already holds. Replacing the queue whole dropped another tab's
+   * failed edits, and a replay then released pins on values it never carried.
+   */
+  private queueFailedEdits(
+    userId: string,
+    edits: Record<string, unknown>,
     sequence: number
   ): void {
     if (!browser) return;
 
     try {
-      // Belt and braces alongside write serialization: a payload can only
-      // replace a queued one that is the same age or older. An older snapshot
-      // must never become what a reconnect replays.
+      const changes = this.readOfflineQueue(userId);
+      // Belt and braces alongside write serialization: an older edit of this
+      // session must never replace a newer queued one, because the queue is
+      // what a reconnect replays.
       //
       // The comparison is scoped to this session. `sequence` counts edits in
       // memory and restarts at zero on reload, so comparing it against a
-      // sequence persisted by an EARLIER session rejects the newer payload and
-      // loses the edit entirely — a queued 5 from last session would beat this
-      // session's 1. A queue entry from any other session is by definition
-      // older than what this session is writing now.
-      const existing = localStorage.getItem(this.offlineQueueKey(userId));
-      if (existing) {
-        const queued = JSON.parse(existing) as {
-          sequence?: unknown;
-          session?: unknown;
-        };
-        if (
-          queued?.session === this.sessionId &&
-          typeof queued.sequence === "number" &&
-          queued.sequence > sequence
-        ) {
-          return;
-        }
+      // sequence persisted by an EARLIER session rejects the newer edit and
+      // loses it — a queued 5 from last session would beat this session's 1.
+      // A change queued by any other session is taken as older than what this
+      // session is writing now.
+      const queuedIsNewer = (key: string) => {
+        const queued = changes[key];
+        return queued?.session === this.sessionId && queued.sequence > sequence;
+      };
+      // The prop pair is kept or replaced whole, never spliced.
+      const keepQueuedPair = PROP_PAIR_KEYS.some(queuedIsNewer);
+      if (!keepQueuedPair && PROP_PAIR_KEYS.some((key) => key in edits)) {
+        for (const key of PROP_PAIR_KEYS) delete changes[key];
       }
 
-      const queueEntry = {
-        settings,
-        sequence,
-        session: this.sessionId,
-        timestamp: Date.now(),
-      };
-      localStorage.setItem(
-        this.offlineQueueKey(userId),
-        JSON.stringify(queueEntry)
-      );
-      this.queuedOfflineEdit = { userId, sequence };
+      for (const [key, value] of Object.entries(edits)) {
+        if (isPropPairKey(key) ? keepQueuedPair : queuedIsNewer(key)) continue;
+        changes[key] = { value, session: this.sessionId, sequence };
+      }
+      this.writeOfflineQueue(userId, changes);
     } catch (error) {
       console.error("Failed to queue offline change:", error);
     }
   }
 
+  /**
+   * Replay the offline queue now: at sign-in, and when the connection returns.
+   * The replay is an ordinary write, so it takes the write slot and carries
+   * this tab's own unconfirmed edits along with the queue.
+   */
   private async processOfflineQueue(): Promise<void> {
-    if (!browser) return;
-    // A write in flight carries a newer full snapshot than anything queued and
-    // clears the queue when it lands. Replaying now would race it with older
-    // values.
-    if (this.pendingFirebaseSave) return;
+    if (!browser || !this.firebasePersistence) return;
 
     const userId = auth.currentUser?.uid;
     if (!userId) return;
+    if (Object.keys(this.readOfflineQueue(userId)).length === 0) return;
 
-    const generation = this.lifecycleGeneration;
-
-    try {
-      const queuedData = localStorage.getItem(this.offlineQueueKey(userId));
-      if (!queuedData) return;
-
-      const queueEntry = JSON.parse(queuedData);
-      if (!queueEntry?.settings) return;
-
-      if (this.firebasePersistence && auth.currentUser?.uid === userId) {
-        const settings = this.sanitizeImageExportForUser(
-          normalizeLegacyAppSettings(queueEntry.settings),
-          userId
-        );
-
-        // Identity of the entry actually being replayed, captured before any
-        // await. Everything the success path does is scoped to THIS entry:
-        // by the time it runs, the queue may hold a different, newer payload.
-        const replayedEntry = {
-          session: queueEntry.session as unknown,
-          sequence: queueEntry.sequence as unknown,
-        };
-        // The pins this payload covers, also captured now. Reading
-        // `queuedOfflineEdit` afterwards could release pins belonging to a
-        // newer edit that was queued in the meantime.
-        const replayedPinSequence =
-          this.queuedOfflineEdit?.userId === userId
-            ? this.queuedOfflineEdit.sequence
-            : null;
-
-        // Claim the slot before awaiting. Checking it once and leaving it free
-        // let an edit made DURING the replay start a concurrent write; if that
-        // newer write landed first, the replay's older payload settled last and
-        // won on the server.
-        const replayToken = this.claimWriteSlot();
-        const replay = this.firebasePersistence
-          .saveSettings(settings)
-          // Settle the replay's own bookkeeping BEFORE the slot is released.
-          // Releasing first synchronously starts the coalesced newer save, and
-          // if that save failed fast it queued a newer payload that this block
-          // would then delete.
-          .then(() => {
-            if (
-              this.lifecycleGeneration !== generation ||
-              auth.currentUser?.uid !== userId
-            ) {
-              return;
-            }
-            // The replayed payload is now on the server, so the edits it
-            // carried no longer need protection from the account document.
-            if (replayedPinSequence !== null) {
-              this.releaseConfirmedLocalEdits(userId, replayedPinSequence);
-            }
-            this.clearReplayedOfflineQueue(userId, replayedEntry);
-          })
-          .finally(() => this.releaseWriteSlot(replayToken, generation));
-        // The slot holds a non-rejecting view; a replay failure surfaces
-        // through the await below and leaves the queue in place.
-        this.pendingFirebaseSave = replay.catch(() => {});
-
-        await replay;
-      }
-    } catch (error) {
-      console.error("Failed to process offline queue:", error);
+    // The write that follows the open one reads the queue afresh.
+    if (this.pendingFirebaseSave) {
+      this.resaveWhenIdle = true;
+      return;
     }
+    await this.writeToFirebase(userId);
   }
 
   /**
-   * Clear the queue only if it still holds the entry that was just replayed.
-   * A failed write during the replay can have replaced it with a newer payload,
-   * and deleting that would drop the user's edit from the server, the queue,
-   * and the pin set at once.
+   * Remove the queued changes a confirmed write covered — the ones it carried
+   * and the ones a newer local edit replaced in its payload. A change queued
+   * while the write was open replaced the entry the write read, so it no
+   * longer matches and stays for the next write. Deleting it would drop that
+   * edit from the server, the queue, and the pin set at once.
    */
-  private clearReplayedOfflineQueue(
+  private settleOfflineQueue(
     userId: string,
-    replayed: { session: unknown; sequence: unknown }
+    covered: Record<string, QueuedChange>
   ): void {
     if (!browser) return;
 
     try {
-      const current = localStorage.getItem(this.offlineQueueKey(userId));
-      if (!current) return;
-
-      const entry = JSON.parse(current) as {
-        session?: unknown;
-        sequence?: unknown;
-      };
-      if (
-        entry?.session !== replayed.session ||
-        entry?.sequence !== replayed.sequence
-      ) {
-        return; // Superseded by a newer payload; leave it for the next replay.
+      const changes = this.readOfflineQueue(userId);
+      let settled = false;
+      for (const [key, change] of Object.entries(covered)) {
+        const current = changes[key];
+        if (
+          current?.session === change.session &&
+          current.sequence === change.sequence
+        ) {
+          delete changes[key];
+          settled = true;
+        }
       }
-    } catch {
-      // An unreadable entry is not one we can claim to have replayed.
-      return;
-    }
-
-    this.clearOfflineQueue(userId);
-  }
-
-  private clearOfflineQueue(userId: string): void {
-    if (this.queuedOfflineEdit?.userId === userId) {
-      this.queuedOfflineEdit = null;
-    }
-    if (!browser) return;
-
-    try {
-      localStorage.removeItem(this.offlineQueueKey(userId));
+      if (settled) this.writeOfflineQueue(userId, changes);
     } catch (error) {
       console.error("Failed to clear offline queue:", error);
     }
@@ -980,6 +1054,11 @@ class SettingsState {
     settingsState.imageExport = undefined;
     settingsState._localTimestamp = undefined;
     Object.assign(settingsState, DEFAULT_SETTINGS);
+    // Uploads carry only edited keys, so the reset counts as an edit of every
+    // setting it restored.
+    for (const key of Object.keys(DEFAULT_SETTINGS) as (keyof AppSettings)[]) {
+      this.markLocallyEdited(key);
+    }
     this.saveSettings();
   }
 

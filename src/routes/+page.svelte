@@ -111,7 +111,7 @@
 		"sameAs": [
 			"https://instagram.com/tkaflowarts",
 			"https://facebook.com/tkaflowarts",
-			"https://www.youtube.com/@TheKineticAlphabet"
+			"https://www.youtube.com/@tkaflowarts"
 		],
 		"contactPoint": {
 			"@type": "ContactPoint",

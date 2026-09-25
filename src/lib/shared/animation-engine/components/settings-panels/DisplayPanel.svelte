@@ -12,6 +12,7 @@
   import { tryGetViewerVisibilityContext } from "$lib/shared/sequence-viewer/context/viewer-visibility-context";
   import type { ViewerControlSink } from "$lib/shared/sequence-viewer/domain/viewer-control-analytics";
   import { reportViewerControlChange } from "$lib/shared/sequence-viewer/domain/viewer-control-analytics";
+  import { fitDisplayGrid } from "../../domain/display-grid-fit";
 
   let {
     /** Show per-color prop (Left/Right) chips. Only surfaces without a header
@@ -33,6 +34,13 @@
      *  third of the column empty underneath. Where it is not, the width-only
      *  rules below apply unchanged. */
     fill = false,
+    /** With `fill`: the box is bounded by something else on screen (the
+     *  motion-path studio's card matches the canvas beside it), not a rail
+     *  as tall as the window. The pictures then take the room the box has
+     *  instead of the short-side share that keeps a free-standing rail's
+     *  toggles modest, so the grid spends the card rather than sitting in
+     *  the middle of it. */
+    grow = false,
     /** The four edge marks (TKA glyph, element, step number, word) describe a
      *  realized sequence. A host animating something that has no letter and no
      *  steps — the shape-matrix theory stage traces a bare spin ratio — turns
@@ -51,6 +59,7 @@
     } | null;
     propType?: string;
     fill?: boolean;
+    grow?: boolean;
     showSequenceMarks?: boolean;
     showWordToggle?: boolean;
     onSettingChange?: ViewerControlSink;
@@ -254,28 +263,8 @@
       : []),
   ]);
 
-  /**
-   * Fit the grid to the box's shape, at a size the box does not get to dictate.
-   *
-   * Two decisions, in this order. First how big a tile should be: a fraction of
-   * the box's SHORT side, floored and ceilinged, so the control looks like the
-   * same control on a phone tray and on a 4K rail. Then how to arrange eight of
-   * them: 2, 4 and 8 columns all keep the four square-field layers and the four
-   * edge marks on whole rows, and the winner is whichever fits the biggest tile
-   * — or, once the ceiling has settled that, whichever arrangement's own
-   * proportions come closest to the box's, since that is the one that centres
-   * without a lopsided margin down one axis.
-   *
-   * Filling the box was the first attempt and it was wrong: a 831x2186 rail
-   * bought 390px toggles. The grid sits in the middle of the room it has.
-   *
-   * Every measurement comes off the rendered chip, so the padding, gap and
-   * label metrics are whatever the host's own CSS resolved to and this file
-   * never has to duplicate them.
-   */
-  const COLUMN_CHOICES = [2, 4, 8];
-  const GROUP_GAP = 10;
-
+  // Fitted to the box's shape by fitDisplayGrid, from the rendered chip's own
+  // metrics, so this file never duplicates the host's CSS.
   let shellEl = $state<HTMLElement | null>(null);
   let gridEl = $state<HTMLElement | null>(null);
   // 0 means "not measured" — the CSS ladder applies and nothing is overridden.
@@ -306,50 +295,19 @@
     const gapX = parseFloat(gridStyle.columnGap) || 0;
     const gapY = parseFloat(gridStyle.rowGap) || 0;
 
-    // What the picture is ALLOWED to be, before the question of how much room
-    // is going spare. Tied to the box's short side so a phone tray and a 4K
-    // rail read as the same control at different sizes, and bounded at both
-    // ends — a panel does not get to spend 2186px of rail on eight toggles.
-    const cap = Math.min(
-      176,
-      Math.max(72, Math.round(Math.min(width, height) * 0.2))
-    );
-    const boxAspect = width / height;
-    const count = chips.length;
-    let best = { cols: 0, art: 0, skew: Number.POSITIVE_INFINITY };
-
-    for (const cols of COLUMN_CHOICES) {
-      if (cols > count) continue;
-      const rows = Math.ceil(count / cols);
-      // The breath between the two groups is a row gap when the boundary falls
-      // on a row edge, and a column gap when one row holds everything.
-      const artW =
-        (width - gapX * (cols - 1) - (rows === 1 ? GROUP_GAP : 0)) / cols -
-        padX;
-      const artH =
-        (height - gapY * (rows - 1) - (rows > 1 ? GROUP_GAP : 0)) / rows -
-        chromeY;
-      const art = Math.min(cap, artW, artH);
-      if (art <= 0) continue;
-      const tile = art + Math.max(padX, chromeY);
-      const gridW = cols * tile + gapX * (cols - 1);
-      const gridH = rows * tile + gapY * (rows - 1);
-      const skew = Math.abs(Math.log(gridW / gridH / boxAspect));
-      // Biggest picture wins. Where the cap has already settled that, the shape
-      // decides: the arrangement whose proportions match the box's is the one
-      // that centres without a lopsided margin on one axis.
-      if (
-        art > best.art + 0.5 ||
-        (Math.abs(art - best.art) <= 0.5 && skew < best.skew)
-      ) {
-        best = { cols, art, skew };
-      }
-    }
-
-    if (!best.cols) return;
-    fitCols = best.cols;
-    fitArt = Math.floor(best.art);
-    fitTile = Math.floor(best.art + Math.max(padX, chromeY));
+    const fit = fitDisplayGrid({
+      width,
+      height,
+      padX,
+      chromeY,
+      gapX,
+      gapY,
+      count: chips.length,
+      grow,
+    });
+    fitCols = fit?.cols ?? 0;
+    fitArt = fit?.art ?? 0;
+    fitTile = fit?.tile ?? 0;
   }
 
   onMount(() => {
@@ -366,6 +324,7 @@
   $effect(() => {
     void chips.length;
     void fill;
+    void grow;
     measureFit();
   });
 
@@ -435,6 +394,15 @@
     flex: 1 1 0;
     min-height: 0;
     display: flex;
+  }
+
+  /* A box too small to fit (MIN_FIT_ART in display-grid-fit) keeps the
+     width-only grid at its own height, across the whole box, and the page
+     scrolls. */
+  .vis-grid-shell.fill > .vis-grid:not(.fitted) {
+    flex: 1 1 auto;
+    min-width: 0;
+    align-self: flex-start;
   }
 
   /* Four columns as soon as there is room for them, two below that. Eight tiles

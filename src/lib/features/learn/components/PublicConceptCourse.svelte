@@ -3,7 +3,14 @@
   import { page } from "$app/state";
   import LearnTab from "../LearnTab.svelte";
   import { getConceptById } from "../domain/concepts";
-  import { buildConceptPath, CONCEPT_LIST_PATH } from "../domain/concept-routes";
+  import {
+    getAvailableConcepts,
+    getConceptExperience,
+  } from "../domain/concept-experience-registry";
+  import {
+    buildConceptPath,
+    CONCEPT_LIST_PATH,
+  } from "../domain/concept-routes";
   import Seo from "$lib/shared/components/Seo.svelte";
   import { LANDING_DOMAIN } from "../../../../config/domains";
 
@@ -13,6 +20,22 @@
 
   const concept = $derived(
     page.params.conceptId ? getConceptById(page.params.conceptId) : undefined
+  );
+
+  // The server-rendered page is what search engines and no-JS readers get, so
+  // it carries the course order and links the app itself renders client-side.
+  const lessons = getAvailableConcepts();
+  const lessonIndex = $derived(
+    concept ? lessons.findIndex((lesson) => lesson.id === concept.id) : -1
+  );
+  const previousLesson = $derived(
+    lessonIndex > 0 ? lessons[lessonIndex - 1] : undefined
+  );
+  const nextLesson = $derived(
+    lessonIndex >= 0 ? lessons[lessonIndex + 1] : undefined
+  );
+  const experience = $derived(
+    concept ? getConceptExperience(concept.id) : undefined
   );
   const title = $derived(
     concept ? `${concept.name} | Interactive TKA Lesson` : COURSE_NAME
@@ -97,13 +120,48 @@
   {:else}
     <div class="course-prerender">
       <span>Learn by doing</span>
-      <h1>{concept?.name ?? "Interactive TKA lessons"}</h1>
-      <p>
-        Explore guided lessons from the grid through reading TKA words.
-        The interactive course starts when this page loads in your
-        browser.
-      </p>
-      <a href="/guide">Prefer to read? Open the Guide</a>
+      {#if concept && experience}
+        <h1>{concept.name}</h1>
+        <p class="lesson-description">{concept.description}</p>
+        <p>
+          About {concept.estimatedMinutes} minutes. The interactive lesson starts
+          when this page loads in your browser.
+        </p>
+        <nav class="lesson-links" aria-label="Lesson links">
+          <a
+            href={experience.reference?.href ??
+              `/guide/level-1/${experience.guideSlug}`}
+          >
+            Read {experience.reference?.label ?? experience.guideLabel}
+          </a>
+          {#if previousLesson}
+            <a href={buildConceptPath(previousLesson.id)}>
+              Previous: {previousLesson.name}
+            </a>
+          {/if}
+          {#if nextLesson}
+            <a href={buildConceptPath(nextLesson.id)}>
+              Next: {nextLesson.name}
+            </a>
+          {/if}
+          <a href={CONCEPT_LIST_PATH}>All lessons</a>
+        </nav>
+      {:else}
+        <h1>{concept?.name ?? "Interactive TKA lessons"}</h1>
+        <p>
+          Explore guided lessons from the grid through reading TKA words. The
+          interactive course starts when this page loads in your browser.
+        </p>
+        <ol class="lesson-list">
+          {#each lessons as lesson (lesson.id)}
+            <li>
+              <a href={buildConceptPath(lesson.id)}>{lesson.name}</a>
+              <span>{lesson.description}</span>
+            </li>
+          {/each}
+        </ol>
+        <a href="/guide">Prefer to read? Open the Guide</a>
+      {/if}
     </div>
   {/if}
 </section>
@@ -147,15 +205,52 @@
     line-height: 1.65;
   }
 
-  .course-prerender a {
+  .course-prerender .lesson-description {
+    color: #fff;
+    font-size: 1.15rem;
+  }
+
+  .lesson-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
+  .lesson-list {
+    display: grid;
+    gap: 0.9rem;
+    margin: 1.75rem 0 0;
+    padding-left: 1.5rem;
+    color: rgba(236, 233, 245, 0.72);
+  }
+
+  .lesson-list span {
+    display: block;
+    margin-top: 0.2rem;
+  }
+
+  .course-prerender .lesson-list a {
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    color: #fff;
+  }
+
+  .course-prerender > a,
+  .lesson-links a {
     width: fit-content;
     min-height: 44px;
-    margin-top: 1.5rem;
     padding: 0.75rem 1rem;
     border: 1px solid rgba(255, 255, 255, 0.14);
     border-radius: 12px;
     color: #fff;
     font-weight: 700;
     text-decoration: none;
+  }
+
+  .course-prerender > a {
+    margin-top: 1.5rem;
   }
 </style>

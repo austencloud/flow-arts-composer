@@ -132,8 +132,6 @@
   }
   .entry-composition:not(.with-artifact) {
     width: 100%;
-    max-width: 48rem;
-    align-self: center;
   }
   .entry-heading {
     padding-top: 0.15rem;
@@ -161,7 +159,6 @@
   }
   .entry-people {
     margin: 0;
-    max-width: 68ch;
     color: var(--theme-text-dim);
     font-size: 1rem;
     line-height: 1.6;
@@ -183,7 +180,6 @@
   .entry-summary {
     font-size: 1.0625rem;
     line-height: 1.75;
-    max-width: 65ch;
     margin: 0;
   }
   a {
@@ -260,7 +256,6 @@
     color: var(--theme-text-dim);
     font-size: var(--font-size-min, 0.875rem);
     line-height: 1.65;
-    max-width: 68ch;
   }
   @container (min-width: 760px) {
     .entry-composition.with-artifact {
@@ -313,9 +308,6 @@
       grid-column: 1 / -1;
       grid-row: 1;
       margin-bottom: 1.5rem;
-    }
-    .explorable .entry-people {
-      max-width: 90ch;
     }
     .explorable .entry-copy {
       grid-row: 2;

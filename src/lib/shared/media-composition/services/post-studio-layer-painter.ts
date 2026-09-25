@@ -1,3 +1,6 @@
+import type { SequenceFrame } from "$lib/shared/media-composition/domain/sequence-frame";
+import type { EvaluatedFrameLayer } from "$lib/shared/media-composition/services/frame-evaluator";
+
 /**
  * A painted layer is a source that is a pure function of the evaluated frame:
  * the beat carousel today, captions and counters later. Preview and export
@@ -25,6 +28,26 @@ export interface PaintFrame {
   /** 0→1 across the clip's span in the post. */
   projectProgress: number;
   sourceTimeSeconds: number;
+  /** Which move is showing. Absent on a layer no take's timing reaches. */
+  sequenceFrame?: SequenceFrame;
+  /** The post's own clock, for overlays timed against the whole post. */
+  projectTimeSeconds?: number;
+}
+
+/** The painter's view of one evaluated layer at one post time. */
+export function toPaintFrame(
+  layer: EvaluatedFrameLayer,
+  projectTimeSeconds?: number
+): PaintFrame {
+  return {
+    sequencePosition: layer.sequencePosition,
+    carouselPosition: layer.carouselPosition,
+    displayedBeatNumber: layer.displayedBeatNumber,
+    projectProgress: layer.projectProgress,
+    sourceTimeSeconds: layer.sourceTimeSeconds,
+    sequenceFrame: layer.sequenceFrame,
+    projectTimeSeconds,
+  };
 }
 
 export interface PostStudioLayerPainter {
