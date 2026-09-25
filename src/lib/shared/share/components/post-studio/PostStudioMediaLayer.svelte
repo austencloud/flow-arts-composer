@@ -2,7 +2,7 @@
   import type { CompositionSourceBinding } from "$lib/shared/media-composition/state/media-composition-state.svelte";
   import type { LayoutRegion } from "$lib/shared/media-composition/domain/media-layout-schema";
   import type { EvaluatedFrameLayer } from "$lib/shared/media-composition/services/frame-evaluator";
-  import { getMediaCompositionContext } from "$lib/shared/media-composition/state/media-composition-context";
+  import { tryGetMediaCompositionContext } from "$lib/shared/media-composition/state/media-composition-context";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
@@ -34,6 +34,8 @@
     displayedBeatNumber?: number;
     clipId: string;
     transform: EvaluatedFrameLayer["transform"];
+    /** The act's speed; the footage runs at it while the preview plays. */
+    playbackRate?: number;
   }
 
   let {
@@ -53,8 +55,9 @@
     displayedBeatNumber,
     clipId,
     transform,
+    playbackRate = 1,
   }: Props = $props();
-  const composition = getMediaCompositionContext();
+  const composition = tryGetMediaCompositionContext();
   let video = $state<HTMLVideoElement | null>(null);
   let pausedFrameRequest: { element: HTMLVideoElement; id: number } | null =
     null;
@@ -105,7 +108,10 @@
       return false;
     const ceiling = Math.max(0, video.duration - 1 / 60);
     const target = Math.min(ceiling, Math.max(0, sourceTimeSeconds));
-    if (Math.abs(video.currentTime - target) <= 0.12) return false;
+    // Paused, the frame shown is the frame asked for; playing, the element
+    // runs on its own clock and is only pulled back when it drifts.
+    const tolerance = playing ? 0.12 : 1 / 30;
+    if (Math.abs(video.currentTime - target) <= tolerance) return false;
     video.currentTime = target;
     return true;
   }
@@ -143,7 +149,7 @@
     if (!video || !Number.isFinite(video.duration)) return;
     sourceWidth = video.videoWidth;
     sourceHeight = video.videoHeight;
-    composition.setSourceDuration(binding.roleKey, video.duration);
+    composition?.setSourceDuration(binding.roleKey, video.duration);
     syncVideoTime();
     if (!playing) showPausedFrame(video);
   }
@@ -159,6 +165,12 @@
     event.preventDefault();
     saveMenuHost?.openContextMenu(event.clientX, event.clientY);
   }
+
+  $effect(() => {
+    if (video && video.playbackRate !== playbackRate) {
+      video.playbackRate = playbackRate;
+    }
+  });
 
   $effect(() => {
     sourceTimeSeconds;
@@ -218,7 +230,7 @@
     <PostStudioTunnelLayer
       {sequence}
       {playing}
-      bpm={composition.tempoBpm ?? 60}
+      bpm={composition?.tempoBpm ?? 60}
       leftPropType={cardRenderOptions?.leftPropTypeOverride ??
         cardRenderOptions?.propTypeOverride}
       rightPropType={cardRenderOptions?.rightPropTypeOverride ??

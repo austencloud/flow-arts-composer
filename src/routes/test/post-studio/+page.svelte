@@ -1,7 +1,8 @@
 <!--
   Visual harness for Post Studio with the published DCKΨ- sequence and a local
-  copy of Austen's clean September 6 phone take. The clip is gitignored, so the route also
-  works when that local media is absent: choose another performance in the UI.
+  copy of Austen's clean September 6 phone take, offered as a catalog video on
+  the Takes step. The clip is gitignored, so the route also works without it:
+  add a video from this device instead.
 -->
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
@@ -18,10 +19,6 @@
   import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
   import { registerLoopDetector } from "$lib/shared/create/get-loop-detector";
   import { buildCardRenderOptions } from "$lib/shared/share/services/card-render-options";
-  import {
-    loadBpmAlignment,
-    saveBpmAlignment,
-  } from "$lib/shared/share/components/post-studio/local-performance-bpm-alignments";
 
   const SEQUENCE_WORD = "DCKΨ-DCKΨ-DCKΨ-DCKΨ-";
   const SEQUENCE_ID = "DCKΨ-";
@@ -52,11 +49,13 @@
       mimeType: "video/mp4",
       sequenceId,
       sequenceName: SEQUENCE_ID,
+      associations: [],
+      performers: [],
       creatorId: "slice-performer",
       collaborators: [],
       pendingInvites: [],
       visibility: "private",
-      description: "DCKΨ- clean phone take · align Beat 1",
+      description: "DCKΨ- clean phone take",
       createdAt: now,
       updatedAt: now,
     };
@@ -82,10 +81,6 @@
         throw new Error("The visual fixture is no longer published.");
       const hydrated = await hydrateSequence(loaded);
       seedPerformance(hydrated.id);
-      const alignmentKey = `${hydrated.id}:catalog:${VIDEO_ID}`;
-      if (!loadBpmAlignment(alignmentKey)) {
-        saveBpmAlignment(alignmentKey, { bpm: 87, firstBeatSeconds: null });
-      }
       sequence = { ...hydrated, performanceVideoUrl: VIDEO_URL };
       cardRenderOptions = buildCardRenderOptions(sequence, { darkMode: true });
 
@@ -142,8 +137,6 @@
       isPreparingCard={!cardPreviewUrl}
       {isPreparingAnimation}
       onRequestAnimation={requestAnimation}
-      onBack={() => undefined}
-      onClose={() => undefined}
     />
   {/if}
 </main>

@@ -95,9 +95,8 @@
           Math.min(1, sequencePosition - Math.floor(sequencePosition))
         )
   );
-  const arrowOpacity = $derived(
-    motionProgress === null ? 0 : Math.max(0, 1 - motionProgress)
-  );
+  // The arrow fades in as the move is made, as in the Construct audition.
+  const arrowOpacity = $derived(motionProgress ?? 0);
 
   $effect(() => {
     const target = sequence;
@@ -164,7 +163,7 @@
       hideProgressBar
       hideHeader
       fillContainer
-      virtualTime={!breakdownMotion || animationTimeSeconds === undefined
+      virtualTime={animationTimeSeconds === undefined
         ? undefined
         : animationTimeSeconds * 1000}
     />
