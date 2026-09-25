@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { saveMandalaToCollection } from "$lib/features/mandala/tabs/collection/services/save-mandala-to-collection";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type {
@@ -87,7 +88,7 @@
 </script>
 
 <div class="mandala-viewer-panel">
-  <PanelHeader title="Mandala" {isMobile} {onClose} />
+  <PanelHeader title={t("create_ui_mandala")} {isMobile} {onClose} />
   <div class="mandala-stage">
     <MandalaPane
       {sequence}

@@ -18,6 +18,7 @@
   Other views still prepare their file in the share sheet.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import type { SequenceSendSession } from "$lib/shared/inbox/state/send-sequence-state.svelte";
   import SendSequenceWorkspace from "./SendSequenceWorkspace.svelte";
@@ -98,7 +99,7 @@
 <section class="share-panel" aria-labelledby={headingId}>
   <header class="panel-head">
     <div class="title-group">
-      <h2 id={headingId}>Share</h2>
+      <h2 id={headingId}>{t("viewer_share")}</h2>
       <p class="subject" aria-live="polite">
         <i class="fa-solid {subject.icon}" aria-hidden="true"></i>
         <span>{subject.label}</span>
@@ -110,8 +111,8 @@
       data-escape-shortcut
       data-escape-shortcut-label="Share"
       onclick={onClose}
-      aria-label="Close share"
-      title="Close share"
+      aria-label={t("viewer_ui_close_share")}
+      title={t("viewer_ui_close_share")}
     >
       <i class="fa-solid fa-xmark" aria-hidden="true"></i>
     </button>

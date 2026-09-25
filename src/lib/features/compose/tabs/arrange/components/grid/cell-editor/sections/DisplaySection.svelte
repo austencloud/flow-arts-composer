@@ -5,6 +5,7 @@
   Choreo Card is disabled when layerCount > 1 (requires a single layer).
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { CellMediaType } from "$lib/shared/animation-engine/domain/compose-types";
 
   let {
@@ -21,7 +22,11 @@
 </script>
 
 <div class="display-section">
-  <div class="chip-grid" role="radiogroup" aria-label="Display type">
+  <div
+    class="chip-grid"
+    role="radiogroup"
+    aria-label={t("compose_ui_display_type")}
+  >
     <button
       class="chip"
       class:active={currentMediaType === "animation"}
@@ -97,8 +102,16 @@
   }
 
   .chip.active {
-    background: color-mix(in srgb, var(--theme-accent, #60a5fa) var(--surface-active-pct, 12%), transparent);
-    border-color: color-mix(in srgb, var(--theme-accent, #60a5fa) var(--stroke-active-pct, 35%), transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #60a5fa) var(--surface-active-pct, 12%),
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #60a5fa) var(--stroke-active-pct, 35%),
+      transparent
+    );
     color: var(--theme-accent, #60a5fa);
   }
 

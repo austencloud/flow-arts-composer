@@ -135,13 +135,13 @@
   <section class="section">
     <h2 class="section-title">
       <i class="fas fa-compass" aria-hidden="true"></i>
-      Guides
+      {t("settings_guides")}
     </h2>
 
     <div class="guide-buttons">
       <button type="button" class="guide-button" onclick={handleReplayTutorial}>
         <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
-        <span>Replay Construct guide</span>
+        <span>{t("settings_replay_construct_guide")}</span>
       </button>
 
       <button
@@ -150,7 +150,7 @@
         onclick={handleReplayGenerateTour}
       >
         <i class="fas fa-circle-question" aria-hidden="true"></i>
-        <span>Replay generate options tour</span>
+        <span>{t("settings_replay_generate_tour")}</span>
       </button>
     </div>
   </section>
@@ -162,8 +162,8 @@
           <i class="fas fa-database" aria-hidden="true"></i>
         </span>
         <span class="advanced-trigger-copy">
-          <strong>Advanced</strong>
-          <small>Offline downloads and data stored on this device.</small>
+          <strong>{t("settings_advanced")}</strong>
+          <small>{t("settings_advanced_desc")}</small>
         </span>
         <i
           class="fas fa-chevron-down advanced-chevron"
@@ -175,8 +175,8 @@
       <Collapsible.Content class="advanced-content">
         <div class="advanced-content-inner">
           <header class="advanced-content-header">
-            <h3>Offline and local data</h3>
-            <p>Manage downloads and storage used only on this device.</p>
+            <h3>{t("settings_offline_local_data")}</h3>
+            <p>{t("settings_offline_local_data_desc")}</p>
           </header>
           <OfflineLocalDataSection />
         </div>

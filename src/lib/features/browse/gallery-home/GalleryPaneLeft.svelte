@@ -10,6 +10,7 @@
   Split out of GalleryDrill.svelte 2026-08-05 (Task 9).
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
   import CategoryRail from "./CategoryRail.svelte";
   import { heightBudget } from "./pane-height-budget";
@@ -59,7 +60,9 @@
     onselect={onSelectCategory}
   />
   {#if idle}
-    <p class="pane-idle">Pick a category above to narrow it down.</p>
+    <p class="pane-idle">
+      {t("browse_ui_pick_a_category_above_to_narrow_it_down")}
+    </p>
   {:else}
     <div class="drill-editor-stage">{@render editor()}</div>
   {/if}

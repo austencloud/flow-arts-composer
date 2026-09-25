@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import VisualSequenceSaveContextMenuHost from "$lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
@@ -54,7 +55,7 @@
   data-performance-ready={stageState !== "loading" &&
     stageState !== "preparing"}
   oncontextmenu={handleContextMenu}
-  aria-label="Selected performance"
+  aria-label={t("viewer_ui_selected_performance")}
 >
   {#if workspace.store.loading}
     <div class="stage-message" role="status">

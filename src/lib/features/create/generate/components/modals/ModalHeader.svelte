@@ -3,6 +3,7 @@ ModalHeader.svelte - Reusable modal header component
 Displays modal title and close button
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
 
@@ -33,7 +34,11 @@ Displays modal title and close button
   <h2 id="modal-title">
     {icon}{#if icon}&nbsp;{/if}{title}
   </h2>
-  <button class="close-button" onclick={handleClose} aria-label="Close modal">
+  <button
+    class="close-button"
+    onclick={handleClose}
+    aria-label={t("create_ui_close_modal")}
+  >
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <line x1="18" y1="6" x2="6" y2="18"></line>
       <line x1="6" y1="6" x2="18" y2="18"></line>

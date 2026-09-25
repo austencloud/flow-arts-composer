@@ -4,6 +4,7 @@
   state; GalleryWorkspaceFrame owns the responsive rules shared by all editors.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
   import GalleryWorkspaceFrame from "./GalleryWorkspaceFrame.svelte";
   import GalleryChooserEditor from "./value-editors/GalleryChooserEditor.svelte";
@@ -69,7 +70,7 @@
       <i class="fas fa-arrow-left" aria-hidden="true"></i>
       <!-- Icon-only reads as an anonymous circle when the wide stage strands
            it far from the title — the label makes it unmistakably a button. -->
-      <span class="head-back-label">Back</span>
+      <span class="head-back-label">{t("learn_back")}</span>
     </button>
     <h2 tabindex="-1">{title}</h2>
     {#if hint}<p>{hint}</p>{/if}

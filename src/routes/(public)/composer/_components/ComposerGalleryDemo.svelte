@@ -10,6 +10,7 @@
   page never scrolls the whole community pool.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
@@ -63,7 +64,8 @@
       showSourceToggle={false}
       toolbarVariant="embedded"
       eager
-      onSelect={(sequence: SequenceData) => void goto(`/sequence/${sequence.id}`)}
+      onSelect={(sequence: SequenceData) =>
+        void goto(`/sequence/${sequence.id}`)}
     />
   {:else if status === "loading"}
     <div class="gallery-skeleton" aria-hidden="true">
@@ -71,12 +73,14 @@
         <div class="skeleton-cell" style:--stagger={i}></div>
       {/each}
     </div>
-    <span class="sr-only" role="status">Loading the community gallery.</span>
+    <span class="sr-only" role="status"
+      >{t("composer_demo_gallery_loading")}</span
+    >
   {:else}
     <div class="gallery-error" role="alert">
-      <p>The community gallery did not load.</p>
+      <p>{t("composer_gallery_demo_failed")}</p>
       <button type="button" onclick={() => void load()}>
-        Try the gallery again
+        {t("composer_retry_gallery")}
       </button>
     </div>
   {/if}

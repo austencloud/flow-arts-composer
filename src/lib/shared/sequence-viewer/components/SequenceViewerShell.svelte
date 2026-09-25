@@ -62,7 +62,10 @@
   import { META_POSTING_ENABLED } from "$lib/shared/share/services/meta-publish";
   import { computeExportSummary } from "$lib/shared/animation-panel/pill-nav/pill-summaries";
   import { formatExportTimeEstimate } from "$lib/shared/animation-panel/state/export-timing-tracker";
-  import { VIEWER_MODE_OPTIONS } from "../services/viewer-modes";
+  import {
+    VIEWER_MODE_OPTIONS,
+    viewerModeLabel,
+  } from "../services/viewer-modes";
   import Recording3DOverlay from "./Recording3DOverlay.svelte";
   import ExportTakeover from "$lib/shared/video-export/components/ExportTakeover.svelte";
   import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
@@ -399,17 +402,18 @@
   /** What the panel says is being shared: the view the rail has selected. */
   const shareSubject = $derived.by(() => {
     const mode = ctx.viewerState.viewerMode;
-    if (mode === "mandala") return { label: "Mandala", icon: "fa-sun" };
+    if (mode === "mandala")
+      return { label: t("viewer_ui_mandala"), icon: "fa-sun" };
     const option = VIEWER_MODE_OPTIONS.find((entry) => entry.id === mode);
     return option
-      ? { label: option.label, icon: option.icon }
-      : { label: "Sequence", icon: "fa-share-nodes" };
+      ? { label: viewerModeLabel(option.id), icon: option.icon }
+      : { label: t("viewer_ui_sequence"), icon: "fa-share-nodes" };
   });
   const shareDownloadLabel = $derived.by(() => {
     const mode = ctx.viewerState.viewerMode;
-    if (mode === "card") return "Card image";
-    if (mode === "post-studio") return "Post video";
-    return "Video";
+    if (mode === "card") return t("viewer_ui_card_image");
+    if (mode === "post-studio") return t("viewer_ui_post_video");
+    return t("viewer_ui_video");
   });
   const canShareNatively =
     typeof navigator !== "undefined" && typeof navigator.share === "function";
@@ -459,7 +463,7 @@
     {
       getStore: getSequenceVideosStore,
       playhead: videoPlayhead,
-      onTimingSaved: () => toast.success("Timing saved"),
+      onTimingSaved: () => toast.success(t("viewer_ui_timing_saved")),
     }
   );
   setPerformanceWorkspaceContext(performanceWorkspace);
@@ -496,12 +500,14 @@
       type: "success",
       message:
         conversationIds.length > 1
-          ? `Sent to ${conversationIds.length} conversations`
-          : "Sent",
+          ? t("viewer_ui_sent_to_conversations", {
+              count: conversationIds.length,
+            })
+          : t("viewer_ui_sent"),
       duration: 5000,
       action: single
         ? {
-            label: "Open",
+            label: t("viewer_ui_open"),
             onClick: () => inboxState.openToConversationById(single),
           }
         : undefined,
@@ -556,7 +562,7 @@
         blobUrl: postStudioVideoUrl,
         exporting: false,
         progress: null,
-        label: "Post",
+        label: t("viewer_ui_post"),
         request: () =>
           postStudioShareExport?.render() ?? Promise.resolve(false),
         cancel: () => postStudioShareExport?.cancel(),
@@ -569,7 +575,7 @@
         blobUrl: mandala.exportBlobUrl,
         exporting: mandala.exporting,
         progress: mandala.exporting ? mandala.exportProgress : null,
-        label: "Mandala",
+        label: t("viewer_ui_mandala"),
         request: () => Promise.resolve(mandala.startExport({ deliver: false })),
         cancel: () => mandala.cancelExport(),
       };
@@ -580,7 +586,7 @@
         blobUrl: ctx.previewBlobUrl,
         exporting: ctx.isExporting,
         progress: ctx.exportProgress?.progress ?? null,
-        label: "Tunnel",
+        label: t("viewer_ui_tunnel"),
         request: () => interactions.handleArtExport(target),
         cancel: () => interactions.handleCancelVideoExport(),
       };
@@ -590,7 +596,7 @@
       blobUrl: ctx.previewBlobUrl,
       exporting: ctx.isExporting,
       progress: ctx.exportProgress?.progress ?? null,
-      label: "Video",
+      label: t("viewer_ui_video"),
       request: requestShareVideo,
       cancel: () => interactions.handleCancelVideoExport(),
     };
@@ -766,20 +772,20 @@
     if (sharesFilm) {
       return latestFilm
         ? {
-            text: "Download film",
+            text: t("viewer_ui_download_film"),
             icon: undefined,
             detail: describeFilm(latestFilm),
             action: {
-              label: "New take",
+              label: t("viewer_ui_new_take"),
               icon: "fa-circle-dot",
-              ariaLabel: "Record a new take",
+              ariaLabel: t("viewer_ui_record_a_new_take"),
               onClick: recordTake,
             },
           }
         : {
-            text: "Record a take",
+            text: t("viewer_ui_record_a_take"),
             icon: "fa-circle-dot",
-            detail: "Films the stage live. Pick the quality after you stop.",
+            detail: t("viewer_ui_films_the_stage_live"),
             action: undefined,
           };
     }
@@ -790,9 +796,9 @@
       action:
         shareRendersDirectly && ctx.exportOptions
           ? {
-              label: "Settings",
+              label: t("viewer_ui_settings"),
               icon: "fa-sliders",
-              ariaLabel: "Video export settings",
+              ariaLabel: t("viewer_ui_video_export_settings"),
               onClick: openVideoExportSettings,
             }
           : undefined,
@@ -884,11 +890,13 @@
     try {
       const blob = await (await fetch(url)).blob();
       await uploadRenderedFilm({ sequence: target, blob });
-      toast.success("Film saved to this sequence");
+      toast.success(t("viewer_ui_film_saved_to_this_sequence"));
     } catch (error) {
       console.warn("[RenderedFilm] Cloud save failed:", error);
       toast.error(
-        error instanceof Error ? error.message : "Could not save the film"
+        error instanceof Error
+          ? error.message
+          : t("viewer_ui_could_not_save_the_film")
       );
       throw error;
     }

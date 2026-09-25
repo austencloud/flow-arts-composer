@@ -67,6 +67,7 @@ localeCache.set("en", enMessages);
 // Reactive state (initialized synchronously with English)
 let currentLocale = $state<Locale>(getInitialLocale());
 let messages = $state<Messages>(enMessages);
+let localeRequest = 0;
 const _i18nInitialized = true;
 
 // HMR support - reload messages when locale JSON files change.
@@ -89,7 +90,6 @@ if (import.meta.hot) {
       if (currentLocale === locale) {
         messages = fresh;
       }
-
     }
   );
 }
@@ -164,17 +164,20 @@ export function getLocale(): Locale {
  * Get the text direction for a locale
  * @returns "rtl" for Arabic, "ltr" for all others
  */
-export function getLocaleDirection(locale: Locale = currentLocale): "ltr" | "rtl" {
+export function getLocaleDirection(
+  locale: Locale = currentLocale
+): "ltr" | "rtl" {
   return rtlLocales.includes(locale) ? "rtl" : "ltr";
 }
 
 /**
- * Update the HTML dir attribute to match current locale
+ * Keep assistive technology in sync with the displayed language.
  * Automatically called by setLocale()
  */
-function updateHtmlDirection(): void {
+function updateHtmlLanguage(): void {
   if (typeof document !== "undefined") {
     const direction = getLocaleDirection();
+    document.documentElement.setAttribute("lang", currentLocale);
     document.documentElement.setAttribute("dir", direction);
   }
 }
@@ -187,14 +190,10 @@ function updateHtmlDirection(): void {
  * to enable the fallback chain: es-MX → es → en
  */
 export async function setLocale(locale: Locale): Promise<void> {
+  const request = ++localeRequest;
   if (!isLocale(locale)) {
     console.warn(`Invalid locale: ${locale}, falling back to ${baseLocale}`);
     locale = baseLocale;
-  }
-
-  // Persist to cookie
-  if (typeof document !== "undefined") {
-    document.cookie = `${LOCALE_COOKIE_NAME}=${locale}; path=/; max-age=${LOCALE_COOKIE_MAX_AGE}`;
   }
 
   // For regional locales, ensure base locale is loaded first
@@ -220,12 +219,16 @@ export async function setLocale(locale: Locale): Promise<void> {
     }
   }
 
-  // Update reactive state
+  // A slower download must not undo a more recent language choice.
+  if (request !== localeRequest) return;
+
   currentLocale = locale;
   messages = localeCache.get(locale) || (enMessages as Messages);
 
-  // Update HTML dir attribute for RTL support
-  updateHtmlDirection();
+  if (typeof document !== "undefined") {
+    document.cookie = `${LOCALE_COOKIE_NAME}=${locale}; path=/; max-age=${LOCALE_COOKIE_MAX_AGE}`;
+  }
+  updateHtmlLanguage();
 }
 
 /**
@@ -243,25 +246,35 @@ async function loadLocaleMessages(locale: Locale): Promise<Messages> {
       case "en":
         return enMessages as Messages;
       case "es":
-        return (await import("../../../../messages/es.json")).default as Messages;
+        return (await import("../../../../messages/es.json"))
+          .default as Messages;
       case "fr":
-        return (await import("../../../../messages/fr.json")).default as Messages;
+        return (await import("../../../../messages/fr.json"))
+          .default as Messages;
       case "de":
-        return (await import("../../../../messages/de.json")).default as Messages;
+        return (await import("../../../../messages/de.json"))
+          .default as Messages;
       case "pt":
-        return (await import("../../../../messages/pt.json")).default as Messages;
+        return (await import("../../../../messages/pt.json"))
+          .default as Messages;
       case "zh":
-        return (await import("../../../../messages/zh.json")).default as Messages;
+        return (await import("../../../../messages/zh.json"))
+          .default as Messages;
       case "ja":
-        return (await import("../../../../messages/ja.json")).default as Messages;
+        return (await import("../../../../messages/ja.json"))
+          .default as Messages;
       case "ko":
-        return (await import("../../../../messages/ko.json")).default as Messages;
+        return (await import("../../../../messages/ko.json"))
+          .default as Messages;
       case "ar":
-        return (await import("../../../../messages/ar.json")).default as Messages;
+        return (await import("../../../../messages/ar.json"))
+          .default as Messages;
       case "ru":
-        return (await import("../../../../messages/ru.json")).default as Messages;
+        return (await import("../../../../messages/ru.json"))
+          .default as Messages;
       case "it":
-        return (await import("../../../../messages/it.json")).default as Messages;
+        return (await import("../../../../messages/it.json"))
+          .default as Messages;
     }
   }
 
@@ -270,7 +283,9 @@ async function loadLocaleMessages(locale: Locale): Promise<Messages> {
     try {
       // Try to load regional override file (e.g., messages/es-MX.json)
       // This file only needs to contain keys that differ from the base locale
-      const regionalMessages = await import(`../../../../messages/${locale}.json`);
+      const regionalMessages = await import(
+        `../../../../messages/${locale}.json`
+      );
       return regionalMessages.default as Messages;
     } catch {
       // No regional override file - use base locale
@@ -301,7 +316,10 @@ async function loadLocaleMessages(locale: Locale): Promise<Messages> {
  * t("dashboard_viewing_as", { name: "John" }) // "Viewing as John"
  * t("invalid_key") // TypeScript error!
  */
-export function t(key: TranslationKey, params?: Record<string, string | number>): string {
+export function t(
+  key: TranslationKey,
+  params?: Record<string, string | number>
+): string {
   let text = messages[key];
 
   // Fallback chain: regional → base → English
@@ -321,7 +339,9 @@ export function t(key: TranslationKey, params?: Record<string, string | number>)
   if (!text) {
     // Development warning for missing keys
     if (import.meta.env.DEV) {
-      console.warn(`Missing translation key: ${key} (locale: ${currentLocale})`);
+      console.warn(
+        `Missing translation key: ${key} (locale: ${currentLocale})`
+      );
     }
     return key;
   }
@@ -329,7 +349,10 @@ export function t(key: TranslationKey, params?: Record<string, string | number>)
   // Handle parameter interpolation: {paramName}
   if (params) {
     for (const [paramKey, paramValue] of Object.entries(params)) {
-      text = text.replace(new RegExp(`\\{${paramKey}\\}`, "g"), String(paramValue));
+      text = text.replace(
+        new RegExp(`\\{${paramKey}\\}`, "g"),
+        String(paramValue)
+      );
     }
   }
 
@@ -343,12 +366,7 @@ export function t(key: TranslationKey, params?: Record<string, string | number>)
 export async function initI18n(): Promise<void> {
   const initialLocale = getInitialLocale();
 
-  // Set HTML dir attribute even for default locale
-  updateHtmlDirection();
-
-  if (initialLocale !== "en") {
-    await setLocale(initialLocale);
-  }
+  await setLocale(initialLocale);
 
   // Preload likely next locales during idle time
   preloadBrowserLocales();
@@ -437,7 +455,7 @@ export function tDynamic(
   let silent = false;
 
   if (paramsOrOptions) {
-    if ('silent' in paramsOrOptions || 'params' in paramsOrOptions) {
+    if ("silent" in paramsOrOptions || "params" in paramsOrOptions) {
       // New options format
       const opts = paramsOrOptions as TDynamicOptions;
       params = opts.params;
@@ -466,14 +484,19 @@ export function tDynamic(
 
   if (!text) {
     if (import.meta.env.DEV && !silent) {
-      console.warn(`Missing translation key: ${key} (locale: ${currentLocale})`);
+      console.warn(
+        `Missing translation key: ${key} (locale: ${currentLocale})`
+      );
     }
     return key;
   }
 
   if (params) {
     for (const [paramKey, paramValue] of Object.entries(params)) {
-      text = text.replace(new RegExp(`\\{${paramKey}\\}`, "g"), String(paramValue));
+      text = text.replace(
+        new RegExp(`\\{${paramKey}\\}`, "g"),
+        String(paramValue)
+      );
     }
   }
 

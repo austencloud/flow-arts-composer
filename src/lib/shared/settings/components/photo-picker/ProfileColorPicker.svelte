@@ -7,6 +7,7 @@
   opens the native OS color picker.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   interface Props {
     selectedColor: string;
     onColorChange: (color: string) => void;
@@ -47,15 +48,21 @@
       aria-hidden="true"
     ></div>
     <div class="toggle-text">
-      <span class="toggle-label">Profile Color</span>
-      <span class="toggle-desc">Ring color around your avatar</span>
+      <span class="toggle-label">{t("settings_profile_color")}</span>
+      <span class="toggle-desc">{t("settings_avatar_ring_color")}</span>
     </div>
-    <span class="toggle-action">{expanded ? "Done" : "Change"}</span>
+    <span class="toggle-action"
+      >{expanded ? t("settings_done") : t("settings_change")}</span
+    >
   </button>
 
   <!-- Expanded: preset grid + custom picker swatch -->
   {#if expanded}
-    <div class="color-grid" role="radiogroup" aria-label="Profile color presets">
+    <div
+      class="color-grid"
+      role="radiogroup"
+      aria-label={t("settings_profile_color_presets")}
+    >
       {#each COLOR_PRESETS as preset (preset.hex)}
         {@const isSelected =
           preset.hex.toLowerCase() === selectedColor.toLowerCase()}
@@ -83,12 +90,16 @@
       class="custom-color"
       onclick={openNativePicker}
       disabled={saving}
-      title="Custom color"
+      title={t("settings_custom_color")}
     >
-      <span class="color-swatch custom-swatch" style="--swatch-color: {selectedColor}" aria-hidden="true">
+      <span
+        class="color-swatch custom-swatch"
+        style="--swatch-color: {selectedColor}"
+        aria-hidden="true"
+      >
         <i class="fas fa-eyedropper"></i>
       </span>
-      <span>Custom color</span>
+      <span>{t("settings_custom_color")}</span>
     </button>
 
     <!-- Hidden native color input - triggered by the custom swatch -->
@@ -209,7 +220,9 @@
 
   .color-swatch.selected {
     border-color: white;
-    box-shadow: 0 0 0 2px var(--swatch-color), 0 0 12px var(--swatch-color);
+    box-shadow:
+      0 0 0 2px var(--swatch-color),
+      0 0 12px var(--swatch-color);
     transform: scale(1.1);
   }
 
@@ -231,8 +244,15 @@
   /* The custom-color swatch: conic gradient background with eyedropper icon */
   .custom-swatch {
     background: conic-gradient(
-      #ef4444, #f97316, #eab308, #22c55e,
-      #06b6d4, #3b82f6, #8b5cf6, #ec4899, #ef4444
+      #ef4444,
+      #f97316,
+      #eab308,
+      #22c55e,
+      #06b6d4,
+      #3b82f6,
+      #8b5cf6,
+      #ec4899,
+      #ef4444
     ) !important;
     border-color: rgba(255, 255, 255, 0.15);
   }

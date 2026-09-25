@@ -4,6 +4,7 @@
   Header bar for playback overlay with mode info, actions, and close button.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { ComposeMode } from "../../../shared/state/compose-module-state.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import ShareButton from "$lib/features/create/shared/workspace-panel/shared/components/buttons/ShareButton.svelte";
@@ -47,10 +48,10 @@
       data-save-shortcut
       class="action-btn save-btn"
       onclick={onSave}
-      aria-label="Save composition"
+      aria-label={t("compose_ui_save_composition")}
     >
       <i class="fas fa-save" aria-hidden="true"></i>
-      <span class="btn-label">Save</span>
+      <span class="btn-label">{t("browse_save")}</span>
     </button>
 
     <!-- The real thing, not a second one: ShareButton carries its own
@@ -61,7 +62,11 @@
   </div>
 
   <div class="header-right">
-    <button class="close-btn" onclick={onClose} aria-label="Close playback">
+    <button
+      class="close-btn"
+      onclick={onClose}
+      aria-label={t("compose_ui_close_playback")}
+    >
       <i class="fas fa-times" aria-hidden="true"></i>
     </button>
   </div>
@@ -141,14 +146,30 @@
   }
 
   .save-btn {
-    background: color-mix(in srgb, var(--theme-accent, #8b5cf6) 20%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent, #8b5cf6) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 20%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 30%,
+      transparent
+    );
     color: var(--theme-accent, #a78bfa);
   }
 
   .save-btn:hover {
-    background: color-mix(in srgb, var(--theme-accent, #8b5cf6) 30%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent, #8b5cf6) 50%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 30%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 50%,
+      transparent
+    );
     color: var(--theme-accent, #c4b5fd);
   }
 
@@ -173,8 +194,16 @@
   }
 
   .close-btn:hover {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 20%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-error, #ef4444) 40%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 20%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 40%,
+      transparent
+    );
     color: var(--semantic-error, #fca5a5);
   }
 

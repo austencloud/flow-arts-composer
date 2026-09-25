@@ -5,6 +5,7 @@
   Shows a left arrow icon to go back to the previous panel.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
 
   // Props
@@ -26,8 +27,8 @@
 <button
   class="panel-button back-button"
   onclick={handleClick}
-  aria-label="Go back to previous panel"
-  title="Go back"
+  aria-label={t("create_ui_go_back_to_previous_panel")}
+  title={t("learn_go_back")}
 >
   <svg
     width="20"
@@ -57,7 +58,11 @@
     border: none;
     border-radius: 50%;
     cursor: pointer;
-    transition: all var(--transition-normal, var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1));
+    transition: all
+      var(
+        --transition-normal,
+        var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1)
+      );
     font-size: var(--font-size-lg);
     color: var(--theme-text);
 

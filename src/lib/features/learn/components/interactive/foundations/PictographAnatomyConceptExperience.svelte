@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { getCodexLetterMappingRepo } from "$lib/features/learn/codex/get-codex-letter-mapping-repo";
@@ -163,17 +164,19 @@
   onkeydown={handleKeydown}
   tabindex="0"
   role="application"
-  aria-label="Pictograph anatomy lesson, use arrow keys to navigate"
+  aria-label={t("learn_ui_pictograph_anatomy_keyboard")}
 >
   <main class="lesson-shell">
     <section
       class="anatomy-studio"
-      aria-label={`Pictograph anatomy: ${current.label}`}
+      aria-label={t("learn_ui_pictograph_anatomy_step", {
+        label: current.label,
+      })}
     >
       <div class="anatomy-step">
         <div class="instruction-rail">
           <div class="instruction-meta">
-            <span>Pictograph anatomy</span>
+            <span>{t("learn_ui_pictograph_anatomy")}</span>
             <span>Step {stepIndex + 1} of {STEPS.length}</span>
           </div>
           <div class="instruction-story" aria-live="polite">
@@ -194,13 +197,13 @@
             {#if loading}
               <div class="load-state" role="status">
                 <ProgressRing percent={-1} size={40} strokeWidth={3} />
-                <span>Loading pictograph…</span>
+                <span>{t("learn_ui_loading_pictograph")}</span>
               </div>
             {:else if error || !anatomyStep}
               <div class="load-state" role="alert">
                 <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"
                 ></i>
-                <span>Pictograph unavailable</span>
+                <span>{t("learn_ui_pictograph_unavailable")}</span>
               </div>
             {:else}
               <PictographContainer
@@ -235,7 +238,9 @@
 
       <footer class="lesson-transport">
         <LessonStageControls
-          label={stepIndex === STEPS.length - 1 ? "Finish lesson" : "Next"}
+          label={stepIndex === STEPS.length - 1
+            ? t("learn_ui_finish_lesson")
+            : t("learn_ui_next")}
           currentStep={stepIndex + 1}
           totalSteps={STEPS.length}
           onAction={stepIndex === STEPS.length - 1

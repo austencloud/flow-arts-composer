@@ -25,6 +25,7 @@
   footprint so nothing shifts while those chunks arrive.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { activateWhenNear } from "$lib/actions/activate-when-near";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
@@ -142,8 +143,8 @@
 
     <div class="stage notation-stage">
       <header class="stage-heading">
-        <strong>Sequence</strong>
-        <span>Notation</span>
+        <strong>{t("composer_demo_sequence")}</strong>
+        <span>{t("composer_demo_notation")}</span>
       </header>
       <div class="stage-content">
         {#key current?.id}
@@ -168,8 +169,8 @@
     <!-- The movement: the same steps, playing. -->
     <div class="stage movement-stage">
       <header class="stage-heading">
-        <strong>Movement</strong>
-        <span>Animation</span>
+        <strong>{t("composer_demo_movement")}</strong>
+        <span>{t("composer_demo_animation")}</span>
       </header>
       <div class="stage-content">
         {#key current?.id}
@@ -194,7 +195,7 @@
     <!-- The word slot stays reserved while a sequence loads, so the action
          never moves sideways. -->
     <div class="caption-row">
-      <span class="caption-label">Sequence word</span>
+      <span class="caption-label">{t("composer_demo_sequence_word")}</span>
       <span class="tka-font caption-word" class:pending={!current}>{word}</span>
     </div>
 
@@ -209,7 +210,11 @@
           class="fas {generating ? 'fa-circle-notch fa-spin' : 'fa-dice'}"
           aria-hidden="true"
         ></i>
-        <span>{generating ? "Generating..." : "Generate a new one"}</span>
+        <span
+          >{generating
+            ? t("composer_demo_generating")
+            : t("composer_demo_generate_new")}</span
+        >
       </button>
       <!-- The line is always reserved so either failure state can arrive without
            moving the controls or demonstrations around it. Success says nothing:
@@ -222,9 +227,9 @@
         aria-live="polite"
       >
         {result === "no-result"
-          ? "That recipe found no valid sequence. Draw again."
+          ? t("composer_demo_no_result")
           : result === "error"
-            ? "The generator couldn't run. Try again."
+            ? t("composer_demo_generate_failed")
             : ""}
       </span>
     </div>

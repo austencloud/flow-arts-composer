@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * LoadingGate - Full-page loading wrapper with three visual variants.
    * Uses the other loading primitives (IndeterminateBar, ProgressRing, ShimmerBlock).
@@ -17,19 +18,20 @@
     color?: string;
   }
 
-  let { variant = "bar", message = "Loading...", color }: Props = $props();
+  let { variant = "bar", message, color }: Props = $props();
+  const loadingMessage = $derived(message ?? t("common_loading"));
 </script>
 
-<div class="loading-gate" role="status" aria-label={message}>
+<div class="loading-gate" role="status" aria-label={loadingMessage}>
   {#if variant === "bar"}
     <IndeterminateBar position="top" {color} />
     <div class="centered-message">
-      <span class="message-text">{message}</span>
+      <span class="message-text">{loadingMessage}</span>
     </div>
   {:else if variant === "card"}
     <div class="centered-card">
       <ProgressRing percent={-1} size={40} strokeWidth={3} {color} />
-      <span class="message-text">{message}</span>
+      <span class="message-text">{loadingMessage}</span>
     </div>
   {:else if variant === "skeleton"}
     <div class="skeleton-layout">
@@ -50,7 +52,7 @@
     {#await import("$lib/shared/mandala/components/MandalaLoader.svelte")}
       <IndeterminateBar position="top" {color} />
     {:then module}
-      <module.default {message} />
+      <module.default message={loadingMessage} />
     {/await}
   {/if}
 </div>

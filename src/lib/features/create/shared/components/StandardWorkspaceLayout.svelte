@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * StandardWorkspaceLayout - Workspace and Tool Panel Layout Container
    *
@@ -250,7 +251,7 @@
       {:else if isAssembleTab}
         <div class="assemble-workspace-placeholder">
           <i class="fas fa-layer-group" aria-hidden="true"></i>
-          <p>Build on the grid. Pictographs appear here.</p>
+          <p>{t("create_ui_build_on_the_grid_pictographs_appear_here")}</p>
         </div>
       {/if}
     </div>
@@ -290,7 +291,7 @@
       >
         <button class="build-another-btn" onclick={onClearSequence}>
           <i class="fas fa-plus" aria-hidden="true"></i>
-          <span>Build Another</span>
+          <span>{t("create_ui_build_another")}</span>
         </button>
       </div>
     {/if}

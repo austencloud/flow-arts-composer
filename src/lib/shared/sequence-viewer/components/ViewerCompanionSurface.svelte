@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import ArtPane from "./ArtPane.svelte";
   import ChoreoCard from "./ChoreoCard.svelte";
   import { createPaneKeepAlive } from "./pane-keep-alive.svelte";
@@ -100,7 +101,7 @@
           if (event.key === "Enter" || event.key === " ")
             handleCloseClick(event);
         }}
-        aria-label="Exit focus mode"
+        aria-label={t("viewer_ui_exit_focus_mode")}
       >
         <i class="fas fa-times" aria-hidden="true"></i>
       </div>

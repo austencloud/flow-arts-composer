@@ -17,6 +17,7 @@ heavier 400ms beat on the last one → best line → stats → actions.
   import { reducedMotion } from "$lib/shared/transitions/motion";
   import { formatTime } from "$lib/shared/sequence-viewer/utils/format-time";
   import { analyzeErrors } from "$lib/features/learn/services/gap-detector";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type {
     ArcadeSessionResult,
@@ -141,7 +142,11 @@ heavier 400ms beat on the last one → best line → stats → actions.
 <div class="results-shell">
   <div class="arcade-results" style="--game-accent: {accent}">
     <!-- 1. Grade: spring scale-in. Transform only — the hero box is fixed, zero layout shift. -->
-    <div class="grade-hero" role="img" aria-label="Grade {result.grade}">
+    <div
+      class="grade-hero"
+      role="img"
+      aria-label={t("learn_ui_grade_value", { grade: result.grade })}
+    >
       <span
         class="grade-letter"
         style="transform: scale({gradeScale.current}); opacity: {Math.min(
@@ -160,14 +165,17 @@ heavier 400ms beat on the last one → best line → stats → actions.
         delay={reduced ? 0 : DURATION.dramatic}
         duration={reduced ? 0 : DURATION.dramatic * 2}
       />
-      <span class="score-label">score</span>
+      <span class="score-label">{t("learn_ui_score")}</span>
     </div>
 
     <!-- 3. Stars -->
     <div
       class="stars-row"
       role="img"
-      aria-label="{result.starsEarned} of 3 stars"
+      aria-label={t("learn_ui_stars_of", {
+        current: result.starsEarned,
+        total: 3,
+      })}
     >
       {#each [0, 1, 2] as i (i)}
         {@const earned = i < result.starsEarned}
@@ -198,22 +206,24 @@ heavier 400ms beat on the last one → best line → stats → actions.
       class:shown={revealBest}
       class:new-best={isNewBest}
     >
-      {isNewBest ? "New best!" : `Best: ${progress.bestScore}`}
+      {isNewBest
+        ? t("learn_ui_new_best")
+        : t("learn_ui_best_value", { score: progress.bestScore })}
     </p>
 
     <!-- 5. Stats -->
     <div class="stats-row reveal" class:shown={revealStats}>
       <div class="stat">
         <span class="stat-value">{Math.round(result.accuracyPercentage)}%</span>
-        <span class="stat-label">accuracy</span>
+        <span class="stat-label">{t("learn_ui_accuracy")}</span>
       </div>
       <div class="stat">
         <span class="stat-value">{result.longestStreak}</span>
-        <span class="stat-label">best streak</span>
+        <span class="stat-label">{t("learn_ui_best_streak")}</span>
       </div>
       <div class="stat">
         <span class="stat-value">{formatTime(result.durationSeconds)}</span>
-        <span class="stat-label">time</span>
+        <span class="stat-label">{t("learn_ui_time")}</span>
       </div>
     </div>
 
@@ -230,7 +240,7 @@ heavier 400ms beat on the last one → best line → stats → actions.
           class:primary={!hasNextChallenge}
           onclick={handleReplay}
         >
-          Replay challenge
+          {t("learn_ui_replay_challenge")}
         </button>
         {#if hasNextChallenge}
           <button
@@ -238,11 +248,11 @@ heavier 400ms beat on the last one → best line → stats → actions.
             class="action-button primary"
             onclick={handleNext}
           >
-            Next challenge
+            {t("learn_ui_next_challenge")}
           </button>
         {/if}
         <button type="button" class="action-button ghost" onclick={handleBack}>
-          Back to challenges
+          {t("learn_ui_back_to_challenges")}
         </button>
       </div>
     </div>

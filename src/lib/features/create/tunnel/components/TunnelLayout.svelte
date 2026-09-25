@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount, tick } from "svelte";
   import { motionDuration } from "$lib/shared/transitions/motion";
   import CreatePanelDrawer from "$lib/features/create/shared/components/CreatePanelDrawer.svelte";
@@ -319,8 +320,8 @@
 {#snippet settingsPanel(isMobile: boolean, layout: "bottom" | "sidebar")}
   <div class="drawer-panel settings-panel">
     <PanelHeader
-      title="Stage settings"
-      subtitle="Formation, appearance, and playback"
+      title={t("create_ui_stage_settings")}
+      subtitle={t("create_ui_formation_appearance_and_playback")}
       {isMobile}
       onClose={creator.closeWorkspacePanel}
     />
@@ -357,7 +358,9 @@
   <div class="drawer-panel pairing-panel">
     <PanelHeader
       title={`${creator.pairingTarget?.label ?? "Performer"} source`}
-      subtitle="Independent choreography or a derived relationship"
+      subtitle={t(
+        "create_ui_independent_choreography_or_a_derived_relationship"
+      )}
       {isMobile}
       onClose={creator.closeWorkspacePanel}
     />
@@ -369,7 +372,7 @@
   <div class="drawer-panel generation-panel">
     <PanelHeader
       title={`Generate ${generationTargetLabel}`}
-      subtitle="Choose the complete two-prop recipe"
+      subtitle={t("create_ui_choose_the_complete_two_prop_recipe")}
       {isMobile}
       onClose={creator.closeWorkspacePanel}
     />
@@ -413,7 +416,9 @@
             />
           {/if}
           <div class="editing-identity">
-            <span class="editing-eyebrow">Editing saved tunnel</span>
+            <span class="editing-eyebrow"
+              >{t("create_ui_editing_saved_tunnel")}</span
+            >
             <h2 class="editing-name">
               <TkaLabel
                 text={creator.editingTunnel.name}
@@ -425,7 +430,7 @@
         </div>
       {:else}
         <div class="title-block">
-          <h2>Build a tunnel</h2>
+          <h2>{t("create_ui_build_a_tunnel")}</h2>
           <p>
             Give each performer choreography, then arrange the cast on stage.
           </p>
@@ -440,7 +445,7 @@
             ariaLabel={`Open tunnels; ${collectionCount} saved`}
           >
             <i class="fas fa-folder-open" aria-hidden="true"></i>
-            <span class="library-label">Tunnels</span>
+            <span class="library-label">{t("create_ui_tunnels")}</span>
             <span class="library-count" aria-hidden="true"
               >{collectionCount}</span
             >
@@ -473,11 +478,11 @@
       />
     </div>
 
-    <section class="preview-stage" aria-label="Tunnel preview">
+    <section class="preview-stage" aria-label={t("create_ui_tunnel_preview")}>
       <header class="preview-heading">
         <div>
-          <span>Stage</span>
-          <h3>Preview</h3>
+          <span>{t("tab_stage_editor")}</span>
+          <h3>{t("create_ui_preview")}</h3>
         </div>
         <div class="preview-summary">
           <p>
@@ -510,7 +515,7 @@
             <div class="preview-guidance" role="status">
               <i class="fas fa-person-circle-plus" aria-hidden="true"></i>
               <span>
-                <strong>Previewing the completed cards</strong>
+                <strong>{t("create_ui_previewing_the_completed_cards")}</strong>
                 Finish every empty performer card before opening the viewer.
               </span>
             </div>
@@ -518,7 +523,7 @@
         {:else}
           <PanelState
             type="empty"
-            title="Your tunnel will appear here"
+            title={t("create_ui_your_tunnel_will_appear_here")}
             message="Choose a sequence in the first performer card to start the preview."
             icon="fa-people-arrows-left-right"
           />

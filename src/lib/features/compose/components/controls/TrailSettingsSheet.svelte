@@ -5,6 +5,7 @@
   Uses SimpleTrailControls for the core presets.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
   import SimpleTrailControls from "$lib/shared/animation-engine/components/trail/SimpleTrailControls.svelte";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -34,11 +35,11 @@
 >
   <div class="sheet-content">
     <header class="sheet-header">
-      <h3 class="sheet-title">Trail Settings</h3>
+      <h3 class="sheet-title">{t("compose_ui_trail_settings")}</h3>
       <button
         class="sheet-close-btn"
         onclick={() => (isOpen = false)}
-        aria-label="Close"
+        aria-label={t("action_close")}
         type="button"
       >
         <i class="fas fa-times" aria-hidden="true"></i>
@@ -130,5 +131,4 @@
     line-height: 1.5;
     margin: 0;
   }
-
 </style>

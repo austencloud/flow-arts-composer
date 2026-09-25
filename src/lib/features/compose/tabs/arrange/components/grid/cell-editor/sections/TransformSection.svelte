@@ -5,6 +5,7 @@
   No Apply To selector, no rotation strip, no hotkey badges.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { CellEditorPanelState } from "../state/cell-editor-panel-state.svelte";
   import type { TransformType } from "$lib/shared/animation-engine/domain/compose-types";
 
@@ -32,7 +33,11 @@
 <div class="transform-section">
   <span class="section-header">TRANSFORM</span>
 
-  <div class="btn-row" role="group" aria-label="Transform row 1">
+  <div
+    class="btn-row"
+    role="group"
+    aria-label={t("compose_ui_transform_row_1")}
+  >
     {#each row1 as btn}
       <button class="transform-btn" onclick={() => onTransform(btn.type)}>
         <i class="fas {btn.icon}" aria-hidden="true"></i>
@@ -41,7 +46,11 @@
     {/each}
   </div>
 
-  <div class="btn-row" role="group" aria-label="Transform row 2">
+  <div
+    class="btn-row"
+    role="group"
+    aria-label={t("compose_ui_transform_row_2")}
+  >
     {#each row2 as btn}
       <button class="transform-btn" onclick={() => onTransform(btn.type)}>
         <i class="fas {btn.icon}" aria-hidden="true"></i>

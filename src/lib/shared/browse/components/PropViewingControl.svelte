@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import {
@@ -101,7 +102,7 @@
         onclick={() => {
           void onUpdate({ ...ownProps });
           open = false;
-        }}>Done</PanelButton
+        }}>{t("train_filter_done")}</PanelButton
       >
     </div>
   {/snippet}

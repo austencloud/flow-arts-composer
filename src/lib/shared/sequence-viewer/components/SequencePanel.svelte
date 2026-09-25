@@ -9,6 +9,7 @@
   Unified sequence viewer panel that works in both Browse (Browse) and Edit (Create) modes.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
@@ -19,7 +20,10 @@
   import type { MediaType, MediaFormat, ExportSettings } from "../domain/types";
   import type { CollaborativeVideo } from "$lib/shared/video-collaboration/domain/collaborative-video";
   import type { VideoExportProgress } from "$lib/shared/compose/domain/video-export-types";
-  import type { PlaybackMode, StepPlaybackStepSize } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
+  import type {
+    PlaybackMode,
+    StepPlaybackStepSize,
+  } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
 
   import { getSequenceDetailLoader } from "$lib/shared/browse/get-sequence-detail-loader";
   import { getVideoCountManager } from "$lib/shared/browse/get-video-count-manager";
@@ -163,7 +167,10 @@
         detailLoader = getSequenceDetailLoader();
         videoCountManager = getVideoCountManager();
       } catch (e) {
-        console.warn("[SequencePanel] Could not resolve browse mode services:", e);
+        console.warn(
+          "[SequencePanel] Could not resolve browse mode services:",
+          e
+        );
       }
     }
   });
@@ -187,7 +194,8 @@
 
     untrack(() => {
       isLoadingFullSequence = true;
-      loader.loadFullSequence(currentSequence)
+      loader
+        .loadFullSequence(currentSequence)
         .then((loaded) => {
           if (sequence.id === currentSequence.id && loaded) {
             fullSequence = loaded;
@@ -215,7 +223,8 @@
     if (!manager || !currentSequence) return;
 
     untrack(() => {
-      manager.getVideoCount(currentSequence.id)
+      manager
+        .getVideoCount(currentSequence.id)
         .then((count) => {
           if (sequence.id === currentSequence.id) {
             videoCount = count;
@@ -228,9 +237,7 @@
   });
 
   // Derived: can share (full sequence loaded or edit mode)
-  const canShare = $derived(
-    mode === "edit" || !isLoadingFullSequence
-  );
+  const canShare = $derived(mode === "edit" || !isLoadingFullSequence);
 
   // Share handlers
   async function handleCopyImage() {
@@ -246,7 +253,9 @@
     if (result.success) {
       shareSuccess = true;
       hapticService?.trigger("success");
-      setTimeout(() => { shareSuccess = false; }, 2000);
+      setTimeout(() => {
+        shareSuccess = false;
+      }, 2000);
     } else {
       hapticService?.trigger("error");
     }
@@ -323,12 +332,17 @@
 
   // Export handler for edit mode
   function handleExportClick() {
-    const format: MediaFormat = currentMediaType === "image" ? "static" : "animation";
+    const format: MediaFormat =
+      currentMediaType === "image" ? "static" : "animation";
     onExport?.(format, { format });
   }
 </script>
 
-<div class="sequence-panel" class:browse-mode={mode === "browse"} class:edit-mode={mode === "edit"}>
+<div
+  class="sequence-panel"
+  class:browse-mode={mode === "browse"}
+  class:edit-mode={mode === "edit"}
+>
   <!-- Header -->
   <header class="panel-header">
     <div class="header-left">
@@ -337,14 +351,14 @@
           type="button"
           class="icon-btn close-btn"
           onclick={() => onClose?.()}
-          aria-label="Close panel"
+          aria-label={t("compose_close_panel")}
         >
           <i class="fas fa-times" aria-hidden="true"></i>
         </button>
       {/if}
     </div>
 
-    <h2 class="panel-title">Sequence Details</h2>
+    <h2 class="panel-title">{t("browse_sequence_details")}</h2>
 
     <div class="header-right">
       {#if mode === "browse"}
@@ -352,7 +366,7 @@
           type="button"
           class="icon-btn"
           onclick={handleMaximize}
-          aria-label="Maximize"
+          aria-label={t("browse_maximize")}
         >
           <i class="fas fa-expand" aria-hidden="true"></i>
         </button>
@@ -429,7 +443,10 @@
           type="button"
           class="action-btn"
           class:active={isFavorite}
-          onclick={() => { hapticService?.trigger("selection"); onFavorite?.(); }}
+          onclick={() => {
+            hapticService?.trigger("selection");
+            onFavorite?.();
+          }}
           aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
           aria-pressed={isFavorite}
         >
@@ -442,7 +459,10 @@
         <button
           type="button"
           class="action-btn"
-          onclick={() => { hapticService?.trigger("selection"); onFork?.(); }}
+          onclick={() => {
+            hapticService?.trigger("selection");
+            onFork?.();
+          }}
           aria-label="Fork this sequence"
         >
           <i class="fas fa-code-branch" aria-hidden="true"></i>
@@ -455,10 +475,10 @@
         type="button"
         class="action-btn primary"
         onclick={() => handleAction("edit")}
-        aria-label="Remix"
+        aria-label={t("viewer_ui_remix")}
       >
         <i class="fas fa-pen-to-square" aria-hidden="true"></i>
-        <span>Remix</span>
+        <span>{t("viewer_ui_remix")}</span>
       </button>
 
       {#if videoCount > 0 || isOwned}
@@ -466,7 +486,7 @@
           type="button"
           class="action-btn"
           onclick={handleVideosClick}
-          aria-label="View videos"
+          aria-label={t("browse_view_videos")}
         >
           <i class="fas fa-video" aria-hidden="true"></i>
           <span>Videos{videoCount > 0 ? ` (${videoCount})` : ""}</span>
@@ -477,11 +497,14 @@
         <button
           type="button"
           class="action-btn danger"
-          onclick={() => { hapticService?.trigger("selection"); onDelete?.(); }}
-          aria-label="Delete sequence"
+          onclick={() => {
+            hapticService?.trigger("selection");
+            onDelete?.();
+          }}
+          aria-label={t("viewer_ui_delete_sequence")}
         >
           <i class="fas fa-trash" aria-hidden="true"></i>
-          <span>Delete</span>
+          <span>{t("action_delete")}</span>
         </button>
       {/if}
     </div>
@@ -495,11 +518,14 @@
           data-save-shortcut
           type="button"
           class="action-btn primary"
-          onclick={() => { hapticService?.trigger("selection"); onSaveToLibrary?.(); }}
+          onclick={() => {
+            hapticService?.trigger("selection");
+            onSaveToLibrary?.();
+          }}
           aria-label="Save to library"
         >
           <i class="fas fa-bookmark" aria-hidden="true"></i>
-          <span>Save</span>
+          <span>{t("browse_save")}</span>
         </button>
       {/if}
 
@@ -508,7 +534,10 @@
           type="button"
           class="action-btn"
           class:active={isFavorite}
-          onclick={() => { hapticService?.trigger("selection"); onFavorite?.(); }}
+          onclick={() => {
+            hapticService?.trigger("selection");
+            onFavorite?.();
+          }}
           aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
           aria-pressed={isFavorite}
         >
@@ -642,7 +671,11 @@
   }
 
   .variation-thumb.active {
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 20%,
+      transparent
+    );
     border-color: var(--theme-accent, #6366f1);
     color: white;
   }
@@ -744,27 +777,55 @@
 
   .action-btn.active {
     color: var(--semantic-error, #ef4444);
-    border-color: color-mix(in srgb, var(--semantic-error, #ef4444) 40%, transparent);
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 10%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 40%,
+      transparent
+    );
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 10%,
+      transparent
+    );
   }
 
   .action-btn.danger {
     color: var(--semantic-error, #ef4444);
-    border-color: color-mix(in srgb, var(--semantic-error, #ef4444) 30%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 30%,
+      transparent
+    );
   }
 
   .action-btn.danger:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 15%,
+      transparent
+    );
   }
 
   .action-btn.primary {
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 20%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent, #6366f1) 50%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 20%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 50%,
+      transparent
+    );
     color: white;
   }
 
   .action-btn.primary:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 35%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 35%,
+      transparent
+    );
     border-color: var(--theme-accent, #6366f1);
   }
 

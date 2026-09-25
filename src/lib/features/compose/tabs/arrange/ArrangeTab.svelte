@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import {
     handleKeyDown as arrangeHandleKeyDown,
     findAdjacentCell,
@@ -407,8 +408,12 @@
     <div class="mobile-placeholder">
       <div class="placeholder-content">
         <i class="fas fa-desktop" aria-hidden="true"></i>
-        <p class="title">Composition grid is optimized for desktop</p>
-        <p class="hint">Try rotating your device or using a larger screen.</p>
+        <p class="title">
+          {t("compose_ui_composition_grid_is_optimized_for_desktop")}
+        </p>
+        <p class="hint">
+          {t("compose_ui_try_rotating_your_device_or_using_a_larger_screen")}
+        </p>
       </div>
     </div>
   {:else}
@@ -421,8 +426,8 @@
           <button
             class="util-btn"
             onclick={handleCopyState}
-            title="Copy grid state to clipboard"
-            aria-label="Copy grid state to clipboard"
+            title={t("compose_ui_copy_grid_state_to_clipboard")}
+            aria-label={t("compose_ui_copy_grid_state_to_clipboard")}
           >
             <i class="fas fa-clipboard" aria-hidden="true"></i>
           </button>
@@ -430,8 +435,8 @@
             data-save-shortcut
             class="util-btn"
             onclick={handleSaveComposition}
-            title="Save composition"
-            aria-label="Save composition"
+            title={t("compose_ui_save_composition")}
+            aria-label={t("compose_ui_save_composition")}
           >
             <i class="fas fa-bookmark" aria-hidden="true"></i>
           </button>

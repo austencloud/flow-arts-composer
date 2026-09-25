@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import PropPairField from "$lib/shared/pictograph/prop/components/PropPairField.svelte";
@@ -38,7 +39,9 @@
 </script>
 
 <BaseModal open={true} onclose={onCancel} size="fit" labelledBy={titleId}>
-  {#snippet header()}<h2 id={titleId}>Save to Library</h2>{/snippet}
+  {#snippet header()}<h2 id={titleId}>
+      {t("library_ui_save_to_library")}
+    </h2>{/snippet}
   <div class="body">
     <PropPairField bind:value />
     <p>Used when someone chooses As saved.</p>
@@ -70,8 +73,10 @@
   </div>
   {#snippet footer()}
     <div class="actions">
-      <PanelButton variant="secondary" onclick={onCancel}>Cancel</PanelButton>
-      <PanelButton onclick={onSave}>Save</PanelButton>
+      <PanelButton variant="secondary" onclick={onCancel}
+        >{t("action_cancel")}</PanelButton
+      >
+      <PanelButton onclick={onSave}>{t("browse_save")}</PanelButton>
     </div>
   {/snippet}
 </BaseModal>

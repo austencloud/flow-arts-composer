@@ -5,6 +5,8 @@
   Standard layout for larger screens (non-wizard mode).
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { avatarGradientLabel } from "$lib/shared/settings/domain/avatar-gradient-labels";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import {
     PROP_TYPE_DISPLAY_REGISTRY,
@@ -43,7 +45,6 @@
     isModal = false,
   }: Props = $props();
 
-
   const NON_PROP_TYPES = new Set([PropType.HAND]);
 
   // Reading the whole registry also picks up paid cosmetics, so they come out
@@ -63,7 +64,6 @@
       }));
   });
 
-
   const selectedGradient = $derived(
     ALL_GRADIENTS.find((g) => g.id === selectedGradientId) ?? ALL_GRADIENTS[0]!
   );
@@ -77,7 +77,6 @@
   const currentPropImage = $derived(
     PROPS.find((p) => p.id === selectedProp)?.image ?? ""
   );
-
 
   function selectFamily(familyId: string) {
     const firstInFamily = ALL_GRADIENTS.find((g) => g.family === familyId);
@@ -107,31 +106,35 @@
           <img src={currentPropImage} alt="Prop" class="prop-silhouette" />
         {/if}
       </div>
-      <span class="gradient-name">{selectedGradient.name}</span>
+      <span class="gradient-name"
+        >{avatarGradientLabel(selectedGradient.name)}</span
+      >
       <button class="save-btn compact" onclick={onSave} disabled={saving}>
         {#if saving}
           <i class="fas fa-circle-notch fa-spin"></i>
-          <span>Saving...</span>
+          <span>{t("settings_avatar_saving")}</span>
         {:else}
           <i class="fas fa-check"></i>
-          <span>Use This Avatar</span>
+          <span>{t("settings_avatar_use")}</span>
         {/if}
       </button>
     </div>
 
     <div class="controls-column">
       <div class="section">
-        <h4 class="section-label">Style</h4>
+        <h4 class="section-label">{t("settings_avatar_style")}</h4>
         <div class="family-row compact">
           {#each COLOR_FAMILIES as family}
             <button
               class="family-chip compact"
               class:selected={selectedFamilyId === family.id}
               onclick={() => selectFamily(family.id)}
-              title={family.name}
+              title={avatarGradientLabel(family.name)}
             >
               <i class="fas {family.icon}"></i>
-              <span class="family-label">{family.name}</span>
+              <span class="family-label"
+                >{avatarGradientLabel(family.name)}</span
+              >
             </button>
           {/each}
         </div>
@@ -139,12 +142,12 @@
 
       <div class="section">
         <div class="section-header">
-          <h4 class="section-label">Shade</h4>
+          <h4 class="section-label">{t("settings_avatar_shade")}</h4>
           <button
             class="shuffle-btn compact"
             onclick={shuffle}
-            title="Shuffle to random shade"
-            aria-label="Shuffle to random shade"
+            title={t("settings_avatar_random_shade")}
+            aria-label={t("settings_avatar_random_shade")}
           >
             <i class="fas fa-random" aria-hidden="true"></i>
           </button>
@@ -155,8 +158,8 @@
               class="gradient-swatch compact"
               class:selected={selectedGradientId === gradient.id}
               onclick={() => onGradientChange(gradient.id)}
-              title={gradient.name}
-              aria-label={gradient.name}
+              title={avatarGradientLabel(gradient.name)}
+              aria-label={avatarGradientLabel(gradient.name)}
               aria-pressed={selectedGradientId === gradient.id}
               style="background: {gradient.gradient};"
             >
@@ -169,7 +172,7 @@
       </div>
 
       <div class="section">
-        <h4 class="section-label">Prop</h4>
+        <h4 class="section-label">{t("settings_avatar_prop")}</h4>
         <div class="prop-row compact">
           {#each PROPS as prop}
             <button
@@ -198,24 +201,28 @@
           <img src={currentPropImage} alt="Prop" class="prop-silhouette" />
         {/if}
       </div>
-      <span class="gradient-name">{selectedGradient.name}</span>
-      <h3 class="panel-title">Create Avatar</h3>
+      <span class="gradient-name"
+        >{avatarGradientLabel(selectedGradient.name)}</span
+      >
+      <h3 class="panel-title">{t("settings_create_avatar")}</h3>
     </div>
 
     <div class="generate-content">
       <!-- Style & Shade -->
       <div class="section">
-        <h4 class="section-label">Style</h4>
+        <h4 class="section-label">{t("settings_avatar_style")}</h4>
         <div class="family-row">
           {#each COLOR_FAMILIES as family}
             <button
               class="family-chip"
               class:selected={selectedFamilyId === family.id}
               onclick={() => selectFamily(family.id)}
-              title={family.name}
+              title={avatarGradientLabel(family.name)}
             >
               <i class="fas {family.icon}"></i>
-              <span class="family-label">{family.name}</span>
+              <span class="family-label"
+                >{avatarGradientLabel(family.name)}</span
+              >
             </button>
           {/each}
         </div>
@@ -223,12 +230,12 @@
 
       <div class="section">
         <div class="section-header">
-          <h4 class="section-label">Shade</h4>
+          <h4 class="section-label">{t("settings_avatar_shade")}</h4>
           <button
             class="shuffle-btn"
             onclick={shuffle}
-            title="Shuffle to random shade"
-            aria-label="Shuffle to random shade"
+            title={t("settings_avatar_random_shade")}
+            aria-label={t("settings_avatar_random_shade")}
           >
             <i class="fas fa-random" aria-hidden="true"></i>
           </button>
@@ -239,8 +246,8 @@
               class="gradient-swatch"
               class:selected={selectedGradientId === gradient.id}
               onclick={() => onGradientChange(gradient.id)}
-              title={gradient.name}
-              aria-label={gradient.name}
+              title={avatarGradientLabel(gradient.name)}
+              aria-label={avatarGradientLabel(gradient.name)}
               aria-pressed={selectedGradientId === gradient.id}
               style="background: {gradient.gradient};"
             >
@@ -254,7 +261,7 @@
 
       <!-- Prop Selection -->
       <div class="section">
-        <h4 class="section-label">Prop</h4>
+        <h4 class="section-label">{t("settings_avatar_prop")}</h4>
         <div class="prop-row">
           {#each PROPS as prop}
             <button
@@ -272,10 +279,10 @@
       <button class="save-btn" onclick={onSave} disabled={saving}>
         {#if saving}
           <i class="fas fa-circle-notch fa-spin"></i>
-          <span>Saving...</span>
+          <span>{t("settings_avatar_saving")}</span>
         {:else}
           <i class="fas fa-check"></i>
-          <span>Use This Avatar</span>
+          <span>{t("settings_avatar_use")}</span>
         {/if}
       </button>
     </div>

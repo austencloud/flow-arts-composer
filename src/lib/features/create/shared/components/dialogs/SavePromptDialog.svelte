@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * Save Prompt Dialog
    *
@@ -51,9 +52,9 @@
         <span>
           Saving allows you to:
           <ul>
-            <li>Access recordings in your library</li>
-            <li>Find shared sequences later</li>
-            <li>Track your progress over time</li>
+            <li>{t("create_ui_access_recordings_in_your_library")}</li>
+            <li>{t("create_ui_find_shared_sequences_later")}</li>
+            <li>{t("create_ui_track_your_progress_over_time")}</li>
           </ul>
         </span>
       </div>

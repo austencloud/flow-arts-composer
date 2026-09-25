@@ -5,6 +5,7 @@
   Simpler than UsernameEditor - no availability checking needed.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { HapticFeedback } from "../../../application/services/haptic-feedback";
   import type { User } from "firebase/auth";
   import { authState } from "../../../auth/state/auth-state.svelte";
@@ -94,7 +95,9 @@
     // Validate format
     const username = editedUsername.trim();
     if (username && !validateFormat(username)) {
-      error = "Letters, numbers, underscores, and periods only (1-30 chars)";
+      error = t(
+        "nav_ui_letters_numbers_underscores_and_periods_only_1_30_chars"
+      );
     }
   }
 
@@ -103,7 +106,7 @@
 
     // Validate format
     if (trimmedUsername && !validateFormat(trimmedUsername)) {
-      error = "Invalid format";
+      error = t("nav_ui_invalid_format");
       return;
     }
 
@@ -121,8 +124,8 @@
       hapticService?.trigger("success");
       toast.success(
         trimmedUsername
-          ? "Instagram username updated"
-          : "Instagram username cleared"
+          ? t("nav_ui_instagram_username_updated")
+          : t("nav_ui_instagram_username_cleared")
       );
       isEditing = false;
       await tick();
@@ -130,9 +133,11 @@
     } catch (err) {
       console.error("Failed to update Instagram username:", err);
       hapticService?.trigger("error");
-      saveError = "Instagram username couldn't be saved. Try again.";
+      saveError = t("nav_ui_instagram_username_couldn_t_be_saved_try_again");
       toast.error(
-        err instanceof Error ? err.message : "Failed to update Instagram"
+        err instanceof Error
+          ? err.message
+          : t("nav_ui_failed_to_update_instagram")
       );
     } finally {
       isSaving = false;
@@ -168,7 +173,7 @@
           oninput={handleInput}
           onkeydown={handleKeydown}
           maxlength="30"
-          placeholder="your_username"
+          placeholder={t("nav_ui_your_username")}
           disabled={isSaving}
           aria-invalid={feedbackError ? "true" : "false"}
           aria-describedby={feedbackError ? "instagram-error" : undefined}
@@ -180,7 +185,7 @@
           class="icon-btn save"
           onclick={save}
           disabled={isSaveDisabled}
-          aria-label="Save Instagram username"
+          aria-label={t("nav_ui_save_instagram_username")}
         >
           {#if isSaving}
             <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
@@ -192,7 +197,7 @@
           class="icon-btn cancel"
           onclick={cancelEditing}
           disabled={isSaving}
-          aria-label="Cancel editing"
+          aria-label={t("nav_ui_cancel_editing")}
         >
           <i class="fas fa-times" aria-hidden="true"></i>
         </button>
@@ -209,7 +214,9 @@
   {:else}
     <AccountValueRow
       label="Instagram"
-      value={currentUsername ? `@${currentUsername}` : "Not set"}
+      value={currentUsername
+        ? `@${currentUsername}`
+        : t("profile_pronouns_not_set")}
       empty={!currentUsername}
       onEdit={startEditing}
       bind:buttonRef={editButton}

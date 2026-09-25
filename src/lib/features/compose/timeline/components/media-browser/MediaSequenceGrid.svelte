@@ -2,6 +2,7 @@
   MediaSequenceGrid.svelte - Grid display of sequences with infinite scroll
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import MediaSequenceCard from "./MediaSequenceCard.svelte";
@@ -56,12 +57,12 @@
     <div class="state-message error">
       <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
       <span>{error}</span>
-      <button onclick={onRetry}>Retry</button>
+      <button onclick={onRetry}>{t("action_retry")}</button>
     </div>
   {:else if sequences.length === 0}
     <div class="state-message">
       <i class="fas fa-search" aria-hidden="true"></i>
-      <span>No sequences found</span>
+      <span>{t("browse_no_sequences_found")}</span>
       {#if hasActiveFilter}
         <button onclick={onClearFilters}>Clear filters</button>
       {/if}
@@ -183,6 +184,4 @@
     color: var(--theme-text-dim, var(--theme-text-dim));
     font-size: var(--font-size-compact);
   }
-
-
 </style>

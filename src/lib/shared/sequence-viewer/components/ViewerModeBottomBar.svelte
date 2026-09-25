@@ -1,7 +1,9 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { ContentType, ViewerMode } from "../state/viewer-state.svelte";
   import {
     viewerModeOptions,
+    viewerModeLabel,
     PRACTICE_OPTION,
     type SelectableViewerMode,
   } from "../services/viewer-modes";
@@ -41,7 +43,9 @@
       webgl2Available,
       viewportFits3D(),
       canAccessPostStudio() || (import.meta.env.DEV && reviewPostStudio)
-    ).filter((m) => allowSplit || m.id !== "split")
+    )
+      .filter((m) => allowSplit || m.id !== "split")
+      .map((m) => ({ ...m, label: viewerModeLabel(m.id) }))
   );
 
   function selectMode(id: ViewerMode) {
@@ -50,7 +54,7 @@
   }
 </script>
 
-<nav class="viewer-bottom-bar" aria-label="Sequence views">
+<nav class="viewer-bottom-bar" aria-label={t("viewer_ui_sequence_views")}>
   {#each modes as mode (mode.id)}
     <NavButton
       icon={`<i class="fas ${mode.icon}"></i>`}
@@ -63,8 +67,10 @@
   {#if onPracticeToggle}
     <NavButton
       icon={`<i class="fas ${practiceActive ? "fa-stop" : PRACTICE_OPTION.icon}"></i>`}
-      label={practiceActive ? "Stop" : PRACTICE_OPTION.label}
-      ariaLabel={practiceActive ? "Stop practice" : "Practice"}
+      label={practiceActive ? t("viewer_ui_stop") : t("viewer_ui_practice")}
+      ariaLabel={practiceActive
+        ? t("viewer_ui_stop_practice")
+        : t("viewer_ui_practice")}
       active={practiceActive}
       onClick={onPracticeToggle}
     />

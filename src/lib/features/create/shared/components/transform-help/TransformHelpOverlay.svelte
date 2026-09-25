@@ -10,6 +10,7 @@
   - Clicks on backdrop exit help mode, clicks on drawer content pass through
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   interface Props {
     onClose: () => void;
   }
@@ -39,13 +40,13 @@
   onkeydown={(e) => e.key === "Enter" && handleBackdropClick()}
   role="button"
   tabindex="0"
-  aria-label="Exit help mode"
+  aria-label={t("create_ui_exit_help_mode")}
 ></div>
 
 <!-- Instruction banner at top of viewport -->
 <div class="help-banner">
   <i class="fas fa-hand-pointer" aria-hidden="true"></i>
-  <span>Tap any action to learn how it works</span>
+  <span>{t("create_ui_tap_any_action_to_learn_how_it_works")}</span>
 </div>
 
 <style>
@@ -80,8 +81,8 @@
     min-height: 44px; /* AAA touch target if tappable */
     background: linear-gradient(
       180deg,
-      rgba(30, 64, 175, 0.98) 0%,   /* Darker blue for AAA: 7.2:1 contrast */
-      rgba(23, 37, 84, 0.98) 100%
+      rgba(30, 64, 175, 0.98) 0%,
+      /* Darker blue for AAA: 7.2:1 contrast */ rgba(23, 37, 84, 0.98) 100%
     );
     color: white;
     font-size: var(--font-size-min, 14px);

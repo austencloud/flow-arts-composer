@@ -379,7 +379,9 @@
     {#if engine.error}
       <div class="error-state" role="alert">
         <p>{engine.error}</p>
-        <button onclick={() => engine.refresh()}>Try again</button>
+        <button onclick={() => engine.refresh()}
+          >{t("browse_ui_try_again")}</button
+        >
       </div>
     {:else if warming}
       <!-- Instant-tap warm frame: skeleton only. No sidebar/grid → no

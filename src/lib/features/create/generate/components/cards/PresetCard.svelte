@@ -1,5 +1,6 @@
 <!-- The Setups card shows the applied source and opens the setup drawer. -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import BaseCard from "./BaseCard.svelte";
 
   let {
@@ -18,14 +19,12 @@
     cardIndex?: number;
   }>();
 
-  const statusLabel = $derived(
-    setupsCardStatus === "active" ? "Active" : ""
-  );
+  const statusLabel = $derived(setupsCardStatus === "active" ? "Active" : "");
 </script>
 
 <div class="preset-card-shell">
   <BaseCard
-    title="Setups"
+    title={t("create_ui_setups")}
     currentValue={setupsCardValue}
     ariaLabel={`Setups: ${setupsCardValue}${statusLabel ? `, ${statusLabel}` : ""}. Click to change.`}
     {color}

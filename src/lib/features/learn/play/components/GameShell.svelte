@@ -27,9 +27,11 @@ animations, exactly as the legacy quizzes did.
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { formatTime } from "$lib/shared/sequence-viewer/utils/format-time";
   import { createSpring } from "$lib/shared/ui-animation/animations.svelte";
   import { getArcadeSession } from "../state/arcade-session-state.svelte";
+  import { gameTitle, challengeTitle } from "../domain/play-labels";
   import { withViewTransition } from "../state/view-transition";
   import PictographToLetterGame from "../games/PictographToLetterGame.svelte";
   import LetterToPictographGame from "../games/LetterToPictographGame.svelte";
@@ -134,7 +136,7 @@ animations, exactly as the legacy quizzes did.
           type="button"
           class="back-button"
           onclick={handleBack}
-          aria-label="Back to challenge select"
+          aria-label={t("learn_ui_back_to_challenges")}
         >
           <svg
             width="20"
@@ -152,8 +154,10 @@ animations, exactly as the legacy quizzes did.
         </button>
 
         <div class="challenge-label">
-          <span class="game-title">{playing.game.title}</span>
-          <span class="challenge-title">{playing.challenge.title}</span>
+          <span class="game-title">{gameTitle(playing.game)}</span>
+          <span class="challenge-title"
+            >{challengeTitle(playing.challenge)}</span
+          >
         </div>
 
         <!-- Immersive games keep the bar (and its exits) but drop the readouts
@@ -167,7 +171,10 @@ animations, exactly as the legacy quizzes did.
             <!-- Ghost-sizer reserves the widest readout so 9→10 never shifts -->
             <span
               class="q-progress"
-              aria-label="Question {questionNumber} of {questionCount}"
+              aria-label={t("learn_ui_question_of", {
+                current: questionNumber,
+                total: questionCount,
+              })}
             >
               <span class="q-sizer" aria-hidden="true"
                 >{questionCount}/{questionCount}</span
@@ -178,7 +185,10 @@ animations, exactly as the legacy quizzes did.
             <div
               class="miss-pips"
               role="img"
-              aria-label="{session.misses} of {maxMisses} misses"
+              aria-label={t("learn_ui_misses_of", {
+                current: session.misses,
+                total: maxMisses,
+              })}
             >
               {#each Array(maxMisses) as _, i (i)}
                 <span class="pip" class:missed={i < session.misses}></span>
@@ -210,7 +220,10 @@ animations, exactly as the legacy quizzes did.
           <span class="streak-count">{session.streak}</span>
         </div>
 
-        <div class="score" aria-label="Score {session.score}">
+        <div
+          class="score"
+          aria-label={t("learn_ui_score_value", { score: session.score })}
+        >
           <span class="score-value">{displayedScore}</span>
         </div>
       </div>
@@ -244,10 +257,10 @@ animations, exactly as the legacy quizzes did.
 
     <ConfirmDialog
       bind:isOpen={showQuitConfirm}
-      title="Leave this run?"
-      message="The score for this run will be lost."
-      confirmText="Leave"
-      cancelText="Keep playing"
+      title={t("learn_ui_leave_run_title")}
+      message={t("learn_ui_leave_run_message")}
+      confirmText={t("learn_ui_leave")}
+      cancelText={t("learn_ui_keep_playing")}
       variant="warning"
       onConfirm={confirmQuit}
       onCancel={() => {}}

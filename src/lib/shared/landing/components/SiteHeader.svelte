@@ -21,6 +21,7 @@
   import { analyticsRoute } from "$lib/shared/analytics/analytics-context";
   import type { AuthCta } from "$lib/shared/analytics/auth-events";
   import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { siteCopy } from "../site-copy";
 
   let scrolled = $state(false);
   let mobileOpen = $state(false);
@@ -49,7 +50,9 @@
   );
   const isFullAccount = $derived(authApi?.isFullAccount ?? false);
   const user = $derived(authApi?.user ?? null);
-  const displayName = $derived(user?.displayName || user?.email || "You");
+  const displayName = $derived(
+    user?.displayName || user?.email || siteCopy("You")
+  );
   const email = $derived(user?.email ?? null);
   const photoURL = $derived(user?.photoURL ?? null);
 
@@ -397,22 +400,34 @@
   <div class="inner">
     <div class="left-group">
       {#if showBack}
-        <a href="/" class="surface-back" aria-label="Back to the launchpad">
+        <a
+          href="/"
+          class="surface-back"
+          aria-label={siteCopy("Back to the launchpad")}
+        >
           <i class="fas fa-chevron-left" aria-hidden="true"></i>
-          <span>Back</span>
+          <span>{siteCopy("Back")}</span>
         </a>
       {/if}
-      <a href="/" class="logo" aria-label="TKA, The Kinetic Alphabet, Home">
+      <a
+        href="/"
+        class="logo"
+        aria-label={siteCopy("TKA, The Kinetic Alphabet, Home")}
+      >
         <span class="logo-text">TKA</span>
       </a>
     </div>
 
-    <nav class="desktop-nav" aria-label="Main navigation">
+    <nav class="desktop-nav" aria-label={siteCopy("Main navigation")}>
       {#each NAV as entry}
         {#if isGroup(entry)}
           <NavDropdown
-            label={entry.label}
-            items={entry.items}
+            label={siteCopy(entry.label)}
+            items={entry.items.map((item) => ({
+              ...item,
+              label: siteCopy(item.label),
+              desc: item.desc ? siteCopy(item.desc) : undefined,
+            }))}
             active={groupActive(entry)}
             activeHref={getActiveItemHref(entry.items)}
             open={desktopOpenGroup === entry.label}
@@ -424,7 +439,7 @@
             class:active={isActive(entry.href)}
             aria-current={isActive(entry.href) ? "page" : undefined}
           >
-            {entry.label}
+            {siteCopy(entry.label)}
             {#if isActive(entry.href)}<span class="ind" aria-hidden="true"
               ></span>{/if}
           </a>
@@ -438,7 +453,7 @@
             class="avatar-btn"
             aria-haspopup="menu"
             aria-expanded={accountOpen}
-            aria-label="Account menu"
+            aria-label={siteCopy("Account menu")}
             onclick={() => (accountOpen = !accountOpen)}
           >
             <RobustAvatar src={photoURL} name={displayName} customSize={32} />
@@ -455,7 +470,7 @@
                 onclick={handleSignOut}
               >
                 <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
-                Sign out
+                {siteCopy("Sign out")}
               </button>
             </div>
           {/if}
@@ -464,7 +479,8 @@
         <button
           type="button"
           class="signin auth-slot"
-          onclick={() => openSignIn("header_desktop_signin")}>Sign in</button
+          onclick={() => openSignIn("header_desktop_signin")}
+          >{siteCopy("Sign in")}</button
         >
       {/if}
       <a
@@ -475,13 +491,13 @@
           trackCtaClick("header_desktop", {
             cta_type: "open_composer",
             destination: "/create",
-          })}>Open Flow Arts Composer</a
+          })}>{siteCopy("Open Flow Arts Composer")}</a
       >
     </nav>
 
     <button
       class="toggle"
-      aria-label={mobileOpen ? "Close menu" : "Open menu"}
+      aria-label={siteCopy(mobileOpen ? "Close menu" : "Open menu")}
       aria-expanded={mobileOpen}
       aria-controls="site-mobile-nav"
       onclick={() => (mobileOpen = !mobileOpen)}
@@ -500,7 +516,7 @@
   id="site-mobile-nav"
   class="mobile-nav"
   class:open={mobileOpen}
-  aria-label="Mobile navigation"
+  aria-label={siteCopy("Mobile navigation")}
   aria-hidden={!mobileOpen}
 >
   <ul class="m-list">
@@ -516,7 +532,7 @@
             onclick={() => (expandedGroup = expanded ? null : entry.label)}
           >
             <i class="fas {entry.icon} m-icon" aria-hidden="true"></i>
-            <span class="m-label">{entry.label}</span>
+            <span class="m-label">{siteCopy(entry.label)}</span>
             <i
               class="fas fa-chevron-down m-chev"
               class:m-chev-up={expanded}
@@ -535,7 +551,7 @@
                       class="fas {item.icon} m-icon m-sub-icon"
                       aria-hidden="true"
                     ></i>
-                    <span class="m-label">{item.label}</span>
+                    <span class="m-label">{siteCopy(item.label)}</span>
                     <i class="fas fa-chevron-right m-chev" aria-hidden="true"
                     ></i>
                   </a>
@@ -550,7 +566,7 @@
             aria-current={isActive(entry.href) ? "page" : undefined}
           >
             <i class="fas {entry.icon} m-icon" aria-hidden="true"></i>
-            <span class="m-label">{entry.label}</span>
+            <span class="m-label">{siteCopy(entry.label)}</span>
             <i class="fas fa-chevron-right m-chev" aria-hidden="true"></i>
           </a>
         {/if}
@@ -571,7 +587,7 @@
         close();
       }}
     >
-      <span>Open Flow Arts Composer</span>
+      <span>{siteCopy("Open Flow Arts Composer")}</span>
     </a>
     {#if authReady && isFullAccount}
       <div class="m-identity">
@@ -583,13 +599,14 @@
       </div>
       <button class="m-signin m-signout" onclick={handleSignOut}>
         <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
-        Sign out
+        {siteCopy("Sign out")}
       </button>
     {:else if authReady}
       <button
         type="button"
         class="m-signin"
-        onclick={() => openSignIn("header_mobile_signin")}>Sign in</button
+        onclick={() => openSignIn("header_mobile_signin")}
+        >{siteCopy("Sign in")}</button
       >
     {/if}
   </div>

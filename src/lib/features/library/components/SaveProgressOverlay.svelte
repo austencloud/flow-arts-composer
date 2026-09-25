@@ -9,6 +9,7 @@
   - detailed (default): Shows all step indicators and beat progress
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   interface SaveStep {
     icon: string;
     label: string;
@@ -39,8 +40,8 @@
         <div class="success-circle">
           <i class="fas fa-check" aria-hidden="true"></i>
         </div>
-        <h3>Saved!</h3>
-        <p>Your sequence is now in your library</p>
+        <h3>{t("library_ui_saved")}</h3>
+        <p>{t("library_ui_your_sequence_is_now_in_your_library")}</p>
       </div>
     {:else if compact}
       <!-- Compact Mode: Simple "Saving..." with progress bar -->
@@ -48,7 +49,7 @@
         <div class="compact-spinner">
           <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
         </div>
-        <h3>Saving to library...</h3>
+        <h3>{t("library_ui_saving_to_library")}</h3>
         <div class="progress-bar-container">
           <div
             class="progress-bar-fill"

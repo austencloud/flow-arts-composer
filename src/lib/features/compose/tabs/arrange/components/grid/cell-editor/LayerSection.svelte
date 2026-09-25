@@ -6,6 +6,7 @@
   Add Layer and Paste buttons below the list.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { GridCell } from "../../../state/arrange-grid-state.svelte";
   import type { TunnelLayerConfig } from "$lib/shared/animation-engine/domain/compose-types";
 
@@ -32,7 +33,9 @@
   const canAddLayer = $derived(cell.layers.length < MAX_LAYERS);
 
   function getLayerName(layer: TunnelLayerConfig, index: number): string {
-    return layer.sequence.word || layer.sequence.name || `Sequence ${index + 1}`;
+    return (
+      layer.sequence.word || layer.sequence.name || `Sequence ${index + 1}`
+    );
   }
 
   function getLayerBeats(layer: TunnelLayerConfig): number {
@@ -56,15 +59,15 @@
 
   {#if cell.layers.length === 0}
     <div class="empty-layers">
-      <p>No sequences yet</p>
+      <p>{t("compose_ui_no_sequences_yet")}</p>
       <button class="add-sequence-btn" onclick={onAddSequence}>
         <i class="fas fa-plus" aria-hidden="true"></i>
-        <span>Add Sequence</span>
+        <span>{t("compose_ui_add_sequence")}</span>
       </button>
       {#if clipboardHasData && onPasteLayer}
         <button class="paste-btn" onclick={onPasteLayer}>
           <i class="fas fa-paste" aria-hidden="true"></i>
-          <span>Paste</span>
+          <span>{t("compose_ui_paste")}</span>
         </button>
       {/if}
     </div>
@@ -77,8 +80,16 @@
           style:--right-color={layer.propColors.right}
         >
           <div class="chip-colors">
-            <span class="color-dot" style:background={layer.propColors.left} style:--dot-color={layer.propColors.left}></span>
-            <span class="color-dot" style:background={layer.propColors.right} style:--dot-color={layer.propColors.right}></span>
+            <span
+              class="color-dot"
+              style:background={layer.propColors.left}
+              style:--dot-color={layer.propColors.left}
+            ></span>
+            <span
+              class="color-dot"
+              style:background={layer.propColors.right}
+              style:--dot-color={layer.propColors.right}
+            ></span>
           </div>
           <div class="chip-info">
             <span class="chip-name">{getLayerName(layer, index)}</span>
@@ -92,7 +103,7 @@
                 class="chip-action-btn"
                 onclick={() => onCopyLayer(index)}
                 aria-label="Copy layer {index + 1}"
-                title="Copy"
+                title={t("browse_copy")}
               >
                 <i class="fas fa-copy" aria-hidden="true"></i>
               </button>
@@ -120,7 +131,7 @@
       {#if clipboardHasData && canAddLayer && onPasteLayer}
         <button class="paste-btn" onclick={onPasteLayer}>
           <i class="fas fa-paste" aria-hidden="true"></i>
-          <span>Paste</span>
+          <span>{t("compose_ui_paste")}</span>
         </button>
       {/if}
     </div>
@@ -160,8 +171,16 @@
     font-size: clamp(0.65rem, 2cqi, 0.75rem);
     font-weight: 500;
     text-transform: none;
-    background: color-mix(in srgb, var(--theme-accent, #8b5cf6) 20%, transparent);
-    color: color-mix(in srgb, var(--theme-accent-light, #a78bfa) 95%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 20%,
+      transparent
+    );
+    color: color-mix(
+      in srgb,
+      var(--theme-accent-light, #a78bfa) 95%,
+      transparent
+    );
   }
 
   .count {
@@ -219,7 +238,8 @@
     height: clamp(12px, 3cqi, 14px);
     border-radius: 50%;
     border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
-    box-shadow: 0 0 6px color-mix(in srgb, var(--dot-color, currentColor) 25%, transparent);
+    box-shadow: 0 0 6px
+      color-mix(in srgb, var(--dot-color, currentColor) 25%, transparent);
   }
 
   .chip-info {
@@ -260,7 +280,8 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.3));
     border-radius: var(--action-radius, 10px);
     cursor: pointer;
-    transition: background var(--duration-fast, 150ms) ease,
+    transition:
+      background var(--duration-fast, 150ms) ease,
       border-color var(--duration-fast, 150ms) ease,
       color var(--duration-fast, 150ms) ease;
   }
@@ -272,8 +293,16 @@
   }
 
   .chip-action-btn.danger:hover {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 8%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-error, #ef4444) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 8%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 15%,
+      transparent
+    );
     color: color-mix(in srgb, var(--semantic-error, #ef4444) 70%, transparent);
   }
 
@@ -292,20 +321,43 @@
     gap: var(--chip-gap, clamp(6px, 1.5cqi, 8px));
     min-height: 44px;
     padding: 10px 14px;
-    background: color-mix(in srgb, var(--semantic-success, #10b981) 4%, transparent);
-    border: 1px solid color-mix(in srgb, var(--semantic-success, #10b981) 10%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #10b981) 4%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-success, #10b981) 10%, transparent);
     border-radius: var(--action-radius, 10px);
-    color: color-mix(in srgb, var(--semantic-success, #10b981) 55%, transparent);
+    color: color-mix(
+      in srgb,
+      var(--semantic-success, #10b981) 55%,
+      transparent
+    );
     font-size: clamp(0.8rem, 2.8cqi, 0.95rem);
     font-weight: 500;
     cursor: pointer;
-    transition: background 150ms ease, border-color 150ms ease;
+    transition:
+      background 150ms ease,
+      border-color 150ms ease;
   }
 
   .add-sequence-btn:hover {
-    background: color-mix(in srgb, var(--semantic-success, #10b981) 8%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-success, #10b981) 20%, transparent);
-    color: color-mix(in srgb, var(--semantic-success, #10b981) 75%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #10b981) 8%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-success, #10b981) 20%,
+      transparent
+    );
+    color: color-mix(
+      in srgb,
+      var(--semantic-success, #10b981) 75%,
+      transparent
+    );
   }
 
   .paste-btn {
@@ -315,20 +367,43 @@
     gap: var(--chip-gap, clamp(6px, 1.5cqi, 8px));
     min-height: 44px;
     padding: 10px 14px;
-    background: color-mix(in srgb, var(--theme-accent, #8b5cf6) 4%, transparent);
-    border: 1px solid color-mix(in srgb, var(--theme-accent, #8b5cf6) 10%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 4%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--theme-accent, #8b5cf6) 10%, transparent);
     border-radius: var(--action-radius, 10px);
-    color: color-mix(in srgb, var(--theme-accent-light, #a78bfa) 55%, transparent);
+    color: color-mix(
+      in srgb,
+      var(--theme-accent-light, #a78bfa) 55%,
+      transparent
+    );
     font-size: clamp(0.8rem, 2.8cqi, 0.95rem);
     font-weight: 500;
     cursor: pointer;
-    transition: background 150ms ease, border-color 150ms ease;
+    transition:
+      background 150ms ease,
+      border-color 150ms ease;
   }
 
   .paste-btn:hover {
-    background: color-mix(in srgb, var(--theme-accent, #8b5cf6) 8%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent, #8b5cf6) 20%, transparent);
-    color: color-mix(in srgb, var(--theme-accent-light, #a78bfa) 75%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 8%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 20%,
+      transparent
+    );
+    color: color-mix(
+      in srgb,
+      var(--theme-accent-light, #a78bfa) 75%,
+      transparent
+    );
   }
 
   @media (prefers-reduced-motion: reduce) {

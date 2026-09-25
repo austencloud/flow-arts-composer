@@ -5,6 +5,7 @@
 -->
 <script lang="ts">
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import GridMergeAnimation from "./grid-merge/GridMergeAnimation.svelte";
   import GridScrollView from "./grid-concept/GridScrollView.svelte";
@@ -84,7 +85,7 @@
     onkeydown={handleKeydown}
     tabindex="0"
     role="application"
-    aria-label="Grid lesson, use arrow keys to navigate"
+    aria-label={t("learn_ui_grid_keyboard_hint")}
   >
     <div class="sr-only" aria-live="polite" aria-atomic="true">
       {experienceState.announcement}
@@ -111,7 +112,9 @@
       {#snippet controls()}
         <div class="control-focus-anchor">
           <LessonStageControls
-            label={isFinalAction ? "Continue to Hand Placements" : "Next"}
+            label={isFinalAction
+              ? t("learn_ui_continue_placements")
+              : t("learn_ui_next")}
             currentStep={experienceState.step + 1}
             totalSteps={experienceState.totalSteps}
             onAction={handleNext}

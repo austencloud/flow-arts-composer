@@ -8,6 +8,7 @@ Shows:
 - Select All button (optional)
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { fly } from "svelte/transition";
   import { backOut } from "svelte/easing";
 
@@ -38,14 +39,14 @@ Shows:
   class="selection-toolbar"
   transition:fly={{ y: 100, duration: 300, easing: backOut }}
   role="toolbar"
-  aria-label="Selection toolbar"
+  aria-label={t("create_ui_selection_toolbar")}
 >
   <!-- Cancel button -->
   <button
     class="toolbar-button cancel-button"
     onclick={onCancel}
     type="button"
-    aria-label="Cancel selection"
+    aria-label={t("create_ui_cancel_selection")}
   >
     <i class="fas fa-times" aria-hidden="true"></i>
   </button>

@@ -13,6 +13,7 @@
   Domain: Export Panel - Settings - Performance Video Format
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getExportPanelState } from "../../state/export-panel-state.svelte";
 
   const hubState = getExportPanelState();
@@ -110,7 +111,7 @@
       >
         <i class="fas fa-cloud-upload-alt" aria-hidden="true"></i>
         <div>
-          <span class="mode-title">Upload Video</span>
+          <span class="mode-title">{t("export_ui_upload_video_title")}</span>
           <span class="mode-description">Use a pre-recorded video file</span>
         </div>
       </button>

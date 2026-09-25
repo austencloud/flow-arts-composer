@@ -13,6 +13,7 @@
   Sections: Effects → Props → Motion → Display → Export.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { fade } from "svelte/transition";
   import type { ExportOptionsStateManager } from "../state/export-options-state.svelte";
   import type { VideoExportProgress } from "$lib/shared/compose/domain/video-export-types";
@@ -257,14 +258,20 @@
     onSettingChange,
     onActiveSectionChange,
     closeRequest = 0,
-    regionLabel = "Animation controls",
+    regionLabel,
     fillPages = false,
   }: Props = $props();
+
+  const effectiveRegionLabel = $derived(
+    regionLabel ?? t("viewer_ui_animation_controls")
+  );
 
   const viewerAnimatorInspector = getOptionalViewerAnimatorInspectorContext();
 
   const exportButtonLabel = $derived(
-    renderMode === "3d" ? "Record Scene" : "Download animation"
+    renderMode === "3d"
+      ? t("viewer_ui_record_scene")
+      : t("viewer_ui_download_animation")
   );
 
   // Export is host-optional: both the state manager and the handler must be
@@ -527,7 +534,7 @@
       match ??
       EFFORTS[0] ?? {
         id: "linear",
-        label: "Linear",
+        label: t("viewer_ui_linear"),
         subtitle: "",
         color: "#94a3b8",
         params: [],
@@ -566,7 +573,7 @@
     void vmVersion;
     return showTempoControls
       ? computePlaybackSummary(bpm, vm.getPlaybackMode())
-      : "Path shape";
+      : t("viewer_ui_path_shape");
   });
 
   const displaySummary = $derived.by(() => {
@@ -689,7 +696,7 @@
               props: {
                 propType: selectedPropType,
                 fanAppearance,
-                label: "Props",
+                label: t("viewer_ui_props"),
                 summary: propsSummary,
                 accentColor: RAIL_CATEGORY_ACCENTS.props,
               },
@@ -697,12 +704,12 @@
           : {}),
         effects: {
           icon: effectsIcon,
-          label: "Effects",
+          label: t("viewer_ui_effects"),
           summary: effectsSummary,
           accentColor: effectsAccent,
         },
         effort: {
-          label: "Effort",
+          label: t("viewer_ui_effort"),
           summary: effortSummary,
           accentColor: effortAccent,
         },
@@ -713,7 +720,7 @@
           ? {
               playback: {
                 icon: "fa-route",
-                label: "Playback",
+                label: t("viewer_ui_playback"),
                 summary: playbackSummary,
                 accentColor: RAIL_CATEGORY_ACCENTS.playback,
               },
@@ -721,7 +728,7 @@
           : {}),
         display: {
           icon: "fa-eye",
-          label: "Display",
+          label: t("viewer_ui_display"),
           summary: displaySummary,
           accentColor: RAIL_CATEGORY_ACCENTS.display,
         },
@@ -732,7 +739,7 @@
         // carries the accent the rail glows with.
         motion: {
           icon: "fa-gauge-high",
-          label: "Motion",
+          label: t("viewer_ui_motion"),
           summary: effortSummary,
           accentColor: effortAccent,
         },
@@ -740,7 +747,7 @@
           ? {
               export: {
                 icon: "fa-sliders",
-                label: "Export",
+                label: t("viewer_ui_export"),
                 summary: exportSummary,
               },
             }
@@ -951,10 +958,12 @@
 {#snippet effortBody(labelled = false)}
   <div class="section-pad">
     {#if labelled}
-      <span class="rt-section-label">Effort</span>
+      <span class="rt-section-label">{t("viewer_ui_effort")}</span>
     {/if}
     {#if layout === "sidebar"}
-      <p class="section-hint">How each beat speeds up and slows down.</p>
+      <p class="section-hint">
+        {t("viewer_ui_how_each_beat_speeds_up_and_slows_down")}
+      </p>
     {/if}
     <EffortPanel
       columns={layout === "sidebar" ? 2 : 4}
@@ -983,7 +992,7 @@
     <div class="section-pad playback-rows">
       {#if showTempoControls}
         <div class="rt-section">
-          <span class="rt-section-label">Tempo</span>
+          <span class="rt-section-label">{t("viewer_ui_tempo")}</span>
           <TempoControl
             {bpm}
             onBpmChange={onBpmChange ?? (() => {})}
@@ -996,7 +1005,7 @@
       {/if}
       {#if onPlaybackModeChange}
         <div class="rt-section">
-          <span class="rt-section-label">Mode</span>
+          <span class="rt-section-label">{t("viewer_ui_mode")}</span>
           <PlaybackModeToggle
             {playbackMode}
             {isPlaying}
@@ -1029,7 +1038,11 @@
        back when this block sat inside the merged Motion page, where a heading
        named for something else needed correcting. -->
   <div class="section-pad display-rows">
-    <div class="rt-section" role="region" aria-label="Visibility">
+    <div
+      class="rt-section"
+      role="region"
+      aria-label={t("tab_settings_visibility")}
+    >
       <DisplayPanel
         {showMotionVisibility}
         {showSequenceMarks}
@@ -1143,7 +1156,7 @@
 
       {#if renderMode === "3d"}
         <div class="field">
-          <span class="field-label">Quality</span>
+          <span class="field-label">{t("viewer_ui_quality")}</span>
           <div class="rt-chip-row">
             <button
               type="button"
@@ -1186,14 +1199,14 @@
       </div>
 
       <div class="field">
-        <span class="field-label">Loops</span>
+        <span class="field-label">{t("viewer_ui_loops")}</span>
         <div class="rt-stepper">
           <button
             type="button"
             class="rt-step-btn"
             onclick={() => setLoopCount(exportOptions.videoLoopCount - 1)}
             disabled={exportOptions.videoLoopCount <= 1}
-            aria-label="Decrease loop count"
+            aria-label={t("viewer_ui_decrease_loop_count")}
             ><i class="fas fa-minus" aria-hidden="true"></i></button
           >
           <span class="rt-val">{exportOptions.videoLoopCount}×</span>
@@ -1202,7 +1215,7 @@
             class="rt-step-btn"
             onclick={() => setLoopCount(exportOptions.videoLoopCount + 1)}
             disabled={exportOptions.videoLoopCount >= 10}
-            aria-label="Increase loop count"
+            aria-label={t("viewer_ui_increase_loop_count")}
             ><i class="fas fa-plus" aria-hidden="true"></i></button
           >
         </div>
@@ -1255,7 +1268,7 @@
   <div
     class="external-section-body dock-dense"
     role="region"
-    aria-label={activePillLabel || regionLabel}
+    aria-label={activePillLabel || effectiveRegionLabel}
   >
     {@render pillBody()}
   </div>
@@ -1268,7 +1281,7 @@
     class="mobile-export"
     transition:fade={{ duration: reduceMotion ? 0 : 200 }}
     role="region"
-    aria-label={regionLabel}
+    aria-label={effectiveRegionLabel}
   >
     {#if isExporting && showInlineExportProgress}
       <div class="mobile-progress" role="status" aria-live="polite">
@@ -1290,7 +1303,7 @@
             : 0}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-label="Export progress"
+          aria-label={t("viewer_ui_export_progress")}
         >
           <div
             class="progress-fill"
@@ -1302,7 +1315,7 @@
             type="button"
             class="cancel-btn"
             onclick={onCancel}
-            aria-label="Cancel export"
+            aria-label={t("export_cancel_export")}
           >
             <i class="fas fa-times" aria-hidden="true"></i>
             Cancel
@@ -1340,8 +1353,8 @@
     fluidBody={resolvedPill === "props"}
     pageOnly={presentation === "content"}
     regionLabel={presentation === "content"
-      ? activePillLabel || regionLabel
-      : "Animation export settings"}
+      ? activePillLabel || effectiveRegionLabel
+      : t("viewer_ui_animation_export_settings")}
     onNavMount={(element) => {
       pillNavEl = element;
     }}

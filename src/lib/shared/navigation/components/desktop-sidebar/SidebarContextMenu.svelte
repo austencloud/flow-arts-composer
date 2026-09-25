@@ -9,30 +9,50 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { getAllTabsForModule, hideTab, showTab } from "../../get-sidebar-tab-toggler";
-import type { TabVisibilityInfo } from "../../services/types";
+  import {
+    getAllTabsForModule,
+    hideTab,
+    showTab,
+  } from "../../get-sidebar-tab-toggler";
+  import type { TabVisibilityInfo } from "../../services/types";
   import type { ModuleId } from "../../domain/types";
   import { t } from "$lib/shared/i18n/i18n.svelte";
   import { getReactiveLocale } from "$lib/shared/i18n/locale-state.svelte";
-  import { featureFlagService, featureFlagState } from "../../../auth/services/post-hog-feature-flag-service.svelte";
+  import {
+    featureFlagService,
+    featureFlagState,
+  } from "../../../auth/services/post-hog-feature-flag-service.svelte";
   import { MODULE_DEFINITIONS } from "../../config/module-definitions";
   import { moduleIdToFeatureId } from "../../../auth/domain/models/feature-flag";
   import { isModuleEnabledInEnvironment } from "../../../environment/environment-features";
   import { getModuleDefinitions } from "../../../navigation-coordinator/navigation-coordinator.svelte";
   import { toast } from "../../../toast/state/toast-state.svelte";
   import ContextMenu from "$lib/shared/components/context-menu/ContextMenu.svelte";
-  import type { ContextMenuEntry, ContextMenuState as SharedMenuState } from "$lib/shared/components/context-menu/context-menu-types";
+  import type {
+    ContextMenuEntry,
+    ContextMenuState as SharedMenuState,
+  } from "$lib/shared/components/context-menu/context-menu-types";
 
   export type ContextMenuState =
     | { mode: "closed" }
-    | { mode: "tab"; moduleId: ModuleId; tabId: string; tabLabel: string; x: number; y: number }
-    | { mode: "module"; moduleId: ModuleId; moduleLabel: string; x: number; y: number }
+    | {
+        mode: "tab";
+        moduleId: ModuleId;
+        tabId: string;
+        tabLabel: string;
+        x: number;
+        y: number;
+      }
+    | {
+        mode: "module";
+        moduleId: ModuleId;
+        moduleLabel: string;
+        x: number;
+        y: number;
+      }
     | { mode: "modules"; x: number; y: number };
 
-  let {
-    menuState,
-    onClose,
-  } = $props<{
+  let { menuState, onClose } = $props<{
     menuState: ContextMenuState;
     onClose: () => void;
   }>();
@@ -60,12 +80,15 @@ import type { TabVisibilityInfo } from "../../services/types";
 
     const visibleModuleIds = new Set(getModuleDefinitions().map((m) => m.id));
 
-    return MODULE_DEFINITIONS
-      .filter((m) => m.isMain && !CORE_MODULES.includes(m.id) && isModuleEnabledInEnvironment(m.id))
-      .map((m) => ({
-        module: m,
-        isEnabled: visibleModuleIds.has(m.id),
-      }));
+    return MODULE_DEFINITIONS.filter(
+      (m) =>
+        m.isMain &&
+        !CORE_MODULES.includes(m.id) &&
+        isModuleEnabledInEnvironment(m.id)
+    ).map((m) => ({
+      module: m,
+      isEnabled: visibleModuleIds.has(m.id),
+    }));
   });
 
   // Load tab infos when opening in module mode
@@ -131,7 +154,7 @@ import type { TabVisibilityInfo } from "../../services/types";
 
     if (menuState.mode === "modules") {
       const items: ContextMenuEntry[] = [
-        { type: "header", label: "Toggle Modules" },
+        { type: "header", label: t("nav_toggle_modules") },
       ];
 
       for (const { module, isEnabled } of toggleableModules) {
@@ -153,7 +176,9 @@ import type { TabVisibilityInfo } from "../../services/types";
 
             try {
               if (isEnabled) {
-                await featureFlagService.updateGlobalFeatureFlag(featureId, { enabled: false });
+                await featureFlagService.updateGlobalFeatureFlag(featureId, {
+                  enabled: false,
+                });
 
                 const overrides = featureFlagService.userOverrides;
                 const currentOrder = overrides.moduleOrder || [];
@@ -164,13 +189,19 @@ import type { TabVisibilityInfo } from "../../services/types";
                   await featureFlagService.setUserFeatureOverrides(userId, {
                     ...overrides,
                     moduleOrder: currentOrder.filter((id) => id !== module.id),
-                    disabledFeatures: currentDisabled.includes(featureId) ? currentDisabled : [...currentDisabled, featureId],
-                    enabledFeatures: currentEnabled.filter((f) => f !== featureId),
+                    disabledFeatures: currentDisabled.includes(featureId)
+                      ? currentDisabled
+                      : [...currentDisabled, featureId],
+                    enabledFeatures: currentEnabled.filter(
+                      (f) => f !== featureId
+                    ),
                   });
                 }
                 toast.success(`${label} disabled`, 2000);
               } else {
-                await featureFlagService.updateGlobalFeatureFlag(featureId, { enabled: true });
+                await featureFlagService.updateGlobalFeatureFlag(featureId, {
+                  enabled: true,
+                });
 
                 const overrides = featureFlagService.userOverrides;
                 const currentOrder = overrides.moduleOrder || [];
@@ -179,8 +210,12 @@ import type { TabVisibilityInfo } from "../../services/types";
                 if (userId) {
                   await featureFlagService.setUserFeatureOverrides(userId, {
                     ...overrides,
-                    moduleOrder: currentOrder.includes(module.id) ? currentOrder : [...currentOrder, module.id],
-                    disabledFeatures: currentDisabled.filter((f) => f !== featureId),
+                    moduleOrder: currentOrder.includes(module.id)
+                      ? currentOrder
+                      : [...currentOrder, module.id],
+                    disabledFeatures: currentDisabled.filter(
+                      (f) => f !== featureId
+                    ),
                   });
                 }
                 toast.success(`${label} enabled`, 2000);
@@ -206,8 +241,4 @@ import type { TabVisibilityInfo } from "../../services/types";
   });
 </script>
 
-<ContextMenu
-  menuState={sharedMenuState}
-  items={menuItems}
-  {onClose}
-/>
+<ContextMenu menuState={sharedMenuState} items={menuItems} {onClose} />

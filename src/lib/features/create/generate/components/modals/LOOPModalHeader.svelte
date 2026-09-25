@@ -3,6 +3,7 @@ LOOPModalHeader.svelte - Modal header for LOOP Selection
 Simple header with title and close button
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
 
@@ -30,7 +31,7 @@ Simple header with title and close button
   <button
     class="close-button"
     onclick={handleClose}
-    aria-label="Close LOOP selection"
+    aria-label={t("create_ui_close_loop_selection")}
   >
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <line x1="18" y1="6" x2="6" y2="18"></line>

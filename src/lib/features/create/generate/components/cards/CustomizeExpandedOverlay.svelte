@@ -14,6 +14,7 @@ clipped 415px of that content instead of scrolling.
 Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
   import { onMount, untrack } from "svelte";
@@ -327,7 +328,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
 </script>
 
 <GenerationSettingsOverlay
-  title="Customize"
+  title={t("create_ui_customize")}
   closeLabel="Close customize panel"
   onClose={handleClose}
   {entrance}
@@ -341,7 +342,9 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
           hapticService?.trigger("selection");
           resetConfirmOpen = true;
         }}
-        aria-label="Reset all generation settings to their defaults"
+        aria-label={t(
+          "create_ui_reset_all_generation_settings_to_their_defaults"
+        )}
       >
         Reset all
       </button>
@@ -400,7 +403,9 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
                  visible at the same time. -->
             <div class="ori-block">
               <div class="ori-row">
-                <span class="ori-color-label ori-blue">Left</span>
+                <span class="ori-color-label ori-blue"
+                  >{t("create_ui_left")}</span
+                >
                 <PropOrientationControl
                   hand="left"
                   orientation={localLeftOri}
@@ -409,7 +414,9 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
                 />
               </div>
               <div class="ori-row">
-                <span class="ori-color-label ori-red">Right</span>
+                <span class="ori-color-label ori-red"
+                  >{t("create_ui_right")}</span
+                >
                 <PropOrientationControl
                   hand="right"
                   orientation={localRightOri}
@@ -437,7 +444,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
 
 <ConfirmDialog
   bind:isOpen={resetConfirmOpen}
-  title="Reset all settings?"
+  title={t("create_ui_reset_all_settings")}
   message="Style, start placements, level, length and LOOP settings all go back to their defaults. This can't be undone."
   confirmText="Reset"
   cancelText="Keep"

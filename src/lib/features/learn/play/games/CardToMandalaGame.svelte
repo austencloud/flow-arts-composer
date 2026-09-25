@@ -7,6 +7,7 @@
   No misconception-hint pass: gap detection is letter-based, no signal here.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
   import { onDestroy, onMount } from "svelte";
@@ -150,7 +151,7 @@
   </QuizContainer>
 {:else if questionData && currentSequence}
   <QuizContainer>
-    <QuizPrompt text="Read the card. Pick the mandala it traces." />
+    <QuizPrompt text={t("learn_ui_game_card_to_mandala_tagline")} />
 
     <div class="quiz-content">
       <div class="card-column">
@@ -169,8 +170,12 @@
         {#if showFeedback}
           <QuizFeedbackBanner
             isCorrect={isCorrectAnswer}
-            correctMessage={`Correct! "${correctWord}" traces that bloom`}
-            incorrectMessage={`"${correctWord}" traces the highlighted mandala`}
+            correctMessage={t("learn_ui_correct_mandala_word", {
+              word: correctWord,
+            })}
+            incorrectMessage={t("learn_ui_answer_mandala_word", {
+              word: correctWord,
+            })}
             streakCount={session.streak}
           />
         {/if}

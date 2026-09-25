@@ -7,6 +7,7 @@
   - Unlink providers (if more than one is linked)
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import {
     linkFacebookAccount,
@@ -104,20 +105,22 @@
   }
 
   function getLinkedProviderDetail(providerId: ProviderId): string {
-    if (providerId === "instagram.com") return "Connected";
+    if (providerId === "instagram.com") return t("nav_ui_connected");
     if (providerId === "password") {
       const email = getProviderEmail(providerId) ?? authState.user?.email;
       if (!email)
-        return isEmailVerified ? "Verified email" : "Email not verified";
+        return isEmailVerified
+          ? t("nav_ui_verified_email")
+          : t("nav_ui_email_not_verified");
       return isEmailVerified ? email : `${email} · Not verified`;
     }
-    return getProviderEmail(providerId) ?? "Connected";
+    return getProviderEmail(providerId) ?? t("nav_ui_connected");
   }
 
   function getAvailableProviderDetail(providerId: ProviderId): string {
     return providerId === "password"
-      ? "Add email and password sign-in"
-      : "Not connected";
+      ? t("nav_ui_add_email_and_password_sign_in")
+      : t("nav_ui_not_connected");
   }
 
   // Link a new provider
@@ -146,12 +149,13 @@
       linkingProvider = null;
     } catch (error: unknown) {
       console.error(`Failed to link ${providerId}:`, error);
-      const message = error instanceof Error ? error.message : "Unknown error";
+      const message =
+        error instanceof Error ? error.message : t("nav_ui_unknown_error");
 
       if (providerId === "instagram.com") {
         errorMessage =
           getInstagramAuthErrorMessage(error) ??
-          "Instagram connection was cancelled.";
+          t("nav_ui_instagram_connection_was_cancelled");
         hapticService?.trigger("error");
         linkingProvider = null;
         return;
@@ -159,13 +163,19 @@
 
       // Handle specific Firebase errors
       if (message.includes("already linked")) {
-        errorMessage = `This ${PROVIDERS[providerId].name} account is already linked.`;
+        errorMessage = t("nav_provider_linked", {
+          provider: PROVIDERS[providerId].name,
+        });
       } else if (message.includes("credential-already-in-use")) {
-        errorMessage = `This ${PROVIDERS[providerId].name} account is already linked to another user.`;
+        errorMessage = t("nav_provider_other_user", {
+          provider: PROVIDERS[providerId].name,
+        });
       } else if (message.includes("No user is currently signed in")) {
-        errorMessage = "You must be signed in to link accounts.";
+        errorMessage = t("nav_ui_you_must_be_signed_in_to_link_accounts");
       } else {
-        errorMessage = `Failed to link ${PROVIDERS[providerId].name}. Please try again.`;
+        errorMessage = t("nav_provider_link_failed", {
+          provider: PROVIDERS[providerId].name,
+        });
       }
 
       hapticService?.trigger("error");
@@ -201,14 +211,17 @@
       hapticService?.trigger("success");
     } catch (error: unknown) {
       console.error(`Failed to unlink ${providerId}:`, error);
-      const message = error instanceof Error ? error.message : "Unknown error";
+      const message =
+        error instanceof Error ? error.message : t("nav_ui_unknown_error");
 
       if (providerId === "instagram.com") {
         errorMessage = getInstagramAuthErrorMessage(error);
       } else if (message.includes("only authentication method")) {
-        errorMessage = "Cannot disconnect your only sign-in method.";
+        errorMessage = t("nav_ui_cannot_disconnect_your_only_sign_in_method");
       } else {
-        errorMessage = `Failed to disconnect ${providerName}. Please try again.`;
+        errorMessage = t("nav_provider_unlink_failed", {
+          provider: providerName,
+        });
       }
 
       hapticService?.trigger("error");
@@ -251,7 +264,7 @@
         type="button"
         class="dismiss-btn"
         onclick={dismissError}
-        aria-label="Dismiss account connection error"
+        aria-label={t("nav_ui_dismiss_account_connection_error")}
       >
         <i class="fas fa-times" aria-hidden="true"></i>
       </button>
@@ -267,13 +280,17 @@
         name={config.name}
         detail={getLinkedProviderDetail(providerId)}
         accent={config.color}
-        status={!managing ? "Connected" : canUnlink ? undefined : "Required"}
+        status={!managing
+          ? t("nav_ui_connected")
+          : canUnlink
+            ? undefined
+            : t("nav_ui_required")}
         statusTone="connected"
-        actionLabel={managing && canUnlink ? "Disconnect" : undefined}
+        actionLabel={managing && canUnlink ? t("nav_ui_disconnect") : undefined}
         actionAriaLabel={managing && canUnlink
-          ? `Disconnect ${config.name}`
+          ? t("nav_provider_disconnect", { provider: config.name })
           : undefined}
-        busyLabel="Disconnecting..."
+        busyLabel={t("nav_ui_disconnecting")}
         busy={isUnlinking}
         disabled={unlinkingProvider !== null && !isUnlinking}
         onAction={managing && canUnlink
@@ -290,11 +307,13 @@
         name={config.name}
         detail={getAvailableProviderDetail(providerId)}
         accent={config.color}
-        status={managing ? undefined : "Available"}
+        status={managing ? undefined : t("train_filter_available")}
         statusTone="neutral"
-        actionLabel={managing ? "Connect" : undefined}
-        actionAriaLabel={managing ? `Connect ${config.name}` : undefined}
-        busyLabel="Connecting..."
+        actionLabel={managing ? t("module_connect") : undefined}
+        actionAriaLabel={managing
+          ? t("nav_provider_connect", { provider: config.name })
+          : undefined}
+        busyLabel={t("connect_connecting")}
         busy={isLinking}
         disabled={linkingProvider !== null && !isLinking}
         onAction={managing
@@ -309,7 +328,7 @@
 
   {#if managing && !canUnlink && linkedProviderIds.length === 1}
     <p class="hint">
-      Connect another sign-in method before disconnecting this one.
+      {t("nav_ui_connect_another_sign_in_method_before_disconnecting_this_one")}
     </p>
   {/if}
 </div>
@@ -325,10 +344,10 @@
   {@const config = PROVIDERS[providerToUnlink]}
   <ConfirmDialog
     bind:isOpen={showUnlinkConfirm}
-    title="Disconnect {config.name}?"
-    message="You won't be able to sign in with {config.name} after disconnecting. Make sure you have another sign-in method available."
-    confirmText="Disconnect"
-    cancelText="Keep connected"
+    title={t("nav_provider_disconnect_title", { provider: config.name })}
+    message={t("nav_provider_disconnect_message", { provider: config.name })}
+    confirmText={t("nav_ui_disconnect")}
+    cancelText={t("nav_ui_keep_connected")}
     variant="warning"
     confirmDelay={5}
     onConfirm={confirmUnlinkProvider}

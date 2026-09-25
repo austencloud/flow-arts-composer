@@ -5,6 +5,7 @@
   Individual beat editing (turns, rotation) is handled by StepEditorPanel.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getExtensionFlowCoordinator } from "$lib/features/create/shared/get-extension-flow-coordinator";
   import { copyToClipboard } from "$lib/features/create/shared/services/sequence-json-exporter";
   import * as sequenceTransferHandlerModule from "$lib/features/create/shared/services/sequence-transfer-handler";
@@ -521,7 +522,8 @@
       sequenceState: constructTabState.sequenceState,
       syncGridModeFromSequence: constructTabState.syncGridModeFromSequence,
       setSelectedStartPlacement: constructTabState.setSelectedStartPlacement,
-      setShowStartPlacementPicker: constructTabState.setShowStartPlacementPicker,
+      setShowStartPlacementPicker:
+        constructTabState.setShowStartPlacementPicker,
       syncPickerStateWithSequence:
         constructTabState.syncPickerStateWithSequence,
     };
@@ -706,7 +708,7 @@
               aria-label={backLabel}
             >
               <i class="fas fa-chevron-left" aria-hidden="true"></i>
-              <span class="button-label">Back</span>
+              <span class="button-label">{t("learn_back")}</span>
             </button>
             <div class="sub-title">
               <h2 class="panel-title">{subViewTitle}</h2>
@@ -719,10 +721,10 @@
                 type="button"
                 class="icon-btn close"
                 onclick={handleClose}
-                aria-label="Close"
+                aria-label={t("action_close")}
               >
                 <i class="fas fa-times" aria-hidden="true"></i>
-                <span class="button-label">Close</span>
+                <span class="button-label">{t("action_close")}</span>
               </button>
             </div>
           </div>
@@ -765,12 +767,12 @@
                 type="button"
                 class="icon-btn back"
                 onclick={handleClose}
-                aria-label="Back to workspace"
+                aria-label={t("create_ui_back_to_workspace")}
               >
                 <i class="fas fa-chevron-left" aria-hidden="true"></i>
-                <span class="button-label">Back</span>
+                <span class="button-label">{t("learn_back")}</span>
               </button>
-              <h2 class="panel-title">Sequence Actions</h2>
+              <h2 class="panel-title">{t("create_ui_sequence_actions")}</h2>
             </div>
 
             {#if isMobileLayout}
@@ -787,11 +789,11 @@
                   type="button"
                   class="icon-btn copy"
                   onclick={handleCopySequenceJson}
-                  aria-label="Copy JSON for this sequence"
-                  title="Copy JSON for this sequence"
+                  aria-label={t("create_ui_copy_json_for_this_sequence")}
+                  title={t("create_ui_copy_json_for_this_sequence")}
                 >
                   <i class="fas fa-code" aria-hidden="true"></i>
-                  <span class="button-label">Copy JSON</span>
+                  <span class="button-label">{t("create_ui_copy_json")}</span>
                 </button>
               {/if}
               {#if !isMobileLayout}
@@ -800,20 +802,20 @@
                   class="icon-btn help"
                   class:active={helpMode === "selecting"}
                   onclick={enterHelpMode}
-                  aria-label="Help with transform actions"
+                  aria-label={t("create_ui_help_with_transform_actions")}
                 >
                   <i class="fas fa-circle-question" aria-hidden="true"></i>
-                  <span class="button-label">Help</span>
+                  <span class="button-label">{t("create_ui_help")}</span>
                 </button>
               {/if}
               <button
                 type="button"
                 class="icon-btn close"
                 onclick={handleClose}
-                aria-label="Close"
+                aria-label={t("action_close")}
               >
                 <i class="fas fa-times" aria-hidden="true"></i>
-                <span class="button-label">Close</span>
+                <span class="button-label">{t("action_close")}</span>
               </button>
             </div>
           </div>

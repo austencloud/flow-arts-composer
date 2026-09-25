@@ -10,8 +10,9 @@
   - Shows empty state when no clip at playhead
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
-import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/get-sequence-animation-orchestrator";
+  import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/get-sequence-animation-orchestrator";
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
   import { onMount, onDestroy, untrack } from "svelte";
   import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
@@ -131,7 +132,9 @@ import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/g
   const derivedStartPlacement = $derived.by(() => {
     if (!activeClip?.sequence || !startPlacementDeriver) return null;
     try {
-      return startPlacementDeriver.getOrDeriveStartPlacement(activeClip.sequence);
+      return startPlacementDeriver.getOrDeriveStartPlacement(
+        activeClip.sequence
+      );
     } catch (err) {
       console.warn("TimelinePreview: Failed to derive start position:", err);
       return null;
@@ -293,7 +296,7 @@ import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/g
 <div class="timeline-preview">
   <!-- Preview Header -->
   <div class="preview-header">
-    <span class="preview-label">Preview</span>
+    <span class="preview-label">{t("compose_ui_preview")}</span>
     <span class="time-display">{formatTime(playheadPosition)}</span>
     {#if activeClip}
       <span
@@ -310,7 +313,7 @@ import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/g
     {#if loading}
       <div class="loading-state">
         <ProgressRing percent={-1} size={32} strokeWidth={3} />
-        <span>Initializing...</span>
+        <span>{t("compose_ui_initializing")}</span>
       </div>
     {:else if error}
       <div class="error-state">
@@ -379,7 +382,7 @@ import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/g
         class="transport-btn"
         onclick={() => getPlayback().goToStart()}
         title="Go to start (Home)"
-        aria-label="Go to start"
+        aria-label={t("compose_ui_go_to_start")}
       >
         <i class="fas fa-backward-fast" aria-hidden="true"></i>
       </button>
@@ -412,7 +415,7 @@ import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/g
         class="transport-btn"
         onclick={() => getPlayback().goToEnd()}
         title="Go to end (End)"
-        aria-label="Go to end"
+        aria-label={t("compose_ui_go_to_end")}
       >
         <i class="fas fa-forward-fast" aria-hidden="true"></i>
       </button>
@@ -533,7 +536,11 @@ import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/g
     justify-content: center;
     width: 28px;
     height: 28px;
-    background: color-mix(in srgb, var(--semantic-success, #51cf66) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #51cf66) 20%,
+      transparent
+    );
     border-radius: 50%;
     backdrop-filter: blur(4px);
     color: var(--semantic-success, #51cf66);

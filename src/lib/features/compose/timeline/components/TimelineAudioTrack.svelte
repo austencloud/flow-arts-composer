@@ -261,8 +261,8 @@
         <button
           class="icon-btn danger"
           onclick={removeAudio}
-          title="Remove audio"
-          aria-label="Remove audio"
+          title={t("compose_ui_remove_audio")}
+          aria-label={t("compose_ui_remove_audio")}
         >
           <i class="fa-solid fa-trash" aria-hidden="true"></i>
         </button>

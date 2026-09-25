@@ -6,6 +6,7 @@
   Handles both standard and scroll modes. Extracted from ChoreoCard.svelte.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { fade, scale } from "svelte/transition";
   import { flip } from "svelte/animate";
   import { cubicOut } from "svelte/easing";
@@ -281,22 +282,22 @@
       <img
         class="qr-code-image qr-fill"
         src={qrDataUrl}
-        alt="Scan to get this sequence"
+        alt={t("viewer_ui_scan_to_get_this_sequence")}
         draggable="false"
       />
       <button
         type="button"
         class="qr-play-hit"
         onclick={onQrPlayClick}
-        aria-label="Play in 2D"
-        title="Play in 2D"
+        aria-label={t("viewer_ui_play_in_2d")}
+        title={t("viewer_ui_play_in_2d")}
       ></button>
     </div>
   {:else}
     <img
       class="qr-code-image"
       src={qrDataUrl}
-      alt="Scan to get this sequence"
+      alt={t("viewer_ui_scan_to_get_this_sequence")}
       draggable="false"
       style="width:{qrImageSize};height:{qrImageSize}"
     />

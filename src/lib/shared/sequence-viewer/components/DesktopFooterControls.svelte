@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   interface Props {
     practiceActive?: boolean;
     onSave: () => void;
@@ -67,7 +68,8 @@
         onclick={onCopyLink}
         aria-label={linkCopied ? "Link copied" : "Copy shareable link"}
       >
-        <i class="fas {linkCopied ? 'fa-check' : 'fa-link'}" aria-hidden="true"></i>
+        <i class="fas {linkCopied ? 'fa-check' : 'fa-link'}" aria-hidden="true"
+        ></i>
         <span>{linkCopied ? "Copied" : "Copy Link"}</span>
       </button>
     {/if}
@@ -78,10 +80,10 @@
         type="button"
         class="action-btn save"
         onclick={onSave}
-        aria-label="Save sequence"
+        aria-label={t("viewer_ui_save_sequence")}
       >
         <i class="fas fa-floppy-disk" aria-hidden="true"></i>
-        <span>Save</span>
+        <span>{t("browse_save")}</span>
       </button>
     {/if}
 
@@ -89,17 +91,17 @@
       type="button"
       class="action-btn edit"
       onclick={onEdit}
-      aria-label="Remix"
+      aria-label={t("viewer_ui_remix")}
     >
       <i class="fas fa-pen-to-square" aria-hidden="true"></i>
-      <span>Remix</span>
+      <span>{t("viewer_ui_remix")}</span>
     </button>
     {#if onVideoUpload}
       <button
         type="button"
         class="action-btn video"
         onclick={onVideoUpload}
-        aria-label="Upload video"
+        aria-label={t("viewer_ui_upload_video")}
       >
         <i class="fas fa-video" aria-hidden="true"></i>
         <span>Video</span>
@@ -114,11 +116,15 @@
         type="button"
         class="action-btn"
         class:practice-active={practiceActive}
-        onclick={() => practiceActive ? onPracticeStop?.() : onPracticeStart?.()}
+        onclick={() =>
+          practiceActive ? onPracticeStop?.() : onPracticeStart?.()}
         aria-label={practiceActive ? "Stop practice" : "Practice"}
         aria-pressed={practiceActive}
       >
-        <i class="fas {practiceActive ? 'fa-stop' : 'fa-signal'}" aria-hidden="true"></i>
+        <i
+          class="fas {practiceActive ? 'fa-stop' : 'fa-signal'}"
+          aria-hidden="true"
+        ></i>
         <span>{practiceActive ? "Stop" : "Practice"}</span>
       </button>
     {/if}
@@ -130,7 +136,10 @@
         onclick={isPublished ? onUnpublish : onPublish}
         aria-label={isPublished ? "Make Private" : "Make Public"}
       >
-        <i class="fas {isPublished ? 'fa-eye-slash' : 'fa-eye'}" aria-hidden="true"></i>
+        <i
+          class="fas {isPublished ? 'fa-eye-slash' : 'fa-eye'}"
+          aria-hidden="true"
+        ></i>
         <span>{isPublished ? "Make Private" : "Make Public"}</span>
       </button>
       {#if onDeleteRequest}
@@ -138,10 +147,10 @@
           type="button"
           class="action-btn delete"
           onclick={onDeleteRequest}
-          aria-label="Delete sequence"
+          aria-label={t("viewer_ui_delete_sequence")}
         >
           <i class="fas fa-trash" aria-hidden="true"></i>
-          <span>Delete</span>
+          <span>{t("action_delete")}</span>
         </button>
       {/if}
     {/if}
@@ -210,25 +219,57 @@
   }
 
   .action-btn.save {
-    background: color-mix(in srgb, var(--semantic-success, #22c55e) 10%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-success, #22c55e) 25%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 10%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 25%,
+      transparent
+    );
     color: var(--semantic-success, #22c55e);
   }
 
   .action-btn.save:hover {
-    background: color-mix(in srgb, var(--semantic-success, #22c55e) 20%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-success, #22c55e) 40%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 20%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 40%,
+      transparent
+    );
   }
 
   .action-btn.edit {
-    background: color-mix(in srgb, var(--semantic-warning, #f59e0b) 10%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-warning, #f59e0b) 25%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-warning, #f59e0b) 10%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-warning, #f59e0b) 25%,
+      transparent
+    );
     color: var(--semantic-warning, #f59e0b);
   }
 
   .action-btn.edit:hover {
-    background: color-mix(in srgb, var(--semantic-warning, #f59e0b) 20%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-warning, #f59e0b) 40%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-warning, #f59e0b) 20%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-warning, #f59e0b) 40%,
+      transparent
+    );
   }
 
   .action-btn.delete {
@@ -253,14 +294,27 @@
 
   .action-btn.copied {
     color: var(--semantic-success, #22c55e);
-    border-color: color-mix(in srgb, var(--semantic-success, #22c55e) 25%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 25%,
+      transparent
+    );
   }
 
   .action-btn.practice-active {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 15%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-error, #ef4444) 40%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 15%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 40%,
+      transparent
+    );
     color: var(--semantic-error, #f87171);
-    box-shadow: 0 0 12px color-mix(in srgb, var(--semantic-error, #ef4444) 20%, transparent);
+    box-shadow: 0 0 12px
+      color-mix(in srgb, var(--semantic-error, #ef4444) 20%, transparent);
   }
 
   .action-btn.video {

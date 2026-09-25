@@ -1,5 +1,6 @@
 <!-- Multi-select skill choices for families where the distinction matters. -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { ProfilePropFamily } from "$lib/shared/community/domain/profile-prop-catalog";
   import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -32,7 +33,9 @@
       <PropSelectionButton
         label={choice.label.replace(" Hoop", "")}
         {selected}
-        actionLabel={`${selected ? "Remove" : "Add"} ${choice.label} skill`}
+        actionLabel={t(selected ? "nav_remove_skill" : "nav_add_skill", {
+          prop: choice.label,
+        })}
         {disabled}
         onpress={() => ontoggle(choice.prop)}
       >

@@ -1,5 +1,6 @@
 <!-- BottomNavigation - Portrait/Bottom Navigation Layout -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { onMount } from "svelte";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
@@ -86,11 +87,12 @@
 
   // The compact selector replaces the per-tab row, so the module's own name
   // disappears from the bar. Hand it to the popover as its heading.
-  const currentModuleLabel = $derived(
-    MODULE_DEFINITIONS.find(
+  const currentModuleLabel = $derived.by(() => {
+    const module = MODULE_DEFINITIONS.find(
       (module) => module.id === navigationState.currentModule
-    )?.label ?? ""
-  );
+    );
+    return module ? t(module.labelKey) : "";
+  });
 
   // Handle tap on peek indicator to reveal navigation
   function handlePeekTap() {
@@ -172,7 +174,7 @@
     class="peek-indicator"
     class:animate-entrance={peekHasAnimated}
     onclick={handlePeekTap}
-    aria-label="Show navigation"
+    aria-label={t("nav_ui_show_navigation")}
   >
     <i class="fas fa-chevron-up" aria-hidden="true"></i>
   </button>
@@ -216,7 +218,9 @@
         {onSectionChange}
         {sectionHome}
         {onSectionHomeSelect}
-        selectorLabel={sectionHome ? "Choose creation method" : "Select tab"}
+        selectorLabel={sectionHome
+          ? t("nav_choose_method")
+          : t("nav_select_tab")}
         moduleLabel={currentModuleLabel}
       />
     </div>

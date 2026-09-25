@@ -23,6 +23,7 @@
   } from "./launchpad-tiles";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import demoJson from "$lib/shared/landing/data/demo-sequence.json";
+  import { siteCopy } from "../../site-copy";
   import {
     trackLaunchpadClick,
     type LaunchpadTileId,
@@ -283,8 +284,8 @@
       {/if}
 
       <span class="body">
-        <h2>{tile.heading}</h2>
-        <p>{tile.descriptor}</p>
+        <h2>{siteCopy(tile.heading)}</h2>
+        <p>{siteCopy(tile.descriptor)}</p>
       </span>
     {/snippet}
 
@@ -305,7 +306,7 @@
                 trackLaunchpadClick({
                   target: "chip",
                   chip_id: hrefSlug(chip.href),
-                })}>{chip.label}</a
+                })}>{siteCopy(chip.label)}</a
             >
           </li>
         {/each}

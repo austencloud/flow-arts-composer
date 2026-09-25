@@ -177,7 +177,7 @@
 
 <!-- Main Modules Section -->
 <section class="module-section">
-  <h3 class="section-title">Modules</h3>
+  <h3 class="section-title">{t("admin_modules")}</h3>
   {#key locale}
     <div
       class="module-grid"

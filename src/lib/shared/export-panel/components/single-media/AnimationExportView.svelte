@@ -13,6 +13,7 @@
   - Export progress overlay on canvas during export
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
   import AnimationControlsPanel from "$lib/shared/animation-engine/components/canvas/AnimationControlsPanel.svelte";
   import { getAnimationExportContext } from "../../context/animation-export-context.svelte";
@@ -74,12 +75,12 @@
     {#if context.state.loading}
       <div class="loading-state">
         <ProgressRing percent={-1} size={32} strokeWidth={3} />
-        <p>Loading animation...</p>
+        <p>{t("loading_animation")}</p>
       </div>
     {:else if !context.state.sequenceData}
       <div class="empty-state">
         <i class="fas fa-video" aria-hidden="true"></i>
-        <p>No sequence loaded</p>
+        <p>{t("empty_no_sequence_loaded")}</p>
       </div>
     {:else if context.state.servicesReady}
       <AnimatorCanvas
@@ -96,7 +97,7 @@
     {:else}
       <div class="loading-state">
         <ProgressRing percent={-1} size={32} strokeWidth={3} />
-        <p>Initializing...</p>
+        <p>{t("export_ui_initializing")}</p>
       </div>
     {/if}
 
@@ -110,7 +111,7 @@
               <button
                 class="cancel-button"
                 onclick={() => context.actions.onCancelExport()}
-                aria-label="Cancel export"
+                aria-label={t("export_cancel_export")}
               >
                 <i class="fas fa-times" aria-hidden="true"></i>
               </button>

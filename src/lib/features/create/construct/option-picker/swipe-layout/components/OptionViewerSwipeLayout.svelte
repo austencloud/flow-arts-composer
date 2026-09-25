@@ -372,8 +372,8 @@ Features:
           icon="fa-sliders"
           density="compact"
           active={activeUtilityPanel === "settings"}
-          aria-label="Option settings"
-          title="Option settings"
+          aria-label={t("create_ui_option_settings")}
+          title={t("create_ui_option_settings")}
           aria-expanded={activeUtilityPanel === "settings"}
           aria-controls={utilityPanelId}
           onclick={() => toggleUtilityPanel("settings")}
@@ -402,8 +402,8 @@ Features:
         icon="fa-circle-info"
         density="compact"
         active={activeUtilityPanel === "info"}
-        aria-label="Explain letter types"
-        title="Letter type guide"
+        aria-label={t("create_ui_explain_letter_types")}
+        title={t("create_ui_letter_type_guide")}
         aria-expanded={activeUtilityPanel === "info"}
         aria-controls={utilityPanelId}
         onclick={() => toggleUtilityPanel("info")}
@@ -537,7 +537,9 @@ Features:
                   ).accessibleName} match these settings.
                 </p>
                 <span
-                  >Try another letter type or adjust the option settings.</span
+                  >{t(
+                    "create_ui_try_another_letter_type_or_adjust_the_option_settings"
+                  )}</span
                 >
               </div>
             {:else if boundsReady() && (index === activePanelIndex || mountedPanels.includes(index))}
