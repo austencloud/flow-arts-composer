@@ -9052,7 +9052,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..fb77502dfb0c5a079adf853e97f7ab56
 +const MAX_AUTHORED_PELVIS_Y = 0.35;
 +const MAX_AUTHORED_TORSO_YAW = Math.PI / 2;
 +const MAX_AUTHORED_TORSO_TILT = 0.6;
-+const AUTHORED_POLE_SEARCH_RANGE = 0.35;
++const AUTHORED_POLE_SEARCH_RANGE = 1.05;
 +/**
 + * How square the chest must be before the shoulder line's export handedness
 + * can be read off the root. At 0.5 the chest is within 60° of facing the way
@@ -28519,7 +28519,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..2502c85b3b1a4da19f5243950b61086a
 +const MAX_AUTHORED_PELVIS_Y = 0.35;
 +const MAX_AUTHORED_TORSO_YAW = Math.PI / 2;
 +const MAX_AUTHORED_TORSO_TILT = 0.6;
-+const AUTHORED_POLE_SEARCH_RANGE = 0.35;
++const AUTHORED_POLE_SEARCH_RANGE = 1.05;
 +
 +
 +/**

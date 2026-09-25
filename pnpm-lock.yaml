@@ -9,7 +9,7 @@ patchedDependencies:
     hash: f163e5ba342f1576ff6fd359c5e5795dfec1fd0415dce6617ebe03d3c3d995e7
     path: patches/@austencloud__backgrounds@0.7.12.patch
   '@austencloud/scene-3d@0.1.6':
-    hash: 65a9f5f84a86def8ba5055a266bedc62640c5196b8f63dbda1546753eba2fcf8
+    hash: 04d8dfd2e4a1a7cec39839730a9611e3e66b37bbd755a6fc665635ef0db69e42
     path: patches/@austencloud__scene-3d@0.1.6.patch
   svelte-fast-check@0.4.5:
     hash: 79c185fc32c5583774bc91ec4fa0ebcbac5c790d9b132fc5728f5d13a3d72474

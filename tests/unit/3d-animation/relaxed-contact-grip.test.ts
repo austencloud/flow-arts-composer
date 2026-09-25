@@ -465,7 +465,9 @@ describe.runIf(avatarAssetsPresent())("relaxed strict-contact grip", () => {
         // back across the forearm despite keeping the palm socket on the staff.
         // Check the visible hand direction after finger sculpt and contact.
         for (const frame of savedTransition.slice(0, 5)) {
-          expect(frame.wristAngleRad, `phase ${frame.phase}`).toBeLessThan(1.4);
+          expect(frame.wristAngleRad, `phase ${frame.phase}`).toBeLessThan(
+            0.95
+          );
         }
         for (const frame of savedTransition) {
           const { phase } = frame;
