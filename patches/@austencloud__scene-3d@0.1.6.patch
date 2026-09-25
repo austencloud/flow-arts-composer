@@ -5,7 +5,7 @@ diff --git a/dist/index.d.ts.map b/dist/index.d.ts.map
 deleted file mode 100644
 index d554c5bba49036758f9b3c997d025556395cf72b..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/Avatar3D.svelte b/dist/lib/components/Avatar3D.svelte
-index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..b53551a6cb241426b70b8c4f5482e2fd59e9ad1f 100644
+index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..021b3b8613a85eb9f3cd960fd8ac42ad2831d6ff 100644
 --- a/dist/lib/components/Avatar3D.svelte
 +++ b/dist/lib/components/Avatar3D.svelte
 @@ -16,29 +16,51 @@
@@ -1319,7 +1319,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..b53551a6cb241426b70b8c4f5482e2fd
      }
  
      const blueWorldProp = bluePropState
-@@ -746,15 +1473,197 @@
+@@ -746,15 +1473,201 @@
        ? { ...redPropState, worldPosition: redIKTarget }
        : null;
  
@@ -1467,7 +1467,11 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..b53551a6cb241426b70b8c4f5482e2fd
 +      } else {
 +        fingerAnimator.setCylinderContact("right", null);
 +      }
-+      fingerAnimator.solveCylinderContacts();
++      fingerAnimator.solveCylinderContacts(
++        authoredContactPose?.sculptFingers && cachedRoot
++          ? (side) => authoredContactPose.sculptFingers!(cachedRoot!, side)
++          : undefined
++      );
 +    } else if (fingerAnimator) {
 +      fingerAnimator.setCylinderContactStrict(false);
 +    }
@@ -1517,7 +1521,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..b53551a6cb241426b70b8c4f5482e2fd
      // 2b. Collision detection - run after IK so bones are at final positions
      if (collisionDetector.enabled && skeletonService) {
        const state = skeletonService.getState();
-@@ -768,56 +1677,55 @@
+@@ -768,56 +1681,55 @@
        bones.get("Spine2")?.getWorldPosition(_boneVecs.spine2);
        bones.get("Spine1")?.getWorldPosition(_boneVecs.spine1);
        bones.get("Hips")?.getWorldPosition(_boneVecs.hips);
@@ -1604,7 +1608,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..b53551a6cb241426b70b8c4f5482e2fd
            halfStaffLength,
            _redSegA,
            _redSegB
-@@ -825,23 +1733,228 @@
+@@ -825,23 +1737,228 @@
          redSegOrNull = redSeg;
        }
  
@@ -1847,7 +1851,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..b53551a6cb241426b70b8c4f5482e2fd
    });
  
    // Note: Visibility is handled via the {#if visible} in the template
-@@ -867,20 +1980,15 @@
+@@ -867,20 +1984,15 @@
    // transparent with depth-write off so the fade blends correctly.
    $effect(() => {
      if (!cachedRoot) return;
@@ -1874,7 +1878,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..b53551a6cb241426b70b8c4f5482e2fd
      // Dispose locomotion animator, state machine, and foot planter
      if (locomotionAnimator) {
        locomotionAnimator.dispose();
-@@ -913,13 +2021,19 @@
+@@ -913,13 +2025,19 @@
  </script>
  
  {#if visible}
@@ -1901,7 +1905,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..b53551a6cb241426b70b8c4f5482e2fd
      <T.Group
        name={`PERFORMER_${id}`}
        position={[position.x, position.y ?? 0, position.z]}
-@@ -940,9 +2054,10 @@
+@@ -940,9 +2058,10 @@
        - rotation.y: facingAngle (avatar faces movement direction)
  
        groupY calculation:
@@ -1915,7 +1919,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..b53551a6cb241426b70b8c4f5482e2fd
        - This positions feet at the correct ground level
  
        Using cachedRoot instead of skeletonService.getRoot() ensures
-@@ -950,6 +2065,7 @@
+@@ -950,6 +2069,7 @@
        preventing visual glitches during avatar swap.
      -->
      <T.Group
@@ -8068,7 +8072,7 @@ diff --git a/dist/lib/services/contracts/IAnimationStateMachine.d.ts.map b/dist/
 deleted file mode 100644
 index 73f0876c4cafab9821e6e2daa10dafef0c71ff1f..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/contracts/IAvatarAnimator.d.ts b/dist/lib/services/contracts/IAvatarAnimator.d.ts
-index 786bf68515df88ef035b307a7029e717e056bea9..1342b17565413349a94b36e56d41cac88fc14f8a 100644
+index 786bf68515df88ef035b307a7029e717e056bea9..92cd4467b4db99625e6b4ce974822160f5c31657 100644
 --- a/dist/lib/services/contracts/IAvatarAnimator.d.ts
 +++ b/dist/lib/services/contracts/IAvatarAnimator.d.ts
 @@ -4,9 +4,10 @@
@@ -8083,7 +8087,7 @@ index 786bf68515df88ef035b307a7029e717e056bea9..1342b17565413349a94b36e56d41cac8
  /**
   * Pose for a single hand/arm
   */
-@@ -74,6 +75,134 @@ export interface PositionOffset {
+@@ -74,6 +75,139 @@ export interface PositionOffset {
      y: number;
      z: number;
  }
@@ -8128,6 +8132,11 @@ index 786bf68515df88ef035b307a7029e717e056bea9..1342b17565413349a94b36e56d41cac8
 +    gripPalmRollRad?: number;
 +    /** Signed distance along the staff axis from its authored grip point. */
 +    gripRiseM?: number;
++    /** Local wrist edits authored alongside the fixed staff contact. */
++    wristBendRad?: number;
++    wristTwistRad?: number;
++    /** Finger pose to refine against the staff before contact is reported. */
++    sculptFingers?: (root: Object3D, side: "left" | "right") => void;
 +}
 +/** Live posture values used by the sequence collision audit. */
 +export interface AvatarAnimatorDiagnostics {
@@ -8218,7 +8227,7 @@ index 786bf68515df88ef035b307a7029e717e056bea9..1342b17565413349a94b36e56d41cac8
  export interface IAvatarAnimator {
      /**
       * Set the hand targets from prop states
-@@ -120,8 +249,57 @@ export interface IAvatarAnimator {
+@@ -120,8 +254,57 @@ export interface IAvatarAnimator {
       * Set prop states and compute per-arm IK blend weights.
       * Arms with props ramp toward IK (weight 1).
       * Arms without props ramp toward animation (weight 0).
@@ -8277,7 +8286,7 @@ index 786bf68515df88ef035b307a7029e717e056bea9..1342b17565413349a94b36e56d41cac8
      /**
       * Enable/disable smooth blending between poses
       */
-@@ -140,4 +318,3 @@ export interface IAvatarAnimator {
+@@ -140,4 +323,3 @@ export interface IAvatarAnimator {
       */
      setExternalSpinePitch(radians: number): void;
  }
@@ -8962,7 +8971,7 @@ diff --git a/dist/lib/services/implementations/AvatarAnimator.d.ts.map b/dist/li
 deleted file mode 100644
 index f8e47d42167b6ea9bb4fd8f44f41273f48f1943b..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/AvatarAnimator.js b/dist/lib/services/implementations/AvatarAnimator.js
-index bdd5ae35ed47c58d29c537a7805705783f9b9066..56f208057346124f21daa91e81652dea021c5473 100644
+index bdd5ae35ed47c58d29c537a7805705783f9b9066..fb77502dfb0c5a079adf853e97f7ab568688ff6f 100644
 --- a/dist/lib/services/implementations/AvatarAnimator.js
 +++ b/dist/lib/services/implementations/AvatarAnimator.js
 @@ -4,7 +4,93 @@
@@ -9280,7 +9289,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..56f208057346124f21daa91e81652dea
                  staffAngle: blueProp.staffRotationAngle,
                  plane: blueProp.plane,
                  weight: 1,
-@@ -162,13 +427,121 @@ export class AvatarAnimator {
+@@ -162,13 +427,123 @@ export class AvatarAnimator {
          this.targetPose.rightHand = redProp
              ? {
                  targetPosition: new Vector3(redProp.worldPosition.x - ox, redProp.worldPosition.y - oy, redProp.worldPosition.z - oz),
@@ -9330,6 +9339,8 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..56f208057346124f21daa91e81652dea
 +            elbowPole: { x: elbowPole.x, y: elbowPole.y, z: elbowPole.z },
 +            gripRelaxation: Math.max(0, Math.min(1, finite(pose.gripRelaxation ?? 0, 1))),
 +            gripRiseM: finite(pose.gripRiseM ?? 0, 0.08),
++            wristBendRad: finite(pose.wristBendRad ?? 0, Math.PI / 6),
++            wristTwistRad: finite(pose.wristTwistRad ?? 0, Math.PI / 6),
 +            gripTiltRad: Math.max(0, Math.min(1.4, finite(pose.gripTiltRad ?? 0, 1.4))),
 +            gripPalmRollRad: pose.gripPalmRollRad === undefined
 +                ? undefined
@@ -9402,7 +9413,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..56f208057346124f21daa91e81652dea
      setLeftHandTarget(target) {
          this.targetPose.leftHand = { ...target };
          this.targetPose.timestamp = Date.now();
-@@ -183,8 +556,14 @@ export class AvatarAnimator {
+@@ -183,8 +558,14 @@ export class AvatarAnimator {
      update(deltaTime) {
          // Ramp per-arm IK blend weights (framerate-independent exponential lerp)
          const blendFactor = 1 - Math.exp(-this.ikBlendSpeed * deltaTime);
@@ -9419,7 +9430,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..56f208057346124f21daa91e81652dea
          if (this.transitioning) {
              this.updateTransition(deltaTime);
          }
-@@ -197,7 +576,363 @@ export class AvatarAnimator {
+@@ -197,7 +578,373 @@ export class AvatarAnimator {
          // Apply combined layers
          const finalPose = this.computeFinalPose();
          // Solve IK for arms
@@ -9669,6 +9680,9 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..56f208057346124f21daa91e81652dea
 +        const { axis: gripAxis, longitudinal: gripLongitudinal } = this.relaxedGripFrame(transverse, longitudinal);
 +        const localInverse = new Matrix4().makeBasis(gripAxis, gripLongitudinal, new Vector3().crossVectors(gripAxis, gripLongitudinal)).invert();
 +        const scale = chain.effector.getWorldScale(new Vector3());
++        const wristEdit = new Quaternion()
++            .setFromAxisAngle(new Vector3(1, 0, 0), this.authoredContactPose?.wristBendRad ?? 0)
++            .multiply(new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), this.authoredContactPose?.wristTwistRad ?? 0));
 +        const authoredPole = this.authoredContactPose
 +            ? new Vector3(this.authoredContactPose.elbowPole.x, this.authoredContactPose.elbowPole.y, this.authoredContactPose.elbowPole.z)
 +            : null;
@@ -9684,7 +9698,8 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..56f208057346124f21daa91e81652dea
 +            iterations += 1;
 +            const direction = forward.clone().applyAxisAngle(axis, roll);
 +            const basis = new Matrix4().makeBasis(axis, direction, new Vector3().crossVectors(axis, direction));
-+            const rotation = new Quaternion().setFromRotationMatrix(basis.multiply(localInverse)).normalize();
++            const rotation = new Quaternion().setFromRotationMatrix(basis.multiply(localInverse))
++                .multiply(wristEdit).normalize();
 +            const wrist = hand.targetPosition.clone().sub(socket.clone().multiply(scale).applyQuaternion(rotation));
 +            const reach = wrist.clone().sub(shoulder);
 +            const candidatePole = pole.clone().applyAxisAngle(reach.clone().normalize(), poleAngle);
@@ -9723,14 +9738,20 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..56f208057346124f21daa91e81652dea
 +        let roll = 0;
 +        let best = evaluate(poleAngle, roll);
 +        if (authoredPole) {
-+            // Blend the bounded pole/roll candidates instead of choosing a discrete
-+            // winner. This depends only on the authored pose, so seeking and reverse
-+            // playback produce the same elbow as forward playback.
++            // Near North, an authored wrist edit must keep its chosen staff-facing
++            // roll. Fade out the extra reach-search roll while that edit is active.
++            const northBlend = Math.max(0, Math.min(1, (palmRoll - 2) / 0.5));
++            const wristMagnitude = Math.hypot(this.authoredContactPose?.wristBendRad ?? 0, this.authoredContactPose?.wristTwistRad ?? 0);
++            const editBlend = Math.max(0, Math.min(1, wristMagnitude / 0.1));
++            const northWeight = northBlend * northBlend * (3 - 2 * northBlend) * editBlend * editBlend * (3 - 2 * editBlend);
++            const maxRoll = 0.3 * (1 - northWeight);
++            // Blend bounded candidates so direct and reverse seeks agree.
 +            const candidates = [];
 +            for (let i = -4; i <= 4; i += 1) {
-+                for (let j = 0; j <= 20; j += 1) {
-+                    const candidateRoll = -0.3 + j * 0.03;
-+                    const angle = i * AUTHORED_POLE_SEARCH_RANGE / 4;
++                const angle = i * AUTHORED_POLE_SEARCH_RANGE / 4;
++                const rollSteps = maxRoll < 1e-6 ? 0 : 20;
++                for (let j = 0; j <= rollSteps; j += 1) {
++                    const candidateRoll = rollSteps === 0 ? 0 : maxRoll * (-1 + j / 10);
 +                    candidates.push({ angle, roll: candidateRoll, cost: evaluate(angle, candidateRoll).cost });
 +                }
 +            }
@@ -9784,7 +9805,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..56f208057346124f21daa91e81652dea
      }
      blendToTarget(_deltaTime) {
          // Hands snap directly to prop positions - no lerp.
-@@ -273,18 +1008,184 @@ export class AvatarAnimator {
+@@ -273,18 +1020,184 @@ export class AvatarAnimator {
          }
          return result;
      }
@@ -9970,7 +9991,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..56f208057346124f21daa91e81652dea
          // Cache shoulder rest Y positions once (before any clavicle rotation has been applied).
          // CRITICAL: Do NOT read these per-frame after clavicle is rotated - the elevated
          // position feeds back and causes oscillation.
-@@ -335,7 +1236,7 @@ export class AvatarAnimator {
+@@ -335,7 +1248,7 @@ export class AvatarAnimator {
              // Nullable hands are first-class: SpineTwister handles the
              // single-hand-gaze branch and the no-hand identity branch
              // internally, so we pass pose hands through as-is.
@@ -9979,7 +10000,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..56f208057346124f21daa91e81652dea
              // Apply twist to each bone individually for a natural spinal curve.
              // Each bone gets its own weighted quaternion from SpineTwister.
              const applySpineTwist = (boneName, key, twistQuat) => {
-@@ -389,11 +1290,148 @@ export class AvatarAnimator {
+@@ -389,11 +1302,148 @@ export class AvatarAnimator {
                      hipsBoneForUpdate.updateMatrixWorld(true);
              }
          }
@@ -10129,7 +10150,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..56f208057346124f21daa91e81652dea
                  // Save what the locomotion animation wrote to bone quaternions
                  const animRootQuat = leftChain.root.quaternion.clone();
                  const animMiddleQuat = leftChain.middle.quaternion.clone();
-@@ -402,7 +1440,7 @@ export class AvatarAnimator {
+@@ -402,7 +1452,7 @@ export class AvatarAnimator {
                  if (this._clavicleRaiseEnabled && this.clavicleRaiser && this.shoulderRestCached) {
                      const leftShoulder = state.bones.get("LeftShoulder");
                      if (leftShoulder) {
@@ -10138,7 +10159,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..56f208057346124f21daa91e81652dea
                          this.leftClavicleQuat.slerp(targetQuat, this.smoothingFactor);
                          leftShoulder.quaternion
                              .copy(this.leftClavicleRestQuat)
-@@ -410,19 +1448,56 @@ export class AvatarAnimator {
+@@ -410,19 +1460,56 @@ export class AvatarAnimator {
                          leftShoulder.updateMatrixWorld(true);
                      }
                  }
@@ -10198,7 +10219,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..56f208057346124f21daa91e81652dea
                  // Save IK results BEFORE blending - .copy() would overwrite them
                  const ikRootQuat = leftChain.root.quaternion.clone();
                  const ikMiddleQuat = leftChain.middle.quaternion.clone();
-@@ -432,12 +1507,20 @@ export class AvatarAnimator {
+@@ -432,12 +1519,20 @@ export class AvatarAnimator {
                  leftChain.root.quaternion.copy(animRootQuat).slerp(ikRootQuat, w);
                  leftChain.middle.quaternion.copy(animMiddleQuat).slerp(ikMiddleQuat, w);
                  leftChain.effector.quaternion.copy(animEffectorQuat).slerp(ikEffectorQuat, w);
@@ -10220,7 +10241,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..56f208057346124f21daa91e81652dea
                  // Save what the locomotion animation wrote to bone quaternions
                  const animRootQuat = rightChain.root.quaternion.clone();
                  const animMiddleQuat = rightChain.middle.quaternion.clone();
-@@ -446,7 +1529,7 @@ export class AvatarAnimator {
+@@ -446,7 +1541,7 @@ export class AvatarAnimator {
                  if (this._clavicleRaiseEnabled && this.clavicleRaiser && this.shoulderRestCached) {
                      const rightShoulder = state.bones.get("RightShoulder");
                      if (rightShoulder) {
@@ -10229,7 +10250,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..56f208057346124f21daa91e81652dea
                          this.rightClavicleQuat.slerp(targetQuat, this.smoothingFactor);
                          rightShoulder.quaternion
                              .copy(this.rightClavicleRestQuat)
-@@ -454,19 +1537,49 @@ export class AvatarAnimator {
+@@ -454,19 +1549,49 @@ export class AvatarAnimator {
                          rightShoulder.updateMatrixWorld(true);
                      }
                  }
@@ -10282,7 +10303,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..56f208057346124f21daa91e81652dea
                  // Save IK results BEFORE blending - .copy() would overwrite them
                  const ikRootQuat = rightChain.root.quaternion.clone();
                  const ikMiddleQuat = rightChain.middle.quaternion.clone();
-@@ -476,11 +1589,764 @@ export class AvatarAnimator {
+@@ -476,11 +1601,764 @@ export class AvatarAnimator {
                  rightChain.root.quaternion.copy(animRootQuat).slerp(ikRootQuat, w);
                  rightChain.middle.quaternion.copy(animMiddleQuat).slerp(ikMiddleQuat, w);
                  rightChain.effector.quaternion.copy(animEffectorQuat).slerp(ikEffectorQuat, w);
@@ -11047,7 +11068,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..56f208057346124f21daa91e81652dea
      addLayer(layer) {
          this.layers.set(layer.id, layer);
      }
-@@ -521,6 +2387,12 @@ export class AvatarAnimator {
+@@ -521,6 +2399,12 @@ export class AvatarAnimator {
      setExternalSpinePitch(radians) {
          this.externalSpinePitchRad = radians;
      }
@@ -11060,7 +11081,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..56f208057346124f21daa91e81652dea
      /** Debug toggle: disable pole vectors to compare old vs new elbow behavior */
      togglePoleVectors() {
          this._poleVectorsEnabled = !this._poleVectorsEnabled;
-@@ -528,9 +2400,16 @@ export class AvatarAnimator {
+@@ -528,9 +2412,16 @@ export class AvatarAnimator {
              // Reset to default backward poles so difference is visible immediately
              this.leftPoleVector.set(0, 0, -1);
              this.rightPoleVector.set(0, 0, -1);
@@ -12750,7 +12771,7 @@ index d42bcd447471742c09a421dc92e9eb63986abbb4..b448e44004d3680ebcee15b0e40c3b04
 +    }
  }
 diff --git a/dist/lib/services/implementations/FingerAnimator.d.ts b/dist/lib/services/implementations/FingerAnimator.d.ts
-index d49f92aedabc5145aac812b52d74784fc1b5429c..3088408b4638d4412a29c74ce7249a9dccc3a68c 100644
+index d49f92aedabc5145aac812b52d74784fc1b5429c..661a22d270d59745cb235ede86b2506862fc6bf9 100644
 --- a/dist/lib/services/implementations/FingerAnimator.d.ts
 +++ b/dist/lib/services/implementations/FingerAnimator.d.ts
 @@ -1,22 +1,79 @@
@@ -12802,7 +12823,7 @@ index d49f92aedabc5145aac812b52d74784fc1b5429c..3088408b4638d4412a29c74ce7249a9d
 +     */
 +    setCylinderContact(hand: "left" | "right", cylinder: FingerCylinderContactInput | null): void;
 +    setCylinderContactStrict(strict: boolean): void;
-+    solveCylinderContacts(): void;
++    solveCylinderContacts(sculptFingers?: (side: "left" | "right") => void): void;
 +    getCylinderContactReport(side: "left" | "right"): readonly FingerCylinderContact[];
      update(deltaTime: number): void;
      setBlendSpeed(speed: number): void;
@@ -12840,7 +12861,7 @@ diff --git a/dist/lib/services/implementations/FingerAnimator.d.ts.map b/dist/li
 deleted file mode 100644
 index c81171af6db42d1aee03e56854cbd3557e1a6695..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/FingerAnimator.js b/dist/lib/services/implementations/FingerAnimator.js
-index 6c2e8693da61c08f226c11b78b90cc1439db718f..85e54a45e3aa27a30ede82fcff066369eba93d87 100644
+index 6c2e8693da61c08f226c11b78b90cc1439db718f..a33999869ebfd7010dab45b29786c6a73ad0ff02 100644
 --- a/dist/lib/services/implementations/FingerAnimator.js
 +++ b/dist/lib/services/implementations/FingerAnimator.js
 @@ -1,15 +1,119 @@
@@ -12991,7 +13012,7 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..85e54a45e3aa27a30ede82fcff066369
 +    setCylinderContactStrict(strict) {
 +        this.strictCylinderContact = strict;
 +    }
-+    solveCylinderContacts() {
++    solveCylinderContacts(sculptFingers) {
 +        if (!this.ready || !this.leftHand || !this.rightHand)
 +            return;
 +        if (this.strictCylinderContact) {
@@ -13001,8 +13022,8 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..85e54a45e3aa27a30ede82fcff066369
 +            this.applyPoseImmediate(this.leftHand, this.leftHand.targetGrip, "left");
 +            this.applyPoseImmediate(this.rightHand, this.rightHand.targetGrip, "right");
 +        }
-+        this.solveHandCylinder(this.leftHand, this.leftCylinder, this.leftContactReport, "left");
-+        this.solveHandCylinder(this.rightHand, this.rightCylinder, this.rightContactReport, "right");
++        this.solveHandCylinder(this.leftHand, this.leftCylinder, this.leftContactReport, "left", false, sculptFingers);
++        this.solveHandCylinder(this.rightHand, this.rightCylinder, this.rightContactReport, "right", false, sculptFingers);
 +    }
 +    getCylinderContactReport(side) {
 +        return side === "left" ? this.leftContactReport : this.rightContactReport;
@@ -13018,7 +13039,7 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..85e54a45e3aa27a30ede82fcff066369
          this.updateHand(this.leftHand, "left", deltaTime);
          this.updateHand(this.rightHand, "right", deltaTime);
      }
-@@ -44,54 +189,1089 @@ export class FingerAnimator {
+@@ -44,54 +189,1241 @@ export class FingerAnimator {
          this.leftHand = null;
          this.rightHand = null;
          this.ready = false;
@@ -13067,18 +13088,16 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..85e54a45e3aa27a30ede82fcff066369
 +            skinRadii: [],
 +            skinSamples: [],
 +            skinTriangles: [],
++            triangleGroups: new Map(),
 +            relaxedProfiles: new Map(),
-         };
++        };
 +        for (const mesh of meshes) {
 +            mesh.updateWorldMatrix(true, false);
 +            mesh.updateMatrixWorld(true);
 +        }
 +        state.skinRadii = this.measureSkinSupportRadii(state, meshes);
 +        return state;
-     }
--    // Writes the target rotation for boneIndex into scratchQuat, mirroring for right hand.
--    // Right-hand mirror negates Y and Z to reflect across the YZ plane.
--    writeTargetRotation(gripType, boneIndex, hand) {
++    }
 +    /** Cache the visible skin's radial support for each phalanx. */
 +    measureSkinSupportRadii(state, meshes) {
 +        const samples = state.bones.map(() => []);
@@ -13201,7 +13220,7 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..85e54a45e3aa27a30ede82fcff066369
 +        const restore = () => {
 +            state.bones.forEach((bone, index) => bone.quaternion.copy(savedRotations[index]));
 +            palm.updateWorldMatrix(true, true);
-+        };
+         };
 +        const applyDefaultSquare = () => {
 +            state.squareThumbDeltas = null;
 +            for (let index = 0; index < FINGER_BONES.length; index++) {
@@ -13259,7 +13278,10 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..85e54a45e3aa27a30ede82fcff066369
 +        finally {
 +            restore();
 +        }
-+    }
+     }
+-    // Writes the target rotation for boneIndex into scratchQuat, mirroring for right hand.
+-    // Right-hand mirror negates Y and Z to reflect across the YZ plane.
+-    writeTargetRotation(gripType, boneIndex, hand) {
 +    // Grip poses are joint deltas, not replacement local rotations. Keeping each
 +    // character's imported reference pose is what lets the same curl work on
 +    // Mixamo, Unreal, and other rigs whose finger axes start differently.
@@ -13281,7 +13303,7 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..85e54a45e3aa27a30ede82fcff066369
          else {
 -            this.scratchQuat.set(raw[0], raw[1], raw[2], raw[3]);
 +            this.scratchDelta.set(raw[0], raw[1], raw[2], raw[3]);
-         }
++        }
 +        this.scratchQuat
 +            .copy(state.restRotations[boneIndex])
 +            .multiply(this.scratchDelta)
@@ -13292,7 +13314,7 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..85e54a45e3aa27a30ede82fcff066369
 +        if (hand === "right") {
 +            this.scratchDelta.y = -this.scratchDelta.y;
 +            this.scratchDelta.z = -this.scratchDelta.z;
-+        }
+         }
 +        this.scratchQuat
 +            .copy(state.restRotations[boneIndex])
 +            .multiply(this.scratchDelta)
@@ -13309,19 +13331,31 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..85e54a45e3aa27a30ede82fcff066369
              state.bones[i].quaternion.copy(state.currentRotations[i]);
          }
      }
-+    solveHandCylinder(state, cylinder, report, side, buildingProfile = false) {
++    solveHandCylinder(state, cylinder, report, side, buildingProfile = false, sculptFingers) {
 +        this.invalidateSurface();
 +        this.synchronizeSkinMeshes(state);
 +        report.length = 0;
 +        const hand = state.bones[0]?.parent;
 +        if (!buildingProfile && cylinder && hand && state.targetGrip === GripType.SQUARE && state.contactRelaxation > 1e-4) {
 +            this.applyRelaxedProfile(state, cylinder, side);
++            if (sculptFingers) {
++                const contactPose = state.bones.map((bone) => bone.quaternion.clone());
++                sculptFingers(side);
++                hand.updateWorldMatrix(true, true);
++                const authored = state.bones.map((bone) => bone.quaternion.clone());
++                this.projectRelaxedContact(state, cylinder, authored, true);
++                this.easeOptionalPenetration(state, cylinder, contactPose);
++            }
 +            this.invalidateSurface();
 +            FINGER_NAMES.forEach((finger, index) => report.push({
 +                ...this.measureFinger(state, FINGER_STARTS[index], finger, cylinder),
 +                required: this.isRequiredFinger(state, finger),
 +            }));
 +            return;
++        }
++        if (sculptFingers) {
++            sculptFingers(side);
++            hand?.updateWorldMatrix(true, true);
 +        }
 +        let contactKey = null;
 +        let localA = null;
@@ -13344,7 +13378,7 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..85e54a45e3aa27a30ede82fcff066369
 +                sameScale &&
 +                endpointDistanceM(localA, cached.a) <= CONTACT_CACHE_ENDPOINT_TOLERANCE_M &&
 +                endpointDistanceM(localB, cached.b) <= CONTACT_CACHE_ENDPOINT_TOLERANCE_M;
-+            if (equivalentGeometry && state.contactPose) {
++            if (!sculptFingers && equivalentGeometry && state.contactPose) {
 +                state.bones.forEach((bone, index) => bone.quaternion.copy(state.contactPose[index]));
 +                hand.updateWorldMatrix(true, true);
 +                FINGER_NAMES.forEach((finger, index) => report.push({
@@ -13626,6 +13660,18 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..85e54a45e3aa27a30ede82fcff066369
 +    }
 +    applyRelaxedProfile(state, cylinder, side) {
 +        const hand = state.bones[0].parent;
++        const relaxation = state.contactRelaxation;
++        // Build the cached profile from a fixed local reference. A direct seek must
++        // not seed its first profile from the fingers left by the previous frame.
++        const tilt = Math.PI / 3;
++        const scale = hand.getWorldScale(new Vector3());
++        const key = `${Math.round(tilt * 10000)}:${cylinder.radiusM}:${scale.toArray().map(v => v.toFixed(6)).join(":")}`;
++        let profile = state.relaxedProfiles.get(key);
++        if (!profile) {
++            state.contactRelaxation = 0;
++            this.applyPoseImmediate(state, GripType.SQUARE, side);
++            state.contactRelaxation = relaxation;
++        }
 +        hand.updateWorldMatrix(true, true);
 +        const local = (index) => hand.worldToLocal(state.bones[index].getWorldPosition(new Vector3()));
 +        const middle = local(6);
@@ -13636,11 +13682,6 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..85e54a45e3aa27a30ede82fcff066369
 +        if (normal.dot(local(0).sub(middle)) < 0)
 +            normal.negate();
 +        const fallback = middle.clone().multiplyScalar(0.65);
-+        const relaxation = state.contactRelaxation;
-+        const tilt = state.contactTiltRad;
-+        const scale = hand.getWorldScale(new Vector3());
-+        const key = `${Math.round(tilt * 10000)}:${cylinder.radiusM}:${scale.toArray().map(v => v.toFixed(6)).join(":")}`;
-+        let profile = state.relaxedProfiles.get(key);
 +        const samples = 32;
 +        if (!profile) {
 +            const gripChannel = (amount) => {
@@ -13759,12 +13800,26 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..85e54a45e3aa27a30ede82fcff066369
 +        }
 +        hand.updateWorldMatrix(true, true);
 +    }
-+    projectRelaxedContact(state, cylinder, authored) {
++    projectRelaxedContact(state, cylinder, authored, requiredOnly = false) {
 +        for (let fingerIndex = 0; fingerIndex < FINGER_NAMES.length; fingerIndex++) {
 +            const finger = FINGER_NAMES[fingerIndex];
++            if (requiredOnly && !this.isRequiredFinger(state, finger))
++                continue;
 +            const start = FINGER_STARTS[fingerIndex];
 +            this.invalidateSurface();
 +            const existing = this.measureFinger(state, start, finger, cylinder);
++            if (requiredOnly && finger === "thumb" && existing.supported) {
++                const axis = cylinder.b.clone().sub(cylinder.a).normalize();
++                const center = cylinder.a.clone().add(cylinder.b).multiplyScalar(0.5);
++                const radial = (joint) => {
++                    const point = state.bones[joint].getWorldPosition(new Vector3()).sub(center);
++                    return point.addScaledVector(axis, -point.dot(axis)).normalize();
++                };
++                // A supported opposing thumb needs no correction. Optimizing it toward
++                // an arbitrary positive margin can switch to a distant local solution.
++                if (radial(start + 2).dot(radial(4)) <= -0.15)
++                    continue;
++            }
 +            if ((existing.signedClearanceM ?? -Infinity) >= 0.00015 &&
 +                (!this.isRequiredFinger(state, finger) ||
 +                    ((existing.signedClearanceM ?? Infinity) <= 0.0008 &&
@@ -13773,6 +13828,13 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..85e54a45e3aa27a30ede82fcff066369
 +                continue;
 +            const bases = state.bones.slice(start, start + 3).map(bone => bone.quaternion.clone());
 +            const parameters = finger === "thumb" ? [0, 0, 0, 0, 0] : [0, 0, 0];
++            const oppositeSide = requiredOnly && finger === "thumb" ? (() => {
++                const axis = cylinder.b.clone().sub(cylinder.a).normalize();
++                const center = cylinder.a.clone().add(cylinder.b).multiplyScalar(0.5);
++                const index = state.bones[4].getWorldPosition(new Vector3()).sub(center);
++                index.addScaledVector(axis, -index.dot(axis)).normalize();
++                return { axis, center, index };
++            })() : null;
 +            const apply = () => {
 +                this.invalidateSurface();
 +                if (finger === "thumb") {
@@ -13795,6 +13857,13 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..85e54a45e3aa27a30ede82fcff066369
 +                    result += Math.max(0, surface - 0.0008) ** 2 * 1e6;
 +                if (finger === "thumb")
 +                    result += Math.max(0, pad - 0.0008) ** 2 * 1e6;
++                if (oppositeSide) {
++                    const thumbRadial = state.bones[start + 2].getWorldPosition(new Vector3()).sub(oppositeSide.center);
++                    thumbRadial.addScaledVector(oppositeSide.axis, -thumbRadial.dot(oppositeSide.axis)).normalize();
++                    // A surface clearance alone also accepts a thumb beside the index.
++                    // Opposing sides keep the shaft cradled throughout the North turn.
++                    result += Math.max(0, thumbRadial.dot(oppositeSide.index) + 0.15) ** 2 * 40;
++                }
 +                for (let joint = 0; joint < 3; joint++) {
 +                    result += state.bones[start + joint].quaternion.angleTo(authored[start + joint]) ** 2 * 0.0001;
 +                }
@@ -13824,6 +13893,94 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..85e54a45e3aa27a30ede82fcff066369
 +                    if (!changed)
 +                        break;
 +                }
++            }
++            // The mesh objective can have several contact minima. Keep the nearest
++            // exact-supported point on the path from the sculpted thumb to its solve.
++            if (oppositeSide) {
++                const solved = state.bones.slice(start, start + 3).map((bone) => bone.quaternion.clone());
++                const applyBlend = (amount) => {
++                    this.invalidateSurface();
++                    for (let joint = 0; joint < 3; joint++) {
++                        state.bones[start + joint].quaternion.copy(bases[joint]).slerp(solved[joint], amount);
++                    }
++                    state.bones[start].updateWorldMatrix(true, true);
++                    const contact = this.measureFinger(state, start, finger, cylinder);
++                    const radial = state.bones[start + 2].getWorldPosition(new Vector3()).sub(oppositeSide.center);
++                    radial.addScaledVector(oppositeSide.axis, -radial.dot(oppositeSide.axis)).normalize();
++                    return contact.supported && radial.dot(oppositeSide.index) <= -0.15;
++                };
++                let lastUnsafe = 0;
++                let firstSafe = 1;
++                for (let step = 1; step <= 8; step++) {
++                    const amount = step / 8;
++                    if (applyBlend(amount)) {
++                        firstSafe = amount;
++                        break;
++                    }
++                    lastUnsafe = amount;
++                }
++                if (firstSafe < 1) {
++                    for (let pass = 0; pass < 4; pass++) {
++                        const middle = (lastUnsafe + firstSafe) / 2;
++                        if (applyBlend(middle))
++                            firstSafe = middle;
++                        else
++                            lastUnsafe = middle;
++                    }
++                }
++                applyBlend(firstSafe);
++            }
++        }
++    }
++    /** Follow the safe contact-pose branch when a sculpt crosses the staff. */
++    easeOptionalPenetration(state, cylinder, contactPose) {
++        for (let fingerIndex = 0; fingerIndex < FINGER_NAMES.length; fingerIndex++) {
++            const finger = FINGER_NAMES[fingerIndex];
++            if (this.isRequiredFinger(state, finger))
++                continue;
++            const start = FINGER_STARTS[fingerIndex];
++            const sculpted = state.bones.slice(start, start + 3).map((bone) => bone.quaternion.clone());
++            const apply = (amount) => {
++                this.invalidateSurface();
++                for (let joint = 0; joint < 3; joint++) {
++                    state.bones[start + joint].quaternion.copy(sculpted[joint]).slerp(contactPose[start + joint], amount);
++                }
++                state.bones[start].updateWorldMatrix(true, true);
++                return this.fingerTriangleClearance(state, start, cylinder);
++            };
++            const allowedClearance = -0.0008;
++            let safeAmount = 1;
++            let bestAmount = 1;
++            let bestClearance = apply(1);
++            if (bestClearance < allowedClearance) {
++                // The contact pose itself is infeasible. Keep its least-intersecting blend.
++                for (let step = 23; step >= 0; step--) {
++                    const amount = step / 24;
++                    const clearance = apply(amount);
++                    if (clearance > bestClearance) {
++                        bestClearance = clearance;
++                        bestAmount = amount;
++                    }
++                }
++                apply(bestAmount);
++                continue;
++            }
++            for (let step = 23; step >= 0; step--) {
++                const amount = step / 24;
++                const clearance = apply(amount);
++                if (clearance < allowedClearance) {
++                    let unsafeAmount = amount;
++                    for (let iteration = 0; iteration < 8; iteration++) {
++                        const mid = (unsafeAmount + safeAmount) / 2;
++                        if (apply(mid) >= allowedClearance)
++                            safeAmount = mid;
++                        else
++                            unsafeAmount = mid;
++                    }
++                    apply(safeAmount);
++                    break;
++                }
++                safeAmount = amount;
 +            }
 +        }
 +    }
@@ -13968,15 +14125,25 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..85e54a45e3aa27a30ede82fcff066369
 +        if (cached !== undefined)
 +            return cached;
 +        let clearance = Infinity;
-+        const seen = new Set();
-+        const first = distalOnly ? start + 2 : start;
-+        const last = start + 3;
-+        for (let bone = first; bone < last; bone += 1)
-+            for (const sample of state.skinTriangles[bone] ?? []) {
-+                const key = `${sample.mesh.id}:${sample.a}:${sample.b}:${sample.c}`;
-+                if (seen.has(key))
-+                    continue;
-+                seen.add(key);
++        let distalClearance = Infinity;
++        let triangles = state.triangleGroups.get(cacheKey);
++        if (!triangles) {
++            const unique = new Map();
++            for (let bone = start; bone < start + 3; bone += 1)
++                for (const sample of state.skinTriangles[bone] ?? []) {
++                    const key = `${sample.mesh.id}:${sample.a}:${sample.b}:${sample.c}`;
++                    const previous = unique.get(key);
++                    if (previous)
++                        previous.distal ||= bone === start + 2;
++                    else
++                        unique.set(key, { ...sample, distal: bone === start + 2 });
++                }
++            const all = [...unique.values()];
++            state.triangleGroups.set(`tri:${start}:false`, all);
++            state.triangleGroups.set(`tri:${start}:true`, all.filter((sample) => sample.distal));
++            triangles = state.triangleGroups.get(cacheKey);
++        }
++        for (const sample of triangles) {
 +                const a = this.posedVertex(sample.mesh, sample.a);
 +                const b = this.posedVertex(sample.mesh, sample.b);
 +                const c = this.posedVertex(sample.mesh, sample.c);
@@ -13993,11 +14160,17 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..85e54a45e3aa27a30ede82fcff066369
 +                const t = Math.max(0, Math.min(1, ((cx - cylinder.a.x) * dx + (cy - cylinder.a.y) * dy + (cz - cylinder.a.z) * dz) / (dx * dx + dy * dy + dz * dz)));
 +                const centerDistance = Math.hypot(cx - cylinder.a.x - t * dx, cy - cylinder.a.y - t * dy, cz - cylinder.a.z - t * dz);
 +                const bound = Math.max(Math.hypot(a.x - cx, a.y - cy, a.z - cz), Math.hypot(b.x - cx, b.y - cy, b.z - cz), Math.hypot(c.x - cx, c.y - cy, c.z - cz));
-+                if (centerDistance - bound - cylinder.radiusM >= clearance)
++                const lowerBound = centerDistance - bound - cylinder.radiusM;
++                if (lowerBound >= clearance && (distalOnly || !sample.distal || lowerBound >= distalClearance))
 +                    continue;
-+                clearance = Math.min(clearance, this.triangleStaffDistance(new Triangle(a, b, c), cylinder) - cylinder.radiusM);
++                const distance = this.triangleStaffDistance(new Triangle(a, b, c), cylinder) - cylinder.radiusM;
++                clearance = Math.min(clearance, distance);
++                if (!distalOnly && sample.distal)
++                    distalClearance = Math.min(distalClearance, distance);
 +            }
 +        this.surfaceClearances.set(cacheKey, clearance);
++        if (!distalOnly)
++            this.surfaceClearances.set(`tri:${start}:true`, distalClearance);
 +        return clearance;
 +    }
 +    triangleStaffDistance(triangle, cylinder) {
@@ -18851,7 +19024,7 @@ index 525808ca7068a828865a64e176f7bbd641ccc013..ff0ffc3ad65cb6c617fb582992f392fa
    },
    "files": [
 diff --git a/src/lib/components/Avatar3D.svelte b/src/lib/components/Avatar3D.svelte
-index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..b53551a6cb241426b70b8c4f5482e2fd59e9ad1f 100644
+index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..021b3b8613a85eb9f3cd960fd8ac42ad2831d6ff 100644
 --- a/src/lib/components/Avatar3D.svelte
 +++ b/src/lib/components/Avatar3D.svelte
 @@ -16,29 +16,51 @@
@@ -20165,7 +20338,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..b53551a6cb241426b70b8c4f5482e2fd
      }
  
      const blueWorldProp = bluePropState
-@@ -746,15 +1473,197 @@
+@@ -746,15 +1473,201 @@
        ? { ...redPropState, worldPosition: redIKTarget }
        : null;
  
@@ -20313,7 +20486,11 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..b53551a6cb241426b70b8c4f5482e2fd
 +      } else {
 +        fingerAnimator.setCylinderContact("right", null);
 +      }
-+      fingerAnimator.solveCylinderContacts();
++      fingerAnimator.solveCylinderContacts(
++        authoredContactPose?.sculptFingers && cachedRoot
++          ? (side) => authoredContactPose.sculptFingers!(cachedRoot!, side)
++          : undefined
++      );
 +    } else if (fingerAnimator) {
 +      fingerAnimator.setCylinderContactStrict(false);
 +    }
@@ -20363,7 +20540,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..b53551a6cb241426b70b8c4f5482e2fd
      // 2b. Collision detection - run after IK so bones are at final positions
      if (collisionDetector.enabled && skeletonService) {
        const state = skeletonService.getState();
-@@ -768,56 +1677,55 @@
+@@ -768,56 +1681,55 @@
        bones.get("Spine2")?.getWorldPosition(_boneVecs.spine2);
        bones.get("Spine1")?.getWorldPosition(_boneVecs.spine1);
        bones.get("Hips")?.getWorldPosition(_boneVecs.hips);
@@ -20450,7 +20627,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..b53551a6cb241426b70b8c4f5482e2fd
            halfStaffLength,
            _redSegA,
            _redSegB
-@@ -825,23 +1733,228 @@
+@@ -825,23 +1737,228 @@
          redSegOrNull = redSeg;
        }
  
@@ -20693,7 +20870,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..b53551a6cb241426b70b8c4f5482e2fd
    });
  
    // Note: Visibility is handled via the {#if visible} in the template
-@@ -867,20 +1980,15 @@
+@@ -867,20 +1984,15 @@
    // transparent with depth-write off so the fade blends correctly.
    $effect(() => {
      if (!cachedRoot) return;
@@ -20720,7 +20897,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..b53551a6cb241426b70b8c4f5482e2fd
      // Dispose locomotion animator, state machine, and foot planter
      if (locomotionAnimator) {
        locomotionAnimator.dispose();
-@@ -913,13 +2021,19 @@
+@@ -913,13 +2025,19 @@
  </script>
  
  {#if visible}
@@ -20747,7 +20924,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..b53551a6cb241426b70b8c4f5482e2fd
      <T.Group
        name={`PERFORMER_${id}`}
        position={[position.x, position.y ?? 0, position.z]}
-@@ -940,9 +2054,10 @@
+@@ -940,9 +2058,10 @@
        - rotation.y: facingAngle (avatar faces movement direction)
  
        groupY calculation:
@@ -20761,7 +20938,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..b53551a6cb241426b70b8c4f5482e2fd
        - This positions feet at the correct ground level
  
        Using cachedRoot instead of skeletonService.getRoot() ensures
-@@ -950,6 +2065,7 @@
+@@ -950,6 +2069,7 @@
        preventing visual glitches during avatar swap.
      -->
      <T.Group
@@ -27073,7 +27250,7 @@ index 0000000000000000000000000000000000000000..98e57dea0dd008683a1a784921519a32
 +  return scratch.distanceTo(b.getWorldPosition(new Vector3()));
 +}
 diff --git a/src/lib/services/contracts/IAvatarAnimator.ts b/src/lib/services/contracts/IAvatarAnimator.ts
-index 42a46ac294719f16470ed72c27286e50c55a35f2..797d2198f8eb0aa71f122fda1bf201e94afae030 100644
+index 42a46ac294719f16470ed72c27286e50c55a35f2..dd1c7c310a1ca37ea90e20dcaa50b81cf94a5af3 100644
 --- a/src/lib/services/contracts/IAvatarAnimator.ts
 +++ b/src/lib/services/contracts/IAvatarAnimator.ts
 @@ -5,9 +5,10 @@
@@ -27088,7 +27265,7 @@ index 42a46ac294719f16470ed72c27286e50c55a35f2..797d2198f8eb0aa71f122fda1bf201e9
  
  /**
   * Pose for a single hand/arm
-@@ -82,6 +83,139 @@ export interface PositionOffset {
+@@ -82,6 +83,144 @@ export interface PositionOffset {
    z: number;
  }
  
@@ -27126,6 +27303,11 @@ index 42a46ac294719f16470ed72c27286e50c55a35f2..797d2198f8eb0aa71f122fda1bf201e9
 +  gripPalmRollRad?: number;
 +  /** Signed distance along the staff axis from its authored grip point. */
 +  gripRiseM?: number;
++  /** Local wrist edits authored alongside the fixed staff contact. */
++  wristBendRad?: number;
++  wristTwistRad?: number;
++  /** Finger pose to refine against the staff before contact is reported. */
++  sculptFingers?: (root: Object3D, side: "left" | "right") => void;
 +}
 +
 +/** Live posture values used by the sequence collision audit. */
@@ -27228,7 +27410,7 @@ index 42a46ac294719f16470ed72c27286e50c55a35f2..797d2198f8eb0aa71f122fda1bf201e9
  export interface IAvatarAnimator {
    /**
     * Set the hand targets from prop states
-@@ -140,13 +274,70 @@ export interface IAvatarAnimator {
+@@ -140,13 +279,70 @@ export interface IAvatarAnimator {
     * Set prop states and compute per-arm IK blend weights.
     * Arms with props ramp toward IK (weight 1).
     * Arms without props ramp toward animation (weight 0).
@@ -28199,7 +28381,7 @@ index 0000000000000000000000000000000000000000..e93bf29dd13171667d4638beb7b2bf8e
 +  return confidence;
 +}
 diff --git a/src/lib/services/implementations/AvatarAnimator.ts b/src/lib/services/implementations/AvatarAnimator.ts
-index c73bcabe86e07dd117e6f737532aea88ac9ec194..25f8d15b590f2913daa03d2e54656cdd40374058 100644
+index c73bcabe86e07dd117e6f737532aea88ac9ec194..2502c85b3b1a4da19f5243950b61086a7c8e1be1 100644
 --- a/src/lib/services/implementations/AvatarAnimator.ts
 +++ b/src/lib/services/implementations/AvatarAnimator.ts
 @@ -5,21 +5,144 @@
@@ -28597,7 +28779,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..25f8d15b590f2913daa03d2e54656cdd
            staffAngle: blueProp.staffRotationAngle,
            plane: blueProp.plane,
            weight: 1,
-@@ -218,15 +542,152 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -218,15 +542,154 @@ export class AvatarAnimator implements IAvatarAnimator {
              redProp.worldPosition.y - oy,
              redProp.worldPosition.z - oz
            ),
@@ -28659,6 +28841,8 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..25f8d15b590f2913daa03d2e54656cdd
 +      elbowPole: { x: elbowPole.x, y: elbowPole.y, z: elbowPole.z },
 +      gripRelaxation: Math.max(0, Math.min(1, finite(pose.gripRelaxation ?? 0, 1))),
 +      gripRiseM: finite(pose.gripRiseM ?? 0, 0.08),
++      wristBendRad: finite(pose.wristBendRad ?? 0, Math.PI / 6),
++      wristTwistRad: finite(pose.wristTwistRad ?? 0, Math.PI / 6),
 +      gripTiltRad: Math.max(0, Math.min(1.4, finite(pose.gripTiltRad ?? 0, 1.4))),
 +      gripPalmRollRad: pose.gripPalmRollRad === undefined
 +        ? undefined
@@ -28750,7 +28934,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..25f8d15b590f2913daa03d2e54656cdd
    setLeftHandTarget(target: HandPose): void {
      this.targetPose.leftHand = { ...target };
      this.targetPose.timestamp = Date.now();
-@@ -244,8 +705,13 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -244,8 +707,13 @@ export class AvatarAnimator implements IAvatarAnimator {
    update(deltaTime: number): void {
      // Ramp per-arm IK blend weights (framerate-independent exponential lerp)
      const blendFactor = 1 - Math.exp(-this.ikBlendSpeed * deltaTime);
@@ -28766,7 +28950,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..25f8d15b590f2913daa03d2e54656cdd
  
      if (this.transitioning) {
        this.updateTransition(deltaTime);
-@@ -259,7 +725,349 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -259,7 +727,359 @@ export class AvatarAnimator implements IAvatarAnimator {
      const finalPose = this.computeFinalPose();
  
      // Solve IK for arms
@@ -29009,6 +29193,9 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..25f8d15b590f2913daa03d2e54656cdd
 +    const { axis: gripAxis, longitudinal: gripLongitudinal } = this.relaxedGripFrame(transverse, longitudinal);
 +    const localInverse = new Matrix4().makeBasis(gripAxis, gripLongitudinal, new Vector3().crossVectors(gripAxis, gripLongitudinal)).invert();
 +    const scale = chain.effector.getWorldScale(new Vector3());
++    const wristEdit = new Quaternion()
++      .setFromAxisAngle(new Vector3(1, 0, 0), this.authoredContactPose?.wristBendRad ?? 0)
++      .multiply(new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), this.authoredContactPose?.wristTwistRad ?? 0));
 +    const authoredPole = this.authoredContactPose
 +      ? new Vector3(
 +          this.authoredContactPose.elbowPole.x,
@@ -29028,7 +29215,8 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..25f8d15b590f2913daa03d2e54656cdd
 +      iterations += 1;
 +      const direction = forward.clone().applyAxisAngle(axis, roll);
 +      const basis = new Matrix4().makeBasis(axis, direction, new Vector3().crossVectors(axis, direction));
-+      const rotation = new Quaternion().setFromRotationMatrix(basis.multiply(localInverse)).normalize();
++      const rotation = new Quaternion().setFromRotationMatrix(basis.multiply(localInverse))
++        .multiply(wristEdit).normalize();
 +      const wrist = hand.targetPosition.clone().sub(socket.clone().multiply(scale).applyQuaternion(rotation));
 +      const reach = wrist.clone().sub(shoulder);
 +      const candidatePole = pole.clone().applyAxisAngle(reach.clone().normalize(), poleAngle);
@@ -29066,15 +29254,21 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..25f8d15b590f2913daa03d2e54656cdd
 +    let roll = 0;
 +    let best = evaluate(poleAngle, roll);
 +    if (authoredPole) {
-+      // Blend the bounded pole/roll candidates instead of choosing a discrete
-+      // winner. This depends only on the authored pose, so seeking and reverse
-+      // playback produce the same elbow as forward playback.
++      // Near North, an authored wrist edit must keep its chosen staff-facing
++      // roll. Fade out the extra reach-search roll while that edit is active.
++      const northBlend = Math.max(0, Math.min(1, (palmRoll - 2) / 0.5));
++      const wristMagnitude = Math.hypot(this.authoredContactPose?.wristBendRad ?? 0, this.authoredContactPose?.wristTwistRad ?? 0);
++      const editBlend = Math.max(0, Math.min(1, wristMagnitude / 0.1));
++      const northWeight = northBlend * northBlend * (3 - 2 * northBlend) * editBlend * editBlend * (3 - 2 * editBlend);
++      const maxRoll = 0.3 * (1 - northWeight);
++      // Blend bounded candidates so direct and reverse seeks agree.
 +      const candidates: { angle: number; roll: number; cost: number }[] = [];
 +      for (let i = -4; i <= 4; i += 1) {
-+        for (let j = 0; j <= 20; j += 1) {
-+          const candidateRoll = -0.3 + j * 0.03;
-+          const angle = i * AUTHORED_POLE_SEARCH_RANGE / 4;
-+          candidates.push({angle, roll: candidateRoll, cost: evaluate(angle, candidateRoll).cost});
++        const angle = i * AUTHORED_POLE_SEARCH_RANGE / 4;
++        const rollSteps = maxRoll < 1e-6 ? 0 : 20;
++        for (let j = 0; j <= rollSteps; j += 1) {
++          const candidateRoll = rollSteps === 0 ? 0 : maxRoll * (-1 + j / 10);
++          candidates.push({ angle, roll: candidateRoll, cost: evaluate(angle, candidateRoll).cost });
 +        }
 +      }
 +      const minimum = Math.min(...candidates.map(candidate => candidate.cost));
@@ -29117,7 +29311,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..25f8d15b590f2913daa03d2e54656cdd
    }
  
    private blendToTarget(_deltaTime: number): void {
-@@ -378,13 +1186,217 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -378,13 +1198,217 @@ export class AvatarAnimator implements IAvatarAnimator {
      return result;
    }
  
@@ -29336,7 +29530,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..25f8d15b590f2913daa03d2e54656cdd
      // Compute body center from Hips bone (or default to origin)
      const bodyCenter = new Vector3(0, 0, 0);
      const hipsBone = state.bones.get("Hips");
-@@ -392,6 +1404,11 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -392,6 +1416,11 @@ export class AvatarAnimator implements IAvatarAnimator {
        hipsBone.getWorldPosition(bodyCenter);
      }
  
@@ -29348,7 +29542,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..25f8d15b590f2913daa03d2e54656cdd
      // Cache shoulder rest Y positions once (before any clavicle rotation has been applied).
      // CRITICAL: Do NOT read these per-frame after clavicle is rotated - the elevated
      // position feeds back and causes oscillation.
-@@ -445,7 +1462,8 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -445,7 +1474,8 @@ export class AvatarAnimator implements IAvatarAnimator {
          pose.leftHand?.targetPosition ?? null,
          pose.rightHand?.targetPosition ?? null,
          bodyCenter,
@@ -29358,7 +29552,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..25f8d15b590f2913daa03d2e54656cdd
        );
  
        // Apply twist to each bone individually for a natural spinal curve.
-@@ -511,12 +1529,175 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -511,12 +1541,175 @@ export class AvatarAnimator implements IAvatarAnimator {
        }
      }
  
@@ -29535,7 +29729,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..25f8d15b590f2913daa03d2e54656cdd
          // Save what the locomotion animation wrote to bone quaternions
          const animRootQuat = leftChain.root.quaternion.clone();
          const animMiddleQuat = leftChain.middle.quaternion.clone();
-@@ -527,7 +1708,7 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -527,7 +1720,7 @@ export class AvatarAnimator implements IAvatarAnimator {
            const leftShoulder = state.bones.get("LeftShoulder");
            if (leftShoulder) {
              const targetQuat = this.clavicleRaiser.computeClavicleRotation(
@@ -29544,7 +29738,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..25f8d15b590f2913daa03d2e54656cdd
                "left",
                this.leftShoulderRestY,
                leftChain.totalLength
-@@ -540,6 +1721,15 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -540,6 +1733,15 @@ export class AvatarAnimator implements IAvatarAnimator {
            }
          }
  
@@ -29560,7 +29754,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..25f8d15b590f2913daa03d2e54656cdd
          // Build IK target with optional pole vector
          const target: IKTarget = {
            position: leftTarget,
-@@ -547,19 +1737,75 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -547,19 +1749,75 @@ export class AvatarAnimator implements IAvatarAnimator {
          };
  
          if (this._poleVectorsEnabled && this.poleComputer && leftHand.plane) {
@@ -29639,7 +29833,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..25f8d15b590f2913daa03d2e54656cdd
  
          // Save IK results BEFORE blending - .copy() would overwrite them
          const ikRootQuat = leftChain.root.quaternion.clone();
-@@ -572,13 +1818,24 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -572,13 +1830,24 @@ export class AvatarAnimator implements IAvatarAnimator {
          leftChain.middle.quaternion.copy(animMiddleQuat).slerp(ikMiddleQuat, w);
          leftChain.effector.quaternion.copy(animEffectorQuat).slerp(ikEffectorQuat, w);
  
@@ -29665,7 +29859,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..25f8d15b590f2913daa03d2e54656cdd
          // Save what the locomotion animation wrote to bone quaternions
          const animRootQuat = rightChain.root.quaternion.clone();
          const animMiddleQuat = rightChain.middle.quaternion.clone();
-@@ -589,7 +1846,7 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -589,7 +1858,7 @@ export class AvatarAnimator implements IAvatarAnimator {
            const rightShoulder = state.bones.get("RightShoulder");
            if (rightShoulder) {
              const targetQuat = this.clavicleRaiser.computeClavicleRotation(
@@ -29674,7 +29868,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..25f8d15b590f2913daa03d2e54656cdd
                "right",
                this.rightShoulderRestY,
                rightChain.totalLength
-@@ -602,6 +1859,15 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -602,6 +1871,15 @@ export class AvatarAnimator implements IAvatarAnimator {
            }
          }
  
@@ -29690,7 +29884,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..25f8d15b590f2913daa03d2e54656cdd
          // Build IK target with optional pole vector
          const target: IKTarget = {
            position: rightTarget,
-@@ -609,19 +1875,68 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -609,19 +1887,68 @@ export class AvatarAnimator implements IAvatarAnimator {
          };
  
          if (this._poleVectorsEnabled && this.poleComputer && rightHand.plane) {
@@ -29762,7 +29956,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..25f8d15b590f2913daa03d2e54656cdd
  
          // Save IK results BEFORE blending - .copy() would overwrite them
          const ikRootQuat = rightChain.root.quaternion.clone();
-@@ -634,13 +1949,1035 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -634,13 +1961,1035 @@ export class AvatarAnimator implements IAvatarAnimator {
          rightChain.middle.quaternion.copy(animMiddleQuat).slerp(ikMiddleQuat, w);
          rightChain.effector.quaternion.copy(animEffectorQuat).slerp(ikEffectorQuat, w);
  
@@ -30798,7 +30992,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..25f8d15b590f2913daa03d2e54656cdd
  
    addLayer(layer: AnimationLayer): void {
      this.layers.set(layer.id, layer);
-@@ -689,6 +3026,20 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -689,6 +3038,20 @@ export class AvatarAnimator implements IAvatarAnimator {
      this.externalSpinePitchRad = radians;
    }
  
@@ -30819,7 +31013,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..25f8d15b590f2913daa03d2e54656cdd
    /** Debug toggle: disable pole vectors to compare old vs new elbow behavior */
    togglePoleVectors(): boolean {
      this._poleVectorsEnabled = !this._poleVectorsEnabled;
-@@ -696,10 +3047,18 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -696,10 +3059,18 @@ export class AvatarAnimator implements IAvatarAnimator {
        // Reset to default backward poles so difference is visible immediately
        this.leftPoleVector.set(0, 0, -1);
        this.rightPoleVector.set(0, 0, -1);
@@ -33363,7 +33557,7 @@ index 626111debe6cf0d4a8846c94e3b6847e3aa2758f..beac36ea1ba8dcd58f43158c07c6e709
 +  }
  }
 diff --git a/src/lib/services/implementations/FingerAnimator.ts b/src/lib/services/implementations/FingerAnimator.ts
-index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..e829abab102dab096434babd461654568e3678c5 100644
+index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..19c3cfe9429bece6a8b74e3c115c35bc82138611 100644
 --- a/src/lib/services/implementations/FingerAnimator.ts
 +++ b/src/lib/services/implementations/FingerAnimator.ts
 @@ -1,5 +1,5 @@
@@ -33374,7 +33568,7 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..e829abab102dab096434babd46165456
  import type { IFingerAnimator } from "../contracts/IFingerAnimator";
  import {
    GripType,
-@@ -8,23 +8,165 @@ import {
+@@ -8,23 +8,166 @@ import {
    type FingerChains,
  } from "../../domain/models/GripPose";
  import { STAFF_GRIP_POSES } from "../../data/grip-poses/staff-grip-poses";
@@ -33406,6 +33600,7 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..e829abab102dab096434babd46165456
 +  skinRadii: number[];
 +  skinSamples: Array<Array<{ mesh: SkinnedMesh; vertex: number; distalFraction: number }>>;
 +  skinTriangles: Array<Array<{ mesh: SkinnedMesh; a: number; b: number; c: number }>>;
++  triangleGroups: Map<string, Array<{ mesh: SkinnedMesh; a: number; b: number; c: number; distal: boolean }>>;
 +  relaxedProfiles: Map<string, Array<{ amount: number; pose: Quaternion[] }>>;
  }
  
@@ -33543,7 +33738,7 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..e829abab102dab096434babd46165456
      this.ready = true;
  
      this.applyPoseImmediate(this.leftHand, GripType.IDLE, "left");
-@@ -47,9 +189,57 @@ export class FingerAnimator implements IFingerAnimator {
+@@ -47,9 +190,57 @@ export class FingerAnimator implements IFingerAnimator {
      this.setGrip("right", rightGrip);
    }
  
@@ -33571,7 +33766,7 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..e829abab102dab096434babd46165456
 +    this.strictCylinderContact = strict;
 +  }
 +
-+  solveCylinderContacts(): void {
++  solveCylinderContacts(sculptFingers?: (side: "left" | "right") => void): void {
 +    if (!this.ready || !this.leftHand || !this.rightHand) return;
 +    if (this.strictCylinderContact) {
 +      // A seek must produce the same hand as chronological playback. Restore
@@ -33580,8 +33775,8 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..e829abab102dab096434babd46165456
 +      this.applyPoseImmediate(this.leftHand, this.leftHand.targetGrip, "left");
 +      this.applyPoseImmediate(this.rightHand, this.rightHand.targetGrip, "right");
 +    }
-+    this.solveHandCylinder(this.leftHand, this.leftCylinder, this.leftContactReport, "left");
-+    this.solveHandCylinder(this.rightHand, this.rightCylinder, this.rightContactReport, "right");
++    this.solveHandCylinder(this.leftHand, this.leftCylinder, this.leftContactReport, "left", false, sculptFingers);
++    this.solveHandCylinder(this.rightHand, this.rightCylinder, this.rightContactReport, "right", false, sculptFingers);
 +  }
 +
 +  getCylinderContactReport(
@@ -33601,7 +33796,7 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..e829abab102dab096434babd46165456
      this.updateHand(this.leftHand, "left", deltaTime);
      this.updateHand(this.rightHand, "right", deltaTime);
    }
-@@ -67,11 +257,20 @@ export class FingerAnimator implements IFingerAnimator {
+@@ -67,11 +258,20 @@ export class FingerAnimator implements IFingerAnimator {
      this.leftHand = null;
      this.rightHand = null;
      this.ready = false;
@@ -33623,7 +33818,7 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..e829abab102dab096434babd46165456
  
      for (const boneName of FINGER_BONES) {
        const bone = boneMap.get(boneName);
-@@ -79,31 +278,291 @@ export class FingerAnimator implements IFingerAnimator {
+@@ -79,31 +279,292 @@ export class FingerAnimator implements IFingerAnimator {
          throw new Error(`Missing finger bone: ${boneName}`);
        }
        bones.push(bone);
@@ -33657,6 +33852,7 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..e829abab102dab096434babd46165456
 +      skinRadii: [],
 +      skinSamples: [],
 +      skinTriangles: [],
++      triangleGroups: new Map(),
 +      relaxedProfiles: new Map(),
      };
 +    for (const mesh of meshes) {
@@ -33896,7 +34092,7 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..e829abab102dab096434babd46165456
      } else {
 -      this.scratchQuat.set(raw[0], raw[1], raw[2], raw[3]);
 +      this.scratchDelta.set(raw[0], raw[1], raw[2], raw[3]);
-+    }
+     }
 +    this.scratchQuat
 +      .copy(state.restRotations[boneIndex]!)
 +      .multiply(this.scratchDelta)
@@ -33913,7 +34109,7 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..e829abab102dab096434babd46165456
 +    if (hand === "right") {
 +      this.scratchDelta.y = -this.scratchDelta.y;
 +      this.scratchDelta.z = -this.scratchDelta.z;
-     }
++    }
 +    this.scratchQuat
 +      .copy(state.restRotations[boneIndex]!)
 +      .multiply(this.scratchDelta)
@@ -33921,7 +34117,7 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..e829abab102dab096434babd46165456
    }
  
    private updateHand(
-@@ -115,13 +574,833 @@ export class FingerAnimator implements IFingerAnimator {
+@@ -115,13 +576,967 @@ export class FingerAnimator implements IFingerAnimator {
      const alpha = Math.min(1, this.blendSpeed * deltaTime);
  
      for (let i = 0; i < FINGER_BONES.length; i++) {
@@ -33938,7 +34134,8 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..e829abab102dab096434babd46165456
 +    cylinder: FingerCylinderContactInput | null,
 +    report: FingerCylinderContact[],
 +    side: "left" | "right",
-+    buildingProfile = false
++    buildingProfile = false,
++    sculptFingers?: (side: "left" | "right") => void
 +  ): void {
 +    this.invalidateSurface();
 +    this.synchronizeSkinMeshes(state);
@@ -33946,12 +34143,24 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..e829abab102dab096434babd46165456
 +    const hand = state.bones[0]?.parent;
 +    if (!buildingProfile && cylinder && hand && state.targetGrip === GripType.SQUARE && state.contactRelaxation > 1e-4) {
 +      this.applyRelaxedProfile(state, cylinder, side);
++      if (sculptFingers) {
++        const contactPose = state.bones.map((bone) => bone.quaternion.clone());
++        sculptFingers(side);
++        hand.updateWorldMatrix(true, true);
++        const authored = state.bones.map((bone) => bone.quaternion.clone());
++        this.projectRelaxedContact(state, cylinder, authored, true);
++        this.easeOptionalPenetration(state, cylinder, contactPose);
++      }
 +      this.invalidateSurface();
 +      FINGER_NAMES.forEach((finger, index) => report.push({
 +        ...this.measureFinger(state, FINGER_STARTS[index]!, finger, cylinder),
 +        required: this.isRequiredFinger(state, finger),
 +      }));
 +      return;
++    }
++    if (sculptFingers) {
++      sculptFingers(side);
++      hand?.updateWorldMatrix(true, true);
 +    }
 +    let contactKey: string | null = null;
 +    let localA: Vector3 | null = null;
@@ -33980,7 +34189,7 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..e829abab102dab096434babd46165456
 +        sameScale &&
 +        endpointDistanceM(localA, cached.a) <= CONTACT_CACHE_ENDPOINT_TOLERANCE_M &&
 +        endpointDistanceM(localB, cached.b) <= CONTACT_CACHE_ENDPOINT_TOLERANCE_M;
-+      if (equivalentGeometry && state.contactPose) {
++      if (!sculptFingers && equivalentGeometry && state.contactPose) {
 +        state.bones.forEach((bone, index) => bone.quaternion.copy(state.contactPose![index]!));
 +        hand.updateWorldMatrix(true, true);
 +        FINGER_NAMES.forEach((finger, index) => report.push({
@@ -34245,6 +34454,18 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..e829abab102dab096434babd46165456
 +
 +  private applyRelaxedProfile(state: HandState, cylinder: FingerCylinderContactInput, side: "left" | "right"): void {
 +    const hand = state.bones[0]!.parent!;
++    const relaxation = state.contactRelaxation;
++    // Build the cached profile from a fixed local reference. A direct seek must
++    // not seed its first profile from the fingers left by the previous frame.
++    const tilt = Math.PI / 3;
++    const scale = hand.getWorldScale(new Vector3());
++    const key = `${Math.round(tilt * 10000)}:${cylinder.radiusM}:${scale.toArray().map(v => v.toFixed(6)).join(":")}`;
++    let profile = state.relaxedProfiles.get(key);
++    if (!profile) {
++      state.contactRelaxation = 0;
++      this.applyPoseImmediate(state, GripType.SQUARE, side);
++      state.contactRelaxation = relaxation;
++    }
 +    hand.updateWorldMatrix(true, true);
 +    const local = (index: number) => hand.worldToLocal(state.bones[index]!.getWorldPosition(new Vector3()));
 +    const middle = local(6);
@@ -34254,11 +34475,6 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..e829abab102dab096434babd46165456
 +    const normal = new Vector3().crossVectors(transverse, longitudinal).normalize();
 +    if (normal.dot(local(0).sub(middle)) < 0) normal.negate();
 +    const fallback = middle.clone().multiplyScalar(0.65);
-+    const relaxation = state.contactRelaxation;
-+    const tilt = state.contactTiltRad;
-+    const scale = hand.getWorldScale(new Vector3());
-+    const key = `${Math.round(tilt * 10000)}:${cylinder.radiusM}:${scale.toArray().map(v => v.toFixed(6)).join(":")}`;
-+    let profile = state.relaxedProfiles.get(key);
 +    const samples = 32;
 +    if (!profile) {
 +      const gripChannel = (amount: number) => {
@@ -34375,12 +34591,24 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..e829abab102dab096434babd46165456
 +    hand.updateWorldMatrix(true, true);
 +  }
 +
-+  private projectRelaxedContact(state: HandState, cylinder: FingerCylinderContactInput, authored: Quaternion[]): void {
++  private projectRelaxedContact(state: HandState, cylinder: FingerCylinderContactInput, authored: Quaternion[], requiredOnly = false): void {
 +    for (let fingerIndex = 0; fingerIndex < FINGER_NAMES.length; fingerIndex++) {
 +      const finger = FINGER_NAMES[fingerIndex]!;
++      if (requiredOnly && !this.isRequiredFinger(state, finger)) continue;
 +      const start = FINGER_STARTS[fingerIndex]!;
 +      this.invalidateSurface();
 +      const existing = this.measureFinger(state, start, finger, cylinder);
++      if (requiredOnly && finger === "thumb" && existing.supported) {
++        const axis = cylinder.b.clone().sub(cylinder.a).normalize();
++        const center = cylinder.a.clone().add(cylinder.b).multiplyScalar(0.5);
++        const radial = (joint: number) => {
++          const point = state.bones[joint]!.getWorldPosition(new Vector3()).sub(center);
++          return point.addScaledVector(axis, -point.dot(axis)).normalize();
++        };
++        // A supported opposing thumb needs no correction. Optimizing it toward
++        // an arbitrary positive margin can switch to a distant local solution.
++        if (radial(start + 2).dot(radial(4)) <= -0.15) continue;
++      }
 +      if ((existing.signedClearanceM ?? -Infinity) >= 0.00015 &&
 +        (!this.isRequiredFinger(state, finger) ||
 +          ((existing.signedClearanceM ?? Infinity) <= 0.0008 &&
@@ -34388,6 +34616,13 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..e829abab102dab096434babd46165456
 +              (existing.distalPadClearanceM ?? Infinity) <= 0.0008)))) continue;
 +      const bases = state.bones.slice(start, start + 3).map(bone => bone.quaternion.clone());
 +      const parameters = finger === "thumb" ? [0, 0, 0, 0, 0] : [0, 0, 0];
++      const oppositeSide = requiredOnly && finger === "thumb" ? (() => {
++        const axis = cylinder.b.clone().sub(cylinder.a).normalize();
++        const center = cylinder.a.clone().add(cylinder.b).multiplyScalar(0.5);
++        const index = state.bones[4]!.getWorldPosition(new Vector3()).sub(center);
++        index.addScaledVector(axis, -index.dot(axis)).normalize();
++        return { axis, center, index };
++      })() : null;
 +      const apply = () => {
 +        this.invalidateSurface();
 +        if (finger === "thumb") {
@@ -34405,6 +34640,13 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..e829abab102dab096434babd46165456
 +        let result = Math.min(0, surface - 0.00025) ** 2 * 1e6;
 +        if (required) result += Math.max(0, surface - 0.0008) ** 2 * 1e6;
 +        if (finger === "thumb") result += Math.max(0, pad - 0.0008) ** 2 * 1e6;
++        if (oppositeSide) {
++          const thumbRadial = state.bones[start + 2]!.getWorldPosition(new Vector3()).sub(oppositeSide.center);
++          thumbRadial.addScaledVector(oppositeSide.axis, -thumbRadial.dot(oppositeSide.axis)).normalize();
++          // A surface clearance alone also accepts a thumb beside the index.
++          // Opposing sides keep the shaft cradled throughout the North turn.
++          result += Math.max(0, thumbRadial.dot(oppositeSide.index) + 0.15) ** 2 * 40;
++        }
 +        for (let joint = 0; joint < 3; joint++) {
 +          result += state.bones[start + joint]!.quaternion.angleTo(authored[start + joint]!) ** 2 * 0.0001;
 +        }
@@ -34429,6 +34671,84 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..e829abab102dab096434babd46165456
 +          }
 +          if (!changed) break;
 +        }
++      }
++      // The mesh objective can have several contact minima. Keep the nearest
++      // exact-supported point on the path from the sculpted thumb to its solve.
++      if (oppositeSide) {
++        const solved = state.bones.slice(start, start + 3).map((bone) => bone.quaternion.clone());
++        const applyBlend = (amount: number) => {
++          this.invalidateSurface();
++          for (let joint = 0; joint < 3; joint++) {
++            state.bones[start + joint]!.quaternion.copy(bases[joint]!).slerp(solved[joint]!, amount);
++          }
++          state.bones[start]!.updateWorldMatrix(true, true);
++          const contact = this.measureFinger(state, start, finger, cylinder);
++          const radial = state.bones[start + 2]!.getWorldPosition(new Vector3()).sub(oppositeSide.center);
++          radial.addScaledVector(oppositeSide.axis, -radial.dot(oppositeSide.axis)).normalize();
++          return contact.supported && radial.dot(oppositeSide.index) <= -0.15;
++        };
++        let lastUnsafe = 0;
++        let firstSafe = 1;
++        for (let step = 1; step <= 8; step++) {
++          const amount = step / 8;
++          if (applyBlend(amount)) { firstSafe = amount; break; }
++          lastUnsafe = amount;
++        }
++        if (firstSafe < 1) {
++          for (let pass = 0; pass < 4; pass++) {
++            const middle = (lastUnsafe + firstSafe) / 2;
++            if (applyBlend(middle)) firstSafe = middle;
++            else lastUnsafe = middle;
++          }
++        }
++        applyBlend(firstSafe);
++      }
++    }
++  }
++
++  /** Follow the safe contact-pose branch when a sculpt crosses the staff. */
++  private easeOptionalPenetration(state: HandState, cylinder: FingerCylinderContactInput, contactPose: Quaternion[]): void {
++    for (let fingerIndex = 0; fingerIndex < FINGER_NAMES.length; fingerIndex++) {
++      const finger = FINGER_NAMES[fingerIndex]!;
++      if (this.isRequiredFinger(state, finger)) continue;
++      const start = FINGER_STARTS[fingerIndex]!;
++      const sculpted = state.bones.slice(start, start + 3).map((bone) => bone.quaternion.clone());
++      const apply = (amount: number) => {
++        this.invalidateSurface();
++        for (let joint = 0; joint < 3; joint++) {
++          state.bones[start + joint]!.quaternion.copy(sculpted[joint]!).slerp(contactPose[start + joint]!, amount);
++        }
++        state.bones[start]!.updateWorldMatrix(true, true);
++        return this.fingerTriangleClearance(state, start, cylinder);
++      };
++      const allowedClearance = -0.0008;
++      let safeAmount = 1;
++      let bestAmount = 1;
++      let bestClearance = apply(1);
++      if (bestClearance < allowedClearance) {
++        // The contact pose itself is infeasible. Keep its least-intersecting blend.
++        for (let step = 23; step >= 0; step--) {
++          const amount = step / 24;
++          const clearance = apply(amount);
++          if (clearance > bestClearance) { bestClearance = clearance; bestAmount = amount; }
++        }
++        apply(bestAmount);
++        continue;
++      }
++      for (let step = 23; step >= 0; step--) {
++        const amount = step / 24;
++        const clearance = apply(amount);
++        if (clearance < allowedClearance) {
++          let unsafeAmount = amount;
++          for (let iteration = 0; iteration < 8; iteration++) {
++            const mid = (unsafeAmount + safeAmount) / 2;
++            if (apply(mid) >= allowedClearance) safeAmount = mid;
++            else unsafeAmount = mid;
++          }
++          apply(safeAmount);
++          break;
++        }
++        safeAmount = amount;
 +      }
 +    }
 +  }
@@ -34621,13 +34941,22 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..e829abab102dab096434babd46165456
 +    const cached = this.surfaceClearances.get(cacheKey);
 +    if (cached !== undefined) return cached;
 +    let clearance = Infinity;
-+    const seen = new Set<string>();
-+    const first = distalOnly ? start + 2 : start;
-+    const last = start + 3;
-+    for (let bone = first; bone < last; bone += 1) for (const sample of state.skinTriangles[bone] ?? []) {
-+      const key = `${sample.mesh.id}:${sample.a}:${sample.b}:${sample.c}`;
-+      if (seen.has(key)) continue;
-+      seen.add(key);
++    let distalClearance = Infinity;
++    let triangles = state.triangleGroups.get(cacheKey);
++    if (!triangles) {
++      const unique = new Map<string, { mesh: SkinnedMesh; a: number; b: number; c: number; distal: boolean }>();
++      for (let bone = start; bone < start + 3; bone += 1) for (const sample of state.skinTriangles[bone] ?? []) {
++        const key = `${sample.mesh.id}:${sample.a}:${sample.b}:${sample.c}`;
++        const previous = unique.get(key);
++        if (previous) previous.distal ||= bone === start + 2;
++        else unique.set(key, { ...sample, distal: bone === start + 2 });
++      }
++      const all = [...unique.values()];
++      state.triangleGroups.set(`tri:${start}:false`, all);
++      state.triangleGroups.set(`tri:${start}:true`, all.filter((sample) => sample.distal));
++      triangles = state.triangleGroups.get(cacheKey)!;
++    }
++    for (const sample of triangles) {
 +      const a = this.posedVertex(sample.mesh, sample.a);
 +      const b = this.posedVertex(sample.mesh, sample.b);
 +      const c = this.posedVertex(sample.mesh, sample.c);
@@ -34644,13 +34973,14 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..e829abab102dab096434babd46165456
 +      const t = Math.max(0, Math.min(1, ((cx - cylinder.a.x) * dx + (cy - cylinder.a.y) * dy + (cz - cylinder.a.z) * dz) / (dx * dx + dy * dy + dz * dz)));
 +      const centerDistance = Math.hypot(cx - cylinder.a.x - t * dx, cy - cylinder.a.y - t * dy, cz - cylinder.a.z - t * dz);
 +      const bound = Math.max(Math.hypot(a.x - cx, a.y - cy, a.z - cz), Math.hypot(b.x - cx, b.y - cy, b.z - cz), Math.hypot(c.x - cx, c.y - cy, c.z - cz));
-+      if (centerDistance - bound - cylinder.radiusM >= clearance) continue;
-+      clearance = Math.min(
-+        clearance,
-+        this.triangleStaffDistance(new Triangle(a, b, c), cylinder) - cylinder.radiusM
-+      );
++      const lowerBound = centerDistance - bound - cylinder.radiusM;
++      if (lowerBound >= clearance && (distalOnly || !sample.distal || lowerBound >= distalClearance)) continue;
++      const distance = this.triangleStaffDistance(new Triangle(a, b, c), cylinder) - cylinder.radiusM;
++      clearance = Math.min(clearance, distance);
++      if (!distalOnly && sample.distal) distalClearance = Math.min(distalClearance, distance);
 +    }
 +    this.surfaceClearances.set(cacheKey, clearance);
++    if (!distalOnly) this.surfaceClearances.set(`tri:${start}:true`, distalClearance);
 +    return clearance;
 +  }
 +
@@ -34756,7 +35086,7 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..e829abab102dab096434babd46165456
    private applyPoseImmediate(
      state: HandState,
      gripType: GripType,
-@@ -129,10 +1408,42 @@ export class FingerAnimator implements IFingerAnimator {
+@@ -129,10 +1544,42 @@ export class FingerAnimator implements IFingerAnimator {
    ): void {
      state.targetGrip = gripType;
      for (let i = 0; i < FINGER_BONES.length; i++) {

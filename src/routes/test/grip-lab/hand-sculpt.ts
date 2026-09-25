@@ -10,9 +10,15 @@ import type { TeachingPose } from "./isolation-teaching";
 
 type HandSide = "left" | "right";
 type Finger = "thumb" | "index" | "middle" | "ring" | "pinky";
+const FINGERS = [
+  "thumb",
+  "index",
+  "middle",
+  "ring",
+  "pinky",
+] as const satisfies readonly Finger[];
 
 const X = new Vector3(1, 0, 0);
-const Y = new Vector3(0, 1, 0);
 const Z = new Vector3(0, 0, 1);
 const jointWeights = [0.5, 0.35, 0.15] as const;
 const PHOTO_THUMB_SPREAD = (25 * Math.PI) / 180;
@@ -35,6 +41,20 @@ interface HandBone {
 }
 
 const cache = new WeakMap<Object3D, Map<string, HandBone>>();
+
+export function hasFingerSculpt(pose: TeachingPose): boolean {
+  return (
+    pose.gripRelaxation > 1e-4 ||
+    pose.thumbSpread !== 0 ||
+    FINGERS.some(
+      (finger) =>
+        pose[`${finger}Curl`] !== 0 ||
+        pose[`${finger}Joint1`] !== 0 ||
+        pose[`${finger}Joint2`] !== 0 ||
+        pose[`${finger}Joint3`] !== 0
+    )
+  );
+}
 
 function handBones(root: Object3D): Map<string, HandBone> {
   const previous = cache.get(root);
@@ -72,8 +92,8 @@ function handBones(root: Object3D): Map<string, HandBone> {
   return bones;
 }
 
-/** Lab-only edits run after contact posing. Each frame starts from the solver's pose. */
-export function sculptHand(
+/** Sculpt the authored finger pose before contact refinement measures the staff. */
+export function sculptFingers(
   root: Object3D,
   side: HandSide,
   pose: TeachingPose
@@ -82,20 +102,8 @@ export function sculptHand(
   const prefix = `${side}hand`;
   const wrist = bones.get(prefix)?.bone;
   if (!wrist) return;
-  wrist.quaternion.multiply(
-    new Quaternion().setFromAxisAngle(X, pose.wristBend)
-  );
-  wrist.quaternion.multiply(
-    new Quaternion().setFromAxisAngle(Y, pose.wristTwist)
-  );
 
-  for (const finger of [
-    "thumb",
-    "index",
-    "middle",
-    "ring",
-    "pinky",
-  ] as const satisfies readonly Finger[]) {
+  for (const finger of FINGERS) {
     const curl = pose[`${finger}Curl`];
     for (let joint = 1; joint <= 3; joint += 1) {
       const entry = bones.get(`${prefix}${finger}${joint}`);
@@ -107,14 +115,22 @@ export function sculptHand(
         bone.quaternion.slerp(bindRotation, pose.gripRelaxation);
       }
       const northWeight = pose.gripRelaxation;
-      const indexRelease = finger === "index" && joint === 3
-        ? NORTH_INDEX_TIP_RELEASE * northWeight : 0;
-      const supportCurl = finger !== "thumb" && finger !== "index" && joint <= 2
-        ? NORTH_SUPPORT_CURL * northWeight : 0;
+      const indexRelease =
+        finger === "index" && joint === 3
+          ? NORTH_INDEX_TIP_RELEASE * northWeight
+          : 0;
+      const supportCurl =
+        finger !== "thumb" && finger !== "index" && joint <= 2
+          ? NORTH_SUPPORT_CURL * northWeight ** 3
+          : 0;
       const jointEdit = pose[`${finger}Joint${joint as 1 | 2 | 3}`];
       bone.quaternion.multiply(
         new Quaternion().setFromAxisAngle(
-          X, curl * jointWeights[joint - 1]! + indexRelease + supportCurl + jointEdit
+          X,
+          curl * jointWeights[joint - 1]! +
+            indexRelease +
+            supportCurl +
+            jointEdit
         )
       );
       if (joint === 1 && finger !== "thumb") {

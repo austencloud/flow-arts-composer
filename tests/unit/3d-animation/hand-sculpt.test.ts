@@ -1,7 +1,7 @@
 import { Quaternion, Vector3, type Bone } from "three";
 import { describe, expect, it } from "vitest";
 import { avatar, avatarAssetsPresent, loadRig } from "../3d/locomotion-harness";
-import { sculptHand } from "../../../src/routes/test/grip-lab/hand-sculpt";
+import { sculptFingers } from "../../../src/routes/test/grip-lab/hand-sculpt";
 import {
   defaultTeachingKeys,
   sampleTeachingPose,
@@ -35,12 +35,13 @@ describe.runIf(avatarAssetsPresent())("Grip Lab photo hand", () => {
     const contactThumb = thumb.quaternion.clone();
 
     const pose = sampleTeachingPose(2, defaultTeachingKeys());
-    sculptHand(scene, "right", pose);
+    sculptFingers(scene, "right", pose);
     expect(finger.quaternion.angleTo(contactIndex)).toBeCloseTo(0.12, 2);
     expect(indexTip.quaternion.angleTo(contactIndexTip)).toBeCloseTo(1.05, 2);
     expect(thumb.quaternion.angleTo(contactThumb)).toBeCloseTo(0.45, 2);
     expect(ring.quaternion.angleTo(bindRing)).toBeGreaterThan(0.42);
-    const tipX = (bone: Bone) => wrist.worldToLocal(bone.getWorldPosition(new Vector3())).x;
+    const tipX = (bone: Bone) =>
+      wrist.worldToLocal(bone.getWorldPosition(new Vector3())).x;
     expect(tipX(indexEnd) - tipX(pinkyTip)).toBeLessThan(0.06);
     const firstIndex = finger.quaternion.clone();
     const firstThumb = thumb.quaternion.clone();
@@ -48,18 +49,18 @@ describe.runIf(avatarAssetsPresent())("Grip Lab photo hand", () => {
     finger.quaternion.copy(contactIndex);
     indexTip.quaternion.copy(contactIndexTip);
     thumb.quaternion.copy(contactThumb);
-    sculptHand(scene, "right", pose);
+    sculptFingers(scene, "right", pose);
     expect(finger.quaternion.angleTo(firstIndex)).toBeLessThan(1e-4);
     expect(indexTip.quaternion.angleTo(firstIndexTip)).toBeLessThan(1e-4);
     expect(thumb.quaternion.angleTo(firstThumb)).toBeLessThan(1e-4);
     thumb.quaternion.copy(contactThumb);
-    sculptHand(scene, "right", {
+    sculptFingers(scene, "right", {
       ...pose,
       thumbSpread: pose.thumbSpread - 0.2,
     });
     expect(thumb.quaternion.angleTo(firstThumb)).toBeGreaterThan(0.15);
     indexTip.quaternion.copy(contactIndexTip);
-    sculptHand(scene, "right", {
+    sculptFingers(scene, "right", {
       ...pose,
       indexJoint3: -0.2,
     });
