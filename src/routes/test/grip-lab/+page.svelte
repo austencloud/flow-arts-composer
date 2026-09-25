@@ -83,6 +83,7 @@
     ready = $state(false),
     loadFailed = $state(false);
   let cameraControls = $state<CameraControls | null>(null);
+  let cameraAdjusted = $state(false);
   let characterDrawerOpen = $state(false),
     diagnosticsOpen = $state(false),
     auditSummary = $state<string | null>(null);
@@ -217,11 +218,16 @@
     });
   });
 
-  // A hand shot follows the authored grip, and a resize changes the framing
-  // distance. Keep the controls' internal target aligned with the shot.
+  let framedShot = $state.raw(shot);
   $effect(() => {
-    if (stageWidth > 0 && stageHeight > 0 && cameraControls) {
-      void cameraControls.setLookAt(...shot.position, ...shot.target, false);
+    if (!cameraAdjusted && !dragging) framedShot = shot;
+  });
+
+  // Once someone moves the camera or a pose handle, keep their chosen angle
+  // instead of pulling the view back toward the moving hand.
+  $effect(() => {
+    if (stageWidth > 0 && stageHeight > 0 && cameraControls && !cameraAdjusted && !dragging) {
+      void cameraControls.setLookAt(...framedShot.position, ...framedShot.target, false);
     }
   });
 
@@ -247,6 +253,7 @@
     animation = requestAnimationFrame(frame);
   }
   function beginPoseEdit() {
+    cameraAdjusted = true;
     dragging = true;
     inspection.beginEdit();
   }
@@ -389,14 +396,14 @@
       <Canvas shadows>
         {#key inspection.view}<T.PerspectiveCamera
             makeDefault
-            position={shot.position}
+            position={framedShot.position}
             fov={INSPECTION_FOV_DEG}
             ><OrbitControls
               bind:ref={cameraControls}
               enabled={!dragging}
               enablePan={true}
               rightDragAction="pan"
-              target={shot.target}
+              oncontrolstart={() => (cameraAdjusted = true)}
               minDistance={0.25}
               maxDistance={10}
               maxPolarAngle={Math.PI}
@@ -581,7 +588,10 @@
       /><SegmentedControl
         options={views}
         value={inspection.view}
-        onchange={(value) => inspection.setView(value)}
+        onchange={(value) => {
+          cameraAdjusted = false;
+          inspection.setView(value);
+        }}
         ariaLabel="Inspection camera"
       />
     </div>
