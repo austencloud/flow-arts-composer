@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { sequenceFrameAt } from "$lib/shared/media-composition/domain/sequence-frame";
+import {
+  arrowOpacity,
+  sequenceFrameAt,
+} from "$lib/shared/media-composition/domain/sequence-frame";
 
 const DCK = [1, 1, 2, 1, 1, 1, 1, 1];
 
@@ -97,5 +100,17 @@ describe("sequenceFrameAt", () => {
         pass: 1,
       });
     }
+  });
+});
+
+describe("arrowOpacity", () => {
+  it("fades the arrow in with the move and keeps it once the pose holds", () => {
+    expect(arrowOpacity(sequenceFrameAt(0, DCK))).toBe(0);
+    expect(arrowOpacity(sequenceFrameAt(2.25, DCK))).toBeCloseTo(0.25, 9);
+    expect(arrowOpacity(sequenceFrameAt(3, DCK))).toBe(1);
+    // Past the last landing the pose holds with its arrow whole.
+    expect(
+      arrowOpacity(sequenceFrameAt(20, DCK, { endArrival: 16 }))
+    ).toBe(1);
   });
 });

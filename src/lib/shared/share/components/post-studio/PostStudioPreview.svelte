@@ -3,6 +3,7 @@
   import { getMediaCompositionContext } from "$lib/shared/media-composition/state/media-composition-context";
   import PostStudioMediaLayer from "./PostStudioMediaLayer.svelte";
   import PostStudioPaintedLayer from "./PostStudioPaintedLayer.svelte";
+  import { toPaintFrame } from "$lib/shared/media-composition/services/post-studio-layer-painter";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
   import type { PostStudioSlotId } from "$lib/shared/media-composition/domain/post-studio-slots";
@@ -159,13 +160,7 @@
                   <PostStudioPaintedLayer
                     painter={layerBinding.painter}
                     opacity={layer.opacity}
-                    frame={{
-                      sequencePosition: layer.sequencePosition,
-                      carouselPosition: layer.carouselPosition,
-                      displayedBeatNumber: layer.displayedBeatNumber,
-                      projectProgress: layer.projectProgress,
-                      sourceTimeSeconds: layer.sourceTimeSeconds,
-                    }}
+                    frame={toPaintFrame(layer, composition.previewSeconds)}
                   />
                 {:else}
                   <PostStudioMediaLayer

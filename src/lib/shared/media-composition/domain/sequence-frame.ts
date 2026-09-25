@@ -121,3 +121,16 @@ export function sequenceFrameAt(
     enginePosition: move + moveProgress,
   };
 }
+
+/**
+ * How much of the showing move's arrow is drawn. It fades in as the move is
+ * made, the way the Construct audition shows it, and is whole once the move
+ * lands and while the performer holds the last pose.
+ */
+export function arrowOpacity(
+  frame: Pick<SequenceFrame, "phase" | "moveProgress">
+): number {
+  if (frame.phase === "opening") return 0;
+  if (frame.phase === "holding") return 1;
+  return Math.min(1, Math.max(0, frame.moveProgress));
+}

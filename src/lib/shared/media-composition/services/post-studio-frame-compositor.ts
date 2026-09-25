@@ -4,7 +4,10 @@ import {
   regionRectIsOnFrame,
   type EvaluatedFrameLayer,
 } from "$lib/shared/media-composition/services/frame-evaluator";
-import type { PostStudioLayerPainter } from "$lib/shared/media-composition/services/post-studio-layer-painter";
+import {
+  toPaintFrame,
+  type PostStudioLayerPainter,
+} from "$lib/shared/media-composition/services/post-studio-layer-painter";
 import {
   calculateMediaFit,
   resolvePanOffset,
@@ -29,6 +32,8 @@ export interface RenderPostStudioFrameInput {
   cardFrameCache: Map<string, HTMLCanvasElement>;
   /** Painted sources by role. A painted layer never reads the DOM. */
   painters?: ReadonlyMap<string, PostStudioLayerPainter>;
+  /** The post time these layers were evaluated at. */
+  timeSeconds?: number;
 }
 
 function outputRegion(
@@ -275,7 +280,8 @@ async function drawPaintedLayer(
   preset: MediaCompositionPreset,
   region: LayoutRegion,
   layer: EvaluatedFrameLayer,
-  painter: PostStudioLayerPainter
+  painter: PostStudioLayerPainter,
+  timeSeconds: number | undefined
 ): Promise<void> {
   const pixels = outputRegion(preset, region);
   const width = Math.round(pixels.width);
@@ -296,13 +302,7 @@ async function drawPaintedLayer(
   context.clip();
   context.globalAlpha = layer.opacity;
   applyLayerTransform(context, geometry);
-  painter.paint(context, geometry.drawRect, {
-    sequencePosition: layer.sequencePosition,
-    carouselPosition: layer.carouselPosition,
-    displayedBeatNumber: layer.displayedBeatNumber,
-    projectProgress: layer.projectProgress,
-    sourceTimeSeconds: layer.sourceTimeSeconds,
-  });
+  painter.paint(context, geometry.drawRect, toPaintFrame(layer, timeSeconds));
   context.restore();
 }
 
@@ -358,7 +358,14 @@ export async function renderPostStudioFrame(
     const regionPixels = outputRegion(input.preset, region);
     const painter = input.painters?.get(layer.sourceRole);
     if (painter) {
-      await drawPaintedLayer(context, input.preset, region, layer, painter);
+      await drawPaintedLayer(
+        context,
+        input.preset,
+        region,
+        layer,
+        painter,
+        input.timeSeconds
+      );
       continue;
     }
 
