@@ -381,12 +381,14 @@
   }
 
   /* Bottom placement: the sheet is as tall as its header, list, and footer,
-     up to the height cap, and no wider than 720px (centered past that, like
-     iPad and Material bottom sheets). The list region scrolls at the cap. */
+     up to the height cap, and no wider than 720px. Past that it sits against
+     the start edge, the corner the menu button lives in, so it rises from
+     where it was opened. The list region scrolls at the cap. */
   :global(.module-switcher-drawer[data-placement="bottom"]) {
     --sheet-max-height: 100dvh;
     --sheet-max-width: 720px;
     --sheet-min-height: 0px;
+    --sheet-margin-inline: 0 auto;
   }
 
   @media (min-width: 700px) and (min-height: 500px) {

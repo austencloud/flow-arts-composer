@@ -197,7 +197,8 @@ dialog.drawer-content {
   right: 0;
   width: 100%;
   /* Consumers can cap sheet width via --sheet-max-width. Both edges are
-     pinned and the side margins are auto, so a capped sheet centers. */
+     pinned and the side margins are auto, so a capped sheet centers.
+     --sheet-margin-inline: 0 auto anchors it to the start edge instead. */
   max-width: var(--sheet-max-width, 100%);
   /* Consumers can cap sheet height via --sheet-max-height (replaces
      per-consumer `max-height: …vh !important` skins). */
@@ -209,7 +210,8 @@ dialog.drawer-content {
   min-height: var(--sheet-min-height, 50vh);
   min-height: var(--sheet-min-height, 50dvh);
 
-  margin: 0 auto;
+  margin-block: 0;
+  margin-inline: var(--sheet-margin-inline, auto);
   border-top-left-radius: var(
     --sheet-border-radius-top-left,
     var(--sheet-radius-large, 20px)

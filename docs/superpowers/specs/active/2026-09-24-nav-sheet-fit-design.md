@@ -41,15 +41,18 @@ left side drawer.
   (`--sheet-max-height`: `100dvh` on small viewports, `85dvh` at ≥700×500).
   When content exceeds the cap, only the list region scrolls; header and footer
   stay in place.
-- Width caps at 720px and the sheet centers horizontally. Phones are narrower
-  than the cap and are unchanged.
+- Width caps at 720px. Past the cap the sheet sits against the start edge
+  (left in LTR), the corner the menu button lives in, so it rises from where
+  it was opened. Phones are narrower than the cap and are unchanged.
+  (Centered at first; Austen found a centered sheet opened by a bottom-left
+  button weird, 2026-09-24.)
 - `Drawer.css` gains two opt-in custom properties on the bottom placement:
   `--sheet-max-width` (default `100%`) and `--sheet-min-height` (default
-  `50dvh`, the current value). Horizontal margins become `auto` so a capped
-  sheet centers. Other sheets keep today's behavior because the defaults match
-  the current values.
-- The module switcher sets `--sheet-max-width: 720px` and
-  `--sheet-min-height: 0`.
+  `50dvh`, the current value), plus `--sheet-margin-inline` (default `auto`,
+  which centers a capped sheet). Other sheets keep today's behavior because
+  the defaults match the current values.
+- The module switcher sets `--sheet-max-width: 720px`,
+  `--sheet-min-height: 0`, and `--sheet-margin-inline: 0 auto`.
 
 ### Side placement (landscape phones)
 
