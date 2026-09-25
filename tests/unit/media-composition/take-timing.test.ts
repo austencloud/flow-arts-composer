@@ -1,12 +1,20 @@
 import { describe, expect, it } from "vitest";
 import {
   TakeTimingSchema,
+  confirmTakeTiming,
   createTakeTiming,
+  editTimingSection,
+  fitSection,
   mergeTimingSectionIntoPrevious,
+  moveBeatOne,
   resolveTakeTiming,
+  setBeatOneAt,
+  setPerformanceEndAt,
   splitTimingSection,
   takePositionAt,
+  takeSampleAt,
   takeTimingFromLegacyMarks,
+  takeTimingStatus,
   type TakeTiming,
   type TimingSection,
 } from "$lib/shared/media-composition/domain/take-timing";
@@ -176,9 +184,9 @@ describe("resolveTakeTiming", () => {
     );
     expect(takePositionAt(resolved, 1 + SPB * 12)).toBeCloseTo(12, 3);
     expect(takePositionAt(resolved, 31 + slowSpb * 3)).toBeCloseTo(3, 3);
-    // The fast section keeps moving up to its cut, then the slow one takes
-    // over from its own opening pose.
-    expect(takePositionAt(resolved, 29.99)).toBeCloseTo((29.99 - 1) / SPB, 3);
+    // The fast section holds its last tapped landing up to its cut, then the
+    // slow one takes over from its own opening pose.
+    expect(takePositionAt(resolved, 29.99)).toBeCloseTo(16, 6);
     expect(takePositionAt(resolved, 30.5)).toBeCloseTo(0, 6);
   });
 
@@ -200,7 +208,7 @@ describe("timing sections", () => {
   it("splits a section and joins it back", () => {
     const taps = [2, 4, 12, 14];
     const original = timing([{ taps }]);
-    const split = splitTimingSection(original, 10, "section-2", 5);
+    const split = splitTimingSection(original, 10, "section-2", 5, EIGHT);
     expect(split.sections.map((section) => section.taps)).toEqual([
       [2, 4],
       [12, 14],
@@ -216,7 +224,18 @@ describe("timing sections", () => {
 
   it("will not split within a quarter second of a section edge", () => {
     const original = timing([{}]);
-    expect(splitTimingSection(original, 0.1, "section-2", 5)).toBe(original);
+    expect(splitTimingSection(original, 0.1, "section-2", 5, EIGHT)).toBe(
+      original
+    );
+  });
+
+  it("keeps counting across a split instead of starting again at move 1", () => {
+    const taps = Array.from({ length: 16 }, (_, index) => 1 + SPB * (index + 1));
+    const original = timing([{ taps, tempo: "locked" }]);
+    const split = splitTimingSection(original, 1 + SPB * 10.5, "s2", 5, EIGHT);
+    const resolved = resolveTakeTiming(split, EIGHT);
+    expect(takePositionAt(resolved, 1 + SPB * 12)).toBeCloseTo(12, 3);
+    expect(takePositionAt(resolved, 1 + SPB * 16)).toBeCloseTo(16, 3);
   });
 
   it("rejects overlapping sections", () => {
@@ -258,5 +277,118 @@ describe("takeTimingFromLegacyMarks", () => {
     expect(
       takeTimingFromLegacyMarks({ ...base, marks: [1, 2, 1.5] })
     ).toBeNull();
+  });
+});
+
+describe("where a performance ends", () => {
+  const taps = Array.from({ length: 12 }, (_, index) => 1 + SPB * (index + 1));
+
+  it("holds the last tapped landing instead of running on", () => {
+    const resolved = resolveTakeTiming(
+      timing([{ taps, tempo: "locked" }]),
+      EIGHT
+    );
+    expect(resolved.sections[0]!.endPosition).toBe(12);
+    expect(takeSampleAt(resolved, 1 + SPB * 11.5)).toMatchObject({
+      endArrival: 12,
+    });
+    expect(takePositionAt(resolved, 1 + SPB * 11.5)).toBeCloseTo(11.5, 3);
+    expect(takePositionAt(resolved, 1 + SPB * 12)).toBeCloseTo(12, 3);
+    expect(takePositionAt(resolved, 50)).toBeCloseTo(12, 6);
+  });
+
+  it("runs on to where Austen says the performance ends", () => {
+    const section = timing([{ taps, tempo: "locked" }]).sections[0]!;
+    const extended = setPerformanceEndAt(section, EIGHT, 1 + SPB * 20 + 0.1);
+    expect(extended.lastPosition).toBe(20);
+    const resolved = resolveTakeTiming(timing([extended]), EIGHT);
+    expect(takePositionAt(resolved, 1 + SPB * 18)).toBeCloseTo(18, 3);
+    expect(takePositionAt(resolved, 50)).toBeCloseTo(20, 6);
+  });
+
+  it("runs a tempo and beat 1 with no taps to the end of the take", () => {
+    const resolved = resolveTakeTiming(
+      timing([{ beatOneSeconds: 1 + SPB, tempo: "locked" }]),
+      EIGHT
+    );
+    expect(resolved.sections[0]!.endPosition).toBeNull();
+    expect(takePositionAt(resolved, 1 + SPB * 40)).toBeCloseTo(40, 3);
+  });
+});
+
+describe("beat 1", () => {
+  const taps = Array.from({ length: 16 }, (_, index) => 1 + SPB * (index + 1));
+
+  it("renumbers from the landing Austen marks", () => {
+    // He tapped from the opening pose, so the first tap is not move 1.
+    const section = timing([{ taps, tempo: "locked" }]).sections[0]!;
+    const marked = setBeatOneAt(section, EIGHT, 1 + SPB * 2 + 0.05);
+    const fit = fitSection(marked, EIGHT)!;
+    expect(fit.labels[0]!.position).toBe(0);
+    expect(fit.labels[1]!.position).toBe(1);
+    // Taps added before the mark later cannot shift it.
+    const withEarlyTap = { ...marked, taps: [0.2, ...marked.taps] };
+    expect(fitSection(withEarlyTap, EIGHT)!.labels[2]!.position).toBe(1);
+  });
+
+  it("can move to a moment ahead of every tap", () => {
+    // A test tap 3 landings before the performer started became move 1.
+    const section = timing([{ taps, tempo: "locked" }]).sections[0]!;
+    const marked = setBeatOneAt(section, EIGHT, 1 + SPB * -2);
+    expect(fitSection(marked, EIGHT)!.labels[0]!.position).toBe(4);
+  });
+
+  it("moves by whole landings", () => {
+    const section = timing([{ taps, tempo: "locked" }]).sections[0]!;
+    const later = moveBeatOne(section, EIGHT, 1);
+    expect(fitSection(later, EIGHT)!.labels[1]!.position).toBe(1);
+    const back = moveBeatOne(later, EIGHT, -1);
+    expect(fitSection(back, EIGHT)!.labels[0]!.position).toBe(1);
+  });
+
+  it("carries dragged landings and the end with their moments", () => {
+    const dragged = 1 + SPB * 5 + 0.05;
+    const section: TimingSection = {
+      ...timing([{ taps, tempo: "locked" }]).sections[0]!,
+      overrides: [{ position: 5, seconds: dragged }],
+      lastPosition: 14,
+    };
+    const shifted = moveBeatOne(section, EIGHT, 1);
+    expect(shifted.overrides).toEqual([{ position: 4, seconds: dragged }]);
+    expect(shifted.lastPosition).toBe(13);
+    const resolved = resolveTakeTiming(timing([shifted]), EIGHT);
+    const landings = resolved.sections[0]!.landings;
+    // No move squeezed to nothing around the dragged landing.
+    landings.slice(1).forEach((landing, index) => {
+      expect(landing.seconds - landings[index]!.seconds).toBeGreaterThan(
+        SPB / 2
+      );
+    });
+  });
+});
+
+describe("takeTimingStatus", () => {
+  const taps = [1, 2, 3, 4].map((position) => 1 + SPB * position);
+
+  it("asks for a check after tapping and remembers it", () => {
+    expect(takeTimingStatus(timing([{}]), EIGHT)).toBe("untapped");
+    const tapped = timing([{ taps }]);
+    expect(takeTimingStatus(tapped, EIGHT)).toBe("unconfirmed");
+    const confirmed = confirmTakeTiming(tapped, EIGHT, 9);
+    expect(takeTimingStatus(confirmed, EIGHT)).toBe("confirmed");
+    expect(TakeTimingSchema.safeParse(confirmed).success).toBe(true);
+    // Any edit needs a fresh look.
+    const edited = editTimingSection(
+      confirmed,
+      "section-1",
+      (section) => ({ ...section, offsetSeconds: 0.03 }),
+      10
+    );
+    expect(takeTimingStatus(edited, EIGHT)).toBe("unconfirmed");
+  });
+
+  it("flags a take confirmed against a sequence that has changed", () => {
+    const confirmed = confirmTakeTiming(timing([{ taps }]), EIGHT, 9);
+    expect(takeTimingStatus(confirmed, [...EIGHT, 1])).toBe("stale");
   });
 });

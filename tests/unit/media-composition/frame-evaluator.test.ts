@@ -251,7 +251,11 @@ describe("evaluatePresetFrame", () => {
       {
         steps,
         startPlacementDuration: 1,
-        clocks: { "take:slow": { positionAt: (seconds) => seconds } },
+        clocks: {
+          "take:slow": {
+            sampleAt: (seconds) => ({ arrival: seconds, endArrival: null }),
+          },
+        },
       },
       { "take:slow": 1.5 }
     );
@@ -262,6 +266,52 @@ describe("evaluatePresetFrame", () => {
       expect(layer.sequenceFrame!.arrival).toBeCloseTo(6.5, 9);
       expect(layer.displayedBeatNumber).toBe(7);
     }
+  });
+
+  it("holds every mapped layer on the performer's last landing", () => {
+    const steps = Array.from({ length: 8 }, () => ({
+      duration: 1,
+    })) as unknown as StepData[];
+    const preset = {
+      ...performancePreset,
+      clips: performancePreset.clips.map((clip) =>
+        clip.kind === "visual"
+          ? {
+              ...clip,
+              start: { unit: "seconds" as const, value: 0 },
+              end: { unit: "seconds" as const, value: 10 },
+              sourceIn: { unit: "seconds" as const, value: 0 },
+              sourceOut: { unit: "seconds" as const, value: 10 },
+              fadeInSeconds: undefined,
+              fadeOutSeconds: undefined,
+              timeMapRole: "take:a",
+            }
+          : clip
+      ),
+      transitions: [],
+    };
+    const at = (seconds: number) =>
+      evaluatePresetFrame(preset, 10, seconds, {
+        steps,
+        startPlacementDuration: 1,
+        clocks: {
+          "take:a": {
+            // The take ends on landing 12 at 6 s and the performer stands.
+            sampleAt: (media) => ({
+              arrival: Math.min(12, media * 2),
+              endArrival: 12,
+            }),
+          },
+        },
+      }).find((layer) => layer.clipId === "performance")!;
+    expect(at(5).sequenceFrame).toMatchObject({ phase: "moving", move: 2 });
+    expect(at(8).sequenceFrame).toMatchObject({
+      phase: "holding",
+      absoluteMove: 12,
+      move: 4,
+      pass: 1,
+      moveProgress: 1,
+    });
   });
 
   it("rejects an invalid project duration", () => {

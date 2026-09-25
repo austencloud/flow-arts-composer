@@ -7,7 +7,8 @@ describe("sequenceFrameAt", () => {
   it("shows the opening pose before anything moves", () => {
     for (const arrival of [-2, 0, Number.NaN]) {
       expect(sequenceFrameAt(arrival, DCK)).toMatchObject({
-        isOpening: true,
+        phase: "opening",
+        absoluteMove: 0,
         move: 0,
         moveProgress: 0,
         pass: 0,
@@ -66,8 +67,35 @@ describe("sequenceFrameAt", () => {
       move: 2,
       moveProgress: 1,
     });
-    expect(sequenceFrameAt(0.7, DCK, { holdLandings: true }).isOpening).toBe(
-      true
+    expect(sequenceFrameAt(0.7, DCK, { holdLandings: true }).phase).toBe(
+      "opening"
     );
+  });
+
+  it("counts moves and beats on across passes", () => {
+    const frame = sequenceFrameAt(10.5, DCK);
+    expect(frame).toMatchObject({ absoluteMove: 11, move: 3, pass: 1 });
+    // A pass is nine beats; move 3 is the two-beat one, half done.
+    expect(frame.beatsElapsed).toBeCloseTo(9 + 2 + 1, 9);
+    expect(sequenceFrameAt(8, DCK).beatsElapsed).toBeCloseTo(9, 9);
+  });
+
+  it("holds the last landing once the performer stops", () => {
+    expect(sequenceFrameAt(11.5, DCK, { endArrival: 12 })).toMatchObject({
+      phase: "moving",
+      move: 4,
+    });
+    for (const arrival of [12, 13.7, 40]) {
+      expect(
+        sequenceFrameAt(arrival, DCK, { endArrival: 12 })
+      ).toMatchObject({
+        phase: "holding",
+        arrival: 12,
+        absoluteMove: 12,
+        move: 4,
+        moveProgress: 1,
+        pass: 1,
+      });
+    }
   });
 });

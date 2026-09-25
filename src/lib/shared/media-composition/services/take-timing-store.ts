@@ -160,14 +160,15 @@ export function migrateLegacyTakeTiming(input: {
         bpm: alignment.bpm,
         now: input.now,
       });
+      // A typed tempo and a marked beat 1 are exactly a beat-1 mark with no
+      // taps: the grid runs at that tempo to the end of the take.
       const migrated: TakeTiming = {
         ...base,
         sections: [
           {
             ...base.sections[0]!,
             tempo: "locked",
-            taps: [alignment.firstBeatSeconds],
-            firstTapPosition: 1,
+            beatOneSeconds: alignment.firstBeatSeconds,
           },
         ],
       };
@@ -179,7 +180,9 @@ export function migrateLegacyTakeTiming(input: {
 
 /**
  * The timing to open a take with: what was saved, else a migrated older map,
- * else a fresh unmapped one at the BPM last used for this sequence.
+ * else a fresh unmapped one. The BPM is per take - a slow take is performed
+ * at its own tempo - so a fresh one starts at the default and the Timing
+ * step offers the tempo its taps suggest.
  */
 export function openTakeTiming(input: {
   sequenceId: string;
@@ -203,23 +206,4 @@ export function openTakeTiming(input: {
     bpm: input.defaultBpm,
     now: input.now,
   });
-}
-
-const LAST_BPM_PREFIX = "tka:post-studio:last-bpm:v1:";
-
-export function loadLastBpm(sequenceId: string): number | null {
-  const store = storage();
-  if (!store) return null;
-  const value = Number(store.getItem(LAST_BPM_PREFIX + sequenceId));
-  return Number.isFinite(value) && value > 0 ? value : null;
-}
-
-export function saveLastBpm(sequenceId: string, bpm: number): void {
-  const store = storage();
-  if (!store || !Number.isFinite(bpm) || bpm <= 0) return;
-  try {
-    store.setItem(LAST_BPM_PREFIX + sequenceId, String(bpm));
-  } catch {
-    // Not worth interrupting anything for.
-  }
 }

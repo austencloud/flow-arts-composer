@@ -1,11 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   catalogTakeKey,
-  loadLastBpm,
   loadTakeTiming,
   localTakeKey,
   openTakeTiming,
-  saveLastBpm,
   saveTakeTiming,
 } from "$lib/shared/media-composition/services/take-timing-store";
 import {
@@ -88,17 +86,13 @@ describe("take timing store", () => {
     expect(timing.sections[0]).toMatchObject({
       bpm: 87,
       tempo: "locked",
-      taps: [2],
-      firstTapPosition: 1,
+      taps: [],
+      beatOneSeconds: 2,
     });
     const resolved = resolveTakeTiming(timing, EIGHT);
     expect(takePositionAt(resolved, 2)).toBeCloseTo(1, 6);
     expect(takePositionAt(resolved, 2 + (60 / 87) * 4)).toBeCloseTo(5, 6);
-  });
-
-  it("remembers the last BPM per sequence", () => {
-    expect(loadLastBpm("dck")).toBeNull();
-    saveLastBpm("dck", 87);
-    expect(loadLastBpm("dck")).toBe(87);
+    // No taps, so the typed tempo runs on to the end of the take.
+    expect(takePositionAt(resolved, 2 + (60 / 87) * 30)).toBeCloseTo(31, 6);
   });
 });

@@ -26,8 +26,18 @@ export interface TapFitInput {
   bpm: number;
   /** Beats each move lasts, in sequence order; length is moves per pass. */
   moveBeats: readonly number[];
-  /** The position the earliest matched tap lands on. 1 is move 1's landing. */
+  /**
+   * The position the earliest matched tap lands on. 1 is move 1's landing.
+   * Ignored when `beatOneSeconds` is set.
+   */
   firstTapPosition: number;
+  /**
+   * A moment Austen marked as move 1's landing. The landing nearest it is
+   * position 1 however the taps start, so a tap on the opening pose, a stray
+   * before the performer starts, or tapping from partway in cannot shift the
+   * labels. Taps that fall before the opening pose are extras.
+   */
+  beatOneSeconds?: number | null;
   /** Hold the typed tempo exactly, or fit the video's own within ±5%. */
   tempo: "locked" | "follow";
 }
@@ -87,7 +97,10 @@ export function createBeatClock(moveBeats: readonly number[]) {
   const movesPerPass = moveBeats.length;
   const beatsPerPass = cumulative[movesPerPass]!;
 
-  /** Beats from position 0 to position p. Integer p only. */
+  /**
+   * Beats from position 0 to position p. Integer p only; a negative p counts
+   * back from the opening pose through the previous pass.
+   */
   function beatsBefore(position: number): number {
     const pass = Math.floor(position / movesPerPass);
     const within = position - pass * movesPerPass;
@@ -158,11 +171,17 @@ interface GridHypothesis {
  * move either side of where the first tap would put the origin, which covers
  * every phase of a uniform sequence without assuming the first tap is clean.
  */
+/** Where the first phase window sits: on the beat-1 mark, or the first tap. */
+interface PhaseSeed {
+  seconds: number;
+  position: number;
+}
+
 function searchGrid(
   taps: readonly number[],
   clock: BeatClock,
   tempos: readonly number[],
-  firstTapPosition: number,
+  seed: PhaseSeed,
   phaseStep: number,
   phaseWindow?: { center: number; reach: number }
 ): GridHypothesis {
@@ -170,7 +189,7 @@ function searchGrid(
   for (const secondsPerBeat of tempos) {
     const center =
       phaseWindow?.center ??
-      taps[0]! - secondsPerBeat * clock.beatsBefore(firstTapPosition);
+      seed.seconds - secondsPerBeat * clock.beatsBefore(seed.position);
     const reach =
       phaseWindow?.reach ?? secondsPerBeat * clock.shortestMove;
     for (let offset = -reach; offset <= reach + 1e-9; offset += phaseStep) {
@@ -194,7 +213,7 @@ function searchGridCoarseToFine(
   clock: BeatClock,
   nominal: number,
   lockTempo: boolean,
-  firstTapPosition: number
+  seed: PhaseSeed
 ): GridHypothesis {
   const tempoRange = (step: number, around: number, span: number) => {
     const tempos: number[] = [];
@@ -210,7 +229,7 @@ function searchGridCoarseToFine(
     taps,
     clock,
     coarseTempos,
-    firstTapPosition,
+    seed,
     PHASE_SEARCH_STEP_SECONDS * 3
   );
   const fineTempos = lockTempo
@@ -230,7 +249,7 @@ function searchGridCoarseToFine(
       taps,
       clock,
       [secondsPerBeat],
-      firstTapPosition,
+      seed,
       PHASE_SEARCH_STEP_SECONDS / 2,
       {
         center: middle - middleBeats * secondsPerBeat,
@@ -369,6 +388,11 @@ export function fitTapsToGrid(input: TapFitInput): TapFitResult {
     throw new RangeError("Tap at least once to fit a grid");
   }
   const firstTapPosition = Math.max(0, Math.round(input.firstTapPosition));
+  const beatOne =
+    typeof input.beatOneSeconds === "number" &&
+    Number.isFinite(input.beatOneSeconds)
+      ? input.beatOneSeconds
+      : null;
   const nominal = 60 / input.bpm;
   const lockTempo = input.tempo === "locked" || taps.length < 3;
   const grid = searchGridCoarseToFine(
@@ -376,8 +400,41 @@ export function fitTapsToGrid(input: TapFitInput): TapFitResult {
     clock,
     nominal,
     lockTempo,
-    firstTapPosition
+    beatOne === null
+      ? { seconds: taps[0]!, position: firstTapPosition }
+      : { seconds: beatOne, position: 1 }
   );
+  const shiftLabels = (
+    labelled: MatchedTap[],
+    shift: number,
+    secondsPerBeat: number
+  ): { matched: MatchedTap[]; originSeconds: number | null } => {
+    const shifted = labelled
+      .map((tap) => ({ ...tap, position: tap.position + shift }))
+      .filter((tap) => tap.position >= 0);
+    return {
+      matched: shifted,
+      originSeconds: shifted.length
+        ? shifted[0]!.seconds -
+          secondsPerBeat * clock.beatsBefore(shifted[0]!.position)
+        : null,
+    };
+  };
+  // With a beat-1 mark, the landing nearest it is position 1 and nothing
+  // else decides the labels.
+  const anchorToBeatOne = (
+    all: MatchedTap[],
+    originSeconds: number,
+    secondsPerBeat: number
+  ): { matched: MatchedTap[]; originSeconds: number | null } => {
+    const markLabel = clock.nearestPosition(
+      (beatOne! - originSeconds) / secondsPerBeat
+    );
+    const shift = 1 - markLabel;
+    return shift === 0
+      ? { matched: all, originSeconds: null }
+      : shiftLabels(all, shift, secondsPerBeat);
+  };
   // The earliest matched tap marks `firstTapPosition` by definition. The comb
   // may have placed it a landing off when the first tap was an extra, so
   // relabel before refining; with uneven move lengths the refit then settles
@@ -412,24 +469,24 @@ export function fitTapsToGrid(input: TapFitInput): TapFitResult {
             : null,
       };
     }
-    const shifted = labelled
-      .map((tap) => ({ ...tap, position: tap.position + shift }))
-      .filter((tap) => tap.position >= 0);
-    return {
-      matched: shifted,
-      originSeconds: shifted.length
-        ? shifted[0]!.seconds -
-          secondsPerBeat * clock.beatsBefore(shifted[0]!.position)
-        : null,
-    };
+    return shiftLabels(labelled, shift, secondsPerBeat);
   };
+  const anchor = (
+    all: MatchedTap[],
+    originSeconds: number,
+    secondsPerBeat: number
+  ) =>
+    beatOne === null
+      ? anchorToFirstTap(all, secondsPerBeat)
+      : anchorToBeatOne(all, originSeconds, secondsPerBeat);
   const sortedLabels = (originSeconds: number, secondsPerBeat: number) =>
     [...labelTaps(taps, clock, originSeconds, secondsPerBeat).values()].sort(
       (left, right) => left.position - right.position
     );
 
-  const first = anchorToFirstTap(
+  const first = anchor(
     sortedLabels(grid.originSeconds, grid.secondsPerBeat),
+    grid.originSeconds,
     grid.secondsPerBeat
   );
   let matched = first.matched;
@@ -445,8 +502,9 @@ export function fitTapsToGrid(input: TapFitInput): TapFitResult {
   );
   // Relabel against the refined grid once: a drifting tempo can leave the
   // last passes' taps nearer a neighbour under the comb's coarser grid.
-  const second = anchorToFirstTap(
+  const second = anchor(
     sortedLabels(fitted.originSeconds, fitted.secondsPerBeat),
+    fitted.originSeconds,
     fitted.secondsPerBeat
   );
   if (second.matched.length >= matched.length) {

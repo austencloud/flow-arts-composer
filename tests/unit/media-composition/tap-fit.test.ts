@@ -297,3 +297,76 @@ describe("fitTapsToGrid", () => {
     ).toThrow(RangeError);
   });
 });
+
+describe("fitTapsToGrid with a beat-1 mark", () => {
+  // DCKΨ- and ΩΛ-XJ: sixteen one-beat moves at 87 BPM, the same four
+  // letters four times over, so a label a group off still shows the right
+  // letter. Only the mark can tell which landing is move 1.
+  const sixteen = Array.from({ length: 16 }, () => 1);
+  const spb = 60 / 87;
+  const origin = 2;
+  const landing = (position: number) => origin + spb * position;
+  const run = (from: number, to: number) =>
+    Array.from({ length: to - from + 1 }, (_, index) => landing(from + index));
+  const fit = (taps: number[]) =>
+    fitTapsToGrid({
+      taps,
+      bpm: 87,
+      moveBeats: sixteen,
+      firstTapPosition: 1,
+      beatOneSeconds: landing(1) + 0.05,
+      tempo: "follow",
+    });
+  const labelOf = (result: ReturnType<typeof fit>, seconds: number) =>
+    result.labels.find((label) => label.seconds === seconds)!.position;
+
+  it("keeps a tap on the opening pose from shifting every label", () => {
+    const taps = run(0, 32);
+    const result = fit(taps);
+    expect(labelOf(result, landing(0))).toBe(0);
+    expect(labelOf(result, landing(1))).toBe(1);
+    expect(labelOf(result, landing(17))).toBe(17);
+    expect(result.originSeconds).toBeCloseTo(origin, 2);
+  });
+
+  it("does not let a stray just after the opening pose become move 1", () => {
+    const taps = [origin + 0.14, ...run(1, 32)];
+    const result = fit(taps);
+    expect(labelOf(result, landing(1))).toBe(1);
+    expect(labelOf(result, landing(16))).toBe(16);
+  });
+
+  it("sets aside a test tap well before the performer starts", () => {
+    const early = landing(1) - 1.4;
+    const result = fit([early, ...run(1, 32)]);
+    expect(labelOf(result, early)).toBeNull();
+    expect(labelOf(result, landing(1))).toBe(1);
+    expect(result.extraCount).toBe(1);
+  });
+
+  it("numbers a late start from the mark, not from the first tap", () => {
+    const result = fit(run(5, 32));
+    expect(labelOf(result, landing(5))).toBe(5);
+    expect(labelOf(result, landing(17))).toBe(17);
+    expect(result.missedPositions).toEqual([]);
+  });
+
+  it("places a two-beat move where the mark says", () => {
+    const moveBeats = [1, 1, 2, 1];
+    const clock = createBeatClock(moveBeats);
+    const at = (position: number) => origin + spb * clock.beatsBefore(position);
+    const taps = [3, 4, 5, 6, 7, 8, 9, 10].map(at);
+    const result = fitTapsToGrid({
+      taps,
+      bpm: 87,
+      moveBeats,
+      firstTapPosition: 1,
+      beatOneSeconds: at(1),
+      tempo: "locked",
+    });
+    expect(result.labels.map((label) => label.position)).toEqual([
+      3, 4, 5, 6, 7, 8, 9, 10,
+    ]);
+    expect(result.worstMissSeconds).toBeLessThan(1e-6);
+  });
+});

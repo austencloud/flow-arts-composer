@@ -20,6 +20,7 @@ import {
   sequenceFrameAt,
   type SequenceFrame,
 } from "$lib/shared/media-composition/domain/sequence-frame";
+import type { TakeSample } from "$lib/shared/media-composition/domain/take-timing";
 
 /**
  * A take's timing, asked by media time. Each take has its own, so a post that
@@ -27,8 +28,8 @@ import {
  * from the footage actually on screen rather than from the post's clock.
  */
 export interface TakeClock {
-  /** Arrival position at this media time, or null where nothing is mapped. */
-  positionAt(mediaSeconds: number): number | null;
+  /** Where the take is at this media time, or null where nothing is mapped. */
+  sampleAt(mediaSeconds: number): TakeSample | null;
 }
 
 export interface SequenceFrameAlignment {
@@ -215,7 +216,7 @@ export function evaluateRegionRects(
  * the square, the strip, the carousel and the beat number show one move.
  */
 function sequenceFieldsFor(
-  arrival: number,
+  sample: TakeSample,
   alignment: SequenceFrameAlignment,
   moveBeats: readonly number[],
   holdLandings: boolean
@@ -228,7 +229,10 @@ function sequenceFieldsFor(
   | "animationTimeSeconds"
   | "displayedBeatNumber"
 > {
-  const frame = sequenceFrameAt(arrival, moveBeats, { holdLandings });
+  const frame = sequenceFrameAt(sample.arrival, moveBeats, {
+    holdLandings,
+    endArrival: sample.endArrival,
+  });
   return {
     sequenceFrame: frame,
     sequencePosition: frame.enginePosition,
@@ -264,16 +268,23 @@ export function evaluatePresetFrame(
   // The single-map path reads the post clock once for every clip. A map
   // saved in the engine's count (move k in flight is [k, k + 1)) is moved
   // onto arrivals first, so both kinds of map meet the frame record alike.
-  const postArrival = (() => {
+  const postSample = ((): TakeSample | null => {
     if (!alignment?.timeMap || moveBeats.length === 0) return null;
+    const map = alignment.timeMap;
     const raw = mediaTimeToSequencePosition(
-      alignment.timeMap,
+      map,
       clampedTime + (alignment.mediaTimeOffsetSeconds ?? 0)
     );
     if (!Number.isFinite(raw)) return null;
-    return sequenceTimeMapConvention(alignment.timeMap) === "arrival"
-      ? raw
-      : Math.max(0, raw - 1);
+    const toArrival = (position: number) =>
+      sequenceTimeMapConvention(map) === "arrival"
+        ? position
+        : Math.max(0, position - 1);
+    const last = map.anchors[map.anchors.length - 1];
+    return {
+      arrival: toArrival(raw),
+      endArrival: last ? toArrival(last.sequencePosition) : null,
+    };
   })();
 
   const regionRects = evaluateRegionRects(preset, durationSeconds, clampedTime);
@@ -304,14 +315,14 @@ export function evaluatePresetFrame(
     // A clip tied to a take reads that take's clock at the take's media time
     // under this clip, trim included, so a slowed act and a derived square
     // over the same footage land on the same move.
-    let arrival: number | null = null;
+    let sample: TakeSample | null = null;
     if (alignment && clip.useResolvedTimeMap && moveBeats.length > 0) {
       const role = clip.timeMapRole;
       const clock = role ? alignment.clocks?.[role] : undefined;
-      arrival =
+      sample =
         clock && role
-          ? clock.positionAt((sourceTimeOffsets[role] ?? 0) + sourceSpanTime)
-          : postArrival;
+          ? clock.sampleAt((sourceTimeOffsets[role] ?? 0) + sourceSpanTime)
+          : postSample;
     }
 
     return [
@@ -331,8 +342,8 @@ export function evaluatePresetFrame(
         projectProgress,
         transform: clip.transform,
         ...(regionRect ? { regionRect } : {}),
-        ...(arrival !== null && alignment
-          ? sequenceFieldsFor(arrival, alignment, moveBeats, holdLandings)
+        ...(sample !== null && alignment
+          ? sequenceFieldsFor(sample, alignment, moveBeats, holdLandings)
           : {}),
       },
     ];
