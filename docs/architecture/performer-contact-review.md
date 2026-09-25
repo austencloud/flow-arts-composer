@@ -307,9 +307,12 @@ Decisions and open items:
 - **Hosts left on the legacy split** until they are wired: Coven, Learn
   preview, Quiz, two Museum hosts, Village, the character card, walk-lab and
   the grip lab.
-- **Stance cache.** `performer-upper-body-stance.ts` does not include effort
-  or path settings in its cache key, so a stance can go stale after either
-  changes. The hard-beat track cache had the same bug and was fixed.
+- **Stance cache.** Fixed on 2026-09-25. The torso track in
+  `performer-upper-body-stance.ts` now keys on the same score motion as the
+  hard-beat track, through the shared `performer-score-motion-key.ts`: steps,
+  plane mode, step count, loop, effort, effort timeline, path shape and
+  motion-aware paths. An effort or path change replans the torso and the
+  displaced props together.
 
 ## Target architecture
 
