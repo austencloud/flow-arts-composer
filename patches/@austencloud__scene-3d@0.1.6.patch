@@ -5,7 +5,7 @@ diff --git a/dist/index.d.ts.map b/dist/index.d.ts.map
 deleted file mode 100644
 index d554c5bba49036758f9b3c997d025556395cf72b..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/Avatar3D.svelte b/dist/lib/components/Avatar3D.svelte
-index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..021b3b8613a85eb9f3cd960fd8ac42ad2831d6ff 100644
+index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8128f1fc5 100644
 --- a/dist/lib/components/Avatar3D.svelte
 +++ b/dist/lib/components/Avatar3D.svelte
 @@ -16,29 +16,51 @@
@@ -1959,7 +1959,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..021b3b8613a85eb9f3cd960fd8ac42ad
        position={[position.x, groupY, position.z]}
        rotation.y={facingAngle}
 diff --git a/dist/lib/components/Avatar3D.svelte.d.ts b/dist/lib/components/Avatar3D.svelte.d.ts
-index eaae3a65cb08e4a370b4496a2a2c738624d75610..95ed6cd67dd38641c0be003eac0fc69ac4c57b26 100644
+index eaae3a65cb08e4a370b4496a2a2c738624d75610..dd07e6099da8060e8c908f9bd3eb958cdb118726 100644
 --- a/dist/lib/components/Avatar3D.svelte.d.ts
 +++ b/dist/lib/components/Avatar3D.svelte.d.ts
 @@ -1,7 +1,9 @@
@@ -2096,7 +2096,7 @@ diff --git a/dist/lib/components/LimbSegment.svelte.d.ts.map b/dist/lib/componen
 deleted file mode 100644
 index cde3408aa49f552ba186378457fee937ba0d21ec..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/PerformerRig.svelte b/dist/lib/components/PerformerRig.svelte
-index 99a40cd26b35183a5e71c93105e0704084dbf9e9..067d8045e78164960fb22cc20650f46592b8ee16 100644
+index 99a40cd26b35183a5e71c93105e0704084dbf9e9..5737579c11614a10669fa7396f5a9d807675078e 100644
 --- a/dist/lib/components/PerformerRig.svelte
 +++ b/dist/lib/components/PerformerRig.svelte
 @@ -16,11 +16,12 @@
@@ -2617,7 +2617,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..067d8045e78164960fb22cc20650f465
        {@render effectsSlot({
          bluePropState,
 diff --git a/dist/lib/components/PerformerRig.svelte.d.ts b/dist/lib/components/PerformerRig.svelte.d.ts
-index 8caa93994d4c204b5d45daeae8b06c191c822e4f..3ef7b70a14d5da300610c612f393820df54e48fb 100644
+index 8caa93994d4c204b5d45daeae8b06c191c822e4f..ff101edc1a86aa760c05541008849c136a31586a 100644
 --- a/dist/lib/components/PerformerRig.svelte.d.ts
 +++ b/dist/lib/components/PerformerRig.svelte.d.ts
 @@ -1,5 +1,6 @@
@@ -2745,7 +2745,7 @@ diff --git a/dist/lib/components/PerformerRig.svelte.d.ts.map b/dist/lib/compone
 deleted file mode 100644
 index 9ec67da0c77ac3ae765e84157869663c61696d90..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/Staff3D.svelte b/dist/lib/components/Staff3D.svelte
-index c483f07b26..5b12a19efc 100644
+index c483f07b26cd339a40a34fafe5c34d9f003d5d05..5b12a19efcebdbbd549a6a31186b6c166bbe23cc 100644
 --- a/dist/lib/components/Staff3D.svelte
 +++ b/dist/lib/components/Staff3D.svelte
 @@ -13,8 +13,11 @@
@@ -2887,7 +2887,7 @@ diff --git a/dist/lib/components/Staff3D.svelte.d.ts.map b/dist/lib/components/S
 deleted file mode 100644
 index cc74d06dc485af8253fcbf8c958003bdcb71a76e..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Ball3D.svelte b/dist/lib/components/props/Ball3D.svelte
-index e9f884d02b..57f99ad936 100644
+index e9f884d02b7929ef87cc7f6001791bc977e0d863..57f99ad9364678daff8a499222b24825a6288b89 100644
 --- a/dist/lib/components/props/Ball3D.svelte
 +++ b/dist/lib/components/props/Ball3D.svelte
 @@ -11,7 +11,7 @@
@@ -2915,7 +2915,7 @@ diff --git a/dist/lib/components/props/Ball3D.svelte.d.ts.map b/dist/lib/compone
 deleted file mode 100644
 index 327431ea46a84fb115d068c545ef21b86c50713e..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Buugeng3D.svelte b/dist/lib/components/props/Buugeng3D.svelte
-index 8b02d79603..b43b1deb5a 100644
+index 8b02d7960387431387d12a655ba4dddbeaf575a1..b43b1deb5a863256cafd1f03e4254148b34594b8 100644
 --- a/dist/lib/components/props/Buugeng3D.svelte
 +++ b/dist/lib/components/props/Buugeng3D.svelte
 @@ -1,14 +1,65 @@
@@ -3117,7 +3117,7 @@ diff --git a/dist/lib/components/props/Buugeng3D.svelte.d.ts.map b/dist/lib/comp
 deleted file mode 100644
 index 81b3160b2c4ff60d93b2297775f9145752cd879a..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Chicken3D.svelte b/dist/lib/components/props/Chicken3D.svelte
-index d8d33e5d4a..81c9db47e7 100644
+index d8d33e5d4aa5f948acf4f7c5b3acd928f137c4b1..81c9db47e7e2496b400f9f1513692ddabf1ea69d 100644
 --- a/dist/lib/components/props/Chicken3D.svelte
 +++ b/dist/lib/components/props/Chicken3D.svelte
 @@ -14,7 +14,7 @@
@@ -3145,7 +3145,7 @@ diff --git a/dist/lib/components/props/Chicken3D.svelte.d.ts.map b/dist/lib/comp
 deleted file mode 100644
 index 66f308949cacc8790fcdd3ebf2b165815cb75b80..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Club3D.svelte b/dist/lib/components/props/Club3D.svelte
-index d51a323611..761c1a03d0 100644
+index d51a323611e6b9f7b7b2c914182620b41cdfff72..761c1a03d04dcbf468df1d35954f69f4e146c4ff 100644
 --- a/dist/lib/components/props/Club3D.svelte
 +++ b/dist/lib/components/props/Club3D.svelte
 @@ -1,149 +1,120 @@
@@ -3393,7 +3393,7 @@ diff --git a/dist/lib/components/props/Club3D.svelte.d.ts.map b/dist/lib/compone
 deleted file mode 100644
 index 91b522bfdf7a43f024e5c236a7eb948178ff748b..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Doublestar3D.svelte b/dist/lib/components/props/Doublestar3D.svelte
-index 68efc24af1..87ebb8fb82 100644
+index 68efc24af1180e24a9900e1943857a75c6b63e62..87ebb8fb8243dbea8fc32479bb320409ec6b7aed 100644
 --- a/dist/lib/components/props/Doublestar3D.svelte
 +++ b/dist/lib/components/props/Doublestar3D.svelte
 @@ -1,25 +1,53 @@
@@ -3623,7 +3623,7 @@ diff --git a/dist/lib/components/props/Doublestar3D.svelte.d.ts.map b/dist/lib/c
 deleted file mode 100644
 index 0c43a1c1f3364ea7bb9f6b17da197bda69cf9bee..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Eightrings3D.svelte b/dist/lib/components/props/Eightrings3D.svelte
-index 12a776e2dc..e99e626aef 100644
+index 12a776e2dc4cc4cf8f484afde470d094690a6dc0..e99e626aef531d417e49111acc3fed414820f121 100644
 --- a/dist/lib/components/props/Eightrings3D.svelte
 +++ b/dist/lib/components/props/Eightrings3D.svelte
 @@ -1,23 +1,65 @@
@@ -3789,7 +3789,7 @@ diff --git a/dist/lib/components/props/Eightrings3D.svelte.d.ts.map b/dist/lib/c
 deleted file mode 100644
 index fadf6104b043722cb8415eb47964e1527ee8a117..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Fan3D.svelte b/dist/lib/components/props/Fan3D.svelte
-index dc635e752d..8e83233d5b 100644
+index dc635e752d11561cb585cbaaffa05b1e525d31e8..8e83233d5b701391fd39c9d0e79fb6a446227165 100644
 --- a/dist/lib/components/props/Fan3D.svelte
 +++ b/dist/lib/components/props/Fan3D.svelte
 @@ -1,29 +1,58 @@
@@ -4137,7 +4137,7 @@ diff --git a/dist/lib/components/props/Fan3D.svelte.d.ts.map b/dist/lib/componen
 deleted file mode 100644
 index cf1c0579171cb7ee0dfd0cb6e9e64a3c7aac8660..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/GltfProp3D.svelte b/dist/lib/components/props/GltfProp3D.svelte
-index 9ed038d07d..cfbdde6e30 100644
+index 9ed038d07d35b4d5d340c578e100415154ac1178..2010455db305109b7f9b401189134afe5b99f52c 100644
 --- a/dist/lib/components/props/GltfProp3D.svelte
 +++ b/dist/lib/components/props/GltfProp3D.svelte
 @@ -13,6 +13,7 @@
@@ -4148,7 +4148,16 @@ index 9ed038d07d..cfbdde6e30 100644
    import { computePropRotation } from "./prop3d-transforms";
    import { userProportionsState } from "../../state/user-proportions-state.svelte";
    import {
-@@ -44,6 +45,7 @@
+@@ -31,6 +32,8 @@
+     isActivePlayer?: boolean;
+     /** Extra scale multiplier (for big variants) */
+     extraScale?: number;
++    /** Scale only the model's long axis, preserving the grip diameter. */
++    lengthScaleY?: number;
+   }
+
+   const props: Props = $props();
+@@ -44,6 +47,7 @@
    // We need a fresh clone for each color to avoid shared material mutation.
    let coloredScene = $state<Object3D | null>(null);
    let lastColor = $state<string>("");
@@ -4156,7 +4165,7 @@ index 9ed038d07d..cfbdde6e30 100644
  
    $effect(() => {
      const loaded = $gltf;
-@@ -52,8 +54,13 @@
+@@ -52,8 +56,13 @@
        return;
      }
  
@@ -4172,7 +4181,7 @@ index 9ed038d07d..cfbdde6e30 100644
        const clone = loaded.scene.clone(true);
        recolorPropModel(clone, props.color);
        // Enable shadow casting on all prop meshes
-@@ -62,23 +69,36 @@
+@@ -62,23 +71,36 @@
        });
        coloredScene = clone;
        lastColor = props.color;
@@ -4191,8 +4200,9 @@ index 9ed038d07d..cfbdde6e30 100644
 +  // the entry's own only when a caller renders this component directly.
    const effectiveScale = $derived.by((): [number, number, number] => {
 -    const s = props.modelEntry.scale * (props.extraScale ?? 1);
+-    return [s, s, s];
 +    const s = props.extraScale ?? props.modelEntry.scale;
-     return [s, s, s];
++    return [s, s * (props.lengthScaleY ?? 1), s];
    });
 +
 +  /**
@@ -4218,7 +4228,7 @@ diff --git a/dist/lib/components/props/GltfProp3D.svelte.d.ts.map b/dist/lib/com
 deleted file mode 100644
 index df86e200b113876764f0acac5538c3e711ea892d..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Guitar3D.svelte b/dist/lib/components/props/Guitar3D.svelte
-index 5dc4004b59..28e8ebf3ce 100644
+index 5dc4004b59491e955c27a053f24c119d38abd1ae..28e8ebf3ce282575e5b8f8cba9e59c43d65bb43b 100644
 --- a/dist/lib/components/props/Guitar3D.svelte
 +++ b/dist/lib/components/props/Guitar3D.svelte
 @@ -16,7 +16,7 @@
@@ -4246,7 +4256,7 @@ diff --git a/dist/lib/components/props/Guitar3D.svelte.d.ts.map b/dist/lib/compo
 deleted file mode 100644
 index 2bce990797cf1d0499fdc3a1e7ee926dd28a491e..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Hoop3D.svelte b/dist/lib/components/props/Hoop3D.svelte
-index 9ffc241323..753bdde1f6 100644
+index 9ffc2413236b11d28d99f53884e6a696741e3333..753bdde1f61dddf9c478523845318907046dcaba 100644
 --- a/dist/lib/components/props/Hoop3D.svelte
 +++ b/dist/lib/components/props/Hoop3D.svelte
 @@ -1,20 +1,60 @@
@@ -4400,7 +4410,7 @@ diff --git a/dist/lib/components/props/Hoop3D.svelte.d.ts.map b/dist/lib/compone
 deleted file mode 100644
 index 32d6218a715be0a64cba07b0f0b60f4272fd9e40..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Poi3D.svelte b/dist/lib/components/props/Poi3D.svelte
-index 8a455aeebd..7cb29372ae 100644
+index 8a455aeebd6a4c8f408c732ac0c1bb2c177c2ab3..7cb29372ae34f587e0d58225dc3a56593859dd31 100644
 --- a/dist/lib/components/props/Poi3D.svelte
 +++ b/dist/lib/components/props/Poi3D.svelte
 @@ -16,7 +16,7 @@
@@ -4428,7 +4438,7 @@ diff --git a/dist/lib/components/props/Poi3D.svelte.d.ts.map b/dist/lib/componen
 deleted file mode 100644
 index 4c2d4a9b12da3596bfed1803e1a6d6649fa0dfd9..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Prop3D.svelte b/dist/lib/components/props/Prop3D.svelte
-index 8f023f7b8a..430d531bb2 100644
+index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..4a01bc0a021307069357967d775947b122462bfd 100644
 --- a/dist/lib/components/props/Prop3D.svelte
 +++ b/dist/lib/components/props/Prop3D.svelte
 @@ -13,6 +13,8 @@
@@ -4468,7 +4478,7 @@ index 8f023f7b8a..430d531bb2 100644
    // "Big" variants use a 1.4x scale on the base prop.
    const BIG_SCALE = 1.4;
  
-@@ -61,14 +68,18 @@
+@@ -61,14 +68,19 @@
  {#if visible}
    <!-- Tier 1: GLTF model (when available in registry) -->
    {#if gltfResolution}
@@ -4490,12 +4500,13 @@ index 8f023f7b8a..430d531bb2 100644
 +        {visible}
 +        {isActivePlayer}
 +        extraScale={gltfResolution.scale}
++        lengthScaleY={propType === PropType.FIRE_DOUBLE_STAFF && length != null ? length / 0.9 : 1}
 +      />
 +    {/key}
  
    <!-- Tier 2: Procedural fallback geometry -->
    {:else if propType === PropType.STAFF || propType === PropType.SIMPLESTAFF || propType === PropType.STAFF2}
-@@ -82,14 +93,22 @@
+@@ -82,14 +94,22 @@
      <Club3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
  
    {:else if propType === PropType.FAN}
@@ -4522,7 +4533,7 @@ index 8f023f7b8a..430d531bb2 100644
  
    {:else if propType === PropType.MINIHOOP}
      <Hoop3D {propState} {color} {visible} {isActivePlayer} {length} />
-@@ -102,10 +121,19 @@
+@@ -102,10 +122,19 @@
      <Buugeng3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
  
    {:else if propType === PropType.TRIGENG}
@@ -4544,7 +4555,7 @@ index 8f023f7b8a..430d531bb2 100644
  
    {:else if propType === PropType.SWORD}
      <Sword3D {propState} {color} {visible} {isActivePlayer} {length} />
-@@ -140,7 +168,15 @@
+@@ -140,7 +169,15 @@
      <Ball3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
  
    {:else if propType === PropType.QUIAD}
@@ -4574,7 +4585,7 @@ diff --git a/dist/lib/components/props/Prop3DProps.d.ts.map b/dist/lib/component
 deleted file mode 100644
 index fc8b675084cf6f91287dd935c44f8e7ca573c317..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Prop3DProps.js b/dist/lib/components/props/Prop3DProps.js
-index 36215e345e..6e3f369ece 100644
+index 36215e345ea2e47dae408054f7abee865163c78e..6e3f369ecec43da03ba09d44f353588d96fdcbca 100644
 --- a/dist/lib/components/props/Prop3DProps.js
 +++ b/dist/lib/components/props/Prop3DProps.js
 @@ -1,18 +1,11 @@
@@ -4606,7 +4617,7 @@ index 36215e345e..6e3f369ece 100644
 +  PROP_COLORS
  };
 diff --git a/dist/lib/components/props/Sword3D.svelte b/dist/lib/components/props/Sword3D.svelte
-index 144b8c19a4..c05304d264 100644
+index 144b8c19a4cc6bb92459b3854d5374a17f31ae7c..c05304d264ae2b221e6fbd17076542c3f91d69d6 100644
 --- a/dist/lib/components/props/Sword3D.svelte
 +++ b/dist/lib/components/props/Sword3D.svelte
 @@ -11,7 +11,8 @@
@@ -4635,7 +4646,7 @@ diff --git a/dist/lib/components/props/Sword3D.svelte.d.ts.map b/dist/lib/compon
 deleted file mode 100644
 index fa557fd5e8d807aa3c414da08e9925517de486d7..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Torch3D.svelte b/dist/lib/components/props/Torch3D.svelte
-index dd84811c1c..9c59345510 100644
+index dd84811c1cc9986fb72430bd3e94e3233da61684..9c5934551096a8124821406d3ea0e3a008bdee91 100644
 --- a/dist/lib/components/props/Torch3D.svelte
 +++ b/dist/lib/components/props/Torch3D.svelte
 @@ -1,142 +1,119 @@
@@ -4874,7 +4885,7 @@ diff --git a/dist/lib/components/props/Torch3D.svelte.d.ts.map b/dist/lib/compon
 deleted file mode 100644
 index 70643cfc402ccbf6963bfdf3117009e83b14fbad..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Triad3D.svelte b/dist/lib/components/props/Triad3D.svelte
-index f2e76efafe..b3f79749ee 100644
+index f2e76efafe1854c93461f47e9b16c32400ca3dca..b3f79749eee31ad401d6191162af556e17468711 100644
 --- a/dist/lib/components/props/Triad3D.svelte
 +++ b/dist/lib/components/props/Triad3D.svelte
 @@ -1,152 +1,196 @@
@@ -5197,7 +5208,7 @@ diff --git a/dist/lib/components/props/Triad3D.svelte.d.ts.map b/dist/lib/compon
 deleted file mode 100644
 index d4eff8de3676b87e729420fc04beba7a9c390745..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Triquetra3D.svelte b/dist/lib/components/props/Triquetra3D.svelte
-index 43ff1c3d09..c05aecf863 100644
+index 43ff1c3d090621bff1e77af4d1b9834ac29821be..c05aecf863070202be34f6db930c6879f8c48117 100644
 --- a/dist/lib/components/props/Triquetra3D.svelte
 +++ b/dist/lib/components/props/Triquetra3D.svelte
 @@ -1,23 +1,69 @@
@@ -5389,10 +5400,10 @@ deleted file mode 100644
 index da4a1eff264d7f5f6c34253d48a278a18c48df43..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/club-profile.js b/dist/lib/components/props/club-profile.js
 new file mode 100644
-index 0000000000..23d9827eb9
+index 0000000000000000000000000000000000000000..23d9827eb937b880d7ee13cb7dc9b68967d5b86c
 --- /dev/null
 +++ b/dist/lib/components/props/club-profile.js
-@@ -0,0 +0,166 @@
+@@ -0,0 +1,166 @@
 +/**
 + * Club lathe profile: the silhouette from `club.svg`, the size from real clubs.
 + *
@@ -5561,10 +5572,10 @@ index 0000000000..23d9827eb9
 +export const CLUB_REACH_M = 0.50343;
 diff --git a/dist/lib/components/props/doublestar-profile.js b/dist/lib/components/props/doublestar-profile.js
 new file mode 100644
-index 0000000000..b6349edf5f
+index 0000000000000000000000000000000000000000..b6349edf5f347f63d46296705563f0eb26feac2b
 --- /dev/null
 +++ b/dist/lib/components/props/doublestar-profile.js
-@@ -0,0 +0,82 @@
+@@ -0,0 +1,82 @@
 +/**
 + * Doublestar silhouette profile
 + *
@@ -5649,10 +5660,10 @@ index 0000000000..b6349edf5f
 +}
 diff --git a/dist/lib/components/props/eightrings-profile.js b/dist/lib/components/props/eightrings-profile.js
 new file mode 100644
-index 0000000000..297fcdc824
+index 0000000000000000000000000000000000000000..297fcdc8243808898327df2ee1d7367cebbaeb68
 --- /dev/null
 +++ b/dist/lib/components/props/eightrings-profile.js
-@@ -0,0 +0,76 @@
+@@ -0,0 +1,76 @@
 +/**
 + * Eight rings silhouette profile
 + *
@@ -5731,10 +5742,10 @@ index 0000000000..297fcdc824
 +}
 diff --git a/dist/lib/components/props/fan-profile.js b/dist/lib/components/props/fan-profile.js
 new file mode 100644
-index 0000000000..5abfbe088d
+index 0000000000000000000000000000000000000000..5abfbe088d175d0a66a1213ac8931ef761e5a86f
 --- /dev/null
 +++ b/dist/lib/components/props/fan-profile.js
-@@ -0,0 +0,140 @@
+@@ -0,0 +1,140 @@
 +/**
 + * Fan silhouette profile
 + *
@@ -5877,10 +5888,10 @@ index 0000000000..5abfbe088d
 +}
 diff --git a/dist/lib/components/props/frame-materials.js b/dist/lib/components/props/frame-materials.js
 new file mode 100644
-index 0000000000..2f993ae985
+index 0000000000000000000000000000000000000000..2f993ae9854fb29bdba48828174f02e882ca96ad
 --- /dev/null
 +++ b/dist/lib/components/props/frame-materials.js
-@@ -0,0 +0,197 @@
+@@ -0,0 +1,197 @@
 +import {
 +  Color,
 +  MeshBasicMaterial,
@@ -6080,10 +6091,10 @@ index 0000000000..2f993ae985
 +};
 diff --git a/dist/lib/components/props/geng-profile.js b/dist/lib/components/props/geng-profile.js
 new file mode 100644
-index 0000000000..e22eff0c74
+index 0000000000000000000000000000000000000000..e22eff0c745fb150ec9e194b6722a5a95c7fd0bb
 --- /dev/null
 +++ b/dist/lib/components/props/geng-profile.js
-@@ -0,0 +0,134 @@
+@@ -0,0 +1,134 @@
 +/**
 + * Geng silhouette profiles
 + *
@@ -6220,10 +6231,10 @@ index 0000000000..e22eff0c74
 +}
 diff --git a/dist/lib/components/props/hoop-geometry.js b/dist/lib/components/props/hoop-geometry.js
 new file mode 100644
-index 0000000000..a2b871a8a9
+index 0000000000000000000000000000000000000000..a2b871a8a9b362b2f280ca0da42a728ba6c92520
 --- /dev/null
 +++ b/dist/lib/components/props/hoop-geometry.js
-@@ -0,0 +0,108 @@
+@@ -0,0 +1,108 @@
 +/**
 + * Mini-hoop dimensions: the size from hoops people buy, the grip from the glyph.
 + *
@@ -6334,10 +6345,10 @@ index 0000000000..a2b871a8a9
 +export const HOOP_REACH_M = 2 * HOOP_CENTERLINE_RADIUS_M + HOOP_TUBE_RADIUS_M;
 diff --git a/dist/lib/components/props/plate-extrude.js b/dist/lib/components/props/plate-extrude.js
 new file mode 100644
-index 0000000000..286ab745e0
+index 0000000000000000000000000000000000000000..286ab745e01e31fdbe6d2b0eb06693f22630d8ce
 --- /dev/null
 +++ b/dist/lib/components/props/plate-extrude.js
-@@ -0,0 +0,60 @@
+@@ -0,0 +1,60 @@
 +/**
 + * Flat-prop plate stock
 + *
@@ -6400,10 +6411,10 @@ index 0000000000..286ab745e0
 +}
 diff --git a/dist/lib/components/props/plate-materials.js b/dist/lib/components/props/plate-materials.js
 new file mode 100644
-index 0000000000..8e6bdb8a0c
+index 0000000000000000000000000000000000000000..8e6bdb8a0cf67bc13d06fb45fae936c37e680dbf
 --- /dev/null
 +++ b/dist/lib/components/props/plate-materials.js
-@@ -0,0 +0,63 @@
+@@ -0,0 +1,63 @@
 +import {
 +  Color,
 +  MeshBasicMaterial,
@@ -6469,10 +6480,10 @@ index 0000000000..8e6bdb8a0c
 +};
 diff --git a/dist/lib/components/props/prop-hand-paint.js b/dist/lib/components/props/prop-hand-paint.js
 new file mode 100644
-index 0000000000..d084a75803
+index 0000000000000000000000000000000000000000..d084a7580388d5aa15c1bd1584b7f4e5faa16375
 --- /dev/null
 +++ b/dist/lib/components/props/prop-hand-paint.js
-@@ -0,0 +0,30 @@
+@@ -0,0 +1,30 @@
 +import { Color } from "three";
 +import {
 +  propHandPalette,
@@ -6505,10 +6516,10 @@ index 0000000000..d084a75803
 +};
 diff --git a/dist/lib/components/props/prop-hand-palette-state.svelte.js b/dist/lib/components/props/prop-hand-palette-state.svelte.js
 new file mode 100644
-index 0000000000..5c4a4736dd
+index 0000000000000000000000000000000000000000..5c4a4736dd2eae6ddff40735fe17ae058a8aff22
 --- /dev/null
 +++ b/dist/lib/components/props/prop-hand-palette-state.svelte.js
-@@ -0,0 +0,20 @@
+@@ -0,0 +1,20 @@
 +import {
 +  propHandPalette,
 +  propHandPaletteVersion,
@@ -6531,10 +6542,10 @@ index 0000000000..5c4a4736dd
 +};
 diff --git a/dist/lib/components/props/prop-hand-palette.js b/dist/lib/components/props/prop-hand-palette.js
 new file mode 100644
-index 0000000000..ea2b5c7f1d
+index 0000000000000000000000000000000000000000..ea2b5c7f1decea70cf044a58e48b7fdcf3221f25
 --- /dev/null
 +++ b/dist/lib/components/props/prop-hand-palette.js
-@@ -0,0 +0,90 @@
+@@ -0,0 +1,90 @@
 +const DEFAULT_PROP_HAND_PALETTES = {
 +  blue: { main: "#3b82f6", dark: "#1d4ed8", light: "#60a5fa" },
 +  red: { main: "#ef4444", dark: "#b91c1c", light: "#f87171" }
@@ -6627,10 +6638,10 @@ index 0000000000..ea2b5c7f1d
 +};
 diff --git a/dist/lib/components/props/prop-lathe.js b/dist/lib/components/props/prop-lathe.js
 new file mode 100644
-index 0000000000..c64a9ff1cc
+index 0000000000000000000000000000000000000000..c64a9ff1cc0b06fd18785ea4e606b06eb6011b8a
 --- /dev/null
 +++ b/dist/lib/components/props/prop-lathe.js
-@@ -0,0 +0,72 @@
+@@ -0,0 +1,72 @@
 +/**
 + * Revolved prop parts
 + *
@@ -6710,7 +6721,7 @@ diff --git a/dist/lib/components/props/prop-model-recolor.d.ts.map b/dist/lib/co
 deleted file mode 100644
 index 7ff7c28e2920dcf89f8428417b3d27ecdc543ce1..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/prop-model-recolor.js b/dist/lib/components/props/prop-model-recolor.js
-index 202c762649..75d2fc737b 100644
+index 202c7626491817532b35a1e4572dbf417ca12c51..75d2fc737bbda14a30a74cc36398e09278613dc1 100644
 --- a/dist/lib/components/props/prop-model-recolor.js
 +++ b/dist/lib/components/props/prop-model-recolor.js
 @@ -1,9 +1,10 @@
@@ -6813,7 +6824,7 @@ diff --git a/dist/lib/components/props/prop-model-registry.d.ts.map b/dist/lib/c
 deleted file mode 100644
 index 61d578d9780308efad435cde03d59b9a1636564f..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/prop-model-registry.js b/dist/lib/components/props/prop-model-registry.js
-index d26cd3a0b4..5798f38500 100644
+index d26cd3a0b4aecdbc58a6132f134f8d0965a94ebf..5798f38500594260911b358577cd8f90e011a010 100644
 --- a/dist/lib/components/props/prop-model-registry.js
 +++ b/dist/lib/components/props/prop-model-registry.js
 @@ -25,6 +25,39 @@ function modelUrl(filename) {
@@ -7018,10 +7029,10 @@ deleted file mode 100644
 index f888e82e7c0d12cce70582ba6aeb518e0d85302c..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/torch-profile.js b/dist/lib/components/props/torch-profile.js
 new file mode 100644
-index 0000000000..90dee722a0
+index 0000000000000000000000000000000000000000..90dee722a0dfff7df7587571f03dc01bc73d368d
 --- /dev/null
 +++ b/dist/lib/components/props/torch-profile.js
-@@ -0,0 +0,125 @@
+@@ -0,0 +1,125 @@
 +/**
 + * Torch profile
 + *
@@ -7149,10 +7160,10 @@ index 0000000000..90dee722a0
 +export const TORCH_REACH = 0.59335;
 diff --git a/dist/lib/components/props/triad-frame.js b/dist/lib/components/props/triad-frame.js
 new file mode 100644
-index 0000000000..77dae684f0
+index 0000000000000000000000000000000000000000..77dae684f0a8eaa4d6f07dab53ce6f995a93f79f
 --- /dev/null
 +++ b/dist/lib/components/props/triad-frame.js
-@@ -0,0 +0,79 @@
+@@ -0,0 +1,79 @@
 +/**
 + * Triad frame
 + *
@@ -7234,10 +7245,10 @@ index 0000000000..77dae684f0
 +};
 diff --git a/dist/lib/components/props/triquetra-profile.js b/dist/lib/components/props/triquetra-profile.js
 new file mode 100644
-index 0000000000..30632a0b02
+index 0000000000000000000000000000000000000000..30632a0b02ca68d577ec7aa281c7d89257373bfc
 --- /dev/null
 +++ b/dist/lib/components/props/triquetra-profile.js
-@@ -0,0 +0,146 @@
+@@ -0,0 +1,146 @@
 +/**
 + * Triquetra silhouette profile
 + *
@@ -7391,7 +7402,7 @@ diff --git a/dist/lib/config/avatar-definitions.d.ts.map b/dist/lib/config/avata
 deleted file mode 100644
 index 00bac5f8e9f0e499668207b35e5eb79c49861922..0000000000000000000000000000000000000000
 diff --git a/dist/lib/config/avatar-definitions.js b/dist/lib/config/avatar-definitions.js
-index 6625f56852..f5814637ca 100644
+index 6625f568525aa5f1f2dc0560861e3627aff5d1e2..f5814637ca3adc515f36cb83e8c38072f5bb7b4e 100644
 --- a/dist/lib/config/avatar-definitions.js
 +++ b/dist/lib/config/avatar-definitions.js
 @@ -7,17 +7,34 @@
@@ -7503,7 +7514,7 @@ diff --git a/dist/lib/debug/avatar-debug-hooks.d.ts.map b/dist/lib/debug/avatar-
 deleted file mode 100644
 index 70ce276e7527dc8e6de72fd4c07fcd3385954343..0000000000000000000000000000000000000000
 diff --git a/dist/lib/debug/avatar-debug-hooks.js b/dist/lib/debug/avatar-debug-hooks.js
-index e08ff44827..918148662c 100644
+index e08ff448270430534dff2ca7acd9b56e7cbd2b5a..918148662c96c60440bae13caccc9da5891577ce 100644
 --- a/dist/lib/debug/avatar-debug-hooks.js
 +++ b/dist/lib/debug/avatar-debug-hooks.js
 @@ -7,6 +7,11 @@ export function installAvatarDebugHooks(args) {
@@ -7581,10 +7592,10 @@ index e08ff44827..918148662c 100644
  }
 diff --git a/dist/lib/debug/avatar-load-instrumentation.js b/dist/lib/debug/avatar-load-instrumentation.js
 new file mode 100644
-index 0000000000..3da407076b
+index 0000000000000000000000000000000000000000..3da407076bbad414d93cdac0dd1f84ba44abfb56
 --- /dev/null
 +++ b/dist/lib/debug/avatar-load-instrumentation.js
-@@ -0,0 +0,121 @@
+@@ -0,0 +1,121 @@
 +/**
 + * Avatar load instrumentation.
 + *
@@ -7755,7 +7766,7 @@ diff --git a/dist/lib/domain/enums/PropType.d.ts.map b/dist/lib/domain/enums/Pro
 deleted file mode 100644
 index b7409eb0c5a99e845b2969440b9c08331729704d..0000000000000000000000000000000000000000
 diff --git a/dist/lib/domain/enums/PropType.js b/dist/lib/domain/enums/PropType.js
-index 15844ec327..9efeec83ae 100644
+index 15844ec32763c63fe4955b8c893dbcdd5156ff4b..9efeec83ae295374887406039ab5fcd1b1d40c96 100644
 --- a/dist/lib/domain/enums/PropType.js
 +++ b/dist/lib/domain/enums/PropType.js
 @@ -20,6 +20,7 @@ export var PropType;
@@ -7842,7 +7853,7 @@ diff --git a/dist/lib/getAngleMathCalculator.d.ts.map b/dist/lib/getAngleMathCal
 deleted file mode 100644
 index 75095405aba26fc2283c5f24258534f8bd8ee21f..0000000000000000000000000000000000000000
 diff --git a/dist/lib/index.d.ts b/dist/lib/index.d.ts
-index b6c16afd1233f1d026941e108cf2912a86e92d03..551749f5cf1d4efaa0408558e844e65461adaf99 100644
+index b6c16afd1233f1d026941e108cf2912a86e92d03..b5cd047ff188a36a086eaad7a66b2896992bf796 100644
 --- a/dist/lib/index.d.ts
 +++ b/dist/lib/index.d.ts
 @@ -48,13 +48,16 @@ export { PRESET_VALID_COUNTS, createFormationFromPreset, FORMATION_PRESET_INFO }
@@ -7917,7 +7928,7 @@ diff --git a/dist/lib/index.d.ts.map b/dist/lib/index.d.ts.map
 deleted file mode 100644
 index e65326b49a5b788b837220aaf39614a7876831ce..0000000000000000000000000000000000000000
 diff --git a/dist/lib/index.js b/dist/lib/index.js
-index 10260a02337aeff1c9a1b880aff958088813053b..fa389c19e223a3d1325c675a37e9cd8ef7a0032f 100644
+index 10260a02337aeff1c9a1b880aff958088813053b..6e9d3623cc5c0d23184c812d280341ec68e6434a 100644
 --- a/dist/lib/index.js
 +++ b/dist/lib/index.js
 @@ -47,9 +47,14 @@ export { SCALE, STAGE, WORLDS } from "./scale/scale-constants";
@@ -7981,10 +7992,10 @@ deleted file mode 100644
 index e289ae7771cbefc1f8f071fac3b62b1241d79704..0000000000000000000000000000000000000000
 diff --git a/dist/lib/rendering/create-staff-object.d.ts b/dist/lib/rendering/create-staff-object.d.ts
 new file mode 100644
-index 0000000000..67b207b0e6
+index 0000000000000000000000000000000000000000..67b207b0e66a87be71a2e24fbdaede769803c1c1
 --- /dev/null
 +++ b/dist/lib/rendering/create-staff-object.d.ts
-@@ -0,0 +0,15 @@
+@@ -0,0 +1,15 @@
 +import { Group } from "three";
 +import type { PropState3D } from "../domain/models/PropState3D";
 +export interface StaffObjectOptions {
@@ -8002,10 +8013,10 @@ index 0000000000..67b207b0e6
 +export declare function createStaffObject(options: StaffObjectOptions): StaffObject;
 diff --git a/dist/lib/rendering/create-staff-object.js b/dist/lib/rendering/create-staff-object.js
 new file mode 100644
-index 0000000000..9ff2cdad3b
+index 0000000000000000000000000000000000000000..9ff2cdad3be5ea0b33709c686fdbe72c428d589d
 --- /dev/null
 +++ b/dist/lib/rendering/create-staff-object.js
-@@ -0,0 +0,122 @@
+@@ -0,0 +1,122 @@
 +import {
 +  CylinderGeometry,
 +  Euler,
@@ -8136,10 +8147,10 @@ deleted file mode 100644
 index 1f4d9296f2d356f677d1a21f8e955b437c53f394..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/bone-name-normalization.js b/dist/lib/services/bone-name-normalization.js
 new file mode 100644
-index 0000000000..1cf469d4a9
+index 0000000000000000000000000000000000000000..1cf469d4a9529c870e130e7a7771a69058731f85
 --- /dev/null
 +++ b/dist/lib/services/bone-name-normalization.js
-@@ -0,0 +0,37 @@
+@@ -0,0 +1,37 @@
 +/**
 + * One owner for exporter-namespace-tolerant bone name matching.
 + *
@@ -8179,10 +8190,10 @@ index 0000000000..1cf469d4a9
 +}
 diff --git a/dist/lib/services/clip-footprint.js b/dist/lib/services/clip-footprint.js
 new file mode 100644
-index 0000000000..3e460c8c3e
+index 0000000000000000000000000000000000000000..3e460c8c3eb4b80f91a49ee55d275edad40b3e3f
 --- /dev/null
 +++ b/dist/lib/services/clip-footprint.js
-@@ -0,0 +0,261 @@
+@@ -0,0 +1,261 @@
 +import { AnimationMixer, Vector3, } from "three";
 +/**
 + * Samples per second of clip.
@@ -8457,7 +8468,7 @@ diff --git a/dist/lib/services/contracts/IAnimationStateMachine.d.ts.map b/dist/
 deleted file mode 100644
 index 73f0876c4cafab9821e6e2daa10dafef0c71ff1f..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/contracts/IAvatarAnimator.d.ts b/dist/lib/services/contracts/IAvatarAnimator.d.ts
-index 786bf68515df88ef035b307a7029e717e056bea9..92cd4467b4db99625e6b4ce974822160f5c31657 100644
+index 786bf68515df88ef035b307a7029e717e056bea9..48fd6d9fa5173cf39504f441307e0f1f1f448214 100644
 --- a/dist/lib/services/contracts/IAvatarAnimator.d.ts
 +++ b/dist/lib/services/contracts/IAvatarAnimator.d.ts
 @@ -4,9 +4,10 @@
@@ -8805,7 +8816,7 @@ diff --git a/dist/lib/services/contracts/ILegIKSolver.d.ts.map b/dist/lib/servic
 deleted file mode 100644
 index b09b7c3d5cb9dc8d2b545762fcec09c075822fb9..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/contracts/ILegIKSolver.js b/dist/lib/services/contracts/ILegIKSolver.js
-index 9a43033503..637adda957 100644
+index 9a43033503a12ddfbcca45fe3d399f645e673afe..637adda95754af001f1c126978caf149305fa2cf 100644
 --- a/dist/lib/services/contracts/ILegIKSolver.js
 +++ b/dist/lib/services/contracts/ILegIKSolver.js
 @@ -9,9 +9,11 @@
@@ -8873,10 +8884,10 @@ deleted file mode 100644
 index 8d0262d3ce741f36f066d69fc14af57691e8d939..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/geometry/BodyCollisionGeometry.js b/dist/lib/services/geometry/BodyCollisionGeometry.js
 new file mode 100644
-index 0000000000..889d205761
+index 0000000000000000000000000000000000000000..889d20576124946b866af1508231ba9e2d19d0a5
 --- /dev/null
 +++ b/dist/lib/services/geometry/BodyCollisionGeometry.js
-@@ -0,0 +0,43 @@
+@@ -0,0 +1,43 @@
 +export const FACE_RADIUS = 0.09;
 +export const FOREARM_RADIUS = 0.04;
 +export const BODY_CLEARANCE_PADDING = 0.02;
@@ -8925,7 +8936,7 @@ new file mode 100644
 index 0000000000000000000000000000000000000000..ca3eae9b2a4fb7e5470624f3aea84a3af154307f
 --- /dev/null
 +++ b/dist/lib/services/geometry/CylindricalGripGeometry.js
-@@ -0,0 +0,83 @@
+@@ -0,0 +1,83 @@
 +export const PALMAR_SOCKET_OFFSET_M = 0.008;
 +export const LONGITUDINAL_SOCKET_OFFSET_M = 0.008;
 +// A nearly open finger describes a very large circle whose center is not a
@@ -9023,10 +9034,10 @@ deleted file mode 100644
 index f98ba9f8480c6de2af5d91103546be019d81dbb0..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/ArmClearanceRetargeter.js b/dist/lib/services/implementations/ArmClearanceRetargeter.js
 new file mode 100644
-index 0000000000..752fdac92f
+index 0000000000000000000000000000000000000000..752fdac92fe732640272cfeff9644dd9c9927d19
 --- /dev/null
 +++ b/dist/lib/services/implementations/ArmClearanceRetargeter.js
-@@ -0,0 +0,435 @@
+@@ -0,0 +1,435 @@
 +import { AnimationClip, AnimationMixer, Matrix4, Quaternion, QuaternionKeyframeTrack, Vector3, } from "three";
 +/** How far the hand's skin is held off the thigh's, in metres. */
 +const CLEARANCE = 0.012;
@@ -9463,7 +9474,7 @@ index 0000000000..752fdac92f
 +    }
 +}
 diff --git a/dist/lib/services/implementations/AvatarAnimator.d.ts b/dist/lib/services/implementations/AvatarAnimator.d.ts
-index cac989e5e626274fb4d13d59e401a9a1b485760b..8e8bacbfe0575d766e6765f48140d70a255ca8c6 100644
+index cac989e5e626274fb4d13d59e401a9a1b485760b..e08b1e5c4c2c8c6a6010d41527b30f250b1a3188 100644
 --- a/dist/lib/services/implementations/AvatarAnimator.d.ts
 +++ b/dist/lib/services/implementations/AvatarAnimator.d.ts
 @@ -4,7 +4,8 @@
@@ -9834,7 +9845,7 @@ diff --git a/dist/lib/services/implementations/AvatarAnimator.d.ts.map b/dist/li
 deleted file mode 100644
 index f8e47d42167b6ea9bb4fd8f44f41273f48f1943b..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/AvatarAnimator.js b/dist/lib/services/implementations/AvatarAnimator.js
-index bdd5ae35ed47c58d29c537a7805705783f9b9066..fb77502dfb0c5a079adf853e97f7ab568688ff6f 100644
+index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3f456c496 100644
 --- a/dist/lib/services/implementations/AvatarAnimator.js
 +++ b/dist/lib/services/implementations/AvatarAnimator.js
 @@ -4,7 +4,93 @@
@@ -12070,7 +12081,7 @@ diff --git a/dist/lib/services/implementations/AvatarSkeletonBuilder.d.ts.map b/
 deleted file mode 100644
 index c12c9d64f6cc6e7e5dca20f2c415f3d3f215eee0..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/AvatarSkeletonBuilder.js b/dist/lib/services/implementations/AvatarSkeletonBuilder.js
-index 7c5875a96e..84b262dda9 100644
+index 7c5875a96eec7fc59a6bc9206d933b7273a3dffd..84b262dda923399fc9f1bf1e4952c1d8ff8138cd 100644
 --- a/dist/lib/services/implementations/AvatarSkeletonBuilder.js
 +++ b/dist/lib/services/implementations/AvatarSkeletonBuilder.js
 @@ -5,8 +5,11 @@
@@ -12595,7 +12606,7 @@ diff --git a/dist/lib/services/implementations/ClipBasedTurnAnimator.d.ts.map b/
 deleted file mode 100644
 index 3ce9411f76cdc543c069b5d288fe7b8bd0c0f02d..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/ClipBasedTurnAnimator.js b/dist/lib/services/implementations/ClipBasedTurnAnimator.js
-index 5cb91c6048..1989b67837 100644
+index 5cb91c6048b30298d298d923213fcf3037dda852..1989b6783709edde7c9d6d214b4c8a3fc2692bd7 100644
 --- a/dist/lib/services/implementations/ClipBasedTurnAnimator.js
 +++ b/dist/lib/services/implementations/ClipBasedTurnAnimator.js
 @@ -18,7 +18,7 @@
@@ -12746,7 +12757,7 @@ diff --git a/dist/lib/services/implementations/CollisionDetector.d.ts.map b/dist
 deleted file mode 100644
 index 589730c42dd77154bad8305e67d5804bdf805018..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/CollisionDetector.js b/dist/lib/services/implementations/CollisionDetector.js
-index bdf2062fc3..b7b227ff8a 100644
+index bdf2062fc3ee834f003879c49286b6dd7a282887..b7b227ff8a407f134d1a556ffe518ab4aa936c47 100644
 --- a/dist/lib/services/implementations/CollisionDetector.js
 +++ b/dist/lib/services/implementations/CollisionDetector.js
 @@ -18,12 +18,7 @@
@@ -12877,10 +12888,10 @@ deleted file mode 100644
 index 5040c8a93fa8a008b51c602fb2e84cea444643b3..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/ContactRetargeter.js b/dist/lib/services/implementations/ContactRetargeter.js
 new file mode 100644
-index 0000000000..19c3b968c6
+index 0000000000000000000000000000000000000000..19c3b968c6e5a66d9e33ae0803bead81ec60ac2e
 --- /dev/null
 +++ b/dist/lib/services/implementations/ContactRetargeter.js
-@@ -0,0 +0,552 @@
+@@ -0,0 +1,552 @@
 +import { AnimationClip, AnimationMixer, Matrix4, Quaternion, QuaternionKeyframeTrack, Vector3, VectorKeyframeTrack, } from "three";
 +import { buildTwoBoneChain } from "../leg-geometry";
 +import { HingeConstrainedLegIKSolver } from "./HingeConstrainedLegIKSolver";
@@ -13446,7 +13457,7 @@ diff --git a/dist/lib/services/implementations/ElbowPoleComputer.d.ts.map b/dist
 deleted file mode 100644
 index 173449a757714cbbd61602f8af64218d423e9c39..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/ElbowPoleComputer.js b/dist/lib/services/implementations/ElbowPoleComputer.js
-index d42bcd4474..b448e44004 100644
+index d42bcd447471742c09a421dc92e9eb63986abbb4..b448e44004d3680ebcee15b0e40c3b0472b8137d 100644
 --- a/dist/lib/services/implementations/ElbowPoleComputer.js
 +++ b/dist/lib/services/implementations/ElbowPoleComputer.js
 @@ -12,57 +12,206 @@
@@ -15286,7 +15297,7 @@ diff --git a/dist/lib/services/implementations/FootPlanter.d.ts.map b/dist/lib/s
 deleted file mode 100644
 index 756125321be9ddfe04e11cf726909db56ac0a0d6..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/FootPlanter.js b/dist/lib/services/implementations/FootPlanter.js
-index f213a2d8d9..d7b1ed2b5e 100644
+index f213a2d8d9f708fd48280b934fc3c9cf0ac4d5cf..d7b1ed2b5ec709d6738110eae95186bca0c8c939 100644
 --- a/dist/lib/services/implementations/FootPlanter.js
 +++ b/dist/lib/services/implementations/FootPlanter.js
 @@ -8,18 +8,42 @@
@@ -16302,7 +16313,7 @@ diff --git a/dist/lib/services/implementations/HingeConstrainedLegIKSolver.d.ts.
 deleted file mode 100644
 index 5b379fcec3e0caa1a6f0d3a4fea4d4c4d08a2569..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/HingeConstrainedLegIKSolver.js b/dist/lib/services/implementations/HingeConstrainedLegIKSolver.js
-index d5beba55a0..5c9249336b 100644
+index d5beba55a02f869e87510a90c38af430a2d34278..5c9249336b67bad4cd9b1162ae27ee0673ee69cd 100644
 --- a/dist/lib/services/implementations/HingeConstrainedLegIKSolver.js
 +++ b/dist/lib/services/implementations/HingeConstrainedLegIKSolver.js
 @@ -18,8 +18,27 @@ import { Vector3, Quaternion, Matrix4 } from "three";
@@ -16662,7 +16673,7 @@ diff --git a/dist/lib/services/implementations/KneeHingeAxisCalibrator.d.ts.map 
 deleted file mode 100644
 index 47c2bd2070a7f0e11cfe987085b9b9f5e928a9d1..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/KneeHingeAxisCalibrator.js b/dist/lib/services/implementations/KneeHingeAxisCalibrator.js
-index d3bfef52fa..3949de097b 100644
+index d3bfef52fae5be915356c52a5547027d328ce240..3949de097b577e1c0bb01fc23de2bf76a4b30406 100644
 --- a/dist/lib/services/implementations/KneeHingeAxisCalibrator.js
 +++ b/dist/lib/services/implementations/KneeHingeAxisCalibrator.js
 @@ -1,25 +1,121 @@
@@ -16820,7 +16831,7 @@ diff --git a/dist/lib/services/implementations/LocomotionAnimator.d.ts.map b/dis
 deleted file mode 100644
 index e2ad276197cfcb019800a407b2fe3d4739b38861..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/LocomotionAnimator.js b/dist/lib/services/implementations/LocomotionAnimator.js
-index 56279f173c..7a850aace3 100644
+index 56279f173c47d912a9cb02a35e4e27abc07c41d6..7a850aace3c9d47a0f96956bf2659c1cf3531e56 100644
 --- a/dist/lib/services/implementations/LocomotionAnimator.js
 +++ b/dist/lib/services/implementations/LocomotionAnimator.js
 @@ -1,554 +1,1911 @@
@@ -19289,7 +19300,7 @@ diff --git a/dist/lib/services/implementations/SpineTwister.d.ts.map b/dist/lib/
 deleted file mode 100644
 index c5582b590245342854ad42a5c3c33315d7b1ddd8..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/SpineTwister.js b/dist/lib/services/implementations/SpineTwister.js
-index 29809adb0b..2bbaae3921 100644
+index 29809adb0b6cd2e639a532bc3c7794224d7bc79c..2bbaae392151488470a0d0a28bb61c925f381321 100644
 --- a/dist/lib/services/implementations/SpineTwister.js
 +++ b/dist/lib/services/implementations/SpineTwister.js
 @@ -7,10 +7,12 @@
@@ -19481,10 +19492,10 @@ deleted file mode 100644
 index 52f3da6d8d8bb5c429baa2320f0ab202453922d7..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/leg-geometry.js b/dist/lib/services/leg-geometry.js
 new file mode 100644
-index 0000000000..f771f48ce9
+index 0000000000000000000000000000000000000000..f771f48ce98f1349c33231a654cbfe189b43473d
 --- /dev/null
 +++ b/dist/lib/services/leg-geometry.js
-@@ -0,0 +0,270 @@
+@@ -0,0 +1,270 @@
 +import { Quaternion, Vector3 } from "three";
 +const parentWorld = new Vector3();
 +const childWorld = new Vector3();
@@ -19757,10 +19768,10 @@ index 0000000000..f771f48ce9
 +}
 diff --git a/dist/lib/services/rendered-staff-geometry.js b/dist/lib/services/rendered-staff-geometry.js
 new file mode 100644
-index 0000000000..e364fd6d69
+index 0000000000000000000000000000000000000000..e364fd6d6933b782cea226cd2600b077f6a832b4
 --- /dev/null
 +++ b/dist/lib/services/rendered-staff-geometry.js
-@@ -0,0 +0,14 @@
+@@ -0,0 +1,14 @@
 +/**
 + * Builds the collision shaft from the prop transform the user can actually see.
 + * Contact lock may move and rotate that transform away from the authored anchor,
@@ -19783,10 +19794,10 @@ deleted file mode 100644
 index 4df37febb302cec3ee854e39419ca73a4cb8257d..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/shared-gltf-cache.js b/dist/lib/services/shared-gltf-cache.js
 new file mode 100644
-index 0000000000..c80b51b5c4
+index 0000000000000000000000000000000000000000..c80b51b5c41e5f8afc35cb59b8be64287df197be
 --- /dev/null
 +++ b/dist/lib/services/shared-gltf-cache.js
-@@ -0,0 +0,392 @@
+@@ -0,0 +1,392 @@
 +import { Box3 } from "three";
 +import { extractClipFootprint, registerClipFootprint, trimLeadingHold, } from "./clip-footprint";
 +import { GLTFLoader, } from "three/examples/jsm/loaders/GLTFLoader.js";
@@ -20181,10 +20192,10 @@ index 0000000000..c80b51b5c4
 +}
 diff --git a/dist/lib/state/prop-finish-state.svelte.js b/dist/lib/state/prop-finish-state.svelte.js
 new file mode 100644
-index 0000000000..cc7439e462
+index 0000000000000000000000000000000000000000..cc7439e4625543c4c5d2bd6062a44b85dbb0678b
 --- /dev/null
 +++ b/dist/lib/state/prop-finish-state.svelte.js
-@@ -0,0 +0,77 @@
+@@ -0,0 +1,77 @@
 +/**
 + * Prop Finish State
 + *
@@ -20270,10 +20281,10 @@ deleted file mode 100644
 index a8fd5a41c1434bf568841daf28c8443ba1515e65..0000000000000000000000000000000000000000
 diff --git a/dist/worker.d.ts b/dist/worker.d.ts
 new file mode 100644
-index 0000000000..533ef6d662
+index 0000000000000000000000000000000000000000..533ef6d66204d21488db624774c11a3d8dfc69da
 --- /dev/null
 +++ b/dist/worker.d.ts
-@@ -0,0 +0,22 @@
+@@ -0,0 +1,22 @@
 +export { getAvatarModelPath } from "./lib/config/avatar-definitions";
 +export { cmToUnits } from "./lib/config/avatar-proportions";
 +export { GRID_OFFSETS, PLANE_MODE_CONFIGS } from "./lib/domain/constants/plane-mode-configs";
@@ -20298,10 +20309,10 @@ index 0000000000..533ef6d662
 +export type { AvatarServices } from "./lib/services/implementations/AvatarServicesFactory";
 diff --git a/dist/worker.js b/dist/worker.js
 new file mode 100644
-index 0000000000..05151322fc
+index 0000000000000000000000000000000000000000..05151322fc13411fdaace64e4c70f922f7101107
 --- /dev/null
 +++ b/dist/worker.js
-@@ -0,0 +0,15 @@
+@@ -0,0 +1,15 @@
 +export { getAvatarModelPath } from "./lib/config/avatar-definitions";
 +export { cmToUnits } from "./lib/config/avatar-proportions";
 +export { GRID_OFFSETS, PLANE_MODE_CONFIGS } from "./lib/domain/constants/plane-mode-configs";
@@ -20318,7 +20329,7 @@ index 0000000000..05151322fc
 +export { createStaffObject } from "./lib/rendering/create-staff-object";
 +export { createAvatarServices } from "./lib/services/implementations/AvatarServicesFactory";
 diff --git a/package.json b/package.json
-index 525808ca70..c7749e7724 100644
+index 525808ca7068a828865a64e176f7bbd641ccc013..c7749e7724634669fccdaa615fd94ad2bebb9929 100644
 --- a/package.json
 +++ b/package.json
 @@ -15,6 +15,15 @@
@@ -20338,7 +20349,7 @@ index 525808ca70..c7749e7724 100644
    },
    "files": [
 diff --git a/src/lib/components/Avatar3D.svelte b/src/lib/components/Avatar3D.svelte
-index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..021b3b8613a85eb9f3cd960fd8ac42ad2831d6ff 100644
+index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8128f1fc5 100644
 --- a/src/lib/components/Avatar3D.svelte
 +++ b/src/lib/components/Avatar3D.svelte
 @@ -16,29 +16,51 @@
@@ -22292,7 +22303,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..021b3b8613a85eb9f3cd960fd8ac42ad
        position={[position.x, groupY, position.z]}
        rotation.y={facingAngle}
 diff --git a/src/lib/components/PerformerRig.svelte b/src/lib/components/PerformerRig.svelte
-index 99a40cd26b35183a5e71c93105e0704084dbf9e9..067d8045e78164960fb22cc20650f46592b8ee16 100644
+index 99a40cd26b35183a5e71c93105e0704084dbf9e9..5737579c11614a10669fa7396f5a9d807675078e 100644
 --- a/src/lib/components/PerformerRig.svelte
 +++ b/src/lib/components/PerformerRig.svelte
 @@ -16,11 +16,12 @@
@@ -22813,7 +22824,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..067d8045e78164960fb22cc20650f465
        {@render effectsSlot({
          bluePropState,
 diff --git a/src/lib/components/Staff3D.svelte b/src/lib/components/Staff3D.svelte
-index c483f07b26..5b12a19efc 100644
+index c483f07b26cd339a40a34fafe5c34d9f003d5d05..5b12a19efcebdbbd549a6a31186b6c166bbe23cc 100644
 --- a/src/lib/components/Staff3D.svelte
 +++ b/src/lib/components/Staff3D.svelte
 @@ -13,8 +13,11 @@
@@ -22949,7 +22960,7 @@ index c483f07b26..5b12a19efc 100644
 +  <T is={staff.root} dispose={false} />
  {/if}
 diff --git a/src/lib/components/props/Ball3D.svelte b/src/lib/components/props/Ball3D.svelte
-index e9f884d02b..57f99ad936 100644
+index e9f884d02b7929ef87cc7f6001791bc977e0d863..57f99ad9364678daff8a499222b24825a6288b89 100644
 --- a/src/lib/components/props/Ball3D.svelte
 +++ b/src/lib/components/props/Ball3D.svelte
 @@ -11,7 +11,7 @@
@@ -22971,7 +22982,7 @@ index e9f884d02b..57f99ad936 100644
    const staffRadius = $derived(
      thickness
 diff --git a/src/lib/components/props/Buugeng3D.svelte b/src/lib/components/props/Buugeng3D.svelte
-index 8b02d79603..b43b1deb5a 100644
+index 8b02d7960387431387d12a655ba4dddbeaf575a1..b43b1deb5a863256cafd1f03e4254148b34594b8 100644
 --- a/src/lib/components/props/Buugeng3D.svelte
 +++ b/src/lib/components/props/Buugeng3D.svelte
 @@ -1,14 +1,65 @@
@@ -23167,7 +23178,7 @@ index 8b02d79603..b43b1deb5a 100644
 +  />
  {/if}
 diff --git a/src/lib/components/props/Chicken3D.svelte b/src/lib/components/props/Chicken3D.svelte
-index d8d33e5d4a..81c9db47e7 100644
+index d8d33e5d4aa5f948acf4f7c5b3acd928f137c4b1..81c9db47e7e2496b400f9f1513692ddabf1ea69d 100644
 --- a/src/lib/components/props/Chicken3D.svelte
 +++ b/src/lib/components/props/Chicken3D.svelte
 @@ -14,7 +14,7 @@
@@ -23189,7 +23200,7 @@ index d8d33e5d4a..81c9db47e7 100644
    const rotation = $derived(computePropRotation(propState));
  
 diff --git a/src/lib/components/props/Club3D.svelte b/src/lib/components/props/Club3D.svelte
-index d51a323611..761c1a03d0 100644
+index d51a323611e6b9f7b7b2c914182620b41cdfff72..761c1a03d04dcbf468df1d35954f69f4e146c4ff 100644
 --- a/src/lib/components/props/Club3D.svelte
 +++ b/src/lib/components/props/Club3D.svelte
 @@ -1,149 +1,120 @@
@@ -23431,7 +23442,7 @@ index d51a323611..761c1a03d0 100644
 +  />
  {/if}
 diff --git a/src/lib/components/props/Doublestar3D.svelte b/src/lib/components/props/Doublestar3D.svelte
-index 68efc24af1..87ebb8fb82 100644
+index 68efc24af1180e24a9900e1943857a75c6b63e62..87ebb8fb8243dbea8fc32479bb320409ec6b7aed 100644
 --- a/src/lib/components/props/Doublestar3D.svelte
 +++ b/src/lib/components/props/Doublestar3D.svelte
 @@ -1,25 +1,53 @@
@@ -23655,7 +23666,7 @@ index 68efc24af1..87ebb8fb82 100644
 +  />
  {/if}
 diff --git a/src/lib/components/props/Eightrings3D.svelte b/src/lib/components/props/Eightrings3D.svelte
-index 12a776e2dc..e99e626aef 100644
+index 12a776e2dc4cc4cf8f484afde470d094690a6dc0..e99e626aef531d417e49111acc3fed414820f121 100644
 --- a/src/lib/components/props/Eightrings3D.svelte
 +++ b/src/lib/components/props/Eightrings3D.svelte
 @@ -1,23 +1,65 @@
@@ -23815,7 +23826,7 @@ index 12a776e2dc..e99e626aef 100644
 +  />
  {/if}
 diff --git a/src/lib/components/props/Fan3D.svelte b/src/lib/components/props/Fan3D.svelte
-index dc635e752d..8e83233d5b 100644
+index dc635e752d11561cb585cbaaffa05b1e525d31e8..8e83233d5b701391fd39c9d0e79fb6a446227165 100644
 --- a/src/lib/components/props/Fan3D.svelte
 +++ b/src/lib/components/props/Fan3D.svelte
 @@ -1,29 +1,58 @@
@@ -24157,7 +24168,7 @@ index dc635e752d..8e83233d5b 100644
 +  />
  {/if}
 diff --git a/src/lib/components/props/GltfProp3D.svelte b/src/lib/components/props/GltfProp3D.svelte
-index 9ed038d07d..cfbdde6e30 100644
+index 9ed038d07d35b4d5d340c578e100415154ac1178..2010455db305109b7f9b401189134afe5b99f52c 100644
 --- a/src/lib/components/props/GltfProp3D.svelte
 +++ b/src/lib/components/props/GltfProp3D.svelte
 @@ -13,6 +13,7 @@
@@ -24168,7 +24179,16 @@ index 9ed038d07d..cfbdde6e30 100644
    import { computePropRotation } from "./prop3d-transforms";
    import { userProportionsState } from "../../state/user-proportions-state.svelte";
    import {
-@@ -44,6 +45,7 @@
+@@ -31,6 +32,8 @@
+     isActivePlayer?: boolean;
+     /** Extra scale multiplier (for big variants) */
+     extraScale?: number;
++    /** Scale only the model's long axis, preserving the grip diameter. */
++    lengthScaleY?: number;
+   }
+
+   const props: Props = $props();
+@@ -44,6 +47,7 @@
    // We need a fresh clone for each color to avoid shared material mutation.
    let coloredScene = $state<Object3D | null>(null);
    let lastColor = $state<string>("");
@@ -24176,7 +24196,7 @@ index 9ed038d07d..cfbdde6e30 100644
  
    $effect(() => {
      const loaded = $gltf;
-@@ -52,8 +54,13 @@
+@@ -52,8 +56,13 @@
        return;
      }
  
@@ -24192,7 +24212,7 @@ index 9ed038d07d..cfbdde6e30 100644
        const clone = loaded.scene.clone(true);
        recolorPropModel(clone, props.color);
        // Enable shadow casting on all prop meshes
-@@ -62,23 +69,36 @@
+@@ -62,23 +71,36 @@
        });
        coloredScene = clone;
        lastColor = props.color;
@@ -24211,8 +24231,9 @@ index 9ed038d07d..cfbdde6e30 100644
 +  // the entry's own only when a caller renders this component directly.
    const effectiveScale = $derived.by((): [number, number, number] => {
 -    const s = props.modelEntry.scale * (props.extraScale ?? 1);
+-    return [s, s, s];
 +    const s = props.extraScale ?? props.modelEntry.scale;
-     return [s, s, s];
++    return [s, s * (props.lengthScaleY ?? 1), s];
    });
 +
 +  /**
@@ -24232,7 +24253,7 @@ index 9ed038d07d..cfbdde6e30 100644
      >
        <T is={coloredScene} />
 diff --git a/src/lib/components/props/Guitar3D.svelte b/src/lib/components/props/Guitar3D.svelte
-index 5dc4004b59..28e8ebf3ce 100644
+index 5dc4004b59491e955c27a053f24c119d38abd1ae..28e8ebf3ce282575e5b8f8cba9e59c43d65bb43b 100644
 --- a/src/lib/components/props/Guitar3D.svelte
 +++ b/src/lib/components/props/Guitar3D.svelte
 @@ -16,7 +16,7 @@
@@ -24254,7 +24275,7 @@ index 5dc4004b59..28e8ebf3ce 100644
    const rotation = $derived(computePropRotation(propState));
  
 diff --git a/src/lib/components/props/Hoop3D.svelte b/src/lib/components/props/Hoop3D.svelte
-index 9ffc241323..cad34bdf1d 100644
+index 9ffc2413236b11d28d99f53884e6a696741e3333..cad34bdf1dac7bcdc80eca278f6c36175091d049 100644
 --- a/src/lib/components/props/Hoop3D.svelte
 +++ b/src/lib/components/props/Hoop3D.svelte
 @@ -1,20 +1,98 @@
@@ -24464,7 +24485,7 @@ index 9ffc241323..cad34bdf1d 100644
 +  />
  {/if}
 diff --git a/src/lib/components/props/Poi3D.svelte b/src/lib/components/props/Poi3D.svelte
-index 8a455aeebd..7cb29372ae 100644
+index 8a455aeebd6a4c8f408c732ac0c1bb2c177c2ab3..7cb29372ae34f587e0d58225dc3a56593859dd31 100644
 --- a/src/lib/components/props/Poi3D.svelte
 +++ b/src/lib/components/props/Poi3D.svelte
 @@ -16,7 +16,7 @@
@@ -24486,7 +24507,7 @@ index 8a455aeebd..7cb29372ae 100644
    const rotation = $derived(computePropRotation(propState));
  
 diff --git a/src/lib/components/props/Prop3D.svelte b/src/lib/components/props/Prop3D.svelte
-index 8f023f7b8a..2cb9849334 100644
+index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..3f466d80b00558ddc642a947c2ead65e54742c20 100644
 --- a/src/lib/components/props/Prop3D.svelte
 +++ b/src/lib/components/props/Prop3D.svelte
 @@ -13,6 +13,8 @@
@@ -24532,7 +24553,7 @@ index 8f023f7b8a..2cb9849334 100644
    // "Big" variants use a 1.4x scale on the base prop.
    const BIG_SCALE = 1.4;
  
-@@ -61,14 +69,18 @@
+@@ -61,14 +69,19 @@
  {#if visible}
    <!-- Tier 1: GLTF model (when available in registry) -->
    {#if gltfResolution}
@@ -24554,12 +24575,13 @@ index 8f023f7b8a..2cb9849334 100644
 +        {visible}
 +        {isActivePlayer}
 +        extraScale={gltfResolution.scale}
++        lengthScaleY={propType === PropType.FIRE_DOUBLE_STAFF && length != null ? length / 0.9 : 1}
 +      />
 +    {/key}
  
    <!-- Tier 2: Procedural fallback geometry -->
    {:else if propType === PropType.STAFF || propType === PropType.SIMPLESTAFF || propType === PropType.STAFF2}
-@@ -82,19 +94,29 @@
+@@ -82,19 +95,29 @@
      <Club3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
  
    {:else if propType === PropType.FAN}
@@ -24593,7 +24615,7 @@ index 8f023f7b8a..2cb9849334 100644
  
    {:else if propType === PropType.BUUGENG || propType === PropType.FRACTALGENG}
      <Buugeng3D {propState} {color} {visible} {isActivePlayer} {length} />
-@@ -102,10 +124,19 @@
+@@ -102,10 +125,19 @@
      <Buugeng3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
  
    {:else if propType === PropType.TRIGENG}
@@ -24615,7 +24637,7 @@ index 8f023f7b8a..2cb9849334 100644
  
    {:else if propType === PropType.SWORD}
      <Sword3D {propState} {color} {visible} {isActivePlayer} {length} />
-@@ -140,7 +171,15 @@
+@@ -140,7 +172,15 @@
      <Ball3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
  
    {:else if propType === PropType.QUIAD}
@@ -24633,7 +24655,7 @@ index 8f023f7b8a..2cb9849334 100644
    {:else if propType === PropType.TORCH}
      <Torch3D {propState} {color} {visible} {isActivePlayer} {length} />
 diff --git a/src/lib/components/props/Prop3DProps.ts b/src/lib/components/props/Prop3DProps.ts
-index a31ce7d182..9d000a6400 100644
+index a31ce7d182d1d2b7f4be226346abc023e5ed7254..9d000a64000545cd365859bf2230f96049e0d042 100644
 --- a/src/lib/components/props/Prop3DProps.ts
 +++ b/src/lib/components/props/Prop3DProps.ts
 @@ -7,6 +7,8 @@
@@ -24667,7 +24689,7 @@ index a31ce7d182..9d000a6400 100644
  /** Metallic material palette (for swords, etc.) */
  export const METAL_COLORS = {
 diff --git a/src/lib/components/props/Sword3D.svelte b/src/lib/components/props/Sword3D.svelte
-index 144b8c19a4..c05304d264 100644
+index 144b8c19a4cc6bb92459b3854d5374a17f31ae7c..c05304d264ae2b221e6fbd17076542c3f91d69d6 100644
 --- a/src/lib/components/props/Sword3D.svelte
 +++ b/src/lib/components/props/Sword3D.svelte
 @@ -11,7 +11,8 @@
@@ -24690,7 +24712,7 @@ index 144b8c19a4..c05304d264 100644
    const staffLength = $derived(length ?? userProportionsState.staffLength);
    const staffRadius = $derived(
 diff --git a/src/lib/components/props/Torch3D.svelte b/src/lib/components/props/Torch3D.svelte
-index dd84811c1c..9c59345510 100644
+index dd84811c1cc9986fb72430bd3e94e3233da61684..9c5934551096a8124821406d3ea0e3a008bdee91 100644
 --- a/src/lib/components/props/Torch3D.svelte
 +++ b/src/lib/components/props/Torch3D.svelte
 @@ -1,142 +1,119 @@
@@ -24923,7 +24945,7 @@ index dd84811c1c..9c59345510 100644
 +  />
  {/if}
 diff --git a/src/lib/components/props/Triad3D.svelte b/src/lib/components/props/Triad3D.svelte
-index f2e76efafe..b3f79749ee 100644
+index f2e76efafe1854c93461f47e9b16c32400ca3dca..b3f79749eee31ad401d6191162af556e17468711 100644
 --- a/src/lib/components/props/Triad3D.svelte
 +++ b/src/lib/components/props/Triad3D.svelte
 @@ -1,152 +1,196 @@
@@ -25241,10 +25263,10 @@ index f2e76efafe..b3f79749ee 100644
  {/if}
 diff --git a/src/lib/components/props/Triangle3D.svelte b/src/lib/components/props/Triangle3D.svelte
 new file mode 100644
-index 0000000000..564b9376d7
+index 0000000000000000000000000000000000000000..564b9376d741ce37d0cefcb85f93099b1e30831d
 --- /dev/null
 +++ b/src/lib/components/props/Triangle3D.svelte
-@@ -0,0 +0,129 @@
+@@ -0,0 +1,129 @@
 +<script module lang="ts">
 +  import { SphereGeometry, TorusGeometry } from "three";
 +  import {
@@ -25375,7 +25397,7 @@ index 0000000000..564b9376d7
 +  />
 +{/if}
 diff --git a/src/lib/components/props/Triquetra3D.svelte b/src/lib/components/props/Triquetra3D.svelte
-index 43ff1c3d09..c05aecf863 100644
+index 43ff1c3d090621bff1e77af4d1b9834ac29821be..c05aecf863070202be34f6db930c6879f8c48117 100644
 --- a/src/lib/components/props/Triquetra3D.svelte
 +++ b/src/lib/components/props/Triquetra3D.svelte
 @@ -1,23 +1,69 @@
@@ -25561,10 +25583,10 @@ index 43ff1c3d09..c05aecf863 100644
  {/if}
 diff --git a/src/lib/components/props/club-profile.ts b/src/lib/components/props/club-profile.ts
 new file mode 100644
-index 0000000000..863f3bbbc6
+index 0000000000000000000000000000000000000000..863f3bbbc67406a457aac1bb0e1ca9bf8be338ce
 --- /dev/null
 +++ b/src/lib/components/props/club-profile.ts
-@@ -0,0 +0,179 @@
+@@ -0,0 +1,179 @@
 +/**
 + * Club lathe profile: the silhouette from `club.svg`, the size from real clubs.
 + *
@@ -25746,10 +25768,10 @@ index 0000000000..863f3bbbc6
 +export const CLUB_REACH_M = 0.50343;
 diff --git a/src/lib/components/props/doublestar-profile.ts b/src/lib/components/props/doublestar-profile.ts
 new file mode 100644
-index 0000000000..6c1a0cff0b
+index 0000000000000000000000000000000000000000..6c1a0cff0b24c07b96e584153f27b064107955eb
 --- /dev/null
 +++ b/src/lib/components/props/doublestar-profile.ts
-@@ -0,0 +0,100 @@
+@@ -0,0 +1,100 @@
 +/**
 + * Doublestar silhouette profile
 + *
@@ -25852,10 +25874,10 @@ index 0000000000..6c1a0cff0b
 +}
 diff --git a/src/lib/components/props/eightrings-profile.ts b/src/lib/components/props/eightrings-profile.ts
 new file mode 100644
-index 0000000000..c08bdcb893
+index 0000000000000000000000000000000000000000..c08bdcb8934b579eb722aef21cc56cd33dfd966a
 --- /dev/null
 +++ b/src/lib/components/props/eightrings-profile.ts
-@@ -0,0 +0,84 @@
+@@ -0,0 +1,84 @@
 +/**
 + * Eight rings silhouette profile
 + *
@@ -25942,10 +25964,10 @@ index 0000000000..c08bdcb893
 +}
 diff --git a/src/lib/components/props/fan-profile.ts b/src/lib/components/props/fan-profile.ts
 new file mode 100644
-index 0000000000..0da37239a8
+index 0000000000000000000000000000000000000000..0da37239a8053b7b14d4224987f648381ff7a220
 --- /dev/null
 +++ b/src/lib/components/props/fan-profile.ts
-@@ -0,0 +0,169 @@
+@@ -0,0 +1,169 @@
 +/**
 + * Fan silhouette profile
 + *
@@ -26117,10 +26139,10 @@ index 0000000000..0da37239a8
 +}
 diff --git a/src/lib/components/props/frame-materials.ts b/src/lib/components/props/frame-materials.ts
 new file mode 100644
-index 0000000000..66942a8f53
+index 0000000000000000000000000000000000000000..66942a8f539663634255419ef4cdb24fd8babeb4
 --- /dev/null
 +++ b/src/lib/components/props/frame-materials.ts
-@@ -0,0 +0,350 @@
+@@ -0,0 +1,350 @@
 +/**
 + * Assembled-prop finish
 + *
@@ -26473,10 +26495,10 @@ index 0000000000..66942a8f53
 +}
 diff --git a/src/lib/components/props/geng-profile.ts b/src/lib/components/props/geng-profile.ts
 new file mode 100644
-index 0000000000..e6a8fa5c72
+index 0000000000000000000000000000000000000000..e6a8fa5c7212231654c232b99f1946477a62166f
 --- /dev/null
 +++ b/src/lib/components/props/geng-profile.ts
-@@ -0,0 +0,156 @@
+@@ -0,0 +1,156 @@
 +/**
 + * Geng silhouette profiles
 + *
@@ -26635,10 +26657,10 @@ index 0000000000..e6a8fa5c72
 +}
 diff --git a/src/lib/components/props/hoop-geometry.ts b/src/lib/components/props/hoop-geometry.ts
 new file mode 100644
-index 0000000000..e94aeb4ca5
+index 0000000000000000000000000000000000000000..e94aeb4ca545031bde81550c0809bfd03e54ffb2
 --- /dev/null
 +++ b/src/lib/components/props/hoop-geometry.ts
-@@ -0,0 +0,128 @@
+@@ -0,0 +1,128 @@
 +/**
 + * Mini-hoop dimensions: the size from hoops people buy, the grip from the glyph.
 + *
@@ -26769,10 +26791,10 @@ index 0000000000..e94aeb4ca5
 +}
 diff --git a/src/lib/components/props/plate-extrude.ts b/src/lib/components/props/plate-extrude.ts
 new file mode 100644
-index 0000000000..3b093299f8
+index 0000000000000000000000000000000000000000..3b093299f8fd46afc2d5e303492b3c156594e571
 --- /dev/null
 +++ b/src/lib/components/props/plate-extrude.ts
-@@ -0,0 +0,72 @@
+@@ -0,0 +1,72 @@
 +/**
 + * Flat-prop plate stock
 + *
@@ -26847,10 +26869,10 @@ index 0000000000..3b093299f8
 +}
 diff --git a/src/lib/components/props/plate-materials.ts b/src/lib/components/props/plate-materials.ts
 new file mode 100644
-index 0000000000..3b87db752c
+index 0000000000000000000000000000000000000000..3b87db752c525ef8db4ec940670c9a61034e5a81
 --- /dev/null
 +++ b/src/lib/components/props/plate-materials.ts
-@@ -0,0 +0,79 @@
+@@ -0,0 +1,79 @@
 +/**
 + * Flat-prop finish
 + *
@@ -26932,10 +26954,10 @@ index 0000000000..3b87db752c
 +export const PLATE_TRAIL_GEOMETRY = new SphereGeometry(0.015, 8, 8);
 diff --git a/src/lib/components/props/prop-hand-paint.ts b/src/lib/components/props/prop-hand-paint.ts
 new file mode 100644
-index 0000000000..a8772bf4d1
+index 0000000000000000000000000000000000000000..a8772bf4d15a2cde7fc14d310b6d24b627f2606e
 --- /dev/null
 +++ b/src/lib/components/props/prop-hand-paint.ts
-@@ -0,0 +0,73 @@
+@@ -0,0 +1,73 @@
 +/**
 + * Hand paint for module-cached prop materials.
 + *
@@ -27011,10 +27033,10 @@ index 0000000000..a8772bf4d1
 +}
 diff --git a/src/lib/components/props/prop-hand-palette-state.svelte.ts b/src/lib/components/props/prop-hand-palette-state.svelte.ts
 new file mode 100644
-index 0000000000..cc390b69b1
+index 0000000000000000000000000000000000000000..cc390b69b186aa2c01bc6c5d258680079b274ba2
 --- /dev/null
 +++ b/src/lib/components/props/prop-hand-palette-state.svelte.ts
-@@ -0,0 +0,27 @@
+@@ -0,0 +1,27 @@
 +/**
 + * Svelte view of the hand palettes. Reading `reactivePropHandPalette` inside a
 + * `$derived` or `$effect` re-runs it when the host app repaints the hands.
@@ -27044,10 +27066,10 @@ index 0000000000..cc390b69b1
 +}
 diff --git a/src/lib/components/props/prop-hand-palette.ts b/src/lib/components/props/prop-hand-palette.ts
 new file mode 100644
-index 0000000000..b19ee4aca8
+index 0000000000000000000000000000000000000000..b19ee4aca8d2b3f9bb72f58cc71b5ec36aa2c166
 --- /dev/null
 +++ b/src/lib/components/props/prop-hand-palette.ts
-@@ -0,0 +0,140 @@
+@@ -0,0 +1,140 @@
 +/**
 + * The two hand colors every prop is painted in.
 + *
@@ -27190,10 +27212,10 @@ index 0000000000..b19ee4aca8
 +}
 diff --git a/src/lib/components/props/prop-lathe.ts b/src/lib/components/props/prop-lathe.ts
 new file mode 100644
-index 0000000000..2653ce5702
+index 0000000000000000000000000000000000000000..2653ce5702094760a785e7352b9a245835d43cb0
 --- /dev/null
 +++ b/src/lib/components/props/prop-lathe.ts
-@@ -0,0 +0,116 @@
+@@ -0,0 +1,116 @@
 +/**
 + * Revolved prop parts
 + *
@@ -27311,7 +27333,7 @@ index 0000000000..2653ce5702
 +  return new LatheGeometry(profile, radialSegments);
 +}
 diff --git a/src/lib/components/props/prop-model-recolor.ts b/src/lib/components/props/prop-model-recolor.ts
-index 6d8e91ce13..d4e3f130bc 100644
+index 6d8e91ce13c491ba06883641fbabc36adb2beeb0..d4e3f130bcf51597c60f8e19a7b66eee32c791e2 100644
 --- a/src/lib/components/props/prop-model-recolor.ts
 +++ b/src/lib/components/props/prop-model-recolor.ts
 @@ -1,9 +1,10 @@
@@ -27424,7 +27446,7 @@ index 6d8e91ce13..d4e3f130bc 100644
    });
  }
 diff --git a/src/lib/components/props/prop-model-registry.ts b/src/lib/components/props/prop-model-registry.ts
-index 899e076e7e..a79703a0e4 100644
+index 899e076e7e08becffb11b36d6651a9099ab43d6c..a79703a0e472bc442440c2d2de4b6f0ebe4b71d0 100644
 --- a/src/lib/components/props/prop-model-registry.ts
 +++ b/src/lib/components/props/prop-model-registry.ts
 @@ -20,6 +20,16 @@ export interface PropModelEntry {
@@ -27650,10 +27672,10 @@ index 899e076e7e..a79703a0e4 100644
    if (bigVariant) {
 diff --git a/src/lib/components/props/torch-profile.ts b/src/lib/components/props/torch-profile.ts
 new file mode 100644
-index 0000000000..764b153863
+index 0000000000000000000000000000000000000000..764b15386348c9e9bdd2ae3701d14199856e40fa
 --- /dev/null
 +++ b/src/lib/components/props/torch-profile.ts
-@@ -0,0 +0,142 @@
+@@ -0,0 +1,142 @@
 +/**
 + * Torch profile
 + *
@@ -27798,10 +27820,10 @@ index 0000000000..764b153863
 +export const TORCH_REACH = 0.59335;
 diff --git a/src/lib/components/props/triad-frame.ts b/src/lib/components/props/triad-frame.ts
 new file mode 100644
-index 0000000000..c3e88a14ab
+index 0000000000000000000000000000000000000000..c3e88a14abd46aa706641905aad0885d801a6c71
 --- /dev/null
 +++ b/src/lib/components/props/triad-frame.ts
-@@ -0,0 +0,134 @@
+@@ -0,0 +1,134 @@
 +/**
 + * Triad frame
 + *
@@ -27938,10 +27960,10 @@ index 0000000000..c3e88a14ab
 +};
 diff --git a/src/lib/components/props/triangle-geometry.ts b/src/lib/components/props/triangle-geometry.ts
 new file mode 100644
-index 0000000000..dc19d062e7
+index 0000000000000000000000000000000000000000..dc19d062e7c8ccd00dbd35406502c851cb35c453
 --- /dev/null
 +++ b/src/lib/components/props/triangle-geometry.ts
-@@ -0,0 +0,109 @@
+@@ -0,0 +1,109 @@
 +/**
 + * Triangle: three lengths of 5/8in hoop tubing joined by printed elbows into
 + * an equilateral frame whose sides keep the tubing's bow.
@@ -28053,10 +28075,10 @@ index 0000000000..dc19d062e7
 +}
 diff --git a/src/lib/components/props/triquetra-profile.ts b/src/lib/components/props/triquetra-profile.ts
 new file mode 100644
-index 0000000000..e78e9296e6
+index 0000000000000000000000000000000000000000..e78e9296e60edb2d417b43b47b32edff55684d48
 --- /dev/null
 +++ b/src/lib/components/props/triquetra-profile.ts
-@@ -0,0 +0,186 @@
+@@ -0,0 +1,186 @@
 +/**
 + * Triquetra silhouette profile
 + *
@@ -28244,7 +28266,7 @@ index 0000000000..e78e9296e6
 +  return shape;
 +}
 diff --git a/src/lib/config/avatar-definitions.ts b/src/lib/config/avatar-definitions.ts
-index e3c577e94a..b3d4bd79bb 100644
+index e3c577e94a6b79bbca1bc222fd79886eaf88962b..b3d4bd79bb2801c45c3f1636290ad38e2707da90 100644
 --- a/src/lib/config/avatar-definitions.ts
 +++ b/src/lib/config/avatar-definitions.ts
 @@ -9,11 +9,29 @@
@@ -28334,7 +28356,7 @@ index e3c577e94a..b3d4bd79bb 100644
  
  /**
 diff --git a/src/lib/debug/avatar-debug-hooks.ts b/src/lib/debug/avatar-debug-hooks.ts
-index 7a39174683..7a4e8296c4 100644
+index 7a39174683bca72ec068a727f5e748a7269cb528..7a4e8296c490761589c8da9bf3efe82e1fb6bd10 100644
 --- a/src/lib/debug/avatar-debug-hooks.ts
 +++ b/src/lib/debug/avatar-debug-hooks.ts
 @@ -7,15 +7,18 @@ import type {
@@ -28452,10 +28474,10 @@ index 7a39174683..7a4e8296c4 100644
  }
 diff --git a/src/lib/debug/avatar-load-instrumentation.ts b/src/lib/debug/avatar-load-instrumentation.ts
 new file mode 100644
-index 0000000000..7533d55eb9
+index 0000000000000000000000000000000000000000..7533d55eb9587dc3eda6ea149de226fc48749af5
 --- /dev/null
 +++ b/src/lib/debug/avatar-load-instrumentation.ts
-@@ -0,0 +0,181 @@
+@@ -0,0 +1,181 @@
 +/**
 + * Avatar load instrumentation.
 + *
@@ -28638,7 +28660,7 @@ index 0000000000..7533d55eb9
 +  w.__avatarLoadClear = clearAvatarLoadSpans;
 +}
 diff --git a/src/lib/domain/enums/PropType.ts b/src/lib/domain/enums/PropType.ts
-index a6a29aa9b9..fe47e78001 100644
+index a6a29aa9b928eb98fc102f572da1ed2035c658ba..fe47e7800101428ecd25e58a40bd2bf8793c2f9c 100644
 --- a/src/lib/domain/enums/PropType.ts
 +++ b/src/lib/domain/enums/PropType.ts
 @@ -11,6 +11,7 @@ export enum PropType {
@@ -28667,7 +28689,7 @@ index a6a29aa9b9..fe47e78001 100644
  	BIGTORCH = "bigtorch",
  	POI = "poi",
 diff --git a/src/lib/index.ts b/src/lib/index.ts
-index 68c4a74d3b2fe5ba08879790479da3cd64dcae1d..4764c7f17c7e85c4279bad2603c1fd1641c36a0c 100644
+index 68c4a74d3b2fe5ba08879790479da3cd64dcae1d..d56b30f8d64c0a0e19d778fd12723d836dceb947 100644
 --- a/src/lib/index.ts
 +++ b/src/lib/index.ts
 @@ -71,6 +71,17 @@ export { LAYER_WORLD, LAYER_PLAYER_BODY, LAYER_VIEWMODEL, getCameraLayers, shoul
@@ -28824,10 +28846,10 @@ index 68c4a74d3b2fe5ba08879790479da3cd64dcae1d..4764c7f17c7e85c4279bad2603c1fd16
 +export { prepareSharedGltf, prepareAvatarForDisplay } from "./services/shared-gltf-cache";
 diff --git a/src/lib/rendering/create-staff-object.ts b/src/lib/rendering/create-staff-object.ts
 new file mode 100644
-index 0000000000..c6c8f61d24
+index 0000000000000000000000000000000000000000..c6c8f61d246a134d7dde3697d330b02ef102926f
 --- /dev/null
 +++ b/src/lib/rendering/create-staff-object.ts
-@@ -0,0 +0,184 @@
+@@ -0,0 +1,184 @@
 +import {
 +  CylinderGeometry,
 +  Euler,
@@ -29014,10 +29036,10 @@ index 0000000000..c6c8f61d24
 +}
 diff --git a/src/lib/services/bone-name-normalization.ts b/src/lib/services/bone-name-normalization.ts
 new file mode 100644
-index 0000000000..164a88b402
+index 0000000000000000000000000000000000000000..164a88b402d8501ad7b09fa33e727f75550e8999
 --- /dev/null
 +++ b/src/lib/services/bone-name-normalization.ts
-@@ -0,0 +0,37 @@
+@@ -0,0 +1,37 @@
 +/**
 + * One owner for exporter-namespace-tolerant bone name matching.
 + *
@@ -29057,10 +29079,10 @@ index 0000000000..164a88b402
 +}
 diff --git a/src/lib/services/clip-footprint.ts b/src/lib/services/clip-footprint.ts
 new file mode 100644
-index 0000000000..98e57dea0d
+index 0000000000000000000000000000000000000000..98e57dea0dd008683a1a784921519a3208f3af52
 --- /dev/null
 +++ b/src/lib/services/clip-footprint.ts
-@@ -0,0 +0,369 @@
+@@ -0,0 +1,369 @@
 +import {
 +  AnimationMixer,
 +  Vector3,
@@ -29431,7 +29453,7 @@ index 0000000000..98e57dea0d
 +  return scratch.distanceTo(b.getWorldPosition(new Vector3()));
 +}
 diff --git a/src/lib/services/contracts/IAvatarAnimator.ts b/src/lib/services/contracts/IAvatarAnimator.ts
-index 42a46ac294719f16470ed72c27286e50c55a35f2..dd1c7c310a1ca37ea90e20dcaa50b81cf94a5af3 100644
+index 42a46ac294719f16470ed72c27286e50c55a35f2..bb72e562c5f37b59114c8e685852b57269e7600c 100644
 --- a/src/lib/services/contracts/IAvatarAnimator.ts
 +++ b/src/lib/services/contracts/IAvatarAnimator.ts
 @@ -5,9 +5,10 @@
@@ -29682,7 +29704,7 @@ index 42a46ac294719f16470ed72c27286e50c55a35f2..dd1c7c310a1ca37ea90e20dcaa50b81c
     * Enable/disable smooth blending between poses
     */
 diff --git a/src/lib/services/contracts/IAvatarSkeletonBuilder.ts b/src/lib/services/contracts/IAvatarSkeletonBuilder.ts
-index 666a20b6dd..e0b23efe86 100644
+index 666a20b6ddead4b33f695ce341c854f937eaabb6..e0b23efe86d24cb2ffedebf41579906dcb7beb9b 100644
 --- a/src/lib/services/contracts/IAvatarSkeletonBuilder.ts
 +++ b/src/lib/services/contracts/IAvatarSkeletonBuilder.ts
 @@ -30,9 +30,11 @@ export type BoneName =
@@ -29722,7 +29744,7 @@ index 666a20b6dd..e0b23efe86 100644
     * Dispose of the loaded model and free resources
     */
 diff --git a/src/lib/services/contracts/ICollisionDetector.ts b/src/lib/services/contracts/ICollisionDetector.ts
-index 4f19833178..cea61ed8d9 100644
+index 4f198331785178e696142a56f0f2b6675d020abe..cea61ed8d9c1d3c71fa8da423d443e8d7b752800 100644
 --- a/src/lib/services/contracts/ICollisionDetector.ts
 +++ b/src/lib/services/contracts/ICollisionDetector.ts
 @@ -17,6 +17,8 @@ export type CollisionZone =
@@ -29774,7 +29796,7 @@ index 4f19833178..cea61ed8d9 100644
  export interface BodySnapshot {
    /**
 diff --git a/src/lib/services/contracts/IElbowPoleComputer.ts b/src/lib/services/contracts/IElbowPoleComputer.ts
-index e1d06d6b72..c516922375 100644
+index e1d06d6b7212d8689bbd087c62c023714629d718..c51692237501de565e3550f3761aad9d5f237708 100644
 --- a/src/lib/services/contracts/IElbowPoleComputer.ts
 +++ b/src/lib/services/contracts/IElbowPoleComputer.ts
 @@ -10,6 +10,40 @@
@@ -29889,7 +29911,7 @@ index 059e11919912812efb300e60add8f8ad5fcf9647..848ccebcba10167ae834f5663462a906
    update(deltaTime: number): void;
  
 diff --git a/src/lib/services/contracts/IFootPlanter.ts b/src/lib/services/contracts/IFootPlanter.ts
-index 90ba82c982..c2953279a5 100644
+index 90ba82c982d73882ebf0ab4456ac422b1468ab37..c2953279a54b94f65df2844333be7a4bb443e7f6 100644
 --- a/src/lib/services/contracts/IFootPlanter.ts
 +++ b/src/lib/services/contracts/IFootPlanter.ts
 @@ -35,6 +35,47 @@ export interface FootPlanterInput {
@@ -29976,7 +29998,7 @@ index 90ba82c982..c2953279a5 100644
     * Whether the foot planter is initialized and has valid leg chains.
     */
 diff --git a/src/lib/services/contracts/ILegIKSolver.ts b/src/lib/services/contracts/ILegIKSolver.ts
-index df13878005..d68905bd3e 100644
+index df13878005926639ee48b400e7eb19647b92b020..d68905bd3ebda71325e9a332f633a38c0effe02a 100644
 --- a/src/lib/services/contracts/ILegIKSolver.ts
 +++ b/src/lib/services/contracts/ILegIKSolver.ts
 @@ -10,14 +10,16 @@
@@ -30091,7 +30113,7 @@ index df13878005..d68905bd3e 100644
 +  solve(input: LegIKInput): LegIKResult;
  }
 diff --git a/src/lib/services/contracts/ILocomotionAnimator.ts b/src/lib/services/contracts/ILocomotionAnimator.ts
-index 3ad8e04464..59ee526e19 100644
+index 3ad8e04464bd5aa48ee1277b5ad81ee0bfad19aa..59ee526e193c726cad1ce2f758e5b617599de13a 100644
 --- a/src/lib/services/contracts/ILocomotionAnimator.ts
 +++ b/src/lib/services/contracts/ILocomotionAnimator.ts
 @@ -10,6 +10,10 @@
@@ -30323,7 +30345,7 @@ index 3ad8e04464..59ee526e19 100644
     * Clean up all resources (mixer, actions, clips)
     */
 diff --git a/src/lib/services/contracts/ISpineTwister.ts b/src/lib/services/contracts/ISpineTwister.ts
-index 2627f729e9..486597269a 100644
+index 2627f729e9f27d0eafff53491ea15d219472ac24..486597269ab9d8e29cadfb88c69b67e8e2512b16 100644
 --- a/src/lib/services/contracts/ISpineTwister.ts
 +++ b/src/lib/services/contracts/ISpineTwister.ts
 @@ -15,6 +15,20 @@
@@ -30375,7 +30397,7 @@ index 2627f729e9..486597269a 100644
    ): SpineTwistResult;
  }
 diff --git a/src/lib/services/contracts/ITurnAnimator.ts b/src/lib/services/contracts/ITurnAnimator.ts
-index f906b396cd..d78c415dce 100644
+index f906b396cdb9f1a924c617f9a44c5978f9cfd46b..d78c415dce9399f16b6c8654b88ba70ac93d8c82 100644
 --- a/src/lib/services/contracts/ITurnAnimator.ts
 +++ b/src/lib/services/contracts/ITurnAnimator.ts
 @@ -20,6 +20,8 @@ import type { Quaternion, Vector3 } from "three";
@@ -30413,10 +30435,10 @@ index f906b396cd..d78c415dce 100644
    /** Per-foot contact state: 0 = airborne, 1 = fully planted. */
 diff --git a/src/lib/services/geometry/BodyCollisionGeometry.ts b/src/lib/services/geometry/BodyCollisionGeometry.ts
 new file mode 100644
-index 0000000000..804080e43f
+index 0000000000000000000000000000000000000000..804080e43f4dc206951115861d4b871fe92f612e
 --- /dev/null
 +++ b/src/lib/services/geometry/BodyCollisionGeometry.ts
-@@ -0,0 +0,68 @@
+@@ -0,0 +1,68 @@
 +import { Vector3 } from "three";
 +
 +export const FACE_RADIUS = 0.09;
@@ -30490,7 +30512,7 @@ new file mode 100644
 index 0000000000000000000000000000000000000000..e93bf29dd13171667d4638beb7b2bf8e3516cf24
 --- /dev/null
 +++ b/src/lib/services/geometry/CylindricalGripGeometry.ts
-@@ -0,0 +0,118 @@
+@@ -0,0 +1,118 @@
 +import type { Vector3 } from "three";
 +
 +export const PALMAR_SOCKET_OFFSET_M = 0.008;
@@ -30611,10 +30633,10 @@ index 0000000000000000000000000000000000000000..e93bf29dd13171667d4638beb7b2bf8e
 +}
 diff --git a/src/lib/services/implementations/ArmClearanceRetargeter.ts b/src/lib/services/implementations/ArmClearanceRetargeter.ts
 new file mode 100644
-index 0000000000..1e89fc30e0
+index 0000000000000000000000000000000000000000..1e89fc30e0d413a389a0a5be23675ba900f8cd19
 --- /dev/null
 +++ b/src/lib/services/implementations/ArmClearanceRetargeter.ts
-@@ -0,0 +0,532 @@
+@@ -0,0 +1,532 @@
 +import {
 +  AnimationClip,
 +  AnimationMixer,
@@ -31148,7 +31170,7 @@ index 0000000000..1e89fc30e0
 +  }
 +}
 diff --git a/src/lib/services/implementations/AvatarAnimator.ts b/src/lib/services/implementations/AvatarAnimator.ts
-index c73bcabe86e07dd117e6f737532aea88ac9ec194..2502c85b3b1a4da19f5243950b61086a7c8e1be1 100644
+index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c37b00ebe 100644
 --- a/src/lib/services/implementations/AvatarAnimator.ts
 +++ b/src/lib/services/implementations/AvatarAnimator.ts
 @@ -5,21 +5,144 @@
@@ -33892,7 +33914,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..2502c85b3b1a4da19f5243950b61086a
    toggleClavicleRaise(): boolean {
      this._clavicleRaiseEnabled = !this._clavicleRaiseEnabled;
 diff --git a/src/lib/services/implementations/AvatarSkeletonBuilder.ts b/src/lib/services/implementations/AvatarSkeletonBuilder.ts
-index d2f43b6b63..bc98e19938 100644
+index d2f43b6b63eacb247573543f3d15c29118926882..bc98e1993809abb5e6a48e10345b1292fa06f389 100644
 --- a/src/lib/services/implementations/AvatarSkeletonBuilder.ts
 +++ b/src/lib/services/implementations/AvatarSkeletonBuilder.ts
 @@ -5,9 +5,8 @@
@@ -34492,7 +34514,7 @@ index d2f43b6b63..bc98e19938 100644
      this.state = {
        isLoaded: false,
 diff --git a/src/lib/services/implementations/ClipBasedTurnAnimator.ts b/src/lib/services/implementations/ClipBasedTurnAnimator.ts
-index f8a2b8ddba..a2cde2dada 100644
+index f8a2b8ddba4717fa9c4594e099d623a2c3ac14e5..a2cde2dada0e28f612e0a683532b902b90f7c79a 100644
 --- a/src/lib/services/implementations/ClipBasedTurnAnimator.ts
 +++ b/src/lib/services/implementations/ClipBasedTurnAnimator.ts
 @@ -19,10 +19,14 @@
@@ -34910,7 +34932,7 @@ index f8a2b8ddba..a2cde2dada 100644
          bestDist = dist;
          best = clip;
 diff --git a/src/lib/services/implementations/CollisionDetector.ts b/src/lib/services/implementations/CollisionDetector.ts
-index 7bcee43c7b..145b22db33 100644
+index 7bcee43c7bd19f3e7aa820ab57f8902cd7e90ca9..145b22db339a0b1197cbd5228c7be949a2a9e62e 100644
 --- a/src/lib/services/implementations/CollisionDetector.ts
 +++ b/src/lib/services/implementations/CollisionDetector.ts
 @@ -27,14 +27,16 @@ import type {
@@ -35079,10 +35101,10 @@ index 7bcee43c7b..145b22db33 100644
    private segmentToSegmentDistance(a0: Vector3, a1: Vector3, b0: Vector3, b1: Vector3): number {
 diff --git a/src/lib/services/implementations/ContactRetargeter.ts b/src/lib/services/implementations/ContactRetargeter.ts
 new file mode 100644
-index 0000000000..7187a05479
+index 0000000000000000000000000000000000000000..7187a0547969aa1a7e503a53c37445efb94c774c
 --- /dev/null
 +++ b/src/lib/services/implementations/ContactRetargeter.ts
-@@ -0,0 +0,920 @@
+@@ -0,0 +1,920 @@
 +import {
 +  AnimationClip,
 +  AnimationMixer,
@@ -36004,7 +36026,7 @@ index 0000000000..7187a05479
 +  }
 +}
 diff --git a/src/lib/services/implementations/ElbowPoleComputer.ts b/src/lib/services/implementations/ElbowPoleComputer.ts
-index 626111debe..beac36ea1b 100644
+index 626111debe6cf0d4a8846c94e3b6847e3aa2758f..beac36ea1ba8dcd58f43158c07c6e7091cda4e38 100644
 --- a/src/lib/services/implementations/ElbowPoleComputer.ts
 +++ b/src/lib/services/implementations/ElbowPoleComputer.ts
 @@ -12,8 +12,21 @@
@@ -38046,7 +38068,7 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..19c3cfe9429bece6a8b74e3c115c35bc
 +  }
  }
 diff --git a/src/lib/services/implementations/FootPlanter.ts b/src/lib/services/implementations/FootPlanter.ts
-index a47113296e..490840e57c 100644
+index a47113296e4edce51a40e2a1c3498c4f13969e4f..490840e57c28b324dcfe6f125b77fb1a4595135b 100644
 --- a/src/lib/services/implementations/FootPlanter.ts
 +++ b/src/lib/services/implementations/FootPlanter.ts
 @@ -8,27 +8,65 @@
@@ -39442,7 +39464,7 @@ index a47113296e..490840e57c 100644
 +  }
  }
 diff --git a/src/lib/services/implementations/HingeConstrainedLegIKSolver.ts b/src/lib/services/implementations/HingeConstrainedLegIKSolver.ts
-index 732eb4430c..605270cc1d 100644
+index 732eb4430c365103d55b3453f8cd8f6fe097ecbb..605270cc1d1b04401b253e61778aaa16faf17889 100644
 --- a/src/lib/services/implementations/HingeConstrainedLegIKSolver.ts
 +++ b/src/lib/services/implementations/HingeConstrainedLegIKSolver.ts
 @@ -1,7 +1,11 @@
@@ -39854,7 +39876,7 @@ index 732eb4430c..605270cc1d 100644
    }
  }
 diff --git a/src/lib/services/implementations/KneeHingeAxisCalibrator.ts b/src/lib/services/implementations/KneeHingeAxisCalibrator.ts
-index ce05b8a425..0d04a3e7f6 100644
+index ce05b8a4253eadc12a846226c96a9d83f63063bc..0d04a3e7f6340dc401dcdf68b59f6af055426ca6 100644
 --- a/src/lib/services/implementations/KneeHingeAxisCalibrator.ts
 +++ b/src/lib/services/implementations/KneeHingeAxisCalibrator.ts
 @@ -1,26 +1,125 @@
@@ -40003,7 +40025,7 @@ index ce05b8a425..0d04a3e7f6 100644
    }
  }
 diff --git a/src/lib/services/implementations/LocomotionAnimator.ts b/src/lib/services/implementations/LocomotionAnimator.ts
-index 25b0660fc5..34fa653cfc 100644
+index 25b0660fc5e3c3b71f7dede872aa86fe78a16162..34fa653cfc84a35f246488a7b2723cc31bc85825 100644
 --- a/src/lib/services/implementations/LocomotionAnimator.ts
 +++ b/src/lib/services/implementations/LocomotionAnimator.ts
 @@ -13,17 +13,238 @@
@@ -42827,7 +42849,7 @@ index 25b0660fc5..34fa653cfc 100644
      action: AnimationAction | null,
      targetWeight: number,
 diff --git a/src/lib/services/implementations/RootMotionExtractor.ts b/src/lib/services/implementations/RootMotionExtractor.ts
-index 4040db93ea..cca0f04c28 100644
+index 4040db93ea9b7f2b6418120c045c9639cb321b33..cca0f04c288b8d878691c675ec365da738014bb0 100644
 --- a/src/lib/services/implementations/RootMotionExtractor.ts
 +++ b/src/lib/services/implementations/RootMotionExtractor.ts
 @@ -40,6 +40,7 @@ export class RootMotionExtractor implements IRootMotionExtractor {
@@ -42865,7 +42887,7 @@ index 4040db93ea..cca0f04c28 100644
      return delta;
    }
 diff --git a/src/lib/services/implementations/SpineTwister.ts b/src/lib/services/implementations/SpineTwister.ts
-index f6212ea61c..359acdf3d5 100644
+index f6212ea61c00417a102adf86799b7d4d93b2d1c9..359acdf3d54d932409ca055b0f0aafcdcfd3c3c9 100644
 --- a/src/lib/services/implementations/SpineTwister.ts
 +++ b/src/lib/services/implementations/SpineTwister.ts
 @@ -7,10 +7,12 @@
@@ -43122,10 +43144,10 @@ index f6212ea61c..359acdf3d5 100644
    }
 diff --git a/src/lib/services/leg-geometry.ts b/src/lib/services/leg-geometry.ts
 new file mode 100644
-index 0000000000..659491c876
+index 0000000000000000000000000000000000000000..659491c87669856c213fd41dabbf8171b30282bd
 --- /dev/null
 +++ b/src/lib/services/leg-geometry.ts
-@@ -0,0 +0,366 @@
+@@ -0,0 +1,366 @@
 +import {
 +  Quaternion,
 +  Vector3,
@@ -43494,10 +43516,10 @@ index 0000000000..659491c876
 +}
 diff --git a/src/lib/services/rendered-staff-geometry.ts b/src/lib/services/rendered-staff-geometry.ts
 new file mode 100644
-index 0000000000..1388eb2e3b
+index 0000000000000000000000000000000000000000..1388eb2e3be5cd3be548c934db37d821e0cab147
 --- /dev/null
 +++ b/src/lib/services/rendered-staff-geometry.ts
-@@ -0,0 +0,22 @@
+@@ -0,0 +1,22 @@
 +import type { Quaternion, Vector3 } from "three";
 +
 +/**
@@ -43522,10 +43544,10 @@ index 0000000000..1388eb2e3b
 +}
 diff --git a/src/lib/services/shared-gltf-cache.ts b/src/lib/services/shared-gltf-cache.ts
 new file mode 100644
-index 0000000000..30ccfb4de7
+index 0000000000000000000000000000000000000000..30ccfb4de78798dd472a76de1d3aa7c2b12f410a
 --- /dev/null
 +++ b/src/lib/services/shared-gltf-cache.ts
-@@ -0,0 +0,473 @@
+@@ -0,0 +1,473 @@
 +import type {
 +  AnimationClip,
 +  Camera,
@@ -44001,10 +44023,10 @@ index 0000000000..30ccfb4de7
 +}
 diff --git a/src/lib/state/prop-finish-state.svelte.ts b/src/lib/state/prop-finish-state.svelte.ts
 new file mode 100644
-index 0000000000..e2e21cf354
+index 0000000000000000000000000000000000000000..e2e21cf354a4c90c5e5e9c84eedec1b83f00276a
 --- /dev/null
 +++ b/src/lib/state/prop-finish-state.svelte.ts
-@@ -0,0 +0,126 @@
+@@ -0,0 +1,126 @@
 +/**
 + * Prop Finish State
 + *
@@ -44133,10 +44155,10 @@ index 0000000000..e2e21cf354
 +}
 diff --git a/src/worker.ts b/src/worker.ts
 new file mode 100644
-index 0000000000..1c85721a30
+index 0000000000000000000000000000000000000000..1c85721a30d91ffd9c464a8ace2926ab46d8b909
 --- /dev/null
 +++ b/src/worker.ts
-@@ -0,0 +0,48 @@
+@@ -0,0 +1,48 @@
 +export { getAvatarModelPath } from "./lib/config/avatar-definitions";
 +export { cmToUnits } from "./lib/config/avatar-proportions";
 +export {
