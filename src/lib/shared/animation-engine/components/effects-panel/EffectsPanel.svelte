@@ -655,7 +655,7 @@
                `tuneOverrides`. CustomizeComponent still loads as the readiness
                signal for this view but is no longer rendered. -->
           {#if activeEffect !== "none"}
-            {#if primaryControls(activeEffect).length === 0}
+            {#if primaryControls(activeEffect, "2d").length === 0}
               <!-- LED and anything else whose controls are structured config
                    rather than flat fields: the strip has nothing to show, so
                    the hand-built panel takes the view. -->
@@ -664,6 +664,7 @@
               <EffectTuneStrip
                 effectId={activeEffect}
                 config={effectsConfigState}
+                view="2d"
                 propType={animationSettingsState.currentPropType}
                 overrides={tuneOverrides}
                 onSettingChange={(setting, previousValue, value, coalesce) =>
