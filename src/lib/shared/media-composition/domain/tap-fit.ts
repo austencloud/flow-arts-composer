@@ -67,6 +67,13 @@ export interface TapFitResult {
    * per landing. Null when the typed tempo looks right.
    */
   octaveHint: "half" | "double" | null;
+  /**
+   * Taps before the first one the fit used; their labels are null. Usually a
+   * key pressed while the performer was getting ready, but a real first tap
+   * followed by several missed landings looks the same, so the UI asks.
+   * Marking beat 1 settles it, and the count is then always 0.
+   */
+  ignoredLeadingTaps: number;
 }
 
 const COMB_SIGMA_SECONDS = 0.04;
@@ -77,10 +84,30 @@ const HUBER_SECONDS = 0.04;
 const REFINE_ITERATIONS = 8;
 /** A tap farther than this share of the shortest move is not that landing. */
 const MATCH_TOLERANCE = 0.35;
-/** A first tap more than this many landings before the next is a stray... */
+/**
+ * A first tap more than this many landings before the next is a stray...
+ *
+ * A seeded sweep (60 takes each, one pre-roll tap 0.8-3.8 s early) found the
+ * rule halves wrong maps at a 10% miss rate and costs nothing there; at 40%
+ * missed it wrongly drops a real first tap in 5 of 60. Beat 1 marked
+ * explicitly overrides it either way.
+ */
 const MAX_LEADING_GAP_LANDINGS = 3;
 /** ...provided enough taps follow it to fit the grid without it. */
 const MIN_RUN_AFTER_STRAY = 3;
+/** Taps closer than this are one press registered twice. */
+const DUPLICATE_TAP_SECONDS = 0.001;
+/**
+ * Tempo stays at the typed BPM until the taps span this many beats (one pass,
+ * within these bounds): over a few moves, tapping jitter reads as tempo.
+ */
+const MIN_TEMPO_SPAN_BEATS = 8;
+const MAX_TEMPO_SPAN_BEATS = 16;
+/**
+ * The coarse search scores this many taps, spread across the take; the fine
+ * search and refit use them all. A 130 s take has ~190 taps.
+ */
+const COARSE_SEARCH_TAPS = 48;
 
 /** Cumulative beats from the opening pose to any position, across passes. */
 export function createBeatClock(moveBeats: readonly number[]) {
@@ -107,21 +134,28 @@ export function createBeatClock(moveBeats: readonly number[]) {
     return pass * beatsPerPass + cumulative[within]!;
   }
 
-  /** The position whose landing is nearest to `beats` from the opening pose. */
+  /**
+   * The position whose landing is nearest to `beats` from the opening pose;
+   * a tie goes to the earlier one.
+   */
   function nearestPosition(beats: number): number {
     if (beats <= 0) return 0;
     const pass = Math.floor(beats / beatsPerPass);
-    let best = pass * movesPerPass;
-    let bestError = Infinity;
-    for (let within = 0; within <= movesPerPass; within += 1) {
-      const position = pass * movesPerPass + within;
-      const error = Math.abs(beatsBefore(position) - beats);
-      if (error < bestError) {
-        bestError = error;
-        best = position;
-      }
+    const within = beats - pass * beatsPerPass;
+    // The last landing at or before `within`, by bisection: the comb calls
+    // this for every tap under every hypothesis.
+    let low = 0;
+    let high = movesPerPass;
+    while (high - low > 1) {
+      const middle = (low + high) >> 1;
+      if (cumulative[middle]! <= within) low = middle;
+      else high = middle;
     }
-    return best;
+    const nearer =
+      within - cumulative[low]! <= cumulative[low + 1]! - within
+        ? low
+        : low + 1;
+    return pass * movesPerPass + nearer;
   }
 
   return {
@@ -166,17 +200,17 @@ interface GridHypothesis {
   score: number;
 }
 
-/**
- * Searches phase for each candidate tempo. The phase window is one shortest
- * move either side of where the first tap would put the origin, which covers
- * every phase of a uniform sequence without assuming the first tap is clean.
- */
 /** Where the first phase window sits: on the beat-1 mark, or the first tap. */
 interface PhaseSeed {
   seconds: number;
   position: number;
 }
 
+/**
+ * Searches phase for each candidate tempo. The phase window is one shortest
+ * move either side of where the seed would put the origin, which covers
+ * every phase of a uniform sequence without assuming the first tap is clean.
+ */
 function searchGrid(
   taps: readonly number[],
   clock: BeatClock,
@@ -203,10 +237,21 @@ function searchGrid(
   return best!;
 }
 
+/** At most `count` taps, evenly spread, keeping the first and last. */
+function spreadSubset(taps: readonly number[], count: number): number[] {
+  if (taps.length <= count) return [...taps];
+  const stride = (taps.length - 1) / (count - 1);
+  return Array.from(
+    { length: count },
+    (_, index) => taps[Math.round(index * stride)]!
+  );
+}
+
 /**
  * Coarse pass over every tempo and phase, then a fine pass around the best.
  * The comb's 40 ms kernel is wide enough that a 12 ms coarse step cannot step
- * over its peak, and it keeps a live refit under a few tens of milliseconds.
+ * over its peak. The coarse pass scores a spread subset of the taps, which
+ * keeps a full-take refit near a tenth of a second.
  */
 function searchGridCoarseToFine(
   taps: readonly number[],
@@ -215,6 +260,7 @@ function searchGridCoarseToFine(
   lockTempo: boolean,
   seed: PhaseSeed
 ): GridHypothesis {
+  const coarseTaps = spreadSubset(taps, COARSE_SEARCH_TAPS);
   const tempoRange = (step: number, around: number, span: number) => {
     const tempos: number[] = [];
     for (let ratio = -span; ratio <= span + 1e-9; ratio += step) {
@@ -226,7 +272,7 @@ function searchGridCoarseToFine(
     ? [nominal]
     : tempoRange(TEMPO_SEARCH_STEP * 2, nominal, TEMPO_SEARCH_SPAN);
   const coarse = searchGrid(
-    taps,
+    coarseTaps,
     clock,
     coarseTempos,
     seed,
@@ -371,19 +417,33 @@ function detectOctave(
   return null;
 }
 
+type Anchored = {
+  matched: MatchedTap[];
+  /** A re-derived origin when the labels moved, else null. */
+  originSeconds: number | null;
+};
+
 /**
- * Fits the grid. Needs at least one tap; with fewer than three the tempo is
- * held at the typed BPM whatever `tempo` says, since two taps cannot tell a
- * tempo error from tapping jitter.
+ * Fits the grid. Needs at least one tap. Until the taps span about one pass
+ * the tempo is held at the typed BPM whatever `tempo` says: over a few moves,
+ * tapping jitter cannot be told from a tempo error.
  */
 export function fitTapsToGrid(input: TapFitInput): TapFitResult {
   if (!Number.isFinite(input.bpm) || input.bpm <= 0) {
     throw new RangeError("BPM must be positive");
   }
   const clock = createBeatClock(input.moveBeats);
-  const taps = [...input.taps]
+  const taps: number[] = [];
+  for (const tap of [...input.taps]
     .filter((tap) => Number.isFinite(tap))
-    .sort((left, right) => left - right);
+    .sort((left, right) => left - right)) {
+    if (
+      taps.length === 0 ||
+      tap - taps[taps.length - 1]! > DUPLICATE_TAP_SECONDS
+    ) {
+      taps.push(tap);
+    }
+  }
   if (taps.length === 0) {
     throw new RangeError("Tap at least once to fit a grid");
   }
@@ -394,7 +454,14 @@ export function fitTapsToGrid(input: TapFitInput): TapFitResult {
       ? input.beatOneSeconds
       : null;
   const nominal = 60 / input.bpm;
-  const lockTempo = input.tempo === "locked" || taps.length < 3;
+  const tempoSpanBeats = Math.min(
+    MAX_TEMPO_SPAN_BEATS,
+    Math.max(MIN_TEMPO_SPAN_BEATS, clock.beatsPerPass)
+  );
+  const lockTempo =
+    input.tempo === "locked" ||
+    taps.length < 3 ||
+    (taps[taps.length - 1]! - taps[0]!) / nominal < tempoSpanBeats;
   const grid = searchGridCoarseToFine(
     taps,
     clock,
@@ -408,7 +475,7 @@ export function fitTapsToGrid(input: TapFitInput): TapFitResult {
     labelled: MatchedTap[],
     shift: number,
     secondsPerBeat: number
-  ): { matched: MatchedTap[]; originSeconds: number | null } => {
+  ): Anchored => {
     const shifted = labelled
       .map((tap) => ({ ...tap, position: tap.position + shift }))
       .filter((tap) => tap.position >= 0);
@@ -426,7 +493,7 @@ export function fitTapsToGrid(input: TapFitInput): TapFitResult {
     all: MatchedTap[],
     originSeconds: number,
     secondsPerBeat: number
-  ): { matched: MatchedTap[]; originSeconds: number | null } => {
+  ): Anchored => {
     const markLabel = clock.nearestPosition(
       (beatOne! - originSeconds) / secondsPerBeat
     );
@@ -442,11 +509,13 @@ export function fitTapsToGrid(input: TapFitInput): TapFitResult {
   const anchorToFirstTap = (
     all: MatchedTap[],
     secondsPerBeat: number
-  ): { matched: MatchedTap[]; originSeconds: number | null } => {
+  ): Anchored => {
     // A tap well before the run - pressing the key while the performer was
     // still getting ready - would otherwise become move 1 and shift every
-    // label after it. Nobody misses several landings right after starting to
-    // tap, so a lone tap that far ahead of the rest is set aside as an extra.
+    // label after it. Few people miss several landings right after starting
+    // to tap, so a lone tap that far ahead of the rest is set aside, and the
+    // result counts it so the UI can offer it back as beat 1. The explicit
+    // beat-1 mark replaces this guess.
     let startIndex = 0;
     while (
       all.length - startIndex > MIN_RUN_AFTER_STRAY &&
@@ -475,7 +544,7 @@ export function fitTapsToGrid(input: TapFitInput): TapFitResult {
     all: MatchedTap[],
     originSeconds: number,
     secondsPerBeat: number
-  ) =>
+  ): Anchored =>
     beatOne === null
       ? anchorToFirstTap(all, secondsPerBeat)
       : anchorToBeatOne(all, originSeconds, secondsPerBeat);
@@ -549,6 +618,8 @@ export function fitTapsToGrid(input: TapFitInput): TapFitResult {
     }
   }
   const extraCount = labels.length - matched.length;
+  const firstUsed = labels.findIndex((label) => label.position !== null);
+  const ignoredLeadingTaps = beatOne === null ? Math.max(0, firstUsed) : 0;
 
   return {
     secondsPerBeat: fitted.secondsPerBeat,
@@ -560,5 +631,6 @@ export function fitTapsToGrid(input: TapFitInput): TapFitResult {
     medianMissSeconds: median(misses),
     worstMissSeconds: misses.length ? Math.max(...misses) : 0,
     octaveHint: detectOctave(matched, extraCount),
+    ignoredLeadingTaps,
   };
 }

@@ -29,6 +29,8 @@ function simulateTake(options: {
   miss: number;
   extra: number;
   latency: number;
+  /** Seconds before landing 1 of a stray key press, or none. */
+  strayLead?: number;
 }): SimulatedTake {
   const { random } = options;
   const gauss = () =>
@@ -52,24 +54,34 @@ function simulateTake(options: {
       taps.push(landing + secondsPerBeat * (0.3 + 0.4 * random()));
     }
   }
+  if (options.strayLead !== undefined) {
+    taps.unshift(truth[1]! - options.strayLead);
+  }
   return { taps, truth, secondsPerBeat };
 }
 
-/** Largest landing error after removing the constant tap latency. */
-function worstSpread(
+/**
+ * Largest landing error once the known tap latency is taken off. Measured
+ * against the true landings, so a map a whole move off fails however tidy
+ * its spacing.
+ */
+function worstError(
   take: SimulatedTake,
   fit: { originSeconds: number; secondsPerBeat: number },
-  moveBeats: number[]
+  moveBeats: number[],
+  latency: number
 ): number {
   const clock = createBeatClock(moveBeats);
-  const errors = take.truth.map(
-    (landing, position) =>
-      fit.originSeconds +
-      fit.secondsPerBeat * clock.beatsBefore(position) -
-      landing
+  return Math.max(
+    ...take.truth.map((landing, position) =>
+      Math.abs(
+        fit.originSeconds +
+          fit.secondsPerBeat * clock.beatsBefore(position) -
+          latency -
+          landing
+      )
+    )
   );
-  const mean = errors.reduce((sum, error) => sum + error, 0) / errors.length;
-  return Math.max(...errors.map((error) => Math.abs(error - mean)));
 }
 
 describe("createBeatClock", () => {
@@ -83,6 +95,30 @@ describe("createBeatClock", () => {
     expect(clock.nearestPosition(-3)).toBe(0);
     expect(clock.moveBeatsAt(2)).toBe(2);
     expect(clock.moveBeatsAt(5)).toBe(2);
+  });
+
+  it("finds the nearest landing the same way a full scan would", () => {
+    const moveBeats = [1, 1, 2, 1, 3, 1, 1, 2];
+    const clock = createBeatClock(moveBeats);
+    const scan = (beats: number) => {
+      let best = 0;
+      for (let position = 1; position <= 200; position += 1) {
+        if (
+          Math.abs(clock.beatsBefore(position) - beats) <
+          Math.abs(clock.beatsBefore(best) - beats)
+        ) {
+          best = position;
+        }
+      }
+      return best;
+    };
+    const random = seededRandom(3);
+    for (let trial = 0; trial < 500; trial += 1) {
+      const beats = random() * 150;
+      expect(clock.nearestPosition(beats)).toBe(scan(beats));
+    }
+    // Halfway between two landings goes to the earlier one.
+    expect(clock.nearestPosition(2.5)).toBe(2);
   });
 });
 
@@ -191,6 +227,9 @@ describe("fitTapsToGrid", () => {
     expect(fit.octaveHint).toBe("half");
   });
 
+  // Without a beat-1 mark, the stray-tap rule wrongly sets aside a real first
+  // tap when the next few landings go untapped. That costs a few takes at
+  // high miss rates, and each one must be flagged for the UI to ask about.
   it("finds the phase across a seeded sweep of rough takes", () => {
     const random = seededRandom(7);
     const scenarios = [
@@ -203,6 +242,7 @@ describe("fitTapsToGrid", () => {
     const moveBeats = [1, 1, 2, 1, 1, 1, 1, 1];
     for (const scenario of scenarios) {
       let failures = 0;
+      let flaggedFailures = 0;
       for (let trial = 0; trial < 40; trial += 1) {
         const take = simulateTake({
           random,
@@ -222,11 +262,54 @@ describe("fitTapsToGrid", () => {
           firstTapPosition: 1,
           tempo: scenario.tempo,
         });
-        if (worstSpread(take, fit, moveBeats) > 0.25 * take.secondsPerBeat) {
-          failures += 1;
+        if (
+          worstError(take, fit, moveBeats, 0.06) >
+          0.25 * take.secondsPerBeat
+        ) {
+          if (fit.ignoredLeadingTaps > 0) flaggedFailures += 1;
+          else failures += 1;
         }
       }
       expect({ scenario, failures }).toEqual({ scenario, failures: 0 });
+      expect(flaggedFailures).toBeLessThanOrEqual(2);
+    }
+  });
+
+  it("finds move 1 through a stray early tap once beat 1 is marked", () => {
+    const random = seededRandom(11);
+    const moveBeats = [1, 1, 2, 1, 1, 1, 1, 1];
+    for (const miss of [0.1, 0.4]) {
+      let failures = 0;
+      for (let trial = 0; trial < 40; trial += 1) {
+        const take = simulateTake({
+          random,
+          moveBeats,
+          trueBpm: 86 + 2 * random(),
+          originSeconds: 4 + 3 * random(),
+          passes: 4,
+          jitter: 0.05,
+          miss,
+          extra: 0.1,
+          latency: 0.06,
+          strayLead: 0.8 + 3 * random(),
+        });
+        const fit = fitTapsToGrid({
+          taps: take.taps,
+          bpm: 87,
+          moveBeats,
+          firstTapPosition: 1,
+          // Marked by eye, up to 0.15 s either side of the landing.
+          beatOneSeconds: take.truth[1]! + 0.3 * (random() - 0.5),
+          tempo: "follow",
+        });
+        if (
+          worstError(take, fit, moveBeats, 0.06) >
+          0.25 * take.secondsPerBeat
+        ) {
+          failures += 1;
+        }
+      }
+      expect({ miss, failures }).toEqual({ miss, failures: 0 });
     }
   });
 
@@ -247,6 +330,50 @@ describe("fitTapsToGrid", () => {
       1, 2, 3, 4, 5, 6, 7, 8, 9,
     ]);
     expect(fit.originSeconds).toBeCloseTo(3, 2);
+    expect(fit.ignoredLeadingTaps).toBe(1);
+  });
+
+  it("reads three misses right after a real first tap as a stray, until beat 1 is marked", () => {
+    // The rule's known cost: nothing in the taps separates this from a key
+    // pressed early. The fit reports the tap it set aside so the UI can ask.
+    const landing = (position: number) => 3 + SECONDS_PER_BEAT * position;
+    const taps = [1, 5, 6, 7, 8, 9, 10, 11, 12].map(landing);
+    const unmarked = fitTapsToGrid({
+      taps,
+      bpm: 87,
+      moveBeats: eightMoves,
+      firstTapPosition: 1,
+      tempo: "locked",
+    });
+    expect(unmarked.ignoredLeadingTaps).toBe(1);
+    const marked = fitTapsToGrid({
+      taps,
+      bpm: 87,
+      moveBeats: eightMoves,
+      firstTapPosition: 1,
+      beatOneSeconds: landing(1),
+      tempo: "locked",
+    });
+    expect(marked.labels.map((label) => label.position)).toEqual([
+      1, 5, 6, 7, 8, 9, 10, 11, 12,
+    ]);
+    expect(marked.ignoredLeadingTaps).toBe(0);
+  });
+
+  it("counts a key registered twice as one tap", () => {
+    const landing = (position: number) => 3 + SECONDS_PER_BEAT * position;
+    const taps = [1, 2, 3, 4, 5, 6].map(landing);
+    const fit = fitTapsToGrid({
+      taps: [...taps, landing(4) + 0.0004],
+      bpm: 87,
+      moveBeats: eightMoves,
+      firstTapPosition: 1,
+      tempo: "locked",
+    });
+    expect(fit.labels.map((label) => label.position)).toEqual([
+      1, 2, 3, 4, 5, 6,
+    ]);
+    expect(fit.extraCount).toBe(0);
   });
 
   it("keeps a first tap that is only a missed landing or two ahead", () => {
@@ -274,6 +401,29 @@ describe("fitTapsToGrid", () => {
       tempo: "follow",
     });
     expect(fit.bpm).toBeCloseTo(87, 6);
+  });
+
+  it("holds the typed tempo until the taps span a pass", () => {
+    // Three rough taps once swung the fit 5% off; over a few moves, jitter
+    // cannot be told from tempo.
+    const sixteen = Array.from({ length: 16 }, () => 1);
+    const at80 = (position: number) => 2 + (60 / 80) * position;
+    const short = fitTapsToGrid({
+      taps: [1, 2, 3, 4, 5].map(at80),
+      bpm: 87,
+      moveBeats: sixteen,
+      firstTapPosition: 1,
+      tempo: "follow",
+    });
+    expect(short.bpm).toBeCloseTo(87, 6);
+    const long = fitTapsToGrid({
+      taps: Array.from({ length: 20 }, (_, index) => at80(index + 1)),
+      bpm: 84,
+      moveBeats: sixteen,
+      firstTapPosition: 1,
+      tempo: "follow",
+    });
+    expect(long.bpm).toBeCloseTo(80, 0);
   });
 
   it("rejects an empty tap list and a zero BPM", () => {

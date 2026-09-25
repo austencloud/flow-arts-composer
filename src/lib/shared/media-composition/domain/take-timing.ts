@@ -1,9 +1,5 @@
 import { z } from "zod";
 import {
-  PLAYBACK_MAX_BPM,
-  PLAYBACK_MIN_BPM,
-} from "$lib/shared/animation-engine/domain/constants/timing";
-import {
   SequenceTimeMapSchema,
   mediaTimeToSequencePosition,
   type SequenceTimeAnchor,
@@ -33,6 +29,19 @@ import {
  * confirmed it against the video.
  */
 
+/**
+ * The tempos a take can be typed at. A take's BPM never drives the engine -
+ * the map does - so it has its own range rather than the playback limits.
+ */
+export const TAKE_MIN_BPM = 20;
+export const TAKE_MAX_BPM = 300;
+
+/**
+ * One frame at 30 fps. No move resolves shorter, and a dragged landing stops
+ * this far from its neighbours.
+ */
+export const MIN_MOVE_SECONDS = 1 / 30;
+
 const IdSchema = z.string().trim().min(1);
 const MediaSecondsSchema = z.number().finite().nonnegative();
 
@@ -52,7 +61,7 @@ export const TimingSectionSchema = z
     id: IdSchema,
     startSeconds: MediaSecondsSchema,
     endSeconds: MediaSecondsSchema,
-    bpm: z.number().finite().min(PLAYBACK_MIN_BPM).max(PLAYBACK_MAX_BPM),
+    bpm: z.number().finite().min(TAKE_MIN_BPM).max(TAKE_MAX_BPM),
     /** "locked" holds the typed BPM; "follow" fits the video's own within ±5%. */
     tempo: z.enum(["locked", "follow"]),
     /** "grid": even landings. "taps": each matched tap is its landing. */
@@ -76,13 +85,23 @@ export const TimingSectionSchema = z
     lastPosition: z.number().int().nonnegative().optional(),
     /** Whole-grid nudge, seconds; the UI moves it a frame at a time. */
     offsetSeconds: z.number().finite(),
+    /**
+     * Landings Austen dragged, one per position. They ignore the nudge: each
+     * is a moment he placed by eye.
+     */
     overrides: z.array(TimingOverrideSchema),
   })
   .strict()
   .refine((section) => section.endSeconds > section.startSeconds, {
     message: "A timing section must end after it starts",
     path: ["endSeconds"],
-  });
+  })
+  .refine(
+    (section) =>
+      new Set(section.overrides.map((override) => override.position)).size ===
+      section.overrides.length,
+    { message: "A landing can be dragged only once", path: ["overrides"] }
+  );
 
 export type TimingSection = z.infer<typeof TimingSectionSchema>;
 
@@ -164,17 +183,27 @@ export function createTakeTiming(input: {
 }
 
 /**
+ * What the performance does at a split:
+ * - `continues`: it carries on through (the performer changed tempo), so the
+ *   right-hand side keeps counting from the left's labels.
+ * - `restarts`: it starts over at move 1 (an edited video whose slow replay
+ *   begins from the opening pose). Dragged landings and the end come along,
+ *   renumbered to match.
+ */
+export type SplitContinuity = "continues" | "restarts";
+
+/**
  * Splits the section that contains `atSeconds` in two. Taps and overrides
- * stay with the side they fall on, and the right-hand side carries on
- * counting from the left's labels: its first tap keeps the position it had,
- * so a split never renumbers the moves after it.
+ * stay with the side they fall on; the right-hand side keeps the tempo,
+ * snap and nudge.
  */
 export function splitTimingSection(
   timing: TakeTiming,
   atSeconds: number,
   newId: string,
   now: number,
-  moveBeats: readonly number[]
+  moveBeats: readonly number[],
+  continuity: SplitContinuity
 ): TakeTiming {
   const index = timing.sections.findIndex(
     (section) =>
@@ -196,6 +225,19 @@ export function splitTimingSection(
       (override) => override.seconds < atSeconds
     ),
   };
+  // Restarting renumbers from the position the right-hand side would have
+  // continued at; with no tap to say where that is, carried positions mean
+  // nothing and are dropped.
+  const renumber =
+    continuity === "continues"
+      ? 0
+      : continuedFrom == null
+        ? null
+        : 1 - continuedFrom;
+  const carriedEnd =
+    section.lastPosition === undefined || renumber === null
+      ? undefined
+      : section.lastPosition + renumber;
   const right: TimingSection = {
     ...createTimingSection({
       id: newId,
@@ -206,14 +248,24 @@ export function splitTimingSection(
     tempo: section.tempo,
     snap: section.snap,
     taps: section.taps.filter((tap) => tap >= atSeconds),
-    firstTapPosition: continuedFrom ?? section.firstTapPosition,
+    firstTapPosition:
+      continuity === "restarts"
+        ? 1
+        : (continuedFrom ?? section.firstTapPosition),
     offsetSeconds: section.offsetSeconds,
-    ...(section.lastPosition !== undefined
-      ? { lastPosition: section.lastPosition }
+    ...(carriedEnd !== undefined && carriedEnd >= 0
+      ? { lastPosition: carriedEnd }
       : {}),
-    overrides: section.overrides.filter(
-      (override) => override.seconds >= atSeconds
-    ),
+    overrides:
+      renumber === null
+        ? []
+        : section.overrides
+            .filter((override) => override.seconds >= atSeconds)
+            .map((override) => ({
+              ...override,
+              position: override.position + renumber,
+            }))
+            .filter((override) => override.position >= 0),
   };
   const sections = [...timing.sections];
   sections.splice(index, 1, left, right);
@@ -255,12 +307,24 @@ export interface ResolvedTimingSection {
   map: SequenceTimeMap | null;
   fit: TapFitResult | null;
   /** Landing times by position, for drawing the grid. */
-  landings: { position: number; seconds: number }[];
+  landings: ResolvedLanding[];
   /**
    * The last landing the performer makes; every layer holds it afterwards.
    * Null when the section runs on to its end at the typed tempo.
    */
   endPosition: number | null;
+  /**
+   * Dragged landings set aside because they no longer sit between their
+   * neighbours - typically after beat 1 moved or the taps changed.
+   */
+  droppedOverrides: number[];
+}
+
+export interface ResolvedLanding {
+  position: number;
+  seconds: number;
+  /** A landing Austen dragged into place. */
+  pinned: boolean;
 }
 
 export interface ResolvedTakeTiming {
@@ -315,55 +379,38 @@ export function fitSection(
   });
 }
 
-function resolveSection(
+/**
+ * Performances run in whole passes. A last tap this close to the end of a
+ * pass means Austen stopped tapping, not that the performer stopped moving.
+ */
+function roundUpToPassEnd(position: number, movesPerPass: number): number {
+  const slack = Math.min(2, Math.floor(movesPerPass / 4));
+  const within = position % movesPerPass;
+  return within !== 0 && movesPerPass - within <= slack
+    ? position + movesPerPass - within
+    : position;
+}
+
+interface SectionLandings {
+  fit: TapFitResult;
+  landings: ResolvedLanding[];
+  endPosition: number | null;
+  droppedOverrides: number[];
+}
+
+/** Every landing that matters to a section, or null with nothing to fit. */
+function sectionLandings(
   section: TimingSection,
-  moveBeats: readonly number[],
-  context: { sequenceId: string; takeKey: string; updatedAt: number }
-): ResolvedTimingSection {
-  const empty: ResolvedTimingSection = {
-    id: section.id,
-    startSeconds: section.startSeconds,
-    endSeconds: section.endSeconds,
-    map: null,
-    fit: null,
-    landings: [],
-    endPosition: null,
-  };
+  moveBeats: readonly number[]
+): SectionLandings | null {
   const fit = fitSection(section, moveBeats);
-  if (!fit) return empty;
+  if (!fit) return null;
 
   const clock = createBeatClock(moveBeats);
   const spb = fit.secondsPerBeat;
   const gridAt = (position: number) =>
     fit.originSeconds + spb * clock.beatsBefore(position) + section.offsetSeconds;
-
-  // Every position whose landing could matter to this section: from the last
-  // landing at or before its start (never below the opening pose) to where
-  // the performance ends. Taps say where that is - the grid does not run on
-  // after the performer stops - unless Austen set it; with no taps at all
-  // the typed tempo runs to the section's end.
-  const firstPosition = Math.max(
-    0,
-    clock.nearestPosition((section.startSeconds - fit.originSeconds) / spb) - 1
-  );
   const tapped = sectionTaps(section).length > 0;
-  const matchedPositions = fit.labels
-    .map((label) => label.position)
-    .filter((position): position is number => position !== null);
-  const endPosition =
-    section.lastPosition ??
-    (tapped && matchedPositions.length > 0
-      ? Math.max(
-          ...matchedPositions,
-          ...section.overrides.map((override) => override.position)
-        )
-      : null);
-  let lastPosition = firstPosition + 1;
-  if (endPosition === null) {
-    while (gridAt(lastPosition) < section.endSeconds) lastPosition += 1;
-  } else {
-    lastPosition = Math.max(lastPosition, endPosition);
-  }
 
   const tappedAt = new Map<number, number>();
   if (section.snap === "taps" && tapped) {
@@ -400,18 +447,99 @@ function resolveSection(
     const nearest = (before ?? after)!;
     return tappedAt.get(nearest)! + spb * (beats - clock.beatsBefore(nearest));
   };
-
   const overrides = new Map(
     section.overrides.map((override) => [override.position, override.seconds])
   );
-  const landings: { position: number; seconds: number }[] = [];
+  const landingAt = (position: number) =>
+    overrides.get(position) ?? snappedAt(position);
+
+  // Every position whose landing could matter to this section: from the last
+  // landing at or before its start (never below the opening pose) to where
+  // the performance ends. Taps say where that is - the grid does not run on
+  // after the performer stops - unless Austen set it; with no taps at all
+  // the typed tempo runs to the section's end.
+  let firstPosition = Math.max(
+    0,
+    clock.nearestPosition(
+      (section.startSeconds - section.offsetSeconds - fit.originSeconds) / spb
+    ) - 1
+  );
+  while (firstPosition > 0 && landingAt(firstPosition) > section.startSeconds) {
+    firstPosition -= 1;
+  }
+  const matchedPositions = fit.labels
+    .map((label) => label.position)
+    .filter((position): position is number => position !== null);
+  const endPosition =
+    section.lastPosition ??
+    (tapped && matchedPositions.length > 0
+      ? roundUpToPassEnd(
+          Math.max(
+            ...matchedPositions,
+            ...section.overrides.map((override) => override.position)
+          ),
+          clock.movesPerPass
+        )
+      : null);
+  let lastPosition = firstPosition + 1;
+  if (endPosition === null) {
+    while (landingAt(lastPosition) < section.endSeconds) lastPosition += 1;
+  } else {
+    lastPosition = Math.max(lastPosition, endPosition);
+  }
+
+  const landings: ResolvedLanding[] = [];
   for (let position = firstPosition; position <= lastPosition; position += 1) {
     landings.push({
       position,
-      seconds: overrides.get(position) ?? snappedAt(position),
+      seconds: landingAt(position),
+      pinned: overrides.has(position),
     });
   }
+  // A dragged landing that no longer sits between its neighbours would make
+  // the moves around it flash by; it goes back on the grid and is reported.
+  const droppedOverrides: number[] = [];
+  landings.forEach((landing, index) => {
+    if (!landing.pinned) return;
+    const previous = landings[index - 1];
+    const next = landings[index + 1];
+    if (
+      (previous && landing.seconds < previous.seconds + MIN_MOVE_SECONDS) ||
+      (next && landing.seconds > next.seconds - MIN_MOVE_SECONDS)
+    ) {
+      landing.seconds = snappedAt(landing.position);
+      landing.pinned = false;
+      droppedOverrides.push(landing.position);
+    }
+  });
   enforceIncreasing(landings);
+
+  return {
+    fit,
+    landings,
+    endPosition: endPosition === null ? null : lastPosition,
+    droppedOverrides,
+  };
+}
+
+function resolveSection(
+  section: TimingSection,
+  moveBeats: readonly number[],
+  context: { sequenceId: string; takeKey: string; updatedAt: number }
+): ResolvedTimingSection {
+  const empty: ResolvedTimingSection = {
+    id: section.id,
+    startSeconds: section.startSeconds,
+    endSeconds: section.endSeconds,
+    map: null,
+    fit: null,
+    landings: [],
+    endPosition: null,
+    droppedOverrides: [],
+  };
+  const resolved = sectionLandings(section, moveBeats);
+  if (!resolved) return empty;
+  const { fit, landings } = resolved;
 
   // The schema needs nonnegative media times; a grid reaching back before the
   // file's first frame is cut at zero with the position it would have there.
@@ -463,7 +591,8 @@ function resolveSection(
     map,
     fit,
     landings,
-    endPosition: endPosition === null ? null : lastPosition,
+    endPosition: resolved.endPosition,
+    droppedOverrides: resolved.droppedOverrides,
   };
 }
 
@@ -691,11 +820,66 @@ export function setPerformanceEndAt(
 }
 
 /**
+ * Where a landing can be dragged: strictly between its neighbours, a frame
+ * clear of each. Null when the section has no such landing.
+ */
+export function landingDragRange(
+  section: TimingSection,
+  moveBeats: readonly number[],
+  position: number
+): { min: number; max: number } | null {
+  const resolved = sectionLandings(section, moveBeats);
+  const index =
+    resolved?.landings.findIndex((landing) => landing.position === position) ??
+    -1;
+  if (!resolved || index < 0) return null;
+  const previous = resolved.landings[index - 1];
+  const next = resolved.landings[index + 1];
+  return {
+    min: Math.max(0, previous ? previous.seconds + MIN_MOVE_SECONDS : 0),
+    max: next ? next.seconds - MIN_MOVE_SECONDS : Number.POSITIVE_INFINITY,
+  };
+}
+
+/** Pins a landing where Austen dropped it, stopped at its neighbours. */
+export function setLandingAt(
+  section: TimingSection,
+  moveBeats: readonly number[],
+  position: number,
+  seconds: number
+): TimingSection {
+  const range = landingDragRange(section, moveBeats, position);
+  if (!range || range.max < range.min) return section;
+  return {
+    ...section,
+    overrides: [
+      ...section.overrides.filter((override) => override.position !== position),
+      { position, seconds: Math.min(range.max, Math.max(range.min, seconds)) },
+    ].sort((left, right) => left.position - right.position),
+  };
+}
+
+/** Hands a dragged landing back to the grid. */
+export function releaseLanding(
+  section: TimingSection,
+  position: number
+): TimingSection {
+  return {
+    ...section,
+    overrides: section.overrides.filter(
+      (override) => override.position !== position
+    ),
+  };
+}
+
+/**
  * Seeds a take timing from a legacy step map. Its marks are arrivals - mark 0
  * the opening pose, mark k move k's landing, the optional end mark the landing
  * after the last - so each becomes a pinned landing on its position, which
- * reproduces the old map exactly. The same marks are the taps, so the grid
- * they imply carries on past either end and nudges still work.
+ * reproduces the old map exactly, and the performance ends on the last one.
+ * Marks 1 onward are also the taps, so releasing the pins hands the take to a
+ * fitted grid. Mark 0 is left out of the fit: a performer can hold the
+ * opening pose any length of time, so it says nothing about the tempo.
  */
 export function takeTimingFromLegacyMarks(input: {
   sequenceId: string;
@@ -723,8 +907,8 @@ export function takeTimingFromLegacyMarks(input: {
   const sorted = [...intervals].sort((left, right) => left - right);
   const medianInterval = sorted[Math.floor(sorted.length / 2)]!;
   const bpm = Math.min(
-    PLAYBACK_MAX_BPM,
-    Math.max(PLAYBACK_MIN_BPM, 60 / medianInterval)
+    TAKE_MAX_BPM,
+    Math.max(TAKE_MIN_BPM, 60 / medianInterval)
   );
   return {
     schemaVersion: 1,
@@ -739,8 +923,9 @@ export function takeTimingFromLegacyMarks(input: {
           bpm,
         }),
         snap: "taps",
-        taps: marks,
-        firstTapPosition: 0,
+        taps: marks.slice(1),
+        firstTapPosition: 1,
+        lastPosition: marks.length - 1,
         overrides: marks.map((seconds, position) => ({ position, seconds })),
       },
     ],

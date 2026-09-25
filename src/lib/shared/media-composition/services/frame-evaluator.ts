@@ -306,23 +306,28 @@ export function evaluatePresetFrame(
     const projectProgress = clamp01((clampedTime - start) / (end - start));
     const sourceIn = resolvePresetTimePoint(clip.sourceIn, durationSeconds);
     const sourceOut = resolvePresetTimePoint(clip.sourceOut, durationSeconds);
-    const sourceSpanTime =
-      sourceIn + (sourceOut - sourceIn) * projectProgress * clip.playbackRate;
+    // The span maps onto the clip; an act's speed is carried by how long it
+    // is against its source, so the rate never enters here.
+    const sourceSpanTime = sourceIn + (sourceOut - sourceIn) * projectProgress;
     const sourceTimeSeconds =
       (sourceTimeOffsets[clip.sourceRole] ?? 0) + sourceSpanTime;
     const regionRect = regionRects.get(clip.regionId);
 
     // A clip tied to a take reads that take's clock at the take's media time
     // under this clip, trim included, so a slowed act and a derived square
-    // over the same footage land on the same move.
+    // over the same footage land on the same move. A take with no clock yet
+    // is unmapped: the post-wide map belongs to another take's footage.
     let sample: TakeSample | null = null;
     if (alignment && clip.useResolvedTimeMap && moveBeats.length > 0) {
       const role = clip.timeMapRole;
-      const clock = role ? alignment.clocks?.[role] : undefined;
-      sample =
-        clock && role
+      if (role === undefined) {
+        sample = postSample;
+      } else {
+        const clock = alignment.clocks?.[role];
+        sample = clock
           ? clock.sampleAt((sourceTimeOffsets[role] ?? 0) + sourceSpanTime)
-          : postSample;
+          : null;
+      }
     }
 
     return [

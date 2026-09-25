@@ -1,14 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
+  MIN_MOVE_SECONDS,
   TakeTimingSchema,
   confirmTakeTiming,
   createTakeTiming,
   editTimingSection,
   fitSection,
+  landingDragRange,
   mergeTimingSectionIntoPrevious,
   moveBeatOne,
+  releaseLanding,
   resolveTakeTiming,
   setBeatOneAt,
+  setLandingAt,
   setPerformanceEndAt,
   splitTimingSection,
   takePositionAt,
@@ -20,6 +24,7 @@ import {
 } from "$lib/shared/media-composition/domain/take-timing";
 
 const EIGHT = [1, 1, 1, 1, 1, 1, 1, 1];
+const SIXTEEN = Array.from({ length: 16 }, () => 1);
 const SPB = 60 / 87;
 
 function timing(sections: Partial<TimingSection>[]): TakeTiming {
@@ -120,22 +125,61 @@ describe("resolveTakeTiming", () => {
       EIGHT
     );
     expect(takePositionAt(pinned, 1 + SPB * 4 + 0.1)).toBeCloseTo(4, 6);
+    expect(pinned.sections[0]!.droppedOverrides).toEqual([]);
+  });
 
-    // An override dragged past its neighbour cannot run the map backwards.
+  it("sets aside a dragged landing that no longer sits between its neighbours", () => {
+    // Pushing later landings a millisecond apart would flash three moves by
+    // in three milliseconds; the stale drag goes back on the grid instead.
+    const taps = [1, 2, 3, 4, 5, 6].map((position) => 1 + SPB * position);
     const crossed = resolveTakeTiming(
       timing([
         {
           taps,
           tempo: "locked",
-          overrides: [{ position: 3, seconds: 1 + SPB * 5 }],
+          overrides: [{ position: 3, seconds: 1 + SPB * 5 + 0.05 }],
         },
       ]),
       EIGHT
     );
-    const seconds = crossed.sections[0]!.landings.map((entry) => entry.seconds);
-    seconds.slice(1).forEach((value, index) => {
-      expect(value).toBeGreaterThan(seconds[index]!);
+    const section = crossed.sections[0]!;
+    expect(section.droppedOverrides).toEqual([3]);
+    const landing = section.landings.find((entry) => entry.position === 3)!;
+    expect(landing).toMatchObject({ pinned: false });
+    expect(landing.seconds).toBeCloseTo(1 + SPB * 3, 3);
+    section.landings.slice(1).forEach((entry, index) => {
+      expect(entry.seconds - section.landings[index]!.seconds).toBeGreaterThan(
+        0.5
+      );
     });
+  });
+
+  it("stops a dragged landing a frame short of its neighbours", () => {
+    const taps = [1, 2, 3, 4, 5, 6].map((position) => 1 + SPB * position);
+    const section = timing([{ taps, tempo: "locked" }]).sections[0]!;
+    const range = landingDragRange(section, EIGHT, 4)!;
+    expect(range.min).toBeCloseTo(1 + SPB * 3 + MIN_MOVE_SECONDS, 3);
+    expect(range.max).toBeCloseTo(1 + SPB * 5 - MIN_MOVE_SECONDS, 3);
+
+    const dragged = setLandingAt(section, EIGHT, 4, 1 + SPB * 7);
+    expect(dragged.overrides).toEqual([{ position: 4, seconds: range.max }]);
+    const again = setLandingAt(dragged, EIGHT, 4, 1 + SPB * 4 + 0.1);
+    expect(again.overrides).toEqual([
+      { position: 4, seconds: 1 + SPB * 4 + 0.1 },
+    ]);
+    expect(releaseLanding(again, 4).overrides).toEqual([]);
+  });
+
+  it("refuses a landing dragged twice", () => {
+    const twice = timing([
+      {
+        overrides: [
+          { position: 4, seconds: 3 },
+          { position: 4, seconds: 3.2 },
+        ],
+      },
+    ]);
+    expect(TakeTimingSchema.safeParse(twice).success).toBe(false);
   });
 
   it("shifts the whole grid by the offset", () => {
@@ -145,6 +189,25 @@ describe("resolveTakeTiming", () => {
       EIGHT
     );
     expect(takePositionAt(resolved, 1 + SPB * 2 + 0.1)).toBeCloseTo(2, 3);
+  });
+
+  it("keeps the start of a section moving under a nudge of over half a move", () => {
+    const taps = Array.from({ length: 20 }, (_, index) => 1 + SPB * (index + 14));
+    const resolved = resolveTakeTiming(
+      timing([
+        {
+          startSeconds: 10,
+          endSeconds: 60,
+          taps,
+          beatOneSeconds: 1 + SPB,
+          tempo: "locked",
+          offsetSeconds: 1,
+        },
+      ]),
+      EIGHT
+    );
+    expect(takePositionAt(resolved, 10)).toBeCloseTo((10 - 2) / SPB, 2);
+    expect(takePositionAt(resolved, 10.4)).toBeCloseTo((10.4 - 2) / SPB, 2);
   });
 
   it("cuts a grid that reaches back before the file at zero", () => {
@@ -208,7 +271,14 @@ describe("timing sections", () => {
   it("splits a section and joins it back", () => {
     const taps = [2, 4, 12, 14];
     const original = timing([{ taps }]);
-    const split = splitTimingSection(original, 10, "section-2", 5, EIGHT);
+    const split = splitTimingSection(
+      original,
+      10,
+      "section-2",
+      5,
+      EIGHT,
+      "continues"
+    );
     expect(split.sections.map((section) => section.taps)).toEqual([
       [2, 4],
       [12, 14],
@@ -224,18 +294,53 @@ describe("timing sections", () => {
 
   it("will not split within a quarter second of a section edge", () => {
     const original = timing([{}]);
-    expect(splitTimingSection(original, 0.1, "section-2", 5, EIGHT)).toBe(
-      original
-    );
+    expect(
+      splitTimingSection(original, 0.1, "section-2", 5, EIGHT, "continues")
+    ).toBe(original);
   });
 
-  it("keeps counting across a split instead of starting again at move 1", () => {
+  it("keeps counting across a split where the performance continues", () => {
     const taps = Array.from({ length: 16 }, (_, index) => 1 + SPB * (index + 1));
     const original = timing([{ taps, tempo: "locked" }]);
-    const split = splitTimingSection(original, 1 + SPB * 10.5, "s2", 5, EIGHT);
+    const split = splitTimingSection(
+      original,
+      1 + SPB * 10.5,
+      "s2",
+      5,
+      EIGHT,
+      "continues"
+    );
     const resolved = resolveTakeTiming(split, EIGHT);
     expect(takePositionAt(resolved, 1 + SPB * 12)).toBeCloseTo(12, 3);
     expect(takePositionAt(resolved, 1 + SPB * 16)).toBeCloseTo(16, 3);
+  });
+
+  it("starts over at move 1 where an edited video replays slowly", () => {
+    // An InShot export: sixteen landings at full speed, then the same moves
+    // from the opening pose at half speed.
+    const fast = Array.from({ length: 16 }, (_, index) => 1 + SPB * (index + 1));
+    const replay = (position: number) => 14 + 2 * SPB * position;
+    const slow = Array.from({ length: 8 }, (_, index) => replay(index + 1));
+    const original = timing([{ taps: [...fast, ...slow], tempo: "locked" }]);
+    const split = splitTimingSection(
+      original,
+      13.5,
+      "slow",
+      5,
+      EIGHT,
+      "restarts"
+    );
+    expect(split.sections[1]!.firstTapPosition).toBe(1);
+    const halfSpeed = editTimingSection(
+      split,
+      "slow",
+      (section) => ({ ...section, bpm: 43.5 }),
+      6
+    );
+    const resolved = resolveTakeTiming(halfSpeed, EIGHT);
+    expect(takePositionAt(resolved, 1 + SPB * 12)).toBeCloseTo(12, 3);
+    expect(takePositionAt(resolved, replay(3))).toBeCloseTo(3, 3);
+    expect(takePositionAt(resolved, replay(3.5))).toBeCloseTo(3.5, 3);
   });
 
   it("rejects overlapping sections", () => {
@@ -264,6 +369,30 @@ describe("takeTimingFromLegacyMarks", () => {
     [...marks, 7.1].forEach((seconds, position) => {
       expect(takePositionAt(resolved, seconds)).toBeCloseTo(position, 6);
     });
+    // The performance ends on the end mark and holds there.
+    expect(takePositionAt(resolved, 11)).toBeCloseTo(9, 6);
+  });
+
+  it("leaves the opening pose out of the fit, however long it was held", () => {
+    // The performer holds the opening pose 2.2 s before moving. Fitted with
+    // the rest, that mark once pushed every label two moves on.
+    const marks = [0.5, 2.7, ...[1, 2, 3, 4, 5, 6, 7].map((k) => 2.7 + SPB * k)];
+    const legacy = takeTimingFromLegacyMarks({
+      sequenceId: "dck",
+      takeKey: "k",
+      durationSeconds: 12,
+      marks,
+      now: 1,
+    })!;
+    const section = resolveTakeTiming(legacy, EIGHT).sections[0]!;
+    expect(section.fit!.labels.map((label) => label.position)).toEqual([
+      1, 2, 3, 4, 5, 6, 7, 8,
+    ]);
+    expect(section.endPosition).toBe(8);
+    expect(section.droppedOverrides).toEqual([]);
+    const resolved = resolveTakeTiming(legacy, EIGHT);
+    expect(takePositionAt(resolved, 1.6)).toBeCloseTo(0.5, 3);
+    expect(takePositionAt(resolved, 11)).toBeCloseTo(8, 6);
   });
 
   it("returns null for marks that cannot make a map", () => {
@@ -304,6 +433,21 @@ describe("where a performance ends", () => {
     const resolved = resolveTakeTiming(timing([extended]), EIGHT);
     expect(takePositionAt(resolved, 1 + SPB * 18)).toBeCloseTo(18, 3);
     expect(takePositionAt(resolved, 50)).toBeCloseTo(20, 6);
+  });
+
+  it("rounds a last tap just short of the pass end up to it", () => {
+    // Austen stops tapping a landing early; the performer finishes the pass.
+    const upTo = (count: number) =>
+      Array.from({ length: count }, (_, index) => 1 + SPB * (index + 1));
+    const endOf = (count: number) =>
+      resolveTakeTiming(
+        timing([{ taps: upTo(count), tempo: "locked" }]),
+        SIXTEEN
+      ).sections[0]!.endPosition;
+    expect(endOf(15)).toBe(16);
+    expect(endOf(14)).toBe(16);
+    expect(endOf(13)).toBe(13);
+    expect(endOf(16)).toBe(16);
   });
 
   it("runs a tempo and beat 1 with no taps to the end of the take", () => {

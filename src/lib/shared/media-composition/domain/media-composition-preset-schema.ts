@@ -204,6 +204,11 @@ const PresetClipTimingFields = {
   end: PresetTimePointSchema,
   sourceIn: PresetTimePointSchema,
   sourceOut: PresetTimePointSchema,
+  /**
+   * The rate the media element plays at. The source span always maps onto
+   * the clip's own span, so this should equal their ratio; it tells the
+   * player how fast to run, and the evaluator never scales by it.
+   */
   playbackRate: z.number().finite().positive(),
   loop: z.boolean(),
 };

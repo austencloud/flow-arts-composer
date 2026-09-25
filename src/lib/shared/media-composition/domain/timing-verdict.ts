@@ -1,11 +1,11 @@
 import {
-  PLAYBACK_MAX_BPM,
-  PLAYBACK_MIN_BPM,
-} from "$lib/shared/animation-engine/domain/constants/timing";
-import {
   fitTapsToGrid,
   type TapFitResult,
 } from "$lib/shared/media-composition/domain/tap-fit";
+import {
+  TAKE_MAX_BPM,
+  TAKE_MIN_BPM,
+} from "$lib/shared/media-composition/domain/take-timing";
 
 /**
  * Says whether a fit can be trusted, in terms Austen can act on.
@@ -29,6 +29,8 @@ const GOOD_MISSED_SHARE = 0.25;
 const TEMPO_EDGE = 0.045;
 /** Taps implying a tempo this far from the typed one disagree with it. */
 const TEMPO_DISAGREEMENT = 0.06;
+/** A reading this close to half or double the typed tempo is that tempo. */
+const OCTAVE_SNAP = 0.02;
 /** Two taps closer than this are one press bouncing, not two landings. */
 const DOUBLE_PRESS_SECONDS = 0.15;
 
@@ -42,8 +44,8 @@ function median(values: readonly number[]): number {
 
 function roundBpm(bpm: number): number {
   return Math.min(
-    PLAYBACK_MAX_BPM,
-    Math.max(PLAYBACK_MIN_BPM, Math.round(bpm * 2) / 2)
+    TAKE_MAX_BPM,
+    Math.max(TAKE_MIN_BPM, Math.round(bpm * 2) / 2)
   );
 }
 
@@ -117,23 +119,27 @@ export function judgeTimingFit(input: {
     worstMissBeats > GOOD_WORST_MISS ||
     missedShare > GOOD_MISSED_SHARE;
 
-  if (fit.octaveHint) {
-    return {
-      kind: "tempo",
-      suggestedBpm: roundBpm(
+  // Half or double the typed tempo is the likely answer when the taps skip
+  // or double up - a slow take is often the same track at half time - but
+  // the taps' own spacing decides: a 40 BPM take typed at 87 also lands on
+  // every other landing, and half of 87 would be wrong there.
+  const octave = fit.octaveHint
+    ? roundBpm(
         fit.octaveHint === "half" ? input.typedBpm / 2 : input.typedBpm * 2
-      ),
-    };
-  }
-  if (loose || atTempoEdge) {
+      )
+    : null;
+  if (octave !== null || loose || atTempoEdge) {
     const suggested = suggestBpmFromTaps(input.taps, input.moveBeats);
     if (
       suggested !== null &&
       Math.abs(suggested / input.typedBpm - 1) > TEMPO_DISAGREEMENT
     ) {
-      return { kind: "tempo", suggestedBpm: suggested };
+      const nearOctave =
+        octave !== null && Math.abs(suggested / octave - 1) <= OCTAVE_SNAP;
+      return { kind: "tempo", suggestedBpm: nearOctave ? octave : suggested };
     }
   }
+  if (octave !== null) return { kind: "tempo", suggestedBpm: octave };
   if (loose) {
     return { kind: "rough", medianMissBeats, worstMissBeats, missedShare };
   }

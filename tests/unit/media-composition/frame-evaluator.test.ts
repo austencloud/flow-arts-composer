@@ -314,6 +314,61 @@ describe("evaluatePresetFrame", () => {
     });
   });
 
+  it("shows no move for a take that has no clock yet", () => {
+    // The post-wide map belongs to another take's footage; borrowing it would
+    // put a confident wrong move over this one.
+    const steps = Array.from({ length: 8 }, () => ({
+      duration: 1,
+    })) as unknown as StepData[];
+    const preset = {
+      ...performancePreset,
+      clips: performancePreset.clips.map((clip) =>
+        clip.id === "performance" ? { ...clip, timeMapRole: "take:b" } : clip
+      ),
+    };
+    const layers = evaluatePresetFrame(preset, 10, 4, {
+      timeMap,
+      steps,
+      startPlacementDuration: 1,
+      clocks: {
+        "take:a": { sampleAt: (media) => ({ arrival: media, endArrival: null }) },
+      },
+    });
+    const untimed = layers.find((layer) => layer.clipId === "performance")!;
+    expect(untimed.sequenceFrame).toBeUndefined();
+    expect(untimed.displayedBeatNumber).toBeUndefined();
+    // A clip that names no take still reads the post-wide map.
+    const card = layers.find((layer) => layer.clipId === "card")!;
+    expect(card.sequenceFrame).toBeDefined();
+  });
+
+  it("reads a clip's footage across its span whatever its rate says", () => {
+    // Ten post seconds over five seconds of footage: the rate is how fast the
+    // player runs, already implied by the spans, and must not apply twice.
+    const preset = {
+      ...performancePreset,
+      clips: performancePreset.clips.map((clip) =>
+        clip.id === "performance"
+          ? {
+              ...clip,
+              start: { unit: "seconds" as const, value: 0 },
+              end: { unit: "seconds" as const, value: 10 },
+              sourceIn: { unit: "seconds" as const, value: 0 },
+              sourceOut: { unit: "seconds" as const, value: 5 },
+              playbackRate: 0.5,
+              fadeInSeconds: undefined,
+              fadeOutSeconds: undefined,
+            }
+          : clip
+      ),
+      transitions: [],
+    };
+    const layer = evaluatePresetFrame(preset, 10, 4).find(
+      (candidate) => candidate.clipId === "performance"
+    )!;
+    expect(layer.sourceTimeSeconds).toBeCloseTo(2, 9);
+  });
+
   it("rejects an invalid project duration", () => {
     expect(() => evaluatePresetFrame(performancePreset, 0, 0)).toThrow(
       RangeError
