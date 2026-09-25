@@ -209,19 +209,19 @@
         : "paths"}{session.preview ? " replaced in this preview" : ""}
     </p>
   {/if}
-  {#if session.preview}
-    <div class="path-actions" transition:growFade>
-      <PanelButton onclick={resetPaths}>Reset paths</PanelButton>
-      {#if viewerPaths?.canSave}
-        <PanelButton
-          disabled={viewerPaths.saving}
-          onclick={() => viewerPaths.save()}
-          ariaBusy={viewerPaths.saving}>Save paths</PanelButton
-        >
-      {/if}
-    </div>
-  {/if}
   <div class="path-actions">
+    {#if session.preview}
+      <div class="path-actions" transition:growFade>
+        <PanelButton onclick={resetPaths}>Undo path changes</PanelButton>
+        {#if viewerPaths?.canSave}
+          <PanelButton
+            disabled={viewerPaths.saving}
+            onclick={() => viewerPaths.save()}
+            ariaBusy={viewerPaths.saving}>Save paths</PanelButton
+          >
+        {/if}
+      </div>
+    {/if}
     <PanelButton onclick={makeDefault}>Make default</PanelButton>
   </div>
 {/if}
