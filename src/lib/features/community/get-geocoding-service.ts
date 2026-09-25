@@ -1,7 +1,7 @@
 import { browser } from "$app/environment";
 
 import { Geocoder } from "./services/geocoding-service";
-import { PUBLIC_GOOGLE_MAPS_API_KEY } from "$env/static/public";
+import { PUBLIC_GOOGLE_MAPS_API_KEY } from "$lib/shared/maps/google-maps-api-key";
 
 let instance: Geocoder | null = null;
 
