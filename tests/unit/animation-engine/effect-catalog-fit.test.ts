@@ -4,9 +4,12 @@ import {
   CATALOG_CAPTION_WIDTH,
   CATALOG_GAP,
   CATALOG_INNER_GAP,
+  CATALOG_NAME_WIDTH,
   CATALOG_PORTRAIT_ASPECT,
+  CATALOG_TILE_BORDER,
   CATALOG_TILE_PAD,
   fitEffectCatalog,
+  fitEffectRoster,
   MAX_LIST_ROW,
   MIN_CATALOG_PORTRAIT,
   MIN_LIST_ROW,
@@ -14,13 +17,12 @@ import {
 } from "$lib/shared/animation-engine/domain/effect-catalog-fit";
 
 const COUNT = 16;
+const INSET = 2 * (CATALOG_TILE_PAD + CATALOG_TILE_BORDER);
 
 function tile(fit: EffectCatalogFit, width: number, height: number) {
   return {
-    innerW:
-      (width - (fit.cols - 1) * CATALOG_GAP) / fit.cols - 2 * CATALOG_TILE_PAD,
-    innerH:
-      (height - (fit.rows - 1) * CATALOG_GAP) / fit.rows - 2 * CATALOG_TILE_PAD,
+    innerW: (width - (fit.cols - 1) * fit.gap) / fit.cols - INSET,
+    innerH: (height - (fit.rows - 1) * fit.gap) / fit.rows - INSET,
   };
 }
 
@@ -34,55 +36,101 @@ function expectContentInside(
   const portraitH = fit.portrait / CATALOG_PORTRAIT_ASPECT;
   if (fit.orientation === "row") {
     expect(
-      fit.portrait + CATALOG_INNER_GAP + CATALOG_CAPTION_WIDTH
+      fit.portrait + CATALOG_INNER_GAP + CATALOG_NAME_WIDTH
     ).toBeLessThanOrEqual(innerW + 0.5);
     expect(portraitH).toBeLessThanOrEqual(innerH + 0.5);
   } else {
     expect(fit.portrait).toBeLessThanOrEqual(innerW + 0.5);
-    expect(CATALOG_CAPTION_WIDTH).toBeLessThanOrEqual(innerW + 0.5);
+    expect(CATALOG_NAME_WIDTH).toBeLessThanOrEqual(innerW + 0.5);
     expect(
       portraitH + CATALOG_INNER_GAP + CATALOG_CAPTION_HEIGHT
     ).toBeLessThanOrEqual(innerH + 0.5);
   }
 }
 
-/** Every list row is a full touch target and wide enough for its name. */
+/** Every list row is a full touch target and wide enough for its icon and
+ *  name. */
 function expectListRowsFit(
   fit: EffectCatalogFit,
   width: number,
   height: number
 ) {
   const rowH = (height - (fit.rows - 1) * fit.gap) / fit.rows;
-  const innerW =
-    (width - (fit.cols - 1) * fit.gap) / fit.cols - 2 * CATALOG_TILE_PAD;
+  const { innerW } = tile(fit, width, height);
   expect(Math.min(rowH, MAX_LIST_ROW)).toBeGreaterThanOrEqual(MIN_LIST_ROW);
   expect(CATALOG_CAPTION_WIDTH).toBeLessThanOrEqual(innerW + 0.5);
 }
+
+describe("fitEffectRoster", () => {
+  it("keeps four pictures across in a desktop studio card", () => {
+    // The side-by-side studio at 1920x1000: the grid is about 504px wide.
+    const fit = fitEffectRoster({ width: 504, count: COUNT });
+    expect(fit).toMatchObject({
+      cols: 4,
+      rows: 4,
+      orientation: "stack",
+      fill: false,
+    });
+    expect(fit!.portrait).toBe(102);
+  });
+
+  it("still shows pictures in half a laptop screen", () => {
+    // 1278x1249 at 150%: the grid is 345px wide.
+    expect(fitEffectRoster({ width: 345, count: COUNT })?.portrait).toBe(62);
+  });
+
+  it("falls back to icons where four pictures would be stamps", () => {
+    // 852x833 at 150%: the grid is 273px wide.
+    expect(fitEffectRoster({ width: 273, count: COUNT })).toBe(null);
+  });
+
+  it("never lets a picture or a name spill out of its column", () => {
+    for (let width = 160; width <= 900; width += 7) {
+      const fit = fitEffectRoster({ width, count: COUNT });
+      if (!fit) continue;
+      const { innerW } = tile(fit, width, 0);
+      expect(fit.portrait).toBeGreaterThanOrEqual(MIN_CATALOG_PORTRAIT);
+      expect(fit.portrait).toBeLessThanOrEqual(innerW);
+      expect(CATALOG_NAME_WIDTH).toBeLessThanOrEqual(innerW);
+    }
+  });
+});
 
 describe("fitEffectCatalog", () => {
   it("puts the name beside the picture in a desktop studio card", () => {
     // The side-by-side studio at 1920x1000: the grid gets about 504x712.
     const fit = fitEffectCatalog({ width: 504, height: 712, count: COUNT });
-    expect(fit).toMatchObject({ cols: 2, rows: 8, orientation: "row" });
+    expect(fit).toMatchObject({
+      cols: 2,
+      rows: 8,
+      orientation: "row",
+      fill: true,
+    });
     expect(fit!.portrait).toBeGreaterThan(120);
     expectContentInside(fit!, 504, 712);
   });
 
-  it("stacks the name under the picture when a column is too narrow", () => {
-    const fit = fitEffectCatalog({ width: 300, height: 900, count: COUNT });
-    expect(fit).toMatchObject({ orientation: "stack" });
-    expectContentInside(fit!, 300, 900);
+  it("stacks the name under the picture when the card is short", () => {
+    const fit = fitEffectCatalog({ width: 400, height: 400, count: COUNT });
+    expect(fit).toMatchObject({ cols: 4, orientation: "stack", fill: true });
+    expectContentInside(fit!, 400, 400);
   });
 
-  it("fills a narrow tall card with a list of names where pictures would be stamps", () => {
-    // The studio at 852x833 (a third of a laptop screen at 150%): the card is
-    // 305px wide, so the best picture would be about 53px.
+  it("gives a card too narrow for four pictures the list, even when it is tall", () => {
+    const fit = fitEffectCatalog({ width: 300, height: 900, count: COUNT });
+    expect(fit).toMatchObject({ orientation: "list", portrait: 0 });
+    expectListRowsFit(fit!, 300, 900);
+  });
+
+  it("fills a narrow tall card with a list of names", () => {
+    // The studio at 852x833 (a third of a laptop screen at 150%).
     const fit = fitEffectCatalog({ width: 273, height: 390, count: COUNT });
     expect(fit).toMatchObject({
       cols: 2,
       rows: 8,
       orientation: "list",
       portrait: 0,
+      fill: true,
     });
     expectListRowsFit(fit!, 273, 390);
   });
@@ -106,6 +154,17 @@ describe("fitEffectCatalog", () => {
         }
         expect(fit.portrait).toBeGreaterThanOrEqual(MIN_CATALOG_PORTRAIT);
         expectContentInside(fit, width, height);
+      }
+    }
+  });
+
+  it("shows pictures with nothing on only where the roster keeps them", () => {
+    for (let width = 160; width <= 900; width += 11) {
+      const roster = fitEffectRoster({ width, count: COUNT });
+      for (let height = 200; height <= 1400; height += 97) {
+        const fit = fitEffectCatalog({ width, height, count: COUNT });
+        if (fit && fit.portrait > 0) expect(roster).not.toBe(null);
+        if (fit?.orientation === "list") expect(roster).toBe(null);
       }
     }
   });
