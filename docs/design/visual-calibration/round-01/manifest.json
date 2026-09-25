@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "manifestId": "visual-calibration-round-01-v1",
+  "roundId": "round-01",
+  "rubric": "VR-1",
+  "capturedAt": "2026-09-21",
+  "status": "awaiting-owner-labels",
+  "role": "calibration",
+  "cases": [
+    {
+      "id": "A",
+      "title": "Ableton Learning Music",
+      "purpose": "An introductory music lesson with a beat-making exercise.",
+      "sourceUrl": "https://learningmusic.ableton.com/",
+      "revision": "Live public page; deployment version unknown",
+      "frames": [
+        {
+          "src": "assets/a-01.webp",
+          "label": "Beat-making exercise",
+          "viewport": { "width": 1440, "height": 900 },
+          "scrollY": 450,
+          "notes": "Exercise idle, audio not activated. Cookie notice dismissed. This is a scrolled viewport, not the whole lesson."
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "title": "The Kinetic Alphabet — About",
+      "purpose": "Introduce the notation, its scope, its creator, and its connection to Composer.",
+      "sourceUrl": "https://localhost:5173/about",
+      "captureUrl": "https://[::1]:5173/about",
+      "revision": "Local development page; see round record for provenance",
+      "frames": [
+        {
+          "src": "assets/b-01.webp",
+          "label": "Opening viewport",
+          "viewport": { "width": 1280, "height": 720 },
+          "scrollY": 0,
+          "notes": "Signed out, starfield background, sequence paused. The image ends at the viewport edge."
+        },
+        {
+          "src": "assets/b-02.webp",
+          "label": "Purpose and scope",
+          "viewport": { "width": 1280, "height": 720 },
+          "scrollY": 740,
+          "notes": "Same page and state, scrolled down."
+        },
+        {
+          "src": "assets/b-03.webp",
+          "label": "Creator and next step",
+          "viewport": { "width": 1280, "height": 720 },
+          "scrollY": 1190,
+          "notes": "Same page and state, scrolled further down."
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "title": "Obsidian",
+      "purpose": "Introduce a note-taking application and provide a way to download it.",
+      "sourceUrl": "https://obsidian.md/",
+      "revision": "Live public page; deployment version unknown",
+      "frames": [
+        {
+          "src": "assets/c-01.webp",
+          "label": "Opening viewport",
+          "viewport": { "width": 1440, "height": 900 },
+          "scrollY": 0,
+          "notes": "Product image continues below the viewport. No interaction performed."
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "title": "GOV.UK — Passport guide",
+      "purpose": "Help a visitor understand the steps for renewing or replacing a passport.",
+      "sourceUrl": "https://www.gov.uk/renew-adult-passport",
+      "revision": "Live public page; deployment version unknown",
+      "frames": [
+        {
+          "src": "assets/d-01.webp",
+          "label": "Guide overview",
+          "viewport": { "width": 1440, "height": 900 },
+          "scrollY": 0,
+          "notes": "Optional cookies rejected and confirmation hidden. No application started. Content is captured for visual review, not current passport advice."
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "title": "Flow Arts Composer",
+      "purpose": "Introduce the choreography app through a playing sequence and a composing entry point.",
+      "sourceUrl": "https://localhost:5173/composer",
+      "revision": "Local development page; see round record for provenance",
+      "frames": [
+        {
+          "src": "assets/e-01.webp",
+          "label": "Opening viewport",
+          "viewport": { "width": 1600, "height": 900 },
+          "scrollY": 0,
+          "notes": "Ocean background and playing sequence at capture time; account avatar visible. A still frame cannot represent the motion experience."
+        }
+      ]
+    },
+    {
+      "id": "F",
+      "title": "Blender — About",
+      "purpose": "Introduce the 3D-creation project, its community, and its mission.",
+      "sourceUrl": "https://www.blender.org/about/",
+      "revision": "Live public page; deployment version unknown",
+      "frames": [
+        {
+          "src": "assets/f-01.webp",
+          "label": "Opening viewport",
+          "viewport": { "width": 1440, "height": 900 },
+          "scrollY": 0,
+          "notes": "Hero artwork credited on the source page to Ian Hubert. Lower sections continue below the viewport."
+        }
+      ]
+    }
+  ]
+}
