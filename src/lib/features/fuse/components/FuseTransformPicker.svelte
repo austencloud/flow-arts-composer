@@ -14,6 +14,7 @@
   passes drafts.
 -->
 <script lang="ts">
+  import { growFade } from "$lib/shared/transitions/motion";
   import LOOPIconStrip from "$lib/shared/components/LOOPIconStrip.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import FuseTnDModePicker from "./FuseTnDModePicker.svelte";
@@ -141,8 +142,11 @@
     commit(resolveFuseRule(next));
   }
 
-  function chooseMode(mode: FuseTnDMode): void {
-    commitSelection({ ...selection, mode });
+  function chooseMode(
+    mode: FuseTnDMode,
+    quarterOffset: FuseQuarterOffset = selection.quarterOffset
+  ): void {
+    commitSelection({ ...selection, mode, quarterOffset });
   }
 
   function chooseOffset(quarterOffset: FuseQuarterOffset): void {
@@ -200,12 +204,15 @@
         selected={selection.mode}
         {disabled}
         {inline}
+        quarterOffset={selection.quarterOffset}
+        {followerLabel}
         onpick={chooseMode}
+        onquarterpick={chooseMode}
       />
     </div>
 
-    {#if showOffset}
-      <div class="axis offset-axis">
+    {#if showOffset && !inline}
+      <div class="axis offset-axis" transition:growFade={{ axis: "y" }}>
         <span class="axis-label" id="fuse-offset-label"
           >Rotate {followerLabel}'s path</span
         >
@@ -636,13 +643,6 @@
     line-height: 1;
   }
 
-  .inline .offset-axis {
-    grid-column: 1 / -1;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: center;
-    gap: 8px;
-  }
-
   .offset-axis > .axis-label {
     font-size: var(--font-size-min, 14px);
     letter-spacing: normal;
@@ -718,10 +718,6 @@
       min-height: 48px;
     }
 
-    .inline .offset-axis {
-      grid-template-columns: minmax(0, 1fr);
-    }
-
     .inline .operation-note {
       grid-column: 1 / -1;
     }
@@ -730,19 +726,6 @@
   @container (max-width: 28rem) {
     .inline .driver-control {
       width: min(100%, 172px);
-    }
-
-    .offset-option {
-      gap: 4px;
-      flex-direction: column;
-    }
-
-    .offset-arrow {
-      font-size: 1.5rem;
-    }
-
-    .offset-axis :global(.segment) {
-      min-height: 64px;
     }
   }
 

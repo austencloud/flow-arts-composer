@@ -781,22 +781,22 @@
     min-height: 0;
   }
 
-  /* The frame is the positioning context the gear hangs off, and it takes
-     the growth the stage used to take so nothing else moves. */
+  /* The frame takes the available height while its transport reserves a row
+     below the drawing. The gear still anchors to its top-right corner. */
   .stage-frame {
     position: relative;
     display: flex;
+    flex-direction: column;
     flex: 1 1 0;
     min-width: 0;
-    min-height: 9rem;
+    min-height: 13.125rem;
   }
 
   .canvas-transport {
-    position: absolute;
-    right: 0.75rem;
-    bottom: 0.75rem;
+    position: relative;
     z-index: 5;
-    width: min(70rem, calc(100% - 1.5rem));
+    flex: 0 0 auto;
+    width: 100%;
   }
 
   .stage-window {

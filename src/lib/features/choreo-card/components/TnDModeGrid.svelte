@@ -10,6 +10,7 @@
   reason on the chip.
 -->
 <script lang="ts">
+  import type { Snippet } from "svelte";
   import RelationshipChoiceChip from "$lib/shared/shape-matrix/components/RelationshipChoiceChip.svelte";
   import {
     MODE_FAMILY_ID,
@@ -26,6 +27,7 @@
     reasons = {},
     fullLabels = false,
     ariaLabel = "Timing and direction",
+    modeContent,
     onpick,
   }: {
     selected: VtgMode | null;
@@ -38,6 +40,8 @@
     /** Uses complete words when the host gives each choice enough room. */
     fullLabels?: boolean;
     ariaLabel?: string;
+    /** Lets a host compose around a chip without changing the default grid. */
+    modeContent?: Snippet<[VtgMode, Snippet]>;
     onpick: (mode: VtgMode) => void;
   } = $props();
 
@@ -73,18 +77,25 @@
 
 <div class="mode-grid" role="radiogroup" aria-label={ariaLabel}>
   {#each chips as c (c.mode)}
-    <RelationshipChoiceChip
-      compact
-      accent={c.el.accentColor}
-      icon={c.el.iconPath}
-      timing={fullLabels ? c.words.timing : c.shortWords.timing}
-      direction={fullLabels ? c.words.direction : c.shortWords.direction}
-      active={selected === c.mode}
-      disabled={disabled || isBlocked(c.mode)}
-      title={isBlocked(c.mode) ? (reasons[c.mode] ?? null) : null}
-      ariaLabel={chipLabel(c)}
-      onpick={() => onpick(c.mode)}
-    />
+    {#snippet defaultChip()}
+      <RelationshipChoiceChip
+        compact
+        accent={c.el.accentColor}
+        icon={c.el.iconPath}
+        timing={fullLabels ? c.words.timing : c.shortWords.timing}
+        direction={fullLabels ? c.words.direction : c.shortWords.direction}
+        active={selected === c.mode}
+        disabled={disabled || isBlocked(c.mode)}
+        title={isBlocked(c.mode) ? (reasons[c.mode] ?? null) : null}
+        ariaLabel={chipLabel(c)}
+        onpick={() => onpick(c.mode)}
+      />
+    {/snippet}
+    {#if modeContent}
+      {@render modeContent(c.mode, defaultChip)}
+    {:else}
+      {@render defaultChip()}
+    {/if}
   {/each}
 </div>
 
