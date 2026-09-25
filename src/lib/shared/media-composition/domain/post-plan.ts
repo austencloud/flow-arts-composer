@@ -84,7 +84,12 @@ export const PostFramingSchema = z
 
 export type PostFraming = z.infer<typeof PostFramingSchema>;
 
-export const PostStripSchema = z.enum(["off", "arrows", "mandala", "alternate"]);
+export const PostStripSchema = z.enum([
+  "off",
+  "arrows",
+  "mandala",
+  "alternate",
+]);
 export type PostStrip = z.infer<typeof PostStripSchema>;
 
 export const PerformanceActSchema = z
@@ -98,7 +103,11 @@ export const PerformanceActSchema = z
     sourceIn: SecondsSchema,
     /** Take media seconds; null runs to the end of the take. */
     sourceOut: SecondsSchema.nullable(),
-    speed: z.number().finite().min(POST_PLAN_MIN_SPEED).max(POST_PLAN_MAX_SPEED),
+    speed: z
+      .number()
+      .finite()
+      .min(POST_PLAN_MIN_SPEED)
+      .max(POST_PLAN_MAX_SPEED),
     /**
      * - split: the take above, the animation (trails, beat number, letter)
      *   below, for the full-speed run.
@@ -112,10 +121,10 @@ export const PerformanceActSchema = z
     framing: PostFramingSchema,
   })
   .strict()
-  .refine(
-    (act) => act.sourceOut === null || act.sourceOut > act.sourceIn,
-    { message: "An act must end after it starts", path: ["sourceOut"] }
-  );
+  .refine((act) => act.sourceOut === null || act.sourceOut > act.sourceIn, {
+    message: "An act must end after it starts",
+    path: ["sourceOut"],
+  });
 
 export type PerformanceAct = z.infer<typeof PerformanceActSchema>;
 
@@ -362,6 +371,18 @@ export function updateAct(
   });
   if (!changed) return plan;
   const parsed = PostPlanSchema.safeParse({ ...plan, acts });
+  return parsed.success ? withTimestamp(parsed.data, now) : plan;
+}
+
+/** Any other edit to the plan, kept only when the result is valid. */
+export function editPlan(
+  plan: PostPlan,
+  edit: (plan: PostPlan) => PostPlan,
+  now: number
+): PostPlan {
+  const next = edit(plan);
+  if (next === plan) return plan;
+  const parsed = PostPlanSchema.safeParse(next);
   return parsed.success ? withTimestamp(parsed.data, now) : plan;
 }
 

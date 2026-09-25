@@ -11,6 +11,7 @@ import {
   type PostTake,
 } from "$lib/shared/media-composition/domain/post-plan";
 import {
+  ANIMATION_OVERLAY_ROLE,
   CAPTIONS_ROLE,
   actAtTime,
   compilePostPlan,
@@ -59,7 +60,11 @@ describe("post plan", () => {
     const plan = planWith(fast);
     const [full, breakdown] = plan.acts;
     expect(full).toMatchObject({ takeId: "a", speed: 1, layout: "split" });
-    expect(breakdown).toMatchObject({ takeId: "a", speed: 0.5, layout: "full" });
+    expect(breakdown).toMatchObject({
+      takeId: "a",
+      speed: 0.5,
+      layout: "full",
+    });
   });
 
   it("gives a second take the breakdown at its own speed", () => {
@@ -133,11 +138,7 @@ describe("compilePostPlan", () => {
       clip.id.startsWith(`${POST_ACT.breakdown}:`)
     );
     expect(breakdownClips.map((clip) => clip.sourceRole).sort()).toEqual(
-      [
-        "sequence-carousel",
-        stripRole("alternate"),
-        takeRole("b"),
-      ].sort()
+      ["sequence-carousel", stripRole("alternate"), takeRole("b")].sort()
     );
     for (const clip of breakdownClips) {
       expect(clip).toMatchObject({
@@ -254,12 +255,14 @@ describe("compilePostPlan", () => {
     const trimmed = updateAct(
       withCaption,
       POST_ACT.fullSpeed,
-      (act) =>
-        act.kind === "performance" ? { ...act, sourceOut: 12 } : act,
+      (act) => (act.kind === "performance" ? { ...act, sourceOut: 12 } : act),
       4
     );
     const post = compile(trimmed);
-    expect(post.captions[0]).toMatchObject({ startSeconds: 14, endSeconds: 17 });
+    expect(post.captions[0]).toMatchObject({
+      startSeconds: 14,
+      endSeconds: 17,
+    });
     const overlay = post.preset.clips.find(
       (clip) => clip.sourceRole === CAPTIONS_ROLE
     );
@@ -306,6 +309,23 @@ describe("compilePostPlan", () => {
       3
     );
     expect(takeRect(lifted).height).toBeCloseTo(BREAKDOWN_GEOMETRY.stripTop, 9);
+  });
+
+  it("puts the beat overlay over the split's animation only when asked", () => {
+    const roles = (post: ReturnType<typeof compile>) =>
+      post.preset.clips
+        .filter((clip) => clip.regionId === `${POST_ACT.fullSpeed}:animation`)
+        .map((clip) => clip.sourceRole);
+    expect(roles(compile(planWith(fast)))).toEqual(["sequence-animation"]);
+    const withOverlay = compilePostPlan(planWith(fast), {
+      now: 5,
+      animationOverlay: true,
+    })!;
+    // Drawn after the animation in the same region, so it lands on top.
+    expect(roles(withOverlay)).toEqual([
+      "sequence-animation",
+      ANIMATION_OVERLAY_ROLE,
+    ]);
   });
 
   it("finds the act at a post time and the post time of a take moment", () => {

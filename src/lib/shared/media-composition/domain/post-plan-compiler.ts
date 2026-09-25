@@ -31,6 +31,8 @@ import {
 export const TAKE_ROLE_PREFIX = "take:";
 export const STRIP_ROLE_PREFIX = "strip:";
 export const CAPTIONS_ROLE = "post-captions";
+/** Beat number, letter, element and progress over the split's animation. */
+export const ANIMATION_OVERLAY_ROLE = "animation-overlay";
 
 export function takeRole(takeId: string): string {
   return `${TAKE_ROLE_PREFIX}${takeId}`;
@@ -93,6 +95,11 @@ export interface CompiledPost {
 export interface CompilePostPlanContext {
   /** When the preset was made; kept out of the plan's own timestamp. */
   now: number;
+  /**
+   * Draw the beat number, letter, element and progress bar over the split's
+   * animation. Only a host with a painter for them asks for it.
+   */
+  animationOverlay?: boolean;
 }
 
 const OUTPUT = {
@@ -288,7 +295,12 @@ export function compilePostPlan(
     const derived = (
       id: string,
       sourceRole: string,
-      regionId: string
+      regionId: string,
+      framing: { scale: number; translateX: number; translateY: number } = {
+        scale: 1,
+        translateX: 0,
+        translateY: 0,
+      }
     ): PresetClip => ({
       id,
       kind: "visual",
@@ -298,10 +310,8 @@ export function compilePostPlan(
       opacity: 1,
       ...(fadeIn ? { fadeInSeconds: fadeIn } : {}),
       transform: {
-        scale: 1,
+        ...framing,
         rotationDegrees: 0,
-        translateX: 0,
-        translateY: 0,
         flipHorizontal: false,
       },
       useResolvedTimeMap: true,
@@ -324,16 +334,13 @@ export function compilePostPlan(
         z
       )
     );
-    clips.push({
-      ...derived(takeRegionId, timeMapRole, takeRegionId),
-      transform: {
+    clips.push(
+      derived(takeRegionId, timeMapRole, takeRegionId, {
         scale: act.framing.zoom,
-        rotationDegrees: 0,
         translateX: act.framing.panX,
         translateY: act.framing.panY,
-        flipHorizontal: false,
-      },
-    });
+      })
+    );
 
     if (act.layout === "split") {
       const animationRegionId = `${act.id}:animation`;
@@ -349,8 +356,24 @@ export function compilePostPlan(
         region(animationRegionId, "Animation", SPLIT_ANIMATION, "contain", z)
       );
       clips.push(
-        derived(animationRegionId, POST_STUDIO_ROLE.animation, animationRegionId)
+        derived(
+          animationRegionId,
+          POST_STUDIO_ROLE.animation,
+          animationRegionId
+        )
       );
+      if (context.animationOverlay) {
+        useRole(
+          role(ANIMATION_OVERLAY_ROLE, "Beat and letter", "manual", ["image"])
+        );
+        clips.push(
+          derived(
+            `${act.id}:animation-overlay`,
+            ANIMATION_OVERLAY_ROLE,
+            animationRegionId
+          )
+        );
+      }
     } else {
       const strip = act.strip !== "off" ? stripRole(act.strip) : null;
       if (strip) {
