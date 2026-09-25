@@ -24,10 +24,11 @@
      *  offering a chip that renders nothing is worse than not offering it.
      *  Omit for the full roster. */
     availableEffects?: readonly string[];
-    /** Spend a tall box on pictures: each tile shows `portrait` beside or
-     *  above its name, in the arrangement `fitEffectCatalog` chose. The list
-     *  arrangement has names only. The grid fills its parent, so the parent
-     *  needs a definite height. */
+    /** Show each effect as a picture of its look: `portrait` beside or above
+     *  its name, in the arrangement `fitEffectCatalog` or `fitEffectRoster`
+     *  chose. The picture stands in for the icon. The list arrangement keeps
+     *  the icons. A `fill` arrangement fills its parent, so the parent needs a
+     *  definite height; the others take the height their tiles need. */
     catalog?: EffectCatalogFit | null;
     portrait?: Snippet<[string]>;
   }
@@ -61,11 +62,16 @@
   }
 </script>
 
-<div class="effect-selector-shell" class:catalog={showCatalog}>
+<div
+  class="effect-selector-shell"
+  class:catalog={showCatalog}
+  class:fill={catalog?.fill}
+>
   <div
     class="effect-selector"
     class:tray={layout === "tray"}
     class:catalog={showCatalog}
+    class:fill={catalog?.fill}
     data-orientation={catalog?.orientation}
     style:--fx-cols={catalog?.cols}
     style:--fx-rows={catalog?.rows}
@@ -111,7 +117,9 @@
             </span>
           {/if}
           <span class="effect-caption">
-            <i class="fas {effect.icon}" aria-hidden="true"></i>
+            {#if !showPortraits}
+              <i class="fas {effect.icon}" aria-hidden="true"></i>
+            {/if}
             <span class="effect-label">{effect.label}</span>
           </span>
         {:else}
@@ -229,29 +237,33 @@
     max-width: 100%;
   }
 
-  /* ── Catalog: pictures while no effect is on ── */
-  /* The parent gives the shell a height and the grid divides it into rows.
-     Every value that decides the tile's size arrives from
+  /* ── Catalog and roster: pictures of each effect's look ── */
+  /* Every value that decides the tile's size arrives from
      effect-catalog-fit.ts as a custom property, so the fit's arithmetic and
      the rendered tile use the same numbers. */
-  .effect-selector-shell.catalog {
+  .effect-selector.catalog {
+    grid-template-columns: repeat(var(--fx-cols), minmax(0, 1fr));
+    gap: var(--fx-gap);
+  }
+
+  /* Fill: the parent gives the shell a height and the grid divides it into
+     rows. */
+  .effect-selector-shell.fill {
     flex: 1 1 0;
     min-height: 0;
     display: flex;
     flex-direction: column;
   }
 
-  .effect-selector.catalog {
+  .effect-selector.fill {
     flex: 1 1 0;
     min-height: 0;
-    grid-template-columns: repeat(var(--fx-cols), minmax(0, 1fr));
     /* The list caps its rows (--fx-row-max); the picture tiles share the
        whole height. */
     grid-template-rows: repeat(
       var(--fx-rows),
       minmax(0, var(--fx-row-max, 1fr))
     );
-    gap: var(--fx-gap);
   }
 
   .catalog .effect-btn {
@@ -266,11 +278,15 @@
   }
 
   /* The frame the looks cards use (EffectPresetsSection .preview-area), so an
-     effect's picture here and its look in the dock have the same shape. */
+     effect's picture here and its look in the dock have the same shape. The
+     height is set outright rather than by aspect-ratio: a 102px frame let the
+     pictures inside stretch it to 48px (their own 15:7), which made every
+     roster row taller than the fit had room for. */
   .effect-portrait {
     flex: none;
     width: var(--fx-portrait);
-    aspect-ratio: 8 / 3;
+    height: calc(var(--fx-portrait) * 3 / 8);
+    overflow: hidden;
     pointer-events: none;
   }
 
