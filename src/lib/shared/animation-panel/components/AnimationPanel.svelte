@@ -1625,11 +1625,11 @@
      grouping the sidebar shows, in the shortest tray that can carry it. The
      previews come along; they are the point of the tile, and shrinking one is
      better than replacing it with a word. */
-  .dock-dense :global(.vis-grid) {
+  .dock-dense:not(.fill) :global(.vis-grid) {
     grid-template-columns: repeat(4, 1fr);
     gap: 4px;
   }
-  .dock-dense :global(.vis-grid > *:nth-child(n + 5)) {
+  .dock-dense:not(.fill) :global(.vis-grid > *:nth-child(n + 5)) {
     margin-top: 6px;
   }
   /* The cap is set above the column width on purpose, so the COLUMN binds and
@@ -1638,19 +1638,19 @@
      the grid read as eight smudges, which is the state this redesign replaced.
      4rem is the largest picture whose two rows still land inside the capped
      tray without scrolling. */
-  .dock-dense :global(.vis-grid .rt-chip) {
+  .dock-dense:not(.fill) :global(.vis-grid .rt-chip) {
     gap: 4px;
     padding: 6px 3px;
     --tile-art: 4rem;
   }
-  .dock-dense :global(.vis-grid .chip-label) {
+  .dock-dense:not(.fill) :global(.vis-grid .chip-label) {
     font-size: 0.68rem;
   }
   /* A tablet's dock is 776px wide with a 250px tray — 4rem is a phone's cap
      and leaves a 64px picture inside a 190px tile. 5rem is the largest picture
      whose two rows still clear that tray. */
   @container (min-width: 30rem) {
-    .dock-dense :global(.vis-grid .rt-chip) {
+    .dock-dense:not(.fill) :global(.vis-grid .rt-chip) {
       --tile-art: 5rem;
     }
   }
@@ -1668,16 +1668,16 @@
      under 44rem, which put it back on four columns of 171px tiles carrying an
      80px picture. */
   @container (min-width: 42rem) {
-    .dock-dense :global(.vis-grid) {
+    .dock-dense:not(.fill) :global(.vis-grid) {
       grid-template-columns: repeat(8, minmax(0, 1fr));
     }
-    .dock-dense :global(.vis-grid > *:nth-child(n + 5)) {
+    .dock-dense:not(.fill) :global(.vis-grid > *:nth-child(n + 5)) {
       margin-top: 0;
     }
-    .dock-dense :global(.vis-grid > *:nth-child(5)) {
+    .dock-dense:not(.fill) :global(.vis-grid > *:nth-child(5)) {
       margin-left: 8px;
     }
-    .dock-dense :global(.vis-grid .rt-chip) {
+    .dock-dense:not(.fill) :global(.vis-grid .rt-chip) {
       --tile-art: 6rem;
     }
   }
