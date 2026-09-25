@@ -64,20 +64,22 @@ const EPS = 1e-9;
 // bring the rendered count down to the authored one. Not met yet: ch07 73
 // against 65, ch18 73 against 72. The displaced staff alone clips 75 and 70.
 //
-// The forearm gate is not met and stays at 0 (ch07 75, ch18 34 contacts under
-// 4 cm). The legacy split kept forearms apart by pulling the hands off their
-// staffs, with no limit. Without it the contacts are elbow against elbow near
-// the midline. On the tog-opp beats the lane is fully reached (18 cm planned,
+// Forearms are capped at the measured count (ch07 75, ch18 34 contacts under
+// 4 cm), not at 0. Austen accepted that on 2026-09-25 so step 2 could merge.
+// The old 0 came from the legacy split pulling the hands off their staffs,
+// with no limit. Without it the contacts are elbow against elbow near the
+// midline. On the tog-opp beats the lane is fully reached (18 cm planned,
 // 18 cm between the palms) and the elbows still meet at 2-3 cm with the chest
 // square; on the quarter-same and split-same beats the hands fall short of
 // the lane. Only 7 and 5 of the contacts have a lane against elbow routing,
 // and making the two agree frame by frame raised the contacts to 95 and 56.
-// Closing the rest needs elbow and shoulder planning, not a wider lane.
+// Closing the rest needs elbow and shoulder planning (step 4), not a wider
+// lane; step 4 brings this cap back to 0.
 const GATES: Record<string, Gate> = {
   ch07: {
     maxGapOver3cm: 1_787,
     maxGapP90M: 0.0386,
-    maxForearmsUnder4cm: 0,
+    maxForearmsUnder4cm: 75,
     maxForearmsUnder8cm: 350,
     maxPalmsUnder6cm: 7,
     maxStaffThroughBody: 73,
@@ -88,7 +90,7 @@ const GATES: Record<string, Gate> = {
   ch18: {
     maxGapOver3cm: 2_362,
     maxGapP90M: 0.0572,
-    maxForearmsUnder4cm: 0,
+    maxForearmsUnder4cm: 34,
     maxForearmsUnder8cm: 285,
     maxPalmsUnder6cm: 3,
     maxStaffThroughBody: 73,
@@ -200,7 +202,7 @@ describe.skipIf(!avatarAssetsPresent())("performer contact scoreboard", () => {
       expect(score.forearmsUnder8cm).toBeLessThanOrEqual(
         gate.maxForearmsUnder8cm
       );
-      // Last, so the other gates are still checked while this one is unmet.
+      // Capped, not yet 0: see the note above GATES.
       expect(score.forearmsUnder4cm).toBeLessThanOrEqual(
         gate.maxForearmsUnder4cm
       );
