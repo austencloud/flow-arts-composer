@@ -16,7 +16,10 @@
     type EffectLookPreviewModel,
   } from "./effect-look-preview";
   import type { EffectPreset } from "./presets/types";
-  import { fitEffectCatalog } from "$lib/shared/animation-engine/domain/effect-catalog-fit";
+  import {
+    fitEffectCatalog,
+    fitEffectRoster,
+  } from "$lib/shared/animation-engine/domain/effect-catalog-fit";
   import {
     matchPresetId,
     pickedPresetId,
@@ -112,12 +115,14 @@
   // select, just triggered by boot instead of a click.
   let sidebarDetailOpen = $state(false);
 
-  // ── Catalog (fill hosts, no effect on) ─────────────────────────────────────
-  // With nothing on there is no dock, so the roster is the whole page and each
-  // tile can carry a picture of its effect's look (or, in a card too narrow for
-  // pictures, the names fill it as a list). Once an effect is on, the
-  // roster goes back to the compact grid: the dock needs the room, and while
-  // you compare effects the grid must stay still under the pointer (see
+  // ── Catalog and roster (fill hosts) ────────────────────────────────────────
+  // In a card wide enough for four pictures across, every tile shows a picture
+  // of its effect's look, whether or not an effect is on (effect-catalog-fit.ts
+  // has the rule). With nothing on there is no dock, so the roster is the whole
+  // page and its tiles fill it (or, in a card too narrow for pictures, the names
+  // fill it as a list). Once an effect is on, the roster takes the height its
+  // tiles need and the dock the rest. That height depends on the width alone,
+  // so while you compare effects the grid stays still under the pointer (see
   // .sb-footer). Only turning effects on or off changes the arrangement, and
   // the view Crossfade animates that change.
   // Fractional sizes, floored once at the end: a panel 736.5px tall reports a
@@ -142,22 +147,32 @@
       Math.floor((panelRect?.height ?? 0) - (footerBox?.[0]?.blockSize ?? 0))
     )
   );
+  const pictureHost = $derived(fill && !showPlayback && !children);
+  const rosterWidth = $derived(
+    Math.floor(panelRect?.width ?? 0) - CATALOG_CHROME_X
+  );
   const catalogFit = $derived(
-    fill && !showPlayback && !children && activeEffect === "none"
+    pictureHost && activeEffect === "none"
       ? fitEffectCatalog({
-          width: Math.floor(panelRect?.width ?? 0) - CATALOG_CHROME_X,
+          width: rosterWidth,
           height: catalogRoom - CATALOG_CHROME_Y,
           count: rosterCount,
         })
       : null
   );
+  const rosterFit = $derived(
+    pictureHost
+      ? fitEffectRoster({ width: rosterWidth, count: rosterCount })
+      : null
+  );
 
-  /** The look each catalog tile shows: the one that effect is set to now, so
-   *  the picture shows what turning it on will look like. An effect with no
-   *  named looks (Ghost) draws its motif from its defaults. */
+  /** The look each tile shows: the one that effect is set to now, so the
+   *  picture shows what turning it on will look like (or, for the effect that
+   *  is on, the look you picked in the dock). An effect with no named looks
+   *  (Ghost) draws its motif from its defaults. */
   const catalogLooks = $derived.by(() => {
     // The list arrangement has names only.
-    if (!catalogFit?.portrait) return null;
+    if (!(catalogFit ? catalogFit.portrait : rosterFit)) return null;
     void effectsConfigState.version;
     const looks = new Map<
       string,
@@ -669,7 +684,7 @@
             onPrewarm={handleEffectPrewarm}
             activeAction="tune"
             {availableEffects}
-            catalog={sidebarView === "catalog" ? catalogFit : null}
+            catalog={sidebarView === "catalog" ? catalogFit : rosterFit}
             portrait={catalogPortrait}
           />
 
