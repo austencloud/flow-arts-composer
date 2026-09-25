@@ -44,7 +44,7 @@
   .linked-rule-panel {
     container-type: inline-size;
     min-width: 0;
-    padding: 10px 14px;
+    padding: 8px;
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
     border-radius: var(--settings-radius-md, 14px);
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.045));
@@ -58,7 +58,7 @@
 
   @media (max-width: 480px) {
     .linked-rule-panel {
-      padding: 8px 10px;
+      padding: 6px;
     }
   }
 </style>

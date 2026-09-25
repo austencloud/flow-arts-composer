@@ -31,17 +31,29 @@
 
   .inline :global(.mode-grid) {
     grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 5px;
+    gap: 6px;
   }
 
   .inline :global(.relationship-choice) {
-    min-height: var(--min-touch-target, 44px);
-    padding: 4px 5px;
+    min-height: 72px;
+    gap: 8px;
+    padding: 8px;
   }
 
   .inline :global(.choice-icon) {
-    width: 1.7rem;
-    height: 1.7rem;
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+
+  .inline :global(.choice-copy strong) {
+    font-size: var(--font-size-min, 14px);
+  }
+
+  .inline :global(.choice-check) {
+    width: 1rem;
+    height: 1rem;
+    top: 4px;
+    inset-inline-end: 4px;
   }
 
   @container (max-width: 56rem) {
@@ -57,16 +69,16 @@
     }
 
     .inline :global(.relationship-choice) {
-      min-height: 46px;
+      min-height: 64px;
       flex-direction: row;
-      gap: 4px;
-      padding: 3px 5px;
+      gap: 8px;
+      padding: 6px 8px;
       text-align: left;
     }
 
     .inline :global(.choice-icon) {
-      width: 1.5rem;
-      height: 1.5rem;
+      width: 2rem;
+      height: 2rem;
     }
 
     .inline :global(.choice-copy) {
