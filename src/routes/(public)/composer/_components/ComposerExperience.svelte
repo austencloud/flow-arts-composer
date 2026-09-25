@@ -40,7 +40,6 @@
   import { resolveComposerCarriedSequence } from "./composer-sequence-ownership";
   import type { ComposerPropAppearance } from "./composer-prop-appearance";
   import ProjectStory from "./ProjectStory.svelte";
-  import "$lib/shared/landing/styles/editorial-measure.css";
 
   function trackOpenComposer(): void {
     trackCtaClick("hero", {
@@ -757,10 +756,7 @@
     color: oklch(0.79 0.15 278);
   }
 
-  /* Measure comes from the shared semantic token rather than another local
-     width decision. See editorial-measure.css. */
   .opening-lede {
-    max-inline-size: var(--measure-lede);
     margin: 1.55rem 0 0;
     color: oklch(0.79 0.015 270);
     font-size: clamp(1rem, 0.94rem + 0.32vw, 1.28rem);
@@ -850,7 +846,6 @@
   }
 
   .opening-note {
-    max-inline-size: var(--measure-note);
     margin: 0.9rem 0 0;
     color: oklch(0.74 0.018 270);
     font-size: var(--font-size-min, 0.875rem);
@@ -1029,7 +1024,6 @@
   }
 
   .keeping-lede > p {
-    max-inline-size: var(--measure-prose);
     margin: 1.25rem 0 0;
     color: oklch(0.76 0.014 270);
     font-size: clamp(1rem, 0.94rem + 0.24vw, 1.18rem);
@@ -1201,7 +1195,6 @@
 
   .small-screen-3d-note {
     display: none;
-    max-inline-size: var(--measure-note);
     margin: 1.4rem 0 0;
     color: oklch(0.74 0.018 270);
     font-size: var(--font-size-min, 0.875rem);
@@ -1214,7 +1207,6 @@
   }
 
   .notation-bridge {
-    max-width: min(100%, 56rem);
     margin: 0 auto;
     padding: clamp(2rem, 4vw, 64px) 0;
     text-align: center;
@@ -1233,7 +1225,6 @@
   }
 
   .notation-bridge p {
-    max-width: 60ch;
     margin: 1.25rem auto 0;
     color: var(--theme-text-secondary, oklch(0.74 0.018 270));
     font-size: clamp(1rem, 0.97rem + 0.18vw, 1.12rem);
@@ -1396,7 +1387,6 @@
     }
 
     .opening-lede {
-      max-inline-size: var(--measure-lede);
       margin: 0.8rem 0 0;
       font-size: var(--font-size-min, 0.875rem);
       line-height: 1.45;
