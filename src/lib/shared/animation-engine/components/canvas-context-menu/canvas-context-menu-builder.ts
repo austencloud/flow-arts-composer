@@ -233,13 +233,12 @@ function buildPathShapeChildren(
         window.open("/guide/motion-paths", "_blank", "noopener,noreferrer");
       },
     },
-    ...(vm.getPathSession()
+    ...(vm.getPathSession()?.preview
       ? [
           {
             id: "path-restore",
-            label: "Restore saved paths",
+            label: "Undo path changes",
             icon: "fa-rotate-left",
-            disabled: !vm.getPathSession()?.preview,
             action: () => vm.restoreSavedPaths(),
           },
         ]
