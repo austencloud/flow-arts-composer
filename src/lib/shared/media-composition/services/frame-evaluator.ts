@@ -13,19 +13,39 @@ import {
 } from "$lib/shared/media-composition/domain/sequence-time-map";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import {
-  clampDisplayedBeatNumber,
-  displayedBeatNumber,
   sequencePositionToAnimationTime,
   wrapSequencePosition,
 } from "$lib/shared/animation-engine/services/step-calculator";
+import {
+  sequenceFrameAt,
+  type SequenceFrame,
+} from "$lib/shared/media-composition/domain/sequence-frame";
+
+/**
+ * A take's timing, asked by media time. Each take has its own, so a post that
+ * cuts between takes - or plays one slowed down - reads every frame's move
+ * from the footage actually on screen rather than from the post's clock.
+ */
+export interface TakeClock {
+  /** Arrival position at this media time, or null where nothing is mapped. */
+  positionAt(mediaSeconds: number): number | null;
+}
 
 export interface SequenceFrameAlignment {
-  timeMap: SequenceTimeMap;
   steps: readonly StepData[];
   startPlacementDuration: number;
-  dwellOnCompletedBeat?: boolean;
   /**
-   * Where project time zero sits in the mapped media. A step map is recorded
+   * Clocks by take role. A clip whose `timeMapRole` names one reads its move
+   * from that take's media time at the clip's own source time.
+   */
+  clocks?: Readonly<Record<string, TakeClock>>;
+  /**
+   * One map for the whole post, read at post time: the older single-take
+   * path, used by clips that name no clock.
+   */
+  timeMap?: SequenceTimeMap;
+  /**
+   * Where project time zero sits in `timeMap`'s media. A step map is recorded
    * against the footage as shot, so trimming the head off a take moves the post
    * clock away from the map's clock by exactly the amount trimmed. Adding it
    * back here keeps the card on the step the performer is actually landing.
@@ -57,17 +77,19 @@ export interface EvaluatedFrameLayer {
    * by hand; consumers fall back to the region's static rect.
    */
   regionRect?: RegionRect;
+  /** Which move is showing. Every other sequence field derives from it. */
+  sequenceFrame?: SequenceFrame;
   /**
-   * Engine convention: [0, 1) is the start placement and [k, k + 1) is move k
-   * in flight, whatever convention the time map counted in.
+   * Engine convention: [1, 2) is move 1 in flight and N + 1 the last landing;
+   * the opening pose is 1. Folded into one pass.
    */
   sequencePosition?: number;
-  /** Zero-based repetition of the sequence before its position is folded. */
+  /** Zero-based repetition the showing move belongs to. */
   sequencePassIndex?: number;
   /** Arrival-counted position for the beat carousel: 0 is the start pose. */
   carouselPosition?: number;
   animationTimeSeconds?: number;
-  /** The beat the card highlights. See `evaluatePresetFrame`. */
+  /** The move showing, 1..N; 0 for the opening pose. */
   displayedBeatNumber?: number;
 }
 
@@ -189,21 +211,36 @@ export function evaluateRegionRects(
 }
 
 /**
- * Converts an arrival-counted position to the engine's count. The arrival
- * position is folded into one pass first, which leaves it in (0, N + 1):
- * (0, N] is the pass itself and becomes (1, N + 1], and (N, N + 1) is the
- * next pass's first move, which becomes (1, 2). Position 0, the opening pose
- * before anything has moved, is move 1 about to begin.
+ * The sequence fields a mapped layer carries, all from one frame record so
+ * the square, the strip, the carousel and the beat number show one move.
  */
-export function arrivalToEnginePosition(
-  arrivalPosition: number,
-  beatsPerPass: number
-): number {
-  if (beatsPerPass <= 0 || !Number.isFinite(arrivalPosition)) {
-    return arrivalPosition;
-  }
-  const folded = wrapSequencePosition(arrivalPosition, beatsPerPass);
-  return folded <= beatsPerPass ? folded + 1 : folded - beatsPerPass + 1;
+function sequenceFieldsFor(
+  arrival: number,
+  alignment: SequenceFrameAlignment,
+  moveBeats: readonly number[],
+  holdLandings: boolean
+): Pick<
+  EvaluatedFrameLayer,
+  | "sequenceFrame"
+  | "sequencePosition"
+  | "sequencePassIndex"
+  | "carouselPosition"
+  | "animationTimeSeconds"
+  | "displayedBeatNumber"
+> {
+  const frame = sequenceFrameAt(arrival, moveBeats, { holdLandings });
+  return {
+    sequenceFrame: frame,
+    sequencePosition: frame.enginePosition,
+    sequencePassIndex: frame.pass,
+    carouselPosition: wrapSequencePosition(frame.arrival, moveBeats.length),
+    animationTimeSeconds: sequencePositionToAnimationTime(
+      frame.enginePosition,
+      alignment.steps,
+      alignment.startPlacementDuration
+    ),
+    displayedBeatNumber: frame.move,
+  };
 }
 
 /**
@@ -222,71 +259,23 @@ export function evaluatePresetFrame(
   }
 
   const clampedTime = Math.min(durationSeconds, Math.max(0, timeSeconds));
-  const mappedTime = clampedTime + (alignment?.mediaTimeOffsetSeconds ?? 0);
-  const beatsPerPass = alignment?.steps.length ?? 0;
-  const convention = alignment
-    ? sequenceTimeMapConvention(alignment.timeMap)
-    : "engine";
-  // A take that runs the sequence several times through arrives with positions
-  // counting past the sequence's length, so it is folded back into one pass
-  // here - before anything derives from it, so the card, the animation clock,
-  // and the animation layer all cycle together.
-  const rawPosition = alignment
-    ? mediaTimeToSequencePosition(alignment.timeMap, mappedTime)
-    : undefined;
-  const sequencePassIndex =
-    rawPosition !== undefined &&
-    Number.isFinite(rawPosition) &&
-    beatsPerPass > 0
-      ? Math.max(0, Math.floor((Math.max(0, rawPosition) - 1) / beatsPerPass))
-      : 0;
-  const mappedPosition =
-    rawPosition !== undefined
-      ? wrapSequencePosition(rawPosition, beatsPerPass)
-      : undefined;
-  // The animation engine counts moves in flight, so a map that counts
-  // arrivals is converted before the engine sees it. Skipping this ran the
-  // animation exactly one move behind the performer.
-  const continuousPosition =
-    mappedPosition !== undefined && convention === "arrival"
-      ? arrivalToEnginePosition(mappedPosition, beatsPerPass)
-      : mappedPosition;
-  // Step mode holds the completed pose for the beat instead of interpolating
-  // toward the next one. Flooring the position is what "hold" means to every
-  // downstream consumer at once — the animation layer, the animation clock,
-  // and the card's beat number all read from this one value.
-  const holdsBeats = preset.animationPlaybackMode === "step";
-  const sequencePosition =
-    continuousPosition !== undefined && holdsBeats
-      ? Math.floor(continuousPosition)
-      : continuousPosition;
-  const animationTimeSeconds =
-    alignment && sequencePosition !== undefined
-      ? sequencePositionToAnimationTime(
-          sequencePosition,
-          alignment.steps,
-          alignment.startPlacementDuration
-        )
-      : undefined;
-  // The card keeps counting in the map's own terms. Against footage it
-  // highlights the pose the performer most recently landed - the shape they
-  // tapped - rather than the move they are travelling through.
-  const beatPosition =
-    convention === "arrival" && mappedPosition !== undefined
-      ? holdsBeats
-        ? Math.floor(mappedPosition)
-        : mappedPosition
-      : sequencePosition;
-  const cardBeatNumber =
-    alignment && beatPosition !== undefined
-      ? clampDisplayedBeatNumber(
-          displayedBeatNumber(
-            beatPosition,
-            alignment.dwellOnCompletedBeat ?? false
-          ),
-          beatsPerPass
-        )
-      : undefined;
+  const moveBeats = alignment?.steps.map((step) => step.duration ?? 1) ?? [];
+  const holdLandings = preset.animationPlaybackMode === "step";
+  // The single-map path reads the post clock once for every clip. A map
+  // saved in the engine's count (move k in flight is [k, k + 1)) is moved
+  // onto arrivals first, so both kinds of map meet the frame record alike.
+  const postArrival = (() => {
+    if (!alignment?.timeMap || moveBeats.length === 0) return null;
+    const raw = mediaTimeToSequencePosition(
+      alignment.timeMap,
+      clampedTime + (alignment.mediaTimeOffsetSeconds ?? 0)
+    );
+    if (!Number.isFinite(raw)) return null;
+    return sequenceTimeMapConvention(alignment.timeMap) === "arrival"
+      ? raw
+      : Math.max(0, raw - 1);
+  })();
+
   const regionRects = evaluateRegionRects(preset, durationSeconds, clampedTime);
   const layers = preset.clips.flatMap((clip): EvaluatedFrameLayer[] => {
     if (clip.kind !== "visual") return [];
@@ -306,11 +295,24 @@ export function evaluatePresetFrame(
     const projectProgress = clamp01((clampedTime - start) / (end - start));
     const sourceIn = resolvePresetTimePoint(clip.sourceIn, durationSeconds);
     const sourceOut = resolvePresetTimePoint(clip.sourceOut, durationSeconds);
+    const sourceSpanTime =
+      sourceIn + (sourceOut - sourceIn) * projectProgress * clip.playbackRate;
     const sourceTimeSeconds =
-      (sourceTimeOffsets[clip.sourceRole] ?? 0) +
-      sourceIn +
-      (sourceOut - sourceIn) * projectProgress * clip.playbackRate;
+      (sourceTimeOffsets[clip.sourceRole] ?? 0) + sourceSpanTime;
     const regionRect = regionRects.get(clip.regionId);
+
+    // A clip tied to a take reads that take's clock at the take's media time
+    // under this clip, trim included, so a slowed act and a derived square
+    // over the same footage land on the same move.
+    let arrival: number | null = null;
+    if (alignment && clip.useResolvedTimeMap && moveBeats.length > 0) {
+      const role = clip.timeMapRole;
+      const clock = role ? alignment.clocks?.[role] : undefined;
+      arrival =
+        clock && role
+          ? clock.positionAt((sourceTimeOffsets[role] ?? 0) + sourceSpanTime)
+          : postArrival;
+    }
 
     return [
       {
@@ -329,14 +331,8 @@ export function evaluatePresetFrame(
         projectProgress,
         transform: clip.transform,
         ...(regionRect ? { regionRect } : {}),
-        ...(clip.useResolvedTimeMap && sequencePosition !== undefined
-          ? {
-              sequencePosition,
-              sequencePassIndex,
-              carouselPosition: mappedPosition,
-              animationTimeSeconds,
-              displayedBeatNumber: cardBeatNumber,
-            }
+        ...(arrival !== null && alignment
+          ? sequenceFieldsFor(arrival, alignment, moveBeats, holdLandings)
           : {}),
       },
     ];

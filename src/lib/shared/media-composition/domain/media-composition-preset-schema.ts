@@ -222,6 +222,12 @@ export const PresetVisualClipSchema = z
     fadeOutSeconds: SecondsSchema.optional(),
     transform: ClipTransformSchema,
     useResolvedTimeMap: z.boolean(),
+    /**
+     * The take whose timing drives this clip's move. A clip drawn over or
+     * beside that take copies its timing fields, so its source time is the
+     * take's media time.
+     */
+    timeMapRole: NonEmptyIdSchema.optional(),
     syncGroupId: NonEmptyIdSchema.optional(),
   })
   .strict()
