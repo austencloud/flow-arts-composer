@@ -131,20 +131,23 @@ export class PostAnimationOverlayPainter implements PostStudioLayerPainter {
     const ctx = context as CanvasRenderingContext2D;
     ctx.save();
     ctx.translate(squareX, squareY);
+    // The render fades a layer in through the context's alpha, and these
+    // helpers set their opacity outright; the preview's alpha is 1.
+    const alpha = ctx.globalAlpha;
 
     const { stepIndex, beatNumber } = resolveOverlayStep(sequenceFrame);
-    renderStepNumberToCanvas(ctx, canvasSize, beatNumber, 1, IS_DARK_MODE);
+    renderStepNumberToCanvas(ctx, canvasSize, beatNumber, alpha, IS_DARK_MODE);
 
     if (stepIndex !== null && this.ready && this.prerenderer) {
       const cacheKey = this.prerenderer.getCacheKeyForStep(stepIndex);
       const glyph = cacheKey ? this.prerenderer.getGlyph(cacheKey) : null;
       if (glyph) {
-        drawPrerenderedGlyphToCanvas(ctx, canvasSize, glyph, 1);
+        drawPrerenderedGlyphToCanvas(ctx, canvasSize, glyph, alpha);
       }
 
       const elemental = this.prerenderer.getElementalGlyphForStep(stepIndex);
       if (elemental) {
-        drawElementalGlyphToCanvas(ctx, canvasSize, elemental, 1);
+        drawElementalGlyphToCanvas(ctx, canvasSize, elemental, alpha);
       }
     }
 

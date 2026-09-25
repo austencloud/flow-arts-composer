@@ -1068,9 +1068,15 @@
     }
 
     if (event.key === " " || event.code === "Space") {
+      // Post Studio plays its own post (or, on Timing, its take) from its
+      // own window listeners. The viewer's animation is hidden behind it, so
+      // whatever holds focus the key is the studio's.
+      if (viewerState.viewerMode === "post-studio") return;
       const target = event.target as HTMLElement;
       if (
-        target.closest("[data-keyboard-shortcuts-ignore]") ||
+        target.closest(
+          "[data-keyboard-shortcuts-ignore], [data-viewer-keys-ignore]"
+        ) ||
         target.tagName === "INPUT" ||
         target.tagName === "TEXTAREA" ||
         target.isContentEditable

@@ -142,7 +142,14 @@ class SequenceStripPainter implements PostStudioLayerPainter {
 
   async prepare(target: { width: number; height: number }): Promise<void> {
     const size = stripSquareSize(target);
-    if (this.sizeCaches.has(size)) return;
+    const cached = this.sizeCaches.get(size);
+    if (cached) {
+      // Asked for again, so it is the newest: a layer remounted after Timing
+      // keeps its size through the render's.
+      this.sizeCaches.delete(size);
+      this.sizeCaches.set(size, cached);
+      return;
+    }
     const existing = this.pendingSizes.get(size);
     if (existing) return existing;
 
@@ -229,8 +236,9 @@ class SequenceStripPainter implements PostStudioLayerPainter {
       }
     }
     this.sizeCaches.set(size, { under, arrows });
-    // A preview being resized asks for a new size on every frame. The newest
-    // few - the preview's and the render's - are the ones worth keeping.
+    // A preview being resized asks for a new size on every frame. The few
+    // asked for most recently - the preview's and the render's - are the ones
+    // worth keeping.
     for (const stale of [...this.sizeCaches.keys()].slice(
       0,
       -MAX_CACHED_SIZES
@@ -415,6 +423,9 @@ class SequenceStripPainter implements PostStudioLayerPainter {
     );
 
     context.save();
+    // The render fades a layer in through the context's alpha; the preview
+    // fades the whole canvas and paints at 1.
+    const baseAlpha = context.globalAlpha;
     context.translate(centerX, centerY);
     context.scale(scale, scale);
     context.lineWidth = 2.5 / scale;
@@ -425,15 +436,14 @@ class SequenceStripPainter implements PostStudioLayerPainter {
       // The complete path gives the mandala its shape; its bright leading
       // portion records how far this hand has actually traced it so far.
       context.strokeStyle = path.color;
-      context.globalAlpha = 0.25;
+      context.globalAlpha = baseAlpha * 0.25;
       context.setLineDash([]);
       context.stroke(path.path2d);
-      context.globalAlpha = 1;
+      context.globalAlpha = baseAlpha;
       context.setLineDash([path.totalLength * fraction, path.totalLength]);
       context.stroke(path.path2d);
     }
     context.setLineDash([]);
-    context.globalAlpha = 1;
     context.restore();
   }
 }

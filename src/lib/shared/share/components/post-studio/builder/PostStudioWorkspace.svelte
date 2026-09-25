@@ -364,9 +364,20 @@
     }
   });
 
-  /** Space plays the post on every step but Timing, which has its own keys. */
+  /**
+   * Space plays the post; on Timing the take's own keys answer instead (T
+   * taps, Space plays the take). A studio the viewer keeps mounted out of
+   * sight ignores every key, and so does one that is rendering: the render
+   * seeks the post frame by frame, and playback would move the clock between
+   * a seek and its capture.
+   */
   function handleKey(event: KeyboardEvent): void {
-    if (showTimingStage || event.key !== " " || event.defaultPrevented) return;
+    if (!active || exporting) return;
+    if (showTimingStage) {
+      session.handleKey(event);
+      return;
+    }
+    if (event.key !== " " || event.defaultPrevented) return;
     if (event.ctrlKey || event.metaKey || event.altKey || event.repeat) return;
     const target = event.target;
     if (
@@ -560,13 +571,13 @@
 
 <svelte:window onkeydown={handleKey} />
 
-<!-- The studio owns its keys (Space plays, T taps), so the viewer's own
-     shortcuts skip it; tabindex keeps a click inside it from sending focus
-     back to the page. -->
+<!-- The studio owns Space and T, so the viewer's own Space handler skips it
+     (the app's shortcuts, Shift+P and the rest, still reach it); tabindex
+     keeps a click inside it from sending focus back to the page. -->
 <section
   class="post-studio"
   tabindex="-1"
-  data-keyboard-shortcuts-ignore
+  data-viewer-keys-ignore
   data-external-inspector={!!externalInspector}
   data-sharing={sharing}
   aria-label={`Post Studio, ${sequenceName}`}
@@ -604,7 +615,7 @@
     <aside
       class="tools"
       tabindex="-1"
-      data-keyboard-shortcuts-ignore
+      data-viewer-keys-ignore
       class:external={!!externalInspector}
       use:reparentToInspector={externalInspector}
       inert={sharing || undefined}
