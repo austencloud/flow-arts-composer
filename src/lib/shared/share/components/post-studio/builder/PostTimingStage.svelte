@@ -195,7 +195,7 @@
   video {
     display: block;
     max-width: 100%;
-    max-height: min(58vh, 40rem);
+    max-height: 58vh;
     cursor: pointer;
   }
   .square {
