@@ -18,28 +18,25 @@
 </script>
 
 <script lang="ts">
-  import type { Snippet } from "svelte";
   import CatDogToggle from "./CatDogToggle.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import { growFade } from "$lib/shared/transitions/motion";
 
   let {
     handProps,
-    actions,
     compact = false,
-  }: { handProps: HandPropToolbarProps; actions?: Snippet; compact?: boolean } = $props();
+  }: { handProps: HandPropToolbarProps; compact?: boolean } = $props();
 </script>
 
 <!-- Same chip and hand segments as the global prop drawer, so the viewer
      picks a pair the way every other settings-backed picker does. -->
-<div class="hand-toolbar" class:with-actions={!!actions} class:compact>
+<div class="hand-toolbar" class:compact>
   <div class="cat-dog-control">
     <CatDogToggle
       catDogMode={handProps.catDog}
       onToggle={handProps.onToggleCatDog}
     />
   </div>
-  {#if actions}<div class="toolbar-actions">{@render actions()}</div>{/if}
   {#if handProps.catDog}
     <div class="hand-segments" transition:growFade={{ axis: "y" }}>
       <SegmentedControl
@@ -68,42 +65,13 @@
     padding: 8px 16px 4px;
     flex-shrink: 0;
   }
-  .hand-toolbar.with-actions {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-    justify-items: center;
-    padding: 8px 12px 4px;
-  }
-  .cat-dog-control {
-    min-width: 0;
-  }
-  .with-actions .cat-dog-control {
-    grid-column: 2;
-  }
-  .toolbar-actions {
-    grid-column: 3;
-    grid-row: 1;
-    justify-self: end;
-  }
+  .cat-dog-control,
   .hand-segments {
     min-width: 0;
   }
-  .with-actions .hand-segments {
-    grid-column: 1 / -1;
-    justify-self: center;
-  }
-  .hand-toolbar.compact,
-  .hand-toolbar.compact.with-actions {
-    display: flex;
+  .hand-toolbar.compact {
     justify-content: flex-start;
     gap: 6px;
     padding: 0;
-  }
-  .compact .toolbar-actions,
-  .compact.with-actions .cat-dog-control,
-  .compact.with-actions .hand-segments {
-    grid-column: auto;
-    grid-row: auto;
-    justify-self: auto;
   }
 </style>

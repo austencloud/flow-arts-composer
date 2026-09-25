@@ -491,8 +491,8 @@
   onMount(() => {
     // Settings-backed picker rows (fan appearance, triangle grip) write through
     // updateSettings, which is a no-op until the settings service exists. The
-    // app shell does this through MainApplication; /test/* routes have to do it
-    // themselves, as SequenceViewerTransitionReviewFrame does.
+    // root layout starts it only for app routes, and this page boots in landing
+    // mode to stay light, so it starts the service itself.
     void initializeAppServices();
     const token = ++generationToken;
     const cachedSequence = readCachedRotatedLoop();
