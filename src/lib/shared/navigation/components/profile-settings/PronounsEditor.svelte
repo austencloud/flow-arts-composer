@@ -138,7 +138,11 @@
       <span class="optional-badge">{t("profile_optional")}</span>
     </div>
 
-    <div class="preset-chips" role="group" aria-label="Pronoun presets">
+    <div
+      class="preset-chips"
+      role="group"
+      aria-label={t("nav_ui_pronoun_presets")}
+    >
       {#each PRESETS as preset}
         <FilterChipBase
           label={preset.label}
@@ -171,7 +175,7 @@
           class="icon-btn save"
           onclick={save}
           disabled={isSaveDisabled}
-          aria-label="Save pronouns"
+          aria-label={t("nav_ui_save_pronouns")}
         >
           {#if isSaving}
             <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
@@ -183,7 +187,7 @@
           class="icon-btn cancel"
           onclick={cancelEditing}
           disabled={isSaving}
-          aria-label="Cancel editing"
+          aria-label={t("nav_ui_cancel_editing")}
         >
           <i class="fas fa-times" aria-hidden="true"></i>
         </button>

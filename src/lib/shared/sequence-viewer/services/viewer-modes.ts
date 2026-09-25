@@ -1,26 +1,27 @@
-import type { ViewerMode } from '../state/viewer-state.svelte';
-import type { ContentType, SplitConfig } from './viewer-state-persistence';
+import type { ViewerMode } from "../state/viewer-state.svelte";
+import type { ContentType, SplitConfig } from "./viewer-state-persistence";
+import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
 /** One switchable view in the sequence viewer (rail + mobile bottom bar). */
 export interface ViewerModeOption {
-	/** The ViewerMode this option selects. */
-	id: ViewerMode;
-	/** Font Awesome class fragment, e.g. 'fa-play'. */
-	icon: string;
-	label: string;
-	/** When true, the option is hidden unless WebGL2 is available. */
-	requiresWebgl2?: boolean;
-	/**
-	 * When true, the option is hidden unless the viewport is large enough to host
-	 * 3D (see `MIN_3D_VIEWPORT_PX` / `viewportFits3D`). The 3D viewer is not
-	 * phone-friendly yet, so it is withheld on small screens.
-	 */
-	requiresLargeViewport?: boolean;
-	/**
-	 * When true, the option is withheld unless the current user has Post Studio
-	 * early access (`canAccessPostStudio()` in services/post-studio-access.ts).
-	 */
-	requiresPostStudioAccess?: boolean;
+  /** The ViewerMode this option selects. */
+  id: ViewerMode;
+  /** Font Awesome class fragment, e.g. 'fa-play'. */
+  icon: string;
+  label: string;
+  /** When true, the option is hidden unless WebGL2 is available. */
+  requiresWebgl2?: boolean;
+  /**
+   * When true, the option is hidden unless the viewport is large enough to host
+   * 3D (see `MIN_3D_VIEWPORT_PX` / `viewportFits3D`). The 3D viewer is not
+   * phone-friendly yet, so it is withheld on small screens.
+   */
+  requiresLargeViewport?: boolean;
+  /**
+   * When true, the option is withheld unless the current user has Post Studio
+   * early access (`canAccessPostStudio()` in services/post-studio-access.ts).
+   */
+  requiresPostStudioAccess?: boolean;
 }
 
 /**
@@ -29,26 +30,32 @@ export interface ViewerModeOption {
  * Order is intentional: Side-by-Side first, then single views by value.
  */
 export const VIEWER_MODE_OPTIONS: ViewerModeOption[] = [
-	{ id: 'split', icon: 'fa-columns', label: 'Side by Side' },
-	{ id: 'animation', icon: 'fa-play', label: '2D Animation' },
-	{ id: 'animation-3d', icon: 'fa-cube', label: '3D Animation', requiresWebgl2: true, requiresLargeViewport: true },
-	{ id: 'card', icon: 'fa-grip', label: 'Card' },
-	{ id: 'videos', icon: 'fa-video', label: 'Performances' },
-	// Tunnel remains a direct art view. Mandala opens from the workspace card,
-	// where its collection and creation controls already live.
-	{ id: 'tunnel', icon: 'fa-fan', label: 'Tunnel' },
-	// Composing a vertical post is a viewer surface, not a child of the share
-	// sheet: the viewer already owns every other way a sequence is turned into
-	// something (card export, video export, tunnel, mandala, practice), and
-	// Share owns distribution. Listing it here is what gives it a real entry
-	// point in both switchers instead of a button buried two clicks into a modal.
-	// Early access while unfinished: admins and per-user grants only.
-	{
-		id: 'post-studio',
-		icon: 'fa-wand-magic-sparkles',
-		label: 'Post Studio',
-		requiresPostStudioAccess: true
-	}
+  { id: "split", icon: "fa-columns", label: "Side by Side" },
+  { id: "animation", icon: "fa-play", label: "2D Animation" },
+  {
+    id: "animation-3d",
+    icon: "fa-cube",
+    label: "3D Animation",
+    requiresWebgl2: true,
+    requiresLargeViewport: true,
+  },
+  { id: "card", icon: "fa-grip", label: "Card" },
+  { id: "videos", icon: "fa-video", label: "Performances" },
+  // Tunnel remains a direct art view. Mandala opens from the workspace card,
+  // where its collection and creation controls already live.
+  { id: "tunnel", icon: "fa-fan", label: "Tunnel" },
+  // Composing a vertical post is a viewer surface, not a child of the share
+  // sheet: the viewer already owns every other way a sequence is turned into
+  // something (card export, video export, tunnel, mandala, practice), and
+  // Share owns distribution. Listing it here is what gives it a real entry
+  // point in both switchers instead of a button buried two clicks into a modal.
+  // Early access while unfinished: admins and per-user grants only.
+  {
+    id: "post-studio",
+    icon: "fa-wand-magic-sparkles",
+    label: "Post Studio",
+    requiresPostStudioAccess: true,
+  },
 ];
 
 /**
@@ -58,10 +65,35 @@ export const VIEWER_MODE_OPTIONS: ViewerModeOption[] = [
  * including surfaces like `post-studio` that are not legal split-pane contents,
  * is selectable.
  */
-export type SelectableViewerMode = Exclude<ViewerMode, 'split'>;
+export type SelectableViewerMode = Exclude<ViewerMode, "split">;
 
 /** Practice is a toggle, not a ViewerMode. Rendered as its own item in both switchers. */
-export const PRACTICE_OPTION = { icon: 'fa-signal', label: 'Practice' } as const;
+export const PRACTICE_OPTION = {
+  icon: "fa-signal",
+  label: "Practice",
+} as const;
+
+/** Resolve display copy when the view is rendered so locale changes stay live. */
+export function viewerModeLabel(id: ViewerMode): string {
+  switch (id) {
+    case "split":
+      return t("viewer_ui_side_by_side");
+    case "animation":
+      return t("viewer_ui_2d_animation");
+    case "animation-3d":
+      return t("viewer_ui_3d_animation");
+    case "card":
+      return t("viewer_ui_card");
+    case "videos":
+      return t("viewer_ui_performances");
+    case "tunnel":
+      return t("viewer_ui_tunnel");
+    case "post-studio":
+      return t("viewer_ui_post_studio");
+    default:
+      return t("viewer_ui_sequence");
+  }
+}
 
 /**
  * Filter helper: drops WebGL2-only options when WebGL2 is unavailable,
@@ -71,16 +103,16 @@ export const PRACTICE_OPTION = { icon: 'fa-signal', label: 'Practice' } as const
  * access — so a call site that forgets the check fails closed.
  */
 export function viewerModeOptions(
-	webgl2Available: boolean,
-	viewportFits3D = true,
-	postStudioAccess = false
+  webgl2Available: boolean,
+  viewportFits3D = true,
+  postStudioAccess = false
 ): ViewerModeOption[] {
-	return VIEWER_MODE_OPTIONS.filter(
-		(m) =>
-			(!m.requiresWebgl2 || webgl2Available) &&
-			(!m.requiresLargeViewport || viewportFits3D) &&
-			(!m.requiresPostStudioAccess || postStudioAccess)
-	);
+  return VIEWER_MODE_OPTIONS.filter(
+    (m) =>
+      (!m.requiresWebgl2 || webgl2Available) &&
+      (!m.requiresLargeViewport || viewportFits3D) &&
+      (!m.requiresPostStudioAccess || postStudioAccess)
+  );
 }
 
 /**
@@ -89,17 +121,23 @@ export function viewerModeOptions(
  * Pure — used by the viewer-state getters so a persisted 3D preference renders
  * as 2D on a small screen without overwriting the stored preference.
  */
-export function coerce3DContent(content: ContentType, fits3D: boolean): ContentType {
-	return !fits3D && content === 'animation-3d' ? 'animation' : content;
+export function coerce3DContent(
+  content: ContentType,
+  fits3D: boolean
+): ContentType {
+  return !fits3D && content === "animation-3d" ? "animation" : content;
 }
 
 /** Coerce both panes of a split config away from 3D when the viewport can't host it. */
-export function coerce3DSplit(config: SplitConfig, fits3D: boolean): SplitConfig {
-	if (fits3D) return config;
-	return {
-		leftPane: coerce3DContent(config.leftPane, fits3D),
-		rightPane: coerce3DContent(config.rightPane, fits3D)
-	};
+export function coerce3DSplit(
+  config: SplitConfig,
+  fits3D: boolean
+): SplitConfig {
+  if (fits3D) return config;
+  return {
+    leftPane: coerce3DContent(config.leftPane, fits3D),
+    rightPane: coerce3DContent(config.rightPane, fits3D),
+  };
 }
 
 /**
@@ -109,8 +147,10 @@ export function coerce3DSplit(config: SplitConfig, fits3D: boolean): SplitConfig
  * a still image, so an autoplay open on it stays still; every other surface
  * either animates or ignores playback.
  */
-export function legacyViewModeFor(mode: ViewerMode): 'animation' | 'image' | 'split' {
-	return mode === 'card' ? 'image' : 'animation';
+export function legacyViewModeFor(
+  mode: ViewerMode
+): "animation" | "image" | "split" {
+  return mode === "card" ? "image" : "animation";
 }
 
 /**
@@ -120,11 +160,11 @@ export function legacyViewModeFor(mode: ViewerMode): 'animation' | 'image' | 'sp
  * the renderer hidden underneath it.
  */
 export function viewerModeForRenderMode(
-	renderMode: '2d' | '3d' | null
+  renderMode: "2d" | "3d" | null
 ): ViewerMode | undefined {
-	if (renderMode === '3d') return 'animation-3d';
-	if (renderMode === '2d') return 'animation';
-	return undefined;
+  if (renderMode === "3d") return "animation-3d";
+  if (renderMode === "2d") return "animation";
+  return undefined;
 }
 
 /**
@@ -141,11 +181,11 @@ export function viewerModeForRenderMode(
  * device-local remembered surface — see `viewerModeForRenderMode`.
  */
 export function initialViewerModeForUrl(
-	scanOrigin: boolean,
-	pane: string | null,
-	renderMode: '2d' | '3d' | null
+  scanOrigin: boolean,
+  pane: string | null,
+  renderMode: "2d" | "3d" | null
 ): ViewerMode | undefined {
-	if (scanOrigin) return 'card';
-	if (pane) return undefined;
-	return viewerModeForRenderMode(renderMode);
+  if (scanOrigin) return "card";
+  if (pane) return undefined;
+  return viewerModeForRenderMode(renderMode);
 }

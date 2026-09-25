@@ -9,6 +9,7 @@ session.submitAnswer() with the exact QuizAnswerEvent shape gap detection
 depends on.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
   import { detectSingleError } from "$lib/features/learn/services/gap-detector";
@@ -171,7 +172,7 @@ depends on.
   </QuizContainer>
 {:else if questionData && questionLetter}
   <QuizContainer>
-    <QuizPrompt text="Which pictograph contains this glyph?" />
+    <QuizPrompt text={t("learn_ui_prompt_letter_pictograph")} />
 
     <div class="quiz-content">
       <!-- Glyph card handles its own crossfade transitions -->
@@ -197,8 +198,10 @@ depends on.
         {#if showFeedback}
           <QuizFeedbackBanner
             isCorrect={isCorrectAnswer}
-            correctMessage={`Correct! That's "${questionLetter}"`}
-            incorrectMessage="The correct pictograph is highlighted"
+            correctMessage={t("learn_ui_correct_letter", {
+              letter: questionLetter,
+            })}
+            incorrectMessage={t("learn_ui_answer_pictograph_highlighted")}
           />
           {#if currentGap}
             <MisconceptionHint gap={currentGap} />

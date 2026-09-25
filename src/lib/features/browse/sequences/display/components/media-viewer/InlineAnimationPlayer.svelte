@@ -7,6 +7,7 @@
   Uses the shared animation engine with BPM preset controls.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount, onDestroy, untrack } from "svelte";
   import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
   import {
@@ -1013,12 +1014,14 @@
          sequence swap (and the hero act's prop morph) actually seamless. -->
     <div class="loading-state">
       <ProgressRing percent={-1} size={24} strokeWidth={3} />
-      <span>Loading animation...</span>
+      <span>{t("loading_animation")}</span>
     </div>
   {:else if error}
     <div class="error-state">
       <span>{error}</span>
-      <button class="retry-btn" onclick={() => loadAnimation()}>Retry</button>
+      <button class="retry-btn" onclick={() => loadAnimation()}
+        >{t("action_retry")}</button
+      >
     </div>
   {:else}
     <!-- Animation Canvas -->

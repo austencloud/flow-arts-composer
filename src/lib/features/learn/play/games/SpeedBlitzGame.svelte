@@ -28,6 +28,7 @@ existing QuizLetterButton state machine already gives us "incorrect shows the
 correct letter" for free).
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
@@ -285,7 +286,7 @@ correct letter" for free).
   </QuizContainer>
 {:else if questionData && currentPictograph}
   <QuizContainer>
-    <QuizPrompt text="Name the letter — fast." />
+    <QuizPrompt text={t("learn_ui_prompt_speed")} />
 
     <div
       class="quiz-content"
@@ -294,7 +295,11 @@ correct letter" for free).
     >
       <QuizPictographCard pictograph={currentPictograph} />
 
-      <div class="drain-track" role="img" aria-label="Time remaining">
+      <div
+        class="drain-track"
+        role="img"
+        aria-label={t("learn_ui_time_remaining")}
+      >
         <div
           class="drain-fill"
           class:urgent={isUrgent}
@@ -326,10 +331,12 @@ correct letter" for free).
         {#if showFeedback}
           <QuizFeedbackBanner
             isCorrect={isCorrectAnswer}
-            correctMessage={`Correct! This is "${correctAnswer}"`}
+            correctMessage={t("learn_ui_correct_letter", {
+              letter: correctAnswer,
+            })}
             incorrectMessage={isTimeout
-              ? `Too slow — it's "${correctAnswer}"`
-              : `The correct letter is "${correctAnswer}"`}
+              ? t("learn_ui_too_slow_letter", { letter: correctAnswer })
+              : t("learn_ui_answer_letter", { letter: correctAnswer })}
             streakCount={session.streak}
           />
         {/if}

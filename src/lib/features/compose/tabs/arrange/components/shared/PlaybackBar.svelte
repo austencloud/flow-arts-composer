@@ -8,6 +8,7 @@
   Plus: stop button, beat counter, loop mode toggle
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import HorizontalTransportRow from "$lib/shared/sequence-viewer/components/HorizontalTransportRow.svelte";
   import BpmChips from "$lib/shared/animation-engine/components/controls/BpmChips.svelte";
 
@@ -71,8 +72,12 @@
           class="loop-btn"
           class:active={skipStartPlacement}
           onclick={onToggleLoop}
-          aria-label={skipStartPlacement ? "Loop mode: seamless" : "Loop mode: with start placement"}
-          title={skipStartPlacement ? "Seamless loop (skips start pose)" : "Includes start pose each loop"}
+          aria-label={skipStartPlacement
+            ? "Loop mode: seamless"
+            : "Loop mode: with start placement"}
+          title={skipStartPlacement
+            ? "Seamless loop (skips start pose)"
+            : "Includes start pose each loop"}
         >
           <i class="fas fa-repeat" aria-hidden="true"></i>
         </button>
@@ -83,7 +88,7 @@
         class="stop-btn"
         onclick={onStop}
         disabled={!canStop}
-        aria-label="Stop"
+        aria-label={t("compose_ui_stop")}
       >
         <i class="fas fa-stop" aria-hidden="true"></i>
       </button>
@@ -91,11 +96,7 @@
   </div>
 
   <!-- BPM control (reuses shared component, compact variant) -->
-  <BpmChips
-    bind:bpm
-    variant="compact"
-    onBpmChange={onBpmChange}
-  />
+  <BpmChips bind:bpm variant="compact" {onBpmChange} />
 </div>
 
 <style>
@@ -179,14 +180,30 @@
   }
 
   .loop-btn.active {
-    background: color-mix(in srgb, var(--semantic-success, #10b981) 20%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-success, #10b981) 40%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #10b981) 20%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-success, #10b981) 40%,
+      transparent
+    );
     color: var(--semantic-success, #10b981);
   }
 
   .loop-btn.active:hover {
-    background: color-mix(in srgb, var(--semantic-success, #10b981) 30%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-success, #10b981) 50%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #10b981) 30%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-success, #10b981) 50%,
+      transparent
+    );
   }
 
   .loop-btn:focus-visible {

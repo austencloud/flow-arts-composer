@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import type { TunnelViewController } from "../../tunnel/tunnel-view-controller.svelte";
@@ -57,14 +58,18 @@
     value: String(r),
     label: speedLabel(r),
   }));
-  const SPEED_FILL_META: Record<SpeedFill, { label: string; icon: string }> = {
-    alternating: { label: "Alternating", icon: "fas fa-shuffle" },
-    accelerando: { label: "Accelerando", icon: "fas fa-forward" },
-  };
-  const speedFillButtons = SPEED_FILLS.map((kind) => ({
-    kind,
-    ...SPEED_FILL_META[kind],
-  }));
+  const SPEED_FILL_META = $derived<
+    Record<SpeedFill, { label: string; icon: string }>
+  >({
+    alternating: { label: t("viewer_ui_alternating"), icon: "fas fa-shuffle" },
+    accelerando: { label: t("viewer_ui_accelerando"), icon: "fas fa-forward" },
+  });
+  const speedFillButtons = $derived(
+    SPEED_FILLS.map((kind) => ({
+      kind,
+      ...SPEED_FILL_META[kind],
+    }))
+  );
 </script>
 
 <div class="section-pad">
@@ -91,7 +96,7 @@
       <FilterChipBase
         mode="action"
         size="sm"
-        label="Reset"
+        label={t("viewer_ui_reset")}
         icon="fas fa-rotate-left"
         disabled={!controller.hasSpeedOverrides}
         onclick={() =>
@@ -104,7 +109,11 @@
     <!-- Per performer: two-tone swatch identity + rate. Click a row to
              spotlight that performer in the tunnel (others dim). "You" (the base)
              is the fixed 1× reference. -->
-    <div class="perf-list" role="listbox" aria-label="Performers">
+    <div
+      class="perf-list"
+      role="listbox"
+      aria-label={t("viewer_ui_performers")}
+    >
       {#each controller.speedPerformers as perf (perf.arm)}
         <div
           class="perf-row"
@@ -159,8 +168,8 @@
   {:else if !dense}
     <p class="section-hint">
       {stageAware
-        ? "Add another stage appearance to set different speeds."
-        : "Add copies (Copies ×N, Mirror, Flip) to set speed per performer."}
+        ? t("viewer_ui_add_another_stage_appearance")
+        : t("viewer_ui_add_copies_to_set_speed")}
     </p>
   {/if}
 </div>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, tick, untrack } from "svelte";
   import { createLayoutMotion } from "$lib/shared/transitions/layout-flip";
   import { motionDuration } from "$lib/shared/transitions/motion";
@@ -148,12 +149,12 @@
     correct
       ? ""
       : incorrect
-        ? "Try again"
+        ? t("learn_ui_try_again")
         : placement.activeHand === HandSide.LEFT
-          ? "Tap a point for your left hand."
+          ? t("learn_ui_tap_left_hand")
           : placement.activeHand === HandSide.RIGHT
-            ? "Now place your right hand."
-            : "Drag a hand, or tap it and choose a point."
+            ? t("learn_ui_place_right_hand")
+            : t("learn_ui_drag_or_tap_hand")
   );
 
   const exploring = $derived(workshop.phase === "explore");
@@ -180,17 +181,22 @@
     PLACEMENT_KINDS.map((kind) => ({
       kind,
       pair: workshop.examplePair(kind, gridMode),
-      data: placementPairPreview(workshop.examplePair(kind, gridMode), gridMode),
+      data: placementPairPreview(
+        workshop.examplePair(kind, gridMode),
+        gridMode
+      ),
     }))
   );
   const title = $derived(
     exploring
-      ? "Hand Placements"
+      ? t("learn_ui_hand_placements")
       : workshop.canFinish
-        ? "All six built"
+        ? t("learn_ui_all_six_built")
         : correct
           ? `${PLACEMENT_TYPE_INFO[workshop.challenge!.kind].label} ✓`
-          : `Build ${PLACEMENT_TYPE_INFO[workshop.challenge!.kind].label}`
+          : t("learn_ui_build_placement", {
+              placement: PLACEMENT_TYPE_INFO[workshop.challenge!.kind].label,
+            })
   );
 
   function changed(change: PropPlacementChange) {
@@ -303,13 +309,13 @@
 </script>
 
 {#snippet lessonActions()}
-  <nav class="lesson-navigation" aria-label="Lesson navigation">
+  <nav class="lesson-navigation" aria-label={t("learn_ui_lesson_navigation")}>
     <LessonStageControls
       label={workshop.canFinish
-        ? "Continue to Hand Motions"
+        ? t("learn_ui_continue_hand_motions")
         : workshop.round > 0
-          ? "Resume practice"
-          : "Next: Practice →"}
+          ? t("learn_ui_resume_practice")
+          : t("learn_ui_next_practice")}
       currentStep={Math.min(workshop.round + 1, PLACEMENT_CHALLENGES.length)}
       totalSteps={PLACEMENT_CHALLENGES.length}
       showProgress={false}
@@ -318,8 +324,9 @@
     />
     {#if workshop.canFinish}
       <PanelButton onclick={practice}
-        ><i class="fa-solid fa-rotate-right" aria-hidden="true"></i>Practice
-        again</PanelButton
+        ><i class="fa-solid fa-rotate-right" aria-hidden="true"></i>{t(
+          "learn_ui_practice_again"
+        )}</PanelButton
       >
     {/if}
   </nav>
@@ -332,12 +339,12 @@
         <LessonStageHeading key={title} {title}>
           <p>
             {exploring
-              ? "Place both hands and see the placement’s name. Next, try six practice challenges."
+              ? t("learn_ui_place_both_hands_instruction")
               : workshop.canFinish
-                ? "Keep exploring, or continue to Hand Motions."
+                ? t("learn_ui_keep_exploring_instruction")
                 : gridMode === GridMode.DIAMOND
-                  ? "Diamond grid"
-                  : "Box grid"}
+                  ? t("learn_ui_diamond_grid")
+                  : t("learn_ui_box_grid")}
           </p>
         </LessonStageHeading>
       </div>
@@ -379,7 +386,7 @@
             bind:this={boardElement}
             tabindex="-1"
             role="group"
-            aria-label="Hand placement grid"
+            aria-label={t("learn_ui_hand_placement_grid")}
             bind:clientWidth={boardWidth}
             bind:clientHeight={boardHeight}
           >
@@ -408,7 +415,9 @@
               onChange={changed}
             />
             <span class="sr-only" aria-live="polite"
-              >{built ? PLACEMENT_TYPE_INFO[built].label : "Your placement"}</span
+              >{built
+                ? PLACEMENT_TYPE_INFO[built].label
+                : t("learn_ui_your_placement")}</span
             >
             {#if correctionPreview && workshop.challenge && !referencesVisible}
               <figure class="correction-guide">
@@ -437,7 +446,11 @@
           </div>
           {#if referencesVisible}
             <div class="reference-area">
-              <div class="examples" role="group" aria-label="Placement examples">
+              <div
+                class="examples"
+                role="group"
+                aria-label={t("learn_ui_placement_examples")}
+              >
                 {#each examples as example (example.kind)}
                   {@const matches =
                     freePlay &&
@@ -469,7 +482,9 @@
                       <button
                         type="button"
                         class="tka-seq-hit"
-                        aria-label={`Study ${PLACEMENT_TYPE_INFO[example.kind].label} example`}
+                        aria-label={t("learn_ui_study_placement_example", {
+                          placement: PLACEMENT_TYPE_INFO[example.kind].label,
+                        })}
                         aria-pressed={matches}
                         onpointerenter={() => (hoveredExample = example.kind)}
                         onpointerleave={() => (hoveredExample = null)}
@@ -500,8 +515,8 @@
           {#if !exploring && !workshop.canFinish}
             <LessonStageControls
               label={workshop.round === PLACEMENT_CHALLENGES.length - 1
-                ? "Finish practice"
-                : "Next placement"}
+                ? t("learn_ui_finish_practice")
+                : t("learn_ui_next_placement")}
               currentStep={workshop.round + 1}
               totalSteps={PLACEMENT_CHALLENGES.length}
               showProgress={false}
@@ -515,7 +530,7 @@
           {#if !exploring && !workshop.canFinish}
             <progress
               class="practice-progress"
-              aria-label="Placements built"
+              aria-label={t("learn_ui_placements_built")}
               max={PLACEMENT_CHALLENGES.length}
               value={workshop.builtCount}
             ></progress>
@@ -525,28 +540,31 @@
           class="hand-controls"
           data-placement-stage="editing"
           role="group"
-          aria-label="Move the hands"
+          aria-label={t("learn_ui_move_hands")}
         >
           <UndoButton CreateModuleState={handHistory} />
           <ClearSequenceButton
             disabled={!placement.leftLocation && !placement.rightLocation}
-            label="Clear both hands"
+            label={t("learn_ui_clear_both_hands")}
             onclick={() => loadPair(null, null)}
           />
           {#if freePlay}
             <div
               class="transform-controls"
               role="group"
-              aria-label="Transform both hands"
+              aria-label={t("learn_ui_transform_both_hands")}
             >
               <PanelButton disabled={!built} onclick={() => transform("rotate")}
-                ><i class="fas fa-rotate-right" aria-hidden="true"></i> Rotate</PanelButton
+                ><i class="fas fa-rotate-right" aria-hidden="true"></i>
+                {t("learn_ui_rotate")}</PanelButton
               >
               <PanelButton disabled={!built} onclick={() => transform("mirror")}
-                ><i class="fas fa-left-right" aria-hidden="true"></i> Reflect</PanelButton
+                ><i class="fas fa-left-right" aria-hidden="true"></i>
+                {t("learn_ui_reflect")}</PanelButton
               >
               <PanelButton disabled={!built} onclick={() => transform("swap")}
-                ><i class="fas fa-arrows-rotate" aria-hidden="true"></i> Swap hands</PanelButton
+                ><i class="fas fa-arrows-rotate" aria-hidden="true"></i>
+                {t("learn_ui_swap_hands")}</PanelButton
               >
             </div>
           {/if}
@@ -556,8 +574,8 @@
               ariaPressed={referencesVisible}
               onclick={() => (showReference = !referencesVisible)}
               >{referencesVisible
-                ? "Hide reference"
-                : "Show reference"}</PanelButton
+                ? t("learn_ui_hide_reference")
+                : t("learn_ui_show_reference")}</PanelButton
             >
           {/if}
         </div>

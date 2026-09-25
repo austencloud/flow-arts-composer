@@ -11,6 +11,7 @@ Card-based architecture with integrated Generate button:
 - Tour: Guided tour offered first-run via GenerateEmptyState; also via voice
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { SequenceState } from "$lib/features/create/shared/state/sequence-state-orchestrator.svelte";
@@ -360,7 +361,7 @@ Card-based architecture with integrated Generate button:
   data-is-desktop={isDesktop}
   style="--min-touch-target: {deviceState.minTouchTarget}px; --element-spacing: {deviceState.elementSpacing}px;"
   role="region"
-  aria-label="Generator settings panel"
+  aria-label={t("create_ui_generator_settings_panel")}
 >
   <div class="generate-panel-inner">
     <CardBasedSettingsContainer

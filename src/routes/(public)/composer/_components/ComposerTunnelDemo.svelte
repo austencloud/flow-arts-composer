@@ -16,6 +16,7 @@
   mount it through LazyMount so none of it lands in the eager graph.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { onDestroy } from "svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
@@ -100,7 +101,12 @@
   const arrangementOptions = $derived(
     ARRANGEMENTS.map((a) => ({
       value: a.value,
-      label: a.label,
+      label:
+        a.value === "ring"
+          ? t("composer_demo_ring")
+          : a.value === "mirrored"
+            ? t("composer_demo_mirrored")
+            : t("composer_demo_canon"),
       disabled: !fits(fold, a.mirror),
     }))
   );
@@ -184,7 +190,7 @@
     options={foldOptions}
     value={String(fold)}
     onchange={(v) => (fold = Number(v))}
-    ariaLabel="Tunnel performers"
+    ariaLabel={t("composer_demo_tunnel_performers")}
     color="accent"
     size="sm"
   />
@@ -197,18 +203,18 @@
     </div>
     <div class="band-controls">
       <h3 class="band-title">Tunnel</h3>
-      <p class="band-caption">The same movement, repeated around the ring.</p>
+      <p class="band-caption">{t("composer_demo_tunnel_caption")}</p>
       <div class="control-row">
-        <span class="control-label">Performers</span>
+        <span class="control-label">{t("composer_demo_performers")}</span>
         {@render performers()}
       </div>
       <div class="control-row">
-        <span class="control-label">Arrangement</span>
+        <span class="control-label">{t("composer_demo_arrangement")}</span>
         <SegmentedControl
           options={arrangementOptions}
           value={arrangement}
           onchange={(v) => (arrangement = v as Arrangement)}
-          ariaLabel="Tunnel arrangement"
+          ariaLabel={t("composer_demo_tunnel_arrangement")}
           color="accent"
           size="sm"
         />
@@ -220,7 +226,7 @@
     {@render stage()}
 
     <div class="fold-row">
-      <span class="control-label">Performers</span>
+      <span class="control-label">{t("composer_demo_performers")}</span>
       {@render performers()}
     </div>
   </div>

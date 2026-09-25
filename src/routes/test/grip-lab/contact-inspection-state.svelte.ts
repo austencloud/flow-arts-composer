@@ -17,6 +17,11 @@ import {
   CHARACTER_DEFINITIONS,
   type CharacterId,
 } from "$lib/shared/3d/domain/character-model";
+import {
+  DEFAULT_LAB_STAFF_LENGTH_M,
+  MIN_LAB_STAFF_LENGTH_M,
+  MAX_LAB_STAFF_LENGTH_M,
+} from "$lib/shared/3d/performers/staff-isolation";
 
 export type InspectionView = "front" | "side" | "hand";
 export type InspectionHand = "right" | "left";
@@ -25,6 +30,7 @@ interface KeyUndoSnapshot {
   phase: number;
   transition: "all" | "0" | "1" | "2" | "3";
   tolerance: number;
+  staffLengthM: number;
 }
 
 const HISTORY_LIMIT = 100;
@@ -34,6 +40,8 @@ interface InspectionDraft {
   version: 1;
   sourcePoses: string | null;
   savedPoses: string;
+  sourceStaffCm?: string | null;
+  savedStaffCm?: string;
   characterId: CharacterId;
   hand: InspectionHand;
   current: KeyUndoSnapshot;
@@ -54,6 +62,11 @@ function parseSnapshot(value: unknown): KeyUndoSnapshot | null {
     !Number.isFinite(entry.tolerance) ||
     entry.tolerance < 0 ||
     entry.tolerance > 0.2 ||
+    (entry.staffLengthM !== undefined &&
+      (typeof entry.staffLengthM !== "number" ||
+        !Number.isFinite(entry.staffLengthM) ||
+        entry.staffLengthM < MIN_LAB_STAFF_LENGTH_M ||
+        entry.staffLengthM > MAX_LAB_STAFF_LENGTH_M)) ||
     !["all", "0", "1", "2", "3"].includes(String(entry.transition)) ||
     !Array.isArray(entry.keys) ||
     entry.keys.length < 1 ||
@@ -73,6 +86,8 @@ function parseSnapshot(value: unknown): KeyUndoSnapshot | null {
     keys,
     phase: entry.phase,
     tolerance: entry.tolerance,
+    staffLengthM:
+      (entry.staffLengthM as number | undefined) ?? DEFAULT_LAB_STAFF_LENGTH_M,
     transition: entry.transition as KeyUndoSnapshot["transition"],
   };
 }
@@ -111,6 +126,14 @@ export function createContactInspectionState() {
       ? Math.max(0, Math.min(0.2, initialTolerance))
       : 0.13
   );
+  const requestedStaffCm = Number(url.searchParams.get("staffCm"));
+  let staffLengthM = $state(
+    Number.isFinite(requestedStaffCm) &&
+      requestedStaffCm >= 40 &&
+      requestedStaffCm <= 120
+      ? requestedStaffCm / 100
+      : DEFAULT_LAB_STAFF_LENGTH_M
+  );
   let undoKeys = $state<KeyUndoSnapshot[]>([]);
   let redoKeys = $state<KeyUndoSnapshot[]>([]);
   let editInProgress = false;
@@ -129,12 +152,17 @@ export function createContactInspectionState() {
       : ("ch07" as CharacterId)
   );
 
-  function saveDraft(sourcePoses = url.searchParams.get("poses")): void {
+  function saveDraft(
+    sourcePoses = url.searchParams.get("poses"),
+    sourceStaffCm = url.searchParams.get("staffCm")
+  ): void {
     if (typeof window === "undefined") return;
     const draft: InspectionDraft = {
       version: 1,
       sourcePoses,
       savedPoses: encodeTeachingKeys(keys),
+      sourceStaffCm,
+      savedStaffCm: String(Math.round(staffLengthM * 100)),
       characterId,
       hand,
       current: snapshot(),
@@ -161,12 +189,15 @@ export function createContactInspectionState() {
     if (!stored || typeof stored !== "object") return;
     const draft = stored as Partial<InspectionDraft>;
     const requestedPoses = url.searchParams.get("poses");
+    const requestedLength = url.searchParams.get("staffCm");
     if (
       draft.version !== 1 ||
       draft.characterId !== characterId ||
       draft.hand !== hand ||
       (requestedPoses !== draft.sourcePoses &&
         requestedPoses !== draft.savedPoses) ||
+      (requestedLength !== (draft.sourceStaffCm ?? null) &&
+        requestedLength !== (draft.savedStaffCm ?? null)) ||
       !Array.isArray(draft.undo) ||
       !Array.isArray(draft.redo)
     )
@@ -196,6 +227,7 @@ export function createContactInspectionState() {
 
   function persist(skipDraft = false): void {
     const sourcePoses = url.searchParams.get("poses");
+    const sourceStaffCm = url.searchParams.get("staffCm");
     const next = new URL(
       typeof window === "undefined" ? url : window.location.href
     );
@@ -206,11 +238,12 @@ export function createContactInspectionState() {
     next.searchParams.set("segment", transition);
     next.searchParams.set("poses", encodeTeachingKeys(keys));
     next.searchParams.set("drift", tolerance.toFixed(3));
+    next.searchParams.set("staffCm", String(Math.round(staffLengthM * 100)));
     if (playing) next.searchParams.set("play", "1");
     else next.searchParams.delete("play");
     url = next;
     writeUrl(next, { mode: "replace" });
-    if (!skipDraft) saveDraft(sourcePoses);
+    if (!skipDraft) saveDraft(sourcePoses, sourceStaffCm);
   }
 
   function snapshot(): KeyUndoSnapshot {
@@ -219,6 +252,7 @@ export function createContactInspectionState() {
       phase,
       transition,
       tolerance,
+      staffLengthM,
     };
   }
 
@@ -234,6 +268,7 @@ export function createContactInspectionState() {
       entry.phase === phase &&
       entry.transition === transition &&
       entry.tolerance === tolerance &&
+      entry.staffLengthM === staffLengthM &&
       encodeTeachingKeys(entry.keys) === encodeTeachingKeys(keys)
     );
   }
@@ -243,6 +278,7 @@ export function createContactInspectionState() {
     phase = entry.phase;
     transition = entry.transition;
     tolerance = entry.tolerance;
+    staffLengthM = entry.staffLengthM;
   }
 
   function recordChange(before: KeyUndoSnapshot): boolean {
@@ -324,6 +360,9 @@ export function createContactInspectionState() {
     get tolerance() {
       return tolerance;
     },
+    get staffLengthM() {
+      return staffLengthM;
+    },
     get canUndo() {
       return (
         undoKeys.length > 0 ||
@@ -370,6 +409,20 @@ export function createContactInspectionState() {
       playing = false;
       recordChange(before);
       if (!editInProgress) persist();
+    },
+    setStaffLengthM(value: number) {
+      if (!Number.isFinite(value)) return;
+      const before = snapshot();
+      staffLengthM =
+        Math.round(
+          Math.max(
+            MIN_LAB_STAFF_LENGTH_M,
+            Math.min(MAX_LAB_STAFF_LENGTH_M, value)
+          ) * 100
+        ) / 100;
+      playing = false;
+      recordChange(before);
+      persist();
     },
     undo() {
       finishEdit();

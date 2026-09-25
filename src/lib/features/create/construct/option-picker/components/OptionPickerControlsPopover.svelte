@@ -6,6 +6,7 @@
   OptionPickerHeader inside their shared utility tray instead.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { Popover } from "bits-ui";
   import { flyFade } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
@@ -83,7 +84,7 @@
         density={triggerDensity}
         active={open}
         aria-label={triggerLabel}
-        title="Option settings"
+        title={t("create_ui_option_settings")}
       />
     {/snippet}
   </Popover.Trigger>
@@ -109,7 +110,7 @@
               {...props}
               class="controls-popover themed-scrollbar"
               role="dialog"
-              aria-label="Option settings"
+              aria-label={t("create_ui_option_settings")}
               transition:flyFade={{ y: 8, duration: DURATION.normal }}
             >
               <!-- Visible close: the trigger toggle / Escape / backdrop tap all
@@ -120,8 +121,8 @@
                 <button
                   type="button"
                   class="popover-close"
-                  aria-label="Close option settings"
-                  title="Close"
+                  aria-label={t("create_ui_close_option_settings")}
+                  title={t("action_close")}
                   onclick={() => (open = false)}
                 >
                   <i class="fas fa-xmark" aria-hidden="true"></i>

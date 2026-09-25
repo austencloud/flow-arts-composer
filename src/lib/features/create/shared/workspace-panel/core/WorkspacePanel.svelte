@@ -5,6 +5,7 @@
 	Main area for viewing and interacting with the sequence.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getStepOperator } from "$lib/features/create/shared/get-step-operator";
   import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
   import { tryGetCreateModuleContext } from "../../context/create-module-context";
@@ -224,7 +225,7 @@
   </div>
 {:else}
   <div class="workspace-panel loading" data-testid="workspace-panel">
-    <div class="loading-message">Initializing workspace...</div>
+    <div class="loading-message">{t("create_ui_initializing_workspace")}</div>
   </div>
 {/if}
 

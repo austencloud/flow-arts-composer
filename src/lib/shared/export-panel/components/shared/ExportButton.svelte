@@ -14,6 +14,7 @@
   Domain: Export Panel - Export Action
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   let {
     label = "Export",
     loading = false,
@@ -44,7 +45,7 @@
 >
   {#if loading}
     <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-    <span>Exporting...</span>
+    <span>{t("export_exporting")}</span>
   {:else}
     <i class="fas fa-download" aria-hidden="true"></i>
     <span>{label}</span>

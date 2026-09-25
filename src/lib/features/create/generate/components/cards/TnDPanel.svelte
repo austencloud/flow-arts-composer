@@ -14,6 +14,7 @@
   needs equal turns on every beat, so the switch would be a lie.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import GenerationSettingsOverlay from "./GenerationSettingsOverlay.svelte";
   import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import TnDModeGrid from "$lib/features/choreo-card/components/TnDModeGrid.svelte";
@@ -80,7 +81,7 @@
 </script>
 
 <GenerationSettingsOverlay
-  title="Timing and direction"
+  title={t("create_ui_timing_and_direction")}
   {titleId}
   closeLabel="Close timing and direction"
   entrance="none"
@@ -90,7 +91,9 @@
     <div class="tnd-panel">
       <section class="tnd-section" aria-labelledby="tnd-hands-heading">
         <div class="section-head">
-          <h4 class="section-title" id="tnd-hands-heading">Hands</h4>
+          <h4 class="section-title" id="tnd-hands-heading">
+            {t("create_ui_hands")}
+          </h4>
           <span class="section-value"
             >{describeTnDSelection(handRelationship)}</span
           >
@@ -118,7 +121,9 @@
 
       <section class="tnd-section" aria-labelledby="tnd-props-heading">
         <div class="section-head">
-          <h4 class="section-title" id="tnd-props-heading">Props</h4>
+          <h4 class="section-title" id="tnd-props-heading">
+            {t("create_ui_props")}
+          </h4>
           <span class="section-value"
             >{describeTnDSelection(propRelationship)}</span
           >
@@ -144,7 +149,7 @@
 
       {#if startFeasibility?.feasible === false}
         <div class="feasibility-warning" role="status">
-          <strong>No valid starting move</strong>
+          <strong>{t("create_ui_no_valid_starting_move")}</strong>
           <span
             >These choices leave no allowed first step. Try another timing and
             direction, or allow more starting placements in Customize.</span
@@ -154,7 +159,9 @@
 
       <div class="turns-row" aria-labelledby="turn-matching-title">
         <div class="turns-copy">
-          <h4 class="turns-title" id="turn-matching-title">Turn matching</h4>
+          <h4 class="turns-title" id="turn-matching-title">
+            {t("create_ui_turn_matching")}
+          </h4>
           <p class="turns-hint">{turnsHint}</p>
         </div>
         <FilterChipBase

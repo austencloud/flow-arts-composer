@@ -7,6 +7,7 @@
   - Save: extract rotation directions from the current sequence and save
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import * as rotationDirectionPatternManagerModule from "$lib/features/create/shared/services/rotation-direction-pattern-manager";
   import { rotationDirectionPatternState } from "../../state/rotation-direction-pattern-state.svelte.ts";
@@ -141,7 +142,7 @@
       onclick={() => (mode = "apply")}
       aria-label={`Apply patterns to ${targetHandLabel.toLowerCase()} hand${targetHand === "both" ? "s" : ""}`}
     >
-      <span>Apply</span>
+      <span>{t("create_ui_apply")}</span>
       <span class="tab-target">{targetHandLabel}</span>
     </button>
     <button

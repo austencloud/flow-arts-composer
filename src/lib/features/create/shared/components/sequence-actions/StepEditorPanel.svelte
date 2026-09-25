@@ -9,6 +9,7 @@
   Desktop: Side panel with pictograph preview, horizontal controls
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import PropPlacementGrid from "$lib/shared/pictograph/grid/components/PropPlacementGrid.svelte";
   import type { PlacementMotionMove } from "$lib/shared/pictograph/grid/state/prop-placement-motion.svelte";
@@ -499,7 +500,7 @@
   <!-- Header -->
   <header class="panel-header" class:tour-dim={tourHighlight !== "none"}>
     <div class="header-info">
-      <h2>Step Editor</h2>
+      <h2>{t("create_ui_step_editor")}</h2>
       <span class="subtitle">
         {stepLabel}
         {#if cascadeCount > 0 && !isStartPlacementSelected}
@@ -562,8 +563,8 @@
         <button
           class="icon-btn delete"
           onclick={() => onDelete()}
-          aria-label="Delete step"
-          title="Delete this step"
+          aria-label={t("create_ui_delete_step")}
+          title={t("create_ui_delete_this_step")}
         >
           <i class="fa-solid fa-trash" aria-hidden="true"></i>
         </button>
@@ -571,7 +572,7 @@
       <button
         class="icon-btn close"
         onclick={handleClose}
-        aria-label="Close step editor"
+        aria-label={t("create_ui_close_step_editor")}
       >
         <i class="fas fa-times" aria-hidden="true"></i>
       </button>
@@ -647,7 +648,7 @@
       {#if !hasSelection}
         <div class="no-selection">
           <i class="fas fa-hand-pointer" aria-hidden="true"></i>
-          <p>Select a step to edit</p>
+          <p>{t("create_ui_select_a_step_to_edit")}</p>
         </div>
       {:else if isStartPlacementSelected}
         <StartPlacementEditMode

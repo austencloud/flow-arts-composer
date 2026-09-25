@@ -2,10 +2,15 @@
 QuizBackButton - Back navigation button for quizzes
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   let { onclick }: { onclick: () => void } = $props();
 </script>
 
-<button class="back-button" {onclick} aria-label="Back to quiz selector">
+<button
+  class="back-button"
+  {onclick}
+  aria-label={t("learn_ui_back_to_quizzes")}
+>
   <svg
     width="20"
     height="20"

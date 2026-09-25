@@ -12,6 +12,7 @@
   Split out of GalleryDrill.svelte 2026-08-04.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import CategoryTile from "./CategoryTile.svelte";
   import type {
     CategoryEntry,
@@ -44,7 +45,6 @@
     fill = false,
     onselect,
   }: Props = $props();
-
 </script>
 
 <nav
@@ -52,9 +52,9 @@
   class:catalog-layout={layout === "catalog"}
   class:fill
   data-section={section}
-  aria-label="Filter categories"
+  aria-label={t("browse_ui_filter_categories")}
 >
-  {#if layout === "rail"}<h2>Filters</h2>{/if}
+  {#if layout === "rail"}<h2>{t("browse_ui_filters")}</h2>{/if}
   <div class="desktop-filter-grid">
     {#each [...catalog.primaryCategories, ...catalog.secondaryCategories] as entry (entry.key)}
       <!-- The cell is a size container so the TILE can answer the question

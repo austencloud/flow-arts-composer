@@ -16,6 +16,7 @@
     - Layer 3 (Combination Override): Edge cases where blue+red prop combo needs special handling
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getArrowAdjustmentOrchestrator } from "$lib/features/create/shared/get-arrow-adjustment-orchestrator";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
@@ -479,7 +480,7 @@
       class="undo-btn"
       onclick={handleUndo}
       title="Undo last adjustment (Ctrl+Z) - {arrowAdjustmentUndoStack.size} in stack"
-      aria-label="Undo last arrow adjustment"
+      aria-label={t("create_ui_undo_last_arrow_adjustment")}
     >
       <i class="fas fa-undo-alt" aria-hidden="true"></i>
       <span class="undo-count">{arrowAdjustmentUndoStack.size}</span>
@@ -495,7 +496,7 @@
       title={rotationOverrideActive
         ? "Rotation override ON - press X to remove"
         : "Toggle rotation override (X)"}
-      aria-label="Toggle rotation override"
+      aria-label={t("create_ui_toggle_rotation_override")}
       aria-pressed={rotationOverrideActive}
     >
       <i class="fas fa-sync-alt" aria-hidden="true"></i>
@@ -508,8 +509,8 @@
     <button
       class="reset-btn"
       onclick={handleResetToDefault}
-      title="Reset to default (Z)"
-      aria-label="Reset arrow to default position"
+      title={t("create_ui_reset_to_default_z")}
+      aria-label={t("create_ui_reset_arrow_to_default_position")}
       disabled={saveState === "saving"}
     >
       <i class="fas fa-undo" aria-hidden="true"></i>
@@ -520,8 +521,8 @@
   <button
     class="clear-btn"
     onclick={handleClearSelection}
-    title="Deselect arrow (Esc)"
-    aria-label="Deselect arrow"
+    title={t("create_ui_deselect_arrow_esc")}
+    aria-label={t("create_ui_deselect_arrow")}
   >
     <i class="fas fa-times" aria-hidden="true"></i>
   </button>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import type { ExperienceViewMode } from "../../../domain/types";
@@ -72,7 +73,7 @@
   onkeydown={handleKeydown}
   tabindex="0"
   role="application"
-  aria-label={`${title} lesson, use arrow keys to navigate`}
+  aria-label={t("learn_ui_named_lesson_keyboard", { title })}
 >
   <main class="lesson-shell">
     {#if activeMode}
@@ -82,7 +83,7 @@
         aria-labelledby="mode-title"
       >
         <div class="instruction-rail">
-          <p class="eyebrow">Hand time + direction</p>
+          <p class="eyebrow">{t("learn_ui_hand_time_direction")}</p>
           <div class="mode-heading">
             <img src={activeMode.element.iconPath} alt="" />
             <h1 id="mode-title">{activeMode.name}</h1>
@@ -90,11 +91,11 @@
 
           <dl class="mode-properties">
             <div>
-              <dt>Time</dt>
+              <dt>{t("learn_ui_time")}</dt>
               <dd>{activeMode.timing}</dd>
             </div>
             <div>
-              <dt>Direction</dt>
+              <dt>{t("learn_ui_direction")}</dt>
               <dd>{activeMode.direction}</dd>
             </div>
           </dl>
@@ -113,7 +114,7 @@
       </section>
     {:else}
       <section class="summary" aria-labelledby="mode-summary-title">
-        <p class="eyebrow">Complete</p>
+        <p class="eyebrow">{t("learn_ui_complete")}</p>
         <h1 id="mode-summary-title">{title}</h1>
         <div class="mode-recap">
           {#each modes as mode, index (mode.id)}
@@ -139,7 +140,7 @@
         disabled={stepIndex === 0}
       >
         <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
-        <span>Previous</span>
+        <span>{t("learn_ui_previous")}</span>
       </PanelButton>
       <ExperienceProgressIndicator
         currentStep={stepIndex + 1}
@@ -147,12 +148,12 @@
       />
       {#if stepIndex === summaryIndex}
         <PanelButton variant="primary" onclick={complete}>
-          <span>Finish lesson</span>
+          <span>{t("learn_ui_finish_lesson")}</span>
           <i class="fa-solid fa-check" aria-hidden="true"></i>
         </PanelButton>
       {:else}
         <PanelButton variant="primary" onclick={() => goToStep(stepIndex + 1)}>
-          <span>Next</span>
+          <span>{t("learn_ui_next")}</span>
           <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
         </PanelButton>
       {/if}

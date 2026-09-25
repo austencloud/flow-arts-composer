@@ -10,6 +10,7 @@ session.submitAnswer() with the exact QuizAnswerEvent shape gap detection
 depends on.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
   import { detectSingleError } from "$lib/features/learn/services/gap-detector";
@@ -192,7 +193,7 @@ depends on.
   </QuizContainer>
 {:else if questionData && currentPictograph}
   <QuizContainer>
-    <QuizPrompt text="What letter does this pictograph represent?" />
+    <QuizPrompt text={t("learn_ui_prompt_pictograph_letter")} />
 
     <div class="quiz-content">
       <!-- Pictograph card - arrows/props animate smoothly when data changes -->
@@ -224,8 +225,12 @@ depends on.
         {#if showFeedback}
           <QuizFeedbackBanner
             isCorrect={isCorrectAnswer}
-            correctMessage={`Correct! This is "${correctAnswer}"`}
-            incorrectMessage={`The correct letter is "${correctAnswer}"`}
+            correctMessage={t("learn_ui_correct_letter", {
+              letter: correctAnswer,
+            })}
+            incorrectMessage={t("learn_ui_answer_letter", {
+              letter: correctAnswer,
+            })}
             streakCount={session.streak}
           />
           {#if currentGap}

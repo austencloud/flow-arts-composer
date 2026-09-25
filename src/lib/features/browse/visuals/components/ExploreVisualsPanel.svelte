@@ -15,6 +15,7 @@
   a way back to everything.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { Component } from "svelte";
   import { getBrowseNavigationContext } from "$lib/shared/browse/context/browse-navigation-context";
   import type { BrowseVisualType } from "$lib/shared/browse/navigation/browse-route-resolver";
@@ -79,7 +80,6 @@
   const detailArtifactId = $derived(
     inVisuals && location?.view === "detail" ? location.contextId : undefined
   );
-
 
   let byType = $state<Record<string, PublicArtifactEnvelope[]>>({});
   let listLoading = $state(true);
@@ -212,9 +212,8 @@
         }
 
         if (!TunnelDetailPreview) {
-          const loaded = await import(
-            "$lib/features/tunnel-collection/components/TunnelDetailPreview.svelte"
-          );
+          const loaded =
+            await import("$lib/features/tunnel-collection/components/TunnelDetailPreview.svelte");
           if (token !== detailToken) return;
           TunnelDetailPreview = loaded.default;
         }
@@ -296,11 +295,17 @@
       <header class="detail-header">
         <button type="button" class="pill-btn" onclick={backToList}>
           <i class="fas fa-arrow-left" aria-hidden="true"></i>
-          <span>All visuals</span>
+          <span>{t("browse_ui_all_visuals")}</span>
         </button>
         {#if detailEnvelope}
           <div class="detail-title">
-            <h2><TkaLabel text={detailEnvelope.title} darkMode fitToParent={false} /></h2>
+            <h2>
+              <TkaLabel
+                text={detailEnvelope.title}
+                darkMode
+                fitToParent={false}
+              />
+            </h2>
             <p class="detail-byline">
               By {detailEnvelope.ownerDisplayName}
               {#if formatPublished(detailEnvelope.publishedAt)}
@@ -322,7 +327,7 @@
             <span>{detailError}</span>
             <button type="button" class="pill-btn" onclick={backToList}>
               <i class="fas fa-arrow-left" aria-hidden="true"></i>
-              <span>Back to visuals</span>
+              <span>{t("browse_ui_back_to_visuals")}</span>
             </button>
           </div>
         {:else if detailTunnel && TunnelDetailPreview}
@@ -342,16 +347,20 @@
       {:else if listError}
         <div class="panel-status error" role="alert">
           <span>{listError}</span>
-          <button type="button" class="pill-btn" onclick={() => void loadList()}>
+          <button
+            type="button"
+            class="pill-btn"
+            onclick={() => void loadList()}
+          >
             <i class="fas fa-rotate-right" aria-hidden="true"></i>
-            <span>Retry</span>
+            <span>{t("action_retry")}</span>
           </button>
         </div>
       {:else if totalCount === 0}
         <div class="panel-status">
           <i class="fas fa-wand-magic-sparkles empty-icon" aria-hidden="true"
           ></i>
-          <span>No public visuals yet</span>
+          <span>{t("browse_ui_no_public_visuals_yet")}</span>
           <p class="empty-hint">
             Share a tunnel or a mandala publicly and it shows up here for
             everyone.
@@ -369,7 +378,7 @@
             <div class="filter-row">
               <button type="button" class="pill-btn" onclick={showEverything}>
                 <i class="fas fa-arrow-left" aria-hidden="true"></i>
-                <span>All visuals</span>
+                <span>{t("browse_ui_all_visuals")}</span>
               </button>
             </div>
           {/if}
@@ -464,7 +473,6 @@
     opacity: 0.8;
   }
 
-
   .list-shell {
     flex: 1;
     min-height: 0;
@@ -510,7 +518,10 @@
          canvas with a void between them. The band is bound to the artwork it
          actually holds, then centered, so the shelves stay one composition at
          every width. */
-      max-width: min(100%, calc(var(--art-card-max) * var(--total-cols, 3) + 6rem));
+      max-width: min(
+        100%,
+        calc(var(--art-card-max) * var(--total-cols, 3) + 6rem)
+      );
       margin-inline: auto;
     }
   }
@@ -697,7 +708,6 @@
       transform: none;
     }
   }
-
 
   .detail-shell {
     display: flex;

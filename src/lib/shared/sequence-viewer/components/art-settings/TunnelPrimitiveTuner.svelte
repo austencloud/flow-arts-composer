@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import PerformerRing from "../../tunnel/PerformerRing.svelte";
@@ -100,14 +101,14 @@
   const twinChips = $derived([
     {
       key: "mirror",
-      label: "Mirror ×2",
+      label: t("viewer_ui_mirror_x2"),
       icon: "fas fa-arrows-left-right",
       active: controller.mirror,
       set: (v: boolean) => controller.setMirror(v),
     },
     {
       key: "flip",
-      label: "Flip ×2",
+      label: t("viewer_ui_flip_x2"),
       icon: "fas fa-arrows-up-down",
       active: controller.flip,
       set: (v: boolean) => controller.setFlip(v),
@@ -116,14 +117,14 @@
   const motionChips = $derived([
     {
       key: "invert",
-      label: "Invert",
+      label: t("viewer_ui_invert"),
       icon: "fas fa-arrows-spin",
       active: controller.invert,
       set: (v: boolean) => controller.setInvert(v),
     },
     {
       key: "echo",
-      label: "Echo",
+      label: t("viewer_ui_echo"),
       icon: "fas fa-backward",
       active: controller.echo,
       set: (v: boolean) => controller.setEcho(v),
@@ -134,9 +135,11 @@
   // count-multiplier. Only factors >×1 show, so it reads "1 × 2 copies × 2 mirror".
   const tunnelFactors = $derived(
     [
-      controller.fold > 1 ? { x: controller.fold, label: "copies" } : null,
-      controller.mirror ? { x: 2, label: "mirror" } : null,
-      controller.flip ? { x: 2, label: "flip" } : null,
+      controller.fold > 1
+        ? { x: controller.fold, label: t("viewer_ui_copies") }
+        : null,
+      controller.mirror ? { x: 2, label: t("viewer_ui_mirror") } : null,
+      controller.flip ? { x: 2, label: t("viewer_ui_flip") } : null,
     ].filter((f): f is { x: number; label: string } => f !== null)
   );
   // A modified recipe is still its recipe for provenance, but it can also be
@@ -150,12 +153,15 @@
 <!-- SECONDARY: the primitive tuner. Every tunnel is a combination of
          these. Even card grid for the toggles — no ragged wrap. -->
 <button class="back-btn" type="button" onclick={onBack}>
-  <i class="fas fa-chevron-left" aria-hidden="true"></i> Presets
+  <i class="fas fa-chevron-left" aria-hidden="true"></i>
+  {t("create_ui_presets")}
 </button>
 
 {#if controller.presetRecipe}
   <p class="recipe-editing">
-    Editing {controller.presetRecipe.name} recipe{controller.presetRecipeModified ? " · modified" : ""}
+    {t("viewer_ui_editing_named_recipe", {
+      name: controller.presetRecipe.name,
+    })}{controller.presetRecipeModified ? ` · ${t("viewer_ui_modified")}` : ""}
   </p>
 {/if}
 
@@ -168,9 +174,11 @@
   </div>
   <p class="tuner-result">
     <span class="tr-n">{controller.performerCount}</span>
-    {controller.performerCount === 1 ? "performer" : "performers"}
+    {controller.performerCount === 1
+      ? t("viewer_ui_performer")
+      : t("viewer_ui_performers")}
     <span class="tr-mid">·</span>
-    <span class="tr-n">{controller.propCount}</span> props
+    <span class="tr-n">{controller.propCount}</span> Props
   </p>
   {#if tunnelFactors.length}
     <p class="tuner-build">
@@ -180,13 +188,13 @@
       {/each}
     </p>
   {:else}
-    <p class="tuner-build">just you</p>
+    <p class="tuner-build">{t("viewer_ui_just_you")}</p>
   {/if}
 </div>
 
 <!-- Copies (fold) as a ×multiplier of the base performer + Grid toggle. -->
 <div class="prim-row">
-  <span class="row-lbl">Copies</span>
+  <span class="row-lbl">{t("viewer_ui_copies")}</span>
   <div class="seg-wrap">
     <SegmentedControl
       options={foldSegOptions}
@@ -204,11 +212,11 @@
     class:active={controller.gridVisible}
     type="button"
     aria-pressed={controller.gridVisible}
-    aria-label="Toggle grid"
+    aria-label={t("viewer_ui_toggle_grid")}
     data-ghost="safe"
     data-ghost-kind="view-toggle"
-    data-ghost-label="Toggle grid"
-    title="Grid"
+    data-ghost-label={t("viewer_ui_toggle_grid")}
+    title={t("generator_grid")}
     onclick={() =>
       changeSetting(
         "art_tunnel",
@@ -225,7 +233,8 @@
 <!-- Add twins — each doubles the cast (a reflected copy of every performer). -->
 <div class="prim-group">
   <span class="group-lbl"
-    >Add twins <span class="group-hint">— each doubles</span></span
+    >{t("viewer_ui_add_twins")}
+    <span class="group-hint">— {t("viewer_ui_each_doubles")}</span></span
   >
   <div class="prim-chip-grid">
     {#each twinChips as chip (chip.key)}
@@ -249,7 +258,8 @@
          (canon offset) lives here: arm k shows the sequence k×N steps ahead. -->
 <div class="prim-group">
   <span class="group-lbl"
-    >Motion <span class="group-hint">— same count</span></span
+    >{t("viewer_ui_motion")}
+    <span class="group-hint">— {t("viewer_ui_same_count")}</span></span
   >
   <div class="prim-chip-grid">
     {#each motionChips as chip (chip.key)}
@@ -268,12 +278,12 @@
     {/each}
   </div>
   <div class="prim-row">
-    <span class="row-lbl">Stagger</span>
+    <span class="row-lbl">{t("viewer_ui_stagger")}</span>
     <div class="stepper">
       <button
         type="button"
         class="step-btn"
-        aria-label="Less stagger"
+        aria-label={t("viewer_ui_less_stagger")}
         disabled={controller.staggerSteps <= 0}
         onclick={() =>
           changeSetting(
@@ -290,7 +300,7 @@
       <button
         type="button"
         class="step-btn"
-        aria-label="More stagger"
+        aria-label={t("viewer_ui_more_stagger")}
         disabled={controller.staggerSteps >= controller.staggerMax}
         onclick={() =>
           changeSetting(
@@ -317,19 +327,19 @@
         type="text"
         bind:value={presetName}
         maxlength="40"
-        placeholder="Name this tunnel"
-        aria-label="Preset name"
+        placeholder={t("viewer_ui_name_this_tunnel")}
+        aria-label={t("viewer_ui_preset_name")}
       />
       <button
         data-save-shortcut
         class="save-confirm"
         type="button"
-        onclick={saveCurrentPreset}>Save</button
+        onclick={saveCurrentPreset}>{t("browse_save")}</button
       >
       <button
         class="save-cancel"
         type="button"
-        aria-label="Cancel save"
+        aria-label={t("viewer_ui_cancel_save")}
         onclick={cancelSavingPreset}
       >
         <i class="fas fa-xmark" aria-hidden="true"></i>
@@ -337,7 +347,8 @@
     </div>
   {:else}
     <button class="save-preset-btn" type="button" onclick={startSavingPreset}>
-      <i class="fas fa-star" aria-hidden="true"></i> Save as preset
+      <i class="fas fa-star" aria-hidden="true"></i>
+      {t("viewer_ui_save_as_preset")}
     </button>
   {/if}
 {/if}

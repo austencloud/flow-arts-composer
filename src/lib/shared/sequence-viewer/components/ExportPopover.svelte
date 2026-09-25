@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import {
     getExportOptionsState,
     type VideoFps,
@@ -111,7 +112,7 @@
   </div>
 
   <div class="row">
-    <div class="row-label">Quality</div>
+    <div class="row-label">{t("viewer_ui_quality")}</div>
     <div class="chips">
       {#each QUALITIES as q (q)}
         <button
@@ -159,7 +160,7 @@
           <button
             class="step-btn"
             onclick={() => changeLoopCount(-1)}
-            aria-label="Decrease loop count"
+            aria-label={t("viewer_ui_decrease_loop_count")}
             disabled={opts.videoLoopCount <= 1}
           >
             <i class="fas fa-minus"></i>
@@ -168,7 +169,7 @@
           <button
             class="step-btn"
             onclick={() => changeLoopCount(1)}
-            aria-label="Increase loop count"
+            aria-label={t("viewer_ui_increase_loop_count")}
             disabled={opts.videoLoopCount >= 10}
           >
             <i class="fas fa-plus"></i>

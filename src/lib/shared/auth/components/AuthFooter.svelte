@@ -7,6 +7,7 @@
 -->
 <script lang="ts">
   import LegalSheet from "../../legal/components/LegalSheet.svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte";
 
   // Local sheet state
   let sheetOpen = $state(false);
@@ -43,13 +44,13 @@
 
 <footer class="auth-footer">
   <p class="auth-footer__text">
-    By continuing, you agree to our
+    {t("auth_footer_agree")}
     <a href="/terms" class="auth-footer__link" onclick={handleTermsClick}
-      >Terms of Service</a
+      >{t("auth_footer_terms")}</a
     >
-    and
+    {t("auth_footer_and")}
     <a href="/privacy" class="auth-footer__link" onclick={handlePrivacyClick}
-      >Privacy Policy</a
+      >{t("auth_footer_privacy")}</a
     >
   </p>
 </footer>

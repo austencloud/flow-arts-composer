@@ -150,11 +150,11 @@ Supports two navigation modes:
           href={experience.reference?.href ??
             `/guide/level-1/${experience.guideSlug}`}
           aria-label={experience.reference
-            ? `Read the ${experience.reference.label} reference`
-            : `Read ${experience.guideLabel} in the written Guide`}
+            ? t("learn_ui_read_reference", { name: experience.reference.label })
+            : t("learn_ui_read_in_guide", { name: experience.guideLabel })}
         >
           <i class="fa-solid fa-book-open" aria-hidden="true"></i>
-          <span>Read this topic</span>
+          <span>{t("learn_ui_read_topic")}</span>
         </a>
       {/if}
 
@@ -187,7 +187,9 @@ Supports two navigation modes:
     {#key `${concept.id}-${viewMode}`}
       {#if experience}
         {#await experience.load()}
-          <div class="lesson-loading" role="status">Loading lesson…</div>
+          <div class="lesson-loading" role="status">
+            {t("learn_ui_loading_lesson")}
+          </div>
         {:then loaded}
           {@const Experience = loaded.default}
           <Experience

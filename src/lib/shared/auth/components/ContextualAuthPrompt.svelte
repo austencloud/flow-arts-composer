@@ -8,6 +8,8 @@
   import LastUsedBadge from "$lib/shared/components/LastUsedBadge.svelte";
   import SocialAuthCompact from "./SocialAuthCompact.svelte";
   import { growFade } from "$lib/shared/transitions/motion";
+  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { authPromptCopy } from "../domain/auth-prompt-copy";
 
   interface Props {
     content: AuthPromptContent;
@@ -85,7 +87,7 @@
         class="close-button"
         type="button"
         onclick={onClose}
-        aria-label="Close"
+        aria-label={t("common_close")}
       >
         <i class="fas fa-times" aria-hidden="true"></i>
       </button>
@@ -96,17 +98,17 @@
     {#if compact}
       <div class="fac-signature">
         <img src="/branding/logo.jpg" alt="" width="28" height="28" />
-        {#if encoreOffer}<span>One-time extension</span>{/if}
+        {#if encoreOffer}<span>{t("auth_one_time_extension")}</span>{/if}
       </div>
     {/if}
-    <h2 id={titleId}>{content.title}</h2>
-    <p id={descriptionId}>{content.body}</p>
+    <h2 id={titleId}>{authPromptCopy(content.title)}</h2>
+    <p id={descriptionId}>{authPromptCopy(content.body)}</p>
   </div>
 
   <div class="auth-methods">
     {#if compact && encoreOffer}
       <button class="encore-button" type="button" onclick={onAcceptEncore}>
-        Keep going
+        {t("auth_keep_going")}
         <i class="fas fa-arrow-right" aria-hidden="true"></i>
       </button>
     {:else if compact}
@@ -117,7 +119,9 @@
         aria-expanded={showOtherProviders}
         onclick={() => (showOtherProviders = !showOtherProviders)}
       >
-        {showOtherProviders ? "Fewer options" : "More sign-in options"}
+        {showOtherProviders
+          ? t("auth_fewer_options")
+          : t("auth_more_sign_in_options")}
       </button>
       {#if showOtherProviders}
         <div transition:growFade>
@@ -126,12 +130,14 @@
       {/if}
     {:else if inAppBrowser}
       <div class="email-flow">
-        <div class="email-divider"><span>Continue by email</span></div>
+        <div class="email-divider">
+          <span>{t("auth_continue_by_email")}</span>
+        </div>
         <EmailAuthTabs bind:mode {compact} />
       </div>
 
       <p class="provider-warning">
-        Social sign-in is blocked inside this browser.
+        {t("auth_social_blocked_browser")}
       </p>
       <SocialAuthCompact {mode} {onFacebookAuth} />
     {:else if showEmailAuth}
@@ -142,7 +148,7 @@
           onclick={() => (showEmailAuth = false)}
         >
           <i class="fas fa-arrow-left" aria-hidden="true"></i>
-          Other sign-in options
+          {t("auth_other_sign_in_options")}
         </button>
         <EmailAuthTabs bind:mode {compact} />
       </div>
@@ -158,14 +164,14 @@
             type="button"
             onclick={() => (showEmailAuth = true)}
             aria-label={lastUsedEmail
-              ? "Continue with email, last used on this device"
-              : "Continue with email"}
+              ? t("auth_continue_email_last_used")
+              : t("auth_continue_email")}
           >
             {#if lastUsedEmail}
               <LastUsedBadge />
             {/if}
             <i class="fas fa-envelope" aria-hidden="true"></i>
-            <span>Continue with email</span>
+            <span>{t("auth_continue_email")}</span>
           </button>
         </div>
       </div>
@@ -179,11 +185,11 @@
   {#if !encoreOffer && (!compact || showOtherProviders)}
     <button class="mode-toggle" type="button" onclick={toggleMode}>
       {#if mode === "signup"}
-        <span>Already have an account?</span>
-        <strong>Sign in</strong>
+        <span>{t("auth_already_have_account")}</span>
+        <strong>{t("auth_sign_in")}</strong>
       {:else}
-        <span>New here?</span>
-        <strong>Create an account</strong>
+        <span>{t("auth_new_here")}</span>
+        <strong>{t("auth_create_account")}</strong>
       {/if}
     </button>
   {/if}

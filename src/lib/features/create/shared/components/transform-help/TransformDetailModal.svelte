@@ -5,6 +5,7 @@
   Shows visual data mapping + interactive pictograph example.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import SwapIcon from "$lib/shared/icons/SwapIcon.svelte";
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
   import { onMount } from "svelte";
@@ -177,7 +178,11 @@
         <h2 class="header-title">{action?.name ?? "Action"}</h2>
         <p class="header-subtitle">{action?.shortDesc ?? ""}</p>
       </div>
-      <button class="close-btn" onclick={onClose} aria-label="Close help">
+      <button
+        class="close-btn"
+        onclick={onClose}
+        aria-label={t("create_ui_close_help")}
+      >
         <i class="fas fa-times" aria-hidden="true"></i>
       </button>
     </div>
@@ -199,7 +204,7 @@
             {#if isLoading}
               <div class="loading-state" role="status" aria-live="polite">
                 <ProgressRing percent={-1} size={32} strokeWidth={3} />
-                <span class="sr-only">Loading example...</span>
+                <span class="sr-only">{t("create_ui_loading_example")}</span>
               </div>
             {:else if displayedPictograph}
               <PictographContainer pictographData={displayedPictograph} />
@@ -222,12 +227,12 @@
               {:else}
                 <i class="fas {action?.icon}" aria-hidden="true"></i>
               {/if}
-              <span>Apply</span>
+              <span>{t("create_ui_apply")}</span>
             </button>
 
             <button class="action-btn shuffle" onclick={loadNewExample}>
               <i class="fas fa-shuffle" aria-hidden="true"></i>
-              <span>New</span>
+              <span>{t("create_ui_new")}</span>
             </button>
           </div>
         </div>

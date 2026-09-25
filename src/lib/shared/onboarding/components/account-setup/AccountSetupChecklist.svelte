@@ -3,6 +3,7 @@
     logAccountSetupTaskSelected,
     logAccountSetupViewed,
   } from "$lib/shared/analytics/services/onboarding-events";
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import type {
     AccountSetupState,
     AccountSetupTask,
@@ -51,6 +52,49 @@
     });
     onTaskAction(task.id);
   }
+
+  function taskLabel(task: AccountSetupTask): string {
+    return t(
+      (
+        {
+          "display-name": "onboarding_display_name",
+          "profile-photo": "onboarding_profile_photo",
+          props: "onboarding_props_you_spin",
+          theme: "tab_settings_theme",
+        } as const
+      )[task.id]
+    );
+  }
+
+  function taskDescription(task: AccountSetupTask): string {
+    return t(
+      (
+        {
+          "display-name": "onboarding_display_name_desc",
+          "profile-photo": "onboarding_profile_photo_desc",
+          props: "onboarding_props_desc",
+          theme: "onboarding_theme_desc",
+        } as const
+      )[task.id]
+    );
+  }
+
+  function taskAction(task: AccountSetupTask): string {
+    if (task.complete)
+      return t(
+        task.id === "display-name" ? "onboarding_edit" : "onboarding_change"
+      );
+    return t(
+      (
+        {
+          "display-name": "onboarding_add_name",
+          "profile-photo": "onboarding_add_photo",
+          props: "onboarding_choose_props",
+          theme: "onboarding_choose",
+        } as const
+      )[task.id]
+    );
+  }
 </script>
 
 {#if !state.loading && state.available && (variant !== "prompt" || !state.isComplete)}
@@ -62,19 +106,24 @@
   >
     <header class="setup-header">
       <div class="header-copy">
-        {#if variant === "standard"}<p class="eyebrow">Account setup</p>{/if}
+        {#if variant === "standard"}<p class="eyebrow">
+            {t("onboarding_account_setup")}
+          </p>{/if}
         <h2 id="account-setup-title">
           {variant === "prompt"
-            ? "Finish your account"
+            ? t("onboarding_finish_account")
             : state.isComplete
-              ? "Your account is set"
-              : "Finish setting up your account"}
+              ? t("onboarding_account_set")
+              : t("onboarding_finish_setting_up")}
         </h2>
       </div>
       <span class="progress-count">
         {variant === "prompt"
-          ? `${remainingTasks.length} ${remainingTasks.length === 1 ? "item" : "items"} left`
-          : `${state.completedCount} of ${state.totalCount} done`}
+          ? t("onboarding_items_left", { count: remainingTasks.length })
+          : t("onboarding_progress_done", {
+              done: state.completedCount,
+              total: state.totalCount,
+            })}
       </span>
     </header>
 
@@ -82,7 +131,7 @@
       <div
         class="progress-track"
         role="progressbar"
-        aria-label="Account setup progress"
+        aria-label={t("onboarding_setup_progress")}
         aria-valuemin="0"
         aria-valuemax={state.totalCount}
         aria-valuenow={state.completedCount}
@@ -93,17 +142,20 @@
 
     <p class="completion-status" role="status" aria-live="polite">
       {variant === "prompt"
-        ? `${remainingTasks.length} account setup ${remainingTasks.length === 1 ? "task remains" : "tasks remain"}.`
+        ? t("onboarding_tasks_remain", { count: remainingTasks.length })
         : state.isComplete
-          ? "Account setup complete."
-          : `${state.completedCount} of ${state.totalCount} account setup tasks complete.`}
+          ? t("onboarding_setup_complete")
+          : t("onboarding_tasks_complete", {
+              done: state.completedCount,
+              total: state.totalCount,
+            })}
     </p>
 
     {#if state.saveError}
       <div class="save-error" role="status">
-        <span>{state.saveError}</span>
+        <span>{t("onboarding_save_failed")}</span>
         <button type="button" onclick={() => void state.retrySave()}
-          >Retry</button
+          >{t("action_retry")}</button
         >
       </div>
     {/if}
@@ -114,16 +166,16 @@
           class="task-row"
           class:complete={task.complete}
           onclick={() => handleTaskAction(task)}
-          aria-label={`${task.actionLabel}: ${task.label}`}
+          aria-label={`${taskAction(task)}: ${taskLabel(task)}`}
         >
           <span class="task-status" aria-hidden="true">
             <i class="fas {task.complete ? 'fa-check' : task.icon}"></i>
           </span>
           <span class="task-copy">
-            <span class="task-label">{task.label}</span>
-            <span class="task-description">{task.description}</span>
+            <span class="task-label">{taskLabel(task)}</span>
+            <span class="task-description">{taskDescription(task)}</span>
           </span>
-          <span class="task-action">{task.actionLabel}</span>
+          <span class="task-action">{taskAction(task)}</span>
         </button>
       {/each}
     </div>

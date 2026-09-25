@@ -1,5 +1,6 @@
 <!-- StepGrid.svelte - Responsive step grid with display animations -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
@@ -782,7 +783,7 @@
   {#if steps.length === 0 && (!startPlacement || startPlacement.isBlank)}
     <div class="empty-grid-message">
       <span class="empty-icon">📋</span>
-      <span class="empty-text">No sequence loaded</span>
+      <span class="empty-text">{t("empty_no_sequence_loaded")}</span>
     </div>
   {:else}
     <WorkspaceGrid

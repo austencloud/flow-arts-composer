@@ -1,5 +1,6 @@
 <!-- Persistent Account-page summary of public prop identity. -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
   import type { PropPreferenceState } from "$lib/shared/community/state/prop-preference-state.svelte";
@@ -44,11 +45,12 @@
       </span>
       <span>
         <span class="identity-title" id="flow-identity-title"
-          >Flow identity</span
+          >{t("nav_ui_flow_identity")}</span
         >
         <span class="identity-description">
-          Shown on your public creator profile and used for prop-based
-          discovery.
+          {t(
+            "nav_ui_shown_on_your_public_creator_profile_and_used_for_prop_based_discovery"
+          )}
         </span>
       </span>
     </span>
@@ -57,18 +59,18 @@
       variant="secondary"
       onclick={onOpenPropEditor}
       disabled={loading || propState === null}
-      ariaLabel="Change props you spin and Profile prop"
+      ariaLabel={t("nav_ui_change_props_you_spin_and_profile_prop")}
     >
       <i class="fas fa-pen" aria-hidden="true"></i>
-      <span>Change</span>
+      <span>{t("nav_ui_change")}</span>
     </PanelButton>
   </header>
 
   <div class="identity-values">
     <div class="identity-value">
-      <span class="value-label">Props you spin</span>
+      <span class="value-label">{t("nav_ui_props_you_spin")}</span>
       {#if loading}
-        <span class="value-empty">Loading…</span>
+        <span class="value-empty">{t("nav_ui_loading")}</span>
       {:else if selectedProps.length > 0}
         <span
           class="prop-list"
@@ -88,18 +90,22 @@
             </span>
           {/each}
           {#if selectedProps.length > 5}
-            <span class="more-count">+{selectedProps.length - 5} more</span>
+            <span class="more-count"
+              >{t("nav_more_count", { count: selectedProps.length - 5 })}</span
+            >
           {/if}
         </span>
       {:else}
-        <span class="value-empty">Not set</span>
+        <span class="value-empty">{t("profile_pronouns_not_set")}</span>
       {/if}
     </div>
 
     <div class="identity-value profile-prop-value">
-      <span class="value-label">Profile prop <span>Optional</span></span>
+      <span class="value-label"
+        >{t("nav_ui_profile_prop")} <span>{t("nav_ui_optional")}</span></span
+      >
       {#if loading}
-        <span class="value-empty">Loading…</span>
+        <span class="value-empty">{t("nav_ui_loading")}</span>
       {:else if effectiveProfileProp}
         {@const label = getProfilePropLabel(effectiveProfileProp)}
         <span class="profile-prop">
@@ -112,13 +118,15 @@
           </span>
           <span>{label}</span>
           {#if !explicitProfileProp && selectedProps.length === 1}
-            <span class="implicit-note">Your only selected prop</span>
+            <span class="implicit-note"
+              >{t("nav_ui_your_only_selected_prop")}</span
+            >
           {/if}
         </span>
       {:else if selectedProps.length > 1}
-        <span class="value-empty">No preference</span>
+        <span class="value-empty">{t("nav_ui_no_preference")}</span>
       {:else}
-        <span class="value-empty">Not set</span>
+        <span class="value-empty">{t("profile_pronouns_not_set")}</span>
       {/if}
     </div>
   </div>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * ClipInspector - Container for clip property editor panel
    *
@@ -127,13 +128,13 @@
     <div class="inspector-header">
       <div class="header-title">
         <i class="fa-solid fa-sliders" aria-hidden="true"></i>
-        <span>Clip Inspector</span>
+        <span>{t("compose_ui_clip_inspector")}</span>
       </div>
       <button
         class="close-btn"
         onclick={() => getState().closeClipInspector()}
-        title="Close inspector"
-        aria-label="Close inspector"
+        title={t("compose_ui_close_inspector")}
+        aria-label={t("compose_ui_close_inspector")}
       >
         <i class="fa-solid fa-xmark" aria-hidden="true"></i>
       </button>

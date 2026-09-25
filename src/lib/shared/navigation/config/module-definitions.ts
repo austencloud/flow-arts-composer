@@ -6,6 +6,7 @@
  */
 
 import type { ModuleDefinition, ModuleId } from "../domain/types";
+import { t } from "../../i18n/i18n.svelte";
 import {
   CREATE_TABS,
   LEARN_TABS,
@@ -151,10 +152,18 @@ export const MODULE_DEFINITIONS: ModuleDefinition[] = [
     isMain: true,
     sections: CREATE_TABS,
     home: {
-      label: "Create",
-      optionLabel: "All methods",
-      ariaLabel: "All creation methods",
-      description: "Choose how you want to build your next sequence.",
+      get label() {
+        return t("module_create");
+      },
+      get optionLabel() {
+        return t("nav_all_methods");
+      },
+      get ariaLabel() {
+        return t("nav_all_creation_methods");
+      },
+      get description() {
+        return t("nav_creation_method_description");
+      },
       icon: '<i class="fas fa-border-all" aria-hidden="true"></i>',
     },
   },

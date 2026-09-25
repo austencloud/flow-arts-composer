@@ -13,6 +13,7 @@
   (it holds the analysis state); this view renders the options body only.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import LOOPPicker from "$lib/shared/components/loop-picker/LOOPPicker.svelte";
   import BridgePictographGrid from "$lib/shared/components/loop-picker/BridgePictographGrid.svelte";
   import type { Letter } from "$lib/shared/foundation/domain/models/letter";
@@ -79,19 +80,19 @@
 {#if !analysis || (!isDirectlyLoopable && circularizationOptions.length === 0)}
   <div class="no-options">
     <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
-    <p>No extension patterns available for this sequence.</p>
+    <p>{t("create_ui_no_extension_patterns_available_for_this_sequence")}</p>
   </div>
 {:else}
   <div class="options-container">
     <div class="status-header">
       <div class="placement-info">
         <div class="placement-row">
-          <span class="label">Start</span>
+          <span class="label">{t("create_ui_start")}</span>
           <span class="placement">{analysis.startPlacement}</span>
         </div>
         <span class="placement-arrow" aria-hidden="true">→</span>
         <div class="placement-row">
-          <span class="label">End</span>
+          <span class="label">{t("create_ui_end")}</span>
           <span class="placement">{analysis.currentEndPlacement}</span>
         </div>
       </div>
@@ -111,7 +112,7 @@
             >Returns to {analysis.currentEndPlacement} after
             {orientationRepeat?.count ?? 8} repeats.</span
           >
-          <span>Placement and orientation both close.</span>
+          <span>{t("create_ui_placement_and_orientation_both_close")}</span>
         </span>
         <span class="status-live">{statusLine}</span>
       </p>

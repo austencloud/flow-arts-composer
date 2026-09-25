@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { calculateOptionInteractionHintPosition } from "../services/option-interaction-hint-position";
   import { safe } from "$lib/shared/attract/domain/annotations";
 
@@ -179,13 +180,17 @@
   style:top={`${position.top}px`}
   style:left={`${position.left}px`}
   style:--hint-arrow-left={`${position.arrowLeft}px`}
-  aria-label="Option controls"
+  aria-label={t("create_ui_option_controls")}
 >
   <span class="hint-copy">
-    <strong>Tap to add</strong>
-    <span>Hold to preview</span>
+    <strong>{t("create_ui_tap_to_add")}</strong>
+    <span>{t("create_ui_hold_to_preview")}</span>
   </span>
-  <button type="button" onclick={onDismiss} aria-label="Dismiss option hint">
+  <button
+    type="button"
+    onclick={onDismiss}
+    aria-label={t("create_ui_dismiss_option_hint")}
+  >
     <i class="fa-solid fa-xmark" aria-hidden="true"></i>
   </button>
 </aside>

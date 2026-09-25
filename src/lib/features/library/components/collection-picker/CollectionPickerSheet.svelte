@@ -10,6 +10,7 @@ Mounted once by CollectionPickerHost at app level, never by a card — see
 collection-picker-state for why.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount, onDestroy } from "svelte";
   import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
@@ -75,12 +76,12 @@ collection-picker-state for why.
       type="button"
       class="close-button"
       onclick={handleClose}
-      aria-label="Close collection picker"
+      aria-label={t("library_ui_close_collection_picker")}
     >
       <i class="fas fa-times" aria-hidden="true"></i>
     </button>
 
-    <h2 class="sheet-title">Collections</h2>
+    <h2 class="sheet-title">{t("tab_library_collections")}</h2>
 
     <div class="sheet-body">
       <CollectionPickerContent

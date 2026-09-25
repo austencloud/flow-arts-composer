@@ -44,6 +44,7 @@
   import { analyticsRoute } from "$lib/shared/analytics/analytics-context";
   import { getInstagramAuthErrorMessage } from "$lib/shared/auth/services/instagram-auth";
   import InAppEscapeControls from "./InAppEscapeControls.svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte";
 
   let { mode = "signin", onFacebookAuth } = $props<{
     mode?: "signin" | "signup";
@@ -92,7 +93,7 @@
   // AuthPrompt both render this component first, so "above" would be wrong
   // from two of the three hosts.
   function blockedProviderMessage(provider: string): string {
-    return `${provider} blocks sign-in inside this browser. Use Email code, or open this page in ${escapeTarget}.`;
+    return t("auth_provider_blocked", { provider, browser: escapeTarget });
   }
 
   // The escape action (button label + fired URL) for this environment. Revealed
@@ -279,19 +280,19 @@
       disabled={isLoading}
       aria-expanded={showEscapeNote}
       aria-controls="inapp-escape-note"
-      aria-label={`Continue with Google${
-        lastMethod === "google" ? ", last used on this device" : ""
-      }`}
+      aria-label={lastMethod === "google"
+        ? t("auth_continue_google_last_used")
+        : t("auth_continue_google")}
     >
       {#if lastMethod === "google"}
         <LastUsedBadge />
       {/if}
       {#if loadingProvider === "google"}
         <ProgressRing percent={-1} size={24} strokeWidth={2} />
-        Signing in...
+        {t("auth_signing_in")}
       {:else}
         <GoogleIcon />
-        Continue with Google
+        {t("auth_continue_google")}
       {/if}
     </button>
     {#if showFacebook}
@@ -299,15 +300,15 @@
         class="social-compact-button social-compact-button--facebook"
         onclick={handleFacebookClick}
         disabled={isLoading}
-        aria-label={`Continue with Facebook${
-          lastMethod === "facebook" ? ", last used on this device" : ""
-        }`}
+        aria-label={lastMethod === "facebook"
+          ? t("auth_continue_facebook_last_used")
+          : t("auth_continue_facebook")}
       >
         {#if lastMethod === "facebook"}
           <LastUsedBadge />
         {/if}
         <FacebookIcon />
-        Continue with Facebook
+        {t("auth_continue_facebook")}
       </button>
     {/if}
     {#if showInstagram}
@@ -316,26 +317,26 @@
         onclick={handleInstagramClick}
         disabled={isLoading}
         aria-describedby="instagram-account-requirement"
-        aria-label={`Continue with Instagram, creator or business account required${
-          lastMethod === "instagram" ? ", last used on this device" : ""
-        }`}
+        aria-label={lastMethod === "instagram"
+          ? t("auth_continue_instagram_requirement_last_used")
+          : t("auth_continue_instagram_requirement")}
       >
         {#if lastMethod === "instagram"}
           <LastUsedBadge />
         {/if}
         {#if loadingProvider === "instagram"}
           <ProgressRing percent={-1} size={24} strokeWidth={2} />
-          Opening...
+          {t("auth_opening")}
         {:else}
           <i class="fab fa-instagram" aria-hidden="true"></i>
-          Continue with Instagram
+          {t("auth_continue_instagram")}
         {/if}
       </button>
     {/if}
   </div>
   {#if showInstagram}
     <p id="instagram-account-requirement" class="provider-note">
-      Instagram requires a creator or business account.
+      {t("auth_instagram_requirement")}
     </p>
   {/if}
   {#if providerError}
@@ -346,9 +347,9 @@
       class="escape-note"
       id="inapp-escape-note"
       role="region"
-      aria-label="Open this page in your browser"
+      aria-label={t("auth_open_in_browser")}
     >
-      <p class="escape-note-lead">Or open this page in your browser:</p>
+      <p class="escape-note-lead">{t("auth_or_open_in_browser")}</p>
       <InAppEscapeControls
         target={escapeAction}
         route={analyticsRoute()}

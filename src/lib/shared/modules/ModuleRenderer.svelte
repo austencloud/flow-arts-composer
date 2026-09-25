@@ -29,7 +29,11 @@
     resolveOptimisticAccessTier,
   } from "../auth/domain/access-tier";
   import { readBootSnapshot } from "$lib/shared/application/services/boot-snapshot";
-  import { isModuleAccessible } from "../auth/domain/guest-access-config";
+  import {
+    isModuleAccessible,
+    isTabAccessible,
+  } from "../auth/domain/guest-access-config";
+  import { navigationState } from "../navigation/state/navigation-state.svelte";
   import { isPremiumOrAbove } from "../auth/domain/models/user-role";
   import AuthNudge from "../auth/components/AuthNudge.svelte";
   import type { AuthNudgeTrigger } from "../auth/domain/auth-nudge-trigger";
@@ -337,7 +341,11 @@
   );
 
   const isModuleBlocked = $derived(
-    activeModule ? !isModuleAccessible(activeModule, accessTier) : false
+    activeModule
+      ? !isModuleAccessible(activeModule, accessTier) ||
+          (activeModule === "settings" &&
+            !isTabAccessible("settings", navigationState.activeTab, accessTier))
+      : false
   );
 
   function getModuleNudgeTrigger(moduleId: string): AuthNudgeTrigger {

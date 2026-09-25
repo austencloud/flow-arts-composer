@@ -15,6 +15,7 @@
   that leak column layout into unprefixed names.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, type Snippet } from "svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import { DURATION } from "$lib/shared/transitions/transitions";
@@ -584,8 +585,8 @@
       <input
         type="search"
         bind:value={query}
-        placeholder="Search sequences…"
-        aria-label="Search sequences"
+        placeholder={t("browse_ui_search_sequences")}
+        aria-label={t("browse_search_sequences")}
       />
     </form>
   {/if}

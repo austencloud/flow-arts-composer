@@ -3,11 +3,12 @@ QuizLoadingState - Loading spinner for quizzes
 -->
 <script lang="ts">
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
 </script>
 
 <div class="loading-state" role="status" aria-live="polite" aria-busy="true">
   <ProgressRing percent={-1} size={32} strokeWidth={3} />
-  <p class="loading-text">Loading quiz...</p>
+  <p class="loading-text">{t("learn_ui_loading_quiz")}</p>
 </div>
 
 <style>

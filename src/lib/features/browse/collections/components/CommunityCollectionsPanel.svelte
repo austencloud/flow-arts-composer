@@ -12,6 +12,7 @@ into a first-class sub-tab. List ↔ detail uses the Browse route owner so publi
 collections have stable URLs and ordinary browser back/forward behavior.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import {
     communityCollectionsState,
@@ -76,7 +77,7 @@ collections have stable URLs and ordinary browser back/forward behavior.
 {:else}
   <div class="discover-list">
     <header class="list-header">
-      <h2 class="list-title">Collections</h2>
+      <h2 class="list-title">{t("tab_library_collections")}</h2>
     </header>
 
     {#if loading && items.length === 0}

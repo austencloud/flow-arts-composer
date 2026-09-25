@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getOfflineCacheOrchestrator } from "$lib/shared/offline/get-offline-cache-orchestrator";
   import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
@@ -74,13 +75,13 @@
     value: ExploreSection;
     label: string;
   }> = [
-    { value: "sequences", label: "Sequences" },
-    { value: "collections", label: "Collections" },
+    { value: "sequences", label: t("browse_ui_sequences_tab") },
+    { value: "collections", label: t("browse_ui_collections_tab") },
     // Visuals is promotion-gated (Browse Phase 3): the publication pipeline
     // ships unconditionally, but the public destination appears only once the
     // gate opens. Unpromoted deep links fall back to Sequences below.
     ...(exploreVisualsVisible()
-      ? [{ value: "visuals" as const, label: "Visuals" }]
+      ? [{ value: "visuals" as const, label: t("browse_ui_visuals_tab") }]
       : []),
   ];
 
@@ -659,13 +660,13 @@
           <div class="explore-shell">
             <header class="explore-header">
               <div class="explore-heading">
-                <span class="explore-eyebrow">Explore</span>
+                <span class="explore-eyebrow">{t("browse_ui_explore")}</span>
                 <h1>
                   {exploreSection === "sequences"
-                    ? "Find a sequence"
+                    ? t("browse_ui_find_a_sequence")
                     : exploreSection === "collections"
-                      ? "Community collections"
-                      : "Community visuals"}
+                      ? t("browse_ui_community_collections")
+                      : t("browse_ui_community_visuals")}
                 </h1>
               </div>
               <div class="explore-switcher">
@@ -689,7 +690,7 @@
                   }}
                   color="accent"
                   semantics="tabs"
-                  ariaLabel="Explore content type"
+                  ariaLabel={t("browse_ui_explore_content_type")}
                 />
               </div>
             </header>
@@ -816,11 +817,16 @@
     white-space: nowrap;
   }
 
-  /* Three short labels, so the box grows with the canvas but never stretches
-     into a progress bar (visual-verification-mandatory.md). */
+  /* Reserve room for translated labels while keeping the control bounded. */
   .explore-switcher {
-    width: clamp(260px, 20vw, 560px);
-    min-width: 260px;
+    width: clamp(450px, 32vw, 560px);
+    min-width: 0;
+  }
+
+  .explore-switcher :global(.segment-label) {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    hyphens: auto;
   }
 
   .explore-body {

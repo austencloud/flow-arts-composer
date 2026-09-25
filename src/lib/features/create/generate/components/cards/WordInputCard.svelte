@@ -4,6 +4,7 @@ Empty = random generation. Typed word = spell that word.
 Replaces the old GenerationModeCard (Freeform/Spell toggle).
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getGreekSymbol } from "$lib/shared/keyboard/services/greek-key-mapper";
   import { onMount } from "svelte";
   import CardHeader from "./shared/CardHeader.svelte";
@@ -38,9 +39,7 @@ Replaces the old GenerationModeCard (Freeform/Spell toggle).
     onOpenOverlay?: () => void;
   }>();
 
-
-  onMount(() => {
-  });
+  onMount(() => {});
 
   const hasWord = $derived(wordValue.trim().length > 0);
 
@@ -74,8 +73,10 @@ Replaces the old GenerationModeCard (Freeform/Spell toggle).
       return;
     }
 
-    if (event.shiftKey || event.ctrlKey || event.altKey || event.metaKey) return;
-    if (event.code.startsWith("Numpad") && !event.getModifierState("NumLock")) return;
+    if (event.shiftKey || event.ctrlKey || event.altKey || event.metaKey)
+      return;
+    if (event.code.startsWith("Numpad") && !event.getModifierState("NumLock"))
+      return;
 
     const symbol = getGreekSymbol(event.code);
     if (!symbol) return;
@@ -90,7 +91,6 @@ Replaces the old GenerationModeCard (Freeform/Spell toggle).
     input.setSelectionRange(result.cursor, result.cursor);
     onWordChange?.(uppercased);
   }
-
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
@@ -108,7 +108,7 @@ Replaces the old GenerationModeCard (Freeform/Spell toggle).
   tabindex={isMobile ? 0 : undefined}
   aria-label={isMobile ? "Enter word to spell" : undefined}
 >
-  <CardHeader title="Word" {headerFontSize} />
+  <CardHeader title={t("create_ui_word")} {headerFontSize} />
 
   <div class="input-row">
     <input

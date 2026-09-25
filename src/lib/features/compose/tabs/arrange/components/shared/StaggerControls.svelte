@@ -5,6 +5,7 @@
   Shown in a popover/modal when user clicks the timing button on a layer.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
 
   let {
@@ -64,13 +65,11 @@
 >
   <div class="stagger-controls">
     <div class="header">
-      <h3 id="stagger-controls-title">Timing Offset</h3>
+      <h3 id="stagger-controls-title">{t("compose_ui_timing_offset")}</h3>
       <p class="layer-label">{layerName}</p>
     </div>
 
-    <p class="description">
-      Shift this sequence by beats relative to others
-    </p>
+    <p class="description">Shift this sequence by beats relative to others</p>
 
     <!-- Offset selector -->
     <div class="offset-selector">
@@ -78,7 +77,7 @@
         class="step-btn"
         onclick={handleDecrement}
         disabled={editOffset <= 0}
-        aria-label="Decrease offset"
+        aria-label={t("compose_ui_decrease_offset")}
       >
         <i class="fas fa-minus" aria-hidden="true"></i>
       </button>
@@ -92,7 +91,7 @@
         class="step-btn"
         onclick={handleIncrement}
         disabled={editOffset >= maxOffset}
-        aria-label="Increase offset"
+        aria-label={t("compose_ui_increase_offset")}
       >
         <i class="fas fa-plus" aria-hidden="true"></i>
       </button>
@@ -125,12 +124,8 @@
 
     <!-- Actions -->
     <div class="actions">
-      <button class="cancel-btn" onclick={handleCancel}>
-        Cancel
-      </button>
-      <button class="save-btn" onclick={handleSave}>
-        Apply
-      </button>
+      <button class="cancel-btn" onclick={handleCancel}> Cancel </button>
+      <button class="save-btn" onclick={handleSave}> Apply </button>
     </div>
   </div>
 </BaseModal>
@@ -250,8 +245,16 @@
   }
 
   .preset-btn.active {
-    background: color-mix(in srgb, var(--theme-accent, #8b5cf6) 20%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent, #8b5cf6) 40%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 20%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 40%,
+      transparent
+    );
     color: var(--theme-accent-light, #a78bfa);
   }
 
@@ -292,13 +295,18 @@
   }
 
   .save-btn {
-    background: linear-gradient(135deg, var(--theme-accent, #8b5cf6), var(--accent-pink, #ec4899));
+    background: linear-gradient(
+      135deg,
+      var(--theme-accent, #8b5cf6),
+      var(--accent-pink, #ec4899)
+    );
     border: none;
     color: white;
   }
 
   .save-btn:hover {
-    box-shadow: 0 2px 12px color-mix(in srgb, var(--theme-accent, #8b5cf6) 40%, transparent);
+    box-shadow: 0 2px 12px
+      color-mix(in srgb, var(--theme-accent, #8b5cf6) 40%, transparent);
   }
 
   .cancel-btn:focus-visible,

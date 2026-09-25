@@ -2,6 +2,7 @@
 <script lang="ts">
   import RobustAvatar from "../../../../components/avatar/RobustAvatar.svelte";
   import type { User } from "firebase/auth";
+  import { t } from "$lib/shared/i18n/i18n.svelte";
 
   interface Props {
     user: User;
@@ -24,10 +25,10 @@
   }: Props = $props();
 </script>
 
-<section class="identity-header" aria-label="Signed-in account">
+<section class="identity-header" aria-label={t("settings_signed_in_account")}>
   <p class="identity-kicker">
     <i class="fas fa-id-card" aria-hidden="true"></i>
-    <span>Account</span>
+    <span>{t("settings_account")}</span>
   </p>
 
   <div class="profile-hero">
@@ -37,12 +38,12 @@
         class="avatar-wrapper clickable"
         style:--profile-accent={profileColor}
         onclick={onAvatarClick}
-        aria-label="Change profile photo"
+        aria-label={t("settings_change_profile_photo")}
       >
         <RobustAvatar
           src={user.photoURL}
           name={user.displayName || user.email}
-          alt={user.displayName || "User"}
+          alt={user.displayName || t("settings_user")}
           size="xl"
         />
         <span class="avatar-edit-badge">
@@ -54,14 +55,14 @@
         <RobustAvatar
           src={user.photoURL}
           name={user.displayName || user.email}
-          alt={user.displayName || "User"}
+          alt={user.displayName || t("settings_user")}
           size="xl"
         />
       </div>
     {/if}
 
     <div class="profile-info">
-      <h1 class="profile-name">{user.displayName || "User"}</h1>
+      <h1 class="profile-name">{user.displayName || t("settings_user")}</h1>
       {#if username || pronouns}
         <p class="profile-meta">
           {#if username}<span>@{username}</span>{/if}
@@ -79,11 +80,11 @@
     <div class="session-row">
       <span class="session-status">
         <span class="session-dot" aria-hidden="true"></span>
-        <span>Signed in</span>
+        <span>{t("settings_signed_in")}</span>
       </span>
       <button type="button" class="sign-out-btn" onclick={onSignOut}>
         <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
-        <span>Sign out</span>
+        <span>{t("settings_sign_out")}</span>
       </button>
     </div>
   {/if}

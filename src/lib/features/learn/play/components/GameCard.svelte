@@ -20,7 +20,9 @@
     Grade,
   } from "../domain/arcade-types";
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getGamePreview } from "./previews/preview-map";
+  import { gameTitle, gameTagline } from "../domain/play-labels";
 
   let {
     game,
@@ -81,14 +83,14 @@
     </span>
 
     <span class="card-copy">
-      <span class="card-title">{game.title}</span>
-      <span class="card-tagline">{game.tagline}</span>
+      <span class="card-title">{gameTitle(game)}</span>
+      <span class="card-tagline">{gameTagline(game)}</span>
     </span>
 
     <span class="card-stats">
       {#if played}
         <span class="best">
-          <span class="best-label">Best</span>
+          <span class="best-label">{t("learn_ui_best")}</span>
           <span class="best-score">{progress.bestScore.toLocaleString()}</span>
           {#if progress.bestGrade}
             <span
@@ -100,7 +102,11 @@
         </span>
       {:else}
         <span class="best">
-          <span class="unplayed">{game.challenges.length} challenges</span>
+          <span class="unplayed"
+            >{t("learn_ui_challenge_count", {
+              count: game.challenges.length,
+            })}</span
+          >
         </span>
       {/if}
 
@@ -108,7 +114,10 @@
         <span class="ladder-text">
           <span class="stars-text">★ {totalStars}/{maxStars}</span>
           <span class="challenge-text"
-            >Challenge {challengesReached}/{game.challenges.length}</span
+            >{t("learn_ui_challenge_progress", {
+              current: challengesReached,
+              total: game.challenges.length,
+            })}</span
           >
         </span>
         <ProgressRing

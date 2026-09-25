@@ -8,6 +8,7 @@ buildFilterSpecFromEngine on save. Reused by every browse host that offers a
 my-library pool).
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
   import ModalHeader from "$lib/shared/foundation/ui/modal/ModalHeader.svelte";
   import type { BrowseEngine } from "$lib/shared/browse/engine/types";
@@ -89,8 +90,10 @@ my-library pool).
   {#snippet header()}
     <ModalHeader
       id="save-smart-collection-title"
-      title="Save Smart Collection"
-      subtitle="The name follows the filters until you change it."
+      title={t("library_ui_save_smart_collection")}
+      subtitle={t(
+        "library_ui_the_name_follows_the_filters_until_you_change_it"
+      )}
       icon="fa-wand-magic-sparkles"
       iconColor="var(--theme-accent, #8b6cff)"
       onClose={() => (show = false)}

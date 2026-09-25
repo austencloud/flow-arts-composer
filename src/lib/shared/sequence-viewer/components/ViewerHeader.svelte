@@ -4,6 +4,7 @@
   visual language. Hosts provide callbacks instead of rebuilding the chrome.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { OrchestratorContext } from "../domain/viewer-orchestrator-context";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { ShareActionMenuItem } from "$lib/shared/share/domain/models/share-action-menu";
@@ -156,7 +157,10 @@
     !!onOpenApp && !(hasAccountEntry && authState.isFullAccount)
   );
   const identityWord = $derived(
-    sequence.word || sequence.displayName || sequence.name || "Sequence"
+    sequence.word ||
+      sequence.displayName ||
+      sequence.name ||
+      t("viewer_header_sequence")
   );
   const trimmedTitleOverride = $derived(titleOverride?.trim() || "");
   /** Plain-text title actually shown in the slot: the override when present,
@@ -219,11 +223,11 @@
           type="button"
           class="viewer-action practice-exit"
           onclick={onPracticeToggle}
-          aria-label="Exit practice mode"
-          title="Exit practice mode"
+          aria-label={t("viewer_ui_exit_practice_mode")}
+          title={t("viewer_ui_exit_practice_mode")}
         >
           <i class="fas fa-arrow-left" aria-hidden="true"></i>
-          <span class="action-label">Exit Practice</span>
+          <span class="action-label">{t("viewer_ui_exit_practice_mode")}</span>
         </button>
       {/if}
       {#if compactChrome && showViewingProps}
@@ -232,7 +236,7 @@
           dropDown
           align="left"
           onPropsOpen={() => viewingControl?.show()}
-          propsLabel={`Viewing props · ${viewingLabel}`}
+          propsLabel={t("viewer_header_viewing_props", { props: viewingLabel })}
           onOpenChange={onOverflowOpenChange}
         />
       {/if}
@@ -259,14 +263,16 @@
             class:favorite-active={isFavorite}
             onclick={onFavoriteToggle}
             aria-label={isFavorite
-              ? "Remove from favorites"
-              : "Add to favorites"}
+              ? t("viewer_header_remove_favorite")
+              : t("viewer_header_add_favorite")}
             aria-pressed={isFavorite}
-            title={isFavorite ? "Favorited" : "Favorite"}
+            title={isFavorite
+              ? t("viewer_header_favorited")
+              : t("viewer_header_favorite")}
           >
             <i class="{isFavorite ? 'fas' : 'far'} fa-heart" aria-hidden="true"
             ></i>
-            <span class="action-label">Favorite</span>
+            <span class="action-label">{t("viewer_header_favorite")}</span>
           </button>
         {/if}
 
@@ -280,15 +286,15 @@
             onclick={onSave}
             disabled={isSaved || isSaving}
             aria-label={isSaving
-              ? "Saving to library"
+              ? t("viewer_header_saving_to_library")
               : isSaved
-                ? "Saved to library"
-                : "Save to library"}
+                ? t("viewer_header_saved_to_library")
+                : t("viewer_header_save_to_library")}
             title={isSaving
-              ? "Saving to library"
+              ? t("viewer_header_saving_to_library")
               : isSaved
-                ? "Saved to library"
-                : "Save to library"}
+                ? t("viewer_header_saved_to_library")
+                : t("viewer_header_save_to_library")}
           >
             <i
               class="fas {isSaving
@@ -299,9 +305,15 @@
               aria-hidden="true"
             ></i>
             <span class="action-label stable-label" aria-live="polite">
-              <span class="label-sizer" aria-hidden="true">Saving…</span>
+              <span class="label-sizer" aria-hidden="true"
+                >{t("viewer_header_saving_short")}</span
+              >
               <span class="label-live">
-                {isSaving ? "Saving…" : isSaved ? "Saved" : "Save"}
+                {isSaving
+                  ? t("viewer_header_saving_short")
+                  : isSaved
+                    ? t("viewer_header_saved_short")
+                    : t("browse_save")}
               </span>
             </span>
           </button>
@@ -312,11 +324,11 @@
             type="button"
             class="viewer-action core-action remix-action"
             onclick={onRemix}
-            aria-label="Remix sequence"
-            title="Remix"
+            aria-label={t("viewer_header_remix_sequence")}
+            title={t("viewer_ui_remix")}
           >
             <i class="fas fa-pen-to-square" aria-hidden="true"></i>
-            <span class="action-label">Remix</span>
+            <span class="action-label">{t("viewer_ui_remix")}</span>
           </button>
         {/if}
       {/if}
@@ -326,11 +338,11 @@
           type="button"
           class="viewer-action core-action practice-action"
           onclick={onPracticeToggle}
-          aria-label="Practice"
-          title="Practice"
+          aria-label={t("viewer_ui_practice")}
+          title={t("viewer_ui_practice")}
         >
           <i class="fas fa-dumbbell" aria-hidden="true"></i>
-          <span class="action-label">Practice</span>
+          <span class="action-label">{t("viewer_ui_practice")}</span>
         </button>
       {/if}
 
@@ -350,8 +362,12 @@
               class="viewer-action context-action visibility-action"
               class:published={isPublished}
               onclick={handleVisibilityAction}
-              aria-label={isPublished ? "Make Private" : "Make Public"}
-              title={isPublished ? "Make Private" : "Make Public"}
+              aria-label={isPublished
+                ? t("viewer_header_make_private")
+                : t("viewer_header_make_public")}
+              title={isPublished
+                ? t("viewer_header_make_private")
+                : t("viewer_header_make_public")}
             >
               <i
                 class="fas {isPublished ? 'fa-eye-slash' : 'fa-eye'}"
@@ -365,8 +381,8 @@
               type="button"
               class="viewer-action context-action"
               onclick={onVideoUpload}
-              aria-label="Upload video"
-              title="Upload Video"
+              aria-label={t("viewer_ui_upload_video")}
+              title={t("viewer_ui_upload_video_title")}
             >
               <i class="fas fa-video" aria-hidden="true"></i>
             </button>
@@ -377,8 +393,8 @@
               type="button"
               class="viewer-action context-action open-app-action"
               onclick={onOpenApp}
-              aria-label="Open Flow Arts Composer"
-              title="Open Flow Arts Composer"
+              aria-label={t("viewer_ui_open_flow_arts_composer")}
+              title={t("viewer_ui_open_flow_arts_composer")}
             >
               <i class="fas fa-compass" aria-hidden="true"></i>
             </button>
@@ -389,8 +405,8 @@
               type="button"
               class="viewer-action context-action delete-action"
               onclick={onDeleteRequest}
-              aria-label="Delete sequence"
-              title="Delete"
+              aria-label={t("viewer_ui_delete_sequence")}
+              title={t("action_delete")}
             >
               <i class="fas fa-trash" aria-hidden="true"></i>
             </button>
@@ -404,7 +420,7 @@
           onPropsOpen={showViewingProps
             ? () => viewingControl?.show()
             : undefined}
-          propsLabel={`Viewing props · ${viewingLabel}`}
+          propsLabel={t("viewer_header_viewing_props", { props: viewingLabel })}
           dropDown
           align="left"
           {isFavorite}
@@ -451,10 +467,12 @@
         aria-haspopup={isWordTitle ? "menu" : undefined}
         aria-expanded={isWordTitle ? actions.isOpen : undefined}
         aria-label={isWordTitle
-          ? `Current word: ${actions.copyableWord}. Open word actions.`
+          ? t("viewer_header_current_word_actions", {
+              word: actions.copyableWord,
+            })
           : displayTitle}
         title={isWordTitle
-          ? `Word actions for ${actions.copyableWord}`
+          ? t("viewer_header_word_actions_for", { word: actions.copyableWord })
           : displayTitle}
       >
         <span class="word-display">
@@ -481,7 +499,7 @@
 
       {#if actions.copied}
         <div class="word-status" role="status" aria-live="polite">
-          Copied “{actions.copyableWord}”
+          {t("viewer_header_copied_word", { word: actions.copyableWord })}
         </div>
       {/if}
     {/snippet}
@@ -501,8 +519,8 @@
           <a
             class="account-entry-control avatar"
             href={openAppHref}
-            aria-label="Open Flow Arts Composer"
-            title="Open Flow Arts Composer"
+            aria-label={t("viewer_ui_open_flow_arts_composer")}
+            title={t("viewer_ui_open_flow_arts_composer")}
             onclick={onAccountOpenApp
               ? (event) => {
                   event.preventDefault();
@@ -514,7 +532,7 @@
               src={authState.user?.photoURL}
               name={authState.user?.displayName ||
                 authState.user?.email ||
-                "Account"}
+                t("viewer_header_account")}
               alt=""
               size="sm"
             />
@@ -524,10 +542,10 @@
             type="button"
             class="account-entry-control sign-in"
             onclick={onAccountSignIn}
-            aria-label="Sign in"
+            aria-label={t("viewer_ui_sign_in")}
           >
             <i class="fas fa-user" aria-hidden="true"></i>
-            <span>Sign in</span>
+            <span>{t("viewer_ui_sign_in")}</span>
           </button>
         {/if}
       </div>
@@ -549,9 +567,11 @@
         class:accent-active={exportSettings.expanded}
         onclick={exportSettings.onToggle}
         aria-label={exportSettings.expanded
-          ? "Hide export settings"
-          : "Show export settings"}
-        title={exportSettings.expanded ? "Hide settings" : "Show settings"}
+          ? t("viewer_header_hide_export_settings")
+          : t("viewer_header_show_export_settings")}
+        title={exportSettings.expanded
+          ? t("viewer_header_hide_settings")
+          : t("viewer_header_show_settings")}
       >
         <i class="fas fa-sliders" aria-hidden="true"></i>
       </button>
@@ -566,12 +586,12 @@
         <ShareActionMenu
           bind:open={shareMenuOpen}
           actions={shareActions}
-          triggerLabel={labelledChrome ? "Share" : undefined}
+          triggerLabel={labelledChrome ? t("viewer_share") : undefined}
           useMobileSheet={isMobile}
           disabled={!ctx.hasSequence}
-          ariaLabel="Share sequence"
-          sheetTitle="Share sequence"
-          tooltip="Share sequence"
+          ariaLabel={t("browse_share_sequence")}
+          sheetTitle={t("browse_share_sequence")}
+          tooltip={t("browse_share_sequence")}
           testId="viewer-share-button"
           idBase="viewer-share"
           menuSide="bottom"
@@ -593,8 +613,8 @@
           data-ghost-kind="close-overlay"
           data-ghost-label="Close viewer"
           onclick={onClose}
-          aria-label="Close viewer"
-          title="Close viewer"
+          aria-label={t("viewer_ui_close_viewer")}
+          title={t("viewer_ui_close_viewer")}
         >
           <i class="fas fa-times" aria-hidden="true"></i>
         </button>

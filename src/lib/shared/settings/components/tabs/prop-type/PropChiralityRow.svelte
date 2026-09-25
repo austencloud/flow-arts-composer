@@ -31,6 +31,7 @@
   Standard/Mirrored implied a deviation from a norm that does not exist.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
   import {
@@ -76,8 +77,8 @@
 
 <div class="chirality-row">
   <div class="chirality-heading">
-    <span class="chirality-label">Buugeng chirality</span>
-    <span class="chirality-hint">Choose A or B for each prop</span>
+    <span class="chirality-label">{t("settings_buugeng_chirality")}</span>
+    <span class="chirality-hint">{t("settings_buugeng_choose_side")}</span>
   </div>
   <div class="chirality-controls">
     {#each hands as state (state.hand)}

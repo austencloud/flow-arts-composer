@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { AuthNudgeTrigger } from "../domain/auth-nudge-trigger";
-  import { AUTH_NUDGE_TEXTS } from "../domain/auth-nudge-trigger";
+  import { authNudgeCopy } from "../domain/auth-prompt-copy";
+  import { t } from "$lib/shared/i18n/i18n.svelte";
 
   interface Props {
     trigger: AuthNudgeTrigger;
@@ -22,8 +23,7 @@
     onDismiss,
   }: Props = $props();
 
-  const text = $derived(textOverride ?? AUTH_NUDGE_TEXTS[trigger]);
-  const buttonText = "Create account";
+  const text = $derived(textOverride ?? authNudgeCopy(trigger));
 </script>
 
 <div class="auth-nudge" role="alert">
@@ -35,15 +35,15 @@
 
   <div class="auth-nudge-actions">
     <button type="button" class="auth-nudge-primary" onclick={onCreateAccount}>
-      {buttonText}
+      {t("auth_nudge_create_account")}
     </button>
     <button type="button" class="auth-nudge-login-btn" onclick={onLogin}>
-      Log in
+      {t("auth_nudge_log_in")}
     </button>
   </div>
 
   <button type="button" class="auth-nudge-dismiss" onclick={onDismiss}>
-    Not now
+    {t("auth_nudge_not_now")}
   </button>
 </div>
 

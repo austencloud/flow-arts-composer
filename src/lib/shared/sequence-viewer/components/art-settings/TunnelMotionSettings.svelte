@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import EffortPanel from "$lib/shared/animation-engine/components/settings-panels/EffortPanel.svelte";
   import type { PlaybackMode } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
   import TunnelPlaybackSettings from "./TunnelPlaybackSettings.svelte";
@@ -32,9 +33,13 @@
 
 <div class="motion-stack" class:fill={!dense}>
   <div class:dense class="section-pad">
-    {#if includePlayback}<span class="rt-section-label">Effort</span>{/if}
+    {#if includePlayback}<span class="rt-section-label"
+        >{t("viewer_ui_effort")}</span
+      >{/if}
     {#if !dense}
-      <p class="section-hint">How each beat speeds up and slows down.</p>
+      <p class="section-hint">
+        {t("viewer_ui_how_each_beat_speeds_up_and_slows_down")}
+      </p>
     {/if}
     <EffortPanel
       columns={dense ? 4 : 2}

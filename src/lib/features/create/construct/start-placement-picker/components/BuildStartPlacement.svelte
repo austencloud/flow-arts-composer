@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import {
     startPlacementManager,
     type StartPlacementPlacement,
@@ -187,10 +188,12 @@
       <div
         class="orientation-controls"
         role="group"
-        aria-label="Prop orientations"
+        aria-label={t("create_ui_prop_orientations")}
       >
         <div class="prop-control">
-          <div class="prop-label"><span class="prop-dot"></span>Left prop</div>
+          <div class="prop-label">
+            <span class="prop-dot"></span>{t("create_ui_left_prop")}
+          </div>
           <OrientationCycler
             orientation={leftOrientation}
             onOrientationChange={onLeftOrientationChange}
@@ -212,7 +215,7 @@
       </div>
       {#if onGridModeChange}
         <div class="grid-mode-control">
-          <span class="control-label">Grid</span>
+          <span class="control-label">{t("generator_grid")}</span>
           <SegmentedControl
             options={gridModes}
             value={gridMode}

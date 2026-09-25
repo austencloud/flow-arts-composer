@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import TempoControl from "$lib/shared/animation-panel/components/TempoControl.svelte";
   import PlaybackModeToggle from "$lib/shared/animation-engine/components/controls/PlaybackModeToggle.svelte";
   import PathShapePanel from "$lib/shared/animation-engine/components/settings-panels/PathShapePanel.svelte";
@@ -51,7 +52,7 @@
 
 <div class="section-pad playback-rows">
   <div class="rt-section">
-    <span class="rt-section-label">Tempo</span>
+    <span class="rt-section-label">{t("viewer_ui_tempo")}</span>
     <TempoControl
       {bpm}
       {onBpmChange}
@@ -62,7 +63,7 @@
     />
   </div>
   <div class="rt-section">
-    <span class="rt-section-label">Mode</span>
+    <span class="rt-section-label">{t("viewer_ui_mode")}</span>
     <PlaybackModeToggle
       {playbackMode}
       {isPlaying}
