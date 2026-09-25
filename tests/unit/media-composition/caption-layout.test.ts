@@ -3,6 +3,7 @@ import {
   activeCaptionsAtTime,
   captionAlpha,
   captionCenterY,
+  captionStartAtPlayhead,
   captionFontPx,
   captionFontString,
   captionLineYPositions,
@@ -155,5 +156,21 @@ describe("captionLineYPositions", () => {
   it("spreads multiple lines symmetrically around the anchor", () => {
     const ys = captionLineYPositions(500, 3, 40);
     expect(ys).toEqual([460, 500, 540]);
+  });
+});
+
+describe("captionStartAtPlayhead", () => {
+  it("is fully visible at the playhead it was added at", () => {
+    const start = captionStartAtPlayhead(5, 40);
+    const alpha = captionAlpha(
+      { startSeconds: start, endSeconds: start + 3 },
+      5
+    );
+    expect(alpha).toBe(1);
+  });
+
+  it("stays inside the act at either end", () => {
+    expect(captionStartAtPlayhead(0.05, 40)).toBe(0);
+    expect(captionStartAtPlayhead(39.9, 40)).toBe(39);
   });
 });

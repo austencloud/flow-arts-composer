@@ -38,6 +38,10 @@ import {
   type TakeClock,
 } from "$lib/shared/media-composition/services/frame-evaluator";
 import {
+  NEW_CAPTION_SECONDS,
+  captionStartAtPlayhead,
+} from "$lib/shared/media-composition/domain/caption-layout";
+import {
   openPostPlan,
   savePostPlan,
 } from "$lib/shared/media-composition/services/post-plan-store";
@@ -423,14 +427,14 @@ export function createPostBuilderState(deps: PostBuilderDeps) {
     commitPlan(editPlan(plan, (current) => ({ ...current, audio }), now()));
   }
 
-  /** A caption in the act under the playhead, three seconds long. */
+  /** A caption in the act under the playhead, showing at the playhead. */
   function addCaptionAtPlayhead(text: string): string | null {
     const act = currentAct ?? compiled?.acts[compiled.acts.length - 1] ?? null;
     if (!act) return null;
     const length = act.endSeconds - act.startSeconds;
-    const start = Math.min(
-      Math.max(0, previewSeconds - act.startSeconds),
-      Math.max(0, length - 1)
+    const start = captionStartAtPlayhead(
+      previewSeconds - act.startSeconds,
+      length
     );
     const id = `caption-${now().toString(36)}`;
     const caption: Caption = {
@@ -438,7 +442,7 @@ export function createPostBuilderState(deps: PostBuilderDeps) {
       actId: act.actId,
       text: text.slice(0, 140),
       startSeconds: start,
-      endSeconds: Math.min(length, start + 3),
+      endSeconds: Math.min(length, start + NEW_CAPTION_SECONDS),
       position: "top",
       size: "l",
     };

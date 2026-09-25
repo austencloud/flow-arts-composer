@@ -100,6 +100,24 @@ export function captionAlpha(
   return Math.max(0, Math.min(1, sinceStart / fade, untilEnd / fade));
 }
 
+/** How long a caption added at the playhead stays up. */
+export const NEW_CAPTION_SECONDS = 3;
+
+/**
+ * Where a caption added at the playhead starts, in seconds into its act. It
+ * starts one fade early so it is already fully visible at the playhead;
+ * starting exactly there would paint it at zero opacity and the paused
+ * preview would show nothing. It keeps at least a second inside the act.
+ */
+export function captionStartAtPlayhead(
+  secondsIntoAct: number,
+  actSeconds: number,
+  fadeSeconds: number = CAPTION_FADE_SECONDS
+): number {
+  const latest = Math.max(0, actSeconds - 1);
+  return Math.min(Math.max(0, secondsIntoAct - fadeSeconds), latest);
+}
+
 /** Every caption whose span contains `timeSeconds`, each with its alpha. */
 export function activeCaptionsAtTime<T extends CaptionLayoutInput>(
   captions: readonly T[],
