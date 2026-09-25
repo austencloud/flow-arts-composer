@@ -25,7 +25,6 @@
   import ComposerGenerateDemo from "./_components/ComposerGenerateDemo.svelte";
   import ComposerBackgroundCycle from "./_components/ComposerBackgroundCycle.svelte";
   import { resolveComposerCarriedSequence } from "./_components/composer-sequence-ownership";
-  import "$lib/shared/landing/styles/editorial-measure.css";
 
   const TITLE = "Flow Arts Composer | Free Flow Arts Software for Choreography";
   const DESCRIPTION =
@@ -604,10 +603,7 @@
     color: oklch(0.79 0.15 278);
   }
 
-  /* Measure comes from the shared semantic token rather than another local
-     width decision. See editorial-measure.css. */
   .opening-lede {
-    max-inline-size: var(--measure-lede);
     margin: 1.55rem 0 0;
     color: oklch(0.79 0.015 270);
     font-size: clamp(1rem, 0.94rem + 0.32vw, 1.28rem);
@@ -678,7 +674,6 @@
   }
 
   .opening-note {
-    max-inline-size: var(--measure-note);
     margin: 0.9rem 0 0;
     color: oklch(0.74 0.018 270);
     font-size: var(--font-size-min, 0.875rem);
@@ -753,7 +748,6 @@
   }
 
   .section-intro {
-    max-inline-size: var(--measure-prose);
     margin: 1.2rem 0 0;
     color: oklch(0.76 0.014 270);
     font-size: var(--font-size-base, 1rem);
@@ -769,13 +763,8 @@
     line-height: 1;
   }
 
-  /* Body copy is capped in characters, not in rem, and is NOT centered: it
-     stays on the same left grid line as the heading above it. A narrow block
-     centered inside a wide section is the stranded-ribbon failure, which is a
-     different bug from this one, not its cure. */
   .changing-intro > p,
   .keeping-lede > p {
-    max-inline-size: var(--measure-prose);
     margin: 1.25rem 0 0;
     color: oklch(0.76 0.014 270);
     font-size: clamp(1rem, 0.94rem + 0.24vw, 1.18rem);
@@ -942,7 +931,6 @@
 
   .small-screen-3d-note {
     display: none;
-    max-inline-size: var(--measure-note);
     margin: 1.4rem 0 0;
     color: oklch(0.74 0.018 270);
     font-size: var(--font-size-min, 0.875rem);
@@ -1097,7 +1085,6 @@
     }
 
     .opening-lede {
-      max-inline-size: var(--measure-lede);
       margin: 0.8rem 0 0;
       font-size: var(--font-size-min, 0.875rem);
       line-height: 1.45;

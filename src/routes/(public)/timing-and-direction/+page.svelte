@@ -176,7 +176,6 @@
 
   .page-subtitle {
     margin: 0 auto;
-    max-width: 46rem;
     color: var(--theme-text-dim);
     font-size: 1rem;
     line-height: 1.5;
@@ -197,7 +196,6 @@
   }
 
   .history-intro {
-    max-width: 48rem;
     margin: 0 auto;
     color: var(--theme-text-dim);
     font-size: 1rem;
