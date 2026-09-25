@@ -31,7 +31,7 @@ vi.mock(
 
 // The canvas renders the card and animation from static art the component
 // test server does not serve. The prop under test lives in the studio itself.
-vi.mock("./PostStudioPreview.svelte", async () => ({
+vi.mock("./builder/PostBuilderCanvas.svelte", async () => ({
   default: (
     await import("$lib/shared/sequence-viewer/components/__test-stubs__/SequenceViewerDrawerHostChildStub.svelte")
   ).default,
