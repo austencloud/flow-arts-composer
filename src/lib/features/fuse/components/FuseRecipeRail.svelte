@@ -28,6 +28,7 @@
   import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { getFuseContext } from "../context/fuse-context";
   import type { FuseRecipeDestination } from "../domain/fuse-recipe-destination";
+  import { fuseRuleLabel } from "../domain/fuse-rule";
   import { fuseRuleMode, fuseTnDModeLabel } from "../domain/fuse-tnd-rule";
   import type { FuseRecipeSummaries } from "../domain/fuse-recipe-summaries";
   import { FUSE_LENGTHS, type FuseMode } from "../state/fuse-state.svelte";
@@ -82,6 +83,7 @@
     fuseState.generationLevel === 1 ? 0 : fuseState.maxTurnIntensity
   );
   const ruleLabel = $derived(fuseTnDModeLabel(fuseRuleMode(fuseState.rule)));
+  const ruleOperations = $derived(fuseRuleLabel(fuseState.rule));
   const driverLabel = $derived(
     fuseState.driverSide === "left" ? "Left" : "Right"
   );
@@ -213,7 +215,7 @@
   </div>
 
   <div
-    class="card-slot swing-slot"
+    class="card-slot swing-slot rule-slot"
     class:visible={linked}
     aria-hidden={!linked}
     inert={!linked}
@@ -224,9 +226,19 @@
       appearance="quiet"
       gridColumnSpan={1}
       headerFontSize="var(--rail-card-title-size)"
-      ariaLabel="Rule that rebuilds from {driverLabel}: {ruleLabel}. Opens the rule editor."
+      ariaLabel="Change rule: {ruleLabel}. Rebuilds from {driverLabel} using {ruleOperations}."
       onClick={onEditRule}
-    />
+    >
+      <div class="rule-details">
+        <span class="rule-operations" title={ruleOperations}
+          >{ruleOperations}</span
+        >
+        <span class="rule-action">
+          Change rule
+          <i class="fas fa-chevron-right" aria-hidden="true"></i>
+        </span>
+      </div>
+    </BaseCard>
   </div>
 </div>
 
@@ -255,6 +267,58 @@
   .card-slot :global(.base-card[data-state="open"]) {
     border-color: var(--theme-stroke-strong);
     background: var(--theme-card-hover-bg);
+  }
+
+  .rule-slot :global(.base-card) {
+    border-color: var(--theme-stroke-strong);
+  }
+
+  .rule-slot :global(.card-value) {
+    flex: 0 0 auto;
+    white-space: normal;
+  }
+
+  .rule-slot :global(.card-content) {
+    margin-top: 0;
+  }
+
+  .rule-slot :global(.click-indicator) {
+    display: none;
+  }
+
+  .rule-details {
+    display: grid;
+    justify-items: center;
+    gap: 6px;
+  }
+
+  .rule-operations {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    color: var(--theme-text-dim);
+    font-size: var(--font-size-compact, 12px);
+    line-height: 1.2;
+  }
+
+  .rule-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 4px 10px;
+    border: 1px solid var(--theme-stroke-strong);
+    border-radius: var(--settings-radius-sm, 8px);
+    background: var(--theme-card-hover-bg);
+    color: var(--theme-text);
+    font-size: var(--font-size-min, 14px);
+    font-weight: 650;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  .rule-action i {
+    font-size: var(--font-size-compact, 12px);
   }
 
   /* Two cards come and go with the recipe: Turns above level 1, Rule when the
