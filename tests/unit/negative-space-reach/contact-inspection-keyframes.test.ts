@@ -50,6 +50,24 @@ describe("Grip Lab keyframe state", () => {
     expect(reloaded.tolerance).toBe(0.08);
   });
 
+  it("keeps staff length in the link and restores it through undo after a reload", () => {
+    const state = createState("?phase=3.000&staffCm=40");
+    state.beginEdit();
+    state.setStaffLengthM(0.65);
+    state.setStaffLengthM(0.7);
+    state.endEdit();
+
+    expect(new URL(state.poseLink()).searchParams.get("staffCm")).toBe("70");
+    const reloaded = createState(new URL(state.poseLink()).search);
+    reloaded.restoreDraft();
+    expect(reloaded.staffLengthM).toBe(0.7);
+    reloaded.undo();
+    expect(reloaded.staffLengthM).toBe(0.4);
+    expect(new URL(reloaded.poseLink()).searchParams.get("staffCm")).toBe("40");
+    reloaded.redo();
+    expect(reloaded.staffLengthM).toBe(0.7);
+  });
+
   it("saves a newly added keyframe without an explicit save action", () => {
     const state = createState("?phase=0.500&segment=0");
     const originalCount = state.keys.length;
