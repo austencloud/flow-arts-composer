@@ -14,10 +14,9 @@
   sequence animate — and the first real pointerdown or focusin kills the act
   for the visit. Reduced motion: no act, no ghost, plain interactive.
 
-  Prop policy: this surface pins its own prop via the canonical-five PropPicker
-  (staff default) and passes leftPropTypeOverride/rightPropTypeOverride down the
-  whole chain — the user's global prop setting (which may be poi) never reaches
-  this demo. Poi is deliberately impossible here. Turns policy is the same
+  Prop policy: the public page owns the selected pair and passes
+  leftPropTypeOverride/rightPropTypeOverride down the whole chain, so the
+  user's global prop setting never reaches this demo. Turns policy is the same
   move: the demo pins its available turn values via per-hand pickers (left/right) and
   passes leftTurnsOverride/rightTurnsOverride, so the user's sticky Create-tab
   turns (localStorage) never leak in. Every visible demo value stays at or
@@ -49,18 +48,14 @@
   import ViewSequenceButton from "$lib/features/create/shared/workspace-panel/shared/components/buttons/ViewSequenceButton.svelte";
   import HorizontalTransportRow from "$lib/shared/sequence-viewer/components/HorizontalTransportRow.svelte";
   import ClearSequenceButton from "$lib/features/create/shared/workspace-panel/shared/components/buttons/ClearSequenceButton.svelte";
+  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import UndoGlyph from "$lib/features/create/shared/workspace-panel/shared/components/buttons/UndoGlyph.svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import { motionDuration } from "$lib/shared/transitions/motion";
   import { slide } from "svelte/transition";
-  import PropPicker from "$lib/features/store/components/PropPicker.svelte";
-  import {
-    SHOP_PROP_OPTIONS,
-    DEFAULT_SHOP_PROP,
-  } from "$lib/features/store/domain/shop-prop-options";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
   import {
     HERO_TIP_EFFECT_MAP,
@@ -78,9 +73,17 @@
   let {
     presentationMode = "full",
     onVisitorComposed,
+    leftPropType,
+    rightPropType,
+    active = true,
+    embedded = false,
   }: {
     presentationMode?: ConstructPresentationMode;
     onVisitorComposed?: (sequence: SequenceData) => void;
+    leftPropType?: PropType;
+    rightPropType?: PropType;
+    active?: boolean;
+    embedded?: boolean;
   } = $props();
 
   const isGuidedBuild = $derived(presentationMode === "guided-build");
@@ -113,9 +116,12 @@
   let playingStepNumber = $state<number | null>(null);
   let editingStepNumber = $state<number | null>(null);
 
-  // The demo's pinned prop — canonical five only, staves first. Never poi, and
-  // never the user's global setting.
-  let demoProp = $state<PropType>(DEFAULT_SHOP_PROP);
+  // The page owns the 2D demo pair; standalone demo routes still default to
+  // staff without inheriting a visitor's global prop setting.
+  const effectiveLeftPropType = $derived(leftPropType ?? PropType.STAFF);
+  const effectiveRightPropType = $derived(
+    rightPropType ?? effectiveLeftPropType
+  );
 
   // The demo's pinned turns — one picker PER HAND (blue/red), overriding the
   // picker's sticky localStorage turns (same leak-proofing as the prop
@@ -136,6 +142,7 @@
   // animation to that step, click the start cell to restart.
   let playerController: AnimationPlaybackController | null = null;
   let playerIsPlaying = $state(false);
+
   let startHoldTimer: ReturnType<typeof setTimeout> | null = null;
   let compactPane = $state<CompactPane>("build");
   const compactDemoQuery =
@@ -155,7 +162,14 @@
   let act: ConstructAttractAct | null = $state(null);
   let tookOver = $state(false);
   let visitorOwnsBuild = $state(false);
+  let inViewport = $state(false);
   let io: IntersectionObserver | null = null;
+
+  $effect(() => {
+    const visible = active && inViewport;
+    act?.setVisible(visible);
+    if (visible) act?.start();
+  });
 
   onMount(() => {
     unsubscribe = startPlacementState.onSelectedPlacementChange(
@@ -187,9 +201,7 @@
       });
       io = new IntersectionObserver(
         (entries) => {
-          const visible = entries.some((e) => e.isIntersecting);
-          act?.setVisible(visible);
-          if (visible) act?.start();
+          inViewport = entries.some((e) => e.isIntersecting);
         },
         { threshold: 0.25 }
       );
@@ -525,23 +537,11 @@
   }
 </script>
 
-{#snippet propControl()}
-  <div class="tool-group prop-group">
-    <span class="tool-label">{t("composer_demo_prop")}</span>
-    <PropPicker
-      value={demoProp}
-      onchange={(p) => (demoProp = p)}
-      options={SHOP_PROP_OPTIONS}
-    />
-  </div>
-{/snippet}
-
 {#snippet playPhaseActions()}
   <div class="play-actions">
     {#if steps.length < MAX_STEPS}
-      <button
-        type="button"
-        class="cta-btn quiet"
+      <PanelButton
+        variant="secondary"
         onclick={() => {
           playing = false;
           playingStepNumber = null;
@@ -551,12 +551,12 @@
       >
         <i class="fas fa-arrow-left" aria-hidden="true"></i>
         {t("composer_demo_keep_building")}
-      </button>
+      </PanelButton>
     {/if}
-    <button type="button" class="cta-btn" data-demo-again onclick={reset}>
+    <PanelButton variant="primary" ariaLabel="Build another" onclick={reset}>
       <i class="fas fa-rotate-left" aria-hidden="true"></i>
       {t("composer_demo_build_another")}
-    </button>
+    </PanelButton>
   </div>
 {/snippet}
 
@@ -566,15 +566,17 @@
       <div class="player-frame" data-demo-stage>
         <mod.default
           {sequence}
-          autoPlay={!isContinuous}
+          autoPlay={active && !isContinuous}
+          playbackAllowed={active}
+          resumeWhenPlaybackAllowed
           showControls={false}
           hideWordHeader={!isCompactDemo}
           tapToToggle
           progressLine
           progressLineSeekable
           hoverHint="badge"
-          leftPropType={demoProp}
-          rightPropType={demoProp}
+          leftPropType={effectiveLeftPropType}
+          rightPropType={effectiveRightPropType}
           trailSettingsOverride={HERO_TRAIL_PRESET}
           tipEffectMap={HERO_TIP_EFFECT_MAP}
           onStepChange={handlePlayerStepChange}
@@ -593,6 +595,7 @@
   class:play-phase={phase === "play"}
   class:guided-build={isGuidedBuild}
   class:continuous-workspace={isContinuous}
+  class:embedded
   bind:this={bandEl}
   onpointerdowncapture={takeover}
   onfocusincapture={takeover}
@@ -605,7 +608,7 @@
           value={compactPane}
           onchange={(pane) => (compactPane = pane)}
           color="accent"
-          size="sm"
+          size="md"
           semantics="tabs"
           ariaLabel="Construct demo view"
         />
@@ -632,10 +635,6 @@
           !usesFocusedLayout &&
           compactPane !== "sequence"}
       >
-        {#if !isCompactDemo && !isGuidedBuild}
-          {@render propControl()}
-        {/if}
-
         {#if isContinuous}
           <div
             class="continuous-preview"
@@ -705,8 +704,8 @@
                   manualColumnCount={STEP_COLUMNS}
                   allowFewStepOverflowOnNarrow={false}
                   arrivalSequence={composedSequence}
-                  leftPropTypeOverride={demoProp}
-                  rightPropTypeOverride={demoProp}
+                  leftPropTypeOverride={effectiveLeftPropType}
+                  rightPropTypeOverride={effectiveRightPropType}
                   sequenceWord={rawWord}
                 />
               {:else}
@@ -729,8 +728,8 @@
                     : undefined}
                   getStepKey={(beat, index) => beat.id ?? `demo-key-${index}`}
                   getDurationDisplay={(stepIndex) => String(stepIndex + 1)}
-                  leftPropTypeOverride={demoProp}
-                  rightPropTypeOverride={demoProp}
+                  leftPropTypeOverride={effectiveLeftPropType}
+                  rightPropTypeOverride={effectiveRightPropType}
                   sequenceWord={rawWord}
                 />
               {/if}
@@ -842,10 +841,6 @@
           : undefined}
         hidden={isCompactDemo && !usesFocusedLayout && compactPane !== "build"}
       >
-        {#if isCompactDemo && phase !== "play" && !isGuidedBuild && !isContinuous}
-          {@render propControl()}
-        {/if}
-
         <!-- Turns imply "you can change the playing sequence's turns" — not true
          during playback, so they slide away for the play phase (freeing their
          strip for the player) and return on Keep building / Build another. -->
@@ -881,35 +876,6 @@
           </div>
         {/if}
 
-        {#if isGuidedBuild || isContinuous}
-          <!-- One line, not two. This carried a tracked-out uppercase eyebrow
-               ("NEXT STEP") above the instruction it introduced ("Choose step
-               2") — the same thing said twice, in two typographic voices. -->
-          <div
-            class="guided-build-status"
-            aria-live={isContinuous || tookOver ? "polite" : "off"}
-          >
-            <span class="region-label">
-              {isContinuous && editingStepNumber
-                ? "Replace beat"
-                : phase === "play"
-                  ? "Playback"
-                  : "Next move"}
-            </span>
-            <strong>
-              {isContinuous && editingStepNumber
-                ? `Choose a new step ${editingStepNumber}`
-                : phase === "pick-start"
-                  ? "Choose where the props begin"
-                  : phase === "add-step"
-                    ? steps.length >= MAX_STEPS
-                      ? "Eight-count ready to play"
-                      : `Choose step ${steps.length + 1}`
-                    : `${steps.length} steps playing`}
-            </strong>
-          </div>
-        {/if}
-
         <!-- PICKER / PLAYER: the real primitives; phase swap lives HERE only. -->
         <div class="picker-pane">
           {#if phase === "pick-start"}
@@ -917,8 +883,8 @@
               <mod.default
                 {startPlacementState}
                 embedded
-                leftPropTypeOverride={demoProp}
-                rightPropTypeOverride={demoProp}
+                leftPropTypeOverride={effectiveLeftPropType}
+                rightPropTypeOverride={effectiveRightPropType}
               />
             {/await}
           {:else if phase === "add-step"}
@@ -932,8 +898,8 @@
                 currentGridMode={gridMode}
                 onOptionSelected={handleOptionSelected}
                 hideFilters={isGuidedBuild}
-                leftPropTypeOverride={demoProp}
-                rightPropTypeOverride={demoProp}
+                leftPropTypeOverride={effectiveLeftPropType}
+                rightPropTypeOverride={effectiveRightPropType}
                 leftTurnsOverride={leftTurns}
                 rightTurnsOverride={rightTurns}
               />
@@ -947,7 +913,6 @@
           <details class="continuous-settings">
             <summary>{t("composer_demo_prop_turn_settings")}</summary>
             <div class="continuous-settings-content">
-              {@render propControl()}
               <div class="turns-pair">
                 <div class="tool-group turns-group blue">
                   <span class="tool-label"
@@ -1037,6 +1002,23 @@
   .guided-build .demo-shell,
   .continuous-workspace .demo-shell {
     max-width: none;
+  }
+
+  .construct-demo.embedded .demo-shell {
+    padding: clamp(1rem, 1.8cqw, 1.5rem);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .guided-build,
+  .guided-build .demo-shell {
+    height: 100%;
+  }
+
+  .guided-build .demo-columns {
+    flex: 1;
+    min-height: 0;
   }
 
   /* ===== Column stacks =====
@@ -1253,37 +1235,10 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-size: 0.8rem;
+    font-size: var(--font-size-min, 0.875rem);
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
-  }
-
-  /* Height stays reserved so the picker below it never moves as the wording
-     changes between phases. */
-  .guided-build-status {
-    min-height: 3.25rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    font-size: clamp(1rem, 0.96rem + 0.14vw, 1.15rem);
-  }
-
-  .guided-build-status strong {
-    color: var(--theme-text, #fff);
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    text-align: right;
-  }
-
-  .region-label {
-    flex: 0 0 auto;
-    min-width: 6rem;
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.56));
-    font-size: var(--font-size-min, 0.875rem);
-    font-weight: 650;
-    letter-spacing: 0.01em;
   }
 
   .hand-dot {
@@ -1299,13 +1254,6 @@
 
   .hand-dot.red {
     background: var(--prop-red, #d84a4a);
-  }
-
-  /* Prop tiles GROW to fill their toolbar cell — edge-to-edge, no void after
-     the last tile. (Denser than the shop's 104px configurator basis.) */
-  .tool-group :global(.prop-option) {
-    flex: 1 1 84px;
-    min-width: 72px;
   }
 
   /* ===== Per-hand glass turn pickers =====
@@ -1442,22 +1390,21 @@
   .demo-status {
     min-height: 3.25rem;
     display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 1rem;
+    align-items: center;
+    justify-content: center;
     --text-color: var(--theme-text, #fff);
   }
 
   .status-content {
-    flex: 1 1 0;
+    width: 100%;
     min-width: 0;
     display: flex;
-    justify-content: flex-end;
-    text-align: right;
+    justify-content: center;
+    text-align: center;
   }
 
   .status-content :global(.word-label-container) {
-    justify-content: flex-end;
+    justify-content: center;
   }
 
   .hint {
@@ -1661,7 +1608,7 @@
   .ws-empty {
     margin: 0;
     text-align: center;
-    font-size: 0.85rem;
+    font-size: var(--font-size-min, 0.875rem);
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.35));
   }
 
@@ -1748,63 +1695,11 @@
     justify-content: center;
   }
 
-  /* Sized in rem with a px floor so browser zoom enlarges these alongside the
-     round buttons while normal viewports retain the 44px target. */
-  .cta-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    min-height: max(44px, 2.75rem);
-    padding: 0 1.375rem;
-    border-radius: 999px;
-    border: 1px solid
-      color-mix(in srgb, var(--theme-accent, #8b5cf6) 55%, transparent);
-    background: color-mix(
-      in srgb,
-      var(--theme-accent, #8b5cf6) 22%,
-      transparent
-    );
-    color: var(--theme-text, #fff);
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition:
-      background var(--transition-fast),
-      transform var(--transition-fast);
-  }
-
-  .cta-btn:hover {
-    background: color-mix(
-      in srgb,
-      var(--theme-accent, #8b5cf6) 34%,
-      transparent
-    );
-    transform: translateY(-1px);
-  }
-
-  .cta-btn:active {
-    transform: translateY(0);
-  }
-
-  .cta-btn i {
-    font-size: 0.8em;
-  }
-
-  /* Play-phase pair: quiet "Keep building" beside the primary Build another. */
   .play-actions {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 12px;
-  }
-
-  .cta-btn.quiet {
-    background: transparent;
-    border-color: var(--theme-stroke, rgba(255, 255, 255, 0.16));
-  }
-
-  .cta-btn.quiet:hover {
-    background: rgba(255, 255, 255, 0.07);
   }
 
   @media (max-width: 480px) {
@@ -1822,12 +1717,6 @@
 
     .compact-demo.play-phase .build-column .picker-pane {
       height: auto;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .cta-btn {
-      transition: none;
     }
   }
 </style>

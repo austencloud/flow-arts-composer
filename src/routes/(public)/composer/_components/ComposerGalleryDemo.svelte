@@ -93,7 +93,7 @@
     display: flex;
     flex-direction: column;
     min-width: 0;
-    height: min(80vh, 56rem);
+    height: var(--composer-gallery-height, 80rem);
     overflow: hidden;
     padding: clamp(0.75rem, 1.7vw, 1.4rem);
     border: 1px solid var(--theme-stroke, oklch(0.45 0.03 270 / 0.2));

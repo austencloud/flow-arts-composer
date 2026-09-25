@@ -19,6 +19,8 @@
   import BentoPropGrid from "./BentoPropGrid.svelte";
   import type { PropChiralitySeam } from "./prop-chirality-seam";
   import CatDogToggle from "./CatDogToggle.svelte";
+  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
 
   let {
     isOpen = $bindable(false),
@@ -34,6 +36,10 @@
     onCatDogToggle,
     chirality,
     showColors = true,
+    fanAppearance,
+    onFanAppearanceChange,
+    propLook,
+    onPropLookChange,
   } = $props<{
     isOpen?: boolean;
     selectedPropType: PropType;
@@ -60,6 +66,11 @@
     chirality?: PropChiralitySeam;
     /** The picker's own prop-colour control; see BentoPropGrid. */
     showColors?: boolean;
+    /** Host-owned appearance; unset edits the global settings. */
+    fanAppearance?: FanAppearance;
+    onFanAppearanceChange?: (appearance: FanAppearance) => void;
+    propLook?: PropLook;
+    onPropLookChange?: (look: PropLook) => void;
   }>();
 
   // Desktop (side-by-side layout, i.e. nav sidebar present) opens the picker as
@@ -190,6 +201,10 @@
         onSelect={handlePropSelect}
         {chirality}
         {showColors}
+        {fanAppearance}
+        {onFanAppearanceChange}
+        {propLook}
+        {onPropLookChange}
       />
     </div>
   </div>

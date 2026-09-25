@@ -13,6 +13,7 @@
 
   let {
     propType,
+    label,
     selected = false,
     selectedLeft = false,
     selectedRight = false,
@@ -32,6 +33,8 @@
     previewPair = true,
   } = $props<{
     propType: PropType;
+    /** Overrides the registry name, e.g. "Triad 3D" for a look variant. */
+    label?: string;
     selected?: boolean;
     selectedLeft?: boolean;
     selectedRight?: boolean;
@@ -52,13 +55,14 @@
   }>();
 
   const displayInfo = $derived(getPropTypeDisplayInfo(propType));
+  const resolvedLabel = $derived(label ?? displayInfo.label);
   const resolvedActionLabel = $derived(
     actionLabel ?? `Select ${displayInfo.label} prop type`
   );
 </script>
 
 <PropSelectionButton
-  label={displayInfo.label}
+  label={resolvedLabel}
   {selected}
   {selectedLeft}
   {selectedRight}

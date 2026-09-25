@@ -14,6 +14,7 @@ import {
   type TipPoint,
 } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
 import { propTipEnds } from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
+import { basePropTypeOfRenderKey } from "$lib/shared/pictograph/prop/domain/prop-look";
 import { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
 
 /**
@@ -54,7 +55,7 @@ function isPropCenterSource(source: TrailPointSource): boolean {
 
 function isCenterOnlyConfig(config: TrailPointConfig): boolean {
   const enabledSources = [config.left, config.right].filter(
-    (source) => source.type !== "none",
+    (source) => source.type !== "none"
   );
   return enabledSources.length > 0 && enabledSources.every(isPropCenterSource);
 }
@@ -86,7 +87,25 @@ export function getTrailPointConfig(
 ): TrailPointConfig | null {
   if (!propType) return null;
   const key = propType.toLowerCase();
-  return trailPointOverrideProvider?.(key) ?? null;
+  const exact = trailPointOverrideProvider?.(key);
+  if (exact) return exact;
+  // A render key (`bigfan__fire_bare`) falls back to its prop's assignment.
+  const baseKey = basePropTypeOfRenderKey(key);
+  return baseKey === key
+    ? null
+    : (trailPointOverrideProvider?.(baseKey) ?? null);
+}
+
+/**
+ * How many ends a trail follows on a prop or render key. A two-ended prop
+ * whose drawn artwork resolves to a single tip (the big club model is a club
+ * held at its knob) traces one end, or both ends would trace the same tip.
+ */
+export function trailTipEnds(propType: string | null | undefined): 1 | 2 {
+  return propTipEnds(propType ?? undefined) === 2 &&
+    getTipPoints(propType).points.length > 1
+    ? 2
+    : 1;
 }
 
 /**

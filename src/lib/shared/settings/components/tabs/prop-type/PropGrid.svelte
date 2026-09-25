@@ -37,10 +37,10 @@
     centeredOrphan,
     sectionFillLayout,
   } from "./section-fill-layout";
-  import { drillFillLayout } from "./drill-fill-layout";
   import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
   import {
     hasModelSprite,
+    normalizePropLook,
     propLookOptions,
   } from "$lib/shared/pictograph/prop/domain/prop-look";
   import type { CompositionRecipe } from "$lib/shared/pictograph/prop/domain/prop-composition-recipes";
@@ -510,20 +510,71 @@
     };
   });
 
-  const drillTileCount = $derived(
-    drill?.kind === "family" ? familyChoices(drill.base).length : 0
-  );
+  const DRILL_GAP = 10;
   /**
-   * Tile grid for a drilled family in a bounded host (see drill-fill-layout).
-   * The tiles sit on a doubled track grid (two tracks each) so a short last
-   * row can start one track in and centre itself. Null means the host is not
-   * bounded and the tiles keep their ordinary size.
+   * A family's styles, each in every look it has: a style with a captured 3D
+   * sprite gets a pictograph tile and a 3D tile, so one view holds every
+   * variation and a pick sets the prop and the (global) look together.
+   * Pictographs come first so the 3D row reads as the same set again.
    */
-  const drillLayout = $derived(
-    fillHeight === 0
-      ? null
-      : drillFillLayout(drillTileCount, tilesBox.width, tilesBox.height)
-  );
+  type FamilyTile = { prop: PropType; look?: PropLook };
+  const familyTiles = $derived.by((): FamilyTile[] => {
+    if (drill?.kind !== "family") return [];
+    const choices = familyChoices(drill.base);
+    const withLooks =
+      showAppearance && onPropLookChange !== undefined
+        ? choices.filter((prop) => hasModelSprite(prop))
+        : [];
+    if (withLooks.length === 0) return choices.map((prop) => ({ prop }));
+    return [
+      ...choices.map((prop) =>
+        withLooks.includes(prop)
+          ? { prop, look: "pictograph" as const }
+          : { prop }
+      ),
+      ...withLooks.map((prop) => ({ prop, look: "model" as const })),
+    ];
+  });
+  const drillTileCount = $derived(familyTiles.length);
+  /**
+   * Tile grid for a drilled family in a bounded host: the column count that
+   * makes the largest tile once rows share the height, so a two-style family
+   * stacks in a tall rail and sits side by side in a wide sheet. Rows are
+   * capped at 1.25x the column width so tiles never become towers. Null means
+   * the host is not bounded and the tiles keep their ordinary size.
+   */
+  const drillLayout = $derived.by(() => {
+    const n = drillTileCount;
+    const { width, height } = tilesBox;
+    if (n === 0 || fillHeight === 0 || width === 0 || height === 0) return null;
+    let cols = 1;
+    let bestSize = 0;
+    for (let candidate = 1; candidate <= Math.min(n, 4); candidate += 1) {
+      const candidateRows = Math.ceil(n / candidate);
+      const candidateWidth = (width - DRILL_GAP * (candidate - 1)) / candidate;
+      const candidateHeight =
+        (height - DRILL_GAP * (candidateRows - 1)) / candidateRows;
+      const size = Math.min(candidateWidth, candidateHeight / 1.25);
+      if (size > bestSize + 0.5) {
+        bestSize = size;
+        cols = candidate;
+      }
+    }
+    const rows = Math.ceil(n / cols);
+    const colWidth = (width - DRILL_GAP * (cols - 1)) / cols;
+    const rowHeight = Math.floor(
+      Math.min((height - DRILL_GAP * (rows - 1)) / rows, colWidth * 1.25)
+    );
+    // The tiles sit on a doubled track grid (two tracks each) so a short
+    // last row can start one track in and centre itself.
+    const orphans = n % cols;
+    return {
+      cols,
+      rowHeight,
+      orphanIndex: orphans === 0 ? -1 : n - orphans,
+      orphanStart: cols - orphans + 1,
+    };
+  });
 
   // The sectioned grid's width and the height its labels take, which do not
   // change with the tile size, so the layout below can fit the tiles to the
@@ -603,6 +654,13 @@
       onPropLookChange !== undefined &&
       hasModelSprite(detailProp)
   );
+  // A style picked from a family's look tiles already carries its look, so
+  // its details keep to what the tiles cannot show (size, chirality).
+  const detailLookFromTiles = $derived(
+    drill?.kind === "details" &&
+      familyChoices(getBasePropType(drill.prop)).length > 1
+  );
+  const currentPropLook = $derived(normalizePropLook(propLook));
   const selectedPropLookOption = $derived(
     selectedPropType === null
       ? undefined
@@ -666,20 +724,24 @@
   // Track which paid prop (if any) is showing its upgrade nudge.
   let premiumNudgeFor = $state<PropType | null>(null);
 
-  function opensDetails(prop: PropType): boolean {
+  // A tile that already carries a look has nothing left to ask about it.
+  function opensDetails(prop: PropType, lookChosen: boolean): boolean {
     return (
       showAppearance &&
       (isFanPropType(prop) ||
         hasBigVariant(prop) ||
         isTrianglePropType(prop) ||
-        (onPropLookChange !== undefined && hasModelSprite(prop)) ||
+        (!lookChosen &&
+          onPropLookChange !== undefined &&
+          hasModelSprite(prop)) ||
         (chirality !== undefined && isBuugengFamilyProp(prop)))
     );
   }
 
-  function selectProp(prop: PropType): void {
+  function selectProp(prop: PropType, look?: PropLook): void {
     onSelect(prop);
-    if (!opensDetails(prop)) return;
+    if (look !== undefined) onPropLookChange?.(look);
+    if (!opensDetails(prop, look !== undefined)) return;
     void openDrill(
       isFanPropType(prop)
         ? { kind: "fan-look", prop }
@@ -695,11 +757,11 @@
    * - premium-nudge: toggles the upgrade callout; never calls onSelect.
    * - earn-tip: toggles the inline earn tip; never calls onSelect.
    */
-  function handleTileClick(prop: PropType) {
+  function handleTileClick(prop: PropType, look?: PropLook) {
     if (prop === PropType.HAND && includeBareHands) {
       lockedTipFor = null;
       premiumNudgeFor = null;
-      selectProp(prop);
+      selectProp(prop, look);
       return;
     }
 
@@ -707,7 +769,7 @@
     if (accessMode === "educational" && !premium) {
       lockedTipFor = null;
       premiumNudgeFor = null;
-      selectProp(prop);
+      selectProp(prop, look);
       return;
     }
     const route = premium
@@ -721,7 +783,7 @@
     if (route === "select") {
       lockedTipFor = null;
       premiumNudgeFor = null;
-      selectProp(prop);
+      selectProp(prop, look);
       return;
     }
 
@@ -875,7 +937,7 @@
     </header>
   {/if}
 
-  {#snippet tile(prop: PropType, columnStart?: number)}
+  {#snippet tile(prop: PropType, columnStart?: number, look?: PropLook)}
     <!--
       Each tile is wrapped in a relative-positioned container so the lock glyph,
       crown and earn-tip can be positioned over / below the button. The click
@@ -888,6 +950,10 @@
       only for sale.
     -->
     {@const premium = isPremiumCosmeticProp(prop)}
+    {@const label =
+      look === "model"
+        ? `${getPropTypeDisplayInfo(prop).label} 3D`
+        : getPropTypeDisplayInfo(prop).label}
     <div
       class="tile-wrapper"
       style:grid-column-start={columnStart}
@@ -896,13 +962,15 @@
     >
       <PropGridButton
         propType={prop}
-        selected={selectedPropType === prop}
+        {label}
+        actionLabel={look === "model" ? `Select ${label}` : undefined}
+        selected={selectedPropType === prop &&
+          (look === undefined || currentPropLook === look)}
         {color}
-        buttonProps={{ "data-prop-tile": prop }}
-        onSelect={() => handleTileClick(prop)}
+        buttonProps={{ "data-prop-tile": prop, "data-prop-look": look }}
+        onSelect={() => handleTileClick(prop, look)}
         fanAppearance={normalizedFanAppearance}
-        {propLook}
-        triangleGrip={currentGrip}
+        propLook={look ?? propLook}
         {recipeOverrides}
         {colors}
         previewPair={showAppearance}
@@ -1037,11 +1105,12 @@
                   {@render gripControl()}
                 </div>
               {/if}
-              {#if showPropLook && onPropLookChange}
+              {#if showPropLook && onPropLookChange && !detailLookFromTiles}
                 <PropLookPicker
                   propType={drill.prop}
                   value={propLook}
                   onchange={onPropLookChange}
+                  fill={fillHeight > 0}
                 />
               {/if}
               {#if chirality && isBuugengFamilyProp(drill.prop)}
@@ -1059,6 +1128,7 @@
               propType={selectedPropType}
               value={propLook}
               onchange={onPropLookChange}
+              fill={fillHeight > 0}
             />
           {:else}
             <div
@@ -1066,7 +1136,7 @@
               role="group"
               aria-label={`${drillTitle} choices`}
               class:dragging={railDragging}
-              style={balancedColumns(familyChoices(drill.base).length)}
+              style={balancedColumns(familyTiles.length)}
               style:--family-count={familyChoices(drill.base).length}
               class:comfortable={tileDensity === "comfortable"}
               class:fill={drillLayout !== null}
@@ -1083,12 +1153,13 @@
               onpointercancel={endRailPointer}
               onclickcapture={handleRailClick}
             >
-              {#each familyChoices(drill.base) as prop, index (prop)}
+              {#each familyTiles as entry, index (`${entry.prop}:${entry.look ?? ""}`)}
                 {@render tile(
-                  prop,
+                  entry.prop,
                   drillLayout && index === drillLayout.orphanIndex
                     ? drillLayout.orphanStart
-                    : undefined
+                    : undefined,
+                  entry.look
                 )}
               {/each}
             </div>
@@ -1524,11 +1595,13 @@
     gap: 8px;
   }
 
-  .flat-grid.comfortable {
+  /* A fill grid already sizes its tiles to the host; comfortable only sets
+     the unbounded grid's track floor and tile shape. */
+  .flat-grid.comfortable:not(.fill) {
     grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
     gap: 0.6rem;
   }
-  .flat-grid.comfortable :global(.prop-button) {
+  .flat-grid.comfortable:not(.fill) :global(.prop-button) {
     min-height: 6.75rem;
     aspect-ratio: 1.25;
     padding: 0.5rem;
@@ -1671,6 +1744,8 @@
   .detail-options.fill {
     flex: 1;
     min-height: 0;
+    /* Vertical only: a subpixel card edge must not raise a sideways bar. */
+    overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior-y: contain;
     scrollbar-width: thin;
