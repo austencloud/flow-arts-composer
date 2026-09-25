@@ -1446,12 +1446,15 @@
      and path controls keep their natural height above the merged Motion grid. */
   .motion-scope.fills,
   .motion-scope.fills .motion-stack,
-  .motion-scope.fills .motion-stack > :global(.section-pad),
   .section-pad.fill-effort {
     flex: 1 1 0;
     min-height: 0;
     display: flex;
     flex-direction: column;
+  }
+
+  .motion-scope.fills .motion-stack > :global(.section-pad:not(.fill-effort)) {
+    flex: 0 0 auto;
   }
 
   /* The merged sections keep their own internal padding; the stack only
