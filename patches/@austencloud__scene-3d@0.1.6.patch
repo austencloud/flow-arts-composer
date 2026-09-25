@@ -8908,7 +8908,7 @@ diff --git a/dist/lib/services/implementations/AnimationStateMachine.d.ts.map b/
 deleted file mode 100644
 index f98ba9f8480c6de2af5d91103546be019d81dbb0..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/AvatarAnimator.d.ts b/dist/lib/services/implementations/AvatarAnimator.d.ts
-index cac989e5e6..8e8bacbfe0 100644
+index cac989e5e6..677e90aa93 100644
 --- a/dist/lib/services/implementations/AvatarAnimator.d.ts
 +++ b/dist/lib/services/implementations/AvatarAnimator.d.ts
 @@ -4,7 +4,8 @@
@@ -8950,7 +8950,7 @@ index cac989e5e6..8e8bacbfe0 100644
      private _poleVectorsEnabled;
      private clavicleRaiser;
      private leftClavicleQuat;
-@@ -54,23 +70,279 @@ export declare class AvatarAnimator implements IAvatarAnimator {
+@@ -54,23 +70,297 @@ export declare class AvatarAnimator implements IAvatarAnimator {
       * on top of the twist rest pose before arm IK runs. 0 = disabled.
       */
      private externalSpinePitchRad;
@@ -9030,6 +9030,9 @@ index cac989e5e6..8e8bacbfe0 100644
 +    private readonly _handDeviate;
 +    private readonly _handRef;
 +    private readonly _handAxis;
++    private readonly _handSquareE1;
++    private readonly _handSquareE2;
++    private readonly _handSquareE3;
 +    private readonly leftHandDir;
 +    private readonly rightHandDir;
 +    private leftHandDirValid;
@@ -9190,15 +9193,30 @@ index cac989e5e6..8e8bacbfe0 100644
 +    /**
 +     * Direction the hand points, wrist to palm, for a requested grip.
 +     *
-+     * A square stance keeps the historical approach: straight along the medial
-+     * axis, so the wrist sits a palm length outboard of the grip. Once the chest
-+     * turns side-on the goal becomes medial, eased back toward the forearm by a
-+     * bounded wrist deviation and resolved inside the plane the knuckle axis can
-+     * actually reach. Nothing here moves the authored grip: the wrist travels
-+     * around it on a palm-length sphere, so the hug is the hand rotating in, not
-+     * a second placement pass, and the elbow stays where the arm already put it.
++     * A square stance uses the hand orientation the wrist pass will produce:
++     * knuckle line along the staff, palm NORMAL rolled medial. The wrist-to-palm
++     * vector is not the palm normal, so placing the wrist as if the hand pointed
++     * straight medial (the historical approach) left the palm about 1.4 palm
++     * lengths off the staff once the roll landed. Once the chest turns side-on
++     * the goal becomes medial, eased back toward the forearm by a bounded wrist
++     * deviation and resolved inside the plane the knuckle axis can actually
++     * reach; the hug blends from the square direction, so crossing the hug knee
++     * never jumps the wrist. Nothing here moves the authored grip: the wrist
++     * travels around it on a palm-length sphere, so the hug is the hand rotating
++     * in, not a second placement pass, and the elbow stays where the arm already
++     * put it.
 +     */
 +    private computeHandDirection;
++    /**
++     * Wrist-to-palm direction of the square-stance grip. The orientation pass
++     * puts the knuckle line on the directed staff axis and rolls the palm
++     * normal onto the medial direction perpendicular to it; expressing the
++     * measured palm offset in that frame gives where the palm will actually
++     * sit. Reads `_handAxis` and `_handMedial` as prepared by
++     * computeHandDirection, and leaves `out` alone until the hand frame is
++     * measured.
++     */
++    private computeSquareHandDirection;
 +    private computeSocketTarget;
 +    /**
 +     * Probe the IK solve; when the target is out of reach, protract the
@@ -9231,7 +9249,7 @@ index cac989e5e6..8e8bacbfe0 100644
      addLayer(layer: AnimationLayer): void;
      removeLayer(layerId: string): void;
      setLayerWeight(layerId: string, weight: number): void;
-@@ -78,8 +350,16 @@ export declare class AvatarAnimator implements IAvatarAnimator {
+@@ -78,8 +368,16 @@ export declare class AvatarAnimator implements IAvatarAnimator {
      setSmoothBlending(enabled: boolean): void;
      setSmoothingFactor(factor: number): void;
      setExternalSpinePitch(radians: number): void;
@@ -9248,7 +9266,7 @@ index cac989e5e6..8e8bacbfe0 100644
      /** Debug toggle: disable clavicle raise to compare old vs new shoulder behavior */
      toggleClavicleRaise(): boolean;
      /** Skip Hips counter-rotation (exhibit performers with planted feet) */
-@@ -89,4 +369,3 @@ export declare class AvatarAnimator implements IAvatarAnimator {
+@@ -89,4 +387,3 @@ export declare class AvatarAnimator implements IAvatarAnimator {
      /** Debug toggle: disable spine twist to compare old vs new torso behavior */
      toggleSpineTwist(): boolean;
  }
@@ -9258,7 +9276,7 @@ diff --git a/dist/lib/services/implementations/AvatarAnimator.d.ts.map b/dist/li
 deleted file mode 100644
 index f8e47d42167b6ea9bb4fd8f44f41273f48f1943b..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/AvatarAnimator.js b/dist/lib/services/implementations/AvatarAnimator.js
-index bdd5ae35ed..ba5520847c 100644
+index bdd5ae35ed..04d35a4b57 100644
 --- a/dist/lib/services/implementations/AvatarAnimator.js
 +++ b/dist/lib/services/implementations/AvatarAnimator.js
 @@ -4,7 +4,96 @@
@@ -9393,7 +9411,7 @@ index bdd5ae35ed..ba5520847c 100644
      _poleVectorsEnabled = true;
      clavicleRaiser;
      leftClavicleQuat = new Quaternion();
-@@ -67,6 +174,132 @@ export class AvatarAnimator {
+@@ -67,6 +174,135 @@ export class AvatarAnimator {
       * on top of the twist rest pose before arm IK runs. 0 = disabled.
       */
      externalSpinePitchRad = 0;
@@ -9505,6 +9523,9 @@ index bdd5ae35ed..ba5520847c 100644
 +    _handDeviate = new Vector3();
 +    _handRef = new Vector3();
 +    _handAxis = new Vector3();
++    _handSquareE1 = new Vector3();
++    _handSquareE2 = new Vector3();
++    _handSquareE3 = new Vector3();
 +    leftHandDir = new Vector3();
 +    rightHandDir = new Vector3();
 +    leftHandDirValid = false;
@@ -9526,7 +9547,7 @@ index bdd5ae35ed..ba5520847c 100644
      constructor(ikSolver, skeleton, poleComputer, clavicleRaiser, spineTwister) {
          this.ikSolver = ikSolver;
          this.skeleton = skeleton;
-@@ -140,9 +373,43 @@ export class AvatarAnimator {
+@@ -140,9 +376,43 @@ export class AvatarAnimator {
                  weight: 1,
              }
              : null;
@@ -9571,7 +9592,7 @@ index bdd5ae35ed..ba5520847c 100644
          this.leftArmIK.targetWeight = blueProp ? 1 : 0;
          this.rightArmIK.targetWeight = redProp ? 1 : 0;
          const ox = offset?.x ?? 0;
-@@ -154,6 +421,7 @@ export class AvatarAnimator {
+@@ -154,6 +424,7 @@ export class AvatarAnimator {
          this.targetPose.leftHand = blueProp
              ? {
                  targetPosition: new Vector3(blueProp.worldPosition.x - ox, blueProp.worldPosition.y - oy, blueProp.worldPosition.z - oz),
@@ -9579,7 +9600,7 @@ index bdd5ae35ed..ba5520847c 100644
                  staffAngle: blueProp.staffRotationAngle,
                  plane: blueProp.plane,
                  weight: 1,
-@@ -162,13 +430,103 @@ export class AvatarAnimator {
+@@ -162,13 +433,103 @@ export class AvatarAnimator {
          this.targetPose.rightHand = redProp
              ? {
                  targetPosition: new Vector3(redProp.worldPosition.x - ox, redProp.worldPosition.y - oy, redProp.worldPosition.z - oz),
@@ -9683,7 +9704,7 @@ index bdd5ae35ed..ba5520847c 100644
      setLeftHandTarget(target) {
          this.targetPose.leftHand = { ...target };
          this.targetPose.timestamp = Date.now();
-@@ -183,8 +541,14 @@ export class AvatarAnimator {
+@@ -183,8 +544,14 @@ export class AvatarAnimator {
      update(deltaTime) {
          // Ramp per-arm IK blend weights (framerate-independent exponential lerp)
          const blendFactor = 1 - Math.exp(-this.ikBlendSpeed * deltaTime);
@@ -9700,7 +9721,7 @@ index bdd5ae35ed..ba5520847c 100644
          if (this.transitioning) {
              this.updateTransition(deltaTime);
          }
-@@ -197,7 +561,311 @@ export class AvatarAnimator {
+@@ -197,7 +564,311 @@ export class AvatarAnimator {
          // Apply combined layers
          const finalPose = this.computeFinalPose();
          // Solve IK for arms
@@ -10013,7 +10034,7 @@ index bdd5ae35ed..ba5520847c 100644
      }
      blendToTarget(_deltaTime) {
          // Hands snap directly to prop positions - no lerp.
-@@ -273,18 +941,184 @@ export class AvatarAnimator {
+@@ -273,18 +944,184 @@ export class AvatarAnimator {
          }
          return result;
      }
@@ -10199,7 +10220,7 @@ index bdd5ae35ed..ba5520847c 100644
          // Cache shoulder rest Y positions once (before any clavicle rotation has been applied).
          // CRITICAL: Do NOT read these per-frame after clavicle is rotated - the elevated
          // position feeds back and causes oscillation.
-@@ -335,7 +1169,7 @@ export class AvatarAnimator {
+@@ -335,7 +1172,7 @@ export class AvatarAnimator {
              // Nullable hands are first-class: SpineTwister handles the
              // single-hand-gaze branch and the no-hand identity branch
              // internally, so we pass pose hands through as-is.
@@ -10208,7 +10229,7 @@ index bdd5ae35ed..ba5520847c 100644
              // Apply twist to each bone individually for a natural spinal curve.
              // Each bone gets its own weighted quaternion from SpineTwister.
              const applySpineTwist = (boneName, key, twistQuat) => {
-@@ -389,11 +1223,148 @@ export class AvatarAnimator {
+@@ -389,11 +1226,148 @@ export class AvatarAnimator {
                      hipsBoneForUpdate.updateMatrixWorld(true);
              }
          }
@@ -10358,7 +10379,7 @@ index bdd5ae35ed..ba5520847c 100644
                  // Save what the locomotion animation wrote to bone quaternions
                  const animRootQuat = leftChain.root.quaternion.clone();
                  const animMiddleQuat = leftChain.middle.quaternion.clone();
-@@ -402,7 +1373,7 @@ export class AvatarAnimator {
+@@ -402,7 +1376,7 @@ export class AvatarAnimator {
                  if (this._clavicleRaiseEnabled && this.clavicleRaiser && this.shoulderRestCached) {
                      const leftShoulder = state.bones.get("LeftShoulder");
                      if (leftShoulder) {
@@ -10367,7 +10388,7 @@ index bdd5ae35ed..ba5520847c 100644
                          this.leftClavicleQuat.slerp(targetQuat, this.smoothingFactor);
                          leftShoulder.quaternion
                              .copy(this.leftClavicleRestQuat)
-@@ -410,19 +1381,56 @@ export class AvatarAnimator {
+@@ -410,19 +1384,56 @@ export class AvatarAnimator {
                          leftShoulder.updateMatrixWorld(true);
                      }
                  }
@@ -10427,7 +10448,7 @@ index bdd5ae35ed..ba5520847c 100644
                  // Save IK results BEFORE blending - .copy() would overwrite them
                  const ikRootQuat = leftChain.root.quaternion.clone();
                  const ikMiddleQuat = leftChain.middle.quaternion.clone();
-@@ -432,12 +1440,20 @@ export class AvatarAnimator {
+@@ -432,12 +1443,20 @@ export class AvatarAnimator {
                  leftChain.root.quaternion.copy(animRootQuat).slerp(ikRootQuat, w);
                  leftChain.middle.quaternion.copy(animMiddleQuat).slerp(ikMiddleQuat, w);
                  leftChain.effector.quaternion.copy(animEffectorQuat).slerp(ikEffectorQuat, w);
@@ -10449,7 +10470,7 @@ index bdd5ae35ed..ba5520847c 100644
                  // Save what the locomotion animation wrote to bone quaternions
                  const animRootQuat = rightChain.root.quaternion.clone();
                  const animMiddleQuat = rightChain.middle.quaternion.clone();
-@@ -446,7 +1462,7 @@ export class AvatarAnimator {
+@@ -446,7 +1465,7 @@ export class AvatarAnimator {
                  if (this._clavicleRaiseEnabled && this.clavicleRaiser && this.shoulderRestCached) {
                      const rightShoulder = state.bones.get("RightShoulder");
                      if (rightShoulder) {
@@ -10458,7 +10479,7 @@ index bdd5ae35ed..ba5520847c 100644
                          this.rightClavicleQuat.slerp(targetQuat, this.smoothingFactor);
                          rightShoulder.quaternion
                              .copy(this.rightClavicleRestQuat)
-@@ -454,19 +1470,49 @@ export class AvatarAnimator {
+@@ -454,19 +1473,49 @@ export class AvatarAnimator {
                          rightShoulder.updateMatrixWorld(true);
                      }
                  }
@@ -10511,7 +10532,7 @@ index bdd5ae35ed..ba5520847c 100644
                  // Save IK results BEFORE blending - .copy() would overwrite them
                  const ikRootQuat = rightChain.root.quaternion.clone();
                  const ikMiddleQuat = rightChain.middle.quaternion.clone();
-@@ -476,11 +1522,726 @@ export class AvatarAnimator {
+@@ -476,11 +1525,773 @@ export class AvatarAnimator {
                  rightChain.root.quaternion.copy(animRootQuat).slerp(ikRootQuat, w);
                  rightChain.middle.quaternion.copy(animMiddleQuat).slerp(ikMiddleQuat, w);
                  rightChain.effector.quaternion.copy(animEffectorQuat).slerp(ikEffectorQuat, w);
@@ -10825,13 +10846,18 @@ index bdd5ae35ed..ba5520847c 100644
 +    /**
 +     * Direction the hand points, wrist to palm, for a requested grip.
 +     *
-+     * A square stance keeps the historical approach: straight along the medial
-+     * axis, so the wrist sits a palm length outboard of the grip. Once the chest
-+     * turns side-on the goal becomes medial, eased back toward the forearm by a
-+     * bounded wrist deviation and resolved inside the plane the knuckle axis can
-+     * actually reach. Nothing here moves the authored grip: the wrist travels
-+     * around it on a palm-length sphere, so the hug is the hand rotating in, not
-+     * a second placement pass, and the elbow stays where the arm already put it.
++     * A square stance uses the hand orientation the wrist pass will produce:
++     * knuckle line along the staff, palm NORMAL rolled medial. The wrist-to-palm
++     * vector is not the palm normal, so placing the wrist as if the hand pointed
++     * straight medial (the historical approach) left the palm about 1.4 palm
++     * lengths off the staff once the roll landed. Once the chest turns side-on
++     * the goal becomes medial, eased back toward the forearm by a bounded wrist
++     * deviation and resolved inside the plane the knuckle axis can actually
++     * reach; the hug blends from the square direction, so crossing the hug knee
++     * never jumps the wrist. Nothing here moves the authored grip: the wrist
++     * travels around it on a palm-length sphere, so the hug is the hand rotating
++     * in, not a second placement pass, and the elbow stays where the arm already
++     * put it.
 +     */
 +    computeHandDirection(side, chain, gripPoint, staffQuat, out) {
 +        const medialSign = side === "left" ? 1 : -1;
@@ -10840,8 +10866,7 @@ index bdd5ae35ed..ba5520847c 100644
 +            .multiplyScalar(medialSign)
 +            .normalize();
 +        out.copy(this._handMedial);
-+        const blend = this.hugBlend();
-+        if (blend <= 1e-4 || !staffQuat)
++        if (!staffQuat)
 +            return;
 +        // The knuckle axis is welded to the staff, so the only wrist-to-palm
 +        // directions the orientation pass can actually reach lie in the plane
@@ -10857,6 +10882,10 @@ index bdd5ae35ed..ba5520847c 100644
 +        if (this._handMedial.lengthSq() <= 1e-10)
 +            return;
 +        this._handMedial.normalize();
++        this.computeSquareHandDirection(side, out);
++        const blend = this.hugBlend();
++        if (blend <= 1e-4)
++            return;
 +        // Rotate the medial goal back toward the arm's own reach line by a
 +        // bounded wrist deviation. Pure medial is the tightest hug the hand can
 +        // hold; easing toward the arm's line is what keeps the elbow where it
@@ -10896,6 +10925,45 @@ index bdd5ae35ed..ba5520847c 100644
 +            out.copy(this._handMedial);
 +        else
 +            out.normalize();
++    }
++    /**
++     * Wrist-to-palm direction of the square-stance grip. The orientation pass
++     * puts the knuckle line on the directed staff axis and rolls the palm
++     * normal onto the medial direction perpendicular to it; expressing the
++     * measured palm offset in that frame gives where the palm will actually
++     * sit. Reads `_handAxis` and `_handMedial` as prepared by
++     * computeHandDirection, and leaves `out` alone until the hand frame is
++     * measured.
++     */
++    computeSquareHandDirection(side, out) {
++        const gripAxis = side === "left" ? this.leftGripAxisLocal : this.rightGripAxisLocal;
++        const palmNormal = side === "left" ? this.leftPalmNormalLocal : this.rightPalmNormalLocal;
++        const palm = side === "left" ? this.leftPalmLocal : this.rightPalmLocal;
++        if (!gripAxis || !palmNormal || !palm)
++            return;
++        const e1 = this._handSquareE1.copy(gripAxis);
++        if (e1.lengthSq() <= 1e-10)
++            return;
++        e1.normalize();
++        const e2 = this._handSquareE2
++            .copy(palmNormal)
++            .addScaledVector(e1, -palmNormal.dot(e1));
++        if (e2.lengthSq() <= 1e-10)
++            return;
++        e2.normalize();
++        const e3 = this._handSquareE3.crossVectors(e1, e2);
++        const along = palm.dot(e1);
++        const normal = palm.dot(e2);
++        const across = palm.dot(e3);
++        // The same coordinates in the world frame the roll lands on.
++        e3.crossVectors(this._handAxis, this._handMedial);
++        e1.copy(this._handAxis)
++            .multiplyScalar(along)
++            .addScaledVector(this._handMedial, normal)
++            .addScaledVector(e3, across);
++        if (e1.lengthSq() <= 1e-10)
++            return;
++        out.copy(e1).normalize();
 +    }
 +    computeSocketTarget(side, chain, gripPoint, staffQuat) {
 +        const palmLocal = side === "left" ? this.leftPalmLocal : this.rightPalmLocal;
@@ -11238,7 +11306,7 @@ index bdd5ae35ed..ba5520847c 100644
      addLayer(layer) {
          this.layers.set(layer.id, layer);
      }
-@@ -521,6 +2282,12 @@ export class AvatarAnimator {
+@@ -521,6 +2332,12 @@ export class AvatarAnimator {
      setExternalSpinePitch(radians) {
          this.externalSpinePitchRad = radians;
      }
@@ -11251,7 +11319,7 @@ index bdd5ae35ed..ba5520847c 100644
      /** Debug toggle: disable pole vectors to compare old vs new elbow behavior */
      togglePoleVectors() {
          this._poleVectorsEnabled = !this._poleVectorsEnabled;
-@@ -528,9 +2295,16 @@ export class AvatarAnimator {
+@@ -528,9 +2345,16 @@ export class AvatarAnimator {
              // Reset to default backward poles so difference is visible immediately
              this.leftPoleVector.set(0, 0, -1);
              this.rightPoleVector.set(0, 0, -1);
@@ -28853,7 +28921,7 @@ index 0000000000..2ffaba50d5
 +  return confidence;
 +}
 diff --git a/src/lib/services/implementations/AvatarAnimator.ts b/src/lib/services/implementations/AvatarAnimator.ts
-index c73bcabe86..b01bf88254 100644
+index c73bcabe86..9a4d8c8a92 100644
 --- a/src/lib/services/implementations/AvatarAnimator.ts
 +++ b/src/lib/services/implementations/AvatarAnimator.ts
 @@ -5,21 +5,147 @@
@@ -29042,7 +29110,7 @@ index c73bcabe86..b01bf88254 100644
    private _poleVectorsEnabled = true;
  
    private clavicleRaiser: IClavicleRaiser | null;
-@@ -85,6 +229,142 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -85,6 +229,145 @@ export class AvatarAnimator implements IAvatarAnimator {
     */
    private externalSpinePitchRad = 0;
  
@@ -29163,6 +29231,9 @@ index c73bcabe86..b01bf88254 100644
 +  private readonly _handDeviate = new Vector3();
 +  private readonly _handRef = new Vector3();
 +  private readonly _handAxis = new Vector3();
++  private readonly _handSquareE1 = new Vector3();
++  private readonly _handSquareE2 = new Vector3();
++  private readonly _handSquareE3 = new Vector3();
 +  private readonly leftHandDir = new Vector3();
 +  private readonly rightHandDir = new Vector3();
 +  private leftHandDirValid = false;
@@ -29185,7 +29256,7 @@ index c73bcabe86..b01bf88254 100644
    constructor(
      private ikSolver: IIKSolver,
      private skeleton: IAvatarSkeletonBuilder,
-@@ -180,13 +460,59 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -180,13 +463,59 @@ export class AvatarAnimator implements IAvatarAnimator {
          }
        : null;
  
@@ -29246,7 +29317,7 @@ index c73bcabe86..b01bf88254 100644
    ): void {
      this.leftArmIK.targetWeight = blueProp ? 1 : 0;
      this.rightArmIK.targetWeight = redProp ? 1 : 0;
-@@ -205,6 +531,7 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -205,6 +534,7 @@ export class AvatarAnimator implements IAvatarAnimator {
              blueProp.worldPosition.y - oy,
              blueProp.worldPosition.z - oz
            ),
@@ -29254,7 +29325,7 @@ index c73bcabe86..b01bf88254 100644
            staffAngle: blueProp.staffRotationAngle,
            plane: blueProp.plane,
            weight: 1,
-@@ -218,15 +545,131 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -218,15 +548,131 @@ export class AvatarAnimator implements IAvatarAnimator {
              redProp.worldPosition.y - oy,
              redProp.worldPosition.z - oz
            ),
@@ -29386,7 +29457,7 @@ index c73bcabe86..b01bf88254 100644
    setLeftHandTarget(target: HandPose): void {
      this.targetPose.leftHand = { ...target };
      this.targetPose.timestamp = Date.now();
-@@ -244,8 +687,13 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -244,8 +690,13 @@ export class AvatarAnimator implements IAvatarAnimator {
    update(deltaTime: number): void {
      // Ramp per-arm IK blend weights (framerate-independent exponential lerp)
      const blendFactor = 1 - Math.exp(-this.ikBlendSpeed * deltaTime);
@@ -29402,7 +29473,7 @@ index c73bcabe86..b01bf88254 100644
  
      if (this.transitioning) {
        this.updateTransition(deltaTime);
-@@ -259,7 +707,303 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -259,7 +710,303 @@ export class AvatarAnimator implements IAvatarAnimator {
      const finalPose = this.computeFinalPose();
  
      // Solve IK for arms
@@ -29707,7 +29778,7 @@ index c73bcabe86..b01bf88254 100644
    }
  
    private blendToTarget(_deltaTime: number): void {
-@@ -378,13 +1122,217 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -378,13 +1125,217 @@ export class AvatarAnimator implements IAvatarAnimator {
      return result;
    }
  
@@ -29926,7 +29997,7 @@ index c73bcabe86..b01bf88254 100644
      // Compute body center from Hips bone (or default to origin)
      const bodyCenter = new Vector3(0, 0, 0);
      const hipsBone = state.bones.get("Hips");
-@@ -392,6 +1340,11 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -392,6 +1343,11 @@ export class AvatarAnimator implements IAvatarAnimator {
        hipsBone.getWorldPosition(bodyCenter);
      }
  
@@ -29938,7 +30009,7 @@ index c73bcabe86..b01bf88254 100644
      // Cache shoulder rest Y positions once (before any clavicle rotation has been applied).
      // CRITICAL: Do NOT read these per-frame after clavicle is rotated - the elevated
      // position feeds back and causes oscillation.
-@@ -445,7 +1398,8 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -445,7 +1401,8 @@ export class AvatarAnimator implements IAvatarAnimator {
          pose.leftHand?.targetPosition ?? null,
          pose.rightHand?.targetPosition ?? null,
          bodyCenter,
@@ -29948,7 +30019,7 @@ index c73bcabe86..b01bf88254 100644
        );
  
        // Apply twist to each bone individually for a natural spinal curve.
-@@ -511,12 +1465,175 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -511,12 +1468,175 @@ export class AvatarAnimator implements IAvatarAnimator {
        }
      }
  
@@ -30125,7 +30196,7 @@ index c73bcabe86..b01bf88254 100644
          // Save what the locomotion animation wrote to bone quaternions
          const animRootQuat = leftChain.root.quaternion.clone();
          const animMiddleQuat = leftChain.middle.quaternion.clone();
-@@ -527,7 +1644,7 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -527,7 +1647,7 @@ export class AvatarAnimator implements IAvatarAnimator {
            const leftShoulder = state.bones.get("LeftShoulder");
            if (leftShoulder) {
              const targetQuat = this.clavicleRaiser.computeClavicleRotation(
@@ -30134,7 +30205,7 @@ index c73bcabe86..b01bf88254 100644
                "left",
                this.leftShoulderRestY,
                leftChain.totalLength
-@@ -540,6 +1657,15 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -540,6 +1660,15 @@ export class AvatarAnimator implements IAvatarAnimator {
            }
          }
  
@@ -30150,7 +30221,7 @@ index c73bcabe86..b01bf88254 100644
          // Build IK target with optional pole vector
          const target: IKTarget = {
            position: leftTarget,
-@@ -547,19 +1673,75 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -547,19 +1676,75 @@ export class AvatarAnimator implements IAvatarAnimator {
          };
  
          if (this._poleVectorsEnabled && this.poleComputer && leftHand.plane) {
@@ -30229,7 +30300,7 @@ index c73bcabe86..b01bf88254 100644
  
          // Save IK results BEFORE blending - .copy() would overwrite them
          const ikRootQuat = leftChain.root.quaternion.clone();
-@@ -572,13 +1754,24 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -572,13 +1757,24 @@ export class AvatarAnimator implements IAvatarAnimator {
          leftChain.middle.quaternion.copy(animMiddleQuat).slerp(ikMiddleQuat, w);
          leftChain.effector.quaternion.copy(animEffectorQuat).slerp(ikEffectorQuat, w);
  
@@ -30255,7 +30326,7 @@ index c73bcabe86..b01bf88254 100644
          // Save what the locomotion animation wrote to bone quaternions
          const animRootQuat = rightChain.root.quaternion.clone();
          const animMiddleQuat = rightChain.middle.quaternion.clone();
-@@ -589,7 +1782,7 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -589,7 +1785,7 @@ export class AvatarAnimator implements IAvatarAnimator {
            const rightShoulder = state.bones.get("RightShoulder");
            if (rightShoulder) {
              const targetQuat = this.clavicleRaiser.computeClavicleRotation(
@@ -30264,7 +30335,7 @@ index c73bcabe86..b01bf88254 100644
                "right",
                this.rightShoulderRestY,
                rightChain.totalLength
-@@ -602,6 +1795,15 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -602,6 +1798,15 @@ export class AvatarAnimator implements IAvatarAnimator {
            }
          }
  
@@ -30280,7 +30351,7 @@ index c73bcabe86..b01bf88254 100644
          // Build IK target with optional pole vector
          const target: IKTarget = {
            position: rightTarget,
-@@ -609,19 +1811,68 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -609,19 +1814,68 @@ export class AvatarAnimator implements IAvatarAnimator {
          };
  
          if (this._poleVectorsEnabled && this.poleComputer && rightHand.plane) {
@@ -30352,7 +30423,7 @@ index c73bcabe86..b01bf88254 100644
  
          // Save IK results BEFORE blending - .copy() would overwrite them
          const ikRootQuat = rightChain.root.quaternion.clone();
-@@ -634,13 +1885,972 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -634,13 +1888,1020 @@ export class AvatarAnimator implements IAvatarAnimator {
          rightChain.middle.quaternion.copy(animMiddleQuat).slerp(ikMiddleQuat, w);
          rightChain.effector.quaternion.copy(animEffectorQuat).slerp(ikEffectorQuat, w);
  
@@ -30749,13 +30820,18 @@ index c73bcabe86..b01bf88254 100644
 +  /**
 +   * Direction the hand points, wrist to palm, for a requested grip.
 +   *
-+   * A square stance keeps the historical approach: straight along the medial
-+   * axis, so the wrist sits a palm length outboard of the grip. Once the chest
-+   * turns side-on the goal becomes medial, eased back toward the forearm by a
-+   * bounded wrist deviation and resolved inside the plane the knuckle axis can
-+   * actually reach. Nothing here moves the authored grip: the wrist travels
-+   * around it on a palm-length sphere, so the hug is the hand rotating in, not
-+   * a second placement pass, and the elbow stays where the arm already put it.
++   * A square stance uses the hand orientation the wrist pass will produce:
++   * knuckle line along the staff, palm NORMAL rolled medial. The wrist-to-palm
++   * vector is not the palm normal, so placing the wrist as if the hand pointed
++   * straight medial (the historical approach) left the palm about 1.4 palm
++   * lengths off the staff once the roll landed. Once the chest turns side-on
++   * the goal becomes medial, eased back toward the forearm by a bounded wrist
++   * deviation and resolved inside the plane the knuckle axis can actually
++   * reach; the hug blends from the square direction, so crossing the hug knee
++   * never jumps the wrist. Nothing here moves the authored grip: the wrist
++   * travels around it on a palm-length sphere, so the hug is the hand rotating
++   * in, not a second placement pass, and the elbow stays where the arm already
++   * put it.
 +   */
 +  private computeHandDirection(
 +    side: "left" | "right",
@@ -30770,8 +30846,7 @@ index c73bcabe86..b01bf88254 100644
 +      .multiplyScalar(medialSign)
 +      .normalize();
 +    out.copy(this._handMedial);
-+    const blend = this.hugBlend();
-+    if (blend <= 1e-4 || !staffQuat) return;
++    if (!staffQuat) return;
 +    // The knuckle axis is welded to the staff, so the only wrist-to-palm
 +    // directions the orientation pass can actually reach lie in the plane
 +    // perpendicular to the shaft. Solve the hug inside that plane; a goal
@@ -30787,6 +30862,9 @@ index c73bcabe86..b01bf88254 100644
 +    );
 +    if (this._handMedial.lengthSq() <= 1e-10) return;
 +    this._handMedial.normalize();
++    this.computeSquareHandDirection(side, out);
++    const blend = this.hugBlend();
++    if (blend <= 1e-4) return;
 +    // Rotate the medial goal back toward the arm's own reach line by a
 +    // bounded wrist deviation. Pure medial is the tightest hug the hand can
 +    // hold; easing toward the arm's line is what keeps the elbow where it
@@ -30830,6 +30908,47 @@ index c73bcabe86..b01bf88254 100644
 +    out.lerp(this._handRef, blend);
 +    if (out.lengthSq() <= 1e-10) out.copy(this._handMedial);
 +    else out.normalize();
++  }
++
++  /**
++   * Wrist-to-palm direction of the square-stance grip. The orientation pass
++   * puts the knuckle line on the directed staff axis and rolls the palm
++   * normal onto the medial direction perpendicular to it; expressing the
++   * measured palm offset in that frame gives where the palm will actually
++   * sit. Reads `_handAxis` and `_handMedial` as prepared by
++   * computeHandDirection, and leaves `out` alone until the hand frame is
++   * measured.
++   */
++  private computeSquareHandDirection(
++    side: "left" | "right",
++    out: Vector3
++  ): void {
++    const gripAxis =
++      side === "left" ? this.leftGripAxisLocal : this.rightGripAxisLocal;
++    const palmNormal =
++      side === "left" ? this.leftPalmNormalLocal : this.rightPalmNormalLocal;
++    const palm = side === "left" ? this.leftPalmLocal : this.rightPalmLocal;
++    if (!gripAxis || !palmNormal || !palm) return;
++    const e1 = this._handSquareE1.copy(gripAxis);
++    if (e1.lengthSq() <= 1e-10) return;
++    e1.normalize();
++    const e2 = this._handSquareE2
++      .copy(palmNormal)
++      .addScaledVector(e1, -palmNormal.dot(e1));
++    if (e2.lengthSq() <= 1e-10) return;
++    e2.normalize();
++    const e3 = this._handSquareE3.crossVectors(e1, e2);
++    const along = palm.dot(e1);
++    const normal = palm.dot(e2);
++    const across = palm.dot(e3);
++    // The same coordinates in the world frame the roll lands on.
++    e3.crossVectors(this._handAxis, this._handMedial);
++    e1.copy(this._handAxis)
++      .multiplyScalar(along)
++      .addScaledVector(this._handMedial, normal)
++      .addScaledVector(e3, across);
++    if (e1.lengthSq() <= 1e-10) return;
++    out.copy(e1).normalize();
 +  }
 +
 +  private computeSocketTarget(
@@ -31325,7 +31444,7 @@ index c73bcabe86..b01bf88254 100644
  
    addLayer(layer: AnimationLayer): void {
      this.layers.set(layer.id, layer);
-@@ -689,6 +2899,20 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -689,6 +2950,20 @@ export class AvatarAnimator implements IAvatarAnimator {
      this.externalSpinePitchRad = radians;
    }
  
@@ -31346,7 +31465,7 @@ index c73bcabe86..b01bf88254 100644
    /** Debug toggle: disable pole vectors to compare old vs new elbow behavior */
    togglePoleVectors(): boolean {
      this._poleVectorsEnabled = !this._poleVectorsEnabled;
-@@ -696,10 +2920,18 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -696,10 +2971,18 @@ export class AvatarAnimator implements IAvatarAnimator {
        // Reset to default backward poles so difference is visible immediately
        this.leftPoleVector.set(0, 0, -1);
        this.rightPoleVector.set(0, 0, -1);

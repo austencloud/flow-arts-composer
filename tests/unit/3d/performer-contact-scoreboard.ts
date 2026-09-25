@@ -83,6 +83,7 @@ export interface SequenceScore {
   handFrames: number;
   gapOver3cm: number;
   staffThroughBody: number;
+  authoredStaffThroughBody: number;
 }
 
 export interface ContactScore {
@@ -105,6 +106,12 @@ export interface ContactScore {
   palmMinM: number;
   /** Staff-frames where the rendered staff passes through a body part. */
   staffThrough: Record<string, number>;
+  /**
+   * The same count for the staff where the grid places it, before the render
+   * lock pulls it toward the palm. Separates clipping the choreography
+   * authors from clipping the hand causes.
+   */
+  authoredStaffThrough: Record<string, number>;
   sequences: SequenceScore[];
   worstBeats: WorstBeat[];
 }
@@ -266,6 +273,9 @@ export async function runContactScoreboard(
   const staffThrough: Record<string, number> = Object.fromEntries(
     STAFF_ZONES.map((zone) => [zone, 0])
   );
+  const authoredStaffThrough: Record<string, number> = Object.fromEntries(
+    STAFF_ZONES.map((zone) => [zone, 0])
+  );
   const beatWorst = new Map<string, WorstBeat>();
   const sequences: SequenceScore[] = [];
   const score = {
@@ -288,6 +298,7 @@ export async function runContactScoreboard(
         handFrames: 0,
         gapOver3cm: 0,
         staffThroughBody: 0,
+        authoredStaffThroughBody: 0,
       };
       const state = createCharacterInstanceState(
         { id: `scoreboard-${entry.id}`, persistent: false },
@@ -411,6 +422,34 @@ export async function runContactScoreboard(
             perSequence.staffThroughBody++;
           }
         }
+        const authored = (
+          prop: HandProp | null,
+          quat: QuaternionType | null
+        ): PropSegment | null => {
+          if (!prop || !quat) return null;
+          const half = new Vector3(0, 1, 0)
+            .applyQuaternion(quat)
+            .normalize()
+            .multiplyScalar(STAFF_HALF_LENGTH_M);
+          return {
+            a: prop.worldPosition.clone().add(half),
+            b: prop.worldPosition.clone().sub(half),
+            radius: STAFF_RADIUS_M,
+          };
+        };
+        const authoredEvents = detector.detect(
+          body,
+          authored(blue, blueQuat),
+          authored(red, redQuat),
+          step,
+          phase - step
+        );
+        for (const event of authoredEvents) {
+          if (event.zone in authoredStaffThrough) {
+            authoredStaffThrough[event.zone]!++;
+            perSequence.authoredStaffThroughBody++;
+          }
+        }
 
         if (hands.left && hands.right) {
           score.pairFrames++;
@@ -453,6 +492,7 @@ export async function runContactScoreboard(
     forearmMinM: quantile(forearms, 0),
     palmMinM: quantile(palms, 0),
     staffThrough,
+    authoredStaffThrough,
     sequences,
     worstBeats: [...beatWorst.values()]
       .sort((a, b) => b.gapM - a.gapM)
