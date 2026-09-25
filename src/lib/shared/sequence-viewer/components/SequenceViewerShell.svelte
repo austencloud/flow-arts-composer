@@ -212,6 +212,8 @@
     showFullscreenControls?: boolean;
     /** Host intent: enter through Share and open the canonical sheet once. */
     shareOnOpen?: boolean;
+    /** Host intent: start the canonical library save flow once. */
+    saveOnOpen?: boolean;
   }
 
   let {
@@ -233,6 +235,7 @@
     contextContent,
     showFullscreenControls = false,
     shareOnOpen = false,
+    saveOnOpen = false,
     tunnelComposition = null,
     tunnelSaveTarget = null,
     onTunnelSaved,
@@ -510,6 +513,13 @@
     if (!shareOnOpen || consumedShareOnOpen) return;
     consumedShareOnOpen = true;
     void Promise.resolve().then(() => share.selectAction("share-sequence"));
+  });
+
+  let consumedSaveOnOpen = false;
+  $effect(() => {
+    if (!saveOnOpen || consumedSaveOnOpen) return;
+    consumedSaveOnOpen = true;
+    void Promise.resolve().then(() => interactions.handleSave());
   });
 
   /**

@@ -452,6 +452,7 @@
         shortCode: overlay.activeShortCode,
         analyticsSource: overlay.analyticsSource,
         shareOnOpen: overlay.shareOnOpen,
+        saveOnOpen: overlay.saveOnOpen,
         tunnelComposition: overlay.tunnelComposition,
         tunnelSaveTarget: overlay.tunnelSaveTarget,
         onTunnelSaved: overlay.onTunnelSaved,

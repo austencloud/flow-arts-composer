@@ -117,6 +117,8 @@
     fromShapeEngine && page.url.searchParams.get("play") === "1";
   const shareFromShapeEngine =
     fromShapeEngine && page.url.searchParams.get("share") === "1";
+  const saveFromShapeEngine =
+    fromShapeEngine && page.url.searchParams.get("save") === "1";
   // `/embed/sequence/[id]` mounts this same page body inside a third-party
   // iframe (see docs/architecture/sharing-export-experience.md's embed
   // player). It has exactly the same "nowhere to go" chrome problem the demo
@@ -799,6 +801,7 @@
               ? "shape_engine"
               : "external_link"}
           shareOnOpen={shareFromShapeEngine}
+          saveOnOpen={saveFromShapeEngine}
           {isMobile}
           startInCardThenSplit={!!scanOriginCode}
           embedded={isEmbedded}

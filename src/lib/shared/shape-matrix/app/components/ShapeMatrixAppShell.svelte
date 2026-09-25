@@ -113,15 +113,14 @@
 
   function openRealization(
     realization: ModeRealization,
-    action: "open" | "play" | "share"
+    action: "open" | "save" | "share"
   ): void {
     if (variant === "embedded") {
       openSequenceViewer(realization.seq, {
         source: "shape_engine",
         returnPath: "/create/shape-engine",
         returnLabel: "Shape Engine",
-        initialViewMode: action === "play" ? "animation" : undefined,
-        playOnOpen: action === "play",
+        saveOnOpen: action === "save",
         shareOnOpen: action === "share",
       });
       return;
@@ -134,7 +133,7 @@
       returnLabel: "Shape Engine",
     });
     const params = new URLSearchParams({ from: "shape-engine" });
-    if (action === "play") params.set("play", "1");
+    if (action === "save") params.set("save", "1");
     if (action === "share") params.set("share", "1");
     void goto(`${generateSequenceRoutePath(realization.seq)}?${params}`);
   }
