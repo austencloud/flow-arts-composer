@@ -248,8 +248,10 @@
   );
   let showAdvanced = $state(false);
   let drilldownEffect = $state<EffectType | null>(null);
+  // This panel tunes the 3D viewer, so every manifest read asks for the 3D
+  // view's controls.
   const hasAdvanced = $derived(
-    activeEffectId ? advancedControls(activeEffectId).length > 0 : false
+    activeEffectId ? advancedControls(activeEffectId, "3d").length > 0 : false
   );
 
   // --- Footer: Copy Diagnostic / Save Defaults / Reset ---
@@ -441,6 +443,7 @@
         <EffectControlStack
           effect={activeEffectId}
           {config}
+          view="3d"
           propType={trackingPropType}
           overrides={controlOverrides}
           onSettingChange={handleEffectSettingChange}
@@ -462,6 +465,7 @@
             <EffectControlStack
               effect={activeEffectId}
               {config}
+              view="3d"
               propType={trackingPropType}
               overrides={controlOverrides}
               tiers={["advanced"]}
@@ -573,6 +577,7 @@
         <EffectControlStack
           effect={activeEffectId}
           {config}
+          view="3d"
           propType={trackingPropType}
           overrides={controlOverrides}
           onSettingChange={handleEffectSettingChange}
@@ -594,6 +599,7 @@
             <EffectControlStack
               effect={activeEffectId}
               {config}
+              view="3d"
               propType={trackingPropType}
               overrides={controlOverrides}
               tiers={["advanced"]}

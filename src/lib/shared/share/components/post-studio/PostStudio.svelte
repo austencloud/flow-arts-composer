@@ -96,8 +96,14 @@
       ? seedFromPsSlice(psSeedPayload)
       : null;
 
-  let selectedPropType = $state<PropType>(
-    psSeed?.propType ?? settingsService.settings.leftPropType ?? PropType.STAFF
+  // Until a prop is picked in the studio, the studio shows the live settings
+  // prop, so a settings change (Shift+P, another tab or device) reaches it. A
+  // pick, or a URL seed, holds from then on. See `ps-slice.ts`, "Touched-flag
+  // diffing".
+  let pickedPropType = $state<PropType | undefined>(psSeed?.propType);
+  const propTypeTouched = $derived(pickedPropType !== undefined);
+  const selectedPropType = $derived(
+    pickedPropType ?? settingsService.settings.leftPropType ?? PropType.STAFF
   );
   const synchronizedCardRenderOptions = $derived(
     withPostStudioPropType(cardRenderOptions, selectedPropType)
@@ -122,8 +128,7 @@
     capturePsSlice(
       {
         propType: selectedPropType,
-        defaultPropType:
-          settingsService.settings.leftPropType ?? PropType.STAFF,
+        propTypeTouched,
         audioMode: audio === "takes" ? "original" : "instagram",
         audioModeTouched: audioTouched,
       },
@@ -176,7 +181,7 @@
     {previewTarget}
     {sharing}
     {selectedPropType}
-    onPropChange={(propType) => (selectedPropType = propType)}
+    onPropChange={(propType) => (pickedPropType = propType)}
     {audioSeed}
     onAudioChange={setAudio}
     {registerExport}

@@ -55,7 +55,6 @@
   }
   .intro {
     text-align: center;
-    max-width: 36rem;
     margin: 0 auto 2rem;
   }
   .topic-list ol {

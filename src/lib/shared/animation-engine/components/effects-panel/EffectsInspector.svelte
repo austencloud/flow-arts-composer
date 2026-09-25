@@ -56,7 +56,9 @@
   }: Props = $props();
 
   let fineTuningOpen = $state(false);
-  const fineControls = $derived(advancedControls(effect));
+  // This inspector tunes the 2D canvas, so every manifest read asks for the 2D
+  // view's controls.
+  const fineControls = $derived(advancedControls(effect, "2d"));
   const hasLooks = $derived(registration.presetGroup.presets.length > 0);
 
   // Some effects have nothing the flat-field manifest can address — LED's
@@ -68,7 +70,7 @@
   // Loaded through a derived promise rather than `$effect`: this component has
   // a prop named `effect`, and inside it `$effect` parses as a store
   // subscription, not the rune.
-  const usesRichPanel = $derived(primaryControls(effect).length === 0);
+  const usesRichPanel = $derived(primaryControls(effect, "2d").length === 0);
   const richPanel = $derived(
     usesRichPanel ? registration.customizeComponent() : null
   );
@@ -140,6 +142,7 @@
         <EffectControlStack
           {effect}
           {config}
+          view="2d"
           tiers={["primary", "tracking"]}
           {propType}
           {overrides}
@@ -172,6 +175,7 @@
             <EffectControlStack
               {effect}
               {config}
+              view="2d"
               tiers={["advanced"]}
               {propType}
               {overrides}

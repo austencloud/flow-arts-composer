@@ -8,7 +8,9 @@
  *
  * This test locks the shape that fixed it: BentoPropGrid owns the control and
  * shows it by default, hosts never mount their own copy, and a host turns it
- * off only for a stated reason.
+ * off only for a stated reason. A short rail that wants the colours as a
+ * toolbar button asks BentoPropGrid for it with `compactColors`; it does not
+ * mount the compact PrimaryPropColorSettings itself.
  *
  * If this test fails, fix the host — do not loosen the assertions.
  */
@@ -47,7 +49,8 @@ const HOSTS: Record<string, string> = {
     "src/lib/shared/application/components/MainApplication.svelte",
   "create step editor sheet":
     "src/lib/features/create/shared/components/coordinators/StepEditorCoordinator.svelte",
-  "arena prop drawer": "src/lib/features/arena/components/battle/ArenaPropDrawer.svelte",
+  "arena prop drawer":
+    "src/lib/features/arena/components/battle/ArenaPropDrawer.svelte",
   "guide codex controls":
     "src/routes/(public)/guide/level-1/_components/GuideCodexControls.svelte",
   "sequence viewer props panel":
@@ -60,7 +63,8 @@ const HOSTS: Record<string, string> = {
     "src/lib/shared/share/components/post-studio/builder/PostStudioWorkspace.svelte",
   "motion path explorer":
     "src/routes/(public)/guide/motion-paths/_components/MotionPathExplorer.svelte",
-  "landing play with it": "src/routes/landing/components/PlayWithItInner.svelte",
+  "landing play with it":
+    "src/routes/landing/components/PlayWithItInner.svelte",
 };
 
 /**

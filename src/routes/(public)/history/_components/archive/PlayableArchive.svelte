@@ -257,7 +257,6 @@
     color: var(--theme-text);
   }
   .archive-header {
-    max-width: 56rem;
     margin-bottom: var(--archive-heading-gap);
   }
   h1 {
@@ -269,7 +268,6 @@
     letter-spacing: -0.035em;
   }
   .archive-header > p {
-    max-width: 43rem;
     font-size: clamp(1rem, 1.25vw, 1.25rem);
     line-height: 1.6;
     color: var(--theme-text-dim);
@@ -389,7 +387,6 @@
     margin: 0 0 0.75rem;
   }
   .archive-about p {
-    max-width: 65ch;
     font-size: var(--font-size-min, 0.875rem);
     line-height: 1.5;
     color: var(--theme-text-dim);
