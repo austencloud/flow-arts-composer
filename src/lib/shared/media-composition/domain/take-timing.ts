@@ -411,21 +411,33 @@ export function isTakeTimingMapped(resolved: ResolvedTakeTiming): boolean {
 
 /**
  * Seeds a take timing from a legacy step map. Its marks are arrivals - mark 0
- * the opening pose - so they become taps on positions 0, 1, 2, … followed
- * as-is, which reproduces the old map while making it editable.
+ * the opening pose, mark k move k's landing, the optional end mark the landing
+ * after the last - so each becomes a pinned landing on its position, which
+ * reproduces the old map exactly. The same marks are the taps, so the grid
+ * they imply carries on past either end and nudges still work.
  */
 export function takeTimingFromLegacyMarks(input: {
   sequenceId: string;
   takeKey: string;
   durationSeconds: number;
   marks: readonly number[];
-  movesPerPass: number;
+  endMark?: number;
   now: number;
 }): TakeTiming | null {
   const marks = input.marks.filter(
     (mark) => Number.isFinite(mark) && mark >= 0
   );
+  if (
+    input.endMark !== undefined &&
+    Number.isFinite(input.endMark) &&
+    input.endMark > (marks[marks.length - 1] ?? Infinity)
+  ) {
+    marks.push(input.endMark);
+  }
   if (marks.length < 2) return null;
+  if (marks.some((mark, index) => index > 0 && mark <= marks[index - 1]!)) {
+    return null;
+  }
   const intervals = marks.slice(1).map((mark, index) => mark - marks[index]!);
   const sorted = [...intervals].sort((left, right) => left - right);
   const medianInterval = sorted[Math.floor(sorted.length / 2)]!;
@@ -448,6 +460,7 @@ export function takeTimingFromLegacyMarks(input: {
         snap: "taps",
         taps: marks,
         firstTapPosition: 0,
+        overrides: marks.map((seconds, position) => ({ position, seconds })),
       },
     ],
     updatedAt: input.now,

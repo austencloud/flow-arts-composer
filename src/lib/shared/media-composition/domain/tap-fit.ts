@@ -273,7 +273,8 @@ function refine(
   matched: readonly MatchedTap[],
   clock: BeatClock,
   start: { originSeconds: number; secondsPerBeat: number },
-  lockTempo: boolean
+  lockTempo: boolean,
+  nominal: number
 ): { originSeconds: number; secondsPerBeat: number } {
   const points = matched.map((tap) => ({
     t: tap.seconds,
@@ -299,7 +300,14 @@ function refine(
         numerator += weights[i]! * (point.b - meanBeats) * (point.t - meanTime);
         denominator += weights[i]! * (point.b - meanBeats) ** 2;
       });
-      if (denominator > 0) secondsPerBeat = numerator / denominator;
+      // The least-squares slope may wander past the promised ±5% when a few
+      // taps sit far off; hold it to the span the search covered.
+      if (denominator > 0) {
+        secondsPerBeat = Math.min(
+          nominal * (1 + TEMPO_SEARCH_SPAN),
+          Math.max(nominal * (1 - TEMPO_SEARCH_SPAN), numerator / denominator)
+        );
+      }
     }
     originSeconds = meanTime - secondsPerBeat * meanBeats;
     weights = points.map((point) => {
@@ -366,40 +374,67 @@ export function fitTapsToGrid(input: TapFitInput): TapFitResult {
     lockTempo,
     firstTapPosition
   );
-  let matched = [
-    ...labelTaps(taps, clock, grid.originSeconds, grid.secondsPerBeat).values(),
-  ].sort((left, right) => left.position - right.position);
-
   // The earliest matched tap marks `firstTapPosition` by definition. The comb
   // may have placed it a landing off when the first tap was an extra, so
   // relabel before refining; with uneven move lengths the refit then settles
   // the grid on the corrected durations.
-  const shift = matched.length ? firstTapPosition - matched[0]!.position : 0;
-  let start = {
-    originSeconds: grid.originSeconds,
-    secondsPerBeat: grid.secondsPerBeat,
-  };
-  if (shift !== 0) {
-    matched = matched
+  const anchorToFirstTap = (
+    labelled: MatchedTap[],
+    secondsPerBeat: number
+  ): { matched: MatchedTap[]; originSeconds: number | null } => {
+    const shift = labelled.length
+      ? firstTapPosition - labelled[0]!.position
+      : 0;
+    if (shift === 0) return { matched: labelled, originSeconds: null };
+    const shifted = labelled
       .map((tap) => ({ ...tap, position: tap.position + shift }))
       .filter((tap) => tap.position >= 0);
-    start = {
-      secondsPerBeat: grid.secondsPerBeat,
-      originSeconds:
-        matched[0]!.seconds -
-        grid.secondsPerBeat * clock.beatsBefore(matched[0]!.position),
+    return {
+      matched: shifted,
+      originSeconds: shifted.length
+        ? shifted[0]!.seconds -
+          secondsPerBeat * clock.beatsBefore(shifted[0]!.position)
+        : null,
     };
-  }
+  };
+  const sortedLabels = (originSeconds: number, secondsPerBeat: number) =>
+    [...labelTaps(taps, clock, originSeconds, secondsPerBeat).values()].sort(
+      (left, right) => left.position - right.position
+    );
 
-  let fitted = refine(matched, clock, start, lockTempo);
+  const first = anchorToFirstTap(
+    sortedLabels(grid.originSeconds, grid.secondsPerBeat),
+    grid.secondsPerBeat
+  );
+  let matched = first.matched;
+  let fitted = refine(
+    matched,
+    clock,
+    {
+      originSeconds: first.originSeconds ?? grid.originSeconds,
+      secondsPerBeat: grid.secondsPerBeat,
+    },
+    lockTempo,
+    nominal
+  );
   // Relabel against the refined grid once: a drifting tempo can leave the
   // last passes' taps nearer a neighbour under the comb's coarser grid.
-  const relabelled = [
-    ...labelTaps(taps, clock, fitted.originSeconds, fitted.secondsPerBeat).values(),
-  ].sort((left, right) => left.position - right.position);
-  if (relabelled.length >= matched.length) {
-    matched = relabelled;
-    fitted = refine(matched, clock, fitted, lockTempo);
+  const second = anchorToFirstTap(
+    sortedLabels(fitted.originSeconds, fitted.secondsPerBeat),
+    fitted.secondsPerBeat
+  );
+  if (second.matched.length >= matched.length) {
+    matched = second.matched;
+    fitted = refine(
+      matched,
+      clock,
+      {
+        originSeconds: second.originSeconds ?? fitted.originSeconds,
+        secondsPerBeat: fitted.secondsPerBeat,
+      },
+      lockTempo,
+      nominal
+    );
   }
 
   const matchedBySeconds = new Map(matched.map((tap) => [tap.seconds, tap]));
