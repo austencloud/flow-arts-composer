@@ -142,19 +142,15 @@
     commit(resolveFuseRule(next));
   }
 
-  function chooseMode(mode: FuseTnDMode): void {
-    commitSelection({ ...selection, mode });
+  function chooseMode(
+    mode: FuseTnDMode,
+    quarterOffset: FuseQuarterOffset = selection.quarterOffset
+  ): void {
+    commitSelection({ ...selection, mode, quarterOffset });
   }
 
   function chooseOffset(quarterOffset: FuseQuarterOffset): void {
     commitSelection({ ...selection, quarterOffset });
-  }
-
-  function revealOffset(node: HTMLElement) {
-    // Wide layouts make room beside the modes; narrow layouts open a row below.
-    return growFade(node, {
-      axis: inline && getComputedStyle(node).gridRowStart === "1" ? "x" : "y",
-    });
   }
 </script>
 
@@ -208,12 +204,15 @@
         selected={selection.mode}
         {disabled}
         {inline}
+        quarterOffset={selection.quarterOffset}
+        {followerLabel}
         onpick={chooseMode}
+        onquarterpick={chooseMode}
       />
     </div>
 
-    {#if showOffset}
-      <div class="axis offset-axis" transition:revealOffset>
+    {#if showOffset && !inline}
+      <div class="axis offset-axis" transition:growFade={{ axis: "y" }}>
         <span class="axis-label" id="fuse-offset-label"
           >Rotate {followerLabel}'s path</span
         >
@@ -644,14 +643,6 @@
     line-height: 1;
   }
 
-  .inline .offset-axis {
-    grid-column: 1;
-    grid-template-columns: minmax(0, 1fr);
-    justify-self: end;
-    width: min(100%, 26rem);
-    gap: 4px;
-  }
-
   .offset-axis > .axis-label {
     font-size: var(--font-size-min, 14px);
     letter-spacing: normal;
@@ -735,54 +726,6 @@
   @container (max-width: 28rem) {
     .inline .driver-control {
       width: min(100%, 172px);
-    }
-
-    .offset-option {
-      gap: 4px;
-      flex-direction: column;
-    }
-
-    .offset-arrow {
-      font-size: 1.5rem;
-    }
-
-    .offset-axis :global(.segment) {
-      min-height: 64px;
-    }
-  }
-
-  @container (min-width: 100rem) {
-    .inline .rule-field:has(.offset-axis) {
-      grid-template-columns: minmax(0, 1fr) auto 210px;
-    }
-
-    .inline .offset-axis {
-      grid-column: 2;
-      grid-row: 1 / 3;
-      width: 21rem;
-      gap: 6px;
-    }
-
-    .inline .offset-axis > .axis-label {
-      white-space: nowrap;
-    }
-
-    .inline .offset-axis :global(.segment) {
-      min-height: 64px;
-    }
-
-    .inline .offset-option {
-      flex-direction: column;
-      gap: 4px;
-      white-space: nowrap;
-    }
-
-    .inline .offset-arrow {
-      font-size: 1.5rem;
-    }
-
-    .inline .rule-field:has(.offset-axis) .operations-axis {
-      grid-column: 3;
     }
   }
 
