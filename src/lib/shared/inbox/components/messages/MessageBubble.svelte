@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   /**
    * MessageBubble
    *
@@ -26,7 +27,7 @@
   import { messagingService } from "$lib/shared/messaging/services/messenger";
   import RobustAvatar from "../../../components/avatar/RobustAvatar.svelte";
   import { toast } from "../../../toast/state/toast-state.svelte";
-  import { getMessagePreviewText } from "$lib/shared/messaging/domain/message-preview";
+  import { getMessagePreviewText } from "../../utils/message-preview";
   import RichMessageText from "./RichMessageText.svelte";
   import {
     buildDetectedSequenceAttachment,
@@ -130,13 +131,13 @@
   const deliveryLabel = $derived.by(() => {
     if (!outboxItem) return "";
     if (outboxItem.status === "sending") {
-      return outboxItem.progress?.label || "Sending";
+      return outboxItem.progress?.label || t("inbox_ui_sending");
     }
     if (outboxItem.status === "queued") {
-      return outboxItem.lastError || "Waiting to send";
+      return outboxItem.lastError || t("inbox_ui_waiting_to_send");
     }
     if (outboxItem.status === "failed") {
-      return outboxItem.lastError || "Message could not be sent";
+      return outboxItem.lastError || t("inbox_ui_message_could_not_be_sent");
     }
     return "Sent";
   });
@@ -150,7 +151,7 @@
       .toggleReaction(message.conversationId, message.id, emoji)
       .catch((err) => {
         console.error("Failed to toggle reaction:", err);
-        toast.error("Failed to update reaction");
+        toast.error(t("inbox_ui_failed_to_update_reaction"));
       });
   }
 
@@ -244,19 +245,19 @@
           type="button"
           class="edited-button"
           onclick={handleEditedClick}
-          aria-label="View edit history"
+          aria-label={t("inbox_ui_view_edit_history")}
         >
-          (edited)
+          {t("inbox_ui__edited")}
         </button>
       {:else}
-        <span class="edited">(edited)</span>
+        <span class="edited">{t("inbox_ui__edited")}</span>
       {/if}
     {/if}
     {#if showReadReceipt && !message.isDeleted}
-      <span class="read-receipt read" aria-label="Read">
+      <span class="read-receipt read" aria-label={t("inbox_ui_read")}>
         <i class="fas fa-check-double" aria-hidden="true"></i>
         {#if readTimestamp}
-          <span class="read-time">Seen {formatReadTime(readTimestamp)}</span>
+          <span class="read-time">{t("inbox_ui_seen")} {formatReadTime(readTimestamp)}</span>
         {/if}
       </span>
     {/if}
@@ -278,11 +279,11 @@
         ></i>
         <span>{deliveryLabel}</span>
         {#if outboxItem.status === "failed"}
-          <button type="button" onclick={onRetry}>Retry</button>
+          <button type="button" onclick={onRetry}>{t("inbox_ui_retry")}</button>
         {/if}
         {#if outboxItem.status === "failed" || outboxItem.status === "queued"}
           <button type="button" class="remove-delivery" onclick={onRemove}
-            >Remove</button
+            >{t("inbox_ui_remove")}</button
           >
         {/if}
       </span>
@@ -355,7 +356,7 @@
       role="article"
       tabindex="-1"
       aria-label="{isOwn
-        ? 'You'
+        ? t("inbox_you")
         : message.senderName}: {accessibleMessage}{deliveryLabel
         ? `, ${deliveryLabel}`
         : ''}"

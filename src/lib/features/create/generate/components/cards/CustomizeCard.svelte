@@ -145,7 +145,7 @@ to three rows. Click opens the expanded overlay.
   bind:clientHeight={cardHeight}
   onclick={handleClick}
   onkeydown={handleKeydown}
-  aria-label="Customize: {summary.accessibleSummary}. Click to configure style and placements."
+  aria-label={t("create_ui_customize_card_label", { summary: summary.accessibleSummary })}
 >
   <CardHeader title={t("create_ui_customize")} {headerFontSize} />
   {#if summary.isDefault}

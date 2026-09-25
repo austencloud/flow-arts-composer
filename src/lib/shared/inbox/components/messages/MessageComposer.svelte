@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   /**
    * MessageComposer
    *
@@ -255,11 +256,11 @@
         );
         return;
       }
-      draftSaveError = "Draft not saved";
+      draftSaveError = t("inbox_ui_draft_not_saved");
       if (draftFailureReported) return;
       draftFailureReported = true;
       showComposerFailure(
-        "This draft could not be saved on this device.",
+        t("inbox_ui_this_draft_could_not_be_saved_on_this_device"),
         error,
         "saveMessageDraft"
       );
@@ -459,7 +460,7 @@
     } catch (error) {
       console.error("Failed to send message:", error);
       showComposerFailure(
-        "This message could not be placed in the outbox. Your draft is still here.",
+        t("inbox_ui_this_message_could_not_be_placed_in_the_outbox_your_draft_is_still_here"),
         error,
         "queueMessage"
       );
@@ -519,7 +520,7 @@
     } catch (error) {
       console.error("Failed to edit message:", error);
       showComposerFailure(
-        "These changes could not be saved.",
+        t("inbox_ui_these_changes_could_not_be_saved"),
         error,
         "editMessage"
       );
@@ -570,14 +571,14 @@
   {#if isEditing}
     <div class="edit-header">
       <i class="fa-solid fa-pen" aria-hidden="true"></i>
-      <span>Editing message</span>
+      <span>{t("inbox_ui_editing_message")}</span>
       <button
         type="button"
         class="cancel-edit-button"
         onclick={cancelEdit}
-        aria-label="Cancel editing"
+        aria-label={t("inbox_ui_cancel_editing")}
       >
-        Cancel
+        {t("inbox_ui_cancel")}
       </button>
     </div>
   {/if}
@@ -600,15 +601,15 @@
       oninput={handleInput}
       onkeydown={handleKeydown}
       placeholder={!messageDeliveryState.ready
-        ? "Restoring draft..."
+        ? t("inbox_ui_restoring_draft")
         : isEditing
-          ? "Edit your message..."
-          : "Type a message..."}
+          ? t("inbox_ui_edit_your_message")
+          : t("inbox_ui_type_a_message")}
       rows="1"
       maxlength={2000}
       spellcheck="true"
       disabled={isSending || !messageDeliveryState.ready}
-      aria-label={isEditing ? "Edit message" : "Message input"}
+      aria-label={isEditing ? t("inbox_ui_edit_message") : t("inbox_ui_message_input")}
       aria-describedby={isReplying ? "message-reply-context" : undefined}
     ></textarea>
     <button
@@ -618,11 +619,11 @@
       disabled={!canSend}
       aria-label={isSending
         ? isEditing
-          ? "Saving changes..."
-          : "Saving message to outbox..."
+          ? t("inbox_ui_saving_changes")
+          : t("inbox_ui_saving_message_to_outbox")
         : isEditing
-          ? "Save changes"
-          : "Send message"}
+          ? t("inbox_ui_save_changes")
+          : t("inbox_ui_send_message")}
     >
       {#if isSending}
         <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>

@@ -141,7 +141,7 @@
       <!-- Help button -->
       <HelpButton
         onclick={() => (showHelpModal = true)}
-        ariaLabel="Help with sequence viewer"
+        ariaLabel={t("viewer_detail_help_with_sequence_viewer")}
       />
 
       {#if mode === "full" && onFavorite}
@@ -205,7 +205,7 @@
                 type="text"
                 class="name-input"
                 bind:value={editedName}
-                placeholder={sequence?.word || "Enter custom name"}
+                placeholder={sequence?.word || t("viewer_detail_enter_custom_name")}
                 maxlength="50"
               />
               <div class="name-edit-actions">

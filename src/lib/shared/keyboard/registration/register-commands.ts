@@ -22,6 +22,7 @@ import {
   type EditHistoryAction,
 } from "../domain/edit-history-shortcut-target";
 import { openShortcutSettings } from "../open-shortcut-settings";
+import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
 function getCommandIcon(icon: string | undefined): string {
   return icon?.match(/\bfa-[a-z0-9-]+\b/i)?.[0] ?? "fa-circle";
@@ -73,6 +74,15 @@ export function registerCommandPaletteCommands(
             section.id,
           ],
           available: true,
+          resolvePresentation: () => {
+            const currentModule = getModuleDefinitions().find(({ id }) => id === module.id);
+            const currentSection = getAccessibleSectionsForModule(module.id).find(({ id }) => id === section.id);
+            return {
+              label: t(currentSection?.labelKey ?? section.labelKey),
+              parentLabel: t(currentModule?.labelKey ?? module.labelKey),
+              description: t(currentSection?.descKey ?? section.descKey),
+            };
+          },
           action: async () => {
             if (module.id !== state.context) {
               await handleModuleChange(module.id, section.id);
@@ -96,6 +106,10 @@ export function registerCommandPaletteCommands(
       destinationId: buildNavigationDestinationId(module.id),
       keywords: [module.label.toLowerCase(), module.id],
       available: true,
+      resolvePresentation: () => {
+        const currentModule = getModuleDefinitions().find(({ id }) => id === module.id);
+        return { label: t(currentModule?.labelKey ?? module.labelKey), description: t(currentModule?.descKey ?? module.descKey) };
+      },
       action: async () => {
         if (module.linkHref) {
           window.location.assign(module.linkHref);
@@ -120,6 +134,7 @@ export function registerCommandPaletteCommands(
     shortcut: "Shift+/",
     keywords: ["help", "shortcuts", "keyboard", "hotkeys"],
     available: true,
+    resolvePresentation: () => ({ label: t("keyboard_palette_shortcuts"), description: t("keyboard_palette_shortcuts_description") }),
     action: () => {
       state.closeCommandPalette();
       void openShortcutSettings("command_palette");
@@ -158,7 +173,8 @@ function registerEditHistoryCommand(
         fromCommandPalette: true,
       });
       return {
-        label: actionLabel ? `${baseLabel}: ${actionLabel}` : baseLabel,
+        label: actionLabel ? `${t(action === "undo" ? "keyboard_palette_undo" : "keyboard_palette_redo")}: ${actionLabel}` : t(action === "undo" ? "keyboard_palette_undo" : "keyboard_palette_redo"),
+        description: t(action === "undo" ? "keyboard_palette_undo_description" : "keyboard_palette_redo_description"),
       };
     },
     action: () => {

@@ -109,11 +109,11 @@
         event.value as AppSettings[keyof AppSettings]
       );
 
-      flashToast("Saved", 1500);
+      flashToast(t("settings_save_success"), 1500);
     } catch (error) {
       console.error("Settings save failed:", error);
       // Keep error toast visible longer
-      flashToast("Save failed", 3000);
+      flashToast(t("settings_save_failed"), 3000);
     }
   }
 

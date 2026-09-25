@@ -4,6 +4,7 @@
   stage, inspector, and editor directly into its persistent panel tracks.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import { getSequenceVideosStore } from "$lib/shared/video-collaboration/state/sequence-videos-store.svelte";
   import { toast } from "$lib/shared/toast/state/toast-state.svelte";
@@ -50,7 +51,7 @@
     {
       getStore: getSequenceVideosStore,
       playhead: tryGetVideoPlayheadContext(),
-      onTimingSaved: () => toast.success("Timing saved"),
+      onTimingSaved: () => toast.success(t("viewer_detail_timing_saved")),
     }
   );
   setPerformanceWorkspaceContext(workspace);

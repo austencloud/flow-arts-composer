@@ -526,7 +526,7 @@
                       "prop_tnd_glyph",
                       propTndGlyph,
                       (value) => vm.setGlyphVisibility("propTndGlyph", value)
-                    )}>Prop TnD</button
+                    )}>{t("viewer_detail_prop_tnd")}</button
                 >
                 <button
                   type="button"
@@ -612,8 +612,7 @@
             {/if}
             {#if hasInfoCell && canQRCode}
               <p class="qr-scope-note">
-                QR codes appear on opened cards and exports. Gallery thumbnails
-                stay QR-free.
+                {t("viewer_detail_qr_codes_appear_on_opened_cards_and_exports_gallery_thumbnails_stay_qr_free")}
               </p>
             {/if}
             <!-- Start position is its own group: the Show toggle plus (when on) the
@@ -685,14 +684,14 @@
                   class="rt-chip"
                   aria-pressed={!exportOptions.imageDarkMode}
                   onclick={() => setTheme(false)}
-                  ><i class="fas fa-sun" aria-hidden="true"></i> Light</button
+                  ><i class="fas fa-sun" aria-hidden="true"></i> {t("viewer_detail_light")}</button
                 >
                 <button
                   type="button"
                   class="rt-chip"
                   aria-pressed={exportOptions.imageDarkMode}
                   onclick={() => setTheme(true)}
-                  ><i class="fas fa-moon" aria-hidden="true"></i> Dark</button
+                  ><i class="fas fa-moon" aria-hidden="true"></i> {t("viewer_detail_dark")}</button
                 >
               </div>
             </div>
@@ -854,7 +853,7 @@
                   propTndGlyph,
                   (value) => vm.setGlyphVisibility("propTndGlyph", value)
                 )}
-              aria-pressed={propTndGlyph}>Prop TnD</button
+              aria-pressed={propTndGlyph}>{t("viewer_detail_prop_tnd")}</button
             >
             <button
               type="button"
@@ -928,7 +927,7 @@
                         showQRCode,
                         imageComposition.setShowQRCode.bind(imageComposition)
                       )}
-                    aria-pressed={showQRCode}>QR Code</button
+                    aria-pressed={showQRCode}>{t("viewer_detail_qr_code")}</button
                   >
                 </div>
               </div>
@@ -957,8 +956,7 @@
 
         {#if hasInfoCell && canQRCode}
           <p class="qr-scope-note">
-            QR codes appear on opened cards and exports. Gallery thumbnails stay
-            QR-free.
+            {t("viewer_detail_qr_codes_appear_on_opened_cards_and_exports_gallery_thumbnails_stay_qr_free")}
           </p>
         {/if}
 
@@ -1033,7 +1031,7 @@
               onclick={() => setTheme(false)}
               aria-pressed={!exportOptions.imageDarkMode}
             >
-              <i class="fas fa-sun" aria-hidden="true"></i> Light
+              <i class="fas fa-sun" aria-hidden="true"></i> {t("viewer_detail_light")}
             </button>
             <button
               type="button"
@@ -1042,7 +1040,7 @@
               onclick={() => setTheme(true)}
               aria-pressed={exportOptions.imageDarkMode}
             >
-              <i class="fas fa-moon" aria-hidden="true"></i> Dark
+              <i class="fas fa-moon" aria-hidden="true"></i> {t("viewer_detail_dark")}
             </button>
           </div>
         </div>

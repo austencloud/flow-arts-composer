@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   /**
    * NewMessageSheet
    *
@@ -141,7 +142,7 @@
       ...selectedUsers,
       {
         id: user.uid,
-        displayName: user.displayName || user.username || "Unknown",
+        displayName: user.displayName || user.username || t("inbox_ui_unknown"),
         username: user.username,
         avatar: user.photoURL,
       },
@@ -205,7 +206,7 @@
     } catch (err) {
       console.error("[NewMessageSheet] Failed to start conversation:", err);
       error =
-        err instanceof Error ? err.message : "Failed to start conversation";
+        err instanceof Error ? err.message : t("inbox_ui_failed_to_start_conversation");
       hapticService?.trigger("error");
       isCreating = false;
     }
@@ -238,8 +239,8 @@
       </div>
       <span>
         {isGroup
-          ? "Starting group conversation..."
-          : "Starting conversation..."}
+          ? t("inbox_ui_starting_group_conversation")
+          : t("inbox_ui_starting_conversation")}
       </span>
     </div>
   {:else}
@@ -256,7 +257,7 @@
       {#if selectedUsers.length > 0}
         <div class="selected-section">
           <div class="selected-header">
-            <span class="selected-label">To:</span>
+            <span class="selected-label">{t("inbox_ui_to")}</span>
             <span class="selected-count">
               {selectedUsers.length}
               {selectedUsers.length === 1 ? "person" : "people"}
@@ -277,7 +278,7 @@
                   type="button"
                   class="chip-remove"
                   onclick={() => removeUser(user.id)}
-                  aria-label="Remove {identity.primary}"
+                  aria-label={t("inbox_remove_person", { name: identity.primary })}
                 >
                   <i class="fas fa-times" aria-hidden="true"></i>
                 </button>
@@ -291,13 +292,13 @@
       {#if isGroup}
         <div class="group-name-section">
           <label for="group-name" class="form-label">
-            Group name <span class="required">(required)</span>
+            {t("inbox_ui_group_name")} <span class="required">{t("inbox_ui__required")}</span>
           </label>
           <input
             id="group-name"
             type="text"
             bind:value={groupName}
-            placeholder="Name this group"
+            placeholder={t("inbox_ui_name_this_group")}
             maxlength={100}
             class="name-input"
             required
@@ -309,20 +310,20 @@
       <div class="search-section">
         <p class="search-label">
           {#if groupMode && selectedUsers.length === 0}
-            Select 2 or more people to start a group:
+            {t("inbox_ui_select_2_or_more_people_to_start_a_group")}
           {:else if groupMode && selectedUsers.length === 1}
-            Add at least one more person:
+            {t("inbox_ui_add_at_least_one_more_person")}
           {:else if selectedUsers.length === 0}
-            Search for someone to message:
+            {t("inbox_ui_search_for_someone_to_message")}
           {:else}
-            Add more people:
+            {t("inbox_ui_add_more_people")}
           {/if}
         </p>
         <UserSearchInput
           selectedUserId={searchUserId}
           selectedUserDisplay={searchUserDisplay}
           onSelect={handleUserSelect}
-          placeholder="Search by username or name..."
+          placeholder={t("inbox_ui_search_by_username_or_name")}
           inlineResults={true}
           {excludeUserIds}
         />
@@ -334,7 +335,7 @@
       {#if isLoadingSuggestions}
         <div class="suggestions-loading">
           <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-          <span>Loading suggestions...</span>
+          <span>{t("inbox_ui_loading_suggestions")}</span>
         </div>
       {:else if hasSuggestions}
         <div class="suggestions-section">
@@ -343,7 +344,7 @@
             <div class="suggestion-group">
               <h3 class="suggestion-heading">
                 <i class="fas fa-user-friends" aria-hidden="true"></i>
-                People You Follow
+                {t("inbox_ui_people_you_follow")}
               </h3>
               <div class="suggestion-grid">
                 {#each availableSuggestions.slice(0, 12) as user (user.id)}
@@ -382,7 +383,7 @@
             <div class="suggestion-group">
               <h3 class="suggestion-heading">
                 <i class="fas fa-clock" aria-hidden="true"></i>
-                Recent
+                {t("inbox_ui_recent")}
               </h3>
               <div class="suggestion-list">
                 {#each availableRecentUsers as user (user.id)}
@@ -425,7 +426,7 @@
         <!-- No suggestions -->
         <div class="no-suggestions">
           <i class="fas fa-search" aria-hidden="true"></i>
-          <p>Use the search bar to find people</p>
+          <p>{t("inbox_ui_use_the_search_bar_to_find_people")}</p>
         </div>
       {/if}
     </div>
@@ -434,7 +435,7 @@
     {#if selectedUsers.length > 0}
       <div class="actions">
         <button type="button" class="btn-cancel" onclick={onCancel}>
-          Cancel
+          {t("inbox_ui_cancel")}
         </button>
         <button
           type="button"
@@ -446,7 +447,7 @@
             class="fas {isGroup ? 'fa-users' : 'fa-paper-plane'}"
             aria-hidden="true"
           ></i>
-          {isGroup ? "Start Group" : "Start Chat"}
+          {isGroup ? t("inbox_ui_start_group") : t("inbox_ui_start_chat")}
         </button>
       </div>
     {/if}

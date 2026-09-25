@@ -76,7 +76,7 @@
     onCopyLink,
     linkCopied = false,
     onPropsOpen,
-    propsLabel = "Props",
+    propsLabel,
     onPublish,
     onUnpublish,
     onDeleteRequest,
@@ -95,13 +95,13 @@
     onSave,
     onRemix,
     onSendTo,
-    remixLabel = "Remix",
+    remixLabel,
     onDownload,
     downloadBusy = false,
     onOpenApp,
-    openAppLabel = "Open Flow Arts Composer",
+    openAppLabel,
     onGuideAction,
-    guideActionLabel = "See it in the Guide",
+    guideActionLabel,
     motionVisibility,
     onOpenChange,
   }: Props = $props();
@@ -156,7 +156,7 @@
     }
     if (onRemix) {
       items.push({
-        label: remixLabel,
+        label: remixLabel ?? t("viewer_ui_remix"),
         icon: "fa-pen-to-square",
         action: onRemix,
       });
@@ -182,7 +182,7 @@
     }
     if (onOpenApp) {
       items.push({
-        label: openAppLabel,
+        label: openAppLabel ?? t("viewer_ui_open_app"),
         icon: "fa-compass",
         action: onOpenApp,
         dividerBefore: items.length > 0,
@@ -190,7 +190,7 @@
     }
     if (onGuideAction) {
       items.push({
-        label: guideActionLabel,
+        label: guideActionLabel ?? t("viewer_ui_see_guide"),
         icon: "fa-book-open",
         action: onGuideAction,
         dividerBefore: items.length > 0,
@@ -216,7 +216,7 @@
     }
     if (onPropsOpen) {
       items.push({
-        label: propsLabel,
+        label: propsLabel ?? t("viewer_ui_props"),
         icon: "fa-wand-magic-sparkles",
         action: onPropsOpen,
         dividerBefore: items.length > 0,

@@ -1557,14 +1557,14 @@
                   {#if ctx.previewBlobUrl}
                     <VideoPreviewPanel
                       blobUrl={ctx.previewBlobUrl}
-                      saveLabel="Download video"
+                      saveLabel={t("viewer_ui_download_video")}
                       onDismiss={interactions.handleDismissExportedVideo}
                       onRedownload={() =>
                         void interactions.handleRedownloadExportedVideo()}
                       onSaveToCloud={canSaveFilmToSequence
                         ? saveFilmToSequence
                         : undefined}
-                      cloudSaveLabel="Attach video to sequence"
+                      cloudSaveLabel={t("viewer_ui_attach_video_sequence")}
                     />
                   {:else}
                     <!-- No tempo and no playback mode on the Motion page: the

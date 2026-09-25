@@ -96,7 +96,7 @@
     showExport,
     showTitle = true,
     onSaveTunnel,
-    saveTunnelLabel = "Save tunnel",
+    saveTunnelLabel = t("viewer_detail_save_tunnel"),
     bpm,
     playbackMode,
     isPlaying,

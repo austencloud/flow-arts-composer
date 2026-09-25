@@ -9,6 +9,7 @@
   - Pointer/tail connects bar to message bubble
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { onMount, type Snippet } from "svelte";
   import type { Message } from "$lib/shared/messaging/domain/models/message-models";
@@ -114,8 +115,8 @@
   const canDelete = $derived(actionsEnabled && isOwn && !message.isDeleted);
   const messageActionLabel = $derived(
     isOwn
-      ? "Actions for your message"
-      : `Actions for message from ${message.senderName || "this sender"}`
+      ? t("inbox_ui_actions_for_your_message")
+      : t("inbox_actions_sender", { name: message.senderName || t("inbox_ui_unknown") })
   );
   const swipeProgress = $derived(
     Math.min(1, swipeDistance / REPLY_SWIPE_THRESHOLD)
@@ -397,10 +398,10 @@
 
     try {
       await navigator.clipboard.writeText(message.content);
-      toast.success("Message copied");
+      toast.success(t("inbox_ui_message_copied"));
     } catch (error) {
       console.error("Failed to copy text:", error);
-      toast.error("Failed to copy message");
+      toast.error(t("inbox_ui_failed_to_copy_message"));
     }
   }
 
@@ -412,10 +413,10 @@
     try {
       const formattedMessage = formatMessageForAI(message);
       await navigator.clipboard.writeText(formattedMessage);
-      toast.success("Copied for AI");
+      toast.success(t("inbox_ui_copied_for_ai"));
     } catch (error) {
       console.error("Failed to copy for AI:", error);
-      toast.error("Failed to copy message");
+      toast.error(t("inbox_ui_failed_to_copy_message"));
     }
   }
 
@@ -427,8 +428,8 @@
       `**Message ID:** \`${msg.id}\``,
       `**Conversation ID:** \`${msg.conversationId}\``,
       `**Sender ID:** \`${msg.senderId}\``,
-      `**Sender Name:** ${msg.senderName || "Unknown"}`,
-      `**Sent:** ${msg.createdAt?.toLocaleString() || "Unknown"}`,
+      `**Sender Name:** ${msg.senderName || t("inbox_ui_unknown")}`,
+      `**Sent:** ${msg.createdAt?.toLocaleString() || t("inbox_ui_unknown")}`,
     ];
 
     if (msg.editedAt) {
@@ -589,8 +590,8 @@
     if (!isAuthenticated) {
       toast.error(
         authState.loading
-          ? "Please wait, authentication loading..."
-          : "Please sign in to react"
+          ? t("inbox_ui_please_wait_authentication_loading")
+          : t("inbox_ui_please_sign_in_to_react")
       );
       return;
     }
@@ -603,7 +604,7 @@
       );
     } catch (error) {
       console.error("Failed to add reaction:", error);
-      toast.error("Failed to add reaction");
+      toast.error(t("inbox_ui_failed_to_add_reaction"));
     }
   }
 
@@ -685,10 +686,10 @@
 
     try {
       await navigator.clipboard.writeText(text);
-      toast.success("Selection copied");
+      toast.success(t("inbox_ui_selection_copied"));
     } catch (error) {
       console.error("Failed to copy selected message text:", error);
-      toast.error("Failed to copy selection");
+      toast.error(t("inbox_ui_failed_to_copy_selection"));
     }
   }
 
@@ -697,10 +698,10 @@
 
     try {
       await messagingService.deleteMessage(message.conversationId, message.id);
-      toast.success("Message deleted");
+      toast.success(t("inbox_ui_message_deleted"));
     } catch (error) {
       console.error("Failed to delete message:", error);
-      toast.error("Failed to delete message");
+      toast.error(t("inbox_ui_failed_to_delete_message"));
     }
   }
 </script>
@@ -763,7 +764,7 @@
         aria-label={messageActionLabel}
         aria-haspopup={isMobile ? "dialog" : "menu"}
         aria-expanded={isMobile ? showTouchSheet : showMoreMenu}
-        title="Message actions"
+        title={t("inbox_ui_message_actions")}
       >
         <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
       </button>
@@ -776,19 +777,19 @@
           bind:this={moreMenuEl}
           role="menu"
           tabindex="-1"
-          aria-label="Message actions"
+          aria-label={t("inbox_ui_message_actions")}
           onkeydown={handleMenuKeydown}
           onfocusout={handleMenuFocusout}
         >
-          <div class="reaction-menu" role="group" aria-label="React to message">
-            <span class="reaction-menu-label" aria-hidden="true">React</span>
+          <div class="reaction-menu" role="group" aria-label={t("inbox_ui_react_to_message")}>
+            <span class="reaction-menu-label" aria-hidden="true">{t("inbox_ui_react")}</span>
             {#each REACTIONS as emoji}
               <button
                 type="button"
                 class="reaction-menu-option"
                 role="menuitem"
                 onclick={() => handleReaction(emoji)}
-                aria-label="React with {emoji}"
+                aria-label={t("inbox_react_emoji", { emoji: emoji })}
               >
                 <span aria-hidden="true">{emoji}</span>
               </button>
@@ -801,7 +802,7 @@
             onclick={handleReply}
           >
             <i class="fa-solid fa-reply" aria-hidden="true"></i>
-            Reply
+            {t("inbox_ui_reply")}
           </button>
           <button
             type="button"
@@ -810,7 +811,7 @@
             onclick={handleCopyText}
           >
             <i class="fa-solid fa-copy" aria-hidden="true"></i>
-            Copy
+            {t("inbox_ui_copy")}
           </button>
           {#if authState.isAdmin}
             <button
@@ -820,7 +821,7 @@
               onclick={handleCopyForAI}
             >
               <i class="fa-solid fa-robot" aria-hidden="true"></i>
-              Copy for AI
+              {t("inbox_ui_copy_for_ai")}
             </button>
           {/if}
           {#if canEdit}
@@ -831,7 +832,7 @@
               onclick={handleEdit}
             >
               <i class="fa-solid fa-pen" aria-hidden="true"></i>
-              Edit
+              {t("inbox_ui_edit")}
             </button>
           {/if}
           {#if canDelete}
@@ -842,7 +843,7 @@
               onclick={handleDeleteRequest}
             >
               <i class="fa-solid fa-trash" aria-hidden="true"></i>
-              Delete
+              {t("inbox_ui_delete")}
             </button>
           {/if}
         </div>
@@ -860,7 +861,7 @@
           class="emoji-btn"
           style="--delay: {i * 30}ms"
           onclick={() => handleReaction(emoji)}
-          aria-label="React with {emoji}"
+          aria-label={t("inbox_react_emoji", { emoji: emoji })}
         >
           {emoji}
         </button>
@@ -870,7 +871,7 @@
         type="button"
         class="reply-btn"
         onclick={() => handleReply()}
-        aria-label="Reply to message from {message.senderName}"
+        aria-label={t("inbox_reply_sender", { name: message.senderName })}
       >
         <i class="fa-solid fa-reply" aria-hidden="true"></i>
       </button>
@@ -903,10 +904,10 @@
 <!-- Delete confirmation -->
 <ConfirmDialog
   bind:isOpen={showDeleteConfirm}
-  title="Delete Message"
-  message="This message will be deleted for everyone. This action cannot be undone."
-  confirmText="Delete"
-  cancelText="Cancel"
+  title={t("inbox_ui_delete_message")}
+  message={t("inbox_ui_this_message_will_be_deleted_for_everyone_this_action_cannot_be_undone")}
+  confirmText={t("inbox_ui_delete")}
+  cancelText={t("inbox_ui_cancel")}
   variant="danger"
   onConfirm={handleDeleteConfirm}
   onCancel={() => (showDeleteConfirm = false)}

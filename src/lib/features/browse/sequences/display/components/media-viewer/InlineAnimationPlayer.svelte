@@ -465,10 +465,10 @@
           },
         }
       );
-      toast.success("Video downloaded.");
+      toast.success(t("browse_ui_video_downloaded"));
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Video export could not finish."
+        err instanceof Error ? err.message : t("browse_ui_video_export_failed")
       );
     } finally {
       if (progressToastId) removeToast(progressToastId, "programmatic");

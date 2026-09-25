@@ -15,19 +15,31 @@
   } from "$lib/shared/i18n/locale-state.svelte";
 
   // Language display names (native)
-  const languageNames: Record<string, { native: string; english: string }> = {
-    en: { native: "English", english: "English" },
-    es: { native: "Español", english: "Spanish" },
-    fr: { native: "Français", english: "French" },
-    de: { native: "Deutsch", english: "German" },
-    pt: { native: "Português", english: "Portuguese" },
-    zh: { native: "中文", english: "Chinese" },
-    ja: { native: "日本語", english: "Japanese" },
-    ko: { native: "한국어", english: "Korean" },
-    ar: { native: "العربية", english: "Arabic" },
-    ru: { native: "Русский", english: "Russian" },
-    it: { native: "Italiano", english: "Italian" },
+  const languageNames: Record<string, string> = {
+    en: "English",
+    es: "Español",
+    fr: "Français",
+    de: "Deutsch",
+    pt: "Português",
+    zh: "中文",
+    ja: "日本語",
+    ko: "한국어",
+    ar: "العربية",
+    ru: "Русский",
+    it: "Italiano",
   };
+
+  function localizedLanguageName(locale: string): string {
+    try {
+      return (
+        new Intl.DisplayNames([currentLocale], { type: "language" }).of(locale) ??
+        languageNames[locale] ??
+        locale
+      );
+    } catch {
+      return languageNames[locale] ?? locale;
+    }
+  }
 
   // Services
   let hapticService: HapticFeedback | null = null;
@@ -90,10 +102,6 @@
 
     <div class="language-grid">
       {#each locales as locale}
-        {@const langInfo = languageNames[locale] || {
-          native: locale,
-          english: locale,
-        }}
         <button
           type="button"
           class="language-card"
@@ -102,8 +110,8 @@
           onclick={() => handleLanguageSelect(locale)}
           aria-pressed={isCurrentLocale(locale)}
         >
-          <span class="native-name">{langInfo.native}</span>
-          <span class="english-name">{langInfo.english}</span>
+          <span class="native-name">{languageNames[locale] ?? locale}</span>
+          <span class="english-name">{localizedLanguageName(locale)}</span>
           {#if isCurrentLocale(locale)}
             <i class="fas fa-check checkmark" aria-hidden="true"></i>
           {/if}
@@ -135,7 +143,7 @@
   <!-- Screen reader announcement for locale changes -->
   <div role="status" aria-live="polite" class="sr-only">
     {#if localeChanged}
-      {t("settings_language_changed_to")} {languageNames[currentLocale]?.native}
+      {t("settings_language_changed_to")} {languageNames[currentLocale] ?? currentLocale}
     {/if}
   </div>
 </div>

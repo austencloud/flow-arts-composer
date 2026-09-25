@@ -1,5 +1,6 @@
 <!-- VersionDetailPanel - Drawer wrapper for version detail content -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { onMount } from "svelte";
   import type { AppVersion } from "$lib/shared/versioning/domain/models/version-models";
   import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
@@ -32,7 +33,9 @@
   bind:isOpen
   {placement}
   showHandle={isMobile}
-  ariaLabel={version ? `Version ${version.version} details` : "Version details"}
+  ariaLabel={version
+    ? t("settings_version_details_named", { version: version.version })
+    : t("settings_version_details")}
 >
   {#if version}
     <VersionDetailContent

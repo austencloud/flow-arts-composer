@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   /**
    * ConversationItem
    *
@@ -50,10 +51,10 @@
   // Derived display values based on conversation type
   const isGroup = $derived(conversation.type === "group");
   const directIdentity = $derived(
-    getUserIdentityLabels(conversation.otherParticipant, "Unknown")
+    getUserIdentityLabels(conversation.otherParticipant, t("inbox_ui_unknown"))
   );
   const displayName = $derived(
-    isGroup ? conversation.groupName || "Unnamed Group" : directIdentity.primary
+    isGroup ? conversation.groupName || t("inbox_ui_unnamed_group") : directIdentity.primary
   );
   const draft = $derived(messageDeliveryState?.draftFor(conversation.id));
   const draftPreview = $derived.by(() => {
@@ -62,13 +63,13 @@
     if (content) return content;
     switch (draft.attachment?.type) {
       case "image":
-        return "Image";
+        return t("inbox_ui_image");
       case "sequence":
-        return "Sequence";
+        return t("inbox_ui_sequence");
       case "collection":
-        return "Collection";
+        return t("inbox_ui_collection");
       default:
-        return "Reply";
+        return t("inbox_ui_reply");
     }
   });
   const displayTime = $derived(
@@ -77,8 +78,8 @@
   const accountName = $derived(isGroup ? null : directIdentity.secondary);
   const relativeTime = $derived(formatRelativeTime(displayTime));
   const accessiblePreview = $derived.by(() => {
-    if (draft) return `Draft ${draftPreview}`;
-    if (!conversation.lastMessage) return "No messages yet";
+    if (draft) return t("inbox_draft_preview", { preview: draftPreview });
+    if (!conversation.lastMessage) return t("inbox_ui_no_messages_yet");
     const sender =
       isGroup && conversation.lastMessage.senderName
         ? `${conversation.lastMessage.senderName}: `
@@ -87,10 +88,10 @@
   });
   const ariaLabel = $derived(
     selectionMode
-      ? `${selected ? "Selected. " : ""}Send to ${displayName}${accountName ? `, ${accountName}` : ""}${isGroup && conversation.participantCount ? `, ${conversation.participantCount} members` : ""}`
+      ? `${selected ? t("inbox_selected_prefix") : ""}${t("inbox_send_to_person", { name: displayName })}${accountName ? `, ${accountName}` : ""}${isGroup && conversation.participantCount ? `, ${t("inbox_member_count", { count: conversation.participantCount })}` : ""}`
       : isGroup
-        ? `Group: ${displayName}, ${conversation.participantCount} members, ${relativeTime}, ${accessiblePreview}${conversation.unreadCount > 0 ? `, ${conversation.unreadCount} unread` : ""}`
-        : `Conversation with ${displayName}${accountName ? `, ${accountName}` : ""}, ${relativeTime}, ${accessiblePreview}${conversation.unreadCount > 0 ? `, ${conversation.unreadCount} unread` : ""}`
+        ? `${t("inbox_group_label", { name: displayName })}, ${t("inbox_member_count", { count: conversation.participantCount ?? 0 })}, ${relativeTime}, ${accessiblePreview}${conversation.unreadCount > 0 ? `, ${t("inbox_unread_messages", { count: conversation.unreadCount })}` : ""}`
+        : `${t("inbox_conversation_with", { name: displayName })}${accountName ? `, ${accountName}` : ""}, ${relativeTime}, ${accessiblePreview}${conversation.unreadCount > 0 ? `, ${t("inbox_unread_messages", { count: conversation.unreadCount })}` : ""}`
   );
 </script>
 
@@ -121,7 +122,7 @@
       <RobustAvatar
         src={conversation.otherParticipant.avatar}
         name={conversation.otherParticipant.displayName}
-        alt="Avatar for {directIdentity.primary}"
+        alt={t("inbox_avatar_for", { name: directIdentity.primary })}
         customSize={44}
       />
     {/if}
@@ -148,7 +149,7 @@
     </div>
     {#if draft}
       <p class="preview draft-preview">
-        <span class="draft-label">Draft</span>
+        <span class="draft-label">{t("inbox_ui_draft")}</span>
         {truncateText(draftPreview, isGroup ? 45 : 60)}
       </p>
     {:else if conversation.lastMessage}
@@ -159,7 +160,7 @@
         {truncateText(conversation.lastMessage.content, isGroup ? 45 : 60)}
       </p>
     {:else}
-      <p class="preview empty">No messages yet</p>
+      <p class="preview empty">{t("inbox_ui_no_messages_yet")}</p>
     {/if}
   </div>
 
@@ -171,7 +172,7 @@
   {:else if conversation.unreadCount > 0}
     <span
       class="unread-badge"
-      aria-label="{conversation.unreadCount} unread messages"
+      aria-label={t("inbox_unread_messages", { count: conversation.unreadCount })}
     >
       {conversation.unreadCount > 9 ? "9+" : conversation.unreadCount}
     </span>

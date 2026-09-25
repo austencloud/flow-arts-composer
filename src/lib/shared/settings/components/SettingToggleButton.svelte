@@ -6,6 +6,7 @@
   particular operating system.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   interface Props {
     label: string;
     description?: string;
@@ -27,14 +28,14 @@
     busy = false,
     disabled = false,
     onToggle,
-    onLabel = "On",
-    offLabel = "Off",
+    onLabel,
+    offLabel,
     ariaLabel,
     surface = "plain",
     density = "comfortable",
   }: Props = $props();
 
-  const stateLabel = $derived(checked ? onLabel : offLabel);
+  const stateLabel = $derived(checked ? (onLabel ?? t("settings_on")) : (offLabel ?? t("settings_off")));
 </script>
 
 <button

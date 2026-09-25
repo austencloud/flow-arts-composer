@@ -259,7 +259,7 @@ one rail while the live matching grid gets the rest of the canvas.
   async function save() {
     const trimmed = name.trim() || suggestedName;
     if (!engine.hasActiveFilters) {
-      toast.error("Add at least one filter to define the rule.");
+      toast.error(t("browse_ui_add_rule_filter"));
       return;
     }
     if (saving) return;

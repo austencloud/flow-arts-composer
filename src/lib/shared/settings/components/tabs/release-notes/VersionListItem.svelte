@@ -1,10 +1,10 @@
 <!-- VersionListItem - Compact clickable item for master panel version list -->
 <script lang="ts">
-  import type {
-    AppVersion,
-    ChangelogEntry,
-  } from "$lib/shared/versioning/domain/models/version-models";
+  import type { AppVersion } from "$lib/shared/versioning/domain/models/version-models";
   import { PRE_RELEASE_VERSION } from "$lib/shared/versioning/domain/models/version-models";
+  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { getReactiveLocale } from "$lib/shared/i18n/locale-state.svelte";
+  import { releaseSummary } from "./release-summary";
 
   const { version, isActive, onclick } = $props<{
     version: AppVersion;
@@ -12,52 +12,10 @@
     onclick: () => void;
   }>();
 
-  const hasChangelog = $derived(
-    version.changelogEntries && version.changelogEntries.length > 0
-  );
-
-  const summary = $derived.by(() => {
-    if (hasChangelog && version.changelogEntries) {
-      const fixed = version.changelogEntries.filter(
-        (e: ChangelogEntry) => e.category === "fixed"
-      ).length;
-      const added = version.changelogEntries.filter(
-        (e: ChangelogEntry) => e.category === "added"
-      ).length;
-      const improved = version.changelogEntries.filter(
-        (e: ChangelogEntry) => e.category === "improved"
-      ).length;
-
-      const parts: string[] = [];
-      if (fixed > 0) parts.push(`${fixed} fix${fixed === 1 ? "" : "es"}`);
-      if (added > 0)
-        parts.push(`${added} new feature${added === 1 ? "" : "s"}`);
-      if (improved > 0)
-        parts.push(`${improved} improvement${improved === 1 ? "" : "s"}`);
-      return parts.join(", ") || "Updates included";
-    }
-
-    const parts: string[] = [];
-    if (version.feedbackSummary.bugs > 0) {
-      parts.push(
-        `${version.feedbackSummary.bugs} bug${version.feedbackSummary.bugs === 1 ? "" : "s"} fixed`
-      );
-    }
-    if (version.feedbackSummary.features > 0) {
-      parts.push(
-        `${version.feedbackSummary.features} feature${version.feedbackSummary.features === 1 ? "" : "s"} added`
-      );
-    }
-    if (version.feedbackSummary.general > 0) {
-      parts.push(
-        `${version.feedbackSummary.general} improvement${version.feedbackSummary.general === 1 ? "" : "s"}`
-      );
-    }
-    return parts.join(", ") || "No changes recorded";
-  });
+  const summary = $derived(releaseSummary(version));
 
   const formattedDate = $derived(
-    version.releasedAt.toLocaleDateString("en-US", {
+    version.releasedAt.toLocaleDateString(getReactiveLocale(), {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -79,7 +37,7 @@
   <div class="header-row">
     <span class="version-number">
       {#if isPreRelease}
-        Pre-Release
+        {t("settings_pre_release")}
       {:else}
         v{version.version}
       {/if}

@@ -2,6 +2,7 @@
 StaffQuizTypeBadge - Question type indicator badge
 -->
 <script lang="ts">
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import type { QuestionType } from "../../../../domain/constants/staff-quiz-questions";
 
   let { type }: { type: QuestionType } = $props();
@@ -15,13 +16,13 @@ StaffQuizTypeBadge - Question type indicator badge
 >
   {#if type === "placement"}
     <i class="fa-solid fa-crosshairs" aria-hidden="true"></i>
-    <span>Placement</span>
+    <span>{tDynamic("learn_staff_topic_placement")}</span>
   {:else if type === "thumb"}
     <i class="fa-solid fa-hand-point-up" aria-hidden="true"></i>
-    <span>Thumb</span>
+    <span>{tDynamic("learn_staff_topic_thumb")}</span>
   {:else}
     <i class="fa-solid fa-sync-alt" aria-hidden="true"></i>
-    <span>Rotation</span>
+    <span>{tDynamic("learn_staff_topic_rotation")}</span>
   {/if}
 </div>
 
@@ -43,12 +44,20 @@ StaffQuizTypeBadge - Question type indicator badge
   }
 
   .question-type-badge.thumb {
-    background: color-mix(in srgb, var(--semantic-info, #3b82f6) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-info, #3b82f6) 15%,
+      transparent
+    );
     color: var(--semantic-info);
   }
 
   .question-type-badge.rotation {
-    background: color-mix(in srgb, var(--theme-accent, #22d3ee) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #22d3ee) 15%,
+      transparent
+    );
     color: var(--theme-accent, #22d3ee);
   }
 </style>

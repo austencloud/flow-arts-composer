@@ -57,10 +57,10 @@
     <button
       class="step-btn step-secondary"
       onclick={onStepHalfBack}
-      aria-label="Previous half step"
+      aria-label={t("viewer_ui_previous_half_step")}
       data-ghost="safe"
       data-ghost-kind="step-nav"
-      data-ghost-label="Previous half step"
+      data-ghost-label={t("viewer_ui_previous_half_step")}
     >
       <i class="fas fa-chevron-left" aria-hidden="true"></i>
     </button>
@@ -69,10 +69,10 @@
     <button
       class="step-btn step-primary"
       onclick={onRestartToStart}
-      aria-label="Restart from beginning"
+      aria-label={t("viewer_ui_restart")}
       data-ghost="safe"
       data-ghost-kind="step-nav"
-      data-ghost-label="Restart"
+      data-ghost-label={t("viewer_ui_restart_short")}
     >
       <i class="fas fa-backward-fast" aria-hidden="true"></i>
     </button>
@@ -83,7 +83,7 @@
       aria-label={t("viewer_ui_previous_step")}
       data-ghost="safe"
       data-ghost-kind="step-nav"
-      data-ghost-label="Previous step"
+      data-ghost-label={t("viewer_ui_previous_step")}
     >
       <i class="fas {stepGlyph}-left" aria-hidden="true"></i>
     </button>
@@ -92,7 +92,7 @@
   <button
     class="play-btn"
     onclick={onPlaybackToggle}
-    aria-label={isPlaying ? "Pause" : "Play"}
+    aria-label={isPlaying ? t("viewer_ui_pause") : t("viewer_ui_play")}
   >
     <span class="play-icon-stack">
       {#key isPlaying}
@@ -118,7 +118,7 @@
     aria-label={t("viewer_ui_next_step")}
     data-ghost="safe"
     data-ghost-kind="step-nav"
-    data-ghost-label="Next step"
+    data-ghost-label={t("viewer_ui_next_step")}
   >
     <i class="fas {stepGlyph}-right" aria-hidden="true"></i>
   </button>
@@ -126,10 +126,10 @@
     <button
       class="step-btn step-secondary"
       onclick={onStepHalfFwd}
-      aria-label="Next half step"
+      aria-label={t("viewer_ui_next_half_step")}
       data-ghost="safe"
       data-ghost-kind="step-nav"
-      data-ghost-label="Next half step"
+      data-ghost-label={t("viewer_ui_next_half_step")}
     >
       <i class="fas fa-chevron-right" aria-hidden="true"></i>
     </button>

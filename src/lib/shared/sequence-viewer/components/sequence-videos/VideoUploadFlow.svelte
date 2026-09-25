@@ -9,6 +9,7 @@
   SequenceVideos, which receives the finished record through onUploaded.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { getVideoUploader } from "$lib/shared/share/get-video-uploader";
   import { toast } from "$lib/shared/toast/state/toast-state.svelte";
@@ -100,13 +101,13 @@
 
   function processFile(file: File) {
     if (!file.type.startsWith("video/")) {
-      uploadError = "Please select a video file";
+      uploadError = t("viewer_detail_please_select_a_video_file");
       return;
     }
 
     const maxSize = 500 * 1024 * 1024;
     if (file.size > maxSize) {
-      uploadError = "Video must be under 500MB";
+      uploadError = t("viewer_detail_video_must_be_under_500mb");
       return;
     }
 
@@ -159,7 +160,7 @@
     }
     if (visibility === "public" && !sequenceRevision) {
       uploadError =
-        "Publish this sequence before sharing a public performance of it.";
+        t("viewer_detail_publish_this_sequence_before_sharing_a_public_performance_of_it");
       return;
     }
 
@@ -219,14 +220,14 @@
       uploadProgress = 100;
 
       hapticService?.trigger("success");
-      toast.success("Video uploaded");
+      toast.success(t("viewer_detail_video_uploaded"));
 
       cleanupFileState();
       onUploaded(video);
     } catch (cause) {
       console.error("Upload failed:", cause);
-      uploadError = cause instanceof Error ? cause.message : "Upload failed";
-      toast.error("Video upload failed. Please try again.");
+      uploadError = cause instanceof Error ? cause.message : t("viewer_detail_upload_failed");
+      toast.error(t("viewer_detail_video_upload_failed_please_try_again"));
       hapticService?.trigger("error");
       // Back to the preview so the same file can be sent again.
       flowState = "preview";
@@ -276,10 +277,9 @@
       <div class="state-icon">
         <i class="fas fa-bookmark" aria-hidden="true"></i>
       </div>
-      <span class="state-title">Save to library first</span>
+      <span class="state-title">{t("viewer_detail_save_to_library_first")}</span>
       <span class="state-hint">
-        Videos are attached to saved sequences. Save this one to your library,
-        then you can upload a performance video.
+        {t("viewer_detail_videos_are_attached_to_saved_sequences_save_this_one_to_your_library_then_you_can_upload_a_performance_video")}
       </span>
       {#if onSaveFirst}
         <button
@@ -291,10 +291,10 @@
         >
           {#if isSaving}
             <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-            Saving...
+            {t("viewer_detail_saving")}
           {:else}
             <i class="fas fa-bookmark" aria-hidden="true"></i>
-            Save to Library
+            {t("viewer_detail_save_to_library")}
           {/if}
         </button>
       {/if}
@@ -312,10 +312,10 @@
       <i class="fas fa-cloud-upload-alt drop-icon" aria-hidden="true"></i>
       <span class="drop-title">
         {hasExistingVideos
-          ? "Add another performance"
-          : "Upload your first performance"}
+          ? t("viewer_detail_add_another_performance")
+          : t("viewer_detail_upload_your_first_performance")}
       </span>
-      <span class="drop-hint">MP4, WebM, MOV up to 500MB</span>
+      <span class="drop-hint">{t("viewer_detail_mp4_webm_mov_up_to_500mb")}</span>
     </button>
   {:else if flowState === "preview"}
     <div class="preview-stage">
@@ -337,7 +337,7 @@
 
     <div class="visibility-choice">
       <span class="visibility-label" id="performance-visibility-label">
-        Who can see this in Flow Arts Composer?
+        {t("viewer_detail_who_can_see_this_in_flow_arts_composer")}
       </span>
       <SegmentedControl
         options={VIDEO_VISIBILITY_OPTIONS}
@@ -359,7 +359,7 @@
         type="button"
       >
         <i class="fas fa-exchange-alt" aria-hidden="true"></i>
-        Change file
+        {t("viewer_detail_change_file")}
       </button>
       <button
         class="primary-btn"
@@ -368,14 +368,14 @@
         type="button"
       >
         <i class="fas fa-upload" aria-hidden="true"></i>
-        Upload performance
+        {t("viewer_detail_upload_performance")}
       </button>
     </div>
   {:else}
     <div class="center-state">
       <div class="progress-section">
         <div class="progress-info">
-          <span class="progress-label">Uploading...</span>
+          <span class="progress-label">{t("viewer_detail_uploading")}</span>
           <span class="progress-pct">{uploadProgress}%</span>
         </div>
         <div
@@ -384,7 +384,7 @@
           aria-valuenow={uploadProgress}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-label="Upload progress"
+          aria-label={t("viewer_detail_upload_progress")}
         >
           <div class="progress-fill" style="width: {uploadProgress}%"></div>
         </div>
@@ -401,7 +401,7 @@
 
   {#if flowState !== "uploading"}
     <button type="button" class="cancel-btn" onclick={handleCancel}>
-      Cancel
+      {t("viewer_detail_cancel")}
     </button>
   {/if}
 </div>

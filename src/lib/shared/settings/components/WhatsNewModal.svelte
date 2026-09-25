@@ -11,7 +11,6 @@
   import { getContributorLoader } from "$lib/shared/feedback/get-contributor-loader";
   import {
     CATEGORY_ICONS,
-    CATEGORY_LABELS,
   } from "$lib/shared/versioning/domain/constants/changelog-constants";
   import type { Contributor } from "$lib/shared/versioning/domain/models/contributor-models";
   import type {
@@ -21,6 +20,7 @@
   import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
   import ContributorBadge from "./tabs/release-notes/ContributorBadge.svelte";
   import ChangelogRichText from "./tabs/release-notes/ChangelogRichText.svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte";
 
   // Category display order and colors
   const CATEGORY_CONFIG: Record<
@@ -119,16 +119,15 @@
           <span>v{version.version}</span>
         </div>
         <div class="header-text">
-          <h1 id="whats-new-title">What's New</h1>
+          <h1 id="whats-new-title">{t("settings_whats_new")}</h1>
           <p class="subtitle">
-            {totalChanges}
-            {totalChanges === 1 ? "update" : "updates"} in this release
+            {t("settings_release_update_count", { count: totalChanges })}
           </p>
         </div>
         <button
           class="close-btn"
           onclick={handleClose}
-          aria-label="Close"
+          aria-label={t("action_close")}
           type="button"
         >
           <i class="fas fa-times" aria-hidden="true"></i>
@@ -150,7 +149,7 @@
                   aria-hidden="true"
                 ></i>
               </div>
-              <h3>{CATEGORY_LABELS[group.category]}</h3>
+              <h3>{t(`settings_changelog_${group.category}`)}</h3>
               <span class="category-count">{group.entries.length}</span>
             </div>
             <ul class="category-list">
@@ -179,7 +178,7 @@
 
       {#if version?.contributorIds?.length && contributors.size > 0}
         <div class="contributors-footer">
-          <h4 class="contributors-title">Contributors</h4>
+          <h4 class="contributors-title">{t("settings_contributors")}</h4>
           <div class="contributors-list">
             {#each version.contributorIds as cid}
               {@const contrib = contributors.get(cid)}
@@ -194,7 +193,7 @@
       {#if groupedChangelog.length === 0}
         <div class="empty-state">
           <i class="fas fa-box-open" aria-hidden="true"></i>
-          <p>No detailed changelog for this version.</p>
+          <p>{t("settings_no_detailed_changelog")}</p>
         </div>
       {/if}
     </div>
@@ -207,11 +206,11 @@
           type="button"
         >
           <i class="fas fa-history" aria-hidden="true"></i>
-          All Releases
+          {t("settings_all_releases")}
         </button>
         <button class="footer-btn primary" onclick={handleClose} type="button">
           <i class="fas fa-check" aria-hidden="true"></i>
-          Got it
+          {t("settings_got_it")}
         </button>
       </footer>
     {/snippet}

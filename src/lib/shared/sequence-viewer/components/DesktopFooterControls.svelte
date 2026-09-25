@@ -53,7 +53,7 @@
         class="action-btn"
         class:favorited={isFavorite}
         onclick={onFavorite}
-        aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+        aria-label={isFavorite ? t("viewer_detail_remove_from_favorites") : t("viewer_detail_add_to_favorites")}
       >
         <i class="fas fa-heart" aria-hidden="true"></i>
         <span>{isFavorite ? "Favorited" : "Favorite"}</span>
@@ -66,11 +66,11 @@
         class="action-btn"
         class:copied={linkCopied}
         onclick={onCopyLink}
-        aria-label={linkCopied ? "Link copied" : "Copy shareable link"}
+        aria-label={linkCopied ? t("viewer_detail_link_copied") : t("viewer_detail_copy_shareable_link")}
       >
         <i class="fas {linkCopied ? 'fa-check' : 'fa-link'}" aria-hidden="true"
         ></i>
-        <span>{linkCopied ? "Copied" : "Copy Link"}</span>
+        <span>{linkCopied ? "Copied" : t("viewer_detail_copy_link")}</span>
       </button>
     {/if}
 
@@ -104,7 +104,7 @@
         aria-label={t("viewer_ui_upload_video")}
       >
         <i class="fas fa-video" aria-hidden="true"></i>
-        <span>Video</span>
+        <span>{t("viewer_detail_video")}</span>
         {#if videoCount && videoCount > 0}
           <span class="video-badge">{videoCount}</span>
         {/if}
@@ -118,7 +118,7 @@
         class:practice-active={practiceActive}
         onclick={() =>
           practiceActive ? onPracticeStop?.() : onPracticeStart?.()}
-        aria-label={practiceActive ? "Stop practice" : "Practice"}
+        aria-label={practiceActive ? t("viewer_detail_stop_practice") : "Practice"}
         aria-pressed={practiceActive}
       >
         <i
@@ -134,13 +134,13 @@
         type="button"
         class="action-btn"
         onclick={isPublished ? onUnpublish : onPublish}
-        aria-label={isPublished ? "Make Private" : "Make Public"}
+        aria-label={isPublished ? t("viewer_detail_make_private") : t("viewer_detail_make_public")}
       >
         <i
           class="fas {isPublished ? 'fa-eye-slash' : 'fa-eye'}"
           aria-hidden="true"
         ></i>
-        <span>{isPublished ? "Make Private" : "Make Public"}</span>
+        <span>{isPublished ? t("viewer_detail_make_private") : t("viewer_detail_make_public")}</span>
       </button>
       {#if onDeleteRequest}
         <button

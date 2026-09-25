@@ -2,6 +2,7 @@
 AntispinPage - Page 4: Antispin rotation + summary comparison
 -->
 <script lang="ts">
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import { ANTISPIN_EXAMPLES } from "../../../../domain/constants/staff-examples";
   import StaffPlacementVisualizer from "../StaffPlacementVisualizer.svelte";
 
@@ -23,14 +24,14 @@ AntispinPage - Page 4: Antispin rotation + summary comparison
 </script>
 
 <div class="page">
-  <h2>Antispin Rotation</h2>
+  <h2>{tDynamic("learn_staff_antispin_title")}</h2>
 
   <div class="concept-intro antispin-intro">
     <div class="concept-icon">
       <i class="fa-solid fa-retweet" aria-hidden="true"></i>
     </div>
     <p class="concept-summary">
-      The prop rotates in the <strong>opposite direction</strong> of the handpath
+      {tDynamic("learn_staff_antispin_summary")}
     </p>
   </div>
 
@@ -45,30 +46,28 @@ AntispinPage - Page 4: Antispin rotation + summary comparison
       rotationType="antispin"
     />
     <div class="example-description">
-      {currentExample.description}
+      {tDynamic(`learn_staff_antispin_example_${demoIndex}`)}
     </div>
     <button class="cycle-button" onclick={cycleExample}>
       <i class="fa-solid fa-play" aria-hidden="true"></i>
-      Show Motion Step
+      {tDynamic("learn_staff_show_motion_step")}
     </button>
   </div>
 
   <div class="explanation antispin-explanation">
-    <h3>Antispin = Thumb Swap</h3>
+    <h3>{tDynamic("learn_staff_antispin_swap")}</h3>
     <ul>
-      <li>
-        The prop rotates <strong>against</strong> your hand's direction
-      </li>
-      <li>Thumb orientation <strong>swaps</strong> during the motion</li>
-      <li>If you start with thumbs IN, you end with thumbs OUT</li>
-      <li>A 90° antispin is the base unit of antispin motion</li>
+      <li>{tDynamic("learn_staff_antispin_explain_1")}</li>
+      <li>{tDynamic("learn_staff_antispin_explain_2")}</li>
+      <li>{tDynamic("learn_staff_antispin_explain_3")}</li>
+      <li>{tDynamic("learn_staff_antispin_explain_4")}</li>
     </ul>
   </div>
 
   <div class="rotation-formula">
     <div class="formula-item">
-      <span class="formula-label">Start</span>
-      <span class="formula-value">Thumb In</span>
+      <span class="formula-label">{tDynamic("learn_staff_start")}</span>
+      <span class="formula-value">{tDynamic("learn_staff_thumb_in")}</span>
     </div>
     <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
     <div class="formula-item antispin-item">
@@ -77,30 +76,30 @@ AntispinPage - Page 4: Antispin rotation + summary comparison
     </div>
     <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
     <div class="formula-item">
-      <span class="formula-label">End</span>
-      <span class="formula-value">Thumb Out</span>
+      <span class="formula-label">{tDynamic("learn_staff_end")}</span>
+      <span class="formula-value">{tDynamic("learn_staff_thumb_out")}</span>
     </div>
   </div>
 
   <div class="summary-section">
-    <h3>Pro vs Anti Summary</h3>
+    <h3>{tDynamic("learn_staff_pro_anti_summary")}</h3>
     <div class="comparison-cards">
       <div class="comparison-card prospin">
         <i class="fa-solid fa-sync-alt" aria-hidden="true"></i>
         <span class="card-title">Prospin</span>
         <ul>
-          <li>Same direction</li>
-          <li>Thumb stays same</li>
-          <li>Like an isolation</li>
+          <li>{tDynamic("learn_staff_same_direction")}</li>
+          <li>{tDynamic("learn_staff_thumb_same")}</li>
+          <li>{tDynamic("learn_staff_like_isolation")}</li>
         </ul>
       </div>
       <div class="comparison-card antispin">
         <i class="fa-solid fa-retweet" aria-hidden="true"></i>
         <span class="card-title">Antispin</span>
         <ul>
-          <li>Opposite direction</li>
-          <li>Thumb swaps</li>
-          <li>In becomes Out</li>
+          <li>{tDynamic("learn_staff_opposite_direction")}</li>
+          <li>{tDynamic("learn_staff_thumb_swaps")}</li>
+          <li>{tDynamic("learn_staff_in_becomes_out")}</li>
         </ul>
       </div>
     </div>
@@ -108,7 +107,7 @@ AntispinPage - Page 4: Antispin rotation + summary comparison
 
   <button class="next-button" onclick={onNext}>
     <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
-    Take the Quiz
+    {tDynamic("learn_staff_take_quiz")}
   </button>
 </div>
 
@@ -139,7 +138,11 @@ AntispinPage - Page 4: Antispin rotation + summary comparison
     font-weight: 700;
     margin: 0;
     text-align: center;
-    background: linear-gradient(135deg, var(--theme-accent, #22d3ee) 0%, var(--theme-accent, #06b6d4) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--theme-accent, #22d3ee) 0%,
+      var(--theme-accent, #06b6d4) 100%
+    );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -179,7 +182,11 @@ AntispinPage - Page 4: Antispin rotation + summary comparison
     justify-content: center;
     border-radius: 50%;
     font-size: 1.5rem;
-    background: color-mix(in srgb, var(--semantic-warning, #f97316) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-warning, #f97316) 20%,
+      transparent
+    );
     color: var(--semantic-warning, #f97316);
   }
 
@@ -233,7 +240,11 @@ AntispinPage - Page 4: Antispin rotation + summary comparison
   }
 
   .antispin-explanation {
-    border-color: color-mix(in srgb, var(--semantic-warning, #f97316) 15%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-warning, #f97316) 15%,
+      transparent
+    );
   }
 
   .explanation ul {
@@ -291,7 +302,11 @@ AntispinPage - Page 4: Antispin rotation + summary comparison
   }
 
   .antispin-item {
-    background: color-mix(in srgb, var(--semantic-warning, #f97316) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-warning, #f97316) 15%,
+      transparent
+    );
     color: var(--semantic-warning, #f97316);
   }
 
@@ -325,14 +340,24 @@ AntispinPage - Page 4: Antispin rotation + summary comparison
   }
 
   .comparison-card.prospin {
-    background: color-mix(in srgb, var(--theme-accent, #22d3ee) 10%, transparent);
-    border: 1px solid color-mix(in srgb, var(--theme-accent, #22d3ee) 25%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #22d3ee) 10%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--theme-accent, #22d3ee) 25%, transparent);
     color: var(--theme-accent, #22d3ee);
   }
 
   .comparison-card.antispin {
-    background: color-mix(in srgb, var(--semantic-warning, #f97316) 10%, transparent);
-    border: 1px solid color-mix(in srgb, var(--semantic-warning, #f97316) 25%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-warning, #f97316) 10%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-warning, #f97316) 25%, transparent);
     color: var(--semantic-warning, #f97316);
   }
 
@@ -370,7 +395,8 @@ AntispinPage - Page 4: Antispin rotation + summary comparison
       color-mix(in srgb, var(--theme-accent, #22d3ee) 30%, transparent) 0%,
       color-mix(in srgb, var(--theme-accent, #22d3ee) 30%, transparent) 100%
     );
-    border: 2px solid color-mix(in srgb, var(--theme-accent, #22d3ee) 50%, transparent);
+    border: 2px solid
+      color-mix(in srgb, var(--theme-accent, #22d3ee) 50%, transparent);
     border-radius: 12px;
     color: white;
     font-size: 1.125rem;
@@ -387,7 +413,11 @@ AntispinPage - Page 4: Antispin rotation + summary comparison
       color-mix(in srgb, var(--theme-accent, #22d3ee) 40%, transparent) 0%,
       color-mix(in srgb, var(--theme-accent, #22d3ee) 40%, transparent) 100%
     );
-    border-color: color-mix(in srgb, var(--theme-accent, #22d3ee) 80%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #22d3ee) 80%,
+      transparent
+    );
     transform: translateY(-2px);
   }
 

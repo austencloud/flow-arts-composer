@@ -10,6 +10,7 @@
   - Integrates with existing export settings panels
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import type { MediaFormat } from "$lib/shared/export-panel/domain/models/media-format";
   import type { ExportProgress, ExportSettings } from "../domain/types";
   import ExportButton from "$lib/shared/export-panel/components/shared/ExportButton.svelte";
@@ -45,7 +46,7 @@
       ? "Animation"
       : selectedFormat === "static"
         ? "Image"
-        : "Video"
+        : t("viewer_detail_video")
   );
   const actionVerb = $derived(isMobile ? "Share" : "Save");
   const buttonLabel = $derived(

@@ -2,6 +2,7 @@
 StaffQuizAnswerButton - Single answer option button
 -->
 <script lang="ts">
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import type { AnswerInfo } from "../../../../domain/constants/staff-quiz-questions";
 
   let {
@@ -25,6 +26,15 @@ StaffQuizAnswerButton - Single answer option button
     disabled: boolean;
     onSelect: () => void;
   } = $props();
+
+  const label = $derived(
+    tDynamic(
+      `learn_staff_answer_${option
+        .toLowerCase()
+        .replaceAll(/[^a-z]+/g, "_")
+        .replace(/^_|_$/g, "")}`
+    )
+  );
 </script>
 
 <button
@@ -35,10 +45,10 @@ StaffQuizAnswerButton - Single answer option button
   style="--type-color: {info.color}"
   onclick={onSelect}
   {disabled}
-  aria-label="Select {option.charAt(0).toUpperCase() + option.slice(1)}"
+  aria-label={tDynamic("learn_staff_select_answer", { answer: label })}
 >
   <i class="fa-solid {info.icon}" aria-hidden="true"></i>
-  <span>{option.charAt(0).toUpperCase() + option.slice(1)}</span>
+  <span>{label}</span>
   {#if answerState !== "idle" && isSelected}
     <span class="result-icon">{answerState === "correct" ? "✓" : "✗"}</span>
   {:else if revealCorrect}

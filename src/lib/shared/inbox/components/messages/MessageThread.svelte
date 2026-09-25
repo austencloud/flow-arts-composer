@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   /**
    * MessageThread
    *
@@ -210,7 +211,7 @@
     let target = messagesById.get(messageId);
     if (!target) {
       isLocatingReply = true;
-      navigationAnnouncement = "Loading the original message";
+      navigationAnnouncement = t("inbox_ui_loading_the_original_message");
       try {
         const context = await messagingService.getMessageContext(
           conversation.id,
@@ -218,15 +219,15 @@
         );
         target = context.find((message) => message.id === messageId);
         if (!target) {
-          navigationAnnouncement = "Original message is unavailable";
-          toast.error("Original message is unavailable.");
+          navigationAnnouncement = t("inbox_ui_original_message_is_unavailable");
+          toast.error(t("inbox_ui_original_message_is_unavailable"));
           return;
         }
         contextualMessages = context;
         contextTargetId = messageId;
       } catch {
-        navigationAnnouncement = "Could not load the original message";
-        toast.error("Couldn't load the original message.");
+        navigationAnnouncement = t("inbox_ui_could_not_load_the_original_message");
+        toast.error(t("inbox_ui_couldn_t_load_the_original_message"));
         return;
       } finally {
         isLocatingReply = false;
@@ -234,23 +235,23 @@
     }
 
     if (!(await focusMessage(messageId))) {
-      navigationAnnouncement = "Original message is unavailable";
-      toast.error("Original message is unavailable.");
+      navigationAnnouncement = t("inbox_ui_original_message_is_unavailable");
+      toast.error(t("inbox_ui_original_message_is_unavailable"));
       return;
     }
 
     if (!target) return;
 
     navigationAnnouncement = target.isDeleted
-      ? `Moved to deleted message from ${target.senderName}`
-      : `Moved to original message from ${target.senderName}`;
+      ? t("inbox_moved_deleted", { name: target.senderName })
+      : t("inbox_moved_original", { name: target.senderName });
   }
 
   async function returnToLatest(): Promise<void> {
     contextualMessages = null;
     contextTargetId = null;
     highlightedMessageId = null;
-    navigationAnnouncement = "Returned to latest messages";
+    navigationAnnouncement = t("inbox_ui_returned_to_latest_messages");
     await tick();
     messagesContainer?.scrollTo({
       top: messagesContainer.scrollHeight,
@@ -261,7 +262,7 @@
   function showOutboxFailure(error: unknown, action: string): void {
     const failure = error instanceof Error ? error : new Error(String(error));
     getErrorHandler().showUserError({
-      message: "The outbox could not be updated.",
+      message: t("inbox_ui_the_outbox_could_not_be_updated"),
       technicalDetails: failure.message,
       error: failure,
       severity: "error",
@@ -365,7 +366,7 @@
     {#if isLocatingReply}
       <div class="locating-reply" role="status">
         <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
-        Finding original message
+        {t("inbox_ui_finding_original_message")}
       </div>
     {/if}
     {#if isLoading}
@@ -382,12 +383,12 @@
         <div class="context-toolbar" role="status">
           <span>
             {contextTarget?.isDeleted
-              ? "Viewing a deleted original message"
-              : "Viewing the original message"}
+              ? t("inbox_ui_viewing_a_deleted_original_message")
+              : t("inbox_ui_viewing_the_original_message")}
           </span>
           <button type="button" onclick={returnToLatest}>
             <i class="fa-solid fa-arrow-down" aria-hidden="true"></i>
-            Return to latest
+            {t("inbox_ui_return_to_latest")}
           </button>
         </div>
       {/if}

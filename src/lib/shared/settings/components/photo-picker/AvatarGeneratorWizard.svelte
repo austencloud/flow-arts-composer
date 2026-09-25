@@ -22,6 +22,7 @@
     PropOption,
     WizardStep,
   } from "$lib/shared/settings/domain/photo-picker-types";
+  import { localizedPropName } from "../tabs/prop-type/localized-prop-name";
 
   interface Props {
     selectedGradientId: string;
@@ -59,7 +60,7 @@
       })
       .map(([propType, info]) => ({
         id: propType as PropType,
-        label: info.label,
+        label: localizedPropName(propType as PropType),
         image: info.image,
       }));
   });
@@ -250,7 +251,7 @@
               {#if currentPropImage}
                 <img
                   src={currentPropImage}
-                  alt="Prop"
+                  alt={t("settings_avatar_prop")}
                   class="prop-silhouette"
                 />
               {/if}
@@ -288,7 +289,7 @@
                   onclick={() => wizardGoTo("prop")}
                   aria-label={t("settings_avatar_change_prop")}
                 >
-                  <img src={currentPropImage} alt="Prop" />
+                  <img src={currentPropImage} alt={t("settings_avatar_prop")} />
                   <span class="chip-label">{t("settings_avatar_prop")}</span>
                 </button>
               </div>
