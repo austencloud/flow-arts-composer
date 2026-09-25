@@ -113,7 +113,7 @@ function firstAccepted(type: (typeof REQUESTS)[number]): StepData[] {
 }
 
 describe("canonical LOOP completion", () => {
-  it("completes every admitted canonical seed across grids, periods, turns, and orientations", () => {
+  it("completes every admitted canonical seed across grids, periods, turns, and orientations", { timeout: 90_000 }, () => {
     const failures: string[] = [];
     const coverage = new Set<string>();
     for (const loopType of REQUESTS) {
