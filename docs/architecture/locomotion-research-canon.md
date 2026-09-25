@@ -393,6 +393,24 @@ plant's shift (`FootPlanterInput.settlingPlants`) rather than letting the warp
 scale a stance it does not walk over. Pulling the pelvis down until every foot reaches is
 not acceptable motion quality.
 
+Free arms are retargeted too. Copying the pack's upper-arm rotations onto a
+wider body hangs the hands inside the thighs: before 2026-09-24, standing idle
+put X-Bot's thumb 5.6 cm into its thigh, Remy's hand 4.9 cm, Y-Bot's 3.0 cm and
+ch34's 12.5 cm. The clearance that already existed only covered IK-held prop
+arms against the face, neck and torso, so a hand driven by the walk clips was
+never checked against the legs. **Shipped** as `ArmClearanceRetargeter` in
+scene-3d, run once per clip in `prepareClip` after the legs are fitted. It
+measures each thigh's skin as a radius table in its own bone frame, finds the
+smallest outward swing of the upper arm that keeps every hand vertex 1.2 cm
+clear, caps it at 30 degrees, and eases it over 0.12 s either side. This is
+Mixamo's Character Arm-Space setting measured per rig instead of dialled by
+hand. Clean rigs get almost nothing (ch12 0.2 degrees, ch44 none); X-Bot gets
+up to 7 and ch34 up to 29. The bake reads the body, not only the skeleton, so
+the prepared-clip cache key carries a digest of the skin: X-Bot and Y-Bot share
+one skeleton and need different arms. `tests/unit/3d/arm-thigh-clearance.test.ts`
+checks the result against fully skinned vertices with geometry the bake does
+not share.
+
 ### Motion matching, warping, and learned controllers
 
 Motion matching selects recorded poses that jointly fit the current pose and a
@@ -664,6 +682,7 @@ itself is pinned by an assertion so the claim cannot go stale silently.
 | A public dataset is product-cleared                      | Code, annotations, video, music, performer data, body models, and derived assets can carry different terms.                                            |
 | A cited technique is implemented                         | Research, adopted architecture, prototypes, and shipped behavior are separate status classes.                                                          |
 | A knee metric detects a knee posed wrong                  | `kneeJerkRms` is the second derivative of an unsigned joint angle, which a rotated bend plane preserves exactly. Grading a limb needs the plane it moved in, not only how far it moved.  |
+| Clip arm rotations fit every body                         | Retargeting keeps rotations, so a hand that hung beside a slim capture body lands inside a wider rig's thigh. Arm spacing is measured per rig, like the legs. |
 | A harness that drives the animator tests the pose         | Foot IK poses the leg after the animator. A harness that stops short of it cannot observe an IK defect at all, whatever it measures.                                                    |
 | Green unit tests prove top-tier motion                   | Tests cannot see twitching, implausible weight transfer, mesh penetration, or a bad silhouette. Live visual evidence is mandatory.                     |
 
@@ -675,6 +694,9 @@ itself is pinned by an assertion so the claim cannot go stale silently.
 2. **Contact-aware retargeting across shipped rigs.** Measure how one source
    motion changes on short and tall rigs. Preserve intentional self-contact
    while preventing interpenetration.
+   Hands against thighs is covered for clip-driven arms (see Contact, foot
+   locking, IK, and retargeting); forearms against the torso during a free
+   arm swing are not measured yet.
 3. **Terminal transition coverage.** The state machine exists and runs
    (`TerminalKey`, armed/braking/landed/settled, `terminalEntryBlend`, contact
    curves), but the only shipped assets are `walk-stop-left` and

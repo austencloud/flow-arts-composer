@@ -84,6 +84,35 @@ async function flushMicrotasks(): Promise<void> {
   for (let i = 0; i < 5; i += 1) await Promise.resolve();
 }
 
+/** A stored queue entry: one change per setting, tagged with its edit. */
+function queueEntry(
+  changes: RemoteSettings,
+  session: string,
+  sequence: number
+): string {
+  return JSON.stringify({
+    version: 2,
+    changes: Object.fromEntries(
+      Object.entries(changes).map(([key, value]) => [
+        key,
+        { value, session, sequence },
+      ])
+    ),
+  });
+}
+
+/** The values a reconnect would replay from the queue under `key`. */
+function queuedValues(key: string): RemoteSettings | null {
+  const stored = localStorage.getItem(key);
+  if (!stored) return null;
+  const { changes } = JSON.parse(stored) as {
+    changes: Record<string, { value: unknown }>;
+  };
+  return Object.fromEntries(
+    Object.entries(changes).map(([setting, change]) => [setting, change.value])
+  );
+}
+
 /**
  * Replay the offline queue on ONE service instance. Dispatching a real
  * `online` event is unusable here: every loadSettingsService() call re-imports
@@ -222,6 +251,32 @@ describe("settings edited while a remote copy is in flight", () => {
     expect(service.currentSettings.backgroundType).toBe(BackgroundType.COSMIC);
   });
 
+  it("applies another device's change that arrives while an edit waits to upload", async () => {
+    persister.loadSettings.mockResolvedValue({
+      hapticFeedback: true,
+      reducedMotion: false,
+    });
+    const service = await loadSettingsService();
+    await service.initializeFirebaseSync();
+    await flushMicrotasks();
+
+    await service.updateSetting("hapticFeedback", false);
+
+    // Another device's change lands inside the upload debounce. Dropping it
+    // left this tab holding the old value, ready to upload it again.
+    persister.listener?.({ hapticFeedback: true, reducedMotion: true });
+    await flushMicrotasks();
+
+    expect(service.currentSettings.reducedMotion).toBe(true);
+    expect(service.currentSettings.hapticFeedback).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    await flushMicrotasks();
+    expect(persister.saveSettings).toHaveBeenLastCalledWith({
+      hapticFeedback: false,
+    });
+  });
+
   it("still lets the account document outrank an edit made before sign-in", async () => {
     auth.currentUser = null;
     const service = await loadSettingsService();
@@ -334,11 +389,10 @@ describe("writes that settle out of order", () => {
     firstSave.resolve();
     await flushMicrotasks();
 
-    // The coalesced re-run carries everything, including the edit made while
-    // the first write was open.
+    // The coalesced re-run carries the edit made while the first write was
+    // open, and nothing the first write already confirmed.
     expect(persister.saveSettings).toHaveBeenCalledTimes(2);
-    expect(persister.saveSettings.mock.calls[1][0]).toMatchObject({
-      hapticFeedback: false,
+    expect(persister.saveSettings.mock.calls[1][0]).toEqual({
       reducedMotion: true,
     });
   });
@@ -381,12 +435,9 @@ describe("writes that settle out of order", () => {
       await flushMicrotasks();
     }
 
-    const queued = JSON.parse(
-      localStorage.getItem(`${LEGACY_QUEUE_KEY}:user-b`) ?? "{}"
-    );
-    // A reconnect replays this payload, so it must not be older than what the
-    // user last chose.
-    expect(queued.settings).toMatchObject({
+    // A reconnect replays this queue, so it must not hold anything older than
+    // what the user last chose.
+    expect(queuedValues(`${LEGACY_QUEUE_KEY}:user-b`)).toMatchObject({
       hapticFeedback: false,
       reducedMotion: true,
     });
@@ -401,12 +452,11 @@ describe("writes that settle out of order", () => {
     // than by init's own drain.
     localStorage.setItem(
       `${LEGACY_QUEUE_KEY}:user-b`,
-      JSON.stringify({
-        settings: { hapticFeedback: true, reducedMotion: false },
-        sequence: 4,
-        session: "a-previous-page-load",
-        timestamp: Date.now(),
-      })
+      queueEntry(
+        { hapticFeedback: true, reducedMotion: false },
+        "a-previous-page-load",
+        4
+      )
     );
 
     persister.saveSettings.mockClear();
@@ -447,12 +497,11 @@ describe("writes that settle out of order", () => {
     const queueKey = `${LEGACY_QUEUE_KEY}:user-b`;
     localStorage.setItem(
       queueKey,
-      JSON.stringify({
-        settings: { hapticFeedback: true, reducedMotion: false },
-        sequence: 7,
-        session: "a-previous-page-load",
-        timestamp: Date.now(),
-      })
+      queueEntry(
+        { hapticFeedback: true, reducedMotion: false },
+        "a-previous-page-load",
+        7
+      )
     );
 
     persister.saveSettings.mockClear();
@@ -483,8 +532,7 @@ describe("writes that settle out of order", () => {
     // That continuation must not clear a queue entry it never replayed, nor
     // release pins belonging to the newer edit. Losing this drops the user's
     // choice from the server, the queue, and the pin set at once.
-    const queued = JSON.parse(localStorage.getItem(queueKey) ?? "null");
-    expect(queued?.settings).toMatchObject({ reducedMotion: true });
+    expect(queuedValues(queueKey)).toMatchObject({ reducedMotion: true });
     expect(service.currentSettings.reducedMotion).toBe(true);
   });
 
@@ -496,12 +544,7 @@ describe("writes that settle out of order", () => {
     const queueKey = `${LEGACY_QUEUE_KEY}:user-b`;
     localStorage.setItem(
       queueKey,
-      JSON.stringify({
-        settings: { reducedMotion: false },
-        sequence: 7,
-        session: "a-previous-page-load",
-        timestamp: Date.now(),
-      })
+      queueEntry({ reducedMotion: false }, "a-previous-page-load", 7)
     );
 
     persister.saveSettings.mockClear();
@@ -510,38 +553,28 @@ describe("writes that settle out of order", () => {
 
     const draining = drainOfflineQueue(service);
     await flushMicrotasks();
+    expect(persister.saveSettings).toHaveBeenCalledTimes(1);
 
     // Another tab writes a newer payload to the shared key while this replay
     // is open. Ordering alone cannot prevent this — only entry identity can.
     localStorage.setItem(
       queueKey,
-      JSON.stringify({
-        settings: { reducedMotion: true },
-        sequence: 2,
-        session: "another-tab",
-        timestamp: Date.now(),
-      })
+      queueEntry({ reducedMotion: true }, "another-tab", 2)
     );
 
     oldReplay.resolve();
     await draining;
     await flushMicrotasks();
 
-    const queued = JSON.parse(localStorage.getItem(queueKey) ?? "null");
-    expect(queued?.settings).toMatchObject({ reducedMotion: true });
+    expect(queuedValues(queueKey)).toMatchObject({ reducedMotion: true });
   });
 
   it("queues a failed edit whose sequence is lower than a previous page load's", async () => {
-    // A queue entry left by an earlier page load, stamped with that session's
-    // much higher edit sequence.
+    // A queue entry left by an earlier page load for the same setting, stamped
+    // with that session's much higher edit sequence.
     localStorage.setItem(
       `${LEGACY_QUEUE_KEY}:user-b`,
-      JSON.stringify({
-        settings: { hapticFeedback: true },
-        sequence: 5,
-        session: "a-previous-page-load",
-        timestamp: Date.now(),
-      })
+      queueEntry({ reducedMotion: false }, "a-previous-page-load", 5)
     );
 
     // Still offline, so init's replay fails and leaves that entry in place —
@@ -556,7 +589,7 @@ describe("writes that settle out of order", () => {
     const stillQueued = JSON.parse(
       localStorage.getItem(`${LEGACY_QUEUE_KEY}:user-b`) ?? "{}"
     );
-    expect(stillQueued.sequence).toBe(5);
+    expect(stillQueued.changes.reducedMotion.sequence).toBe(5);
 
     await service.updateSetting("reducedMotion", true);
     await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
@@ -564,10 +597,9 @@ describe("writes that settle out of order", () => {
 
     // Sequence 1 from this session must not be judged "older" than the 5 a
     // previous session persisted — that would silently drop the edit.
-    const queued = JSON.parse(
-      localStorage.getItem(`${LEGACY_QUEUE_KEY}:user-b`) ?? "{}"
-    );
-    expect(queued.settings).toMatchObject({ reducedMotion: true });
+    expect(queuedValues(`${LEGACY_QUEUE_KEY}:user-b`)).toMatchObject({
+      reducedMotion: true,
+    });
   });
 
   it("refuses to let an older payload replace a newer queued one", async () => {
@@ -587,25 +619,27 @@ describe("writes that settle out of order", () => {
 
     const queueKey = `${LEGACY_QUEUE_KEY}:user-b`;
     const newest = JSON.parse(localStorage.getItem(queueKey) ?? "{}");
-    expect(typeof newest.sequence).toBe("number");
+    const newestSequence = newest.changes?.reducedMotion?.sequence;
+    expect(typeof newestSequence).toBe("number");
 
-    // Hand the queue a stale entry carrying a lower revision, as an older
-    // write settling late would.
+    // Hand the queue stale edits carrying a lower revision, as an older write
+    // settling late would.
     const service2 = service as unknown as {
-      queueOfflineChange: (
-        settings: RemoteSettings,
+      queueFailedEdits: (
         userId: string,
+        edits: RemoteSettings,
         sequence: number
       ) => void;
     };
-    service2.queueOfflineChange(
-      { hapticFeedback: true, reducedMotion: false },
+    service2.queueFailedEdits(
       "user-b",
-      newest.sequence - 1
+      { hapticFeedback: true, reducedMotion: false },
+      newestSequence - 1
     );
 
-    expect(JSON.parse(localStorage.getItem(queueKey) ?? "{}")).toMatchObject({
-      settings: { hapticFeedback: false, reducedMotion: true },
+    expect(queuedValues(queueKey)).toMatchObject({
+      hapticFeedback: false,
+      reducedMotion: true,
     });
   });
 });
@@ -838,8 +872,8 @@ describe("prop choices follow the account", () => {
       })
     );
 
-    // The last press fails to upload. That frees the write slot, so the next
-    // snapshot is applied while the account still holds the first press.
+    // The last press fails to upload, so the account still holds the first
+    // press when the next snapshot arrives.
     secondSave.reject(new Error("offline"));
     await flushMicrotasks();
 
@@ -922,6 +956,26 @@ describe("prop choices follow the account", () => {
     expect(service.currentSettings.leftPropType).toBe(PropType.CLUB);
   });
 
+  it("uploads the whole prop pair, and only the pair, when one hand changes", async () => {
+    const service = await loadSettingsService();
+    await service.initializeFirebaseSync();
+    await flushMicrotasks();
+
+    await service.updateSetting("rightPropType", PropType.FAN);
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    await flushMicrotasks();
+
+    // The left hand was not edited, but the pair is one choice: another tab
+    // must never receive this right hand spliced onto its own left.
+    expect(persister.saveSettings).toHaveBeenCalledTimes(1);
+    expect(persister.saveSettings.mock.calls[0][0]).toEqual({
+      leftPropType: PropType.STAFF,
+      rightPropType: PropType.FAN,
+      propType: PropType.STAFF,
+      catDogMode: true,
+    });
+  });
+
   it("keeps this device's props off the account when the account read fails", async () => {
     localStorage.setItem(
       SETTINGS_KEY,
@@ -950,5 +1004,184 @@ describe("prop choices follow the account", () => {
     });
     await flushMicrotasks();
     expect(service.currentSettings.leftPropType).toBe(PropType.FAN);
+  });
+});
+
+describe("one account document shared by several tabs", () => {
+  // Stands in for the Firestore document. A write merges into it and every
+  // open listener sees the result at once, the way latency compensation shows
+  // each tab a write before the server acknowledges it.
+  let server: RemoteSettings = {};
+  const listeners = new Set<(settings: RemoteSettings) => void>();
+  const queueKey = `${LEGACY_QUEUE_KEY}:user-b`;
+
+  function commit(payload: RemoteSettings): void {
+    Object.assign(server, structuredClone(payload));
+    for (const listener of [...listeners]) listener({ ...server });
+  }
+
+  function failNextWrite(): void {
+    persister.saveSettings.mockImplementationOnce(async () => {
+      throw new Error("offline");
+    });
+  }
+
+  async function openTab() {
+    const tab = await loadSettingsService();
+    await tab.initializeFirebaseSync();
+    await flushMicrotasks();
+    return tab;
+  }
+
+  async function settle(): Promise<void> {
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    await flushMicrotasks();
+  }
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    localStorage.clear();
+    auth.currentUser = { uid: "user-b" };
+    server = { hapticFeedback: true, reducedMotion: false };
+    listeners.clear();
+    persister.loadSettings.mockReset();
+    persister.loadSettings.mockImplementation(async () => ({ ...server }));
+    persister.saveSettings.mockReset();
+    persister.saveSettings.mockImplementation(async (payload) =>
+      commit(payload)
+    );
+    persister.onSettingsChange.mockReset();
+    persister.onSettingsChange.mockImplementation(
+      (listener: (settings: RemoteSettings) => void) => {
+        listeners.add(listener);
+        return () => {
+          listeners.delete(listener);
+        };
+      }
+    );
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("does not send back another tab's change that landed while this tab was saving", async () => {
+    const tabA = await openTab();
+    const tabB = await openTab();
+
+    // Tab A's write reaches the document but is slow to be acknowledged, as
+    // it is through a flaky connection.
+    const ack = deferred<void>();
+    persister.saveSettings.mockImplementationOnce(async (payload) => {
+      commit(payload);
+      await ack.promise;
+    });
+    await tabA.updateSetting("hapticFeedback", false);
+    await settle();
+
+    // Tab B changes a different setting while A's write is still open.
+    await tabB.updateSetting("reducedMotion", true);
+    await settle();
+    expect(server.reducedMotion).toBe(true);
+
+    ack.resolve();
+    await flushMicrotasks();
+
+    // A's next write, for an unrelated setting, must not carry A's old copy of
+    // B's setting back to the account and on to every other device.
+    await tabA.updateSetting("musicianMode", true);
+    await settle();
+
+    expect(server).toMatchObject({
+      hapticFeedback: false,
+      reducedMotion: true,
+      musicianMode: true,
+    });
+    expect(tabA.currentSettings.reducedMotion).toBe(true);
+    expect(tabB.currentSettings.reducedMotion).toBe(true);
+  });
+
+  it("replays only the edits an earlier page load could not upload", async () => {
+    const earlier = await openTab();
+    failNextWrite();
+    await earlier.updateSetting("reducedMotion", true);
+    await settle();
+    // That page goes away with its edit still queued.
+    earlier.cleanup();
+
+    // Meanwhile another device turns haptics off.
+    commit({ hapticFeedback: false });
+
+    const later = await openTab();
+    await settle();
+
+    // The queued edit lands. Nothing else the earlier page held comes back.
+    expect(server).toMatchObject({
+      hapticFeedback: false,
+      reducedMotion: true,
+    });
+    expect(later.currentSettings.hapticFeedback).toBe(false);
+    expect(localStorage.getItem(queueKey)).toBeNull();
+  });
+
+  it("keeps a tab's failed edit when another tab's failure shares the queue", async () => {
+    const tabA = await openTab();
+    const tabB = await openTab();
+
+    // Both tabs lose an upload, one after the other, into the same queue.
+    failNextWrite();
+    await tabA.updateSetting("hapticFeedback", false);
+    await settle();
+    failNextWrite();
+    await tabB.updateSetting("reducedMotion", true);
+    await settle();
+
+    // Tab A reconnects first and replays the shared queue.
+    await drainOfflineQueue(tabA);
+    await flushMicrotasks();
+
+    expect(server).toMatchObject({
+      hapticFeedback: false,
+      reducedMotion: true,
+    });
+    expect(localStorage.getItem(queueKey)).toBeNull();
+
+    // A later change from another device must not knock A's edit back out.
+    commit({ musicianMode: true });
+    expect(tabA.currentSettings.hapticFeedback).toBe(false);
+  });
+
+  it("retires a whole-settings queue entry written before per-key queueing", async () => {
+    server.hapticFeedback = false;
+    localStorage.setItem(
+      queueKey,
+      JSON.stringify({
+        settings: { hapticFeedback: true, reducedMotion: false },
+        sequence: 3,
+        session: "a-page-load-before-the-upgrade",
+        timestamp: Date.now(),
+      })
+    );
+
+    const tab = await openTab();
+    await settle();
+
+    // Nothing in a whole-settings copy says which values were edits, so
+    // replaying it would put back every value it held.
+    expect(server.hapticFeedback).toBe(false);
+    expect(tab.currentSettings.hapticFeedback).toBe(false);
+    expect(localStorage.getItem(queueKey)).toBeNull();
+  });
+
+  it("uploads the values a reset to defaults restores", async () => {
+    server.hapticFeedback = false;
+    const tab = await openTab();
+    expect(tab.currentSettings.hapticFeedback).toBe(false);
+
+    await tab.resetToDefaults();
+    await settle();
+
+    expect(server.hapticFeedback).toBe(true);
+    expect(tab.currentSettings.hapticFeedback).toBe(true);
   });
 });
