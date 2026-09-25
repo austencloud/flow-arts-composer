@@ -33,6 +33,10 @@ function services() {
     getFootContact: vi.fn(() => ({ left: 1, right: 0 })),
     getFootPlantConfidence: vi.fn(() => 0.9),
     getStrideScale: vi.fn(() => 1.1),
+    getSettlingPlants: vi.fn(() => ({
+      left: { shift: 0.05, weight: 1 },
+      right: { shift: 0, weight: 0 },
+    })),
     reset: vi.fn(),
     dispose: vi.fn(),
   };
@@ -121,6 +125,10 @@ describe("worker performer locomotion", () => {
         contactLeft: 1,
         contactRight: 0,
         strideScale: 1.1,
+        settlingPlants: {
+          left: { shift: 0.05, weight: 1 },
+          right: { shift: 0, weight: 0 },
+        },
       })
     );
     expect(fake.order).toEqual(["locomotion", "feet"]);

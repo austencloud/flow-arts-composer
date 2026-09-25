@@ -356,7 +356,7 @@
           Color, intensity, persistence, and density update the preview
           immediately.
         </p>
-        <EffectControlStack effect="ghost" config={effectsConfig} />
+        <EffectControlStack effect="ghost" config={effectsConfig} view="3d" />
       </section>
     </section>
 

@@ -498,6 +498,7 @@ export async function driveRig({
         travelDirection: moving
           ? { x: Math.sin(heading), z: Math.cos(heading) }
           : undefined,
+        settlingPlants: animator.getSettlingPlants?.() ?? undefined,
       });
     }
 
