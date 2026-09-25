@@ -193,6 +193,8 @@ export interface OrchestratorContext {
   handleRetryExport: () => void;
   dismissPreview: () => void;
   saveExportedVideo: () => Promise<void>;
+  /** Saves a film kept on the device; false when it is no longer there. */
+  saveRetainedFilm: (filmId: string) => Promise<boolean>;
 
   playbackController: AnimationPlaybackController | null;
   /** Resolves `false` when the render was refused before it began. */

@@ -17,7 +17,7 @@
   import { Quaternion, Euler, Vector3 } from "three";
   import type { PropState3D } from "@austencloud/scene-3d";
   import { userProportionsState } from "@austencloud/scene-3d";
-  import { LAYER_VIEWMODEL } from "@austencloud/scene-3d";
+  import { LAYER_VIEWMODEL, reactivePropHandPalette } from "@austencloud/scene-3d";
   import { CameraMode } from "$lib/shared/3d/camera/types";
 
   interface Props {
@@ -60,11 +60,11 @@
   // Half length for positioning end caps
   const halfLength = $derived(staffLength / 2);
 
-  // Color values
-  const colors = {
-    left: { main: "#3b82f6", dark: "#1d4ed8" },
-    right: { main: "#ef4444", dark: "#b91c1c" },
-  };
+  // The hand colors every other prop is painted in
+  const colors = $derived({
+    left: reactivePropHandPalette("blue"),
+    right: reactivePropHandPalette("red"),
+  });
 
   // Viewmodel configuration
   const VIEWMODEL_CONFIG = {

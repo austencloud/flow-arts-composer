@@ -14,10 +14,11 @@ const firestoreDoc = vi.hoisted(() => vi.fn((_db: unknown, path: string) => ({
 })));
 const onSnapshot = vi.hoisted(() => vi.fn(() => vi.fn()));
 const setDoc = vi.hoisted(() => vi.fn(async () => {}));
+const getDoc = vi.hoisted(() => vi.fn());
 
 vi.mock("firebase/firestore", () => ({
   doc: firestoreDoc,
-  getDoc: vi.fn(),
+  getDoc,
   setDoc,
   onSnapshot,
   serverTimestamp: () => "server-time",
@@ -135,6 +136,8 @@ describe("FirebaseSettingsPersister async boundaries", () => {
     });
 
     await persister.saveSettings({ leftPropType: PropType.FAN } as never);
+    // The mirror runs after the save settles.
+    await flushMicrotasks();
 
     const mirrored = setDoc.mock.calls
       .map(([ref]) => (ref as { path?: string })?.path)
@@ -147,6 +150,7 @@ describe("FirebaseSettingsPersister async boundaries", () => {
     const persister = new FirebaseSettingsPersister();
 
     await persister.saveSettings({ leftPropType: PropType.FAN } as never);
+    await flushMicrotasks();
 
     const paths = setDoc.mock.calls.map(
       ([ref]) => (ref as { path?: string })?.path
@@ -159,13 +163,86 @@ describe("FirebaseSettingsPersister async boundaries", () => {
     const persister = new FirebaseSettingsPersister();
 
     await persister.saveSettings({ leftPropType: PropType.FAN } as never);
+    await flushMicrotasks();
     auth.currentUser = { uid: "user-b", isAnonymous: false };
     await persister.saveSettings({ leftPropType: PropType.FAN } as never);
+    await flushMicrotasks();
 
     const paths = setDoc.mock.calls.map(
       ([ref]) => (ref as { path?: string })?.path
     );
     // An unscoped "last mirrored prop" cache would skip user-b entirely.
     expect(paths).toContain("users/user-b");
+  });
+
+  it("mirrors a prop again after another tab moved the account off it", async () => {
+    let deliver: ((snapshot: unknown) => void) | null = null;
+    onSnapshot.mockImplementation((...args: unknown[]) => {
+      deliver = args[1] as (snapshot: unknown) => void;
+      return vi.fn();
+    });
+    const persister = new FirebaseSettingsPersister();
+    persister.onSettingsChange(() => {});
+    await flushMicrotasks();
+
+    await persister.saveSettings({ leftPropType: PropType.FAN } as never);
+    await flushMicrotasks();
+    // Another tab picked club, which also moved the public mirror to club.
+    deliver?.({
+      exists: () => true,
+      data: () => ({ leftPropType: PropType.CLUB }),
+    });
+    await persister.saveSettings({ leftPropType: PropType.FAN } as never);
+    await flushMicrotasks();
+
+    const mirrored = setDoc.mock.calls
+      .filter(([ref]) => (ref as { path?: string })?.path === "users/user-a")
+      .map(([, data]) => (data as { activeProp: string }).activeProp);
+    expect(mirrored).toEqual([PropType.FAN, PropType.FAN]);
+  });
+
+  it("settles a settings save without waiting for the activeProp mirror", async () => {
+    let releaseMirror!: () => void;
+    const mirrorOpen = new Promise<void>((resolve) => {
+      releaseMirror = resolve;
+    });
+    setDoc.mockImplementation(async (...args: unknown[]) => {
+      if ((args[0] as { path?: string })?.path === "users/user-a") {
+        await mirrorOpen;
+      }
+    });
+    const persister = new FirebaseSettingsPersister();
+
+    let saved = false;
+    const saving = persister
+      .saveSettings({ leftPropType: PropType.FAN } as never)
+      .then(() => {
+        saved = true;
+      });
+
+    // The badge mirror is still open. The caller holds its write slot until
+    // this save settles, so waiting on the mirror stretches that window.
+    await vi.waitFor(() => {
+      const paths = setDoc.mock.calls.map(
+        ([ref]) => (ref as { path?: string })?.path
+      );
+      expect(paths).toContain("users/user-a");
+    });
+    await vi.waitFor(() => expect(saved).toBe(true));
+
+    releaseMirror();
+    await saving;
+  });
+
+  it("tells a failed read apart from a missing document", async () => {
+    const persister = new FirebaseSettingsPersister();
+
+    getDoc.mockResolvedValueOnce({ exists: () => false });
+    await expect(persister.loadSettings()).resolves.toBeNull();
+
+    // Offline with nothing cached, getDoc rejects. Reading that as "no
+    // document" made the caller upload this device's copy over the account's.
+    getDoc.mockRejectedValueOnce(new Error("client is offline"));
+    await expect(persister.loadSettings()).rejects.toThrow("client is offline");
   });
 });

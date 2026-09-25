@@ -4,6 +4,7 @@
   import type { PostStudioExportProgress } from "$lib/shared/media-composition/services/post-studio-exporter";
   import type { PostStudioRoleKey } from "$lib/shared/media-composition/domain/post-studio-presets";
   import type { PostStudioSlotId } from "$lib/shared/media-composition/domain/post-studio-slots";
+  import { BREAKDOWN_POST_LAYOUT } from "$lib/shared/media-composition/domain/post-studio-presets";
   import { ROLE_ICON, buildSourceMenuItems } from "./post-studio-source-menu";
   import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
 
@@ -38,6 +39,7 @@
     audioMode: "original" | "instagram";
     canKeepOriginalAudio: boolean;
     onAudioModeChange: (mode: "original" | "instagram") => void;
+    onChoosePerformance: () => void;
     onFixMissing: () => void;
     onRender: () => void;
     onCancelExport: () => void;
@@ -65,6 +67,7 @@
     audioMode,
     canKeepOriginalAudio,
     onAudioModeChange,
+    onChoosePerformance,
     onFixMissing,
     onRender,
     onCancelExport,
@@ -166,32 +169,48 @@
 
 <div class="actionbar" class:crowded={exporting || !!exportedUrl}>
   <div class="slots">
-    {#each slotEntries as slot (slot.id)}
-      <div class="slot-picker" class:selected={slot.selected}>
-        <OverflowMenu
-          items={buildSourceMenuItems(composition, slot.id, slot.roleKey)}
-          placement="bottom"
-          align="left"
-          triggerClass="slot-trigger"
-          triggerPresentation="labelled"
-          ariaLabel={`${slot.position} slot: ${slot.label}. Change or remove.`}
+    {#if composition.activePresetId === BREAKDOWN_POST_LAYOUT.id}
+      <div class="slot-picker">
+        <button
+          type="button"
+          class="slot-trigger"
+          aria-label="Change breakdown performance video"
+          onclick={onChoosePerformance}
         >
-          {#snippet trigger()}
-            <!-- Phone widths cannot carry the word TOP alongside a source name
-                 without truncating the name, which is the part that changes.
-                 The arrow replaces the word there; the trigger's aria-label
-                 still reads "Top slot: …" either way. -->
-            <i class={`slot-glyph ${slot.glyph}`} aria-hidden="true"></i>
-            <i class={`slot-icon ${slot.icon}`} aria-hidden="true"></i>
-            <span class="slot-position">{slot.position}</span>
-            <span class="slot-label" class:missing={slot.missing}
-              >{slot.label}</span
-            >
-            <i class="fa-solid fa-chevron-down caret" aria-hidden="true"></i>
-          {/snippet}
-        </OverflowMenu>
+          <i class="slot-glyph fa-solid fa-video" aria-hidden="true"></i>
+          <i class="slot-icon fa-solid fa-video" aria-hidden="true"></i>
+          <span class="slot-position">Breakdown</span>
+          <span class="slot-label">Performance video</span>
+        </button>
       </div>
-    {/each}
+    {:else}
+      {#each slotEntries as slot (slot.id)}
+        <div class="slot-picker" class:selected={slot.selected}>
+          <OverflowMenu
+            items={buildSourceMenuItems(composition, slot.id, slot.roleKey)}
+            placement="bottom"
+            align="left"
+            triggerClass="slot-trigger"
+            triggerPresentation="labelled"
+            ariaLabel={`${slot.position} slot: ${slot.label}. Change or remove.`}
+          >
+            {#snippet trigger()}
+              <!-- Phone widths cannot carry the word TOP alongside a source name
+                   without truncating the name, which is the part that changes.
+                   The arrow replaces the word there; the trigger's aria-label
+                   still reads "Top slot: …" either way. -->
+              <i class={`slot-glyph ${slot.glyph}`} aria-hidden="true"></i>
+              <i class={`slot-icon ${slot.icon}`} aria-hidden="true"></i>
+              <span class="slot-position">{slot.position}</span>
+              <span class="slot-label" class:missing={slot.missing}
+                >{slot.label}</span
+              >
+              <i class="fa-solid fa-chevron-down caret" aria-hidden="true"></i>
+            {/snippet}
+          </OverflowMenu>
+        </div>
+      {/each}
+    {/if}
   </div>
 
   <!-- The safe-area overlay is scaffolding: it belongs beside the thing that

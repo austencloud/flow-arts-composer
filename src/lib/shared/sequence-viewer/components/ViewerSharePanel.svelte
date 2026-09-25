@@ -13,8 +13,9 @@
 
   On the 2D animation Download renders right here: the line under it says
   what it will make, Settings opens the Export page that decides that, and
-  the button carries the render's progress. Other views still prepare their
-  file in the share sheet.
+  the button carries the render's progress. In 3D it hands over the film
+  already recorded on the stage, or reads "Record a take" when there is none.
+  Other views still prepare their file in the share sheet.
 -->
 <script lang="ts">
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
@@ -26,6 +27,11 @@
     subject: { label: string; icon: string };
     /** What Download produces from that view, e.g. "Card image" or "Video". */
     downloadLabel: string;
+    /** Replaces "Download <label>" when the primary action is something else,
+     *  e.g. "Record a take" before a 3D film exists. */
+    downloadText?: string;
+    /** Font Awesome icon for that replacement; defaults to the download icon. */
+    downloadIcon?: string;
     linkCopied: boolean;
     onCopyLink: () => void;
     embedCopied: boolean;
@@ -36,8 +42,13 @@
     /** 0-1 while Download's render runs; null when idle. */
     downloadProgress?: number | null;
     downloadDisabled?: boolean;
-    /** Opens the settings that shape the file. */
-    onDownloadSettings?: () => void;
+    /** One small action on the detail line: Settings, or New take in 3D. */
+    detailAction?: {
+      label: string;
+      icon: string;
+      ariaLabel: string;
+      onClick: () => void;
+    };
     /** Omitted where the browser has no share sheet. */
     onNativeShare?: () => void;
     /** Omitted while social publishing is unavailable. */
@@ -53,6 +64,8 @@
   let {
     subject,
     downloadLabel,
+    downloadText: downloadTextOverride,
+    downloadIcon = "fa-download",
     linkCopied,
     onCopyLink,
     embedCopied,
@@ -61,7 +74,7 @@
     downloadDetail,
     downloadProgress = null,
     downloadDisabled = false,
-    onDownloadSettings,
+    detailAction,
     onNativeShare,
     onPublish,
     session,
@@ -73,7 +86,9 @@
 
   const headingId = $props.id();
 
-  const downloadText = $derived(`Download ${downloadLabel.toLowerCase()}`);
+  const downloadText = $derived(
+    downloadTextOverride ?? `Download ${downloadLabel.toLowerCase()}`
+  );
   const rendering = $derived(downloadProgress !== null);
   const renderPercent = $derived(
     Math.round(Math.max(0, Math.min(1, downloadProgress ?? 0)) * 100)
@@ -118,7 +133,7 @@
           class:shown={!rendering}
           aria-hidden={rendering}
         >
-          <i class="fa-solid fa-download" aria-hidden="true"></i>
+          <i class="fa-solid {downloadIcon}" aria-hidden="true"></i>
           {downloadText}
         </span>
         <span
@@ -134,15 +149,15 @@
     {#if downloadDetail}
       <div class="download-detail">
         <span>{downloadDetail}</span>
-        {#if onDownloadSettings}
+        {#if detailAction}
           <button
             type="button"
             class="settings"
-            onclick={onDownloadSettings}
-            aria-label="Video export settings"
+            onclick={detailAction.onClick}
+            aria-label={detailAction.ariaLabel}
           >
-            <i class="fa-solid fa-sliders" aria-hidden="true"></i>
-            Settings
+            <i class="fa-solid {detailAction.icon}" aria-hidden="true"></i>
+            {detailAction.label}
           </button>
         {/if}
       </div>

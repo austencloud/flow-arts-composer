@@ -383,7 +383,7 @@
     return capturePsSlice(
       {
         propType,
-        defaultPropType: propType,
+        propTypeTouched: false,
         audioMode: "original",
         audioModeTouched: false,
       },

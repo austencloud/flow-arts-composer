@@ -50,9 +50,6 @@ export async function calculateArrowPoint(
       motion,
       pictographData
     );
-    const initialPosition = getInitialPosition(motion, location, gridMode);
-
-    const validPosition = ensureValidPosition(initialPosition);
 
     // A full arrow is resolved once in the canonical placement frame. Position
     // offsets, rotation flags, and glyph angle must share this boundary or Box
@@ -66,6 +63,13 @@ export async function calculateArrowPoint(
           location,
           gridMode
         );
+    const initialPosition = getInitialPosition(
+      motion,
+      location,
+      placementFrame?.anchorGridMode ?? gridMode
+    );
+
+    const validPosition = ensureValidPosition(initialPosition);
     const canonicalRotation = await arrowRotationCalculator.calculateRotation(
       placementFrame?.motionData ?? motion,
       placementFrame?.location ?? location,

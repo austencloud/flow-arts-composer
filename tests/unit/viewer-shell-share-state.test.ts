@@ -60,20 +60,16 @@ describe("viewer share file preparation", () => {
     expect(dismissals).toBe(2);
   });
 
-  it("marks a live scene take as a resumed share session", () => {
-    const share = createShareState(() => undefined);
+  it("sends a 3D viewer's publish to the card, not a live take", () => {
+    const share = createShareState(() => undefined, {
+      viewerMode: "animation-3d",
+    });
 
-    share.shareScene();
-    share.suspendForSceneTake();
-    expect(share.postSheetOpen).toBe(false);
-    expect(share.preserveSession).toBe(true);
-
-    share.resumeAfterSceneTake();
+    share.publishCurrentView();
     expect(share.postSheetOpen).toBe(true);
-    expect(share.preserveSession).toBe(true);
-
-    share.markSessionResumed();
-    expect(share.preserveSession).toBe(false);
+    expect(share.initialEntry).toBe("publish");
+    expect(share.artShare).toBeNull();
+    expect(share.postShare).toBe(false);
   });
 
   it("keeps a rendered post's source kind stable when its sheet reopens", () => {

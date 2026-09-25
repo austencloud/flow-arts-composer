@@ -800,7 +800,6 @@
     font-size: 0.875rem;
     line-height: 1.4;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.68));
-    max-width: 60ch;
   }
   .s-2x2 .body p,
   .s-2x1 .body p {

@@ -3,6 +3,11 @@
   exist in a spatial scene. BentoPropGrid owns prop cards, family popovers,
   access rules, and Buugeng chirality. This adapter owns only the supported 3D
   catalog plus fan and finish builds.
+
+  A performer-scoped host receives only the parts a control changed, never
+  the whole resolved build: a full build stored as an override would pin every
+  part, the triangle grip included, and the global Grip pills would stop
+  reaching that performer.
 -->
 <script lang="ts">
   import {
@@ -29,6 +34,11 @@
   } from "../../domain/scene-prop-catalog";
   import { toScenePropType } from "../../domain/scene-prop-type";
   import PropBuildPicker from "./PropBuildPicker.svelte";
+  import {
+    writeFanAppearance,
+    writeFinish,
+    type PropBuildPatchSink,
+  } from "./scene-prop-build-writes";
   import { syncTriangleGripToScene } from "./scene-prop-picker-grip-sync.svelte";
 
   interface Props {
@@ -40,8 +50,11 @@
     showBareHands?: boolean;
     /** Resolved build for a performer-scoped host. Omit for the scene default. */
     build?: PropBuild;
-    /** Writes a performer override. Omit to write the scene default. */
-    onBuildChange?: (build: PropBuild) => void;
+    /**
+     * Writes the changed parts into a performer override. Omit to write the
+     * scene default.
+     */
+    onBuildChange?: PropBuildPatchSink;
   }
 
   let {
@@ -93,21 +106,11 @@
   );
 
   function chooseFinish(finish: PropFinish): void {
-    if (onBuildChange) return onBuildChange({ ...build, finish });
-    propFinishState.set(finish);
+    writeFinish(finish, onBuildChange);
   }
 
   function chooseFanAppearance(appearance: FanAppearance): void {
-    const next = {
-      ...build,
-      fanBuild: appearance.build,
-      fanFrameColor: appearance.frameColor,
-      fanCover: appearance.cover,
-    };
-    if (onBuildChange) return onBuildChange(next);
-    propFinishState.setFanBuild(appearance.build);
-    propFinishState.setFanFrameColor(appearance.frameColor);
-    propFinishState.setFanCover(appearance.cover);
+    writeFanAppearance(appearance, onBuildChange);
   }
 
   let buildStageElement: HTMLDivElement | null = $state(null);
@@ -189,6 +192,7 @@
       scrollMode="host"
       allowedProps={SCENE_PROP_TYPES}
       showColors={false}
+      showPropLook={false}
       includeBareHands={showBareHands}
       {chirality}
     />

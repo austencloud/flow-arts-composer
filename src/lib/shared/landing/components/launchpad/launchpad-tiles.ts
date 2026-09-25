@@ -116,6 +116,7 @@ export const LAUNCHPAD_TILES: LaunchpadTileDef[] = [
       { label: "Fans", href: "/notation/fans" },
       { label: "Clubs", href: "/notation/clubs" },
       { label: "Buugeng", href: "/notation/buugeng" },
+      { label: "Poi", href: "/notation/poi" },
     ],
   },
   {
