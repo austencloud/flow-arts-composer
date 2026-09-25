@@ -196,12 +196,8 @@
 </GuideSection>
 
 <style>
-  /* Prose measure + rhythm mirror level-1's FlowFrame `.flow-p`/`.flow-h3`.
-     TurnStrip calls stay OUTSIDE these wrappers, as direct GuideSection
-     children, so their own grid-column breakout (TurnStrip.svelte) still
-     applies. */
+  /* GuideSection owns text width; these rules set paragraph rhythm. */
   .section-body :global(p) {
-    max-width: 34rem;
     margin: 0 auto 1.1rem;
     text-align: center;
     text-wrap: balance;

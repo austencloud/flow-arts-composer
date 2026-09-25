@@ -1110,10 +1110,6 @@
     margin: 0 0 0.85rem;
   }
 
-  .ratios p {
-    max-inline-size: var(--measure-prose, 72ch);
-  }
-
   .ratios code {
     padding: 0.1em 0.35em;
     border-radius: 5px;
@@ -1283,10 +1279,6 @@
     color: var(--ink-faint);
     font-size: var(--font-size-compact, 0.78rem);
     text-align: center;
-  }
-
-  .ladder-copy {
-    max-inline-size: 42rem;
   }
 
   .ladder-copy p:last-child {
@@ -1920,10 +1912,6 @@
     padding-top: 0.5rem;
   }
 
-  .swap-copy {
-    max-inline-size: 42rem;
-  }
-
   .swap-copy h3,
   .beyond h3 {
     margin: 0 0 0.6rem;
@@ -2127,7 +2115,6 @@
     }
 
     .worked-note {
-      max-inline-size: 44ch;
       margin-inline: auto;
       text-align: center;
     }
