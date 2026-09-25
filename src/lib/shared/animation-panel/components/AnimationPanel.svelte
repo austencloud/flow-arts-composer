@@ -554,7 +554,9 @@
   const playbackHasPage = $derived(
     showTempoControls || !!onPlaybackModeChange || showPathShape
   );
-  const visualPagesFill = $derived(fillPages && layout === "sidebar");
+  const visualPagesFill = $derived(
+    fillPages && (layout === "sidebar" || presentation === "content")
+  );
 
   const playbackSummary = $derived.by(() => {
     void vmVersion;
@@ -873,10 +875,10 @@
     </div>
   {:else if resolvedPill === "effects"}
     <EffectsPanel
-      layout={layout === "bottom" ? "strip" : "sidebar"}
-      showHeading={layout === "bottom" ||
+      layout={layout === "bottom" && !visualPagesFill ? "strip" : "sidebar"}
+      showHeading={(layout === "bottom" && !visualPagesFill) ||
         (presentation === "content" && !fillPages)}
-      fill={fillPages && layout === "sidebar"}
+      fill={visualPagesFill}
       {bpm}
       onBpmChange={onBpmChange ?? (() => {})}
       {isPlaying}
@@ -1030,7 +1032,7 @@
         {showWordToggle}
         {sequence}
         propType={selectedPropType}
-        fill={layout === "sidebar"}
+        fill={layout === "sidebar" || visualPagesFill}
         grow={fillPages}
         {onSettingChange}
       />
@@ -1248,6 +1250,7 @@
 {#if presentation === "content" && layout === "bottom"}
   <div
     class="external-section-body dock-dense"
+    class:fill={visualPagesFill}
     role="region"
     aria-label={activePillLabel || regionLabel}
   >
@@ -1407,6 +1410,10 @@
     min-height: 0;
     height: 100%;
     overflow: hidden auto;
+  }
+  .external-section-body.fill {
+    display: flex;
+    flex-direction: column;
   }
   .section-pad {
     display: flex;

@@ -114,6 +114,7 @@
       <AnimationPanel
         isExporting={false}
         layout="bottom"
+        fillPages
         presentation="content"
         controlledSection={animation.activeSection}
         isPlaying={animation.playing}
@@ -185,6 +186,10 @@
   }
   .settings-body.effort :global(.effort-btn) {
     font-size: var(--font-size-min, 14px);
+  }
+  .settings-body.effort :global(.effort-curve) {
+    flex: 1 1 22px;
+    min-height: 22px;
   }
   @container shape-matrix-app (max-width: 30rem) {
     .settings-body.effort :global(.effort-grid) {
