@@ -88,6 +88,7 @@ describe("createBeatClock", () => {
 
 describe("fitTapsToGrid", () => {
   const eightMoves = [1, 1, 1, 1, 1, 1, 1, 1];
+  const SECONDS_PER_BEAT = 60 / 87;
 
   it("recovers an exact grid from clean taps", () => {
     const secondsPerBeat = 60 / 87;
@@ -227,6 +228,41 @@ describe("fitTapsToGrid", () => {
       }
       expect({ scenario, failures }).toEqual({ scenario, failures: 0 });
     }
+  });
+
+  it("sets aside a stray tap made well before the performer starts", () => {
+    const landing = (position: number) => 3 + SECONDS_PER_BEAT * position;
+    const real = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(landing);
+    // Nearly on the grid, four landings ahead of the first real tap.
+    const stray = landing(-3) + 0.03;
+    const fit = fitTapsToGrid({
+      taps: [stray, ...real],
+      bpm: 87,
+      moveBeats: eightMoves,
+      firstTapPosition: 1,
+      tempo: "follow",
+    });
+    expect(fit.labels[0]!.position).toBeNull();
+    expect(fit.labels.slice(1).map((label) => label.position)).toEqual([
+      1, 2, 3, 4, 5, 6, 7, 8, 9,
+    ]);
+    expect(fit.originSeconds).toBeCloseTo(3, 2);
+  });
+
+  it("keeps a first tap that is only a missed landing or two ahead", () => {
+    const landing = (position: number) => 3 + SECONDS_PER_BEAT * position;
+    const taps = [1, 4, 5, 6, 7, 8].map(landing);
+    const fit = fitTapsToGrid({
+      taps,
+      bpm: 87,
+      moveBeats: eightMoves,
+      firstTapPosition: 1,
+      tempo: "locked",
+    });
+    expect(fit.labels.map((label) => label.position)).toEqual([
+      1, 4, 5, 6, 7, 8,
+    ]);
+    expect(fit.missedPositions).toEqual([2, 3]);
   });
 
   it("holds the typed tempo with fewer than three taps", () => {

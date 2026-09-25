@@ -67,6 +67,10 @@ const HUBER_SECONDS = 0.04;
 const REFINE_ITERATIONS = 8;
 /** A tap farther than this share of the shortest move is not that landing. */
 const MATCH_TOLERANCE = 0.35;
+/** A first tap more than this many landings before the next is a stray... */
+const MAX_LEADING_GAP_LANDINGS = 3;
+/** ...provided enough taps follow it to fit the grid without it. */
+const MIN_RUN_AFTER_STRAY = 3;
 
 /** Cumulative beats from the opening pose to any position, across passes. */
 export function createBeatClock(moveBeats: readonly number[]) {
@@ -379,13 +383,35 @@ export function fitTapsToGrid(input: TapFitInput): TapFitResult {
   // relabel before refining; with uneven move lengths the refit then settles
   // the grid on the corrected durations.
   const anchorToFirstTap = (
-    labelled: MatchedTap[],
+    all: MatchedTap[],
     secondsPerBeat: number
   ): { matched: MatchedTap[]; originSeconds: number | null } => {
+    // A tap well before the run - pressing the key while the performer was
+    // still getting ready - would otherwise become move 1 and shift every
+    // label after it. Nobody misses several landings right after starting to
+    // tap, so a lone tap that far ahead of the rest is set aside as an extra.
+    let startIndex = 0;
+    while (
+      all.length - startIndex > MIN_RUN_AFTER_STRAY &&
+      all[startIndex + 1]!.position - all[startIndex]!.position >
+        MAX_LEADING_GAP_LANDINGS
+    ) {
+      startIndex += 1;
+    }
+    const labelled = all.slice(startIndex);
     const shift = labelled.length
       ? firstTapPosition - labelled[0]!.position
       : 0;
-    if (shift === 0) return { matched: labelled, originSeconds: null };
+    if (shift === 0) {
+      return {
+        matched: labelled,
+        originSeconds:
+          startIndex > 0
+            ? labelled[0]!.seconds -
+              secondsPerBeat * clock.beatsBefore(labelled[0]!.position)
+            : null,
+      };
+    }
     const shifted = labelled
       .map((tap) => ({ ...tap, position: tap.position + shift }))
       .filter((tap) => tap.position >= 0);
