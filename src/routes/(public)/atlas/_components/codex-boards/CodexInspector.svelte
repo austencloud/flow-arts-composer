@@ -119,7 +119,6 @@
 
   .description {
     margin: 0;
-    max-width: 72ch;
     color: var(--theme-text-muted, oklch(0.78 0.015 270));
     font-size: var(--font-size-min, 0.875rem);
     line-height: 1.65;

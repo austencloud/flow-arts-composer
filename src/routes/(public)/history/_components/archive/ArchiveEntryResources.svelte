@@ -208,7 +208,6 @@
     color: var(--theme-text-dim);
     font-size: var(--font-size-min, 0.875rem);
     line-height: 1.65;
-    max-width: 68ch;
   }
   .description {
     margin: 0;
