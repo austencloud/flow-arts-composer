@@ -46,11 +46,7 @@
   import HandPropToolbar, {
     type HandPropToolbarProps,
   } from "$lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
-  import PrimaryPropColorSettings from "$lib/shared/settings/components/tabs/prop-type/PrimaryPropColorSettings.svelte";
-  import {
-    getSettings,
-    updateSetting,
-  } from "$lib/shared/application/state/app-state.svelte";
+  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import { viewingPropLabel } from "$lib/shared/foundation/services/prop-viewing";
   import AnimatorInspectorShell from "./AnimatorInspectorShell.svelte";
   import AnimatorInspectorFooter from "./AnimatorInspectorFooter.svelte";
@@ -270,7 +266,6 @@
   const exportButtonLabel = $derived(
     renderMode === "3d" ? "Record Scene" : "Download animation"
   );
-  const appSettings = $derived(getSettings());
 
   // Export is host-optional: both the state manager and the handler must be
   // wired for the Export pill, footer button, and dock trailing icon to render.
@@ -867,35 +862,16 @@
           {selectedPropType}
           onSelect={onPropChange}
           chirality={propChirality}
-          showColors={layout === "sidebar" && showPropColors}
+          showColors={showPropColors}
+          compactColors={layout === "bottom"}
           layout={layout === "bottom" ? "rail" : "grid"}
           variant="inline"
           flat
           fill={layout === "sidebar"}
         >
           {#snippet heading()}
-            {#if layout === "bottom"}
-              {#if handProps}
-                <HandPropToolbar {handProps} compact>
-                  {#snippet actions()}
-                    {#if showPropColors}
-                      <PrimaryPropColorSettings
-                        compact
-                        colors={appSettings.primaryPropColors}
-                        darkMode={appSettings.darkMode}
-                        onchange={(colors) => updateSetting("primaryPropColors", colors)}
-                      />
-                    {/if}
-                  {/snippet}
-                </HandPropToolbar>
-              {:else if showPropColors}
-                <PrimaryPropColorSettings
-                  compact
-                  colors={appSettings.primaryPropColors}
-                  darkMode={appSettings.darkMode}
-                  onchange={(colors) => updateSetting("primaryPropColors", colors)}
-                />
-              {/if}
+            {#if layout === "bottom" && handProps}
+              <HandPropToolbar {handProps} compact />
             {/if}
           {/snippet}
         </mod.default>
@@ -1415,6 +1391,7 @@
   }
   @media (max-width: 500px) {
     .bottom-prop-picker :global(.rail-toolbar .rail-heading),
+    .bottom-prop-picker :global(.rail-toolbar .rail-lead),
     .bottom-prop-picker :global(.rail-toolbar .hand-toolbar.compact) {
       display: contents;
     }
