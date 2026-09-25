@@ -28,6 +28,16 @@ attach/change feedback detached a handle mid-drag and froze pose editing.
 Only native `objectChange` events author poses; raycasting and gizmos remain
 owned by Three.js. `AuthoredContactPose` in the scene-3d patch
 extends the existing strict contact animator with opt-in body inputs.
+Relaxed staff holding extends those same authored inputs with grip amount and
+shaft angle. `FingerAnimator` owns thumb/index contact and relaxed free fingers;
+`AvatarAnimator` owns the matching hand frame and socket. Grip Lab's existing
+pose channels, interpolation, URL state, and editor own the transition timing.
+Grip Lab's right-hand palm roll is an anticipatory phase path: it starts at
+South, faces stage left at North, stays there through NW, then returns by West.
+It is separate from finger relaxation because half-rolling the wrist at NW
+pulls the hand off the shaft.
+Searches: pinch grip, relaxed grip, North wrist, finger contact, grip transition.
+Legacy pose links retain their closed grip until explicitly edited.
 The production `collision/stance-yaw-track.ts` remains the automatic anticipatory
 stance owner; it does not author these user-taught poses. This lab intentionally
 eases to rest at each taught pose instead of choosing anticipation itself.
