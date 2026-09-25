@@ -1698,6 +1698,11 @@
   .dock-dense .display-rows .rt-section {
     flex: 0 0 auto;
   }
+  /* Full-page compact settings have a definite height, unlike a dock tray. */
+  .external-section-body.fill .display-rows,
+  .external-section-body.fill .display-rows .rt-section {
+    flex: 1 1 0;
+  }
   /* Playback: 5 controls don't need four stacked bands. Label-left rows, and
      the two mode buttons sit side-by-side. Dock only — the sidebar keeps the
      descriptive vertical stack. */
