@@ -1,5 +1,4 @@
-import { userProportionsState, type PlaneMode } from "@austencloud/scene-3d";
-import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+import { userProportionsState } from "@austencloud/scene-3d";
 import type { CharacterInstanceState } from "../state/character-instance-state.svelte";
 import { buildStanceYawTrackForSource } from "../collision/stance-yaw-track";
 import {
@@ -10,6 +9,11 @@ import {
   type HardBeatSample,
   type HardBeatTrack,
 } from "../collision/hard-beat-displacement";
+import {
+  sameScoreMotionKey,
+  scoreMotionKey,
+  type ScoreMotionKey,
+} from "./performer-score-motion-key";
 
 /**
  * Tells a seek from playback, so the animator can drop contact history (cached
@@ -54,17 +58,8 @@ export class ScoreSeekDetector {
   }
 }
 
-/** Everything besides the clock that decides where the score puts the props
- *  (`propStatesAtScoreTime`), and the body the track is planned for. */
-interface HardBeatTrackKey {
-  stepConfigs: CharacterInstanceState["stepConfigs"];
-  planeMode: PlaneMode;
-  stepCount: number;
-  loop: boolean;
-  effortId: CharacterInstanceState["effectiveEffortId"];
-  effortTimeline: CharacterInstanceState["effortTimeline"];
-  pathShape: string;
-  motionAwarePaths: boolean;
+/** The score's prop motion, and the body the track is planned for. */
+interface HardBeatTrackKey extends ScoreMotionKey {
   heightCm: number;
 }
 
@@ -77,24 +72,7 @@ function hardBeatTrackKey(
   performer: CharacterInstanceState,
   heightCm: number
 ): HardBeatTrackKey {
-  const paths = getAnimationVisibilityManager().getPathPolicy();
-  return {
-    stepConfigs: performer.stepConfigs,
-    planeMode: performer.planeMode,
-    stepCount: performer.motionStepCount,
-    loop: performer.loop,
-    effortId: performer.effectiveEffortId,
-    effortTimeline: performer.effortTimeline,
-    pathShape: paths.pathShape,
-    motionAwarePaths: paths.motionAwarePaths,
-    heightCm,
-  };
-}
-
-function sameKey(a: HardBeatTrackKey, b: HardBeatTrackKey): boolean {
-  return (Object.keys(a) as (keyof HardBeatTrackKey)[]).every(
-    (field) => a[field] === b[field]
-  );
+  return { ...scoreMotionKey(performer), heightCm };
 }
 
 const hardBeatTracks = new WeakMap<
@@ -116,7 +94,8 @@ function seekDetectorFor(performer: CharacterInstanceState): ScoreSeekDetector {
  * The performer's hard-beat track, rebuilt only when the score's motion or the
  * body changes: the steps, plane mode, loop, effort and path policy all move
  * the props the track is planned from. Builds its own stance track rather than
- * sharing the stance owner's cache, so this module does not depend on it.
+ * sharing the stance owner's cache, so this module does not depend on it. Both
+ * caches key on the same score motion, so the two stance tracks replan together.
  */
 function resolveHardBeatTrack(
   performer: CharacterInstanceState,
@@ -124,7 +103,7 @@ function resolveHardBeatTrack(
 ): HardBeatTrack | null {
   const key = hardBeatTrackKey(performer, heightCm);
   const cached = hardBeatTracks.get(performer);
-  if (cached && sameKey(cached.key, key)) return cached.track;
+  if (cached && sameScoreMotionKey(cached.key, key)) return cached.track;
 
   // A performer without a playable score (or a stand-in without one) keeps its
   // authored props.
