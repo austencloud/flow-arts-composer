@@ -29,7 +29,6 @@ import { getBaseMotionColors } from "./svg-generator";
 import {
   DEFAULT_FAN_APPEARANCE,
   normalizeFanAppearance,
-  resolveFanRenderKey,
   type FanAppearance,
 } from "$lib/shared/pictograph/prop/domain/fan-appearance";
 import {
@@ -59,6 +58,8 @@ export class PropTypeManager {
   private renderPropTypeLeft: string | null = null;
   private renderPropTypeRight: string | null = null;
   private fanAppearance: FanAppearance = DEFAULT_FAN_APPEARANCE;
+  /** Fan build the caller pinned with props.fanAppearance; null follows settings. */
+  private fanAppearanceOverride: FanAppearance | null = null;
   private propLook: PropLook = DEFAULT_PROP_LOOK;
   private triangleGrip: TriangleGrip = DEFAULT_TRIANGLE_GRIP;
   trailsSuppressedUntilTextureLoad = false;
@@ -117,6 +118,7 @@ export class PropTypeManager {
 
   /** Update mutable refs that change after wire(). */
   updateRefs(refs: {
+    settingsService?: SettingsState | null;
     renderLoopService?: IAnimationRenderLoop | null;
     precomputationService?: IAnimationPrecomputer | null;
     propTextureService?: IPropTextureLoader | null;
@@ -124,6 +126,8 @@ export class PropTypeManager {
     fireTipTracker?: FireTipTracker | null;
     animationRenderer?: AnimationRenderer | null;
   }): void {
+    if (refs.settingsService !== undefined)
+      this.settingsService = refs.settingsService;
     if (refs.renderLoopService !== undefined)
       this.renderLoopService = refs.renderLoopService;
     if (refs.precomputationService !== undefined)
@@ -139,20 +143,21 @@ export class PropTypeManager {
   }
 
   /**
-   * Render key for the base prop pair. Model sprites are baked in the blue and
-   * red motion colors, so exact tunnel colors fall back to the recolorable
-   * pictograph artwork; additional tunnel layers always use that path.
+   * Render key for every sprite this canvas draws: the base pair and each
+   * tunnel copy. A model capture takes any hand color through its chroma
+   * filter (applyModelSpriteColor), so chosen or tunnel colors never change
+   * the look. The look is the viewer's one setting, the same one pictographs
+   * read, so a canvas can never show different artwork than its step grid.
    */
-  private baseRenderKey(
+  private renderKey(
     propType: string,
-    appearance: FanAppearance,
-    look: PropLook,
-    baseColors: TunnelPropColorPair | null,
-    triangleGrip: TriangleGrip
+    appearance: FanAppearance = this.fanAppearance,
+    look: PropLook = this.propLook,
+    triangleGrip: TriangleGrip = this.triangleGrip
   ): string {
     return resolvePropRenderKey(propType, {
       fanAppearance: appearance,
-      propLook: baseColors ? "pictograph" : look,
+      propLook: look,
       triangleGrip,
     });
   }
@@ -171,6 +176,7 @@ export class PropTypeManager {
     const newLeft = props.leftPropType ?? this.propTypeOverrideLeft ?? "staff";
     const newRight =
       props.rightPropType ?? this.propTypeOverrideRight ?? "staff";
+    this.fanAppearanceOverride = props.fanAppearance ?? null;
     const nextAppearance = normalizeFanAppearance(
       props.fanAppearance ??
         this.settingsService?.currentSettings?.fanAppearance
@@ -181,20 +187,16 @@ export class PropTypeManager {
     const nextGrip = normalizeTriangleGrip(
       this.settingsService?.currentSettings?.triangleGrip
     );
-    const nextBaseColors =
-      props.tunnelPropColors ?? props.primaryPropColors ?? null;
-    const newLeftRender = this.baseRenderKey(
+    const newLeftRender = this.renderKey(
       newLeft,
       nextAppearance,
       nextLook,
-      nextBaseColors,
       nextGrip
     );
-    const newRightRender = this.baseRenderKey(
+    const newRightRender = this.renderKey(
       newRight,
       nextAppearance,
       nextLook,
-      nextBaseColors,
       nextGrip
     );
 
@@ -314,18 +316,16 @@ export class PropTypeManager {
     const settingsGrip = normalizeTriangleGrip(
       this.settingsService?.currentSettings?.triangleGrip
     );
-    const settingsLeftRender = this.baseRenderKey(
+    const settingsLeftRender = this.renderKey(
       settingsLeft,
       settingsAppearance,
       settingsLook,
-      this.currentBaseColors,
       settingsGrip
     );
-    const settingsRightRender = this.baseRenderKey(
+    const settingsRightRender = this.renderKey(
       settingsRight,
       settingsAppearance,
       settingsLook,
-      this.currentBaseColors,
       settingsGrip
     );
     const renderAppearanceChanged =
@@ -475,20 +475,10 @@ export class PropTypeManager {
           const leftPropType = layer.leftPropType ?? state.currentLeftPropType;
           const rightPropType =
             layer.rightPropType ?? state.currentRightPropType;
-          // Same render-key path as the primary layer's baseRenderKey, pinned
-          // to the pictograph look (tunnel layers never use baked model
-          // sprites; see the comment on baseRenderKey), so a triangle grip
-          // shows the same glyph on every layer instead of only the primary.
-          const leftRenderType = resolvePropRenderKey(leftPropType, {
-            fanAppearance: this.fanAppearance,
-            propLook: "pictograph",
-            triangleGrip: this.triangleGrip,
-          });
-          const rightRenderType = resolvePropRenderKey(rightPropType, {
-            fanAppearance: this.fanAppearance,
-            propLook: "pictograph",
-            triangleGrip: this.triangleGrip,
-          });
+          // Same render key as the base pair, so a copy wears the same look,
+          // fan build, and triangle grip as the performer it copies.
+          const leftRenderType = this.renderKey(leftPropType);
+          const rightRenderType = this.renderKey(rightPropType);
 
           this.animationRenderer
             .loadAdditionalLayerPropTextures(
@@ -632,8 +622,8 @@ export class PropTypeManager {
         const rightType = t?.right ?? propType;
         return this.animationRenderer!.loadAdditionalLayerPropTextures(
           i,
-          resolveFanRenderKey(leftType, this.fanAppearance),
-          resolveFanRenderKey(rightType, this.fanAppearance),
+          this.renderKey(leftType),
+          this.renderKey(rightType),
           left,
           right
         ).then(() => {
@@ -660,26 +650,34 @@ export class PropTypeManager {
     let look = this.propLook;
     let grip = this.triangleGrip;
 
-    if (
-      this.propTypeOverrideLeft != null ||
-      this.propTypeOverrideRight != null
-    ) {
-      // Use overrides - bypass settings entirely
+    const settings = this.settingsService?.currentSettings;
+    const hasOverrides =
+      this.propTypeOverrideLeft != null || this.propTypeOverrideRight != null;
+    if (hasOverrides) {
+      // Overrides pick the prop types; settings don't
       leftPropType = this.propTypeOverrideLeft ?? "staff";
       rightPropType = this.propTypeOverrideRight ?? "staff";
-    } else if (this.settingsService?.currentSettings) {
+    } else if (settings) {
       // No overrides - read from settings
-      const settings = this.settingsService.currentSettings;
       leftPropType = settings.leftPropType || settings.propType || "staff";
       rightPropType = settings.rightPropType || settings.propType || "staff";
-      appearance = normalizeFanAppearance(settings.fanAppearance);
-      look = normalizePropLook(settings.propArtwork);
-      grip = normalizeTriangleGrip(settings.triangleGrip);
 
       // Also update engine state to keep it in sync
       state.setLeftPropType(leftPropType);
       state.setRightPropType(rightPropType);
       state.setLegacyPropType(leftPropType);
+    }
+    // The look, fan build, and triangle grip are the viewer's settings in
+    // both modes. Read them here rather than trusting the stored values: the
+    // first override can arrive before settings are wired, and the boot load
+    // would otherwise paint the default artwork until the next update.
+    if (settings) {
+      appearance = normalizeFanAppearance(
+        (hasOverrides ? this.fanAppearanceOverride : null) ??
+          settings.fanAppearance
+      );
+      look = normalizePropLook(settings.propArtwork);
+      grip = normalizeTriangleGrip(settings.triangleGrip);
     }
 
     this.fanAppearance = appearance;
@@ -691,18 +689,11 @@ export class PropTypeManager {
     const effectiveColors =
       colors === undefined ? this.currentBaseColors : colors;
     this.currentBaseColors = effectiveColors;
-    const leftRenderType = this.baseRenderKey(
-      leftPropType,
-      appearance,
-      look,
-      effectiveColors,
-      grip
-    );
-    const rightRenderType = this.baseRenderKey(
+    const leftRenderType = this.renderKey(leftPropType, appearance, look, grip);
+    const rightRenderType = this.renderKey(
       rightPropType,
       appearance,
       look,
-      effectiveColors,
       grip
     );
     this.renderPropTypeLeft = leftRenderType;
