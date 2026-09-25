@@ -26,7 +26,12 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { LocomotionAnimator } from "@austencloud/scene-3d";
 
 import { createPatternTerminalStepPlan } from "$lib/shared/3d/locomotion/pattern-terminal-step-plan";
-import { avatar, loadPackClips, loadRig } from "./locomotion-harness";
+import {
+  avatar,
+  avatarAssetsPresent,
+  loadPackClips,
+  loadRig,
+} from "./locomotion-harness";
 
 const STOP_DIR = path.resolve("static/animations/terminal-stops");
 const RIGS = ["ch01", "ch12", "ch44", "remy", "x-bot"];
@@ -65,23 +70,6 @@ async function parseStop(side: "left" | "right"): Promise<AnimationClip> {
   );
   return gltf.animations[0]!;
 }
-
-beforeAll(async () => {
-  packClips = await loadPackClips();
-  for (const side of ["left", "right"] as const) {
-    const key = side === "left" ? "stopLeft" : "stopRight";
-    stopClips.set(key, await parseStop(side));
-    stopMotions.set(
-      key,
-      JSON.parse(
-        fs.readFileSync(
-          path.join(STOP_DIR, `walk-stop-${side}.motion.json`),
-          "utf8"
-        )
-      )
-    );
-  }
-});
 
 function ankles(scene: Object3D): [Vector3, Vector3] {
   const find = (suffix: string) => {
@@ -170,7 +158,28 @@ async function releaseSettledStop(rig: string) {
   return { first, lowestWeight };
 }
 
-describe("releasing a settled terminal stop", () => {
+// The rigs are gitignored downloads, so CI has none; skip rather than report a
+// missing file as a broken stop, the same gate terminal-stop-stance uses.
+describe.skipIf(
+  !avatarAssetsPresent() || RIGS.some((rig) => !fs.existsSync(avatar(rig)))
+)("releasing a settled terminal stop", () => {
+  beforeAll(async () => {
+    packClips = await loadPackClips();
+    for (const side of ["left", "right"] as const) {
+      const key = side === "left" ? "stopLeft" : "stopRight";
+      stopClips.set(key, await parseStop(side));
+      stopMotions.set(
+        key,
+        JSON.parse(
+          fs.readFileSync(
+            path.join(STOP_DIR, `walk-stop-${side}.motion.json`),
+            "utf8"
+          )
+        )
+      );
+    }
+  });
+
   it.each(RIGS)(
     "%s hands the held stance to idle without a jump",
     async (rig) => {
