@@ -222,12 +222,17 @@ describe("staff grip contact contract", () => {
   });
 
   it("maps sequence hands into the rig's blue and red prop inputs", () => {
+    // The contact owner hands over the performer's own left and right props,
+    // displaced where a hard beat needs it.
     expect(liveSequencePerformer).toContain(
-      "bluePropState={performerState.leftPropState}"
+      "resolvePerformerContact(performerState"
     );
-    expect(liveSequencePerformer).toContain(
-      "redPropState={performerState.rightPropState}"
-    );
+    for (const host of [liveSequencePerformer, viewerScene]) {
+      expect(host).toContain("bluePropState={contact.leftProp}");
+      expect(host).toContain("redPropState={contact.rightProp}");
+      expect(host).toContain("pairSeparation={!contact.planned}");
+      expect(host).toContain("contactResetKey={contact.resetKey}");
+    }
     expect(liveSequencePerformer).toContain(
       "bluePropType={toScenePropType(props.propType)}"
     );

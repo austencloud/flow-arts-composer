@@ -1418,6 +1418,14 @@ export function createCharacterInstanceState(
     get motionStepCount() {
       return Math.max(0, stepConfigs.length - motionStepOffsetValue());
     },
+    /**
+     * The converted steps, start pose first when there is one. A new array
+     * whenever the score is converted again (a new sequence, plane or
+     * rotation variant), so a cache of derived motion can key on it.
+     */
+    get stepConfigs(): readonly StepMotionConfigs[] {
+      return stepConfigs;
+    },
     /** Playhead in motion score time; 0.00 is the start of beat 1. */
     get scoreTime() {
       return scoreTime;
