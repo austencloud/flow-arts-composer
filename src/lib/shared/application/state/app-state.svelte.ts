@@ -100,8 +100,11 @@ export function getSettings() {
   const initialized = areServicesInitialized();
 
   if (!initialized) {
-    // Return pre-loaded settings from localStorage (not hardcoded defaults)
-    // This ensures BackgroundHost gets the user's saved background type immediately
+    // The saved settings rather than hardcoded defaults, so BackgroundHost
+    // paints the user's background immediately. This copy is read once and
+    // never changes. The root layout starts the settings service on every app
+    // route; a landing-mode page that has to follow setting changes calls
+    // initializeAppServices() itself.
     return getPreloadedSettings();
   }
 

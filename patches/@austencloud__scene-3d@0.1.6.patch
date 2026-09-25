@@ -8909,6 +8909,447 @@ index 59d70cc000b59318964aaf91791d9f6cbc8a5381..00000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/AnimationStateMachine.d.ts.map b/dist/lib/services/implementations/AnimationStateMachine.d.ts.map
 deleted file mode 100644
 index f98ba9f8480c6de2af5d91103546be019d81dbb0..0000000000000000000000000000000000000000
+diff --git a/dist/lib/services/implementations/ArmClearanceRetargeter.js b/dist/lib/services/implementations/ArmClearanceRetargeter.js
+new file mode 100644
+index 0000000000..752fdac92f
+--- /dev/null
++++ b/dist/lib/services/implementations/ArmClearanceRetargeter.js
+@@ -0,0 +1,435 @@
++import { AnimationClip, AnimationMixer, Matrix4, Quaternion, QuaternionKeyframeTrack, Vector3, } from "three";
++/** How far the hand's skin is held off the thigh's, in metres. */
++const CLEARANCE = 0.012;
++/** The most the upper arm is swung out to find that clearance. */
++const MAX_ABDUCTION = (30 * Math.PI) / 180;
++/** Bisection steps between no swing and the most: a fifth of a degree. */
++const SEARCH_STEPS = 7;
++/**
++ * Clip time a swing is held on either side of the samples that needed it,
++ * then blended over. The arm opens before the hand reaches the thigh and
++ * closes after it has passed, rather than being shoved aside on the frame of
++ * contact.
++ */
++const EASE_SECONDS = 0.12;
++/** Cells around the thigh axis and along it that the skin is binned into. */
++const SECTORS = 24;
++const BINS = 16;
++/** The table covers a little above the hip joint, where the hand hangs. */
++const T_MIN = -0.15;
++const T_MAX = 1;
++/** Enough of a hand to find its deepest point without skinning all of it. */
++const MAX_PROBES = 400;
++/** The longest gap between keys the swing is measured at. */
++const SAMPLE_SECONDS = 1 / 15;
++const models = new WeakMap();
++/**
++ * A short digest of the skin this bake reads, for a clip cache key.
++ *
++ * Clips are cached per rig by skeleton proportions, and two characters can
++ * share a skeleton while one of them has much wider hips. X-Bot and Y-Bot are
++ * the shipped pair: one skeleton, two bodies, and only one of them puts its
++ * hands through its thighs.
++ */
++export function armClearanceSignature(root, modelPrefix) {
++    return resolveModel(root, modelPrefix)?.signature ?? "no-arms";
++}
++/**
++ * Keep a clip's hands out of this rig's thighs.
++ *
++ * Retargeting copies rotations, and rotations know nothing of the body they
++ * land on. The pack's arms were authored for a slim source; on a character
++ * with wide hips the same shoulder angles hang the hands inside the thighs.
++ * Measured on the shipped rigs, standing idle put X-Bot's thumb 5.6 cm into
++ * its thigh, Remy's fingers 4.9 cm and ch34's hand 12.5 cm, and ch34 kept it
++ * there through a third of every walking stride. Nothing downstream looks:
++ * the arm clearance in `AvatarAnimator` covers the IK arms that hold props,
++ * against the torso, neck and face, and a free arm is posed by the clip alone.
++ *
++ * So the arm spacing is fitted per character, the way Mixamo's "Character
++ * Arm-Space" slider and a retargeter's per-chain offsets fit it, but measured
++ * rather than hand-set: at every key of each upper-arm track the hand's skin
++ * is tested against the thigh's, and where it is inside, the upper arm swings
++ * out about the body's forward axis by the least angle that clears. That
++ * swing is eased across neighbouring keys so the arm opens ahead of the thigh.
++ * A key that already clears is left exactly as authored, which on the slim
++ * rigs is every key.
++ *
++ * `root` is posed during the bake and restored before returning.
++ */
++export function bakeArmClearance(clip, root, modelPrefix, options) {
++    const model = resolveModel(root, modelPrefix);
++    if (!model)
++        return clip;
++    const tracks = new Map();
++    for (const track of clip.tracks)
++        tracks.set(track.name, track);
++    const pose = capturePose(root);
++    const mixer = new AnimationMixer(root);
++    mixer.clipAction(clip).play();
++    const replaced = new Map();
++    try {
++        for (const side of model.sides) {
++            const name = `${side.arm.name}.quaternion`;
++            const track = tracks.get(name);
++            if (!track || track.times.length === 0)
++                continue;
++            const baked = bakeSide(clip, track, side, model, root, mixer, options);
++            if (baked)
++                replaced.set(name, baked);
++        }
++    }
++    finally {
++        mixer.stopAllAction();
++        mixer.uncacheClip(clip);
++        restorePose(pose);
++        root.updateMatrixWorld(true);
++    }
++    if (replaced.size === 0)
++        return clip;
++    return new AnimationClip(clip.name, clip.duration, clip.tracks.map((track) => replaced.get(track.name) ?? track), clip.blendMode);
++}
++const swing = new Quaternion();
++const held = new Quaternion();
++const hipsTurn = new Quaternion();
++const parentTurn = new Quaternion();
++function bakeSide(clip, track, side, model, root, mixer, options) {
++    const times = track.times;
++    const count = times.length;
++    const angles = new Float32Array(count);
++    const axes = new Float32Array(count * 3);
++    const axis = new Vector3();
++    let any = false;
++    // An arm swings slowly next to a clip's key rate, so a long idle is read at
++    // a sampling rate that still catches every pass and filled in between.
++    const stride = Math.max(1, Math.floor(SAMPLE_SECONDS / Math.max(keyStep(times), 1e-3)));
++    const sampled = [];
++    for (let i = 0; i < count; i += stride)
++        sampled.push(i);
++    if (sampled[sampled.length - 1] !== count - 1)
++        sampled.push(count - 1);
++    for (const i of sampled) {
++        mixer.setTime(Math.min(times[i], clip.duration));
++        root.updateMatrixWorld(true);
++        held.copy(side.arm.quaternion);
++        model.hips.getWorldQuaternion(hipsTurn);
++        side.arm.parent.getWorldQuaternion(parentTurn);
++        axis
++            .copy(model.forward)
++            .applyQuaternion(hipsTurn)
++            .applyQuaternion(parentTurn.invert())
++            .normalize();
++        axis.toArray(axes, i * 3);
++        const depthAt = (angle) => {
++            swing.setFromAxisAngle(axis, side.outward * angle);
++            side.arm.quaternion.copy(held).premultiply(swing);
++            side.arm.updateMatrixWorld(true);
++            return deepest(side);
++        };
++        if (deepest(side) > 0) {
++            let angle = MAX_ABDUCTION;
++            if (depthAt(MAX_ABDUCTION) <= 0) {
++                let clear = MAX_ABDUCTION;
++                let inside = 0;
++                for (let step = 0; step < SEARCH_STEPS; step++) {
++                    const mid = (clear + inside) / 2;
++                    if (depthAt(mid) > 0)
++                        inside = mid;
++                    else
++                        clear = mid;
++                }
++                angle = clear;
++            }
++            angles[i] = angle;
++            any = true;
++        }
++        // The mixer writes a bone only when its value changes, so a swing left on
++        // the bone would ride into the next sample. Put the clip's value back.
++        side.arm.quaternion.copy(held);
++    }
++    if (!any)
++        return null;
++    fillBetween(sampled, angles, axes, times);
++    const eased = ease(angles, times, options.cyclic);
++    const values = new Float32Array(track.values.length);
++    const key = new Quaternion();
++    for (let i = 0; i < count; i++) {
++        key.fromArray(track.values, i * 4);
++        axis.fromArray(axes, i * 3).normalize();
++        swing.setFromAxisAngle(axis, side.outward * eased[i]);
++        key.premultiply(swing).toArray(values, i * 4);
++    }
++    return new QuaternionKeyframeTrack(track.name, Array.from(times), Array.from(values));
++}
++function keyStep(times) {
++    const count = times.length;
++    return count > 1 ? (times[count - 1] - times[0]) / (count - 1) : 1;
++}
++/** Interpolate the swing and its axis onto the keys between two samples. */
++function fillBetween(sampled, angles, axes, times) {
++    for (let s = 0; s + 1 < sampled.length; s++) {
++        const from = sampled[s];
++        const to = sampled[s + 1];
++        const span = times[to] - times[from];
++        for (let i = from + 1; i < to; i++) {
++            const w = span > 0 ? (times[i] - times[from]) / span : 0;
++            angles[i] = angles[from] + (angles[to] - angles[from]) * w;
++            for (let k = 0; k < 3; k++) {
++                axes[i * 3 + k] =
++                    axes[from * 3 + k] + (axes[to * 3 + k] - axes[from * 3 + k]) * w;
++            }
++        }
++    }
++}
++/**
++ * Hold each swing across its neighbours, then blend. A running maximum over
++ * the window keeps every sample at least as open as it needed, and the mean
++ * over the same window turns the plateau's edges into ramps.
++ */
++function ease(angles, times, cyclic) {
++    const count = angles.length;
++    const step = keyStep(times);
++    const radius = Math.max(1, Math.round(EASE_SECONDS / Math.max(step, 1e-3)));
++    const at = (source, index) => {
++        if (cyclic)
++            return source[((index % count) + count) % count];
++        return source[Math.min(count - 1, Math.max(0, index))];
++    };
++    const held = new Float32Array(count);
++    for (let i = 0; i < count; i++) {
++        let most = 0;
++        for (let k = -radius; k <= radius; k++)
++            most = Math.max(most, at(angles, i + k));
++        held[i] = most;
++    }
++    const out = new Float32Array(count);
++    for (let i = 0; i < count; i++) {
++        let sum = 0;
++        for (let k = -radius; k <= radius; k++)
++            sum += at(held, i + k);
++        out[i] = sum / (2 * radius + 1);
++    }
++    return out;
++}
++const toThigh = new Matrix4();
++const boneToThigh = [];
++const point = new Vector3();
++/** How far the deepest probe is inside the thigh plus the clearance; <= 0 is clear. */
++function deepest(side) {
++    toThigh.copy(side.thigh.matrixWorld).invert();
++    for (let b = 0; b < side.bones.length; b++) {
++        boneToThigh[b] ??= new Matrix4();
++        boneToThigh[b].multiplyMatrices(toThigh, side.bones[b].matrixWorld);
++    }
++    let worst = -Infinity;
++    for (let i = 0; i < side.probeBone.length; i++) {
++        point
++            .fromArray(side.probe, i * 3)
++            .applyMatrix4(boneToThigh[side.probeBone[i]]);
++        const depth = depthInside(side, point);
++        if (depth > worst)
++            worst = depth;
++    }
++    return worst;
++}
++function depthInside(side, p) {
++    const along = p.dot(side.axis);
++    const t = along / side.length;
++    if (t < T_MIN || t > T_MAX)
++        return -Infinity;
++    const x = p.dot(side.e1);
++    const y = p.dot(side.e2);
++    const reach = side.radius[cell(t, x, y)];
++    if (reach === 0)
++        return -Infinity;
++    return reach + CLEARANCE - Math.hypot(x, y);
++}
++function cell(t, x, y) {
++    const bin = Math.min(BINS - 1, Math.max(0, Math.floor(((t - T_MIN) / (T_MAX - T_MIN)) * BINS)));
++    const turn = (Math.atan2(y, x) + Math.PI) / (2 * Math.PI);
++    const sector = Math.min(SECTORS - 1, Math.floor(turn * SECTORS));
++    return bin * SECTORS + sector;
++}
++/**
++ * Measure the arms and thighs once per rig.
++ *
++ * Every vertex is read in the space of the bone that carries most of its
++ * weight and treated as riding on that bone alone. Hands and thighs skin
++ * almost rigidly, and it turns a skinned-mesh query into one matrix per point.
++ */
++function resolveModel(root, prefix) {
++    if (models.has(root))
++        return models.get(root);
++    const model = measure(root, prefix);
++    models.set(root, model);
++    return model;
++}
++function measure(root, prefix) {
++    const bone = (name) => root.getObjectByName(`${prefix}${name}`) ?? null;
++    const hips = bone("Hips");
++    const leftHip = bone("LeftUpLeg");
++    const rightHip = bone("RightUpLeg");
++    if (!hips || !leftHip || !rightHip)
++        return null;
++    const meshes = [];
++    root.traverse((node) => {
++        const mesh = node;
++        if (mesh.isSkinnedMesh && mesh.visible && mesh.geometry.getAttribute("skinWeight"))
++            meshes.push(mesh);
++    });
++    if (meshes.length === 0)
++        return null;
++    root.updateMatrixWorld(true);
++    const up = new Vector3(0, 1, 0).transformDirection(root.matrixWorld);
++    const lateral = leftHip
++        .getWorldPosition(new Vector3())
++        .sub(rightHip.getWorldPosition(new Vector3()))
++        .normalize();
++    const forward = new Vector3().crossVectors(lateral, up).normalize();
++    const hipsTurnInverse = hips.getWorldQuaternion(new Quaternion()).invert();
++    const sides = [];
++    for (const name of ["Left", "Right"]) {
++        const arm = bone(`${name}Arm`);
++        const forearm = bone(`${name}ForeArm`);
++        const thigh = bone(`${name}UpLeg`);
++        const knee = bone(`${name}Leg`);
++        if (!arm || !forearm || !thigh || !knee)
++            continue;
++        const away = name === "Left" ? lateral : lateral.clone().negate();
++        // A hanging arm points down; whichever way round the forward axis moves
++        // a downward arm toward this side's outside is the way that opens it.
++        const opens = new Vector3().crossVectors(forward, up.clone().negate());
++        const outward = opens.dot(away) >= 0 ? 1 : -1;
++        const side = measureSide(meshes, arm, forearm, thigh, knee, outward);
++        if (side)
++            sides.push(side);
++    }
++    if (sides.length === 0)
++        return null;
++    let digest = 0;
++    for (const side of sides) {
++        for (const value of side.radius)
++            digest = (digest * 31 + Math.round(value * 1000)) >>> 0;
++    }
++    return {
++        hips,
++        forward: forward.applyQuaternion(hipsTurnInverse).normalize(),
++        sides,
++        signature: digest.toString(36),
++    };
++}
++function measureSide(meshes, arm, forearm, thigh, knee, outward) {
++    const hand = new Set();
++    forearm.traverse((node) => hand.add(node));
++    const axisEnd = knee.position.clone();
++    const length = axisEnd.length();
++    if (!(length > 1e-4))
++        return null;
++    const axis = axisEnd.clone().divideScalar(length);
++    const e1 = new Vector3(1, 0, 0);
++    if (Math.abs(e1.dot(axis)) > 0.9)
++        e1.set(0, 1, 0);
++    e1.sub(axis.clone().multiplyScalar(e1.dot(axis))).normalize();
++    const e2 = new Vector3().crossVectors(axis, e1);
++    const radius = new Float32Array(BINS * SECTORS);
++    const bones = [];
++    const boneIndex = new Map();
++    const probeBone = [];
++    const probe = [];
++    const toThigh = new Matrix4().copy(thigh.matrixWorld).invert();
++    const v = new Vector3();
++    for (const mesh of meshes) {
++        const skinIndex = mesh.geometry.getAttribute("skinIndex");
++        const skinWeight = mesh.geometry.getAttribute("skinWeight");
++        const skeleton = mesh.skeleton;
++        for (let i = 0; i < skinIndex.count; i++) {
++            let best = -1;
++            let weight = -1;
++            for (let k = 0; k < 4; k++) {
++                const w = skinWeight.getComponent(i, k);
++                if (w > weight) {
++                    weight = w;
++                    best = skinIndex.getComponent(i, k);
++                }
++            }
++            const owner = skeleton.bones[best];
++            if (!owner)
++                continue;
++            const onThigh = owner === thigh;
++            const onHand = hand.has(owner);
++            if (!onThigh && !onHand)
++                continue;
++            mesh.getVertexPosition(i, v);
++            v.applyMatrix4(mesh.matrixWorld);
++            if (onThigh) {
++                v.applyMatrix4(toThigh);
++                const t = v.dot(axis) / length;
++                if (t < T_MIN || t > T_MAX)
++                    continue;
++                const x = v.dot(e1);
++                const y = v.dot(e2);
++                const index = cell(t, x, y);
++                radius[index] = Math.max(radius[index], Math.hypot(x, y));
++            }
++            else {
++                let b = boneIndex.get(owner);
++                if (b === undefined) {
++                    b = bones.length;
++                    bones.push(owner);
++                    boneIndex.set(owner, b);
++                }
++                v.applyMatrix4(new Matrix4().copy(owner.matrixWorld).invert());
++                probeBone.push(b);
++                probe.push(v.x, v.y, v.z);
++            }
++        }
++    }
++    if (probeBone.length === 0)
++        return null;
++    // A cell the skin happens to miss is not a hole in the thigh. Each cell
++    // takes the farthest reach of itself and its two neighbours round the axis.
++    const filled = new Float32Array(radius.length);
++    for (let bin = 0; bin < BINS; bin++) {
++        for (let s = 0; s < SECTORS; s++) {
++            const at = (k) => radius[bin * SECTORS + ((k + SECTORS) % SECTORS)];
++            filled[bin * SECTORS + s] = Math.max(at(s - 1), at(s), at(s + 1));
++        }
++    }
++    const stride = Math.max(1, Math.ceil(probeBone.length / MAX_PROBES));
++    const keptBone = [];
++    const kept = [];
++    for (let i = 0; i < probeBone.length; i += stride) {
++        keptBone.push(probeBone[i]);
++        kept.push(probe[i * 3], probe[i * 3 + 1], probe[i * 3 + 2]);
++    }
++    return {
++        arm,
++        thigh,
++        bones,
++        probeBone: Uint16Array.from(keptBone),
++        probe: Float32Array.from(kept),
++        radius: filled,
++        axis,
++        e1,
++        e2,
++        length,
++        outward,
++    };
++}
++function capturePose(root) {
++    const pose = [];
++    root.traverse((object) => {
++        pose.push({
++            object,
++            position: object.position.clone(),
++            quaternion: object.quaternion.clone(),
++        });
++    });
++    return pose;
++}
++function restorePose(pose) {
++    for (const entry of pose) {
++        entry.object.position.copy(entry.position);
++        entry.object.quaternion.copy(entry.quaternion);
++    }
++}
 diff --git a/dist/lib/services/implementations/AvatarAnimator.d.ts b/dist/lib/services/implementations/AvatarAnimator.d.ts
 index cac989e5e6..8e8bacbfe0 100644
 --- a/dist/lib/services/implementations/AvatarAnimator.d.ts
@@ -15457,10 +15898,10 @@ diff --git a/dist/lib/services/implementations/LocomotionAnimator.d.ts.map b/dis
 deleted file mode 100644
 index e2ad276197cfcb019800a407b2fe3d4739b38861..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/LocomotionAnimator.js b/dist/lib/services/implementations/LocomotionAnimator.js
-index 56279f173c..62e65bb8bf 100644
+index 56279f173c..7a850aace3 100644
 --- a/dist/lib/services/implementations/LocomotionAnimator.js
 +++ b/dist/lib/services/implementations/LocomotionAnimator.js
-@@ -1,554 +1,1901 @@
+@@ -1,554 +1,1911 @@
 -/**
 - * LocomotionAnimator
 - *
@@ -15496,6 +15937,10 @@ index 56279f173c..62e65bb8bf 100644
 +  trimLeadingHold
 +} from "../clip-footprint";
 +import { bakeContactPreservedLegs } from "./ContactRetargeter";
++import {
++  armClearanceSignature,
++  bakeArmClearance
++} from "./ArmClearanceRetargeter";
 +const DIRECTION_KEYS = [
 +  "forward",
 +  "backward",
@@ -16856,7 +17301,8 @@ index 56279f173c..62e65bb8bf 100644
 +    if (key === "crouch") hipsMode = "pose";
 +    const stripLegs = this.config.stripLegBones && key === "idle";
 +    const preservePelvisSway = key === "grapevineLeft" || key === "grapevineRight";
-+    const cacheKey = `${key}|${this.modelPrefix}|${this.rigSignature}|${hipsMode}|${stripLegs}|${preservePelvisSway}`;
++    const arms = this.root ? armClearanceSignature(this.root, this.modelPrefix) : "no-arms";
++    const cacheKey = `${key}|${this.modelPrefix}|${this.rigSignature}|${arms}|${hipsMode}|${stripLegs}|${preservePelvisSway}`;
 +    let variants = preparedClipCache.get(raw);
 +    if (!variants) {
 +      variants = /* @__PURE__ */ new Map();
@@ -16885,6 +17331,11 @@ index 56279f173c..62e65bb8bf 100644
 +          minimumLegOrderShare: 1.25
 +        } : {}
 +      );
++    }
++    if (this.root) {
++      prepared = bakeArmClearance(prepared, this.root, this.modelPrefix, {
++        cyclic: key === "idle" || DIRECTION_KEYS.includes(key)
++      });
 +    }
 +    prepared.name = key;
 +    variants.set(cacheKey, prepared);
@@ -29137,6 +29588,544 @@ index 0000000000..2ffaba50d5
 +  out.lerp(fallback, 1 - confidence);
 +  return confidence;
 +}
+diff --git a/src/lib/services/implementations/ArmClearanceRetargeter.ts b/src/lib/services/implementations/ArmClearanceRetargeter.ts
+new file mode 100644
+index 0000000000..1e89fc30e0
+--- /dev/null
++++ b/src/lib/services/implementations/ArmClearanceRetargeter.ts
+@@ -0,0 +1,532 @@
++import {
++  AnimationClip,
++  AnimationMixer,
++  Matrix4,
++  Quaternion,
++  QuaternionKeyframeTrack,
++  Vector3,
++  type Bone,
++  type KeyframeTrack,
++  type Object3D,
++  type SkinnedMesh,
++} from "three";
++
++/** How far the hand's skin is held off the thigh's, in metres. */
++const CLEARANCE = 0.012;
++/** The most the upper arm is swung out to find that clearance. */
++const MAX_ABDUCTION = (30 * Math.PI) / 180;
++/** Bisection steps between no swing and the most: a fifth of a degree. */
++const SEARCH_STEPS = 7;
++/**
++ * Clip time a swing is held on either side of the samples that needed it,
++ * then blended over. The arm opens before the hand reaches the thigh and
++ * closes after it has passed, rather than being shoved aside on the frame of
++ * contact.
++ */
++const EASE_SECONDS = 0.12;
++/** Cells around the thigh axis and along it that the skin is binned into. */
++const SECTORS = 24;
++const BINS = 16;
++/** The table covers a little above the hip joint, where the hand hangs. */
++const T_MIN = -0.15;
++const T_MAX = 1;
++/** Enough of a hand to find its deepest point without skinning all of it. */
++const MAX_PROBES = 400;
++/** The longest gap between keys the swing is measured at. */
++const SAMPLE_SECONDS = 1 / 15;
++
++type Side = "Left" | "Right";
++
++interface ArmSide {
++  arm: Bone;
++  thigh: Object3D;
++  /** Bones the probe points ride on, and each point in its bone's space. */
++  bones: Object3D[];
++  probeBone: Uint16Array;
++  probe: Float32Array;
++  /** The thigh's skin, as its farthest reach from the thigh axis per cell. */
++  radius: Float32Array;
++  axis: Vector3;
++  e1: Vector3;
++  e2: Vector3;
++  length: number;
++  /** Which way round the forward axis swings this arm away from the body. */
++  outward: 1 | -1;
++}
++
++interface ArmModel {
++  hips: Object3D;
++  /** The body's forward direction in the pelvis's own space. */
++  forward: Vector3;
++  sides: ArmSide[];
++  signature: string;
++}
++
++const models = new WeakMap<Object3D, ArmModel | null>();
++
++/**
++ * A short digest of the skin this bake reads, for a clip cache key.
++ *
++ * Clips are cached per rig by skeleton proportions, and two characters can
++ * share a skeleton while one of them has much wider hips. X-Bot and Y-Bot are
++ * the shipped pair: one skeleton, two bodies, and only one of them puts its
++ * hands through its thighs.
++ */
++export function armClearanceSignature(
++  root: Object3D,
++  modelPrefix: string
++): string {
++  return resolveModel(root, modelPrefix)?.signature ?? "no-arms";
++}
++
++/**
++ * Keep a clip's hands out of this rig's thighs.
++ *
++ * Retargeting copies rotations, and rotations know nothing of the body they
++ * land on. The pack's arms were authored for a slim source; on a character
++ * with wide hips the same shoulder angles hang the hands inside the thighs.
++ * Measured on the shipped rigs, standing idle put X-Bot's thumb 5.6 cm into
++ * its thigh, Remy's fingers 4.9 cm and ch34's hand 12.5 cm, and ch34 kept it
++ * there through a third of every walking stride. Nothing downstream looks:
++ * the arm clearance in `AvatarAnimator` covers the IK arms that hold props,
++ * against the torso, neck and face, and a free arm is posed by the clip alone.
++ *
++ * So the arm spacing is fitted per character, the way Mixamo's "Character
++ * Arm-Space" slider and a retargeter's per-chain offsets fit it, but measured
++ * rather than hand-set: at every key of each upper-arm track the hand's skin
++ * is tested against the thigh's, and where it is inside, the upper arm swings
++ * out about the body's forward axis by the least angle that clears. That
++ * swing is eased across neighbouring keys so the arm opens ahead of the thigh.
++ * A key that already clears is left exactly as authored, which on the slim
++ * rigs is every key.
++ *
++ * `root` is posed during the bake and restored before returning.
++ */
++export function bakeArmClearance(
++  clip: AnimationClip,
++  root: Object3D,
++  modelPrefix: string,
++  options: { cyclic: boolean }
++): AnimationClip {
++  const model = resolveModel(root, modelPrefix);
++  if (!model) return clip;
++
++  const tracks = new Map<string, KeyframeTrack>();
++  for (const track of clip.tracks) tracks.set(track.name, track);
++
++  const pose = capturePose(root);
++  const mixer = new AnimationMixer(root);
++  mixer.clipAction(clip).play();
++  const replaced = new Map<string, QuaternionKeyframeTrack>();
++  try {
++    for (const side of model.sides) {
++      const name = `${side.arm.name}.quaternion`;
++      const track = tracks.get(name);
++      if (!track || track.times.length === 0) continue;
++      const baked = bakeSide(clip, track, side, model, root, mixer, options);
++      if (baked) replaced.set(name, baked);
++    }
++  } finally {
++    mixer.stopAllAction();
++    mixer.uncacheClip(clip);
++    restorePose(pose);
++    root.updateMatrixWorld(true);
++  }
++  if (replaced.size === 0) return clip;
++  return new AnimationClip(
++    clip.name,
++    clip.duration,
++    clip.tracks.map((track) => replaced.get(track.name) ?? track),
++    clip.blendMode
++  );
++}
++
++const swing = new Quaternion();
++const held = new Quaternion();
++const hipsTurn = new Quaternion();
++const parentTurn = new Quaternion();
++
++function bakeSide(
++  clip: AnimationClip,
++  track: KeyframeTrack,
++  side: ArmSide,
++  model: ArmModel,
++  root: Object3D,
++  mixer: AnimationMixer,
++  options: { cyclic: boolean }
++): QuaternionKeyframeTrack | null {
++  const times = track.times;
++  const count = times.length;
++  const angles = new Float32Array(count);
++  const axes = new Float32Array(count * 3);
++  const axis = new Vector3();
++  let any = false;
++
++  // An arm swings slowly next to a clip's key rate, so a long idle is read at
++  // a sampling rate that still catches every pass and filled in between.
++  const stride = Math.max(
++    1,
++    Math.floor(SAMPLE_SECONDS / Math.max(keyStep(times), 1e-3))
++  );
++  const sampled: number[] = [];
++  for (let i = 0; i < count; i += stride) sampled.push(i);
++  if (sampled[sampled.length - 1] !== count - 1) sampled.push(count - 1);
++
++  for (const i of sampled) {
++    mixer.setTime(Math.min(times[i]!, clip.duration));
++    root.updateMatrixWorld(true);
++    held.copy(side.arm.quaternion);
++
++    model.hips.getWorldQuaternion(hipsTurn);
++    side.arm.parent!.getWorldQuaternion(parentTurn);
++    axis
++      .copy(model.forward)
++      .applyQuaternion(hipsTurn)
++      .applyQuaternion(parentTurn.invert())
++      .normalize();
++    axis.toArray(axes, i * 3);
++
++    const depthAt = (angle: number): number => {
++      swing.setFromAxisAngle(axis, side.outward * angle);
++      side.arm.quaternion.copy(held).premultiply(swing);
++      side.arm.updateMatrixWorld(true);
++      return deepest(side);
++    };
++
++    if (deepest(side) > 0) {
++      let angle = MAX_ABDUCTION;
++      if (depthAt(MAX_ABDUCTION) <= 0) {
++        let clear = MAX_ABDUCTION;
++        let inside = 0;
++        for (let step = 0; step < SEARCH_STEPS; step++) {
++          const mid = (clear + inside) / 2;
++          if (depthAt(mid) > 0) inside = mid;
++          else clear = mid;
++        }
++        angle = clear;
++      }
++      angles[i] = angle;
++      any = true;
++    }
++    // The mixer writes a bone only when its value changes, so a swing left on
++    // the bone would ride into the next sample. Put the clip's value back.
++    side.arm.quaternion.copy(held);
++  }
++  if (!any) return null;
++  fillBetween(sampled, angles, axes, times);
++
++  const eased = ease(angles, times, options.cyclic);
++  const values = new Float32Array(track.values.length);
++  const key = new Quaternion();
++  for (let i = 0; i < count; i++) {
++    key.fromArray(track.values, i * 4);
++    axis.fromArray(axes, i * 3).normalize();
++    swing.setFromAxisAngle(axis, side.outward * eased[i]!);
++    key.premultiply(swing).toArray(values, i * 4);
++  }
++  return new QuaternionKeyframeTrack(
++    track.name,
++    Array.from(times),
++    Array.from(values)
++  );
++}
++
++function keyStep(times: ArrayLike<number>): number {
++  const count = times.length;
++  return count > 1 ? (times[count - 1]! - times[0]!) / (count - 1) : 1;
++}
++
++/** Interpolate the swing and its axis onto the keys between two samples. */
++function fillBetween(
++  sampled: number[],
++  angles: Float32Array,
++  axes: Float32Array,
++  times: ArrayLike<number>
++): void {
++  for (let s = 0; s + 1 < sampled.length; s++) {
++    const from = sampled[s]!;
++    const to = sampled[s + 1]!;
++    const span = times[to]! - times[from]!;
++    for (let i = from + 1; i < to; i++) {
++      const w = span > 0 ? (times[i]! - times[from]!) / span : 0;
++      angles[i] = angles[from]! + (angles[to]! - angles[from]!) * w;
++      for (let k = 0; k < 3; k++) {
++        axes[i * 3 + k] =
++          axes[from * 3 + k]! + (axes[to * 3 + k]! - axes[from * 3 + k]!) * w;
++      }
++    }
++  }
++}
++
++/**
++ * Hold each swing across its neighbours, then blend. A running maximum over
++ * the window keeps every sample at least as open as it needed, and the mean
++ * over the same window turns the plateau's edges into ramps.
++ */
++function ease(
++  angles: Float32Array,
++  times: ArrayLike<number>,
++  cyclic: boolean
++): Float32Array {
++  const count = angles.length;
++  const step = keyStep(times);
++  const radius = Math.max(1, Math.round(EASE_SECONDS / Math.max(step, 1e-3)));
++  const at = (source: Float32Array, index: number): number => {
++    if (cyclic) return source[((index % count) + count) % count]!;
++    return source[Math.min(count - 1, Math.max(0, index))]!;
++  };
++  const held = new Float32Array(count);
++  for (let i = 0; i < count; i++) {
++    let most = 0;
++    for (let k = -radius; k <= radius; k++) most = Math.max(most, at(angles, i + k));
++    held[i] = most;
++  }
++  const out = new Float32Array(count);
++  for (let i = 0; i < count; i++) {
++    let sum = 0;
++    for (let k = -radius; k <= radius; k++) sum += at(held, i + k);
++    out[i] = sum / (2 * radius + 1);
++  }
++  return out;
++}
++
++const toThigh = new Matrix4();
++const boneToThigh: Matrix4[] = [];
++const point = new Vector3();
++
++/** How far the deepest probe is inside the thigh plus the clearance; <= 0 is clear. */
++function deepest(side: ArmSide): number {
++  toThigh.copy(side.thigh.matrixWorld).invert();
++  for (let b = 0; b < side.bones.length; b++) {
++    boneToThigh[b] ??= new Matrix4();
++    boneToThigh[b]!.multiplyMatrices(toThigh, side.bones[b]!.matrixWorld);
++  }
++  let worst = -Infinity;
++  for (let i = 0; i < side.probeBone.length; i++) {
++    point
++      .fromArray(side.probe, i * 3)
++      .applyMatrix4(boneToThigh[side.probeBone[i]!]!);
++    const depth = depthInside(side, point);
++    if (depth > worst) worst = depth;
++  }
++  return worst;
++}
++
++function depthInside(side: ArmSide, p: Vector3): number {
++  const along = p.dot(side.axis);
++  const t = along / side.length;
++  if (t < T_MIN || t > T_MAX) return -Infinity;
++  const x = p.dot(side.e1);
++  const y = p.dot(side.e2);
++  const reach = side.radius[cell(t, x, y)]!;
++  if (reach === 0) return -Infinity;
++  return reach + CLEARANCE - Math.hypot(x, y);
++}
++
++function cell(t: number, x: number, y: number): number {
++  const bin = Math.min(
++    BINS - 1,
++    Math.max(0, Math.floor(((t - T_MIN) / (T_MAX - T_MIN)) * BINS))
++  );
++  const turn = (Math.atan2(y, x) + Math.PI) / (2 * Math.PI);
++  const sector = Math.min(SECTORS - 1, Math.floor(turn * SECTORS));
++  return bin * SECTORS + sector;
++}
++
++/**
++ * Measure the arms and thighs once per rig.
++ *
++ * Every vertex is read in the space of the bone that carries most of its
++ * weight and treated as riding on that bone alone. Hands and thighs skin
++ * almost rigidly, and it turns a skinned-mesh query into one matrix per point.
++ */
++function resolveModel(root: Object3D, prefix: string): ArmModel | null {
++  if (models.has(root)) return models.get(root)!;
++  const model = measure(root, prefix);
++  models.set(root, model);
++  return model;
++}
++
++function measure(root: Object3D, prefix: string): ArmModel | null {
++  const bone = (name: string) =>
++    (root.getObjectByName(`${prefix}${name}`) as Bone | undefined) ?? null;
++  const hips = bone("Hips");
++  const leftHip = bone("LeftUpLeg");
++  const rightHip = bone("RightUpLeg");
++  if (!hips || !leftHip || !rightHip) return null;
++
++  const meshes: SkinnedMesh[] = [];
++  root.traverse((node) => {
++    const mesh = node as SkinnedMesh;
++    if (mesh.isSkinnedMesh && mesh.visible && mesh.geometry.getAttribute("skinWeight"))
++      meshes.push(mesh);
++  });
++  if (meshes.length === 0) return null;
++  root.updateMatrixWorld(true);
++
++  const up = new Vector3(0, 1, 0).transformDirection(root.matrixWorld);
++  const lateral = leftHip
++    .getWorldPosition(new Vector3())
++    .sub(rightHip.getWorldPosition(new Vector3()))
++    .normalize();
++  const forward = new Vector3().crossVectors(lateral, up).normalize();
++  const hipsTurnInverse = hips.getWorldQuaternion(new Quaternion()).invert();
++
++  const sides: ArmSide[] = [];
++  for (const name of ["Left", "Right"] as Side[]) {
++    const arm = bone(`${name}Arm`);
++    const forearm = bone(`${name}ForeArm`);
++    const thigh = bone(`${name}UpLeg`);
++    const knee = bone(`${name}Leg`);
++    if (!arm || !forearm || !thigh || !knee) continue;
++    const away = name === "Left" ? lateral : lateral.clone().negate();
++    // A hanging arm points down; whichever way round the forward axis moves
++    // a downward arm toward this side's outside is the way that opens it.
++    const opens = new Vector3().crossVectors(forward, up.clone().negate());
++    const outward: 1 | -1 = opens.dot(away) >= 0 ? 1 : -1;
++    const side = measureSide(meshes, arm, forearm, thigh, knee, outward);
++    if (side) sides.push(side);
++  }
++  if (sides.length === 0) return null;
++
++  let digest = 0;
++  for (const side of sides) {
++    for (const value of side.radius) digest = (digest * 31 + Math.round(value * 1000)) >>> 0;
++  }
++  return {
++    hips,
++    forward: forward.applyQuaternion(hipsTurnInverse).normalize(),
++    sides,
++    signature: digest.toString(36),
++  };
++}
++
++function measureSide(
++  meshes: SkinnedMesh[],
++  arm: Bone,
++  forearm: Object3D,
++  thigh: Object3D,
++  knee: Object3D,
++  outward: 1 | -1
++): ArmSide | null {
++  const hand = new Set<Object3D>();
++  forearm.traverse((node) => hand.add(node));
++
++  const axisEnd = knee.position.clone();
++  const length = axisEnd.length();
++  if (!(length > 1e-4)) return null;
++  const axis = axisEnd.clone().divideScalar(length);
++  const e1 = new Vector3(1, 0, 0);
++  if (Math.abs(e1.dot(axis)) > 0.9) e1.set(0, 1, 0);
++  e1.sub(axis.clone().multiplyScalar(e1.dot(axis))).normalize();
++  const e2 = new Vector3().crossVectors(axis, e1);
++
++  const radius = new Float32Array(BINS * SECTORS);
++  const bones: Object3D[] = [];
++  const boneIndex = new Map<Object3D, number>();
++  const probeBone: number[] = [];
++  const probe: number[] = [];
++  const toThigh = new Matrix4().copy(thigh.matrixWorld).invert();
++  const v = new Vector3();
++
++  for (const mesh of meshes) {
++    const skinIndex = mesh.geometry.getAttribute("skinIndex");
++    const skinWeight = mesh.geometry.getAttribute("skinWeight");
++    const skeleton = mesh.skeleton;
++    for (let i = 0; i < skinIndex.count; i++) {
++      let best = -1;
++      let weight = -1;
++      for (let k = 0; k < 4; k++) {
++        const w = skinWeight.getComponent(i, k);
++        if (w > weight) {
++          weight = w;
++          best = skinIndex.getComponent(i, k);
++        }
++      }
++      const owner = skeleton.bones[best];
++      if (!owner) continue;
++      const onThigh = owner === thigh;
++      const onHand = hand.has(owner);
++      if (!onThigh && !onHand) continue;
++      mesh.getVertexPosition(i, v);
++      v.applyMatrix4(mesh.matrixWorld);
++      if (onThigh) {
++        v.applyMatrix4(toThigh);
++        const t = v.dot(axis) / length;
++        if (t < T_MIN || t > T_MAX) continue;
++        const x = v.dot(e1);
++        const y = v.dot(e2);
++        const index = cell(t, x, y);
++        radius[index] = Math.max(radius[index]!, Math.hypot(x, y));
++      } else {
++        let b = boneIndex.get(owner);
++        if (b === undefined) {
++          b = bones.length;
++          bones.push(owner);
++          boneIndex.set(owner, b);
++        }
++        v.applyMatrix4(new Matrix4().copy(owner.matrixWorld).invert());
++        probeBone.push(b);
++        probe.push(v.x, v.y, v.z);
++      }
++    }
++  }
++  if (probeBone.length === 0) return null;
++
++  // A cell the skin happens to miss is not a hole in the thigh. Each cell
++  // takes the farthest reach of itself and its two neighbours round the axis.
++  const filled = new Float32Array(radius.length);
++  for (let bin = 0; bin < BINS; bin++) {
++    for (let s = 0; s < SECTORS; s++) {
++      const at = (k: number) => radius[bin * SECTORS + ((k + SECTORS) % SECTORS)]!;
++      filled[bin * SECTORS + s] = Math.max(at(s - 1), at(s), at(s + 1));
++    }
++  }
++
++  const stride = Math.max(1, Math.ceil(probeBone.length / MAX_PROBES));
++  const keptBone: number[] = [];
++  const kept: number[] = [];
++  for (let i = 0; i < probeBone.length; i += stride) {
++    keptBone.push(probeBone[i]!);
++    kept.push(probe[i * 3]!, probe[i * 3 + 1]!, probe[i * 3 + 2]!);
++  }
++
++  return {
++    arm,
++    thigh,
++    bones,
++    probeBone: Uint16Array.from(keptBone),
++    probe: Float32Array.from(kept),
++    radius: filled,
++    axis,
++    e1,
++    e2,
++    length,
++    outward,
++  };
++}
++
++interface CapturedBone {
++  object: Object3D;
++  position: Vector3;
++  quaternion: Quaternion;
++}
++
++function capturePose(root: Object3D): CapturedBone[] {
++  const pose: CapturedBone[] = [];
++  root.traverse((object) => {
++    pose.push({
++      object,
++      position: object.position.clone(),
++      quaternion: object.quaternion.clone(),
++    });
++  });
++  return pose;
++}
++
++function restorePose(pose: CapturedBone[]): void {
++  for (const entry of pose) {
++    entry.object.position.copy(entry.position);
++    entry.object.quaternion.copy(entry.quaternion);
++  }
++}
 diff --git a/src/lib/services/implementations/AvatarAnimator.ts b/src/lib/services/implementations/AvatarAnimator.ts
 index c73bcabe86..b01bf88254 100644
 --- a/src/lib/services/implementations/AvatarAnimator.ts
@@ -37191,10 +38180,10 @@ index ce05b8a425..0d04a3e7f6 100644
    }
  }
 diff --git a/src/lib/services/implementations/LocomotionAnimator.ts b/src/lib/services/implementations/LocomotionAnimator.ts
-index 25b0660fc5..ee33da1184 100644
+index 25b0660fc5..34fa653cfc 100644
 --- a/src/lib/services/implementations/LocomotionAnimator.ts
 +++ b/src/lib/services/implementations/LocomotionAnimator.ts
-@@ -13,17 +13,234 @@
+@@ -13,17 +13,238 @@
   */
  
  import type { AnimationAction, Object3D, Bone } from "three";
@@ -37228,6 +38217,10 @@ index 25b0660fc5..ee33da1184 100644
 +  type ClipFootprint,
 +} from "../clip-footprint";
 +import { bakeContactPreservedLegs } from "./ContactRetargeter";
++import {
++  armClearanceSignature,
++  bakeArmClearance,
++} from "./ArmClearanceRetargeter";
 +
 +const DIRECTION_KEYS = [
 +  "forward",
@@ -37432,7 +38425,7 @@ index 25b0660fc5..ee33da1184 100644
  
  /**
   * Known Mixamo bone prefixes. Animation files may use a different
-@@ -70,21 +287,29 @@ function detectClipPrefix(clip: AnimationClip): string {
+@@ -70,21 +291,29 @@ function detectClipPrefix(clip: AnimationClip): string {
   *   "strip"    - Remove Hips position entirely (default for idle/jump/fall/land)
   *   "rootMotion" - Keep and make Z relative to first frame (for walk/run root motion)
   *   "pose"     - Keep as-is, no baseline subtraction (for crouch - absolute Y is the pose)
@@ -37466,7 +38459,7 @@ index 25b0660fc5..ee33da1184 100644
  ): AnimationClip {
    const clipPrefix = detectClipPrefix(clip);
  
-@@ -95,7 +320,9 @@ function remapClipToSkeleton(
+@@ -95,7 +324,9 @@ function remapClipToSkeleton(
  
        const boneName = track.name.slice(0, dotIdx);
        const property = track.name.slice(dotIdx + 1);
@@ -37477,7 +38470,7 @@ index 25b0660fc5..ee33da1184 100644
  
        // Skip bones that don't exist on our models
        if (coreName.endsWith("_End")) return false;
-@@ -110,7 +337,12 @@ function remapClipToSkeleton(
+@@ -110,7 +341,12 @@ function remapClipToSkeleton(
        if (coreName === "Hips" && property === "quaternion") return false;
  
        // Keep Hips position track when needed for root motion or crouch pose.
@@ -37491,7 +38484,7 @@ index 25b0660fc5..ee33da1184 100644
  
        // Keep all other quaternion tracks - bone rotations are the animation.
        // Filter out position/scale tracks (position teleports, scale vanishes).
-@@ -122,7 +354,9 @@ function remapClipToSkeleton(
+@@ -122,7 +358,9 @@ function remapClipToSkeleton(
        const dotIdx = track.name.indexOf(".");
        const boneName = track.name.slice(0, dotIdx);
        const property = track.name.slice(dotIdx);
@@ -37502,7 +38495,7 @@ index 25b0660fc5..ee33da1184 100644
  
        const cloned = track.clone();
  
-@@ -136,7 +370,11 @@ function remapClipToSkeleton(
+@@ -136,7 +374,11 @@ function remapClipToSkeleton(
        // first keyframe's Z preserves the natural vertical bob (hips go up
        // and down ~2-3cm per step) while removing the absolute offset that
        // would slam the avatar underground.
@@ -37515,7 +38508,7 @@ index 25b0660fc5..ee33da1184 100644
          const values = cloned.values as Float32Array;
          const baseZ = values[2] ?? 0; // First keyframe's Z = rest height
          for (let i = 2; i < values.length; i += 3) {
-@@ -144,13 +382,70 @@ function remapClipToSkeleton(
+@@ -144,13 +386,70 @@ function remapClipToSkeleton(
          }
        }
  
@@ -37587,7 +38580,7 @@ index 25b0660fc5..ee33da1184 100644
          const values = cloned.values as Float32Array;
          for (let i = 0; i < values.length; i++) {
            values[i]! *= 0.01;
-@@ -167,37 +462,785 @@ function remapClipToSkeleton(
+@@ -167,37 +466,785 @@ function remapClipToSkeleton(
    return new AnimationClip(clip.name, clip.duration, tracks);
  }
  
@@ -38381,7 +39374,7 @@ index 25b0660fc5..ee33da1184 100644
      animationWalkSpeed: 1.57,
      enableRootMotion: false,
      stripLegBones: false,
-@@ -205,46 +1248,219 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -205,46 +1252,219 @@ export class LocomotionAnimator implements ILocomotionAnimator {
  
    // Blend weights (smoothed each frame)
    private currentIdleWeight = 1;
@@ -38620,7 +39613,7 @@ index 25b0660fc5..ee33da1184 100644
    }
  
    async loadAnimations(urls: AnimationUrls): Promise<void> {
-@@ -255,21 +1471,39 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -255,21 +1475,39 @@ export class LocomotionAnimator implements ILocomotionAnimator {
        { key: "strafeLeft", url: urls.strafeLeft },
        { key: "strafeRight", url: urls.strafeRight },
      ];
@@ -38668,7 +39661,7 @@ index 25b0660fc5..ee33da1184 100644
          return { key, clip };
        })
      );
-@@ -280,6 +1514,23 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -280,6 +1518,23 @@ export class LocomotionAnimator implements ILocomotionAnimator {
        }
      }
  
@@ -38692,7 +39685,7 @@ index 25b0660fc5..ee33da1184 100644
      this.clipsLoaded = true;
      if (this.initialized && this.mixer) {
        this.createActions();
-@@ -300,23 +1551,75 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -300,23 +1555,87 @@ export class LocomotionAnimator implements ILocomotionAnimator {
      // - Crouch: keep Hips position as-is (absolute Y IS the crouched height)
      // - Everything else: strip Hips position (would teleport the avatar)
      const isLocomotionClip =
@@ -38723,7 +39716,12 @@ index 25b0660fc5..ee33da1184 100644
 +    const preservePelvisSway =
 +      key === "grapevineLeft" || key === "grapevineRight";
 +
-+    const cacheKey = `${key}|${this.modelPrefix}|${this.rigSignature}|${hipsMode}|${stripLegs}|${preservePelvisSway}`;
++    // The arm bake reads the skin, not just the skeleton, so two bodies on one
++    // skeleton need their own entries.
++    const arms = this.root
++      ? armClearanceSignature(this.root, this.modelPrefix)
++      : "no-arms";
++    const cacheKey = `${key}|${this.modelPrefix}|${this.rigSignature}|${arms}|${hipsMode}|${stripLegs}|${preservePelvisSway}`;
 +    let variants = preparedClipCache.get(raw);
 +    if (!variants) {
 +      variants = new Map();
@@ -38767,6 +39765,13 @@ index 25b0660fc5..ee33da1184 100644
 +          : {}
 +      );
 +    }
++    // Rotations copied onto a wider body hang its hands inside its thighs.
++    // Fitted after the legs, so the thighs it clears are the ones that play.
++    if (this.root) {
++      prepared = bakeArmClearance(prepared, this.root, this.modelPrefix, {
++        cyclic: key === "idle" || DIRECTION_KEYS.includes(key as DirectionKey),
++      });
++    }
 +    // Blender exports all Mixamo clips with the same name. AnimationMixer
 +    // caches actions by clip name, so each behavior needs a stable identity.
 +    prepared.name = key;
@@ -38775,7 +39780,7 @@ index 25b0660fc5..ee33da1184 100644
    }
  
    /**
-@@ -327,6 +1630,19 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -327,6 +1646,19 @@ export class LocomotionAnimator implements ILocomotionAnimator {
    private createActions(): void {
      if (!this.mixer) return;
  
@@ -38795,7 +39800,7 @@ index 25b0660fc5..ee33da1184 100644
  
      // Idle - starts at weight 1
      const idleClip = this.prepareClip("idle");
-@@ -338,7 +1654,7 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -338,7 +1670,7 @@ export class LocomotionAnimator implements ILocomotionAnimator {
      }
  
      // Walk directions - start at weight 0
@@ -38804,7 +39809,7 @@ index 25b0660fc5..ee33da1184 100644
        const clip = this.prepareClip(key);
        if (clip && !this.walkActions[key]) {
          const action = this.mixer.clipAction(clip);
-@@ -346,6 +1662,22 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -346,6 +1678,22 @@ export class LocomotionAnimator implements ILocomotionAnimator {
          this.setWeight(action, 0);
          action.play();
          this.walkActions[key] = action;
@@ -38827,7 +39832,7 @@ index 25b0660fc5..ee33da1184 100644
        }
      }
  
-@@ -386,6 +1718,33 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -386,6 +1734,33 @@ export class LocomotionAnimator implements ILocomotionAnimator {
        this.setWeight(this.crouchAction, 0);
        this.crouchAction.play();
      }
@@ -38861,7 +39866,7 @@ index 25b0660fc5..ee33da1184 100644
    }
  
    /**
-@@ -398,19 +1757,99 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -398,19 +1773,99 @@ export class LocomotionAnimator implements ILocomotionAnimator {
    }
  
    setLocomotion(input: LocomotionInput): void {
@@ -38965,7 +39970,7 @@ index 25b0660fc5..ee33da1184 100644
    setActiveState(state: LocomotionState): void {
      this.activeState = state;
    }
-@@ -422,19 +1861,170 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -422,19 +1877,170 @@ export class LocomotionAnimator implements ILocomotionAnimator {
      const blendSpeed = 1 / Math.max(0.01, this.config.blendTime);
      const blendFactor = 1 - Math.exp(-blendSpeed * delta);
  
@@ -39140,7 +40145,7 @@ index 25b0660fc5..ee33da1184 100644
    configure(config: LocomotionConfig): void {
      this.config = { ...this.config, ...config };
    }
-@@ -447,40 +2037,15 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -447,40 +2053,15 @@ export class LocomotionAnimator implements ILocomotionAnimator {
    }
  
    dispose(): void {
@@ -39182,7 +40187,7 @@ index 25b0660fc5..ee33da1184 100644
    private updateDirectionalTargets(input: LocomotionInput): void {
      const dir = input.moveDirection ?? { x: 0, z: 1 };
      const fw = Math.max(0, dir.z);
-@@ -493,20 +2058,92 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -493,20 +2074,92 @@ export class LocomotionAnimator implements ILocomotionAnimator {
      // pose. The physics still moves diagonally - only the animation is pure
      // backward. This matches how most third-person games handle it.
      if (bw > 0) {
@@ -39282,7 +40287,7 @@ index 25b0660fc5..ee33da1184 100644
    }
  
    private updatePlaybackSpeed(speed: number): void {
-@@ -521,15 +2158,579 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -521,15 +2174,579 @@ export class LocomotionAnimator implements ILocomotionAnimator {
        return;
      }
  
@@ -39349,7 +40354,8 @@ index 25b0660fc5..ee33da1184 100644
 +  private blendedNativeSpeed(): number {
 +    let sum = 0;
 +    let weight = 0;
-+    for (const key of Object.keys(this.walkActions) as DirectionKey[]) {
+     for (const key of Object.keys(this.walkActions) as DirectionKey[]) {
+-      this.walkActions[key]?.setEffectiveTimeScale(timeScale);
 +      const gait = this.gaits[key];
 +      // Smoothed weights, not targets: stride and contact have to describe
 +      // the pose on screen, not the pose being blended toward.
@@ -39357,7 +40363,7 @@ index 25b0660fc5..ee33da1184 100644
 +      if (!gait || w <= 1e-4) continue;
 +      sum += gait.nativeSpeed * w;
 +      weight += w;
-+    }
+     }
 +    if (weight <= 1e-4) return 0;
 +    return (sum / weight) * this.rootWorldScale;
 +  }
@@ -39367,8 +40373,9 @@ index 25b0660fc5..ee33da1184 100644
 +    if (!sample) return null;
 +    const timingPlanId = this.terminalPlan?.timingPlanId;
 +    return timingPlanId && timingPlanId !== sample.planId ? null : sample;
-+  }
-+
+   }
+ 
+-  private applyStateWeights(blendFactor: number): void {
 +  /**
 +   * Advance the shared phase and write it to every walk action, offset by
 +   * where that clip puts its own left-foot strike so all four agree on which
@@ -39834,8 +40841,7 @@ index 25b0660fc5..ee33da1184 100644
 +      );
 +    }
 +
-     for (const key of Object.keys(this.walkActions) as DirectionKey[]) {
--      this.walkActions[key]?.setEffectiveTimeScale(timeScale);
++    for (const key of Object.keys(this.walkActions) as DirectionKey[]) {
 +      const next = this.terminalEntryDirWeights[key] * (1 - entryBlend);
 +      this.currentDirWeights[key] = next;
 +      this.dirWeightVelocities[key] = 0;
@@ -39859,15 +40865,14 @@ index 25b0660fc5..ee33da1184 100644
 +        leftEntry + (this.terminalContactLeft - leftEntry) * entryBlend;
 +      this.contactRight =
 +        rightEntry + (this.terminalContactRight - rightEntry) * entryBlend;
-     }
-   }
- 
--  private applyStateWeights(blendFactor: number): void {
++    }
++  }
++
 +  private applyStateWeights(delta: number, blendFactor: number): void {
      const state = this.activeState!;
  
      // Phase-based jump: each state has its own clip.
-@@ -545,22 +2746,35 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -545,22 +2762,35 @@ export class LocomotionAnimator implements ILocomotionAnimator {
      // "hunched walk" without needing a dedicated crouch-walk animation clip.
      // Without movement, 100% crouch-idle plays normally.
      const isCrouching = state === LocomotionState.CROUCHING;
@@ -39908,7 +40913,7 @@ index 25b0660fc5..ee33da1184 100644
        this.walkActions[key]?.setEffectiveWeight(newWeight);
      }
  
-@@ -573,12 +2787,17 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -573,12 +2803,17 @@ export class LocomotionAnimator implements ILocomotionAnimator {
      // On state entry: snap weights for instant transitions on one-shot clips.
      if (state !== this.currentActiveState) {
        // Zero out ground animations instantly when entering any airborne state
@@ -39927,7 +40932,7 @@ index 25b0660fc5..ee33da1184 100644
          }
        }
        // Reset one-shot clips on entry
-@@ -601,20 +2820,65 @@ export class LocomotionAnimator implements ILocomotionAnimator {
+@@ -601,20 +2836,65 @@ export class LocomotionAnimator implements ILocomotionAnimator {
      }
    }
  
