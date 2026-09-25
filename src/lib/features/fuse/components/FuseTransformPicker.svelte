@@ -83,8 +83,8 @@
   const offsetOptions = $derived(
     (
       [
-        { value: "cw", label: "Quarter clockwise" },
-        { value: "ccw", label: "Quarter counterclockwise" },
+        { value: "cw", label: "90° clockwise" },
+        { value: "ccw", label: "90° counterclockwise" },
       ] as { value: FuseQuarterOffset; label: string }[]
     ).map((option) => ({ ...option, disabled }))
   );
@@ -205,8 +205,10 @@
     </div>
 
     {#if showOffset}
-      <div class="axis">
-        <span class="axis-label" id="fuse-offset-label">Which way round</span>
+      <div class="axis offset-axis">
+        <span class="axis-label" id="fuse-offset-label"
+          >Rotate {followerLabel}'s path</span
+        >
         <SegmentedControl
           options={offsetOptions}
           value={selection.quarterOffset}
@@ -214,7 +216,18 @@
           color="accent"
           size="md"
           ariaLabelledby="fuse-offset-label"
-        />
+        >
+          {#snippet optionContent(offset: FuseQuarterOffset)}
+            <span class="offset-option">
+              <span class="offset-arrow" aria-hidden="true"
+                >{offset === "cw" ? "↻" : "↺"}</span
+              >
+              <span
+                >90° {offset === "cw" ? "clockwise" : "counterclockwise"}</span
+              >
+            </span>
+          {/snippet}
+        </SegmentedControl>
       </div>
     {/if}
 
@@ -224,7 +237,7 @@
          and read as the same size of decision as the six modes. They are
          switches because each is on or off on its own. -->
     <div class="axis operations-axis">
-      <span class="axis-label" id="fuse-operations-label">Also</span>
+      <span class="axis-label" id="fuse-operations-label">Options</span>
       <div
         class="operation-list"
         role="group"
@@ -529,9 +542,9 @@
   .transform-picker.inline {
     flex: none;
     display: grid;
-    grid-template-columns: minmax(170px, 0.55fr) minmax(0, 4fr);
+    grid-template-columns: 160px minmax(0, 1fr);
     align-items: start;
-    gap: 12px;
+    gap: 8px;
   }
 
   .inline .field,
@@ -541,18 +554,18 @@
     border-radius: 0;
     background: none;
     padding: 0;
-    gap: 5px;
+    gap: 6px;
   }
 
   .inline .rule-field {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(220px, 250px);
+    grid-template-columns: minmax(0, 1fr) 210px;
     align-items: start;
-    gap: 5px 10px;
+    gap: 6px 8px;
   }
 
   .inline .rule-field > .field-heading {
-    grid-column: 1 / -1;
+    grid-column: 1;
   }
 
   .inline .mode-axis {
@@ -564,18 +577,29 @@
   .inline .operations-axis {
     align-self: start;
     grid-column: 2;
-    grid-row: 2;
+    grid-row: 1 / 3;
+    grid-template-rows: auto auto;
+  }
+
+  .inline .operations-axis > .axis-label {
+    align-self: center;
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: var(--font-size-min, 14px);
   }
 
   .inline .operation-list {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 6px;
   }
 
   .inline .operation-toggle {
     display: flex;
+    justify-content: center;
     gap: 6px;
-    padding: 5px 7px;
+    min-height: 72px;
+    padding: 6px;
     white-space: nowrap;
   }
 
@@ -600,11 +624,41 @@
     transform: translateX(8px);
   }
 
-  .inline .axis:not(.mode-axis, .operations-axis) {
-    grid-column: 1;
+  .offset-option {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .offset-arrow {
+    font-size: 1.75rem;
+    line-height: 1;
+  }
+
+  .inline .offset-axis {
+    grid-column: 1 / -1;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+  }
+
+  .offset-axis > .axis-label {
+    font-size: var(--font-size-min, 14px);
+    letter-spacing: normal;
+    text-transform: none;
+  }
+
+  .inline .driver-control :global(.segment) {
+    min-height: 64px;
+  }
+
+  .offset-axis :global(.segment) {
+    min-height: 48px;
   }
 
   .inline .operation-note {
+    grid-column: 1 / -1;
     max-width: 16rem;
   }
 
@@ -626,8 +680,12 @@
       width: min(100%, 220px);
     }
 
+    .inline .driver-control :global(.segment) {
+      min-height: 48px;
+    }
+
     .inline .rule-field {
-      grid-template-columns: minmax(0, 1fr) minmax(200px, 230px);
+      grid-template-columns: minmax(0, 1fr) 200px;
     }
   }
 
@@ -646,6 +704,7 @@
       display: grid;
       grid-template-columns: auto minmax(0, 1fr);
       grid-row: auto;
+      grid-template-rows: auto;
       align-items: center;
       gap: 8px;
     }
@@ -655,18 +714,35 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    .inline .operation-toggle {
+      min-height: 48px;
+    }
+
+    .inline .offset-axis {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
     .inline .operation-note {
       grid-column: 1 / -1;
     }
   }
 
   @container (max-width: 28rem) {
-    .inline .field-label {
-      white-space: nowrap;
+    .inline .driver-control {
+      width: min(100%, 172px);
     }
 
-    .inline .driver-control {
-      width: min(100%, 182px);
+    .offset-option {
+      gap: 4px;
+      flex-direction: column;
+    }
+
+    .offset-arrow {
+      font-size: 1.5rem;
+    }
+
+    .offset-axis :global(.segment) {
+      min-height: 64px;
     }
   }
 
