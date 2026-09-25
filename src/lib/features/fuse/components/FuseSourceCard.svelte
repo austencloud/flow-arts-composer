@@ -512,10 +512,13 @@
         style="--rule-accent: {followerElement.accentColor}"
         title="{followerModeLabel} of {driverLabel} ({followerTransformLabel})"
         aria-label={onEditPairing
-          ? `Change pairing — currently ${followerModeLabel} of ${driverLabel} (${followerTransformLabel})`
+          ? `Change rule: ${followerModeLabel} of ${driverLabel} (${followerTransformLabel})`
           : `${followerModeLabel} of ${driverLabel} (${followerTransformLabel})`}
       >
         <img class="rule-icon" src={followerElement.iconPath} alt="" />
+        {#if onEditPairing}
+          <span>Change rule</span>
+        {/if}
       </svelte:element>
     {:else}
       <div class="compact-source-tools">
@@ -546,7 +549,7 @@
       onclick={onEditPairing}
       style="--rule-accent: {followerElement.accentColor}"
       aria-label={onEditPairing
-        ? `Change pairing — currently ${followerModeLabel} of ${driverLabel} (${followerTransformLabel})`
+        ? `Change rule: ${followerModeLabel} of ${driverLabel} (${followerTransformLabel})`
         : undefined}
     >
       <span class="note-glyph">
@@ -558,7 +561,10 @@
         <span class="note-ops">{followerTransformLabel}</span>
       </span>
       {#if onEditPairing}
-        <i class="fas fa-pen-to-square note-edit" aria-hidden="true"></i>
+        <span class="note-edit">
+          Change rule
+          <i class="fas fa-chevron-right" aria-hidden="true"></i>
+        </span>
       {/if}
     </svelte:element>
   {:else if !compactHero}
@@ -843,6 +849,17 @@
   }
 
   .compact-derived-indicator.interactive {
+    display: inline-flex;
+    justify-content: center;
+    gap: 6px;
+    width: auto;
+    min-height: var(--min-touch-target, 44px);
+    padding: 6px 10px;
+    border-radius: var(--settings-radius-sm, 8px);
+    color: var(--theme-text);
+    font-size: var(--font-size-min, 14px);
+    font-weight: 650;
+    white-space: nowrap;
     cursor: pointer;
   }
 
@@ -1048,17 +1065,18 @@
     white-space: nowrap;
   }
 
-  /* Absolute so the identity stays centred in the bar; a right auto-margin
-     would drag it to the left edge and leave the middle empty. */
   .note-edit {
-    position: absolute;
-    right: 12px;
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
-    font-size: var(--font-size-compact, 12px);
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 6px;
+    color: var(--theme-text);
+    font-size: var(--font-size-min, 14px);
+    white-space: nowrap;
   }
 
-  .follower-note.interactive:hover .note-edit {
-    color: var(--theme-text, #fff);
+  .note-edit i {
+    font-size: var(--font-size-compact, 12px);
   }
 
   /* Regenerate is the primary action, tinted in the path's color; the word
@@ -1209,8 +1227,13 @@
   }
 
   .compact-toolbar .compact-derived-indicator {
-    width: var(--min-touch-target, 44px);
+    width: auto;
+    min-width: var(--min-touch-target, 44px);
     height: var(--min-touch-target, 44px);
+  }
+
+  .compact-toolbar .compact-derived-indicator.interactive .rule-icon {
+    display: none;
   }
 
   /* The compact menu is intentionally local to its source card. Raise that
@@ -1348,14 +1371,8 @@
       font-size: var(--font-size-base, 16px);
     }
 
-    /* The identity held a row of its own, two words across the card's whole
-       width, and the note saying where a rebuilt path came from held a second
-       row pinned to the card's floor. They answer the same question — what
-       this card is — so here they share the identity's row and the note lays
-       its three lines out along it instead of stacking them. The floor block's
-       height goes to the stage. Grid rather than the column's flex because it
-       places by area: the note stays last in the markup, where the narrow
-       layouts still want it under the notation. */
+    /* Keep the linked rule beside the path identity on desktop. The summary
+       stays stacked so its labels have room beside the Change rule action. */
     .source-card:not(.compact-hero):not(.compact-toolbar) {
       display: grid;
       grid-template-columns: auto minmax(0, 1fr);
@@ -1392,30 +1409,6 @@
       margin-top: 0;
       padding: 5px 10px;
       font-size: 16px;
-    }
-
-    /* `minmax(0, auto)` so the longest rule — Quarter, opposite by Rotate 90 +
-       Mirror — gives way to its own ellipsis at the narrow end of this tier
-       rather than pushing the note past the card. */
-    .follower-note .note-copy {
-      grid-auto-flow: column;
-      grid-auto-columns: minmax(0, auto);
-      align-items: baseline;
-      gap: 9px;
-    }
-
-    .follower-note .note-role {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    /* In the bar it was absolute so the identity stayed centred in a full-width
-       row. The note is sized to its own content now, so there is no slack for
-       an absolute control to sit in without landing on the words. */
-    .follower-note .note-edit {
-      position: static;
-      margin-left: 1px;
     }
   }
 
