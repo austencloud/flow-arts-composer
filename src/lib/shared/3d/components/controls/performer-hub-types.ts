@@ -22,7 +22,9 @@ export type PerformerHubTab =
 export type PerformerHubEdit =
   | PerformerHubEditBase<"characterId", CharacterId>
   | PerformerHubEditBase<"prop", PropType>
-  | PerformerHubEditBase<"propBuild", PropBuild>
+  // Only the parts a control changed; the host merges them into each
+  // performer's stored build so untouched parts keep following the scene.
+  | PerformerHubEditBase<"propBuild", Partial<PropBuild>>
   | PerformerHubEditBase<"effort", EffortId>
   | PerformerHubEditBase<"staffLengthCm", number>
   | PerformerHubEditBase<"effect", EffectType>;

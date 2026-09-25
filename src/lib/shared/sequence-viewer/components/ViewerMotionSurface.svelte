@@ -737,8 +737,10 @@
                   layout.focusedPane === null)
               : true)}
           hideHeader
-          hideTkaGlyph={tunnelVisualActive}
-          hideStepNumbers={tunnelVisualActive}
+          hideTkaGlyph={tunnelVisualActive || !!studioFrame?.labelsPainted}
+          hideStepNumbers={tunnelVisualActive ||
+            !!studioFrame?.labelsPainted}
+          hideElementalGlyph={!!studioFrame?.labelsPainted}
           hidePathLines={tunnelVisualActive}
           tapToToggle={side === "left" && !inStudio}
           hoverHint={isTunnelActive ? "badge" : undefined}

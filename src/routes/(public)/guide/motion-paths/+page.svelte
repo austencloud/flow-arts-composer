@@ -242,7 +242,6 @@
   }
   .reading p,
   dd {
-    max-width: 70ch;
     font-size: 16px;
     line-height: 1.75;
   }

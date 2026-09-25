@@ -176,11 +176,24 @@
   let heightAnimation: Animation | null = null;
   let observer: ResizeObserver | null = null;
   let measureFrame: number | null = null;
-  /** Set for exactly one measurement after a key change: the swap animates,
-   *  a content reflow at rest (a panel resize, a wrapped row gained) does not. */
+  /** Set for exactly one rendered measurement after a key change: the swap
+   *  animates, a content reflow at rest (a panel resize, a wrapped row gained)
+   *  does not. */
   let animateNextMeasure = false;
 
   const HEIGHT_EASING = "cubic-bezier(0.4, 0, 0.2, 1)";
+
+  /** Time the running height ease has left, split the way `animate()` takes
+   *  it, or null when the box is at rest. */
+  function remainingEase(): { delay: number; duration: number } | null {
+    if (heightAnimation?.playState !== "running") return null;
+    const timing = heightAnimation.effect?.getComputedTiming();
+    if (!timing) return null;
+    const elapsed = Number(heightAnimation.currentTime ?? 0);
+    const delay = Math.max(0, (timing.delay ?? 0) - elapsed);
+    const duration = Number(timing.endTime ?? 0) - elapsed - delay;
+    return duration > 0 ? { delay, duration } : null;
+  }
 
   function applyHeight(target: number): void {
     if (!box) return;
@@ -190,24 +203,32 @@
     const expected = Number.parseFloat(box.style.height);
     if (Number.isFinite(expected) && Math.abs(expected - target) < 0.5) return;
 
+    // Move the box on the same clock as the arriving content. In `swap` that
+    // means holding the old height while the old layer fades out, then
+    // resizing as the new one appears — resize it during the fade-out instead
+    // and the box sits empty at its new size for a beat. A reflow that lands
+    // while an earlier ease is still running (a child measuring its own width
+    // just after mount) bends that ease toward the new height over the time it
+    // has left; left alone, it finishes at the stale target and then snaps.
+    const timing = shouldAnimate
+      ? { delay: inDelay, duration: effDuration }
+      : remainingEase();
+
     // Layout height must stay in the element's own coordinate space. A modal
     // may scale its whole subtree while entering; getBoundingClientRect() then
     // reports that temporary visual scale and freezes the box too short after
-    // the modal settles.
+    // the modal settles. Mid-ease this is the height on screen, so a bent ease
+    // starts where the box already is.
     const from = box.offsetHeight;
     box.style.height = `${target}px`;
-    if (!shouldAnimate || Math.abs(from - target) < 0.5) return;
-
     heightAnimation?.cancel();
+    heightAnimation = null;
+    if (!timing || Math.abs(from - target) < 0.5) return;
+
     heightAnimation = box.animate(
       [{ height: `${from}px` }, { height: `${target}px` }],
       {
-        duration: effDuration,
-        // Move the box on the same clock as the arriving content. In `swap`
-        // that means holding the old height while the old layer fades out, then
-        // resizing as the new one appears — resize it during the fade-out
-        // instead and the box sits empty at its new size for a beat.
-        delay: inDelay,
+        ...timing,
         // The inline height is already the destination, so without a backwards
         // fill the box would jump there and only then animate away from it.
         fill: "backwards",
@@ -218,6 +239,12 @@
 
   function measure(): void {
     if (!liveLayer) return;
+    // A layer under `display: none` (Drawer renders its content before the
+    // dialog opens) has no boxes and reports a height of 0; writing that
+    // collapses the box for a frame when it appears. Keep the last real height
+    // and save a pending key-change ease for the first measurement that can be
+    // seen. The ResizeObserver fires again once the layer renders.
+    if (liveLayer.getClientRects().length === 0) return;
     applyHeight(liveLayer.offsetHeight);
   }
 

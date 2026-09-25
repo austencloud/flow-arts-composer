@@ -40,6 +40,9 @@
   import AccountSetupReminder from "../../onboarding/components/account-setup/AccountSetupReminder.svelte";
   import { propDrawerState } from "../../settings/state/prop-drawer-state.svelte";
   import { PropType } from "../../pictograph/prop/domain/enums/prop-type";
+  import { HandSide } from "../../pictograph/shared/domain/enums/pictograph-enums";
+  import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
+  import { setPropHandColors } from "@austencloud/scene-3d/prop-hand-palette";
 
   import { getContext, onMount } from "svelte";
   import { bootProfiler } from "$lib/shared/analytics/boot-profiler";
@@ -235,6 +238,16 @@
 
     loadedAccountSetupIdentity = identity;
     void accountSetupState.loadForCurrentUser();
+  });
+
+  // 3D props paint their "blue" and "red" hands from a shared palette. Keep it
+  // on the user's chosen colors, or the same defaults the 2D props use.
+  $effect(() => {
+    const colors = getSettings().primaryPropColors;
+    setPropHandColors({
+      blue: colors?.left ?? getMotionColor(HandSide.LEFT, "dark"),
+      red: colors?.right ?? getMotionColor(HandSide.RIGHT, "dark"),
+    });
   });
 
   // Track whether MainInterface has been shown at least once.
@@ -454,8 +467,11 @@
         window.__tkaLoadProgress?.(92, "Restoring workspace...");
 
         bootProfiler.mark("app:load-settings+theme");
+        // Stored settings are read here, never saved back. Passing them
+        // through updateSettings marks every key as the user's edit, and once
+        // sign-in has restored, that hides the account's copy and uploads this
+        // device's old one over it.
         await settingsService.loadSettings();
-        updateSettings(settingsService.currentSettings);
         initializeTheme();
 
         // Progress: Settings loaded, applying theme

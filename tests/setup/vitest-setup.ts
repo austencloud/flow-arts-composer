@@ -34,12 +34,18 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     return upstreamFetch(input, init);
   }
 
-  // Strip any query string before hitting the filesystem.
-  const relativePath = url.slice(1).split("?")[0];
-  const extension = relativePath.split(".").pop()?.toLowerCase() ?? "";
-
   try {
-    const body = await readFile(path.join(STATIC_ROOT, relativePath), "utf8");
+    // Strip any query string, then decode the way the real server does.
+    // Callers encode non-ASCII file names, so β's special placements arrive
+    // as %CE%B2_placements.json. A malformed escape throws URIError and a
+    // decoded path that leaves static/ is refused; both answer 404 below.
+    const relativePath = decodeURIComponent(url.slice(1).split("?")[0] ?? "");
+    const filePath = path.join(STATIC_ROOT, relativePath);
+    if (!filePath.startsWith(STATIC_ROOT + path.sep)) {
+      throw new Error(`${url} resolves outside static/`);
+    }
+    const extension = relativePath.split(".").pop()?.toLowerCase() ?? "";
+    const body = await readFile(filePath, "utf8");
     return new Response(body, {
       status: 200,
       headers: {

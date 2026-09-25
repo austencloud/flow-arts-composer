@@ -93,8 +93,6 @@
     shareUrl: string;
     videoBlobUrl: string | null;
     isExportingVideo: boolean;
-    /** Distinguishes a user-driven scene take from background export work. */
-    isRecordingScene?: boolean;
     exportProgress: number | null;
     /** `false` means no render started, so the sheet must stop waiting. The
      * request carries the chosen opener image so the render opens on it. */
@@ -149,11 +147,10 @@
     /** A host with its own share surface (the viewer's share panel) enters
      * file preparation or publishing directly, with no chooser to go back to. */
     initialEntry?: "chooser" | "download" | "publish";
-    /** A live 3D take temporarily hides this sheet, then resumes its draft. */
-    preserveSession?: boolean;
-    onSessionResumed?: () => void;
     /** A host-owned animation stage shown before its encoded video is ready. */
     liveVideoPreview?: Snippet;
+    /** Hide controls when the host owns a fixed video format. */
+    videoSettingsAvailable?: boolean;
   }
 
   let {
@@ -162,7 +159,6 @@
     shareUrl,
     videoBlobUrl,
     isExportingVideo,
-    isRecordingScene = false,
     exportProgress,
     onRequestVideo = () => false,
     onCancelVideo,
@@ -186,9 +182,8 @@
     onOpenVideoExport,
     canCreateLink = true,
     initialEntry = "chooser",
-    preserveSession = false,
-    onSessionResumed,
     liveVideoPreview,
+    videoSettingsAvailable = true,
   }: Props = $props();
 
   const postDeliveryState = createPostDeliveryState({
@@ -749,14 +744,16 @@
 
   /** Detect setting changes without automatically replacing an expensive render. */
   const videoSettingsKey = $derived(
-    videoDownloadSettingsKey({
-      resolution: exportOptions.videoResolution,
-      fps: exportOptions.videoFps,
-      repeats: exportOptions.videoLoopCount,
-      quality: exportOptions.videoQuality,
-      is3DExport,
-      opener: openerEnabled ? opener : undefined,
-    })
+    videoSettingsAvailable
+      ? videoDownloadSettingsKey({
+          resolution: exportOptions.videoResolution,
+          fps: exportOptions.videoFps,
+          repeats: exportOptions.videoLoopCount,
+          quality: exportOptions.videoQuality,
+          is3DExport,
+          opener: openerEnabled ? opener : undefined,
+        })
+      : "host-video-format"
   );
   let renderedVideoKey = $state<string | null>(null);
   let renderedVideoSourceKey = $state<string | null>(null);
@@ -775,7 +772,6 @@
     artifact === "video" &&
       hasVideo &&
       !isExportingVideo &&
-      !isRecordingScene &&
       renderedVideoKey !== null &&
       (renderedVideoKey !== videoSettingsKey ||
         renderedVideoSourceKey !== videoSourceKey)
@@ -798,8 +794,6 @@
 
   const progressLabel = $derived.by(() => {
     if (!videoBusy) return "";
-    // A user-driven scene take is recording, not background rendering.
-    if (isRecordingScene) return "Recording the scene…";
     if (isExportingVideo && exportProgress !== null) {
       return `Rendering ${videoLabel.toLowerCase()}… ${Math.round(exportProgress * 100)}%`;
     }
@@ -832,10 +826,6 @@
     if (isOpen === wasOpen) return;
     wasOpen = isOpen;
     if (!isOpen) return;
-    if (preserveSession) {
-      onSessionResumed?.();
-      return;
-    }
     pendingHandoff = null;
     shareDraft.start({
       availableArtifacts,
@@ -920,7 +910,7 @@
 
   $effect(() => {
     if (videoStatus === "canceled") return;
-    if (isExportingVideo || isRecordingScene) {
+    if (isExportingVideo) {
       sawExternalVideoExport = true;
       // A delivered URL can finish loading before the source flips its active
       // flag. Keep the usable result ready instead of bouncing back to a
@@ -983,7 +973,7 @@
     if (
       next !== artifact &&
       artifact === "video" &&
-      (videoBusy || isExportingVideo || isRecordingScene)
+      (videoBusy || isExportingVideo)
     ) {
       cancelVideo();
     }
@@ -1124,7 +1114,7 @@
   }
 
   function returnToChooser(): void {
-    if (videoBusy || isExportingVideo || isRecordingScene) cancelVideo();
+    if (videoBusy || isExportingVideo) cancelVideo();
     filePreparationOpen = false;
     shareRoute = "home";
     captionOpen = false;
@@ -1247,7 +1237,7 @@
    */
   function requestVideo(): void {
     if (!shareDraft.availableArtifacts.includes("video")) return;
-    if (videoBusy || isExportingVideo || isRecordingScene) return;
+    if (videoBusy || isExportingVideo) return;
     statusMessage = "";
     const requestVersion = ++videoRequestVersion;
     sawExternalVideoExport = false;
@@ -1275,7 +1265,6 @@
         if (
           requestVersion === videoRequestVersion &&
           !isExportingVideo &&
-          !isRecordingScene &&
           !videoBlobUrl
         ) {
           videoStatus = "failed";
@@ -1289,7 +1278,7 @@
         if (requestVersion !== videoRequestVersion) return;
         if (ok === false) {
           videoStatus = "failed";
-        } else if (!videoBlobUrl && !isExportingVideo && !isRecordingScene) {
+        } else if (!videoBlobUrl && !isExportingVideo) {
           // A source that settled without a delivered file is an unsuccessful
           // render; this also prevents a canceled source from spinning forever.
           videoStatus = "failed";
@@ -1301,7 +1290,7 @@
   }
 
   function cancelVideo(): void {
-    if (!videoBusy && !isExportingVideo && !isRecordingScene) return;
+    if (!videoBusy && !isExportingVideo) return;
     statusMessage = "";
     videoRequestVersion += 1;
     sawExternalVideoExport = false;
@@ -1336,7 +1325,7 @@
   }
 
   function downloadVideo(): void {
-    if (videoBusy || isExportingVideo || isRecordingScene) return;
+    if (videoBusy || isExportingVideo) return;
     const plan = planFileRequest({
       needsAccount: needsAccountForFiles,
       hasFreshFile: hasVideo && !videoSettingsStale && !!activeBlob,
@@ -1429,7 +1418,7 @@
   // render the instant it started, so the Export page's button did nothing.
   let sheetWasActive = false;
   $effect(() => {
-    if (isOpen || preserveSession) {
+    if (isOpen) {
       sheetWasActive = true;
       return;
     }
@@ -1441,7 +1430,7 @@
       pendingDownloadSettingsKey = null;
       pendingDownloadSourceKey = null;
       pendingCardDownloadRevision = null;
-      if (videoBusy || isExportingVideo || isRecordingScene) cancelVideo();
+      if (videoBusy || isExportingVideo) cancelVideo();
     });
   });
 
@@ -1834,7 +1823,7 @@
     : shareRoute === "link"
       ? "Share a link"
       : shareRoute === "download"
-        ? `Download ${artifact === "video" ? "animation" : "card"}`
+        ? `Download ${artifact === "video" ? (videoSettingsAvailable ? "animation" : "post") : "card"}`
         : "Share sequence"}
   {onClose}
   onClosed={runPendingHandoff}
@@ -1887,7 +1876,7 @@
                   : shareRoute === "link"
                     ? "Share a link"
                     : shareRoute === "download"
-                      ? `Download ${artifact === "video" ? "animation" : "card"}`
+                      ? `Download ${artifact === "video" ? (videoSettingsAvailable ? "animation" : "post") : "card"}`
                       : "Share sequence"}
               </h2>
               <div class="sequence-identity">
@@ -2305,7 +2294,7 @@
                           {/if}
                         </fieldset>
                       {/if}
-                      {#if artifact === "video" && sequence}
+                      {#if artifact === "video" && sequence && videoSettingsAvailable}
                         <fieldset
                           class="video-settings"
                           aria-label="Video settings"

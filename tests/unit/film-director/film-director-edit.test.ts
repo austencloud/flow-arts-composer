@@ -36,7 +36,10 @@ function castOf(input: FilmDirectorInput) {
 describe("applyPerformerEdit", () => {
   it("writes the value onto the named performer's slot", () => {
     const input = film({
-      performers: [{ id: "a", prop: "staff" }, { id: "b", prop: "staff" }],
+      performers: [
+        { id: "a", prop: "staff" },
+        { id: "b", prop: "staff" },
+      ],
     });
     const next = edit(input, {
       sceneId: "s1",
@@ -47,6 +50,24 @@ describe("applyPerformerEdit", () => {
     const cast = castOf(next);
     expect(cast[0]!.prop).toBe("staff");
     expect(cast[1]!.prop).toBe("fan");
+  });
+
+  it("merges a build edit into the parts the performer already carries", () => {
+    const input = film({
+      performers: [
+        { id: "a", prop: "fan", propBuild: { fanBuild: "lotus" } },
+        { id: "b", prop: "fan" },
+      ],
+    });
+    const next = edit(input, {
+      sceneId: "s1",
+      performerIds: ["a", "b"],
+      field: "propBuild",
+      value: { finish: "day" },
+    });
+    const cast = castOf(next);
+    expect(cast[0]!.propBuild).toEqual({ fanBuild: "lotus", finish: "day" });
+    expect(cast[1]!.propBuild).toEqual({ finish: "day" });
   });
 
   it("leaves the caller's document untouched", () => {
@@ -136,8 +157,11 @@ describe("seeded-draw freezing", () => {
     });
     expect(castOf(next).map((performer) => performer.effect)).toEqual(before);
     expect(
-      (next.scenes[0]!.performance as { cast: { defaults: { effect: unknown } } })
-        .cast.defaults.effect
+      (
+        next.scenes[0]!.performance as {
+          cast: { defaults: { effect: unknown } };
+        }
+      ).cast.defaults.effect
     ).toEqual({ pick: "any" });
   });
 
@@ -177,7 +201,9 @@ describe("seeded-draw freezing", () => {
       value: "fan",
     });
     const defaults = (
-      next.scenes[0]!.performance as { cast: { defaults: Record<string, unknown> } }
+      next.scenes[0]!.performance as {
+        cast: { defaults: Record<string, unknown> };
+      }
     ).cast.defaults;
     expect(defaults.prop).toBe("staff");
     expect(defaults.effort).toBe("linear");
@@ -244,7 +270,11 @@ describe("applySceneEdit", () => {
         {
           id: "s1",
           title: "S1",
-          performance: { bpm: 120, formation: "side-by-side", cast: { count: 2 } },
+          performance: {
+            bpm: 120,
+            formation: "side-by-side",
+            cast: { count: 2 },
+          },
           ...scene,
         },
       ],
@@ -345,14 +375,11 @@ describe("applySceneEdit", () => {
 
   it("rejects a move on a camera written as shots", () => {
     expect(() =>
-      applySceneEdit(
-        sceneFilm({ camera: { shots: [{ shotSize: "wide" }] } }),
-        {
-          sceneId: "s1",
-          kind: "append-camera-move",
-          move: { move: "hold" },
-        }
-      )
+      applySceneEdit(sceneFilm({ camera: { shots: [{ shotSize: "wide" }] } }), {
+        sceneId: "s1",
+        kind: "append-camera-move",
+        move: { move: "hold" },
+      })
     ).toThrow(/run of shots/);
   });
 

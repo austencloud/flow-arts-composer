@@ -1,13 +1,12 @@
-import {
-  DEFAULT_TRAIL_SETTINGS,
-  type TrailSettings,
-} from "./types/trail-types";
+import { DEFAULT_TRAIL_SETTINGS } from "./types/trail-types";
 
-/** Default trails follow hand colors; deliberately customized trail colors win. */
-export function resolveTrailColors(
-  settings: TrailSettings,
-  colors?: { left: string; right: string } | null
-): TrailSettings {
+/**
+ * Default trails follow hand colors; deliberately customized trail colors win.
+ * Shared by the 2D trail settings and the 3D trail intent.
+ */
+export function resolveTrailColors<
+  T extends { leftColor: string; rightColor: string },
+>(settings: T, colors?: { left: string; right: string } | null): T {
   if (!colors) return settings;
   const leftColor =
     settings.leftColor.toLowerCase() ===

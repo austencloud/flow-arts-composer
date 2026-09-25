@@ -231,7 +231,7 @@ export class ExportFrameCompositor {
         this.crossfade.previousGlyph?.image &&
         fadeOutOpacity > 0
       ) {
-        this.drawPrerenderedGlyph(
+        drawPrerenderedGlyphToCanvas(
           offscreenCtx,
           actualCanvasSize,
           this.crossfade.previousGlyph,
@@ -240,7 +240,7 @@ export class ExportFrameCompositor {
       }
       if (this.crossfade.currentGlyph?.image) {
         const opacity = inCrossfade ? fadeInOpacity : 1;
-        this.drawPrerenderedGlyph(
+        drawPrerenderedGlyphToCanvas(
           offscreenCtx,
           actualCanvasSize,
           this.crossfade.currentGlyph,
@@ -294,7 +294,7 @@ export class ExportFrameCompositor {
         this.crossfade.previousElementalGlyph &&
         fadeOutOpacity > 0
       ) {
-        this.drawElementalGlyph(
+        drawElementalGlyphToCanvas(
           offscreenCtx,
           actualCanvasSize,
           this.crossfade.previousElementalGlyph,
@@ -302,7 +302,7 @@ export class ExportFrameCompositor {
         );
       }
       if (this.crossfade.currentElementalGlyph) {
-        this.drawElementalGlyph(
+        drawElementalGlyphToCanvas(
           offscreenCtx,
           actualCanvasSize,
           this.crossfade.currentElementalGlyph,
@@ -488,41 +488,53 @@ export class ExportFrameCompositor {
     if (this.config.showRightPathLines)
       drawMotionPath(step.motions?.right, rightColor);
   }
+}
 
-  private drawPrerenderedGlyph(
-    ctx: CanvasRenderingContext2D,
-    canvasSize: number,
-    glyph: GlyphAsset,
-    opacity: number
-  ): void {
-    const gridScaleFactor = canvasSize / 950;
-    const x = (50 - glyph.xOffset) * gridScaleFactor;
-    const y = (800 - glyph.yOffset) * gridScaleFactor;
-    const scaledWidth = glyph.dimensions.width * gridScaleFactor;
-    const scaledHeight = glyph.dimensions.height * gridScaleFactor;
+/**
+ * Places the prerendered TKA glyph composite (letter + dash + skew braces +
+ * turns column) at the glyph's standard canvas position. Pulled out of
+ * ExportFrameCompositor so the Post Studio overlay painter can draw the exact
+ * same glyph the Animate export bakes into its MP4, instead of duplicating
+ * this placement math.
+ */
+export function drawPrerenderedGlyphToCanvas(
+  ctx: CanvasRenderingContext2D,
+  canvasSize: number,
+  glyph: GlyphAsset,
+  opacity: number
+): void {
+  const gridScaleFactor = canvasSize / 950;
+  const x = (50 - glyph.xOffset) * gridScaleFactor;
+  const y = (800 - glyph.yOffset) * gridScaleFactor;
+  const scaledWidth = glyph.dimensions.width * gridScaleFactor;
+  const scaledHeight = glyph.dimensions.height * gridScaleFactor;
 
-    ctx.save();
-    ctx.globalAlpha = opacity;
-    ctx.drawImage(glyph.image, x, y, scaledWidth, scaledHeight);
-    ctx.restore();
-  }
+  ctx.save();
+  ctx.globalAlpha = opacity;
+  ctx.drawImage(glyph.image, x, y, scaledWidth, scaledHeight);
+  ctx.restore();
+}
 
-  private drawElementalGlyph(
-    ctx: CanvasRenderingContext2D,
-    canvasSize: number,
-    glyph: ElementalGlyphAsset,
-    opacity: number
-  ): void {
-    const box = containElementalGlyph(
-      getElementalGlyphBox(canvasSize),
-      glyph.sourceWidth,
-      glyph.sourceHeight
-    );
-    if (!box) return;
+/**
+ * Places the elemental (timing/direction) glyph in its canonical corner slot,
+ * containing it without stretching. Pulled out alongside
+ * drawPrerenderedGlyphToCanvas for the same reuse reason.
+ */
+export function drawElementalGlyphToCanvas(
+  ctx: CanvasRenderingContext2D,
+  canvasSize: number,
+  glyph: ElementalGlyphAsset,
+  opacity: number
+): void {
+  const box = containElementalGlyph(
+    getElementalGlyphBox(canvasSize),
+    glyph.sourceWidth,
+    glyph.sourceHeight
+  );
+  if (!box) return;
 
-    ctx.save();
-    ctx.globalAlpha = opacity;
-    ctx.drawImage(glyph.image, box.x, box.y, box.width, box.height);
-    ctx.restore();
-  }
+  ctx.save();
+  ctx.globalAlpha = opacity;
+  ctx.drawImage(glyph.image, box.x, box.y, box.width, box.height);
+  ctx.restore();
 }

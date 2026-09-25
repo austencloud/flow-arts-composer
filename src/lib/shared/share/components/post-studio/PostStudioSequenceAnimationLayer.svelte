@@ -4,6 +4,8 @@
   import { AnimationStateManager } from "$lib/shared/animation-engine/services/animation-state-manager";
   import { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
   import { getViewerAnimationPropConfig } from "$lib/shared/animation-engine/get-viewer-animation-prop-config";
+  import PostStudioBreakdownMandala from "./PostStudioBreakdownMandala.svelte";
+  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -16,68 +18,92 @@
   let {
     sequence,
     sequencePosition,
+    sequencePassIndex = 0,
+    animationTimeSeconds,
+    breakdownMotion = false,
+    labelsPainted = false,
     playing,
     leftPropType,
     rightPropType,
   }: {
     sequence: SequenceData;
     sequencePosition: number;
+    sequencePassIndex?: number;
+    animationTimeSeconds?: number;
+    breakdownMotion?: boolean;
+    /**
+     * The post paints the beat number, letter and element icon over this
+     * layer, so the animator's own copies would show twice.
+     */
+    labelsPainted?: boolean;
     playing: boolean;
     leftPropType?: PropType;
     rightPropType?: PropType;
   } = $props();
 
   const stateManager = new AnimationStateManager();
-  const shared = getViewerStudioSurfaces();
-  const owner = {};
-  function destination(node: HTMLElement) {
-    return {
-      destroy: shared?.requestCanvas(owner, node, () => ({
-        sequence,
-        position: sequencePosition,
-        playing,
-        left: leftProp,
-        right: rightProp,
-        step: stepData,
-        leftPropType,
-        rightPropType,
-      })),
-    };
-  }
   const orchestrator = new SequenceAnimationOrchestrator(
     stateManager,
     getViewerAnimationPropConfig
   );
-  // Create hands Post Studio a reactive sequence proxy. Ordinary `$state`
-  // wraps that value again, so an identity check against the prop never
-  // matches and the canvas stays at its empty grid. This value is only a
-  // readiness marker; keeping the exact reference lets both Create and the
-  // Sequence Viewer drive the same animation layer.
+  const shared = getViewerStudioSurfaces();
+  const owner = {};
+  function destination(node: HTMLElement) {
+    return {
+      destroy: breakdownMotion
+        ? undefined
+        : shared?.requestCanvas(owner, node, () => ({
+            sequence,
+            position: sequencePosition,
+            playing,
+            left: leftProp,
+            right: rightProp,
+            step: stepData,
+            leftPropType,
+            rightPropType,
+            labelsPainted,
+          })),
+    };
+  }
   let initializedSequence = $state.raw<SequenceData | null>(null);
   let leftProp = $state<PropState | null>(null);
   let rightProp = $state<PropState | null>(null);
 
+  const showMandala = $derived(breakdownMotion && sequencePassIndex % 2 === 1);
   const beatNumber = $derived(
     clampDisplayedBeatNumber(
       displayedBeatNumber(sequencePosition, false),
       sequence.steps.length
     )
   );
-  const stepData = $derived.by(() => {
-    if (beatNumber < 1) {
-      return (
-        sequence.startPlacement ??
-        sequence.startingPlacement ??
-        (sequence.steps[0]
-          ? createStartPlacementFromBeatStart(sequence.steps[0])
-          : null)
-      );
-    }
-    return (
-      sequence.steps[Math.min(beatNumber - 1, sequence.steps.length - 1)] ??
-      null
-    );
-  });
+  const openingPose = $derived(
+    sequence.startPlacement ??
+      sequence.startingPlacement ??
+      (sequence.steps[0]
+        ? createStartPlacementFromBeatStart(sequence.steps[0])
+        : null)
+  );
+  const stepData = $derived(
+    beatNumber < 1
+      ? openingPose
+      : (sequence.steps[Math.min(beatNumber - 1, sequence.steps.length - 1)] ??
+          null)
+  );
+  const startData = $derived(
+    beatNumber <= 1
+      ? openingPose
+      : (sequence.steps[beatNumber - 2] ?? openingPose)
+  );
+  const motionProgress = $derived(
+    beatNumber < 1
+      ? null
+      : Math.max(
+          0,
+          Math.min(1, sequencePosition - Math.floor(sequencePosition))
+        )
+  );
+  // The arrow fades in as the move is made, as in the Construct audition.
+  const arrowOpacity = $derived(motionProgress ?? 0);
 
   $effect(() => {
     const target = sequence;
@@ -99,9 +125,34 @@
   class="animation-layer"
   use:destination
   data-studio-animation-destination
+  data-studio-animation-mode={showMandala ? "mandala" : "pictograph"}
   data-sequence-position={sequencePosition}
+  data-sequence-pass-index={sequencePassIndex}
 >
-  {#if !shared?.ownsCanvas(owner)}
+  {#if showMandala}
+    <PostStudioBreakdownMandala
+      {sequence}
+      {sequencePosition}
+      {leftPropType}
+      {rightPropType}
+    />
+  {:else if breakdownMotion && stepData}
+    <div class="pictograph-motion" data-pictograph-motion>
+      <PictographContainer
+        pictographData={stepData}
+        motionStartData={startData}
+        {motionProgress}
+        {arrowOpacity}
+        leftPropTypeOverride={leftPropType}
+        rightPropTypeOverride={rightPropType}
+        disableTransitions
+        darkMode
+        showTKA={false}
+        showHandPoints={false}
+        stepNumberOverride={false}
+      />
+    </div>
+  {:else if !breakdownMotion && !shared?.ownsCanvas(owner)}
     <AnimatorCanvas
       {leftProp}
       {rightProp}
@@ -118,7 +169,13 @@
       previewDarkMode
       hideProgressBar
       hideHeader
+      hideTkaGlyph={labelsPainted}
+      hideStepNumbers={labelsPainted}
+      hideElementalGlyph={labelsPainted}
       fillContainer
+      virtualTime={animationTimeSeconds === undefined
+        ? undefined
+        : animationTimeSeconds * 1000}
     />
   {/if}
 </div>
@@ -129,5 +186,13 @@
     height: 100%;
     overflow: hidden;
     background: #08080c;
+  }
+  .pictograph-motion {
+    width: 100%;
+    height: 100%;
+  }
+  .pictograph-motion :global(.pictograph-container) {
+    width: 100%;
+    height: 100%;
   }
 </style>

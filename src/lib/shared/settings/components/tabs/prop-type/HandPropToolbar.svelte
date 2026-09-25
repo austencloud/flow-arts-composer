@@ -22,18 +22,23 @@
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import { growFade } from "$lib/shared/transitions/motion";
 
-  let { handProps }: { handProps: HandPropToolbarProps } = $props();
+  let {
+    handProps,
+    compact = false,
+  }: { handProps: HandPropToolbarProps; compact?: boolean } = $props();
 </script>
 
 <!-- Same chip and hand segments as the global prop drawer, so the viewer
      picks a pair the way every other settings-backed picker does. -->
-<div class="hand-toolbar">
-  <CatDogToggle
-    catDogMode={handProps.catDog}
-    onToggle={handProps.onToggleCatDog}
-  />
+<div class="hand-toolbar" class:compact>
+  <div class="cat-dog-control">
+    <CatDogToggle
+      catDogMode={handProps.catDog}
+      onToggle={handProps.onToggleCatDog}
+    />
+  </div>
   {#if handProps.catDog}
-    <div transition:growFade={{ axis: "y" }}>
+    <div class="hand-segments" transition:growFade={{ axis: "y" }}>
       <SegmentedControl
         options={[
           { value: "left", label: "Left", tone: "blue" },
@@ -59,5 +64,14 @@
     gap: 10px;
     padding: 8px 16px 4px;
     flex-shrink: 0;
+  }
+  .cat-dog-control,
+  .hand-segments {
+    min-width: 0;
+  }
+  .hand-toolbar.compact {
+    justify-content: flex-start;
+    gap: 6px;
+    padding: 0;
   }
 </style>
