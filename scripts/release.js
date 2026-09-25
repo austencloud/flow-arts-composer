@@ -1260,7 +1260,10 @@ async function main() {
   if (!dryRun && !quickPreview) {
     console.log(`🌿 Current branch: ${startingBranch}`);
 
-    if (!isOnDevelop && !isOnMain) {
+    // Protected-main releases verify and tag origin/main directly. Allow the
+    // audited runner to live in a separate worktree while main is checked out
+    // elsewhere with unrelated in-flight changes.
+    if (!isOnDevelop && !isOnMain && !tagMergedMain) {
       console.error(`\n❌ You must be on 'develop' or 'main' to release.`);
       console.error(`   Currently on: ${startingBranch}`);
       console.error(`   Switch to develop: git checkout develop\n`);
