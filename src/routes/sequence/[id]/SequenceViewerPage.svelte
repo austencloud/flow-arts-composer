@@ -112,6 +112,11 @@
     page.url.searchParams
   );
   const isDemo = page.url.searchParams.get("demo") === "1";
+  const fromShapeEngine = page.url.searchParams.get("from") === "shape-engine";
+  const playFromShapeEngine =
+    fromShapeEngine && page.url.searchParams.get("play") === "1";
+  const shareFromShapeEngine =
+    fromShapeEngine && page.url.searchParams.get("share") === "1";
   // `/embed/sequence/[id]` mounts this same page body inside a third-party
   // iframe (see docs/architecture/sharing-export-experience.md's embed
   // player). It has exactly the same "nowhere to go" chrome problem the demo
@@ -756,7 +761,10 @@
     initialBpm={urlBpm ||
       (scanOriginCode ? scanInitialBpm : handoffData?.playbackState?.bpm || 60)}
     initialStep={handoffData?.playbackState?.currentStep || 0}
-    initialViewMode={urlViewMode || undefined}
+    initialViewMode={playFromShapeEngine
+      ? "animation"
+      : urlViewMode || undefined}
+    playOnOpen={playFromShapeEngine}
     initialRenderMode={urlRenderMode || (scanOriginCode ? "2d" : undefined)}
     initialViewerMode={initialViewerModeForUrl(
       !!scanOriginCode,
@@ -785,7 +793,12 @@
         <SequenceViewerShell
           {ctx}
           {sequence}
-          analyticsSource={scanOriginCode ? "qr" : "external_link"}
+          analyticsSource={scanOriginCode
+            ? "qr"
+            : fromShapeEngine
+              ? "shape_engine"
+              : "external_link"}
+          shareOnOpen={shareFromShapeEngine}
           {isMobile}
           startInCardThenSplit={!!scanOriginCode}
           embedded={isEmbedded}

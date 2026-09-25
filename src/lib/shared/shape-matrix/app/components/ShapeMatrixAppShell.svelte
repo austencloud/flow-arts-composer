@@ -10,6 +10,11 @@
   import { KINETIC_SHAPE_ENGINE_NAME } from "../shape-engine-identity";
   import { shareOrCopyLink } from "$lib/shared/share/services/link-share";
   import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { goto } from "$app/navigation";
+  import { openSequenceViewer } from "$lib/shared/sequence-viewer/services/sequence-viewer-navigator";
+  import { saveSequenceRouteHandoff } from "$lib/shared/coordinators/sequence-handoff.svelte";
+  import { generateSequenceRoutePath } from "$lib/shared/navigation/services/sequence-encoder";
+  import type { ModeRealization } from "$lib/shared/shape-matrix/services/build-mode-realizations";
 
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import { createShapeMatrixAnimationState } from "../state/shape-matrix-animation-state.svelte";
@@ -104,6 +109,34 @@
     });
     if (outcome === "copied") toast.success("Link copied");
     else if (outcome === "failed") toast.error("Could not copy the link");
+  }
+
+  function openRealization(
+    realization: ModeRealization,
+    action: "open" | "play" | "share"
+  ): void {
+    if (variant === "embedded") {
+      openSequenceViewer(realization.seq, {
+        source: "shape_engine",
+        returnPath: "/create/shape-engine",
+        returnLabel: "Shape Engine",
+        initialViewMode: action === "play" ? "animation" : undefined,
+        playOnOpen: action === "play",
+        shareOnOpen: action === "share",
+      });
+      return;
+    }
+
+    const returnUrl = new URL(appState.shareLink() ?? window.location.href);
+    saveSequenceRouteHandoff({
+      sequence: realization.seq,
+      returnPath: `${returnUrl.pathname}${returnUrl.search}${returnUrl.hash}`,
+      returnLabel: "Shape Engine",
+    });
+    const params = new URLSearchParams({ from: "shape-engine" });
+    if (action === "play") params.set("play", "1");
+    if (action === "share") params.set("share", "1");
+    void goto(`${generateSequenceRoutePath(realization.seq)}?${params}`);
   }
   // The hero's animation state lives here, above both panes, so both surfaces
   // share one animation scope while their workspaces crossfade.
@@ -392,7 +425,7 @@
 
 {#snippet matrixDetail()}
   <div class="pane-source">
-    <ShapeMatrixDetailPane />
+    <ShapeMatrixDetailPane onrealizationAction={openRealization} />
   </div>
 {/snippet}
 

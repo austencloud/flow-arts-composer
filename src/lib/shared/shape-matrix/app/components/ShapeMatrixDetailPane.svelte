@@ -1,7 +1,16 @@
 <script lang="ts">
   import ShapeMatrixDrill from "$lib/shared/shape-matrix/components/ShapeMatrixDrill.svelte";
+  import type { ModeRealization } from "$lib/shared/shape-matrix/services/build-mode-realizations";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
 
+  interface Props {
+    onrealizationAction: (
+      realization: ModeRealization,
+      action: "open" | "play" | "share"
+    ) => void;
+  }
+
+  const { onrealizationAction }: Props = $props();
   const state = getShapeMatrixAppContext();
   // The shell owns prop choosing. Wide hosts use the grid pane; compact
   // hosts recompose this same live stage above a scrolling prop workspace.
@@ -26,6 +35,12 @@
         handProps={state.handProps}
         propPickerOpen={state.propPickerOpen}
         onproppickertoggle={state.togglePropPicker}
+        onopenRealization={(realization) =>
+          onrealizationAction(realization, "open")}
+        onplayRealization={(realization) =>
+          onrealizationAction(realization, "play")}
+        onshareRealization={(realization) =>
+          onrealizationAction(realization, "share")}
         mandalaTransition={{
           claim: state.compact && state.activeView === "detail",
           handoff: state.mandalaHandoff,
