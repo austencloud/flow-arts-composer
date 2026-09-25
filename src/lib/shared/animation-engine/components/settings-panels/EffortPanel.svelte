@@ -50,10 +50,8 @@
   }: {
     columns?: 2 | 4;
     showSubtitles?: boolean;
-    /** The host hands the grid a definite height (the motion-path studio's
-     *  card, sized to its canvas). The rows share it and each tile spends
-     *  the room past its label on its timing curve, so the page is pictures
-     *  like Display's and Props' instead of eight labels over an empty card. */
+    /** In a height-bounded page, the rows share the remaining room and grow
+     *  their timing curves. Intrinsic pages keep compact curves. */
     fill?: boolean;
     onSettingChange?: (previousValue: string, value: string) => void;
   } = $props();
@@ -87,29 +85,28 @@
       onclick={() => selectEffort(effort.id)}
       style:--effort-color={effort.color}
     >
-      {#if fill}
-        <svg
-          class="effort-curve"
-          viewBox="0 0 {CURVE_WIDTH} {CURVE_HEIGHT}"
-          aria-hidden="true"
-        >
-          <line
-            class="curve-guide"
-            x1="0"
-            x2={CURVE_WIDTH}
-            y1={START_Y}
-            y2={START_Y}
-          />
-          <line
-            class="curve-guide"
-            x1="0"
-            x2={CURVE_WIDTH}
-            y1={END_Y}
-            y2={END_Y}
-          />
-          <path class="curve-line" d={CURVE_PATHS.get(effort.id)} />
-        </svg>
-      {/if}
+      <svg
+        class="effort-curve"
+        viewBox="0 0 {CURVE_WIDTH} {CURVE_HEIGHT}"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <line
+          class="curve-guide"
+          x1="0"
+          x2={CURVE_WIDTH}
+          y1={START_Y}
+          y2={START_Y}
+        />
+        <line
+          class="curve-guide"
+          x1="0"
+          x2={CURVE_WIDTH}
+          y1={END_Y}
+          y2={END_Y}
+        />
+        <path class="curve-line" d={CURVE_PATHS.get(effort.id)} />
+      </svg>
       <span class="effort-label">{effort.label}</span>
       {#if showSubtitles && effort.subtitle}
         <span class="effort-sub">{effort.subtitle}</span>
@@ -126,8 +123,9 @@
   }
 
   .effort-btn {
-    min-height: 56px;
-    padding: 12px 8px;
+    min-height: 80px;
+    min-width: 0;
+    padding: 8px 4px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -156,7 +154,8 @@
   }
 
   .effort-btn.with-sub {
-    padding: 14px 8px;
+    min-height: 96px;
+    padding: 10px 6px;
     gap: 4px;
   }
 
@@ -181,7 +180,7 @@
   .effort-grid.fill {
     flex: 1 1 0;
     min-height: 0;
-    grid-auto-rows: 1fr;
+    grid-auto-rows: minmax(80px, 1fr);
   }
 
   .effort-grid.fill .effort-btn {
@@ -190,10 +189,15 @@
   }
 
   .effort-curve {
-    flex: 1 1 0;
-    min-height: 0;
+    flex: 0 0 auto;
+    height: 28px;
     width: 100%;
     overflow: visible;
+  }
+
+  .effort-grid.fill .effort-curve {
+    flex: 1 1 28px;
+    min-height: 28px;
   }
 
   .curve-guide {

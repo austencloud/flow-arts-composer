@@ -981,6 +981,7 @@
     data-shared-studio-inspector
   >
     <ExportVideoDrawer
+      fillPages
       exportOptions={studioSurfaces.active ? undefined : ctx.exportOptions}
       reserveExportSpace={studioSurfaces.active}
       isExporting={interactions.videoBusy}
@@ -1021,6 +1022,7 @@
       sequence={ctx.effectiveSequence}
       showInlineExportProgress={false}
       showTempoControls={false}
+      showEffectsPlayback={false}
       showPathShape={!studioSurfaces.active}
       onPropChange={ctx.effectiveSequence?.sequenceKind === "hand-path"
         ? undefined

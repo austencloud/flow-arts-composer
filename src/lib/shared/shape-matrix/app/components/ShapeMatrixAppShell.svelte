@@ -113,7 +113,7 @@
 
   function openRealization(
     realization: ModeRealization,
-    action: "open" | "save" | "share"
+    action: "open" | "save"
   ): void {
     if (variant === "embedded") {
       openSequenceViewer(realization.seq, {
@@ -121,7 +121,6 @@
         returnPath: "/create/shape-engine",
         returnLabel: "Shape Engine",
         saveOnOpen: action === "save",
-        shareOnOpen: action === "share",
       });
       return;
     }
@@ -134,8 +133,20 @@
     });
     const params = new URLSearchParams({ from: "shape-engine" });
     if (action === "save") params.set("save", "1");
-    if (action === "share") params.set("share", "1");
     void goto(`${generateSequenceRoutePath(realization.seq)}?${params}`);
+  }
+
+  async function shareRealization(realization: ModeRealization): Promise<void> {
+    const url = new URL(
+      generateSequenceRoutePath(realization.seq),
+      window.location.origin
+    ).href;
+    const outcome = await shareOrCopyLink({
+      url,
+      title: `${realization.word} · ${KINETIC_SHAPE_ENGINE_NAME}`,
+    });
+    if (outcome === "copied") toast.success("Sequence link copied");
+    else if (outcome === "failed") toast.error("Could not copy the link");
   }
   // The hero's animation state lives here, above both panes, so both surfaces
   // share one animation scope while their workspaces crossfade.
@@ -424,7 +435,10 @@
 
 {#snippet matrixDetail()}
   <div class="pane-source">
-    <ShapeMatrixDetailPane onrealizationAction={openRealization} />
+    <ShapeMatrixDetailPane
+      onrealizationAction={openRealization}
+      onshareRealization={shareRealization}
+    />
   </div>
 {/snippet}
 

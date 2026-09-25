@@ -9,13 +9,11 @@
 
   let {
     onOpenRecipe = () => {},
-    onOpenSetting = () => {},
     onModeChange,
     recipeOpen = false,
     flatRecipeRail = false,
   }: {
     onOpenRecipe?: () => void;
-    onOpenSetting?: (destination: FuseRecipeDestination) => void;
     onModeChange: (mode: FuseMode) => void;
     /** Whether the recipe panel is showing. The trigger is a toggle, so it has
      *  to say which way it points. */
@@ -99,7 +97,6 @@
     {activeSetting}
     onSettingOpenChange={setTileOpen}
     {onModeChange}
-    onEditRule={() => onOpenSetting("pairing")}
   />
 
   <!-- The way into the recipe panel, at every width. Where the rail is showing

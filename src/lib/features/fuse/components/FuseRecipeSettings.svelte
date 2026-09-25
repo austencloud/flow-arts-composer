@@ -27,10 +27,7 @@
     onClose: () => void;
   } = $props();
 
-  // Titles for the solo panel, which is only ever reached by pressing one of the
-  // rail's cards. They name the card that opened them — `pairing` reads "Rule"
-  // because the Rule card is its only door there, and a panel that renames
-  // itself on the way in makes the press feel like it went somewhere else.
+  // Titles match the setting that opened each focused editor.
   const DESTINATION_LABELS: Record<string, string> = {
     length: "Length",
     level: "Level",
@@ -63,18 +60,12 @@
       rule: fuseState.rule,
     })
   );
-  // Pairing is listed only when there is a pairing: separate paths have no rule,
-  // and the header switch is what links them. Listing it anyway is how the
-  // recipe used to open on an editor with nothing in it.
   const drillItems = $derived<SettingsDrillItem[]>([
     { id: "length", label: "Length", value: summaries.length },
     { id: "level", label: "Level", value: summaries.level },
     { id: "grid", label: "Grid", value: summaries.grid },
     { id: "style", label: "Style", value: summaries.style },
     { id: "starting", label: "Starting conditions", value: summaries.starting },
-    ...(fuseState.mode === "symmetry"
-      ? [{ id: "pairing", label: "Pairing", value: summaries.pairing }]
-      : []),
   ]);
   const solo = $derived(
     singleDestination &&
@@ -87,8 +78,7 @@
   }
 </script>
 
-<!-- The six focused recipe editors, identical whether they arrive as a drawer
-     over the workspace or as the workspace's own left column. -->
+<!-- The recipe editors share their content between the drawer and column. -->
 {#if solo && destination}
   <GenerationSettingsOverlay
     title={DESTINATION_LABELS[destination] ?? "Fuse recipe"}

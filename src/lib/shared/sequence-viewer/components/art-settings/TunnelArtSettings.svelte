@@ -454,7 +454,10 @@
     onSelect={selectTunnel}
     direction={flyDir}
     {reduceMotion}
-    fillBody={tunnelSection === "display" || tunnelSection === "effects"}
+    fillBody={tunnelSection === "display" || tunnelSection === "effects" ||
+      tunnelSection === "effort" || tunnelSection === "motion"}
+    fluidBody={tunnelSection === "display" || tunnelSection === "effects" ||
+      tunnelSection === "effort" || tunnelSection === "motion"}
     {exporting}
     artPanel
     regionLabel={showTitle ? "Tunnel settings" : "Animation controls"}

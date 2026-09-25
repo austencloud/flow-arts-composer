@@ -36,6 +36,7 @@
     driver,
     rule,
     rewindNote = null,
+    inline = false,
     onDriverChange,
     onRuleChange,
   }: {
@@ -43,6 +44,8 @@
     rule?: FuseRule;
     /** What Rewind did to timing and direction on this path, once it is on. */
     rewindNote?: { text: string; breaks: boolean } | null;
+    /** Dense, persistent presentation beside the Linked canvas. */
+    inline?: boolean;
     onDriverChange?: (side: FuseSide) => void;
     onRuleChange?: (rule: FuseRule) => void;
   } = $props();
@@ -147,7 +150,7 @@
   }
 </script>
 
-<div class="transform-picker">
+<div class="transform-picker" class:inline>
   <!-- Named for what it does to both paths, not for the one it leaves alone.
        "Path you will edit" read as a view toggle, so switching it looked like
        the workspace had swapped to a different fuse: it is a source-of-truth
@@ -157,10 +160,10 @@
        replaces the other path rather than just moving the cursor. -->
   <div class="field" role="group" aria-label="Which path leads">
     <div class="field-heading">
-      <span class="step-number">1</span>
+      {#if !inline}<span class="step-number">1</span>{/if}
       <div>
         <span class="field-label">Which path leads</span>
-        <span class="field-help">
+        <span class="field-help" class:inline-help={inline}>
           {driverLabel} keeps its own path; {followerLabel} is rebuilt from it
         </span>
       </div>
@@ -178,22 +181,25 @@
 
   <div class="rule-field">
     <div class="field-heading">
-      <span class="step-number">2</span>
+      {#if !inline}<span class="step-number">2</span>{/if}
       <div>
         <span class="field-label"
           >How {followerLabel} relates to {driverLabel}</span
         >
-        <span class="field-help">
+        <span class="field-help" class:inline-help={inline}>
           Every change previews a new {followerLabel} path
         </span>
       </div>
     </div>
 
     <div class="axis mode-axis">
-      <span class="axis-label" id="fuse-mode-label">Timing and direction</span>
+      {#if !inline}<span class="axis-label" id="fuse-mode-label"
+          >Timing and direction</span
+        >{/if}
       <FuseTnDModePicker
         selected={selection.mode}
         {disabled}
+        {inline}
         onpick={chooseMode}
       />
     </div>
@@ -516,6 +522,152 @@
 
   .field-control :global(.segmented-control) {
     width: 100%;
+  }
+
+  /* The Linked band keeps the same controls and commit path while giving the
+     canvas the room that the full-height drawer normally occupies. */
+  .transform-picker.inline {
+    flex: none;
+    display: grid;
+    grid-template-columns: minmax(170px, 0.55fr) minmax(0, 4fr);
+    align-items: start;
+    gap: 12px;
+  }
+
+  .inline .field,
+  .inline .rule-field {
+    flex: none;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    padding: 0;
+    gap: 5px;
+  }
+
+  .inline .rule-field {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 250px);
+    align-items: start;
+    gap: 5px 10px;
+  }
+
+  .inline .rule-field > .field-heading {
+    grid-column: 1 / -1;
+  }
+
+  .inline .mode-axis {
+    flex: none;
+    grid-column: 1;
+    grid-template-rows: auto;
+  }
+
+  .inline .operations-axis {
+    align-self: start;
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .inline .operation-list {
+    display: flex;
+    gap: 6px;
+  }
+
+  .inline .operation-toggle {
+    display: flex;
+    gap: 6px;
+    padding: 5px 7px;
+    white-space: nowrap;
+  }
+
+  .inline .op-glyph {
+    display: none;
+  }
+
+  .inline .op-detail,
+  .inline .inline-help {
+    display: none;
+  }
+
+  .inline .op-switch {
+    width: 28px;
+  }
+
+  .inline .op-switch::after {
+    width: 14px;
+  }
+
+  .inline .operation-toggle.active .op-switch::after {
+    transform: translateX(8px);
+  }
+
+  .inline .axis:not(.mode-axis, .operations-axis) {
+    grid-column: 1;
+  }
+
+  .inline .operation-note {
+    max-width: 16rem;
+  }
+
+  @container (max-width: 70rem) {
+    .transform-picker.inline {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 8px;
+    }
+
+    .inline .field {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      gap: 8px;
+    }
+
+    .inline .driver-control {
+      justify-self: end;
+      width: min(100%, 220px);
+    }
+
+    .inline .rule-field {
+      grid-template-columns: minmax(0, 1fr) minmax(200px, 230px);
+    }
+  }
+
+  @container (max-width: 44rem) {
+    .inline .rule-field {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 6px;
+    }
+
+    .inline .rule-field > .field-heading,
+    .inline .axis {
+      grid-column: 1;
+    }
+
+    .inline .operations-axis {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      grid-row: auto;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .inline .operation-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .inline .operation-note {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @container (max-width: 28rem) {
+    .inline .field-label {
+      white-space: nowrap;
+    }
+
+    .inline .driver-control {
+      width: min(100%, 182px);
+    }
   }
 
   /* Same trade as the composer's short-viewport tiers: the step cards keep their

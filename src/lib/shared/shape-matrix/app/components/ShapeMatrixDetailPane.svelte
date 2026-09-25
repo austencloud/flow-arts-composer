@@ -6,11 +6,12 @@
   interface Props {
     onrealizationAction: (
       realization: ModeRealization,
-      action: "open" | "save" | "share"
+      action: "open" | "save"
     ) => void;
+    onshareRealization: (realization: ModeRealization) => void;
   }
 
-  const { onrealizationAction }: Props = $props();
+  const { onrealizationAction, onshareRealization }: Props = $props();
   const state = getShapeMatrixAppContext();
   // The shell owns prop choosing. Wide hosts use the grid pane; compact
   // hosts recompose this same live stage above a scrolling prop workspace.
@@ -39,8 +40,7 @@
           onrealizationAction(realization, "open")}
         onsaveRealization={(realization) =>
           onrealizationAction(realization, "save")}
-        onshareRealization={(realization) =>
-          onrealizationAction(realization, "share")}
+        {onshareRealization}
         mandalaTransition={{
           claim: state.compact && state.activeView === "detail",
           handoff: state.mandalaHandoff,
