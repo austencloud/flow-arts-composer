@@ -279,7 +279,7 @@
   const fitted = $derived(fitCols > 0);
 
   function measureFit(): void {
-    if (!fill || showPropChips || !shellEl || !gridEl) return;
+    if (!fill || !shellEl || !gridEl) return;
     const width = shellEl.clientWidth;
     const height = shellEl.clientHeight;
     const chip = gridEl.firstElementChild as HTMLElement | null;
@@ -288,9 +288,14 @@
     const chipStyle = getComputedStyle(chip);
     const padX =
       parseFloat(chipStyle.paddingLeft) + parseFloat(chipStyle.paddingRight);
-    const labelH =
-      (chip.querySelector(".chip-label") as HTMLElement | null)?.offsetHeight ??
-      0;
+    const labelH = Math.max(
+      ...Array.from(
+        gridEl.children,
+        (tile) =>
+          (tile.querySelector(".chip-label") as HTMLElement | null)
+            ?.offsetHeight ?? 0
+      )
+    );
     const chromeY =
       parseFloat(chipStyle.paddingTop) +
       parseFloat(chipStyle.paddingBottom) +
@@ -309,6 +314,7 @@
       gapY,
       count: chips.length,
       grow,
+      groupBoundary: showPropChips ? null : 4,
     });
     fitCols = fit?.cols ?? 0;
     fitArt = fit?.art ?? 0;
@@ -349,6 +355,7 @@
 <div class="vis-grid-shell" class:fill bind:this={shellEl}>
   <div
     class:motion-grid={showPropChips}
+    class:ten-tiles={showPropChips && chips.length === 10}
     class:fitted
     class="vis-grid"
     bind:this={gridEl}
@@ -359,11 +366,15 @@
     {#each chips as chip, index (chip.id)}
       <button
         class="rt-chip"
-        class:group-row={fitted &&
+        class:group-row={!showPropChips &&
+          fitted &&
           fitCols < chips.length &&
           index >= 4 &&
           index < 4 + fitCols}
-        class:group-inline={fitted && fitCols >= chips.length && index === 4}
+        class:group-inline={!showPropChips &&
+          fitted &&
+          fitCols >= chips.length &&
+          index === 4}
         type="button"
         aria-pressed={chip.active()}
         data-tone={chip.tone}
@@ -434,10 +445,20 @@
     }
   }
 
-  /* The landing variant swaps the master Props toggle for Left/Right, so it
-     runs nine. Three columns: nine at two strands one alone on the last row. */
-  .vis-grid.motion-grid {
+  /* Intrinsic Left/Right variants use three columns for nine tiles and five
+     for ten, keeping complete rows before a bounded host supplies its fit. */
+  .vis-grid.motion-grid:not(.fitted) {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .vis-grid.motion-grid.ten-tiles:not(.fitted) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @container (min-width: 36rem) {
+    .vis-grid.motion-grid.ten-tiles:not(.fitted) {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
   }
 
   /* A breath between the layers that live in the square and the marks drawn at

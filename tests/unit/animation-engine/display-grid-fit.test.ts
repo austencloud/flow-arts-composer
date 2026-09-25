@@ -9,17 +9,21 @@ import {
 // and bottom, a 7px gap and an 11px label.
 const CHIP = { padX: 20, chromeY: 42, gapX: 6, gapY: 6, count: 8 };
 
-function gridSize(fit: { cols: number; tile: number }, count = 8) {
+function gridSize(
+  fit: { cols: number; tile: number },
+  count = 8,
+  grouped = true
+) {
   const rows = Math.ceil(count / fit.cols);
   return {
     width:
       fit.cols * fit.tile +
       CHIP.gapX * (fit.cols - 1) +
-      (rows === 1 ? DISPLAY_GROUP_GAP : 0),
+      (grouped && rows === 1 ? DISPLAY_GROUP_GAP : 0),
     height:
       rows * fit.tile +
       CHIP.gapY * (rows - 1) +
-      (rows > 1 ? DISPLAY_GROUP_GAP : 0),
+      (grouped && rows > 1 ? DISPLAY_GROUP_GAP : 0),
   };
 }
 
@@ -53,4 +57,43 @@ describe("fitDisplayGrid", () => {
     expect(gridSize(grown).height).toBeLessThanOrEqual(830);
     expect(grown.art).toBeGreaterThanOrEqual(MIN_FIT_ART);
   });
+
+  it("keeps grouped tiles fitted when the optional word is hidden", () => {
+    const fit = fitDisplayGrid({
+      ...CHIP,
+      count: 7,
+      width: 480,
+      height: 800,
+      grow: true,
+    });
+    expect(fit).not.toBeNull();
+    const size = gridSize(fit!, 7);
+    expect(size.width).toBeLessThanOrEqual(480);
+    expect(size.height).toBeLessThanOrEqual(800);
+  });
+
+  it.each([
+    { width: 480, height: 800, cols: 2, binding: "height" },
+    { width: 800, height: 480, cols: 5, binding: "width" },
+  ] as const)(
+    "fits ten ungrouped hand tiles in a $width x $height bounded panel",
+    ({ width, height, cols, binding }) => {
+      const fit = fitDisplayGrid({
+        ...CHIP,
+        width,
+        height,
+        count: 10,
+        grow: true,
+        groupBoundary: null,
+      });
+      expect(fit).not.toBeNull();
+      expect(fit!.cols).toBe(cols);
+      const size = gridSize(fit!, 10, false);
+      expect(size.width).toBeLessThanOrEqual(width);
+      expect(size.height).toBeLessThanOrEqual(height);
+      expect(size[binding]).toBeGreaterThan(
+        (binding === "width" ? width : height) * 0.95
+      );
+    }
+  );
 });
