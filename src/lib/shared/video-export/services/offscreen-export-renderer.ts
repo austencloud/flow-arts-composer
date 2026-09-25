@@ -36,6 +36,8 @@ import {
 } from "./export-engine-props";
 import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
+import { foldTrailIntentIntoSettings } from "$lib/shared/effects/translators/canvas2d-translator";
+import type { TrailSettings } from "$lib/shared/animation-engine/domain/types/trail-types";
 import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
 import type { AnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
 import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
@@ -95,6 +97,7 @@ const MOTION_VISIBILITY_SETTLE_MS = 400;
 export class OffscreenExportRenderer {
   private handle: OffscreenContextHandle | null = null;
   private init!: OffscreenExportInit;
+  private trailSettings!: TrailSettings;
 
   // Fixed-timestep clock. `internalClockMs` is the engine's virtual clock (drives
   // the overlay's dt and the fluid sim); `accumulatorMs` carries the unsimulated
@@ -116,6 +119,13 @@ export class OffscreenExportRenderer {
     // trails/fire, on the global VM). Without this the offscreen engine renders
     // props but NO effect overlay — captured trail points would go nowhere.
     const vm = getAnimationVisibilityManager();
+    // animationSettings.trail carries only the rendering params; the trail look
+    // (width, brightness, colours) lives on the effects config. Fold them the
+    // way the live viewer does, or the export draws the stock trail.
+    this.trailSettings = foldTrailIntentIntoSettings(
+      animationSettings.trail,
+      vm.effectsConfigState?.trails
+    );
     this.handle = await new RenderContextFactory().createOffscreenContext(
       init.outputCanvasSize,
       { visibilityManager: vm, effectsConfigState: vm.effectsConfigState }
@@ -148,7 +158,7 @@ export class OffscreenExportRenderer {
       canvasSize: init.outputCanvasSize,
       leftPropType: init.leftPropType,
       rightPropType: init.rightPropType,
-      trailSettings: animationSettings.trail,
+      trailSettings: this.trailSettings,
       isSeamlesslyLoopable: this.playback.isSeamlesslyLoopable,
     });
 
@@ -348,7 +358,7 @@ export class OffscreenExportRenderer {
       isSeamlesslyLoopable: this.playback.isSeamlesslyLoopable,
       backgroundAlpha: 1,
       showNonRadialPoints: this.init.showNonRadialPoints,
-      trailSettings: animationSettings.trail,
+      trailSettings: this.trailSettings,
       leftPropType: this.init.leftPropType,
       rightPropType: this.init.rightPropType,
       previewDarkMode: this.init.previewDarkMode,

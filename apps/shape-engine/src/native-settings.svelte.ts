@@ -138,11 +138,17 @@ export async function updateSettings(
   await settingsService.updateSettings(updates);
 }
 
-export function setCurrentPropType(propType: PropType): Promise<void> {
+export function setCurrentPropPair(pair: {
+  left: PropType;
+  right: PropType;
+}): Promise<void> {
   return updateSettings({
-    propType,
-    leftPropType: propType,
-    rightPropType: propType,
+    propType: pair.left,
+    leftPropType: pair.left,
+    rightPropType: pair.right,
+    // Deliberately one-way: the shape-matrix snapshot carries no cat dog
+    // flag, so equal hands never clear an existing catDogMode.
+    ...(pair.left !== pair.right ? { catDogMode: true } : {}),
   });
 }
 

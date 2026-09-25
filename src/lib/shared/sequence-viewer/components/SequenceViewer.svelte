@@ -24,6 +24,7 @@
 	import PropAwareThumbnail from "$lib/shared/browse/components/PropAwareThumbnail.svelte";
 	import ChoreoCard from "./ChoreoCard.svelte";
 	import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+	import { captureActivePropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
 	import { tryGetAnimationExportContext } from "$lib/shared/export-panel/context/animation-export-context.svelte";
 	import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
 	import { browser } from "$app/environment";
@@ -139,10 +140,14 @@
 	// LOOP glyph visibility
 	const showLoopGlyph = $derived(showVisibilitySettings ? localShowLoopGlyph : (globalImageExport?.showLoopGlyph ?? true));
 
-	// Prop type settings for PropAwareThumbnail
-	const leftPropType = $derived(settingsService.settings.leftPropType);
-	const rightPropType = $derived(settingsService.settings.rightPropType);
-	const catDogMode = $derived(settingsService.settings.catDogMode);
+	// The performer's own pair, the same one the animation tab, the export
+	// preview, and the real export use in the Create drawer.
+	const viewingProps = $derived(
+		captureActivePropConfig(settingsService.settings)
+	);
+	const leftPropType = $derived(viewingProps.leftPropType);
+	const rightPropType = $derived(viewingProps.rightPropType);
+	const catDogMode = $derived(viewingProps.catDogMode);
 
 	// Image settings toggle handlers
 	function toggleWord() {
@@ -335,7 +340,7 @@
 							{handPathMode}
 							{darkMode}
 							{leftPropType}
-							rightPropType={catDogMode ? rightPropType : leftPropType}
+							{rightPropType}
 							catDogModeEnabled={catDogMode}
 						/>
 					{:else}
@@ -343,7 +348,7 @@
 						<PropAwareThumbnail
 							{sequence}
 							{leftPropType}
-							rightPropType={catDogMode ? rightPropType : leftPropType}
+							{rightPropType}
 							catDogModeEnabled={catDogMode}
 							lightMode={!darkMode}
 							{addWord}

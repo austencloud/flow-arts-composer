@@ -43,8 +43,8 @@ describe("SEO acquisition funnel analytics", () => {
 
     expect(imageExporter).toContain("if (!shareCanceled)");
     expect(imageExporter).toContain('exportFormat: "png"');
-    expect(videoExporter).toContain(
-      "result.success && !result.canceled && !measuredVideoUrls.has(url)"
+    expect(videoExporter).toMatch(
+      /result\.success &&\s*!result\.canceled &&\s*!measuredVideoUrls\.has\(measureKey\)/
     );
     expect(videoExporter).toContain('exportFormat: "mp4"');
     expect(viewerShareActions).toContain('logShareAction("sequence_share"');

@@ -34,7 +34,7 @@
     const overlay = {
       left: data.left.get(flowerKey(p.left))?.left ?? [],
       right: data.right.get(flowerKey(p.right))?.right ?? [],
-      clubTipDx: data.clubTipDx,
+      tips: data.tips,
     };
     let cancelled = false;
     loading = true;

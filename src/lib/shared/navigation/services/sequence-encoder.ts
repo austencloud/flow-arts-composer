@@ -123,6 +123,13 @@ const PROP_TYPE_ENCODE: Record<PropType, string> = {
   [PropType.BIGTRIAD]: "t",
   [PropType.MINIHOOP]: "M",
   [PropType.BIGHOOP]: "H",
+  // A lowercase letter in this table usually means "the big build of that
+  // uppercase code" (c/f/t/b/d/e/a/v/k), but not always: s/q/u below encode
+  // simple staff, triquetra2, and ukulele, none of which are big builds.
+  // Triangle is not a big build either, so it takes the next free digit
+  // after 7, the way the earlier standard-size variants (baton, fire staff,
+  // classic club) did.
+  [PropType.TRIANGLE]: "8",
   [PropType.BUUGENG]: "B",
   [PropType.BIGBUUGENG]: "b",
   [PropType.TRIGENG]: "J",
@@ -169,6 +176,33 @@ PROP_TYPE_DECODE["Y"] = PropType.SWORD;
 
 type FloatWireFormat = "token" | "numeric";
 
+/**
+ * A visible motion whose location, rotation or turns has no wire code.
+ *
+ * The encoder used to log and return an empty segment, which the decoder
+ * reads as "this hand is not really there": a printed code would silently
+ * drop a hand. Minting and hashing must fail loudly instead.
+ */
+export class UnencodableMotionError extends Error {
+  constructor(
+    readonly field:
+      | "startLocation"
+      | "endLocation"
+      | "rotationDirection"
+      | "turns",
+    readonly value: unknown
+  ) {
+    super(`Cannot encode motion: unknown ${field} ${JSON.stringify(value)}`);
+    this.name = "UnencodableMotionError";
+  }
+}
+
+/** Stored aliases of noRotation that predate the enum value. */
+const NO_ROTATION_ALIASES: ReadonlySet<string> = new Set([
+  "no_rotation",
+  "no_rot",
+]);
+
 function encodeMotion(
   motion: MotionData | undefined,
   floatWireFormat: FloatWireFormat = "token"
@@ -193,7 +227,7 @@ function encodeMotion(
       ? prefloatRotation
       : ROTATION_ENCODE[RotationDirection.NO_ROTATION]
     : (ROTATION_ENCODE[
-        motion.rotationDirection === ("no_rotation" as RotationDirection)
+        NO_ROTATION_ALIASES.has(motion.rotationDirection as string)
           ? RotationDirection.NO_ROTATION
           : motion.rotationDirection
       ] ??
@@ -207,14 +241,20 @@ function encodeMotion(
       : "f"
     : String(motion.turns);
 
-  if (!startLoc || !endLoc || !rotation) {
-    console.error("❌ Encoder: motion missing required fields", {
-      startLocation: motion.startLocation,
-      endLocation: motion.endLocation,
-      rotationDirection: motion.rotationDirection,
-      turns: motion.turns,
-    });
-    return "";
+  if (!startLoc) {
+    throw new UnencodableMotionError("startLocation", motion.startLocation);
+  }
+  if (!endLoc) {
+    throw new UnencodableMotionError("endLocation", motion.endLocation);
+  }
+  if (!rotation) {
+    throw new UnencodableMotionError(
+      "rotationDirection",
+      motion.rotationDirection
+    );
+  }
+  if (!isFloat && (turns.trim() === "" || !Number.isFinite(Number(turns)))) {
+    throw new UnencodableMotionError("turns", motion.turns);
   }
 
   if (!isFloat || floatWireFormat === "numeric") {
@@ -470,6 +510,32 @@ function findMotionMismatch(a: SequenceData, b: SequenceData): string | null {
 // PUBLIC API
 // ============================================================================
 
+/**
+ * Header orientation seed for one hand. The decoder chains every orientation
+ * of that hand from this seed, so it must be the orientation the hand really
+ * starts in: a visible start-position motion first, then the first step's own
+ * start orientation. A sequence saved without a start position used to seed
+ * "i" here, and a hand that starts "out" decoded as starting "in".
+ */
+function orientationSeed(
+  startMotion: MotionData | undefined,
+  firstStepMotion: MotionData | undefined
+): string {
+  const code = (motion: MotionData | undefined) =>
+    motion
+      ? ORIENTATION_ENCODE[motion.startOrientation as Orientation]
+      : undefined;
+  if (startMotion && startMotion.isVisible !== false) {
+    const seed = code(startMotion);
+    if (seed) return seed;
+  }
+  if (firstStepMotion && firstStepMotion.isVisible !== false) {
+    const seed = code(firstStepMotion);
+    if (seed) return seed;
+  }
+  return code(startMotion) ?? "i";
+}
+
 function encodeSequenceWithFloatFormat(
   sequence: SequenceData,
   floatWireFormat: FloatWireFormat
@@ -498,10 +564,9 @@ function encodeSequenceWithFloatFormat(
     left: undefined,
     right: undefined,
   };
-  const leftSeed =
-    ORIENTATION_ENCODE[spMotions.left?.startOrientation as Orientation] ?? "i";
-  const rightSeed =
-    ORIENTATION_ENCODE[spMotions.right?.startOrientation as Orientation] ?? "i";
+  const firstMotions = actualSteps[0]?.motions;
+  const leftSeed = orientationSeed(spMotions.left, firstMotions?.left);
+  const rightSeed = orientationSeed(spMotions.right, firstMotions?.right);
   const leftPropCode =
     PROP_TYPE_ENCODE[
       (spMotions.left?.propType ?? PropType.STAFF) as PropType

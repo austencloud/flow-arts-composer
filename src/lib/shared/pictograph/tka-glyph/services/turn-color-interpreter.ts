@@ -35,6 +35,21 @@ type LetterType =
 export const BLUE_HEX: TurnNumberColor = getMotionColor(HandSide.LEFT, "dark");
 export const RED_HEX: TurnNumberColor = getMotionColor(HandSide.RIGHT, "dark");
 
+/**
+ * The interpreter's colors name a hand; the hex is always the dark-theme one.
+ * Resolve it to the palette of the theme being drawn so light-mode turn
+ * numbers match the light-mode arrows and props, as TurnsColumn.svelte does.
+ */
+export function resolveTurnColor(
+  color: TurnNumberColor,
+  isDarkMode: boolean
+): string {
+  const mode = isDarkMode ? "dark" : "light";
+  if (color === BLUE_HEX) return getMotionColor(HandSide.LEFT, mode);
+  if (color === RED_HEX) return getMotionColor(HandSide.RIGHT, mode);
+  return color;
+}
+
 function determineLetterType(letter: string): LetterType {
   if (["Φ-", "Ψ-", "Λ-"].includes(letter)) return "TYPE5";
   if (["α", "β", "γ"].includes(letter)) return "TYPE6";

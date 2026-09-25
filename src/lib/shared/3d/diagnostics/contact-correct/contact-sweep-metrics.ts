@@ -160,7 +160,7 @@ export function gradeContactSweep(
   let maximumContinuityM = 0;
   const failingMetrics = new Set<string>();
   for (let index = 0; index < frames.length; index += 1) {
-    const metrics = measureContactSweepFrame(frames[index]);
+    const metrics = measureContactSweepFrame(frames[index]!);
     maximumEndpointDriftM = Math.max(
       maximumEndpointDriftM,
       metrics.endpointDriftM
@@ -174,15 +174,15 @@ export function gradeContactSweep(
       failingMetrics.add("directed-axis");
     if ((metrics.meshPenetrationM ?? Infinity) > 0)
       failingMetrics.add("mesh-penetration");
-    if (frames[index].meshAudit.interiorContainment === "contained")
+    if (frames[index]!.meshAudit.interiorContainment === "contained")
       failingMetrics.add("mesh-contained");
-    if (frames[index].meshAudit.interiorContainment === "ambiguous")
+    if (frames[index]!.meshAudit.interiorContainment === "ambiguous")
       failingMetrics.add("mesh-ambiguous");
     if (index > 0) {
-      const continuity = endpointContinuityM(frames[index - 1], frames[index]);
+      const continuity = endpointContinuityM(frames[index - 1]!, frames[index]!);
       maximumContinuityM = Math.max(maximumContinuityM, continuity);
       if (continuity > limits.continuityM) failingMetrics.add("continuity");
-      const body = bodyContinuity(frames[index - 1], frames[index]);
+      const body = bodyContinuity(frames[index - 1]!, frames[index]!);
       if (
         !body ||
         body.displacementM > limits.continuityM ||

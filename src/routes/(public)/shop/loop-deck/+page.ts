@@ -1,7 +1,7 @@
-// The <svelte:head> (title/desc/canonical/OG/Product schema) + a crawlable SEO
-// shell render server-side so bots get real HTML. The configurator itself is
-// browser-only (real ChoreoCards via the canvas + firebase thumbnail
-// orchestrator), so it mounts behind {#if browser} + a dynamic import — no
-// browser-only code enters the SSR graph. Same pattern as /shop.
+// The whole configurator renders server-side, seeded with the catalog snapshot
+// from +page.server.ts, so crawlers and the first paint get the real product
+// page: title, price, packs, how-it-works copy, and the cross-sell rail. The
+// card art, the live fan, and the dials hydrate in the browser; nothing in the
+// configurator touches canvas or Firebase until its effects run there.
 export const ssr = true;
 export const prerender = false;

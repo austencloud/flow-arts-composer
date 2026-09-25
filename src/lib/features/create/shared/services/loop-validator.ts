@@ -218,5 +218,5 @@ export const loopValidator = new LOOPValidator();
 function toEngineLOOPType(loopType: LOOPType): EngineLOOPType {
   return loopType === LOOPType.STRICT_REWOUND
     ? EngineLOOPType.REWOUND
-    : (loopType as EngineLOOPType);
+    : (loopType as unknown as EngineLOOPType);
 }

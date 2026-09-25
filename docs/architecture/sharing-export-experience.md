@@ -163,13 +163,14 @@ to a card merely because an old sheet default used that artifact.
 - In the viewer, Share is not a dialog. It toggles a share panel in the
   inspector track beside the live stage, the way the Export page sits there.
   The rail item the person has selected is what gets shared; the panel names
-  it and follows rail changes while it stays open. The panel holds Copy link,
-  a Download action named for that subject (Card image, Video, Post video),
-  More for the system share sheet where the browser supports it, Publish in
-  development builds, and the Send to a friend recipients. Download and
-  Publish open the file sheet directly at that task, not at its chooser, and
-  the panel is still there when the sheet closes. Share again, the close
-  button, or Escape closes the panel.
+  it and follows rail changes while it stays open. Download leads the panel,
+  named for that subject (Card image, Video, Post video); under it sit Copy
+  link, Other apps for the system share sheet where the browser supports it,
+  and Publish in development builds; Send to a friend follows below a divider.
+  On the 2D animation Download renders at once (see below). Elsewhere
+  Download and Publish open the file sheet directly at that task, not at its
+  chooser, and the panel is still there when the sheet closes. Share again,
+  the close button, or Escape closes the panel.
 - Sending to a friend in Flow Arts Composer uses the existing sequence-attachment
   workflow; it is not a social publishing operation. In the viewer it lives in
   the share panel, not in the file sheet. Choosing who must not change what, so
@@ -260,18 +261,38 @@ also fails, reveals the link in a selectable field.
 
 ### Downloading the animation from the viewer
 
-The sequence animation is downloaded from the viewer's own Export page, not
-from a route inside the share sheet. The stage keeps playing beside the page
-(the same shape as the share panel), the settings stack in one column with chips
-for every choice, and the page's footer button renders and delivers the file.
-Share → Download a file → Video hands off to that page and closes the sheet,
-the way Post Studio takes over from the sheet; the sheet's own download route
+Share is the only way to download the 2D sequence animation. The share
+panel's Download renders at once with the Export page's settings, names what
+it will make (resolution, fps, loops, and the expected render time), and
+carries the render's progress; its Settings button opens the Export page. The
+page holds the settings only: the stage keeps playing beside it (the same shape
+as the share panel) and they stack in one column with chips for every choice,
+but it has no render button of its own, so the file cannot come out of two
+different flows. The share sheet's Video choice closes the sheet and
+returns to the share panel on the animation, the way Post Studio takes over
+from the sheet; the sheet's own download route
 keeps Card, plus Video for hosts with their own exporters (Mandala, Tunnel,
-3D takes, Post Studio renders), where the file type is a chip row. The viewer
+Post Studio renders), where the file type is a chip row. The viewer
 never mounts a second animation engine behind its share sheet: a frozen capture
 behind a modal was the reason the download moved. The Create workspace has a
 static card behind sharing, so its download sheet supplies its own live preview
 using the existing inline animation player.
+
+### Filming the 3D scene
+
+A 3D video is a performance, not a render: the camera moves live while the
+person watches, so it is filmed where they are looking. The stage holds the
+only Record control, a red button with a Free/Orbit segmented choice for the
+camera beside it. The quality (Draft, Final, Cinema) is picked once, on the
+card that appears after Stop; the recording is already saved by then, so
+backing out costs nothing. Share never starts a take. In 3D the share
+panel's Download hands over the newest film kept on the device for this
+sequence, named `Download film` with its length, frame, and rate on the line
+beneath and `New take` beside them. With no film yet it reads
+`Record a take` and returns the person to the stage. Publish from 3D opens the
+card sheet. The earlier pattern, where the share sheet hid itself during a
+take and resumed afterward, is retired: it showed a hung "Rendering video..."
+over a scene the person could neither see nor stop.
 
 ### The image a clip opens with
 
@@ -724,3 +745,29 @@ Acceptance requires observing actual animation frames before pressing Download,
 then a playable downloaded file. Check both directions of Card/Video switching,
 close/reopen, cancellation, and a replacement sequence. A placeholder, spinner,
 static frame, or test that mocks the player cannot establish this behavior.
+
+### September 22 card dialog clipping regression
+
+The live development server returned raw Svelte component source inside the
+`BaseModal` stylesheet response. The browser discarded its uncompiled `:global`
+selectors, including the intrinsic wrapper's `flex: 0 0 auto` rule. The wrapper
+then shrank to the sharing menu's retained height, so `ResizeObserver` could not
+detect the larger card view. The card and download footer extended below the
+dialog's clipped edge. A page reload did not repair the server's cached response.
+
+The same components worked in Vitest's independent Vite instance. Changing the
+share sheet's percentage height was investigated and rejected: `ShareSheetFrame`
+already overrides it with natural sizing. Do not mask a malformed stylesheet
+with feature-local sizing rules or descendant-height arithmetic.
+
+When the live route and browser component tests disagree, inspect the loaded
+stylesheet and computed wrapper flex before changing layout. Run
+`node scripts/verify-dev-styles.mjs` against the existing local server to detect
+raw component source in the layout, modal, and sharing styles. This probe does
+not start or restart a server. Follow the server ownership rule for recovery.
+
+Regression verification must start with the settled sharing menu, then open
+Download a file and switch Card/Video in both directions. Check the footer and
+complete preview against the dialog bounds, including small landscape and a
+large desktop viewport. A smooth height animation alone does not establish
+that its destination contains the content.

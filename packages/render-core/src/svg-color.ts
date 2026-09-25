@@ -55,6 +55,13 @@ export const SELECTIVE_COLOR_PROP_TYPES = [
   // take left or right, while the kevlar wicks and the gold thumb bands stay as
   // authored. Kevlar is never left or right.
   "fire_double_staff",
+  // Hoop family: commit 9fefc947d5 regenerated these glyphs with a neutral
+  // #9A9A9A tube (repainted to the hand colour here) and #1C1C1F / #3A3A3F
+  // hardware plus a #C9AC68 grip band that selective mode preserves. Before
+  // that regeneration the tube was #2E3192, a fill this mode would have kept.
+  "minihoop",
+  "bighoop",
+  "triangle",
   "sword-knight",
   "sword-saber",
   "sword-flamberge",

@@ -3,7 +3,9 @@
 /**
  * Cloudflare Worker: QR Short Code Redirect + Edge OG Meta
  *
- * Deployed on: tka.run, tka.to
+ * Deployed on: tka.run only. tka.to is not ours in practice (it serves an
+ * unrelated site) — no printed card has ever encoded it, and the app only
+ * ever accepts tka.run (src/lib/shared/qr/services/extract-scan-code.ts).
  * Routes: /{code} → OG meta for crawlers, 302 → tkaflowarts.com/q/{code} for humans
  *         /       → 301 → tkaflowarts.com/create
  *

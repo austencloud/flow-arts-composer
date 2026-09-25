@@ -26,6 +26,11 @@ export interface StudioAnimationFrame {
   step: SequenceData["steps"][number] | SequenceData["startPlacement"] | null;
   leftPropType?: PropType;
   rightPropType?: PropType;
+  /**
+   * The post paints the beat number, letter and element icon over the
+   * canvas, so the host hides its own copies.
+   */
+  labelsPainted?: boolean;
 }
 
 interface CanvasDestination {

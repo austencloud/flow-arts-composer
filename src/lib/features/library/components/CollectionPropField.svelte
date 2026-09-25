@@ -52,6 +52,7 @@
       variant="inline"
       scrollMode="host"
       showAppearance={false}
+      showColors={false}
       onSelect={(prop) => {
         value = prop;
         choosing = false;

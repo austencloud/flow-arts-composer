@@ -16,13 +16,25 @@ import {
  * stand on the floor the rig stands on, and it has to get there without
  * dropping the body for a frame or freezing it at the loop.
  *
- * The pack's walk clips are re-anchored at the rig's rest height, which
- * discards the dip a walk is authored with. `pelvisDrop` is the cycle mean,
- * over every gait-probe sample a foot declares contact, of that sole's height
- * over the bind floor. It is one number for the cycle on purpose: a per-phase
- * curve was measured on 2026-09-06 (ch01, 1.37 m/s, planted) to bring the
- * planted sole from 2.0 cm to 1.4 cm of the floor while adding 2.2 cm of
- * pelvis bob every stride, and the bounce is what an eye reads.
+ * Two things set that height. The contact bake (`bakeContactPreservedLegs`)
+ * writes a pelvis track that stands this rig's legs on the floor through the
+ * source clip's stances, which carries nearly all of the dip a walk is
+ * authored with. `pelvisDrop` is what is left over: the cycle mean, over every
+ * gait-probe sample a foot declares contact, of that sole's height over the
+ * bind floor, measured on the baked clip and taken off the pelvis at runtime.
+ * It is one number for the cycle on purpose: a per-phase curve was measured on
+ * 2026-09-06 (ch01, 1.37 m/s, planted) to bring the planted sole from 2.0 cm
+ * to 1.4 cm of the floor while adding 2.2 cm of pelvis bob every stride, and
+ * the bounce is what an eye reads.
+ *
+ * With the bake standing the feet down, a large residual means the bake put
+ * the foot somewhere other than the floor. Until 2026-09-24 it did, on every
+ * rig whose ankle does not sit at the source's 0.109 leg lengths over its
+ * sole: ch07 came out -0.043 (planted sole 5.1 cm in the air once the planter
+ * held the toe down), ch42 -0.029, ch24 -0.023 and ch34 +0.024. Standing the
+ * leg on the rig's own ankle height brought every forward and strafe walk
+ * within 0.017 of zero. Backward walks and run strafes keep 0.01-0.05, the
+ * part of their dip the bake does not own.
  *
  * Two defects the same measurement pass found, both once per stride at 60 Hz:
  * a 3.7 cm one-frame drop of the whole body where three.js skipped the pelvis
@@ -30,22 +42,29 @@ import {
  * before the mixer ran), and a two-tick freeze at every loop wrap because the
  * clips key from 0.0333 s while their duration counted from zero.
  *
- * Numbers below are measured on the shipped rigs (2026-09-06, headless 60 Hz
- * harness, this build): walk dip 0.032-0.053 (forward and backward), strafe
- * dip 0.051-0.065, run dip 0.116-0.149, run strafe dip 0.092-0.119. Planted
- * sole at 1.368 m/s, a plant being a toe moving under 0.1 m/s in 3D so the
- * planter's acquire and release tails are left out: highest 0.016-0.019 over
- * the floor on ch01/ch12/ch21/ch44 and 0.035 on ch07, whose ankle sits 0.148
- * over its sole and reads a taller foot at every pitch; 95th percentile
- * 0.015-0.016 and 0.034; lowest -0.005 to -0.019 (the planter's floor clamp
- * holds the toe itself at or above the floor). Largest frame-to-frame pelvis
- * move in a steady walk is under 0.01; the defect was 0.037.
+ * Numbers below are measured on all twelve shipped rigs (2026-09-24, headless
+ * 60 Hz harness, this build). The dip is the whole of it, the baked track's
+ * mean under rest plus the residual: walk 0.045-0.074 (forward 0.045-0.057,
+ * backward 0.051-0.074), strafe 0.057-0.076, run 0.128-0.150, run strafe
+ * 0.098-0.141. The bands were first set on 2026-09-06 against the residual
+ * alone, before the bake owned the pelvis, when the residual was the whole
+ * dip. The run band still holds; the others are re-set around the baked
+ * measurement with the margins they had. Planted sole at 1.368 m/s, a plant
+ * being a toe moving under 0.1 m/s in 3D so the planter's acquire and release
+ * tails are left out: highest 0.010 over the floor on ch01/ch12/ch21 and 0.018
+ * on ch07, whose ankle sits 0.148 over its sole and reads a taller foot at
+ * every pitch; 95th percentile 0.007-0.008 and 0.016; lowest -0.006 to -0.015
+ * (the planter's floor clamp holds the toe itself at or above the floor).
+ * Largest frame-to-frame pelvis move in a steady walk is under 0.01; the
+ * defect was 0.037.
  */
 
-const WALK_DROP = { min: 0.03, max: 0.06 };
-const STRAFE_DROP = { min: 0.045, max: 0.075 };
+const WALK_DROP = { min: 0.04, max: 0.08 };
+const STRAFE_DROP = { min: 0.05, max: 0.085 };
 const RUN_DROP = { min: 0.1, max: 0.16 };
-const RUN_STRAFE_DROP = { min: 0.085, max: 0.13 };
+const RUN_STRAFE_DROP = { min: 0.085, max: 0.15 };
+/** Forward and strafe walks, whose stances the bake stands on the floor. */
+const BAKED_RESIDUAL_MAX = 0.02;
 const PLANTED_SOLE_MAX = 0.04;
 const PLANTED_SOLE_P95_MAX = 0.04;
 const PLANTED_SOLE_MIN = -0.03;
@@ -76,6 +95,8 @@ async function bootAnimator(id: string) {
     pendingClips: Map<string, AnimationClip>;
     clipsLoaded: boolean;
     gaits: Record<string, { pelvisDrop: number } | null>;
+    walkActions: Record<string, { getClip(): AnimationClip } | undefined>;
+    runActions: Record<string, { getClip(): AnimationClip } | undefined> | null;
     hipsBone: { position: Vector3 } | null;
     hipsRest: Vector3 | null;
   };
@@ -88,6 +109,25 @@ async function bootAnimator(id: string) {
     bindAnkle: bindFloor(rig.scene, "Foot"),
     bindToe: bindFloor(rig.scene, "ToeBase"),
   };
+}
+
+type Seam = Awaited<ReturnType<typeof bootAnimator>>["seam"];
+
+/**
+ * How far under rest the pelvis sits on average through a gait's cycle: the
+ * baked track's mean, which is an offset from rest, less the residual the
+ * animator takes off at runtime.
+ */
+function walkingDip(seam: Seam, key: string): number {
+  const action = seam.walkActions[key] ?? seam.runActions?.[key];
+  const track = action
+    ?.getClip()
+    .tracks.find((candidate) => candidate.name.endsWith("Hips.position"));
+  expect(track, `${key} pelvis track`).toBeTruthy();
+  let sum = 0;
+  const count = track!.times.length;
+  for (let i = 0; i < count; i++) sum += track!.values[i * 3 + 1]!;
+  return (seam.gaits[key]?.pelvisDrop ?? NaN) - sum / count;
 }
 
 function expectBand(value: number, band: { min: number; max: number }, label: string) {
@@ -105,24 +145,40 @@ describe.skipIf(!avatarAssetsPresent())("locomotion pelvis drop", () => {
     for (const id of ALL_RIGS) {
       const { seam } = await bootAnimator(id);
       for (const key of ["forward", "backward"]) {
-        expectBand(seam.gaits[key]?.pelvisDrop ?? -1, WALK_DROP, `${id} ${key}`);
+        expectBand(walkingDip(seam, key), WALK_DROP, `${id} ${key}`);
       }
       for (const key of ["strafeLeft", "strafeRight"]) {
-        expectBand(seam.gaits[key]?.pelvisDrop ?? -1, STRAFE_DROP, `${id} ${key}`);
+        expectBand(walkingDip(seam, key), STRAFE_DROP, `${id} ${key}`);
       }
-      expectBand(seam.gaits.runForward?.pelvisDrop ?? -1, RUN_DROP, `${id} runForward`);
+      expectBand(walkingDip(seam, "runForward"), RUN_DROP, `${id} runForward`);
       for (const key of ["runStrafeLeft", "runStrafeRight"]) {
-        expectBand(seam.gaits[key]?.pelvisDrop ?? -1, RUN_STRAFE_DROP, `${id} ${key}`);
+        expectBand(walkingDip(seam, key), RUN_STRAFE_DROP, `${id} ${key}`);
       }
     }
   }, 180_000);
 
-  it("hands the planter a toe pinned at the floor and never an ankle above the bind", async () => {
+  it("bakes forward and strafe stances onto the rig's own floor", async () => {
     for (const id of ALL_RIGS) {
-      const { animator, bindAnkle } = await bootAnimator(id);
-      // In the lowered pose the lowest ball of the foot is at or under the
-      // floor, so the plant pins it at the floor itself.
-      expect(animator.getToeOffset(), `${id} toe`).toBe(0);
+      const { seam } = await bootAnimator(id);
+      for (const key of ["forward", "strafeLeft", "strafeRight"]) {
+        const residual = seam.gaits[key]?.pelvisDrop ?? NaN;
+        expect(Math.abs(residual), `${id} ${key} residual`).toBeLessThan(
+          BAKED_RESIDUAL_MAX
+        );
+      }
+    }
+  }, 180_000);
+
+  it("hands the planter a toe no higher than it stands and never an ankle above the bind", async () => {
+    for (const id of ALL_RIGS) {
+      const { animator, bindAnkle, bindToe } = await bootAnimator(id);
+      // The bake lifts the ball of the foot until the front of the shoe rests
+      // on the floor, so in the lowered pose the toe joint can sit a few
+      // millimetres over it. Pinning that joint at zero would push the shoe
+      // through the floor by as much as the joint stands over its sole.
+      const toe = animator.getToeOffset();
+      expect(toe, `${id} toe`).toBeGreaterThanOrEqual(0);
+      expect(toe, `${id} toe`).toBeLessThanOrEqual(bindToe);
       const sole = animator.getSoleOffset();
       expect(sole, `${id} sole`).toBeGreaterThanOrEqual(0);
       expect(sole, `${id} sole`).toBeLessThanOrEqual(bindAnkle);
@@ -143,7 +199,7 @@ describe.skipIf(!avatarAssetsPresent())("locomotion pelvis drop", () => {
       animator.update(1 / 60);
       if (i >= 120) heights.push(seam.hipsBone!.position.y);
     }
-    const walkDrop = seam.gaits.forward!.pelvisDrop;
+    const walkDrop = walkingDip(seam, "forward");
     // The clip's own bob rides on top and averages out over whole cycles.
     const mean = heights.reduce((a, b) => a + b, 0) / heights.length;
     expect(rest - mean).toBeGreaterThan(walkDrop - 0.01);

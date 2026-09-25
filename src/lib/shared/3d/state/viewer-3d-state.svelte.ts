@@ -1264,11 +1264,20 @@ function buildViewer3DState(
     return true;
   }
 
-  function setPropBuildScoped(propBuild: Partial<PropBuild>): boolean {
+  /**
+   * Merges the changed parts into each scoped performer's own override. A
+   * part no control has set stays absent, so it keeps following the scene
+   * default (the global Grip pills reach the triangle grip this way).
+   */
+  function mergePropBuildScoped(patch: Partial<PropBuild>): boolean {
     return applyScopedPerformerEdit(
       "change-prop-build",
       "Prop build",
-      (performer) => performer.setPropBuild(propBuild)
+      (performer) =>
+        performer.setPropBuild({
+          ...(performer.settings.propBuild ?? {}),
+          ...patch,
+        })
     );
   }
 
@@ -1941,13 +1950,19 @@ function buildViewer3DState(
     const savedFormation = loadPersistedActiveFormation();
     if (savedFormation) activeFormation = savedFormation;
     if (!options.performerSelection) {
-      const savedSelection = seeded(
-        seed?.selectedPerformerIndices,
-        loadPersistedSelectedIndices
-      );
+      // Either selection field seeds the whole selection. A seed with only the
+      // legacy single index must not pick up the real viewer's stored list,
+      // or a stored "[]" leaves the preview with nobody to edit.
+      const selectionSeeded =
+        seed?.selectedPerformerIndices !== undefined ||
+        seed?.selectedPerformerIndex !== undefined;
+      const savedSelection = selectionSeeded
+        ? (seed?.selectedPerformerIndices ?? null)
+        : loadPersistedSelectedIndices();
       if (savedSelection !== null) {
-        const savedPrimary =
-          seed?.selectedPerformerIndex ?? loadPersistedSelectedIndex();
+        const savedPrimary = selectionSeeded
+          ? (seed?.selectedPerformerIndex ?? null)
+          : loadPersistedSelectedIndex();
         if (
           savedPrimary === null &&
           savedSelection.length === performerManager.performers.length
@@ -2400,7 +2415,7 @@ function buildViewer3DState(
     setCharacterScoped,
     setPropScoped,
     applyPerformerAppearanceAssignments,
-    setPropBuildScoped,
+    mergePropBuildScoped,
     setEffortScoped,
     setEffectScoped,
     setHandEffectsScoped,

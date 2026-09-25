@@ -150,7 +150,7 @@
               <ShapeMatrixMandalaArt
                 paint={(sizePx) =>
                   headerArtworkSrc(artworkData, flower, side, sizePx)}
-                artKey={`${artworkData.propType}:${side}:${flowerKey(flower)}`}
+                artKey={`${artworkData.props[side]}:${side}:${flowerKey(flower)}`}
                 alt=""
                 instant
               />

@@ -4,7 +4,7 @@ import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictogra
 import type { CsvEdge } from "$lib/features/choreo-card/services/pictograph-letter-lookup";
 import type { SVGPathData } from "$lib/shared/mandala/domain/mandala-types";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { TipPoint } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
+import type { ShapeMatrixTipPair } from "../domain/prop-pair";
 import {
   flowerStartOrientation,
   flowerTurnPattern,
@@ -175,7 +175,7 @@ function realize(
   leftOri: Orientation,
   rightOri: Orientation,
   edges: CsvEdge[],
-  tipPoint: TipPoint | number
+  tips: ShapeMatrixTipPair
 ): { sequence: SequenceData; left: SVGPathData[]; right: SVGPathData[] } {
   const leftTurn = flowerTurnPattern(pair.left).split("|")[0];
   const rightTurn = flowerTurnPattern(pair.right).split("|")[0];
@@ -190,12 +190,14 @@ function realize(
     edges
   );
   const closedSequence = closeSequenceOrientationCycle(sequence);
+  // Each hand follows its own prop's tracked source, so a staff beside a fan
+  // is compared against the loci those two props actually trace.
   const paths = calculateMandalaGeometry(
     closedSequence.steps,
     undefined,
     undefined,
     { tipEnds: 1, pathShape: "arc" },
-    typeof tipPoint === "number" ? { dx: tipPoint, dy: 0 } : tipPoint
+    { left: [tips.left], right: [tips.right] }
   );
   return { sequence: closedSequence, left: paths.left, right: paths.right };
 }
@@ -239,7 +241,7 @@ export function findExactParityCandidates(
   overlayLeft: SVGPathData[],
   overlayRight: SVGPathData[],
   edges: CsvEdge[],
-  tipPoint: TipPoint | number
+  tips: ShapeMatrixTipPair
 ): ExactParityResult[] {
   const ob = pathPoints(overlayLeft);
   const or = pathPoints(overlayRight);
@@ -247,13 +249,14 @@ export function findExactParityCandidates(
   const defaultRight = flowerStartOrientation(pair.right);
   const orientations = flowerPhaseOrientations(pair);
   const leftMatches: Array<{ orientation: Orientation; distance: number }> = [];
-  const rightMatches: Array<{ orientation: Orientation; distance: number }> = [];
+  const rightMatches: Array<{ orientation: Orientation; distance: number }> =
+    [];
 
   for (const orientation of orientations) {
     const distance = loopDistance(
       ob,
       pathPoints(
-        realize(base, pair, orientation, defaultRight, edges, tipPoint).left
+        realize(base, pair, orientation, defaultRight, edges, tips).left
       )
     );
     if (distance <= MATCH_EPS) {
@@ -265,7 +268,7 @@ export function findExactParityCandidates(
     const distance = loopDistance(
       or,
       pathPoints(
-        realize(base, pair, defaultLeft, orientation, edges, tipPoint).right
+        realize(base, pair, defaultLeft, orientation, edges, tips).right
       )
     );
     if (distance <= MATCH_EPS) {
@@ -291,7 +294,7 @@ export function findExactParityCandidates(
           left.orientation,
           right.orientation,
           edges,
-          tipPoint
+          tips
         ).sequence,
       });
     }
@@ -318,7 +321,7 @@ export function verifyAndCorrect(
   overlayLeft: SVGPathData[],
   overlayRight: SVGPathData[],
   edges: CsvEdge[],
-  tipPoint: TipPoint | number
+  tips: ShapeMatrixTipPair
 ): ParityResult {
   const ob = pathPoints(overlayLeft);
   const or = pathPoints(overlayRight);
@@ -330,7 +333,7 @@ export function verifyAndCorrect(
   for (const o of flowerPhaseOrientations(pair)) {
     const d = loopDistance(
       ob,
-      pathPoints(realize(base, pair, o, defRight, edges, tipPoint).left)
+      pathPoints(realize(base, pair, o, defRight, edges, tips).left)
     );
     if (d < leftDist) {
       leftDist = d;
@@ -343,7 +346,7 @@ export function verifyAndCorrect(
   for (const o of flowerPhaseOrientations(pair)) {
     const d = loopDistance(
       or,
-      pathPoints(realize(base, pair, bestLeft, o, edges, tipPoint).right)
+      pathPoints(realize(base, pair, bestLeft, o, edges, tips).right)
     );
     if (d < rightDist) {
       rightDist = d;
@@ -351,7 +354,7 @@ export function verifyAndCorrect(
     }
   }
 
-  const final = realize(base, pair, bestLeft, bestRight, edges, tipPoint);
+  const final = realize(base, pair, bestLeft, bestRight, edges, tips);
   return {
     leftOri: bestLeft,
     rightOri: bestRight,

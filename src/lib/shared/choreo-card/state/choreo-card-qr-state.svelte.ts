@@ -3,7 +3,10 @@ import { encodeViewMode } from "$lib/shared/browse/domain/browse-view-mode";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import type { getQRCodeGenerator } from "$lib/shared/qr/get-qr-code-generator";
-import { encodeSequence } from "$lib/shared/navigation/services/sequence-encoder";
+import {
+  encodeSequence,
+  UnencodableMotionError,
+} from "$lib/shared/navigation/services/sequence-encoder";
 import { PRINT_QR_RENDER_SIZE } from "@tka/render-composition";
 
 export interface ChoreoCardQrDeps {
@@ -33,6 +36,26 @@ export function createChoreoCardQrState(
   let generating = $state(false);
   const cache = new Map<string, string>();
   let activeKey = "";
+  let warnedUnencodable = false;
+
+  // The QR is optional; the card is not. A motion the encoder has no wire code
+  // for leaves this card without a QR instead of throwing out of the derived
+  // key and taking the whole card down. Any other failure is a real bug.
+  function encodeForQrKey(sequence: SequenceData): string | null {
+    try {
+      return encodeSequence(sequence);
+    } catch (error) {
+      if (!(error instanceof UnencodableMotionError)) throw error;
+      if (!warnedUnencodable) {
+        warnedUnencodable = true;
+        console.warn(
+          "[ChoreoCard] Showing the card without a QR: the sequence has a motion the encoder cannot represent.",
+          { sequenceId: sequence.id, field: error.field, value: error.value }
+        );
+      }
+      return null;
+    }
+  }
 
   const encodedViewMode = $derived.by(() => {
     const mode = getDeps().browseViewMode;
@@ -45,7 +68,8 @@ export function createChoreoCardQrState(
     const presentation = deps.exportPresentation ? "export" : "viewer";
     if (deps.qrUrl) return `url:${presentation}:${deps.darkMode}:${deps.qrUrl}`;
     // Editing a sequence in place keeps its ID; its QR must follow the motions.
-    const sequenceId = encodeSequence(deps.sequence);
+    const sequenceId = encodeForQrKey(deps.sequence);
+    if (sequenceId === null) return "";
     const authTag = deps.isAuthenticated ? "a" : "g";
     const leftProp = deps.leftPropType ?? "default";
     const rightProp = deps.rightPropType ?? "default";

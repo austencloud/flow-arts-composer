@@ -76,6 +76,7 @@ Delegates ALL logic to services (SRP compliant)
   import PresetCard from "./cards/PresetCard.svelte";
   import type { FavoriteState } from "../state/favorite-state.svelte";
   import type { TnDSelection } from "$lib/shared/create/domain/hand-relationship";
+  import type { StartFeasibilityResult } from "$lib/shared/create/domain/start-feasibility";
   import type {
     CommunitySetup,
     SavedGeneratorSetup,
@@ -95,6 +96,7 @@ Delegates ALL logic to services (SRP compliant)
     onGenerateClicked,
     startEndState,
     hasSettingsChanged = false,
+    startFeasibility = null,
     wordInputValue = "",
     onWordInput,
     onWordSubmit,
@@ -112,6 +114,7 @@ Delegates ALL logic to services (SRP compliant)
     onGenerateClicked: (options: GenerationOptions) => Promise<void>;
     startEndState?: StartEndOptionsState;
     hasSettingsChanged?: boolean;
+    startFeasibility?: StartFeasibilityResult | null;
     wordInputValue?: string;
     onWordInput?: (value: string) => void;
     onWordSubmit?: () => void;
@@ -782,6 +785,7 @@ Delegates ALL logic to services (SRP compliant)
           {:else if card.id === "generate-button"}
             <GenerateButtonCard
               {...card.props as ComponentProps<typeof GenerateButtonCard>}
+              {startFeasibility}
               suspendPulse={panelState.openGenerateCard !== null}
             />
           {/if}

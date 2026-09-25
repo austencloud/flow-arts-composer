@@ -90,4 +90,32 @@ describe("stageTunnelSnapshotForViewer", () => {
       JSON.stringify(snapshot.effects)
     );
   });
+
+  it("carries catDogMode from the snapshot's props into the viewer's settings", () => {
+    const snapshotWithCatDog = {
+      ...snapshot,
+      props: { ...snapshot.props, catDogMode: true },
+    } as unknown as TunnelSnapshot;
+
+    const dependencies = {
+      visibility: {
+        setGridMode: vi.fn(),
+        setEffortPreset: vi.fn(),
+        setPathPolicy: vi.fn(),
+        setVisibility: vi.fn(),
+      },
+      animationSettings: { updateSettings: vi.fn() },
+      settings: { updateSettings: vi.fn() },
+      saveViewState: vi.fn(),
+      storage: { setItem: vi.fn() },
+      ensureCustomColorPreference: vi.fn(),
+      stageCustomColors: vi.fn(),
+    } as unknown as TunnelViewerStagingDependencies;
+
+    stageTunnelSnapshotForViewer(snapshotWithCatDog, dependencies);
+
+    expect(dependencies.settings.updateSettings).toHaveBeenCalledWith(
+      snapshotWithCatDog.props
+    );
+  });
 });

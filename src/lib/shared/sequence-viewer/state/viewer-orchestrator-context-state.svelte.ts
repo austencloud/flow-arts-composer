@@ -298,6 +298,11 @@ export function createViewerOrchestratorContextState(
         inputs.exportCoordinator.saveExportedVideo(
           inputs.getEffectiveSequence()
         ),
+      saveRetainedFilm: (filmId: string) =>
+        inputs.exportCoordinator.saveRetainedFilm(
+          filmId,
+          inputs.getEffectiveSequence()
+        ),
 
       playbackController: inputs.interactive.playbackController,
       handleArtExport: inputs.handlers.handleArtExport,

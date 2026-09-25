@@ -131,6 +131,46 @@ The owners have deliberately different jobs:
     clamp) is a leg-proportion mismatch that a retargeter with foot IK goals
     would absorb in the knees; that is the open gap, and it is not the
     pelvis. Contract in `tests/unit/3d/locomotion-pelvis-drop.test.ts`.
+
+    Since 2026-09-07 (e086abff42) that retargeter exists:
+    `bakeContactPreservedLegs` in `ContactRetargeter` solves every stance onto
+    the rig's legs and writes a pelvis track that stands them on the floor, so
+    the bake carries almost all of the dip and `pelvisDrop` is the residual
+    the baked clip still leaves. The pelvis-drop bands were not re-derived
+    when that landed and the suite stayed red locally (CI skips it without
+    the rigs) until 2026-09-24. The bake also had a real defect: it scaled
+    the ankle's height over the floor with the leg, so every rig's planted
+    ankle came out at the source's 0.109 leg lengths rather than its own,
+    and the residual took up the error with the whole body (ch07 -0.043 and
+    a planted sole 5.1 cm in the air, ch34 +0.024). The bake now measures hip
+    heights up from `legBase`, the floor raised by the rig's own bind ankle
+    height and lowered by the source's planted-ankle median. Measured
+    2026-09-24 across the twelve rigs, as the whole dip (baked track mean
+    under rest plus residual): walks 0.045-0.074, strafes 0.057-0.076, runs
+    0.128-0.150, run strafes 0.098-0.141; forward and strafe residuals within
+    0.017 of zero; planted sole at most 1.8 cm over the floor. The run bobs
+    94% of its authored pelvis travel on ch01 (6.89 of 7.32 cm) and a little
+    less than the walk (7.05 cm): the pack's run and walk lift the pelvis
+    within 4% of each other, and holding stances exactly on the floor trims
+    the run's by 6%.
+
+    The terminal stops are not walks and are not baked. Until 2026-09-24
+    they borrowed the forward walk's `pelvisDrop`, which the bake had left
+    at about zero, so the stop's captured standing pose (knees about 150
+    degrees against idle's 163 to 167) hung under a pelvis held at rest
+    height and every rig settled with both soles 3.6 to 5.3 cm up (Remy
+    7.0). `analyzeTerminalStop()` now measures each stop on the rig at
+    `createActions()`: a drop curve per sidecar frame, from the higher sole
+    over the feet the sidecar declares down, smoothed by six [1, 2, 1]
+    passes, and `blendedPelvisDrop()` samples it at the frame the stop is
+    showing. A curve here and not the walks' mean because a stop ends in a
+    held pose: a mean over the braking steps leaves that pose a centimetre
+    off the floor for as long as it is held, and the bounce that rejected
+    the walks' curve is two steps long here, not every stride. Settled
+    soles are now within 1.5% of hip height on all five Walk Lab rigs, and
+    the settled pelvis sits about 3 cm below idle because the capture's
+    standing knees are bent. Contract in
+    `tests/unit/3d/terminal-stop-stance.test.ts`.
 11. **Clip loop seams and the mixer's write skip** are owned by
     `LocomotionAnimator`. The pack's converted clips key from one frame in
     (0.0333 s at 30 Hz) while their duration counts from zero, and their last
@@ -229,6 +269,42 @@ facing, and a root-distance curve or authored stop motion. The animator owns the
 window. FootPlanter may preserve the declared support anchor. Freezing an
 arbitrary walk-loop phase and blending to idle is **Rejected**.
 
+Every caller's root follows the stop's distance curve once braking begins:
+destination walks through `sampleDestinationWalkPlan`, time-scripted walk
+patterns through `samplePatternTerminalTravel`. The captured stop has nearly
+halted before its terminal foot lands, so a root held at walking speed to the
+mark drags the planted feet and the plant slides them to catch up after landing
+(23 cm in 0.13 s on the 2026-09-24 shuttle). A pattern arms on the gait boundary
+nearest a one-and-a-half-stride stop and scales the braking cadence so the root
+enters the brake at the same pace a destination walk does.
+
+Letting go of a stop is part of the stop. Clearing the plan, which a turn or the
+next walk does on its first frame, hands the held stance to idle or walking on
+the same spring the other clips blend on, so the outgoing weight and the
+incoming weight always sum to one. Before 2026-09-24 the clear zeroed the stop
+clip while idle was still at zero, three.js filled the gap with the bind pose
+for a frame, and every rig's ankles jumped 2.5 to 4.6 m/s (7 to 11 m/s with
+planting off) on the first frame of the shuttle's about-face.
+`tests/unit/3d/terminal-stop-release.test.ts` pins the release on every rig.
+
+Where a stop leaves the feet is measured on the rig, in two parts, both from
+2026-09-24. First, the braking stride scale divides the plan's step distances
+by the ground the stop's declared stance feet cover on this rig
+(`analyzeTerminalStop().travel`), not by the sidecar's `nativeTravelMeters`,
+which is the capture's own metres: Remy covers 1.51 m on a stop the sidecar
+calls 0.78, so its scale sat on the 1.75 clamp and its planted ankles ended
+0.34 and 0.79 m ahead of the settled pose, which the about-face then tore back
+at 6 to 7 m/s. Second, the stride warp scales a foot's offset from the pelvis,
+which is neutral only for a foot the body walks over; a stop's last feet settle
+ahead of the pelvis (the ball of the foot 15 to 25 cm ahead on ch01), so even a
+correct scale of 1.27 planted them 7 cm ahead. `getSettlingPlants()` hands
+`FootPlanter` the shift each foot's final plant needs instead: the root's
+remaining plan distance less that anchor's remaining retreat under the body in
+the clip, taken at the landing and faded in across the foot's last swing, live
+once it is down. Every rig now plants within about a centimetre of the settled
+pose, with no rise in peak swing speed. Contract in
+`tests/unit/3d/terminal-stop-stance.test.ts`.
+
 ### Step turns, spin turns, pivots, and facing
 
 Turning is foot placement plus weight transfer and braking. Root yaw alone is
@@ -311,8 +387,29 @@ complete contact model.
 TKA decision: **Shipped** for late contact locks and leg IK. **Adopted** for
 source contact labels, toe-aware anchors, confidence, per-rig reach limits, and
 contact-aware retargeting. Foot locks must release safely when the correction
-would break the source pose. Pulling the pelvis down until every foot reaches is
+would break the source pose. A stride warp is a correction about the pelvis for
+cyclic steps; a transition that ends in a held stance supplies each final
+plant's shift (`FootPlanterInput.settlingPlants`) rather than letting the warp
+scale a stance it does not walk over. Pulling the pelvis down until every foot reaches is
 not acceptable motion quality.
+
+Free arms are retargeted too. Copying the pack's upper-arm rotations onto a
+wider body hangs the hands inside the thighs: before 2026-09-24, standing idle
+put X-Bot's thumb 5.6 cm into its thigh, Remy's hand 4.9 cm, Y-Bot's 3.0 cm and
+ch34's 12.5 cm. The clearance that already existed only covered IK-held prop
+arms against the face, neck and torso, so a hand driven by the walk clips was
+never checked against the legs. **Shipped** as `ArmClearanceRetargeter` in
+scene-3d, run once per clip in `prepareClip` after the legs are fitted. It
+measures each thigh's skin as a radius table in its own bone frame, finds the
+smallest outward swing of the upper arm that keeps every hand vertex 1.2 cm
+clear, caps it at 30 degrees, and eases it over 0.12 s either side. This is
+Mixamo's Character Arm-Space setting measured per rig instead of dialled by
+hand. Clean rigs get almost nothing (ch12 0.2 degrees, ch44 none); X-Bot gets
+up to 7 and ch34 up to 29. The bake reads the body, not only the skeleton, so
+the prepared-clip cache key carries a digest of the skin: X-Bot and Y-Bot share
+one skeleton and need different arms. `tests/unit/3d/arm-thigh-clearance.test.ts`
+checks the result against fully skinned vertices with geometry the bake does
+not share.
 
 ### Motion matching, warping, and learned controllers
 
@@ -572,6 +669,11 @@ itself is pinned by an assertion so the claim cannot go stale silently.
 | Motion matching naturally plants feet                    | Selection only chooses from available data. Contacts, coverage, retargeting, blending, and correction remain explicit concerns.                        |
 | Inertialization or a crossfade can create a missing stop | Blending removes a small pose discontinuity. It does not create braking, final foot placement, or weight transfer.                                     |
 | Setting velocity to zero is a terminal transition        | Human gait termination is phase- and speed-dependent and can require another placement.                                                                |
+| Zeroing a clip's weight releases it                      | three.js fills any weight the actions leave missing with the bind pose. A release has to hand the weight to the next clip, not drop it.                 |
+| A scripted root can keep its speed through a stop        | The stop clip decelerates before its terminal plant. A root that does not follow its distance curve drags the declared stance feet across the floor.   |
+| A sidecar's source travel fits every rig                 | Retargeting keeps rotations, so ground covered grows with the leg. Remy covers twice the capture's 0.78 m; scaling against the sidecar planted its feet up to 0.79 m off. |
+| A stop can borrow the walk's pelvis dip                  | The walks carry their dip inside the baked clip, so the borrowed residual is about zero and the stop's bent-knee settle hung 4 to 5 cm over the floor. |
+| Scaling a stride about the pelvis keeps a stop's stance   | A stop's last feet settle ahead of the pelvis, so any scale other than 1 moves the settled stance by that offset times the scale's excess.              |
 | Rotating the root under the avatar is a turn             | A believable turn selects support, places a foot, transfers weight, and rotates through an authored or data-covered window.                            |
 | Negative leg order is always collision                   | Intentional front and back crossovers reverse left/right foot order. Collision requires geometry and continuity evidence.                              |
 | IK can turn a sidestep into a grapevine                  | IK can correct a target near a valid source pose. It cannot supply the missing swing path, support sequence, pelvis action, or self-contact semantics. |
@@ -580,6 +682,7 @@ itself is pinned by an assertion so the claim cannot go stale silently.
 | A public dataset is product-cleared                      | Code, annotations, video, music, performer data, body models, and derived assets can carry different terms.                                            |
 | A cited technique is implemented                         | Research, adopted architecture, prototypes, and shipped behavior are separate status classes.                                                          |
 | A knee metric detects a knee posed wrong                  | `kneeJerkRms` is the second derivative of an unsigned joint angle, which a rotated bend plane preserves exactly. Grading a limb needs the plane it moved in, not only how far it moved.  |
+| Clip arm rotations fit every body                         | Retargeting keeps rotations, so a hand that hung beside a slim capture body lands inside a wider rig's thigh. Arm spacing is measured per rig, like the legs. |
 | A harness that drives the animator tests the pose         | Foot IK poses the leg after the animator. A harness that stops short of it cannot observe an IK defect at all, whatever it measures.                                                    |
 | Green unit tests prove top-tier motion                   | Tests cannot see twitching, implausible weight transfer, mesh penetration, or a bad silhouette. Live visual evidence is mandatory.                     |
 
@@ -591,6 +694,9 @@ itself is pinned by an assertion so the claim cannot go stale silently.
 2. **Contact-aware retargeting across shipped rigs.** Measure how one source
    motion changes on short and tall rigs. Preserve intentional self-contact
    while preventing interpenetration.
+   Hands against thighs is covered for clip-driven arms (see Contact, foot
+   locking, IK, and retargeting); forearms against the torso during a free
+   arm swing are not measured yet.
 3. **Terminal transition coverage.** The state machine exists and runs
    (`TerminalKey`, armed/braking/landed/settled, `terminalEntryBlend`, contact
    curves), but the only shipped assets are `walk-stop-left` and

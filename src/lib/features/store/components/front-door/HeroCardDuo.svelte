@@ -3,7 +3,7 @@
 <script lang="ts">
   import type { HeroCoverEntry } from "./front-door-catalog";
   import ShopEntryArt from "../ShopEntryArt.svelte";
-  import CardBack from "$lib/features/choreo-card/components/card-back/CardBack.svelte";
+  import BackJobPreview from "$lib/features/choreo-card/components/card-back/BackJobPreview.svelte";
   import HeroPhone from "./HeroPhone.svelte";
   import ActionButton from "$lib/shared/components/selection/ActionButton.svelte";
   import { createHeroScanTimeline } from "./hero-scan-timeline.svelte";
@@ -13,7 +13,6 @@
     SHOP_BACK_THEME,
     bakedCoverUrl,
   } from "../../domain/shop-prop-options";
-  import { getCardBackThemeVisuals } from "$lib/features/choreo-card/components/card-back/card-back-theme-visuals";
   import { hydrateSequence } from "$lib/features/choreo-card/services/catalog-loader";
   import { resolveHeroScanCode } from "./hero-scan-code";
 
@@ -60,10 +59,6 @@
 
   // Printed art must not inherit the viewer's display settings.
   const printedProp = DEFAULT_SHOP_PROP;
-  const printedTheme = {
-    visuals: getCardBackThemeVisuals(SHOP_BACK_THEME),
-    name: SHOP_BACK_THEME,
-  };
 
   // Catalog blobs need hydration before the back can render correctly.
   const backSequence = $derived(
@@ -208,11 +203,12 @@
       <div class="slot back">
         {#if backSequence}
           <div class="card-frame">
-            <CardBack
+            <BackJobPreview
               sequence={backSequence}
-              themeOverride={printedTheme}
+              themeOverride={SHOP_BACK_THEME}
               leftPropTypeOverride={printedProp}
               rightPropTypeOverride={printedProp}
+              primaryPropColorsOverride={null}
             />
           </div>
         {/if}
@@ -427,18 +423,18 @@
     place-items: center;
   }
 
-  /* Gives CardBack's `cqi` border a local query container. */
+  /* The printed back fills the frame throughout the deal animation. */
   .card-frame {
     position: absolute;
     inset: 0;
     border-radius: 0.75rem;
     overflow: hidden;
-    container-type: inline-size;
   }
 
   /* `both` fill keeps outgoing faces hidden across the offscreen swap. */
   .scene.deal-out .art {
-    animation: deal-out-front var(--deal-out-ms) cubic-bezier(0.5, 0, 0.75, 0) both;
+    animation: deal-out-front var(--deal-out-ms) cubic-bezier(0.5, 0, 0.75, 0)
+      both;
   }
   .scene.deal-out .card-frame {
     animation: deal-out-back var(--deal-out-ms) cubic-bezier(0.5, 0, 0.75, 0)
@@ -446,7 +442,8 @@
   }
   /* Back lands first; slight overshoot makes both faces settle instead of glide. */
   .scene.deal-in .card-frame {
-    animation: deal-in-back var(--deal-in-ms) cubic-bezier(0.32, 1.34, 0.52, 1) both;
+    animation: deal-in-back var(--deal-in-ms) cubic-bezier(0.32, 1.34, 0.52, 1)
+      both;
   }
   .scene.deal-in .art {
     animation: deal-in-front var(--deal-in-ms) cubic-bezier(0.32, 1.34, 0.52, 1)

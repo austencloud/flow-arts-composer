@@ -1,5 +1,17 @@
+<!--
+  RecordSceneChrome.svelte
+
+  The one way to film the 3D scene. A take is a performance on this stage —
+  the camera moves as you steer it, or orbits on its own — so the control
+  lives here, beside what it records, and not behind Share or the Export
+  page. Share hands over the finished film.
+
+  The camera mode sits inline beside Record as a two-way toggle: a menu
+  behind a gear hid a choice that decides what the take looks like.
+-->
 <script lang="ts">
   import type { CameraChoreographyState } from "$lib/shared/sequence-viewer/camera-choreography/state.svelte";
+  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import {
     reportViewerControlChange,
     type ViewerControlSink,
@@ -21,20 +33,24 @@
     onSettingChange,
   }: Props = $props();
 
-  const currentMode = $derived(
-    choreography?.activePresetId === "auto-orbit"
-      ? ("auto-orbit" as const)
-      : ("free" as const)
+  type CameraMode = "free" | "auto-orbit";
+
+  // Words, not icons: SegmentedControl shows only the icon when one is set,
+  // and a hand and two arrows over a busy scene do not say "camera mode".
+  const cameraModeOptions: { value: CameraMode; label: string }[] = [
+    { value: "free", label: "Free" },
+    { value: "auto-orbit", label: "Orbit" },
+  ];
+
+  const currentMode = $derived<CameraMode>(
+    choreography?.activePresetId === "auto-orbit" ? "auto-orbit" : "free"
   );
 
   const disabled = $derived(isExporting || !canvasReady);
 
-  let showSettings = $state(false);
-  let settingsEl: HTMLDivElement | null = $state(null);
-  let gearBtnEl: HTMLButtonElement | null = $state(null);
-
-  function handleModeSelect(mode: "free" | "auto-orbit") {
+  function handleModeSelect(mode: CameraMode) {
     const previous = currentMode;
+    if (mode === previous) return;
     choreography?.setPresetId(mode);
     reportViewerControlChange(
       onSettingChange,
@@ -43,138 +59,44 @@
       previous,
       mode
     );
-    reportViewerControlChange(
-      onSettingChange,
-      "record_scene",
-      "camera_settings_open",
-      true,
-      false,
-      { count: false }
-    );
-    showSettings = false;
   }
-
-  function toggleSettings(e: MouseEvent) {
-    e.stopPropagation();
-    const previous = showSettings;
-    showSettings = !showSettings;
-    reportViewerControlChange(
-      onSettingChange,
-      "record_scene",
-      "camera_settings_open",
-      previous,
-      showSettings
-    );
-  }
-
-  function handleOutsideClick(event: MouseEvent) {
-    if (!showSettings) return;
-    const target = event.target as HTMLElement;
-    if (
-      settingsEl &&
-      gearBtnEl &&
-      !settingsEl.contains(target) &&
-      !gearBtnEl.contains(target)
-    ) {
-      showSettings = false;
-      reportViewerControlChange(
-        onSettingChange,
-        "record_scene",
-        "camera_settings_open",
-        true,
-        false,
-        { count: false }
-      );
-    }
-  }
-
-  $effect(() => {
-    if (showSettings) {
-      const timer = setTimeout(() => {
-        document.addEventListener("click", handleOutsideClick);
-      }, 0);
-      return () => {
-        clearTimeout(timer);
-        document.removeEventListener("click", handleOutsideClick);
-      };
-    }
-    return undefined;
-  });
 </script>
 
 <div class="chrome-root">
   <div class="bottom-right">
-    <div class="record-pill">
-      <button
-        type="button"
-        class="pill-record"
-        class:disabled
-        {disabled}
-        onclick={onExport}
-        aria-label={isExporting
-          ? "Recording in progress"
-          : !canvasReady
-            ? "Preparing"
-            : "Record scene"}
-      >
-        {#if !canvasReady}
-          <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-          <span>Preparing...</span>
-        {:else if isExporting}
-          <i class="fas fa-circle pulse" aria-hidden="true"></i>
-          <span>Recording</span>
-        {:else}
-          <span class="dot" aria-hidden="true"></span>
-          <span>Record Scene</span>
-        {/if}
-      </button>
-
-      <div class="pill-divider"></div>
-
-      <button
-        bind:this={gearBtnEl}
-        type="button"
-        class="pill-settings"
-        onclick={toggleSettings}
-        aria-haspopup="true"
-        aria-expanded={showSettings}
-        aria-label="Recording camera mode: {currentMode === 'free'
-          ? 'Free'
-          : 'Orbit'}"
-      >
-        <i class="fas fa-gear" aria-hidden="true"></i>
-      </button>
-
-      {#if showSettings}
-        <div
-          bind:this={settingsEl}
-          class="settings-popover"
-          role="menu"
-          aria-label="Camera mode"
-        >
-          <button
-            type="button"
-            role="menuitem"
-            class="settings-item"
-            class:active={currentMode === "free"}
-            onclick={() => handleModeSelect("free")}
-          >
-            <i class="fas fa-hand-paper" aria-hidden="true"></i>
-            <span>Free Camera</span>
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            class="settings-item"
-            class:active={currentMode === "auto-orbit"}
-            onclick={() => handleModeSelect("auto-orbit")}
-          >
-            <i class="fas fa-sync-alt" aria-hidden="true"></i>
-            <span>Auto Orbit</span>
-          </button>
-        </div>
-      {/if}
+    <div class="camera-mode">
+      <SegmentedControl
+        options={cameraModeOptions}
+        value={currentMode}
+        onchange={handleModeSelect}
+        color="accent"
+        size="sm"
+        ariaLabel="Recording camera"
+        semantics="radiogroup"
+      />
     </div>
+    <button
+      type="button"
+      class="record"
+      {disabled}
+      onclick={onExport}
+      aria-label={isExporting
+        ? "Recording in progress"
+        : !canvasReady
+          ? "Preparing"
+          : "Record scene"}
+    >
+      {#if !canvasReady}
+        <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
+        <span>Preparing...</span>
+      {:else if isExporting}
+        <i class="fas fa-circle pulse" aria-hidden="true"></i>
+        <span>Recording</span>
+      {:else}
+        <span class="dot" aria-hidden="true"></span>
+        <span>Record Scene</span>
+      {/if}
+    </button>
   </div>
 </div>
 
@@ -189,7 +111,9 @@
   .bottom-right {
     position: absolute;
     display: flex;
-    align-items: center;
+    /* Stretch, so Record matches the toggle's height beside it. */
+    align-items: stretch;
+    gap: 0.5rem;
     pointer-events: auto;
     /* The host sets --record-scene-right / --record-scene-bottom to clear
        the scene control rail (desktop) or the compact action bar
@@ -198,11 +122,21 @@
     right: var(--record-scene-right, 12px);
   }
 
-  .record-pill {
-    display: flex;
-    align-items: stretch;
-    position: relative;
-    border-radius: 999px;
+  /* The toggle sits over the live scene, so it carries the same dark glass
+     as the scene rail beside it; bare segments vanish into a bright sky. */
+  .camera-mode {
+    border-radius: 9px;
+    background: rgba(12, 12, 20, 0.72);
+    backdrop-filter: blur(8px);
+  }
+
+  .record {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: var(--min-touch-target, 44px);
+    padding: 0 20px;
+    border-radius: 10px;
     background: linear-gradient(
       180deg,
       rgba(239, 68, 68, 0.95) 0%,
@@ -212,62 +146,24 @@
     box-shadow:
       0 6px 20px rgba(239, 68, 68, 0.35),
       0 0 0 1px rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(8px);
-    overflow: visible;
-  }
-
-  .pill-settings {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--min-touch-target, 44px);
-    min-height: var(--min-touch-target, 44px);
-    background: none;
-    border: none;
-    color: rgba(255, 255, 255, 0.85);
-    cursor: pointer;
-    font-size: 14px;
-    padding: 0;
-    border-radius: 0 999px 999px 0;
-    transition:
-      color 150ms ease,
-      background 150ms ease;
-  }
-
-  .pill-settings:hover {
-    color: white;
-    background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.12));
-  }
-
-  .pill-divider {
-    width: 1px;
-    margin: 10px 0;
-    background: rgba(255, 255, 255, 0.3);
-    flex-shrink: 0;
-  }
-
-  .pill-record {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    min-height: var(--min-touch-target, 44px);
-    padding: 0 20px;
-    background: none;
-    border: none;
     color: #fff;
     font-size: var(--font-size-min, 14px);
     font-weight: 700;
     letter-spacing: 0.02em;
     cursor: pointer;
-    border-radius: 999px 0 0 999px;
-    transition: background 150ms ease;
+    transition: filter var(--duration-fast, 150ms) ease;
   }
 
-  .pill-record:hover:not(:disabled) {
-    background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.1));
+  .record:hover:not(:disabled) {
+    filter: brightness(1.08);
   }
 
-  .pill-record:disabled {
+  .record:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+
+  .record:disabled {
     opacity: 0.7;
     cursor: not-allowed;
   }
@@ -294,85 +190,19 @@
     }
   }
 
-  .settings-popover {
-    position: absolute;
-    bottom: calc(100% + 8px);
-    right: 0;
-    min-width: 160px;
-    background: rgba(18, 18, 28, 0.96);
-    backdrop-filter: blur(20px);
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.15));
-    border-radius: 12px;
-    padding: 4px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-    z-index: 10;
-    animation: popoverUp 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  @keyframes popoverUp {
-    from {
-      opacity: 0;
-      transform: translateY(4px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .settings-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-    height: var(--min-touch-target, 44px);
-    padding: 0 12px;
-    border-radius: 8px;
-    background: transparent;
-    border: none;
-    color: rgba(255, 255, 255, 0.6);
-    font-size: var(--font-size-sm, 14px);
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 150ms ease;
-    white-space: nowrap;
-  }
-
-  .settings-item i {
-    width: 20px;
-    text-align: center;
-    font-size: 13px;
-  }
-
-  .settings-item:hover,
-  .settings-item:focus {
-    background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.08));
-    color: white;
-    outline: none;
-  }
-
-  .settings-item.active {
-    background: rgba(99, 102, 241, 0.18);
-    color: white;
-  }
-
   @media (max-width: 600px) {
     .bottom-right {
       /* Below 600px the scene control workspace is always compact (no
          rail on the right edge), so the right offset is never set; the
-         bottom offset still lifts the pill above the compact action bar. */
+         bottom offset still lifts the controls above the compact action bar. */
       bottom: var(--record-scene-bottom, 80px);
       right: 8px;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .pill-settings,
-    .pill-record {
+    .record {
       transition: none;
-    }
-    .settings-popover {
-      animation: none;
     }
     .pulse {
       animation: none;

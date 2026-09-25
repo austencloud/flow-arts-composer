@@ -172,20 +172,24 @@ export class Canvas2DImageLoader {
     this.requestedRightPropType = rightPropType;
     try {
       // Generate blue and red prop SVGs with different types
-      // Pass darkMode to use local preview state instead of global
+      // Pass darkMode to use local preview state instead of global. The hand,
+      // not the hue of a chosen color, picks which model capture to tint, the
+      // same capture the pictographs use for that hand.
       const [leftPropData, rightPropData] = await Promise.all([
         colors
           ? generatePropSvg(
               leftPropType,
               colors.left,
-              darkMode === undefined ? undefined : darkMode ? "dark" : "light"
+              darkMode === undefined ? undefined : darkMode ? "dark" : "light",
+              "left"
             )
           : generateLeftPropSvg(leftPropType, darkMode),
         colors
           ? generatePropSvg(
               rightPropType,
               colors.right,
-              darkMode === undefined ? undefined : darkMode ? "dark" : "light"
+              darkMode === undefined ? undefined : darkMode ? "dark" : "light",
+              "right"
             )
           : generateRightPropSvg(rightPropType, darkMode),
       ]);
@@ -276,8 +280,8 @@ export class Canvas2DImageLoader {
       // Generate per-hand prop SVGs with custom colors for this layer. Blue and
       // red can be different prop types (each performer's per-hand prop).
       const [leftPropData, rightPropData] = await Promise.all([
-        generatePropSvg(leftPropType, leftColor),
-        generatePropSvg(rightPropType, rightColor),
+        generatePropSvg(leftPropType, leftColor, undefined, "left"),
+        generatePropSvg(rightPropType, rightColor, undefined, "right"),
       ]);
 
       // Create new images

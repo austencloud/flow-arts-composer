@@ -17,8 +17,6 @@
   import { growFade } from "$lib/shared/transitions/motion";
   import BentoPropGrid from "./BentoPropGrid.svelte";
   import type { PropChiralitySeam } from "./prop-chirality-seam";
-  import PrimaryPropColorSettings from "./PrimaryPropColorSettings.svelte";
-  import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
   import CatDogToggle from "./CatDogToggle.svelte";
 
   let {
@@ -34,13 +32,8 @@
     catDogEnabled = false,
     onCatDogToggle,
     chirality,
-    primaryPropColors,
-    onPrimaryPropColorsChange,
-    darkMode = true,
+    showColors = true,
   } = $props<{
-    primaryPropColors?: ViewerCustomColorPair | null;
-    onPrimaryPropColorsChange?: (colors: ViewerCustomColorPair | null) => void;
-    darkMode?: boolean;
     isOpen?: boolean;
     selectedPropType: PropType;
     color?: "blue" | "red";
@@ -64,6 +57,8 @@
      * hand only — blue A beside red B is the pairing that nests.
      */
     chirality?: PropChiralitySeam;
+    /** The picker's own prop-colour control; see BentoPropGrid. */
+    showColors?: boolean;
   }>();
 
   // Desktop (side-by-side layout, i.e. nav sidebar present) opens the picker as
@@ -181,16 +176,6 @@
         </div>
       {/if}
 
-      {#if !isDrilled && onPrimaryPropColorsChange}
-        <div class="color-settings" transition:growFade={{ axis: "y" }}>
-          <PrimaryPropColorSettings
-            colors={primaryPropColors}
-            {darkMode}
-            onchange={onPrimaryPropColorsChange}
-          />
-        </div>
-      {/if}
-
       <BentoPropGrid
         {selectedPropType}
         {color}
@@ -203,6 +188,7 @@
         onDrillChange={(drilled) => (isDrilled = drilled)}
         onSelect={handlePropSelect}
         {chirality}
+        {showColors}
       />
     </div>
   </div>
@@ -214,12 +200,10 @@
     flex-direction: column;
     flex: 1;
     min-height: 0;
+    --prop-colors-inset: 12px 18px;
   }
-  .color-settings {
-    padding: 12px 18px;
-    flex-shrink: 0;
-  }
-  /* Bottom drawer sizing - centered with margin auto (avoids transform conflicts with drag) */
+  /* Bottom drawer sizing. Drawer.css caps the sheet at --sheet-max-width and
+     centers it with auto margins (no transform, so drag is unaffected). */
   :global(.prop-selection-drawer[data-placement="bottom"]) {
     /* DEFINITE height, not fit-content. BentoPropGrid's .grid-scroll is a
        flex:1 + overflow:auto region; under an indefinite (fit-content) parent
@@ -231,10 +215,7 @@
        top inset is ~0 so it stays pinned to the top (matches the Fold). */
     height: 100vh;
     height: calc(100dvh - env(safe-area-inset-top, 0px));
-    max-width: 480px;
-    /* left:0/right:0 match the Drawer bottom defaults — dropped. */
-    margin-left: auto;
-    margin-right: auto;
+    --sheet-max-width: 480px;
     border-radius: var(--sheet-radius-large, 20px)
       var(--sheet-radius-large, 20px) 0 0;
   }

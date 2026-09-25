@@ -110,3 +110,91 @@ export function nextLoopOffset(
   const wrapped = previousRawStep !== -1 && rawStep < previousRawStep;
   return wrapped ? offset + cellCount : offset;
 }
+
+// ── Spotlight curves ─────────────────────────────────────────────────────
+//
+// Extracted from StepStrip.svelte so a canvas painter (Post Studio's beat
+// carousel) can match the DOM rail's dim/shrink treatment exactly instead of
+// re-deriving it. StepStrip imports these back and must behave identically.
+
+export type StripPresentation = "spotlight" | "strip";
+export type StripDensity = "standard" | "compact";
+
+/**
+ * Hero (focus) cell scale multiplier. A continuous strip keeps every cell at
+ * 1 (no spotlight zoom); a spotlight rail zooms the focus to 1.15 (compact
+ * surfaces) or 1.32 (standard — Play With It's original geometry).
+ */
+export function stripHeroScale(
+  presentation: StripPresentation,
+  density: StripDensity
+): number {
+  if (presentation === "strip") return 1;
+  return density === "compact" ? 1.15 : 1.32;
+}
+
+/** Spotlight opacity at an integer cell distance from the focus (0 = focus). */
+export function cellOpacity(
+  presentation: StripPresentation,
+  dist: number
+): number {
+  if (presentation === "strip") return dist === 0 ? 1 : 0.85;
+  if (dist === 0) return 1;
+  return Math.max(0.14, 0.66 - (dist - 1) * 0.18);
+}
+
+/**
+ * Spotlight scale at an integer cell distance from the focus (0 = focus).
+ * `heroScale` is the caller's already-resolved `stripHeroScale(...)` result.
+ */
+export function cellScale(
+  presentation: StripPresentation,
+  heroScale: number,
+  dist: number
+): number {
+  if (presentation === "strip") return 1;
+  if (dist === 0) return heroScale;
+  return Math.max(0.62, 0.84 - (dist - 1) * 0.09);
+}
+
+/**
+ * Blends a discrete per-cell curve across a continuous distance.
+ *
+ * `cellOpacity`/`cellScale` special-case `dist === 0` (the focus is exactly
+ * 1×), which the general formula doesn't approach as `dist` falls toward 0
+ * from above — sampling a fractional distance directly would jump right at
+ * the focus. This instead linearly blends between the two neighboring
+ * integer samples, which is what a continuously sliding canvas focus needs.
+ */
+function interpolateAtDistance(
+  discrete: (dist: number) => number,
+  dist: number
+): number {
+  const clamped = Math.max(0, dist);
+  const lower = Math.floor(clamped);
+  const upper = lower + 1;
+  const t = clamped - lower;
+  const a = discrete(lower);
+  const b = discrete(upper);
+  return a + (b - a) * t;
+}
+
+/** `cellOpacity`, sampled at a continuous (fractional) distance. */
+export function continuousCellOpacity(
+  presentation: StripPresentation,
+  dist: number
+): number {
+  return interpolateAtDistance((d) => cellOpacity(presentation, d), dist);
+}
+
+/** `cellScale`, sampled at a continuous (fractional) distance. */
+export function continuousCellScale(
+  presentation: StripPresentation,
+  heroScale: number,
+  dist: number
+): number {
+  return interpolateAtDistance(
+    (d) => cellScale(presentation, heroScale, d),
+    dist
+  );
+}

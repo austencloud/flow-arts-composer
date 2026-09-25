@@ -20,28 +20,7 @@ import {
   DISPLAY_FRAG,
   PROP_VISIBILITY_MATTE_FRAG,
 } from "$lib/shared/animation-engine/services/fire/fluid-shader-sources";
-import { computeFireTipPresentation } from "$lib/shared/animation-engine/services/fire/fire-tip-presentation";
 import { computeFirePropVisibilityScale } from "$lib/shared/animation-engine/services/fire/fire-prop-visibility";
-import type { PropTipData } from "$lib/shared/animation-engine/domain/types/fire-types";
-
-function createTip(overrides: Partial<PropTipData> = {}): PropTipData {
-  return {
-    x: 475,
-    y: 475,
-    prevX: 475,
-    prevY: 475,
-    velocityX: 0,
-    velocityY: 0,
-    speed: 0,
-    accelerationX: 0,
-    accelerationY: 0,
-    propIndex: 0,
-    tipIndex: 0,
-    flameScale: 1,
-    jerk: 0,
-    ...overrides,
-  };
-}
 
 describe("2D fire quality controls", () => {
   it("reconstructs HDR fire above the simulation grid without unbounded targets", () => {
@@ -132,29 +111,6 @@ describe("2D fire quality controls", () => {
     );
   });
 
-  it("turns tip motion into a tapered wake direction and stretch", () => {
-    const resting = computeFireTipPresentation(createTip(), 950, 950);
-    expect(resting.directionX).toBeCloseTo(0, 8);
-    expect(resting.directionY).toBeCloseTo(1, 8);
-    expect(resting.stretch).toBeCloseTo(1, 8);
-
-    const movingRight = computeFireTipPresentation(
-      createTip({ velocityX: 1400, speed: 1400 }),
-      950,
-      950
-    );
-    expect(movingRight.directionX).toBeLessThan(-0.45);
-    expect(movingRight.stretch).toBeGreaterThan(1.8);
-    expect(movingRight.breakup).toBeGreaterThan(resting.breakup);
-
-    const movingDown = computeFireTipPresentation(
-      createTip({ velocityY: 1400, speed: 1400 }),
-      950,
-      950
-    );
-    expect(movingDown.directionY).toBeGreaterThan(0.9);
-  });
-
   it("limits independent wick geometry to Liquid Fire", () => {
     const wickLayer = DISPLAY_FRAG.slice(
       DISPLAY_FRAG.indexOf("// --- Layer 2: Liquid Fire wick cores ---")
@@ -169,26 +125,16 @@ describe("2D fire quality controls", () => {
     expect(wickLayer).not.toContain("float flameCore");
   });
 
-  it("gates Natural Fire's motion-shaped ignition core by transported fluid", () => {
-    const coreIndex = DISPLAY_FRAG.indexOf("float ignitionCore");
+  it("keeps Natural Fire's bright center inside transported heat", () => {
+    const coreIndex = DISPLAY_FRAG.indexOf("float whiteCore = transportedCore;");
     const liquidIndex = DISPLAY_FRAG.indexOf(
       "// --- Layer 2: Liquid Fire wick cores ---"
     );
 
     expect(coreIndex).toBeGreaterThan(-1);
     expect(coreIndex).toBeLessThan(liquidIndex);
-    expect(DISPLAY_FRAG.indexOf("vec4 tipShape", coreIndex)).toBeGreaterThan(
-      coreIndex
-    );
-    expect(DISPLAY_FRAG.indexOf("float fieldSupport", coreIndex)).toBeGreaterThan(
-      coreIndex
-    );
-    expect(
-      DISPLAY_FRAG.indexOf(
-        "taperedSpine * fieldSupport * mix(0.42, 1.0, youngFlame)",
-        coreIndex
-      )
-    ).toBeGreaterThan(coreIndex);
+    expect(DISPLAY_FRAG).not.toContain("ignitionCore");
+    expect(DISPLAY_FRAG).not.toContain("u_tipShapes");
   });
 
   it("protects prop readability only when foreground fire becomes dense", () => {

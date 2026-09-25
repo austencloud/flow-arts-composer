@@ -30,6 +30,8 @@ const DEFAULT_TRANSFORM = {
   flipHorizontal: false,
 } as const;
 
+type VisualPresetClip = Extract<PresetClip, { kind: "visual" }>;
+
 export const POST_STUDIO_ROLE = {
   performance: "performance-video",
   animation: "sequence-animation",
@@ -37,6 +39,7 @@ export const POST_STUDIO_ROLE = {
   tunnel: "sequence-tunnel",
   scene3d: "sequence-scene-3d",
   mandala: "sequence-mandala",
+  carousel: "sequence-carousel",
 } as const;
 
 export type PostStudioRoleKey =
@@ -49,7 +52,9 @@ export type PostStudioRenderMode =
   | "choreo-card"
   | "tunnel"
   | "scene-3d"
-  | "mandala";
+  | "mandala"
+  /** Drawn by a `PostStudioLayerPainter`, identically in preview and export. */
+  | "painted";
 
 function role(
   key: PostStudioRoleKey,
@@ -81,7 +86,7 @@ function visualClip(
   id: string,
   sourceRole: PostStudioRoleKey,
   regionId: string
-): PresetClip {
+): VisualPresetClip {
   return {
     id,
     kind: "visual",
@@ -94,6 +99,28 @@ function visualClip(
     // performance clip uses it for media sync, the animation for fractional
     // motion, and the card for its highlighted pictograph.
     useResolvedTimeMap: true,
+  };
+}
+
+function breakdownStripClip(
+  id: string,
+  sourceRole: PostStudioRoleKey,
+  regionId: string
+): VisualPresetClip {
+  return {
+    ...visualClip(id, sourceRole, regionId),
+    start: {
+      unit: "marker",
+      markerId: BREAKDOWN_MARKER.start,
+      offsetSeconds: 0,
+    },
+    end: {
+      unit: "marker",
+      markerId: BREAKDOWN_MARKER.end,
+      offsetSeconds: 0,
+    },
+    fadeInSeconds: 0.5,
+    fadeOutSeconds: 0.5,
   };
 }
 
@@ -180,6 +207,12 @@ const MANDALA_ROLE = role(
   "Mandala",
   "linked-sequence-derived",
   ["mandala"]
+);
+const CAROUSEL_ROLE = role(
+  POST_STUDIO_ROLE.carousel,
+  "Carousel",
+  "linked-sequence-derived",
+  ["beat-carousel"]
 );
 
 export interface PostStudioSource {
@@ -270,6 +303,12 @@ export const POST_STUDIO_SOURCES: Readonly<
     // `SequenceMandala` declares a `currentStep` prop and never reads it.
     { isStill: true }
   ),
+  [POST_STUDIO_ROLE.carousel]: source(
+    POST_STUDIO_ROLE.carousel,
+    CAROUSEL_ROLE,
+    "painted",
+    "contain"
+  ),
 };
 
 export const POST_STUDIO_SOURCE_ORDER: readonly PostStudioRoleKey[] = [
@@ -279,6 +318,7 @@ export const POST_STUDIO_SOURCE_ORDER: readonly PostStudioRoleKey[] = [
   POST_STUDIO_ROLE.tunnel,
   POST_STUDIO_ROLE.scene3d,
   POST_STUDIO_ROLE.mandala,
+  POST_STUDIO_ROLE.carousel,
 ];
 
 /**
@@ -406,3 +446,181 @@ export const POST_STUDIO_PRESETS: readonly MediaCompositionPreset[] = [
 export const DEFAULT_POST_LAYOUT: MediaCompositionPreset =
   POST_STUDIO_PRESETS.find((entry) => entry.id === "sequence-breakdown") ??
   POST_STUDIO_PRESETS[0]!;
+
+/**
+ * The breakdown strip's geometry, in output fractions of a 1080x1920 post:
+ * the performance keeps the top 1420px and a 500px strip below it holds the
+ * animation square and the carousel. Widths and heights are written as
+ * `1 - x` so their sums land on exactly 1, which the region schema checks.
+ */
+export const BREAKDOWN_GEOMETRY = {
+  stripTop: 1420 / 1920,
+  stripHeight: 1 - 1420 / 1920,
+  animationWidth: 500 / 1080,
+  carouselWidth: 1 - 500 / 1080,
+  /** Seconds the strip takes to slide in, and again to slide out. */
+  transitionSeconds: 0.8,
+} as const;
+
+export const BREAKDOWN_MARKER = {
+  start: "breakdown-start",
+  end: "breakdown-end",
+} as const;
+
+export const BREAKDOWN_REGION = {
+  performance: "performance",
+  animation: "strip-animation",
+  carousel: "strip-carousel",
+} as const;
+
+type BreakdownRect = { x: number; y: number; width: number; height: number };
+
+/**
+ * Keyframes that hold `outside` until the section starts, travel to `inside`
+ * over the transition, hold it, and travel back out as the section ends. Every
+ * time follows a marker, so moving a marker moves its slide with it.
+ */
+export function breakdownKeyframes(
+  outside: BreakdownRect,
+  inside: BreakdownRect
+): NonNullable<MediaCompositionPreset["regionMotion"]>[number]["keyframes"] {
+  const at = (markerId: string, offsetSeconds: number) => ({
+    unit: "marker" as const,
+    markerId,
+    offsetSeconds,
+  });
+  const { transitionSeconds } = BREAKDOWN_GEOMETRY;
+  return [
+    { at: at(BREAKDOWN_MARKER.start, 0), rect: outside, curve: "linear" },
+    {
+      at: at(BREAKDOWN_MARKER.start, transitionSeconds),
+      rect: inside,
+      curve: "ease-in-out",
+    },
+    {
+      at: at(BREAKDOWN_MARKER.end, -transitionSeconds),
+      rect: inside,
+      curve: "linear",
+    },
+    { at: at(BREAKDOWN_MARKER.end, 0), rect: outside, curve: "ease-in-out" },
+  ];
+}
+
+export const BREAKDOWN_PERFORMANCE_INSIDE: BreakdownRect = {
+  x: 0,
+  y: 0,
+  width: 1,
+  height: BREAKDOWN_GEOMETRY.stripTop,
+};
+export const FULL_FRAME: BreakdownRect = { x: 0, y: 0, width: 1, height: 1 };
+
+const ANIMATION_INSIDE: BreakdownRect = {
+  x: 0,
+  y: BREAKDOWN_GEOMETRY.stripTop,
+  width: BREAKDOWN_GEOMETRY.animationWidth,
+  height: BREAKDOWN_GEOMETRY.stripHeight,
+};
+const CAROUSEL_INSIDE: BreakdownRect = {
+  x: BREAKDOWN_GEOMETRY.animationWidth,
+  y: BREAKDOWN_GEOMETRY.stripTop,
+  width: BREAKDOWN_GEOMETRY.carouselWidth,
+  height: BREAKDOWN_GEOMETRY.stripHeight,
+};
+/** Below the bottom edge: the strip waits there, drawn nowhere. */
+const belowFrame = (rect: BreakdownRect): BreakdownRect => ({ ...rect, y: 1 });
+
+/**
+ * The performance runs full frame; between the two breakdown markers it lifts
+ * to make room for a strip carrying the animation and a carousel of the
+ * upcoming beats, all three reading one clock. The strip clips follow the
+ * markers, so their fades and the region slide move together when edited.
+ *
+ * Free layout: the slot verbs cannot express a region that moves.
+ */
+export const BREAKDOWN_POST_LAYOUT: MediaCompositionPreset = preset({
+  id: "performance-breakdown-strip",
+  name: "Breakdown",
+  description:
+    "Performance full frame, lifting for a breakdown strip between two markers.",
+  layoutModel: "free",
+  duration: {
+    mode: "follow-source-role",
+    sourceRole: POST_STUDIO_ROLE.performance,
+  },
+  sourceRoles: [PERFORMANCE_ROLE, ANIMATION_ROLE, CAROUSEL_ROLE],
+  markers: [
+    {
+      id: BREAKDOWN_MARKER.start,
+      label: "Breakdown start",
+      time: { unit: "duration-fraction", value: 0.25 },
+    },
+    {
+      id: BREAKDOWN_MARKER.end,
+      label: "Breakdown end",
+      time: { unit: "duration-fraction", value: 0.9 },
+    },
+  ],
+  regions: [
+    region(
+      BREAKDOWN_REGION.performance,
+      "Performance",
+      BREAKDOWN_PERFORMANCE_INSIDE,
+      "contain"
+    ),
+    {
+      ...region(
+        BREAKDOWN_REGION.animation,
+        "Animation",
+        ANIMATION_INSIDE,
+        "contain"
+      ),
+      zIndex: 1,
+    },
+    {
+      ...region(
+        BREAKDOWN_REGION.carousel,
+        "Carousel",
+        CAROUSEL_INSIDE,
+        "contain"
+      ),
+      zIndex: 1,
+    },
+  ],
+  regionMotion: [
+    {
+      regionId: BREAKDOWN_REGION.performance,
+      keyframes: breakdownKeyframes(FULL_FRAME, BREAKDOWN_PERFORMANCE_INSIDE),
+    },
+    {
+      regionId: BREAKDOWN_REGION.animation,
+      keyframes: breakdownKeyframes(
+        belowFrame(ANIMATION_INSIDE),
+        ANIMATION_INSIDE
+      ),
+    },
+    {
+      regionId: BREAKDOWN_REGION.carousel,
+      keyframes: breakdownKeyframes(
+        belowFrame(CAROUSEL_INSIDE),
+        CAROUSEL_INSIDE
+      ),
+    },
+  ],
+  clips: [
+    visualClip(
+      BREAKDOWN_REGION.performance,
+      POST_STUDIO_ROLE.performance,
+      BREAKDOWN_REGION.performance
+    ),
+    breakdownStripClip(
+      BREAKDOWN_REGION.animation,
+      POST_STUDIO_ROLE.animation,
+      BREAKDOWN_REGION.animation
+    ),
+    breakdownStripClip(
+      BREAKDOWN_REGION.carousel,
+      POST_STUDIO_ROLE.carousel,
+      BREAKDOWN_REGION.carousel
+    ),
+  ],
+});

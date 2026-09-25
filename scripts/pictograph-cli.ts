@@ -10,11 +10,15 @@
  *   npm run pictograph A B C
  *   npm run pictograph -- --all
  *   npm run pictograph -- U --dark
+ *   npm run pictograph -- U --tnd
  *
- * Flags need the `--` separator. Without it npm reads --all and --dark as its
- * own config options and the script never sees them.
+ * Flags need the `--` separator. Without it npm reads --all, --dark and --tnd
+ * as its own config options and the script never sees them.
  *
- * Output: static/images/grant-feature/pictograph-<letter>[-dark].png
+ * --tnd adds the fused Elemental/TnD glyph (Type 1 letters only) and writes
+ * to a separate -tnd file so the grant images are never overwritten.
+ *
+ * Output: static/images/grant-feature/pictograph-<letter>[-tnd][-dark].png
  *
  * How it runs: the render pipeline imports through `$lib`, `$app/*` and
  * `$env/*`, reads `import.meta.env`, and depends on rune-based .svelte.ts
@@ -79,13 +83,18 @@ function installNodeGlobals(): void {
     if (!url.startsWith("/")) {
       return upstreamFetch(input, init);
     }
-    const relativePath = url.slice(1).split("?")[0] ?? "";
-    const extension = relativePath.split(".").pop()?.toLowerCase() ?? "";
     try {
-      const body = await fs.promises.readFile(
-        path.join(STATIC_ROOT, relativePath),
-        "utf8"
-      );
+      // Strip any query string, then decode the way the dev server does.
+      // Callers encode non-ASCII file names, so β's special placements
+      // arrive as %CE%B2_placements.json. A malformed escape throws URIError
+      // and a decoded path that leaves static/ is refused; both answer 404.
+      const relativePath = decodeURIComponent(url.slice(1).split("?")[0] ?? "");
+      const filePath = path.join(STATIC_ROOT, relativePath);
+      if (!filePath.startsWith(STATIC_ROOT + path.sep)) {
+        throw new Error(`${url} resolves outside static/`);
+      }
+      const extension = relativePath.split(".").pop()?.toLowerCase() ?? "";
+      const body = await fs.promises.readFile(filePath, "utf8");
       return new Response(body, {
         status: 200,
         headers: {
@@ -162,27 +171,31 @@ async function loadRenderModule(): Promise<{
 function parseArgs(argv: string[]): {
   letters: string[];
   themeMode: "light" | "dark";
+  showTnD: boolean;
 } {
   const themeMode: "light" | "dark" = argv.includes("--dark") ? "dark" : "light";
+  const showTnD = argv.includes("--tnd");
   let letters = argv.filter((arg) => !arg.startsWith("--"));
   if (argv.includes("--all")) {
     letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
   }
-  return { letters, themeMode };
+  return { letters, themeMode, showTnD };
 }
 
 async function main(): Promise<number> {
-  const { letters, themeMode } = parseArgs(process.argv.slice(2));
+  const { letters, themeMode, showTnD } = parseArgs(process.argv.slice(2));
 
   if (letters.length === 0) {
     console.log("Usage: npm run pictograph A B C");
     console.log("   Or: npm run pictograph -- A B C --dark");
-    console.log("   Or: npm run pictograph -- --all [--dark]");
+    console.log("   Or: npm run pictograph -- --all [--dark] [--tnd]");
     return 1;
   }
 
   console.log("TKA Pictograph CLI");
-  console.log(`Rendering ${letters.length} pictograph(s), ${themeMode} theme`);
+  console.log(
+    `Rendering ${letters.length} pictograph(s), ${themeMode} theme${showTnD ? ", TnD glyph on" : ""}`
+  );
 
   const startTime = Date.now();
   const { module, close } = await loadRenderModule();
@@ -201,6 +214,7 @@ async function main(): Promise<number> {
         projectRoot: PROJECT_ROOT,
         outputDir: OUTPUT_DIR,
         themeMode,
+        showTnD,
       };
       // The grant feature uses the alpha1 to alpha3 variation for A, B, C.
       if (["A", "B", "C"].includes(letter)) {

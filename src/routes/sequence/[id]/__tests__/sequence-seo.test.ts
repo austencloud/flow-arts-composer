@@ -18,6 +18,7 @@ const curatedMeta: SequenceRouteMeta = {
   catalogId: "l1-tnd-motions",
   deckName: "TKA 1: Learning Letters (Base Motions)",
   deckNumber: 4,
+  letters: ["A", "A", "A", "A"],
 };
 
 describe("sequence route indexing", () => {

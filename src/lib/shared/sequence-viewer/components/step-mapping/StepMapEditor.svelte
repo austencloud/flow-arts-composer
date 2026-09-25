@@ -58,6 +58,14 @@
      * lives only as long as the component.
      */
     draftKey?: string;
+    /**
+     * Where to seek a fresh marking run before the first tap - a hint for
+     * where the interesting footage starts, so the performer does not have to
+     * scrub there by hand. Only applies when starting clean: an unfinished
+     * draft or an existing map already gives the editor a real position to
+     * resume or review from, and that always wins.
+     */
+    initialTime?: number;
     bpm: number;
     onSave: (beatMap: StepMap) => Promise<void>;
     onClose: () => void;
@@ -99,6 +107,20 @@
   const draft = untrack(() => (draftKey ? loadStepMapDraft(draftKey) : null));
 
   /**
+   * Where a fresh run starts: the draft's last position when resuming one,
+   * else the caller's hint if this is truly a blank slate, else the top of
+   * the clip. Computed once - videoDuration and the props behind it never
+   * change mid-session.
+   */
+  const startAt = untrack(() =>
+    draft
+      ? draft.currentTime
+      : !initialStepMap && initialTime !== undefined
+        ? initialTime
+        : null
+  );
+
+  /**
    * How many times through the sequence this run is currently sized for. It
    * grows on its own as the marking reaches the end of a pass with footage
    * still to go, so nobody has to count the repeats before starting.
@@ -113,7 +135,7 @@
 
   let videoEl: HTMLVideoElement | undefined = $state();
   let isPlaying = $state(false);
-  let currentTime = $state(untrack(() => draft?.currentTime ?? 0));
+  let currentTime = $state(startAt ?? 0);
   /**
    * Marking opens slowed down, because the landing is what you are looking for.
    * Re-timing an existing map opens on the timeline, where full speed is what
@@ -164,8 +186,8 @@
     });
   });
 
-  /** Seek to the draft's playhead once the clip can actually be seeked. */
-  let resumeAt: number | null = draft ? draft.currentTime : null;
+  /** Seek to `startAt` once the clip can actually be seeked. */
+  let resumeAt: number | null = startAt;
   let isSaving = $state(false);
   let saveError = $state<string | null>(null);
   let flashing = $state(false);
@@ -344,7 +366,9 @@
         )
       )
     );
-    mirroredStart = startPlacement ? mirrorStartPlacement(startPlacement) : null;
+    mirroredStart = startPlacement
+      ? mirrorStartPlacement(startPlacement)
+      : null;
   }
 
   function startMarking(): void {

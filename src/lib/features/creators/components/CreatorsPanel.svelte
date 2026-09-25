@@ -5,7 +5,7 @@
   import { onDestroy, onMount } from "svelte";
   import { browser } from "$app/environment";
   import { page } from "$app/state";
-  import { PUBLIC_GOOGLE_MAPS_API_KEY } from "$env/static/public";
+  import { PUBLIC_GOOGLE_MAPS_API_KEY } from "$lib/shared/maps/google-maps-api-key";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { authState } from "$lib/shared/auth/state/auth-state.svelte";

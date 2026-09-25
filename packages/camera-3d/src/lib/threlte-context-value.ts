@@ -8,5 +8,6 @@ export function resolveThrelteContextValue<T extends object>(
 ): T | null {
   if (value == null) return null;
   if ("current" in value) return value.current ?? null;
-  return value;
+  // `in` cannot narrow a generic T away from the wrapper shape.
+  return value as T;
 }

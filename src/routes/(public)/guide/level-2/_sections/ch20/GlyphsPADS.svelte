@@ -54,17 +54,13 @@
 </GuideSection>
 
 <style>
-  /* Prose measure + rhythm mirror level-1's FlowFrame `.flow-p`. Lists keep
-     their own left-aligned item text (centring bulleted lines reads poorly)
-     but the block itself is capped and centred with the same measure. */
+  /* GuideSection owns text width; these rules set paragraph rhythm. */
   .section-body :global(p) {
-    max-width: 34rem;
     margin: 0 auto 1.1rem;
     text-align: center;
     text-wrap: balance;
   }
   .section-body :global(ul) {
-    max-width: 34rem;
     margin: 0 auto 1.1rem;
   }
   .section-body :global(p:last-child),

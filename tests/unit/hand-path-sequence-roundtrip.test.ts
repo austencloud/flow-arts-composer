@@ -10,6 +10,10 @@ import {
 } from "$lib/shared/navigation/services/sequence-encoder";
 import { buildHandPathShortCodePayload } from "$lib/shared/qr/services/hand-path-short-code-payload";
 import { hydrateSelfContainedShortCodePayload } from "$lib/shared/qr/services/short-code-payload-hydrator";
+import {
+  findChoreographyMismatch,
+  projectChoreography,
+} from "$lib/shared/qr/services/choreography-fidelity";
 
 describe("saved hand-path cards", () => {
   it.each(getHandPathReferenceCards())(
@@ -45,19 +49,36 @@ describe("saved hand-path cards", () => {
           s.motions.right?.endLocation,
         ])
       );
-      const offline = await decodeSequenceFromQR(record.encoded!);
-      expect(offline.sequenceKind).toBe("hand-path");
-      expect(offline.steps).toHaveLength(4);
+      // A scan plays the saved card exactly, every motion field.
       expect(
-        await hydrateSelfContainedShortCodePayload("TEST01", {
-          ...record,
-          sequenceData: undefined,
-        })
-      ).toMatchObject({
-        sequenceKind: "hand-path",
-        displayName: cardTitle,
-        word: "",
+        findChoreographyMismatch(
+          projectChoreography(reloaded),
+          projectChoreography(scan!)
+        )
+      ).toBeNull();
+      const blobOnly = await hydrateSelfContainedShortCodePayload("TEST01", {
+        ...record,
+        sequenceData: undefined,
       });
+      if (record.encodedFidelity === "exact") {
+        const offline = await decodeSequenceFromQR(record.encoded!);
+        expect(offline.sequenceKind).toBe("hand-path");
+        expect(offline.steps).toHaveLength(4);
+        expect(blobOnly).toMatchObject({
+          sequenceKind: "hand-path",
+          displayName: cardTitle,
+          word: "",
+        });
+      } else {
+        // Hands-only pro and anti with no rotation share one wire token, so
+        // the blob would play the other motion type. It is not stored.
+        expect(record.encodedFidelity).toBe("lossy");
+        expect(record.encoded).toBeUndefined();
+        expect(record.encodedLossReason).toMatch(
+          /motionType: (pro vs anti|anti vs pro)$/
+        );
+        expect(blobOnly).toBeNull();
+      }
       expect(
         await hydrateSelfContainedShortCodePayload("TEST01", {
           ...record,

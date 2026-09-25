@@ -201,7 +201,6 @@
 
   .note {
     display: none;
-    max-width: 44em;
     margin-top: 0.6rem;
     font-size: clamp(var(--font-size-min, 0.875rem), 2.2cqi, 1.4rem);
     line-height: 1.5;

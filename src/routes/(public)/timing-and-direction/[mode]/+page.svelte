@@ -1046,7 +1046,6 @@
   .mode-copy,
   .mode-notes {
     min-width: 0;
-    max-width: 65ch;
   }
   .mode-notes {
     grid-column: 1;
@@ -1127,9 +1126,6 @@
     margin-top: 2.5rem;
     padding-top: 1.5rem;
     border-top: 1px solid var(--theme-stroke);
-  }
-  .history > p {
-    max-width: 68ch;
   }
   .source-note {
     font-size: 1rem;

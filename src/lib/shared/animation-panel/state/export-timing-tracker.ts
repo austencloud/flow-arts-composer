@@ -107,7 +107,8 @@ export function estimateExportTime(
 
   const data = loadThroughput();
   const record = data[tier];
-  const throughput = record?.fps ?? FALLBACK_THROUGHPUT[tier] ?? FALLBACK_THROUGHPUT["1080"];
+  const throughput =
+    record?.fps ?? FALLBACK_THROUGHPUT[tier] ?? FALLBACK_THROUGHPUT["1080"];
 
   // Add ~1s overhead for encoder initialization and finalization
   const encodingTime = totalFrames / throughput;
@@ -121,4 +122,36 @@ export function hasDeviceMetrics(resolution: number): boolean {
   const tier = String(resolution) as ResolutionTier;
   const data = loadThroughput();
   return (data[tier]?.samples ?? 0) > 0;
+}
+
+/** "40.5s", "1m 12s", "2m". Empty for a non-positive duration. */
+export function formatExportDuration(seconds: number): string {
+  if (seconds <= 0) return "";
+  if (seconds < 60) return `${seconds.toFixed(1)}s`;
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.round(seconds % 60);
+  return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
+}
+
+/**
+ * How long a render should take, as the Export page and Share show it:
+ * "~1m 12s", or "~1m 12s est." while this device has no measured throughput
+ * for the resolution. Empty when there is nothing to estimate from.
+ */
+export function formatExportTimeEstimate(
+  resolution: number,
+  fps: number,
+  singlePlayDurationSeconds: number,
+  loopCount: number
+): string {
+  const seconds = estimateExportTime(
+    resolution,
+    fps,
+    singlePlayDurationSeconds,
+    loopCount
+  );
+  if (seconds === null) return "";
+  const label = formatExportDuration(seconds);
+  if (!label) return "";
+  return hasDeviceMetrics(resolution) ? `~${label}` : `~${label} est.`;
 }

@@ -5,13 +5,6 @@ import type { LOOPComponent } from "$lib/shared/foundation/domain/models/generat
 import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import type { TnDElement } from "../domain/tnd-element";
 
-export interface CardBackDomRenderOptions {
-  width: number;
-  height: number;
-  bleedPx: number;
-  theme: string;
-}
-
 /**
  * Per-hand skew data for a single step.
  *
@@ -99,6 +92,7 @@ export interface PrintRenderOptions {
   /** Override prop types (reads from settings when not provided) */
   leftPropType?: PropType;
   rightPropType?: PropType;
+  primaryPropColors?: { left: string; right: string } | null;
   /** TnD elemental theme for front frame coloring. Omit for neutral gray. */
   tndElement?: TnDElement;
   /**

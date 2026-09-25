@@ -3,6 +3,7 @@ import type { VariationConfig } from "../../services/deck-variation";
 import type { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import type { SmartFilterSpec } from "$lib/shared/library/domain/models/collection";
 import type { HandPathReferenceCardId } from "../hand-path-reference-card-manifest";
+import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 
 export interface CardFooter {
   left?: string;
@@ -157,6 +158,43 @@ export interface DeckRelease {
    * so a future redesign is traceable from an old manifest without a backfill.
    */
   insertCard?: { version: number };
+  /**
+   * True once every card's exact reprint data (full SequenceData, matched
+   * positionally to `sequences[]` by index) has been saved to this release's
+   * `cards` subcollection — see `getDeckReleaseCardsPath`. A reprint can then
+   * render straight from the saved data instead of re-reading the source
+   * sequence by id, so a deleted/pruned/local-only source (generated LOOP
+   * cards, a catalog entry retired later) can never silently drop a card.
+   * Absent/false → legacy release; reprint re-resolves by sequenceId through
+   * the original catalog/gallery source and fails loudly if that's gone.
+   */
+  cardDataSaved?: boolean;
+  /**
+   * Soft-delete flag. A released deck's short codes stay scannable forever
+   * (see deck-release-store.deleteDeck's note on permanent deck numbers), so
+   * hard delete is no longer offered from the release UI — archiving hides
+   * the deck from the default list without destroying its manifest or saved
+   * card data. Absent/false → active.
+   */
+  archived?: boolean;
+  /** ISO timestamp of the archive action. Null/absent when not archived. */
+  archivedAt?: string | null;
+}
+
+/**
+ * One card's exact reprint data, stored at
+ * `deckReleases/counter/manifests/{deckNumber}/cards/{cardIndex}` — one
+ * document per card so a large deck's saved sequences can never approach the
+ * 1 MiB Firestore document limit that a single array-of-sequences field on
+ * the manifest itself would risk.
+ */
+export interface DeckReleaseCardData {
+  /** 0-based index into `DeckRelease.sequences[]` (this doc's id, as a number). */
+  cardIndex: number;
+  /** The exact rendered sequence (variation already applied) for this card. */
+  sequence: SequenceData;
+  /** false when this card's applied turn pattern breaks per-hand loop closure. */
+  turnLoopClosed?: boolean;
 }
 
 /** Current insert revision. Bump when the printed insert content changes. */

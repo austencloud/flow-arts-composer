@@ -5,8 +5,12 @@
   import AnimatorInspectorFooter from "$lib/shared/animation-panel/components/AnimatorInspectorFooter.svelte";
   import BentoPropGrid from "$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
   import { createGlobalChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
+  import HandPropToolbar, {
+    type HandPropToolbarProps,
+  } from "$lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
+  import { viewingPropLabel } from "$lib/shared/foundation/services/prop-viewing";
   import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
   import { EFFORTS } from "$lib/shared/effort/domain/effort-types";
   import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
@@ -68,6 +72,8 @@
     onPlaybackToggle: () => void;
     leftPropType: string | null;
     onPropChange?: (propType: PropType) => void;
+    /** Per-hand picking for hosts that keep a local pair (Tunnel creator). */
+    handProps?: HandPropToolbarProps;
     fanAppearance?: FanAppearance;
     onFanAppearanceChange?: (appearance: FanAppearance) => void;
     propChirality?: PropChiralitySeam;
@@ -98,6 +104,7 @@
     onPlaybackToggle,
     leftPropType,
     onPropChange,
+    handProps,
     fanAppearance,
     propChirality = createGlobalChiralitySeam(),
     animationSettingsState = animationSettings,
@@ -129,8 +136,8 @@
     );
   }
 
-  // The active prop for the Props grid's highlight. Tunnel uses a single prop for
-  // both hands (like the 2D Download panel), so blue is the source of truth.
+  // The active prop for the Props grid's highlight: the addressed hand's prop
+  // when the host passes handProps, otherwise the left prop.
   const selectedPropType = $derived<PropType>(
     (leftPropType as PropType | null) ?? PropType.STAFF
   );
@@ -196,7 +203,13 @@
             propType: selectedPropType,
             fanAppearance,
             label: "Props",
-            summary: getPropTypeDisplayInfo(selectedPropType).label,
+            summary: handProps
+              ? viewingPropLabel({
+                  leftPropType: handProps.leftPropType,
+                  rightPropType: handProps.rightPropType,
+                  catDogMode: handProps.catDog,
+                })
+              : getPropTypeDisplayInfo(selectedPropType).label,
             accentColor: RAIL_CATEGORY_ACCENTS.props,
           },
         ]
@@ -339,9 +352,12 @@
       />
     {/if}
   {:else if id === "props"}
-    <!-- Prop selection — the same BentoPropGrid the 2D Download panel uses. The
-         chosen prop flows through the viewer's shared handlePropTypeChange, so it
-         updates both hands, settings, and the URL in lockstep with the 2D view. -->
+    <!-- Prop selection: the same BentoPropGrid the 2D Download panel uses. The
+         chosen prop goes to onPropChange; the host routes it (Tunnel routes it
+         to the addressed hand, the viewer host keeps its own handling). -->
+    {#if onPropChange && handProps}
+      <HandPropToolbar {handProps} />
+    {/if}
     <div class="section-pad props-pad">
       {#if onPropChange}
         <BentoPropGrid
@@ -349,6 +365,7 @@
           onSelect={onPropChange}
           variant="inline"
           flat
+          showColors={false}
           chirality={propChirality}
         />
       {/if}

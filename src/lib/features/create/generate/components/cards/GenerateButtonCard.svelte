@@ -13,6 +13,7 @@ Always renders as a pure button. Word input is now in WordInputCard.
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
   import { uiConfigToGenerationOptions } from "$lib/shared/create/utils/config-mapper";
   import type { GenerationOptions } from "$lib/shared/foundation/domain/models/generation/generate-models";
+  import type { StartFeasibilityResult } from "$lib/shared/create/domain/start-feasibility";
 
   let {
     isGenerating,
@@ -21,6 +22,7 @@ Always renders as a pure button. Word input is now in WordInputCard.
     config,
     startEndOptions = null,
     suspendPulse = false,
+    startFeasibility = null,
   } = $props<{
     isGenerating: boolean;
     hasSettingsChanged?: boolean;
@@ -28,13 +30,17 @@ Always renders as a pure button. Word input is now in WordInputCard.
     config: UIGenerationConfig;
     startEndOptions?: StartEndOptions | null;
     suspendPulse?: boolean;
+    startFeasibility?: StartFeasibilityResult | null;
   }>();
 
-  const isDisabled = $derived(isGenerating);
+  const noValidStart = $derived(startFeasibility?.feasible === false);
+  const isDisabled = $derived(isGenerating || noValidStart);
 
   let buttonLabel = $derived(
     isGenerating
       ? t("generator_button_generating")
+      : noValidStart
+        ? "No valid start"
       : hasSettingsChanged
         ? t("generator_button_regenerate")
         : t("generator_button")
@@ -89,6 +95,7 @@ Always renders as a pure button. Word input is now in WordInputCard.
   disabled={isDisabled}
   type="button"
   aria-label={buttonLabel}
+  title={noValidStart ? startFeasibility?.reason : undefined}
   data-ghost="safe"
   data-ghost-kind="generate"
   data-ghost-label="Generate"

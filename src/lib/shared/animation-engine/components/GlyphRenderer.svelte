@@ -116,14 +116,18 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
       // width. This effect only reads `letter`, so writing state here
       // cannot re-trigger it.
       loadedLetterDimensions = { width: 100, height: 100 };
+      // Ignore a superseded load: the effect's cleanup runs when `letter`
+      // moves on or the renderer unmounts, so a late resolve can't overwrite
+      // the current letter's dimensions or touch a destroyed component.
+      let superseded = false;
       preloadLetterDimensions([currentLetter]).then(() => {
-        // Ignore a superseded load: if `letter` moved on again before this
-        // resolved, applying it now would overwrite dimensions for
-        // whichever letter is current at that point.
-        if (letter === currentLetter) {
+        if (!superseded) {
           loadedLetterDimensions = getLetterDimensions(currentLetter);
         }
       });
+      return () => {
+        superseded = true;
+      };
     }
   });
 

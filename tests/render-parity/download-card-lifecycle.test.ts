@@ -161,6 +161,7 @@ async function openCard(
   columns: number | null = 2,
   options: {
     availableArtifacts?: readonly ("card" | "video")[];
+    initialArtifact?: "card" | "video";
     videoBlobUrl?: string | null;
     initialEntry?: "chooser" | "download";
     metaStatusOverride?: MetaPublishStatus;
@@ -181,7 +182,7 @@ async function openCard(
     isExportingVideo: false,
     exportProgress: null,
     onClose: vi.fn(),
-    initialArtifact: "card",
+    initialArtifact: options.initialArtifact ?? "card",
     availableArtifacts: options.availableArtifacts ?? ["card"],
     initialEntry: options.initialEntry ?? "download",
     canCreateLink: false,
@@ -203,6 +204,91 @@ function chooseFileType(group: Element, label: "Card" | "Video"): void {
 }
 
 describe("Download card with real live pictographs", () => {
+  it.each([
+    {
+      width: 1562,
+      height: 1540,
+      initialArtifact: "card" as const,
+      shouldGrow: true,
+    },
+    {
+      width: 1562,
+      height: 1540,
+      initialArtifact: "video" as const,
+      shouldGrow: true,
+    },
+    {
+      width: 960,
+      height: 412,
+      initialArtifact: "card" as const,
+      shouldGrow: false,
+    },
+  ])(
+    "keeps a $initialArtifact to Card download reachable from the chooser at $width × $height",
+    async ({ width, height, initialArtifact, shouldGrow }) => {
+      renderCard.mockReturnValue(new Promise<Blob>(() => {}));
+      const screen = await openCard(realSequence(8), 4, {
+        initialEntry: "chooser",
+        initialArtifact,
+        availableArtifacts: ["card", "video"],
+      });
+      try {
+        await page.viewport(width, height);
+        const dialog = document.querySelector<HTMLDialogElement>(
+          "dialog.share-sheet-modal"
+        )!;
+        const chooserHeight = await settledDialogHeight(dialog);
+        await page.getByRole("button", { name: /Download a file/ }).click();
+        if (initialArtifact === "video") {
+          const fileType = document.querySelector(".file-type")!;
+          await settledDialogHeight(dialog);
+          chooseFileType(fileType, "Card");
+        }
+        await expect
+          .poll(() => renderCard.mock.calls.length)
+          .toBeGreaterThan(0);
+        const cardHeight = await settledDialogHeight(dialog);
+
+        if (shouldGrow) expect(cardHeight).toBeGreaterThan(chooserHeight + 100);
+
+        const scrollArea = document.querySelector<HTMLElement>(
+          ".sheet-scroll.download-route"
+        )!;
+        const footer = document.querySelector<HTMLElement>(".share-dock")!;
+        const download = [
+          ...footer.querySelectorAll<HTMLButtonElement>("button"),
+        ].find((button) => button.textContent?.trim() === "Download card");
+        const frame = dialog.getBoundingClientRect();
+        const dock = footer.getBoundingClientRect();
+        const wrapper = dialog.querySelector<HTMLElement>(
+          ".modal-content-wrapper"
+        )!;
+        expect(getComputedStyle(wrapper).flex).toBe("0 0 auto");
+        expect(download).toBeDefined();
+        expect(download!.disabled).toBe(false);
+        expect(dock.height).toBeGreaterThan(40);
+        expect(dock.top).toBeGreaterThanOrEqual(frame.top);
+        expect(dock.bottom).toBeLessThanOrEqual(frame.bottom + 1);
+        expect(scrollArea.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+          dock.top + 1
+        );
+
+        if (!shouldGrow) {
+          expect(scrollArea.scrollHeight).toBeGreaterThan(
+            scrollArea.clientHeight
+          );
+          scrollArea.scrollTop = scrollArea.scrollHeight;
+          await nextFrame();
+          expect(footer.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+            dialog.getBoundingClientRect().bottom + 1
+          );
+        }
+      } finally {
+        await screen.unmount();
+      }
+    }
+  );
+
   it("contains the video status when the workspace has no live animation capture", async () => {
     renderCard.mockReturnValue(new Promise<Blob>(() => {}));
     const screen = await openCard(realSequence(8), 2, {

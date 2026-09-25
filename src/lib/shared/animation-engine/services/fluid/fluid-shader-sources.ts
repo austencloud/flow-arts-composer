@@ -591,7 +591,6 @@ uniform vec3 u_colorCore;   // FireColorCurve.coreColor
 uniform vec2 u_tipPositions[16];
 uniform float u_tipFlameScales[16];
 uniform vec3 u_tipColors[16];
-uniform vec4 u_tipShapes[16]; // direction.xy, stretch, breakup
 uniform int u_tipCount;
 uniform vec2 u_aspectCorrect;
 
@@ -804,41 +803,9 @@ void main() {
         * deepInterior * deepInterior
         * mix(0.06, 1.0, max(fresh, fuelRich * 0.86));
 
-      // The ignition spine is only a heat selector inside existing fluid. Its
-      // tapered, motion-oriented mask cannot draw a detached candle flame: no
-      // transported temperature or fuel means no contribution at all.
-      float ignitionCore = 0.0;
-      for (int i = 0; i < 16; i++) {
-        if (i >= u_tipCount) break;
-
-        float fs = u_tipFlameScales[i];
-        vec4 tipShape = u_tipShapes[i];
-        vec2 direction = normalize(tipShape.xy + vec2(0.00001, 0.00001));
-        vec2 normal = vec2(-direction.y, direction.x);
-        vec2 delta = (v_uv - u_tipPositions[i]) * u_aspectCorrect;
-        float along = dot(delta, direction);
-        float lateral = dot(delta, normal);
-        float spineLength = 0.032 * fs * (0.84 + tipShape.z * 0.42);
-        float progress = along / max(spineLength, 0.0001);
-        float longitudinal = smoothstep(-0.2, 0.03, progress)
-          * (1.0 - smoothstep(0.58, 1.0, progress));
-        float spineWidth = 0.009 * fs
-          * mix(1.0, 0.3, clamp(progress, 0.0, 1.0));
-        float bend = sin(progress * 7.0 + reaction * 12.0)
-          * spineWidth * tipShape.w * 0.24;
-        float taperedSpine = exp(
-          -pow((lateral + bend) / max(spineWidth, 0.0001), 2.0) * 2.4
-        ) * longitudinal;
-        float fieldSupport = smoothstep(0.06, 0.28, fireIntensity)
-          * smoothstep(0.004, 0.06, temp + fuel);
-        float youngFlame = 1.0 - smoothstep(0.78, 0.98, reaction);
-        ignitionCore = max(
-          ignitionCore,
-          taperedSpine * fieldSupport * mix(0.42, 1.0, youngFlame)
-        );
-      }
-
-      float whiteCore = max(transportedCore, ignitionCore * 0.94);
+      // Only carried heat creates the white center. A separate tip-aligned
+      // spine can stay bright after the surrounding flame thins to a pixel.
+      float whiteCore = transportedCore;
       vec3 coreTint = mix(vec3(1.0, 0.68, 0.2), vec3(1.0, 0.985, 0.92), whiteCore);
       color += coreTint * whiteCore * 2.3 * u_displayIntensity;
       alpha = max(alpha, whiteCore * 0.94);

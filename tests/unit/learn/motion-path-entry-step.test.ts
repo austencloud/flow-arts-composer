@@ -220,8 +220,7 @@ describe("motion path selection handoff", () => {
     const overlay = {
       left: data.left.get(flowerKey(left))?.left ?? [],
       right: data.right.get(flowerKey(right))?.right ?? [],
-      tipPoint: data.tipPoint,
-      clubTipDx: data.clubTipDx,
+      tips: data.tips,
     };
     const ss = await buildModeRealization({ left, right }, overlay, "SS");
     const alternatives = await Promise.all(

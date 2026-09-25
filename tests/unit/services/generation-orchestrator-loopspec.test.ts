@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import { loadDiamondVariations } from "../../../packages/sequence-engine/tests/helpers/csv-variations";
 
 // Stub the engine's SequenceBuilder so we can assert exactly what
 // GenerationOrchestrator passes into build() without running a real
@@ -39,7 +40,10 @@ function baseOptions(overrides: Partial<GenerationOptions>): GenerationOptions {
 }
 
 function makeOrchestrator(sequenceResult: unknown = { sequence: [], loop: {} }) {
-  const stubVariationProvider = { initialize: vi.fn().mockResolvedValue(undefined) };
+  const stubVariationProvider = {
+    initialize: vi.fn().mockResolvedValue(undefined),
+    getAllVariationsForGrid: vi.fn(async () => loadDiamondVariations()),
+  };
   const stubTransformer = {
     convertToSequenceData: vi.fn().mockResolvedValue({ id: "stub" }),
   };

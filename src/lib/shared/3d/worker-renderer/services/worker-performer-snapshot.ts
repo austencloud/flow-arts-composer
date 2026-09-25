@@ -3,10 +3,12 @@ import {
   GRID_OFFSETS,
   PlaneMode,
   PLANE_MODE_CONFIGS,
+  PROP_COLORS,
   userProportionsState,
 } from "@austencloud/scene-3d";
 import type { CharacterInstanceState } from "../../state/character-instance-state.svelte";
 import { resolvePerformerUpperBodyStance } from "../../domain/performer-upper-body-stance";
+import { resolvePerformerContact } from "../../domain/performer-contact-displacement";
 import { CANONICAL_PERFORMER_ANCHOR_Y } from "../../environments/domain/stage-coordinate-frame";
 import type {
   WorkerPerformerEffectIntent,
@@ -114,9 +116,7 @@ function assertExactEffectIntent(
     ({ effect }) => !isWorkerEffectExact(effect)
   )?.effect;
   if (unsupported) {
-    throw new Error(
-      `Worker performer cannot reproduce ${unsupported} exactly`
-    );
+    throw new Error(`Worker performer cannot reproduce ${unsupported} exactly`);
   }
   throw new Error("Worker performer is missing resolved effect parameters");
 }
@@ -141,13 +141,18 @@ export function createWorkerPerformerSnapshot(
       options.effectIntent.propBuild.fanBuild !== options.propBuild.fanBuild ||
       options.effectIntent.propBuild.fanFrameColor !==
         options.propBuild.fanFrameColor ||
-      options.effectIntent.propBuild.fanCover !== options.propBuild.fanCover)
+      options.effectIntent.propBuild.fanCover !== options.propBuild.fanCover ||
+      options.effectIntent.propBuild.triangleGrip !==
+        options.propBuild.triangleGrip)
   ) {
     throw new Error(
       "Worker performer effect intent uses a different prop build"
     );
   }
   const stance = resolvePerformerUpperBodyStance(performer);
+  // The same displaced props and reset key the interactive viewer hands its
+  // rig.
+  const contact = resolvePerformerContact(performer);
   const staffLength = resolveWorkerPerformerStaffLength(performer);
   const modeConfig = PLANE_MODE_CONFIGS[performer.planeMode];
   const dualWheel = performer.planeMode === PlaneMode.DUAL_WHEEL;
@@ -176,18 +181,19 @@ export function createWorkerPerformerSnapshot(
     staffLength,
     staffThickness: userProportionsState.dimensions.staffRadius,
     propBuild: { ...options.propBuild },
+    handColors: { blue: PROP_COLORS.blue.main, red: PROP_COLORS.red.main },
     leftPropType: options.leftPropType,
     rightPropType: options.rightPropType,
     leftProp: performer.showLeft
       ? serializeProp(
-          performer.leftPropState,
+          contact.leftProp,
           leftHandAnchor,
           options.leftPropFlipped ?? false
         )
       : null,
     rightProp: performer.showRight
       ? serializeProp(
-          performer.rightPropState,
+          contact.rightProp,
           rightHandAnchor,
           options.rightPropFlipped ?? false
         )
@@ -195,6 +201,8 @@ export function createWorkerPerformerSnapshot(
     stanceYaw: stance.yawRad,
     stanceSegments: stance.segments,
     spinePitchOffset: stance.pitchRad,
+    pairSeparation: !contact.planned,
+    contactResetKey: contact.resetKey,
     badge: options.badge?.visible
       ? {
           index: options.badge.index,

@@ -89,7 +89,7 @@ describe("createCardPreviewState artifact identity", () => {
       sequence: value,
       enabled: true,
       renderEnabled: false,
-      onState: (next) => (state = next),
+      onState: (next: CardPreviewState) => (state = next),
     });
     await settle();
     expect(state.request?.sequence.word).toBe("A");

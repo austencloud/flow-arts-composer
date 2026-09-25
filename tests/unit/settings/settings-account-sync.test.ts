@@ -207,8 +207,13 @@ describe("account settings synchronization", () => {
     localStorage.setItem(
       userBQueueKey,
       JSON.stringify({
-        settings: {
-          imageExport: { columnCountOverrides: { "8": 8 } },
+        version: 2,
+        changes: {
+          imageExport: {
+            value: { columnCountOverrides: { "8": 8 } },
+            session: "a-previous-page-load",
+            sequence: 1,
+          },
         },
       })
     );
@@ -226,6 +231,21 @@ describe("account settings synchronization", () => {
       })
     );
     expect(localStorage.getItem(userBQueueKey)).toBeNull();
+  });
+
+  it("migrates a legacy background name without rewriting the rest of the account", async () => {
+    persister.loadSettings.mockResolvedValue({
+      backgroundType: "deepOcean",
+      hapticFeedback: false,
+    });
+    const service = await loadSettingsService();
+
+    await service.initializeFirebaseSync();
+
+    expect(service.currentSettings.backgroundType).toBe(BackgroundType.OCEAN);
+    expect(persister.saveSettings).toHaveBeenCalledWith({
+      backgroundType: BackgroundType.OCEAN,
+    });
   });
 
   it("persists the selected Celestial environment in the local settings owner", async () => {

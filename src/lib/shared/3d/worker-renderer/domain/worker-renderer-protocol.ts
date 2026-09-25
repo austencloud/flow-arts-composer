@@ -91,6 +91,7 @@ export const WORKER_PERFORMER_PROP_TYPES = [
   "bigtriad",
   "minihoop",
   "bighoop",
+  "triangle",
   "fractalgeng",
   "triquetra",
   "triquetra2",
@@ -230,6 +231,12 @@ export interface WorkerPerformerLocomotionSnapshot {
   turnRequest: TurnRequest | null;
 }
 
+/** The colors the application paints the "blue" and "red" prop hands in. */
+export interface WorkerPropHandColors {
+  blue: string;
+  red: string;
+}
+
 export interface WorkerPerformerSnapshot {
   id: string;
   avatarId: string;
@@ -240,6 +247,8 @@ export interface WorkerPerformerSnapshot {
   staffLength: number;
   staffThickness: number;
   propBuild: WorkerPropBuild;
+  /** Absent means the props' authored palette. */
+  handColors?: WorkerPropHandColors | null;
   leftPropType: WorkerPerformerPropType;
   rightPropType: WorkerPerformerPropType;
   leftProp: WorkerPropSnapshot | null;
@@ -247,6 +256,12 @@ export interface WorkerPerformerSnapshot {
   stanceYaw: number;
   stanceSegments: WorkerStanceSegments | null;
   spinePitchOffset: number;
+  /** The animator's legacy pair split. False when the props arrive already
+   *  displaced by the hard-beat planner; absent keeps it on. */
+  pairSeparation?: boolean;
+  /** Changes on a seek or a new score; the animator then drops its contact
+   *  history. Absent never resets. */
+  contactResetKey?: number;
   badge?: WorkerPerformerBadgeSnapshot | null;
   selectionMarker?: WorkerSelectionMarkerSnapshot | null;
   effectIntent?: WorkerPerformerEffectIntent | null;
@@ -462,6 +477,7 @@ export interface InitializeWorkerRendererMessage {
   performers: readonly WorkerPerformerSnapshot[];
   effects?: WorkerSceneEffectsSnapshot;
   reducedMotion?: boolean;
+  retainSceneCache?: boolean;
 }
 
 export interface SwitchWorkerRendererEnvironmentMessage {
@@ -469,6 +485,8 @@ export interface SwitchWorkerRendererEnvironmentMessage {
   requestId: number;
   environment: WorkerEnvironmentKey;
   reducedMotion?: boolean;
+  /** Prepare a hidden replacement without requiring a visible-frame poster. */
+  backgroundPreparation?: boolean;
 }
 
 export interface PosterReadyWorkerRendererMessage {

@@ -8,6 +8,9 @@ export const ZAP_PRESETS: EffectPreset<"zap">[] = [
     patch: {
       intensity: 0.9, leftColor: "#88ccff", rightColor: "#a25bff",
       frequency: 10, branching: 0.5, style: "branching", mode: "arc",
+      // Storm and Web set Tesla's four fields to their factory values; left
+      // out, a look picked after Tesla kept Tesla's glow and jitter.
+      wobbleRate: 0.18, wobbleAmount: 0.5, glow: 0.5, jitter: 0.5,
     },
   },
   {
@@ -28,6 +31,7 @@ export const ZAP_PRESETS: EffectPreset<"zap">[] = [
     patch: {
       intensity: 0.8, leftColor: "#22d3ee", rightColor: "#ec4899",
       frequency: 12, branching: 0.2, style: "web", mode: "arc",
+      wobbleRate: 0.18, wobbleAmount: 0.5, glow: 0.5, jitter: 0.5,
     },
   },
 ];

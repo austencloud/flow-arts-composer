@@ -27,6 +27,21 @@ export function isFirstScanRouteVisit(
     if (nav.type !== "navigate") return false;
   }
 
+  return claimScanVisit(code, physicalCardId);
+}
+
+/**
+ * Claims one scan of this card for the current tab or app session, unless the
+ * same card was claimed within the last five minutes.
+ *
+ * `/q` reaches it through `isFirstScanRouteVisit`. The installed app calls it
+ * directly, because Android can deliver one printed-card link twice (the
+ * launch URL and `appUrlOpen`) and a WebView reload re-reads the launch URL.
+ */
+export function claimScanVisit(
+  code: string,
+  physicalCardId: string | null = null
+): boolean {
   try {
     // Shared shortcodes can back many separately serialized cards. Deduplicate
     // this physical identity, not the choreography payload, so scanning two
@@ -44,7 +59,7 @@ export function isFirstScanRouteVisit(
     }
     sessionStorage.setItem(key, String(now));
   } catch {
-    // With storage disabled, treat the first navigation as an eligible visit.
+    // With storage disabled, treat the first visit as an eligible scan.
   }
 
   return true;

@@ -2,7 +2,7 @@
   /**
    * Front + back of a real Choreo Card for the marketing page.
    * Front = baked print render (Firebase Storage URL from the admin cover
-   * bake, instant load). Back = live CardBack render fed the same sequence,
+   * bake, instant load). Back = the print BackJob fed the same sequence,
    * so the anatomy can never drift from the real card design.
    *
    * No markers sit on the cards. The page's legend rows drive `highlight`;
@@ -11,7 +11,15 @@
    */
   import { onMount, tick, untrack } from "svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import CardBack from "$lib/features/choreo-card/components/card-back/CardBack.svelte";
+  import BackJobPreview from "$lib/features/choreo-card/components/card-back/BackJobPreview.svelte";
+  import { deriveCardBackData } from "$lib/features/choreo-card/components/card-back/card-back-data";
+  import { getCardBackThemeVisuals } from "$lib/features/choreo-card/components/card-back/card-back-theme-visuals";
+  import { computeCardBackLayout } from "$lib/features/choreo-card/services/card-back/card-back-layout";
+  import type { Placement } from "$lib/features/choreo-card/services/card-back/back-job";
+  import {
+    DEFAULT_SHOP_PROP,
+    SHOP_BACK_THEME,
+  } from "../domain/shop-prop-options";
   import { computeFrontRegions } from "../services/card-front-regions";
   import ContextMenu from "$lib/shared/components/context-menu/ContextMenu.svelte";
   import type {
@@ -72,8 +80,7 @@
   // at a random count (8/12/16) with a turn pattern, so the reader sees the real
   // variety: different words, mandalas, LOOP types, difficulties, and step
   // counts. The anatomy stays accurate because front regions are computed from
-  // the print layout for that step count, and back regions are measured off the
-  // live CardBack DOM.
+  // the print layout and back regions use the BackJob's placement geometry.
   type Shown = { sequence: SequenceData; frontUrl: string; stepCount: number };
   const pokerCardAspectRatio =
     CARD_SIZES.poker.widthInches / CARD_SIZES.poker.heightInches;
@@ -289,22 +296,28 @@
     }
   }
 
-  // Back regions are measured off the live CardBack DOM at hover time, so
-  // they track the real element positions regardless of theme border width
-  // or how many LOOP icons this card shows. Multiple matches union (loop-col).
-  const BACK_SELECTORS: Record<string, string> = {
-    turn: ".corner.top-left",
-    reversal: ".corner.top-right",
-    mandala: ".mandala-anchor",
-    looptype: ".loop-col",
-    difficulty: ".level-badge-slot > :first-child",
-    startpos: ".corner.bottom-left",
-    stepcount: ".corner.bottom-right",
-  };
+  const BACK_IDS = [
+    "turn",
+    "reversal",
+    "mandala",
+    "looptype",
+    "difficulty",
+    "startpos",
+    "stepcount",
+  ] as const;
+
+  const backLayout = $derived.by(() => {
+    if (!shown) return null;
+    const theme = getCardBackThemeVisuals(SHOP_BACK_THEME);
+    return computeCardBackLayout(deriveCardBackData(shown.sequence), {
+      width: 1644,
+      height: 2244,
+      borderWidthCqi: theme.borderWidth ?? 2,
+    });
+  });
 
   const PAD = 1; // % breathing room around the measured element
 
-  let backBox: HTMLElement | null = $state(null);
   let frontBox: HTMLElement | null = $state(null);
   let liveRegionRevision = $state(0);
 
@@ -360,27 +373,64 @@
   );
 
   function measureBack(id: string) {
-    const sel = BACK_SELECTORS[id];
-    if (!sel || !backBox) return null;
-    const els = backBox.querySelectorAll(sel);
-    if (els.length === 0) return null;
-    const b = backBox.getBoundingClientRect();
-    let left = Infinity,
-      top = Infinity,
-      right = -Infinity,
-      bottom = -Infinity;
-    for (const el of els) {
-      const r = el.getBoundingClientRect();
-      left = Math.min(left, r.left);
-      top = Math.min(top, r.top);
-      right = Math.max(right, r.right);
-      bottom = Math.max(bottom, r.bottom);
+    const layout = backLayout;
+    if (!layout) return null;
+    const cqi = layout.anchors.cqiEff;
+    let boxes: Placement[];
+    switch (id) {
+      case "turn":
+        boxes = [
+          { ...layout.topLeftGlyph, h: layout.topLeftGlyph.h + 3.4 * cqi },
+        ];
+        break;
+      case "reversal":
+        boxes = [
+          { ...layout.topRightGlyph, h: layout.topRightGlyph.h + 3.4 * cqi },
+        ];
+        break;
+      case "mandala":
+        boxes = [layout.mandala];
+        break;
+      case "looptype":
+        boxes = layout.loopRow.items.map((item) => ({
+          ...item,
+          h: item.h + 3 * cqi,
+        }));
+        break;
+      case "difficulty":
+        boxes = [layout.levelBadge];
+        break;
+      case "startpos":
+        boxes = [
+          {
+            ...layout.startPos,
+            y: layout.startPos.y - 4 * cqi,
+            h: layout.startPos.h + 4 * cqi,
+          },
+        ];
+        break;
+      case "stepcount":
+        boxes = [
+          {
+            ...layout.stepCount,
+            y: layout.stepCount.y - 4 * cqi,
+            h: layout.stepCount.h + 4 * cqi,
+          },
+        ];
+        break;
+      default:
+        return null;
     }
+    if (!boxes.length) return null;
+    const left = Math.min(...boxes.map((box) => box.x));
+    const top = Math.min(...boxes.map((box) => box.y));
+    const right = Math.max(...boxes.map((box) => box.x + box.w));
+    const bottom = Math.max(...boxes.map((box) => box.y + box.h));
     return {
-      x: ((left - b.left) / b.width) * 100 - PAD,
-      y: ((top - b.top) / b.height) * 100 - PAD,
-      w: ((right - left) / b.width) * 100 + 2 * PAD,
-      h: ((bottom - top) / b.height) * 100 + 2 * PAD,
+      x: (left / 1644) * 100 - PAD,
+      y: (top / 2244) * 100 - PAD,
+      w: ((right - left) / 1644) * 100 + 2 * PAD,
+      h: ((bottom - top) / 2244) * 100 + 2 * PAD,
     };
   }
 
@@ -425,7 +475,7 @@
   function backHit(e: PointerEvent) {
     if (e.pointerType !== "mouse") return;
     const p = pointerPct(e);
-    for (const id of Object.keys(BACK_SELECTORS)) {
+    for (const id of BACK_IDS) {
       const rg = measureBack(id);
       if (rg && inRect(p.x, p.y, rg)) return onhighlight?.(id);
     }
@@ -453,7 +503,7 @@
   }
   function backTap(e: MouseEvent) {
     const p = clickPct(e);
-    for (const id of Object.keys(BACK_SELECTORS)) {
+    for (const id of BACK_IDS) {
       const rg = measureBack(id);
       if (rg && inRect(p.x, p.y, rg))
         return onhighlight?.(highlight === id ? null : id);
@@ -598,7 +648,6 @@
           <div
             class="card-box back"
             role="presentation"
-            bind:this={backBox}
             class:dimmable={activeRegion?.face === "back"}
             onpointermove={backHit}
             onpointerleave={(e) =>
@@ -606,7 +655,13 @@
             onclick={backTap}
             oncontextmenu={openCardMenu}
           >
-            <CardBack sequence={shown.sequence} />
+            <BackJobPreview
+              sequence={shown.sequence}
+              themeOverride={SHOP_BACK_THEME}
+              leftPropTypeOverride={DEFAULT_SHOP_PROP}
+              rightPropTypeOverride={DEFAULT_SHOP_PROP}
+              primaryPropColorsOverride={null}
+            />
             {@render spotlight("back")}
           </div>
           {#if face === "both"}<figcaption>Back</figcaption>{/if}
@@ -853,11 +908,6 @@
   .front-preview-unavailable i {
     font-size: 1.5rem;
     color: oklch(0.62 0.04 290);
-  }
-
-  /* CardBack fills its parent and sizes with container query units. */
-  .card-box.back {
-    container-type: size;
   }
 
   @media (prefers-reduced-motion: reduce) {

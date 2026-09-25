@@ -161,12 +161,12 @@
                 style:background={theme.gradient}
                 aria-hidden="true"
               >
-                <span class="choice-icon">{@html theme.iconSvg}</span>
-              </span>
-              <span class="choice-name" aria-hidden="true">{theme.label}</span>
-              <span class="choice-marker" aria-hidden="true">
-                {#if currentType === theme.type}<i class="fas fa-check"
-                  ></i>{/if}
+                <img src={`/images/theme-previews/${theme.type}.webp`} alt="" />
+                <span class="choice-scrim"></span>
+                <span class="choice-name">{theme.label}</span>
+                {#if currentType === theme.type}
+                  <span class="choice-current">Current</span>
+                {/if}
               </span>
             </button>
           {/each}
@@ -191,6 +191,8 @@
   .theme-workspace {
     display: flex;
     flex-direction: column;
+    flex: 1;
+    min-height: 0;
     width: 100%;
     min-width: 0;
   }
@@ -222,6 +224,7 @@
     display: flex;
     flex-direction: column;
     flex: 1;
+    min-height: 0;
     min-width: 0;
   }
   .theme-stage {
@@ -276,6 +279,8 @@
     line-height: 1.4;
   }
   .theme-controls {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
     flex: none;
     min-width: 0;
     padding: 14px;
@@ -303,37 +308,34 @@
   .theme-choices {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
+    min-height: 0;
     gap: 8px;
   }
   .theme-choices button {
-    display: grid;
-    grid-template-columns: 36px minmax(0, 1fr) 16px;
-    align-items: center;
-    min-height: 56px;
-    gap: 8px;
-    padding: 5px;
+    position: relative;
+    display: block;
+    min-width: 0;
+    min-height: 104px;
+    padding: 0;
     overflow: hidden;
     color: var(--theme-text);
     text-align: left;
-    background: transparent;
+    background: var(--theme-card-bg);
     border: 1px solid var(--theme-stroke);
     border-radius: 10px;
     cursor: pointer;
     transition:
       border-color var(--transition-fast),
-      background var(--transition-fast);
+      background var(--transition-fast),
+      box-shadow var(--transition-fast);
   }
   .theme-choices button:hover {
-    background: var(--theme-card-hover-bg);
     border-color: var(--theme-stroke-strong);
+    box-shadow: 0 0 0 1px var(--theme-stroke-strong);
   }
   .theme-choices button.previewing {
     border-color: var(--theme-accent);
-    background: color-mix(
-      in srgb,
-      var(--theme-accent) 12%,
-      var(--theme-card-bg)
-    );
+    box-shadow: 0 0 0 2px var(--theme-accent);
   }
   .theme-choices button:focus-visible,
   .apply-theme:focus-visible {
@@ -341,52 +343,77 @@
     outline-offset: 2px;
   }
   .choice-art {
-    display: grid;
-    width: 36px;
-    height: 44px;
-    place-items: center;
-    border-radius: 6px;
-    color: white;
+    position: absolute;
+    inset: 0;
+    display: block;
+    overflow: hidden;
+    isolation: isolate;
+    background: var(--theme-card-bg);
   }
-  .choice-icon {
-    width: 15px;
-    height: 15px;
-  }
-  .choice-icon :global(svg) {
+  .choice-art img {
     display: block;
     width: 100%;
     height: 100%;
+    object-fit: cover;
+    transition: transform var(--transition-fast);
+  }
+  .choice-scrim {
+    position: absolute;
+    z-index: 1;
+    inset: 35% 0 0;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+    pointer-events: none;
+  }
+  .theme-choices button:hover .choice-art img,
+  .theme-choices button:focus-visible .choice-art img {
+    transform: scale(1.04);
+  }
+  .theme-choices button:active .choice-art img {
+    transform: scale(1.01);
   }
   .choice-name {
+    position: absolute;
+    z-index: 2;
+    right: 10px;
+    bottom: 9px;
+    left: 10px;
     overflow: hidden;
+    color: #fff;
     font-size: 14px;
-    font-weight: 650;
+    font-weight: 700;
+    line-height: 1.2;
     text-overflow: ellipsis;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
     white-space: nowrap;
   }
-  .choice-marker {
-    display: grid;
-    width: 16px;
-    height: 16px;
-    place-items: center;
-    color: var(--theme-text);
-    font-size: 10px;
-  }
-  .choice-marker:empty {
-    border: 1px solid var(--theme-stroke-strong);
-    border-radius: 50%;
+  .choice-current {
+    position: absolute;
+    z-index: 2;
+    top: 8px;
+    left: 8px;
+    padding: 3px 6px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.2;
+    background: rgba(0, 0, 0, 0.68);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 5px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
   }
   .apply-theme {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     min-height: 44px;
+    min-width: 164px;
     gap: 8px;
     flex: 0 0 auto;
     padding: 8px 14px;
     color: var(--theme-button-text, #fff);
     font: inherit;
     font-weight: 700;
+    white-space: nowrap;
     background: var(--theme-accent);
     border: 1px solid var(--theme-accent);
     border-radius: 10px;
@@ -416,18 +443,18 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
     .theme-choices button {
-      grid-template-columns: 40px minmax(0, 1fr) 16px;
-      min-height: 56px;
-    }
-    .choice-art {
-      width: 40px;
-      height: 44px;
+      min-height: 120px;
     }
     .controls-heading {
       align-items: flex-start;
     }
     .apply-theme {
       min-height: 44px;
+    }
+  }
+  @container (min-width: 600px) and (max-width: 759px) {
+    .theme-choices {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
     }
   }
   @media (max-height: 650px) and (min-width: 760px) {
@@ -440,28 +467,31 @@
     @container (min-width: 1000px) {
       .theme-composition {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) clamp(280px, 22cqi, 340px);
+        grid-template-columns: minmax(0, 1fr) clamp(360px, 36cqi, 640px);
         gap: var(--settings-gap);
+        min-height: 620px;
       }
       .theme-stage {
+        min-height: 0;
         border-radius: 18px;
       }
       .theme-controls {
-        align-self: start;
+        min-height: 0;
         border-top: 1px solid var(--theme-stroke);
         border-radius: 18px;
       }
       .theme-choices {
-        grid-template-columns: minmax(0, 1fr);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-rows: repeat(5, minmax(100px, 1fr));
       }
       .controls-heading {
-        flex-direction: column;
-        align-items: flex-start;
+        align-items: center;
       }
     }
   }
   @media (prefers-reduced-motion: reduce) {
     .theme-choices button,
+    .choice-art img,
     .apply-theme {
       transition: none;
     }

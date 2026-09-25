@@ -22,6 +22,7 @@ export function createViewer3DStateForTest(deps: {
   environmentId?: SceneEnvironmentId;
   firstUseEnvironment?: SceneEnvironmentId;
   persistent?: boolean;
+  selectedPerformerIndex?: number | null;
   performerSelection?: ViewerPerformerSelectionController;
 }): { state: ViewerState; dispose: () => void } {
   let state!: ViewerState;
@@ -34,6 +35,7 @@ export function createViewer3DStateForTest(deps: {
           renderMode: deps.renderMode,
           backgroundType: deps.backgroundType,
           environmentId: deps.environmentId,
+          selectedPerformerIndex: deps.selectedPerformerIndex,
         };
     state = createViewer3DState(seed, {
       firstUseEnvironment: deps.firstUseEnvironment,

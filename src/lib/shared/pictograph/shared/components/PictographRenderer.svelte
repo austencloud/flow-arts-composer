@@ -473,14 +473,18 @@ Usage:
       // of poisoning a permanent cache, but keep both components consistent).
       loadedLetterDimensions = { width: 100, height: 100 };
       // Trigger async load and wait for it
+      // Ignore a superseded load: the effect's cleanup runs when the letter
+      // moves on or the renderer unmounts. Reading the pictograph prop here
+      // instead would chase a parent getter that may already be torn down.
+      let superseded = false;
       preloadLetterDimensions([currentLetter]).then(() => {
-        // Ignore a superseded load: if the letter moved on again before
-        // this resolved, applying it now would overwrite dimensions for
-        // whichever letter is current at that point.
-        if (pictograph?.letter === currentLetter) {
+        if (!superseded) {
           loadedLetterDimensions = getLetterDimensions(currentLetter);
         }
       });
+      return () => {
+        superseded = true;
+      };
     }
   });
 

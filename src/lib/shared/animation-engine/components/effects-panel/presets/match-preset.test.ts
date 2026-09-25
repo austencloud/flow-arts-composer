@@ -8,8 +8,13 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { configMatchesPatch, matchPresetId } from "./match-preset";
+import {
+  configMatchesPatch,
+  matchPresetId,
+  pickedPresetId,
+} from "./match-preset";
 import { BLOOM_PRESET_GROUP, BLOOM_PRESETS } from "./bloom-presets";
+import { BUBBLES_PRESET_GROUP } from "./bubbles-presets";
 import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
 
 const SUPERNOVA = BLOOM_PRESETS.find((p) => p.id === "bloom-supernova")!;
@@ -62,5 +67,34 @@ describe("matchPresetId", () => {
       intensity: 0.42, // hand-tuned away from Supernova's 0.9
     } as Record<string, unknown>;
     expect(matchPresetId(BLOOM_PRESET_GROUP, cfg)).toBeNull();
+  });
+});
+
+describe("pickedPresetId", () => {
+  const bubblesFactory = DEFAULT_EFFECTS_CONFIG.bubbles as unknown as Record<
+    string,
+    unknown
+  >;
+
+  it("keeps a clicked look lit when its patch equals the factory default", () => {
+    // Bubbles Classic is the factory look, so value matching alone lit the
+    // Original chip after Classic was clicked.
+    expect(
+      pickedPresetId(BUBBLES_PRESET_GROUP, bubblesFactory, "bubbles-classic")
+    ).toBe("bubbles-classic");
+  });
+
+  it("drops the pick once a field is tuned away from the look", () => {
+    const tuned = { ...bubblesFactory, intensity: 0.93 };
+    expect(
+      pickedPresetId(BUBBLES_PRESET_GROUP, tuned, "bubbles-classic")
+    ).toBeNull();
+  });
+
+  it("returns null with no pick or an unknown id", () => {
+    expect(pickedPresetId(BUBBLES_PRESET_GROUP, bubblesFactory, null)).toBeNull();
+    expect(
+      pickedPresetId(BUBBLES_PRESET_GROUP, bubblesFactory, "bloom-supernova")
+    ).toBeNull();
   });
 });

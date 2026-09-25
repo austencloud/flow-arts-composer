@@ -6,6 +6,8 @@ export interface WorkerRendererResponsivenessResult {
   mainThreadGapsOver50Ms: number;
   outgoingWorkerMaxFrameGapMs: number;
   outgoingWorkerMaxFrameGapPhase: string | null;
+  outgoingFrameSamples: number;
+  lastOutgoingFrameAt: number | null;
 }
 
 export interface WorkerRendererResponsivenessState extends WorkerRendererResponsivenessResult {
@@ -26,6 +28,8 @@ export function createWorkerRendererResponsivenessState(
     mainThreadGapsOver50Ms: 0,
     outgoingWorkerMaxFrameGapMs: 0,
     outgoingWorkerMaxFrameGapPhase: null,
+    outgoingFrameSamples: 0,
+    lastOutgoingFrameAt: null,
     currentPhase: "worker",
   };
 }
@@ -45,10 +49,18 @@ export function recordMainThreadTimer(
 
 export function recordOutgoingWorkerFrame(
   state: WorkerRendererResponsivenessState,
-  deltaMs: number
+  deltaMs: number,
+  receivedAt = performance.now()
 ): void {
-  if (deltaMs > state.outgoingWorkerMaxFrameGapMs) {
-    state.outgoingWorkerMaxFrameGapMs = deltaMs;
+  const gap =
+    state.lastOutgoingFrameAt === null
+      ? receivedAt - state.requestedAt
+      : receivedAt - state.lastOutgoingFrameAt;
+  state.lastOutgoingFrameAt = receivedAt;
+  state.outgoingFrameSamples += 1;
+  const measuredGap = Math.max(deltaMs, gap);
+  if (measuredGap > state.outgoingWorkerMaxFrameGapMs) {
+    state.outgoingWorkerMaxFrameGapMs = measuredGap;
     state.outgoingWorkerMaxFrameGapPhase = state.currentPhase;
   }
 }
@@ -94,6 +106,8 @@ export class WorkerRendererResponsivenessProbe {
       mainThreadGapsOver50Ms: active.mainThreadGapsOver50Ms,
       outgoingWorkerMaxFrameGapMs: active.outgoingWorkerMaxFrameGapMs,
       outgoingWorkerMaxFrameGapPhase: active.outgoingWorkerMaxFrameGapPhase,
+      outgoingFrameSamples: active.outgoingFrameSamples,
+      lastOutgoingFrameAt: active.lastOutgoingFrameAt,
     };
   }
 }

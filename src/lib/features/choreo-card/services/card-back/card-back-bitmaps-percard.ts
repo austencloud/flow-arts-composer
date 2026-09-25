@@ -516,6 +516,7 @@ export async function rasterizeStartPlacementPictograph(
   ctx: PerCardRenderCtx = DEFAULT_CTX,
   leftPropType?: PropType,
   rightPropType?: PropType,
+  primaryPropColors?: { left: string; right: string } | null,
 ): Promise<ImageBitmap> {
   const box = Math.round(12 * ctx.cqi);
   const borderW = Math.max(1, Math.round(0.3 * ctx.cqi));
@@ -536,6 +537,7 @@ export async function rasterizeStartPlacementPictograph(
       // Draw the deck's prop, not the renderer's staff default.
       leftPropType,
       rightPropType,
+      primaryPropColors,
     },
   });
 

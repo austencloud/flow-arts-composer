@@ -35,6 +35,11 @@ export interface RenderPictographOptions {
   themeMode?: "light" | "dark";
   /** Canvas size in pixels. Default 950 (the pictograph viewBox). */
   size?: number;
+  /**
+   * Draw the fused Elemental/TnD glyph in the bottom-right corner, as the
+   * app does when TnD is on. Only Type 1 letters carry one. Default false.
+   */
+  showTnD?: boolean;
 }
 
 export interface RenderPictographResult {
@@ -126,7 +131,7 @@ function loadPictographData(
 }
 
 /**
- * Render one letter to `<outputDir>/pictograph-<letter>[-dark].png`.
+ * Render one letter to `<outputDir>/pictograph-<letter>[-tnd][-dark].png`.
  */
 export async function renderPictograph(
   letter: string,
@@ -148,7 +153,7 @@ export async function renderPictograph(
     visibility: {
       showGrid: true,
       showTKA: true,
-      showTnD: false,
+      showTnD: options.showTnD ?? false,
       showElemental: false,
       showPlacements: false,
       showReversals: false,
@@ -175,10 +180,11 @@ export async function renderPictograph(
   }
 
   fs.mkdirSync(options.outputDir, { recursive: true });
+  const tndSuffix = options.showTnD ? "-tnd" : "";
   const themeSuffix = themeMode === "dark" ? "-dark" : "";
   const outputPath = path.join(
     options.outputDir,
-    `pictograph-${letter}${themeSuffix}.png`
+    `pictograph-${letter}${tndSuffix}${themeSuffix}.png`
   );
   fs.writeFileSync(outputPath, nodeCanvas.toBuffer("image/png"));
 

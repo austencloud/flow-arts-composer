@@ -126,12 +126,7 @@ function pooledSource(
     currentStep: input.intent.currentStep,
     totalSteps: input.intent.totalSteps,
     seamlesslyLoopable: input.intent.seamlesslyLoopable,
-    propColor:
-      propIndex === 0
-        ? PROP_COLORS.blue.main
-        : effect === "fire"
-          ? "#ff2410"
-          : PROP_COLORS.red.main,
+    propColor: propIndex === 0 ? PROP_COLORS.blue.main : PROP_COLORS.red.main,
   };
   switch (effect) {
     case "sparkles":

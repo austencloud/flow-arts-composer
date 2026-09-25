@@ -23,6 +23,9 @@ import { getExportGlyphPrerenderer } from "../animation-engine/get-export-glyph-
 import { getBackgroundVideoEncoder } from "../animation-engine/get-background-video-encoder";
 import { VideoExportOrchestrator } from "$lib/features/compose/services/video-export-orchestrator";
 
+import { registerAnimationOverlayPainterFactory } from "../media-composition/services/animation-overlay-painter-registry";
+import { PostAnimationOverlayPainter } from "$lib/features/compose/services/post-animation-overlay-painter";
+
 import { getQRCodeGenerator } from "../qr/get-qr-code-generator";
 import { getImageComposer } from "../render/get-image-composer";
 
@@ -51,6 +54,16 @@ registerVideoExportOrchestratorFactory(
       getExportGlyphPrerenderer(),
       getBackgroundVideoEncoder()
     )
+);
+
+// Post Studio's animation panel paints trails/props/grid on its own canvas
+// but not the beat number, letter glyph, element icon or progress bar (those
+// are DOM overlays elsewhere in AnimatorCanvas) - this factory gives it a
+// painter that draws the same overlays the Animate export bakes in. See
+// post-animation-overlay-painter.ts for why it lives in features/compose
+// instead of shared/.
+registerAnimationOverlayPainterFactory(
+  (sequence) => new PostAnimationOverlayPainter(sequence)
 );
 
 try {

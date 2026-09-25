@@ -236,35 +236,43 @@ export interface BloomIntent {
 }
 
 /**
- * Goo — viscous luminous liquid flung off the prop, blobs merged via the
- * metaball blur+contrast threshold (see Goo2DRenderer). Renamed from the
- * earlier realistic-water effect (2026-06-28). Goo reads ambientEmission,
- * motionEmission, intensity, palette and trackingMode; the droplet-era fields
- * `clarity`, `surfaceTension` and `spewStyle` are inert for the goo renderer
- * and kept only for config-shape stability — a controls trim is a follow-up.
+ * Goo: viscous luminous liquid streaming off the prop, its blobs merged by the
+ * metaball blur+contrast threshold. Renamed from the earlier realistic-water
+ * effect (2026-06-28).
+ *
+ * The 2D and 3D renderers read different fields, so a setting can visibly
+ * change one surface and do nothing on the other:
+ * - 2D canvas (Goo2DRenderer) reads intensity, motionEmission, surfaceTension
+ *   (as Viscosity), palette, customColor and trackingMode. It ignores
+ *   ambientEmission, clarity and spewStyle.
+ * - 3D viewer (GooRenderer3D, or the legacy WaterEmitter3D when the pooled
+ *   scene-effects manager is absent) reads ambientEmission, motionEmission,
+ *   intensity, clarity, palette, customColor and trackingMode. It ignores
+ *   surfaceTension and spewStyle.
  */
 export interface GooIntent {
-  /** 0-1. Continuous drip rate when props are at rest. */
+  /** 0-1. 3D only: a steady droplet rate that keeps flowing while the prop is
+   *  still. */
   ambientEmission: number;
-  /** 0-1. Velocity-reactive emission multiplier. */
+  /** 0-1. 2D: how thick the stream is. 3D: extra droplets that scale with tip
+   *  speed. */
   motionEmission: number;
-  /** 0-1. Overall droplet scale + brightness. */
+  /** 0-1. 2D: bead size and how solid the body looks. 3D: droplet size. */
   intensity: number;
   /** Named color palette. "custom" uses customColor instead. */
   palette: "classic" | "mercury" | "acid" | "blood" | "spirit" | "custom";
   /** Hex string. Used only when palette === "custom". */
   customColor: string;
-  /** 0-1. 0 = milky/opaque, 1 = crystal clear. Drives 3D refraction + 2D highlight. */
+  /** 0-1. 3D only: higher is more see-through (droplet peak opacity falls from
+   *  1 to 0.75). */
   clarity: number;
-  /** 0-1. How strongly surface tension holds droplets round under motion.
-   *  1 = very round (tight tension), 0 = stretches hard under velocity. */
+  /** 0-1. 2D only: Viscosity. 0 is watery, necks off early and sheds drips; 1
+   *  is thick, keeps its width down the stream and rarely drips. */
   surfaceTension: number;
   /** Which staff end(s) droplets track. */
   trackingMode: "left_end" | "right_end" | "both_ends";
-  /** How the water comes off the prop.
-   *  - splash: heavier discrete chunks on motion, drippy at rest
-   *  - flow:   streamy long elongated droplets that trail the tip
-   *  - mist:   fine high-count spray, drops stay round, wide spread */
+  /** Read by neither renderer. A droplet-era setting kept so saved configs
+   *  keep their shape. */
   spewStyle: "splash" | "flow" | "mist";
 }
 

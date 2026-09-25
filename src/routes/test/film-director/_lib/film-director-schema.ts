@@ -319,6 +319,7 @@ const propBuildSchema = z
     fanBuild: z.enum(["pictograph", "fire", "lotus", "day", "moon"]).optional(),
     fanFrameColor: z.enum(["black", "white"]).optional(),
     fanCover: z.enum(["bare", "covered"]).optional(),
+    triangleGrip: z.enum(["corner", "side"]).optional(),
   })
   .strict()
   .refine((value) => Object.keys(value).length > 0, {

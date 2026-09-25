@@ -37,6 +37,8 @@
  *   node scripts/release.js --changelog file.json - Use audience-audited user-facing entries
  *   node scripts/release.js --highlights 1,3,4   - Select highlight indices (comma-separated, or "none")
  *   node scripts/release.js --from-main        - Release directly from main (skip branch workflow)
+ *   node scripts/release.js --tag-merged-main  - Protected main: the version bump already merged through
+ *                                                a pull request; record, tag origin/main, push only the tag
  *   node scripts/release.js --auto-gate        - Drop commits behind a dark flag (unreleased modules) from the changelog; without it the gate is advisory-only
  *   node scripts/release.js --skip-jargon-check - Bypass jargon detection (use with caution)
  *   node scripts/release.js --update-notes 0.7.11 --changelog notes.json - Update existing release notes
@@ -44,7 +46,7 @@
 
 import admin from "firebase-admin";
 import { readFileSync, writeFileSync, existsSync } from "fs";
-import { execSync } from "child_process";
+import { execFileSync, execSync } from "child_process";
 import * as readline from "readline";
 import config from "../config/feedback.config.js";
 import {
@@ -889,6 +891,64 @@ function popStash() {
 }
 
 /**
+ * Archive released feedback and write the versions/{version} record that the
+ * What's New modal reads.
+ */
+async function recordFirestoreRelease(
+  version,
+  changelog,
+  { feedbackItems, selectedHighlights, useGitHistory }
+) {
+  if (!useGitHistory && feedbackItems.length > 0) {
+    console.log("✓ Archiving feedback in Firestore...");
+    await prepareFirestoreRelease(version, changelog, feedbackItems, selectedHighlights);
+  } else {
+    // Create version document even with 0 feedback (changelog still needs to be stored)
+    console.log("✓ Creating version record in Firestore...");
+    await createFirestoreVersion(version, changelog, selectedHighlights);
+  }
+}
+
+/**
+ * Release a version whose bump already reached origin/main through a pull
+ * request. Protected main rejects direct pushes, so this mode never commits or
+ * pushes a branch: it checks the merged version before touching Firestore,
+ * then tags origin/main and pushes only that tag.
+ */
+async function releaseMergedMain(version, changelog, firestoreRelease) {
+  execSync("git fetch origin main --tags", { stdio: "inherit" });
+  const merged = JSON.parse(
+    execFileSync("git", ["show", "origin/main:package.json"], { encoding: "utf8" })
+  ).version;
+  if (merged !== version) {
+    console.error(`\n❌ origin/main is at ${merged}, not ${version}.`);
+    console.error("   Merge the version bump pull request first.\n");
+    process.exit(1);
+  }
+  if (execFileSync("git", ["tag", "--list", `v${version}`], { encoding: "utf8" }).trim()) {
+    console.error(`\n❌ Tag v${version} already exists.\n`);
+    process.exit(1);
+  }
+  const target = execFileSync("git", ["rev-parse", "origin/main"], { encoding: "utf8" }).trim();
+
+  await recordFirestoreRelease(version, changelog, firestoreRelease);
+
+  console.log(`✓ Tagging origin/main (${target.slice(0, 10)})...`);
+  const tagMessage = changelog.map((e) => `- ${e.text}`).join("\n");
+  execFileSync(
+    "git",
+    ["tag", "-a", `v${version}`, target, "-m", `Release v${version}\n\n${tagMessage}`],
+    { stdio: "inherit" }
+  );
+  execSync(`git push origin refs/tags/v${version}`, { stdio: "inherit" });
+
+  console.log("✓ Creating GitHub release...");
+  createGitHubRelease(version, changelog);
+
+  console.log(`\n🎉 Release v${version} complete (tag on origin/main ${target.slice(0, 10)}).\n`);
+}
+
+/**
  * Push the branch and only this release's tag to remote
  */
 function pushToRemote(branch, version) {
@@ -1135,6 +1195,7 @@ async function main() {
   const highlightsArg =
     highlightsIndex >= 0 ? args[highlightsIndex + 1] : null;
   const fromMain = args.includes("--from-main");
+  const tagMergedMain = args.includes("--tag-merged-main");
   const autoGate = args.includes("--auto-gate");
   const updateNotesIndex = args.indexOf("--update-notes");
   const updateNotesVersion =
@@ -1420,6 +1481,15 @@ async function main() {
   // 6. Execute release
   console.log("🚀 Executing release...\n");
 
+  if (tagMergedMain) {
+    await releaseMergedMain(suggestedVersion, changelog, {
+      feedbackItems,
+      selectedHighlights,
+      useGitHistory,
+    });
+    process.exit(0);
+  }
+
   let didStash = false;
 
   // Branch workflow: stash, switch to main, merge develop
@@ -1453,21 +1523,11 @@ async function main() {
   updatePackageVersion(suggestedVersion);
 
   // Prepare Firestore
-  if (!useGitHistory && feedbackItems.length > 0) {
-    console.log("✓ Archiving feedback in Firestore...");
-    // Use custom changelog entries if provided, otherwise use generated ones
-    // Include selected highlights (if any) in the version document
-    await prepareFirestoreRelease(
-      suggestedVersion,
-      changelog,
-      feedbackItems,
-      selectedHighlights
-    );
-  } else {
-    // Create version document even with 0 feedback (changelog still needs to be stored)
-    console.log("✓ Creating version record in Firestore...");
-    await createFirestoreVersion(suggestedVersion, changelog, selectedHighlights);
-  }
+  await recordFirestoreRelease(suggestedVersion, changelog, {
+    feedbackItems,
+    selectedHighlights,
+    useGitHistory,
+  });
 
   // Sync static thumbnails from cloud for instant loading
   console.log("✓ Syncing static thumbnails from cloud...");

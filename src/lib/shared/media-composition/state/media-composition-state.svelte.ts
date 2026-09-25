@@ -6,14 +6,17 @@ import type {
 } from "$lib/shared/media-composition/domain/media-layout-schema";
 import {
   evaluatePresetFrame,
+  evaluateRegionRects,
   resolvePresetTimePoint,
 } from "$lib/shared/media-composition/services/frame-evaluator";
 import type { SequenceTimeMap } from "$lib/shared/media-composition/domain/sequence-time-map";
+import type { PostStudioLayerPainter } from "$lib/shared/media-composition/services/post-studio-layer-painter";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import { MediaCompositionPresetSchema } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
 import { clampTempoBpm } from "$lib/shared/animation-engine/domain/tempo-behavior";
 import { getStepDuration } from "$lib/shared/animation-engine/timeline/services/step-grid-calculator";
 import {
+  BREAKDOWN_MARKER,
   POST_STUDIO_SOURCES,
   type PostStudioRenderMode,
   type PostStudioRoleKey,
@@ -27,6 +30,14 @@ import {
   withSlotSplit,
   type PostStudioSlotId,
 } from "$lib/shared/media-composition/domain/post-studio-slots";
+import {
+  breakdownFraming,
+  breakdownSection,
+  withBreakdownFraming,
+  withBreakdownMarker,
+  type BreakdownFraming,
+  type BreakdownSection,
+} from "$lib/shared/media-composition/domain/post-studio-breakdown";
 
 type VisualPresetClip = Extract<
   MediaCompositionPreset["clips"][number],
@@ -51,17 +62,31 @@ export interface CompositionSourceBinding {
   previewUrl: string | null;
   previewType?: "video" | "image";
   renderMode?: PostStudioRenderMode;
+  /** Draws a `painted` source; preview and export call the same one. */
+  painter?: PostStudioLayerPainter;
   durationSeconds?: number;
   hasAudio?: boolean;
   status: CompositionSourceStatus;
   missingMessage?: string;
 }
 
+/** What the host needs to build a fallback time map for the active layout. */
+export interface SequenceTimeMapContext {
+  /**
+   * The active breakdown section in the MAPPED media's seconds (project time
+   * plus the mapped source's trim), or null when the layout has none.
+   */
+  section: BreakdownSection | null;
+}
+
 export interface MediaCompositionStateDeps {
   presets: readonly MediaCompositionPreset[];
   initialPresetId?: string;
   getBindings: () => readonly CompositionSourceBinding[];
-  getSequenceTimeMap?: (durationSeconds: number) => SequenceTimeMap | null;
+  getSequenceTimeMap?: (
+    durationSeconds: number,
+    context: SequenceTimeMapContext
+  ) => SequenceTimeMap | null;
   getSequenceSteps?: () => readonly StepData[];
   startPlacementDuration?: number;
   requestSource?: (roleKey: string) => void;
@@ -268,9 +293,29 @@ export function createMediaCompositionState(deps: MediaCompositionStateDeps) {
     return mappedRole ? (getSourceTrim(mappedRole)?.inSeconds ?? 0) : 0;
   }
 
+  function getBreakdownSection(): BreakdownSection | null {
+    return breakdownSection(getActivePreset(), getDurationSeconds());
+  }
+
+  function getTimeMap(): SequenceTimeMap | null {
+    const durationSeconds = getDurationSeconds();
+    const section = getBreakdownSection();
+    const offset = getMappedTimeOffset();
+    return (
+      deps.getSequenceTimeMap?.(durationSeconds, {
+        section: section
+          ? {
+              startSeconds: section.startSeconds + offset,
+              endSeconds: section.endSeconds + offset,
+            }
+          : null,
+      }) ?? null
+    );
+  }
+
   function getFrameLayers() {
     const durationSeconds = getDurationSeconds();
-    const timeMap = deps.getSequenceTimeMap?.(durationSeconds) ?? null;
+    const timeMap = getTimeMap();
     const steps = deps.getSequenceSteps?.() ?? [];
     return evaluatePresetFrame(
       getActivePreset(),
@@ -391,11 +436,19 @@ export function createMediaCompositionState(deps: MediaCompositionStateDeps) {
     return !getSlotOccupancy()[other].includes(roleKey);
   }
 
+  /**
+   * The slot verbs rebuild regions from occupancy, which would flatten a free
+   * layout's own regions and motion into two stacked slots.
+   */
+  function usesSlots(): boolean {
+    return getActivePreset().layoutModel !== "free";
+  }
+
   function setSlotSource(
     slot: PostStudioSlotId,
     roleKey: PostStudioRoleKey
   ): void {
-    if (!slotAccepts(slot, roleKey)) return;
+    if (!usesSlots() || !slotAccepts(slot, roleKey)) return;
     commitPreset(withSlotSource(getActivePreset(), slot, roleKey));
     selectedRegionId = slot;
     selectedRoleKey = roleKey;
@@ -404,7 +457,7 @@ export function createMediaCompositionState(deps: MediaCompositionStateDeps) {
   /** Empties a slot. The survivor goes full frame; the last slot cannot go. */
   function clearSlot(slot: PostStudioSlotId): void {
     const preset = getActivePreset();
-    if (!slotIsOccupied(preset, slot)) return;
+    if (!usesSlots() || !slotIsOccupied(preset, slot)) return;
     commitPreset(withClearedSlot(preset, slot));
   }
 
@@ -414,7 +467,23 @@ export function createMediaCompositionState(deps: MediaCompositionStateDeps) {
   // there. `withSwappedSlots` remains in the slots module as a pure transform.
 
   function setSlotSplit(split: number): void {
+    if (!usesSlots()) return;
     commitPreset(withSlotSplit(getActivePreset(), split));
+  }
+
+  function setBreakdownMarker(which: "start" | "end", seconds: number): void {
+    commitPreset(
+      withBreakdownMarker(
+        getActivePreset(),
+        which,
+        seconds,
+        getDurationSeconds()
+      )
+    );
+  }
+
+  function setBreakdownFraming(framing: BreakdownFraming): void {
+    commitPreset(withBreakdownFraming(getActivePreset(), framing));
   }
 
   function setSelectedFit(fit: LayoutRegion["fit"]): void {
@@ -577,11 +646,29 @@ export function createMediaCompositionState(deps: MediaCompositionStateDeps) {
     );
     if (!clip || clip.kind !== "visual") return;
 
+    const bound = clip[boundary];
+    if (bound.unit === "marker") {
+      if (bound.markerId === BREAKDOWN_MARKER.start) {
+        setBreakdownMarker("start", seconds - bound.offsetSeconds);
+      } else if (bound.markerId === BREAKDOWN_MARKER.end) {
+        setBreakdownMarker("end", seconds - bound.offsetSeconds);
+      }
+      return;
+    }
+
     const duration = getDurationSeconds();
     const minimumClipSeconds = Math.min(0.25, duration / 4);
     const minimumTransitionSeconds = Math.min(0.2, duration / 5);
-    const currentStart = resolvePresetTimePoint(clip.start, duration);
-    const currentEnd = resolvePresetTimePoint(clip.end, duration);
+    const currentStart = resolvePresetTimePoint(
+      clip.start,
+      duration,
+      preset.markers
+    );
+    const currentEnd = resolvePresetTimePoint(
+      clip.end,
+      duration,
+      preset.markers
+    );
 
     let nextStart = currentStart;
     let nextEnd = currentEnd;
@@ -605,7 +692,7 @@ export function createMediaCompositionState(deps: MediaCompositionStateDeps) {
         if (incoming) {
           nextEnd = Math.max(
             nextEnd,
-            resolvePresetTimePoint(incoming.start, duration) +
+            resolvePresetTimePoint(incoming.start, duration, preset.markers) +
               minimumTransitionSeconds
           );
         }
@@ -617,7 +704,7 @@ export function createMediaCompositionState(deps: MediaCompositionStateDeps) {
         if (outgoing) {
           nextStart = Math.min(
             nextStart,
-            resolvePresetTimePoint(outgoing.end, duration) -
+            resolvePresetTimePoint(outgoing.end, duration, preset.markers) -
               minimumTransitionSeconds
           );
         }
@@ -653,16 +740,16 @@ export function createMediaCompositionState(deps: MediaCompositionStateDeps) {
           unit: "duration-fraction" as const,
           value:
             Math.max(
-              resolvePresetTimePoint(outgoing.start, duration),
-              resolvePresetTimePoint(incoming.start, duration)
+              resolvePresetTimePoint(outgoing.start, duration, preset.markers),
+              resolvePresetTimePoint(incoming.start, duration, preset.markers)
             ) / duration,
         },
         end: {
           unit: "duration-fraction" as const,
           value:
             Math.min(
-              resolvePresetTimePoint(outgoing.end, duration),
-              resolvePresetTimePoint(incoming.end, duration)
+              resolvePresetTimePoint(outgoing.end, duration, preset.markers),
+              resolvePresetTimePoint(incoming.end, duration, preset.markers)
             ) / duration,
         },
       };
@@ -781,7 +868,9 @@ export function createMediaCompositionState(deps: MediaCompositionStateDeps) {
     /** The role whose footage sets the post's length, when one does. */
     get durationSourceRole() {
       const duration = getActivePreset().duration;
-      return duration.mode === "follow-source-role" ? duration.sourceRole : null;
+      return duration.mode === "follow-source-role"
+        ? duration.sourceRole
+        : null;
     },
     sourceLengthFor: getSourceLength,
     sourceTrimFor: getSourceTrim,
@@ -803,8 +892,28 @@ export function createMediaCompositionState(deps: MediaCompositionStateDeps) {
       return getFrameLayers();
     },
     get sequenceTimeMap() {
-      return deps.getSequenceTimeMap?.(getDurationSeconds()) ?? null;
+      return getTimeMap();
     },
+    get layoutModel() {
+      return getActivePreset().layoutModel ?? "slots";
+    },
+    /** Where each region sits at the playhead, including any in motion. */
+    get regionRects() {
+      return evaluateRegionRects(
+        getActivePreset(),
+        getDurationSeconds(),
+        previewSeconds
+      );
+    },
+    /** The breakdown section in project seconds, when the layout has one. */
+    get breakdownSection() {
+      return getBreakdownSection();
+    },
+    get breakdownFraming() {
+      return breakdownFraming(getActivePreset());
+    },
+    setBreakdownMarker,
+    setBreakdownFraming,
     get slotOccupancy() {
       return getSlotOccupancy();
     },

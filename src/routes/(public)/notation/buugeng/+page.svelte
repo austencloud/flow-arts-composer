@@ -10,7 +10,7 @@
 
   const TITLE = "Buugeng Notation | The Kinetic Alphabet for Buugeng";
   const DESCRIPTION =
-    "How The Kinetic Alphabet applies to buugeng: dual-ended like staves, so the notation carries over directly, with finger spinning welcomed where the staff pedagogy is strict.";
+    "How double-staff notation carries over to buugeng, including two-ended geometry, finger spins, and grip changes.";
   const URL = "https://tkaflowarts.com/notation/buugeng";
 </script>
 
@@ -53,28 +53,26 @@
       <div class="duo-copy">
         <div class="prose">
           <p>
-            Good news: this is the shortest prop page, because buugeng have two ends, and
-            that single fact does most of the work. Everything on the
-            <a href="/notation/staves">staff page</a> transfers whole. The isolation and
-            antispin collapse, the two visible references, the grid, the letters, the
-            timing. Eight rings and double contact ball sit in the same dual-ended family
-            and inherit the same way.
+            Buugeng have two visible ends, so the <a href="/notation/staves"
+              >staff notation</a
+            > carries over, including the isolation and antispin relationships. The
+            two end references still apply, as do the grid positions and timing of
+            each letter. Eight rings and double contact ball belong to the same dual-ended
+            family.
           </p>
           <p>
-            Two things are worth saying anyway. Buugeng are large, and sometimes strange
-            and unwieldy, because they curve around. And finger spinning with buugeng is
-            well established. A lot of Kinetic Alphabet patterns might be hard to finger
-            spin. Definitely not impossible. So, plainly: finger spin to your heart's
-            desire. The strict thumb-orientation
-            discipline belongs to how staves are taught, and once you can read the turn
-            value off any pictograph it stops mattering even there.
+            Buugeng curve around the body, and many artists turn them with their
+            fingers. Some Kinetic Alphabet patterns may be awkward to finger
+            spin. The fixed thumb reference is a staff teaching method. Buugeng
+            spinners can change grip while following the same positions and turn
+            values.
           </p>
         </div>
       </div>
       <div class="duo-demo">
         <SequenceHeroDemo
           sequence={demoSequence}
-          note="the demo sequence, on buugeng"
+          note="both curved ends follow the staff positions"
           leftPropType="buugeng"
           rightPropType="buugeng"
         />
@@ -82,14 +80,11 @@
     </div>
   </section>
 
-  <OpenChapter prop="Buugeng">
+  <OpenChapter prop="Buugeng" heading="How buugeng artists handle the curves">
     <p>
-      What this page doesn't cover is the part buugeng artists care most about: the grip
-      vocabulary, the finger spinning technique, the way the curves change body
-      mechanics. The notation was worked out on double staves, and that chapter needs
-      someone who trained buugeng.
+      The notation records where each end points. A buugeng artist could add
+      examples of finger spins, grip changes, and movement around the curves.
     </p>
-    <p>If buugeng are your language, come write it.</p>
   </OpenChapter>
 
   <div class="cta-card">

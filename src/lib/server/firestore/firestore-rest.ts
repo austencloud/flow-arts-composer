@@ -52,6 +52,8 @@ export interface FirestoreQuery {
   fieldPath: string;
   value: unknown;
   limit?: number;
+  /** Projection: return only these fields. Omit for whole documents. */
+  fieldPaths?: readonly string[];
 }
 
 export interface FirestoreDocumentPage {
@@ -144,6 +146,45 @@ export class FirestoreRest {
     return (await response.json()) as FirestoreDocument;
   }
 
+  /**
+   * Many documents in one request, keyed by the path each was requested
+   * with; a missing document maps to null. Firestore returns them in no
+   * particular order, so results are matched back by document name.
+   */
+  async batchGetDocuments(
+    paths: readonly string[],
+    fieldPaths: readonly string[] = []
+  ): Promise<Map<string, FirestoreDocument | null>> {
+    const documents = new Map<string, FirestoreDocument | null>();
+    const pathByName = new Map(
+      [...new Set(paths)].map((path) => [this.documentName(path), path])
+    );
+    if (pathByName.size === 0) return documents;
+
+    const url =
+      `${FIRESTORE_HOST}/projects/${this.projectId}/databases/(default)` +
+      "/documents:batchGet";
+    const response = await this.authorizedFetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        documents: [...pathByName.keys()],
+        ...(fieldPaths.length > 0 ? { mask: { fieldPaths } } : {}),
+      }),
+    });
+
+    if (!response.ok) await this.throwResponseError("batchGet", response);
+    const rows = (await response.json()) as Array<{
+      found?: FirestoreDocument;
+      missing?: string;
+    }>;
+    for (const row of rows) {
+      const path = pathByName.get(row.found?.name ?? row.missing ?? "");
+      if (path !== undefined) documents.set(path, row.found ?? null);
+    }
+    return documents;
+  }
+
   async listDocuments(
     collectionId: string,
     options: {
@@ -208,6 +249,13 @@ export class FirestoreRest {
       body: JSON.stringify({
         structuredQuery: {
           from: [{ collectionId: query.collectionId }],
+          ...(query.fieldPaths?.length
+            ? {
+                select: {
+                  fields: query.fieldPaths.map((fieldPath) => ({ fieldPath })),
+                },
+              }
+            : {}),
           where: {
             fieldFilter: {
               field: { fieldPath: query.fieldPath },

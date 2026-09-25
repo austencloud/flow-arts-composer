@@ -1,6 +1,7 @@
 import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { modelSpriteFacesAwayFromTips } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
 import { PROP_MODEL_SPRITES } from "$lib/shared/pictograph/prop/domain/prop-model-sprites.generated";
+import { applyModelSpriteColor } from "$lib/shared/pictograph/prop/domain/prop-preview-color";
 import type { PropSvgData } from "$lib/shared/animation-engine/domain/types/svg-types";
 
 export type { PropSvgData } from "$lib/shared/animation-engine/domain/types/svg-types";
@@ -30,6 +31,10 @@ import {
   parseModelRenderKey,
   type PropSpriteSide,
 } from "$lib/shared/pictograph/prop/domain/prop-look";
+import {
+  parseTriangleRenderKey,
+  triangleAppearanceArtwork,
+} from "$lib/shared/pictograph/prop/domain/triangle-appearance";
 
 /**
  * SVG Generator for creating prop staff images and grid
@@ -258,6 +263,10 @@ export function resolvePropSvgPath(
   if (fanRenderKey) {
     return fanAppearanceArtwork(fanRenderKey.build, fanRenderKey.cover)!;
   }
+  const triangleRenderKey = parseTriangleRenderKey(propTypeLower);
+  if (triangleRenderKey) {
+    return triangleAppearanceArtwork(triangleRenderKey.grip)!;
+  }
   const modelRenderKey = parseModelRenderKey(propTypeLower);
   if (modelRenderKey) {
     return modelSpriteArtwork(modelRenderKey.propType, side);
@@ -323,14 +332,19 @@ export async function generatePropSvg(
   const propTypeLower = propType.toLowerCase();
   const modelRenderKey = parseModelRenderKey(propTypeLower);
   if (modelRenderKey) {
-    // Baked 3D capture: material colors are part of the image. No recolor.
+    // Baked 3D capture: a raster lit in the blue or red capture palette. The
+    // chroma filter moves that paint to the requested color and leaves the
+    // neutral materials and shading alone.
     const path = resolvePropSvgPath(
       propTypeLower,
       side ?? spriteSideForColor(color)
     );
-    const svg = orientModelSpriteToTips(
-      modelRenderKey.propType,
-      await fetchPropSvg(path)
+    const svg = applyModelSpriteColor(
+      orientModelSpriteToTips(
+        modelRenderKey.propType,
+        await fetchPropSvg(path)
+      ),
+      color
     );
     const { width, height } = extractViewBoxDimensions(svg);
     return { svg, width, height };
@@ -338,7 +352,10 @@ export async function generatePropSvg(
   const path = resolvePropSvgPath(propTypeLower);
   const fanRenderKey = parseFanRenderKey(propTypeLower);
   const fetchedSvg = await fetchPropSvg(path);
-  const semanticPropType = fanRenderKey?.propType ?? propTypeLower;
+  const semanticPropType =
+    fanRenderKey?.propType ??
+    parseTriangleRenderKey(propTypeLower)?.propType ??
+    propTypeLower;
   // A parsed key is a material build by construction: FanRenderKey types
   // `build` as Exclude<FanBuild, "pictograph">, and resolveFanRenderKey returns
   // null for the pictograph build rather than a key carrying it. The old

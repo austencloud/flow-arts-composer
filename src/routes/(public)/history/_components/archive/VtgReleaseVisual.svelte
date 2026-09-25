@@ -107,7 +107,6 @@
     object-fit: contain;
   }
   figcaption {
-    max-width: 70ch;
     margin-top: 1rem;
     color: var(--theme-text-dim);
     font-size: 0.875rem;

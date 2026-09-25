@@ -212,6 +212,7 @@ function _getPropName(propType: PropType): string {
       return "buugeng";
     case PropType.MINIHOOP:
     case PropType.BIGHOOP:
+    case PropType.TRIANGLE:
       return "hoop";
     case PropType.HAND:
       return "hand";

@@ -34,6 +34,7 @@ import {
 } from "$lib/features/scene-3d-collection/services/save-film-recipe";
 import type { Scene3DFilmRender } from "$lib/features/scene-3d-collection/domain/scene-3d-collection-types";
 import {
+  getRenderedFilm,
   putRenderedFilm,
   pruneRenderedFilms,
 } from "$lib/shared/video-export/services/rendered-film-store";
@@ -271,7 +272,12 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
     return {
       kind,
       imageUrl: openerAddsHold(kind)
-        ? await captureVideoOpener(kind, playbackController, panelState, sequence)
+        ? await captureVideoOpener(
+            kind,
+            playbackController,
+            panelState,
+            sequence
+          )
         : "",
     };
   }
@@ -305,6 +311,29 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
   async function saveExportedVideo(effectiveSequence: SequenceData | null) {
     const url = sequenceModalExporter.state.previewBlobUrl;
     if (!url) return;
+    const blob = await (await fetch(url)).blob();
+    await deliverVideoBlob(blob, url, effectiveSequence);
+  }
+
+  /**
+   * Save a film kept on the device, for Share's Download film in 3D. The
+   * preview may be long dismissed; the kept file is still the finished film.
+   */
+  async function saveRetainedFilm(
+    filmId: string,
+    effectiveSequence: SequenceData | null
+  ): Promise<boolean> {
+    const film = await getRenderedFilm(filmId);
+    if (!film) return false;
+    await deliverVideoBlob(film.blob, filmId, effectiveSequence);
+    return true;
+  }
+
+  async function deliverVideoBlob(
+    blob: Blob,
+    measureKey: string,
+    effectiveSequence: SequenceData | null
+  ) {
     const rawName =
       effectiveSequence?.displayName ||
       effectiveSequence?.intendedWord ||
@@ -312,13 +341,16 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
       "sequence";
     const safeName =
       sanitizeFilename(simplifyRepeatedWord(rawName)) || "sequence";
-    const blob = await (await fetch(url)).blob();
     const result = await shareOrDownloadBlob(blob, `${safeName}.mp4`, {
       title: "Flow Arts Composer sequence",
     });
 
-    if (result.success && !result.canceled && !measuredVideoUrls.has(url)) {
-      measuredVideoUrls.add(url);
+    if (
+      result.success &&
+      !result.canceled &&
+      !measuredVideoUrls.has(measureKey)
+    ) {
+      measuredVideoUrls.add(measureKey);
       void logShareAction(
         result.method === "share" ? "sequence_share" : "sequence_export",
         {
@@ -1030,6 +1062,7 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
     handleStopRecording,
     dismissPreview,
     saveExportedVideo,
+    saveRetainedFilm,
     dispose,
   };
 }

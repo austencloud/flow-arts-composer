@@ -26,11 +26,13 @@ import {
 } from "$lib/shared/shape-matrix/services/shape-matrix-render";
 import {
   cellArtworkSrc,
+  pathsArtworkSrc,
   shapeMatrixArtworkPainterForColors,
   type ShapeMatrixArtworkPainter,
 } from "$lib/shared/shape-matrix/services/shape-matrix-artwork";
 import type { ShapeMatrixData } from "$lib/shared/shape-matrix/services/shape-matrix-flowers";
 import type { Flower } from "$lib/shared/shape-matrix/domain/flower-signature";
+import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 
 const left: MandalaPaths = {
   left: [{ d: "M 0 0 C 10 0 10 10 20 10", tipIndex: 0 }],
@@ -56,6 +58,9 @@ const matrixData: ShapeMatrixData = {
   axis: [flower],
   left: new Map([["pro-0-in-diamond", left]]),
   right: new Map([["pro-0-in-diamond", right]]),
+  props: { left: PropType.STAFF, right: PropType.STAFF },
+  tips: { left: { dx: 100, dy: 0 }, right: { dx: 100, dy: 0 } },
+  reach: { left: 100, right: 100 },
   clubTipDx: 100,
   geometryKey: "arc:tips",
 };
@@ -157,6 +162,51 @@ describe("shape matrix stills use the animator's guide painter", () => {
     );
 
     expect(cell).toHaveBeenCalledTimes(2);
+  });
+
+  it("paints the hero floor with its painter's palette, not a cached default", () => {
+    // The detail hero shows this still while the player loads, then the live
+    // guide takes over in the viewer's saved hand colors. A floor painted in
+    // the default palette visibly flips color at that handoff.
+    const hero: MandalaPaths = {
+      left: left.left,
+      right: right.right,
+      purple: [],
+    };
+    const extentFor = (url: string) => vi.fn(() => url);
+    const defaultExtent = extentFor("data:image/png;base64,default");
+    const paletteExtent = extentFor("data:image/png;base64,palette");
+    const defaultPainter: ShapeMatrixArtworkPainter = {
+      cacheKey: "hero",
+      cell: vi.fn(() => ""),
+      header: vi.fn(() => ""),
+      extent: defaultExtent,
+    };
+    const palettePainter: ShapeMatrixArtworkPainter = {
+      cacheKey: "palette:#00aa00|#ffee00",
+      cell: vi.fn(() => ""),
+      header: vi.fn(() => ""),
+      extent: paletteExtent,
+    };
+
+    expect(pathsArtworkSrc(hero, 400, 100, defaultPainter)).toBe(
+      "data:image/png;base64,default"
+    );
+    expect(pathsArtworkSrc(hero, 400, 100, palettePainter)).toBe(
+      "data:image/png;base64,palette"
+    );
+    expect(paletteExtent).toHaveBeenCalledWith(hero, 400, 100);
+    expect(defaultExtent).toHaveBeenCalledTimes(1);
+  });
+
+  it("gives every palette painter an extent-fit hero painter", () => {
+    expect(
+      shapeMatrixArtworkPainterForColors({ left: "#00aa00", right: "#ffee00" })
+        .extent
+    ).toBeTypeOf("function");
+    expect(shapeMatrixArtworkPainterForColors(null).extent).toBeTypeOf(
+      "function"
+    );
   });
 
   it("keeps a painter's palette identity when reactive settings mutate", () => {

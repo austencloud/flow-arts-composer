@@ -6,17 +6,19 @@
   - Mobile (layout="bottom"): compact control dock + export action.
   - Desktop (layout="sidebar"): shared Animator inspector shell with a
     scrollable section body and export action pinned in its footer.
+  - presentation="content": one section's page for a host that navigates from
+    its own controls. The bottom layout gives the dock tray's dense page, the
+    sidebar layout the inspector's page without its rail or title.
 
   Sections: Effects → Props → Motion → Display → Export.
 -->
 <script lang="ts">
   import { fade } from "svelte/transition";
-  import { growFade } from "$lib/shared/transitions/motion";
   import type { ExportOptionsStateManager } from "../state/export-options-state.svelte";
   import type { VideoExportProgress } from "$lib/shared/compose/domain/video-export-types";
   import {
-    estimateExportTime,
-    hasDeviceMetrics,
+    formatExportDuration,
+    formatExportTimeEstimate,
   } from "../state/export-timing-tracker";
   import EffectsPanel from "$lib/shared/animation-engine/components/effects-panel/EffectsPanel.svelte";
   import PlaybackModeToggle from "$lib/shared/animation-engine/components/controls/PlaybackModeToggle.svelte";
@@ -41,13 +43,10 @@
   import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
   import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
   import type { PropChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
-  import CatDogToggle from "$lib/shared/settings/components/tabs/prop-type/CatDogToggle.svelte";
-  import PrimaryPropColorSettings from "$lib/shared/settings/components/tabs/prop-type/PrimaryPropColorSettings.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import {
-    getSettings,
-    updateSetting,
-  } from "$lib/shared/application/state/app-state.svelte";
+  import HandPropToolbar, {
+    type HandPropToolbarProps,
+  } from "$lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
+  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import { viewingPropLabel } from "$lib/shared/foundation/services/prop-viewing";
   import AnimatorInspectorShell from "./AnimatorInspectorShell.svelte";
   import AnimatorInspectorFooter from "./AnimatorInspectorFooter.svelte";
@@ -106,6 +105,10 @@
     singlePlayDuration?: number;
     /** Keep the editor geometry while another workspace owns export. */
     reserveExportSpace?: boolean;
+    /** Show the panel's own render button (footer, dock icon, tray confirm).
+     *  The sequence viewer turns it off: there Share is the one way to get
+     *  the file, and the Export page only holds its settings. */
+    showExportAction?: boolean;
     isPlaying?: boolean;
     bpm?: number;
     renderMode?: "2d" | "3d";
@@ -150,19 +153,12 @@
      * one local prop (Post Studio, profile photo, landing) omit this and keep
      * the single grid.
      */
-    handProps?: {
-      catDog: boolean;
-      hand: "left" | "right";
-      leftPropType: PropType;
-      rightPropType: PropType;
-      onToggleCatDog: () => void;
-      onHandChange: (hand: "left" | "right") => void;
-    };
+    handProps?: HandPropToolbarProps;
     /**
-     * Put the account's primary prop colours above the prop grid, the way the
-     * global prop drawer does, for a host whose canvas draws the props in
-     * those colours and has no other way to reach them. Hosts whose header
-     * already offers the control leave it off.
+     * The prop grid's own primary-colour control (BentoPropGrid's
+     * showColors). On by default: every canvas this panel drives draws its
+     * props in the account colours unless the host passes its own pair, and
+     * such a host turns this off.
      */
     showPropColors?: boolean;
     onExport?: () => void;
@@ -191,6 +187,8 @@
     /** Hide the four sequence-only edge marks (TKA glyph, element, step number,
      *  word) for a host animating something with no letter and no steps. */
     showSequenceMarks?: boolean;
+    /** Leave out the Word tile for a host that never draws a word header. */
+    showWordToggle?: boolean;
     /** Restrict the effect roster to what the host's renderer can actually
      *  draw. Omit for the full roster. */
     availableEffects?: readonly string[];
@@ -207,6 +205,12 @@
     closeRequest?: number;
     /** Accessible region name for non-export hosts. */
     regionLabel?: string;
+    /** A sidebar host whose panel height is set by something else on
+     *  screen (the motion-path studio's card matches the canvas beside it)
+     *  wants every page to spend that height rather than sit at the top of
+     *  it. Display's pictures grow into it, and Effort alone on its page
+     *  shares it between its tiles, each drawing its timing curve. */
+    fillPages?: boolean;
   }
 
   let {
@@ -219,6 +223,7 @@
     controlledSection,
     singlePlayDuration = 0,
     reserveExportSpace = false,
+    showExportAction = true,
     isPlaying = false,
     bpm = 60,
     renderMode = "2d",
@@ -236,7 +241,7 @@
     propPickerActive = false,
     propChirality,
     handProps,
-    showPropColors = false,
+    showPropColors = true,
     onExport,
     captureVideoOpener,
     exportSectionRequest = 0,
@@ -246,12 +251,14 @@
     showInlineExportProgress = true,
     showMotionVisibility = false,
     showSequenceMarks = true,
+    showWordToggle = true,
     availableEffects,
     showPathShape = true,
     onSettingChange,
     onActiveSectionChange,
     closeRequest = 0,
     regionLabel = "Animation controls",
+    fillPages = false,
   }: Props = $props();
 
   const viewerAnimatorInspector = getOptionalViewerAnimatorInspectorContext();
@@ -438,7 +445,10 @@
         if (current) mandalaOpenerUrl = url || null;
       },
       (error) => {
-        console.error("[AnimationPanel] Could not draw the mandala opener:", error);
+        console.error(
+          "[AnimationPanel] Could not draw the mandala opener:",
+          error
+        );
       }
     );
     return () => {
@@ -543,6 +553,15 @@
   const effortSummary = $derived(activeEffort.label);
   const effortAccent = $derived(activeEffort.color);
 
+  // What the Playback page (and the merged Motion page above Effort) holds.
+  const playbackHasPage = $derived(
+    showTempoControls || !!onPlaybackModeChange || showPathShape
+  );
+  // Effort alone on a page the host asked to be filled.
+  const effortFills = $derived(
+    fillPages && layout === "sidebar" && !playbackHasPage
+  );
+
   const playbackSummary = $derived.by(() => {
     void vmVersion;
     return showTempoControls
@@ -619,31 +638,16 @@
     });
   });
 
-  function formatDuration(seconds: number): string {
-    if (seconds <= 0) return "";
-    if (seconds < 60) return `${seconds.toFixed(1)}s`;
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.round(seconds % 60);
-    return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
-  }
-
-  const estimatedTime = $derived.by(() => {
-    if (singlePlayDuration <= 0 || !exportOptions) return null;
-    return estimateExportTime(
-      exportOptions.videoResolution,
-      exportOptions.videoFps,
-      singlePlayDuration,
-      exportOptions.videoLoopCount
-    );
-  });
-
-  const timeEstimateLabel = $derived.by(() => {
-    if (estimatedTime === null || !exportOptions) return "";
-    const label = formatDuration(estimatedTime);
-    if (!label) return "";
-    const isEstimate = !hasDeviceMetrics(exportOptions.videoResolution);
-    return isEstimate ? `~${label} est.` : `~${label}`;
-  });
+  const timeEstimateLabel = $derived(
+    exportOptions
+      ? formatExportTimeEstimate(
+          exportOptions.videoResolution,
+          exportOptions.videoFps,
+          singlePlayDuration,
+          exportOptions.videoLoopCount
+        )
+      : ""
+  );
 
   const totalVideoDuration = $derived.by(() => {
     if (singlePlayDuration <= 0 || !exportOptions) return "";
@@ -654,7 +658,7 @@
     const endHold = exportOptions.videoIncludeEndHold ? unitSeconds : 0;
     const total =
       startHold + singlePlayDuration * exportOptions.videoLoopCount + endHold;
-    return formatDuration(total);
+    return formatExportDuration(total);
   });
 
   // ── Pill specs ──
@@ -702,12 +706,19 @@
           summary: effortSummary,
           accentColor: effortAccent,
         },
-        playback: {
-          icon: "fa-route",
-          label: "Playback",
-          summary: playbackSummary,
-          accentColor: RAIL_CATEGORY_ACCENTS.playback,
-        },
+        // A host whose canvas has its own transport owns tempo there and
+        // passes showTempoControls={false}. With no mode and no path shape
+        // either, the Playback page would be empty, so it has no pill.
+        ...(playbackHasPage
+          ? {
+              playback: {
+                icon: "fa-route",
+                label: "Playback",
+                summary: playbackSummary,
+                accentColor: RAIL_CATEGORY_ACCENTS.playback,
+              },
+            }
+          : {}),
         display: {
           icon: "fa-eye",
           label: "Display",
@@ -758,6 +769,23 @@
   );
   const resolvedPill = $derived(resolveActivePill(requestedPill, availableIds));
 
+  // A host that drives the page from its own controls changes sections
+  // without handlePillSelect, so the page's slide follows the change itself:
+  // later in the pill order rises from below, earlier drops from above. Pre,
+  // so the direction is set before the page's transition reads it.
+  let directedPill: PillId | null = null;
+  $effect.pre(() => {
+    const next = resolvedPill;
+    const previous = directedPill;
+    directedPill = next;
+    if (controlledSection === undefined || !previous || !next) return;
+    if (previous === next) return;
+    const ids = untrack(() => availableIds);
+    const from = ids.indexOf(previous);
+    const to = ids.indexOf(next);
+    if (from !== -1 && to !== -1) panelDirection = to > from ? 1 : -1;
+  });
+
   // The effect reads pillSpecs (through resolvedPill), which recomputes on
   // every BPM tick and effect change, so an unguarded save wrote the same
   // string to localStorage on every control tweak.
@@ -766,7 +794,13 @@
     if (!resolvedPill) return;
     // Write back so the rail, the dock and persistence agree on one id.
     if (activePill !== resolvedPill) activePill = resolvedPill;
-    if (layout === "sidebar" && savedPill !== resolvedPill) {
+    // A page the host frames and navigates is the host's choice, not the
+    // viewer inspector's remembered page.
+    if (
+      layout === "sidebar" &&
+      presentation !== "content" &&
+      savedPill !== resolvedPill
+    ) {
       savedPill = resolvedPill;
       saveActivePill(resolvedPill);
     }
@@ -791,7 +825,7 @@
     }))
   );
   const dockTrailing = $derived<ControlDockAction | undefined>(
-    exportEnabled && onExport
+    exportEnabled && onExport && showExportAction
       ? {
           icon: renderMode === "3d" ? "fa-circle" : "fa-download",
           label: exportButtonLabel,
@@ -814,64 +848,41 @@
 
 {#snippet pillBody()}
   {#if resolvedPill === "props" && onPropChange && selectedPropType !== undefined}
-    {#if handProps}
-      <!-- Same chip and hand segments as the global prop drawer, so the viewer
-           picks a pair the way every other settings-backed picker does. -->
-      <div class="hand-toolbar">
-        <CatDogToggle
-          catDogMode={handProps.catDog}
-          onToggle={handProps.onToggleCatDog}
-        />
-        {#if handProps.catDog}
-          <div transition:growFade={{ axis: "y" }}>
-            <SegmentedControl
-              options={[
-                { value: "left", label: "Left", tone: "blue" },
-                { value: "right", label: "Right", tone: "red" },
-              ]}
-              value={handProps.hand}
-              onchange={handProps.onHandChange}
-              ariaLabel="Prop hand selection"
-              semantics="radiogroup"
-            />
-          </div>
-        {/if}
-      </div>
-    {/if}
-    {#if showPropColors}
-      <!-- The same control the global prop drawer puts above its grid: the
-           pair's colours are chosen where the pair is chosen. -->
-      <div class="prop-colors">
-        <PrimaryPropColorSettings
-          colors={getSettings().primaryPropColors}
-          darkMode={getSettings().darkMode}
-          onchange={(colors) => updateSetting("primaryPropColors", colors)}
-        />
-      </div>
-    {/if}
-    {#await import("$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte")}
-      <!-- Reserve space while the chunk loads so the body doesn't render
-           as a blank slot and then jump when the grid arrives. -->
-      <div class="pill-pending">
-        <PanelSpinner />
-      </div>
-    {:then mod}
-      <!-- The wide sidebar hands the picker its whole page, so the tiles
-           share the height instead of huddling in the top third of it. The
-           tray and the compact sheet grow with their content and keep the
-           dense grid. -->
-      <mod.default
-        {selectedPropType}
-        onSelect={onPropChange}
-        chirality={propChirality}
-        variant="inline"
-        flat
-        fill={layout === "sidebar"}
-      />
-    {/await}
+    <div
+      class:bottom-prop-picker={layout === "bottom"}
+      class:sidebar-prop-picker={layout === "sidebar"}
+    >
+      {#if layout === "sidebar" && handProps}
+        <HandPropToolbar {handProps} />
+      {/if}
+      {#await import("$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte")}
+        <div class="pill-pending"><PanelSpinner /></div>
+      {:then mod}
+        <mod.default
+          {selectedPropType}
+          onSelect={onPropChange}
+          chirality={propChirality}
+          showColors={showPropColors}
+          compactColors={layout === "bottom"}
+          layout={layout === "bottom" ? "rail" : "grid"}
+          variant="inline"
+          flat
+          fill={layout === "sidebar"}
+        >
+          {#snippet heading()}
+            {#if layout === "bottom" && handProps}
+              <HandPropToolbar {handProps} compact />
+            {/if}
+          {/snippet}
+        </mod.default>
+      {/await}
+    </div>
   {:else if resolvedPill === "effects"}
     <EffectsPanel
       layout={layout === "bottom" ? "strip" : "sidebar"}
+      showHeading={layout === "bottom" ||
+        (presentation === "content" && !fillPages)}
+      fill={fillPages && layout === "sidebar"}
       {bpm}
       onBpmChange={onBpmChange ?? (() => {})}
       {isPlaying}
@@ -901,12 +912,12 @@
          put visibility toggles under a heading that claimed they were motion;
          it has its own pill again. Sidebar only; the mobile dock still gets
          separate tabs, where one tall merged tray would not fit. -->
-    <div class="motion-scope">
+    <div class="motion-scope" class:fills={effortFills}>
       <!-- A host with its own transport bar owns tempo there and passes
            showTempoControls={false}; with no playback mode either, Tempo and
            Mode have nothing to hold and Paths runs the full width above
            Effort instead of stranding an empty second column. -->
-      <div class="motion-stack">
+      <div class="motion-stack" class:effort-only={!playbackHasPage}>
         {#if showPathShape}
           {#if showTempoControls || onPlaybackModeChange}
             <div class="motion-col">
@@ -923,7 +934,8 @@
             {@render tempoModeBody()}
           </div>
         {/if}
-        {@render effortBody(true)}
+        <!-- Effort alone is the whole page, so it needs no label of its own. -->
+        {@render effortBody(playbackHasPage)}
       </div>
     </div>
   {:else if resolvedPill === "export" && exportOptions}
@@ -931,11 +943,11 @@
   {/if}
 {/snippet}
 
-<!-- `labelled` is set only by the merged Motion page. On its own page the h2
-     names the section and a label under it would say the same word twice; on
-     the merged page Tempo, Mode and Visibility all carry one, and the effort
-     tiles were the single unlabelled block under a heading named for something
-     else. -->
+<!-- `labelled` is set only by a merged Motion page with more than Effort on it.
+     On its own page the h2 names the section and a label under it would say
+     the same word twice; on the merged page Tempo, Mode and Visibility all
+     carry one, and the effort tiles were the single unlabelled block under a
+     heading named for something else. -->
 {#snippet effortBody(labelled = false)}
   <div class="section-pad">
     {#if labelled}
@@ -947,6 +959,7 @@
     <EffortPanel
       columns={layout === "sidebar" ? 2 : 4}
       showSubtitles={layout === "sidebar"}
+      fill={effortFills}
       onSettingChange={(previous, value) =>
         reportSetting("effort", "preset", previous, value)}
     />
@@ -1020,9 +1033,11 @@
       <DisplayPanel
         {showMotionVisibility}
         {showSequenceMarks}
+        {showWordToggle}
         {sequence}
         propType={selectedPropType}
         fill={layout === "sidebar"}
+        grow={fillPages}
         {onSettingChange}
       />
     </div>
@@ -1059,8 +1074,8 @@
             <span>Holds the sequence's mandala for a beat, then plays.</span>
           {:else if exportOptions.videoOpener === "this-frame"}
             <span
-              >Holds the frame on the stage when you press Download. Pause
-              where it looks right.</span
+              >Holds the frame on the stage when you press Download. Pause where
+              it looks right.</span
             >
           {:else}
             <span>Opens on the start position.</span>
@@ -1206,7 +1221,7 @@
         </div>
       {/if}
 
-      {#if layout === "bottom" && onExport}
+      {#if layout === "bottom" && onExport && showExportAction}
         <!-- The dock's download icon opened this tray, so the confirm sits on
              the same surface as the options it applies. The sidebar keeps its
              footer button instead. -->
@@ -1236,10 +1251,9 @@
   </div>
 {/snippet}
 
-{#if presentation === "content"}
+{#if presentation === "content" && layout === "bottom"}
   <div
-    class="external-section-body"
-    class:dock-dense={layout === "bottom"}
+    class="external-section-body dock-dense"
     role="region"
     aria-label={activePillLabel || regionLabel}
   >
@@ -1304,7 +1318,9 @@
         {secondaryActions}
         trayMaxHeight={resolvedPill === "effects"
           ? "min(54vh, 360px)"
-          : "min(35vh, 250px)"}
+          : resolvedPill === "props"
+            ? "min(80dvh, 380px)"
+            : "min(35vh, 250px)"}
         tray={presentation === "full" ? dockTray : undefined}
       />
     {/if}
@@ -1319,9 +1335,13 @@
     {reduceMotion}
     fillBody={resolvedPill === "display" ||
       resolvedPill === "effects" ||
-      resolvedPill === "props"}
+      resolvedPill === "props" ||
+      (resolvedPill === "motion" && effortFills)}
     fluidBody={resolvedPill === "props"}
-    regionLabel="Animation export settings"
+    pageOnly={presentation === "content"}
+    regionLabel={presentation === "content"
+      ? activePillLabel || regionLabel
+      : "Animation export settings"}
     onNavMount={(element) => {
       pillNavEl = element;
     }}
@@ -1331,7 +1351,7 @@
   >
     {#snippet body()}{@render pillBody()}{/snippet}
     {#snippet footer()}
-      {#if (exportEnabled && onExport) || reserveExportSpace}
+      {#if (exportEnabled && onExport && showExportAction) || reserveExportSpace}
         <AnimatorInspectorFooter
           onAction={handleExportTrigger}
           concealed={reserveExportSpace}
@@ -1351,6 +1371,37 @@
 {/if}
 
 <style>
+  .sidebar-prop-picker {
+    display: contents;
+  }
+  .bottom-prop-picker {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: min(340px, calc(80dvh - 36px));
+    min-height: 0;
+    overflow: hidden;
+  }
+  .bottom-prop-picker :global(.rail-toolbar .rail-heading:empty),
+  .bottom-prop-picker :global(.rail-toolbar .rail-actions:empty) {
+    display: none;
+  }
+  .bottom-prop-picker :global(.rail-toolbar .size-toggle) {
+    margin-left: auto;
+  }
+  @media (max-width: 500px) {
+    .bottom-prop-picker :global(.rail-toolbar .rail-heading),
+    .bottom-prop-picker :global(.rail-toolbar .rail-lead),
+    .bottom-prop-picker :global(.rail-toolbar .hand-toolbar.compact) {
+      display: contents;
+    }
+    .bottom-prop-picker :global(.rail-toolbar .size-toggle) {
+      margin-left: 0;
+    }
+    .bottom-prop-picker :global(.rail-toolbar .look-name) {
+      display: none;
+    }
+  }
   .external-section-body {
     min-width: 0;
     min-height: 0;
@@ -1369,6 +1420,17 @@
   .motion-scope {
     container-name: motion-stack;
     container-type: inline-size;
+  }
+
+  /* Effort alone on a page the host fills: each wrapper hands the height down
+     so the tiles can share it. */
+  .motion-scope.fills,
+  .motion-scope.fills .motion-stack,
+  .motion-scope.fills .motion-stack > :global(.section-pad) {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   /* The merged sections keep their own internal padding; the stack only
@@ -1428,17 +1490,18 @@
        first-time viewer understands last. Four across in two rows instead of
        two across in four, without the descriptions: 386px down to ~150px,
        which is what keeps a 315px rail from scrolling. Both come back with the
-       second column, where the room exists. */
-    .motion-stack :global(.effort-sub) {
+       second column, where the room exists. Effort alone on the page keeps
+       them: it is the whole page, and the descriptions are what it teaches. */
+    .motion-stack:not(.effort-only) :global(.effort-sub) {
       display: none;
     }
 
-    .motion-stack :global(.effort-btn.with-sub) {
+    .motion-stack:not(.effort-only) :global(.effort-btn.with-sub) {
       padding: 8px 4px;
       min-height: 40px;
     }
 
-    .motion-stack :global(.effort-grid) {
+    .motion-stack:not(.effort-only) :global(.effort-grid) {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
@@ -1472,24 +1535,6 @@
     align-items: center;
     justify-content: center;
     min-height: 140px;
-  }
-
-  /* Cat Dog chip and hand segments above the grid; mirrors the global prop
-     drawer's toolbar so the pair reads the same wherever it is picked. */
-  .hand-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 8px 16px 4px;
-    flex-shrink: 0;
-  }
-
-  /* The colour pair above the grid, on the prop drawer's own inset. */
-  .prop-colors {
-    padding: 8px 16px 4px;
-    flex-shrink: 0;
   }
 
   /* Compact Export body: label-left rows instead of stacked sections. */
@@ -1663,33 +1708,6 @@
     flex: 1;
     min-width: 0;
   }
-  /* BentoPropGrid */
-  .dock-dense :global(.grid-scroll) {
-    padding: 6px 12px;
-  }
-  .dock-dense :global(.section-label) {
-    padding: 4px 4px 2px;
-  }
-  .dock-dense :global(.section-buttons) {
-    gap: 4px;
-  }
-  .dock-dense :global(.grid-content) {
-    gap: 2px;
-  }
-  /* Shrink prop tiles ~79->60px (square) so more fit per row + shorter rows.
-     Higher specificity than BentoPropGrid's own width + container-query rules. */
-  .dock-dense :global(.section-buttons .prop-button),
-  .dock-dense :global(.popover-trigger-wrap .prop-button),
-  .dock-dense :global(.popover-trigger-wrap) {
-    width: 60px;
-  }
-  .dock-dense :global(.prop-button) {
-    aspect-ratio: 1 / 1;
-    padding: 5px 3px 4px;
-    gap: 2px;
-  }
-  /* .prop-label keeps its base var(--font-size-compact, 12px); it ellipsizes
-     (nowrap + hidden overflow) inside the 60px tile, so no sub-floor override. */
   /* EffortPanel (56px tile -> 48, still >=44) */
   .dock-dense :global(.effort-btn) {
     min-height: 48px;

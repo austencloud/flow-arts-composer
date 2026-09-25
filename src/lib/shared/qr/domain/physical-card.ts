@@ -19,6 +19,10 @@ const PHYSICAL_CARD_ID_PATTERN =
   /^[23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{12}$/;
 const PRINT_RUN_ID_PATTERN = /^[0-9A-Za-z]{20}$/;
 const SHORT_CODE_PATTERN = /^[0-9A-Z]{4,6}$/;
+// Codes minted today are uppercase base36, and only those go on new print
+// runs. About 3,000 older shortcodes (13% on 2026-09-23, none on a deck card)
+// use mixed case and still resolve on /q, so a scan of one is still a scan.
+const SCANNABLE_SHORT_CODE_PATTERN = /^[0-9A-Za-z]{4,6}$/;
 const DEVICE_ID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -266,7 +270,7 @@ export function validateCardScanIngestRequest(
   if (body.schemaVersion !== PHYSICAL_CARD_SCHEMA_VERSION) {
     return { ok: false, error: "Unsupported physical-card schema version" };
   }
-  if (!isShortCode(body.shortCode)) {
+  if (!isScannableShortCode(body.shortCode)) {
     return { ok: false, error: "Invalid short code" };
   }
   if (body.physicalCardId !== null && !isPhysicalCardId(body.physicalCardId)) {
@@ -367,6 +371,11 @@ export function isPrintRunId(value: unknown): value is string {
 
 export function isShortCode(value: unknown): value is string {
   return typeof value === "string" && SHORT_CODE_PATTERN.test(value);
+}
+
+/** Any existing shortcode a scan can carry, including legacy mixed-case ones. */
+export function isScannableShortCode(value: unknown): value is string {
+  return typeof value === "string" && SCANNABLE_SHORT_CODE_PATTERN.test(value);
 }
 
 export function isDeviceId(value: unknown): value is string {

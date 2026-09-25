@@ -96,6 +96,13 @@ describe("resolveActivePill", () => {
     expect(resolveActivePill("motion", split)).toBe("effort");
   });
 
+  it("sends a remembered Playback to Effort when the host leaves Playback out", () => {
+    // A canvas with its own transport owns tempo, so its dock has no Playback
+    // tray. The other motion part is the nearer page, not Effects.
+    const noPlayback = split.filter((id) => id !== "playback");
+    expect(resolveActivePill("playback", noPlayback)).toBe("effort");
+  });
+
   it("falls back to Effects for a pill this host simply lacks", () => {
     // A remembered "props" on a host wired without onPropChange.
     const noProps = merged.filter((id) => id !== "props");

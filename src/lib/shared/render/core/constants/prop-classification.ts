@@ -7,7 +7,7 @@ const BIG_UNILATERAL_PROPS = [
 ] as const;
 
 const SMALL_UNILATERAL_PROPS = [
-  "fan", "club", "classic_club", "minihoop", "triad", "ukulele",
+  "fan", "club", "classic_club", "minihoop", "triangle", "triad", "ukulele",
   "triquetra", "triquetra2", "chicken", "torch", "contactball", "poi",
 ] as const;
 

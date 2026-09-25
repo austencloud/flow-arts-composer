@@ -19,6 +19,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 
 // rasterizeLoopIconByKind pulls CardBackLoopIcon → SwapIcon/CheckerboardCircleIcon
 // (Svelte components) which don't import cleanly in vitest; mock it to a fake
@@ -290,6 +291,17 @@ describe("card-back-bitmaps-percard rasterizers (canvas-native)", () => {
       expect(v.showTKA).toBe(false);
       expect(v.showReversals).toBe(false);
       expect(v.showPlacements).toBe(false);
+    });
+
+    it("passes explicit prop types and custom hand colors to the canvas pictograph", async () => {
+      const colors = { left: "#7442c8", right: "#a84fd4" };
+      await rasterizeStartPlacementPictograph(
+        pictographData, true, undefined, PropType.CLUB, PropType.CLUB, colors,
+      );
+      const visibility = renderPictoCalls[0]!.options.visibility;
+      expect(visibility.leftPropType).toBe(PropType.CLUB);
+      expect(visibility.rightPropType).toBe(PropType.CLUB);
+      expect(visibility.primaryPropColors).toEqual(colors);
     });
 
     it("returns an ImageBitmap", async () => {

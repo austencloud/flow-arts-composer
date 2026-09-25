@@ -118,7 +118,6 @@
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
-    max-width: 48rem;
   }
   .beat-heading {
     margin: 0;

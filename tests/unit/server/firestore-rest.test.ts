@@ -59,6 +59,108 @@ describe("FirestoreRest requests", () => {
     expect(receivers).toEqual([undefined]);
   });
 
+  it("batch-reads documents and keys each result by its requested path", async () => {
+    const documentsRoot = "projects/test/databases/(default)/documents/";
+    // Firestore answers in its own order, not the request's.
+    const fetchImpl = vi.fn(() =>
+      Promise.resolve(
+        Response.json([
+          { missing: `${documentsRoot}publicSequences/ΘΘ-word` },
+          {
+            found: {
+              name: `${documentsRoot}catalogs/deck/sequences/ABC`,
+              fields: { word: { stringValue: "ABC" } },
+            },
+          },
+        ])
+      )
+    ) as unknown as typeof fetch;
+    const authorizer = new ServiceAccountAuthorizer(
+      {
+        project_id: "test",
+        client_email: "cards@example.invalid",
+        private_key: "not-used-by-this-test",
+      },
+      fetchImpl
+    );
+    vi.spyOn(authorizer, "getAccessToken").mockResolvedValue("cached-token");
+    const firestore = new FirestoreRest(authorizer);
+
+    const documents = await firestore.batchGetDocuments(
+      [
+        "catalogs/deck/sequences/ABC",
+        "publicSequences/ΘΘ-word",
+        "catalogs/deck/sequences/ABC",
+      ],
+      ["word"]
+    );
+
+    expect(documents.get("catalogs/deck/sequences/ABC")).toMatchObject({
+      fields: { word: { stringValue: "ABC" } },
+    });
+    expect(documents.get("publicSequences/ΘΘ-word")).toBeNull();
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    const [url, init] = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock
+      .calls[0] as [string, RequestInit];
+    expect(url).toBe(
+      "https://firestore.googleapis.com/v1/projects/test/databases/(default)/documents:batchGet"
+    );
+    expect(JSON.parse(String(init.body))).toEqual({
+      documents: [
+        `${documentsRoot}catalogs/deck/sequences/ABC`,
+        `${documentsRoot}publicSequences/ΘΘ-word`,
+      ],
+      mask: { fieldPaths: ["word"] },
+    });
+  });
+
+  it("projects a query onto the requested fields", async () => {
+    const fetchImpl = vi.fn(() =>
+      Promise.resolve(Response.json([{ readTime: "2026-09-23T00:00:00Z" }]))
+    ) as unknown as typeof fetch;
+    const authorizer = new ServiceAccountAuthorizer(
+      {
+        project_id: "test",
+        client_email: "cards@example.invalid",
+        private_key: "not-used-by-this-test",
+      },
+      fetchImpl
+    );
+    vi.spyOn(authorizer, "getAccessToken").mockResolvedValue("cached-token");
+    const firestore = new FirestoreRest(authorizer);
+
+    await expect(
+      firestore.queryDocuments({
+        collectionId: "products",
+        fieldPath: "status",
+        value: "active",
+        fieldPaths: ["name", "price"],
+      })
+    ).resolves.toEqual([]);
+
+    const [, init] = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock
+      .calls[0] as [string, RequestInit];
+    expect(JSON.parse(String(init.body)).structuredQuery.select).toEqual({
+      fields: [{ fieldPath: "name" }, { fieldPath: "price" }],
+    });
+  });
+
+  it("makes no request for an empty batch", async () => {
+    const fetchImpl = vi.fn() as unknown as typeof fetch;
+    const authorizer = new ServiceAccountAuthorizer(
+      {
+        project_id: "test",
+        client_email: "cards@example.invalid",
+        private_key: "not-used-by-this-test",
+      },
+      fetchImpl
+    );
+    const firestore = new FirestoreRest(authorizer);
+
+    await expect(firestore.batchGetDocuments([])).resolves.toEqual(new Map());
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
   it("lists a collection with masks and pagination", async () => {
     const fetchImpl = vi.fn(() =>
       Promise.resolve(

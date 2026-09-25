@@ -9,6 +9,12 @@ const MIN_RAIL_WIDTH = 72;
 const MAX_RAIL_WIDTH = 300;
 export const VIEWER_INSPECTOR_HANDLE_SIZE = 8;
 export const VIEWER_STAGE_MIN_WIDTH = 600;
+/**
+ * Post Studio's stage is a 9:16 frame over a transport. It wants height, not
+ * width: 300px holds the frame, the transport, and the phone-width action bar,
+ * which is exactly what the studio already shows on a 344px cover screen.
+ */
+export const POST_STUDIO_STAGE_MIN_WIDTH = 300;
 
 export type ViewerInspectorProfile =
   | "card"
@@ -44,23 +50,52 @@ export function viewerInspectorConstraints(profile: ViewerInspectorProfile): {
   return { minWidth, maxWidth };
 }
 
+function resolveRailWidth(persistedRailWidth: string | null): number {
+  if (persistedRailWidth) {
+    const parsed = Number.parseInt(persistedRailWidth, 10);
+    if (parsed >= MIN_RAIL_WIDTH && parsed <= MAX_RAIL_WIDTH) {
+      return parsed;
+    }
+  }
+  return DEFAULT_RAIL_WIDTH;
+}
+
 export function resolveExportSidebarMinWidth(
   persistedRailWidth: string | null,
   profile: ViewerInspectorProfile = "motion"
 ): number {
-  let railWidth = DEFAULT_RAIL_WIDTH;
-  if (persistedRailWidth) {
-    const parsed = Number.parseInt(persistedRailWidth, 10);
-    if (parsed >= MIN_RAIL_WIDTH && parsed <= MAX_RAIL_WIDTH) {
-      railWidth = parsed;
-    }
-  }
-
   return (
-    railWidth +
+    resolveRailWidth(persistedRailWidth) +
     INSPECTOR_LAYOUTS[profile].defaultWidth +
     VIEWER_INSPECTOR_HANDLE_SIZE +
     VIEWER_STAGE_MIN_WIDTH
+  );
+}
+
+/**
+ * The narrowest viewer body that can hold the share column beside Post Studio.
+ *
+ * Stacking the share panel under a 9:16 frame spends the one dimension the
+ * frame needs: on an unfolded Fold (707px) the stacked panel left a 1x2px
+ * preview. Beside it, the same screen keeps a 214x381 frame. `rail` is what
+ * the shell is actually showing: none on a phone host, the 72px icon rail
+ * under the compact-chrome width, else the person's rail width.
+ */
+export function resolvePostStudioShareDockMinWidth(
+  persistedRailWidth: string | null,
+  rail: "hidden" | "compact" | "full"
+): number {
+  const railWidth =
+    rail === "hidden"
+      ? 0
+      : rail === "compact"
+        ? MIN_RAIL_WIDTH
+        : resolveRailWidth(persistedRailWidth);
+  return (
+    railWidth +
+    INSPECTOR_LAYOUTS.share.minWidth +
+    VIEWER_INSPECTOR_HANDLE_SIZE +
+    POST_STUDIO_STAGE_MIN_WIDTH
   );
 }
 

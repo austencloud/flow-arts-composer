@@ -136,6 +136,40 @@ export interface HandModeContext {
 }
 
 /**
+ * Every engine option the selection can use before a random quarter sense is
+ * chosen. A pinned start is a hard spatial requirement, so an incompatible
+ * pin deliberately returns no options instead of falling back to another
+ * sense that cannot start there.
+ */
+export function handModeOptionsForContext(
+  hand: TnDSelection,
+  context: Omit<HandModeContext, "random">
+): readonly HandRelationshipOptions[] {
+  if (hand === "free") return [];
+
+  const maps = HAND_MODE_MAPS[hand];
+  const inverted = deriveHandInversion(hand, context.prop);
+  if (maps.length === 1) return [{ map: maps[0]!, inverted }];
+
+  const start = context.startLocations;
+  if (start) {
+    return maps
+      .filter(
+        (map) =>
+          HAND_RELATIONSHIP_LOCATION_MAPS[map][start.right] === start.left
+      )
+      .map((map) => ({ map, inverted }));
+  }
+
+  const fromLoop = context.loopAxis
+    ? DIAGONAL_AXIS_MAP[context.loopAxis]
+    : undefined;
+  if (fromLoop && maps.includes(fromLoop)) return [{ map: fromLoop, inverted }];
+
+  return maps.map((map) => ({ map, inverted }));
+}
+
+/**
  * The engine option for a hand selection, or undefined for Free. QS and QO
  * have two senses. A pinned start decides: the sense whose map sends the right
  * hand's start location onto the left's. Otherwise a diagonal LOOP axis
@@ -147,27 +181,23 @@ export function handModeToEngine(
   context: HandModeContext
 ): HandRelationshipOptions | undefined {
   if (hand === "free") return undefined;
-  const maps = HAND_MODE_MAPS[hand];
-  const inverted = deriveHandInversion(hand, context.prop);
-  if (maps.length === 1) return { map: maps[0]!, inverted };
+  const options = handModeOptionsForContext(hand, context);
+  if (options.length === 1) return options[0];
 
-  const start = context.startLocations;
-  const pinned = start
-    ? maps.find(
-        (map) =>
-          HAND_RELATIONSHIP_LOCATION_MAPS[map][start.right] === start.left
-      )
-    : undefined;
-  if (pinned) return { map: pinned, inverted };
-
-  const fromLoop = context.loopAxis
-    ? DIAGONAL_AXIS_MAP[context.loopAxis]
-    : undefined;
-  if (fromLoop && maps.includes(fromLoop)) return { map: fromLoop, inverted };
+  // Preserve the established fallback for old callers that ask for an
+  // impossible pinned quarter relation. Generation itself now detects that
+  // case before search and gives the user an explanation.
+  if (options.length === 0) {
+    const maps = HAND_MODE_MAPS[hand];
+    const inverted = deriveHandInversion(hand, context.prop);
+    const random = context.random ?? Math.random;
+    const index = Math.min(maps.length - 1, Math.floor(random() * maps.length));
+    return { map: maps[index]!, inverted };
+  }
 
   const random = context.random ?? Math.random;
-  const index = Math.min(maps.length - 1, Math.floor(random() * maps.length));
-  return { map: maps[index]!, inverted };
+  const index = Math.min(options.length - 1, Math.floor(random() * options.length));
+  return options[index]!;
 }
 
 /** Card and summary wording: "Free", "Together Same", "Quarter Opposite". */

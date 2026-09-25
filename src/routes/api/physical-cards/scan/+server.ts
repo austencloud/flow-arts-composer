@@ -1,7 +1,11 @@
 import { json } from "@sveltejs/kit";
-import type { RequestHandler } from "./$types";
+import type { RequestEvent, RequestHandler } from "./$types";
 import { getOptionalFirebaseUser } from "$lib/server/auth/getOptionalFirebaseUser";
 import { createScanEventId } from "$lib/server/physical-cards/scan-event-identity";
+import {
+  scanPreflightResponse,
+  withScanCors,
+} from "$lib/server/physical-cards/scan-cors";
 import {
   FirestoreRestError,
   getFirestoreRest,
@@ -120,7 +124,14 @@ function invalidCard(message: string, code: string, status = 400): Response {
   return json({ error: message, code }, { status });
 }
 
-export const POST: RequestHandler = async (event) => {
+// The installed app posts from its own origin; see scan-cors.ts.
+export const OPTIONS: RequestHandler = ({ request }) =>
+  scanPreflightResponse(request);
+
+export const POST: RequestHandler = async (event) =>
+  withScanCors(event.request, await ingestScan(event));
+
+async function ingestScan(event: RequestEvent): Promise<Response> {
   // Apply the coarse edge limit before parsing. Invalid JSON must not be a free
   // path around abuse controls.
   const ipBlocked = await withRateLimit(event, RATE_LIMITS.GENERAL, "ip");
@@ -329,4 +340,4 @@ export const POST: RequestHandler = async (event) => {
       { status: 500 }
     );
   }
-};
+}

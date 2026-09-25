@@ -30,6 +30,13 @@
   import { tick } from "svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import PropGridButton from "./PropGridButton.svelte";
+  import {
+    FILL_MAX_TILE,
+    balancedCount,
+    centeredOrphan,
+    sectionFillLayout,
+  } from "./section-fill-layout";
+  import { drillFillLayout } from "./drill-fill-layout";
   import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
   import {
     hasModelSprite,
@@ -52,6 +59,12 @@
   import { isBuugengFamilyProp } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
   import type { Snippet } from "svelte";
   import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
+  import {
+    TRIANGLE_GRIP_OPTIONS,
+    isTrianglePropType,
+    normalizeTriangleGrip,
+    type TriangleGrip,
+  } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
 
   let {
     selectedPropType,
@@ -83,6 +96,8 @@
     onPropLookChange,
     recipeOverrides,
     colors,
+    triangleGrip,
+    onTriangleGripChange,
     isActive = true,
     onDrillChange,
   } = $props<{
@@ -112,11 +127,11 @@
     scrollMode?: "internal" | "host";
     /**
      * The host bounds the internal scroller to a definite height (the Change
-     * Prop drawer, the phone sheet, the wide sidebar). A drilled view then
-     * claims that whole height and sizes its tiles to share it, and so does
-     * the flat grid. Only a host with a definite height may opt in: in an
-     * auto-height host the measurement would feed back into the content it
-     * measures.
+     * Prop drawer, the phone sheet, the wide sidebar, the Props page side by
+     * side). A drilled view then claims that whole height and sizes its
+     * tiles to share it, and so do the flat and sectioned grids. Only a host
+     * with a definite height may opt in: in an auto-height host the
+     * measurement would feed back into the content it measures.
      */
     fill?: boolean;
     /** Adds the scene-only no-prop choice using the same canonical card. */
@@ -152,6 +167,8 @@
     onPropLookChange?: (look: PropLook) => void;
     recipeOverrides?: Partial<Record<PropType, CompositionRecipe>>;
     colors?: ViewerCustomColorPair | null;
+    triangleGrip: TriangleGrip;
+    onTriangleGripChange: (grip: TriangleGrip) => void;
     /** A sheet can reset this transient route when it closes. */
     isActive?: boolean;
     /** Lets a sheet temporarily reclaim root-only control space while drilled. */
@@ -201,10 +218,24 @@
           seen.add(base);
           bases.push(base);
         }
-        return { label: section.label, bases };
+        return {
+          label: section.label,
+          bases,
+          columns: balancedColumns(bases.length),
+        };
       })
       .filter((section) => section.bases.length > 0);
   });
+
+  // The column count a section uses at each width tier: as many as the tier
+  // allows, less any that would only leave a short last row. Ten props at an
+  // eight-column tier sit five and five, not eight and a stray two.
+  const COLUMN_TIERS = [2, 3, 4, 6, 8, 10, 12] as const;
+  function balancedColumns(count: number): string {
+    return COLUMN_TIERS.map(
+      (max) => `--c${max}: ${balancedCount(count, max)}`
+    ).join("; ");
+  }
 
   const allBases = $derived(sections.flatMap((section) => section.bases));
   const selectedBase = $derived(
@@ -307,9 +338,18 @@
   let tilesBox = $state({ width: 0, height: 0 });
 
   $effect(() => {
-    if (!probeEl) return;
+    // A host that stops bounding the grid (the Props page stacking its
+    // cards) takes the probe away; the last height must not linger.
+    if (!probeEl) {
+      fillHeight = 0;
+      return;
+    }
     const probe = probeEl;
-    const measure = () => (fillHeight = probe.offsetHeight);
+    // Floored, not offsetHeight: the scroller's height is often fractional,
+    // and rounding it up overflows the content by a fraction of a pixel,
+    // which pins an empty scrollbar beside the filled grid.
+    const measure = () =>
+      (fillHeight = Math.floor(probe.getBoundingClientRect().height));
     const observer = new ResizeObserver(measure);
     observer.observe(probe);
     measure();
@@ -331,6 +371,64 @@
   // drilled tiles: its height is the scroller's, its width is its own.
   let flatEl = $state<HTMLDivElement | null>(null);
   let flatWidth = $state(0);
+  let railDragging = $state(false);
+  let railPointer: {
+    id: number;
+    x: number;
+    scrollLeft: number;
+    dragging: boolean;
+  } | null = null;
+  let suppressRailClick = false;
+
+  function handleRailPointerDown(event: PointerEvent) {
+    if (
+      layout !== "rail" ||
+      event.pointerType !== "mouse" ||
+      event.button !== 0
+    )
+      return;
+    const rail = event.currentTarget as HTMLDivElement;
+    if (rail.scrollWidth <= rail.clientWidth) return;
+    railPointer = {
+      id: event.pointerId,
+      x: event.clientX,
+      scrollLeft: rail.scrollLeft,
+      dragging: false,
+    };
+  }
+
+  function handleRailPointerMove(event: PointerEvent) {
+    if (!railPointer || event.pointerId !== railPointer.id) return;
+    const distance = event.clientX - railPointer.x;
+    if (!railPointer.dragging && Math.abs(distance) < 6) return;
+    const rail = event.currentTarget as HTMLDivElement;
+    if (!railPointer.dragging) {
+      railPointer.dragging = true;
+      railDragging = true;
+      rail.setPointerCapture(event.pointerId);
+    }
+    rail.scrollLeft = railPointer.scrollLeft - distance;
+    event.preventDefault();
+  }
+
+  function endRailPointer(event: PointerEvent) {
+    if (!railPointer || event.pointerId !== railPointer.id) return;
+    if (railPointer.dragging) {
+      suppressRailClick = true;
+      // The click generated by pointerup is synchronous. A later intentional
+      // click must still select a card if the browser omits that drag click.
+      setTimeout(() => (suppressRailClick = false), 0);
+    }
+    railPointer = null;
+    railDragging = false;
+  }
+
+  function handleRailClick(event: MouseEvent) {
+    if (!suppressRailClick) return;
+    suppressRailClick = false;
+    event.preventDefault();
+    event.stopPropagation();
+  }
 
   $effect(() => {
     if (!flatEl) return;
@@ -343,9 +441,6 @@
   });
 
   const FLAT_GAP = 8;
-  /* A tile never grows past this: a wall-sized pane gets a composed block
-     with margins rather than tiles the size of playing cards. */
-  const FLAT_MAX_TILE = 288;
   /* Below this the dense grid and its scrollbar read better than tiles
      squeezed to fit a short host. */
   const FLAT_MIN_TILE = 52;
@@ -373,7 +468,7 @@
       const rows = Math.ceil(n / cols);
       const colWidth = Math.min(
         (width - FLAT_GAP * (cols - 1)) / cols,
-        FLAT_MAX_TILE
+        FILL_MAX_TILE
       );
       const rowHeight = Math.min(
         (height - FLAT_GAP * (rows - 1)) / rows,
@@ -395,37 +490,64 @@
     };
   });
 
-  const DRILL_GAP = 10;
   const drillTileCount = $derived(
     drill?.kind === "family" ? familyChoices(drill.base).length : 0
   );
   /**
-   * Tile grid for a drilled family in a bounded host: as many columns as the
-   * family warrants, rows sharing the height so the tiles own the space,
-   * capped so a two-prop family gets two generous cards rather than two
-   * towers. Null means the host is not bounded and the tiles keep their
-   * ordinary size.
+   * Tile grid for a drilled family in a bounded host (see drill-fill-layout).
+   * The tiles sit on a doubled track grid (two tracks each) so a short last
+   * row can start one track in and centre itself. Null means the host is not
+   * bounded and the tiles keep their ordinary size.
    */
-  const drillLayout = $derived.by(() => {
-    const n = drillTileCount;
-    const { width, height } = tilesBox;
-    if (n === 0 || fillHeight === 0 || width === 0 || height === 0) return null;
-    const phone = width < 440;
-    const cols = n <= 2 ? n : phone || n <= 4 ? 2 : n <= 9 ? 3 : 4;
-    const rows = Math.ceil(n / cols);
-    const colWidth = (width - DRILL_GAP * (cols - 1)) / cols;
-    const rowHeight = Math.floor(
-      Math.min((height - DRILL_GAP * (rows - 1)) / rows, colWidth * 1.25)
-    );
-    // The tiles sit on a doubled track grid (two tracks each) so a short
-    // last row can start one track in and centre itself.
-    const orphans = n % cols;
-    return {
-      cols,
-      rowHeight,
-      orphanIndex: orphans === 0 ? -1 : n - orphans,
-      orphanStart: cols - orphans + 1,
+  const drillLayout = $derived(
+    fillHeight === 0
+      ? null
+      : drillFillLayout(drillTileCount, tilesBox.width, tilesBox.height)
+  );
+
+  // The sectioned grid's width and the height its labels take, which do not
+  // change with the tile size, so the layout below can fit the tiles to the
+  // rest of the bounded height without measuring what it sizes.
+  let sectionsEl = $state<HTMLDivElement | null>(null);
+  let sectionsBox = $state({ width: 0, labels: 0 });
+
+  $effect(() => {
+    if (!sectionsEl) return;
+    const content = sectionsEl;
+    // Compared locally so the effect does not subscribe to what it writes;
+    // the tiles resizing fires the observer without changing either value.
+    let last = { width: -1, labels: -1 };
+    const measure = () => {
+      let labels = 0;
+      for (const label of content.querySelectorAll<HTMLElement>(
+        ".section-label"
+      )) {
+        labels += label.offsetHeight;
+      }
+      const width = content.clientWidth;
+      if (width === last.width && labels === last.labels) return;
+      last = { width, labels };
+      sectionsBox = last;
     };
+    const observer = new ResizeObserver(measure);
+    observer.observe(content);
+    measure();
+    return () => observer.disconnect();
+  });
+
+  /**
+   * Tile grid for the sectioned picker in a bounded host (see
+   * section-fill-layout). Null means the host is not bounded, a family is
+   * drilled open, or the host is too small, and the tiered grid stands.
+   */
+  const sectionLayout = $derived.by(() => {
+    if (!fill || flat || drill !== null || fillHeight === 0) return null;
+    return sectionFillLayout({
+      counts: sections.map((section) => section.bases.length),
+      width: sectionsBox.width,
+      height: fillHeight,
+      labels: sectionsBox.labels,
+    });
   });
 
   function handleDrillKeydown(event: KeyboardEvent): void {
@@ -475,6 +597,17 @@
       : selectedPropType
   );
 
+  // The triangle's grip is a look on top of the tile, like the fan build. It
+  // shows as a two-pill row in the triangle's details and on the rail.
+  const showGrip = $derived(
+    showAppearance && detailProp !== null && isTrianglePropType(detailProp)
+  );
+  const currentGrip = $derived(normalizeTriangleGrip(triangleGrip));
+  function chooseGrip(grip: TriangleGrip) {
+    if (currentGrip === grip) return;
+    onTriangleGripChange(grip);
+  }
+
   // Size is a property of the current prop, not a prop of its own. Every big
   // prop is reached from here, which is why the grid can fold them away.
   const showSize = $derived(
@@ -518,6 +651,7 @@
       showAppearance &&
       (isFanPropType(prop) ||
         hasBigVariant(prop) ||
+        isTrianglePropType(prop) ||
         (onPropLookChange !== undefined && hasModelSprite(prop)) ||
         (chirality !== undefined && isBuugengFamilyProp(prop)))
     );
@@ -582,6 +716,8 @@
   }
 </script>
 
+<!-- The rail picker owns gestures from its toolbar, gaps, tiles, and drill views.
+     The dock's separate grab handle remains available to dismiss the tray. -->
 <div
   bind:this={rootEl}
   class="prop-grid-root"
@@ -591,6 +727,7 @@
   class:rail={layout === "rail"}
   class:host-scroll={scrollMode === "host"}
   class:fluid-sections={fluidSections}
+  data-swipe-block={layout === "rail" ? "" : undefined}
 >
   {#snippet sizeControl()}
     <div class="size-toggle" role="group" aria-label="Prop size">
@@ -608,6 +745,20 @@
         aria-pressed={sizeIsBig}
         onclick={() => chooseSize(true)}>Big</button
       >
+    </div>
+  {/snippet}
+  {#snippet gripControl()}
+    <div class="size-toggle" role="group" aria-label="Triangle grip">
+      {#each TRIANGLE_GRIP_OPTIONS as option (option.id)}
+        <button
+          type="button"
+          class="size-option"
+          class:active={currentGrip === option.id}
+          aria-pressed={currentGrip === option.id}
+          data-testid={`triangle-grip-${option.id}`}
+          onclick={() => chooseGrip(option.id)}>{option.label}</button
+        >
+      {/each}
     </div>
   {/snippet}
   {#snippet fanControl()}
@@ -687,6 +838,7 @@
       {:else}
         <div class="rail-heading">{@render heading?.()}</div>
         {#if showSize}{@render sizeControl()}{/if}
+        {#if showGrip}{@render gripControl()}{/if}
         {#if showFanLook}{@render fanControl()}{/if}
         {#if showPropLook}{@render propLookControl()}{/if}
       {/if}
@@ -726,6 +878,7 @@
         onSelect={() => handleTileClick(prop)}
         fanAppearance={normalizedFanAppearance}
         {propLook}
+        triangleGrip={currentGrip}
         {recipeOverrides}
         {colors}
         previewPair={showAppearance}
@@ -769,6 +922,7 @@
         {color}
         fanAppearance={normalizedFanAppearance}
         {propLook}
+        triangleGrip={currentGrip}
         {recipeOverrides}
         {colors}
         previewPair={showAppearance}
@@ -833,11 +987,28 @@
               />
             </div>
           {:else if drill.kind === "details"}
-            <div class="detail-options" class:fill={fillHeight > 0}>
+            <div
+              class="detail-options"
+              role="group"
+              aria-label={`${drillTitle} options`}
+              class:fill={fillHeight > 0}
+              class:dragging={railDragging}
+              onpointerdown={handleRailPointerDown}
+              onpointermove={handleRailPointerMove}
+              onpointerup={endRailPointer}
+              onpointercancel={endRailPointer}
+              onclickcapture={handleRailClick}
+            >
               {#if showSize}
                 <div class="detail-row">
                   <span class="look-label">Size</span>
                   {@render sizeControl()}
+                </div>
+              {/if}
+              {#if showGrip}
+                <div class="detail-row">
+                  <span class="look-label">Grip</span>
+                  {@render gripControl()}
                 </div>
               {/if}
               {#if showPropLook && onPropLookChange}
@@ -866,6 +1037,10 @@
           {:else}
             <div
               class="drill-tiles"
+              role="group"
+              aria-label={`${drillTitle} choices`}
+              class:dragging={railDragging}
+              style={balancedColumns(familyChoices(drill.base).length)}
               style:--family-count={familyChoices(drill.base).length}
               class:comfortable={tileDensity === "comfortable"}
               class:fill={drillLayout !== null}
@@ -876,6 +1051,11 @@
                 ? `${drillLayout.rowHeight}px`
                 : undefined}
               bind:this={tilesEl}
+              onpointerdown={handleRailPointerDown}
+              onpointermove={handleRailPointerMove}
+              onpointerup={endRailPointer}
+              onpointercancel={endRailPointer}
+              onclickcapture={handleRailClick}
             >
               {#each familyChoices(drill.base) as prop, index (prop)}
                 {@render tile(
@@ -891,6 +1071,9 @@
       {:else if flat}
         <div
           class="flat-grid"
+          role="group"
+          aria-label="Prop choices"
+          class:dragging={railDragging}
           class:comfortable={tileDensity === "comfortable"}
           class:fill={flatLayout !== null}
           style:height={flatLayout ? `${fillHeight}px` : undefined}
@@ -902,6 +1085,11 @@
             ? `${flatLayout.rowHeight}px`
             : undefined}
           bind:this={flatEl}
+          onpointerdown={handleRailPointerDown}
+          onpointermove={handleRailPointerMove}
+          onpointerup={endRailPointer}
+          onpointercancel={endRailPointer}
+          onclickcapture={handleRailClick}
         >
           {#each allBases as base, index (base)}
             {@render familyTile(
@@ -913,8 +1101,22 @@
           {/each}
         </div>
       {:else}
-        <div class="grid-content">
+        <div
+          class="grid-content"
+          class:fill={sectionLayout !== null}
+          style:min-height={sectionLayout ? `${fillHeight}px` : undefined}
+          style:--fill-tile={sectionLayout
+            ? `${sectionLayout.tile}px`
+            : undefined}
+          bind:this={sectionsEl}
+        >
           {#each sections as section, i}
+            {@const fillCols = sectionLayout
+              ? balancedCount(section.bases.length, sectionLayout.cols)
+              : 0}
+            {@const orphan = sectionLayout
+              ? centeredOrphan(section.bases.length, fillCols)
+              : null}
             <div class="prop-section" class:primary={i === 0}>
               <div class="section-label" class:first={i === 0}>
                 {section.label}
@@ -922,9 +1124,14 @@
               <div
                 class="section-buttons"
                 class:single={section.bases.length === 1}
+                style={section.columns}
+                style:--fill-cols={sectionLayout ? fillCols : undefined}
               >
-                {#each section.bases as base (base)}
-                  {@render familyTile(base)}
+                {#each section.bases as base, index (base)}
+                  {@render familyTile(
+                    base,
+                    index === orphan?.index ? orphan.start : undefined
+                  )}
                 {/each}
               </div>
             </div>
@@ -1031,7 +1238,14 @@
     scroll-snap-type: x proximity;
     scroll-padding-inline: 0.25rem;
     overscroll-behavior-x: contain;
+    touch-action: pan-x pinch-zoom;
     scrollbar-width: thin;
+    cursor: grab;
+  }
+  .rail .flat-grid.dragging {
+    cursor: grabbing;
+    scroll-snap-type: none;
+    user-select: none;
   }
   .rail .flat-grid > :global(*) {
     min-height: 0;
@@ -1045,31 +1259,89 @@
   .rail .drill-view {
     height: 100%;
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
-    gap: 0.375rem;
-  }
-  /* Fan Look has no inner back bar or modifier row. Give its one choice rail
-     the entire drilled area instead of preserving the family drill's auto row. */
-  .rail .drill-view.fan-look-drill,
-  .rail .drill-view.prop-look-drill {
     grid-template-rows: minmax(0, 1fr);
   }
-  .rail .drill-view.fan-look-drill > :global(.fan-style-options) {
-    height: 100%;
-  }
   .rail .drill-view > .detail-options {
+    height: 100%;
     min-height: 0;
   }
+  .rail .drill-view:not(.fan-look-drill) > .detail-options {
+    flex-direction: row;
+    align-items: stretch;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+    touch-action: pan-x pinch-zoom;
+    cursor: grab;
+  }
+  .rail .drill-view:not(.fan-look-drill) > .detail-options.dragging,
+  .rail .drill-tiles.flat-grid.dragging {
+    cursor: grabbing;
+    scroll-snap-type: none;
+    user-select: none;
+  }
+  .rail .drill-view:not(.fan-look-drill) > .detail-options > * {
+    scroll-snap-align: start;
+  }
+  .rail .drill-view:not(.fan-look-drill) > .detail-options > .detail-row {
+    flex: 0 0 13rem;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .rail
+    .drill-view:not(.fan-look-drill)
+    > .detail-options
+    > :global(.prop-look-picker) {
+    flex: 0 0 min(22rem, 80cqw);
+    align-self: center;
+  }
+  .rail
+    .drill-view:not(.fan-look-drill)
+    > .detail-options
+    > :global(.chirality-row) {
+    flex: 0 0 24.5rem;
+    align-self: center;
+    margin: 0;
+  }
   .rail .drill-view.fan-look-drill > .detail-options {
-    height: 100%;
+    overflow: hidden;
+  }
+  .rail
+    .drill-view.fan-look-drill
+    > .detail-options
+    > :global(.fan-style-options) {
+    flex: 1 1 0;
+    height: auto;
+    min-height: 0;
   }
   .rail .drill-view.prop-look-drill > :global(.prop-look-picker) {
     align-self: center;
     width: min(32rem, 100%);
   }
   .rail .drill-tiles.flat-grid {
-    grid-template-columns: repeat(var(--family-count), minmax(8.5rem, 1fr));
+    height: 100%;
+    min-height: 0;
+    grid-template-columns: none;
     grid-template-rows: minmax(0, 1fr);
+    grid-auto-flow: column;
+    grid-auto-columns: clamp(8.5rem, 24cqw, 12rem);
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+    touch-action: pan-x pinch-zoom;
+    cursor: grab;
+  }
+  .rail .drill-tiles.flat-grid > :global(*) {
+    scroll-snap-align: start;
+  }
+  .rail .drill-tiles.flat-grid :global(.prop-button) {
+    height: 100%;
+    min-height: 0;
+    aspect-ratio: auto;
   }
   .rail .drill-view > :global(.fan-style-options) {
     flex: 1;
@@ -1256,9 +1528,12 @@
     padding-top: 2px;
   }
 
+  /* Sections and the drilled family grid read their balanced counts
+     (--c2 ... --c12) from balancedColumns; the fallbacks are each tier's
+     full count. */
   .section-buttons {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 124px));
+    grid-template-columns: repeat(var(--c2, 2), minmax(0, 124px));
     gap: 10px;
     justify-content: center;
     padding: 0 2px;
@@ -1285,6 +1560,27 @@
 
   .section-buttons :global(.prop-button) {
     width: 100%;
+  }
+
+  /* A bounded host hands the sections its whole height (see sectionLayout):
+     one tile size for every section, each balanced within the column cap,
+     and the block centred in whatever the size cap leaves. */
+  .grid-content.fill {
+    justify-content: center;
+  }
+
+  /* Doubled tracks, as the drilled and flat grids use, so a short last row
+     can start one track in and sit centred under the full ones. */
+  .grid-content.fill .section-buttons {
+    grid-template-columns: repeat(
+      calc(var(--fill-cols) * 2),
+      calc((var(--fill-tile) - 10px) / 2)
+    );
+  }
+
+  .grid-content.fill .section-buttons > :global(*) {
+    /* End-only, so an inline column start on the orphan keeps its span. */
+    grid-column-end: span 2;
   }
 
   /* Reports the scroller's bounded height to script; see fillHeight. */
@@ -1521,19 +1817,19 @@
 
   @container prop-grid (min-width: 360px) {
     .section-buttons:not(.single) {
-      grid-template-columns: repeat(3, minmax(0, 124px));
+      grid-template-columns: repeat(var(--c3, 3), minmax(0, 124px));
     }
   }
 
   @container prop-grid (min-width: 550px) {
     .section-buttons:not(.single) {
-      grid-template-columns: repeat(4, minmax(0, 118px));
+      grid-template-columns: repeat(var(--c4, 4), minmax(0, 118px));
     }
   }
 
   @container prop-grid (min-width: 700px) {
     .section-buttons:not(.single) {
-      grid-template-columns: repeat(6, minmax(0, 112px));
+      grid-template-columns: repeat(var(--c6, 6), minmax(0, 112px));
     }
 
     .prop-grid-root.fluid-sections .grid-content {
@@ -1547,7 +1843,21 @@
 
   @container prop-grid (min-width: 850px) {
     .section-buttons:not(.single) {
-      grid-template-columns: repeat(8, minmax(0, 112px));
+      grid-template-columns: repeat(var(--c8, 8), minmax(0, 112px));
+    }
+  }
+
+  /* A wide monitor's picker: more of each section on one row instead of
+     the same eight tiles stranded in the middle of the card. */
+  @container prop-grid (min-width: 1250px) {
+    .section-buttons:not(.single) {
+      grid-template-columns: repeat(var(--c10, 10), minmax(0, 112px));
+    }
+  }
+
+  @container prop-grid (min-width: 1500px) {
+    .section-buttons:not(.single) {
+      grid-template-columns: repeat(var(--c12, 12), minmax(0, 112px));
     }
   }
 

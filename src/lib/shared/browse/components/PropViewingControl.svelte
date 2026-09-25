@@ -93,7 +93,7 @@
         ? "Use the collection’s prop, or the props saved with each sequence. Sequences without saved props use yours."
         : "Show sequences with your props. Saved versions stay unchanged."}
     </p>
-    <PropPairField bind:value={ownProps} label="My props" />
+    <PropPairField bind:value={ownProps} label="My props" showColors />
   </div>
   {#snippet footer()}
     <div class="actions">

@@ -197,6 +197,14 @@ the below-seam actions mutate the engine in place.
 {/snippet}
 
 <div class="gallery-workspace">
+  {#if engine.error}
+    <div role="alert">
+      <p>{engine.error}</p>
+      <PanelButton variant="secondary" onclick={() => engine.refresh()}>
+        Try again
+      </PanelButton>
+    </div>
+  {/if}
   {#if onClose && !splitPaneActive && !engine.hasActiveFilters}
     <div class="workspace-close">
       <PanelButton
@@ -277,6 +285,8 @@ the below-seam actions mutate the engine in place.
   {#key drillSeed}
     <GalleryDrill
       pool={engine.allSequences}
+      loading={!engine.error && (engine.isLoading || !engine.sectionsReady)}
+      loadFailed={!!engine.error}
       adaptiveValueLayout
       persistentDesktopCatalog
       fluidWideCanvas

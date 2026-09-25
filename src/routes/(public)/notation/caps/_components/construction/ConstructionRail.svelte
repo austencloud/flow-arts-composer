@@ -98,7 +98,6 @@
           </li>
         {/each}
       </ol>
-      <p class="join-note">The marked junction is shared by both fragments.</p>
     </div>
   {:else}
     <div class="layer-copy mechanism-copy">
@@ -106,7 +105,7 @@
       <h4>Two rotating vectors</h4>
       <p>
         O stays fixed. M circles O at θ₁. E circles M at θ₁ + θ₂ in the ground
-        frame. Their two vectors add to the luminous point.
+        frame. Together they place the prop tip at E.
       </p>
 
       <div
@@ -375,11 +374,6 @@
     font-size: 0.75rem;
     white-space: normal;
   }
-  .join-note {
-    color: color-mix(in srgb, #fbbf24 72%, white);
-    font-size: 0.8rem;
-  }
-
   .equation {
     padding: 0.8rem;
     overflow-x: auto;

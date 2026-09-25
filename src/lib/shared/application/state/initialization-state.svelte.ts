@@ -9,12 +9,17 @@ const hmrInitData = import.meta.hot?.data as
   | { initializationState?: { isInitialized: boolean; isInitializing: boolean; initializationError: string | null; initializationProgress: number } }
   | undefined;
 
+// A fresh load always starts un-booted. The root layout starts the settings
+// service on every app route, often before this module has loaded, so
+// "settings are ready" says nothing about whether MainApplication finished its
+// boot. Starting from it would make MainApplication skip restoring the
+// workspace, the saved settings and the theme.
 const initializationState = $state(
   hmrInitData?.initializationState ?? {
-    isInitialized: areServicesInitialized(),
+    isInitialized: false,
     isInitializing: false,
     initializationError: null as string | null,
-    initializationProgress: areServicesInitialized() ? 100 : 0,
+    initializationProgress: 0,
   }
 );
 

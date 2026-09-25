@@ -17,7 +17,10 @@
   } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import type { TurnValue } from "$lib/shared/create/domain/turn-pattern-data";
   import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import { generateSequenceRoutePath } from "$lib/shared/navigation/services/sequence-encoder";
+  import {
+    generateSequenceRoutePath,
+    UnencodableMotionError,
+  } from "$lib/shared/navigation/services/sequence-encoder";
   import { buildGalleryLetterHref } from "$lib/shared/browse/navigation/gallery-letter-link";
   import type { CodexLetterInfo } from "./codex-letters";
 
@@ -99,6 +102,23 @@
     gridMode === GridMode.BOX ? "Box grid" : "Diamond grid"
   );
   const galleryHref = $derived(buildGalleryLetterHref(info.label));
+  // A card link is optional; the panel is not. A card with a motion the
+  // encoder cannot represent is left out of the list instead of throwing
+  // during render.
+  const learningLinks = $derived(
+    learningMatches.flatMap((sequence) => {
+      try {
+        return [{ sequence, href: generateSequenceRoutePath(sequence) }];
+      } catch (error) {
+        if (!(error instanceof UnencodableMotionError)) throw error;
+        console.warn(
+          "[LetterExplorer] Leaving out a card link that cannot be encoded.",
+          { sequenceId: sequence.id, field: error.field, value: error.value }
+        );
+        return [];
+      }
+    })
+  );
 </script>
 
 <div class="explorer-container">
@@ -315,8 +335,8 @@
                 class="word-links"
                 aria-label={`${info.label} cards in Learning Letters`}
               >
-                {#each learningMatches as sequence (sequence.id)}
-                  <a href={generateSequenceRoutePath(sequence)}>
+                {#each learningLinks as { sequence, href } (sequence.id)}
+                  <a {href}>
                     {simplifyRepeatedWord(sequence.word || sequence.name)}
                   </a>
                 {/each}

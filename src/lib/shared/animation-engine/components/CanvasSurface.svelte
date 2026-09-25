@@ -281,12 +281,15 @@ captureEffectDiagnostics to the context menu.
 
   // Re-sync the engine whenever effects config changes (fire sliders, presets, etc.).
   // EffectsConfigState mutations don't notify the VM observer, so we bridge here.
+  // Notify the manager this engine observes: a scoped surface's synchronizer
+  // listens to its override, so waking the global singleton left fire,
+  // charcoal, and LED looks stale there.
   // untrack the notification so observer-triggered mutations don't re-enter this effect.
   $effect(() => {
     const ecs = effectsConfigState ?? inheritedEffectsConfig ?? null;
     if (!ecs) return;
     void ecs.version;
-    untrack(() => getAnimationVisibilityManager().notifyObservers());
+    untrack(() => visibilityManager.notifyObservers());
   });
 
   // Hover-intent prewarm: when the user points at an effect in the picker,

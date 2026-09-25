@@ -10,7 +10,7 @@
 
   const TITLE = "Fan Spinning Notation | The Kinetic Alphabet for Fans";
   const DESCRIPTION =
-    "How The Kinetic Alphabet applies to fan spinning: the translation from staves, and folds, the plane-crossing move the notation honestly can't write down yet.";
+    "How The Kinetic Alphabet applies to fan spinning: the translation from staves and why folds cannot yet be fully written in pictographs.";
   const URL = "https://tkaflowarts.com/notation/fans";
 </script>
 
@@ -53,20 +53,19 @@
       <div class="duo-copy">
         <div class="prose">
           <p>
-            This page is short because the honest version is short. Fans are single-ended
-            props, so they translate from staves the way clubs do: pretend one end of the
-            staff got cut off and do everything else the same. A fan's orientation is the
-            staff's thumb orientation, the flat face makes it easy to read at a glance,
-            and every grid position, letter, and timing relationship applies unchanged.
-            The full single-ended story lives on the <a href="/notation/clubs">club
-            page</a>, and all of it holds for fans.
+            Fans use the same single-ended translation as <a
+              href="/notation/clubs">clubs</a
+            >. Imagine the pinky end of a staff is invisible. A fan's
+            orientation follows the staff's thumb end, and its flat face makes
+            that direction easy to read. The grid positions, letters, and timing
+            remain the same.
           </p>
         </div>
       </div>
       <div class="duo-demo">
         <SequenceHeroDemo
           sequence={demoSequence}
-          note="the demo sequence, on fans"
+          note="the staff pattern played with two fans"
           leftPropType="fan"
           rightPropType="fan"
         />
@@ -77,30 +76,20 @@
   <section class="editorial-section" style="--accent: #14b8a6">
     <div class="prose">
       <p>
-        What fans have that no tubular prop has is a plane. The leaves form a fan plane
-        the way a triad's arms form a triangle plane, and the notation currently assumes
-        the prop's plane matches the plane it's being spun on. Folds break that
-        assumption. A fold doesn't travel through the grid's two-dimensional space at
-        all: it leaves the plane, passes through 3D space, and lands back where it
-        started with your hand orientation switched from front to back. Hand orientation
-        isn't a concept in The Kinetic Alphabet yet. Mapping the full hand orientation
-        matrix into pictographs is on the drawing board, not in the system, and folds are
-        so fundamental to fans that this page has to say so plainly: until that piece
-        lands, the notation captures less of fan spinning than fan spinners deserve.
+        A fan's leaves form a plane, much like a triad's arms. The notation
+        assumes the prop's plane matches the plane of the movement. During a
+        fold, the fan leaves that plane, moves through 3D space, and returns
+        with the hand turned from front to back. The Kinetic Alphabet does not
+        yet encode hand orientation, so it cannot fully describe folds. A
+        hand-orientation matrix for pictographs is planned.
       </p>
     </div>
   </section>
 
-  <OpenChapter prop="Fans">
+  <OpenChapter prop="Fans" heading="Fan folds and grips need documentation">
     <p>
-      The Kinetic Alphabet was developed on double staves. Fan grips are their own
-      language, and secondhand fluency isn't enough to write a chapter people will
-      train from.
-    </p>
-    <p>
-      The translation rule, the letters, and the timing are proven, and the composer
-      renders fans today. The grip vocabulary, the folds, and the body mechanics that
-      belong to fans alone are open territory. If that territory is yours, claim it.
+      Fan spinners can help document the grips and hand turns used in folds,
+      with examples of movements the current pictographs cannot record.
     </p>
   </OpenChapter>
 

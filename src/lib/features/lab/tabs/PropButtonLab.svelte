@@ -284,7 +284,7 @@
       <div class="family-card" class:expanded={isExpanded}>
         <button class="family-header" onclick={() => toggleFamily(propType)}>
           <div class="preview-container" class:preview-large={isExpanded}>
-            <PropCompositionPreview pairedGlyph colors={getSettings().primaryPropColors} appearanceOverride={{ fanAppearance: getSettings().fanAppearance, propLook: getSettings().propArtwork }}
+            <PropCompositionPreview pairedGlyph colors={getSettings().primaryPropColors} appearanceOverride={{ fanAppearance: getSettings().fanAppearance, propLook: getSettings().propArtwork, triangleGrip: getSettings().triangleGrip }}
               {propType}
               size={isExpanded ? 280 : 100}
               recipeOverride={overrides[propType]}
@@ -309,7 +309,7 @@
                       title={preset.label}
                     >
                       <div class="preset-preview">
-                        <PropCompositionPreview pairedGlyph colors={getSettings().primaryPropColors} appearanceOverride={{ fanAppearance: getSettings().fanAppearance, propLook: getSettings().propArtwork }}
+                        <PropCompositionPreview pairedGlyph colors={getSettings().primaryPropColors} appearanceOverride={{ fanAppearance: getSettings().fanAppearance, propLook: getSettings().propArtwork, triangleGrip: getSettings().triangleGrip }}
                           {propType}
                           size={80}
                           recipeOverride={preset.recipe}

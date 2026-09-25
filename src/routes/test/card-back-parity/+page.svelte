@@ -1,9 +1,5 @@
 <script lang="ts">
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { PrintRenderOptions } from "$lib/features/choreo-card/services/types";
-  import { renderCardBack } from "$lib/features/choreo-card/services/card-back-dom-renderer";
-  import { buildBackJob } from "$lib/features/choreo-card/services/card-back/card-back-job-builder";
-  import { paintBackJob } from "$lib/features/choreo-card/services/card-back/card-back-raster";
   import { buildFrontComposeOptions } from "$lib/features/choreo-card/services/build-front-compose-options";
   import { wrapContentInCardFrame } from "$lib/features/choreo-card/services/card-front-frame";
   import {
@@ -29,7 +25,7 @@
     ParityVerdict,
   } from "$lib/shared/parity/parity-types";
 
-  // Logical MPC dimensions; both render paths end at scale-2 (1644x2244).
+  // Full framed print-card dimensions, shared by the main and worker paths.
   const LOGICAL_W = 822;
   const LOGICAL_H = 1122;
   const LOGICAL_BLEED = 36;
@@ -40,7 +36,6 @@
   // One fixed timestamp shared by the main + worker front renders so the
   // The shared footer and QR inputs stay byte-identical for pixel parity.
 
-  let mode = $state<"front" | "back">("front");
   let decks = $state<ParityDeckSummary[]>([]);
   let selectedDeck = $state<number | null>(null);
   let loadError = $state<string | null>(null);
@@ -162,38 +157,7 @@
     }
   }
 
-  async function renderBackNew(
-    seq: SequenceData,
-    theme: string
-  ): Promise<HTMLCanvasElement> {
-    const job = await buildBackJob(seq, {
-      width: OUT_W,
-      height: OUT_H,
-      bleedPx: LOGICAL_BLEED * SCALE,
-      theme,
-    });
-    return normalizeToCanvas(
-      paintBackJob(job) as CanvasImageSource,
-      OUT_W,
-      OUT_H
-    );
-  }
-
-  async function renderBackOld(
-    seq: SequenceData,
-    theme: string
-  ): Promise<HTMLCanvasElement> {
-    const c = await renderCardBack(seq, {
-      width: LOGICAL_W,
-      height: LOGICAL_H,
-      bleedPx: LOGICAL_BLEED,
-      theme,
-    });
-    return normalizeToCanvas(c as CanvasImageSource, OUT_W, OUT_H);
-  }
-
   function makeRun(): ParityRun {
-    const runMode = mode;
     const deckNumber = selectedDeck;
     return {
       async run(ctx) {
@@ -216,32 +180,30 @@
           };
         }
 
-        if (runMode === "front") {
-          const handPathProfile = deck.cards.every(
-            (card) => card.cardProfile === "hand-path"
-          );
-          ctx.onProgress({ phase: "seeding worker pool" });
-          try {
-            await seedCardPool({
-              sequences: deck.cards.map((card) => card.sequence),
-              leftPropType: deck.leftPropType,
-              rightPropType: deck.rightPropType,
-              theme: deck.theme,
-              iconPaths: deck.cards
-                .map((card) => card.footer.iconPath)
-                .filter(Boolean) as string[],
-              handPathMode: handPathProfile,
-            });
-          } catch (error) {
-            return {
-              verdict: "FAIL",
-              summary: "worker pool setup failed",
-              gates: [],
-              result: {
-                error: error instanceof Error ? error.message : String(error),
-              },
-            };
-          }
+        const handPathProfile = deck.cards.every(
+          (card) => card.cardProfile === "hand-path"
+        );
+        ctx.onProgress({ phase: "seeding worker pool" });
+        try {
+          await seedCardPool({
+            sequences: deck.cards.map((card) => card.sequence),
+            leftPropType: deck.leftPropType,
+            rightPropType: deck.rightPropType,
+            theme: deck.theme,
+            iconPaths: deck.cards
+              .map((card) => card.footer.iconPath)
+              .filter(Boolean) as string[],
+            handPathMode: handPathProfile,
+          });
+        } catch (error) {
+          return {
+            verdict: "FAIL",
+            summary: "worker pool setup failed",
+            gates: [],
+            result: {
+              error: error instanceof Error ? error.message : String(error),
+            },
+          };
         }
 
         const total = deck.cards.length;
@@ -255,7 +217,7 @@
           if (ctx.signal.aborted) break;
           // TnD decks repeat a base sequence id across variations, so the row key
           // must include the position to stay unique.
-          const rowId = `${card.sequence.id}:${idx}:${runMode}`;
+          const rowId = `${card.sequence.id}:${idx}:front`;
           const label = card.word || card.sequence.word || card.sequence.id;
           ctx.onProgress({
             phase: "rendering",
@@ -266,22 +228,17 @@
           try {
             let oldCanvas: HTMLCanvasElement;
             let newCanvas: HTMLCanvasElement;
-            if (runMode === "front") {
-              const composed = buildFrontComposeOptions(
-                card.sequence,
-                printOptionsFor(deck, card)
-              );
-              const qrImage = await generateQr(deck, card, composed);
-              const qr = qrImage ? await createImageBitmap(qrImage) : null;
-              try {
-                oldCanvas = await renderFrontMain(card, composed, qr);
-                newCanvas = await renderFrontWorker(card, composed, qr);
-              } finally {
-                qr?.close();
-              }
-            } else {
-              oldCanvas = await renderBackOld(card.sequence, deck.theme);
-              newCanvas = await renderBackNew(card.sequence, deck.theme);
+            const composed = buildFrontComposeOptions(
+              card.sequence,
+              printOptionsFor(deck, card)
+            );
+            const qrImage = await generateQr(deck, card, composed);
+            const qr = qrImage ? await createImageBitmap(qrImage) : null;
+            try {
+              oldCanvas = await renderFrontMain(card, composed, qr);
+              newCanvas = await renderFrontWorker(card, composed, qr);
+            } finally {
+              qr?.close();
             }
             const d = diff(oldCanvas, newCanvas, OUT_W, OUT_H);
             worst = Math.max(worst, d.diffPct);
@@ -293,13 +250,11 @@
               bad: d.diffPct > 1,
               cells: [
                 {
-                  label:
-                    runMode === "front" ? "MAIN (main thread)" : "OLD (DOM)",
+                  label: "MAIN (main thread)",
                   canvas: oldCanvas,
                 },
                 {
-                  label:
-                    runMode === "front" ? "WORKER (pool)" : "NEW (BackJob)",
+                  label: "WORKER (pool)",
                   canvas: newCanvas,
                 },
                 { label: "DIFF", canvas: d.heat },
@@ -354,7 +309,7 @@
             },
           ],
           result: {
-            mode: runMode,
+            mode: "front",
             deck: deck.name,
             theme: deck.theme,
             aaTolerance: AA_TOLERANCE,
@@ -370,29 +325,16 @@
 </script>
 
 <svelte:head>
-  <title
-    >Card Parity — {mode === "front"
-      ? "Front Worker vs Main"
-      : "Back Old vs New"}</title
-  >
+  <title>Card Front Parity — Worker vs Main</title>
 </svelte:head>
 
 <CardParityViewer
-  title="Card Parity"
-  description={`Renders real released-deck cards two ways and pixel-diffs them. AA tolerance ${AA_TOLERANCE}/channel. Output ${OUT_W}×${OUT_H}. Front: worker pool vs main thread (full framed card). Back: old DOM vs new BackJob.`}
+  title="Card Front Parity"
+  description={`Renders real released-deck card fronts through the worker pool and main thread, then pixel-diffs them. AA tolerance ${AA_TOLERANCE}/channel. Output ${OUT_W}×${OUT_H}.`}
   resultKey="cardParityResult"
   run={makeRun}
 >
   {#snippet controls()}
-    <SegmentedControl
-      options={[
-        { value: "front", label: "Front (worker vs main)" },
-        { value: "back", label: "Back (old vs new)" },
-      ]}
-      value={mode}
-      onchange={(v) => (mode = v as "front" | "back")}
-      size="sm"
-    />
     {#if decks.length > 0 && selectedDeck != null}
       <SegmentedControl
         options={decks.map((d) => ({

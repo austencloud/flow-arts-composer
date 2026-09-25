@@ -70,7 +70,9 @@ export async function decodeWordShortCodePayload(
   code: string,
   data: ShortCodeData
 ): Promise<SequenceData | null> {
-  if (!data.encoded) return null;
+  // A blob that failed the mint-time round trip is never played. New lossy
+  // records store no blob at all; this guards any record that carries both.
+  if (!data.encoded || data.encodedFidelity === "lossy") return null;
 
   try {
     const decoded = graftPrefloatFromEmbedded(
@@ -232,6 +234,9 @@ export async function hydrateSoloShortCodePayload(
   const sequence = soloPropToSequence(
     {
       ...soloData,
+      // Same identity as the blob path: an artifact that was never saved has
+      // no library id a recipient could reference.
+      id: data.sourceSoloPropId ?? `shortcode-${code}`,
       contentHash: data.payloadContentHash,
       name: title,
       authoredHand: data.authoredHand,
@@ -263,7 +268,10 @@ export async function hydrateSelfContainedShortCodePayload(
     )
       return null;
     const title = data.payloadTitle || sequence.displayName || sequence.name;
-    return { ...sequence, word: "", name: title, displayName: title };
+    return withRecordIdentity(
+      { ...sequence, word: "", name: title, displayName: title },
+      data
+    );
   }
   if (data.payloadKind === "solo") {
     return hydrateSoloShortCodePayload(code, data);
@@ -273,8 +281,22 @@ export async function hydrateSelfContainedShortCodePayload(
   // created. Prefer it whenever it is complete; the compact blob deliberately
   // omits fields that can be derived later, and displaying that lean form can
   // make a valid saved sequence look unnamed or non-circular.
-  return (
+  const sequence =
     hydrateEmbeddedWordShortCodePayload(code, data) ??
-    (await decodeWordShortCodePayload(code, data))
-  );
+    (await decodeWordShortCodePayload(code, data));
+  return sequence && withRecordIdentity(sequence, data);
+}
+
+/**
+ * A record minted from a saved sequence names that document in `sequenceId`.
+ * The viewer keys performances, and anything else attached to the sequence, by
+ * its id, so a played copy must carry the document's id rather than the code;
+ * otherwise every short-code visit reads and writes attachments under the code.
+ * Records without a source document keep the code as their only identity.
+ */
+function withRecordIdentity(
+  sequence: SequenceData,
+  data: ShortCodeData
+): SequenceData {
+  return data.sequenceId ? { ...sequence, id: data.sequenceId } : sequence;
 }

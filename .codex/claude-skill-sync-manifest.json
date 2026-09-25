@@ -7,6 +7,7 @@
     ".agents/skills/add-to-library/format-reference.md",
     ".agents/skills/ai-bust/SKILL.md",
     ".agents/skills/ai-bust/agents/openai.yaml",
+    ".agents/skills/ai-bust/ai_bust.py",
     ".agents/skills/audit/SKILL.md",
     ".agents/skills/audit/agents/openai.yaml",
     ".agents/skills/changelog/SKILL.md",

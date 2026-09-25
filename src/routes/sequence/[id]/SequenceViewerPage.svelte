@@ -112,6 +112,16 @@
     page.url.searchParams
   );
   const isDemo = page.url.searchParams.get("demo") === "1";
+  // `/embed/sequence/[id]` mounts this same page body inside a third-party
+  // iframe (see docs/architecture/sharing-export-experience.md's embed
+  // player). It has exactly the same "nowhere to go" chrome problem the demo
+  // phone widget solved: no Close, no account entry, no Share (an iframe
+  // origin is not a link worth sharing), nothing that navigates away. Reuse
+  // the shell's existing `embedded` trim instead of forking a second one.
+  const isEmbedRoute = $derived(
+    page.route.id?.startsWith("/embed/sequence") ?? false
+  );
+  const isEmbedded = $derived(isDemo || isEmbedRoute);
   const scanAnalyticsCode = isDemo ? null : scanOriginCode;
 
   // Scan-origin cards keep the cloud pictograph path after /q hands off. This
@@ -663,7 +673,7 @@
   // ============================================================================
 
   function handleClose(reason?: "navigate") {
-    if (isDemo || reason === "navigate") return;
+    if (isEmbedded || reason === "navigate") return;
     if (handoffData?.returnPath) {
       void goto(handoffData.returnPath);
       return;
@@ -778,7 +788,7 @@
           analyticsSource={scanOriginCode ? "qr" : "external_link"}
           {isMobile}
           startInCardThenSplit={!!scanOriginCode}
-          embedded={isDemo}
+          embedded={isEmbedded}
           onClose={handleClose}
           navigation={{
             label: handoffData?.returnLabel

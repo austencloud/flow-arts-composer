@@ -6,7 +6,7 @@ import { deriveBaseLayerKey, deriveGridPointsLayerKey, deriveTKALayerKey, derive
 import { turnsTupleGenerator } from "../../pictograph/arrow/positioning/placement/services/turns-tuple-generator";
 import type { Letter } from "../../foundation/domain/models/letter";
 import { GridMode } from "../../pictograph/grid/domain/enums/grid-enums";
-import { interpretTurnColors, BLUE_HEX, RED_HEX } from "../../pictograph/tka-glyph/services/turn-color-interpreter";
+import { interpretTurnColors, resolveTurnColor, BLUE_HEX, RED_HEX } from "../../pictograph/tka-glyph/services/turn-color-interpreter";
 import {
   parseTurnsTuple,
   shouldDisplayTurn,
@@ -817,7 +817,7 @@ export class LayerCompositor {
     pictograph: PreparedPictographData,
     letterDimensions: { width: number; height: number },
     scale: number,
-    _darkMode: boolean,
+    darkMode: boolean,
     turnsTuple: string,
     motionVisibility?: { showLeftMotion?: boolean; showRightMotion?: boolean }
   ): Promise<void> {
@@ -866,7 +866,7 @@ export class LayerCompositor {
             const drawWidth = topNaturalWidth * scale;
             const drawHeight = TURN_NUMBER_HEIGHT * scale;
 
-            drawTintedImage(ctx, topImg, drawX, drawY, drawWidth, drawHeight, turnColors.top);
+            drawTintedImage(ctx, topImg, drawX, drawY, drawWidth, drawHeight, resolveTurnColor(turnColors.top, darkMode));
           }
         } catch (error) {
           console.warn("[LayerCompositor] Failed to load top turn number:", error);
@@ -887,7 +887,7 @@ export class LayerCompositor {
             const drawWidth = bottomNaturalWidth * scale;
             const drawHeight = TURN_NUMBER_HEIGHT * scale;
 
-            drawTintedImage(ctx, bottomImg, drawX, drawY, drawWidth, drawHeight, turnColors.bottom);
+            drawTintedImage(ctx, bottomImg, drawX, drawY, drawWidth, drawHeight, resolveTurnColor(turnColors.bottom, darkMode));
           }
         } catch (error) {
           console.warn("[LayerCompositor] Failed to load bottom turn number:", error);
@@ -899,9 +899,8 @@ export class LayerCompositor {
   private drawDirectionDot(
     ctx: RenderContext2D,
     // Unused now that the tuple is passed in rather than recomputed here -
-    // kept (prefixed, matching drawTurnsColumn's _darkMode convention in
-    // this same file) instead of dropped, so this method's signature stays
-    // parallel with its two siblings (drawSkewBracesOverlay,
+    // kept (underscore-prefixed) instead of dropped, so this method's
+    // signature stays parallel with its two siblings (drawSkewBracesOverlay,
     // drawTurnsColumn) at the shared call site above.
     _pictograph: PreparedPictographData,
     letterDimensions: { width: number; height: number },

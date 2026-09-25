@@ -164,6 +164,14 @@ export class NativeInitializer {
     await goto("/create", { replaceState: true });
   }
 
+  private recordCardScan(url: string): void {
+    void import("$lib/shared/qr/services/native-card-scan")
+      .then(({ recordNativeCardScan }) => recordNativeCardScan(url))
+      .catch((error: unknown) => {
+        console.warn("[NativeInitializer] Card scan not recorded:", error);
+      });
+  }
+
   // Returns true if the URL was a real deep link that navigated the app.
   private async handleDeepLink(
     url: string,
@@ -171,6 +179,11 @@ export class NativeInitializer {
   ): Promise<boolean> {
     const target = resolveNativeDeepLinkTarget(url);
     if (!target) return false;
+
+    // A printed-card link that Android opened here never reaches /q, so /q
+    // never records it. Record it from the original link (it carries the pid)
+    // without waiting: the viewer below must not depend on this request.
+    this.recordCardScan(url);
 
     const targetUrl = new URL(target, "https://localhost");
     const scanCode = targetUrl.searchParams.get("v");

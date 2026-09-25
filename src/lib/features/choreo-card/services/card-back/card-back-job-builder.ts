@@ -23,6 +23,7 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import { pairTipEnds } from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
+import { applyMandalaHandColors } from "$lib/shared/mandala/domain/mandala-palette";
 import type { MandalaPaths, MandalaPalette } from "$lib/shared/mandala/domain/mandala-types";
 import type { MandalaPathOptions } from "$lib/shared/mandala/services/types";
 import {
@@ -72,6 +73,7 @@ import {
   type LoopRowCol,
 } from "./card-back-bitmaps-percard";
 import { rasterizeDecorations } from "./card-back-decorations-svg";
+import { resolveCardBackAppearance } from "./card-back-appearance";
 
 // Bleed: the BackJob bleedPx is 36 logical * scale 2 = 72 (see back-job.ts).
 const DEFAULT_BLEED_PX = 72;
@@ -102,6 +104,7 @@ function renderMandalaPath2D(
   w: number,
   h: number,
   darkMode: boolean,
+  primaryPropColors: { left: string; right: string } | null,
 ): ImageBitmap {
   const canvas = new OffscreenCanvas(w, h);
   const ctx = canvas.getContext("2d") as unknown as CanvasRenderingContext2D;
@@ -110,7 +113,10 @@ function renderMandalaPath2D(
     size: Math.min(w, h),
     style: "stroke",
     show: "both",
-    palette: darkMode ? DARK_MANDALA_PALETTE : LIGHT_MANDALA_PALETTE,
+    palette: applyMandalaHandColors(
+      darkMode ? DARK_MANDALA_PALETTE : LIGHT_MANDALA_PALETTE,
+      primaryPropColors,
+    ),
     strokeWidth: 2.5,
     tipDx: MANDALA_STANDARD_TIP_DX,
     offsetX: 0,
@@ -160,6 +166,7 @@ export interface BuildBackJobOptions {
    *  real prop (fan/club/triad) instead of the renderer's staff default. */
   leftPropType?: PropType;
   rightPropType?: PropType;
+  primaryPropColors?: { left: string; right: string } | null;
 }
 
 /**
@@ -197,6 +204,7 @@ export interface BuildBackJobDeps {
     w: number,
     h: number,
     darkMode: boolean,
+    primaryPropColors: { left: string; right: string } | null,
   ) => ImageBitmap;
 }
 
@@ -275,6 +283,7 @@ export async function buildBackJob(
   deps: Partial<BuildBackJobDeps> = {},
 ): Promise<BackJob> {
   const d = { ...realDeps, ...deps };
+  const appearance = resolveCardBackAppearance(opts);
 
   // 1) Derive shared data + theme visuals (proof mode in the print path).
   const data = deriveCardBackData(sequence);
@@ -297,12 +306,10 @@ export async function buildBackJob(
   //    (proof mode sets textColor "#111111" → light).
   const darkMode = !visuals.textColor || visuals.textColor === "#ffffff";
 
-  // 5) Mandala — rasterize the EXACT renderMandalaSVG output the DOM card back
-  //    uses (glow/bloom/feather feGaussianBlur filters + purple-overlap mask),
-  //    so the new path achieves pixel parity with the old DOM render rather
-  //    than the filter-free Path2D approximation (renderMandalaToCanvas).
-  //
-  //    Mirror SequenceMandala (CardBack.svelte mounts it with size=380,
+  // 5) Mandala — mirror SequenceMandala's geometry and colors. The bitmap
+  //    still uses Path2D with a canvas glow while the static DOM card uses SVG
+  //    filters; browser parity checks measure any remaining raster difference.
+  //    CardBack.svelte mounts SequenceMandala with size=380,
   //    style="stroke", show="both", pathShape="arc", no strokeWidth [→ 2.5],
   //    no tipDx [→ MANDALA_STANDARD_TIP_DX], darkMode={isDarkTheme}):
   //      - pathShape "arc"  → no pathShape key. Motion-aware ("hybrid",
@@ -313,13 +320,13 @@ export async function buildBackJob(
   //    Prop-aware: a single-ended prop (club) traces ONE tip, not the staff's
   //    two. Without this every back drew the double-staff locus regardless of
   //    the prop the card is rendered with.
-  const tipEnds = pairTipEnds(opts.leftPropType, opts.rightPropType);
+  const tipEnds = pairTipEnds(appearance.leftPropType, appearance.rightPropType);
   const pathOptions: MandalaPathOptions | undefined =
     tipEnds === 1 ? { tipEnds: 1 } : undefined;
   const mandalaPaths = d.calculatePaths(
     sequence.steps,
-    opts.leftPropType,
-    opts.rightPropType,
+    appearance.leftPropType,
+    appearance.rightPropType,
     pathOptions,
     { dx: MANDALA_STANDARD_TIP_DX, dy: 0 },
   );
@@ -330,7 +337,9 @@ export async function buildBackJob(
   // the ~200ms SVG-filter decode the prior path paid.
   const mandalaW = Math.round(layout.mandala.w);
   const mandalaH = Math.round(layout.mandala.h);
-  const mandalaBitmap = d.renderMandala(mandalaPaths, mandalaW, mandalaH, darkMode);
+  const mandalaBitmap = d.renderMandala(
+    mandalaPaths, mandalaW, mandalaH, darkMode, appearance.primaryPropColors,
+  );
   const mandala: BackJob["mandala"] = {
     bitmap: mandalaBitmap,
     placement: layout.mandala,
@@ -421,8 +430,9 @@ export async function buildBackJob(
           sequence.startPlacement,
           darkMode,
           perCardCtx,
-          opts.leftPropType,
-          opts.rightPropType,
+          appearance.leftPropType,
+          appearance.rightPropType,
+          appearance.primaryPropColors,
         )
       : Promise.resolve(null),
     loopCols.length > 0

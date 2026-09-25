@@ -1,6 +1,12 @@
 import { render } from "vitest-browser-svelte";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import CanvasSurface from "./CanvasSurface.svelte";
+import {
+  AnimationVisibilityStateManager,
+  getAnimationVisibilityManager,
+} from "../state/animation-visibility-state.svelte";
+import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+import { FIRE_PRESETS } from "./effects-panel/presets/fire-presets";
 
 const mocks = vi.hoisted(() => {
   const initializations: Array<() => Promise<void>> = [];
@@ -134,5 +140,48 @@ describe("CanvasSurface initialization", () => {
 
     expect(mocks.register).not.toHaveBeenCalled();
     expect(engine.dispose).toHaveBeenCalledOnce();
+  });
+});
+
+describe("CanvasSurface effects config bridge", () => {
+  it("wakes the scoped visibility manager its engine observes when a look is applied", async () => {
+    // Fire, charcoal, and LED only re-sync when the engine's own visibility
+    // manager notifies. A scoped surface (Motion Paths, Shape Engine) observes
+    // its override, so a look applied there must wake that manager.
+    const scoped = new AnimationVisibilityStateManager({ ephemeral: true });
+    const effects = createEffectsConfigState(undefined, { persist: false });
+    const scopedObserver = vi.fn();
+    const globalObserver = vi.fn();
+    scoped.registerObserver(scopedObserver);
+    getAnimationVisibilityManager().registerObserver(globalObserver);
+
+    const screen = render(CanvasSurface, {
+      props: {
+        leftProp: null,
+        rightProp: null,
+        visibilityManagerOverride: scoped,
+        effectsConfigState: effects,
+      },
+    });
+    await vi.waitFor(() =>
+      expect(mocks.engines[0]!.setEffectsConfigState).toHaveBeenCalledWith(
+        effects
+      )
+    );
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    scopedObserver.mockClear();
+    globalObserver.mockClear();
+
+    const blueFlame = FIRE_PRESETS.find(
+      (preset) => preset.id === "fire-blue-flame"
+    )!;
+    effects.applyPreset("fire", blueFlame.id, blueFlame.patch!);
+
+    await vi.waitFor(() => expect(scopedObserver).toHaveBeenCalled());
+    expect(globalObserver).not.toHaveBeenCalled();
+
+    screen.unmount();
+    scoped.unregisterObserver(scopedObserver);
+    getAnimationVisibilityManager().unregisterObserver(globalObserver);
   });
 });

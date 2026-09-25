@@ -468,7 +468,7 @@
     autoRotate={viewer3DState.seededAutoOrbit}
     autoRotateSpeed={viewer3DState.seededAutoOrbitSpeed}
     oncreate={(c) => {
-      configureViewerOrbitNavigation(c);
+      const stopOrbitNavigation = configureViewerOrbitNavigation(c);
       controlsInstance = c;
       const live = viewer3DState.persistedCamera;
       const pos = live?.position ?? initialPosition;
@@ -497,6 +497,7 @@
       checkOrbitHealth(c);
       viewer3DState.cameraChoreography.registerControls(c);
       return () => {
+        stopOrbitNavigation();
         viewer3DState.cameraChoreography.unregisterControls(c);
       };
     }}

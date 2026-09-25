@@ -3,7 +3,11 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { HandSide } from "../../../shared/domain/enums/pictograph-enums";
 import { applyMotionColorToSvg } from "$lib/shared/utils/svg-color-utils";
-import { applyHandColorOverride } from "../prop-preview-color";
+import {
+  applyHandColorOverride,
+  applyModelSpriteColor,
+  modelPreviewColorMatrix,
+} from "../prop-preview-color";
 
 // The same bundled artwork propSvgLoader serves, already carrying the default
 // hand color the loader paints on (right = #ED1C24). The override must replace
@@ -74,5 +78,57 @@ describe("applyHandColorOverride", () => {
     expect(otherPaints(recolored, "#22c55e")).toEqual(
       otherPaints(loaderTorch, "#ed1c24")
     );
+  });
+});
+
+describe("applyModelSpriteColor", () => {
+  const sprite = (hand: "blue" | "red") =>
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10" data-prop-look="model" data-prop="staff" data-motion-color="${hand}"><image href="data:image/webp;base64,AAAA" width="10" height="10"/></svg>`;
+
+  it("leaves artwork that is not a model capture untouched", () => {
+    expect(applyModelSpriteColor(staffSvg, "#22c55e")).toBe(staffSvg);
+  });
+
+  it("tints the capture from the palette it was lit in", () => {
+    const green = applyModelSpriteColor(sprite("red"), "#22C55E");
+    expect(green).toContain(
+      `values="${modelPreviewColorMatrix("#22c55e", "right")}"`
+    );
+    expect(green).toContain('filter="url(#model-tint-right-22c55e)"');
+    expect(green).toMatch(/<g data-model-tint-body=""[^>]*><image /);
+    expect(green.endsWith("</g></svg>")).toBe(true);
+  });
+
+  it("replaces an earlier tint instead of stacking a second one", () => {
+    const once = applyModelSpriteColor(sprite("blue"), "#22c55e");
+    const twice = applyModelSpriteColor(once, "#a855f7");
+    expect(twice.match(/data-model-tint-body/g)).toHaveLength(1);
+    expect(twice).toContain("model-tint-left-a855f7");
+    expect(twice).not.toContain("22c55e");
+  });
+
+  it("is what the hand override applies to a model capture", () => {
+    expect(
+      applyHandColorOverride(sprite("red"), HandSide.RIGHT, "staff", "#a855f7")
+    ).toBe(applyModelSpriteColor(sprite("red"), "#a855f7"));
+  });
+
+  it("repaints the inner markup the prop loader hands to PropSvg", () => {
+    // The loader tints in the default hand color, then keeps only the markup
+    // inside the outer <svg>, which carries the data-prop-look marker.
+    const loaded = applyModelSpriteColor(sprite("blue"), "#3575e2");
+    const inner = loaded.match(/<svg\b[^>]*>([\s\S]*)<\/svg\s*>/i)![1]!;
+    const painted = applyHandColorOverride(
+      inner,
+      HandSide.LEFT,
+      "staff",
+      "#a855f7"
+    );
+    expect(painted).toContain(
+      `values="${modelPreviewColorMatrix("#a855f7", "left")}"`
+    );
+    expect(painted).toContain('filter="url(#model-tint-left-a855f7)"');
+    expect(painted).not.toContain("3575e2");
+    expect(painted.match(/data-model-tint-body/g)).toHaveLength(1);
   });
 });

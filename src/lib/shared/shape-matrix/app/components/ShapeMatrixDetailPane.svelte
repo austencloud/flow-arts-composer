@@ -21,8 +21,9 @@
         selectedPropMode={state.selectedPropMode}
         onmodechange={state.setMode}
         onpropmodechange={state.setPropMode}
-        propType={state.propType}
+        selectedPropType={state.addressedPropType}
         onproptypechange={(propType) => void state.setPropType(propType)}
+        handProps={state.handProps}
         propPickerOpen={state.propPickerOpen}
         onproppickertoggle={state.togglePropPicker}
         mandalaTransition={{

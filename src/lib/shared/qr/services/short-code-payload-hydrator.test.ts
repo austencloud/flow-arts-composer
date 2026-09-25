@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ShortCodeData } from "./types";
 import {
   decodeWordShortCodePayload,
+  hydrateSelfContainedShortCodePayload,
   shortCodeImportedWord,
 } from "./short-code-payload-hydrator";
 
@@ -28,6 +29,20 @@ describe("short-code payload hydrator", () => {
     expect(sequence?.word).toBe("Λ-γYΘγΛ-γYΘγ");
     expect(sequence?.name).toBe("Λ-γYΘγΛ-γYΘγ");
     expect(sequence?.steps).toHaveLength(10);
+  });
+
+  it("plays a saved sequence under its document id, not the code", async () => {
+    // A performance attached to the sequence is keyed by this id; stamping the
+    // code here made every short-code visit show and upload under "B2ZM".
+    const saved = await hydrateSelfContainedShortCodePayload(
+      "B2ZM",
+      record({ sequenceId: "Λ-γYΘγ", ownerId: "owner-1" })
+    );
+    expect(saved?.id).toBe("Λ-γYΘγ");
+    expect(saved?.ownerId).toBe("owner-1");
+
+    const unsaved = await hydrateSelfContainedShortCodePayload("B2ZM", record());
+    expect(unsaved?.id).toBe("B2ZM");
   });
 
   it("never treats an encoded legacy alias as a human word", () => {

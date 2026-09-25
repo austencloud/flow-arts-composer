@@ -131,7 +131,6 @@
 
   .bg-cycle-note {
     margin: 0.6rem 0 0;
-    max-inline-size: var(--measure-note);
     margin-inline: auto;
     text-align: center;
     color: oklch(0.74 0.018 270);

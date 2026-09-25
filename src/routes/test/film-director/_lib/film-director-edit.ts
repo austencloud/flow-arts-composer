@@ -10,6 +10,8 @@
  * Spec: docs/superpowers/specs/active/2026-08-25-director-control-surface-design.md
  */
 
+import type { PropBuild } from "@austencloud/scene-3d";
+
 import type { DirectorCameraMove } from "./camera-language";
 import type { CameraChannelId } from "./director-camera-channels";
 import {
@@ -37,14 +39,21 @@ export const DIRECTIVE_PERFORMER_FIELDS = [
   "rightPlane",
 ] as const;
 
-export type DirectivePerformerField = (typeof DIRECTIVE_PERFORMER_FIELDS)[number];
-export type PerformerEditableField = DirectivePerformerField | "sequence";
+export type DirectivePerformerField =
+  (typeof DIRECTIVE_PERFORMER_FIELDS)[number];
+export type PerformerEditableField =
+  | DirectivePerformerField
+  | "sequence"
+  | "propBuild";
 
 export type PerformerEditValue =
   | string
   | number
   | null
-  | DirectorPerformerSequence;
+  | DirectorPerformerSequence
+  // The scene's build type. A part the director's schema does not accept
+  // still rejects when the patched document is parsed.
+  | Partial<PropBuild>;
 
 export interface PerformerEdit {
   sceneId: string;
@@ -124,7 +133,10 @@ function performerSlots(
   }
 
   cast.performers = slots;
-  return { slots, defaults: (cast.defaults as PerformerSlot | undefined) ?? null };
+  return {
+    slots,
+    defaults: (cast.defaults as PerformerSlot | undefined) ?? null,
+  };
 }
 
 function resolvedValue(
@@ -189,6 +201,14 @@ export function applyPerformerEdit(
     const slot = layout.slots[targetIndex]!;
     if (edit.value === null && edit.field !== "staffLengthCm") {
       delete slot[edit.field];
+    } else if (edit.field === "propBuild") {
+      // A build edit names only the parts one control changed. Merged over
+      // what this performer already resolves to, the parts it leaves out stay
+      // as they were instead of being dropped from the document.
+      slot.propBuild = {
+        ...(cast[targetIndex]!.propBuild ?? {}),
+        ...(edit.value as Partial<PropBuild>),
+      };
     } else {
       slot[edit.field] = edit.value;
     }
@@ -403,8 +423,7 @@ function freezeStreamDraws(
 ): void {
   const defaultDraws = drawsFromStream(layout.defaults?.[field]);
   const anyDraw =
-    defaultDraws ||
-    layout.slots.some((slot) => drawsFromStream(slot[field]));
+    defaultDraws || layout.slots.some((slot) => drawsFromStream(slot[field]));
   if (!anyDraw) return;
 
   layout.slots.forEach((slot, index) => {

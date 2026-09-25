@@ -164,7 +164,6 @@
     margin: 0;
     font-size: var(--font-size-sm, 0.875rem);
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
-    max-width: 52ch;
   }
 
   .strip-scroll {

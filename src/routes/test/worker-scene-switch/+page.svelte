@@ -196,9 +196,9 @@
       <p class="eyebrow">OffscreenCanvas worker proof</p>
       <h1>Atomic world handoff</h1>
       <p>
-        The last complete picture stays visible while the worker prepares the
-        requested scene. The new scene appears after its first complete frame.
-        Timings below separate asset loading, shaders, and presentation.
+        The performer keeps moving while a second worker prepares the requested
+        scene. The new scene fades in after its first complete frame. Timings
+        below separate asset loading, shaders, and presentation.
       </p>
     </header>
 
@@ -414,6 +414,13 @@
           <dd>
             {last.outgoingWorkerMaxFrameGapMs.toFixed(1)} ms ·
             {last.outgoingWorkerMaxFrameGapPhase ?? "unknown"}
+          </dd>
+        </div>
+        <div>
+          <dt>Outgoing frames during preparation</dt>
+          <dd>
+            {last.outgoingFrameSamples} · final gap
+            {last.outgoingTerminalFrameGapMs.toFixed(1)} ms
           </dd>
         </div>
         <div>

@@ -2,16 +2,18 @@
  * Shared per-effect control manifest.
  *
  * Single source of truth for what tuning controls each effect exposes. Both the
- * 2D customize panels and the 3D viewer FX popover render from this via
+ * 2D effects panel and the 3D viewer's effects panel render from this via
  * EffectControlStack, so editing a control here changes both surfaces — "fix 2D
- * → fixes 3D" by construction.
+ * → fixes 3D" by construction. The one exception is a control tagged with a
+ * `view`: only that view's renderer reads its field, so the other view leaves
+ * it out instead of showing a slider that does nothing there.
  *
  * Every effect has a uniform Primary row (Color/Palette · Intensity · two
  * character knobs, 3–6 controls) so effects feel equally simple to control;
  * deeper params live under tier "advanced". `tracking` is the prop-aware end
  * selector for tip-emission effects.
  *
- * Spec: docs/superpowers/specs/2026-06-21-effect-control-consolidation-design.md
+ * Spec: docs/superpowers/specs/shipped/2026-06-21-effect-control-consolidation-design.md
  */
 
 import type { EffectId } from "$lib/shared/effects/state/effects-config-state.svelte";
@@ -28,6 +30,9 @@ export type ControlType =
   | "palette"
   | "paletteSwatches";
 export type ControlTier = "primary" | "tracking" | "advanced";
+/** Which picture a panel tunes: the flat 2D canvas or the 3D viewer. Each has
+ *  its own renderers, and they do not always read the same fields. */
+export type EffectView = "2d" | "3d";
 
 export interface ControlDescriptor {
   id: string;
@@ -51,6 +56,10 @@ export interface ControlDescriptor {
   swatch?: "rainbow";
   // conditional visibility (e.g. tint only when palette === "custom")
   showWhen?: (intent: Record<string, unknown>) => boolean;
+  /** Show this control only on panels for this view, because the other view's
+   *  renderer ignores its field. Leave unset for the usual case, a field both
+   *  renderers read. */
+  view?: EffectView;
   /** Keep this control out of the compact mobile tune strip while preserving
    *  it in the full desktop inspector. Defaults to true. */
   compact?: boolean;
@@ -222,11 +231,16 @@ export const EFFECT_CONTROLS: Record<EffectId, ControlDescriptor[]> = {
       { value: "blood", label: "Blood" }, { value: "spirit", label: "Spirit" }, { value: "custom", label: "Custom" },
     ]),
     slider("goo", "intensity", "Intensity", { tier: "primary" }),
-    slider("goo", "ambientEmission", "Ambient", { tier: "primary" }),
+    // The two goo renderers read different fields (see GooIntent), so this
+    // slot holds a different knob in each view. The 2D canvas turns Viscosity
+    // into drip rate, body length and taper, and ignores Ambient. The 3D
+    // viewer uses Ambient for a steady drip while the prop is still, and
+    // ignores Viscosity. clarity (3D-only opacity) and spewStyle (read by
+    // nothing) are not listed.
+    slider("goo", "surfaceTension", "Viscosity", { tier: "primary", view: "2d" }),
+    slider("goo", "ambientEmission", "Ambient", { tier: "primary", view: "3d" }),
     slider("goo", "motionEmission", "Motion", { tier: "primary" }),
     { id: "goo-track", label: "Track", type: "segmented", field: "trackingMode", options: TRACK_OPTS, tier: "tracking" },
-    // spewStyle/clarity/surfaceTension trimmed: droplet-era fields the current
-    // goo renderer ignores (inert), and the flat panel already omitted them.
   ],
   bubbles: [
     ...paletteColor("bubbles", [
@@ -345,9 +359,14 @@ export const EFFECT_CONTROLS: Record<EffectId, ControlDescriptor[]> = {
   ],
 };
 
-export function primaryControls(effect: EffectId): ControlDescriptor[] {
-  return EFFECT_CONTROLS[effect].filter((c) => c.tier === "primary" || c.tier === "tracking");
+/** The effect's controls a panel for `view` may show: every untagged control
+ *  plus the ones tagged for that view. */
+export function controlsForView(effect: EffectId, view: EffectView): ControlDescriptor[] {
+  return EFFECT_CONTROLS[effect].filter((c) => !c.view || c.view === view);
 }
-export function advancedControls(effect: EffectId): ControlDescriptor[] {
-  return EFFECT_CONTROLS[effect].filter((c) => c.tier === "advanced");
+export function primaryControls(effect: EffectId, view: EffectView): ControlDescriptor[] {
+  return controlsForView(effect, view).filter((c) => c.tier === "primary" || c.tier === "tracking");
+}
+export function advancedControls(effect: EffectId, view: EffectView): ControlDescriptor[] {
+  return controlsForView(effect, view).filter((c) => c.tier === "advanced");
 }

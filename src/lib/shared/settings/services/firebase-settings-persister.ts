@@ -51,7 +51,10 @@ export class FirebaseSettingsPersister {
   }
 
   /**
-   * Load settings from Firestore
+   * Load settings from Firestore. Null means the account has no document yet;
+   * a failed read rejects. Offline with nothing cached, getDoc rejects, and
+   * reporting that as "no document" made the caller upload this device's
+   * whole copy over the account's newer settings once it reconnected.
    */
   async loadSettings(): Promise<AppSettings | null> {
     const docRef = await this.getSettingsDocRef();
@@ -59,33 +62,27 @@ export class FirebaseSettingsPersister {
       return null;
     }
 
-    try {
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        // Remove Firestore metadata fields
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      // Remove Firestore metadata fields
 
-        const {
-          updatedAt: _updatedAt,
-          createdAt: _createdAt,
-          ...settings
-        } = data;
-        return normalizeLegacyAppSettings(settings);
-      }
-      return null;
-    } catch (error) {
-      console.error(
-        "❌ [FirebaseSettingsPersister] Failed to load settings:",
-        error
-      );
-      return null;
+      const {
+        updatedAt: _updatedAt,
+        createdAt: _createdAt,
+        ...settings
+      } = data;
+      return normalizeLegacyAppSettings(settings);
     }
+    return null;
   }
 
   /**
-   * Save settings to Firestore
+   * Merge settings into the account document. Pass only the keys to change:
+   * merge:true leaves every other field as it is, and any key sent is a value
+   * this write puts back over whatever another tab or device stored there.
    */
-  async saveSettings(settings: AppSettings): Promise<void> {
+  async saveSettings(settings: Partial<AppSettings>): Promise<void> {
     // Captured before any await, so the whole save — including the activeProp
     // mirror that runs after the settings write — is pinned to the account
     // this write belongs to.
@@ -118,7 +115,11 @@ export class FirebaseSettingsPersister {
       throw error;
     }
 
-    await this.mirrorActiveProp(settings, ownerId);
+    // Not awaited. The caller holds its single write slot until this save
+    // settles, and the badge is a separate document the settings do not
+    // depend on; waiting on it kept every edit queued behind that slot
+    // waiting too.
+    void this.mirrorActiveProp(settings, ownerId);
   }
 
   /**
@@ -129,7 +130,7 @@ export class FirebaseSettingsPersister {
    * leaves a stale badge, not broken settings.
    */
   private async mirrorActiveProp(
-    settings: AppSettings,
+    settings: Partial<AppSettings>,
     ownerId: string
   ): Promise<void> {
     const activeProp = settings.leftPropType;
@@ -271,9 +272,19 @@ export class FirebaseSettingsPersister {
                 clearedAt: _clearedAt,
                 ...settings
               } = data;
+              const remote = normalizeLegacyAppSettings(settings);
+              // A tab that moved the account to another prop also moved the
+              // mirror, so this tab's record of what it last mirrored is stale
+              // and must not skip its next write of that prop.
+              if (
+                this.lastMirroredActiveProp &&
+                this.lastMirroredActiveProp.activeProp !== remote.leftPropType
+              ) {
+                this.lastMirroredActiveProp = null;
+              }
               // An existing document with no settings is still authoritative:
               // subscribers must clear stale optional slices such as imageExport.
-              callback(normalizeLegacyAppSettings(settings));
+              callback(remote);
             }
           },
           (error) => {

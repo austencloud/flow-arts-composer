@@ -41,13 +41,7 @@ The 1680px and 2600px thresholds are composition vocabulary, not scale modes. Th
 
 Public pages use one capped shell variable, `--shell-w`, for composition. Full-bleed backgrounds may span the viewport while authored content remains in the shell.
 
-Editorial copy uses the shared measures in `src/lib/shared/landing/styles/editorial-measure.css`:
-
-- prose: `68ch`
-- lede: `54ch`
-- notes and captions: `60ch`
-
-These are maximum measures, not fixed widths. They collapse naturally on small screens. Feature grids and visual showcases may be wider than prose without increasing root type size.
+Editorial copy fills the width of its assigned shell, section, or grid column. Do not add a second character-count cap to paragraphs inside that space. Feature grids and visual showcases may use separate columns without increasing root type size.
 
 ## Authenticated app
 
@@ -83,5 +77,5 @@ Also check 200% browser zoom for keyboard reachability, clipping, and reflow. Ve
 
 - `ReleaseNotesTab.svelte`: desktop rail plus container-driven mobile history cards, with stable type roles
 - `BaseModal.svelte` and `modal-tokens.css`: modal sizing and mobile fallback
-- `public-editorial.css` and `editorial-measure.css`: public reading measure
+- `public-editorial.css`: public editorial shell and text styles
 - `SequenceViewerShell.svelte`: an artifact shell whose visual workspace can grow without magnifying generic UI

@@ -23,6 +23,7 @@
     type TnDSelection,
   } from "$lib/shared/create/domain/hand-relationship";
   import type { VtgMode } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+  import type { StartFeasibilityResult } from "$lib/shared/create/domain/start-feasibility";
 
   const MATCH_HAND_TURNS_LABEL = "Match turns";
   const MATCH_HAND_TURNS_REQUIRED_LABEL = "Match turns · Required";
@@ -38,6 +39,7 @@
     matchHandTurns,
     level,
     blockedHandModes = {},
+    startFeasibility = null,
     titleId,
     onHandRelationshipChange,
     onPropRelationshipChange,
@@ -50,6 +52,7 @@
     level: number;
     /** Hand modes the current LOOP rules out, each with its reason. */
     blockedHandModes?: Partial<Record<VtgMode, string>>;
+    startFeasibility?: StartFeasibilityResult | null;
     /** The heading's id, so the host stage's aria-labelledby points here. */
     titleId?: string;
     onHandRelationshipChange: (value: TnDSelection) => void;
@@ -139,6 +142,16 @@
         </div>
       </section>
 
+      {#if startFeasibility?.feasible === false}
+        <div class="feasibility-warning" role="status">
+          <strong>No valid starting move</strong>
+          <span
+            >These choices leave no allowed first step. Try another timing and
+            direction, or allow more starting placements in Customize.</span
+          >
+        </div>
+      {/if}
+
       <div class="turns-row" aria-labelledby="turn-matching-title">
         <div class="turns-copy">
           <h4 class="turns-title" id="turn-matching-title">Turn matching</h4>
@@ -180,7 +193,7 @@
     padding: clamp(8px, 2cqi, 16px);
   }
 
-  @container tnd-panel (max-width: 560px) {
+  @container tnd-panel (max-width: 359px) {
     .tnd-panel {
       grid-template-columns: minmax(0, 1fr);
     }
@@ -199,6 +212,10 @@
     gap: 10px;
     min-width: 0;
     min-height: 0;
+  }
+
+  .choice-stack > :global(.relationship-choice) {
+    min-height: 4.5rem;
   }
 
   .section-head {
@@ -234,6 +251,29 @@
     border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.14));
   }
 
+  .feasibility-warning {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    grid-column: 1 / -1;
+    align-items: baseline;
+    padding: 10px 12px;
+    border: 1px solid var(--semantic-warning, #f59e0b);
+    border-radius: 12px;
+    background: color-mix(
+      in srgb,
+      var(--semantic-warning, #f59e0b) 12%,
+      transparent
+    );
+    color: var(--theme-text, #fff);
+    font-size: var(--font-size-min, 0.875rem);
+    line-height: 1.35;
+  }
+
+  .feasibility-warning strong {
+    color: var(--semantic-warning, #f59e0b);
+  }
+
   .turns-row :global(.filter-chip) {
     grid-area: control;
     justify-self: end;
@@ -261,7 +301,7 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.72));
   }
 
-  @container tnd-panel (max-width: 560px) {
+  @container tnd-panel (max-width: 359px) {
     .turns-row {
       grid-template-columns: minmax(0, 1fr);
       grid-template-areas:
@@ -271,6 +311,56 @@
 
     .turns-row :global(.filter-chip) {
       justify-self: start;
+    }
+  }
+
+  /* A middle-width stage is often height-constrained even in a tall browser
+     window. Keep Hands and Props alongside each other here; stacking both
+     complete grids makes the bottom choices disappear behind a scrollbar. */
+  @container tnd-panel (min-width: 360px) and (max-width: 560px) {
+    .tnd-panel {
+      align-content: center;
+      gap: clamp(10px, 2cqi, 16px);
+      padding: 8px;
+    }
+
+    .tnd-section,
+    .choice-stack {
+      gap: 6px;
+    }
+
+    .choice-stack > :global(.relationship-choice) {
+      min-height: 3.75rem;
+    }
+
+    .choice-stack :global(.mode-grid) {
+      gap: 6px;
+    }
+
+    .choice-stack :global(.mode-grid .relationship-choice) {
+      flex-direction: column;
+      gap: 2px;
+      min-height: 68px;
+      padding: 2px 4px;
+      text-align: center;
+    }
+
+    .choice-stack :global(.mode-grid .choice-icon) {
+      width: 1.75rem;
+      height: 1.75rem;
+    }
+
+    .choice-stack :global(.mode-grid .choice-copy) {
+      width: 100%;
+    }
+
+    .choice-stack :global(.mode-grid .choice-copy strong) {
+      font-size: var(--font-size-min, 0.875rem);
+    }
+
+    .turns-row {
+      margin-top: 0;
+      padding-top: 8px;
     }
   }
 
@@ -293,19 +383,17 @@
 
     .choice-stack {
       display: grid;
-      grid-template-rows: auto minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr) minmax(0, 3fr);
       gap: clamp(10px, 1.25cqh, 18px);
     }
 
     .choice-stack :global(.mode-grid) {
       width: 100%;
       height: 100%;
-      max-height: 34rem;
       align-self: start;
     }
 
     .turns-row {
-      grid-row: 2;
       margin-top: 0;
       padding-top: clamp(12px, 1.5cqh, 20px);
     }

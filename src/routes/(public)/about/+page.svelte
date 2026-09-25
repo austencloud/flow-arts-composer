@@ -145,6 +145,9 @@
       <div class="resource-row scope-links">
         <a href="/faq" class="resource-chip">Read common questions</a>
         <a href="/history" class="quiet-link">Read the notation history</a>
+        <a href="/roots/software" class="quiet-link"
+          >Read the software history</a
+        >
       </div>
     </div>
   </section>
@@ -253,7 +256,6 @@
   }
 
   .hero-lede {
-    max-width: 32ch;
     margin: 0;
     color: var(--about-text);
     font-family: var(
@@ -277,7 +279,6 @@
   }
 
   .hero-body {
-    max-width: 54ch;
     margin: 1rem 0 1.5rem;
   }
 
@@ -347,7 +348,6 @@
   .reading-copy p,
   .scope-copy p,
   .creator-copy p {
-    max-width: 58ch;
     margin: 0;
   }
 

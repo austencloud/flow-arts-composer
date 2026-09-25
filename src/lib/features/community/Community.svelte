@@ -24,7 +24,7 @@
   import { createFirestoreCommunityMapPort } from "./services/community-map-port";
   import { createEdgeCitySuggestion } from "./services/edge-city-suggestion";
   import { getGeocodingService } from "./get-geocoding-service";
-  import { PUBLIC_GOOGLE_MAPS_API_KEY } from "$env/static/public";
+  import { PUBLIC_GOOGLE_MAPS_API_KEY } from "$lib/shared/maps/google-maps-api-key";
 
   // Not named `state`: a variable of that name in scope turns every
   // `$state(...)` in this module into a store subscription.

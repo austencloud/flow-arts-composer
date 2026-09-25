@@ -2,7 +2,7 @@
   import type { CompositionSourceBinding } from "$lib/shared/media-composition/state/media-composition-state.svelte";
   import type { LayoutRegion } from "$lib/shared/media-composition/domain/media-layout-schema";
   import type { EvaluatedFrameLayer } from "$lib/shared/media-composition/services/frame-evaluator";
-  import { getMediaCompositionContext } from "$lib/shared/media-composition/state/media-composition-context";
+  import { tryGetMediaCompositionContext } from "$lib/shared/media-composition/state/media-composition-context";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
@@ -15,6 +15,7 @@
     resolvePanOffset,
   } from "$lib/shared/media-composition/services/media-fit";
   import VisualSequenceSaveContextMenuHost from "$lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
+  import { onDestroy } from "svelte";
 
   interface Props {
     binding: CompositionSourceBinding;
@@ -27,9 +28,16 @@
     qrSequence?: SequenceData;
     cardRenderOptions?: Partial<SequenceExportOptions> | null;
     sequencePosition?: number;
+    sequencePassIndex?: number;
+    animationTimeSeconds?: number;
+    breakdownMotion?: boolean;
+    /** The post paints the animation's labels; see the animation layer. */
+    labelsPainted?: boolean;
     displayedBeatNumber?: number;
     clipId: string;
     transform: EvaluatedFrameLayer["transform"];
+    /** The act's speed; the footage runs at it while the preview plays. */
+    playbackRate?: number;
   }
 
   let {
@@ -43,12 +51,21 @@
     qrSequence,
     cardRenderOptions = null,
     sequencePosition,
+    sequencePassIndex,
+    animationTimeSeconds,
+    breakdownMotion,
+    labelsPainted = false,
     displayedBeatNumber,
     clipId,
     transform,
+    playbackRate = 1,
   }: Props = $props();
-  const composition = getMediaCompositionContext();
+  const composition = tryGetMediaCompositionContext();
   let video = $state<HTMLVideoElement | null>(null);
+  let pausedFrameRequest: { element: HTMLVideoElement; id: number } | null =
+    null;
+  let pausedFrameGeneration = 0;
+  let primingVideo: HTMLVideoElement | null = null;
   let saveMenuHost: VisualSequenceSaveContextMenuHost | undefined = $state();
 
   /**
@@ -89,20 +106,55 @@
     });
   });
 
-  function syncVideoTime(): void {
+  function syncVideoTime(): boolean {
     if (!video || video.readyState < 1 || !Number.isFinite(sourceTimeSeconds))
-      return;
+      return false;
     const ceiling = Math.max(0, video.duration - 1 / 60);
     const target = Math.min(ceiling, Math.max(0, sourceTimeSeconds));
-    if (Math.abs(video.currentTime - target) > 0.12) video.currentTime = target;
+    // Paused, the frame shown is the frame asked for; playing, the element
+    // runs on its own clock and is only pulled back when it drifts.
+    const tolerance = playing ? 0.12 : 1 / 30;
+    if (Math.abs(video.currentTime - target) <= tolerance) return false;
+    video.currentTime = target;
+    return true;
+  }
+
+  function cancelPausedFrame(): void {
+    pausedFrameGeneration += 1;
+    if (pausedFrameRequest) {
+      pausedFrameRequest.element.cancelVideoFrameCallback(
+        pausedFrameRequest.id
+      );
+      pausedFrameRequest = null;
+    }
+    primingVideo = null;
+  }
+
+  function showPausedFrame(element: HTMLVideoElement): void {
+    cancelPausedFrame();
+    const generation = pausedFrameGeneration;
+    primingVideo = element;
+    // A newly mounted, paused video can stay at HAVE_METADATA after a seek.
+    // Let it decode one frame, then return it to the paused preview state.
+    const id = element.requestVideoFrameCallback(() => {
+      if (generation !== pausedFrameGeneration) return;
+      pausedFrameRequest = null;
+      primingVideo = null;
+      if (video === element && !playing) element.pause();
+    });
+    pausedFrameRequest = { element, id };
+    void element.play().catch(() => {
+      if (generation === pausedFrameGeneration) cancelPausedFrame();
+    });
   }
 
   function onMetadata(): void {
     if (!video || !Number.isFinite(video.duration)) return;
     sourceWidth = video.videoWidth;
     sourceHeight = video.videoHeight;
-    composition.setSourceDuration(binding.roleKey, video.duration);
+    composition?.setSourceDuration(binding.roleKey, video.duration);
     syncVideoTime();
+    if (!playing) showPausedFrame(video);
   }
 
   function onImageLoad(event: Event): void {
@@ -117,17 +169,32 @@
     saveMenuHost?.openContextMenu(event.clientX, event.clientY);
   }
 
+  // A new src resets the rate to the default, so the default carries it too.
+  $effect(() => {
+    if (!video) return;
+    video.defaultPlaybackRate = playbackRate;
+    if (video.playbackRate !== playbackRate) video.playbackRate = playbackRate;
+  });
+
   $effect(() => {
     sourceTimeSeconds;
     playing;
-    syncVideoTime();
-    if (!video) return;
+    const seeked = syncVideoTime();
+    if (!video) {
+      cancelPausedFrame();
+      return;
+    }
     if (playing) {
+      cancelPausedFrame();
       if (video.paused) void video.play().catch(() => undefined);
-    } else if (!video.paused) {
+    } else if (seeked) {
+      showPausedFrame(video);
+    } else if (primingVideo !== video && !video.paused) {
       video.pause();
     }
   });
+
+  onDestroy(cancelPausedFrame);
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -146,6 +213,10 @@
     <PostStudioSequenceAnimationLayer
       {sequence}
       {sequencePosition}
+      {sequencePassIndex}
+      {animationTimeSeconds}
+      {breakdownMotion}
+      {labelsPainted}
       {playing}
       leftPropType={cardRenderOptions?.leftPropTypeOverride ??
         cardRenderOptions?.propTypeOverride}
@@ -164,7 +235,7 @@
     <PostStudioTunnelLayer
       {sequence}
       {playing}
-      bpm={composition.tempoBpm ?? 60}
+      bpm={composition?.tempoBpm ?? 60}
       leftPropType={cardRenderOptions?.leftPropTypeOverride ??
         cardRenderOptions?.propTypeOverride}
       rightPropType={cardRenderOptions?.rightPropTypeOverride ??

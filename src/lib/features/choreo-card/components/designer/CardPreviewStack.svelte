@@ -8,7 +8,7 @@
 <script lang="ts">
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import ChoreoCard from "../ChoreoCard.svelte";
-  import CardBack from "../card-back/CardBack.svelte";
+  import BackJobPreview from "../card-back/BackJobPreview.svelte";
   import InfoCardCanvasPreview from "../card-back/InfoCardCanvasPreview.svelte";
 
   interface Props {
@@ -183,7 +183,7 @@
           draggable="false"
         />
       {:else if sequence}
-        <CardBack {sequence} />
+        <BackJobPreview {sequence} />
       {/if}
     </div>
   </div>

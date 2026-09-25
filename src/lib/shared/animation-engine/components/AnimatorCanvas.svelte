@@ -109,6 +109,7 @@ Last audit: 2025-12-27
     previewDarkMode = null,
     hideTkaGlyph = false,
     hideStepNumbers = false,
+    hideElementalGlyph = false,
     placementGlyphVisible = false,
     propElementalType = null,
     glyphFrame = "pictograph",
@@ -191,6 +192,8 @@ Last audit: 2025-12-27
     previewDarkMode?: boolean | null;
     hideTkaGlyph?: boolean;
     hideStepNumbers?: boolean;
+    /** Hide the element icons, for a host that paints its own. */
+    hideElementalGlyph?: boolean;
     /** Show the α/β/γ start→end position indicator centered at the top. Educational
      *  overlay for the guide's hand-path exploration; off by default everywhere else. */
     placementGlyphVisible?: boolean;
@@ -681,10 +684,14 @@ Last audit: 2025-12-27
   // one red prop. Once a tunnel adds more prop layers, showing that same glyph
   // would falsely describe the whole canvas as a single two-prop relationship.
   const effectiveElementalGlyphVisible = $derived(
-    elementalGlyphVisible && additionalLayers.length === 0
+    elementalGlyphVisible &&
+      additionalLayers.length === 0 &&
+      !hideElementalGlyph
   );
   const effectivePropElementalGlyphVisible = $derived(
-    propElementalGlyphVisible && additionalLayers.length === 0
+    propElementalGlyphVisible &&
+      additionalLayers.length === 0 &&
+      !hideElementalGlyph
   );
   const effectiveBeatNumbersVisible = $derived(
     stepNumbersVisible && !hideStepNumbers

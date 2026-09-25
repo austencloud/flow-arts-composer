@@ -73,8 +73,46 @@ describe("legacy QR payload compatibility", () => {
       expect(decoded.startPlacement?.motions.left?.propType).toBe(
         PropType.STAFF
       );
-      expect(decoded.startPlacement?.motions.right?.propType).toBe(PropType.STAFF);
+      expect(decoded.startPlacement?.motions.right?.propType).toBe(
+        PropType.STAFF
+      );
       expect(encodeLegacySequence(decoded, format)).toBe(encoded);
+    }
+  );
+
+  it.each<LegacySequenceFormat>([1, 2, 3])(
+    "round-trips the triangle prop type through every historical flat format (v%s)",
+    async (format) => {
+      const source = await decodeSequenceFromQR(PRODUCTION_FLAT_QR);
+      // PropType.TRIANGLE encodes as "8" (legacy-sequence-codec.ts), the next
+      // free digit after the other standard-size variants. Swap every motion
+      // onto it and confirm the code survives the round trip like any other
+      // prop.
+      // A plain JSON clone: SequenceData is deeply readonly, and this test
+      // deliberately rewrites every motion's prop in place.
+      const mutated = JSON.parse(JSON.stringify(source));
+      if (mutated.startPlacement) {
+        mutated.startPlacement.motions.left.propType = PropType.TRIANGLE;
+        mutated.startPlacement.motions.right.propType = PropType.TRIANGLE;
+      }
+      for (const step of mutated.steps) {
+        step.motions.left.propType = PropType.TRIANGLE;
+        step.motions.right.propType = PropType.TRIANGLE;
+      }
+
+      const encoded = encodeLegacySequence(mutated, format);
+      const decoded = decodeLegacySequence(encoded);
+
+      expect(decoded.startPlacement?.motions.left?.propType).toBe(
+        PropType.TRIANGLE
+      );
+      expect(decoded.startPlacement?.motions.right?.propType).toBe(
+        PropType.TRIANGLE
+      );
+      for (const step of decoded.steps) {
+        expect(step.motions.left.propType).toBe(PropType.TRIANGLE);
+        expect(step.motions.right.propType).toBe(PropType.TRIANGLE);
+      }
     }
   );
 
@@ -104,8 +142,12 @@ describe("legacy QR payload compatibility", () => {
     const sequence = await decodeSequenceFromQR(PRODUCTION_NUMERIC_FLOAT_QR);
 
     expect(sequence.steps).toHaveLength(16);
-    expect(sequence.startPlacement?.motions.left?.propType).toBe(PropType.STAFF);
-    expect(sequence.startPlacement?.motions.right?.propType).toBe(PropType.STAFF);
+    expect(sequence.startPlacement?.motions.left?.propType).toBe(
+      PropType.STAFF
+    );
+    expect(sequence.startPlacement?.motions.right?.propType).toBe(
+      PropType.STAFF
+    );
 
     const numericFloat = sequence.steps[0]?.motions.right;
     expect(numericFloat?.motionType).toBe(MotionType.FLOAT);

@@ -74,37 +74,6 @@ async function executeSequenceShortcut(
   });
 }
 
-/**
- * Apply a prop preset from settings by index
- */
-async function applyPropPreset(presetIndex: number): Promise<void> {
-  const settings = getSettings();
-  const propPresets = settings?.propPresets || [];
-
-  // Check if this preset slot is filled
-  const preset = propPresets[presetIndex];
-  if (!preset) {
-    debug.log(`Preset ${presetIndex} is empty, ignoring`);
-    return;
-  }
-
-  // Trigger haptic feedback
-  const hapticService = getHapticFeedback();
-  hapticService?.trigger("selection");
-
-  // Apply the preset settings
-  await updateSettings({
-    selectedPresetIndex: presetIndex,
-    leftPropType: preset.leftPropType,
-    rightPropType: preset.rightPropType,
-    catDogMode: preset.catDogMode,
-    leftBuugengFlipped: preset.leftBuugengFlipped ?? false,
-    rightBuugengFlipped: preset.rightBuugengFlipped ?? false,
-  });
-
-  debug.log(`Applied prop preset ${presetIndex}:`, preset);
-}
-
 export function registerCreateShortcuts(
   service: KeyboardShortcutManager,
   state: ReturnType<typeof createKeyboardShortcutState>
@@ -587,28 +556,6 @@ export function registerCreateShortcuts(
     },
     action: () => executeSequenceShortcut("rotate_counterclockwise"),
   });
-
-  // ==================== Prop Presets ====================
-
-  // Alt+1 through Alt+9,0 - Select prop presets
-  for (let i = 0; i < 10; i++) {
-    const displayKey = i === 9 ? "0" : String(i + 1);
-    const presetIndex = i;
-
-    service.register({
-      id: `create.select-preset-${presetIndex}`,
-      label: `Select Prop Preset ${displayKey}`,
-      description: `Apply prop preset ${displayKey}`,
-      key: displayKey,
-      modifiers: ["alt"],
-      context: "create",
-      scope: "sequence-management",
-      priority: "medium",
-      action: async () => {
-        await applyPropPreset(presetIndex);
-      },
-    });
-  }
 
   // ==================== Edit Panel Adjustments ====================
 

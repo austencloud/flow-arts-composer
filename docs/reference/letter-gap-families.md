@@ -300,9 +300,11 @@ Consequence at the time: a closed loop that stays in skew could not be
 expressed from the shipped data, even though it was performable. Extending
 the generator to cover skew→skew transitions was the unlock for skewed LOOPs.
 
-Described as of 2026-09-21: the skewed alphabet in
+Described as of 2026-09-23: the skewed alphabet in
 `docs/superpowers/specs/2026-09-21-skewed-frame-lettering-design.md` letters
-all 1152 skewed-frame beats with 38 letters. The generator writes those rows
+all 1152 skewed-frame beats with 32 letters (38 before the landmark rule of
+`docs/superpowers/specs/2026-09-22-multigrid-lettering-design.md` retired
+D E F and J K L from the frame). The generator writes those rows
 to `static/data/pictographs/SkewedPictographDataframe.csv` (6272 rows: 3072
 category 1, 2048 category 2, 1152 category 3). The
 `mcp-server-pkg/assets/data/pictographs/` copy is a mirror of that file, kept

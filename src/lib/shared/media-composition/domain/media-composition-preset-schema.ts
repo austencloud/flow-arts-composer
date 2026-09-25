@@ -19,22 +19,93 @@ const NonEmptyIdSchema = z.string().trim().min(1);
 const TimestampSchema = z.number().finite().int().nonnegative();
 const SecondsSchema = z.number().finite().nonnegative();
 
+const SecondsTimePointSchema = z
+  .object({
+    unit: z.literal("seconds"),
+    value: SecondsSchema,
+  })
+  .strict();
+
+const FractionTimePointSchema = z
+  .object({
+    unit: z.literal("duration-fraction"),
+    value: z.number().finite().min(0).max(1),
+  })
+  .strict();
+
 export const PresetTimePointSchema = z.union([
+  SecondsTimePointSchema,
+  FractionTimePointSchema,
+]);
+
+export type PresetTimePoint = z.infer<typeof PresetTimePointSchema>;
+
+/**
+ * A time that can follow a named marker. Only moments that should move WITH a
+ * marker take one — region keyframes today — so dragging a breakdown's start
+ * carries its slide-in along. Clip in and out points stay plain points: a
+ * marker names a moment in the post, not a place inside a source.
+ */
+export const PresetTimeRefSchema = z.union([
+  SecondsTimePointSchema,
+  FractionTimePointSchema,
   z
     .object({
-      unit: z.literal("seconds"),
-      value: SecondsSchema,
-    })
-    .strict(),
-  z
-    .object({
-      unit: z.literal("duration-fraction"),
-      value: z.number().finite().min(0).max(1),
+      unit: z.literal("marker"),
+      markerId: NonEmptyIdSchema,
+      offsetSeconds: z.number().finite(),
     })
     .strict(),
 ]);
 
-export type PresetTimePoint = z.infer<typeof PresetTimePointSchema>;
+export type PresetTimeRef = z.infer<typeof PresetTimeRefSchema>;
+
+/** A named moment in the post, such as where a breakdown section starts. */
+export const PresetMarkerSchema = z
+  .object({
+    id: NonEmptyIdSchema,
+    label: z.string().trim().min(1).max(60).optional(),
+    time: PresetTimePointSchema,
+  })
+  .strict();
+
+export type PresetMarker = z.infer<typeof PresetMarkerSchema>;
+
+/**
+ * A region's rect at one moment, in output fractions. Unlike a static region
+ * it may sit partly or wholly outside the frame: that is how a panel slides in
+ * from an edge and waits off screen until it is needed.
+ */
+export const MotionRectSchema = z
+  .object({
+    x: z.number().finite(),
+    y: z.number().finite(),
+    width: z.number().finite().positive(),
+    height: z.number().finite().positive(),
+  })
+  .strict();
+
+export type MotionRect = z.infer<typeof MotionRectSchema>;
+
+export const RegionKeyframeSchema = z
+  .object({
+    at: PresetTimeRefSchema,
+    rect: MotionRectSchema,
+    /** How the region travels from the previous keyframe into this one. */
+    curve: z.enum(["linear", "ease-in-out"]),
+  })
+  .strict();
+
+export type RegionKeyframe = z.infer<typeof RegionKeyframeSchema>;
+
+export const RegionMotionSchema = z
+  .object({
+    regionId: NonEmptyIdSchema,
+    keyframes: z.array(RegionKeyframeSchema).min(1),
+  })
+  .strict();
+
+export type RegionMotion = z.infer<typeof RegionMotionSchema>;
 
 export const PresetSourceRoleSchema = z
   .object({
@@ -103,9 +174,13 @@ export const PresetSourceRoleSchema = z
 export type PresetSourceRole = z.infer<typeof PresetSourceRoleSchema>;
 
 function validatePresetInterval(
-  interval: { start: PresetTimePoint; end: PresetTimePoint },
+  interval: { start: PresetTimeRef; end: PresetTimeRef },
   context: z.RefinementCtx
 ): void {
+  // A marker's actual time depends on the selected source's duration. Its
+  // ordering is checked when frames are evaluated, after that duration exists.
+  if (interval.start.unit === "marker" || interval.end.unit === "marker")
+    return;
   if (interval.start.unit !== interval.end.unit) {
     context.addIssue({
       code: "custom",
@@ -129,6 +204,11 @@ const PresetClipTimingFields = {
   end: PresetTimePointSchema,
   sourceIn: PresetTimePointSchema,
   sourceOut: PresetTimePointSchema,
+  /**
+   * The rate the media element plays at. The source span always maps onto
+   * the clip's own span, so this should equal their ratio; it tells the
+   * player how fast to run, and the evaluator never scales by it.
+   */
   playbackRate: z.number().finite().positive(),
   loop: z.boolean(),
 };
@@ -140,9 +220,19 @@ export const PresetVisualClipSchema = z
     sourceRole: NonEmptyIdSchema,
     regionId: NonEmptyIdSchema,
     ...PresetClipTimingFields,
+    start: PresetTimeRefSchema,
+    end: PresetTimeRefSchema,
     opacity: z.number().finite().min(0).max(1),
+    fadeInSeconds: SecondsSchema.optional(),
+    fadeOutSeconds: SecondsSchema.optional(),
     transform: ClipTransformSchema,
     useResolvedTimeMap: z.boolean(),
+    /**
+     * The take whose timing drives this clip's move. A clip drawn over or
+     * beside that take copies its timing fields, so its source time is the
+     * take's media time.
+     */
+    timeMapRole: NonEmptyIdSchema.optional(),
     syncGroupId: NonEmptyIdSchema.optional(),
   })
   .strict()
@@ -251,6 +341,21 @@ export const MediaCompositionPresetSchema = z
      * "continuous".
      */
     animationPlaybackMode: z.enum(["continuous", "step"]).optional(),
+    /**
+     * "slots" is the two-slot model the source pickers edit: regions are
+     * derived from occupancy and renamed `top`/`bottom` on the way in. "free"
+     * keeps the preset's own regions and motion, for layouts the slot verbs
+     * cannot express, such as a breakdown strip that slides in partway
+     * through. Absent reads as "slots", so older presets parse unchanged.
+     */
+    layoutModel: z.enum(["slots", "free"]).optional(),
+    markers: z.array(PresetMarkerSchema).optional(),
+    /**
+     * Keyframed rects that override a region's static rect over time. The
+     * static rect still has to sit inside the frame, so a moving region
+     * declares where it rests and moves from there.
+     */
+    regionMotion: z.array(RegionMotionSchema).optional(),
     sourceRoles: z.array(PresetSourceRoleSchema).min(1),
     regions: z.array(LayoutRegionSchema),
     clips: z.array(PresetClipSchema).min(1),
@@ -291,6 +396,21 @@ export const MediaCompositionPresetSchema = z
     }
 
     preset.clips.forEach((clip, index) => {
+      if (clip.kind === "visual") {
+        for (const boundary of ["start", "end"] as const) {
+          const point = clip[boundary];
+          if (
+            point.unit === "marker" &&
+            !preset.markers?.some((marker) => marker.id === point.markerId)
+          ) {
+            context.addIssue({
+              code: "custom",
+              path: ["clips", index, boundary],
+              message: "Clip marker does not exist",
+            });
+          }
+        }
+      }
       const role = roles.get(clip.sourceRole);
       if (!role) {
         context.addIssue({
@@ -378,6 +498,49 @@ export const MediaCompositionPresetSchema = z
         message: "Preset duration source role does not exist",
       });
     }
+
+    const markerIds = new Set<string>();
+    (preset.markers ?? []).forEach((marker, index) => {
+      if (markerIds.has(marker.id)) {
+        context.addIssue({
+          code: "custom",
+          path: ["markers", index, "id"],
+          message: "Duplicate markers id",
+        });
+      }
+      markerIds.add(marker.id);
+    });
+
+    const movingRegions = new Set<string>();
+    (preset.regionMotion ?? []).forEach((motion, index) => {
+      if (!regions.has(motion.regionId)) {
+        context.addIssue({
+          code: "custom",
+          path: ["regionMotion", index, "regionId"],
+          message: "Region motion targets a region that does not exist",
+        });
+      }
+      if (movingRegions.has(motion.regionId)) {
+        context.addIssue({
+          code: "custom",
+          path: ["regionMotion", index, "regionId"],
+          message: "A region can only have one motion track",
+        });
+      }
+      movingRegions.add(motion.regionId);
+      motion.keyframes.forEach((keyframe, keyframeIndex) => {
+        if (
+          keyframe.at.unit === "marker" &&
+          !markerIds.has(keyframe.at.markerId)
+        ) {
+          context.addIssue({
+            code: "custom",
+            path: ["regionMotion", index, "keyframes", keyframeIndex, "at"],
+            message: "Keyframe marker does not exist",
+          });
+        }
+      });
+    });
   });
 
 export type MediaCompositionPreset = z.infer<

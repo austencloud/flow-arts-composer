@@ -23,16 +23,35 @@ import {
 } from "../state/global-arrow-adjustment-state.svelte";
 import { createComponentLogger } from "$lib/shared/utils/debug-logger";
 import { globalAdjustmentVersion } from "../state/global-adjustment-version.svelte";
+import { normalizeLegacyHandSide } from "@tka/tka-types";
 
 const logger = createComponentLogger("GlobalArrowAdjustmentRepository");
 
 // Admin email for authorization
 const ADMIN_EMAIL = "austencloud@gmail.com";
 
+// Nudges saved before the 31 Aug 2026 hand rename name their arrow by color
+// ("blue" or "red"), but the renderer and editor ask for "left" or "right".
+// Blue is the left hand and red the right, so an old nudge answers to its
+// hand name. Without this, every old nudge silently stops applying.
+function normalizeArrowHand(arrowKey: string): string {
+  return normalizeLegacyHandSide(arrowKey) ?? arrowKey;
+}
+
+function normalizeKey<T extends { readonly arrowKey: string }>(key: T): T {
+  const arrowKey = normalizeArrowHand(key.arrowKey);
+  return arrowKey === key.arrowKey ? key : { ...key, arrowKey };
+}
+
 export class GlobalArrowAdjustmentRepository {
   private readonly state: GlobalArrowAdjustmentState;
   private unsubscribe: (() => void) | null = null;
   private initializePromise: Promise<void> | null = null;
+  // Firestore can hold an old blue/red nudge and a newer one saved under the
+  // hand name for the same arrow. The newer one always wins. These track
+  // which copies exist, so removing one never hides the other by mistake.
+  private readonly handNamedKeys = new Set<string>();
+  private readonly legacyTwins = new Map<string, GlobalArrowAdjustment>();
 
   constructor(private readonly persister: GlobalArrowAdjustmentPersister) {
     this.state = createGlobalArrowAdjustmentState();
@@ -70,7 +89,14 @@ export class GlobalArrowAdjustmentRepository {
 
       // Load all adjustments from Firestore
       const adjustments = await this.persister.loadAll();
-      this.state.loadAll(adjustments);
+      this.handNamedKeys.clear();
+      this.legacyTwins.clear();
+      // A hand-named nudge listed after its old twin replaces it in loadAll.
+      this.state.loadAll(
+        adjustments
+          .map((adjustment) => this.track(adjustment))
+          .filter((served): served is GlobalArrowAdjustment => served !== null)
+      );
 
       // Bump version so all rendered pictographs re-prepare with the now-available adjustments.
       // Without this, pictographs that rendered before initialization stay at fallback positions.
@@ -99,7 +125,8 @@ export class GlobalArrowAdjustmentRepository {
     this.unsubscribe = this.persister.subscribe(
       // On add/modify
       (adjustment: GlobalArrowAdjustment) => {
-        this.state.setAdjustment(adjustment);
+        const served = this.track(adjustment);
+        if (served) this.state.setAdjustment(served);
         logger.info(
           `Real-time update: ${generateAdjustmentKeyString({
             placementFrame: adjustment.placementFrame,
@@ -114,7 +141,7 @@ export class GlobalArrowAdjustmentRepository {
       (keyString: string) => {
         const key = parseAdjustmentKeyString(keyString);
         if (key) {
-          this.state.removeAdjustment(key);
+          this.untrack(key);
           logger.info(`Real-time removal: ${keyString}`);
         }
       }
@@ -122,25 +149,71 @@ export class GlobalArrowAdjustmentRepository {
   }
 
   /**
+   * Records one Firestore doc and returns what lookups should serve for it,
+   * or null when a nudge saved under the hand name already covers that arrow.
+   */
+  private track(
+    adjustment: GlobalArrowAdjustment
+  ): GlobalArrowAdjustment | null {
+    const served = normalizeKey(adjustment);
+    const keyString = generateAdjustmentKeyString(served);
+    if (served.arrowKey === adjustment.arrowKey) {
+      this.handNamedKeys.add(keyString);
+      return adjustment;
+    }
+    this.legacyTwins.set(keyString, adjustment);
+    return this.handNamedKeys.has(keyString) ? null : served;
+  }
+
+  /** Firestore dropped a doc: serve whichever copy of that nudge remains. */
+  private untrack(key: GlobalAdjustmentKey): void {
+    const handKey = normalizeKey(key);
+    const keyString = generateAdjustmentKeyString(handKey);
+    if (handKey.arrowKey === key.arrowKey) {
+      this.handNamedKeys.delete(keyString);
+    } else {
+      this.legacyTwins.delete(keyString);
+    }
+
+    if (this.handNamedKeys.has(keyString)) return;
+    const twin = this.legacyTwins.get(keyString);
+    if (twin) {
+      this.state.setAdjustment(normalizeKey(twin));
+    } else {
+      this.state.removeAdjustment(handKey);
+    }
+  }
+
+  // Once a nudge is saved or reset under its hand name, its old blue or red
+  // copy is deleted too. Left behind, it would reappear the next time that
+  // nudge is reset.
+  private async deleteLegacyTwin(keyString: string): Promise<void> {
+    const twin = this.legacyTwins.get(keyString);
+    if (!twin) return;
+    await this.persister.delete(generateAdjustmentKeyString(twin));
+    this.legacyTwins.delete(keyString);
+  }
+
+  /**
    * Get adjustment by key components
    * Returns x/y pair if found, null otherwise
    */
   getAdjustment(key: GlobalAdjustmentKey): { x: number; y: number } | null {
-    return this.state.getAdjustment(key);
+    return this.state.getAdjustment(normalizeKey(key));
   }
 
   /**
    * Get full adjustment data by key
    */
   getFullAdjustment(key: GlobalAdjustmentKey): GlobalArrowAdjustment | null {
-    return this.state.getFullAdjustment(key);
+    return this.state.getFullAdjustment(normalizeKey(key));
   }
 
   /**
    * Check if an adjustment exists
    */
   hasAdjustment(key: GlobalAdjustmentKey): boolean {
-    return this.state.hasAdjustment(key);
+    return this.state.hasAdjustment(normalizeKey(key));
   }
 
   /**
@@ -161,7 +234,7 @@ export class GlobalArrowAdjustmentRepository {
     legacyOriKey?: string
   ): CascadingLookupResult | null {
     return this.state.getAdjustmentCascading(
-      baseKey,
+      normalizeKey(baseKey),
       thisPropType,
       otherPropType,
       legacyOriKey
@@ -177,11 +250,12 @@ export class GlobalArrowAdjustmentRepository {
    * Save an adjustment to local cache only (admin only).
    * Use this for live preview during WASD adjustment.
    */
-  saveAdjustmentLocal(input: GlobalArrowAdjustmentInput): void {
+  saveAdjustmentLocal(requested: GlobalArrowAdjustmentInput): void {
     // Validate admin
     if (!this.isAdmin()) {
       throw new Error("Only admin can save global arrow adjustments");
     }
+    const input = normalizeKey(requested);
 
     // Build key with optional prop types
     const key: GlobalAdjustmentKey = {
@@ -231,7 +305,7 @@ export class GlobalArrowAdjustmentRepository {
    * Save an adjustment (admin only)
    * @throws Error if user is not admin
    */
-  async saveAdjustment(input: GlobalArrowAdjustmentInput): Promise<void> {
+  async saveAdjustment(requested: GlobalArrowAdjustmentInput): Promise<void> {
     // Validate admin
     if (!this.isAdmin()) {
       throw new Error("Only admin can save global arrow adjustments");
@@ -241,6 +315,8 @@ export class GlobalArrowAdjustmentRepository {
     if (!userEmail) {
       throw new Error("User email not available");
     }
+    // A history revert of an old entry still says blue or red.
+    const input = normalizeKey(requested);
 
     // Build key with optional prop types
     const key: GlobalAdjustmentKey = {
@@ -260,22 +336,27 @@ export class GlobalArrowAdjustmentRepository {
 
     // Save to Firestore (real-time subscription will update local state)
     await this.persister.save(input, userEmail);
+    this.handNamedKeys.add(keyString);
+    await this.deleteLegacyTwin(keyString);
   }
 
   /**
    * Delete an adjustment (admin only)
    * @throws Error if user is not admin
    */
-  async deleteAdjustment(key: GlobalAdjustmentKey): Promise<void> {
+  async deleteAdjustment(requested: GlobalAdjustmentKey): Promise<void> {
     // Validate admin
     if (!this.isAdmin()) {
       throw new Error("Only admin can delete global arrow adjustments");
     }
 
+    const key = normalizeKey(requested);
     const keyString = generateAdjustmentKeyString(key);
     logger.info(`Deleting adjustment from Firestore: ${keyString}`);
 
-    // Delete from Firestore (real-time subscription will update local state)
+    // Delete from Firestore (real-time subscription will update local state).
+    // The old copy goes first, so it never shows through between the deletes.
+    await this.deleteLegacyTwin(keyString);
     await this.persister.delete(keyString);
   }
 
@@ -283,12 +364,13 @@ export class GlobalArrowAdjustmentRepository {
    * Delete an adjustment from local cache only (admin only).
    * Use this for live preview during reset.
    */
-  deleteAdjustmentLocal(key: GlobalAdjustmentKey): void {
+  deleteAdjustmentLocal(requested: GlobalAdjustmentKey): void {
     // Validate admin
     if (!this.isAdmin()) {
       throw new Error("Only admin can delete global arrow adjustments");
     }
 
+    const key = normalizeKey(requested);
     const keyString = generateAdjustmentKeyString(key);
     logger.info(`Deleting LOCAL adjustment: ${keyString}`);
 
@@ -313,6 +395,8 @@ export class GlobalArrowAdjustmentRepository {
       this.unsubscribe = null;
     }
     this.state.clear();
+    this.handNamedKeys.clear();
+    this.legacyTwins.clear();
     logger.info("Disposed");
   }
 }

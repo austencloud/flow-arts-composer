@@ -222,8 +222,8 @@ describe("buildBackJob", () => {
     );
     const args = calls.calc![0]!;
     // (steps, bluePropType, redPropType, pathOptions, tipOverride)
-    expect(args[1]).toBeUndefined();
-    expect(args[2]).toBeUndefined();
+    expect(args[1]).toBe(PropType.STAFF);
+    expect(args[2]).toBe(PropType.STAFF);
     expect(args[3]).toBeUndefined(); // no prop → staff → two tips (arc default; motion-aware parked)
     expect(args[4]).toEqual({ dx: 120, dy: 0 });
   });
@@ -247,6 +247,27 @@ describe("buildBackJob", () => {
     expect(args[2]).toBe(PropType.CLUB);
     expect(args[3]).toEqual({ tipEnds: 1 }); // one tip, not the staff's two
     expect(args[4]).toEqual({ dx: 120, dy: 0 });
+  });
+
+  it("keeps a two-ended prop and custom hand colors in the mandala and start pictograph", async () => {
+    const { deps, calls } = makeFakeDeps();
+    const colors = { left: "#7442c8", right: "#a84fd4" };
+    await buildBackJob(
+      makeSequence({ startPlacement: { letter: "A", motions: {} } as never }),
+      {
+        width: WIDTH,
+        height: HEIGHT,
+        bleedPx: BLEED,
+        theme: "cosmic",
+        leftPropType: PropType.STAFF,
+        rightPropType: PropType.STAFF,
+        primaryPropColors: colors,
+      },
+      deps,
+    );
+    expect(calls.calc![0]![3]).toBeUndefined();
+    expect(calls.mandala![0]![4]).toEqual(colors);
+    expect(calls.startpos![0]!.slice(3)).toEqual([PropType.STAFF, PropType.STAFF, colors]);
   });
 
   it("places the constant + per-card element bitmaps at their layout boxes", async () => {

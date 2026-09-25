@@ -100,7 +100,7 @@ function isHeldPalmTriangle(
     // This is the grip-axis projection without subtracting from a posed
     // vertex. The triangle is still needed for the collision query below.
     const axialPosition =
-      vertices[slot].dot(axis) * inverseAxisLength - centerProjection;
+      vertices[slot]!.dot(axis) * inverseAxisLength - centerProjection;
     return Math.abs(axialPosition) <= exclusion.halfAxialWindow;
   });
 }
@@ -252,7 +252,7 @@ function pointInsideClosedMesh(
       .sort((a, b) => a - b);
     const uniqueHits = distances.filter(
       (distance, index) =>
-        index === 0 || Math.abs(distance - distances[index - 1]) > 1e-6
+        index === 0 || Math.abs(distance - distances[index - 1]!) > 1e-6
     );
     return uniqueHits.length % 2 === 1;
   });

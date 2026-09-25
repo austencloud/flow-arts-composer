@@ -98,6 +98,8 @@ export function createCardPreviewState(inputs: CardPreviewInputs) {
     const darkMode = inputs.getDarkMode();
     const resolvedAutoLayout = inputs.getResolvedAutoLayout();
     const cardPresentation = inputs.getCardPresentation?.();
+    // Snapshot drops proxies but keeps the same option values; its mapped
+    // type just cannot express bitmaps and other class instances.
     const options = $state.snapshot(
       buildCardRenderOptions(target, {
         darkMode,
@@ -107,7 +109,7 @@ export function createCardPreviewState(inputs: CardPreviewInputs) {
         resolvedAutoLayout,
         cardPresentation,
       })
-    );
+    ) as Partial<SequenceExportOptions>;
     const settingsKey = buildCardPreviewRenderKey(
       options,
       visibility.getState()

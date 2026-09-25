@@ -71,12 +71,13 @@
     SHAPE_MATRIX_STRIP_NAME,
   } from "../services/shape-matrix-artwork";
   import { getShapeMatrixTransitionRecorder } from "../debug/shape-matrix-transition-recorder";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
   import { QualityTier } from "$lib/shared/animation-engine/domain/types/quality-types";
   import { resolveRealizationEntryStep } from "../services/realization-phase-handoff";
   import type { ElementalType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
   import AnimationPanel from "$lib/shared/animation-panel/components/AnimationPanel.svelte";
+  import type { HandPropToolbarProps } from "$lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
   import type { ControlDockAction } from "$lib/shared/sequence-viewer/components/ControlDock.svelte";
   import { getShapeMatrixAnimationContext } from "../app/context/shape-matrix-animation-context";
   import { getOptionalShapeMatrixAppContext } from "../app/context/shape-matrix-app-context";
@@ -104,8 +105,14 @@
     selectedPropMode?: VtgMode | null;
     onmodechange?: (mode: VtgMode | null) => void;
     onpropmodechange?: (mode: VtgMode | null) => void;
-    propType?: PropType;
+    /**
+     * The prop the Props pill addresses. The pair itself arrives with `data`;
+     * this is only which hand a pick lands on. Defaults to the left hand.
+     */
+    selectedPropType?: PropType;
     onproptypechange?: (propType: PropType) => void;
+    /** The cat dog chip and hand segments, when the host keeps a pair. */
+    handProps?: HandPropToolbarProps;
     /**
      * The prop catalogue lives over the grid pane (a sheet on compact hosts),
      * never on this stage: the animation, the element relationships and the
@@ -132,8 +139,9 @@
     selectedPropMode = $bindable(null),
     onmodechange,
     onpropmodechange,
-    propType = PropType.STAFF,
+    selectedPropType,
     onproptypechange,
+    handProps,
     propPickerOpen = false,
     onproppickertoggle,
     mandalaTransition = { claim: false, handoff: false },
@@ -214,7 +222,8 @@
     realization: ModeRealization;
     paths: MandalaPaths;
     clubTipDx: number;
-    propType: PropType;
+    leftPropType: PropType;
+    rightPropType: PropType;
     transitionId: number;
     initialStep: number;
   }
@@ -234,6 +243,13 @@
   let waitingSource = $state<PlayerSource | null>(null);
   let visibleRealization = $state.raw<ModeRealization | null>(null);
   let railRealization = $state.raw<ModeRealization | null>(null);
+  /**
+   * The pair the rail's own sequence was built with. Kept in step with
+   * `railRealization` (set and cleared at the same points) so the rail never
+   * draws an arriving pair over the still-settling old sequence: the crossfade
+   * settles the sequence and the props together.
+   */
+  let railProps = $state.raw<{ left: PropType; right: PropType } | null>(null);
   let queuedLayer: PlayerLayer | null = null;
   let crossfadeOutgoing = $state<PlayerSource | null>(null);
   let activeTransitionId: number | null = null;
@@ -275,7 +291,9 @@
   };
 
   const pairKey = $derived(
-    pair ? `${propType}|${flowerKey(pair.left)}|${flowerKey(pair.right)}` : null
+    pair
+      ? `${data.props.left}|${data.props.right}|${flowerKey(pair.left)}|${flowerKey(pair.right)}`
+      : null
   );
 
   // The live canvas that is visible plays THIS pair. Until then the still
@@ -434,8 +452,7 @@
     const overlay = {
       left: data.left.get(flowerKey(p.left))?.left ?? [],
       right: data.right.get(flowerKey(p.right))?.right ?? [],
-      tipPoint: data.tipPoint,
-      clubTipDx: data.clubTipDx,
+      tips: data.tips,
     };
     let cancelled = false;
     (async () => {
@@ -735,6 +752,10 @@
           if (visibleSource !== active || getLayer(active)?.key !== settledKey)
             return;
           railRealization = settledLayer.realization;
+          railProps = {
+            left: settledLayer.leftPropType,
+            right: settledLayer.rightPropType,
+          };
         });
       });
     }
@@ -935,6 +956,7 @@
     waitingSource = null;
     visibleRealization = null;
     railRealization = null;
+    railProps = null;
     realizationChoicesKey = null;
     pendingRealizationChoices = null;
     queuedLayer = null;
@@ -989,7 +1011,8 @@
           realization,
           paths,
           clubTipDx: data.clubTipDx,
-          propType,
+          leftPropType: data.props.left,
+          rightPropType: data.props.right,
           transitionId:
             activeBuildTransitionId || transitionRecorder.claimLatest(layerKey),
           initialStep: entryStepFor(realization, layerKey),
@@ -1135,8 +1158,8 @@
             // glyph would name a relationship that is not on stage.
             hideTkaGlyph: solo !== null,
             beatIndicators: false,
-            leftPropType: layer.propType,
-            rightPropType: layer.propType,
+            leftPropType: layer.leftPropType,
+            rightPropType: layer.rightPropType,
             trailSettingsOverride: effectiveTrailSettings,
             tipEffectMap: animationState.scope.effects.tipEffectMap,
             effectsConfigState: animationState.scope.effects,
@@ -1342,8 +1365,8 @@
               anchor: "center",
               orientation: "horizontal",
               loop: true,
-              leftPropType: propType,
-              rightPropType: propType,
+              leftPropType: (railProps ?? data.props).left,
+              rightPropType: (railProps ?? data.props).right,
               propElementalType: railPropElementalType,
               stepPulse: false,
               staggerCellUpdates: true,
@@ -1391,8 +1414,9 @@
         onPlaybackModeChange={animationState.setPlaybackMode}
         onBpmChange={animationState.setBpm}
         showEffectsPlayback={false}
-        selectedPropType={propType}
+        selectedPropType={selectedPropType ?? data.props.left}
         onPropChange={onproptypechange}
+        {handProps}
         onPropPickerRequest={onproppickertoggle}
         propPickerActive={propPickerOpen}
         sequence={captionRealization?.seq ?? null}

@@ -95,6 +95,10 @@ export const PROP_TYPE_DISPLAY_REGISTRY: Record<PropType, PropTypeDisplayInfo> =
       label: "Big Hoop",
       image: "/images/props/buttons/bighoop.svg",
     },
+    [PropType.TRIANGLE]: {
+      label: "Triangle",
+      image: "/images/props/buttons/triangle.svg",
+    },
 
     [PropType.BUUGENG]: {
       label: "Buugeng",
@@ -338,6 +342,7 @@ export const VARIANT_PROP_TYPES: PropType[] = [
   PropType.BIGTRIAD,
   // Hoop family
   PropType.BIGHOOP,
+  PropType.TRIANGLE,
   // Buugeng family
   PropType.BIGBUUGENG,
   // Triquetra family
@@ -380,6 +385,7 @@ const VARIANT_TO_BASE: Partial<Record<PropType, PropType>> = {
   [PropType.BIGTRIAD]: PropType.TRIAD,
   // Hoop variations
   [PropType.BIGHOOP]: PropType.MINIHOOP,
+  [PropType.TRIANGLE]: PropType.MINIHOOP,
   // Buugeng variations
   [PropType.BIGBUUGENG]: PropType.BUUGENG,
   // Triquetra variations
@@ -418,7 +424,7 @@ const BASE_TO_VARIANTS: Partial<Record<PropType, PropType[]>> = {
   ],
   [PropType.FAN]: [PropType.BIGFAN],
   [PropType.TRIAD]: [PropType.TRIGENG, PropType.BIGTRIAD],
-  [PropType.MINIHOOP]: [PropType.BIGHOOP],
+  [PropType.MINIHOOP]: [PropType.BIGHOOP, PropType.TRIANGLE],
   [PropType.BUUGENG]: [PropType.BIGBUUGENG],
   [PropType.TRIQUETRA]: [PropType.TRIQUETRA2],
   [PropType.CHICKEN]: [PropType.BIGCHICKEN],
@@ -651,6 +657,7 @@ export const PROP_PICKER_SECTIONS: { label: string; props: PropType[] }[] = [
       PropType.FAN,
       PropType.TRIAD,
       PropType.MINIHOOP,
+      PropType.TRIANGLE,
       PropType.BUUGENG,
       PropType.TRIGENG,
       PropType.EIGHTRINGS,

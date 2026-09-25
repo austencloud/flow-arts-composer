@@ -20,6 +20,7 @@ import {
   createAvatarServices,
   getAvatarModelPath,
   type AvatarServices,
+  setPropHandColors,
   type PropState3D,
 } from "@austencloud/scene-3d/worker";
 import type {
@@ -39,6 +40,7 @@ import {
 import { createWorkerSelectionMarker } from "./selection-markers/worker-selection-marker";
 import type { WorkerSelectionMarkerVisual } from "./selection-markers/worker-selection-marker";
 import { WorkerImperativeEffectFrameBuilder } from "../effects/worker-imperative-effect-frame-builder";
+import { applyLegacyContactLock } from "./worker-contact-lock";
 
 const STAFF_HORIZONTAL_QUATERNION = new Quaternion().setFromEuler(
   new Euler(0, 0, Math.PI / 2)
@@ -192,9 +194,7 @@ export async function createWorkerPerformerProp(
       state.worldPosition.fromArray(next.worldPosition);
       state.worldRotation.fromArray(next.worldRotation);
       state.gripType = next.gripType as PropState3D["gripType"];
-      anchor.position
-        .fromArray(next.handAnchor)
-        .add(state.worldPosition);
+      anchor.position.fromArray(next.handAnchor).add(state.worldPosition);
       correction.scale.x = next.flipped ? -1 : 1;
       visual.setState(state);
     },
@@ -229,7 +229,10 @@ export class WorkerPerformer {
   private readonly rightOrientation = new Quaternion();
   private readonly leftEffectRotation = new Quaternion();
   private readonly rightEffectRotation = new Quaternion();
+  private readonly palmWorld = new Vector3();
   private snapshot: WorkerPerformerSnapshot;
+  /** The reset key last applied to the animator. */
+  private contactResetKey: number | undefined;
   private avatarRoot: Object3D | null = null;
   private badge: WorkerPerformerBadgeObject | null = null;
   private readonly selectionMarker: WorkerSelectionMarkerVisual;
@@ -297,6 +300,10 @@ export class WorkerPerformer {
       snapshot.propBuild.fanFrameColor ===
         this.snapshot.propBuild.fanFrameColor &&
       snapshot.propBuild.fanCover === this.snapshot.propBuild.fanCover &&
+      snapshot.handColors?.blue === this.snapshot.handColors?.blue &&
+      snapshot.handColors?.red === this.snapshot.handColors?.red &&
+      snapshot.propBuild.triangleGrip ===
+        this.snapshot.propBuild.triangleGrip &&
       (snapshot.locomotion != null) === (this.snapshot.locomotion != null)
     );
   }
@@ -432,6 +439,13 @@ export class WorkerPerformer {
 
   update(deltaSeconds: number): void {
     if (this.disposed || !this.avatarRoot) return;
+    // A seek or a new score: history from the old point in the score would
+    // steer this frame's arms.
+    const resetKey = this.snapshot.contactResetKey;
+    if (resetKey !== undefined && resetKey !== this.contactResetKey) {
+      this.contactResetKey = resetKey;
+      this.services.animator.resetContactHistory?.();
+    }
     this.root.updateMatrixWorld(true);
 
     if (this.locomotion && this.snapshot.locomotion) {
@@ -467,6 +481,9 @@ export class WorkerPerformer {
       .multiply(this.right.state.worldRotation)
       .multiply(STAFF_HORIZONTAL_QUATERNION);
 
+    this.services.animator.setPairSeparation?.(
+      this.snapshot.pairSeparation ?? true
+    );
     this.services.animator.setPropsAndBlend(leftWorld, rightWorld, undefined, {
       blue: leftWorld ? this.leftOrientation : null,
       red: rightWorld ? this.rightOrientation : null,
@@ -487,7 +504,23 @@ export class WorkerPerformer {
     }
     this.services.animator.update(deltaSeconds);
     this.services.skeleton.updateMatrices();
+    this.lockToPalm("left", this.left, leftWorld !== null);
+    this.lockToPalm("right", this.right, rightWorld !== null);
     this.updateEffects(deltaSeconds, leftState, rightState);
+  }
+
+  /** Close the last few centimetres between a held staff and the solved palm,
+   *  as the interactive rig does. */
+  private lockToPalm(
+    side: "left" | "right",
+    prop: WorkerPropObject,
+    held: boolean
+  ): void {
+    const palm = held
+      ? (this.services.animator.getPalmWorldPoint?.(side, this.palmWorld) ??
+        null)
+      : null;
+    applyLegacyContactLock(prop.anchor, prop.correction, palm);
   }
 
   private updateEffects(
@@ -681,6 +714,9 @@ export class WorkerPerformerStage {
 
   async setSnapshots(next: readonly WorkerPerformerSnapshot[]): Promise<void> {
     if (this.disposed) return;
+    // Hand paint is scene-wide. Set it before any prop is built or rebuilt so
+    // new materials and the shared cached ones agree.
+    if (next[0]) setPropHandColors(next[0].handColors ?? {});
     const byId = new Map(next.map((snapshot) => [snapshot.id, snapshot]));
     this.snapshots = byId;
 

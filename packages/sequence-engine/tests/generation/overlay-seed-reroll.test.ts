@@ -45,6 +45,15 @@ const LEVEL = 3;
 /** ~86% of pre-fix builds threw, so a dozen makes a pre-fix pass ~1e-10. */
 const BUILDS = 12;
 
+/**
+ * Builds are unseeded, so an occasional draw still hits the ordinary
+ * orientation-closure feasibility limit the header describes. That limit is
+ * not this defect; it failed about one run in forty of this file when every
+ * build had to succeed. Allow a few, and fail on any overlay-divisibility
+ * throw, which is what a starved seed produces.
+ */
+const MAX_INFEASIBLE = 3;
+
 const CASES = [
   {
     type: LOOPType.INVERTED,
@@ -83,23 +92,35 @@ describe("overlay inversion survives the requested-length re-roll", () => {
     ({ type, prop, totalLength, expandMultiplier }) => {
       const spec = loopSpecFromWire({ left: prop, right: prop });
 
+      let infeasible = 0;
       for (let attempt = 0; attempt < BUILDS; attempt++) {
-        const result = builder.build({
-          length: totalLength / expandMultiplier,
-          gridMode: "diamond",
-          level: LEVEL,
-          constraintPreset: "smooth",
-          loop: {
-            type,
-            period: Period.HALVED,
-            useTargetedGeneration: true,
-            loopSpec: spec,
-            requestedTotalLength: totalLength,
-          },
-        });
+        let result: ReturnType<SequenceBuilder["build"]>;
+        try {
+          result = builder.build({
+            length: totalLength / expandMultiplier,
+            gridMode: "diamond",
+            level: LEVEL,
+            constraintPreset: "smooth",
+            loop: {
+              type,
+              period: Period.HALVED,
+              useTargetedGeneration: true,
+              loopSpec: spec,
+              requestedTotalLength: totalLength,
+            },
+          });
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : String(error);
+          expect(message).not.toMatch(/divisible by the period/);
+          expect(message).toMatch(/orientation closure requires/);
+          infeasible++;
+          continue;
+        }
 
         expect(result.sequence.length - 1).toBe(totalLength);
       }
+      expect(infeasible).toBeLessThanOrEqual(MAX_INFEASIBLE);
     }
   );
 });

@@ -143,15 +143,22 @@ export function createViewerShellInteractionState(
     });
   }
 
-  function handleVideoExport(stage: "requested" | "retry" = "requested"): void {
+  /** Resolves when the render settles: false when it was refused or failed
+   *  to start, true otherwise. A host override owns its own lifecycle. */
+  function handleVideoExport(
+    stage: "requested" | "retry" = "requested"
+  ): Promise<boolean> {
     dependencies.captureScanExport(
       "video",
       stage,
       videoExportAnalyticsConfig()
     );
     const overrides = inputs.getExportOverrides();
-    if (overrides) overrides.onVideoExport();
-    else void inputs.getContext().handleExport();
+    if (overrides) {
+      overrides.onVideoExport();
+      return Promise.resolve(true);
+    }
+    return inputs.getContext().handleExport();
   }
 
   function handleCardExport(): void {

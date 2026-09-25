@@ -129,9 +129,6 @@
     font-size: clamp(1.05rem, 1rem + 0.3vw, 1.3rem);
     line-height: 1.65;
     color: oklch(0.7 0.01 270);
-    /* The sentence keeps a reading measure even though the destination row
-       below spans the full block. */
-    max-width: 40rem;
     margin: 0 auto 2.2rem;
   }
 
@@ -142,9 +139,8 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: 0.75rem;
-    /* Wider than the reading measure so a full row of destinations stays a
-       single row on a laptop and up, instead of stranding one or two on a
-       second line (.claude/rules/4k-native-layout.md — never a row of one). */
+    /* Keep the destinations together on a laptop and up instead of
+       stranding one or two on a second line. */
     width: min(64rem, 100%);
     margin-inline: auto;
   }

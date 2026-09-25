@@ -70,10 +70,6 @@ import {
   type FluidProgram,
   type FluidPrograms,
 } from "../fluid/web-gl-fluid-solver-2d";
-import {
-  computeFireTipPresentation,
-  type FireTipPresentation,
-} from "./fire-tip-presentation";
 
 const MAX_DPR = 2;
 const _DEFAULT_JACOBI_ITERATIONS = 12;
@@ -372,15 +368,6 @@ export class WebGLFireRenderer {
   private displayTipUVs: Float32Array = new Float32Array(32); // 16 tips * 2 (x,y)
   private displayTipFlameScales: Float32Array = new Float32Array(16);
   private displayTipColors: Float32Array = new Float32Array(48); // 16 tips * 3 (r,g,b)
-  // direction.xy, stretch, breakup. This replaces the old unused speed uniform,
-  // so Natural Fire gains motion shaping without another per-tip GL call.
-  private displayTipShapes: Float32Array = new Float32Array(64);
-  private readonly tipPresentation: FireTipPresentation = {
-    directionX: 0,
-    directionY: 1,
-    stretch: 1,
-    breakup: 0,
-  };
   private displayTipCount = 0;
   private displayCanvasWidth = 1;
   private displayCanvasHeight = 1;
@@ -388,9 +375,8 @@ export class WebGLFireRenderer {
   // Reused uniform payloads for swept-tip splat batching.
   // Pre-cached uniform locations for tip arrays (avoids getUniformLocation per frame)
   // On Windows/ANGLE, each getUniformLocation call triggers a GPU-CPU sync stall.
-  // With 4 tips × 4 uniforms = 16 calls per frame, this was costing 1.6-8ms of pure stall.
+  // With 4 tips × 3 uniforms = 12 calls per frame, uncached lookups still cost time.
   private tipPositionLocs: (WebGLUniformLocation | null)[] = [];
-  private tipShapeLocs: (WebGLUniformLocation | null)[] = [];
   private tipFlameScaleLocs: (WebGLUniformLocation | null)[] = [];
   private tipColorLocs: (WebGLUniformLocation | null)[] = [];
 
@@ -1090,17 +1076,6 @@ export class WebGLFireRenderer {
       this.displayTipUVs[index * 2] = tip.x / input.canvasWidth;
       this.displayTipUVs[index * 2 + 1] = 1 - tip.y / input.canvasHeight;
       this.displayTipFlameScales[index] = tip.flameScale;
-
-      const presentation = computeFireTipPresentation(
-        tip,
-        input.canvasWidth,
-        input.canvasHeight,
-        this.tipPresentation
-      );
-      this.displayTipShapes[index * 4] = presentation.directionX;
-      this.displayTipShapes[index * 4 + 1] = presentation.directionY;
-      this.displayTipShapes[index * 4 + 2] = presentation.stretch;
-      this.displayTipShapes[index * 4 + 3] = presentation.breakup;
 
       const color = input.propColors?.[tip.propIndex];
       this.displayTipColors[index * 3] = color?.r ?? 1;
@@ -1943,7 +1918,6 @@ export class WebGLFireRenderer {
 
     for (let i = 0; i < this.displayTipCount; i++) {
       const posLoc = this.tipPositionLocs[i];
-      const shapeLoc = this.tipShapeLocs[i];
       const scaleLoc = this.tipFlameScaleLocs[i];
       const colorLoc = this.tipColorLocs[i];
       if (posLoc)
@@ -1952,15 +1926,6 @@ export class WebGLFireRenderer {
           this.displayTipUVs[i * 2]!,
           this.displayTipUVs[i * 2 + 1]!
         );
-      if (shapeLoc) {
-        gl.uniform4f(
-          shapeLoc,
-          this.displayTipShapes[i * 4]!,
-          this.displayTipShapes[i * 4 + 1]!,
-          this.displayTipShapes[i * 4 + 2]!,
-          this.displayTipShapes[i * 4 + 3]!
-        );
-      }
       if (scaleLoc) gl.uniform1f(scaleLoc, this.displayTipFlameScales[i]!);
       if (colorLoc) {
         gl.uniform3f(
@@ -2541,7 +2506,6 @@ export class WebGLFireRenderer {
     const MAX_TIPS = 16;
 
     this.tipPositionLocs = new Array(MAX_TIPS);
-    this.tipShapeLocs = new Array(MAX_TIPS);
     this.tipFlameScaleLocs = new Array(MAX_TIPS);
     this.tipColorLocs = new Array(MAX_TIPS);
 
@@ -2550,7 +2514,6 @@ export class WebGLFireRenderer {
         prog,
         `u_tipPositions[${i}]`
       );
-      this.tipShapeLocs[i] = gl.getUniformLocation(prog, `u_tipShapes[${i}]`);
       this.tipFlameScaleLocs[i] = gl.getUniformLocation(
         prog,
         `u_tipFlameScales[${i}]`

@@ -24,6 +24,12 @@ import {
   type VtgMode,
 } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
 import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import {
+  foldUntraceablePropPair,
+  propPairFromLegacy,
+  type ShapeMatrixPropHand,
+  type ShapeMatrixPropPair,
+} from "$lib/shared/shape-matrix/domain/prop-pair";
 import { requestShapeMatrixTransition } from "$lib/shared/shape-matrix/debug/shape-matrix-transition-recorder";
 import { spinRatioEquals, type SpinRatio } from "@vtg/domain";
 import {
@@ -98,7 +104,13 @@ export interface ShapeMatrixAppSnapshot {
   rightTurn: TurnValue;
   activeAxis: ShapeMatrixAxisTarget;
   labelMode: MatrixLabelMode;
-  propType: PropType;
+  leftPropType: PropType;
+  rightPropType: PropType;
+  /**
+   * Snapshots saved before the pair existed carry one prop. It is read into
+   * both hands and never written again.
+   */
+  propType?: PropType;
   pair: { left: Flower; right: Flower } | null;
   mode: VtgMode | null;
   propMode: VtgMode | null;
@@ -120,10 +132,29 @@ export interface ShapeMatrixAppPersistence {
   link?: (state: ShapeMatrixAppSnapshot) => string;
 }
 
+/**
+ * A host that owns the prop pair elsewhere (the Create module's Shape tab
+ * mirrors settings). The engine adopts what the source says and reports its
+ * own picks back; the standalone route passes none and keeps the pair in its
+ * URL.
+ */
+export interface ShapeMatrixPropSource {
+  readonly left: PropType;
+  readonly right: PropType;
+  readonly catDog: boolean;
+  set(pair: { left: PropType; right: PropType; catDog: boolean }): void;
+}
+
 interface ShapeMatrixAppDependencies {
-  loadMatrix: (propType: PropType) => Promise<ShapeMatrixData>;
+  loadMatrix: (props: ShapeMatrixPropPair) => Promise<ShapeMatrixData>;
   syncState: (state: ShapeMatrixAppSnapshot) => void;
   link?: (state: ShapeMatrixAppSnapshot) => string;
+  /**
+   * A pick made inside the engine (a prop, or the cat dog chip), for a host
+   * that mirrors the pair somewhere else. Adopted pairs never come back out,
+   * and a superseded load never fires this at all.
+   */
+  onPropPairChange?: (pair: ShapeMatrixPropPair, catDog: boolean) => void;
 }
 
 const LEVEL_LANDING_TURN: Record<TurnLevel, TurnValue> = {
@@ -262,7 +293,26 @@ export function createShapeMatrixAppState(
   );
   let activeAxis = $state<ShapeMatrixAxisTarget>(initial.activeAxis);
   let labelMode = $state(initial.labelMode);
-  let propType = $state(initial.propType);
+  const initialPair = propPairFromLegacy(initial);
+  let leftPropType = $state(initialPair.left);
+  let rightPropType = $state(initialPair.right);
+  /** Whether the hand segments show; starts on when the restored pair differs. */
+  let catDog = $state(initialPair.left !== initialPair.right);
+  /** The hand the picker addresses while cat dog is on. */
+  let propHand = $state<ShapeMatrixPropHand>("left");
+  /* A load is a request for one pair; a later request supersedes it. */
+  let loadToken = 0;
+  /**
+   * The pair the most recent load was asked for, updated the instant that
+   * load is requested rather than when it resolves. A no-op check compares
+   * against this, not against `leftPropType`/`rightPropType`, so a re-pick
+   * made while an earlier one is still in flight is judged against what was
+   * just asked for and never against a value that has not landed yet.
+   */
+  let requestedPropPair: ShapeMatrixPropPair = {
+    left: initialPair.left,
+    right: initialPair.right,
+  };
   let selectedPair = $state(initial.pair);
   let rememberedVariants = $state<{
     left: SemanticVariant;
@@ -316,18 +366,49 @@ export function createShapeMatrixAppState(
     data ? applyFilter(data.axis, filters.right, false) : []
   );
 
-  async function load(nextPropType: PropType = propType): Promise<void> {
-    if (loading) return;
+  /**
+   * Resolves true only when this call's pair is the one that landed: this
+   * token was still current when the fetch came back, and it came back
+   * clean. False covers both a superseded request and a failed one, so a
+   * caller can treat "not the winner" as a single case.
+   *
+   * `nextPair` is the user's raw choice and stays raw everywhere in this
+   * state -- `requestedPropPair`, `leftPropType`/`rightPropType`, and every
+   * announcement to the host all carry exactly what was asked for. Folding
+   * happens once, right here, only for the value handed to `loadMatrix`: a
+   * prop the engine cannot trace a path for (a bare hand, a single contact
+   * ball) draws as staff instead of leaving the matrix stuck on its error
+   * state, while the raw pick is never overwritten in state or echoed back
+   * into settings as staff.
+   */
+  async function load(
+    nextPair: ShapeMatrixPropPair = { left: leftPropType, right: rightPropType }
+  ): Promise<boolean> {
+    const token = ++loadToken;
+    requestedPropPair = nextPair;
     loading = true;
     loadError = null;
     try {
-      const nextData = await dependencies.loadMatrix(nextPropType);
+      const nextData = await dependencies.loadMatrix(
+        foldUntraceablePropPair(nextPair)
+      );
+      if (token !== loadToken) return false;
       data = nextData;
-      propType = nextPropType;
+      leftPropType = nextPair.left;
+      rightPropType = nextPair.right;
+      return true;
     } catch (error) {
+      if (token !== loadToken) return false;
+      // The failed pair never became real, so the "most recently requested"
+      // pointer falls back to what is actually on screen. Left stale at the
+      // failed target, a re-pick of that same target would read as a no-op,
+      // and a mixed pair's cat dog fold would judge itself against a hand
+      // that never landed.
+      requestedPropPair = { left: leftPropType, right: rightPropType };
       loadError = error instanceof Error ? error.message : String(error);
+      return false;
     } finally {
-      loading = false;
+      if (token === loadToken) loading = false;
     }
   }
 
@@ -565,8 +646,7 @@ export function createShapeMatrixAppState(
       hand === "left"
         ? {
             left: flower,
-            right:
-              theoryPair?.right ?? theoryFlowerAt(theoryRightRatio, null),
+            right: theoryPair?.right ?? theoryFlowerAt(theoryRightRatio, null),
           }
         : {
             left: theoryPair?.left ?? theoryFlowerAt(theoryLeftRatio, null),
@@ -686,13 +766,110 @@ export function createShapeMatrixAppState(
    * so a choice is meant to be watched: pick a prop, see the shape traced by
    * it, pick the next one. Closing is its own action.
    */
-  async function setPropType(nextPropType: PropType): Promise<void> {
-    if (propType === nextPropType) return;
-    await load(nextPropType);
-    if (!loadError) syncState();
+  async function setPropType(
+    prop: PropType,
+    hand: ShapeMatrixPropHand | "both" = catDog ? propHand : "both"
+  ): Promise<void> {
+    const next = {
+      left: hand === "right" ? requestedPropPair.left : prop,
+      right: hand === "left" ? requestedPropPair.right : prop,
+    };
+    if (
+      next.left === requestedPropPair.left &&
+      next.right === requestedPropPair.right
+    )
+      return;
+    if (!(await load(next))) return;
+    syncState();
+    dependencies.onPropPairChange?.(
+      { left: leftPropType, right: rightPropType },
+      catDog
+    );
   }
 
-  function restoreState(snapshot: ShapeMatrixAppSnapshot): void {
+  function setPropHand(hand: ShapeMatrixPropHand): void {
+    propHand = hand;
+  }
+
+  /**
+   * Leaving cat dog folds the right hand onto the left, the same collapse
+   * Settings performs; entering it changes nothing until a hand is picked.
+   */
+  async function toggleCatDog(): Promise<void> {
+    if (catDog && requestedPropPair.right !== requestedPropPair.left) {
+      const target = requestedPropPair.left;
+      if (!(await load({ left: target, right: target }))) return;
+      syncState();
+    }
+    catDog = !catDog;
+    if (!catDog) propHand = "left";
+    dependencies.onPropPairChange?.(
+      { left: leftPropType, right: rightPropType },
+      catDog
+    );
+  }
+
+  /**
+   * The host's pair, taken as the truth: recorded at once, reloaded when the
+   * matrix is already up, and never synced or announced back to the host.
+   *
+   * Checked against `requestedPropPair` and the live `catDog`, not against
+   * the committed `leftPropType`/`rightPropType`: a pick in flight has
+   * already moved the requested target away from what is on screen, and
+   * comparing against the still-landed pair would read a settings change
+   * that happens to match it as a no-op, dropping it. Adopting instead
+   * bumps the load token, so the pick's own in-flight load resolves
+   * superseded and never overwrites what settings just asked for.
+   *
+   * The incoming pair is stored and compared exactly as settings gave it:
+   * this is the value `load()` echoes back through `onPropPairChange`, so
+   * settings must see its own value again, never a folded stand-in. A prop
+   * the engine cannot trace a path for (a bare hand, a single contact ball)
+   * is only folded to staff where `load()` hands the pair to `loadMatrix`,
+   * which is what keeps the matrix drawing without touching the saved
+   * choice.
+   */
+  function adoptPropPair(pair: ShapeMatrixPropPair, nextCatDog: boolean): void {
+    if (
+      pair.left === requestedPropPair.left &&
+      pair.right === requestedPropPair.right &&
+      nextCatDog === catDog
+    )
+      return;
+    catDog = nextCatDog;
+    if (!nextCatDog) propHand = "left";
+    leftPropType = pair.left;
+    rightPropType = pair.right;
+    requestedPropPair = pair;
+    if (data || loading) void load();
+  }
+
+  /**
+   * The host that owns this state is going away (the Shape tab unmounts).
+   * Bumps the load token so any load already in flight -- a pick's own, or
+   * one an adopt fired in the background -- resolves as superseded instead
+   * of writing a dead instance's pair into state or settings once it lands,
+   * and clears `loading` so nothing keeps reading it as still in progress.
+   */
+  function dispose(): void {
+    loadToken += 1;
+    loading = false;
+  }
+
+  function restoreState(
+    snapshot: ShapeMatrixAppSnapshot,
+    options: { keepPropPair?: boolean } = {}
+  ): void {
+    // A restore is a fresh state, not a continuation of whatever was in
+    // flight before it. Bumping the token makes any pending load's own
+    // check fail when it lands, so it can never overwrite what is restored
+    // here; clearing loading and the error is what stops that dropped load
+    // from leaving the banner stuck on. A load was in flight for a reason,
+    // though, so once the restored pair is in place the state asks again.
+    const cancelled = loading;
+    loadToken += 1;
+    loading = false;
+    loadError = null;
     surface = snapshot.surface ?? "matrix";
     level = snapshot.level;
     const restoredLeftRatio = snapshot.theoryLeftRatio ?? DEFAULT_THEORY_RATIO;
@@ -723,7 +900,14 @@ export function createShapeMatrixAppState(
     rightTurn = clampMatrixTurnToLevel(snapshot.rightTurn, snapshot.level);
     activeAxis = snapshot.activeAxis;
     labelMode = snapshot.labelMode;
-    propType = snapshot.propType;
+    if (!options.keepPropPair) {
+      const pair = propPairFromLegacy(snapshot);
+      leftPropType = pair.left;
+      rightPropType = pair.right;
+      catDog = pair.left !== pair.right;
+      propHand = "left";
+    }
+    requestedPropPair = { left: leftPropType, right: rightPropType };
     if (snapshot.pair) {
       rememberedVariants = {
         left: semanticVariant(snapshot.pair.left),
@@ -743,6 +927,7 @@ export function createShapeMatrixAppState(
       ? snapshot.propMode
       : null;
     soloHand = selectedPair ? snapshot.solo : null;
+    if (cancelled) void load();
   }
 
   function selectPair(
@@ -876,7 +1061,8 @@ export function createShapeMatrixAppState(
       rightTurn,
       activeAxis,
       labelMode,
-      propType,
+      leftPropType,
+      rightPropType,
       pair: selectedPair,
       mode: selectedMode,
       propMode: selectedPropMode,
@@ -938,8 +1124,32 @@ export function createShapeMatrixAppState(
     get labelMode() {
       return labelMode;
     },
-    get propType() {
-      return propType;
+    get leftPropType() {
+      return leftPropType;
+    },
+    get rightPropType() {
+      return rightPropType;
+    },
+    get catDog() {
+      return catDog;
+    },
+    get propHand() {
+      return propHand;
+    },
+    /** The prop the picker addresses: the chosen hand under cat dog, else left. */
+    get addressedPropType() {
+      return catDog && propHand === "right" ? rightPropType : leftPropType;
+    },
+    /** The hand chip and segments every engine AnimationPanel shows. */
+    get handProps() {
+      return {
+        catDog,
+        hand: propHand,
+        leftPropType,
+        rightPropType,
+        onToggleCatDog: () => void toggleCatDog(),
+        onHandChange: setPropHand,
+      };
     },
     get availableTurns() {
       return availableTurns;
@@ -1015,6 +1225,10 @@ export function createShapeMatrixAppState(
     selectTheorySolo,
     surpriseMe,
     setPropType,
+    setPropHand,
+    toggleCatDog,
+    adoptPropPair,
+    dispose,
     selectPair,
     setMode,
     setPropMode,

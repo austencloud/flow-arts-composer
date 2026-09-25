@@ -75,9 +75,14 @@
   <meta property="og:title" content="Shop | Flow Arts Composer" />
   <meta property="og:description" content={DESCRIPTION} />
   <meta property="og:url" content="https://tkaflowarts.com/shop" />
+  <meta property="og:image" content="https://tkaflowarts.com/branding/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="The Kinetic Alphabet" />
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="Shop | Flow Arts Composer" />
   <meta name="twitter:description" content={DESCRIPTION} />
+  <meta name="twitter:image" content="https://tkaflowarts.com/branding/og-image.png" />
   {@html `<script type="application/ld+json">${jsonLd}</script>`}
 </svelte:head>
 

@@ -42,7 +42,10 @@
     parsePropsFromURL,
   } from "$lib/shared/navigation/services/sequence-encoder";
   import { hydrateSequence } from "$lib/shared/navigation/services/sequence-hydrator";
-  import { recordCardScan } from "$lib/shared/qr/services/card-scan-ingest";
+  import {
+    readScanPhysicalCardId,
+    recordCardScanAfterAuth,
+  } from "$lib/shared/qr/services/card-scan-ingest";
   import { resolveScanPropConfig } from "$lib/shared/qr/services/scan-prop-resolver";
   import { buildScanSequenceDestination } from "$lib/shared/qr/services/scan-sequence-handoff";
   import {
@@ -205,37 +208,42 @@
         rightProp: String(propConfig.rightPropType),
       });
 
-      const scanPrintId = page.url.searchParams.get("pid") || null;
+      const { physicalCardId, pidState } = readScanPhysicalCardId(
+        page.url.searchParams
+      );
       const shouldRecordScan =
         !isDemo &&
         !isInlineEncoded(shortCode) &&
-        isFirstScanRouteVisit(shortCode, scanPrintId);
+        isFirstScanRouteVisit(shortCode, physicalCardId);
 
       if (shouldRecordScan) {
+        const scanKind = physicalCardId ? "serialized" : "legacy";
         captureScanEvent("card_scanned", {
           country: data.geo.country,
           city: data.geo.city,
+          scan_kind: scanKind,
+          physical_card_id: physicalCardId,
+          pid_state: pidState,
           ...scanPropProperties(
             propConfig.leftPropType,
             propConfig.rightPropType
           ),
         });
 
-        try {
-          await Promise.race([
-            initializeAuthListener(),
-            new Promise((resolve) => setTimeout(resolve, 1500)),
-          ]);
-        } catch {
-          // The scan remains anonymous when auth initialization is unavailable.
-        }
-
-        void recordCardScan({
-          shortCode,
-          physicalCardId: scanPrintId,
-          deviceId: getDeviceId(),
-        }).catch((error) => {
-          console.error("[q-scan] physical scan ingestion failed:", error);
+        // Not awaited: the ingest waits for auth to attribute a signed-in
+        // scanner, and that wait must never hold the viewer handoff below.
+        void recordCardScanAfterAuth(
+          { shortCode, physicalCardId, deviceId: getDeviceId() },
+          initializeAuthListener
+        ).then((result) => {
+          captureScanEvent("card_scan_ingest", {
+            scan_kind: scanKind,
+            physical_card_id: physicalCardId,
+            outcome: result.outcome,
+            ...(result.outcome === "failed"
+              ? { status: result.status, error_code: result.code }
+              : {}),
+          });
         });
       }
 

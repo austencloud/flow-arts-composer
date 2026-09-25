@@ -180,6 +180,27 @@ two decisions.
 
 ## Loose ends (ranked)
 
+**Status 2026-09-24.** #1-#3 and #5 are closed. The five failures above stayed
+red from this handoff until then, because the pelvis-drop suite skips in CI.
+
+- #1: `pelvisDrop` stays, as a residual. ch34 was the case to explain, and the
+  explanation covers every rig. The bake scaled the ankle's height over the
+  floor with the leg, so each rig's planted ankle came out at the source's
+  0.109 leg lengths instead of at its own bind height: ch07 (0.178) baked its
+  feet 5.6 cm low and ch34 (0.068) 3.6 cm high. The bake now stands the leg on
+  the rig's own ankle (`legBase` in `ContactRetargeter`). Forward and strafe
+  residuals now sit within 0.017 of zero, and the planted sole is at most
+  1.8 cm over the floor on every rig.
+- #2: the bands are re-derived as the whole dip (baked track mean plus
+  residual). There is a new residual ceiling, and the toe offset is bounded by
+  the bind toe height instead of pinned at zero. The four continuity
+  invariants listed under #2 are still owed.
+- #3: the pack's run and walk lift the pelvis within 4% of each other. Holding
+  the stances on the floor trims the run's lift by 6%, so "run bobs more than
+  walk" was never a property of the clips. The assertion now checks the run
+  against its own authored travel.
+- #5: canon item 10 carries the bake and the fix.
+
 ### 1. Decide `pelvisDrop`. Start here.
 
 The bake now owns pelvis height: baked `Hips.position` peak-to-peak is 0.0706 m

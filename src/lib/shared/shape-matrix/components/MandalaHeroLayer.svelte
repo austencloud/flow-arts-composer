@@ -12,9 +12,13 @@
   visible with no transition so the transition snapshot has artwork in it. -->
 <script lang="ts">
   import type { MandalaPaths } from "$lib/shared/mandala/domain/mandala-types";
+  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import { motionDuration } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
-  import { pathsArtworkSrc } from "../services/shape-matrix-artwork";
+  import {
+    pathsArtworkSrc,
+    shapeMatrixArtworkPainterForColors,
+  } from "../services/shape-matrix-artwork";
   import { engineExtentBoxRatio } from "../services/shape-matrix-render";
   import ShapeMatrixMandalaArt from "./ShapeMatrixMandalaArt.svelte";
 
@@ -40,8 +44,14 @@
 
   const transitionDuration = motionDuration(DURATION.normal);
   const effectiveOpacity = $derived(handoff ? 1 : opacity);
+  // The live guide that replaces this floor strokes in the viewer's saved
+  // hand colors, and so do the matrix tiles it morphs from. Painting the
+  // floor in the default palette flipped the mandala's color at the handoff.
+  const painter = $derived(
+    shapeMatrixArtworkPainterForColors(getSettings().primaryPropColors)
+  );
   const paint = $derived((sizePx: number) =>
-    pathsArtworkSrc(paths, sizePx, tipDx)
+    pathsArtworkSrc(paths, sizePx, tipDx, painter)
   );
   const extentRatio = $derived(engineExtentBoxRatio(paths, tipDx));
 </script>

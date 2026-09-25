@@ -54,10 +54,14 @@
   import VideoPreviewPanel from "./VideoPreviewPanel.svelte";
   import PracticeBar from "./PracticeBar.svelte";
   import PostStudioPane from "./PostStudioPane.svelte";
+  import type { PostStudioShareExport } from "$lib/shared/share/components/post-studio/post-studio-share-export";
+  import { POST_STUDIO_STAGE_MIN_WIDTH } from "../services/viewer-shell-model";
   import { createPaneKeepAlive } from "./pane-keep-alive.svelte";
   import PracticeSetupBar from "./PracticeSetupBar.svelte";
   import ViewerSharePanel from "./ViewerSharePanel.svelte";
   import { META_POSTING_ENABLED } from "$lib/shared/share/services/meta-publish";
+  import { computeExportSummary } from "$lib/shared/animation-panel/pill-nav/pill-summaries";
+  import { formatExportTimeEstimate } from "$lib/shared/animation-panel/state/export-timing-tracker";
   import { VIEWER_MODE_OPTIONS } from "../services/viewer-modes";
   import Recording3DOverlay from "./Recording3DOverlay.svelte";
   import ExportTakeover from "$lib/shared/video-export/components/ExportTakeover.svelte";
@@ -70,6 +74,15 @@
   import DeleteConfirmDialog from "./DeleteConfirmDialog.svelte";
   import PostShareSheet from "$lib/shared/share/components/PostShareSheet.svelte";
   import type { VideoRenderRequest } from "$lib/shared/share/domain/video-opener";
+  import {
+    listRenderedFilms,
+    onRenderedFilmsChanged,
+    type RenderedFilmSummary,
+  } from "$lib/shared/video-export/services/rendered-film-store";
+  import {
+    describeFilm,
+    latestFilmForSequence,
+  } from "$lib/shared/video-export/domain/film-share-summary";
   import { VIDEO_UPLOAD_ENABLED } from "../config/viewer-feature-flags";
   import { uploadRenderedFilm } from "$lib/shared/video-collaboration/services/upload-rendered-film";
   import { canAccessPostStudio } from "../services/post-studio-access";
@@ -515,6 +528,8 @@
    * tunnel bake takes the slot when the share came from those surfaces.
    */
   let postStudioVideoUrl = $state<string | null>(null);
+  let postStudioSharePreviewTarget = $state<HTMLElement | null>(null);
+  let postStudioShareExport: PostStudioShareExport | null = null;
   function adoptPostStudioRender(blob: Blob): void {
     if (postStudioVideoUrl) URL.revokeObjectURL(postStudioVideoUrl);
     postStudioVideoUrl = URL.createObjectURL(blob);
@@ -526,19 +541,15 @@
   const artShareVideo = $derived.by(() => {
     const target = share.artShare;
 
-    // Not for a scene share: that session is ABOUT a live 3D take, and a post
-    // render left behind by the studio would both stand in for the take and
-    // no-op the request that records it.
-    if (postStudioVideoUrl && share.postShare && !target && !share.sceneShare) {
+    if (share.postShare && !target) {
       return {
         blobUrl: postStudioVideoUrl,
         exporting: false,
         progress: null,
         label: "Post",
-        // Post Studio owns re-rendering; the sheet must not kick off an
-        // animation export that would replace the composed post.
-        request: () => Promise.resolve(),
-        cancel: () => {},
+        request: () =>
+          postStudioShareExport?.render() ?? Promise.resolve(false),
+        cancel: () => postStudioShareExport?.cancel(),
       };
     }
 
@@ -569,10 +580,7 @@
       blobUrl: ctx.previewBlobUrl,
       exporting: ctx.isExporting,
       progress: ctx.exportProgress?.progress ?? null,
-      // Same export either way — `handleExport` records the live stage when 3D
-      // is the editing pane. Only a share that came FROM the 3D rail names it
-      // that, because only there is the user unambiguously looking at a scene.
-      label: share.sceneShare ? "Scene" : "Video",
+      label: "Video",
       request: requestShareVideo,
       cancel: () => interactions.handleCancelVideoExport(),
     };
@@ -591,6 +599,14 @@
   let armedExportForShare = $state(false);
 
   function requestShareVideo(request?: VideoRenderRequest): Promise<boolean> {
+    // A 3D video is a take filmed on the stage, never a render the sheet can
+    // start behind itself. Send the person to the panel, where Download hands
+    // over the film or leads to Record.
+    if (ctx.renderMode === "3d") {
+      share.setPostSheetOpen(false);
+      openVideoDownloadFromSheet();
+      return Promise.resolve(false);
+    }
     if (ctx.editingPane !== "animation") {
       // setExportContext, NOT enterEditMode/enterExport: those also move
       // viewerMode, and moving it remounts the 3D canvas — so the export ran one
@@ -606,11 +622,171 @@
 
   $effect(() => {
     if (!armedExportForShare) return;
-    // Not while the sheet is up, and not during a live take — the sheet is only
-    // hidden then, and exiting would tear down the export the take is feeding.
-    if (share.postSheetOpen || awaitingSceneTake) return;
+    // Not while the sheet is up, and not during a render Share started:
+    // exiting would tear down the export it is feeding.
+    if (share.postSheetOpen || shareRenderInFlight) return;
     armedExportForShare = false;
     ctx.viewerState.exitExport();
+  });
+
+  /**
+   * Share → Download on the 2D animation renders at once, with the settings
+   * on the Export page, and the render shows its progress over the stage.
+   * It used to open the share sheet, which then opened the Export page, whose
+   * own button finally rendered: two routes to one file, one of them three
+   * steps long. Share is now the only way to the file; the Export page keeps
+   * the settings. 3D hands over its film (below); other views (card, tunnel,
+   * Post Studio) still prepare their file in the share sheet.
+   */
+  const shareRendersDirectly = $derived(
+    ctx.viewerState.viewerMode === "animation" && ctx.renderMode !== "3d"
+  );
+  let shareRenderInFlight = $state(false);
+
+  /**
+   * Share in 3D hands over the film. A take is filmed on the stage with its
+   * Record button, and its quality is picked on the card after Stop, so Share
+   * never starts one: Download gives the newest film kept for this sequence,
+   * and with none yet it reads "Record a take" and leaves the stage ready.
+   */
+  const sharesFilm = $derived(
+    (ctx.viewerState.viewerMode === "animation" ||
+      ctx.viewerState.viewerMode === "animation-3d") &&
+      ctx.renderMode === "3d"
+  );
+  let keptFilms = $state<RenderedFilmSummary[]>([]);
+  $effect(() => {
+    if (!sharesFilm || !share.panelOpen) return;
+    let live = true;
+    const refresh = () => {
+      void listRenderedFilms().then((films) => {
+        if (live) keptFilms = films;
+      });
+    };
+    refresh();
+    const stopListening = onRenderedFilmsChanged(refresh);
+    return () => {
+      live = false;
+      stopListening();
+    };
+  });
+  const latestFilm = $derived(
+    sharesFilm
+      ? latestFilmForSequence(
+          keptFilms,
+          (ctx.effectiveSequence ?? sequence)?.id
+        )
+      : null
+  );
+
+  function recordTake(): void {
+    share.closePanel();
+    // Record shows on the stage only while no preview is up. The film was kept
+    // on the device when it finished, so clearing the preview loses nothing.
+    if (ctx.previewBlobUrl) interactions.handleDismissExportedVideo();
+    if (ctx.editingPane !== "animation") {
+      ctx.viewerState.enterExport("animation-export", "animation-3d");
+    }
+  }
+
+  async function downloadFromShare(): Promise<void> {
+    if (sharesFilm) {
+      const film = latestFilm;
+      if (!film) {
+        recordTake();
+        return;
+      }
+      if (!(await ctx.saveRetainedFilm(film.id))) {
+        keptFilms = keptFilms.filter((entry) => entry.id !== film.id);
+      }
+      return;
+    }
+    if (!shareRendersDirectly) {
+      share.downloadCurrentView();
+      return;
+    }
+    if (interactions.videoBusy || shareRenderInFlight) return;
+    if (ctx.editingPane !== "animation") {
+      ctx.viewerState.setExportContext("animation-export");
+      armedExportForShare = true;
+    }
+    shareRenderInFlight = true;
+    try {
+      await interactions.handleVideoExport();
+    } finally {
+      shareRenderInFlight = false;
+    }
+  }
+
+  /**
+   * The sheet's Video choice (reached from Card's Download, say) comes back to
+   * the panel on the animation, where Download renders that video or, in 3D,
+   * hands over the film, rather than rendering from inside the sheet. Same
+   * shape as Post Studio's handoff; the sheet closes itself after calling this.
+   */
+  function openVideoDownloadFromSheet(): void {
+    const mode = ctx.viewerState.viewerMode;
+    if (mode !== "animation" && mode !== "animation-3d") {
+      layout.selectViewerMode("animation");
+    }
+    share.openPanel();
+  }
+
+  /** What Download will render, read from the Export page's settings. */
+  const shareDownloadDetail = $derived.by(() => {
+    const options = ctx.exportOptions;
+    if (!shareRendersDirectly || !options) return undefined;
+    const summary = computeExportSummary({
+      resolution: options.videoResolution,
+      fps: options.videoFps,
+      loopCount: options.videoLoopCount,
+      renderMode: "2d",
+    });
+    const estimate = formatExportTimeEstimate(
+      options.videoResolution,
+      options.videoFps,
+      ctx.singlePlayDuration,
+      options.videoLoopCount
+    );
+    return estimate ? `${summary} • ${estimate}` : summary;
+  });
+
+  /** Download's label, the line under it, and that line's action. */
+  const shareDownload = $derived.by(() => {
+    if (sharesFilm) {
+      return latestFilm
+        ? {
+            text: "Download film",
+            icon: undefined,
+            detail: describeFilm(latestFilm),
+            action: {
+              label: "New take",
+              icon: "fa-circle-dot",
+              ariaLabel: "Record a new take",
+              onClick: recordTake,
+            },
+          }
+        : {
+            text: "Record a take",
+            icon: "fa-circle-dot",
+            detail: "Films the stage live. Pick the quality after you stop.",
+            action: undefined,
+          };
+    }
+    return {
+      text: undefined,
+      icon: undefined,
+      detail: shareDownloadDetail,
+      action:
+        shareRendersDirectly && ctx.exportOptions
+          ? {
+              label: "Settings",
+              icon: "fa-sliders",
+              ariaLabel: "Video export settings",
+              onClick: openVideoExportSettings,
+            }
+          : undefined,
+    };
   });
 
   onMount(() => {
@@ -652,26 +828,22 @@
   const takeoverWord = $derived(simplifyRepeatedWord(takeoverLabel));
 
   /**
-   * A share of the sequence animation itself, as opposed to an art render, a
-   * 3D take, or a Post Studio composition. Only this one can open on a chosen
-   * image, and only this one downloads from the viewer's own Export page.
+   * A share of the 2D sequence animation itself, as opposed to an art render,
+   * a 3D film, or a Post Studio composition. Only this one can open on a
+   * chosen image.
    */
   const ordinaryAnimationShare = $derived(
-    !share.artShare &&
-      !share.postShare &&
-      !share.sceneShare &&
-      ctx.renderMode !== "3d"
+    !share.artShare && !share.postShare && ctx.renderMode !== "3d"
   );
   let exportSectionRequest = $state(0);
 
   /**
-   * Share → Download a file → Video lands here instead of on a route inside
-   * the sheet: the stage keeps playing beside the Export page, so the frame
-   * the clip opens with is chosen by pausing where it looks right, not from a
-   * capture taken when the sheet opened. Same shape as Post Studio's handoff;
-   * the sheet closes itself after calling this.
+   * The share panel's Settings: the Export page that decides what Download
+   * renders. The stage keeps playing beside it, so the frame the clip opens
+   * with is chosen by pausing where it looks right. The page has no render
+   * button of its own; Share is how the file comes out.
    */
-  function openVideoExportFromShare(): void {
+  function openVideoExportSettings(): void {
     // The Export page takes the inspector track the share panel holds.
     share.closePanel();
     if (ctx.editingPane !== "animation") {
@@ -685,38 +857,6 @@
     exportSectionRequest += 1;
   }
 
-  /**
-   * Share sheet ⇄ 3D scene take.
-   *
-   * Picking Video in the share sheet asks the viewer to export. In 2D that is a
-   * background render and the sheet fills in. In 3D it is a live camera
-   * performance: the scene records in real time and ends when the user presses
-   * Stop on the REC pill. The sheet covers the stage and shows none of that, so
-   * the take used to look like a hung "Rendering video…" over a scene the user
-   * could neither see nor stop. Step aside for the take, come back with it.
-   */
-  let awaitingSceneTake = $state(false);
-
-  $effect(() => {
-    if (!ctx.isRecording3D || !share.postSheetOpen) return;
-    awaitingSceneTake = true;
-    share.suspendForSceneTake();
-  });
-
-  $effect(() => {
-    if (!awaitingSceneTake) return;
-    // Came back on their own — the sheet is theirs again, stop waiting to
-    // reopen it.
-    if (share.postSheetOpen) {
-      awaitingSceneTake = false;
-      return;
-    }
-    // The scene's render-choice card is still using the stage. Keep the sheet
-    // aside until it is answered, then recover even when no video was made.
-    if (ctx.sceneTakeActive || ctx.isExporting || ctx.pendingFilmRender) return;
-    awaitingSceneTake = false;
-    share.resumeAfterSceneTake();
-  });
   // Opt-in cloud save for a film rendered here: the same performance-video
   // pipeline the upload sheet uses, minus the file picker. Local retention and
   // the download stay untouched — this is an extra destination, not a
@@ -895,6 +1035,7 @@
       onExport={studioSurfaces.active
         ? undefined
         : () => interactions.handleVideoExport()}
+      showExportAction={false}
       captureVideoOpener={studioSurfaces.active || ctx.renderMode === "3d"
         ? undefined
         : ctx.captureVideoOpener}
@@ -1044,6 +1185,7 @@
           class:performance-inspector={layout.inspectorProfile ===
             "performance"}
           class:share-inspector={layout.inspectorProfile === "share"}
+          class:studio-stage={layout.showPostStudio}
           class:desktop={!layout.effectiveMobile}
           class:stacked-rail={layout.stackedExportWithRail}
           class:sidebar-collapsed={layout.exportSidebarCollapsed &&
@@ -1108,6 +1250,9 @@
               : layout.showVideoGallery
                 ? "var(--performance-inspector-height)"
                 : "auto"}
+            stageMinSize={layout.showPostStudio
+              ? POST_STUDIO_STAGE_MIN_WIDTH
+              : undefined}
             takeover={workspaceTakeover}
             takeoverActive={workspaceTakeoverActive}
           >
@@ -1121,6 +1266,10 @@
                       resolvedCardAutoLayout={ctx.resolvedCardAutoLayout}
                       onExported={adoptPostStudioRender}
                       onSharePost={share.openPanel}
+                      previewTarget={postStudioSharePreviewTarget}
+                      onRegisterShareExport={(controls) =>
+                        (postStudioShareExport = controls)}
+                      sharing={share.panelOpen}
                     />
                   {/if}
                 {/snippet}
@@ -1451,9 +1600,23 @@
                       <ViewerSharePanel
                         subject={shareSubject}
                         downloadLabel={shareDownloadLabel}
+                        downloadText={shareDownload.text}
+                        downloadIcon={shareDownload.icon}
                         linkCopied={share.linkCopied}
                         onCopyLink={() => void share.copyShareLink()}
-                        onDownload={share.downloadCurrentView}
+                        embedCopied={share.embedCopied}
+                        onCopyEmbed={() => void share.copyEmbedSnippet()}
+                        onDownload={() => void downloadFromShare()}
+                        downloadDetail={shareDownload.detail}
+                        downloadProgress={shareRendersDirectly &&
+                        interactions.videoBusy
+                          ? (interactions.videoProgress?.progress ?? 0)
+                          : null}
+                        downloadDisabled={shareRendersDirectly
+                          ? !ctx.canvasReady
+                          : sharesFilm &&
+                            (ctx.sceneTakeActive || ctx.isExporting)}
+                        detailAction={shareDownload.action}
                         onNativeShare={canShareNatively
                           ? share.shareLinkNatively
                           : undefined}
@@ -1630,20 +1793,24 @@
        the mandala's own worker render; from Tunnel it is the kaleidoscope bake
        (which already lands in the shared exporter's preview slot, so only the
        request differs); otherwise it is the sequence animation. -->
+  {#snippet postStudioSharePreview()}
+    <div
+      class="post-studio-share-target"
+      bind:this={postStudioSharePreviewTarget}
+    ></div>
+  {/snippet}
+
   <PostShareSheet
     isOpen={share.postSheetOpen}
     sequence={ctx.effectiveSequence ?? null}
     shareUrl={share.postSheetOpen ? share.getShareUrl() : ""}
     videoBlobUrl={artShareVideo.blobUrl}
     isExportingVideo={artShareVideo.exporting}
-    isRecordingScene={!share.artShare && ctx.isRecording3D}
     exportProgress={artShareVideo.progress}
     onRequestVideo={artShareVideo.request}
     onCancelVideo={artShareVideo.cancel}
     onPrepareFile={share.prepareFile}
     initialEntry={share.initialEntry}
-    preserveSession={share.preserveSession}
-    onSessionResumed={share.markSessionResumed}
     videoLabel={artShareVideo.label}
     captureAnimationPreview={share.artShare
       ? share.artShare.capturePreview
@@ -1653,14 +1820,14 @@
     captureVideoOpener={ordinaryAnimationShare
       ? ctx.captureVideoOpener
       : undefined}
-    onOpenVideoExport={ordinaryAnimationShare
-      ? openVideoExportFromShare
+    onOpenVideoExport={!share.artShare && !share.postShare
+      ? openVideoDownloadFromSheet
       : undefined}
+    liveVideoPreview={share.postShare ? postStudioSharePreview : undefined}
+    videoSettingsAvailable={!share.postShare}
     is3DExport={ctx.renderMode === "3d"}
-    videoSourceKey={`${ctx.effectiveSequence?.id ?? ctx.effectiveSequence?.word ?? "unsaved"}:${share.getShareUrl()}:${viewerVideoSourceIdentity(share.videoSourceKind, share.postShare ? postStudioVideoUrl : null)}:${ctx.renderMode}`}
-    initialArtifact={share.artShare ||
-    share.sceneShare ||
-    (share.postShare && !!postStudioVideoUrl)
+    videoSourceKey={`${ctx.effectiveSequence?.id ?? ctx.effectiveSequence?.word ?? "unsaved"}:${share.getShareUrl()}:${viewerVideoSourceIdentity(share.videoSourceKind, null)}:${ctx.renderMode}`}
+    initialArtifact={share.artShare || share.postShare
       ? "video"
       : ctx.viewerState.viewerMode === "card"
         ? "card"
@@ -1683,6 +1850,12 @@
 </div>
 
 <style>
+  .post-studio-share-target {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+  }
   .shared-inspector-parking {
     display: none;
   }
@@ -2236,6 +2409,22 @@
   .viewer-and-export {
     --performance-inspector-height: min(46vh, 30rem);
     --share-inspector-height: min(54vh, 34rem);
+  }
+
+  /* Post Studio stacks share only on a phone-width body. Its stage is a 9:16
+     frame between the studio's action bar and transport, so the general dock
+     height left a 1x2px preview on a 375x667 phone. This height keeps the
+     panel's actions in view and scrolls its list; the frame keeps the rest. */
+  .viewer-and-export.studio-stage {
+    --share-inspector-height: min(34dvh, 22rem);
+  }
+
+  @media (min-height: 34.0625rem) {
+    .viewer-and-export.studio-stage:not(.desktop)
+      .share-layer
+      > .share-layer-content {
+      min-height: 12rem;
+    }
   }
 
   @media (max-height: 34rem) {

@@ -35,3 +35,23 @@ but does not choose the stopping foot or invent either swing.
 The build duplicates the first stable double-contact pose for 12 frames after
 source frame 50. Root distance remains fixed and both contacts remain declared,
 giving the runtime planter a motionless window to finish its anchor blend.
+
+## Build rules the runtime depends on
+
+`build-terminal-stops.py` keys each bone against its parent's pose on the same
+frame. Assigning `PoseBone.matrix` instead converts against the parent's last
+evaluated pose, which keyed every leg relative to a pelvis already standing at
+the end of the clip: the legs trailed the body and the terminal foot kicked up
+behind it.
+
+`LocomotionAnimator` drops every Hips rotation track, so the build keeps the
+pelvis at its rest orientation and folds the capture's 10 to 13 degree braking
+pitch into the pelvis's children. Left on the stripped track, that pitch swung
+both legs back behind the settled body.
+
+Contact ramps sit inside the planted span. FootPlanter pins the toe on the
+first frame that reaches 0.6, so an entry ramp written ahead of touchdown
+pinned a foot that was still 9 cm up and 21 cm short of where it landed.
+
+`tests/unit/3d/terminal-stop-clips.test.ts` plays the built clips the way the
+runtime does and checks each of these.

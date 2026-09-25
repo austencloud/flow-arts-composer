@@ -16,6 +16,10 @@ export interface SequenceRouteMeta {
   catalogId: string | null;
   deckName: string | null;
   deckNumber: number | null;
+  /** Per-step TKA letters, in sequence order, for the crawlable letter list
+   *  on a curated card page. Absent/empty when the source record carries no
+   *  per-step letters (decoded/inline sequences never do). */
+  letters: string[] | null;
 }
 
 export interface SequenceSeoDocument {
