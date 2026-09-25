@@ -169,10 +169,11 @@
     saveMenuHost?.openContextMenu(event.clientX, event.clientY);
   }
 
+  // A new src resets the rate to the default, so the default carries it too.
   $effect(() => {
-    if (video && video.playbackRate !== playbackRate) {
-      video.playbackRate = playbackRate;
-    }
+    if (!video) return;
+    video.defaultPlaybackRate = playbackRate;
+    if (video.playbackRate !== playbackRate) video.playbackRate = playbackRate;
   });
 
   $effect(() => {

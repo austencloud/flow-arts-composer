@@ -116,19 +116,21 @@ export class PostAnimationOverlayPainter implements PostStudioLayerPainter {
     const sequenceFrame = frame.sequenceFrame;
     if (!sequenceFrame) return;
 
-    // The painted region is square in every preset the animation panel is
-    // used in today; min() keeps every draw call inside the rect even if a
-    // future region isn't, matching how AnimatorCanvas centers its own
-    // square canvas-wrapper.
+    // The animation is a square fitted inside its region and centred, as
+    // AnimatorCanvas centres its canvas-wrapper and the compositor draws the
+    // canvas "contain". The split's region is wider than tall, so the labels
+    // sit on that square, not the region's corner.
     const canvasSize = Math.min(rect.width, rect.height);
     if (canvasSize <= 0) return;
+    const squareX = rect.x + (rect.width - canvasSize) / 2;
+    const squareY = rect.y + (rect.height - canvasSize) / 2;
 
     // Cast is safe: every draw call below uses only the 2D context methods
     // both CanvasRenderingContext2D and OffscreenCanvasRenderingContext2D
     // implement, which is exactly what canvas-renderer.ts's helpers expect.
     const ctx = context as CanvasRenderingContext2D;
     ctx.save();
-    ctx.translate(rect.x, rect.y);
+    ctx.translate(squareX, squareY);
 
     const { stepIndex, beatNumber } = resolveOverlayStep(sequenceFrame);
     renderStepNumberToCanvas(ctx, canvasSize, beatNumber, 1, IS_DARK_MODE);

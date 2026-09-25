@@ -59,13 +59,33 @@
     builder.seek(start + caption.startSeconds + 0.05);
   }
 
+  /**
+   * The field shows what was kept: a time clamped into the act, or the old
+   * value when the text was not a time, rather than what was typed.
+   */
+  function showStored(
+    input: HTMLInputElement,
+    captionId: string,
+    read: (caption: Caption) => string
+  ): void {
+    const stored = builder.plan.captions.find(
+      (candidate) => candidate.id === captionId
+    );
+    if (stored) input.value = read(stored);
+  }
+
   function setTime(
     caption: Caption,
     edge: "start" | "end",
-    text: string
+    input: HTMLInputElement
   ): void {
-    const seconds = parseClock(text);
-    if (seconds === null) return;
+    const seconds = parseClock(input.value);
+    const read = (stored: Caption) =>
+      formatPostClock(edge === "start" ? stored.startSeconds : stored.endSeconds);
+    if (seconds === null) {
+      showStored(input, caption.id, read);
+      return;
+    }
     const length = actLength(caption.actId);
     builder.updateCaption(caption.id, (current) => {
       if (edge === "start") {
@@ -78,6 +98,7 @@
       );
       return { ...current, endSeconds: end };
     });
+    showStored(input, caption.id, read);
   }
 
   function focusOnMount(node: HTMLInputElement, id: string) {
@@ -134,11 +155,13 @@
               aria-label="Caption text"
               use:focusOnMount={caption.id}
               onchange={(event) => {
-                const text = event.currentTarget.value;
+                const input = event.currentTarget;
+                const text = input.value;
                 builder.updateCaption(caption.id, (current) => ({
                   ...current,
                   text,
                 }));
+                showStored(input, caption.id, (stored) => stored.text);
               }}
             />
             <button
@@ -162,7 +185,7 @@
                 inputmode="decimal"
                 aria-label="Caption starts, seconds into the act"
                 onchange={(event) =>
-                  setTime(caption, "start", event.currentTarget.value)}
+                  setTime(caption, "start", event.currentTarget)}
               />
             </label>
             <label class="time">
@@ -173,7 +196,7 @@
                 inputmode="decimal"
                 aria-label="Caption ends, seconds into the act"
                 onchange={(event) =>
-                  setTime(caption, "end", event.currentTarget.value)}
+                  setTime(caption, "end", event.currentTarget)}
               />
             </label>
           </div>

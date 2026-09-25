@@ -48,7 +48,6 @@ export function mandalaPrefixFraction(
   const total = sampleCounts.reduce((sum, count) => sum + count, 0);
   if (total <= 0) return 0;
   if (frame.phase === "opening") return 0;
-  if (frame.phase === "holding") return 1;
 
   const index = frame.move - 1;
   if (index < 0 || index >= sampleCounts.length) return 0;

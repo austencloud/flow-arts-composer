@@ -14,6 +14,8 @@ export interface BuildPostAudioTrackInput {
    *  not a failure. */
   takeUrls: ReadonlyMap<string, string>;
   sampleRate?: number;
+  /** Cancelling the render stops the downloads rather than waiting on them. */
+  signal?: AbortSignal;
 }
 
 const DEFAULT_SAMPLE_RATE = 48_000;
@@ -46,10 +48,11 @@ export async function buildPostAudioTrack(
     neededTakeIds.map(async (takeId) => {
       const url = input.takeUrls.get(takeId);
       if (!url) return;
-      const source = await decodeTakeAudio(takeId, url);
+      const source = await decodeTakeAudio(takeId, url, input.signal);
       if (source) sources.set(takeId, source);
     })
   );
+  if (input.signal?.aborted) return null;
 
   const mixed = mixPostAudio({
     segments,
@@ -67,10 +70,11 @@ export async function buildPostAudioTrack(
  *  whole export over one bad take. */
 async function decodeTakeAudio(
   takeId: string,
-  url: string
+  url: string,
+  signal?: AbortSignal
 ): Promise<PostAudioSource | null> {
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, { signal });
     if (!response.ok) {
       throw new Error(`Fetch failed with status ${response.status}`);
     }
@@ -90,6 +94,7 @@ async function decodeTakeAudio(
     }
     return { sampleRate: audioBuffer.sampleRate, channels };
   } catch (error) {
+    if (signal?.aborted) return null;
     console.warn(
       `[post-audio-track] Take "${takeId}" audio could not be decoded; treating it as silent.`,
       error

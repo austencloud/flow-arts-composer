@@ -51,6 +51,7 @@
       <button
         type="button"
         class="tap"
+        data-space-plays
         onclick={session.tap}
         disabled={!session.url}
         aria-describedby="post-tap-help"
@@ -447,11 +448,19 @@
     font-size: 0.875rem;
     cursor: pointer;
   }
+  /* "Looks right" is the step's way out, so it stays in view while the
+     controls above it scroll. The wash is translucent on dark themes; the
+     blur keeps what scrolls under it from reading through. */
   .foot {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
-    padding-top: 0.75rem;
+    padding-block: 0.75rem;
     border-top: 1px solid var(--theme-stroke, #484755);
+    background: var(--theme-panel-bg, #12121c);
+    backdrop-filter: blur(12px);
   }
 </style>

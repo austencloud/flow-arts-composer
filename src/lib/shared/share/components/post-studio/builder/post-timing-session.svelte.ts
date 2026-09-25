@@ -136,8 +136,11 @@ export function createPostTimingSession(builder: PostBuilderState) {
     selected = null;
   });
 
+  // Loading another take resets the rate to the default, so both carry it.
   $effect(() => {
-    if (video) video.playbackRate = Number(speed);
+    if (!video) return;
+    video.defaultPlaybackRate = Number(speed);
+    video.playbackRate = Number(speed);
   });
 
   // Follow the video while it plays; a paused one moves only by seek.
@@ -299,7 +302,7 @@ export function createPostTimingSession(builder: PostBuilderState) {
     if (!takeId || !section) return;
     const id = section.id;
     builder.editTiming(takeId, (current) =>
-      mergeTimingSectionIntoPrevious(current, id, Date.now())
+      mergeTimingSectionIntoPrevious(current, id, Date.now(), moveBeats)
     );
   }
 
@@ -336,11 +339,19 @@ export function createPostTimingSession(builder: PostBuilderState) {
     if (isTyping(event.target)) return;
     if (event.key === "t" || event.key === "T") {
       event.preventDefault();
-      tap();
+      // A held key repeats; one press is one landing.
+      if (!event.repeat) tap();
     } else if (event.key === " ") {
-      if (event.target instanceof HTMLButtonElement) return;
+      // Space presses a focused button - except Tap, which Austen clicks
+      // mid-take and would otherwise tap a second time.
+      if (
+        event.target instanceof HTMLButtonElement &&
+        !event.target.hasAttribute("data-space-plays")
+      ) {
+        return;
+      }
       event.preventDefault();
-      togglePlay();
+      if (!event.repeat) togglePlay();
     } else if (event.key === ",") {
       stepFrame(-1);
     } else if (event.key === ".") {

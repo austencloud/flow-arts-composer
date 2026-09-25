@@ -75,7 +75,8 @@
     onPropChange: (propType: PropType) => void;
     /** Sound a shared link asked for, applied once on open. */
     audioSeed: "takes" | "silent" | null;
-    onAudioChange: (audio: "takes" | "silent") => void;
+    /** `chosen` is false for the sound a saved plan opens with. */
+    onAudioChange: (audio: "takes" | "silent", chosen: boolean) => void;
     /** Hands the share sheet this workspace's render; returns the release. */
     registerExport: (controls: PostStudioShareExport) => () => void;
   }
@@ -155,8 +156,11 @@
     untrack(() => builder.attachCatalogTakes());
   });
 
+  let audioReported = false;
   $effect(() => {
-    onAudioChange(builder.plan.audio);
+    const audio = builder.plan.audio;
+    untrack(() => onAudioChange(audio, audioReported));
+    audioReported = true;
   });
 
   /**
@@ -309,6 +313,7 @@
   let exportError = $state("");
   let exportedUrl = $state<string | null>(null);
   let exportCancelled = false;
+  let exportAbort: AbortController | null = null;
   let lookOpen = $state(false);
 
   const exporting = $derived(exportProgress !== null);
@@ -342,6 +347,37 @@
     if (next === builder.step) return;
     if (builder.step === "timing") session.pause();
     builder.step = next;
+  }
+
+  // A control that moves to another step ("Map timing") leaves with its
+  // panel. Focus follows to the new panel instead of dropping to the page.
+  let panelElement = $state<HTMLElement | null>(null);
+  let shownStep: PostBuilderStep | null = null;
+  $effect(() => {
+    const step = builder.step;
+    const left = shownStep !== null && shownStep !== step;
+    shownStep = step;
+    if (!left || !panelElement) return;
+    const focused = document.activeElement;
+    if (!focused || focused === document.body) {
+      panelElement.focus({ preventScroll: true });
+    }
+  });
+
+  /** Space plays the post on every step but Timing, which has its own keys. */
+  function handleKey(event: KeyboardEvent): void {
+    if (showTimingStage || event.key !== " " || event.defaultPrevented) return;
+    if (event.ctrlKey || event.metaKey || event.altKey || event.repeat) return;
+    const target = event.target;
+    if (
+      target instanceof HTMLElement &&
+      (target.isContentEditable ||
+        target.closest("button, a, input, textarea, select, [role='slider']"))
+    ) {
+      return;
+    }
+    event.preventDefault();
+    builder.togglePlayback();
   }
 
   // The viewer shell shows the studio's own panel in its side inspector.
@@ -445,6 +481,7 @@
     const wasPlaying = builder.isPlaying;
     builder.pause();
     exportCancelled = false;
+    exportAbort = new AbortController();
     exportError = "";
     const totalFrames = Math.ceil(
       compiled.durationSeconds * compiled.preset.output.frameRate
@@ -462,6 +499,7 @@
         post: compiled,
         mode: builder.plan.audio,
         takeUrls,
+        signal: exportAbort.signal,
       });
       if (exportCancelled) return false;
       audioUrl = audio ? URL.createObjectURL(audio) : null;
@@ -502,6 +540,7 @@
 
   function cancelExport(): void {
     exportCancelled = true;
+    exportAbort?.abort();
   }
 
   const releaseExport = registerExport({
@@ -511,6 +550,7 @@
 
   onDestroy(() => {
     exportCancelled = true;
+    exportAbort?.abort();
     releaseExport();
     if (frameRequest !== null) cancelAnimationFrame(frameRequest);
     if (exportedUrl) URL.revokeObjectURL(exportedUrl);
@@ -518,8 +558,15 @@
   });
 </script>
 
+<svelte:window onkeydown={handleKey} />
+
+<!-- The studio owns its keys (Space plays, T taps), so the viewer's own
+     shortcuts skip it; tabindex keeps a click inside it from sending focus
+     back to the page. -->
 <section
   class="post-studio"
+  tabindex="-1"
+  data-keyboard-shortcuts-ignore
   data-external-inspector={!!externalInspector}
   data-sharing={sharing}
   aria-label={`Post Studio, ${sequenceName}`}
@@ -556,6 +603,8 @@
 
     <aside
       class="tools"
+      tabindex="-1"
+      data-keyboard-shortcuts-ignore
       class:external={!!externalInspector}
       use:reparentToInspector={externalInspector}
       inert={sharing || undefined}
@@ -589,7 +638,13 @@
         </ol>
       </nav>
 
-      <div class="panel">
+      <div
+        class="panel"
+        bind:this={panelElement}
+        tabindex="-1"
+        role="group"
+        aria-label={STEP_LABEL[builder.step]}
+      >
         {#if builder.step === "takes"}
           <PostTakesPanel
             {builder}
@@ -669,6 +724,11 @@
 />
 
 <style>
+  .post-studio:focus,
+  .tools:focus,
+  .panel:focus {
+    outline: none;
+  }
   .post-studio {
     container: post-studio / inline-size;
     width: 100%;

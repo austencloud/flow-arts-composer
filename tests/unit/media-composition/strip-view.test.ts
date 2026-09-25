@@ -58,12 +58,24 @@ describe("mandalaPrefixFraction", () => {
     );
   });
 
-  it("holds the whole path once the performer holds the last pose", () => {
+  it("holds the path walked so far once the performer holds the last pose", () => {
     const holding = sequenceFrameAt(1, DCK, { endArrival: 1 });
     expect(holding.phase).toBe("holding");
-    // Move/progress on a holding frame would otherwise look like a fresh
-    // move 1 in flight; holding must win regardless.
-    expect(mandalaPrefixFraction(sampleCounts, holding)).toBe(1);
+    // A take that stops after move 1 has walked move 1's share, not the pass.
+    expect(mandalaPrefixFraction(sampleCounts, holding)).toBeCloseTo(
+      64 / total,
+      10
+    );
+  });
+
+  it("holds a partial last pass at the move it stopped on", () => {
+    // Twelve moves of an eight-move sequence: the hold is move 4 of pass 2.
+    const holding = sequenceFrameAt(12, DCK, { endArrival: 12 });
+    expect(holding).toMatchObject({ phase: "holding", move: 4 });
+    expect(mandalaPrefixFraction(sampleCounts, holding)).toBeCloseTo(
+      (64 + 64 + 128 + 64) / total,
+      10
+    );
   });
 
   it("lands on the whole pass exactly at the last move's landing", () => {

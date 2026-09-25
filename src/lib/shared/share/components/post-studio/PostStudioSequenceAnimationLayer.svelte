@@ -61,6 +61,7 @@
             step: stepData,
             leftPropType,
             rightPropType,
+            labelsPainted,
           })),
     };
   }

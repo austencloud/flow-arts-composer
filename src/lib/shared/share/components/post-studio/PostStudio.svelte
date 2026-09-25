@@ -119,8 +119,8 @@
   let audio = $state<"takes" | "silent">(audioSeed ?? "takes");
   let audioTouched = $state(audioSeed !== null);
 
-  function setAudio(next: "takes" | "silent"): void {
-    if (next !== audio) audioTouched = true;
+  function setAudio(next: "takes" | "silent", chosen = true): void {
+    if (chosen && next !== audio) audioTouched = true;
     audio = next;
   }
 

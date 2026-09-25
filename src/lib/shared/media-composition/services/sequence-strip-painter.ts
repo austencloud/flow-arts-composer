@@ -49,6 +49,9 @@ interface PreparedCell {
  * Every raster a target size needs, cached together so a resize or an export
  * at a different resolution from the preview never mixes sizes.
  */
+/** Rendered sizes kept at once; see `prepareAtSize`. */
+const MAX_CACHED_SIZES = 3;
+
 interface SizeCache {
   /** Index 0 is the full start-position pictograph (grid, glyph, static
    * props - no arrows). Indices 1..N are move g's backdrop: grid, glyph,
@@ -226,6 +229,14 @@ class SequenceStripPainter implements PostStudioLayerPainter {
       }
     }
     this.sizeCaches.set(size, { under, arrows });
+    // A preview being resized asks for a new size on every frame. The newest
+    // few - the preview's and the render's - are the ones worth keeping.
+    for (const stale of [...this.sizeCaches.keys()].slice(
+      0,
+      -MAX_CACHED_SIZES
+    )) {
+      this.sizeCaches.delete(stale);
+    }
 
     if (this.mode !== "arrows" && !this.mandalaPaths) {
       this.mandalaPaths = this.prepareMandalaPaths();

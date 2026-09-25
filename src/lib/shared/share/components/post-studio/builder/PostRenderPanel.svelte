@@ -37,18 +37,24 @@
   const output = $derived(builder.compiled?.preset.output ?? null);
 
   const todo = $derived.by(() => {
-    const items: { text: string; step: "takes" | "timing" }[] = [];
+    const items: { key: string; text: string; step: "takes" | "timing" }[] =
+      [];
     if (builder.plan.takes.length === 0) {
-      items.push({ text: "Add a take", step: "takes" });
+      items.push({ key: "add", text: "Add a take", step: "takes" });
     }
     for (const take of builder.takesInUse) {
       if (!builder.mediaUrl(take.id)) {
-        items.push({ text: `Pick ${take.label} again`, step: "takes" });
+        items.push({
+          key: take.id,
+          text: `Pick ${take.label} again`,
+          step: "takes",
+        });
         continue;
       }
       const status = builder.timingStatus(take.id);
       if (status !== "confirmed") {
         items.push({
+          key: take.id,
           text:
             status === "untapped"
               ? `Map ${take.label}'s timing`
@@ -93,7 +99,7 @@
     <div class="group">
       <h3>Before you render</h3>
       <ul class="todo">
-        {#each todo as item (item.text)}
+        {#each todo as item (item.key)}
           <li>
             <button
               type="button"

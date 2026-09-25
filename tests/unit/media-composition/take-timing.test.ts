@@ -154,6 +154,34 @@ describe("resolveTakeTiming", () => {
     });
   });
 
+  it("sets aside a drag that its reset neighbour now crowds", () => {
+    // Landings 1 and 2 dragged half a move late, then the grid nudged a whole
+    // move early: landing 2 passes landing 3 and goes back on the grid, which
+    // puts it behind landing 1's drag - so that one goes back too, rather than
+    // leaving a move a millisecond long.
+    const taps = [1, 2, 3, 4, 5, 6, 7, 8].map((position) => 1 + SPB * position);
+    const section = resolveTakeTiming(
+      timing([
+        {
+          taps,
+          tempo: "locked",
+          offsetSeconds: -SPB,
+          overrides: [
+            { position: 1, seconds: 1 + SPB * 1.5 },
+            { position: 2, seconds: 1 + SPB * 2.5 },
+          ],
+        },
+      ]),
+      EIGHT
+    ).sections[0]!;
+    expect(section.droppedOverrides).toEqual([1, 2]);
+    section.landings.slice(1).forEach((entry, index) => {
+      expect(entry.seconds - section.landings[index]!.seconds).toBeGreaterThan(
+        MIN_MOVE_SECONDS
+      );
+    });
+  });
+
   it("stops a dragged landing a frame short of its neighbours", () => {
     const taps = [1, 2, 3, 4, 5, 6].map((position) => 1 + SPB * position);
     const section = timing([{ taps, tempo: "locked" }]).sections[0]!;
@@ -286,7 +314,7 @@ describe("timing sections", () => {
     expect(split.sections[1]!.startSeconds).toBe(10);
     expect(TakeTimingSchema.safeParse(split).success).toBe(true);
 
-    const merged = mergeTimingSectionIntoPrevious(split, "section-2", 6);
+    const merged = mergeTimingSectionIntoPrevious(split, "section-2", 6, EIGHT);
     expect(merged.sections).toHaveLength(1);
     expect(merged.sections[0]!.taps).toEqual(taps);
     expect(merged.sections[0]!.endSeconds).toBe(60);
@@ -313,6 +341,91 @@ describe("timing sections", () => {
     const resolved = resolveTakeTiming(split, EIGHT);
     expect(takePositionAt(resolved, 1 + SPB * 12)).toBeCloseTo(12, 3);
     expect(takePositionAt(resolved, 1 + SPB * 16)).toBeCloseTo(16, 3);
+  });
+
+  it("changes nothing on screen when it splits and keeps counting", () => {
+    const taps = Array.from({ length: 16 }, (_, index) => 1 + SPB * (index + 1));
+    const original = timing([{ taps, tempo: "locked", snap: "taps" }]);
+    const cut = 1 + SPB * 10.5;
+    const split = splitTimingSection(original, cut, "s2", 5, EIGHT, "continues");
+    expect(TakeTimingSchema.safeParse(split).success).toBe(true);
+    const before = resolveTakeTiming(original, EIGHT);
+    const after = resolveTakeTiming(split, EIGHT);
+    // Just short of the cut the left part is still moving, not frozen on its
+    // last tap waiting to jump.
+    expect(takePositionAt(after, cut - SPB * 0.25)).toBeCloseTo(10.25, 3);
+    for (let seconds = 0; seconds <= 20; seconds += 0.37) {
+      expect(takePositionAt(after, seconds)).toBeCloseTo(
+        takePositionAt(before, seconds)!,
+        3
+      );
+    }
+  });
+
+  it("carries a tempo and beat 1 with no taps across a split", () => {
+    const original = timing([
+      { startSeconds: 0, endSeconds: 30, bpm: 60, tempo: "locked", beatOneSeconds: 1 },
+    ]);
+    const split = splitTimingSection(original, 10, "s2", 5, EIGHT, "continues");
+    const before = resolveTakeTiming(original, EIGHT);
+    const after = resolveTakeTiming(split, EIGHT);
+    expect(after.sections[1]!.map).not.toBeNull();
+    expect(takePositionAt(after, 20)).toBeCloseTo(
+      takePositionAt(before, 20)!,
+      6
+    );
+  });
+
+  it("keeps the end where the performance stopped before a split", () => {
+    const taps = Array.from({ length: 12 }, (_, index) => 1 + SPB * (index + 1));
+    const original = timing([{ taps, tempo: "locked" }]);
+    const split = splitTimingSection(original, 20, "s2", 5, EIGHT, "continues");
+    const after = resolveTakeTiming(split, EIGHT);
+    expect(after.sections[0]!.endPosition).toBe(12);
+    expect(takePositionAt(after, 15)).toBeCloseTo(12, 6);
+    expect(takePositionAt(after, 25)).toBeCloseTo(12, 6);
+  });
+
+  it("joins a restarted part back without two drags on one landing", () => {
+    const fast = Array.from({ length: 16 }, (_, index) => 1 + SPB * (index + 1));
+    const later = Array.from({ length: 8 }, (_, index) => 14 + SPB * (index + 1));
+    const original = timing([{ taps: [...fast, ...later], tempo: "locked" }]);
+    const split = splitTimingSection(original, 13.5, "later", 5, EIGHT, "restarts");
+    // Landing 2 dragged on each side, and an end on the later part.
+    const dragged = editTimingSection(
+      editTimingSection(
+        split,
+        "section-1",
+        (section) => setLandingAt(section, EIGHT, 2, 1 + SPB * 2 + 0.05),
+        6
+      ),
+      "later",
+      (section) => ({
+        ...setLandingAt(section, EIGHT, 2, 14 + SPB * 2 + 0.05),
+        lastPosition: 8,
+      }),
+      7
+    );
+    expect(dragged.sections.map((section) => section.overrides.length)).toEqual([
+      1, 1,
+    ]);
+    const merged = mergeTimingSectionIntoPrevious(dragged, "later", 8, EIGHT);
+    expect(TakeTimingSchema.safeParse(merged).success).toBe(true);
+    const [section] = merged.sections;
+    const positions = section!.overrides.map((override) => override.position);
+    expect(new Set(positions).size).toBe(positions.length);
+    // The later part's landing 2 and end take the joined count at the same
+    // moments: it restarted after landing 18 of the joined count.
+    const resolved = resolveTakeTiming(merged, EIGHT);
+    const laterDrag = section!.overrides.find(
+      (override) => Math.abs(override.seconds - (14 + SPB * 2 + 0.05)) < 1e-9
+    );
+    expect(laterDrag).toBeDefined();
+    expect(takePositionAt(resolved, laterDrag!.seconds)).toBeCloseTo(
+      laterDrag!.position,
+      6
+    );
+    expect(section!.lastPosition).toBe(laterDrag!.position + 6);
   });
 
   it("starts over at move 1 where an edited video replays slowly", () => {
@@ -385,14 +498,44 @@ describe("takeTimingFromLegacyMarks", () => {
       now: 1,
     })!;
     const section = resolveTakeTiming(legacy, EIGHT).sections[0]!;
+    // With no end mark the old map closed one typical move after the last
+    // mark, so that landing is kept as move 9.
     expect(section.fit!.labels.map((label) => label.position)).toEqual([
-      1, 2, 3, 4, 5, 6, 7, 8,
+      1, 2, 3, 4, 5, 6, 7, 8, 9,
     ]);
-    expect(section.endPosition).toBe(8);
+    expect(section.endPosition).toBe(9);
     expect(section.droppedOverrides).toEqual([]);
     const resolved = resolveTakeTiming(legacy, EIGHT);
     expect(takePositionAt(resolved, 1.6)).toBeCloseTo(0.5, 3);
-    expect(takePositionAt(resolved, 11)).toBeCloseTo(8, 6);
+    expect(takePositionAt(resolved, 11)).toBeCloseTo(9, 6);
+  });
+
+  it("keeps the last move of a map saved without an end mark", () => {
+    // Eight moves, one a second, and no end mark: the old map closed on a
+    // landing one median move after the last mark.
+    const legacy = takeTimingFromLegacyMarks({
+      sequenceId: "dck",
+      takeKey: "k",
+      durationSeconds: 10,
+      marks: [0, 1, 2, 3, 4, 5, 6, 7],
+      now: 1,
+    })!;
+    const resolved = resolveTakeTiming(legacy, EIGHT);
+    expect(resolved.sections[0]!.endPosition).toBe(8);
+    expect(takePositionAt(resolved, 7.5)).toBeCloseTo(7.5, 6);
+    expect(takePositionAt(resolved, 9)).toBeCloseTo(8, 6);
+  });
+
+  it("closes a map no later than the end of its file", () => {
+    const legacy = takeTimingFromLegacyMarks({
+      sequenceId: "dck",
+      takeKey: "k",
+      durationSeconds: 7.4,
+      marks: [0, 1, 2, 3, 4, 5, 6, 7],
+      now: 1,
+    })!;
+    const resolved = resolveTakeTiming(legacy, EIGHT);
+    expect(takePositionAt(resolved, 7.4)).toBeCloseTo(8, 6);
   });
 
   it("returns null for marks that cannot make a map", () => {
@@ -433,6 +576,19 @@ describe("where a performance ends", () => {
     const resolved = resolveTakeTiming(timing([extended]), EIGHT);
     expect(takePositionAt(resolved, 1 + SPB * 18)).toBeCloseTo(18, 3);
     expect(takePositionAt(resolved, 50)).toBeCloseTo(20, 6);
+  });
+
+  it("ends on the landing drawn where Austen stops, dragged or not", () => {
+    const section = timing([{ taps, tempo: "locked" }]).sections[0]!;
+    // Landing 2 dragged most of a move late, still short of landing 3.
+    const late = 1 + SPB * 2.9;
+    const dragged = setLandingAt(section, EIGHT, 2, late);
+    expect(dragged.overrides).toEqual([{ position: 2, seconds: late }]);
+    expect(setPerformanceEndAt(dragged, EIGHT, late).lastPosition).toBe(2);
+    // Past the last tapped landing the grid carries on.
+    expect(
+      setPerformanceEndAt(dragged, EIGHT, 1 + SPB * 14.1).lastPosition
+    ).toBe(14);
   });
 
   it("rounds a last tap just short of the pass end up to it", () => {

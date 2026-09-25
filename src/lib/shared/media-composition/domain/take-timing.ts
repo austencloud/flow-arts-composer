@@ -83,6 +83,12 @@ export const TimingSectionSchema = z
      * landing and an untapped one (tempo and beat 1 only) runs to its end.
      */
     lastPosition: z.number().int().nonnegative().optional(),
+    /**
+     * Set on the left of a "keep counting" split: the performance carries on
+     * through this part's end into the next, so with no end set the part runs
+     * to its cut rather than stopping at its last tap.
+     */
+    continuesIntoNext: z.literal(true).optional(),
     /** Whole-grid nudge, seconds; the UI moves it a frame at a time. */
     offsetSeconds: z.number().finite(),
     /**
@@ -195,7 +201,9 @@ export type SplitContinuity = "continues" | "restarts";
 /**
  * Splits the section that contains `atSeconds` in two. Taps and overrides
  * stay with the side they fall on; the right-hand side keeps the tempo,
- * snap and nudge.
+ * snap and nudge. A split that keeps counting changes nothing on screen until
+ * one side is edited: the left runs up to the cut, and a right-hand side with
+ * no taps of its own carries on along the grid it was cut from.
  */
 export function splitTimingSection(
   timing: TakeTiming,
@@ -216,7 +224,11 @@ export function splitTimingSection(
   const continuedFrom = fit?.labels.find(
     (label) => label.seconds >= atSeconds && label.position !== null
   )?.position;
-  const { lastPosition: _leftEnd, ...leftBase } = section;
+  const {
+    lastPosition: _leftEnd,
+    continuesIntoNext: _leftCarries,
+    ...leftBase
+  } = section;
   const left: TimingSection = {
     ...leftBase,
     endSeconds: atSeconds,
@@ -225,20 +237,8 @@ export function splitTimingSection(
       (override) => override.seconds < atSeconds
     ),
   };
-  // Restarting renumbers from the position the right-hand side would have
-  // continued at; with no tap to say where that is, carried positions mean
-  // nothing and are dropped.
-  const renumber =
-    continuity === "continues"
-      ? 0
-      : continuedFrom == null
-        ? null
-        : 1 - continuedFrom;
-  const carriedEnd =
-    section.lastPosition === undefined || renumber === null
-      ? undefined
-      : section.lastPosition + renumber;
-  const right: TimingSection = {
+  const rightTaps = section.taps.filter((tap) => tap >= atSeconds);
+  const rightBase: TimingSection = {
     ...createTimingSection({
       id: newId,
       startSeconds: atSeconds,
@@ -247,36 +247,130 @@ export function splitTimingSection(
     }),
     tempo: section.tempo,
     snap: section.snap,
-    taps: section.taps.filter((tap) => tap >= atSeconds),
-    firstTapPosition:
-      continuity === "restarts"
-        ? 1
-        : (continuedFrom ?? section.firstTapPosition),
+    taps: rightTaps,
     offsetSeconds: section.offsetSeconds,
-    ...(carriedEnd !== undefined && carriedEnd >= 0
-      ? { lastPosition: carriedEnd }
-      : {}),
-    overrides:
-      renumber === null
-        ? []
-        : section.overrides
-            .filter((override) => override.seconds >= atSeconds)
-            .map((override) => ({
-              ...override,
-              position: override.position + renumber,
-            }))
-            .filter((override) => override.position >= 0),
+    ...(section.continuesIntoNext ? { continuesIntoNext: true as const } : {}),
   };
+
+  let sides: [TimingSection, TimingSection];
+  if (continuity === "continues") {
+    // Where the performance ends before the split, so neither side moves it.
+    const resolved = sectionLandings(section, moveBeats);
+    const end = resolved?.endPosition ?? null;
+    const endLanding =
+      end === null
+        ? undefined
+        : resolved?.landings.find((landing) => landing.position === end);
+    const endedBeforeCut =
+      endLanding !== undefined && endLanding.seconds <= atSeconds;
+    const anchor =
+      rightTaps.length === 0 && !endedBeforeCut && resolved
+        ? resolved.fit
+        : null;
+    const rightEnd =
+      section.lastPosition ?? (anchor && end !== null ? end : undefined);
+    sides = [
+      endedBeforeCut && end !== null
+        ? { ...left, lastPosition: end }
+        : { ...left, continuesIntoNext: true },
+      {
+        ...rightBase,
+        firstTapPosition: continuedFrom ?? section.firstTapPosition,
+        ...(anchor
+          ? {
+              beatOneSeconds:
+                anchor.originSeconds +
+                anchor.secondsPerBeat *
+                  createBeatClock(moveBeats).beatsBefore(1),
+              bpm: Math.min(
+                TAKE_MAX_BPM,
+                Math.max(TAKE_MIN_BPM, 60 / anchor.secondsPerBeat)
+              ),
+            }
+          : {}),
+        ...(rightEnd !== undefined ? { lastPosition: rightEnd } : {}),
+        overrides: section.overrides.filter(
+          (override) => override.seconds >= atSeconds
+        ),
+      },
+    ];
+  } else {
+    // Restarting renumbers from the position the right-hand side would have
+    // continued at; with no tap to say where that is, carried positions mean
+    // nothing and are dropped.
+    const renumber = continuedFrom == null ? null : 1 - continuedFrom;
+    const carriedEnd =
+      section.lastPosition === undefined || renumber === null
+        ? undefined
+        : section.lastPosition + renumber;
+    sides = [
+      left,
+      {
+        ...rightBase,
+        firstTapPosition: 1,
+        ...(carriedEnd !== undefined && carriedEnd >= 0
+          ? { lastPosition: carriedEnd }
+          : {}),
+        overrides:
+          renumber === null
+            ? []
+            : section.overrides
+                .filter((override) => override.seconds >= atSeconds)
+                .map((override) => ({
+                  ...override,
+                  position: override.position + renumber,
+                }))
+                .filter((override) => override.position >= 0),
+      },
+    ];
+  }
   const sections = [...timing.sections];
-  sections.splice(index, 1, left, right);
+  sections.splice(index, 1, ...sides);
   return { ...timing, sections, updatedAt: now };
 }
 
-/** Joins a section into the one before it, keeping the earlier one's tempo. */
+/**
+ * How far a later part's count sits from the joined count: the joined fit's
+ * position at one of the part's own landings, less that landing's number.
+ * Null when either side has no grid to compare.
+ */
+function joinedCountShift(
+  joined: TimingSection,
+  part: TimingSection,
+  moveBeats: readonly number[]
+): number | null {
+  const own = sectionLandings(part, moveBeats);
+  const joinedFit = fitSection(joined, moveBeats);
+  if (!own || !joinedFit) return null;
+  const inside = own.landings.filter(
+    (landing) => landing.seconds >= part.startSeconds
+  );
+  const landing =
+    inside.find((candidate) => !candidate.pinned) ??
+    inside[0] ??
+    own.landings[own.landings.length - 1];
+  if (!landing) return null;
+  return (
+    landingNear(
+      joined,
+      joinedFit,
+      createBeatClock(moveBeats),
+      landing.seconds
+    ) - landing.position
+  );
+}
+
+/**
+ * Joins a section into the one before it, keeping the earlier one's tempo.
+ * The later part's dragged landings and end are moments on the footage, so
+ * they take the joined count at those moments; where the earlier part already
+ * dragged the same landing, the earlier drag stays.
+ */
 export function mergeTimingSectionIntoPrevious(
   timing: TakeTiming,
   sectionId: string,
-  now: number
+  now: number,
+  moveBeats: readonly number[]
 ): TakeTiming {
   const index = timing.sections.findIndex(
     (section) => section.id === sectionId
@@ -284,15 +378,44 @@ export function mergeTimingSectionIntoPrevious(
   if (index <= 0) return timing;
   const previous = timing.sections[index - 1]!;
   const section = timing.sections[index]!;
-  const { lastPosition: _previousEnd, ...previousBase } = previous;
-  const merged: TimingSection = {
+  const {
+    lastPosition: _previousEnd,
+    continuesIntoNext: _previousCarries,
+    ...previousBase
+  } = previous;
+  const joined: TimingSection = {
     ...previousBase,
     endSeconds: section.endSeconds,
     taps: [...previous.taps, ...section.taps],
-    overrides: [...previous.overrides, ...section.overrides],
-    ...(section.lastPosition !== undefined
-      ? { lastPosition: section.lastPosition }
-      : {}),
+    overrides: previous.overrides,
+    ...(section.continuesIntoNext ? { continuesIntoNext: true as const } : {}),
+  };
+  const shift = joinedCountShift(joined, section, moveBeats);
+  const taken = new Set(
+    previous.overrides.map((override) => override.position)
+  );
+  const carried =
+    shift === null
+      ? []
+      : section.overrides
+          .map((override) => ({
+            ...override,
+            position: override.position + shift,
+          }))
+          .filter(
+            (override) =>
+              override.position >= 0 && !taken.has(override.position)
+          );
+  const end =
+    shift === null || section.lastPosition === undefined
+      ? undefined
+      : section.lastPosition + shift;
+  const merged: TimingSection = {
+    ...joined,
+    overrides: [...previous.overrides, ...carried].sort(
+      (left, right) => left.position - right.position
+    ),
+    ...(end !== undefined && end >= 0 ? { lastPosition: end } : {}),
   };
   const sections = [...timing.sections];
   sections.splice(index - 1, 2, merged);
@@ -472,7 +595,7 @@ function sectionLandings(
     .filter((position): position is number => position !== null);
   const endPosition =
     section.lastPosition ??
-    (tapped && matchedPositions.length > 0
+    (tapped && !section.continuesIntoNext && matchedPositions.length > 0
       ? roundUpToPassEnd(
           Math.max(
             ...matchedPositions,
@@ -498,20 +621,28 @@ function sectionLandings(
   }
   // A dragged landing that no longer sits between its neighbours would make
   // the moves around it flash by; it goes back on the grid and is reported.
+  // Its grid spot can crowd a neighbour already checked, so this repeats
+  // until every drag left standing has room.
   const droppedOverrides: number[] = [];
-  landings.forEach((landing, index) => {
-    if (!landing.pinned) return;
-    const previous = landings[index - 1];
-    const next = landings[index + 1];
-    if (
-      (previous && landing.seconds < previous.seconds + MIN_MOVE_SECONDS) ||
-      (next && landing.seconds > next.seconds - MIN_MOVE_SECONDS)
-    ) {
-      landing.seconds = snappedAt(landing.position);
-      landing.pinned = false;
-      droppedOverrides.push(landing.position);
-    }
-  });
+  let settled = false;
+  while (!settled) {
+    settled = true;
+    landings.forEach((landing, index) => {
+      if (!landing.pinned) return;
+      const previous = landings[index - 1];
+      const next = landings[index + 1];
+      if (
+        (previous && landing.seconds < previous.seconds + MIN_MOVE_SECONDS) ||
+        (next && landing.seconds > next.seconds - MIN_MOVE_SECONDS)
+      ) {
+        landing.seconds = snappedAt(landing.position);
+        landing.pinned = false;
+        droppedOverrides.push(landing.position);
+        settled = false;
+      }
+    });
+  }
+  droppedOverrides.sort((left, right) => left - right);
   enforceIncreasing(landings);
 
   return {
@@ -804,7 +935,11 @@ export function moveBeatOne(
   );
 }
 
-/** Ends the performance at the landing nearest `seconds`. */
+/**
+ * Ends the performance at the landing nearest `seconds` as drawn - dragged and
+ * snapped to taps - so the end lands on the pose Austen sees there. Past the
+ * last drawn landing the grid carries on.
+ */
 export function setPerformanceEndAt(
   section: TimingSection,
   moveBeats: readonly number[],
@@ -813,10 +948,19 @@ export function setPerformanceEndAt(
   const fit = fitSection(section, moveBeats);
   if (!fit) return section;
   const clock = createBeatClock(moveBeats);
-  return {
-    ...section,
-    lastPosition: landingNear(section, fit, clock, seconds),
-  };
+  const { lastPosition: _end, ...open } = section;
+  const drawn = sectionLandings(open, moveBeats)?.landings ?? [];
+  const onGrid = landingNear(section, fit, clock, seconds);
+  const lastDrawn = drawn[drawn.length - 1];
+  const nearest =
+    lastDrawn && onGrid <= lastDrawn.position
+      ? drawn.reduce((best, landing) =>
+          Math.abs(landing.seconds - seconds) < Math.abs(best.seconds - seconds)
+            ? landing
+            : best
+        ).position
+      : onGrid;
+  return { ...section, lastPosition: Math.max(0, nearest) };
 }
 
 /**
@@ -872,6 +1016,16 @@ export function releaseLanding(
   };
 }
 
+/** The middle value, averaging the middle two; the legacy map's own rule. */
+function medianOf(values: readonly number[]): number | null {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((left, right) => left - right);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 1
+    ? sorted[middle]!
+    : (sorted[middle - 1]! + sorted[middle]!) / 2;
+}
+
 /**
  * Seeds a take timing from a legacy step map. Its marks are arrivals - mark 0
  * the opening pose, mark k move k's landing, the optional end mark the landing
@@ -892,17 +1046,31 @@ export function takeTimingFromLegacyMarks(input: {
   const marks = input.marks.filter(
     (mark) => Number.isFinite(mark) && mark >= 0
   );
-  if (
-    input.endMark !== undefined &&
-    Number.isFinite(input.endMark) &&
-    input.endMark > (marks[marks.length - 1] ?? Infinity)
-  ) {
-    marks.push(input.endMark);
-  }
-  if (marks.length < 2) return null;
+  if (marks.length === 0) return null;
   if (marks.some((mark, index) => index > 0 && mark <= marks[index - 1]!)) {
     return null;
   }
+  // The old maps always closed on one more landing: the end mark when Austen
+  // tapped one, otherwise a typical move after the last mark, never past the
+  // end of the file. Dropping it would lose the last move.
+  const lastMark = marks[marks.length - 1]!;
+  const markedEnd =
+    input.endMark !== undefined &&
+    Number.isFinite(input.endMark) &&
+    input.endMark > lastMark
+      ? input.endMark
+      : undefined;
+  // The opening pose alone says nothing about when anything lands.
+  if (marks.length < 2 && markedEnd === undefined) return null;
+  const closingEnd = Math.min(
+    input.durationSeconds,
+    markedEnd ??
+      lastMark +
+        (medianOf(marks.slice(1).map((mark, index) => mark - marks[index]!)) ??
+          input.durationSeconds - lastMark)
+  );
+  if (closingEnd > lastMark) marks.push(closingEnd);
+  if (marks.length < 2) return null;
   const intervals = marks.slice(1).map((mark, index) => mark - marks[index]!);
   const sorted = [...intervals].sort((left, right) => left - right);
   const medianInterval = sorted[Math.floor(sorted.length / 2)]!;

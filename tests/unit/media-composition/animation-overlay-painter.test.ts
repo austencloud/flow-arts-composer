@@ -61,6 +61,7 @@ function createFakeContext() {
     lineCap: "",
   } as unknown as CanvasRenderingContext2D & {
     save: ReturnType<typeof vi.fn>;
+    translate: ReturnType<typeof vi.fn>;
     fillText: ReturnType<typeof vi.fn>;
     fillRect: ReturnType<typeof vi.fn>;
     drawImage: ReturnType<typeof vi.fn>;
@@ -139,6 +140,21 @@ describe("PostAnimationOverlayPainter.paint", () => {
       expect.any(Number),
       expect.any(Number)
     );
+  });
+
+  it("draws on the animation's centred square in a region wider than tall", () => {
+    // The split's animation region is 1080 wide and 960 tall; its square is
+    // 960 on a side, 60 px in from the left.
+    const painter = new PostAnimationOverlayPainter(buildSequence());
+    const ctx = createFakeContext();
+
+    painter.paint(
+      ctx,
+      { x: 0, y: 960, width: 1080, height: 960 },
+      paintFrameFor(2.5)
+    );
+
+    expect(ctx.translate).toHaveBeenCalledWith(60, 960);
   });
 
   it("draws no glyph before prepare() resolves, per the painter interface's contract", () => {

@@ -296,7 +296,11 @@ export function createPostBuilderState(deps: PostBuilderDeps) {
     const existing = plan.takes.find((take) => take.takeKey === takeKey);
     const take: PostTake = existing ?? {
       id: nextTakeId(),
-      label: file.name.replace(/\.[^.]+$/, "") || "Take",
+      label:
+        file.name
+          .replace(/\.[^.]+$/, "")
+          .trim()
+          .slice(0, 120) || "Take",
       ref: {
         kind: "local",
         name: file.name,
@@ -325,7 +329,7 @@ export function createPostBuilderState(deps: PostBuilderDeps) {
     const existing = plan.takes.find((take) => take.takeKey === takeKey);
     const take: PostTake = existing ?? {
       id: nextTakeId(),
-      label: video.label.slice(0, 120) || "Take",
+      label: video.label.trim().slice(0, 120) || "Take",
       ref: { kind: "catalog", videoId: video.videoId },
       takeKey,
       durationSeconds: video.durationSeconds,
@@ -341,8 +345,12 @@ export function createPostBuilderState(deps: PostBuilderDeps) {
     if (held?.owned) URL.revokeObjectURL(held.url);
     const { [takeId]: _media, ...restMedia } = media;
     const { [takeId]: _timing, ...restTimings } = timings;
+    // A later take can be given this id, and must not undo into this one's
+    // timing.
+    const { [takeId]: _undo, ...restUndo } = undoStacks;
     media = restMedia;
     timings = restTimings;
+    undoStacks = restUndo;
     commitPlan(removeTakeFromPlan(plan, takeId, now()));
     if (selectedTakeId === takeId) selectedTakeId = plan.takes[0]?.id ?? null;
   }
@@ -436,7 +444,11 @@ export function createPostBuilderState(deps: PostBuilderDeps) {
       previewSeconds - act.startSeconds,
       length
     );
-    const id = `caption-${now().toString(36)}`;
+    const stamp = now().toString(36);
+    let id = `caption-${stamp}`;
+    for (let n = 2; plan.captions.some((caption) => caption.id === id); n += 1) {
+      id = `caption-${stamp}-${n}`;
+    }
     const caption: Caption = {
       id,
       actId: act.actId,
