@@ -774,6 +774,11 @@
     .inline .offset-option {
       flex-direction: column;
       gap: 4px;
+      white-space: nowrap;
+    }
+
+    .inline .offset-arrow {
+      font-size: 1.5rem;
     }
 
     .inline .rule-field:has(.offset-axis) .operations-axis {
