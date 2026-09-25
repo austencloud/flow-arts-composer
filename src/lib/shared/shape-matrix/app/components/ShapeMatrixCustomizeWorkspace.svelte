@@ -138,6 +138,7 @@
       <AnimationPanel
         isExporting={false}
         layout="sidebar"
+        fillPages
         controlledSection={section}
         onActiveSectionChange={selectSection}
         isPlaying={animationState.playing}
@@ -148,6 +149,7 @@
         onBpmChange={animationState.setBpm}
         showEffectsPlayback={false}
         selectedPropType={appState.addressedPropType}
+        sequence={theory ? null : animationState.previewSequence}
         onPropChange={(propType) => void appState.setPropType(propType)}
         handProps={appState.handProps}
         showPathShape={false}

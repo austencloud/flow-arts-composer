@@ -29,6 +29,7 @@
      both Animator modes. Tunnel-only appearance belongs to Formation. -->
 <EffectsPanel
   layout={dense ? "strip" : "sidebar"}
+  fill={!dense}
   showPlayback={false}
   {bpm}
   {onBpmChange}

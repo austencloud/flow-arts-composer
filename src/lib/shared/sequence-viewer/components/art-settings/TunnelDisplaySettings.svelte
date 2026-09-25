@@ -21,6 +21,7 @@
       {sequence}
       {propType}
       fill={!dense}
+      grow={!dense}
       onSettingChange={(group, setting, previousValue, value, options) =>
         reportArtSetting(
           onArtSettingChange,
