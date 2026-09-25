@@ -11,7 +11,6 @@
   import { registerLoopDisplayResolver } from "$lib/shared/loop-labeler/get-loop-display-resolver";
   import { resolveLoopDisplay } from "$lib/features/loop-labeler/services/loop-display-resolver";
   import { registerLibraryRepository } from "$lib/shared/composition-root/register-library-repository";
-  import { initializeAppServices } from "$lib/shared/application/state/services.svelte";
   import {
     configureShortCodeManager,
     getShortCodeManager,
@@ -91,8 +90,6 @@
     // silently disappear from the header. Registering is idempotent.
     registerLoopDetector(loopDetector);
     registerLoopDisplayResolver(resolveLoopDisplay);
-
-    initializeAppServices().catch(() => {});
 
     const checkMobile = () => {
       isMobile = window.innerWidth < 768;
