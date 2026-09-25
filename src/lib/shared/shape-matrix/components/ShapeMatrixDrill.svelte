@@ -78,12 +78,13 @@
   import type { ElementalType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
   import AnimationPanel from "$lib/shared/animation-panel/components/AnimationPanel.svelte";
   import type { HandPropToolbarProps } from "$lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
-  import type { ControlDockAction } from "$lib/shared/sequence-viewer/components/ControlDock.svelte";
   import { getShapeMatrixAnimationContext } from "../app/context/shape-matrix-animation-context";
   import { getOptionalShapeMatrixAppContext } from "../app/context/shape-matrix-app-context";
   import ShapeMatrixStageActions from "./ShapeMatrixStageActions.svelte";
   import { registerShapeMatrixPlaybackShortcut } from "../app/services/shape-matrix-playback-shortcut";
   import { foldTrailIntentIntoSettings } from "$lib/shared/effects/translators/canvas2d-translator";
+  import UnifiedTimeline from "$lib/shared/timeline/UnifiedTimeline.svelte";
+  import { createAnimatorPlaybackAdapter } from "$lib/shared/timeline/adapters/animator-playback-adapter.svelte";
 
   interface Props {
     /** Nullable: the drill renders its own "Pick a cell" state before any click. */
@@ -200,15 +201,12 @@
     registerShapeMatrixPlaybackShortcut(
       "matrix",
       () => animationState.togglePlaying(),
-      () => (!appState || appState.surface === "matrix") && Boolean(pair)
+      () =>
+        (!appState || appState.surface === "matrix") &&
+        Boolean(pair) &&
+        !document.activeElement?.closest("[data-shape-matrix-transport]")
     )
   );
-
-  const playbackAction = $derived<ControlDockAction>({
-    icon: animationState.playing ? "fa-pause" : "fa-play",
-    label: animationState.playing ? "Pause" : "Play",
-    onClick: animationState.togglePlaying,
-  });
 
   // Sticky across pair changes by design (spec: "Selection persistence").
   // Realizations are immutable payloads replaced as a unit. Raw state keeps
@@ -628,6 +626,20 @@
         ? secondStep
         : 0
   );
+  let firstSeek: ((step: number) => void) | null = null;
+  let secondSeek: ((step: number) => void) | null = null;
+  const playbackAdapter = createAnimatorPlaybackAdapter({
+    getCurrentStep: () => visibleStep,
+    getSteps: () => captionRealization?.seq.steps ?? [],
+    getIsPlaying: () => animationState.playing,
+    onSeek: (step) =>
+      (visibleSource === "first" ? firstSeek : secondSeek)?.(step),
+    onTogglePlay: animationState.togglePlaying,
+    getBpm: () => animationState.bpm,
+    onBpmChange: animationState.setBpm,
+    getPlaybackMode: () => animationState.playbackMode,
+    onPlaybackModeChange: animationState.setPlaybackMode,
+  });
   function pictographArrowsApproved(flower: Flower): boolean {
     return flower.turns === "fl" || Number.isInteger(flower.turns * 2);
   }
@@ -920,6 +932,10 @@
 
   function createPlayerCallbacks(source: PlayerSource) {
     return {
+      onSeekRef: (seek: ((step: number) => void) | null) => {
+        if (source === "first") firstSeek = seek;
+        else secondSeek = seek;
+      },
       onReady: () => {
         const layer = getLayer(source);
         if (!layer) return;
@@ -1193,6 +1209,7 @@
             onReady: playerCallbacks[source].onReady,
             onCanvasInitialized: playerCallbacks[source].onCanvasInitialized,
             onStepChange: playerCallbacks[source].onStepChange,
+            onSeekRef: playerCallbacks[source].onSeekRef,
             // A handoff briefly runs two canvases. Start both at the existing
             // low tier so glow and dense subdivision work cannot block input.
             initialQualityTier: QualityTier.LOW,
@@ -1315,6 +1332,14 @@
             second={secondPlayer}
             onsettled={finishCrossfade}
           />
+          {#if livePlayerShowsPair}
+            <div class="canvas-transport" data-shape-matrix-transport>
+              <UnifiedTimeline
+                playback={playbackAdapter}
+                compact={appState?.compact ?? false}
+              />
+            </div>
+          {/if}
           {#if playerLoadFailure}
             <div class="player-load-notice" role="alert">
               <p>Animation didn’t load.</p>
@@ -1414,8 +1439,8 @@
         bpm={animationState.bpm}
         playbackMode={animationState.playbackMode}
         onPlaybackToggle={animationState.togglePlaying}
-        onPlaybackModeChange={animationState.setPlaybackMode}
         onBpmChange={animationState.setBpm}
+        showTempoControls={false}
         showEffectsPlayback={false}
         selectedPropType={selectedPropType ?? data.props.left}
         onPropChange={onproptypechange}
@@ -1423,7 +1448,6 @@
         onPropPickerRequest={onproppickertoggle}
         propPickerActive={propPickerOpen}
         sequence={captionRealization?.seq ?? null}
-        dockTrailingAction={playbackAction}
         showPathShape={false}
         showMotionVisibility={true}
         onActiveSectionChange={animationState.setActiveSection}
@@ -1606,6 +1630,14 @@
     height: 100%;
     min-width: 0;
     min-height: 0;
+  }
+
+  .canvas-transport {
+    position: absolute;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    z-index: 5;
+    width: min(70rem, calc(100% - 1.5rem));
   }
 
   /* Ghost-sizer: the live header and a hidden one-letter header share one

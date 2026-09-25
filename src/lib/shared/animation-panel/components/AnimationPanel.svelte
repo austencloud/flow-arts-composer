@@ -1513,16 +1513,22 @@
        which is what keeps a 315px rail from scrolling. Both come back with the
        second column, where the room exists. Effort alone on the page keeps
        them: it is the whole page, and the descriptions are what it teaches. */
-    .motion-stack:not(.effort-only) :global(.effort-sub) {
+    .motion-scope:not(.fills)
+      .motion-stack:not(.effort-only)
+      :global(.effort-sub) {
       display: none;
     }
 
-    .motion-stack:not(.effort-only) :global(.effort-btn.with-sub) {
+    .motion-scope:not(.fills)
+      .motion-stack:not(.effort-only)
+      :global(.effort-btn.with-sub) {
       padding: 8px 4px;
       min-height: 72px;
     }
 
-    .motion-stack:not(.effort-only) :global(.effort-grid) {
+    .motion-scope:not(.fills)
+      .motion-stack:not(.effort-only)
+      :global(.effort-grid) {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
@@ -1744,14 +1750,14 @@
     min-width: 0;
   }
   /* The dock keeps the actual curves while its tray owns scrolling. */
-  .dock-dense :global(.effort-btn) {
+  .dock-dense:not(.fill) :global(.effort-btn) {
     min-height: 72px;
     padding: 6px 4px;
   }
-  .dock-dense :global(.effort-grid) {
+  .dock-dense:not(.fill) :global(.effort-grid) {
     gap: 4px;
   }
-  .dock-dense :global(.effort-curve) {
+  .dock-dense:not(.fill) :global(.effort-curve) {
     height: 22px;
   }
   /* PathShapePanel */
