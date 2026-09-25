@@ -137,6 +137,24 @@
       })();
     </script>
 
+    <!-- Capture the PWA install prompt before MobileFullscreenManager exists.
+         Chrome fires beforeinstallprompt early in page load, but the manager
+         is only created lazily when the first caller reaches for it (root
+         layout defers that to requestIdleCallback). Any event that fires
+         before the manager exists would otherwise be lost, leaving
+         canInstallPWA() false even though Chrome offers an install. -->
+    <script>
+      (function () {
+        window.addEventListener("beforeinstallprompt", function (e) {
+          e.preventDefault();
+          window.__tkaInstallPrompt = e;
+        });
+        window.addEventListener("appinstalled", function () {
+          window.__tkaInstallPrompt = null;
+        });
+      })();
+    </script>
+
     <!-- tka-root-app-only:start -->
     <!-- 🚀 Preconnect to external origins for faster requests (app mode only) -->
     <!-- Landing visitors don't need Firebase/Google APIs - skip these to save ~500ms -->
@@ -282,7 +300,7 @@
       name="apple-mobile-web-app-status-bar-style"
       content="black-translucent"
     />
-    <meta name="apple-mobile-web-app-title" content="Flow Arts Composer" />
+    <meta name="apple-mobile-web-app-title" content="FA Composer" />
     <!-- Smart App Banner: prompts iOS users to open/install native app.
          Uncomment after Apple Developer enrollment assigns an App Store ID. -->
     <!-- <meta name="apple-itunes-app" content="app-id=XXXXXXXXXX"> -->
