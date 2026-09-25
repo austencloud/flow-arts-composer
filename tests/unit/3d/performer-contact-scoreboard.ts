@@ -9,11 +9,13 @@
  * to avoid clipping) passed unnoticed. See
  * `docs/architecture/performer-contact-review.md`.
  *
- * The per-frame order mirrors `Avatar3D`'s legacy path: props and blend, stance
- * yaw, finger grips, animator update, then the render contact lock, which
- * slides the staff at most `CONTACT_LOCK_MAX_M` toward the palm without
- * rotating it. Idle and walking animation, foot planting and root motion are
- * off, and the tempo is one step per second.
+ * The per-frame order mirrors `Avatar3D`'s legacy path as the wired hosts
+ * drive it: hard-beat displacement of the props (the same track, sample and
+ * `displaceProp` the renderers use, with the animator's legacy pair split off),
+ * props and blend, stance yaw, finger grips, animator update, then the render
+ * contact lock, which slides the staff at most `CONTACT_LOCK_MAX_M` toward the
+ * palm without rotating it. Idle and walking animation, foot planting and root
+ * motion are off, and the tempo is one step per second.
  *
  * Gaps are measured from the palm to the staff's centre line, so the visible
  * gap is roughly a staff radius smaller.
@@ -46,6 +48,13 @@ import {
   buildStanceYawTrackForSource,
   resolveTrackedUpperBodyStance,
 } from "$lib/shared/3d/collision/stance-yaw-track";
+import {
+  buildHardBeatTrack,
+  displaceProp,
+  sampleHardBeatTrack,
+  type DisplacedBeat,
+  type HardBeatTrackOptions,
+} from "$lib/shared/3d/collision/hard-beat-displacement";
 import { propContinuityCorpus } from "../../tools/prop-continuity-corpus";
 import { avatar, loadRig } from "./locomotion-harness";
 
@@ -63,6 +72,14 @@ const WARMUP_FRAMES = 60;
 const STAFF_HORIZONTAL = new Quaternion(0, 0, Math.SQRT1_2, Math.SQRT1_2);
 const STAFF_HALF_LENGTH_M = DEFAULT_SCENE_DIMENSIONS.staffLength / 2;
 const STAFF_RADIUS_M = 0.012;
+/** Displacements below this are not reported, as in the planner. */
+const DISPLACED_EPS_M = 0.001;
+/** `ElbowPoleComputer.computePairRouting`: shoulder half-width, the crossing
+ *  at which the elbows start routing over/under, and the height dead zone
+ *  inside which the left hand is over. */
+const ROUTING_SHOULDER_HALF_WIDTH_M = 0.2;
+const ROUTING_CROSS_ENGAGE = 0.25;
+const ROUTING_HEIGHT_DEAD_ZONE_M = 0.04;
 
 const STAFF_ZONES: CollisionEvent["zone"][] = [
   "prop-through-head",
@@ -84,6 +101,79 @@ export interface SequenceScore {
   gapOver3cm: number;
   staffThroughBody: number;
   authoredStaffThroughBody: number;
+  displacedStaffThroughBody: number;
+}
+
+/** One planner report entry, with what the render lock still did on top. */
+export interface ScoreboardDisplacedBeat extends DisplacedBeat {
+  sequence: string;
+  /** Largest lock translation on this beat, from the displaced staff. */
+  lockMaxM: number;
+  /** Largest part of that lock outside the staff's radial/depth plane: the
+   *  angular drift the lock still adds. */
+  lockTangentialMaxM: number;
+}
+
+/** Where the lock may move a staff: anywhere (the legacy lock), or only along
+ *  its radial line and in depth, like the planner. */
+export type ContactLockMode = "free" | "radial-depth";
+
+/** Forearm contacts under 4 cm, grouped by beat. */
+export interface ForearmCluster {
+  sequence: string;
+  step: number;
+  frames: number;
+  minM: number;
+  /** Of those frames, how many had a lane whose downstage hand is not the
+   *  hand elbow routing puts over. */
+  routingLaneMismatchFrames: number;
+  /** Mean over the frames with a lane: how far the downstage staff is
+   *  planned in front of the other (lane plus corridor), and how far the
+   *  downstage palm actually ends up in front of the other palm. */
+  laneTargetSeparationM: number | null;
+  laneRealizedSeparationM: number | null;
+}
+
+/** Whether the depth lanes reach the hands, over pair-frames with a lane. */
+export interface LaneRealization {
+  frames: number;
+  /** Mean planned depth separation of the staffs (lane plus corridor). */
+  targetSeparationMeanM: number;
+  /** Mean depth separation the palms actually reach. */
+  realizedSeparationMeanM: number;
+  /** Frames where the palms reach less than half the planned separation. */
+  underHalfFrames: number;
+}
+
+/** The largest rendered moves, per hand-frame, measured in the grid frame
+ *  from where the score puts each staff. */
+export interface RenderedMoves {
+  radialInMaxM: number;
+  radialOutMaxM: number;
+  depthMaxAbsM: number;
+  /** The part of a displacement that is neither radial nor depth. */
+  offPlaneMaxM: number;
+  /** The render lock on top, and its part that is neither radial nor depth. */
+  lockMaxM: number;
+  lockOffPlaneMaxM: number;
+}
+
+/** One measured frame, for diagnostic probes. Grid-frame positions are
+ *  relative to each hand's grid centre; the body is in the rig's frame. */
+export interface ScoreboardFrame {
+  sequence: string;
+  phase: number;
+  authored: { left: Vector3Type | null; right: Vector3Type | null };
+  displaced: { left: Vector3Type | null; right: Vector3Type | null };
+  shift: ReturnType<typeof sampleHardBeatTrack>;
+  corridor: { left: number; right: number; chestRad: number };
+  body: BodySnapshot;
+  forearmM: number | null;
+  gap: { left: number | null; right: number | null };
+  routedOver: "left" | "right" | null;
+  staffThrough: string[];
+  displacedStaffThrough: string[];
+  authoredStaffThrough: string[];
 }
 
 export interface ContactScore {
@@ -112,8 +202,40 @@ export interface ContactScore {
    * authors from clipping the hand causes.
    */
   authoredStaffThrough: Record<string, number>;
+  /** The staff after hard-beat displacement, before the lock. */
+  displacedStaffThrough: Record<string, number>;
+  /** Every (sequence, step, hand) the planner displaced, from its report. */
+  displacedBeats: ScoreboardDisplacedBeat[];
+  /** Displaced beats a cap or the minimum radius stopped short. */
+  cappedBeats: number;
+  /** Hand-frames displaced by more than 1 mm on a beat the report omits, in
+   *  any direction, including ones the planner may not use. */
+  unlistedDisplacedFrames: number;
+  renderedMoves: RenderedMoves;
+  /** Pair-frames with an active depth lane where the downstage hand is not
+   *  the hand the animator's elbow routing puts over. */
+  routingLaneMismatchFrames: number;
+  /** Those frames that are also forearm contacts. */
+  routingLaneMismatchForearmsUnder6cm: number;
+  routingLaneMismatchForearmsUnder4cm: number;
+  laneRealization: LaneRealization;
+  forearmClusters: ForearmCluster[];
   sequences: SequenceScore[];
   worstBeats: WorstBeat[];
+}
+
+export interface ContactScoreboardOptions {
+  /** Trims the corpus for quick local runs; the gates assume all of it. */
+  limit?: number;
+  /** False plays the authored props with the animator's legacy pair split,
+   *  as the unwired hosts still do. */
+  displace?: boolean;
+  /** Planner overrides for tuning runs. */
+  hardBeat?: Pick<HardBeatTrackOptions, "limits" | "body" | "laneForwardShare">;
+  /** The render lock's freedom; "free" is what both renderers do. */
+  lockMode?: ContactLockMode;
+  /** Called with every measured frame, for diagnostic probes. */
+  onFrame?: (frame: ScoreboardFrame) => void;
 }
 
 async function buildRig(id: string) {
@@ -150,6 +272,8 @@ interface HandProp {
 
 interface RenderedHand {
   gapM: number;
+  /** The lock's translation of the staff toward the palm. */
+  lock: Vector3Type;
   staffA: Vector3Type;
   staffB: Vector3Type;
 }
@@ -158,18 +282,29 @@ function staffQuat(prop: HandProp | null): QuaternionType | null {
   return prop ? prop.worldRotation.clone().multiply(STAFF_HORIZONTAL) : null;
 }
 
-/** Palm-to-axis gap after the clamped render lock, plus the rendered shaft. */
+/** Palm-to-axis gap after the clamped render lock, plus the rendered shaft.
+ *  `grid` is where the score puts the staff in the grid frame; its radial line
+ *  and depth bound a "radial-depth" lock. */
 function renderHand(
   rig: Rig,
   side: "left" | "right",
   prop: HandProp | null,
-  quat: QuaternionType | null
+  quat: QuaternionType | null,
+  grid: Vector3Type | null,
+  lockMode: ContactLockMode
 ): RenderedHand | null {
   if (!prop || !quat) return null;
   const palm = rig.services.animator.getPalmWorldPoint(side, new Vector3());
   if (!palm) return null;
   const axis = new Vector3(0, 1, 0).applyQuaternion(quat).normalize();
-  const toPalm = palm.clone().sub(prop.worldPosition);
+  let toPalm = palm.clone().sub(prop.worldPosition);
+  if (lockMode === "radial-depth" && grid) {
+    const [radial, depth] = radialDepthBasis(grid);
+    toPalm = radial
+      .clone()
+      .multiplyScalar(toPalm.dot(radial))
+      .addScaledVector(depth, toPalm.dot(depth));
+  }
   const len = toPalm.length();
   const lock = toPalm.multiplyScalar(
     len > CONTACT_LOCK_MAX_M ? CONTACT_LOCK_MAX_M / len : 1
@@ -180,6 +315,7 @@ function renderHand(
   const half = axis.clone().multiplyScalar(STAFF_HALF_LENGTH_M);
   return {
     gapM,
+    lock,
     staffA: centre.clone().add(half),
     staffB: centre.clone().sub(half),
   };
@@ -251,33 +387,106 @@ function quantile(values: number[], q: number): number {
 }
 
 /**
+ * An orthonormal basis of the plane a staff may move in: its radial line out
+ * of the grid centre and depth. Grid frame, so the rig's world frame here.
+ */
+function radialDepthBasis(grid: Vector3Type): [Vector3Type, Vector3Type] {
+  const radius = grid.length();
+  const depth = new Vector3(0, 0, 1);
+  // A staff at the grid centre has no radial line: depth only.
+  if (radius < 1e-9) return [new Vector3(), depth];
+  const radial = grid.clone().divideScalar(radius);
+  const rest = depth.addScaledVector(radial, -radial.z);
+  return [radial, rest.lengthSq() > 1e-12 ? rest.normalize() : new Vector3()];
+}
+
+/** A move's radial (inward positive) and depth parts, and what is left over. */
+function radialDepthParts(grid: Vector3Type, move: Vector3Type) {
+  const [radial, depth] = radialDepthBasis(grid);
+  const along = move.dot(radial);
+  const across = move.dot(depth);
+  const offPlane = move
+    .clone()
+    .addScaledVector(radial, -along)
+    .addScaledVector(depth, -across);
+  // Depth is +z; its radial share already sits in `along`.
+  const depthM = depth.z > 1e-9 ? across / depth.z : 0;
+  return {
+    radialInM: -(along - depthM * radial.z),
+    depthM,
+    offPlaneM: offPlane.length(),
+  };
+}
+
+/**
+ * Which hand the animator's elbow routing puts over, on the targets it is
+ * handed (`ElbowPoleComputer.computePairRouting`), or null when the hands are
+ * not crossed enough to route. Grid frame: +x is the performer's left.
+ */
+function routedOverHand(
+  left: Vector3Type,
+  right: Vector3Type
+): "left" | "right" | null {
+  const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+  const crossing = Math.min(
+    clamp01(-left.x / ROUTING_SHOULDER_HALF_WIDTH_M),
+    clamp01(right.x / ROUTING_SHOULDER_HALF_WIDTH_M)
+  );
+  if (crossing < ROUTING_CROSS_ENGAGE) return null;
+  return left.y - right.y >= -ROUTING_HEIGHT_DEAD_ZONE_M ? "left" : "right";
+}
+
+/**
  * Sweep the corpus on one rig. `limit` trims the corpus for quick local runs;
  * the gates assume the full corpus.
  */
 export async function runContactScoreboard(
   rigId: string,
-  options: { limit?: number } = {}
+  options: ContactScoreboardOptions = {}
 ): Promise<ContactScore> {
   const mode = PlaneMode.WALL;
   const config = PLANE_MODE_CONFIGS[mode];
   const gridOffset = GRID_OFFSETS[mode];
+  const displace = options.displace ?? true;
+  const lockMode = options.lockMode ?? "free";
   const rig = await buildRig(rigId);
   const animator = rig.services.animator as unknown as {
     hugBlend(): number;
     setStanceYawSegments?(segments: unknown): void;
   };
+  // Hosts that hand the rig displaced props turn the legacy split off.
+  rig.services.animator.setPairSeparation?.(!displace);
   const detector = new CollisionDetector();
   const gaps: number[] = [];
   const forearms: number[] = [];
   const palms: number[] = [];
-  const staffThrough: Record<string, number> = Object.fromEntries(
-    STAFF_ZONES.map((zone) => [zone, 0])
-  );
-  const authoredStaffThrough: Record<string, number> = Object.fromEntries(
-    STAFF_ZONES.map((zone) => [zone, 0])
-  );
+  const zoneCounts = (): Record<string, number> =>
+    Object.fromEntries(STAFF_ZONES.map((zone) => [zone, 0]));
+  const staffThrough = zoneCounts();
+  const authoredStaffThrough = zoneCounts();
+  const displacedStaffThrough = zoneCounts();
   const beatWorst = new Map<string, WorstBeat>();
   const sequences: SequenceScore[] = [];
+  const displacedBeats: ScoreboardDisplacedBeat[] = [];
+  const clusters = new Map<string, ForearmCluster>();
+  const clusterLanes = new Map<
+    string,
+    { frames: number; target: number; realized: number }
+  >();
+  const laneRealization: LaneRealization = {
+    frames: 0,
+    targetSeparationMeanM: 0,
+    realizedSeparationMeanM: 0,
+    underHalfFrames: 0,
+  };
+  const renderedMoves: RenderedMoves = {
+    radialInMaxM: 0,
+    radialOutMaxM: 0,
+    depthMaxAbsM: 0,
+    offPlaneMaxM: 0,
+    lockMaxM: 0,
+    lockOffPlaneMaxM: 0,
+  };
   const score = {
     handFrames: 0,
     gapOver3cm: 0,
@@ -288,6 +497,10 @@ export async function runContactScoreboard(
     forearmsUnder4cm: 0,
     forearmsUnder8cm: 0,
     palmsUnder6cm: 0,
+    unlistedDisplacedFrames: 0,
+    routingLaneMismatchFrames: 0,
+    routingLaneMismatchForearmsUnder6cm: 0,
+    routingLaneMismatchForearmsUnder4cm: 0,
   };
 
   try {
@@ -299,6 +512,7 @@ export async function runContactScoreboard(
         gapOver3cm: 0,
         staffThroughBody: 0,
         authoredStaffThroughBody: 0,
+        displacedStaffThroughBody: 0,
       };
       const state = createCharacterInstanceState(
         { id: `scoreboard-${entry.id}`, persistent: false },
@@ -307,6 +521,28 @@ export async function runContactScoreboard(
       state.setPlaneMode(mode);
       state.loadSequence(entry.sequence);
       const track = buildStanceYawTrackForSource(state, mode);
+      const hardBeat = displace
+        ? buildHardBeatTrack({
+            source: state,
+            stanceTrack: track,
+            heightM: PERFORMER_HEIGHT_M,
+            planeMode: mode,
+            ...options.hardBeat,
+          })
+        : null;
+      const beats = new Map<string, ScoreboardDisplacedBeat>();
+      for (const beat of hardBeat?.report ?? []) {
+        const entryBeat = {
+          ...beat,
+          sequence: entry.id,
+          lockMaxM: 0,
+          lockTangentialMaxM: 0,
+        };
+        beats.set(`${beat.step}|${beat.hand}`, entryBeat);
+        displacedBeats.push(entryBeat);
+      }
+      // A new score is a seek for the hosts: contact history starts over.
+      if (displace) rig.services.animator.resetContactHistory?.();
       const frames = Math.max(
         1,
         Math.round(state.motionStepCount * FRAMES_PER_STEP)
@@ -314,15 +550,19 @@ export async function runContactScoreboard(
 
       for (let f = -WARMUP_FRAMES; f < frames; f++) {
         const phase = Math.max(0, f) / FRAMES_PER_STEP;
-        const { left, right } = state.propStatesAtScoreTime(phase);
+        const authoredProps = state.propStatesAtScoreTime(phase);
+        // The stance is planned from the authored props, as the hosts do.
         const stance = resolveTrackedUpperBodyStance(
           track,
           phase,
           mode,
-          left,
-          right,
+          authoredProps.left,
+          authoredProps.right,
           null
         );
+        const shift = sampleHardBeatTrack(hardBeat, phase);
+        const left = displaceProp(authoredProps.left, shift.left);
+        const right = displaceProp(authoredProps.right, shift.right);
         const place = (
           prop: typeof left,
           lateral: number,
@@ -354,6 +594,18 @@ export async function runContactScoreboard(
         );
         const blueQuat = staffQuat(blue);
         const redQuat = staffQuat(red);
+        // Where the grid puts each staff before any displacement, so the
+        // authored count stays comparable across steps.
+        const blueAuthored = place(
+          authoredProps.left,
+          config.blueLateralOffset,
+          stance.leftDepthOffsetM
+        );
+        const redAuthored = place(
+          authoredProps.right,
+          config.redLateralOffset,
+          stance.rightDepthOffsetM
+        );
 
         const services = rig.services;
         animator.setStanceYawSegments?.(stance.segments);
@@ -376,8 +628,22 @@ export async function runContactScoreboard(
         const square = animator.hugBlend() <= 1e-3;
         const step = Math.floor(phase);
         const hands = {
-          left: renderHand(rig, "left", blue, blueQuat),
-          right: renderHand(rig, "right", red, redQuat),
+          left: renderHand(
+            rig,
+            "left",
+            blue,
+            blueQuat,
+            authoredProps.left?.worldPosition ?? null,
+            lockMode
+          ),
+          right: renderHand(
+            rig,
+            "right",
+            red,
+            redQuat,
+            authoredProps.right?.worldPosition ?? null,
+            lockMode
+          ),
         };
         for (const side of ["left", "right"] as const) {
           const hand = hands[side];
@@ -404,6 +670,42 @@ export async function runContactScoreboard(
               gapM: hand.gapM,
             });
           }
+
+          const grid = authoredProps[side]!.worldPosition;
+          const beat = beats.get(`${step}|${side}`);
+          const move = radialDepthParts(
+            grid,
+            (side === "left" ? left : right)!.worldPosition.clone().sub(grid)
+          );
+          const lock = radialDepthParts(grid, hand.lock);
+          const moves = renderedMoves;
+          moves.radialInMaxM = Math.max(moves.radialInMaxM, move.radialInM);
+          moves.radialOutMaxM = Math.max(moves.radialOutMaxM, -move.radialInM);
+          moves.depthMaxAbsM = Math.max(
+            moves.depthMaxAbsM,
+            Math.abs(move.depthM)
+          );
+          moves.offPlaneMaxM = Math.max(moves.offPlaneMaxM, move.offPlaneM);
+          moves.lockMaxM = Math.max(moves.lockMaxM, hand.lock.length());
+          moves.lockOffPlaneMaxM = Math.max(
+            moves.lockOffPlaneMaxM,
+            lock.offPlaneM
+          );
+          if (
+            !beat &&
+            (Math.abs(move.radialInM) > DISPLACED_EPS_M ||
+              Math.abs(move.depthM) > DISPLACED_EPS_M ||
+              move.offPlaneM > DISPLACED_EPS_M)
+          ) {
+            score.unlistedDisplacedFrames++;
+          }
+          if (beat) {
+            beat.lockMaxM = Math.max(beat.lockMaxM, hand.lock.length());
+            beat.lockTangentialMaxM = Math.max(
+              beat.lockTangentialMaxM,
+              lock.offPlaneM
+            );
+          }
         }
 
         const body = bodySnapshot(rig);
@@ -422,7 +724,9 @@ export async function runContactScoreboard(
             perSequence.staffThroughBody++;
           }
         }
-        const authored = (
+        const zones = (list: CollisionEvent[]) =>
+          list.filter((e) => e.zone in staffThrough).map((e) => e.zone);
+        const unlocked = (
           prop: HandProp | null,
           quat: QuaternionType | null
         ): PropSegment | null => {
@@ -439,8 +743,8 @@ export async function runContactScoreboard(
         };
         const authoredEvents = detector.detect(
           body,
-          authored(blue, blueQuat),
-          authored(red, redQuat),
+          unlocked(blueAuthored, blueQuat),
+          unlocked(redAuthored, redQuat),
           step,
           phase - step
         );
@@ -450,18 +754,37 @@ export async function runContactScoreboard(
             perSequence.authoredStaffThroughBody++;
           }
         }
+        const displacedEvents = detector.detect(
+          body,
+          unlocked(blue, blueQuat),
+          unlocked(red, redQuat),
+          step,
+          phase - step
+        );
+        for (const event of displacedEvents) {
+          if (event.zone in displacedStaffThrough) {
+            displacedStaffThrough[event.zone]!++;
+            perSequence.displacedStaffThroughBody++;
+          }
+        }
 
+        const laneActive =
+          shift.downstageHand !== null &&
+          (Math.abs(shift.left.depthM) > DISPLACED_EPS_M ||
+            Math.abs(shift.right.depthM) > DISPLACED_EPS_M);
+        const routedOver =
+          left && right
+            ? routedOverHand(left.worldPosition, right.worldPosition)
+            : null;
+        const mismatch =
+          laneActive &&
+          routedOver !== null &&
+          routedOver !== shift.downstageHand;
+        if (mismatch) score.routingLaneMismatchFrames++;
+
+        let forearm: number | null = null;
         if (hands.left && hands.right) {
           score.pairFrames++;
-          const forearm = segmentDistance(
-            body.leftElbow,
-            body.leftHand,
-            body.rightElbow,
-            body.rightHand
-          );
-          forearms.push(forearm);
-          if (forearm < 0.08) score.forearmsUnder8cm++;
-          if (forearm < 0.04) score.forearmsUnder4cm++;
           const leftPalm = services.animator.getPalmWorldPoint(
             "left",
             new Vector3()
@@ -470,17 +793,111 @@ export async function runContactScoreboard(
             "right",
             new Vector3()
           );
+          // Depth separation planned for the staffs against what the palms
+          // reach, downstage hand minus the other, on frames with a lane.
+          let lane: { target: number; realized: number } | null = null;
+          if (laneActive && leftPalm && rightPalm) {
+            const sign = shift.downstageHand === "left" ? 1 : -1;
+            const target =
+              sign *
+              (shift.left.depthM +
+                stance.leftDepthOffsetM -
+                (shift.right.depthM + stance.rightDepthOffsetM));
+            const realized = sign * (leftPalm.z - rightPalm.z);
+            lane = { target, realized };
+            laneRealization.frames++;
+            laneRealization.targetSeparationMeanM += target;
+            laneRealization.realizedSeparationMeanM += realized;
+            if (realized < target / 2) laneRealization.underHalfFrames++;
+          }
+          forearm = segmentDistance(
+            body.leftElbow,
+            body.leftHand,
+            body.rightElbow,
+            body.rightHand
+          );
+          forearms.push(forearm);
+          if (forearm < 0.08) score.forearmsUnder8cm++;
+          if (forearm < 0.06 && mismatch)
+            score.routingLaneMismatchForearmsUnder6cm++;
+          if (forearm < 0.04) {
+            score.forearmsUnder4cm++;
+            if (mismatch) score.routingLaneMismatchForearmsUnder4cm++;
+            const key = `${entry.id}|${step}`;
+            const cluster = clusters.get(key) ?? {
+              sequence: entry.id,
+              step,
+              frames: 0,
+              minM: Infinity,
+              routingLaneMismatchFrames: 0,
+              laneTargetSeparationM: null,
+              laneRealizedSeparationM: null,
+            };
+            cluster.frames++;
+            cluster.minM = Math.min(cluster.minM, forearm);
+            if (mismatch) cluster.routingLaneMismatchFrames++;
+            clusters.set(key, cluster);
+            if (lane) {
+              const sums = clusterLanes.get(key) ?? {
+                frames: 0,
+                target: 0,
+                realized: 0,
+              };
+              sums.frames++;
+              sums.target += lane.target;
+              sums.realized += lane.realized;
+              clusterLanes.set(key, sums);
+            }
+          }
           if (leftPalm && rightPalm) {
             const palm = leftPalm.distanceTo(rightPalm);
             palms.push(palm);
             if (palm < 0.06) score.palmsUnder6cm++;
           }
         }
+        options.onFrame?.({
+          sequence: entry.id,
+          phase,
+          authored: {
+            left: authoredProps.left?.worldPosition ?? null,
+            right: authoredProps.right?.worldPosition ?? null,
+          },
+          displaced: {
+            left: left?.worldPosition ?? null,
+            right: right?.worldPosition ?? null,
+          },
+          shift,
+          corridor: {
+            left: stance.leftDepthOffsetM,
+            right: stance.rightDepthOffsetM,
+            chestRad: stance.segments.chestRad,
+          },
+          body,
+          forearmM: forearm,
+          gap: {
+            left: hands.left?.gapM ?? null,
+            right: hands.right?.gapM ?? null,
+          },
+          routedOver,
+          staffThrough: zones(events),
+          displacedStaffThrough: zones(displacedEvents),
+          authoredStaffThrough: zones(authoredEvents),
+        });
       }
       sequences.push(perSequence);
     }
   } finally {
     detector.dispose();
+  }
+
+  if (laneRealization.frames > 0) {
+    laneRealization.targetSeparationMeanM /= laneRealization.frames;
+    laneRealization.realizedSeparationMeanM /= laneRealization.frames;
+  }
+  for (const [key, sums] of clusterLanes) {
+    const cluster = clusters.get(key)!;
+    cluster.laneTargetSeparationM = sums.target / sums.frames;
+    cluster.laneRealizedSeparationM = sums.realized / sums.frames;
   }
 
   return {
@@ -493,6 +910,14 @@ export async function runContactScoreboard(
     palmMinM: quantile(palms, 0),
     staffThrough,
     authoredStaffThrough,
+    displacedStaffThrough,
+    displacedBeats,
+    cappedBeats: displacedBeats.filter((beat) => beat.capped).length,
+    renderedMoves,
+    laneRealization,
+    forearmClusters: [...clusters.values()].sort(
+      (a, b) => b.frames - a.frames || a.minM - b.minM
+    ),
     sequences,
     worstBeats: [...beatWorst.values()]
       .sort((a, b) => b.gapM - a.gapM)
