@@ -205,11 +205,8 @@
     closeRequest?: number;
     /** Accessible region name for non-export hosts. */
     regionLabel?: string;
-    /** A sidebar host whose panel height is set by something else on
-     *  screen (the motion-path studio's card matches the canvas beside it)
-     *  wants every page to spend that height rather than sit at the top of
-     *  it. Display's pictures grow into it, and Effort alone on its page
-     *  shares it between its tiles, each drawing its timing curve. */
+    /** A height-bounded sidebar can give its visual pages the remaining room.
+     *  Auto-height hosts leave this off so their content sets the height. */
     fillPages?: boolean;
   }
 
@@ -557,10 +554,7 @@
   const playbackHasPage = $derived(
     showTempoControls || !!onPlaybackModeChange || showPathShape
   );
-  // Effort alone on a page the host asked to be filled.
-  const effortFills = $derived(
-    fillPages && layout === "sidebar" && !playbackHasPage
-  );
+  const visualPagesFill = $derived(fillPages && layout === "sidebar");
 
   const playbackSummary = $derived.by(() => {
     void vmVersion;
@@ -912,7 +906,7 @@
          put visibility toggles under a heading that claimed they were motion;
          it has its own pill again. Sidebar only; the mobile dock still gets
          separate tabs, where one tall merged tray would not fit. -->
-    <div class="motion-scope" class:fills={effortFills}>
+    <div class="motion-scope" class:fills={visualPagesFill}>
       <!-- A host with its own transport bar owns tempo there and passes
            showTempoControls={false}; with no playback mode either, Tempo and
            Mode have nothing to hold and Paths runs the full width above
@@ -949,7 +943,7 @@
      carry one, and the effort tiles were the single unlabelled block under a
      heading named for something else. -->
 {#snippet effortBody(labelled = false)}
-  <div class="section-pad">
+  <div class="section-pad" class:fill-effort={visualPagesFill}>
     {#if labelled}
       <span class="rt-section-label">Effort</span>
     {/if}
@@ -959,7 +953,7 @@
     <EffortPanel
       columns={layout === "sidebar" ? 2 : 4}
       showSubtitles={layout === "sidebar"}
-      fill={effortFills}
+      fill={visualPagesFill}
       onSettingChange={(previous, value) =>
         reportSetting("effort", "preset", previous, value)}
     />
@@ -1333,11 +1327,17 @@
     onSelect={handlePillSelect}
     direction={panelDirection}
     {reduceMotion}
-    fillBody={resolvedPill === "display" ||
+    fillBody={(resolvedPill === "effort" && visualPagesFill) ||
+      resolvedPill === "display" ||
       resolvedPill === "effects" ||
       resolvedPill === "props" ||
-      (resolvedPill === "motion" && effortFills)}
-    fluidBody={resolvedPill === "props"}
+      (resolvedPill === "motion" && visualPagesFill)}
+    fluidBody={resolvedPill === "props" ||
+      (visualPagesFill &&
+        (resolvedPill === "effects" ||
+          resolvedPill === "display" ||
+          resolvedPill === "motion" ||
+          resolvedPill === "effort"))}
     pageOnly={presentation === "content"}
     regionLabel={presentation === "content"
       ? activePillLabel || regionLabel
@@ -1422,11 +1422,12 @@
     container-type: inline-size;
   }
 
-  /* Effort alone on a page the host fills: each wrapper hands the height down
-     so the tiles can share it. */
+  /* Height-bounded pages give their remaining room to the curve tiles. Tempo
+     and path controls keep their natural height above the merged Motion grid. */
   .motion-scope.fills,
   .motion-scope.fills .motion-stack,
-  .motion-scope.fills .motion-stack > :global(.section-pad) {
+  .motion-scope.fills .motion-stack > :global(.section-pad),
+  .section-pad.fill-effort {
     flex: 1 1 0;
     min-height: 0;
     display: flex;
@@ -1498,7 +1499,7 @@
 
     .motion-stack:not(.effort-only) :global(.effort-btn.with-sub) {
       padding: 8px 4px;
-      min-height: 40px;
+      min-height: 72px;
     }
 
     .motion-stack:not(.effort-only) :global(.effort-grid) {
@@ -1509,6 +1510,15 @@
   @container motion-stack (min-width: 528px) {
     .motion-stack {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .motion-scope.fills .motion-stack {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    .motion-scope.fills .motion-stack.effort-only {
+      grid-template-rows: minmax(0, 1fr);
     }
 
     /* A host with no Paths page (the shape matrix traces a fixed figure) has
@@ -1708,13 +1718,16 @@
     flex: 1;
     min-width: 0;
   }
-  /* EffortPanel (56px tile -> 48, still >=44) */
+  /* The dock keeps the actual curves while its tray owns scrolling. */
   .dock-dense :global(.effort-btn) {
-    min-height: 48px;
-    padding: 10px 6px;
+    min-height: 72px;
+    padding: 6px 4px;
   }
   .dock-dense :global(.effort-grid) {
     gap: 4px;
+  }
+  .dock-dense :global(.effort-curve) {
+    height: 22px;
   }
   /* PathShapePanel */
   .dock-dense :global(.path-shape-grid) {

@@ -45,6 +45,7 @@
 
   let {
     kind,
+    hand,
     gridMode = "8point",
     propType,
     pathShape = "arc",
@@ -53,6 +54,7 @@
     sequence = null,
   }: {
     kind: PreviewKind;
+    hand?: "left" | "right";
     gridMode?: string;
     propType?: string;
     pathShape?: Exclude<MandalaPathShape, "hybrid">;
@@ -159,6 +161,8 @@
     {#if propType}
       <PropCompositionPreview
         propType={propType as PropType}
+        pairedGlyph={!!hand}
+        singleHand={hand}
         size={100}
         darkBackground={darkMode}
       />

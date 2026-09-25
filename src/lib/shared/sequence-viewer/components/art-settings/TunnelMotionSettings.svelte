@@ -30,7 +30,7 @@
   }: Props = $props();
 </script>
 
-<div class="motion-stack">
+<div class="motion-stack" class:fill={!dense}>
   <div class:dense class="section-pad">
     {#if includePlayback}<span class="rt-section-label">Effort</span>{/if}
     {#if !dense}
@@ -39,6 +39,7 @@
     <EffortPanel
       columns={dense ? 4 : 2}
       showSubtitles={!dense}
+      fill={!dense}
       onSettingChange={(previousValue, value) =>
         reportArtSetting(
           onArtSettingChange,
@@ -74,6 +75,16 @@
     flex-direction: column;
     gap: 16px;
     padding: 8px 16px 20px;
+  }
+
+  .motion-stack.fill {
+    display: flex;
+    flex-direction: column;
+    flex: 1 0 auto;
+  }
+
+  .motion-stack.fill > .section-pad {
+    flex: 1 0 auto;
   }
 
   .section-pad.dense {

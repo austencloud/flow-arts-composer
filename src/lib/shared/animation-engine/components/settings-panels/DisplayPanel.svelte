@@ -139,7 +139,7 @@
   interface Chip {
     id: string;
     label: string;
-    /** Which layer this tile draws a preview of. Absent = label only. */
+    /** Which layer this tile draws a preview of. */
     preview?:
       | "grid"
       | "props"
@@ -151,6 +151,7 @@
       | "word";
     accent?: string;
     tone?: "blue" | "red";
+    hand?: "left" | "right";
     active: () => boolean;
     toggle: () => void;
   }
@@ -161,6 +162,8 @@
     {
       id: "left",
       label: "Left",
+      preview: "props",
+      hand: "left",
       accent: "var(--prop-blue, #2196f3)",
       tone: "blue",
       active: () => viewerVis!.leftMotion,
@@ -169,6 +172,8 @@
     {
       id: "right",
       label: "Right",
+      preview: "props",
+      hand: "right",
       accent: "var(--prop-red, #f44336)",
       tone: "red",
       active: () => viewerVis!.rightMotion,
@@ -368,6 +373,7 @@
         {#if chip.preview}
           <DisplayTilePreview
             kind={chip.preview}
+            hand={chip.hand}
             {gridMode}
             {propType}
             {pathShape}

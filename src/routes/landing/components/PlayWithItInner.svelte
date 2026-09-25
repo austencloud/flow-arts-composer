@@ -358,6 +358,7 @@ import { sequenceTransformer } from "$lib/shared/create/services/sequence-transf
             isExporting={false}
             canvasReady={animationReady}
             layout="sidebar"
+            fillPages
             {bpm}
             {isPlaying}
             renderMode="2d"
