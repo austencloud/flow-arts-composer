@@ -392,11 +392,7 @@
      scoped .flow-* selectors out-specify .guide-content h2/h3/p, but only for the
      properties they actually set. Leave one unset and the dark-SPA value shows
      through. */
-  /* The frame is a WIDE container; the reading measure is enforced per-element
-     (.flow-p caps at 34rem, headings are short centred text), so prose pages look
-     unchanged - their content still sits centred at its own width. The extra
-     frame width only exists so card rows can break past the reading measure and
-     show 3 legible cards across. */
+  /* The frame gives prose and card rows a common content width. */
   .flow-frame {
     max-width: 62rem;
     margin: 0 auto;
@@ -433,10 +429,7 @@
     line-height: 1.7;
     margin: 0 0 1.1rem;
     text-align: center;
-    max-width: 34rem;
     margin-inline: auto;
-    /* Even the line lengths on these short centred blocks so breaks land on
-       phrase boundaries instead of stranding "the / shoulder" (2026 native). */
     text-wrap: balance;
   }
   /* Plain <strong> emphasis stays ink + bold (guide-content colours it lavender);
@@ -523,11 +516,7 @@
 
   /* ── Sequence showcase: banner (square animation + section text) over the
      step strip. SequenceShowcase owns its internal layout; this wrapper owns
-     PLACEMENT - break out of the narrow reading measure to use the content
-     width on large screens. 94cqw = 94% of the guide route's own width (a
-     container set in GuidePageHost), so it uses the 4K width without colliding
-     with the sidebar; 72rem caps the text measure. Prose elsewhere stays
-     narrow-centred. */
+     placement within the guide route's content width. */
   .flow-showcase {
     width: min(72rem, 94cqw);
     margin-inline: calc((100% - min(72rem, 94cqw)) / 2);
@@ -550,8 +539,7 @@
     margin-bottom: 0;
   }
   /* Text inside the showcase banner reads left-aligned and full-width in its
-     column (not the centred narrow measure standalone flow prose uses);
-     headings drop the standalone section head's big top margin. Inside a
+     column; headings drop the standalone section head's big top margin. Inside a
      stacked (narrow) showcase - the nearest @container is the showcase itself -
      everything re-centres. */
   .flow-p.showcase-p {
@@ -596,7 +584,6 @@
   }
   .flow-caption {
     margin: 0.15rem auto 0.25rem;
-    max-width: 30rem;
   }
 
   /* Grid diagram (The Grid page): the canonical GridSvg on a white square,
@@ -667,7 +654,6 @@
 
   .grid-reference .flow-area-grid-overview,
   .grid-reference .flow-area-grid-points {
-    max-width: 21rem;
     margin: 0;
     text-align: left;
     text-wrap: pretty;
@@ -701,7 +687,6 @@
 
     .grid-reference .flow-area-grid-overview,
     .grid-reference .flow-area-grid-points {
-      max-width: 28rem;
     }
   }
 
@@ -715,7 +700,6 @@
 
     .grid-reference .flow-area-grid-overview,
     .grid-reference .flow-area-grid-points {
-      max-width: 34rem;
       margin-inline: auto;
       text-align: center;
       text-wrap: balance;
@@ -727,11 +711,7 @@
     }
   }
 
-  /* Wide/4K ramp: FlowFrame's own reading measures stay narrow-centred (prose is
-     capped independently of this), but the card grids/figures below are square
-     content in a WIDE frame - below 1680px they're already sized right; above
-     it there's room to let them breathe rather than staying pinned to their
-     sub-1680 caps forever. Base (sub-1680) values above are untouched. */
+  /* Wide/4K ramp: card grids and figures gain room above 1680px. */
   @media (min-width: 1680px) {
     .flow-grid {
       max-width: 40rem;

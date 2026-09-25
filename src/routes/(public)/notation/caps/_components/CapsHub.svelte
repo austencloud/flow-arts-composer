@@ -152,7 +152,6 @@
   }
   .hub-head p {
     margin: 0 auto;
-    max-width: 56ch;
     font-size: clamp(0.9rem, 0.95vw, 1.15rem);
     color: rgba(255, 255, 255, 0.74);
   }

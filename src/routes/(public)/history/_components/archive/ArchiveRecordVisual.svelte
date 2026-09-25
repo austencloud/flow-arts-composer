@@ -175,7 +175,6 @@
   }
 
   .record-identity p {
-    max-width: 42rem;
     font-size: clamp(0.875rem, min(3cqw, 3cqh), 1.35rem);
     line-height: 1.45;
   }

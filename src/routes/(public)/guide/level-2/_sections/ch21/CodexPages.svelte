@@ -17,9 +17,8 @@
 </GuideSection>
 
 <style>
-  /* Prose measure + rhythm mirror level-1's FlowFrame `.flow-p`/`.flow-h3`. */
+  /* GuideSection owns text width; these rules set paragraph rhythm. */
   .section-body :global(p) {
-    max-width: 34rem;
     margin: 0 auto 1.1rem;
     text-align: center;
     text-wrap: balance;
