@@ -1,16 +1,14 @@
-<!-- src/lib/shared/shape-matrix/components/ShapeMatrixStageActions.svelte
-  The wide host's way into the customize workspace, in the corner of the
-  animation it customizes.
-
-  This replaces a full-width row under the stage that held two buttons pushed
-  to opposite ends, because the row was paying a band of vertical space for
-  one control and a play button the canvas already offers. The canvas toggles
-  playback on a click and says so on hover; settings belong on the thing they
-  settle, so the gear sits in the stage's own corner. -->
 <script lang="ts">
+  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import { getShapeMatrixAnimationContext } from "../app/context/shape-matrix-animation-context";
   import { getShapeMatrixAppContext } from "../app/context/shape-matrix-app-context";
   import { surfaceHasPair } from "../app/state/shape-matrix-customize";
+
+  interface Props {
+    placement?: "overlay" | "panel";
+  }
+
+  const { placement = "overlay" }: Props = $props();
 
   const appState = getShapeMatrixAppContext();
   const animationState = getShapeMatrixAnimationContext();
@@ -39,22 +37,36 @@
   }
 </script>
 
-<div class="stage-actions">
-  <button
-    type="button"
-    class="stage-action"
-    class:open
-    aria-pressed={open}
-    aria-label={open
+{#if placement === "panel"}
+  <PanelButton
+    ariaLabel={open
       ? "Close the customize workspace"
       : "Customize the animation"}
-    title={open ? "Close customize" : "Customize"}
+    ariaPressed={open}
     disabled={!hasPair}
     onclick={toggle}
   >
     <i class="fas fa-sliders" aria-hidden="true"></i>
-  </button>
-</div>
+    Customize
+  </PanelButton>
+{:else}
+  <div class="stage-actions">
+    <button
+      type="button"
+      class="stage-action"
+      class:open
+      aria-pressed={open}
+      aria-label={open
+        ? "Close the customize workspace"
+        : "Customize the animation"}
+      title={open ? "Close customize" : "Customize"}
+      disabled={!hasPair}
+      onclick={toggle}
+    >
+      <i class="fas fa-sliders" aria-hidden="true"></i>
+    </button>
+  </div>
+{/if}
 
 <style>
   /* Over the stage, out of the mandala's way. The stage is a square in a
