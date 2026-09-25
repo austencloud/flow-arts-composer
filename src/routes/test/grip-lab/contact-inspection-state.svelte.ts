@@ -27,7 +27,55 @@ interface KeyUndoSnapshot {
   tolerance: number;
 }
 
-const HISTORY_LIMIT = 30;
+const HISTORY_LIMIT = 100;
+const DRAFT_KEY = "grip-lab:inspection-draft:v1";
+
+interface InspectionDraft {
+  version: 1;
+  sourcePoses: string | null;
+  savedPoses: string;
+  characterId: CharacterId;
+  hand: InspectionHand;
+  current: KeyUndoSnapshot;
+  undo: KeyUndoSnapshot[];
+  redo: KeyUndoSnapshot[];
+  pending: KeyUndoSnapshot | null;
+}
+
+function parseSnapshot(value: unknown): KeyUndoSnapshot | null {
+  if (!value || typeof value !== "object") return null;
+  const entry = value as Record<string, unknown>;
+  if (
+    typeof entry.phase !== "number" ||
+    !Number.isFinite(entry.phase) ||
+    entry.phase < 0 ||
+    entry.phase > 4 ||
+    typeof entry.tolerance !== "number" ||
+    !Number.isFinite(entry.tolerance) ||
+    entry.tolerance < 0 ||
+    entry.tolerance > 0.2 ||
+    !["all", "0", "1", "2", "3"].includes(String(entry.transition)) ||
+    !Array.isArray(entry.keys) ||
+    entry.keys.length < 1 ||
+    entry.keys.length > 100
+  )
+    return null;
+  if (entry.keys.some((key) => !key || typeof key !== "object")) return null;
+  let encoded: string;
+  try {
+    encoded = encodeTeachingKeys(entry.keys as TeachingKey[]);
+  } catch {
+    return null;
+  }
+  const keys = decodeTeachingKeys(encoded);
+  if (encodeTeachingKeys(keys) !== encoded) return null;
+  return {
+    keys,
+    phase: entry.phase,
+    tolerance: entry.tolerance,
+    transition: entry.transition as KeyUndoSnapshot["transition"],
+  };
+}
 
 function numberInRange(value: string | null, fallback: number): number {
   const parsed = Number(value);
@@ -42,7 +90,7 @@ function option<T extends string>(
   return choices.includes(value as T) ? (value as T) : fallback;
 }
 
-/** URL-backed frame state keeps an inspection link reproducible without a lab cache. */
+/** Shareable URL state with a per-tab draft for in-progress edits and history. */
 export function createContactInspectionState() {
   let url = $state(new URL(page.url));
   let phase = $state(numberInRange(url.searchParams.get("phase"), 0));
@@ -81,7 +129,73 @@ export function createContactInspectionState() {
       : ("ch07" as CharacterId)
   );
 
-  function persist(): void {
+  function saveDraft(sourcePoses = url.searchParams.get("poses")): void {
+    if (typeof window === "undefined") return;
+    const draft: InspectionDraft = {
+      version: 1,
+      sourcePoses,
+      savedPoses: encodeTeachingKeys(keys),
+      characterId,
+      hand,
+      current: snapshot(),
+      undo: undoKeys,
+      redo: redoKeys,
+      pending: editSnapshot,
+    };
+    try {
+      window.sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    } catch {
+      // A full or disabled storage area still leaves the URL as a recovery path.
+      if (editInProgress) persist(true);
+    }
+  }
+
+  function restoreDraft(): void {
+    if (typeof window === "undefined") return;
+    let stored: unknown;
+    try {
+      stored = JSON.parse(window.sessionStorage.getItem(DRAFT_KEY) ?? "null");
+    } catch {
+      return;
+    }
+    if (!stored || typeof stored !== "object") return;
+    const draft = stored as Partial<InspectionDraft>;
+    const requestedPoses = url.searchParams.get("poses");
+    if (
+      draft.version !== 1 ||
+      draft.characterId !== characterId ||
+      draft.hand !== hand ||
+      (requestedPoses !== draft.sourcePoses &&
+        requestedPoses !== draft.savedPoses) ||
+      !Array.isArray(draft.undo) ||
+      !Array.isArray(draft.redo)
+    )
+      return;
+    const current = parseSnapshot(draft.current);
+    const undo = draft.undo.map(parseSnapshot);
+    const redo = draft.redo.map(parseSnapshot);
+    const pending =
+      draft.pending === null ? null : parseSnapshot(draft.pending);
+    if (
+      !current ||
+      undo.some((entry) => !entry) ||
+      redo.some((entry) => !entry)
+    )
+      return;
+    restoreSnapshot(current);
+    undoKeys = undo.slice(-HISTORY_LIMIT) as KeyUndoSnapshot[];
+    redoKeys = redo.slice(-HISTORY_LIMIT) as KeyUndoSnapshot[];
+    editInProgress = false;
+    editSnapshot = null;
+    if (pending && !snapshotMatchesCurrent(pending)) {
+      undoKeys = appendHistory(undoKeys, pending);
+      redoKeys = [];
+    }
+    persist();
+  }
+
+  function persist(skipDraft = false): void {
+    const sourcePoses = url.searchParams.get("poses");
     const next = new URL(
       typeof window === "undefined" ? url : window.location.href
     );
@@ -96,6 +210,7 @@ export function createContactInspectionState() {
     else next.searchParams.delete("play");
     url = next;
     writeUrl(next, { mode: "replace" });
+    if (!skipDraft) saveDraft(sourcePoses);
   }
 
   function snapshot(): KeyUndoSnapshot {
@@ -134,6 +249,7 @@ export function createContactInspectionState() {
     if (snapshotMatchesCurrent(before)) return false;
     if (editInProgress) {
       editSnapshot ??= before;
+      saveDraft();
       return true;
     }
     undoKeys = appendHistory(undoKeys, before);
@@ -183,6 +299,7 @@ export function createContactInspectionState() {
   }
 
   return {
+    restoreDraft,
     get transition() {
       return transition;
     },
@@ -282,7 +399,8 @@ export function createContactInspectionState() {
       if (!editInProgress) persist();
     },
     addKey(): boolean {
-      if (keys.length >= 100 || !canAddTeachingKeyAtPhase(keys, phase)) return false;
+      if (keys.length >= 100 || !canAddTeachingKeyAtPhase(keys, phase))
+        return false;
       const before = snapshot();
       keys = upsertTeachingKey(keys, phase, {});
       playing = false;
