@@ -14,6 +14,7 @@ import {
   scoreMotionKey,
   type ScoreMotionKey,
 } from "./performer-score-motion-key";
+import { performerScoreClock } from "./performer-score-clock";
 
 /**
  * Tells a seek from playback, so the animator can drop contact history (cached
@@ -156,13 +157,7 @@ export function resolvePerformerContact(
 ): PerformerContact {
   const heightCm = options.heightCm ?? userProportionsState.heightCm;
   const track = resolveHardBeatTrack(performer, heightCm);
-  // The static start pose plays before beat 1 and again at each loop seam,
-  // while the clock already runs 0 to 1. It holds where beat 1 starts, so the
-  // step into beat 1 and the seam are playback, and nothing jumps there.
-  const scoreTime =
-    performer.currentStepIndex < performer.motionStepOffset
-      ? 0
-      : performer.scoreTime;
+  const scoreTime = performerScoreClock(performer);
   const resetKey = seekDetectorFor(performer).observe(
     scoreTime,
     performer.motionStepCount,
