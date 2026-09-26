@@ -31,6 +31,7 @@
   } from "$lib/shared/3d/collision/stance-yaw-track";
   import type { HardBeatTrack } from "$lib/shared/3d/collision/hard-beat-displacement";
   import { resolvePerformerContact } from "$lib/shared/3d/domain/performer-contact-displacement";
+  import { performerScoreClock } from "$lib/shared/3d/domain/performer-score-clock";
   import {
     fitStaffLengthForHug,
     measurePerformerReach,
@@ -140,7 +141,7 @@
   const upperBodyStance = $derived(
     resolveTrackedUpperBodyStance(
       stanceTrack,
-      performerState.scoreTime,
+      performerScoreClock(performerState),
       PlaneMode.WALL,
       performerState.leftPropState,
       performerState.rightPropState,
