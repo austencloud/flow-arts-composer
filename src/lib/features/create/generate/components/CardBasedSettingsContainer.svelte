@@ -3,6 +3,7 @@ CardBasedSettingsContainer - Minimal card grid renderer
 Delegates ALL logic to services (SRP compliant)
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { buildCardDescriptors } from "$lib/features/create/generate/shared/services/card-configurator";
   import { getLOOPParameterProvider } from "$lib/features/create/generate/shared/get-loop-parameter-provider";
   import {
