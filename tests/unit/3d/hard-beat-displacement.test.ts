@@ -532,6 +532,40 @@ describe("hard-beat lanes", () => {
     expect(beat?.shortfallMaxM).toBeGreaterThan(0);
   });
 
+  it("gates a crossed pair's lane once each hand's lane is sized against the body", () => {
+    // Both hands on the performer's left, so the chest holds side-on, with
+    // the right reaching past the left and below it, so the arm lines cross.
+    const pair = heldPair(wallProp(0.2, 0.4), wallProp(0.5, 0));
+    const bodyLane = buildStanceYawTrackForSource(pair, PlaneMode.WALL, null);
+    const sizedLanes = buildStanceYawTrackForSource(pair, PlaneMode.WALL);
+    expect(bodyLane?.laneFloorLeft).toBeNull();
+    expect(sizedLanes?.laneFloorLeft).not.toBeNull();
+    const withStance = (stanceTrack: StanceYawTrack | null) => {
+      const track = buildHardBeatTrack({
+        source: pair,
+        stanceTrack,
+        heightM: HEIGHT_M,
+        planeMode: PlaneMode.WALL,
+      });
+      expect(track).not.toBeNull();
+      const crossed = LANE_KINDS.indexOf("crossed-lane");
+      expect(Array.from(track!.laneKind).every((k) => k === crossed)).toBe(
+        true
+      );
+      return track!;
+    };
+
+    // At the body's own lane the corridor does not keep crossed arms apart,
+    // so the pair keeps its whole lane, on the corridor's side.
+    const kept = sampleHardBeatTrack(withStance(bodyLane), 1.5);
+    expect(kept.left.depthM).toBeLessThan(-0.05);
+    expect(kept.right.depthM).toBeGreaterThan(0.05);
+    // Lanes sized against the body already keep them apart.
+    const gated = withStance(sizedLanes);
+    expect(Array.from(gated.leftDepth).every((v) => v === 0)).toBe(true);
+    expect(Array.from(gated.rightDepth).every((v) => v === 0)).toBe(true);
+  });
+
   it("leaves a performer without a score, or off the wall mode, untracked", () => {
     const pair = heldPair(wallProp(0, 0.3), wallProp(0, 0.3));
     for (const motionStepCount of [0, Number.NaN]) {

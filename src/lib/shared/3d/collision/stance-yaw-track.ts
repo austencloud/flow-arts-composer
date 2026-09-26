@@ -159,7 +159,7 @@ const MIN_KEY_GAP_STEPS = 0.04;
  * Without it a lane that opens between two samples would move the grip
  * sideways within one.
  */
-const LANE_RATE_M_PER_STEP = 0.48;
+export const LANE_RATE_M_PER_STEP = 0.48;
 
 export interface StanceYawSegments {
   /** The curve itself: the plan, before any per-segment stagger. */
