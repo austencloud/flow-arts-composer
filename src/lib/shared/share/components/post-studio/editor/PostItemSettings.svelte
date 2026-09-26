@@ -23,10 +23,12 @@
   } from "$lib/shared/media-composition/domain/post-project";
   import {
     moveOverlayItem,
+    resetFraming,
     setItemFill,
     setVideoSpeed,
     trimItem,
     updateItem,
+    updateItemAt,
     type PostItemPatch,
   } from "$lib/shared/media-composition/domain/post-project-edits";
   import {
@@ -34,11 +36,18 @@
     lookOf,
     type PostLook,
   } from "$lib/shared/media-composition/domain/post-project-looks";
+  import {
+    boxAt,
+    framingAt,
+    isAnimated,
+    opacityAt,
+  } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import ScrubbableNumber from "$lib/shared/ui/components/ScrubbableNumber.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import PostKeyframeControls from "./PostKeyframeControls.svelte";
   import { formatTakeClock } from "../builder/post-builder-format";
   import { itemDisplayLabel, itemIcon, itemKindLabel } from "./post-editor-labels";
 
@@ -74,11 +83,18 @@
     editor.previewSeconds - item.start > POST_MIN_ITEM_SECONDS + POST_TIME_EPSILON &&
       itemEnd(item) - editor.previewSeconds > POST_MIN_ITEM_SECONDS + POST_TIME_EPSILON
   );
+  /** Unlike playheadInside (margined, for the trim-to-playhead buttons), this
+   *  is the item's plain span - the same test the keyframe module itself
+   *  uses to decide whether a write at the playhead lands anywhere at all. */
+  const withinSpan = $derived(
+    editor.previewSeconds >= item.start - POST_TIME_EPSILON &&
+      editor.previewSeconds <= itemEnd(item) + POST_TIME_EPSILON
+  );
 
   function change(field: string, patch: PostItemPatch): void {
     if (locked) return;
     editor.editSetting(`${item.id}:${field}`, (project, ctx) =>
-      updateItem(project, item.id, patch, ctx)
+      updateItemAt(project, item.id, patch, editor.previewSeconds, ctx)
     );
   }
 
@@ -133,7 +149,9 @@
 
   function place(box: PostBox): void {
     if (locked) return;
-    editor.edit((project, ctx) => updateItem(project, item.id, { box }, ctx));
+    editor.edit((project, ctx) =>
+      updateItemAt(project, item.id, { box }, editor.previewSeconds, ctx)
+    );
   }
 
   function sameBox(a: PostBox, b: PostBox): boolean {
@@ -385,6 +403,8 @@
 
   {#if item.kind === "video"}
     {@const clip = item}
+    {@const framing = framingAt(clip, editor.previewSeconds)}
+    {@const framingLocked = locked || (isAnimated(clip, "framing") && !withinSpan)}
     {#if look !== null}
       <section class="group" aria-labelledby="{item.id}-look">
         <h3 id="{item.id}-look">{t("post_editor_look")}</h3>
@@ -502,11 +522,32 @@
         size="sm"
         ariaLabel={t("post_editor_fit")}
       />
+      <SegmentedControl
+        options={[
+          {
+            value: "box",
+            label: t("post_editor_drag_target_box"),
+            disabled: locked,
+          },
+          {
+            value: "picture",
+            label: t("post_editor_drag_target_picture"),
+            disabled: locked,
+          },
+        ]}
+        value={editor.previewDragTarget}
+        onchange={(target) => {
+          if (locked) return;
+          editor.previewDragTarget = target;
+        }}
+        size="sm"
+        ariaLabel={t("post_editor_drag_target")}
+      />
       <div class="grid">
-        <div class="lockable" inert={locked}>
+        <div class="lockable" inert={framingLocked}>
           <ScrubbableNumber
             label={t("post_editor_zoom")}
-            value={clip.zoom * 100}
+            value={framing.zoom * 100}
             min={POST_MIN_ZOOM * 100}
             max={POST_MAX_ZOOM * 100}
             step={1}
@@ -515,10 +556,10 @@
             onchange={(value) => change("zoom", { zoom: value / 100 })}
           />
         </div>
-        <div class="lockable" inert={locked}>
+        <div class="lockable" inert={framingLocked}>
           <ScrubbableNumber
             label={t("post_editor_rotation")}
-            value={clip.rotation}
+            value={framing.rotation}
             min={-180}
             max={180}
             step={1}
@@ -527,10 +568,10 @@
             onchange={(value) => change("rotation", { rotation: value })}
           />
         </div>
-        <div class="lockable" inert={locked}>
+        <div class="lockable" inert={framingLocked}>
           <ScrubbableNumber
             label={t("post_editor_pan_x")}
-            value={clip.panX * 100}
+            value={framing.panX * 100}
             min={-50}
             max={50}
             step={1}
@@ -539,10 +580,10 @@
             onchange={(value) => change("panX", { panX: value / 100 })}
           />
         </div>
-        <div class="lockable" inert={locked}>
+        <div class="lockable" inert={framingLocked}>
           <ScrubbableNumber
             label={t("post_editor_pan_y")}
-            value={clip.panY * 100}
+            value={framing.panY * 100}
             min={-50}
             max={50}
             step={1}
@@ -552,6 +593,10 @@
           />
         </div>
       </div>
+      {#if isAnimated(clip, "framing") && !withinSpan}
+        <p class="hint">{t("post_editor_outside_span_hint")}</p>
+      {/if}
+      <PostKeyframeControls {editor} item={clip} channel="framing" {locked} />
       <div class="chips">
         <FilterChipBase
           mode="toggle"
@@ -576,21 +621,14 @@
               clip.panX === 0 &&
               clip.panY === 0 &&
               clip.rotation === 0 &&
-              !clip.flip)}
+              !clip.flip &&
+              !isAnimated(clip, "framing"))}
           onclick={() => {
             if (locked) return;
             editor.edit((project, ctx) =>
-              updateItem(
-                project,
+              resetFraming(
+                updateItem(project, clip.id, { fit: "cover", flip: false }, ctx),
                 clip.id,
-                {
-                  fit: "cover",
-                  zoom: 1,
-                  panX: 0,
-                  panY: 0,
-                  rotation: 0,
-                  flip: false,
-                },
                 ctx
               )
             );
@@ -676,18 +714,22 @@
         <FilterChipBase
           mode="toggle"
           label={option.label}
-          active={sameBox(item.box, option.box)}
+          active={sameBox(boxAt(item, editor.previewSeconds), option.box)}
           disabled={locked}
           onclick={() => place(option.box)}
         />
       {/each}
     </div>
     <p class="hint">{t("post_editor_placement_hint")}</p>
+    {#if isAnimated(item, "box") && !withinSpan}
+      <p class="hint">{t("post_editor_outside_span_hint")}</p>
+    {/if}
+    <PostKeyframeControls {editor} {item} channel="box" {locked} />
     <div class="grid">
-      <div class="lockable" inert={locked}>
+      <div class="lockable" inert={locked || (isAnimated(item, "opacity") && !withinSpan)}>
         <ScrubbableNumber
           label={t("post_editor_opacity")}
-          value={item.opacity * 100}
+          value={opacityAt(item, editor.previewSeconds) * 100}
           min={0}
           max={100}
           step={1}
@@ -721,6 +763,10 @@
         />
       </div>
     </div>
+    {#if isAnimated(item, "opacity") && !withinSpan}
+      <p class="hint">{t("post_editor_outside_span_hint")}</p>
+    {/if}
+    <PostKeyframeControls {editor} {item} channel="opacity" {locked} />
   </section>
 </div>
 

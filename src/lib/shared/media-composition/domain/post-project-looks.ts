@@ -25,6 +25,7 @@ import {
   withoutItems,
   type EditContext,
 } from "$lib/shared/media-composition/domain/post-project-edits";
+import { clearChannel } from "$lib/shared/media-composition/domain/post-project-keyframes";
 
 /**
  * Looks are quick layouts for one main clip, built from ordinary items so
@@ -102,8 +103,11 @@ export function applyLook(
   const clip = located.item;
   const owned = new Set(lookOverlays(project, mainItemId).map(({ item }) => item.id));
   let next = withoutItems(project, owned);
+  // The look's own box replaces whatever box (and box animation) the clip
+  // had; its framing and opacity keyframes are the clip's own and stay.
+  const clipWithoutBoxKeyframes = clearChannel(clip, "box", clip.start);
   next = replaceItem(next, clip.id, {
-    ...clip,
+    ...clipWithoutBoxKeyframes,
     box: { ...(look === "dual" ? POST_BOX.top : POST_BOX.full) },
   });
 

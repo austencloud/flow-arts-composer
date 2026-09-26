@@ -2,15 +2,25 @@ import {
   MAIN_TRACK_ID,
   MAIN_TRACK_INDEX,
   MAIN_TRACK_KINDS,
+  POST_KEYFRAME_MERGE_SECONDS,
   POST_MIN_ITEM_SECONDS,
   POST_TIME_EPSILON,
   createIdAllocator,
   itemEnd,
   trackHasRoom,
   type PostItem,
+  type PostItemKeyframes,
+  type PostKeyframe,
+  type PostKeyframeChannel,
   type PostProject,
   type PostTrack,
 } from "$lib/shared/media-composition/domain/post-project";
+import {
+  channelsOf,
+  clampChannelValue,
+  postSecondsOfKeyframe,
+  sameChannelValue,
+} from "$lib/shared/media-composition/domain/post-project-keyframes";
 import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
 
 /**
@@ -174,17 +184,18 @@ function sizeItem(
   item: PostItem,
   takes: ReadonlyMap<string, PostTake>
 ): PostItem {
-  if (item.kind === "video") {
-    const limit = takes.get(item.takeId)?.durationSeconds ?? Infinity;
-    const minSpan = POST_MIN_ITEM_SECONDS * item.speed;
-    const sourceOut = Math.min(item.sourceOut, limit);
+  const canonical = canonicalizeItemKeyframes(item);
+  if (canonical.kind === "video") {
+    const limit = takes.get(canonical.takeId)?.durationSeconds ?? Infinity;
+    const minSpan = POST_MIN_ITEM_SECONDS * canonical.speed;
+    const sourceOut = Math.min(canonical.sourceOut, limit);
     const sourceIn =
-      sourceOut - item.sourceIn < minSpan
+      sourceOut - canonical.sourceIn < minSpan
         ? Math.max(0, sourceOut - minSpan)
-        : item.sourceIn;
-    const duration = (sourceOut - sourceIn) / item.speed;
-    const fades = fittedFades(item.fadeIn, item.fadeOut, duration);
-    return withChanges(item, {
+        : canonical.sourceIn;
+    const duration = (sourceOut - sourceIn) / canonical.speed;
+    const fades = fittedFades(canonical.fadeIn, canonical.fadeOut, duration);
+    return withChanges(canonical, {
       sourceIn,
       sourceOut,
       duration,
@@ -192,13 +203,75 @@ function sizeItem(
       fadeOut: fades.fadeOut,
     });
   }
-  const duration = Math.max(POST_MIN_ITEM_SECONDS, item.duration);
-  const fades = fittedFades(item.fadeIn, item.fadeOut, duration);
-  return withChanges(item, {
+  const duration = Math.max(POST_MIN_ITEM_SECONDS, canonical.duration);
+  const fades = fittedFades(canonical.fadeIn, canonical.fadeOut, duration);
+  return withChanges(canonical, {
     duration,
     fadeIn: fades.fadeIn,
     fadeOut: fades.fadeOut,
   });
+}
+
+/**
+ * Canonical keyframes (see `2026-09-26-post-studio-keyframes-design.md`):
+ * each channel sorted by `t`, keyframes within half a frame of post time
+ * merged (the later one winning), values clamped, and an empty channel or an
+ * empty `keyframes` object removed. Keeps the item's reference when it is
+ * already canonical.
+ */
+function canonicalizeItemKeyframes(item: PostItem): PostItem {
+  const existing = (item as { keyframes?: PostItemKeyframes }).keyframes;
+  if (!existing) return item;
+  const next: Record<string, PostKeyframe<unknown>[]> = {};
+  for (const channel of channelsOf(item)) {
+    const raw = existing[channel] as PostKeyframe<unknown>[] | undefined;
+    const canon = canonicalChannel(item, channel, raw);
+    if (canon) next[channel] = canon;
+  }
+  const existingKeys = Object.keys(existing) as PostKeyframeChannel[];
+  const nextKeys = Object.keys(next) as PostKeyframeChannel[];
+  const same =
+    existingKeys.length === nextKeys.length &&
+    nextKeys.every((channel) => next[channel] === existing[channel]);
+  if (same) return item;
+  const { keyframes: _drop, ...rest } = item as PostItem & {
+    keyframes?: unknown;
+  };
+  return nextKeys.length === 0
+    ? (rest as PostItem)
+    : ({ ...item, keyframes: next } as unknown as PostItem);
+}
+
+/** One channel's keyframes, sorted, merged within half a frame, and clamped. */
+function canonicalChannel(
+  item: PostItem,
+  channel: PostKeyframeChannel,
+  raw: readonly PostKeyframe<unknown>[] | undefined
+): PostKeyframe<unknown>[] | undefined {
+  if (!raw || raw.length === 0) return undefined;
+  const sorted = [...raw].sort((a, b) => a.t - b.t);
+  const merged: PostKeyframe<unknown>[] = [];
+  for (const kf of sorted) {
+    const clamped = clampChannelValue(channel, kf.value);
+    const candidate: PostKeyframe<unknown> = sameChannelValue(channel, clamped, kf.value)
+      ? kf
+      : { ...kf, value: clamped };
+    const last = merged[merged.length - 1];
+    if (
+      last &&
+      Math.abs(
+        postSecondsOfKeyframe(item, candidate.t) - postSecondsOfKeyframe(item, last.t)
+      ) <= POST_KEYFRAME_MERGE_SECONDS
+    ) {
+      merged[merged.length - 1] = candidate;
+    } else {
+      merged.push(candidate);
+    }
+  }
+  if (merged.length === raw.length && merged.every((kf, index) => kf === raw[index])) {
+    return raw as PostKeyframe<unknown>[];
+  }
+  return merged;
 }
 
 /**

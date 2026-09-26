@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { PostItem, PostItemKind } from "$lib/shared/media-composition/domain/post-project";
+  import type { PostKeyframeMarker } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import { formatPostClock } from "../../builder/post-builder-format";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
@@ -20,6 +21,10 @@
     onActivate: (itemId: string) => void;
     onBodyPointerDown: (event: PointerEvent) => void;
     onHandlePointerDown: (event: PointerEvent, edge: "start" | "end") => void;
+    markers: PostKeyframeMarker[];
+    onMarkerSeek: (seconds: number) => void;
+    onMarkerPointerDown: (event: PointerEvent, seconds: number) => void;
+    onMarkerKeydown: (event: KeyboardEvent, seconds: number) => void;
   }
 
   let {
@@ -33,6 +38,10 @@
     onActivate,
     onBodyPointerDown,
     onHandlePointerDown,
+    markers,
+    onMarkerSeek,
+    onMarkerPointerDown,
+    onMarkerKeydown,
   }: Props = $props();
 
   const KIND_ICON: Record<PostItemKind, string> = {
@@ -48,6 +57,8 @@
     item.kind === "video" && item.speed !== 1 ? `${item.speed}×` : null
   );
   const isMuted = $derived(item.kind === "video" && item.volume === 0);
+  const pxPerSecond = $derived(item.duration > 0 ? widthPx / item.duration : 0);
+  const hasKeyframes = $derived(markers.length > 0);
 
   const accessibleName = $derived.by(() => {
     const parts = [
@@ -60,6 +71,7 @@
     if (speedLabel) parts.push(t("post_timeline_item_speed", { speed: speedLabel }));
     if (isMuted) parts.push(t("post_timeline_item_muted"));
     if (item.fill) parts.push(t("post_timeline_item_linked"));
+    if (hasKeyframes) parts.push(t("post_timeline_item_animated"));
     return parts.join(", ");
   });
 
@@ -80,6 +92,23 @@
     event.preventDefault();
     event.stopPropagation();
     onHandlePointerDown(event, edge);
+  }
+
+  function handleMarkerPointerDown(event: PointerEvent, seconds: number): void {
+    event.preventDefault();
+    event.stopPropagation();
+    if (locked) return;
+    onMarkerPointerDown(event, seconds);
+  }
+
+  function handleMarkerClick(event: MouseEvent, seconds: number): void {
+    event.stopPropagation();
+    onMarkerSeek(seconds);
+  }
+
+  function handleMarkerKeydown(event: KeyboardEvent, seconds: number): void {
+    event.stopPropagation();
+    onMarkerKeydown(event, seconds);
   }
 </script>
 
@@ -105,6 +134,9 @@
   {#if item.fill}
     <i class="fa-solid fa-link item-glyph" aria-hidden="true"></i>
   {/if}
+  {#if !selected && hasKeyframes}
+    <i class="fa-solid fa-diamond item-glyph" aria-hidden="true"></i>
+  {/if}
   {#if locked}
     <i class="fa-solid fa-lock item-glyph" aria-hidden="true"></i>
   {/if}
@@ -129,6 +161,19 @@
   >
     <span class="handle-grip" aria-hidden="true"></span>
   </button>
+  {#each markers as marker (marker.seconds)}
+    <button
+      type="button"
+      class="kf-marker"
+      style="left: {leftPx + (marker.seconds - item.start) * pxPerSecond}px"
+      aria-label={t("post_timeline_keyframe_at", { time: formatPostClock(marker.seconds) })}
+      onpointerdown={(event) => handleMarkerPointerDown(event, marker.seconds)}
+      onclick={(event) => handleMarkerClick(event, marker.seconds)}
+      onkeydown={(event) => handleMarkerKeydown(event, marker.seconds)}
+    >
+      <i class="fa-solid fa-diamond kf-marker-glyph" aria-hidden="true"></i>
+    </button>
+  {/each}
 {/if}
 
 <style>
@@ -258,6 +303,42 @@
   .trim-handle:focus-visible .handle-grip {
     outline: 2px solid var(--theme-accent);
     outline-offset: 2px;
+  }
+
+  /* Keyframe marker: a small rotated-square diamond centered on its time,
+     with the same 44px hit width as .trim-handle so it stays reachable on
+     touch even though the visible glyph is much smaller. */
+  .kf-marker {
+    position: absolute;
+    top: 3px;
+    bottom: 3px;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    transform: translateX(-50%);
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    touch-action: none;
+  }
+
+  .kf-marker-glyph {
+    font-size: 0.5rem;
+    color: var(--theme-accent, #d4813a);
+    filter: drop-shadow(0 0 0 1px var(--theme-bg, #101018));
+  }
+
+  .kf-marker:focus-visible .kf-marker-glyph {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 2px;
+  }
+
+  @media (hover: hover) {
+    .kf-marker:hover .kf-marker-glyph {
+      color: var(--theme-text, #fff);
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {

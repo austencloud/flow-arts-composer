@@ -18,6 +18,7 @@ import {
   setTrackFlag,
   updateItem,
 } from "$lib/shared/media-composition/domain/post-project-edits";
+import { isAnimated } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import { NOW, card, project, spans, take, text, video } from "./post-project-fixtures";
 
 const ctx = { now: NOW + 1 };
@@ -59,6 +60,30 @@ describe("looks", () => {
     expect(looksOn(full, "v1")).toEqual([]);
     // The text is not part of any look.
     expect(findItem(full, "t1")).not.toBeNull();
+  });
+
+  it("drops the clip's box animation when a look sets its own box, keeping framing and opacity", () => {
+    const base = project([
+      video("v1", {
+        keyframes: {
+          box: [
+            { t: 0, value: { x: 0.2, y: 0.2, width: 0.3, height: 0.3 }, easing: "hold" },
+          ],
+          opacity: [{ t: 0, value: 0.5, easing: "hold" }],
+          framing: [
+            { t: 0, value: { zoom: 1.5, panX: 0, panY: 0, rotation: 0 }, easing: "hold" },
+          ],
+        },
+      }),
+    ]);
+    expect(isAnimated(findItem(base, "v1")!.item, "box")).toBe(true);
+
+    const dual = valid(applyLook(base, "v1", "dual", ctx));
+    const clip = findItem(dual, "v1")!.item;
+    expect(isAnimated(clip, "box")).toBe(false);
+    expect(clip.box).toEqual(POST_BOX.top);
+    expect(isAnimated(clip, "opacity")).toBe(true);
+    expect(isAnimated(clip, "framing")).toBe(true);
   });
 
   it("puts look overlays below texts and fades them with the clip", () => {

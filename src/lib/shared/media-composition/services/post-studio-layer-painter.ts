@@ -50,6 +50,47 @@ export function toPaintFrame(
   };
 }
 
+const PAINT_SIZE_LADDER_RATIO = 1.06;
+
+/**
+ * Rounds a pixel size up to the next rung of a 6% geometric ladder, so a
+ * painter's per-size raster cache coalesces the many close-together sizes a
+ * smoothly dragged resize (or export at a slightly different resolution)
+ * asks for into one shared bucket, instead of re-rendering on every pixel of
+ * movement. The result is always at least `px`, so a cached raster keyed by
+ * the bucket is never smaller than what was actually asked for.
+ */
+export function paintSizeBucket(px: number): number {
+  const size = Math.max(1, px);
+  const step = Math.ceil(
+    Math.log(size) / Math.log(PAINT_SIZE_LADDER_RATIO) - 1e-9
+  );
+  const rung = Math.ceil(Math.pow(PAINT_SIZE_LADDER_RATIO, step));
+  return Math.max(Math.ceil(size), rung);
+}
+
+/**
+ * The cached size closest to `target` among `available`, or null when
+ * nothing is cached yet. Lets `paint` draw the nearest raster that is
+ * actually ready instead of leaving a blank while the exact bucket it just
+ * asked `prepare` for is still rendering.
+ */
+export function nearestCachedSize(
+  available: Iterable<number>,
+  target: number
+): number | null {
+  let best: number | null = null;
+  let bestDistance = Infinity;
+  for (const size of available) {
+    const distance = Math.abs(size - target);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = size;
+    }
+  }
+  return best;
+}
+
 export interface PostStudioLayerPainter {
   /**
    * Readies whatever the painter caches for a target of this pixel size.

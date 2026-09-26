@@ -28,10 +28,12 @@ import {
   resolveStripView,
   type StripMode,
 } from "$lib/shared/media-composition/domain/strip-view";
-import type {
-  PaintFrame,
-  PaintRect,
-  PostStudioLayerPainter,
+import {
+  nearestCachedSize,
+  paintSizeBucket,
+  type PaintFrame,
+  type PaintRect,
+  type PostStudioLayerPainter,
 } from "./post-studio-layer-painter";
 
 const BACKGROUND = "#08080c";
@@ -100,8 +102,13 @@ function mandalaSampleCounts(
   });
 }
 
+/**
+ * The square cache-key size for a target: the smaller side, rounded up to the
+ * nearest 6% ladder rung (`paintSizeBucket`) so a smoothly resized preview
+ * reuses one raster across many near-identical pixel sizes.
+ */
 function stripSquareSize(dims: { width: number; height: number }): number {
-  return Math.max(1, Math.ceil(Math.min(dims.width, dims.height)));
+  return paintSizeBucket(Math.min(dims.width, dims.height));
 }
 
 /**
@@ -308,7 +315,10 @@ class SequenceStripPainter implements PostStudioLayerPainter {
     sequenceFrame: SequenceFrame
   ): void {
     const size = stripSquareSize(rect);
-    const cache = this.sizeCaches.get(size);
+    const nearestSize = this.sizeCaches.has(size)
+      ? size
+      : nearestCachedSize(this.sizeCaches.keys(), size);
+    const cache = nearestSize !== null ? this.sizeCaches.get(nearestSize) : undefined;
     const preparedCells = this.preparedCells;
     if (!cache || !preparedCells) return; // Not ready yet - background only.
 

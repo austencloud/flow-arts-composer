@@ -37,6 +37,14 @@ export const POST_DEFAULT_OVERLAY_SECONDS = 3;
 export const POST_FRAME_RATE = 30;
 /** Times closer than this are the same time. */
 export const POST_TIME_EPSILON = 1e-6;
+/** Keyframes this close in post seconds are the same moment, and merge. */
+export const POST_KEYFRAME_MERGE_SECONDS = 1 / (2 * POST_FRAME_RATE);
+/** A bezier control point's x, like CSS, must stay inside the unit interval. */
+export const POST_EASING_X_MIN = 0;
+export const POST_EASING_X_MAX = 1;
+/** A bezier control point's y may over- or undershoot, for a spring feel. */
+export const POST_EASING_Y_MIN = -1;
+export const POST_EASING_Y_MAX = 2;
 
 export const MAIN_TRACK_INDEX = 0;
 
@@ -73,6 +81,79 @@ export const PostAnchorSchema = z
 
 export type PostAnchor = z.infer<typeof PostAnchorSchema>;
 
+// ---------------------------------------------------------------------------
+// Keyframes
+// ---------------------------------------------------------------------------
+
+const easingXSchema = z.number().finite().min(POST_EASING_X_MIN).max(POST_EASING_X_MAX);
+const easingYSchema = z.number().finite().min(POST_EASING_Y_MIN).max(POST_EASING_Y_MAX);
+
+/** A CSS `cubic-bezier(x1, y1, x2, y2)`, or a hold until the next keyframe. */
+export const PostEasingSchema = z.union([
+  z.literal("hold"),
+  z.tuple([easingXSchema, easingYSchema, easingXSchema, easingYSchema]),
+]);
+
+export type PostEasing = z.infer<typeof PostEasingSchema>;
+
+/** Zoom, pan and turn together, as one keyframed picture framing. */
+export const PostFramingSchema = z
+  .object({
+    zoom: z.number().finite().min(POST_MIN_ZOOM).max(POST_MAX_ZOOM),
+    panX: z.number().finite().min(-0.5).max(0.5),
+    panY: z.number().finite().min(-0.5).max(0.5),
+    rotation: z.number().finite().min(-180).max(180),
+  })
+  .strict();
+
+export type PostFraming = z.infer<typeof PostFramingSchema>;
+
+function postKeyframeSchema<V extends z.ZodTypeAny>(value: V) {
+  return z
+    .object({
+      /** Content time: see `post-project-keyframes.ts` for the two clocks. */
+      t: z.number().finite(),
+      value,
+      /** How the value travels to the next keyframe. */
+      easing: PostEasingSchema,
+    })
+    .strict();
+}
+
+export type PostKeyframe<V> = { t: number; value: V; easing: PostEasing };
+
+/** Channels an item's `keyframes` may animate; `framing` is video only. */
+export type PostKeyframeChannel = "framing" | "box" | "opacity";
+
+const PostKeyframeBoxSchema = postKeyframeSchema(PostBoxSchema);
+const PostKeyframeOpacitySchema = postKeyframeSchema(
+  z.number().finite().min(0).max(1)
+);
+const PostKeyframeFramingSchema = postKeyframeSchema(PostFramingSchema);
+
+/** Every kind: where it sits, and how it fades in and out over its fades. */
+const PostItemKeyframesSchema = z
+  .object({
+    box: z.array(PostKeyframeBoxSchema).optional(),
+    opacity: z.array(PostKeyframeOpacitySchema).optional(),
+  })
+  .strict();
+
+/** Video only: also its zoom, pan and turn. */
+const PostVideoItemKeyframesSchema = z
+  .object({
+    framing: z.array(PostKeyframeFramingSchema).optional(),
+    box: z.array(PostKeyframeBoxSchema).optional(),
+    opacity: z.array(PostKeyframeOpacitySchema).optional(),
+  })
+  .strict();
+
+export interface PostItemKeyframes {
+  framing?: PostKeyframe<PostFraming>[];
+  box?: PostKeyframe<PostBox>[];
+  opacity?: PostKeyframe<number>[];
+}
+
 const itemBase = {
   id: IdSchema,
   /** Austen's own name for it; the kind's name shows when absent. */
@@ -89,12 +170,16 @@ const itemBase = {
   anchor: PostAnchorSchema.nullable(),
   /** Overlays only: span exactly the anchored main clip. */
   fill: z.boolean(),
+  /** Optional animation on this item's box and opacity. */
+  keyframes: PostItemKeyframesSchema.optional(),
 };
 
 export const PostVideoItemSchema = z
   .object({
     ...itemBase,
     kind: z.literal("video"),
+    /** Overrides the base: video also keyframes its framing. */
+    keyframes: PostVideoItemKeyframesSchema.optional(),
     takeId: IdSchema,
     /** Take media seconds. */
     sourceIn: SecondsSchema,
@@ -361,6 +446,22 @@ export function clampBox(box: PostBox): PostBox {
     y: Math.min(1 - height, Math.max(0, box.y)),
     width,
     height,
+  };
+}
+
+/** Degrees folded into [-180, 180]; values already inside are kept. */
+export function wrapDegrees(value: number): number {
+  if (value >= -180 && value <= 180) return value;
+  return ((((value + 180) % 360) + 360) % 360) - 180;
+}
+
+/** A framing moved or turned back into its bounds, rotation wrapped. */
+export function clampFraming(framing: PostFraming): PostFraming {
+  return {
+    zoom: Math.min(POST_MAX_ZOOM, Math.max(POST_MIN_ZOOM, framing.zoom)),
+    panX: Math.min(0.5, Math.max(-0.5, framing.panX)),
+    panY: Math.min(0.5, Math.max(-0.5, framing.panY)),
+    rotation: wrapDegrees(framing.rotation),
   };
 }
 

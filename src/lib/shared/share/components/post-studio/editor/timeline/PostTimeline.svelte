@@ -7,12 +7,14 @@
   } from "$lib/shared/media-composition/domain/post-project";
   import {
     MAIN_TRACK_INDEX,
+    POST_FRAME_RATE,
     POST_MIN_ITEM_SECONDS,
     POST_TIME_EPSILON,
     findItem,
     itemEnd,
     mainItems,
   } from "$lib/shared/media-composition/domain/post-project";
+  import { keyframeMarkers } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import TimeRuler from "$lib/shared/timeline/TimeRuler.svelte";
   import PostTimelineItem from "./PostTimelineItem.svelte";
@@ -72,6 +74,8 @@
       flag: "hidden" | "locked",
       value: boolean
     ) => void;
+    onMoveKeyframe: (itemId: string, fromSeconds: number, toSeconds: number) => void;
+    onDeleteKeyframesAt: (itemId: string, seconds: number) => void;
     onAddVideo?: () => void;
     pixelsPerSecond?: number;
   }
@@ -92,6 +96,8 @@
     onMoveMain,
     onMoveOverlay,
     onTrackFlag,
+    onMoveKeyframe,
+    onDeleteKeyframesAt,
     onAddVideo,
     pixelsPerSecond = $bindable(POST_TIMELINE_DEFAULT_PIXELS_PER_SECOND),
   }: Props = $props();
@@ -117,6 +123,7 @@
   let userScrollTimeoutId: ReturnType<typeof setTimeout> | undefined;
   let suppressNextScrollEvent = false;
   let suppressNextClickForItemId: string | null = null;
+  let suppressNextMarkerClick = false;
   let didFitOnce = false;
   let previousHasItems: boolean | null = null;
 
@@ -177,7 +184,21 @@
     rowHit: OverlayRowHit;
   }
 
-  type DragState = TrimDrag | MoveMainDrag | MoveOverlayDrag;
+  interface KeyframeDrag {
+    kind: "keyframe";
+    itemId: string;
+    pointerId: number;
+    startClientX: number;
+    startClientY: number;
+    didDrag: boolean;
+    frozenPixelsPerSecond: number;
+    originalSeconds: number;
+    itemStartSeconds: number;
+    itemEndSeconds: number;
+    pendingSeconds: number;
+  }
+
+  type DragState = TrimDrag | MoveMainDrag | MoveOverlayDrag | KeyframeDrag;
 
   let dragState = $state<DragState | null>(null);
 
@@ -516,6 +537,64 @@
     };
   }
 
+  function beginKeyframeDrag(
+    event: PointerEvent,
+    itemId: string,
+    seconds: number,
+    itemStartSeconds: number,
+    itemEndSeconds: number
+  ): void {
+    if (event.button !== 0) return;
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    dragState = {
+      kind: "keyframe",
+      itemId,
+      pointerId: event.pointerId,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      didDrag: false,
+      frozenPixelsPerSecond: pixelsPerSecond,
+      originalSeconds: seconds,
+      itemStartSeconds,
+      itemEndSeconds,
+      pendingSeconds: seconds,
+    };
+  }
+
+  function handleMarkerActivate(seconds: number): void {
+    if (suppressNextMarkerClick) {
+      suppressNextMarkerClick = false;
+      return;
+    }
+    onSeek(seconds);
+  }
+
+  function handleMarkerKeydown(
+    event: KeyboardEvent,
+    itemId: string,
+    seconds: number,
+    itemStartSeconds: number,
+    itemEndSeconds: number
+  ): void {
+    if (event.key === "Delete" || event.key === "Backspace") {
+      event.preventDefault();
+      onDeleteKeyframesAt(itemId, seconds);
+      return;
+    }
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      event.preventDefault();
+      const big = event.shiftKey ? 10 : 1;
+      const direction = event.key === "ArrowLeft" ? -1 : 1;
+      const next = Math.min(
+        itemEndSeconds,
+        Math.max(itemStartSeconds, seconds + direction * big * (1 / POST_FRAME_RATE))
+      );
+      if (Math.abs(next - seconds) > POST_TIME_EPSILON) {
+        onMoveKeyframe(itemId, seconds, next);
+      }
+    }
+  }
+
   // --- Continuing / finishing a drag ------------------------------------------
 
   function trackIndexForRowHit(hit: OverlayRowHit, fallback: number): number {
@@ -614,6 +693,17 @@
       return;
     }
 
+    if (state.kind === "keyframe") {
+      const rawSeconds = pointerContentSeconds(event.clientX, state.frozenPixelsPerSecond);
+      const clamped = Math.min(
+        state.itemEndSeconds,
+        Math.max(state.itemStartSeconds, roundToFrameSeconds(rawSeconds))
+      );
+      state.pendingSeconds = clamped;
+      snapGuideSeconds = clamped;
+      return;
+    }
+
     // move-overlay: the ghost's x is the snapped position (not a raw pixel
     // follow like the main-track ghost), since overlays can land anywhere.
     const placed = placeDraggedOverlay(
@@ -661,12 +751,13 @@
     }
 
     if (state.didDrag) {
-      suppressNextClickForItemId = state.itemId;
       if (state.kind === "move-main") {
+        suppressNextClickForItemId = state.itemId;
         if (state.dropIndex !== state.originalIndex) {
           onMoveMain(state.itemId, state.dropIndex);
         }
-      } else {
+      } else if (state.kind === "move-overlay") {
+        suppressNextClickForItemId = state.itemId;
         const targetTrackIndex = trackIndexForRowHit(
           state.rowHit,
           state.originalTrackIndex
@@ -677,6 +768,11 @@
             POST_TIME_EPSILON;
         if (!unchanged) {
           onMoveOverlay(state.itemId, state.snappedStartSeconds, targetTrackIndex);
+        }
+      } else {
+        suppressNextMarkerClick = true;
+        if (Math.abs(state.pendingSeconds - state.originalSeconds) > POST_TIME_EPSILON) {
+          onMoveKeyframe(state.itemId, state.originalSeconds, state.pendingSeconds);
         }
       }
     }
@@ -827,6 +923,12 @@
                     beginBodyDrag(event, item, row.trackIndex)}
                   onHandlePointerDown={(event, edge) =>
                     beginHandleDrag(event, item, edge, row.trackIndex)}
+                  markers={keyframeMarkers(item)}
+                  onMarkerSeek={handleMarkerActivate}
+                  onMarkerPointerDown={(event, seconds) =>
+                    beginKeyframeDrag(event, item.id, seconds, item.start, itemEnd(item))}
+                  onMarkerKeydown={(event, seconds) =>
+                    handleMarkerKeydown(event, item.id, seconds, item.start, itemEnd(item))}
                 />
               {/each}
             </div>

@@ -49,7 +49,9 @@ import {
 } from "$lib/shared/media-composition/domain/take-timing";
 import {
   evaluatePresetFrame,
+  evaluateRegionRects,
   type EvaluatedFrameLayer,
+  type RegionRect,
   type TakeClock,
 } from "$lib/shared/media-composition/services/frame-evaluator";
 import {
@@ -143,6 +145,8 @@ export function createPostEditorState(deps: PostEditorDeps) {
   let mode = $state<PostEditorMode>("edit");
   let selectedItemId = $state<string | null>(null);
   let timingTakeId = $state<string | null>(null);
+  /** What a preview drag moves on a video that does not fill the frame. */
+  let previewDragTarget = $state<"box" | "picture">("box");
 
   const resolved = $derived.by(() => {
     const out: Record<string, ResolvedTakeTiming> = {};
@@ -184,6 +188,14 @@ export function createPostEditorState(deps: PostEditorDeps) {
         clocks,
       }
     );
+  });
+
+  /** Every region's rect at the playhead: static, or where its motion or a
+   *  keyframed box has carried it. The canvas positions its region divs from
+   *  this map, keyed by region id (an item's own id, one region each). */
+  const regionRects = $derived.by((): Map<string, RegionRect> => {
+    if (!compiled || compiled.durationSeconds <= 0) return new Map();
+    return evaluateRegionRects(compiled.preset, compiled.durationSeconds, previewSeconds);
   });
 
   const selectedItem = $derived(
@@ -756,6 +768,15 @@ export function createPostEditorState(deps: PostEditorDeps) {
     },
     get frameLayers() {
       return frameLayers;
+    },
+    get regionRects() {
+      return regionRects;
+    },
+    get previewDragTarget() {
+      return previewDragTarget;
+    },
+    set previewDragTarget(next: "box" | "picture") {
+      previewDragTarget = next;
     },
     get previewSeconds() {
       return previewSeconds;

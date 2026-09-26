@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
-import { PostProjectSchema } from "$lib/shared/media-composition/domain/post-project";
+import {
+  PostProjectSchema,
+  type PostEasing,
+} from "$lib/shared/media-composition/domain/post-project";
 import {
   card,
   overlay,
@@ -281,5 +284,146 @@ describe("normalizeProject", () => {
       )
     );
     expect(PostProjectSchema.safeParse(result).success).toBe(true);
+  });
+});
+
+describe("normalizeProject: keyframe canonicalization", () => {
+  // Card, not text: text is not a MAIN_TRACK_KINDS member, so a lone text
+  // item on the main array would be displaced onto a new overlay track and
+  // these tests would be reading the wrong track's empty items[0].
+  const LINEAR: PostEasing = [0, 0, 1, 1];
+
+  it("sorts keyframes by time", () => {
+    const result = normalizeProject(
+      project([
+        card("c1", 10, {
+          keyframes: {
+            opacity: [
+              { t: 8, value: 0.8, easing: LINEAR },
+              { t: 2, value: 0.2, easing: LINEAR },
+            ],
+          },
+        }),
+      ])
+    );
+    const clip = result.tracks[0]!.items[0]!;
+    expect(clip.keyframes?.opacity?.map((k) => k.t)).toEqual([2, 8]);
+  });
+
+  it("merges keyframes within half a frame of post time, the later one winning", () => {
+    const half = 1 / 60; // POST_KEYFRAME_MERGE_SECONDS
+    const result = normalizeProject(
+      project([
+        card("c1", 10, {
+          keyframes: {
+            opacity: [
+              { t: 3, value: 0.3, easing: LINEAR },
+              { t: 3 + half * 0.5, value: 0.9, easing: LINEAR },
+            ],
+          },
+        }),
+      ])
+    );
+    const clip = result.tracks[0]!.items[0]!;
+    expect(clip.keyframes?.opacity).toHaveLength(1);
+    expect(clip.keyframes?.opacity?.[0]).toMatchObject({ value: 0.9 });
+  });
+
+  it("measures a video's merge distance in post seconds, not raw content time", () => {
+    // At speed 2, a 0.02s content-time gap is only a 0.01s post-time gap -
+    // within half a frame (~0.0167s) once mapped through the take's own
+    // clock, even though the raw content-time gap alone is not.
+    const result = normalizeProject(
+      project([
+        video("v1", {
+          sourceOut: 20,
+          speed: 2,
+          keyframes: {
+            framing: [
+              {
+                t: 4,
+                value: { zoom: 1, panX: 0, panY: 0, rotation: 0 },
+                easing: LINEAR,
+              },
+              {
+                t: 4.02,
+                value: { zoom: 2, panX: 0, panY: 0, rotation: 0 },
+                easing: LINEAR,
+              },
+            ],
+          },
+        }),
+      ])
+    );
+    const clip = result.tracks[0]!.items[0]!;
+    const framing = clip.kind === "video" ? clip.keyframes?.framing : undefined;
+    expect(framing).toHaveLength(1);
+    expect(framing?.[0]?.value.zoom).toBe(2);
+  });
+
+  it("clamps an out-of-range keyframe value", () => {
+    const result = normalizeProject(
+      project([
+        card("c1", 10, {
+          keyframes: {
+            opacity: [{ t: 3, value: 1.5, easing: LINEAR }],
+            box: [
+              {
+                t: 5,
+                value: { x: 0.9, y: 0, width: 0.5, height: 0.5 },
+                easing: LINEAR,
+              },
+            ],
+          },
+        }),
+      ])
+    );
+    const clip = result.tracks[0]!.items[0]!;
+    expect(clip.keyframes?.opacity?.[0]?.value).toBe(1);
+    expect(clip.keyframes?.box?.[0]?.value).toEqual({
+      x: 0.5,
+      y: 0,
+      width: 0.5,
+      height: 0.5,
+    });
+  });
+
+  it("prunes an empty channel, and the whole keyframes object once every channel is empty", () => {
+    const emptied = normalizeProject(
+      project([card("c1", 10, { keyframes: { opacity: [] } })])
+    );
+    expect(emptied.tracks[0]!.items[0]!.keyframes).toBeUndefined();
+
+    const partial = normalizeProject(
+      project([
+        card("c2", 10, {
+          keyframes: {
+            opacity: [],
+            box: [
+              {
+                t: 1,
+                value: { x: 0, y: 0, width: 1, height: 1 },
+                easing: LINEAR,
+              },
+            ],
+          },
+        }),
+      ])
+    );
+    const clip = partial.tracks[0]!.items[0]!;
+    expect(clip.keyframes?.opacity).toBeUndefined();
+    expect(clip.keyframes?.box).toHaveLength(1);
+  });
+
+  it("keeps the same keyframes array reference when already canonical", () => {
+    const opacity = [
+      { t: 2, value: 0.2, easing: LINEAR },
+      { t: 8, value: 0.8, easing: LINEAR },
+    ];
+    const result = normalizeProject(
+      project([card("c1", 10, { keyframes: { opacity } })])
+    );
+    const clip = result.tracks[0]!.items[0]!;
+    expect(clip.keyframes?.opacity).toBe(opacity);
   });
 });

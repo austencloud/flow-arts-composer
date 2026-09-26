@@ -231,6 +231,19 @@ its ruler is the shared `shared/timeline/TimeRuler.svelte`. Ctrl+Z and Ctrl+Y
 reach the editor through `data-edit-history-shortcut-scope` and
 `registerEditHistoryShortcuts`; do not bind them locally.
 
+Post Studio keyframes live on the item: `post-project-keyframes.ts` owns
+content time, sampling, the auto-key rule, easing presets and every keyframe
+edit, and the compiler turns them into the preset's `motion` and
+`regionKeyframes` tracks, which `frame-evaluator.ts` samples for the preview
+and the export alike. Bezier easing goes through `cssCubicBezier` in
+`shared/transitions/ws-ease.ts`. The editor's curve editor is
+`share/components/post-studio/editor/PostCurveEditor.svelte`, and
+`PostKeyframeControls.svelte` presents the previous, toggle and next keyframe
+actions. Searches: keyframe, animate, easing curve, bezier, zoom over time,
+auto-key, hold, overshoot. Painters that cache per size use `paintSizeBucket`
+from `post-studio-layer-painter.ts`, so a box that grows does not re-render
+every frame.
+
 | Search vocabulary                                                                                                                   | Canonical owner                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | scene boot, scene switch, persistent worker renderer, poster handoff, shader warmup, GLB prefetch                                   | `shared/3d/worker-renderer/` owns the persistent production worker for all ten environments; `shared/3d/scene-boot/` owns legacy main-thread boot (Record Scene); `shared/3d/rendering/viewer-lighting-rig.ts` owns viewer lighting; environment worlds under `shared/3d/environments/worlds/` stay renderer-neutral with thin Svelte and worker adapters                                                                                                                                                                                                                                                                  |

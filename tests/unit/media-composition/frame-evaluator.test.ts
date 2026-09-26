@@ -3,6 +3,10 @@ import { POST_STUDIO_PRESETS } from "$lib/shared/media-composition/domain/post-s
 import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
 import type { SequenceTimeMap } from "$lib/shared/media-composition/domain/sequence-time-map";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type {
+  PresetEasing,
+  PresetVisualClipMotion,
+} from "$lib/shared/media-composition/domain/media-composition-preset-schema";
 
 const performancePreset = POST_STUDIO_PRESETS.find(
   (preset) => preset.id === "performance-breakdown"
@@ -37,6 +41,20 @@ function layerAt(seconds: number, clipId: string) {
     (layer) => layer.clipId === clipId
   );
 }
+
+function layerOn(
+  preset: (typeof POST_STUDIO_PRESETS)[number],
+  seconds: number,
+  clipId: string
+) {
+  return evaluatePresetFrame(preset, 10, seconds).find(
+    (layer) => layer.clipId === clipId
+  );
+}
+
+/** cubic-bezier(0, 0, 1, 1): both control points collapse onto the diagonal,
+ * so x(t) === y(t) for every t and the curve is an exact identity. */
+const LINEAR: PresetEasing = [0, 0, 1, 1];
 
 describe("evaluatePresetFrame", () => {
   it("keeps the card visible through the full project", () => {
@@ -373,5 +391,176 @@ describe("evaluatePresetFrame", () => {
     expect(() => evaluatePresetFrame(performancePreset, 0, 0)).toThrow(
       RangeError
     );
+  });
+});
+
+describe("evaluatePresetFrame: motion tracks", () => {
+  const withCardMotion = (motion: PresetVisualClipMotion) => ({
+    ...performancePreset,
+    clips: performancePreset.clips.map((clip) =>
+      clip.id === "card" ? { ...clip, motion } : clip
+    ),
+  });
+
+  it("leaves clip opacity and transform untouched when motion is absent", () => {
+    expect(layerAt(0, "card")?.opacity).toBe(1);
+    expect(layerAt(0, "card")?.transform).toEqual({
+      scale: 1,
+      rotationDegrees: 0,
+      translateX: 0,
+      translateY: 0,
+      flipHorizontal: false,
+    });
+  });
+
+  it("samples a clip's motion.opacity track instead of its static opacity", () => {
+    const preset = withCardMotion({
+      opacity: [
+        { atSeconds: 0, value: 0.2, easing: LINEAR },
+        { atSeconds: 10, value: 1, easing: LINEAR },
+      ],
+    });
+
+    expect(layerOn(preset, 0, "card")?.opacity).toBeCloseTo(0.2, 6);
+    expect(layerOn(preset, 5, "card")?.opacity).toBeCloseTo(0.6, 6);
+    expect(layerOn(preset, 10, "card")?.opacity).toBeCloseTo(1, 6);
+  });
+
+  it("holds the previous opacity value across a hold segment", () => {
+    const preset = withCardMotion({
+      opacity: [
+        { atSeconds: 0, value: 0.3, easing: "hold" },
+        { atSeconds: 10, value: 1, easing: LINEAR },
+      ],
+    });
+
+    expect(layerOn(preset, 0, "card")?.opacity).toBeCloseTo(0.3, 6);
+    expect(layerOn(preset, 5, "card")?.opacity).toBeCloseTo(0.3, 6);
+    expect(layerOn(preset, 9.999, "card")?.opacity).toBeCloseTo(0.3, 6);
+    expect(layerOn(preset, 10, "card")?.opacity).toBeCloseTo(1, 6);
+  });
+
+  it("clamps an out-of-range motion.opacity sample to [0, 1]", () => {
+    // A lone keyframe queried at its own instant returns its value verbatim
+    // from sampleMotionTrack; clipOpacityAt is what clamps it, guarding
+    // against any producer of an out-of-range sample.
+    const preset = withCardMotion({
+      opacity: [{ atSeconds: 0, value: 1.4, easing: LINEAR }],
+    });
+
+    expect(layerOn(preset, 0, "card")?.opacity).toBe(1);
+  });
+
+  it("samples a clip's motion.transform, merging onto the static transform and leaving flipHorizontal alone", () => {
+    const preset = withCardMotion({
+      transform: [
+        {
+          atSeconds: 0,
+          value: { scale: 1, rotationDegrees: 0, translateX: 0, translateY: 0 },
+          easing: LINEAR,
+        },
+        {
+          atSeconds: 10,
+          value: { scale: 2, rotationDegrees: 90, translateX: 0.1, translateY: -0.1 },
+          easing: LINEAR,
+        },
+      ],
+    });
+
+    const start = layerOn(preset, 0, "card")!;
+    const mid = layerOn(preset, 5, "card")!;
+    const end = layerOn(preset, 10, "card")!;
+
+    expect(start.transform).toEqual({
+      scale: 1,
+      rotationDegrees: 0,
+      translateX: 0,
+      translateY: 0,
+      flipHorizontal: false,
+    });
+    expect(mid.transform.scale).toBeCloseTo(1.5, 6);
+    expect(mid.transform.rotationDegrees).toBeCloseTo(45, 6);
+    expect(mid.transform.translateX).toBeCloseTo(0.05, 6);
+    expect(mid.transform.translateY).toBeCloseTo(-0.05, 6);
+    expect(mid.transform.flipHorizontal).toBe(false);
+    expect(end.transform.scale).toBeCloseTo(2, 6);
+  });
+
+  it("floors a motion.transform sample's scale at 0.01", () => {
+    const preset = withCardMotion({
+      transform: [
+        {
+          atSeconds: 0,
+          value: { scale: -2, rotationDegrees: 0, translateX: 0, translateY: 0 },
+          easing: LINEAR,
+        },
+      ],
+    });
+
+    expect(layerOn(preset, 0, "card")?.transform.scale).toBe(0.01);
+  });
+
+  it("samples a preset-level regionKeyframes track for a region's rect", () => {
+    const preset: typeof performancePreset = {
+      ...performancePreset,
+      regionKeyframes: [
+        {
+          regionId: "card",
+          keyframes: [
+            {
+              atSeconds: 0,
+              value: { x: 0, y: 0.6, width: 1, height: 0.4 },
+              easing: LINEAR,
+            },
+            {
+              atSeconds: 10,
+              value: { x: 0, y: 0, width: 1, height: 1 },
+              easing: LINEAR,
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(layerOn(preset, 0, "card")?.regionRect).toEqual({
+      x: 0,
+      y: 0.6,
+      width: 1,
+      height: 0.4,
+    });
+    expect(layerOn(preset, 10, "card")?.regionRect).toEqual({
+      x: 0,
+      y: 0,
+      width: 1,
+      height: 1,
+    });
+    expect(layerOn(preset, 5, "card")?.regionRect).toEqual({
+      x: 0,
+      y: 0.3,
+      width: 1,
+      height: 0.7,
+    });
+  });
+
+  it("floors a regionKeyframes rect sample's width and height at 0.001", () => {
+    const preset: typeof performancePreset = {
+      ...performancePreset,
+      regionKeyframes: [
+        {
+          regionId: "card",
+          keyframes: [
+            {
+              atSeconds: 0,
+              value: { x: 0, y: 0, width: -1, height: -1 },
+              easing: LINEAR,
+            },
+          ],
+        },
+      ],
+    };
+
+    const rect = layerOn(preset, 0, "card")?.regionRect;
+    expect(rect?.width).toBe(0.001);
+    expect(rect?.height).toBe(0.001);
   });
 });

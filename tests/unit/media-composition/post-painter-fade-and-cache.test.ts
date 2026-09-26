@@ -61,7 +61,10 @@ vi.mock("$lib/shared/foundation/get-svg-image-converter", () => ({
 
 import { sequenceFrameAt } from "$lib/shared/media-composition/domain/sequence-frame";
 import { createSequenceStripPainter } from "$lib/shared/media-composition/services/sequence-strip-painter";
-import type { PaintFrame } from "$lib/shared/media-composition/services/post-studio-layer-painter";
+import {
+  paintSizeBucket,
+  type PaintFrame,
+} from "$lib/shared/media-composition/services/post-studio-layer-painter";
 import { PostAnimationOverlayPainter } from "$lib/features/compose/services/post-animation-overlay-painter";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 
@@ -200,9 +203,38 @@ describe("strip painter sizes", () => {
     // The render asks for its own.
     await painter.prepare({ width: 500, height: 500 });
 
-    expect(paintAt(painter, 500, 500)).toEqual(["img-500", "img-500"]);
-    expect(paintAt(painter, 300, 533)).toEqual(["img-300", "img-300"]);
-    // The size asked for longest ago made room.
-    expect(paintAt(painter, 153, 153)).toEqual([]);
+    const img500 = `img-${paintSizeBucket(500)}`;
+    const img300 = `img-${paintSizeBucket(300)}`;
+    expect(paintAt(painter, 500, 500)).toEqual([img500, img500]);
+    expect(paintAt(painter, 300, 533)).toEqual([img300, img300]);
+    // bucket(153) was the size asked for longest ago and was evicted to make
+    // room for bucket(500); a resize never blanks, though - paint falls back
+    // to the nearest raster still cached (bucket(150), one rung away)
+    // instead of waiting for a fresh prepare() to resolve.
+    const img150 = `img-${paintSizeBucket(150)}`;
+    expect(paintAt(painter, 153, 153)).toEqual([img150, img150]);
+  });
+
+  it("coalesces nearby sizes onto one bucket without a second prepare", async () => {
+    const painter = createSequenceStripPainter({ sequence, mode: "arrows" });
+    await painter.prepare({ width: 145, height: 145 });
+
+    // 145 and 150 round up to the same 6% ladder rung, so the raster prepared
+    // for 145 already serves a paint at 150 - no prepare(150) call, and no
+    // fallback needed since the bucket itself is an exact cache hit.
+    expect(paintSizeBucket(145)).toBe(paintSizeBucket(150));
+    const img = `img-${paintSizeBucket(145)}`;
+    expect(paintAt(painter, 150, 150)).toEqual([img, img]);
+  });
+
+  it("falls back to the nearest cached size instead of leaving a blank", async () => {
+    const painter = createSequenceStripPainter({ sequence, mode: "arrows" });
+    await painter.prepare({ width: 300, height: 300 });
+
+    // Only bucket(300) is cached; a paint at a size in a different bucket
+    // still draws, using the one raster that exists, rather than skipping.
+    expect(paintSizeBucket(300)).not.toBe(paintSizeBucket(200));
+    const img = `img-${paintSizeBucket(300)}`;
+    expect(paintAt(painter, 200, 200)).toEqual([img, img]);
   });
 });
