@@ -6,7 +6,6 @@
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import ConstructSection from "../_sections/ConstructSection.svelte";
   import ComposerGenerateDemo from "./ComposerGenerateDemo.svelte";
@@ -21,8 +20,6 @@
     rightPropType,
     appearance,
     propControl,
-    inlinePropPicker,
-    onOpenProps,
   }: {
     sequence: SequenceData | null;
     onSequenceChange?: (sequence: SequenceData) => void;
@@ -30,13 +27,9 @@
     rightPropType?: PropType;
     appearance?: ComposerPropAppearance;
     propControl?: Snippet;
-    inlinePropPicker?: Snippet<[boolean?]>;
-    onOpenProps?: () => void;
   } = $props();
 
   let mode = $state<PracticeMode>("build");
-  let practiceWidth = $state(0);
-  let resultWidth = $state(0);
   const options = [
     {
       value: "build" as const,
@@ -52,28 +45,9 @@
     },
   ];
 
-  const workspacePanels = $derived<PanelDefinition[]>(
-    inlinePropPicker && practiceWidth > 896
-      ? [
-          { id: "result", content: practiceResult, defaultSize: 1 },
-          {
-            id: "props",
-            content: practiceProps,
-            fixedSize: "min(22rem, 36%)",
-            minSize: 240,
-            maxSize: 352,
-            resizable: false,
-          },
-        ]
-      : [{ id: "result", content: practiceResult, defaultSize: 1 }]
-  );
-  // Construct changes from its wide two-column workspace to a stacked layout
-  // at 1100px of its own container. The prop dock reduces that container while
-  // the overall practice surface remains wide, so size the shared stage from
-  // the result panel rather than from the outer surface.
-  const needsCompactResultStage = $derived(
-    resultWidth > 0 && resultWidth < 1100
-  );
+  const workspacePanels: PanelDefinition[] = [
+    { id: "result", content: practiceResult, defaultSize: 1 },
+  ];
 </script>
 
 {#snippet buildPanel()}
@@ -115,7 +89,7 @@
 {/snippet}
 
 {#snippet practiceResult()}
-  <div class="practice-result" bind:clientWidth={resultWidth}>
+  <div class="practice-result">
     <DualSourceCrossfade
       active={mode === "build" ? "first" : "second"}
       first={buildPanel}
@@ -124,19 +98,9 @@
   </div>
 {/snippet}
 
-{#snippet practiceProps()}
-  <aside
-    class="practice-inline-props"
-    aria-label="Props for the practice result"
-  >
-    {@render inlinePropPicker?.(true)}
-  </aside>
-{/snippet}
-
 <section
   class="composer-practice"
   aria-label="Try Composer"
-  bind:clientWidth={practiceWidth}
 >
   <div class="practice-toolbar">
     <SegmentedControl
@@ -150,21 +114,13 @@
     {#if propControl}
       <div class="prop-control">{@render propControl()}</div>
     {/if}
-    {#if onOpenProps && !inlinePropPicker}
-      <div class="desktop-prop-control">
-        <PanelButton onclick={onOpenProps}>Choose props</PanelButton>
-      </div>
-    {/if}
   </div>
 
-  <div
-    class="practice-stage"
-    class:compact-result-stage={needsCompactResultStage}
-  >
+  <div class="practice-stage">
     <PanelGroup
       direction="horizontal"
       panels={workspacePanels}
-      flattened={workspacePanels.length === 1}
+      flattened
       gap={0}
     />
   </div>
@@ -195,7 +151,7 @@
   }
 
   .prop-control {
-    display: none;
+    display: flex;
     min-width: 0;
   }
 
@@ -209,30 +165,9 @@
     background: var(--theme-panel-bg);
   }
 
-  .practice-result,
-  .practice-inline-props {
+  .practice-result {
     min-width: 0;
     min-height: 0;
-  }
-
-  .practice-stage
-    :global(.panel-wrapper + .resize-handle-slot + .panel-wrapper),
-  .practice-stage :global(.panel-wrapper + .panel-wrapper) {
-    border-left: 1px solid var(--theme-stroke);
-  }
-
-  /* This is driven by the allocated result panel, not the outer practice
-     width. A 352px dock leaves a 938px constructor at a 1293px surface; the
-     constructor stacks at that inner width and needs the same tall stage as a
-     truly narrow practice surface. Both tabs remain mounted in this one frame. */
-  .practice-stage.compact-result-stage {
-    height: clamp(52rem, 90svh, 62rem);
-  }
-
-  @media (max-width: 895.98px) {
-    .desktop-prop-control {
-      display: none;
-    }
   }
 
   @container (max-width: 69rem) {
@@ -245,29 +180,17 @@
     .practice-stage {
       height: clamp(52rem, 170cqw, 74rem);
     }
-
-    .practice-inline-props {
-      display: none;
-    }
-
-    .prop-control {
-      display: block;
-    }
-
-    .desktop-prop-control {
-      display: none;
-    }
   }
 
   @container (max-width: 42rem) {
-    .practice-toolbar {
-      align-items: stretch;
-      flex-direction: column;
+    .practice-toolbar :global(.segmented-control) {
+      flex: 1 1 14rem;
+      width: auto;
+      max-width: 22rem;
     }
 
-    .practice-toolbar :global(.segmented-control),
     .prop-control {
-      width: 100%;
+      flex: 0 0 auto;
     }
   }
 </style>

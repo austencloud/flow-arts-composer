@@ -36,7 +36,6 @@
   import { runAfterNamedRouteMorphIdle } from "$lib/shared/transitions/named-route-morph-state.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import ComposerBackgroundCycle from "./ComposerBackgroundCycle.svelte";
-  import ComposerInlinePropPicker from "./ComposerInlinePropPicker.svelte";
   import ComposerPropPicker from "./ComposerPropPicker.svelte";
   import { resolveComposerCarriedSequence } from "./composer-sequence-ownership";
   import type { ComposerPropAppearance } from "./composer-prop-appearance";
@@ -141,7 +140,6 @@
     chirality,
   };
   let propPickerOpen = $state(false);
-  let inlinePickerTarget = $state<"practice" | "tunnel" | null>(null);
   const propName = $derived(getPropTypeDisplayInfo(selectedProp).label);
 
   function openPropPicker(): void {
@@ -153,13 +151,6 @@
     selectedProp = prop;
   }
 
-  function openInlinePicker(target: "practice" | "tunnel"): void {
-    inlinePickerTarget = target;
-  }
-
-  function closeInlinePicker(): void {
-    inlinePickerTarget = null;
-  }
   const reduceMotion = new MediaQuery("(prefers-reduced-motion: reduce)");
   let constructActive = $state(false);
   let outputsActive = $state(false);
@@ -223,30 +214,20 @@
 </script>
 
 {#snippet propControl()}
-  <PanelButton
-    onclick={openPropPicker}
-    ariaLabel={`Change props. Current: ${propName}`}
-  >
-    <PropCompositionPreview
-      propType={selectedProp}
-      size={28}
-      useSavedOverrides={false}
-      colors={primaryPropColors}
-    />
-    <span>Props: {propName}</span>
-    <i class="fas fa-chevron-down" aria-hidden="true"></i>
-  </PanelButton>
-{/snippet}
-
-{#snippet inlinePropPicker(docked = false)}
-  <ComposerInlinePropPicker
-    selectedPropType={selectedProp}
-    onSelect={selectProp}
-    onDone={closeInlinePicker}
-    {docked}
-    showColors={inlinePickerTarget !== "tunnel"}
-    {...pickerAppearance}
-  />
+  <span class="prop-trigger" title={`Change props · ${propName}`}>
+    <PanelButton
+      onclick={openPropPicker}
+      ariaLabel={`Change props. Current: ${propName}`}
+      ariaExpanded={propPickerOpen}
+    >
+      <PropCompositionPreview
+        propType={selectedProp}
+        size={36}
+        useSavedOverrides={false}
+        colors={primaryPropColors}
+      />
+    </PanelButton>
+  </span>
 {/snippet}
 
 {#snippet pickerPreview()}
@@ -403,23 +384,7 @@
           loadPriority="immediate"
         />
         <div class="hero-props">
-          <PanelButton
-            onclick={openPropPicker}
-            ariaLabel={`Change props. Current: ${propName}`}
-            ariaExpanded={propPickerOpen}
-          >
-            <PropCompositionPreview
-              propType={selectedProp}
-              size={28}
-              useSavedOverrides={false}
-              colors={primaryPropColors}
-            />
-            <span>Props: {propName}</span>
-            <i
-              class="fas fa-chevron-down"
-              aria-hidden="true"
-            ></i>
-          </PanelButton>
+          {@render propControl()}
         </div>
       </div>
       <div class="player-theme"><ComposerBackgroundCycle /></div>
@@ -465,9 +430,6 @@
           rightPropType: selectedProp,
           appearance: propAppearance,
           propControl,
-          inlinePropPicker:
-            inlinePickerTarget === "practice" ? inlinePropPicker : undefined,
-          onOpenProps: () => openInlinePicker("practice"),
         }}
         error={constructLoadError}
         debugName="composer guided construct"
@@ -517,9 +479,6 @@
             rightPropType: selectedProp,
             appearance: propAppearance,
             propControl,
-            inlinePropPicker:
-              inlinePickerTarget === "tunnel" ? inlinePropPicker : undefined,
-            onOpenProps: () => openInlinePicker("tunnel"),
           }}
           error={tunnelLoadError}
           debugName="composer tunnel"
@@ -841,6 +800,24 @@
     display: flex;
     justify-content: center;
     margin-top: var(--spacing-md, 16px);
+  }
+
+  .prop-trigger {
+    display: inline-block;
+    width: max(var(--min-touch-target, 48px), 48px);
+    height: max(var(--min-touch-target, 48px), 48px);
+  }
+
+  .prop-trigger :global(.panel-btn) {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    padding: 5px;
+    border-radius: var(--settings-radius-md, 0.65rem);
+  }
+
+  .prop-trigger :global(.panel-btn:hover) {
+    border-color: var(--theme-stroke-strong);
   }
 
   .opening-player::before {
