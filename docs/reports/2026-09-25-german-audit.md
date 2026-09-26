@@ -22,7 +22,8 @@ The repeated visible omissions had several causes: hardcoded component text, dis
 
 - All 60 tests passed across eight focused suites: locale selection, reactive German display helpers, authentication errors, post handoff, Trace Paths state, startup splash handoff, timing summaries, and timing keys.
 - Regression checks cover browser-language versus saved-language priority, switching English → German → English, startup status text, and preserving saved values and user content while changing display language.
-- All 147 changed Svelte components compiled. The 36 compiler warnings also occur in the original versions; this pass introduced no new compiler warnings.
+- All 148 changed Svelte components compiled, including the animation canvas's play/pause overlay caught during the final main-server inspection. Compiler warnings in the audited components also occur in the original versions; this pass introduced no new compiler warnings.
+- The guarded local integration ran `npm run check` successfully: zero errors and zero warnings. German language settings and the creation entry page were rechecked on the main server.
 - New/changed translation keys have matching English and German placeholders. Literal translation references in changed source files resolve. Generated translation types were refreshed.
 - Direct browser inspection used the task worktree at `http://127.0.0.1:5191`. Checked German settings navigation/language selection, creation methods and generator controls, browsing filters/results, and the AKEJ sequence viewer with playback and sharing controls. Desktop viewer labels fit the inspected 1280 × 720 layout.
 - Guest account prompts prevented browser inspection of account-only prop controls. Those paths received source/compiler checks; authenticated end-to-end behavior is not claimed.
