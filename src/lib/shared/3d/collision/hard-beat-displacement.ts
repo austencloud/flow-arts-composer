@@ -34,11 +34,6 @@ import {
   type PropState3D,
 } from "@austencloud/scene-3d";
 import {
-  planUpperBodyStanceYawTarget,
-  stanceSideBlend,
-  stanceTargetsForPropStates,
-} from "./upper-body-stance-planner";
-import {
   resolveTrackedUpperBodyStance,
   type StanceYawTrack,
 } from "./stance-yaw-track";
@@ -579,12 +574,9 @@ export function buildHardBeatTrack(
     );
     const chestRad = stance.segments.chestRad;
     chest[i] = chestRad;
-    sideBlend[i] = stanceSideBlend(
-      chestRad,
-      planUpperBodyStanceYawTarget(
-        stanceTargetsForPropStates(PlaneMode.WALL, left, right)
-      )
-    );
+    // The corridor's own engagement, read from the stance rather than
+    // re-derived, so the lanes hand over exactly where it opens.
+    sideBlend[i] = stance.sideBlend;
     hands[i] = {
       left: { prop: left, corridorM: stance.leftDepthOffsetM },
       right: { prop: right, corridorM: stance.rightDepthOffsetM },
@@ -738,10 +730,16 @@ export function buildHardBeatTrack(
   // Each hand's share of the lane, toward and away from the audience, widened
   // on its own: where the sign changes one ramps out while the other ramps in,
   // so neither hand jumps. Arms crossed in front of the chest stay crossed
-  // when it turns side-on, and the corridor alone does not keep them apart,
-  // so a crossed pair keeps its whole lane there, ungated. Wherever the chest
-  // is committed its lane takes the corridor's sign and adds to the corridor.
-  // On the scoreboard this put far fewer staffs through the torso.
+  // when it turns side-on. A corridor at the body's own lane does not keep
+  // them apart, so there a crossed pair keeps its whole lane, ungated, which
+  // put far fewer staffs through the torso on the scoreboard. Lanes sized
+  // against the body (`stance-side-lane.ts`) already keep them apart: the
+  // whole lane on top of those lost about as many grips as the torso frames
+  // it cleared and pressed some 370 more staff frames per rig against the
+  // holding forearm, so with them a crossed pair is gated like any other.
+  // Wherever the chest is committed its lane takes the corridor's sign and
+  // adds to the corridor.
+  const crossedKeepsLane = options.stanceTrack?.laneFloorLeft == null;
   const laneParts = {
     leftToward: new Float64Array(n),
     leftAway: new Float64Array(n),
@@ -750,7 +748,7 @@ export function buildHardBeatTrack(
   };
   const crossedKind = LANE_KINDS.indexOf("crossed-lane");
   for (let i = 0; i < n; i++) {
-    const crossedPair = laneKind[i] === crossedKind;
+    const crossedPair = crossedKeepsLane && laneKind[i] === crossedKind;
     const lane = crossedPair ? laneWidth[i]! : laneRaw[i]!;
     const up = crossedPair
       ? { left: 1, right: 1 }

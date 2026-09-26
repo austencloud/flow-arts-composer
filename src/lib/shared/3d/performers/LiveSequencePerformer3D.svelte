@@ -30,7 +30,10 @@
     type StanceYawTrack,
   } from "$lib/shared/3d/collision/stance-yaw-track";
   import type { HardBeatTrack } from "$lib/shared/3d/collision/hard-beat-displacement";
+  import { DEFAULT_STAFF_BODY_CLEARANCE_BODY } from "$lib/shared/3d/collision/staff-body-clearance";
+  import type { StanceClearance } from "$lib/shared/3d/collision/stance-side-lane";
   import { resolvePerformerContact } from "$lib/shared/3d/domain/performer-contact-displacement";
+  import { performerScoreClock } from "$lib/shared/3d/domain/performer-score-clock";
   import {
     fitStaffLengthForHug,
     measurePerformerReach,
@@ -125,22 +128,39 @@
   );
   // A body that cannot hold any supported staff keeps the global default
   // rather than rendering a nonsense prop; the fit result says so explicitly.
-  const propLength = $derived.by(() => {
+  const staffLengthCm = $derived.by(() => {
     const pinned = props.propLengthCm;
-    if (pinned != null && Number.isFinite(pinned)) return cmToUnits(pinned);
-    return staffFit?.fits
-      ? cmToUnits(staffFit.recommendedStaffLengthCm)
-      : undefined;
+    if (pinned != null && Number.isFinite(pinned)) return pinned;
+    return staffFit?.fits ? staffFit.recommendedStaffLengthCm : null;
+  });
+  const propLength = $derived(
+    staffLengthCm === null ? undefined : cmToUnits(staffLengthCm)
+  );
+  // The hands' side-on lanes are sized for the staff this body holds and the
+  // lane the frame reads, so the plan tests each grip where it will be drawn.
+  const stanceClearance = $derived<StanceClearance>({
+    body:
+      staffLengthCm === null
+        ? DEFAULT_STAFF_BODY_CLEARANCE_BODY
+        : {
+            ...DEFAULT_STAFF_BODY_CLEARANCE_BODY,
+            staffLengthM: staffLengthCm / 100,
+          },
+    measurements: reachMeasurements,
   });
   // The turn's timing is planned once per sequence, not re-derived per frame:
   // the curve needs the whole score to know when to start leading.
   const stanceTrack = $derived(
-    buildStanceYawTrackForSource(performerState, PlaneMode.WALL)
+    buildStanceYawTrackForSource(
+      performerState,
+      PlaneMode.WALL,
+      stanceClearance
+    )
   );
   const upperBodyStance = $derived(
     resolveTrackedUpperBodyStance(
       stanceTrack,
-      performerState.scoreTime,
+      performerScoreClock(performerState),
       PlaneMode.WALL,
       performerState.leftPropState,
       performerState.rightPropState,

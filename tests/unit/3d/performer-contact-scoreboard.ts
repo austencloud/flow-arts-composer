@@ -46,6 +46,10 @@ import {
   buildStanceYawTrackForSource,
   resolveTrackedUpperBodyStance,
 } from "$lib/shared/3d/collision/stance-yaw-track";
+import {
+  DEFAULT_STANCE_CLEARANCE,
+  type StanceClearance,
+} from "$lib/shared/3d/collision/stance-side-lane";
 import { MAX_STANCE_YAW_RAD } from "$lib/shared/3d/collision/upper-body-stance-planner";
 import {
   buildHardBeatTrack,
@@ -338,6 +342,11 @@ export interface ContactScoreboardOptions {
   lockMode?: ContactLockMode;
   /** Called with every measured frame, for diagnostic probes. */
   onFrame?: (frame: ScoreboardFrame) => void;
+  /** The body the hands' side-on lanes are sized for; null keeps the body's
+   *  own lane everywhere, as before the lanes adapted. */
+  stanceClearance?: StanceClearance | null;
+  /** Only these corpus sequences, for diagnostic probes. */
+  sequences?: readonly string[];
 }
 
 async function buildRig(id: string) {
@@ -640,7 +649,11 @@ export async function runContactScoreboard(
   };
 
   {
-    const corpus = propContinuityCorpus().slice(0, options.limit);
+    const corpus = propContinuityCorpus()
+      .filter(
+        (entry) => !options.sequences || options.sequences.includes(entry.id)
+      )
+      .slice(0, options.limit);
     for (const entry of corpus) {
       const perSequence: SequenceScore = {
         sequence: entry.id,
@@ -654,7 +667,13 @@ export async function runContactScoreboard(
       );
       state.setPlaneMode(mode);
       state.loadSequence(entry.sequence);
-      const track = buildStanceYawTrackForSource(state, mode);
+      const track = buildStanceYawTrackForSource(
+        state,
+        mode,
+        options.stanceClearance === undefined
+          ? DEFAULT_STANCE_CLEARANCE
+          : options.stanceClearance
+      );
       const hardBeat = displace
         ? buildHardBeatTrack({
             source: state,
