@@ -447,11 +447,17 @@
             hapticService?.trigger("selection");
             onFavorite?.();
           }}
-          aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+          aria-label={isFavorite
+            ? t("viewer_remove_from_favorites")
+            : t("viewer_add_to_favorites")}
           aria-pressed={isFavorite}
         >
           <i class="fas fa-heart" aria-hidden="true"></i>
-          <span>{isFavorite ? "Favorited" : "Favorite"}</span>
+          <span
+            >{isFavorite
+              ? t("viewer_header_favorited")
+              : t("viewer_header_favorite")}</span
+          >
         </button>
       {/if}
 
@@ -463,10 +469,10 @@
             hapticService?.trigger("selection");
             onFork?.();
           }}
-          aria-label="Fork this sequence"
+          aria-label={t("viewer_audit_fork_sequence")}
         >
           <i class="fas fa-code-branch" aria-hidden="true"></i>
-          <span>Fork</span>
+          <span>{t("viewer_audit_fork")}</span>
         </button>
       {/if}
 
@@ -522,7 +528,7 @@
             hapticService?.trigger("selection");
             onSaveToLibrary?.();
           }}
-          aria-label="Save to library"
+          aria-label={t("viewer_header_save_to_library")}
         >
           <i class="fas fa-bookmark" aria-hidden="true"></i>
           <span>{t("browse_save")}</span>
@@ -538,11 +544,17 @@
             hapticService?.trigger("selection");
             onFavorite?.();
           }}
-          aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+          aria-label={isFavorite
+            ? t("viewer_remove_from_favorites")
+            : t("viewer_add_to_favorites")}
           aria-pressed={isFavorite}
         >
           <i class="fas fa-heart" aria-hidden="true"></i>
-          <span>{isFavorite ? "Favorited" : "Favorite"}</span>
+          <span
+            >{isFavorite
+              ? t("viewer_header_favorited")
+              : t("viewer_header_favorite")}</span
+          >
         </button>
       {/if}
 
@@ -552,10 +564,14 @@
           class="action-btn"
           onclick={handleExportClick}
           disabled={isExporting}
-          aria-label="Export sequence"
+          aria-label={t("viewer_detail_export_sequence")}
         >
           <i class="fas fa-file-export" aria-hidden="true"></i>
-          <span>{isExporting ? "Exporting..." : "Export"}</span>
+          <span
+            >{isExporting
+              ? t("viewer_audit_exporting")
+              : t("viewer_ui_export")}</span
+          >
         </button>
       {/if}
     </div>

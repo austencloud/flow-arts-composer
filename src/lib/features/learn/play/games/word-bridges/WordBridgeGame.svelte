@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount, tick } from "svelte";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import { getErrorHandler } from "$lib/shared/application/get-error-handler";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
@@ -77,49 +78,83 @@
   const prompt = $derived.by(() => {
     switch (currentQuestion?.task) {
       case "validity":
-        return "This word can run exactly as written.";
+        return tDynamic("learn_bridge_prompt_validity");
       case "count":
-        return "How many bridge letters does this word need?";
+        return tDynamic("learn_bridge_prompt_count");
       case "repair":
-        return "Which letter can bridge the marked gap?";
+        return tDynamic("learn_bridge_prompt_repair");
       default:
-        return "Read the word";
+        return tDynamic("learn_bridge_prompt_read");
     }
   });
 
   const kicker = $derived.by(() => {
     switch (currentQuestion?.task) {
       case "validity":
-        return "True or false";
+        return tDynamic("learn_bridge_kicker_validity");
       case "count":
-        return "Count every break";
+        return tDynamic("learn_bridge_kicker_count");
       case "repair":
-        return "Choose a bridge";
+        return tDynamic("learn_bridge_kicker_repair");
       default:
-        return "Word bridges";
+        return tDynamic("learn_bridge_kicker_default");
     }
   });
 
   const answerAnnouncement = $derived.by(() => {
     if (!isAnswered || !currentQuestion || selectedAnswer === null) return "";
 
-    const result = answerWasCorrect ? "Correct." : "Not quite.";
+    const result = answerWasCorrect
+      ? tDynamic("learn_bridge_correct")
+      : tDynamic("learn_bridge_not_quite");
     if (currentQuestion.task === "validity") {
       return currentQuestion.analysis.canRunAsWritten
-        ? `${result} ${displayWord} runs exactly as written.`
-        : `${result} ${displayWord} needs ${currentQuestion.analysis.requiredBridgeCount} ${currentQuestion.analysis.requiredBridgeCount === 1 ? "bridge" : "bridges"}.`;
+        ? tDynamic("learn_bridge_announcement_runs", {
+            result,
+            word: displayWord,
+          })
+        : tDynamic(
+            currentQuestion.analysis.requiredBridgeCount === 1
+              ? "learn_bridge_announcement_needs_one"
+              : "learn_bridge_announcement_needs_many",
+            {
+              result,
+              word: displayWord,
+              count: currentQuestion.analysis.requiredBridgeCount,
+            }
+          );
     }
 
     if (currentQuestion.task === "count") {
-      return `${result} ${displayWord} needs ${currentQuestion.correctAnswer} ${currentQuestion.correctAnswer === 1 ? "bridge" : "bridges"}.`;
+      return tDynamic(
+        currentQuestion.correctAnswer === 1
+          ? "learn_bridge_announcement_needs_one"
+          : "learn_bridge_announcement_needs_many",
+        {
+          result,
+          word: displayWord,
+          count: currentQuestion.correctAnswer,
+        }
+      );
     }
 
     const validBridges = currentQuestion.validBridges
       .map((bridge) => bridge.letter)
       .join(", ");
     return answerWasCorrect
-      ? `${result} ${selectedAnswer} bridges ${currentQuestion.gap.from} to ${currentQuestion.gap.to}.`
-      : `${result} ${selectedAnswer} does not bridge ${currentQuestion.gap.from} to ${currentQuestion.gap.to}. Valid bridges are ${validBridges}.`;
+      ? tDynamic("learn_bridge_announcement_connects", {
+          result,
+          selected: selectedAnswer,
+          from: currentQuestion.gap.from,
+          to: currentQuestion.gap.to,
+        })
+      : tDynamic("learn_bridge_announcement_fails", {
+          result,
+          selected: selectedAnswer,
+          from: currentQuestion.gap.from,
+          to: currentQuestion.gap.to,
+          valid: validBridges,
+        });
   });
 
   onMount(() => {
@@ -197,9 +232,9 @@
     } catch (cause) {
       if (disposed) return;
       console.error("[WordBridgeGame] Failed to load:", cause);
-      error = "Bridge questions did not load.";
+      error = "learn_bridge_load_error";
       getErrorHandler().showUserError({
-        message: "Bridge questions did not load",
+        message: tDynamic("learn_bridge_load_error"),
         technicalDetails:
           cause instanceof Error ? cause.message : String(cause),
         error: cause instanceof Error ? cause : new Error(String(cause)),
@@ -386,7 +421,7 @@
   </QuizContainer>
 {:else if error}
   <QuizContainer>
-    <QuizErrorState {error} onRetry={initializeGame} />
+    <QuizErrorState error={tDynamic(error)} onRetry={initializeGame} />
   </QuizContainer>
 {:else if currentQuestion}
   <QuizContainer>
@@ -403,7 +438,10 @@
         <div class="problem-panel">
           <div
             class="word-display"
-            aria-label="{prompt} Word {displayWord}"
+            aria-label={tDynamic("learn_bridge_word_aria", {
+              prompt,
+              word: displayWord,
+            })}
             tabindex="-1"
             bind:this={wordDisplayElement}
           >
@@ -425,18 +463,18 @@
             {@const validityQuestion = currentQuestion}
             <div class="text-answer-grid binary">
               <QuizWordButton
-                word="TRUE"
-                subtitle="No bridge"
-                ariaLabel="True, the word runs as written"
+                word={tDynamic("learn_bridge_true")}
+                subtitle={tDynamic("learn_bridge_no_bridge")}
+                ariaLabel={tDynamic("learn_bridge_true_aria")}
                 state={textAnswerState(true, validityQuestion.correctAnswer)}
                 disabled={isAnswered}
                 onclick={() =>
                   submitAnswer(true, "true", validityQuestion.correctAnswer)}
               />
               <QuizWordButton
-                word="FALSE"
-                subtitle="Bridge needed"
-                ariaLabel="False, the word needs a bridge"
+                word={tDynamic("learn_bridge_false")}
+                subtitle={tDynamic("learn_bridge_needed")}
+                ariaLabel={tDynamic("learn_bridge_false_aria")}
                 state={textAnswerState(false, !validityQuestion.correctAnswer)}
                 disabled={isAnswered}
                 onclick={() =>
@@ -449,7 +487,12 @@
               {#each countQuestion.options as count (count)}
                 <QuizWordButton
                   word={String(count)}
-                  ariaLabel={`${count} ${count === 1 ? "bridge" : "bridges"}`}
+                  ariaLabel={tDynamic(
+                    count === 1
+                      ? "learn_bridge_count_one"
+                      : "learn_bridge_count_many",
+                    { count }
+                  )}
                   state={textAnswerState(
                     count,
                     count === countQuestion.correctAnswer
@@ -473,7 +516,11 @@
                   <QuizPictographButton
                     {pictograph}
                     caption={choice.letter}
-                    ariaLabel={`Bridge letter ${choice.letter}, starts ${groupLabel(choice.startPlacementGroup)} and ends ${groupLabel(choice.endPlacementGroup)}`}
+                    ariaLabel={tDynamic("learn_bridge_choice_aria", {
+                      letter: choice.letter,
+                      start: groupLabel(choice.startPlacementGroup),
+                      end: groupLabel(choice.endPlacementGroup),
+                    })}
                     showPlacements={true}
                     state={repairAnswerState(choice)}
                     disabled={isAnswered}
@@ -492,7 +539,7 @@
 
         <aside
           class="explanation-panel"
-          aria-label="Bridge explanation"
+          aria-label={tDynamic("learn_bridge_explanation_aria")}
           tabindex="-1"
           bind:this={explanationPanel}
         >
@@ -509,24 +556,21 @@
               class="continue-button"
               onclick={handleContinue}
             >
-              {isFinalAnswer ? "See results" : "Continue"}
+              {isFinalAnswer
+                ? tDynamic("learn_bridge_see_results")
+                : tDynamic("learn_bridge_continue")}
               <span aria-hidden="true">→</span>
             </button>
           {:else}
             <div class="bridge-primer" role="note">
               <div class="match-rule" aria-hidden="true">
-                <span>End</span>
+                <span>{tDynamic("learn_bridge_end")}</span>
                 <strong>=</strong>
-                <span>Start</span>
+                <span>{tDynamic("learn_bridge_start")}</span>
               </div>
-              <h3>Check each gap</h3>
-              <p>
-                Matching placement groups connect directly. A mismatch needs a
-                bridge letter between them.
-              </p>
-              <span class="take-time"
-                >No timer. Study the word as long as needed.</span
-              >
+              <h3>{tDynamic("learn_bridge_check_gaps")}</h3>
+              <p>{tDynamic("learn_bridge_primer")}</p>
+              <span class="take-time">{tDynamic("learn_bridge_no_timer")}</span>
             </div>
           {/if}
         </aside>

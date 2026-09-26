@@ -15,6 +15,17 @@ import {
 import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import { describePictograph } from "$lib/shared/pictograph/shared/domain/utils/pictograph-description";
 
+import { loopTypeLabel } from "$lib/features/create/generate/components/loop-component-presentation";
+import {
+  feedbackStatusLabel,
+  feedbackTypePlaceholder,
+} from "$lib/features/feedback/domain/feedback-display-labels";
+import { mapAuthError } from "$lib/shared/auth/services/auth-error-messages";
+import { localizeFilterChip } from "$lib/shared/browse/components/localize-filter-chip";
+import { effectUiLabel } from "$lib/shared/animation-engine/components/effects-panel/effect-ui-label";
+import { postActDisplayLabel } from "$lib/shared/share/components/post-studio/builder/post-builder-format";
+import { POST_ACT } from "$lib/shared/media-composition/domain/post-plan";
+
 afterEach(async () => {
   await setLocale("en");
   document.cookie = "PARAGLIDE_LOCALE=; max-age=0; path=/";
@@ -74,5 +85,55 @@ describe("Create display language", () => {
     expect(JSON.stringify(pictograph)).toBe(before);
     await setLocale("en");
     expect(describePictograph(pictograph)).toBe(english);
+  });
+});
+
+describe("German audit display helpers", () => {
+  it("localizes persisted built-in labels without modifying filters or user content", async () => {
+    const filters = [
+      { type: "length", label: "8 steps", value: 8 },
+      { type: "cap_type", label: "Mirrored", value: "component:mirrored" },
+      { type: "gridMode", label: "Diamond", value: "diamond" },
+      { type: "owner", label: "Fire", value: "Fire" },
+      { type: "collection", label: "My German practice", value: "mine" },
+    ];
+    const before = JSON.stringify(filters);
+    await setLocale("en");
+    const english = filters.map(localizeFilterChip);
+    await setLocale("de");
+    const german = filters.map(localizeFilterChip);
+    expect(german.slice(0, 3)).toEqual(["8 Schritte", "Gespiegelt", "Raute"]);
+    expect(german.slice(3)).toEqual(["Fire", "My German practice"]);
+    expect(effectUiLabel("Fire")).toBe("Feuer");
+    expect(effectUiLabel("My custom effect")).toBe("My custom effect");
+    expect(postActDisplayLabel(POST_ACT.fullSpeed, "Full speed")).not.toBe(
+      "Full speed"
+    );
+    expect(postActDisplayLabel(POST_ACT.fullSpeed, "My chosen title")).toBe(
+      "My chosen title"
+    );
+    expect(JSON.stringify(filters)).toBe(before);
+    await setLocale("en");
+    expect(filters.map(localizeFilterChip)).toEqual(english);
+  });
+
+  it("updates combined LOOP names and existing form helpers after a locale switch", async () => {
+    const read = () => ({
+      loop: loopTypeLabel("rotated_swapped"),
+      status: feedbackStatusLabel("in-progress"),
+      placeholder: feedbackTypePlaceholder("bug"),
+      auth: mapAuthError({ code: "auth/popup-blocked" }),
+    });
+    await setLocale("en");
+    const english = read();
+    await setLocale("de");
+    const german = read();
+    for (const key of Object.keys(english) as Array<keyof typeof english>) {
+      expect(german[key]).not.toBe(english[key]);
+      expect(german[key]).not.toMatch(/^(feedback_|generator_|auth_)/);
+    }
+    expect(german.loop).toContain(" + ");
+    await setLocale("en");
+    expect(read()).toEqual(english);
   });
 });

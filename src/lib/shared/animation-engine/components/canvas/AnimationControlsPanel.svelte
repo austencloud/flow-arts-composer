@@ -10,6 +10,7 @@
   - Desktop: Fixed layout with full controls
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { settingsService as settingsServiceSingleton } from "$lib/shared/settings/state/settings-state.svelte";
   import { browser } from "$app/environment";
   import { onMount } from "svelte";
@@ -270,10 +271,10 @@
           class="settings-sheet-btn"
           onclick={() => (isSettingsSheetOpen = true)}
           type="button"
-          aria-label="Open playback settings"
+          aria-label={t("playback_audit_open_settings")}
         >
           <i class="fas fa-sliders-h" aria-hidden="true"></i>
-          <span class="settings-btn-label">Settings</span>
+          <span class="settings-btn-label">{t("playback_audit_settings")}</span>
           <span class="settings-summary">{playbackModeLabel} · {bpm} BPM</span>
         </button>
       </div>

@@ -6,6 +6,7 @@
   select-all, clear, and exit behavior.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   type PrimaryTone = "accent" | "danger";
 
   interface Props {
@@ -65,7 +66,7 @@
   class:has-secondary={hasSecondary}
   class:destructive-primary={primaryTone === "danger"}
   role="toolbar"
-  aria-label="Selection actions"
+  aria-label={t("shared_controls_selection_actions")}
 >
   <div class="toolbar-status">
     {#if showExitAction}
@@ -73,15 +74,19 @@
         type="button"
         class="toolbar-button icon-button exit-button"
         onclick={onExitSelection}
-        aria-label="Exit selection mode"
+        aria-label={t("shared_controls_exit_selection")}
       >
         <i class="fas fa-times" aria-hidden="true"></i>
       </button>
     {/if}
 
     <span class="selected-count" aria-live="polite" aria-atomic="true">
-      <span class="count-sizer" aria-hidden="true">{totalCount} selected</span>
-      <span class="count-live">{selectedCount} selected</span>
+      <span class="count-sizer" aria-hidden="true"
+        >{t("shared_controls_selected_count", { count: totalCount })}</span
+      >
+      <span class="count-live"
+        >{t("shared_controls_selected_count", { count: selectedCount })}</span
+      >
     </span>
   </div>
 
@@ -91,8 +96,8 @@
       class="toolbar-button select-all-button"
       onclick={allSelected && onClearSelection ? onClearSelection : onSelectAll}
       aria-label={allSelected && onClearSelection
-        ? "Deselect all"
-        : "Select all"}
+        ? t("shared_controls_deselect_all")
+        : t("shared_controls_select_all")}
     >
       <i
         class="fas {allSelected && onClearSelection
@@ -101,7 +106,9 @@
         aria-hidden="true"
       ></i>
       <span class="button-label">
-        {allSelected && onClearSelection ? "Deselect all" : "Select all"}
+        {allSelected && onClearSelection
+          ? t("shared_controls_deselect_all")
+          : t("shared_controls_select_all")}
       </span>
     </button>
 
@@ -111,10 +118,10 @@
         class="toolbar-button clear-button"
         onclick={onClearSelection}
         disabled={selectedCount === 0}
-        aria-label="Clear selection"
+        aria-label={t("shared_controls_clear_selection")}
       >
         <i class="fas fa-eraser" aria-hidden="true"></i>
-        <span class="button-label">Clear</span>
+        <span class="button-label">{t("shared_controls_clear")}</span>
       </button>
     {/if}
 

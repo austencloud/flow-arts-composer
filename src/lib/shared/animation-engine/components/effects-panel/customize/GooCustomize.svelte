@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
   import type { GooIntent } from "$lib/shared/effects/domain/effects-config";
   import OptionChipRow from "../OptionChipRow.svelte";
@@ -10,7 +11,11 @@
   const { onBack }: Props = $props();
   const state = getEffectsConfigContext();
 
-  const PALETTES: { value: GooIntent["palette"]; label: string; swatch: string }[] = [
+  const PALETTES: {
+    value: GooIntent["palette"];
+    label: string;
+    swatch: string;
+  }[] = [
     { value: "classic", label: "Classic", swatch: "#3a7fd9" },
     { value: "mercury", label: "Mercury", swatch: "#9a9fa8" },
     { value: "acid", label: "Acid", swatch: "#7fd94a" },
@@ -36,16 +41,22 @@
 <div class="customize-view">
   <button type="button" class="back-btn" onclick={onBack}>
     <i class="fas fa-arrow-left" aria-hidden="true"></i>
-    Back to presets
+    {t("effect_deep_back_to_presets")}
   </button>
 
   {#if state}
     <div class="goo-controls">
-      <OptionChipRow label="Palette" ariaLabel="Goo palette" value={state.goo.palette} options={PALETTES} onChange={(v) => state.updateEffect("goo", { palette: v })} />
+      <OptionChipRow
+        label="Palette"
+        ariaLabel="Goo palette"
+        value={state.goo.palette}
+        options={PALETTES}
+        onChange={(v) => state.updateEffect("goo", { palette: v })}
+      />
 
       {#if state.goo.palette === "custom"}
         <div class="color-row">
-          <span class="color-label">Tint</span>
+          <span class="color-label">{t("effect_deep_tint")}</span>
           <div class="color-pickers">
             <label class="color-picker">
               <input
@@ -61,12 +72,18 @@
         </div>
       {/if}
 
-      <OptionChipRow label="Tracking" ariaLabel="Goo tracking mode" value={state.goo.trackingMode} options={TRACKING} onChange={(v) => state.updateEffect("goo", { trackingMode: v })} />
+      <OptionChipRow
+        label="Tracking"
+        ariaLabel="Goo tracking mode"
+        value={state.goo.trackingMode}
+        options={TRACKING}
+        onChange={(v) => state.updateEffect("goo", { trackingMode: v })}
+      />
 
       <!-- Viscosity. Names the MATERIAL rather than a number inside it: low is
            watery and sheds drips, high congeals and hangs together. -->
       <div class="slider-row">
-        <label for="goo-viscosity">Viscosity</label>
+        <label for="goo-viscosity">{t("effect_deep_viscosity")}</label>
         <input
           id="goo-viscosity"
           type="range"
@@ -79,12 +96,14 @@
               surfaceTension: +(e.currentTarget as HTMLInputElement).value,
             })}
         />
-        <span class="slider-value">{Math.round(state.goo.surfaceTension * 100)}%</span>
+        <span class="slider-value"
+          >{Math.round(state.goo.surfaceTension * 100)}%</span
+        >
       </div>
 
       <!-- Amount -->
       <div class="slider-row">
-        <label for="goo-amount">Amount</label>
+        <label for="goo-amount">{t("effect_deep_amount")}</label>
         <input
           id="goo-amount"
           type="range"
@@ -97,12 +116,14 @@
               motionEmission: +(e.currentTarget as HTMLInputElement).value,
             })}
         />
-        <span class="slider-value">{Math.round(state.goo.motionEmission * 100)}%</span>
+        <span class="slider-value"
+          >{Math.round(state.goo.motionEmission * 100)}%</span
+        >
       </div>
 
       <!-- Intensity -->
       <div class="slider-row">
-        <label for="goo-intensity">Intensity</label>
+        <label for="goo-intensity">{t("effect_deep_intensity")}</label>
         <input
           id="goo-intensity"
           type="range"
@@ -115,11 +136,13 @@
               intensity: +(e.currentTarget as HTMLInputElement).value,
             })}
         />
-        <span class="slider-value">{Math.round(state.goo.intensity * 100)}%</span>
+        <span class="slider-value"
+          >{Math.round(state.goo.intensity * 100)}%</span
+        >
       </div>
     </div>
   {:else}
-    <p class="empty">Effect state unavailable.</p>
+    <p class="empty">{t("effect_deep_effect_state_unavailable")}</p>
   {/if}
 </div>
 

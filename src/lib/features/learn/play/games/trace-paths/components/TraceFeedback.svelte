@@ -24,6 +24,7 @@ Presentation constraints, all deliberate:
   import type { TraceMetrics } from "../domain/trace-types";
   import type { TraceRoundScore } from "../services/score-trace-round";
   import { getTracePaths } from "../state/trace-paths-state.svelte";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     metrics: TraceMetrics;
@@ -69,48 +70,51 @@ Presentation constraints, all deliberate:
   });
 </script>
 
-<section class="trace-feedback" class:clean aria-label="Round result">
+<section
+  class="trace-feedback"
+  class:clean
+  aria-label={tDynamic("learn_trace_round_result")}
+>
   <!-- Full-width row of its own: the sentence varies in length by design, and
        here there is nothing beside it to displace. -->
   <p class="headline">{sentence}</p>
 
   {#if assisted}
     <p class="note">
-      Completed with Tap Route. This round counts toward the challenge and does
-      not claim a trace score.
+      {tDynamic("learn_trace_assisted_note")}
     </p>
   {/if}
 
   <dl class="readouts">
     <div class="readout">
-      <dt>Coverage</dt>
+      <dt>{tDynamic("learn_trace_coverage")}</dt>
       <dd>{percent(metrics.coverage)}</dd>
     </div>
     <div class="readout">
-      <dt>Accuracy</dt>
+      <dt>{tDynamic("learn_trace_accuracy")}</dt>
       <dd>{percent(metrics.accuracy)}</dd>
     </div>
     <div class="readout">
-      <dt>Continuity</dt>
+      <dt>{tDynamic("learn_trace_continuity")}</dt>
       <dd>{percent(metrics.continuity)}</dd>
     </div>
     <div class="readout">
-      <dt>Sync</dt>
+      <dt>{tDynamic("learn_trace_sync")}</dt>
       <dd>{syncLabel}</dd>
     </div>
   </dl>
 
   <p class="points">
-    <span class="points-label">Points</span>
+    <span class="points-label">{tDynamic("learn_trace_points")}</span>
     <span class="points-value">{score.points}</span>
   </p>
 
   <div class="actions">
     <button type="button" class="action secondary" onclick={onRetry}>
-      Trace it again
+      {tDynamic("learn_trace_retry")}
     </button>
     <button type="button" class="action primary" onclick={onNext}>
-      Next route
+      {tDynamic("learn_trace_next")}
     </button>
   </div>
 </section>

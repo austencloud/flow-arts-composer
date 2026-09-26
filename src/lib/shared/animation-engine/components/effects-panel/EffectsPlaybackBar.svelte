@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import TempoControl from "$lib/shared/animation-panel/components/TempoControl.svelte";
   import TransportControls from "$lib/shared/animation-engine/components/controls/TransportControls.svelte";
 
@@ -27,7 +28,7 @@
   }: Props = $props();
 </script>
 
-<section class="playback-shell" aria-label="Effect playback">
+<section class="playback-shell" aria-label={t("effect_deep_effect_playback")}>
   <div class="playback-row">
     <div class="tempo-cell">
       <TempoControl

@@ -5,6 +5,7 @@
   The pill slides smoothly between options.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   export type SettingsMode = "playback" | "visual";
 
   let {
@@ -33,7 +34,7 @@
       aria-pressed={activeMode === "playback"}
     >
       <i class="fas fa-sliders-h" aria-hidden="true"></i>
-      <span>Playback</span>
+      <span>{t("playback_audit_playback")}</span>
     </button>
     <button
       class="switcher-btn"
@@ -43,7 +44,7 @@
       aria-pressed={activeMode === "visual"}
     >
       <i class="fas fa-eye" aria-hidden="true"></i>
-      <span>Visual</span>
+      <span>{t("playback_audit_visual")}</span>
     </button>
   </div>
 </div>
@@ -72,7 +73,8 @@
     background: var(--theme-accent);
     border: 1px solid var(--theme-accent);
     border-radius: 10px;
-    transition: transform var(--duration-dramatic) cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform var(--duration-dramatic)
+      cubic-bezier(0.34, 1.56, 0.64, 1);
     box-shadow: 0 2px 6px var(--theme-shadow);
     pointer-events: none;
   }

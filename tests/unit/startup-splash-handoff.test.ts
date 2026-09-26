@@ -11,6 +11,48 @@ let page: JSDOM | undefined;
 afterEach(() => page?.window.close());
 
 describe("startup splash handoff", () => {
+  it.each([
+    { cookie: "", languages: ["de-DE", "en"], german: true },
+    { cookie: "PARAGLIDE_LOCALE=de", languages: ["en"], german: true },
+    { cookie: "PARAGLIDE_LOCALE=en", languages: ["de-DE"], german: false },
+    {
+      cookie: "PARAGLIDE_LOCALE=invalid",
+      languages: ["nl", "de-AT"],
+      german: true,
+    },
+  ])(
+    "honors the saved or supported browser language before app boot: $cookie / $languages",
+    ({ cookie, languages, german }) => {
+      page = new JSDOM(
+        '<div id="app-loading" aria-label="Loading Flow Arts Composer"><div id="loading-bar-fill"></div><p id="loading-text"></p></div>',
+        {
+          url: "https://localhost/create/construct",
+          runScripts: "outside-only",
+        }
+      );
+      page.window.document.cookie = cookie;
+      Object.defineProperty(page.window.navigator, "languages", {
+        value: languages,
+      });
+      page.window.eval(loadingScript!);
+      expect(
+        page.window.document.getElementById("loading-text")!.textContent
+      ).toBe(german ? "Das Alphabet wird geladen…" : "Loading the alphabet…");
+      expect(
+        page.window.document
+          .getElementById("app-loading")!
+          .getAttribute("aria-label")
+      ).toBe(
+        german
+          ? "Flow Arts Composer wird geladen"
+          : "Loading Flow Arts Composer"
+      );
+      expect(page.window.eval('__tkaBootMessage("Checking session...")')).toBe(
+        german ? "Anmeldung wird geprüft…" : "Checking session..."
+      );
+    }
+  );
+
   it("releases the shell immediately and ignores child transition events", () => {
     expect(loadingScript).toBeDefined();
     page = new JSDOM(

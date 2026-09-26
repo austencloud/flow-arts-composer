@@ -15,15 +15,15 @@
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { Dialog as DialogPrimitive } from "bits-ui";
   import type { HapticFeedback } from "../../application/services/haptic-feedback";
-import { onMount } from "svelte";
+  import { onMount } from "svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
   let {
     isOpen = $bindable(false),
     title,
     message,
-    confirmText = t("common_continue"),
-    cancelText = t("common_cancel"),
+    confirmText,
+    cancelText,
     onConfirm,
     onCancel,
     variant = "warning",
@@ -187,7 +187,7 @@ import { onMount } from "svelte";
       <!-- Actions -->
       <div class="dialog-actions">
         <button class="dialog-button cancel-button" onclick={handleCancel}>
-          {cancelText}
+          {cancelText ?? t("common_cancel")}
         </button>
         <button
           class="dialog-button confirm-button"
@@ -196,14 +196,14 @@ import { onMount } from "svelte";
           data-ghost-kind={ghostConfirm && !isConfirmDisabled
             ? "confirm"
             : undefined}
-          data-ghost-label={confirmText}
+          data-ghost-label={confirmText ?? t("common_continue")}
           onclick={handleConfirm}
           disabled={isConfirmDisabled}
         >
           {#if isConfirmDisabled}
-            {confirmText} ({delayRemaining}s)
+            {confirmText ?? t("common_continue")} ({delayRemaining}s)
           {:else}
-            {confirmText}
+            {confirmText ?? t("common_continue")}
           {/if}
         </button>
       </div>
@@ -246,15 +246,27 @@ import { onMount } from "svelte";
   }
 
   :global(.dialog-container.warning) {
-    border-color: color-mix(in srgb, var(--semantic-warning, #f59e0b) 30%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-warning, #f59e0b) 30%,
+      transparent
+    );
   }
 
   :global(.dialog-container.danger) {
-    border-color: color-mix(in srgb, var(--semantic-error, #ef4444) 30%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 30%,
+      transparent
+    );
   }
 
   :global(.dialog-container.info) {
-    border-color: color-mix(in srgb, var(--semantic-info, #3b82f6) 30%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-info, #3b82f6) 30%,
+      transparent
+    );
   }
 
   .dialog-icon {
@@ -432,7 +444,8 @@ import { onMount } from "svelte";
       var(--semantic-warning, #f59e0b) 0%,
       var(--semantic-warning, #f59e0b) 100%
     );
-    box-shadow: 0 4px 12px color-mix(in srgb, var(--semantic-warning, #f59e0b) 40%, transparent);
+    box-shadow: 0 4px 12px
+      color-mix(in srgb, var(--semantic-warning, #f59e0b) 40%, transparent);
   }
 
   :global(.dialog-container.danger) .confirm-button {
@@ -449,7 +462,8 @@ import { onMount } from "svelte";
       var(--semantic-error, #ef4444) 0%,
       var(--semantic-error, #ef4444) 100%
     );
-    box-shadow: 0 4px 12px color-mix(in srgb, var(--semantic-error, #ef4444) 40%, transparent);
+    box-shadow: 0 4px 12px
+      color-mix(in srgb, var(--semantic-error, #ef4444) 40%, transparent);
   }
 
   /* Delayed confirm button - visually distinct waiting state */

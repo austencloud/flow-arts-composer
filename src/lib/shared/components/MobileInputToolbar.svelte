@@ -11,13 +11,14 @@
   - CSS env() variables for positioning
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { type Snippet } from "svelte";
   import { createKeyboardInset } from "$lib/shared/mobile/utils/keyboard-inset.svelte";
 
   let {
     visible = false,
     disabled = false,
-    doneLabel = "Done",
+    doneLabel,
     onDone,
     onKeyboardHeightChange,
     leftContent,
@@ -65,7 +66,7 @@
     class:has-virtual-keyboard-api={kb.hasVirtualKeyboardAPI}
     style={toolbarStyle}
     role="toolbar"
-    aria-label="Input actions"
+    aria-label={t("shared_controls_input_actions")}
   >
     <div class="toolbar-content">
       {#if leftContent}
@@ -80,9 +81,10 @@
           class="done-button"
           onclick={onDone}
           {disabled}
-          aria-label={doneLabel}
+          aria-label={doneLabel ?? t("shared_controls_done")}
         >
-          <span class="done-text">{doneLabel}</span>
+          <span class="done-text">{doneLabel ?? t("shared_controls_done")}</span
+          >
         </button>
       </div>
     </div>

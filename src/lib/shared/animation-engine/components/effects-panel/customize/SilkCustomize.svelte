@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
   import type { SilkIntent } from "$lib/shared/effects/domain/effects-config";
   import { SILK_INTENSITY_MAX } from "$lib/shared/effects/domain/effects-config";
@@ -12,7 +13,11 @@
   const { onBack }: Props = $props();
   const state = getEffectsConfigContext();
 
-  const PALETTES: { value: SilkIntent["palette"]; label: string; swatch: string }[] = [
+  const PALETTES: {
+    value: SilkIntent["palette"];
+    label: string;
+    swatch: string;
+  }[] = [
     { value: "satin", label: "Satin", swatch: "#c0c0d0" },
     { value: "velvet", label: "Velvet", swatch: "#600018" },
     { value: "ethereal", label: "Ethereal", swatch: "#c080ff" },
@@ -32,7 +37,7 @@
 <div class="customize-view">
   <button type="button" class="back-btn" onclick={onBack}>
     <i class="fas fa-arrow-left" aria-hidden="true"></i>
-    Back to presets
+    {t("effect_deep_back_to_presets")}
   </button>
 
   {#if state}
@@ -47,7 +52,7 @@
 
       {#if state.silk.palette === "custom"}
         <div class="color-row">
-          <span class="color-label">Tint</span>
+          <span class="color-label">{t("effect_deep_tint")}</span>
           <div class="color-pickers">
             <label class="color-picker">
               <input
@@ -72,7 +77,7 @@
       />
 
       <div class="slider-row">
-        <label for="silk-intensity">Intensity</label>
+        <label for="silk-intensity">{t("effect_deep_intensity")}</label>
         <input
           id="silk-intensity"
           type="range"
@@ -85,11 +90,13 @@
               intensity: +(e.currentTarget as HTMLInputElement).value,
             })}
         />
-        <span class="slider-value">{Math.round(state.silk.intensity * 100)}%</span>
+        <span class="slider-value"
+          >{Math.round(state.silk.intensity * 100)}%</span
+        >
       </div>
 
       <div class="slider-row">
-        <label for="silk-width">Width</label>
+        <label for="silk-width">{t("effect_deep_width")}</label>
         <input
           id="silk-width"
           type="range"
@@ -106,7 +113,7 @@
       </div>
 
       <div class="slider-row">
-        <label for="silk-flutter">Flutter</label>
+        <label for="silk-flutter">{t("effect_deep_flutter")}</label>
         <input
           id="silk-flutter"
           type="range"
@@ -119,12 +126,13 @@
               flutter: +(e.currentTarget as HTMLInputElement).value,
             })}
         />
-        <span class="slider-value">{Math.round(state.silk.flutter * 100)}%</span>
+        <span class="slider-value">{Math.round(state.silk.flutter * 100)}%</span
+        >
       </div>
 
       <AdvancedControls count={2}>
         <div class="slider-row">
-          <label for="silk-duration">Duration</label>
+          <label for="silk-duration">{t("effect_deep_duration")}</label>
           <input
             id="silk-duration"
             type="range"
@@ -137,11 +145,13 @@
                 duration: +(e.currentTarget as HTMLInputElement).value,
               })}
           />
-          <span class="slider-value">{Math.round(state.silk.duration * 100)}%</span>
+          <span class="slider-value"
+            >{Math.round(state.silk.duration * 100)}%</span
+          >
         </div>
 
         <div class="slider-row">
-          <label for="silk-tautness">Tautness</label>
+          <label for="silk-tautness">{t("effect_deep_tautness")}</label>
           <input
             id="silk-tautness"
             type="range"
@@ -154,12 +164,14 @@
                 tautness: +(e.currentTarget as HTMLInputElement).value,
               })}
           />
-          <span class="slider-value">{Math.round(state.silk.tautness * 100)}%</span>
+          <span class="slider-value"
+            >{Math.round(state.silk.tautness * 100)}%</span
+          >
         </div>
       </AdvancedControls>
     </div>
   {:else}
-    <p class="empty">Effect state unavailable.</p>
+    <p class="empty">{t("effect_deep_effect_state_unavailable")}</p>
   {/if}
 </div>
 

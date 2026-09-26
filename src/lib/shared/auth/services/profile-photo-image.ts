@@ -1,3 +1,5 @@
+import { t } from "$lib/shared/i18n/i18n.svelte.js";
+
 const WEBP_CONTENT_TYPE = "image/webp";
 const PNG_CONTENT_TYPE = "image/png";
 
@@ -333,22 +335,37 @@ export async function prepareProfilePhoto(
 }
 
 export function getProfilePhotoErrorMessage(error: unknown): string {
-  if (error instanceof ProfilePhotoError) return error.message;
+  if (error instanceof ProfilePhotoError) {
+    switch (error.code) {
+      case "signed-out":
+        return t("settings_photo_sign_in_again");
+      case "input-too-large":
+        return t("settings_photo_input_too_large");
+      case "input-not-image":
+        return t("settings_photo_input_not_image");
+      case "decode-failed":
+        return t("settings_photo_decode_failed");
+      case "encode-unsupported":
+        return t("settings_photo_encode_unsupported");
+      case "output-too-large":
+        return t("settings_photo_output_too_large");
+    }
+  }
 
   const code = (error as { code?: unknown } | null)?.code;
   if (code === "storage/unauthenticated") {
-    return "Sign in again, then retry the photo upload.";
+    return t("settings_photo_sign_in_again");
   }
   if (code === "storage/unauthorized") {
-    return "Photo uploads are unavailable right now. Try again later.";
+    return t("settings_photo_upload_unavailable");
   }
   if (
     code === "storage/retry-limit-exceeded" ||
     code === "storage/unknown" ||
     code === "unavailable"
   ) {
-    return "The upload was interrupted. Check your connection and try again.";
+    return t("settings_photo_upload_interrupted");
   }
 
-  return "Profile photo could not be updated. Try again.";
+  return t("settings_photo_update_failed");
 }

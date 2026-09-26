@@ -16,21 +16,25 @@
     type LOOPComponentId,
     type LoopReflectionAxis,
   } from "@tka/render-composition";
+  import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+  import { loopComponentLabel } from "$lib/features/create/generate/components/loop-component-presentation";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 
-  let { model, height = 34 }: { model: BlockTimelineModel; height?: number } = $props();
+  let { model, height = 34 }: { model: BlockTimelineModel; height?: number } =
+    $props();
 
-  const ICONS: Record<string, { fa: string; color: string; label: string }> = {
-    mirrored: { fa: "fas fa-left-right", color: "#6F2DA8", label: "Mirrored" },
-    flipped: { fa: "fas fa-up-down", color: "#6F2DA8", label: "Flipped" },
-    swapped: { fa: "fas fa-shuffle", color: "#2ecc71", label: "Swapped" },
-    inverted: { fa: "fas fa-adjust", color: "#eb7d00", label: "Inverted" },
+  const ICONS: Record<string, { fa: string; color: string }> = {
+    mirrored: { fa: "fas fa-left-right", color: "#6F2DA8" },
+    flipped: { fa: "fas fa-up-down", color: "#6F2DA8" },
+    swapped: { fa: "fas fa-shuffle", color: "#2ecc71" },
+    inverted: { fa: "fas fa-adjust", color: "#eb7d00" },
   };
 
-  const REFLECTION_LABELS: Record<LoopReflectionAxis, string> = {
-    "north-south": "Mirrored (north-south axis)",
-    "east-west": "Flipped (east-west axis)",
-    "northeast-southwest": "Northeast-southwest reflection",
-    "northwest-southeast": "Northwest-southeast reflection",
+  const REFLECTION_LABEL_KEYS: Record<LoopReflectionAxis, string> = {
+    "north-south": "loop_reflection_north_south",
+    "east-west": "loop_reflection_east_west",
+    "northeast-southwest": "loop_reflection_northeast_southwest",
+    "northwest-southeast": "loop_reflection_northwest_southeast",
   };
 
   function iconFor(component: string) {
@@ -50,16 +54,21 @@
       ? {
           ...base,
           fa: "fas fa-left-right",
-          label: REFLECTION_LABELS[reflection.axis],
+          label: tDynamic(REFLECTION_LABEL_KEYS[reflection.axis]),
           rotationDegrees: reflection.rotationDegrees,
           scale: reflection.scale,
         }
-      : { ...base, rotationDegrees: 0, scale: 1 };
+      : {
+          ...base,
+          label: loopComponentLabel(component as LOOPComponent),
+          rotationDegrees: 0,
+          scale: 1,
+        };
   }
 </script>
 
 <div class="timeline" style="--cells: {model.cells.length}; --h: {height}px;">
-  <div class="cells" role="img" aria-label="Loop structure timeline">
+  <div class="cells" role="img" aria-label={tDynamic("loop_timeline_aria")}>
     {#each model.cells as cell, i (i)}
       <div class="cell" class:base={cell.size === 0}>
         {#if cell.size === 0}
@@ -80,7 +89,14 @@
     {/each}
   </div>
   {#if model.rotation}
-    <div class="ribbon" title="Rotates continuously ({model.rotation.interval === 4 ? '90° slices' : '180° slices'})">
+    <div
+      class="ribbon"
+      title={tDynamic(
+        model.rotation.interval === 4
+          ? "loop_timeline_rotates_90"
+          : "loop_timeline_rotates_180"
+      )}
+    >
       <span class="ribbon-line"></span>
       <i class="fas fa-rotate" aria-hidden="true"></i>
     </div>
@@ -88,7 +104,12 @@
 </div>
 
 <style>
-  .timeline { display: flex; flex-direction: column; gap: 3px; width: 100%; }
+  .timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    width: 100%;
+  }
   .cells {
     display: grid;
     grid-template-columns: repeat(var(--cells), 1fr);
@@ -96,7 +117,10 @@
     height: var(--h);
   }
   .cell {
-    display: flex; align-items: center; justify-content: center; gap: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
     border-radius: 6px;
     background: rgba(255, 255, 255, 0.06);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -107,14 +131,27 @@
     display: inline-block;
     transform-origin: center;
   }
-  .cell.base { background: rgba(255, 255, 255, 0.03); }
-  .base-dot {
-    width: 5px; height: 5px; border-radius: 50%;
-    background: currentColor; opacity: 0.35;
+  .cell.base {
+    background: rgba(255, 255, 255, 0.03);
   }
-  .ribbon { display: flex; align-items: center; gap: 5px; color: #36c3ff; font-size: 10px; }
+  .base-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.35;
+  }
+  .ribbon {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #36c3ff;
+    font-size: 10px;
+  }
   .ribbon-line {
-    flex: 1; height: 2px; border-radius: 2px;
+    flex: 1;
+    height: 2px;
+    border-radius: 2px;
     background: linear-gradient(90deg, transparent, #36c3ff 15%, #36c3ff);
     opacity: 0.7;
   }

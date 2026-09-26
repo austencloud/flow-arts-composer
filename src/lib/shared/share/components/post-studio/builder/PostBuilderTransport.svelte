@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { PostBuilderState } from "$lib/shared/media-composition/state/post-builder-state.svelte";
-  import { formatPostClock } from "./post-builder-format";
+  import { formatPostClock, postActDisplayLabel } from "./post-builder-format";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
   /**
    * Play, the clock and the act lane under the canvas. Each act is a block as
@@ -30,25 +31,32 @@
   }
 </script>
 
-<div class="transport" aria-label="Playback">
+<div class="transport" aria-label={t("share_studio_deep_playback")}>
   <div class="controls">
     <button
       type="button"
       class="play"
       onclick={builder.togglePlayback}
       disabled={duration <= 0}
-      aria-label={builder.isPlaying ? "Pause" : "Play"}
+      aria-label={builder.isPlaying
+        ? t("share_studio_deep_pause")
+        : t("share_studio_deep_play")}
     >
       <i
         class="fa-solid {builder.isPlaying ? 'fa-pause' : 'fa-play'}"
         aria-hidden="true"
       ></i>
     </button>
-    <output class="clock" aria-label="Playhead">
+    <output class="clock" aria-label={t("share_studio_deep_playhead")}>
       {formatPostClock(builder.previewSeconds)} / {formatPostClock(duration)}
     </output>
     {#if builder.currentAct}
-      <span class="act-now">{builder.currentAct.label}</span>
+      <span class="act-now"
+        >{postActDisplayLabel(
+          builder.currentAct.actId,
+          builder.currentAct.label
+        )}</span
+      >
     {/if}
   </div>
 
@@ -64,7 +72,7 @@
           style:width={share(act.endSeconds - act.startSeconds)}
           onclick={() => openAct(act.actId, act.startSeconds)}
         >
-          <span>{act.label}</span>
+          <span>{postActDisplayLabel(act.actId, act.label)}</span>
           {#if act.speed !== 1}<small>{act.speed}×</small>{/if}
         </button>
       {/each}
@@ -89,7 +97,7 @@
       step="0.01"
       value={builder.previewSeconds}
       oninput={scrub}
-      aria-label="Scrub the post"
+      aria-label={t("share_studio_deep_scrub_post")}
       disabled={duration <= 0}
     />
     <span class="playhead" aria-hidden="true"></span>

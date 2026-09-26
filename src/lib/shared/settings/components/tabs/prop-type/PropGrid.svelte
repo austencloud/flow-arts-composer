@@ -187,16 +187,23 @@
       ...section,
       label: pickerSectionLabel(section.label),
     })),
-    ...(includeBareHands ? [{ label: t("settings_prop_section_scene"), props: [PropType.HAND] }] : []),
+    ...(includeBareHands
+      ? [{ label: t("settings_prop_section_scene"), props: [PropType.HAND] }]
+      : []),
   ]);
 
   function pickerSectionLabel(label: string): string {
     switch (label) {
-      case "Standard": return t("settings_prop_section_standard");
-      case "Big": return t("settings_prop_section_big");
-      case "Novelty": return t("settings_prop_section_novelty");
-      case "Premium": return t("settings_prop_section_premium");
-      default: return label;
+      case "Standard":
+        return t("settings_prop_section_standard");
+      case "Big":
+        return t("settings_prop_section_big");
+      case "Novelty":
+        return t("settings_prop_section_novelty");
+      case "Premium":
+        return t("settings_prop_section_premium");
+      default:
+        return label;
     }
   }
 
@@ -842,7 +849,12 @@
           class:active={currentGrip === option.id}
           aria-pressed={currentGrip === option.id}
           data-testid={`triangle-grip-${option.id}`}
-          onclick={() => chooseGrip(option.id)}>{option.label}</button
+          onclick={() => chooseGrip(option.id)}
+          >{t(
+            option.id === "corner"
+              ? "settings_grip_corner"
+              : "settings_grip_side"
+          )}</button
         >
       {/each}
     </div>
@@ -852,7 +864,9 @@
       type="button"
       class="look-chip"
       data-testid="fan-look-chip"
-      aria-label={t("settings_change_fan_look", { look: fanLook?.label ?? normalizedFanAppearance.build })}
+      aria-label={t("settings_change_fan_look", {
+        look: fanLook?.label ?? normalizedFanAppearance.build,
+      })}
       onclick={() =>
         selectedPropType !== null &&
         void openDrill({
@@ -875,7 +889,12 @@
       type="button"
       class="look-chip"
       data-testid="prop-look-chip"
-      aria-label={t("settings_change_prop_look", { look: selectedPropLookOption?.id === "model" ? t("settings_3d_model") : t("viewer_ui_pictograph") })}
+      aria-label={t("settings_change_prop_look", {
+        look:
+          selectedPropLookOption?.id === "model"
+            ? t("settings_3d_model")
+            : t("viewer_ui_pictograph"),
+      })}
       onclick={() => void openDrill({ kind: "prop-look" })}
     >
       {#if selectedPropLookOption}
@@ -887,7 +906,9 @@
         />
       {/if}
       <span class="look-name"
-        >{selectedPropLookOption?.id === "model" ? t("settings_3d_model") : t("viewer_ui_pictograph")}</span
+        >{selectedPropLookOption?.id === "model"
+          ? t("settings_3d_model")
+          : t("viewer_ui_pictograph")}</span
       >
       <i class="fas fa-chevron-right look-caret" aria-hidden="true"></i>
     </button>
@@ -912,7 +933,9 @@
             href={fanLook.designCredit.sourceUrl}
             target="_blank"
             rel="noreferrer"
-            aria-label={t("settings_design_source", { name: fanLook.designCredit.originator })}
+            aria-label={t("settings_design_source", {
+              name: fanLook.designCredit.originator,
+            })}
           >
             <span class="credit-long">{fanLook.designCredit.originator}</span>
             <span class="credit-short" aria-hidden="true"

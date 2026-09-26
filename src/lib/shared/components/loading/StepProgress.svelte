@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * StepProgress - Multi-step indicator showing pending/active/completed states.
    */
@@ -19,12 +20,7 @@
     color?: string;
   }
 
-  let {
-    steps,
-    currentStep,
-    orientation = "vertical",
-    color,
-  }: Props = $props();
+  let { steps, currentStep, orientation = "vertical", color }: Props = $props();
 
   function stepState(index: number): "completed" | "active" | "pending" {
     const stepNum = index + 1;
@@ -39,7 +35,10 @@
   class:horizontal={orientation === "horizontal"}
   style:--step-color={color}
   role="status"
-  aria-label="Step {Math.min(currentStep, steps.length)} of {steps.length}"
+  aria-label={t("shared_controls_step_progress", {
+    current: Math.min(currentStep, steps.length),
+    total: steps.length,
+  })}
 >
   {#each steps as step, i}
     {@const state = stepState(i)}
@@ -47,15 +46,33 @@
     {#if i > 0}
       <div
         class="connector"
-        class:completed={state === "completed" || stepState(i - 1) === "completed"}
+        class:completed={state === "completed" ||
+          stepState(i - 1) === "completed"}
       ></div>
     {/if}
 
-    <div class="step" class:completed={state === "completed"} class:active={state === "active"} class:pending={state === "pending"}>
+    <div
+      class="step"
+      class:completed={state === "completed"}
+      class:active={state === "active"}
+      class:pending={state === "pending"}
+    >
       <div class="dot">
         {#if state === "completed"}
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-            <path d="M2.5 6L5 8.5L9.5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 12 12"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M2.5 6L5 8.5L9.5 4"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
         {:else if state === "active"}
           <div class="pulse-ring"></div>
@@ -81,7 +98,6 @@
     align-items: center;
   }
 
-
   .step {
     display: flex;
     align-items: center;
@@ -93,7 +109,6 @@
     gap: 6px;
   }
 
-
   .dot {
     width: 24px;
     height: 24px;
@@ -104,8 +119,9 @@
     flex-shrink: 0;
     font-size: 11px;
     font-weight: 600;
-    transition: background var(--duration-fast, 150ms) ease-out,
-                border-color var(--duration-fast, 150ms) ease-out;
+    transition:
+      background var(--duration-fast, 150ms) ease-out,
+      border-color var(--duration-fast, 150ms) ease-out;
   }
 
   .completed .dot {
@@ -136,7 +152,8 @@
   }
 
   @keyframes step-pulse {
-    0%, 100% {
+    0%,
+    100% {
       opacity: 1;
       transform: scale(1);
     }
@@ -146,11 +163,9 @@
     }
   }
 
-
   .step-number {
     font-variant-numeric: tabular-nums;
   }
-
 
   .step-label {
     font-size: var(--font-size-compact, 12px);
@@ -169,7 +184,6 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.4));
   }
 
-
   .connector {
     width: 2px;
     height: 12px;
@@ -187,7 +201,6 @@
     height: 2px;
     margin-left: 0;
   }
-
 
   @media (prefers-reduced-motion: reduce) {
     .pulse-ring {

@@ -5,15 +5,16 @@
   import type {
     FeedbackItem,
     FeedbackType,
-    FeedbackStatus,
   } from "$lib/shared/feedback/domain/models/feedback-models";
-  import {
-    TYPE_CONFIG,
-    STATUS_CONFIG,
-  } from "$lib/shared/feedback/domain/models/feedback-models";
+  import { TYPE_CONFIG } from "$lib/shared/feedback/domain/models/feedback-models";
   import { responsiveLayoutManager } from "$lib/shared/create/services/responsive-layout-manager";
   import { onMount } from "svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import {
+    feedbackStatusLabel,
+    feedbackTypeLabel,
+    feedbackTypePlaceholder,
+  } from "../../domain/feedback-display-labels";
 
   interface Props {
     isOpen: boolean;
@@ -110,13 +111,14 @@
   }
 
   const currentTypeConfig = $derived(TYPE_CONFIG[editType]);
-  const statusConfig = $derived(STATUS_CONFIG[item.status as FeedbackStatus]);
 </script>
 
 <Drawer
   bind:isOpen
   placement={drawerPlacement}
-  ariaLabel={appendMode ? t("feedback_add_notes_aria") : t("feedback_edit_aria")}
+  ariaLabel={appendMode
+    ? t("feedback_add_notes_aria")
+    : t("feedback_edit_aria")}
   class="feedback-edit-drawer {isSideBySide ? 'side-panel' : 'bottom-sheet'}"
   showHandle={!isSideBySide}
 >
@@ -135,9 +137,9 @@
         <div class="append-info">
           <i class="fas fa-info-circle" aria-hidden="true"></i>
           <span
-            >This feedback is <strong style="color: {statusConfig.color}"
-              >{statusConfig.label.toLowerCase()}</strong
-            >. You can add additional notes below.</span
+            >{t("feedback_append_info", {
+              status: feedbackStatusLabel(item.status).toLowerCase(),
+            })}</span
           >
         </div>
 
@@ -150,10 +152,7 @@
               style="--type-color: {currentTypeConfig.color}"
             >
               <i class="fas {currentTypeConfig.icon}" aria-hidden="true"></i>
-              {currentTypeConfig.label
-                .replace(" Report", "")
-                .replace(" Request", "")
-                .replace(" Feedback", "")}
+              {feedbackTypeLabel(editType, true)}
             </span>
             <p>{item.description}</p>
           </div>
@@ -179,7 +178,9 @@
               class:met={additionalNotes.trim().length >= 5}
             >
               {#if additionalNotes.trim().length < 5}
-                {t("feedback_chars_needed", { count: 5 - additionalNotes.trim().length })}
+                {t("feedback_chars_needed", {
+                  count: 5 - additionalNotes.trim().length,
+                })}
               {:else}
                 <i class="fas fa-check" aria-hidden="true"></i>
               {/if}
@@ -203,10 +204,7 @@
               >
                 <i class="fas {config.icon}" aria-hidden="true"></i>
                 <span class="segment-label">
-                  {config.label
-                    .replace(" Report", "")
-                    .replace(" Request", "")
-                    .replace(" Feedback", "")}
+                  {feedbackTypeLabel(type as FeedbackType, true)}
                 </span>
               </button>
             {/each}
@@ -215,13 +213,15 @@
 
         <!-- Description Field -->
         <div class="field">
-          <label for="edit-description" class="field-label">{t("feedback_description")}</label>
+          <label for="edit-description" class="field-label"
+            >{t("feedback_description")}</label
+          >
           <div class="textarea-wrapper">
             <textarea
               id="edit-description"
               class="field-textarea"
               bind:value={editDescription}
-              placeholder={currentTypeConfig.placeholder}
+              placeholder={feedbackTypePlaceholder(editType)}
               rows="6"
             ></textarea>
           </div>
@@ -231,7 +231,9 @@
               class:met={editDescription.trim().length >= 10}
             >
               {#if editDescription.trim().length < 10}
-                {t("feedback_chars_needed", { count: 10 - editDescription.trim().length })}
+                {t("feedback_chars_needed", {
+                  count: 10 - editDescription.trim().length,
+                })}
               {:else}
                 <i class="fas fa-check" aria-hidden="true"></i>
               {/if}
@@ -269,7 +271,11 @@
               class="fas {appendMode ? 'fa-plus' : 'fa-check'}"
               aria-hidden="true"
             ></i>
-            <span>{appendMode ? t("feedback_add_notes") : t("feedback_save_changes")}</span>
+            <span
+              >{appendMode
+                ? t("feedback_add_notes")
+                : t("feedback_save_changes")}</span
+            >
           {/if}
         </button>
       </div>

@@ -7,6 +7,7 @@
   - BPM control with tap tempo and presets
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onDestroy } from "svelte";
   import type {
     PlaybackMode,
@@ -63,49 +64,49 @@
       class:active={playbackMode === "continuous"}
       onclick={() => handleModeChange("continuous")}
       type="button"
-      aria-label="Continuous playback mode"
+      aria-label={t("playback_audit_continuous_mode")}
       aria-pressed={playbackMode === "continuous"}
     >
       <i class="fas fa-infinity" aria-hidden="true"></i>
-      <span>Flow</span>
+      <span>{t("playback_audit_flow")}</span>
     </button>
     <button
       class="style-btn"
       class:active={playbackMode === "step"}
       onclick={() => handleModeChange("step")}
       type="button"
-      aria-label="Step playback mode"
+      aria-label={t("playback_audit_step_mode")}
       aria-pressed={playbackMode === "step"}
     >
       <i class="fas fa-shoe-prints" aria-hidden="true"></i>
-      <span>Step</span>
+      <span>{t("playback_audit_step")}</span>
     </button>
   </div>
 
   <!-- Step Size (only in step mode) -->
   {#if playbackMode === "step"}
     <div class="step-size-row">
-      <span class="step-label">Step Size</span>
+      <span class="step-label">{t("compose_ui_step_size")}</span>
       <div class="step-chips">
         <button
           class="step-chip"
           class:active={stepPlaybackStepSize === 1}
           onclick={() => onStepPlaybackStepSizeChange(1)}
           type="button"
-          aria-label="Step by full step"
+          aria-label={t("compose_ui_step_by_full_steps")}
           aria-pressed={stepPlaybackStepSize === 1}
         >
-          Step
+          {t("playback_audit_step")}
         </button>
         <button
           class="step-chip"
           class:active={stepPlaybackStepSize === 0.5}
           onclick={() => onStepPlaybackStepSizeChange(0.5)}
           type="button"
-          aria-label="Step by half step"
+          aria-label={t("compose_ui_step_by_half_steps")}
           aria-pressed={stepPlaybackStepSize === 0.5}
         >
-          Half
+          {t("playback_audit_half")}
         </button>
       </div>
     </div>

@@ -4,6 +4,7 @@
  */
 
 import { getExperiencePersistence } from "../../../state/experience-persistence.svelte";
+import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 
 export type GridPhase = "split" | "diamond-labels" | "box-labels" | "merged";
 export type PointTypePhase = "center" | "hand" | "outer";
@@ -58,24 +59,20 @@ export function createGridExperienceState(isScrollMode: boolean = false) {
     step === 2 ? pointTypePhase : "none"
   );
 
-  // Accessibility: derive announcement text
-  function getAnnouncement(): string {
-    if (step === 0) return "Step 1 of 3: The Grid. A 4-point diamond grid.";
+  // Store the key so the live text follows a locale change.
+  function getAnnouncementKey(): string {
+    if (step === 0) return "learn_grid_announcement_intro";
     if (step === 1) {
-      if (gridPhase === "split")
-        return "Step 2 of 3: Two Grid Modes. Diamond and Box grids shown side by side.";
+      if (gridPhase === "split") return "learn_grid_announcement_split";
       if (gridPhase === "diamond-labels")
-        return "Diamond mode: Cardinal directions North, East, South, West.";
-      if (gridPhase === "box-labels")
-        return "Box mode: Intercardinal directions Northeast, Southeast, Southwest, Northwest.";
-      if (gridPhase === "merged")
-        return "The grids merge to form the complete 8-point grid.";
+        return "learn_grid_announcement_diamond";
+      if (gridPhase === "box-labels") return "learn_grid_announcement_box";
+      if (gridPhase === "merged") return "learn_grid_announcement_merged";
     }
     if (step === 2) {
-      if (pointTypePhase === "center")
-        return "Step 3 of 3: Point Types. The center point is highlighted.";
-      if (pointTypePhase === "hand") return "4 hand points are highlighted.";
-      if (pointTypePhase === "outer") return "4 outer points are highlighted.";
+      if (pointTypePhase === "center") return "learn_grid_announcement_center";
+      if (pointTypePhase === "hand") return "learn_grid_announcement_hand";
+      if (pointTypePhase === "outer") return "learn_grid_announcement_outer";
     }
     return "";
   }
@@ -83,7 +80,7 @@ export function createGridExperienceState(isScrollMode: boolean = false) {
   function announce() {
     announcement = "";
     requestAnimationFrame(() => {
-      announcement = getAnnouncement();
+      announcement = getAnnouncementKey();
     });
   }
 
@@ -242,7 +239,7 @@ export function createGridExperienceState(isScrollMode: boolean = false) {
       return animateIn;
     },
     get announcement() {
-      return announcement;
+      return announcement ? tDynamic(announcement) : "";
     },
     get effectivePhase() {
       return effectivePhase;

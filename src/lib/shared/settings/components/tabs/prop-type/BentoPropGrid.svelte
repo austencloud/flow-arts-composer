@@ -19,6 +19,7 @@
   import PropGrid from "./PropGrid.svelte";
   import PrimaryPropColorSettings from "./PrimaryPropColorSettings.svelte";
   import { growFade } from "$lib/shared/transitions/motion";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { DEFAULT_TRIANGLE_GRIP } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
 
   // Public hosts own their appearance without writing global settings.
@@ -158,7 +159,7 @@
   onTriangleGripChange={(triangleGrip) => void updateSettings({ triangleGrip })}
 >
   {#snippet premiumBadge()}
-    <PremiumBadge tooltip="Premium prop" />
+    <PremiumBadge tooltip={t("settings_premium_prop")} />
   {/snippet}
   {#snippet premiumNudge({ dismiss })}
     <PremiumNudge nudge={PREMIUM_COSMETIC_NUDGE} onDismiss={dismiss} />

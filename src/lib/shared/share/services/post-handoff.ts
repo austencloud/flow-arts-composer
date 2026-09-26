@@ -26,6 +26,7 @@ import {
 } from "$lib/shared/foundation/services/file-downloader";
 import { detectPlatform } from "$lib/shared/mobile/services/platform-detector";
 import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
 export type ShareArtifact = "card" | "video";
 
@@ -78,48 +79,48 @@ export function resolveDestinations(ctx: HandoffContext): HandoffDestination[] {
   if (shareable) {
     destinations.push({
       id: "native-share",
-      label: "Share to another app",
-      short: "Share to another app",
+      label: t("share_to_another_app"),
+      short: t("share_to_another_app"),
       icon: "fa-solid fa-share-nodes",
       primary: true,
-      hint: "Choose an app on this device",
+      hint: t("share_choose_device_app"),
     });
   }
   if (!isMobile) {
     destinations.push({
       id: "send-to-phone",
-      label: "Transfer to phone",
-      short: "Transfer",
+      label: t("share_transfer_phone"),
+      short: t("share_transfer"),
       icon: "fa-solid fa-qrcode",
       primary: true,
-      hint: "Upload a file, then scan its QR code",
+      hint: t("share_upload_scan_qr"),
     });
 
     if (ctx.artifact === "card") {
       destinations.push({
         id: "copy-image-facebook",
-        label: "Copy image & open Facebook",
+        label: t("share_copy_image_facebook"),
         short: "Facebook",
         icon: "fa-solid fa-image",
         brand: "facebook",
         primary: false,
-        hint: "Paste into your post",
+        hint: t("share_paste_post"),
       });
     }
   }
 
   destinations.push({
     id: "download",
-    label: isMobile ? "Save file" : "Download",
-    short: isMobile ? "Save" : "Download",
+    label: isMobile ? t("share_save_file") : t("share_download"),
+    short: isMobile ? t("share_save") : t("share_download"),
     icon: "fa-solid fa-download",
     primary: false,
   });
 
   destinations.push({
     id: "copy-caption",
-    label: "Copy caption",
-    short: "Caption",
+    label: t("share_copy_caption"),
+    short: t("share_caption_short"),
     icon: "fa-solid fa-clipboard",
     primary: false,
   });
@@ -154,10 +155,10 @@ export async function shareArtifactNatively(
     case "unavailable":
       return {
         status: "failed",
-        message: "Sharing files isn't available here",
+        message: t("share_files_unavailable"),
       };
     default:
-      return { status: "failed", message: "Share failed" };
+      return { status: "failed", message: t("share_failed") };
   }
 }
 
@@ -167,8 +168,8 @@ export async function downloadArtifact(
 ): Promise<HandoffResult> {
   const result = await downloadBlobToDisk(blob, filename);
   return result.success
-    ? { status: "done", message: "Download started" }
-    : { status: "failed", message: "Download failed" };
+    ? { status: "done", message: t("share_download_started") }
+    : { status: "failed", message: t("share_download_failed") };
 }
 
 /**
@@ -199,33 +200,45 @@ function copyTextThroughSelection(text: string): boolean {
   }
 }
 
-async function copyText(text: string, noun: string): Promise<HandoffResult> {
+async function copyText(
+  text: string,
+  successMessage: string,
+  failureMessage: string
+): Promise<HandoffResult> {
   if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
     try {
       await navigator.clipboard.writeText(text);
-      return { status: "done", message: `${noun} copied` };
+      return { status: "done", message: successMessage };
     } catch {
       // Denied permission falls through to the selection path below.
     }
   }
 
   if (copyTextThroughSelection(text)) {
-    return { status: "done", message: `${noun} copied` };
+    return { status: "done", message: successMessage };
   }
-  return { status: "failed", message: `Couldn't copy ${noun.toLowerCase()}` };
+  return { status: "failed", message: failureMessage };
 }
 
 export function copyCaption(caption: string): Promise<HandoffResult> {
-  return copyText(caption, "Caption");
+  return copyText(
+    caption,
+    t("share_caption_copied"),
+    t("share_copy_caption_failed")
+  );
 }
 
 export function copyLink(url: string): Promise<HandoffResult> {
-  return copyText(url, "Link");
+  return copyText(
+    url,
+    t("share_link_copied"),
+    t("share_copy_link_failed_short")
+  );
 }
 
 /** The pasteable embed `<iframe>` + attribution snippet, not a bare URL. */
 export function copyEmbedCode(html: string): Promise<HandoffResult> {
-  return copyText(html, "Embed code");
+  return copyText(html, t("share_embed_copied"), t("share_copy_embed_failed"));
 }
 
 /**
@@ -240,7 +253,7 @@ export async function copyPreparedLink(
   // rejected preparation observed even when there is nowhere to write it.
   void preparedUrl.catch(() => {});
   if (typeof navigator === "undefined" || !navigator.clipboard) {
-    return { status: "failed", message: "Clipboard unavailable" };
+    return { status: "failed", message: t("share_clipboard_unavailable") };
   }
 
   if (navigator.clipboard.write && typeof ClipboardItem !== "undefined") {
@@ -260,16 +273,16 @@ export async function copyPreparedLink(
       if (navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(url).catch(() => {});
       }
-      return { status: "done", message: "Link copied" };
+      return { status: "done", message: t("share_link_copied") };
     } catch {
-      return { status: "failed", message: "Couldn't copy link" };
+      return { status: "failed", message: t("share_copy_link_failed_short") };
     }
   }
 
   try {
     return await copyLink(await preparedUrl);
   } catch {
-    return { status: "failed", message: "Couldn't copy link" };
+    return { status: "failed", message: t("share_copy_link_failed_short") };
   }
 }
 
@@ -288,21 +301,21 @@ export async function copyImageAndOpenFacebook(
   blob: Blob
 ): Promise<HandoffResult> {
   if (typeof navigator === "undefined" || !navigator.clipboard?.write) {
-    return { status: "failed", message: "Clipboard unavailable" };
+    return { status: "failed", message: t("share_clipboard_unavailable") };
   }
 
   if (blob.type !== "image/png") {
-    return { status: "failed", message: "Only images can be copied" };
+    return { status: "failed", message: t("share_copy_images_only") };
   }
 
   try {
     await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
   } catch {
-    return { status: "failed", message: "Couldn't copy the image" };
+    return { status: "failed", message: t("share_copy_image_failed") };
   }
 
   window.open(FACEBOOK_COMPOSER_URL, "_blank", "noopener,noreferrer");
-  return { status: "done", message: "Image copied. Paste into your post" };
+  return { status: "done", message: t("share_image_copied_paste") };
 }
 
 /**

@@ -9,7 +9,8 @@
     STATUS_CONFIG,
     TYPE_CONFIG,
   } from "$lib/shared/feedback/domain/models/feedback-models";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { getLocale, t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { feedbackStatusLabel } from "../../domain/feedback-display-labels";
 
   const { item, isSelected, onClick } = $props<{
     item: FeedbackItem;
@@ -33,13 +34,15 @@
       const hours = Math.floor(diff / (1000 * 60 * 60));
       if (hours === 0) {
         const minutes = Math.floor(diff / (1000 * 60));
-        return minutes <= 1 ? t("feedback_just_now") : t("feedback_minutes_ago", { count: minutes });
+        return minutes <= 1
+          ? t("feedback_just_now")
+          : t("feedback_minutes_ago", { count: minutes });
       }
       return t("feedback_hours_ago", { count: hours });
     }
     if (days === 1) return t("feedback_yesterday");
     if (days < 7) return t("feedback_days_ago", { count: days });
-    return date.toLocaleDateString();
+    return date.toLocaleDateString(getLocale());
   }
 </script>
 
@@ -61,7 +64,7 @@
       <h3 class="card-title">{item.title}</h3>
       <span class="status-badge" style="--badge-color: {statusConfig.color}">
         <i class="fas {statusConfig.icon}" aria-hidden="true"></i>
-        {statusConfig.label}
+        {feedbackStatusLabel(item.status)}
       </span>
     </div>
 
@@ -71,7 +74,11 @@
     {#if item.imageUrls && item.imageUrls.length > 0}
       <div class="screenshot-indicator">
         <i class="fas fa-images" aria-hidden="true"></i>
-        <span>{t("feedback_screenshot_count", { count: item.imageUrls.length })}</span>
+        <span
+          >{t("feedback_screenshot_count", {
+            count: item.imageUrls.length,
+          })}</span
+        >
       </div>
     {/if}
 

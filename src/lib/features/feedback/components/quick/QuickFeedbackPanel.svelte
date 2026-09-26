@@ -182,7 +182,7 @@
   }}
   closeOnBackdrop={true}
   closeOnEscape={true}
-  ariaLabel="Quick Feedback"
+  ariaLabel={t("feedback_quick_title")}
   showHandle={isBottomSheet}
   dismissible={!isInputFocused}
   class={`quick-feedback-drawer ${isBottomSheet ? "bottom-sheet" : ""} ${isInputMode && isIOSPlatform ? "ios-input-mode" : ""}`}
@@ -211,7 +211,7 @@
         <button
           class="close-btn"
           onclick={closePanel}
-          aria-label="Close panel"
+          aria-label={t("feedback_close_panel")}
           type="button"
         >
           <i class="fas fa-times" aria-hidden="true"></i>
@@ -232,10 +232,13 @@
               >
                 <i class="fas {config.icon}" aria-hidden="true"></i>
                 <span
-                  >{config.label
-                    .replace(" Report", "")
-                    .replace(" Request", "")
-                    .replace(" Feedback", "")}</span
+                  >{t(
+                    type === "bug"
+                      ? "feedback_type_bug_short"
+                      : type === "feature"
+                        ? "feedback_type_feature_short"
+                        : "feedback_type_general_short"
+                  )}</span
                 >
               </button>
             {/each}
@@ -244,7 +247,7 @@
             class="close-btn input-mode-close"
             onpointerdown={handleInputModeClose}
             onclick={closePanel}
-            aria-label="Close panel"
+            aria-label={t("feedback_close_panel")}
             type="button"
           >
             <i class="fas fa-times" aria-hidden="true"></i>
@@ -256,7 +259,7 @@
       {#if showKeyboardHints}
         <div class="keyboard-hint" aria-hidden="true">
           <kbd>f</kbd>
-          <span>or</span>
+          <span>{t("auth_escape_or")}</span>
           <kbd>Esc</kbd>
           <span>{t("feedback_to_close")}</span>
         </div>

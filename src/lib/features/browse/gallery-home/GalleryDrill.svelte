@@ -518,9 +518,9 @@
     }
   }
 
-  const stackHint = onToggleValue
-    ? "Tap several. A sequence can match any of them."
-    : undefined;
+  const stackHint = $derived(
+    onToggleValue ? t("browse_audit_tap_several_sequence_any") : undefined
+  );
   // The landing's Starting-letter glyph grows once the adaptive tier has room.
   const landingGlyphHeight = $derived(
     adaptiveValueLayout && drillWidth >= 700 && drillWidth < 900 ? 32 : 20

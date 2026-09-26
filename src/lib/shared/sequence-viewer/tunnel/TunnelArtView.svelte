@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
   import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
@@ -245,7 +246,7 @@
     {#if controller.buildError}
       <div class="tunnel-error" role="alert">
         <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
-        <strong>The tunnel could not be built</strong>
+        <strong>{t("browse_audit_tunnel_error")}</strong>
         <span>{controller.buildError}</span>
       </div>
     {:else if seq}

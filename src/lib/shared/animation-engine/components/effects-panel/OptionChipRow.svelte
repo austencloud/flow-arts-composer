@@ -1,4 +1,5 @@
 <script lang="ts" generics="T extends string">
+  import { effectUiLabel } from "./effect-ui-label";
   /**
    * OptionChipRow — single-select chip row for effect-customize panels.
    *
@@ -57,8 +58,12 @@
   class:stacked={layout === "stacked"}
   style:--option-accent={color}
 >
-  <span class="option-label">{label}</span>
-  <div class="chip-group" role="radiogroup" aria-label={ariaLabel ?? label}>
+  <span class="option-label">{effectUiLabel(label)}</span>
+  <div
+    class="chip-group"
+    role="radiogroup"
+    aria-label={effectUiLabel(ariaLabel ?? label)}
+  >
     {#each options as option (option.value)}
       <button
         class="chip"
@@ -72,7 +77,7 @@
         data-ghost-kind={value === option.value || disabled
           ? undefined
           : "effect-param"}
-        data-ghost-label={option.label}
+        data-ghost-label={effectUiLabel(option.label)}
         onclick={() => onChange(option.value)}
       >
         {#if option.swatch != null}
@@ -85,9 +90,11 @@
           <i class="fas {option.icon}" aria-hidden="true"></i>
         {/if}
         <span class="chip-copy">
-          <span class="chip-label">{option.label}</span>
+          <span class="chip-label">{effectUiLabel(option.label)}</span>
           {#if option.description}
-            <span class="chip-description">{option.description}</span>
+            <span class="chip-description"
+              >{effectUiLabel(option.description)}</span
+            >
           {/if}
         </span>
       </button>

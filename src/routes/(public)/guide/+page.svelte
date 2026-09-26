@@ -2,6 +2,7 @@
   import GuideShell from "./_components/GuideShell.svelte";
   import { bodyPagesByGroup } from "./level-1/_data/guide-manifest";
   import { seoForSlug } from "./level-1/_data/guide-page-seo";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 
   const firstTopic = bodyPagesByGroup()[0]?.entries[0]?.entry;
   const firstTopicHref = firstTopic
@@ -10,54 +11,46 @@
   const firstTopicLabel = firstTopic
     ? seoForSlug(firstTopic.id, firstTopic.title).h1
     : "Level 1";
+  const localizedFirstTopicLabel = $derived(
+    firstTopic?.id === "the-grid"
+      ? tDynamic("guide_hub_first_topic")
+      : firstTopicLabel
+  );
 
   const guideSections = [
     {
-      title: "Level 1",
-      description: "The grid, positions, motions, letters, and words.",
+      key: "level1",
       href: firstTopicHref,
-      action: `Start with ${firstTopicLabel}`,
     },
     {
-      title: "Level 2",
-      description: "Turns, transitions, and intermediate notation.",
+      key: "level2",
       href: "/guide/level-2/turns",
-      action: "Read Level 2",
     },
     {
-      title: "Ratios",
-      description: "Translate spin ratios into TKA turns and flower petals.",
+      key: "ratios",
       href: "/guide/ratios",
-      action: "Translate ratios",
     },
     {
-      title: "The Codex",
-      description: "Every published Kinetic Alphabet letter.",
+      key: "codex",
       href: "/guide/codex",
-      action: "Open the Codex",
     },
     {
-      title: "Motion paths",
-      description: "Compare hand paths and the mandalas they draw.",
+      key: "motion_paths",
       href: "/guide/motion-paths",
-      action: "Compare motion paths",
     },
   ] as const;
 </script>
 
 <svelte:head>
-  <title>The Kinetic Alphabet Guide | Flow Arts Notation</title>
-  <meta
-    name="description"
-    content="Read the Kinetic Alphabet Guide, from Level 1 foundations through Level 2 turns and transitions, or open the complete letter Codex."
-  />
+  <title>{tDynamic("guide_hub_seo_title")}</title>
+  <meta name="description" content={tDynamic("guide_hub_seo_description")} />
   <link rel="canonical" href="https://tkaflowarts.com/guide" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://tkaflowarts.com/guide" />
-  <meta property="og:title" content="The Kinetic Alphabet Guide" />
+  <meta property="og:title" content={tDynamic("guide_hub_title")} />
   <meta
     property="og:description"
-    content="Read Level 1, continue with Level 2, or open the Kinetic Alphabet Codex."
+    content={tDynamic("guide_hub_social_description")}
   />
   <meta property="og:site_name" content="The Kinetic Alphabet" />
   <meta
@@ -69,10 +62,10 @@
   <meta property="og:image:alt" content="The Kinetic Alphabet" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:site" content="@tkaflowarts" />
-  <meta name="twitter:title" content="The Kinetic Alphabet Guide" />
+  <meta name="twitter:title" content={tDynamic("guide_hub_title")} />
   <meta
     name="twitter:description"
-    content="Read Level 1, continue with Level 2, or open the Kinetic Alphabet Codex."
+    content={tDynamic("guide_hub_social_description")}
   />
   <meta
     name="twitter:image"
@@ -84,25 +77,26 @@
   <main class="guide-hub guide-page-route">
     <div class="guide-index" style:view-transition-name="launchpad-guide">
       <header class="intro">
-        <span class="kicker">Written reference</span>
-        <h1>The Kinetic Alphabet Guide</h1>
-        <p>
-          Start with Level 1. Level 2 covers turns and transitions. The Codex is
-          the full letter reference.
-        </p>
+        <span class="kicker">{tDynamic("guide_hub_kicker")}</span>
+        <h1>{tDynamic("guide_hub_title")}</h1>
+        <p>{tDynamic("guide_hub_intro")}</p>
         <div class="intro-actions">
           <a class="primary-action" href={firstTopicHref}>
-            Start with {firstTopicLabel}
+            {tDynamic("guide_hub_start_with", {
+              topic: localizedFirstTopicLabel,
+            })}
             <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
           </a>
           <a class="secondary-action" href="/learn/concepts">
-            Interactive lessons
+            {tDynamic("guide_hub_interactive_lessons")}
           </a>
         </div>
       </header>
 
       <section class="section-index" aria-labelledby="section-index-heading">
-        <h2 id="section-index-heading">Read by section</h2>
+        <h2 id="section-index-heading">
+          {tDynamic("guide_hub_read_by_section")}
+        </h2>
 
         <div class="section-list">
           {#each guideSections as section, index}
@@ -111,11 +105,15 @@
                 {String(index + 1).padStart(2, "0")}
               </span>
               <span class="section-copy">
-                <strong>{section.title}</strong>
-                <span>{section.description}</span>
+                <strong>{tDynamic(`guide_hub_${section.key}_title`)}</strong>
+                <span>{tDynamic(`guide_hub_${section.key}_description`)}</span>
               </span>
               <span class="section-action">
-                {section.action}
+                {section.key === "level1"
+                  ? tDynamic("guide_hub_start_with", {
+                      topic: localizedFirstTopicLabel,
+                    })
+                  : tDynamic(`guide_hub_${section.key}_action`)}
                 <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
               </span>
             </a>
@@ -125,13 +123,13 @@
 
       <aside class="pdf-strip" aria-labelledby="pdf-heading">
         <div class="pdf-copy">
-          <span>Printable</span>
-          <strong id="pdf-heading">Level 1 PDF</strong>
-          <p>The Level 1 guide in its book layout.</p>
+          <span>{tDynamic("guide_hub_printable")}</span>
+          <strong id="pdf-heading">{tDynamic("guide_hub_pdf_title")}</strong>
+          <p>{tDynamic("guide_hub_pdf_description")}</p>
         </div>
         <a class="pdf-action" href="/guides/level-1.pdf" download>
           <i class="fa-solid fa-file-arrow-down" aria-hidden="true"></i>
-          Download PDF
+          {tDynamic("guide_hub_download_pdf")}
         </a>
       </aside>
     </div>

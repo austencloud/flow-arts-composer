@@ -1,5 +1,6 @@
 <!-- NavButton - Reusable Navigation Button Component -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { HapticFeedback } from "../../../application/services/haptic-feedback";
   import { onMount } from "svelte";
@@ -81,7 +82,7 @@
   {oncontextmenu}
   {disabled}
   aria-label="{ariaLabel || label}{badgeCount > 0
-    ? `, ${badgeCount} unread`
+    ? `, ${t('shared_unread_count', { count: badgeCount })}`
     : ''}"
   aria-current={active && type === "section" ? "page" : undefined}
   style="--section-color: {color}; --section-gradient: {gradient};"

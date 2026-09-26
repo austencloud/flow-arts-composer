@@ -88,7 +88,8 @@
   const headingId = $props.id();
 
   const downloadText = $derived(
-    downloadTextOverride ?? t("viewer_ui_download_named", { name: downloadLabel.toLowerCase() })
+    downloadTextOverride ??
+      t("viewer_ui_download_named", { name: downloadLabel })
   );
   const rendering = $derived(downloadProgress !== null);
   const renderPercent = $derived(
@@ -143,7 +144,8 @@
           aria-hidden={!rendering}
         >
           <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
-          {t("viewer_ui_rendering")} <span class="percent">{renderPercent}%</span>
+          {t("viewer_ui_rendering")}
+          <span class="percent">{renderPercent}%</span>
         </span>
       </span>
     </PanelButton>
@@ -165,7 +167,11 @@
     {/if}
   </div>
 
-  <div class="actions" role="group" aria-label={t("viewer_ui_other_share_ways")}>
+  <div
+    class="actions"
+    role="group"
+    aria-label={t("viewer_ui_other_share_ways")}
+  >
     <PanelButton onclick={onCopyLink}>
       <i
         class="fa-solid {linkCopied ? 'fa-check' : 'fa-link'}"
@@ -173,7 +179,10 @@
       ></i>
       {linkCopied ? t("viewer_ui_link_copied") : t("viewer_ui_copy_link")}
     </PanelButton>
-    <PanelButton onclick={onCopyEmbed} ariaLabel={t("viewer_ui_copy_embed_code")}>
+    <PanelButton
+      onclick={onCopyEmbed}
+      ariaLabel={t("viewer_ui_copy_embed_code")}
+    >
       <i
         class="fa-solid {embedCopied ? 'fa-check' : 'fa-code'}"
         aria-hidden="true"
@@ -181,7 +190,10 @@
       {embedCopied ? t("viewer_ui_code_copied") : t("viewer_ui_embed")}
     </PanelButton>
     {#if onNativeShare}
-      <PanelButton onclick={onNativeShare} ariaLabel={t("viewer_ui_share_other_apps")}>
+      <PanelButton
+        onclick={onNativeShare}
+        ariaLabel={t("viewer_ui_share_other_apps")}
+      >
         <i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i>
         {t("viewer_ui_other_apps")}
       </PanelButton>

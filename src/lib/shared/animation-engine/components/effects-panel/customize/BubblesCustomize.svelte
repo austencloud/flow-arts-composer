@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
   import type { BubblesIntent } from "$lib/shared/effects/domain/effects-config";
   import OptionChipRow from "../OptionChipRow.svelte";
@@ -11,7 +12,11 @@
   const { onBack }: Props = $props();
   const state = getEffectsConfigContext();
 
-  const PALETTES: { value: BubblesIntent["palette"]; label: string; swatch: string }[] = [
+  const PALETTES: {
+    value: BubblesIntent["palette"];
+    label: string;
+    swatch: string;
+  }[] = [
     { value: "soap", label: "Soap", swatch: "#c8e0ff" },
     { value: "champagne", label: "Champagne", swatch: "#f4e8c8" },
     { value: "oil", label: "Oil", swatch: "#c080ff" },
@@ -30,7 +35,7 @@
 <div class="customize-view">
   <button type="button" class="back-btn" onclick={onBack}>
     <i class="fas fa-arrow-left" aria-hidden="true"></i>
-    Back to presets
+    {t("effect_deep_back_to_presets")}
   </button>
 
   {#if state}
@@ -46,7 +51,7 @@
 
       {#if state.bubbles.palette === "custom"}
         <div class="color-row">
-          <span class="color-label">Tint</span>
+          <span class="color-label">{t("effect_deep_tint")}</span>
           <div class="color-pickers">
             <label class="color-picker">
               <input
@@ -73,7 +78,7 @@
 
       <!-- Ambient emission -->
       <div class="slider-row">
-        <label for="bubbles-ambient">Drift</label>
+        <label for="bubbles-ambient">{t("effect_deep_drift")}</label>
         <input
           id="bubbles-ambient"
           type="range"
@@ -86,12 +91,14 @@
               ambientEmission: +(e.currentTarget as HTMLInputElement).value,
             })}
         />
-        <span class="slider-value">{Math.round(state.bubbles.ambientEmission * 100)}%</span>
+        <span class="slider-value"
+          >{Math.round(state.bubbles.ambientEmission * 100)}%</span
+        >
       </div>
 
       <!-- Motion emission -->
       <div class="slider-row">
-        <label for="bubbles-motion">Motion</label>
+        <label for="bubbles-motion">{t("effect_deep_motion")}</label>
         <input
           id="bubbles-motion"
           type="range"
@@ -104,12 +111,14 @@
               motionEmission: +(e.currentTarget as HTMLInputElement).value,
             })}
         />
-        <span class="slider-value">{Math.round(state.bubbles.motionEmission * 100)}%</span>
+        <span class="slider-value"
+          >{Math.round(state.bubbles.motionEmission * 100)}%</span
+        >
       </div>
 
       <!-- Intensity -->
       <div class="slider-row">
-        <label for="bubbles-intensity">Size</label>
+        <label for="bubbles-intensity">{t("effect_deep_size")}</label>
         <input
           id="bubbles-intensity"
           type="range"
@@ -122,49 +131,55 @@
               intensity: +(e.currentTarget as HTMLInputElement).value,
             })}
         />
-        <span class="slider-value">{Math.round(state.bubbles.intensity * 100)}%</span>
+        <span class="slider-value"
+          >{Math.round(state.bubbles.intensity * 100)}%</span
+        >
       </div>
 
       <AdvancedControls count={2}>
         <!-- Size jitter -->
-      <div class="slider-row">
-        <label for="bubbles-jitter">Jitter</label>
-        <input
-          id="bubbles-jitter"
-          type="range"
-          min="0"
-          max="1"
-          step="0.05"
-          value={state.bubbles.sizeJitter}
-          oninput={(e) =>
-            state.updateEffect("bubbles", {
-              sizeJitter: +(e.currentTarget as HTMLInputElement).value,
-            })}
-        />
-        <span class="slider-value">{Math.round(state.bubbles.sizeJitter * 100)}%</span>
-      </div>
+        <div class="slider-row">
+          <label for="bubbles-jitter">{t("effect_deep_jitter")}</label>
+          <input
+            id="bubbles-jitter"
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={state.bubbles.sizeJitter}
+            oninput={(e) =>
+              state.updateEffect("bubbles", {
+                sizeJitter: +(e.currentTarget as HTMLInputElement).value,
+              })}
+          />
+          <span class="slider-value"
+            >{Math.round(state.bubbles.sizeJitter * 100)}%</span
+          >
+        </div>
 
-      <!-- Buoyancy -->
-      <div class="slider-row">
-        <label for="bubbles-buoyancy">Rise</label>
-        <input
-          id="bubbles-buoyancy"
-          type="range"
-          min="0"
-          max="1"
-          step="0.05"
-          value={state.bubbles.buoyancy}
-          oninput={(e) =>
-            state.updateEffect("bubbles", {
-              buoyancy: +(e.currentTarget as HTMLInputElement).value,
-            })}
-        />
-        <span class="slider-value">{Math.round(state.bubbles.buoyancy * 100)}%</span>
-      </div>
+        <!-- Buoyancy -->
+        <div class="slider-row">
+          <label for="bubbles-buoyancy">{t("effect_deep_rise")}</label>
+          <input
+            id="bubbles-buoyancy"
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={state.bubbles.buoyancy}
+            oninput={(e) =>
+              state.updateEffect("bubbles", {
+                buoyancy: +(e.currentTarget as HTMLInputElement).value,
+              })}
+          />
+          <span class="slider-value"
+            >{Math.round(state.bubbles.buoyancy * 100)}%</span
+          >
+        </div>
       </AdvancedControls>
     </div>
   {:else}
-    <p class="empty">Effect state unavailable.</p>
+    <p class="empty">{t("effect_deep_effect_state_unavailable")}</p>
   {/if}
 </div>
 

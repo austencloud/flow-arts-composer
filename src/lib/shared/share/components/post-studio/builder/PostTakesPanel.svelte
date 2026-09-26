@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type {
     CatalogTakeSource,
     PostBuilderState,
@@ -6,7 +7,7 @@
   import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
   import { getVideoFileMetadata } from "$lib/shared/video-collaboration/helpers/create-video-from-upload";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { formatPostClock } from "./post-builder-format";
+  import { formatPostClock, postActDisplayLabel } from "./post-builder-format";
 
   /**
    * The videos the post cuts between. The first one runs both performance
@@ -45,17 +46,17 @@
     )
   );
 
-  const STATUS_TEXT = {
-    untapped: "Timing not mapped",
-    unconfirmed: "Timing not checked",
-    confirmed: "Timing checked",
-    stale: "Sequence changed",
-  } as const;
+  const STATUS_TEXT = $derived({
+    untapped: t("share_studio_timing_unmapped"),
+    unconfirmed: t("share_studio_timing_unchecked"),
+    confirmed: t("share_studio_timing_checked"),
+    stale: t("share_studio_sequence_changed"),
+  });
 
   function sourceText(take: PostTake): string {
-    if (take.ref.kind === "catalog") return "Saved video";
-    if (take.ref.kind === "linked") return "Linked video";
-    return "From this device";
+    if (take.ref.kind === "catalog") return t("share_studio_saved_video");
+    if (take.ref.kind === "linked") return t("share_studio_linked_video");
+    return t("share_studio_from_device");
   }
 
   function usedBy(take: PostTake): string {
@@ -64,17 +65,20 @@
         act.kind === "performance" && act.enabled && act.takeId === take.id
     );
     return acts.length > 0
-      ? acts.map((act) => act.label).join(" and ")
-      : "Not in an act";
+      ? acts
+          .map((act) => postActDisplayLabel(act.id, act.label))
+          .join(` ${t("share_studio_and")} `)
+      : t("share_studio_not_in_act");
   }
 
   async function readFile(file: File): Promise<number> {
     if (!file.type.startsWith("video/"))
-      throw new Error("Choose a video file.");
-    if (file.size > MAX_BYTES) throw new Error("Choose a video under 500 MB.");
+      throw new Error(t("share_studio_choose_video_file"));
+    if (file.size > MAX_BYTES)
+      throw new Error(t("share_studio_video_under_500"));
     const metadata = await getVideoFileMetadata(file);
     if (!Number.isFinite(metadata.duration) || metadata.duration <= 0) {
-      throw new Error("That video has no length this browser can read.");
+      throw new Error(t("share_studio_video_duration_unreadable"));
     }
     return metadata.duration;
   }
@@ -94,7 +98,7 @@
       error =
         caught instanceof Error
           ? caught.message
-          : "That video could not be read.";
+          : t("share_studio_video_unreadable");
     } finally {
       busy = false;
     }
@@ -116,14 +120,13 @@
     try {
       await readFile(file);
       if (!builder.relinkLocalTake(takeId, file)) {
-        error =
-          "That isn't the same file. Pick the one this take was made from.";
+        error = t("share_studio_wrong_file");
       }
     } catch (caught) {
       error =
         caught instanceof Error
           ? caught.message
-          : "That video could not be read.";
+          : t("share_studio_video_unreadable");
     }
   }
 
@@ -135,8 +138,7 @@
 
 <div class="takes">
   <p class="help">
-    The first take plays both performance acts. Add a second, slowly performed
-    take and it runs the breakdown instead.
+    {t("share_studio_takes_hint")}
   </p>
 
   {#if takes.length > 0}
@@ -150,7 +152,7 @@
               class="name"
               value={take.label}
               maxlength="120"
-              aria-label="Take name"
+              aria-label={t("share_studio_take_name")}
               onchange={(event) =>
                 builder.renameTake(take.id, event.currentTarget.value)}
             />
@@ -165,8 +167,8 @@
           {#if !loaded}
             <p class="warn">
               {take.ref.kind === "local"
-                ? "Pick this file again to use it; browsers don't keep local files between visits."
-                : "This video could not be loaded."}
+                ? t("share_studio_repick_local")
+                : t("share_studio_video_not_loaded")}
             </p>
           {/if}
           <div class="row">
@@ -175,18 +177,20 @@
                 variant={status === "confirmed" ? "secondary" : "primary"}
                 onclick={() => mapTiming(take.id)}
               >
-                {status === "confirmed" ? "Timing" : "Map timing"}
+                {status === "confirmed"
+                  ? t("share_studio_timing")
+                  : t("share_studio_map_timing")}
               </PanelButton>
             {:else if take.ref.kind === "local"}
               <PanelButton variant="primary" onclick={() => pickAgain(take.id)}>
-                Pick the file again
+                {t("share_studio_pick_file_again")}
               </PanelButton>
             {/if}
             <PanelButton
               onclick={() => builder.removeTake(take.id)}
-              ariaLabel="Remove {take.label}"
+              ariaLabel={`${t("share_studio_remove")} ${take.label}`}
             >
-              Remove
+              {t("share_studio_remove")}
             </PanelButton>
           </div>
         </li>
@@ -195,7 +199,7 @@
   {/if}
 
   <div class="add">
-    <h3>Add a take</h3>
+    <h3>{t("share_studio_add_take")}</h3>
     <PanelButton
       variant={takes.length === 0 ? "primary" : "secondary"}
       onclick={() => fileInput?.click()}
@@ -203,16 +207,18 @@
       ariaBusy={busy}
     >
       <i class="fa-solid fa-film" aria-hidden="true"></i>
-      {busy ? "Reading the video…" : "Choose a video from this device"}
+      {busy
+        ? t("share_studio_reading_video")
+        : t("share_studio_choose_device_video")}
     </PanelButton>
     {#if error}<p class="warn" role="alert">{error}</p>{/if}
 
     {#if catalogLoading}
-      <p class="help">Looking for this sequence's saved videos…</p>
+      <p class="help">{t("share_studio_finding_saved_videos")}</p>
     {:else if catalogError}
       <p class="warn">{catalogError}</p>
     {:else if unused.length > 0}
-      <p class="help">This sequence's saved videos:</p>
+      <p class="help">{t("share_studio_saved_videos")}</p>
       <ul class="list">
         {#each unused as video (video.videoId)}
           <li class="catalog">
@@ -220,7 +226,7 @@
               {video.label}
               <span class="meta">
                 {formatPostClock(video.durationSeconds)}{video.legacyStepMap
-                  ? " · timing saved"
+                  ? ` · ${t("share_studio_timing_saved")}`
                   : ""}
               </span>
             </span>
@@ -229,9 +235,9 @@
                 const take = builder.addCatalogTake(video);
                 builder.selectedTakeId = take.id;
               }}
-              ariaLabel="Add {video.label}"
+              ariaLabel={`${t("share_studio_add")} ${video.label}`}
             >
-              Add
+              {t("share_studio_add")}
             </PanelButton>
           </li>
         {/each}

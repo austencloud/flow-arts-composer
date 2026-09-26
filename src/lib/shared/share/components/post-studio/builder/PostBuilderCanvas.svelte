@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
   import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
@@ -170,7 +171,7 @@
   {:else}
     <div class="empty">
       <i class="fa-solid fa-film" aria-hidden="true"></i>
-      <span>Add a take to start the post</span>
+      <span>{t("share_studio_deep_add_take_start_post")}</span>
     </div>
   {/if}
 </div>
