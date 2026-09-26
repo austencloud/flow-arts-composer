@@ -2,8 +2,10 @@
 
 Status: review, 2026-09-24. Read-only findings, Austen's answers, and the
 agreed plan. Steps 0 to 2 landed on local main on 2026-09-25 (see
-[Results](#results-2026-09-25)); later steps wait on the mapping sessions
-described below.
+[Results](#results-2026-09-25)), followed the same day by a check of the
+staffs against the body itself (see
+[Physical check](#physical-check-2026-09-25)); later steps wait on the
+mapping sessions described below.
 
 The complaint: the props go where the grid says, but the hands cannot reach
 them and let go. This review asked whether the work on arm clipping, negative
@@ -155,16 +157,16 @@ There are three contact modes: `legacy` (every production host), weld (three
 test routes) and `prop-authoritative` (grip lab only, one hand). A win in one
 does not carry to the others.
 
-## The grip-elbow worktree: parked
+## The grip-elbow worktree
 
-Do not merge `codex/grip-elbow-continuity` and do not delete it. It touches
-none of the three causes; it runs only in the grip lab's strict mode. Palm
-roll is a curve for one right-hand exercise, clamped so it cannot mirror; a
-hand-sculpt step moves bones after they are measured; and merging requires
-regenerating the patch against newer `main` commits, the operation behind all
-five clobbers. Worth keeping: the relaxed thumb-and-index pinch shapes (after
-the ring and pinky splay are mirrored), the scrub-equals-play tests, and
-Austen's taught North pose values as defaults for their route.
+This review parked `codex/grip-elbow-continuity`; another session merged it
+to local main on 2026-09-25. The assessment stands as a record: it touches
+none of the three causes and runs only in the grip lab's strict mode. Palm
+roll is a curve for one right-hand exercise, clamped so it cannot mirror, and
+a hand-sculpt step moves bones after they are measured. Worth keeping from
+it: the relaxed thumb-and-index pinch shapes (after the ring and pinky splay
+are mirrored), the scrub-equals-play tests, and Austen's taught North pose
+values as defaults for their route.
 
 ## Keep and stop
 
@@ -254,7 +256,7 @@ Every step is judged by the same scoreboard. Effort figures are estimates.
 | 0    | Scoreboard: commit the probe as a corpus test; add staff-versus-arm, head and torso distance                                                                                      | Reproduces today: 8,068 of 12,960 over 3 cm on ch07; 0 forearm pairs under 4 cm                                                                      |
 | 1    | Wrist fix: place the wrist from the orientation the twist will produce                                                                                                            | At most 4,400 of 12,960 over 3 cm on ch07 and ch18; forearms under 4 cm stay 0; palms under 6 cm at most 10 per rig; browser check on both renderers |
 | 2    | Hard beats: replace the unbounded split with a capped, reported displacement of staff and hand together, radial and depth only; beta depth lanes; reset cached retraction on seek | p90 gap at most 12 cm on both rigs; forearms under 4 cm stay 0; every displaced beat listed in cm within the cap                                     |
-| 3    | Move scene-3d out of the pnpm patch into `packages/` (the camera-3d precedent); keep grip-elbow parked                                                                            | Scoreboard identical before and after; type check and build pass                                                                                     |
+| 3    | Move scene-3d out of the pnpm patch into `packages/` (the camera-3d precedent)                                                                                                    | Scoreboard identical before and after; type check and build pass                                                                                     |
 | 4    | Planning trial: plan elbow direction across the worst remaining sequence instead of per frame                                                                                     | At least 50% fewer gap frames than step 2 on that sequence and forearms under 4 cm back to 0; otherwise stop and keep step 2                         |
 | 5    | Routes and palm facing from the mapping sessions: negative-space pockets, body turns and blends, chosen per beat across the sequence                                              | Austen signs off the route rules; the negative-space filmstrip shows the thumb end in the pocket at 25% and 35%                                      |
 | 6    | Grip states: the relaxed pinch as a real state on both hands, entered deliberately or when the wrist runs out of turn                                                             | Both hands, four rigs; contact holds in both grips; displayed hand equals measured hand                                                              |
@@ -278,7 +280,7 @@ ch18:
 | Forearm pairs under 4 cm                      | 0 / 0           | 0 / 0         | 75 / 34       |
 | Palm pairs under 6 cm                         | 0 / 0           | 8 / 4         | 7 / 3         |
 | Rendered staff through head, torso or arm     | 60 / 49         | 136 / 157     | 73 / 73       |
-| The same with the staff at its grid position  | not measured    | 70 / 83       | 65 / 72       |
+| The same before the hard-beat move and lock   | not measured    | 70 / 83       | 65 / 72       |
 
 Step 1 turned the wrist from the orientation the twist produces. Step 2
 replaced the unbounded pair split with a capped displacement of staff and
@@ -299,9 +301,13 @@ Decisions and open items:
 - **Render lock.** It still slides the staff up to 6 cm in any direction,
   against the radial-and-depth rule. A lock limited to radial and depth moves
   raised the frames over 3 cm to 2,556 and 3,154. Kept until step 7.
-- **Staff through the body** is above step 0 (73 against 60 and 49). The grid
-  positions alone account for 65 and 72 of those frames; step 1's target of
-  bringing the rendered count down to the grid count is not met.
+- **Staff through the body** is above step 0 (73 against 60 and 49). An
+  earlier version said the grid positions alone account for 65 and 72 of
+  those frames. That was wrong: those staffs already sit where the torso
+  turn's corridor puts them, and held square the grid never reaches the body.
+  These counts also come from the package's collision spheres, which put the
+  face behind the head, miss the front of the chest and ignore the turn. The mesh measure in
+  [Physical check](#physical-check-2026-09-25) replaces them.
 - **Elbow routing.** The displacement changes the over/under routing on 368
   frames (capped); the plan asked for none.
 - **Hosts left on the legacy split** until they are wired: Coven, Learn
@@ -313,6 +319,71 @@ Decisions and open items:
   plane mode, step count, loop, effort, effort timeline, path shape and
   motion-aware paths. An effort or path change replans the torso and the
   displaced props together.
+
+## Physical check (2026-09-25)
+
+Austen asked for realism next: a staff at the South point flies through the
+torso when the body turns side-on. He chose to measure honestly first, then
+keep each staff out of the body without capping the turn, and to have the
+hips and feet carry the turn later, like a real spinner: the chest leads,
+then the hips and feet pivot. That is a separate, larger piece built on the
+walking system. Until it lands the scoreboard reports the spine twisted past
+the pelvis instead of blocking it.
+
+What changed:
+
+- **Measured against the body.** The scoreboard now measures each staff
+  against the rig's own skinned mesh: head, torso, legs, the other hand's arm,
+  and the holding hand's upper arm and forearm. Held square, no staff touches
+  the head or torso on either rig; every head or torso hit comes from the
+  chest turning side-on, up to 87°.
+- **Timing.** The torso turn read the raw clock, which already runs through
+  beat 1 during the static start pose, so the torso turned through beat 1 and
+  snapped back as it began. The torso now holds where beat 1 starts, and it
+  reads the same clock as the displaced props in both renderers.
+- **Each hand's lane.** The side-on corridor gave both hands one 16 cm lane,
+  and the turned chest is wider than that: a staff held upright at South runs
+  through it. Each hand's lane now opens, per moment of the score and up to
+  26 cm, to the narrowest width at which its staff comes no further into the
+  head and torso than it does with the chest square. Lanes open ahead of the
+  moments that need them and close after, no faster than 48 cm per beat. The planning
+  model is a stack of rounded boxes measured from both rigs, turned with the
+  spine segments. With lanes sized this way, a crossed pair's hard-beat lane
+  is gated like any other pair's, since the corridor already keeps the hands
+  apart.
+
+Scoreboard, ch07 / ch18, staff-frames of 12,960 unless noted:
+
+| Measure                                   | Before the lanes | With the lanes |
+| ----------------------------------------- | ---------------- | -------------- |
+| Staff through the torso, as drawn         | 642 / 1,271      | 100 / 181      |
+| Staff through the head, as drawn          | 64 / 149         | 52 / 141       |
+| Head and torso where the stance plans it  | 1,189 / 1,610    | 72 / 103       |
+| Staff through a leg                       | 20 / 21          | 17 / 17        |
+| Staff through the other hand's arm        | 628 / 637        | 662 / 668      |
+| Staff through its own upper arm           | 1,908 / 1,848    | 2,751 / 2,710  |
+| Staff along or through its own forearm    | 2,886 / 2,666    | 3,732 / 3,436  |
+| Hand-frames over 3 cm from the staff      | 1,787 / 2,362    | 1,860 / 2,446  |
+| 90th-percentile hand-to-staff gap         | 3.9 / 5.7 cm     | 4.0 / 6.0 cm   |
+| Forearm pairs under 4 cm (of 6,480)       | 75 / 34          | 73 / 33        |
+| Chest over 60° past the pelvis (of 6,480) | 2,633 / 2,614    | 2,639 / 2,615  |
+
+The torso count falls by about 85%. The cost is in the arms: a staff moved
+out of the chest now runs into the path of its own arm, because the elbow is
+still solved frame by frame without knowing where the staff is. The
+together family (gggg) moved its chest contact into the arm. The extra
+hand-frames off their staffs are almost all in the three quarter-opposite
+sequences (nqnq, mpmp, oror), where the upstage hand holds the staff at South:
+the wider lane puts that grip behind the pelvis, which does not turn yet, and
+the animator's body-clearance retraction then recovers slowly (at nqnq 3.35
+the corridor is back to the body's own lane, yet the hand is still 10 cm off).
+Elbow planning (step 4) is expected to win back the arm contacts and the hips
+the grips; neither is measured yet.
+
+Recommended order after this: trail cleanup; reference clips from Austen
+(front and side stills he confirms) for body turns and negative space,
+starting with the together-opposite, split-same and quarter families; then
+elbow planning (step 4). Step 3 does not block any of them.
 
 ## Target architecture
 
@@ -363,7 +434,7 @@ installed from `patches/@austencloud__scene-3d@0.1.6.patch`.
 | Lean and pitch fixed at 0          | `AvatarAnimator.ts:98`, `SpineTwister.ts:53`                                  |
 | Retraction and its cache           | `AvatarAnimator.ts:102-106`, `:167-170`, `:251-254`                           |
 | Wrist rate limit and smoothing     | `AvatarAnimator.ts:60`, `:2744-2752`, `:2848`                                 |
-| Render lock, 6 cm                  | `Avatar3D.svelte:510`, clamp `:633`, report `:1857`                           |
+| Render lock, 6 cm                  | `Avatar3D.svelte:529`, clamp `:652`, applied `:1663`, `:1670`, report `:1886` |
 | Orbit renderer without lock        | `worker-performer.ts:436-491`; routing `Viewer3DCanvas.svelte:346-385`        |
 | Grid radius                        | `plane-transforms.ts:34`                                                      |
 | Split pairs flattened, depth jump  | `upper-body-stance-planner.ts:127-160`, `:211-217`                            |
