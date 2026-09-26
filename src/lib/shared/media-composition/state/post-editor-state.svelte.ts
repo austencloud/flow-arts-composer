@@ -145,8 +145,6 @@ export function createPostEditorState(deps: PostEditorDeps) {
   let mode = $state<PostEditorMode>("edit");
   let selectedItemId = $state<string | null>(null);
   let timingTakeId = $state<string | null>(null);
-  /** What a preview drag moves on a video that does not fill the frame. */
-  let previewDragTarget = $state<"box" | "picture">("box");
 
   const resolved = $derived.by(() => {
     const out: Record<string, ResolvedTakeTiming> = {};
@@ -771,12 +769,6 @@ export function createPostEditorState(deps: PostEditorDeps) {
     },
     get regionRects() {
       return regionRects;
-    },
-    get previewDragTarget() {
-      return previewDragTarget;
-    },
-    set previewDragTarget(next: "box" | "picture") {
-      previewDragTarget = next;
     },
     get previewSeconds() {
       return previewSeconds;

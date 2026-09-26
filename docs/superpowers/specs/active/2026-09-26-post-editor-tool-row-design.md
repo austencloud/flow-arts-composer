@@ -38,21 +38,33 @@ settings list goes away.
 ## Layout
 
 Three presentations of the same parts. Wide mode is measured from the
-editor's own width (at least 56rem), so the viewer's narrow columns and the
-share sheet behave like a phone.
+editor's own box: at least 56rem wide, or landscape and at least 36rem wide.
+A short landscape screen (a turned phone, a zoomed-in laptop) keeps the panel
+beside the preview, where it cannot cover it. The viewer's narrow columns and
+the share sheet behave like a phone.
 
-**Phone.** Rows: top bar, stage (preview and transport, at least 20rem), the
-timeline, the dock. The dock holds the tool row. Opening a panel tool swaps
-the row for that tool's panel (`Crossfade` with `animateHeight`), with a
-check-mark Done button that returns to the row. The dock is sticky at the
-bottom of the scrolling editor, and a panel scrolls inside itself past half
-the screen height.
+**Phone.** Rows: top bar, stage, transport, timeline, dock. The stage takes
+the height the other rows leave it, at least 12rem and never taller than a
+full-width 9:16 frame, so the preview, the timeline and the row fit on one
+screen down to the iPhone SE. The dock holds the tool row. Opening a panel
+tool swaps the row for that tool's panel, with a check-mark Done button that
+returns to the row. The preview keeps the height it had, and the panel fills
+the room under it and scrolls inside. When that room is under 14rem, the
+panel may take half the editor, which then scrolls under the dock.
 
-**Wide.** Rows: top bar, stage row, timeline, tool row. The stage row centers
-the preview and the side panel as one group; the preview's width comes from
-the row height (9:16), so the panel sits right beside the video. The side
-panel always shows a tool: the active tool when the selection has it,
-otherwise the selection's default. There is no Done button.
+**Wide.** Rows: stage row, transport, timeline, tool row. The stage row
+centers the preview and a side column as one group; the preview's width comes
+from the row height (9:16), so the column sits right beside the video. The
+column holds the top bar with the panel under it. The panel always shows a
+tool: the active tool when the selection has it, otherwise the selection's
+default. There is no Done button. The stage row is at least 15rem; a shorter
+window scrolls.
+
+The dock and the wide tool row stay at the bottom of the scrolling editor, so
+the tools are on screen at any height. Tools, panels and the dock swap with
+`Crossfade` in swap mode at `DURATION.fast`: the old set fades out before the
+new one fades in, so two sets of labels never overlap. Reduced motion makes
+the swap instant.
 
 **Viewer.** When the viewer shell offers its side inspector, the panel host is
 reparented there (`reparentToInspector`); the editor stacks top bar, stage,
@@ -102,7 +114,7 @@ One control style per kind of value, and no help paragraphs inside tools:
 | Export   | `PostExportPanel` (sound, to-do list, render, download), unchanged                                                                     |
 | Trim     | In and Out readouts, each with Set to playhead                                                                                         |
 | Timing   | Overlays: Match clip or Own time; with own time, Start and End each with Set to playhead. Main-track card: Length with End at playhead |
-| Crop     | Keyframes; Zoom and Rotation sliders; Fill or Show all; Normal or Mirrored; Reset                                                      |
+| Crop     | Keyframes; Zoom and Rotation sliders; Fill or Show all and Normal or Mirrored, on one line when there is room; Reset                   |
 | Speed    | Speed slider, 0.25× to 4×                                                                                                              |
 | Volume   | Volume slider, 0 to 200%; a silent post shows a status with Use the videos' sound                                                      |
 | Layout   | Dual view, Breakdown or Video only                                                                                                     |
@@ -151,6 +163,11 @@ picture, anything else moves its box. The old Box/Picture switch and
   on the button.
 - A range slider owns its arrows, Home and End; editor shortcuts still work
   while it has focus.
+- When a pick on the timeline or the preview swaps the tools that hold focus,
+  focus moves to their holder first, so Tab continues into the new tools.
+- Delete, by key or tool, moves focus to the new row's first tool.
+- Tap beats moves focus into the tapper's controls, and Back to editing
+  returns it to the editor.
 
 ## Ownership (primitive discovery)
 
@@ -167,9 +184,9 @@ Searches: `slider`, `type="range"`, `role="slider"`, `ScrubbableNumber`,
 | Amount input            | `ScrubbableNumber`                                         | replace in the editor with new shared `ValueSlider`; `ScrubbableNumber` stays for dense tools elsewhere |
 | Pick input              | mixed `FilterChipBase` toggles and `SegmentedControl`      | replace with `SegmentedControl` only                                                                    |
 | Actions                 | `.post-editor-tool` buttons, `FilterChipBase` action chips | replace with the row's buttons and `PanelButton`                                                        |
-| Motion                  | `Crossfade animateHeight` on the inspector                 | keep: `Crossfade` for the dock swap, the side panel and the row                                         |
+| Motion                  | `Crossfade animateHeight` on the inspector                 | keep: `Crossfade` in swap mode for the dock, the side panel and the row                                 |
 | Feedback                | hint paragraphs                                            | remove (Austen rejected them); keep short status lines with actions                                     |
-| Responsive layout       | container queries at 56rem and 36rem                       | replace with measured wide mode plus the viewer's external inspector                                    |
+| Responsive layout       | container queries at 56rem and 36rem                       | replace with measured wide mode (width, or landscape width) plus the viewer's external inspector        |
 | Detail surfaces         | `PostSettingsPanel`, `PostItemSettings`                    | replace with `PostToolPanel` and `PostItemTool`                                                         |
 | Add menu                | `PostEditorAddMenu` (bits-ui dropdown)                     | replace with the Add panel; its placement rules move to `post-editor-add.ts`                            |
 | Typography and color    | theme tokens                                               | keep; tool labels 0.875rem, readouts tabular                                                            |
@@ -196,6 +213,8 @@ inputs; they are not migrated here.
 
 ## Follow-ups
 
-- A compact phone timeline (shorter lanes) so the iPhone SE fits without
-  scrolling.
+- A shorter timeline on short laptops: its zoom row and the empty space under
+  a few lanes could go to the preview.
+- Export in the top bar shows no pressed state while its panel is open.
+- The Tutorial tool's hint is long.
 - Migrating the app's other range sliders to `ValueSlider`.

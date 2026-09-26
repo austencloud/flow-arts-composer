@@ -88,14 +88,9 @@
       ]}
       value={editor.project.audio}
       onchange={editor.setAudio}
-      size="sm"
+      color="accent"
       ariaLabel={t("share_studio_sound")}
     />
-    <p class="help">
-      {editor.project.audio === "takes"
-        ? t("post_editor_takes_sound_hint")
-        : t("share_studio_silent_hint")}
-    </p>
   </div>
 
   {#if todo.length > 0}
@@ -115,7 +110,6 @@
           </li>
         {/each}
       </ul>
-      <p class="help">{t("share_studio_unchecked_timing_hint")}</p>
     </div>
   {/if}
 
