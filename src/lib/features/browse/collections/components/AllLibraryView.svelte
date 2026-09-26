@@ -108,13 +108,13 @@ the gallery's, and the source is pinned to my-library with no toggle.
 
   const deleteTitle = $derived(
     deleteTargets.length === 1
-      ? "Permanently delete this sequence?"
-      : `Permanently delete ${deleteTargets.length} sequences?`
+      ? t("browse_audit_delete_one_title")
+      : t("browse_audit_delete_many_title", { count: deleteTargets.length })
   );
   const deleteMessage = $derived(
     deleteTargets.length === 1
-      ? "This removes the sequence from your library, this device, and the community gallery. It can't be undone."
-      : "This removes the selected sequences from your library, this device, and the community gallery. It can't be undone."
+      ? t("browse_audit_delete_one_message")
+      : t("browse_audit_delete_many_message")
   );
 
   async function deleteSelectedSequences(): Promise<void> {
@@ -126,8 +126,8 @@ the gallery's, and the source is pinned to my-library with no toggle.
       await getLibraryRepository().deleteSequences(ids);
       toast.success(
         ids.length === 1
-          ? "Sequence permanently deleted"
-          : `${ids.length} sequences permanently deleted`
+          ? t("browse_audit_deleted_one")
+          : t("browse_audit_deleted_many", { count: ids.length })
       );
       selectionState.exit();
       deleteTargets = [];
@@ -135,8 +135,8 @@ the gallery's, and the source is pinned to my-library with no toggle.
       console.error("[AllLibraryView] Permanent delete failed:", error);
       toast.error(
         ids.length === 1
-          ? "Sequence wasn't deleted. Try again."
-          : "Some sequences weren't deleted. Try again."
+          ? t("browse_audit_delete_failed_one")
+          : t("browse_audit_delete_failed_many")
       );
     } finally {
       isDeleting = false;
@@ -186,7 +186,7 @@ the gallery's, and the source is pinned to my-library with no toggle.
     openSequenceViewer(sequence, {
       source: "browse_library",
       returnPath: "/browse/library",
-      returnLabel: "Library",
+      returnLabel: t("browse_audit_library"),
       scrollY: browseScrollState.lastScrollY,
       handPathMode: engine.viewMode.subject === "hands",
       variations,
@@ -203,12 +203,12 @@ the gallery's, and the source is pinned to my-library with no toggle.
     engine.sections.map((s) => s.title)
   );
 
-  const emptyAction = {
-    label: "Browse Gallery",
+  const emptyAction = $derived({
+    label: t("browse_audit_browse_gallery"),
     onClick: () => {
       navigationState.setActiveTab("explore");
     },
-  };
+  });
   const showEmptyLibrary = $derived(
     !previewReadOnly &&
       engine.sectionsReady &&
@@ -219,14 +219,13 @@ the gallery's, and the source is pinned to my-library with no toggle.
       !engine.searchQuery
   );
   const emptyState = $derived({
-    message: "Your saved sequences and collections appear here.",
-    description: "Browse the Gallery to find something to save.",
+    message: t("browse_audit_library_empty_message"),
+    description: t("browse_audit_library_empty_description"),
     secondaryAction:
       !authState.isFullAccount && !previewReadOnly
         ? {
-            label: "Create account",
-            description:
-              "Create a free account to access your collections on other devices.",
+            label: t("browse_audit_create_account"),
+            description: t("browse_audit_create_account_description"),
             onClick: () => authDrawerState.show("signup", "sync-library"),
           }
         : undefined,
@@ -276,7 +275,7 @@ the gallery's, and the source is pinned to my-library with no toggle.
       layout="fullpage"
       onSelect={handleSelect}
       {onBack}
-      backLabel="Collections"
+      backLabel={t("browse_ui_collections_tab")}
       hideToolbarSearch
       warming={gridWarming || (!engine.sectionsReady && !engine.error)}
       showToolbar={engine.sectionsReady || !!engine.error}
@@ -322,8 +321,8 @@ the gallery's, and the source is pinned to my-library with no toggle.
   bind:isOpen={deleteConfirmOpen}
   title={deleteTitle}
   message={deleteMessage}
-  confirmText="Delete permanently"
-  cancelText="Keep"
+  confirmText={t("browse_audit_delete_permanently")}
+  cancelText={t("browse_audit_keep")}
   variant="danger"
   onConfirm={deleteSelectedSequences}
   onCancel={cancelDelete}

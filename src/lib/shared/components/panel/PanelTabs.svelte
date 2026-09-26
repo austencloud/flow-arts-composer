@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * PanelTabs - Segmented control / tab component
    *
@@ -29,7 +30,11 @@
 </script>
 
 <div class="panel-tabs-container">
-  <div class="panel-tabs" role="tablist" aria-label="Panel tabs">
+  <div
+    class="panel-tabs"
+    role="tablist"
+    aria-label={t("shared_controls_panel_tabs")}
+  >
     {#each tabs as tab (tab.value)}
       <button
         type="button"

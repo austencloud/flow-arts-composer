@@ -4,6 +4,7 @@ Uses StartPlacementManager to load variations and displays actual pictographs
 50px minimum touch targets for accessibility
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
@@ -102,14 +103,14 @@ Uses StartPlacementManager to load variations and displays actual pictographs
     onclick={() => handleSelect(null)}
     onkeydown={(e) => handleKeydown(e, null)}
     type="button"
-    aria-label="Any placement (no constraint)"
+    aria-label={t("shared_controls_any_position_unconstrained")}
   >
-    <span class="any-text">Any</span>
+    <span class="any-text">{t("shared_controls_any_position")}</span>
   </button>
 
   {#if isLoading}
     <div class="loading-placeholder">
-      <span>Loading placements...</span>
+      <span>{t("shared_controls_loading_positions")}</span>
     </div>
   {:else}
     <!-- All variations in a responsive grid -->
@@ -124,7 +125,9 @@ Uses StartPlacementManager to load variations and displays actual pictographs
           style:--letter-border-color={getLetterBorderColorSafe(
             placement.letter
           )}
-          aria-label="Select placement {placement.startPlacement}"
+          aria-label={t("shared_controls_select_position", {
+            position: placement.startPlacement,
+          })}
         >
           <div class="pictograph-wrapper">
             <PictographContainer pictographData={placement} />

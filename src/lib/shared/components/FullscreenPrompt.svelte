@@ -12,13 +12,14 @@ the actual fullscreen state rather than inferring from viewport size.
 <script lang="ts">
   import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
   import { getMobileFullscreenManager } from "$lib/shared/mobile/get-mobile-fullscreen-manager";
-  import type { DeviceDetector } from '$lib/shared/device/services/device-detector'
-  import type { MobileFullscreenManager } from '$lib/shared/mobile/services/mobile-fullscreen-manager'
+  import type { DeviceDetector } from "$lib/shared/device/services/device-detector";
+  import type { MobileFullscreenManager } from "$lib/shared/mobile/services/mobile-fullscreen-manager";
   import { onMount } from "svelte";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 
   let showPrompt = $state(false);
   let isEmergencyMode = $state(false); // Track if we're in emergency mode
-  let message = $state("");
+  let messageIndex = $state(0);
 
   let deviceDetector: DeviceDetector | null = null;
   let fullscreenService: MobileFullscreenManager | null = null;
@@ -27,16 +28,19 @@ the actual fullscreen state rather than inferring from viewport size.
   const DISMISSAL_KEY = "tka-fullscreen-prompt-dismissed-session";
 
   // Fun, inviting messages that make users want to tap
-  const messages = [
-    "Tap to Build Movement ✨",
-    "Enter the Studio 🎯",
-    "Let's Create Sequences 🌟",
-    "Tap to Choreograph ⚡",
-    "Begin Your Sequence 🎨",
-    "Create Something Beautiful ✨",
-    "Build Your Vision 🎭",
-    "Tap to Start Creating 🚀",
-  ];
+  const messageKeys = [
+    "fullscreen_prompt_message_1",
+    "fullscreen_prompt_message_2",
+    "fullscreen_prompt_message_3",
+    "fullscreen_prompt_message_4",
+    "fullscreen_prompt_message_5",
+    "fullscreen_prompt_message_6",
+    "fullscreen_prompt_message_7",
+    "fullscreen_prompt_message_8",
+  ] as const;
+  const message = $derived(
+    tDynamic(messageKeys[messageIndex] ?? "fullscreen_prompt_message_1")
+  );
 
   onMount(() => {
     let unsubscribe: (() => void) | undefined;
@@ -48,7 +52,7 @@ the actual fullscreen state rather than inferring from viewport size.
       fullscreenService = getMobileFullscreenManager();
 
       // Pick a random message
-      message = messages[Math.floor(Math.random() * messages.length)] || "";
+      messageIndex = Math.floor(Math.random() * messageKeys.length);
 
       // Initial check
       checkShouldPrompt();
@@ -119,15 +123,15 @@ the actual fullscreen state rather than inferring from viewport size.
       (e.key === "Enter" || e.key === " ") && requestFullscreen()}
     role="button"
     tabindex="0"
-    aria-label="Enter fullscreen to start building"
+    aria-label={tDynamic("fullscreen_prompt_enter_aria")}
   >
     <div class="fullscreen-prompt-content">
       <h2 class="prompt-title">{message}</h2>
       <p class="prompt-subtitle">
         {#if isEmergencyMode}
-          Limited space detected - tap anywhere for fullscreen
+          {tDynamic("fullscreen_prompt_limited_space")}
         {:else}
-          Tap anywhere to enter fullscreen
+          {tDynamic("fullscreen_prompt_tap_fullscreen")}
         {/if}
       </p>
 
@@ -136,10 +140,10 @@ the actual fullscreen state rather than inferring from viewport size.
         <button
           class="dismiss-button"
           onclick={dismissPrompt}
-          aria-label="Skip fullscreen for now"
-          title="Skip fullscreen (this session)"
+          aria-label={tDynamic("fullscreen_prompt_skip_aria")}
+          title={tDynamic("fullscreen_prompt_skip_title")}
         >
-          Skip
+          {tDynamic("fullscreen_prompt_skip")}
         </button>
       {/if}
     </div>
@@ -207,7 +211,8 @@ the actual fullscreen state rather than inferring from viewport size.
     gap: clamp(12px, 3vh, 20px);
 
     /* Scale-in animation */
-    animation: scaleIn var(--duration-emphasis) cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: scaleIn var(--duration-emphasis)
+      cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   @keyframes scaleIn {

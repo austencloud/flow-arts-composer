@@ -311,7 +311,11 @@
   {#if qrDataUrl}
     {@render qrImageBlock()}
   {:else if qrPending}
-    <div class="qr-pending" role="status" aria-label={t("viewer_detail_generating_qr_code")}>
+    <div
+      class="qr-pending"
+      role="status"
+      aria-label={t("viewer_detail_generating_qr_code")}
+    >
       <ProgressRing
         percent={-1}
         size={20}
@@ -379,7 +383,9 @@
                           cell.index < highlightedStepIndex}
                         onclick={() => onStepClick(cell.index)}
                         type="button"
-                        aria-label="Go to step {cell.label}"
+                        aria-label={t("browse_audit_go_to_step", {
+                          step: cell.label,
+                        })}
                       >
                         <CellRenderer
                           {exportPresentation}
@@ -483,7 +489,9 @@
                         cell.index < highlightedStepIndex}
                       onclick={() => onStepClick(cell.index)}
                       type="button"
-                      aria-label="Go to step {cell.label}"
+                      aria-label={t("browse_audit_go_to_step", {
+                        step: cell.label,
+                      })}
                     >
                       <CellRenderer
                         {exportPresentation}
@@ -579,7 +587,7 @@
                 cell.index < highlightedStepIndex}
               onclick={() => onStepClick(cell.index)}
               type="button"
-              aria-label="Go to step {cell.label}"
+              aria-label={t("browse_audit_go_to_step", { step: cell.label })}
             >
               <CellRenderer
                 {exportPresentation}
@@ -707,7 +715,7 @@
               cell.index < highlightedStepIndex}
             onclick={() => onStepClick(cell.index)}
             type="button"
-            aria-label="Go to step {cell.label}"
+            aria-label={t("browse_audit_go_to_step", { step: cell.label })}
           >
             <CellRenderer
               {exportPresentation}

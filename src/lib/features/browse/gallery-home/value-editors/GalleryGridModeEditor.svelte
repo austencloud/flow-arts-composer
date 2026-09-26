@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import LessonGridDisplay from "$lib/shared/pictograph/grid/components/LessonGridDisplay.svelte";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
@@ -18,7 +19,7 @@
 </script>
 
 <div class="drill-screen screen-gridmode">
-  {@render valueHead("Pick a grid mode", stackHint)}
+  {@render valueHead(t("browse_audit_pick_grid_mode"), stackHint)}
   <div class="value-list">
     {#each catalog.gridModeValues as v (v.value)}
       {@const gridModeApplied =
@@ -39,8 +40,16 @@
           />
         </span>
         <span class="value-main">
-          <span class="value-label">{v.label}</span>
-          <span class="value-desc">{v.desc}</span>
+          <span class="value-label"
+            >{v.value === "box"
+              ? t("browse_audit_box")
+              : t("browse_audit_diamond")}</span
+          >
+          <span class="value-desc"
+            >{v.value === "box"
+              ? t("browse_audit_diagonal_points")
+              : t("browse_audit_cardinal_points")}</span
+          >
           <span class="density-bar">
             <span
               class="density-fill"

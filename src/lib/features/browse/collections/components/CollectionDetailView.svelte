@@ -309,7 +309,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
         source: "browse_collection",
         collectionPropType: collection?.propType,
         returnPath: "/browse",
-        returnLabel: collection?.name ?? "Collection",
+        returnLabel: collection?.name ?? t("browse_audit_collection"),
         variations,
       });
     }
@@ -415,13 +415,15 @@ becomes private while open, we bail back to the list instead of showing a ghost.
 
   const sequenceDeleteTitle = $derived(
     sequenceDeleteTargets.length === 1
-      ? "Permanently delete this sequence?"
-      : `Permanently delete ${sequenceDeleteTargets.length} sequences?`
+      ? t("browse_audit_delete_one_title")
+      : t("browse_audit_delete_many_title", {
+          count: sequenceDeleteTargets.length,
+        })
   );
   const sequenceDeleteMessage = $derived(
     sequenceDeleteTargets.length === 1
-      ? "This removes the sequence from your library, this device, and the community gallery. It can't be undone."
-      : "This removes the selected sequences from your library, this device, and the community gallery. It can't be undone."
+      ? t("browse_audit_delete_one_message")
+      : t("browse_audit_delete_many_message")
   );
 
   function openSequenceDelete(): void {
@@ -434,9 +436,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
       return !!member?.ownerId && member.ownerId !== currentUserId;
     });
     if (includesSharedSequence) {
-      toast.info(
-        "Shared sequences can be filed into your collections, but only your own sequences can be permanently deleted."
-      );
+      toast.info(t("browse_audit_shared_delete_restriction"));
       return;
     }
 
@@ -453,8 +453,8 @@ becomes private while open, we bail back to the list instead of showing a ghost.
       await getLibraryRepository().deleteSequences(ids);
       toast.success(
         ids.length === 1
-          ? "Sequence permanently deleted"
-          : `${ids.length} sequences permanently deleted`
+          ? t("browse_audit_deleted_one")
+          : t("browse_audit_deleted_many", { count: ids.length })
       );
       selectionState.exit();
       sequenceDeleteTargets = [];
@@ -462,8 +462,8 @@ becomes private while open, we bail back to the list instead of showing a ghost.
       console.error("[CollectionDetail] Permanent delete failed:", error);
       toast.error(
         ids.length === 1
-          ? "Sequence wasn't deleted. Try again."
-          : "Some sequences weren't deleted. Try again."
+          ? t("browse_audit_delete_failed_one")
+          : t("browse_audit_delete_failed_many")
       );
     } finally {
       deletingSequences = false;
@@ -498,7 +498,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
       ? [
           {
             id: "select-sequences",
-            label: "Select sequences",
+            label: t("browse_ui_select_sequences"),
             icon: "fa-check-double",
             disabled: loadingMembers || members.length === 0,
             action() {
@@ -513,7 +513,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
       items.push(
         {
           id: "share",
-          label: "Share collection",
+          label: t("browse_audit_share_collection"),
           icon: "fa-user-plus",
           action() {
             menuState = { open: false };
@@ -522,7 +522,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
         },
         {
           id: "rename",
-          label: "Rename",
+          label: t("browse_audit_rename"),
           icon: "fa-pen",
           action() {
             menuState = { open: false };
@@ -533,7 +533,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
         { type: "separator" },
         {
           id: "delete",
-          label: "Delete collection",
+          label: t("browse_audit_delete_collection"),
           icon: "fa-trash",
           danger: true,
           action() {
@@ -546,7 +546,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
       if (accessRole === "editor") {
         items.push({
           id: "rename",
-          label: "Rename",
+          label: t("browse_audit_rename"),
           icon: "fa-pen",
           action() {
             menuState = { open: false };
@@ -558,7 +558,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
       if (items.length > 0) items.push({ type: "separator" });
       items.push({
         id: "leave",
-        label: "Leave collection",
+        label: t("browse_audit_leave_collection"),
         icon: "fa-right-from-bracket",
         danger: true,
         action() {
@@ -596,7 +596,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
         });
       } catch (error) {
         console.error("[CollectionDetail] Shared rename failed:", error);
-        toast.error("The collection wasn’t renamed. Try again.");
+        toast.error(t("browse_audit_rename_failed"));
       }
       return;
     }
@@ -640,12 +640,14 @@ becomes private while open, we bail back to the list instead of showing a ghost.
       onBack();
     } catch (error) {
       console.error("[CollectionDetail] Leave collection failed:", error);
-      toast.error("You couldn’t leave the collection. Try again.");
+      toast.error(t("browse_audit_leave_failed"));
     }
   }
 
   function countLabel(n: number): string {
-    return `${n} ${n === 1 ? "sequence" : "sequences"}`;
+    return n === 1
+      ? t("browse_audit_one_sequence", { count: n })
+      : t("browse_audit_many_sequences", { count: n });
   }
 
   // Foreign collections arrive with sequenceCount already normalized to
@@ -664,15 +666,17 @@ becomes private while open, we bail back to the list instead of showing a ghost.
     <SelectionToolbar
       selectedCount={selectionState.selectedCount}
       totalCount={members.length}
-      primaryLabel="Remove from this collection"
+      primaryLabel={t("browse_audit_remove_from_collection")}
       primaryIcon="fa-folder-minus"
       onPrimaryAction={removeSelectedFromCollection}
       primaryTone="danger"
       primaryBusy={removingSelected}
-      secondaryLabel="Add to collection…"
+      secondaryLabel={t("browse_audit_add_to_collection")}
       secondaryIcon="fa-folder-plus"
       onSecondaryAction={openAddSelectedToCollection}
-      dangerLabel={foreignOwnerId ? undefined : "Delete permanently"}
+      dangerLabel={foreignOwnerId
+        ? undefined
+        : t("browse_audit_delete_permanently")}
       dangerIcon={foreignOwnerId ? undefined : "fa-trash"}
       onDangerAction={foreignOwnerId ? undefined : openSequenceDelete}
       onSelectAll={selectAllMembers}
@@ -715,7 +719,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
         <div class="header-text">
           <h2 class="header-name">{collection?.name ?? ""}</h2>
           <span class="header-count">
-            {#if ownerName}by {ownerName} ·
+            {#if ownerName}{t("browse_audit_by_owner", { owner: ownerName })} ·
             {/if}{visibleCount !== null ? countLabel(visibleCount) : ""}
             {#if accessRole}
               <span class="permission-badge">
@@ -723,7 +727,9 @@ becomes private while open, we bail back to the list instead of showing a ghost.
                   class={`fas ${accessRole === "editor" ? "fa-pen" : "fa-eye"}`}
                   aria-hidden="true"
                 ></i>
-                {accessRole === "editor" ? "Can edit" : "Can view"}
+                {accessRole === "editor"
+                  ? t("browse_audit_can_edit")
+                  : t("browse_audit_can_view")}
               </span>
             {/if}
           </span>
@@ -760,7 +766,11 @@ becomes private while open, we bail back to the list instead of showing a ghost.
             class={`fas ${following ? "fa-check" : "fa-plus"}`}
             aria-hidden="true"
           ></i>
-          <span>{following ? "Following" : "Follow"}</span>
+          <span
+            >{following
+              ? t("browse_audit_following")
+              : t("browse_audit_follow")}</span
+          >
         </button>
       {/if}
 
@@ -831,10 +841,9 @@ becomes private while open, we bail back to the list instead of showing a ghost.
         <p class="empty-title">{t("browse_ui_nothing_here_yet")}</p>
         <p class="empty-hint">
           {#if foreignOwnerId && !canEdit}
-            This collection doesn't have any public sequences right now.
+            {t("browse_audit_no_public_sequences")}
           {:else}
-            Hunt through your library or the community gallery and tap sequences
-            to add them.
+            {t("browse_audit_empty_collection_hint")}
           {/if}
         </p>
         {#if canEdit}
@@ -864,7 +873,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
         {engine}
         layout="compact"
         eager={false}
-        curatedSortLabel="Collection order"
+        curatedSortLabel={t("browse_audit_collection_order")}
         toolbarVariant="embedded"
         resultTotal={visibleCount ?? members.length}
         onSelect={(sequence, variations) =>
@@ -875,7 +884,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
         collectionContext={canEdit
           ? {
               id: collectionId,
-              name: collection?.name ?? "this collection",
+              name: collection?.name ?? t("browse_audit_this_collection"),
               onRemove: handleRemoveFromCollection,
             }
           : undefined}
@@ -892,10 +901,12 @@ becomes private while open, we bail back to the list instead of showing a ghost.
 
 <ConfirmDialog
   bind:isOpen={deleteConfirmOpen}
-  title={`Delete "${collection?.name ?? "collection"}"?`}
-  message="The collection goes away, but every sequence in it stays in your library."
-  confirmText="Delete"
-  cancelText="Keep"
+  title={t("browse_audit_delete_named_collection", {
+    name: collection?.name ?? t("browse_audit_collection"),
+  })}
+  message={t("browse_audit_delete_collection_message")}
+  confirmText={t("action_delete")}
+  cancelText={t("browse_audit_keep")}
   variant="danger"
   onConfirm={performDelete}
   onCancel={() => (deleteConfirmOpen = false)}
@@ -905,8 +916,8 @@ becomes private while open, we bail back to the list instead of showing a ghost.
   bind:isOpen={sequenceDeleteConfirmOpen}
   title={sequenceDeleteTitle}
   message={sequenceDeleteMessage}
-  confirmText="Delete permanently"
-  cancelText="Keep"
+  confirmText={t("browse_audit_delete_permanently")}
+  cancelText={t("browse_audit_keep")}
   variant="danger"
   onConfirm={deleteSelectedSequences}
   onCancel={cancelSequenceDelete}
@@ -914,10 +925,12 @@ becomes private while open, we bail back to the list instead of showing a ghost.
 
 <ConfirmDialog
   bind:isOpen={leaveConfirmOpen}
-  title={`Leave "${collection?.name ?? "collection"}"?`}
-  message="You will lose access. The owner can share the collection with you again."
-  confirmText="Leave collection"
-  cancelText="Stay"
+  title={t("browse_audit_leave_named_collection", {
+    name: collection?.name ?? t("browse_audit_collection"),
+  })}
+  message={t("browse_audit_leave_collection_message")}
+  confirmText={t("browse_audit_leave_collection")}
+  cancelText={t("browse_audit_stay")}
   variant="danger"
   onConfirm={leaveCollection}
   onCancel={() => (leaveConfirmOpen = false)}

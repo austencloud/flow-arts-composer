@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import { growFade } from "$lib/shared/transitions/motion";
@@ -24,19 +25,19 @@
   let {
     value,
     onchange,
-    description = "Appears inside the shared card image.",
+    description,
     onSave,
     dirty = false,
     saving = false,
-    saveLabel = "Save to card",
+    saveLabel,
     idBase = "card-footer",
   }: Props = $props();
 
-  const options: { value: CardFooterMode; label: string }[] = [
-    { value: "off", label: "Off" },
-    { value: "credit", label: "Credit" },
-    { value: "custom", label: "Custom" },
-  ];
+  const options: { value: CardFooterMode; label: string }[] = $derived([
+    { value: "off", label: t("share_footer_off") },
+    { value: "credit", label: t("share_footer_credit") },
+    { value: "custom", label: t("share_footer_custom") },
+  ]);
 
   const normalized = $derived(normalizeCardPresentation(value));
   const mode = $derived(normalized.footer.mode);
@@ -71,12 +72,20 @@
 <div class="card-footer-editor" data-card-footer-editor>
   <div class="editor-heading">
     <div>
-      <div class="editor-label" id="{idBase}-label">Card footer</div>
-      <p class="editor-description">{description}</p>
+      <div class="editor-label" id="{idBase}-label">
+        {t("share_card_footer")}
+      </div>
+      <p class="editor-description">
+        {description ?? t("share_footer_description")}
+      </p>
     </div>
     {#if onSave}
       <span class="save-status" aria-live="polite">
-        {saving ? "Saving…" : dirty ? "Not saved" : "Saved"}
+        {saving
+          ? t("share_saving")
+          : dirty
+            ? t("share_not_saved")
+            : t("share_saved")}
       </span>
     {/if}
   </div>
@@ -93,13 +102,13 @@
 
   {#if mode === "custom"}
     <div class="custom-field" transition:growFade={{ axis: "y" }}>
-      <label for="{idBase}-text">Footer text</label>
+      <label for="{idBase}-text">{t("share_footer_text")}</label>
       <input
         id="{idBase}-text"
         type="text"
         value={normalized.footer.text ?? ""}
         maxlength={CARD_FOOTER_TEXT_MAX_LENGTH}
-        placeholder="Add a credit, event, or short note"
+        placeholder={t("share_footer_placeholder")}
         oninput={updateCustomText}
       />
       <span class="character-count">
@@ -117,7 +126,11 @@
       onclick={() => void onSave?.()}
     >
       <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
-      {saving ? "Saving…" : dirty ? saveLabel : "Saved to card"}
+      {saving
+        ? t("share_saving")
+        : dirty
+          ? (saveLabel ?? t("share_save_to_card"))
+          : t("share_saved_to_card")}
     </PanelButton>
   {/if}
 </div>

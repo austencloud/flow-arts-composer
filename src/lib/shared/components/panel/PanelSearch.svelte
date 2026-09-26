@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * PanelSearch - Search input component
    *
@@ -39,10 +40,10 @@
 
   let {
     value = $bindable(""),
-    placeholder = "Search...",
+    placeholder,
     oninput,
     maxWidth = "600px",
-    ariaLabel = "Search",
+    ariaLabel,
     autofocus = false,
     inputRef = $bindable(null),
     name = "panel-search",
@@ -71,11 +72,11 @@
     type="text"
     class="panel-search__input"
     class:panel-search__input--trailing={trailing !== undefined}
-    {placeholder}
+    placeholder={placeholder ?? t("search_placeholder")}
     {value}
     oninput={handleInput}
     {onkeydown}
-    aria-label={ariaLabel}
+    aria-label={ariaLabel ?? t("shared_search_label")}
     aria-controls={ariaControls}
     aria-expanded={ariaExpanded}
     aria-activedescendant={ariaActiveDescendant}

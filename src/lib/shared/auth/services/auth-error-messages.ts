@@ -6,6 +6,7 @@
 //
 // `null` means "don't toast" — the user cancelled/dismissed the flow
 // themselves, which is not an error worth surfacing.
+import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
 export function getAuthErrorCode(error: unknown): string | undefined {
   return (error as { code?: string } | null | undefined)?.code;
@@ -36,21 +37,19 @@ export function mapAuthError(error: unknown): string | null {
 
   switch (errorCode) {
     case "auth/popup-blocked":
-      return "Popup was blocked. Please allow popups for this site.";
+      return t("auth_facebook_popup_blocked");
     case "auth/popup-closed-by-user":
     case "auth/cancelled-popup-request":
     case "auth/user-cancelled":
       // Silent: the user dismissed/denied the flow, or another popup replaced it.
       return null;
     case "auth/account-exists-with-different-credential":
-      return "An account already exists with this email using a different sign-in method.";
+      return t("auth_error_different_signin_method");
     case "auth/unauthorized-domain":
-      return "This domain isn't authorized for sign-in. Please contact support.";
+      return t("auth_error_unauthorized_domain");
     case "auth/network-request-failed":
-      return "Network error. Check your connection and try again.";
+      return t("auth_error_network");
     default:
-      return error instanceof Error && error.message
-        ? error.message
-        : "Sign-in failed. Please try again.";
+      return t("auth_error_signin_failed");
   }
 }

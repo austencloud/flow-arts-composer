@@ -3,6 +3,7 @@ LevelCard.svelte - Unified difficulty level selection card
 Uses shared StepperCard for consistent styling with Generate module
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import StepperCard from "$lib/shared/components/stepper-card/StepperCard.svelte";
   import {
     type DifficultyLevel,
@@ -52,7 +53,7 @@ Uses shared StepperCard for consistent styling with Generate module
   }
 
   function formatValue(val: number): string {
-    if (val === 0) return "All";
+    if (val === 0) return t("shared_controls_all");
     return val.toString();
   }
 
@@ -63,7 +64,17 @@ Uses shared StepperCard for consistent styling with Generate module
   );
   const shadowColor = $derived(currentConfig?.shadowColor ?? "220deg 80% 55%");
   const textColor = $derived(currentConfig?.textColor ?? "white");
-  const description = $derived(currentConfig?.name ?? "Any difficulty");
+  const description = $derived(
+    value
+      ? {
+          1: t("shared_controls_level_1"),
+          2: t("shared_controls_level_2"),
+          3: t("shared_controls_level_3"),
+          4: t("shared_controls_level_4"),
+          5: t("shared_controls_level_5"),
+        }[value]
+      : t("shared_controls_any_difficulty")
+  );
 </script>
 
 {#if disabled}
@@ -71,13 +82,14 @@ Uses shared StepperCard for consistent styling with Generate module
     class="level-card-disabled"
     style="grid-column: span {gridColumnSpan};"
     role="group"
-    aria-label="Difficulty level (disabled)"
+    aria-label={t("shared_controls_difficulty_disabled")}
   >
-    <span class="disabled-text">Level: {value ?? "All"}</span>
+    <span class="disabled-text">Level: {value ?? t("shared_controls_all")}</span
+    >
   </div>
 {:else}
   <StepperCard
-    title="Level"
+    title={t("shared_controls_level")}
     {currentValue}
     {minValue}
     maxValue={3}

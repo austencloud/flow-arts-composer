@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
   import { valueDisabled } from "../gallery-value-editor";
   import type {
@@ -17,8 +18,8 @@
 
 <div class="drill-screen screen-performance">
   {@render valueHead(
-    "Performances in these results",
-    "Counts include every filter already applied. Tap several to match any."
+    t("browse_audit_performances_results"),
+    t("browse_audit_performance_filter_hint")
   )}
   <div class="value-list">
     {#each catalog.performanceValues as v (v.value)}
@@ -35,11 +36,17 @@
           <i class="fas {v.icon}"></i>
         </span>
         <span class="value-main">
-          <span class="value-label">{v.label}</span>
+          <span class="value-label"
+            >{v.value === "has-public-performance"
+              ? t("browse_audit_with_public_performance")
+              : v.value === "no-public-performance"
+                ? t("browse_audit_without_public_performance")
+                : t("browse_audit_recently_performed")}</span
+          >
           <span class="value-desc">
-            {v.count} in these results
+            {t("browse_audit_in_results", { count: v.count })}
             {#if v.count !== v.overallCount}
-              · {v.overallCount} overall
+              · {t("browse_audit_overall", { count: v.overallCount })}
             {/if}
           </span>
           <span class="density-bar">

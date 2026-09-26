@@ -26,6 +26,7 @@ import {
   summarizeTiming,
 } from "$lib/shared/media-composition/domain/timing-summary";
 import { shownLanding } from "./timing-lane-landings";
+import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
 export interface LandingRef {
   sectionId: string;
@@ -120,11 +121,11 @@ export function createPostTimingSession(builder: PostBuilderState) {
   );
   const readout = $derived(
     !frame
-      ? "Not mapped here"
+      ? t("share_studio_deep_not_mapped_here")
       : frame.phase === "opening"
-        ? "Opening pose"
+        ? t("share_studio_deep_opening_pose")
         : `${landingName(Math.max(1, Math.ceil(frame.arrival - 1e-9)), movesPerPass)}${
-            frame.phase === "holding" ? " · held" : ""
+            frame.phase === "holding" ? t("share_studio_deep_held_suffix") : ""
           }`
   );
 

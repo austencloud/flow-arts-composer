@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { PostBuilderState } from "$lib/shared/media-composition/state/post-builder-state.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
@@ -37,16 +38,19 @@
   const output = $derived(builder.compiled?.preset.output ?? null);
 
   const todo = $derived.by(() => {
-    const items: { key: string; text: string; step: "takes" | "timing" }[] =
-      [];
+    const items: { key: string; text: string; step: "takes" | "timing" }[] = [];
     if (builder.plan.takes.length === 0) {
-      items.push({ key: "add", text: "Add a take", step: "takes" });
+      items.push({
+        key: "add",
+        text: t("share_studio_add_take"),
+        step: "takes",
+      });
     }
     for (const take of builder.takesInUse) {
       if (!builder.mediaUrl(take.id)) {
         items.push({
           key: take.id,
-          text: `Pick ${take.label} again`,
+          text: `${t("share_studio_pick_take_again")} ${take.label}`,
           step: "takes",
         });
         continue;
@@ -57,8 +61,8 @@
           key: take.id,
           text:
             status === "untapped"
-              ? `Map ${take.label}'s timing`
-              : `Check ${take.label}'s timing`,
+              ? `${t("share_studio_map_timing_for")} ${take.label}`
+              : `${t("share_studio_check_timing_for")} ${take.label}`,
           step: "timing",
         });
       }
@@ -77,27 +81,27 @@
   {/if}
 
   <div class="group">
-    <h3>Sound</h3>
+    <h3>{t("share_studio_sound")}</h3>
     <SegmentedControl
       options={[
-        { value: "takes", label: "The takes' own sound" },
-        { value: "silent", label: "Silent" },
+        { value: "takes", label: t("share_studio_takes_sound") },
+        { value: "silent", label: t("share_studio_silent") },
       ]}
       value={builder.plan.audio}
       onchange={builder.setAudio}
       size="sm"
-      ariaLabel="Sound"
+      ariaLabel={t("share_studio_sound")}
     />
     <p class="help">
       {builder.plan.audio === "takes"
-        ? "Full-speed acts keep their take's sound. Slowed acts are silent."
-        : "No sound, for music added in the app you post from."}
+        ? t("share_studio_takes_sound_hint")
+        : t("share_studio_silent_hint")}
     </p>
   </div>
 
   {#if todo.length > 0}
     <div class="group">
-      <h3>Before you render</h3>
+      <h3>{t("share_studio_before_render")}</h3>
       <ul class="todo">
         {#each todo as item (item.key)}
           <li>
@@ -112,7 +116,7 @@
         {/each}
       </ul>
       <p class="help">
-        You can render anyway. Unchecked timing shows whatever the map says now.
+        {t("share_studio_unchecked_timing_hint")}
       </p>
     </div>
   {/if}
@@ -122,7 +126,7 @@
       <div
         class="progress"
         role="progressbar"
-        aria-label="Rendering"
+        aria-label={t("share_studio_rendering")}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={exportPercent}
@@ -130,7 +134,7 @@
         <span style:width="{exportPercent}%"></span>
       </div>
       <div class="row">
-        <PanelButton onclick={onCancel}>Cancel</PanelButton>
+        <PanelButton onclick={onCancel}>{t("share_studio_cancel")}</PanelButton>
       </div>
     {:else}
       <PanelButton
@@ -140,13 +144,14 @@
         fullWidth
       >
         <i class="fa-solid fa-film" aria-hidden="true"></i>
-        {exportedUrl ? "Render again" : "Render the post"}
+        {exportedUrl
+          ? t("share_studio_render_again")
+          : t("share_studio_render_post")}
       </PanelButton>
       <!-- The render paints each frame on an animation frame, and a browser
            stops those in a hidden tab. -->
       <p class="help">
-        Keep this tab in front until the render finishes. It pauses while the
-        tab is hidden.
+        {t("share_studio_keep_tab_front")}
       </p>
     {/if}
     {#if exportError}
@@ -156,15 +161,17 @@
 
   {#if exportedUrl && !exporting}
     <div class="group">
-      <h3>Done</h3>
+      <h3>{t("share_studio_done")}</h3>
       <div class="row">
         <a class="download" href={exportedUrl} download={exportFilename}>
           <i class="fa-solid fa-download" aria-hidden="true"></i>
-          Download {exportFilename}
+          {t("share_download")}
+          {exportFilename}
         </a>
         {#if onSharePost}
           <PanelButton onclick={onSharePost}>
-            <i class="fa-solid fa-share" aria-hidden="true"></i> Share
+            <i class="fa-solid fa-share" aria-hidden="true"></i>
+            {t("share_title")}
           </PanelButton>
         {/if}
       </div>

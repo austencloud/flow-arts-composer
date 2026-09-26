@@ -12,7 +12,12 @@
   } from "$lib/shared/media-composition/domain/post-plan";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { formatTakeClock, parseClock } from "./post-builder-format";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import {
+    formatTakeClock,
+    parseClock,
+    postActDisplayLabel,
+  } from "./post-builder-format";
 
   /**
    * One act at a time: which take it plays and which stretch of it, how
@@ -152,24 +157,26 @@
     { value: "0.5", label: "½×" },
     { value: "0.25", label: "¼×" },
   ];
-  const STRIPS: { value: PostStrip; label: string }[] = [
-    { value: "off", label: "Off" },
-    { value: "arrows", label: "Arrows" },
-    { value: "mandala", label: "Trails" },
-    { value: "alternate", label: "Both" },
-  ];
+  const STRIPS: { value: PostStrip; label: string }[] = $derived([
+    { value: "off", label: t("share_studio_deep_off") },
+    { value: "arrows", label: t("share_studio_deep_arrows") },
+    { value: "mandala", label: t("share_studio_deep_trails") },
+    { value: "alternate", label: t("share_studio_deep_both") },
+  ]);
 </script>
 
 <div class="acts">
   <SegmentedControl
     options={acts.map((entry) => ({
       value: entry.id,
-      label: entry.enabled ? entry.label : `${entry.label} (off)`,
+      label: entry.enabled
+        ? postActDisplayLabel(entry.id, entry.label)
+        : `${postActDisplayLabel(entry.id, entry.label)} (${t("share_studio_deep_off")})`,
     }))}
     value={act?.id ?? ""}
     onchange={selectAct}
     size="sm"
-    ariaLabel="Act"
+    ariaLabel={t("share_studio_deep_act")}
   />
 
   {#if act}
@@ -183,15 +190,21 @@
             enabled: event.currentTarget.checked,
           }))}
       />
-      Include {act.label} in the post
+      {t("share_studio_deep_include_act", {
+        act: postActDisplayLabel(act.id, act.label),
+      })}
     </label>
 
     {#if act.kind === "card"}
       <div class="group">
-        <h3>The card</h3>
-        <p class="help">The sequence card with its QR code, held at the end.</p>
+        <h3>{t("share_studio_deep_the_card")}</h3>
+        <p class="help">{t("share_studio_deep_card_help")}</p>
         <label class="slider">
-          <span>On screen for {act.seconds} s</span>
+          <span
+            >{t("share_studio_deep_on_screen_for", {
+              seconds: act.seconds,
+            })}</span
+          >
           <input
             type="range"
             min="1"
@@ -209,14 +222,14 @@
       </div>
     {:else}
       <div class="group">
-        <h3>Take</h3>
+        <h3>{t("share_studio_deep_take")}</h3>
         {#if takes.length === 0}
-          <p class="help">Add a take on the Takes step first.</p>
+          <p class="help">{t("share_studio_deep_add_take_first")}</p>
         {:else}
           <select
             class="field"
             value={act.takeId ?? ""}
-            aria-label="Take this act plays"
+            aria-label={t("share_studio_deep_take_this_act_plays")}
             onchange={(event) => {
               const takeId = event.currentTarget.value || null;
               editPerformance((current) => ({
@@ -236,10 +249,10 @@
 
       {#if take}
         <div class="group">
-          <h3>Part of the take</h3>
+          <h3>{t("share_studio_deep_part_of_take")}</h3>
           <div class="row">
             <label class="time">
-              <span>Starts at</span>
+              <span>{t("share_studio_deep_starts_at")}</span>
               <input
                 class="field"
                 bind:value={inDraft}
@@ -249,12 +262,12 @@
               />
             </label>
             <label class="time">
-              <span>Ends at</span>
+              <span>{t("share_studio_deep_ends_at")}</span>
               <input
                 class="field"
                 bind:value={outDraft}
                 inputmode="decimal"
-                placeholder="the end"
+                placeholder={t("share_studio_deep_the_end")}
                 onchange={commitOut}
                 onkeydown={(event) => event.key === "Enter" && commitOut()}
               />
@@ -264,10 +277,10 @@
             {#if takeSecondsAtPlayhead !== null}
               {@const at = takeSecondsAtPlayhead}
               <PanelButton onclick={() => setIn(at)}
-                >Start at the playhead</PanelButton
+                >{t("share_studio_deep_start_at_playhead")}</PanelButton
               >
               <PanelButton onclick={() => setOut(at)}
-                >End at the playhead</PanelButton
+                >{t("share_studio_deep_end_at_playhead")}</PanelButton
               >
             {/if}
             {#if performanceSpan}
@@ -280,14 +293,14 @@
                     sourceOut: span.sourceOut,
                   }))}
               >
-                Trim to the performance
+                {t("share_studio_deep_trim_to_performance")}
               </PanelButton>
             {/if}
           </div>
         </div>
 
         <div class="group">
-          <h3>Speed</h3>
+          <h3>{t("share_studio_deep_speed")}</h3>
           <SegmentedControl
             options={SPEEDS}
             value={String(act.speed)}
@@ -297,35 +310,38 @@
                 speed: Number(value),
               }))}
             size="sm"
-            ariaLabel="Speed"
+            ariaLabel={t("share_studio_deep_speed")}
           />
         </div>
 
         <div class="group">
-          <h3>Layout</h3>
+          <h3>{t("share_studio_deep_layout")}</h3>
           <SegmentedControl
             options={[
-              { value: "split", label: "Take over animation" },
-              { value: "full", label: "Full frame" },
+              {
+                value: "split",
+                label: t("share_studio_deep_take_over_animation"),
+              },
+              { value: "full", label: t("share_studio_deep_full_frame") },
             ]}
             value={act.layout}
             onchange={(layout) =>
               editPerformance((current) => ({ ...current, layout }))}
             size="sm"
-            ariaLabel="Layout"
+            ariaLabel={t("share_studio_deep_layout")}
           />
           {#if act.layout === "full"}
-            <span class="label">Strip square</span>
+            <span class="label">{t("share_studio_deep_strip_square")}</span>
             <SegmentedControl
               options={STRIPS}
               value={act.strip}
               onchange={(strip) =>
                 editPerformance((current) => ({ ...current, strip }))}
               size="sm"
-              ariaLabel="Strip square"
+              ariaLabel={t("share_studio_deep_strip_square")}
             />
             <p class="help">
-              Both shows the arrows and the trails in turn, one pass each.
+              {t("share_studio_deep_both_help")}
             </p>
             <label class="check">
               <input
@@ -337,37 +353,44 @@
                     carousel: event.currentTarget.checked,
                   }))}
               />
-              Show the upcoming moves beside it
+              {t("share_studio_deep_show_upcoming_moves")}
             </label>
           {/if}
         </div>
 
         <div class="group">
-          <h3>Framing</h3>
+          <h3>{t("share_studio_deep_framing")}</h3>
           {#if act.layout === "full"}
             <SegmentedControl
               options={[
-                { value: "frame", label: "Behind the strip" },
-                { value: "above-strip", label: "Above the strip" },
+                { value: "frame", label: t("share_studio_deep_behind_strip") },
+                {
+                  value: "above-strip",
+                  label: t("share_studio_deep_above_strip"),
+                },
               ]}
               value={act.framing.area}
               onchange={(area) => editFraming({ area })}
               size="sm"
-              ariaLabel="Where the footage sits"
+              ariaLabel={t("share_studio_deep_where_footage_sits")}
             />
           {/if}
           <SegmentedControl
             options={[
-              { value: "cover", label: "Fill" },
-              { value: "contain", label: "Whole picture" },
+              { value: "cover", label: t("share_studio_deep_fill") },
+              { value: "contain", label: t("share_studio_deep_whole_picture") },
             ]}
             value={act.framing.fit}
             onchange={(fit) => editFraming({ fit })}
             size="sm"
-            ariaLabel="Fit"
+            ariaLabel={t("share_studio_deep_fit")}
           />
           <label class="slider">
-            <span>Zoom {act.framing.zoom.toFixed(2)}×</span>
+            <span
+              >{t("share_studio_deep_zoom", {
+                zoom: act.framing.zoom.toFixed(2),
+              })}</span
+            >
             <input
               type="range"
               min={POST_PLAN_MIN_ZOOM}
@@ -379,7 +402,7 @@
             />
           </label>
           <label class="slider">
-            <span>Left and right</span>
+            <span>{t("share_studio_deep_left_right")}</span>
             <input
               type="range"
               min="-0.5"
@@ -391,7 +414,7 @@
             />
           </label>
           <label class="slider">
-            <span>Up and down</span>
+            <span>{t("share_studio_deep_up_down")}</span>
             <input
               type="range"
               min="-0.5"
@@ -407,7 +430,7 @@
               onclick={() =>
                 editFraming({ ...DEFAULT_FRAMING, area: act.framing.area })}
             >
-              Reset framing
+              {t("share_studio_deep_reset_framing")}
             </PanelButton>
           </div>
         </div>

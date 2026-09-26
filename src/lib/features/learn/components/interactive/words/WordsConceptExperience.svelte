@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { loadFoundingCollectionSequences } from "$lib/features/browse/collections/config/founding-collections";
@@ -152,7 +152,7 @@
       loadState = "ready";
     } catch (caught) {
       console.error("Learning Letters deck failed to load", caught);
-      loadError = "The Learning Letters deck could not be loaded.";
+      loadError = "learn_words_deck_load_error";
       loadState = "error";
     }
   }
@@ -214,7 +214,7 @@
   {:else if loadState === "error"}
     <section class="load-state" role="alert">
       <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
-      <p>{loadError}</p>
+      <p>{loadError ? tDynamic(loadError) : ""}</p>
       <PanelButton variant="secondary" onclick={loadDeck}>
         <i class="fa-solid fa-arrow-rotate-right" aria-hidden="true"></i>
         <span>{t("learn_ui_try_again")}</span>

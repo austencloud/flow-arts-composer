@@ -1,12 +1,14 @@
 <script lang="ts">
   import type { PostBuilderState } from "$lib/shared/media-composition/state/post-builder-state.svelte";
-  import {
-    CAPTION_STARTERS,
-    type Caption,
-  } from "$lib/shared/media-composition/domain/post-plan";
+  import type { Caption } from "$lib/shared/media-composition/domain/post-plan";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { formatPostClock, parseClock } from "./post-builder-format";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import {
+    formatPostClock,
+    parseClock,
+    postActDisplayLabel,
+  } from "./post-builder-format";
 
   /**
    * Words over the video. A caption belongs to an act and keeps its place
@@ -26,6 +28,12 @@
     })
   );
   const compiledActs = $derived(builder.compiled?.acts ?? []);
+  const starters = $derived([
+    t("share_studio_deep_caption_practice_with_me"),
+    t("share_studio_deep_caption_watch_hands"),
+    t("share_studio_deep_caption_go_slower"),
+    t("share_studio_deep_caption_repeat_100x"),
+  ]);
 
   function actStart(actId: string): number {
     return (
@@ -39,7 +47,10 @@
   }
 
   function actLabel(actId: string): string {
-    return builder.plan.acts.find((act) => act.id === actId)?.label ?? "Act";
+    const act = builder.plan.acts.find((entry) => entry.id === actId);
+    return act
+      ? postActDisplayLabel(act.id, act.label)
+      : t("share_studio_deep_act");
   }
 
   function add(text: string): void {
@@ -81,7 +92,9 @@
   ): void {
     const seconds = parseClock(input.value);
     const read = (stored: Caption) =>
-      formatPostClock(edge === "start" ? stored.startSeconds : stored.endSeconds);
+      formatPostClock(
+        edge === "start" ? stored.startSeconds : stored.endSeconds
+      );
     if (seconds === null) {
       showStored(input, caption.id, read);
       return;
@@ -112,9 +125,9 @@
 
 <div class="captions">
   <div class="group">
-    <h3>Add at the playhead</h3>
+    <h3>{t("share_studio_deep_add_at_playhead")}</h3>
     <div class="starters">
-      {#each CAPTION_STARTERS as starter (starter)}
+      {#each starters as starter (starter)}
         <button type="button" class="chip" onclick={() => add(starter)}>
           {starter}
         </button>
@@ -131,17 +144,18 @@
         class="field grow"
         bind:value={draft}
         maxlength="140"
-        placeholder="Your own words"
-        aria-label="Caption text"
+        placeholder={t("share_studio_deep_your_own_words")}
+        aria-label={t("share_studio_deep_caption_text")}
       />
-      <PanelButton type="submit" disabled={!draft.trim()}>Add</PanelButton>
+      <PanelButton type="submit" disabled={!draft.trim()}
+        >{t("share_studio_add")}</PanelButton
+      >
     </form>
   </div>
 
   {#if captions.length === 0}
     <p class="help">
-      No captions yet. Move the playhead to where one should appear, then pick a
-      starter or type your own.
+      {t("share_studio_deep_no_captions_help")}
     </p>
   {:else}
     <ul class="list">
@@ -152,7 +166,7 @@
               class="field grow"
               value={caption.text}
               maxlength="140"
-              aria-label="Caption text"
+              aria-label={t("share_studio_deep_caption_text")}
               use:focusOnMount={caption.id}
               onchange={(event) => {
                 const input = event.currentTarget;
@@ -168,7 +182,9 @@
               type="button"
               class="icon"
               onclick={() => builder.removeCaption(caption.id)}
-              aria-label="Remove caption {caption.text}"
+              aria-label={t("share_studio_deep_remove_caption", {
+                caption: caption.text,
+              })}
             >
               <i class="fa-solid fa-trash" aria-hidden="true"></i>
             </button>
@@ -178,23 +194,23 @@
               {actLabel(caption.actId)}
             </button>
             <label class="time">
-              <span>from</span>
+              <span>{t("share_studio_deep_from")}</span>
               <input
                 class="field"
                 value={formatPostClock(caption.startSeconds)}
                 inputmode="decimal"
-                aria-label="Caption starts, seconds into the act"
+                aria-label={t("share_studio_deep_caption_starts")}
                 onchange={(event) =>
                   setTime(caption, "start", event.currentTarget)}
               />
             </label>
             <label class="time">
-              <span>to</span>
+              <span>{t("share_studio_deep_to")}</span>
               <input
                 class="field"
                 value={formatPostClock(caption.endSeconds)}
                 inputmode="decimal"
-                aria-label="Caption ends, seconds into the act"
+                aria-label={t("share_studio_deep_caption_ends")}
                 onchange={(event) =>
                   setTime(caption, "end", event.currentTarget)}
               />
@@ -203,9 +219,9 @@
           <div class="row">
             <SegmentedControl
               options={[
-                { value: "top", label: "Top" },
-                { value: "middle", label: "Middle" },
-                { value: "bottom", label: "Bottom" },
+                { value: "top", label: t("share_studio_deep_top") },
+                { value: "middle", label: t("share_studio_deep_middle") },
+                { value: "bottom", label: t("share_studio_deep_bottom") },
               ]}
               value={caption.position}
               onchange={(position) =>
@@ -215,13 +231,25 @@
                 }))}
               size="sm"
               density="compact"
-              ariaLabel="Caption position"
+              ariaLabel={t("share_studio_deep_caption_position")}
             />
             <SegmentedControl
               options={[
-                { value: "s", label: "S", ariaLabel: "Small" },
-                { value: "m", label: "M", ariaLabel: "Medium" },
-                { value: "l", label: "L", ariaLabel: "Large" },
+                {
+                  value: "s",
+                  label: "S",
+                  ariaLabel: t("share_studio_deep_small"),
+                },
+                {
+                  value: "m",
+                  label: "M",
+                  ariaLabel: t("share_studio_deep_medium"),
+                },
+                {
+                  value: "l",
+                  label: "L",
+                  ariaLabel: t("share_studio_deep_large"),
+                },
               ]}
               value={caption.size}
               onchange={(size) =>
@@ -231,7 +259,7 @@
                 }))}
               size="sm"
               density="compact"
-              ariaLabel="Caption size"
+              ariaLabel={t("share_studio_deep_caption_size")}
             />
           </div>
         </li>

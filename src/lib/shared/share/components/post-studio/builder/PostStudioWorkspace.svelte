@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, tick, untrack } from "svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
@@ -101,13 +102,13 @@
     registerExport,
   }: Props = $props();
 
-  const STEP_LABEL: Record<PostBuilderStep, string> = {
-    takes: "Takes",
-    timing: "Timing",
-    acts: "Acts",
-    captions: "Captions",
-    render: "Render",
-  };
+  const STEP_LABEL: Record<PostBuilderStep, string> = $derived({
+    takes: t("share_studio_takes"),
+    timing: t("share_studio_timing"),
+    acts: t("share_studio_acts"),
+    captions: t("share_studio_captions"),
+    render: t("share_studio_render"),
+  });
 
   const sharedSurfaces = getViewerStudioSurfaces();
   const externalInspector = $derived(
@@ -235,7 +236,7 @@
       return {
         roleKey: role,
         kind: "video",
-        label: take?.label ?? "Take",
+        label: take?.label ?? t("share_studio_deep_take"),
         previewUrl: url,
         previewType: "video",
         renderMode: "external-media",
@@ -247,14 +248,16 @@
     const strip = stripModeFromRole(role);
     if (strip) {
       const painter = stripPainters.get(strip);
-      return painter ? painted(role, "Moves", painter) : null;
+      return painter
+        ? painted(role, t("share_studio_deep_moves"), painter)
+        : null;
     }
     switch (role) {
       case POST_STUDIO_ROLE.animation:
         return {
           roleKey: role,
           kind: "sequence-animation",
-          label: "Animation",
+          label: t("share_studio_deep_animation"),
           previewUrl: animationPreviewUrl,
           previewType: animationPreviewType,
           renderMode: "sequence-animation",
@@ -266,18 +269,26 @@
                 : "missing",
         };
       case POST_STUDIO_ROLE.carousel:
-        return painted(role, "Beat carousel", carouselPainter);
+        return painted(
+          role,
+          t("share_studio_deep_beat_carousel"),
+          carouselPainter
+        );
       case CAPTIONS_ROLE:
-        return painted(role, "Captions", captionPainter);
+        return painted(role, t("share_studio_deep_captions"), captionPainter);
       case ANIMATION_OVERLAY_ROLE:
         return overlayPainter
-          ? painted(role, "Beat and letter", overlayPainter)
+          ? painted(
+              role,
+              t("share_studio_deep_beat_and_letter"),
+              overlayPainter
+            )
           : null;
       case POST_STUDIO_ROLE.card:
         return {
           roleKey: role,
           kind: "choreo-card",
-          label: "Choreo card",
+          label: t("share_studio_deep_choreo_card"),
           previewUrl: cardPreviewUrl,
           previewType: "image",
           renderMode: "choreo-card",
@@ -538,7 +549,7 @@
         exportError =
           error instanceof Error
             ? error.message
-            : "The post could not be rendered.";
+            : t("share_studio_render_failed");
       }
       return false;
     } finally {
@@ -619,9 +630,9 @@
       class:external={!!externalInspector}
       use:reparentToInspector={externalInspector}
       inert={sharing || undefined}
-      aria-label="Post steps"
+      aria-label={t("share_studio_post_steps")}
     >
-      <nav class="steps" aria-label="Steps">
+      <nav class="steps" aria-label={t("share_studio_steps")}>
         <ol>
           {#each POST_BUILDER_STEPS as step, index (step)}
             <li>
@@ -641,7 +652,7 @@
                 </span>
                 <span class="label">{STEP_LABEL[step]}</span>
                 {#if builder.stepDone[step]}
-                  <span class="sr-only">, done</span>
+                  <span class="sr-only">, {t("share_studio_done")}</span>
                 {/if}
               </button>
             </li>
@@ -680,7 +691,7 @@
                   : 'fa-chevron-right'}"
                 aria-hidden="true"
               ></i>
-              Props, trails and colors
+              {t("share_studio_look")}
             </button>
             {#if lookOpen}
               <div class="look-panel">
@@ -726,12 +737,12 @@
   phase={exporting ? "capturing" : "idle"}
   progress={exportPercent / 100}
   phaseLabel={exportProgress?.phase === "audio"
-    ? "Mixing the sound"
+    ? t("share_studio_mixing_sound")
     : exportProgress
-      ? `Rendering frame ${exportProgress.completedFrames} of ${exportProgress.totalFrames}`
-      : "Rendering"}
+      ? `${t("share_studio_rendering_frame")} ${exportProgress.completedFrames} ${t("share_studio_of")} ${exportProgress.totalFrames}`
+      : t("share_studio_rendering")}
   onCancel={cancelExport}
-  label="Rendering your post"
+  label={t("share_studio_rendering_post")}
 />
 
 <style>

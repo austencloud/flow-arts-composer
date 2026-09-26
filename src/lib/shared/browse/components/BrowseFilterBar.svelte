@@ -16,6 +16,7 @@ Reads from / writes to a headless BrowseEngine instance.
   import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte";
   import type { BrowseEngine } from "../engine/types";
+  import { localizeFilterChip } from "./localize-filter-chip";
 
   const LOOP_FILTER_COLORS: Record<string, string> = {
     "component:rotated_halved": "#36c3ff",
@@ -77,7 +78,8 @@ Reads from / writes to a headless BrowseEngine instance.
   // single-select semantics replace all loop filters on change).
   const activeLoopComponent = $derived.by(() => {
     for (const f of engine.activeFilters.values()) {
-      if (f.type === BrowseFilterType.LOOP_TYPE && !f.locked) return f.value as string;
+      if (f.type === BrowseFilterType.LOOP_TYPE && !f.locked)
+        return f.value as string;
     }
     return null;
   });
@@ -87,19 +89,37 @@ Reads from / writes to a headless BrowseEngine instance.
   function handleLevelSelect(level: number | null) {
     hapticService?.trigger("selection");
     if (level == null) engine.removeFilter("difficulty");
-    else engine.addFilter(BrowseFilterType.DIFFICULTY, level, `Level ${level}`, "var(--semantic-info)");
+    else
+      engine.addFilter(
+        BrowseFilterType.DIFFICULTY,
+        level,
+        `Level ${level}`,
+        "var(--semantic-info)"
+      );
   }
 
   function handleFavoritesToggle(active: boolean) {
     hapticService?.trigger("selection");
-    if (active) engine.addFilter(BrowseFilterType.FAVORITES, true, "Favorites", "#ec4899");
+    if (active)
+      engine.addFilter(
+        BrowseFilterType.FAVORITES,
+        true,
+        "Favorites",
+        "#ec4899"
+      );
     else engine.removeFilter("favorites");
   }
 
   function handleLengthSelect(length: number | null) {
     hapticService?.trigger("selection");
     if (length == null) engine.removeFilter("length");
-    else engine.addFilter(BrowseFilterType.LENGTH, length, `${length} steps`, "#f59e0b");
+    else
+      engine.addFilter(
+        BrowseFilterType.LENGTH,
+        length,
+        `${length} steps`,
+        "#f59e0b"
+      );
   }
 
   function handleMaxTurnIntensitySelect(intensity: number | null) {
@@ -122,10 +142,18 @@ Reads from / writes to a headless BrowseEngine instance.
     else {
       engine.removeFilter("cap_type");
       const label = value.startsWith("component:")
-        ? value.slice("component:".length).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+        ? value
+            .slice("component:".length)
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (c) => c.toUpperCase())
         : value;
       const info = LOOP_FILTER_COLORS[value];
-      engine.addFilter(BrowseFilterType.LOOP_TYPE, value, label, info ?? "#8b5cf6");
+      engine.addFilter(
+        BrowseFilterType.LOOP_TYPE,
+        value,
+        label,
+        info ?? "#8b5cf6"
+      );
     }
   }
 
@@ -165,13 +193,18 @@ Reads from / writes to a headless BrowseEngine instance.
   // any locked constraint renders as a chip in the SAME row — the old second
   // "active filters" row duplicated the selector chips and cost a whole band
   // on mobile.
-  const SELECTOR_TYPES = new Set(["difficulty", "favorites", "length", "cap_type"]);
+  const SELECTOR_TYPES = new Set([
+    "difficulty",
+    "favorites",
+    "length",
+    "cap_type",
+  ]);
   const extraChips = $derived(
     chipsOnly
       ? engine.allFilterChips
       : engine.allFilterChips.filter(
-          (chip) => chip.locked || !SELECTOR_TYPES.has(String(chip.type)),
-        ),
+          (chip) => chip.locked || !SELECTOR_TYPES.has(String(chip.type))
+        )
   );
 </script>
 
@@ -181,20 +214,28 @@ Reads from / writes to a headless BrowseEngine instance.
        live region lives here instead. -->
   <span class="sr-only" role="status">
     {[
-      activeSearch ? `Search: ${activeSearch}` : "",
+      activeSearch
+        ? t("browse_audit_chip_search", { query: activeSearch })
+        : "",
       extraChips.length > 0
-        ? `Active filters: ${extraChips.map((c) => c.label).join(", ")}`
+        ? t("browse_audit_chip_active_filters", {
+            filters: extraChips.map(localizeFilterChip).join(", "),
+          })
         : "",
     ]
       .filter(Boolean)
       .join(". ")}
   </span>
   <!-- Chip row: level, favorites, length selectors -->
-  <div class="filter-chip-row" role="toolbar" aria-label={t('browse_filter_options')}>
+  <div
+    class="filter-chip-row"
+    role="toolbar"
+    aria-label={t("browse_filter_options")}
+  >
     {#if !chipsOnly}
       {#if !isHandsMode}
         <LevelFilterChip
-          activeLevel={activeLevel}
+          {activeLevel}
           onSelect={handleLevelSelect}
           getFilteredCount={engine.getFilteredCount.bind(engine)}
         />
@@ -207,7 +248,7 @@ Reads from / writes to a headless BrowseEngine instance.
 
       {#if !hasLengthConstraint}
         <LengthFilterChip
-          activeLength={activeLength}
+          {activeLength}
           availableLengths={engine.availableLengths as number[]}
           onSelect={handleLengthSelect}
           getFilteredCount={engine.getFilteredCount.bind(engine)}
@@ -233,12 +274,13 @@ Reads from / writes to a headless BrowseEngine instance.
     <!-- Active search — same dismissible-chip treatment as applied filters -->
     {#if activeSearch}
       <span class="active-chip" style="--chip-color: #6aa0ff;">
-        <i class="fas fa-magnifying-glass chip-search-icon" aria-hidden="true"></i>
+        <i class="fas fa-magnifying-glass chip-search-icon" aria-hidden="true"
+        ></i>
         <span class="chip-label">{activeSearch}</span>
         <button
           class="chip-dismiss"
           type="button"
-          aria-label={t('browse_remove_filter', { type: activeSearch })}
+          aria-label={t("browse_remove_filter", { type: activeSearch })}
           onclick={handleDismissSearch}
         >
           <i class="fas fa-times" aria-hidden="true"></i>
@@ -249,19 +291,18 @@ Reads from / writes to a headless BrowseEngine instance.
     <!-- Active filters the selectors don't cover (drill picks, locked constraints) -->
     <!-- Keyed by map key, not type — stacked loop filters share a type. -->
     {#each extraChips as chip (chip.key)}
-      <span
-        class="active-chip"
-        style="--chip-color: {chip.chipColor};"
-      >
+      <span class="active-chip" style="--chip-color: {chip.chipColor};">
         {#if chip.locked}
           <i class="fas fa-lock chip-lock" aria-hidden="true"></i>
         {/if}
-        <span class="chip-label">{chip.label}</span>
+        <span class="chip-label">{localizeFilterChip(chip)}</span>
         {#if !chip.locked}
           <button
             class="chip-dismiss"
             type="button"
-            aria-label={t('browse_remove_filter', { type: chip.label })}
+            aria-label={t("browse_remove_filter", {
+              type: localizeFilterChip(chip),
+            })}
             onclick={(e) => {
               e.stopPropagation();
               handleDismissChip(chip.key);
@@ -275,7 +316,7 @@ Reads from / writes to a headless BrowseEngine instance.
 
     {#if engine.hasActiveFilters || activeSearch}
       <FilterChipBase
-        label={t('browse_clear_all')}
+        label={t("browse_clear_all")}
         icon="fas fa-xmark"
         mode="action"
         size="sm"
@@ -286,7 +327,7 @@ Reads from / writes to a headless BrowseEngine instance.
 
     {#if onSaveSmart && engine.hasActiveFilters}
       <FilterChipBase
-        label="Save as Smart Collection"
+        label={t("browse_audit_save_smart_collection")}
         icon="fas fa-wand-magic-sparkles"
         mode="action"
         size="sm"
@@ -304,7 +345,6 @@ Reads from / writes to a headless BrowseEngine instance.
     flex-direction: column;
     gap: var(--spacing-xs, 4px);
   }
-
 
   .filter-chip-row {
     display: flex;

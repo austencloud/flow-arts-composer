@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { DropdownMenu, Portal } from "bits-ui";
   import type { HTMLButtonAttributes } from "svelte/elements";
   import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
@@ -55,9 +56,9 @@
     disabled = false,
     busy = false,
     canOpen = true,
-    ariaLabel = "Share",
-    tooltip = ariaLabel,
-    sheetTitle = ariaLabel,
+    ariaLabel,
+    tooltip,
+    sheetTitle,
     triggerIcon = "fa-share-nodes",
     triggerLabel,
     testId,
@@ -74,6 +75,9 @@
     onActionSelect,
   }: Props = $props();
 
+  const resolvedAriaLabel = $derived(ariaLabel ?? t("share_title"));
+  const resolvedTooltip = $derived(tooltip ?? resolvedAriaLabel);
+  const resolvedSheetTitle = $derived(sheetTitle ?? resolvedAriaLabel);
   const sheetTitleId = $derived(`${idBase}-sheet-title`);
   const triggerBusy = $derived(busy);
 
@@ -124,8 +128,8 @@
     <button
       type="button"
       class="share-action-trigger"
-      title={tooltip}
-      aria-label={ariaLabel}
+      title={resolvedTooltip}
+      aria-label={resolvedAriaLabel}
       aria-busy={triggerBusy}
       aria-haspopup={useMobileSheet && canOpen && !onDirectOpen
         ? "dialog"
@@ -165,11 +169,11 @@
         >
           <div class="share-action-sheet-content">
             <header class="share-action-sheet-header">
-              <h2 id={sheetTitleId}>{sheetTitle}</h2>
+              <h2 id={sheetTitleId}>{resolvedSheetTitle}</h2>
               <button
                 type="button"
                 class="share-action-close"
-                aria-label="Close share options"
+                aria-label={t("share_close_options")}
                 onclick={() => (open = false)}
               >
                 <i class="fa-solid fa-xmark" aria-hidden="true"></i>
@@ -211,8 +215,8 @@
             {...triggerProps}
             type="button"
             class="share-action-trigger"
-            title={tooltip}
-            aria-label={ariaLabel}
+            title={resolvedTooltip}
+            aria-label={resolvedAriaLabel}
             aria-busy={triggerBusy}
             data-testid={testId}
           >
@@ -238,7 +242,7 @@
           sideOffset={menuSideOffset}
           collisionPadding={12}
           class="share-action-menu"
-          aria-label={ariaLabel}
+          aria-label={resolvedAriaLabel}
         >
           {#each actions as action, index (action.id)}
             {#if index > 0 && actions[index - 1]?.section !== action.section}

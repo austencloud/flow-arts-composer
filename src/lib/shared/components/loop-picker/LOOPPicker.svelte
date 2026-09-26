@@ -24,6 +24,8 @@
   } from "./loop-option-color";
   import LOOPChoiceButton from "./LOOPChoiceButton.svelte";
   import { parseLoopComponents } from "$lib/shared/create/services/loop-type-utils";
+  import { loopTypeLabel } from "$lib/features/create/generate/components/loop-component-presentation";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     /** Direct LOOP options (no bridge letter needed) */
@@ -66,15 +68,6 @@
   const hasBridgeOptions = $derived(circularizationOptions.length > 0);
   const showBridgeSection = $derived(hasBridgeOptions);
 
-  // Format LOOP type for display
-  function formatLOOPType(loopType: LOOPType): string {
-    return loopType
-      .replace(/^strict_/i, "")
-      .split("_")
-      .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
-      .join(" ");
-  }
-
   // Handle direct LOOP click
   function handleDirectClick(loopType: LOOPType) {
     if (isApplying) {
@@ -96,8 +89,8 @@
   <div class="picker-content" data-count={choiceCount}>
     <!-- Header -->
     <header class="picker-header">
-      <h3>Apply LOOP</h3>
-      <span class="subtitle">Click to extend your sequence</span>
+      <h3>{tDynamic("loop_picker_apply_loop")}</h3>
+      <span class="subtitle">{tDynamic("loop_picker_extend_hint")}</span>
     </header>
 
     <!-- Direct LOOP Options -->
@@ -108,8 +101,10 @@
             <LOOPChoiceButton
               components={parseLoopComponents(option.loopType)}
               tint={loopTypeTint(option.loopType)}
-              name={option.name}
-              description={option.description}
+              name={loopTypeLabel(option.loopType)}
+              description={tDynamic(
+                `loop_picker_description_${option.loopType}`
+              )}
               disabled={isApplying}
               onclick={() => handleDirectClick(option.loopType)}
             />
@@ -120,8 +115,13 @@
               components={new Set()}
               fallbackIcon="fa-repeat"
               tint={repeatTint}
-              name={`Repeated ×${orientationRepeat.count}`}
-              description={`Back at the start placement, but the props are turned. Repeating ${orientationRepeat.count} times returns their orientation too.`}
+              name={tDynamic("loop_picker_repeated", {
+                count: orientationRepeat.count,
+              })}
+              description={tDynamic(
+                "loop_picker_orientation_repeat_description",
+                { count: orientationRepeat.count }
+              )}
               disabled={isApplying}
               onclick={() => !isApplying && onOrientationRepeat?.()}
             />
@@ -139,7 +139,9 @@
     {#if showBridgeSection}
       <section class="bridge-section" transition:slide={{ duration: 200 }}>
         <div class="section-header">
-          <span class="section-label">Add bridge letter + LOOP</span>
+          <span class="section-label"
+            >{tDynamic("loop_picker_bridge_heading")}</span
+          >
         </div>
 
         <div class="bridge-options">
@@ -157,10 +159,10 @@
                   <LOOPChoiceButton
                     components={parseLoopComponents(loop.loopType)}
                     tint={loopTypeTint(loop.loopType)}
-                    name={formatLOOPType(loop.loopType)}
+                    name={loopTypeLabel(loop.loopType)}
                     glyphSize={18}
                     disabled={isApplying}
-                    title={loop.description || formatLOOPType(loop.loopType)}
+                    title={tDynamic(`loop_picker_description_${loop.loopType}`)}
                     onclick={() => {
                       const bridgeLetter = option.bridgeLetters[0];
                       if (bridgeLetter)
@@ -180,7 +182,7 @@
   {#if isApplying}
     <div class="applying-overlay">
       <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-      <span>Applying...</span>
+      <span>{tDynamic("loop_picker_applying")}</span>
     </div>
   {/if}
 </div>

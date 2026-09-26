@@ -17,7 +17,11 @@
     drawerWidth: string;
     engine: BrowseEngine;
     error: string | null;
-    onSequenceAction: (action: string, sequence: SequenceData, variations?: SequenceData[]) => Promise<void>;
+    onSequenceAction: (
+      action: string,
+      sequence: SequenceData,
+      variations?: SequenceData[]
+    ) => Promise<void>;
     /** Back to the drill chooser — rendered as a leading pill in the toolbar. */
     onBackToStart?: () => void;
     /** Grid warm-up: show the skeleton and skip the filtered-set reads for one
@@ -71,9 +75,10 @@
   <BrowsePanel
     {engine}
     layout="fullpage"
-    onSelect={(sequence, variations) => onSequenceAction("view-detail", sequence, variations)}
+    onSelect={(sequence, variations) =>
+      onSequenceAction("view-detail", sequence, variations)}
     onBack={onBackToStart}
-    backLabel="Start here"
+    backLabel={t("site_start_here")}
     hideToolbarSearch
     onOpenFilters={() => {
       if (!isMobile && onOpenWorkspace) onOpenWorkspace();
@@ -101,7 +106,10 @@
       if (!open) sequencePanelManager.close();
     }}
   >
-    <DrawerHeader title={t('browse_sort_navigate')} onClose={() => sequencePanelManager.close()} />
+    <DrawerHeader
+      title={t("browse_sort_navigate")}
+      onClose={() => sequencePanelManager.close()}
+    />
     <SortJumpSheet
       currentSortMethod={engine.sortMethod}
       availableSections={availableNavigationSections}
@@ -118,7 +126,9 @@
 
 <!-- Invite Collaborators Panel -->
 {#if inviteVideo}
-  <div style:--drawer-width={isMobile ? "min(720px, 95vw)" : "min(520px, 45vw)"}>
+  <div
+    style:--drawer-width={isMobile ? "min(720px, 95vw)" : "min(520px, 45vw)"}
+  >
     <InviteCollaboratorsPanel
       show={isInvitePanelOpen}
       placement={isMobile ? "bottom" : "right"}

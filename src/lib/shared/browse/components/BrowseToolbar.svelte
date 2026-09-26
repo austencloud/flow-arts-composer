@@ -10,6 +10,7 @@
 -->
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { localizeFilterChip } from "./localize-filter-chip";
   import { onMount, onDestroy } from "svelte";
   import type { BrowseEngine } from "../engine/types";
   import { BrowseSortMethod } from "$lib/shared/browse/domain/enums/browse-enums";
@@ -416,7 +417,7 @@
         onclick={() => handleSourceChange("community")}
         aria-pressed={engine.source === "community"}
       >
-        Community
+        {t("browse_audit_community")}
       </button>
       <button
         type="button"
@@ -425,7 +426,7 @@
         onclick={() => handleSourceChange("my-library")}
         aria-pressed={engine.source === "my-library"}
       >
-        My Library
+        {t("browse_audit_my_library")}
       </button>
     </div>
   {/if}
@@ -441,7 +442,7 @@
       onkeydown={handleSortKeydown}
       aria-haspopup="listbox"
       aria-expanded={sortOpen}
-      aria-label="Sort by {currentSortOption.label}"
+      aria-label={t("browse_audit_sort_by", { sort: currentSortOption.label })}
     >
       <i
         class="fas fa-arrow-down-short-wide sort-trigger-icon"
@@ -501,17 +502,31 @@
       type="button"
       class="filters-pill"
       onclick={onOpenFilters}
-      aria-label="Filters — {engine.resultCount}
-        {engine.resultCount === 1
-        ? 'sequence'
-        : 'sequences'}{activeUserFilterCount > 0
-        ? `, ${activeUserFilterCount} active`
-        : ''}"
+      aria-label={activeUserFilterCount > 0
+        ? t("browse_audit_filters_with_active", {
+            results:
+              engine.resultCount === 1
+                ? t("browse_audit_one_sequence", { count: engine.resultCount })
+                : t("browse_audit_many_sequences", {
+                    count: engine.resultCount,
+                  }),
+            active: activeUserFilterCount,
+          })
+        : t("browse_audit_filters_with_results", {
+            results:
+              engine.resultCount === 1
+                ? t("browse_audit_one_sequence", { count: engine.resultCount })
+                : t("browse_audit_many_sequences", {
+                    count: engine.resultCount,
+                  }),
+          })}
     >
       <i class="fas fa-sliders" aria-hidden="true"></i>
       <span class="filters-pill-count">
         {engine.resultCount}<span class="result-count-word"
-          >&nbsp;{engine.resultCount === 1 ? "sequence" : "sequences"}</span
+          >&nbsp;{engine.resultCount === 1
+            ? t("browse_audit_sequence")
+            : t("browse_audit_sequences")}</span
         >
       </span>
       {#if activeUserFilterCount > 0}
@@ -519,8 +534,9 @@
       {/if}
     </button>
     <span class="sr-only" aria-live="polite" aria-atomic="true">
-      {engine.resultCount}
-      {engine.resultCount === 1 ? "sequence" : "sequences"}
+      {engine.resultCount === 1
+        ? t("browse_audit_one_sequence", { count: engine.resultCount })
+        : t("browse_audit_many_sequences", { count: engine.resultCount })}
     </span>
   {/if}
 
@@ -563,12 +579,14 @@
           {#if chip.locked}
             <i class="fas fa-lock chip-lock" aria-hidden="true"></i>
           {/if}
-          <span class="chip-label">{chip.label}</span>
+          <span class="chip-label">{localizeFilterChip(chip)}</span>
           {#if !chip.locked}
             <button
               class="chip-dismiss"
               type="button"
-              aria-label="Remove filter {chip.label}"
+              aria-label={t("browse_audit_remove_filter", {
+                filter: localizeFilterChip(chip),
+              })}
               onclick={(e) => {
                 e.stopPropagation();
                 handleDismissChip(chip.key);
@@ -589,7 +607,7 @@
             handleClearAll();
           }}
         >
-          Clear all
+          {t("browse_clear_all")}
         </button>
       {/if}
     </div>
@@ -611,14 +629,14 @@
     class="zoom-control"
     role="group"
     aria-label={t("browse_ui_grid_density")}
-    title="Grid density (Ctrl+scroll also works)"
+    title={t("browse_audit_grid_density_tip")}
   >
     <button
       type="button"
       class="zoom-btn"
       onclick={() => engine.zoomIn()}
       disabled={!engine.canZoomIn}
-      aria-label="Zoom out: smaller cards, more columns"
+      aria-label={t("browse_audit_zoom_out")}
     >
       <i class="fas fa-magnifying-glass-minus" aria-hidden="true"></i>
     </button>
@@ -627,7 +645,7 @@
       class="zoom-btn"
       onclick={() => engine.zoomOut()}
       disabled={!engine.canZoomOut}
-      aria-label="Zoom in: larger cards, fewer columns"
+      aria-label={t("browse_audit_zoom_in")}
     >
       <i class="fas fa-magnifying-glass-plus" aria-hidden="true"></i>
     </button>

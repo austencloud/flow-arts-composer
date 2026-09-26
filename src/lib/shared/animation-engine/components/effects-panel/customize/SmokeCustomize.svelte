@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
   import type { SmokeIntent } from "$lib/shared/effects/domain/effects-config";
   import OptionChipRow from "../OptionChipRow.svelte";
@@ -15,7 +16,11 @@
   // chip reads identity at a glance. No lifetime slider: lifetime is
   // palette-owned (genie is short, fog is long - that's what makes them
   // those things). Spec §"Intent shape".
-  const PALETTES: { value: SmokeIntent["palette"]; label: string; swatch: string }[] = [
+  const PALETTES: {
+    value: SmokeIntent["palette"];
+    label: string;
+    swatch: string;
+  }[] = [
     { value: "incense", label: "Incense", swatch: "#d8d8d8" },
     { value: "fog", label: "Fog", swatch: "#c0c0c8" },
     { value: "genie", label: "Genie", swatch: "#a060ff" },
@@ -35,7 +40,7 @@
 <div class="customize-view">
   <button type="button" class="back-btn" onclick={onBack}>
     <i class="fas fa-arrow-left" aria-hidden="true"></i>
-    Back to presets
+    {t("effect_deep_back_to_presets")}
   </button>
 
   {#if state}
@@ -51,7 +56,7 @@
 
       {#if state.smoke.palette === "custom"}
         <div class="color-row">
-          <span class="color-label">Tint</span>
+          <span class="color-label">{t("effect_deep_tint")}</span>
           <div class="color-pickers">
             <label class="color-picker">
               <input
@@ -78,7 +83,7 @@
 
       <!-- Ambient emission -->
       <div class="slider-row">
-        <label for="smoke-ambient">Ambient</label>
+        <label for="smoke-ambient">{t("effect_deep_ambient")}</label>
         <input
           id="smoke-ambient"
           type="range"
@@ -91,12 +96,14 @@
               ambientEmission: +(e.currentTarget as HTMLInputElement).value,
             })}
         />
-        <span class="slider-value">{Math.round(state.smoke.ambientEmission * 100)}%</span>
+        <span class="slider-value"
+          >{Math.round(state.smoke.ambientEmission * 100)}%</span
+        >
       </div>
 
       <!-- Motion emission -->
       <div class="slider-row">
-        <label for="smoke-motion">Motion</label>
+        <label for="smoke-motion">{t("effect_deep_motion")}</label>
         <input
           id="smoke-motion"
           type="range"
@@ -109,12 +116,14 @@
               motionEmission: +(e.currentTarget as HTMLInputElement).value,
             })}
         />
-        <span class="slider-value">{Math.round(state.smoke.motionEmission * 100)}%</span>
+        <span class="slider-value"
+          >{Math.round(state.smoke.motionEmission * 100)}%</span
+        >
       </div>
 
       <!-- Intensity (size + opacity) -->
       <div class="slider-row">
-        <label for="smoke-intensity">Intensity</label>
+        <label for="smoke-intensity">{t("effect_deep_intensity")}</label>
         <input
           id="smoke-intensity"
           type="range"
@@ -127,49 +136,55 @@
               intensity: +(e.currentTarget as HTMLInputElement).value,
             })}
         />
-        <span class="slider-value">{Math.round(state.smoke.intensity * 100)}%</span>
+        <span class="slider-value"
+          >{Math.round(state.smoke.intensity * 100)}%</span
+        >
       </div>
 
       <AdvancedControls count={2}>
         <!-- Curl strength (multiplier on palette.curlBias) -->
-      <div class="slider-row">
-        <label for="smoke-curl">Curl</label>
-        <input
-          id="smoke-curl"
-          type="range"
-          min="0"
-          max="1"
-          step="0.05"
-          value={state.smoke.curlStrength}
-          oninput={(e) =>
-            state.updateEffect("smoke", {
-              curlStrength: +(e.currentTarget as HTMLInputElement).value,
-            })}
-        />
-        <span class="slider-value">{Math.round(state.smoke.curlStrength * 100)}%</span>
-      </div>
+        <div class="slider-row">
+          <label for="smoke-curl">{t("effect_deep_curl")}</label>
+          <input
+            id="smoke-curl"
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={state.smoke.curlStrength}
+            oninput={(e) =>
+              state.updateEffect("smoke", {
+                curlStrength: +(e.currentTarget as HTMLInputElement).value,
+              })}
+          />
+          <span class="slider-value"
+            >{Math.round(state.smoke.curlStrength * 100)}%</span
+          >
+        </div>
 
-      <!-- Rise speed (multiplier on palette.riseBias) -->
-      <div class="slider-row">
-        <label for="smoke-rise">Rise</label>
-        <input
-          id="smoke-rise"
-          type="range"
-          min="0"
-          max="1"
-          step="0.05"
-          value={state.smoke.riseSpeed}
-          oninput={(e) =>
-            state.updateEffect("smoke", {
-              riseSpeed: +(e.currentTarget as HTMLInputElement).value,
-            })}
-        />
-        <span class="slider-value">{Math.round(state.smoke.riseSpeed * 100)}%</span>
-      </div>
+        <!-- Rise speed (multiplier on palette.riseBias) -->
+        <div class="slider-row">
+          <label for="smoke-rise">{t("effect_deep_rise")}</label>
+          <input
+            id="smoke-rise"
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={state.smoke.riseSpeed}
+            oninput={(e) =>
+              state.updateEffect("smoke", {
+                riseSpeed: +(e.currentTarget as HTMLInputElement).value,
+              })}
+          />
+          <span class="slider-value"
+            >{Math.round(state.smoke.riseSpeed * 100)}%</span
+          >
+        </div>
       </AdvancedControls>
     </div>
   {:else}
-    <p class="empty">Effect state unavailable.</p>
+    <p class="empty">{t("effect_deep_effect_state_unavailable")}</p>
   {/if}
 </div>
 

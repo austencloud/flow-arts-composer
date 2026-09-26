@@ -21,6 +21,7 @@
 </script>
 
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
   import { settingsService as settingsServiceSingleton } from "$lib/shared/settings/state/settings-state.svelte";
   import { createGlobalChiralitySeam } from "../../settings/components/tabs/prop-type/prop-chirality-seam";
@@ -125,7 +126,12 @@
       const color = colors?.[hand];
       if (color) {
         root.style.setProperty(name, color);
-        root.style.setProperty(rgbName, [1, 3, 5].map((offset) => parseInt(color.slice(offset, offset + 2), 16)).join(", "));
+        root.style.setProperty(
+          rgbName,
+          [1, 3, 5]
+            .map((offset) => parseInt(color.slice(offset, offset + 2), 16))
+            .join(", ")
+        );
       } else {
         root.style.removeProperty(name);
         root.style.removeProperty(rgbName);
@@ -325,7 +331,9 @@
     const mod = MODULE_DEFINITIONS.find(
       (m) => m.id === navigationState.currentModule
     );
-    return mod ? `${mod.label} | Flow Arts Composer` : "Flow Arts Composer";
+    return mod
+      ? `${t(mod.labelKey)} | Flow Arts Composer`
+      : "Flow Arts Composer";
   });
 
   // Global prop drawer (P key shortcut + PropIndicatorButton)

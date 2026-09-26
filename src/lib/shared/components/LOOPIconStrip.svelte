@@ -33,6 +33,8 @@ Used in:
     type ReflectionIconTransform,
   } from "@tka/render-composition";
   import CheckerboardCircleIcon from "$lib/shared/icons/CheckerboardCircleIcon.svelte";
+  import { loopComponentLabel } from "$lib/features/create/generate/components/loop-component-presentation";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     activeComponents: Set<LOOPComponent>;
@@ -76,47 +78,44 @@ Used in:
   // from a single source of truth.
   // Reserved orientation primitives (ZONE_HOLD_INVERT / FLIP / CROSS) are
   // intentionally absent - see primitive-discovery rule and Phase 2 filter.
-  const primitiveIcons: Partial<Record<LOOPComponent, {
-    faClass: string;
-    color: string;
-    label: string;
-  }>> & {
-    freeform: { faClass: string; color: string; label: string };
+  const primitiveIcons: Partial<
+    Record<
+      LOOPComponent,
+      {
+        faClass: string;
+        color: string;
+      }
+    >
+  > & {
+    freeform: { faClass: string; color: string };
   } = {
     [LOOPComponent.ROTATED]: {
       faClass: "fas fa-rotate",
       color: LOOP_ICON_COLORS.rotated,
-      label: "Rotated",
     },
     [LOOPComponent.MIRRORED]: {
       faClass: "fas fa-left-right",
       color: LOOP_ICON_COLORS.mirrored,
-      label: "Mirrored",
     },
     [LOOPComponent.FLIPPED]: {
       faClass: "fas fa-left-right",
       color: LOOP_ICON_COLORS.flipped,
-      label: "Flipped",
     },
     [LOOPComponent.SWAPPED]: {
       faClass: "fas fa-shuffle",
       color: LOOP_ICON_COLORS.swapped,
-      label: "Swapped",
     },
     [LOOPComponent.INVERTED]: {
       faClass: "fas fa-adjust",
       color: LOOP_ICON_COLORS.inverted,
-      label: "Inverted",
     },
     [LOOPComponent.REWOUND]: {
       faClass: "fas fa-backward",
       color: LOOP_ICON_COLORS.rewound,
-      label: "Rewound",
     },
     freeform: {
       faClass: "fas fa-infinity",
       color: LOOP_ICON_COLORS.freeform,
-      label: "Freeform",
     },
   };
 
@@ -132,7 +131,7 @@ Used in:
 
   // Filter to only active components, maintaining display order
   const activeList = $derived(
-    displayOrder.filter(comp => activeComponents.has(comp))
+    displayOrder.filter((comp) => activeComponents.has(comp))
   );
 
   // Split into expand-mode (rendered first) and overlay-mode (rendered
@@ -142,7 +141,9 @@ Used in:
   const overlaySet = $derived(overlayComponents ?? new Set<LOOPComponent>());
   const expandList = $derived(activeList.filter((c) => !overlaySet.has(c)));
   const overlayList = $derived(activeList.filter((c) => overlaySet.has(c)));
-  const showOverlayDot = $derived(expandList.length > 0 && overlayList.length > 0);
+  const showOverlayDot = $derived(
+    expandList.length > 0 && overlayList.length > 0
+  );
   const dotSize = $derived(size * LOOP_ICON_DOT_SIZE_SCALE);
 
   // Show freeform icon if no components active and flag is set
@@ -150,19 +151,15 @@ Used in:
     showFreeformWhenEmpty && activeList.length === 0
   );
 
-  const isQuarteredRotation = $derived(
-    rotationPeriod === Period.QUARTERED
-  );
+  const isQuarteredRotation = $derived(rotationPeriod === Period.QUARTERED);
 
-  const isQuarteredInversion = $derived(
-    inversionPeriod === Period.QUARTERED
-  );
+  const isQuarteredInversion = $derived(inversionPeriod === Period.QUARTERED);
 
-  const reflectionLabels: Record<LoopReflectionAxis, string> = {
-    "north-south": "Mirrored (north-south axis)",
-    "east-west": "Flipped (east-west axis)",
-    "northeast-southwest": "Northeast-southwest reflection",
-    "northwest-southeast": "Northwest-southeast reflection",
+  const reflectionLabelKeys: Record<LoopReflectionAxis, string> = {
+    "north-south": "loop_reflection_north_south",
+    "east-west": "loop_reflection_east_west",
+    "northeast-southwest": "loop_reflection_northeast_southwest",
+    "northwest-southeast": "loop_reflection_northwest_southeast",
   };
 
   function iconFor(component: LOOPComponent): {
@@ -183,7 +180,7 @@ Used in:
         ...base,
         faClass: "fas fa-left-right",
         color: LOOP_ICON_COLORS.mirrored,
-        label: reflectionLabels[reflectionTransform.axis],
+        label: tDynamic(reflectionLabelKeys[reflectionTransform.axis]),
         reflectionTransform,
       };
     }
@@ -191,17 +188,17 @@ Used in:
       return {
         faClass: "fas fa-arrows-spin",
         color: base.color,
-        label: "Rotated (quartered)",
+        label: tDynamic("loop_icon_rotated_quartered"),
       };
     }
     if (component === LOOPComponent.INVERTED && isQuarteredInversion) {
       return {
         ...base,
-        label: "Inverted (quartered)",
+        label: tDynamic("loop_icon_inverted_quartered"),
         customSvg: "checkerboard",
       };
     }
-    return base;
+    return { ...base, label: loopComponentLabel(component) };
   }
 
   // Generate aria label. When rotation is quartered the label reads
@@ -213,7 +210,7 @@ Used in:
           .map((c) => iconFor(c)?.label)
           .filter((l): l is string => typeof l === "string")
           .join(", ")}`
-      : "Freeform LOOP"
+      : tDynamic("loop_icon_freeform_loop")
   );
 
   // Gap uses shared constant from @tka/render-composition
@@ -232,7 +229,7 @@ Used in:
       class={primitiveIcons.freeform.faClass}
       style="font-size: {size}px; color: {primitiveIcons.freeform.color};"
       aria-hidden="true"
-      title="Freeform"
+      title={tDynamic("loop_icon_freeform")}
     ></i>
   {:else}
     {#each expandList as component}
@@ -254,9 +251,16 @@ Used in:
 {#snippet iconCell(component: LOOPComponent)}
   {@const icon = iconFor(component)}
   {#if icon}
-    <span class="icon-cell" style="width: {size}px; height: {size}px;" title={icon.label}>
+    <span
+      class="icon-cell"
+      style="width: {size}px; height: {size}px;"
+      title={icon.label}
+    >
       {#if icon.customSvg === "checkerboard"}
-        <span class="custom-icon" style="filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));">
+        <span
+          class="custom-icon"
+          style="filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));"
+        >
           <CheckerboardCircleIcon size="{size}px" color={icon.color} />
         </span>
       {:else}

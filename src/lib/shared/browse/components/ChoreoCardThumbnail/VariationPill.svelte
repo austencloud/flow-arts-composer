@@ -10,6 +10,7 @@ belongs to the card's chip row.
 -->
 <script lang="ts">
   import CardChip from "./CardChip.svelte";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 
   const {
     currentIndex = 0,
@@ -24,8 +25,11 @@ belongs to the card's chip row.
 
 {#if totalCount > 1}
   <CardChip
-    label="Show next variation ({currentIndex + 1} of {totalCount})"
-    title="Tap to see other versions"
+    label={tDynamic("browse_results_next_variation", {
+      current: currentIndex + 1,
+      total: totalCount,
+    })}
+    title={tDynamic("browse_results_other_versions")}
     onActivate={onCycle}
   >
     {currentIndex + 1}/{totalCount}

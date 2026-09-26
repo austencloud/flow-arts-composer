@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { effectUiLabel, effectUiTrait } from "./effect-ui-label";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { EffectPresetGroup } from "./presets/types";
   import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
   import EffectPresetThumbnail from "./EffectPresetThumbnail.svelte";
@@ -85,12 +87,14 @@
 </script>
 
 <div class="presets-section">
-  <span class="section-label">Looks</span>
+  <span class="section-label">{t("effect_deep_looks")}</span>
 
   <div
     class="look-choices"
     role="radiogroup"
-    aria-label="Choose a {effectLabel} look"
+    aria-label={t("effect_deep_choose_look", {
+      effect: effectUiLabel(effectLabel),
+    })}
   >
     {#if presetModels.length > 0}
       <div class="preset-grid" data-cols={wideCols} data-cols-wide={ultraCols}>
@@ -113,8 +117,8 @@
                 active={isActive}
               />
             </div>
-            <span class="preset-name">{item.preset.name}</span>
-            <span class="preset-trait">{item.description}</span>
+            <span class="preset-name">{effectUiLabel(item.preset.name)}</span>
+            <span class="preset-trait">{effectUiTrait(item.description)}</span>
           </button>
         {/each}
       </div>
@@ -146,8 +150,10 @@
               {/if}
             </span>
             <span class="anchor-copy">
-              <span class="anchor-name">Original</span>
-              <span class="anchor-description">Factory settings</span>
+              <span class="anchor-name">{t("effect_deep_original")}</span>
+              <span class="anchor-description"
+                >{t("effect_deep_factory_settings")}</span
+              >
             </span>
           </button>
         {/if}
@@ -169,18 +175,19 @@
               {#if customColors}
                 <span class="dual-dots">
                   <span class="dot" style:background={customColors.left}></span>
-                  <span class="dot" style:background={customColors.right}></span>
+                  <span class="dot" style:background={customColors.right}
+                  ></span>
                 </span>
               {:else}
                 <i class="fas fa-wand-magic-sparkles"></i>
               {/if}
             </span>
             <span class="anchor-copy">
-              <span class="anchor-name">Your look</span>
+              <span class="anchor-name">{t("effect_deep_your_look")}</span>
               <span class="anchor-description">
                 {customDisabled
-                  ? "Tune anything to create"
-                  : "Updates as controls move"}
+                  ? t("effect_deep_tune_anything")
+                  : t("effect_deep_updates_controls")}
               </span>
             </span>
           </button>
@@ -191,7 +198,7 @@
 
   {#if showSummary}
     <div class="summary-row">
-      <span class="summary-label">Current</span>
+      <span class="summary-label">{t("effect_deep_current")}</span>
       <span class="summary-text">{summary}</span>
     </div>
   {/if}
@@ -203,7 +210,9 @@
       style:--btn-accent={accentColor}
       onclick={onCustomize}
     >
-      Customize {effectLabel} Settings
+      {t("effect_deep_customize_settings", {
+        effect: effectUiLabel(effectLabel),
+      })}
     </button>
   {/if}
 </div>

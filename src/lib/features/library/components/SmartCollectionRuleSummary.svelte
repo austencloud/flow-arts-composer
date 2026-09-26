@@ -32,39 +32,47 @@
   }: Props = $props();
 
   const sourceLabel = $derived(
-    spec.source === "my-library" ? "My Library" : "Community"
+    spec.source === "my-library"
+      ? t("browse_audit_my_library")
+      : t("browse_audit_community")
   );
 
   const matchLabel = $derived(
     countUnavailable
-      ? "Matches unavailable"
+      ? t("browse_audit_matches_unavailable")
       : matchCount == null
-        ? "Counting matches"
-        : `${matchCount} ${matchCount === 1 ? "match" : "matches"} now`
+        ? t("browse_audit_counting_matches")
+        : t("browse_audit_matches_now", { count: matchCount })
   );
 
-  const sortLabels: Record<string, string> = {
-    alphabetical: "Alphabetical",
-    date: "Date added",
-    level: "Level",
-    length: "Sequence length",
-    author: "Creator",
-    popularity: "Popularity",
-  };
+  const sortLabels = $derived<Record<string, string>>({
+    alphabetical: t("browse_audit_alphabetical"),
+    date: t("browse_audit_date_added"),
+    level: t("browse_audit_level"),
+    length: t("browse_audit_sequence_length"),
+    author: t("browse_audit_creator"),
+    popularity: t("browse_audit_popularity"),
+  });
 
   const sortLabel = $derived(
-    `${sortLabels[spec.sortMethod] ?? "Default order"}, ${
-      spec.sortDirection === "desc" ? "descending" : "ascending"
-    }`
+    t("browse_audit_sort_direction", {
+      sort: sortLabels[spec.sortMethod] ?? t("browse_audit_default_order"),
+      direction:
+        spec.sortDirection === "desc"
+          ? t("browse_audit_descending")
+          : t("browse_audit_ascending"),
+    })
   );
 
-  const ruleEyebrow = $derived(draft ? "Rule preview" : "Saved rule");
+  const ruleEyebrow = $derived(
+    draft ? t("browse_audit_rule_preview") : t("browse_audit_saved_rule")
+  );
   const ruleBehavior = $derived(
     builtIn
-      ? "Built in"
+      ? t("browse_audit_built_in")
       : draft
-        ? "Updates after saving"
-        : "Updates automatically"
+        ? t("browse_audit_updates_after_saving")
+        : t("browse_audit_updates_automatically")
   );
 </script>
 
@@ -122,7 +130,7 @@
     {:else}
       <span class="no-rule">
         <i class="fas fa-circle-info" aria-hidden="true"></i>
-        Add a filter to define what belongs here.
+        {t("browse_audit_add_filter_to_define")}
       </span>
     {/if}
   </div>

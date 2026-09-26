@@ -12,6 +12,7 @@
  */
 
 import { doc, onSnapshot, type DocumentData } from "firebase/firestore";
+import { t } from "$lib/shared/i18n/i18n.svelte.js";
 import { httpsCallable } from "firebase/functions";
 import {
   getAuthInstance,
@@ -77,51 +78,51 @@ export class MetaPublishClientError extends Error {
 export function metaErrorMessage(code: string): string {
   switch (code) {
     case "meta/cancelled":
-      return "Connection cancelled.";
+      return t("share_meta_cancelled");
     case "meta/popup-blocked":
-      return "Your browser blocked the Meta window. Allow popups and try again.";
+      return t("share_meta_popup_blocked");
     case "meta/account-required":
-      return "Sign in with a full account to post directly.";
+      return t("share_meta_account_required");
     case "meta/account-type-required":
-      return "Direct posting needs an Instagram creator or business account. You can still finish the post in Instagram.";
+      return t("share_meta_account_type_required");
     case "meta/account-type-unverified":
-      return "Reconnect Instagram so Flow Arts Composer can verify this professional account.";
+      return t("share_meta_account_type_unverified");
     case "meta/account-mismatch":
-      return "This connection controls a different Instagram account.";
+      return t("share_meta_account_mismatch");
     case "meta/capabilities-missing":
-      return "Reconnect Instagram so Flow Arts Composer can verify what this account supports.";
+      return t("share_reconnect_instagram_capability");
     case "meta/facebook-capability-required":
-      return "Connect Facebook to use this Instagram option.";
+      return t("share_meta_facebook_required");
     case "meta/review-required":
-      return "Review this post for Instagram before publishing.";
+      return t("share_meta_review_required");
     case "meta/app-configuration-mismatch":
-      return "Instagram's connection settings need an app update. Trying again will not fix this.";
+      return t("share_meta_app_configuration");
     case "meta/session-required":
-      return "Sign-in is still loading. Try again in a moment.";
+      return t("share_meta_session_required");
     case "meta/no-pages":
       // Meta shares Pages per-authorization, so an empty list far more often
       // means none were ticked in its dialog than that there are none to tick.
-      return "No Pages came through. Try again and share all your Pages.";
+      return t("share_meta_no_pages");
     case "meta/not-connected":
-      return "Connect the account first.";
+      return t("share_meta_not_connected");
     case "meta/page-required":
-      return "Choose which Page to post to first.";
+      return t("share_meta_page_required");
     case "meta/token-expired":
-      return "That connection expired. Reconnect and try again.";
+      return t("share_meta_token_expired");
     case "meta/permission-missing":
-      return "This account hasn't granted permission to post.";
+      return t("share_meta_permission_missing");
     case "meta/media-rejected":
-      return "Meta wouldn't accept this media.";
+      return t("share_meta_media_rejected");
     case "meta/rate-limited":
-      return "Meta is rate limiting posts. Try again in a few minutes.";
+      return t("share_meta_rate_limited");
     case "meta/timed-out":
-      return "Meta took too long processing the upload.";
+      return t("share_meta_timed_out");
     case "meta/not-configured":
-      return "Direct posting isn't switched on yet.";
+      return t("share_meta_not_configured");
     case "meta/state-expired":
-      return "That connection request expired. Try again.";
+      return t("share_meta_state_expired");
     default:
-      return "Meta couldn't complete that. Try again.";
+      return t("share_meta_generic_error");
   }
 }
 

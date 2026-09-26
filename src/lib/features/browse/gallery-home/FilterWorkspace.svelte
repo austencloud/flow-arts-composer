@@ -154,8 +154,12 @@ the below-seam actions mutate the engine in place.
     style:view-transition-name="gallery-rule-count"
     aria-live="polite"
   >
-    {engine.resultCount}
-    {engine.resultCount === 1 ? "match" : "matches"}
+    {t(
+      engine.resultCount === 1
+        ? "browse_audit_match_count_singular"
+        : "browse_audit_match_count_plural",
+      { count: engine.resultCount }
+    )}
   </span>
   {#if engine.hasActiveFilters}
     <FilterRuleStrip
@@ -179,20 +183,20 @@ the below-seam actions mutate the engine in place.
       {#if onSaveSmart}
         <PanelButton
           variant="secondary"
-          ariaLabel="Save these filters as a Smart Collection"
+          ariaLabel={t("browse_audit_save_filters_smart")}
           onclick={onSaveSmart}
         >
           <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
-          Save
+          {t("browse_audit_save")}
         </PanelButton>
       {/if}
       {#if onClose}
         <PanelButton
           variant="primary"
-          ariaLabel="Close filters and view results"
+          ariaLabel={t("browse_audit_close_filters_view_results")}
           onclick={onClose}
         >
-          Done
+          {t("browse_audit_done")}
         </PanelButton>
       {/if}
     </div>
@@ -204,7 +208,7 @@ the below-seam actions mutate the engine in place.
     <div role="alert">
       <p>{engine.error}</p>
       <PanelButton variant="secondary" onclick={() => engine.refresh()}>
-        Try again
+        {t("browse_audit_try_again")}
       </PanelButton>
     </div>
   {/if}
@@ -212,10 +216,10 @@ the below-seam actions mutate the engine in place.
     <div class="workspace-close">
       <PanelButton
         variant="primary"
-        ariaLabel="Close filters and view results"
+        ariaLabel={t("browse_audit_close_filters_view_results")}
         onclick={onClose}
       >
-        Done
+        {t("browse_audit_done")}
       </PanelButton>
     </div>
   {/if}
@@ -226,8 +230,12 @@ the below-seam actions mutate the engine in place.
         style:view-transition-name="gallery-rule-count"
         aria-live="polite"
       >
-        {engine.resultCount}
-        {engine.resultCount === 1 ? "match" : "matches"}
+        {t(
+          engine.resultCount === 1
+            ? "browse_audit_match_count_singular"
+            : "browse_audit_match_count_plural",
+          { count: engine.resultCount }
+        )}
       </span>
       {#if engine.hasActiveFilters}
         <FilterRuleStrip
@@ -260,26 +268,26 @@ the below-seam actions mutate the engine in place.
               else eject(() => {});
             }}
           >
-            View {engine.resultCount} results
+            {t("browse_audit_view_results", { count: engine.resultCount })}
           </PanelButton>
         {/if}
         {#if onSaveSmart}
           <PanelButton
             variant="secondary"
-            ariaLabel="Save these filters as a Smart Collection"
+            ariaLabel={t("browse_audit_save_filters_smart")}
             onclick={onSaveSmart}
           >
             <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
-            Save
+            {t("browse_audit_save")}
           </PanelButton>
         {/if}
         {#if onClose}
           <PanelButton
             variant="primary"
-            ariaLabel="Close filters and view results"
+            ariaLabel={t("browse_audit_close_filters_view_results")}
             onclick={onClose}
           >
-            Done
+            {t("browse_audit_done")}
           </PanelButton>
         {/if}
       </div>

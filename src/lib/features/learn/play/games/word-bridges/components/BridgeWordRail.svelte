@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
   import type { WordBridgeAnalysis } from "../domain/word-bridge-questions";
 
@@ -24,14 +25,28 @@
   );
   const summary = $derived.by(() => {
     if (reveal) {
-      return `${displayWord}. ${analysis.requiredBridgeCount} ${analysis.requiredBridgeCount === 1 ? "bridge" : "bridges"} required.`;
+      return tDynamic(
+        analysis.requiredBridgeCount === 1
+          ? "learn_bridge_rail_required_one"
+          : "learn_bridge_rail_required_many",
+        {
+          word: displayWord,
+          count: analysis.requiredBridgeCount,
+        }
+      );
     }
 
     if (showFocusSocket && focusedGap) {
-      return `Word ${displayWord}. Marked gap from ${focusedGap.from}, ending ${focusedGap.fromEndPlacementGroup}, to ${focusedGap.to}, starting ${focusedGap.toStartPlacementGroup}. Choose a bridge that starts ${focusedGap.fromEndPlacementGroup} and ends ${focusedGap.toStartPlacementGroup}.`;
+      return tDynamic("learn_bridge_rail_marked", {
+        word: displayWord,
+        from: focusedGap.from,
+        fromGroup: focusedGap.fromEndPlacementGroup,
+        to: focusedGap.to,
+        toGroup: focusedGap.toStartPlacementGroup,
+      });
     }
 
-    return `Word ${displayWord}. Bridge status hidden.`;
+    return tDynamic("learn_bridge_rail_hidden", { word: displayWord });
   });
 
   function isRevealed(index: number): boolean {
@@ -57,7 +72,7 @@
         {#if shown && gap.direct}
           <span
             class="direct-link"
-            title="Direct transition"
+            title={tDynamic("learn_bridge_direct_transition")}
             aria-hidden="true"
           >
             <span class="link-line"></span>
@@ -69,8 +84,16 @@
             class="bridge-marker"
             class:selected={focused}
             aria-pressed={focused}
-            aria-label="Inspect the gap from {gap.from} to {gap.to}, {gap.bridgeCount ??
-              0} {(gap.bridgeCount ?? 0) === 1 ? 'bridge' : 'bridges'}"
+            aria-label={tDynamic(
+              (gap.bridgeCount ?? 0) === 1
+                ? "learn_bridge_inspect_gap_one"
+                : "learn_bridge_inspect_gap_many",
+              {
+                from: gap.from,
+                to: gap.to,
+                count: gap.bridgeCount ?? 0,
+              }
+            )}
             onclick={() => onSelectGap?.(gap.index)}
           >
             +{gap.bridgeCount ?? "?"}

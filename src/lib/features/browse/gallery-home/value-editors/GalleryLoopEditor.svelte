@@ -1,5 +1,10 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
+  import { localizeFilterChip } from "$lib/shared/browse/components/localize-filter-chip";
+  import { loopComponentDescription } from "$lib/features/create/generate/components/loop-component-presentation";
+  import { LOOPComponent } from "$lib/features/create/generate/shared/domain/constants/loop-components";
   import type {
     GalleryValueHeadSnippet,
     GalleryWorkspaceProps,
@@ -14,6 +19,17 @@
     | "onLoopConnectiveChange"
     | "onPickLoop"
   > & { valueHead: GalleryValueHeadSnippet };
+
+  function loopDescription(value: string, fallback: string): string {
+    if (value === "component:rotated_halved")
+      return t("browse_dynamic_rotated_halved_description");
+    if (value === "component:rotated_quartered")
+      return t("browse_dynamic_rotated_quartered_description");
+    const component = value.replace(/^component:/, "") as LOOPComponent;
+    return Object.values(LOOPComponent).includes(component)
+      ? loopComponentDescription(component)
+      : fallback;
+  }
 
   let {
     catalog,
@@ -30,10 +46,10 @@
   <SegmentedControl
     size="sm"
     color="accent"
-    ariaLabel="How selected LOOPs combine"
+    ariaLabel={t("browse_audit_loop_combine")}
     options={[
-      { value: "any", label: "Match any" },
-      { value: "all", label: "Match all" },
+      { value: "any", label: t("browse_audit_match_any") },
+      { value: "all", label: t("browse_audit_match_all") },
     ]}
     value={loopConnective}
     onchange={(v) => onLoopConnectiveChange?.(v)}
@@ -42,11 +58,11 @@
 
 <div class="drill-screen screen-loop">
   {@render valueHead(
-    "Pick a LOOP type",
+    t("browse_audit_pick_loop"),
     onToggleLoop
       ? loopConnective === "all"
-        ? "Tap several. Sequences need every one of them."
-        : "Tap several. Sequences match any of them."
+        ? t("browse_audit_every_loop_hint")
+        : t("browse_audit_any_loop_hint")
       : undefined,
     onLoopConnectiveChange ? loopConnectiveControl : undefined
   )}
@@ -66,8 +82,14 @@
           <i class="fas {v.icon}"></i>
         </span>
         <span class="value-main">
-          <span class="value-label">{v.label}</span>
-          <span class="value-desc">{v.desc}</span>
+          <span class="value-label"
+            >{localizeFilterChip({
+              type: BrowseFilterType.LOOP_TYPE,
+              value: v.value,
+              label: v.label,
+            })}</span
+          >
+          <span class="value-desc">{loopDescription(v.value, v.desc)}</span>
           <span class="density-bar">
             <span
               class="density-fill"

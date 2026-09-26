@@ -20,60 +20,49 @@ challenge on their own terms — they simply don't claim a traced score.
     getTracePaths,
     type TraceSettingKey,
   } from "../state/trace-paths-state.svelte";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 
   const trace = getTracePaths();
 
   interface Row {
     key: TraceSettingKey;
-    label: string;
-    description: string;
   }
 
   const ROWS: Row[] = [
     {
       key: "reducedMotion",
-      label: "Reduced motion",
-      description:
-        "Static marks only. No traveling preview, no pulsing targets.",
     },
     {
       key: "lowStimulus",
-      label: "Low stimulus",
-      description: "Drops the path glow and any animated backdrop.",
     },
     {
       key: "haptics",
-      label: "Haptics",
-      description: "A short buzz when a hand arms and when a round ends.",
     },
     {
       key: "sound",
-      label: "Sound",
-      description: "One quiet tone on a clean round.",
     },
     {
       key: "oneHandMode",
-      label: "One hand",
-      description: "Arm one hand at a time on a two-hand route.",
     },
     {
       key: "tapRouteMode",
-      label: "Tap Route",
-      description:
-        "Select the waypoints in order by tapping. No dragging, and no trace score.",
     },
   ];
 </script>
 
 <fieldset class="trace-settings">
-  <legend>Round options</legend>
+  <legend>{tDynamic("learn_trace_round_options")}</legend>
 
   {#each ROWS as row (row.key)}
     {@const on = trace.settings[row.key]}
     <div class="row">
       <div class="copy">
-        <span class="label" id="trace-setting-{row.key}">{row.label}</span>
-        <span class="description">{row.description}</span>
+        <span class="label" id="trace-setting-{row.key}"
+          >{tDynamic(`learn_trace_setting_${row.key}_label`)}</span
+        >
+        <span class="description"
+          >{tDynamic(`learn_trace_setting_${row.key}_description`)}</span
+        >
       </div>
       <button
         type="button"

@@ -35,27 +35,61 @@
     frameColor?: boolean;
   } = $props();
 
+  function buildLabel(id: FanBuild): string {
+    switch (id) {
+      case "pictograph":
+        return t("viewer_ui_pictograph");
+      case "fire":
+        return t("shared_fan_build_fire");
+      case "lotus":
+        return t("shared_fan_build_lotus");
+      case "flat-grip":
+        return t("shared_fan_build_flat_grip");
+      case "day":
+        return t("shared_fan_build_day");
+      case "moon":
+        return t("shared_fan_build_moon");
+      case "star":
+        return t("shared_fan_build_star");
+    }
+  }
+
   const appearance = $derived(normalizeFanAppearance(value));
-  const buildOptions = $derived(fanBuildPreviewOptions(appearance).map((option) => ({
-    ...option,
-    label: option.id === "pictograph" ? t("viewer_ui_pictograph") : option.label,
-  })));
-  const compactLookOptions = $derived(compactFanLookPreviewOptions(appearance).map((option) => ({
-    ...option,
-    label: option.id === "pictograph"
-      ? t("viewer_ui_pictograph")
-      : option.id === "covered-fire"
-        ? t("settings_fan_covered_look")
-        : option.label,
-  })));
-  const frameOptions = $derived(fanFramePreviewOptions(appearance).map((option) => ({
-    ...option,
-    label: option.id === "black" ? t("settings_fan_frame_black") : t("settings_fan_frame_white"),
-  })));
-  const coverOptions = $derived(fanCoverPreviewOptions(appearance).map((option) => ({
-    ...option,
-    label: option.id === "bare" ? t("settings_fan_cover_bare") : t("settings_fan_cover_covered"),
-  })));
+  const buildOptions = $derived(
+    fanBuildPreviewOptions(appearance).map((option) => ({
+      ...option,
+      label: buildLabel(option.id),
+    }))
+  );
+  const compactLookOptions = $derived(
+    compactFanLookPreviewOptions(appearance).map((option) => ({
+      ...option,
+      label:
+        option.id === "pictograph"
+          ? t("viewer_ui_pictograph")
+          : option.id === "covered-fire"
+            ? t("settings_fan_covered_look")
+            : buildLabel(option.id),
+    }))
+  );
+  const frameOptions = $derived(
+    fanFramePreviewOptions(appearance).map((option) => ({
+      ...option,
+      label:
+        option.id === "black"
+          ? t("settings_fan_frame_black")
+          : t("settings_fan_frame_white"),
+    }))
+  );
+  const coverOptions = $derived(
+    fanCoverPreviewOptions(appearance).map((option) => ({
+      ...option,
+      label:
+        option.id === "bare"
+          ? t("settings_fan_cover_bare")
+          : t("settings_fan_cover_covered"),
+    }))
+  );
   const showFrameColor = $derived(frameColor && appearance.build === "day");
   const showCover = $derived(
     appearance.build === "fire" || appearance.build === "day"

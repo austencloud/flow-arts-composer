@@ -3,7 +3,11 @@
   import type { FeedbackType } from "$lib/shared/feedback/domain/models/feedback-models";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
-  const { selectedType, onTypeChange, isInputMode = false } = $props<{
+  const {
+    selectedType,
+    onTypeChange,
+    isInputMode = false,
+  } = $props<{
     selectedType: FeedbackType;
     onTypeChange: (type: FeedbackType) => void;
     isInputMode?: boolean;
@@ -24,10 +28,13 @@
       >
         <i class="fas {config.icon}" aria-hidden="true"></i>
         <span class="segment-label"
-          >{config.label
-            .replace(" Report", "")
-            .replace(" Request", "")
-            .replace(" Feedback", "")}</span
+          >{t(
+            type === "bug"
+              ? "feedback_type_bug_short"
+              : type === "feature"
+                ? "feedback_type_feature_short"
+                : "feedback_type_general_short"
+          )}</span
         >
       </button>
     {/each}

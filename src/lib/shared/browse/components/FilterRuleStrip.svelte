@@ -12,6 +12,8 @@ workspace spec, the main gallery next — one component, never a copy.
 -->
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import type { TranslationKey } from "$lib/shared/i18n/i18n-types.js";
+  import { localizeFilterChip } from "./localize-filter-chip";
   import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import {
     groupRuleFilters,
@@ -62,6 +64,34 @@ workspace spec, the main gallery next — one component, never a copy.
   });
   const groups = $derived(groupRuleFilters(visibleFilters, connectives));
 
+  const GROUP_LABEL_KEYS: Readonly<Record<string, TranslationKey>> = {
+    startPlacement: "browse_audit_chip_group_start",
+    endPlacement: "browse_audit_chip_group_end",
+    difficulty: "browse_audit_chip_group_level",
+    length: "browse_audit_chip_group_length",
+    starting_letter: "browse_audit_chip_group_letters",
+    contains_letters: "browse_audit_chip_group_contains",
+    letter_occurrence: "browse_audit_chip_group_letter",
+    gridMode: "browse_audit_chip_group_grid",
+    owner: "browse_audit_chip_group_creator",
+    author: "browse_audit_chip_group_author",
+    performance_availability: "browse_audit_chip_group_performances",
+    recent_performance: "browse_audit_chip_group_performed",
+    cap_type: "browse_audit_chip_group_loops",
+    tnd_family: "browse_audit_chip_group_families",
+    max_turn_intensity: "browse_audit_chip_group_max_turns",
+    collection: "browse_audit_chip_group_in",
+    reversal_pattern: "browse_audit_chip_group_reversals",
+    favorites: "browse_audit_chip_group_favorites",
+    recent: "browse_audit_chip_group_added",
+    search: "browse_audit_chip_group_search",
+  };
+
+  function groupLabel(group: { type: string; label: string }): string {
+    const key = GROUP_LABEL_KEYS[group.type];
+    return key ? t(key) : group.label;
+  }
+
   function motionName(kind: string, key: string): string {
     if (!motionScope) return "none";
     let hash = 2166136261;
@@ -85,7 +115,7 @@ workspace spec, the main gallery next — one component, never a copy.
     <span
       class="rule-group"
       role="group"
-      aria-label={group.label}
+      aria-label={groupLabel(group)}
       transition:growFade={{
         axis: "x",
         duration: fallbackDuration(),
@@ -104,7 +134,7 @@ workspace spec, the main gallery next — one component, never a copy.
         class="group-label rule-motion-token"
         class:motion-enabled={Boolean(motionScope)}
         style:view-transition-name={motionName("label", group.type)}
-        >{group.label}:</span
+        >{groupLabel(group)}:</span
       >
       {#each group.chips as chip, chipIndex (chip.key)}
         <span
@@ -118,23 +148,33 @@ workspace spec, the main gallery next — one component, never a copy.
           }}
         >
           {#if chipIndex > 0 && group.connectiveWord}
-            <span class="connective-word">{group.connectiveWord}</span>
+            <span class="connective-word"
+              >{t(
+                group.connectiveWord === "or"
+                  ? "browse_audit_chip_or"
+                  : "browse_audit_chip_and"
+              )}</span
+            >
           {/if}
           {#if interactive}
             <FilterChipBase
-              label={chip.displayLabel}
+              label={localizeFilterChip({ ...chip, label: chip.displayLabel })}
               active
               mode="action"
               size="sm"
               chipColor={chip.chipColor}
-              ariaLabel={`Edit ${chip.label} filter`}
+              ariaLabel={t("browse_audit_chip_edit_filter", {
+                filter: localizeFilterChip(chip),
+              })}
               onclick={() => onEditFilter?.(chip.type)}
               onremove={() => onRemoveFilter?.(chip.key)}
-              removeAriaLabel={`Remove ${chip.label} filter`}
+              removeAriaLabel={t("browse_audit_remove_filter", {
+                filter: localizeFilterChip(chip),
+              })}
             />
           {:else}
             <FilterChipBase
-              label={chip.displayLabel}
+              label={localizeFilterChip({ ...chip, label: chip.displayLabel })}
               active
               mode="display"
               size="sm"

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { effectUiLabel } from "./effect-ui-label";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
   import { EFFECTS, type EffectMeta } from "./effect-registry";
   import {
@@ -57,8 +59,8 @@
 
   function getActiveLabel(effect: EffectMeta): string {
     return activeAction === "tune"
-      ? `Tune ${effect.label}`
-      : `Click to disable ${effect.label}`;
+      ? t("effect_deep_tune_effect", { effect: effectUiLabel(effect.label) })
+      : t("effect_deep_click_disable", { effect: effectUiLabel(effect.label) });
   }
 </script>
 
@@ -86,7 +88,7 @@
       ? `${CATALOG_CAPTION_HEIGHT}px`
       : undefined}
     role="radiogroup"
-    aria-label="Select effect"
+    aria-label={t("effect_deep_select_effect")}
   >
     {#each effects as effect (effect.id)}
       {@const isActive = activeEffect === effect.id}
@@ -98,14 +100,14 @@
         aria-checked={isActive}
         aria-label={isActive && activeAction === "tune"
           ? getActiveLabel(effect)
-          : effect.label}
-        title={isActive ? getActiveLabel(effect) : effect.label}
+          : effectUiLabel(effect.label)}
+        title={isActive ? getActiveLabel(effect) : effectUiLabel(effect.label)}
         style:--effect-color={effect.color}
         data-ghost="safe"
         data-ghost-kind="effect"
         data-ghost-id={effect.id}
         data-ghost-active={isActive || undefined}
-        data-ghost-label={effect.label}
+        data-ghost-label={effectUiLabel(effect.label)}
         onclick={() => onSelect(effect.id)}
         onpointerenter={() => onPrewarm?.(effect.id)}
         onpointerdown={() => onPrewarm?.(effect.id)}
@@ -120,11 +122,11 @@
             {#if !showPortraits}
               <i class="fas {effect.icon}" aria-hidden="true"></i>
             {/if}
-            <span class="effect-label">{effect.label}</span>
+            <span class="effect-label">{effectUiLabel(effect.label)}</span>
           </span>
         {:else}
           <i class="fas {effect.icon}" aria-hidden="true"></i>
-          <span class="effect-label">{effect.label}</span>
+          <span class="effect-label">{effectUiLabel(effect.label)}</span>
         {/if}
         {#if isActive && activeAction === "tune"}
           <span class="tune-badge" aria-hidden="true">
