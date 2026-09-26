@@ -113,7 +113,12 @@
   <ShapeMatrixRibbonCell {label} tray={layout === "tray"} keepLabel>
     {#snippet note()}
       {#if showStepper && index >= 0}
-        <span class="position">{index + 1} of {count}</span>
+        <span class="position"
+          >{t("shape_engine_value_position", {
+            current: index + 1,
+            total: count,
+          })}</span
+        >
       {/if}
     {/snippet}
     <div class="value-row">
@@ -124,7 +129,7 @@
           onclick={() => step(-1)}
           disabled={index <= 0}
           aria-label={t("shape_engine_previous_generic", {
-            label: label.toLowerCase(),
+            label,
           })}
         >
           <i class="fas fa-chevron-left" aria-hidden="true"></i>
@@ -159,7 +164,7 @@
           onclick={() => step(1)}
           disabled={index < 0 || index >= count - 1}
           aria-label={t("shape_engine_next_generic", {
-            label: label.toLowerCase(),
+            label,
           })}
         >
           <i class="fas fa-chevron-right" aria-hidden="true"></i>

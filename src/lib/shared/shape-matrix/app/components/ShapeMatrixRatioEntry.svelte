@@ -6,9 +6,9 @@
   import {
     theoryRatioFromParts,
     theoryRatioLabel,
-    theoryRatioSpokenLabel,
     THEORY_RATIO_MAX_PART,
   } from "$lib/shared/shape-matrix/domain/theory-ratio";
+  import { localizedTheoryRatioSpokenLabel } from "../../domain/shape-matrix-display";
   import { growFade } from "$lib/shared/transitions/motion";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
 
@@ -259,7 +259,7 @@
   </div>
 
   <span class="sr-only" aria-live="polite">
-    {theoryRatioSpokenLabel(current)}
+    {localizedTheoryRatioSpokenLabel(current.handCycles, current.propRotations)}
   </span>
 </section>
 
