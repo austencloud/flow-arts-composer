@@ -109,9 +109,12 @@ export function normalizeProject(project: PostProject): PostProject {
         (left, right) =>
           left.item.start - right.item.start || left.order - right.order
       );
+    // A hidden or locked track's own items stay on it no matter what: it
+    // never sends its own items looking for room elsewhere.
+    const frozen = track.hidden || track.locked;
     for (const { item } of placed) {
       const lane = kept[overlayIndex]!;
-      if (fitsAmong(lane, item)) lane.push(item);
+      if (frozen || fitsAmong(lane, item)) lane.push(item);
       else bumped.push({ item, fromIndex: overlayIndex + 1 });
     }
   });
@@ -125,6 +128,9 @@ export function normalizeProject(project: PostProject): PostProject {
     )
     .forEach(({ item, fromIndex }) => {
       for (let index = fromIndex; index < kept.length; index++) {
+        // A hidden or locked track never receives an item bumped from
+        // elsewhere, even when it would otherwise have room for it.
+        if (overlays[index]!.hidden || overlays[index]!.locked) continue;
         const lane = kept[index]!;
         if (fitsAmong(lane, item)) {
           lane.push(item);
@@ -177,20 +183,40 @@ function sizeItem(
         ? Math.max(0, sourceOut - minSpan)
         : item.sourceIn;
     const duration = (sourceOut - sourceIn) / item.speed;
+    const fades = fittedFades(item.fadeIn, item.fadeOut, duration);
     return withChanges(item, {
       sourceIn,
       sourceOut,
       duration,
-      fadeIn: Math.min(item.fadeIn, duration),
-      fadeOut: Math.min(item.fadeOut, duration),
+      fadeIn: fades.fadeIn,
+      fadeOut: fades.fadeOut,
     });
   }
   const duration = Math.max(POST_MIN_ITEM_SECONDS, item.duration);
+  const fades = fittedFades(item.fadeIn, item.fadeOut, duration);
   return withChanges(item, {
     duration,
-    fadeIn: Math.min(item.fadeIn, duration),
-    fadeOut: Math.min(item.fadeOut, duration),
+    fadeIn: fades.fadeIn,
+    fadeOut: fades.fadeOut,
   });
+}
+
+/**
+ * Each fade capped to the item's length, then both scaled down together when
+ * they still ask for more than the whole item - a speed change or a trim can
+ * shrink a clip out from under fades that used to fit it on their own.
+ */
+function fittedFades(
+  fadeIn: number,
+  fadeOut: number,
+  duration: number
+): { fadeIn: number; fadeOut: number } {
+  const cappedIn = Math.min(fadeIn, duration);
+  const cappedOut = Math.min(fadeOut, duration);
+  const total = cappedIn + cappedOut;
+  if (total <= duration) return { fadeIn: cappedIn, fadeOut: cappedOut };
+  const scale = duration / total;
+  return { fadeIn: cappedIn * scale, fadeOut: cappedOut * scale };
 }
 
 function fitsAmong(items: readonly PostItem[], item: PostItem): boolean {

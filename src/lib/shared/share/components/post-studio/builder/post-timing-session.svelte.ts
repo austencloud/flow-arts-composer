@@ -1,4 +1,3 @@
-import type { PostBuilderState } from "$lib/shared/media-composition/state/post-builder-state.svelte";
 import type { PaintFrame } from "$lib/shared/media-composition/services/post-studio-layer-painter";
 import {
   MIN_MOVE_SECONDS,
@@ -16,10 +15,14 @@ import {
   splitTimingSection,
   takeLandingDragRange,
   takeSampleAt,
+  type ResolvedTakeTiming,
   type SplitContinuity,
   type TakeTiming,
+  type TakeTimingStatus,
   type TimingSection,
 } from "$lib/shared/media-composition/domain/take-timing";
+import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
+import { untrack } from "svelte";
 import { sequenceFrameAt } from "$lib/shared/media-composition/domain/sequence-frame";
 import {
   landingName,
@@ -50,11 +53,34 @@ const NOT_TEXT_ENTRY = new Set([
 export type TimingZoom = "4" | "8" | "16";
 
 /**
+ * What the Timing tool needs from the editor that opens it: the takes, their
+ * media and timing, and a way back. Timing belongs to a take's media, so
+ * both clips cut from one raw video share it.
+ */
+export interface TimingHost {
+  readonly takes: readonly Pick<PostTake, "id" | "label" | "durationSeconds">[];
+  selectedTakeId: string | null;
+  readonly moveBeats: readonly number[];
+  /** Takes the post uses, in order; confirming one moves to the next. */
+  readonly takesInUse: readonly Pick<PostTake, "id">[];
+  mediaUrl(takeId: string): string | null;
+  timing(takeId: string): TakeTiming | null;
+  resolvedTiming(takeId: string): ResolvedTakeTiming | null;
+  timingStatus(takeId: string): TakeTimingStatus;
+  editTiming(takeId: string, edit: (current: TakeTiming) => TakeTiming): void;
+  confirmTiming(takeId: string): void;
+  canUndoTiming(takeId: string): boolean;
+  undoTiming(takeId: string): void;
+  /** Leave the tool: "done" after the last take checks out, "back" otherwise. */
+  exitTiming(reason: "done" | "back"): void;
+}
+
+/**
  * The Timing step's working state, shared by its stage (the take, its move
  * square and the lanes) and its panel (the controls), which the studio may
  * lay out apart. The take plays on its own clock here, not the post's.
  */
-export function createPostTimingSession(builder: PostBuilderState) {
+export function createPostTimingSession(builder: TimingHost) {
   let video = $state<HTMLVideoElement | null>(null);
   let mediaSeconds = $state(0);
   let playing = $state(false);
@@ -64,7 +90,7 @@ export function createPostTimingSession(builder: PostBuilderState) {
   let selected = $state<LandingRef | null>(null);
   let tapCount = $state(0);
 
-  const takes = $derived(builder.plan.takes);
+  const takes = $derived(builder.takes);
   const takeId = $derived(
     builder.selectedTakeId &&
       takes.some((take) => take.id === builder.selectedTakeId)
@@ -149,12 +175,30 @@ export function createPostTimingSession(builder: PostBuilderState) {
   // Keeping count needs a count: a part with nothing fitted has none to carry.
   const canKeepCounting = $derived(canSplit && Boolean(resolvedSection?.fit));
 
-  // A different take starts from its top with nothing selected.
+  /** Where the next take opened starts, instead of its top. */
+  let pendingStart: number | null = null;
+
+  // A different take starts from its top (or where it was opened at) with
+  // nothing selected.
   $effect(() => {
     void takeId;
-    mediaSeconds = 0;
+    mediaSeconds = pendingStart ?? 0;
+    pendingStart = null;
     playing = false;
     selected = null;
+  });
+
+  // A newly mounted video starts at 0; bring it to where the tool is.
+  $effect(() => {
+    if (!video) return;
+    const target = video;
+    const align = () => {
+      const at = untrack(() => mediaSeconds);
+      if (Math.abs(target.currentTime - at) > 0.01) target.currentTime = at;
+    };
+    if (target.readyState >= 1) align();
+    else target.addEventListener("loadedmetadata", align, { once: true });
+    return () => target.removeEventListener("loadedmetadata", align);
   });
 
   // Loading another take resets the rate to the default, so both carry it.
@@ -380,7 +424,7 @@ export function createPostTimingSession(builder: PostBuilderState) {
     );
   }
 
-  /** Records the check, then moves to the next take or on to the acts. */
+  /** Records the check, then moves to the next take or back to the editor. */
   function confirm(): void {
     if (!takeId) return;
     pause();
@@ -389,7 +433,7 @@ export function createPostTimingSession(builder: PostBuilderState) {
       (entry) => builder.timingStatus(entry.id) !== "confirmed"
     );
     if (next) builder.selectedTakeId = next.id;
-    else builder.step = "acts";
+    else builder.exitTiming("done");
   }
 
   /**
@@ -561,8 +605,22 @@ export function createPostTimingSession(builder: PostBuilderState) {
     selectTake(id: string): void {
       builder.selectedTakeId = id;
     },
-    goToTakes(): void {
-      builder.step = "takes";
+    /**
+     * Opens a take at a moment of its media, such as a clip's first frame,
+     * so tapping starts where that clip's performance does.
+     */
+    openAt(id: string, seconds: number): void {
+      if (id === takeId) {
+        selected = null;
+        seek(seconds);
+        return;
+      }
+      pendingStart = Math.max(0, seconds);
+      builder.selectedTakeId = id;
+    },
+    exit(): void {
+      pause();
+      builder.exitTiming("back");
     },
     seek,
     pause,

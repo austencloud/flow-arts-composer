@@ -173,13 +173,71 @@ describe("normalizeProject", () => {
     expect(result.tracks[1]!.items[0]!.fill).toBe(false);
   });
 
-  it("fits fades inside the item", () => {
+  it("fits fades inside the item, scaling the pair down together when both are capped", () => {
     const result = normalizeProject(
       project([card("c1", 2, { fadeIn: 5, fadeOut: 3 })])
     );
     const item = result.tracks[0]!.items[0]!;
-    expect(item.fadeIn).toBe(2);
+    // Capped independently this would be {fadeIn: 2, fadeOut: 2}, which still
+    // sums past the 2s item - both are scaled down so they add up to it.
+    expect(item.fadeIn).toBe(1);
+    expect(item.fadeOut).toBe(1);
+  });
+
+  it("scales fades down together when a speed change shrinks the clip under them", () => {
+    const result = normalizeProject(
+      project([video("v1", { sourceOut: 10, speed: 4, fadeIn: 2, fadeOut: 2 })])
+    );
+    const item = result.tracks[0]!.items[0]!;
+    expect(item.duration).toBe(2.5);
+    expect(item.fadeIn).toBe(1.25);
+    expect(item.fadeOut).toBe(1.25);
+  });
+
+  it("leaves fades unchanged when they already fit", () => {
+    const result = normalizeProject(project([card("c1", 10, { fadeIn: 1, fadeOut: 2 })]));
+    const item = result.tracks[0]!.items[0]!;
+    expect(item.fadeIn).toBe(1);
     expect(item.fadeOut).toBe(2);
+  });
+
+  it("keeps overlapping items on a track that is hidden instead of bumping one up", () => {
+    const raw = project(
+      [video("v1", { sourceOut: 10 })],
+      [[text("t1", 0, 3), text("t2", 2, 3)]]
+    );
+    const hidden = {
+      ...raw,
+      tracks: raw.tracks.map((track, index) =>
+        index === 1 ? { ...track, hidden: true } : track
+      ),
+    };
+    const result = normalizeProject(hidden);
+    expect(result.tracks).toHaveLength(2);
+    expect(result.tracks[1]!.hidden).toBe(true);
+    expect(spans(result, 1)).toEqual([
+      ["t1", 0, 3],
+      ["t2", 2, 3],
+    ]);
+  });
+
+  it("never lands a displaced item on a hidden track even when it has room", () => {
+    const raw = project(
+      [video("v1", { sourceOut: 10 }), text("stray", 1, 2)],
+      [[text("far", 50, 1)]]
+    );
+    const hidden = {
+      ...raw,
+      tracks: raw.tracks.map((track, index) =>
+        index === 1 ? { ...track, hidden: true } : track
+      ),
+    };
+    const result = normalizeProject(hidden);
+    expect(spans(result, 0)).toEqual([["v1", 0, 10]]);
+    expect(result.tracks[1]!.hidden).toBe(true);
+    expect(spans(result, 1)).toEqual([["far", 50, 1]]);
+    expect(result.tracks).toHaveLength(3);
+    expect(spans(result, 2)).toEqual([["stray", 1, 2]]);
   });
 
   it("returns the same project when nothing changes", () => {

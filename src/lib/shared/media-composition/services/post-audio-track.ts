@@ -2,6 +2,7 @@ import {
   encodeWav,
   mixPostAudio,
   planPostAudio,
+  type PostAudioSegment,
   type PostAudioSource,
 } from "$lib/shared/media-composition/domain/post-audio-plan";
 import type { CompiledPost } from "$lib/shared/media-composition/domain/post-plan-compiler";
@@ -22,28 +23,46 @@ const DEFAULT_SAMPLE_RATE = 48_000;
 /** Any valid rate works - see the comment on its one use in decodeTakeAudio. */
 const DECODE_CONTEXT_SAMPLE_RATE = 44_100;
 
+export interface BuildMixedAudioTrackInput {
+  segments: readonly PostAudioSegment[];
+  durationSeconds: number;
+  /** Fetchable URL for a take's own media, keyed by `PostTake.id`. A take
+   *  missing here is treated the same as one that fails to decode: silent,
+   *  not a failure. */
+  takeUrls: ReadonlyMap<string, string>;
+  sampleRate?: number;
+  /** Cancelling the render stops the downloads rather than waiting on them. */
+  signal?: AbortSignal;
+}
+
 /**
- * Builds the post's whole mixed audio track as one WAV blob, already laid
- * out on the post's own clock from 0. That's what lets it slot straight into
+ * Fetches and decodes whatever takes a caller's own segments need, mixes
+ * them, and encodes the result as one WAV blob already laid out on the
+ * segments' own clock from 0. That's what lets it slot straight into
  * `PostStudioExporter`'s existing single-track `originalAudioUrl` /
  * `originalAudioStartSeconds: 0` pair instead of needing the encoder to
  * accept several original-audio sources - see the finding in this file's
  * sibling `post-audio-plan.ts` docblock and the task report for the
  * `UrlSource`/blob-URL check.
+ *
+ * This is the shared plumbing behind both `buildPostAudioTrack` (the v1 act
+ * list, via `planPostAudio`) and the v2 timeline (via `planProjectAudio`),
+ * so a caller with a compiled project's segments in hand can mix them
+ * directly without going through a v1 `CompiledPost` at all.
  */
-export async function buildPostAudioTrack(
-  input: BuildPostAudioTrackInput
+export async function buildMixedAudioTrack(
+  input: BuildMixedAudioTrackInput
 ): Promise<Blob | null> {
   const sampleRate = input.sampleRate ?? DEFAULT_SAMPLE_RATE;
-  const segments = planPostAudio(input.post, input.mode);
+  const segments = input.segments;
   if (segments.length === 0) return null;
 
   const neededTakeIds = [...new Set(segments.map((segment) => segment.takeId))];
   const sources = new Map<string, PostAudioSource>();
 
   // One fetch+decode per take, not per segment - a take can back more than
-  // one act (e.g. reused across full-speed acts) but its audio only needs
-  // reading once.
+  // one segment (e.g. reused across full-speed acts, or split across a
+  // sequence layer's pieces) but its audio only needs reading once.
   await Promise.all(
     neededTakeIds.map(async (takeId) => {
       const url = input.takeUrls.get(takeId);
@@ -58,10 +77,25 @@ export async function buildPostAudioTrack(
     segments,
     sources,
     sampleRate,
-    durationSeconds: input.post.durationSeconds,
+    durationSeconds: input.durationSeconds,
   });
 
   return encodeWav(mixed, sampleRate);
+}
+
+/** Builds a v1 act-list post's whole mixed audio track. See
+ *  `buildMixedAudioTrack` for the shared fetch/decode/mix/encode path. */
+export async function buildPostAudioTrack(
+  input: BuildPostAudioTrackInput
+): Promise<Blob | null> {
+  const segments = planPostAudio(input.post, input.mode);
+  return buildMixedAudioTrack({
+    segments,
+    durationSeconds: input.post.durationSeconds,
+    takeUrls: input.takeUrls,
+    sampleRate: input.sampleRate,
+    signal: input.signal,
+  });
 }
 
 /** Fetches and decodes one take's audio. Failure - a missing file, a codec

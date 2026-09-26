@@ -1,5 +1,3 @@
-import { POST_ACT } from "$lib/shared/media-composition/domain/post-plan";
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
 /** m:ss.s, the clock the transport and the act fields read in. */
 export function formatPostClock(seconds: number): string {
@@ -31,14 +29,4 @@ export function parseClock(text: string): number | null {
   if (match[1] && seconds >= 60) return null;
   const total = minutes * 60 + seconds;
   return Number.isFinite(total) ? total : null;
-}
-/** Localize only the canonical default act names; preserve user-edited labels. */
-export function postActDisplayLabel(id: string, label: string): string {
-  if (id === POST_ACT.fullSpeed && label === "Full speed")
-    return t("share_studio_deep_default_full_speed");
-  if (id === POST_ACT.breakdown && label === "Breakdown")
-    return t("share_studio_deep_default_breakdown");
-  if (id === POST_ACT.card && label === "Card")
-    return t("share_studio_deep_default_card");
-  return label;
 }

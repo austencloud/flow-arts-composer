@@ -1,41 +1,44 @@
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
   import type {
     CatalogTakeSource,
-    PostBuilderState,
-  } from "$lib/shared/media-composition/state/post-builder-state.svelte";
-  import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
-  import { getVideoFileMetadata } from "$lib/shared/video-collaboration/helpers/create-video-from-upload";
+    PostEditorState,
+  } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { formatPostClock, postActDisplayLabel } from "./post-builder-format";
+  import { formatPostClock } from "../builder/post-builder-format";
+  import { readVideoFile, videoFileError } from "./post-editor-files";
 
   /**
-   * The videos the post cuts between. The first one runs both performance
-   * acts; a second, slowly performed take takes over the breakdown.
+   * The raw videos the post cuts from. One recording can hold both the run
+   * through and the slow version: cut it into two clips on the timeline.
+   * Each video's beats are tapped once and every clip cut from it uses them.
    */
   interface Props {
-    builder: PostBuilderState;
+    editor: PostEditorState;
     catalog: readonly CatalogTakeSource[];
     catalogLoading?: boolean;
     catalogError?: string;
+    busy?: boolean;
+    onAddDeviceVideo: () => void;
+    onTapBeats: (takeId: string) => void;
   }
 
   let {
-    builder,
+    editor,
     catalog,
     catalogLoading = false,
     catalogError = "",
+    busy = false,
+    onAddDeviceVideo,
+    onTapBeats,
   }: Props = $props();
 
-  const MAX_BYTES = 500 * 1024 * 1024;
-
-  let fileInput = $state<HTMLInputElement | null>(null);
   let relinkInput = $state<HTMLInputElement | null>(null);
   let relinkTakeId = $state<string | null>(null);
   let error = $state("");
-  let busy = $state(false);
 
-  const takes = $derived(builder.plan.takes);
+  const takes = $derived(editor.takes);
   const unused = $derived(
     catalog.filter(
       (video) =>
@@ -59,49 +62,14 @@
     return t("share_studio_from_device");
   }
 
-  function usedBy(take: PostTake): string {
-    const acts = builder.plan.acts.filter(
-      (act) =>
-        act.kind === "performance" && act.enabled && act.takeId === take.id
-    );
-    return acts.length > 0
-      ? acts
-          .map((act) => postActDisplayLabel(act.id, act.label))
-          .join(` ${t("share_studio_and")} `)
-      : t("share_studio_not_in_act");
-  }
-
-  async function readFile(file: File): Promise<number> {
-    if (!file.type.startsWith("video/"))
-      throw new Error(t("share_studio_choose_video_file"));
-    if (file.size > MAX_BYTES)
-      throw new Error(t("share_studio_video_under_500"));
-    const metadata = await getVideoFileMetadata(file);
-    if (!Number.isFinite(metadata.duration) || metadata.duration <= 0) {
-      throw new Error(t("share_studio_video_duration_unreadable"));
+  function clipCount(takeId: string): number {
+    let count = 0;
+    for (const track of editor.project.tracks) {
+      for (const item of track.items) {
+        if (item.kind === "video" && item.takeId === takeId) count += 1;
+      }
     }
-    return metadata.duration;
-  }
-
-  async function addFile(event: Event): Promise<void> {
-    const input = event.currentTarget as HTMLInputElement;
-    const file = input.files?.[0];
-    input.value = "";
-    if (!file) return;
-    error = "";
-    busy = true;
-    try {
-      const duration = await readFile(file);
-      const take = builder.addLocalTake(file, duration);
-      builder.selectedTakeId = take.id;
-    } catch (caught) {
-      error =
-        caught instanceof Error
-          ? caught.message
-          : t("share_studio_video_unreadable");
-    } finally {
-      busy = false;
-    }
+    return count;
   }
 
   function pickAgain(takeId: string): void {
@@ -118,51 +86,42 @@
     if (!file || !takeId) return;
     error = "";
     try {
-      await readFile(file);
-      if (!builder.relinkLocalTake(takeId, file)) {
+      await readVideoFile(file);
+      if (!editor.relinkLocalTake(takeId, file)) {
         error = t("share_studio_wrong_file");
       }
     } catch (caught) {
-      error =
-        caught instanceof Error
-          ? caught.message
-          : t("share_studio_video_unreadable");
+      error = videoFileError(caught);
     }
-  }
-
-  function mapTiming(takeId: string): void {
-    builder.selectedTakeId = takeId;
-    builder.step = "timing";
   }
 </script>
 
-<div class="takes">
-  <p class="help">
-    {t("share_studio_takes_hint")}
-  </p>
-
+<div class="media">
   {#if takes.length > 0}
     <ul class="list">
       {#each takes as take (take.id)}
-        {@const status = builder.timingStatus(take.id)}
-        {@const loaded = Boolean(builder.mediaUrl(take.id))}
+        {@const status = editor.timingStatus(take.id)}
+        {@const loaded = Boolean(editor.mediaUrl(take.id))}
+        {@const clips = clipCount(take.id)}
         <li class="take">
-          <div class="take-head">
-            <input
-              class="name"
-              value={take.label}
-              maxlength="120"
-              aria-label={t("share_studio_take_name")}
-              onchange={(event) =>
-                builder.renameTake(take.id, event.currentTarget.value)}
-            />
-            <span class="meta">
-              {formatPostClock(take.durationSeconds)} · {sourceText(take)}
-            </span>
-          </div>
+          <input
+            class="name"
+            value={take.label}
+            maxlength="120"
+            aria-label={t("share_studio_take_name")}
+            onchange={(event) =>
+              editor.renameTake(take.id, event.currentTarget.value)}
+          />
+          <p class="meta">
+            {formatPostClock(take.durationSeconds)} · {sourceText(take)} ·
+            {clips === 0
+              ? t("post_editor_no_clips")
+              : clips === 1
+                ? t("post_editor_one_clip")
+                : t("post_editor_clip_count", { count: clips })}
+          </p>
           <p class="meta">
             <span class="status status-{status}">{STATUS_TEXT[status]}</span>
-            · {usedBy(take)}
           </p>
           {#if !loaded}
             <p class="warn">
@@ -175,11 +134,17 @@
             {#if loaded}
               <PanelButton
                 variant={status === "confirmed" ? "secondary" : "primary"}
-                onclick={() => mapTiming(take.id)}
+                onclick={() => onTapBeats(take.id)}
               >
-                {status === "confirmed"
-                  ? t("share_studio_timing")
-                  : t("share_studio_map_timing")}
+                <i class="fa-solid fa-drum" aria-hidden="true"></i>
+                {t("post_editor_tap_beats")}
+              </PanelButton>
+              <PanelButton
+                onclick={() => editor.appendTakeClip(take.id)}
+                ariaLabel={t("post_editor_add_clip_of", { take: take.label })}
+              >
+                <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                {t("post_editor_add_clip")}
               </PanelButton>
             {:else if take.ref.kind === "local"}
               <PanelButton variant="primary" onclick={() => pickAgain(take.id)}>
@@ -187,7 +152,7 @@
               </PanelButton>
             {/if}
             <PanelButton
-              onclick={() => builder.removeTake(take.id)}
+              onclick={() => editor.removeTake(take.id)}
               ariaLabel={`${t("share_studio_remove")} ${take.label}`}
             >
               {t("share_studio_remove")}
@@ -196,13 +161,14 @@
         </li>
       {/each}
     </ul>
+  {:else}
+    <p class="help">{t("post_editor_media_empty")}</p>
   {/if}
 
   <div class="add">
-    <h3>{t("share_studio_add_take")}</h3>
     <PanelButton
       variant={takes.length === 0 ? "primary" : "secondary"}
-      onclick={() => fileInput?.click()}
+      onclick={onAddDeviceVideo}
       disabled={busy}
       ariaBusy={busy}
     >
@@ -231,10 +197,7 @@
               </span>
             </span>
             <PanelButton
-              onclick={() => {
-                const take = builder.addCatalogTake(video);
-                builder.selectedTakeId = take.id;
-              }}
+              onclick={() => editor.addCatalogVideo(video)}
               ariaLabel={`${t("share_studio_add")} ${video.label}`}
             >
               {t("share_studio_add")}
@@ -245,15 +208,6 @@
     {/if}
   </div>
 
-  <input
-    bind:this={fileInput}
-    class="hidden"
-    type="file"
-    accept="video/*"
-    onchange={addFile}
-    tabindex="-1"
-    aria-hidden="true"
-  />
   <input
     bind:this={relinkInput}
     class="hidden"
@@ -266,16 +220,18 @@
 </div>
 
 <style>
-  .takes,
+  .media,
   .add,
   .take {
     display: grid;
     gap: 0.5rem;
     min-width: 0;
   }
-  .takes {
+
+  .media {
     gap: 1rem;
   }
+
   .list {
     display: grid;
     gap: 0.5rem;
@@ -283,20 +239,19 @@
     padding: 0;
     list-style: none;
   }
+
   .take {
     padding: 0.75rem;
     border: 1px solid var(--theme-stroke, #484755);
     border-radius: 0.625rem;
     background: var(--theme-card-bg);
   }
-  .take-head {
-    display: grid;
-    gap: 0.25rem;
-    min-width: 0;
-  }
+
   .name {
+    box-sizing: border-box;
+    width: 100%;
     min-width: 0;
-    min-height: 2.75rem;
+    min-height: var(--min-touch-target, 44px);
     padding: 0 0.5rem;
     border: 1px solid transparent;
     border-radius: 0.375rem;
@@ -306,24 +261,23 @@
     font-size: 1rem;
     font-weight: 600;
   }
+
   .name:hover,
   .name:focus {
     border-color: var(--theme-stroke, #484755);
   }
+
   .name:focus-visible {
-    outline: 2px solid var(--theme-primary, currentColor);
+    outline: 2px solid var(--theme-accent, currentColor);
     outline-offset: 1px;
   }
+
   .row {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
   }
-  h3 {
-    margin: 0;
-    color: var(--theme-text, #fff);
-    font-size: 0.9375rem;
-  }
+
   .help,
   .meta,
   .warn {
@@ -332,18 +286,24 @@
     font-size: 0.875rem;
     line-height: 1.4;
   }
+
   .meta {
     font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
   }
+
   .warn {
     color: var(--semantic-warning, #fbbf24);
   }
+
   .status-confirmed {
     color: var(--semantic-success, #4ade80);
   }
+
   .status-stale {
     color: var(--semantic-warning, #fbbf24);
   }
+
   .catalog {
     display: flex;
     align-items: center;
@@ -354,6 +314,7 @@
     border: 1px solid var(--theme-stroke, #484755);
     border-radius: 0.625rem;
   }
+
   .catalog-name {
     display: grid;
     min-width: 0;
@@ -361,6 +322,7 @@
     font-size: 0.875rem;
     overflow-wrap: anywhere;
   }
+
   .hidden {
     display: none;
   }

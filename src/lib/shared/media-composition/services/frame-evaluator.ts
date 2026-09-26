@@ -338,10 +338,20 @@ export function evaluatePresetFrame(
         opacity:
           clip.opacity *
           (clip.fadeInSeconds
-            ? easeInOut(clamp01((clampedTime - start) / clip.fadeInSeconds))
+            ? easeInOut(
+                clamp01(
+                  (clampedTime - (clip.fadeInStartSeconds ?? start)) /
+                    clip.fadeInSeconds
+                )
+              )
             : 1) *
           (clip.fadeOutSeconds
-            ? easeInOut(clamp01((end - clampedTime) / clip.fadeOutSeconds))
+            ? easeInOut(
+                clamp01(
+                  ((clip.fadeOutEndSeconds ?? end) - clampedTime) /
+                    clip.fadeOutSeconds
+                )
+              )
             : 1),
         sourceTimeSeconds,
         projectProgress,

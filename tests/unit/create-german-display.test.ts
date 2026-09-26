@@ -23,8 +23,6 @@ import {
 import { mapAuthError } from "$lib/shared/auth/services/auth-error-messages";
 import { localizeFilterChip } from "$lib/shared/browse/components/localize-filter-chip";
 import { effectUiLabel } from "$lib/shared/animation-engine/components/effects-panel/effect-ui-label";
-import { postActDisplayLabel } from "$lib/shared/share/components/post-studio/builder/post-builder-format";
-import { POST_ACT } from "$lib/shared/media-composition/domain/post-plan";
 
 afterEach(async () => {
   await setLocale("en");
@@ -106,12 +104,6 @@ describe("German audit display helpers", () => {
     expect(german.slice(3)).toEqual(["Fire", "My German practice"]);
     expect(effectUiLabel("Fire")).toBe("Feuer");
     expect(effectUiLabel("My custom effect")).toBe("My custom effect");
-    expect(postActDisplayLabel(POST_ACT.fullSpeed, "Full speed")).not.toBe(
-      "Full speed"
-    );
-    expect(postActDisplayLabel(POST_ACT.fullSpeed, "My chosen title")).toBe(
-      "My chosen title"
-    );
     expect(JSON.stringify(filters)).toBe(before);
     await setLocale("en");
     expect(filters.map(localizeFilterChip)).toEqual(english);

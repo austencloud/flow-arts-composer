@@ -23,9 +23,9 @@
 
 {#if !session.take || !session.timing}
   <div class="empty">
-    <p>{t("share_studio_deep_add_take_stage")}</p>
-    <PanelButton onclick={session.goToTakes}
-      >{t("share_studio_deep_go_to_takes")}</PanelButton
+    <p>{t("post_editor_add_video_to_tap")}</p>
+    <PanelButton onclick={session.exit}
+      >{t("post_editor_back_to_editing")}</PanelButton
     >
   </div>
 {:else}
@@ -68,9 +68,9 @@
       </div>
     {:else}
       <div class="empty">
-        <p>{t("share_studio_deep_take_file_missing")}</p>
-        <PanelButton onclick={session.goToTakes}
-          >{t("share_studio_deep_go_to_takes")}</PanelButton
+        <p>{t("post_editor_take_file_missing")}</p>
+        <PanelButton onclick={session.exit}
+          >{t("post_editor_back_to_editing")}</PanelButton
         >
       </div>
     {/if}
