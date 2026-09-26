@@ -89,6 +89,7 @@
       embedded={true}
       {leftPropType}
       {rightPropType}
+      primaryPropColors={appearance?.primaryPropColors ?? null}
       onVisitorComposed={onSequenceChange}
     />
   </div>

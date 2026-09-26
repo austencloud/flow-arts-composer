@@ -1,7 +1,6 @@
 <script lang="ts">
-  import { onMount, tick } from "svelte";
+  import { onMount } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
-  import { fade } from "svelte/transition";
   import { activateWhenNear } from "$lib/actions/activate-when-near";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
@@ -17,6 +16,7 @@
     type PropLook,
   } from "$lib/shared/pictograph/prop/domain/prop-look";
   import type { PropChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
+  import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
   import {
     trackCtaClick,
     trackDemoInteraction,
@@ -37,6 +37,7 @@
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import ComposerBackgroundCycle from "./ComposerBackgroundCycle.svelte";
   import ComposerInlinePropPicker from "./ComposerInlinePropPicker.svelte";
+  import ComposerPropPicker from "./ComposerPropPicker.svelte";
   import { resolveComposerCarriedSequence } from "./composer-sequence-ownership";
   import type { ComposerPropAppearance } from "./composer-prop-appearance";
   import ProjectStory from "./ProjectStory.svelte";
@@ -91,11 +92,11 @@
     )
   );
   let selectedProp = $state<PropType>(PropType.STAFF);
-  // The fan build, the 2D artwork look and buugeng chirality ride with the
-  // prop and stay page-local like it. This public page runs without the app
-  // settings service, so the picker's default global writes would be dropped.
+  // Appearance and colors stay with this public page's prop choice. There is
+  // no app settings service here, so writing to it would lose these edits.
   let fanAppearance = $state<FanAppearance>(DEFAULT_FAN_APPEARANCE);
   let propLook = $state<PropLook>(DEFAULT_PROP_LOOK);
+  let primaryPropColors = $state<ViewerCustomColorPair | null>(null);
   let buugengFlipped = $state({ left: false, right: false });
   const chirality: PropChiralitySeam = {
     hands: [
@@ -119,6 +120,7 @@
   const propAppearance = $derived<ComposerPropAppearance>({
     fanAppearance,
     propLook,
+    primaryPropColors,
     leftBuugengFlipped: buugengFlipped.left,
     rightBuugengFlipped: buugengFlipped.right,
   });
@@ -131,63 +133,34 @@
       return propLook;
     },
     onPropLookChange: (next: PropLook) => (propLook = next),
+    get primaryPropColors() {
+      return primaryPropColors;
+    },
+    onPrimaryPropColorsChange: (next: ViewerCustomColorPair | null) =>
+      (primaryPropColors = next),
     chirality,
   };
   let propPickerOpen = $state(false);
-  let propPickerLoaded = $state(false);
-  let inlinePickerTarget = $state<"hero" | "practice" | "tunnel" | null>(null);
-  let heroPropButton = $state<HTMLButtonElement | null>(null);
+  let inlinePickerTarget = $state<"practice" | "tunnel" | null>(null);
   const propName = $derived(getPropTypeDisplayInfo(selectedProp).label);
 
   function openPropPicker(): void {
-    propPickerLoaded = true;
     propPickerOpen = true;
   }
 
   function selectProp(prop: PropType): void {
-    // The sheet stays open after a pick, as it does in the app: fans, sizes,
-    // 3D looks and buugeng chirality open their details only after the prop
-    // is chosen. Closing is the sheet's own action (backdrop, X, Escape).
+    // Keep the chooser open so a family pick can reveal its appearance options.
     selectedProp = prop;
   }
 
-  function openInlinePicker(target: "hero" | "practice" | "tunnel"): void {
+  function openInlinePicker(target: "practice" | "tunnel"): void {
     inlinePickerTarget = target;
   }
 
-  function toggleHeroProps(): void {
-    if (!wideHeroPicker.current) {
-      openPropPicker();
-    } else if (heroPickerOpen) {
-      closeInlinePicker();
-    } else {
-      openInlinePicker("hero");
-    }
-  }
-
   function closeInlinePicker(): void {
-    const closedTarget = inlinePickerTarget;
     inlinePickerTarget = null;
-    if (closedTarget === "hero") {
-      void tick().then(() => heroPropButton?.focus());
-    }
   }
   const reduceMotion = new MediaQuery("(prefers-reduced-motion: reduce)");
-  // The rail docks beside the stage, so it needs the two-column opening plus
-  // enough player width that the stage does not shrink much to make room.
-  // Below this the same trigger opens the canonical sheet; a rail that was
-  // open simply unmounts, and the copy column never depended on it.
-  const wideHeroPicker = new MediaQuery("(min-width: 80rem)");
-  const heroPickerOpen = $derived(
-    inlinePickerTarget === "hero" && wideHeroPicker.current
-  );
-  // Narrowing past the rail's breakpoint closes it for good, so widening again
-  // later does not resurrect a panel the visitor has not asked for since.
-  $effect(() => {
-    if (!wideHeroPicker.current && inlinePickerTarget === "hero") {
-      inlinePickerTarget = null;
-    }
-  });
   let constructActive = $state(false);
   let outputsActive = $state(false);
   let shelfActive = $state(false);
@@ -258,6 +231,7 @@
       propType={selectedProp}
       size={28}
       useSavedOverrides={false}
+      colors={primaryPropColors}
     />
     <span>Props: {propName}</span>
     <i class="fas fa-chevron-down" aria-hidden="true"></i>
@@ -270,22 +244,34 @@
     onSelect={selectProp}
     onDone={closeInlinePicker}
     {docked}
+    showColors={inlinePickerTarget !== "tunnel"}
     {...pickerAppearance}
   />
 {/snippet}
 
-<LazyMount
-  loader={() =>
-    import("$lib/shared/settings/components/tabs/prop-type/PropSelectionSheet.svelte")}
-  active={propPickerLoaded}
-  props={{
-    isOpen: propPickerOpen,
-    selectedPropType: selectedProp,
-    title: "Props",
-    onSelect: selectProp,
-    onOpenChange: (open: boolean) => (propPickerOpen = open),
-    ...pickerAppearance,
-  }}
+{#snippet pickerPreview()}
+  <SequenceHeroDemo
+    sequence={heroAct.sequence}
+    element={heroAct.element}
+    leftPropType={selectedProp}
+    rightPropType={selectedProp}
+    {...propAppearance}
+    note="Current sequence"
+    trailSettingsOverride={HERO_TRAIL_PRESET}
+    tipEffectMap={HERO_TIP_EFFECT_MAP}
+    showCaption={false}
+    autoPlay={!reduceMotion.current}
+    loadPriority="immediate"
+  />
+{/snippet}
+
+<ComposerPropPicker
+  open={propPickerOpen}
+  selectedPropType={selectedProp}
+  onSelect={selectProp}
+  onOpenChange={(open) => (propPickerOpen = open)}
+  preview={pickerPreview}
+  {...pickerAppearance}
 />
 
 {#snippet tunnelPlaceholder()}
@@ -365,7 +351,6 @@
 <main class="composer-page">
   <section
     class="opening"
-    class:props-open={heroPickerOpen}
     aria-labelledby="composer-title"
     style:view-transition-name="launchpad-composer"
   >
@@ -397,10 +382,7 @@
       </p>
     </div>
 
-    <!-- The prop rail belongs to the player it changes: it docks against the
-         stage's right edge and runs down to the Props button, the same way the
-         practice workspace docks its rail beside its result. -->
-    <div class="opening-player" class:props-open={heroPickerOpen}>
+    <div class="opening-player">
       <div class="player-main">
         <SequenceHeroDemo
           sequence={heroAct.sequence}
@@ -422,37 +404,23 @@
         />
         <div class="hero-props">
           <PanelButton
-            onclick={toggleHeroProps}
-            bind:ref={heroPropButton}
+            onclick={openPropPicker}
             ariaLabel={`Change props. Current: ${propName}`}
-            ariaExpanded={wideHeroPicker.current
-              ? heroPickerOpen
-              : propPickerOpen}
-            ariaControls={heroPickerOpen ? "hero-prop-rail" : undefined}
+            ariaExpanded={propPickerOpen}
           >
             <PropCompositionPreview
               propType={selectedProp}
               size={28}
               useSavedOverrides={false}
+              colors={primaryPropColors}
             />
             <span>Props: {propName}</span>
             <i
-              class="fas fa-chevron-{heroPickerOpen ? 'right' : 'down'}"
+              class="fas fa-chevron-down"
               aria-hidden="true"
             ></i>
           </PanelButton>
         </div>
-      </div>
-      <div class="hero-rail-slot">
-        {#if heroPickerOpen}
-          <div
-            id="hero-prop-rail"
-            class="hero-prop-rail"
-            transition:fade={{ duration: reduceMotion.current ? 0 : 180 }}
-          >
-            {@render inlinePropPicker(true)}
-          </div>
-        {/if}
       </div>
       <div class="player-theme"><ComposerBackgroundCycle /></div>
     </div>
@@ -661,11 +629,7 @@
      narrow viewports below let it grow rather than clip the player. */
   .opening {
     position: relative;
-    /* Stage and rail sizing live here, not on the player, because the
-       wide-screen composition sizes this grid's tracks from them too. */
     --hero-card-cap: min(45rem, 47svh);
-    --hero-rail-w: 17.5rem;
-    --hero-rail-gap: 1rem;
     min-height: calc(100dvh - var(--marketing-header-h, 64px) - 1.25rem);
     display: grid;
     grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
@@ -858,54 +822,18 @@
      stack (square + notation strip + controls + background row), so on a short
      desktop window its width has to come down rather than push the fold away.
      Sizing goes through the demo's own max-width tokens, as HomeHero does. */
-  /* --hero-card-cap is the stage's own width ceiling. Opening the prop rail
-     widens the player by exactly the rail and its gap, so the stage keeps its
-     size wherever the column has room and gives up only the difference where
-     it does not. The rail column animates from zero, sliding the stage aside
-     rather than covering it. */
   .opening-player {
     position: relative;
     --hero-demo-max-width: min(100%, var(--hero-card-cap));
     width: min(100%, 45rem);
     margin-inline: auto;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 0rem;
-    column-gap: 0rem;
-    transition:
-      width 260ms ease,
-      grid-template-columns 260ms ease,
-      column-gap 260ms ease,
-      padding-block-end 260ms ease;
-  }
-
-  .opening-player.props-open {
-    width: min(
-      100%,
-      calc(var(--hero-card-cap) + var(--hero-rail-gap) + var(--hero-rail-w))
-    );
-    grid-template-columns: minmax(0, 1fr) var(--hero-rail-w);
-    column-gap: var(--hero-rail-gap);
-    /* The square stage loses height one-for-one with the width it gives up.
-       Padding refers to the column's width, so this returns exactly that
-       height and the vertically centred copy does not drift when the rail
-       opens. Zero wherever the column already had room. */
-    padding-block-end: max(
-      0px,
-      calc(
-        var(--hero-card-cap) + var(--hero-rail-gap) + var(--hero-rail-w) - 100%
-      )
-    );
   }
 
   .player-main {
-    grid-column: 1;
-    grid-row: 1;
     min-width: 0;
   }
 
   .player-theme {
-    grid-column: 1;
-    grid-row: 2;
     min-width: 0;
   }
 
@@ -913,50 +841,6 @@
     display: flex;
     justify-content: center;
     margin-top: var(--spacing-md, 16px);
-  }
-
-  /* The slot takes the row's height without contributing to it, so opening
-     the rail never changes the hero's height or moves the fold. */
-  .hero-rail-slot {
-    grid-column: 2;
-    grid-row: 1;
-    position: relative;
-    min-width: 0;
-    overflow: hidden;
-  }
-
-  /* Fixed at the final rail width while the column animates, so the grid
-     lays out once instead of reflowing through every intermediate width.
-     The top offset matches SequenceHeroDemo's .with-notation-strip margin:
-     the rail starts level with the stage and ends level with the Props
-     button. */
-  .hero-prop-rail {
-    position: absolute;
-    top: 1.8rem;
-    bottom: 0;
-    left: 0;
-    width: var(--hero-rail-w);
-    box-sizing: border-box;
-    border: 1px solid var(--theme-stroke, oklch(0.45 0.03 270 / 0.2));
-    border-radius: 18px;
-    background: var(--theme-panel-bg, oklch(0.13 0.025 270 / 0.94));
-  }
-
-  /* Every inset between the rail edge and the tiles (host, scroller, grid)
-     was sized for a drawer. Stacked in a rail they spent 76px and dropped
-     the comfortable grid to one oversized column. Trimmed here, plus a 7rem
-     track floor, the rail holds two readable columns at 17.5rem, so the
-     stage gives up little or no width to make room. Labels keep their 14px. */
-  .hero-prop-rail :global(.inline-prop-picker.docked) {
-    padding-inline: 0.5rem;
-  }
-
-  .hero-prop-rail :global(.grid-scroll) {
-    padding-inline: 0.375rem;
-  }
-
-  .hero-prop-rail :global(.flat-grid.comfortable:not(.fill)) {
-    grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
   }
 
   .opening-player::before {
@@ -1428,8 +1312,7 @@
     }
   }
 
-  /* SequenceHeroDemo switches to its wide max-width only at this height too,
-     so the cap the rail arithmetic reads has to switch with it. */
+  /* SequenceHeroDemo switches to its wide max-width at this height. */
   @media (min-width: 105rem) and (min-height: 56.25rem) {
     .opening {
       --hero-card-cap: min(52rem, 51svh);
@@ -1440,46 +1323,16 @@
     }
   }
 
-  /* From 1920px the page is wider than the hero needs. Proportional columns
-     left the copy against the page edge with the slack of both columns
-     pooled between it and the stage. Here each track hugs its content (the
-     copy's own measure, the stage's exact width) and the pair is centred.
-     Opening the rail widens the player track by the rail, so the whole
-     composition re-centres as one unit instead of anything being covered or
-     squeezed. The wider rail fits two 150px tile columns. */
+  /* On wide canvases, center the copy and stage together. */
   @media (min-width: 120rem) {
     .opening {
-      --hero-rail-w: 22rem;
       grid-template-columns: fit-content(48rem) minmax(0, var(--hero-card-cap));
       justify-content: center;
       column-gap: clamp(5rem, 6vw, 10rem);
-      transition: grid-template-columns 260ms ease;
     }
 
-    .opening.props-open {
-      grid-template-columns:
-        fit-content(48rem)
-        minmax(
-          0,
-          calc(var(--hero-card-cap) + var(--hero-rail-gap) + var(--hero-rail-w))
-        );
-    }
-
-    /* The track already includes the rail, so the stage never shrinks and
-       needs no height compensation. Left on, that padding would read the
-       track mid-animation and bob the hero vertically. */
-    .opening-player,
-    .opening-player.props-open {
+    .opening-player {
       width: 100%;
-      padding-block-end: 0;
-    }
-  }
-
-  /* From 2400px the centred composition still leaves room for three tile
-     columns in the rail, with the stage at full size beside it. */
-  @media (min-width: 150rem) {
-    .opening {
-      --hero-rail-w: 30rem;
     }
   }
 
@@ -1496,8 +1349,7 @@
     .open-app i,
     .section-entry i,
     .demo-load-error button,
-    .opening,
-    .opening-player {
+    .opening {
       transition: none;
     }
   }

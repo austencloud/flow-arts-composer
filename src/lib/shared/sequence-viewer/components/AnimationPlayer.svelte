@@ -57,6 +57,7 @@
   const DEFAULT_BPM = 60;
 
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { ViewerCustomColorPair } from "../domain/viewer-custom-colors";
 
   let {
     sequence,
@@ -70,6 +71,7 @@
     layout = "vertical" as "vertical" | "horizontal",
     leftPropType = null,
     rightPropType = null,
+    primaryPropColors,
     onTogglePlaybackRef,
     onControllerReady,
     hideProgressBar = false,
@@ -93,6 +95,8 @@
     layout?: "vertical" | "horizontal";
     leftPropType?: PropType | null;
     rightPropType?: PropType | null;
+    /** Host-owned prop colors; null uses the default pair. */
+    primaryPropColors?: ViewerCustomColorPair | null;
     /** Callback to receive reference to toggle playback function (for external keyboard control) */
     onTogglePlaybackRef?: (toggleFn: () => void) => void;
     /** Called when the internal playback controller is initialized, exposing it for external sync */
@@ -444,6 +448,7 @@
           {previewDarkMode}
           {leftPropType}
           {rightPropType}
+          {primaryPropColors}
           {tipEffectMap}
           progressBarVariant="minimal"
           {hideProgressBar}
@@ -516,6 +521,7 @@
         {previewDarkMode}
         {leftPropType}
         {rightPropType}
+        {primaryPropColors}
         {tipEffectMap}
         progressBarVariant="minimal"
         {hideProgressBar}
