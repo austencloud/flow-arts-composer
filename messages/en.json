@@ -6895,6 +6895,7 @@
   "post_curve_preset_hold": "Hold",
   "post_curve_hold_hint": "The value jumps to the next keyframe instead of easing into it.",
   "post_curve_editor_label": "Easing curve editor",
+  "post_curve_presets": "Easing presets",
   "post_curve_handle_start": "Start handle",
   "post_curve_handle_end": "End handle",
   "post_curve_handle_value": "x {x}, y {y}",

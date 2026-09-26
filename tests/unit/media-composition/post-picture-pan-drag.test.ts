@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { calculateMediaFit } from "$lib/shared/media-composition/services/media-fit";
 import {
   PICTURE_NUDGE,
   dragPicturePan,
@@ -18,6 +19,16 @@ function close(actual: number, expected: number) {
 // fits the width exactly and letterboxes top and bottom.
 const SOURCE = { sourceWidth: 1600, sourceHeight: 900 };
 const REGION = { regionWidthPx: 800, regionHeightPx: 900 };
+
+// A 720x1280 take in the full-frame box the editor preview really measured:
+// the same 9:16 shape, so a cover fit fills it exactly, except that the fit's
+// float math leaves the drawn width about 3e-14px wider than the box.
+const SAME_SHAPE = {
+  sourceWidth: 720,
+  sourceHeight: 1280,
+  regionWidthPx: 238.9479217529297,
+  regionHeightPx: (238.9479217529297 * 1920) / 1080,
+};
 
 describe("overscanPixels", () => {
   it("is zero when the mounted size is not known yet", () => {
@@ -39,6 +50,19 @@ describe("overscanPixels", () => {
     const atThree = overscanPixels({ ...SOURCE, ...REGION, fit: "contain", zoom: 3 });
     close(atThree.x, 1600);
     close(atThree.y, 450);
+  });
+
+  it("counts a same-shape fit's float remainder as no overscan", () => {
+    // The raw fit really does overflow by a hair here, or this proves nothing.
+    const { drawRect } = calculateMediaFit({
+      sourceWidth: SAME_SHAPE.sourceWidth,
+      sourceHeight: SAME_SHAPE.sourceHeight,
+      regionWidth: SAME_SHAPE.regionWidthPx,
+      regionHeight: SAME_SHAPE.regionHeightPx,
+      fit: "cover",
+    });
+    expect(drawRect.width).toBeGreaterThan(SAME_SHAPE.regionWidthPx);
+    expect(overscanPixels({ ...SAME_SHAPE, fit: "cover", zoom: 1 })).toEqual({ x: 0, y: 0 });
   });
 });
 
@@ -71,6 +95,21 @@ describe("dragPicturePan", () => {
       deltaYPx: 0,
     });
     close(result.panX, 0.5);
+  });
+
+  it("leaves the pan alone when the picture fits its box exactly", () => {
+    // Dividing this drag by the fit's 3e-14px remainder used to pin the pan
+    // at -0.5 while nothing on screen moved.
+    const result = dragPicturePan({
+      ...SAME_SHAPE,
+      fit: "cover",
+      zoom: 1,
+      startPanX: 0,
+      startPanY: 0,
+      deltaXPx: -40,
+      deltaYPx: 30,
+    });
+    expect(result).toEqual({ panX: 0, panY: 0 });
   });
 });
 
