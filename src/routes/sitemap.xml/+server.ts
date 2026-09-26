@@ -40,6 +40,8 @@ const pages: SitemapEntry[] = [
   { url: "timing-and-direction" },
   // Common trick names, each linked to the page that explains it.
   { url: "tricks" },
+  // Named flower patterns, each drawn from its spin ratio.
+  { url: "flowers" },
   // The archive, rebuilt as a chronological catalog and un-gated 2026-07-27
   // (2026-07-26-notation-catalog-design.md), moved from /notation to /history
   // on 2026-09-03. /notation 301s here and is omitted, same as /roots below.
