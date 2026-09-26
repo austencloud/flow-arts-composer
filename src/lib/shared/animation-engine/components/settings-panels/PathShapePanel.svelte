@@ -1,12 +1,8 @@
 <script lang="ts">
   import { PATH_SHAPE_COLORS } from "$lib/shared/animation-engine/domain/path-shape-colors";
-  import { onDestroy, tick, type Snippet } from "svelte";
+  import { onDestroy, type Snippet } from "svelte";
   import { getAnimationVisibilityManager } from "../../state/animation-visibility-state.svelte";
   import { getAnimationVisibilityContext } from "../../state/animation-visibility-context";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { getViewerPathContext } from "$lib/shared/sequence-viewer/context/viewer-path-context";
-  import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { growFade } from "$lib/shared/transitions/motion";
 
   let {
     onSettingChange,
@@ -23,11 +19,9 @@
   } = $props();
 
   const vm = getAnimationVisibilityContext() ?? getAnimationVisibilityManager();
-  const viewerPaths = getViewerPathContext();
   let session = $state(vm.getPathSession());
   let previewWidth = $state(0);
   let previewHeight = $state(0);
-  let pathGrid: HTMLDivElement | undefined = $state();
 
   let pathShape = $state(vm.getPathShape());
   let motionAware = $state(vm.getMotionAwarePaths());
@@ -134,21 +128,6 @@
     });
     onSettingChange?.(previous, o.id);
   }
-
-  function makeDefault(): void {
-    try {
-      vm.makePathsDefault();
-      showToast("Motion path default saved", "success");
-    } catch {
-      showToast("Couldn't save the motion path default", "error");
-    }
-  }
-
-  async function resetPaths(): Promise<void> {
-    vm.restoreSavedPaths();
-    await tick();
-    pathGrid?.querySelector<HTMLButtonElement>('[aria-pressed="true"]')?.focus();
-  }
 </script>
 
 <!-- Header doubles as the explanation slot: section label left, the selected
@@ -165,7 +144,8 @@
   class="path-shape-grid"
   class:with-preview={!!preview}
   class:fill={!!preview && fill}
-  bind:this={pathGrid}
+  role="group"
+  aria-label="Motion paths"
   bind:clientWidth={previewWidth}
   bind:clientHeight={previewHeight}
 >
@@ -209,21 +189,6 @@
         : "paths"}{session.preview ? " replaced in this preview" : ""}
     </p>
   {/if}
-  <div class="path-actions">
-    {#if session.preview}
-      <div class="path-actions" transition:growFade>
-        <PanelButton onclick={resetPaths}>Undo path changes</PanelButton>
-        {#if viewerPaths?.canSave}
-          <PanelButton
-            disabled={viewerPaths.saving}
-            onclick={() => viewerPaths.save()}
-            ariaBusy={viewerPaths.saving}>Save paths</PanelButton
-          >
-        {/if}
-      </div>
-    {/if}
-    <PanelButton onclick={makeDefault}>Make default</PanelButton>
-  </div>
 {/if}
 
 {#if showHelp}
@@ -282,11 +247,6 @@
     margin: 0;
   }
 
-  .path-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
   .path-header {
     display: flex;
     align-items: baseline;

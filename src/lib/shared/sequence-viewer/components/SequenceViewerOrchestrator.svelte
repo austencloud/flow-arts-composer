@@ -8,7 +8,6 @@
     countPathOverrides,
   } from "../services/sequence-path-policy";
   import type { AnimationPathPolicy } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { setViewerPathContext } from "../context/viewer-path-context";
   import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get-animation-playback-controller";
   import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/get-sequence-animation-orchestrator";
   import { getLanSyncCoordinator } from "$lib/shared/lan-sync/get-lan-sync-coordinator";
@@ -233,6 +232,7 @@
   }: Props = $props();
 
   let pathPreview = $state<AnimationPathPolicy | null>(null);
+  let pathPreviewPending = $state(false);
   const sequence = $derived(
     applySequencePathPreview(savedSequence, pathPreview)
   );
@@ -797,7 +797,9 @@
     motionAwarePaths: anStores.visibility.snapshot().motionAwarePaths,
   };
   const syncPathPreview = () => {
-    const next = anStores.visibility.getPathSession()?.applied ?? null;
+    const session = anStores.visibility.getPathSession();
+    const next = session?.applied ?? null;
+    pathPreviewPending = session?.preview != null;
     if (
       next?.pathShape !== pathPreview?.pathShape ||
       next?.motionAwarePaths !== pathPreview?.motionAwarePaths
@@ -885,6 +887,19 @@
   const libraryActions = createLibraryActionHandler({
     getSequence: () => sequence,
     getIsOwned: () => isOwned,
+    getPathSaveIntent: () => {
+      if (!pathPreviewPending) return null;
+      const policy = anStores.visibility.getPathSession()?.preview;
+      if (!policy) return null;
+      const source = savedSequence;
+      return {
+        acceptSaved: () => {
+          if (savedSequence === source) {
+            anStores.visibility.acceptSavedPaths(policy);
+          }
+        },
+      };
+    },
     getLeftPropType: () => getSettings().leftPropType,
     getRightPropType: () => getSettings().rightPropType,
     getCatDogModeEnabled: () => getSettings().catDogMode,
@@ -895,25 +910,6 @@
     }),
     getHapticService: () => interactive.hapticService,
     onDeleteSuccess: () => handleClose(),
-  });
-
-  setViewerPathContext({
-    get sequence() {
-      return sequence;
-    },
-    get canSave() {
-      return isOwned && libraryActions.isOwnedLibraryRecord;
-    },
-    get saving() {
-      return libraryActions.isSaving;
-    },
-    save: async () => {
-      const policy = anStores.visibility.getPathPolicy();
-      const id = savedSequence?.id;
-      if ((await libraryActions.savePaths()) && savedSequence?.id === id) {
-        anStores.visibility.acceptSavedPaths(policy);
-      }
-    },
   });
 
   const isPublished = $derived(

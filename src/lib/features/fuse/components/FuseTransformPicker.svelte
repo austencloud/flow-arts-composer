@@ -27,6 +27,10 @@
     DEFAULT_TND_SELECTION,
     isQuarterMode,
     resolveFuseRule,
+    fuseTnDAxes,
+    withFuseTnDAxes,
+    type FuseTiming,
+    type FuseDirection,
     type FuseQuarterOffset,
     type FuseTnDMode,
     type FuseTnDSelection,
@@ -127,6 +131,43 @@
   ]);
 
   const showOffset = $derived(isQuarterMode(selection.mode));
+  const axes = $derived(fuseTnDAxes(selection));
+  const timingOptions = $derived(
+    (
+      [
+        {
+          value: "together",
+          label: `Together timing for ${followerLabel} and ${driverLabel}`,
+        },
+        {
+          value: "split",
+          label: `Split timing between ${followerLabel} and ${driverLabel}`,
+        },
+        {
+          value: "quarter-cw",
+          label: `Quarter clockwise — rotate ${followerLabel}'s path 90° clockwise`,
+        },
+        {
+          value: "quarter-ccw",
+          label: `Quarter counterclockwise — rotate ${followerLabel}'s path 90° counterclockwise`,
+        },
+      ] as { value: FuseTiming; label: string }[]
+    ).map((option) => ({ ...option, disabled }))
+  );
+  const directionOptions = $derived(
+    (
+      [
+        {
+          value: "same",
+          label: `${followerLabel} moves in the same direction as ${driverLabel}`,
+        },
+        {
+          value: "opposite",
+          label: `${followerLabel} moves in the opposite direction from ${driverLabel}`,
+        },
+      ] as { value: FuseDirection; label: string }[]
+    ).map((option) => ({ ...option, disabled }))
+  );
 
   function handleDriver(value: FuseSide): void {
     if (onDriverChange) onDriverChange(value);
@@ -151,6 +192,14 @@
 
   function chooseOffset(quarterOffset: FuseQuarterOffset): void {
     commitSelection({ ...selection, quarterOffset });
+  }
+
+  function chooseTiming(timing: FuseTiming): void {
+    commitSelection(withFuseTnDAxes(selection, { timing }));
+  }
+
+  function chooseDirection(direction: FuseDirection): void {
+    commitSelection(withFuseTnDAxes(selection, { direction }));
   }
 </script>
 
@@ -184,32 +233,68 @@
   </div>
 
   <div class="rule-field">
-    <div class="field-heading">
-      {#if !inline}<span class="step-number">2</span>{/if}
-      <div>
-        <span class="field-label"
-          >How {followerLabel} relates to {driverLabel}</span
-        >
-        <span class="field-help" class:inline-help={inline}>
-          Every change previews a new {followerLabel} path
-        </span>
-      </div>
-    </div>
+    {#if !inline}<div class="field-heading">
+        <span class="step-number">2</span>
+        <div>
+          <span class="field-label"
+            >How {followerLabel} relates to {driverLabel}</span
+          >
+          <span class="field-help" class:inline-help={inline}>
+            Every change previews a new {followerLabel} path
+          </span>
+        </div>
+      </div>{/if}
 
-    <div class="axis mode-axis">
-      {#if !inline}<span class="axis-label" id="fuse-mode-label"
-          >Timing and direction</span
-        >{/if}
-      <FuseTnDModePicker
-        selected={selection.mode}
-        {disabled}
-        {inline}
-        quarterOffset={selection.quarterOffset}
-        {followerLabel}
-        onpick={chooseMode}
-        onquarterpick={chooseMode}
-      />
-    </div>
+    {#if inline}
+      <div class="axis timing-axis">
+        <span class="axis-label" id="fuse-timing-label">Timing</span>
+        <SegmentedControl
+          options={timingOptions}
+          value={axes.timing}
+          onchange={chooseTiming}
+          color="accent"
+          size="md"
+          semantics="radiogroup"
+          ariaLabel={`${followerLabel} timing relative to ${driverLabel}`}
+        >
+          {#snippet optionContent(timing: FuseTiming)}
+            {#if timing === "together"}Together
+            {:else if timing === "split"}Split
+            {:else}<span class="quarter-choice"
+                ><span>Quarter</span><span aria-hidden="true"
+                  >{timing === "quarter-cw" ? "↻" : "↺"}</span
+                ></span
+              >{/if}
+          {/snippet}
+        </SegmentedControl>
+      </div>
+      <div class="axis direction-axis">
+        <span class="axis-label" id="fuse-direction-label">Direction</span>
+        <SegmentedControl
+          options={directionOptions}
+          value={axes.direction}
+          onchange={chooseDirection}
+          color="accent"
+          size="md"
+          semantics="radiogroup"
+          ariaLabel={`${followerLabel} direction relative to ${driverLabel}`}
+        >
+          {#snippet optionContent(direction: FuseDirection)}
+            {direction === "same" ? "Same" : "Opposite"}
+          {/snippet}
+        </SegmentedControl>
+      </div>
+    {:else}
+      <div class="axis mode-axis">
+        <span class="axis-label" id="fuse-mode-label">Timing and direction</span
+        >
+        <FuseTnDModePicker
+          selected={selection.mode}
+          {disabled}
+          onpick={chooseMode}
+        />
+      </div>
+    {/if}
 
     {#if showOffset && !inline}
       <div class="axis offset-axis" transition:growFade={{ axis: "y" }}>
@@ -238,11 +323,7 @@
       </div>
     {/if}
 
-    <!-- Modifiers on the mode, so they sit a step below it: content-height
-         rows that say what they do, not tiles sharing the mode grid's spare
-         height. Stretched to fill, two words sat in the middle of 130px pills
-         and read as the same size of decision as the six modes. They are
-         switches because each is on or off on its own. -->
+    <!-- Each modifier is independent of the timing and direction selection. -->
     <div class="axis operations-axis">
       <span class="axis-label" id="fuse-operations-label">Options</span>
       <div
@@ -280,20 +361,16 @@
           </button>
         {/each}
       </div>
-      <!-- The consequence, measured on the live preview: Rewind pairs each
+    </div>
+    <!-- The consequence, measured on the live preview: Rewind pairs each
            beat with one from the other end, so whether timing and direction
            survive depends on the leading path, and the switch alone cannot
            say. -->
-      {#if rewindNote}
-        <p
-          class="operation-note"
-          class:breaks={rewindNote.breaks}
-          role="status"
-        >
-          {rewindNote.text}
-        </p>
-      {/if}
-    </div>
+    {#if rewindNote}
+      <p class="operation-note" class:breaks={rewindNote.breaks} role="status">
+        {rewindNote.text}
+      </p>
+    {/if}
   </div>
 </div>
 
@@ -544,16 +621,14 @@
     width: 100%;
   }
 
-  /* The Linked band keeps the same controls and commit path while giving the
-     canvas the room that the full-height drawer normally occupies. */
+  /* The Linked controls share one label row and one control band. */
   .transform-picker.inline {
     flex: none;
     display: grid;
-    grid-template-columns: 160px minmax(0, 1fr);
+    grid-template-columns: 160px minmax(360px, 1fr) 170px 200px;
     align-items: start;
     gap: 8px;
   }
-
   .inline .field,
   .inline .rule-field {
     flex: none;
@@ -563,44 +638,37 @@
     padding: 0;
     gap: 6px;
   }
-
   .inline .rule-field {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 210px;
-    align-items: start;
-    gap: 6px 8px;
+    display: contents;
   }
-
-  .inline .rule-field > .field-heading {
-    grid-column: 1;
-  }
-
-  .inline .mode-axis {
-    flex: none;
-    grid-column: 1;
-    grid-template-rows: auto;
-  }
-
+  .inline .field,
+  .inline .timing-axis,
+  .inline .direction-axis,
   .inline .operations-axis {
-    align-self: start;
-    grid-column: 2;
-    grid-row: 1 / 3;
-    grid-template-rows: auto auto;
-  }
-
-  .inline .operations-axis > .axis-label {
-    align-self: center;
-    text-transform: none;
-    letter-spacing: normal;
-    font-size: var(--font-size-min, 14px);
-  }
-
-  .inline .operation-list {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: 20px auto;
+    align-content: start;
+    min-width: 0;
     gap: 6px;
   }
-
+  .inline .field-heading,
+  .inline .axis-label {
+    align-self: center;
+  }
+  .inline .axis-label {
+    color: var(--theme-text, #fff);
+    font-size: var(--font-size-min, 14px);
+    letter-spacing: normal;
+    text-transform: none;
+  }
+  .inline .driver-control :global(.segment),
+  .inline .timing-axis :global(.segment),
+  .inline .direction-axis :global(.segment) {
+    min-height: 64px;
+  }
+  .inline .operation-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .inline .operation-toggle {
     display: flex;
     justify-content: center;
@@ -609,123 +677,96 @@
     padding: 6px;
     white-space: nowrap;
   }
-
-  .inline .op-glyph {
-    display: none;
-  }
-
+  .inline .op-glyph,
   .inline .op-detail,
   .inline .inline-help {
     display: none;
   }
-
   .inline .op-switch {
     width: 28px;
   }
-
-  .inline .op-switch::after {
-    width: 14px;
-  }
-
   .inline .operation-toggle.active .op-switch::after {
     transform: translateX(8px);
   }
-
+  .inline .operation-note {
+    grid-column: 1 / -1;
+    margin: 0;
+  }
+  .quarter-choice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+  }
+  .quarter-choice > span:last-child {
+    font-size: 1.4rem;
+    line-height: 1;
+  }
   .offset-option {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
   }
-
   .offset-arrow {
     font-size: 1.75rem;
     line-height: 1;
   }
-
   .offset-axis > .axis-label {
     font-size: var(--font-size-min, 14px);
     letter-spacing: normal;
     text-transform: none;
   }
-
-  .inline .driver-control :global(.segment) {
-    min-height: 64px;
-  }
-
   .offset-axis :global(.segment) {
     min-height: 48px;
   }
-
-  .inline .operation-note {
-    grid-column: 1 / -1;
-    max-width: 16rem;
-  }
-
-  @container (max-width: 70rem) {
+  @container (max-width: 65rem) {
     .transform-picker.inline {
-      grid-template-columns: minmax(0, 1fr);
-      gap: 8px;
+      grid-template-columns: minmax(150px, 1fr) minmax(360px, 2.4fr);
     }
-
-    .inline .field {
-      display: grid;
-      grid-template-columns: auto minmax(0, 1fr);
-      align-items: center;
-      gap: 8px;
+    .inline .direction-axis,
+    .inline .operations-axis {
+      grid-row: 2;
     }
-
-    .inline .driver-control {
-      justify-self: end;
-      width: min(100%, 220px);
-    }
-
-    .inline .driver-control :global(.segment) {
+    .inline .driver-control :global(.segment),
+    .inline .timing-axis :global(.segment),
+    .inline .direction-axis :global(.segment) {
       min-height: 48px;
     }
-
-    .inline .rule-field {
-      grid-template-columns: minmax(0, 1fr) 200px;
+    .inline .operation-toggle {
+      min-height: 56px;
     }
   }
-
-  @container (max-width: 44rem) {
-    .inline .rule-field {
-      grid-template-columns: minmax(0, 1fr);
-      gap: 6px;
-    }
-
-    .inline .rule-field > .field-heading,
-    .inline .axis {
-      grid-column: 1;
-    }
-
-    .inline .operations-axis {
-      display: grid;
-      grid-template-columns: auto minmax(0, 1fr);
-      grid-row: auto;
-      grid-template-rows: auto;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .inline .operation-list {
-      display: grid;
+  @container (max-width: 40rem) {
+    .transform-picker.inline {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-
-    .inline .operation-toggle {
-      min-height: 48px;
-    }
-
-    .inline .operation-note {
+    .inline .timing-axis {
       grid-column: 1 / -1;
+      grid-row: 2;
+    }
+    .inline .direction-axis {
+      grid-column: 2;
+      grid-row: 1;
+    }
+    .inline .operations-axis {
+      grid-column: 1 / -1;
+      grid-row: 3;
     }
   }
-
   @container (max-width: 28rem) {
-    .inline .driver-control {
-      width: min(100%, 172px);
+    .inline .field,
+    .inline .direction-axis {
+      grid-column: 1 / -1;
+    }
+    .inline .direction-axis {
+      grid-row: 2;
+    }
+    .inline .timing-axis {
+      grid-row: 3;
+    }
+    .inline .operations-axis {
+      grid-row: 4;
     }
   }
 
