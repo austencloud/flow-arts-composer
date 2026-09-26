@@ -43,9 +43,9 @@ export function summarizeTiming(input: {
 }): TimingSummary {
   const { section, resolved } = input;
   const fit = resolved?.fit ?? null;
-  const tapCount = section.taps.filter(
-    (tap) => tap >= section.startSeconds && tap <= section.endSeconds
-  ).length;
+  // A part's taps are the ones whose landings it draws, which near a nudged
+  // cut can sit just outside it.
+  const tapCount = section.taps.length;
   const base = { suggestedBpm: null, ignoredLeadingTaps: 0 };
 
   if (!fit) {

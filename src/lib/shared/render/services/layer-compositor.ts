@@ -6,7 +6,13 @@ import { deriveBaseLayerKey, deriveGridPointsLayerKey, deriveTKALayerKey, derive
 import { turnsTupleGenerator } from "../../pictograph/arrow/positioning/placement/services/turns-tuple-generator";
 import type { Letter } from "../../foundation/domain/models/letter";
 import { GridMode } from "../../pictograph/grid/domain/enums/grid-enums";
-import { interpretTurnColors, resolveTurnColor, BLUE_HEX, RED_HEX } from "../../pictograph/tka-glyph/services/turn-color-interpreter";
+import { interpretTurnColors, resolveTurnDisplayColor, BLUE_HEX, RED_HEX } from "../../pictograph/tka-glyph/services/turn-color-interpreter";
+
+interface TurnsMotionVisibility {
+  showLeftMotion?: boolean;
+  showRightMotion?: boolean;
+  primaryPropColors?: { left: string; right: string } | null;
+}
 import {
   parseTurnsTuple,
   shouldDisplayTurn,
@@ -183,6 +189,7 @@ export class LayerCompositor {
     const motionVisibility = {
       showLeftMotion: options.showLeftMotion,
       showRightMotion: options.showRightMotion,
+      primaryPropColors: options.primaryPropColors,
     };
 
     let tkaResult: LayerRenderResult | null = null;
@@ -324,7 +331,7 @@ export class LayerCompositor {
   async renderTKAOverlay(
     pictograph: PreparedPictographData,
     options: Pick<LayerRenderOptions, "size" | "darkMode">,
-    motionVisibility?: { showLeftMotion?: boolean; showRightMotion?: boolean }
+    motionVisibility?: TurnsMotionVisibility
   ): Promise<LayerRenderResult | null> {
     if (!pictograph.letter) return null;
 
@@ -371,7 +378,7 @@ export class LayerCompositor {
     stepData: StepData,
     size: number,
     darkMode: boolean = false,
-    motionVisibility?: { showLeftMotion?: boolean; showRightMotion?: boolean }
+    motionVisibility?: TurnsMotionVisibility
   ): Promise<LayerRenderResult | null> {
     if (!stepData.leftReversal && !stepData.rightReversal) return null;
 
@@ -512,7 +519,7 @@ export class LayerCompositor {
   private async renderTKAOverlayInternal(
     pictograph: PreparedPictographData,
     options: Pick<LayerRenderOptions, "size" | "darkMode">,
-    motionVisibility?: { showLeftMotion?: boolean; showRightMotion?: boolean }
+    motionVisibility?: TurnsMotionVisibility
   ): Promise<RenderCanvas> {
     const canvas = createCanvas(options.size, options.size);
     const ctx = canvas.getContext("2d")! as RenderContext2D;
@@ -634,7 +641,7 @@ export class LayerCompositor {
     stepData: StepData,
     size: number,
     darkMode: boolean,
-    motionVisibility?: { showLeftMotion?: boolean; showRightMotion?: boolean }
+    motionVisibility?: TurnsMotionVisibility
   ): RenderCanvas {
     const canvas = createCanvas(size, size);
     const ctx = canvas.getContext("2d")! as RenderContext2D;
@@ -819,7 +826,7 @@ export class LayerCompositor {
     scale: number,
     darkMode: boolean,
     turnsTuple: string,
-    motionVisibility?: { showLeftMotion?: boolean; showRightMotion?: boolean }
+    motionVisibility?: TurnsMotionVisibility
   ): Promise<void> {
     const parsed = parseTurnsTuple(turnsTuple);
     const showTop = shouldDisplayTurn(parsed.top);
@@ -831,6 +838,10 @@ export class LayerCompositor {
       pictograph.letter,
       pictograph
     );
+    // Interpreter colors name the hand; the digits are painted in the same
+    // color as that hand's prop and arrow for the active theme.
+    const displayColor = (color: string) =>
+      resolveTurnDisplayColor(color, darkMode, motionVisibility?.primaryPropColors);
 
     const isColorHidden = (color: string) => {
       if (color === BLUE_HEX && motionVisibility?.showLeftMotion === false) return true;
@@ -866,7 +877,7 @@ export class LayerCompositor {
             const drawWidth = topNaturalWidth * scale;
             const drawHeight = TURN_NUMBER_HEIGHT * scale;
 
-            drawTintedImage(ctx, topImg, drawX, drawY, drawWidth, drawHeight, resolveTurnColor(turnColors.top, darkMode));
+            drawTintedImage(ctx, topImg, drawX, drawY, drawWidth, drawHeight, displayColor(turnColors.top));
           }
         } catch (error) {
           console.warn("[LayerCompositor] Failed to load top turn number:", error);
@@ -887,7 +898,7 @@ export class LayerCompositor {
             const drawWidth = bottomNaturalWidth * scale;
             const drawHeight = TURN_NUMBER_HEIGHT * scale;
 
-            drawTintedImage(ctx, bottomImg, drawX, drawY, drawWidth, drawHeight, resolveTurnColor(turnColors.bottom, darkMode));
+            drawTintedImage(ctx, bottomImg, drawX, drawY, drawWidth, drawHeight, displayColor(turnColors.bottom));
           }
         } catch (error) {
           console.warn("[LayerCompositor] Failed to load bottom turn number:", error);

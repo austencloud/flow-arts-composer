@@ -1,4 +1,5 @@
 import { PropType } from "./enums/prop-type";
+import type { PropTileCrop } from "./prop-look";
 export {
   applyFanFrameColor,
   applyFanPaperContrast,
@@ -33,6 +34,8 @@ export interface PropBuildPreviewOption<T extends string> {
   label: string;
   image: string;
   imageScale?: number;
+  /** The painted window of a grip-centred capture; see PropTileCrop. */
+  crop?: PropTileCrop;
   designCredit?: {
     originator: string;
     sourceUrl: string;

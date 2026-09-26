@@ -13,11 +13,19 @@ interface ControllerInternals {
   canvasB: HTMLCanvasElement | null;
   systemA: unknown;
   systemB: unknown;
+  activeCanvas: "A" | "B";
+  currentType: BackgroundType | null;
   initializationRetryTimer: ReturnType<typeof setTimeout> | null;
   initializeBackground(
     type: BackgroundType,
     options: Record<string, unknown>
   ): Promise<void>;
+  performCrossfade(
+    type: BackgroundType,
+    options: Record<string, unknown>
+  ): Promise<void>;
+  waitForFrame(): Promise<void>;
+  delay(milliseconds: number): Promise<void>;
   attachCanvasRecovery(canvas: HTMLCanvasElement, which: "A" | "B"): void;
 }
 
@@ -140,6 +148,110 @@ describe("BackgroundController lifecycle recovery", () => {
     expect(internals.systemA).toBeNull();
     expect(internals.initialized).toBe(false);
     expect(controller.isReady()).toBe(false);
+  });
+
+  it("waits for Ocean sprites before exposing the first canvas", async () => {
+    const controller = new BackgroundController();
+    const internals = controller as unknown as ControllerInternals;
+    const initialization = createDeferred<void>();
+    const system = createSystemDouble();
+    system.initialize.mockImplementation(() => initialization.promise);
+    vi.spyOn(BackgroundFactory, "createBackgroundSystem").mockResolvedValue(
+      system as never
+    );
+
+    internals.mounted = true;
+    internals.lifecycleGeneration = 1;
+    internals.canvasA = createCanvasDouble().canvas;
+    internals.canvasB = createCanvasDouble().canvas;
+
+    const starting = internals.initializeBackground(BackgroundType.OCEAN, {});
+    await vi.waitFor(() => expect(system.initialize).toHaveBeenCalledTimes(1));
+
+    expect(system.initialize).toHaveBeenCalledWith(
+      { width: 1280, height: 720 },
+      "medium",
+      { spawnFishOnScreen: true }
+    );
+    expect(controller.isReady()).toBe(false);
+    expect(requestAnimationFrame).not.toHaveBeenCalled();
+
+    initialization.resolve();
+    await starting;
+
+    expect(controller.isReady()).toBe(true);
+    expect(requestAnimationFrame).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the outgoing canvas visible until an Ocean crossfade initializes", async () => {
+    const controller = new BackgroundController();
+    const internals = controller as unknown as ControllerInternals;
+    const initialization = createDeferred<void>();
+    const outgoingSystem = createSystemDouble();
+    const incomingSystem = createSystemDouble();
+    incomingSystem.initialize.mockImplementation(() => initialization.promise);
+    vi.spyOn(BackgroundFactory, "createBackgroundSystem").mockResolvedValue(
+      incomingSystem as never
+    );
+    vi.spyOn(internals, "waitForFrame").mockResolvedValue();
+    vi.spyOn(internals, "delay").mockResolvedValue();
+
+    internals.mounted = true;
+    internals.lifecycleGeneration = 1;
+    internals.initialized = true;
+    internals.activeCanvas = "A";
+    internals.currentType = BackgroundType.COSMIC;
+    internals.canvasA = createCanvasDouble().canvas;
+    internals.canvasB = createCanvasDouble().canvas;
+    internals.systemA = outgoingSystem;
+
+    const crossfade = internals.performCrossfade(BackgroundType.OCEAN, {});
+    await vi.waitFor(() =>
+      expect(incomingSystem.initialize).toHaveBeenCalledTimes(1)
+    );
+
+    expect(incomingSystem.initialize).toHaveBeenCalledWith(
+      { width: 1280, height: 720 },
+      "medium",
+      { spawnFishOnScreen: true }
+    );
+    expect(internals.activeCanvas).toBe("A");
+    expect(requestAnimationFrame).not.toHaveBeenCalled();
+
+    initialization.resolve();
+    await crossfade;
+
+    expect(internals.activeCanvas).toBe("B");
+    expect(internals.currentType).toBe(BackgroundType.OCEAN);
+    expect(outgoingSystem.cleanup).toHaveBeenCalledTimes(1);
+    expect(requestAnimationFrame).toHaveBeenCalledTimes(1);
+  });
+
+  it("cleans up a deferred Ocean initializer after its generation becomes stale", async () => {
+    const controller = new BackgroundController();
+    const internals = controller as unknown as ControllerInternals;
+    const initialization = createDeferred<void>();
+    const system = createSystemDouble();
+    system.initialize.mockImplementation(() => initialization.promise);
+    vi.spyOn(BackgroundFactory, "createBackgroundSystem").mockResolvedValue(
+      system as never
+    );
+
+    internals.mounted = true;
+    internals.lifecycleGeneration = 1;
+    internals.canvasA = createCanvasDouble().canvas;
+    internals.canvasB = createCanvasDouble().canvas;
+
+    const starting = internals.initializeBackground(BackgroundType.OCEAN, {});
+    await vi.waitFor(() => expect(system.initialize).toHaveBeenCalledTimes(1));
+
+    controller.unmount();
+    initialization.resolve();
+    await starting;
+
+    expect(system.cleanup).toHaveBeenCalledTimes(1);
+    expect(internals.systemA).toBeNull();
+    expect(requestAnimationFrame).not.toHaveBeenCalled();
   });
 
   it("refreshes the active background when a canvas context returns", () => {

@@ -82,37 +82,28 @@ describe("computeCardFrontLayout", () => {
     expect(layout.stepsPerRow).toBe(3);
   });
 
-  it("geometrically centers mixed Start and QR grids on physical cards", () => {
+  it("keeps equal left and right gutters on physical cards", () => {
     const sequence = {
-      steps: Array.from({ length: 4 }, () => ({ letter: "A" })),
+      steps: Array.from({ length: 8 }, () => ({ letter: "A" })),
       startPlacement: {},
     } as any;
-    const baseOptions = {
+    const options = {
       deckCard: { contentWidth: 678, contentHeight: 978 },
       includeStartPlacement: true,
-      startPlacementLayout: "row" as const,
-      columnCount: 2,
+      startPlacementLayout: "column" as const,
+      columnCount: 3,
       addWord: true,
       leftLabel: "earth",
     };
 
-    const optical = computeCardFrontLayout(sequence, baseOptions, {} as any);
-    const geometric = computeCardFrontLayout(
-      sequence,
-      { ...baseOptions, gridCentering: "geometric" },
-      {} as any
-    );
-    const geometricInset = Math.floor(
-      (geometric.canvasWidth - geometric.columns * geometric.stepSize) / 2
-    );
-    const geometricRightInset =
-      geometric.canvasWidth -
-      (geometric.gridOffsetX + geometric.columns * geometric.stepSize);
+    const layout = computeCardFrontLayout(sequence, options, {} as any);
+    const rightInset =
+      layout.canvasWidth - (layout.gridOffsetX + layout.columns * layout.stepSize);
 
-    expect(geometric.gridOffsetX).toBe(58);
-    expect(geometric.gridOffsetX).toBe(geometricInset);
-    expect(geometricRightInset).toBe(geometricInset);
-    expect(optical.gridOffsetX).toBe(76);
+    // 678 wide, three 210px cells: 48px of slack split 24 / 24.
+    expect(layout.stepSize).toBe(210);
+    expect(layout.gridOffsetX).toBe(24);
+    expect(rightInset).toBe(24);
   });
 
   it("lays eight steps out four-wide beside their dedicated start column", () => {

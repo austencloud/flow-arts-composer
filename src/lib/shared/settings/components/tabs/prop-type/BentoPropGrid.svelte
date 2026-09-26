@@ -13,12 +13,18 @@
     PREMIUM_COSMETIC_NUDGE,
   } from "$lib/shared/subscription/domain/premium-prop-access";
   import type { ComponentProps } from "svelte";
+  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
   import PropGrid from "./PropGrid.svelte";
   import PrimaryPropColorSettings from "./PrimaryPropColorSettings.svelte";
   import { growFade } from "$lib/shared/transitions/motion";
   import { DEFAULT_TRIANGLE_GRIP } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
 
+  // Public hosts own their appearance without writing global settings.
   let {
+    fanAppearance,
+    onFanAppearanceChange,
+    propLook,
+    onPropLookChange,
     showColors = true,
     compactColors = false,
     showPropLook = true,
@@ -34,14 +40,16 @@
     | "premiumAllowed"
     | "premiumBadge"
     | "premiumNudge"
-    | "propLook"
-    | "onPropLookChange"
     | "recipeOverrides"
     | "colors"
     | "triangleGrip"
     | "onTriangleGripChange"
     | "onDrillChange"
   > & {
+    fanAppearance?: FanAppearance;
+    onFanAppearanceChange?: (appearance: FanAppearance) => void;
+    propLook?: PropLook;
+    onPropLookChange?: (look: PropLook) => void;
     /**
      * The account's primary prop colours above the catalogue: the pair's
      * colours are chosen where the pair is chosen, on every picker. A host
@@ -114,15 +122,16 @@
     drilled = next;
     onDrillChange?.(next);
   }}
-  fanAppearance={settings.fanAppearance}
-  onFanAppearanceChange={(fanAppearance) =>
-    void updateSettings({ fanAppearance })}
+  fanAppearance={fanAppearance ?? settings.fanAppearance}
+  onFanAppearanceChange={onFanAppearanceChange ??
+    ((next) => void updateSettings({ fanAppearance: next }))}
   isUnlocked={isPropUnlocked}
   premiumVisible={isPremiumCosmeticVisible()}
   premiumAllowed={checkPremiumCosmeticAccess().allowed}
-  propLook={settings.propArtwork}
+  propLook={propLook ?? settings.propArtwork}
   onPropLookChange={showPropLook
-    ? (propArtwork) => void updateSettings({ propArtwork })
+    ? (onPropLookChange ??
+      ((propArtwork) => void updateSettings({ propArtwork })))
     : undefined}
   recipeOverrides={settings.compositionRecipeOverrides}
   colors={settings.primaryPropColors}

@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_MANDALA_OVERLAY_CONFIG } from "$lib/shared/mandala/domain/mandala-overlay-types";
-import { MandalaOverlayCanvas } from "$lib/shared/mandala/services/mandala-overlay-canvas";
+import {
+  MandalaOverlayCanvas,
+  scaleGuideForOverlay,
+} from "$lib/shared/mandala/services/mandala-overlay-canvas";
 import type { PreparedMandalaPaths } from "$lib/shared/mandala/services/types";
 import { DURATION } from "$lib/shared/transitions/transitions";
 
@@ -47,6 +50,28 @@ function preparedPaths(id: number): PreparedMandalaPaths {
 }
 
 describe("MandalaOverlayCanvas guide transitions", () => {
+  it.each([1, 1.2, 2, 3])(
+    "matches the prop path on screen at DPR %s",
+    (dpr) => {
+      // Reproduce the lazy overlay's 500px logical frame and the already-sized
+      // props buffer. The painter applies DPR, then CSS fits both to 421px.
+      const rendererSize = 505;
+      const overlayWidth = 500;
+      const displayWidth = 421;
+      const point = 150;
+      const guideScale = scaleGuideForOverlay(
+        rendererSize / 950,
+        overlayWidth,
+        rendererSize
+      );
+      const guideOnScreen =
+        (point * guideScale * dpr * displayWidth) / (overlayWidth * dpr);
+      const propOnScreen =
+        (point * (rendererSize / 950) * displayWidth) / rendererSize;
+      expect(guideOnScreen).toBeCloseTo(propOnScreen, 12);
+    }
+  );
+
   const offscreenCanvases: FakeOffscreenCanvas[] = [];
   const mainDrawCalls: DrawCall[] = [];
   const mainContext = createContext(mainDrawCalls);

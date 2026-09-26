@@ -32,6 +32,18 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
+declare global {
+  interface Window {
+    /**
+     * Set by the inline capture script in src/app.html, which listens for
+     * beforeinstallprompt before this manager exists (it's only created
+     * lazily). The constructor below adopts it so an event that fired during
+     * initial page load isn't lost.
+     */
+    __tkaInstallPrompt?: BeforeInstallPromptEvent | null;
+  }
+}
+
 /**
  * Mobile Fullscreen Service Implementation
  *
@@ -43,6 +55,9 @@ export class MobileFullscreenManager {
   private deferredPrompt: BeforeInstallPromptEvent | null = null;
 
   constructor() {
+    if (typeof window !== "undefined" && window.__tkaInstallPrompt) {
+      this.deferredPrompt = window.__tkaInstallPrompt;
+    }
     this.setupEventListeners();
   }
 
@@ -131,6 +146,9 @@ export class MobileFullscreenManager {
       return false;
     } finally {
       this.deferredPrompt = null;
+      if (typeof window !== "undefined") {
+        window.__tkaInstallPrompt = null;
+      }
     }
   }
 

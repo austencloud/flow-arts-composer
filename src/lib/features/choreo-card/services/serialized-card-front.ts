@@ -1,3 +1,4 @@
+import { PRINT_QR_RENDER_SIZE } from "@tka/render-composition";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { findEmptyCellForQR } from "$lib/shared/render/services/cell-border-renderer";
 import { computeCardFrontLayout } from "$lib/shared/render/services/card-front-assembler";
@@ -58,6 +59,11 @@ export function getSerializedQrPlacement(
  * The generated QR has an opaque card-color background and exactly covers the
  * original QR bounds, so the surrounding card artwork and cell borders remain
  * untouched.
+ *
+ * The QR is authored at PRINT_QR_RENDER_SIZE and scaled into the placement,
+ * the same way the base front's QR is. qr-code-styling floors its module size
+ * to whole pixels, so authoring at the small placement size instead would
+ * leave up to one pixel per module unused and shrink the printed symbol.
  */
 export async function renderSerializedCardFront(
   baseFront: HTMLCanvasElement,
@@ -75,7 +81,7 @@ export async function renderSerializedCardFront(
 
   const qrImage = await qrGenerator.generateUrlAsImage(
     serializedUrl,
-    placement.size,
+    PRINT_QR_RENDER_SIZE,
     {
       style: "modern",
       margin: 1,

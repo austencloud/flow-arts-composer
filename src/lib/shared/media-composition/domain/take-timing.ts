@@ -36,6 +36,9 @@ import {
 export const TAKE_MIN_BPM = 20;
 export const TAKE_MAX_BPM = 300;
 
+const clampTakeBpm = (bpm: number) =>
+  Math.min(TAKE_MAX_BPM, Math.max(TAKE_MIN_BPM, bpm));
+
 /**
  * One frame at 30 fps. No move resolves shorter, and a dragged landing stops
  * this far from its neighbours.
@@ -78,15 +81,28 @@ export const TimingSectionSchema = z
      */
     beatOneSeconds: z.number().finite().optional(),
     /**
+     * The position the `beatOneSeconds` landing takes, when not move 1. The
+     * right of a "keep counting" split marks its count at the cut, so a new
+     * tempo there pivots about the cut rather than the take's first move.
+     */
+    beatOnePosition: z.number().int().positive().optional(),
+    /**
      * The last landing the performer makes in this section. Past it every
      * layer holds that pose. Unset, a tapped section ends at its last tapped
      * landing and an untapped one (tempo and beat 1 only) runs to its end.
      */
     lastPosition: z.number().int().nonnegative().optional(),
     /**
-     * Set on the left of a "keep counting" split: the performance carries on
-     * through this part's end into the next, so with no end set the part runs
-     * to its cut rather than stopping at its last tap.
+     * An end guessed from the taps before a "keep counting" split, set on an
+     * untapped right side so it holds where the whole take did. It stands only
+     * until the part has taps of its own; unlike `lastPosition`, Austen never
+     * chose it.
+     */
+    carriedEnd: z.number().int().nonnegative().optional(),
+    /**
+     * Set on the left of a "keep counting" split: the next part counts on
+     * from this one. While the performance carries on into it, this part runs
+     * to its cut rather than stopping at its last tap; see `carriesOnInto`.
      */
     continuesIntoNext: z.literal(true).optional(),
     /** Whole-grid nudge, seconds; the UI moves it a frame at a time. */
@@ -198,12 +214,89 @@ export function createTakeTiming(input: {
  */
 export type SplitContinuity = "continues" | "restarts";
 
+type BeatClock = ReturnType<typeof createBeatClock>;
+
+/**
+ * The beat-1 mark that keeps the left of a split counting as the whole
+ * section did. Fewer taps can count differently - an early tap the whole take
+ * set aside becomes move 1 again - so the left is marked on its first counted
+ * landing, or with none on the landing nearest the cut. A mark already inside
+ * the left stays.
+ */
+function leftCount(
+  section: TimingSection,
+  fit: TapFitResult | null,
+  clock: BeatClock,
+  atSeconds: number
+): Pick<TimingSection, "beatOneSeconds" | "beatOnePosition"> {
+  const { beatOneSeconds, beatOnePosition } = section;
+  const kept = {
+    ...(beatOneSeconds !== undefined ? { beatOneSeconds } : {}),
+    ...(beatOnePosition !== undefined ? { beatOnePosition } : {}),
+  };
+  if (
+    !fit ||
+    (beatOneSeconds !== undefined &&
+      beatOneSeconds + section.offsetSeconds < atSeconds)
+  ) {
+    return kept;
+  }
+  const position =
+    fit.labels.find(
+      (label) =>
+        label.position !== null &&
+        label.position >= 1 &&
+        label.seconds + section.offsetSeconds < atSeconds
+    )?.position ?? Math.max(1, landingNear(section, fit, clock, atSeconds));
+  return {
+    beatOneSeconds:
+      fit.originSeconds + fit.secondsPerBeat * clock.beatsBefore(position),
+    ...(position !== 1 ? { beatOnePosition: position } : {}),
+  };
+}
+
+/**
+ * The part a tap at `seconds` belongs to: the last one whose grid draws that
+ * moment at or after its start. Each part nudges its own grid, so a tap near a
+ * cut goes with the landing it marks rather than the raw moment.
+ */
+function tapOwner(timing: TakeTiming, seconds: number): TimingSection {
+  for (let index = timing.sections.length - 1; index > 0; index -= 1) {
+    const part = timing.sections[index]!;
+    if (seconds + part.offsetSeconds >= part.startSeconds) return part;
+  }
+  return timing.sections[0]!;
+}
+
+/** Adds a tap at `seconds` to the part whose landing it marks. */
+export function addTakeTap(timing: TakeTiming, seconds: number): TakeTiming {
+  const owner = tapOwner(timing, seconds);
+  return {
+    ...timing,
+    sections: timing.sections.map((section) =>
+      section === owner
+        ? {
+            ...section,
+            taps: [...section.taps, seconds].sort((left, right) => left - right),
+          }
+        : section
+    ),
+  };
+}
+
 /**
  * Splits the section that contains `atSeconds` in two. Taps and overrides
- * stay with the side they fall on; the right-hand side keeps the tempo,
- * snap and nudge. A split that keeps counting changes nothing on screen until
- * one side is edited: the left runs up to the cut, and a right-hand side with
- * no taps of its own carries on along the grid it was cut from.
+ * stay with the side their landing is drawn on, and the left keeps the count
+ * the whole section gave it; the right-hand side keeps the tempo, snap and
+ * nudge. A split that keeps counting changes nothing on screen until one side
+ * is edited: a right-hand side with no taps of its own carries on along the
+ * grid it was cut from, the left runs up to the cut for as long as the
+ * performance carries on into the right, and each side draws the landings
+ * beside the cut as the other does (see `sectionLandings`).
+ *
+ * Keeping count needs a grid to count from. With nothing fitted yet the
+ * right-hand side has no count to carry and numbers its taps from its first.
+ * Starting over renumbers the parts after it that kept the section's count.
  */
 export function splitTimingSection(
   timing: TakeTiming,
@@ -220,24 +313,57 @@ export function splitTimingSection(
   );
   if (index < 0) return timing;
   const section = timing.sections[index]!;
-  const fit = fitSection(section, moveBeats);
+  const resolved = sectionLandings(
+    section,
+    moveBeats,
+    timing.sections.slice(index + 1),
+    timing.sections.slice(0, index)
+  );
+  const fit = resolved?.fit ?? null;
+  const clock = createBeatClock(moveBeats);
+  // A tap goes with the side its landing is drawn on, nudge and all.
+  const beforeCut = (tap: number) => tap + section.offsetSeconds < atSeconds;
   const continuedFrom = fit?.labels.find(
-    (label) => label.seconds >= atSeconds && label.position !== null
+    (label) => !beforeCut(label.seconds) && label.position !== null
   )?.position;
+  const renumber = continuedFrom == null ? null : 1 - continuedFrom;
+  // Where the performance ends before the cut, the end belongs to the left.
+  const end = resolved?.endPosition ?? null;
+  const endLanding =
+    end === null
+      ? undefined
+      : resolved?.landings.find((landing) => landing.position === end);
+  const endedBeforeCut =
+    endLanding !== undefined && endLanding.seconds <= atSeconds;
   const {
     lastPosition: _leftEnd,
+    carriedEnd: _leftCarriedEnd,
     continuesIntoNext: _leftCarries,
+    beatOneSeconds: _leftMark,
+    beatOnePosition: _leftMarkCount,
     ...leftBase
   } = section;
   const left: TimingSection = {
     ...leftBase,
+    ...leftCount(section, fit, clock, atSeconds),
     endSeconds: atSeconds,
-    taps: section.taps.filter((tap) => tap < atSeconds),
+    taps: section.taps.filter(beforeCut),
     overrides: section.overrides.filter(
       (override) => override.seconds < atSeconds
     ),
   };
-  const rightTaps = section.taps.filter((tap) => tap >= atSeconds);
+  // The left keeps an end that was set or carried; one guessed from the taps
+  // its own taps guess again.
+  const leftEnded: TimingSection = {
+    ...left,
+    ...(section.lastPosition !== undefined
+      ? { lastPosition: section.lastPosition }
+      : {}),
+    ...(section.carriedEnd !== undefined
+      ? { carriedEnd: section.carriedEnd }
+      : {}),
+  };
+  const rightTaps = section.taps.filter((tap) => !beforeCut(tap));
   const rightBase: TimingSection = {
     ...createTimingSection({
       id: newId,
@@ -251,71 +377,79 @@ export function splitTimingSection(
     offsetSeconds: section.offsetSeconds,
     ...(section.continuesIntoNext ? { continuesIntoNext: true as const } : {}),
   };
+  const rightOverrides = section.overrides.filter(
+    (override) => override.seconds >= atSeconds
+  );
 
   let sides: [TimingSection, TimingSection];
   if (continuity === "continues") {
-    // Where the performance ends before the split, so neither side moves it.
-    const resolved = sectionLandings(section, moveBeats);
-    const end = resolved?.endPosition ?? null;
-    const endLanding =
-      end === null
-        ? undefined
-        : resolved?.landings.find((landing) => landing.position === end);
-    const endedBeforeCut =
-      endLanding !== undefined && endLanding.seconds <= atSeconds;
-    const anchor =
-      rightTaps.length === 0 && !endedBeforeCut && resolved
-        ? resolved.fit
-        : null;
-    const rightEnd =
-      section.lastPosition ?? (anchor && end !== null ? end : undefined);
+    // The right's count is marked at the cut: the landing nearest it on the
+    // left's grid, under the same number. A new tempo after the cut then
+    // pivots there, where the two parts meet, and the right's taps take the
+    // count whether they were tapped before the split or after it. A left
+    // with no landing of its own counted - only taps before the opening pose
+    // - has no grid to go by, so the whole section's is used.
+    const leftFit = fitSection(left, moveBeats);
+    const countFit = leftFit?.labels.some((label) => label.position !== null)
+      ? leftFit
+      : fit;
+    const carried = countFit
+      ? Math.max(1, landingNear(section, countFit, clock, atSeconds))
+      : null;
+    const untapped = rightTaps.length === 0;
     sides = [
-      endedBeforeCut && end !== null
-        ? { ...left, lastPosition: end }
-        : { ...left, continuesIntoNext: true },
+      // Whether the performance ran on past the left's last tap is for the
+      // right to say, so the left asks it each time it is resolved: tapping
+      // the right after the split must not leave the left frozen short of
+      // the cut.
+      { ...(endedBeforeCut ? leftEnded : left), continuesIntoNext: true },
       {
         ...rightBase,
         firstTapPosition: continuedFrom ?? section.firstTapPosition,
-        ...(anchor
+        ...(countFit && carried !== null
           ? {
               beatOneSeconds:
-                anchor.originSeconds +
-                anchor.secondsPerBeat *
-                  createBeatClock(moveBeats).beatsBefore(1),
-              bpm: Math.min(
-                TAKE_MAX_BPM,
-                Math.max(TAKE_MIN_BPM, 60 / anchor.secondsPerBeat)
-              ),
+                countFit.originSeconds +
+                countFit.secondsPerBeat * clock.beatsBefore(carried),
+              ...(carried !== 1 ? { beatOnePosition: carried } : {}),
+              // With no taps the part runs on the grid it was cut from, so
+              // it takes that grid's exact tempo.
+              ...(untapped
+                ? { bpm: clampTakeBpm(60 / countFit.secondsPerBeat) }
+                : {}),
             }
           : {}),
-        ...(rightEnd !== undefined ? { lastPosition: rightEnd } : {}),
-        overrides: section.overrides.filter(
-          (override) => override.seconds >= atSeconds
-        ),
+        // An end Austen set holds on both sides. A guessed one holds an
+        // untapped right where the whole take held, until it has taps of
+        // its own to guess from.
+        ...(section.lastPosition !== undefined
+          ? { lastPosition: section.lastPosition }
+          : untapped && end !== null
+            ? { carriedEnd: end }
+            : {}),
+        overrides: rightOverrides,
       },
     ];
   } else {
     // Restarting renumbers from the position the right-hand side would have
     // continued at; with no tap to say where that is, carried positions mean
-    // nothing and are dropped.
-    const renumber = continuedFrom == null ? null : 1 - continuedFrom;
-    const carriedEnd =
-      section.lastPosition === undefined || renumber === null
+    // nothing and are dropped. An end before the cut is the left's alone.
+    const restartedEnd =
+      section.lastPosition === undefined || renumber === null || endedBeforeCut
         ? undefined
         : section.lastPosition + renumber;
     sides = [
-      left,
+      endedBeforeCut ? leftEnded : left,
       {
         ...rightBase,
         firstTapPosition: 1,
-        ...(carriedEnd !== undefined && carriedEnd >= 0
-          ? { lastPosition: carriedEnd }
+        ...(restartedEnd !== undefined && restartedEnd >= 0
+          ? { lastPosition: restartedEnd }
           : {}),
         overrides:
           renumber === null
             ? []
-            : section.overrides
-                .filter((override) => override.seconds >= atSeconds)
+            : rightOverrides
                 .map((override) => ({
                   ...override,
                   position: override.position + renumber,
@@ -326,45 +460,58 @@ export function splitTimingSection(
   }
   const sections = [...timing.sections];
   sections.splice(index, 1, ...sides);
+  if (continuity === "restarts") {
+    recountChain(sections, index + 2, section, moveBeats, renumber);
+  }
   return { ...timing, sections, updatedAt: now };
 }
 
 /**
- * How far a later part's count sits from the joined count: the joined fit's
- * position at one of the part's own landings, less that landing's number.
- * Null when either side has no grid to compare.
+ * Where a later part's landings fall in the joined count. Each keeps its
+ * moment on the footage: the landing as the part drew it before any drag
+ * takes the number of the joined landing nearest that moment. Parts at
+ * different tempos do not number alike, so no single shift would do. Null
+ * when either side has no grid to compare.
  */
-function joinedCountShift(
+function joinedPositions(
   joined: TimingSection,
   part: TimingSection,
-  moveBeats: readonly number[]
-): number | null {
-  const own = sectionLandings(part, moveBeats);
+  moveBeats: readonly number[],
+  partFollowing: readonly TimingSection[]
+): ((position: number) => number) | null {
+  const own = sectionLandings(
+    { ...part, overrides: [] },
+    moveBeats,
+    partFollowing,
+    [],
+    false
+  );
   const joinedFit = fitSection(joined, moveBeats);
   if (!own || !joinedFit) return null;
-  const inside = own.landings.filter(
-    (landing) => landing.seconds >= part.startSeconds
+  const clock = createBeatClock(moveBeats);
+  const drawn = new Map(
+    own.landings.map((landing) => [landing.position, landing.seconds])
   );
-  const landing =
-    inside.find((candidate) => !candidate.pinned) ??
-    inside[0] ??
-    own.landings[own.landings.length - 1];
-  if (!landing) return null;
-  return (
+  return (position) =>
     landingNear(
       joined,
       joinedFit,
-      createBeatClock(moveBeats),
-      landing.seconds
-    ) - landing.position
-  );
+      clock,
+      drawn.get(position) ??
+        own.fit.originSeconds +
+          own.fit.secondsPerBeat * clock.beatsBefore(position) +
+          part.offsetSeconds
+    );
 }
 
 /**
  * Joins a section into the one before it, keeping the earlier one's tempo.
  * The later part's dragged landings and end are moments on the footage, so
  * they take the joined count at those moments; where the earlier part already
- * dragged the same landing, the earlier drag stays.
+ * dragged the same landing, the earlier drag stays. A later part with no taps
+ * adds no performance, so without an end of its own the earlier part's end
+ * stands, as does one the performance reached before the later part began.
+ * Parts that kept the later part's count count on from the joined one.
  */
 export function mergeTimingSectionIntoPrevious(
   timing: TakeTiming,
@@ -380,6 +527,7 @@ export function mergeTimingSectionIntoPrevious(
   const section = timing.sections[index]!;
   const {
     lastPosition: _previousEnd,
+    carriedEnd: _previousCarriedEnd,
     continuesIntoNext: _previousCarries,
     ...previousBase
   } = previous;
@@ -390,35 +538,61 @@ export function mergeTimingSectionIntoPrevious(
     overrides: previous.overrides,
     ...(section.continuesIntoNext ? { continuesIntoNext: true as const } : {}),
   };
-  const shift = joinedCountShift(joined, section, moveBeats);
+  const following = timing.sections.slice(index + 1);
+  const toJoined = joinedPositions(joined, section, moveBeats, following);
+  // One drag per landing: the earlier part's stands, and of two later drags
+  // that land on one joined landing the first does.
   const taken = new Set(
     previous.overrides.map((override) => override.position)
   );
-  const carried =
-    shift === null
-      ? []
-      : section.overrides
-          .map((override) => ({
-            ...override,
-            position: override.position + shift,
-          }))
-          .filter(
-            (override) =>
-              override.position >= 0 && !taken.has(override.position)
-          );
-  const end =
-    shift === null || section.lastPosition === undefined
-      ? undefined
-      : section.lastPosition + shift;
+  const carried: TimingOverride[] = [];
+  for (const override of toJoined === null ? [] : section.overrides) {
+    const position = toJoined!(override.position);
+    if (position < 0 || taken.has(position)) continue;
+    taken.add(position);
+    carried.push({ ...override, position });
+  }
+  let end: number | undefined;
+  let carriedEnd: number | undefined;
+  if (section.lastPosition !== undefined && toJoined !== null) {
+    end = toJoined(section.lastPosition);
+  } else if (section.taps.length === 0) {
+    end = previous.lastPosition;
+    // A guessed end carries on only while there are no taps to guess from.
+    if (end === undefined && joined.taps.length === 0) {
+      carriedEnd =
+        section.carriedEnd !== undefined && toJoined !== null
+          ? toJoined(section.carriedEnd)
+          : previous.carriedEnd;
+    }
+  } else if (
+    section.lastPosition === undefined &&
+    previous.lastPosition !== undefined &&
+    !previous.continuesIntoNext
+  ) {
+    // The later part started over after the performance had stopped: the
+    // stop still holds once the two are one.
+    const stop = sectionLandings(
+      previous,
+      moveBeats,
+      [section, ...following],
+      timing.sections.slice(0, index - 1)
+    )?.landings.find((landing) => landing.position === previous.lastPosition);
+    if (stop && stop.seconds <= section.startSeconds) {
+      end = previous.lastPosition;
+    }
+  }
   const merged: TimingSection = {
     ...joined,
     overrides: [...previous.overrides, ...carried].sort(
       (left, right) => left.position - right.position
     ),
     ...(end !== undefined && end >= 0 ? { lastPosition: end } : {}),
+    ...(carriedEnd !== undefined && carriedEnd >= 0 ? { carriedEnd } : {}),
   };
   const sections = [...timing.sections];
   sections.splice(index - 1, 2, merged);
+  recountChain(sections, index, section, moveBeats, null);
   return { ...timing, sections, updatedAt: now };
 }
 
@@ -436,6 +610,11 @@ export interface ResolvedTimingSection {
    * Null when the section runs on to its end at the typed tempo.
    */
   endPosition: number | null;
+  /**
+   * True when a stored end decides `endPosition`: one Austen set, or one a
+   * split carried. False when the taps guess it or the section runs on.
+   */
+  endStored: boolean;
   /**
    * Dragged landings set aside because they no longer sit between their
    * neighbours - typically after beat 1 moved or the taps changed.
@@ -470,21 +649,17 @@ function enforceIncreasing(
   }
 }
 
-function sectionTaps(section: TimingSection): number[] {
-  return section.taps.filter(
-    (tap) => tap >= section.startSeconds && tap <= section.endSeconds
-  );
-}
-
 /**
  * The section's fit, or null with nothing to fit. A section with a beat-1
- * mark and no taps fits the typed tempo through the mark alone.
+ * mark and no taps fits the typed tempo through the mark alone. A part's taps
+ * are the ones whose landings it draws, which near a nudged cut can sit just
+ * outside it; see `addTakeTap`.
  */
 export function fitSection(
   section: TimingSection,
   moveBeats: readonly number[]
 ): TapFitResult | null {
-  const taps = sectionTaps(section);
+  const taps = section.taps;
   const fitTaps =
     taps.length > 0
       ? taps
@@ -492,15 +667,46 @@ export function fitSection(
         ? [section.beatOneSeconds]
         : [];
   if (fitTaps.length === 0) return null;
-  return fitTapsToGrid({
+  const key = [
+    section.tempo,
+    section.bpm,
+    section.firstTapPosition,
+    section.beatOneSeconds ?? "",
+    section.beatOnePosition ?? "",
+    moveBeats.join(","),
+    fitTaps.join(","),
+  ].join("|");
+  const recent = recentFits.get(key);
+  if (recent) {
+    recentFits.delete(key);
+    recentFits.set(key, recent);
+    return recent;
+  }
+  const fit = fitTapsToGrid({
     taps: fitTaps,
     bpm: section.bpm,
     moveBeats,
     firstTapPosition: section.firstTapPosition,
     beatOneSeconds: section.beatOneSeconds ?? null,
+    beatOnePosition: section.beatOnePosition,
     tempo: section.tempo,
   });
+  recentFits.set(key, fit);
+  if (recentFits.size > RECENT_FIT_LIMIT) {
+    recentFits.delete(recentFits.keys().next().value!);
+  }
+  return fit;
 }
+
+/**
+ * Recent fits by what they were fitted from, the least recently used going
+ * first. Parts that share a count ask one another how they count, so a take
+ * fits each part several times over, and a tap changes one part while the
+ * others' fits carry over. Nothing changes a fit once made, so callers share
+ * one.
+ */
+const recentFits = new Map<string, TapFitResult>();
+const RECENT_FIT_LIMIT = 64;
 
 /**
  * Performances run in whole passes. A last tap this close to the end of a
@@ -518,13 +724,225 @@ interface SectionLandings {
   fit: TapFitResult;
   landings: ResolvedLanding[];
   endPosition: number | null;
+  endStored: boolean;
   droppedOverrides: number[];
 }
 
-/** Every landing that matters to a section, or null with nothing to fit. */
-function sectionLandings(
+/**
+ * The end a part's taps guess: the last landing they match, or a drag past
+ * it, rounded up to the end of the pass when close. Null without taps.
+ */
+function guessEnd(
+  section: TimingSection,
+  fit: TapFitResult,
+  movesPerPass: number
+): number | null {
+  if (section.taps.length === 0) return null;
+  const matched = fit.labels
+    .map((label) => label.position)
+    .filter((position): position is number => position !== null);
+  if (matched.length === 0) return null;
+  return roundUpToPassEnd(
+    Math.max(
+      ...matched,
+      ...section.overrides.map((override) => override.position)
+    ),
+    movesPerPass
+  );
+}
+
+/**
+ * Where a part's own input says the performance ends, whatever the parts
+ * around it do: an end Austen set, the taps' guess, or for a part with no
+ * taps an end a split carried to it. Null when nothing says.
+ */
+function ownEnd(
   section: TimingSection,
   moveBeats: readonly number[]
+): number | null {
+  if (section.lastPosition !== undefined) return section.lastPosition;
+  if (section.taps.length === 0) return section.carriedEnd ?? null;
+  const fit = fitSection(section, moveBeats);
+  return fit ? guessEnd(section, fit, moveBeats.length) : null;
+}
+
+/**
+ * Whether `next` counts on from `section`: cut from it to keep counting, its
+ * beat 1 carrying the number the section's grid gives that moment.
+ */
+function keepsCount(
+  section: TimingSection,
+  next: TimingSection,
+  moveBeats: readonly number[]
+): boolean {
+  if (!section.continuesIntoNext || next.beatOneSeconds === undefined) {
+    return false;
+  }
+  const fit = fitSection(section, moveBeats);
+  return (
+    fit !== null &&
+    landingNear(
+      section,
+      fit,
+      createBeatClock(moveBeats),
+      next.beatOneSeconds + next.offsetSeconds
+    ) === (next.beatOnePosition ?? 1)
+  );
+}
+
+/**
+ * The parts either side of `section` that share its count, nearest first:
+ * one performance, cut only to change tempo. `preceding` is in take order.
+ */
+function countingChain(
+  section: TimingSection,
+  preceding: readonly TimingSection[],
+  following: readonly TimingSection[],
+  moveBeats: readonly number[]
+): { before: TimingSection[]; after: TimingSection[] } {
+  const before: TimingSection[] = [];
+  for (let index = preceding.length - 1; index >= 0; index -= 1) {
+    const part = preceding[index]!;
+    if (!keepsCount(part, before[before.length - 1] ?? section, moveBeats)) {
+      break;
+    }
+    before.push(part);
+  }
+  const after: TimingSection[] = [];
+  for (const part of following) {
+    if (!keepsCount(after[after.length - 1] ?? section, part, moveBeats)) {
+      break;
+    }
+    after.push(part);
+  }
+  return { before, after };
+}
+
+/**
+ * Whether the performance runs on through `part` into the parts after it,
+ * judged on the part's own grid and drags. A part with nothing to fit says
+ * nothing against it.
+ */
+function runsOnThrough(
+  part: TimingSection,
+  following: readonly TimingSection[],
+  moveBeats: readonly number[]
+): boolean {
+  const fit = fitSection(part, moveBeats);
+  if (!fit) return true;
+  const clock = createBeatClock(moveBeats);
+  const drags = new Map(
+    part.overrides.map((override) => [override.position, override.seconds])
+  );
+  const landingAt = (position: number) =>
+    drags.get(position) ??
+    fit.originSeconds +
+      fit.secondsPerBeat * clock.beatsBefore(position) +
+      part.offsetSeconds;
+  return carriesOnInto(part, fit, clock, landingAt, following, moveBeats);
+}
+
+/**
+ * Whether the performance carries on from a "keep counting" part into the
+ * part after it, the first of `following`. It does while that part keeps
+ * this one's count - its beat 1 carries no lower a number than this part's
+ * grid gives that moment - and either has taps of its own, runs on through
+ * into the parts after it, or holds no earlier than this part's cut. A lower
+ * number means the performer paused or started again; an untapped part that
+ * holds before the cut, or that passes the count on to a pause, means the
+ * performance stopped here.
+ */
+function carriesOnInto(
+  section: TimingSection,
+  fit: TapFitResult,
+  clock: BeatClock,
+  landingAt: (position: number) => number,
+  following: readonly TimingSection[],
+  moveBeats: readonly number[]
+): boolean {
+  const [next, ...after] = following;
+  if (!next) return true;
+  if (next.beatOneSeconds !== undefined) {
+    const here = landingNear(
+      section,
+      fit,
+      clock,
+      next.beatOneSeconds + next.offsetSeconds
+    );
+    if ((next.beatOnePosition ?? 1) < here) return false;
+  }
+  if (next.taps.length > 0) return true;
+  if (next.lastPosition === undefined) {
+    if (next.continuesIntoNext && runsOnThrough(next, after, moveBeats)) {
+      return true;
+    }
+    if (next.carriedEnd === undefined) return !next.continuesIntoNext;
+  }
+  return landingAt((next.lastPosition ?? next.carriedEnd)!) >= section.endSeconds;
+}
+
+/**
+ * Where the performance stopped, for an untapped part with no end of its own
+ * that it does not run on through: where the nearest part before it along
+ * their shared count says it stopped. Null when none does.
+ */
+function endBefore(
+  section: TimingSection,
+  preceding: readonly TimingSection[],
+  moveBeats: readonly number[]
+): number | null {
+  let later = section;
+  for (let index = preceding.length - 1; index >= 0; index -= 1) {
+    const part = preceding[index]!;
+    if (!keepsCount(part, later, moveBeats)) return null;
+    const end = ownEnd(part, moveBeats);
+    if (end !== null || part.taps.length > 0) return end;
+    later = part;
+  }
+  return null;
+}
+
+interface DrawnLanding {
+  position: number;
+  seconds: number;
+}
+
+/**
+ * One tapped landing of the nearest part in `parts` with taps, as that part
+ * draws it, chosen by `pick`. Only a part snapped to its taps draws them.
+ */
+function edgeTap(
+  parts: readonly TimingSection[],
+  moveBeats: readonly number[],
+  pick: (drawn: DrawnLanding[]) => DrawnLanding | undefined
+): DrawnLanding | null {
+  const part = parts.find((candidate) => candidate.taps.length > 0);
+  if (!part || part.snap !== "taps") return null;
+  const fit = fitSection(part, moveBeats);
+  if (!fit) return null;
+  const drawn = fit.labels.flatMap((label) =>
+    label.position === null
+      ? []
+      : [{ position: label.position, seconds: label.seconds + part.offsetSeconds }]
+  );
+  return pick(drawn) ?? null;
+}
+
+/**
+ * Every landing that matters to a section, or null with nothing to fit.
+ * `following` and `preceding` hold the parts after and before it in take
+ * order. Parts a "keep counting" split cut apart share one count, and each
+ * draws the moves beside a cut as the others do: whether the performance runs
+ * on, where it stopped, the drags either side and, snapped to taps, the
+ * tapped landings either side. `borrow` false draws the part from its own
+ * input alone.
+ */
+function sectionLandings(
+  section: TimingSection,
+  moveBeats: readonly number[],
+  following: readonly TimingSection[],
+  preceding: readonly TimingSection[] = [],
+  borrow = true
 ): SectionLandings | null {
   const fit = fitSection(section, moveBeats);
   if (!fit) return null;
@@ -533,14 +951,36 @@ function sectionLandings(
   const spb = fit.secondsPerBeat;
   const gridAt = (position: number) =>
     fit.originSeconds + spb * clock.beatsBefore(position) + section.offsetSeconds;
-  const tapped = sectionTaps(section).length > 0;
+  const tapped = section.taps.length > 0;
+  const chain = borrow
+    ? countingChain(section, preceding, following, moveBeats)
+    : { before: [], after: [] };
 
   const tappedAt = new Map<number, number>();
-  if (section.snap === "taps" && tapped) {
-    for (const label of fit.labels) {
-      if (label.position !== null) {
-        tappedAt.set(label.position, label.seconds + section.offsetSeconds);
+  if (section.snap === "taps") {
+    if (tapped) {
+      for (const label of fit.labels) {
+        if (label.position !== null) {
+          tappedAt.set(label.position, label.seconds + section.offsetSeconds);
+        }
       }
+    }
+    // The nearest tapped landing either side, from the parts sharing the
+    // count, so the move a cut falls in runs between the same two taps.
+    const own = [...tappedAt.keys()];
+    const edgeBefore = edgeTap(chain.before, moveBeats, (drawn) =>
+      [...drawn]
+        .reverse()
+        .find((landing) => landing.seconds < section.startSeconds)
+    );
+    const edgeAfter = edgeTap(chain.after, moveBeats, (drawn) =>
+      drawn.find((landing) => landing.seconds >= section.endSeconds)
+    );
+    if (edgeBefore && own.every((position) => edgeBefore.position < position)) {
+      tappedAt.set(edgeBefore.position, edgeBefore.seconds);
+    }
+    if (edgeAfter && own.every((position) => edgeAfter.position > position)) {
+      tappedAt.set(edgeAfter.position, edgeAfter.seconds);
     }
   }
   const tappedPositions = [...tappedAt.keys()].sort(
@@ -570,17 +1010,32 @@ function sectionLandings(
     const nearest = (before ?? after)!;
     return tappedAt.get(nearest)! + spb * (beats - clock.beatsBefore(nearest));
   };
+  // A drag belongs to the part it was dropped in, but every part sharing the
+  // count draws it; where two dragged one landing, the nearer part's stands.
   const overrides = new Map(
     section.overrides.map((override) => [override.position, override.seconds])
   );
+  const ownDrags = new Set(overrides.keys());
+  const reach = Math.max(chain.before.length, chain.after.length);
+  for (let distance = 0; distance < reach; distance += 1) {
+    for (const part of [chain.before[distance], chain.after[distance]]) {
+      for (const override of part?.overrides ?? []) {
+        if (!overrides.has(override.position)) {
+          overrides.set(override.position, override.seconds);
+        }
+      }
+    }
+  }
   const landingAt = (position: number) =>
     overrides.get(position) ?? snappedAt(position);
 
   // Every position whose landing could matter to this section: from the last
   // landing at or before its start (never below the opening pose) to where
   // the performance ends. Taps say where that is - the grid does not run on
-  // after the performer stops - unless Austen set it; with no taps at all
-  // the typed tempo runs to the section's end.
+  // after the performer stops - unless Austen set it or the performance
+  // carries on into the next part; with no taps at all the typed tempo runs
+  // to the section's end, or to an end a split carried until the parts after
+  // show the performance ran on.
   let firstPosition = Math.max(
     0,
     clock.nearestPosition(
@@ -590,20 +1045,33 @@ function sectionLandings(
   while (firstPosition > 0 && landingAt(firstPosition) > section.startSeconds) {
     firstPosition -= 1;
   }
-  const matchedPositions = fit.labels
-    .map((label) => label.position)
-    .filter((position): position is number => position !== null);
-  const endPosition =
-    section.lastPosition ??
-    (tapped && !section.continuesIntoNext && matchedPositions.length > 0
-      ? roundUpToPassEnd(
-          Math.max(
-            ...matchedPositions,
-            ...section.overrides.map((override) => override.position)
-          ),
-          clock.movesPerPass
-        )
-      : null);
+  let carries: boolean | undefined;
+  const runsOn = () =>
+    (carries ??=
+      section.continuesIntoNext === true &&
+      carriesOnInto(section, fit, clock, landingAt, following, moveBeats));
+  let endPosition: number | null = null;
+  let endStored = false;
+  if (section.lastPosition !== undefined) {
+    endPosition = section.lastPosition;
+    endStored = true;
+  } else if (tapped) {
+    endPosition = runsOn() ? null : guessEnd(section, fit, clock.movesPerPass);
+  } else if (following.length > 0 && runsOn()) {
+    endPosition = null;
+  } else if (section.carriedEnd !== undefined) {
+    endPosition = section.carriedEnd;
+    endStored = true;
+  } else if (section.continuesIntoNext && following.length > 0) {
+    // Nothing here says where the performance stopped, and it does not run
+    // on through: it stopped where the part before it says.
+    endPosition = endBefore(section, preceding, moveBeats);
+  }
+  // The performer stopped before this part began, so every layer holds that
+  // pose throughout it.
+  if (endPosition !== null && endPosition <= firstPosition) {
+    firstPosition = Math.max(0, endPosition - 1);
+  }
   let lastPosition = firstPosition + 1;
   if (endPosition === null) {
     while (landingAt(lastPosition) < section.endSeconds) lastPosition += 1;
@@ -620,9 +1088,9 @@ function sectionLandings(
     });
   }
   // A dragged landing that no longer sits between its neighbours would make
-  // the moves around it flash by; it goes back on the grid and is reported.
-  // Its grid spot can crowd a neighbour already checked, so this repeats
-  // until every drag left standing has room.
+  // the moves around it flash by; it goes back on the grid, and one of this
+  // part's own is reported. Its grid spot can crowd a neighbour already
+  // checked, so this repeats until every drag left standing has room.
   const droppedOverrides: number[] = [];
   let settled = false;
   while (!settled) {
@@ -637,7 +1105,9 @@ function sectionLandings(
       ) {
         landing.seconds = snappedAt(landing.position);
         landing.pinned = false;
-        droppedOverrides.push(landing.position);
+        if (ownDrags.has(landing.position)) {
+          droppedOverrides.push(landing.position);
+        }
         settled = false;
       }
     });
@@ -649,12 +1119,15 @@ function sectionLandings(
     fit,
     landings,
     endPosition: endPosition === null ? null : lastPosition,
+    endStored,
     droppedOverrides,
   };
 }
 
 function resolveSection(
   section: TimingSection,
+  following: readonly TimingSection[],
+  preceding: readonly TimingSection[],
   moveBeats: readonly number[],
   context: { sequenceId: string; takeKey: string; updatedAt: number }
 ): ResolvedTimingSection {
@@ -666,11 +1139,14 @@ function resolveSection(
     fit: null,
     landings: [],
     endPosition: null,
+    endStored: false,
     droppedOverrides: [],
   };
-  const resolved = sectionLandings(section, moveBeats);
+  const resolved = sectionLandings(section, moveBeats, following, preceding);
   if (!resolved) return empty;
   const { fit, landings } = resolved;
+  // Nothing left to map still leaves an end Austen can clear.
+  const unmapped = { ...empty, fit, endStored: resolved.endStored };
 
   // The schema needs nonnegative media times; a grid reaching back before the
   // file's first frame is cut at zero with the position it would have there.
@@ -698,9 +1174,9 @@ function resolveSection(
       ...anchors.slice(firstNonNegative),
     ];
   } else if (firstNonNegative < 0) {
-    return { ...empty, fit };
+    return unmapped;
   }
-  if (anchors.length < 2) return { ...empty, fit };
+  if (anchors.length < 2) return unmapped;
 
   const map = SequenceTimeMapSchema.parse({
     schemaVersion: 1,
@@ -723,6 +1199,7 @@ function resolveSection(
     fit,
     landings,
     endPosition: resolved.endPosition,
+    endStored: resolved.endStored,
     droppedOverrides: resolved.droppedOverrides,
   };
 }
@@ -735,12 +1212,18 @@ export function resolveTakeTiming(
   return {
     takeKey: timing.takeKey,
     movesPerPass: moveBeats.length,
-    sections: timing.sections.map((section) =>
-      resolveSection(section, moveBeats, {
-        sequenceId: timing.sequenceId,
-        takeKey: timing.takeKey,
-        updatedAt: timing.updatedAt,
-      })
+    sections: timing.sections.map((section, index) =>
+      resolveSection(
+        section,
+        timing.sections.slice(index + 1),
+        timing.sections.slice(0, index),
+        moveBeats,
+        {
+          sequenceId: timing.sequenceId,
+          takeKey: timing.takeKey,
+          updatedAt: timing.updatedAt,
+        }
+      )
     ),
   };
 }
@@ -814,7 +1297,7 @@ export function takeTimingStatus(
 ): TakeTimingStatus {
   const hasInput = timing.sections.every(
     (section) =>
-      sectionTaps(section).length > 0 || section.beatOneSeconds !== undefined
+      section.taps.length > 0 || section.beatOneSeconds !== undefined
   );
   if (!hasInput) return "untapped";
   if (
@@ -868,7 +1351,7 @@ export function editTimingSection(
 function landingNear(
   section: TimingSection,
   fit: TapFitResult,
-  clock: ReturnType<typeof createBeatClock>,
+  clock: BeatClock,
   seconds: number
 ): number {
   const beats =
@@ -882,6 +1365,92 @@ function landingNear(
 }
 
 /**
+ * The section counted `shift` landings on. Dragged landings and the
+ * performance's end are physical moments, so they keep their moments and
+ * take the new numbers with them; any that would fall before the opening
+ * pose go.
+ */
+function renumberSection(section: TimingSection, shift: number): TimingSection {
+  const { lastPosition, carriedEnd, ...rest } = section;
+  const end = lastPosition === undefined ? undefined : lastPosition + shift;
+  const carried = carriedEnd === undefined ? undefined : carriedEnd + shift;
+  return {
+    ...rest,
+    overrides: section.overrides
+      .map((override) => ({ ...override, position: override.position + shift }))
+      .filter((override) => override.position >= 0),
+    ...(end !== undefined && end >= 0 ? { lastPosition: end } : {}),
+    ...(carried !== undefined && carried >= 0 ? { carriedEnd: carried } : {}),
+  };
+}
+
+/** A beat-1 edit, and the shift it added to every landing's number. */
+interface Recounted {
+  section: TimingSection;
+  shift: number;
+}
+
+function beatOneAt(
+  section: TimingSection,
+  moveBeats: readonly number[],
+  seconds: number
+): Recounted {
+  const { beatOnePosition: _carriedCount, ...unmarked } = section;
+  const fit = fitSection(section, moveBeats);
+  if (!fit) return { section: { ...unmarked, beatOneSeconds: seconds }, shift: 0 };
+  const clock = createBeatClock(moveBeats);
+  const current = landingNear(section, fit, clock, seconds);
+  return {
+    section: {
+      ...renumberSection(unmarked, 1 - current),
+      // Stored on the landing itself, the middle of its catch, so later taps
+      // that nudge the grid cannot tip it onto a neighbour.
+      beatOneSeconds:
+        fit.originSeconds + fit.secondsPerBeat * clock.beatsBefore(current),
+    },
+    shift: 1 - current,
+  };
+}
+
+function beatOneMoved(
+  section: TimingSection,
+  moveBeats: readonly number[],
+  landings: number
+): Recounted {
+  const fit = fitSection(section, moveBeats);
+  if (!fit || landings === 0) return { section, shift: 0 };
+  // A count carried across a split keeps its mark at the cut and takes the
+  // new number there. Marking move 1 instead would put the mark back near
+  // the take's start, so a tempo change would pivot far from this part.
+  const carried = section.beatOnePosition;
+  if (
+    carried !== undefined &&
+    section.beatOneSeconds !== undefined &&
+    carried - landings >= 1
+  ) {
+    const { beatOnePosition: _count, ...unmarked } = renumberSection(
+      section,
+      -landings
+    );
+    return {
+      section:
+        carried - landings === 1
+          ? unmarked
+          : { ...unmarked, beatOnePosition: carried - landings },
+      shift: -landings,
+    };
+  }
+  const clock = createBeatClock(moveBeats);
+  return beatOneAt(
+    section,
+    moveBeats,
+    fit.originSeconds +
+      fit.secondsPerBeat * clock.beatsBefore(1 + landings) +
+      section.offsetSeconds
+  );
+}
+
+/**
  * Makes the landing nearest `seconds` move 1's. Dragged landings and the
  * performance's end are physical moments, so they keep their moments and
  * take the new numbers with them.
@@ -891,27 +1460,7 @@ export function setBeatOneAt(
   moveBeats: readonly number[],
   seconds: number
 ): TimingSection {
-  const fit = fitSection(section, moveBeats);
-  if (!fit) return { ...section, beatOneSeconds: seconds };
-  const clock = createBeatClock(moveBeats);
-  const current = landingNear(section, fit, clock, seconds);
-  const shift = 1 - current;
-  const { lastPosition, ...rest } = section;
-  const shiftedEnd =
-    lastPosition === undefined ? undefined : lastPosition + shift;
-  return {
-    ...rest,
-    // Stored on the landing itself, the middle of its catch, so later taps
-    // that nudge the grid cannot tip it onto a neighbour.
-    beatOneSeconds:
-      fit.originSeconds + fit.secondsPerBeat * clock.beatsBefore(current),
-    overrides: section.overrides
-      .map((override) => ({ ...override, position: override.position + shift }))
-      .filter((override) => override.position >= 0),
-    ...(shiftedEnd !== undefined && shiftedEnd >= 0
-      ? { lastPosition: shiftedEnd }
-      : {}),
-  };
+  return beatOneAt(section, moveBeats, seconds).section;
 }
 
 /**
@@ -923,65 +1472,245 @@ export function moveBeatOne(
   moveBeats: readonly number[],
   landings: number
 ): TimingSection {
-  const fit = fitSection(section, moveBeats);
-  if (!fit || landings === 0) return section;
+  return beatOneMoved(section, moveBeats, landings).section;
+}
+
+/**
+ * A part with no beat-1 mark that keeps an earlier part's count, renumbered
+ * with it.
+ */
+function countShifted(section: TimingSection, shift: number): TimingSection {
+  return {
+    ...renumberSection(section, shift),
+    firstTapPosition: Math.max(0, section.firstTapPosition + shift),
+  };
+}
+
+/**
+ * A marked part that kept `before`'s count, counting on from `after` instead:
+ * the same part recounted, or the one that took its place. The mark moves to
+ * the landing nearest the part's start on the new grid, under that number
+ * less any the part's own count set back (a pause after the cut) and never
+ * below move 1. Moves of different lengths do not number alike across a new
+ * count, so no single shift would do. Drags and the end keep their moments
+ * and take the numbers found there; an end carried from the taps is guessed
+ * again from the new count. Null when the part has a count of its own or
+ * either side has no grid.
+ */
+function reanchor(
+  part: TimingSection,
+  before: TimingSection,
+  after: TimingSection,
+  moveBeats: readonly number[]
+): TimingSection | null {
+  if (part.beatOneSeconds === undefined) return null;
+  const fitBefore = fitSection(before, moveBeats);
+  const fitAfter = fitSection(after, moveBeats);
+  if (!fitBefore || !fitAfter) return null;
   const clock = createBeatClock(moveBeats);
-  return setBeatOneAt(
-    section,
-    moveBeats,
-    fit.originSeconds +
-      fit.secondsPerBeat * clock.beatsBefore(1 + landings) +
-      section.offsetSeconds
+  const marked = landingNear(
+    before,
+    fitBefore,
+    clock,
+    part.beatOneSeconds + part.offsetSeconds
+  );
+  if (
+    marked !==
+    Math.max(1, landingNear(before, fitBefore, clock, part.startSeconds))
+  ) {
+    return null;
+  }
+  const skipped = (part.beatOnePosition ?? 1) - marked;
+  const landing = Math.max(
+    landingNear(after, fitAfter, clock, part.startSeconds),
+    1 - skipped
+  );
+  const count = landing + skipped;
+  const {
+    beatOnePosition: _count,
+    lastPosition: _end,
+    carriedEnd: _carriedEnd,
+    ...unmarked
+  } = part;
+  const recounted: TimingSection = {
+    ...unmarked,
+    beatOneSeconds:
+      fitAfter.originSeconds +
+      fitAfter.secondsPerBeat * clock.beatsBefore(landing) +
+      after.offsetSeconds -
+      part.offsetSeconds,
+    ...(count !== 1 ? { beatOnePosition: count } : {}),
+    // With no taps the part ran on the grid it was cut from, so it runs on
+    // the one it now counts from.
+    ...(part.taps.length === 0 &&
+    Math.abs(part.bpm - clampTakeBpm(60 / fitBefore.secondsPerBeat)) < 1e-6
+      ? { bpm: clampTakeBpm(60 / fitAfter.secondsPerBeat) }
+      : {}),
+  };
+  const toRecounted = joinedPositions(recounted, part, moveBeats, []);
+  if (!toRecounted) return null;
+  const taken = new Set<number>();
+  const overrides: TimingOverride[] = [];
+  for (const override of part.overrides) {
+    const position = toRecounted(override.position);
+    if (position < 0 || taken.has(position)) continue;
+    taken.add(position);
+    overrides.push({ ...override, position });
+  }
+  const end =
+    part.lastPosition === undefined
+      ? undefined
+      : toRecounted(part.lastPosition);
+  const guessed =
+    part.carriedEnd === undefined ? null : ownEnd(after, moveBeats);
+  const carriedEnd = guessed === null ? undefined : guessed + skipped;
+  return {
+    ...recounted,
+    overrides: overrides.sort((left, right) => left.position - right.position),
+    ...(end !== undefined && end >= 0 ? { lastPosition: end } : {}),
+    ...(carriedEnd !== undefined && carriedEnd >= 0 ? { carriedEnd } : {}),
+  };
+}
+
+/**
+ * The parts from `index` on that kept the count of `before` - the part
+ * before them as it was - count on from that part as it is now, down the
+ * chain. A marked part re-anchors (see `reanchor`); an unmarked one takes
+ * `shift`, the change in every landing's number, when there is one.
+ */
+function recountChain(
+  sections: TimingSection[],
+  index: number,
+  before: TimingSection,
+  moveBeats: readonly number[],
+  shift: number | null
+): void {
+  let was = before;
+  for (
+    let at = index;
+    at < sections.length && sections[at - 1]!.continuesIntoNext;
+    at += 1
+  ) {
+    const part = sections[at]!;
+    const recounted =
+      part.beatOneSeconds !== undefined
+        ? reanchor(part, was, sections[at - 1]!, moveBeats)
+        : shift
+          ? countShifted(part, shift)
+          : null;
+    if (!recounted) return;
+    was = part;
+    sections[at] = recounted;
+  }
+}
+
+/**
+ * Applies a beat-1 edit to one part of a take. The parts after it that keep
+ * its count are renumbered with it, down the chain: correcting the count
+ * before a "keep counting" split must not leave the parts after it a move
+ * off, or read as a pause where the performance ran on.
+ */
+function recount(
+  timing: TakeTiming,
+  sectionId: string,
+  moveBeats: readonly number[],
+  edit: (section: TimingSection) => Recounted
+): TakeTiming {
+  const index = timing.sections.findIndex(
+    (section) => section.id === sectionId
+  );
+  if (index < 0) return timing;
+  const original = timing.sections[index]!;
+  const { section, shift } = edit(original);
+  if (section === original) return timing;
+  const sections = [...timing.sections];
+  sections[index] = section;
+  recountChain(sections, index + 1, original, moveBeats, shift);
+  return { ...timing, sections };
+}
+
+/** `setBeatOneAt` on one part, carried to the parts that keep its count. */
+export function setTakeBeatOneAt(
+  timing: TakeTiming,
+  sectionId: string,
+  moveBeats: readonly number[],
+  seconds: number
+): TakeTiming {
+  return recount(timing, sectionId, moveBeats, (section) =>
+    beatOneAt(section, moveBeats, seconds)
+  );
+}
+
+/** `moveBeatOne` on one part, carried to the parts that keep its count. */
+export function moveTakeBeatOne(
+  timing: TakeTiming,
+  sectionId: string,
+  moveBeats: readonly number[],
+  landings: number
+): TakeTiming {
+  return recount(timing, sectionId, moveBeats, (section) =>
+    beatOneMoved(section, moveBeats, landings)
   );
 }
 
 /**
  * Ends the performance at the landing nearest `seconds` as drawn - dragged and
  * snapped to taps - so the end lands on the pose Austen sees there. Past the
- * last drawn landing the grid carries on.
+ * last drawn landing the grid carries on. `following` and `preceding` hold
+ * the parts after and before this one, which decide how a part cut by "keep
+ * counting" is drawn.
  */
 export function setPerformanceEndAt(
   section: TimingSection,
   moveBeats: readonly number[],
-  seconds: number
+  seconds: number,
+  following: readonly TimingSection[] = [],
+  preceding: readonly TimingSection[] = []
 ): TimingSection {
   const fit = fitSection(section, moveBeats);
   if (!fit) return section;
   const clock = createBeatClock(moveBeats);
-  const { lastPosition: _end, ...open } = section;
-  const drawn = sectionLandings(open, moveBeats)?.landings ?? [];
+  const { lastPosition: _end, carriedEnd: _carried, ...open } = section;
+  const drawn =
+    sectionLandings(open, moveBeats, following, preceding)?.landings ?? [];
   const onGrid = landingNear(section, fit, clock, seconds);
   const lastDrawn = drawn[drawn.length - 1];
+  // Up to the last drawn landing, the drawn landings decide: one dragged
+  // late sits past its grid slot, and ending on it must not pick the next.
   const nearest =
-    lastDrawn && onGrid <= lastDrawn.position
+    lastDrawn &&
+    (onGrid <= lastDrawn.position || seconds <= lastDrawn.seconds)
       ? drawn.reduce((best, landing) =>
           Math.abs(landing.seconds - seconds) < Math.abs(best.seconds - seconds)
             ? landing
             : best
         ).position
       : onGrid;
-  return { ...section, lastPosition: Math.max(0, nearest) };
+  return { ...open, lastPosition: Math.max(0, nearest) };
 }
 
 /**
  * Where a landing can be dragged: strictly between its neighbours, a frame
- * clear of each. Null when the section has no such landing.
+ * clear of each. Null when the section has no such landing. `following` and
+ * `preceding` hold the parts around this one, as for `setPerformanceEndAt`.
  */
 export function landingDragRange(
   section: TimingSection,
   moveBeats: readonly number[],
-  position: number
+  position: number,
+  following: readonly TimingSection[] = [],
+  preceding: readonly TimingSection[] = []
 ): { min: number; max: number } | null {
-  const resolved = sectionLandings(section, moveBeats);
+  const resolved = sectionLandings(section, moveBeats, following, preceding);
   const index =
     resolved?.landings.findIndex((landing) => landing.position === position) ??
     -1;
   if (!resolved || index < 0) return null;
   const previous = resolved.landings[index - 1];
-  const next = resolved.landings[index + 1];
+  const after = resolved.landings[index + 1];
   return {
     min: Math.max(0, previous ? previous.seconds + MIN_MOVE_SECONDS : 0),
-    max: next ? next.seconds - MIN_MOVE_SECONDS : Number.POSITIVE_INFINITY,
+    max: after ? after.seconds - MIN_MOVE_SECONDS : Number.POSITIVE_INFINITY,
   };
 }
 
@@ -990,9 +1719,17 @@ export function setLandingAt(
   section: TimingSection,
   moveBeats: readonly number[],
   position: number,
-  seconds: number
+  seconds: number,
+  following: readonly TimingSection[] = [],
+  preceding: readonly TimingSection[] = []
 ): TimingSection {
-  const range = landingDragRange(section, moveBeats, position);
+  const range = landingDragRange(
+    section,
+    moveBeats,
+    position,
+    following,
+    preceding
+  );
   if (!range || range.max < range.min) return section;
   return {
     ...section,
@@ -1012,6 +1749,129 @@ export function releaseLanding(
     ...section,
     overrides: section.overrides.filter(
       (override) => override.position !== position
+    ),
+  };
+}
+
+/** The part `sectionId` names, with the parts before and after it. */
+function partAt(
+  timing: TakeTiming,
+  sectionId: string
+): {
+  section: TimingSection;
+  preceding: TimingSection[];
+  following: TimingSection[];
+} | null {
+  const index = timing.sections.findIndex(
+    (section) => section.id === sectionId
+  );
+  if (index < 0) return null;
+  return {
+    section: timing.sections[index]!,
+    preceding: timing.sections.slice(0, index),
+    following: timing.sections.slice(index + 1),
+  };
+}
+
+/** The parts that share `sectionId`'s count, in take order. */
+function countedWith(
+  timing: TakeTiming,
+  sectionId: string,
+  moveBeats: readonly number[]
+): TimingSection[] {
+  const part = partAt(timing, sectionId);
+  if (!part) return [];
+  const { before, after } = countingChain(
+    part.section,
+    part.preceding,
+    part.following,
+    moveBeats
+  );
+  return [...before.reverse(), part.section, ...after];
+}
+
+/** `landingDragRange` for one part of a take, among the parts around it. */
+export function takeLandingDragRange(
+  timing: TakeTiming,
+  sectionId: string,
+  position: number,
+  moveBeats: readonly number[]
+): { min: number; max: number } | null {
+  const part = partAt(timing, sectionId);
+  return part
+    ? landingDragRange(
+        part.section,
+        moveBeats,
+        position,
+        part.following,
+        part.preceding
+      )
+    : null;
+}
+
+/**
+ * Pins a landing where Austen dropped it, from whichever part he dragged it
+ * in. Parts that share a count draw one another's drags, so the drag goes to
+ * the part it was dropped inside and replaces any other part's drag on that
+ * landing.
+ */
+export function placeTakeLanding(
+  timing: TakeTiming,
+  sectionId: string,
+  position: number,
+  seconds: number,
+  moveBeats: readonly number[]
+): TakeTiming {
+  const range = takeLandingDragRange(timing, sectionId, position, moveBeats);
+  if (!range || range.max < range.min) return timing;
+  const placed = Math.min(range.max, Math.max(range.min, seconds));
+  const chain = countedWith(timing, sectionId, moveBeats);
+  const keeper =
+    chain.find(
+      (part) => placed >= part.startSeconds && placed < part.endSeconds
+    ) ?? chain.find((part) => part.id === sectionId)!;
+  return {
+    ...timing,
+    sections: timing.sections.map((part) => {
+      if (!chain.includes(part)) return part;
+      const others = part.overrides.filter(
+        (override) => override.position !== position
+      );
+      if (part === keeper) {
+        return {
+          ...part,
+          overrides: [...others, { position, seconds: placed }].sort(
+            (left, right) => left.position - right.position
+          ),
+        };
+      }
+      return others.length === part.overrides.length
+        ? part
+        : { ...part, overrides: others };
+    }),
+  };
+}
+
+/**
+ * Hands a dragged landing back to the grid, whichever of the parts sharing
+ * the count holds the drag.
+ */
+export function releaseTakeLanding(
+  timing: TakeTiming,
+  sectionId: string,
+  position: number,
+  moveBeats: readonly number[]
+): TakeTiming {
+  const chain = countedWith(timing, sectionId, moveBeats);
+  const holds = (part: TimingSection) =>
+    part.overrides.some((override) => override.position === position);
+  if (!chain.some(holds)) return timing;
+  return {
+    ...timing,
+    sections: timing.sections.map((part) =>
+      chain.includes(part) && holds(part)
+        ? releaseLanding(part, position)
+        : part
     ),
   };
 }

@@ -26,6 +26,13 @@ export interface TrailCapturePropStates {
   /** Chirality flip as drawn this frame; trail sources mirror with the sprite. */
   leftPropFlipped?: boolean;
   rightPropFlipped?: boolean;
+  /**
+   * Render key of the artwork drawn this frame (`bigfan__fire_bare`,
+   * `triad__model`). The base pair's tips come from its table; tunnel layers
+   * keep the notation prop type.
+   */
+  leftPropRenderKey?: string | null;
+  rightPropRenderKey?: string | null;
   additionalLayers?: AdditionalLayerProps[];
 }
 
