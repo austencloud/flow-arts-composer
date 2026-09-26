@@ -44,7 +44,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { isAbsolute, join, relative, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const SKIP_BRANCH_PREFIXES = [
   "wip/",
@@ -326,6 +326,14 @@ function localFinish() {
       } else {
         run("npm", ["run", "check"], { cwd: task.path, stdio: "inherit" });
       }
+      // svelte-check no longer reads components; compile the changed ones.
+      const compileGate = fileURLToPath(
+        new URL("svelte-compile-gate.mjs", import.meta.url)
+      );
+      run(process.execPath, [compileGate, mainBefore], {
+        cwd: task.path,
+        stdio: "inherit",
+      });
     } else if (!SKIP_CHECKS) {
       console.log(
         "    skipping `npm run check` for documentation-only changes"
