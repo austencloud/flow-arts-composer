@@ -190,6 +190,13 @@ describe("staff grip contact contract", () => {
       'import { resolvePerformerUpperBodyStance } from "../domain/performer-upper-body-stance"'
     );
     expect(viewerScene).toContain("resolvePerformerUpperBodyStance(performer)");
+    // The contact owner reads the score clock, which holds at beat 1 while the
+    // start pose plays; a torso on the raw score time would turn ahead of the
+    // props it hands over.
+    expect(liveSequencePerformer).toContain(
+      "performerScoreClock(performerState),"
+    );
+    expect(performerStanceOwner).toContain("performerScoreClock(performer),");
     // An authored stance (the isolation study) may override the planned one,
     // so the render props read the resolved `renderedUpperBodyStance`, which
     // falls back to the shared owner's result.
