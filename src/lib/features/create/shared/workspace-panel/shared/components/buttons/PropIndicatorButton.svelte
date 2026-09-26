@@ -5,14 +5,24 @@
   Tap toggles the prop selection drawer (mounted at CreateModule level).
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { getSettings, updateSettings } from "$lib/shared/application/state/app-state.svelte";
-  import { getPropTypeDisplayInfo, getAllPropTypes } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
+  import {
+    getSettings,
+    updateSettings,
+  } from "$lib/shared/application/state/app-state.svelte";
+  import {
+    getPropTypeDisplayInfo,
+    getAllPropTypes,
+  } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
   import { filterPremiumCosmeticProps } from "$lib/shared/subscription/domain/premium-prop-access";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { propDrawerState } from "$lib/shared/settings/state/prop-drawer-state.svelte";
   import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
-  import { propCollection, remainingLockedProps } from "$lib/shared/gamification/state/prop-collection-state.svelte";
+  import {
+    propCollection,
+    remainingLockedProps,
+  } from "$lib/shared/gamification/state/prop-collection-state.svelte";
   import { openPropCelebration } from "$lib/shared/gamification/state/prop-celebration-state.svelte";
 
   const settings = $derived(getSettings());
@@ -29,7 +39,8 @@
     // the user may actually use them.
     const allProps = filterPremiumCosmeticProps(getAllPropTypes());
     const otherProps = allProps.filter((p) => p !== leftPropType);
-    const randomProp = otherProps[Math.floor(Math.random() * otherProps.length)]!;
+    const randomProp =
+      otherProps[Math.floor(Math.random() * otherProps.length)]!;
 
     try {
       const hapticService = getHapticFeedback();
@@ -77,7 +88,8 @@
 >
   <PropCompositionPreview propType={leftPropType} size={40} />
   {#if hasPendingPick}
-    <span class="redeem-dot" aria-label="Claim your new prop"></span>
+    <span class="redeem-dot" aria-label={t("create_ui_claim_your_new_prop")}
+    ></span>
   {/if}
 </button>
 
@@ -93,8 +105,13 @@
     background: transparent;
     border-radius: 50%;
     cursor: pointer;
-    transition: all var(--transition-normal, var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1));
-    box-shadow: 0 0 12px color-mix(in srgb, var(--theme-accent, #818cf8) 25%, transparent);
+    transition: all
+      var(
+        --transition-normal,
+        var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1)
+      );
+    box-shadow: 0 0 12px
+      color-mix(in srgb, var(--theme-accent, #818cf8) 25%, transparent);
     -webkit-tap-highlight-color: transparent;
     padding: 0;
     filter: brightness(1.3) saturate(1.3);
@@ -114,7 +131,8 @@
   .prop-indicator-button:hover {
     transform: scale(1.05);
     border-color: var(--theme-accent, #818cf8);
-    box-shadow: 0 0 18px color-mix(in srgb, var(--theme-accent, #818cf8) 40%, transparent);
+    box-shadow: 0 0 18px
+      color-mix(in srgb, var(--theme-accent, #818cf8) 40%, transparent);
   }
 
   .prop-indicator-button:active {

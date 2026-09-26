@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   /**
    * ConversationList
    *
@@ -43,17 +44,17 @@
     isMarkingRead = true;
     try {
       await conversationService.markAllAsRead();
-      toast.success("All messages marked as read");
+      toast.success(t("inbox_ui_all_messages_marked_as_read"));
     } catch (error) {
       console.error("Failed to mark all as read:", error);
-      toast.error("Failed to mark messages as read");
+      toast.error(t("inbox_ui_failed_to_mark_messages_as_read"));
     } finally {
       isMarkingRead = false;
     }
   }
 </script>
 
-<div class="conversation-list" role="region" aria-label="Conversations">
+<div class="conversation-list" role="region" aria-label={t("inbox_ui_conversations")}>
   <!-- Mark all read appears when there are unread messages -->
   {#if conversations.length > 0 && hasUnread}
     <div class="header-actions">
@@ -61,14 +62,14 @@
         class="mark-all-read"
         onclick={handleMarkAllRead}
         disabled={isMarkingRead}
-        aria-label="Mark all conversations as read"
+        aria-label={t("inbox_ui_mark_all_conversations_as_read")}
       >
         {#if isMarkingRead}
           <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
         {:else}
           <i class="fas fa-check-double" aria-hidden="true"></i>
         {/if}
-        <span>Mark all read</span>
+        <span>{t("inbox_ui_mark_all_read")}</span>
       </button>
     </div>
   {/if}
@@ -78,7 +79,7 @@
   {:else if conversations.length === 0}
     <EmptyConversations />
   {:else}
-    <div class="conversations" role="list" aria-label="Conversation list">
+    <div class="conversations" role="list" aria-label={t("inbox_ui_conversation_list")}>
       {#each conversations as conversation, index (conversation.id)}
         <div
           class="conversation-wrapper"

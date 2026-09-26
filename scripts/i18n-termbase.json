@@ -17,7 +17,7 @@
     "Box":        { "_review": "GRID MODE proper noun, rendered as 'square mode'.", "es": "Cuadrado", "fr": "Carré",  "de": "Quadrat", "pt": "Quadrado", "it": "Quadrato", "ja": "ボックス", "ko": "TODO", "zh": "方形", "ar": "TODO", "ru": "квадрат" },
     "Diamond":    { "_review": "GRID MODE proper noun. Endorsed Rombo/Losange.", "es": "Rombo", "fr": "Losange", "de": "Raute", "pt": "Losango", "it": "Rombo", "ja": "ダイヤモンド", "ko": "TODO", "zh": "菱形", "ar": "TODO", "ru": "ромб" },
 
-    "Prop":       { "_policy": "term-of-art: Latin in Latin-script locales, native in CJK/Cyrillic", "es": "Prop", "fr": "Prop", "de": "Prop", "pt": "Prop", "it": "Prop", "ja": "プロップ", "ko": "TODO", "zh": "道具", "ar": "TODO", "ru": "реквизит" },
+    "Prop":       { "_policy": "German: Requisit (plural Requisiten), per UI review; other Latin-script locales retain Prop", "es": "Prop", "fr": "Prop", "de": "Requisit", "pt": "Prop", "it": "Prop", "ja": "プロップ", "ko": "TODO", "zh": "道具", "ar": "TODO", "ru": "реквизит" },
     "Staff":      { "_policy": "the staff prop (pole/rod), not personnel/staff-list", "es": "Staff", "fr": "Staff", "de": "Staff", "pt": "Staff", "it": "Staff", "ja": "棒", "ko": "TODO", "zh": "棍", "ar": "TODO", "ru": "шест" },
     "Double-Staff": { "_policy": "TKA canonical prop name", "es": "Double-Staff", "fr": "Double-Staff", "de": "Double-Staff", "pt": "Double-Staff", "it": "Double-Staff", "ja": "ダブルスタッフ", "ko": "TODO", "zh": "双棍", "ar": "TODO", "ru": "двойной шест" },
     "Dash":       { "_policy": "motion type proper noun; Latin in Latin-script, transliterate CJK/Cyrillic; zh uncertain", "es": "Dash", "fr": "Dash", "de": "Dash", "pt": "Dash", "it": "Dash", "ja": "ダッシュ", "ko": "TODO", "zh": "TODO", "ar": "TODO", "ru": "дэш" },

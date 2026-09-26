@@ -7,6 +7,7 @@
   than as the thing that changes it, and conclude the app is one 4x4 matrix.
   The readout, steppers, and segment chrome are the signals that correct it. -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import ShapeMatrixRibbonCell from "./ShapeMatrixRibbonCell.svelte";
 
@@ -112,7 +113,12 @@
   <ShapeMatrixRibbonCell {label} tray={layout === "tray"} keepLabel>
     {#snippet note()}
       {#if showStepper && index >= 0}
-        <span class="position">{index + 1} of {count}</span>
+        <span class="position"
+          >{t("shape_engine_value_position", {
+            current: index + 1,
+            total: count,
+          })}</span
+        >
       {/if}
     {/snippet}
     <div class="value-row">
@@ -122,7 +128,9 @@
           class="value-step"
           onclick={() => step(-1)}
           disabled={index <= 0}
-          aria-label={`Previous ${label.toLowerCase()}`}
+          aria-label={t("shape_engine_previous_generic", {
+            label,
+          })}
         >
           <i class="fas fa-chevron-left" aria-hidden="true"></i>
         </button>
@@ -155,7 +163,9 @@
           class="value-step"
           onclick={() => step(1)}
           disabled={index < 0 || index >= count - 1}
-          aria-label={`Next ${label.toLowerCase()}`}
+          aria-label={t("shape_engine_next_generic", {
+            label,
+          })}
         >
           <i class="fas fa-chevron-right" aria-hidden="true"></i>
         </button>

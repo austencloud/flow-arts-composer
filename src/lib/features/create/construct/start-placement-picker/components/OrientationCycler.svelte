@@ -4,6 +4,7 @@ Three touch targets: left arrow cycles back, right arrow cycles forward, and the
 center label opens an anchored popover with all four orientations.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
   import { Popover } from "bits-ui";
   import { scale } from "svelte/transition";
@@ -188,11 +189,16 @@ center label opens an anchored popover with all four orientations.
         : RADIAL_CYCLE_ORDER
   );
   const orientationOptions = $derived(
-    centered
+    (centered
       ? CENTER_ORIENTATIONS
       : allowInterradial
         ? INTERRADIAL_ORIENTATIONS
         : RADIAL_ORIENTATIONS
+    ).map((option) => ({
+      ...option,
+      label: t(`create_ui_orientation_${option.value}_label`),
+      hint: t(`create_ui_orientation_${option.value}_hint`),
+    }))
   );
   const currentDisplay = $derived(
     orientationOptions.find((option) => option.value === orientation) ??
@@ -203,7 +209,11 @@ center label opens an anchored popover with all four orientations.
   // tinted, so the word lives in the accessible name rather than on screen
   // (`chip-primitives.md`, Blue/Red prop identity).
   const colorLabel = $derived(
-    color === "blue" ? "Left" : color === "red" ? "Right" : ""
+    color === "blue"
+      ? t("create_ui_left")
+      : color === "red"
+        ? t("create_ui_right")
+        : ""
   );
 
   let popoverOpen = $state(false);
@@ -237,7 +247,7 @@ center label opens an anchored popover with all four orientations.
   <button
     class="cycle-arrow"
     onclick={cyclePrev}
-    aria-label="Previous {colorLabel} orientation"
+    aria-label={t("create_ui_previous_orientation", { side: colorLabel })}
   >
     <i class="fas fa-chevron-left" aria-hidden="true"></i>
   </button>
@@ -248,7 +258,10 @@ center label opens an anchored popover with all four orientations.
         <button
           {...props}
           class="cycle-center"
-          aria-label="{colorLabel} orientation: {currentDisplay.label}. Tap to see all options."
+          aria-label={t("create_ui_orientation_options", {
+            side: colorLabel,
+            orientation: currentDisplay.label,
+          })}
         >
           <span class="trigger-label">{currentDisplay.label}</span>
         </button>
@@ -319,7 +332,7 @@ center label opens an anchored popover with all four orientations.
   <button
     class="cycle-arrow"
     onclick={cycleNext}
-    aria-label="Next {colorLabel} orientation"
+    aria-label={t("create_ui_next_orientation", { side: colorLabel })}
   >
     <i class="fas fa-chevron-right" aria-hidden="true"></i>
   </button>

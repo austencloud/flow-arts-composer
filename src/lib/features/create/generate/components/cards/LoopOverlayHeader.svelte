@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   interface Props {
     onClose: () => void;
     onDisable?: () => void;
@@ -9,13 +10,15 @@
 </script>
 
 <div class="overlay-header">
-  <h3 class="overlay-title" id={props.titleId}>Select LOOP Type</h3>
+  <h3 class="overlay-title" id={props.titleId}>
+    {t("create_ui_select_loop_type")}
+  </h3>
   <div class="header-actions">
     {#if props.onDisable}
       <button
         class="disable-button"
         onclick={props.onDisable}
-        aria-label="Turn off LOOP"
+        aria-label={t("create_ui_turn_off_loop")}
       >
         <svg
           viewBox="0 0 24 24"
@@ -26,13 +29,13 @@
           <circle cx="12" cy="12" r="10"></circle>
           <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
         </svg>
-        <span>Off</span>
+        <span>{t("create_ui_off")}</span>
       </button>
     {/if}
     <button
       class="close-button"
       onclick={props.onClose}
-      aria-label="Close LOOP selection"
+      aria-label={t("create_ui_close_loop_selection")}
     >
       <svg
         viewBox="0 0 24 24"

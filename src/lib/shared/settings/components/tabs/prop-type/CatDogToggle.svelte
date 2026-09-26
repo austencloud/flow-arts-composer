@@ -1,5 +1,6 @@
 <!-- CatDogToggle.svelte - Chip toggle for CatDog mode (different props per hand) -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   let {
     catDogMode = false,
     onToggle,
@@ -16,13 +17,13 @@
   onclick={onToggle}
   role="switch"
   aria-checked={catDogMode}
-  aria-label="Cat Dog: different props per hand"
+  aria-label={t("settings_cat_dog_help")}
 >
   <span class="chip-icons">
     <i class="fas fa-cat" aria-hidden="true"></i>
     <i class="fas fa-dog" aria-hidden="true"></i>
   </span>
-  <span class="chip-label">Cat Dog</span>
+  <span class="chip-label">{t("settings_cat_dog")}</span>
 </button>
 
 <style>

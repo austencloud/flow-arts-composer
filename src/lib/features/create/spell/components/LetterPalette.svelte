@@ -6,6 +6,7 @@ Clicking a letter inserts it into the word input.
 Haptic feedback on letter selection.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import {
     GREEK_LETTER_PALETTE,
@@ -52,11 +53,15 @@ Haptic feedback on letter selection.
 
 <div class="letter-palette">
   <div class="palette-header">
-    <h4>Greek Letters</h4>
-    <span class="hint">Click to insert</span>
+    <h4>{t("create_ui_greek_letters")}</h4>
+    <span class="hint">{t("create_ui_click_to_insert")}</span>
   </div>
 
-  <div class="categories" role="group" aria-label="Greek letter categories">
+  <div
+    class="categories"
+    role="group"
+    aria-label={t("create_ui_greek_letter_categories")}
+  >
     {#each categories as category}
       <div
         class="category"

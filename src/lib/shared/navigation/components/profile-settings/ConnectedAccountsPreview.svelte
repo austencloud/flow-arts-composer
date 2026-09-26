@@ -5,6 +5,7 @@
   Used in admin preview mode to view another user's linked accounts.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { PreviewAuthProvider } from "../../../debug/state/user-preview-state.svelte";
   import { PROVIDERS, type ProviderId } from "./connected-accounts.providers";
   import ProviderStatusRow from "./ProviderStatusRow.svelte";
@@ -31,7 +32,7 @@
   {#if loading}
     <div class="loading-state">
       <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-      <span>Loading sign-in methods...</span>
+      <span>{t("nav_ui_loading_sign_in_methods")}</span>
     </div>
   {:else if providers.length > 0}
     <div class="providers-list">
@@ -42,9 +43,11 @@
         <ProviderStatusRow
           providerId={provider.providerId}
           name={config?.name ?? provider.providerId}
-          detail={provider.email ?? "Connected"}
+          detail={provider.email ?? t("nav_ui_connected")}
           accent={config?.color ?? "#9ca3af"}
-          status={emailNeedsVerification ? "Not verified" : "Connected"}
+          status={emailNeedsVerification
+            ? t("nav_ui_not_verified")
+            : t("nav_ui_connected")}
           statusTone={emailNeedsVerification ? "warning" : "connected"}
         />
       {/each}
@@ -52,7 +55,7 @@
   {:else}
     <div class="empty-state">
       <i class="fas fa-unlink" aria-hidden="true"></i>
-      <p>No sign-in methods found</p>
+      <p>{t("nav_ui_no_sign_in_methods_found")}</p>
     </div>
   {/if}
 </div>

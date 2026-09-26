@@ -7,6 +7,7 @@
   frame color is a 3D-only detail and stays out of this 2D control.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import FanAppearancePicker from "$lib/shared/pictograph/prop/components/FanAppearancePicker.svelte";
   import {
     normalizeFanAppearance,
@@ -92,7 +93,7 @@
 <div
   class="fan-style-options"
   role="group"
-  aria-label="Fan appearance choices"
+  aria-label={t("settings_fan_appearance_choices")}
   class:fill
   class:horizontal
   class:dragging

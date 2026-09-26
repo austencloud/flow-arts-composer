@@ -6,6 +6,7 @@
   } from "$lib/shared/background/shared/state/background-hold.svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import type { TranslationKey } from "$lib/shared/i18n/i18n-types";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
   import { tryGetAccountSetupContext } from "$lib/shared/onboarding/context/account-setup-context";
   import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
@@ -38,6 +39,16 @@
     celestial: "Open sky, sunlight, and a clear horizon.",
     void: "Near-black space for maximum focus on the composition.",
   };
+
+  function themeName(type: string): string {
+    return t(`settings_theme_${type}` as TranslationKey);
+  }
+
+  function themeDescription(type: string): string {
+    return descriptions[type]
+      ? t(`settings_theme_${type}_desc` as TranslationKey)
+      : "";
+  }
 
   let hapticService: HapticFeedback | null = null;
   let previewType = $state<BackgroundType>(
@@ -81,7 +92,7 @@
       duration: 10_000,
       announcement: "polite",
       action: {
-        label: "Retry",
+        label: t("common_retry"),
         onClick: () => void accountSetupState.retrySave(),
       },
     });
@@ -107,32 +118,38 @@
   <section class="theme-workspace" aria-labelledby="theme-heading">
     <header class="theme-intro">
       <h3 id="theme-heading">{t("tab_settings_theme")}</h3>
-      <p>Choose the moving backdrop for your composer.</p>
+      <p>{t("settings_background_intro")}</p>
     </header>
 
     <div class="theme-composition">
       <section
         class="theme-stage"
-        aria-label={`Previewing ${preview.label} theme`}
+        aria-label={t("settings_previewing_theme", {
+          theme: themeName(previewType),
+        })}
       >
         <ThemePreview type={previewType} fallback={preview.gradient} />
         <div class="stage-scrim"></div>
         <div class="stage-copy">
-          <p class="stage-label">Live preview</p>
+          <p class="stage-label">{t("settings_live_preview")}</p>
           <Crossfade key={previewType} duration={DURATION.normal}>
             <div class="stage-title-wrap">
-              <h4>{preview.label}</h4>
-              <p>{descriptions[previewType]}</p>
+              <h4>{themeName(previewType)}</h4>
+              <p>{themeDescription(previewType)}</p>
             </div>
           </Crossfade>
         </div>
       </section>
 
-      <section class="theme-controls" aria-label="Theme choices">
+      <section class="theme-controls" aria-label={t("settings_theme_choices")}>
         <div class="controls-heading">
           <div>
-            <p class="eyebrow">Choose a theme</p>
-            <span>{BACKGROUND_CARD_REGISTRY.length} available</span>
+            <p class="eyebrow">{t("settings_choose_theme")}</p>
+            <span
+              >{t("settings_themes_available", {
+                count: BACKGROUND_CARD_REGISTRY.length,
+              })}</span
+            >
           </div>
           <button
             type="button"
@@ -141,19 +158,25 @@
             onclick={applyPreview}
             disabled={!canApplyPreview}
           >
-            {canApplyPreview ? `Use ${preview.label}` : "Current theme"}
+            {canApplyPreview
+              ? t("settings_use_theme", { theme: themeName(previewType) })
+              : t("settings_current_theme")}
             {#if !canApplyPreview}<i class="fas fa-check" aria-hidden="true"
               ></i>{/if}
           </button>
         </div>
 
-        <div class="theme-choices" aria-label="Choose a theme">
+        <div class="theme-choices" aria-label={t("settings_choose_theme")}>
           {#each BACKGROUND_CARD_REGISTRY as theme}
             <button
               type="button"
               class:previewing={previewType === theme.type}
               aria-pressed={previewType === theme.type}
-              aria-label={`${theme.label}${currentType === theme.type ? ", current theme" : ""}`}
+              aria-label={currentType === theme.type
+                ? t("settings_theme_current_aria", {
+                    theme: themeName(theme.type),
+                  })
+                : themeName(theme.type)}
               onclick={() => previewTheme(theme.type as BackgroundType)}
             >
               <span
@@ -163,9 +186,9 @@
               >
                 <img src={`/images/theme-previews/${theme.type}.webp`} alt="" />
                 <span class="choice-scrim"></span>
-                <span class="choice-name">{theme.label}</span>
+                <span class="choice-name">{themeName(theme.type)}</span>
                 {#if currentType === theme.type}
-                  <span class="choice-current">Current</span>
+                  <span class="choice-current">{t("settings_current")}</span>
                 {/if}
               </span>
             </button>

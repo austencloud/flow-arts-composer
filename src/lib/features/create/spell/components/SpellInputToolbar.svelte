@@ -11,6 +11,7 @@
   - CSS env() variables for positioning
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { onMount, onDestroy } from "svelte";
   import { browser } from "$app/environment";
@@ -113,8 +114,14 @@
       vk.addEventListener("geometrychange", handleVirtualKeyboardChange);
     } else if (window.visualViewport) {
       // Fallback: visualViewport API (iOS Safari, older Chrome)
-      window.visualViewport.addEventListener("resize", handleVisualViewportResize);
-      window.visualViewport.addEventListener("scroll", handleVisualViewportResize);
+      window.visualViewport.addEventListener(
+        "resize",
+        handleVisualViewportResize
+      );
+      window.visualViewport.addEventListener(
+        "scroll",
+        handleVisualViewportResize
+      );
     }
   });
 
@@ -131,8 +138,14 @@
     }
 
     if (window.visualViewport) {
-      window.visualViewport.removeEventListener("resize", handleVisualViewportResize);
-      window.visualViewport.removeEventListener("scroll", handleVisualViewportResize);
+      window.visualViewport.removeEventListener(
+        "resize",
+        handleVisualViewportResize
+      );
+      window.visualViewport.removeEventListener(
+        "scroll",
+        handleVisualViewportResize
+      );
     }
   });
 
@@ -172,7 +185,8 @@
 
     const viewportHeight = window.visualViewport.height;
     const windowHeight = window.innerHeight;
-    const calculatedHeight = windowHeight - viewportHeight - window.visualViewport.offsetTop;
+    const calculatedHeight =
+      windowHeight - viewportHeight - window.visualViewport.offsetTop;
 
     if (keyboardDebounceTimer) {
       clearTimeout(keyboardDebounceTimer);
@@ -219,7 +233,9 @@
   });
 
   // Don't show toolbar in simulated mobile mode (Chrome DevTools) - there's no keyboard
-  const shouldShow = $derived(visible && isKeyboardVisible && !isSimulatedMobile);
+  const shouldShow = $derived(
+    visible && isKeyboardVisible && !isSimulatedMobile
+  );
 
   function handleDone() {
     haptic.trigger("selection");
@@ -238,14 +254,16 @@
     class:has-virtual-keyboard-api={hasVirtualKeyboardAPI}
     style={toolbarStyle}
     role="toolbar"
-    aria-label="Word input actions"
+    aria-label={t("create_ui_word_input_actions")}
   >
     <div class="toolbar-content">
       <div class="toolbar-left">
         {#if word}
-          <span class="word-preview"><TKAWordGlyph {word} height={16} darkMode /></span>
+          <span class="word-preview"
+            ><TKAWordGlyph {word} height={16} darkMode /></span
+          >
         {:else}
-          <span class="word-hint">Type your word...</span>
+          <span class="word-hint">{t("create_ui_type_your_word")}</span>
         {/if}
       </div>
 
@@ -263,14 +281,14 @@
               handleGenerate();
             }}
             disabled={disabled || !canGenerate || isGenerating}
-            aria-label="Generate sequence"
+            aria-label={t("create_ui_generate_sequence")}
           >
             {#if isGenerating}
               <i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i>
             {:else}
               <i class="fas fa-magic" aria-hidden="true"></i>
             {/if}
-            <span>Generate</span>
+            <span>{t("generator_button")}</span>
           </button>
         {/if}
 
@@ -279,9 +297,9 @@
           class="done-button"
           onclick={handleDone}
           {disabled}
-          aria-label="Done - dismiss keyboard"
+          aria-label={t("create_ui_done_dismiss_keyboard")}
         >
-          <span class="done-text">Done</span>
+          <span class="done-text">{t("train_filter_done")}</span>
         </button>
       </div>
     </div>

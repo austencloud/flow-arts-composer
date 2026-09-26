@@ -1,13 +1,14 @@
 <!-- One directly editable VTG ratio. Theory composes one for each axis so
      neither half of the grid is hidden behind an Apply-to mode. -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { spinRatioKey, type SpinRatio } from "@vtg/domain";
   import {
     theoryRatioFromParts,
     theoryRatioLabel,
-    theoryRatioSpokenLabel,
     THEORY_RATIO_MAX_PART,
   } from "$lib/shared/shape-matrix/domain/theory-ratio";
+  import { localizedTheoryRatioSpokenLabel } from "../../domain/shape-matrix-display";
   import { growFade } from "$lib/shared/transitions/motion";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
 
@@ -27,10 +28,10 @@
   const currentKey = $derived(spinRatioKey(current));
   const axisLabel = $derived(
     hand === "left"
-      ? "Left-hand rows"
+      ? t("shape_engine_left_rows")
       : hand === "right"
-        ? "Right-hand columns"
-        : "Rows + columns"
+        ? t("shape_engine_right_columns")
+        : t("shape_engine_rows_columns")
   );
 
   let propText = $state("");
@@ -68,13 +69,13 @@
     const handCycles = readPart(handText);
     if (propRotations === null || handCycles === null) return null;
     if (propRotations === 0 && handCycles === 0) {
-      return "A ratio needs a hand cycle or a prop rotation.";
+      return t("shape_engine_ratio_invalid_zero");
     }
     if (
       propRotations > THEORY_RATIO_MAX_PART ||
       handCycles > THEORY_RATIO_MAX_PART
     ) {
-      return `Each number can be 0 through ${THEORY_RATIO_MAX_PART}.`;
+      return t("shape_engine_ratio_range", { max: THEORY_RATIO_MAX_PART });
     }
     return null;
   });
@@ -152,7 +153,7 @@
   class:both={hand === "both"}
   class:tray={layout === "tray"}
   class:corner={layout === "corner"}
-  aria-label={`${axisLabel} ratio`}
+  aria-label={t("shape_engine_ratio_aria", { axis: axisLabel })}
   onfocusin={() => onfocuschange?.(hand)}
   onfocusout={onFocusOut}
 >
@@ -163,11 +164,13 @@
 
   <div class="entry-row" class:invalid={Boolean(problem)}>
     <div class="part-field">
-      <span>Hand cycles</span>
+      <span>{t("shape_engine_hand_cycles")}</span>
       <span class="part-stepper">
         <button
           type="button"
-          aria-label={`Decrease ${axisLabel} hand cycles`}
+          aria-label={t("shape_engine_ratio_decrease_hand", {
+            axis: axisLabel,
+          })}
           disabled={(handValue ?? 0) <= 0}
           onclick={() => nudge("hand", -1)}
         >
@@ -179,7 +182,7 @@
           inputmode="numeric"
           autocomplete="off"
           value={handText}
-          aria-label={`${axisLabel} hand cycles`}
+          aria-label={t("shape_engine_ratio_hand_field", { axis: axisLabel })}
           aria-valuemin="0"
           aria-valuemax={THEORY_RATIO_MAX_PART}
           aria-valuenow={handValue ?? undefined}
@@ -189,7 +192,9 @@
         />
         <button
           type="button"
-          aria-label={`Increase ${axisLabel} hand cycles`}
+          aria-label={t("shape_engine_ratio_increase_hand", {
+            axis: axisLabel,
+          })}
           disabled={(handValue ?? 0) >= THEORY_RATIO_MAX_PART}
           onclick={() => nudge("hand", 1)}
         >
@@ -201,11 +206,13 @@
     <span class="colon" aria-hidden="true">:</span>
 
     <div class="part-field">
-      <span>Prop rotations</span>
+      <span>{t("shape_engine_prop_rotations")}</span>
       <span class="part-stepper">
         <button
           type="button"
-          aria-label={`Decrease ${axisLabel} prop rotations`}
+          aria-label={t("shape_engine_ratio_decrease_prop", {
+            axis: axisLabel,
+          })}
           disabled={(propValue ?? 0) <= 0}
           onclick={() => nudge("prop", -1)}
         >
@@ -217,7 +224,7 @@
           inputmode="numeric"
           autocomplete="off"
           value={propText}
-          aria-label={`${axisLabel} prop rotations`}
+          aria-label={t("shape_engine_ratio_prop_field", { axis: axisLabel })}
           aria-valuemin="0"
           aria-valuemax={THEORY_RATIO_MAX_PART}
           aria-valuenow={propValue ?? undefined}
@@ -227,7 +234,9 @@
         />
         <button
           type="button"
-          aria-label={`Increase ${axisLabel} prop rotations`}
+          aria-label={t("shape_engine_ratio_increase_prop", {
+            axis: axisLabel,
+          })}
           disabled={(propValue ?? 0) >= THEORY_RATIO_MAX_PART}
           onclick={() => nudge("prop", 1)}
         >
@@ -250,7 +259,7 @@
   </div>
 
   <span class="sr-only" aria-live="polite">
-    {theoryRatioSpokenLabel(current)}
+    {localizedTheoryRatioSpokenLabel(current.handCycles, current.propRotations)}
   </span>
 </section>
 

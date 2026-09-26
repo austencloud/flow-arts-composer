@@ -1,5 +1,6 @@
 <!-- The Setups card shows the applied source and opens the setup drawer. -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import BaseCard from "./BaseCard.svelte";
 
   let {
@@ -19,15 +20,21 @@
   }>();
 
   const statusLabel = $derived(
-    setupsCardStatus === "active" ? "Active" : ""
+    setupsCardStatus === "active" ? t("create_deep_active") : ""
+  );
+  const displayValue = $derived(
+    setupsCardValue === "Browse" ? t("create_deep_browse") : setupsCardValue
   );
 </script>
 
 <div class="preset-card-shell">
   <BaseCard
-    title="Setups"
-    currentValue={setupsCardValue}
-    ariaLabel={`Setups: ${setupsCardValue}${statusLabel ? `, ${statusLabel}` : ""}. Click to change.`}
+    title={t("create_ui_setups")}
+    currentValue={displayValue}
+    ariaLabel={t("create_deep_setups_card_aria", {
+      value: displayValue,
+      status: statusLabel ? `, ${statusLabel}` : "",
+    })}
     {color}
     {shadowColor}
     {cardIndex}
@@ -35,7 +42,9 @@
     onClick={onOpenDrawer}
   >
     <span class="setup-status">
-      <span class="setup-status-sizer" aria-hidden="true">Active</span>
+      <span class="setup-status-sizer" aria-hidden="true"
+        >{t("create_deep_active")}</span
+      >
       <span class="setup-status-live">{statusLabel}</span>
     </span>
   </BaseCard>

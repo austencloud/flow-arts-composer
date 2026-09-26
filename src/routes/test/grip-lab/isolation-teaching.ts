@@ -15,13 +15,50 @@ export const POSE_CHANNELS = [
   "tipX",
   "tipY",
   "tipZ",
+  "gripRelaxation",
+  "gripTilt",
+  "wristBend",
+  "wristTwist",
+  "thumbSpread",
+  "thumbCurl",
+  "indexCurl",
+  "middleCurl",
+  "ringCurl",
+  "pinkyCurl",
+  "thumbJoint1",
+  "thumbJoint2",
+  "thumbJoint3",
+  "indexJoint1",
+  "indexJoint2",
+  "indexJoint3",
+  "middleJoint1",
+  "middleJoint2",
+  "middleJoint3",
+  "ringJoint1",
+  "ringJoint2",
+  "ringJoint3",
+  "pinkyJoint1",
+  "pinkyJoint2",
+  "pinkyJoint3",
+  "wristRaise",
 ] as const;
+// Preserve links created before grip editing and before individual hand editing.
+const LEGACY_POSE_ROW_LENGTH = 13;
+const PRE_HAND_POSE_ROW_LENGTH = 15;
+const PRE_JOINT_POSE_ROW_LENGTH = 23;
+const PRE_WRIST_RAISE_POSE_ROW_LENGTH = POSE_CHANNELS.length - 1;
 export type PoseChannel = (typeof POSE_CHANNELS)[number];
 export type TeachingPose = Record<PoseChannel, number>;
 export interface TeachingKey extends TeachingPose {
   phase: number;
 }
-export type PoseHandle = "chest" | "pelvis" | "elbow" | "tip";
+export type PoseHandle =
+  | "chest"
+  | "pelvis"
+  | "elbow"
+  | "tip"
+  | "grip"
+  | "fingers";
 export const TEACHING_KEY_PHASE_TOLERANCE = 0.005;
 // Place this teaching circle within arm reach; drift measures movement around this fixed anchor.
 export const TEACHING_ANCHOR_OFFSET: [number, number, number] = [0, 0, -0.25];
@@ -46,12 +83,38 @@ const NEUTRAL: TeachingPose = {
   tipX: 0,
   tipY: 0,
   tipZ: 0,
+  gripRelaxation: 0,
+  gripTilt: 1.0472,
+  wristBend: 0,
+  wristTwist: 0,
+  thumbSpread: 0,
+  thumbCurl: 0,
+  indexCurl: 0,
+  middleCurl: 0,
+  ringCurl: 0,
+  pinkyCurl: 0,
+  thumbJoint1: 0,
+  thumbJoint2: 0,
+  thumbJoint3: 0,
+  indexJoint1: 0,
+  indexJoint2: 0,
+  indexJoint3: 0,
+  middleJoint1: 0,
+  middleJoint2: 0,
+  middleJoint3: 0,
+  ringJoint1: 0,
+  ringJoint2: 0,
+  ringJoint3: 0,
+  pinkyJoint1: 0,
+  pinkyJoint2: 0,
+  pinkyJoint3: 0,
+  wristRaise: 0,
 };
 export function defaultTeachingKeys(): TeachingKey[] {
   return [
     { ...NEUTRAL, phase: 0, tipY: 0.09 },
     { ...NEUTRAL, phase: 1 },
-    { ...NEUTRAL, phase: 2 },
+    { ...NEUTRAL, phase: 2, gripRelaxation: 1, thumbSpread: 0.4363 },
     {
       ...NEUTRAL,
       phase: 3,
@@ -62,7 +125,8 @@ export function defaultTeachingKeys(): TeachingKey[] {
       elbowY: -0.6,
       elbowZ: 1,
       tipX: -0.08,
-      tipZ: -0.05,
+      // Give the thumb end room to pass inside the right elbow at West.
+      tipZ: 0.1,
     },
     {
       ...NEUTRAL,
@@ -73,7 +137,7 @@ export function defaultTeachingKeys(): TeachingKey[] {
       pelvisZ: 0.0125,
       tipX: -0.1,
       tipY: 0.07,
-      tipZ: -0.025,
+      tipZ: 0.05,
     },
   ];
 }
@@ -138,6 +202,13 @@ export function canMoveTeachingKey(
   );
 }
 export function channelLimit(channel: PoseChannel): number {
+  if (channel === "wristRaise") return 0.08;
+  if (channel === "wristBend" || channel === "wristTwist") return Math.PI / 6;
+  if (channel === "thumbSpread") return Math.PI / 4;
+  if (channel.endsWith("Curl")) return Math.PI / 4;
+  if (channel.includes("Joint")) return Math.PI / 3;
+  if (channel === "gripRelaxation") return 1;
+  if (channel === "gripTilt") return (80 * Math.PI) / 180;
   if (channel === "turn") return Math.PI / 2;
   if (channel === "lean" || channel === "pitch") return 0.35;
   if (channel.startsWith("elbow")) return 1.5;
@@ -155,7 +226,9 @@ export function upsertTeachingKey(
     const next = changes[channel];
     if (next !== undefined && Number.isFinite(next)) {
       pose[channel] = Math.max(
-        -channelLimit(channel),
+        channel === "gripRelaxation" || channel === "gripTilt"
+          ? 0
+          : -channelLimit(channel),
         Math.min(channelLimit(channel), next)
       );
     }
@@ -168,13 +241,55 @@ export function upsertTeachingKey(
     { ...pose, phase: t },
   ].sort((a, b) => a.phase - b.phase);
 }
-export function authoredBodyPose(pose: TeachingPose): AuthoredContactPose {
+/** The ordinary North grip follows the original turn. An authored wrist edit
+ * on the East-to-North passage selects the shorter, inward-facing approach. */
+export function isolationPalmRoll(
+  phase: number,
+  inwardApproach = false
+): number {
+  const t = wrapStaffIsolationPhase(phase);
+  if (!inwardApproach) {
+    const roll = Math.PI - 0.18;
+    if (t < 2) return (t / 2) * roll;
+    if (t < 2.5) return roll;
+    if (t < 3) return (3 - t) * 2 * roll;
+    return 0;
+  }
+  const stageLeftRoll = -2.8;
+  const northRoll = -Math.PI - 0.18;
+  if (t <= 1) return 0;
+  if (t < 1.9) {
+    const progress = (t - 1) / 0.9;
+    return stageLeftRoll * progress * progress * (3 - 2 * progress);
+  }
+  if (t < 2)
+    return stageLeftRoll + (t - 1.9) * 10 * (northRoll - stageLeftRoll);
+  if (t < 2.5) return northRoll;
+  if (t < 3) return (3 - t) * 2 * (northRoll + 2 * Math.PI);
+  return 0;
+}
+export function authoredBodyPose(
+  pose: TeachingPose,
+  phase = 0,
+  keys?: readonly TeachingKey[]
+): AuthoredContactPose {
+  const inwardApproach =
+    keys?.some(
+      (key) =>
+        key.phase > 1 &&
+        key.phase < 2 &&
+        (Math.abs(key.wristBend) > 0.1 || Math.abs(key.wristTwist) > 0.1)
+    ) ?? false;
   return {
     pelvisOffset: { x: pose.pelvisX, y: pose.pelvisY, z: pose.pelvisZ },
     torsoYawRad: pose.turn,
     torsoLeanRad: pose.lean,
     torsoPitchRad: pose.pitch,
     elbowPole: { x: pose.elbowX, y: pose.elbowY, z: pose.elbowZ },
+    gripRelaxation: pose.gripRelaxation,
+    gripTiltRad: pose.gripTilt,
+    gripPalmRollRad: isolationPalmRoll(phase, inwardApproach),
+    gripRiseM: pose.wristRaise,
   };
 }
 /** Bound the actual tip displacement, including depth, rather than loosening the grip. */
@@ -197,7 +312,7 @@ export function encodeTeachingKeys(keys: readonly TeachingKey[]): string {
   );
 }
 export function decodeTeachingKeys(raw: string | null): TeachingKey[] {
-  if (!raw || raw.length > 24000) return defaultTeachingKeys();
+  if (!raw || raw.length > 48000) return defaultTeachingKeys();
   try {
     const rows: unknown = JSON.parse(raw);
     if (!Array.isArray(rows) || !rows.length || rows.length > 100)
@@ -206,7 +321,13 @@ export function decodeTeachingKeys(raw: string | null): TeachingKey[] {
     for (const row of rows) {
       if (
         !Array.isArray(row) ||
-        row.length !== POSE_CHANNELS.length + 1 ||
+        ![
+          POSE_CHANNELS.length + 1,
+          PRE_WRIST_RAISE_POSE_ROW_LENGTH,
+          PRE_JOINT_POSE_ROW_LENGTH,
+          PRE_HAND_POSE_ROW_LENGTH,
+          LEGACY_POSE_ROW_LENGTH,
+        ].includes(row.length) ||
         !row.every(
           (value) => typeof value === "number" && Number.isFinite(value)
         ) ||
@@ -214,11 +335,23 @@ export function decodeTeachingKeys(raw: string | null): TeachingKey[] {
         row[0] >= 4
       )
         return defaultTeachingKeys();
+      // Old pose links describe a closed grip. Keep those reproducible instead
+      // of silently giving their existing keyframes a different hand pose.
+      const legacy = row.length === LEGACY_POSE_ROW_LENGTH;
       keys = upsertTeachingKey(
         keys,
         row[0],
         Object.fromEntries(
-          POSE_CHANNELS.map((channel, i) => [channel, row[i + 1]])
+          POSE_CHANNELS.map((channel, i) => [
+            channel,
+            i + 1 >= row.length
+              ? NEUTRAL[channel]
+              : legacy && channel === "gripRelaxation"
+                ? 0
+                : legacy && channel === "gripTilt"
+                  ? NEUTRAL.gripTilt
+                  : row[i + 1],
+          ])
         )
       );
     }

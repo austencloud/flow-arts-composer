@@ -6,6 +6,8 @@
   import { getSubscriptionInfo, onSubscriptionChange, createPortalSession } from "$lib/shared/subscription/services/subscription-manager";
   import { onMount, onDestroy } from "svelte";
   import { goto } from "$app/navigation";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { getReactiveLocale } from "$lib/shared/i18n/locale-state.svelte";
   import type { SubscriptionInfo } from "../../../../subscription/services/types";
   import type { HapticFeedback } from "../../../../application/services/haptic-feedback";
 
@@ -28,7 +30,7 @@
 
   const formattedBillingDate = $derived(
     subscriptionInfo?.currentPeriodEnd
-      ? subscriptionInfo.currentPeriodEnd.toLocaleDateString("en-US", {
+      ? subscriptionInfo.currentPeriodEnd.toLocaleDateString(getReactiveLocale(), {
           month: "long",
           day: "numeric",
           year: "numeric",
@@ -83,7 +85,7 @@
         </div>
         <div class="premium-info">
           <span class="premium-label">Flow Arts Composer Premium</span>
-          <span class="premium-status">Active</span>
+          <span class="premium-status">{t("settings_subscription_active")}</span>
         </div>
         <div class="active-badge">
           <i class="fas fa-check-circle" aria-hidden="true"></i>
@@ -94,10 +96,10 @@
         {#if subscriptionInfo?.cancelAtPeriodEnd}
           <p class="cancel-notice">
             <i class="fas fa-info-circle" aria-hidden="true"></i>
-            Cancels on {formattedBillingDate}
+            {t("settings_subscription_cancels_on", { date: formattedBillingDate ?? "" })}
           </p>
         {:else}
-          <p>Next billing: {formattedBillingDate}</p>
+          <p>{t("settings_subscription_next_billing", { date: formattedBillingDate ?? "" })}</p>
         {/if}
       </div>
 
@@ -111,7 +113,7 @@
         {:else}
           <i class="fas fa-cog" aria-hidden="true"></i>
         {/if}
-        <span>Manage Subscription</span>
+        <span>{t("settings_subscription_manage")}</span>
       </button>
     </div>
   {:else}
@@ -119,8 +121,8 @@
     <button class="subscribe-btn" onclick={handleLearnMore}>
       <div class="subscribe-content">
         <i class="fas fa-crown" aria-hidden="true"></i>
-        <span class="subscribe-text">Go Premium</span>
-        <span class="subscribe-price">$10/mo</span>
+        <span class="subscribe-text">{t("settings_subscription_go_premium")}</span>
+        <span class="subscribe-price">{t("settings_subscription_price")}</span>
       </div>
     </button>
   {/if}

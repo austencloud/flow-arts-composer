@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import ShapeMatrixGrid from "$lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte";
   import type { Flower } from "$lib/shared/shape-matrix/domain/flower-signature";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
@@ -35,7 +36,7 @@
 <section
   class="matrix-pane"
   class:compact={state.compact}
-  aria-label="Shape matrix"
+  aria-label={t("shape_engine_matrix_aria")}
 >
   {#if state.compact}
     <ShapeMatrixRecipeStrip surface="level" onsurprise={surprise} />
@@ -43,11 +44,15 @@
   <div class="matrix-stage" inert={workspaceOpen} aria-hidden={workspaceOpen}>
     {#if state.loadError}
       <div class="status error" role="alert">
-        <p>The matrix could not be built.</p>
-        <button type="button" onclick={() => state.load()}>Try again</button>
+        <p>{t("shape_engine_matrix_failed")}</p>
+        <button type="button" onclick={() => state.load()}
+          >{t("shape_engine_try_again")}</button
+        >
       </div>
     {:else if !state.data}
-      <p class="status" aria-live="polite">Building the matrix…</p>
+      <p class="status" aria-live="polite">
+        {t("shape_engine_building_matrix")}
+      </p>
     {:else}
       <ShapeMatrixGrid
         data={state.data}

@@ -70,6 +70,7 @@
     type PerformerPointerInteraction,
   } from "./performer-interaction/performer-pointer-interaction.svelte";
   import { resolvePerformerUpperBodyStance } from "../domain/performer-upper-body-stance";
+  import { resolvePerformerContact } from "../domain/performer-contact-displacement";
   import { getAvatarSequenceCollisionAudit } from "../collision/avatar-sequence-collision-audit";
   import { getAvatarGripMotionAudit } from "../diagnostics/avatar-grip-motion-audit";
   import {
@@ -823,6 +824,10 @@
         performer.totalSteps
       )}
       {@const upperBodyStance = resolvePerformerUpperBodyStance(performer)}
+      <!-- Staffs the hands cannot hold from the planned stance move toward
+         them, radially and in depth; a seek clears the animator's contact
+         history. -->
+      {@const contact = resolvePerformerContact(performer)}
       <PerformerVisualPickTarget
         performerIndex={i}
         register={performerInteraction?.registerVisualPickTarget}
@@ -849,8 +854,10 @@
                 leftBuugengFlipped}
               redPropFlipped={isBuugengFamilyProp(resolvedRightProp) &&
                 rightBuugengFlipped}
-              bluePropState={performer.leftPropState}
-              redPropState={performer.rightPropState}
+              bluePropState={contact.leftProp}
+              redPropState={contact.rightProp}
+              pairSeparation={!contact.planned}
+              contactResetKey={contact.resetKey}
               tipEffectMap={perfTipMap}
               {propLength}
               {propBuild}

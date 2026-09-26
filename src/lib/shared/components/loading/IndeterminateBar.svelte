@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * IndeterminateBar - Thin animated bar that slides back and forth.
    * YouTube/GitHub-style loading indicator.
@@ -22,7 +23,7 @@
   style:height="{height}px"
   style:--bar-color={color}
   role="status"
-  aria-label="Loading"
+  aria-label={t("common_loading")}
 >
   <div class="fill"></div>
 </div>

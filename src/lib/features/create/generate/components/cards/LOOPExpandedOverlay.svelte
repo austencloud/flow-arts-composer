@@ -3,6 +3,7 @@ LOOPExpandedOverlay.svelte - Expanded LOOP selection that covers the card grid
 Animates forward in z-axis and expands to fill the container space
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { fly, scale } from "svelte/transition";
   import { quintOut } from "svelte/easing";
@@ -13,6 +14,7 @@ Animates forward in z-axis and expands to fill the container space
   import {
     generateLOOPType,
     buildLoopSpec,
+    effectiveInversionInterval,
   } from "$lib/shared/create/services/loop-type-utils";
   import { gateRhythm } from "$lib/shared/create/services/loop-rhythm-gating";
   import {
@@ -28,6 +30,11 @@ Animates forward in z-axis and expands to fill the container space
   import LoopOverlayHeader from "./LoopOverlayHeader.svelte";
   import LoopRhythmConfigurator from "./LoopRhythmConfigurator.svelte";
   import LoopSelectionSummary from "./LoopSelectionSummary.svelte";
+  import {
+    loopComponentLabel,
+    loopComponentDescription,
+  } from "../loop-component-presentation";
+  import { describeCreateTnDSelection } from "./tnd-presentation";
   import {
     buildLoopOverlayModel,
     normalizeReflectionSelection,
@@ -162,10 +169,27 @@ Animates forward in z-axis and expands to fill the container space
       handRelationship,
     })
   );
-  const explanationText = $derived(overlayModel.explanationText);
+  const explanationText = $derived.by(() => {
+    const components = Array.from(localSelectedComponents);
+    if (components.length === 0)
+      return t("create_deep_loop_select_explanation");
+    if (components.length === 1)
+      return loopComponentDescription(components[0]!);
+    return t("create_deep_loop_combo_explanation", {
+      components: components.map(loopComponentLabel).join(" + "),
+    });
+  });
   const isImplemented = $derived(overlayModel.isImplemented);
   const disabledComponents = $derived(overlayModel.disabledComponents);
-  const disabledReasons = $derived(overlayModel.disabledReasons);
+  const disabledReasons = $derived.by(() => {
+    const reasons = { ...overlayModel.disabledReasons };
+    for (const component of Object.keys(reasons) as LOOPComponent[]) {
+      reasons[component] = t("create_deep_loop_incompatible_hands", {
+        hands: describeCreateTnDSelection(handRelationship ?? "free"),
+      });
+    }
+    return reasons;
+  });
   const reflectionAxisOptions = $derived(overlayModel.reflectionAxisOptions);
   const quarteredAvailable = $derived(overlayModel.quarteredAvailable);
   const selectionCount = $derived(overlayModel.selectionCount);
@@ -185,9 +209,70 @@ Animates forward in z-axis and expands to fill the container space
   const rhythmGate = $derived(overlayModel.rhythmGate);
   const guestLock = $derived(overlayModel.guestLock);
   const lockedComponents = $derived(overlayModel.lockedComponents);
-  const wordMathText = $derived(overlayModel.wordMathText);
-  const inversionCaption = $derived(overlayModel.inversionCaption);
-  const buttonText = $derived(overlayModel.buttonText);
+  const wordMathText = $derived.by(() => {
+    if (!rhythmGate) return null;
+    if (!rhythmGate.ok) {
+      if (rhythmGate.reason.startsWith("No LOOP type"))
+        return t("create_deep_loop_no_match");
+      if (rhythmGate.reason.startsWith("Too short"))
+        return t("create_deep_loop_too_short");
+      const match = rhythmGate.reason.match(
+        /^(\d+) beats can't split into (\d+) equal parts$/
+      );
+      return match
+        ? t("create_deep_loop_cannot_split", {
+            beats: match[1],
+            parts: match[2],
+          })
+        : rhythmGate.reason;
+    }
+    return t("create_deep_loop_word_math", {
+      seed: rhythmGate.seedLength,
+      multiplier: rhythmGate.multiplier,
+      total: sequenceLength ?? 0,
+      overlay:
+        localSelectedComponents.has(LOOPComponent.INVERTED) &&
+        localRhythm.inversionMode === "overlay"
+          ? t("create_deep_loop_word_math_overlay")
+          : "",
+    });
+  });
+  const inversionCaption = $derived(
+    localRhythm.inversionMode === "overlay"
+      ? t(
+          effectiveInversionInterval(localRhythm) === 4
+            ? "create_deep_inversion_quarter_caption"
+            : "create_deep_inversion_half_caption"
+        )
+      : t("create_deep_inversion_expand_caption")
+  );
+  const buttonText = $derived.by(() => {
+    if (selectionCount === 0) return t("create_deep_select_components");
+    if (!isImplemented) return t("create_deep_combo_unsupported");
+    if (guestLock.locked) return t("create_deep_signup_unlock");
+    if (
+      selectionCount === 1 &&
+      localSelectedComponents.has(LOOPComponent.MIRRORED)
+    ) {
+      return t("create_deep_apply_reflection", {
+        axis:
+          localRhythm.reflectionAxis === "north-south"
+            ? t("generator_loop_mirrored")
+            : localRhythm.reflectionAxis === "east-west"
+              ? t("generator_loop_flipped")
+              : localRhythm.reflectionAxis === "northeast-southwest"
+                ? t("create_deep_ne_sw_reflection")
+                : t("create_deep_nw_se_reflection"),
+      });
+    }
+    if (selectionCount === 1) {
+      const component = Array.from(localSelectedComponents)[0]!;
+      return t("create_deep_apply_component", {
+        component: loopComponentLabel(component),
+      });
+    }
+    return t("create_deep_apply_combo", { count: selectionCount });
+  });
 
   function usesMobileDrawerPresentation(): boolean {
     const mobileStage = overlayElement?.querySelector<HTMLElement>(
@@ -545,8 +630,8 @@ Animates forward in z-axis and expands to fill the container space
   {#snippet modeSelector()}
     <SegmentedControl
       options={[
-        { value: "single", label: "Single" },
-        { value: "combo", label: "Combo" },
+        { value: "single", label: t("create_deep_single") },
+        { value: "combo", label: t("create_deep_combo") },
       ]}
       value={isMultiSelectMode ? "combo" : "single"}
       onchange={(v) => handleModeChange(v === "combo")}

@@ -1,4 +1,5 @@
 // Manages undo/redo state for changelog editing
+import { t } from "$lib/shared/i18n/i18n.svelte";
 import type {
   AppVersion,
   ChangelogEntry,
@@ -46,7 +47,7 @@ class ChangelogEditState {
         ...this.redoStack,
         { type: "add", absoluteIndex: action.absoluteIndex },
       ];
-      return "Entry restored";
+      return t("settings_entry_restored");
     }
 
     if (action.type === "add") {
@@ -67,7 +68,7 @@ class ChangelogEditState {
             absoluteIndex: action.absoluteIndex,
           },
         ];
-        return "Entry removed";
+        return t("settings_entry_removed");
       }
     }
 
@@ -95,7 +96,7 @@ class ChangelogEditState {
             absoluteIndex: action.absoluteIndex,
           },
         ];
-        return "Edit reverted";
+        return t("settings_edit_reverted");
       }
     }
 
@@ -107,7 +108,7 @@ class ChangelogEditState {
         ...this.redoStack,
         { type: "editReleaseNotes", oldText: currentText },
       ];
-      return "Release notes reverted";
+      return t("settings_release_notes_reverted");
     }
 
     return null;
@@ -132,7 +133,7 @@ class ChangelogEditState {
         ...this.undoStack,
         { type: "add", absoluteIndex: action.absoluteIndex },
       ];
-      return "Entry restored";
+      return t("settings_entry_restored");
     }
 
     if (action.type === "add") {
@@ -153,7 +154,7 @@ class ChangelogEditState {
             absoluteIndex: action.absoluteIndex,
           },
         ];
-        return "Entry removed";
+        return t("settings_entry_removed");
       }
     }
 
@@ -181,7 +182,7 @@ class ChangelogEditState {
             absoluteIndex: action.absoluteIndex,
           },
         ];
-        return "Edit reapplied";
+        return t("settings_edit_reapplied");
       }
     }
 
@@ -193,7 +194,7 @@ class ChangelogEditState {
         ...this.undoStack,
         { type: "editReleaseNotes", oldText: currentText },
       ];
-      return "Release notes reapplied";
+        return t("settings_release_notes_reapplied");
     }
 
     return null;

@@ -31,7 +31,7 @@ import {
   fromFirestoreFields,
   toFirestoreFields,
 } from "../../../src/lib/server/firestore/firestore-rest";
-import { withPhysicalCardId } from "../../../src/lib/shared/qr/domain/physical-card";
+import { buildSerializedCardUrl } from "../../../src/lib/shared/qr/domain/physical-card";
 import {
   readScanPhysicalCardId,
   recordCardScanAfterAuth,
@@ -371,11 +371,9 @@ describe("serialized card URL through the Worker and /q to the ingest write", ()
   it("keeps pid, bp, and rp from the printed QR to the scan record", async () => {
     seedSerializedCard();
     const posted = routeClientPostsToEndpoint();
-    // Exactly how a print export builds the QR payload.
-    const printedUrl = withPhysicalCardId(
-      `HTTPS://TKA.RUN/${SHORT_CODE}?bp=staff&rp=staff`,
-      PID
-    );
+    // A card printed before serialized QRs dropped bp/rp: its props ride in
+    // the URL and must still reach /q.
+    const printedUrl = `https://tka.run/${SHORT_CODE}?bp=staff&rp=staff&pid=${PID}`;
 
     const scanUrl = await followWorker(printedUrl);
 
@@ -547,10 +545,7 @@ describe("serialized card URL opened in the installed Android app", () => {
   it("records the scan with its pid from the link the phone camera opened", async () => {
     seedSerializedCard();
     const posted = routeAppPostsToEndpoint();
-    const printedUrl = withPhysicalCardId(
-      `HTTPS://TKA.RUN/${SHORT_CODE}?bp=staff&rp=staff`,
-      PID
-    );
+    const printedUrl = buildSerializedCardUrl(SHORT_CODE, PID);
 
     const outcome = await recordNativeCardScan(printedUrl, {
       deviceId: () => DEVICE_ID,

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import { AnimationLoop } from "$lib/shared/animation-engine/services/animation-loop";
@@ -25,15 +26,23 @@
     selectedRhythm = label;
     elapsed = 0;
   }
-  const rhythms = [
-    { label: "Together", offset: 0, caption: "Downbeats land together." },
-    { label: "Split", offset: 0.5, caption: "Downbeats alternate evenly." },
+  const rhythms = $derived([
+    {
+      label: "Together",
+      offset: 0,
+      caption: tDynamic("learn_timing_examples_together_caption"),
+    },
+    {
+      label: "Split",
+      offset: 0.5,
+      caption: tDynamic("learn_timing_examples_split_caption"),
+    },
     {
       label: "Quarter",
       offset: 0.25,
-      caption: "A short gap, then a long gap.",
+      caption: tDynamic("learn_timing_examples_quarter_caption"),
     },
-  ];
+  ]);
   const loop = new AnimationLoop();
   const gate = createRenderActivityGate({
     name: "timing-examples",
@@ -83,16 +92,25 @@
         {#if topic === "placement"}
           <PlacementComparison />
         {:else if topic === "timing"}
-          <div class="examples" role="group" aria-label="Timing examples">
+          <div
+            class="examples"
+            role="group"
+            aria-label={tDynamic("learn_timing_examples_timing_group")}
+          >
             {#each rhythms as rhythm}
               <section
                 class="example timing-example"
                 class:selected={selectedRhythm === rhythm.label}
-                aria-label={`${rhythm.label} timing`}
+                aria-label={tDynamic("learn_timing_examples_timing_label", {
+                  timing: rhythm.label,
+                })}
               >
                 <PanelButton
                   fullWidth
-                  ariaLabel={`${rhythm.label} timing: ${rhythm.caption}`}
+                  ariaLabel={tDynamic("learn_timing_examples_timing_detail", {
+                    timing: rhythm.label,
+                    caption: rhythm.caption,
+                  })}
                   ariaPressed={selectedRhythm === rhythm.label}
                   onclick={() => selectRhythm(rhythm.label)}
                 >
@@ -138,15 +156,30 @@
           <div
             class="examples directions"
             role="group"
-            aria-label="Direction examples"
+            aria-label={tDynamic("learn_timing_examples_direction_group")}
           >
             {#each ["Same", "Opposite"] as label, example}
-              <section class="example" aria-label={`${label} direction`}>
+              <section
+                class="example"
+                aria-label={tDynamic("learn_timing_examples_direction_label", {
+                  direction: tDynamic(
+                    example === 0
+                      ? "learn_timing_examples_same"
+                      : "learn_timing_examples_opposite"
+                  ),
+                })}
+              >
                 <div class="direction-picture">
                   <PanelButton
                     fullWidth
                     onclick={() => (reversed[example] = !reversed[example])}
-                    ariaLabel={`Reverse both arrows in ${label.toLowerCase()} direction`}
+                    ariaLabel={tDynamic("learn_timing_examples_reverse_aria", {
+                      direction: tDynamic(
+                        example === 0
+                          ? "learn_timing_examples_same"
+                          : "learn_timing_examples_opposite"
+                      ),
+                    })}
                   >
                     <svg viewBox="0 0 320 190" aria-hidden="true">
                       {#each [0, 1] as index}
@@ -173,16 +206,24 @@
                     </svg>
                     <span class="reverse-label"
                       ><i class="fa-solid fa-repeat" aria-hidden="true"
-                      ></i>Reverse both</span
+                      ></i>{tDynamic(
+                        "learn_timing_examples_reverse_both"
+                      )}</span
                     >
                   </PanelButton>
                 </div>
                 <div class="caption">
-                  <h2>{label}</h2>
+                  <h2>
+                    {tDynamic(
+                      example === 0
+                        ? "learn_timing_examples_same"
+                        : "learn_timing_examples_opposite"
+                    )}
+                  </h2>
                   <p>
                     {example === 0
-                      ? "Circling the same way."
-                      : "Circling opposite ways."}
+                      ? tDynamic("learn_timing_examples_same_caption")
+                      : tDynamic("learn_timing_examples_opposite_caption")}
                   </p>
                 </div>
               </section>

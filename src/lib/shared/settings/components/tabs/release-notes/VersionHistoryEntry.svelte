@@ -1,5 +1,7 @@
 <!-- VersionHistoryEntry - Read-only release block for the continuous history stream -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { getReactiveLocale } from "$lib/shared/i18n/locale-state.svelte";
   import type {
     AppVersion,
     ChangelogCategory,
@@ -26,7 +28,7 @@
   const isPreRelease = $derived(version.version === PRE_RELEASE_VERSION);
 
   const formattedDate = $derived(
-    version.releasedAt.toLocaleDateString("en-US", {
+    version.releasedAt.toLocaleDateString(getReactiveLocale(), {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -61,16 +63,16 @@
 <article class="history-entry">
   <header class="entry-header">
     <div class="version-badge" class:pre-release={isPreRelease}>
-      {isPreRelease ? "Pre-Release" : `v${version.version}`}
+      {isPreRelease ? t("settings_pre_release") : `v${version.version}`}
     </div>
     <time>{formattedDate}</time>
     {#if totalChanges > 0}
-      <span class="total">{totalChanges} changes</span>
+      <span class="total">{t("settings_change_count", { count: totalChanges })}</span>
     {/if}
     {#if onSelect}
       <button type="button" class="edit-link" onclick={onSelect}>
         <i class="fas fa-pen" aria-hidden="true"></i>
-        Edit
+        {t("action_edit")}
       </button>
     {/if}
   </header>

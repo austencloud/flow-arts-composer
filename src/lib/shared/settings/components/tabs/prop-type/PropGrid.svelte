@@ -14,6 +14,7 @@
     beats grouping.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import {
     PROP_PICKER_SECTIONS,
@@ -23,7 +24,6 @@
     isBigVariant,
     toggleBigVariant,
     getFamilyTileDisplayProp,
-    getPropTypeDisplayInfo,
     isPropActive,
     isPremiumCosmeticProp,
   } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
@@ -36,10 +36,10 @@
     centeredOrphan,
     sectionFillLayout,
   } from "./section-fill-layout";
-  import { drillFillLayout } from "./drill-fill-layout";
   import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
   import {
     hasModelSprite,
+    normalizePropLook,
     propLookOptions,
   } from "$lib/shared/pictograph/prop/domain/prop-look";
   import type { CompositionRecipe } from "$lib/shared/pictograph/prop/domain/prop-composition-recipes";
@@ -57,6 +57,7 @@
   } from "$lib/shared/pictograph/prop/domain/fan-appearance";
   import type { PropChiralitySeam } from "./prop-chirality-seam";
   import { isBuugengFamilyProp } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
+  import { localizedPropName } from "./localized-prop-name";
   import type { Snippet } from "svelte";
   import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
   import {
@@ -69,7 +70,7 @@
   let {
     selectedPropType,
     color = "blue",
-    title = "Select Prop",
+    title,
     onSelect,
     variant = "panel",
     flat = false,
@@ -175,14 +176,29 @@
     onDrillChange?: (drilled: boolean) => void;
   }>();
 
+  const displayTitle = $derived(title ?? t("settings_props_select_prop"));
+
   const allowedPropSet = $derived(
     allowedProps ? new Set<PropType>(allowedProps) : null
   );
 
   const pickerSections = $derived([
-    ...PROP_PICKER_SECTIONS,
-    ...(includeBareHands ? [{ label: "Scene", props: [PropType.HAND] }] : []),
+    ...PROP_PICKER_SECTIONS.map((section) => ({
+      ...section,
+      label: pickerSectionLabel(section.label),
+    })),
+    ...(includeBareHands ? [{ label: t("settings_prop_section_scene"), props: [PropType.HAND] }] : []),
   ]);
+
+  function pickerSectionLabel(label: string): string {
+    switch (label) {
+      case "Standard": return t("settings_prop_section_standard");
+      case "Big": return t("settings_prop_section_big");
+      case "Novelty": return t("settings_prop_section_novelty");
+      case "Premium": return t("settings_prop_section_premium");
+      default: return label;
+    }
+  }
 
   function canShowProp(prop: PropType): boolean {
     if (prop === PropType.HAND && includeBareHands) return true;
@@ -291,12 +307,16 @@
     drill === null
       ? ""
       : drill.kind === "family"
-        ? `${getPropTypeDisplayInfo(drill.base).label} styles`
+        ? t("settings_prop_styles", {
+            prop: localizedPropName(drill.base),
+          })
         : drill.kind === "fan-look"
-          ? "Fan look"
+          ? t("settings_fan_look")
           : drill.kind === "details"
-            ? `${getPropTypeDisplayInfo(drill.prop).label} details`
-            : "Prop look"
+            ? t("settings_prop_details", {
+                prop: localizedPropName(drill.prop),
+              })
+            : t("settings_prop_look")
   );
 
   async function openDrill(next: Drill): Promise<void> {
@@ -490,20 +510,71 @@
     };
   });
 
-  const drillTileCount = $derived(
-    drill?.kind === "family" ? familyChoices(drill.base).length : 0
-  );
+  const DRILL_GAP = 10;
   /**
-   * Tile grid for a drilled family in a bounded host (see drill-fill-layout).
-   * The tiles sit on a doubled track grid (two tracks each) so a short last
-   * row can start one track in and centre itself. Null means the host is not
-   * bounded and the tiles keep their ordinary size.
+   * A family's styles, each in every look it has: a style with a captured 3D
+   * sprite gets a pictograph tile and a 3D tile, so one view holds every
+   * variation and a pick sets the prop and the (global) look together.
+   * Pictographs come first so the 3D row reads as the same set again.
    */
-  const drillLayout = $derived(
-    fillHeight === 0
-      ? null
-      : drillFillLayout(drillTileCount, tilesBox.width, tilesBox.height)
-  );
+  type FamilyTile = { prop: PropType; look?: PropLook };
+  const familyTiles = $derived.by((): FamilyTile[] => {
+    if (drill?.kind !== "family") return [];
+    const choices = familyChoices(drill.base);
+    const withLooks =
+      showAppearance && onPropLookChange !== undefined
+        ? choices.filter((prop) => hasModelSprite(prop))
+        : [];
+    if (withLooks.length === 0) return choices.map((prop) => ({ prop }));
+    return [
+      ...choices.map((prop) =>
+        withLooks.includes(prop)
+          ? { prop, look: "pictograph" as const }
+          : { prop }
+      ),
+      ...withLooks.map((prop) => ({ prop, look: "model" as const })),
+    ];
+  });
+  const drillTileCount = $derived(familyTiles.length);
+  /**
+   * Tile grid for a drilled family in a bounded host: the column count that
+   * makes the largest tile once rows share the height, so a two-style family
+   * stacks in a tall rail and sits side by side in a wide sheet. Rows are
+   * capped at 1.25x the column width so tiles never become towers. Null means
+   * the host is not bounded and the tiles keep their ordinary size.
+   */
+  const drillLayout = $derived.by(() => {
+    const n = drillTileCount;
+    const { width, height } = tilesBox;
+    if (n === 0 || fillHeight === 0 || width === 0 || height === 0) return null;
+    let cols = 1;
+    let bestSize = 0;
+    for (let candidate = 1; candidate <= Math.min(n, 4); candidate += 1) {
+      const candidateRows = Math.ceil(n / candidate);
+      const candidateWidth = (width - DRILL_GAP * (candidate - 1)) / candidate;
+      const candidateHeight =
+        (height - DRILL_GAP * (candidateRows - 1)) / candidateRows;
+      const size = Math.min(candidateWidth, candidateHeight / 1.25);
+      if (size > bestSize + 0.5) {
+        bestSize = size;
+        cols = candidate;
+      }
+    }
+    const rows = Math.ceil(n / cols);
+    const colWidth = (width - DRILL_GAP * (cols - 1)) / cols;
+    const rowHeight = Math.floor(
+      Math.min((height - DRILL_GAP * (rows - 1)) / rows, colWidth * 1.25)
+    );
+    // The tiles sit on a doubled track grid (two tracks each) so a short
+    // last row can start one track in and centre itself.
+    const orphans = n % cols;
+    return {
+      cols,
+      rowHeight,
+      orphanIndex: orphans === 0 ? -1 : n - orphans,
+      orphanStart: cols - orphans + 1,
+    };
+  });
 
   // The sectioned grid's width and the height its labels take, which do not
   // change with the tile size, so the layout below can fit the tiles to the
@@ -583,6 +654,13 @@
       onPropLookChange !== undefined &&
       hasModelSprite(detailProp)
   );
+  // A style picked from a family's look tiles already carries its look, so
+  // its details keep to what the tiles cannot show (size, chirality).
+  const detailLookFromTiles = $derived(
+    drill?.kind === "details" &&
+      familyChoices(getBasePropType(drill.prop)).length > 1
+  );
+  const currentPropLook = $derived(normalizePropLook(propLook));
   const selectedPropLookOption = $derived(
     selectedPropType === null
       ? undefined
@@ -646,20 +724,24 @@
   // Track which paid prop (if any) is showing its upgrade nudge.
   let premiumNudgeFor = $state<PropType | null>(null);
 
-  function opensDetails(prop: PropType): boolean {
+  // A tile that already carries a look has nothing left to ask about it.
+  function opensDetails(prop: PropType, lookChosen: boolean): boolean {
     return (
       showAppearance &&
       (isFanPropType(prop) ||
         hasBigVariant(prop) ||
         isTrianglePropType(prop) ||
-        (onPropLookChange !== undefined && hasModelSprite(prop)) ||
+        (!lookChosen &&
+          onPropLookChange !== undefined &&
+          hasModelSprite(prop)) ||
         (chirality !== undefined && isBuugengFamilyProp(prop)))
     );
   }
 
-  function selectProp(prop: PropType): void {
+  function selectProp(prop: PropType, look?: PropLook): void {
     onSelect(prop);
-    if (!opensDetails(prop)) return;
+    if (look !== undefined) onPropLookChange?.(look);
+    if (!opensDetails(prop, look !== undefined)) return;
     void openDrill(
       isFanPropType(prop)
         ? { kind: "fan-look", prop }
@@ -675,11 +757,11 @@
    * - premium-nudge: toggles the upgrade callout; never calls onSelect.
    * - earn-tip: toggles the inline earn tip; never calls onSelect.
    */
-  function handleTileClick(prop: PropType) {
+  function handleTileClick(prop: PropType, look?: PropLook) {
     if (prop === PropType.HAND && includeBareHands) {
       lockedTipFor = null;
       premiumNudgeFor = null;
-      selectProp(prop);
+      selectProp(prop, look);
       return;
     }
 
@@ -687,7 +769,7 @@
     if (accessMode === "educational" && !premium) {
       lockedTipFor = null;
       premiumNudgeFor = null;
-      selectProp(prop);
+      selectProp(prop, look);
       return;
     }
     const route = premium
@@ -701,7 +783,7 @@
     if (route === "select") {
       lockedTipFor = null;
       premiumNudgeFor = null;
-      selectProp(prop);
+      selectProp(prop, look);
       return;
     }
 
@@ -730,25 +812,29 @@
   data-swipe-block={layout === "rail" ? "" : undefined}
 >
   {#snippet sizeControl()}
-    <div class="size-toggle" role="group" aria-label="Prop size">
+    <div class="size-toggle" role="group" aria-label={t("settings_prop_size")}>
       <button
         type="button"
         class="size-option"
         class:active={!sizeIsBig}
         aria-pressed={!sizeIsBig}
-        onclick={() => chooseSize(false)}>Standard</button
+        onclick={() => chooseSize(false)}>{t("settings_prop_standard")}</button
       >
       <button
         type="button"
         class="size-option"
         class:active={sizeIsBig}
         aria-pressed={sizeIsBig}
-        onclick={() => chooseSize(true)}>Big</button
+        onclick={() => chooseSize(true)}>{t("settings_prop_big")}</button
       >
     </div>
   {/snippet}
   {#snippet gripControl()}
-    <div class="size-toggle" role="group" aria-label="Triangle grip">
+    <div
+      class="size-toggle"
+      role="group"
+      aria-label={t("settings_triangle_grip")}
+    >
       {#each TRIANGLE_GRIP_OPTIONS as option (option.id)}
         <button
           type="button"
@@ -766,7 +852,7 @@
       type="button"
       class="look-chip"
       data-testid="fan-look-chip"
-      aria-label={`Fan look: ${fanLook?.label ?? normalizedFanAppearance.build}. Change`}
+      aria-label={t("settings_change_fan_look", { look: fanLook?.label ?? normalizedFanAppearance.build })}
       onclick={() =>
         selectedPropType !== null &&
         void openDrill({
@@ -789,7 +875,7 @@
       type="button"
       class="look-chip"
       data-testid="prop-look-chip"
-      aria-label={`Prop look: ${selectedPropLookOption?.label ?? "Pictograph"}. Change`}
+      aria-label={t("settings_change_prop_look", { look: selectedPropLookOption?.id === "model" ? t("settings_3d_model") : t("viewer_ui_pictograph") })}
       onclick={() => void openDrill({ kind: "prop-look" })}
     >
       {#if selectedPropLookOption}
@@ -801,7 +887,7 @@
         />
       {/if}
       <span class="look-name"
-        >{selectedPropLookOption?.label ?? "Pictograph"}</span
+        >{selectedPropLookOption?.id === "model" ? t("settings_3d_model") : t("viewer_ui_pictograph")}</span
       >
       <i class="fas fa-chevron-right look-caret" aria-hidden="true"></i>
     </button>
@@ -812,7 +898,7 @@
         <button
           type="button"
           class="drill-back"
-          aria-label="Back to all props"
+          aria-label={t("settings_back_all_props")}
           onclick={() => void closeDrill()}
         >
           <i class="fas fa-arrow-left" aria-hidden="true"></i>
@@ -826,7 +912,7 @@
             href={fanLook.designCredit.sourceUrl}
             target="_blank"
             rel="noreferrer"
-            aria-label={`${fanLook.designCredit.originator} source`}
+            aria-label={t("settings_design_source", { name: fanLook.designCredit.originator })}
           >
             <span class="credit-long">{fanLook.designCredit.originator}</span>
             <span class="credit-short" aria-hidden="true"
@@ -847,11 +933,11 @@
   {/if}
   {#if variant === "panel"}
     <header class="grid-header">
-      <h4 class="grid-title">{title}</h4>
+      <h4 class="grid-title">{displayTitle}</h4>
     </header>
   {/if}
 
-  {#snippet tile(prop: PropType, columnStart?: number)}
+  {#snippet tile(prop: PropType, columnStart?: number, look?: PropLook)}
     <!--
       Each tile is wrapped in a relative-positioned container so the lock glyph,
       crown and earn-tip can be positioned over / below the button. The click
@@ -864,6 +950,10 @@
       only for sale.
     -->
     {@const premium = isPremiumCosmeticProp(prop)}
+    {@const label =
+      look === "model"
+        ? `${localizedPropName(prop)} 3D`
+        : localizedPropName(prop)}
     <div
       class="tile-wrapper"
       style:grid-column-start={columnStart}
@@ -872,12 +962,17 @@
     >
       <PropGridButton
         propType={prop}
-        selected={selectedPropType === prop}
+        {label}
+        actionLabel={look === "model"
+          ? t("settings_select_prop_type", { prop: label })
+          : undefined}
+        selected={selectedPropType === prop &&
+          (look === undefined || currentPropLook === look)}
         {color}
-        buttonProps={{ "data-prop-tile": prop }}
-        onSelect={() => handleTileClick(prop)}
+        buttonProps={{ "data-prop-tile": prop, "data-prop-look": look }}
+        onSelect={() => handleTileClick(prop, look)}
         fanAppearance={normalizedFanAppearance}
-        {propLook}
+        propLook={look ?? propLook}
         triangleGrip={currentGrip}
         {recipeOverrides}
         {colors}
@@ -897,7 +992,7 @@
       {:else if prop !== PropType.HAND && !isUnlocked(prop)}
         <i class="fas fa-lock lock-glyph" aria-hidden="true"></i>
         {#if lockedTipFor === prop}
-          <span class="earn-tip">Earn by creating</span>
+          <span class="earn-tip">{t("settings_earn_by_creating")}</span>
         {/if}
       {/if}
     </div>
@@ -912,7 +1007,9 @@
         propType={familyDisplayProp(base)}
         selected={selectedBase === base}
         badge={familyCount(base)}
-        actionLabel={`Choose ${getPropTypeDisplayInfo(base).label} style`}
+        actionLabel={t("settings_prop_choose_style", {
+          prop: localizedPropName(base),
+        })}
         buttonProps={{
           "aria-expanded": drill?.kind === "family" && drill.base === base,
           "data-family-tile": base,
@@ -968,7 +1065,7 @@
               <button
                 type="button"
                 class="drill-back"
-                aria-label="Back to all props"
+                aria-label={t("settings_back_all_props")}
                 onclick={() => void closeDrill()}
               >
                 <i class="fas fa-arrow-left" aria-hidden="true"></i>
@@ -990,7 +1087,7 @@
             <div
               class="detail-options"
               role="group"
-              aria-label={`${drillTitle} options`}
+              aria-label={t("settings_options_for", { item: drillTitle })}
               class:fill={fillHeight > 0}
               class:dragging={railDragging}
               onpointerdown={handleRailPointerDown}
@@ -1001,21 +1098,22 @@
             >
               {#if showSize}
                 <div class="detail-row">
-                  <span class="look-label">Size</span>
+                  <span class="look-label">{t("settings_size")}</span>
                   {@render sizeControl()}
                 </div>
               {/if}
               {#if showGrip}
                 <div class="detail-row">
-                  <span class="look-label">Grip</span>
+                  <span class="look-label">{t("settings_grip")}</span>
                   {@render gripControl()}
                 </div>
               {/if}
-              {#if showPropLook && onPropLookChange}
+              {#if showPropLook && onPropLookChange && !detailLookFromTiles}
                 <PropLookPicker
                   propType={drill.prop}
                   value={propLook}
                   onchange={onPropLookChange}
+                  fill={fillHeight > 0}
                 />
               {/if}
               {#if chirality && isBuugengFamilyProp(drill.prop)}
@@ -1033,14 +1131,15 @@
               propType={selectedPropType}
               value={propLook}
               onchange={onPropLookChange}
+              fill={fillHeight > 0}
             />
           {:else}
             <div
               class="drill-tiles"
               role="group"
-              aria-label={`${drillTitle} choices`}
+              aria-label={t("settings_choices_for", { item: drillTitle })}
               class:dragging={railDragging}
-              style={balancedColumns(familyChoices(drill.base).length)}
+              style={balancedColumns(familyTiles.length)}
               style:--family-count={familyChoices(drill.base).length}
               class:comfortable={tileDensity === "comfortable"}
               class:fill={drillLayout !== null}
@@ -1057,12 +1156,13 @@
               onpointercancel={endRailPointer}
               onclickcapture={handleRailClick}
             >
-              {#each familyChoices(drill.base) as prop, index (prop)}
+              {#each familyTiles as entry, index (`${entry.prop}:${entry.look ?? ""}`)}
                 {@render tile(
-                  prop,
+                  entry.prop,
                   drillLayout && index === drillLayout.orphanIndex
                     ? drillLayout.orphanStart
-                    : undefined
+                    : undefined,
+                  entry.look
                 )}
               {/each}
             </div>
@@ -1072,7 +1172,7 @@
         <div
           class="flat-grid"
           role="group"
-          aria-label="Prop choices"
+          aria-label={t("settings_prop_choices")}
           class:dragging={railDragging}
           class:comfortable={tileDensity === "comfortable"}
           class:fill={flatLayout !== null}
@@ -1498,11 +1598,13 @@
     gap: 8px;
   }
 
-  .flat-grid.comfortable {
+  /* A fill grid already sizes its tiles to the host; comfortable only sets
+     the unbounded grid's track floor and tile shape. */
+  .flat-grid.comfortable:not(.fill) {
     grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
     gap: 0.6rem;
   }
-  .flat-grid.comfortable :global(.prop-button) {
+  .flat-grid.comfortable:not(.fill) :global(.prop-button) {
     min-height: 6.75rem;
     aspect-ratio: 1.25;
     padding: 0.5rem;
@@ -1645,6 +1747,8 @@
   .detail-options.fill {
     flex: 1;
     min-height: 0;
+    /* Vertical only: a subpixel card edge must not raise a sideways bar. */
+    overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior-y: contain;
     scrollbar-width: thin;

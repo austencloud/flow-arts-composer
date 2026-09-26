@@ -142,15 +142,17 @@ Allows user to set name, visibility, tags, collections, and notes.
     <button
       class="close-button"
       onclick={handleCancel}
-      aria-label="Close dialog"
+      aria-label={t("create_ui_close_dialog")}
     >
       <i class="fas fa-times" aria-hidden="true"></i>
     </button>
 
     <!-- Header -->
     <div class="dialog-header">
-      <h2 id="save-to-library-title">Add to Gallery</h2>
-      <p class="subtitle">Your sequence will be published to the gallery</p>
+      <h2 id="save-to-library-title">{t("create_ui_add_to_gallery")}</h2>
+      <p class="subtitle">
+        {t("create_ui_your_sequence_will_be_published_to_the_gallery")}
+      </p>
     </div>
 
     <!-- Form -->
@@ -166,7 +168,7 @@ Allows user to set name, visibility, tags, collections, and notes.
           id="sequence-name"
           type="text"
           bind:value={name}
-          placeholder="Enter sequence name"
+          placeholder={t("create_ui_enter_sequence_name")}
           class="input-field"
           maxlength="100"
         />
@@ -178,19 +180,19 @@ Allows user to set name, visibility, tags, collections, and notes.
         <span>By {displayName}</span>
         <span class="separator">•</span>
         <i class="fas fa-globe" aria-hidden="true"></i>
-        <span>Public</span>
+        <span>{t("create_ui_public")}</span>
       </div>
 
       <!-- Tags -->
       <div class="form-group">
-        <label for="tag-input">Tags</label>
+        <label for="tag-input">{t("create_ui_tags")}</label>
         <div class="tag-input-container">
           <input
             id="tag-input"
             type="text"
             bind:value={tagInput}
             onkeydown={handleTagKeydown}
-            placeholder="Add tags (press Enter)"
+            placeholder={t("create_ui_add_tags_press_enter")}
             class="input-field"
             maxlength="50"
           />
@@ -199,7 +201,7 @@ Allows user to set name, visibility, tags, collections, and notes.
             class="add-tag-button"
             onclick={handleAddTag}
             disabled={!tagInput.trim()}
-            aria-label="Add tag"
+            aria-label={t("create_ui_add_tag")}
           >
             <i class="fas fa-plus" aria-hidden="true"></i>
           </button>
@@ -226,7 +228,7 @@ Allows user to set name, visibility, tags, collections, and notes.
 
       <!-- Collections -->
       <div class="form-group">
-        <span class="form-label">Collections</span>
+        <span class="form-label">{t("tab_library_collections")}</span>
         <CollectionPickerContent
           mode="select"
           bind:selectedIds={selectedCollectionIds}
@@ -239,7 +241,7 @@ Allows user to set name, visibility, tags, collections, and notes.
         <textarea
           id="notes"
           bind:value={notes}
-          placeholder="Add personal notes about this sequence"
+          placeholder={t("create_ui_add_personal_notes_about_this_sequence")}
           class="textarea-field"
           rows="3"
           maxlength="500"

@@ -6,6 +6,7 @@
   Uses shared MobileInputToolbar for keyboard-aware Done button.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { pushState as svelteKitPushState } from "$app/navigation";
   import { onMount } from "svelte";
   import { getGreekSymbol } from "$lib/shared/keyboard/services/greek-key-mapper";
@@ -26,10 +27,9 @@
   }>();
 
   let inputElement = $state<HTMLInputElement | null>(null);
-let isInputFocused = $state(false);
+  let isInputFocused = $state(false);
 
   onMount(() => {
-
     // Auto-focus after a brief delay to let the overlay animate in
     requestAnimationFrame(() => {
       inputElement?.focus();
@@ -70,8 +70,10 @@ let isInputFocused = $state(false);
       return;
     }
 
-    if (event.shiftKey || event.ctrlKey || event.altKey || event.metaKey) return;
-    if (event.code.startsWith("Numpad") && !event.getModifierState("NumLock")) return;
+    if (event.shiftKey || event.ctrlKey || event.altKey || event.metaKey)
+      return;
+    if (event.code.startsWith("Numpad") && !event.getModifierState("NumLock"))
+      return;
 
     const symbol = getGreekSymbol(event.code);
     if (!symbol) return;
@@ -107,8 +109,13 @@ let isInputFocused = $state(false);
 <div class="overlay-backdrop" onclick={handleBackdropClick} role="presentation">
   <div class="overlay-card">
     <div class="overlay-header">
-      <span class="overlay-title">Spell a Word</span>
-      <button class="close-btn" onclick={onClose} aria-label="Close" type="button">
+      <span class="overlay-title">{t("create_ui_spell_a_word")}</span>
+      <button
+        class="close-btn"
+        onclick={onClose}
+        aria-label={t("action_close")}
+        type="button"
+      >
         <i class="fas fa-times" aria-hidden="true"></i>
       </button>
     </div>
@@ -130,7 +137,12 @@ let isInputFocused = $state(false);
         spellcheck="false"
       />
       {#if wordValue.trim()}
-        <button class="clear-btn" onclick={handleClear} aria-label="Clear word" type="button">
+        <button
+          class="clear-btn"
+          onclick={handleClear}
+          aria-label={t("create_ui_clear_word")}
+          type="button"
+        >
           <i class="fas fa-times" aria-hidden="true"></i>
         </button>
       {/if}
@@ -140,18 +152,15 @@ let isInputFocused = $state(false);
       class="confirm-btn"
       type="button"
       onclick={handleDone}
-      aria-label="Confirm word"
+      aria-label={t("create_ui_confirm_word")}
     >
       <i class="fas fa-check" aria-hidden="true"></i>
-      <span>Confirm</span>
+      <span>{t("action_confirm")}</span>
     </button>
   </div>
 </div>
 
-<MobileInputToolbar
-  visible={isInputFocused}
-  onDone={handleDone}
-/>
+<MobileInputToolbar visible={isInputFocused} onDone={handleDone} />
 
 <style>
   .overlay-backdrop {
@@ -167,8 +176,12 @@ let isInputFocused = $state(false);
   }
 
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   .overlay-card {

@@ -68,6 +68,7 @@
 </script>
 
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { untrack } from "svelte";
   import { slide, fly, fade } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
@@ -304,7 +305,7 @@
         type="button"
         class="tray-handle"
         onclick={closeTray}
-        aria-label="Hide controls"
+        aria-label={t("viewer_ui_hide_controls")}
       >
         <span class="grab" aria-hidden="true"></span>
       </button>

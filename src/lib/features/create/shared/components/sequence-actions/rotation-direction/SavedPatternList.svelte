@@ -4,6 +4,7 @@
   List of user's saved rotation direction patterns with apply and delete actions.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { RotationDirectionPattern } from "../../../domain/models/rotation-direction-pattern-data";
 
   interface Props {
@@ -25,7 +26,7 @@
   </p>
 {:else}
   <div class="saved-patterns-section">
-    <h3>Your Patterns</h3>
+    <h3>{t("create_ui_your_patterns")}</h3>
     <div class="patterns-list">
       {#each patterns as pattern}
         {@const isDisabled = applying || currentStepCount !== pattern.stepCount}
@@ -56,8 +57,8 @@
                 e.stopPropagation();
                 onDelete(pattern);
               }}
-              title="Delete pattern"
-              aria-label="Delete pattern"
+              title={t("create_ui_delete_pattern")}
+              aria-label={t("create_ui_delete_pattern")}
             >
               <i class="fas fa-trash" aria-hidden="true"></i>
             </button>

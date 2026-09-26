@@ -15,6 +15,7 @@
     </PropControlPair>
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
   import type { TargetHand } from "$lib/shared/create/domain/panel-types";
 
@@ -55,7 +56,7 @@
     class:inactive={visibleHand === "right"}
     inert={visibleHand === "right"}
   >
-    <span class="prop-label">Left</span>
+    <span class="prop-label">{t("create_ui_left")}</span>
     <div class="card-content">
       {@render leftContent?.()}
     </div>
@@ -65,7 +66,7 @@
     class:inactive={visibleHand === "left"}
     inert={visibleHand === "left"}
   >
-    <span class="prop-label">Right</span>
+    <span class="prop-label">{t("create_ui_right")}</span>
     <div class="card-content">
       {@render rightContent?.()}
     </div>

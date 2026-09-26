@@ -5,6 +5,7 @@
   Includes animated checkmark and done button.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   interface Props {
     email: string;
     onComplete: () => void;
@@ -21,7 +22,7 @@
   </div>
 
   <div class="success-message">
-    <p>You can now sign in using:</p>
+    <p>{t("auth_linking_can_sign_in")}</p>
     <div class="credential-display">
       <i class="fas fa-envelope" aria-hidden="true"></i>
       <span>{email}</span>
@@ -30,7 +31,7 @@
 
   <button class="done-btn" onclick={onComplete}>
     <i class="fas fa-check" aria-hidden="true"></i>
-    <span>Done</span>
+    <span>{t("auth_linking_done")}</span>
   </button>
 </div>
 

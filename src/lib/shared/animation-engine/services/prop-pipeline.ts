@@ -48,7 +48,8 @@ export class PropPipeline {
         state,
         getFrameParamsFn,
         darkMode,
-        props.tunnelPropColors ?? props.primaryPropColors ?? null
+        props.tunnelPropColors ?? props.primaryPropColors ?? null,
+        props.tunnelPropColors != null
       );
     }
 
@@ -63,9 +64,15 @@ export class PropPipeline {
   async loadTextures(
     state: AnimatorState,
     darkMode: boolean,
-    colors?: TunnelPropColorPair | null
+    colors?: TunnelPropColorPair | null,
+    exactColors?: boolean
   ): Promise<void> {
-    await this.propTypeManager.loadPropTextures(state, darkMode, colors);
+    await this.propTypeManager.loadPropTextures(
+      state,
+      darkMode,
+      colors,
+      exactColors
+    );
   }
 
   dispose(): void {

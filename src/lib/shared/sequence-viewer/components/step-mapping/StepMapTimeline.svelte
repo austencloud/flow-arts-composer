@@ -6,6 +6,7 @@
   Users can click to seek or drag markers to adjust beat timestamps.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   interface Props {
     duration: number;
     currentTime: number;
@@ -141,7 +142,10 @@
   function getTimeFromPointer(clientX: number): number {
     if (!timelineEl || duration <= 0) return 0;
     const rect = timelineEl.getBoundingClientRect();
-    const fraction = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const fraction = Math.max(
+      0,
+      Math.min(1, (clientX - rect.left) / rect.width)
+    );
     return fraction * duration;
   }
 
@@ -227,7 +231,7 @@
   onpointerup={handlePointerUp}
   onpointercancel={handlePointerUp}
   role="slider"
-  aria-label="Step timing"
+  aria-label={t("viewer_ui_step_timing")}
   aria-valuemin={0}
   aria-valuemax={duration}
   aria-valuenow={currentTime}
@@ -316,7 +320,6 @@
     cursor: pointer;
   }
 
-
   .beat-labels {
     position: relative;
     /* Reserved so the row never changes height as labels thin in and out. */
@@ -346,7 +349,6 @@
     font-weight: 700;
   }
 
-
   .timeline-bar {
     position: relative;
     /* The host scales this on very wide panels, where a 48px bar spanning
@@ -363,12 +365,15 @@
     top: 0;
     left: 0;
     height: 100%;
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 15%,
+      transparent
+    );
     border-radius: 7px 0 0 7px;
     pointer-events: none;
     transition: width 0.05s linear;
   }
-
 
   .playhead {
     position: absolute;
@@ -382,7 +387,6 @@
     z-index: 2;
     transition: left 0.05s linear;
   }
-
 
   .beat-marker {
     position: absolute;
@@ -440,7 +444,8 @@
 
   .beat-marker.active .marker-line {
     background: var(--theme-accent, #6366f1);
-    box-shadow: 0 0 6px color-mix(in srgb, var(--theme-accent, #6366f1) 50%, transparent);
+    box-shadow: 0 0 6px
+      color-mix(in srgb, var(--theme-accent, #6366f1) 50%, transparent);
   }
 
   .beat-marker.dragging .marker-line {
@@ -455,7 +460,10 @@
     border-radius: 50%;
     background: var(--theme-card-bg, rgba(30, 30, 40, 1));
     border: 2px solid var(--theme-text-muted, rgba(255, 255, 255, 0.35));
-    transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+    transition:
+      border-color 0.15s ease,
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
   }
 
   .beat-marker:hover .marker-handle {
@@ -466,16 +474,17 @@
   .beat-marker.active .marker-handle {
     border-color: var(--theme-accent, #6366f1);
     background: var(--theme-accent, #6366f1);
-    box-shadow: 0 0 8px color-mix(in srgb, var(--theme-accent, #6366f1) 60%, transparent);
+    box-shadow: 0 0 8px
+      color-mix(in srgb, var(--theme-accent, #6366f1) 60%, transparent);
   }
 
   .beat-marker.dragging .marker-handle {
     border-color: var(--theme-accent, #6366f1);
     background: var(--theme-accent, #6366f1);
     transform: scale(1.25);
-    box-shadow: 0 0 12px color-mix(in srgb, var(--theme-accent, #6366f1) 60%, transparent);
+    box-shadow: 0 0 12px
+      color-mix(in srgb, var(--theme-accent, #6366f1) 60%, transparent);
   }
-
 
   .time-display {
     display: flex;
@@ -489,7 +498,6 @@
     color: var(--theme-text-muted, rgba(255, 255, 255, 0.4));
     font-variant-numeric: tabular-nums;
   }
-
 
   @media (prefers-reduced-motion: reduce) {
     .marker-line,

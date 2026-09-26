@@ -11,7 +11,6 @@ export interface CardSurfaceOptions {
   showHeader: boolean;
   showFooter: boolean;
   deckCard?: { contentWidth: number; contentHeight: number };
-  gridCentering?: "optical" | "geometric";
 }
 
 /** The same content geometry is used by browser exports and portable MCP cards. */
@@ -38,21 +37,16 @@ export function calculateCardSurface(options: CardSurfaceOptions) {
   const width = deckCard?.contentWidth ?? columns * cellSize;
   const height =
     deckCard?.contentHeight ?? rows * cellSize + headerHeight + footerHeight;
-  // Cell annotations sit further left than the prop ink. Printed cards compensate
-  // for that difference unless their mixed Start/QR lane requires equal gutters.
-  const opticalShift =
-    deckCard && options.gridCentering !== "geometric"
-      ? Math.round((((175 - 50) / 950) * cellSize) / 2)
-      : 0;
+  // Printed cards keep equal left and right gutters. An earlier optical shift
+  // nudged the grid right to balance cell annotations, but on a card with
+  // accent side bands the unequal gutters read as a misprint.
   return {
     width,
     height,
     cellSize,
     headerHeight,
     footerHeight,
-    gridStartX: deckCard
-      ? Math.floor((width - columns * cellSize) / 2) + opticalShift
-      : 0,
+    gridStartX: deckCard ? Math.floor((width - columns * cellSize) / 2) : 0,
     gridStartY: deckCard
       ? headerHeight +
         Math.floor((height - headerHeight - footerHeight - rows * cellSize) / 2)

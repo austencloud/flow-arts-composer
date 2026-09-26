@@ -31,6 +31,7 @@
   Standard/Mirrored implied a deviation from a norm that does not exist.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
   import {
@@ -76,8 +77,8 @@
 
 <div class="chirality-row">
   <div class="chirality-heading">
-    <span class="chirality-label">Buugeng chirality</span>
-    <span class="chirality-hint">Choose A or B for each prop</span>
+    <span class="chirality-label">{t("settings_buugeng_chirality")}</span>
+    <span class="chirality-hint">{t("settings_buugeng_choose_side")}</span>
   </div>
   <div class="chirality-controls">
     {#each hands as state (state.hand)}
@@ -89,7 +90,9 @@
       >
         <span class="chirality-hand-label">
           <span class="chirality-hand-dot" aria-hidden="true"></span>
-          {state.hand === "right" ? "Right prop" : "Left prop"}
+          {state.hand === "right"
+            ? t("settings_right_prop")
+            : t("settings_left_prop")}
         </span>
         <SegmentedControl
           {options}
@@ -97,9 +100,9 @@
           onchange={(next) => onChange(state.hand, next === "b")}
           color={palette[state.hand]}
           semantics="radiogroup"
-          ariaLabel="{state.hand === 'right'
-            ? 'Right'
-            : 'Left'} buugeng chirality"
+          ariaLabel={state.hand === "right"
+            ? t("settings_right_buugeng_chirality")
+            : t("settings_left_buugeng_chirality")}
         >
           {#snippet optionContent(option)}
             <PropCompositionPreview

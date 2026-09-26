@@ -5,6 +5,7 @@
   Expands to reveal quick-apply preset grid + scope selector + channel matrix.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { TipEffortMap } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
   import type { EffortId } from "$lib/shared/effort/domain/effort-types";
   import { EFFORTS } from "$lib/shared/effort/domain/effort-types";
@@ -219,7 +220,11 @@
   {#if expanded}
     <div class="accordion-body">
       <!-- Quick-apply preset grid -->
-      <div class="chip-grid" role="radiogroup" aria-label="Effort quality">
+      <div
+        class="chip-grid"
+        role="radiogroup"
+        aria-label={t("compose_ui_effort_quality")}
+      >
         {#each EFFORTS as effort}
           <button
             class="chip"
@@ -237,7 +242,9 @@
 
       <!-- Scope selector -->
       <div class="scope-section">
-        <span class="scope-label" id="effort-scope-label">SCOPE</span>
+        <span class="scope-label" id="effort-scope-label"
+          >{t("compose_ui_scope")}</span
+        >
         <div
           class="scope-strip"
           role="radiogroup"

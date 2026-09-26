@@ -251,7 +251,9 @@ describe("homepage public-links contract", () => {
     expect(siteFooter).toContain('class:sitemap={variant === "sitemap"}');
     expect(siteFooter).toContain('{#if variant !== "sitemap"}');
     expect(siteFooter).toContain('{#if variant !== "compact"}');
-    expect(siteFooter).toContain('<nav class="col col-static"');
+    // Prettier puts the nav's attributes on their own lines once the
+    // translated aria-label makes the tag too long, so match across whitespace.
+    expect(siteFooter).toMatch(/<nav\s+class="col col-static"/);
     expect(siteFooter).toContain('<details class="col col-disclosure">');
     expect(siteFooter).toContain(".col-disclosure[open] .col-chevron");
     expect(siteFooter).not.toContain("MediaQuery");

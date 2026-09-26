@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import PerformerRing from "../../tunnel/PerformerRing.svelte";
   import type { TunnelViewController } from "../../tunnel/tunnel-view-controller.svelte";
   import {
@@ -33,17 +34,24 @@
     controller,
     dense,
     onSaveTunnel,
-    saveTunnelLabel = "Save tunnel",
+    saveTunnelLabel,
     onCustomize,
     minimumInstances = 1,
     showCustomCard = true,
     showCustomizeButton = true,
-    presetLabel = "Choose a tunnel preset",
+    presetLabel,
     selectionMode = "recipe",
     formationOnly = false,
     showUserPresets = true,
     onArtSettingChange,
   }: Props = $props();
+
+  const effectiveSaveTunnelLabel = $derived(
+    saveTunnelLabel ?? t("viewer_ui_save_tunnel")
+  );
+  const effectivePresetLabel = $derived(
+    presetLabel ?? t("viewer_ui_choose_a_tunnel_preset")
+  );
 
   function reportSetting(
     group: string,
@@ -141,8 +149,12 @@
   );
 </script>
 
-{#if !dense}<span class="rt-section-label">{presetLabel}</span>{/if}
-<div class="preset-grid" role="radiogroup" aria-label="Tunnel preset">
+{#if !dense}<span class="rt-section-label">{effectivePresetLabel}</span>{/if}
+<div
+  class="preset-grid"
+  role="radiogroup"
+  aria-label={t("viewer_ui_tunnel_preset")}
+>
   {#each builtInPresets as p (p.id)}
     <button
       class="preset-card"
@@ -152,7 +164,7 @@
       aria-checked={selectedBuiltInId === p.id}
       disabled={imageCount(p.config) < minimumInstances}
       title={imageCount(p.config) < minimumInstances
-        ? `Needs at least ${minimumInstances} stage positions`
+        ? t("viewer_ui_needs_stage_positions", { count: minimumInstances })
         : undefined}
       onclick={() =>
         changeSetting(
@@ -179,7 +191,7 @@
           aria-checked={selectedUserId === up.id}
           disabled={imageCount(up.config) < minimumInstances}
           title={imageCount(up.config) < minimumInstances
-            ? `Needs at least ${minimumInstances} stage positions`
+            ? t("viewer_ui_needs_stage_positions", { count: minimumInstances })
             : undefined}
           onclick={() =>
             changeSetting(
@@ -196,8 +208,8 @@
         <button
           class="preset-del"
           type="button"
-          aria-label={`Delete preset ${up.name}`}
-          title="Delete preset"
+          aria-label={t("viewer_ui_delete_named_preset", { name: up.name })}
+          title={t("viewer_ui_delete_preset")}
           onclick={() => {
             const previousCount = tunnelUserPresets.presets.length;
             tunnelUserPresets.remove(up.id);
@@ -225,23 +237,23 @@
       onclick={() => onCustomize?.("custom_card")}
     >
       <i class="fas fa-sliders" aria-hidden="true"></i>
-      <span>Custom</span>
+      <span>{t("compose_custom")}</span>
     </button>
   {/if}
 </div>
 
 <div class="prim-row">
-  <span class="row-lbl">Grid</span>
+  <span class="row-lbl">{t("generator_grid")}</span>
   <button
     class="grid-toggle"
     class:active={controller.gridVisible}
     type="button"
     aria-pressed={controller.gridVisible}
-    aria-label="Toggle grid"
+    aria-label={t("viewer_ui_toggle_grid")}
     data-ghost="safe"
     data-ghost-kind="view-toggle"
-    data-ghost-label="Toggle grid"
-    title="Grid"
+    data-ghost-label={t("viewer_ui_toggle_grid")}
+    title={t("generator_grid")}
     onclick={() =>
       changeSetting(
         "art_tunnel",
@@ -253,7 +265,9 @@
   >
     <i class="fas fa-border-all" aria-hidden="true"></i>
   </button>
-  <span class="prim-count">{controller.propCount} props</span>
+  <span class="prim-count"
+    >{t("viewer_ui_prop_count", { count: controller.propCount })}</span
+  >
 </div>
 
 {#if showCustomizeButton}
@@ -264,8 +278,8 @@
   >
     <i class="fas fa-sliders" aria-hidden="true"></i>
     {controller.presetRecipe
-      ? `Edit ${controller.presetRecipe.name}`
-      : "Edit configuration"}
+      ? t("viewer_ui_edit_named", { name: controller.presetRecipe.name })
+      : t("viewer_ui_edit_configuration")}
   </button>
 {/if}
 {#if onSaveTunnel}
@@ -276,7 +290,7 @@
     onclick={() => onSaveTunnel?.()}
   >
     <i class="fas fa-bookmark" aria-hidden="true"></i>
-    {saveTunnelLabel}
+    {effectiveSaveTunnelLabel}
   </button>
 {/if}
 

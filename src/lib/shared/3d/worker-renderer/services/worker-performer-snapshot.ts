@@ -8,6 +8,7 @@ import {
 } from "@austencloud/scene-3d";
 import type { CharacterInstanceState } from "../../state/character-instance-state.svelte";
 import { resolvePerformerUpperBodyStance } from "../../domain/performer-upper-body-stance";
+import { resolvePerformerContact } from "../../domain/performer-contact-displacement";
 import { CANONICAL_PERFORMER_ANCHOR_Y } from "../../environments/domain/stage-coordinate-frame";
 import type {
   WorkerPerformerEffectIntent,
@@ -149,6 +150,9 @@ export function createWorkerPerformerSnapshot(
     );
   }
   const stance = resolvePerformerUpperBodyStance(performer);
+  // The same displaced props and reset key the interactive viewer hands its
+  // rig.
+  const contact = resolvePerformerContact(performer);
   const staffLength = resolveWorkerPerformerStaffLength(performer);
   const modeConfig = PLANE_MODE_CONFIGS[performer.planeMode];
   const dualWheel = performer.planeMode === PlaneMode.DUAL_WHEEL;
@@ -182,14 +186,14 @@ export function createWorkerPerformerSnapshot(
     rightPropType: options.rightPropType,
     leftProp: performer.showLeft
       ? serializeProp(
-          performer.leftPropState,
+          contact.leftProp,
           leftHandAnchor,
           options.leftPropFlipped ?? false
         )
       : null,
     rightProp: performer.showRight
       ? serializeProp(
-          performer.rightPropState,
+          contact.rightProp,
           rightHandAnchor,
           options.rightPropFlipped ?? false
         )
@@ -197,6 +201,8 @@ export function createWorkerPerformerSnapshot(
     stanceYaw: stance.yawRad,
     stanceSegments: stance.segments,
     spinePitchOffset: stance.pitchRad,
+    pairSeparation: !contact.planned,
+    contactResetKey: contact.resetKey,
     badge: options.badge?.visible
       ? {
           index: options.badge.index,

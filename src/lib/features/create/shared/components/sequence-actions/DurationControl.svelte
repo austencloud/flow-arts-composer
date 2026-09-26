@@ -10,6 +10,7 @@
   Compact mode: Smaller buttons and tighter spacing for mobile.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { formatDurationDisplay } from "../../utils/duration-display";
   import {
     MIN_DURATION,
@@ -74,13 +75,13 @@
 </script>
 
 <div class="duration-control" class:compact>
-  <span class="duration-label">Duration</span>
+  <span class="duration-label">{t("clip_duration")}</span>
 
   <div class="duration-row">
     <!-- Coarse decrease (−0.5) -->
     <button
       class="ctrl-btn coarse"
-      aria-label="Decrease duration by half beat"
+      aria-label={t("create_ui_decrease_duration_by_half_beat")}
       onclick={() => handleChange(-DURATION_STEP_COARSE)}
       disabled={!canDecrease}
     >
@@ -90,7 +91,7 @@
     <!-- Fine decrease (−0.1) -->
     <button
       class="ctrl-btn fine"
-      aria-label="Decrease duration by tenth"
+      aria-label={t("create_ui_decrease_duration_by_tenth")}
       onclick={() => handleChange(-DURATION_STEP_FINE)}
       disabled={!canDecrease}
     >
@@ -116,7 +117,7 @@
         class="duration-value"
         class:compact
         onclick={startEditing}
-        aria-label="Edit duration value"
+        aria-label={t("create_ui_edit_duration_value")}
       >
         {displayDuration}
       </button>
@@ -125,7 +126,7 @@
     <!-- Fine increase (+0.1) -->
     <button
       class="ctrl-btn fine"
-      aria-label="Increase duration by tenth"
+      aria-label={t("create_ui_increase_duration_by_tenth")}
       onclick={() => handleChange(DURATION_STEP_FINE)}
       disabled={!canIncrease}
     >
@@ -135,7 +136,7 @@
     <!-- Coarse increase (+0.5) -->
     <button
       class="ctrl-btn coarse"
-      aria-label="Increase duration by half beat"
+      aria-label={t("create_ui_increase_duration_by_half_beat")}
       onclick={() => handleChange(DURATION_STEP_COARSE)}
       disabled={!canIncrease}
     >
@@ -145,7 +146,6 @@
 </div>
 
 <style>
-
   .duration-control {
     display: flex;
     flex-direction: column;
@@ -243,7 +243,6 @@
     width: 56px;
   }
 
-
   .ctrl-btn {
     display: flex;
     align-items: center;
@@ -295,7 +294,6 @@
     font-size: 0.9rem;
   }
 
-
   .duration-control.compact .ctrl-btn {
     width: var(--min-touch-target, 44px);
     height: var(--min-touch-target, 44px);
@@ -308,7 +306,6 @@
     height: var(--min-touch-target, 44px);
     font-size: 0.75rem;
   }
-
 
   /* The iPhone-width editor has room for one clear toolbar. Keeping the label
      beside the controls returns an entire row to the pictograph stage. */
@@ -356,7 +353,6 @@
       font-size: 1.25rem;
     }
   }
-
 
   @media (prefers-reduced-motion: reduce) {
     .ctrl-btn {

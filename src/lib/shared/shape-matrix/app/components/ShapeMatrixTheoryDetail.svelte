@@ -17,6 +17,7 @@
   thing to look at, a meaningless thing to link to, and a second way to do what
   the grid already does. -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { spinRatioKey } from "@vtg/domain";
   import { MANDALA_STANDARD_TIP_DX } from "$lib/shared/mandala/domain/mandala-constants";
   import { traceScaledPath } from "$lib/shared/notation/qft/qft-model";
@@ -45,8 +46,9 @@
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import AnimationPanel from "$lib/shared/animation-panel/components/AnimationPanel.svelte";
   import ShapeMatrixStageActions from "$lib/shared/shape-matrix/components/ShapeMatrixStageActions.svelte";
+  import UnifiedTimeline from "$lib/shared/timeline/UnifiedTimeline.svelte";
+  import type { UnifiedPlaybackContext } from "$lib/shared/timeline/unified-playback-context";
   import { registerShapeMatrixPlaybackShortcut } from "../services/shape-matrix-playback-shortcut";
-  import type { ControlDockAction } from "$lib/shared/sequence-viewer/components/ControlDock.svelte";
   import { growFade } from "$lib/shared/transitions/motion";
   import { CANVAS2D_HOSTED_EFFECTS } from "$lib/shared/effects/services/canvas2d-effect-host";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -112,7 +114,10 @@
    */
   const drawnProps = $derived(
     app.data?.props ??
-      foldUntraceablePropPair({ left: app.leftPropType, right: app.rightPropType })
+      foldUntraceablePropPair({
+        left: app.leftPropType,
+        right: app.rightPropType,
+      })
   );
 
   /*
@@ -134,9 +139,56 @@
 
   /*
    * One hand cycle is four beats, the four cardinal points, so the tempo the
-   * dock sets is the tempo the hands travel at. 60 BPM is a second a beat.
+   * transport sets is the tempo the hands travel at. 60 BPM is a second a beat.
    */
   const handPeriod = $derived((4 * 60000) / Math.max(1, animationState.bpm));
+  let cycleProgress = $state(0);
+  let seekCycle: ((progress: number) => void) | null = null;
+  function handleCycleProgress(progress: number): void {
+    cycleProgress = progress;
+  }
+  function handleSeekRef(seek: ((progress: number) => void) | null): void {
+    seekCycle = seek;
+  }
+  const playbackAdapter: UnifiedPlaybackContext = {
+    get overallProgress() {
+      return cycleProgress;
+    },
+    get currentStep() {
+      return Math.min(4, Math.floor(cycleProgress * 4) + 1);
+    },
+    get totalSteps() {
+      return 4;
+    },
+    get isPlaying() {
+      return animationState.playing;
+    },
+    get isLooping() {
+      return undefined;
+    },
+    get duration() {
+      return handPeriod / 1000;
+    },
+    get elapsed() {
+      return (cycleProgress * handPeriod) / 1000;
+    },
+    get beatMarkerPositions() {
+      return [0.25, 0.5, 0.75];
+    },
+    get bpm() {
+      return animationState.bpm;
+    },
+    get playbackMode() {
+      return animationState.playbackMode;
+    },
+    seek(progress) {
+      seekCycle?.(progress);
+    },
+    togglePlay: animationState.togglePlaying,
+    toggleLoop() {},
+    onBpmChange: animationState.setBpm,
+    onPlaybackModeChange: animationState.setPlaybackMode,
+  };
 
   let alignToken = $state(0);
   let boundaryOpen = $state(false);
@@ -286,11 +338,6 @@
     propRelationship?.element?.accentColor ?? handAccent
   );
 
-  /*
-   * Play/pause lives in the dock's trailing slot, where the Matrix drill keeps
-   * it, rather than in a pair of buttons under this stage. One transport
-   * control, in one place, on both surfaces.
-   */
   /* Space is the stage's click, reached without a mouse. Through the app's
      shortcut registry, so it stands aside for text fields and dialogs. The
      Level Matrix drill is mounted beside this one and binds the same key, so
@@ -299,15 +346,12 @@
     registerShapeMatrixPlaybackShortcut(
       "theory",
       () => animationState.togglePlaying(),
-      () => app.surface === "theory" && Boolean(pair)
+      () =>
+        app.surface === "theory" &&
+        Boolean(pair) &&
+        !document.activeElement?.closest("[data-shape-matrix-transport]")
     )
   );
-
-  const playbackAction = $derived<ControlDockAction>({
-    icon: animationState.playing ? "fa-pause" : "fa-play",
-    label: animationState.playing ? "Pause" : "Play",
-    onClick: animationState.togglePlaying,
-  });
 
   /*
    * An open control panel takes the room the reading rows were using, the same
@@ -317,7 +361,7 @@
   const controlsOpen = $derived(animationState.activeSection !== null);
 </script>
 
-<aside class="theory-detail" aria-label="Selected theory pair">
+<aside class="theory-detail" aria-label={t("shape_engine_selected_pair_aria")}>
   <!-- The pane owns the container; this body owns the composition, the same
        split the Matrix drill uses between its stage and its dock. A size
        container cannot answer its own query. -->
@@ -361,8 +405,8 @@
       <div class="detail-flow">
         {#if !pair}
           <div class="empty">
-            <strong>Pick a cell</strong>
-            <small>Its two hands run here, in the pairing chosen above.</small>
+            <strong>{t("shape_engine_pick_cell")}</strong>
+            <small>{t("shape_engine_theory_hint")}</small>
           </div>
         {:else}
           <header class="pair-heading" data-focus-mode-chrome>
@@ -379,7 +423,7 @@
                 <strong style={`color: ${leftInk};`}>
                   {theoryRatioLabel(pair.left.ratio)}
                 </strong>
-                <span class="against">against</span>
+                <span class="against">{t("shape_engine_against")}</span>
                 <strong style={`color: ${rightInk};`}>
                   {theoryRatioLabel(pair.right.ratio)}
                 </strong>
@@ -397,8 +441,8 @@
               type="button"
               class="stage-window"
               aria-label={animationState.playing
-                ? "Pause theory animation"
-                : "Play theory animation"}
+                ? t("shape_engine_pause_theory_animation")
+                : t("shape_engine_play_theory_animation")}
               onclick={animationState.togglePlaying}
             >
               <!-- The stage toggles playback on a click; this is how a mouse
@@ -415,7 +459,9 @@
                   ></i>
                 </span>
                 <span class="stage-hint-word">
-                  {animationState.playing ? "Pause" : "Play"}
+                  {animationState.playing
+                    ? t("shape_engine_pause")
+                    : t("shape_engine_play")}
                 </span>
               </span>
               <!-- The elemental backdrop from the drill, lit by the two elements
@@ -431,6 +477,8 @@
                 {hands}
                 {handPeriod}
                 {alignToken}
+                onCycleProgress={handleCycleProgress}
+                onSeekRef={handleSeekRef}
                 {propReach}
                 {tipAngle}
                 paused={!animationState.playing}
@@ -440,6 +488,12 @@
                 {propColors}
               />
             </button>
+            <div class="canvas-transport" data-shape-matrix-transport>
+              <UnifiedTimeline
+                playback={playbackAdapter}
+                compact={app.compact}
+              />
+            </div>
           </div>
         {/if}
 
@@ -458,7 +512,7 @@
           >
             <span>
               <i class="fas fa-circle-question" aria-hidden="true"></i>
-              Why no letter or level?
+              {t("shape_engine_why_no_letter_or_level")}
             </span>
             <i
               class="fas fa-chevron-down boundary-toggle-icon"
@@ -468,10 +522,7 @@
           </PanelButton>
           {#if boundaryOpen}
             <p class="boundary-note" transition:growFade={{ axis: "y" }}>
-              Levels only name turn values down to a quarter turn. A ratio like
-              3:7 falls outside that ladder. The selected VTG mode still
-              identifies its timing and direction, while the path retains the
-              exact 3:7 ratio.
+              {t("shape_engine_boundary_explanation")}
             </p>
           {/if}
         </div>
@@ -499,8 +550,8 @@
           bpm={animationState.bpm}
           playbackMode={animationState.playbackMode}
           onPlaybackToggle={animationState.togglePlaying}
-          onPlaybackModeChange={animationState.setPlaybackMode}
           onBpmChange={animationState.setBpm}
+          showTempoControls={false}
           showEffectsPlayback={false}
           selectedPropType={app.addressedPropType}
           onPropChange={(next: PropType) => void app.setPropType(next)}
@@ -508,14 +559,13 @@
           onPropPickerRequest={app.togglePropPicker}
           propPickerActive={app.propPickerOpen}
           sequence={null}
-          dockTrailingAction={playbackAction}
           showPathShape={false}
           showMotionVisibility={true}
           showSequenceMarks={false}
           availableEffects={THEORY_EFFECTS}
           onActiveSectionChange={animationState.setActiveSection}
           closeRequest={animationState.closeRequest}
-          regionLabel="Shape animation controls"
+          regionLabel={t("shape_engine_shape_animation_controls")}
         />
       </div>
     {/if}
@@ -731,14 +781,22 @@
     min-height: 0;
   }
 
-  /* The frame is the positioning context the gear hangs off, and it takes
-     the growth the stage used to take so nothing else moves. */
+  /* The frame takes the available height while its transport reserves a row
+     below the drawing. The gear still anchors to its top-right corner. */
   .stage-frame {
     position: relative;
     display: flex;
+    flex-direction: column;
     flex: 1 1 0;
     min-width: 0;
-    min-height: 9rem;
+    min-height: 13.125rem;
+  }
+
+  .canvas-transport {
+    position: relative;
+    z-index: 5;
+    flex: 0 0 auto;
+    width: 100%;
   }
 
   .stage-window {

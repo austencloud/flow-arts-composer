@@ -11,6 +11,7 @@ Shared by the Smart Collection builder today and, per the unified filter
 workspace spec, the main gallery next — one component, never a copy.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import {
     groupRuleFilters,
@@ -79,7 +80,7 @@ workspace spec, the main gallery next — one component, never a copy.
   }
 </script>
 
-<div class="rule-sentence" aria-label="Current rule">
+<div class="rule-sentence" aria-label={t("browse_ui_current_rule")}>
   {#each groups as group, groupIndex (group.type)}
     <span
       class="rule-group"

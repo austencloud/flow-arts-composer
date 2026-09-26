@@ -5,6 +5,7 @@
   Layout: [View Toggle] ... [Play Button] ... [Close Button]
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { MobileToolView } from "../state/playback-state.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import MobileToolViewToggle from "../../../components/inputs/MobileToolViewToggle.svelte";
@@ -45,7 +46,11 @@
 
   <div class="toolbar-right">
     <ShareButton {sequence} useMobileSheet />
-    <button class="close-btn" onclick={onClose} aria-label="Close playback">
+    <button
+      class="close-btn"
+      onclick={onClose}
+      aria-label={t("compose_ui_close_playback")}
+    >
       <i class="fas fa-chevron-down" aria-hidden="true"></i>
     </button>
   </div>

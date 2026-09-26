@@ -11,6 +11,7 @@ batched Firestore reads return them shuffled. If the collection disappears or
 becomes private while open, we bail back to the list instead of showing a ghost.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { untrack, onDestroy } from "svelte";
   import type {
     CollectionAccessRole,
@@ -686,7 +687,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
         <button
           type="button"
           class="back-btn"
-          aria-label="Back to collections"
+          aria-label={t("browse_ui_back_to_collections")}
           onclick={onBack}
         >
           <i class="fas fa-arrow-left" aria-hidden="true"></i>
@@ -703,7 +704,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
         <input
           type="text"
           class="rename-field"
-          aria-label="Collection name"
+          aria-label={t("browse_ui_collection_name")}
           bind:value={renameValue}
           onkeydown={handleRenameKeydown}
           onblur={() => void commitRename()}
@@ -768,32 +769,32 @@ becomes private while open, we bail back to the list instead of showing a ghost.
           <button
             type="button"
             class="header-action-btn select-btn"
-            aria-label="Select sequences"
+            aria-label={t("browse_ui_select_sequences")}
             disabled={loadingMembers || members.length === 0}
             onclick={() => selectionState.enter()}
           >
             <i class="fas fa-circle-check" aria-hidden="true"></i>
-            <span>Select</span>
+            <span>{t("browse_ui_select")}</span>
           </button>
 
           {#if !foreignOwnerId}
             <button
               type="button"
               class="header-action-btn"
-              aria-label="Add"
+              aria-label={t("browse_ui_add")}
               onclick={() => (addSheetOpen = true)}
             >
               <i class="fas fa-plus" aria-hidden="true"></i>
-              <span>Add</span>
+              <span>{t("browse_ui_add")}</span>
             </button>
             <button
               type="button"
               class="header-action-btn"
-              aria-label="Scan"
+              aria-label={t("browse_ui_scan")}
               onclick={() => (scanSheetOpen = true)}
             >
               <i class="fas fa-qrcode" aria-hidden="true"></i>
-              <span>Scan</span>
+              <span>{t("browse_ui_scan")}</span>
             </button>
           {/if}
         </div>
@@ -803,7 +804,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
         <button
           type="button"
           class="options-btn"
-          aria-label="Collection options"
+          aria-label={t("browse_ui_collection_options")}
           onclick={handleOptions}
         >
           <i class="fas fa-ellipsis-vertical" aria-hidden="true"></i>
@@ -827,7 +828,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
             aria-hidden="true"
           ></i>
         </span>
-        <p class="empty-title">Nothing here yet</p>
+        <p class="empty-title">{t("browse_ui_nothing_here_yet")}</p>
         <p class="empty-hint">
           {#if foreignOwnerId && !canEdit}
             This collection doesn't have any public sequences right now.
@@ -844,7 +845,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
               onclick={() => (addSheetOpen = true)}
             >
               <i class="fas fa-plus" aria-hidden="true"></i>
-              <span>Add sequences</span>
+              <span>{t("browse_ui_add_sequences")}</span>
             </button>
             <button
               type="button"
@@ -852,7 +853,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
               onclick={() => (scanSheetOpen = true)}
             >
               <i class="fas fa-qrcode" aria-hidden="true"></i>
-              <span>Scan a card</span>
+              <span>{t("browse_ui_scan_a_card")}</span>
             </button>
           {/if}
         {/if}

@@ -200,7 +200,7 @@
     if (!providedController) controller.active = artType === "tunnel";
   });
   const saveTunnelLabel = $derived(
-    tunnelSaveTarget ? "Save tunnel changes" : "Save tunnel to Visuals"
+    tunnelSaveTarget ? t("viewer_detail_save_tunnel_changes") : t("viewer_detail_save_tunnel_to_visuals")
   );
   const inspectorHost = getOptionalViewerInspectorHostContext();
   const tunnelStage = getOptionalViewerTunnelStageContext();
@@ -538,7 +538,7 @@
           delivery_method: result.method,
         });
         tunnelDeliveryNeedsRetry = true;
-        toast.error("Couldn't save the tunnel video");
+        toast.error(t("viewer_detail_couldn_t_save_the_tunnel_video"));
         return;
       }
       finishArtExportAttempt(deliveryStage, { delivery_method: result.method });
@@ -547,7 +547,7 @@
       if (tunnelExportAttempt.isActive(attemptToken)) {
         finishArtExportAttempt("failed", { reason: "delivery_error" });
         tunnelDeliveryNeedsRetry = true;
-        toast.error("Couldn't save the tunnel video");
+        toast.error(t("viewer_detail_couldn_t_save_the_tunnel_video"));
       }
     }
   }
@@ -744,8 +744,8 @@
       }
       toast.success(
         tunnelSaveTarget
-          ? "Tunnel choreography updated"
-          : "Tunnel saved to your collection"
+          ? t("viewer_detail_tunnel_choreography_updated")
+          : t("viewer_detail_tunnel_saved_to_your_collection")
       );
       onArtAction?.(
         "tunnel_save",
@@ -762,7 +762,7 @@
       // A failed account sync rolls the optimistic entry back. Keep this exact
       // content retryable and tell the user it did not reach their collection.
       console.warn("[ArtPane] Tunnel save failed to sync:", error);
-      toast.error("Couldn't sync the tunnel to your account");
+      toast.error(t("viewer_detail_couldn_t_sync_the_tunnel_to_your_account"));
       onArtAction?.(
         "tunnel_save",
         { stage: "failed", source, reason: "sync_error" },

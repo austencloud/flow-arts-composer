@@ -13,6 +13,7 @@
     logAccountSetupViewed,
   } from "$lib/shared/analytics/services/onboarding-events";
   import { reportErrorTelemetry } from "$lib/shared/error/services/error-telemetry-reporter";
+  import { t } from "$lib/shared/i18n/i18n.svelte";
 
   interface Props {
     /** Admin "preview" — render the card even for accounts that don't need it. */
@@ -76,9 +77,7 @@
           },
         });
         console.error("Failed to save name:", err);
-        toast.warning(
-          "Couldn't save your name. You can set it later in Settings."
-        );
+        toast.warning(t("onboarding_name_save_warning"));
       }
     }
 
@@ -91,15 +90,17 @@
     <i class="fas fa-user" aria-hidden="true"></i>
   </div>
 
-  <h1 id="account-setup-title" class="title">Choose a display name</h1>
-  <p class="subtitle">This is how you'll appear in the community.</p>
+  <h1 id="account-setup-title" class="title">
+    {t("onboarding_choose_display_name")}
+  </h1>
+  <p class="subtitle">{t("onboarding_community_name_desc")}</p>
 
   <form class="setup-form" onsubmit={handleSubmit}>
     {#if showName}
       <input
         type="text"
         class="text-input"
-        placeholder="Your name or nickname"
+        placeholder={t("onboarding_name_placeholder")}
         bind:value={name}
         maxlength="50"
         autocomplete="name"
@@ -113,7 +114,7 @@
       class="action-button"
       disabled={!isValid || submitting}
     >
-      {submitting ? "Saving..." : "Continue"}
+      {submitting ? t("onboarding_saving") : t("action_continue")}
       <i class="fas fa-arrow-right" aria-hidden="true"></i>
     </button>
   </form>

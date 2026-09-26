@@ -26,6 +26,13 @@ export interface TrailOverlayRenderParams {
   /** Prop type names for correct trail endpoint resolution */
   leftPropType?: string | null;
   rightPropType?: string | null;
+  /**
+   * Render key of the artwork drawn for the base pair (`bigfan__fire_bare`,
+   * `sword__model`). Its tip table places the base pair's trails; tunnel
+   * layers keep the notation prop type.
+   */
+  leftPropRenderKey?: string | null;
+  rightPropRenderKey?: string | null;
   /** Chirality flip as drawn this frame; trail sources mirror with the sprite. */
   leftPropFlipped?: boolean;
   rightPropFlipped?: boolean;

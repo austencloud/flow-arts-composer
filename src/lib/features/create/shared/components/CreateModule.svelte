@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { bootProfiler } from "$lib/shared/analytics/boot-profiler";
   // get-create-module-initializer (64-file subtree) and get-extension-flow-coordinator
   // (10-file subtree) are imported dynamically at their only call sites (onMount /
@@ -275,7 +276,8 @@
       return;
     }
 
-    const startPlacement = constructTabState.sequenceState.selectedStartPlacement;
+    const startPlacement =
+      constructTabState.sequenceState.selectedStartPlacement;
 
     constructTabState.setSelectedStartPlacement(startPlacement);
     if (startPlacement) {
@@ -418,7 +420,7 @@
 
       try {
         const initStart = performance.now();
-        initProgress = "Resolving services...";
+        initProgress = t("create_ui_resolving_services");
         const { getCreateModuleInitializer } = await bootProfiler.measureAsync(
           "create:initializer-import",
           () =>
@@ -426,7 +428,7 @@
         );
         const initService = getCreateModuleInitializer();
 
-        initProgress = "Initializing workspace...";
+        initProgress = t("create_ui_initializing_workspace");
         const result = await bootProfiler.measureAsync(
           "create:initialize",
           () => initService.initialize()
@@ -1047,7 +1049,7 @@
         <!-- Clear Sequence Confirmation Dialog -->
         <ConfirmDialog
           bind:isOpen={showClearSequenceConfirm}
-          title="Clear Sequence?"
+          title={t("create_ui_clear_sequence")}
           message="This will remove all steps and the start placement. Use undo to restore if needed."
           confirmText="Clear All"
           cancelText="Keep"

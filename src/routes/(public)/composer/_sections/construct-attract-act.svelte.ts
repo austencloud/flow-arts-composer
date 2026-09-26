@@ -50,7 +50,7 @@ const FILTER_SEL = ".picker-pane .filter-toggle";
 const CELL_SEL = ".step-cell";
 // The Build another button — the act presses the REAL button when it's done
 // watching, so even the cycle reset is a visible decision, not a silent jump.
-const AGAIN_SEL = "[data-demo-again]";
+const AGAIN_SEL = 'button[aria-label="Build another"]';
 
 export type ConstructAttractAct = AttractActHandle;
 export type { GhostState } from "$lib/shared/attract/services/attract-ghost.svelte";

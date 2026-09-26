@@ -5,6 +5,7 @@
   Displayed when no video has been generated yet.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   let {
     onGenerate,
   }: {
@@ -16,7 +17,7 @@
   class="generate-video-btn"
   onclick={onGenerate}
   type="button"
-  aria-label="Generate video for this sequence"
+  aria-label={t("compose_ui_generate_video_for_this_sequence")}
 >
   Generate Video
 </button>

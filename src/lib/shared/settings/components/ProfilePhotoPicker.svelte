@@ -16,6 +16,7 @@
     getProfilePhotoErrorMessage,
   } from "$lib/shared/auth/services/profile-photo-image";
   import { reportErrorTelemetry } from "$lib/shared/error/services/error-telemetry-reporter";
+  import { t } from "$lib/shared/i18n/i18n.svelte";
 
   import PhotoOptionsList from "$lib/shared/settings/components/photo-picker/PhotoOptionsList.svelte";
   import AvatarGenerator from "$lib/shared/settings/components/photo-picker/AvatarGenerator.svelte";
@@ -250,8 +251,12 @@
   >
     <div class="modal-layout tabbed-modal">
       <header class="modal-header">
-        <h2 id="photo-picker-title">Profile Photo</h2>
-        <button class="close-btn" onclick={handleClose} aria-label="Close">
+        <h2 id="photo-picker-title">{t("settings_profile_photo")}</h2>
+        <button
+          class="close-btn"
+          onclick={handleClose}
+          aria-label={t("common_close")}
+        >
           <i class="fas fa-times"></i>
         </button>
       </header>
@@ -292,7 +297,7 @@
           onclick={() => (activeTab = "options")}
         >
           <i class="fas fa-image"></i>
-          <span>Choose Photo</span>
+          <span>{t("settings_choose_photo")}</span>
         </button>
         <button
           class="tab-btn"
@@ -300,7 +305,7 @@
           onclick={() => (activeTab = "generate")}
         >
           <i class="fas fa-magic"></i>
-          <span>Create Avatar</span>
+          <span>{t("settings_create_avatar")}</span>
         </button>
       </div>
     </div>
@@ -311,7 +316,7 @@
     placement="bottom"
     respectLayoutMode={false}
     onclose={handleClose}
-    ariaLabel="Change profile photo"
+    ariaLabel={t("settings_change_profile_photo")}
   >
     <div class="drawer-layout">
       <header class="drawer-header">
@@ -319,21 +324,25 @@
           <button
             class="back-btn"
             onclick={() => wizardRef?.goBack()}
-            aria-label="Back"
+            aria-label={t("common_back")}
           >
             <i class="fas fa-arrow-left"></i>
           </button>
           <h2 id="photo-picker-title">
-            {#if wizardStep === "style"}Pick Style
-            {:else if wizardStep === "shade"}Pick Shade
-            {:else if wizardStep === "prop"}Pick Prop
-            {:else}Confirm
+            {#if wizardStep === "style"}{t("settings_pick_style")}
+            {:else if wizardStep === "shade"}{t("settings_pick_shade")}
+            {:else if wizardStep === "prop"}{t("settings_pick_prop")}
+            {:else}{t("settings_confirm")}
             {/if}
           </h2>
         {:else}
-          <h2 id="photo-picker-title">Profile Photo</h2>
+          <h2 id="photo-picker-title">{t("settings_profile_photo")}</h2>
         {/if}
-        <button class="close-btn" onclick={handleClose} aria-label="Close">
+        <button
+          class="close-btn"
+          onclick={handleClose}
+          aria-label={t("common_close")}
+        >
           <i class="fas fa-times"></i>
         </button>
       </header>
@@ -384,7 +393,7 @@
             onclick={() => (activeTab = "options")}
           >
             <i class="fas fa-image"></i>
-            <span>Choose Photo</span>
+            <span>{t("settings_choose_photo")}</span>
           </button>
           <button
             class="tab-btn"
@@ -395,7 +404,7 @@
             }}
           >
             <i class="fas fa-magic"></i>
-            <span>Create Avatar</span>
+            <span>{t("settings_create_avatar")}</span>
           </button>
         </div>
       {/if}
@@ -406,7 +415,7 @@
 <input
   type="file"
   accept="image/*"
-  aria-label="Choose a profile photo"
+  aria-label={t("settings_choose_profile_photo")}
   onchange={handleFileSelected}
   bind:this={fileInputRef}
   class="sr-only"

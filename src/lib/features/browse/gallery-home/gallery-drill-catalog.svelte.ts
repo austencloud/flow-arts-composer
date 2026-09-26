@@ -11,6 +11,7 @@
  */
 
 import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
+import { t } from "$lib/shared/i18n/i18n.svelte.js";
 import { ACTIVE_DIFFICULTY_LEVELS } from "$lib/shared/config/difficulty-styles";
 import { TND_ELEMENTS } from "$lib/features/choreo-card/domain/tnd-element";
 import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
@@ -590,8 +591,11 @@ export function createGalleryCatalog(deps: GalleryCatalogDeps) {
 
   const lengthSub = $derived(
     lengthPair.min !== undefined && lengthPair.max !== undefined
-      ? `${lengthPair.min} to ${lengthPair.max} steps`
-      : "Short to long"
+      ? t("browse_ui_length_range", {
+          min: lengthPair.min,
+          max: lengthPair.max,
+        })
+      : t("browse_ui_short_to_long")
   );
 
   const PEEK = $derived(
@@ -610,15 +614,15 @@ export function createGalleryCatalog(deps: GalleryCatalogDeps) {
   const primaryCategories = $derived<CategoryEntry[]>([
     {
       key: "level",
-      title: "Level",
-      sub: "Beginner to advanced",
+      title: t("browse_ui_level_category"),
+      sub: t("browse_ui_beginner_to_advanced"),
       art: { kind: "icon", icon: "fa-signal" },
       section: "level",
       narrowedOut: false,
     },
     {
       key: "length",
-      title: "Length",
+      title: t("browse_ui_length_category"),
       sub: lengthSub,
       art: { kind: "icon", icon: "fa-ruler-horizontal" },
       section: "length",
@@ -632,10 +636,10 @@ export function createGalleryCatalog(deps: GalleryCatalogDeps) {
     if (showSection("letter")) {
       out.push({
         key: "letter",
-        title: "Starting letter",
+        title: t("browse_ui_starting_letter"),
         sub: sectionNarrowedOut("letter")
-          ? "No matches with this rule"
-          : `${letterValues.length} letters`,
+          ? t("browse_ui_no_matches_rule")
+          : t("browse_ui_letters_count", { count: letterValues.length }),
         art: { kind: "glyph", word: letterSample },
         section: "letter",
         narrowedOut: sectionNarrowedOut("letter"),
@@ -644,10 +648,10 @@ export function createGalleryCatalog(deps: GalleryCatalogDeps) {
     if (showSection("placement")) {
       out.push({
         key: "placement",
-        title: "Start placement",
+        title: t("browse_ui_start_placement"),
         sub: sectionNarrowedOut("placement")
-          ? "No matches with this rule"
-          : "Alpha, beta, gamma",
+          ? t("browse_ui_no_matches_rule")
+          : t("browse_ui_alpha_beta_gamma"),
         art: {
           kind: "plate",
           src: placementValues[0]?.img ?? PLACEMENTS[0]!.img,
@@ -659,10 +663,10 @@ export function createGalleryCatalog(deps: GalleryCatalogDeps) {
     if (showSection("gridmode")) {
       out.push({
         key: "gridmode",
-        title: "Grid mode",
+        title: t("browse_ui_grid_mode_category"),
         sub: sectionNarrowedOut("gridmode")
-          ? "Narrowed out by this rule"
-          : "Diamond or box",
+          ? t("browse_ui_narrowed_out_rule")
+          : t("browse_ui_diamond_or_box"),
         art: { kind: "grid" },
         section: "gridmode",
         narrowedOut: sectionNarrowedOut("gridmode"),
@@ -673,8 +677,8 @@ export function createGalleryCatalog(deps: GalleryCatalogDeps) {
         key: "loop",
         title: "LOOPs",
         sub: sectionNarrowedOut("loop")
-          ? "No matches with this rule"
-          : "Mirrored, rotated, swapped…",
+          ? t("browse_ui_no_matches_rule")
+          : t("browse_ui_loop_variants"),
         art: { kind: "dots", colors: loopDotColors },
         section: "loop",
         narrowedOut: sectionNarrowedOut("loop"),
@@ -683,10 +687,10 @@ export function createGalleryCatalog(deps: GalleryCatalogDeps) {
     if (showSection("author")) {
       out.push({
         key: "author",
-        title: "Creator",
+        title: t("browse_ui_creator_category"),
         sub: sectionNarrowedOut("author")
-          ? "No matches with this rule"
-          : `${creatorValues.length} creators`,
+          ? t("browse_ui_no_matches_rule")
+          : t("browse_ui_creators_count", { count: creatorValues.length }),
         art: { kind: "avatars", names: creatorTopThree },
         section: "author",
         narrowedOut: sectionNarrowedOut("author"),
@@ -697,10 +701,13 @@ export function createGalleryCatalog(deps: GalleryCatalogDeps) {
       const waiting = performanceValues[1]?.count ?? 0;
       out.push({
         key: "performance",
-        title: "Performances",
+        title: t("browse_ui_performances_category"),
         sub: sectionNarrowedOut("performance")
-          ? "No matches with this rule"
-          : `${withPerformance} with video · ${waiting} without in results`,
+          ? t("browse_ui_no_matches_rule")
+          : t("browse_ui_performance_counts", {
+              with: withPerformance,
+              without: waiting,
+            }),
         art: { kind: "icon", icon: "fa-circle-play" },
         section: "performance",
         narrowedOut: sectionNarrowedOut("performance"),
@@ -709,17 +716,17 @@ export function createGalleryCatalog(deps: GalleryCatalogDeps) {
     if (showSection("recent")) {
       out.push({
         key: "recent",
-        title: "Recently added",
+        title: t("browse_ui_recently_added_category"),
         sub: sectionNarrowedOut("recent")
-          ? "No matches with this rule"
+          ? t("browse_ui_no_matches_rule")
           : deps.unifiedFilterChooser
-            ? `Sequences added in the last 30 days · ${recentCount} · applies instantly`
-            : `Sequences added in the last 30 days · ${recentCount}`,
+            ? t("browse_ui_recent_count_instant", { count: recentCount })
+            : t("browse_ui_recent_count", { count: recentCount }),
         art: { kind: "icon", icon: "fa-clock-rotate-left" },
         apply: {
           type: BrowseFilterType.RECENT,
           value: "recent",
-          label: "Recently added",
+          label: t("browse_ui_recently_added_category"),
         },
         narrowedOut: sectionNarrowedOut("recent"),
       });
@@ -727,17 +734,17 @@ export function createGalleryCatalog(deps: GalleryCatalogDeps) {
     if (showSection("favorites")) {
       out.push({
         key: "favorites",
-        title: "Favorites",
+        title: t("browse_ui_favorites_category"),
         sub: sectionNarrowedOut("favorites")
-          ? "No matches with this rule"
+          ? t("browse_ui_no_matches_rule")
           : deps.unifiedFilterChooser
-            ? `${favoritesCount} saved · applies instantly`
-            : `${favoritesCount} saved`,
+            ? t("browse_ui_saved_instant", { count: favoritesCount })
+            : t("browse_ui_saved_count", { count: favoritesCount }),
         art: { kind: "icon", icon: "fa-heart" },
         apply: {
           type: BrowseFilterType.FAVORITES,
           value: "favorites",
-          label: "Favorites",
+          label: t("browse_ui_favorites_category"),
         },
         narrowedOut: sectionNarrowedOut("favorites"),
       });
@@ -745,10 +752,10 @@ export function createGalleryCatalog(deps: GalleryCatalogDeps) {
     if (showSection("family")) {
       out.push({
         key: "family",
-        title: "Timing & Direction",
+        title: t("browse_ui_timing_direction_category"),
         sub: sectionNarrowedOut("family")
-          ? "No matches with this rule"
-          : "The six families",
+          ? t("browse_ui_no_matches_rule")
+          : t("browse_ui_six_families"),
         art: {
           kind: "dots",
           colors: TND_ELEMENTS.map((el) => el.accentColor),
@@ -760,10 +767,12 @@ export function createGalleryCatalog(deps: GalleryCatalogDeps) {
     if (showSection("max_turn_intensity")) {
       out.push({
         key: "max_turn_intensity",
-        title: "Max turn intensity",
+        title: t("browse_ui_max_turn_intensity"),
         sub: sectionNarrowedOut("max_turn_intensity")
-          ? "Narrowed out by this rule"
-          : `${maxTurnIntensityValues.length} levels`,
+          ? t("browse_ui_narrowed_out_rule")
+          : t("browse_ui_levels_count", {
+              count: maxTurnIntensityValues.length,
+            }),
         // A gauge, not a rotation glyph: `fa-arrows-spin` is what the LOOPs
         // "Rotated (quartered)" type wears, so this category was reading as a
         // second loop filter. Turn INTENSITY is a quantity — how much rotation
@@ -777,10 +786,12 @@ export function createGalleryCatalog(deps: GalleryCatalogDeps) {
       const filterable = (deps.collections?.length ?? 0) > 0;
       out.push({
         key: "collections",
-        title: "Collections",
+        title: t("browse_ui_collections_tab"),
         sub: filterable
-          ? `${deps.collections!.length} to filter by`
-          : "Curated by the community",
+          ? t("browse_ui_collections_filter_count", {
+              count: deps.collections!.length,
+            })
+          : t("browse_ui_curated_by_community"),
         art: { kind: "icon", icon: "fa-folder" },
         section: filterable ? "collection" : undefined,
         navigate: filterable ? undefined : "collections",

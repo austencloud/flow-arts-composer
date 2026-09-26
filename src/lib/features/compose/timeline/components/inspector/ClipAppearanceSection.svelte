@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * ClipAppearanceSection - Color, rotation, and opacity controls
    */
@@ -40,7 +41,7 @@
   </div>
 
   <div class="field">
-    <span class="field-label">Clip Color</span>
+    <span class="field-label">{t("compose_ui_clip_color")}</span>
     <div class="color-presets">
       {#each COLOR_PRESETS as presetColor}
         <button

@@ -160,6 +160,33 @@ export function planUpperBodyStanceYawTarget(
 }
 
 /**
+ * How far the side-on corridor is engaged, 0 to 1, for a chest turned by
+ * `yawRad` while the props ask for `propDesireRad`. Exported so the hard-beat
+ * depth lanes hand over to the corridor on the same curve instead of
+ * re-deriving it.
+ *
+ * Only an aligned desire counts. Through a reversal the delivered yaw passes
+ * through zero while the props still ask for the side it is leaving, and
+ * opening a corridor in the sign of a near-zero yaw would steer the grips the
+ * wrong way at exactly the frame they are least committed.
+ */
+export function stanceSideBlend(
+  yawRad: number,
+  propDesireRad: number = yawRad
+): number {
+  if (yawRad === 0) return 0;
+  const alignedDesireRad =
+    Math.sign(propDesireRad) === Math.sign(yawRad)
+      ? Math.abs(propDesireRad)
+      : 0;
+  const sideOnRad = Math.max(Math.abs(yawRad), alignedDesireRad);
+  return smoothstep01(
+    (sideOnRad - SIDE_ON_YAW_KNEE_RAD) /
+      (MAX_STANCE_YAW_RAD - SIDE_ON_YAW_KNEE_RAD)
+  );
+}
+
+/**
  * The reach corridor for a chest that is *already* turned by `yawRad`.
  *
  * Split out from the yaw decision so a planned score-time curve can drive the
@@ -204,17 +231,7 @@ export function planUpperBodyStanceDepth(
   // the chest is still half square, which is where the bulkier rigs took shaft
   // hits mid-transition. Below SIDE_ON_YAW_KNEE the grips keep their authored
   // depth and the pose is simply the old square-ish reach.
-  // Only an aligned desire counts. Through a reversal the delivered yaw passes
-  // through zero while the props still ask for the side it is leaving, and
-  // opening a corridor in the sign of a near-zero yaw would steer the grips the
-  // wrong way at exactly the frame they are least committed.
-  const alignedDesireRad =
-    Math.sign(propDesireRad) === Math.sign(yawRad) ? Math.abs(propDesireRad) : 0;
-  const sideOnRad = Math.max(Math.abs(yawRad), alignedDesireRad);
-  const sideBlend = smoothstep01(
-    (sideOnRad - SIDE_ON_YAW_KNEE_RAD) /
-      (MAX_STANCE_YAW_RAD - SIDE_ON_YAW_KNEE_RAD)
-  );
+  const sideBlend = stanceSideBlend(yawRad, propDesireRad);
   // Rig convention: the performer's left is rig-local +X, so a positive stance
   // yaw swings the left shoulder toward negative depth.
   const leftLaneM = -Math.sign(yawRad) * sameSideLaneM(measurements);

@@ -276,7 +276,7 @@
       onTogglePlaybackRef?.(togglePlayback);
     } catch (err) {
       console.error("Failed to initialize animation player:", err);
-      error = "Failed to load animation";
+      error = t("viewer_detail_failed_to_load_animation");
       loading = false;
     }
   });
@@ -324,14 +324,14 @@
 
       const fullSeq = await ensureMotionData(sequence);
       if (!fullSeq) {
-        error = "Failed to load sequence";
+        error = t("viewer_detail_failed_to_load_sequence");
         return;
       }
 
       animState?.setShouldLoop(true);
       const ok = controller!.initialize(fullSeq, animState!);
       if (!ok) {
-        error = "Failed to initialize playback";
+        error = t("viewer_detail_failed_to_initialize_playback");
         return;
       }
 
@@ -415,7 +415,7 @@
   {#if loading}
     <div class="state-msg">
       <ProgressRing percent={-1} size={32} strokeWidth={3} /><span
-        >Loading animation...</span
+        >{t("loading_animation")}</span
       >
     </div>
   {:else if error}

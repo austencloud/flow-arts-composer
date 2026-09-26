@@ -5,6 +5,7 @@ Playback controls for the Record tab.
 Provides play/pause, speed adjustment (BPM), reset, and metronome toggle.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   // Props
   const {
     isPlaying = false,
@@ -72,11 +73,11 @@ Provides play/pause, speed adjustment (BPM), reset, and metronome toggle.
     <button
       class="control-button reset-button"
       onclick={onReset}
-      title="Reset to beginning"
-      aria-label="Reset to beginning"
+      title={t("create_ui_reset_to_beginning")}
+      aria-label={t("create_ui_reset_to_beginning")}
     >
       <span class="icon">⏮️</span>
-      <span class="label">Reset</span>
+      <span class="label">{t("create_ui_reset")}</span>
     </button>
   </div>
 
@@ -91,8 +92,8 @@ Provides play/pause, speed adjustment (BPM), reset, and metronome toggle.
       <button
         class="bpm-adjust-button"
         onclick={() => incrementBpm(-10)}
-        title="Decrease by 10 BPM"
-        aria-label="Decrease speed by 10 BPM"
+        title={t("create_ui_decrease_by_10_bpm")}
+        aria-label={t("create_ui_decrease_speed_by_10_bpm")}
       >
         <span aria-hidden="true">−</span>
       </button>
@@ -105,7 +106,7 @@ Provides play/pause, speed adjustment (BPM), reset, and metronome toggle.
         value={localBpm}
         oninput={handleBpmChange}
         step="5"
-        aria-label="Playback speed in BPM"
+        aria-label={t("create_ui_playback_speed_in_bpm")}
         aria-valuemin={minBpm}
         aria-valuemax={maxBpm}
         aria-valuenow={localBpm}
@@ -114,8 +115,8 @@ Provides play/pause, speed adjustment (BPM), reset, and metronome toggle.
       <button
         class="bpm-adjust-button"
         onclick={() => incrementBpm(10)}
-        title="Increase by 10 BPM"
-        aria-label="Increase speed by 10 BPM"
+        title={t("create_ui_increase_by_10_bpm")}
+        aria-label={t("create_ui_increase_speed_by_10_bpm")}
       >
         <span aria-hidden="true">+</span>
       </button>
@@ -131,11 +132,17 @@ Provides play/pause, speed adjustment (BPM), reset, and metronome toggle.
       onclick={() => onMetronomeToggle(!isMetronomeEnabled)}
       aria-label={isMetronomeEnabled ? "Disable metronome" : "Enable metronome"}
     >
-      <span class="toggle-track" class:on={isMetronomeEnabled} aria-hidden="true">
+      <span
+        class="toggle-track"
+        class:on={isMetronomeEnabled}
+        aria-hidden="true"
+      >
         <span class="toggle-thumb"></span>
       </span>
-      <span class="toggle-icon" aria-hidden="true">{isMetronomeEnabled ? "🔊" : "🔇"}</span>
-      <span class="toggle-label">Metronome</span>
+      <span class="toggle-icon" aria-hidden="true"
+        >{isMetronomeEnabled ? "🔊" : "🔇"}</span
+      >
+      <span class="toggle-label">{t("create_ui_metronome")}</span>
     </button>
   </div>
 </div>

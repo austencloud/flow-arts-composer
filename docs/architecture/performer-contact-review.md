@@ -1,8 +1,9 @@
 # Performer contact review
 
 Status: review, 2026-09-24. Read-only findings, Austen's answers, and the
-agreed plan. Steps 0 to 2 are approved for implementation; later steps wait
-on the mapping sessions described below.
+agreed plan. Steps 0 to 2 landed on local main on 2026-09-25 (see
+[Results](#results-2026-09-25)); later steps wait on the mapping sessions
+described below.
 
 The complaint: the props go where the grid says, but the hands cannot reach
 them and let go. This review asked whether the work on arm clipping, negative
@@ -254,7 +255,7 @@ Every step is judged by the same scoreboard. Effort figures are estimates.
 | 1    | Wrist fix: place the wrist from the orientation the twist will produce                                                                                                            | At most 4,400 of 12,960 over 3 cm on ch07 and ch18; forearms under 4 cm stay 0; palms under 6 cm at most 10 per rig; browser check on both renderers |
 | 2    | Hard beats: replace the unbounded split with a capped, reported displacement of staff and hand together, radial and depth only; beta depth lanes; reset cached retraction on seek | p90 gap at most 12 cm on both rigs; forearms under 4 cm stay 0; every displaced beat listed in cm within the cap                                     |
 | 3    | Move scene-3d out of the pnpm patch into `packages/` (the camera-3d precedent); keep grip-elbow parked                                                                            | Scoreboard identical before and after; type check and build pass                                                                                     |
-| 4    | Planning trial: plan elbow direction across the worst remaining sequence instead of per frame                                                                                     | At least 50% fewer gap frames than step 2 on that sequence, no new contacts under 4 cm; otherwise stop and keep step 2                               |
+| 4    | Planning trial: plan elbow direction across the worst remaining sequence instead of per frame                                                                                     | At least 50% fewer gap frames than step 2 on that sequence and forearms under 4 cm back to 0; otherwise stop and keep step 2                         |
 | 5    | Routes and palm facing from the mapping sessions: negative-space pockets, body turns and blends, chosen per beat across the sequence                                              | Austen signs off the route rules; the negative-space filmstrip shows the thumb end in the pocket at 25% and 35%                                      |
 | 6    | Grip states: the relaxed pinch as a real state on both hands, entered deliberately or when the wrist runs out of turn                                                             | Both hands, four rigs; contact holds in both grips; displayed hand equals measured hand                                                              |
 | 7    | Delete the legacy per-frame rules, extra contact modes and render lock once the planned path is default (lab-mode retirement pending Austen's decision)                           | Old passes gone; no test reads source text; earlier gates hold                                                                                       |
@@ -263,6 +264,55 @@ The architecture reviewer wanted step 3 first and the animation reviewer
 wanted a full offline optimizer first. The red team moved both after the
 wrist fix: the fix is small, the patch can carry it, and an optimizer built on
 the wrong wrist placement would optimise against a wrong model.
+
+## Results (2026-09-25)
+
+Steps 0 to 2 are on local main, not pushed. The scoreboard is
+`tests/unit/3d/performer-contact-scoreboard.test.ts`, full corpus, ch07 then
+ch18:
+
+| Measure                                       | Step 0 (before) | Step 1        | Step 2        |
+| --------------------------------------------- | --------------- | ------------- | ------------- |
+| Hand-frames over 3 cm from the staff (12,960) | 8,068 / 8,282   | 3,858 / 4,134 | 1,787 / 2,362 |
+| 90th-percentile hand-to-staff gap             | 23.3 / 24.4 cm  | 18.1 / 18.5   | 3.9 / 5.7     |
+| Forearm pairs under 4 cm                      | 0 / 0           | 0 / 0         | 75 / 34       |
+| Palm pairs under 6 cm                         | 0 / 0           | 8 / 4         | 7 / 3         |
+| Rendered staff through head, torso or arm     | 60 / 49         | 136 / 157     | 73 / 73       |
+| The same with the staff at its grid position  | not measured    | 70 / 83       | 65 / 72       |
+
+Step 1 turned the wrist from the orientation the twist produces. Step 2
+replaced the unbounded pair split with a capped displacement of staff and
+hand together: at most 25 cm in toward the grid centre, never out, and depth
+lanes of up to 10 cm per hand. Every displaced beat is listed in cm. The
+displacement runs in both renderers, a seek resets the animator's contact
+history, and the worker renderer now applies the same 6 cm render lock as the
+main-thread one. The browser check ran on `/composer` with both renderers
+loading the patched package.
+
+Decisions and open items:
+
+- **Forearms.** Step 2 misses "forearms under 4 cm stay 0". Austen accepted
+  the merge with the count capped at 75 and 34. The old 0 came from the split
+  pulling the hands off their staffs. The remaining contacts are elbow against
+  elbow near the midline on crossed and close pairs; a wider depth lane does
+  not close them. Step 4 takes the cap back to 0.
+- **Render lock.** It still slides the staff up to 6 cm in any direction,
+  against the radial-and-depth rule. A lock limited to radial and depth moves
+  raised the frames over 3 cm to 2,556 and 3,154. Kept until step 7.
+- **Staff through the body** is above step 0 (73 against 60 and 49). The grid
+  positions alone account for 65 and 72 of those frames; step 1's target of
+  bringing the rendered count down to the grid count is not met.
+- **Elbow routing.** The displacement changes the over/under routing on 368
+  frames (capped); the plan asked for none.
+- **Hosts left on the legacy split** until they are wired: Coven, Learn
+  preview, Quiz, two Museum hosts, Village, the character card, walk-lab and
+  the grip lab.
+- **Stance cache.** Fixed on 2026-09-25. The torso track in
+  `performer-upper-body-stance.ts` now keys on the same score motion as the
+  hard-beat track, through the shared `performer-score-motion-key.ts`: steps,
+  plane mode, step count, loop, effort, effort timeline, path shape and
+  motion-aware paths. An effort or path change replans the torso and the
+  displaced props together.
 
 ## Target architecture
 
@@ -289,7 +339,7 @@ are useful now.
 - Turns are all spine (up to 87 to 90° with square hips); a human spine
   rotates roughly 40 to 50° (general estimate).
 - The orbit-camera renderer has no contact lock, so the same sequence looks
-  different depending on which renderer draws it.
+  different depending on which renderer draws it. (Fixed in step 2.)
 - `avatar-head-clearance-policy.test.ts` pins lean at 0 and the 0.6
   retraction; nine test files read source text.
 - 13 patch commits since 2026-09-17 came from at least four branches.

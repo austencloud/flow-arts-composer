@@ -39,6 +39,7 @@ let _dismissPath = $state<string | null>(null);
 let _handPathMode = $state(false);
 let _playOnOpen = $state(false);
 let _shareOnOpen = $state(false);
+let _saveOnOpen = $state(false);
 let _openedFromUrl = $state(false);
 let _activeShortCode = $state<string | null>(null);
 let _analyticsSource = $state<SequenceViewerSource>("external_link");
@@ -62,6 +63,7 @@ export function openSequenceOverlay(
     /** Open on the 2D animation surface and request playback. */
     playOnOpen?: boolean;
     shareOnOpen?: boolean;
+    saveOnOpen?: boolean;
     /** Viewer state query to seed the viewer with; see `seedViewerStateParams`. */
     viewStateParams?: string;
     fromUrl?: boolean;
@@ -89,6 +91,7 @@ export function openSequenceOverlay(
   _handPathMode = options.handPathMode ?? false;
   _playOnOpen = options.playOnOpen ?? false;
   _shareOnOpen = options.shareOnOpen ?? false;
+  _saveOnOpen = options.saveOnOpen ?? false;
   _openedFromUrl = options.fromUrl ?? false;
   _activeShortCode = options.shortCode ?? null;
   _analyticsSource = options.analyticsSource;
@@ -231,6 +234,7 @@ export function closeSequenceOverlay(): void {
   _handPathMode = false;
   _playOnOpen = false;
   _shareOnOpen = false;
+  _saveOnOpen = false;
   _openedFromUrl = false;
   _activeShortCode = null;
   _analyticsSource = "external_link";
@@ -303,6 +307,9 @@ export function getSequenceOverlayState() {
     },
     get shareOnOpen() {
       return _shareOnOpen;
+    },
+    get saveOnOpen() {
+      return _saveOnOpen;
     },
     get openedFromUrl() {
       return _openedFromUrl;

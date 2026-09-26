@@ -8,6 +8,7 @@
   import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
   import ProfileColorPicker from "./ProfileColorPicker.svelte";
   import type { User } from "firebase/auth";
+  import { t } from "$lib/shared/i18n/i18n.svelte";
 
   interface Props {
     user: User | null;
@@ -54,11 +55,11 @@
         src={user?.photoURL}
         name={user?.displayName || user?.email}
         googleId={providerIds.googleId}
-        alt={user?.displayName || "Profile"}
+        alt={user?.displayName || t("settings_profile")}
         size="xl"
       />
     </div>
-    <h3 class="panel-title">Choose Photo</h3>
+    <h3 class="panel-title">{t("settings_choose_photo")}</h3>
   </div>
 
   {#if errorMessage}
@@ -68,7 +69,7 @@
       <button
         class="error-dismiss"
         onclick={onDismissError}
-        aria-label="Dismiss error"
+        aria-label={t("settings_dismiss_error")}
       >
         <i class="fas fa-times"></i>
       </button>
@@ -81,8 +82,8 @@
         <i class="fas fa-camera"></i>
       </div>
       <div class="option-text">
-        <span class="option-label">Upload Photo</span>
-        <span class="option-desc">Choose from your device</span>
+        <span class="option-label">{t("settings_upload_photo")}</span>
+        <span class="option-desc">{t("settings_choose_from_device")}</span>
       </div>
       <i class="fas fa-chevron-right option-arrow"></i>
     </button>
@@ -93,14 +94,14 @@
           <i class="fab fa-google"></i>
         </div>
         <div class="option-text">
-          <span class="option-label">Use Google Photo</span>
-          <span class="option-desc">From your Google account</span>
+          <span class="option-label">{t("settings_use_google_photo")}</span>
+          <span class="option-desc">{t("settings_from_google")}</span>
         </div>
         <div class="option-preview-avatar">
           <RobustAvatar
             src={googlePhotoUrl}
             googleId={providerIds.googleId}
-            alt="Google profile"
+            alt={t("settings_google_profile")}
             size="sm"
           />
         </div>
@@ -113,12 +114,12 @@
           <i class="fab fa-facebook-f"></i>
         </div>
         <div class="option-text">
-          <span class="option-label">Use Facebook Photo</span>
-          <span class="option-desc">From your Facebook account</span>
+          <span class="option-label">{t("settings_use_facebook_photo")}</span>
+          <span class="option-desc">{t("settings_from_facebook")}</span>
         </div>
         <img
           src="https://graph.facebook.com/{providerIds.facebookId}/picture?type=small"
-          alt="Facebook profile"
+          alt={t("settings_facebook_profile")}
           class="option-preview-img"
         />
       </button>
@@ -128,11 +129,7 @@
   <!-- Profile accent color picker -->
   {#if onColorChange}
     <div class="color-section-divider"></div>
-    <ProfileColorPicker
-      selectedColor={profileColor}
-      {onColorChange}
-      {saving}
-    />
+    <ProfileColorPicker selectedColor={profileColor} {onColorChange} {saving} />
   {/if}
 </div>
 
@@ -165,7 +162,8 @@
     border-radius: 50%;
     overflow: hidden;
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
-    border: 3px solid var(--ring-accent, var(--theme-stroke-strong, rgba(255, 255, 255, 0.2)));
+    border: 3px solid
+      var(--ring-accent, var(--theme-stroke-strong, rgba(255, 255, 255, 0.2)));
   }
 
   .color-section-divider {

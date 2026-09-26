@@ -11,8 +11,7 @@
   - Quick add to timeline button
 -->
 <script lang="ts">
-
-import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/get-sequence-animation-orchestrator";
+  import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/get-sequence-animation-orchestrator";
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte";
   import { onMount, onDestroy, untrack } from "svelte";
@@ -292,7 +291,7 @@ import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/g
     {#if loading}
       <div class="loading-state">
         <ProgressRing percent={-1} size={32} strokeWidth={3} />
-        <span>Initializing...</span>
+        <span>{t("compose_ui_initializing")}</span>
       </div>
     {:else if error}
       <div class="error-state">
@@ -361,8 +360,8 @@ import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/g
         <button
           class="transport-btn"
           onclick={goToStart}
-          title="Go to start"
-          aria-label="Go to start"
+          title={t("compose_ui_go_to_start")}
+          aria-label={t("compose_ui_go_to_start")}
           disabled={!sequence}
         >
           <i class="fas fa-backward-fast" aria-hidden="true"></i>
@@ -370,8 +369,8 @@ import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/g
         <button
           class="transport-btn"
           onclick={stepBackward}
-          title="Previous step"
-          aria-label="Previous step"
+          title={t("compose_ui_previous_step")}
+          aria-label={t("compose_ui_previous_step")}
           disabled={!sequence}
         >
           <i class="fas fa-backward-step" aria-hidden="true"></i>
@@ -389,8 +388,8 @@ import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/g
         <button
           class="transport-btn"
           onclick={stepForward}
-          title="Next step"
-          aria-label="Next step"
+          title={t("compose_ui_next_step")}
+          aria-label={t("compose_ui_next_step")}
           disabled={!sequence}
         >
           <i class="fas fa-forward-step" aria-hidden="true"></i>
@@ -398,8 +397,8 @@ import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/g
         <button
           class="transport-btn"
           onclick={goToEnd}
-          title="Go to end"
-          aria-label="Go to end"
+          title={t("compose_ui_go_to_end")}
+          aria-label={t("compose_ui_go_to_end")}
           disabled={!sequence}
         >
           <i class="fas fa-forward-fast" aria-hidden="true"></i>
@@ -414,7 +413,7 @@ import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/g
           title="Add to timeline at playhead"
         >
           <i class="fas fa-plus" aria-hidden="true"></i>
-          <span>Add</span>
+          <span>{t("compose_ui_add")}</span>
         </button>
       {/if}
     </div>
@@ -519,7 +518,11 @@ import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/g
     justify-content: center;
     width: 28px;
     height: 28px;
-    background: color-mix(in srgb, var(--source-monitor-accent) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--source-monitor-accent) 20%,
+      transparent
+    );
     border-radius: 50%;
     backdrop-filter: blur(4px);
     color: var(--source-monitor-accent);
@@ -628,13 +631,21 @@ import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/g
   .transport-btn.play-btn {
     width: 52px; /* WCAG AAA touch target - slightly larger for primary */
     height: 52px;
-    background: color-mix(in srgb, var(--source-monitor-accent) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--source-monitor-accent) 20%,
+      transparent
+    );
     color: var(--source-monitor-accent);
     font-size: var(--font-size-sm);
   }
 
   .transport-btn.play-btn:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--source-monitor-accent) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--source-monitor-accent) 30%,
+      transparent
+    );
   }
 
   .add-btn {

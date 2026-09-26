@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import ShapeMatrixGrid from "./ShapeMatrixGrid.svelte";
@@ -40,7 +41,7 @@
   {#if err}
     <p class="teaser-status err">{err}</p>
   {:else if !data}
-    <p class="teaser-status">Building flowers…</p>
+    <p class="teaser-status">{t("shape_engine_building_flowers")}</p>
   {:else}
     <ShapeMatrixGrid
       {data}

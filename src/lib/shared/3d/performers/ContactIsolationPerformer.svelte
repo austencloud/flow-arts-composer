@@ -17,7 +17,8 @@
   import { toScenePropType } from "../domain/scene-prop-type";
   import {
     sampleStaffIsolation,
-    ISOLATION_STAFF_CONTACT,
+    isolationStaffContact,
+    DEFAULT_LAB_STAFF_LENGTH_M,
     type IsolationHand,
   } from "./staff-isolation";
 
@@ -27,6 +28,7 @@
     hand = "right",
     bodyPose = null,
     tipOffset = [0, 0, 0],
+    staffLengthM = DEFAULT_LAB_STAFF_LENGTH_M,
     onReady,
     onReport,
     onGeometry,
@@ -36,6 +38,7 @@
     hand?: IsolationHand;
     bodyPose?: AuthoredContactPose | null;
     tipOffset?: readonly [number, number, number];
+    staffLengthM?: number;
     onReady?: () => void;
     onReport?: (report: AvatarContactReport) => void;
     onGeometry?: AvatarContactGeometryCallback;
@@ -50,7 +53,8 @@
     },
     makeStandaloneDeps()
   );
-  const prop = $derived(sampleStaffIsolation(phase, tipOffset));
+  const prop = $derived(sampleStaffIsolation(phase, tipOffset, staffLengthM));
+  const staffContact = $derived(isolationStaffContact(staffLengthM));
   onDestroy(() => avatarState.destroy());
 </script>
 
@@ -65,9 +69,9 @@
   redPropState={hand === "right" ? prop : null}
   bluePropType={toScenePropType(PropType.FIRE_DOUBLE_STAFF)}
   redPropType={toScenePropType(PropType.FIRE_DOUBLE_STAFF)}
-  propLength={ISOLATION_STAFF_CONTACT.lengthM}
+  propLength={staffLengthM}
   contactMode="prop-authoritative"
-  staffContact={ISOLATION_STAFF_CONTACT}
+  {staffContact}
   authoredContactPose={bodyPose}
   onContactReport={onReport}
   onContactGeometry={onGeometry}

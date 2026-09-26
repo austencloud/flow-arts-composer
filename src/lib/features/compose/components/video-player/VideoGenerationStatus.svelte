@@ -5,6 +5,7 @@
   Shows current phase, percentage, frame count, and allows cancellation.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
   import type { VideoRenderProgress } from "$lib/shared/animation-engine/services/video-pre-renderer";
   let {
@@ -28,7 +29,9 @@
         Complete!
       {/if}
     </div>
-    <button class="cancel-btn" type="button" onclick={onCancel}>Cancel</button>
+    <button class="cancel-btn" type="button" onclick={onCancel}
+      >{t("action_cancel")}</button
+    >
   </div>
   <div
     class="progress-bar"

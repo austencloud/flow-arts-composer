@@ -1,5 +1,6 @@
 <!-- ActionToast - Toast with optional undo/redo button -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   let {
     message,
     showUndo = false,
@@ -18,9 +19,9 @@
 <div class="toast">
   <span>{message}</span>
   {#if showUndo && onUndo}
-    <button type="button" class="toast-btn" onclick={onUndo}>Undo</button>
+    <button type="button" class="toast-btn" onclick={onUndo}>{t("settings_undo")}</button>
   {:else if showRedo && onRedo}
-    <button type="button" class="toast-btn" onclick={onRedo}>Redo</button>
+    <button type="button" class="toast-btn" onclick={onRedo}>{t("settings_redo")}</button>
   {/if}
 </div>
 

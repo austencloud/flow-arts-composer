@@ -12,6 +12,7 @@
   CategoryTile.svelte.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import SequencePeek from "$lib/shared/browse/components/SequencePeek.svelte";
   import DifficultyBadge from "$lib/shared/components/DifficultyBadge.svelte";
   import CategoryTile from "./CategoryTile.svelte";
@@ -26,6 +27,8 @@
   interface Props {
     catalog: GalleryCatalog;
     poolSize: number;
+    loading?: boolean;
+    loadFailed?: boolean;
     showAll: boolean;
     chooserTitle?: string;
     chooserHint?: string;
@@ -43,6 +46,8 @@
   let {
     catalog,
     poolSize,
+    loading = false,
+    loadFailed = false,
     showAll,
     chooserTitle,
     chooserHint,
@@ -56,16 +61,19 @@
   }: Props = $props();
 </script>
 
-<div class="drill-screen screen-chooser" class:sheet>
+<div class="drill-screen screen-chooser" class:sheet aria-busy={loading}>
   <header class="drill-head">
     <h2 tabindex="-1">
-      {chooserTitle ?? (sheet ? "Filter sequences" : "How do you want to browse?")}
+      {chooserTitle ??
+        (sheet ? t("browse_ui_filter_sequences") : t("browse_ui_how_browse"))}
     </h2>
-    <p>
-      {chooserHint ??
-        (sheet
-          ? "Counts update with your current filters."
-          : "Pick one to narrow it down.")}
+    <p role="status">
+      {loading
+        ? poolSize > 0
+          ? t("browse_ui_loading_gallery")
+          : t("browse_ui_loading_sequences")
+        : (chooserHint ??
+          (sheet ? t("browse_ui_counts_update") : t("browse_ui_pick_one")))}
     </p>
   </header>
 
@@ -83,12 +91,16 @@
     <button
       class="choice-tile"
       type="button"
-      use:claimedViewTransitionName={{ name: "gallery-cat-level", enabled: morph }}
+      disabled={(loading || loadFailed) && poolSize === 0}
+      use:claimedViewTransitionName={{
+        name: "gallery-cat-level",
+        enabled: morph,
+      }}
       onclick={() => onOpenSection("level")}
     >
       <span class="choice-main">
-        <span class="choice-title">By level</span>
-        <span class="choice-sub">Beginner to advanced</span>
+        <span class="choice-title">{t("browse_ui_by_level")}</span>
+        <span class="choice-sub">{t("browse_ui_beginner_to_advanced")}</span>
       </span>
       <span class="secondary-door-art compact-door-art" aria-hidden="true">
         <i class="fas fa-signal"></i>
@@ -97,6 +109,7 @@
         {#each LEVELS as lvl, i (lvl)}
           <SequencePeek
             sequence={catalog.levelReps.get(lvl)}
+            {loading}
             width={catalog.PEEK.fanW}
             height={catalog.PEEK.fanH}
             tilt={FAN_TILTS[i]}
@@ -113,6 +126,7 @@
     <button
       class="choice-tile"
       type="button"
+      disabled={(loading || loadFailed) && poolSize === 0}
       use:claimedViewTransitionName={{
         name: "gallery-cat-length",
         enabled: morph,
@@ -120,7 +134,7 @@
       onclick={() => onOpenSection("length")}
     >
       <span class="choice-main">
-        <span class="choice-title">By length</span>
+        <span class="choice-title">{t("browse_ui_by_length")}</span>
         <span class="choice-sub">{catalog.lengthSub}</span>
       </span>
       <span class="secondary-door-art compact-door-art" aria-hidden="true">
@@ -129,12 +143,14 @@
       <span class="peek-fan pair" aria-hidden="true">
         <SequencePeek
           sequence={catalog.lengthPair.short}
+          {loading}
           width={catalog.PEEK.shortW}
           height={catalog.PEEK.shortH}
           tilt={-3}
         />
         <SequencePeek
           sequence={catalog.lengthPair.long}
+          {loading}
           width={catalog.PEEK.longW}
           height={catalog.PEEK.longH}
           tilt={3}
@@ -145,15 +161,27 @@
 
     <!-- Show-all lives IN the hero rank: it's the main door, not a footnote. -->
     {#if showAll}
-      <button class="choice-tile compact" type="button" onclick={() => onShowAll?.()}>
+      <button
+        class="choice-tile compact"
+        type="button"
+        disabled={(loading || loadFailed) && poolSize === 0}
+        onclick={() => onShowAll?.()}
+      >
         <span class="choice-main">
-          <span class="choice-title">Show all {poolSize} sequences</span>
-          <span class="choice-sub">The whole gallery, one grid</span>
+          <span class="choice-title"
+            >{loading || loadFailed
+              ? t("browse_ui_show_all_sequences")
+              : t("browse_ui_show_all_count", { count: poolSize })}</span
+          >
+          <span class="choice-sub"
+            >{t("browse_ui_the_whole_gallery_one_grid")}</span
+          >
         </span>
         <span class="peek-collage" aria-hidden="true">
           {#each catalog.collageSlots as seq, i (i)}
             <SequencePeek
               sequence={seq}
+              {loading}
               width={catalog.PEEK.collW}
               height={catalog.PEEK.collH}
             />
@@ -166,7 +194,7 @@
 
   {#if poolSize > 0}
     <div class="inline-secondary-choices">
-      <p class="more-head">More ways to browse</p>
+      <p class="more-head">{t("browse_ui_more_ways_to_browse")}</p>
       <div class="mini-grid" class:fluid-wide-canvas={fluidWideCanvas}>
         {#each catalog.secondaryCategories as entry (entry.key)}
           <CategoryTile
@@ -271,7 +299,11 @@
     border: 1px solid
       color-mix(in srgb, var(--theme-accent, #6366f1) 45%, transparent);
     border-radius: 1rem;
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 14%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 14%,
+      transparent
+    );
     color: var(--theme-accent, #6366f1);
     font-size: 1.15rem;
   }
@@ -397,8 +429,10 @@
     .mini-grid:has(> :global(:nth-child(10):last-child)) {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
-    .mini-grid:has(> :global(:nth-child(10):last-child)) > :global(:nth-child(9)),
-    .mini-grid:has(> :global(:nth-child(10):last-child)) > :global(:nth-child(10)) {
+    .mini-grid:has(> :global(:nth-child(10):last-child))
+      > :global(:nth-child(9)),
+    .mini-grid:has(> :global(:nth-child(10):last-child))
+      > :global(:nth-child(10)) {
       grid-column: span 2;
     }
   }

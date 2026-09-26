@@ -1,5 +1,6 @@
 <!-- Two-step editor for prop skills and the optional featured profile skill. -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
   import {
@@ -45,10 +46,10 @@
   const profilePropChoices = $derived(normalizeProfileSkills(draftProps));
   const primaryLabel = $derived(
     step === "profile-prop"
-      ? "Save"
+      ? t("browse_save")
       : profilePropChoices.length > 1
-        ? "Continue"
-        : "Done"
+        ? t("attribution_continue")
+        : t("feedback_done")
   );
 
   function resetDraft(): void {
@@ -203,13 +204,15 @@
 >
   {#snippet header()}
     <DrawerHeader
-      title={step === "props" ? "What do you spin?" : "Feature a skill?"}
+      title={step === "props"
+        ? t("nav_ui_what_do_you_spin")
+        : t("nav_ui_feature_a_skill")}
       subtitle={step === "props"
-        ? "Step 1 of 2 · On your profile and in prop search."
-        : "Optional · Step 2 of 2 · Beside your name on creator cards."}
+        ? t("nav_ui_step_1_of_2_on_your_profile_and_in_prop_search")
+        : t("nav_ui_optional_step_2_of_2_beside_your_name_on_creator_cards")}
       onClose={closeModal}
       closeDisabled={submitting}
-      closeLabel="Close prop editor"
+      closeLabel={t("nav_ui_close_prop_editor")}
     />
   {/snippet}
 
@@ -228,10 +231,10 @@
           disabled={submitting || propState.loading}
         >
           {submitting || propState.loading
-            ? "Working…"
+            ? t("nav_ui_working")
             : saveFailed
-              ? "Retry save"
-              : "Reload"}
+              ? t("nav_ui_retry_save")
+              : t("nav_ui_reload")}
         </button>
       </div>
     {/if}
@@ -248,7 +251,9 @@
 
         {#if legacyProps.length > 0}
           <section class="legacy-props" aria-labelledby="legacy-props-title">
-            <strong id="legacy-props-title">Old saved props</strong>
+            <strong id="legacy-props-title"
+              >{t("nav_ui_old_saved_props")}</strong
+            >
             <div class="legacy-list">
               {#each legacyProps as prop (prop)}
                 <button
@@ -256,7 +261,9 @@
                   class="legacy-chip"
                   onclick={() => handleLegacyRemove(prop)}
                   disabled={submitting}
-                  aria-label={`Remove previously saved ${getProfilePropLabel(prop)}`}
+                  aria-label={t("nav_remove_saved_prop", {
+                    prop: getProfilePropLabel(prop),
+                  })}
                 >
                   <span class="legacy-preview" aria-hidden="true">
                     <PropCompositionPreview

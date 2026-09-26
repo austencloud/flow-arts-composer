@@ -256,6 +256,12 @@ export interface WorkerPerformerSnapshot {
   stanceYaw: number;
   stanceSegments: WorkerStanceSegments | null;
   spinePitchOffset: number;
+  /** The animator's legacy pair split. False when the props arrive already
+   *  displaced by the hard-beat planner; absent keeps it on. */
+  pairSeparation?: boolean;
+  /** Changes on a seek or a new score; the animator then drops its contact
+   *  history. Absent never resets. */
+  contactResetKey?: number;
   badge?: WorkerPerformerBadgeSnapshot | null;
   selectionMarker?: WorkerSelectionMarkerSnapshot | null;
   effectIntent?: WorkerPerformerEffectIntent | null;

@@ -8,13 +8,22 @@ interface Deferred<T> {
 }
 
 const mocks = vi.hoisted(() => ({
+  networkStatus: { isOnline: true },
+  loadCachedSequenceMetadata: vi.fn<() => Promise<SequenceData[] | null>>(),
+  loadInitialSequenceMetadata: vi.fn<() => Promise<SequenceData[] | null>>(),
   loadSequenceMetadata: vi.fn<() => Promise<SequenceData[]>>(),
   refreshFromFirestore: vi.fn<() => Promise<SequenceData[]>>(),
   getLibrarySequences: vi.fn<() => Promise<SequenceData[]>>(),
 }));
 
+vi.mock("$lib/shared/offline/state/network-status-state.svelte", () => ({
+  networkStatusState: mocks.networkStatus,
+}));
+
 vi.mock("$lib/shared/browse/get-browse-loader", () => ({
   getBrowseLoader: () => ({
+    loadCachedSequenceMetadata: mocks.loadCachedSequenceMetadata,
+    loadInitialSequenceMetadata: mocks.loadInitialSequenceMetadata,
     loadSequenceMetadata: mocks.loadSequenceMetadata,
     refreshFromFirestore: mocks.refreshFromFirestore,
     removeFromCache: vi.fn(),
@@ -79,6 +88,9 @@ function sequence(id: string): SequenceData {
 }
 
 beforeEach(() => {
+  mocks.networkStatus.isOnline = true;
+  mocks.loadCachedSequenceMetadata.mockReset().mockResolvedValue(null);
+  mocks.loadInitialSequenceMetadata.mockReset().mockResolvedValue(null);
   browseEngineAuthTestState.effectiveUserId = "owner";
   browseEngineAuthTestState.isAuthenticated = true;
   browseEngineAuthTestState.isFullAccount = true;
@@ -88,6 +100,84 @@ beforeEach(() => {
 });
 
 describe("BrowseEngine community load revisions", () => {
+  it("shows a saved catalog before refresh and replaces it with authoritative results", async () => {
+    const refresh = deferred<SequenceData[]>();
+    mocks.loadCachedSequenceMetadata.mockResolvedValueOnce([sequence("saved")]);
+    mocks.refreshFromFirestore.mockReturnValueOnce(refresh.promise);
+    const { engine, dispose } = createBrowseEngineForTest({ persistKey: null });
+
+    const load = engine.initialize();
+    await tick();
+    expect(engine.allSequences.map(({ id }) => id)).toEqual(["saved"]);
+    expect(engine.sectionsReady).toBe(true);
+    expect(engine.isLoading).toBe(true);
+
+    refresh.resolve([sequence("fresh"), sequence("added")]);
+    await load;
+    expect(engine.allSequences.map(({ id }) => id)).toEqual(["fresh", "added"]);
+    expect(engine.isLoading).toBe(false);
+    engine.destroy();
+    dispose();
+  });
+
+  it("keeps early results and reports a later-page failure until a retry succeeds", async () => {
+    mocks.loadCachedSequenceMetadata.mockResolvedValueOnce([sequence("saved")]);
+    mocks.refreshFromFirestore
+      .mockRejectedValueOnce(new Error("catalog page failed"))
+      .mockResolvedValueOnce([sequence("authoritative")]);
+    const { engine, dispose } = createBrowseEngineForTest({ persistKey: null });
+
+    await engine.initialize();
+    expect(engine.allSequences.map(({ id }) => id)).toEqual(["saved"]);
+    expect(engine.error).toBe("catalog page failed");
+    expect(engine.isLoading).toBe(false);
+
+    await engine.refresh();
+    expect(engine.allSequences.map(({ id }) => id)).toEqual(["authoritative"]);
+    expect(engine.error).toBeNull();
+    engine.destroy();
+    dispose();
+  });
+
+  it("uses a saved catalog offline without starting a network refresh", async () => {
+    mocks.networkStatus.isOnline = false;
+    mocks.loadCachedSequenceMetadata.mockResolvedValueOnce([
+      sequence("offline"),
+    ]);
+    const { engine, dispose } = createBrowseEngineForTest({ persistKey: null });
+    await engine.initialize();
+    expect(engine.allSequences.map(({ id }) => id)).toEqual(["offline"]);
+    expect(mocks.refreshFromFirestore).not.toHaveBeenCalled();
+    expect(engine.isLoading).toBe(false);
+    engine.destroy();
+    dispose();
+  });
+
+  it("shows a cold first page before the remaining catalog and ignores it after a source switch", async () => {
+    const firstPage = deferred<SequenceData[] | null>();
+    const refresh = deferred<SequenceData[]>();
+    mocks.loadInitialSequenceMetadata.mockReturnValueOnce(firstPage.promise);
+    mocks.refreshFromFirestore.mockReturnValueOnce(refresh.promise);
+    mocks.getLibrarySequences.mockResolvedValueOnce([sequence("library")]);
+    const { engine, dispose } = createBrowseEngineForTest({ persistKey: null });
+
+    const load = engine.initialize();
+    await vi.waitFor(() =>
+      expect(mocks.loadInitialSequenceMetadata).toHaveBeenCalled()
+    );
+    firstPage.resolve([sequence("first-page")]);
+    await vi.waitFor(() =>
+      expect(engine.allSequences.map(({ id }) => id)).toEqual(["first-page"])
+    );
+    expect(engine.allSequences.map(({ id }) => id)).toEqual(["first-page"]);
+    await engine.setSource("my-library");
+    refresh.resolve([sequence("late-public")]);
+    await load;
+    expect(engine.allSequences.map(({ id }) => id)).toEqual(["library"]);
+    engine.destroy();
+    dispose();
+  });
+
   it("finishes the public community load when account identity changes", async () => {
     const community = deferred<SequenceData[]>();
     mocks.loadSequenceMetadata.mockReturnValueOnce(community.promise);

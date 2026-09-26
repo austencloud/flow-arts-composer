@@ -17,6 +17,7 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
   import { browser } from "$app/environment";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { GAME_REGISTRY } from "../domain/game-registry";
   import { emptyGameProgress } from "../domain/progression";
   import type {
@@ -104,24 +105,6 @@
      the registry instead, spelled as a word because that is how the sentence
      reads out loud. Module-constant, so it is fixed at first paint and can't
      shift the layout. */
-  const COUNT_WORDS = [
-    "Zero",
-    "One",
-    "Two",
-    "Three",
-    "Four",
-    "Five",
-    "Six",
-    "Seven",
-    "Eight",
-    "Nine",
-    "Ten",
-    "Eleven",
-    "Twelve",
-  ];
-  const gameCountWord =
-    COUNT_WORDS[GAME_REGISTRY.length] ?? String(GAME_REGISTRY.length);
-
   // Progress reads (store is non-reactive; bump the version after writes)
 
   let progressVersion = $state(0);
@@ -260,9 +243,9 @@
   <div class="play-hub themed-scrollbar">
     <div class="hub-content">
       <header class="hub-hero">
-        <h2 class="hero-title">Play</h2>
+        <h2 class="hero-title">{t("learn_ui_play")}</h2>
         <p class="hero-sub">
-          {gameCountWord} games. Your best scores are waiting.
+          {t("learn_ui_play_intro", { count: GAME_REGISTRY.length })}
         </p>
       </header>
 

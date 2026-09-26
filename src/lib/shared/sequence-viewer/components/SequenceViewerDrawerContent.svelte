@@ -39,6 +39,7 @@
     shortCode: string | null;
     analyticsSource: SequenceViewerSource;
     shareOnOpen: boolean;
+    saveOnOpen: boolean;
     tunnelComposition: TunnelComposition | null;
     tunnelSaveTarget: TunnelSaveTarget | null;
     onTunnelSaved: TunnelSavedCallback | null;
@@ -62,6 +63,7 @@
     shortCode,
     analyticsSource,
     shareOnOpen,
+    saveOnOpen,
     tunnelComposition,
     tunnelSaveTarget,
     onTunnelSaved,
@@ -94,6 +96,7 @@
           {isMobile}
           {onClose}
           {shareOnOpen}
+          {saveOnOpen}
           {tunnelComposition}
           {tunnelSaveTarget}
           {onTunnelSaved}

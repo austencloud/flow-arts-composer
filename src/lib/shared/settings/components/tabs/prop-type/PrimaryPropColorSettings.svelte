@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import LabeledColorPairPicker from "$lib/shared/ui/components/LabeledColorPairPicker.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
@@ -55,11 +56,14 @@
 {/snippet}
 
 {#snippet colorEditor()}
-  <section class="primary-colors" aria-label="Primary prop colors">
+  <section
+    class="primary-colors"
+    aria-label={t("settings_primary_prop_colors")}
+  >
     <div class="color-heading">
-      <h4>Primary prop colors</h4>
+      <h4>{t("settings_primary_prop_colors")}</h4>
       <PanelButton disabled={!colors} onclick={() => onchange(null)}
-        >Use default colors</PanelButton
+        >{t("settings_use_default_colors")}</PanelButton
       >
     </div>
     <LabeledColorPairPicker
@@ -77,7 +81,7 @@
   <button
     type="button"
     class="compact-color-button"
-    aria-label="Edit prop colors"
+    aria-label={t("settings_edit_prop_colors")}
     aria-haspopup="dialog"
     aria-expanded={editorOpen}
     onclick={() => (editorOpen = true)}
@@ -86,7 +90,7 @@
       <span style:background={palette.left}></span>
       <span style:background={palette.right}></span>
     </span>
-    <span>Colors</span>
+    <span>{t("settings_colors")}</span>
   </button>
   <BaseModal
     bind:open={editorOpen}
@@ -96,7 +100,7 @@
   >
     {#snippet header()}
       <ModalHeader
-        title="Prop colors"
+        title={t("settings_prop_colors")}
         id={modalTitleId}
         onClose={() => (editorOpen = false)}
       />

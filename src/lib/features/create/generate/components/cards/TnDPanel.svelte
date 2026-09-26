@@ -14,24 +14,15 @@
   needs equal turns on every beat, so the switch would be a lie.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import GenerationSettingsOverlay from "./GenerationSettingsOverlay.svelte";
   import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import TnDModeGrid from "$lib/features/choreo-card/components/TnDModeGrid.svelte";
   import RelationshipChoiceChip from "$lib/shared/shape-matrix/components/RelationshipChoiceChip.svelte";
-  import {
-    describeTnDSelection,
-    type TnDSelection,
-  } from "$lib/shared/create/domain/hand-relationship";
+  import { type TnDSelection } from "$lib/shared/create/domain/hand-relationship";
+  import { describeCreateTnDSelection } from "./tnd-presentation";
   import type { VtgMode } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
   import type { StartFeasibilityResult } from "$lib/shared/create/domain/start-feasibility";
-
-  const MATCH_HAND_TURNS_LABEL = "Match turns";
-  const MATCH_HAND_TURNS_REQUIRED_LABEL = "Match turns · Required";
-  const MATCH_HAND_TURNS_HINT =
-    "Both hands take the same turns on every step, and a mirrored dash spins the mirror way.";
-  const MATCH_HAND_TURNS_LEVEL_HINT = "Level 1 has no turns to match.";
-  const MATCH_HAND_TURNS_FORCED_HINT =
-    "A prop timing needs equal turns, so turns stay matched.";
 
   let {
     handRelationship,
@@ -65,24 +56,28 @@
   const timingSet = $derived(propRelationship !== "free");
   const turnsAvailable = $derived(level >= 2);
   const turnsLabel = $derived(
-    timingSet ? MATCH_HAND_TURNS_REQUIRED_LABEL : MATCH_HAND_TURNS_LABEL
+    timingSet
+      ? t("create_deep_match_turns_required")
+      : t("create_deep_match_turns")
   );
   const turnsAriaLabel = $derived(
-    timingSet ? "Match turns, required by prop timing" : MATCH_HAND_TURNS_LABEL
+    timingSet
+      ? t("create_deep_match_turns_required_aria")
+      : t("create_deep_match_turns")
   );
   const turnsHint = $derived(
     !turnsAvailable
-      ? MATCH_HAND_TURNS_LEVEL_HINT
+      ? t("create_deep_match_turns_level_hint")
       : timingSet
-        ? MATCH_HAND_TURNS_FORCED_HINT
-        : MATCH_HAND_TURNS_HINT
+        ? t("create_deep_match_turns_forced_hint")
+        : t("create_deep_match_turns_hint")
   );
 </script>
 
 <GenerationSettingsOverlay
-  title="Timing and direction"
+  title={t("create_ui_timing_and_direction")}
   {titleId}
-  closeLabel="Close timing and direction"
+  closeLabel={t("create_deep_close_tnd")}
   entrance="none"
   {onClose}
 >
@@ -90,19 +85,21 @@
     <div class="tnd-panel">
       <section class="tnd-section" aria-labelledby="tnd-hands-heading">
         <div class="section-head">
-          <h4 class="section-title" id="tnd-hands-heading">Hands</h4>
+          <h4 class="section-title" id="tnd-hands-heading">
+            {t("create_ui_hands")}
+          </h4>
           <span class="section-value"
-            >{describeTnDSelection(handRelationship)}</span
+            >{describeCreateTnDSelection(handRelationship)}</span
           >
         </div>
         <div class="choice-stack">
           <RelationshipChoiceChip
             compact
             accent="var(--theme-accent, #38bdf8)"
-            timing="Free"
-            direction="No constraints"
+            timing={t("create_deep_free")}
+            direction={t("create_deep_no_constraints")}
             active={handRelationship === "free"}
-            ariaLabel="Free hands"
+            ariaLabel={t("create_deep_free_hands")}
             onpick={() => onHandRelationshipChange("free")}
           />
           <TnDModeGrid
@@ -110,7 +107,7 @@
             selected={handRelationship === "free" ? null : handRelationship}
             disabledModes={blockedModes}
             reasons={blockedHandModes}
-            ariaLabel="Hand timing and direction"
+            ariaLabel={t("create_deep_hand_tnd")}
             onpick={onHandRelationshipChange}
           />
         </div>
@@ -118,25 +115,27 @@
 
       <section class="tnd-section" aria-labelledby="tnd-props-heading">
         <div class="section-head">
-          <h4 class="section-title" id="tnd-props-heading">Props</h4>
+          <h4 class="section-title" id="tnd-props-heading">
+            {t("create_ui_props")}
+          </h4>
           <span class="section-value"
-            >{describeTnDSelection(propRelationship)}</span
+            >{describeCreateTnDSelection(propRelationship)}</span
           >
         </div>
         <div class="choice-stack">
           <RelationshipChoiceChip
             compact
             accent="var(--theme-accent, #38bdf8)"
-            timing="Free"
-            direction="No constraints"
+            timing={t("create_deep_free")}
+            direction={t("create_deep_no_constraints")}
             active={propRelationship === "free"}
-            ariaLabel="Free props"
+            ariaLabel={t("create_deep_free_props")}
             onpick={() => onPropRelationshipChange("free")}
           />
           <TnDModeGrid
             fullLabels
             selected={propRelationship === "free" ? null : propRelationship}
-            ariaLabel="Prop timing and direction"
+            ariaLabel={t("create_deep_prop_tnd")}
             onpick={onPropRelationshipChange}
           />
         </div>
@@ -144,17 +143,16 @@
 
       {#if startFeasibility?.feasible === false}
         <div class="feasibility-warning" role="status">
-          <strong>No valid starting move</strong>
-          <span
-            >These choices leave no allowed first step. Try another timing and
-            direction, or allow more starting placements in Customize.</span
-          >
+          <strong>{t("create_ui_no_valid_starting_move")}</strong>
+          <span>{t("create_deep_no_valid_start_hint")}</span>
         </div>
       {/if}
 
       <div class="turns-row" aria-labelledby="turn-matching-title">
         <div class="turns-copy">
-          <h4 class="turns-title" id="turn-matching-title">Turn matching</h4>
+          <h4 class="turns-title" id="turn-matching-title">
+            {t("create_ui_turn_matching")}
+          </h4>
           <p class="turns-hint">{turnsHint}</p>
         </div>
         <FilterChipBase

@@ -7,6 +7,7 @@
   GenerationSettingsOverlay, the same as Customize.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
   import SkeletonLoader from "$lib/shared/foundation/ui/SkeletonLoader.svelte";
   import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
@@ -55,8 +56,15 @@
     const config = item.config;
     const parts = [
       `L${config.level}`,
-      config.gridMode === "diamond" ? "Diamond" : "Box",
-      `${config.length} ${config.length === 1 ? "step" : "steps"}`,
+      config.gridMode === "diamond"
+        ? t("generator_grid_diamond")
+        : t("generator_grid_box"),
+      t(
+        config.length === 1
+          ? "create_deep_step_count_one"
+          : "create_deep_step_count_many",
+        { count: config.length }
+      ),
     ];
     if (config.loopEnabled) parts.push("LOOP");
     return parts.join(` ${SUMMARY_SEPARATOR} `);
@@ -127,8 +135,8 @@
 </script>
 
 <GenerationSettingsOverlay
-  title="Generator setups"
-  closeLabel="Close generator setups"
+  title={t("create_ui_generator_setups")}
+  closeLabel={t("create_deep_close_setups")}
   {onClose}
   entrance="none"
   {titleId}
@@ -138,13 +146,13 @@
       options={[
         {
           value: "saved",
-          label: "Saved",
+          label: t("create_deep_saved"),
           id: "setups-tab-saved",
           controls: "setups-panel-saved",
         },
         {
           value: "community",
-          label: "Community",
+          label: t("create_deep_community"),
           id: "setups-tab-community",
           controls: "setups-panel-community",
         },
@@ -152,7 +160,7 @@
       value={activeTab}
       onchange={handleTabChange}
       semantics="tabs"
-      ariaLabel="Setup lists"
+      ariaLabel={t("create_deep_setup_lists")}
     />
 
     <div
@@ -164,18 +172,22 @@
     >
       {#if isPreview}
         <div class="preview-banner" role="status">
-          <strong>Previewing saved setups</strong>
-          <span>Apply is available. Changes are disabled in preview.</span>
+          <strong>{t("create_ui_previewing_saved_setups")}</strong>
+          <span
+            >{t(
+              "create_ui_apply_is_available_changes_are_disabled_in_preview"
+            )}</span
+          >
         </div>
       {/if}
 
       {#if isSignedOut}
         <div class="empty-state signed-out-state">
           <i class="fa-solid fa-bookmark" aria-hidden="true"></i>
-          <strong>Save generator setups</strong>
-          <span>Sign in to keep setups across sessions.</span>
+          <strong>{t("create_ui_save_generator_setups")}</strong>
+          <span>{t("create_ui_sign_in_to_keep_setups_across_sessions")}</span>
           <button type="button" class="save-button" onclick={onRequestSignIn}>
-            Sign in
+            {t("auth_sign_in")}
           </button>
         </div>
       {:else}
@@ -189,15 +201,17 @@
           onclick={handleSaveClick}
         >
           {favoriteState.pendingAction?.kind === "create"
-            ? "Saving..."
-            : "Save current setup"}
+            ? t("create_deep_saving")
+            : t("create_deep_save_current_setup")}
         </button>
 
-        <p class="share-note">Saved setups are shared with the community.</p>
+        <p class="share-note">
+          {t("create_ui_saved_setups_are_shared_with_the_community")}
+        </p>
 
         {#if favoriteState.setups.length >= 10}
           <p class="cap-message" role="status">
-            10 setups saved. Delete one to save another.
+            {t("create_deep_setup_limit")}
           </p>
         {/if}
 
@@ -205,21 +219,23 @@
           <SkeletonLoader variant="rect" height="64px" count={3} />
         {:else if favoriteState.setupsLoadError}
           <div class="load-state error-state" role="alert">
-            <span>Saved setups could not load</span>
+            <span>{t("create_ui_saved_setups_could_not_load")}</span>
             <button
               type="button"
               class="retry-button"
               onclick={() => void favoriteState.loadPersonal()}
             >
-              Try again
+              {t("create_ui_try_again")}
             </button>
           </div>
         {:else if favoriteState.setups.length === 0}
           <div class="empty-state">
             <i class="fa-regular fa-bookmark" aria-hidden="true"></i>
-            <strong>No saved setups yet</strong>
+            <strong>{t("create_ui_no_saved_setups_yet")}</strong>
             <span
-              >Save the current controls so you can bring them back in one tap.</span
+              >{t(
+                "create_ui_save_the_current_controls_so_you_can_bring_them_back_in_one_tap"
+              )}</span
             >
           </div>
         {:else}
@@ -256,20 +272,20 @@
         <SkeletonLoader variant="rect" height="64px" count={3} />
       {:else if favoriteState.communityLoadError}
         <div class="load-state error-state" role="alert">
-          <span>Community setups could not load</span>
+          <span>{t("create_ui_community_setups_could_not_load")}</span>
           <button
             type="button"
             class="retry-button"
             onclick={() => void favoriteState.loadCommunity()}
           >
-            Try again
+            {t("create_ui_try_again")}
           </button>
         </div>
       {:else if favoriteState.communitySetups.length === 0}
         <div class="empty-state">
           <i class="fa-regular fa-heart" aria-hidden="true"></i>
-          <strong>No setups shared yet</strong>
-          <span>Setups people save appear here.</span>
+          <strong>{t("create_ui_no_setups_shared_yet")}</strong>
+          <span>{t("create_ui_setups_people_save_appear_here")}</span>
         </div>
       {:else}
         <div class="setup-list">
@@ -302,7 +318,7 @@
               <span class="status-slot">
                 {isCommunitySource(setup) &&
                 favoriteState.activeStatus === "active"
-                  ? "Active"
+                  ? t("create_deep_active")
                   : ""}
               </span>
             </button>
@@ -315,10 +331,12 @@
 
 <ConfirmDialog
   isOpen={deleteTarget !== null}
-  title={deleteTarget ? `Delete “${deleteTarget.name}”?` : ""}
-  message="This removes the saved setup from your list and the community. Your current generator settings will not change."
-  confirmText="Delete"
-  cancelText="Cancel"
+  title={deleteTarget
+    ? t("create_deep_delete_setup_title", { name: deleteTarget.name })
+    : ""}
+  message={t("create_deep_delete_setup_message")}
+  confirmText={t("action_delete")}
+  cancelText={t("action_cancel")}
   variant="danger"
   onConfirm={handleDeleteConfirm}
   onCancel={() => (deleteTarget = null)}

@@ -27,7 +27,13 @@ tree, so exactly one heading is ever announced.
   } from "../domain/arcade-types";
   import { getArcadeSession } from "../state/arcade-session-state.svelte";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getGamePreview } from "./previews/preview-map";
+  import {
+    gameTitle,
+    gameTagline,
+    challengeTitle,
+  } from "../domain/play-labels";
 
   let { game, progress }: { game: GameDefinition; progress: GameProgress } =
     $props();
@@ -64,11 +70,11 @@ tree, so exactly one heading is ever announced.
   function modeSummary(mode: ChallengeMode): string {
     switch (mode.kind) {
       case "fixed":
-        return `${mode.questionCount} questions`;
+        return t("learn_ui_question_count", { count: mode.questionCount });
       case "countdown":
-        return `${mode.seconds} seconds`;
+        return t("learn_ui_second_count", { count: mode.seconds });
       case "survival":
-        return `${mode.maxMisses} misses`;
+        return t("learn_ui_miss_count", { count: mode.maxMisses });
     }
   }
 
@@ -82,9 +88,17 @@ tree, so exactly one heading is ever announced.
 
   function challengeLabel(challenge: ChallengeDefinition): string {
     if (isLocked(challenge)) {
-      return `Challenge ${challenge.challengeNumber}: ${challenge.title} — locked`;
+      return t("learn_ui_challenge_locked", {
+        number: challenge.challengeNumber,
+        title: challengeTitle(challenge),
+      });
     }
-    return `Challenge ${challenge.challengeNumber}: ${challenge.title}, ${modeSummary(challenge.mode)}, ${starsFor(challenge)} of 3 stars`;
+    return t("learn_ui_challenge_label", {
+      number: challenge.challengeNumber,
+      title: challengeTitle(challenge),
+      mode: modeSummary(challenge.mode),
+      stars: starsFor(challenge),
+    });
   }
 
   function handleChallengeClick(challenge: ChallengeDefinition) {
@@ -125,7 +139,7 @@ tree, so exactly one heading is ever announced.
         type="button"
         class="back-button"
         onclick={handleBack}
-        aria-label="Back to games"
+        aria-label={t("learn_ui_back_to_games")}
       >
         <svg
           width="20"
@@ -142,11 +156,11 @@ tree, so exactly one heading is ever announced.
         </svg>
       </button>
       <div class="header-text">
-        <h2 class="game-title">{game.title}</h2>
-        <p class="game-tagline">{game.tagline}</p>
+        <h2 class="game-title">{gameTitle(game)}</h2>
+        <p class="game-tagline">{gameTagline(game)}</p>
       </div>
       <div class="best-badge">
-        <span class="best-label">Best</span>
+        <span class="best-label">{t("learn_ui_best")}</span>
         <span class="best-value">
           {progress.totalPlays > 0 ? progress.bestScore : "—"}
         </span>
@@ -157,11 +171,11 @@ tree, so exactly one heading is ever announced.
       <div class="preview-stage" aria-hidden="true">
         <Preview accent={game.accentColor} />
       </div>
-      <h2 class="identity-title">{game.title}</h2>
-      <p class="identity-tagline">{game.tagline}</p>
+      <h2 class="identity-title">{gameTitle(game)}</h2>
+      <p class="identity-tagline">{gameTagline(game)}</p>
       <div class="stats-block">
         <div class="best-stat">
-          <span class="best-stat-label">Best</span>
+          <span class="best-stat-label">{t("learn_ui_best")}</span>
           <span class="best-stat-value">
             {progress.totalPlays > 0
               ? progress.bestScore.toLocaleString()
@@ -195,7 +209,7 @@ tree, so exactly one heading is ever announced.
             >{challenge.challengeNumber}</span
           >
           <span class="challenge-info">
-            <span class="challenge-title">{challenge.title}</span>
+            <span class="challenge-title">{challengeTitle(challenge)}</span>
             <span class="challenge-mode">{modeSummary(challenge.mode)}</span>
           </span>
           <span class="challenge-status" aria-hidden="true">

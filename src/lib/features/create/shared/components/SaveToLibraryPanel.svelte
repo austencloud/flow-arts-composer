@@ -169,7 +169,7 @@
     <button
       class="close-button"
       onclick={s.handleClose}
-      aria-label="Close panel"
+      aria-label={t("compose_close_panel")}
       disabled={s.isSaving}
     >
       <i class="fas fa-times" aria-hidden="true"></i>
@@ -251,7 +251,7 @@
             id="solo-title"
             type="text"
             bind:value={s.title}
-            placeholder="Name this choreography"
+            placeholder={t("create_ui_name_this_choreography")}
             class="input-field"
             maxlength="100"
             disabled={s.isSaving}
@@ -337,9 +337,13 @@
             <div class="toggle-label">
               <i class="fas fa-globe" aria-hidden="true"></i>
               <div class="toggle-label-text">
-                <span class="toggle-label-main">Make this sequence public</span>
+                <span class="toggle-label-main"
+                  >{t("create_ui_make_this_sequence_public")}</span
+                >
                 <span class="toggle-label-sub"
-                  >Anyone can find and view it in the community library</span
+                  >{t(
+                    "create_ui_anyone_can_find_and_view_it_in_the_community_library"
+                  )}</span
                 >
               </div>
             </div>
@@ -377,9 +381,11 @@
           <div class="section-heading">
             <i class="fas fa-folder-open" aria-hidden="true"></i>
             <div class="section-heading-text">
-              <span class="section-heading-main">Add to a collection</span>
+              <span class="section-heading-main"
+                >{t("create_ui_add_to_a_collection")}</span
+              >
               <span class="section-heading-sub"
-                >Keep it organized in your library</span
+                >{t("create_ui_keep_it_organized_in_your_library")}</span
               >
             </div>
           </div>

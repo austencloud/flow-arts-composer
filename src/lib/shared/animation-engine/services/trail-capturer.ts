@@ -230,6 +230,10 @@ export class TrailCapturer {
   // segment across the prop.
   private lastFlipped: [boolean, boolean] = [false, false];
 
+  // Render key per hand of the last captured frame. A different build moves
+  // the tips, so the trail restarts rather than bridging the two.
+  private renderKeys: [string | null, string | null] = [null, null];
+
   // Animation timing
   private animationStartTime: number | null = null;
   private previousBeatForLoopDetection = 0;
@@ -385,6 +389,16 @@ export class TrailCapturer {
       rightFlipped !== this.lastFlipped[1]
     ) {
       this.lastFlipped = [leftFlipped, rightFlipped];
+      this.clearTrails();
+    }
+
+    const leftRenderKey = props.leftPropRenderKey ?? null;
+    const rightRenderKey = props.rightPropRenderKey ?? null;
+    if (
+      leftRenderKey !== this.renderKeys[0] ||
+      rightRenderKey !== this.renderKeys[1]
+    ) {
+      this.renderKeys = [leftRenderKey, rightRenderKey];
       this.clearTrails();
     }
 
@@ -789,7 +803,8 @@ export class TrailCapturer {
   ): void {
     const { trailSettings } = this.config;
     const propType =
-      propIndex === 0 ? this.config.leftPropType : this.config.rightPropType;
+      this.renderKeys[propIndex] ??
+      (propIndex === 0 ? this.config.leftPropType : this.config.rightPropType);
 
     const trailSources = this.resolveTrailSources(propType);
 

@@ -5,6 +5,7 @@ to three rows. Click opens the expanded overlay.
 (Rhythm was removed pending a finished rhythm-preset design.)
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
   import type {
@@ -144,11 +145,11 @@ to three rows. Click opens the expanded overlay.
   bind:clientHeight={cardHeight}
   onclick={handleClick}
   onkeydown={handleKeydown}
-  aria-label="Customize: {summary.accessibleSummary}. Click to configure style and placements."
+  aria-label={t("create_ui_customize_card_label", { summary: summary.accessibleSummary })}
 >
-  <CardHeader title="Customize" {headerFontSize} />
+  <CardHeader title={t("create_ui_customize")} {headerFontSize} />
   {#if summary.isDefault}
-    <div class="card-value">Default</div>
+    <div class="card-value">{t("create_ui_default")}</div>
   {:else}
     <div class="card-summary" data-rows={summaryLines.length}>
       {#each summaryLines as line}

@@ -2,6 +2,7 @@
 StaffGridPoint - Single grid point with label and interactivity
 -->
 <script lang="ts">
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import type {
     GridPoint,
     HandPosition,
@@ -35,7 +36,9 @@ StaffGridPoint - Single grid point with label and interactivity
   {onclick}
   role={interactive ? "button" : "img"}
   tabindex={interactive ? 0 : -1}
-  aria-label={`Position ${position}`}
+  aria-label={tDynamic("learn_staff_position_aria", {
+    position: tDynamic(`learn_staff_cardinal_${position}`),
+  })}
   onkeydown={interactive ? handleKeydown : undefined}
 >
   <!-- Base point -->
@@ -58,7 +61,7 @@ StaffGridPoint - Single grid point with label and interactivity
       font-size="6"
       font-weight="600"
     >
-      {point.label}
+      {tDynamic(`learn_staff_cardinal_${position}`)}
     </text>
   {/if}
 </g>

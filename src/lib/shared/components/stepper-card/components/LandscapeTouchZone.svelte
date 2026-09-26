@@ -3,6 +3,7 @@ LandscapeTouchZone.svelte - Horizontal touch zone for landscape stepper
 Left side decrements, right side increments
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   let { type, disabled, onclick, onkeydown, title } = $props<{
     type: "increment" | "decrement";
     disabled: boolean;
@@ -12,7 +13,9 @@ Left side decrements, right side increments
   }>();
 
   const ariaLabel = $derived(
-    type === "increment" ? `Increase ${title}` : `Decrease ${title}`
+    type === "increment"
+      ? t("create_increase_value", { title })
+      : t("create_decrease_value", { title })
   );
 </script>
 
@@ -97,7 +100,8 @@ Left side decrements, right side increments
   .touch-zone:focus-visible {
     outline: 2px solid color-mix(in srgb, var(--text-color) 70%, transparent);
     outline-offset: -2px;
-    transition: outline-color var(--duration-dramatic) cubic-bezier(0.4, 0, 0.2, 1);
+    transition: outline-color var(--duration-dramatic)
+      cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .zone-icon {

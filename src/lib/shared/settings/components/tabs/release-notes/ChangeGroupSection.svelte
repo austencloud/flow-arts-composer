@@ -1,5 +1,6 @@
 <!-- ChangeGroupSection - Single changelog category with admin editing -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import type {
     ChangelogCategory,
     ChangelogEntry,
@@ -7,9 +8,6 @@
   import type { Contributor } from "$lib/shared/versioning/domain/models/contributor-models";
   import {
     CATEGORY_ICONS,
-    CATEGORY_LABELS,
-    CATEGORY_PLACEHOLDERS,
-    CATEGORY_ADD_LABELS,
   } from "$lib/shared/versioning/domain/constants/changelog-constants";
   import EditableChangelogItem from "./EditableChangelogItem.svelte";
 
@@ -55,7 +53,7 @@
 <div class="change-group">
   <h4 class="group-title {category}">
     <i class="fas {CATEGORY_ICONS[category]}" aria-hidden="true"></i>
-    {CATEGORY_LABELS[category]}
+    {t(`settings_changelog_${category}`)}
     <span class="count">{entries.length}</span>
   </h4>
 
@@ -90,7 +88,7 @@
       <li class="add-entry-form">
         <textarea
           bind:value={newEntryText}
-          placeholder={CATEGORY_PLACEHOLDERS[category]}
+          placeholder={t(`settings_changelog_${category}_placeholder`)}
           rows="2"
         ></textarea>
         <div class="add-entry-actions">
@@ -100,10 +98,10 @@
             onclick={() => void onConfirmAdd()}
             disabled={!newEntryText.trim()}
           >
-            <i class="fas fa-plus" aria-hidden="true"></i> Add
+            <i class="fas fa-plus" aria-hidden="true"></i> {t("action_add")}
           </button>
           <button type="button" class="glass-btn" onclick={onCancelAdd}
-            >Cancel</button
+            >{t("action_cancel")}</button
           >
         </div>
       </li>
@@ -111,7 +109,7 @@
       <li>
         <button type="button" class="add-entry-btn" onclick={onStartAdd}>
           <i class="fas fa-plus" aria-hidden="true"></i>
-          {CATEGORY_ADD_LABELS[category]}
+          {t(`settings_changelog_${category}_add`)}
         </button>
       </li>
     {/if}

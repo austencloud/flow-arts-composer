@@ -11,6 +11,7 @@
   - Last deactivated -> reactivate both (combined)
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { BrowseViewMode } from "$lib/shared/browse/domain/browse-view-mode";
   import MotionColorChips from "$lib/shared/components/MotionColorChips.svelte";
 
@@ -54,9 +55,17 @@
   }
 </script>
 
-<div class="view-mode-toggle" role="toolbar" aria-label="View mode">
+<div
+  class="view-mode-toggle"
+  role="toolbar"
+  aria-label={t("browse_ui_view_mode")}
+>
   <!-- Subject toggle: Props / Hands -->
-  <div class="toggle-group" role="radiogroup" aria-label="Subject">
+  <div
+    class="toggle-group"
+    role="radiogroup"
+    aria-label={t("browse_ui_subject")}
+  >
     <button
       class="toggle-chip"
       class:active={viewMode.subject === "props"}
@@ -113,7 +122,9 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 600;
     cursor: pointer;
-    transition: background var(--duration-fast, 150ms) ease, color var(--duration-fast, 150ms) ease;
+    transition:
+      background var(--duration-fast, 150ms) ease,
+      color var(--duration-fast, 150ms) ease;
   }
 
   .toggle-chip:hover {

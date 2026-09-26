@@ -1,3 +1,6 @@
+import { getLocale, t } from "$lib/shared/i18n/i18n.svelte";
+import { formatRelativeTime as formatLocalizedRelativeTime } from "$lib/shared/i18n/i18n-formatters";
+
 /**
  * Inbox Formatting Utilities
  *
@@ -15,11 +18,11 @@ export function formatRelativeTime(date: Date): string {
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
 
-  if (minutes < 1) return "Now";
-  if (minutes < 60) return `${minutes}m`;
-  if (hours < 24) return `${hours}h`;
-  if (days < 7) return `${days}d`;
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  if (minutes < 1) return t("inbox_time_now");
+  if (minutes < 60) return t("inbox_time_minutes", { count: minutes });
+  if (hours < 24) return t("inbox_time_hours", { count: hours });
+  if (days < 7) return t("inbox_time_days", { count: days });
+  return date.toLocaleDateString(getLocale(), { month: "short", day: "numeric" });
 }
 
 /**
@@ -33,18 +36,18 @@ export function formatRelativeTimeVerbose(date: Date): string {
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
 
-  if (minutes < 1) return "Just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  if (days < 7) return `${days}d ago`;
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  if (minutes < 1) return t("inbox_time_just_now");
+  if (minutes < 60) return formatLocalizedRelativeTime(-minutes, "minute");
+  if (hours < 24) return formatLocalizedRelativeTime(-hours, "hour");
+  if (days < 7) return formatLocalizedRelativeTime(-days, "day");
+  return date.toLocaleDateString(getLocale(), { month: "short", day: "numeric" });
 }
 
 /**
  * Format a date as time only (e.g., "2:30 PM")
  */
 export function formatTime(date: Date): string {
-  return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  return date.toLocaleTimeString(getLocale(), { hour: "numeric", minute: "2-digit" });
 }
 
 /**

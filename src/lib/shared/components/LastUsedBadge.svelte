@@ -12,22 +12,22 @@
   accessible name (for example, "Generate, last used on this device").
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   interface Props {
     /** Override the label. Defaults to "Last used". */
     label?: string;
   }
 
-  let { label = "Last used" }: Props = $props();
+  let { label }: Props = $props();
 </script>
 
-<span class="last-used-badge" aria-hidden="true">{label}</span>
+<span class="last-used-badge" aria-hidden="true"
+  >{label ?? t("create_ui_last_used")}</span
+>
 
 <style>
   .last-used-badge {
-    --badge-accent: var(
-      --last-used-badge-accent,
-      var(--theme-accent, #7c6af7)
-    );
+    --badge-accent: var(--last-used-badge-accent, var(--theme-accent, #7c6af7));
 
     position: absolute;
     top: 0;
@@ -48,13 +48,11 @@
       var(--theme-panel-bg, #12121c)
     );
     color: color-mix(in srgb, var(--badge-accent) 25%, #fff);
-    border: 1px solid
-      color-mix(in srgb, var(--badge-accent) 55%, transparent);
+    border: 1px solid color-mix(in srgb, var(--badge-accent) 55%, transparent);
     box-shadow:
       0 0 0 0.25rem
         color-mix(in srgb, var(--theme-panel-bg, #12121c) 70%, transparent),
-      0 2px 8px
-        color-mix(in srgb, var(--badge-accent) 28%, transparent);
+      0 2px 8px color-mix(in srgb, var(--badge-accent) 28%, transparent);
 
     translate: 0 -50%;
     opacity: 1;

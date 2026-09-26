@@ -17,6 +17,7 @@
    * cannot drift.
    */
   import { FAQ_ITEMS, faqPageJsonLd, type FaqItem } from "../faq/faq-items";
+  import { siteCopy } from "../site-copy";
 
   let {
     items = FAQ_ITEMS,
@@ -30,7 +31,17 @@
     sectionId?: string;
   } = $props();
 
-  const schema = $derived(emitSchema ? faqPageJsonLd(items) : null);
+  const localizedItems = $derived(
+    items.map((item) => ({
+      ...item,
+      question: siteCopy(item.question),
+      answer: siteCopy(item.answer),
+      cta: item.cta
+        ? { ...item.cta, label: siteCopy(item.cta.label) }
+        : undefined,
+    }))
+  );
+  const schema = $derived(emitSchema ? faqPageJsonLd(localizedItems) : null);
 </script>
 
 <svelte:head>
@@ -43,13 +54,13 @@
   class="faq"
   id={sectionId}
   aria-labelledby={heading ? `${sectionId}-heading` : undefined}
-  aria-label={heading ? undefined : "Frequently asked questions"}
+  aria-label={heading ? undefined : siteCopy("Frequently asked questions")}
 >
   {#if heading}
-    <h2 id="{sectionId}-heading">{heading}</h2>
+    <h2 id="{sectionId}-heading">{siteCopy(heading)}</h2>
   {/if}
   <div class="qa-list">
-    {#each items as faq}
+    {#each localizedItems as faq}
       <article class="qa">
         <h3 class="question">{faq.question}</h3>
         <p class="answer">{faq.answer}</p>
@@ -128,8 +139,13 @@
     padding: 0 20px;
     margin-top: 0.2rem;
     border-radius: 10px;
-    background: color-mix(in srgb, var(--theme-accent-strong, #818cf8) 16%, transparent);
-    border: 1px solid color-mix(in srgb, var(--theme-accent-strong, #818cf8) 45%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent-strong, #818cf8) 16%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--theme-accent-strong, #818cf8) 45%, transparent);
     color: #ffffff;
     font-size: 0.92rem;
     font-weight: 600;
@@ -139,8 +155,16 @@
       border-color var(--duration-normal, 0.2s) ease;
   }
   .faq-cta:hover {
-    background: color-mix(in srgb, var(--theme-accent-strong, #818cf8) 30%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent-strong, #818cf8) 75%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent-strong, #818cf8) 30%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent-strong, #818cf8) 75%,
+      transparent
+    );
   }
   .faq-cta i {
     font-size: 0.8em;

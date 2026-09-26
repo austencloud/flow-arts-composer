@@ -9,6 +9,7 @@
   Change-then-repick.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import { DURATION } from "$lib/shared/transitions/transitions";
@@ -49,8 +50,8 @@
 >
   <div class="section-heading">
     <div>
-      <span class="section-kicker">Destination</span>
-      <h3 id="share-destination-title">Send to</h3>
+      <span class="section-kicker">{t("inbox_ui_destination")}</span>
+      <h3 id="share-destination-title">{t("inbox_ui_send_to")}</h3>
     </div>
   </div>
 
@@ -81,7 +82,7 @@
                 class="chip-remove"
                 onclick={chip.remove}
                 disabled={state.sending}
-                aria-label={`Remove ${chip.name}`}
+                aria-label={t("inbox_remove_person", { name: chip.name })}
               >
                 <i class="fas fa-xmark" aria-hidden="true"></i>
               </button>
@@ -94,7 +95,7 @@
           onclick={state.clearDestination}
           disabled={state.sending}
         >
-          Clear
+          {t("inbox_ui_clear")}
         </button>
       </div>
     {:else if state.hasDestination}
@@ -133,7 +134,7 @@
           onclick={state.clearDestination}
           disabled={state.sending}
         >
-          Change
+          {t("inbox_ui_change")}
         </button>
       </div>
     {:else}
@@ -142,8 +143,8 @@
           <i class="fas fa-paper-plane"></i>
         </span>
         <div>
-          <strong>Choose a conversation</strong>
-          <span>Pick a recent chat or find someone new.</span>
+          <strong>{t("inbox_ui_choose_a_conversation")}</strong>
+          <span>{t("inbox_ui_pick_a_recent_chat_or_find_someone_new")}</span>
         </div>
       </div>
     {/if}
@@ -152,17 +153,17 @@
   <div
     class="destination-browser"
     inert={state.sending}
-    aria-label="Share destinations"
+    aria-label={t("inbox_ui_share_destinations")}
   >
     <Crossfade key={recentsPhase} duration={DURATION.normal} animateHeight>
       {#if recentsPhase === "loading"}
         <div class="destination-group" aria-busy="true">
-          <h4>Recent conversations</h4>
+          <h4>{t("inbox_ui_recent_conversations")}</h4>
           <ConversationSkeleton count={3} />
         </div>
       {:else if recentsPhase === "ready"}
         <div class="destination-group">
-          <h4>Recent conversations</h4>
+          <h4>{t("inbox_ui_recent_conversations")}</h4>
           <div class="conversation-options">
             {#each state.recentConversations as conversation (conversation.id)}
               <ConversationItem
@@ -179,14 +180,14 @@
 
     <div class="destination-group new-conversation">
       <h4>
-        {recentsPhase === "none" ? "Find someone" : "Start a new conversation"}
+        {recentsPhase === "none" ? t("inbox_ui_find_someone") : t("inbox_ui_start_a_new_conversation")}
       </h4>
       {#key state.searchResetKey}
         <UserSearchInput
           selectedUserId={state.searchUserId}
           selectedUserDisplay={state.searchUserDisplay}
           onSelect={state.selectUser}
-          placeholder="Search by username or name"
+          placeholder={t("inbox_ui_search_by_username_or_name")}
           inlineResults
           excludeUserIds={state.excludeUserIds}
           autofocus={recentsPhase === "none" && !state.hasDestination}

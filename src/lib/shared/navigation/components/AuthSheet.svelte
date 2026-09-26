@@ -5,6 +5,7 @@
   Supports: Facebook, Google, Email/Password
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { signInWithFacebook } from "$lib/shared/auth/services/authenticator";
   import {
@@ -122,9 +123,7 @@
           "This email is already registered. Sign in with your original method (Google or email) and we'll connect Facebook automatically.";
       } else {
         facebookError =
-          error instanceof Error
-            ? error.message
-            : "Facebook sign-in failed. Please try again.";
+          error instanceof Error ? error.message : t("nav_facebook_failed");
       }
     }
   }
@@ -154,8 +153,8 @@
       <div class="auth-sheet__divider">
         <span
           >{authMode === "signin"
-            ? "or sign in with email"
-            : "or sign up with email"}</span
+            ? t("nav_email_signin")
+            : t("nav_email_signup")}</span
         >
       </div>
 

@@ -4,6 +4,7 @@
   Buttons for applying uniform rotation direction (All CW or All CCW) to a sequence.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   interface Props {
     disabled: boolean;
     onApplyUniform: (direction: "cw" | "ccw") => void;
@@ -13,8 +14,8 @@
 </script>
 
 <div class="uniform-section">
-  <h3>Uniform</h3>
-  <p class="section-desc">Apply same direction to all steps</p>
+  <h3>{t("create_ui_uniform")}</h3>
+  <p class="section-desc">{t("create_ui_apply_same_direction_to_all_steps")}</p>
   <div class="uniform-buttons">
     <button
       class="uniform-btn cw"

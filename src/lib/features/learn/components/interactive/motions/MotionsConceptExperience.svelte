@@ -5,6 +5,7 @@
   never sends the learner backward through the lesson carousel.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, tick } from "svelte";
   import { TND_ELEMENTS } from "$lib/features/choreo-card/domain/tnd-element";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
@@ -250,7 +251,9 @@
   onkeydown={handleKeydown}
   tabindex="0"
   role="application"
-  aria-label={`${timingDirectionOnly ? "Timing and direction" : "Hand motions"} lesson, use arrow keys to navigate`}
+  aria-label={timingDirectionOnly
+    ? t("learn_ui_timing_direction_keyboard")
+    : t("learn_ui_hand_motions_keyboard")}
 >
   <LessonStageFrame
     artifactLayout={activeMotion
@@ -272,7 +275,7 @@
             {activeMotion.guideCaption}
           {:else}
             <span class="description-phrase"
-              >These relationships apply to hands, props, and prop ends.</span
+              >{t("learn_ui_relationships_apply")}</span
             >
           {/if}
         </p>
@@ -301,9 +304,9 @@
                     ariaLabel={`${activeMotion.name}: ${activeMotion.guideCaption}`}
                   />
                 </div>
-                <div class="hand-key" aria-label="Left hand is blue">
+                <div class="hand-key" aria-label={t("learn_ui_left_hand_blue")}>
                   <span aria-hidden="true"></span>
-                  <strong>Left hand</strong>
+                  <strong>{t("learn_ui_left_hand")}</strong>
                 </div>
               </div>
             {:else}
@@ -346,16 +349,18 @@
         progressAppearance="steps"
         label={isComparison
           ? viewMode === "scroll"
-            ? "Done"
-            : "Finish lesson"
+            ? t("learn_ui_done")
+            : t("learn_ui_finish_lesson")
           : comparisonRequested
-            ? "Preparing…"
-            : "Next"}
+            ? t("learn_ui_preparing")
+            : t("learn_ui_next")}
         currentStep={stepIndex - firstStage + 1}
         totalSteps={totalStages}
         onAction={handlePrimaryAction}
         onPrevious={handleBack}
-        previousLabel={viewMode === "scroll" ? "Close review" : "Previous"}
+        previousLabel={viewMode === "scroll"
+          ? t("learn_ui_close_review")
+          : t("learn_ui_previous")}
         previousDisabled={viewMode !== "scroll" && stepIndex === firstStage}
         actionIcon={isComparison ? "check" : "arrow"}
         {curriculumLabel}

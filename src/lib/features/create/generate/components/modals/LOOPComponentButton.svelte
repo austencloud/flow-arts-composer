@@ -4,6 +4,11 @@ Displays a selectable button for a single LOOP transformation type
 Shows description in Quick Apply mode, compact in Build Combo mode
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import {
+    loopComponentDescription,
+    loopComponentLabel,
+  } from "../loop-component-presentation";
   import FontAwesomeIcon from "$lib/shared/foundation/ui/FontAwesomeIcon.svelte";
   import type { LOOPComponentInfo } from "$lib/features/create/generate/shared/domain/constants/loop-components";
   import type { Snippet } from "svelte";
@@ -46,8 +51,10 @@ Shows description in Quick Apply mode, compact in Build Combo mode
   }>();
 
   // Reactive destructure - updates when componentInfo changes
-  const label = $derived(componentInfo.label);
-  const description = $derived(componentInfo.description);
+  const label = $derived(loopComponentLabel(componentInfo.component));
+  const description = $derived(
+    loopComponentDescription(componentInfo.component)
+  );
   const icon = $derived(componentInfo.icon);
   const color = $derived(componentInfo.color);
 </script>
@@ -72,13 +79,17 @@ Shows description in Quick Apply mode, compact in Build Combo mode
     title={isDisabled ? disabledReason : undefined}
     aria-expanded={expandedContent ? isExpanded : undefined}
     aria-controls={expandedContent ? expandedContentId : undefined}
-    aria-label="{label} - {description} - {isDisabled
-      ? (disabledReason ?? 'not compatible with current selection')
-      : isLocked
-        ? 'locked, sign up to unlock'
-        : isSelected
-          ? 'selected'
-          : 'not selected'}"
+    aria-label={t("create_deep_loop_component_aria", {
+      label,
+      description,
+      status: isDisabled
+        ? (disabledReason ?? t("create_deep_not_compatible"))
+        : isLocked
+          ? t("create_deep_locked_signup")
+          : isSelected
+            ? t("create_deep_selected")
+            : t("create_deep_not_selected"),
+    })}
   >
     <div class="button-content">
       <div class="loop-component-icon">
@@ -116,7 +127,7 @@ Shows description in Quick Apply mode, compact in Build Combo mode
       class="configure-button"
       data-configure-component={componentInfo.component}
       onclick={onConfigure}
-      aria-label="Configure {label}"
+      aria-label={t("create_deep_configure_loop_component", { label })}
     >
       <span class="configure-button-visual" aria-hidden="true">
         <FontAwesomeIcon icon="fas fa-sliders" size="0.85em" />

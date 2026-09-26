@@ -1,5 +1,6 @@
 <!-- AccountRow: Clickable account identity row for sidebar footer and mobile drawer -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { authState } from "../../../auth/state/auth-state.svelte";
   import type { HapticFeedback } from "../../../application/services/haptic-feedback";
@@ -14,7 +15,9 @@
 
   const user = $derived(authState.user);
   const isFullAccount = $derived(authState.isFullAccount);
-  const displayName = $derived(user?.displayName || user?.email || "Account");
+  const displayName = $derived(
+    user?.displayName || user?.email || t("tab_settings_profile")
+  );
   const photoURL = $derived(user?.photoURL ?? null);
   const accountSetupState = tryGetAccountSetupContext();
   const showSetupStatus = $derived(
@@ -52,19 +55,17 @@
     <button
       class="account-row drawer interactive"
       onclick={handleClick}
-      aria-label="Edit profile"
+      aria-label={t("nav_ui_edit_profile")}
     >
       <RobustAvatar src={photoURL} name={displayName} customSize={32} />
       <span class="account-copy">
         <span class="account-label">{displayName}</span>
         {#if showSetupStatus && accountSetupState}
           <span class="setup-status">
-            {accountSetupState.totalCount - accountSetupState.completedCount}
-            setup {accountSetupState.totalCount -
-              accountSetupState.completedCount ===
-            1
-              ? "step"
-              : "steps"} left
+            {t("nav_setup_remaining", {
+              count:
+                accountSetupState.totalCount - accountSetupState.completedCount,
+            })}
           </span>
         {/if}
       </span>
@@ -77,12 +78,10 @@
         <span class="account-label">{displayName}</span>
         {#if showSetupStatus && accountSetupState}
           <span class="setup-status">
-            {accountSetupState.totalCount - accountSetupState.completedCount}
-            setup {accountSetupState.totalCount -
-              accountSetupState.completedCount ===
-            1
-              ? "step"
-              : "steps"} left
+            {t("nav_setup_remaining", {
+              count:
+                accountSetupState.totalCount - accountSetupState.completedCount,
+            })}
           </span>
         {/if}
       </span>
@@ -99,12 +98,12 @@
         onclick?.();
         authDrawerState.show("signup");
       }}
-      aria-label="Sign in"
+      aria-label={t("nav_ui_sign_in")}
     >
       <div class="avatar-guest drawer-size">
         <i class="fas fa-user-plus" aria-hidden="true"></i>
       </div>
-      <span class="account-label sign-up-label">Sign in</span>
+      <span class="account-label sign-up-label">{t("nav_ui_sign_in")}</span>
     </button>
   {/if}
 {:else}
@@ -112,8 +111,10 @@
     class="account-row"
     class:collapsed={variant === "collapsed"}
     onclick={handleClick}
-    aria-label={isFullAccount ? "Account menu" : "Sign in"}
-    title={variant === "collapsed" && !isFullAccount ? "Sign in" : undefined}
+    aria-label={isFullAccount ? t("nav_ui_account_menu") : t("nav_ui_sign_in")}
+    title={variant === "collapsed" && !isFullAccount
+      ? t("nav_ui_sign_in")
+      : undefined}
     aria-haspopup={isFullAccount ? "menu" : undefined}
   >
     <span class="avatar-col">
@@ -132,7 +133,7 @@
 
     {#if variant !== "collapsed"}
       <span class="account-label"
-        >{isFullAccount ? displayName : "Sign in"}</span
+        >{isFullAccount ? displayName : t("nav_ui_sign_in")}</span
       >
       {#if isFullAccount}
         <i class="fas fa-chevron-up chevron" aria-hidden="true"></i>

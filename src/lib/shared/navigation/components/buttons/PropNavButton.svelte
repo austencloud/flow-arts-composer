@@ -1,12 +1,13 @@
 <!-- PropNavButton - Circular prop type button for bottom/side navigation -->
 <!-- Tap: toggle prop drawer. Long-press (touch only): open quick feedback panel. -->
 <script lang="ts">
+  import { localizedPropName } from "$lib/shared/settings/components/tabs/prop-type/localized-prop-name";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { onMount } from "svelte";
   import NavButton from "./NavButton.svelte";
   import SelectedPropPreview from "./SelectedPropPreview.svelte";
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { propDrawerState } from "$lib/shared/settings/state/prop-drawer-state.svelte";
   import { quickFeedbackState } from "$lib/shared/feedback/state/quick-feedback-state.svelte";
@@ -24,7 +25,6 @@
 
   const settings = $derived(getSettings());
   const leftPropType = $derived(settings.leftPropType ?? PropType.STAFF);
-  const displayInfo = $derived(getPropTypeDisplayInfo(leftPropType));
   const rightPropType = $derived(
     settings.catDogMode
       ? (settings.rightPropType ?? leftPropType)
@@ -32,8 +32,8 @@
   );
   const propLabel = $derived(
     rightPropType === leftPropType
-      ? displayInfo.label
-      : `${displayInfo.label} + ${getPropTypeDisplayInfo(rightPropType).label}`
+      ? localizedPropName(leftPropType)
+      : `${localizedPropName(leftPropType)} + ${localizedPropName(rightPropType)}`
   );
 
   function startLongPress(event: PointerEvent) {
@@ -77,11 +77,11 @@
   <div class="prop-button-container">
     <NavButton
       iconContent={propIcon}
-      label="Prop"
+      label={t("nav_ui_prop")}
       type="special"
       color="var(--theme-accent, #818cf8)"
       gradient="var(--theme-accent, #818cf8)"
-      ariaLabel="Change props. Current: {propLabel}"
+      ariaLabel={t("nav_change_props_current", { prop: propLabel })}
       active={false}
     />
   </div>

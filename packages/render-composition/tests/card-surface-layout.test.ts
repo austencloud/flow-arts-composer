@@ -19,7 +19,9 @@ describe("portable card surface geometry", () => {
     expect(surface.headerHeight * surface.indicatorSizeScale!).toBe(48);
     expect(surface.cellSize).toBe(222);
     expect(surface.gridStartY).toBe(90);
-    expect(surface.gridStartX).toBe(21);
+    // 678 - 3 * 222 = 12px of slack, split equally.
+    expect(surface.gridStartX).toBe(6);
+    expect(surface.width - (surface.gridStartX + 3 * surface.cellSize)).toBe(6);
   });
 
   it("reserves a header for a LOOP-only card and applies narrow-grid scaling", () => {

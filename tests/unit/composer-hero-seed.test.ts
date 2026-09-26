@@ -22,7 +22,7 @@ const repoRoot = path.resolve(
 );
 
 const SEEDED_HOSTS = [
-  "src/routes/(public)/composer/+page.svelte",
+  "src/routes/(public)/composer/_components/ComposerExperience.svelte",
   "src/lib/shared/landing/components/HomeHero.svelte",
 ];
 

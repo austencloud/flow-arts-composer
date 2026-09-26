@@ -5,6 +5,7 @@
   away nothing. Draft first, look at it, then come back for Final or Cinema.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import type { ExportOptionsStateManager } from "$lib/shared/animation-panel/state/export-options-state.svelte";
   import {
@@ -35,7 +36,7 @@
     onRender,
     onDiscard,
     presentation = "overlay",
-    title = "Render your film",
+    title = t("viewer_detail_render_your_film"),
     renderLabel = "Render",
     discardLabel = "Re-record",
   }: Props = $props();
@@ -130,7 +131,7 @@
 >
   <h2 class="title" id="render-film-title">{title}</h2>
   <p class="meta">
-    <span class="recorded">{formatTime(durationSeconds)} recorded</span>
+    <span class="recorded">{formatTime(durationSeconds)} {t("viewer_detail_recorded")}</span>
     <span class="detail">{detail}</span>
   </p>
 
@@ -139,7 +140,7 @@
     value={selected}
     onchange={handleSelect}
     size="sm"
-    ariaLabel="Render quality"
+    ariaLabel={t("viewer_detail_render_quality")}
   />
 
   <p class="estimate">

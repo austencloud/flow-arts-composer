@@ -1,5 +1,6 @@
 <script lang="ts">
   import FaqInterview from "$lib/shared/landing/components/FaqInterview.svelte";
+  import { siteCopy } from "$lib/shared/landing/site-copy";
   import "$lib/shared/landing/styles/public-editorial.css";
 </script>
 
@@ -18,7 +19,10 @@
     property="og:description"
     content="Common questions about The Kinetic Alphabet: what the notation is, which props it covers, where to start, and what Flow Arts Composer costs."
   />
-  <meta property="og:image" content="https://tkaflowarts.com/branding/og-image.png" />
+  <meta
+    property="og:image"
+    content="https://tkaflowarts.com/branding/og-image.png"
+  />
 
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="FAQ | Flow Arts Composer" />
@@ -26,7 +30,10 @@
     name="twitter:description"
     content="Common questions about The Kinetic Alphabet: what the notation is, which props it covers, where to start, and what Flow Arts Composer costs."
   />
-  <meta name="twitter:image" content="https://tkaflowarts.com/branding/og-image.png" />
+  <meta
+    name="twitter:image"
+    content="https://tkaflowarts.com/branding/og-image.png"
+  />
 
   <!-- JSON-LD: BreadcrumbList for search result hierarchy. The FAQPage schema
        itself is emitted by <FaqInterview emitSchema> below, generated from the
@@ -56,16 +63,20 @@
 <div class="editorial faq-editorial">
   <header class="editorial-header" style:view-transition-name="launchpad-faq">
     <h1 class="page-title">FAQ</h1>
-    <p class="page-subtitle">Getting started, props, and cost</p>
+    <p class="page-subtitle">{siteCopy("Getting started, props, and cost")}</p>
   </header>
 
   <FaqInterview emitSchema heading="" />
 
   <div class="cta-card">
-    <h3>Out of questions?</h3>
-    <p>Ten minutes in the composer answers more than this page can. Free, in your browser.</p>
+    <h3>{siteCopy("Out of questions?")}</h3>
+    <p>
+      {siteCopy(
+        "Ten minutes in the composer answers more than this page can. Free, in your browser."
+      )}
+    </p>
     <a class="cta-button" href="/create" data-sveltekit-reload>
-      <span>Open Flow Arts Composer</span>
+      <span>{siteCopy("Open Flow Arts Composer")}</span>
       <i class="fas fa-arrow-right" aria-hidden="true"></i>
     </a>
   </div>

@@ -5,8 +5,7 @@
   Overlays two sequences with different colors on the same canvas.
 -->
 <script lang="ts">
-
-import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get-animation-playback-controller";
+  import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get-animation-playback-controller";
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte";
   import { onMount } from "svelte";
@@ -134,17 +133,24 @@ import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get
   // Build additionalLayers prop for AnimatorCanvas
   // Secondary layer textures are loaded automatically by AnimationEngine
   const additionalLayerProps = $derived.by((): AdditionalLayerProps[] => {
-    if (!secondaryAnimationState.leftPropState && !secondaryAnimationState.rightPropState) {
+    if (
+      !secondaryAnimationState.leftPropState &&
+      !secondaryAnimationState.rightPropState
+    ) {
       return [];
     }
-    return [{
-      leftProp: secondaryLeftVisible && secondaryVisible
-        ? secondaryAnimationState.leftPropState
-        : null,
-      rightProp: secondaryRightVisible && secondaryVisible
-        ? secondaryAnimationState.rightPropState
-        : null,
-    }];
+    return [
+      {
+        leftProp:
+          secondaryLeftVisible && secondaryVisible
+            ? secondaryAnimationState.leftPropState
+            : null,
+        rightProp:
+          secondaryRightVisible && secondaryVisible
+            ? secondaryAnimationState.rightPropState
+            : null,
+      },
+    ];
   });
 
   // Load and start animations when sequences change
@@ -416,7 +422,7 @@ import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get
   {:else}
     <div class="empty-message">
       <i class="fas fa-video" aria-hidden="true"></i>
-      <p>No sequences loaded</p>
+      <p>{t("compose_ui_no_sequences_loaded")}</p>
     </div>
   {/if}
 </div>
@@ -475,6 +481,4 @@ import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get
     font-size: 3rem;
     opacity: 0.2;
   }
-
-
 </style>

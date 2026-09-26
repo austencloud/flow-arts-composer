@@ -1,5 +1,5 @@
 diff --git a/dist/backgrounds/autumn/services/AutumnSceneryRenderer.d.ts b/dist/backgrounds/autumn/services/AutumnSceneryRenderer.d.ts
-index 440cfe77e03e1d190c0f3ef41c975cf056ed8a60..8e1746ed8f7a9feaf0cd69672449d69effe456c4 100644
+index 440cfe77e03e1d190c0f3ef41c975cf056ed8a60..c2199f243dd59982b11d1d394ca65a559014145e 100644
 --- a/dist/backgrounds/autumn/services/AutumnSceneryRenderer.d.ts
 +++ b/dist/backgrounds/autumn/services/AutumnSceneryRenderer.d.ts
 @@ -16,9 +16,14 @@ export declare class AutumnSceneryRenderer {
@@ -18,7 +18,7 @@ index 440cfe77e03e1d190c0f3ef41c975cf056ed8a60..8e1746ed8f7a9feaf0cd69672449d69e
      draw(ctx: CanvasRenderingContext2D, dimensions: Dimensions, layers: AutumnSceneryLayers): void;
      private usesMultiplaneArtwork;
 diff --git a/dist/backgrounds/autumn/services/AutumnSceneryRenderer.js b/dist/backgrounds/autumn/services/AutumnSceneryRenderer.js
-index 1786fd1f41ef95d383ef0167ec6d1e116aa2464f..3c43b68cf4ca568c555afff193c2bef0fc40dd66 100644
+index 1786fd1f41ef95d383ef0167ec6d1e116aa2464f..089815ba4ac1db88646f9f8070a068576f6af395 100644
 --- a/dist/backgrounds/autumn/services/AutumnSceneryRenderer.js
 +++ b/dist/backgrounds/autumn/services/AutumnSceneryRenderer.js
 @@ -3,6 +3,7 @@ import { getAutumnComposition, } from "../domain/autumn-composition.js";
@@ -124,7 +124,7 @@ index 1786fd1f41ef95d383ef0167ec6d1e116aa2464f..3c43b68cf4ca568c555afff193c2bef0
          this.activeAspect = null;
          this.parallax.initialize();
 diff --git a/dist/backgrounds/ocean/domain/models/OceanModels.d.ts b/dist/backgrounds/ocean/domain/models/OceanModels.d.ts
-index 0176a8118f17325476b1b7a73e8f259222a0a5ac..35f86bfceb9a4fabeace543a7545ac220c705b93 100644
+index 0176a8118f17325476b1b7a73e8f259222a0a5ac..5b4e62cde5f77e8851ee4808c8fabed61159dd4d 100644
 --- a/dist/backgrounds/ocean/domain/models/OceanModels.d.ts
 +++ b/dist/backgrounds/ocean/domain/models/OceanModels.d.ts
 @@ -39,6 +39,12 @@ export interface Bubble {
@@ -141,7 +141,7 @@ index 0176a8118f17325476b1b7a73e8f259222a0a5ac..35f86bfceb9a4fabeace543a7545ac22
      fadeZone: number;
  }
 diff --git a/dist/backgrounds/ocean/services/OceanBackgroundOrchestrator.d.ts b/dist/backgrounds/ocean/services/OceanBackgroundOrchestrator.d.ts
-index 924f4f61901312942ae8010baca2b0305b5eebeb..9c4787725ec9576bbc8f5345dc4985e04e377618 100644
+index 924f4f61901312942ae8010baca2b0305b5eebeb..092f35695c35b1fb9624d9fdd500def3108cead3 100644
 --- a/dist/backgrounds/ocean/services/OceanBackgroundOrchestrator.d.ts
 +++ b/dist/backgrounds/ocean/services/OceanBackgroundOrchestrator.d.ts
 @@ -63,6 +63,10 @@ export declare class OceanBackgroundOrchestrator implements IBackgroundSystem {
@@ -169,7 +169,7 @@ index 924f4f61901312942ae8010baca2b0305b5eebeb..9c4787725ec9576bbc8f5345dc4985e0
      setThumbnailMode(enabled: boolean): void;
      setLayerVisibility(layers: Partial<OceanLayers>): void;
 diff --git a/dist/backgrounds/ocean/services/OceanBackgroundOrchestrator.js b/dist/backgrounds/ocean/services/OceanBackgroundOrchestrator.js
-index 4d0556f8e2c57e5d995ed3a2980d85b63c870589..cdbc29cecbb80f028afeaae5588935862ca19a01 100644
+index 4d0556f8e2c57e5d995ed3a2980d85b63c870589..8e94b4c2a2a3d85844a8f82ce2d94256bf2ec56d 100644
 --- a/dist/backgrounds/ocean/services/OceanBackgroundOrchestrator.js
 +++ b/dist/backgrounds/ocean/services/OceanBackgroundOrchestrator.js
 @@ -190,6 +190,52 @@ export class OceanBackgroundOrchestrator {
@@ -278,7 +278,7 @@ index 4d0556f8e2c57e5d995ed3a2980d85b63c870589..cdbc29cecbb80f028afeaae558893586
          this.accessibility = settings;
      }
 diff --git a/dist/backgrounds/ocean/services/implementations/BubblePhysics.js b/dist/backgrounds/ocean/services/implementations/BubblePhysics.js
-index b3b3664df39334bf96f7a235b2d34b69b6908137..da4d79cb47846eae628d82386d65b4cc524624f8 100644
+index b3b3664df39334bf96f7a235b2d34b69b6908137..63c418c3d730a6e0bfe9f9882e0dad11c6962b30 100644
 --- a/dist/backgrounds/ocean/services/implementations/BubblePhysics.js
 +++ b/dist/backgrounds/ocean/services/implementations/BubblePhysics.js
 @@ -61,6 +61,7 @@ const BUBBLE_CONFIG = {
@@ -308,7 +308,7 @@ index b3b3664df39334bf96f7a235b2d34b69b6908137..da4d79cb47846eae628d82386d65b4cc
              this.updateBubblePhysics(bubble, dimensions, frameMultiplier, animationTime);
              // Update cluster position (followers track leaders)
 diff --git a/dist/backgrounds/ocean/services/implementations/BubbleRenderer.d.ts b/dist/backgrounds/ocean/services/implementations/BubbleRenderer.d.ts
-index dbf264a78ddb9c6563efa53e3d8c01c6abd21962..6f18a2223b912ce1dcc5b5a0d53b832e3fb3a056 100644
+index dbf264a78ddb9c6563efa53e3d8c01c6abd21962..757625c314ccc0b68e7deeeb05830b39537ef889 100644
 --- a/dist/backgrounds/ocean/services/implementations/BubbleRenderer.d.ts
 +++ b/dist/backgrounds/ocean/services/implementations/BubbleRenderer.d.ts
 @@ -15,6 +15,7 @@ import type { IBubbleRenderer } from "../contracts/IBubbleRenderer.js";
@@ -320,7 +320,7 @@ index dbf264a78ddb9c6563efa53e3d8c01c6abd21962..6f18a2223b912ce1dcc5b5a0d53b832e
       * Draw trail particles (micro-bubbles following larger bubble)
       */
 diff --git a/dist/backgrounds/ocean/services/implementations/BubbleRenderer.js b/dist/backgrounds/ocean/services/implementations/BubbleRenderer.js
-index 8b69fb2ef098e6b2c557b0384146cab31f83bff1..deb624aef5fe6b7ca5b20d6810dcfecedad36fed 100644
+index 8b69fb2ef098e6b2c557b0384146cab31f83bff1..f56d83a844a1b9eb16dddd8e4030b646860b44c6 100644
 --- a/dist/backgrounds/ocean/services/implementations/BubbleRenderer.js
 +++ b/dist/backgrounds/ocean/services/implementations/BubbleRenderer.js
 @@ -25,6 +25,10 @@ export class BubbleRenderer {
@@ -376,7 +376,7 @@ index 8b69fb2ef098e6b2c557b0384146cab31f83bff1..deb624aef5fe6b7ca5b20d6810dcfece
       * Draw trail particles (micro-bubbles following larger bubble)
       */
 diff --git a/dist/core/contracts/IBackgroundController.d.ts b/dist/core/contracts/IBackgroundController.d.ts
-index d8d0dc1508c33d0df7f2a7eb8371ffd72ca5f169..d7e13a303184dc638226db5bad63c082f010caa9 100644
+index d8d0dc1508c33d0df7f2a7eb8371ffd72ca5f169..0791ce78f45b52f5fea2d19e011aa46ba508d662 100644
 --- a/dist/core/contracts/IBackgroundController.d.ts
 +++ b/dist/core/contracts/IBackgroundController.d.ts
 @@ -76,6 +76,10 @@ export interface IBackgroundController {
@@ -413,10 +413,21 @@ index d8d0dc1508c33d0df7f2a7eb8371ffd72ca5f169..d7e13a303184dc638226db5bad63c082
       * Get the currently displayed background type.
       * Returns null if no background is set.
 diff --git a/dist/core/contracts/IBackgroundSystem.d.ts b/dist/core/contracts/IBackgroundSystem.d.ts
-index edefd367c5831dcd18c9af3253ae7b4c86e0d138..acf529c2fb07ac9f2a0555744cf693522038d491 100644
+index edefd367c5831dcd18c9af3253ae7b4c86e0d138..58b6e942506d47a6fa7dd5f12d01c85f6724b69d 100644
 --- a/dist/core/contracts/IBackgroundSystem.d.ts
 +++ b/dist/core/contracts/IBackgroundSystem.d.ts
-@@ -39,6 +39,8 @@ export interface IBackgroundSystem {
+@@ -10,7 +10,9 @@ export interface IBackgroundSystem {
+     /**
+      * Initialize the background system with dimensions and quality
+      */
+-    initialize(dimensions: Dimensions, quality: QualityLevel): void;
++    initialize(dimensions: Dimensions, quality: QualityLevel, options?: {
++        spawnFishOnScreen?: boolean;
++    }): void | Promise<void>;
+     /**
+      * Update the background system animation state
+      * @param dimensions - Canvas dimensions
+@@ -39,6 +41,8 @@ export interface IBackgroundSystem {
       * pointerType lets motion effects keep touch input flat.
       */
      setPointer?(x: number, y: number, active: boolean, pointerType?: string): void;
@@ -425,7 +436,7 @@ index edefd367c5831dcd18c9af3253ae7b4c86e0d138..acf529c2fb07ac9f2a0555744cf69352
      /**
       * Tap-test the background at (x, y) in canvas-logical px. Interactive
       * backgrounds (e.g. ocean jellyfish) hit-test their elements and, on a hit,
-@@ -50,6 +52,12 @@ export interface IBackgroundSystem {
+@@ -50,6 +54,12 @@ export interface IBackgroundSystem {
          pitch01: number;
          pan: number;
      } | void;
@@ -438,8 +449,23 @@ index edefd367c5831dcd18c9af3253ae7b4c86e0d138..acf529c2fb07ac9f2a0555744cf69352
      /**
       * Set accessibility settings (optional)
       */
+diff --git a/dist/core/domain/models.d.ts b/dist/core/domain/models.d.ts
+index e0f5d9893e4a583ebbd9b53621de22d927c06c21..3057ea39dc74aabd273ed5510926091c0680c90a 100644
+--- a/dist/core/domain/models.d.ts
++++ b/dist/core/domain/models.d.ts
+@@ -6,7 +6,9 @@ import type { Dimensions, QualityLevel, PerformanceMetrics, AccessibilitySetting
+  * Animation component interface - stateful components that render to canvas
+  */
+ export interface AnimationComponent {
+-    initialize: (dimensions: Dimensions, quality: QualityLevel) => void;
++    initialize: (dimensions: Dimensions, quality: QualityLevel, options?: {
++        spawnFishOnScreen?: boolean;
++    }) => void | Promise<void>;
+     update: (dimensions: Dimensions) => void;
+     draw: (ctx: CanvasRenderingContext2D, dimensions: Dimensions) => void;
+     cleanup: () => void;
 diff --git a/dist/core/services/BackgroundController.d.ts b/dist/core/services/BackgroundController.d.ts
-index 6f9952dbb2671ccc70b357a791694c4a2ce5c288..8056a9ce3a946eb943bcf61d8597f8f798bc8a1b 100644
+index 6f9952dbb2671ccc70b357a791694c4a2ce5c288..5b8bb1dd09b966c03f2c2907d7a1e1fea106df69 100644
 --- a/dist/core/services/BackgroundController.d.ts
 +++ b/dist/core/services/BackgroundController.d.ts
 @@ -28,6 +28,11 @@ export declare class BackgroundController implements IBackgroundController {
@@ -506,10 +532,16 @@ index 6f9952dbb2671ccc70b357a791694c4a2ce5c288..8056a9ce3a946eb943bcf61d8597f8f7
      private delay;
  }
 diff --git a/dist/core/services/BackgroundController.js b/dist/core/services/BackgroundController.js
-index 70fed35010d4d591ff7b1d3ae0782c7713ae00b5..f4d5e70c54c928e6431d7ca5854d91c39969ee8c 100644
+index 70fed35010d4d591ff7b1d3ae0782c7713ae00b5..5850777e8ab3b0e44a6fb54bee0f96ac9c186910 100644
 --- a/dist/core/services/BackgroundController.js
 +++ b/dist/core/services/BackgroundController.js
-@@ -12,6 +12,8 @@ const CROSSFADE_DURATION_MS = 800;
+@@ -7,11 +7,14 @@
+ import { BackgroundFactory } from "./BackgroundFactory.js";
+ import { AdaptiveQualityManager } from "./AdaptiveQualityManager.js";
+ import { getBackgroundConfigurationService } from "./BackgroundConfigurationService.js";
++import { BackgroundType } from "../domain/enums.js";
+ /** Duration of the CSS crossfade transition in milliseconds. Must match backgrounds.css. */
+ const CROSSFADE_DURATION_MS = 800;
  /** Cap internal canvas resolution — decorative background doesn't need full resolution. */
  const MAX_CANVAS_WIDTH = 960;
  const MAX_CANVAS_HEIGHT = 540;
@@ -518,7 +550,7 @@ index 70fed35010d4d591ff7b1d3ae0782c7713ae00b5..f4d5e70c54c928e6431d7ca5854d91c3
  /**
   * BackgroundController implementation
   */
-@@ -40,6 +42,16 @@ export class BackgroundController {
+@@ -40,6 +43,16 @@ export class BackgroundController {
      mounted = false;
      initialized = false;
      initializationInProgress = false;
@@ -535,7 +567,7 @@ index 70fed35010d4d591ff7b1d3ae0782c7713ae00b5..f4d5e70c54c928e6431d7ca5854d91c3
      // Resize observer
      resizeObserver = null;
      // Adaptive quality
-@@ -59,6 +71,7 @@ export class BackgroundController {
+@@ -59,6 +72,7 @@ export class BackgroundController {
          if (this.mounted && this.container !== container) {
              this.unmount();
          }
@@ -543,7 +575,7 @@ index 70fed35010d4d591ff7b1d3ae0782c7713ae00b5..f4d5e70c54c928e6431d7ca5854d91c3
          this.container = container;
          this.createCanvases();
          this.setupResizeObserver();
-@@ -74,6 +87,10 @@ export class BackgroundController {
+@@ -74,6 +88,10 @@ export class BackgroundController {
       * Stops animations, cleans up systems, removes canvases.
       */
      unmount() {
@@ -554,7 +586,7 @@ index 70fed35010d4d591ff7b1d3ae0782c7713ae00b5..f4d5e70c54c928e6431d7ca5854d91c3
          // Stop all animations
          this.stopAnimation('A');
          this.stopAnimation('B');
-@@ -98,6 +115,43 @@ export class BackgroundController {
+@@ -98,6 +116,43 @@ export class BackgroundController {
          // Reset flags (but keep currentType for potential remount)
          this.mounted = false;
          this.initialized = false;
@@ -598,7 +630,7 @@ index 70fed35010d4d591ff7b1d3ae0782c7713ae00b5..f4d5e70c54c928e6431d7ca5854d91c3
      }
      /**
       * Set the background type.
-@@ -112,6 +166,14 @@ export class BackgroundController {
+@@ -112,6 +167,14 @@ export class BackgroundController {
              this.currentType = type;
              return;
          }
@@ -613,7 +645,7 @@ index 70fed35010d4d591ff7b1d3ae0782c7713ae00b5..f4d5e70c54c928e6431d7ca5854d91c3
          // If same type and already initialized → no-op
          // Note: We no longer pixel-read the canvas here. The isActiveCanvasBlank()
          // check was racy: the animation loop calls clearRect() before draw(), and
-@@ -152,9 +214,15 @@ export class BackgroundController {
+@@ -152,9 +215,15 @@ export class BackgroundController {
          this.systemA?.setPointer?.(x, y, active, pointerType);
          this.systemB?.setPointer?.(x, y, active, pointerType);
      }
@@ -629,7 +661,7 @@ index 70fed35010d4d591ff7b1d3ae0782c7713ae00b5..f4d5e70c54c928e6431d7ca5854d91c3
      /**
       * Get current background type.
       */
-@@ -172,6 +240,14 @@ export class BackgroundController {
+@@ -172,6 +241,14 @@ export class BackgroundController {
       */
      forceRefresh() {
          if (this.currentType && this.mounted) {
@@ -644,7 +676,7 @@ index 70fed35010d4d591ff7b1d3ae0782c7713ae00b5..f4d5e70c54c928e6431d7ca5854d91c3
              this.initialized = false;
              void this.initializeBackground(this.currentType, this.currentOptions);
          }
-@@ -200,10 +276,12 @@ export class BackgroundController {
+@@ -200,10 +277,12 @@ export class BackgroundController {
          this.canvasA = document.createElement('canvas');
          this.canvasA.className = 'background-canvas canvas-a';
          this.canvasA.setAttribute('aria-hidden', 'true');
@@ -657,7 +689,7 @@ index 70fed35010d4d591ff7b1d3ae0782c7713ae00b5..f4d5e70c54c928e6431d7ca5854d91c3
          // Set initial active state
          this.updateActiveCanvasClass();
          // Append to container
-@@ -229,6 +307,18 @@ export class BackgroundController {
+@@ -229,6 +308,18 @@ export class BackgroundController {
              }
          }
      }
@@ -676,7 +708,7 @@ index 70fed35010d4d591ff7b1d3ae0782c7713ae00b5..f4d5e70c54c928e6431d7ca5854d91c3
      setupResizeObserver() {
          if (!this.container || typeof ResizeObserver === 'undefined')
              return;
-@@ -305,9 +395,10 @@ export class BackgroundController {
+@@ -305,10 +396,12 @@ export class BackgroundController {
      // PRIVATE METHODS - Background Initialization & Transitions
      // ═══════════════════════════════════════════════════════════════════════════
      async initializeBackground(type, options) {
@@ -686,9 +718,11 @@ index 70fed35010d4d591ff7b1d3ae0782c7713ae00b5..f4d5e70c54c928e6431d7ca5854d91c3
          }
 +        const generation = this.lifecycleGeneration;
          this.initializationInProgress = true;
++        let system = null;
          try {
              // Clean up any existing systems
-@@ -318,24 +409,17 @@ export class BackgroundController {
+             this.stopAnimation('A');
+@@ -318,24 +411,17 @@ export class BackgroundController {
              this.systemA = null;
              this.systemB = null;
              // Create the background system
@@ -710,7 +744,7 @@ index 70fed35010d4d591ff7b1d3ae0782c7713ae00b5..f4d5e70c54c928e6431d7ca5854d91c3
 -            }
 -            if (!system) {
 -                this.initializationInProgress = false;
-+            const system = await BackgroundFactory.createBackgroundSystem({
++            system = await BackgroundFactory.createBackgroundSystem({
 +                type,
 +                quality: this.quality,
 +                initialQuality: this.quality,
@@ -724,9 +758,21 @@ index 70fed35010d4d591ff7b1d3ae0782c7713ae00b5..f4d5e70c54c928e6431d7ca5854d91c3
                  return;
              }
              // Store and activate on canvas A
-@@ -349,14 +433,25 @@ export class BackgroundController {
+@@ -347,16 +433,40 @@ export class BackgroundController {
+                 width: this.canvasA.width,
+                 height: this.canvasA.height
              };
-             system.initialize(dimensions, this.quality);
+-            system.initialize(dimensions, this.quality);
++            await system.initialize(dimensions, this.quality, {
++                spawnFishOnScreen: type === BackgroundType.OCEAN,
++            });
++            if (!this.isCurrentGeneration(generation) || this.systemA !== system) {
++                if (this.systemA === system) {
++                    system.cleanup();
++                    this.systemA = null;
++                }
++                return;
++            }
              // Start the animation loop
 -            this.startAnimation('A', type);
 +            this.startAnimation('A');
@@ -737,6 +783,10 @@ index 70fed35010d4d591ff7b1d3ae0782c7713ae00b5..f4d5e70c54c928e6431d7ca5854d91c3
 +        }
 +        catch (error) {
 +            if (this.isCurrentGeneration(generation)) {
++                if (this.systemA === system) {
++                    system?.cleanup();
++                    this.systemA = null;
++                }
 +                this.initialized = false;
 +                this.scheduleInitializationRetry(type, options, generation, error);
 +            }
@@ -752,7 +802,7 @@ index 70fed35010d4d591ff7b1d3ae0782c7713ae00b5..f4d5e70c54c928e6431d7ca5854d91c3
          // Process any pending request
          if (this.pendingType && this.pendingType !== type) {
              const pending = this.pendingType;
-@@ -371,6 +466,7 @@ export class BackgroundController {
+@@ -371,6 +481,7 @@ export class BackgroundController {
          }
      }
      async performCrossfade(newType, options) {
@@ -760,7 +810,7 @@ index 70fed35010d4d591ff7b1d3ae0782c7713ae00b5..f4d5e70c54c928e6431d7ca5854d91c3
          this.isTransitioning = true;
          const incomingCanvas = this.activeCanvas === 'A' ? 'B' : 'A';
          const canvas = incomingCanvas === 'A' ? this.canvasA : this.canvasB;
-@@ -379,72 +475,99 @@ export class BackgroundController {
+@@ -379,72 +490,130 @@ export class BackgroundController {
              return;
          }
          // Create the new background system
@@ -805,7 +855,21 @@ index 70fed35010d4d591ff7b1d3ae0782c7713ae00b5..f4d5e70c54c928e6431d7ca5854d91c3
 -        const dimensions = { width: canvas.width, height: canvas.height };
 -        newSystem.initialize(dimensions, this.quality);
 +            const dimensions = { width: canvas.width, height: canvas.height };
-+            newSystem.initialize(dimensions, this.quality);
++            await newSystem.initialize(dimensions, this.quality, {
++                spawnFishOnScreen: newType === BackgroundType.OCEAN,
++            });
++            if (!this.isCurrentGeneration(generation) ||
++                (incomingCanvas === "A" ? this.systemA : this.systemB) !== newSystem) {
++                if (incomingCanvas === "A" && this.systemA === newSystem) {
++                    newSystem.cleanup();
++                    this.systemA = null;
++                }
++                if (incomingCanvas === "B" && this.systemB === newSystem) {
++                    newSystem.cleanup();
++                    this.systemB = null;
++                }
++                return;
++            }
          // Start animation on the new canvas
 -        this.startAnimation(incomingCanvas, newType);
 +            this.startAnimation(incomingCanvas);
@@ -815,7 +879,14 @@ index 70fed35010d4d591ff7b1d3ae0782c7713ae00b5..f4d5e70c54c928e6431d7ca5854d91c3
 +            await this.waitForFrame();
 +            await this.waitForFrame();
 +            if (!this.isCurrentGeneration(generation)) {
-+                newSystem.cleanup();
++                if (incomingCanvas === "A" && this.systemA === newSystem) {
++                    newSystem.cleanup();
++                    this.systemA = null;
++                }
++                if (incomingCanvas === "B" && this.systemB === newSystem) {
++                    newSystem.cleanup();
++                    this.systemB = null;
++                }
 +                return;
 +            }
          // Trigger the CSS crossfade
@@ -827,7 +898,14 @@ index 70fed35010d4d591ff7b1d3ae0782c7713ae00b5..f4d5e70c54c928e6431d7ca5854d91c3
 -        await this.delay(CROSSFADE_DURATION_MS);
 +            await this.delay(CROSSFADE_DURATION_MS);
 +            if (!this.isCurrentGeneration(generation)) {
-+                newSystem.cleanup();
++                if (incomingCanvas === "A" && this.systemA === newSystem) {
++                    newSystem.cleanup();
++                    this.systemA = null;
++                }
++                if (incomingCanvas === "B" && this.systemB === newSystem) {
++                    newSystem.cleanup();
++                    this.systemB = null;
++                }
 +                return;
 +            }
          // Cleanup the old system
@@ -884,12 +962,15 @@ index 70fed35010d4d591ff7b1d3ae0782c7713ae00b5..f4d5e70c54c928e6431d7ca5854d91c3
 -            this.pendingType = null;
 -            this.pendingOptions = null;
 +        catch (error) {
-+            newSystem?.cleanup();
 +            if (this.isCurrentGeneration(generation)) {
-+                if (incomingCanvas === 'A' && this.systemA === newSystem)
++                if (incomingCanvas === 'A' && this.systemA === newSystem) {
++                    newSystem?.cleanup();
 +                    this.systemA = null;
-+                if (incomingCanvas === 'B' && this.systemB === newSystem)
++                }
++                if (incomingCanvas === 'B' && this.systemB === newSystem) {
++                    newSystem?.cleanup();
 +                    this.systemB = null;
++                }
 +                this.isTransitioning = false;
 +                this.scheduleInitializationRetry(newType, options, generation, error);
 +            }
@@ -907,7 +988,7 @@ index 70fed35010d4d591ff7b1d3ae0782c7713ae00b5..f4d5e70c54c928e6431d7ca5854d91c3
              return;
          const ctx = canvas.getContext('2d', { willReadFrequently: false });
          if (!ctx)
-@@ -492,6 +615,46 @@ export class BackgroundController {
+@@ -492,6 +661,46 @@ export class BackgroundController {
              this.animationIdB = null;
          }
      }
