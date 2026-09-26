@@ -1,11 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   MAX_STANCE_YAW_RAD,
-  SIDE_ON_YAW_KNEE_RAD,
   planUpperBodyStance,
-  planUpperBodyStanceDepth,
   planUpperBodyStanceYaw,
-  type UpperBodyStancePlan,
 } from "$lib/shared/3d/collision/upper-body-stance-planner";
 
 const GRID_DEPTH = 0.3;
@@ -124,7 +121,7 @@ describe("planUpperBodyStanceYaw", () => {
       right: { x: 0.15, z: GRID_DEPTH },
     });
     expect(Math.abs(partial.yawRad)).toBeGreaterThan(0);
-    expect(Math.abs(partial.yawRad)).toBeLessThan((Math.PI / 2) * 0.8);
+    expect(Math.abs(partial.yawRad)).toBeLessThan(Math.PI / 2 * 0.8);
     expect(partial.leftDepthOffsetM).toBeCloseTo(0, 12);
     expect(partial.rightDepthOffsetM).toBeCloseTo(0, 12);
   });
@@ -217,51 +214,5 @@ describe("hug reach at a same-side hold", () => {
     expect(Math.abs(plan.leftDepthOffsetM + EAST.left.z)).toBeLessThanOrEqual(
       LANE + 1e-9
     );
-  });
-});
-
-describe("each hand's side-on lane", () => {
-  const EAST = {
-    left: { x: 0.48, z: GRID_DEPTH },
-    right: { x: 0.44, z: GRID_DEPTH },
-  };
-  const grips = (plan: UpperBodyStancePlan) => ({
-    left: EAST.left.z + plan.leftDepthOffsetM,
-    right: EAST.right.z + plan.rightDepthOffsetM,
-  });
-
-  it("opens each hand to the lane its own staff needs", () => {
-    for (const side of [1, -1]) {
-      const yaw = side * MAX_STANCE_YAW_RAD;
-      const plan = planUpperBodyStanceDepth(yaw, EAST, null, yaw, {
-        leftM: 0.24,
-        rightM: 0.2,
-      });
-      // A positive turn swings the left shoulder upstage.
-      expect(grips(plan).left).toBeCloseTo(-side * 0.24, 8);
-      expect(grips(plan).right).toBeCloseTo(side * 0.2, 8);
-    }
-  });
-
-  it("never narrows a lane below the body's own", () => {
-    const plan = planUpperBodyStanceDepth(
-      MAX_STANCE_YAW_RAD,
-      EAST,
-      null,
-      MAX_STANCE_YAW_RAD,
-      { leftM: 0.05, rightM: 0 }
-    );
-    expect(grips(plan).left).toBeCloseTo(-LANE, 8);
-    expect(grips(plan).right).toBeCloseTo(LANE, 8);
-  });
-
-  it("moves nothing until the chest is side-on", () => {
-    const yaw = SIDE_ON_YAW_KNEE_RAD * 0.9;
-    const plan = planUpperBodyStanceDepth(yaw, EAST, null, yaw, {
-      leftM: 0.26,
-      rightM: 0.26,
-    });
-    expect(plan.leftDepthOffsetM).toBeCloseTo(0, 12);
-    expect(plan.rightDepthOffsetM).toBeCloseTo(0, 12);
   });
 });

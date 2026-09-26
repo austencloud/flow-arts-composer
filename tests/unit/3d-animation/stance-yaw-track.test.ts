@@ -1,25 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { Vector3 } from "three";
-import { PlaneMode } from "@austencloud/scene-3d";
 import {
-  LANE_RATE_M_PER_STEP,
   MAX_HEAD_LAG_RAD,
   MAX_SPINE_STAGGER_RAD,
   SPINE1_SHARE,
   buildStanceYawTrack,
   describeStanceYawTrack,
-  resolveTrackedUpperBodyStance,
   sampleStanceYawTrack,
   sampleStanceYawTrackDetail,
-  stanceLaneFloorAt,
   stanceYawAngularVelocity,
   type StanceYawTrack,
-  type StanceYawTrackOptions,
 } from "$lib/shared/3d/collision/stance-yaw-track";
 import {
   MAX_STANCE_YAW_RAD,
   planUpperBodyStanceYawTarget,
-  stanceSideBlend,
   type UpperBodyStanceTargets,
 } from "$lib/shared/3d/collision/upper-body-stance-planner";
 
@@ -124,7 +117,10 @@ describe("stance yaw track", () => {
   it("anticipates from the lower spine, which the arms do not hang from", () => {
     const track = makeTrack();
     const desireAt = (fraction: number) =>
-      crossingTime((t) => planUpperBodyStanceYawTarget(targetsAt(t)), fraction);
+      crossingTime(
+        (t) => planUpperBodyStanceYawTarget(targetsAt(t)),
+        fraction
+      );
     const spine1Final = SPINE1_SHARE * MAX_STANCE_YAW_RAD;
 
     const chestLeads: number[] = [];
@@ -292,142 +288,5 @@ describe("stance yaw track", () => {
     const before = stanceYawAngularVelocity(track!, 7.99);
     const after = stanceYawAngularVelocity(track!, 0.01);
     expect(Math.abs(after - before)).toBeLessThan(0.2);
-  });
-});
-
-describe("stance yaw track lane floors", () => {
-  const BASE = 0.16;
-  const NEED = 0.24;
-  const NEED_FROM = 6;
-  const NEED_TO = 6.5;
-
-  /** The fixture turn, with the left hand's staff needing a wider lane
-   *  through part of the side hold. Records every check it is asked for. */
-  function trackWithNeed() {
-    const checks: { scoreTime: number; chestRad: number; desireRad: number }[] =
-      [];
-    const track = buildStanceYawTrack({
-      targetsAtScoreTime: targetsAt,
-      motionStepCount: 8,
-      loop: false,
-      sideOnLaneFloorAt: (scoreTime, pose, desireRad) => {
-        checks.push({ scoreTime, chestRad: pose.chestRad, desireRad });
-        const needed = scoreTime >= NEED_FROM && scoreTime <= NEED_TO;
-        return { leftM: needed ? NEED : BASE, rightM: BASE };
-      },
-    });
-    expect(track).not.toBeNull();
-    return { track: track!, checks };
-  }
-
-  it("checks only where the corridor is open, against the chest the track poses", () => {
-    const { track, checks } = trackWithNeed();
-    expect(checks.length).toBeGreaterThan(0);
-    expect(checks.length).toBeLessThan(track.rawTimes.length);
-    for (const check of checks) {
-      expect(check.chestRad).toBe(
-        sampleStanceYawTrack(track, check.scoreTime).chestRad
-      );
-      expect(stanceSideBlend(check.chestRad, check.desireRad)).toBeGreaterThan(
-        0
-      );
-    }
-  });
-
-  it("opens a lane ahead of the moment that needs it and holds it through", () => {
-    const { track } = trackWithNeed();
-    const leftAt = (t: number) => stanceLaneFloorAt(track, t)!.leftM;
-    for (let t = NEED_FROM; t <= NEED_TO; t += 0.05) {
-      expect(leftAt(t)).toBeGreaterThanOrEqual(NEED - 1e-9);
-    }
-    expect(leftAt(NEED_FROM - 0.1)).toBeGreaterThan(BASE);
-    expect(leftAt(NEED_FROM - 0.1)).toBeLessThan(NEED);
-    // The other hand never needed more than the body's lane.
-    expect(Math.max(...track.laneFloorRight!)).toBeCloseTo(BASE, 9);
-    // Far from any need the floor asks for nothing past the body's lane.
-    expect(leftAt(1)).toBeLessThanOrEqual(BASE);
-  });
-
-  it("opens and closes a lane no faster than the lane rate", () => {
-    const { track } = trackWithNeed();
-    const perStep = track.rawTimes.length / track.stepCount;
-    const rate = LANE_RATE_M_PER_STEP / perStep;
-    for (const floor of [track.laneFloorLeft!, track.laneFloorRight!]) {
-      for (let i = 1; i < floor.length; i++) {
-        expect(Math.abs(floor[i]! - floor[i - 1]!)).toBeLessThanOrEqual(
-          rate + 1e-12
-        );
-      }
-    }
-  });
-
-  it("hands the planned lane to the frame's corridor", () => {
-    const { track } = trackWithNeed();
-    const t = 6.25;
-    const prop = { worldPosition: new Vector3(FULL_LATERAL_M, 0, 0) };
-    const sized = resolveTrackedUpperBodyStance(
-      track,
-      t,
-      PlaneMode.WALL,
-      prop,
-      prop
-    );
-    const bodyLane = resolveTrackedUpperBodyStance(
-      makeTrack(),
-      t,
-      PlaneMode.WALL,
-      prop,
-      prop
-    );
-    expect(sized.sideBlend).toBeGreaterThan(0);
-    // The chest turns toward the performer's left, so the left grip goes
-    // upstage by the extra lane.
-    expect(sized.leftDepthOffsetM - bodyLane.leftDepthOffsetM).toBeCloseTo(
-      -sized.sideBlend * (NEED - BASE),
-      9
-    );
-    expect(sized.rightDepthOffsetM).toBeCloseTo(bodyLane.rightDepthOffsetM, 12);
-  });
-
-  it("plans no floors without a check or when the chest never turns side-on", () => {
-    expect(makeTrack().laneFloorLeft).toBeNull();
-    expect(stanceLaneFloorAt(makeTrack(), 6.25)).toBeNull();
-    expect(stanceLaneFloorAt(null, 6.25)).toBeNull();
-    const square = buildStanceYawTrack({
-      // Opposed grips keep the chest square throughout.
-      targetsAtScoreTime: () => ({
-        left: { x: 0.3, z: 0.5 },
-        right: { x: -0.3, z: 0.5 },
-      }),
-      motionStepCount: 8,
-      loop: false,
-      sideOnLaneFloorAt: () => {
-        throw new Error("checked a lane with the chest square");
-      },
-    });
-    expect(square?.laneFloorLeft).toBeNull();
-    expect(square?.laneFloorRight).toBeNull();
-  });
-
-  it("opens a lane across the loop seam", () => {
-    // Side-on throughout, with the need just after the seam.
-    const held = (loop: boolean) => {
-      const options: StanceYawTrackOptions = {
-        targetsAtScoreTime: () => ({
-          left: { x: FULL_LATERAL_M, z: 0.5 },
-          right: { x: FULL_LATERAL_M, z: 0.5 },
-        }),
-        motionStepCount: 8,
-        loop,
-        sideOnLaneFloorAt: (scoreTime) => ({
-          leftM: scoreTime <= 0.5 ? NEED : BASE,
-          rightM: BASE,
-        }),
-      };
-      return buildStanceYawTrack(options)!;
-    };
-    expect(stanceLaneFloorAt(held(true), 7.9)!.leftM).toBeGreaterThan(BASE);
-    expect(stanceLaneFloorAt(held(true), 8.25)!.leftM).toBeCloseTo(NEED, 9);
-    expect(stanceLaneFloorAt(held(false), 7.9)!.leftM).toBeCloseTo(BASE, 9);
   });
 });

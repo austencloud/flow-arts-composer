@@ -26,15 +26,6 @@ export interface UpperBodyStancePlan {
   rightDepthOffsetM: number;
 }
 
-/**
- * How far each hand's side-on lane sits from the chest's centre line, metres.
- * As a floor, a hand's lane is the larger of this and the body's own lane.
- */
-export interface SideOnLanes {
-  leftM: number;
-  rightM: number;
-}
-
 // Just short of a full quarter turn. At exactly 90 degrees the shoulder line
 // runs parallel to the rig's root forward, which is the degenerate case the
 // animator's own body-frame code calls out: the disambiguating dot product
@@ -69,28 +60,9 @@ export const FULL_ASSIST_LATERAL_M = 0.28;
 // 4 cm, and 38 mm at 0. This lane is a torso-clearance corridor, not a
 // convergence mechanism; converging further needs a shorter staff, which is
 // what `fitStaffLengthForHug` is for.
-//
-// It is the body's lane, not every staff's. Measured against the mesh
-// (`tests/unit/3d/performer-contact-scoreboard.ts`), a 16 cm lane still left
-// staffs through the chest on 642 of ch07's frames and 1271 of ch18's: a staff
-// at the south point, held upstage while the chest is side-on, runs through
-// the sternum at any lane inside the chest's half width. Each hand's lane now
-// opens past this one where its own staff needs the room
-// (`stance-side-lane.ts`).
-/** Below this yaw the corridor is closed and the grips keep their depth. */
-export const SIDE_ON_YAW_KNEE_RAD = MAX_STANCE_YAW_RAD * 0.8;
+const SIDE_ON_YAW_KNEE_RAD = MAX_STANCE_YAW_RAD * 0.8;
 const SAME_SIDE_DEPTH_SEPARATION_M = 0.32;
 const SAME_SIDE_DEPTH_LANE_M = SAME_SIDE_DEPTH_SEPARATION_M / 2;
-
-/**
- * Share of the shoulder line each spine bone carries at rest. Matches the
- * animator's historical blade split, so a held stance is bone-for-bone the
- * pose that shipped before the score-time track existed. Here rather than in
- * the track so the clearance check can hold the same pose without importing
- * the track.
- */
-export const SPINE1_SHARE = 0.45;
-export const SPINE2_SHARE = 0.55;
 
 /**
  * The hug reach. Once a rig has been measured, the pair no longer straddles
@@ -101,7 +73,7 @@ export const SPINE2_SHARE = 0.55;
  * measurements — see `fitStaffLengthForHug`. Without measurements the planner
  * keeps the wider un-measured lane rather than guessing at a body.
  */
-export function sameSideLaneM(
+function sameSideLaneM(
   measurements: PerformerReachMeasurements | null
 ): number {
   if (!measurements) return SAME_SIDE_DEPTH_LANE_M;
@@ -184,9 +156,7 @@ export function planUpperBodyStanceYawTarget(
   // the stance direction; coherence and lateralWeight still soften entrances.
   const desiredYaw = Math.sign(meanX) * MAX_STANCE_YAW_RAD;
   const assistance = smoothstep01(coherence) * lateralWeight;
-  return (
-    clamp(desiredYaw, -MAX_STANCE_YAW_RAD, MAX_STANCE_YAW_RAD) * assistance
-  );
+  return clamp(desiredYaw, -MAX_STANCE_YAW_RAD, MAX_STANCE_YAW_RAD) * assistance;
 }
 
 /**
@@ -243,8 +213,7 @@ export function planUpperBodyStanceDepth(
   yawRad: number,
   targets: UpperBodyStanceTargets,
   measurements: PerformerReachMeasurements | null = null,
-  propDesireRad: number = yawRad,
-  laneFloor: SideOnLanes | null = null
+  propDesireRad: number = yawRad
 ): UpperBodyStancePlan {
   if (yawRad === 0) return SQUARE_STANCE;
 
@@ -263,22 +232,17 @@ export function planUpperBodyStanceDepth(
   // hits mid-transition. Below SIDE_ON_YAW_KNEE the grips keep their authored
   // depth and the pose is simply the old square-ish reach.
   const sideBlend = stanceSideBlend(yawRad, propDesireRad);
-  // Each hand's lane opens past the body's own where its staff needs the room.
-  const laneM = sameSideLaneM(measurements);
-  const leftLaneM = Math.max(laneM, laneFloor?.leftM ?? 0);
-  const rightLaneM = Math.max(laneM, laneFloor?.rightM ?? 0);
   // Rig convention: the performer's left is rig-local +X, so a positive stance
   // yaw swings the left shoulder toward negative depth.
-  const side = Math.sign(yawRad);
+  const leftLaneM = -Math.sign(yawRad) * sameSideLaneM(measurements);
   return {
     yawRad,
     // Same-side reaches need shoulder facing, not a permanent bow. Cross-body
     // pitch and reach-deficit lean remain owned by the animator and engage only
     // when their geometry actually calls for them.
     pitchRad: 0,
-    leftDepthOffsetM: sideBlend * (-side * leftLaneM - (targets.left?.z ?? 0)),
-    rightDepthOffsetM:
-      sideBlend * (side * rightLaneM - (targets.right?.z ?? 0)),
+    leftDepthOffsetM: sideBlend * (leftLaneM - (targets.left?.z ?? 0)),
+    rightDepthOffsetM: sideBlend * (-leftLaneM - (targets.right?.z ?? 0)),
   };
 }
 
@@ -304,13 +268,7 @@ export function planUpperBodyStanceYaw(
   return planUpperBodyStanceYawTarget(targets);
 }
 
-/**
- * A prop as the stance reads it. The rotation is optional: the yaw and the
- * corridor need only the grip, and the clearance check tests the whole staff
- * when the rotation is there and the grip alone when it is not.
- */
-export type GripPropState = Pick<PropState3D, "worldPosition"> &
-  Partial<Pick<PropState3D, "worldRotation">>;
+export type GripPropState = Pick<PropState3D, "worldPosition">;
 
 /**
  * The grid-frame grip targets behind a rendered prop pair. One owner for the

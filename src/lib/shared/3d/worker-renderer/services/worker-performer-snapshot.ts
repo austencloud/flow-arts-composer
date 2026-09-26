@@ -1,4 +1,5 @@
 import {
+  cmToUnits,
   GRID_OFFSETS,
   PlaneMode,
   PLANE_MODE_CONFIGS,
@@ -8,7 +9,6 @@ import {
 import type { CharacterInstanceState } from "../../state/character-instance-state.svelte";
 import { resolvePerformerUpperBodyStance } from "../../domain/performer-upper-body-stance";
 import { resolvePerformerContact } from "../../domain/performer-contact-displacement";
-import { resolvePerformerStaffLength } from "../../domain/performer-stance-clearance";
 import { CANONICAL_PERFORMER_ANCHOR_Y } from "../../environments/domain/stage-coordinate-frame";
 import type {
   WorkerPerformerEffectIntent,
@@ -77,13 +77,15 @@ export function supportsWorkerPerformer(
  * Resolve the physical prop length from the same owner used by the serialized
  * performer. Effect anchor construction needs the half-length before the
  * snapshot exists, so exporting this avoids a second, subtly divergent unit
- * conversion at the application/worker boundary. The stance checks its lanes
- * against the same length.
+ * conversion at the application/worker boundary.
  */
 export function resolveWorkerPerformerStaffLength(
   performer: CharacterInstanceState
 ): number {
-  return resolvePerformerStaffLength(performer);
+  const staffLengthCm = performer.settings.staffLengthCm;
+  return staffLengthCm == null
+    ? userProportionsState.staffLength
+    : cmToUnits(staffLengthCm);
 }
 
 export function supportsWorkerPerformerEffectIntent(

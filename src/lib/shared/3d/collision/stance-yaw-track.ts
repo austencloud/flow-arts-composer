@@ -44,27 +44,16 @@
 
 import {
   MAX_STANCE_YAW_RAD,
-  SPINE1_SHARE,
-  SPINE2_SHARE,
   planUpperBodyStanceDepth,
   planUpperBodyStanceYawTarget,
   stanceLateralMean,
-  stanceSideBlend,
   stanceTargetsForPropStates,
   type GripPropState,
-  type SideOnLanes,
   type UpperBodyStancePlan,
   type UpperBodyStanceTargets,
 } from "./upper-body-stance-planner";
-import {
-  DEFAULT_STANCE_CLEARANCE,
-  planSideOnLaneFloor,
-  type StanceClearance,
-} from "./stance-side-lane";
 import type { PerformerReachMeasurements } from "$lib/shared/3d/domain/performer-reach-measurements";
 import type { PlaneMode } from "@austencloud/scene-3d";
-
-export { SPINE1_SHARE, SPINE2_SHARE };
 
 /** Geometry samples taken per motion step while building the curve. */
 const SAMPLES_PER_STEP = 24;
@@ -151,15 +140,16 @@ export const MAX_HEAD_LAG_RAD = (30 * Math.PI) / 180;
  */
 export const MAX_SPINE_STAGGER_RAD = (22 * Math.PI) / 180;
 
+/**
+ * Share of the shoulder line each spine bone carries at rest. Matches the
+ * animator's historical blade split, so a held stance is bone-for-bone the
+ * pose that shipped before this module existed.
+ */
+export const SPINE1_SHARE = 0.45;
+export const SPINE2_SHARE = 0.55;
+
 /** Two keys may not be pushed closer together than this by the lead. */
 const MIN_KEY_GAP_STEPS = 0.04;
-
-/**
- * Fastest a hand's side-on lane may open or close, in metres per motion step.
- * Without it a lane that opens between two samples would move the grip
- * sideways within one.
- */
-export const LANE_RATE_M_PER_STEP = 0.48;
 
 export interface StanceYawSegments {
   /** The curve itself: the plan, before any per-segment stagger. */
@@ -196,13 +186,6 @@ export interface StanceYawTrack {
   readonly rawTimes: readonly number[];
   readonly rawDesire: readonly number[];
   readonly rawLateral: readonly number[];
-  /**
-   * Each hand's side-on lane at each raw sample (`stance-side-lane.ts`),
-   * opened ahead of the moments that need it and closed after them: the
-   * floor the corridor's lanes widen to. Null when none was planned.
-   */
-  readonly laneFloorLeft: readonly number[] | null;
-  readonly laneFloorRight: readonly number[] | null;
 }
 
 /**
@@ -408,7 +391,8 @@ function applyAnticipationLead(
     if (Math.abs(keyValues[i + 1]! - keyValues[i]!) <= PLATEAU_EPSILON_RAD) {
       continue;
     }
-    const floor = i === 0 ? keyTimes[0]! : keyTimes[i - 1]! + MIN_KEY_GAP_STEPS;
+    const floor =
+      i === 0 ? keyTimes[0]! : keyTimes[i - 1]! + MIN_KEY_GAP_STEPS;
     keyTimes[i] = Math.max(floor, keyTimes[i]! - leadSteps);
   }
 }
@@ -416,93 +400,10 @@ function applyAnticipationLead(
 export interface StanceYawTrackOptions {
   /** Geometric targets at a score time, in the grid frame. */
   targetsAtScoreTime(scoreTime: number): UpperBodyStanceTargets;
-  /**
-   * The lane each hand needs at a score time, with the chest posed as the
-   * track poses it there and the props asking for `propDesireRad`
-   * (`stance-side-lane.ts`). Omitted, the corridor keeps the body's own lane.
-   */
-  sideOnLaneFloorAt?(
-    scoreTime: number,
-    pose: StanceYawSegments,
-    propDesireRad: number
-  ): SideOnLanes;
   motionStepCount: number;
   loop: boolean;
   samplesPerStep?: number;
   anticipationLeadSteps?: number;
-}
-
-/**
- * Open each lane ahead of the moments that need it and close it after them:
- *
- *     out[i] = max over j of raw[j] - rate * max(0, |i - j| - 1)
- *
- * A grey-scale dilation by a cone with a one-sample flat top, so between two
- * samples the lane is never narrower than either one needs, and it opens and
- * closes no faster than `rate`. Wraps on a looping score.
- *
- * Opening ahead is not free. On a turn's first samples, with the chest barely
- * side-on, a lane opened for the committed turn can bring a staff further into
- * the body than that sample's own lane would. Across the 26 prop-continuity
- * sequences, 28 of 2,296 hand-samples came in more than 1 mm further, all
- * below a side blend of 0.2 and all in the quarter families; 4 of them newly
- * touched the body, and the worst came 1.4 cm further in. That adds 61 mm of
- * summed intrusion to the 1,634 mm the per-sample lanes leave. The rate limit
- * stays: without it the lane, and the grip with it, would jump.
- */
-function dilateLaneFloor(
-  raw: readonly number[],
-  ratePerSample: number,
-  loop: boolean
-): number[] {
-  const n = raw.length;
-  const widest = raw.reduce((peak, lane) => Math.max(peak, lane), 0);
-  const reach = Math.min(n, Math.ceil(1 + widest / ratePerSample));
-  const out = new Array<number>(n).fill(0);
-  for (let j = 0; j < n; j++) {
-    const lane = raw[j]!;
-    if (lane <= 0) continue;
-    for (let offset = -reach; offset <= reach; offset++) {
-      let i = j + offset;
-      if (loop) i = ((i % n) + n) % n;
-      else if (i < 0 || i >= n) continue;
-      const cone = lane - ratePerSample * Math.max(0, Math.abs(offset) - 1);
-      if (cone > out[i]!) out[i] = cone;
-    }
-  }
-  return out;
-}
-
-/**
- * The lane each hand needs at every raw sample, with the chest where the
- * finished curve puts it. Only samples where the corridor is open are
- * checked: elsewhere the lane moves nothing.
- */
-function planLaneFloors(
-  track: StanceYawTrack,
-  floorAt: NonNullable<StanceYawTrackOptions["sideOnLaneFloorAt"]>,
-  perStep: number
-): { left: number[]; right: number[] } | null {
-  const n = track.rawTimes.length;
-  const left = new Array<number>(n).fill(0);
-  const right = new Array<number>(n).fill(0);
-  let open = false;
-  for (let i = 0; i < n; i++) {
-    const scoreTime = track.rawTimes[i]!;
-    const desireRad = track.rawDesire[i]!;
-    const pose = sampleStanceYawTrack(track, scoreTime);
-    if (stanceSideBlend(pose.chestRad, desireRad) === 0) continue;
-    const floor = floorAt(scoreTime, pose, desireRad);
-    left[i] = floor.leftM;
-    right[i] = floor.rightM;
-    open = true;
-  }
-  if (!open) return null;
-  const ratePerSample = LANE_RATE_M_PER_STEP / perStep;
-  return {
-    left: dilateLaneFloor(left, ratePerSample, track.loop),
-    right: dilateLaneFloor(right, ratePerSample, track.loop),
-  };
 }
 
 export function buildStanceYawTrack(
@@ -532,7 +433,7 @@ export function buildStanceYawTrack(
   );
   const keyTangents = monotoneTangents(keyTimes, keyValues);
 
-  const track: StanceYawTrack = {
+  return {
     stepCount,
     loop: options.loop,
     keyTimes,
@@ -541,44 +442,6 @@ export function buildStanceYawTrack(
     rawTimes,
     rawDesire,
     rawLateral,
-    laneFloorLeft: null,
-    laneFloorRight: null,
-  };
-  // The lanes are checked against the finished curve, so they are sized for
-  // the chest the frame will actually pose.
-  const floors = options.sideOnLaneFloorAt
-    ? planLaneFloors(track, options.sideOnLaneFloorAt, perStep)
-    : null;
-  return floors
-    ? { ...track, laneFloorLeft: floors.left, laneFloorRight: floors.right }
-    : track;
-}
-
-/**
- * Each hand's lane floor at a score time, interpolated between samples. Null
- * without a track or where none was planned.
- */
-export function stanceLaneFloorAt(
-  track: StanceYawTrack | null,
-  scoreTime: number
-): SideOnLanes | null {
-  const left = track?.laneFloorLeft;
-  const right = track?.laneFloorRight;
-  if (!track || !left || !right || left.length === 0) return null;
-  const n = left.length;
-  const perStep = n / Math.max(1, track.stepCount);
-  let position: number;
-  if (track.loop) {
-    position = (((scoreTime * perStep) % n) + n) % n;
-  } else {
-    position = clamp(scoreTime * perStep, 0, n - 1);
-  }
-  const low = Math.floor(position);
-  const high = track.loop ? (low + 1) % n : Math.min(n - 1, low + 1);
-  const t = position - low;
-  return {
-    leftM: left[low]! + (left[high]! - left[low]!) * t,
-    rightM: right[low]! + (right[high]! - right[low]!) * t,
   };
 }
 
@@ -685,11 +548,6 @@ export interface TrackedUpperBodyStance extends UpperBodyStancePlan {
   segments: StanceYawSegments;
   /** True when a score-time curve drove this frame rather than the geometry. */
   tracked: boolean;
-  /**
-   * How far the side-on corridor is engaged, 0 to 1: the one number the
-   * corridor above was opened by, so the hard-beat lanes hand over on it.
-   */
-  sideBlend: number;
 }
 
 /**
@@ -730,64 +588,30 @@ export function resolveTrackedUpperBodyStance(
       segments.chestRad,
       targets,
       measurements,
-      desireRad,
-      stanceLaneFloorAt(track, scoreTime)
+      desireRad
     ),
     segments,
     tracked: track !== null,
-    sideBlend: stanceSideBlend(segments.chestRad, desireRad),
   };
 }
 
 /**
- * Build the track for a live performer. `planeMode` is the same input the
- * per-frame plan uses, so the curve and the frame agree about geometry and
- * differ only in timing.
- *
- * `clearance` is the body the hands' lanes are sized for: pass the
- * performer's own, with the reach measurements the per-frame read passes. The
- * default is the scene's default performer; null keeps the body's own lane
- * everywhere.
+ * Build the track for a live performer. `planeMode` and `measurements` are the
+ * same inputs the per-frame plan uses, so the curve and the frame agree about
+ * geometry and differ only in timing.
  */
 export function buildStanceYawTrackForSource(
   source: StanceScoreSource | null,
-  planeMode: PlaneMode,
-  clearance: StanceClearance | null = DEFAULT_STANCE_CLEARANCE
+  planeMode: PlaneMode
 ): StanceYawTrack | null {
   if (!source) return null;
-  // The lane check reads the same samples as the curve; sample each once.
-  const states = new Map<
-    number,
-    ReturnType<StanceScoreSource["propStatesAtScoreTime"]>
-  >();
-  const propsAt = (scoreTime: number) => {
-    let state = states.get(scoreTime);
-    if (!state) {
-      state = source.propStatesAtScoreTime(scoreTime);
-      states.set(scoreTime, state);
-    }
-    return state;
-  };
   return buildStanceYawTrack({
     motionStepCount: source.motionStepCount,
     loop: source.loop,
     targetsAtScoreTime: (scoreTime) => {
-      const { left, right } = propsAt(scoreTime);
+      const { left, right } = source.propStatesAtScoreTime(scoreTime);
       return stanceTargetsForPropStates(planeMode, left, right);
     },
-    sideOnLaneFloorAt: clearance
-      ? (scoreTime, pose, propDesireRad) => {
-          const { left, right } = propsAt(scoreTime);
-          return planSideOnLaneFloor(
-            planeMode,
-            left,
-            right,
-            pose,
-            propDesireRad,
-            clearance
-          );
-        }
-      : undefined,
   });
 }
 
@@ -888,10 +712,7 @@ export function describeStanceYawTrack(
     );
   }
 
-  const firstCrossing = (
-    values: number[],
-    threshold: number
-  ): number | null => {
+  const firstCrossing = (values: number[], threshold: number): number | null => {
     for (let i = 0; i < values.length; i += 1) {
       const value = values[i];
       if (value === undefined) continue;
@@ -907,17 +728,13 @@ export function describeStanceYawTrack(
       ? firstCrossing(desire, ONSET_FRACTION * peakDesireRad)
       : null;
   const onsetLeadSteps =
-    chestOnset !== null && desireOnset !== null
-      ? desireOnset - chestOnset
-      : null;
+    chestOnset !== null && desireOnset !== null ? desireOnset - chestOnset : null;
   const spineOnset = firstCrossing(
     spine1,
     ONSET_FRACTION * SPINE1_SHARE * peakChestRad
   );
   const spineOnsetLeadSteps =
-    spineOnset !== null && desireOnset !== null
-      ? desireOnset - spineOnset
-      : null;
+    spineOnset !== null && desireOnset !== null ? desireOnset - spineOnset : null;
 
   // The largest turn in the score: from where the chest leaves square, through
   // its extreme, to where it settles again.

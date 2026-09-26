@@ -30,10 +30,7 @@
     type StanceYawTrack,
   } from "$lib/shared/3d/collision/stance-yaw-track";
   import type { HardBeatTrack } from "$lib/shared/3d/collision/hard-beat-displacement";
-  import { DEFAULT_STAFF_BODY_CLEARANCE_BODY } from "$lib/shared/3d/collision/staff-body-clearance";
-  import type { StanceClearance } from "$lib/shared/3d/collision/stance-side-lane";
   import { resolvePerformerContact } from "$lib/shared/3d/domain/performer-contact-displacement";
-  import { performerScoreClock } from "$lib/shared/3d/domain/performer-score-clock";
   import {
     fitStaffLengthForHug,
     measurePerformerReach,
@@ -128,37 +125,22 @@
   );
   // A body that cannot hold any supported staff keeps the global default
   // rather than rendering a nonsense prop; the fit result says so explicitly.
-  const staffLengthCm = $derived.by(() => {
+  const propLength = $derived.by(() => {
     const pinned = props.propLengthCm;
-    if (pinned != null && Number.isFinite(pinned)) return pinned;
-    return staffFit?.fits ? staffFit.recommendedStaffLengthCm : null;
-  });
-  const propLength = $derived(
-    staffLengthCm === null ? undefined : cmToUnits(staffLengthCm)
-  );
-  // The hands' side-on lanes are sized for the staff this body is drawn
-  // holding and the lane the frame reads, so the plan tests each grip where it
-  // will be drawn.
-  const stanceClearance = $derived<StanceClearance>({
-    body: {
-      ...DEFAULT_STAFF_BODY_CLEARANCE_BODY,
-      staffLengthM: propLength ?? userProportionsState.staffLength,
-    },
-    measurements: reachMeasurements,
+    if (pinned != null && Number.isFinite(pinned)) return cmToUnits(pinned);
+    return staffFit?.fits
+      ? cmToUnits(staffFit.recommendedStaffLengthCm)
+      : undefined;
   });
   // The turn's timing is planned once per sequence, not re-derived per frame:
   // the curve needs the whole score to know when to start leading.
   const stanceTrack = $derived(
-    buildStanceYawTrackForSource(
-      performerState,
-      PlaneMode.WALL,
-      stanceClearance
-    )
+    buildStanceYawTrackForSource(performerState, PlaneMode.WALL)
   );
   const upperBodyStance = $derived(
     resolveTrackedUpperBodyStance(
       stanceTrack,
-      performerScoreClock(performerState),
+      performerState.scoreTime,
       PlaneMode.WALL,
       performerState.leftPropState,
       performerState.rightPropState,
@@ -175,13 +157,9 @@
   const authoredStanceActive = $derived(props.authoredUpperBodyStance != null);
   // Staffs the hands cannot hold from this stance move toward them, radially
   // and in depth, and a seek clears the animator's contact history. A pose
-  // authored by hand keeps the props where the score puts them. The track
-  // under the displacement sizes its lanes like the stance above.
+  // authored by hand keeps the props where the score puts them.
   const contact = $derived(
-    resolvePerformerContact(performerState, {
-      displace: !authoredStanceActive,
-      stanceClearance,
-    })
+    resolvePerformerContact(performerState, { displace: !authoredStanceActive })
   );
   const hardBeatTrack = $derived(contact.track);
   let readyReported = false;
