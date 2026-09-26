@@ -8,6 +8,7 @@
   floor, lazy paint, and the tile-to-hero shared element stay here.
 -->
 <script lang="ts" generics="TAxis = Flower">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
   import type { ShapeMatrixData } from "../services/shape-matrix-flowers";
   import { flowerKey, type Flower } from "../domain/flower-signature";
