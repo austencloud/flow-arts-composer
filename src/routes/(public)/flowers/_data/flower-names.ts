@@ -2,6 +2,7 @@ import {
   flowerPetals,
   type FlowerStyle,
   type RotatingFlower,
+  type RotatingFlowerOri,
 } from "$lib/shared/shape-matrix/domain/flower-signature";
 
 export interface FlowerName {
@@ -16,14 +17,15 @@ export interface FlowerName {
 }
 
 /**
- * Every flower starts pointing out, the classic picture: a four-petal
+ * Flowers start pointing out by default, the classic picture: a four-petal
  * antispin flower then has its petal tips at the top, bottom, and sides.
  */
 function named(
   id: string,
   name: string,
   style: FlowerStyle,
-  turns: number
+  turns: number,
+  ori: RotatingFlowerOri = "out"
 ): FlowerName {
   return {
     id,
@@ -31,7 +33,7 @@ function named(
     flower: {
       style,
       turns,
-      ori: "out",
+      ori,
       grid: "diamond",
       petals: flowerPetals({ style, turns }),
     },
@@ -40,7 +42,8 @@ function named(
 
 /** Ordered by ratio, one prop rotation more per hand cycle at each step. */
 export const FLOWER_NAMES: readonly FlowerName[] = [
-  named("cat-eye", "Cat-eye", "anti", 0),
+  // Starting in lays the eye on its side; starting out stands it upright.
+  named("cat-eye", "Cat-eye", "anti", 0, "in"),
   named("triquetra", "Triquetra", "anti", 0.5),
   named("antispin-flower", "Antispin flower", "anti", 1),
   named("inspin-flower", "Inspin flower", "pro", 1.5),
