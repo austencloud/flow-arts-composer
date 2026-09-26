@@ -10,6 +10,7 @@ import {
   ScoreSeekDetector,
   resolvePerformerContact,
 } from "$lib/shared/3d/domain/performer-contact-displacement";
+import { performerStanceClearance } from "$lib/shared/3d/domain/performer-stance-clearance";
 import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
 import { propContinuityCorpus } from "../../tools/prop-continuity-corpus";
 
@@ -71,6 +72,7 @@ describe("performer contact", () => {
     const left = { worldPosition: new Vector3(3, 4, 5), plane: Plane.WALL };
     const right = { worldPosition: new Vector3(-3, 4, 5), plane: Plane.WALL };
     const standIn = {
+      settings: { staffLengthCm: null },
       leftPropState: left,
       rightPropState: right,
     } as unknown as CharacterInstanceState;
@@ -186,5 +188,33 @@ describe("performer contact", () => {
     } finally {
       paths.setPathPolicy(policy);
     }
+  });
+
+  it("replans when the staff the performer is drawn holding changes length", () => {
+    const performer = performerFor("tnd-tog-same-gggg");
+    seek(performer, 1);
+    const at = () => resolvePerformerContact(performer, { heightCm: 190.5 });
+    const base = at();
+    expect(base.track).not.toBeNull();
+
+    // The stance under the displacement sizes its side-on lanes for the staff.
+    performer.setStaffLengthCm(120);
+    const longer = at();
+    expect(longer.track).not.toBe(base.track);
+    expect(longer.resetKey).toBe(base.resetKey + 1);
+    expect(at().track).toBe(longer.track);
+
+    // A host passing the clearance it plans with shares the track when it
+    // sizes the lanes alike.
+    const sameLanes = resolvePerformerContact(performer, {
+      heightCm: 190.5,
+      stanceClearance: performerStanceClearance(performer),
+    });
+    expect(sameLanes.track).toBe(longer.track);
+    const noLanes = resolvePerformerContact(performer, {
+      heightCm: 190.5,
+      stanceClearance: null,
+    });
+    expect(noLanes.track).not.toBe(longer.track);
   });
 });

@@ -136,16 +136,14 @@
   const propLength = $derived(
     staffLengthCm === null ? undefined : cmToUnits(staffLengthCm)
   );
-  // The hands' side-on lanes are sized for the staff this body holds and the
-  // lane the frame reads, so the plan tests each grip where it will be drawn.
+  // The hands' side-on lanes are sized for the staff this body is drawn
+  // holding and the lane the frame reads, so the plan tests each grip where it
+  // will be drawn.
   const stanceClearance = $derived<StanceClearance>({
-    body:
-      staffLengthCm === null
-        ? DEFAULT_STAFF_BODY_CLEARANCE_BODY
-        : {
-            ...DEFAULT_STAFF_BODY_CLEARANCE_BODY,
-            staffLengthM: staffLengthCm / 100,
-          },
+    body: {
+      ...DEFAULT_STAFF_BODY_CLEARANCE_BODY,
+      staffLengthM: propLength ?? userProportionsState.staffLength,
+    },
     measurements: reachMeasurements,
   });
   // The turn's timing is planned once per sequence, not re-derived per frame:
@@ -177,9 +175,13 @@
   const authoredStanceActive = $derived(props.authoredUpperBodyStance != null);
   // Staffs the hands cannot hold from this stance move toward them, radially
   // and in depth, and a seek clears the animator's contact history. A pose
-  // authored by hand keeps the props where the score puts them.
+  // authored by hand keeps the props where the score puts them. The track
+  // under the displacement sizes its lanes like the stance above.
   const contact = $derived(
-    resolvePerformerContact(performerState, { displace: !authoredStanceActive })
+    resolvePerformerContact(performerState, {
+      displace: !authoredStanceActive,
+      stanceClearance,
+    })
   );
   const hardBeatTrack = $derived(contact.track);
   let readyReported = false;

@@ -1,6 +1,7 @@
 import { userProportionsState } from "@austencloud/scene-3d";
 import type { CharacterInstanceState } from "../state/character-instance-state.svelte";
 import { buildStanceYawTrackForSource } from "../collision/stance-yaw-track";
+import type { StanceClearance } from "../collision/stance-side-lane";
 import {
   buildHardBeatTrack,
   displaceProp,
@@ -15,6 +16,7 @@ import {
   type ScoreMotionKey,
 } from "./performer-score-motion-key";
 import { performerScoreClock } from "./performer-score-clock";
+import { performerStanceClearance } from "./performer-stance-clearance";
 
 /**
  * Tells a seek from playback, so the animator can drop contact history (cached
@@ -59,9 +61,10 @@ export class ScoreSeekDetector {
   }
 }
 
-/** The score's prop motion, and the body the track is planned for. */
+/** The score's prop motion, and the body and staff the track is planned for. */
 interface HardBeatTrackKey extends ScoreMotionKey {
   heightCm: number;
+  clearance: Readonly<StanceClearance> | null;
 }
 
 interface CachedHardBeatTrack {
@@ -71,9 +74,10 @@ interface CachedHardBeatTrack {
 
 function hardBeatTrackKey(
   performer: CharacterInstanceState,
-  heightCm: number
+  heightCm: number,
+  clearance: Readonly<StanceClearance> | null
 ): HardBeatTrackKey {
-  return { ...scoreMotionKey(performer), heightCm };
+  return { ...scoreMotionKey(performer), heightCm, clearance };
 }
 
 const hardBeatTracks = new WeakMap<
@@ -92,17 +96,19 @@ function seekDetectorFor(performer: CharacterInstanceState): ScoreSeekDetector {
 }
 
 /**
- * The performer's hard-beat track, rebuilt only when the score's motion or the
- * body changes: the steps, plane mode, loop, effort and path policy all move
- * the props the track is planned from. Builds its own stance track rather than
- * sharing the stance owner's cache, so this module does not depend on it. Both
- * caches key on the same score motion, so the two stance tracks replan together.
+ * The performer's hard-beat track, rebuilt only when the score's motion, the
+ * body or the staff changes: the steps, plane mode, loop, effort and path
+ * policy all move the props the track is planned from. Builds its own stance
+ * track rather than sharing the stance owner's cache, so this module does not
+ * depend on it. Both caches key on the same score motion and staff, so the two
+ * stance tracks replan together.
  */
 function resolveHardBeatTrack(
   performer: CharacterInstanceState,
-  heightCm: number
+  heightCm: number,
+  clearance: Readonly<StanceClearance> | null
 ): HardBeatTrack | null {
-  const key = hardBeatTrackKey(performer, heightCm);
+  const key = hardBeatTrackKey(performer, heightCm, clearance);
   const cached = hardBeatTracks.get(performer);
   if (cached && sameScoreMotionKey(cached.key, key)) return cached.track;
 
@@ -112,7 +118,11 @@ function resolveHardBeatTrack(
     key.stepCount > 0
       ? buildHardBeatTrack({
           source: performer,
-          stanceTrack: buildStanceYawTrackForSource(performer, key.planeMode),
+          stanceTrack: buildStanceYawTrackForSource(
+            performer,
+            key.planeMode,
+            key.clearance
+          ),
           heightM: heightCm / 100,
           planeMode: key.planeMode,
         })
@@ -126,6 +136,13 @@ function resolveHardBeatTrack(
 export interface PerformerContactOptions {
   /** Performer height; the body model scales from it. */
   heightCm?: number;
+  /**
+   * The body the stance under the displacement checks the staffs against;
+   * the performer's drawn staff by default. A host that plans its own stance
+   * passes the clearance it plans with, so both tracks size the side-on lanes
+   * alike. Null plans without side-on lanes.
+   */
+  stanceClearance?: Readonly<StanceClearance> | null;
   /** False passes the authored props through, for a host whose stance is
    *  authored by hand rather than planned. */
   displace?: boolean;
@@ -156,7 +173,11 @@ export function resolvePerformerContact(
   options: PerformerContactOptions = {}
 ): PerformerContact {
   const heightCm = options.heightCm ?? userProportionsState.heightCm;
-  const track = resolveHardBeatTrack(performer, heightCm);
+  const clearance =
+    options.stanceClearance === undefined
+      ? performerStanceClearance(performer)
+      : options.stanceClearance;
+  const track = resolveHardBeatTrack(performer, heightCm, clearance);
   const scoreTime = performerScoreClock(performer);
   const resetKey = seekDetectorFor(performer).observe(
     scoreTime,
