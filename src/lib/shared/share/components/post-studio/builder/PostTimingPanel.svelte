@@ -296,7 +296,7 @@
     </footer>
   </div>
 {:else}
-  <p class="help">{t("share_studio_deep_add_take_to_map")}</p>
+  <p class="help">{t("post_editor_add_video_to_tap")}</p>
 {/if}
 
 <style>

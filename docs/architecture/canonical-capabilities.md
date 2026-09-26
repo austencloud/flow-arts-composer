@@ -215,6 +215,22 @@ uses destinations for the same surfaces. The canvas flight captures its visual
 child before the transport changes allocation. Searches: Post Studio, persistent
 canvas, shared inspector, shared Choreo Card, shared playback bar, live handoff.
 
+Post Studio's editor keeps a post as a `PostProject` in
+`shared/media-composition/domain/post-project.ts`: a main track of clips and
+cards laid end to end, overlay tracks drawn above it, and anchors that tie an
+overlay to its clip. Searches: post editor, video timeline, clip, split, trim,
+overlay track, layer, look, Tutorial preset, raw take. `post-project-normalize.ts`
+owns layout and runs after every edit. `post-project-edits.ts` owns the pure
+edit operations, and `post-project-looks.ts` owns the dual, breakdown and
+video-only looks plus the Tutorial preset. Looks are ordinary overlay items, so
+each part stays movable. `state/post-editor-state.svelte.ts` owns selection,
+drag gestures and undo steps over those operations. `post-project-compiler.ts`
+feeds the renderer, and `post-project-migration.ts` converts saved v1 act
+plans. The timeline UI is `share/components/post-studio/editor/timeline/`, and
+its ruler is the shared `shared/timeline/TimeRuler.svelte`. Ctrl+Z and Ctrl+Y
+reach the editor through `data-edit-history-shortcut-scope` and
+`registerEditHistoryShortcuts`; do not bind them locally.
+
 | Search vocabulary                                                                                                                   | Canonical owner                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | scene boot, scene switch, persistent worker renderer, poster handoff, shader warmup, GLB prefetch                                   | `shared/3d/worker-renderer/` owns the persistent production worker for all ten environments; `shared/3d/scene-boot/` owns legacy main-thread boot (Record Scene); `shared/3d/rendering/viewer-lighting-rig.ts` owns viewer lighting; environment worlds under `shared/3d/environments/worlds/` stay renderer-neutral with thin Svelte and worker adapters                                                                                                                                                                                                                                                                  |

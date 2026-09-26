@@ -25,7 +25,7 @@
   } from "$lib/shared/sequence-viewer/services/viewer-url-slices/ps-slice";
   import type { PostStudioShareExport } from "./post-studio-share-export";
   import { withPostStudioPropType } from "./post-studio-prop-render-options";
-  import PostStudioWorkspace from "./builder/PostStudioWorkspace.svelte";
+  import PostEditorWorkspace from "./editor/PostEditorWorkspace.svelte";
 
   /**
    * Post Studio's host-facing shell. It owns what outlives one sequence (the
@@ -167,7 +167,7 @@
 </script>
 
 {#key sequence.id}
-  <PostStudioWorkspace
+  <PostEditorWorkspace
     {active}
     {sequence}
     {cardPreviewUrl}

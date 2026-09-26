@@ -3,9 +3,11 @@ import {
   encodeWav,
   mixPostAudio,
   planPostAudio,
+  planProjectAudio,
   type PostAudioSource,
 } from "$lib/shared/media-composition/domain/post-audio-plan";
 import type { CompiledAct } from "$lib/shared/media-composition/domain/post-plan-compiler";
+import type { CompiledPostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
 
 function act(overrides: Partial<CompiledAct>): CompiledAct {
   return {
@@ -102,6 +104,73 @@ describe("planPostAudio", () => {
       ] satisfies CompiledAct[],
     };
     expect(planPostAudio(post, "takes")).toEqual([]);
+  });
+});
+
+describe("planProjectAudio", () => {
+  // A full-speed clip, a half-speed one carrying its own (quieter) sound
+  // rather than being dropped outright, and a muted third clip.
+  const compiled: Pick<CompiledPostProject, "videoSegments"> = {
+    videoSegments: [
+      {
+        itemId: "video-1",
+        takeId: "take-a",
+        trackIndex: 0,
+        startSeconds: 0,
+        endSeconds: 20,
+        sourceIn: 0,
+        sourceOut: 20,
+        speed: 1,
+        volume: 1,
+      },
+      {
+        itemId: "video-2",
+        takeId: "take-a",
+        trackIndex: 0,
+        startSeconds: 20,
+        endSeconds: 60,
+        sourceIn: 0,
+        sourceOut: 20,
+        speed: 0.5,
+        volume: 0.7,
+      },
+      {
+        itemId: "video-3",
+        takeId: "take-b",
+        trackIndex: 0,
+        startSeconds: 60,
+        endSeconds: 65,
+        sourceIn: 2,
+        sourceOut: 7,
+        speed: 1,
+        volume: 0,
+      },
+    ],
+  };
+
+  it("maps every video segment with volume above zero to an audio segment carrying its own speed and volume", () => {
+    expect(planProjectAudio(compiled, "takes")).toEqual([
+      {
+        takeId: "take-a",
+        postStartSeconds: 0,
+        sourceInSeconds: 0,
+        durationSeconds: 20,
+        rate: 1,
+        gain: 1,
+      },
+      {
+        takeId: "take-a",
+        postStartSeconds: 20,
+        sourceInSeconds: 0,
+        durationSeconds: 40,
+        rate: 0.5,
+        gain: 0.7,
+      },
+    ]);
+  });
+
+  it("plans nothing at all in silent mode", () => {
+    expect(planProjectAudio(compiled, "silent")).toEqual([]);
   });
 });
 
@@ -221,6 +290,68 @@ describe("mixPostAudio", () => {
     expect(left[expectedSegmentSamples - 1]).toBeCloseTo(constant, 5);
     // Nothing past the segment's own span.
     expect(left[expectedSegmentSamples]).toBe(0);
+  });
+
+  it("reads a slowed segment's source at half speed when rate is 0.5", () => {
+    const sampleRate = 1000;
+    const ramp = Float32Array.from({ length: 200 }, (_, i) => i);
+    const source: PostAudioSource = { sampleRate, channels: [ramp] };
+
+    const [left] = mixPostAudio({
+      segments: [
+        {
+          takeId: "r",
+          postStartSeconds: 0,
+          sourceInSeconds: 0,
+          durationSeconds: 0.1, // 100 output samples
+          rate: 0.5,
+        },
+      ],
+      sources: new Map([["r", source]]),
+      sampleRate,
+      durationSeconds: 0.1,
+      fadeSeconds: 0, // isolate the read rate from the fade envelope
+    });
+
+    // At half rate, output sample i lands on source position i * 0.5 - it
+    // takes two output samples to advance one source sample.
+    expect(left[0]).toBeCloseTo(0, 5);
+    expect(left[2]).toBeCloseTo(1, 5);
+    expect(left[10]).toBeCloseTo(5, 5);
+    expect(left[98]).toBeCloseTo(49, 5);
+  });
+
+  it("scales the mixed output by a segment's own gain, layered under the edge fades", () => {
+    const sampleRate = 1000;
+    const constant = 0.8;
+    const gain = 0.5;
+    const source: PostAudioSource = {
+      sampleRate,
+      channels: [new Float32Array(200).fill(constant)],
+    };
+
+    const [left] = mixPostAudio({
+      segments: [
+        {
+          takeId: "g",
+          postStartSeconds: 0.05,
+          sourceInSeconds: 0,
+          durationSeconds: 0.1,
+          gain,
+        },
+      ],
+      sources: new Map([["g", source]]),
+      sampleRate,
+      durationSeconds: 0.3,
+      fadeSeconds: 0.01, // same envelope as the fade test above, gain layered on top
+    });
+
+    // Fade-in sample i=4 (fade gain 0.4) also carries the segment's own gain.
+    expect(left[54]).toBeCloseTo(constant * 0.4 * gain, 6);
+    // Stable middle: full fade gain (1) times the segment's own gain.
+    expect(left[100]).toBeCloseTo(constant * gain, 6);
+    // Fade-out sample i=95 (fade gain 0.4) again carries the segment's own gain.
+    expect(left[145]).toBeCloseTo(constant * 0.4 * gain, 6);
   });
 });
 

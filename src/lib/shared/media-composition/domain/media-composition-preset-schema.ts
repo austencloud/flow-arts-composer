@@ -225,6 +225,13 @@ export const PresetVisualClipSchema = z
     opacity: z.number().finite().min(0).max(1),
     fadeInSeconds: SecondsSchema.optional(),
     fadeOutSeconds: SecondsSchema.optional(),
+    /**
+     * Where the fade actually started or ends, when this clip is one piece of
+     * a bigger item that was cut into pieces and the fade spans the cut.
+     * Absent, a fade runs against this clip's own start/end as usual.
+     */
+    fadeInStartSeconds: SecondsSchema.optional(),
+    fadeOutEndSeconds: SecondsSchema.optional(),
     transform: ClipTransformSchema,
     useResolvedTimeMap: z.boolean(),
     /**
