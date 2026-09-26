@@ -1,12 +1,13 @@
 <!-- NoChangelogState - Empty state when no changelog exists -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
 </script>
 
 <section class="no-changelog-section">
   <div class="no-changelog-content">
     <i class="fas fa-clipboard-list" aria-hidden="true"></i>
-    <h3>No Changelog Available</h3>
-    <p>Detailed changes for this version weren't recorded.</p>
+    <h3>{t("settings_no_changelog")}</h3>
+    <p>{t("settings_no_changelog_details")}</p>
   </div>
 </section>
 

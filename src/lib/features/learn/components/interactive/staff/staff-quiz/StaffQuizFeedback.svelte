@@ -2,6 +2,7 @@
 StaffQuizFeedback - Feedback display after answer
 -->
 <script lang="ts">
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import type { AnswerInfo } from "../../../../domain/constants/staff-quiz-questions";
 
   let {
@@ -13,6 +14,15 @@ StaffQuizFeedback - Feedback display after answer
     correctAnswer: string;
     correctInfo: AnswerInfo;
   } = $props();
+
+  const answerLabel = $derived(
+    tDynamic(
+      `learn_staff_answer_${correctAnswer
+        .toLowerCase()
+        .replaceAll(/[^a-z]+/g, "_")
+        .replace(/^_|_$/g, "")}`
+    )
+  );
 </script>
 
 <div
@@ -22,15 +32,13 @@ StaffQuizFeedback - Feedback display after answer
 >
   {#if answerState === "correct"}
     <span>
-      Correct! That's <strong style="color: {correctInfo.color}"
-        >{correctAnswer}</strong
-      >.
+      {tDynamic("learn_staff_answer_correct_prefix")}
+      <strong style="color: {correctInfo.color}">{answerLabel}</strong>.
     </span>
   {:else}
     <span>
-      Not quite! The answer is <strong style="color: {correctInfo.color}"
-        >{correctAnswer}</strong
-      >.
+      {tDynamic("learn_staff_answer_incorrect_prefix")}
+      <strong style="color: {correctInfo.color}">{answerLabel}</strong>.
     </span>
   {/if}
 </div>
@@ -56,14 +64,24 @@ StaffQuizFeedback - Feedback display after answer
   }
 
   .feedback.correct {
-    background: color-mix(in srgb, var(--theme-accent, #22d3ee) 15%, transparent);
-    border: 1px solid color-mix(in srgb, var(--theme-accent, #22d3ee) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #22d3ee) 15%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--theme-accent, #22d3ee) 30%, transparent);
     color: var(--theme-accent, #22d3ee);
   }
 
   .feedback.incorrect {
-    background: color-mix(in srgb, var(--semantic-warning, #fb923c) 15%, transparent);
-    border: 1px solid color-mix(in srgb, var(--semantic-warning, #fb923c) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-warning, #fb923c) 15%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-warning, #fb923c) 30%, transparent);
     color: var(--semantic-warning, #fb923c);
   }
 

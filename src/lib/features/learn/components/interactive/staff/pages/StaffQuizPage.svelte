@@ -2,6 +2,7 @@
 StaffQuizPage - Page 5: Quiz wrapper
 -->
 <script lang="ts">
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import StaffIdentificationQuiz from "../StaffIdentificationQuiz.svelte";
 
   let {
@@ -12,8 +13,8 @@ StaffQuizPage - Page 5: Quiz wrapper
 </script>
 
 <div class="page quiz-page">
-  <h2>Test Your Knowledge</h2>
-  <p>Identify staff positions and rotation types!</p>
+  <h2>{tDynamic("learn_staff_quiz_title")}</h2>
+  <p>{tDynamic("learn_staff_quiz_intro")}</p>
 
   <StaffIdentificationQuiz {onComplete} />
 </div>
@@ -45,7 +46,11 @@ StaffQuizPage - Page 5: Quiz wrapper
     font-weight: 700;
     margin: 0;
     text-align: center;
-    background: linear-gradient(135deg, var(--theme-accent, #22d3ee) 0%, var(--theme-accent, #06b6d4) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--theme-accent, #22d3ee) 0%,
+      var(--theme-accent, #06b6d4) 100%
+    );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;

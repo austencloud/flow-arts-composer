@@ -420,7 +420,7 @@
 
       try {
         const initStart = performance.now();
-        initProgress = "Resolving services...";
+        initProgress = t("create_ui_resolving_services");
         const { getCreateModuleInitializer } = await bootProfiler.measureAsync(
           "create:initializer-import",
           () =>
@@ -428,7 +428,7 @@
         );
         const initService = getCreateModuleInitializer();
 
-        initProgress = "Initializing workspace...";
+        initProgress = t("create_ui_initializing_workspace");
         const result = await bootProfiler.measureAsync(
           "create:initialize",
           () => initService.initialize()

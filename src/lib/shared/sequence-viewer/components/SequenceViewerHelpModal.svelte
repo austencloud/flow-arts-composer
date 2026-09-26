@@ -39,7 +39,7 @@
   {#snippet header()}
     <ModalHeader
       title={t("viewer_sequence_viewer")}
-      subtitle="Preview and export your sequence"
+      subtitle={t("viewer_help_subtitle")}
       icon="fa-eye"
       iconColor={accentColor}
       onClose={handleClose}
@@ -49,45 +49,43 @@
 
   <div class="help-content">
     <div class="help-grid">
-      <HelpSection icon="fa-image" title="Image Mode" {accentColor}>
-        <p>View your sequence as a static image showing all steps at once.</p>
+      <HelpSection icon="fa-image" title={t("viewer_help_image_mode")} {accentColor}>
+        <p>{t("viewer_help_image_description")}</p>
         <ul>
           <li>
-            <strong>Toggle options</strong> - Show/hide step numbers, word, grid
+            <strong>{t("viewer_help_toggle_options")}</strong> – {t("viewer_help_toggle_description")}
           </li>
-          <li><strong>Dark/light</strong> - Switch background for export</li>
+          <li><strong>{t("viewer_help_dark_light")}</strong> – {t("viewer_help_background_description")}</li>
         </ul>
       </HelpSection>
 
-      <HelpSection icon="fa-play-circle" title="Animation Mode" {accentColor}>
-        <p>Watch your sequence animate with smooth prop movements.</p>
+      <HelpSection icon="fa-play-circle" title={t("viewer_help_animation_mode")} {accentColor}>
+        <p>{t("viewer_help_animation_description")}</p>
         <ul>
-          <li><strong>Play/Pause</strong> - Control playback</li>
+          <li><strong>{t("viewer_help_play_pause")}</strong> – {t("viewer_help_playback_description")}</li>
           <li>
-            <strong>{t("viewer_ui_speed")}</strong> - Adjust animation speed (0.5x
-            - 2x)
+            <strong>{t("viewer_ui_speed")}</strong> – {t("viewer_help_speed_description")}
           </li>
           <li>
-            <strong>{t("viewer_ui_loop")}</strong> - Set how many times to repeat
+            <strong>{t("viewer_ui_loop")}</strong> – {t("viewer_help_loop_description")}
           </li>
         </ul>
       </HelpSection>
 
-      <HelpSection icon="fa-download" title="Export" {accentColor}>
-        <p>Save or share your sequence in different formats.</p>
+      <HelpSection icon="fa-download" title={t("viewer_help_export")} {accentColor}>
+        <p>{t("viewer_help_export_description")}</p>
         <ul>
-          <li><strong>Image</strong> - Download as PNG</li>
+          <li><strong>{t("viewer_help_image")}</strong> – {t("viewer_help_download_png")}</li>
           <li>
-            <strong>{t("viewer_ui_animation")}</strong> - Export as a video
+            <strong>{t("viewer_ui_animation")}</strong> – {t("viewer_help_export_video")}
           </li>
-          <li><strong>{t("browse_copy")}</strong> - Copy image to clipboard</li>
+          <li><strong>{t("browse_copy")}</strong> – {t("viewer_help_copy_image")}</li>
         </ul>
       </HelpSection>
 
-      <HelpSection icon="fa-lightbulb" title="Tip" variant="tip">
+      <HelpSection icon="fa-lightbulb" title={t("viewer_help_tip")} variant="tip">
         <p>
-          Use the toggle chips below the preview to customize what elements
-          appear in your export (step numbers, grid, word label).
+          {t("viewer_help_tip_description")}
         </p>
       </HelpSection>
     </div>
@@ -95,7 +93,7 @@
 
   {#snippet footer()}
     <ModalFooter>
-      <button class="secondary" onclick={handleClose}>Got it</button>
+      <button class="secondary" onclick={handleClose}>{t("viewer_help_got_it")}</button>
     </ModalFooter>
   {/snippet}
 </BaseModal>

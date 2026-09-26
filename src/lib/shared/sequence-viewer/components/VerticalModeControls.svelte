@@ -7,6 +7,7 @@
   - full: TransportControls + SettingsTogglePanel
 -->
 <script lang="ts">
+	import { t } from "$lib/shared/i18n/i18n.svelte.js";
 	import TempoControl from "$lib/shared/animation-panel/components/TempoControl.svelte";
 	import TransportControls from "$lib/shared/animation-engine/components/controls/TransportControls.svelte";
 	import SettingsTogglePanel from "$lib/shared/animation-engine/components/controls/SettingsTogglePanel.svelte";
@@ -88,8 +89,8 @@
 			class:active={sequencePanelManager.isDetailExpanded}
 			onclick={() => sequencePanelManager.toggleDetailExpanded()}
 			aria-label={sequencePanelManager.isDetailExpanded
-				? "Collapse settings"
-				: "Expand settings"}
+				? t("viewer_ui_collapse_settings")
+				: t("viewer_ui_expand_settings")}
 			type="button"
 		>
 			<i class="fas fa-sliders" aria-hidden="true"></i>
@@ -101,7 +102,7 @@
 		<button
 			class="play-btn"
 			onclick={onPlaybackToggle}
-			aria-label={isPlaying ? "Pause" : "Play"}
+			aria-label={isPlaying ? t("viewer_ui_pause") : t("viewer_ui_play")}
 		>
 			{#if isPlaying}
 				<svg viewBox="0 0 24 24" fill="currentColor">
@@ -119,8 +120,8 @@
 			class:active={sequencePanelManager.isDetailExpanded}
 			onclick={() => sequencePanelManager.toggleDetailExpanded()}
 			aria-label={sequencePanelManager.isDetailExpanded
-				? "Collapse settings"
-				: "Expand settings"}
+				? t("viewer_ui_collapse_settings")
+				: t("viewer_ui_expand_settings")}
 			type="button"
 		>
 			<i class="fas fa-sliders" aria-hidden="true"></i>

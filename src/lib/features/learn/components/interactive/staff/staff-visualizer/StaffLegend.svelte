@@ -2,6 +2,7 @@
 StaffLegend - Legend showing left/right staff position and thumb orientation
 -->
 <script lang="ts">
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import {
     LEFT_STAFF_COLOR,
     RIGHT_STAFF_COLOR,
@@ -25,13 +26,33 @@ StaffLegend - Legend showing left/right staff position and thumb orientation
 <div class="thumb-legend">
   <div class="legend-item left">
     <div class="legend-color" style="background: {LEFT_STAFF_COLOR}"></div>
-    <span>Left: {leftPosition}</span>
-    <span class="thumb-label">Thumb {leftThumbOrientation}</span>
+    <span
+      >{tDynamic("learn_staff_left_position", {
+        position: tDynamic(`learn_staff_cardinal_${leftPosition}`),
+      })}</span
+    >
+    <span class="thumb-label"
+      >{tDynamic(
+        leftThumbOrientation === "in"
+          ? "learn_staff_thumb_in"
+          : "learn_staff_thumb_out"
+      )}</span
+    >
   </div>
   <div class="legend-item right">
     <div class="legend-color" style="background: {RIGHT_STAFF_COLOR}"></div>
-    <span>Right: {rightPosition}</span>
-    <span class="thumb-label">Thumb {rightThumbOrientation}</span>
+    <span
+      >{tDynamic("learn_staff_right_position", {
+        position: tDynamic(`learn_staff_cardinal_${rightPosition}`),
+      })}</span
+    >
+    <span class="thumb-label"
+      >{tDynamic(
+        rightThumbOrientation === "in"
+          ? "learn_staff_thumb_in"
+          : "learn_staff_thumb_out"
+      )}</span
+    >
   </div>
 </div>
 

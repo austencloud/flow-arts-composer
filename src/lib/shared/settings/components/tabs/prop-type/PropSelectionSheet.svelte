@@ -26,7 +26,7 @@
     isOpen = $bindable(false),
     selectedPropType,
     color = "blue",
-    title = "Select Prop",
+    title,
     onSelect,
     showTabs = false,
     activeTab = $bindable<"left" | "right">("left"),
@@ -72,6 +72,8 @@
     propLook?: PropLook;
     onPropLookChange?: (look: PropLook) => void;
   }>();
+
+  const displayTitle = $derived(title ?? t("settings_props_select_prop"));
 
   // Desktop (side-by-side layout, i.e. nav sidebar present) opens the picker as
   // a full-height RIGHT side drawer instead of a bottom sheet — matches the
@@ -131,7 +133,7 @@
   closeOnEscape={true}
   dismissible={true}
   showHandle={true}
-  ariaLabel={title}
+  ariaLabel={displayTitle}
   class="prop-selection-drawer"
   onOpenChange={(open) => {
     if (!open) setOpen(false);
@@ -139,7 +141,7 @@
 >
   <div class="sheet-content">
     <DrawerHeader
-      {title}
+      {displayTitle}
       subtitle={t("settings_prop_sheet_help")}
       onClose={handleClose}
     />
@@ -191,7 +193,7 @@
       <BentoPropGrid
         {selectedPropType}
         {color}
-        {title}
+        {displayTitle}
         variant="inline"
         flat
         scrollMode="internal"

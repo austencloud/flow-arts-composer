@@ -22,7 +22,7 @@
   <button
     class="info-chip"
     onclick={toggle}
-    aria-label="About this destination"
+    aria-label={t("viewer_detail_about_this_destination")}
     aria-expanded={open}
     aria-haspopup="dialog"
   >
@@ -33,19 +33,17 @@
     <div
       class="info-popover"
       role="dialog"
-      aria-label="Destination explainer"
+      aria-label={t("viewer_detail_destination_explainer")}
       in:scale={{ duration: 220, start: 0.92, opacity: 0, easing: backOut }}
       out:scale={{ duration: 160, start: 0.95, opacity: 0, easing: cubicOut }}
     >
       <h3>{t("viewer_sequence_viewer")}</h3>
       <p>
-        Watch one sequence, performed by 1 to N versions of you, each with their
-        own effort, prop, and effects. Same choreography, different
-        interpretations.
+        {t("viewer_detail_watch_one_sequence_performed_by_1_to_n_versions_of_you_each_with_their_own_effort_prop_and_effects_same_choreography_different_interpretations")}
       </p>
       <p class="aside">
-        Want different sequences per performer, with timing and music?
-        <button class="link" onclick={openStageStub}>Open in Stage →</button>
+        {t("viewer_detail_want_different_sequences_per_performer_with_timing_and_music")}
+        <button class="link" onclick={openStageStub}>{t("viewer_detail_open_in_stage")}</button>
       </p>
     </div>
   {/if}

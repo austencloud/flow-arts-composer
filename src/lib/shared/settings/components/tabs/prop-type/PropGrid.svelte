@@ -24,7 +24,6 @@
     isBigVariant,
     toggleBigVariant,
     getFamilyTileDisplayProp,
-    getPropTypeDisplayInfo,
     isPropActive,
     isPremiumCosmeticProp,
   } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
@@ -58,6 +57,7 @@
   } from "$lib/shared/pictograph/prop/domain/fan-appearance";
   import type { PropChiralitySeam } from "./prop-chirality-seam";
   import { isBuugengFamilyProp } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
+  import { localizedPropName } from "./localized-prop-name";
   import type { Snippet } from "svelte";
   import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
   import {
@@ -70,7 +70,7 @@
   let {
     selectedPropType,
     color = "blue",
-    title = "Select Prop",
+    title,
     onSelect,
     variant = "panel",
     flat = false,
@@ -176,14 +176,29 @@
     onDrillChange?: (drilled: boolean) => void;
   }>();
 
+  const displayTitle = $derived(title ?? t("settings_props_select_prop"));
+
   const allowedPropSet = $derived(
     allowedProps ? new Set<PropType>(allowedProps) : null
   );
 
   const pickerSections = $derived([
-    ...PROP_PICKER_SECTIONS,
-    ...(includeBareHands ? [{ label: "Scene", props: [PropType.HAND] }] : []),
+    ...PROP_PICKER_SECTIONS.map((section) => ({
+      ...section,
+      label: pickerSectionLabel(section.label),
+    })),
+    ...(includeBareHands ? [{ label: t("settings_prop_section_scene"), props: [PropType.HAND] }] : []),
   ]);
+
+  function pickerSectionLabel(label: string): string {
+    switch (label) {
+      case "Standard": return t("settings_prop_section_standard");
+      case "Big": return t("settings_prop_section_big");
+      case "Novelty": return t("settings_prop_section_novelty");
+      case "Premium": return t("settings_prop_section_premium");
+      default: return label;
+    }
+  }
 
   function canShowProp(prop: PropType): boolean {
     if (prop === PropType.HAND && includeBareHands) return true;
@@ -293,31 +308,16 @@
       ? ""
       : drill.kind === "family"
         ? t("settings_prop_styles", {
-            prop: getPropTypeDisplayInfo(drill.base).label,
+            prop: localizedPropName(drill.base),
           })
         : drill.kind === "fan-look"
           ? t("settings_fan_look")
           : drill.kind === "details"
             ? t("settings_prop_details", {
-                prop: getPropTypeDisplayInfo(drill.prop).label,
+                prop: localizedPropName(drill.prop),
               })
             : t("settings_prop_look")
   );
-
-  function sectionLabel(id: string, fallback: string): string {
-    switch (id) {
-      case "staves-clubs":
-        return t("settings_prop_section_staves_clubs");
-      case "curved":
-        return t("settings_prop_section_curved");
-      case "novelty":
-        return t("settings_prop_section_novelty");
-      case "singles":
-        return t("settings_prop_section_singles");
-      default:
-        return fallback;
-    }
-  }
 
   async function openDrill(next: Drill): Promise<void> {
     drill = next;
@@ -852,7 +852,7 @@
       type="button"
       class="look-chip"
       data-testid="fan-look-chip"
-      aria-label={`Fan look: ${fanLook?.label ?? normalizedFanAppearance.build}. Change`}
+      aria-label={t("settings_change_fan_look", { look: fanLook?.label ?? normalizedFanAppearance.build })}
       onclick={() =>
         selectedPropType !== null &&
         void openDrill({
@@ -875,7 +875,7 @@
       type="button"
       class="look-chip"
       data-testid="prop-look-chip"
-      aria-label={`Prop look: ${selectedPropLookOption?.label ?? "Pictograph"}. Change`}
+      aria-label={t("settings_change_prop_look", { look: selectedPropLookOption?.id === "model" ? t("settings_3d_model") : t("viewer_ui_pictograph") })}
       onclick={() => void openDrill({ kind: "prop-look" })}
     >
       {#if selectedPropLookOption}
@@ -887,7 +887,7 @@
         />
       {/if}
       <span class="look-name"
-        >{selectedPropLookOption?.label ?? "Pictograph"}</span
+        >{selectedPropLookOption?.id === "model" ? t("settings_3d_model") : t("viewer_ui_pictograph")}</span
       >
       <i class="fas fa-chevron-right look-caret" aria-hidden="true"></i>
     </button>
@@ -912,7 +912,7 @@
             href={fanLook.designCredit.sourceUrl}
             target="_blank"
             rel="noreferrer"
-            aria-label={`${fanLook.designCredit.originator} source`}
+            aria-label={t("settings_design_source", { name: fanLook.designCredit.originator })}
           >
             <span class="credit-long">{fanLook.designCredit.originator}</span>
             <span class="credit-short" aria-hidden="true"
@@ -933,7 +933,7 @@
   {/if}
   {#if variant === "panel"}
     <header class="grid-header">
-      <h4 class="grid-title">{title}</h4>
+      <h4 class="grid-title">{displayTitle}</h4>
     </header>
   {/if}
 
@@ -1005,7 +1005,7 @@
         selected={selectedBase === base}
         badge={familyCount(base)}
         actionLabel={t("settings_prop_choose_style", {
-          prop: getPropTypeDisplayInfo(base).label,
+          prop: localizedPropName(base),
         })}
         buttonProps={{
           "aria-expanded": drill?.kind === "family" && drill.base === base,
@@ -1084,7 +1084,7 @@
             <div
               class="detail-options"
               role="group"
-              aria-label={`${drillTitle} options`}
+              aria-label={t("settings_options_for", { item: drillTitle })}
               class:fill={fillHeight > 0}
               class:dragging={railDragging}
               onpointerdown={handleRailPointerDown}
@@ -1134,7 +1134,7 @@
             <div
               class="drill-tiles"
               role="group"
-              aria-label={`${drillTitle} choices`}
+              aria-label={t("settings_choices_for", { item: drillTitle })}
               class:dragging={railDragging}
               style={balancedColumns(familyTiles.length)}
               style:--family-count={familyChoices(drill.base).length}
@@ -1216,7 +1216,7 @@
               : null}
             <div class="prop-section" class:primary={i === 0}>
               <div class="section-label" class:first={i === 0}>
-                {sectionLabel(section.id, section.label)}
+                {section.label}
               </div>
               <div
                 class="section-buttons"

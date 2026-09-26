@@ -4,6 +4,7 @@
   Shows animated "X is typing..." indicator when other users are typing.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   let {
     typingUsers,
   } = $props<{
@@ -12,9 +13,9 @@
 
   const displayText = $derived.by(() => {
     if (typingUsers.length === 0) return "";
-    if (typingUsers.length === 1) return `${typingUsers[0]} is typing`;
-    if (typingUsers.length === 2) return `${typingUsers[0]} and ${typingUsers[1]} are typing`;
-    return `${typingUsers[0]} and ${typingUsers.length - 1} others are typing`;
+    if (typingUsers.length === 1) return t("inbox_typing_one", { name: typingUsers[0] ?? "" });
+    if (typingUsers.length === 2) return t("inbox_typing_two", { first: typingUsers[0] ?? "", second: typingUsers[1] ?? "" });
+    return t("inbox_typing_many", { name: typingUsers[0] ?? "", count: typingUsers.length - 1 });
   });
 </script>
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   /**
    * EmptyMessages
    *
@@ -11,19 +12,19 @@
     isGroup?: boolean;
   }
 
-  let { recipientName = "this user", isGroup = false }: Props = $props();
+  let { recipientName, isGroup = false }: Props = $props();
 
   const heading = $derived(
-    isGroup ? "Start the group chat" : "Start the conversation"
+    isGroup ? t("inbox_ui_start_the_group_chat") : t("inbox_ui_start_the_conversation")
   );
   const description = $derived(
     isGroup
-      ? `Be the first to message ${recipientName || "this group"}`
-      : `Send a message to ${recipientName}`
+      ? t("inbox_first_message_group", { name: recipientName || t("inbox_this_group") })
+      : t("inbox_send_person", { name: recipientName || t("inbox_this_user") })
   );
 </script>
 
-<div class="empty-state" role="status" aria-label="No messages in conversation">
+<div class="empty-state" role="status" aria-label={t("inbox_ui_no_messages_in_conversation")}>
   <div class="illustration">
     <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
       <!-- Paper airplane -->

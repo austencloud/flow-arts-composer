@@ -211,10 +211,10 @@
         aria-pressed={mode.id === "practice"
           ? practiceActive
           : activeMode === mode.id}
-        aria-label={mode.label}
+        aria-label={mode.id === "practice" && practiceActive ? t("viewer_ui_stop") : mode.label}
         data-ghost={ghostKindFor(mode.id) ? "safe" : undefined}
         data-ghost-kind={ghostKindFor(mode.id)}
-        data-ghost-label={mode.label}
+        data-ghost-label={mode.id === "practice" && practiceActive ? t("viewer_ui_stop") : mode.label}
         onclick={() => {
           if (mode.id === "split") onSelectSplit();
           else if (mode.id === "practice") onPracticeToggle?.();
@@ -231,7 +231,7 @@
         {#if !collapsed}
           <span class="rail-mode-label"
             >{mode.id === "practice" && practiceActive
-              ? "Stop"
+              ? t("viewer_ui_stop")
               : mode.label}</span
           >
         {/if}
@@ -271,7 +271,7 @@
       <ResizeHandle
         direction="horizontal"
         size={10}
-        ariaLabel="Resize sidebar"
+        ariaLabel={t("viewer_ui_resize_sidebar")}
         ariaValueNow={(100 * (railWidth - MIN_WIDTH)) / (MAX_WIDTH - MIN_WIDTH)}
         onDragStart={onResizeStart}
         onDrag={onResize}

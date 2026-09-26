@@ -53,7 +53,7 @@
         class="mid-action-btn"
         class:favorited={isFavorite}
         onclick={onFavorite}
-        aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+        aria-label={isFavorite ? t("viewer_detail_remove_from_favorites") : t("viewer_detail_add_to_favorites")}
       >
         <i class="fas fa-heart" aria-hidden="true"></i>
       </button>
@@ -102,8 +102,8 @@
         onclick={() =>
           practiceActive ? onPracticeStop?.() : onPracticeStart?.()}
         aria-label={practiceActive
-          ? "Stop practice training"
-          : "Start practice training"}
+          ? t("viewer_detail_stop_practice_training")
+          : t("viewer_detail_start_practice_training")}
         aria-pressed={practiceActive}
       >
         <i

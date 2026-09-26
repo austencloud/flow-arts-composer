@@ -18,6 +18,7 @@ import {
 } from "firebase/firestore";
 import { auth, getFirestoreInstance } from "../../auth/firebase";
 import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+import { t } from "$lib/shared/i18n/i18n.svelte.js";
 import { isPermissionDeniedError } from "$lib/shared/auth/utils/is-permission-denied-error";
 import { trackWrite } from "$lib/shared/offline/state/sync-status-state.svelte";
 import {
@@ -111,7 +112,7 @@ export class FirebaseSettingsPersister {
         "❌ [FirebaseSettingsPersister] Failed to save settings:",
         error
       );
-      toast.error("Failed to save settings.");
+      toast.error(t("settings_persist_save_failed"));
       throw error;
     }
 
@@ -197,7 +198,7 @@ export class FirebaseSettingsPersister {
         "❌ [FirebaseSettingsPersister] Failed to clear settings:",
         error
       );
-      toast.error("Failed to clear settings.");
+      toast.error(t("settings_persist_clear_failed"));
       throw error;
     }
   }
@@ -294,7 +295,7 @@ export class FirebaseSettingsPersister {
               "❌ [FirebaseSettingsPersister] Subscription error:",
               error
             );
-            toast.error("Lost connection to settings. Please refresh.");
+            toast.error(t("settings_connection_lost"));
           }
         );
 
@@ -310,7 +311,7 @@ export class FirebaseSettingsPersister {
           "❌ [FirebaseSettingsPersister] Failed to initialize settings subscription:",
           error
         );
-        toast.error("Failed to connect to settings.");
+        toast.error(t("settings_connect_failed"));
       });
 
     return cancel;

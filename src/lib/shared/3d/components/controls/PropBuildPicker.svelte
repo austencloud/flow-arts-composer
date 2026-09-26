@@ -1,4 +1,5 @@
 <script lang="ts" generics="T extends string">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import { popIn } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
@@ -76,7 +77,7 @@
     </div>
   {/if}
 
-  <div class="option-grid" role="radiogroup" aria-label={label ?? "Options"}>
+  <div class="option-grid" role="radiogroup" aria-label={label ?? t("prop_build_picker_options")}>
     {#each options as option, index (option.id)}
       <button
         type="button"
@@ -85,10 +86,10 @@
         role="radio"
         aria-checked={value === option.id}
         aria-label={option.designCredit
-          ? `${option.label}, original design by ${option.designCredit.originator}`
+          ? t("prop_build_picker_design_credit_aria", { label: option.label, name: option.designCredit.originator })
           : option.label}
         title={option.designCredit
-          ? `Original design by ${option.designCredit.originator}`
+          ? t("prop_build_picker_design_credit_title", { name: option.designCredit.originator })
           : undefined}
         tabindex={value === option.id ? 0 : -1}
         onclick={() => onchange(option.id)}

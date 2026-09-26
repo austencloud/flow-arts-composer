@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   /**
    * EmptyNotifications
    *
@@ -6,7 +7,7 @@
    */
 </script>
 
-<div class="empty-state" role="status" aria-label="No notifications">
+<div class="empty-state" role="status" aria-label={t("notifications_none")}>
   <div class="illustration">
     <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
       <!-- Bell -->
@@ -31,8 +32,8 @@
       <path d="M80 35L84 39L91 31" class="check-mark" />
     </svg>
   </div>
-  <h3>All caught up!</h3>
-  <p>You have no new notifications</p>
+  <h3>{t("notifications_caught_up")}</h3>
+  <p>{t("notifications_no_new")}</p>
 </div>
 
 <style>

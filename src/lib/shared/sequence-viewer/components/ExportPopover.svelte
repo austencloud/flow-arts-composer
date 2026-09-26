@@ -96,7 +96,7 @@
 
 <div class="export-content">
   <div class="row">
-    <div class="row-label">Resolution</div>
+    <div class="row-label">{t("viewer_detail_resolution")}</div>
     <div class="chips">
       {#each RESOLUTIONS as r (r)}
         <button
@@ -128,7 +128,7 @@
   </div>
 
   <div class="row">
-    <div class="row-label">FPS</div>
+    <div class="row-label">{t("viewer_detail_fps")}</div>
     <div class="chips">
       {#each FPS_OPTIONS as f (f)}
         <button
@@ -149,13 +149,13 @@
     aria-expanded={advancedOpen}
   >
     <i class="fas fa-chevron-{advancedOpen ? 'down' : 'right'}"></i>
-    Advanced
+    {t("viewer_detail_advanced")}
   </button>
 
   {#if advancedOpen}
     <div class="advanced" transition:slide={{ duration: 180 }}>
       <div class="row">
-        <div class="row-label">Loop count</div>
+        <div class="row-label">{t("viewer_detail_loop_count")}</div>
         <div class="stepper">
           <button
             class="step-btn"

@@ -417,21 +417,21 @@
 
 {#snippet viewerContentPlaceholder()}
   <div class="viewer-content-state" role="status" aria-live="polite">
-    <span>Loading sequence viewer…</span>
+    <span>{t("viewer_ui_loading_viewer")}</span>
     <PanelButton variant="secondary" onclick={() => handleDismiss()}>
-      Close viewer
+      {t("viewer_ui_close_viewer")}
     </PanelButton>
   </div>
 {/snippet}
 
 {#snippet viewerContentError(_error: unknown, retry: () => void)}
   <div class="viewer-content-state viewer-content-error" role="alert">
-    <p>The sequence viewer couldn’t load.</p>
+    <p>{t("viewer_ui_load_failed")}</p>
     <PanelButton variant="secondary" onclick={retry}
       >{t("viewer_ui_try_again")}</PanelButton
     >
     <PanelButton variant="secondary" onclick={() => handleDismiss()}>
-      Close viewer
+      {t("viewer_ui_close_viewer")}
     </PanelButton>
   </div>
 {/snippet}
@@ -446,7 +446,7 @@
   dismissible={nativeLoadingCode === null}
   closeOnBackdrop={nativeLoadingCode === null}
   closeOnEscape={nativeLoadingCode === null}
-  ariaLabel="Sequence Viewer"
+  ariaLabel={t("viewer_detail_sequence_viewer")}
   class="sequence-viewer-drawer"
 >
   <div class="viewer-stage">

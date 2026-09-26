@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   /**
    * GroupSettingsSheet
    *
@@ -52,7 +53,7 @@
   );
 
   const groupName = $derived(
-    conversation.groupMetadata?.name || "Unnamed Group"
+    conversation.groupMetadata?.name || t("inbox_ui_unnamed_group")
   );
 
   // Get participants as array with their info
@@ -113,7 +114,7 @@
       isEditingName = false;
     } catch (err) {
       console.error("[GroupSettings] Failed to update name:", err);
-      error = err instanceof Error ? err.message : "Failed to update name";
+      error = err instanceof Error ? err.message : t("inbox_ui_failed_to_update_name");
       hapticService?.trigger("error");
     } finally {
       isSaving = false;
@@ -138,7 +139,7 @@
       searchUserDisplay = "";
     } catch (err) {
       console.error("[GroupSettings] Failed to add member:", err);
-      error = err instanceof Error ? err.message : "Failed to add member";
+      error = err instanceof Error ? err.message : t("inbox_ui_failed_to_add_member");
       hapticService?.trigger("error");
     } finally {
       isAddingMember = false;
@@ -155,7 +156,7 @@
       hapticService?.trigger("success");
     } catch (err) {
       console.error("[GroupSettings] Failed to remove member:", err);
-      error = err instanceof Error ? err.message : "Failed to remove member";
+      error = err instanceof Error ? err.message : t("inbox_ui_failed_to_remove_member");
       hapticService?.trigger("error");
     }
   }
@@ -176,7 +177,7 @@
       hapticService?.trigger("success");
     } catch (err) {
       console.error("[GroupSettings] Failed to toggle admin:", err);
-      error = err instanceof Error ? err.message : "Failed to update admin";
+      error = err instanceof Error ? err.message : t("inbox_ui_failed_to_update_admin");
       hapticService?.trigger("error");
     }
   }
@@ -190,7 +191,7 @@
       onGroupLeft();
     } catch (err) {
       console.error("[GroupSettings] Failed to leave group:", err);
-      error = err instanceof Error ? err.message : "Failed to leave group";
+      error = err instanceof Error ? err.message : t("inbox_ui_failed_to_leave_group");
       hapticService?.trigger("error");
       confirmLeave = false;
     }
@@ -203,11 +204,11 @@
       type="button"
       class="back-btn"
       onclick={onClose}
-      aria-label="Close settings"
+      aria-label={t("inbox_ui_close_settings")}
     >
       <i class="fas fa-arrow-left" aria-hidden="true"></i>
     </button>
-    <h2>Group Settings</h2>
+    <h2>{t("inbox_ui_group_settings")}</h2>
   </div>
 
   {#if error}
@@ -220,11 +221,11 @@
   <!-- Group Name Section -->
   <div class="section">
     <div class="section-header">
-      <span class="section-label">Group Name</span>
+      <span class="section-label">{t("inbox_ui_group_name")}</span>
       {#if isAdmin && !isEditingName}
         <button type="button" class="edit-btn" onclick={startEditName}>
           <i class="fas fa-pencil-alt" aria-hidden="true"></i>
-          Edit
+          {t("inbox_ui_edit")}
         </button>
       {/if}
     </div>
@@ -245,7 +246,7 @@
             onclick={cancelEditName}
             disabled={isSaving}
           >
-            Cancel
+            {t("inbox_ui_cancel")}
           </button>
           <button
             type="button"
@@ -256,7 +257,7 @@
             {#if isSaving}
               <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
             {:else}
-              Save
+              {t("inbox_ui_save")}
             {/if}
           </button>
         </div>
@@ -270,7 +271,7 @@
   <div class="section">
     <div class="section-header">
       <span class="section-label">
-        Members ({participants.length})
+        {t("inbox_members", { count: participants.length })}
       </span>
     </div>
 
@@ -281,14 +282,14 @@
           selectedUserId={searchUserId}
           selectedUserDisplay={searchUserDisplay}
           onSelect={handleAddMember}
-          placeholder="Add member by username or name..."
+          placeholder={t("inbox_ui_add_member_by_username_or_name")}
           inlineResults={true}
           {excludeUserIds}
         />
         {#if isAddingMember}
           <div class="adding-indicator">
             <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-            Adding...
+            {t("inbox_ui_adding")}
           </div>
         {/if}
       </div>
@@ -309,14 +310,14 @@
             <span class="member-name">
               {identity.primary}
               {#if member.userId === currentUserId}
-                <span class="you-badge">(You)</span>
+                <span class="you-badge">{t("inbox_ui__you")}</span>
               {/if}
             </span>
             {#if identity.secondary}
               <span class="member-account-name">{identity.secondary}</span>
             {/if}
             {#if member.isAdmin}
-              <span class="admin-badge">Admin</span>
+              <span class="admin-badge">{t("inbox_ui_admin")}</span>
             {/if}
           </div>
 
@@ -327,7 +328,7 @@
                 type="button"
                 class="action-btn"
                 onclick={() => toggleAdmin(member.userId)}
-                title={member.isAdmin ? "Remove admin" : "Make admin"}
+                title={member.isAdmin ? t("inbox_ui_remove_admin") : t("inbox_ui_make_admin")}
               >
                 <i
                   class="fas {member.isAdmin ? 'fa-user-shield' : 'fa-shield'}"
@@ -338,7 +339,7 @@
                 type="button"
                 class="action-btn danger"
                 onclick={() => removeMember(member.userId)}
-                title="Remove from group"
+                title={t("inbox_ui_remove_from_group")}
               >
                 <i class="fas fa-user-minus" aria-hidden="true"></i>
               </button>
@@ -353,17 +354,17 @@
   <div class="section danger-section">
     {#if confirmLeave}
       <div class="confirm-leave">
-        <p>Are you sure you want to leave this group?</p>
+        <p>{t("inbox_ui_are_you_sure_you_want_to_leave_this_group")}</p>
         <div class="confirm-actions">
           <button
             type="button"
             class="btn-secondary"
             onclick={() => (confirmLeave = false)}
           >
-            Cancel
+            {t("inbox_ui_cancel")}
           </button>
           <button type="button" class="btn-danger" onclick={leaveGroup}>
-            Leave Group
+            {t("inbox_ui_leave_group")}
           </button>
         </div>
       </div>
@@ -374,7 +375,7 @@
         onclick={() => (confirmLeave = true)}
       >
         <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
-        Leave Group
+        {t("inbox_ui_leave_group")}
       </button>
     {/if}
   </div>

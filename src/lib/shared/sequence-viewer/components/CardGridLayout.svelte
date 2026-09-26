@@ -219,7 +219,7 @@
       class:current={showHighlight && highlightedStepIndex === -1}
       onclick={() => onStepClick(-1)}
       type="button"
-      aria-label="Go to start placement"
+      aria-label={t("viewer_detail_go_to_start_placement")}
     >
       <CellRenderer
         {exportPresentation}
@@ -311,7 +311,7 @@
   {#if qrDataUrl}
     {@render qrImageBlock()}
   {:else if qrPending}
-    <div class="qr-pending" role="status" aria-label="Generating QR code">
+    <div class="qr-pending" role="status" aria-label={t("viewer_detail_generating_qr_code")}>
       <ProgressRing
         percent={-1}
         size={20}

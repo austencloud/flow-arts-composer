@@ -5,6 +5,8 @@ import {
   buildShortcutCatalog,
   getShortcutContextLabel,
 } from "./shortcut-center-catalog";
+import { localizeShortcut } from "./shortcut-presentation";
+import { setLocale } from "$lib/shared/i18n/i18n.svelte.js";
 
 function item(
   id: string,
@@ -52,6 +54,24 @@ describe("shortcut center catalog", () => {
     item("realm.play", "Play scene", "realm", "Space"),
     item("animation.seek", "Seek forward", "animation-panel", "ArrowRight"),
   ];
+
+  it("searches translated shortcut labels after a locale change without changing registration", async () => {
+    const registered = item("create.shuffle-prop", "Shuffle Prop", "create", "r", {
+      description: "Pick a random prop type",
+    });
+    try {
+      await setLocale("de");
+      const german = localizeShortcut(registered);
+      expect(german.shortcut.label).toBe("Zufällige Requisite");
+      expect(buildShortcutCatalog([german], "all", "create", "zufällige")).toHaveLength(1);
+      expect(registered.shortcut.label).toBe("Shuffle Prop");
+
+      await setLocale("en");
+      expect(localizeShortcut(registered).shortcut.label).toBe("Shuffle Prop");
+    } finally {
+      await setLocale("en");
+    }
+  });
 
   it("shows global and active-area commands in This area", () => {
     const catalog = buildShortcutCatalog(items, "current", "create", "");

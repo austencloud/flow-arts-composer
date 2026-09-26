@@ -90,7 +90,9 @@
       >
         <span class="chirality-hand-label">
           <span class="chirality-hand-dot" aria-hidden="true"></span>
-          {state.hand === "right" ? "Right prop" : "Left prop"}
+          {state.hand === "right"
+            ? t("settings_right_prop")
+            : t("settings_left_prop")}
         </span>
         <SegmentedControl
           {options}
@@ -98,9 +100,9 @@
           onchange={(next) => onChange(state.hand, next === "b")}
           color={palette[state.hand]}
           semantics="radiogroup"
-          ariaLabel="{state.hand === 'right'
-            ? 'Right'
-            : 'Left'} buugeng chirality"
+          ariaLabel={state.hand === "right"
+            ? t("settings_right_buugeng_chirality")
+            : t("settings_left_buugeng_chirality")}
         >
           {#snippet optionContent(option)}
             <PropCompositionPreview

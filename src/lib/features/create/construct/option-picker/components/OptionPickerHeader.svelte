@@ -164,7 +164,7 @@
             {#snippet optionContent(value)}
               <span class="filter-option">
                 {#if layout === "compact"}
-                  <span>{value === "all" ? "All" : "Continuous"}</span>
+                  <span>{value === "all" ? t("create_option_all") : t("create_option_continuous")}</span>
                 {:else}
                   <i
                     class={value === "all"
@@ -174,7 +174,7 @@
                   ></i>
                 {/if}
                 {#if value === "continuous" && hiddenCount > 0}
-                  <span class="filter-hidden-count">{hiddenCount} hidden</span>
+                  <span class="filter-hidden-count">{t("create_option_hidden_count", { count: hiddenCount })}</span>
                 {/if}
               </span>
             {/snippet}
@@ -194,7 +194,7 @@
           value={level}
           compact={layout === "compact"}
           onchange={(n) => onLevelChange(n as TurnLevel)}
-          ariaLabel="Working difficulty level"
+          ariaLabel={t("create_option_working_level")}
         />
       </div>
 
@@ -234,10 +234,8 @@
               <button
                 class="spin-inline edge"
                 transition:popIn
-                title="Spin direction for dash & static options on this hand (shifts keep their own direction)"
-                aria-label="Toggle left dash/static spin (currently {dirLabel(
-                  leftRotation
-                )})"
+                title={t("create_option_spin_direction_hint")}
+                aria-label={t("create_option_toggle_left_spin", { direction: dirLabel(leftRotation) })}
                 onclick={() => onLeftRotationChange(opposite(leftRotation))}
               >
                 <i class="fas {dirIcon(leftRotation)}" aria-hidden="true"></i>
@@ -272,10 +270,8 @@
               <button
                 class="spin-inline edge"
                 transition:popIn
-                title="Spin direction for dash & static options on this hand (shifts keep their own direction)"
-                aria-label="Toggle right dash/static spin (currently {dirLabel(
-                  rightRotation
-                )})"
+                title={t("create_option_spin_direction_hint")}
+                aria-label={t("create_option_toggle_right_spin", { direction: dirLabel(rightRotation) })}
                 onclick={() => onRightRotationChange(opposite(rightRotation))}
               >
                 <i class="fas {dirIcon(rightRotation)}" aria-hidden="true"></i>

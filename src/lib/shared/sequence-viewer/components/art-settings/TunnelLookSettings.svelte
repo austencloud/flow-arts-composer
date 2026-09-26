@@ -1,5 +1,6 @@
 <!-- Formation coordinates the preset browser and the primitive tuner. -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import type { TunnelViewController } from "../../tunnel/tunnel-view-controller.svelte";
   import TunnelPresetBrowser from "./TunnelPresetBrowser.svelte";
   import TunnelPrimitiveTuner from "./TunnelPrimitiveTuner.svelte";
@@ -19,7 +20,7 @@
     controller,
     dense,
     onSaveTunnel,
-    saveTunnelLabel = "Save tunnel",
+    saveTunnelLabel = t("viewer_detail_save_tunnel"),
     onArtSettingChange,
   }: Props = $props();
 

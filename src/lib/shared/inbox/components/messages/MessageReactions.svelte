@@ -5,6 +5,7 @@
   Just the emoji(s) in a small rounded container with a shadow for depth.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import type { MessageReaction } from "$lib/shared/messaging/domain/models/message-models";
   import { authState } from "$lib/shared/auth/state/auth-state.svelte";
 
@@ -21,7 +22,7 @@
   }
 </script>
 
-<div class="reaction-cluster" aria-label="Message reactions" role="group">
+<div class="reaction-cluster" aria-label={t("inbox_ui_message_reactions")} role="group">
   {#each reactions as reaction}
     <button
       type="button"
@@ -29,12 +30,7 @@
       class:reacted={hasUserReacted(reaction)}
       onclick={() => onToggleReaction(reaction.emoji)}
       aria-pressed={hasUserReacted(reaction)}
-      aria-label="{hasUserReacted(reaction)
-        ? 'Remove'
-        : 'React with'} {reaction.emoji}. {reaction.userIds.length} {reaction
-        .userIds.length === 1
-        ? 'reaction'
-        : 'reactions'}"
+      aria-label={t(hasUserReacted(reaction) ? "inbox_reaction_remove_count" : "inbox_reaction_add_count", { emoji: reaction.emoji, count: reaction.userIds.length })}
     >
       <span class="reaction-surface">
         <span class="emoji" aria-hidden="true">{reaction.emoji}</span>

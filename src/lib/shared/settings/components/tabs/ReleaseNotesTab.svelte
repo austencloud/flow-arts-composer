@@ -1,5 +1,6 @@
 <!-- ReleaseNotesTab - Master-detail version history with container query responsive layout -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { createVersionState } from "$lib/shared/feedback/state/version-state.svelte";
   import type { AppVersion } from "$lib/shared/versioning/domain/models/version-models";
   import VersionCard from "./release-notes/VersionCard.svelte";
@@ -200,7 +201,7 @@
     <div class="header-content">
       <h2>
         <i class="fas fa-gift" aria-hidden="true"></i>
-        Release Notes
+        {t("tab_settings_release_notes")}
       </h2>
     </div>
   </header>
@@ -222,14 +223,14 @@
           <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
           <p>{versionState.error}</p>
           <button type="button" onclick={() => versionState.loadVersions()}>
-            Try Again
+            {t("action_retry")}
           </button>
         </div>
       {:else if versionState.versions.length === 0}
         <div class="empty-state">
           <i class="fas fa-rocket" aria-hidden="true"></i>
-          <h3>No Releases Yet</h3>
-          <p>Check back soon for updates!</p>
+          <h3>{t("settings_no_releases_yet")}</h3>
+          <p>{t("settings_check_back_for_updates")}</p>
         </div>
       {:else}
         <!-- Wide mode: compact list items -->
@@ -238,7 +239,7 @@
           class="version-list-compact"
           role="listbox"
           tabindex="0"
-          aria-label="Version list"
+          aria-label={t("settings_version_list")}
           onkeydown={handleListKeydown}
         >
           {#each versionState.versions as version (version.version)}
@@ -294,18 +295,18 @@
           {#if visibleCount < versionState.versions.length}
             <div class="stream-sentinel" use:revealOnScroll aria-hidden="true">
               <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-              Loading earlier releases
+              {t("settings_loading_earlier_releases")}
             </div>
           {:else}
             <p class="stream-end">
-              {versionState.versions.length} releases, back to the beginning.
+              {t("settings_release_count_end", { count: versionState.versions.length })}
             </p>
           {/if}
         </div>
       {:else}
         <div class="no-selection">
           <i class="fas fa-arrow-left" aria-hidden="true"></i>
-          <p>Select a version to view details</p>
+          <p>{t("settings_select_version_details")}</p>
         </div>
       {/if}
     </main>

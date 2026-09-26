@@ -6,7 +6,8 @@
   import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
   import type { TriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
   import type { CompositionRecipe } from "$lib/shared/pictograph/prop/domain/prop-composition-recipes";
-  import { getPropTypeDisplayInfo } from "./prop-type-registry";
+  import { localizedPropName } from "./localized-prop-name";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import PropSelectionButton from "./PropSelectionButton.svelte";
   import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
   import { isBuugengFamilyProp } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
@@ -54,10 +55,10 @@
     previewPair?: boolean;
   }>();
 
-  const displayInfo = $derived(getPropTypeDisplayInfo(propType));
-  const resolvedLabel = $derived(label ?? displayInfo.label);
+  const displayLabel = $derived(localizedPropName(propType));
+  const resolvedLabel = $derived(label ?? displayLabel);
   const resolvedActionLabel = $derived(
-    actionLabel ?? `Select ${displayInfo.label} prop type`
+    actionLabel ?? t("settings_select_prop_type", { prop: displayLabel })
   );
 </script>
 

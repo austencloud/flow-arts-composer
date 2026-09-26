@@ -10,6 +10,7 @@
   behind a gear hid a choice that decides what the take looks like.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import type { CameraChoreographyState } from "$lib/shared/sequence-viewer/camera-choreography/state.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import {
@@ -71,7 +72,7 @@
         onchange={handleModeSelect}
         color="accent"
         size="sm"
-        ariaLabel="Recording camera"
+        ariaLabel={t("viewer_detail_recording_camera")}
         semantics="radiogroup"
       />
     </div>
@@ -81,20 +82,20 @@
       {disabled}
       onclick={onExport}
       aria-label={isExporting
-        ? "Recording in progress"
+        ? t("viewer_detail_recording_in_progress")
         : !canvasReady
           ? "Preparing"
-          : "Record scene"}
+          : t("viewer_detail_record_scene")}
     >
       {#if !canvasReady}
         <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-        <span>Preparing...</span>
+        <span>{t("viewer_detail_preparing")}</span>
       {:else if isExporting}
         <i class="fas fa-circle pulse" aria-hidden="true"></i>
-        <span>Recording</span>
+        <span>{t("viewer_detail_recording")}</span>
       {:else}
         <span class="dot" aria-hidden="true"></span>
-        <span>Record Scene</span>
+        <span>{t("viewer_detail_record_scene")}</span>
       {/if}
     </button>
   </div>

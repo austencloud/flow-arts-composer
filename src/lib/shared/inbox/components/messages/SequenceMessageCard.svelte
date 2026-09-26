@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   /**
    * SequenceMessageCard
    *
@@ -59,7 +60,7 @@
       resolvedPreview?.sequenceWord ||
         attachment.metadata?.sequenceWord ||
         attachment.metadata?.title ||
-        "Sequence"
+        t("inbox_ui_sequence")
     )
   );
   // Only durable URLs become posters. Guessing storage filenames generated a
@@ -159,7 +160,7 @@
       openSequenceViewer(viewerSequence, {
         source: "inbox_message",
         returnPath: window.location.pathname,
-        returnLabel: "Messages",
+        returnLabel: t("inbox_ui_messages"),
         viewStateParams: attachment.metadata?.sequenceViewParams,
       });
     } catch (caught) {
@@ -169,7 +170,7 @@
       getErrorHandler().showUserError({
         message:
           getShortCodeShareMessage(caught) ??
-          "This sequence could not be opened.",
+          t("inbox_ui_this_sequence_could_not_be_opened"),
         technicalDetails: failure.message,
         error: failure,
         severity: "error",
@@ -191,11 +192,11 @@
     <div class="card-header">
       <div class="deleted-badge">
         <i class="fas fa-trash-alt" aria-hidden="true"></i>
-        <span>Unavailable</span>
+        <span>{t("inbox_ui_unavailable")}</span>
       </div>
     </div>
     <h4 class="sequence-title deleted-title">{sequenceWord}</h4>
-    <p class="deleted-notice">This sequence is no longer available</p>
+    <p class="deleted-notice">{t("inbox_ui_this_sequence_is_no_longer_available")}</p>
   {:else}
     <div class="card-content">
       <SequenceMessagePreview
@@ -216,10 +217,10 @@
         >
           {#if isChecking}
             <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-            <span>Opening</span>
+            <span>{t("inbox_ui_opening")}</span>
           {:else}
             <i class="fas fa-external-link-alt" aria-hidden="true"></i>
-            <span>Open in Sequence Viewer</span>
+            <span>{t("inbox_ui_open_in_sequence_viewer")}</span>
           {/if}
         </button>
       </div>

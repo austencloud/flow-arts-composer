@@ -63,14 +63,14 @@
 
 <div class="config-body">
   {@render stepper(
-    "Start tempo",
+    t("viewer_detail_start_tempo"),
     startBpm,
     "BPM",
     () => setStartBpm(startBpm - 5),
     () => setStartBpm(startBpm + 5)
   )}
   {@render stepper(
-    "Loops per speed-up",
+    t("viewer_detail_loops_per_speed_up"),
     roundsPerLevel,
     "",
     () => setRounds(roundsPerLevel - 1),
@@ -92,7 +92,7 @@
       class:on={targetEnabled}
       onclick={toggleTarget}
       aria-pressed={targetEnabled}
-      aria-label={targetEnabled ? "Goal on" : "Goal off"}
+      aria-label={targetEnabled ? t("viewer_detail_goal_on") : t("viewer_detail_goal_off")}
     >
       <span class="goal-knob"></span>
     </button>
@@ -100,7 +100,7 @@
 
   {#if targetEnabled}
     {@render stepper(
-      "Goal tempo",
+      t("viewer_detail_goal_tempo"),
       clamp(targetBpm, startBpm + 5, maxBpm),
       "BPM",
       () => setTargetBpm(targetBpm - 5),

@@ -76,7 +76,7 @@
   {#if controller.performerCount > 1}
     <!-- One-tap fills write the rows below; Reset clears. Rows are the truth. -->
     <div class="fill-row">
-      {#if !dense}<span class="fill-lbl">Fill</span>{/if}
+      {#if !dense}<span class="fill-lbl">{t("viewer_detail_fill")}</span>{/if}
       {#each speedFillButtons as f (f.kind)}
         <FilterChipBase
           mode="action"
@@ -161,8 +161,8 @@
     </div>
     {#if !dense && controller.selectedArm !== null}
       <p class="section-hint">
-        Spotlighting {controller.speedPerformers[controller.selectedArm]
-          ?.label ?? "a performer"} — tap again to clear.
+        {t("viewer_detail_spotlighting")} {controller.speedPerformers[controller.selectedArm]
+          ?.label ?? "a performer"} {t("viewer_detail__tap_again_to_clear")}
       </p>
     {/if}
   {:else if !dense}

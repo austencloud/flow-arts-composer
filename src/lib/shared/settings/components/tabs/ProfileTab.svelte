@@ -235,7 +235,7 @@
       await authState.signOut();
     } catch (error) {
       console.error("Sign out failed:", error);
-      toast.error("Sign out failed. Please try again.");
+      toast.error(t("settings_sign_out_failed"));
     }
   }
 
@@ -310,7 +310,7 @@
       return;
     }
 
-    toast.info("Props are still loading. Try again in a moment.");
+    toast.info(t("settings_props_still_loading"));
   }
 
   async function handleColorChange(color: string) {
@@ -325,9 +325,7 @@
     } catch (error) {
       console.error("Failed to save profile color:", error);
       profileColor = previousColor;
-      toast.error(
-        "Couldn't save profile color. Your previous color is restored."
-      );
+      toast.error(t("settings_profile_color_save_failed"));
     }
   }
 
@@ -336,7 +334,7 @@
     if (!user) {
       throw new ProfilePhotoError(
         "signed-out",
-        "Sign in again, then retry the photo upload."
+        t("settings_photo_sign_in_again")
       );
     }
 
@@ -386,11 +384,11 @@
       <div class="preview-banner">
         <i class="fas fa-eye" aria-hidden="true"></i>
         <span>
-          Viewing as
+          {t("settings_viewing_as")}
           <strong
             >{previewProfile.displayName ||
               previewProfile.email ||
-              "User"}</strong
+              t("settings_user")}</strong
           >
         </span>
       </div>

@@ -44,7 +44,7 @@
       class="landscape-btn"
       class:favorited={isFavorite}
       onclick={onFavorite}
-      aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+      aria-label={isFavorite ? t("viewer_detail_remove_from_favorites") : t("viewer_detail_add_to_favorites")}
     >
       <i class="fas fa-heart" aria-hidden="true"></i>
     </button>
@@ -89,7 +89,7 @@
       class:practice-active={practiceActive}
       onclick={() =>
         practiceActive ? onPracticeStop?.() : onPracticeStart?.()}
-      aria-label={practiceActive ? "Stop practice" : "Practice"}
+      aria-label={practiceActive ? t("viewer_detail_stop_practice") : "Practice"}
       aria-pressed={practiceActive}
     >
       <i
@@ -104,7 +104,7 @@
       type="button"
       class="landscape-btn"
       onclick={isPublished ? onUnpublish : onPublish}
-      aria-label={isPublished ? "Make Private" : "Make Public"}
+      aria-label={isPublished ? t("viewer_detail_make_private") : t("viewer_detail_make_public")}
     >
       <i
         class="fas {isPublished ? 'fa-eye-slash' : 'fa-eye'}"

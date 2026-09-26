@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   /**
    * FeedbackMessageCard
    *
@@ -84,13 +85,13 @@
     <div class="card-header">
       <div class="deleted-badge">
         <i class="fas fa-trash-alt" aria-hidden="true"></i>
-        <span>Deleted</span>
+        <span>{t("inbox_ui_deleted")}</span>
       </div>
     </div>
     <h4 class="feedback-title deleted-title">
-      {attachment.metadata?.feedbackTitle || "Untitled Feedback"}
+      {attachment.metadata?.feedbackTitle || t("inbox_ui_untitled_feedback")}
     </h4>
-    <p class="deleted-notice">This feedback item no longer exists</p>
+    <p class="deleted-notice">{t("inbox_ui_this_feedback_item_no_longer_exists")}</p>
   {:else}
     <!-- Normal state -->
     <button
@@ -111,7 +112,7 @@
       </div>
 
       <h4 class="feedback-title">
-        {attachment.metadata?.feedbackTitle || "Untitled Feedback"}
+        {attachment.metadata?.feedbackTitle || t("inbox_ui_untitled_feedback")}
       </h4>
 
       {#if attachment.metadata?.feedbackDescription}
@@ -127,12 +128,12 @@
         {#if isChecking}
           <span class="checking-hint">
             <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-            Checking...
+            {t("inbox_ui_checking")}
           </span>
         {:else}
           <span class="tap-hint">
             <i class="fas fa-external-link-alt" aria-hidden="true"></i>
-            Tap to view
+            {t("inbox_ui_tap_to_view")}
           </span>
         {/if}
       </div>
