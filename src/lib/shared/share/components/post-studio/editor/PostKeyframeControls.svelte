@@ -6,7 +6,8 @@
   chevrons seek to the nearest in-view keyframe; the diamond adds one at the
   playhead recording the value currently showing, or removes the one already
   there. The Curve chip opens the segment under the playhead: easing presets
-  plus PostCurveEditor for fine control.
+  plus PostCurveEditor for fine control, in a popover that closes on Escape
+  or a press anywhere outside it.
 
   Renders nothing while the playhead sits outside the item - the spec calls
   animated values read-only there, and there is nothing to seek to, toggle or
@@ -65,6 +66,7 @@
         })
       : ""
   );
+  const curveName = $derived(t("post_keyframe_curve_for_range", { range: curveLabel }));
   const presetId = $derived(segment ? easingPresetOf(segment.easing) : null);
   const chipLabel = $derived.by(() => {
     const id = presetId;
@@ -73,6 +75,28 @@
   });
 
   let curveOpen = $state(false);
+  let curveWrapperEl: HTMLDivElement | null = $state(null);
+
+  // The chip goes away when the playhead leaves the item or its keyframes
+  // stop forming a segment; closing then keeps the popover from springing
+  // back open by itself when a segment next appears.
+  $effect(() => {
+    if (curveOpen && (!withinSpan || !segment)) curveOpen = false;
+  });
+
+  // A press anywhere outside the chip and its popover closes it, as the
+  // browse filter chips do. Capture phase, so a control that stops its own
+  // pointerdown from bubbling still counts as outside.
+  $effect(() => {
+    if (!curveOpen) return;
+    function closeOnOutsidePress(event: PointerEvent): void {
+      const target = event.target;
+      if (target instanceof Node && curveWrapperEl?.contains(target)) return;
+      curveOpen = false;
+    }
+    document.addEventListener("pointerdown", closeOnOutsidePress, true);
+    return () => document.removeEventListener("pointerdown", closeOnOutsidePress, true);
+  });
 
   function presetLabel(id: PostEasingPresetId): string {
     switch (id) {
@@ -149,12 +173,14 @@
       </button>
     </div>
     {#if segment}
-      <div class="curve-chip-wrapper">
+      <div class="curve-chip-wrapper" bind:this={curveWrapperEl}>
         <FilterChipBase
           mode="dropdown"
+          popupRole="dialog"
+          popupLabel={curveName}
           icon="fa-solid fa-wave-square"
           label={chipLabel}
-          ariaLabel={t("post_keyframe_curve_for_range", { range: curveLabel })}
+          ariaLabel={curveName}
           size="sm"
           disabled={locked}
           expanded={curveOpen}
@@ -164,20 +190,19 @@
           {#snippet children()}
             <div class="curve-popover">
               <p class="curve-range">{curveLabel}</p>
-              <div class="preset-list">
-                {#each PRESET_IDS as id (id)}
-                  <ChipPopoverOption
-                    label={presetLabel(id)}
-                    selected={presetId === id}
-                    onclick={() => choosePreset(id)}
-                  />
-                {/each}
-              </div>
-              {#if segment.easing === "hold"}
-                <p class="hint">{t("post_curve_hold_hint")}</p>
-              {:else}
-                <PostCurveEditor {editor} {item} {channel} {segment} {locked} />
-              {/if}
+              <PostCurveEditor {editor} {item} {channel} {segment} {locked}>
+                {#snippet presets()}
+                  <div class="preset-list" role="listbox" aria-label={t("post_curve_presets")}>
+                    {#each PRESET_IDS as id (id)}
+                      <ChipPopoverOption
+                        label={presetLabel(id)}
+                        selected={presetId === id}
+                        onclick={() => choosePreset(id)}
+                      />
+                    {/each}
+                  </div>
+                {/snippet}
+              </PostCurveEditor>
             </div>
           {/snippet}
         </FilterChipBase>
@@ -250,7 +275,6 @@
   .curve-popover {
     display: grid;
     gap: 0.5rem;
-    width: 15rem;
     padding: 0.25rem;
   }
 
@@ -265,14 +289,6 @@
   .preset-list {
     display: grid;
     gap: 0.125rem;
-  }
-
-  .hint {
-    margin: 0;
-    padding: 0 0.375rem;
-    color: var(--theme-text-secondary, #aaa);
-    font-size: 0.8125rem;
-    line-height: 1.4;
   }
 
   @media (prefers-reduced-motion: reduce) {

@@ -34,9 +34,25 @@ export interface OverscanInput {
 }
 
 /**
+ * Less overflow than this is float noise, not room to pan. A take whose shape
+ * matches its box fits it exactly, yet the fit's arithmetic can still leave a
+ * remainder like 3e-14px, and dividing a drag by that sent the stored pan
+ * straight to its limit while the picture visibly stayed put - until a later
+ * zoom made the stored pan real and the picture jumped. Under half a pixel
+ * nothing on screen can move, so it counts as no overflow at all.
+ */
+const MIN_OVERSCAN_PX = 0.5;
+
+function overflowBeyond(drawnPx: number, regionPx: number): number {
+  const overflow = drawnPx - regionPx;
+  return overflow >= MIN_OVERSCAN_PX ? overflow : 0;
+}
+
+/**
  * How far the picture overflows its box on each axis, at this zoom. Zero on
- * an axis the picture never overflows (a `contain` fit, most of the time) and
- * zero on both when a size is missing (the video's metadata hasn't loaded).
+ * an axis the picture never overflows (a `contain` fit, most of the time),
+ * zero on an axis it overflows by less than half a pixel, and zero on both
+ * when a size is missing (the video's metadata hasn't loaded).
  */
 export function overscanPixels(input: OverscanInput): { x: number; y: number } {
   if (
@@ -55,8 +71,8 @@ export function overscanPixels(input: OverscanInput): { x: number; y: number } {
     fit: input.fit,
   });
   return {
-    x: Math.max(0, drawRect.width * input.zoom - input.regionWidthPx),
-    y: Math.max(0, drawRect.height * input.zoom - input.regionHeightPx),
+    x: overflowBeyond(drawRect.width * input.zoom, input.regionWidthPx),
+    y: overflowBeyond(drawRect.height * input.zoom, input.regionHeightPx),
   };
 }
 

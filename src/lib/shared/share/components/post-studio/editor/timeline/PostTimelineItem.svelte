@@ -176,7 +176,7 @@
       onclick={(event) => handleMarkerClick(event, marker.seconds)}
       onkeydown={(event) => handleMarkerKeydown(event, marker.seconds)}
     >
-      <i class="fa-solid fa-diamond kf-marker-glyph" aria-hidden="true"></i>
+      <span class="kf-marker-glyph" aria-hidden="true"></span>
     </button>
   {/each}
 {/if}
@@ -310,20 +310,24 @@
     outline-offset: 2px;
   }
 
-  /* Keyframe marker: a small rotated-square diamond centered on its time,
-     with the same 44px hit width as .trim-handle so it stays reachable on
-     touch even though the visible glyph is much smaller. It sits under the
-     trim handles: a keyframe on a clip's first or last frame is common, and
-     the press at that edge trims. */
+  /* Keyframe marker: a rotated-square diamond centered on its time, with the
+     same 44px hit width as .trim-handle so it stays reachable on touch even
+     though the visible glyph is much smaller. It sits under the trim handles:
+     a keyframe on a clip's first or last frame is common, and the press at
+     that edge trims. The glyph rides the block's bottom edge, clear of the
+     label, in near-white with a dark outline so it reads on every kind's
+     tint - an accent-colored glyph vanished into the video block's own
+     accent tint. */
   .kf-marker {
     position: absolute;
     top: 3px;
     bottom: 3px;
     z-index: 1;
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
     width: 44px;
+    padding: 0 0 6px;
     transform: translateX(-50%);
     border: 0;
     background: transparent;
@@ -332,9 +336,14 @@
   }
 
   .kf-marker-glyph {
-    font-size: 0.5rem;
-    color: var(--theme-accent, #d4813a);
-    filter: drop-shadow(0 0 0 1px var(--theme-bg, #101018));
+    box-sizing: border-box;
+    width: 10px;
+    height: 10px;
+    border: 1.5px solid var(--theme-bg, #101018);
+    border-radius: 2px;
+    background: var(--theme-text, #fff);
+    transform: rotate(45deg);
+    transition: background-color var(--transition-fast);
   }
 
   .kf-marker:focus-visible .kf-marker-glyph {
@@ -344,12 +353,13 @@
 
   @media (hover: hover) {
     .kf-marker:hover .kf-marker-glyph {
-      color: var(--theme-text, #fff);
+      background: var(--theme-accent, #d4813a);
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .post-timeline-item {
+    .post-timeline-item,
+    .kf-marker-glyph {
       transition: none;
     }
   }

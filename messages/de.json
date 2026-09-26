@@ -6189,6 +6189,7 @@
   "post_curve_preset_hold": "Halten",
   "post_curve_hold_hint": "Der Wert springt zum nächsten Keyframe, anstatt sanft dorthin überzugehen.",
   "post_curve_editor_label": "Editor für die Übergangskurve",
+  "post_curve_presets": "Kurvenvorlagen",
   "post_curve_handle_start": "Anfangsgriff",
   "post_curve_handle_end": "Endgriff",
   "post_curve_handle_value": "x {x}, y {y}",
