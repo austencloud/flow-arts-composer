@@ -338,74 +338,58 @@ What changed:
   with the body held square, no staff touches the head or torso on either
   rig. Most head and torso hits come from the chest turning side-on, up to
   87°. The rest happen with the chest square and come from hard-beat
-  displacement and the render lock, which the lanes do not change: head hits
-  in the together-opposite sequences and fx-phi-psi, mostly at step 2 (ch07
-  40 of 52 head frames, ch18 92 of 141), and 5 ch18 torso frames at
-  tog-opp-ekek step 3.
+  displacement and the render lock: head hits in the together-opposite
+  sequences and fx-phi-psi, mostly at step 2 (ch07 40 of 52 head frames,
+  ch18 92 of 141), and 5 ch18 torso frames at tog-opp-ekek step 3.
 - **Timing.** The torso turn read the raw clock, which already runs through
   beat 1 during the static start pose, so the torso turned through beat 1 and
   snapped back as it began. The torso now holds where beat 1 starts, and it
   reads the same clock as the displaced props in both renderers.
-- **Each hand's lane.** The side-on corridor gave both hands one 16 cm lane,
-  and the turned chest is wider than that: a staff held upright at South runs
-  through it. Each hand's lane now opens, per moment of the score and up to
-  26 cm, to the narrowest width at which its staff comes no further into the
-  head and torso than it does with the chest square. Lanes open ahead of the
-  moments that need them and close after, no faster than 48 cm per beat. The
-  planning model is a stack of rounded boxes measured from both rigs, turned
-  with the spine segments. With lanes sized this way, a crossed pair's
-  hard-beat lane is gated like any other pair's, since the corridor already
-  keeps the hands apart.
-- **The staff as drawn.** The lanes are sized for the staff each performer is
-  drawn holding: its own length, or else the user's. Both renderers had sized
-  them for the default 34-inch staff whatever was drawn; the lab already used
-  its own length, and its hard-beat planner now does too. On the 26 test
-  sequences a 120 cm staff moves the side-on grips by up to 10 cm in 20 of
-  them. The default staff's numbers below are unchanged. A measured body's
-  lanes now also open to the full 26 cm: its own lane is off the centimetre
-  grid, and whole-centimetre steps from it stopped 3.4 mm short.
 
-Scoreboard, ch07 / ch18, staff-frames of 12,960 unless noted:
-
-| Measure                                   | Before the lanes | With the lanes |
-| ----------------------------------------- | ---------------- | -------------- |
-| Staff through the torso, as drawn         | 642 / 1,271      | 100 / 181      |
-| Staff through the head, as drawn          | 64 / 149         | 52 / 141       |
-| Head and torso where the stance plans it  | 1,189 / 1,610    | 72 / 103       |
-| Staff through a leg                       | 20 / 21          | 17 / 17        |
-| Staff through the other hand's arm        | 628 / 637        | 662 / 668      |
-| Staff through its own upper arm           | 1,908 / 1,848    | 2,751 / 2,710  |
-| Staff along or through its own forearm    | 2,886 / 2,666    | 3,732 / 3,436  |
-| Hand-frames over 3 cm from the staff      | 1,787 / 2,362    | 1,860 / 2,446  |
-| 90th-percentile hand-to-staff gap         | 3.9 / 5.7 cm     | 4.0 / 6.0 cm   |
-| Forearm pairs under 4 cm (of 6,480)       | 75 / 34          | 73 / 33        |
-| Chest over 60° past the pelvis (of 6,480) | 2,633 / 2,614    | 2,639 / 2,615  |
-
-The torso count falls by about 85%. The cost is in the arms: a staff moved
-out of the chest now runs into the path of its own arm, because the elbow is
-still solved frame by frame without knowing where the staff is. The
-together family (gggg) moved its chest contact into the arm. The extra
-hand-frames off their staffs are almost all in the three quarter-opposite
-sequences (nqnq, mpmp, oror), where the upstage hand holds the staff at South:
-the wider lane puts that grip behind the pelvis, which does not turn yet, and
-the animator's body-clearance retraction then recovers slowly (at nqnq 3.35
-the corridor is back to the body's own lane, yet the hand is still 10 cm off).
-Elbow planning (step 4) is expected to win back the arm contacts and the hips
-the grips; neither is measured yet.
-
-Opening a lane ahead of the moment that needs it has a small cost. On a
-turn's first samples, with the chest barely side-on, a lane opened for the
-committed turn can bring a staff further in than that moment's own lane
-would. Across the 26 sequences, 28 of 2,296 hand-samples came in more than
-1 mm further, all in the quarter families; 4 of them newly touched the body,
-and the worst came 1.4 cm further in. That adds 61 mm of summed intrusion to
-the 1,634 mm the per-moment lanes leave. The rate limit stays, since without
-it the grip would jump as fast as the lane.
+Staffs still pass through the chest when it turns side-on (642 / 1,271
+staff-frames as drawn, ch07 / ch18). The scoreboard holds them at those
+counts. The per-hand lanes below were the attempt to clear them; they were
+dropped.
 
 Recommended order after this: trail cleanup; reference clips from Austen
 (front and side stills he confirms) for body turns and negative space,
 starting with the together-opposite, split-same and quarter families; then
 elbow planning (step 4). Step 3 does not block any of them.
+
+### Tried and dropped: a lane for each hand
+
+When the chest turns side-on, the corridor moves both grips to one 16 cm
+depth lane. The turned chest is wider than that, so a staff held upright at
+South runs through it. The attempt gave each hand its own lane, opened per
+moment of the score, up to 26 cm, until its staff came no further into the
+head and torso than with the chest square. The check read a stack of rounded
+boxes measured from both rigs and turned with the spine.
+
+Scoreboard, ch07 / ch18, staff-frames of 12,960 unless noted:
+
+| Measure                                   | Merged        | Each hand's lane |
+| ----------------------------------------- | ------------- | ---------------- |
+| Staff through the torso, as drawn         | 642 / 1,271   | 100 / 181        |
+| Staff through the head, as drawn          | 64 / 149      | 52 / 141         |
+| Head and torso where the stance plans it  | 1,189 / 1,610 | 72 / 103         |
+| Staff through a leg                       | 20 / 21       | 17 / 17          |
+| Staff through the other hand's arm        | 628 / 637     | 662 / 668        |
+| Staff through its own upper arm           | 1,908 / 1,848 | 2,751 / 2,710    |
+| Staff along or through its own forearm    | 2,886 / 2,666 | 3,732 / 3,436    |
+| Hand-frames over 3 cm from the staff      | 1,787 / 2,362 | 1,860 / 2,446    |
+| 90th-percentile hand-to-staff gap         | 3.9 / 5.7 cm  | 4.0 / 6.0 cm     |
+| Forearm pairs under 4 cm (of 6,480)       | 75 / 34       | 73 / 33          |
+| Chest over 60° past the pelvis (of 6,480) | 2,633 / 2,614 | 2,639 / 2,615    |
+
+The counts improved where the lanes aimed, and the pose got worse. Side by
+side at gggg beats 1 and 2, the lane pulled one arm back behind the head,
+where its hand and staff dropped out of sight, and laid the other staff along
+its own forearm. Without the lanes the pose reads as two arms reaching
+together, with one staff through the face. Austen rejected the lanes on
+2026-09-26 from those pictures, and they were reverted before the merge.
+Commit `2dd227ba5f` and its follow-ups hold the work if elbow planning makes
+it worth another look. Judge the next attempt from pictures of the whole pose
+before the counts: a contact count can fall while the pose gets worse.
 
 ## Target architecture
 
@@ -459,7 +443,7 @@ installed from `patches/@austencloud__scene-3d@0.1.6.patch`.
 | Render lock, 6 cm                  | `Avatar3D.svelte:529`, clamp `:652`, applied `:1663`, `:1670`, report `:1886` |
 | Orbit renderer without lock        | `worker-performer.ts:436-491`; routing `Viewer3DCanvas.svelte:346-385`        |
 | Grid radius                        | `plane-transforms.ts:34`                                                      |
-| Split pairs flattened, depth jump  | `upper-body-stance-planner.ts:155-188`, `:241-247`                            |
+| Split pairs flattened, depth jump  | `upper-body-stance-planner.ts:127-160`, `:211-217`                            |
 | Concave paths off in 3D            | `prop-state-interpolator.ts:33`                                               |
 | Lab-only strict path               | `AvatarAnimator.ts:718-1007`; host `ContactIsolationPerformer.svelte:69`      |
 | Tests pinning the constants        | `tests/unit/3d-animation/avatar-head-clearance-policy.test.ts:37-45`          |
