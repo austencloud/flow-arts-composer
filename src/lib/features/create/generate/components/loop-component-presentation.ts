@@ -1,6 +1,12 @@
 import { t } from "$lib/shared/i18n/i18n.svelte.js";
 import { LOOPComponent } from "$lib/features/create/generate/shared/domain/constants/loop-components";
 
+import {
+  parseLoopComponents,
+  formatLOOPTypeForDisplay,
+} from "$lib/shared/create/services/loop-type-utils";
+import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
+
 const LABELS = {
   [LOOPComponent.ROTATED]: "generator_loop_rotated",
   [LOOPComponent.MIRRORED]: "create_deep_reflection",
@@ -27,4 +33,14 @@ export function loopComponentLabel(component: LOOPComponent): string {
 export function loopComponentDescription(component: LOOPComponent): string {
   const key = DESCRIPTIONS[component as keyof typeof DESCRIPTIONS];
   return key ? t(key) : component;
+}
+
+export function loopTypeLabel(
+  loopType: LOOPType | string | null | undefined
+): string {
+  if (!loopType) return "";
+  const components = [...parseLoopComponents(loopType)];
+  return components.length
+    ? components.map(loopComponentLabel).join(" + ")
+    : formatLOOPTypeForDisplay(loopType);
 }

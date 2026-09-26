@@ -3,8 +3,10 @@ import {
   type TakeTiming,
   type TimingSection,
 } from "$lib/shared/media-composition/domain/take-timing";
-import type { PostBuilderState } from "$lib/shared/media-composition/state/post-builder-state.svelte";
-import { createPostTimingSession } from "$lib/shared/share/components/post-studio/builder/post-timing-session.svelte";
+import {
+  createPostTimingSession,
+  type TimingHost,
+} from "$lib/shared/share/components/post-studio/builder/post-timing-session.svelte";
 
 /** A Timing session over one untapped take, with no video attached. */
 export function createPostTimingSessionHarness() {
@@ -17,9 +19,8 @@ export function createPostTimingSessionHarness() {
     })
   );
   const builder = {
-    plan: { takes: [{ id: "take-a", durationSeconds: 60 }] },
+    takes: [{ id: "take-a", label: "Take A", durationSeconds: 60 }],
     selectedTakeId: "take-a",
-    step: "timing",
     moveBeats: [1, 1, 1, 1, 1, 1, 1, 1],
     takesInUse: [],
     mediaUrl: () => null,
@@ -41,7 +42,11 @@ export function createPostTimingSessionHarness() {
     editTiming: (_takeId: string, edit: (current: TakeTiming) => TakeTiming) => {
       timing = edit(timing);
     },
-  } as unknown as PostBuilderState;
+    confirmTiming: () => {},
+    canUndoTiming: () => false,
+    undoTiming: () => {},
+    exitTiming: () => {},
+  } as unknown as TimingHost;
   let session!: ReturnType<typeof createPostTimingSession>;
   const dispose = $effect.root(() => {
     session = createPostTimingSession(builder);

@@ -1,3 +1,5 @@
+import { t } from "$lib/shared/i18n/i18n.svelte.js";
+import { loopTypeLabel } from "$lib/features/create/generate/components/loop-component-presentation";
 /**
  * Extension Flow Coordinator
  *
@@ -7,7 +9,11 @@
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { ExtensionFlowStart, BridgeAppendResult, ExtensionApplyResult } from "./sequence-extender";
+import type {
+  ExtensionFlowStart,
+  BridgeAppendResult,
+  ExtensionApplyResult,
+} from "./sequence-extender";
 import type { SequenceExtender } from "./sequence-extender";
 import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
 import { orientationCycleExtender } from "$lib/features/create/generate/circular/services/orientation-cycle-extender";
@@ -55,7 +61,7 @@ export class ExtensionFlowCoordinator {
           analysis,
           circularizationOptions: [],
           directUnavailableReason: null,
-          errorMessage: "Cannot extend this sequence",
+          errorMessage: t("create_audit_cannot_extend"),
         };
       }
 
@@ -63,8 +69,7 @@ export class ExtensionFlowCoordinator {
         canExtend: true,
         analysis,
         circularizationOptions,
-        directUnavailableReason:
-          "Placement groups don't match for direct extension",
+        directUnavailableReason: t("create_audit_placement_mismatch"),
         errorMessage: null,
       };
     } catch (error) {
@@ -74,7 +79,7 @@ export class ExtensionFlowCoordinator {
         analysis: null,
         circularizationOptions: [],
         directUnavailableReason: null,
-        errorMessage: "Failed to analyze sequence for extension",
+        errorMessage: t("create_audit_analyze_error"),
       };
     }
   }
@@ -98,7 +103,7 @@ export class ExtensionFlowCoordinator {
         success: true,
         sequence: sequenceWithBridge,
         analysis,
-        message: `Added "${bridgeLetter}" - now choose LOOP pattern`,
+        message: t("create_audit_bridge_added", { letter: bridgeLetter }),
       };
     } catch (error) {
       console.error("[ExtensionFlowCoordinator] appendBridge failed:", error);
@@ -106,7 +111,7 @@ export class ExtensionFlowCoordinator {
         success: false,
         sequence: null,
         analysis: null,
-        message: "Could not add bridge letter",
+        message: t("create_audit_bridge_error"),
       };
     }
   }
@@ -131,16 +136,19 @@ export class ExtensionFlowCoordinator {
           success: false,
           sequence: null,
           stepsAdded: 0,
-          message: "No extension steps generated",
+          message: t("create_audit_empty_extension"),
         };
       }
 
-      const loopName = loopType.replace(/_/g, " ");
+      const loopName = loopTypeLabel(loopType);
       return {
         success: true,
         sequence: extendedSequence,
         stepsAdded,
-        message: `Extended with ${loopName}! Added ${stepsAdded} steps`,
+        message: t("create_audit_extended", {
+          name: loopName,
+          count: stepsAdded,
+        }),
       };
     } catch (error) {
       console.error("[ExtensionFlowCoordinator] applyLoop failed:", error);
@@ -148,7 +156,7 @@ export class ExtensionFlowCoordinator {
         success: false,
         sequence: null,
         stepsAdded: 0,
-        message: "Could not extend sequence",
+        message: t("create_audit_extend_error"),
       };
     }
   }
@@ -161,7 +169,8 @@ export class ExtensionFlowCoordinator {
   applyOrientationRepeat(sequence: SequenceData): ExtensionApplyResult {
     try {
       const originalLength = sequence.steps?.length || 0;
-      const extendedSequence = orientationCycleExtender.extendIfNeeded(sequence);
+      const extendedSequence =
+        orientationCycleExtender.extendIfNeeded(sequence);
       const stepsAdded = (extendedSequence.steps?.length || 0) - originalLength;
 
       if (stepsAdded === 0) {
@@ -169,7 +178,7 @@ export class ExtensionFlowCoordinator {
           success: false,
           sequence: null,
           stepsAdded: 0,
-          message: "Orientation already returns at the end of this sequence",
+          message: t("create_audit_orientation_closed"),
         };
       }
 
@@ -178,7 +187,10 @@ export class ExtensionFlowCoordinator {
         success: true,
         sequence: extendedSequence,
         stepsAdded,
-        message: `Repeated ×${count} — orientation now returns. Added ${stepsAdded} steps`,
+        message: t("create_audit_repeated", {
+          repeats: count,
+          count: stepsAdded,
+        }),
       };
     } catch (error) {
       console.error(
@@ -189,7 +201,7 @@ export class ExtensionFlowCoordinator {
         success: false,
         sequence: null,
         stepsAdded: 0,
-        message: "Could not repeat sequence",
+        message: t("create_audit_repeat_error"),
       };
     }
   }

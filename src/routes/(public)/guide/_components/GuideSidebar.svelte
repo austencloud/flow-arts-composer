@@ -29,6 +29,7 @@
   import { tick } from "svelte";
   import { page } from "$app/state";
   import { growFade } from "$lib/shared/transitions/motion";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import {
     bodyPagesByGroup,
     GROUP_TITLES,
@@ -147,7 +148,11 @@
   });
 </script>
 
-<nav class="guide-nav" aria-label="Guide navigation" bind:this={navEl}>
+<nav
+  class="guide-nav"
+  aria-label={tDynamic("guide_nav_aria")}
+  bind:this={navEl}
+>
   <!-- ── Level 1 ─────────────────────────────────────────────────────── -->
   <div class="level-block">
     <div class="level-header">
@@ -156,13 +161,15 @@
         href="/guide/level-1"
         onclick={() => onLinkClick?.()}
       >
-        Level 1
+        {tDynamic("guide_hub_level1_title")}
       </a>
       <button
         type="button"
         class="level-toggle"
         aria-expanded={level1Open}
-        aria-label={level1Open ? "Collapse Level 1" : "Expand Level 1"}
+        aria-label={tDynamic(
+          level1Open ? "guide_nav_collapse_level1" : "guide_nav_expand_level1"
+        )}
         onclick={() => (level1Choice = !level1Open)}
       >
         <i class="fas fa-chevron-down" aria-hidden="true"></i>
@@ -206,13 +213,15 @@
         href="/guide/level-2"
         onclick={() => onLinkClick?.()}
       >
-        Level 2
+        {tDynamic("guide_hub_level2_title")}
       </a>
       <button
         type="button"
         class="level-toggle"
         aria-expanded={level2Open}
-        aria-label={level2Open ? "Collapse Level 2" : "Expand Level 2"}
+        aria-label={tDynamic(
+          level2Open ? "guide_nav_collapse_level2" : "guide_nav_expand_level2"
+        )}
         onclick={() => (level2Choice = !level2Open)}
       >
         <i class="fas fa-chevron-down" aria-hidden="true"></i>
@@ -258,7 +267,7 @@
       href="/guide/ratios"
       onclick={() => onLinkClick?.()}
     >
-      Ratios
+      {tDynamic("guide_hub_ratios_title")}
     </a>
   </div>
 
@@ -270,7 +279,7 @@
       href="/guide/motion-paths"
       onclick={() => onLinkClick?.()}
     >
-      Motion paths
+      {tDynamic("guide_hub_motion_paths_title")}
     </a>
   </div>
 
@@ -282,12 +291,14 @@
       href="/guide/codex"
       onclick={() => onLinkClick?.()}
     >
-      Codex
+      {tDynamic("guide_nav_codex")}
     </a>
   </div>
 
   <div class="chapter-group">
-    <div class="group-heading"><span>Downloads</span></div>
+    <div class="group-heading">
+      <span>{tDynamic("guide_nav_downloads")}</span>
+    </div>
     <ul class="section-list">
       <li>
         <a
@@ -296,7 +307,7 @@
           download
           onclick={() => onLinkClick?.()}
         >
-          Level 1 PDF
+          {tDynamic("guide_nav_level1_pdf")}
         </a>
       </li>
       <li>
@@ -306,7 +317,7 @@
           download
           onclick={() => onLinkClick?.()}
         >
-          Level 2 PDF
+          {tDynamic("guide_nav_level2_pdf")}
         </a>
       </li>
       <li>
@@ -316,7 +327,7 @@
           download
           onclick={() => onLinkClick?.()}
         >
-          Level 3 PDF
+          {tDynamic("guide_nav_level3_pdf")}
         </a>
       </li>
     </ul>

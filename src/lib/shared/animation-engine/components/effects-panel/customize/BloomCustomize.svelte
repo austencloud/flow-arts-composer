@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
   import type { BloomIntent } from "$lib/shared/effects/domain/effects-config";
   import OptionChipRow from "../OptionChipRow.svelte";
@@ -40,7 +41,7 @@
 <div class="customize-view">
   <button type="button" class="back-btn" onclick={onBack}>
     <i class="fas fa-arrow-left" aria-hidden="true"></i>
-    Back to presets
+    {t("effect_deep_back_to_presets")}
   </button>
 
   {#if state}
@@ -63,7 +64,7 @@
 
       {#if state.bloom.colorMode === "solid"}
         <div class="color-row">
-          <span class="color-label">Tint</span>
+          <span class="color-label">{t("effect_deep_tint")}</span>
           <div class="color-pickers">
             <label class="color-picker">
               <input
@@ -79,7 +80,7 @@
         </div>
       {:else if state.bloom.colorMode === "palette"}
         <div class="color-row">
-          <span class="color-label">Palette</span>
+          <span class="color-label">{t("effect_deep_palette")}</span>
           <div class="color-pickers">
             {#each Array.from({ length: 5 }, (_, i) => i) as i (i)}
               <label class="color-picker">
@@ -100,7 +101,7 @@
 
       <!-- Intensity -->
       <div class="slider-row">
-        <label for="bloom-intensity">Intensity</label>
+        <label for="bloom-intensity">{t("effect_deep_intensity")}</label>
         <input
           id="bloom-intensity"
           type="range"
@@ -120,7 +121,7 @@
 
       <!-- Radius -->
       <div class="slider-row">
-        <label for="bloom-radius">Radius</label>
+        <label for="bloom-radius">{t("effect_deep_radius")}</label>
         <input
           id="bloom-radius"
           type="range"
@@ -138,7 +139,7 @@
 
       <AdvancedControls count={6}>
         <div class="slider-row">
-          <label for="bloom-core">Core</label>
+          <label for="bloom-core">{t("effect_deep_core")}</label>
           <input
             id="bloom-core"
             type="range"
@@ -158,7 +159,7 @@
 
         <!-- Pulse -->
         <div class="slider-row">
-          <label for="bloom-pulse">Pulse</label>
+          <label for="bloom-pulse">{t("effect_deep_pulse")}</label>
           <input
             id="bloom-pulse"
             type="range"
@@ -178,7 +179,7 @@
 
         <!-- Pulse Rate -->
         <div class="slider-row">
-          <label for="bloom-pulse-rate">Rate</label>
+          <label for="bloom-pulse-rate">{t("effect_deep_rate")}</label>
           <input
             id="bloom-pulse-rate"
             type="range"
@@ -196,7 +197,7 @@
 
         <!-- Streak (anamorphic motion smear) -->
         <div class="slider-row">
-          <label for="bloom-streak">Streak</label>
+          <label for="bloom-streak">{t("effect_deep_streak")}</label>
           <input
             id="bloom-streak"
             type="range"
@@ -216,7 +217,7 @@
 
         <!-- Spikes (diffraction star glint) -->
         <div class="slider-row">
-          <label for="bloom-spikes">Spikes</label>
+          <label for="bloom-spikes">{t("effect_deep_spikes")}</label>
           <input
             id="bloom-spikes"
             type="range"
@@ -236,7 +237,7 @@
 
         <!-- Afterglow (long-exposure trail persistence) -->
         <div class="slider-row">
-          <label for="bloom-afterglow">Afterglow</label>
+          <label for="bloom-afterglow">{t("effect_deep_afterglow")}</label>
           <input
             id="bloom-afterglow"
             type="range"
@@ -256,7 +257,7 @@
       </AdvancedControls>
     </div>
   {:else}
-    <p class="empty">Effect state unavailable.</p>
+    <p class="empty">{t("effect_deep_effect_state_unavailable")}</p>
   {/if}
 </div>
 

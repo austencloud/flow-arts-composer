@@ -365,7 +365,7 @@ compensation), so the detail view behind this sheet updates on its own.
           selectedIds={memberIds}
           onSelect={handleSelect}
           onBack={backToDrill}
-          backLabel="Start here"
+          backLabel={t("site_start_here")}
           hideToolbarSearch
           onOpenFilters={() => (filterSheetOpen = true)}
         />

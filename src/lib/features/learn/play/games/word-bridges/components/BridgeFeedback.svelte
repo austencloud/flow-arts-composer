@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
   import type {
     BridgeLetterInfo,
@@ -64,61 +65,96 @@
     return group.charAt(0).toUpperCase() + group.slice(1);
   }
 
+  function bridgeCount(count: number): string {
+    return tDynamic(
+      count === 1 ? "learn_bridge_count_one" : "learn_bridge_count_many",
+      { count }
+    );
+  }
+
   const headline = $derived.by(() => {
     if (question.task === "validity") {
       return question.analysis.canRunAsWritten
-        ? "Runs exactly as written"
-        : `${question.analysis.requiredBridgeCount} ${question.analysis.requiredBridgeCount === 1 ? "bridge" : "bridges"} needed`;
+        ? tDynamic("learn_bridge_runs_as_written")
+        : tDynamic("learn_bridge_count_needed", {
+            count: bridgeCount(question.analysis.requiredBridgeCount),
+          });
     }
 
     if (question.task === "count") {
-      return `${question.correctAnswer} ${question.correctAnswer === 1 ? "bridge" : "bridges"}`;
+      return bridgeCount(question.correctAnswer);
     }
 
     if (selectedRepairChoice?.isCorrect) {
-      return `${selectedRepairChoice.letter} connects both sides`;
+      return tDynamic("learn_bridge_connects_both", {
+        letter: selectedRepairChoice.letter,
+      });
     }
     return selectedRepairChoice
-      ? `${selectedRepairChoice.letter} leaves a mismatch`
-      : "A bridge closes both sides";
+      ? tDynamic("learn_bridge_leaves_mismatch", {
+          letter: selectedRepairChoice.letter,
+        })
+      : tDynamic("learn_bridge_closes_both");
   });
 
   const explanation = $derived.by(() => {
     if (question.task === "validity" && question.analysis.canRunAsWritten) {
-      return "Every ending placement matches the next starting placement.";
+      return tDynamic("learn_bridge_every_match");
     }
 
     if (question.task === "count") {
       if (question.correctAnswer === 0) {
-        return "Every ending placement already matches the next starting placement.";
+        return tDynamic("learn_bridge_already_match");
       }
-      return "Add the numbers on the gap markers. Select one to inspect it.";
+      return tDynamic("learn_bridge_add_markers");
     }
 
     if (question.task === "repair" && selectedRepairChoice) {
       if (selectedRepairChoice.isCorrect) {
-        return `${selectedRepairChoice.letter} starts at ${groupLabel(selectedRepairChoice.startPlacementGroup)} and ends at ${groupLabel(selectedRepairChoice.endPlacementGroup)}, matching both neighbors.`;
+        return tDynamic("learn_bridge_matches_neighbors", {
+          letter: selectedRepairChoice.letter,
+          start: groupLabel(selectedRepairChoice.startPlacementGroup),
+          end: groupLabel(selectedRepairChoice.endPlacementGroup),
+        });
       }
 
       const failures: string[] = [];
       if (!selectedRepairChoice.leftConnects) {
         failures.push(
-          `it starts at ${groupLabel(selectedRepairChoice.startPlacementGroup)}, not ${groupLabel(focusGap.fromEndPlacementGroup)}`
+          tDynamic("learn_bridge_wrong_start", {
+            actual: groupLabel(selectedRepairChoice.startPlacementGroup),
+            expected: groupLabel(focusGap.fromEndPlacementGroup),
+          })
         );
       }
       if (!selectedRepairChoice.rightConnects) {
         failures.push(
-          `it ends at ${groupLabel(selectedRepairChoice.endPlacementGroup)}, not ${groupLabel(focusGap.toStartPlacementGroup)}`
+          tDynamic("learn_bridge_wrong_end", {
+            actual: groupLabel(selectedRepairChoice.endPlacementGroup),
+            expected: groupLabel(focusGap.toStartPlacementGroup),
+          })
         );
       }
-      return `${selectedRepairChoice.letter} misses because ${failures.join(" and ")}.`;
+      return tDynamic("learn_bridge_misses_because", {
+        letter: selectedRepairChoice.letter,
+        failures: failures.join(` ${tDynamic("learn_bridge_and")} `),
+      });
     }
 
     if (!focusGap.direct) {
-      return `${focusGap.from} ends at ${groupLabel(focusGap.fromEndPlacementGroup)}, while ${focusGap.to} starts at ${groupLabel(focusGap.toStartPlacementGroup)}.`;
+      return tDynamic("learn_bridge_gap_mismatch", {
+        from: focusGap.from,
+        fromGroup: groupLabel(focusGap.fromEndPlacementGroup),
+        to: focusGap.to,
+        toGroup: groupLabel(focusGap.toStartPlacementGroup),
+      });
     }
 
-    return `${focusGap.from} ends at ${groupLabel(focusGap.fromEndPlacementGroup)}, matching ${focusGap.to}'s starting group.`;
+    return tDynamic("learn_bridge_gap_match", {
+      from: focusGap.from,
+      group: groupLabel(focusGap.fromEndPlacementGroup),
+      to: focusGap.to,
+    });
   });
 
   const alternateAnswers = $derived.by(() => {
@@ -130,13 +166,20 @@
 
   function nodeDetail(index: number): string {
     if (index === 0) {
-      return `Ends ${groupLabel(focusGap.fromEndPlacementGroup)}`;
+      return tDynamic("learn_bridge_node_ends", {
+        group: groupLabel(focusGap.fromEndPlacementGroup),
+      });
     }
     if (index === chainLetters.length - 1) {
-      return `Starts ${groupLabel(focusGap.toStartPlacementGroup)}`;
+      return tDynamic("learn_bridge_node_starts", {
+        group: groupLabel(focusGap.toStartPlacementGroup),
+      });
     }
     const bridge = explanationPath[index - 1]!;
-    return `${groupLabel(bridge.startPlacementGroup)} to ${groupLabel(bridge.endPlacementGroup)}`;
+    return tDynamic("learn_bridge_node_to", {
+      start: groupLabel(bridge.startPlacementGroup),
+      end: groupLabel(bridge.endPlacementGroup),
+    });
   }
 </script>
 
@@ -154,7 +197,10 @@
   </header>
 
   <div class="chain-scroll themed-scrollbar">
-    <div class="pictograph-chain" aria-label="The connecting letter path">
+    <div
+      class="pictograph-chain"
+      aria-label={tDynamic("learn_bridge_chain_aria")}
+    >
       {#each chainLetters as letter, index (`${letter}-${index}`)}
         <BridgeLetterCard
           {letter}
@@ -163,9 +209,12 @@
           bridge={index > 0 && index < chainLetters.length - 1}
         />
         {#if index < chainLetters.length - 1}
-          <span class="match-arrow" aria-label="Placements match">
+          <span
+            class="match-arrow"
+            aria-label={tDynamic("learn_bridge_match_aria")}
+          >
             <span aria-hidden="true">→</span>
-            <small>match</small>
+            <small>{tDynamic("learn_bridge_match")}</small>
           </span>
         {/if}
       {/each}
@@ -174,9 +223,9 @@
 
   {#if question.task === "repair" && alternateAnswers.length > 0}
     <p class="alternate-answer">
-      {isCorrect ? "Also valid" : "Valid bridges"}: {alternateAnswers.join(
-        ", "
-      )}
+      {isCorrect
+        ? tDynamic("learn_bridge_also_valid")
+        : tDynamic("learn_bridge_valid_bridges")}: {alternateAnswers.join(", ")}
     </p>
   {/if}
 </div>

@@ -200,7 +200,9 @@
     if (!providedController) controller.active = artType === "tunnel";
   });
   const saveTunnelLabel = $derived(
-    tunnelSaveTarget ? t("viewer_detail_save_tunnel_changes") : t("viewer_detail_save_tunnel_to_visuals")
+    tunnelSaveTarget
+      ? t("viewer_detail_save_tunnel_changes")
+      : t("viewer_detail_save_tunnel_to_visuals")
   );
   const inspectorHost = getOptionalViewerInspectorHostContext();
   const tunnelStage = getOptionalViewerTunnelStageContext();
@@ -831,7 +833,7 @@
       <div class="preview-overlay" transition:fade={{ duration: 180 }}>
         <VideoPreviewPanel
           blobUrl={exportState.previewBlobUrl}
-          saveLabel="Save"
+          saveLabel={t("browse_save")}
           onRedownload={() => void saveTunnelVideo()}
           onDismiss={dismissTunnelPreview}
         />

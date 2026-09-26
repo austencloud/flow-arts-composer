@@ -13,6 +13,7 @@
   import { getAudioAnalyzer } from "$lib/features/feedback/get-audio-analyzer";
   import type { FeedbackSubmitState } from "../../state/feedback-submit-state.svelte";
   import { TYPE_CONFIG } from "$lib/shared/feedback/domain/models/feedback-models";
+  import { feedbackTypePlaceholder } from "../../domain/feedback-display-labels";
   import type { FeedbackType } from "$lib/shared/feedback/domain/models/feedback-models";
   import SuccessState from "./SuccessState.svelte";
   import TypeSelector from "./TypeSelector.svelte";
@@ -262,8 +263,9 @@
       bind:this={textareaRef}
       value={formState.formData.description}
       error={formState.formErrors.description}
-      placeholder={currentTypeConfig?.placeholder ??
-        t("feedback_default_placeholder")}
+      placeholder={feedbackType
+        ? feedbackTypePlaceholder(feedbackType)
+        : t("feedback_default_placeholder")}
       {isTranscribing}
       isMobile={isMobileDevice}
       {isTouchDevice}

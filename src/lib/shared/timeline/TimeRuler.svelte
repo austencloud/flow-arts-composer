@@ -3,7 +3,10 @@
    * TimeRuler - Time scale header showing seconds/frames
    *
    * Displays time markers with major/minor ticks based on zoom level.
-   * Adapts tick density to current zoom.
+   * Adapts tick density to current zoom. Shared by Compose's beat timeline,
+   * Stage's count ruler and Post Studio's timeline (each passes its own
+   * `pixelsPerSecond`/`tickInterval`/`formatLabel`, so "seconds" here just
+   * means "the timeline's unit").
    */
 
   import type { TimeSeconds } from "$lib/shared/animation-engine/domain/timeline-types";
@@ -13,10 +16,23 @@
     pixelsPerSecond: number;
     formatLabel?: (value: number) => string;
     tickInterval?: number;
+    /** Added to every tick's displayed time, e.g. a ruler showing a window
+     *  that starts partway through a longer timeline. Ticks still lay out at
+     *  their local `x` position; only the label shifts. */
+    offsetSeconds?: number;
+    /** Extra class(es) on the root, for a caller that needs to position or
+     *  size the ruler beyond the default 100% width/height. */
+    class?: string;
   }
 
-  let { duration, pixelsPerSecond, formatLabel, tickInterval }: Props =
-    $props();
+  let {
+    duration,
+    pixelsPerSecond,
+    formatLabel,
+    tickInterval,
+    offsetSeconds = 0,
+    class: className,
+  }: Props = $props();
 
   // Calculate appropriate tick interval based on zoom
   const resolvedTickInterval = $derived.by(() => {
@@ -29,8 +45,11 @@
     return 30; // Every 30s at low zoom
   });
 
-  // Major tick is every 5th minor tick
-  const majorInterval = $derived(resolvedTickInterval * 5);
+  // Every 5th minor tick is major. Ticks below only carry this out by index,
+  // not by testing the accumulated time - `0.1 * 5` etc. can land a hair off
+  // a whole number in floating point, so a fractional interval (e.g. 0.5s at
+  // high zoom) intermittently marked the wrong tick major.
+  const MAJOR_EVERY = 5;
 
   // Generate tick marks
   const ticks = $derived.by(() => {
@@ -41,14 +60,18 @@
       x: number;
     }> = [];
     const interval = resolvedTickInterval;
-    const major = majorInterval;
+    if (!(interval > 0) || !(duration >= 0)) return result;
 
-    let index = 0;
-    for (let t = 0; t <= duration; t += interval) {
+    const count = Math.floor(duration / interval);
+    for (let index = 0; index <= count; index++) {
+      // Multiplying from the index (instead of repeatedly adding `interval`)
+      // keeps each tick's time exact instead of compounding rounding error
+      // over hundreds of ticks at a fine interval.
+      const t = index * interval;
       result.push({
-        id: `tick-${index++}`, // Use unique index-based ID to avoid floating point key issues
+        id: `tick-${index}`,
         time: t,
-        major: t % major === 0,
+        major: index % MAJOR_EVERY === 0,
         x: t * pixelsPerSecond,
       });
     }
@@ -58,9 +81,10 @@
 
   // Format time as MM:SS or MM:SS.ms depending on zoom
   function formatTime(seconds: number): string {
-    if (formatLabel) return formatLabel(seconds);
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+    const shown = seconds + offsetSeconds;
+    if (formatLabel) return formatLabel(shown);
+    const mins = Math.floor(shown / 60);
+    const secs = shown % 60;
 
     if (pixelsPerSecond > 100) {
       // Show milliseconds at high zoom
@@ -70,7 +94,7 @@
   }
 </script>
 
-<div class="time-ruler">
+<div class="time-ruler {className ?? ''}">
   {#each ticks as tick (tick.id)}
     <div class="tick" class:major={tick.major} style="left: {tick.x}px">
       <div class="tick-line"></div>

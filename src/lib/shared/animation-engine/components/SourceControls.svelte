@@ -5,6 +5,7 @@
   action buttons (pick/skip/shuffle), and current sequence info.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { SourceMode } from "$lib/shared/animation-engine/services/sequence-chaining-orchestrator";
   import { simplifyAndTruncate } from "$lib/shared/foundation/utils/word-simplifier";
@@ -36,8 +37,12 @@
 </script>
 
 <div class="source-controls">
-  <h3>Source</h3>
-  <div class="source-toggle" role="radiogroup" aria-label="Sequence source">
+  <h3>{t("effect_deep_source")}</h3>
+  <div
+    class="source-toggle"
+    role="radiogroup"
+    aria-label={t("effect_deep_sequence_source")}
+  >
     <button
       role="radio"
       class="source-btn"
@@ -46,7 +51,7 @@
       onclick={() => onSourceChange("pick")}
     >
       <i class="fas fa-hand-pointer" aria-hidden="true"></i>
-      Pick
+      {t("effect_deep_pick")}
     </button>
     <button
       role="radio"
@@ -56,7 +61,7 @@
       onclick={() => onSourceChange("library")}
     >
       <i class="fas fa-book" aria-hidden="true"></i>
-      Library
+      {t("effect_deep_library")}
     </button>
     <button
       role="radio"
@@ -66,15 +71,23 @@
       onclick={() => onSourceChange("infinite")}
     >
       <i class="fas fa-infinity" aria-hidden="true"></i>
-      Infinite
+      {t("effect_deep_infinite")}
     </button>
   </div>
 
   {#if sourceMode === "pick"}
     <div class="auto-actions">
-      <button class="action-btn" onclick={onPick} aria-label={sequence ? "Change the current sequence" : "Pick a sequence to load"}>
+      <button
+        class="action-btn"
+        onclick={onPick}
+        aria-label={sequence
+          ? t("effect_deep_change_current_sequence")
+          : t("effect_deep_pick_sequence_to_load")}
+      >
         <i class="fas fa-folder-open" aria-hidden="true"></i>
-        {sequence ? "Change Sequence" : "Pick Sequence"}
+        {sequence
+          ? t("effect_deep_change_sequence")
+          : t("effect_deep_pick_sequence")}
       </button>
       {#if sequence}
         <div class="util-actions">
@@ -83,13 +96,22 @@
               getData={getDebugData}
               variant="icon-only"
               size="md"
-              ariaLabel="Copy sequence data for AI"
+              ariaLabel={t("effect_deep_copy_sequence_data")}
               useToast
-              labels={{ success: "Sequence copied", error: "Copy failed" }}
+              labels={{
+                success: t("effect_deep_sequence_copied"),
+                error: t("effect_deep_copy_failed"),
+              }}
             />
           {/if}
           {#if onSave}
-            <button data-save-shortcut class="icon-btn save-btn" onclick={onSave} aria-label="Save sequence to library" title="Save to library">
+            <button
+              data-save-shortcut
+              class="icon-btn save-btn"
+              onclick={onSave}
+              aria-label={t("effect_deep_save_sequence")}
+              title={t("effect_deep_save_to_library")}
+            >
               <i class="fas fa-bookmark" aria-hidden="true"></i>
             </button>
           {/if}
@@ -98,14 +120,24 @@
     </div>
   {:else}
     <div class="auto-actions">
-      <button class="action-btn skip-btn" onclick={onSkip} disabled={isChainingNow || !sequence} aria-label="Skip to the next sequence">
+      <button
+        class="action-btn skip-btn"
+        onclick={onSkip}
+        disabled={isChainingNow || !sequence}
+        aria-label={t("effect_deep_skip_to_next")}
+      >
         <i class="fas fa-forward" aria-hidden="true"></i>
-        Skip
+        {t("effect_deep_skip")}
       </button>
       {#if sourceMode === "infinite"}
-        <button class="action-btn shuffle-btn" onclick={onShuffle} disabled={isChainingNow || !sequence} aria-label="Shuffle to a random sequence">
+        <button
+          class="action-btn shuffle-btn"
+          onclick={onShuffle}
+          disabled={isChainingNow || !sequence}
+          aria-label={t("effect_deep_shuffle_to_random")}
+        >
           <i class="fas fa-random" aria-hidden="true"></i>
-          Shuffle
+          {t("effect_deep_shuffle")}
         </button>
       {/if}
       {#if sequence}
@@ -115,13 +147,22 @@
               getData={getDebugData}
               variant="icon-only"
               size="md"
-              ariaLabel="Copy sequence data for AI"
+              ariaLabel={t("effect_deep_copy_sequence_data")}
               useToast
-              labels={{ success: "Sequence copied", error: "Copy failed" }}
+              labels={{
+                success: t("effect_deep_sequence_copied"),
+                error: t("effect_deep_copy_failed"),
+              }}
             />
           {/if}
           {#if onSave}
-            <button data-save-shortcut class="icon-btn save-btn" onclick={onSave} aria-label="Save sequence to library" title="Save to library">
+            <button
+              data-save-shortcut
+              class="icon-btn save-btn"
+              onclick={onSave}
+              aria-label={t("effect_deep_save_sequence")}
+              title={t("effect_deep_save_to_library")}
+            >
               <i class="fas fa-bookmark" aria-hidden="true"></i>
             </button>
           {/if}
@@ -132,11 +173,23 @@
 
   <!-- Always render the slot so space is reserved and conditional hydration
        of `sequence` doesn't shift the EffectsPanel below (CLS). -->
-  <div class="sequence-info" data-empty={!sequence || undefined} aria-hidden={!sequence || undefined}>
+  <div
+    class="sequence-info"
+    data-empty={!sequence || undefined}
+    aria-hidden={!sequence || undefined}
+  >
     {#if sequence}
-      <span class="seq-name">{simplifyAndTruncate(sequence.word || sequence.name || "Unnamed")}</span>
+      <span class="seq-name"
+        >{simplifyAndTruncate(
+          sequence.word || sequence.name || t("effect_deep_unnamed")
+        )}</span
+      >
       <span class="seq-meta">
-        <span class="seq-beats">{sequence.steps?.length || 0} steps</span>
+        <span class="seq-beats"
+          >{t("effect_deep_step_count", {
+            count: sequence.steps?.length || 0,
+          })}</span
+        >
       </span>
     {:else}
       <span class="seq-name seq-placeholder">&nbsp;</span>

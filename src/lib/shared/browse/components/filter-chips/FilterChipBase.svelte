@@ -39,6 +39,15 @@ Popover uses fixed positioning to escape overflow:hidden containers.
     disabled?: boolean;
     /** Accessible name when the visible label does not describe the action. */
     ariaLabel?: string;
+    /**
+     * What the dropdown's popover is, for assistive tech. listbox (default) =
+     * a plain list of options, the usual chip menu. dialog = richer content
+     * (number fields, a plot) that is more than a list of options; any option
+     * rows inside it then sit in their own `role="listbox"`.
+     */
+    popupRole?: "listbox" | "dialog";
+    /** The popover's accessible name. Defaults to "<label> options". */
+    popupLabel?: string;
     children?: Snippet;
     onclick?: () => void;
     /**
@@ -86,6 +95,8 @@ Popover uses fixed positioning to escape overflow:hidden containers.
     expanded = false,
     disabled = false,
     ariaLabel,
+    popupRole = "listbox",
+    popupLabel,
     ghostKind,
     children,
     onclick,
@@ -119,10 +130,14 @@ Popover uses fixed positioning to escape overflow:hidden containers.
   let popoverEl: HTMLDivElement | null = $state(null);
   let popoverTop = $state(0);
   let popoverLeft = $state(0);
+  let popoverMaxHeight: number | null = $state(null);
 
   /** Keeps the menu on screen: below the chip when there is room, above it when
-   * there is not, and never past either side edge. Reading `popoverEl` runs
-   * this a second time once the menu exists, which is when it can be measured.
+   * there is not, and never past either side edge. A menu too tall for either
+   * side opens toward the roomier one with its height capped to that room, and
+   * scrolls inside itself instead of running off screen. Reading `popoverEl`
+   * runs this a second time once the menu exists, which is when it can be
+   * measured.
    */
   const EDGE = 8;
 
@@ -162,14 +177,23 @@ Popover uses fixed positioning to escape overflow:hidden containers.
 
   function place(chip: HTMLElement) {
     const rect = chip.getBoundingClientRect();
-    const menuHeight = popoverEl?.offsetHeight ?? 0;
+    // The menu's full height even while its max-height caps it: scrollHeight
+    // ignores the cap, and the offset/client difference adds back the borders
+    // scrollHeight leaves out.
+    const menuHeight = popoverEl
+      ? popoverEl.scrollHeight + popoverEl.offsetHeight - popoverEl.clientHeight
+      : 0;
     const menuWidth = popoverEl?.offsetWidth ?? 0;
     const below = rect.bottom + 6;
+    const roomBelow = window.innerHeight - EDGE - below;
+    const roomAbove = rect.top - 6 - EDGE;
 
-    const top =
-      menuHeight && below + menuHeight > window.innerHeight - EDGE
-        ? Math.max(EDGE, rect.top - 6 - menuHeight)
-        : below;
+    const above =
+      menuHeight > 0 &&
+      menuHeight > roomBelow &&
+      (menuHeight <= roomAbove || roomAbove > roomBelow);
+    const top = above ? rect.top - 6 - Math.min(menuHeight, roomAbove) : below;
+    popoverMaxHeight = Math.max(0, above ? roomAbove : roomBelow);
     const left = menuWidth
       ? Math.max(
           EDGE,
@@ -289,7 +313,7 @@ Popover uses fixed positioning to escape overflow:hidden containers.
     style="--chip-color: {chipColor};"
     type="button"
     aria-pressed={mode === "toggle" ? active : undefined}
-    aria-haspopup={mode === "dropdown" ? "listbox" : undefined}
+    aria-haspopup={mode === "dropdown" ? popupRole : undefined}
     aria-expanded={mode === "dropdown" ? expanded : undefined}
     aria-label={ariaLabel ?? `${label}${count != null ? ` (${count})` : ""}`}
     {disabled}
@@ -311,16 +335,19 @@ Popover uses fixed positioning to escape overflow:hidden containers.
     focus (Svelte's `a11y_interactive_supports_focus`). -1 keeps it out of the
     tab sequence — the `role="option"` buttons inside are the real tab stops —
     while letting the container take focus programmatically, which is the
-    WAI-ARIA listbox container contract. Suppressing the warning instead would
-    have left a keyboard handler on an element that could never be focused.
+    WAI-ARIA listbox container contract, and a dialog's too. Suppressing the
+    warning instead would have left a keyboard handler on an element that could
+    never be focused.
   -->
   <div
     bind:this={popoverEl}
     class="chip-popover"
-    role="listbox"
+    role={popupRole}
     tabindex="-1"
-    aria-label="{label} options"
-    style="top: {popoverTop}px; left: {popoverLeft}px;"
+    aria-label={popupLabel ?? `${label} options`}
+    style="top: {popoverTop}px; left: {popoverLeft}px;{popoverMaxHeight === null
+      ? ''
+      : ` max-height: ${popoverMaxHeight}px;`}"
     onkeydown={handleEscape}
   >
     {@render children()}
@@ -497,7 +524,17 @@ Popover uses fixed positioning to escape overflow:hidden containers.
   .chip-popover {
     position: fixed;
     z-index: var(--z-dropdown);
+    /* Its own width, not what is left between its left edge and the screen's
+       right edge. place() reads this width to slide a menu that would run
+       off that edge back in; a width the browser had already shrunk to the
+       leftover room never ran off, so the menu squeezed instead of sliding. */
+    width: max-content;
     min-width: 160px;
+    /* place() caps the height to the room on the side the menu opens toward;
+       past that, and past a narrow screen's width, it scrolls inside itself. */
+    max-width: calc(100vw - 16px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 4px;
     /* --theme-panel-bg is a translucent wash (rgba(0,0,0,0.75) on dark
        desktop) — floating menus need an opaque surface, so paint the wash

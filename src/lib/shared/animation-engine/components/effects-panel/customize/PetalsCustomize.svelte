@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
   import type { PetalsIntent } from "$lib/shared/effects/domain/effects-config";
   import OptionChipRow from "../OptionChipRow.svelte";
@@ -11,7 +12,11 @@
   const { onBack }: Props = $props();
   const state = getEffectsConfigContext();
 
-  const PALETTES: { value: PetalsIntent["palette"]; label: string; swatch: string }[] = [
+  const PALETTES: {
+    value: PetalsIntent["palette"];
+    label: string;
+    swatch: string;
+  }[] = [
     { value: "blossom", label: "Blossom", swatch: "#ffc0d8" },
     { value: "autumn", label: "Autumn", swatch: "#d84820" },
     { value: "jungle", label: "Jungle", swatch: "#408840" },
@@ -30,7 +35,7 @@
 <div class="customize-view">
   <button type="button" class="back-btn" onclick={onBack}>
     <i class="fas fa-arrow-left" aria-hidden="true"></i>
-    Back to presets
+    {t("effect_deep_back_to_presets")}
   </button>
 
   {#if state}
@@ -45,7 +50,7 @@
 
       {#if state.petals.palette === "custom"}
         <div class="color-row">
-          <span class="color-label">Tint</span>
+          <span class="color-label">{t("effect_deep_tint")}</span>
           <div class="color-pickers">
             <label class="color-picker">
               <input
@@ -71,7 +76,7 @@
 
       <!-- Ambient emission -->
       <div class="slider-row">
-        <label for="petals-ambient">Drift</label>
+        <label for="petals-ambient">{t("effect_deep_drift")}</label>
         <input
           id="petals-ambient"
           type="range"
@@ -84,12 +89,14 @@
               ambientEmission: +(e.currentTarget as HTMLInputElement).value,
             })}
         />
-        <span class="slider-value">{Math.round(state.petals.ambientEmission * 100)}%</span>
+        <span class="slider-value"
+          >{Math.round(state.petals.ambientEmission * 100)}%</span
+        >
       </div>
 
       <!-- Motion emission -->
       <div class="slider-row">
-        <label for="petals-motion">Motion</label>
+        <label for="petals-motion">{t("effect_deep_motion")}</label>
         <input
           id="petals-motion"
           type="range"
@@ -102,12 +109,14 @@
               motionEmission: +(e.currentTarget as HTMLInputElement).value,
             })}
         />
-        <span class="slider-value">{Math.round(state.petals.motionEmission * 100)}%</span>
+        <span class="slider-value"
+          >{Math.round(state.petals.motionEmission * 100)}%</span
+        >
       </div>
 
       <!-- Intensity (size) -->
       <div class="slider-row">
-        <label for="petals-intensity">Size</label>
+        <label for="petals-intensity">{t("effect_deep_size")}</label>
         <input
           id="petals-intensity"
           type="range"
@@ -120,13 +129,15 @@
               intensity: +(e.currentTarget as HTMLInputElement).value,
             })}
         />
-        <span class="slider-value">{Math.round(state.petals.intensity * 100)}%</span>
+        <span class="slider-value"
+          >{Math.round(state.petals.intensity * 100)}%</span
+        >
       </div>
 
       <AdvancedControls count={3}>
         <!-- Carry: how much of the prop's velocity a petal inherits -->
         <div class="slider-row">
-          <label for="petals-carry">Carry</label>
+          <label for="petals-carry">{t("effect_deep_carry")}</label>
           <input
             id="petals-carry"
             type="range"
@@ -139,12 +150,14 @@
                 carry: +(e.currentTarget as HTMLInputElement).value,
               })}
           />
-          <span class="slider-value">{Math.round(state.petals.carry * 100)}%</span>
+          <span class="slider-value"
+            >{Math.round(state.petals.carry * 100)}%</span
+          >
         </div>
 
         <!-- Streak: how long the inherited motion lingers -->
         <div class="slider-row">
-          <label for="petals-streak">Streak</label>
+          <label for="petals-streak">{t("effect_deep_streak")}</label>
           <input
             id="petals-streak"
             type="range"
@@ -157,12 +170,14 @@
                 streakLength: +(e.currentTarget as HTMLInputElement).value,
               })}
           />
-          <span class="slider-value">{Math.round(state.petals.streakLength * 100)}%</span>
+          <span class="slider-value"
+            >{Math.round(state.petals.streakLength * 100)}%</span
+          >
         </div>
 
         <!-- Fall speed -->
         <div class="slider-row">
-          <label for="petals-fall">Fall</label>
+          <label for="petals-fall">{t("effect_deep_fall")}</label>
           <input
             id="petals-fall"
             type="range"
@@ -175,12 +190,14 @@
                 fallSpeed: +(e.currentTarget as HTMLInputElement).value,
               })}
           />
-          <span class="slider-value">{Math.round(state.petals.fallSpeed * 100)}%</span>
+          <span class="slider-value"
+            >{Math.round(state.petals.fallSpeed * 100)}%</span
+          >
         </div>
       </AdvancedControls>
     </div>
   {:else}
-    <p class="empty">Effect state unavailable.</p>
+    <p class="empty">{t("effect_deep_effect_state_unavailable")}</p>
   {/if}
 </div>
 

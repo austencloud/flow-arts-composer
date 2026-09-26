@@ -231,7 +231,10 @@
               <span class="cell-label">{t(module.labelKey)}</span>
 
               {#if badgeCount > 0}
-                <span class="unread-badge" aria-label="{badgeCount} unread">
+                <span
+                  class="unread-badge"
+                  aria-label={t("shared_unread_count", { count: badgeCount })}
+                >
                   {formatBadgeCount(badgeCount)}
                 </span>
               {/if}

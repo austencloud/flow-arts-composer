@@ -1,3 +1,4 @@
+
 /** m:ss.s, the clock the transport and the act fields read in. */
 export function formatPostClock(seconds: number): string {
   const safe = Number.isFinite(seconds) ? Math.max(0, seconds) : 0;

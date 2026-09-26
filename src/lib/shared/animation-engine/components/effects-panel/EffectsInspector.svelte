@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { effectUiLabel } from "./effect-ui-label";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type {
     EffectId,
     EffectsConfigState,
@@ -87,24 +89,26 @@
       <span class="back-arrow" aria-hidden="true">
         <i class="fas fa-arrow-left"></i>
       </span>
-      <span>All effects</span>
+      <span>{t("effect_deep_all_effects")}</span>
     </button>
 
     <span class="effect-identity">
       <span class="effect-icon" aria-hidden="true">
         <i class="fas {registration.meta.icon}"></i>
       </span>
-      <span class="effect-name">{registration.meta.label}</span>
+      <span class="effect-name">{effectUiLabel(registration.meta.label)}</span>
     </span>
 
     <button
       class="off-action"
       type="button"
       onclick={onDisable}
-      aria-label="Turn off {registration.meta.label}"
+      aria-label={t("effect_deep_turn_off_effect", {
+        effect: effectUiLabel(registration.meta.label),
+      })}
     >
       <i class="fas fa-power-off" aria-hidden="true"></i>
-      <span>Off</span>
+      <span>{t("effect_deep_off")}</span>
     </button>
   </header>
 
@@ -132,7 +136,7 @@
       <!-- No help line here. Every control in this section already writes to
            the canvas the instant it moves, so saying so cost a row of height
            and told the user nothing they were not about to see. -->
-      <span class="section-title">Tune the look</span>
+      <span class="section-title">{t("effect_deep_tune_look")}</span>
       {#if richPanel}
         {#await richPanel then mod}
           {@const Panel = mod.default}
@@ -161,10 +165,14 @@
           onclick={() => (fineTuningOpen = !fineTuningOpen)}
         >
           <span class="fine-copy">
-            <span class="section-title">Fine tuning</span>
+            <span class="section-title">{t("effect_deep_fine_tuning")}</span>
             <span class="section-help">
               {fineControls.length}
-              {fineControls.length === 1 ? "control" : "controls"}
+              {t(
+                fineControls.length === 1
+                  ? "effect_deep_control"
+                  : "effect_deep_controls"
+              )}
             </span>
           </span>
           <i class="fas fa-chevron-down" aria-hidden="true"></i>

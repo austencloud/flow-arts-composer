@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   interface Props {
     effectLabel: string;
     onBack: () => void;
@@ -9,10 +10,13 @@
 <div class="customize-view">
   <button type="button" class="back-btn" onclick={onBack}>
     <i class="fas fa-arrow-left" aria-hidden="true"></i>
-    Back to presets
+    {t("effect_deep_back_to_presets")}
   </button>
 
-  <p class="message">Controls for {effectLabel} land in a follow-up phase. The effect is visible here so you can see where it'll live.</p>
+  <p class="message">
+    Controls for {effectLabel} land in a follow-up phase. The effect is visible here
+    so you can see where it'll live.
+  </p>
 </div>
 
 <style>

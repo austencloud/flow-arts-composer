@@ -7,6 +7,7 @@
   import { landingName } from "$lib/shared/media-composition/domain/timing-summary";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { PostTimingSession } from "./post-timing-session.svelte";
   import { formatTakeClock } from "./post-builder-format";
 
@@ -31,12 +32,12 @@
     }
   }
 
-  const STATUS_TEXT = {
-    untapped: "Not mapped yet",
-    unconfirmed: "Not checked yet",
-    confirmed: "Checked",
-    stale: "The sequence changed. Check it again.",
-  } as const;
+  const STATUS_TEXT = $derived({
+    untapped: t("share_studio_deep_not_mapped"),
+    unconfirmed: t("share_studio_deep_not_checked"),
+    confirmed: t("share_studio_deep_checked"),
+    stale: t("share_studio_deep_sequence_changed"),
+  });
 </script>
 
 {#if session.take && session.timing}
@@ -44,7 +45,7 @@
   {@const fitted = Boolean(session.resolvedSection?.fit)}
   <div class="timing-panel">
     <header class="head">
-      <h3>Map {session.take.label}</h3>
+      <h3>{t("share_studio_deep_map_take", { take: session.take.label })}</h3>
       <span class="status status-{session.status}">
         {STATUS_TEXT[session.status]}
       </span>
@@ -61,11 +62,11 @@
       >
         {#key session.tapCount}<span class="flash" aria-hidden="true"
           ></span>{/key}
-        Tap a landing
+        {t("share_studio_deep_tap_landing")}
         <kbd>T</kbd>
       </button>
       <p id="post-tap-help" class="help">
-        Play the take and tap each time the props land. Rough taps are fine.
+        {t("share_studio_deep_tap_help")}
       </p>
       <div class="row">
         <label class="bpm">
@@ -86,13 +87,13 @@
         {#if section}
           <SegmentedControl
             options={[
-              { value: "locked", label: "Hold BPM" },
-              { value: "follow", label: "Follow video" },
+              { value: "locked", label: t("share_studio_deep_hold_bpm") },
+              { value: "follow", label: t("share_studio_deep_follow_video") },
             ]}
             value={section.tempo}
             onchange={session.setTempo}
             size="sm"
-            ariaLabel="Tempo"
+            ariaLabel={t("share_studio_deep_tempo")}
           />
         {/if}
       </div>
@@ -106,22 +107,27 @@
           {@const suggested = summary.suggestedBpm}
           <div class="row">
             <PanelButton onclick={() => session.setBpm(suggested)}>
-              Use {suggested} BPM
+              {t("share_studio_deep_use_bpm", { bpm: suggested })}
             </PanelButton>
           </div>
         {/if}
         {#if summary.ignoredLeadingTaps > 0}
           {@const ignored = summary.ignoredLeadingTaps}
           <p class="help">
-            {ignored === 1 ? "The first tap" : `The first ${ignored} taps`} came before
-            the grid starts.
+            {ignored === 1
+              ? t("share_studio_deep_first_tap_before_grid")
+              : t("share_studio_deep_first_taps_before_grid", {
+                  count: ignored,
+                })}
           </p>
           <div class="row">
             <PanelButton onclick={session.firstTapWasMoveOne}>
-              That was move 1
+              {t("share_studio_deep_that_was_move_one")}
             </PanelButton>
             <PanelButton onclick={() => session.dropLeadingTaps(ignored)}>
-              Drop {ignored === 1 ? "it" : "them"}
+              {ignored === 1
+                ? t("share_studio_deep_drop_it")
+                : t("share_studio_deep_drop_them")}
             </PanelButton>
           </div>
         {/if}
@@ -129,46 +135,50 @@
     {/if}
 
     <div class="group">
-      <h4>Move 1</h4>
+      <h4>{t("share_studio_deep_move_one")}</h4>
       <div class="row">
-        <PanelButton onclick={session.beatOneHere}>Lands here</PanelButton>
+        <PanelButton onclick={session.beatOneHere}
+          >{t("share_studio_deep_lands_here")}</PanelButton
+        >
         <PanelButton
           onclick={() => session.shiftBeatOne(-1)}
           disabled={!fitted}
-          ariaLabel="Move 1 one landing earlier"
+          ariaLabel={t("share_studio_deep_move_one_earlier")}
         >
-          <i class="fa-solid fa-chevron-left" aria-hidden="true"></i> Earlier
+          <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+          {t("share_studio_deep_earlier")}
         </PanelButton>
         <PanelButton
           onclick={() => session.shiftBeatOne(1)}
           disabled={!fitted}
-          ariaLabel="Move 1 one landing later"
+          ariaLabel={t("share_studio_deep_move_one_later")}
         >
-          Later <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+          {t("share_studio_deep_later")}
+          <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
         </PanelButton>
       </div>
     </div>
 
     {#if fitted && section}
       <div class="group">
-        <h4>Whole grid</h4>
+        <h4>{t("share_studio_deep_whole_grid")}</h4>
         <div class="row">
           <PanelButton
             onclick={() => session.nudgeGrid(-1)}
-            ariaLabel="Grid one frame earlier"
+            ariaLabel={t("share_studio_deep_grid_frame_earlier")}
           >
             <i class="fa-solid fa-chevron-left" aria-hidden="true"></i> 1 frame
           </PanelButton>
           <PanelButton
             onclick={() => session.nudgeGrid(1)}
-            ariaLabel="Grid one frame later"
+            ariaLabel={t("share_studio_deep_grid_frame_later")}
           >
             1 frame <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
           </PanelButton>
           <span class="value">
             {section.offsetSeconds !== 0
               ? `${section.offsetSeconds > 0 ? "+" : ""}${section.offsetSeconds.toFixed(2)} s`
-              : "On the taps"}
+              : t("share_studio_deep_on_taps")}
           </span>
         </div>
         <label class="check">
@@ -178,7 +188,7 @@
             onchange={(event) =>
               session.setSnap(event.currentTarget.checked ? "taps" : "grid")}
           />
-          Land exactly on my taps
+          {t("share_studio_deep_land_exactly_on_taps")}
         </label>
       </div>
 
@@ -188,29 +198,31 @@
         <div class="group">
           <h4>{landingName(landing.position, session.movesPerPass)}</h4>
           <p class="help">
-            At {formatTakeClock(landing.seconds)}{landing.pinned
-              ? ", placed by hand"
-              : ""}. Drag it on the lane or nudge it here.
+            {t("share_studio_deep_at_time", {
+              time: formatTakeClock(landing.seconds),
+            })}{landing.pinned
+              ? t("share_studio_deep_placed_by_hand_suffix")
+              : ""}. {t("share_studio_deep_drag_or_nudge")}
           </p>
           <div class="row">
             <PanelButton
               onclick={() =>
                 session.placeLanding(ref, landing.seconds - MIN_MOVE_SECONDS)}
-              ariaLabel="Landing one frame earlier"
+              ariaLabel={t("share_studio_deep_landing_frame_earlier")}
             >
               <i class="fa-solid fa-chevron-left" aria-hidden="true"></i> 1 frame
             </PanelButton>
             <PanelButton
               onclick={() =>
                 session.placeLanding(ref, landing.seconds + MIN_MOVE_SECONDS)}
-              ariaLabel="Landing one frame later"
+              ariaLabel={t("share_studio_deep_landing_frame_later")}
             >
               1 frame <i class="fa-solid fa-chevron-right" aria-hidden="true"
               ></i>
             </PanelButton>
             {#if landing.pinned}
               <PanelButton onclick={session.releaseSelected}>
-                Back on the grid
+                {t("share_studio_deep_back_on_grid")}
               </PanelButton>
             {/if}
           </div>
@@ -218,57 +230,59 @@
       {/if}
 
       <div class="group">
-        <h4>End</h4>
+        <h4>{t("share_studio_deep_end")}</h4>
         <div class="row">
           <PanelButton onclick={session.endHere}
-            >Performance ends here</PanelButton
+            >{t("share_studio_deep_performance_ends_here")}</PanelButton
           >
           {#if session.endClearable}
-            <PanelButton onclick={session.clearEnd}>Clear the end</PanelButton>
+            <PanelButton onclick={session.clearEnd}
+              >{t("share_studio_deep_clear_end")}</PanelButton
+            >
           {/if}
         </div>
       </div>
     {/if}
 
     <details class="group parts" open={session.timing.sections.length > 1}>
-      <summary>Edited take? Split it into parts</summary>
+      <summary>{t("share_studio_deep_split_take_summary")}</summary>
       <p class="help">
-        Split where the video cuts or the tempo changes. Each part gets its own
-        tempo and taps.
+        {t("share_studio_deep_split_take_help")}
       </p>
       <div class="row">
         <PanelButton
           onclick={() => session.split("continues")}
           disabled={!session.canKeepCounting}
         >
-          Split here, keep counting
+          {t("share_studio_deep_split_keep_counting")}
         </PanelButton>
         <PanelButton
           onclick={() => session.split("restarts")}
           disabled={!session.canSplit}
         >
-          Split here, start over
+          {t("share_studio_deep_split_start_over")}
         </PanelButton>
         {#if session.sectionIndex > 0}
           <PanelButton onclick={session.joinWithPrevious}>
-            Join with the part before
+            {t("share_studio_deep_join_previous")}
           </PanelButton>
         {/if}
       </div>
       {#if session.canSplit && !session.canKeepCounting}
-        <p class="help">To keep counting, tap up to here first.</p>
+        <p class="help">{t("share_studio_deep_tap_to_here_first")}</p>
       {/if}
     </details>
 
     <footer class="foot">
       <PanelButton onclick={session.undo} disabled={!session.canUndo}>
-        <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Undo
+        <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+        {t("share_studio_deep_undo")}
       </PanelButton>
       <PanelButton
         onclick={session.clearTaps}
         disabled={!section || section.taps.length === 0}
       >
-        Clear taps
+        {t("share_studio_deep_clear_taps")}
       </PanelButton>
       <PanelButton
         variant="primary"
@@ -276,12 +290,13 @@
         disabled={session.status === "untapped" ||
           session.status === "confirmed"}
       >
-        <i class="fa-solid fa-check" aria-hidden="true"></i> Looks right
+        <i class="fa-solid fa-check" aria-hidden="true"></i>
+        {t("share_studio_deep_looks_right")}
       </PanelButton>
     </footer>
   </div>
 {:else}
-  <p class="help">Add a take on the Takes step to map its timing.</p>
+  <p class="help">{t("post_editor_add_video_to_tap")}</p>
 {/if}
 
 <style>

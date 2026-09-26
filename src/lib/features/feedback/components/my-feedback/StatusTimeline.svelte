@@ -5,7 +5,8 @@
     FeedbackStatus,
   } from "$lib/shared/feedback/domain/models/feedback-models";
   import { STATUS_CONFIG } from "$lib/shared/feedback/domain/models/feedback-models";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { getLocale, t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { feedbackStatusLabel } from "../../domain/feedback-display-labels";
 
   let {
     history = [],
@@ -32,12 +33,14 @@
   // Build timeline entries from history, or create a simple one if no history
   const timelineEntries = $derived((): TimelineEntry[] => {
     if (history && history.length > 0) {
-      return history.map((entry: StatusHistoryEntry): TimelineEntry => ({
-        status: entry.status,
-        timestamp: entry.timestamp,
-        notes: entry.notes,
-        actor: entry.actorName,
-      }));
+      return history.map(
+        (entry: StatusHistoryEntry): TimelineEntry => ({
+          status: entry.status,
+          timestamp: entry.timestamp,
+          notes: entry.notes,
+          actor: entry.actorName,
+        })
+      );
     }
 
     // Fallback: create minimal timeline from current state
@@ -54,7 +57,7 @@
   });
 
   function formatDate(date: Date): string {
-    return date.toLocaleDateString("en-US", {
+    return date.toLocaleDateString(getLocale(), {
       month: "short",
       day: "numeric",
       hour: "numeric",
@@ -63,7 +66,7 @@
   }
 
   function getStatusLabel(status: FeedbackStatus): string {
-    return STATUS_CONFIG[status]?.label || status;
+    return feedbackStatusLabel(status);
   }
 
   function getStatusColor(status: FeedbackStatus): string {
@@ -95,7 +98,10 @@
         </div>
         <div class="timeline-content">
           <div class="timeline-status">
-            <span class="status-label" style="color: {getStatusColor(entry.status)}">
+            <span
+              class="status-label"
+              style="color: {getStatusColor(entry.status)}"
+            >
               {getStatusLabel(entry.status)}
             </span>
             <span class="timestamp">{formatDate(entry.timestamp)}</span>
@@ -104,7 +110,9 @@
             <p class="timeline-notes">{entry.notes}</p>
           {/if}
           {#if entry.actor}
-            <span class="actor">{t("feedback_by_actor", { name: entry.actor })}</span>
+            <span class="actor"
+              >{t("feedback_by_actor", { name: entry.actor })}</span
+            >
           {/if}
         </div>
       </div>

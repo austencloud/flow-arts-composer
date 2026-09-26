@@ -28,7 +28,7 @@
     presetsMatch,
   } from "../../domain/prop-presets";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
+  import { localizedPropName } from "./prop-type/localized-prop-name";
   import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
   import { resolveViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
   import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
@@ -110,8 +110,8 @@
     })
   );
   const pair = $derived(previewPair(current));
-  const leftName = $derived(getPropTypeDisplayInfo(pair.left).label);
-  const rightName = $derived(getPropTypeDisplayInfo(pair.right).label);
+  const leftName = $derived(localizedPropName(pair.left));
+  const rightName = $derived(localizedPropName(pair.right));
   const splitHands = $derived(pair.left !== pair.right);
   const darkMode = $derived(settings.darkMode ?? true);
   const palette = $derived(
@@ -388,8 +388,16 @@
         <div class="hand-switch" transition:growFade>
           <SegmentedControl
             options={[
-              { value: "left", label: t("settings_props_left_hand"), tone: "blue" },
-              { value: "right", label: t("settings_props_right_hand"), tone: "red" },
+              {
+                value: "left",
+                label: t("settings_props_left_hand"),
+                tone: "blue",
+              },
+              {
+                value: "right",
+                label: t("settings_props_right_hand"),
+                tone: "red",
+              },
             ]}
             value={narrowHand}
             onchange={(hand) => {

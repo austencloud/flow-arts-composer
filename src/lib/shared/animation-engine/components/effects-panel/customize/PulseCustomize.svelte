@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
   import type { PulseIntent } from "$lib/shared/effects/domain/effects-config";
   import OptionChipRow from "../OptionChipRow.svelte";
@@ -22,7 +23,11 @@
     { value: "glow", label: "Glow" },
   ];
 
-  const PALETTES: { value: PulseIntent["palette"]; label: string; swatch: string }[] = [
+  const PALETTES: {
+    value: PulseIntent["palette"];
+    label: string;
+    swatch: string;
+  }[] = [
     { value: "sonar", label: "Sonar", swatch: "#38bdf8" },
     { value: "ripple", label: "Ripple", swatch: "#93c5fd" },
     { value: "aurora", label: "Aurora", swatch: "#a855f7" },
@@ -49,7 +54,7 @@
 <div class="customize-view">
   <button type="button" class="back-btn" onclick={onBack}>
     <i class="fas fa-arrow-left" aria-hidden="true"></i>
-    Back to presets
+    {t("effect_deep_back_to_presets")}
   </button>
 
   {#if state}
@@ -73,12 +78,14 @@
       <!-- Conditional color picker -->
       {#if state.pulse.palette === "custom" || state.pulse.colorMode === "solid"}
         <div class="color-row">
-          <span class="color-label">Tint</span>
+          <span class="color-label">{t("effect_deep_tint")}</span>
           <div class="color-pickers">
             <label class="color-picker">
               <input
                 type="color"
-                value={state.pulse.palette === "custom" ? state.pulse.customColor : state.pulse.color}
+                value={state.pulse.palette === "custom"
+                  ? state.pulse.customColor
+                  : state.pulse.color}
                 oninput={(e) => {
                   const val = (e.currentTarget as HTMLInputElement).value;
                   if (state.pulse.palette === "custom") {
@@ -112,7 +119,9 @@
       <!-- Conditional sliders based on trigger -->
       {#if state.pulse.trigger === "beat"}
         <div class="slider-row">
-          <label for="pulse-beat-interval">Beat Interval</label>
+          <label for="pulse-beat-interval"
+            >{t("effect_deep_beat_interval")}</label
+          >
           <input
             id="pulse-beat-interval"
             type="range"
@@ -131,7 +140,9 @@
 
       {#if state.pulse.trigger === "velocity"}
         <div class="slider-row">
-          <label for="pulse-velocity-threshold">Vel. Threshold</label>
+          <label for="pulse-velocity-threshold"
+            >{t("effect_deep_vel_threshold")}</label
+          >
           <input
             id="pulse-velocity-threshold"
             type="range"
@@ -144,13 +155,15 @@
                 velocityThreshold: +(e.currentTarget as HTMLInputElement).value,
               })}
           />
-          <span class="slider-value">{Math.round(state.pulse.velocityThreshold * 100)}%</span>
+          <span class="slider-value"
+            >{Math.round(state.pulse.velocityThreshold * 100)}%</span
+          >
         </div>
       {/if}
 
       <!-- Always-visible sliders -->
       <div class="slider-row">
-        <label for="pulse-intensity">Intensity</label>
+        <label for="pulse-intensity">{t("effect_deep_intensity")}</label>
         <input
           id="pulse-intensity"
           type="range"
@@ -163,11 +176,13 @@
               intensity: +(e.currentTarget as HTMLInputElement).value,
             })}
         />
-        <span class="slider-value">{Math.round(state.pulse.intensity * 100)}%</span>
+        <span class="slider-value"
+          >{Math.round(state.pulse.intensity * 100)}%</span
+        >
       </div>
 
       <div class="slider-row">
-        <label for="pulse-reach">Reach</label>
+        <label for="pulse-reach">{t("effect_deep_reach")}</label>
         <input
           id="pulse-reach"
           type="range"
@@ -192,128 +207,142 @@
           onChange={(v) => state.updateEffect("pulse", { style: v })}
         />
 
-      <div class="slider-row">
-        <label for="pulse-lifetime">Lifetime</label>
-        <input
-          id="pulse-lifetime"
-          type="range"
-          min="0.2"
-          max="3.0"
-          step="0.1"
-          value={state.pulse.lifetime}
-          oninput={(e) =>
-            state.updateEffect("pulse", {
-              lifetime: +(e.currentTarget as HTMLInputElement).value,
-            })}
-        />
-        <span class="slider-value">{state.pulse.lifetime.toFixed(1)}s</span>
-      </div>
+        <div class="slider-row">
+          <label for="pulse-lifetime">{t("effect_deep_lifetime")}</label>
+          <input
+            id="pulse-lifetime"
+            type="range"
+            min="0.2"
+            max="3.0"
+            step="0.1"
+            value={state.pulse.lifetime}
+            oninput={(e) =>
+              state.updateEffect("pulse", {
+                lifetime: +(e.currentTarget as HTMLInputElement).value,
+              })}
+          />
+          <span class="slider-value">{state.pulse.lifetime.toFixed(1)}s</span>
+        </div>
 
-      <div class="slider-row">
-        <label for="pulse-thickness">Thickness</label>
-        <input
-          id="pulse-thickness"
-          type="range"
-          min="0"
-          max="1"
-          step="0.05"
-          value={state.pulse.thickness}
-          oninput={(e) =>
-            state.updateEffect("pulse", {
-              thickness: +(e.currentTarget as HTMLInputElement).value,
-            })}
-        />
-        <span class="slider-value">{Math.round(state.pulse.thickness * 100)}%</span>
-      </div>
+        <div class="slider-row">
+          <label for="pulse-thickness">{t("effect_deep_thickness")}</label>
+          <input
+            id="pulse-thickness"
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={state.pulse.thickness}
+            oninput={(e) =>
+              state.updateEffect("pulse", {
+                thickness: +(e.currentTarget as HTMLInputElement).value,
+              })}
+          />
+          <span class="slider-value"
+            >{Math.round(state.pulse.thickness * 100)}%</span
+          >
+        </div>
 
-      <div class="slider-row">
-        <label for="pulse-velocity-scale">Velocity → Size</label>
-        <input
-          id="pulse-velocity-scale"
-          type="range"
-          min="0"
-          max="1"
-          step="0.05"
-          value={state.pulse.velocityScale}
-          oninput={(e) =>
-            state.updateEffect("pulse", {
-              velocityScale: +(e.currentTarget as HTMLInputElement).value,
-            })}
-        />
-        <span class="slider-value">{Math.round(state.pulse.velocityScale * 100)}%</span>
-      </div>
+        <div class="slider-row">
+          <label for="pulse-velocity-scale"
+            >{t("effect_deep_velocity_size")}</label
+          >
+          <input
+            id="pulse-velocity-scale"
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={state.pulse.velocityScale}
+            oninput={(e) =>
+              state.updateEffect("pulse", {
+                velocityScale: +(e.currentTarget as HTMLInputElement).value,
+              })}
+          />
+          <span class="slider-value"
+            >{Math.round(state.pulse.velocityScale * 100)}%</span
+          >
+        </div>
 
-      <div class="slider-row">
-        <label for="pulse-asymmetry">Asymmetry</label>
-        <input
-          id="pulse-asymmetry"
-          type="range"
-          min="0"
-          max="1"
-          step="0.05"
-          value={state.pulse.asymmetry}
-          oninput={(e) =>
-            state.updateEffect("pulse", {
-              asymmetry: +(e.currentTarget as HTMLInputElement).value,
-            })}
-        />
-        <span class="slider-value">{Math.round(state.pulse.asymmetry * 100)}%</span>
-      </div>
+        <div class="slider-row">
+          <label for="pulse-asymmetry">{t("effect_deep_asymmetry")}</label>
+          <input
+            id="pulse-asymmetry"
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={state.pulse.asymmetry}
+            oninput={(e) =>
+              state.updateEffect("pulse", {
+                asymmetry: +(e.currentTarget as HTMLInputElement).value,
+              })}
+          />
+          <span class="slider-value"
+            >{Math.round(state.pulse.asymmetry * 100)}%</span
+          >
+        </div>
 
-      <div class="slider-row">
-        <label for="pulse-chromatic">Chromatic</label>
-        <input
-          id="pulse-chromatic"
-          type="range"
-          min="0"
-          max="1"
-          step="0.05"
-          value={state.pulse.chromatic}
-          oninput={(e) =>
-            state.updateEffect("pulse", {
-              chromatic: +(e.currentTarget as HTMLInputElement).value,
-            })}
-        />
-        <span class="slider-value">{Math.round(state.pulse.chromatic * 100)}%</span>
-      </div>
+        <div class="slider-row">
+          <label for="pulse-chromatic">{t("effect_deep_chromatic")}</label>
+          <input
+            id="pulse-chromatic"
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={state.pulse.chromatic}
+            oninput={(e) =>
+              state.updateEffect("pulse", {
+                chromatic: +(e.currentTarget as HTMLInputElement).value,
+              })}
+          />
+          <span class="slider-value"
+            >{Math.round(state.pulse.chromatic * 100)}%</span
+          >
+        </div>
 
-      <div class="slider-row">
-        <label for="pulse-flash">Flash</label>
-        <input
-          id="pulse-flash"
-          type="range"
-          min="0"
-          max="1"
-          step="0.05"
-          value={state.pulse.flash}
-          oninput={(e) =>
-            state.updateEffect("pulse", {
-              flash: +(e.currentTarget as HTMLInputElement).value,
-            })}
-        />
-        <span class="slider-value">{Math.round(state.pulse.flash * 100)}%</span>
-      </div>
+        <div class="slider-row">
+          <label for="pulse-flash">{t("effect_deep_flash")}</label>
+          <input
+            id="pulse-flash"
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={state.pulse.flash}
+            oninput={(e) =>
+              state.updateEffect("pulse", {
+                flash: +(e.currentTarget as HTMLInputElement).value,
+              })}
+          />
+          <span class="slider-value"
+            >{Math.round(state.pulse.flash * 100)}%</span
+          >
+        </div>
 
-      <div class="slider-row">
-        <label for="pulse-harmonics">Harmonics</label>
-        <input
-          id="pulse-harmonics"
-          type="range"
-          min="0"
-          max="1"
-          step="0.05"
-          value={state.pulse.harmonics}
-          oninput={(e) =>
-            state.updateEffect("pulse", {
-              harmonics: +(e.currentTarget as HTMLInputElement).value,
-            })}
-        />
-        <span class="slider-value">{Math.round(state.pulse.harmonics * 100)}%</span>
-      </div>
+        <div class="slider-row">
+          <label for="pulse-harmonics">{t("effect_deep_harmonics")}</label>
+          <input
+            id="pulse-harmonics"
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={state.pulse.harmonics}
+            oninput={(e) =>
+              state.updateEffect("pulse", {
+                harmonics: +(e.currentTarget as HTMLInputElement).value,
+              })}
+          />
+          <span class="slider-value"
+            >{Math.round(state.pulse.harmonics * 100)}%</span
+          >
+        </div>
       </AdvancedControls>
     </div>
   {:else}
-    <p class="empty">Effect state unavailable.</p>
+    <p class="empty">{t("effect_deep_effect_state_unavailable")}</p>
   {/if}
 </div>
 

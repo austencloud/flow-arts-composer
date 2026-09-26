@@ -1,4 +1,5 @@
 import type { CompiledPost } from "$lib/shared/media-composition/domain/post-plan-compiler";
+import type { CompiledPostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
 
 /**
  * The post's own audio track, mixed once and exported alongside the picture
@@ -18,7 +19,17 @@ export interface PostAudioSegment {
   postStartSeconds: number;
   /** Where this segment starts inside its take's own media. */
   sourceInSeconds: number;
+  /** Always in POST seconds: how long this segment plays in the mixed
+   *  output, not how much source media it reads (that's `rate`'s job). */
   durationSeconds: number;
+  /** Source seconds consumed per second of post time. The v2 timeline lets a
+   *  slowed video item still carry its own take's sound - at that same
+   *  slowed rate, tape-style pitch drop included - rather than the v1 rule
+   *  below of dropping a slowed act's sound outright. Defaults to 1. */
+  rate?: number;
+  /** Linear volume multiplier layered under the edge fades, not instead of
+   *  them. Defaults to 1. */
+  gain?: number;
 }
 
 export function planPostAudio(
@@ -44,6 +55,32 @@ export function planPostAudio(
     });
   }
   return segments;
+}
+
+/**
+ * The v2 counterpart to `planPostAudio`, read off a compiled project's own
+ * flattened video segments instead of a v1 act list. Every segment already
+ * carries the item's own `speed` and `volume`, so they pass straight through
+ * as `rate` and `gain` - a slowed item keeps its sound (at that same slowed
+ * rate) rather than being dropped, and an item muted to volume 0 simply gets
+ * no segment.
+ */
+export function planProjectAudio(
+  post: Pick<CompiledPostProject, "videoSegments">,
+  mode: "takes" | "silent"
+): PostAudioSegment[] {
+  if (mode === "silent") return [];
+
+  return post.videoSegments
+    .filter((segment) => segment.volume > 0)
+    .map((segment) => ({
+      takeId: segment.takeId,
+      postStartSeconds: segment.startSeconds,
+      sourceInSeconds: segment.sourceIn,
+      durationSeconds: segment.endSeconds - segment.startSeconds,
+      rate: segment.speed,
+      gain: segment.volume,
+    }));
 }
 
 // ---------------------------------------------------------------------------
@@ -133,6 +170,8 @@ function mixSegmentInto(
     Math.round(fadeSeconds * outSampleRate),
     Math.floor(outCount / 2)
   );
+  const rate = segment.rate ?? 1;
+  const gain = segment.gain ?? 1;
 
   for (let i = 0; i < outCount; i++) {
     const outIndex = outStart + i;
@@ -140,21 +179,24 @@ function mixSegmentInto(
 
     // Read position lives in source SECONDS, converted to that source's own
     // sample rate right here - this is what makes a 44.1kHz take mix cleanly
-    // into a 48kHz bed without a separate resampling pass.
-    const sourceSeconds = segment.sourceInSeconds + i / outSampleRate;
+    // into a 48kHz bed without a separate resampling pass. `rate` scales how
+    // much source time each output sample advances, so a slowed segment
+    // reads its take that same amount slower instead of at the take's own
+    // native speed.
+    const sourceSeconds = segment.sourceInSeconds + (i / outSampleRate) * rate;
     const sourcePosition = sourceSeconds * source.sampleRate;
     const left = sampleAt(srcLeft, sourcePosition);
     const right = sampleAt(srcRight, sourcePosition);
 
-    let gain = 1;
+    let fadeGain = 1;
     if (fadeSamples > 0) {
-      if (i < fadeSamples) gain = i / fadeSamples;
+      if (i < fadeSamples) fadeGain = i / fadeSamples;
       else if (i >= outCount - fadeSamples)
-        gain = (outCount - 1 - i) / fadeSamples;
+        fadeGain = (outCount - 1 - i) / fadeSamples;
     }
 
-    outLeft[outIndex]! += left * gain;
-    outRight[outIndex]! += right * gain;
+    outLeft[outIndex]! += left * fadeGain * gain;
+    outRight[outIndex]! += right * fadeGain * gain;
   }
 }
 

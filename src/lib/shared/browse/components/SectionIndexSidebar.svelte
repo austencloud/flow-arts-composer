@@ -1,6 +1,7 @@
 <script lang="ts">
   import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
   import DifficultyBadge from "$lib/shared/components/DifficultyBadge.svelte";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import type { SequenceSection } from "$lib/shared/browse/domain/models/browse-models";
 
   const TKA_LETTER_RE = /^[a-zA-ZͰ-Ͽ⊕]-?$/;
@@ -13,7 +14,20 @@
 
   const { sections, onScrollToSection, activeSection }: Props = $props();
 
-  const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const MONTH_NAMES = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
 
   interface Marker {
     label: string;
@@ -32,13 +46,19 @@
 
   /** Does this section title describe a relative time (today, 3 days ago, etc.)? */
   function isRelativeTime(title: string): boolean {
-    const core = title.replace(/^[^\w\d]*/u, "").replace(/\s*\([^)]*\)/gi, "").trim();
+    const core = title
+      .replace(/^[^\w\d]*/u, "")
+      .replace(/\s*\([^)]*\)/gi, "")
+      .trim();
     return /^(today|yesterday|\d+\s*(days?|weeks?|months?)\s*ago)$/i.test(core);
   }
 
   /** Resolve a section title to { month, year } */
   function resolveMonthYear(title: string): { month: string; year: string } {
-    const core = title.replace(/^[^\w\d]*/u, "").replace(/\s*\([^)]*\)/gi, "").trim();
+    const core = title
+      .replace(/^[^\w\d]*/u, "")
+      .replace(/\s*\([^)]*\)/gi, "")
+      .trim();
 
     // Exact date (M/D/YYYY)
     const dateMatch = core.match(/^(\d{1,2})\/\d{1,2}\/(\d{4})$/);
@@ -59,9 +79,15 @@
       target = new Date(now.getTime() - 86400000);
     } else {
       const daysMatch = core.match(/^(\d+)\s*days?\s*ago$/i);
-      if (daysMatch) target = new Date(now.getTime() - parseInt(daysMatch[1]!, 10) * 86400000);
+      if (daysMatch)
+        target = new Date(
+          now.getTime() - parseInt(daysMatch[1]!, 10) * 86400000
+        );
       const weeksMatch = core.match(/^(\d+)\s*weeks?\s*ago$/i);
-      if (weeksMatch) target = new Date(now.getTime() - parseInt(weeksMatch[1]!, 10) * 7 * 86400000);
+      if (weeksMatch)
+        target = new Date(
+          now.getTime() - parseInt(weeksMatch[1]!, 10) * 7 * 86400000
+        );
       const monthsMatch = core.match(/^(\d+)\s*months?\s*ago$/i);
       if (monthsMatch) {
         target = new Date(now);
@@ -69,7 +95,10 @@
       }
     }
 
-    return { month: MONTH_NAMES[target.getMonth()]!, year: target.getFullYear().toString() };
+    return {
+      month: MONTH_NAMES[target.getMonth()]!,
+      year: target.getFullYear().toString(),
+    };
   }
 
   /** For non-date sort modes: extract a short label from the section title */
@@ -92,7 +121,7 @@
 
   /** Level-sorted: every section carries a numeric `level` (difficulty grouping). */
   const isLevelSorted = $derived(
-    sections.length > 0 && sections.every(s => typeof s.level === "number")
+    sections.length > 0 && sections.every((s) => typeof s.level === "number")
   );
 
   /** Level-sorted: group by level (header) with letter markers underneath. */
@@ -102,13 +131,13 @@
     const groups: LevelGroup[] = [];
     for (const section of sections) {
       const level = section.level!;
-      let group = groups.find(g => g.level === level);
+      let group = groups.find((g) => g.level === level);
       if (!group) {
         group = { level, markers: [] };
         groups.push(group);
       }
       const label = section.groupLabel ?? "";
-      if (!group.markers.some(m => m.label === label)) {
+      if (!group.markers.some((m) => m.label === label)) {
         group.markers.push({ label, title: section.title });
       }
     }
@@ -117,17 +146,22 @@
   });
 
   /** Which (level, letter) is currently active? */
-  const activeLevelInfo = $derived.by((): { level: number; label: string } | undefined => {
-    if (!activeSection || !isLevelSorted) return undefined;
-    const s = sections.find(x => x.title === activeSection);
-    return s ? { level: s.level!, label: s.groupLabel ?? "" } : undefined;
-  });
+  const activeLevelInfo = $derived.by(
+    (): { level: number; label: string } | undefined => {
+      if (!activeSection || !isLevelSorted) return undefined;
+      const s = sections.find((x) => x.title === activeSection);
+      return s ? { level: s.level!, label: s.groupLabel ?? "" } : undefined;
+    }
+  );
 
   /** Is the sort mode date-based? Check if any section has a relative-time or date title */
   const isDateSorted = $derived.by(() => {
     if (isLevelSorted) return false;
-    return sections.some(s => {
-      const core = s.title.replace(/^[^\w\d]*/u, "").replace(/\s*\([^)]*\)/gi, "").trim();
+    return sections.some((s) => {
+      const core = s.title
+        .replace(/^[^\w\d]*/u, "")
+        .replace(/\s*\([^)]*\)/gi, "")
+        .trim();
       return isRelativeTime(s.title) || /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(core);
     });
   });
@@ -145,7 +179,7 @@
       if (seenMonthKeys.has(key)) continue;
       seenMonthKeys.add(key);
 
-      let group = groups.find(g => g.year === year);
+      let group = groups.find((g) => g.year === year);
       if (!group) {
         group = { year, markers: [] };
         groups.push(group);
@@ -207,18 +241,27 @@
       const trackRect = trackEl.getBoundingClientRect();
       const btnRect = activeBtn.getBoundingClientRect();
       if (btnRect.top < trackRect.top || btnRect.bottom > trackRect.bottom) {
-        trackEl.scrollTop = activeBtn.offsetTop - trackEl.clientHeight / 2 + activeBtn.clientHeight / 2;
+        trackEl.scrollTop =
+          activeBtn.offsetTop -
+          trackEl.clientHeight / 2 +
+          activeBtn.clientHeight / 2;
       }
     }
   });
 </script>
 
-<nav class="section-sidebar" aria-label="Section navigation">
+<nav
+  class="section-sidebar"
+  aria-label={tDynamic("browse_results_section_navigation")}
+>
   <div class="track" bind:this={trackEl}>
     {#if isLevelSorted}
       <!-- Level-sorted: colored level badge headers with letter markers below -->
       {#each levelGroups as group (group.level)}
-        <div class="level-group" class:active-level={activeLevelInfo?.level === group.level}>
+        <div
+          class="level-group"
+          class:active-level={activeLevelInfo?.level === group.level}
+        >
           <div class="level-header">
             <DifficultyBadge level={group.level} size="30px" />
           </div>
@@ -228,10 +271,14 @@
                 class="letter-marker"
                 data-ghost="safe"
                 data-ghost-kind="browse-section"
-                class:active={activeLevelInfo?.level === group.level && activeLevelInfo?.label === marker.label}
+                class:active={activeLevelInfo?.level === group.level &&
+                  activeLevelInfo?.label === marker.label}
                 onclick={() => handleClick(marker.title)}
                 title={marker.title}
-                aria-label="Jump to Level {group.level} {marker.label}"
+                aria-label={tDynamic("browse_results_jump_level_letter", {
+                  level: group.level,
+                  letter: marker.label,
+                })}
               >
                 {#if TKA_LETTER_RE.test(marker.label)}
                   <TKAWordGlyph word={marker.label} height={24} />
@@ -254,10 +301,14 @@
                 class="month-btn"
                 data-ghost="safe"
                 data-ghost-kind="browse-section"
-                class:active={activeYear === group.year && activeMonthLabel === marker.label}
+                class:active={activeYear === group.year &&
+                  activeMonthLabel === marker.label}
                 onclick={() => handleClick(marker.title)}
                 title={marker.title}
-                aria-label="Jump to {marker.label} {group.year}"
+                aria-label={tDynamic("browse_results_jump_month", {
+                  month: marker.label,
+                  year: group.year,
+                })}
               >
                 {marker.label}
               </button>
@@ -273,7 +324,9 @@
           class:active={activeMonthLabel === marker.label}
           onclick={() => handleClick(marker.title)}
           title={marker.title}
-          aria-label="Jump to {marker.label}"
+          aria-label={tDynamic("browse_results_jump_section", {
+            label: marker.label,
+          })}
         >
           {#if TKA_LETTER_RE.test(marker.label)}
             <TKAWordGlyph word={marker.label} height={18} />
@@ -327,12 +380,20 @@
 
   .fade-top {
     top: 0;
-    background: linear-gradient(180deg, var(--theme-panel-bg, #12121c) 0%, transparent 100%);
+    background: linear-gradient(
+      180deg,
+      var(--theme-panel-bg, #12121c) 0%,
+      transparent 100%
+    );
   }
 
   .fade-bottom {
     bottom: 0;
-    background: linear-gradient(0deg, var(--theme-panel-bg, #12121c) 0%, transparent 100%);
+    background: linear-gradient(
+      0deg,
+      var(--theme-panel-bg, #12121c) 0%,
+      transparent 100%
+    );
   }
 
   .track {
@@ -358,7 +419,8 @@
 
   .year-group + .year-group {
     margin-top: 4px;
-    border-top: 1px solid color-mix(in srgb, var(--theme-text, white) 6%, transparent);
+    border-top: 1px solid
+      color-mix(in srgb, var(--theme-text, white) 6%, transparent);
     padding-top: 8px;
   }
 
@@ -414,7 +476,11 @@
   .month-btn.active {
     color: var(--theme-accent, #818cf8);
     font-weight: 700;
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 10%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 10%,
+      transparent
+    );
   }
 
   /* Accent bar on the right edge of the active month (faces the content) */
@@ -427,7 +493,8 @@
     width: 3px;
     border-radius: 3px 0 0 3px;
     background: var(--theme-accent, #6366f1);
-    box-shadow: 0 0 8px color-mix(in srgb, var(--theme-accent, #6366f1) 40%, transparent);
+    box-shadow: 0 0 8px
+      color-mix(in srgb, var(--theme-accent, #6366f1) 40%, transparent);
   }
 
   .month-btn:focus-visible {
@@ -443,7 +510,8 @@
 
   .level-group + .level-group {
     margin-top: 8px;
-    border-top: 1px solid color-mix(in srgb, var(--theme-text, white) 6%, transparent);
+    border-top: 1px solid
+      color-mix(in srgb, var(--theme-text, white) 6%, transparent);
     padding-top: 10px;
   }
 
@@ -456,7 +524,8 @@
 
   /* Lift the active level's badge so it reads as the current group. */
   .level-group.active-level .level-header :global(.difficulty-badge) {
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-text, white) 30%, transparent);
+    box-shadow: 0 0 0 2px
+      color-mix(in srgb, var(--theme-text, white) 30%, transparent);
   }
 
   .letter-list {
@@ -494,7 +563,11 @@
 
   .letter-marker.active {
     color: var(--theme-accent, #818cf8);
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 10%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 10%,
+      transparent
+    );
   }
 
   .letter-marker.active::before {
@@ -506,7 +579,8 @@
     width: 3px;
     border-radius: 3px 0 0 3px;
     background: var(--theme-accent, #6366f1);
-    box-shadow: 0 0 8px color-mix(in srgb, var(--theme-accent, #6366f1) 40%, transparent);
+    box-shadow: 0 0 8px
+      color-mix(in srgb, var(--theme-accent, #6366f1) 40%, transparent);
   }
 
   .letter-marker :global(.glyph img) {
@@ -572,7 +646,11 @@
   .marker.active {
     color: var(--theme-accent, #818cf8);
     font-weight: 700;
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 10%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 10%,
+      transparent
+    );
   }
 
   .marker.active::before {
@@ -584,7 +662,8 @@
     width: 3px;
     border-radius: 3px 0 0 3px;
     background: var(--theme-accent, #6366f1);
-    box-shadow: 0 0 8px color-mix(in srgb, var(--theme-accent, #6366f1) 40%, transparent);
+    box-shadow: 0 0 8px
+      color-mix(in srgb, var(--theme-accent, #6366f1) 40%, transparent);
   }
 
   .marker :global(.glyph img) {

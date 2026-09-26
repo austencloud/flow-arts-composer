@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
   import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
   import { valueDisabled } from "../gallery-value-editor";
@@ -37,7 +38,7 @@
 </script>
 
 <div class="drill-screen screen-letter">
-  {@render valueHead("Pick a starting letter", stackHint)}
+  {@render valueHead(t("browse_audit_pick_starting_letter"), stackHint)}
   <div class="letter-grid">
     {#each catalog.letterValues as v (v.value)}
       {@const letterApplied =
@@ -46,7 +47,10 @@
         class="letter-chip"
         class:value-applied={letterApplied}
         type="button"
-        aria-label="{v.value}, {v.count} sequences"
+        aria-label={t("browse_audit_letter_sequence_count", {
+          letter: v.value,
+          count: v.count,
+        })}
         aria-pressed={isValueApplied ? letterApplied : undefined}
         disabled={valueDisabled(v.count, letterApplied)}
         onclick={() =>

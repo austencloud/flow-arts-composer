@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { effectUiLabel } from "../effect-ui-label";
   import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import {
@@ -41,7 +43,11 @@
 
   type DeviceValue = "capsule" | "32" | "72" | "200";
 
-  const DEVICE_OPTIONS: { value: DeviceValue; label: string; shortLabel?: string }[] = [
+  const DEVICE_OPTIONS: {
+    value: DeviceValue;
+    label: string;
+    shortLabel?: string;
+  }[] = [
     { value: "capsule", label: "Capsule", shortLabel: "Capsule" },
     { value: "32", label: "Pixel staff, 32 LEDs", shortLabel: "Staff 32" },
     { value: "72", label: "Pixel staff, 72 LEDs", shortLabel: "Staff 72" },
@@ -62,7 +68,6 @@
         : normalizeLedDevice("pixel-staff", Number(value));
     effectsState.updateEffect("led", { device });
   }
-
 
   /** How many of the shared params each generator actually reads. */
   const COLOR_SLOTS: Record<string, number> = {
@@ -102,12 +107,19 @@
   function setGenerator(generatorId: string) {
     if (!effectsState || !led) return;
     effectsState.updateEffect("led", {
-      pattern: { source: "generator", generatorId, params: { ...currentParams } },
+      pattern: {
+        source: "generator",
+        generatorId,
+        params: { ...currentParams },
+      },
     });
   }
 
   function rgbToHex(c: { r: number; g: number; b: number }): string {
-    const part = (v: number) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0");
+    const part = (v: number) =>
+      Math.max(0, Math.min(255, Math.round(v)))
+        .toString(16)
+        .padStart(2, "0");
     return `#${part(c.r)}${part(c.g)}${part(c.b)}`;
   }
 
@@ -130,7 +142,9 @@
     });
   }
 
-  const colorSlots = $derived(activeGeneratorId ? (COLOR_SLOTS[activeGeneratorId] ?? 0) : 0);
+  const colorSlots = $derived(
+    activeGeneratorId ? (COLOR_SLOTS[activeGeneratorId] ?? 0) : 0
+  );
 
   // ─── Pattern strips (space-time portraits, one per generator) ──────────────
 
@@ -173,7 +187,9 @@
   function setCycleFromSlider(t: number) {
     if (!effectsState) return;
     const seconds = Math.exp(LOG_MIN + t * (LOG_MAX - LOG_MIN));
-    effectsState.updateEffect("led", { cycleDuration: Math.round(seconds * 10) / 10 });
+    effectsState.updateEffect("led", {
+      cycleDuration: Math.round(seconds * 10) / 10,
+    });
   }
 
   function formatSeconds(seconds: number): string {
@@ -208,7 +224,9 @@
     { value: "camera", label: "Camera" },
   ];
 
-  const shutterMode = $derived<"eye" | "camera">(led?.look.shutter.mode ?? "eye");
+  const shutterMode = $derived<"eye" | "camera">(
+    led?.look.shutter.mode ?? "eye"
+  );
 
   const eyeTimeConstant = $derived(
     led && led.look.shutter.mode === "eye"
@@ -245,7 +263,9 @@
   const glarePct = $derived(
     led
       ? Math.round(
-          ((led.look.glare - GLARE_WEIGHT_MIN) / (GLARE_WEIGHT_MAX - GLARE_WEIGHT_MIN)) * 100
+          ((led.look.glare - GLARE_WEIGHT_MIN) /
+            (GLARE_WEIGHT_MAX - GLARE_WEIGHT_MIN)) *
+            100
         )
       : 0
   );
@@ -255,7 +275,7 @@
   {#if !embedded}
     <button type="button" class="back-btn" onclick={onBack}>
       <i class="fas fa-arrow-left" aria-hidden="true"></i>
-      Back to presets
+      {t("effect_deep_back_to_presets")}
     </button>
   {/if}
 
@@ -263,9 +283,17 @@
     <div class="led-controls">
       <!-- Device -->
       <div class="group">
-        <span class="group-label" id="led-device-label">Prop</span>
+        <span class="group-label" id="led-device-label"
+          >{t("effect_deep_prop")}</span
+        >
         <SegmentedControl
-          options={DEVICE_OPTIONS}
+          options={DEVICE_OPTIONS.map((option) => ({
+            ...option,
+            label: effectUiLabel(option.label),
+            shortLabel: option.shortLabel
+              ? effectUiLabel(option.shortLabel)
+              : undefined,
+          }))}
           value={deviceValue}
           onchange={(v) => setDevice(v as DeviceValue)}
           color="accent"
@@ -277,7 +305,9 @@
 
       <!-- Pattern -->
       <div class="group">
-        <span class="group-label" id="led-pattern-label">Pattern</span>
+        <span class="group-label" id="led-pattern-label"
+          >{t("effect_deep_pattern")}</span
+        >
         <div
           class="pattern-grid"
           role="radiogroup"
@@ -300,7 +330,7 @@
                 bind:this={stripCanvases[generator.id]}
               ></canvas>
               <span class="pattern-name">
-                {PATTERN_LABELS[generator.id] ?? generator.name}
+                {effectUiLabel(PATTERN_LABELS[generator.id] ?? generator.name)}
               </span>
             </button>
           {/each}
@@ -310,12 +340,16 @@
       <!-- Colors: the slot is always reserved so switching patterns never
            shifts the rows below; pickers the pattern ignores go invisible. -->
       <div class="color-row" class:reserved-hidden={colorSlots === 0}>
-        <span class="color-label">{colorSlots === 2 ? "Colors" : "Color"}</span>
+        <span class="color-label"
+          >{colorSlots === 2
+            ? t("effect_deep_colors")
+            : t("effect_deep_color")}</span
+        >
         <div class="color-pickers">
           <label class="color-picker">
             <input
               type="color"
-              aria-label="Primary pattern color"
+              aria-label={t("effect_deep_primary_pattern_color")}
               value={rgbToHex(currentParams.primaryColor)}
               oninput={(e) =>
                 setParamColor(
@@ -327,7 +361,7 @@
           <label class="color-picker" class:reserved-hidden={colorSlots < 2}>
             <input
               type="color"
-              aria-label="Secondary pattern color"
+              aria-label={t("effect_deep_secondary_pattern_color")}
               value={rgbToHex(
                 currentParams.secondaryColor ?? currentParams.primaryColor
               )}
@@ -343,7 +377,7 @@
 
       <!-- Loop -->
       <div class="slider-row">
-        <label for="led-cycle">Loop</label>
+        <label for="led-cycle">{t("effect_deep_loop")}</label>
         <input
           id="led-cycle"
           type="range"
@@ -359,12 +393,17 @@
 
       <!-- Look -->
       <div class="group">
-        <span class="group-label">Look</span>
+        <span class="group-label">{t("effect_deep_look")}</span>
 
         <div class="shutter-row">
-          <span class="group-label" id="led-shutter-label">Shutter</span>
+          <span class="group-label" id="led-shutter-label"
+            >{t("effect_deep_shutter")}</span
+          >
           <SegmentedControl
-            options={SHUTTER_MODE_OPTIONS}
+            options={SHUTTER_MODE_OPTIONS.map((option) => ({
+              ...option,
+              label: effectUiLabel(option.label),
+            }))}
             value={shutterMode}
             onchange={(v) => setShutterMode(v)}
             color="accent"
@@ -383,7 +422,9 @@
              switching shutter mode shifts nothing below it. -->
         <div class="shutter-slot">
           <div class="slider-row" class:reserved-hidden={shutterMode !== "eye"}>
-            <label for="led-eye-persistence">Persistence</label>
+            <label for="led-eye-persistence"
+              >{t("effect_deep_persistence")}</label
+            >
             <input
               id="led-eye-persistence"
               type="range"
@@ -392,7 +433,9 @@
               step="0.005"
               value={eyeTimeConstant}
               oninput={(e) =>
-                setEyeTimeConstant(+(e.currentTarget as HTMLInputElement).value)}
+                setEyeTimeConstant(
+                  +(e.currentTarget as HTMLInputElement).value
+                )}
             />
             <span class="slider-value">
               {Math.round(eyeTimeConstant * 1000)}ms
@@ -403,7 +446,7 @@
             class="slider-row"
             class:reserved-hidden={shutterMode !== "camera"}
           >
-            <label for="led-camera-exposure">Exposure</label>
+            <label for="led-camera-exposure">{t("effect_deep_exposure")}</label>
             <input
               id="led-camera-exposure"
               type="range"
@@ -419,7 +462,7 @@
         </div>
 
         <div class="slider-row">
-          <label for="led-glare">Glare</label>
+          <label for="led-glare">{t("effect_deep_glare")}</label>
           <input
             id="led-glare"
             type="range"
@@ -427,15 +470,21 @@
             max={GLARE_WEIGHT_MAX}
             step="0.01"
             value={led.look.glare}
-            oninput={(e) => setGlare(+(e.currentTarget as HTMLInputElement).value)}
+            oninput={(e) =>
+              setGlare(+(e.currentTarget as HTMLInputElement).value)}
           />
           <span class="slider-value">{glarePct}%</span>
         </div>
 
         <div class="brightness-row">
-          <span class="group-label" id="led-brightness-label">Brightness</span>
+          <span class="group-label" id="led-brightness-label"
+            >{t("effect_deep_brightness")}</span
+          >
           <SegmentedControl
-            options={BRIGHTNESS_OPTIONS}
+            options={BRIGHTNESS_OPTIONS.map((option) => ({
+              ...option,
+              label: effectUiLabel(option.label),
+            }))}
             value={String(led.look.brightness)}
             onchange={(v) => setLook({ brightness: Number(v) })}
             color="accent"
@@ -447,7 +496,7 @@
       </div>
     </div>
   {:else}
-    <p class="empty">Effect state unavailable.</p>
+    <p class="empty">{t("effect_deep_effect_state_unavailable")}</p>
   {/if}
 </div>
 
@@ -545,7 +594,11 @@
 
   .pattern-card.active {
     border-color: var(--theme-accent, #8b5cf6);
-    background: color-mix(in srgb, var(--theme-accent, #8b5cf6) 8%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 8%,
+      transparent
+    );
   }
 
   .pattern-card:focus-visible {

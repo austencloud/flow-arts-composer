@@ -34,6 +34,7 @@ Pointer discipline
 <script lang="ts">
   import { onDestroy } from "svelte";
   import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import GridSvg from "$lib/shared/pictograph/grid/components/GridSvg.svelte";
   import type { TraceHand, TraceSample } from "../domain/trace-types";
@@ -350,7 +351,9 @@ Pointer discipline
         <div
           class="surface"
           role="application"
-          aria-label="{handName(hand)} trace surface"
+          aria-label={tDynamic("learn_trace_surface_aria", {
+            hand: handName(hand),
+          })}
           use:measured
           onpointerdown={(e) => {
             handlePointerDown(e, hand);

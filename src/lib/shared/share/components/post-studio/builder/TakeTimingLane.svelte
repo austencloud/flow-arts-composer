@@ -7,6 +7,7 @@
   } from "$lib/shared/media-composition/domain/take-timing";
   import { MIN_MOVE_SECONDS } from "$lib/shared/media-composition/domain/take-timing";
   import { landingName } from "$lib/shared/media-composition/domain/timing-summary";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { formatTakeClock } from "./post-builder-format";
   import { shownLanding, shownLandings } from "./timing-lane-landings";
 
@@ -100,8 +101,8 @@
   // is not a tap.
   const taps = $derived(
     (resolved?.sections ?? []).flatMap((section) =>
-      (timing.sections.find((entry) => entry.id === section.id)?.taps
-        .length ?? 0) === 0
+      (timing.sections.find((entry) => entry.id === section.id)?.taps.length ??
+        0) === 0
         ? []
         : (section.fit?.labels ?? []).map((label) => ({
             seconds: label.seconds,
@@ -200,12 +201,14 @@
     bind:this={detail}
     onpointerdown={seekFromDetail}
     role="group"
-    aria-label="Landings near the playhead"
+    aria-label={t("share_studio_deep_landings_near_playhead")}
   >
     {#each timing.sections as section, index (section.id)}
       {#if index > 0 && inWindow(section.startSeconds)}
         <span class="section-edge" style:left={at(section.startSeconds)}>
-          <span>Part {index + 1}</span>
+          <span
+            >{t("share_studio_deep_part_number", { number: index + 1 })}</span
+          >
         </span>
       {/if}
     {/each}
@@ -240,12 +243,14 @@
           class:selected={isSelected(landing.sectionId, landing.position)}
           class:dragging
           style:left={at(seconds)}
-          aria-label="{landingName(
-            landing.position,
-            movesPerPass
-          )} at {formatTakeClock(seconds)}{landing.pinned
-            ? ', placed by hand'
-            : ''}{landing.isEnd ? ', performance ends' : ''}"
+          aria-label="{landingName(landing.position, movesPerPass)}{t(
+            'share_studio_deep_at_time_suffix',
+            { time: formatTakeClock(seconds) }
+          )}{landing.pinned
+            ? t('share_studio_deep_placed_by_hand_suffix')
+            : ''}{landing.isEnd
+            ? t('share_studio_deep_performance_ends_suffix')
+            : ''}"
           aria-pressed={isSelected(landing.sectionId, landing.position)}
           onpointerdown={(event) => startDrag(event, ref, landing.seconds)}
           onpointermove={moveDrag}
@@ -277,7 +282,7 @@
     onpointermove={seekFromOverview}
     role="slider"
     tabindex="0"
-    aria-label="Whole take"
+    aria-label={t("share_studio_deep_whole_take")}
     aria-valuemin={0}
     aria-valuemax={Math.round(durationSeconds * 100) / 100}
     aria-valuenow={Math.round(mediaSeconds * 100) / 100}

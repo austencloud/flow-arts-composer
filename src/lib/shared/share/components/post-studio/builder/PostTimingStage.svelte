@@ -2,6 +2,7 @@
   import type { PostStudioLayerPainter } from "$lib/shared/media-composition/services/post-studio-layer-painter";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import PostStudioPaintedLayer from "../PostStudioPaintedLayer.svelte";
   import TakeTimingLane from "./TakeTimingLane.svelte";
   import type { PostTimingSession } from "./post-timing-session.svelte";
@@ -22,11 +23,13 @@
 
 {#if !session.take || !session.timing}
   <div class="empty">
-    <p>Add a take first. Its timing is mapped here.</p>
-    <PanelButton onclick={session.goToTakes}>Go to Takes</PanelButton>
+    <p>{t("post_editor_add_video_to_tap")}</p>
+    <PanelButton onclick={session.exit}
+      >{t("post_editor_back_to_editing")}</PanelButton
+    >
   </div>
 {:else}
-  <section class="stage" aria-label="Take to map">
+  <section class="stage" aria-label={t("share_studio_deep_take_to_map")}>
     {#if session.takes.length > 1}
       <SegmentedControl
         options={session.takes.map((entry) => ({
@@ -36,7 +39,7 @@
         value={session.take.id}
         onchange={session.selectTake}
         size="sm"
-        ariaLabel="Take to map"
+        ariaLabel={t("share_studio_deep_take_to_map")}
       />
     {/if}
 
@@ -65,8 +68,10 @@
       </div>
     {:else}
       <div class="empty">
-        <p>This take's file isn't loaded. Pick it again on the Takes step.</p>
-        <PanelButton onclick={session.goToTakes}>Go to Takes</PanelButton>
+        <p>{t("post_editor_take_file_missing")}</p>
+        <PanelButton onclick={session.exit}
+          >{t("post_editor_back_to_editing")}</PanelButton
+        >
       </div>
     {/if}
 
@@ -76,7 +81,9 @@
         class="round"
         onclick={session.togglePlay}
         disabled={!session.url}
-        aria-label={session.playing ? "Pause" : "Play"}
+        aria-label={session.playing
+          ? t("share_studio_deep_pause")
+          : t("share_studio_deep_play")}
       >
         <i
           class="fa-solid {session.playing ? 'fa-pause' : 'fa-play'}"
@@ -88,7 +95,7 @@
         class="round"
         onclick={() => session.stepFrame(-1)}
         disabled={!session.url}
-        aria-label="Back one frame"
+        aria-label={t("share_studio_deep_back_one_frame")}
       >
         <i class="fa-solid fa-backward-step" aria-hidden="true"></i>
       </button>
@@ -97,7 +104,7 @@
         class="round"
         onclick={() => session.stepFrame(1)}
         disabled={!session.url}
-        aria-label="Forward one frame"
+        aria-label={t("share_studio_deep_forward_one_frame")}
       >
         <i class="fa-solid fa-forward-step" aria-hidden="true"></i>
       </button>
@@ -110,15 +117,27 @@
       <div class="picker">
         <SegmentedControl
           options={[
-            { value: "1", label: "1×", ariaLabel: "Full speed" },
-            { value: "0.75", label: "¾×", ariaLabel: "Three quarter speed" },
-            { value: "0.5", label: "½×", ariaLabel: "Half speed" },
+            {
+              value: "1",
+              label: "1×",
+              ariaLabel: t("share_studio_deep_full_speed"),
+            },
+            {
+              value: "0.75",
+              label: "¾×",
+              ariaLabel: t("share_studio_deep_three_quarter_speed"),
+            },
+            {
+              value: "0.5",
+              label: "½×",
+              ariaLabel: t("share_studio_deep_half_speed"),
+            },
           ]}
           value={session.speed}
           onchange={(value) => (session.speed = value)}
           size="sm"
           density="compact"
-          ariaLabel="Playback speed"
+          ariaLabel={t("share_studio_deep_playback_speed")}
         />
       </div>
     </div>
@@ -152,16 +171,16 @@
           onchange={(value) => (session.zoom = value)}
           size="sm"
           density="compact"
-          ariaLabel="Close-up width"
+          ariaLabel={t("share_studio_deep_closeup_width")}
         />
       </div>
       {#if squarePainter}
         <label class="check">
           <input type="checkbox" bind:checked={session.showSquare} />
-          Show the move
+          {t("share_studio_deep_show_move")}
         </label>
       {/if}
-      <span class="hint">T taps · Space plays · , and . step a frame</span>
+      <span class="hint">{t("share_studio_deep_keyboard_hint")}</span>
     </div>
   </section>
 {/if}

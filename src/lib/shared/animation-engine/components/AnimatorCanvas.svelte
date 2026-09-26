@@ -22,6 +22,7 @@ Last audit: 2025-12-27
 ================================================================================
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { Letter } from "$lib/shared/foundation/domain/models/letter";
@@ -796,7 +797,7 @@ Last audit: 2025-12-27
   <button
     type="button"
     class="corner-toggle"
-    aria-label={isPlaying ? "Pause" : "Play"}
+    aria-label={isPlaying ? t("viewer_ui_pause") : t("viewer_ui_play")}
     data-ghost="safe"
     data-ghost-kind="play"
     onclick={handleCornerToggle}
@@ -1019,14 +1020,14 @@ Last audit: 2025-12-27
           </span>
           <span class="hint-word">
             <Crossfade key={isPlaying} duration={DURATION.fast}>
-              {isPlaying ? "Pause" : "Play"}
+              {isPlaying ? t("viewer_ui_pause") : t("viewer_ui_play")}
             </Crossfade>
           </span>
         </span>
       {:else if hoverHint === "pill"}
         <span class="hint-pill">
           <i class="fas {isPlaying ? 'fa-pause' : 'fa-play'}"></i>
-          <span>{isPlaying ? "Pause" : "Play"}</span>
+          <span>{isPlaying ? t("viewer_ui_pause") : t("viewer_ui_play")}</span>
         </span>
       {/if}
     </div>
