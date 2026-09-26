@@ -157,7 +157,7 @@
         showMotionVisibility={true}
         showSequenceMarks={!theory}
         availableEffects={theory ? theoryEffects : undefined}
-        regionLabel="Animation settings"
+        regionLabel={t("shape_engine_animation_settings")}
       />
     </div>
   </div>

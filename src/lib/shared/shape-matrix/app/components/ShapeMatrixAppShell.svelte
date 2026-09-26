@@ -623,6 +623,7 @@
         panels={[
           {
             id: "matrix",
+            resizeLabel: t("shape_engine_resize_matrix_realization"),
             content: gridPane,
             defaultSize: 1.28,
             minSize: 440,
@@ -1024,7 +1025,7 @@
   /* SegmentedControl's sliding indicator assumes equal-width segments, so
      each wrapper hands it a definite width sized to its longest label. */
   .label-control :global(.segmented-control) {
-    width: 7.5rem;
+    width: 12rem;
   }
 
   .top-actions {

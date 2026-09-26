@@ -100,7 +100,7 @@
     type="button"
     class="step"
     aria-label={t("shape_engine_previous_value", {
-      axis: axisName.toLowerCase(),
+      axis: axisName,
     })}
     disabled={!canStep || index <= 0}
     onclick={() => step(-1)}
@@ -186,7 +186,7 @@
   <button
     type="button"
     class="step"
-    aria-label={t("shape_engine_next_value", { axis: axisName.toLowerCase() })}
+    aria-label={t("shape_engine_next_value", { axis: axisName })}
     disabled={!canStep || index >= turns.length - 1}
     onclick={() => step(1)}
   >

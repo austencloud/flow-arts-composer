@@ -86,7 +86,7 @@
         })
   );
   const popoverTitle = $derived(
-    theory ? "Edit ratios" : t("shape_engine_level_and_turns")
+    theory ? t("shape_engine_edit_ratios") : t("shape_engine_level_and_turns")
   );
   const closeLabel = $derived(
     theory

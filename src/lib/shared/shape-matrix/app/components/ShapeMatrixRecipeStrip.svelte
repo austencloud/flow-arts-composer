@@ -7,14 +7,12 @@
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { flyFade } from "$lib/shared/transitions/motion";
+  import { matrixTurnVisibleLabel } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
+  import { theoryRatioLabel } from "$lib/shared/shape-matrix/domain/theory-ratio";
   import {
-    matrixTurnSpokenLabel,
-    matrixTurnVisibleLabel,
-  } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
-  import {
-    theoryRatioLabel,
-    theoryRatioSpokenLabel,
-  } from "$lib/shared/shape-matrix/domain/theory-ratio";
+    localizedMatrixTurnSpokenLabel,
+    localizedTheoryRatioSpokenLabel,
+  } from "../../domain/shape-matrix-display";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import { SHAPE_MATRIX_REVEAL } from "../services/shape-matrix-reveal";
 
@@ -40,13 +38,19 @@
   );
   const rowsSpoken = $derived(
     theory
-      ? theoryRatioSpokenLabel(appState.theoryLeftRatio)
-      : matrixTurnSpokenLabel(appState.leftTurn, appState.labelMode)
+      ? localizedTheoryRatioSpokenLabel(
+          appState.theoryLeftRatio.handCycles,
+          appState.theoryLeftRatio.propRotations
+        )
+      : localizedMatrixTurnSpokenLabel(appState.leftTurn, appState.labelMode)
   );
   const columnsSpoken = $derived(
     theory
-      ? theoryRatioSpokenLabel(appState.theoryRightRatio)
-      : matrixTurnSpokenLabel(appState.rightTurn, appState.labelMode)
+      ? localizedTheoryRatioSpokenLabel(
+          appState.theoryRightRatio.handCycles,
+          appState.theoryRightRatio.propRotations
+        )
+      : localizedMatrixTurnSpokenLabel(appState.rightTurn, appState.labelMode)
   );
 
   const beat = SHAPE_MATRIX_REVEAL;

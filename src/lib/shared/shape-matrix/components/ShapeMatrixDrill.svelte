@@ -139,7 +139,7 @@
     solo = null,
     data,
     onselectRealization,
-    selectLabel = "Use this realization",
+    selectLabel = t("shape_engine_use_realization"),
     onopenRealization,
     onsaveRealization,
     onshareRealization,
@@ -1344,9 +1344,7 @@
         {:else}
           <div class="hero-hint">
             <p class="hint-lead">{t("shape_engine_pick_cell")}</p>
-            <p class="hint-sub">
-              Its shape opens here. Each element traces it live.
-            </p>
+            <p class="hint-sub">{t("shape_engine_theory_stage_hint")}</p>
           </div>
         {/if}
       </div>
