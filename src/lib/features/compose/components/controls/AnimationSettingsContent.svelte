@@ -11,6 +11,7 @@
   Note: Export settings (loop count) are in ExportActionsPanel
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import BpmChips from "$lib/shared/animation-engine/components/controls/BpmChips.svelte";
   import SimpleTrailControls from "$lib/shared/animation-engine/components/trail/SimpleTrailControls.svelte";
   import PlaybackModeToggle from "$lib/shared/animation-engine/components/controls/PlaybackModeToggle.svelte";
@@ -62,7 +63,7 @@
   <div class="top-row">
     <!-- Playback Mode -->
     <section class="settings-section compact">
-      <h4 class="settings-section-title">Playback Mode</h4>
+      <h4 class="settings-section-title">{t("compose_ui_playback_mode")}</h4>
       <PlaybackModeToggle
         {playbackMode}
         {isPlaying}
@@ -73,7 +74,9 @@
 
     <!-- Motion Visibility -->
     <section class="settings-section compact">
-      <h4 class="settings-section-title">Motion Visibility</h4>
+      <h4 class="settings-section-title">
+        {t("compose_ui_motion_visibility")}
+      </h4>
       <MotionColorChips
         showLeft={leftMotionVisible}
         showRight={rightMotionVisible}
@@ -102,7 +105,7 @@
 
   <!-- Speed -->
   <section class="settings-section">
-    <h4 class="settings-section-title">Speed</h4>
+    <h4 class="settings-section-title">{t("compose_ui_speed")}</h4>
     <BpmChips bind:bpm min={15} max={180} step={1} {onBpmChange} />
   </section>
 

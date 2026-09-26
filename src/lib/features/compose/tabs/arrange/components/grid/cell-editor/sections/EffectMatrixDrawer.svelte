@@ -6,6 +6,7 @@
   Opens as an overlay from the Effects section in CellEditorPanel.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type {
     TipEffectMap,
     EffectType,
@@ -229,12 +230,16 @@
         <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
         Effect Matrix
       </h3>
-      <button class="done-btn" onclick={allProps.onClose}>Done</button>
+      <button class="done-btn" onclick={allProps.onClose}
+        >{t("train_filter_done")}</button
+      >
     </header>
 
     <!-- Scope selector -->
     <div class="scope-section">
-      <span class="scope-label" id="effect-scope-label">SCOPE</span>
+      <span class="scope-label" id="effect-scope-label"
+        >{t("compose_ui_scope")}</span
+      >
       <div
         class="scope-strip"
         role="radiogroup"

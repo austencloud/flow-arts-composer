@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * Inspect Modal Header
    *
@@ -31,7 +32,7 @@
     <span class="title-icon"
       ><i class="fas fa-magnifying-glass" aria-hidden="true"></i></span
     >
-    <h2>Inspect</h2>
+    <h2>{t("create_ui_inspect")}</h2>
     <span class="beat-chip"
       >Step {displayData?.stepNumber ?? stepData.stepNumber}</span
     >
@@ -63,7 +64,7 @@
       labels={{ idle: "JSON", success: "Copied!" }}
       disabled={isCalculating}
     />
-    <button class="close-btn" onclick={onClose} aria-label="Close">
+    <button class="close-btn" onclick={onClose} aria-label={t("action_close")}>
       <i class="fas fa-times" aria-hidden="true"></i>
     </button>
   </div>

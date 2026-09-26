@@ -14,6 +14,7 @@ clipped 415px of that content instead of scrolling.
 Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
   import { onMount, untrack } from "svelte";
@@ -232,7 +233,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
       },
       styleBaseline
     );
-    return isDefault ? "Default" : facts.join(" · ");
+    return isDefault ? t("create_ui_default") : facts.join(" · ");
   });
 
   // The three rows. Start orientation used to be a fourth, which asked the user
@@ -244,14 +245,18 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   // would change the list length and move the row below it, and leave a user
   // who saw the setting once with no explanation.
   const drillItems = $derived<SettingsDrillItem[]>([
-    { id: "style", label: "Style", value: styleSummary },
-    { id: "startPos", label: "Start Placement", value: startPosDisplay },
+    { id: "style", label: t("create_ui_style_label"), value: styleSummary },
+    {
+      id: "startPos",
+      label: t("create_ui_start_placement_label"),
+      value: startPosDisplay,
+    },
     {
       id: "endPos",
-      label: "End Placement",
+      label: t("create_ui_end_placement_label"),
       value: endPosDisplay,
       disabled: !isFreeformMode,
-      disabledReason: "Set by LOOP",
+      disabledReason: t("create_ui_set_by_loop"),
     },
   ]);
 
@@ -327,8 +332,8 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
 </script>
 
 <GenerationSettingsOverlay
-  title="Customize"
-  closeLabel="Close customize panel"
+  title={t("create_ui_customize")}
+  closeLabel={t("create_deep_close_customize")}
   onClose={handleClose}
   {entrance}
   {titleId}
@@ -341,7 +346,9 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
           hapticService?.trigger("selection");
           resetConfirmOpen = true;
         }}
-        aria-label="Reset all generation settings to their defaults"
+        aria-label={t(
+          "create_ui_reset_all_generation_settings_to_their_defaults"
+        )}
       >
         Reset all
       </button>
@@ -400,7 +407,9 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
                  visible at the same time. -->
             <div class="ori-block">
               <div class="ori-row">
-                <span class="ori-color-label ori-blue">Left</span>
+                <span class="ori-color-label ori-blue"
+                  >{t("create_ui_left")}</span
+                >
                 <PropOrientationControl
                   hand="left"
                   orientation={localLeftOri}
@@ -409,7 +418,9 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
                 />
               </div>
               <div class="ori-row">
-                <span class="ori-color-label ori-red">Right</span>
+                <span class="ori-color-label ori-red"
+                  >{t("create_ui_right")}</span
+                >
                 <PropOrientationControl
                   hand="right"
                   orientation={localRightOri}
@@ -437,7 +448,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
 
 <ConfirmDialog
   bind:isOpen={resetConfirmOpen}
-  title="Reset all settings?"
+  title={t("create_ui_reset_all_settings")}
   message="Style, start placements, level, length and LOOP settings all go back to their defaults. This can't be undone."
   confirmText="Reset"
   cancelText="Keep"

@@ -2,6 +2,7 @@
 StaffQuizSection - Main quiz UI with visualizer and answers
 -->
 <script lang="ts">
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import StaffPlacementVisualizer from "../StaffPlacementVisualizer.svelte";
   import {
     type StaffQuizQuestion,
@@ -23,12 +24,25 @@ StaffQuizSection - Main quiz UI with visualizer and answers
     selectedAnswer: string | null;
     onAnswer: (answer: string) => void;
   } = $props();
+
+  const questionKeys: Record<string, string> = {
+    "What placement type is shown?": "learn_staff_question_placement",
+    "What is the thumb orientation?": "learn_staff_question_thumb",
+    "If the thumbs STAY IN during motion, what rotation type is this?":
+      "learn_staff_question_rotation_in",
+    "If thumbs started IN and now are OUT, what rotation occurred?":
+      "learn_staff_question_rotation_out",
+    "Thumb orientation unchanged = which rotation?":
+      "learn_staff_question_rotation_unchanged",
+    "Thumb swapped from IN to OUT = which rotation?":
+      "learn_staff_question_rotation_swapped",
+  };
 </script>
 
 <div class="quiz-section">
   <StaffQuizTypeBadge type={question.type} />
 
-  <h3 class="quiz-title">{question.questionText}</h3>
+  <h3 class="quiz-title">{tDynamic(questionKeys[question.questionText]!)}</h3>
 
   <div class="visualizer-container">
     <StaffPlacementVisualizer

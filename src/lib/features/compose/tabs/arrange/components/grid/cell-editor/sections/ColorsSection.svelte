@@ -5,7 +5,11 @@
   displayed in a 2×2 chip grid matching the v4 mockup.
 -->
 <script lang="ts">
-  import { TUNNEL_LAYER_COLORS, type PropColors } from '$lib/shared/animation-engine/domain/compose-types';
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import {
+    TUNNEL_LAYER_COLORS,
+    type PropColors,
+  } from "$lib/shared/animation-engine/domain/compose-types";
 
   let {
     currentColors,
@@ -16,21 +20,27 @@
   } = $props();
 
   const combos: { label: string; colors: PropColors }[] = [
-    { label: 'Default', colors: TUNNEL_LAYER_COLORS[0]! },
-    { label: 'Alt 1',   colors: TUNNEL_LAYER_COLORS[1]! },
-    { label: 'Alt 2',   colors: TUNNEL_LAYER_COLORS[2]! },
-    { label: 'Alt 3',   colors: TUNNEL_LAYER_COLORS[3]! },
+    { label: "Default", colors: TUNNEL_LAYER_COLORS[0]! },
+    { label: "Alt 1", colors: TUNNEL_LAYER_COLORS[1]! },
+    { label: "Alt 2", colors: TUNNEL_LAYER_COLORS[2]! },
+    { label: "Alt 3", colors: TUNNEL_LAYER_COLORS[3]! },
   ];
 
   function isSelected(combo: PropColors): boolean {
-    return combo.left === currentColors.left && combo.right === currentColors.right;
+    return (
+      combo.left === currentColors.left && combo.right === currentColors.right
+    );
   }
 </script>
 
 <div class="colors-section">
   <span class="section-header">COLORS</span>
 
-  <div class="combo-grid" role="radiogroup" aria-label="Prop color combo">
+  <div
+    class="combo-grid"
+    role="radiogroup"
+    aria-label={t("compose_ui_prop_color_combo")}
+  >
     {#each combos as combo}
       {@const active = isSelected(combo.colors)}
       <button
@@ -42,8 +52,10 @@
         onclick={() => onSetColors(combo.colors)}
       >
         <span class="color-pair">
-          <span class="color-swatch" style:background={combo.colors.left}></span>
-          <span class="color-swatch" style:background={combo.colors.right}></span>
+          <span class="color-swatch" style:background={combo.colors.left}
+          ></span>
+          <span class="color-swatch" style:background={combo.colors.right}
+          ></span>
         </span>
         <span class="combo-label">{combo.label}</span>
       </button>
@@ -60,8 +72,14 @@
   }
 
   @keyframes slideDown {
-    from { opacity: 0; transform: translateY(-6px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .section-header {
@@ -132,7 +150,11 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .colors-section { animation: none; }
-    .combo-chip { transition: none; }
+    .colors-section {
+      animation: none;
+    }
+    .combo-chip {
+      transition: none;
+    }
   }
 </style>

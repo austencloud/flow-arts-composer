@@ -11,6 +11,7 @@ cancels) so the user never leaves the grid. Deleting asks for confirmation
 first and only removes the folder — the sequences inside stay in the library.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type {
     CollectionAccessRole,
     LibraryCollection,
@@ -244,7 +245,7 @@ first and only removes the folder — the sequences inside stay in the library.
     <input
       type="text"
       class="rename-field"
-      aria-label="Collection name"
+      aria-label={t("browse_ui_collection_name")}
       bind:value={renameValue}
       onkeydown={handleRenameKeydown}
       onblur={() => void commitRename()}

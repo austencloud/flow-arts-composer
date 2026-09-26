@@ -22,6 +22,7 @@
   import EmailLinkingFormStep from "./email-linking/EmailLinkingFormStep.svelte";
   import EmailLinkingVerifyStep from "./email-linking/EmailLinkingVerifyStep.svelte";
   import EmailLinkingSuccessStep from "./email-linking/EmailLinkingSuccessStep.svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte";
 
   const MAX_VERIFICATION_CHECKS = 60;
 
@@ -103,27 +104,29 @@
           <div class="header-content">
             <DialogPrimitive.Title class="modal-title">
               {#if linkingState.currentStep === "success"}
-                Email Linked Successfully
+                {t("auth_linking_success_title")}
               {:else if linkingState.currentStep === "verifying"}
-                Verify Your Email
+                {t("auth_linking_verify_title")}
               {:else}
-                Add Email & Password
+                {t("auth_linking_add_title")}
               {/if}
             </DialogPrimitive.Title>
             <DialogPrimitive.Description class="modal-subtitle">
               {#if linkingState.currentStep === "success"}
-                Your email has been verified and linked to your account
+                {t("auth_linking_success_detail")}
               {:else if linkingState.currentStep === "verifying"}
-                We sent a verification link to <strong
-                  >{linkingState.email}</strong
-                >
+                {t("auth_linking_sent_to", { email: linkingState.email })}
               {:else}
-                Create a password to sign in with your email
+                {t("auth_linking_create_password")}
               {/if}
             </DialogPrimitive.Description>
           </div>
           {#if linkingState.canClose}
-            <button class="close-btn" onclick={handleClose} aria-label="Close">
+            <button
+              class="close-btn"
+              onclick={handleClose}
+              aria-label={t("common_close")}
+            >
               <i class="fas fa-times" aria-hidden="true"></i>
             </button>
           {/if}

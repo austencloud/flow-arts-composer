@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>Same content, three compositions</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="review-header">
+      <div>
+        <p class="review-kicker">Same content. Three layouts.</p>
+        <p class="review-instruction">
+          Switch between the compositions to compare what leads the section.
+        </p>
+      </div>
+      <nav class="view-controls" aria-label="Choose a composition">
+        <button type="button" data-layout="a" aria-pressed="true" disabled>
+          A Notation first
+        </button>
+        <button type="button" data-layout="b" aria-pressed="false" disabled>
+          B Creator first
+        </button>
+        <button type="button" data-layout="c" aria-pressed="false" disabled>
+          C Explanation first
+        </button>
+        <button type="button" data-layout="all" aria-pressed="false" disabled>
+          Show all
+        </button>
+      </nav>
+    </header>
+
+    <main id="comparison" aria-live="polite">
+      <p class="loading">Loading the shared content…</p>
+    </main>
+
+    <noscript>
+      <p class="message message--error">
+        This composition comparison needs JavaScript to load and switch the
+        shared content.
+      </p>
+    </noscript>
+
+    <template id="composition-template">
+      <section class="composition">
+        <div class="intro">
+          <h1></h1>
+          <p class="lede"></p>
+        </div>
+
+        <div class="explanation">
+          <p class="explanation-copy"></p>
+          <p class="app-copy"></p>
+          <a class="composer-link"></a>
+        </div>
+
+        <figure class="artifact artifact--creator">
+          <a class="artifact-link" target="_blank" rel="noopener">
+            <img class="creator-image" loading="eager" />
+          </a>
+          <figcaption class="creator-caption"></figcaption>
+        </figure>
+
+        <figure class="artifact artifact--notation">
+          <a class="artifact-link" target="_blank" rel="noopener">
+            <img class="notation-image" loading="eager" />
+          </a>
+          <figcaption class="notation-caption"></figcaption>
+        </figure>
+      </section>
+    </template>
+
+    <script>
+      (() => {
+        const comparison = document.querySelector("#comparison");
+        const controls = [...document.querySelectorAll("[data-layout]")];
+        const template = document.querySelector("#composition-template");
+        let content;
+        let activeLayout = "a";
+
+        const labels = {
+          a: "A Notation first",
+          b: "B Creator first",
+          c: "C Explanation first",
+        };
+
+        function setText(root, selector, value) {
+          root.querySelector(selector).textContent = value;
+        }
+
+        function setImage(root, selector, data) {
+          const image = root.querySelector(selector);
+          image.src = data.src;
+          image.alt = data.alt;
+          image.width = data.width;
+          image.height = data.height;
+          image.closest("a").href = data.src;
+        }
+
+        function createComposition(layout, inAll) {
+          const fragment = template.content.cloneNode(true);
+          const section = fragment.querySelector(".composition");
+          const heading = section.querySelector("h1");
+          const headingId = `section-title-${layout}`;
+          section.classList.add(`composition--${layout}`);
+          if (inAll) section.classList.add("composition--in-all");
+          section.dataset.composition = layout.toUpperCase();
+          heading.id = headingId;
+          section.setAttribute("aria-labelledby", headingId);
+
+          setText(section, "h1", content.title);
+          setText(section, ".lede", content.lede);
+          setText(section, ".explanation-copy", content.explanation);
+          setText(section, ".app-copy", content.app);
+          setText(section, ".composer-link", content.action.label);
+          section.querySelector(".composer-link").href = content.action.href;
+          setImage(section, ".creator-image", content.creator);
+          setText(section, ".creator-caption", content.creator.caption);
+          setImage(section, ".notation-image", content.notation);
+          setText(section, ".notation-caption", content.notation.caption);
+
+          return fragment;
+        }
+
+        function render() {
+          if (!content) return;
+
+          if (activeLayout !== "all") {
+            comparison.replaceChildren(createComposition(activeLayout, false));
+            return;
+          }
+
+          const all = document.createElement("div");
+          all.className = "comparison-all";
+          ["a", "b", "c"].forEach((layout) => {
+            const label = document.createElement("h2");
+            label.className = "composition-label";
+            label.textContent = labels[layout];
+            all.append(label, createComposition(layout, true));
+          });
+          comparison.replaceChildren(all);
+        }
+
+        function chooseLayout(layout) {
+          if (!content) return;
+          activeLayout = layout;
+          controls.forEach((button) => {
+            button.setAttribute(
+              "aria-pressed",
+              String(button.dataset.layout === layout)
+            );
+          });
+          render();
+        }
+
+        controls.forEach((button) => {
+          button.addEventListener("click", () =>
+            chooseLayout(button.dataset.layout)
+          );
+        });
+
+        fetch("content.json")
+          .then((response) => {
+            if (!response.ok)
+              throw new Error(`Content request failed (${response.status})`);
+            return response.json();
+          })
+          .then((data) => {
+            content = data;
+            render();
+            controls.forEach((button) => {
+              button.disabled = false;
+            });
+          })
+          .catch((error) => {
+            content = undefined;
+            controls.forEach((button) => {
+              button.disabled = true;
+            });
+            comparison.replaceChildren();
+            const message = document.createElement("p");
+            message.className = "message message--error";
+            message.textContent = `The comparison content could not load. ${error.message}`;
+            comparison.append(message);
+          });
+      })();
+    </script>
+  </body>
+</html>

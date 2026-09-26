@@ -4,6 +4,7 @@
   Opens a sheet with various sequence actions (Animate, Mirror, Rotate, etc.)
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { WORKSPACE_BUTTON_ICON } from "../../workspace-button-layout";
 
@@ -23,8 +24,8 @@
 <button
   class="sequence-actions-button glass-button"
   onclick={handleClick}
-  aria-label="Sequence actions"
-  title="Sequence actions"
+  aria-label={t("create_ui_sequence_actions")}
+  title={t("create_ui_sequence_actions")}
   data-testid="sequence-actions-button"
   data-ghost="safe"
   data-ghost-kind="sequence-actions"

@@ -4,6 +4,7 @@ Toast.svelte - Simple toast notification for validation messages
 Shows at the bottom center of screen, auto-dismisses after 3 seconds
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   // Props
   const { message = "", onDismiss } = $props<{
     message: string;
@@ -21,7 +22,7 @@ Shows at the bottom center of screen, auto-dismisses after 3 seconds
           class="toast-close"
           onclick={onDismiss}
           type="button"
-          aria-label="Dismiss"
+          aria-label={t("create_ui_dismiss")}
         >
           <i class="fas fa-times" aria-hidden="true"></i>
         </button>

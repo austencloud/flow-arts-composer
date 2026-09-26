@@ -38,6 +38,13 @@ export interface LedSamplerConfig {
   rightPropDimensions: { width: number; height: number };
   leftPropType?: string;
   rightPropType?: string;
+  /**
+   * Render key of the artwork drawn for the base pair (`bigfan__fire_bare`).
+   * Its tip table places the base pair's LEDs; tunnel layers keep the
+   * notation prop type.
+   */
+  leftPropRenderKey?: string;
+  rightPropRenderKey?: string;
   /** Chirality flip as drawn; LED positions mirror with the sprite. */
   leftPropFlipped?: boolean;
   rightPropFlipped?: boolean;
@@ -123,7 +130,7 @@ export class LedSampler {
         leftProp,
         config,
         config.leftPropDimensions,
-        config.leftPropType ?? null,
+        config.leftPropRenderKey ?? config.leftPropType ?? null,
         config.leftPropFlipped ?? false,
         0,
         ledCount,
@@ -141,7 +148,7 @@ export class LedSampler {
         rightProp,
         config,
         config.rightPropDimensions,
-        config.rightPropType ?? null,
+        config.rightPropRenderKey ?? config.rightPropType ?? null,
         config.rightPropFlipped ?? false,
         1,
         ledCount,

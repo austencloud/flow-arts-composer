@@ -645,22 +645,11 @@ export class AnimationPlaybackController {
         this.animationEngine.calculateState(0);
         this.updatePropStatesFromEngine();
 
-        // For seamlessly loopable sequences (circular), beat 0 is identical
-        // to totalSteps, so immediately animate to the first step instead
-        // of pausing at beat 0. This shows beat 1's motion without the
-        // redundant pause at the start position.
-        if (this._isSeamlesslyLoopable) {
-          const duration = this.getStepDuration(stepSize);
-          this.animateToStepInternal(stepSize, duration, true, false);
-        }
-
-        // Schedule next tick to continue looping
-        // Use pause at start position (unless seamlessly loopable, where we animate immediately)
-        const duration = this._isSeamlesslyLoopable
-          ? this.getStepDuration(stepSize)
-          : 0;
-        const pauseMs = this.state.stepPlaybackPauseMs;
-        const nextDelay = duration + pauseMs;
+        // The final pose already had its normal step pause. Begin the first
+        // motion now so looping does not add a second pause at the start pose.
+        const duration = this.getStepDuration(stepSize);
+        this.animateToStepInternal(stepSize, duration, true, false);
+        const nextDelay = duration + this.state.stepPlaybackPauseMs;
 
         this.stepPlaybackTimer = setTimeout(() => {
           this.runStepPlaybackTick(runId);

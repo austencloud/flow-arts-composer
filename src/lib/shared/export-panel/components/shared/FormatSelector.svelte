@@ -14,6 +14,7 @@
   Domain: Export Panel - Single Media Format Selection
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { MediaFormat } from "../../domain/models/media-format";
 
   let {
@@ -26,11 +27,17 @@
 
   // MVP: Only Animation and Image available
   // Performance video not ready - requires camera/upload implementation
-  const formats: Array<{ id: MediaFormat; label: string; icon: string }> = [
-    { id: "animation", label: "Animation", icon: "fa-play-circle" },
-    { id: "static", label: "Image", icon: "fa-image" },
+  const formats = $derived<
+    Array<{ id: MediaFormat; label: string; icon: string }>
+  >([
+    {
+      id: "animation",
+      label: t("export_ui_animation"),
+      icon: "fa-play-circle",
+    },
+    { id: "static", label: t("export_ui_image"), icon: "fa-image" },
     // { id: 'performance', label: 'Performance', icon: 'fa-video' }, // TODO: Enable post-MVP
-  ];
+  ]);
 
   let chipElements: Array<HTMLButtonElement | null> = [];
 
@@ -41,7 +48,8 @@
   // WAI-ARIA radiogroup pattern: arrow keys move focus AND selection together
   // (selection follows focus), with wraparound.
   function selectAndFocusAt(index: number) {
-    const wrapped = ((index % formats.length) + formats.length) % formats.length;
+    const wrapped =
+      ((index % formats.length) + formats.length) % formats.length;
     handleFormatSelect(formats[wrapped]!.id);
     chipElements[wrapped]?.focus();
   }
@@ -82,7 +90,7 @@
 <div
   class="format-selector"
   role="radiogroup"
-  aria-label="Media format selection"
+  aria-label={t("export_ui_media_format_selection")}
 >
   {#each formats as format, i}
     <button

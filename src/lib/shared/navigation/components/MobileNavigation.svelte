@@ -1,6 +1,7 @@
 <!-- Mobile Navigation - Responsive Bottom/Side Navigation Orchestrator -->
 <!-- Automatically adapts between bottom (portrait) and side (landscape) layouts -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
   import type { DeviceDetector } from "$lib/shared/device/services/device-detector";
   import type { ResponsiveSettings } from "../../device/domain/models/device-models";
@@ -40,6 +41,14 @@
   }>();
 
   // Services
+  const localizedSections = $derived(
+    sections.map((section) => ({
+      ...section,
+      label: t(section.labelKey),
+      description: t(section.descKey),
+    }))
+  );
+
   let deviceDetector: DeviceDetector | null = null;
 
   // Responsive settings from DeviceDetector (single source of truth)
@@ -83,7 +92,7 @@
 
 {#if isLandscape}
   <SideNavigation
-    {sections}
+    sections={localizedSections}
     {currentSection}
     {onSectionChange}
     {sectionHome}
@@ -94,7 +103,7 @@
   />
 {:else}
   <BottomNavigation
-    {sections}
+    sections={localizedSections}
     {currentSection}
     {onSectionChange}
     {sectionHome}

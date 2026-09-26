@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { GridCell } from "../../../state/arrange-grid-state.svelte";
   import type {
     TransformType,
@@ -296,7 +297,11 @@
 
     {#if panelState.activePill === "grid"}
       <!-- Grid layout controls -->
-      <div class="pill-body-scroll" role="region" aria-label="Grid settings">
+      <div
+        class="pill-body-scroll"
+        role="region"
+        aria-label={t("compose_ui_grid_settings")}
+      >
         <GridLayoutControls
           gridRows={p.gridRows}
           gridCols={p.gridCols}
@@ -312,7 +317,7 @@
         <div
           class="pill-body-scroll"
           role="region"
-          aria-label="Layer management"
+          aria-label={t("compose_ui_layer_management")}
         >
           <LayerSection
             {cell}
@@ -433,7 +438,7 @@
       {:else}
         <div class="empty-state">
           <i class="fas fa-layer-group" aria-hidden="true"></i>
-          <span>No sequences yet</span>
+          <span>{t("compose_ui_no_sequences_yet")}</span>
           <button
             type="button"
             class="go-layers-btn"
@@ -447,7 +452,7 @@
     {:else}
       <div class="empty-state">
         <i class="fas fa-mouse-pointer" aria-hidden="true"></i>
-        <span>Click a cell to edit</span>
+        <span>{t("compose_ui_click_a_cell_to_edit")}</span>
       </div>
     {/if}
   </div>

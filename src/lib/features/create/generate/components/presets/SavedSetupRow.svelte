@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import OverflowMenu from "$lib/shared/ui/components/OverflowMenu.svelte";
   import type { SavedGeneratorSetup } from "../../domain/models/favorite-config";
 
@@ -28,25 +29,25 @@
   let draft = $state("");
   let renameInput = $state<HTMLInputElement | null>(null);
 
-  const statusLabel = $derived(isActive ? "Active" : "");
+  const statusLabel = $derived(isActive ? t("create_deep_active") : "");
 
   const menuItems = $derived([
     // Overwriting a setup that already equals the live controls is a no-op,
     // so the active row keeps Update disabled.
     {
-      label: "Update with current settings",
+      label: t("create_deep_update_setup"),
       icon: "fa-solid fa-arrows-rotate",
       action: onUpdate,
       disabled: isActive || disableMutations || isBusy,
     },
     {
-      label: "Rename",
+      label: t("create_deep_rename"),
       icon: "fa-solid fa-pen",
       action: startRename,
       disabled: disableMutations || isBusy,
     },
     {
-      label: "Delete",
+      label: t("action_delete"),
       icon: "fa-solid fa-trash",
       action: onDelete,
       variant: "danger" as const,
@@ -59,9 +60,7 @@
     renaming = true;
   }
 
-  async function handleRenameKeydown(
-    event: KeyboardEvent
-  ): Promise<void> {
+  async function handleRenameKeydown(event: KeyboardEvent): Promise<void> {
     if (event.key === "Escape") {
       event.preventDefault();
       renaming = false;
@@ -88,7 +87,7 @@
       bind:this={renameInput}
       bind:value={draft}
       maxlength={60}
-      aria-label={"Rename " + setup.name}
+      aria-label={t("create_deep_rename_setup_aria", { name: setup.name })}
       onkeydown={handleRenameKeydown}
     />
   {:else}
@@ -113,7 +112,7 @@
     items={menuItems}
     disabled={isBusy}
     placement="bottom"
-    ariaLabel={"Actions for " + setup.name}
+    ariaLabel={t("create_deep_setup_actions_aria", { name: setup.name })}
   />
 </div>
 
@@ -139,8 +138,7 @@
     gap: 0.75rem;
     padding: 0.75rem 0.875rem;
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.06));
-    border: 1.5px solid
-      var(--theme-stroke, rgba(255, 255, 255, 0.12));
+    border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
     color: var(--theme-text, #fff);
     cursor: pointer;
     text-align: left;
@@ -150,10 +148,7 @@
   }
 
   .favorite-item:not(:disabled):hover {
-    border-color: var(
-      --theme-stroke-strong,
-      rgba(255, 255, 255, 0.25)
-    );
+    border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.25));
   }
 
   .favorite-item.active {

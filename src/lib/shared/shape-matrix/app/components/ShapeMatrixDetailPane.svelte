@@ -1,16 +1,24 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import ShapeMatrixDrill from "$lib/shared/shape-matrix/components/ShapeMatrixDrill.svelte";
+  import type { ModeRealization } from "$lib/shared/shape-matrix/services/build-mode-realizations";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
 
+  interface Props {
+    onrealizationAction: (
+      realization: ModeRealization,
+      action: "open" | "save"
+    ) => void;
+    onshareRealization: (realization: ModeRealization) => void;
+  }
+
+  const { onrealizationAction, onshareRealization }: Props = $props();
   const state = getShapeMatrixAppContext();
   // The shell owns prop choosing. Wide hosts use the grid pane; compact
   // hosts recompose this same live stage above a scrolling prop workspace.
 </script>
 
-<aside
-  class="detail-pane"
-  aria-label="Shape animation and element relationships"
->
+<aside class="detail-pane" aria-label={t("shape_engine_detail_aria")}>
   <div class="drill-stage">
     {#if state.data}
       <ShapeMatrixDrill
@@ -26,13 +34,18 @@
         handProps={state.handProps}
         propPickerOpen={state.propPickerOpen}
         onproppickertoggle={state.togglePropPicker}
+        onopenRealization={(realization) =>
+          onrealizationAction(realization, "open")}
+        onsaveRealization={(realization) =>
+          onrealizationAction(realization, "save")}
+        {onshareRealization}
         mandalaTransition={{
           claim: state.compact && state.activeView === "detail",
           handoff: state.mandalaHandoff,
         }}
       />
     {:else}
-      <p class="status">Building the matrix…</p>
+      <p class="status">{t("shape_engine_building_matrix")}</p>
     {/if}
   </div>
 </aside>

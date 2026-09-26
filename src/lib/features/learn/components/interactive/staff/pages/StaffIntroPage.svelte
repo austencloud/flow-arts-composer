@@ -2,6 +2,7 @@
 StaffIntroPage - Page 1: Staff Positions Introduction
 -->
 <script lang="ts">
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import type {
     HandPosition,
     ThumbOrientation,
@@ -22,15 +23,14 @@ StaffIntroPage - Page 1: Staff Positions Introduction
 </script>
 
 <div class="page">
-  <h2>Staff Positions</h2>
+  <h2>{tDynamic("learn_staff_positions_title")}</h2>
 
   <div class="concept-intro staff-intro">
     <div class="concept-icon">
       <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
     </div>
     <p class="concept-summary">
-      Staff positions show <strong>where your hands are</strong> and
-      <strong>how the prop is oriented</strong>
+      {tDynamic("learn_staff_positions_summary")}
     </p>
   </div>
 
@@ -46,23 +46,17 @@ StaffIntroPage - Page 1: Staff Positions Introduction
   </div>
 
   <div class="explanation">
-    <h3>Key Concepts</h3>
+    <h3>{tDynamic("learn_staff_key_concepts")}</h3>
     <ul>
-      <li>
-        <strong>The Thumb End</strong> is marked with a perpendicular line (T)
-      </li>
-      <li>
-        One end of the staff is always at the <strong>center point</strong>
-      </li>
-      <li>The outer end points toward <strong>N, E, S, or W</strong></li>
-      <li>
-        Tracking the thumb helps you <strong>verify rotations</strong>
-      </li>
+      <li>{tDynamic("learn_staff_thumb_end_mark")}</li>
+      <li>{tDynamic("learn_staff_center_point")}</li>
+      <li>{tDynamic("learn_staff_outer_end")}</li>
+      <li>{tDynamic("learn_staff_track_thumb")}</li>
     </ul>
   </div>
 
   <button class="next-button" onclick={onNext}>
-    Next: Thumb Orientations
+    {tDynamic("learn_staff_next_thumbs")}
   </button>
 </div>
 
@@ -93,7 +87,11 @@ StaffIntroPage - Page 1: Staff Positions Introduction
     font-weight: 700;
     margin: 0;
     text-align: center;
-    background: linear-gradient(135deg, var(--theme-accent, #22d3ee) 0%, var(--theme-accent, #06b6d4) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--theme-accent, #22d3ee) 0%,
+      var(--theme-accent, #06b6d4) 100%
+    );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -187,7 +185,8 @@ StaffIntroPage - Page 1: Staff Positions Introduction
       color-mix(in srgb, var(--theme-accent, #22d3ee) 30%, transparent) 0%,
       color-mix(in srgb, var(--theme-accent, #22d3ee) 30%, transparent) 100%
     );
-    border: 2px solid color-mix(in srgb, var(--theme-accent, #22d3ee) 50%, transparent);
+    border: 2px solid
+      color-mix(in srgb, var(--theme-accent, #22d3ee) 50%, transparent);
     border-radius: 12px;
     color: white;
     font-size: 1.125rem;
@@ -204,7 +203,11 @@ StaffIntroPage - Page 1: Staff Positions Introduction
       color-mix(in srgb, var(--theme-accent, #22d3ee) 40%, transparent) 0%,
       color-mix(in srgb, var(--theme-accent, #22d3ee) 40%, transparent) 100%
     );
-    border-color: color-mix(in srgb, var(--theme-accent, #22d3ee) 80%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #22d3ee) 80%,
+      transparent
+    );
     transform: translateY(-2px);
   }
 

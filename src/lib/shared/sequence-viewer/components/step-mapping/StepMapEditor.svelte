@@ -23,6 +23,7 @@
   docs/superpowers/specs/2026-08-16-step-map-editor-redesign-design.md.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { onDestroy, untrack } from "svelte";
   import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
   import { generateEvenBeatTimestamps } from "$lib/shared/video-collaboration/utils/step-map-utils";
@@ -320,7 +321,7 @@
       return;
     }
     void videoEl.play().catch(() => {
-      saveError = "Playback could not start. Try the play button again.";
+      saveError = t("viewer_detail_playback_could_not_start_try_the_play_button_again");
     });
   }
 
@@ -380,7 +381,7 @@
     seekTo(0);
     if (videoEl) {
       void videoEl.play().catch(() => {
-        saveError = "Playback could not start. Try the play button again.";
+        saveError = t("viewer_detail_playback_could_not_start_try_the_play_button_again");
       });
     }
   }
@@ -594,7 +595,7 @@
       if (draftKey) clearStepMapDraft(draftKey);
     } catch (cause) {
       saveError =
-        cause instanceof Error ? cause.message : "Failed to save the timing";
+        cause instanceof Error ? cause.message : t("viewer_detail_failed_to_save_the_timing");
     } finally {
       isSaving = false;
     }
@@ -616,7 +617,7 @@
     onclick={toggleMirror}
   >
     <i class="fas fa-arrows-left-right" aria-hidden="true"></i>
-    Mirror
+    {t("viewer_detail_mirror")}
   </button>
 {/snippet}
 
@@ -643,7 +644,7 @@
           type="button"
           class="stage-skip"
           onclick={() => skip(-SKIP_SECONDS)}
-          aria-label="Back {SKIP_SECONDS} seconds"
+          aria-label={t("viewer_timing_back", { seconds: SKIP_SECONDS })}
         >
           <i class="fas fa-rotate-left" aria-hidden="true"></i>
           <span class="skip-label">{SKIP_SECONDS}s</span>
@@ -652,8 +653,8 @@
           type="button"
           class="stage-play"
           onclick={togglePlayPause}
-          aria-label={isPlaying ? "Pause" : "Play"}
-          title={isPlaying ? "Pause (Space)" : "Play (Space)"}
+          aria-label={isPlaying ? t("viewer_detail_pause") : t("viewer_detail_play")}
+          title={isPlaying ? t("viewer_detail_pause_space") : t("viewer_detail_play_space")}
         >
           <i class="fas {isPlaying ? 'fa-pause' : 'fa-play'}" aria-hidden="true"
           ></i>
@@ -662,7 +663,7 @@
           type="button"
           class="stage-skip"
           onclick={() => skip(SKIP_SECONDS)}
-          aria-label="Forward {SKIP_SECONDS} seconds"
+          aria-label={t("viewer_timing_forward", { seconds: SKIP_SECONDS })}
         >
           <i class="fas fa-rotate-right" aria-hidden="true"></i>
           <span class="skip-label">{SKIP_SECONDS}s</span>
@@ -700,14 +701,14 @@
           <span class="rate-control">
             <SegmentedControl
               options={[
-                { value: 0.25, label: "0.25x", ariaLabel: "Quarter speed" },
-                { value: 0.5, label: "0.5x", ariaLabel: "Half speed" },
-                { value: 1, label: "1x", ariaLabel: "Full speed" },
+                { value: 0.25, label: "0.25x", ariaLabel: t("viewer_detail_quarter_speed") },
+                { value: 0.5, label: "0.5x", ariaLabel: t("viewer_detail_half_speed") },
+                { value: 1, label: "1x", ariaLabel: t("viewer_detail_full_speed") },
               ]}
               value={rate}
               onchange={applyRate}
               size="sm"
-              ariaLabel="Playback speed"
+              ariaLabel={t("viewer_detail_playback_speed")}
             />
           </span>
           {@render mirrorToggle()}
@@ -717,7 +718,7 @@
           type="button"
           class="tap-target"
           class:flash={flashing}
-          title="Mark this move (T)"
+          title={t("viewer_detail_mark_this_move_t")}
           onclick={markArrival}
           disabled={placed >= totalMarks}
         >
@@ -734,16 +735,16 @@
           <span class="tap-copy">
             <strong>
               {pendingIndex === 0
-                ? "Tap when they set into this pose"
-                : "Tap when this move lands"}
+                ? t("viewer_detail_tap_when_they_set_into_this_pose")
+                : t("viewer_detail_tap_when_this_move_lands")}
             </strong>
             <span class="tap-progress">
               {#if pendingIndex === 0}
-                mark 1 of {totalMarks}
+                {t("viewer_timing_mark_count", { count: 1, total: totalMarks })}
               {:else}
-                move {moveNumberFor(pendingIndex)} of {moveCount}
+                {t("viewer_timing_move_count", { count: moveNumberFor(pendingIndex), total: moveCount })}
                 {#if passes > 1}
-                  · pass {passFor(pendingIndex)}
+                  · {t("viewer_timing_pass", { count: passFor(pendingIndex) })}
                 {/if}
               {/if}
               {#if letterFor(pendingIndex)}
@@ -761,11 +762,9 @@
                  shove every control under it. -->
             <span class="tap-key">
               {#if supersededCount > 0}
-                Tapping re-takes from here, replacing the
-                {supersededCount}
-                {supersededCount === 1 ? "mark" : "marks"} after it
+                {t("viewer_timing_replace_marks", { count: supersededCount })}
               {:else}
-                <span class="kbd-hint">T marks it · Space plays</span>
+                <span class="kbd-hint">{t("viewer_detail_t_marks_it_space_plays")}</span>
               {/if}
             </span>
           </span>
@@ -782,7 +781,7 @@
               onclick={finishMarking}
             >
               <i class="fas fa-check" aria-hidden="true"></i>
-              Done marking
+              {t("viewer_detail_done_marking")}
             </button>
           {/if}
           <button
@@ -792,15 +791,15 @@
             disabled={marks.length === 0}
           >
             <i class="fas fa-rotate-left" aria-hidden="true"></i>
-            Undo last
+            {t("viewer_detail_undo_last")}
           </button>
           <button type="button" class="aux-btn" onclick={startMarking}>
             <i class="fas fa-backward-fast" aria-hidden="true"></i>
-            Start over
+            {t("viewer_detail_start_over")}
           </button>
           <button type="button" class="aux-btn" onclick={useEvenSpacing}>
             <i class="fas fa-ruler-horizontal" aria-hidden="true"></i>
-            Start from even spacing
+            {t("viewer_detail_start_from_even_spacing")}
           </button>
         </div>
       </div>
@@ -820,10 +819,10 @@
           <span class="selected-copy">
             <span class="selected-label">
               {selectedMark === 0
-                ? "Opening pose"
+                ? t("viewer_detail_opening_pose")
                 : passes > 1
-                  ? `Move ${moveNumberFor(selectedMark)} · pass ${passFor(selectedMark)}`
-                  : `Move ${moveNumberFor(selectedMark)}`}
+                  ? t("viewer_timing_move_pass", { move: moveNumberFor(selectedMark), pass: passFor(selectedMark) })
+                  : t("viewer_timing_move", { count: moveNumberFor(selectedMark) })}
               {#if letterFor(selectedMark)}
                 <span class="selected-letter">
                   <TKAWordGlyph
@@ -835,7 +834,7 @@
               {/if}
             </span>
             <span class="selected-time">
-              lands at {formatTime(marks[selectedMark] ?? 0)}
+              {t("viewer_timing_lands_at", { time: formatTime(marks[selectedMark] ?? 0) })}
             </span>
           </span>
           <span class="nudge">
@@ -843,18 +842,18 @@
               type="button"
               class="aux-btn"
               onclick={() => nudgeSelected(-1)}
-              aria-label="Move this mark one frame earlier"
+              aria-label={t("viewer_detail_move_this_mark_one_frame_earlier")}
             >
               <i class="fas fa-angle-left" aria-hidden="true"></i>
-              a frame earlier
+              {t("viewer_detail_a_frame_earlier")}
             </button>
             <button
               type="button"
               class="aux-btn"
               onclick={() => nudgeSelected(1)}
-              aria-label="Move this mark one frame later"
+              aria-label={t("viewer_detail_move_this_mark_one_frame_later")}
             >
-              a frame later
+              {t("viewer_detail_a_frame_later")}
               <i class="fas fa-angle-right" aria-hidden="true"></i>
             </button>
           </span>
@@ -863,17 +862,17 @@
         <div class="aux-row">
           <button type="button" class="aux-btn" onclick={startMarking}>
             <i class="fas fa-hand-pointer" aria-hidden="true"></i>
-            Mark it again
+            {t("viewer_detail_mark_it_again")}
           </button>
           <button type="button" class="aux-btn" onclick={useEvenSpacing}>
             <i class="fas fa-ruler-horizontal" aria-hidden="true"></i>
-            Even spacing
+            {t("viewer_detail_even_spacing")}
           </button>
           {@render mirrorToggle()}
           <span class="review-progress" class:complete>
-            {marks.length} of {totalMarks} marked
+            {t("viewer_timing_marked_count", { count: marks.length, total: totalMarks })}
             {#if passes > 1}
-              · {passes} passes
+              · {passes} {t("viewer_detail_passes")}
             {/if}
           </span>
         </div>
@@ -894,7 +893,7 @@
         onclick={onClose}
         disabled={isSaving}
       >
-        Cancel
+        {t("viewer_detail_cancel")}
       </button>
       <button
         data-save-shortcut
@@ -905,10 +904,10 @@
       >
         {#if isSaving}
           <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-          Saving...
+          {t("viewer_detail_saving")}
         {:else}
           <i class="fas fa-check" aria-hidden="true"></i>
-          Save timing
+          {t("viewer_detail_save_timing")}
         {/if}
       </button>
     </div>

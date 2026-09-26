@@ -5,6 +5,7 @@ Main panel for the Record tab.
 Combines video feed with playback controls for practicing sequences.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
   import { onDestroy, onMount } from "svelte";
@@ -182,7 +183,7 @@ Combines video feed with playback controls for practicing sequences.
   {:else}
     <div class="empty-state">
       <div class="empty-icon">🎥</div>
-      <h3>No Sequence to Practice</h3>
+      <h3>{t("create_ui_no_sequence_to_practice")}</h3>
       <p>
         Create or select a sequence from the Construct or Generate tab to start
         practicing.

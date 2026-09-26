@@ -6,6 +6,7 @@
   OptionPickerHeader inside their shared utility tray instead.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { Popover } from "bits-ui";
   import { flyFade } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
@@ -58,17 +59,22 @@
     triggerDensity = "standard",
   }: Props = $props();
 
-  const modeLabel = $derived(isContinuousOnly ? "Continuous" : "All");
+  const modeLabel = $derived(
+    isContinuousOnly ? t("create_option_continuous") : t("create_option_all")
+  );
   const leftTurnLabel = $derived(formatTurnValue(leftTurns));
   const rightTurnLabel = $derived(formatTurnValue(rightTurns));
 
   const triggerLabel = $derived.by(() => {
-    const details = ["Option settings"];
-    if (showFilter) details.push(`Showing ${modeLabel.toLowerCase()}`);
+    const details = [t("create_ui_option_settings")];
+    if (showFilter)
+      details.push(t("create_deep_showing_mode", { mode: modeLabel }));
     if (showTurnControls) {
-      details.push(`Level ${level}`);
-      details.push(`Left turns ${leftTurnLabel}`);
-      details.push(`Right turns ${rightTurnLabel}`);
+      details.push(t("create_deep_level_number", { level }));
+      details.push(t("create_deep_left_turns_value", { turns: leftTurnLabel }));
+      details.push(
+        t("create_deep_right_turns_value", { turns: rightTurnLabel })
+      );
     }
     return details.join(". ");
   });
@@ -83,7 +89,7 @@
         density={triggerDensity}
         active={open}
         aria-label={triggerLabel}
-        title="Option settings"
+        title={t("create_ui_option_settings")}
       />
     {/snippet}
   </Popover.Trigger>
@@ -109,7 +115,7 @@
               {...props}
               class="controls-popover themed-scrollbar"
               role="dialog"
-              aria-label="Option settings"
+              aria-label={t("create_ui_option_settings")}
               transition:flyFade={{ y: 8, duration: DURATION.normal }}
             >
               <!-- Visible close: the trigger toggle / Escape / backdrop tap all
@@ -120,8 +126,8 @@
                 <button
                   type="button"
                   class="popover-close"
-                  aria-label="Close option settings"
-                  title="Close"
+                  aria-label={t("create_ui_close_option_settings")}
+                  title={t("action_close")}
                   onclick={() => (open = false)}
                 >
                   <i class="fas fa-xmark" aria-hidden="true"></i>

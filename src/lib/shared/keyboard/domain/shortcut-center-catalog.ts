@@ -1,6 +1,8 @@
 import type { ShortcutContext } from "./types/keyboard-types";
 import type { ShortcutWithBinding } from "../services/types";
 import { buildKeyCombo } from "../utils/key-combo-utils";
+import { t } from "$lib/shared/i18n/i18n.svelte.js";
+import type { TranslationKey } from "$lib/shared/i18n/i18n-types.js";
 
 export type ShortcutCenterView = "current" | "all" | "changed";
 
@@ -62,7 +64,8 @@ export function buildShortcutCatalog(
 }
 
 export function getShortcutContextLabel(context: ShortcutContext): string {
-  return CONTEXT_LABELS[context] ?? titleCase(context);
+  if (!(context in CONTEXT_LABELS)) return titleCase(context);
+  return t(`keyboard_context_${context.replaceAll("-", "_")}` as TranslationKey);
 }
 
 function belongsInView(

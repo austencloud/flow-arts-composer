@@ -6,6 +6,7 @@
   Only rendered when playbackMode === "step".
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { StepPlaybackStepSize } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
 
   let {
@@ -25,14 +26,18 @@
 
 <div class="step-settings-row">
   <span class="step-label">Step size:</span>
-  <div class="step-size-group" role="group" aria-label="Step size">
+  <div
+    class="step-size-group"
+    role="group"
+    aria-label={t("compose_ui_step_size")}
+  >
     <button
       class="step-chip"
       class:active={stepPlaybackStepSize === 1}
       onclick={() => onStepPlaybackStepSizeChange(1)}
       type="button"
       aria-pressed={stepPlaybackStepSize === 1}
-      aria-label="Step by full steps"
+      aria-label={t("compose_ui_step_by_full_steps")}
     >
       Beat
     </button>
@@ -42,7 +47,7 @@
       onclick={() => onStepPlaybackStepSizeChange(0.5)}
       type="button"
       aria-pressed={stepPlaybackStepSize === 0.5}
-      aria-label="Step by half steps"
+      aria-label={t("compose_ui_step_by_half_steps")}
     >
       Half
     </button>

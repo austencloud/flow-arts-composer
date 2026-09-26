@@ -32,9 +32,14 @@
     { value: "pelvis", label: "Pelvis" },
     { value: "elbow", label: "Elbow" },
     { value: "tip", label: "Tip" },
+    { value: "grip", label: "Grip" },
+    { value: "fingers", label: "Fingers" },
   ] as const;
   const degrees = 180 / Math.PI;
   const radians = Math.PI / 180;
+  const fingers = ["thumb", "index", "middle", "ring", "pinky"] as const;
+  type Finger = (typeof fingers)[number];
+  let selectedFinger = $state<Finger>("index");
   let editing = false;
 
   function update(changes: Partial<TeachingPose>): void {
@@ -53,6 +58,24 @@
     onEnd();
   }
 
+  function usePhotoHand(): void {
+    onBegin();
+    onChange({
+      gripRelaxation: 1,
+      wristBend: 0,
+      wristTwist: 0,
+      wristRaise: 0,
+      thumbSpread: 25 * radians,
+      thumbCurl: 0,
+      indexCurl: 0,
+      middleCurl: 0,
+      ringCurl: 0,
+      pinkyCurl: 0,
+      ...Object.fromEntries(fingers.flatMap((finger) => [1, 2, 3].map((joint) => [`${finger}Joint${joint}`, 0]))),
+    });
+    onEnd();
+  }
+
   function slider(
     label: string,
     value: number,
@@ -66,6 +89,26 @@
   }
 
   const controls = $derived.by(() => {
+    if (selected === "grip") {
+      return [
+        slider("Relaxed grip", pose.gripRelaxation * 100, 0, 100, 1, (v) => update({ gripRelaxation: v / 100 }), "%"),
+        slider("Shaft angle in hand", pose.gripTilt * degrees, 0, 80, 1, (v) => update({ gripTilt: v * radians }), "°"),
+        slider("Wrist bend", pose.wristBend * degrees, -30, 30, 1, (v) => update({ wristBend: v * radians }), "°"),
+        slider("Wrist twist", pose.wristTwist * degrees, -30, 30, 1, (v) => update({ wristTwist: v * radians }), "°"),
+        slider("Wrist up along staff", pose.wristRaise * 100, -8, 8, 0.5, (v) => update({ wristRaise: v / 100 }), "cm"),
+      ];
+    }
+    if (selected === "fingers") {
+      return [
+        ...(selectedFinger === "thumb" ? [slider("Thumb across shaft", pose.thumbSpread * degrees, -45, 45, 1, (v) => update({ thumbSpread: v * radians }), "°")] : []),
+        slider("Whole finger curl", pose[`${selectedFinger}Curl`] * degrees, -45, 45, 1,
+          (v) => update({ [`${selectedFinger}Curl`]: v * radians }), "°"),
+        ...([1, 2, 3] as const).map((joint) =>
+          slider(["", "Base", "Middle", "Tip"][joint]!, pose[`${selectedFinger}Joint${joint}`] * degrees, -60, 60, 1,
+            (v) => update({ [`${selectedFinger}Joint${joint}`]: v * radians }), "°")
+        ),
+      ];
+    }
     if (selected === "chest") {
       return [
         slider("Turn toward stage left", pose.turn * degrees, -90, 90, 1, (v) => update({ turn: v * radians }), "°"),
@@ -99,9 +142,21 @@
   <SegmentedControl
     options={handles}
     value={selected}
+    columns={3}
     onchange={(value) => onSelect(value as PoseHandle)}
     ariaLabel="Pose handle"
   />
+
+  {#if selected === "fingers"}
+    <button class="photo-pose" type="button" onclick={usePhotoHand}>Use photo hand</button>
+    <SegmentedControl
+      options={fingers.map((finger) => ({ value: finger, label: finger[0]!.toUpperCase() + finger.slice(1) }))}
+      value={selectedFinger}
+      columns={3}
+      onchange={(value) => selectedFinger = value as Finger}
+      ariaLabel="Finger to adjust"
+    />
+  {/if}
 
   <div class="sliders">
     {#each controls as control (control.label)}
@@ -143,6 +198,8 @@
   </label>
   <p>Edits save a whole-pose keyframe here.</p>
   {#if selected === "elbow"}<p>The handle guides the elbow’s direction; arm length still limits its position.</p>{/if}
+  {#if selected === "grip"}<p>Wrist height slides the grip along the shaft; the elbow follows.</p>{/if}
+  {#if selected === "fingers"}<p>Select a finger, then bend its base, middle, or tip. These edits blend between keyframes.</p>{/if}
 </section>
 
 <style>
@@ -158,6 +215,9 @@
   output { color: var(--theme-text-dim); font-variant-numeric: tabular-nums; font-size: var(--font-size-compact, 12px); }
   input { grid-column: 1 / -1; width: 100%; accent-color: var(--theme-accent); }
   .tolerance { padding-top: 0.5rem; border-top: 1px solid var(--theme-stroke); }
+  .photo-pose { min-height: 44px; border: 1px solid var(--theme-stroke); border-radius: var(--radius-md, 8px); background: var(--theme-surface); color: var(--theme-text); font: inherit; cursor: pointer; }
+  .photo-pose:hover { border-color: var(--theme-accent); }
+  .photo-pose:focus-visible { outline: 2px solid var(--theme-accent); outline-offset: 2px; }
   p { margin: 0; color: var(--theme-text-dim); font-size: var(--font-size-min, 14px); }
   @container (max-width: 22rem) { label { grid-template-columns: 1fr; gap: 0.15rem; } }
 </style>

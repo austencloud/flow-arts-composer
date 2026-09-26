@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { growFade } from "$lib/shared/transitions/motion";
   import type { TunnelViewController } from "../../tunnel/tunnel-view-controller.svelte";
 
@@ -9,9 +10,18 @@
 
   let { controller, dense }: Props = $props();
 
-  const presetName = $derived(controller.presetRecipe?.name ?? "Custom");
+  const presetName = $derived(
+    controller.presetRecipe?.name ?? t("viewer_ui_custom")
+  );
   const renderedSummary = $derived(
-    `${controller.performerCount} ${controller.performerCount === 1 ? "instance" : "instances"} · ${controller.propCount} props`
+    t("viewer_ui_formation_summary", {
+      instances: controller.performerCount,
+      instanceLabel:
+        controller.performerCount === 1
+          ? t("viewer_ui_instance")
+          : t("viewer_ui_instances"),
+      props: controller.propCount,
+    })
   );
   // The preset cards already identify an unmodified mobile formation. Reserve
   // this row for the one state the cards cannot express: edits that can be reset.
@@ -22,14 +32,14 @@
   <section
     class:compact={dense}
     class="configuration-status"
-    aria-label="Tunnel formation status"
+    aria-label={t("viewer_ui_tunnel_formation_status")}
     aria-live="polite"
     transition:growFade={{ axis: "y" }}
   >
     <div class="status-copy">
       <strong>{presetName}</strong>
       {#if controller.presetRecipeModified}
-        <span class="modified-badge">Modified</span>
+        <span class="modified-badge">{t("viewer_ui_modified")}</span>
       {/if}
       {#if !dense}
         <span class="rendered-summary">{renderedSummary}</span>
@@ -40,12 +50,22 @@
       <button
         type="button"
         class="reset-button"
-        aria-label={`Reset ${controller.presetRecipe.name} formation`}
-        title={`Reset ${controller.presetRecipe.name}`}
+        aria-label={t("viewer_ui_reset_named_formation", {
+          name: controller.presetRecipe.name,
+        })}
+        title={t("viewer_ui_reset_named", {
+          name: controller.presetRecipe.name,
+        })}
         onclick={() => controller.resetPresetRecipe()}
       >
         <i class="fas fa-rotate-left" aria-hidden="true"></i>
-        <span>{dense ? "Reset" : `Reset ${controller.presetRecipe.name}`}</span>
+        <span
+          >{dense
+            ? t("viewer_ui_reset")
+            : t("viewer_ui_reset_named", {
+                name: controller.presetRecipe.name,
+              })}</span
+        >
       </button>
     {/if}
   </section>

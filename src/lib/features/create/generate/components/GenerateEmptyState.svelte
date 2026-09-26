@@ -24,6 +24,7 @@
   generated, loaded AND auto-saved a sequence the user never asked for.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import { DURATION } from "$lib/shared/transitions/transitions";
@@ -83,8 +84,10 @@
     {#if showOffer}
       <div class="tour-offer">
         <div class="offer-copy">
-          <p class="offer-title">First time generating?</p>
-          <p class="offer-sub">A quick tour shows what each option does.</p>
+          <p class="offer-title">{t("create_ui_first_time_generating")}</p>
+          <p class="offer-sub">
+            {t("create_ui_a_quick_tour_shows_what_each_option_does")}
+          </p>
         </div>
         <div class="offer-actions">
           <PanelButton variant="primary" onclick={acceptTour}>
@@ -96,7 +99,9 @@
         </div>
       </div>
     {:else}
-      <p class="workspace-hint">Tap Generate to create your sequence</p>
+      <p class="workspace-hint">
+        {t("create_ui_tap_generate_to_create_your_sequence")}
+      </p>
     {/if}
   </Crossfade>
 </div>

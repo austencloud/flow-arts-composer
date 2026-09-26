@@ -38,6 +38,7 @@
   owns the hands-to-props explanation, so the animation area does not repeat it.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, untrack } from "svelte";
   import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
@@ -78,12 +79,13 @@
   import type { ElementalType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
   import AnimationPanel from "$lib/shared/animation-panel/components/AnimationPanel.svelte";
   import type { HandPropToolbarProps } from "$lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
-  import type { ControlDockAction } from "$lib/shared/sequence-viewer/components/ControlDock.svelte";
   import { getShapeMatrixAnimationContext } from "../app/context/shape-matrix-animation-context";
   import { getOptionalShapeMatrixAppContext } from "../app/context/shape-matrix-app-context";
   import ShapeMatrixStageActions from "./ShapeMatrixStageActions.svelte";
   import { registerShapeMatrixPlaybackShortcut } from "../app/services/shape-matrix-playback-shortcut";
   import { foldTrailIntentIntoSettings } from "$lib/shared/effects/translators/canvas2d-translator";
+  import UnifiedTimeline from "$lib/shared/timeline/UnifiedTimeline.svelte";
+  import { createAnimatorPlaybackAdapter } from "$lib/shared/timeline/adapters/animator-playback-adapter.svelte";
 
   interface Props {
     /** Nullable: the drill renders its own "Pick a cell" state before any click. */
@@ -100,6 +102,9 @@
      *  pickers can receive the exact realization this drill already built. */
     onselectRealization?: (realization: ModeRealization) => void;
     selectLabel?: string;
+    onopenRealization?: (realization: ModeRealization) => void;
+    onsaveRealization?: (realization: ModeRealization) => void;
+    onshareRealization?: (realization: ModeRealization) => void;
     /** Optional externally-owned mode for URL-restored app state. */
     selectedMode?: VtgMode | null;
     selectedPropMode?: VtgMode | null;
@@ -134,7 +139,10 @@
     solo = null,
     data,
     onselectRealization,
-    selectLabel = "Use this realization",
+    selectLabel = t("shape_engine_use_realization"),
+    onopenRealization,
+    onsaveRealization,
+    onshareRealization,
     selectedMode = $bindable(null),
     selectedPropMode = $bindable(null),
     onmodechange,
@@ -194,15 +202,12 @@
     registerShapeMatrixPlaybackShortcut(
       "matrix",
       () => animationState.togglePlaying(),
-      () => (!appState || appState.surface === "matrix") && Boolean(pair)
+      () =>
+        (!appState || appState.surface === "matrix") &&
+        Boolean(pair) &&
+        !document.activeElement?.closest("[data-shape-matrix-transport]")
     )
   );
-
-  const playbackAction = $derived<ControlDockAction>({
-    icon: animationState.playing ? "fa-pause" : "fa-play",
-    label: animationState.playing ? "Pause" : "Play",
-    onClick: animationState.togglePlaying,
-  });
 
   // Sticky across pair changes by design (spec: "Selection persistence").
   // Realizations are immutable payloads replaced as a unit. Raw state keeps
@@ -622,6 +627,20 @@
         ? secondStep
         : 0
   );
+  let firstSeek: ((step: number) => void) | null = null;
+  let secondSeek: ((step: number) => void) | null = null;
+  const playbackAdapter = createAnimatorPlaybackAdapter({
+    getCurrentStep: () => visibleStep,
+    getSteps: () => captionRealization?.seq.steps ?? [],
+    getIsPlaying: () => animationState.playing,
+    onSeek: (step) =>
+      (visibleSource === "first" ? firstSeek : secondSeek)?.(step),
+    onTogglePlay: animationState.togglePlaying,
+    getBpm: () => animationState.bpm,
+    onBpmChange: animationState.setBpm,
+    getPlaybackMode: () => animationState.playbackMode,
+    onPlaybackModeChange: animationState.setPlaybackMode,
+  });
   function pictographArrowsApproved(flower: Flower): boolean {
     return flower.turns === "fl" || Number.isInteger(flower.turns * 2);
   }
@@ -914,6 +933,10 @@
 
   function createPlayerCallbacks(source: PlayerSource) {
     return {
+      onSeekRef: (seek: ((step: number) => void) | null) => {
+        if (source === "first") firstSeek = seek;
+        else secondSeek = seek;
+      },
       onReady: () => {
         const layer = getLayer(source);
         if (!layer) return;
@@ -1070,7 +1093,7 @@
 
 {#snippet playerPlaceholder()}
   <div class="lazy-region-state player-placeholder" role="status">
-    <span>Loading animation…</span>
+    <span>{t("shape_engine_loading_animation")}</span>
   </div>
 {/snippet}
 
@@ -1084,7 +1107,7 @@
     class="lazy-region-state player-load-error"
     use:registerPlayerRetry={{ source, key, retry }}
   >
-    <p>Animation didn’t load.</p>
+    <p>{t("shape_engine_animation_failed")}</p>
   </div>
 {/snippet}
 
@@ -1102,14 +1125,14 @@
 
 {#snippet railPlaceholder()}
   <div class="lazy-region-state rail-placeholder" role="status">
-    <span>Loading pictographs…</span>
+    <span>{t("shape_engine_loading_pictographs")}</span>
   </div>
 {/snippet}
 
 {#snippet railLoadError(_loadError: unknown, retry: () => void)}
   <div class="lazy-region-state rail-load-error" role="alert">
-    <p>Pictographs didn’t load.</p>
-    <PanelButton onclick={retry}>Try again</PanelButton>
+    <p>{t("shape_engine_pictographs_failed")}</p>
+    <PanelButton onclick={retry}>{t("shape_engine_try_again")}</PanelButton>
   </div>
 {/snippet}
 
@@ -1187,6 +1210,7 @@
             onReady: playerCallbacks[source].onReady,
             onCanvasInitialized: playerCallbacks[source].onCanvasInitialized,
             onStepChange: playerCallbacks[source].onStepChange,
+            onSeekRef: playerCallbacks[source].onSeekRef,
             // A handoff briefly runs two canvases. Start both at the existing
             // low tier so glow and dense subdivision work cannot block input.
             initialQualityTier: QualityTier.LOW,
@@ -1207,7 +1231,7 @@
 
 <section
   class="drill"
-  aria-label="Shape matrix realizations"
+  aria-label={t("shape_engine_realizations_aria")}
   style={captionRealization
     ? `--hand-el: ${captionRealization.element.accentColor}; --hand-dark: ${captionRealization.element.darkComplement}; --prop-el: ${captionRealization.propRelationship.element?.accentColor ?? captionRealization.element.accentColor}`
     : undefined}
@@ -1256,9 +1280,6 @@
         enabled: mandalaTransition.claim,
       }}
     >
-      {#if appState && !appState.compact}
-        <ShapeMatrixStageActions />
-      {/if}
       <!-- A solo has no word. The letter, its difficulty badge and the
            pictograph carousel all describe the realization built for the
            PAIR: a Kinetic Alphabet letter names how two hands relate, and a
@@ -1314,21 +1335,29 @@
           />
           {#if playerLoadFailure}
             <div class="player-load-notice" role="alert">
-              <p>Animation didn’t load.</p>
+              <p>{t("shape_engine_animation_failed")}</p>
               <PanelButton onclick={() => retryPlayerLoad(playerLoadFailure)}
-                >Try again</PanelButton
+                >{t("shape_engine_try_again")}</PanelButton
               >
             </div>
           {/if}
         {:else}
           <div class="hero-hint">
-            <p class="hint-lead">Pick a cell</p>
-            <p class="hint-sub">
-              Its shape opens here. Each element traces it live.
-            </p>
+            <p class="hint-lead">{t("shape_engine_pick_cell")}</p>
+            <p class="hint-sub">{t("shape_engine_theory_stage_hint")}</p>
           </div>
         {/if}
       </div>
+      {#if pair && heroPaths}
+        <div class="canvas-transport" data-shape-matrix-transport>
+          {#if livePlayerShowsPair}
+            <UnifiedTimeline
+              playback={playbackAdapter}
+              compact={appState?.compact ?? false}
+            />
+          {/if}
+        </div>
+      {/if}
     </div>
 
     <!-- The carousel is its own card below the canvas box, never part of
@@ -1340,7 +1369,7 @@
         data-focus-mode-chrome
         data-drill-region="strip"
         role="group"
-        aria-label="Pictograph timeline"
+        aria-label={t("shape_engine_pictograph_timeline")}
         use:claimedViewTransitionName={{
           name: SHAPE_MATRIX_STRIP_NAME,
           enabled: morphingFrames,
@@ -1374,7 +1403,7 @@
           />
         {:else if railRealization}
           <p class="quarter-status">
-            Level 4 pictograph are in visual calibration.
+            {t("shape_engine_pictographs_calibration")}
           </p>
         {/if}
       </div>
@@ -1411,8 +1440,8 @@
         bpm={animationState.bpm}
         playbackMode={animationState.playbackMode}
         onPlaybackToggle={animationState.togglePlaying}
-        onPlaybackModeChange={animationState.setPlaybackMode}
         onBpmChange={animationState.setBpm}
+        showTempoControls={false}
         showEffectsPlayback={false}
         selectedPropType={selectedPropType ?? data.props.left}
         onPropChange={onproptypechange}
@@ -1420,27 +1449,71 @@
         onPropPickerRequest={onproppickertoggle}
         propPickerActive={propPickerOpen}
         sequence={captionRealization?.seq ?? null}
-        dockTrailingAction={playbackAction}
         showPathShape={false}
         showMotionVisibility={true}
         onActiveSectionChange={animationState.setActiveSection}
         closeRequest={animationState.closeRequest}
-        regionLabel="Shape animation controls"
+        regionLabel={t("shape_engine_shape_animation_controls")}
       />
     </div>
   {/if}
 
-  {#if onselectRealization}
+  {#if onselectRealization || onopenRealization || onsaveRealization || onshareRealization}
     <div class="select-action" class:available={visibleRealization !== null}>
-      <PanelButton
-        variant="primary"
-        disabled={!visibleRealization}
-        onclick={() =>
-          visibleRealization && onselectRealization(visibleRealization)}
-      >
-        <i class="fas fa-person-running" aria-hidden="true"></i>
-        {selectLabel}
-      </PanelButton>
+      {#if onselectRealization}
+        <PanelButton
+          variant="primary"
+          disabled={!visibleRealization}
+          onclick={() =>
+            visibleRealization && onselectRealization(visibleRealization)}
+        >
+          <i class="fas fa-person-running" aria-hidden="true"></i>
+          {selectLabel}
+        </PanelButton>
+      {/if}
+      {#if onopenRealization}
+        <PanelButton
+          variant="primary"
+          ariaLabel={t("shape_engine_open_viewer_aria")}
+          disabled={!visibleRealization}
+          onclick={() =>
+            visibleRealization && onopenRealization(visibleRealization)}
+        >
+          <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
+          {t("shape_engine_open")}<span class="action-suffix">
+            {t("shape_engine_in_viewer")}</span
+          >
+        </PanelButton>
+      {/if}
+      {#if onsaveRealization}
+        <PanelButton
+          ariaLabel={t("shape_engine_save_library_aria")}
+          disabled={!visibleRealization}
+          onclick={() =>
+            visibleRealization && onsaveRealization(visibleRealization)}
+        >
+          <i class="fas fa-bookmark" aria-hidden="true"></i>
+          {t("shape_engine_save")}<span class="action-suffix">
+            {t("shape_engine_to_library")}</span
+          >
+        </PanelButton>
+      {/if}
+      {#if onshareRealization}
+        <PanelButton
+          ariaLabel={t("shape_engine_share_sequence_aria")}
+          disabled={!visibleRealization}
+          onclick={() =>
+            visibleRealization && onshareRealization(visibleRealization)}
+        >
+          <i class="fas fa-share-nodes" aria-hidden="true"></i>
+          {t("shape_engine_share")}<span class="action-suffix">
+            {t("shape_engine_sequence")}</span
+          >
+        </PanelButton>
+      {/if}
+      {#if appState && !appState.compact}
+        <ShapeMatrixStageActions placement="panel" />
+      {/if}
     </div>
   {/if}
 </section>
@@ -1503,7 +1576,7 @@
     position: relative;
     min-height: 0;
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
     place-items: center;
     container-type: size;
     overflow: hidden;
@@ -1522,9 +1595,9 @@
       ),
       var(--theme-card-bg, #0a0f14);
   }
-  /* No header band on a solo, so the frame is the only row. */
+  /* A solo has no header band; the transport still has its own row. */
   .hero-stage.solo {
-    grid-template-rows: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
   }
 
   .strip-zone {
@@ -1564,6 +1637,13 @@
     height: 100%;
     min-width: 0;
     min-height: 0;
+  }
+
+  .canvas-transport {
+    position: relative;
+    z-index: 5;
+    width: 100%;
+    min-height: 4.125rem;
   }
 
   /* Ghost-sizer: the live header and a hidden one-letter header share one
@@ -1713,18 +1793,33 @@
   .select-action {
     grid-area: action;
     min-height: var(--min-touch-target, 44px);
+    display: flex;
+    gap: 0.5rem;
     visibility: hidden;
   }
   .select-action.available {
     visibility: visible;
   }
   .select-action :global(.panel-btn) {
-    width: 100%;
+    flex: 1 1 0;
+    min-width: 0;
+    white-space: nowrap;
+  }
+  @container shape-matrix-drill (max-width: 42rem) {
+    .action-suffix {
+      display: none;
+    }
   }
   /* Phone-height realizations keep the live animation legible. The dedicated
      rail returns as soon as the host has enough width to show it without
      reducing the hero to a thumbnail. */
   @container shape-matrix-drill (max-width: 25rem) {
+    .select-action :global(.panel-btn) {
+      padding-inline: 0.5rem;
+    }
+    .select-action :global(.panel-btn i) {
+      display: none;
+    }
     .drill {
       grid-template-rows: auto minmax(0, 1fr) auto auto;
       grid-template-areas:
@@ -1766,6 +1861,13 @@
 
     .select-action {
       grid-area: action;
+    }
+    .select-action :global(.panel-btn) {
+      padding-inline: 0.5rem;
+    }
+    .select-action :global(.panel-btn i),
+    .action-suffix {
+      display: none;
     }
   }
 </style>

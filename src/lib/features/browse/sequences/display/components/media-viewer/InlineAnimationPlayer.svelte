@@ -7,6 +7,7 @@
   Uses the shared animation engine with BPM preset controls.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount, onDestroy, untrack } from "svelte";
   import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
   import {
@@ -16,6 +17,8 @@
   } from "$lib/shared/render-gating/render-activity-gate";
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
   import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
   import BpmChips from "$lib/shared/animation-engine/components/controls/BpmChips.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
@@ -131,6 +134,10 @@
     showControls = true,
     leftPropType = null,
     rightPropType = null,
+    fanAppearance = undefined,
+    propLook = undefined,
+    leftBuugengFlipped = undefined,
+    rightBuugengFlipped = undefined,
     primaryPropColors,
     externalBpm = null,
     externalPlaying = null,
@@ -192,6 +199,12 @@
     showControls?: boolean;
     leftPropType?: string | null;
     rightPropType?: string | null;
+    /** Page-local prop appearance for hosts without the app settings service
+     *  (the public composer). Unset values fall back to the global settings. */
+    fanAppearance?: FanAppearance;
+    propLook?: PropLook;
+    leftBuugengFlipped?: boolean;
+    rightBuugengFlipped?: boolean;
     /** When provided, overrides internal BPM and controls playback speed externally */
     externalBpm?: number | null;
     /** Shared host playback intent. When present, hidden retained players pause
@@ -464,10 +477,10 @@
           },
         }
       );
-      toast.success("Video downloaded.");
+      toast.success(t("browse_ui_video_downloaded"));
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Video export could not finish."
+        err instanceof Error ? err.message : t("browse_ui_video_export_failed")
       );
     } finally {
       if (progressToastId) removeToast(progressToastId, "programmatic");
@@ -1013,12 +1026,14 @@
          sequence swap (and the hero act's prop morph) actually seamless. -->
     <div class="loading-state">
       <ProgressRing percent={-1} size={24} strokeWidth={3} />
-      <span>Loading animation...</span>
+      <span>{t("loading_animation")}</span>
     </div>
   {:else if error}
     <div class="error-state">
       <span>{error}</span>
-      <button class="retry-btn" onclick={() => loadAnimation()}>Retry</button>
+      <button class="retry-btn" onclick={() => loadAnimation()}
+        >{t("action_retry")}</button
+      >
     </div>
   {:else}
     <!-- Animation Canvas -->
@@ -1045,6 +1060,10 @@
         {effectsConfigState}
         {leftPropType}
         {rightPropType}
+        {fanAppearance}
+        {propLook}
+        {leftBuugengFlipped}
+        {rightBuugengFlipped}
         {primaryPropColors}
         placementGlyphVisible={showPlacementGlyph}
         {propElementalType}

@@ -8,8 +8,10 @@ import {
   coerceToTnDRule,
   FUSE_TND_MODES,
   fuseRuleMode,
+  fuseTnDAxes,
   fuseTnDElement,
   resolveFuseRule,
+  withFuseTnDAxes,
   type FuseTnDSelection,
 } from "$lib/features/fuse/domain/fuse-tnd-rule";
 
@@ -51,6 +53,78 @@ describe("resolveFuseRule", () => {
     ).toEqual(
       createFuseRule({ reflect: "mirror", invert: true, rewind: true })
     );
+  });
+});
+
+describe("inline timing and direction axes", () => {
+  it.each([
+    ["together", "same", "TS", "cw"],
+    ["split", "same", "SS", "cw"],
+    ["quarter-cw", "same", "QS", "cw"],
+    ["quarter-ccw", "same", "QS", "ccw"],
+    ["together", "opposite", "TO", "cw"],
+    ["split", "opposite", "SO", "cw"],
+    ["quarter-cw", "opposite", "QO", "cw"],
+    ["quarter-ccw", "opposite", "QO", "ccw"],
+  ] as const)(
+    "%s and %s resolve to %s",
+    (timing, direction, mode, quarterOffset) => {
+      const next = withFuseTnDAxes(selection({ invert: true, rewind: true }), {
+        timing,
+        direction,
+      });
+      expect(next).toMatchObject({
+        mode,
+        quarterOffset,
+        invert: true,
+        rewind: true,
+      });
+      expect(fuseTnDAxes(next)).toEqual({ timing, direction });
+      expect(classifyFuseRule(resolveFuseRule(next))).toMatchObject({
+        mode,
+        invert: true,
+        rewind: true,
+      });
+    }
+  );
+
+  it("changes direction without losing quarter offset or modifiers", () => {
+    const next = withFuseTnDAxes(
+      selection({
+        mode: "QS",
+        quarterOffset: "ccw",
+        invert: true,
+        rewind: true,
+      }),
+      { direction: "opposite" }
+    );
+    expect(next).toEqual(
+      selection({
+        mode: "QO",
+        quarterOffset: "ccw",
+        invert: true,
+        rewind: true,
+      })
+    );
+  });
+
+  it("changes timing without losing direction or the saved quarter offset", () => {
+    const base = selection({
+      mode: "QO",
+      quarterOffset: "ccw",
+      invert: true,
+      rewind: true,
+    });
+    const split = withFuseTnDAxes(base, { timing: "split" });
+    expect(split).toEqual(
+      selection({
+        mode: "SO",
+        quarterOffset: "ccw",
+        invert: true,
+        rewind: true,
+      })
+    );
+    expect(withFuseTnDAxes(split, { timing: "quarter-ccw" })).toEqual(base);
   });
 });
 

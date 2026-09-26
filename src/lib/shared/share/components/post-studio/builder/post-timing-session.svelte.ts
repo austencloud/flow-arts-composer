@@ -4,16 +4,20 @@ import {
   MIN_MOVE_SECONDS,
   TAKE_MAX_BPM,
   TAKE_MIN_BPM,
-  landingDragRange,
+  addTakeTap,
+  clearTakePerformanceEnd,
+  editTakeSection,
   mergeTimingSectionIntoPrevious,
-  moveBeatOne,
-  releaseLanding,
-  setBeatOneAt,
-  setLandingAt,
-  setPerformanceEndAt,
+  moveTakeBeatOne,
+  placeTakeLanding,
+  releaseTakeLanding,
+  setTakeBeatOneAt,
+  setTakePerformanceEndAt,
   splitTimingSection,
+  takeLandingDragRange,
   takeSampleAt,
   type SplitContinuity,
+  type TakeTiming,
   type TimingSection,
 } from "$lib/shared/media-composition/domain/take-timing";
 import { sequenceFrameAt } from "$lib/shared/media-composition/domain/sequence-frame";
@@ -21,6 +25,7 @@ import {
   landingName,
   summarizeTiming,
 } from "$lib/shared/media-composition/domain/timing-summary";
+import { shownLanding } from "./timing-lane-landings";
 
 export interface LandingRef {
   sectionId: string;
@@ -28,6 +33,19 @@ export interface LandingRef {
 }
 
 export type TimingSpeed = "1" | "0.75" | "0.5";
+
+/** Inputs that take no typing: their keys belong to the take. */
+const NOT_TEXT_ENTRY = new Set([
+  "checkbox",
+  "radio",
+  "button",
+  "submit",
+  "reset",
+  "range",
+  "color",
+  "file",
+  "image",
+]);
 export type TimingZoom = "4" | "8" | "16";
 
 /**
@@ -127,6 +145,8 @@ export function createPostTimingSession(builder: PostBuilderState) {
       mediaSeconds < section.endSeconds - 0.25
     )
   );
+  // Keeping count needs a count: a part with nothing fitted has none to carry.
+  const canKeepCounting = $derived(canSplit && Boolean(resolvedSection?.fit));
 
   // A different take starts from its top with nothing selected.
   $effect(() => {
@@ -179,23 +199,37 @@ export function createPostTimingSession(builder: PostBuilderState) {
     seek(mediaSeconds + direction * MIN_MOVE_SECONDS);
   }
 
+  /**
+   * Edits the current part. The parts after it that keep its count count on
+   * from it as it now is, so the edit is on the whole take.
+   */
   function editCurrent(edit: (section: TimingSection) => TimingSection): void {
     if (!takeId || !section) return;
-    builder.editSection(takeId, section.id, edit);
+    const id = section.id;
+    builder.editTiming(takeId, (current) =>
+      editTakeSection(current, id, moveBeats, edit)
+    );
+  }
+
+  /**
+   * Moves beat 1 on the current part. Parts that keep its count renumber
+   * with it, so the edit is on the whole take.
+   */
+  function recountCurrent(
+    recount: (timing: TakeTiming, sectionId: string) => TakeTiming
+  ): void {
+    if (!takeId || !section) return;
+    const id = section.id;
+    builder.editTiming(takeId, (current) => recount(current, id));
   }
 
   function tap(): void {
     if (!takeId || !timing) return;
     const seconds = video?.currentTime ?? mediaSeconds;
-    const owner =
-      [...timing.sections]
-        .reverse()
-        .find((entry) => seconds >= entry.startSeconds) ?? timing.sections[0];
-    if (!owner) return;
-    builder.editSection(takeId, owner.id, (current) => ({
-      ...current,
-      taps: [...current.taps, seconds].sort((a, b) => a - b),
-    }));
+    // Near a nudged cut, the tap goes with the part that draws its landing.
+    builder.editTiming(takeId, (current) =>
+      addTakeTap(current, seconds, moveBeats)
+    );
     tapCount += 1;
   }
 
@@ -209,16 +243,22 @@ export function createPostTimingSession(builder: PostBuilderState) {
       return false;
     }
     const bpm = Math.round(value * 10) / 10;
+    // The field shows a tenth; a part cut from a fitted grid stores that
+    // grid's exact tempo, which committing the shown value must not move.
     editCurrent((current) =>
-      current.bpm === bpm ? current : { ...current, bpm }
+      Math.round(current.bpm * 10) / 10 === bpm ? current : { ...current, bpm }
     );
     return true;
   }
 
   function firstTapWasMoveOne(): void {
     const first = resolvedSection?.fit?.labels[0]?.seconds;
-    if (first === undefined) return;
-    editCurrent((current) => setBeatOneAt(current, moveBeats, first));
+    if (first === undefined || !section) return;
+    // A label is the raw tap; beat 1 goes where the nudged grid draws it.
+    const drawn = first + section.offsetSeconds;
+    recountCurrent((current, id) =>
+      setTakeBeatOneAt(current, id, moveBeats, drawn)
+    );
   }
 
   function dropLeadingTaps(count: number): void {
@@ -243,12 +283,13 @@ export function createPostTimingSession(builder: PostBuilderState) {
     }));
   }
 
+  // Parts that keep one count share its end, wherever it is stored.
   function clearEnd(): void {
-    editCurrent((current) => {
-      if (current.lastPosition === undefined) return current;
-      const { lastPosition: _end, ...rest } = current;
-      return rest;
-    });
+    if (!takeId || !section) return;
+    const id = section.id;
+    builder.editTiming(takeId, (current) =>
+      clearTakePerformanceEnd(current, id, moveBeats)
+    );
   }
 
   function clearTaps(): void {
@@ -257,26 +298,58 @@ export function createPostTimingSession(builder: PostBuilderState) {
     );
   }
 
+  /**
+   * A selected landing moved across a cut is shown by the part on the other
+   * side now; the selection goes with it.
+   */
+  function followSelected(landing: LandingRef): void {
+    const ref = selected;
+    if (
+      !ref ||
+      !timing ||
+      ref.sectionId !== landing.sectionId ||
+      ref.position !== landing.position
+    ) {
+      return;
+    }
+    const shown = shownLanding(timing, resolved, ref.sectionId, ref.position);
+    if (shown && shown.sectionId !== ref.sectionId) selected = shown;
+  }
+
+  // A landing beside a cut is drawn by both parts, so dragging or releasing
+  // it is an edit on the take: one drag stands, whichever part it came from.
   function placeLanding(landing: LandingRef, seconds: number): void {
     if (!takeId) return;
-    builder.editSection(takeId, landing.sectionId, (current) =>
-      setLandingAt(current, moveBeats, landing.position, seconds)
+    builder.editTiming(takeId, (current) =>
+      placeTakeLanding(
+        current,
+        landing.sectionId,
+        landing.position,
+        seconds,
+        moveBeats
+      )
     );
+    followSelected(landing);
   }
 
   function landingRange(landing: LandingRef) {
-    const owner = timing?.sections.find(
-      (entry) => entry.id === landing.sectionId
-    );
-    return owner ? landingDragRange(owner, moveBeats, landing.position) : null;
+    return timing
+      ? takeLandingDragRange(
+          timing,
+          landing.sectionId,
+          landing.position,
+          moveBeats
+        )
+      : null;
   }
 
   function releaseSelected(): void {
     const ref = selected;
     if (!takeId || !ref) return;
-    builder.editSection(takeId, ref.sectionId, (current) =>
-      releaseLanding(current, ref.position)
+    builder.editTiming(takeId, (current) =>
+      releaseTakeLanding(current, ref.sectionId, ref.position, moveBeats)
     );
+    followSelected(ref);
   }
 
   function split(continuity: SplitContinuity): void {
@@ -318,11 +391,19 @@ export function createPostTimingSession(builder: PostBuilderState) {
     else builder.step = "acts";
   }
 
+  /**
+   * Text entry keeps its keys. A checkbox or slider Austen clicked keeps
+   * focus too, and must not swallow T.
+   */
   function isTyping(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) return false;
+    if (target instanceof HTMLInputElement) {
+      return !NOT_TEXT_ENTRY.has(target.type);
+    }
     return (
-      target instanceof HTMLElement &&
-      (target.isContentEditable ||
-        ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
+      target.isContentEditable ||
+      target instanceof HTMLTextAreaElement ||
+      target instanceof HTMLSelectElement
     );
   }
 
@@ -342,11 +423,16 @@ export function createPostTimingSession(builder: PostBuilderState) {
       // A held key repeats; one press is one landing.
       if (!event.repeat) tap();
     } else if (event.key === " ") {
-      // Space presses a focused button - except Tap, which Austen clicks
-      // mid-take and would otherwise tap a second time.
+      // Space presses a focused button, toggles a focused checkbox and opens
+      // a focused disclosure, so the keyboard can still work them - except
+      // Tap, which Austen clicks mid-take and would otherwise tap a second
+      // time.
+      const target = event.target;
       if (
-        event.target instanceof HTMLButtonElement &&
-        !event.target.hasAttribute("data-space-plays")
+        (target instanceof HTMLButtonElement &&
+          !target.hasAttribute("data-space-plays")) ||
+        target instanceof HTMLInputElement ||
+        (target instanceof HTMLElement && target.localName === "summary")
       ) {
         return;
       }
@@ -453,6 +539,13 @@ export function createPostTimingSession(builder: PostBuilderState) {
     get canSplit() {
       return canSplit;
     },
+    get canKeepCounting() {
+      return canKeepCounting;
+    },
+    /** Whether an end Austen set, or one a split carried, decides the end. */
+    get endClearable() {
+      return resolvedSection?.endStored ?? false;
+    },
     get canUndo() {
       return takeId ? builder.canUndoTiming(takeId) : false;
     },
@@ -488,14 +581,22 @@ export function createPostTimingSession(builder: PostBuilderState) {
     },
     beatOneHere(): void {
       const at = mediaSeconds;
-      editCurrent((current) => setBeatOneAt(current, moveBeats, at));
+      recountCurrent((current, id) =>
+        setTakeBeatOneAt(current, id, moveBeats, at)
+      );
     },
     shiftBeatOne(landings: -1 | 1): void {
-      editCurrent((current) => moveBeatOne(current, moveBeats, landings));
+      recountCurrent((current, id) =>
+        moveTakeBeatOne(current, id, moveBeats, landings)
+      );
     },
     endHere(): void {
+      if (!takeId || !section) return;
+      const id = section.id;
       const at = mediaSeconds;
-      editCurrent((current) => setPerformanceEndAt(current, moveBeats, at));
+      builder.editTiming(takeId, (current) =>
+        setTakePerformanceEndAt(current, id, moveBeats, at)
+      );
     },
     firstTapWasMoveOne,
     dropLeadingTaps,

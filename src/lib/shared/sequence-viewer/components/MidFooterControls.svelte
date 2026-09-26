@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import ViewerOverflowMenu from "./ViewerOverflowMenu.svelte";
 
   interface Props {
@@ -52,7 +53,7 @@
         class="mid-action-btn"
         class:favorited={isFavorite}
         onclick={onFavorite}
-        aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+        aria-label={isFavorite ? t("viewer_detail_remove_from_favorites") : t("viewer_detail_add_to_favorites")}
       >
         <i class="fas fa-heart" aria-hidden="true"></i>
       </button>
@@ -64,7 +65,7 @@
         type="button"
         class="mid-action-btn save"
         onclick={onSave}
-        aria-label="Save sequence"
+        aria-label={t("viewer_ui_save_sequence")}
       >
         <i class="fas fa-floppy-disk" aria-hidden="true"></i>
       </button>
@@ -74,7 +75,7 @@
       type="button"
       class="mid-action-btn edit"
       onclick={onEdit}
-      aria-label="Remix"
+      aria-label={t("viewer_ui_remix")}
     >
       <i class="fas fa-pen-to-square" aria-hidden="true"></i>
     </button>
@@ -84,7 +85,7 @@
         type="button"
         class="mid-action-btn video"
         onclick={onVideoUpload}
-        aria-label="Upload video"
+        aria-label={t("viewer_ui_upload_video")}
       >
         <i class="fas fa-video" aria-hidden="true"></i>
         {#if videoCount && videoCount > 0}
@@ -98,11 +99,17 @@
         type="button"
         class="mid-action-btn"
         class:practice-active={practiceActive}
-        onclick={() => practiceActive ? onPracticeStop?.() : onPracticeStart?.()}
-        aria-label={practiceActive ? "Stop practice training" : "Start practice training"}
+        onclick={() =>
+          practiceActive ? onPracticeStop?.() : onPracticeStart?.()}
+        aria-label={practiceActive
+          ? t("viewer_detail_stop_practice_training")
+          : t("viewer_detail_start_practice_training")}
         aria-pressed={practiceActive}
       >
-        <i class="fas {practiceActive ? 'fa-stop' : 'fa-signal'}" aria-hidden="true"></i>
+        <i
+          class="fas {practiceActive ? 'fa-stop' : 'fa-signal'}"
+          aria-hidden="true"
+        ></i>
       </button>
     {/if}
 
@@ -169,12 +176,20 @@
   }
 
   .mid-action-btn.save {
-    border-color: color-mix(in srgb, var(--semantic-success, #22c55e) 25%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 25%,
+      transparent
+    );
     color: var(--semantic-success, #22c55e);
   }
 
   .mid-action-btn.edit {
-    border-color: color-mix(in srgb, var(--semantic-warning, #f59e0b) 25%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-warning, #f59e0b) 25%,
+      transparent
+    );
     color: var(--semantic-warning, #f59e0b);
   }
 
@@ -184,10 +199,19 @@
   }
 
   .mid-action-btn.practice-active {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 15%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-error, #ef4444) 40%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 15%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 40%,
+      transparent
+    );
     color: var(--semantic-error, #f87171);
-    box-shadow: 0 0 12px color-mix(in srgb, var(--semantic-error, #ef4444) 20%, transparent);
+    box-shadow: 0 0 12px
+      color-mix(in srgb, var(--semantic-error, #ef4444) 20%, transparent);
   }
 
   .mid-action-btn.video {

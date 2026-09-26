@@ -11,6 +11,7 @@
    */
   import LegalSheet from "$lib/shared/legal/components/LegalSheet.svelte";
   import { trackCtaClick } from "$lib/shared/analytics/landing-events";
+  import { siteCopy } from "../site-copy";
 
   let {
     variant = "full",
@@ -88,6 +89,7 @@
       links: [
         { label: "Interactive lessons", href: "/learn/concepts" },
         { label: "Timing & Direction", href: "/timing-and-direction" },
+        { label: "Trick names", href: "/tricks" },
         { label: "Read the Guide", href: "/guide" },
         { label: "Kinetic Atlas", href: "/atlas" },
         { label: "FAQ", href: "/faq" },
@@ -102,7 +104,7 @@
   <div class="col-content">
     <ul>
       {#each col.links as link}
-        <li><a href={link.href}>{link.label}</a></li>
+        <li><a href={link.href}>{siteCopy(link.label)}</a></li>
       {/each}
     </ul>
   </div>
@@ -127,9 +129,9 @@
           <a
             href="/"
             class="wordmark"
-            aria-label="TKA, The Kinetic Alphabet, Home">TKA</a
+            aria-label={siteCopy("TKA, The Kinetic Alphabet, Home")}>TKA</a
           >
-          <p class="tagline">Notation for flow arts.</p>
+          <p class="tagline">{siteCopy("Notation for flow arts.")}</p>
           {#if variant === "full"}
             <a
               class="composer-cta"
@@ -141,7 +143,7 @@
                   destination: "/create",
                 })}
             >
-              Open Flow Arts Composer
+              {siteCopy("Open Flow Arts Composer")}
             </a>
           {/if}
         </div>
@@ -149,13 +151,16 @@
 
       {#if variant !== "compact"}
         {#each COLUMNS as col}
-          <nav class="col col-static" aria-label="{col.title} links">
-            <h2 class="col-title">{col.title}</h2>
+          <nav
+            class="col col-static"
+            aria-label={siteCopy(col.title) + " " + siteCopy("links")}
+          >
+            <h2 class="col-title">{siteCopy(col.title)}</h2>
             {@render columnLinks(col)}
           </nav>
           <details class="col col-disclosure">
             <summary class="col-toggle">
-              <span class="col-title">{col.title}</span>
+              <span class="col-title">{siteCopy(col.title)}</span>
               <i class="fas fa-chevron-down col-chevron" aria-hidden="true"></i>
             </summary>
             {@render columnLinks(col)}
@@ -166,17 +171,26 @@
 
     <div class="bottom">
       <p class="legal-line">
-        Flow Arts Composer and The Kinetic Alphabet are operated by Austen
-        Cloud. © {year} Austen Cloud.
+        {siteCopy(
+          "Flow Arts Composer and The Kinetic Alphabet are operated by Austen Cloud."
+        )} © {year} Austen Cloud.
       </p>
-      <nav class="bottom-links" aria-label="Support and legal links">
+      <nav
+        class="bottom-links"
+        aria-label={siteCopy("Support and legal links")}
+      >
         <a href="/support"
-          ><i class="fas fa-heart heart" aria-hidden="true"></i> Support</a
+          ><i class="fas fa-heart heart" aria-hidden="true"></i>
+          {siteCopy("Support")}</a
         >
-        <a href="/create?sheet=auth" data-sveltekit-reload>Sign in</a>
-        <a href="/terms" onclick={(e) => handleLegalClick(e, "terms")}>Terms</a>
+        <a href="/create?sheet=auth" data-sveltekit-reload
+          >{siteCopy("Sign in")}</a
+        >
+        <a href="/terms" onclick={(e) => handleLegalClick(e, "terms")}
+          >{siteCopy("Terms")}</a
+        >
         <a href="/privacy" onclick={(e) => handleLegalClick(e, "privacy")}
-          >Privacy</a
+          >{siteCopy("Privacy")}</a
         >
       </nav>
     </div>

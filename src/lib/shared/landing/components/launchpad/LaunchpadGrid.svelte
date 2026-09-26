@@ -27,6 +27,7 @@
   } from "./launchpad-tiles";
   import { trackLaunchpadClick } from "$lib/shared/analytics/landing-events";
   import { prefersReducedData } from "$lib/shared/platform/network-conditions";
+  import { siteCopy } from "../../site-copy";
 
   // Every prop defaults to the homepage's current behavior, so `<LaunchpadGrid />`
   // (the +page.svelte call site) renders byte-identically to before this became
@@ -182,7 +183,7 @@
   });
 </script>
 
-<nav class="launchpad variant-{variant}" aria-label={ariaLabel}>
+<nav class="launchpad variant-{variant}" aria-label={siteCopy(ariaLabel)}>
   <div class="launchpad-group">
     <ul class="bento" class:js-ready={jsReady} bind:this={bentoEl}>
       {#each tiles as tile, i (tile.id)}
@@ -210,7 +211,7 @@
                   strip_id: hrefSlug(link.href),
                 })}
             >
-              <h3>{link.label}</h3>
+              <h3>{siteCopy(link.label)}</h3>
             </a>
           </li>
         {/each}

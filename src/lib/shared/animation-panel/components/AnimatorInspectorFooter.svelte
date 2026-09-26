@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { VideoExportProgress } from "$lib/shared/compose/domain/video-export-types";
 
   let {
@@ -54,7 +55,7 @@
         aria-valuenow={progress ? Math.round(progress.progress * 100) : 0}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-label="Export progress"
+        aria-label={t("viewer_ui_export_progress")}
       >
         <div
           class="progress-fill"
@@ -66,7 +67,7 @@
           type="button"
           class="cancel-btn"
           onclick={onCancel}
-          aria-label="Cancel export"
+          aria-label={t("export_cancel_export")}
         >
           <i class="fas fa-times" aria-hidden="true"></i>
           Cancel

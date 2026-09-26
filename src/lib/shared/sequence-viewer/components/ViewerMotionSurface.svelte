@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
   import { getViewerStudioSurfaces } from "../context/viewer-studio-surfaces-context";
   import {
@@ -501,10 +502,10 @@
 {#snippet viewer3DError(_error: unknown, retry: () => void)}
   <div class="error-state viewer-3d-load-state" role="alert">
     <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
-    <span>3D viewer couldn't load. Check your connection and try again.</span>
+    <span>{t("viewer_detail_3d_viewer_couldn_t_load_check_your_connection_and_try_again")}</span>
     <PanelButton variant="secondary" onclick={retry}>
       <i class="fas fa-rotate-right" aria-hidden="true"></i>
-      <span>Try again</span>
+      <span>{t("viewer_ui_try_again")}</span>
     </PanelButton>
   </div>
 {/snippet}
@@ -535,7 +536,7 @@
           if (event.key === "Enter" || event.key === " ")
             handleCloseClick(event);
         }}
-        aria-label="Exit focus mode"
+        aria-label={t("viewer_ui_exit_focus_mode")}
       >
         <i class="fas fa-times" aria-hidden="true"></i>
       </div>
@@ -632,7 +633,7 @@
           if (event.key === "Enter" || event.key === " ")
             handleCloseClick(event);
         }}
-        aria-label="Exit focus mode"
+        aria-label={t("viewer_ui_exit_focus_mode")}
       >
         <i class="fas fa-times" aria-hidden="true"></i>
       </div>
@@ -738,8 +739,7 @@
               : true)}
           hideHeader
           hideTkaGlyph={tunnelVisualActive || !!studioFrame?.labelsPainted}
-          hideStepNumbers={tunnelVisualActive ||
-            !!studioFrame?.labelsPainted}
+          hideStepNumbers={tunnelVisualActive || !!studioFrame?.labelsPainted}
           hideElementalGlyph={!!studioFrame?.labelsPainted}
           hidePathLines={tunnelVisualActive}
           tapToToggle={side === "left" && !inStudio}

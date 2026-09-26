@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * ClipSpeedSection - Speed presets and custom speed control
    */
@@ -24,7 +25,7 @@
 <section class="section">
   <div class="section-header">
     <i class="fa-solid fa-gauge" aria-hidden="true"></i>
-    <span>Speed</span>
+    <span>{t("compose_ui_speed")}</span>
   </div>
 
   <div class="speed-presets">
@@ -40,7 +41,9 @@
   </div>
 
   <div class="field">
-    <label class="field-label" for="custom-speed-range">Custom Speed</label>
+    <label class="field-label" for="custom-speed-range"
+      >{t("compose_ui_custom_speed")}</label
+    >
     <div class="input-group">
       <input
         id="custom-speed-range"
@@ -60,7 +63,7 @@
         max="4"
         step="0.05"
         value={playbackRate.toFixed(2)}
-        aria-label="Custom speed value"
+        aria-label={t("compose_ui_custom_speed_value")}
         onchange={(e) =>
           onUpdateSpeed(parseFloat((e.target as HTMLInputElement).value))}
       />

@@ -126,8 +126,8 @@
       </div>
     </dl>
     <p>
-      Delete removes the entire pose keyframe. Undo and redo last until you
-      reload the page.
+      Delete removes the entire pose keyframe. Pose edits save as you make them;
+      up to 100 undo and redo steps survive a reload in this tab.
     </p>
   </div>
 </Drawer>

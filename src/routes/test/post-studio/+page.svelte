@@ -71,6 +71,11 @@
   }
 
   onMount(async () => {
+    // The boot bar in app.html waits for the app layout to report 100%, and a
+    // /test route never runs that layout, so without this the splash sits over
+    // the harness until its 15s safety net fires.
+    (window as unknown as { __tkaLoadProgress?: (p: number) => void })
+      .__tkaLoadProgress?.(100);
     registerLoopDetector(loopDetector);
     try {
       const loaded = await getBrowseLoader().loadFullSequenceData(

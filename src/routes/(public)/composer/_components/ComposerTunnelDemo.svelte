@@ -16,10 +16,14 @@
   mount it through LazyMount so none of it lands in the eager graph.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { MediaQuery } from "svelte/reactivity";
-  import { onDestroy } from "svelte";
+  import { onDestroy, type Snippet } from "svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import TunnelArtView from "$lib/shared/sequence-viewer/tunnel/TunnelArtView.svelte";
+  import type { ComposerPropAppearance } from "./composer-prop-appearance";
   import { TunnelViewController } from "$lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte";
   import {
     loadTunnelViewState,
@@ -49,7 +53,22 @@
   let {
     sequence: sourceSequence,
     layout = "square",
-  }: { sequence: SequenceData; layout?: "square" | "band" } = $props();
+    leftPropType = "staff",
+    rightPropType = "staff",
+    appearance,
+    propControl,
+    inlinePropPicker,
+    onOpenProps,
+  }: {
+    sequence: SequenceData;
+    layout?: "square" | "band";
+    leftPropType?: string;
+    rightPropType?: string;
+    appearance?: ComposerPropAppearance;
+    propControl?: Snippet;
+    inlinePropPicker?: Snippet;
+    onOpenProps?: () => void;
+  } = $props();
 
   const reduceMotion = new MediaQuery("(prefers-reduced-motion: reduce)");
   let playing = $state(!reduceMotion.current);
@@ -100,7 +119,12 @@
   const arrangementOptions = $derived(
     ARRANGEMENTS.map((a) => ({
       value: a.value,
-      label: a.label,
+      label:
+        a.value === "ring"
+          ? t("composer_demo_ring")
+          : a.value === "mirrored"
+            ? t("composer_demo_mirrored")
+            : t("composer_demo_canon"),
       disabled: !fits(fold, a.mirror),
     }))
   );
@@ -163,8 +187,9 @@
         {playback}
         {controller}
         bpm={60}
-        leftPropType="staff"
-        rightPropType="staff"
+        {leftPropType}
+        {rightPropType}
+        {...appearance}
         bind:playing
       />
     </div>
@@ -184,9 +209,9 @@
     options={foldOptions}
     value={String(fold)}
     onchange={(v) => (fold = Number(v))}
-    ariaLabel="Tunnel performers"
+    ariaLabel={t("composer_demo_tunnel_performers")}
     color="accent"
-    size="sm"
+    size="md"
   />
 {/snippet}
 
@@ -197,20 +222,38 @@
     </div>
     <div class="band-controls">
       <h3 class="band-title">Tunnel</h3>
-      <p class="band-caption">The same movement, repeated around the ring.</p>
+      <p class="band-caption">{t("composer_demo_tunnel_caption")}</p>
+      <div class="band-prop-control">{@render propControl?.()}</div>
+      <div class="desktop-prop-swap">
+        <Crossfade
+          key={inlinePropPicker ? "picker" : "trigger"}
+          animateHeight
+          mode="swap"
+        >
+          {#if inlinePropPicker}
+            <div class="band-inline-props">
+              {@render inlinePropPicker()}
+            </div>
+          {:else if onOpenProps}
+            <div class="desktop-prop-trigger">
+              <PanelButton onclick={onOpenProps}>Choose props</PanelButton>
+            </div>
+          {/if}
+        </Crossfade>
+      </div>
       <div class="control-row">
-        <span class="control-label">Performers</span>
+        <span class="control-label">{t("composer_demo_performers")}</span>
         {@render performers()}
       </div>
       <div class="control-row">
-        <span class="control-label">Arrangement</span>
+        <span class="control-label">{t("composer_demo_arrangement")}</span>
         <SegmentedControl
           options={arrangementOptions}
           value={arrangement}
           onchange={(v) => (arrangement = v as Arrangement)}
-          ariaLabel="Tunnel arrangement"
+          ariaLabel={t("composer_demo_tunnel_arrangement")}
           color="accent"
-          size="sm"
+          size="md"
         />
       </div>
     </div>
@@ -220,7 +263,7 @@
     {@render stage()}
 
     <div class="fold-row">
-      <span class="control-label">Performers</span>
+      <span class="control-label">{t("composer_demo_performers")}</span>
       {@render performers()}
     </div>
   </div>
@@ -325,17 +368,22 @@
     flex-direction: column;
     gap: 0.75rem;
     max-width: 30rem;
+    width: 100%;
+  }
+  .band-prop-control {
+    align-self: flex-start;
+  }
+  .band-prop-control {
+    display: none;
+  }
+  .desktop-prop-trigger {
+    align-self: flex-start;
   }
   .band-title {
     margin: 0;
     font-size: var(--font-size-lg, 1.25rem);
     font-weight: 700;
     letter-spacing: 0.01em;
-  }
-  .band-caption {
-    margin: 0 0 0.5rem;
-    color: oklch(0.78 0.02 270);
-    line-height: 1.5;
   }
   /* Deterministic footprint: fixed label column and fixed row height, so the
      row never moves when the selected value changes (no-layout-shift). */
@@ -359,6 +407,12 @@
       align-items: center;
       text-align: center;
       margin-inline: auto;
+    }
+    .desktop-prop-swap {
+      display: none;
+    }
+    .band-prop-control {
+      display: block;
     }
     /* Stacked: the control keeps a real track, not its intrinsic width,
        so three short labels never collapse into 29px segments. */

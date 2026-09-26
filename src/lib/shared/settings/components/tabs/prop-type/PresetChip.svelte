@@ -119,7 +119,11 @@
      information, not decoration. */
   .preset-chip.active {
     border-color: var(--theme-accent);
-    background: color-mix(in srgb, var(--theme-accent) 14%, var(--theme-card-bg));
+    background: color-mix(
+      in srgb,
+      var(--theme-accent) 14%,
+      var(--theme-card-bg)
+    );
     box-shadow: inset 0 0 0 1px var(--theme-accent);
   }
 

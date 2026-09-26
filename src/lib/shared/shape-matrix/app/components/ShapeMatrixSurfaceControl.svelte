@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import type { ShapeMatrixSurface } from "../state/shape-matrix-app-state.svelte";
@@ -9,19 +10,19 @@
 
   const { compact = false }: Props = $props();
   const state = getShapeMatrixAppContext();
-  const options = [
+  const options = $derived([
     {
       value: "matrix" as const,
-      label: "Level Matrix. Explore Levels 1 through 4.",
+      label: t("shape_engine_surface_level_desc"),
     },
     {
       // The Matrix sits at a Kinetic Alphabet level and Theory does not sit at
       // one at all, so the switch between them says which is which rather than
       // implying a step up the same ladder.
       value: "theory" as const,
-      label: "Ratio Playground. Build your own 4 by 4.",
+      label: t("shape_engine_surface_ratio_desc"),
     },
-  ];
+  ]);
 </script>
 
 {#snippet optionContent(surface: ShapeMatrixSurface)}
@@ -29,15 +30,17 @@
     <strong>
       {compact
         ? surface === "matrix"
-          ? "Levels"
-          : "Ratios"
+          ? t("shape_engine_levels")
+          : t("shape_engine_ratios")
         : surface === "matrix"
-          ? "Level Matrix"
-          : "Ratio Playground"}
+          ? t("shape_engine_level_matrix")
+          : t("shape_engine_ratio_playground")}
     </strong>
     {#if !compact}
       <small>
-        {surface === "matrix" ? "Explore Levels 1–4" : "Build your own 4×4"}
+        {surface === "matrix"
+          ? t("shape_engine_explore_levels")
+          : t("shape_engine_build_four")}
       </small>
     {/if}
   </span>
@@ -52,7 +55,7 @@
     density={compact ? "tight" : "standard"}
     color="accent"
     semantics="radiogroup"
-    ariaLabel="Choose a Shape Engine mode"
+    ariaLabel={t("shape_engine_choose_mode")}
     {optionContent}
   />
 </div>

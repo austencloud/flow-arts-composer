@@ -13,6 +13,7 @@
   state owners under shared/choreo-card.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   // Note: transition/animation imports (fade, fly, scale, flip, cubicOut) moved to
   // extracted sub-components (CardHeader, CardFooter, CardGridLayout, CellRenderer).
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
@@ -212,7 +213,7 @@
     cardAspectRatio,
     customTitleText: requestedTitleText,
     renderWordAsText,
-    customNotesText = "Created using Flow Arts Composer",
+    customNotesText = t("viewer_detail_created_using_flow_arts_composer"),
     handLabeling = null,
     leftPropType,
     rightPropType,
@@ -1139,10 +1140,10 @@
     <div
       class="card-refreshing"
       role="status"
-      aria-label="Updating card preview"
+      aria-label={t("viewer_detail_updating_card_preview")}
     >
       <ProgressRing percent={-1} size={16} strokeWidth={2} />
-      <span>Updating</span>
+      <span>{t("viewer_detail_updating")}</span>
     </div>
   {/if}
   {#if isLoading && cells.length === 0}

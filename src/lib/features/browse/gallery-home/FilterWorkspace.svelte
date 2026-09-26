@@ -17,6 +17,7 @@ escape to a full-page grid. A host that has no such grid omits `onEject` and
 the below-seam actions mutate the engine in place.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
   import GalleryDrill from "$lib/features/browse/gallery-home/GalleryDrill.svelte";
   import type {
@@ -165,7 +166,9 @@ the below-seam actions mutate the engine in place.
       onRemoveFilter={(key) => startMorph(() => engine.removeFilter(key))}
     />
   {:else}
-    <span class="strip-empty">No filters yet. Pick one on the left.</span>
+    <span class="strip-empty"
+      >{t("browse_ui_no_filters_yet_pick_one_on_the_left")}</span
+    >
   {/if}
   {#if resultsActions || onSaveSmart || onClose}
     <div
@@ -217,7 +220,7 @@ the below-seam actions mutate the engine in place.
     </div>
   {/if}
   {#if (engine.hasActiveFilters || resultsActions || stripReserved) && !splitPaneActive}
-    <div class="gallery-rule-strip" aria-label="Current filters">
+    <div class="gallery-rule-strip" aria-label={t("browse_ui_current_filters")}>
       <span
         class="strip-count strip-motion-anchor"
         style:view-transition-name="gallery-rule-count"
@@ -238,7 +241,7 @@ the below-seam actions mutate the engine in place.
         <span
           class="strip-empty strip-motion-anchor"
           style:view-transition-name="gallery-rule-empty"
-          >No filters yet. The whole library is ready.</span
+          >{t("browse_ui_no_filters_yet_the_whole_library_is_ready")}</span
         >
       {/if}
       <div

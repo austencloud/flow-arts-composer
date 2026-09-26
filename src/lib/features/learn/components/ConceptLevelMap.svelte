@@ -9,6 +9,7 @@
   } from "../domain/concept-place-registry";
   import { getConceptById as getLessonConceptById } from "../domain/concepts";
   import type { LearnConcept } from "../domain/types";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
   let {
     selectedId,
@@ -42,8 +43,10 @@
   }
 
   function resourceLabel(place: LearnConceptPlace): string {
-    if (place.lessonIds.length > 0) return "Lesson";
-    return hasMappedResources(place) ? "Reference" : "Map only";
+    if (place.lessonIds.length > 0) return t("learn_ui_lesson");
+    return hasMappedResources(place)
+      ? t("learn_ui_reference")
+      : t("learn_ui_map_only");
   }
 </script>
 
@@ -53,11 +56,11 @@
       <span class="map-kicker">Atlas</span>
       <h2 id="level-map-title">TKA Level 1</h2>
     </div>
-    <p>The map keeps your place. Lessons teach one concept at a time.</p>
+    <p>{t("learn_ui_map_intro")}</p>
   </header>
 
   <div class="atlas-body">
-    <ol class="concept-track" aria-label="TKA Level 1 concepts">
+    <ol class="concept-track" aria-label={t("learn_ui_level_one_concepts")}>
       {#each openingPlaces as place (place.id)}
         <li class="route-stop">
           <button
@@ -77,7 +80,7 @@
       {/each}
 
       <li class="route-branch">
-        <ol aria-label="Parallel Level 1 concepts">
+        <ol aria-label={t("learn_ui_parallel_concepts")}>
           {#each parallelPlaces as place (place.id)}
             <li class="route-stop branch-stop">
               <button
@@ -133,14 +136,17 @@
           </div>
 
           {#if selectedPlace.id === "1.1"}
-            <div class="grid-preview" aria-label="Diamond and Box grids">
+            <div
+              class="grid-preview"
+              aria-label={t("learn_ui_diamond_box_grids")}
+            >
               <figure>
                 <LessonGridDisplay type="diamond" size="medium" />
-                <figcaption>Diamond</figcaption>
+                <figcaption>{t("generator_grid_diamond")}</figcaption>
               </figure>
               <figure>
                 <LessonGridDisplay type="box" size="medium" />
-                <figcaption>Box</figcaption>
+                <figcaption>{t("generator_grid_box")}</figcaption>
               </figure>
             </div>
           {/if}
@@ -157,7 +163,7 @@
                   >
                     <span>{lessonRef.label}</span>
                     {#if lessonRef.coverage === "partial"}
-                      <small>Part of this concept</small>
+                      <small>{t("learn_ui_part_of_concept")}</small>
                     {/if}
                   </button>
                 {/if}
@@ -177,9 +183,9 @@
                   class="resource-action secondary"
                   href="/guide/level-1/{guide.slug}"
                 >
-                  <span>Read {guide.label}</span>
+                  <span>{t("learn_ui_read_named", { name: guide.label })}</span>
                   {#if guide.coverage === "partial"}
-                    <small>Related section</small>
+                    <small>{t("learn_ui_related_section")}</small>
                   {/if}
                 </a>
               {/each}
@@ -191,10 +197,7 @@
               {/each}
             </div>
           {:else}
-            <p class="unmapped-note">
-              This concept is part of Level 1. Its learning resources are still
-              being connected.
-            </p>
+            <p class="unmapped-note">{t("learn_ui_resources_coming")}</p>
           {/if}
         </article>
       </Crossfade>

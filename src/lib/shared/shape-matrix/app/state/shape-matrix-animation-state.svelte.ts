@@ -23,7 +23,6 @@ const CUSTOMIZE_SECTIONS: readonly PillId[] = [
   "props",
   "motion",
   "effort",
-  "playback",
   "display",
 ];
 

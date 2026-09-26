@@ -12,12 +12,16 @@
   - Uses svelte-dnd-action for drag-and-drop
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { onMount } from "svelte";
   import { flip } from "svelte/animate";
   import { dragHandleZone, dragHandle } from "svelte-dnd-action";
   import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import { featureFlagService, featureFlagState } from "../../../auth/services/post-hog-feature-flag-service.svelte";
+  import {
+    featureFlagService,
+    featureFlagState,
+  } from "../../../auth/services/post-hog-feature-flag-service.svelte";
   import { getModuleDefinitions } from "../../../navigation-coordinator/navigation-coordinator.svelte";
   import { MODULE_DEFINITIONS } from "../../config/module-definitions";
   import { moduleIdToFeatureId } from "../../../auth/domain/models/feature-flag";
@@ -178,16 +182,20 @@
 
     try {
       const featureId = moduleIdToFeatureId(module.id);
-      const result = await featureFlagService.updateGlobalFeatureFlag(featureId, {
-        enabled: true,
-      });
+      const result = await featureFlagService.updateGlobalFeatureFlag(
+        featureId,
+        {
+          enabled: true,
+        }
+      );
 
       toast.success(`${module.label} enabled`, 2000);
       hapticService?.trigger("success");
 
       // Update user overrides: add to module order AND remove from disabledFeatures
       const currentOverrides = featureFlagService.userOverrides;
-      const currentOrder = currentOverrides.moduleOrder || visibleModules.map((m) => m.id);
+      const currentOrder =
+        currentOverrides.moduleOrder || visibleModules.map((m) => m.id);
       const currentDisabled = currentOverrides.disabledFeatures || [];
 
       // Check if we need to update user overrides
@@ -199,7 +207,9 @@
         if (userId) {
           await featureFlagService.setUserFeatureOverrides(userId, {
             ...currentOverrides,
-            moduleOrder: needsOrderUpdate ? [...currentOrder, module.id] : currentOrder,
+            moduleOrder: needsOrderUpdate
+              ? [...currentOrder, module.id]
+              : currentOrder,
             // Remove from disabledFeatures if present (user override was blocking it)
             disabledFeatures: currentDisabled.filter((f) => f !== featureId),
           });
@@ -207,7 +217,8 @@
       }
     } catch (error) {
       console.error("Failed to enable module:", error);
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      const errorMessage =
+        error instanceof Error ? error.message : t("nav_ui_unknown_error");
       toast.error(`Failed to enable ${module.label}: ${errorMessage}`);
       hapticService?.trigger("error");
     } finally {
@@ -241,7 +252,8 @@
       // Update user overrides: remove from module order, add to disabledFeatures,
       // and REMOVE from enabledFeatures (enabledFeatures bypasses all other checks)
       const currentOverrides = featureFlagService.userOverrides;
-      const currentOrder = currentOverrides.moduleOrder || visibleModules.map((m) => m.id);
+      const currentOrder =
+        currentOverrides.moduleOrder || visibleModules.map((m) => m.id);
       const currentDisabled = currentOverrides.disabledFeatures || [];
       const currentEnabled = currentOverrides.enabledFeatures || [];
 
@@ -262,7 +274,8 @@
       }
     } catch (error) {
       console.error("Failed to disable module:", error);
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      const errorMessage =
+        error instanceof Error ? error.message : t("nav_ui_unknown_error");
       toast.error(`Failed to disable ${module.label}: ${errorMessage}`);
       hapticService?.trigger("error");
     } finally {
@@ -314,13 +327,13 @@
   class:collapsed={isCollapsed}
   onclick={openModal}
   type="button"
-  aria-label="Manage modules"
+  aria-label={t("nav_ui_manage_modules")}
 >
   <div class="button-icon">
     <i class="fas fa-sliders-h" aria-hidden="true"></i>
   </div>
   {#if !isCollapsed}
-    <span class="button-label">Modules</span>
+    <span class="button-label">{t("admin_modules")}</span>
   {/if}
 </button>
 
@@ -328,12 +341,12 @@
 <BaseModal bind:open size="module-grid" animation="pop">
   {#snippet header()}
     <div class="modal-header">
-      <h2 class="modal-title">Manage Modules</h2>
+      <h2 class="modal-title">{t("nav_ui_manage_modules")}</h2>
       <button
         class="close-button"
         onclick={closeModal}
         type="button"
-        aria-label="Close"
+        aria-label={t("action_close")}
       >
         <i class="fas fa-times" aria-hidden="true"></i>
       </button>
@@ -346,18 +359,24 @@
       <div class="section-header">
         <h3 class="section-title">
           <i class="fas fa-eye-slash" aria-hidden="true"></i>
-          Disabled Modules
+          {t("nav_ui_disabled_modules")}
         </h3>
-        <span class="section-hint">Tap to enable globally</span>
+        <span class="section-hint">{t("nav_ui_tap_to_enable_globally")}</span>
       </div>
 
       {#if hiddenModules.length === 0}
         <div class="empty-state">
-          <p>All modules enabled</p>
-          <p class="empty-hint">Disabled modules will appear here</p>
+          <p>{t("nav_ui_all_modules_enabled")}</p>
+          <p class="empty-hint">
+            {t("nav_ui_disabled_modules_will_appear_here")}
+          </p>
         </div>
       {:else}
-        <div class="module-grid hidden-grid" role="list" aria-label="Disabled modules">
+        <div
+          class="module-grid hidden-grid"
+          role="list"
+          aria-label={t("nav_ui_disabled_modules")}
+        >
           {#each hiddenModules as module (module.id)}
             {@const isThisSaving = savingModuleId === module.id}
             <button
@@ -365,7 +384,7 @@
               onclick={() => showModule(module)}
               type="button"
               style="--module-color: {module.color}"
-              aria-label="{module.label}, tap to enable globally"
+              aria-label={t("nav_enable_module", { module: module.label })}
               disabled={saving}
             >
               <div class="cell-background"></div>
@@ -404,22 +423,26 @@
       <div class="section-header">
         <h3 class="section-title">
           <i class="fas fa-eye" aria-hidden="true"></i>
-          Enabled Modules
+          {t("nav_ui_enabled_modules")}
         </h3>
-        <span class="section-hint">Drag to reorder, tap × to disable</span>
+        <span class="section-hint"
+          >{t("nav_ui_drag_to_reorder_tap_to_disable")}</span
+        >
       </div>
 
       {#if visibleModules.length === 0}
         <div class="empty-state">
-          <p>No visible modules</p>
-          <p class="empty-hint">Tap a hidden module to add it</p>
+          <p>{t("nav_ui_no_visible_modules")}</p>
+          <p class="empty-hint">{t("nav_ui_tap_a_hidden_module_to_add_it")}</p>
         </div>
       {:else}
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div
           class="module-grid visible-grid"
           role="list"
-          aria-label="Visible modules in sidebar order, drag to reorder"
+          aria-label={t(
+            "nav_ui_visible_modules_in_sidebar_order_drag_to_reorder"
+          )}
           use:dragHandleZone={{
             items: visibleModules,
             flipDurationMs: FLIP_DURATION_MS,
@@ -438,7 +461,9 @@
               class:is-saving={isThisSaving}
               style="--module-color: {module.color}"
               role="listitem"
-              aria-label="{module.label}{isCore ? ', always enabled' : ', drag to reorder or tap to disable'}"
+              aria-label="{module.label}{isCore
+                ? ', always enabled'
+                : ', drag to reorder or tap to disable'}"
               animate:flip={{ duration: FLIP_DURATION_MS }}
             >
               <div class="cell-background"></div>
@@ -449,7 +474,7 @@
                   <div
                     class="drag-handle"
                     use:dragHandle
-                    aria-label="Drag to reorder {module.label}"
+                    aria-label={t("nav_drag_module", { module: module.label })}
                   >
                     <i class="fas fa-grip-vertical" aria-hidden="true"></i>
                   </div>
@@ -475,7 +500,7 @@
                     hideModule(module);
                   }}
                   type="button"
-                  aria-label="Disable {module.label} globally"
+                  aria-label={t("nav_disable_module", { module: module.label })}
                   disabled={saving}
                 >
                   <i class="fas fa-minus-circle" aria-hidden="true"></i>
@@ -492,7 +517,7 @@
   {#if saving}
     <div class="saving-overlay">
       <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-      <span>Saving...</span>
+      <span>{t("action_saving")}</span>
     </div>
   {/if}
 </BaseModal>
@@ -803,10 +828,13 @@
     background: linear-gradient(
       145deg,
       color-mix(in srgb, var(--module-color) 25%, rgba(255, 255, 255, 0.08)) 0%,
-      color-mix(in srgb, var(--module-color) 15%, rgba(255, 255, 255, 0.03)) 100%
+      color-mix(in srgb, var(--module-color) 15%, rgba(255, 255, 255, 0.03))
+        100%
     );
-    border: 1.5px solid color-mix(in srgb, var(--module-color) 50%, rgba(255, 255, 255, 0.2));
-    box-shadow: 0 0 20px color-mix(in srgb, var(--module-color) 25%, transparent);
+    border: 1.5px solid
+      color-mix(in srgb, var(--module-color) 50%, rgba(255, 255, 255, 0.2));
+    box-shadow: 0 0 20px
+      color-mix(in srgb, var(--module-color) 25%, transparent);
   }
 
   .visible-module-cell .cell-glow {
@@ -814,8 +842,13 @@
   }
 
   .visible-module-cell:hover .cell-background {
-    border-color: color-mix(in srgb, var(--module-color) 60%, rgba(255, 255, 255, 0.3));
-    box-shadow: 0 0 28px color-mix(in srgb, var(--module-color) 35%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--module-color) 60%,
+      rgba(255, 255, 255, 0.3)
+    );
+    box-shadow: 0 0 28px
+      color-mix(in srgb, var(--module-color) 35%, transparent);
   }
 
   .visible-module-cell:hover .cell-glow {
@@ -832,7 +865,9 @@
 
   .visible-module-cell .cell-icon :global(svg),
   .visible-module-cell .cell-icon :global(i) {
-    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--module-color) 40%, transparent));
+    filter: drop-shadow(
+      0 0 6px color-mix(in srgb, var(--module-color) 40%, transparent)
+    );
   }
 
   /* Drag handle */
@@ -881,7 +916,11 @@
   }
 
   .remove-button:hover {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 20%,
+      transparent
+    );
     color: var(--semantic-error, #ef4444);
   }
 
@@ -954,7 +993,8 @@
       color-mix(in srgb, var(--module-color) 12%, rgba(255, 255, 255, 0.04)) 0%,
       color-mix(in srgb, var(--module-color) 6%, rgba(255, 255, 255, 0.02)) 100%
     );
-    border: 1.5px solid color-mix(in srgb, var(--module-color) 25%, rgba(255, 255, 255, 0.1));
+    border: 1.5px solid
+      color-mix(in srgb, var(--module-color) 25%, rgba(255, 255, 255, 0.1));
   }
 
   .hidden-module-cell .cell-icon {
@@ -973,9 +1013,14 @@
     background: linear-gradient(
       145deg,
       color-mix(in srgb, var(--module-color) 20%, rgba(255, 255, 255, 0.06)) 0%,
-      color-mix(in srgb, var(--module-color) 10%, rgba(255, 255, 255, 0.03)) 100%
+      color-mix(in srgb, var(--module-color) 10%, rgba(255, 255, 255, 0.03))
+        100%
     );
-    border-color: color-mix(in srgb, var(--module-color) 40%, rgba(255, 255, 255, 0.2));
+    border-color: color-mix(
+      in srgb,
+      var(--module-color) 40%,
+      rgba(255, 255, 255, 0.2)
+    );
   }
 
   .hidden-module-cell:hover .cell-icon,

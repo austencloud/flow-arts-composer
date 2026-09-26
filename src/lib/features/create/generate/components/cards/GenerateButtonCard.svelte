@@ -40,10 +40,10 @@ Always renders as a pure button. Word input is now in WordInputCard.
     isGenerating
       ? t("generator_button_generating")
       : noValidStart
-        ? "No valid start"
-      : hasSettingsChanged
-        ? t("generator_button_regenerate")
-        : t("generator_button")
+        ? t("create_deep_no_valid_start")
+        : hasSettingsChanged
+          ? t("generator_button_regenerate")
+          : t("generator_button")
   );
 
   let buttonIcon = $derived(

@@ -1,3 +1,5 @@
+import { t } from "$lib/shared/i18n/i18n.svelte.js";
+import type { TranslationKey } from "$lib/shared/i18n/i18n-types";
 /**
  * Accessible text description of a pictograph, built from the data the renderer
  * already holds (letter, start/end position, each hand's motion).
@@ -25,25 +27,29 @@ type Describable = {
   motions?: { left?: MotionData | null; right?: MotionData | null } | null;
 };
 
-const LOCATION_NAME: Record<string, string> = {
-  n: "north",
-  e: "east",
-  s: "south",
-  w: "west",
-  ne: "northeast",
-  se: "southeast",
-  sw: "southwest",
-  nw: "northwest",
-  c: "center",
+const LOCATION_NAME: Record<string, TranslationKey> = {
+  n: "pictograph_desc_location_n",
+  e: "pictograph_desc_location_e",
+  s: "pictograph_desc_location_s",
+  w: "pictograph_desc_location_w",
+  ne: "pictograph_desc_location_ne",
+  se: "pictograph_desc_location_se",
+  sw: "pictograph_desc_location_sw",
+  nw: "pictograph_desc_location_nw",
+  c: "pictograph_desc_location_c",
 };
 const locName = (l: string | null | undefined): string =>
-  l ? (LOCATION_NAME[l.toLowerCase()] ?? l) : "";
+  l
+    ? LOCATION_NAME[l.toLowerCase()]
+      ? t(LOCATION_NAME[l.toLowerCase()]!)
+      : l
+    : "";
 
 // α = hands at opposite points, β = same point, γ = right angle (TKA canon).
-const GROUP_NAME: Record<string, string> = {
-  alpha: "alpha (hands opposite)",
-  beta: "beta (hands together)",
-  gamma: "gamma (right angle)",
+const GROUP_NAME: Record<string, TranslationKey> = {
+  alpha: "pictograph_desc_group_alpha",
+  beta: "pictograph_desc_group_beta",
+  gamma: "pictograph_desc_group_gamma",
 };
 const groupOf = (pos: string | null | undefined): string | null => {
   if (!pos) return null;
@@ -51,21 +57,21 @@ const groupOf = (pos: string | null | undefined): string | null => {
   return m ? m[0].toLowerCase() : null;
 };
 
-const MOTION_VERB: Partial<Record<MotionType, string>> = {
-  [MotionType.PRO]: "pro-spin shift",
-  [MotionType.ANTI]: "anti-spin shift",
-  [MotionType.FLOAT]: "float",
-  [MotionType.DASH]: "dash",
-  [MotionType.STATIC]: "static hold",
+const MOTION_VERB: Partial<Record<MotionType, TranslationKey>> = {
+  [MotionType.PRO]: "pictograph_desc_motion_pro",
+  [MotionType.ANTI]: "pictograph_desc_motion_anti",
+  [MotionType.FLOAT]: "pictograph_desc_motion_float",
+  [MotionType.DASH]: "pictograph_desc_motion_dash",
+  [MotionType.STATIC]: "pictograph_desc_motion_static",
 };
 
-const TND_NAME: Record<TnDMode, string> = {
-  [TnDMode.SPLIT_SAME]: "Split-Same timing",
-  [TnDMode.SPLIT_OPP]: "Split-Opposite timing",
-  [TnDMode.TOG_SAME]: "Together-Same timing",
-  [TnDMode.TOG_OPP]: "Together-Opposite timing",
-  [TnDMode.QUARTER_SAME]: "Quarter-Same timing",
-  [TnDMode.QUARTER_OPP]: "Quarter-Opposite timing",
+const TND_NAME: Record<TnDMode, TranslationKey> = {
+  [TnDMode.SPLIT_SAME]: "pictograph_desc_timing_split_same",
+  [TnDMode.SPLIT_OPP]: "pictograph_desc_timing_split_opp",
+  [TnDMode.TOG_SAME]: "pictograph_desc_timing_tog_same",
+  [TnDMode.TOG_OPP]: "pictograph_desc_timing_tog_opp",
+  [TnDMode.QUARTER_SAME]: "pictograph_desc_timing_quarter_same",
+  [TnDMode.QUARTER_OPP]: "pictograph_desc_timing_quarter_opp",
 };
 
 function motionPhrase(
@@ -82,16 +88,37 @@ function motionPhrase(
     (m.turns as unknown) === "fl" ||
     (m.propType === PropType.HAND && isShift);
   const verb = isFloat
-    ? "float"
-    : (MOTION_VERB[m.motionType] ?? String(m.motionType));
+    ? t("pictograph_desc_motion_float")
+    : MOTION_VERB[m.motionType]
+      ? t(MOTION_VERB[m.motionType]!)
+      : String(m.motionType);
   const from = locName(m.startLocation);
   const to = locName(m.endLocation);
   const n = typeof m.turns === "number" ? m.turns : 0;
-  const turns = n > 0 ? `, ${n} turn${n === 1 ? "" : "s"}` : "";
+  const turns =
+    n > 0
+      ? t(n === 1 ? "pictograph_desc_turn_one" : "pictograph_desc_turn_many", {
+          count: n,
+        })
+      : "";
+  const handName = t(
+    hand === "Left" ? "pictograph_desc_left" : "pictograph_desc_right"
+  );
   if (m.motionType === MotionType.STATIC || from === to) {
-    return `${hand} hand ${verb} at ${from}${turns}`;
+    return t("pictograph_desc_stationary", {
+      hand: handName,
+      motion: verb,
+      location: from,
+      turns,
+    });
   }
-  return `${hand} hand ${verb} ${from} to ${to}${turns}`;
+  return t("pictograph_desc_moving", {
+    hand: handName,
+    motion: verb,
+    from,
+    to,
+    turns,
+  });
 }
 
 /**
@@ -106,25 +133,34 @@ export function describePictograph(
   const left = p?.motions?.left;
   const right = p?.motions?.right;
   if (!isVisibleMotion(left) && !isVisibleMotion(right))
-    return "Pictograph (empty)";
+    return t("pictograph_desc_empty");
 
   const startG = groupOf(p?.startPlacement);
   const endG = groupOf(p?.endPlacement);
-  const startFull = startG ? (GROUP_NAME[startG] ?? startG) : null;
-  const endFull = endG ? (GROUP_NAME[endG] ?? endG) : null;
+  const startFull = startG
+    ? GROUP_NAME[startG]
+      ? t(GROUP_NAME[startG])
+      : startG
+    : null;
+  const endFull = endG ? (GROUP_NAME[endG] ? t(GROUP_NAME[endG]) : endG) : null;
   const posPhrase =
     startFull && endFull
       ? startG === endG
         ? startFull
-        : `${startFull} to ${endFull}`
+        : t("pictograph_desc_placement_change", {
+            from: startFull,
+            to: endFull,
+          })
       : null;
 
-  const letterPart = p?.letter ? `Letter ${p.letter}` : "Hand pictograph";
+  const letterPart = p?.letter
+    ? t("pictograph_desc_letter", { letter: p.letter })
+    : t("pictograph_desc_hand_only");
   const tndMode =
     opts && "tndMode" in opts
       ? opts.tndMode
       : deriveTnDFromPictograph(p as never).tndMode;
-  const tndPart = tndMode ? TND_NAME[tndMode] : null;
+  const tndPart = tndMode ? t(TND_NAME[tndMode]) : null;
 
   const head = [letterPart, posPhrase, tndPart].filter(Boolean).join(", ");
   const motions = [

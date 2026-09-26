@@ -14,6 +14,7 @@
   import { LEVEL1_READER_CONFIG } from "../../../../routes/(public)/guide/level-1/_data/guide-reader-config";
   import { LEVEL2_READER_CONFIG } from "../../../../routes/(public)/guide/level-2/_data/guide-reader-config";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
   type Level = "1" | "2";
   const STORE_KEY = "guide-active-level";
@@ -46,20 +47,20 @@
       href="/guide/motion-paths"
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="Motion paths guide (opens in a new tab)"
+      aria-label={t("learn_ui_motion_paths_new_tab")}
     >
       <i class="fa-solid fa-draw-polygon" aria-hidden="true"></i>
-      <span>Motion paths</span>
+      <span>{t("learn_ui_motion_paths")}</span>
     </a>
     <a class="lessons-link" href="/learn/concepts">
       <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
-      <span>Interactive lessons</span>
+      <span>{t("learn_ui_interactive_lessons")}</span>
     </a>
     <div class="level-switch">
       <SegmentedControl
         options={[
-          { value: "1", label: "Level 1" },
-          { value: "2", label: "Level 2" },
+          { value: "1", label: t("learn_ui_level_one") },
+          { value: "2", label: t("learn_ui_level_two") },
         ]}
         value={level}
         onchange={(v: Level) => pick(v)}

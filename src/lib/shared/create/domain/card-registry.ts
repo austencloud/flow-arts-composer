@@ -12,6 +12,7 @@ import {
   type GeneratorHelpItem,
 } from "$lib/shared/create/domain/generator-help-content";
 import type { CardColors } from "$lib/shared/create/domain/card-colors";
+import { generatorTourText } from "./generator-tour-display";
 
 export type GeneratorCardSlot = "level" | "grid";
 
@@ -242,10 +243,34 @@ export function getGeneratorCardHelp(
   if (!base) {
     throw new Error(`Missing help content for generator card: ${entry.id}`);
   }
+  const override: Partial<GeneratorHelpItem> | undefined =
+    "helpOverride" in entry ? entry.helpOverride : undefined;
+  const prefix = `card_${entry.id.replaceAll("-", "_")}`;
   return {
     ...base,
-    ...("helpOverride" in entry ? entry.helpOverride : undefined),
+    ...override,
+    ...(override?.name && {
+      name: generatorTourText(`${prefix}_name`, override.name),
+    }),
+    ...(override?.shortDesc && {
+      shortDesc: generatorTourText(`${prefix}_short_desc`, override.shortDesc),
+    }),
+    ...(override?.fullDesc && {
+      fullDesc: generatorTourText(`${prefix}_full_desc`, override.fullDesc),
+    }),
     id: base.id,
+  };
+}
+
+export function getGeneratorCardTourLabel(
+  entry: (typeof CARD_REGISTRY)[number]
+): { header: string; value: string } {
+  const prefix = `card_${entry.id.replaceAll("-", "_")}`;
+  return {
+    header: entry.tourHeader
+      ? generatorTourText(`${prefix}_header`, entry.tourHeader)
+      : "",
+    value: generatorTourText(`${prefix}_value`, entry.tourDefaultValue),
   };
 }
 

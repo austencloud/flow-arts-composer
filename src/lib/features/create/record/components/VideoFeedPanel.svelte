@@ -6,6 +6,7 @@ Handles camera access using MediaDevices API with support for both mobile and de
 Features square aspect ratio for consistent layout and settings dialog for camera controls.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, onMount } from "svelte";
   import CameraSettingsDialog from "./CameraSettingsDialog.svelte";
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
@@ -232,8 +233,8 @@ Features square aspect ratio for consistent layout and settings dialog for camer
       <button
         class="settings-button"
         onclick={openSettings}
-        title="Camera settings"
-        aria-label="Open camera settings"
+        title={t("create_ui_camera_settings")}
+        aria-label={t("create_ui_open_camera_settings")}
       >
         <span class="settings-icon" aria-hidden="true">⚙️</span>
       </button>
@@ -243,7 +244,7 @@ Features square aspect ratio for consistent layout and settings dialog for camer
     {#if isLoading}
       <div class="state-overlay loading-state">
         <ProgressRing percent={-1} size={32} strokeWidth={3} />
-        <p>Accessing camera...</p>
+        <p>{t("create_ui_accessing_camera")}</p>
       </div>
     {:else if error}
       <div class="state-overlay error-state" role="alert" aria-live="assertive">
@@ -255,7 +256,7 @@ Features square aspect ratio for consistent layout and settings dialog for camer
       </div>
     {:else if !isCameraActive}
       <div class="state-overlay inactive-overlay">
-        <p>Camera initializing...</p>
+        <p>{t("create_ui_camera_initializing")}</p>
       </div>
     {/if}
   </div>

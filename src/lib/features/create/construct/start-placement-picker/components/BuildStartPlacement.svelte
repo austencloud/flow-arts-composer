@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import {
     startPlacementManager,
     type StartPlacementPlacement,
@@ -125,10 +126,10 @@
   // wording rather than shipping a button that reads "Use ".
   const applyLabel = $derived(
     isApplying
-      ? "Applying…"
+      ? t("create_deep_applying")
       : placementLabel
-        ? `Use ${placementLabel}`
-        : "Use this placement"
+        ? t("create_deep_use_placement", { label: placementLabel })
+        : t("create_deep_use_this_placement")
   );
 
   function handlePlacementChange(change: PropPlacementChange) {
@@ -187,10 +188,12 @@
       <div
         class="orientation-controls"
         role="group"
-        aria-label="Prop orientations"
+        aria-label={t("create_ui_prop_orientations")}
       >
         <div class="prop-control">
-          <div class="prop-label"><span class="prop-dot"></span>Left prop</div>
+          <div class="prop-label">
+            <span class="prop-dot"></span>{t("create_ui_left_prop")}
+          </div>
           <OrientationCycler
             orientation={leftOrientation}
             onOrientationChange={onLeftOrientationChange}
@@ -212,12 +215,12 @@
       </div>
       {#if onGridModeChange}
         <div class="grid-mode-control">
-          <span class="control-label">Grid</span>
+          <span class="control-label">{t("generator_grid")}</span>
           <SegmentedControl
             options={gridModes}
             value={gridMode}
             onchange={(mode) => void onGridModeChange?.(mode)}
-            ariaLabel="Placement grid"
+            ariaLabel={t("create_deep_placement_grid")}
             color="accent"
             size="md"
           />

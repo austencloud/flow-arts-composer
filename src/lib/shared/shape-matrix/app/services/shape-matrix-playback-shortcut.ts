@@ -9,6 +9,7 @@
  * our own would do none of that and would fire under the About modal.
  */
 import { getKeyboardShortcutManager } from "$lib/shared/keyboard/get-keyboard-shortcut-manager";
+import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
 /**
  * Register Space for one detail view. Returns the unregister function, so an
@@ -47,8 +48,8 @@ export function registerShapeMatrixPlaybackShortcut(
 
   return manager.register({
     id: `shape-matrix.play-pause.${surface}`,
-    label: "Play / Pause",
-    description: "Toggle the Shape Engine animation",
+    label: t("shape_engine_play_pause"),
+    description: t("shape_engine_toggle_animation"),
     // The manager normalizes the event's key before matching, and " " comes
     // out of that as "Space". Registering the raw character silently never
     // fires -- every other Space binding in the app carries the same note.

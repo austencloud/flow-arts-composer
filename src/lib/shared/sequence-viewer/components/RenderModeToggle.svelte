@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   /**
    * RenderModeToggle
    *
@@ -34,8 +35,8 @@
     class="rail-chip mode-chip"
     role="switch"
     aria-checked={renderMode === "3d"}
-    aria-label={renderMode === "3d" ? "Switch to 2D" : "Switch to 3D"}
-    data-tooltip={renderMode === "3d" ? "Switch to 2D" : "Switch to 3D"}
+    aria-label={renderMode === "3d" ? t("viewer_detail_switch_to_2d") : t("viewer_detail_switch_to_3d")}
+    data-tooltip={renderMode === "3d" ? t("viewer_detail_switch_to_2d") : t("viewer_detail_switch_to_3d")}
     data-ghost="safe"
     data-ghost-kind="curio"
     data-ghost-label={renderMode === "3d" ? "2D" : "3D"}

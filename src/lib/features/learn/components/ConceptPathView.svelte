@@ -22,6 +22,7 @@
   import CategoryHeader from "./CategoryHeader.svelte";
   import ConceptLevelMap from "./ConceptLevelMap.svelte";
   import { mutateCurrentUrl } from "$lib/shared/navigation/services/url-state";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
   let {
     onConceptClick,
@@ -190,15 +191,12 @@
   <section class="launch-zone" aria-labelledby="course-title">
     <header class="course-intro" style:view-transition-name="launchpad-guide">
       <div>
-        <h1 id="course-title">Interactive TKA lessons</h1>
-        <p>
-          Start with the grid and build toward reading words. Each lesson gives
-          you one thing to play with at a time.
-        </p>
+        <h1 id="course-title">{t("learn_ui_interactive_lessons")}</h1>
+        <p>{t("learn_ui_course_intro")}</p>
       </div>
       <a class="read-guide-link" href="/guide">
         <i class="fa-solid fa-book-open" aria-hidden="true"></i>
-        <span>Read the Guide</span>
+        <span>{t("learn_ui_read_guide")}</span>
       </a>
     </header>
 
@@ -208,8 +206,8 @@
           <div class="celebration-icon">
             <i class="fa-solid fa-trophy" aria-hidden="true"></i>
           </div>
-          <h2>Level 1 Complete!</h2>
-          <p>You've completed every interactive lesson currently available.</p>
+          <h2>{t("learn_ui_level_complete")}</h2>
+          <p>{t("learn_ui_all_lessons_complete")}</p>
         </div>
       {:else}
         <HeroConceptCard
@@ -220,7 +218,7 @@
 
         {#if nextUpConcept()}
           <p class="next-lesson">
-            After this: <span>{nextUpConcept()?.name}</span>
+            {t("learn_ui_after_this")} <span>{nextUpConcept()?.name}</span>
           </p>
         {/if}
       {/if}
@@ -229,8 +227,10 @@
 
   <section class="lesson-library" aria-labelledby="lesson-library-title">
     <header class="library-heading">
-      <h2 id="lesson-library-title">Available lessons</h2>
-      <span>{availableConcepts.length} lessons · Choose any topic</span>
+      <h2 id="lesson-library-title">{t("learn_ui_available_lessons")}</h2>
+      <span
+        >{t("learn_ui_lesson_count", { count: availableConcepts.length })}</span
+      >
     </header>
     <div class="all-concepts">
       {#each availableCategories as category}

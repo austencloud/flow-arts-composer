@@ -211,6 +211,7 @@ export interface CommandPaletteItem {
   /** Resolve labels that depend on the active editor when the palette opens */
   resolvePresentation?: () => {
     label?: string;
+    parentLabel?: string;
     description?: string;
   };
 

@@ -9,6 +9,7 @@
   } from "$lib/shared/analytics/auth-events";
   import { clearAuthSubmissionBridge } from "$lib/shared/auth/services/auth-analytics-bridge";
   import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte";
 
   interface Props {
     onFacebookAuth: () => Promise<void>;
@@ -39,9 +40,9 @@
     <div class="auth-icon-wrapper">
       <i class="fas fa-user-astronaut" aria-hidden="true"></i>
     </div>
-    <h2 class="auth-title">Sign In to Flow Arts Composer</h2>
+    <h2 class="auth-title">{t("auth_sign_in_composer")}</h2>
     <p class="auth-subtitle">
-      Save your progress, sync across devices, and access your creations.
+      {t("auth_save_sync_creations")}
     </p>
   </div>
 
@@ -49,7 +50,11 @@
     <SocialAuthCompact mode={authMode} {onFacebookAuth} />
 
     <div class="auth-divider">
-      <span>or {authMode === "signin" ? "sign in" : "sign up"} with email</span>
+      <span
+        >{authMode === "signin"
+          ? t("auth_or_sign_in_email")
+          : t("auth_or_sign_up_email")}</span
+      >
     </div>
 
     <EmailAuthTabs bind:mode={authMode} />

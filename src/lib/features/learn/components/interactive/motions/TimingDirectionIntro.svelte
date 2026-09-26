@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount, onDestroy } from "svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
@@ -44,39 +45,51 @@
   ];
   const placementCopy = $derived(
     placement === "alpha"
-      ? "Opposite points."
+      ? tDynamic("learn_timing_intro_placement_alpha")
       : placement === "beta"
-        ? "The same point."
-        : "A right angle apart."
+        ? tDynamic("learn_timing_intro_placement_beta")
+        : tDynamic("learn_timing_intro_placement_gamma")
   );
   const timingCopy = $derived(
     timing === "together"
-      ? "At the same time."
+      ? tDynamic("learn_timing_intro_timing_together")
       : timing === "split"
-        ? "Taking turns, evenly spaced."
-        : "A short gap, then a long gap."
+        ? tDynamic("learn_timing_intro_timing_split")
+        : tDynamic("learn_timing_intro_timing_quarter")
   );
   const timingDescription = $derived(
     timing === "together"
-      ? "Both downbeats happen together."
+      ? tDynamic("learn_timing_intro_description_together")
       : timing === "split"
-        ? "Downbeats alternate, half a cycle apart."
-        : "Downbeats happen a quarter cycle apart."
+        ? tDynamic("learn_timing_intro_description_split")
+        : tDynamic("learn_timing_intro_description_quarter")
   );
   const placementOptions = [
     { value: "alpha", label: "Alpha" },
     { value: "beta", label: "Beta" },
     { value: "gamma", label: "Gamma" },
   ];
-  const timingOptions = [
-    { value: "together" as const, label: "Together" },
-    { value: "split" as const, label: "Split" },
-    { value: "quarter" as const, label: "Quarter" },
-  ];
-  const directionOptions = [
-    { value: "same", label: "Same" },
-    { value: "opposite", label: "Opposite" },
-  ];
+  const timingOptions = $derived([
+    {
+      value: "together" as const,
+      label: tDynamic("learn_timing_intro_option_together"),
+    },
+    {
+      value: "split" as const,
+      label: tDynamic("learn_timing_intro_option_split"),
+    },
+    {
+      value: "quarter" as const,
+      label: tDynamic("learn_timing_intro_option_quarter"),
+    },
+  ]);
+  const directionOptions = $derived([
+    { value: "same", label: tDynamic("learn_timing_intro_option_same") },
+    {
+      value: "opposite",
+      label: tDynamic("learn_timing_intro_option_opposite"),
+    },
+  ]);
 
   onMount(() => {
     loop.setActivityGate(gate);
@@ -124,18 +137,21 @@
 <div
   class="concepts"
   role="group"
-  aria-label="Placement, timing, and direction"
+  aria-label={tDynamic("learn_timing_intro_group_aria")}
 >
-  <section class="concept" aria-label="Placement">
+  <section
+    class="concept"
+    aria-label={tDynamic("learn_timing_intro_placement_heading")}
+  >
     <header>
-      <h3>Placement</h3>
-      <p>Where things are right now.</p>
+      <h3>{tDynamic("learn_timing_intro_placement_heading")}</h3>
+      <p>{tDynamic("learn_timing_intro_placement_explanation")}</p>
     </header>
     <div class="picture-slot">
       <div
         class="picture"
         role="group"
-        aria-label="Click a point to change placement"
+        aria-label={tDynamic("learn_timing_intro_change_placement_aria")}
       >
         <svg viewBox="0 0 320 300" aria-hidden="true">
           <circle class="placement-ring" cx="160" cy="150" r="88" />
@@ -164,9 +180,13 @@
             style:left={`${point.x}%`}
             style:top={`${point.y}%`}
             onclick={() => (placementAngle = point.angle)}
-            aria-label={`Place the second dot at the ${point.name}`}
+            aria-label={tDynamic("learn_timing_intro_place_dot_aria", {
+              point: tDynamic(`learn_timing_intro_point_${point.name}`),
+            })}
             aria-pressed={placementAngle === point.angle}
-            title={`Place the second dot at the ${point.name}`}
+            title={tDynamic("learn_timing_intro_place_dot_aria", {
+              point: tDynamic(`learn_timing_intro_point_${point.name}`),
+            })}
           ></button>
         {/each}
       </div>
@@ -180,17 +200,21 @@
         value={placement}
         onchange={setPlacement}
         semantics="radiogroup"
-        ariaLabel="Placement example"
+        ariaLabel={tDynamic("learn_timing_intro_placement_example_aria")}
         color="accent"
         density="tight"
       />
     </div>
   </section>
 
-  <section class="concept" aria-label="Timing" use:renderGateTarget={gate}>
+  <section
+    class="concept"
+    aria-label={tDynamic("learn_timing_intro_timing_heading")}
+    use:renderGateTarget={gate}
+  >
     <header>
-      <h3>Timing</h3>
-      <p>A pulse marks each downbeat.</p>
+      <h3>{tDynamic("learn_timing_intro_timing_heading")}</h3>
+      <p>{tDynamic("learn_timing_intro_timing_explanation")}</p>
     </header>
     <div class="picture-slot">
       <div class="picture pulse-picture">
@@ -217,7 +241,9 @@
         <div class="pulse-transport">
           <PanelButton
             onclick={() => (playing = !playing)}
-            ariaLabel={playing ? "Pause downbeats" : "Play downbeats"}
+            ariaLabel={playing
+              ? tDynamic("learn_timing_intro_pause_downbeats")
+              : tDynamic("learn_timing_intro_play_downbeats")}
           >
             <svg class="transport-icon" viewBox="0 0 20 20" aria-hidden="true"
               >{#if playing}<path
@@ -244,23 +270,26 @@
         value={timing}
         onchange={setTiming}
         semantics="radiogroup"
-        ariaLabel="Timing example"
+        ariaLabel={tDynamic("learn_timing_intro_timing_example_aria")}
         color="accent"
         density="tight"
       />
     </div>
   </section>
 
-  <section class="concept" aria-label="Direction">
+  <section
+    class="concept"
+    aria-label={tDynamic("learn_timing_intro_direction_heading")}
+  >
     <header>
-      <h3>Direction</h3>
-      <p>Which way things rotate.</p>
+      <h3>{tDynamic("learn_timing_intro_direction_heading")}</h3>
+      <p>{tDynamic("learn_timing_intro_direction_explanation")}</p>
     </header>
     <div class="picture-slot">
       <div
         class="picture"
         role="group"
-        aria-label="Click either arrow to flip its rotation"
+        aria-label={tDynamic("learn_timing_intro_flip_arrow_aria")}
       >
         <svg viewBox="0 0 320 300" aria-hidden="true">
           {#each rotations as rotation, index}
@@ -284,8 +313,22 @@
             class="arrow-button"
             style:left={`${(index === 0 ? 83 : 237) / 3.2}%`}
             onclick={() => (rotations[index] = -rotation)}
-            aria-label={`Flip ${index === 0 ? "left" : "right"} arrow. Currently ${rotation === 1 ? "clockwise" : "counterclockwise"}.`}
-            title={`Flip ${index === 0 ? "left" : "right"} arrow`}
+            aria-label={tDynamic("learn_timing_intro_flip_arrow_state_aria", {
+              side:
+                index === 0
+                  ? tDynamic("learn_timing_intro_point_left")
+                  : tDynamic("learn_timing_intro_point_right"),
+              direction:
+                rotation === 1
+                  ? tDynamic("learn_timing_intro_clockwise")
+                  : tDynamic("learn_timing_intro_counterclockwise"),
+            })}
+            title={tDynamic("learn_timing_intro_flip_arrow_title", {
+              side:
+                index === 0
+                  ? tDynamic("learn_timing_intro_point_left")
+                  : tDynamic("learn_timing_intro_point_right"),
+            })}
           ></button>
         {/each}
       </div>
@@ -294,8 +337,8 @@
       <Crossfade key={direction}
         ><p>
           {direction === "same"
-            ? "Circling the same way."
-            : "Circling opposite ways."}
+            ? tDynamic("learn_timing_intro_direction_same")
+            : tDynamic("learn_timing_intro_direction_opposite")}
         </p></Crossfade
       >
     </div>
@@ -305,7 +348,7 @@
         value={direction}
         onchange={setDirection}
         semantics="radiogroup"
-        ariaLabel="Direction example"
+        ariaLabel={tDynamic("learn_timing_intro_direction_example_aria")}
         color="accent"
         density="tight"
       />

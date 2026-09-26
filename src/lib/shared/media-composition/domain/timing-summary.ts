@@ -43,9 +43,9 @@ export function summarizeTiming(input: {
 }): TimingSummary {
   const { section, resolved } = input;
   const fit = resolved?.fit ?? null;
-  const tapCount = section.taps.filter(
-    (tap) => tap >= section.startSeconds && tap <= section.endSeconds
-  ).length;
+  // A part's taps are the ones whose landings it draws, which near a nudged
+  // cut can sit just outside it.
+  const tapCount = section.taps.length;
   const base = { suggestedBpm: null, ignoredLeadingTaps: 0 };
 
   if (!fit) {
@@ -56,10 +56,26 @@ export function summarizeTiming(input: {
     };
   }
   if (tapCount === 0) {
+    // A part that keeps counting runs on from the landing it was cut at,
+    // unless the performance has ended by then: then it holds that pose.
+    const count = section.beatOnePosition ?? 1;
+    const end = resolved?.endPosition ?? null;
+    const name = (position: number) =>
+      landingName(position, input.moveBeats.length).replace(/^Move/, "move");
+    if (end !== null && end <= count) {
+      const pose = end === 0 ? "the opening pose" : name(end);
+      return {
+        ...base,
+        tone: "tapping",
+        text: resolved?.endStored
+          ? `Held at ${pose}, where the performance ends.`
+          : `Held at ${pose}, where the taps stop. Tap along to count on.`,
+      };
+    }
     return {
       ...base,
       tone: "tapping",
-      text: `Running at ${bpmText(section.bpm)} BPM from move 1. Tap along to fit the video's own timing.`,
+      text: `Running at ${bpmText(section.bpm)} BPM from ${count > 1 ? name(count) : "move 1"}. Tap along to fit the video's own timing.`,
     };
   }
 

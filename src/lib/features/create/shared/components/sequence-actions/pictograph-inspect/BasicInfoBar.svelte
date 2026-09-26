@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * Basic Info Bar
    *
@@ -65,7 +66,9 @@
   <div class="basic-line">
     {#if displayData?.letter}<span class="bl letter">{displayData.letter}</span
       ><span class="sep">·</span>{/if}
-    <span class="bl">{leftMotion?.gridMode ?? rightMotion?.gridMode ?? "—"}</span>
+    <span class="bl"
+      >{leftMotion?.gridMode ?? rightMotion?.gridMode ?? "—"}</span
+    >
     <span class="sep">·</span>
     <span class="bl">{activePropType}</span>
     {#if propDiffers}<span
@@ -102,11 +105,12 @@
       class="copy-btn"
       onclick={() =>
         onCopy(formatBasicInfo(displayData, leftMotion, rightMotion), "basic")}
-      title="Copy Basic Info"
-      aria-label="Copy Basic Info"
+      title={t("create_ui_copy_basic_info")}
+      aria-label={t("create_ui_copy_basic_info")}
     >
       <i class="fas fa-copy" aria-hidden="true"
-      ></i>{#if copiedSection === "basic"}<span class="copied">Copied!</span
+      ></i>{#if copiedSection === "basic"}<span class="copied"
+          >{t("browse_copied")}</span
         >{/if}
     </button>
   </div>

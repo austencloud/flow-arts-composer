@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
   import ViewerOverflowMenu from "./ViewerOverflowMenu.svelte";
 
@@ -10,7 +11,7 @@
   bind:isOpen={viewerOpen}
   placement="bottom"
   showHandle={false}
-  ariaLabel="Sequence Viewer"
+  ariaLabel={t("viewer_detail_sequence_viewer")}
   class="overflow-menu-regression-viewer"
 >
   <ViewerOverflowMenu isSaved={saved} onSave={() => (saved = true)} />

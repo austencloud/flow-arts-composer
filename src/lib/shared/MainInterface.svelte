@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { getLanSyncCoordinator } from "$lib/shared/lan-sync/get-lan-sync-coordinator";
   import { getSyncRoomDiscovery } from "$lib/shared/lan-sync/get-sync-room-discovery";
   /**
@@ -256,7 +257,7 @@
 </script>
 
 <!-- Skip to main content link for keyboard/screen reader users -->
-<a href="#main-content" class="skip-link">Skip to main content</a>
+<a href="#main-content" class="skip-link">{t("nav_skip_main")}</a>
 
 <!-- Admin Toolbar (F9) -->
 <AdminToolbar />

@@ -1,5 +1,6 @@
 <!-- Profile skill families. Only families with real skill splits open details. -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import {
     PROFILE_PROP_FAMILIES,
     getProfilePropFamilyByRepresentative,
@@ -34,7 +35,7 @@
 </script>
 
 <div class="family-picker">
-  <div class="family-grid" role="group" aria-label="Prop skills">
+  <div class="family-grid" role="group" aria-label={t("nav_ui_prop_skills")}>
     {#each PROFILE_PROP_FAMILIES as family (family.representative)}
       <PropFamilyCard
         {family}

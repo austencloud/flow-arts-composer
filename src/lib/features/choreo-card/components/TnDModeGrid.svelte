@@ -10,13 +10,17 @@
   reason on the chip.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import type { Snippet } from "svelte";
   import RelationshipChoiceChip from "$lib/shared/shape-matrix/components/RelationshipChoiceChip.svelte";
   import {
     MODE_FAMILY_ID,
-    MODE_SHORT_WORDS,
-    MODE_WORDS,
     type VtgMode,
   } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+  import {
+    localizedModeWords,
+    localizedElementName,
+  } from "$lib/shared/shape-matrix/domain/shape-matrix-display";
   import { TND_BY_FAMILY } from "$lib/features/choreo-card/domain/tnd-element";
 
   let {
@@ -25,7 +29,8 @@
     disabledModes = [],
     reasons = {},
     fullLabels = false,
-    ariaLabel = "Timing and direction",
+    ariaLabel = t("shape_engine_timing_direction"),
+    modeContent,
     onpick,
   }: {
     selected: VtgMode | null;
@@ -38,6 +43,8 @@
     /** Uses complete words when the host gives each choice enough room. */
     fullLabels?: boolean;
     ariaLabel?: string;
+    /** Lets a host compose around a chip without changing the default grid. */
+    modeContent?: Snippet<[VtgMode, Snippet]>;
     onpick: (mode: VtgMode) => void;
   } = $props();
 
@@ -47,16 +54,10 @@
 
   const chips = GRID_ORDER.map((mode) => ({
     mode,
-    words: MODE_WORDS[mode],
-    shortWords: MODE_SHORT_WORDS[mode],
     el: TND_BY_FAMILY[MODE_FAMILY_ID[mode]],
   })).filter(
     (c): c is typeof c & { el: NonNullable<typeof c.el> } => c.el !== undefined
   );
-
-  function elementName(raw: string): string {
-    return raw.charAt(0).toUpperCase() + raw.slice(1);
-  }
 
   function isBlocked(mode: VtgMode): boolean {
     return disabledModes.includes(mode);
@@ -65,7 +66,7 @@
   // The reason joins the name so a screen reader hears why the chip is off
   // without hunting for the tooltip.
   function chipLabel(c: (typeof chips)[number]): string {
-    const base = `${c.words.timing} ${c.words.direction}, ${elementName(c.el.element)} (${c.mode})`;
+    const base = `${localizedModeWords(c.mode).timing} ${localizedModeWords(c.mode).direction}, ${localizedElementName(c.el.element)} (${c.mode})`;
     const reason = isBlocked(c.mode) ? reasons[c.mode] : undefined;
     return reason ? `${base}, ${reason}` : base;
   }
@@ -73,18 +74,25 @@
 
 <div class="mode-grid" role="radiogroup" aria-label={ariaLabel}>
   {#each chips as c (c.mode)}
-    <RelationshipChoiceChip
-      compact
-      accent={c.el.accentColor}
-      icon={c.el.iconPath}
-      timing={fullLabels ? c.words.timing : c.shortWords.timing}
-      direction={fullLabels ? c.words.direction : c.shortWords.direction}
-      active={selected === c.mode}
-      disabled={disabled || isBlocked(c.mode)}
-      title={isBlocked(c.mode) ? (reasons[c.mode] ?? null) : null}
-      ariaLabel={chipLabel(c)}
-      onpick={() => onpick(c.mode)}
-    />
+    {#snippet defaultChip()}
+      <RelationshipChoiceChip
+        compact
+        accent={c.el.accentColor}
+        icon={c.el.iconPath}
+        timing={localizedModeWords(c.mode, !fullLabels).timing}
+        direction={localizedModeWords(c.mode, !fullLabels).direction}
+        active={selected === c.mode}
+        disabled={disabled || isBlocked(c.mode)}
+        title={isBlocked(c.mode) ? (reasons[c.mode] ?? null) : null}
+        ariaLabel={chipLabel(c)}
+        onpick={() => onpick(c.mode)}
+      />
+    {/snippet}
+    {#if modeContent}
+      {@render modeContent(c.mode, defaultChip)}
+    {:else}
+      {@render defaultChip()}
+    {/if}
   {/each}
 </div>
 

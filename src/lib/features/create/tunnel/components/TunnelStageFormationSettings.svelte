@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { flip } from "svelte/animate";
   import { growFade, flipDuration } from "$lib/shared/transitions/motion";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
@@ -78,7 +79,8 @@
           : "positions"}
       </span>
     </div>
-    <span class="summary-rule">Every authored performer stays represented.</span
+    <span class="summary-rule"
+      >{t("create_ui_every_authored_performer_stays_represented")}</span
     >
   </div>
 
@@ -96,8 +98,10 @@
 
   <section class="frame-controls" aria-labelledby="position-frame-heading">
     <div class="section-heading">
-      <strong id="position-frame-heading">Position frame</strong>
-      <span>Capacity, not performer count</span>
+      <strong id="position-frame-heading"
+        >{t("create_ui_position_frame")}</strong
+      >
+      <span>{t("create_ui_capacity_not_performer_count")}</span>
     </div>
     <div class="frame-row">
       <span class="row-label">Positions</span>
@@ -139,8 +143,10 @@
 
   <section class="appearance-section" aria-labelledby="appearances-heading">
     <div class="section-heading">
-      <strong id="appearances-heading">Stage appearances</strong>
-      <span>Who occupies each visible position</span>
+      <strong id="appearances-heading"
+        >{t("create_ui_stage_appearances")}</strong
+      >
+      <span>{t("create_ui_who_occupies_each_visible_position")}</span>
     </div>
 
     <div class="appearance-list">

@@ -33,6 +33,8 @@ import type { PresentationIntent } from "$lib/shared/foundation/domain/models/pr
 export interface LibraryActionHandlerDeps {
   getSequence: () => SequenceData | null;
   getIsOwned: () => boolean;
+  /** Captures the current path edit and how to accept it after persistence. */
+  getPathSaveIntent?: () => { acceptSaved: () => void } | null;
   getLeftPropType: () => PropType | undefined;
   getRightPropType: () => PropType | undefined;
   getCatDogModeEnabled: () => boolean | undefined;
@@ -188,6 +190,11 @@ export function createLibraryActionHandler(deps: LibraryActionHandlerDeps) {
       return;
     }
     if (isSaving || saveProps) return;
+    const pathSave = deps.getPathSaveIntent?.();
+    if (pathSave && deps.getIsOwned() && isOwnedLibraryRecord) {
+      if (await savePaths()) pathSave.acceptSaved();
+      return;
+    }
     saveProps = captureActivePropConfig({
       leftPropType: deps.getLeftPropType(),
       rightPropType: deps.getRightPropType(),
@@ -248,12 +255,20 @@ export function createLibraryActionHandler(deps: LibraryActionHandlerDeps) {
     const sequence = deps.getSequence();
     if (!sequence || !deps.getIsOwned() || !isOwnedLibraryRecord || isSaving)
       return false;
+    const revision = savedStateRevision;
     isSaving = true;
     try {
       await getLibraryRepository().updateSequence(sequence.id, {
         steps: sequence.steps,
         metadata: sequence.metadata,
       });
+      if (
+        revision === savedStateRevision &&
+        deps.getSequence()?.id === sequence.id
+      ) {
+        savedStateRevision += 1;
+        isSaved = true;
+      }
       showToast("Motion paths saved", "success");
       return true;
     } catch (error) {
@@ -298,7 +313,14 @@ export function createLibraryActionHandler(deps: LibraryActionHandlerDeps) {
       return presentationSummary;
     },
     get isSaved() {
-      return isSaved;
+      return (
+        isSaved &&
+        !(
+          deps.getIsOwned() &&
+          isOwnedLibraryRecord &&
+          !!deps.getPathSaveIntent?.()
+        )
+      );
     },
     get isSaving() {
       return isSaving;

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
   import { onMount } from "svelte";
@@ -116,7 +117,7 @@
     <!-- The card IS the preview. The title says "Send sequence" and the card
          shows the word, so a caption repeating both only stole height from
          the card it captioned. -->
-    <article class="sequence-preview" aria-label="Attachment being shared">
+    <article class="sequence-preview" aria-label={t("inbox_ui_attachment_being_shared")}>
       <div class="preview-thumbnail">
         {#if payload && previewThumbnailUrl && !thumbnailFailed}
           <img
@@ -132,7 +133,7 @@
         {:else if previewPending}
           <div class="thumbnail-fallback" role="status">
             <i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i>
-            <span>Preparing card…</span>
+            <span>{t("inbox_ui_preparing_card")}</span>
           </div>
         {:else}
           <div class="thumbnail-fallback" aria-hidden="true">
@@ -151,8 +152,8 @@
         id="sequence-share-message"
         class="message-input"
         bind:value={send.message}
-        aria-label="Note (optional)"
-        placeholder="Add a note (optional)"
+        aria-label={t("inbox_ui_note_optional")}
+        placeholder={t("inbox_ui_add_a_note_optional")}
         maxlength={SEND_MESSAGE_MAX}
         rows={1}
         disabled={send.sending}

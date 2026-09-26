@@ -6,6 +6,7 @@
   Hides completely when no history is available.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
   import { fade } from "svelte/transition";
@@ -32,8 +33,8 @@
   <button
     class="back-button"
     onclick={handleBack}
-    aria-label="Go back to previous panel"
-    title="Go back"
+    aria-label={t("create_ui_go_back_to_previous_panel")}
+    title={t("learn_go_back")}
     transition:fade={{ duration: 200 }}
   >
     <svg

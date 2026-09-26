@@ -184,6 +184,7 @@
     "/guide",
     "/atlas",
     "/faq",
+    "/tricks",
     "/learn/staff-spinning-choreography",
     // The archive, moved off /notation on 2026-09-03. A single page, not a
     // subtree: nothing renders under /history.

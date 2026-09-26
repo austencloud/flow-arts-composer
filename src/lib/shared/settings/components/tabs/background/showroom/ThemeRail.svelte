@@ -1,5 +1,7 @@
 <script lang="ts">
   import { BackgroundType } from "@austencloud/backgrounds";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import type { TranslationKey } from "$lib/shared/i18n/i18n-types";
 
   import type { ShowroomTheme } from "./theme-showroom-data";
 
@@ -13,15 +15,19 @@
 
   let { themes, previewedType, selectedTheme, onPreview, onPrepare }: Props =
     $props();
+
+  function themeName(theme: ShowroomTheme): string {
+    return t(`settings_theme_${theme.id}` as TranslationKey);
+  }
 </script>
 
-<aside class="theme-browser" aria-label="Environment choices">
+<aside class="theme-browser" aria-label={t("settings_theme_choices")}>
   <div class="browser-header">
     <div>
-      <span class="browser-label">Environments</span>
-      <strong>{selectedTheme.label} selected</strong>
+      <span class="browser-label">{t("settings_showroom_environments")}</span>
+      <strong>{t("settings_showroom_selected_theme", { theme: themeName(selectedTheme) })}</strong>
     </div>
-    <span class="scene-count">{themes.length} scenes</span>
+    <span class="scene-count">{t("settings_showroom_scene_count", { count: themes.length })}</span>
   </div>
 
   <div class="theme-grid">
@@ -35,7 +41,7 @@
         style:--card-gradient={theme.card.gradient}
         data-theme={theme.id}
         aria-pressed={previewedType === theme.id}
-        aria-label={`Preview ${theme.label}${selectedTheme.id === theme.id ? ", selected" : ""}`}
+        aria-label={t(selectedTheme.id === theme.id ? "settings_showroom_preview_selected" : "settings_showroom_preview_theme", { theme: themeName(theme) })}
         onpointerenter={() => onPrepare(theme.id)}
         onfocus={() => onPrepare(theme.id)}
         onclick={() => onPreview(theme.id)}
@@ -53,7 +59,7 @@
         {/if}
         <span class="card-label">
           <i class={`fas ${theme.icon}`} aria-hidden="true"></i>
-          {theme.label}
+          {themeName(theme)}
         </span>
       </button>
     {/each}

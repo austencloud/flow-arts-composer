@@ -20,6 +20,7 @@ Two modes:
              yet, e.g. the save panel); the parent applies membership on save.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { collectionsState } from "$lib/features/library/state/collections-state.svelte";
   import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
@@ -195,7 +196,11 @@ Two modes:
       {/each}
     </div>
   {:else}
-    <div class="tile-grid" role="group" aria-label="Collections">
+    <div
+      class="tile-grid"
+      role="group"
+      aria-label={t("tab_library_collections")}
+    >
       {#each collections as c (c.id)}
         {@const selected = isMember(c)}
         {@const bulkMembers = bulkMemberCount(c)}
@@ -240,7 +245,7 @@ Two modes:
                 >{bulkMembers} of {bulkCount} already here</span
               >
             {:else if c.id === currentCollectionId}
-              <span class="tile-here">Currently here</span>
+              <span class="tile-here">{t("library_ui_currently_here")}</span>
             {:else}
               <span class="tile-count">{countLabel(c.sequenceCount)}</span>
             {/if}
@@ -263,8 +268,8 @@ Two modes:
           <input
             type="text"
             class="name-field"
-            placeholder="Collection name"
-            aria-label="New collection name"
+            placeholder={t("library_ui_collection_name")}
+            aria-label={t("library_ui_new_collection_name")}
             bind:value={newName}
             onkeydown={handleInputKeydown}
             maxlength="60"
@@ -277,7 +282,7 @@ Two modes:
             disabled={!newName.trim() ||
               creating ||
               addingCollectionId !== null}
-            aria-label="Create collection"
+            aria-label={t("library_ui_create_collection")}
           >
             <i class="fas fa-check" aria-hidden="true"></i>
           </button>
@@ -293,7 +298,7 @@ Two modes:
             <i class="fas fa-plus" aria-hidden="true"></i>
           </span>
           <span class="tile-text">
-            <span class="tile-name">New collection</span>
+            <span class="tile-name">{t("library_ui_new_collection")}</span>
           </span>
         </button>
       {/if}

@@ -5,6 +5,7 @@
   Opens trail settings sheet for the specific canvas.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   let {
     canvasId,
     onOpenSettings,
@@ -22,8 +23,8 @@
   <button
     class="settings-btn"
     onclick={handleClick}
-    aria-label="Canvas settings"
-    title="Trail & display settings"
+    aria-label={t("compose_ui_canvas_settings")}
+    title={t("compose_ui_trail_display_settings")}
   >
     <i class="fas fa-cog" aria-hidden="true"></i>
   </button>

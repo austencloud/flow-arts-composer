@@ -14,17 +14,16 @@
   this page have never met one; the question mark opens the full four-level
   explanation in About, where the rest of the vocabulary already lives. -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import LevelSelector from "$lib/shared/components/LevelSelector.svelte";
   import { flyFade } from "$lib/shared/transitions/motion";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
-  import {
-    SHAPE_MATRIX_LEVELS,
-    SHAPE_MATRIX_LEVEL_DESCRIPTIONS,
-  } from "../shape-matrix-levels";
+  import { localizedLevelDescription } from "../../domain/shape-matrix-display";
+  import { SHAPE_MATRIX_LEVELS } from "../shape-matrix-levels";
 
   const appState = getShapeMatrixAppContext();
 
-  const current = $derived(SHAPE_MATRIX_LEVEL_DESCRIPTIONS[appState.level]);
+  const current = $derived(localizedLevelDescription(appState.level));
 </script>
 
 <!-- .control-cell and .control-label are the band's own grammar, styled by
@@ -32,7 +31,7 @@
 <div class="control-cell difficulty-control">
   <span class="control-caption">
     <span class="control-label" id="shape-matrix-difficulty-label"
-      >Difficulty</span
+      >{t("shape_engine_difficulty")}</span
     >
     <!-- The name changes width with the level. Every name sits hidden in the
          same cell as the live one, so the slot is always as wide as the
@@ -41,7 +40,7 @@
     <span class="level-name-slot" aria-live="polite">
       {#each SHAPE_MATRIX_LEVELS as level (level)}
         <span class="level-name ghost" aria-hidden="true"
-          >{SHAPE_MATRIX_LEVEL_DESCRIPTIONS[level].name}</span
+          >{localizedLevelDescription(level).name}</span
         >
       {/each}
       {#key appState.level}
@@ -53,16 +52,16 @@
     <LevelSelector
       value={appState.level}
       levels={SHAPE_MATRIX_LEVELS}
-      describe={(level) => SHAPE_MATRIX_LEVEL_DESCRIPTIONS[level]}
+      describe={localizedLevelDescription}
       onchange={appState.setLevel}
       compact={true}
-      ariaLabel="Difficulty level"
+      ariaLabel={t("shape_engine_difficulty_level")}
     />
     <button
       type="button"
       class="control-info"
-      aria-label="What the difficulty levels mean"
-      title="What the difficulty levels mean"
+      aria-label={t("shape_engine_difficulty_help")}
+      title={t("shape_engine_difficulty_help")}
       onclick={() => appState.openAbout("levels")}
     >
       <i class="fas fa-circle-question" aria-hidden="true"></i>

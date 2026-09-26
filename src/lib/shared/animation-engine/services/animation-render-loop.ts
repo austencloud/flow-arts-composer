@@ -422,6 +422,7 @@ export class AnimationRenderLoop {
       this.onEffectError = config.onEffectError ?? null;
     if (config.mandalaOverlay !== undefined) {
       this.mandalaOverlay = config.mandalaOverlay;
+      // A newly enabled guide must match the already-measured prop canvas.
       this.mandalaOverlay?.resize(
         this.canvasFrame.width,
         this.canvasFrame.height
@@ -1174,7 +1175,10 @@ export class AnimationRenderLoop {
         }
       | undefined
   ):
-    | { left: RenderedPropTransform | null; right: RenderedPropTransform | null }
+    | {
+        left: RenderedPropTransform | null;
+        right: RenderedPropTransform | null;
+      }
     | undefined {
     const { x, y } = this.offset;
     if (!transforms || (x === 0 && y === 0)) return transforms;
@@ -1281,6 +1285,10 @@ export class AnimationRenderLoop {
 
     const params = this.getFrameParamsCallback();
     const { trailSettings, isPlaying, virtualTime } = params;
+    // The sprites actually on the canvas (fan build, model look) decide where
+    // the tips are; a renderer without the accessor falls back to notation.
+    const loadedPropRenderKeys =
+      this.renderer.getLoadedPropRenderKeys?.() ?? null;
 
     // Use virtual time if provided (export mode), otherwise fallback to RAF timestamp
     const effectiveTime = virtualTime ?? currentTime;
@@ -1302,6 +1310,8 @@ export class AnimationRenderLoop {
           rightProp: params.props.rightProp,
           leftPropFlipped: params.leftPropFlipped ?? false,
           rightPropFlipped: params.rightPropFlipped ?? false,
+          leftPropRenderKey: loadedPropRenderKeys?.left ?? null,
+          rightPropRenderKey: loadedPropRenderKeys?.right ?? null,
           additionalLayers:
             params.props.additionalLayers.length > 0
               ? params.props.additionalLayers
@@ -1418,6 +1428,11 @@ export class AnimationRenderLoop {
 
     const dtSeconds = providedDtSeconds ?? (rafGap > 0 ? rafGap / 1000 : 0.016);
 
+    // The sprites actually on the canvas (fan build, model look) decide where
+    // the tips are; a renderer without the accessor falls back to notation.
+    const loadedPropRenderKeys =
+      this.renderer.getLoadedPropRenderKeys?.() ?? null;
+
     // Frame budget monitoring: measure render time for adaptive quality
     const frameStart = this.frameBudgetMonitor?.beginFrame() ?? 0;
 
@@ -1521,7 +1536,8 @@ export class AnimationRenderLoop {
       dtSeconds,
       currentTime,
       effectiveLeftMotionVisible,
-      effectiveRightMotionVisible
+      effectiveRightMotionVisible,
+      loadedPropRenderKeys
     );
 
     // Build additional layer render data
@@ -1627,8 +1643,13 @@ export class AnimationRenderLoop {
         // signals: those signals can arrive one render tick later than the new
         // frame parameters. The overlay keeps its painted accumulator, skips new
         // captures throughout the swap, then starts a disconnected source ring.
-        const leftTrailPropType = params.leftPropType?.toLowerCase() ?? null;
-        const rightTrailPropType = params.rightPropType?.toLowerCase() ?? null;
+        const leftTrailPropType =
+          (loadedPropRenderKeys?.left ?? params.leftPropType)?.toLowerCase() ??
+          null;
+        const rightTrailPropType =
+          (
+            loadedPropRenderKeys?.right ?? params.rightPropType
+          )?.toLowerCase() ?? null;
         const leftPropIdentityChanged =
           this.previousLeftTrailPropType !== undefined &&
           this.previousLeftTrailPropType !== leftTrailPropType;
@@ -1669,6 +1690,8 @@ export class AnimationRenderLoop {
           rightProp: params.props.rightProp,
           leftPropType: params.leftPropType,
           rightPropType: params.rightPropType,
+          leftPropRenderKey: loadedPropRenderKeys?.left ?? null,
+          rightPropRenderKey: loadedPropRenderKeys?.right ?? null,
           leftPropFlipped: params.leftPropFlipped ?? false,
           rightPropFlipped: params.rightPropFlipped ?? false,
           tipEffectMap: params.tipEffectMap,
@@ -1739,10 +1762,6 @@ export class AnimationRenderLoop {
       this.renderer?.getLastPropTransforms?.() ?? undefined;
     const renderedPropSprites =
       this.renderer?.getLastRenderedPropSprites?.() ?? [];
-    // The sprites actually on the canvas (fan build, model look) decide where
-    // the tips are; a renderer without the accessor falls back to notation.
-    const loadedPropRenderKeys =
-      this.renderer?.getLoadedPropRenderKeys?.() ?? null;
     const leftTipKey = loadedPropRenderKeys?.left ?? params.leftPropType;
     const rightTipKey = loadedPropRenderKeys?.right ?? params.rightPropType;
     const leftPropFlipped = params.leftPropFlipped ?? false;
@@ -2000,6 +2019,8 @@ export class AnimationRenderLoop {
           rightPropDimensions: props.rightPropDimensions,
           leftPropType: params.leftPropType,
           rightPropType: params.rightPropType,
+          leftPropRenderKey: loadedPropRenderKeys?.left ?? undefined,
+          rightPropRenderKey: loadedPropRenderKeys?.right ?? undefined,
           leftPropFlipped: params.leftPropFlipped ?? false,
           rightPropFlipped: params.rightPropFlipped ?? false,
           // LEDs cover overlaid tunnel layers too (parity with fire/charcoal).
@@ -2217,7 +2238,8 @@ export class AnimationRenderLoop {
     deltaTime: number,
     currentTime: number,
     showLeft: boolean,
-    showRight: boolean
+    showRight: boolean,
+    renderKeys: { left: string | null; right: string | null } | null
   ): void {
     const overlay = this.mandalaOverlay;
     if (!overlay) return;
@@ -2260,6 +2282,8 @@ export class AnimationRenderLoop {
         show,
         leftPropType: params.leftPropType,
         rightPropType: params.rightPropType,
+        leftPropRenderKey: renderKeys?.left ?? null,
+        rightPropRenderKey: renderKeys?.right ?? null,
         leftPropFlipped: params.leftPropFlipped ?? false,
         rightPropFlipped: params.rightPropFlipped ?? false,
         trackingMode: params.trailSettings.trackingMode,

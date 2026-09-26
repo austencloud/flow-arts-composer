@@ -5,6 +5,7 @@
   When no override is set, all buttons are deselected and a hint shows the global setting.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
   import type { PathShapeValue } from "../../services/step-operations/path-shape-handler";
   import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
@@ -36,7 +37,7 @@
 </script>
 
 <div class="path-shape-control" class:compact>
-  <span class="section-label">Path Shape</span>
+  <span class="section-label">{t("create_ui_path_shape")}</span>
 
   {#each [{ label: "LEFT", hand: "left" as HandSide, current: leftPathShape, cssClass: "blue" }, { label: "RIGHT", hand: "right" as HandSide, current: rightPathShape, cssClass: "red" }] as hand}
     <div class="hand-row">

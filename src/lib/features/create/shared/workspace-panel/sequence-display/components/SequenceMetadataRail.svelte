@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import DifficultyBadge from "$lib/shared/components/DifficultyBadge.svelte";
   import LOOPIconStrip from "$lib/shared/components/LOOPIconStrip.svelte";
   import { analyzeDifficulty } from "$lib/shared/browse/services/sequence-difficulty-calculator";
@@ -38,7 +39,7 @@
   class="metadata-rail"
   class:inline={presentation === "inline"}
   class:corners={presentation === "corners"}
-  aria-label="Sequence metadata"
+  aria-label={t("create_ui_sequence_metadata")}
 >
   <div
     class="difficulty-slot"

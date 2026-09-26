@@ -18,6 +18,8 @@
   import ContactIsolationPerformer from "$lib/shared/3d/performers/ContactIsolationPerformer.svelte";
   import {
     ISOLATION_ENDPOINT,
+    MIN_LAB_STAFF_LENGTH_M,
+    MAX_LAB_STAFF_LENGTH_M,
     sampleStaffIsolation,
   } from "$lib/shared/3d/performers/staff-isolation";
   import { auditFireStaffProfile } from "$lib/shared/3d/diagnostics/contact-correct/fire-staff-mesh-audit";
@@ -38,7 +40,14 @@
   import PoseEditor from "./PoseEditor.svelte";
   import KeyframeTimeline from "./KeyframeTimeline.svelte";
   import GripLabShortcuts from "./GripLabShortcuts.svelte";
-  import { allowedTipOffset, authoredBodyPose, TEACHING_ANCHOR_OFFSET, TRANSITIONS, type PoseHandle } from "./isolation-teaching";
+  import { hasFingerSculpt, sculptFingers } from "./hand-sculpt";
+  import {
+    allowedTipOffset,
+    authoredBodyPose,
+    TEACHING_ANCHOR_OFFSET,
+    TRANSITIONS,
+    type PoseHandle,
+  } from "./isolation-teaching";
   import {
     createContactInspectionState,
     type InspectionView,
@@ -56,8 +65,12 @@
     { value: "3.5", label: "SW", ariaLabel: "Southwest" },
   ];
   let positionsWidth = $state(800);
-  const selectedPosition = $derived(positions.find((position) =>
-    Math.abs(Number(position.value) - inspection.phase % 4) < 0.0005));
+  const selectedPosition = $derived(
+    positions.find(
+      (position) =>
+        Math.abs(Number(position.value) - (inspection.phase % 4)) < 0.0005
+    )
+  );
   const hands = [
     { value: "right", label: "Right", tone: "red" },
     { value: "left", label: "Left", tone: "blue" },
@@ -72,6 +85,7 @@
     ready = $state(false),
     loadFailed = $state(false);
   let cameraControls = $state<CameraControls | null>(null);
+  let cameraAdjusted = $state(false);
   let characterDrawerOpen = $state(false),
     diagnosticsOpen = $state(false),
     auditSummary = $state<string | null>(null);
@@ -88,9 +102,10 @@
     if (inspection.removeKey()) {
       keyframeFeedback = `Deleted keyframe ${selected!.phase.toFixed(3)}. Undo restores it.`;
     } else {
-      keyframeFeedback = inspection.keys.length <= 1
-        ? "Keep at least one keyframe to hold the pose."
-        : "Select a keyframe diamond before deleting.";
+      keyframeFeedback =
+        inspection.keys.length <= 1
+          ? "Keep at least one keyframe to hold the pose."
+          : "Select a keyframe diamond before deleting.";
     }
   }
   function undoKeyframe() {
@@ -106,22 +121,47 @@
   function addKeyframe() {
     keyframeFeedback = inspection.addKey()
       ? `Added keyframe ${inspection.phase.toFixed(3)}.`
-      : inspection.keys.length >= 100 ? "This loop already has 100 keyframes." : "There is already a keyframe here.";
+      : inspection.keys.length >= 100
+        ? "This loop already has 100 keyframes."
+        : "There is already a keyframe here.";
   }
   function selectKeyframe(phase: number) {
     inspection.seekPosition(phase);
     keyframeFeedback = "";
   }
   const taughtPose = $derived(inspection.pose);
-  const tipOffset = $derived(allowedTipOffset(taughtPose, inspection.tolerance));
+  const tipOffset = $derived(
+    allowedTipOffset(taughtPose, inspection.tolerance)
+  );
   const staffOffset = $derived<[number, number, number]>([
     tipOffset[0] + TEACHING_ANCHOR_OFFSET[0],
     tipOffset[1] + TEACHING_ANCHOR_OFFSET[1],
     tipOffset[2] + TEACHING_ANCHOR_OFFSET[2],
   ]);
   const tipDrift = $derived(Math.hypot(...tipOffset));
-  const bodyPose = $derived(authoredBodyPose(taughtPose));
-  const reachGap = $derived((inspection.hand === "right" ? report?.right : report?.left)?.palmResidualM ?? 0);
+  const bodyPose = $derived({
+    ...authoredBodyPose(
+      taughtPose,
+      inspection.hand === "right" ? inspection.phase : 0,
+      inspection.keys
+    ),
+    wristBendRad: taughtPose.wristBend,
+    wristTwistRad: taughtPose.wristTwist,
+    sculptFingers: hasFingerSculpt(taughtPose)
+      ? (root: Object3D, side: "left" | "right") => {
+          if (side === inspection.hand) sculptFingers(root, side, taughtPose);
+        }
+      : undefined,
+  });
+  const activeHandReport = $derived(
+    inspection.hand === "right" ? report?.right : report?.left
+  );
+  const reachGap = $derived(activeHandReport?.palmResidualM ?? 0);
+  const unsupportedFinger = $derived(
+    activeHandReport?.fingers.find(
+      (finger) => finger.required !== false && finger.supported !== true
+    )
+  );
   // A measurement belongs to one posed frame, never the next scrub position.
   $effect(() => {
     inspection.phase;
@@ -139,7 +179,9 @@
   setCharacterCatalogContext(() => catalog);
 
   const groundOffset = $derived(-userProportionsState.groundY);
-  const prop = $derived(sampleStaffIsolation(inspection.phase, staffOffset));
+  const prop = $derived(
+    sampleStaffIsolation(inspection.phase, staffOffset, inspection.staffLengthM)
+  );
   const handCenter = $derived<[number, number, number]>([
     prop.worldPosition.x,
     prop.worldPosition.y + groundOffset,
@@ -148,10 +190,14 @@
   const endpoint = $derived<[number, number, number]>([
     ISOLATION_ENDPOINT[0] + TEACHING_ANCHOR_OFFSET[0],
     ISOLATION_ENDPOINT[1] + groundOffset + TEACHING_ANCHOR_OFFSET[1],
-    ISOLATION_ENDPOINT[2] + STAGE.AVATAR_GRID_OFFSET + TEACHING_ANCHOR_OFFSET[2],
+    ISOLATION_ENDPOINT[2] +
+      STAGE.AVATAR_GRID_OFFSET +
+      TEACHING_ANCHOR_OFFSET[2],
   ]);
   const actualEndpoint = $derived<[number, number, number]>([
-    endpoint[0] + tipOffset[0], endpoint[1] + tipOffset[1], endpoint[2] + tipOffset[2],
+    endpoint[0] + tipOffset[0],
+    endpoint[1] + tipOffset[1],
+    endpoint[2] + tipOffset[2],
   ]);
   const shot = $derived.by(() => {
     const view: InspectionView = inspection.view;
@@ -176,11 +222,26 @@
     });
   });
 
-  // A hand shot follows the authored grip, and a resize changes the framing
-  // distance. Keep the controls' internal target aligned with the shot.
+  let framedShot = $state.raw(shot);
   $effect(() => {
-    if (stageWidth > 0 && stageHeight > 0 && cameraControls) {
-      void cameraControls.setLookAt(...shot.position, ...shot.target, false);
+    if (!cameraAdjusted && !dragging) framedShot = shot;
+  });
+
+  // Once someone moves the camera or a pose handle, keep their chosen angle
+  // instead of pulling the view back toward the moving hand.
+  $effect(() => {
+    if (
+      stageWidth > 0 &&
+      stageHeight > 0 &&
+      cameraControls &&
+      !cameraAdjusted &&
+      !dragging
+    ) {
+      void cameraControls.setLookAt(
+        ...framedShot.position,
+        ...framedShot.target,
+        false
+      );
     }
   });
 
@@ -202,11 +263,11 @@
     if (!previousTimestamp) previousTimestamp = timestamp;
     const elapsed = Math.min(100, timestamp - previousTimestamp);
     previousTimestamp = timestamp;
-    if (inspection.playing && ready)
-      inspection.tick(elapsed / 3000);
+    if (inspection.playing && ready) inspection.tick(elapsed / 3000);
     animation = requestAnimationFrame(frame);
   }
   function beginPoseEdit() {
+    cameraAdjusted = true;
     dragging = true;
     inspection.beginEdit();
   }
@@ -269,6 +330,7 @@
     }
   }
   onMount(() => {
+    inspection.restoreDraft();
     if (
       window.matchMedia("(prefers-reduced-motion: reduce)").matches &&
       inspection.playing
@@ -287,24 +349,39 @@
 
 <svelte:head><title>Staff isolation · TKA</title></svelte:head>
 <main class="inspection" data-edit-history-shortcut-scope>
-<GripLabShortcuts bind:open={shortcutsOpen} blocked={characterDrawerOpen || diagnosticsOpen || dragging}
-  canUndo={inspection.canUndo} canRedo={inspection.canRedo}
-  onUndo={undoKeyframe} onRedo={redoKeyframe} onDelete={deleteKeyframe} onAdd={addKeyframe}
-  onPlay={() => ready && inspection.setPlaying(!inspection.playing)}
-  onStep={(direction) => inspection.setPhase(inspection.phase + direction * 0.01)}
-  onNeighbor={(direction) => { inspection.seekKeyframe(direction); keyframeFeedback = ""; }}
-  onStart={() => inspection.reset()} />
+  <GripLabShortcuts
+    bind:open={shortcutsOpen}
+    blocked={characterDrawerOpen || diagnosticsOpen || dragging}
+    canUndo={inspection.canUndo}
+    canRedo={inspection.canRedo}
+    onUndo={undoKeyframe}
+    onRedo={redoKeyframe}
+    onDelete={deleteKeyframe}
+    onAdd={addKeyframe}
+    onPlay={() => ready && inspection.setPlaying(!inspection.playing)}
+    onStep={(direction) =>
+      inspection.setPhase(inspection.phase + direction * 0.01)}
+    onNeighbor={(direction) => {
+      inspection.seekKeyframe(direction);
+      keyframeFeedback = "";
+    }}
+    onStart={() => inspection.reset()}
+  />
   <header class="page-header">
     <div>
       <h1>Staff isolation</h1>
     </div>
     <div class="header-actions">
-      <PanelButton ariaPressed={editing} onclick={() => {
-        editing = !editing;
-        inspection.setPlaying(false);
-      }}>Edit pose</PanelButton>
+      <PanelButton
+        ariaPressed={editing}
+        onclick={() => {
+          editing = !editing;
+          inspection.setPlaying(false);
+        }}>Edit pose</PanelButton
+      >
       <PanelButton onclick={copyPose}>Copy pose link</PanelButton>
-      <PanelButton onclick={() => shortcutsOpen = true}>Shortcuts</PanelButton>
+      <PanelButton onclick={() => (shortcutsOpen = true)}>Shortcuts</PanelButton
+      >
       <button
         type="button"
         aria-label="Character"
@@ -326,92 +403,135 @@
     aria-label="Staff isolation performer"
     aria-busy={!ready}
   >
-    <div class="scene" bind:clientWidth={stageWidth} bind:clientHeight={stageHeight}>
-    <Canvas shadows>
-      {#key inspection.view}<T.PerspectiveCamera
-          makeDefault
-          position={shot.position}
-          fov={INSPECTION_FOV_DEG}
-          ><OrbitControls
-            bind:ref={cameraControls}
-            enabled={!dragging}
-            enablePan={false}
-            rightDragAction="rotate"
-            target={shot.target}
-            minDistance={0.25}
-            maxDistance={10}
-            maxPolarAngle={Math.PI}
-          /></T.PerspectiveCamera
-        >{/key}
-      <T.AmbientLight args={["#dbe5ef", 1.4]} /><T.DirectionalLight
-        position={[3, 5, 4]}
-        intensity={2.2}
-        castShadow
-      /><T.DirectionalLight position={[-3, 2, -2]} intensity={0.8} />
-      <T.Mesh
-        position={[0, -0.005, STAGE.AVATAR_GRID_OFFSET]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        receiveShadow
-        ><T.CircleGeometry args={[2.8, 64]} /><T.MeshStandardMaterial
-          color="#18212a"
-          roughness={0.9}
-        /></T.Mesh
-      >
-      <T.Mesh position={endpoint}
-        ><T.SphereGeometry args={[0.018, 16, 16]} /><T.MeshStandardMaterial
-          color="#f3c46e"
-          emissive="#6d4a1e"
-        /></T.Mesh
-      >
-      <ContactIsolationPerformer
-        characterId={inspection.characterId}
-        phase={inspection.phase}
-        hand={inspection.hand}
-        {bodyPose}
-        tipOffset={staffOffset}
-        onReady={markReady}
-        onReport={(next) => (report = { ...next })}
-        onGeometry={(root, next) => {
-          avatarRoot = root;
-          report = { ...next };
-        }}
-      />
-      <PoseHandles root={avatarRoot} pose={taughtPose} selected={selectedHandle}
-        visible={editing && !inspection.playing && ready}
-        hand={inspection.hand} tipPosition={actualEndpoint} tipOrigin={endpoint}
-        onBegin={beginPoseEdit} onChange={(changes) => inspection.editPose(changes)} onEnd={endPoseEdit} />
-    </Canvas>
-    {#if inspection.view === "front"}
-      <div class="stage-directions" aria-label="Audience view directions">
-        <span>Stage right · House left</span><span>Stage left · House right</span>
-      </div>
-    {/if}
-    {#if ready && reachGap > 0.003}
-      <p class="reach-warning" role="status">Hand is {(reachGap * 100).toFixed(1)} cm short — adjust the body or tip.</p>
-    {/if}
-    {#if !ready}<p class="stage-status" role="status">
-        {loadFailed
-          ? "The performer did not finish loading. Choose another available character or reload this inspection."
-          : "Loading performer…"}
-      </p>{/if}
+    <div
+      class="scene"
+      bind:clientWidth={stageWidth}
+      bind:clientHeight={stageHeight}
+    >
+      <Canvas shadows>
+        {#key inspection.view}<T.PerspectiveCamera
+            makeDefault
+            position={framedShot.position}
+            fov={INSPECTION_FOV_DEG}
+            ><OrbitControls
+              bind:ref={cameraControls}
+              enabled={!dragging}
+              enablePan={true}
+              rightDragAction="pan"
+              oncontrolstart={() => (cameraAdjusted = true)}
+              minDistance={0.25}
+              maxDistance={10}
+              maxPolarAngle={Math.PI}
+            /></T.PerspectiveCamera
+          >{/key}
+        <T.AmbientLight args={["#dbe5ef", 1.4]} /><T.DirectionalLight
+          position={[3, 5, 4]}
+          intensity={2.2}
+          castShadow
+        /><T.DirectionalLight position={[-3, 2, -2]} intensity={0.8} />
+        <T.Mesh
+          position={[0, -0.005, STAGE.AVATAR_GRID_OFFSET]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          receiveShadow
+          ><T.CircleGeometry args={[2.8, 64]} /><T.MeshStandardMaterial
+            color="#18212a"
+            roughness={0.9}
+          /></T.Mesh
+        >
+        <T.Mesh position={endpoint}
+          ><T.SphereGeometry args={[0.018, 16, 16]} /><T.MeshStandardMaterial
+            color="#f3c46e"
+            emissive="#6d4a1e"
+          /></T.Mesh
+        >
+        <ContactIsolationPerformer
+          characterId={inspection.characterId}
+          phase={inspection.phase}
+          staffLengthM={inspection.staffLengthM}
+          hand={inspection.hand}
+          {bodyPose}
+          tipOffset={staffOffset}
+          onReady={markReady}
+          onReport={(next) => (report = { ...next })}
+          onGeometry={(root, next) => {
+            avatarRoot = root;
+            report = { ...next };
+          }}
+        />
+        <PoseHandles
+          root={avatarRoot}
+          pose={taughtPose}
+          selected={selectedHandle}
+          visible={editing && !inspection.playing && ready}
+          hand={inspection.hand}
+          tipPosition={actualEndpoint}
+          tipOrigin={endpoint}
+          onBegin={beginPoseEdit}
+          onChange={(changes) => inspection.editPose(changes)}
+          onEnd={endPoseEdit}
+        />
+      </Canvas>
+      {#if inspection.view === "front"}
+        <div class="stage-directions" aria-label="Audience view directions">
+          <span>Stage right · House left</span><span
+            >Stage left · House right</span
+          >
+        </div>
+      {/if}
+      {#if ready && (reachGap > 0.003 || unsupportedFinger)}
+        <p class="reach-warning" role="status">
+          {#if reachGap > 0.003}Hand is {(reachGap * 100).toFixed(1)} cm short — adjust
+            the body or tip.
+          {:else if unsupportedFinger}{unsupportedFinger.finger} is off the staff
+            — adjust the wrist or fingers.{/if}
+        </p>
+      {/if}
+      {#if !ready}<p class="stage-status" role="status">
+          {loadFailed
+            ? "The performer did not finish loading. Choose another available character or reload this inspection."
+            : "Loading performer…"}
+        </p>{/if}
     </div>
     {#if editing}
       <aside class="pose-panel" aria-label="Teach this pose">
-        <div class="pose-heading"><strong>{selectedPosition?.label ?? "Pose"} · {inspection.phase.toFixed(3)}</strong>
-          <span>{inspection.selectedKey ? "Whole-pose keyframe" : "New keyframe on edit"}</span></div>
-        <PoseEditor pose={taughtPose} selected={selectedHandle} onSelect={(value) => selectedHandle = value}
-          onBegin={() => inspection.beginEdit()} onChange={(changes) => inspection.editPose(changes)}
-          onEnd={() => inspection.endEdit()} tolerance={inspection.tolerance}
-          onTolerance={(value) => inspection.setTolerance(value)} {tipDrift} />
+        <div class="pose-heading">
+          <strong
+            >{selectedPosition?.label ?? "Pose"} · {inspection.phase.toFixed(
+              3
+            )}</strong
+          >
+          <span
+            >{inspection.selectedKey
+              ? "Whole-pose keyframe"
+              : "New keyframe on edit"}</span
+          >
+        </div>
+        <PoseEditor
+          pose={taughtPose}
+          selected={selectedHandle}
+          onSelect={(value) => (selectedHandle = value)}
+          onBegin={() => inspection.beginEdit()}
+          onChange={(changes) => inspection.editPose(changes)}
+          onEnd={() => inspection.endEdit()}
+          tolerance={inspection.tolerance}
+          onTolerance={(value) => inspection.setTolerance(value)}
+          {tipDrift}
+        />
         <div class="pose-actions">
-          <PanelButton onclick={() => inspection.resetPose()}>Reset poses</PanelButton>
+          <PanelButton onclick={() => inspection.resetPose()}
+            >Reset poses</PanelButton
+          >
         </div>
       </aside>
     {/if}
   </section>
   <section class="controls" aria-label="Isolation controls">
-    <SegmentedControl options={TRANSITIONS} value={inspection.transition}
-      onchange={(value) => inspection.setTransition(value)} ariaLabel="Isolation transition" />
+    <SegmentedControl
+      options={TRANSITIONS}
+      value={inspection.transition}
+      onchange={(value) => inspection.setTransition(value)}
+      ariaLabel="Isolation transition"
+    />
     <div class="playback-row">
       <div class="transport-row">
         <TransportControls
@@ -423,7 +543,11 @@
         />
       </div>
       <label class="scrubber"
-        ><span>{selectedPosition?.label ?? "Position"} · {inspection.phase.toFixed(3)}</span><input
+        ><span
+          >{selectedPosition?.label ?? "Position"} · {inspection.phase.toFixed(
+            3
+          )}</span
+        ><input
           aria-label="Isolation position"
           type="range"
           min={inspection.range[0]}
@@ -435,14 +559,52 @@
         /></label
       >
     </div>
-    <KeyframeTimeline keys={inspection.keys} phase={inspection.phase} range={inspection.range}
-      selectedKey={inspection.selectedKey} canUndo={inspection.canUndo} canRedo={inspection.canRedo}
-      feedback={keyframeFeedback} onSelect={selectKeyframe}
-      onNeighbor={(direction) => { inspection.seekKeyframe(direction); keyframeFeedback = ""; }}
-      onAdd={addKeyframe} onRemove={deleteKeyframe}
-      onUndo={undoKeyframe} onRedo={redoKeyframe} onMove={(from, to) => inspection.moveKey(from, to)}
-      onEdit={() => { inspection.setPlaying(false); editing = true; }}
-      onBegin={() => inspection.beginEdit()} onEnd={() => inspection.endEdit()} />
+    <KeyframeTimeline
+      keys={inspection.keys}
+      phase={inspection.phase}
+      range={inspection.range}
+      selectedKey={inspection.selectedKey}
+      canUndo={inspection.canUndo}
+      canRedo={inspection.canRedo}
+      feedback={keyframeFeedback}
+      onSelect={selectKeyframe}
+      onNeighbor={(direction) => {
+        inspection.seekKeyframe(direction);
+        keyframeFeedback = "";
+      }}
+      onAdd={addKeyframe}
+      onRemove={deleteKeyframe}
+      onUndo={undoKeyframe}
+      onRedo={redoKeyframe}
+      onMove={(from, to) => inspection.moveKey(from, to)}
+      onEdit={() => {
+        inspection.setPlaying(false);
+        editing = true;
+      }}
+      onBegin={() => inspection.beginEdit()}
+      onEnd={() => inspection.endEdit()}
+    />
+    <label class="staff-length-control">
+      <span
+        >Staff length <strong
+          >{Math.round(inspection.staffLengthM * 100)} cm</strong
+        ></span
+      >
+      <input
+        aria-label="Staff length"
+        type="range"
+        min={MIN_LAB_STAFF_LENGTH_M * 100}
+        max={MAX_LAB_STAFF_LENGTH_M * 100}
+        step="1"
+        value={Math.round(inspection.staffLengthM * 100)}
+        onpointerdown={() => inspection.beginEdit()}
+        onpointerup={() => inspection.endEdit()}
+        onpointercancel={() => inspection.endEdit()}
+        onblur={() => inspection.endEdit()}
+        oninput={(event) =>
+          inspection.setStaffLengthM(Number(event.currentTarget.value) / 100)}
+      />
+    </label>
     <div class="control-grid">
       <div class="position-stops" bind:clientWidth={positionsWidth}>
         <SegmentedControl
@@ -453,7 +615,8 @@
           onchange={(value) => inspection.seekPosition(Number(value))}
           ariaLabel="Isolation position stops"
         />
-      </div><SegmentedControl
+      </div>
+      <SegmentedControl
         options={hands}
         value={inspection.hand}
         onchange={(value) => inspection.setHand(value)}
@@ -462,7 +625,10 @@
       /><SegmentedControl
         options={views}
         value={inspection.view}
-        onchange={(value) => inspection.setView(value)}
+        onchange={(value) => {
+          cameraAdjusted = false;
+          inspection.setView(value);
+        }}
         ariaLabel="Inspection camera"
       />
     </div>
@@ -534,6 +700,25 @@
     display: flex;
     align-items: center;
   }
+  .staff-length-control {
+    display: grid;
+    grid-template-columns: auto minmax(8rem, 1fr);
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+    min-height: var(--min-touch-target, 44px);
+    color: var(--theme-text-dim);
+    font-size: var(--font-size-min, 14px);
+  }
+  .staff-length-control span {
+    display: flex;
+    gap: 0.5rem;
+    white-space: nowrap;
+  }
+  .staff-length-control strong {
+    color: var(--theme-text);
+    font-weight: 600;
+  }
   .page-header {
     justify-content: space-between;
     gap: 1rem;
@@ -579,16 +764,70 @@
       var(--theme-panel-bg)
     );
   }
-  .stage.editing { grid-template-columns: minmax(0, 1fr) clamp(18rem, 20cqw, 24rem); }
-  .scene { position: relative; min-width: 0; min-height: 0; overflow: hidden; }
-  .pose-panel { overflow-y: auto; min-height: 0; padding: 0.85rem; background: var(--theme-panel-bg); display: flex; flex-direction: column; gap: 0.9rem; }
-  .pose-panel :global(> *) { flex-shrink: 0; }
-  .pose-heading { display: flex; justify-content: space-between; align-items: baseline; font-size: var(--font-size-min, 14px); gap: 0.5rem; }
-  .pose-heading span { color: var(--theme-text-dim); font-size: var(--font-size-compact, 12px); }
-  .pose-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
-  .stage-directions { position: absolute; inset: auto 0.65rem 0.6rem; display: flex; justify-content: space-between; gap: 1rem; pointer-events: none; font-size: var(--font-size-compact, 12px); color: var(--theme-text-dim); }
-  .reach-warning { position: absolute; inset: 0.6rem 0.6rem auto; width: fit-content; max-width: calc(100% - 1.2rem); margin: 0; padding: 0.5rem 0.7rem; box-sizing: border-box; border-radius: 0.5rem; background: var(--theme-panel-bg); color: var(--semantic-warning, #ffbf69); font-size: var(--font-size-min, 14px); }
-  .copy-status { margin: 0; font-size: var(--font-size-min, 14px); }
+  .stage.editing {
+    grid-template-columns: minmax(0, 1fr) clamp(18rem, 20cqw, 24rem);
+  }
+  .scene {
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .pose-panel {
+    overflow-y: auto;
+    min-height: 0;
+    padding: 0.85rem;
+    background: var(--theme-panel-bg);
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+  .pose-panel :global(> *) {
+    flex-shrink: 0;
+  }
+  .pose-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: var(--font-size-min, 14px);
+    gap: 0.5rem;
+  }
+  .pose-heading span {
+    color: var(--theme-text-dim);
+    font-size: var(--font-size-compact, 12px);
+  }
+  .pose-actions {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+  .stage-directions {
+    position: absolute;
+    inset: auto 0.65rem 0.6rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    pointer-events: none;
+    font-size: var(--font-size-compact, 12px);
+    color: var(--theme-text-dim);
+  }
+  .reach-warning {
+    position: absolute;
+    inset: 0.6rem 0.6rem auto;
+    width: fit-content;
+    max-width: calc(100% - 1.2rem);
+    margin: 0;
+    padding: 0.5rem 0.7rem;
+    box-sizing: border-box;
+    border-radius: 0.5rem;
+    background: var(--theme-panel-bg);
+    color: var(--semantic-warning, #ffbf69);
+    font-size: var(--font-size-min, 14px);
+  }
+  .copy-status {
+    margin: 0;
+    font-size: var(--font-size-min, 14px);
+  }
   .stage :global(canvas) {
     display: block;
     width: 100%;
@@ -644,16 +883,36 @@
     gap: 0.5rem;
     min-width: 0;
   }
-  .position-stops { width: 100%; min-width: 0; }
+  .position-stops {
+    width: 100%;
+    min-width: 0;
+  }
   .drawer-content {
     padding: 0 1.25rem 1.5rem;
   }
   @media (max-width: 700px) {
-    .stage.editing { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; }
-    .stage.editing .scene { height: clamp(16rem, 55dvh, 26rem); }
-    .inspection:has(.stage.editing) { min-height: 48rem; height: auto; }
-    .pose-panel { padding: 0.65rem; max-height: 26rem; }
-    .stage-directions span { max-width: 8rem; }
+    .staff-length-control {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.25rem;
+    }
+    .stage.editing {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto auto;
+    }
+    .stage.editing .scene {
+      height: clamp(16rem, 55dvh, 26rem);
+    }
+    .inspection:has(.stage.editing) {
+      min-height: 48rem;
+      height: auto;
+    }
+    .pose-panel {
+      padding: 0.65rem;
+      max-height: 26rem;
+    }
+    .stage-directions span {
+      max-width: 8rem;
+    }
     .inspection {
       min-height: 48rem;
       height: auto;
@@ -665,7 +924,9 @@
       align-items: center;
       gap: 0.5rem;
     }
-    .scene { height: clamp(16rem, 45dvh, 26rem); }
+    .scene {
+      height: clamp(16rem, 45dvh, 26rem);
+    }
     .header-actions button {
       min-width: 44px;
       padding: 0.5rem;
@@ -695,10 +956,20 @@
     }
   }
   @media (min-width: 701px) and (max-height: 800px) and (orientation: landscape) {
-    .stage.editing { grid-template-columns: minmax(0, 1fr); grid-template-rows: 22rem auto; }
-    .pose-panel { max-height: 24rem; }
-    .controls { align-content: start; }
-    .inspection:has(.stage.editing) { min-height: 42rem; height: auto; }
+    .stage.editing {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: 22rem auto;
+    }
+    .pose-panel {
+      max-height: 24rem;
+    }
+    .controls {
+      align-content: start;
+    }
+    .inspection:has(.stage.editing) {
+      min-height: 42rem;
+      height: auto;
+    }
     .inspection {
       grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.55fr);
       grid-template-rows: auto minmax(15rem, 1fr);
@@ -735,9 +1006,17 @@
     }
   }
   @media (min-width: 701px) and (min-height: 561px) and (max-height: 800px) and (orientation: landscape) {
-    .inspection:has(.stage.editing) { min-height: 0; height: 100dvh; }
-    .stage.editing { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(16rem, 1fr) minmax(0, 1fr); }
-    .pose-panel { max-height: none; }
+    .inspection:has(.stage.editing) {
+      min-height: 0;
+      height: 100dvh;
+    }
+    .stage.editing {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: minmax(16rem, 1fr) minmax(0, 1fr);
+    }
+    .pose-panel {
+      max-height: none;
+    }
   }
   @media (min-width: 1100px) and (min-height: 561px) and (max-height: 800px) and (orientation: landscape) {
     .stage.editing {

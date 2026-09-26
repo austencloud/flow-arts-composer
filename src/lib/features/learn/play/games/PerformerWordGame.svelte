@@ -10,6 +10,7 @@ the exact QuizAnswerEvent shape gap detection depends on. The challenge's
 wordLength constraint rides through the question generator as a soft filter.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { detectSingleError } from "$lib/features/learn/services/gap-detector";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
@@ -220,7 +221,7 @@ wordLength constraint rides through the question generator as a soft filter.
   </QuizContainer>
 {:else if questionData && currentSequence}
   <QuizContainer>
-    <QuizPrompt text="What word is being performed?" />
+    <QuizPrompt text={t("learn_ui_prompt_performer_word")} />
 
     <div class="quiz-content">
       <div class="stage-column">
@@ -285,8 +286,10 @@ wordLength constraint rides through the question generator as a soft filter.
         {#if showFeedback}
           <QuizFeedbackBanner
             isCorrect={isCorrectAnswer}
-            correctMessage={`Correct! The word is "${correctAnswer}"`}
-            incorrectMessage={`The correct word is "${correctAnswer}"`}
+            correctMessage={t("learn_ui_correct_word", { word: correctAnswer })}
+            incorrectMessage={t("learn_ui_answer_word", {
+              word: correctAnswer,
+            })}
             streakCount={session.streak}
           />
           {#if currentGap}

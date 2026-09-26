@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * TrackHeader - Track name and controls (mute, solo, lock)
    *
@@ -202,8 +203,8 @@
               showControls = false;
               showDeleteConfirm = true;
             }}
-            title="Delete track"
-            aria-label="Delete track"
+            title={t("compose_ui_delete_track")}
+            aria-label={t("compose_ui_delete_track")}
           >
             <i class="fa-solid fa-trash" aria-hidden="true"></i>
           </button>

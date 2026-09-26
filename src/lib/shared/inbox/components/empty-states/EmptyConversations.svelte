@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   /**
    * EmptyConversations
    *
@@ -6,7 +7,7 @@
    */
 </script>
 
-<div class="empty-state" role="status" aria-label="No messages">
+<div class="empty-state" role="status" aria-label={t("inbox_ui_no_messages")}>
   <div class="illustration">
     <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
       <!-- Chat bubbles -->
@@ -30,8 +31,8 @@
       <rect x="58" y="75" width="20" height="4" rx="2" class="line" />
     </svg>
   </div>
-  <h3>No messages yet</h3>
-  <p>Start a conversation by clicking "New Message"</p>
+  <h3>{t("inbox_ui_no_messages_yet")}</h3>
+  <p>{t("inbox_ui_start_a_conversation_by_clicking_new_message")}</p>
 </div>
 
 <style>

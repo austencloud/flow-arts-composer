@@ -6,6 +6,7 @@ it, but the surface itself is now a focused modal workspace. The rule stays in
 one rail while the live matching grid gets the rest of the canvas.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
   import ModalHeader from "$lib/shared/foundation/ui/modal/ModalHeader.svelte";
@@ -258,7 +259,7 @@ one rail while the live matching grid gets the rest of the canvas.
   async function save() {
     const trimmed = name.trim() || suggestedName;
     if (!engine.hasActiveFilters) {
-      toast.error("Add at least one filter to define the rule.");
+      toast.error(t("browse_ui_add_rule_filter"));
       return;
     }
     if (saving) return;
@@ -322,7 +323,7 @@ one rail while the live matching grid gets the rest of the canvas.
     class:filter-picker-open={filterPickerOpen}
     class:mobile-preview-open={mobilePreviewOpen}
   >
-    <aside class="rule-pane" aria-label="Smart Collection rule">
+    <aside class="rule-pane" aria-label={t("browse_ui_smart_collection_rule")}>
       {#if mode === "create" && engine.hasActiveFilters}
         <div class="identity-setup">
           <SmartCollectionNameField
@@ -344,7 +345,10 @@ one rail while the live matching grid gets the rest of the canvas.
               <!-- The rule never disappears while refining it: applied chips
                    stay readable (and editable) beside every editor. Audit
                    D-8/X-11/C-17. -->
-              <div class="picker-rule-strip" aria-label="Current rule">
+              <div
+                class="picker-rule-strip"
+                aria-label={t("browse_ui_current_rule")}
+              >
                 <span class="strip-count" aria-live="polite">{matchStatus}</span
                 >
                 <div class="strip-chips">
@@ -455,11 +459,14 @@ one rail while the live matching grid gets the rest of the canvas.
             aria-labelledby="smart-filter-step-title"
           >
             <div class="rule-copy">
-              <h3 id="smart-filter-step-title">Filters</h3>
-              <p>Sequences must match every category.</p>
+              <h3 id="smart-filter-step-title">{t("browse_ui_filters")}</h3>
+              <p>{t("browse_ui_sequences_must_match_every_category")}</p>
             </div>
 
-            <div class="applied-filters" aria-label="Applied filters">
+            <div
+              class="applied-filters"
+              aria-label={t("browse_ui_applied_filters")}
+            >
               <!-- Chip body EDITS (opens that filter's editor); the split ×
                    removes. A chip whose whole surface deletes was audit
                    X-7/D-9/C-7. The strip groups values per category with
@@ -518,15 +525,15 @@ one rail while the live matching grid gets the rest of the canvas.
           </PanelButton>
         </div>
         <div class="preview-title">
-          <span class="step-label">Live preview</span>
+          <span class="step-label">{t("browse_ui_live_preview")}</span>
           <h3 id="smart-preview-title" aria-live="polite">{matchStatus}</h3>
         </div>
         <div
           class="preview-mode"
-          aria-label="Sequence cards are a preview only"
+          aria-label={t("browse_ui_sequence_cards_are_a_preview_only")}
         >
           <i class="fas fa-eye" aria-hidden="true"></i>
-          <span>Preview only</span>
+          <span>{t("browse_ui_preview_only")}</span>
         </div>
       </header>
 
@@ -534,14 +541,14 @@ one rail while the live matching grid gets the rest of the canvas.
         {#if engine.error}
           <PanelState
             type="error"
-            title="Couldn't update the matches"
+            title={t("browse_ui_couldn_t_update_the_matches")}
             message="Check your connection, then try again."
             onretry={() => engine.refresh()}
           />
         {:else if countPending}
           <PanelState
             type="loading"
-            title="Counting matches"
+            title={t("browse_ui_counting_matches")}
             message="The preview will update when the sequences are ready."
           />
         {:else if engine.resultCount === 0}

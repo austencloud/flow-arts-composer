@@ -5,6 +5,8 @@
   Steps: Style -> Shade -> Prop -> Confirm
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { avatarGradientLabel } from "$lib/shared/settings/domain/avatar-gradient-labels";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import {
     PROP_TYPE_DISPLAY_REGISTRY,
@@ -20,6 +22,7 @@
     PropOption,
     WizardStep,
   } from "$lib/shared/settings/domain/photo-picker-types";
+  import { localizedPropName } from "../tabs/prop-type/localized-prop-name";
 
   interface Props {
     selectedGradientId: string;
@@ -41,9 +44,7 @@
     onBack,
   }: Props = $props();
 
-
   let wizardStep = $state<WizardStep>("style");
-
 
   const NON_PROP_TYPES = new Set([PropType.HAND]);
 
@@ -59,11 +60,10 @@
       })
       .map(([propType, info]) => ({
         id: propType as PropType,
-        label: info.label,
+        label: localizedPropName(propType as PropType),
         image: info.image,
       }));
   });
-
 
   const selectedGradient = $derived(
     ALL_GRADIENTS.find((g) => g.id === selectedGradientId) ?? ALL_GRADIENTS[0]!
@@ -78,7 +78,6 @@
   const currentPropImage = $derived(
     PROPS.find((p) => p.id === selectedProp)?.image ?? ""
   );
-
 
   function wizardNext() {
     if (wizardStep === "style") wizardStep = "shade";
@@ -101,7 +100,6 @@
       wizardStep = "prop";
     }
   }
-
 
   function selectFamily(familyId: string) {
     const firstInFamily = ALL_GRADIENTS.find((g) => g.family === familyId);
@@ -139,7 +137,7 @@
       class:active={wizardStep === "style"}
       class:completed={["shade", "prop", "confirm"].includes(wizardStep)}
       onclick={() => wizardGoTo("style")}
-      aria-label="Style"
+      aria-label={t("settings_avatar_style")}
     ></button>
     <div
       class="progress-line"
@@ -150,7 +148,7 @@
       class:active={wizardStep === "shade"}
       class:completed={["prop", "confirm"].includes(wizardStep)}
       onclick={() => wizardGoTo("shade")}
-      aria-label="Shade"
+      aria-label={t("settings_avatar_shade")}
     ></button>
     <div
       class="progress-line"
@@ -161,14 +159,14 @@
       class:active={wizardStep === "prop"}
       class:completed={wizardStep === "confirm"}
       onclick={() => wizardGoTo("prop")}
-      aria-label="Prop"
+      aria-label={t("settings_avatar_prop")}
     ></button>
     <div class="progress-line" class:filled={wizardStep === "confirm"}></div>
     <button
       class="progress-dot"
       class:active={wizardStep === "confirm"}
       onclick={() => wizardGoTo("confirm")}
-      aria-label="Confirm"
+      aria-label={t("settings_confirm")}
     ></button>
   </div>
 
@@ -179,7 +177,7 @@
         {#if wizardStep === "style"}
           <!-- Step 1: Style -->
           <div class="wizard-step">
-            <p class="wizard-subtitle">What vibe fits you?</p>
+            <p class="wizard-subtitle">{t("settings_avatar_vibe")}</p>
             <div class="wizard-options">
               {#each COLOR_FAMILIES as family}
                 <button
@@ -190,7 +188,7 @@
                   <div class="wizard-option-icon">
                     <i class="fas {family.icon}"></i>
                   </div>
-                  <span>{family.name}</span>
+                  <span>{avatarGradientLabel(family.name)}</span>
                 </button>
               {/each}
             </div>
@@ -198,7 +196,7 @@
         {:else if wizardStep === "shade"}
           <!-- Step 2: Shade -->
           <div class="wizard-step">
-            <p class="wizard-subtitle">Pick your shade</p>
+            <p class="wizard-subtitle">{t("settings_avatar_pick_shade")}</p>
             <div class="wizard-shades">
               {#each familyGradients as gradient}
                 <button
@@ -207,7 +205,9 @@
                   onclick={() => selectGradient(gradient.id)}
                   style="background: {gradient.gradient};"
                 >
-                  <span class="shade-name">{gradient.name}</span>
+                  <span class="shade-name"
+                    >{avatarGradientLabel(gradient.name)}</span
+                  >
                   {#if selectedGradientId === gradient.id}
                     <i class="fas fa-check"></i>
                   {/if}
@@ -218,12 +218,12 @@
         {:else if wizardStep === "prop"}
           <!-- Step 3: Prop -->
           <div class="wizard-step">
-            <p class="wizard-subtitle">Choose your prop</p>
+            <p class="wizard-subtitle">{t("settings_avatar_choose_prop")}</p>
             <div class="wizard-props-scroll">
               <div
                 class="wizard-props"
                 role="radiogroup"
-                aria-label="Select a prop"
+                aria-label={t("settings_avatar_select_prop")}
               >
                 {#each PROPS as prop}
                   <button
@@ -251,44 +251,46 @@
               {#if currentPropImage}
                 <img
                   src={currentPropImage}
-                  alt="Prop"
+                  alt={t("settings_avatar_prop")}
                   class="prop-silhouette"
                 />
               {/if}
             </div>
-            <p class="wizard-preview-label">{selectedGradient.name}</p>
+            <p class="wizard-preview-label">
+              {avatarGradientLabel(selectedGradient.name)}
+            </p>
 
             <!-- Quick edit chips with labels -->
             <div class="quick-edit-section">
-              <p class="quick-edit-label">Tap to change:</p>
+              <p class="quick-edit-label">{t("settings_avatar_tap_change")}</p>
               <div class="quick-edit-row">
                 <button
                   class="quick-edit-chip"
                   onclick={() => wizardGoTo("style")}
-                  aria-label="Change style"
+                  aria-label={t("settings_avatar_change_style")}
                 >
                   <i
                     class="fas {COLOR_FAMILIES.find(
                       (f) => f.id === selectedFamilyId
                     )?.icon}"
                   ></i>
-                  <span class="chip-label">Style</span>
+                  <span class="chip-label">{t("settings_avatar_style")}</span>
                 </button>
                 <button
                   class="quick-edit-chip shade-chip"
                   onclick={() => wizardGoTo("shade")}
                   style="background: {selectedGradient.gradient};"
-                  aria-label="Change shade"
+                  aria-label={t("settings_avatar_change_shade")}
                 >
-                  <span class="chip-label">Shade</span>
+                  <span class="chip-label">{t("settings_avatar_shade")}</span>
                 </button>
                 <button
                   class="quick-edit-chip"
                   onclick={() => wizardGoTo("prop")}
-                  aria-label="Change prop"
+                  aria-label={t("settings_avatar_change_prop")}
                 >
-                  <img src={currentPropImage} alt="Prop" />
-                  <span class="chip-label">Prop</span>
+                  <img src={currentPropImage} alt={t("settings_avatar_prop")} />
+                  <span class="chip-label">{t("settings_avatar_prop")}</span>
                 </button>
               </div>
             </div>
@@ -296,16 +298,16 @@
             <!-- Start Over button -->
             <button class="start-over-btn" onclick={() => wizardGoTo("style")}>
               <i class="fas fa-redo"></i>
-              <span>Start Over</span>
+              <span>{t("settings_avatar_start_over")}</span>
             </button>
 
             <button class="save-btn" onclick={onSave} disabled={saving}>
               {#if saving}
                 <i class="fas fa-circle-notch fa-spin"></i>
-                <span>Saving...</span>
+                <span>{t("settings_avatar_saving")}</span>
               {:else}
                 <i class="fas fa-check"></i>
-                <span>Use This Avatar</span>
+                <span>{t("settings_avatar_use")}</span>
               {/if}
             </button>
           </div>

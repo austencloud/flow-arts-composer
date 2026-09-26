@@ -9,6 +9,7 @@
   import { sendEmailVerification } from "firebase/auth";
   import { auth } from "../firebase";
   import { slide } from "svelte/transition";
+  import { t } from "$lib/shared/i18n/i18n.svelte";
 
   let sending = $state(false);
   let sent = $state(false);
@@ -40,9 +41,9 @@
       sent = true;
     } catch (err: any) {
       if (err.code === "auth/too-many-requests") {
-        error = "Please wait before requesting another email.";
+        error = t("auth_verify_wait_before_resend");
       } else {
-        error = "Failed to send verification email. Please try again.";
+        error = t("auth_verify_send_failed");
       }
     } finally {
       sending = false;
@@ -58,10 +59,10 @@
         // Refresh the page to update auth state
         window.location.reload();
       } else {
-        error = "Email not yet verified. Please check your inbox.";
+        error = t("auth_verify_not_yet");
       }
     } catch {
-      error = "Could not check verification status.";
+      error = t("auth_verify_check_failed");
     }
   }
 
@@ -77,23 +78,21 @@
 
       <div class="banner-text">
         {#if sent}
-          <strong>Verification email sent!</strong>
-          <span>Check your inbox and click the verification link.</span>
+          <strong>{t("auth_verify_sent")}</strong>
+          <span>{t("auth_verify_click_link")}</span>
         {:else if error}
-          <strong>Verify your email</strong>
+          <strong>{t("auth_verify_email")}</strong>
           <span class="error-text" role="alert">{error}</span>
         {:else}
-          <strong>Please verify your email</strong>
-          <span
-            >Check your inbox for a verification link to secure your account.</span
-          >
+          <strong>{t("auth_verify_please")}</strong>
+          <span>{t("auth_verify_inbox_secure")}</span>
         {/if}
       </div>
 
       <div class="banner-actions">
         {#if sent}
           <button class="action-button" onclick={checkVerification}>
-            I've verified
+            {t("auth_verify_done")}
           </button>
         {:else}
           <button
@@ -101,13 +100,13 @@
             onclick={resendVerification}
             disabled={sending}
           >
-            {sending ? "Sending..." : "Resend email"}
+            {sending ? t("auth_sending") : t("auth_verify_resend")}
           </button>
         {/if}
         <button
           class="dismiss-button"
           onclick={dismiss}
-          aria-label="Dismiss banner"
+          aria-label={t("auth_verify_dismiss")}
         >
           <i class="fas fa-times" aria-hidden="true"></i>
         </button>

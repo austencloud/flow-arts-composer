@@ -1,5 +1,7 @@
 <!-- VersionHeader - Badge and date display -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { getReactiveLocale } from "$lib/shared/i18n/locale-state.svelte";
   import { PRE_RELEASE_VERSION } from "$lib/shared/versioning/domain/models/version-models";
   import CopyForAIButton from "$lib/shared/foundation/ui/CopyForAIButton.svelte";
 
@@ -19,7 +21,7 @@
 
   const isPreRelease = $derived(version === PRE_RELEASE_VERSION);
   const formattedDate = $derived(
-    releasedAt.toLocaleDateString("en-US", {
+    releasedAt.toLocaleDateString(getReactiveLocale(), {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -32,7 +34,7 @@
     {#if getCopyData}
       <CopyForAIButton
         getData={getCopyData}
-        ariaLabel="Copy release notes"
+        ariaLabel={t("settings_copy_release_notes")}
         variant="icon-only"
         size="md"
         idleIcon="fa-copy"
@@ -45,7 +47,7 @@
         type="button"
         class="header-button close-button"
         onclick={onClose}
-        aria-label="Close version details"
+        aria-label={t("settings_close_version_details")}
       >
         <i class="fas fa-times" aria-hidden="true"></i>
       </button>
@@ -53,7 +55,7 @@
 
     <div class="version-badge" class:pre-release={isPreRelease}>
       <span class="badge-text">
-        {isPreRelease ? "Pre-Release" : `v${version}`}
+        {isPreRelease ? t("settings_pre_release") : `v${version}`}
       </span>
     </div>
 
@@ -61,7 +63,7 @@
   {:else}
     <div class="version-badge inline-badge" class:pre-release={isPreRelease}>
       <span class="badge-text">
-        {isPreRelease ? "Pre-Release" : `v${version}`}
+        {isPreRelease ? t("settings_pre_release") : `v${version}`}
       </span>
     </div>
 
@@ -70,7 +72,7 @@
     {#if getCopyData}
       <CopyForAIButton
         getData={getCopyData}
-        ariaLabel="Copy release notes"
+        ariaLabel={t("settings_copy_release_notes")}
         variant="icon-only"
         size="md"
         idleIcon="fa-copy"

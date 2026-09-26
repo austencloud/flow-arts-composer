@@ -12,6 +12,7 @@
   CategoryTile.svelte.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import SequencePeek from "$lib/shared/browse/components/SequencePeek.svelte";
   import DifficultyBadge from "$lib/shared/components/DifficultyBadge.svelte";
   import CategoryTile from "./CategoryTile.svelte";
@@ -64,17 +65,15 @@
   <header class="drill-head">
     <h2 tabindex="-1">
       {chooserTitle ??
-        (sheet ? "Filter sequences" : "How do you want to browse?")}
+        (sheet ? t("browse_ui_filter_sequences") : t("browse_ui_how_browse"))}
     </h2>
     <p role="status">
       {loading
         ? poolSize > 0
-          ? "Loading the rest of the gallery…"
-          : "Loading sequences…"
+          ? t("browse_ui_loading_gallery")
+          : t("browse_ui_loading_sequences")
         : (chooserHint ??
-          (sheet
-            ? "Counts update with your current filters."
-            : "Pick one to narrow it down."))}
+          (sheet ? t("browse_ui_counts_update") : t("browse_ui_pick_one")))}
     </p>
   </header>
 
@@ -100,8 +99,8 @@
       onclick={() => onOpenSection("level")}
     >
       <span class="choice-main">
-        <span class="choice-title">By level</span>
-        <span class="choice-sub">Beginner to advanced</span>
+        <span class="choice-title">{t("browse_ui_by_level")}</span>
+        <span class="choice-sub">{t("browse_ui_beginner_to_advanced")}</span>
       </span>
       <span class="secondary-door-art compact-door-art" aria-hidden="true">
         <i class="fas fa-signal"></i>
@@ -135,7 +134,7 @@
       onclick={() => onOpenSection("length")}
     >
       <span class="choice-main">
-        <span class="choice-title">By length</span>
+        <span class="choice-title">{t("browse_ui_by_length")}</span>
         <span class="choice-sub">{catalog.lengthSub}</span>
       </span>
       <span class="secondary-door-art compact-door-art" aria-hidden="true">
@@ -171,10 +170,12 @@
         <span class="choice-main">
           <span class="choice-title"
             >{loading || loadFailed
-              ? "Show all sequences"
-              : `Show all ${poolSize} sequences`}</span
+              ? t("browse_ui_show_all_sequences")
+              : t("browse_ui_show_all_count", { count: poolSize })}</span
           >
-          <span class="choice-sub">The whole gallery, one grid</span>
+          <span class="choice-sub"
+            >{t("browse_ui_the_whole_gallery_one_grid")}</span
+          >
         </span>
         <span class="peek-collage" aria-hidden="true">
           {#each catalog.collageSlots as seq, i (i)}
@@ -193,7 +194,7 @@
 
   {#if poolSize > 0}
     <div class="inline-secondary-choices">
-      <p class="more-head">More ways to browse</p>
+      <p class="more-head">{t("browse_ui_more_ways_to_browse")}</p>
       <div class="mini-grid" class:fluid-wide-canvas={fluidWideCanvas}>
         {#each catalog.secondaryCategories as entry (entry.key)}
           <CategoryTile

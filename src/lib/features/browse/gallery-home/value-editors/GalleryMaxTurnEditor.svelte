@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { Slider } from "bits-ui";
   import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
   import type {
@@ -136,7 +137,7 @@
               <Slider.Thumb
                 index={0}
                 class="turn-slider-thumb"
-                aria-label="Maximum turn intensity"
+                aria-label={t("browse_ui_maximum_turn_intensity")}
                 aria-valuetext={atNoLimit
                   ? `No turn limit, ${selectedMaxTurn.count} matches`
                   : `At most ${selectedMaxTurn.value} turns, ${selectedMaxTurn.count} matches`}
