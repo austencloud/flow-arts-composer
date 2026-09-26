@@ -22,6 +22,7 @@ import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
 import { type TrailSettings } from "../domain/types/trail-types";
 import type { AdditionalLayerProps } from "../domain/types/trail-capture-types";
 import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
 import type { TunnelPropColorPair } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
 import {
   getAnimationVisibilityManager,
@@ -102,6 +103,8 @@ export interface AnimationEngineProps {
   rightPropType?: string | null;
   /** Visual fan build. The notation prop remains fan/bigfan. */
   fanAppearance?: FanAppearance;
+  /** 2D artwork look for isolated previews; unset reads the global setting. */
+  propLook?: PropLook;
   /** Per-document chirality overrides for isolated editors/previews. */
   leftBuugengFlipped?: boolean;
   rightBuugengFlipped?: boolean;
@@ -495,10 +498,12 @@ export class AnimationEngine {
     this.state.setRightPropType(right);
     this.state.setLegacyPropType(left);
     // Load textures + sync dimensions into state via the canonical manager path.
+    // Export colors are the tunnel's exact pair.
     await this.propSystem.propPipeline.loadTextures(
       this.state,
       darkMode,
-      colors
+      colors,
+      colors !== null
     );
   }
 

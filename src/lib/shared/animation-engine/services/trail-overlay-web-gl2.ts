@@ -27,10 +27,10 @@ import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
 import { calculateTrailSourceEndpoint } from "$lib/shared/animation-engine/services/prop-position-calculator";
 import {
   resolveTrailPointConfig,
+  trailTipEnds,
   type TrailPointSource,
   type TrailPointConfig,
 } from "../domain/types/trail-point-types";
-import { propTipEnds } from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
 import { recordTunnelFormationTrailCaptures } from "./tunnel-formation-trail-telemetry";
 import { Canvas2DVisibilityFadeManager } from "$lib/shared/animation-engine/services/canvas2d/canvas-2d-visibility-fade-manager";
 import { resolveEffect } from "../domain/types/tip-effect-types";
@@ -305,11 +305,17 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
       hasRight,
       leftProp,
       rightProp,
-      leftPropType,
-      rightPropType,
+      leftPropType: leftNotationType,
+      rightPropType: rightNotationType,
+      leftPropRenderKey,
+      rightPropRenderKey,
       leftPropSwapSuppressed = false,
       rightPropSwapSuppressed = false,
     } = params;
+    // The base pair traces the artwork actually drawn; tunnel layers keep the
+    // notation type, as the fire tracker does.
+    const leftPropType = leftPropRenderKey ?? leftNotationType;
+    const rightPropType = rightPropRenderKey ?? rightNotationType;
 
     // Non-seamless loop wrap: the props teleport from the end position back to
     // the start. Drop the source rings + tails so the next captured point can't
@@ -458,8 +464,8 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
     }
     this.frameFlipped = [leftFlipped, rightFlipped];
 
-    const leftHasTwoEnds = propTipEnds(leftPropType ?? undefined) === 2;
-    const rightHasTwoEnds = propTipEnds(rightPropType ?? undefined) === 2;
+    const leftHasTwoEnds = trailTipEnds(leftPropType) === 2;
+    const rightHasTwoEnds = trailTipEnds(rightPropType) === 2;
     const modeTracksLeft =
       trailSettings.trackingMode === TrackingMode.LEFT_END ||
       trailSettings.trackingMode === TrackingMode.BOTH_ENDS;
@@ -638,7 +644,7 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
           const m = this.capturePropTipsInto(
             layer.leftProp,
             canvasSize,
-            leftPropType,
+            leftNotationType,
             0,
             rings.leftLeft,
             rings.leftRight,
@@ -659,7 +665,7 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
           const m = this.capturePropTipsInto(
             layer.rightProp,
             canvasSize,
-            rightPropType,
+            rightNotationType,
             1,
             rings.rightLeft,
             rings.rightRight,

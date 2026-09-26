@@ -74,6 +74,7 @@ captureEffectDiagnostics to the context menu.
   import { installAnimatorDiagnostics } from "../debug/animator-diagnostics";
   import type { QualityTier } from "../domain/types/quality-types";
   import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
   import type { ElementalType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
   import type { GlyphOverlayFrameMode } from "../domain/glyph-overlay-frame";
   import PanelState from "$lib/shared/components/panel/PanelState.svelte";
@@ -101,6 +102,7 @@ captureEffectDiagnostics to the context menu.
     leftPropType = null,
     rightPropType = null,
     fanAppearance = undefined,
+    propLook = undefined,
     leftBuugengFlipped = undefined,
     rightBuugengFlipped = undefined,
     previewDarkMode = null,
@@ -168,6 +170,8 @@ captureEffectDiagnostics to the context menu.
     leftPropType?: string | null;
     rightPropType?: string | null;
     fanAppearance?: FanAppearance;
+    /** Page-local 2D artwork look; unset falls back to the global setting. */
+    propLook?: PropLook;
     leftBuugengFlipped?: boolean;
     rightBuugengFlipped?: boolean;
     previewDarkMode?: boolean | null;
@@ -508,6 +512,7 @@ captureEffectDiagnostics to the context menu.
       leftPropType,
       rightPropType,
       fanAppearance,
+      propLook,
       leftBuugengFlipped,
       rightBuugengFlipped,
       previewDarkMode,

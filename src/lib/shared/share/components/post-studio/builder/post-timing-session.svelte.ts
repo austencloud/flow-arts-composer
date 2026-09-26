@@ -4,16 +4,18 @@ import {
   MIN_MOVE_SECONDS,
   TAKE_MAX_BPM,
   TAKE_MIN_BPM,
-  landingDragRange,
+  addTakeTap,
   mergeTimingSectionIntoPrevious,
-  moveBeatOne,
-  releaseLanding,
-  setBeatOneAt,
-  setLandingAt,
+  moveTakeBeatOne,
+  placeTakeLanding,
+  releaseTakeLanding,
   setPerformanceEndAt,
+  setTakeBeatOneAt,
   splitTimingSection,
+  takeLandingDragRange,
   takeSampleAt,
   type SplitContinuity,
+  type TakeTiming,
   type TimingSection,
 } from "$lib/shared/media-composition/domain/take-timing";
 import { sequenceFrameAt } from "$lib/shared/media-composition/domain/sequence-frame";
@@ -28,6 +30,19 @@ export interface LandingRef {
 }
 
 export type TimingSpeed = "1" | "0.75" | "0.5";
+
+/** Inputs that take no typing: their keys belong to the take. */
+const NOT_TEXT_ENTRY = new Set([
+  "checkbox",
+  "radio",
+  "button",
+  "submit",
+  "reset",
+  "range",
+  "color",
+  "file",
+  "image",
+]);
 export type TimingZoom = "4" | "8" | "16";
 
 /**
@@ -127,6 +142,8 @@ export function createPostTimingSession(builder: PostBuilderState) {
       mediaSeconds < section.endSeconds - 0.25
     )
   );
+  // Keeping count needs a count: a part with nothing fitted has none to carry.
+  const canKeepCounting = $derived(canSplit && Boolean(resolvedSection?.fit));
 
   // A different take starts from its top with nothing selected.
   $effect(() => {
@@ -184,18 +201,23 @@ export function createPostTimingSession(builder: PostBuilderState) {
     builder.editSection(takeId, section.id, edit);
   }
 
+  /**
+   * Moves beat 1 on the current part. Parts that keep its count renumber
+   * with it, so the edit is on the whole take.
+   */
+  function recountCurrent(
+    recount: (timing: TakeTiming, sectionId: string) => TakeTiming
+  ): void {
+    if (!takeId || !section) return;
+    const id = section.id;
+    builder.editTiming(takeId, (current) => recount(current, id));
+  }
+
   function tap(): void {
     if (!takeId || !timing) return;
     const seconds = video?.currentTime ?? mediaSeconds;
-    const owner =
-      [...timing.sections]
-        .reverse()
-        .find((entry) => seconds >= entry.startSeconds) ?? timing.sections[0];
-    if (!owner) return;
-    builder.editSection(takeId, owner.id, (current) => ({
-      ...current,
-      taps: [...current.taps, seconds].sort((a, b) => a - b),
-    }));
+    // Near a nudged cut, the tap goes with the part that draws its landing.
+    builder.editTiming(takeId, (current) => addTakeTap(current, seconds));
     tapCount += 1;
   }
 
@@ -209,16 +231,22 @@ export function createPostTimingSession(builder: PostBuilderState) {
       return false;
     }
     const bpm = Math.round(value * 10) / 10;
+    // The field shows a tenth; a part cut from a fitted grid stores that
+    // grid's exact tempo, which committing the shown value must not move.
     editCurrent((current) =>
-      current.bpm === bpm ? current : { ...current, bpm }
+      Math.round(current.bpm * 10) / 10 === bpm ? current : { ...current, bpm }
     );
     return true;
   }
 
   function firstTapWasMoveOne(): void {
     const first = resolvedSection?.fit?.labels[0]?.seconds;
-    if (first === undefined) return;
-    editCurrent((current) => setBeatOneAt(current, moveBeats, first));
+    if (first === undefined || !section) return;
+    // A label is the raw tap; beat 1 goes where the nudged grid draws it.
+    const drawn = first + section.offsetSeconds;
+    recountCurrent((current, id) =>
+      setTakeBeatOneAt(current, id, moveBeats, drawn)
+    );
   }
 
   function dropLeadingTaps(count: number): void {
@@ -245,8 +273,13 @@ export function createPostTimingSession(builder: PostBuilderState) {
 
   function clearEnd(): void {
     editCurrent((current) => {
-      if (current.lastPosition === undefined) return current;
-      const { lastPosition: _end, ...rest } = current;
+      if (
+        current.lastPosition === undefined &&
+        current.carriedEnd === undefined
+      ) {
+        return current;
+      }
+      const { lastPosition: _end, carriedEnd: _carried, ...rest } = current;
       return rest;
     });
   }
@@ -257,25 +290,55 @@ export function createPostTimingSession(builder: PostBuilderState) {
     );
   }
 
+  /**
+   * The parts after one, and before it. Where "keep counting" cut them
+   * apart, they say how the part is drawn - how far it runs, and the drags
+   * and taps beside each cut - so edits that pick a landing as drawn need
+   * them.
+   */
+  function sectionsAfter(sectionId: string): TimingSection[] {
+    const sections = timing?.sections ?? [];
+    const index = sections.findIndex((entry) => entry.id === sectionId);
+    return index < 0 ? [] : sections.slice(index + 1);
+  }
+
+  function sectionsBefore(sectionId: string): TimingSection[] {
+    const sections = timing?.sections ?? [];
+    const index = sections.findIndex((entry) => entry.id === sectionId);
+    return index < 0 ? [] : sections.slice(0, index);
+  }
+
+  // A landing beside a cut is drawn by both parts, so dragging or releasing
+  // it is an edit on the take: one drag stands, whichever part it came from.
   function placeLanding(landing: LandingRef, seconds: number): void {
     if (!takeId) return;
-    builder.editSection(takeId, landing.sectionId, (current) =>
-      setLandingAt(current, moveBeats, landing.position, seconds)
+    builder.editTiming(takeId, (current) =>
+      placeTakeLanding(
+        current,
+        landing.sectionId,
+        landing.position,
+        seconds,
+        moveBeats
+      )
     );
   }
 
   function landingRange(landing: LandingRef) {
-    const owner = timing?.sections.find(
-      (entry) => entry.id === landing.sectionId
-    );
-    return owner ? landingDragRange(owner, moveBeats, landing.position) : null;
+    return timing
+      ? takeLandingDragRange(
+          timing,
+          landing.sectionId,
+          landing.position,
+          moveBeats
+        )
+      : null;
   }
 
   function releaseSelected(): void {
     const ref = selected;
     if (!takeId || !ref) return;
-    builder.editSection(takeId, ref.sectionId, (current) =>
-      releaseLanding(current, ref.position)
+    builder.editTiming(takeId, (current) =>
+      releaseTakeLanding(current, ref.sectionId, ref.position, moveBeats)
     );
   }
 
@@ -318,11 +381,19 @@ export function createPostTimingSession(builder: PostBuilderState) {
     else builder.step = "acts";
   }
 
+  /**
+   * Text entry keeps its keys. A checkbox or slider Austen clicked keeps
+   * focus too, and must not swallow T.
+   */
   function isTyping(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) return false;
+    if (target instanceof HTMLInputElement) {
+      return !NOT_TEXT_ENTRY.has(target.type);
+    }
     return (
-      target instanceof HTMLElement &&
-      (target.isContentEditable ||
-        ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
+      target.isContentEditable ||
+      target instanceof HTMLTextAreaElement ||
+      target instanceof HTMLSelectElement
     );
   }
 
@@ -342,11 +413,16 @@ export function createPostTimingSession(builder: PostBuilderState) {
       // A held key repeats; one press is one landing.
       if (!event.repeat) tap();
     } else if (event.key === " ") {
-      // Space presses a focused button - except Tap, which Austen clicks
-      // mid-take and would otherwise tap a second time.
+      // Space presses a focused button, toggles a focused checkbox and opens
+      // a focused disclosure, so the keyboard can still work them - except
+      // Tap, which Austen clicks mid-take and would otherwise tap a second
+      // time.
+      const target = event.target;
       if (
-        event.target instanceof HTMLButtonElement &&
-        !event.target.hasAttribute("data-space-plays")
+        (target instanceof HTMLButtonElement &&
+          !target.hasAttribute("data-space-plays")) ||
+        target instanceof HTMLInputElement ||
+        (target instanceof HTMLElement && target.localName === "summary")
       ) {
         return;
       }
@@ -453,6 +529,13 @@ export function createPostTimingSession(builder: PostBuilderState) {
     get canSplit() {
       return canSplit;
     },
+    get canKeepCounting() {
+      return canKeepCounting;
+    },
+    /** Whether an end Austen set, or one a split carried, decides the end. */
+    get endClearable() {
+      return resolvedSection?.endStored ?? false;
+    },
     get canUndo() {
       return takeId ? builder.canUndoTiming(takeId) : false;
     },
@@ -488,14 +571,26 @@ export function createPostTimingSession(builder: PostBuilderState) {
     },
     beatOneHere(): void {
       const at = mediaSeconds;
-      editCurrent((current) => setBeatOneAt(current, moveBeats, at));
+      recountCurrent((current, id) =>
+        setTakeBeatOneAt(current, id, moveBeats, at)
+      );
     },
     shiftBeatOne(landings: -1 | 1): void {
-      editCurrent((current) => moveBeatOne(current, moveBeats, landings));
+      recountCurrent((current, id) =>
+        moveTakeBeatOne(current, id, moveBeats, landings)
+      );
     },
     endHere(): void {
       const at = mediaSeconds;
-      editCurrent((current) => setPerformanceEndAt(current, moveBeats, at));
+      editCurrent((current) =>
+        setPerformanceEndAt(
+          current,
+          moveBeats,
+          at,
+          sectionsAfter(current.id),
+          sectionsBefore(current.id)
+        )
+      );
     },
     firstTapWasMoveOne,
     dropLeadingTaps,

@@ -5,7 +5,7 @@ import type {
 } from "../../node_modules/@austencloud/backgrounds/dist/backgrounds/ocean/domain/models/OceanModels.js";
 import { OceanBackgroundOrchestrator } from "../../node_modules/@austencloud/backgrounds/dist/backgrounds/ocean/services/OceanBackgroundOrchestrator.js";
 import { BubblePhysics } from "../../node_modules/@austencloud/backgrounds/dist/backgrounds/ocean/services/implementations/BubblePhysics.js";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 interface OceanInternals {
   state: OceanState;
@@ -41,6 +41,52 @@ function bubble(overrides: Partial<Bubble> = {}): Bubble {
 }
 
 describe("2D ocean direct interactions", () => {
+  it("forwards the on-screen spawn option to the async fish initializer", async () => {
+    const initializeFish = vi.fn(async () => []);
+    const ocean = new OceanBackgroundOrchestrator(
+      {
+        getBubbleCount: () => 0,
+        initializeBubbles: () => [],
+      } as never,
+      {
+        getParticleCount: () => 0,
+        initializeParticles: () => [],
+      } as never,
+      {
+        getLightRayCount: () => 0,
+        initializeLightRays: () => [],
+        getCausticsEnabled: () => false,
+      } as never,
+      {
+        getFishCount: () => 1,
+        initializeFish,
+      } as never,
+      {
+        getJellyfishCount: () => 0,
+        initializeJellyfish: () => [],
+      } as never,
+      {
+        initializeGradientState: () => null,
+      } as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never
+    );
+
+    await ocean.initialize({ width: 1280, height: 720 }, "medium", {
+      spawnFishOnScreen: true,
+    });
+
+    expect(initializeFish).toHaveBeenCalledWith(
+      { width: 1280, height: 720 },
+      1,
+      true,
+      true
+    );
+  });
+
   it("pops the closest visible bubble and removes it from the live hit-test", () => {
     const ocean = createOcean();
     const internal = ocean as unknown as OceanInternals;

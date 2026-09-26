@@ -20,8 +20,6 @@
   let { session, squarePainter = null }: Props = $props();
 </script>
 
-<svelte:window onkeydown={session.handleKey} />
-
 {#if !session.take || !session.timing}
   <div class="empty">
     <p>Add a take first. Its timing is mapped here.</p>

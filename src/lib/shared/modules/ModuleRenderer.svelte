@@ -36,7 +36,7 @@
   import { navigationState } from "../navigation/state/navigation-state.svelte";
   import { isPremiumOrAbove } from "../auth/domain/models/user-role";
   import AuthNudge from "../auth/components/AuthNudge.svelte";
-  import type { AuthNudgeTrigger } from "../auth/domain/auth-nudge-trigger";
+  import { moduleNudgeTrigger } from "../auth/domain/auth-nudge-trigger";
   import { authDrawerState } from "../auth/state/auth-drawer-state.svelte";
   import { switchModule } from "../application/state/ui/module-state";
   import { MODULE_DEFINITIONS } from "../navigation/config/module-definitions";
@@ -347,14 +347,6 @@
             !isTabAccessible("settings", navigationState.activeTab, accessTier))
       : false
   );
-
-  function getModuleNudgeTrigger(moduleId: string): AuthNudgeTrigger {
-    const triggerMap: Record<string, AuthNudgeTrigger> = {
-      learn: "module:learn",
-      settings: "module:settings",
-    };
-    return triggerMap[moduleId] ?? "module:library";
-  }
 </script>
 
 {#if isModuleLoading}
@@ -383,11 +375,11 @@
     style="display: flex; align-items: center; justify-content: center; height: 100%;"
   >
     <AuthNudge
-      trigger={getModuleNudgeTrigger(activeModule!)}
+      trigger={moduleNudgeTrigger(activeModule!)}
       onCreateAccount={() =>
-        authDrawerState.show("signup", getModuleNudgeTrigger(activeModule!))}
+        authDrawerState.show("signup", moduleNudgeTrigger(activeModule!))}
       onLogin={() =>
-        authDrawerState.show("signin", getModuleNudgeTrigger(activeModule!))}
+        authDrawerState.show("signin", moduleNudgeTrigger(activeModule!))}
       onDismiss={() => switchModule("create")}
     />
   </div>

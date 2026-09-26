@@ -1,0 +1,339 @@
+:root {
+  --settings-canvas: #101625;
+  --theme-surface: #192131;
+  --theme-text: #f1f3f8;
+  --theme-muted: #b9c4d4;
+  --theme-stroke: #46536a;
+  --theme-selected: #f1f3f8;
+  --font-size-min: 14px;
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  color: var(--theme-text);
+  background: var(--settings-canvas);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: var(--settings-canvas);
+}
+
+button,
+a {
+  font: inherit;
+}
+
+.review-header {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 20px 32px 18px;
+  border-bottom: 1px solid var(--theme-stroke);
+}
+
+.review-kicker,
+.review-instruction {
+  margin: 0;
+}
+
+.review-kicker {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.review-instruction {
+  margin-top: 3px;
+  color: var(--theme-muted);
+  font-size: var(--font-size-min);
+}
+
+.view-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.view-controls button {
+  min-height: 44px;
+  padding: 9px 13px;
+  color: var(--theme-text);
+  background: transparent;
+  border: 2px solid var(--theme-muted);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: var(--font-size-min);
+  font-weight: 650;
+}
+
+.view-controls button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.view-controls button[aria-pressed="true"] {
+  color: #101625;
+  background: var(--theme-selected);
+  border-color: var(--theme-selected);
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid var(--theme-text);
+  outline-offset: 3px;
+}
+
+.loading,
+.message {
+  max-width: 1280px;
+  margin: 48px auto;
+  padding: 0 32px;
+  font-size: 17px;
+}
+
+.message--error {
+  color: var(--theme-text);
+}
+
+.composition {
+  display: grid;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 40px 32px 48px;
+  gap: 32px;
+  align-items: start;
+  align-content: start;
+}
+
+.intro {
+  max-width: 610px;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(32px, 4.2vw, 52px);
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+}
+
+.lede {
+  max-width: 520px;
+  margin: 18px 0 0;
+  color: var(--theme-muted);
+  font-size: clamp(17px, 1.65vw, 19px);
+  line-height: 1.45;
+}
+
+.explanation {
+  max-width: 530px;
+  font-size: clamp(17px, 1.55vw, 19px);
+  line-height: 1.5;
+}
+
+.explanation p {
+  margin: 0;
+}
+.explanation p + p {
+  margin-top: 18px;
+  color: var(--theme-muted);
+}
+
+.composer-link {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  margin-top: 28px;
+  padding: 8px 0;
+  color: var(--theme-text);
+  font-size: var(--font-size-min);
+  font-weight: 700;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 5px;
+}
+
+.artifact {
+  margin: 0;
+  min-width: 0;
+}
+.artifact-link {
+  display: block;
+  color: inherit;
+}
+
+.artifact img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  border: 1px solid var(--theme-stroke);
+}
+
+figcaption {
+  margin-top: 10px;
+  color: var(--theme-muted);
+  font-size: var(--font-size-min);
+  line-height: 1.4;
+}
+
+/* A makes the notation sheet the compositional anchor. */
+.composition--a {
+  grid-template-columns: minmax(0, 1.18fr) minmax(330px, 0.82fr);
+  grid-template-areas:
+    "notation intro"
+    "notation explanation"
+    "notation creator";
+}
+.composition--a .intro {
+  grid-area: intro;
+  align-self: end;
+}
+.composition--a .explanation {
+  grid-area: explanation;
+}
+.composition--a .artifact--notation {
+  grid-area: notation;
+  align-self: start;
+}
+.composition--a .artifact--creator {
+  grid-area: creator;
+  width: clamp(160px, 42%, 180px);
+}
+
+/* B makes the person the tall left-hand region. */
+.composition--b {
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  grid-template-areas:
+    "creator intro"
+    "creator explanation"
+    "creator notation";
+}
+.composition--b .intro {
+  grid-area: intro;
+  align-self: end;
+}
+.composition--b .explanation {
+  grid-area: explanation;
+}
+.composition--b .artifact--creator {
+  grid-area: creator;
+  align-self: start;
+}
+.composition--b .artifact--notation {
+  grid-area: notation;
+  max-width: 720px;
+}
+
+/* C gives reading its own opening band before the artifacts. */
+.composition--c {
+  /* 0.855:1.25 preserves the two sources' natural-height relationship. */
+  grid-template-columns: minmax(230px, 0.855fr) minmax(0, 1.25fr);
+  grid-template-areas:
+    "intro explanation"
+    "creator notation";
+}
+.composition--c .intro {
+  grid-area: intro;
+  align-self: start;
+}
+.composition--c .explanation {
+  grid-area: explanation;
+  padding-bottom: 8px;
+}
+.composition--c .artifact--creator {
+  grid-area: creator;
+  align-self: start;
+}
+.composition--c .artifact--notation {
+  grid-area: notation;
+}
+
+.comparison-all {
+  padding-bottom: 48px;
+}
+.comparison-all .composition {
+  padding-top: 18px;
+  padding-bottom: 36px;
+}
+.composition-label {
+  max-width: 1280px;
+  margin: 36px auto 0;
+  padding: 0 32px;
+  color: var(--theme-muted);
+  font-size: var(--font-size-min);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 760px) {
+  .review-header {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 18px 20px;
+    gap: 16px;
+  }
+  .view-controls {
+    justify-content: flex-start;
+    width: 100%;
+  }
+  .view-controls button {
+    flex: 1 1 150px;
+  }
+  .composition {
+    padding: 32px 20px 48px;
+    gap: 28px;
+  }
+  h1 {
+    font-size: clamp(32px, 10vw, 44px);
+  }
+  .composition--a {
+    grid-template-columns: 1fr;
+    grid-template-areas: "intro" "notation" "explanation" "creator";
+  }
+  .composition--a .artifact--creator {
+    width: min(82%, 360px);
+  }
+  .composition--b {
+    grid-template-columns: 1fr;
+    grid-template-areas: "creator" "intro" "explanation" "notation";
+  }
+  .composition--b .artifact--creator {
+    width: min(86%, 430px);
+  }
+  .composition--c {
+    grid-template-columns: 1fr;
+    grid-template-areas: "intro" "explanation" "creator" "notation";
+  }
+  .composition--c .artifact--creator {
+    width: min(70%, 340px);
+  }
+  .composition-label {
+    margin-top: 28px;
+    padding-inline: 20px;
+  }
+}
+
+@media (max-width: 420px) {
+  .view-controls button {
+    flex-basis: 145px;
+  }
+  .composition {
+    padding-inline: 16px;
+  }
+  .composition-label {
+    padding-inline: 16px;
+  }
+}

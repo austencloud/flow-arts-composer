@@ -303,9 +303,9 @@ function spriteSideForColor(color: string): PropSpriteSide {
 /**
  * Turn a model capture to face its tip table. Captures are grip-centred, so
  * a one-sided prop captured facing -x (club, torch, poi, chicken, sword,
- * hoops) is rotated a half turn about the box centre; that puts the painted
- * end on the +x side where every tip table, trail, and the mandala expect
- * it. Bilateral and radial props are returned unchanged. The predicate lives
+ * triads, hoops, triquetras) is rotated a half turn about the box centre;
+ * that puts the painted end on the +x side where every tip table, trail, and
+ * the mandala expect it. Symmetric props are returned unchanged. The predicate lives
  * with the tip tables so the two never disagree about which sprites turn.
  */
 export function orientModelSpriteToTips(propType: string, svg: string): string {

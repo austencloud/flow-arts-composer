@@ -11,6 +11,9 @@ import {
   prepareScanViewerPayload,
   type PreparedScanViewerPayload,
 } from "$lib/server/scan/scan-viewer-payload-preparer";
+import { getFirestoreRest } from "$lib/server/firestore/firestore-rest";
+import { readPhysicalCardPropsWithin } from "$lib/server/physical-cards/physical-card-props";
+import { physicalCardIdNeedingProps } from "$lib/shared/qr/services/physical-card-props";
 
 // The project id lives in the public env; the value below is the same one the
 // client Firebase config uses (src/lib/shared/auth/firebase.ts) and only
@@ -120,6 +123,21 @@ export const load: PageServerLoad = async ({
   let record: ShortCodeData | null = null;
   let prepared: PreparedScanViewerPayload | null = null;
 
+  // A serialized card's QR carries only code + pid; its props are on the
+  // physical card record. Read it beside the shortcode lookup, not after it.
+  const physicalCardId = physicalCardIdNeedingProps(
+    params.code,
+    url.searchParams
+  );
+  const physicalCardPropsLookup = physicalCardId
+    ? readPhysicalCardPropsWithin(
+        () => getFirestoreRest(platform?.env?.FIREBASE_SERVICE_ACCOUNT_JSON),
+        params.code,
+        physicalCardId,
+        LOOKUP_TIMEOUT_MS
+      )
+    : Promise.resolve(null);
+
   if (!isInlineEncoded(params.code)) {
     try {
       record = await fetchPublicShortCodeRecord(params.code, {
@@ -139,11 +157,16 @@ export const load: PageServerLoad = async ({
     }
   }
 
+  const physicalCardProps = await physicalCardPropsLookup;
+
   try {
+    // Strongest first: the printed URL, then this card's record, then the
+    // shared shortcode record (inside the preparer), then the sequence.
     prepared = await prepareScanViewerPayload(
       params.code,
       record,
-      parsePropsFromURL(url.searchParams)
+      parsePropsFromURL(url.searchParams),
+      physicalCardProps
     );
   } catch (error) {
     // Non-fatal: legacy/user-doc records retain the browser resolver. A broken
@@ -161,5 +184,6 @@ export const load: PageServerLoad = async ({
     record: stripPreparedPayload(record, prepared),
     preparedSequence: prepared?.sequence ?? null,
     preparedPropConfig: prepared?.propConfig ?? null,
+    physicalCardProps,
   };
 };

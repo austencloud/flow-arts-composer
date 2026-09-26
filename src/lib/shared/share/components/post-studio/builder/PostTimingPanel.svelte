@@ -18,13 +18,16 @@
   let { session }: { session: PostTimingSession } = $props();
 
   let bpmDraft = $state("");
+  // A part cut from a fitted grid keeps that grid's exact tempo; the field
+  // shows it to the tenth it is typed at.
+  const shownBpm = (bpm: number) => String(Math.round(bpm * 10) / 10);
   $effect(() => {
-    bpmDraft = session.section ? String(session.section.bpm) : "";
+    bpmDraft = session.section ? shownBpm(session.section.bpm) : "";
   });
 
   function commitBpm(): void {
     if (!session.setBpm(Number(bpmDraft))) {
-      bpmDraft = session.section ? String(session.section.bpm) : "";
+      bpmDraft = session.section ? shownBpm(session.section.bpm) : "";
     }
   }
 
@@ -220,7 +223,7 @@
           <PanelButton onclick={session.endHere}
             >Performance ends here</PanelButton
           >
-          {#if section.lastPosition !== undefined}
+          {#if session.endClearable}
             <PanelButton onclick={session.clearEnd}>Clear the end</PanelButton>
           {/if}
         </div>
@@ -236,7 +239,7 @@
       <div class="row">
         <PanelButton
           onclick={() => session.split("continues")}
-          disabled={!session.canSplit}
+          disabled={!session.canKeepCounting}
         >
           Split here, keep counting
         </PanelButton>
@@ -252,6 +255,9 @@
           </PanelButton>
         {/if}
       </div>
+      {#if session.canSplit && !session.canKeepCounting}
+        <p class="help">To keep counting, tap up to here first.</p>
+      {/if}
     </details>
 
     <footer class="foot">

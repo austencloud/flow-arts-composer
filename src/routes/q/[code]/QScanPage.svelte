@@ -81,6 +81,9 @@
         rightPropType: import("$lib/shared/pictograph/prop/domain/enums/prop-type").PropType;
         catDogMode: boolean;
       } | null;
+      /** This card's props from its physical card record (serialized QRs no
+       *  longer carry bp/rp). Null for legacy cards and URLs that name both. */
+      physicalCardProps: import("$lib/shared/qr/services/scan-prop-resolver").ScanPropCandidate | null;
     };
     onViewerReady?: () => void;
   }
@@ -197,6 +200,7 @@
         resolveScanPropConfig(
           sequence,
           parsePropsFromURL(page.url.searchParams),
+          data.physicalCardProps,
           record
         );
       const word = sequence.word || sequence.displayName || sequence.name;
