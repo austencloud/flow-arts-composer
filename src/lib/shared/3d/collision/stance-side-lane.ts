@@ -114,6 +114,11 @@ export function planSideOnLaneFloor(
     lanes.push(lane);
     lane += LANE_STEP_M;
   }
+  // A measured body's own lane is off the centimetre grid, so its steps stop
+  // short of the widest lane.
+  if (lanes[lanes.length - 1]! < MAX_SIDE_ON_LANE_M - 1e-9) {
+    lanes.push(MAX_SIDE_ON_LANE_M);
+  }
   const plans = lanes.map((lane) =>
     planUpperBodyStanceDepth(
       pose.chestRad,

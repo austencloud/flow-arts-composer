@@ -50,6 +50,13 @@ const SIDE_ON: BodyYawPose = {
 };
 const GRID_OFFSET_M = GRID_OFFSETS[PlaneMode.WALL];
 const MODE = PLANE_MODE_CONFIGS[PlaneMode.WALL];
+/** A measured body whose own lane is narrower than the default's. */
+const MEASURED = {
+  upperArmM: 0.28,
+  forearmM: 0.32,
+  shoulderWidthM: 0.44,
+  reachM: 0.6,
+};
 
 /** A staff whose centre (the grip) is at `x`, `y` on the grid. Without a
  *  rotation only the grip is known. */
@@ -176,18 +183,27 @@ describe("side-on lane floor", () => {
   });
 
   it("starts from a measured body's own lane", () => {
-    const measurements = {
-      upperArmM: 0.28,
-      forearmM: 0.32,
-      shoulderWidthM: 0.44,
-      reachM: 0.6,
-    };
-    const base = sameSideLaneM(measurements);
+    const base = sameSideLaneM(MEASURED);
     expect(base).toBeLessThan(LANE);
     const east = staff(HAND_POINT_M, 0, VERTICAL);
-    expect(lanesSideOn(east, east, { body: BODY, measurements })).toEqual({
+    expect(
+      lanesSideOn(east, east, { body: BODY, measurements: MEASURED })
+    ).toEqual({
       leftM: base,
       rightM: base,
     });
+  });
+
+  it("opens a measured body's lane all the way to the widest", () => {
+    // Its own lane is off the centimetre grid, so whole-centimetre steps from
+    // it stop short of the widest lane, and a staff no lane clears needs that.
+    const thick = { ...BODY, staffRadiusM: 0.08 };
+    const chestHigh = staff(0, 1.45 - BODY.gridHeightM, LEVEL);
+    const lanes = lanesSideOn(chestHigh, null, {
+      body: thick,
+      measurements: MEASURED,
+    });
+    expect(lanes.leftM).toBeCloseTo(MAX_SIDE_ON_LANE_M, 9);
+    expect(lanes.rightM).toBe(sameSideLaneM(MEASURED));
   });
 });
