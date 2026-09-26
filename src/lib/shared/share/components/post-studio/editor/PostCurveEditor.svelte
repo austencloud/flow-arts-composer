@@ -103,13 +103,17 @@
   // there instead of first snapping its center under the pointer.
   let grabOffset = { x: 0, y: 0 };
 
-  function svgPoint(event: PointerEvent): { x: number; y: number } {
-    const rect = svgEl?.getBoundingClientRect();
-    if (!rect || rect.width === 0 || rect.height === 0) return { x: 0, y: 0 };
-    return {
-      x: ((event.clientX - rect.left) * WIDTH) / rect.width,
-      y: ((event.clientY - rect.top) * HEIGHT) / rect.height,
-    };
+  // Through the plot's own screen matrix, which knows how the viewBox is
+  // scaled and centered inside the drawn box. Scaling each axis by the box's
+  // size instead only held while the box kept the viewBox's shape; a plot
+  // drawn narrower put every drag well off the pointer on the y axis.
+  function svgPoint(event: PointerEvent): { x: number; y: number } | null {
+    const matrix = svgEl?.getScreenCTM();
+    if (!matrix) return null;
+    const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(
+      matrix.inverse()
+    );
+    return { x: point.x, y: point.y };
   }
 
   function commit(next: readonly [number, number, number, number]): void {
@@ -128,8 +132,9 @@
 
   function handlePointerDown(handle: "p1" | "p2", event: PointerEvent): void {
     if (locked) return;
-    (event.currentTarget as Element).setPointerCapture(event.pointerId);
     const point = svgPoint(event);
+    if (!point) return;
+    (event.currentTarget as Element).setPointerCapture(event.pointerId);
     const center = handle === "p1" ? p1 : p2;
     grabOffset = { x: point.x - center.x, y: point.y - center.y };
     activeHandle = handle;
@@ -139,6 +144,7 @@
   function handlePointerMove(event: PointerEvent): void {
     if (!activeHandle || locked) return;
     const point = svgPoint(event);
+    if (!point) return;
     const x = plotToDataX(point.x - grabOffset.x, GEOMETRY);
     const y = plotToDataY(point.y - grabOffset.y, GEOMETRY);
     commit(activeHandle === "p1" ? [x, y, x2, y2] : [x1, y1, x, y]);
@@ -375,9 +381,13 @@
     pointer-events: none;
   }
 
+  /* The presets and the plot set the popover's width, and the fields and the
+     hold hint fit under them. Left to size itself, the hint's one long line
+     set it instead, wider than the room beside the chip. */
   .readout {
     grid-area: readout;
     display: grid;
+    contain: inline-size;
   }
 
   .fields,
