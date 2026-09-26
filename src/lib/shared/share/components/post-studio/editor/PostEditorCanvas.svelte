@@ -62,6 +62,12 @@
     showStripGuide?: boolean;
     /** Selecting and dragging boxes; off while a render or a share runs. */
     interactive?: boolean;
+    /**
+     * The selected clip's Crop tool is open: a press anywhere on the frame
+     * pans its picture, no resize handles show, and a drag shows the footage
+     * past the clip's edges.
+     */
+    cropMode?: boolean;
     root?: HTMLElement | null;
   }
 
@@ -75,6 +81,7 @@
     qrSequence,
     showStripGuide = false,
     interactive = true,
+    cropMode = false,
     root = $bindable(null),
   }: Props = $props();
 
@@ -155,9 +162,11 @@
   const paintedLabelRegions = $derived(
     new Set(
       bindingFor(ANIMATION_OVERLAY_ROLE)?.status === "ready" && preset
-        ? preset.clips
-            .filter((clip) => clip.sourceRole === ANIMATION_OVERLAY_ROLE)
-            .map((clip) => clip.regionId)
+        ? preset.clips.flatMap((clip) =>
+            clip.kind === "visual" && clip.sourceRole === ANIMATION_OVERLAY_ROLE
+              ? [clip.regionId]
+              : []
+          )
         : []
     )
   );
@@ -176,6 +185,9 @@
    * opening pose, the engine's position 1, rather than going blank.
    */
   const OPENING_POSITION = 1;
+
+  /** Above every track's region, below the strip guide and the edit layer. */
+  const REVEALED_Z = 19000;
 
   function pct(value: number): string {
     return `${value * 100}%`;
@@ -221,15 +233,12 @@
   }
 
   /**
-   * A body drag pans the picture, rather than moving the box, in Picture
-   * mode - and always for a video that already fills the frame, where
-   * moving the box would have nothing left to show for it.
+   * A body drag pans the picture, rather than moving the box, while Crop is
+   * open - and always for a video that already fills the frame, where moving
+   * the box would have nothing left to show for it.
    */
   function isPictureDragTarget(item: PostItem, box: PostBox): boolean {
-    return (
-      item.kind === "video" &&
-      (editor.previewDragTarget === "picture" || fillsFrame(box))
-    );
+    return item.kind === "video" && (cropMode || fillsFrame(box));
   }
 
   interface BoxDrag {
@@ -269,6 +278,10 @@
   let drag: Drag | null = null;
   let guides = $state<BoxGuides>({ vertical: false, horizontal: false });
   let dragging = $state(false);
+  /** The clip whose whole footage shows while a crop drag or pinch runs. */
+  const revealedId = $derived(
+    cropMode && dragging && selected?.kind === "video" ? selected.id : null
+  );
   /** A press this small is a tap, not a move. */
   const TAP_PIXELS = 4;
 
@@ -347,9 +360,17 @@
     };
   }
 
-  /** A press on the frame selects what is on top there, ready to drag. */
+  /**
+   * A press on the frame selects what is on top there, ready to drag. While
+   * Crop is open the clip keeps the selection, and a press anywhere pans it.
+   */
   function pressFrame(event: PointerEvent): void {
     if (!interactive || event.button !== 0) return;
+    if (cropMode) {
+      if (selected && !trackLocked(selected.id))
+        startDrag(event, selected, "move");
+      return;
+    }
     const hit = hitTest(event);
     editor.selectedItemId = hit?.id ?? null;
     if (hit && !trackLocked(hit.id)) startDrag(event, hit, "move");
@@ -558,8 +579,10 @@
   function startPinch(): void {
     const item = selected;
     if (!root || !item || item.kind !== "video" || trackLocked(item.id)) return;
-    if (touchPoints.size !== 2) return;
-    const [[idA, posA], [idB, posB]] = [...touchPoints.entries()];
+    const [first, second] = [...touchPoints.entries()];
+    if (touchPoints.size !== 2 || !first || !second) return;
+    const [idA, posA] = first;
+    const [idB, posB] = second;
     // A one-finger move already made is kept as its own step, and the pinch
     // goes on from where it left the picture.
     releaseDrag(true);
@@ -751,13 +774,15 @@
   {#if preset}
     {#each preset.regions as region (region.id)}
       {@const rect = editor.regionRects.get(region.id) ?? region}
+      {@const revealed = region.id === revealedId}
       <div
         class="region"
+        class:revealed
         style:left={pct(rect.x)}
         style:top={pct(rect.y)}
         style:width={pct(rect.width)}
         style:height={pct(rect.height)}
-        style:z-index={region.zIndex}
+        style:z-index={revealed ? REVEALED_Z : region.zIndex}
       >
         {#each entries.get(region.id) ?? [] as entry (entry.role)}
           {@const binding = bindingFor(entry.role)}
@@ -795,6 +820,7 @@
                   clipId={entry.clip.id}
                   transform={layer.transform}
                   playbackRate={entry.clip.playbackRate}
+                  revealOverflow={revealed && entry.live}
                 />
               </div>
             {/if}
@@ -824,6 +850,7 @@
          place items from the keyboard. -->
     <div
       class="edit-layer"
+      class:crop={cropMode && selected !== null}
       role="presentation"
       onpointerdowncapture={countTouchDown}
       onpointermovecapture={countTouchMove}
@@ -850,6 +877,7 @@
           class:dragging
           class:locked
           class:picture-mode={pictureMode}
+          class:revealing={revealedId === selected.id}
           style:left={pct(box.x)}
           style:top={pct(box.y)}
           style:width={pct(box.width)}
@@ -863,7 +891,9 @@
           onpointerdown={(event) =>
             locked ? undefined : startDrag(event, selected, "move")}
         >
-          {#if !locked && !editor.isPlaying}
+          {#if cropMode}
+            <span class="thirds" aria-hidden="true"></span>
+          {:else if !locked && !editor.isPlaying}
             {#each BOX_CORNERS as corner (corner)}
               <span
                 class="handle corner {corner}"
@@ -891,8 +921,10 @@
 </div>
 
 <style>
+  /* The layers' stacking stays inside the preview, under the editor's dock. */
   .post-canvas {
     position: relative;
+    isolation: isolate;
     width: 100%;
     max-height: 100%;
     overflow: hidden;
@@ -903,6 +935,11 @@
   .region {
     position: absolute;
     overflow: hidden;
+  }
+  /* A crop drag shows the clip's whole footage; the canvas still clips it
+     to the frame, and the selection's mask dims everything past the box. */
+  .region.revealed {
+    overflow: visible;
   }
   .layer,
   .painted {
@@ -924,6 +961,9 @@
     z-index: 30000;
     touch-action: none;
   }
+  .edit-layer.crop {
+    cursor: grab;
+  }
   .selection {
     position: absolute;
     box-sizing: border-box;
@@ -940,6 +980,39 @@
   .selection.locked {
     border-style: dashed;
     cursor: default;
+  }
+  .selection.revealing {
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.6),
+      0 0 0 100vmax rgb(0 0 0 / 0.55);
+  }
+  /* Rule-of-thirds lines for framing while Crop is open. */
+  .thirds {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .thirds::before,
+  .thirds::after {
+    content: "";
+    position: absolute;
+    border: 0 solid rgb(255 255 255 / 0.55);
+  }
+  .thirds::before {
+    top: 0;
+    bottom: 0;
+    left: calc(100% / 3);
+    width: calc(100% / 3);
+    border-left-width: 1px;
+    border-right-width: 1px;
+  }
+  .thirds::after {
+    left: 0;
+    right: 0;
+    top: calc(100% / 3);
+    height: calc(100% / 3);
+    border-top-width: 1px;
+    border-bottom-width: 1px;
   }
   .selection:focus-visible {
     outline: 2px solid var(--theme-text, #fff);

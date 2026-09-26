@@ -38,6 +38,12 @@
     transform: EvaluatedFrameLayer["transform"];
     /** The act's speed; the footage runs at it while the preview plays. */
     playbackRate?: number;
+    /**
+     * Draws the footage or image at its fitted size instead of cropping it
+     * to the slot, so a crop drag can show what lies past the slot's edges.
+     * The pixels inside the slot stay where they were.
+     */
+    revealOverflow?: boolean;
   }
 
   let {
@@ -59,6 +65,7 @@
     clipId,
     transform,
     playbackRate = 1,
+    revealOverflow = false,
   }: Props = $props();
   const composition = tryGetMediaCompositionContext();
   let video = $state<HTMLVideoElement | null>(null);
@@ -79,22 +86,23 @@
   let sourceWidth = $state(0);
   let sourceHeight = $state(0);
 
+  const drawRect = $derived(
+    sourceWidth > 0 && sourceHeight > 0 && boxWidth > 0 && boxHeight > 0
+      ? calculateMediaFit({
+          sourceWidth,
+          sourceHeight,
+          regionWidth: boxWidth,
+          regionHeight: boxHeight,
+          fit,
+        }).drawRect
+      : null
+  );
+
+  /** The fitted rectangle, when the whole source is being shown. */
+  const revealRect = $derived(revealOverflow ? drawRect : null);
+
   const pan = $derived.by(() => {
-    if (
-      sourceWidth <= 0 ||
-      sourceHeight <= 0 ||
-      boxWidth <= 0 ||
-      boxHeight <= 0
-    ) {
-      return { x: 0, y: 0 };
-    }
-    const drawRect = calculateMediaFit({
-      sourceWidth,
-      sourceHeight,
-      regionWidth: boxWidth,
-      regionHeight: boxHeight,
-      fit,
-    }).drawRect;
+    if (!drawRect) return { x: 0, y: 0 };
     return resolvePanOffset({
       drawWidth: drawRect.width,
       drawHeight: drawRect.height,
@@ -258,7 +266,12 @@
       muted
       playsinline
       preload="auto"
-      style:object-fit={fit}
+      class:revealed={revealRect !== null}
+      style:object-fit={revealRect ? "fill" : fit}
+      style:left={revealRect ? `${revealRect.x}px` : undefined}
+      style:top={revealRect ? `${revealRect.y}px` : undefined}
+      style:width={revealRect ? `${revealRect.width}px` : undefined}
+      style:height={revealRect ? `${revealRect.height}px` : undefined}
       onloadedmetadata={onMetadata}
     ></video>
   {:else}
@@ -266,7 +279,12 @@
       src={binding.previewUrl ?? undefined}
       crossorigin="anonymous"
       alt=""
-      style:object-fit={fit}
+      class:revealed={revealRect !== null}
+      style:object-fit={revealRect ? "fill" : fit}
+      style:left={revealRect ? `${revealRect.x}px` : undefined}
+      style:top={revealRect ? `${revealRect.y}px` : undefined}
+      style:width={revealRect ? `${revealRect.width}px` : undefined}
+      style:height={revealRect ? `${revealRect.height}px` : undefined}
       onload={onImageLoad}
     />
   {/if}
@@ -291,5 +309,11 @@
   video {
     width: 100%;
     height: 100%;
+  }
+
+  .revealed {
+    position: absolute;
+    max-width: none;
+    max-height: none;
   }
 </style>

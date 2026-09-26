@@ -252,7 +252,7 @@ function canonicalChannel(
   const sorted = [...raw].sort((a, b) => a.t - b.t);
   const merged: PostKeyframe<unknown>[] = [];
   for (const kf of sorted) {
-    const clamped = clampChannelValue(channel, kf.value);
+    const clamped = clampChannelValue(channel, kf.value as never);
     const candidate: PostKeyframe<unknown> = sameChannelValue(channel, clamped, kf.value)
       ? kf
       : { ...kf, value: clamped };

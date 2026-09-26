@@ -28,10 +28,11 @@
   import {
     POST_FRAME_RATE,
     POST_TIME_EPSILON,
+    findItem,
     itemEnd,
     mainItemAt,
     type PostItem,
-    type PostKeyframeChannel,
+    type PostItemKind,
     type PostVideoItem,
   } from "$lib/shared/media-composition/domain/post-project";
   import {
@@ -66,27 +67,43 @@
   import AnimationPanel from "$lib/shared/animation-panel/components/AnimationPanel.svelte";
   import ExportTakeover from "$lib/shared/video-export/components/ExportTakeover.svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
+  import { DURATION } from "$lib/shared/transitions/transitions";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import type { PostStudioShareExport } from "../post-studio-share-export";
   import PostTimingStage from "../builder/PostTimingStage.svelte";
   import PostTimingPanel from "../builder/PostTimingPanel.svelte";
   import { createPostTimingSession } from "../builder/post-timing-session.svelte";
   import PostEditorCanvas from "./PostEditorCanvas.svelte";
-  import PostEditorToolbar from "./PostEditorToolbar.svelte";
+  import PostEditorTopBar from "./PostEditorTopBar.svelte";
   import PostEditorTransport from "./PostEditorTransport.svelte";
-  import PostItemSettings from "./PostItemSettings.svelte";
-  import PostSettingsPanel from "./PostSettingsPanel.svelte";
+  import PostToolRow from "./PostToolRow.svelte";
+  import PostToolPanel from "./PostToolPanel.svelte";
+  import PostItemTool from "./PostItemTool.svelte";
+  import PostAddPanel from "./PostAddPanel.svelte";
+  import PostMediaPanel from "./PostMediaPanel.svelte";
   import PostExportPanel from "./PostExportPanel.svelte";
   import PostTimeline from "./timeline/PostTimeline.svelte";
   import { clampPixelsPerSecond } from "./timeline/post-timeline-geometry";
   import { itemDisplayLabel } from "./post-editor-labels";
   import { readVideoFile, videoFileError } from "./post-editor-files";
+  import {
+    availablePanels,
+    isPanelTool,
+    keyframeChannelFor,
+    shownPanel,
+    toolRow,
+    type PostPanelToolId,
+    type PostToolId,
+    type PostToolSelection,
+  } from "./post-editor-tools";
 
   /**
    * One post on one screen, the way a phone video editor works: the preview,
-   * the tools, the timeline of clips and layers, and the settings of what is
-   * selected. Every part reads the same editor state, so the frame drawn here
-   * is the frame the file gets.
+   * the timeline of clips and layers, and one row of tools that changes with
+   * the selection. One tool's panel shows at a time: in place of the row on a
+   * phone, beside the preview on a wide screen, or in the viewer's side
+   * panel. Every part reads the same editor state, so the frame drawn here is
+   * the frame the file gets.
    */
   interface Props {
     active: boolean;
@@ -368,13 +385,31 @@
 
   // ---- Screen state ----------------------------------------------------------
 
+  let rootElement = $state<HTMLElement | null>(null);
   let canvasRoot = $state<HTMLElement | null>(null);
-  let inspectorElement = $state<HTMLElement | null>(null);
+  /** The side column beside the preview, or in the viewer's side panel. */
+  let panelHost = $state<HTMLElement | null>(null);
+  /** The panel's own slot in that column, under the top bar. */
+  let panelSlot = $state<HTMLElement | null>(null);
+  /** A phone's bottom dock: the row, or the panel open in its place. */
+  let dockElement = $state<HTMLElement | null>(null);
+  /** The row under the timeline on a wide screen. */
+  let rowSlot = $state<HTMLElement | null>(null);
+  /** The preview and its neighbors, the row that grows to fill a phone. */
+  let stageRow = $state<HTMLElement | null>(null);
+  /** The preview's height when a phone panel opened, held until it closes. */
+  let heldStageHeight = $state<number | null>(null);
+  /** The tallest that phone panel may grow and still clear the preview. */
+  let dockPanelMax = $state<number | null>(null);
   let fileInput = $state<HTMLInputElement | null>(null);
   let readingFile = $state(false);
   let fileError = $state("");
-  let lookOpen = $state(false);
   let pixelsPerSecond = $state(60);
+  let editorWidth = $state(0);
+  let editorHeight = $state(0);
+  let remPixels = $state(16);
+  /** The panel last asked for. A wide screen falls back to a default. */
+  let activeTool = $state<PostPanelToolId | null>(null);
 
   let exportProgress = $state<PostStudioExportProgress | null>(null);
   let exportError = $state("");
@@ -422,6 +457,117 @@
     beatsClip !== null && Boolean(editor.mediaUrl(beatsClip.takeId))
   );
 
+  // ---- Tools -----------------------------------------------------------------
+
+  /** The editor's own width, not the window's: wide enough for a panel
+   * beside a full-height preview. */
+  const WIDE_REM = 56;
+  /** A landscape editor this wide keeps the panel beside a shorter preview.
+   * Under it, a short screen would hide the preview while a tool is open. */
+  const LANDSCAPE_WIDE_REM = 36;
+
+  $effect(() => {
+    remPixels =
+      Number.parseFloat(getComputedStyle(document.documentElement).fontSize) ||
+      16;
+  });
+
+  const layout = $derived<"phone" | "wide" | "viewer">(
+    externalInspector
+      ? "viewer"
+      : editorWidth >= WIDE_REM * remPixels ||
+          (editorWidth > editorHeight &&
+            editorWidth >= LANDSCAPE_WIDE_REM * remPixels)
+        ? "wide"
+        : "phone"
+  );
+  /** A panel always shows beside the preview or in the viewer's side panel. */
+  const panelBeside = $derived(layout !== "phone");
+
+  const selection = $derived.by((): PostToolSelection => {
+    const item = editor.selectedItem;
+    if (!item) return { kind: null, hasLayout: false };
+    return {
+      kind: item.kind,
+      hasLayout:
+        item.kind === "video" &&
+        findItem(editor.project, item.id)?.trackIndex === 0,
+    };
+  });
+  const tools = $derived(toolRow(selection));
+  const rowKey = $derived(`row:${tools.join(" ")}`);
+  const shown = $derived(shownPanel(activeTool, selection, panelBeside));
+  /** A phone shows the panel in the row's place, else the row. */
+  const dockKey = $derived(shown ?? rowKey);
+  /** The selected clip's Crop is on screen, so the preview pans its picture. */
+  const cropMode = $derived(
+    shown === "crop" && editor.selectedItem?.kind === "video"
+  );
+
+  // A phone's preview takes the height the row leaves it. A panel is taller
+  // than the row, so the preview keeps its height while one is open, and the
+  // panel fits the room under it and scrolls inside. When that room is too
+  // small to use it may take half the editor, which then scrolls under the
+  // dock. This measures before the panel goes in.
+  const MIN_DOCK_PANEL_REM = 14;
+  $effect.pre(() => {
+    const holding = layout === "phone" && !showTimingStage && shown !== null;
+    untrack(() => {
+      if (!holding) {
+        heldStageHeight = null;
+        dockPanelMax = null;
+        return;
+      }
+      if (heldStageHeight !== null) return;
+      if (!stageRow || !rootElement || !dockElement) return;
+      const stage = stageRow.getBoundingClientRect();
+      const stageBottom =
+        stage.bottom - rootElement.getBoundingClientRect().top;
+      const gap =
+        Number.parseFloat(
+          getComputedStyle(stageRow.parentElement ?? stageRow).rowGap
+        ) || 0;
+      const dock = getComputedStyle(dockElement);
+      const dockChrome =
+        Number.parseFloat(dock.paddingTop) +
+        Number.parseFloat(dock.paddingBottom) +
+        Number.parseFloat(dock.borderTopWidth);
+      // The dock's edge lands mid-gap, so it hides the transport completely.
+      const room =
+        rootElement.clientHeight - stageBottom - gap / 2 - dockChrome;
+      heldStageHeight = stage.height;
+      dockPanelMax =
+        room >= MIN_DOCK_PANEL_REM * remPixels
+          ? room
+          : Math.max(room, rootElement.clientHeight / 2);
+    });
+  });
+
+  // A tool the new selection lacks closes, so it does not open again by
+  // surprise when a later selection has it.
+  $effect(() => {
+    if (activeTool && !availablePanels(selection).includes(activeTool)) {
+      activeTool = null;
+    }
+  });
+
+  function toolDisabled(id: PostToolId): boolean {
+    if (exporting) return true;
+    switch (id) {
+      case "split":
+        return !editor.splitTarget;
+      case "duplicate":
+      case "delete":
+        return !editor.selectionEditable;
+      case "beats":
+        return !canTapBeats;
+      case "tutorial":
+        return editor.takes.length === 0;
+      default:
+        return false;
+    }
+  }
+
   // ---- Actions ---------------------------------------------------------------
 
   /** Opens beat tapping on a clip's footage, starting at its first frame. */
@@ -459,10 +605,94 @@
     });
   }
 
-  function exportFromToolbar(): void {
-    // The post's settings hold the progress and the finished file.
+  function pickTool(id: PostToolId): void {
+    if (isPanelTool(id)) {
+      openTool(id);
+      return;
+    }
+    switch (id) {
+      case "back":
+        deselect();
+        void focusAfterUpdate({ kind: "row" });
+        return;
+      case "split":
+        editor.pause();
+        if (editor.splitAtPlayhead()) {
+          void focusAfterUpdate({ kind: "tool", id: "split" });
+        }
+        return;
+      case "tutorial":
+        applyTutorial();
+        return;
+      case "beats":
+        tapBeatsHere();
+        return;
+      case "duplicate":
+        if (editor.duplicateSelected()) {
+          void focusAfterUpdate({ kind: "tool", id: "duplicate" });
+        }
+        return;
+      case "delete":
+        if (editor.deleteSelected()) void focusAfterUpdate({ kind: "row" });
+        return;
+    }
+  }
+
+  function openTool(id: PostPanelToolId): void {
+    if (id === "crop") seekIntoSelected();
+    activeTool = id;
+    // Beside the preview the row works like tabs and focus stays on it. On a
+    // phone the panel takes the row's place, so focus moves into it.
+    if (!panelBeside) void focusAfterUpdate({ kind: "panel" });
+  }
+
+  /** Done on a phone: back to the row, on the tool that opened the panel. */
+  function closePanel(): void {
+    const tool = shown;
+    activeTool = null;
+    void focusAfterUpdate(tool ? { kind: "tool", id: tool } : { kind: "row" });
+  }
+
+  function deselect(): void {
     editor.selectedItemId = null;
-    void renderPost();
+    activeTool = null;
+  }
+
+  /** Export is the post's own panel: sound, the to-do list and the render. */
+  function openExport(): void {
+    editor.selectedItemId = null;
+    activeTool = "export";
+    void focusAfterUpdate({ kind: "panel" });
+  }
+
+  /** New text opens its words; anything else shows the new item's tools. */
+  function itemAdded(kind: PostItemKind): void {
+    if (kind === "text") {
+      activeTool = "text";
+      void focusAfterUpdate({ kind: "field", selector: "textarea" });
+      return;
+    }
+    activeTool = null;
+    void focusAfterUpdate(panelBeside ? { kind: "panel" } : { kind: "row" });
+  }
+
+  /** Crop edits the frame under the playhead, so it starts inside the clip. */
+  function seekIntoSelected(): void {
+    const item = editor.selectedItem;
+    if (!item) return;
+    const seconds = editor.previewSeconds;
+    if (
+      seconds >= item.start - POST_TIME_EPSILON &&
+      seconds <= itemEnd(item) + POST_TIME_EPSILON
+    ) {
+      return;
+    }
+    editor.pause();
+    editor.seek(
+      seconds < item.start
+        ? item.start
+        : Math.max(item.start, itemEnd(item) - FRAME_SECONDS)
+    );
   }
 
   function pickDeviceVideo(): void {
@@ -481,7 +711,7 @@
     try {
       const duration = await readVideoFile(file);
       editor.pause();
-      editor.addLocalVideo(file, duration);
+      if (editor.addLocalVideo(file, duration)) itemAdded("video");
     } catch (caught) {
       fileError = videoFileError(caught);
     } finally {
@@ -521,11 +751,14 @@
   const FRAME_SECONDS = 1 / POST_FRAME_RATE;
   const ZOOM_STEP = 1.25;
 
+  /** Text entry, where letters are typed. A slider is not typing. */
   function isTyping(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) return false;
+    if (target.isContentEditable) return true;
+    const field = target.closest("input, textarea, select");
     return (
-      target instanceof HTMLElement &&
-      (target.isContentEditable ||
-        Boolean(target.closest("input, textarea, select")))
+      field !== null &&
+      !(field instanceof HTMLInputElement && field.type === "range")
     );
   }
 
@@ -537,13 +770,13 @@
     );
   }
 
-  /** Controls that use the arrow keys themselves. */
+  /** Controls that use the arrow keys, Home and End themselves. */
   function ownsArrows(target: EventTarget | null): boolean {
     return (
       target instanceof HTMLElement &&
       Boolean(
         target.closest(
-          "[role='slider'], [role='radio'], [role='radiogroup'], [role='menu'], [role='menuitem'], [role='listbox'], [role='option'], [role='tab'], [role='tablist']"
+          "input[type='range'], [role='slider'], [role='radio'], [role='radiogroup'], [role='menu'], [role='menuitem'], [role='listbox'], [role='option'], [role='tab'], [role='tablist']"
         )
       )
     );
@@ -555,7 +788,7 @@
    * sight ignores every key, and so does one that is rendering: the render
    * seeks the post frame by frame, and playback would move the clock between
    * a seek and its capture. Ctrl+Z and Ctrl+Y belong to the app's edit
-   * history, which presses the toolbar's Undo and Redo.
+   * history, which presses the top bar's Undo and Redo.
    */
   function handleKey(event: KeyboardEvent): void {
     if (!active || exporting) return;
@@ -599,9 +832,15 @@
           return;
         }
         event.preventDefault();
-        const channel: PostKeyframeChannel = item.kind === "video" ? "framing" : "box";
+        // K keys what the tool on screen edits: Crop, Position or Fade.
+        const channel = keyframeChannelFor(shown, item.kind);
         editor.edit((project, ctx) =>
-          editItemKeyframes(project, item.id, (it) => toggleKeyframe(it, channel, seconds), ctx)
+          editItemKeyframes(
+            project,
+            item.id,
+            (it) => toggleKeyframe(it, channel, seconds),
+            ctx
+          )
         );
         return;
       }
@@ -609,7 +848,8 @@
       case "Backspace":
         if (!editor.selectedItem) return;
         event.preventDefault();
-        editor.deleteSelected();
+        // The item's clip and tools go with it, as with the Delete tool.
+        if (editor.deleteSelected()) void focusAfterUpdate({ kind: "row" });
         return;
       case "ArrowLeft":
       case "ArrowRight": {
@@ -624,6 +864,7 @@
       }
       case "Home":
       case "End":
+        if (ownsArrows(event.target)) return;
         event.preventDefault();
         editor.pause();
         editor.seek(event.key === "Home" ? 0 : editor.durationSeconds);
@@ -638,9 +879,16 @@
         zoomTimeline(1 / ZOOM_STEP);
         return;
       case "Escape":
-        if (!editor.selectedItemId || editor.inGesture) return;
+        if (editor.inGesture) return;
+        // A phone's open panel closes first, then the selection clears.
+        if (!panelBeside && shown !== null) {
+          event.preventDefault();
+          closePanel();
+          return;
+        }
+        if (!editor.selectedItemId) return;
         event.preventDefault();
-        editor.selectedItemId = null;
+        deselect();
         return;
     }
   }
@@ -676,33 +924,112 @@
     });
   });
 
-  // A control that swaps the settings (Tap beats, Back) leaves with them.
-  // Focus follows to the new settings instead of dropping to the page.
-  let shownPanel: string | null = null;
-  $effect(() => {
-    const panel = showTimingStage ? "timing" : "edit";
-    const changed = shownPanel !== null && shownPanel !== panel;
-    shownPanel = panel;
-    if (!changed || !inspectorElement) return;
-    const focused = document.activeElement;
-    if (!focused || focused === document.body) {
-      inspectorElement.focus({ preventScroll: true });
+  // ---- Focus -----------------------------------------------------------------
+
+  type FocusTarget =
+    | { kind: "tool"; id: PostToolId }
+    | { kind: "row" }
+    | { kind: "panel" }
+    | { kind: "field"; selector: string };
+
+  /** The first match that is not fading out. */
+  function findShown(selector: string): HTMLElement | null {
+    // The panel may sit in the viewer's side panel, outside this section.
+    for (const scope of [rootElement, panelHost]) {
+      if (!scope) continue;
+      for (const element of scope.querySelectorAll<HTMLElement>(selector)) {
+        if (!element.closest("[inert]")) return element;
+      }
     }
+    return null;
+  }
+
+  /**
+   * Moves focus once swapped tools are on screen: into the new panel, to the
+   * same tool in the new row, or to the row's first tool.
+   */
+  async function focusAfterUpdate(target: FocusTarget): Promise<void> {
+    await tick();
+    const firstTool = () =>
+      findShown('[data-tool]:not([data-tool="back"]):not(:disabled)');
+    let element: HTMLElement | null;
+    switch (target.kind) {
+      case "tool":
+        element =
+          findShown(`[data-tool="${target.id}"]:not(:disabled)`) ?? firstTool();
+        break;
+      case "row":
+        element = firstTool();
+        break;
+      case "panel":
+        element = findShown("[data-tool-panel]");
+        break;
+      case "field":
+        element =
+          findShown(`[data-tool-panel] ${target.selector}`) ??
+          findShown("[data-tool-panel]");
+        break;
+    }
+    element?.focus({ preventScroll: true });
+    if (target.kind === "field" && element instanceof HTMLTextAreaElement) {
+      element.select();
+    }
+  }
+
+  // A pick on the timeline or the preview can swap the tools while focus sits
+  // in them. Focus moves to their holder before the old ones fade out, so Tab
+  // continues into the new ones instead of starting over at the page.
+  let swapKeys = { row: "", panel: "", dock: "" };
+  $effect.pre(() => {
+    const next = { row: rowKey, panel: shown ?? "", dock: dockKey };
+    untrack(() => {
+      const previous = swapKeys;
+      swapKeys = next;
+      const focused = document.activeElement;
+      // The preview's box goes with the selection, so focus on it would drop
+      // to the page. It stays in the editor instead.
+      if (
+        !editor.selectedItemId &&
+        focused !== canvasRoot &&
+        canvasRoot?.contains(focused)
+      ) {
+        rootElement?.focus({ preventScroll: true });
+        return;
+      }
+      const holders: [HTMLElement | null, boolean][] = [
+        [rowSlot, next.row !== previous.row],
+        [panelSlot, next.panel !== previous.panel],
+        [dockElement, next.dock !== previous.dock],
+      ];
+      for (const [holder, swapping] of holders) {
+        if (
+          swapping &&
+          holder &&
+          focused !== holder &&
+          holder.contains(focused)
+        ) {
+          holder.focus({ preventScroll: true });
+          return;
+        }
+      }
+    });
   });
 
-  // A control that changes the selection (Add clip, Back to the post) sits in
-  // settings that are about to fade out and hide. Focus moves to the panel
-  // before they hide, and Tab then continues into the new settings.
-  $effect.pre(() => {
-    void editor.selectedItemId;
+  // Tapping beats swaps the post for the take, and Back to editing swaps it
+  // back. Focus follows to the new controls instead of dropping to the page.
+  let shownSurface: "timing" | "edit" | null = null;
+  $effect(() => {
+    const surface = showTimingStage ? "timing" : "edit";
+    const changed = shownSurface !== null && shownSurface !== surface;
+    shownSurface = surface;
+    if (!changed) return;
     untrack(() => {
       const focused = document.activeElement;
-      if (
-        inspectorElement &&
-        focused !== inspectorElement &&
-        inspectorElement.contains(focused)
-      ) {
-        inspectorElement.focus({ preventScroll: true });
+      if (focused && focused !== document.body) return;
+      if (surface === "edit") {
+        void focusAfterUpdate({ kind: "tool", id: "beats" });
+      } else {
+        (panelBeside ? panelHost : dockElement)?.focus({ preventScroll: true });
       }
     });
   });
@@ -848,61 +1175,134 @@
 
 <svelte:window onkeydown={handleKey} />
 
-{#snippet lookPanel()}
-  <AnimationPanel
-    layout="sidebar"
-    isExporting={false}
-    isPlaying={editor.isPlaying}
-    onPlaybackToggle={editor.togglePlayback}
-    showTempoControls={false}
-    showEffectsPlayback={false}
-    {selectedPropType}
-    {onPropChange}
-    sequence={displaySequence}
+{#snippet topBar()}
+  <PostEditorTopBar {editor} {exporting} onExport={openExport} />
+{/snippet}
+
+{#snippet row()}
+  <PostToolRow
+    {tools}
+    shown={panelBeside ? shown : null}
+    isDisabled={toolDisabled}
+    onpick={pickTool}
   />
 {/snippet}
 
-{#snippet exportPanel()}
-  <PostExportPanel
-    {editor}
-    {canRender}
-    {exporting}
-    {exportPercent}
-    {exportedUrl}
-    {exportFilename}
-    {exportError}
-    onRender={() => void renderPost()}
-    onCancel={cancelExport}
-    onTapBeats={openTakeBeats}
-    {onSharePost}
-  />
+{#snippet panelBody(tool: PostPanelToolId)}
+  {#if tool === "videos"}
+    <PostMediaPanel
+      {editor}
+      {catalog}
+      catalogLoading={videoLibrary?.loading ?? false}
+      catalogError={videoLibrary?.error ?? ""}
+      busy={readingFile}
+      onAddDeviceVideo={pickDeviceVideo}
+      onTapBeats={openTakeBeats}
+    />
+  {:else if tool === "add"}
+    <PostAddPanel
+      {editor}
+      {catalog}
+      busy={readingFile}
+      onAddDeviceVideo={pickDeviceVideo}
+      onAdded={itemAdded}
+    />
+  {:else if tool === "look"}
+    <AnimationPanel
+      layout="sidebar"
+      isExporting={false}
+      isPlaying={editor.isPlaying}
+      onPlaybackToggle={editor.togglePlayback}
+      showTempoControls={false}
+      showEffectsPlayback={false}
+      {selectedPropType}
+      {onPropChange}
+      sequence={displaySequence}
+    />
+  {:else if tool === "export"}
+    <PostExportPanel
+      {editor}
+      {canRender}
+      {exporting}
+      {exportPercent}
+      {exportedUrl}
+      {exportFilename}
+      {exportError}
+      onRender={() => void renderPost()}
+      onCancel={cancelExport}
+      onTapBeats={openTakeBeats}
+      {onSharePost}
+    />
+  {:else if editor.selectedItem}
+    <PostItemTool {editor} item={editor.selectedItem} {tool} />
+  {/if}
 {/snippet}
 
-<!-- The editor owns Space, S, the arrows and Delete, so the viewer's own
+{#snippet panel(tool: PostPanelToolId, placement: "dock" | "side")}
+  <PostToolPanel
+    {tool}
+    subject={editor.selectedItem ? labelFor(editor.selectedItem) : undefined}
+    onDone={placement === "dock" ? closePanel : undefined}
+    {placement}
+  >
+    {@render panelBody(tool)}
+  </PostToolPanel>
+{/snippet}
+
+{#snippet timingPanel()}
+  <div class="timing-panel">
+    <div class="timing-back">
+      <PanelButton onclick={session.exit}>
+        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+        {t("post_editor_back_to_editing")}
+      </PanelButton>
+    </div>
+    <PostTimingPanel {session} />
+  </div>
+{/snippet}
+
+<!-- The editor owns Space, S, K, the arrows and Delete, so the viewer's own
      handlers skip it (the app's shortcuts, Shift+P, Ctrl+Z and the rest,
      still reach it); tabindex keeps a click inside it from sending focus back
-     to the page. Undo and Redo on its toolbar answer the app's history keys
+     to the page. Undo and Redo on its top bar answer the app's history keys
      while focus is inside it. -->
 <section
   class="post-editor"
   tabindex="-1"
   data-viewer-keys-ignore
   data-edit-history-shortcut-scope
-  data-external-inspector={!!externalInspector}
+  data-layout={layout}
   data-sharing={sharing}
   data-mode={showTimingStage ? "timing" : "edit"}
   aria-label={t("post_editor_label", { name: sequenceName })}
+  bind:this={rootElement}
+  bind:offsetWidth={editorWidth}
+  bind:offsetHeight={editorHeight}
 >
-  <div class="layout">
-    {#if showTimingStage}
-      <div class="stage timing">
-        <PostTimingStage
-          {session}
-          squarePainter={stripPainters.get("arrows") ?? null}
-        />
+  <div
+    class="layout"
+    style:--post-stage-min={heldStageHeight === null
+      ? null
+      : `${heldStageHeight}px`}
+    style:--post-dock-panel-max={dockPanelMax === null
+      ? null
+      : `${dockPanelMax}px`}
+  >
+    {#if !showTimingStage && !panelBeside}
+      <div class="top-bar-slot" inert={sharing || undefined}>
+        {@render topBar()}
       </div>
-    {:else}
-      <div class="stage">
+    {/if}
+
+    <div class="stage-row" bind:this={stageRow}>
+      {#if showTimingStage}
+        <div class="timing-stage">
+          <PostTimingStage
+            {session}
+            squarePainter={stripPainters.get("arrows") ?? null}
+          />
+        </div>
+      {:else}
         <div class="preview-frame">
           <div
             class="preview-host"
@@ -920,26 +1320,55 @@
                 handLabeling={labeledCard.labeling}
                 showStripGuide={editor.selectedItem?.kind === "video"}
                 interactive={!exporting && !sharing && !previewTarget}
+                {cropMode}
                 bind:root={canvasRoot}
               />
             </div>
           </div>
         </div>
-        <PostEditorTransport {editor} disabled={exporting} />
-      </div>
+      {/if}
 
-      <div class="toolbar-slot" inert={sharing || undefined}>
-        <PostEditorToolbar
-          {editor}
-          {catalog}
-          {canTapBeats}
-          canExport={canRender}
-          {exporting}
-          onAddDeviceVideo={pickDeviceVideo}
-          onTapBeats={tapBeatsHere}
-          onTutorial={applyTutorial}
-          onExport={exportFromToolbar}
-        />
+      {#if panelBeside}
+        <!-- Beside the preview, or moved into the viewer's side panel: the
+             top bar with the panel under it, the way desktop editors keep
+             Export above the settings. -->
+        <aside
+          class="panel-host"
+          class:external={layout === "viewer"}
+          tabindex="-1"
+          data-viewer-keys-ignore
+          bind:this={panelHost}
+          use:reparentToInspector={externalInspector}
+          inert={sharing || undefined}
+          aria-label={t("post_editor_tools")}
+        >
+          {#if showTimingStage}
+            {@render timingPanel()}
+          {:else}
+            <div class="side-column">
+              {@render topBar()}
+              <div class="panel-slot" tabindex="-1" bind:this={panelSlot}>
+                {#if shown}
+                  <Crossfade
+                    key={shown}
+                    mode="swap"
+                    duration={DURATION.fast}
+                    fill={layout === "wide"}
+                    animateHeight={layout === "viewer"}
+                  >
+                    {@render panel(shown, "side")}
+                  </Crossfade>
+                {/if}
+              </div>
+            </div>
+          {/if}
+        </aside>
+      {/if}
+    </div>
+
+    {#if !showTimingStage}
+      <div class="transport-slot">
+        <PostEditorTransport {editor} disabled={exporting} />
         {#if fileError}
           <p class="file-error" role="alert">{fileError}</p>
         {/if}
@@ -986,69 +1415,60 @@
             )}
           onDeleteKeyframesAt={(itemId, seconds) =>
             editor.edit((project, context) =>
-              editItemKeyframes(project, itemId, (it) => removeKeyframesAt(it, seconds), context)
+              editItemKeyframes(
+                project,
+                itemId,
+                (it) => removeKeyframesAt(it, seconds),
+                context
+              )
             )}
           onAddVideo={pickDeviceVideo}
           bind:pixelsPerSecond
         />
       </div>
+
+      {#if panelBeside}
+        <div
+          class="row-slot"
+          tabindex="-1"
+          bind:this={rowSlot}
+          inert={sharing || undefined}
+        >
+          <Crossfade key={rowKey} mode="swap" duration={DURATION.fast}>
+            {@render row()}
+          </Crossfade>
+        </div>
+      {/if}
     {/if}
 
-    <aside
-      class="inspector"
-      tabindex="-1"
-      data-viewer-keys-ignore
-      class:external={!!externalInspector}
-      bind:this={inspectorElement}
-      use:reparentToInspector={externalInspector}
-      inert={sharing || undefined}
-      aria-label={t("post_editor_settings")}
-    >
-      {#if showTimingStage}
-        <div class="timing-settings">
-          <div class="row">
-            <PanelButton onclick={session.exit}>
-              <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
-              {t("post_editor_back_to_editing")}
-            </PanelButton>
-          </div>
-          <PostTimingPanel {session} />
-        </div>
-      {:else}
-        <Crossfade key={editor.selectedItemId ?? "post"} animateHeight>
-          {#if editor.selectedItem}
-            <div class="item-panel">
-              <div class="row">
-                <PanelButton onclick={() => (editor.selectedItemId = null)}>
-                  <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
-                  {t("post_editor_back_to_post")}
-                </PanelButton>
-              </div>
-              <PostItemSettings
-                {editor}
-                item={editor.selectedItem}
-                onTapBeats={openBeats}
-              />
-            </div>
-          {:else}
-            <PostSettingsPanel
-              {editor}
-              {catalog}
-              catalogLoading={videoLibrary?.loading ?? false}
-              catalogError={videoLibrary?.error ?? ""}
-              busy={readingFile}
-              onAddDeviceVideo={pickDeviceVideo}
-              onTapBeats={openTakeBeats}
-              onTutorial={applyTutorial}
-              {lookOpen}
-              onLookToggle={() => (lookOpen = !lookOpen)}
-              look={lookPanel}
-              output={exportPanel}
-            />
-          {/if}
-        </Crossfade>
-      {/if}
-    </aside>
+    {#if !panelBeside}
+      <!-- A phone's tools stay at the bottom of the screen while the post
+           scrolls above them. An open panel takes the row's place. -->
+      <div
+        class="dock"
+        class:timing={showTimingStage}
+        tabindex="-1"
+        bind:this={dockElement}
+        inert={sharing || undefined}
+      >
+        {#if showTimingStage}
+          {@render timingPanel()}
+        {:else}
+          <Crossfade
+            key={dockKey}
+            mode="swap"
+            duration={DURATION.fast}
+            animateHeight
+          >
+            {#if shown}
+              {@render panel(shown, "dock")}
+            {:else}
+              {@render row()}
+            {/if}
+          </Crossfade>
+        {/if}
+      </div>
+    {/if}
   </div>
 
   <input
@@ -1079,13 +1499,17 @@
 
 <style>
   .post-editor:focus,
-  .inspector:focus {
+  .panel-host:focus,
+  .panel-slot:focus,
+  .row-slot:focus,
+  .dock:focus {
     outline: none;
   }
 
   .post-editor {
-    /* The tools row, the ruler, the main track and two layers. */
+    /* The ruler, the main track and two layers. */
     --post-timeline-height: 17.5rem;
+    --post-gap: 0.75rem;
     container: post-editor / inline-size;
     width: 100%;
     min-width: 0;
@@ -1095,47 +1519,46 @@
     background: var(--theme-panel-bg, transparent);
   }
 
-  /* A phone stacks the parts in the order they are used: the preview, the
-     tools, the timeline, then the settings of what is selected. The settings
-     come last so a change of selection never moves the timeline. */
+  /* A phone stacks the parts in the order they are used: the top bar, the
+     preview and its transport, the timeline, then the dock of tools. */
   .layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas:
-      "stage"
-      "toolbar"
-      "timeline"
-      "inspector";
-    align-content: start;
-    gap: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: var(--post-gap);
     min-height: 100%;
-    padding: 0.75rem;
+    padding: var(--post-gap);
     box-sizing: border-box;
   }
 
-  .stage {
-    grid-area: stage;
+  /* While editing, a phone's preview takes the height the other parts leave
+     it, down to 12rem, so the preview, the timeline and the row all fit on
+     one screen. Past that the editor scrolls under the dock. */
+  .post-editor[data-layout="phone"][data-mode="edit"] .layout {
     display: grid;
-    grid-template-rows: minmax(0, 1fr) auto;
-    gap: 0.5rem;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows:
+      auto minmax(var(--post-stage-min, 12rem), 1fr)
+      auto auto auto;
+    grid-template-areas: "top" "stage" "transport" "timeline" "dock";
+  }
+
+  /* Never taller than a full-width frame needs. */
+  .post-editor[data-layout="phone"][data-mode="edit"] .stage-row {
+    align-self: center;
+    height: min(100%, calc((100cqw - 2 * var(--post-gap)) * 16 / 9));
+  }
+
+  .stage-row {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
     min-width: 0;
-    min-height: 0;
   }
 
-  .stage.timing {
-    display: block;
-  }
-
-  .post-editor[data-mode="timing"] .layout {
-    grid-template-areas:
-      "stage"
-      "inspector";
-  }
-
-  /* The phone's preview takes most of the screen height, never more than a
-     full-width frame would need. */
   .preview-frame {
-    height: min(60dvh, calc(100cqw * 16 / 9));
+    width: 100%;
+    height: 100%;
+    min-width: 0;
     min-height: 0;
   }
 
@@ -1155,8 +1578,13 @@
     width: min(100cqw, calc(100cqh * 9 / 16));
   }
 
-  .toolbar-slot {
-    grid-area: toolbar;
+  .timing-stage {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .transport-slot {
     display: grid;
     gap: 0.5rem;
     min-width: 0;
@@ -1166,108 +1594,175 @@
     margin: 0;
     color: var(--semantic-warning, #fbbf24);
     font-size: 0.875rem;
+    text-align: center;
   }
 
+  /* The timeline's playhead and guides stack inside it, under the dock. */
   .timeline-slot {
-    grid-area: timeline;
     min-width: 0;
     min-height: 0;
+    isolation: isolate;
   }
 
-  .inspector {
-    grid-area: inspector;
+  .row-slot {
+    min-width: 0;
+  }
+
+  /* The tools stay at the bottom of the screen on every layout: a phone's
+     dock, which an open panel takes over, and the row beside a wide
+     preview. A short window scrolls the post under them. */
+  .dock,
+  .row-slot {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    margin: auto calc(-1 * var(--post-gap)) calc(-1 * var(--post-gap));
+    padding: 0.5rem var(--post-gap)
+      max(0.5rem, env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--theme-stroke, #484755);
+    background: var(--theme-panel-bg, rgba(10, 12, 18, 0.92));
+    backdrop-filter: blur(12px);
+  }
+
+  .dock.timing {
+    position: static;
+    margin: 0;
+    padding: 0;
+    border-top: 0;
+    background: none;
+    backdrop-filter: none;
+  }
+
+  .timing-panel {
     display: grid;
     align-content: start;
+    gap: var(--post-gap);
     min-width: 0;
   }
 
-  .inspector.external {
-    height: 100%;
-    padding: 0.75rem;
-    overflow-y: auto;
-    box-sizing: border-box;
-  }
-
-  .item-panel,
-  .timing-settings {
-    display: grid;
-    gap: 0.75rem;
-    min-width: 0;
-  }
-
-  .row {
+  .timing-back {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
   }
 
   .file-input {
     display: none;
   }
 
-  /* On a wide screen the post fills the height: the preview beside its
-     settings, the tools and the timeline full width underneath. A short
-     window scrolls rather than shrinking the preview to a thumbnail. The
-     timeline keeps one height, so a new layer scrolls inside it instead of
-     shrinking the preview. */
-  @container post-editor (min-width: 56rem) {
+  /* On a wide screen the post fills the height: the preview with the top
+     bar and the panel right beside it, then the transport, the timeline and
+     the tool row. A short window scrolls under the row rather than shrinking
+     the preview and its panel below 15rem. The timeline keeps one height, so
+     a new layer scrolls inside it instead of shrinking the preview. The
+     viewer's own side panel holds the top bar and the panel, and the rest
+     stacks the same way. */
+  .post-editor:is([data-layout="wide"], [data-layout="viewer"]) .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(15rem, 1fr) auto var(--post-timeline-height) auto;
+    grid-template-areas: "stage" "transport" "timeline" "row";
+  }
+
+  .post-editor[data-mode="timing"]:is(
+      [data-layout="wide"],
+      [data-layout="viewer"]
+    )
     .layout {
-      grid-template-columns: minmax(0, 1fr) minmax(20rem, 26rem);
-      grid-template-rows: minmax(0, 1fr) auto var(--post-timeline-height);
-      grid-template-areas:
-        "stage inspector"
-        "toolbar toolbar"
-        "timeline timeline";
-      height: max(100%, 36rem);
-      min-height: 0;
-    }
-
-    .preview-frame {
-      height: auto;
-    }
-
-    .inspector:not(.external) {
-      min-height: 0;
-      overflow-y: auto;
-      padding-right: 0.25rem;
-    }
-
-    .post-editor[data-mode="timing"] .layout {
-      grid-template-rows: minmax(0, 1fr);
-      grid-template-areas: "stage inspector";
-    }
-
-    .post-editor[data-mode="timing"] .stage {
-      min-height: 0;
-      overflow-y: auto;
-    }
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-areas: "stage";
   }
 
-  /* The viewer's side panel holds the settings, so the post takes the full
-     width here. */
-  @container post-editor (min-width: 36rem) {
-    .post-editor[data-external-inspector="true"] .layout {
-      grid-template-columns: minmax(0, 1fr);
-      grid-template-rows: minmax(0, 1fr) auto var(--post-timeline-height);
-      grid-template-areas:
-        "stage"
-        "toolbar"
-        "timeline";
-      height: max(100%, 36rem);
-      min-height: 0;
-    }
-
-    .post-editor[data-external-inspector="true"] .preview-frame {
-      height: auto;
-    }
-
-    .post-editor[data-external-inspector="true"][data-mode="timing"] .layout {
-      grid-template-rows: minmax(0, 1fr);
-      grid-template-areas: "stage";
-    }
+  .top-bar-slot {
+    grid-area: top;
   }
 
-  .post-editor[data-sharing="true"] .inspector:not(.external) {
-    display: none;
+  .stage-row {
+    grid-area: stage;
+  }
+
+  .transport-slot {
+    grid-area: transport;
+  }
+
+  .timeline-slot {
+    grid-area: timeline;
+  }
+
+  .row-slot {
+    grid-area: row;
+  }
+
+  .dock {
+    grid-area: dock;
+  }
+
+  /* The preview's width comes from the row's height, so the panel sits right
+     beside the video and the two center as one group. */
+  .post-editor:is([data-layout="wide"], [data-layout="viewer"]) .stage-row {
+    --post-panel-width: clamp(20rem, 30cqw, 26rem);
+    container-type: size;
+    min-height: 0;
+  }
+
+  .post-editor[data-layout="wide"] .preview-frame {
+    flex: none;
+    width: min(
+      calc(100cqh * 9 / 16),
+      calc(100cqw - var(--post-panel-width) - 1rem)
+    );
+    height: 100%;
+  }
+
+  .post-editor[data-layout="viewer"] .preview-frame {
+    flex: none;
+    width: min(100cqw, calc(100cqh * 9 / 16));
+    height: 100%;
+  }
+
+  .post-editor[data-mode="timing"] .timing-stage {
+    overflow-y: auto;
+  }
+
+  .panel-host {
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .post-editor[data-layout="wide"] .panel-host {
+    flex: 0 0 var(--post-panel-width);
+  }
+
+  .side-column {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: var(--post-gap);
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .panel-slot {
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .panel-host.external .side-column {
+    grid-template-rows: auto auto;
+    height: auto;
+  }
+
+  .post-editor[data-mode="timing"][data-layout="wide"] .panel-host {
+    overflow-y: auto;
+  }
+
+  /* In the viewer's side panel the host scrolls as a whole. */
+  .panel-host.external {
+    height: 100%;
+    padding: var(--post-gap);
+    overflow-y: auto;
+    box-sizing: border-box;
+  }
+
+  .post-editor[data-sharing="true"] .panel-host:not(.external) {
+    visibility: hidden;
   }
 </style>

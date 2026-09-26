@@ -601,7 +601,7 @@ export function clearChannel(
 export function shiftKeyframes(item: PostItem, headCut: number): PostItem {
   if (item.kind === "video" || headCut === 0) return item;
   if (!isAnimated(item, "box") && !isAnimated(item, "opacity")) return item;
-  let next = item;
+  let next: PostItem = item;
   for (const channel of OTHER_CHANNELS) {
     const list = rawKeyframes(item, channel);
     if (!list) continue;

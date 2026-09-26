@@ -124,7 +124,8 @@
         editItemKeyframes(
           project,
           item.id,
-          (it) => setSegmentEasing(it, channel, editor.previewSeconds, next),
+          (it) =>
+            setSegmentEasing(it, channel, editor.previewSeconds, [...next]),
           ctx
         )
     );
@@ -401,8 +402,8 @@
     gap: 0.5rem;
   }
 
-  /* Matches PostItemSettings' own .lockable: no disabled prop on
-     ScrubbableNumber, so a locked segment goes read-only via inert instead. */
+  /* ScrubbableNumber has no disabled prop, so a locked segment goes
+     read-only via inert instead, and dims. */
   .fields.locked {
     opacity: 0.5;
   }
