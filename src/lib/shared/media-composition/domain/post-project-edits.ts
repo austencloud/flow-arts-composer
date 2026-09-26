@@ -38,7 +38,6 @@ import {
   isAnimated,
   shiftKeyframes,
   writeChannelValue,
-  type PostKeyframeChannel,
 } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
 
