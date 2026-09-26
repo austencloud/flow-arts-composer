@@ -1,11 +1,11 @@
 // AUTO-GENERATED - DO NOT EDIT
 // Run: npm run i18n:types
-// Generated: 2026-09-25T23:53:48.817Z
-// Keys: 4829
+// Generated: 2026-09-26T00:20:23.570Z
+// Keys: 5372
 
 import enMessages from "../../../../messages/en.json";
 
-/** All valid translation keys (4829 keys) */
+/** All valid translation keys (5372 keys) */
 export type TranslationKey = keyof typeof enMessages;
 
 /** Type-safe message lookup */

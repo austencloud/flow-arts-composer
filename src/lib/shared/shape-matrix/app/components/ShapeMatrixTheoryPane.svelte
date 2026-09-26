@@ -1,11 +1,12 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import ShapeMatrixGrid from "$lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte";
   import { MANDALA_STANDARD_TIP_DX } from "$lib/shared/mandala/domain/mandala-constants";
   import {
     theoryFlowerKey,
-    theoryFlowerLabel,
     type TheoryFlower,
   } from "$lib/shared/shape-matrix/domain/theory-flower";
+  import { localizedTheoryFlowerLabel } from "$lib/shared/shape-matrix/domain/shape-matrix-display";
   import {
     theoryCellArtworkSrc,
     theoryHeaderArtworkSrc,
@@ -25,12 +26,7 @@
     /** The compact header popover points back at the axis it is changing. */
     emphasizedAxis?: "left" | "right" | "both" | null;
   }
-  let {
-    onselect,
-    onsolo,
-    onsurprise,
-    emphasizedAxis = null,
-  }: Props = $props();
+  let { onselect, onsolo, onsurprise, emphasizedAxis = null }: Props = $props();
 
   const appState = getShapeMatrixAppContext();
   const animationState = getShapeMatrixAnimationContext();
@@ -73,7 +69,7 @@
 <section
   class="theory-pane"
   class:compact={appState.compact}
-  aria-label="Theory matrix"
+  aria-label={t("shape_engine_theory_matrix_aria")}
 >
   {#if appState.compact}
     <ShapeMatrixRecipeStrip surface="theory" onsurprise={surprise} />
@@ -86,9 +82,16 @@
       selectedPair={appState.theoryPair}
       claimSelected={appState.compact && appState.activeView === "matrix"}
       keyOf={theoryFlowerKey}
-      labelOf={theoryFlowerLabel}
+      labelOf={localizedTheoryFlowerLabel}
       paintHeader={(flower, hand: "left" | "right", sizePx, painter) =>
-        theoryHeaderArtworkSrc(flower, hand, reach[hand], scale, sizePx, painter)}
+        theoryHeaderArtworkSrc(
+          flower,
+          hand,
+          reach[hand],
+          scale,
+          sizePx,
+          painter
+        )}
       paintCell={(left, right, sizePx, painter) =>
         theoryCellArtworkSrc(left, right, reach, scale, sizePx, painter)}
       emphasizedAxis={emphasis}

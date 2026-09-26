@@ -15,6 +15,7 @@
   import CardHeader from "./shared/CardHeader.svelte";
   import { morphGenerateCard } from "../../shared/services/generate-card-morph";
   import { buildTnDCardDisplay } from "./tnd-card-display";
+  import { describeCreateTnDSelection } from "./tnd-presentation";
 
   let {
     handRelationship,
@@ -45,6 +46,17 @@
       propRelationship,
       matchHandTurns,
       blockedHandModes,
+    })
+  );
+  const handValue = $derived(
+    `${describeCreateTnDSelection(handRelationship)}${display.handBlocked ? `, ${t("create_deep_off_with_loop")}` : ""}`
+  );
+  const propValue = $derived(describeCreateTnDSelection(propRelationship));
+  const ariaLabel = $derived(
+    t("create_deep_tnd_card_aria", {
+      hands: handValue,
+      props: propValue,
+      turns: matchHandTurns ? t("create_deep_turns_matched_suffix") : "",
     })
   );
 
@@ -81,7 +93,7 @@
     bind:clientHeight={cardHeight}
     onclick={handleClick}
     onkeydown={handleKeydown}
-    aria-label={display.ariaLabel}
+    aria-label={ariaLabel}
   >
     <CardHeader title={t("create_ui_timing_and_direction")} {headerFontSize} />
     <div class="tnd-body" aria-hidden="true">
@@ -90,7 +102,11 @@
           class="tnd-line"
           class:blocked={line.label === "Hands" && display.handBlocked}
         >
-          <span class="line-label">{line.label}</span>
+          <span class="line-label"
+            >{line.label === "Hands"
+              ? t("create_ui_hands")
+              : t("create_ui_props")}</span
+          >
           <span class="line-value">
             {#if line.element}
               <img
@@ -100,7 +116,9 @@
                 style="width: {iconSize}px; height: {iconSize}px;"
               />
             {/if}
-            <span class="line-words">{line.value}</span>
+            <span class="line-words"
+              >{line.label === "Hands" ? handValue : propValue}</span
+            >
           </span>
         </div>
       {/each}

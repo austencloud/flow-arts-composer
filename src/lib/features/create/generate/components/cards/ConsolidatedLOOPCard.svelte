@@ -79,14 +79,14 @@ icons when enabled. Click opens the expanded overlay.
   // The exact text label stays alongside the axis-aware icon so combined
   // transformations remain readable without relying on color or glyphs alone.
   const displayValue = $derived.by(() => {
-    if (!loopEnabled) return "Off";
+    if (!loopEnabled) return t("create_ui_off");
     if (display.effectiveAxis) {
       const effectiveAxis: ReflectionAxis = display.effectiveAxis;
       const reflectionLabels: Record<ReflectionAxis, string> = {
         "north-south": t("generator_loop_mirrored"),
         "east-west": t("generator_loop_flipped"),
-        "northeast-southwest": "NE-SW Reflection",
-        "northwest-southeast": "NW-SE Reflection",
+        "northeast-southwest": t("create_deep_ne_sw_reflection"),
+        "northwest-southeast": t("create_deep_nw_se_reflection"),
       };
       const parts = [reflectionLabels[effectiveAxis]];
       if (selectedComponents.has(LOOPComponent.ROTATED)) {
@@ -162,7 +162,20 @@ icons when enabled. Click opens the expanded overlay.
 
   // The strip is hidden from the accessibility tree (this button already owns
   // the name), so the rhythm it encodes visually has to be spoken here.
-  const rhythmDetail = $derived(loopEnabled ? describeLoopRhythm(display) : "");
+  const rhythmDetail = $derived.by(() => {
+    if (!loopEnabled) return "";
+    const rhythm = describeLoopRhythm(display);
+    const labels: Record<string, string> = {
+      "quartered rotation": t("create_deep_quartered_rotation"),
+      "halved rotation": t("create_deep_halved_rotation"),
+      "quartered inversion": t("create_deep_quartered_inversion"),
+      "overlay inversion": t("create_deep_overlay_inversion"),
+    };
+    return rhythm
+      .split(", ")
+      .map((part) => labels[part] ?? part)
+      .join(", ");
+  });
 
   function handleClick() {
     hapticService?.trigger("selection");
@@ -199,9 +212,10 @@ icons when enabled. Click opens the expanded overlay.
     bind:clientHeight={cardHeight}
     onclick={handleClick}
     onkeydown={handleKeydown}
-    aria-label="LOOP: {displayValue}{rhythmDetail
-      ? `, ${rhythmDetail}`
-      : ''}. Click to configure."
+    aria-label={t("create_deep_loop_card_aria", {
+      value: displayValue,
+      rhythm: rhythmDetail ? `, ${rhythmDetail}` : "",
+    })}
   >
     <CardHeader title="LOOP" {headerFontSize} />
     <!-- Label and icons center as one group, so this card's text lines up with

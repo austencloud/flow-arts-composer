@@ -1,13 +1,13 @@
 <!-- Sidebar Footer Component -->
 <!-- Footer with settings, network status, prop switcher, account, and voice mic -->
 <script lang="ts">
+  import { localizedPropName } from "$lib/shared/settings/components/tabs/prop-type/localized-prop-name";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import NetworkStatusIndicator from "../../../offline/components/NetworkStatusIndicator.svelte";
   import { voiceControlState } from "../../../voice-control/state/voice-control-state.svelte";
   import { getSettings } from "../../../application/state/app-state.svelte";
   import { propDrawerState } from "../../../settings/state/prop-drawer-state.svelte";
-  import { getPropTypeDisplayInfo } from "../../../pictograph/prop/domain/prop-type-display-registry";
   import { PropType } from "../../../pictograph/prop/domain/enums/prop-type";
   import AccountRow from "../account/AccountRow.svelte";
   import SelectedPropPreview from "../buttons/SelectedPropPreview.svelte";
@@ -36,7 +36,6 @@
 
   // Prop type display info for the prop button
   const leftPropType = $derived(getSettings()?.leftPropType ?? PropType.STAFF);
-  const propDisplayInfo = $derived(getPropTypeDisplayInfo(leftPropType));
   const rightPropType = $derived(
     getSettings()?.catDogMode
       ? (getSettings().rightPropType ?? leftPropType)
@@ -44,8 +43,8 @@
   );
   const propLabel = $derived(
     rightPropType === leftPropType
-      ? propDisplayInfo.label
-      : `${propDisplayInfo.label} + ${getPropTypeDisplayInfo(rightPropType).label}`
+      ? localizedPropName(leftPropType)
+      : `${localizedPropName(leftPropType)} + ${localizedPropName(rightPropType)}`
   );
 
   // Inbox unread state

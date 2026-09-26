@@ -7,11 +7,10 @@
   there is no Apply-to mode and no "Mixed" placeholder. The corner layout
   scales with the grid's corner cell; the plain layout is a header control. -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { localizedMatrixTurnSpokenLabel } from "$lib/shared/shape-matrix/domain/shape-matrix-display";
   import { Popover } from "bits-ui";
-  import {
-    matrixTurnSpokenLabel,
-    matrixTurnVisibleLabel,
-  } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
+  import { matrixTurnVisibleLabel } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
   import {
     keyToTurnValue,
     turnValueToKey,
@@ -30,7 +29,9 @@
   let { hand, layout = "plain" }: Props = $props();
 
   const appState = getShapeMatrixAppContext();
-  const axisName = $derived(hand === "left" ? "Rows" : "Columns");
+  const axisName = $derived(
+    hand === "left" ? t("shape_engine_rows") : t("shape_engine_columns")
+  );
   const turn = $derived(
     hand === "left" ? appState.leftTurn : appState.rightTurn
   );
@@ -39,8 +40,14 @@
   const canStep = $derived(turns.length > 1);
 
   const visible = $derived(matrixTurnVisibleLabel(turn, appState.labelMode));
-  const spoken = $derived(matrixTurnSpokenLabel(turn, appState.labelMode));
-  const unit = $derived(appState.labelMode === "ratios" ? "ratio" : "turn");
+  const spoken = $derived(
+    localizedMatrixTurnSpokenLabel(turn, appState.labelMode)
+  );
+  const unit = $derived(
+    appState.labelMode === "ratios"
+      ? t("shape_engine_ratio")
+      : t("shape_engine_turn")
+  );
 
   /* The palette: every value of the level, read in the grid's notation.
      Past six values it wraps to two rows, as the compact tray's palette
@@ -49,7 +56,7 @@
   const choices = $derived(
     turns.map((value) => ({
       value: turnValueToKey(value),
-      label: matrixTurnSpokenLabel(value, appState.labelMode),
+      label: localizedMatrixTurnSpokenLabel(value, appState.labelMode),
       shortLabel: matrixTurnVisibleLabel(value, appState.labelMode),
     }))
   );
@@ -92,7 +99,9 @@
   <button
     type="button"
     class="step"
-    aria-label={`Previous ${axisName.toLowerCase()} value`}
+    aria-label={t("shape_engine_previous_value", {
+      axis: axisName.toLowerCase(),
+    })}
     disabled={!canStep || index <= 0}
     onclick={() => step(-1)}
   >
@@ -109,7 +118,11 @@
           type="button"
           class="value"
           disabled={!canStep}
-          aria-label={`${axisName} value: ${spoken}. Choose from every ${unit} at this level`}
+          aria-label={t("shape_engine_axis_value", {
+            axis: axisName,
+            value: spoken,
+            unit,
+          })}
           onkeydown={(event) => {
             onKey(event);
             if (!event.defaultPrevented) triggerKeydown?.(event);
@@ -136,11 +149,18 @@
                 {...props}
                 class="axis-popover"
                 role="dialog"
-                aria-label={`${axisName} ${unit}`}
+                aria-label={t("shape_engine_axis_unit", {
+                  axis: axisName,
+                  unit,
+                })}
                 transition:flyFade={{ y: -6, duration: DURATION.normal }}
               >
                 <span class="popover-title">
-                  {axisName} {unit} · Level {appState.level}
+                  {t("shape_engine_axis_heading", {
+                    axis: axisName,
+                    unit,
+                    level: appState.level,
+                  })}
                 </span>
                 <SegmentedControl
                   options={choices}
@@ -151,7 +171,10 @@
                   density={columns ? "standard" : "tight"}
                   color={hand === "left" ? "blue" : "red"}
                   semantics="radiogroup"
-                  ariaLabel={`${axisName} ${unit}`}
+                  ariaLabel={t("shape_engine_axis_unit", {
+                    axis: axisName,
+                    unit,
+                  })}
                 />
               </div>
             {/if}
@@ -163,7 +186,7 @@
   <button
     type="button"
     class="step"
-    aria-label={`Next ${axisName.toLowerCase()} value`}
+    aria-label={t("shape_engine_next_value", { axis: axisName.toLowerCase() })}
     disabled={!canStep || index >= turns.length - 1}
     onclick={() => step(1)}
   >

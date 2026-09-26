@@ -6,14 +6,17 @@
   re-click (SegmentedControl cannot represent none-selected). Mode → element
   mapping is diamond-grid-specific (see build-mode-realizations.ts). -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import {
     MODE_ORDER,
-    MODE_SHORT_WORDS,
-    MODE_WORDS,
     type VtgMode,
   } from "../services/shape-matrix-realizations";
   import { FAMILY_BY_MODE } from "../services/build-mode-realizations";
   import { TND_BY_FAMILY } from "$lib/features/choreo-card/domain/tnd-element";
+  import {
+    localizedModeWords,
+    localizedElementName,
+  } from "../domain/shape-matrix-display";
   import RelationshipChoiceChip from "./RelationshipChoiceChip.svelte";
 
   let {
@@ -45,16 +48,10 @@
   // VtgMode maps to a real family in practice. Filter rather than assert.
   const chips = MODE_ORDER.map((mode) => ({
     mode,
-    words: MODE_WORDS[mode],
-    shortWords: MODE_SHORT_WORDS[mode],
     el: TND_BY_FAMILY[FAMILY_BY_MODE[mode]],
   })).filter(
     (c): c is typeof c & { el: NonNullable<typeof c.el> } => c.el !== undefined
   );
-
-  function elementName(raw: string): string {
-    return raw.charAt(0).toUpperCase() + raw.slice(1);
-  }
 </script>
 
 <div
@@ -62,20 +59,20 @@
   class:fill
   style="--chip-row-columns: {columns}"
   role="group"
-  aria-label="Hand path timing and direction"
+  aria-label={t("shape_engine_hand_path_aria")}
 >
   {#each chips as c (c.mode)}
     <RelationshipChoiceChip
       {compact}
       accent={c.el.accentColor}
       icon={c.el.iconPath}
-      timing={c.shortWords.timing}
-      direction={c.shortWords.direction}
+      timing={localizedModeWords(c.mode, true).timing}
+      direction={localizedModeWords(c.mode, true).direction}
       active={selected === c.mode}
       disabled={disabled || (availabilityReady && !available.includes(c.mode))}
-      ariaLabel={`${c.words.timing} ${c.words.direction}, ${elementName(c.el.element)} (${c.mode})${
+      ariaLabel={`${localizedModeWords(c.mode).timing} ${localizedModeWords(c.mode).direction}, ${localizedElementName(c.el.element)} (${c.mode})${
         availabilityReady && !available.includes(c.mode)
-          ? ", unavailable for these flowers"
+          ? `, ${t("shape_engine_mode_unavailable")}`
           : ""
       }`}
       onpick={() => onpick(selected === c.mode ? null : c.mode)}

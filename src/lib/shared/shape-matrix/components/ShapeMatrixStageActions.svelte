@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import { getShapeMatrixAnimationContext } from "../app/context/shape-matrix-animation-context";
   import { getShapeMatrixAppContext } from "../app/context/shape-matrix-app-context";
@@ -40,14 +41,14 @@
 {#if placement === "panel"}
   <PanelButton
     ariaLabel={open
-      ? "Close the customize workspace"
-      : "Customize the animation"}
+      ? t("shape_engine_customize_workspace_close")
+      : t("shape_engine_customize_aria")}
     ariaPressed={open}
     disabled={!hasPair}
     onclick={toggle}
   >
     <i class="fas fa-sliders" aria-hidden="true"></i>
-    Customize
+    {t("shape_engine_customize")}
   </PanelButton>
 {:else}
   <div class="stage-actions">
@@ -57,9 +58,11 @@
       class:open
       aria-pressed={open}
       aria-label={open
-        ? "Close the customize workspace"
-        : "Customize the animation"}
-      title={open ? "Close customize" : "Customize"}
+        ? t("shape_engine_customize_workspace_close")
+        : t("shape_engine_customize_aria")}
+      title={open
+        ? t("shape_engine_close_customize")
+        : t("shape_engine_customize")}
       disabled={!hasPair}
       onclick={toggle}
     >

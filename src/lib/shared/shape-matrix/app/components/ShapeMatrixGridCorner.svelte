@@ -9,13 +9,16 @@
   detail pane names it. Compact hosts get a bare legend and edit from the
   header, so this only becomes a control surface on wide layouts. -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { spinRatioEquals } from "@vtg/domain";
   import { flyFade } from "$lib/shared/transitions/motion";
-  import { flowerLabel } from "$lib/shared/shape-matrix/domain/flower-signature";
-  import { matrixTurnSpokenLabel } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
-  import { theoryFlowerLabel } from "$lib/shared/shape-matrix/domain/theory-flower";
-  import { theoryRatioSpokenLabel } from "$lib/shared/shape-matrix/domain/theory-ratio";
-  import { MODE_LABEL } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+  import {
+    localizedFlowerLabel,
+    localizedTheoryFlowerLabel,
+    localizedMatrixTurnSpokenLabel,
+    localizedTheoryRatioSpokenLabel,
+  } from "$lib/shared/shape-matrix/domain/shape-matrix-display";
+  import { localizedModeName } from "$lib/shared/shape-matrix/domain/shape-matrix-display";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import { SHAPE_MATRIX_REVEAL } from "../services/shape-matrix-reveal";
   import ShapeMatrixAxisStepper from "./ShapeMatrixAxisStepper.svelte";
@@ -65,23 +68,34 @@
     // Both panes stay mounted; only the showing surface speaks the roll.
     if (theory !== (appState.surface === "theory")) return;
     const rows = theory
-      ? theoryRatioSpokenLabel(appState.theoryLeftRatio)
-      : matrixTurnSpokenLabel(appState.leftTurn, appState.labelMode);
+      ? localizedTheoryRatioSpokenLabel(
+          appState.theoryLeftRatio.handCycles,
+          appState.theoryLeftRatio.propRotations
+        )
+      : localizedMatrixTurnSpokenLabel(appState.leftTurn, appState.labelMode);
     const columns = theory
-      ? theoryRatioSpokenLabel(appState.theoryRightRatio)
-      : matrixTurnSpokenLabel(appState.rightTurn, appState.labelMode);
+      ? localizedTheoryRatioSpokenLabel(
+          appState.theoryRightRatio.handCycles,
+          appState.theoryRightRatio.propRotations
+        )
+      : localizedMatrixTurnSpokenLabel(appState.rightTurn, appState.labelMode);
     const crossing = theory
       ? appState.theoryPair
-        ? `${theoryFlowerLabel(appState.theoryPair.left)} over ${theoryFlowerLabel(appState.theoryPair.right)}`
+        ? `${localizedTheoryFlowerLabel(appState.theoryPair.left)} ${t("shape_engine_over")} ${localizedTheoryFlowerLabel(appState.theoryPair.right)}`
         : null
       : appState.selectedPair
-        ? `${flowerLabel(appState.selectedPair.left)} over ${flowerLabel(appState.selectedPair.right)}`
+        ? `${localizedFlowerLabel(appState.selectedPair.left)} ${t("shape_engine_over")} ${localizedFlowerLabel(appState.selectedPair.right)}`
         : null;
     const mode = theory ? appState.theoryMode : appState.selectedMode;
     announcement = [
-      `New grid. Rows ${rows}. Columns ${columns}.`,
-      crossing ? `Crossing: left ${crossing}.` : null,
-      mode ? `Relationship: ${mode}, ${MODE_LABEL[mode]}.` : null,
+      t("shape_engine_new_grid_announcement", { rows, columns }),
+      crossing ? t("shape_engine_crossing_announcement", { crossing }) : null,
+      mode
+        ? t("shape_engine_relationship_announcement", {
+            mode,
+            relationship: localizedModeName(mode),
+          })
+        : null,
     ]
       .filter(Boolean)
       .join(" ");
@@ -93,25 +107,29 @@
 <div class="corner-frame" class:theory>
   {#if appState.compact}
     <div class="corner-guide">
-      <strong>Pick a crossing</strong>
+      <strong>{t("shape_engine_pick_crossing")}</strong>
       <span class="compact-axis" aria-hidden="true">
         <i class="column-arrow fas fa-arrow-right"></i>
         <i class="row-arrow fas fa-arrow-down"></i>
       </span>
     </div>
   {:else}
-    <div class="corner-home" role="group" aria-label="Current grid">
+    <div
+      class="corner-home"
+      role="group"
+      aria-label={t("shape_engine_current_grid_aria")}
+    >
       <div class="top">
         <button
           type="button"
           class="surprise"
-          aria-label="Surprise me with a new grid, crossing, and hand relationship"
-          title="Pick a new grid, crossing, and hand relationship"
+          aria-label={t("shape_engine_surprise_aria")}
+          title={t("shape_engine_surprise_title")}
           disabled={!theory && !appState.data}
           onclick={onsurprise}
         >
           <i class="fas fa-dice" aria-hidden="true"></i>
-          <span>Surprise me</span>
+          <span>{t("shape_engine_surprise_me")}</span>
         </button>
         {#if theory}
           <button
@@ -120,11 +138,13 @@
             class:linked={appState.theoryRatiosLinked}
             aria-pressed={appState.theoryRatiosLinked}
             aria-label={appState.theoryRatiosLinked
-              ? "Unlink row and column ratios"
+              ? t("shape_engine_unlink_ratios")
               : ratiosMatch
-                ? "Link row and column ratios"
-                : "Link column ratio to the row ratio"}
-            title={appState.theoryRatiosLinked ? "Linked" : "Link ratios"}
+                ? t("shape_engine_link_ratios")
+                : t("shape_engine_link_column_to_row")}
+            title={appState.theoryRatiosLinked
+              ? t("shape_engine_linked")
+              : t("shape_engine_link_ratios")}
             onclick={toggleLink}
           >
             <i class="fas fa-link" aria-hidden="true"></i>
@@ -174,7 +194,7 @@
 
       <div class="foot">
         {#if !hasPair}
-          <span class="hint">Pick a crossing</span>
+          <span class="hint">{t("shape_engine_pick_crossing")}</span>
         {/if}
       </div>
     </div>

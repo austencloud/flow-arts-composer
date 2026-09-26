@@ -38,6 +38,7 @@
   owns the hands-to-props explanation, so the animation area does not repeat it.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, untrack } from "svelte";
   import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
@@ -1092,7 +1093,7 @@
 
 {#snippet playerPlaceholder()}
   <div class="lazy-region-state player-placeholder" role="status">
-    <span>Loading animation…</span>
+    <span>{t("shape_engine_loading_animation")}</span>
   </div>
 {/snippet}
 
@@ -1106,7 +1107,7 @@
     class="lazy-region-state player-load-error"
     use:registerPlayerRetry={{ source, key, retry }}
   >
-    <p>Animation didn’t load.</p>
+    <p>{t("shape_engine_animation_failed")}</p>
   </div>
 {/snippet}
 
@@ -1124,14 +1125,14 @@
 
 {#snippet railPlaceholder()}
   <div class="lazy-region-state rail-placeholder" role="status">
-    <span>Loading pictographs…</span>
+    <span>{t("shape_engine_loading_pictographs")}</span>
   </div>
 {/snippet}
 
 {#snippet railLoadError(_loadError: unknown, retry: () => void)}
   <div class="lazy-region-state rail-load-error" role="alert">
-    <p>Pictographs didn’t load.</p>
-    <PanelButton onclick={retry}>Try again</PanelButton>
+    <p>{t("shape_engine_pictographs_failed")}</p>
+    <PanelButton onclick={retry}>{t("shape_engine_try_again")}</PanelButton>
   </div>
 {/snippet}
 
@@ -1230,7 +1231,7 @@
 
 <section
   class="drill"
-  aria-label="Shape matrix realizations"
+  aria-label={t("shape_engine_realizations_aria")}
   style={captionRealization
     ? `--hand-el: ${captionRealization.element.accentColor}; --hand-dark: ${captionRealization.element.darkComplement}; --prop-el: ${captionRealization.propRelationship.element?.accentColor ?? captionRealization.element.accentColor}`
     : undefined}
@@ -1334,15 +1335,15 @@
           />
           {#if playerLoadFailure}
             <div class="player-load-notice" role="alert">
-              <p>Animation didn’t load.</p>
+              <p>{t("shape_engine_animation_failed")}</p>
               <PanelButton onclick={() => retryPlayerLoad(playerLoadFailure)}
-                >Try again</PanelButton
+                >{t("shape_engine_try_again")}</PanelButton
               >
             </div>
           {/if}
         {:else}
           <div class="hero-hint">
-            <p class="hint-lead">Pick a cell</p>
+            <p class="hint-lead">{t("shape_engine_pick_cell")}</p>
             <p class="hint-sub">
               Its shape opens here. Each element traces it live.
             </p>
@@ -1370,7 +1371,7 @@
         data-focus-mode-chrome
         data-drill-region="strip"
         role="group"
-        aria-label="Pictograph timeline"
+        aria-label={t("shape_engine_pictograph_timeline")}
         use:claimedViewTransitionName={{
           name: SHAPE_MATRIX_STRIP_NAME,
           enabled: morphingFrames,
@@ -1404,7 +1405,7 @@
           />
         {:else if railRealization}
           <p class="quarter-status">
-            Level 4 pictograph are in visual calibration.
+            {t("shape_engine_pictographs_calibration")}
           </p>
         {/if}
       </div>
@@ -1454,7 +1455,7 @@
         showMotionVisibility={true}
         onActiveSectionChange={animationState.setActiveSection}
         closeRequest={animationState.closeRequest}
-        regionLabel="Shape animation controls"
+        regionLabel={t("shape_engine_shape_animation_controls")}
       />
     </div>
   {/if}
@@ -1475,35 +1476,41 @@
       {#if onopenRealization}
         <PanelButton
           variant="primary"
-          ariaLabel="Open realization in viewer"
+          ariaLabel={t("shape_engine_open_viewer_aria")}
           disabled={!visibleRealization}
           onclick={() =>
             visibleRealization && onopenRealization(visibleRealization)}
         >
           <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
-          Open<span class="action-suffix"> in viewer</span>
+          {t("shape_engine_open")}<span class="action-suffix">
+            {t("shape_engine_in_viewer")}</span
+          >
         </PanelButton>
       {/if}
       {#if onsaveRealization}
         <PanelButton
-          ariaLabel="Save realization to library"
+          ariaLabel={t("shape_engine_save_library_aria")}
           disabled={!visibleRealization}
           onclick={() =>
             visibleRealization && onsaveRealization(visibleRealization)}
         >
           <i class="fas fa-bookmark" aria-hidden="true"></i>
-          Save<span class="action-suffix"> to library</span>
+          {t("shape_engine_save")}<span class="action-suffix">
+            {t("shape_engine_to_library")}</span
+          >
         </PanelButton>
       {/if}
       {#if onshareRealization}
         <PanelButton
-          ariaLabel="Share realization sequence"
+          ariaLabel={t("shape_engine_share_sequence_aria")}
           disabled={!visibleRealization}
           onclick={() =>
             visibleRealization && onshareRealization(visibleRealization)}
         >
           <i class="fas fa-share-nodes" aria-hidden="true"></i>
-          Share<span class="action-suffix"> sequence</span>
+          {t("shape_engine_share")}<span class="action-suffix">
+            {t("shape_engine_sequence")}</span
+          >
         </PanelButton>
       {/if}
       {#if appState && !appState.compact}

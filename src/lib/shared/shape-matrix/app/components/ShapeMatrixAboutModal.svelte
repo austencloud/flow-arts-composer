@@ -1,11 +1,10 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
   import ModalHeader from "$lib/shared/foundation/ui/modal/ModalHeader.svelte";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
-  import {
-    SHAPE_MATRIX_LEVELS,
-    SHAPE_MATRIX_LEVEL_DESCRIPTIONS,
-  } from "../shape-matrix-levels";
+  import { localizedLevelDescription } from "../../domain/shape-matrix-display";
+  import { SHAPE_MATRIX_LEVELS } from "../shape-matrix-levels";
   import {
     KINETIC_SHAPE_ENGINE_AUTHOR,
     KINETIC_SHAPE_ENGINE_NAME,
@@ -36,8 +35,8 @@
 {#snippet header()}
   <ModalHeader
     id="shape-matrix-about-title"
-    title={`About ${KINETIC_SHAPE_ENGINE_NAME}`}
-    subtitle="Vulcan Tech Gospel, Lorq’s matrix, and Austen’s Shape Engine"
+    title={t("shape_engine_about_name")}
+    subtitle={t("shape_engine_about_subtitle")}
     icon="fa-table-cells-large"
     iconColor="#d9901a"
     onClose={appState.closeAbout}
@@ -53,40 +52,37 @@
 >
   <div class="about-copy">
     <p>
-      {KINETIC_SHAPE_ENGINE_NAME} is an independent exploration tool by
-      {KINETIC_SHAPE_ENGINE_AUTHOR}. It is part of
-      <a href="/composer">Flow Arts Composer</a>, also available as a standalone
-      app.
+      {t("shape_engine_about_intro_before")}
+      {KINETIC_SHAPE_ENGINE_AUTHOR}. {t("shape_engine_about_intro_middle")}
+      <a href="/composer">Flow Arts Composer</a>{t(
+        "shape_engine_about_intro_after"
+      )}
     </p>
     <div class="about-columns">
       <section>
-        <span class="section-kicker">Notation in this app</span>
-        <h2>VTG ratios and TKA turns</h2>
+        <span class="section-kicker">{t("shape_engine_notation_kicker")}</span>
+        <h2>{t("shape_engine_notation_heading")}</h2>
         <p>
-          Vulcan Tech Gospel (VTG) was developed by Noel Yee and spinners at the
-          Vulcan Lofts in Oakland. The Level Matrix uses TKA turn values. The
-          Ratio Playground uses exact whole-number spin ratios, including the
-          VTG families {ORIGINAL_SHAPE_MATRIX_VTG_RATIOS}.
+          {t("shape_engine_notation_prose", {
+            ratios: ORIGINAL_SHAPE_MATRIX_VTG_RATIOS,
+          })}
         </p>
       </section>
 
       <section bind:this={levelsSection} class="levels-section">
-        <span class="section-kicker">Organising by difficulty</span>
-        <h2>What the levels are</h2>
+        <span class="section-kicker">{t("shape_engine_difficulty_kicker")}</span
+        >
+        <h2>{t("shape_engine_levels_heading")}</h2>
         <p>
-          Levels are a Kinetic Alphabet idea, and they are cumulative: each one
-          keeps everything the level below it had and adds finer turn
-          increments, so the grid gains rows and columns rather than trading
-          them. A higher level does not make every pattern in it harder — it
-          offers more to choose from.
+          {t("shape_engine_levels_prose")}
         </p>
         <ol class="level-list">
           {#each SHAPE_MATRIX_LEVELS as level (level)}
             <li>
               <span class="level-numeral">{level}</span>
               <span class="level-copy">
-                <strong>{SHAPE_MATRIX_LEVEL_DESCRIPTIONS[level].name}</strong>
-                <span>{SHAPE_MATRIX_LEVEL_DESCRIPTIONS[level].blurb}</span>
+                <strong>{localizedLevelDescription(level).name}</strong>
+                <span>{localizedLevelDescription(level).blurb}</span>
               </span>
             </li>
           {/each}
@@ -94,34 +90,30 @@
       </section>
 
       <section>
-        <span class="section-kicker">Source inspiration</span>
-        <h2>Lorq Nichols’ 144 Shape Matrix</h2>
+        <span class="section-kicker">{t("shape_engine_source_kicker")}</span>
+        <h2>{t("shape_engine_source_heading")}</h2>
         <p>
-          Lorq Nichols, publishing as
+          {t("shape_engine_source_before")}
           <a href={SPIN_SCIENCE_URL} target="_blank" rel="noopener noreferrer"
             >Spin Science</a
-          >, created the original matrix. It pairs twelve driving styles for
-          each hand into 144 combinations. Shape Engine takes inspiration from
-          that row-and-column format.
+          >{t("shape_engine_source_after")}
         </p>
         <p>
-          Austen built this app independently, including its prop selection,
-          relationship solving, live animation, and pictograph readouts. It is
-          not an official Spin Science release.
+          {t("shape_engine_independence_prose")}
         </p>
       </section>
     </div>
     <div class="source-links">
       <a href="/guide/ratios">
-        Read ratios in TKA
+        {t("shape_engine_read_ratios")}
         <i class="fas fa-arrow-right" aria-hidden="true"></i>
       </a>
       <a href="/history#archive-record-vtg">
-        The Vulcan Tech Gospel record
+        {t("shape_engine_vtg_record")}
         <i class="fas fa-arrow-right" aria-hidden="true"></i>
       </a>
       <a href="/history#archive-record-lorq">
-        The Lorq Nichols record
+        {t("shape_engine_lorq_record")}
         <i class="fas fa-arrow-right" aria-hidden="true"></i>
       </a>
       <a
@@ -129,7 +121,7 @@
         target="_blank"
         rel="noopener noreferrer"
       >
-        View Lorq Nichols’ 144 Shape Matrix
+        {t("shape_engine_view_original_matrix")}
         <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
       </a>
     </div>

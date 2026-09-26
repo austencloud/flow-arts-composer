@@ -219,8 +219,8 @@ Features:
   const utilityOpen = $derived(activeUtilityPanel !== null);
   const utilityPanelLabel = $derived(
     renderedUtilityPanel === "settings"
-      ? "Option settings"
-      : "Letter type guide"
+      ? t("create_deep_option_settings")
+      : t("create_deep_letter_type_guide")
   );
   const typeOptions = $derived(
     LETTER_TYPE_GROUP_DESCRIPTORS.map((group, index) => {
@@ -391,7 +391,7 @@ Features:
         size="sm"
         density="compact"
         semantics="tabs"
-        ariaLabel="Letter type"
+        ariaLabel={t("create_deep_letter_type")}
         optionContent={letterTypeGroupLabel}
       />
     </div>
