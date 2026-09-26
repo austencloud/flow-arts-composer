@@ -5,12 +5,14 @@ import {
   TAKE_MAX_BPM,
   TAKE_MIN_BPM,
   addTakeTap,
+  clearTakePerformanceEnd,
+  editTakeSection,
   mergeTimingSectionIntoPrevious,
   moveTakeBeatOne,
   placeTakeLanding,
   releaseTakeLanding,
-  setPerformanceEndAt,
   setTakeBeatOneAt,
+  setTakePerformanceEndAt,
   splitTimingSection,
   takeLandingDragRange,
   takeSampleAt,
@@ -23,6 +25,7 @@ import {
   landingName,
   summarizeTiming,
 } from "$lib/shared/media-composition/domain/timing-summary";
+import { shownLanding } from "./timing-lane-landings";
 
 export interface LandingRef {
   sectionId: string;
@@ -196,9 +199,16 @@ export function createPostTimingSession(builder: PostBuilderState) {
     seek(mediaSeconds + direction * MIN_MOVE_SECONDS);
   }
 
+  /**
+   * Edits the current part. The parts after it that keep its count count on
+   * from it as it now is, so the edit is on the whole take.
+   */
   function editCurrent(edit: (section: TimingSection) => TimingSection): void {
     if (!takeId || !section) return;
-    builder.editSection(takeId, section.id, edit);
+    const id = section.id;
+    builder.editTiming(takeId, (current) =>
+      editTakeSection(current, id, moveBeats, edit)
+    );
   }
 
   /**
@@ -217,7 +227,9 @@ export function createPostTimingSession(builder: PostBuilderState) {
     if (!takeId || !timing) return;
     const seconds = video?.currentTime ?? mediaSeconds;
     // Near a nudged cut, the tap goes with the part that draws its landing.
-    builder.editTiming(takeId, (current) => addTakeTap(current, seconds));
+    builder.editTiming(takeId, (current) =>
+      addTakeTap(current, seconds, moveBeats)
+    );
     tapCount += 1;
   }
 
@@ -271,17 +283,13 @@ export function createPostTimingSession(builder: PostBuilderState) {
     }));
   }
 
+  // Parts that keep one count share its end, wherever it is stored.
   function clearEnd(): void {
-    editCurrent((current) => {
-      if (
-        current.lastPosition === undefined &&
-        current.carriedEnd === undefined
-      ) {
-        return current;
-      }
-      const { lastPosition: _end, carriedEnd: _carried, ...rest } = current;
-      return rest;
-    });
+    if (!takeId || !section) return;
+    const id = section.id;
+    builder.editTiming(takeId, (current) =>
+      clearTakePerformanceEnd(current, id, moveBeats)
+    );
   }
 
   function clearTaps(): void {
@@ -291,21 +299,21 @@ export function createPostTimingSession(builder: PostBuilderState) {
   }
 
   /**
-   * The parts after one, and before it. Where "keep counting" cut them
-   * apart, they say how the part is drawn - how far it runs, and the drags
-   * and taps beside each cut - so edits that pick a landing as drawn need
-   * them.
+   * A selected landing moved across a cut is shown by the part on the other
+   * side now; the selection goes with it.
    */
-  function sectionsAfter(sectionId: string): TimingSection[] {
-    const sections = timing?.sections ?? [];
-    const index = sections.findIndex((entry) => entry.id === sectionId);
-    return index < 0 ? [] : sections.slice(index + 1);
-  }
-
-  function sectionsBefore(sectionId: string): TimingSection[] {
-    const sections = timing?.sections ?? [];
-    const index = sections.findIndex((entry) => entry.id === sectionId);
-    return index < 0 ? [] : sections.slice(0, index);
+  function followSelected(landing: LandingRef): void {
+    const ref = selected;
+    if (
+      !ref ||
+      !timing ||
+      ref.sectionId !== landing.sectionId ||
+      ref.position !== landing.position
+    ) {
+      return;
+    }
+    const shown = shownLanding(timing, resolved, ref.sectionId, ref.position);
+    if (shown && shown.sectionId !== ref.sectionId) selected = shown;
   }
 
   // A landing beside a cut is drawn by both parts, so dragging or releasing
@@ -321,6 +329,7 @@ export function createPostTimingSession(builder: PostBuilderState) {
         moveBeats
       )
     );
+    followSelected(landing);
   }
 
   function landingRange(landing: LandingRef) {
@@ -340,6 +349,7 @@ export function createPostTimingSession(builder: PostBuilderState) {
     builder.editTiming(takeId, (current) =>
       releaseTakeLanding(current, ref.sectionId, ref.position, moveBeats)
     );
+    followSelected(ref);
   }
 
   function split(continuity: SplitContinuity): void {
@@ -581,15 +591,11 @@ export function createPostTimingSession(builder: PostBuilderState) {
       );
     },
     endHere(): void {
+      if (!takeId || !section) return;
+      const id = section.id;
       const at = mediaSeconds;
-      editCurrent((current) =>
-        setPerformanceEndAt(
-          current,
-          moveBeats,
-          at,
-          sectionsAfter(current.id),
-          sectionsBefore(current.id)
-        )
+      builder.editTiming(takeId, (current) =>
+        setTakePerformanceEndAt(current, id, moveBeats, at)
       );
     },
     firstTapWasMoveOne,

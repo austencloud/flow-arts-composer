@@ -56,10 +56,16 @@ export function summarizeTiming(input: {
     };
   }
   if (tapCount === 0) {
+    // A part that keeps counting runs on from the landing it was cut at.
+    const count = section.beatOnePosition ?? 1;
+    const from =
+      count > 1
+        ? landingName(count, input.moveBeats.length).replace(/^Move/, "move")
+        : "move 1";
     return {
       ...base,
       tone: "tapping",
-      text: `Running at ${bpmText(section.bpm)} BPM from move 1. Tap along to fit the video's own timing.`,
+      text: `Running at ${bpmText(section.bpm)} BPM from ${from}. Tap along to fit the video's own timing.`,
     };
   }
 

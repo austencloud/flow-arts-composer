@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createTakeTiming,
   resolveTakeTiming,
+  splitTimingSection,
   type TakeTiming,
   type TimingSection,
 } from "$lib/shared/media-composition/domain/take-timing";
@@ -10,6 +11,7 @@ import {
   summarizeTiming,
 } from "$lib/shared/media-composition/domain/timing-summary";
 
+const EIGHT = Array.from({ length: 8 }, () => 1);
 const SIXTEEN = Array.from({ length: 16 }, () => 1);
 
 function timingWith(section: Partial<TimingSection>): TakeTiming {
@@ -71,6 +73,27 @@ describe("summarizeTiming", () => {
     expect(summary.tone).toBe("tempo");
     expect(summary.suggestedBpm).toBeCloseTo(50, 0);
     expect(summary.text).toContain("not 87");
+  });
+
+  it("names the landing a part that keeps counting runs on from", () => {
+    // Moves 1-8 tapped, then a keep-counting cut at 20 s: move 4 of pass 4.
+    const split = splitTimingSection(
+      timingWith({ tempo: "locked", taps: taps(87, 8, 1 + 60 / 87) }),
+      20,
+      "section-2",
+      2,
+      EIGHT,
+      "continues"
+    );
+    const right = split.sections[1]!;
+    expect(right.beatOnePosition).toBe(28);
+    const summary = summarizeTiming({
+      section: right,
+      resolved: resolveTakeTiming(split, EIGHT).sections[1]!,
+      moveBeats: EIGHT,
+    });
+    expect(summary.text).toContain("from move 4 · pass 4");
+    expect(summary.text).not.toContain("from move 1");
   });
 });
 
