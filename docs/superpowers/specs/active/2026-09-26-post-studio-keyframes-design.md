@@ -153,11 +153,12 @@ Validation: `atSeconds` strictly increasing per track; a region id must exist
 and has at most one `regionKeyframes` track and not also a `regionMotion` one.
 The older `regionMotion` stays for the breakdown presets.
 
-`frame-evaluator.ts` samples these with the same rules. `evaluateRegionRects`
-applies `regionKeyframes` (width and height floored at 0.001), and each layer
-gets `opacity = sampled or static × fades × transitions` and
-`transform = { ...clip.transform, ...sampled }` (scale floored at 0.01;
-`flipHorizontal` stays static).
+`frame-evaluator.ts` samples these with the same rules, clamps included, so
+the value the inspector shows is the value that plays. `evaluateRegionRects`
+applies `regionKeyframes` through `clampBox`, and each layer gets
+`opacity = sampled or static × fades × transitions` and
+`transform = { ...clip.transform, ...sampled }`, the sample passed through
+`clampFraming` (`flipHorizontal` stays static).
 
 The compiler emits a video's framing keyframes as `motion.transform`, any
 item's opacity keyframes as `motion.opacity` (every piece of a sequence item

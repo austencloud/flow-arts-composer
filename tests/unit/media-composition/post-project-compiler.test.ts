@@ -10,6 +10,11 @@ import { MediaCompositionPresetSchema } from "$lib/shared/media-composition/doma
 import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
 import { clampBox, type PostEasing } from "$lib/shared/media-composition/domain/post-project";
 import {
+  EASING_PRESETS,
+  boxAt,
+  framingAt,
+} from "$lib/shared/media-composition/domain/post-project-keyframes";
+import {
   ANIMATION_OVERLAY_ROLE,
   stripRole,
   takeRole,
@@ -482,6 +487,43 @@ describe("compilePostProject", () => {
 
       expect(motionOf(result, "c1")).toBeUndefined();
       expect(result.preset.regionKeyframes).toBeUndefined();
+    });
+
+    it("plays an overshooting zoom and box move exactly as the editor samples them", () => {
+      const overshoot = EASING_PRESETS.overshoot;
+      const clip = video("v1", {
+        sourceOut: 10,
+        keyframes: {
+          framing: [
+            { t: 0, value: { zoom: 1, panX: 0, panY: 0, rotation: 0 }, easing: overshoot },
+            { t: 10, value: { zoom: 4, panX: 0.5, panY: 0, rotation: 0 }, easing: LINEAR },
+          ],
+          box: [
+            { t: 0, value: { x: 0, y: 0, width: 0.5, height: 0.5 }, easing: overshoot },
+            { t: 10, value: { x: 0.5, y: 0.5, width: 0.5, height: 0.5 }, easing: LINEAR },
+          ],
+        },
+      });
+      const result = compilePostProject(project([clip]), ctx)!;
+
+      // Past the curve's peak, the unclamped move would leave both ranges.
+      for (const seconds of [2, 6.4, 8]) {
+        const layer = evaluatePresetFrame(
+          result.preset,
+          result.durationSeconds,
+          seconds
+        ).find((candidate) => candidate.clipId === "v1")!;
+        const framing = framingAt(clip, seconds);
+        expect(layer.transform.scale).toBeCloseTo(framing.zoom, 9);
+        expect(layer.transform.translateX).toBeCloseTo(framing.panX, 9);
+        const box = boxAt(clip, seconds);
+        const rect = layer.regionRect!;
+        expect(rect.x).toBeCloseTo(box.x, 9);
+        expect(rect.y).toBeCloseTo(box.y, 9);
+        expect(rect.width).toBeCloseTo(box.width, 9);
+        expect(rect.height).toBeCloseTo(box.height, 9);
+      }
+      expect(framingAt(clip, 6.4).zoom).toBe(4);
     });
   });
 

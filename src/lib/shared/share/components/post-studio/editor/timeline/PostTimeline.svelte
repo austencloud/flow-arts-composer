@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { untrack } from "svelte";
+  import { tick, untrack } from "svelte";
   import type {
     PostItem,
     PostProject,
@@ -545,6 +545,8 @@
     itemEndSeconds: number
   ): void {
     if (event.button !== 0) return;
+    // A drag whose closing click never landed must not eat this press's click.
+    suppressNextMarkerClick = false;
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
     dragState = {
       kind: "keyframe",
@@ -576,9 +578,11 @@
     itemStartSeconds: number,
     itemEndSeconds: number
   ): void {
+    const lanes = lanesContentEl;
     if (event.key === "Delete" || event.key === "Backspace") {
       event.preventDefault();
       onDeleteKeyframesAt(itemId, seconds);
+      void refocusMarker(lanes, itemId, seconds);
       return;
     }
     if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
@@ -591,8 +595,37 @@
       );
       if (Math.abs(next - seconds) > POST_TIME_EPSILON) {
         onMoveKeyframe(itemId, seconds, next);
+        void refocusMarker(lanes, itemId, next);
       }
     }
+  }
+
+  /**
+   * Keeps the keyboard on the keyframe it just moved, or on the nearest one
+   * left after a delete - and on the clip once none are - so the next key
+   * press does not fall through to the editor and move the playhead or
+   * delete the clip.
+   */
+  async function refocusMarker(
+    lanes: HTMLElement | null,
+    itemId: string,
+    seconds: number
+  ): Promise<void> {
+    await tick();
+    if (!lanes) return;
+    const selector = `[data-item-id="${CSS.escape(itemId)}"]`;
+    let nearest: HTMLElement | null = null;
+    let nearestDistance = Infinity;
+    for (const marker of lanes.querySelectorAll<HTMLElement>(`.kf-marker${selector}`)) {
+      const distance = Math.abs(Number(marker.dataset.seconds) - seconds);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearest = marker;
+      }
+    }
+    const target =
+      nearest ?? lanes.querySelector<HTMLElement>(`.post-timeline-item${selector}`);
+    if (target && document.activeElement !== target) target.focus();
   }
 
   // --- Continuing / finishing a drag ------------------------------------------

@@ -7,6 +7,15 @@ import type {
   PresetEasing,
   PresetVisualClipMotion,
 } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
+import {
+  POST_MAX_ZOOM,
+  POST_MIN_BOX_SIZE,
+  POST_MIN_ZOOM,
+} from "$lib/shared/media-composition/domain/post-project";
+import {
+  EASING_PRESETS,
+  sampleEasing,
+} from "$lib/shared/media-composition/domain/post-project-keyframes";
 
 const performancePreset = POST_STUDIO_PRESETS.find(
   (preset) => preset.id === "performance-breakdown"
@@ -486,18 +495,46 @@ describe("evaluatePresetFrame: motion tracks", () => {
     expect(end.transform.scale).toBeCloseTo(2, 6);
   });
 
-  it("floors a motion.transform sample's scale at 0.01", () => {
+  it("clamps a motion.transform sample into the framing bounds", () => {
     const preset = withCardMotion({
       transform: [
         {
           atSeconds: 0,
-          value: { scale: -2, rotationDegrees: 0, translateX: 0, translateY: 0 },
+          value: { scale: -2, rotationDegrees: 200, translateX: 0.9, translateY: -0.9 },
           easing: LINEAR,
         },
       ],
     });
 
-    expect(layerOn(preset, 0, "card")?.transform.scale).toBe(0.01);
+    expect(layerOn(preset, 0, "card")?.transform).toEqual({
+      scale: POST_MIN_ZOOM,
+      rotationDegrees: -160,
+      translateX: 0.5,
+      translateY: -0.5,
+      flipHorizontal: false,
+    });
+  });
+
+  it("stops an overshooting zoom at the zoom limit, as the inspector shows it", () => {
+    const overshoot = EASING_PRESETS.overshoot as PresetEasing;
+    const preset = withCardMotion({
+      transform: [
+        {
+          atSeconds: 0,
+          value: { scale: 1, rotationDegrees: 0, translateX: 0, translateY: 0 },
+          easing: overshoot,
+        },
+        {
+          atSeconds: 10,
+          value: { scale: POST_MAX_ZOOM, rotationDegrees: 0, translateX: 0, translateY: 0 },
+          easing: LINEAR,
+        },
+      ],
+    });
+
+    // Unclamped, the curve carries the zoom past its end value here.
+    expect(sampleEasing(overshoot, 0.64)).toBeGreaterThan(1);
+    expect(layerOn(preset, 6.4, "card")?.transform.scale).toBe(POST_MAX_ZOOM);
   });
 
   it("samples a preset-level regionKeyframes track for a region's rect", () => {
@@ -542,7 +579,7 @@ describe("evaluatePresetFrame: motion tracks", () => {
     });
   });
 
-  it("floors a regionKeyframes rect sample's width and height at 0.001", () => {
+  it("keeps a regionKeyframes rect sample inside the frame, as the editor's box stays", () => {
     const preset: typeof performancePreset = {
       ...performancePreset,
       regionKeyframes: [
@@ -551,7 +588,7 @@ describe("evaluatePresetFrame: motion tracks", () => {
           keyframes: [
             {
               atSeconds: 0,
-              value: { x: 0, y: 0, width: -1, height: -1 },
+              value: { x: 0.8, y: -0.2, width: 0.5, height: -1 },
               easing: LINEAR,
             },
           ],
@@ -559,8 +596,11 @@ describe("evaluatePresetFrame: motion tracks", () => {
       ],
     };
 
-    const rect = layerOn(preset, 0, "card")?.regionRect;
-    expect(rect?.width).toBe(0.001);
-    expect(rect?.height).toBe(0.001);
+    expect(layerOn(preset, 0, "card")?.regionRect).toEqual({
+      x: 0.5,
+      y: 0,
+      width: 0.5,
+      height: POST_MIN_BOX_SIZE,
+    });
   });
 });

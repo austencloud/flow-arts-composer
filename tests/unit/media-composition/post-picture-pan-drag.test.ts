@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  PICTURE_NUDGE,
   dragPicturePan,
+  nudgePicturePan,
   overscanPixels,
   stepPicturePinch,
   zoomFromWheelDelta,
@@ -146,5 +148,51 @@ describe("stepPicturePinch", () => {
       maxZoom: 4,
     });
     close(result.zoom, 4);
+  });
+});
+
+describe("nudgePicturePan", () => {
+  const cover = { ...SOURCE, ...REGION, fit: "cover" as const, zoom: 1 };
+
+  it("pans one step the way the key points, as a drag that way would", () => {
+    const right = nudgePicturePan({
+      ...cover,
+      panX: 0,
+      panY: 0,
+      directionX: 1,
+      directionY: 0,
+      step: PICTURE_NUDGE.step,
+    });
+    close(right.panX, PICTURE_NUDGE.step);
+    // A drag to the right moves the pan the same way.
+    expect(
+      dragPicturePan({ ...cover, startPanX: 0, startPanY: 0, deltaXPx: 10, deltaYPx: 0 })
+        .panX
+    ).toBeGreaterThan(0);
+  });
+
+  it("leaves an axis the picture does not overflow where it is", () => {
+    // Cover at zoom 1 fills the height exactly: nothing to pan vertically.
+    const down = nudgePicturePan({
+      ...cover,
+      panX: 0.2,
+      panY: 0,
+      directionX: 0,
+      directionY: 1,
+      step: PICTURE_NUDGE.large,
+    });
+    expect(down).toEqual({ panX: 0.2, panY: 0 });
+  });
+
+  it("stops at the edge of the pan range", () => {
+    const left = nudgePicturePan({
+      ...cover,
+      panX: -0.45,
+      panY: 0,
+      directionX: -1,
+      directionY: 0,
+      step: PICTURE_NUDGE.large,
+    });
+    close(left.panX, -0.5);
   });
 });

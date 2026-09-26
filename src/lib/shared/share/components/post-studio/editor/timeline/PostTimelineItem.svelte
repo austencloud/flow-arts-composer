@@ -118,6 +118,7 @@
   class:selected
   class:dimmed
   style="left: {leftPx}px; width: {Math.max(widthPx, 2)}px"
+  data-item-id={item.id}
   aria-pressed={selected}
   aria-label={accessibleName}
   onpointerdown={handleBodyPointerDown}
@@ -161,11 +162,15 @@
   >
     <span class="handle-grip" aria-hidden="true"></span>
   </button>
-  {#each markers as marker (marker.seconds)}
+  <!-- Keyed by place, not time: retiming a keyframe keeps its button, and
+       with it the keyboard focus and the click that ends a drag. -->
+  {#each markers as marker, index (index)}
     <button
       type="button"
       class="kf-marker"
       style="left: {leftPx + (marker.seconds - item.start) * pxPerSecond}px"
+      data-item-id={item.id}
+      data-seconds={marker.seconds}
       aria-label={t("post_timeline_keyframe_at", { time: formatPostClock(marker.seconds) })}
       onpointerdown={(event) => handleMarkerPointerDown(event, marker.seconds)}
       onclick={(event) => handleMarkerClick(event, marker.seconds)}
@@ -307,12 +312,14 @@
 
   /* Keyframe marker: a small rotated-square diamond centered on its time,
      with the same 44px hit width as .trim-handle so it stays reachable on
-     touch even though the visible glyph is much smaller. */
+     touch even though the visible glyph is much smaller. It sits under the
+     trim handles: a keyframe on a clip's first or last frame is common, and
+     the press at that edge trims. */
   .kf-marker {
     position: absolute;
     top: 3px;
     bottom: 3px;
-    z-index: 3;
+    z-index: 1;
     display: flex;
     align-items: center;
     justify-content: center;

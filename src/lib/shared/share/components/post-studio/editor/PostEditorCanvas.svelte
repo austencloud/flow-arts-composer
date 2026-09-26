@@ -36,7 +36,9 @@
     type BoxHandle,
   } from "./post-box-drag";
   import {
+    PICTURE_NUDGE,
     dragPicturePan,
+    nudgePicturePan,
     stepPicturePinch,
     zoomFromWheelDelta,
   } from "./post-picture-pan-drag";
@@ -298,6 +300,9 @@
     if (rect.width <= 0 || rect.height <= 0) return;
     event.preventDefault();
     event.stopPropagation();
+    // A drag another pointer left open (a pen beside a mouse) is kept as its
+    // own step, so no gesture is left holding the history.
+    releaseDrag(true);
     editor.pause();
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
     const seconds = editor.previewSeconds;
@@ -406,42 +411,89 @@
     );
   }
 
-  function endDrag(event: PointerEvent): void {
+  /** Ends the drag in progress, keeping its move or putting it back. */
+  function releaseDrag(keep: boolean): void {
     const current = drag;
-    if (!current || event.pointerId !== current.pointerId) return;
+    if (!current) return;
     drag = null;
     dragging = false;
     guides = { vertical: false, horizontal: false };
-    if (current.moved) editor.endGesture();
+    if (!current.moved) return;
+    if (keep) editor.endGesture();
+    else editor.cancelGesture();
+  }
+
+  function endDrag(event: PointerEvent): void {
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    releaseDrag(true);
   }
 
   function cancelDrag(): void {
-    if (!drag) return;
-    const moved = drag.moved;
-    drag = null;
-    dragging = false;
-    guides = { vertical: false, horizontal: false };
-    if (moved) editor.cancelGesture();
+    releaseDrag(false);
   }
 
+  const ARROW_DIRECTIONS: Record<string, [number, number]> = {
+    ArrowLeft: [-1, 0],
+    ArrowRight: [1, 0],
+    ArrowUp: [0, -1],
+    ArrowDown: [0, 1],
+  };
+
+  /** Arrow keys move the box - or, where a drag pans, pan the picture. */
   function nudge(event: KeyboardEvent): void {
     const item = selected;
     if (!item || trackLocked(item.id)) return;
-    const step = event.shiftKey ? BOX_NUDGE.large : BOX_NUDGE.step;
-    const delta: Record<string, [number, number]> = {
-      ArrowLeft: [-step, 0],
-      ArrowRight: [step, 0],
-      ArrowUp: [0, -step],
-      ArrowDown: [0, step],
-    };
-    const move = delta[event.key];
-    if (!move) return;
+    const direction = ARROW_DIRECTIONS[event.key];
+    if (!direction) return;
     event.preventDefault();
     event.stopPropagation();
     const seconds = editor.previewSeconds;
-    const box = dragBox(boxAt(item, seconds), "move", move[0], move[1], false).box;
+    const current = boxAt(item, seconds);
+    if (item.kind === "video" && isPictureDragTarget(item, current)) {
+      nudgePicture(item, current, direction, event.shiftKey, seconds);
+      return;
+    }
+    const step = event.shiftKey ? BOX_NUDGE.large : BOX_NUDGE.step;
+    const box = dragBox(
+      current,
+      "move",
+      direction[0] * step,
+      direction[1] * step,
+      false
+    ).box;
     editor.edit((project, context) =>
       updateItemAt(project, item.id, { box }, seconds, context)
+    );
+  }
+
+  function nudgePicture(
+    item: PostVideoItem,
+    box: PostBox,
+    direction: [number, number],
+    large: boolean,
+    seconds: number
+  ): void {
+    if (!root) return;
+    const rect = root.getBoundingClientRect();
+    const framing = framingAt(item, seconds);
+    const size = mountedVideoSize(item.id);
+    const pan = nudgePicturePan({
+      sourceWidth: size.width,
+      sourceHeight: size.height,
+      regionWidthPx: box.width * rect.width,
+      regionHeightPx: box.height * rect.height,
+      fit: item.fit,
+      zoom: framing.zoom,
+      panX: framing.panX,
+      panY: framing.panY,
+      directionX: direction[0],
+      directionY: direction[1],
+      step: large ? PICTURE_NUDGE.large : PICTURE_NUDGE.step,
+    });
+    if (pan.panX === framing.panX && pan.panY === framing.panY) return;
+    // Held or repeated presses land as one undo step, as a wheel zoom does.
+    editor.editSetting(`${item.id}:picture-pan`, (project, context) =>
+      updateItemAt(project, item.id, pan, seconds, context)
     );
   }
 
@@ -502,18 +554,15 @@
     return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
   }
 
-  /** A second finger landing on a selected video starts a pinch. */
+  /** A second finger landing anywhere on the frame pinches a selected video. */
   function startPinch(): void {
     const item = selected;
     if (!root || !item || item.kind !== "video" || trackLocked(item.id)) return;
     if (touchPoints.size !== 2) return;
     const [[idA, posA], [idB, posB]] = [...touchPoints.entries()];
-    if (drag) {
-      if (drag.moved) editor.cancelGesture();
-      drag = null;
-      dragging = false;
-      guides = { vertical: false, horizontal: false };
-    }
+    // A one-finger move already made is kept as its own step, and the pinch
+    // goes on from where it left the picture.
+    releaseDrag(true);
     const rect = root.getBoundingClientRect();
     const seconds = editor.previewSeconds;
     const box = boxAt(item, seconds);
@@ -627,23 +676,38 @@
 
   // ---- One pointer surface for a mouse drag, a touch drag or a pinch -------
 
-  function onLayerPointerDown(event: PointerEvent): void {
-    if (event.pointerType === "touch") {
+  /**
+   * Fingers are counted on the way down to the target, before the selection
+   * box or a handle can claim the press, so a second finger anywhere on the
+   * frame reaches the pinch instead of starting a drag of its own.
+   */
+  function countTouchDown(event: PointerEvent): void {
+    if (event.pointerType !== "touch") return;
+    // The first finger of a new touch: any finger still counted was lost.
+    if (event.isPrimary) touchPoints.clear();
+    touchPoints.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (touchPoints.size < 2) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (touchPoints.size === 2 && !pinch) startPinch();
+  }
+
+  function countTouchMove(event: PointerEvent): void {
+    if (event.pointerType === "touch" && touchPoints.has(event.pointerId)) {
       touchPoints.set(event.pointerId, { x: event.clientX, y: event.clientY });
-      if (touchPoints.size === 2) {
-        startPinch();
-        return;
-      }
-      if (touchPoints.size > 2) return;
     }
+  }
+
+  function countTouchUp(event: PointerEvent): void {
+    touchPoints.delete(event.pointerId);
+  }
+
+  function onLayerPointerDown(event: PointerEvent): void {
     if (pinch) return;
     pressFrame(event);
   }
 
   function onLayerPointerMove(event: PointerEvent): void {
-    if (event.pointerType === "touch" && touchPoints.has(event.pointerId)) {
-      touchPoints.set(event.pointerId, { x: event.clientX, y: event.clientY });
-    }
     if (pinch) {
       if (event.pointerId === pinch.pointerA || event.pointerId === pinch.pointerB) {
         stepPinch(event);
@@ -654,7 +718,6 @@
   }
 
   function onLayerPointerUp(event: PointerEvent): void {
-    touchPoints.delete(event.pointerId);
     if (pinch) {
       if (event.pointerId === pinch.pointerA || event.pointerId === pinch.pointerB) {
         endPinch();
@@ -665,14 +728,13 @@
   }
 
   function onLayerPointerCancel(event: PointerEvent): void {
-    touchPoints.delete(event.pointerId);
     if (pinch) {
       if (event.pointerId === pinch.pointerA || event.pointerId === pinch.pointerB) {
         cancelPinch();
       }
       return;
     }
-    cancelDrag();
+    if (drag && event.pointerId === drag.pointerId) cancelDrag();
   }
 </script>
 
@@ -763,6 +825,10 @@
     <div
       class="edit-layer"
       role="presentation"
+      onpointerdowncapture={countTouchDown}
+      onpointermovecapture={countTouchMove}
+      onpointerupcapture={countTouchUp}
+      onpointercancelcapture={countTouchUp}
       onpointerdown={onLayerPointerDown}
       onpointermove={onLayerPointerMove}
       onpointerup={onLayerPointerUp}

@@ -88,6 +88,37 @@ export function dragPicturePan(input: PicturePanDragInput): PicturePanDragResult
   };
 }
 
+/** How far one arrow-key press pans the picture, as a share of its pan range. */
+export const PICTURE_NUDGE = { step: 0.01, large: 0.1 } as const;
+
+export interface PicturePanNudgeInput extends OverscanInput {
+  panX: number;
+  panY: number;
+  /** -1, 0 or 1 on each axis: the way the arrow key points. */
+  directionX: number;
+  directionY: number;
+  step: number;
+}
+
+/**
+ * An arrow-key pan: the picture moves `step` of its pan range the way the
+ * key points, as a drag that way would move it. An axis the picture does not
+ * overflow stays put, as it does for a drag.
+ */
+export function nudgePicturePan(input: PicturePanNudgeInput): PicturePanDragResult {
+  const overscan = overscanPixels(input);
+  return {
+    panX:
+      overscan.x > 0 && input.directionX !== 0
+        ? clampPan(input.panX + input.directionX * input.step)
+        : input.panX,
+    panY:
+      overscan.y > 0 && input.directionY !== 0
+        ? clampPan(input.panY + input.directionY * input.step)
+        : input.panY,
+  };
+}
+
 /**
  * A step of Ctrl/Cmd + wheel - which a trackpad pinch is reported as too - a
  * smooth, deltaY-proportional zoom with no pan change of its own. The

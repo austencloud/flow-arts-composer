@@ -215,9 +215,9 @@
     font-size: 0.9375rem;
     cursor: pointer;
     transition:
-      background var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease,
-      opacity var(--duration-fast, 150ms) ease;
+      background var(--transition-fast),
+      color var(--transition-fast),
+      opacity var(--transition-fast);
   }
 
   @media (hover: hover) {
