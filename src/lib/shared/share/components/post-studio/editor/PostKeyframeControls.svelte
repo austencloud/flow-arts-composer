@@ -1,12 +1,12 @@
 <!--
   PostKeyframeControls.svelte
 
-  The <-- <> --> keyframe navigator and Curve chip for one animatable channel
-  (framing, box or opacity) of the selected item. <- and -> seek to the
-  nearest in-view keyframe; <> adds one at the playhead recording the value
-  currently showing, or removes the one already there. The Curve chip opens
-  the segment under the playhead: easing presets plus PostCurveEditor for
-  fine control.
+  The previous / diamond / next keyframe navigator and Curve chip for one
+  animatable channel (framing, box or opacity) of the selected item. The
+  chevrons seek to the nearest in-view keyframe; the diamond adds one at the
+  playhead recording the value currently showing, or removes the one already
+  there. The Curve chip opens the segment under the playhead: easing presets
+  plus PostCurveEditor for fine control.
 
   Renders nothing while the playhead sits outside the item - the spec calls
   animated values read-only there, and there is nothing to seek to, toggle or
