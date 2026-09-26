@@ -10,11 +10,7 @@
 <script lang="ts" generics="TAxis = Flower">
   import type { Snippet } from "svelte";
   import type { ShapeMatrixData } from "../services/shape-matrix-flowers";
-  import {
-    flowerKey,
-    flowerLabel,
-    type Flower,
-  } from "../domain/flower-signature";
+  import { flowerKey, type Flower } from "../domain/flower-signature";
   import { claimedViewTransitionName } from "$lib/shared/transitions/claimed-view-transition-name";
   import {
     cellArtworkSrc,
@@ -23,6 +19,7 @@
     SHAPE_MATRIX_ACTIVE_STAGE_NAME,
     type ShapeMatrixArtworkPainter,
   } from "../services/shape-matrix-artwork";
+  import { localizedFlowerLabel } from "../domain/shape-matrix-display";
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import ShapeMatrixMandalaArt from "./ShapeMatrixMandalaArt.svelte";
   import { runShapeMatrixGridReveal } from "../app/services/shape-matrix-reveal";
@@ -121,7 +118,7 @@
     keyOf = ((item: TAxis) => flowerKey(item as Flower)) as (
       item: TAxis
     ) => string,
-    labelOf = ((item: TAxis) => flowerLabel(item as Flower)) as (
+    labelOf = ((item: TAxis) => localizedFlowerLabel(item as Flower)) as (
       item: TAxis
     ) => string,
     paintHeader,
@@ -300,19 +297,16 @@
   style="--cols:{cols}; --rows:{rows}; --cell-max:{maxCellPx}px"
 >
   {#if rowAxis.length === 0 || colAxis.length === 0}
-    <div class="empty">No flowers match the current filters.</div>
+    <div class="empty">{t("shape_engine_no_flowers")}</div>
   {:else}
-    <table
-      class="matrix"
-      aria-label="Shape matrix: left-hand flower rows by right-hand flower columns; activate a cell for its TKA realizations"
-    >
+    <table class="matrix" aria-label={t("shape_engine_grid_aria")}>
       <thead>
         <tr>
           <th
             class="corner"
             class:interactive-corner={Boolean(corner)}
             scope="col"
-            aria-label={corner ? undefined : "left rows by right columns"}
+            aria-label={corner ? undefined : t("shape_engine_grid_axes")}
           >
             {@render corner?.()}
           </th>
@@ -329,21 +323,25 @@
                   type="button"
                   class="head-button"
                   class:solo={soloHand === "right" && soloKey === keyOf(rf)}
-                  aria-label={`Play right ${labelOf(rf)} on its own`}
+                  aria-label={t("shape_engine_solo_right", {
+                    flower: labelOf(rf),
+                  })}
                   aria-pressed={soloHand === "right" && soloKey === keyOf(rf)}
                   onclick={() => onsolo("right", rf)}
                 >
                   <ShapeMatrixMandalaArt
                     paint={headerPaint(rf, "right")}
                     artKey={`right:${keyOf(rf)}:${geometryArtKey}:${painterArtKey}`}
-                    alt={`right ${labelOf(rf)}`}
+                    alt={t("shape_engine_right_flower", {
+                      flower: labelOf(rf),
+                    })}
                   />
                 </button>
               {:else}
                 <ShapeMatrixMandalaArt
                   paint={headerPaint(rf, "right")}
                   artKey={`right:${keyOf(rf)}:${geometryArtKey}:${painterArtKey}`}
-                  alt={`right ${labelOf(rf)}`}
+                  alt={t("shape_engine_right_flower", { flower: labelOf(rf) })}
                 />
               {/if}
             </th>
@@ -365,21 +363,23 @@
                   type="button"
                   class="head-button"
                   class:solo={soloHand === "left" && soloKey === keyOf(bf)}
-                  aria-label={`Play left ${labelOf(bf)} on its own`}
+                  aria-label={t("shape_engine_solo_left", {
+                    flower: labelOf(bf),
+                  })}
                   aria-pressed={soloHand === "left" && soloKey === keyOf(bf)}
                   onclick={() => onsolo("left", bf)}
                 >
                   <ShapeMatrixMandalaArt
                     paint={headerPaint(bf, "left")}
                     artKey={`left:${keyOf(bf)}:${geometryArtKey}:${painterArtKey}`}
-                    alt={`left ${labelOf(bf)}`}
+                    alt={t("shape_engine_left_flower", { flower: labelOf(bf) })}
                   />
                 </button>
               {:else}
                 <ShapeMatrixMandalaArt
                   paint={headerPaint(bf, "left")}
                   artKey={`left:${keyOf(bf)}:${geometryArtKey}:${painterArtKey}`}
-                  alt={`left ${labelOf(bf)}`}
+                  alt={t("shape_engine_left_flower", { flower: labelOf(bf) })}
                 />
               {/if}
             </th>
@@ -401,7 +401,10 @@
                     name: SHAPE_MATRIX_ACTIVE_STAGE_NAME,
                     enabled: claimSelected && selectedKey === key,
                   }}
-                  aria-label={`left ${labelOf(bf)} over right ${labelOf(rf)}`}
+                  aria-label={t("shape_engine_cell_pair", {
+                    left: labelOf(bf),
+                    right: labelOf(rf),
+                  })}
                   aria-pressed={pressable ? selectedKey === key : undefined}
                   data-row={rowIndex}
                   data-col={colIndex}

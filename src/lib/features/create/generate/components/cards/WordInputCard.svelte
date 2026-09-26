@@ -106,7 +106,7 @@ Replaces the old GenerationModeCard (Freeform/Spell toggle).
   onclick={handleCardTap}
   role={isMobile ? "button" : undefined}
   tabindex={isMobile ? 0 : undefined}
-  aria-label={isMobile ? "Enter word to spell" : undefined}
+  aria-label={isMobile ? t("create_deep_enter_word_aria") : undefined}
 >
   <CardHeader title={t("create_ui_word")} {headerFontSize} />
 

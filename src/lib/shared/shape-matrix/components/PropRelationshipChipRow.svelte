@@ -1,12 +1,15 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import type { TnDElement } from "$lib/features/choreo-card/domain/tnd-element";
   import type { PropRelationship } from "../domain/prop-relationship";
+  import { type VtgMode } from "../services/shape-matrix-realizations";
   import {
-    MODE_SHORT_WORDS,
-    type VtgMode,
-  } from "../services/shape-matrix-realizations";
+    localizedModeWords,
+    localizedModeName,
+    localizedElementName,
+  } from "../domain/shape-matrix-display";
   import RelationshipChoiceChip from "./RelationshipChoiceChip.svelte";
 
   /**
@@ -53,10 +56,6 @@
     ontarget: (mode: VtgMode) => void;
   } = $props();
 
-  function elementName(raw: string): string {
-    return raw.charAt(0).toUpperCase() + raw.slice(1);
-  }
-
   function describe(
     realization: RelationshipBridgeEntry
   ): PropResultDescription {
@@ -64,8 +63,10 @@
     if (relationship.kind === "full") {
       return {
         key: relationship.element.familyId,
-        label: elementName(relationship.element.element),
-        detail: relationship.element.name,
+        label: localizedElementName(relationship.element.element),
+        detail: realization.propMode
+          ? localizedModeName(realization.propMode)
+          : localizedModeName(realization.mode),
         color: relationship.element.accentColor,
         icon: relationship.element.iconPath,
         mode: realization.propMode,
@@ -74,8 +75,8 @@
     if (relationship.kind === "direction-only") {
       return {
         key: `direction-${relationship.direction}`,
-        label: "Not available",
-        detail: "Mixed prop rates",
+        label: t("shape_engine_not_available"),
+        detail: t("shape_engine_mixed_prop_rates"),
         color: "var(--theme-text-dim, rgb(255 255 255 / 0.62))",
         icon: null,
         mode: null,
@@ -83,8 +84,8 @@
     }
     return {
       key: "float",
-      label: "Float",
-      detail: "No prop rotation",
+      label: t("shape_engine_float"),
+      detail: t("shape_engine_no_prop_rotation"),
       color: "color-mix(in srgb, var(--theme-text, #fff) 72%, transparent)",
       icon: null,
       mode: null,
@@ -124,30 +125,30 @@
 <div
   class="relationship-bridge"
   role="group"
-  aria-label="Selected hand relationship and resulting prop relationship"
+  aria-label={t("shape_engine_relationship_aria")}
 >
   <div
     class="bridge-side hand-side"
     style:--bridge-accent={selectedHand?.accentColor}
   >
-    <span class="bridge-role">Hands</span>
+    <span class="bridge-role">{t("shape_engine_hands")}</span>
     {#if selectedHand}
       <img src={selectedHand.iconPath} alt="" />
       <span class="bridge-copy">
-        <strong>{elementName(selectedHand.element)}</strong>
-        <small>{selectedHand.name}</small>
+        <strong>{localizedElementName(selectedHand.element)}</strong>
+        <small>{selectedMode ? localizedModeName(selectedMode) : ""}</small>
       </span>
     {:else}
       <span class="bridge-dot" aria-hidden="true"></span>
       <span class="bridge-copy">
-        <strong>Pick a cell</strong>
-        <small>Hand relationship</small>
+        <strong>{t("shape_engine_pick_cell")}</strong>
+        <small>{t("shape_engine_hand_relationship")}</small>
       </span>
     {/if}
   </div>
 
   <i class="fas fa-arrow-right bridge-arrow" aria-hidden="true"></i>
-  <span class="sr-only">produces</span>
+  <span class="sr-only">{t("shape_engine_produces")}</span>
 
   <div class="prop-result">
     <!-- Content-sized with an eased height, NOT `fill`. The branching variant
@@ -157,27 +158,35 @@
     <Crossfade key={resultKey} animateHeight duration={DURATION.fast}>
       {#if disabled}
         <div class="bridge-side prop-side pending-result">
-          <span class="bridge-role">Props</span>
+          <span class="bridge-role">{t("shape_engine_props")}</span>
           <span class="bridge-dot" aria-hidden="true"></span>
           <span class="bridge-copy">
-            <strong>Result</strong>
-            <small>Pick a cell</small>
+            <strong>{t("shape_engine_result")}</strong>
+            <small>{t("shape_engine_pick_cell")}</small>
           </span>
         </div>
       {:else if choices.length > 1}
         <div class="branching-result">
-          <span class="branch-label">Props · choose phase</span>
-          <div class="result-choices" aria-label="Exact prop phase choices">
+          <span class="branch-label"
+            >{t("shape_engine_props_choose_phase")}</span
+          >
+          <div
+            class="result-choices"
+            aria-label={t("shape_engine_prop_phase_choices")}
+          >
             {#each choices as choice (choice.key)}
               {#if choice.mode}
                 <RelationshipChoiceChip
                   accent={choice.color}
                   icon={choice.icon}
-                  timing={MODE_SHORT_WORDS[choice.mode].timing}
-                  direction={MODE_SHORT_WORDS[choice.mode].direction}
+                  timing={localizedModeWords(choice.mode, true).timing}
+                  direction={localizedModeWords(choice.mode, true).direction}
                   active={selectedChoice?.key === choice.key}
                   disabled={building}
-                  ariaLabel={`Props: ${choice.detail} ${choice.label}`}
+                  ariaLabel={t("shape_engine_props_summary", {
+                    detail: choice.detail,
+                    label: choice.label,
+                  })}
                   onpick={() => ontarget(choice.mode!)}
                 />
               {/if}
@@ -188,9 +197,12 @@
         <output
           class="bridge-side prop-side"
           style="--bridge-accent: {selectedChoice.color}"
-          aria-label={`Props: ${selectedChoice.detail} ${selectedChoice.label}`}
+          aria-label={t("shape_engine_props_summary", {
+            detail: selectedChoice.detail,
+            label: selectedChoice.label,
+          })}
         >
-          <span class="bridge-role">Props</span>
+          <span class="bridge-role">{t("shape_engine_props")}</span>
           {#if selectedChoice.icon}
             <img src={selectedChoice.icon} alt="" />
           {:else}
@@ -203,11 +215,15 @@
         </output>
       {:else}
         <div class="bridge-side prop-side pending-result" aria-live="polite">
-          <span class="bridge-role">Props</span>
+          <span class="bridge-role">{t("shape_engine_props")}</span>
           <span class="bridge-dot" aria-hidden="true"></span>
           <span class="bridge-copy">
-            <strong>{building ? "Finding result…" : "Unavailable"}</strong>
-            <small>Exact relationship</small>
+            <strong
+              >{building
+                ? t("shape_engine_finding_result")
+                : t("shape_engine_unavailable")}</strong
+            >
+            <small>{t("shape_engine_exact_relationship")}</small>
           </span>
         </div>
       {/if}

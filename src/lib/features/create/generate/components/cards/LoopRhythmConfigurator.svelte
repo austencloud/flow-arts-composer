@@ -32,8 +32,56 @@
     LOOP_COMPONENTS.find((info) => info.component === props.component)?.color ??
       "#36c3ff"
   );
-  const reflectionAxisDetail = $derived(
-    REFLECTION_AXIS_DETAILS[props.rhythm.reflectionAxis]
+  const reflectionDescription = $derived(
+    t(
+      (
+        {
+          "north-south": "create_deep_axis_ns_description",
+          "east-west": "create_deep_axis_ew_description",
+          "northeast-southwest": "create_deep_axis_nesw_description",
+          "northwest-southeast": "create_deep_axis_nwse_description",
+        } as const
+      )[props.rhythm.reflectionAxis]
+    )
+  );
+  const reflectionName = $derived(
+    props.rhythm.reflectionAxis === "north-south"
+      ? t("generator_loop_mirrored")
+      : props.rhythm.reflectionAxis === "east-west"
+        ? t("generator_loop_flipped")
+        : t("create_deep_diagonal")
+  );
+  const localizedAxisOptions = $derived(
+    (props.reflectionAxisOptions ?? REFLECTION_AXIS_OPTIONS).map((option) => {
+      const name =
+        option.value === "north-south"
+          ? t("generator_loop_mirrored")
+          : option.value === "east-west"
+            ? t("generator_loop_flipped")
+            : t("create_deep_diagonal");
+      const description = t(
+        (
+          {
+            "north-south": "create_deep_axis_ns_description",
+            "east-west": "create_deep_axis_ew_description",
+            "northeast-southwest": "create_deep_axis_nesw_description",
+            "northwest-southeast": "create_deep_axis_nwse_description",
+          } as const
+        )[option.value]
+      );
+      return {
+        ...option,
+        label: t("create_deep_axis_option_label", {
+          axis: REFLECTION_AXIS_DETAILS[option.value].axisLabel,
+          name,
+        }),
+        ariaLabel: t("create_deep_axis_option_aria", {
+          axis: REFLECTION_AXIS_DETAILS[option.value].axisLabel,
+          name,
+          description,
+        }),
+      };
+    })
   );
   // "Adds length" has no period-4 orbit — inverting twice restores the original
   // motions, so the generator always uses halfway there. Show the interval the
@@ -52,9 +100,9 @@
   >
     <div class="axis-heading">
       <span class="axis-title" id={`${idPrefix}-reflection-axis-label`}>
-        Reflect across
+        {t("create_deep_reflect_across")}
       </span>
-      <span class="axis-selection">{reflectionAxisDetail.name}</span>
+      <span class="axis-selection">{reflectionName}</span>
     </div>
 
     {#snippet axisOption(reflectionAxis: LoopRhythmValue["reflectionAxis"])}
@@ -79,12 +127,18 @@
           ></line>
         </svg>
         <span class="axis-option-label">{detail.axisLabel}</span>
-        <span class="axis-option-name">{detail.name}</span>
+        <span class="axis-option-name"
+          >{reflectionAxis === "north-south"
+            ? t("generator_loop_mirrored")
+            : reflectionAxis === "east-west"
+              ? t("generator_loop_flipped")
+              : t("create_deep_diagonal")}</span
+        >
       </span>
     {/snippet}
 
     <SegmentedControl
-      options={props.reflectionAxisOptions ?? REFLECTION_AXIS_OPTIONS}
+      options={localizedAxisOptions}
       value={props.rhythm.reflectionAxis}
       onchange={(reflectionAxis) => props.onChange({ reflectionAxis })}
       size="sm"
@@ -96,9 +150,9 @@
 
     <div class="axis-caption" aria-live="polite">
       <span class="axis-caption-sizer" aria-hidden="true">
-        NE and SW stay fixed. North trades with east; south trades with west.
+        {t("create_deep_axis_nesw_description")}
       </span>
-      <span class="axis-caption-live">{reflectionAxisDetail.description}</span>
+      <span class="axis-caption-live">{reflectionDescription}</span>
     </div>
   </div>
 {:else if props.component === LOOPComponent.ROTATED}
@@ -108,18 +162,20 @@
   >
     <div class="configurator-heading">
       <span class="configurator-title" id={`${idPrefix}-rotation-period-label`}>
-        Rotation period
+        {t("create_deep_rotation_period")}
       </span>
       <span class="configurator-selection">
-        {props.rhythm.rotationInterval === 4 ? "Quartered" : "Halved"}
+        {props.rhythm.rotationInterval === 4
+          ? t("create_deep_quartered")
+          : t("create_deep_halved")}
       </span>
     </div>
     <SegmentedControl
       options={[
-        { value: "2", label: "Halved" },
+        { value: "2", label: t("create_deep_halved") },
         {
           value: "4",
-          label: "Quartered",
+          label: t("create_deep_quartered"),
           disabled: !(props.quarteredAvailable ?? true),
         },
       ]}
@@ -133,12 +189,12 @@
     />
     <div class="configurator-caption" aria-live="polite">
       <span class="configurator-caption-sizer" aria-hidden="true">
-        Placements rotate 90° at every quarter.
+        {t("create_deep_rotate_quarter_hint")}
       </span>
       <span class="configurator-caption-live">
         {props.rhythm.rotationInterval === 4
-          ? "Placements rotate 90° at every quarter."
-          : "Placements rotate 180° at halfway."}
+          ? t("create_deep_rotate_quarter_hint")
+          : t("create_deep_rotate_half_hint")}
       </span>
     </div>
   </div>
@@ -155,15 +211,17 @@
           >{t("create_ui_invert_when")}</span
         >
         <span class="configurator-selection">
-          {inversionInterval === 4 ? "Every quarter" : "At halfway"}
+          {inversionInterval === 4
+            ? t("create_deep_every_quarter")
+            : t("create_deep_at_halfway")}
         </span>
       </div>
       <SegmentedControl
         options={[
-          { value: "2", label: "At halfway" },
+          { value: "2", label: t("create_deep_at_halfway") },
           {
             value: "4",
-            label: "Every quarter",
+            label: t("create_deep_every_quarter"),
             disabled: !quarterInversionAvailable,
           },
         ]}
@@ -183,8 +241,8 @@
       >
       <SegmentedControl
         options={[
-          { value: "expand", label: "Adds length" },
-          { value: "overlay", label: "On top" },
+          { value: "expand", label: t("create_deep_adds_length") },
+          { value: "overlay", label: t("create_deep_on_top") },
         ]}
         value={props.rhythm.inversionMode}
         onchange={(inversionMode) => props.onChange({ inversionMode })}
@@ -197,7 +255,7 @@
 
     <div class="configurator-caption">
       <span class="configurator-caption-sizer" aria-hidden="true">
-        Same hand placements — props flip spin direction for the second half.
+        {t("create_deep_inversion_caption_sizer")}
       </span>
       <span class="configurator-caption-live">{props.inversionCaption}</span>
     </div>

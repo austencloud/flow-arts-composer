@@ -246,7 +246,11 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   // who saw the setting once with no explanation.
   const drillItems = $derived<SettingsDrillItem[]>([
     { id: "style", label: t("create_ui_style_label"), value: styleSummary },
-    { id: "startPos", label: t("create_ui_start_placement_label"), value: startPosDisplay },
+    {
+      id: "startPos",
+      label: t("create_ui_start_placement_label"),
+      value: startPosDisplay,
+    },
     {
       id: "endPos",
       label: t("create_ui_end_placement_label"),
@@ -329,7 +333,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
 
 <GenerationSettingsOverlay
   title={t("create_ui_customize")}
-  closeLabel="Close customize panel"
+  closeLabel={t("create_deep_close_customize")}
   onClose={handleClose}
   {entrance}
   {titleId}

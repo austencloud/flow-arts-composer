@@ -4,6 +4,10 @@
   import type { LOOPComponentInfo } from "$lib/features/create/generate/shared/domain/constants/loop-components";
   import type { RhythmGate } from "$lib/shared/create/services/loop-rhythm-gating";
   import LoopRhythmConfigurator from "./LoopRhythmConfigurator.svelte";
+  import {
+    loopComponentDescription,
+    loopComponentLabel,
+  } from "../loop-component-presentation";
   import type { LoopRhythmValue } from "./loop-expanded-overlay-model";
 
   interface Props {
@@ -23,7 +27,9 @@
 <section
   class="loop-detail themed-scrollbar"
   style="--component-color: {props.detail.color};"
-  aria-label="{props.detail.label} settings"
+  aria-label={t("create_deep_loop_component_settings", {
+    label: loopComponentLabel(props.detail.component),
+  })}
 >
   <div class="loop-detail-header">
     <button
@@ -39,8 +45,8 @@
         <FontAwesomeIcon icon={props.detail.icon} size="1em" />
       </div>
       <div class="loop-detail-copy">
-        <strong>{props.detail.label}</strong>
-        <span>{props.detail.description}</span>
+        <strong>{loopComponentLabel(props.detail.component)}</strong>
+        <span>{loopComponentDescription(props.detail.component)}</span>
       </div>
     </div>
   </div>

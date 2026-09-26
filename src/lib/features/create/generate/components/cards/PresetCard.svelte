@@ -19,14 +19,22 @@
     cardIndex?: number;
   }>();
 
-  const statusLabel = $derived(setupsCardStatus === "active" ? "Active" : "");
+  const statusLabel = $derived(
+    setupsCardStatus === "active" ? t("create_deep_active") : ""
+  );
+  const displayValue = $derived(
+    setupsCardValue === "Browse" ? t("create_deep_browse") : setupsCardValue
+  );
 </script>
 
 <div class="preset-card-shell">
   <BaseCard
     title={t("create_ui_setups")}
-    currentValue={setupsCardValue}
-    ariaLabel={`Setups: ${setupsCardValue}${statusLabel ? `, ${statusLabel}` : ""}. Click to change.`}
+    currentValue={displayValue}
+    ariaLabel={t("create_deep_setups_card_aria", {
+      value: displayValue,
+      status: statusLabel ? `, ${statusLabel}` : "",
+    })}
     {color}
     {shadowColor}
     {cardIndex}
@@ -34,7 +42,9 @@
     onClick={onOpenDrawer}
   >
     <span class="setup-status">
-      <span class="setup-status-sizer" aria-hidden="true">Active</span>
+      <span class="setup-status-sizer" aria-hidden="true"
+        >{t("create_deep_active")}</span
+      >
       <span class="setup-status-live">{statusLabel}</span>
     </span>
   </BaseCard>

@@ -17,6 +17,7 @@
   thing to look at, a meaningless thing to link to, and a second way to do what
   the grid already does. -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { spinRatioKey } from "@vtg/domain";
   import { MANDALA_STANDARD_TIP_DX } from "$lib/shared/mandala/domain/mandala-constants";
   import { traceScaledPath } from "$lib/shared/notation/qft/qft-model";
@@ -360,7 +361,7 @@
   const controlsOpen = $derived(animationState.activeSection !== null);
 </script>
 
-<aside class="theory-detail" aria-label="Selected theory pair">
+<aside class="theory-detail" aria-label={t("shape_engine_selected_pair_aria")}>
   <!-- The pane owns the container; this body owns the composition, the same
        split the Matrix drill uses between its stage and its dock. A size
        container cannot answer its own query. -->
@@ -404,8 +405,8 @@
       <div class="detail-flow">
         {#if !pair}
           <div class="empty">
-            <strong>Pick a cell</strong>
-            <small>Its two hands run here, in the pairing chosen above.</small>
+            <strong>{t("shape_engine_pick_cell")}</strong>
+            <small>{t("shape_engine_theory_hint")}</small>
           </div>
         {:else}
           <header class="pair-heading" data-focus-mode-chrome>
@@ -422,7 +423,7 @@
                 <strong style={`color: ${leftInk};`}>
                   {theoryRatioLabel(pair.left.ratio)}
                 </strong>
-                <span class="against">against</span>
+                <span class="against">{t("shape_engine_against")}</span>
                 <strong style={`color: ${rightInk};`}>
                   {theoryRatioLabel(pair.right.ratio)}
                 </strong>
@@ -440,8 +441,8 @@
               type="button"
               class="stage-window"
               aria-label={animationState.playing
-                ? "Pause theory animation"
-                : "Play theory animation"}
+                ? t("shape_engine_pause_theory_animation")
+                : t("shape_engine_play_theory_animation")}
               onclick={animationState.togglePlaying}
             >
               <!-- The stage toggles playback on a click; this is how a mouse
@@ -458,7 +459,9 @@
                   ></i>
                 </span>
                 <span class="stage-hint-word">
-                  {animationState.playing ? "Pause" : "Play"}
+                  {animationState.playing
+                    ? t("shape_engine_pause")
+                    : t("shape_engine_play")}
                 </span>
               </span>
               <!-- The elemental backdrop from the drill, lit by the two elements
@@ -509,7 +512,7 @@
           >
             <span>
               <i class="fas fa-circle-question" aria-hidden="true"></i>
-              Why no letter or level?
+              {t("shape_engine_why_no_letter_or_level")}
             </span>
             <i
               class="fas fa-chevron-down boundary-toggle-icon"
@@ -519,10 +522,7 @@
           </PanelButton>
           {#if boundaryOpen}
             <p class="boundary-note" transition:growFade={{ axis: "y" }}>
-              Levels only name turn values down to a quarter turn. A ratio like
-              3:7 falls outside that ladder. The selected VTG mode still
-              identifies its timing and direction, while the path retains the
-              exact 3:7 ratio.
+              {t("shape_engine_boundary_explanation")}
             </p>
           {/if}
         </div>
@@ -565,7 +565,7 @@
           availableEffects={THEORY_EFFECTS}
           onActiveSectionChange={animationState.setActiveSection}
           closeRequest={animationState.closeRequest}
-          regionLabel="Shape animation controls"
+          regionLabel={t("shape_engine_shape_animation_controls")}
         />
       </div>
     {/if}

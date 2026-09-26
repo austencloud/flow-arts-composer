@@ -641,7 +641,10 @@ Delegates ALL logic to services (SRP compliant)
             return (
               favoriteState.setups.find(
                 (setup: SavedGeneratorSetup) => setup.id === source.setupId
-              )?.name ?? `${favoriteState.setups.length} saved`
+              )?.name ??
+              t("create_deep_saved_count", {
+                count: favoriteState.setups.length,
+              })
             );
           }
           if (source?.kind === "community") {
@@ -650,12 +653,14 @@ Delegates ALL logic to services (SRP compliant)
                 (setup: CommunitySetup) =>
                   setup.userId === source.userId &&
                   setup.setupId === source.setupId
-              )?.name ?? "Community setup"
+              )?.name ?? t("create_deep_community_setup")
             );
           }
           return favoriteState.setups.length > 0
-            ? `${favoriteState.setups.length} saved`
-            : "Browse";
+            ? t("create_deep_saved_count", {
+                count: favoriteState.setups.length,
+              })
+            : t("create_deep_browse");
         })(),
         setupsCardStatus: favoriteState.activeStatus,
         handleOpenPresetDrawer,
@@ -678,7 +683,7 @@ Delegates ALL logic to services (SRP compliant)
       <LevelSelector
         value={selectedLevel}
         onchange={handleLevelSelect}
-        ariaLabel="Generation difficulty level"
+        ariaLabel={t("create_deep_generation_difficulty_aria")}
       />
     </div>
   </div>

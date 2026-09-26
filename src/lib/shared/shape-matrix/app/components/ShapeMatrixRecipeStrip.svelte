@@ -5,6 +5,7 @@
   Columns → (red, right hand). The header popover edits them; this strip
   reads, and rolls. Wide hosts use ShapeMatrixGridCorner instead. -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { flyFade } from "$lib/shared/transitions/motion";
   import {
     matrixTurnSpokenLabel,
@@ -51,12 +52,16 @@
   const beat = SHAPE_MATRIX_REVEAL;
 </script>
 
-<div class="recipe-strip" role="group" aria-label="Current grid">
+<div
+  class="recipe-strip"
+  role="group"
+  aria-label={t("shape_engine_current_grid_aria")}
+>
   <button
     type="button"
     class="surprise"
-    aria-label="Surprise me with a new grid, crossing, and hand relationship"
-    title="Pick a new grid, crossing, and hand relationship"
+    aria-label={t("shape_engine_surprise_aria")}
+    title={t("shape_engine_surprise_title")}
     disabled={!theory && !appState.data}
     onclick={onsurprise}
   >
@@ -66,7 +71,7 @@
   {#key appState.revealToken}
     <output
       class="axis rows"
-      aria-label={`Rows: ${rowsSpoken}`}
+      aria-label={t("shape_engine_grid_rows", { value: rowsSpoken })}
       in:flyFade={{ y: -4, duration: beat.rows.duration }}
     >
       <i class="mark fas fa-arrow-down" aria-hidden="true"></i>
@@ -77,7 +82,7 @@
   {#key appState.revealToken}
     <output
       class="axis columns"
-      aria-label={`Columns: ${columnsSpoken}`}
+      aria-label={t("shape_engine_grid_columns", { value: columnsSpoken })}
       in:flyFade={{
         y: -4,
         delay: beat.columns.at,
