@@ -51,6 +51,9 @@ localized label function and preserves triangle-grip previews.
   1440x900, 1920x1080, 2560x1440, and 3840x2160. No horizontal overflow.
 - The `/start` guest flow opened the rebuilt installation guide with device
   choices and desktop instructions.
+- The `/test/post-studio` harness loaded without console errors, accepted its
+  saved sample take, and displayed the recovered timing controls, including
+  landing taps, tempo modes, frame stepping, and move-one alignment.
 
 Final integration uses the primary checkout's `npm run wt:finish` guard, which
 runs `npm run check`, rejects overlapping uncommitted paths, and rejects a moving
