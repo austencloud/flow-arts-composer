@@ -19,6 +19,10 @@
  *
  * Gaps are measured from the palm to the staff's centre line, so the visible
  * gap is roughly a staff radius smaller.
+ *
+ * Staffs are measured against the rig's own skinned mesh (`performer-body-
+ * mesh.ts`) at four stages: on the grid with the body square, where the stance
+ * plans them (grid plus corridor), after hard-beat displacement, and as drawn.
  */
 
 import type {
@@ -27,18 +31,12 @@ import type {
 } from "three";
 import { Group, Quaternion, Vector3 } from "three";
 import {
-  CollisionDetector,
   DEFAULT_SCENE_DIMENSIONS,
   GRID_OFFSETS,
   GripType,
   PLANE_MODE_CONFIGS,
   PlaneMode,
   createAvatarServices,
-} from "@austencloud/scene-3d";
-import type {
-  BodySnapshot,
-  CollisionEvent,
-  PropSegment,
 } from "@austencloud/scene-3d";
 import {
   createCharacterInstanceState,
@@ -48,6 +46,7 @@ import {
   buildStanceYawTrackForSource,
   resolveTrackedUpperBodyStance,
 } from "$lib/shared/3d/collision/stance-yaw-track";
+import { MAX_STANCE_YAW_RAD } from "$lib/shared/3d/collision/upper-body-stance-planner";
 import {
   buildHardBeatTrack,
   displaceProp,
@@ -57,6 +56,12 @@ import {
 } from "$lib/shared/3d/collision/hard-beat-displacement";
 import { propContinuityCorpus } from "../../tools/prop-continuity-corpus";
 import { avatar, loadRig } from "./locomotion-harness";
+import {
+  BODY_ZONES,
+  createBodyMesh,
+  type BodyMesh,
+  type BodyZone,
+} from "./performer-body-mesh";
 
 /** Height every catalog rig is scaled to by the stage viewer. */
 export const PERFORMER_HEIGHT_M = 1.905;
@@ -71,7 +76,18 @@ const WARMUP_FRAMES = 60;
 /** Euler(0, 0, pi/2): `Avatar3D`'s staff-horizontal correction. */
 const STAFF_HORIZONTAL = new Quaternion(0, 0, Math.SQRT1_2, Math.SQRT1_2);
 const STAFF_HALF_LENGTH_M = DEFAULT_SCENE_DIMENSIONS.staffLength / 2;
-const STAFF_RADIUS_M = 0.012;
+const STAFF_RADIUS_M = DEFAULT_SCENE_DIMENSIONS.staffRadius;
+/** Clearance under which a staff that misses the head or torso counts as a
+ *  near miss. */
+const NEAR_MISS_M = 0.03;
+/** Where the stance commits side-on (the planner's corridor knee), and how
+ *  close to the midline a grip counts as on it, for the bucket Austen named:
+ *  a staff at the south point while the chest turns sideways. */
+const SIDE_ON_RAD = 0.8 * MAX_STANCE_YAW_RAD;
+const MIDLINE_M = 0.1;
+/** Chest-over-pelvis twists reported, from the rendered bones. */
+const TWIST_45_RAD = Math.PI / 4;
+const TWIST_60_RAD = Math.PI / 3;
 /** Displacements below this are not reported, as in the planner. */
 const DISPLACED_EPS_M = 0.001;
 /** `ElbowPoleComputer.computePairRouting`: shoulder half-width, the crossing
@@ -81,12 +97,47 @@ const ROUTING_SHOULDER_HALF_WIDTH_M = 0.2;
 const ROUTING_CROSS_ENGAGE = 0.25;
 const ROUTING_HEIGHT_DEAD_ZONE_M = 0.04;
 
-const STAFF_ZONES: CollisionEvent["zone"][] = [
-  "prop-through-head",
-  "prop-through-torso",
-  "prop-through-arm",
-  "prop-through-prop",
-];
+/**
+ * Where a staff is measured: on the grid with the body square to the audience
+ * (the bind pose, no corridor), where the stance plans it (grid plus
+ * corridor), after hard-beat displacement, and as drawn after the render
+ * lock. The last three are measured against the body as posed that frame.
+ */
+export const STAFF_STAGES = [
+  "square",
+  "planned",
+  "displaced",
+  "rendered",
+] as const;
+export type StaffStage = (typeof STAFF_STAGES)[number];
+
+/** What a staff passes through. Arms split by whose they are: the arm holding
+ *  the staff reaches it at the grip, so its forearm is counted apart. */
+export const STAFF_CONTACTS = [
+  "head",
+  "torso",
+  "leg",
+  "ownForearm",
+  "ownUpperArm",
+  "otherArm",
+] as const;
+export type StaffContact = (typeof STAFF_CONTACTS)[number];
+export type ContactCounts = Record<StaffContact, number>;
+
+function contactOf(zone: BodyZone, side: "left" | "right"): StaffContact {
+  if (zone === "head" || zone === "torso" || zone === "leg") return zone;
+  if (!zone.startsWith(side)) return "otherArm";
+  return zone.endsWith("Forearm") ? "ownForearm" : "ownUpperArm";
+}
+
+/** Arms are measured on the drawn staff only: the hands are not where the
+ *  earlier stages put the staffs, so an arm there says nothing. */
+const STAGE_ZONES: Record<StaffStage, readonly BodyZone[]> = {
+  square: ["head", "torso", "leg"],
+  planned: ["head", "torso", "leg"],
+  displaced: ["head", "torso", "leg"],
+  rendered: BODY_ZONES,
+};
 
 export interface WorstBeat {
   sequence: string;
@@ -99,9 +150,37 @@ export interface SequenceScore {
   sequence: string;
   handFrames: number;
   gapOver3cm: number;
-  staffThroughBody: number;
-  authoredStaffThroughBody: number;
-  displacedStaffThroughBody: number;
+  /** Staff-frames through the head or torso, per stage. */
+  headTorso: Record<StaffStage, number>;
+}
+
+/** Drawn staffs through the head or torso, grouped by beat and hand. */
+export interface StaffHitBeat {
+  sequence: string;
+  step: number;
+  side: "left" | "right";
+  zone: "head" | "torso";
+  frames: number;
+  /** Whether the stance's planned staff already hit on those frames. */
+  plannedFrames: number;
+  /** Largest planned chest yaw on those frames, degrees. */
+  chestDegMax: number;
+}
+
+/** Staffs at the south or north point while the chest is side-on. */
+export interface MidlineTurned {
+  staffFrames: number;
+  plannedHeadTorso: number;
+  renderedHeadTorso: number;
+}
+
+/** Chest (Spine2) yaw over pelvis (Hips) yaw on the rendered bones. */
+export interface TwistReport {
+  frames: number;
+  over45: number;
+  over60: number;
+  maxDeg: number;
+  maxSequence: string | null;
 }
 
 /** One planner report entry, with what the render lock still did on top. */
@@ -158,6 +237,21 @@ export interface RenderedMoves {
   lockOffPlaneMaxM: number;
 }
 
+/** Joint positions in the rig's frame. */
+export interface ArmSnapshot {
+  head: Vector3Type;
+  neck: Vector3Type;
+  spine2: Vector3Type;
+  spine1: Vector3Type;
+  hips: Vector3Type;
+  leftShoulder: Vector3Type;
+  rightShoulder: Vector3Type;
+  leftElbow: Vector3Type;
+  rightElbow: Vector3Type;
+  leftHand: Vector3Type;
+  rightHand: Vector3Type;
+}
+
 /** One measured frame, for diagnostic probes. Grid-frame positions are
  *  relative to each hand's grid centre; the body is in the rig's frame. */
 export interface ScoreboardFrame {
@@ -167,13 +261,17 @@ export interface ScoreboardFrame {
   displaced: { left: Vector3Type | null; right: Vector3Type | null };
   shift: ReturnType<typeof sampleHardBeatTrack>;
   corridor: { left: number; right: number; chestRad: number };
-  body: BodySnapshot;
+  body: ArmSnapshot;
+  /** Rendered chest yaw over pelvis yaw. */
+  twistRad: number;
   forearmM: number | null;
   gap: { left: number | null; right: number | null };
   routedOver: "left" | "right" | null;
-  staffThrough: string[];
-  displacedStaffThrough: string[];
-  authoredStaffThrough: string[];
+  /** What each staff passes through, per stage. */
+  staffHits: Record<
+    StaffStage,
+    { left: StaffContact[]; right: StaffContact[] }
+  >;
 }
 
 export interface ContactScore {
@@ -194,16 +292,20 @@ export interface ContactScore {
   forearmMinM: number;
   palmsUnder6cm: number;
   palmMinM: number;
-  /** Staff-frames where the rendered staff passes through a body part. */
-  staffThrough: Record<string, number>;
   /**
-   * The same count for the staff where the grid places it, before the render
-   * lock pulls it toward the palm. Separates clipping the choreography
-   * authors from clipping the hand causes.
+   * Staff-frames whose staff passes through each zone of the rig's mesh, per
+   * stage. Comparing stages separates what the grid puts in the body (square),
+   * what the stance adds by turning and moving the staffs in depth (planned),
+   * what hard-beat displacement adds, and what the render lock adds.
    */
-  authoredStaffThrough: Record<string, number>;
-  /** The staff after hard-beat displacement, before the lock. */
-  displacedStaffThrough: Record<string, number>;
+  staffThrough: Record<StaffStage, ContactCounts>;
+  /** Staff-frames within `NEAR_MISS_M` of the head or torso without
+   *  touching, per stage. */
+  staffNearHeadTorso: Record<StaffStage, number>;
+  /** Drawn staffs through the head or torso, by beat, most frames first. */
+  staffHitBeats: StaffHitBeat[];
+  midlineTurned: MidlineTurned;
+  twist: TwistReport;
   /** Every (sequence, step, hand) the planner displaced, from its report. */
   displacedBeats: ScoreboardDisplacedBeat[];
   /** Displaced beats a cap or the minimum radius stopped short. */
@@ -257,9 +359,20 @@ async function buildRig(id: string) {
   root.position.y = -services.skeleton.getFeetOffset();
   root.updateMatrixWorld(true);
   const state = services.skeleton.getState();
+  // The bind pose is the square body, and the rest the twist is measured from.
+  const body: BodyMesh = createBodyMesh(root);
+  body.pose();
+  body.keepAsSquare();
+  const bindQuaternion = (name: string) =>
+    state.bones.get(name as never)?.getWorldQuaternion(new Quaternion()) ??
+    new Quaternion();
+  const rest = {
+    hips: bindQuaternion("Hips"),
+    chest: bindQuaternion("Spine2"),
+  };
   services.fingers.initialize(state.fingerChains!, state.meshes);
   services.animator.setContactMode("legacy");
-  return { services, root };
+  return { services, root, body, rest };
 }
 
 type Rig = Awaited<ReturnType<typeof buildRig>>;
@@ -321,7 +434,7 @@ function renderHand(
   };
 }
 
-function bodySnapshot(rig: Rig): BodySnapshot {
+function bodySnapshot(rig: Rig): ArmSnapshot {
   const skeleton = rig.services.skeleton;
   const bones = skeleton.getState().bones;
   const at = (name: string) => {
@@ -333,7 +446,7 @@ function bodySnapshot(rig: Rig): BodySnapshot {
   const right = skeleton.getRightArmChain()!;
   const world = (bone: { getWorldPosition(v: Vector3Type): Vector3Type }) =>
     bone.getWorldPosition(new Vector3());
-  const body = {
+  return {
     head: at("Head"),
     neck: at("Neck"),
     spine2: at("Spine2"),
@@ -345,19 +458,23 @@ function bodySnapshot(rig: Rig): BodySnapshot {
     rightElbow: world(right.middle),
     leftHand: world(left.effector),
     rightHand: world(right.effector),
-    face: new Vector3(),
   };
-  // Same face sphere as the package's computeFaceCenter (not exported): the
-  // head joint sits at the skull base, so the face is 8 cm forward, 5 cm up.
-  const lateral = body.rightShoulder.clone().sub(body.leftShoulder);
-  lateral.y = 0;
-  const forward =
-    lateral.lengthSq() > 1e-6
-      ? new Vector3(-lateral.z, 0, lateral.x).normalize()
-      : new Vector3(0, 0, 1);
-  body.face.copy(body.head).addScaledVector(forward, 0.08);
-  body.face.y += 0.05;
-  return body as unknown as BodySnapshot;
+}
+
+/** A bone's yaw from its bind orientation, positive swinging the performer's
+ *  left side upstage, as the stance's yaw does. */
+function boneYaw(rig: Rig, name: string, rest: QuaternionType): number {
+  const bone = rig.services.skeleton.getState().bones.get(name as never);
+  if (!bone) return 0;
+  const turn = bone
+    .getWorldQuaternion(new Quaternion())
+    .multiply(rest.clone().invert());
+  const lateral = new Vector3(1, 0, 0).applyQuaternion(turn);
+  return Math.atan2(-lateral.z, lateral.x);
+}
+
+function wrapAngle(rad: number): number {
+  return Math.atan2(Math.sin(rad), Math.cos(rad));
 }
 
 /** Closest distance between two segments, sampled (21 x 21). */
@@ -456,15 +573,34 @@ export async function runContactScoreboard(
   };
   // Hosts that hand the rig displaced props turn the legacy split off.
   rig.services.animator.setPairSeparation?.(!displace);
-  const detector = new CollisionDetector();
   const gaps: number[] = [];
   const forearms: number[] = [];
   const palms: number[] = [];
-  const zoneCounts = (): Record<string, number> =>
-    Object.fromEntries(STAFF_ZONES.map((zone) => [zone, 0]));
-  const staffThrough = zoneCounts();
-  const authoredStaffThrough = zoneCounts();
-  const displacedStaffThrough = zoneCounts();
+  const perStage = <T>(make: () => T) =>
+    Object.fromEntries(STAFF_STAGES.map((stage) => [stage, make()])) as Record<
+      StaffStage,
+      T
+    >;
+  const staffThrough = perStage(
+    () =>
+      Object.fromEntries(
+        STAFF_CONTACTS.map((contact) => [contact, 0])
+      ) as ContactCounts
+  );
+  const staffNearHeadTorso = perStage(() => 0);
+  const hitBeats = new Map<string, StaffHitBeat>();
+  const midlineTurned: MidlineTurned = {
+    staffFrames: 0,
+    plannedHeadTorso: 0,
+    renderedHeadTorso: 0,
+  };
+  const twist: TwistReport = {
+    frames: 0,
+    over45: 0,
+    over60: 0,
+    maxDeg: 0,
+    maxSequence: null,
+  };
   const beatWorst = new Map<string, WorstBeat>();
   const sequences: SequenceScore[] = [];
   const displacedBeats: ScoreboardDisplacedBeat[] = [];
@@ -503,16 +639,14 @@ export async function runContactScoreboard(
     routingLaneMismatchForearmsUnder4cm: 0,
   };
 
-  try {
+  {
     const corpus = propContinuityCorpus().slice(0, options.limit);
     for (const entry of corpus) {
       const perSequence: SequenceScore = {
         sequence: entry.id,
         handFrames: 0,
         gapOver3cm: 0,
-        staffThroughBody: 0,
-        authoredStaffThroughBody: 0,
-        displacedStaffThroughBody: 0,
+        headTorso: perStage(() => 0),
       };
       const state = createCharacterInstanceState(
         { id: `scoreboard-${entry.id}`, persistent: false },
@@ -594,14 +728,14 @@ export async function runContactScoreboard(
         );
         const blueQuat = staffQuat(blue);
         const redQuat = staffQuat(red);
-        // Where the grid puts each staff before any displacement, so the
-        // authored count stays comparable across steps.
-        const blueAuthored = place(
+        // Where the stance plans each staff: the grid plus its depth
+        // corridor, before hard-beat displacement.
+        const bluePlanned = place(
           authoredProps.left,
           config.blueLateralOffset,
           stance.leftDepthOffsetM
         );
-        const redAuthored = place(
+        const redPlanned = place(
           authoredProps.right,
           config.redLateralOffset,
           stance.rightDepthOffsetM
@@ -709,27 +843,25 @@ export async function runContactScoreboard(
         }
 
         const body = bodySnapshot(rig);
-        const segment = (hand: RenderedHand | null): PropSegment | null =>
-          hand && { a: hand.staffA, b: hand.staffB, radius: STAFF_RADIUS_M };
-        const events = detector.detect(
-          body,
-          segment(hands.left),
-          segment(hands.right),
-          step,
-          phase - step
+        rig.body.pose();
+        const twistRad = wrapAngle(
+          boneYaw(rig, "Spine2", rig.rest.chest) -
+            boneYaw(rig, "Hips", rig.rest.hips)
         );
-        for (const event of events) {
-          if (event.zone in staffThrough) {
-            staffThrough[event.zone]!++;
-            perSequence.staffThroughBody++;
-          }
+        twist.frames++;
+        if (Math.abs(twistRad) > TWIST_45_RAD) twist.over45++;
+        if (Math.abs(twistRad) > TWIST_60_RAD) twist.over60++;
+        const twistDeg = (Math.abs(twistRad) * 180) / Math.PI;
+        if (twistDeg > twist.maxDeg) {
+          twist.maxDeg = twistDeg;
+          twist.maxSequence = entry.id;
         }
-        const zones = (list: CollisionEvent[]) =>
-          list.filter((e) => e.zone in staffThrough).map((e) => e.zone);
+
+        type Staff = { a: Vector3Type; b: Vector3Type };
         const unlocked = (
           prop: HandProp | null,
           quat: QuaternionType | null
-        ): PropSegment | null => {
+        ): Staff | null => {
           if (!prop || !quat) return null;
           const half = new Vector3(0, 1, 0)
             .applyQuaternion(quat)
@@ -738,33 +870,109 @@ export async function runContactScoreboard(
           return {
             a: prop.worldPosition.clone().add(half),
             b: prop.worldPosition.clone().sub(half),
-            radius: STAFF_RADIUS_M,
           };
         };
-        const authoredEvents = detector.detect(
-          body,
-          unlocked(blueAuthored, blueQuat),
-          unlocked(redAuthored, redQuat),
-          step,
-          phase - step
-        );
-        for (const event of authoredEvents) {
-          if (event.zone in authoredStaffThrough) {
-            authoredStaffThrough[event.zone]!++;
-            perSequence.authoredStaffThroughBody++;
+        const staffs: Record<
+          StaffStage,
+          { left: Staff | null; right: Staff | null }
+        > = {
+          square: {
+            left: unlocked(
+              place(authoredProps.left, config.blueLateralOffset, 0),
+              blueQuat
+            ),
+            right: unlocked(
+              place(authoredProps.right, config.redLateralOffset, 0),
+              redQuat
+            ),
+          },
+          planned: {
+            left: unlocked(bluePlanned, blueQuat),
+            right: unlocked(redPlanned, redQuat),
+          },
+          displaced: {
+            left: unlocked(blue, blueQuat),
+            right: unlocked(red, redQuat),
+          },
+          rendered: {
+            left: hands.left && { a: hands.left.staffA, b: hands.left.staffB },
+            right: hands.right && {
+              a: hands.right.staffA,
+              b: hands.right.staffB,
+            },
+          },
+        };
+        const staffHits = perStage(() => ({
+          left: [] as StaffContact[],
+          right: [] as StaffContact[],
+        }));
+        for (const stage of STAFF_STAGES) {
+          for (const side of ["left", "right"] as const) {
+            const staff = staffs[stage][side];
+            if (!staff) continue;
+            const distances = rig.body.distances(
+              staff.a,
+              staff.b,
+              STAFF_RADIUS_M + NEAR_MISS_M,
+              stage === "square" ? "square" : "current",
+              STAGE_ZONES[stage]
+            );
+            const hits = staffHits[stage][side];
+            for (const zone of STAGE_ZONES[stage]) {
+              if ((distances[zone] ?? Infinity) >= STAFF_RADIUS_M) continue;
+              const contact = contactOf(zone, side);
+              if (hits.includes(contact)) continue;
+              staffThrough[stage][contact]++;
+              hits.push(contact);
+            }
+            if (hits.includes("head") || hits.includes("torso")) {
+              perSequence.headTorso[stage]++;
+            } else if (
+              Math.min(
+                distances.head ?? Infinity,
+                distances.torso ?? Infinity
+              ) <
+              STAFF_RADIUS_M + NEAR_MISS_M
+            ) {
+              staffNearHeadTorso[stage]++;
+            }
           }
         }
-        const displacedEvents = detector.detect(
-          body,
-          unlocked(blue, blueQuat),
-          unlocked(red, redQuat),
-          step,
-          phase - step
-        );
-        for (const event of displacedEvents) {
-          if (event.zone in displacedStaffThrough) {
-            displacedStaffThrough[event.zone]!++;
-            perSequence.displacedStaffThroughBody++;
+        const headOrTorso = (contacts: StaffContact[]) =>
+          contacts.includes("head") || contacts.includes("torso");
+        const chestRad = stance.segments.chestRad;
+        for (const side of ["left", "right"] as const) {
+          const grid = authoredProps[side]?.worldPosition;
+          const rendered = staffHits.rendered[side];
+          const planned = staffHits.planned[side];
+          if (
+            grid &&
+            Math.abs(chestRad) > SIDE_ON_RAD &&
+            Math.abs(grid.x) < MIDLINE_M
+          ) {
+            midlineTurned.staffFrames++;
+            if (headOrTorso(planned)) midlineTurned.plannedHeadTorso++;
+            if (headOrTorso(rendered)) midlineTurned.renderedHeadTorso++;
+          }
+          for (const zone of ["head", "torso"] as const) {
+            if (!rendered.includes(zone)) continue;
+            const key = `${entry.id}|${step}|${side}|${zone}`;
+            const beat = hitBeats.get(key) ?? {
+              sequence: entry.id,
+              step,
+              side,
+              zone,
+              frames: 0,
+              plannedFrames: 0,
+              chestDegMax: 0,
+            };
+            beat.frames++;
+            if (planned.includes(zone)) beat.plannedFrames++;
+            beat.chestDegMax = Math.max(
+              beat.chestDegMax,
+              (Math.abs(chestRad) * 180) / Math.PI
+            );
+            hitBeats.set(key, beat);
           }
         }
 
@@ -873,21 +1081,18 @@ export async function runContactScoreboard(
             chestRad: stance.segments.chestRad,
           },
           body,
+          twistRad,
           forearmM: forearm,
           gap: {
             left: hands.left?.gapM ?? null,
             right: hands.right?.gapM ?? null,
           },
           routedOver,
-          staffThrough: zones(events),
-          displacedStaffThrough: zones(displacedEvents),
-          authoredStaffThrough: zones(authoredEvents),
+          staffHits,
         });
       }
       sequences.push(perSequence);
     }
-  } finally {
-    detector.dispose();
   }
 
   if (laneRealization.frames > 0) {
@@ -909,8 +1114,12 @@ export async function runContactScoreboard(
     forearmMinM: quantile(forearms, 0),
     palmMinM: quantile(palms, 0),
     staffThrough,
-    authoredStaffThrough,
-    displacedStaffThrough,
+    staffNearHeadTorso,
+    staffHitBeats: [...hitBeats.values()].sort(
+      (a, b) => b.frames - a.frames || a.sequence.localeCompare(b.sequence)
+    ),
+    midlineTurned,
+    twist,
     displacedBeats,
     cappedBeats: displacedBeats.filter((beat) => beat.capped).length,
     renderedMoves,

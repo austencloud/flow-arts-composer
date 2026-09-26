@@ -9,6 +9,7 @@ import {
   scoreMotionKey,
   type ScoreMotionKey,
 } from "./performer-score-motion-key";
+import { performerScoreClock } from "./performer-score-clock";
 
 interface CachedStanceTrack {
   key: ScoreMotionKey;
@@ -36,13 +37,13 @@ function resolveStanceTrack(performer: CharacterInstanceState) {
  * One owner for the tracked torso pose consumed by both render backends.
  */
 export function resolvePerformerUpperBodyStance(
-  performer: CharacterInstanceState,
+  performer: CharacterInstanceState
 ) {
   return resolveTrackedUpperBodyStance(
     resolveStanceTrack(performer),
-    performer.scoreTime,
+    performerScoreClock(performer),
     performer.planeMode,
     performer.leftPropState,
-    performer.rightPropState,
+    performer.rightPropState
   );
 }
