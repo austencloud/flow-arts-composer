@@ -952,8 +952,8 @@
     {@const premium = isPremiumCosmeticProp(prop)}
     {@const label =
       look === "model"
-        ? `${getPropTypeDisplayInfo(prop).label} 3D`
-        : getPropTypeDisplayInfo(prop).label}
+        ? `${localizedPropName(prop)} 3D`
+        : localizedPropName(prop)}
     <div
       class="tile-wrapper"
       style:grid-column-start={columnStart}
@@ -963,7 +963,9 @@
       <PropGridButton
         propType={prop}
         {label}
-        actionLabel={look === "model" ? `Select ${label}` : undefined}
+        actionLabel={look === "model"
+          ? t("settings_select_prop_type", { prop: label })
+          : undefined}
         selected={selectedPropType === prop &&
           (look === undefined || currentPropLook === look)}
         {color}
@@ -971,6 +973,7 @@
         onSelect={() => handleTileClick(prop, look)}
         fanAppearance={normalizedFanAppearance}
         propLook={look ?? propLook}
+        triangleGrip={currentGrip}
         {recipeOverrides}
         {colors}
         previewPair={showAppearance}
