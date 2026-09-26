@@ -4,11 +4,11 @@
   import Seo from "$lib/shared/components/Seo.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import ShapeMatrixMandalaArt from "$lib/shared/shape-matrix/components/ShapeMatrixMandalaArt.svelte";
+  import { calculate as calculateMandalaGeometry } from "$lib/shared/mandala/services/mandala-geometry-calculator";
+  import { getMandalaPathOptions } from "$lib/shared/mandala/services/mandala-path-options";
   import {
     flowerKey,
     ratioLabel,
-    type Flower,
-    type RotatingFlower,
   } from "$lib/shared/shape-matrix/domain/flower-signature";
   import {
     CLUB_ARTWORK_PAINTER,
@@ -18,21 +18,25 @@
     loadShapeMatrix,
     type ShapeMatrixData,
   } from "$lib/shared/shape-matrix/services/shape-matrix-flowers";
-  import { FLOWER_NAMES } from "./_data/flower-names";
+  import {
+    NAMED_SHAPES,
+    SHAPE_GROUPS,
+    type NamedShape,
+    type ShapeDrawing,
+  } from "./_data/named-shapes";
   import "$lib/shared/landing/styles/public-editorial.css";
 
-  const TITLE = "Poi Flowers: Antispin, Inspin, Cat-Eye, Triquetra";
+  const TITLE = "Poi Flowers and Linear Extension: Cat-Eye, Triquetra";
   const DESCRIPTION =
-    "The cat-eye, triquetra, antispin flower, and inspin flower, each drawn from its spin ratio with the number of petals that ratio makes.";
+    "The cat-eye, triquetra, antispin flower, inspin flower, and linear extension, each drawn from the motion that makes it.";
   const URL = "https://tkaflowarts.com/flowers";
 
-  function styleWord(flower: RotatingFlower): string {
-    return flower.style === "pro" ? "Prospin" : "Antispin";
-  }
-
-  /** Ratio, style, and petals: the three facts the drawing is built from. */
-  function facts(flower: RotatingFlower): string {
-    return `${ratioLabel(flower.turns)} ${styleWord(flower).toLowerCase()}, ${flower.petals} petals`;
+  /** What the drawing is built from: ratio, style, and petals for a flower. */
+  function facts(drawing: ShapeDrawing): string {
+    if (drawing.kind === "sequence") return drawing.facts;
+    const { flower } = drawing;
+    const style = flower.style === "pro" ? "prospin" : "antispin";
+    return `${ratioLabel(flower.turns)} ${style}, ${flower.petals} petals`;
   }
 
   const jsonLd = {
@@ -41,17 +45,17 @@
       {
         "@type": "DefinedTermSet",
         "@id": `${URL}#terms`,
-        name: "Poi and staff flower names",
+        name: "Poi and staff shape names",
         description: DESCRIPTION,
         url: URL,
         inLanguage: "en-US",
-        hasDefinedTerm: FLOWER_NAMES.map((entry) => ({
+        hasDefinedTerm: NAMED_SHAPES.map((shape) => ({
           "@type": "DefinedTerm",
-          name: entry.name,
-          description: [entry.definition, `${facts(entry.flower)}.`]
+          name: shape.name,
+          description: [`${facts(shape.drawing)}.`, shape.definition]
             .filter(Boolean)
             .join(" "),
-          url: `${URL}#${entry.id}`,
+          url: `${URL}#${shape.id}`,
           inDefinedTermSet: `${URL}#terms`,
         })),
       },
@@ -67,7 +71,7 @@
           {
             "@type": "ListItem",
             position: 2,
-            name: "Flower names",
+            name: "Shape names",
             item: URL,
           },
         ],
@@ -78,12 +82,42 @@
   let data = $state<ShapeMatrixData | null>(null);
   let loadFailed = $state(false);
 
-  /** One end of the prop in blue hand ink, the Spin Ratios guide's painter. */
-  function paintFlower(flower: Flower) {
-    return (sizePx: number) =>
-      data
-        ? headerArtworkSrc(data, flower, "left", sizePx, CLUB_ARTWORK_PAINTER)
-        : "";
+  /**
+   * Blue hand ink at the Spin Ratios guide's scale, so every drawing on the
+   * page shares one size. A flower is one end of the prop; a sequence traces
+   * both ends, since a staff holds one end in pro and the other in anti.
+   */
+  function paint(drawing: ShapeDrawing) {
+    return (sizePx: number) => {
+      if (!data) return "";
+      if (drawing.kind === "flower") {
+        return headerArtworkSrc(
+          data,
+          drawing.flower,
+          "left",
+          sizePx,
+          CLUB_ARTWORK_PAINTER
+        );
+      }
+      const paths = calculateMandalaGeometry(
+        drawing.steps,
+        undefined,
+        undefined,
+        getMandalaPathOptions("arc", 2),
+        data.tips.left
+      );
+      return CLUB_ARTWORK_PAINTER.header(
+        paths,
+        "left",
+        Math.round(sizePx),
+        data.clubTipDx
+      );
+    };
+  }
+
+  function artKey(shape: NamedShape): string {
+    const { drawing } = shape;
+    return drawing.kind === "flower" ? flowerKey(drawing.flower) : shape.id;
   }
 
   onMount(async () => {
@@ -99,11 +133,11 @@
   {@html `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}<\/script>`}
 </Seo>
 
-<div class="editorial flowers-page">
+<div class="editorial shapes-page">
   <header class="editorial-header">
-    <h1 class="page-title">Flower names</h1>
+    <h1 class="page-title">Shape names</h1>
     <p class="page-subtitle">
-      Named flower patterns, each drawn from the spin ratio that makes it.
+      Named shapes, each drawn from the motion that makes it.
     </p>
   </header>
 
@@ -111,30 +145,45 @@
     <p class="load-failed" role="status">The drawings could not load.</p>
   {/if}
 
-  <div class="flowers">
-    <ul class="flower-grid">
-      {#each FLOWER_NAMES as entry (entry.id)}
-        <li class="flower" id={entry.id}>
-          <span class="still">
-            <ShapeMatrixMandalaArt
-              paint={paintFlower(entry.flower)}
-              artKey={flowerKey(entry.flower)}
-              alt={`${entry.name}: ${facts(entry.flower)}`}
-            />
-          </span>
-          <div class="flower-text">
-            <h2>{entry.name}</h2>
-            <p class="facts">{facts(entry.flower)}</p>
-            {#if entry.definition}
-              <p class="definition">{entry.definition}</p>
-            {:else if dev}
-              <p class="definition pending">Definition to come</p>
-            {/if}
-          </div>
-        </li>
-      {/each}
-    </ul>
-  </div>
+  {#each SHAPE_GROUPS as group (group.id)}
+    <section class="shapes" aria-labelledby={`${group.id}-heading`}>
+      <h2 class="section-title" id={`${group.id}-heading`}>{group.title}</h2>
+      <ul class="shape-grid">
+        {#each group.shapes as shape (shape.id)}
+          <li class="shape" id={shape.id}>
+            <span class="still">
+              <ShapeMatrixMandalaArt
+                paint={paint(shape.drawing)}
+                artKey={artKey(shape)}
+                alt={`${shape.name}: ${facts(shape.drawing)}`}
+              />
+            </span>
+            <div class="shape-text">
+              <h3>{shape.name}</h3>
+              <p class="facts">{facts(shape.drawing)}</p>
+              {#if shape.definition}
+                <p class="definition">{shape.definition}</p>
+              {:else if dev}
+                <p class="definition pending">Definition to come</p>
+              {/if}
+              {#if shape.link}
+                <div class="shape-link">
+                  <PanelButton
+                    href={shape.link.href}
+                    ariaLabel={`${shape.link.label}: ${shape.name}`}
+                    >{shape.link.label}<i
+                      class="fa-solid fa-arrow-right"
+                      aria-hidden="true"
+                    ></i></PanelButton
+                  >
+                </div>
+              {/if}
+            </div>
+          </li>
+        {/each}
+      </ul>
+    </section>
+  {/each}
 
   <div class="guide-link">
     <PanelButton href="/guide/ratios"
@@ -147,11 +196,15 @@
 </div>
 
 <style>
-  .flowers {
-    container: flowers / inline-size;
+  .shapes {
+    container: shapes / inline-size;
   }
 
-  .flower-grid {
+  .shapes + .shapes {
+    margin-top: 2rem;
+  }
+
+  .shape-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 1rem;
@@ -160,9 +213,9 @@
     list-style: none;
   }
 
-  /* Narrow: the drawing beside its name, so a phone shows several flowers
+  /* Narrow: the drawing beside its name, so a phone shows several shapes
      per screen. Wider containers stack each card, drawing on top. */
-  .flower {
+  .shape {
     display: grid;
     grid-template-columns: 7.5rem minmax(0, 1fr);
     align-items: center;
@@ -183,13 +236,14 @@
     aspect-ratio: 1;
   }
 
-  .flower-text {
+  .shape-text {
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
+    min-width: 0;
   }
 
-  h2 {
+  h3 {
     margin: 0;
     font-size: clamp(1.15rem, 1.05rem + 0.3vw, 1.375rem);
     font-weight: 660;
@@ -220,32 +274,42 @@
     font-style: italic;
   }
 
+  .shape-link {
+    margin-top: 0.6rem;
+  }
+
+  .shape-link :global(.panel-btn) {
+    white-space: normal;
+    text-align: left;
+  }
+
   .load-failed {
     margin: 0 0 1rem;
     color: oklch(0.78 0.012 270);
   }
 
   .guide-link {
-    margin-top: 1.5rem;
+    margin-top: 2rem;
   }
 
+  .shape-link i,
   .guide-link i {
     font-size: 0.875rem;
   }
 
-  @container flowers (min-width: 30rem) {
-    .flower-grid {
+  @container shapes (min-width: 30rem) {
+    .shape-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .flower {
+    .shape {
       grid-template-columns: minmax(0, 1fr);
       align-content: start;
     }
   }
 
-  @container flowers (min-width: 46rem) {
-    .flower-grid {
+  @container shapes (min-width: 46rem) {
+    .shape-grid {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
