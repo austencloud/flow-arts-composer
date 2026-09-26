@@ -3,8 +3,10 @@ import {
   MIN_MOVE_SECONDS,
   TakeTimingSchema,
   addTakeTap,
+  clearTakePerformanceEnd,
   confirmTakeTiming,
   createTakeTiming,
+  editTakeSection,
   editTimingSection,
   fitSection,
   landingDragRange,
@@ -19,7 +21,9 @@ import {
   setLandingAt,
   setPerformanceEndAt,
   setTakeBeatOneAt,
+  setTakePerformanceEndAt,
   splitTimingSection,
+  takeLandingDragRange,
   takePositionAt,
   takeSampleAt,
   takeTimingFromLegacyMarks,
@@ -576,12 +580,20 @@ describe("timing sections", () => {
       6
     );
     const resolved = resolveTakeTiming(faster, SIXTEEN);
-    // Landing 42 sits just before the cut; the new tempo counts on from it.
-    expect(takePositionAt(resolved, 29.99)).toBeCloseTo((29.99 - 1) / SPB, 6);
+    // Landing 42 sits just before the cut; the new tempo counts on from it,
+    // and both parts draw the move across the cut alike, so it runs at the
+    // new tempo from landing 42 with no jump at the cut.
+    expect(takePositionAt(resolved, 29.99)).toBeCloseTo(
+      42 + (29.99 - at(42)) / 0.6,
+      6
+    );
     expect(takePositionAt(resolved, 30)).toBeCloseTo(
       42 + (30 - at(42)) / 0.6,
       6
     );
+    expect(
+      takePositionAt(resolved, 30)! - takePositionAt(resolved, 30 - 1e-6)!
+    ).toBeLessThan(1e-4);
     // Taps at the new tempo take the count on from there.
     const taps = Array.from({ length: 12 }, (_, index) => at(42) + 0.6 * (index + 1));
     const tapped = editTimingSection(
@@ -670,9 +682,12 @@ describe("timing sections", () => {
       EIGHT,
       "continues"
     );
-    expect(resolveTakeTiming(split, EIGHT).sections[1]!.endStored).toBe(true);
+    // The untapped part carries the end its taps guessed, and those taps
+    // still guess it: nothing stored decides it, so there is nothing to clear.
+    expect(split.sections[1]!.carriedEnd).toBe(40);
+    expect(resolveTakeTiming(split, EIGHT).sections[1]!.endStored).toBe(false);
     // Tapped, the part guesses its own end; the carried one is kept but
-    // decides nothing, so there is nothing to clear.
+    // decides nothing either.
     const tapped = editTimingSection(
       split,
       "s2",
@@ -983,7 +998,8 @@ describe("timing sections", () => {
     // A tap made after the split goes the same way.
     const retapped = addTakeTap(
       { ...split, sections: [{ ...split.sections[0]!, taps: tapsOn(1, 19) }, split.sections[1]!] },
-      at(20)
+      at(20),
+      EIGHT
     );
     expect(retapped.sections.map((section) => section.taps.length)).toEqual([20, 0]);
   });
@@ -1503,6 +1519,325 @@ describe("beat 1", () => {
         SPB / 2
       );
     });
+  });
+});
+
+describe("parts that share a count", () => {
+  /** How far the count jumps across a cut. */
+  function jumpAt(take: TakeTiming, cut: number): number {
+    const resolved = resolveTakeTiming(take, EIGHT);
+    return (
+      takePositionAt(resolved, cut + 0.001)! -
+      takePositionAt(resolved, cut - 0.001)!
+    );
+  }
+  /** Taps on whole seconds: the 60 BPM grid from move 1. */
+  const everySecond = (count: number) =>
+    Array.from({ length: count }, (_, index) => index + 1);
+
+  it("counts on from a part that started over once it is tapped", () => {
+    // Moves 1-4 and 9-16 tapped; the stretch between is cut to keep
+    // counting at 7.5 s, then to start over at 4.5 s.
+    let take = timing([
+      { bpm: 60, tempo: "locked", taps: [1, 2, 3, 4, ...everySecond(16).slice(8)] },
+    ]);
+    take = splitTimingSection(take, 7.5, "tail", 2, EIGHT, "continues");
+    take = splitTimingSection(take, 4.5, "middle", 3, EIGHT, "restarts");
+    for (const seconds of [5, 6, 7]) take = addTakeTap(take, seconds, EIGHT);
+    const resolved = resolveTakeTiming(take, EIGHT);
+    expect(takePositionAt(resolved, 5)).toBeCloseTo(1, 6);
+    expect(takePositionAt(resolved, 7)).toBeCloseTo(3, 6);
+    expect(takePositionAt(resolved, 9)).toBeCloseTo(5, 6);
+  });
+
+  it("stops a drag at the landing drawn next across a cut", () => {
+    let take = timing([{ bpm: 60, tempo: "locked", taps: everySecond(16) }]);
+    take = splitTimingSection(take, 5.2, "fast", 2, EIGHT, "continues");
+    // The later part cleared, typed faster and ended at 8 s.
+    take = editTakeSection(take, "fast", EIGHT, (section) => ({
+      ...section,
+      taps: [],
+      bpm: 120,
+    }));
+    take = setTakePerformanceEndAt(take, "fast", EIGHT, 8);
+    expect(take.sections[1]!.lastPosition).toBe(11);
+    // Landing 6 is drawn at 5.5 s at the new tempo.
+    const range = takeLandingDragRange(take, "section-1", 5, EIGHT)!;
+    expect(range.max).toBeCloseTo(5.5 - MIN_MOVE_SECONDS, 6);
+    const dragged = placeTakeLanding(take, "section-1", 5, 5.8, EIGHT);
+    const resolved = resolveTakeTiming(dragged, EIGHT);
+    const drawn = resolved.sections.map(
+      (section) =>
+        section.landings.find((landing) => landing.position === 5)!.seconds
+    );
+    expect(drawn[0]).toBeCloseTo(5.5 - MIN_MOVE_SECONDS, 6);
+    expect(drawn[1]).toBeCloseTo(drawn[0]!, 9);
+    expect(
+      resolved.sections.flatMap((section) => section.droppedOverrides)
+    ).toEqual([]);
+  });
+
+  it("holds a last landing dragged before a cut made after it", () => {
+    const take = timing([{ bpm: 60, tempo: "locked", taps: everySecond(8) }]);
+    const dragged = placeTakeLanding(take, "section-1", 8, 7.2, EIGHT);
+    const split = splitTimingSection(dragged, 7.5, "tail", 2, EIGHT, "continues");
+    const resolved = resolveTakeTiming(split, EIGHT);
+    expect(takePositionAt(resolved, 7.4)).toBeCloseTo(8, 6);
+    expect(takePositionAt(resolved, 7.6)).toBeCloseTo(8, 6);
+  });
+
+  it("keeps a followed tempo slower than any typed one across a cut", () => {
+    const land = (position: number) => 4 + 3.12 * position;
+    const base = createTakeTiming({
+      sequenceId: "dck",
+      takeKey: "local:take.mp4:1:1",
+      durationSeconds: 150,
+      bpm: 20,
+      now: 1,
+    });
+    const take = setTakePerformanceEndAt(
+      {
+        ...base,
+        sections: [
+          {
+            ...base.sections[0]!,
+            tempo: "follow",
+            taps: Array.from({ length: 30 }, (_, index) => land(index + 1)),
+          },
+        ],
+      },
+      "section-1",
+      EIGHT,
+      land(40)
+    );
+    expect(take.sections[0]!.lastPosition).toBe(40);
+    const split = splitTimingSection(take, land(30.25), "tail", 2, EIGHT, "continues");
+    const end = resolveTakeTiming(split, EIGHT).sections[1]!.landings.find(
+      (landing) => landing.position === 40
+    )!;
+    expect(end.seconds).toBeCloseTo(land(40), 6);
+  });
+
+  it("holds the last tapped landing across a cut made after the taps", () => {
+    const split = splitTimingSection(
+      timing([{ tempo: "locked", taps: tapsOn(1, 9) }]),
+      at(30.5),
+      "right",
+      2,
+      EIGHT,
+      "continues"
+    );
+    expect(split.sections[1]!.carriedEnd).toBe(9);
+    // Moves 10-20 tapped afterwards, all before the cut.
+    const more = tapsOn(10, 20).reduce(
+      (take, seconds) => addTakeTap(take, seconds, EIGHT),
+      split
+    );
+    expect(more.sections.map((section) => section.taps.length)).toEqual([20, 0]);
+    const resolved = resolveTakeTiming(more, EIGHT);
+    expect(takeSampleAt(resolved, at(30.4))!.arrival).toBeCloseTo(20, 6);
+    expect(takeSampleAt(resolved, at(30.6))!.arrival).toBeCloseTo(20, 6);
+  });
+
+  it("holds an end set in one part through the others", () => {
+    const original = timing([{ tempo: "locked", taps: tapsOn(1, 38) }]);
+    const split = splitTimingSection(original, at(38.5), "b", 5, EIGHT, "continues");
+    expect(split.sections[1]!.carriedEnd).toBe(40);
+    const ended = setTakePerformanceEndAt(split, "section-1", EIGHT, at(30));
+    expect(ended.sections.map((section) => section.lastPosition)).toEqual([
+      30,
+      undefined,
+    ]);
+    expect(ended.sections[1]!.carriedEnd).toBeUndefined();
+    const resolved = resolveTakeTiming(ended, EIGHT);
+    expect(takePositionAt(resolved, at(34))).toBeCloseTo(30, 3);
+    expect(takePositionAt(resolved, at(39.5))).toBeCloseTo(30, 3);
+
+    // Ended from the part after a cut just past landing 38: that landing is
+    // drawn before the cut, so the end is stored there and holds both sides.
+    const near = at(38.2);
+    const early = splitTimingSection(original, near, "b", 5, EIGHT, "continues");
+    const stopped = setTakePerformanceEndAt(early, "b", EIGHT, at(38.3));
+    expect(stopped.sections.map((section) => section.lastPosition)).toEqual([
+      38,
+      undefined,
+    ]);
+    const held = resolveTakeTiming(stopped, EIGHT);
+    expect(takePositionAt(held, near - 0.001)).toBeCloseTo(38, 3);
+    expect(takePositionAt(held, near + 0.001)).toBeCloseTo(38, 3);
+    expect(held.sections.map((section) => section.endStored)).toEqual([
+      true,
+      true,
+    ]);
+  });
+
+  it("clears an end for every part that shares it", () => {
+    const split = splitTimingSection(
+      timing([{ tempo: "locked", taps: tapsOn(1, 24) }]),
+      at(40.5),
+      "right",
+      2,
+      EIGHT,
+      "continues"
+    );
+    const ended = setTakePerformanceEndAt(split, "right", EIGHT, at(30));
+    expect(ended.sections[0]!.lastPosition).toBe(30);
+    const cleared = clearTakePerformanceEnd(ended, "right", EIGHT);
+    expect(
+      cleared.sections.map((section) => [
+        section.lastPosition,
+        section.carriedEnd,
+      ])
+    ).toEqual([
+      [undefined, undefined],
+      [undefined, undefined],
+    ]);
+    expect(clearTakePerformanceEnd(cleared, "right", EIGHT)).toBe(cleared);
+  });
+
+  it("recounts the part after a nudged part whose beat 1 moves", () => {
+    const cut = at(20.52);
+    const split = splitTimingSection(
+      timing([{ tempo: "locked", taps: tapsOn(1, 40) }]),
+      cut,
+      "s2",
+      5,
+      EIGHT,
+      "continues"
+    );
+    const nudged = editTakeSection(split, "section-1", EIGHT, (section) => ({
+      ...section,
+      offsetSeconds: MIN_MOVE_SECONDS,
+    }));
+    expect(Math.abs(jumpAt(nudged, cut))).toBeLessThan(0.1);
+    for (const landings of [1, -1]) {
+      const moved = moveTakeBeatOne(nudged, "section-1", EIGHT, landings);
+      expect(
+        Math.abs(jumpAt(moved, cut)),
+        `beat 1 moved ${landings}`
+      ).toBeLessThan(0.1);
+    }
+
+    // A start-over cut made after the nudge recounts the part after it.
+    const replay = splitTimingSection(
+      timing([{ tempo: "locked", taps: [...tapsOn(1, 20), ...tapsOn(22, 51)] }]),
+      at(36.52),
+      "c",
+      5,
+      EIGHT,
+      "continues"
+    );
+    const restarted = splitTimingSection(
+      editTakeSection(replay, "section-1", EIGHT, (section) => ({
+        ...section,
+        offsetSeconds: MIN_MOVE_SECONDS,
+      })),
+      at(21),
+      "r",
+      7,
+      EIGHT,
+      "restarts"
+    );
+    expect(Math.abs(jumpAt(restarted, at(36.52)))).toBeLessThan(0.1);
+  });
+
+  it("counts on from a part's new tempo, whichever came first", () => {
+    const original = timing([
+      { taps: tapsOn(1, 24), tempo: "locked", lastPosition: 64 },
+    ]);
+    const first = splitTimingSection(original, at(24.5), "b", 5, EIGHT, "continues");
+    const slow = (take: TakeTiming) =>
+      editTakeSection(take, "b", EIGHT, (section) => ({ ...section, bpm: 70 }));
+    const cut = at(40.5);
+    const tempoFirst = splitTimingSection(slow(first), cut, "c", 7, EIGHT, "continues");
+    const cutsFirst = slow(splitTimingSection(first, cut, "c", 7, EIGHT, "continues"));
+    expect(Math.abs(jumpAt(tempoFirst, cut))).toBeLessThan(0.1);
+    expect(Math.abs(jumpAt(cutsFirst, cut))).toBeLessThan(0.1);
+    expectSameMotion(cutsFirst, tempoFirst, 20, 60);
+
+    // Tapping a part that started over counts the part after it on too.
+    const cuts = splitTimingSection(
+      splitTimingSection(
+        timing([{ taps: tapsOn(1, 20), tempo: "locked", lastPosition: 60 }]),
+        at(36.5),
+        "c",
+        5,
+        EIGHT,
+        "continues"
+      ),
+      at(21),
+      "r",
+      6,
+      EIGHT,
+      "restarts"
+    );
+    const replayed = tapsOn(22, 36).reduce(
+      (take, seconds) => addTakeTap(take, seconds, EIGHT),
+      cuts
+    );
+    // The replay's move 15 lands where landing 36 did.
+    expect(Math.abs(jumpAt(replayed, at(36.5)))).toBeLessThan(0.05);
+    expect(
+      takePositionAt(resolveTakeTiming(replayed, EIGHT), at(36.5))
+    ).toBeCloseTo(15.5, 1);
+  });
+
+  it("keeps counting across a cut saved before parts marked it", () => {
+    // Saved before cuts were marked: the left flagged, the right numbering
+    // its taps from the landing it continued from.
+    const taps = [1, 2.1, 3, 4.2, 5, 6.1, 7, 8].map(at);
+    const whole = timing([{ taps, tempo: "locked", snap: "taps" }]);
+    const cut = at(4.5);
+    const saved = timing([
+      {
+        taps: taps.slice(0, 4),
+        tempo: "locked",
+        snap: "taps",
+        endSeconds: cut,
+        continuesIntoNext: true,
+      },
+      {
+        taps: taps.slice(4),
+        tempo: "locked",
+        snap: "taps",
+        startSeconds: cut,
+        firstTapPosition: 5,
+      },
+    ]);
+    const resolved = resolveTakeTiming(saved, EIGHT);
+    expect(resolved.sections[1]!.fit!.labels[0]!.position).toBe(5);
+    expect(resolved.sections[1]!.countsWithPrevious).toBe(true);
+    expectSameMotion(saved, whole, 1, 9);
+    // Either part can drag the landing beside the cut.
+    const wanted = placeTakeLanding(whole, "section-1", 5, at(4.6), EIGHT);
+    for (const id of ["section-1", "section-2"]) {
+      expectSameMotion(placeTakeLanding(saved, id, 5, at(4.6), EIGHT), wanted, 3, 7);
+    }
+  });
+
+  it("marks move 1 at the playhead on a nudged part with nothing fitted", () => {
+    const cleared = timing([{ offsetSeconds: -0.1 }]);
+    const marked = setTakeBeatOneAt(cleared, "section-1", EIGHT, 2);
+    expect(
+      resolveTakeTiming(marked, EIGHT).sections[0]!.landings.find(
+        (landing) => landing.position === 1
+      )!.seconds
+    ).toBeCloseTo(2, 6);
+
+    const split = splitTimingSection(
+      timing([{ taps: tapsOn(1, 12), offsetSeconds: -0.1 }]),
+      20,
+      "s2",
+      2,
+      EIGHT,
+      "restarts"
+    );
+    const restarted = setTakeBeatOneAt(split, "s2", EIGHT, 22);
+    expect(
+      resolveTakeTiming(restarted, EIGHT).sections[1]!.landings.find(
+        (landing) => landing.position === 1
+      )!.seconds
+    ).toBeCloseTo(22, 6);
   });
 });
 

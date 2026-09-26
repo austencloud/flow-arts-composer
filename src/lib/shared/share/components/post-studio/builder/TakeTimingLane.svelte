@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { flushSync } from "svelte";
   import type { LandingRef } from "./post-timing-session.svelte";
   import type {
     ResolvedTakeTiming,
@@ -7,6 +8,7 @@
   import { MIN_MOVE_SECONDS } from "$lib/shared/media-composition/domain/take-timing";
   import { landingName } from "$lib/shared/media-composition/domain/timing-summary";
   import { formatTakeClock } from "./post-builder-format";
+  import { shownLanding, shownLandings } from "./timing-lane-landings";
 
   /**
    * The take's timing drawn against its own clock: a close-up window that
@@ -74,39 +76,37 @@
     return seconds >= windowStart - 0.05 && seconds <= windowEnd + 0.05;
   }
 
-  // Each part also draws the landings just past its edges, so the moves
-  // across a cut run on; each landing shows once, in the part it falls in.
+  // Each landing shows once, in the part it falls in (see `shownLandings`).
   const landings = $derived.by(() => {
-    const sections = resolved?.sections ?? [];
-    return sections.flatMap((section, index) =>
-      section.landings
-        .filter(
-          (landing) =>
-            (index === 0 || landing.seconds >= section.startSeconds) &&
-            (index === sections.length - 1 ||
-              landing.seconds < section.endSeconds)
-        )
-        .map((landing) => ({
-          ...landing,
-          sectionId: section.id,
-          passStart:
-            landing.position > 0 &&
-            (landing.position - 1) % movesPerPass === 0,
-          isEnd: section.endPosition === landing.position,
-          label:
-            landing.position <= 0
-              ? "S"
-              : String(((landing.position - 1) % movesPerPass) + 1),
-        }))
+    const ends = new Map(
+      (resolved?.sections ?? []).map((section) => [
+        section.id,
+        section.endPosition,
+      ])
     );
+    return shownLandings(timing, resolved).map((landing) => ({
+      ...landing,
+      passStart:
+        landing.position > 0 && (landing.position - 1) % movesPerPass === 0,
+      isEnd: ends.get(landing.sectionId) === landing.position,
+      label:
+        landing.position <= 0
+          ? "S"
+          : String(((landing.position - 1) % movesPerPass) + 1),
+    }));
   });
 
+  // A part with no taps is fitted through its beat 1 alone, and that mark
+  // is not a tap.
   const taps = $derived(
     (resolved?.sections ?? []).flatMap((section) =>
-      (section.fit?.labels ?? []).map((label) => ({
-        seconds: label.seconds,
-        matched: label.position !== null,
-      }))
+      (timing.sections.find((entry) => entry.id === section.id)?.taps
+        .length ?? 0) === 0
+        ? []
+        : (section.fit?.labels ?? []).map((label) => ({
+            seconds: label.seconds,
+            matched: label.position !== null,
+          }))
     )
   );
 
@@ -176,6 +176,21 @@
     const step = event.shiftKey ? 0.1 : MIN_MOVE_SECONDS;
     onselect(landing);
     onplace(landing, seconds + (event.key === "ArrowLeft" ? -step : step));
+    // Nudged across a cut, the landing is drawn by the part on the other
+    // side, as a new button; the selection and the keyboard go with it.
+    const shown = shownLanding(
+      timing,
+      resolved,
+      landing.sectionId,
+      landing.position
+    );
+    if (shown && shown.sectionId !== landing.sectionId) onselect(shown);
+    flushSync();
+    const focused = document.activeElement;
+    if (!detail || (focused && detail.contains(focused))) return;
+    detail
+      .querySelector<HTMLButtonElement>('button.landing[aria-pressed="true"]')
+      ?.focus();
   }
 </script>
 
