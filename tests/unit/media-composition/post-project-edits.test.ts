@@ -7,6 +7,7 @@ import {
   findItem,
   type PostItem,
   type PostProject,
+  type PostVideoItem,
 } from "$lib/shared/media-composition/domain/post-project";
 import {
   addOverlayItem,
@@ -15,9 +16,11 @@ import {
   appendVideoClip,
   deleteItem,
   duplicateItem,
+  editItemKeyframes,
   moveMainItem,
   moveOverlayItem,
   removeTake,
+  resetFraming,
   setItemFill,
   setProjectAudio,
   setTrackFlag,
@@ -25,8 +28,15 @@ import {
   splitItemAt,
   trimItem,
   updateItem,
+  updateItemAt,
 } from "$lib/shared/media-composition/domain/post-project-edits";
 import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
+import {
+  framingAt,
+  isAnimated,
+  opacityAt,
+  setKeyframe,
+} from "$lib/shared/media-composition/domain/post-project-keyframes";
 import {
   NOW,
   card,
@@ -639,5 +649,193 @@ describe("track and project flags", () => {
     const base = twoClips();
     expect(valid(setProjectAudio(base, "silent", ctx)).audio).toBe("silent");
     expect(setProjectAudio(base, "takes", ctx)).toBe(base);
+  });
+});
+
+describe("editItemKeyframes", () => {
+  it("applies an item-level keyframe edit and finishes the project", () => {
+    const base = project([video("v1", { sourceOut: 10 })]);
+    const next = valid(
+      editItemKeyframes(base, "v1", (it) => setKeyframe(it, "opacity", 5, 0.4), ctx)
+    );
+    expect(isAnimated(item(next, "v1"), "opacity")).toBe(true);
+    expect(next.updatedAt).toBe(ctx.now);
+  });
+
+  it("is a no-op (same project reference) when the edit changes nothing", () => {
+    const base = project([video("v1", { sourceOut: 10 })]);
+    expect(editItemKeyframes(base, "v1", (it) => it, ctx)).toBe(base);
+  });
+
+  it("is a no-op for an item that doesn't exist", () => {
+    const base = project([video("v1", { sourceOut: 10 })]);
+    expect(
+      editItemKeyframes(base, "nope", (it) => setKeyframe(it, "opacity", 5, 0.4), ctx)
+    ).toBe(base);
+  });
+});
+
+describe("updateItemAt", () => {
+  it("routes an animated framing field into a keyframe instead of the static field", () => {
+    const base = project([video("v1", { sourceOut: 10 })]);
+    const withKeyframe = editItemKeyframes(
+      base,
+      "v1",
+      (it) => setKeyframe(it, "framing", 0, { zoom: 1, panX: 0, panY: 0, rotation: 0 }),
+      ctx
+    );
+    const next = valid(updateItemAt(withKeyframe, "v1", { zoom: 3 }, 5, ctx));
+    const updated = item(next, "v1") as PostVideoItem;
+    // The static field is untouched; a keyframe was written at s = 5 instead.
+    expect(updated.zoom).toBe(1);
+    expect(framingAt(updated, 5).zoom).toBe(3);
+  });
+
+  it("falls back to a plain static update when the channel isn't animated", () => {
+    const base = project([video("v1", { sourceOut: 10 })]);
+    const next = valid(updateItemAt(base, "v1", { zoom: 3 }, 5, ctx));
+    const updated = item(next, "v1") as PostVideoItem;
+    expect(updated.zoom).toBe(3);
+    expect(isAnimated(updated, "framing")).toBe(false);
+  });
+
+  it("updates an unanimated field in the same patch normally alongside an animated one", () => {
+    const base = project([video("v1", { sourceOut: 10 })]);
+    const withKeyframe = editItemKeyframes(
+      base,
+      "v1",
+      (it) => setKeyframe(it, "framing", 0, { zoom: 1, panX: 0, panY: 0, rotation: 0 }),
+      ctx
+    );
+    const next = valid(
+      updateItemAt(withKeyframe, "v1", { zoom: 3, volume: 0.5 }, 5, ctx)
+    );
+    const updated = item(next, "v1") as PostVideoItem;
+    expect(updated.volume).toBe(0.5);
+    expect(framingAt(updated, 5).zoom).toBe(3);
+  });
+});
+
+describe("resetFraming", () => {
+  it("resets zoom, pan and rotation to identity and drops framing keyframes only", () => {
+    const base = project([
+      video("v1", { sourceOut: 10, zoom: 2, panX: 0.1, panY: -0.1, rotation: 30 }),
+    ]);
+    let withKeyframes = editItemKeyframes(
+      base,
+      "v1",
+      (it) =>
+        setKeyframe(it, "framing", 0, {
+          zoom: 2,
+          panX: 0.1,
+          panY: -0.1,
+          rotation: 30,
+        }),
+      ctx
+    );
+    withKeyframes = editItemKeyframes(
+      withKeyframes,
+      "v1",
+      (it) => setKeyframe(it, "opacity", 3, 0.5),
+      ctx
+    );
+    const next = valid(resetFraming(withKeyframes, "v1", ctx));
+    const reset = item(next, "v1") as PostVideoItem;
+    expect(reset).toMatchObject({ zoom: 1, panX: 0, panY: 0, rotation: 0 });
+    expect(isAnimated(reset, "framing")).toBe(false);
+    // A keyframe on a different channel survives.
+    expect(isAnimated(reset, "opacity")).toBe(true);
+  });
+
+  it("is a no-op already at identity with no framing keyframes", () => {
+    const base = project([video("v1", { sourceOut: 10 })]);
+    expect(resetFraming(base, "v1", ctx)).toBe(base);
+  });
+
+  it("is a no-op for a non-video item", () => {
+    const base = project([card("c1", 10)]);
+    expect(resetFraming(base, "c1", ctx)).toBe(base);
+  });
+});
+
+describe("shiftKeyframes wiring in trim and split", () => {
+  it("keeps a main-track card's opacity keyframe at the same offset into its remaining content after a head trim", () => {
+    const base = project([card("c1", 10)]);
+    const withKeyframe = editItemKeyframes(
+      base,
+      "c1",
+      (it) => setKeyframe(it, "opacity", 6, 0.4),
+      ctx
+    );
+    const trimmed = valid(trimItem(withKeyframe, "c1", "start", 3, ctx));
+    const trimmedItem = item(trimmed, "c1");
+    expect(trimmedItem.duration).toBeCloseTo(7, 9);
+    // The remaining footage used to start 3s in; it now starts at its own 0,
+    // so the keyframe rides forward with it and still reads 0.4 there.
+    expect(opacityAt(trimmedItem, trimmedItem.start + 3)).toBeCloseTo(0.4, 9);
+  });
+
+  it("keeps an overlay's opacity keyframe at the same post second when its start trims forward", () => {
+    const base = project(
+      [video("v1", { sourceOut: 20 })],
+      [[text("t1", 2, 6)]]
+    );
+    const withKeyframe = editItemKeyframes(
+      base,
+      "t1",
+      (it) => setKeyframe(it, "opacity", 5, 0.5),
+      ctx
+    );
+    const trimmed = valid(trimItem(withKeyframe, "t1", "start", 4, ctx));
+    const trimmedItem = item(trimmed, "t1");
+    expect(trimmedItem.start).toBeCloseTo(4, 9);
+    expect(opacityAt(trimmedItem, 5)).toBeCloseTo(0.5, 9);
+  });
+
+  it("never shifts a video item's framing keyframes when it trims, since they already ride the take's clock", () => {
+    const base = project([video("v1", { sourceOut: 10 })]);
+    const withKeyframe = editItemKeyframes(
+      base,
+      "v1",
+      (it) => setKeyframe(it, "framing", 2, { zoom: 2, panX: 0, panY: 0, rotation: 0 }),
+      ctx
+    );
+    const trimmed = valid(trimItem(withKeyframe, "v1", "end", 8, ctx));
+    const trimmedItem = item(trimmed, "v1") as PostVideoItem;
+    // Content time 2 is unchanged; only the item's own span got shorter.
+    expect(trimmedItem.keyframes?.framing).toEqual(
+      (item(withKeyframe, "v1") as PostVideoItem).keyframes?.framing
+    );
+    expect(framingAt(trimmedItem, 2).zoom).toBe(2);
+  });
+
+  it("keeps a single-keyframe video framing value correct on both pieces of a split", () => {
+    const base = project([video("v1", { sourceOut: 10 })]);
+    const withKeyframe = editItemKeyframes(
+      base,
+      "v1",
+      (it) => setKeyframe(it, "framing", 2, { zoom: 2, panX: 0, panY: 0, rotation: 0 }),
+      ctx
+    );
+    const result = splitItemAt(withKeyframe, "v1", 4, ctx)!;
+    valid(result.project);
+    const first = item(result.project, "v1") as PostVideoItem;
+    const second = item(result.project, result.newItemId) as PostVideoItem;
+    expect(framingAt(first, 1).zoom).toBe(2);
+    expect(framingAt(second, 7).zoom).toBe(2);
+  });
+
+  it("re-maps the post second a video framing keyframe lands on when its speed changes", () => {
+    const base = project([video("v1", { sourceOut: 20, speed: 1 })]);
+    const withKeyframe = editItemKeyframes(
+      base,
+      "v1",
+      (it) => setKeyframe(it, "framing", 10, { zoom: 2, panX: 0, panY: 0, rotation: 0 }),
+      ctx
+    );
+    const sped = valid(setVideoSpeed(withKeyframe, "v1", 2, ctx));
+    const fastItem = item(sped, "v1") as PostVideoItem;
+    // Same take instant (media second 10), now reached in half the post time.
+    expect(framingAt(fastItem, 5).zoom).toBeCloseTo(2, 6);
   });
 });

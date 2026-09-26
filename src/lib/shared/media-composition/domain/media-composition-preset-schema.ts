@@ -107,6 +107,75 @@ export const RegionMotionSchema = z
 
 export type RegionMotion = z.infer<typeof RegionMotionSchema>;
 
+/**
+ * A CSS `cubic-bezier(x1, y1, x2, y2)`, or a hold until the next keyframe.
+ * The post model's `PostEasing` is the same shape; this copy keeps the preset
+ * schema free of a dependency on the post editor, since a preset can be
+ * authored by hand.
+ */
+export const PresetEasingSchema = z.union([
+  z.literal("hold"),
+  z.tuple([
+    z.number().finite().min(0).max(1),
+    z.number().finite().min(-1).max(2),
+    z.number().finite().min(0).max(1),
+    z.number().finite().min(-1).max(2),
+  ]),
+]);
+
+export type PresetEasing = z.infer<typeof PresetEasingSchema>;
+
+function motionKeySchema<V extends z.ZodTypeAny>(value: V) {
+  return z
+    .object({
+      /** Absolute post seconds; may be negative for a keyframe on a trimmed head. */
+      atSeconds: z.number().finite(),
+      value,
+      /** How the value travels to the next keyframe. */
+      easing: PresetEasingSchema,
+    })
+    .strict();
+}
+
+export type MotionKey<V> = { atSeconds: number; value: V; easing: PresetEasing };
+
+/** A clip transform's animated fields; `flipHorizontal` always stays static. */
+export const MotionTransformValueSchema = z
+  .object({
+    scale: z.number().finite().positive(),
+    rotationDegrees: z.number().finite(),
+    translateX: z.number().finite(),
+    translateY: z.number().finite(),
+  })
+  .strict();
+
+export type MotionTransformValue = z.infer<typeof MotionTransformValueSchema>;
+
+export const PresetVisualClipMotionSchema = z
+  .object({
+    transform: z.array(motionKeySchema(MotionTransformValueSchema)).optional(),
+    opacity: z.array(motionKeySchema(z.number().finite().min(0).max(1))).optional(),
+  })
+  .strict();
+
+export type PresetVisualClipMotion = z.infer<typeof PresetVisualClipMotionSchema>;
+
+/**
+ * A region's rect keyframed directly in post seconds, the compiled form of an
+ * item's box channel. Unlike `RegionMotionSchema` it has no marker or curve
+ * enum: its clock is already absolute, and its easing is a bezier or a hold.
+ */
+export const PresetRegionKeyframesTrackSchema = z
+  .object({
+    regionId: NonEmptyIdSchema,
+    keyframes: z.array(motionKeySchema(MotionRectSchema)).min(1),
+  })
+  .strict();
+
+export type PresetRegionKeyframesTrack = z.infer<
+  typeof PresetRegionKeyframesTrackSchema
+>;
+
 export const PresetSourceRoleSchema = z
   .object({
     key: NonEmptyIdSchema,
@@ -199,6 +268,22 @@ function validatePresetInterval(
   }
 }
 
+function assertStrictlyIncreasingAtSeconds(
+  keys: readonly { atSeconds: number }[],
+  context: z.RefinementCtx,
+  path: (string | number)[]
+): void {
+  for (let index = 1; index < keys.length; index++) {
+    if (keys[index]!.atSeconds <= keys[index - 1]!.atSeconds) {
+      context.addIssue({
+        code: "custom",
+        path: [...path, index, "atSeconds"],
+        message: "Motion keyframe times must strictly increase",
+      });
+    }
+  }
+}
+
 const PresetClipTimingFields = {
   start: PresetTimePointSchema,
   end: PresetTimePointSchema,
@@ -241,6 +326,11 @@ export const PresetVisualClipSchema = z
      */
     timeMapRole: NonEmptyIdSchema.optional(),
     syncGroupId: NonEmptyIdSchema.optional(),
+    /**
+     * Keyframed overrides of `transform` and `opacity`, sampled and composed
+     * with the static fields, fades and transitions at evaluation time.
+     */
+    motion: PresetVisualClipMotionSchema.optional(),
   })
   .strict()
   .superRefine((clip, context) => {
@@ -249,6 +339,18 @@ export const PresetVisualClipSchema = z
       { start: clip.sourceIn, end: clip.sourceOut },
       context
     );
+    if (clip.motion?.transform) {
+      assertStrictlyIncreasingAtSeconds(clip.motion.transform, context, [
+        "motion",
+        "transform",
+      ]);
+    }
+    if (clip.motion?.opacity) {
+      assertStrictlyIncreasingAtSeconds(clip.motion.opacity, context, [
+        "motion",
+        "opacity",
+      ]);
+    }
   });
 
 export const PresetAudioClipSchema = z
@@ -363,6 +465,12 @@ export const MediaCompositionPresetSchema = z
      * declares where it rests and moves from there.
      */
     regionMotion: z.array(RegionMotionSchema).optional(),
+    /**
+     * A region's rect keyframed directly in post seconds: the compiled form
+     * of a post item's box channel. A region has at most one of this or a
+     * `regionMotion` track.
+     */
+    regionKeyframes: z.array(PresetRegionKeyframesTrackSchema).optional(),
     sourceRoles: z.array(PresetSourceRoleSchema).min(1),
     regions: z.array(LayoutRegionSchema),
     clips: z.array(PresetClipSchema).min(1),
@@ -547,6 +655,37 @@ export const MediaCompositionPresetSchema = z
           });
         }
       });
+    });
+
+    const keyframedRegions = new Set<string>();
+    (preset.regionKeyframes ?? []).forEach((track, index) => {
+      if (!regions.has(track.regionId)) {
+        context.addIssue({
+          code: "custom",
+          path: ["regionKeyframes", index, "regionId"],
+          message: "Region keyframes target a region that does not exist",
+        });
+      }
+      if (keyframedRegions.has(track.regionId)) {
+        context.addIssue({
+          code: "custom",
+          path: ["regionKeyframes", index, "regionId"],
+          message: "A region can only have one region-keyframes track",
+        });
+      }
+      if (movingRegions.has(track.regionId)) {
+        context.addIssue({
+          code: "custom",
+          path: ["regionKeyframes", index, "regionId"],
+          message: "A region cannot have both regionMotion and regionKeyframes",
+        });
+      }
+      keyframedRegions.add(track.regionId);
+      assertStrictlyIncreasingAtSeconds(track.keyframes, context, [
+        "regionKeyframes",
+        index,
+        "keyframes",
+      ]);
     });
   });
 

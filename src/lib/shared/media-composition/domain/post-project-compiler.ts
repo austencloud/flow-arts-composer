@@ -1,8 +1,12 @@
 import {
   MediaCompositionPresetSchema,
   type MediaCompositionPreset,
+  type MotionKey,
+  type MotionTransformValue,
   type PresetClip,
+  type PresetRegionKeyframesTrack,
   type PresetSourceRole,
+  type PresetVisualClipMotion,
 } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
 import type { LayoutRegion } from "$lib/shared/media-composition/domain/media-layout-schema";
 import {
@@ -25,6 +29,7 @@ import {
   type PostTextSize,
   type PostVideoItem,
 } from "$lib/shared/media-composition/domain/post-project";
+import { postSecondsOfKeyframe } from "$lib/shared/media-composition/domain/post-project-keyframes";
 
 /**
  * Turns an edited project into the free-layout preset the evaluator, the
@@ -251,6 +256,57 @@ function splitIntoPieces(
   return pieces;
 }
 
+function transformMotionKeys(
+  item: PostVideoItem
+): MotionKey<MotionTransformValue>[] | undefined {
+  const frames = item.keyframes?.framing;
+  if (!frames || frames.length === 0) return undefined;
+  return frames.map((kf) => ({
+    atSeconds: postSecondsOfKeyframe(item, kf.t),
+    value: {
+      scale: kf.value.zoom,
+      rotationDegrees: kf.value.rotation,
+      translateX: kf.value.panX,
+      translateY: kf.value.panY,
+    },
+    easing: kf.easing,
+  }));
+}
+
+function opacityMotionKeys(item: PostItem): MotionKey<number>[] | undefined {
+  const frames = item.keyframes?.opacity;
+  if (!frames || frames.length === 0) return undefined;
+  return frames.map((kf) => ({
+    atSeconds: postSecondsOfKeyframe(item, kf.t),
+    value: kf.value,
+    easing: kf.easing,
+  }));
+}
+
+/** The clip's `motion`, or undefined so an unanimated clip stays as it was. */
+function motionFor(
+  item: PostItem,
+  transform?: MotionKey<MotionTransformValue>[]
+): PresetVisualClipMotion | undefined {
+  const opacity = opacityMotionKeys(item);
+  if (!opacity && !transform) return undefined;
+  return { ...(transform ? { transform } : {}), ...(opacity ? { opacity } : {}) };
+}
+
+/** A `regionKeyframes` track for the item's own region, or undefined. */
+function regionKeyframesFor(item: PostItem): PresetRegionKeyframesTrack | null {
+  const frames = item.keyframes?.box;
+  if (!frames || frames.length === 0) return null;
+  return {
+    regionId: item.id,
+    keyframes: frames.map((kf) => ({
+      atSeconds: postSecondsOfKeyframe(item, kf.t),
+      value: kf.value,
+      easing: kf.easing,
+    })),
+  };
+}
+
 export function compilePostProject(
   project: PostProject,
   context: CompilePostProjectContext
@@ -263,6 +319,7 @@ export function compilePostProject(
   );
 
   const regions: LayoutRegion[] = [];
+  const regionKeyframesList: PresetRegionKeyframesTrack[] = [];
   const clips: PresetClip[] = [];
   const roleByKey = new Map<string, PresetSourceRole>();
   const takeIds: string[] = [];
@@ -294,6 +351,9 @@ export function compilePostProject(
         useTake(item.takeId);
         const roleKey = takeRole(item.takeId);
         regions.push(region(item.id, label, box, item.fit, zIndex));
+        const regionKeyframes = regionKeyframesFor(item);
+        if (regionKeyframes) regionKeyframesList.push(regionKeyframes);
+        const motion = motionFor(item, transformMotionKeys(item));
         clips.push({
           id: item.id,
           kind: "visual",
@@ -317,6 +377,7 @@ export function compilePostProject(
           },
           useResolvedTimeMap: true,
           timeMapRole: roleKey,
+          ...(motion ? { motion } : {}),
         });
         videoSegments.push({
           itemId: item.id,
@@ -342,6 +403,11 @@ export function compilePostProject(
           )
         );
         regions.push(region(item.id, label, box, "contain", zIndex));
+        {
+          const regionKeyframes = regionKeyframesFor(item);
+          if (regionKeyframes) regionKeyframesList.push(regionKeyframes);
+        }
+        const cardMotion = motionFor(item);
         clips.push({
           id: item.id,
           kind: "visual",
@@ -358,6 +424,7 @@ export function compilePostProject(
           ...(item.fadeOut > 0 ? { fadeOutSeconds: item.fadeOut } : {}),
           transform: IDENTITY_TRANSFORM,
           useResolvedTimeMap: false,
+          ...(cardMotion ? { motion: cardMotion } : {}),
         });
         return true;
       }
@@ -375,6 +442,11 @@ export function compilePostProject(
           )
         );
         regions.push(region(item.id, label, box, "contain", zIndex));
+        {
+          const regionKeyframes = regionKeyframesFor(item);
+          if (regionKeyframes) regionKeyframesList.push(regionKeyframes);
+        }
+        const sequenceMotion = motionFor(item);
 
         const pieces = splitIntoPieces(item, mainVideos);
         const wantsOverlay =
@@ -425,6 +497,7 @@ export function compilePostProject(
             transform: IDENTITY_TRANSFORM,
             useResolvedTimeMap: piece.useResolvedTimeMap,
             ...(piece.timeMapRole ? { timeMapRole: piece.timeMapRole } : {}),
+            ...(sequenceMotion ? { motion: sequenceMotion } : {}),
           };
           clips.push({
             id: `${item.id}~${index}`,
@@ -451,6 +524,11 @@ export function compilePostProject(
         const roleKey = textRole(item.id);
         useRole(presetRole(roleKey, "Text", "manual", ["image"]));
         regions.push(region(item.id, label, box, "fill", zIndex));
+        {
+          const regionKeyframes = regionKeyframesFor(item);
+          if (regionKeyframes) regionKeyframesList.push(regionKeyframes);
+        }
+        const textMotion = motionFor(item);
         clips.push({
           id: item.id,
           kind: "visual",
@@ -467,6 +545,7 @@ export function compilePostProject(
           ...(item.fadeOut > 0 ? { fadeOutSeconds: item.fadeOut } : {}),
           transform: IDENTITY_TRANSFORM,
           useResolvedTimeMap: false,
+          ...(textMotion ? { motion: textMotion } : {}),
         });
         texts.push({
           itemId: item.id,
@@ -503,6 +582,7 @@ export function compilePostProject(
     layoutModel: "free",
     sourceRoles: [...roleByKey.values()],
     regions,
+    ...(regionKeyframesList.length > 0 ? { regionKeyframes: regionKeyframesList } : {}),
     clips,
     transitions: [],
     audioMix: { masterGain: 1, tracks: [] },

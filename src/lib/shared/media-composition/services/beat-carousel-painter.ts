@@ -8,10 +8,12 @@ import {
   layoutBeatCarousel,
   type BeatCarouselBeat,
 } from "./beat-carousel-layout";
-import type {
-  PaintFrame,
-  PaintRect,
-  PostStudioLayerPainter,
+import {
+  nearestCachedSize,
+  paintSizeBucket,
+  type PaintFrame,
+  type PaintRect,
+  type PostStudioLayerPainter,
 } from "./post-studio-layer-painter";
 
 const BACKGROUND = "#08080c";
@@ -33,7 +35,7 @@ class BeatCarouselPainter implements PostStudioLayerPainter {
   }
 
   prepare(target: { width: number; height: number }): Promise<void> {
-    const size = Math.max(1, Math.ceil(beatCarouselFocusSize(target)));
+    const size = paintSizeBucket(beatCarouselFocusSize(target));
     if (this.cache.has(size)) return Promise.resolve();
     const existing = this.pending.get(size);
     if (existing) return existing;
@@ -83,7 +85,11 @@ class BeatCarouselPainter implements PostStudioLayerPainter {
       position: frame.carouselPosition ?? frame.sequencePosition ?? 0,
       beatCount: this.sequence.steps.length,
     });
-    const images = this.cache.get(Math.max(1, Math.ceil(layout.focusSize)));
+    const bucket = paintSizeBucket(layout.focusSize);
+    const nearest = this.cache.has(bucket)
+      ? bucket
+      : nearestCachedSize(this.cache.keys(), bucket);
+    const images = nearest !== null ? this.cache.get(nearest) : undefined;
     const radius = Math.max(2, rect.width / 140);
     for (const cell of layout.cells) {
       const image = images?.get(cell.beat);

@@ -1,11 +1,19 @@
 import type {
   MediaCompositionPreset,
+  MotionKey,
   MotionRect,
+  MotionTransformValue,
+  PresetClip,
   PresetMarker,
   PresetTimeRef,
   RegionKeyframe,
 } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
 import type { ClipTransform } from "$lib/shared/media-composition/domain/media-layout-schema";
+import {
+  clampBox,
+  clampFraming,
+} from "$lib/shared/media-composition/domain/post-project";
+import { sampleEasing } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import type { SequenceTimeMap } from "$lib/shared/media-composition/domain/sequence-time-map";
 import {
   mediaTimeToSequencePosition,
@@ -149,6 +157,88 @@ function lerpRect(from: MotionRect, to: MotionRect, progress: number) {
   };
 }
 
+function lerpNumber(from: number, to: number, progress: number): number {
+  return from + (to - from) * progress;
+}
+
+function lerpTransformValue(
+  from: MotionTransformValue,
+  to: MotionTransformValue,
+  progress: number
+): MotionTransformValue {
+  return {
+    scale: lerpNumber(from.scale, to.scale, progress),
+    rotationDegrees: lerpNumber(from.rotationDegrees, to.rotationDegrees, progress),
+    translateX: lerpNumber(from.translateX, to.translateX, progress),
+    translateY: lerpNumber(from.translateY, to.translateY, progress),
+  };
+}
+
+/**
+ * A `MotionKey` track's value at one project time: before the first key its
+ * value, after the last its value, and between two a bezier- or hold-eased
+ * blend. `atSeconds` is already schema-validated strictly increasing, so
+ * unlike `rectAtTime` (whose marker-resolved times can reorder) this never
+ * needs to sort. Bezier curves are cached by `sampleEasing` itself, so
+ * sampling a track every frame allocates nothing new.
+ */
+function sampleMotionTrack<V>(
+  keys: readonly MotionKey<V>[],
+  timeSeconds: number,
+  lerpValue: (from: V, to: V, progress: number) => V
+): V {
+  const first = keys[0]!;
+  if (timeSeconds <= first.atSeconds) return first.value;
+  const last = keys[keys.length - 1]!;
+  if (timeSeconds >= last.atSeconds) return last.value;
+  for (let index = 1; index < keys.length; index += 1) {
+    const next = keys[index]!;
+    if (timeSeconds >= next.atSeconds) continue;
+    const previous = keys[index - 1]!;
+    if (previous.easing === "hold") return previous.value;
+    const progress =
+      (timeSeconds - previous.atSeconds) / (next.atSeconds - previous.atSeconds);
+    return lerpValue(previous.value, next.value, sampleEasing(previous.easing, progress));
+  }
+  return last.value;
+}
+
+type PresetVisualClip = Extract<PresetClip, { kind: "visual" }>;
+
+/** `clip.opacity`, or its `motion.opacity` track sampled at this time. */
+function clipOpacityAt(clip: PresetVisualClip, timeSeconds: number): number {
+  const keys = clip.motion?.opacity;
+  if (!keys || keys.length === 0) return clip.opacity;
+  return clamp01(sampleMotionTrack(keys, timeSeconds, lerpNumber));
+}
+
+/**
+ * `clip.transform`, or that transform with its `motion.transform` track's
+ * scale/rotation/translate sampled at this time merged on top.
+ * `flipHorizontal` is never animated, so it always carries over unchanged.
+ * An overshooting curve can carry a value past its range; it is clamped the
+ * way the editor's own sampler clamps a framing, so the zoom the inspector
+ * shows is the zoom that plays.
+ */
+function clipTransformAt(clip: PresetVisualClip, timeSeconds: number): ClipTransform {
+  const keys = clip.motion?.transform;
+  if (!keys || keys.length === 0) return clip.transform;
+  const sampled = sampleMotionTrack(keys, timeSeconds, lerpTransformValue);
+  const framing = clampFraming({
+    zoom: sampled.scale,
+    panX: sampled.translateX,
+    panY: sampled.translateY,
+    rotation: sampled.rotationDegrees,
+  });
+  return {
+    ...clip.transform,
+    scale: framing.zoom,
+    rotationDegrees: framing.rotation,
+    translateX: framing.panX,
+    translateY: framing.panY,
+  };
+}
+
 /**
  * Keyframes are ordered by the time they resolve to, not by where they sit in
  * the array, because a dragged marker can carry one past another. Ties keep
@@ -206,6 +296,17 @@ export function evaluateRegionRects(
     rects.set(
       motion.regionId,
       rectAtTime(motion.keyframes, durationSeconds, markers, timeSeconds)
+    );
+  }
+  // A region has at most one of `regionMotion` or `regionKeyframes` (schema
+  // enforced), so this never overwrites what the loop above just set. The
+  // sample stays inside the frame the way the editor's box does, so an
+  // overshoot stops at the edge the selection box stops at.
+  for (const track of preset.regionKeyframes ?? []) {
+    if (!rects.has(track.regionId) || track.keyframes.length === 0) continue;
+    rects.set(
+      track.regionId,
+      clampBox(sampleMotionTrack(track.keyframes, timeSeconds, lerpRect))
     );
   }
   return rects;
@@ -336,7 +437,7 @@ export function evaluatePresetFrame(
         regionId: clip.regionId,
         sourceRole: clip.sourceRole,
         opacity:
-          clip.opacity *
+          clipOpacityAt(clip, clampedTime) *
           (clip.fadeInSeconds
             ? easeInOut(
                 clamp01(
@@ -355,7 +456,7 @@ export function evaluatePresetFrame(
             : 1),
         sourceTimeSeconds,
         projectProgress,
-        transform: clip.transform,
+        transform: clipTransformAt(clip, clampedTime),
         ...(regionRect ? { regionRect } : {}),
         ...(sample !== null && alignment
           ? sequenceFieldsFor(sample, alignment, moveBeats, holdLandings)

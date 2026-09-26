@@ -20,9 +20,11 @@ import {
   mainItemAt,
   overlaysAnchoredTo,
   trackHasRoom,
+  wrapDegrees,
   type PostAnchor,
   type PostBox,
   type PostCardItem,
+  type PostFraming,
   type PostItem,
   type PostMovesMode,
   type PostProject,
@@ -31,6 +33,13 @@ import {
   type PostVideoItem,
 } from "$lib/shared/media-composition/domain/post-project";
 import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
+import {
+  framingAt,
+  isAnimated,
+  shiftKeyframes,
+  writeChannelValue,
+  type PostKeyframeChannel,
+} from "$lib/shared/media-composition/domain/post-project-keyframes";
 import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
 
 /**
@@ -523,14 +532,17 @@ export function trimItem(
   } else if (edge === "end") {
     trimmed = { ...item, duration: Math.max(POST_MIN_ITEM_SECONDS, delta) };
   } else if (isMain) {
-    trimmed = {
-      ...item,
-      duration: Math.max(POST_MIN_ITEM_SECONDS, item.duration - delta),
-    };
+    // A main-track card's own start never moves - the layout closes the gap -
+    // but the head cut is however much shorter the clip just got.
+    const nextDuration = Math.max(POST_MIN_ITEM_SECONDS, item.duration - delta);
+    trimmed = shiftKeyframes(
+      { ...item, duration: nextDuration },
+      item.duration - nextDuration
+    );
   } else {
     const end = itemEnd(item);
     const start = clamp(seconds, 0, Math.max(0, end - POST_MIN_ITEM_SECONDS));
-    trimmed = { ...item, start, duration: end - start };
+    trimmed = shiftKeyframes({ ...item, start, duration: end - start }, start - item.start);
   }
 
   if (!isMain) {
@@ -651,6 +663,119 @@ export function updateItem(
   const updated = next as unknown as PostItem;
   if (sameItem(updated, item)) return project;
   return finish(replaceItem(project, itemId, updated), ctx);
+}
+
+const FRAMING_PATCH_KEYS = ["zoom", "panX", "panY", "rotation"] as const;
+
+/**
+ * `updateItem`, except that a field belonging to an animated channel writes
+ * (or updates) a keyframe at `s` instead of the static field: zoom, panX,
+ * panY and rotation merge into that channel's framing at `s`, clamped the
+ * same way `updateItem` clamps them.
+ */
+export function updateItemAt(
+  project: PostProject,
+  itemId: string,
+  patch: PostItemPatch,
+  s: number,
+  ctx: EditContext
+): PostProject {
+  const located = findItem(project, itemId);
+  if (!located) return project;
+  const { item } = located;
+
+  const framingAnimated =
+    item.kind === "video" &&
+    isAnimated(item, "framing") &&
+    FRAMING_PATCH_KEYS.some((key) => patch[key] !== undefined);
+  const boxAnimated = patch.box !== undefined && isAnimated(item, "box");
+  const opacityAnimated = patch.opacity !== undefined && isAnimated(item, "opacity");
+
+  if (!framingAnimated && !boxAnimated && !opacityAnimated) {
+    return updateItem(project, itemId, patch, ctx);
+  }
+
+  const rest: PostItemPatch = { ...patch };
+  if (framingAnimated) {
+    for (const key of FRAMING_PATCH_KEYS) delete rest[key];
+  }
+  if (boxAnimated) delete rest.box;
+  if (opacityAnimated) delete rest.opacity;
+
+  let next =
+    Object.keys(rest).length > 0 ? updateItem(project, itemId, rest, ctx) : project;
+
+  if (framingAnimated) {
+    const current = framingAt(findItem(next, itemId)!.item as PostVideoItem, s);
+    const merged: PostFraming = {
+      zoom: patch.zoom ?? current.zoom,
+      panX: patch.panX ?? current.panX,
+      panY: patch.panY ?? current.panY,
+      rotation: patch.rotation !== undefined ? wrapDegrees(patch.rotation) : current.rotation,
+    };
+    next = editItemKeyframes(
+      next,
+      itemId,
+      (it) => writeChannelValue(it, "framing", s, merged),
+      ctx
+    );
+  }
+  if (boxAnimated) {
+    next = editItemKeyframes(
+      next,
+      itemId,
+      (it) => writeChannelValue(it, "box", s, clampBox(patch.box!)),
+      ctx
+    );
+  }
+  if (opacityAnimated) {
+    next = editItemKeyframes(
+      next,
+      itemId,
+      (it) => writeChannelValue(it, "opacity", s, patch.opacity!),
+      ctx
+    );
+  }
+  return next;
+}
+
+/** Applies an item-level keyframe edit (see `post-project-keyframes.ts`) and finishes. */
+export function editItemKeyframes(
+  project: PostProject,
+  itemId: string,
+  edit: (item: PostItem) => PostItem,
+  ctx: EditContext
+): PostProject {
+  const located = findItem(project, itemId);
+  if (!located) return project;
+  const next = edit(located.item);
+  if (next === located.item) return project;
+  return finish(replaceItem(project, itemId, next), ctx);
+}
+
+/** Zoom, pan and turn back to identity, and framing keyframes dropped. */
+export function resetFraming(
+  project: PostProject,
+  itemId: string,
+  ctx: EditContext
+): PostProject {
+  const located = findItem(project, itemId);
+  if (!located || located.item.kind !== "video") return project;
+  const item = located.item;
+  const framing = item.keyframes?.framing;
+  const isIdentity =
+    item.zoom === 1 && item.panX === 0 && item.panY === 0 && item.rotation === 0;
+  if (isIdentity && (!framing || framing.length === 0)) return project;
+  const next = { ...item, zoom: 1, panX: 0, panY: 0, rotation: 0 } as Record<
+    string,
+    unknown
+  >;
+  if (item.keyframes) {
+    const { framing: _dropped, ...restChannels } = item.keyframes;
+    if (Object.keys(restChannels).length > 0) next.keyframes = restChannels;
+    else delete next.keyframes;
+  }
+  return finish(replaceItem(project, itemId, next as unknown as PostItem), ctx);
 }
 
 /**
@@ -914,8 +1039,7 @@ function splitPieces(
       },
     ];
   }
-  return [
-    { ...item, duration: cut, fadeOut: 0 } as PostItem,
+  const second = shiftKeyframes(
     {
       ...item,
       id: secondId,
@@ -923,7 +1047,9 @@ function splitPieces(
       duration: item.duration - cut,
       fadeIn: 0,
     } as PostItem,
-  ];
+    cut
+  );
+  return [{ ...item, duration: cut, fadeOut: 0 } as PostItem, second];
 }
 
 /** An overlay piece keeps following the original's clip, at its own offset. */
@@ -975,12 +1101,6 @@ function setNumber(
   else if (typeof target[key] === "number") {
     target[key] = clamp(target[key] as number, min, Math.max(min, max));
   }
-}
-
-/** Degrees folded into [-180, 180]; values already inside are kept. */
-function wrapDegrees(value: number): number {
-  if (value >= -180 && value <= 180) return value;
-  return ((((value + 180) % 360) + 360) % 360) - 180;
 }
 
 function isFiniteNumber(value: unknown): value is number {

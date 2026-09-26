@@ -436,9 +436,15 @@ export async function renderPostStudioFrame(
       }
     } else if (renderMode === "choreo-card") {
       const beat = layer.displayedBeatNumber ?? 0;
+      // The capture is cached for the whole render, so a card whose box is
+      // keyframed is captured at the frame's full width: one capture then
+      // stays sharp at every size the move reaches.
+      const boxAnimated = (input.preset.regionKeyframes ?? []).some(
+        (track) => track.regionId === layer.regionId
+      );
       const card = await captureCardLayer(
         layerElement,
-        regionPixels.width,
+        boxAnimated ? input.preset.output.width : regionPixels.width,
         `${layer.clipId}:${beat}`,
         input.cardFrameCache
       );

@@ -27,11 +27,20 @@
   } from "$lib/shared/media-composition/domain/post-project-compiler";
   import {
     POST_FRAME_RATE,
+    POST_TIME_EPSILON,
+    itemEnd,
     mainItemAt,
     type PostItem,
+    type PostKeyframeChannel,
     type PostVideoItem,
   } from "$lib/shared/media-composition/domain/post-project";
   import {
+    moveKeyframes,
+    removeKeyframesAt,
+    toggleKeyframe,
+  } from "$lib/shared/media-composition/domain/post-project-keyframes";
+  import {
+    editItemKeyframes,
     moveMainItem,
     moveOverlayItem,
     setTrackFlag,
@@ -577,6 +586,25 @@
         editor.pause();
         editor.splitAtPlayhead();
         return;
+      case "k":
+      case "K": {
+        if (event.repeat) return;
+        const item = editor.selectedItem;
+        if (!item || editor.isLocked(item.id)) return;
+        const seconds = editor.previewSeconds;
+        if (
+          seconds < item.start - POST_TIME_EPSILON ||
+          seconds > itemEnd(item) + POST_TIME_EPSILON
+        ) {
+          return;
+        }
+        event.preventDefault();
+        const channel: PostKeyframeChannel = item.kind === "video" ? "framing" : "box";
+        editor.edit((project, ctx) =>
+          editItemKeyframes(project, item.id, (it) => toggleKeyframe(it, channel, seconds), ctx)
+        );
+        return;
+      }
       case "Delete":
       case "Backspace":
         if (!editor.selectedItem) return;
@@ -946,6 +974,19 @@
           onTrackFlag={(trackId, flag, value) =>
             editor.edit((project, context) =>
               setTrackFlag(project, trackId, flag, value, context)
+            )}
+          onMoveKeyframe={(itemId, fromSeconds, toSeconds) =>
+            editor.edit((project, context) =>
+              editItemKeyframes(
+                project,
+                itemId,
+                (it) => moveKeyframes(it, fromSeconds, toSeconds),
+                context
+              )
+            )}
+          onDeleteKeyframesAt={(itemId, seconds) =>
+            editor.edit((project, context) =>
+              editItemKeyframes(project, itemId, (it) => removeKeyframesAt(it, seconds), context)
             )}
           onAddVideo={pickDeviceVideo}
           bind:pixelsPerSecond

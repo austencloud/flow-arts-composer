@@ -8,7 +8,12 @@ import {
 } from "$lib/shared/media-composition/domain/post-project-compiler";
 import { MediaCompositionPresetSchema } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
 import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
-import { clampBox } from "$lib/shared/media-composition/domain/post-project";
+import { clampBox, type PostEasing } from "$lib/shared/media-composition/domain/post-project";
+import {
+  EASING_PRESETS,
+  boxAt,
+  framingAt,
+} from "$lib/shared/media-composition/domain/post-project-keyframes";
 import {
   ANIMATION_OVERLAY_ROLE,
   stripRole,
@@ -364,6 +369,161 @@ describe("compilePostProject", () => {
         { ...ctx, animationOverlay: true }
       )!;
       expect(MediaCompositionPresetSchema.safeParse(result.preset).success).toBe(true);
+    });
+  });
+
+  describe("keyframes", () => {
+    const LINEAR: PostEasing = [0, 0, 1, 1];
+
+    /** `clip.motion`, narrowed past the visual/audio clip union for the test. */
+    function motionOf(
+      result: NonNullable<ReturnType<typeof compilePostProject>>,
+      id: string
+    ): unknown {
+      const clip = result.preset.clips.find((c) => c.id === id);
+      return (clip as { motion?: unknown } | undefined)?.motion;
+    }
+
+    it("carries a video's framing and opacity keyframes into motion, in post seconds", () => {
+      const result = compilePostProject(
+        project([
+          video("v1", {
+            sourceOut: 10,
+            keyframes: {
+              framing: [
+                { t: 0, value: { zoom: 1, panX: 0, panY: 0, rotation: 0 }, easing: "hold" },
+                { t: 5, value: { zoom: 2, panX: 0.1, panY: -0.1, rotation: 90 }, easing: LINEAR },
+              ],
+              opacity: [
+                { t: 0, value: 0, easing: "hold" },
+                { t: 2, value: 1, easing: LINEAR },
+              ],
+            },
+          }),
+        ]),
+        ctx
+      )!;
+
+      expect(motionOf(result, "v1")).toEqual({
+        transform: [
+          {
+            atSeconds: 0,
+            value: { scale: 1, rotationDegrees: 0, translateX: 0, translateY: 0 },
+            easing: "hold",
+          },
+          {
+            atSeconds: 5,
+            value: { scale: 2, rotationDegrees: 90, translateX: 0.1, translateY: -0.1 },
+            easing: LINEAR,
+          },
+        ],
+        opacity: [
+          { atSeconds: 0, value: 0, easing: "hold" },
+          { atSeconds: 2, value: 1, easing: LINEAR },
+        ],
+      });
+    });
+
+    it("emits a video's box keyframes as a regionKeyframes track keyed by its own item id", () => {
+      const result = compilePostProject(
+        project([
+          video("v1", {
+            sourceOut: 10,
+            keyframes: {
+              box: [
+                { t: 1, value: { x: 0, y: 0, width: 0.5, height: 0.5 }, easing: "hold" },
+              ],
+            },
+          }),
+        ]),
+        ctx
+      )!;
+
+      const track = result.preset.regionKeyframes?.find((r) => r.regionId === "v1");
+      expect(track).toEqual({
+        regionId: "v1",
+        keyframes: [
+          {
+            atSeconds: 1,
+            value: { x: 0, y: 0, width: 0.5, height: 0.5 },
+            easing: "hold",
+          },
+        ],
+      });
+    });
+
+    it("keeps a card's opacity keyframes but never gives it a transform track", () => {
+      const result = compilePostProject(
+        project([
+          video("v1", { sourceOut: 4 }),
+          card("c1", 5, {
+            start: 4,
+            keyframes: {
+              opacity: [
+                { t: 0, value: 0.2, easing: "hold" },
+                { t: 3, value: 1, easing: LINEAR },
+              ],
+            },
+          }),
+        ]),
+        ctx
+      )!;
+
+      // Card content-time is seconds from the item's own start (4), unlike a
+      // video's take-media clock, so t=0/t=3 land at post seconds 4 and 7.
+      expect(motionOf(result, "c1")).toEqual({
+        opacity: [
+          { atSeconds: 4, value: 0.2, easing: "hold" },
+          { atSeconds: 7, value: 1, easing: LINEAR },
+        ],
+      });
+    });
+
+    it("adds no motion and no regionKeyframes entry for an unanimated item", () => {
+      const result = compilePostProject(
+        project([card("c1", 5)]),
+        ctx
+      )!;
+
+      expect(motionOf(result, "c1")).toBeUndefined();
+      expect(result.preset.regionKeyframes).toBeUndefined();
+    });
+
+    it("plays an overshooting zoom and box move exactly as the editor samples them", () => {
+      const overshoot = EASING_PRESETS.overshoot;
+      const clip = video("v1", {
+        sourceOut: 10,
+        keyframes: {
+          framing: [
+            { t: 0, value: { zoom: 1, panX: 0, panY: 0, rotation: 0 }, easing: overshoot },
+            { t: 10, value: { zoom: 4, panX: 0.5, panY: 0, rotation: 0 }, easing: LINEAR },
+          ],
+          box: [
+            { t: 0, value: { x: 0, y: 0, width: 0.5, height: 0.5 }, easing: overshoot },
+            { t: 10, value: { x: 0.5, y: 0.5, width: 0.5, height: 0.5 }, easing: LINEAR },
+          ],
+        },
+      });
+      const result = compilePostProject(project([clip]), ctx)!;
+
+      // Past the curve's peak, the unclamped move would leave both ranges.
+      for (const seconds of [2, 6.4, 8]) {
+        const layer = evaluatePresetFrame(
+          result.preset,
+          result.durationSeconds,
+          seconds
+        ).find((candidate) => candidate.clipId === "v1")!;
+        const framing = framingAt(clip, seconds);
+        expect(layer.transform.scale).toBeCloseTo(framing.zoom, 9);
+        expect(layer.transform.translateX).toBeCloseTo(framing.panX, 9);
+        const box = boxAt(clip, seconds);
+        const rect = layer.regionRect!;
+        expect(rect.x).toBeCloseTo(box.x, 9);
+        expect(rect.y).toBeCloseTo(box.y, 9);
+        expect(rect.width).toBeCloseTo(box.width, 9);
+        expect(rect.height).toBeCloseTo(box.height, 9);
+      }
+      expect(framingAt(clip, 6.4).zoom).toBe(4);
     });
   });
 
