@@ -334,9 +334,14 @@ What changed:
 
 - **Measured against the body.** The scoreboard now measures each staff
   against the rig's own skinned mesh: head, torso, legs, the other hand's arm,
-  and the holding hand's upper arm and forearm. Held square, no staff touches
-  the head or torso on either rig; every head or torso hit comes from the
-  chest turning side-on, up to 87°.
+  and the holding hand's upper arm and forearm. Where the stance plans them,
+  with the body held square, no staff touches the head or torso on either
+  rig. Most head and torso hits come from the chest turning side-on, up to
+  87°. The rest happen with the chest square and come from hard-beat
+  displacement and the render lock, which the lanes do not change: head hits
+  in the together-opposite sequences and fx-phi-psi, mostly at step 2 (ch07
+  40 of 52 head frames, ch18 92 of 141), and 5 ch18 torso frames at
+  tog-opp-ekek step 3.
 - **Timing.** The torso turn read the raw clock, which already runs through
   beat 1 during the static start pose, so the torso turned through beat 1 and
   snapped back as it began. The torso now holds where beat 1 starts, and it
@@ -346,11 +351,19 @@ What changed:
   through it. Each hand's lane now opens, per moment of the score and up to
   26 cm, to the narrowest width at which its staff comes no further into the
   head and torso than it does with the chest square. Lanes open ahead of the
-  moments that need them and close after, no faster than 48 cm per beat. The planning
-  model is a stack of rounded boxes measured from both rigs, turned with the
-  spine segments. With lanes sized this way, a crossed pair's hard-beat lane
-  is gated like any other pair's, since the corridor already keeps the hands
-  apart.
+  moments that need them and close after, no faster than 48 cm per beat. The
+  planning model is a stack of rounded boxes measured from both rigs, turned
+  with the spine segments. With lanes sized this way, a crossed pair's
+  hard-beat lane is gated like any other pair's, since the corridor already
+  keeps the hands apart.
+- **The staff as drawn.** The lanes are sized for the staff each performer is
+  drawn holding: its own length, or else the user's. Both renderers had sized
+  them for the default 34-inch staff whatever was drawn; the lab already used
+  its own length, and its hard-beat planner now does too. On the 26 test
+  sequences a 120 cm staff moves the side-on grips by up to 10 cm in 20 of
+  them. The default staff's numbers below are unchanged. A measured body's
+  lanes now also open to the full 26 cm: its own lane is off the centimetre
+  grid, and whole-centimetre steps from it stopped 3.4 mm short.
 
 Scoreboard, ch07 / ch18, staff-frames of 12,960 unless noted:
 
@@ -379,6 +392,15 @@ the animator's body-clearance retraction then recovers slowly (at nqnq 3.35
 the corridor is back to the body's own lane, yet the hand is still 10 cm off).
 Elbow planning (step 4) is expected to win back the arm contacts and the hips
 the grips; neither is measured yet.
+
+Opening a lane ahead of the moment that needs it has a small cost. On a
+turn's first samples, with the chest barely side-on, a lane opened for the
+committed turn can bring a staff further in than that moment's own lane
+would. Across the 26 sequences, 28 of 2,296 hand-samples came in more than
+1 mm further, all in the quarter families; 4 of them newly touched the body,
+and the worst came 1.4 cm further in. That adds 61 mm of summed intrusion to
+the 1,634 mm the per-moment lanes leave. The rate limit stays, since without
+it the grip would jump as fast as the lane.
 
 Recommended order after this: trail cleanup; reference clips from Austen
 (front and side stills he confirms) for body turns and negative space,
@@ -437,7 +459,7 @@ installed from `patches/@austencloud__scene-3d@0.1.6.patch`.
 | Render lock, 6 cm                  | `Avatar3D.svelte:529`, clamp `:652`, applied `:1663`, `:1670`, report `:1886` |
 | Orbit renderer without lock        | `worker-performer.ts:436-491`; routing `Viewer3DCanvas.svelte:346-385`        |
 | Grid radius                        | `plane-transforms.ts:34`                                                      |
-| Split pairs flattened, depth jump  | `upper-body-stance-planner.ts:127-160`, `:211-217`                            |
+| Split pairs flattened, depth jump  | `upper-body-stance-planner.ts:155-188`, `:241-247`                            |
 | Concave paths off in 3D            | `prop-state-interpolator.ts:33`                                               |
 | Lab-only strict path               | `AvatarAnimator.ts:718-1007`; host `ContactIsolationPerformer.svelte:69`      |
 | Tests pinning the constants        | `tests/unit/3d-animation/avatar-head-clearance-policy.test.ts:37-45`          |

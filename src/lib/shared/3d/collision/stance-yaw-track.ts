@@ -440,6 +440,15 @@ export interface StanceYawTrackOptions {
  * A grey-scale dilation by a cone with a one-sample flat top, so between two
  * samples the lane is never narrower than either one needs, and it opens and
  * closes no faster than `rate`. Wraps on a looping score.
+ *
+ * Opening ahead is not free. On a turn's first samples, with the chest barely
+ * side-on, a lane opened for the committed turn can bring a staff further into
+ * the body than that sample's own lane would. Across the 26 prop-continuity
+ * sequences, 28 of 2,296 hand-samples came in more than 1 mm further, all
+ * below a side blend of 0.2 and all in the quarter families; 4 of them newly
+ * touched the body, and the worst came 1.4 cm further in. That adds 61 mm of
+ * summed intrusion to the 1,634 mm the per-sample lanes leave. The rate limit
+ * stays: without it the lane, and the grip with it, would jump.
  */
 function dilateLaneFloor(
   raw: readonly number[],

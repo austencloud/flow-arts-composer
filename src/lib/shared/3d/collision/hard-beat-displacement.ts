@@ -605,7 +605,8 @@ export function buildHardBeatTrack(
     // Once the chest is side-on the corridor separates the hands instead, and
     // past the point where a lane may change sign it has none of its own, so
     // a changing lane never ramps in against the one ramping out. Crossed
-    // pairs keep the full width (see the lane shares below).
+    // pairs keep the full width only while the stance has no lane floors (see
+    // the lane shares below).
     laneRaw[i] =
       sideBlend[i]! >= LANE_FLIP_SIDE_BLEND
         ? 0
@@ -680,9 +681,10 @@ export function buildHardBeatTrack(
   // the upstage hand toward the audience or the downstage hand away fights
   // the corridor. Each gate is 0 wherever the chest is committed side-on and
   // is applied before widening. The lane gates lead by a full ramp, so no
-  // widened lane opposes the corridor at a committed sample; a crossed pair's
-  // lane is not gated and takes the corridor's sign there instead. The radial
-  // gate leads by half a ramp (CORRIDOR_RADIAL_LEAD_STEPS). The upstage hand's
+  // widened lane opposes the corridor at a committed sample. Without lane
+  // floors a crossed pair's lane is not gated and takes the corridor's sign
+  // there instead; with them it is gated like any other. The radial gate
+  // leads by half a ramp (CORRIDOR_RADIAL_LEAD_STEPS). The upstage hand's
   // move away goes the corridor's way and is not gated: gating it put more
   // staffs through the body on the scoreboard, not fewer.
   const upstageBlend = {
