@@ -56,6 +56,7 @@
   import { slide } from "svelte/transition";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
   import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
   import {
     HERO_TIP_EFFECT_MAP,
@@ -75,6 +76,7 @@
     onVisitorComposed,
     leftPropType,
     rightPropType,
+    primaryPropColors,
     active = true,
     embedded = false,
   }: {
@@ -82,6 +84,7 @@
     onVisitorComposed?: (sequence: SequenceData) => void;
     leftPropType?: PropType;
     rightPropType?: PropType;
+    primaryPropColors?: ViewerCustomColorPair | null;
     active?: boolean;
     embedded?: boolean;
   } = $props();
@@ -577,6 +580,7 @@
           hoverHint="badge"
           leftPropType={effectiveLeftPropType}
           rightPropType={effectiveRightPropType}
+          {primaryPropColors}
           trailSettingsOverride={HERO_TRAIL_PRESET}
           tipEffectMap={HERO_TIP_EFFECT_MAP}
           onStepChange={handlePlayerStepChange}

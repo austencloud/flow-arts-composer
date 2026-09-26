@@ -14,6 +14,8 @@
   } from "$lib/shared/subscription/domain/premium-prop-access";
   import type { ComponentProps } from "svelte";
   import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
+  import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
   import PropGrid from "./PropGrid.svelte";
   import PrimaryPropColorSettings from "./PrimaryPropColorSettings.svelte";
   import { growFade } from "$lib/shared/transitions/motion";
@@ -25,6 +27,8 @@
     onFanAppearanceChange,
     propLook,
     onPropLookChange,
+    primaryPropColors,
+    onPrimaryPropColorsChange,
     showColors = true,
     compactColors = false,
     showPropLook = true,
@@ -50,6 +54,9 @@
     onFanAppearanceChange?: (appearance: FanAppearance) => void;
     propLook?: PropLook;
     onPropLookChange?: (look: PropLook) => void;
+    /** An explicit null keeps a page on the default pair without reading account colours. */
+    primaryPropColors?: ViewerCustomColorPair | null;
+    onPrimaryPropColorsChange?: (colors: ViewerCustomColorPair | null) => void;
     /**
      * The account's primary prop colours above the catalogue: the pair's
      * colours are chosen where the pair is chosen, on every picker. A host
@@ -58,11 +65,7 @@
      * metadata) or the page already shows the control beside the grid.
      */
     showColors?: boolean;
-    /**
-     * A rail with no room beneath its strip (the viewer's bottom tray) shows
-     * the colours as a button at the head of its toolbar that opens the full
-     * editor.
-     */
+    /** Show colours as a toolbar button that opens the full editor. */
     compactColors?: boolean;
     /**
      * The 3D model / Pictograph choice is how the 2D canvas draws a prop. A 3D
@@ -72,28 +75,39 @@
     onDrillChange?: (drilled: boolean) => void;
   } = $props();
   const settings = $derived(getSettings());
+  const displayedColors = $derived(
+    primaryPropColors === undefined
+      ? settings.primaryPropColors
+      : primaryPropColors
+  );
   // A drilled family or detail screen takes the whole picker, as the sheet's
   // own toolbar already does.
   let drilled = $state(false);
-  // A rail is its host's main control in a short strip, so the props stay
-  // first and the colours follow them, or sit in its toolbar when compact.
+  // Compact hosts keep the catalogue ahead of the colour editor.
   const colorsPlace = $derived(
-    props.layout !== "rail" ? "before" : compactColors ? "toolbar" : "after"
+    props.layout !== "rail"
+      ? compactColors
+        ? "compact-before"
+        : "before"
+      : compactColors
+        ? "toolbar"
+        : "after"
   );
 </script>
 
 {#snippet colorSettings(compact: boolean)}
   <PrimaryPropColorSettings
     {compact}
-    colors={settings.primaryPropColors}
+    colors={displayedColors}
     darkMode={settings.darkMode}
-    onchange={(colors) => updateSetting("primaryPropColors", colors)}
+    onchange={onPrimaryPropColorsChange ??
+      ((colors) => updateSetting("primaryPropColors", colors))}
   />
 {/snippet}
 
 {#snippet colorControl()}
   {#if showColors && !drilled}
-    {#if colorsPlace === "toolbar"}
+    {#if colorsPlace === "toolbar" || colorsPlace === "compact-before"}
       {@render colorSettings(true)}
     {:else}
       <div class="prop-colors" transition:growFade={{ axis: "y" }}>
@@ -113,6 +127,11 @@
 {/snippet}
 
 {#if colorsPlace === "before"}{@render colorControl()}{/if}
+{#if colorsPlace === "compact-before" && showColors && !drilled}
+  <div class="compact-color-toolbar" transition:growFade={{ axis: "y" }}>
+    {@render colorControl()}
+  </div>
+{/if}
 <PropGrid
   {...props}
   heading={colorsPlace === "toolbar" && showColors
@@ -134,7 +153,7 @@
       ((propArtwork) => void updateSettings({ propArtwork })))
     : undefined}
   recipeOverrides={settings.compositionRecipeOverrides}
-  colors={settings.primaryPropColors}
+  colors={displayedColors}
   triangleGrip={settings.triangleGrip ?? DEFAULT_TRIANGLE_GRIP}
   onTriangleGripChange={(triangleGrip) => void updateSettings({ triangleGrip })}
 >
@@ -158,5 +177,14 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 6px;
+  }
+  .compact-color-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    min-height: 3.25rem;
+    padding: 0.25rem 1rem;
+    border-bottom: 1px solid var(--theme-stroke);
+    flex-shrink: 0;
   }
 </style>

@@ -113,8 +113,8 @@ describe("buugeng chirality is owned by the prop picker", () => {
     const row = read(ROW_PATH);
     expect(row).toMatch(/\{#each hands as/);
     expect(row).toContain("onChange(state.hand,");
-    expect(row).toContain(
-      'state.hand === "right" ? "Right prop" : "Left prop"'
+    expect(row).toMatch(
+      /state\.hand === "right"\s*\? t\("settings_right_prop"\)\s*:\s*t\("settings_left_prop"\)/
     );
   });
 

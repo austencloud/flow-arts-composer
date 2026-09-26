@@ -5,29 +5,36 @@
   import type { PropChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
   import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
   import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
+  import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
 
   let {
     selectedPropType,
     onSelect,
     onDone,
     docked = false,
+    showColors = true,
     fanAppearance,
     onFanAppearanceChange,
     propLook,
     onPropLookChange,
     chirality,
+    primaryPropColors,
+    onPrimaryPropColorsChange,
   }: {
     selectedPropType: PropType;
     onSelect: (propType: PropType) => void;
     onDone?: () => void;
     /** Lets a containing workspace supply the surface chrome. */
     docked?: boolean;
+    showColors?: boolean;
     /** Page-owned appearance: the public page has no app settings service. */
     fanAppearance: FanAppearance;
     onFanAppearanceChange: (appearance: FanAppearance) => void;
     propLook: PropLook;
     onPropLookChange: (look: PropLook) => void;
     chirality: PropChiralitySeam;
+    primaryPropColors: ViewerCustomColorPair | null;
+    onPrimaryPropColorsChange: (colors: ViewerCustomColorPair | null) => void;
   } = $props();
 </script>
 
@@ -45,11 +52,14 @@
     tileDensity="comfortable"
     scrollMode="internal"
     fill
+    {showColors}
     {fanAppearance}
     {onFanAppearanceChange}
     {propLook}
     {onPropLookChange}
     {chirality}
+    {primaryPropColors}
+    {onPrimaryPropColorsChange}
     {onSelect}
   />
 </section>
