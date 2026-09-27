@@ -61,6 +61,8 @@ export class PropTypeManager {
   /** Fan build the caller pinned with props.fanAppearance; null follows settings. */
   private fanAppearanceOverride: FanAppearance | null = null;
   private propLook: PropLook = DEFAULT_PROP_LOOK;
+  /** Look pinned by the caller; null follows the viewer's settings. */
+  private propLookOverride: PropLook | null = null;
   private triangleGrip: TriangleGrip = DEFAULT_TRIANGLE_GRIP;
   trailsSuppressedUntilTextureLoad = false;
 
@@ -180,6 +182,7 @@ export class PropTypeManager {
     const newRight =
       props.rightPropType ?? this.propTypeOverrideRight ?? "staff";
     this.fanAppearanceOverride = props.fanAppearance ?? null;
+    this.propLookOverride = props.propLook ?? null;
     const nextAppearance = normalizeFanAppearance(
       props.fanAppearance ??
         this.settingsService?.currentSettings?.fanAppearance
@@ -683,7 +686,7 @@ export class PropTypeManager {
         (hasOverrides ? this.fanAppearanceOverride : null) ??
           settings.fanAppearance
       );
-      look = normalizePropLook(settings.propArtwork);
+      look = normalizePropLook(this.propLookOverride ?? settings.propArtwork);
       grip = normalizeTriangleGrip(settings.triangleGrip);
     }
 
