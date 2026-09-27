@@ -248,6 +248,11 @@ const regionalMessageFiles = import.meta.glob<{ default: Messages }>(
  * The translation fallback chain handles missing keys.
  */
 async function loadLocaleMessages(locale: Locale): Promise<Messages> {
+  // The server renders English only; setLocale runs in the browser. Returning
+  // here drops the other locale files from the server build, which Cloudflare
+  // must fit into its 25 MiB Worker bundle limit.
+  if (import.meta.env.SSR) return enMessages as Messages;
+
   // Base locales - always have full translation files
   const asBaseLocale = locale as BaseLocale;
   if (locales.includes(asBaseLocale)) {
