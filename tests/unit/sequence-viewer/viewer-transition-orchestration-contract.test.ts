@@ -101,6 +101,11 @@ const performanceState = read(
 const performanceStage = read(
   "src/lib/shared/sequence-viewer/components/sequence-videos/PerformanceStage.svelte"
 );
+/** The English catalog t() loads statically, where a named label's words live. */
+const englishMessages = JSON.parse(read("messages/en.json")) as Record<
+  string,
+  string
+>;
 
 /**
  * The shell's CSS as {selector, body} pairs. Assertions about a rule ask for it
@@ -139,17 +144,20 @@ describe("Sequence Viewer transition orchestration contract", () => {
     expect(animationPanel).toContain("<AnimatorInspectorFooter");
     expect(tunnelArtSettings).toContain("<AnimatorInspectorFooter");
     // 7672b256d7 gave the wide-sidebar Props page its whole page too (the
-    // 18-tile picker needed the room the old two-way condition didn't grant),
-    // reformatting the three-way check across lines. The fourth arm is Effort
-    // alone on a page its host fills (the motion-path studio's card).
+    // 18-tile picker needed the room the old two-way condition didn't grant).
+    // 7b51429ee5 then filled Effort and Motion wherever a height-bounded host
+    // fills its visual pages, and Tunnel's Effort and Motion pages fill beside
+    // its Display and Effects.
     expect(animationPanel).toContain(
-      'fillBody={resolvedPill === "display" ||\n' +
+      'fillBody={(resolvedPill === "effort" && visualPagesFill) ||\n' +
+        '      resolvedPill === "display" ||\n' +
         '      resolvedPill === "effects" ||\n' +
         '      resolvedPill === "props" ||\n' +
-        '      (resolvedPill === "motion" && effortFills)}'
+        '      (resolvedPill === "motion" && visualPagesFill)}'
     );
     expect(tunnelArtSettings).toContain(
-      'fillBody={tunnelSection === "display" || tunnelSection === "effects"}'
+      'fillBody={tunnelSection === "display" || tunnelSection === "effects" ||\n' +
+        '      tunnelSection === "effort" || tunnelSection === "motion"}'
     );
     expect(animatorInspectorShell).toContain("<IconRailNav");
     expect(animatorInspectorShell).toContain('class="panel-transition"');
@@ -189,8 +197,11 @@ describe("Sequence Viewer transition orchestration contract", () => {
   });
 
   it("names both responsive switchers as Sequence views", () => {
-    expect(contentRail).toContain('aria-label="Sequence views"');
-    expect(modeBottomBar).toContain('aria-label="Sequence views"');
+    expect(contentRail).toContain('aria-label={t("viewer_ui_sequence_views")}');
+    expect(modeBottomBar).toContain(
+      'aria-label={t("viewer_ui_sequence_views")}'
+    );
+    expect(englishMessages.viewer_ui_sequence_views).toBe("Sequence views");
   });
 
   it("routes split geometry through the canonical PanelGroup owner", () => {

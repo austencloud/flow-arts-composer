@@ -105,6 +105,12 @@ const viewerPracticeLaneSource = read(
 const controlDockSource = read(
   "src/lib/shared/sequence-viewer/components/ControlDock.svelte"
 );
+/** The English catalog t() loads statically. Chrome labels live here now, so
+ *  a test that names a label reads its words here. */
+const englishMessages = JSON.parse(read("messages/en.json")) as Record<
+  string,
+  string
+>;
 const hostEntries = Object.entries(HOSTS).map(
   ([name, rels]) => [name, rels.map(read).join("\n")] as const
 );
@@ -166,10 +172,16 @@ describe("SequenceViewerShell host contract", () => {
   });
 
   it("names the app Flow Arts Composer in viewer launch actions", () => {
-    expect(viewerHeaderSource).toContain("Open Flow Arts Composer");
-    expect(overflowMenuSource).toContain(
-      'openAppLabel = "Open Flow Arts Composer"'
+    expect(viewerHeaderSource).toContain(
+      't("viewer_ui_open_flow_arts_composer")'
     );
+    expect(overflowMenuSource).toContain(
+      'label: openAppLabel ?? t("viewer_ui_open_app")'
+    );
+    expect(englishMessages.viewer_ui_open_flow_arts_composer).toBe(
+      "Open Flow Arts Composer"
+    );
+    expect(englishMessages.viewer_ui_open_app).toBe("Open Flow Arts Composer");
     expect(viewerHeaderSource).not.toContain("Open TKA");
   });
 
@@ -213,7 +225,7 @@ describe("SequenceViewerShell host contract", () => {
       "onDownload={() => void downloadFromShare()}"
     );
     expect(shellSource).toContain("ctx.saveRetainedFilm(film.id)");
-    expect(shellSource).toContain('text: "Record a take"');
+    expect(shellSource).toContain('text: t("viewer_ui_record_a_take")');
     expect(shellSource).not.toContain("suspendForSceneTake");
   });
 
@@ -251,10 +263,15 @@ describe("SequenceViewerShell host contract", () => {
   });
 
   it("labels Save by its action and exposes immediate pending feedback", () => {
-    expect(viewerHeaderSource).toContain(">Saving…</span>");
     expect(viewerHeaderSource).toContain(
-      '{isSaving ? "Saving…" : isSaved ? "Saved" : "Save"}'
+      '>{t("viewer_header_saving_short")}</span'
     );
+    expect(viewerHeaderSource.replace(/\s+/g, " ")).toContain(
+      '{isSaving ? t("viewer_header_saving_short") : isSaved ? t("viewer_header_saved_short") : t("browse_save")}'
+    );
+    expect(englishMessages.viewer_header_saving_short).toBe("Saving…");
+    expect(englishMessages.viewer_header_saved_short).toBe("Saved");
+    expect(englishMessages.browse_save).toBe("Save");
     expect(viewerHeaderSource).not.toContain(
       '<span class="action-label">Library</span>'
     );

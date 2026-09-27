@@ -157,7 +157,9 @@ describe("canonical concept lesson composition", () => {
     expect(motions).toContain(
       "const timingDirectionIndex = HAND_PATH_STEPS.length"
     );
-    expect(motions).toContain('activeMotion?.name ?? "Timing and Direction"');
+    expect(motions.replace(/\s+/g, " ")).toContain(
+      'activeMotion ? tDynamic(`learn_motion_path_${activeMotion.id}_name`) : tDynamic("learn_motion_timing_direction")'
+    );
     expect(motions).toContain('"stageSchemaVersion"');
     expect(motions).toContain("migrateHandMotionsSavedStep");
     expect(motions).toContain('viewMode === "scroll"\n      ? comparisonIndex');
@@ -179,8 +181,8 @@ describe("canonical concept lesson composition", () => {
     // The readout and every example name the placement. The canonical
     // pictograph already draws the glyph, so a second decorative one beside it
     // would print the same fact twice.
-    expect(placementsSrc).toContain(
-      'built ? PLACEMENT_TYPE_INFO[built].label : "Your placement"'
+    expect(placementsSrc.replace(/\s+/g, " ")).toContain(
+      'built ? PLACEMENT_TYPE_INFO[built].label : t("learn_ui_your_placement")'
     );
     expect(placementsSrc).toContain("PLACEMENT_TYPE_INFO[example.kind].label");
     expect(placementsSrc).not.toContain("TKAWordGlyph");
@@ -227,7 +229,9 @@ describe("canonical concept lesson composition", () => {
     expect(timingBoard).toContain("onStepChange={syncFocusedStep}");
     expect(timingBoard).toContain("showElementalGlyph");
     expect(timingBoard).toContain("externalPlaying={playing}");
-    expect(timingBoard).toContain("Back to all six relationships");
+    expect(timingBoard).toContain(
+      'ariaLabel={tDynamic("learn_timing_board_back_all_aria")}'
+    );
     expect(timingBoard).toContain("mode.id.toUpperCase()");
     expect(timingBoard).not.toContain("mode.element.element");
     expect(timingBoard).not.toMatch(
@@ -237,10 +241,20 @@ describe("canonical concept lesson composition", () => {
     // independent examples (placement, timing, direction), dropping the old
     // timing-heading/direction-heading ids and the timingMode/directionMode
     // state names along with it. Assert the current structure instead.
-    expect(timingIntro).toContain('aria-label="Timing" use:renderGateTarget={gate}>');
-    expect(timingIntro).toContain("<h3>Timing</h3>");
-    expect(timingIntro).toContain('aria-label="Direction">');
-    expect(timingIntro).toContain("<h3>Direction</h3>");
+    // 245d999978 moved each section's heading, which doubles as its label,
+    // into the catalog.
+    expect(timingIntro.replace(/\s+/g, " ")).toContain(
+      'aria-label={tDynamic("learn_timing_intro_timing_heading")} use:renderGateTarget={gate} >'
+    );
+    expect(timingIntro).toContain(
+      '<h3>{tDynamic("learn_timing_intro_timing_heading")}</h3>'
+    );
+    expect(timingIntro.replace(/\s+/g, " ")).toContain(
+      'aria-label={tDynamic("learn_timing_intro_direction_heading")} >'
+    );
+    expect(timingIntro).toContain(
+      '<h3>{tDynamic("learn_timing_intro_direction_heading")}</h3>'
+    );
     expect(timingIntro).toContain("SegmentedControl");
     expect(timingIntro).toContain('semantics="radiogroup"');
     expect(timingIntro).toContain('let timing = $state<TimingMode>("together");');
@@ -318,14 +332,20 @@ describe("canonical concept lesson composition", () => {
     );
 
     // Connective copy is the guide's own prose, verbatim (lt1-abc-ghi) —
-    // approved via docs/learn/copy-reviews/words-alpha-beta.md.
-    expect(words).toContain(
+    // approved via docs/learn/copy-reviews/words-alpha-beta.md. The lesson
+    // renders it through t(), so its English words are checked in the catalog.
+    const englishMessages = JSON.parse(
+      readSource("messages/en.json")
+    ) as Record<string, string>;
+    expect(words).toContain('{t("learn_ui_first_words_instruction")}');
+    expect(words).toContain('{t("learn_ui_six_words_practice_instruction")}');
+    expect(englishMessages.learn_ui_first_words_instruction).toContain(
       "The first words we will learn correspond to VTG’s 1:1 motions."
     );
-    expect(words).toContain(
+    expect(englishMessages.learn_ui_first_words_instruction).toContain(
       "you’ll need to use body turns and/or negative space"
     );
-    expect(words.replace(/\s+/g, " ")).toContain(
+    expect(englishMessages.learn_ui_six_words_practice_instruction).toContain(
       "Practice each word once in both directions, then again starting with thumbs out."
     );
   });
@@ -356,8 +376,8 @@ describe("canonical concept lesson composition", () => {
     expect(stage).toContain("InlineAnimationPlayer");
     expect(stage).toContain("ChoreoCard");
     expect(stage).toContain("PanelGroup");
-    expect(stage).toContain("Performance video");
-    expect(stage).toContain("Guide notes");
+    expect(stage).toContain('tDynamic("learn_word_stage_performance_video")');
+    expect(stage).toContain('tDynamic("learn_word_stage_guide_notes")');
     expect(stage).toContain("showWordHeader={false}");
     expect(stage).toContain("showWord={false}");
     expect(stage).toContain("hideTkaGlyph");
