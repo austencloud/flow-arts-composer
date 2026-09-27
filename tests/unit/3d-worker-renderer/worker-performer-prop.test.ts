@@ -1,6 +1,7 @@
 import { PropType } from "@austencloud/scene-3d";
 import { DoubleSide, Euler, Group, Quaternion } from "three";
-import { describe, expect, it } from "vitest";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   WORKER_PERFORMER_PROP_TYPES,
   type WorkerPerformerSnapshot,
@@ -53,6 +54,10 @@ function snapshot(
 }
 
 describe("worker performer prop geometry", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("enumerates the complete canonical worker-safe prop surface", () => {
     expect(WORKER_PERFORMER_PROP_TYPES).toEqual(EXACT_WORKER_PROP_TYPES);
 
@@ -94,6 +99,27 @@ describe("worker performer prop geometry", () => {
       expect(prop.anchor.children).toHaveLength(0);
     }
   );
+
+  it("stretches the fire double staff only for the performer's own staff length", async () => {
+    vi.spyOn(GLTFLoader.prototype, "loadAsync").mockResolvedValue({
+      scene: new Group(),
+    } as never);
+    const modelScaleY = async (staffLengthPinned: boolean) => {
+      const prop = await createWorkerPerformerProp("left", {
+        ...snapshot("fire_double_staff"),
+        staffLength: 1.35,
+        staffLengthPinned,
+      });
+      const scaleY = prop.correction.getObjectByName(
+        "worker-prop-model-transform"
+      )?.scale.y;
+      prop.dispose();
+      return scaleY;
+    };
+
+    expect(await modelScaleY(true)).toBeCloseTo(1.35 / 0.9, 12);
+    expect(await modelScaleY(false)).toBe(1);
+  });
 
   it("keeps bare hands in the IK path without mounting a prop mesh", async () => {
     const prop = await createWorkerPerformerProp("right", snapshot("hand"));

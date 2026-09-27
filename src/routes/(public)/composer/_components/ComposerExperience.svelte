@@ -256,15 +256,21 @@
 />
 
 {#snippet tunnelPlaceholder()}
-  <!-- Same two-column band the tunnel renders into (stage left, controls
-       right; stacked under 60rem), so the LazyMount swap cannot shift layout. -->
+  <!-- Reserve the stage, toolbar, and seven-card preset bank during lazy load. -->
   <div class="tunnel-placeholder" aria-hidden="true">
-    <div class="placeholder-square"></div>
+    <div class="placeholder-stage-wrap">
+      <div class="placeholder-square"></div>
+      <div class="placeholder-toolbar">
+        <div class="placeholder-tool"></div>
+        <div class="placeholder-tool"></div>
+        <div class="placeholder-tool"></div>
+      </div>
+    </div>
     <div class="placeholder-band-controls">
       <div class="placeholder-line placeholder-line-title"></div>
-      <div class="placeholder-line"></div>
-      <div class="placeholder-control"></div>
-      <div class="placeholder-control"></div>
+      <div class="placeholder-preset-grid">
+        {#each Array(7) as _}<div class="placeholder-control"></div>{/each}
+      </div>
     </div>
   </div>
 {/snippet}
@@ -459,12 +465,10 @@
     use:activateOutputs
   >
     <div class="changing-intro">
-      <h2 id="changing-title">See it in motion</h2>
+      <h2 id="changing-title">Put it in a tunnel</h2>
     </div>
 
-    <!-- The tunnel gets its own full-width band: the square stage on the left,
-         the performer count and arrangement controls on the right. The 3D
-         viewer takes the next band. -->
+    <!-- The tunnel stage and its seven real presets share this band. -->
     <div class="tunnel-band">
       <div class="product-frame band-frame">
         <!-- No {#key}: both demos accept a changing `sequence` prop and swap
@@ -996,6 +1000,27 @@
     align-items: center;
     justify-content: center;
   }
+  .placeholder-stage-wrap {
+    min-width: 0;
+  }
+  .placeholder-toolbar {
+    display: flex;
+    justify-content: center;
+    gap: 0.65rem;
+    min-height: 3rem;
+    margin-top: 0.75rem;
+  }
+  .placeholder-tool {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.5rem;
+    background: var(--theme-card-bg, oklch(0.2 0.025 270 / 0.75));
+  }
+  .placeholder-preset-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+  }
 
   .placeholder-square {
     width: 100%;
@@ -1004,8 +1029,8 @@
 
   .placeholder-band-controls {
     display: grid;
-    gap: 0.9rem;
-    align-content: center;
+    gap: 0.8rem;
+    align-content: start;
   }
 
   .placeholder-line {
@@ -1016,8 +1041,8 @@
   }
 
   .placeholder-line-title {
-    height: 1.4rem;
-    width: 7rem;
+    height: 1.5rem;
+    width: 11rem;
   }
 
   .placeholder-wide {
@@ -1026,8 +1051,8 @@
   }
 
   .placeholder-control {
-    width: min(100%, 24rem);
-    height: 3.25rem;
+    width: 100%;
+    height: 4.5rem;
     border-radius: 0.85rem;
     background: var(--theme-card-bg, oklch(0.2 0.025 270 / 0.75));
   }
