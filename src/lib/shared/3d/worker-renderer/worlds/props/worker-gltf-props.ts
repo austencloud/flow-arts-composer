@@ -276,6 +276,20 @@ function createRotatedVisual(
   };
 }
 
+/**
+ * Prop3D.svelte stretches the fire double staff's long axis to the performer's
+ * staff length and keeps its grip diameter. The model is authored 900 mm end to
+ * end (scripts/fire-double-staff-stations.json); every other model keeps its
+ * size.
+ */
+const FIRE_DOUBLE_STAFF_AUTHORED_LENGTH_M = 0.9;
+
+function registryLengthScaleY(options: WorkerPropFactoryOptions): number {
+  return options.propType === CANONICAL_PROP_TYPE.FIRE_DOUBLE_STAFF
+    ? options.length / FIRE_DOUBLE_STAFF_AUTHORED_LENGTH_M
+    : 1;
+}
+
 export async function createRegistryWorkerProp(
   options: WorkerPropFactoryOptions,
   resolution: WorkerPropModelResolution
@@ -294,6 +308,7 @@ export async function createRegistryWorkerProp(
   const modelTransform = new Group();
   modelTransform.name = "worker-prop-model-transform";
   modelTransform.scale.setScalar(resolution.scale);
+  modelTransform.scale.y *= registryLengthScaleY(options);
   modelTransform.position.y = resolution.entry.gripOffsetY;
   modelTransform.rotation.x = resolution.entry.flipLongAxis ? Math.PI : 0;
   modelTransform.add(scene);
