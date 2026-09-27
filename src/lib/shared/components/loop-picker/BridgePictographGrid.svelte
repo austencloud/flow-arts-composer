@@ -15,6 +15,7 @@
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import { onMount } from "svelte";
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     /** Bridge options with their pictograph data */
@@ -68,20 +69,26 @@
     sampleOption: CircularizationOption | undefined
   ): string {
     if (!sampleOption?.resultingLength) {
-      if (rotation === "half") return "180° → doubles length";
-      if (rotation === "quarter") return "90° → quadruples length";
-      return "Same position";
+      if (rotation === "half") return tDynamic("bridge_grid_half_doubles");
+      if (rotation === "quarter")
+        return tDynamic("bridge_grid_quarter_quadruples");
+      return tDynamic("bridge_grid_same_position");
     }
     const len = sampleOption.resultingLength;
-    if (rotation === "half") return `180° rotation → ${len} steps`;
-    if (rotation === "quarter") return `90° rotation → ${len} steps`;
+    if (rotation === "half")
+      return tDynamic("bridge_grid_half_steps", { count: len });
+    if (rotation === "quarter")
+      return tDynamic("bridge_grid_quarter_steps", { count: len });
 
     // For exact, check orientation alignment
     const align = sampleOption.orientationAlignment;
     if (align && !align.matches) {
-      return `×${align.repetitionsNeeded} to align → ${len} steps`;
+      return tDynamic("bridge_grid_align_steps", {
+        count: align.repetitionsNeeded,
+        steps: len,
+      });
     }
-    return `True loop → ${len} steps`;
+    return tDynamic("bridge_grid_true_loop_steps", { count: len });
   }
 
   // Get badge info for exact position options
@@ -92,19 +99,25 @@
   } {
     const align = option.orientationAlignment;
     if (!align) {
-      return { label: "1×", class: "exact", tooltip: "Same position" };
+      return {
+        label: "1×",
+        class: "exact",
+        tooltip: tDynamic("bridge_grid_same_position"),
+      };
     }
     if (align.matches) {
       return {
         label: "✓",
         class: "exact-match",
-        tooltip: "Perfect loop - orientations match",
+        tooltip: tDynamic("bridge_grid_perfect_loop"),
       };
     }
     return {
       label: `${align.repetitionsNeeded}×`,
       class: align.repetitionsNeeded === 2 ? "repeat-2" : "repeat-4",
-      tooltip: `Repeat ${align.repetitionsNeeded}× to align orientations`,
+      tooltip: tDynamic("bridge_grid_repeat_to_align", {
+        count: align.repetitionsNeeded,
+      }),
     };
   }
 </script>
@@ -117,12 +130,12 @@
   {#if isLoading}
     <div class="loading-state">
       <ProgressRing percent={-1} size={24} strokeWidth={2} />
-      <span>Finding bridge options...</span>
+      <span>{tDynamic("bridge_grid_finding")}</span>
     </div>
   {:else if options.length === 0}
     <div class="empty-state">
       <i class="fas fa-info-circle" aria-hidden="true"></i>
-      <p>No bridge options available</p>
+      <p>{tDynamic("bridge_grid_none")}</p>
     </div>
   {:else}
     <!-- Half Rotation Group (2x length) -->
@@ -146,8 +159,10 @@
                   pictograph.letter
                 )}
                 style:--animation-delay="{index * 40}ms"
-                aria-label="Add {option
-                  .bridgeLetters[0]} → {option.resultingLength || ''} steps"
+                aria-label={tDynamic("bridge_grid_add_steps", {
+                  letter: option.bridgeLetters[0] ?? "",
+                  count: option.resultingLength || "",
+                })}
                 title="{option.bridgeLetters[0]} → {option.endPlacement}"
               >
                 <div class="pictograph-wrapper">
@@ -182,8 +197,10 @@
                   pictograph.letter
                 )}
                 style:--animation-delay="{index * 40}ms"
-                aria-label="Add {option
-                  .bridgeLetters[0]} → {option.resultingLength || ''} steps"
+                aria-label={tDynamic("bridge_grid_add_steps", {
+                  letter: option.bridgeLetters[0] ?? "",
+                  count: option.resultingLength || "",
+                })}
                 title="{option.bridgeLetters[0]} → {option.endPlacement}"
               >
                 <div class="pictograph-wrapper">
@@ -219,9 +236,11 @@
                   pictograph.letter
                 )}
                 style:--animation-delay="{index * 40}ms"
-                aria-label="Add {option
-                  .bridgeLetters[0]} → {option.resultingLength ||
-                  ''} steps ({badgeInfo.tooltip})"
+                aria-label={tDynamic("bridge_grid_add_steps_detail", {
+                  letter: option.bridgeLetters[0] ?? "",
+                  count: option.resultingLength || "",
+                  detail: badgeInfo.tooltip,
+                })}
                 title={badgeInfo.tooltip}
               >
                 <div class="pictograph-wrapper">
@@ -388,7 +407,8 @@
     /* Entrance animation */
     opacity: 0;
     transform: scale(0.9);
-    animation: scaleIn var(--duration-normal) cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    animation: scaleIn var(--duration-normal) cubic-bezier(0.34, 1.56, 0.64, 1)
+      forwards;
     animation-delay: var(--animation-delay, 0ms);
 
     /* Larger touch target for bigger pictographs */
@@ -521,6 +541,5 @@
     .bridge-option:active:not(:disabled) {
       transform: none;
     }
-
   }
 </style>

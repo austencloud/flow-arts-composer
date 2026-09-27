@@ -2,6 +2,7 @@
 StaffQuizCompleteSection - Score display and completion actions
 -->
 <script lang="ts">
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   let {
     score,
     totalQuestions,
@@ -24,16 +25,16 @@ StaffQuizCompleteSection - Score display and completion actions
   });
 
   const scoreMessage = $derived(() => {
-    if (scorePercent === 100) return "Perfect! You're a Staff Master!";
-    if (scorePercent >= 80) return "Excellent! Great understanding!";
-    if (scorePercent >= 60) return "Good job! Keep practicing!";
-    return "Keep learning! Review the lesson and try again.";
+    if (scorePercent === 100) return tDynamic("learn_staff_score_perfect");
+    if (scorePercent >= 80) return tDynamic("learn_staff_score_excellent");
+    if (scorePercent >= 60) return tDynamic("learn_staff_score_good");
+    return tDynamic("learn_staff_score_keep_learning");
   });
 </script>
 
 <div class="quiz-section complete">
   <div class="complete-icon">{scoreEmoji()}</div>
-  <h3 class="complete-title">Quiz Complete!</h3>
+  <h3 class="complete-title">{tDynamic("learn_staff_quiz_complete")}</h3>
   <div class="score-display">
     <span class="score-value">{score}</span>
     <span class="score-separator">/</span>
@@ -42,19 +43,19 @@ StaffQuizCompleteSection - Score display and completion actions
   <p class="score-message">{scoreMessage()}</p>
 
   <div class="score-breakdown">
-    <h4>Topics Covered</h4>
+    <h4>{tDynamic("learn_staff_topics_covered")}</h4>
     <div class="topic-badges">
       <span class="topic-badge placement">
         <i class="fa-solid fa-crosshairs" aria-hidden="true"></i>
-        Placements
+        {tDynamic("learn_staff_topics_placements")}
       </span>
       <span class="topic-badge thumb">
         <i class="fa-solid fa-hand-point-up" aria-hidden="true"></i>
-        Thumbs
+        {tDynamic("learn_staff_topics_thumbs")}
       </span>
       <span class="topic-badge rotation">
         <i class="fa-solid fa-sync-alt" aria-hidden="true"></i>
-        Rotations
+        {tDynamic("learn_staff_topics_rotations")}
       </span>
     </div>
   </div>
@@ -62,11 +63,11 @@ StaffQuizCompleteSection - Score display and completion actions
   <div class="complete-actions">
     <button class="action-btn secondary" onclick={onRestart}>
       <i class="fa-solid fa-rotate" aria-hidden="true"></i>
-      Try Again
+      {tDynamic("learn_staff_try_again")}
     </button>
     <button class="action-btn primary" onclick={onComplete}>
       <i class="fa-solid fa-check" aria-hidden="true"></i>
-      Finish
+      {tDynamic("learn_staff_finish")}
     </button>
   </div>
 </div>
@@ -177,12 +178,20 @@ StaffQuizCompleteSection - Score display and completion actions
   }
 
   .topic-badge.thumb {
-    background: color-mix(in srgb, var(--semantic-info, #3b82f6) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-info, #3b82f6) 15%,
+      transparent
+    );
     color: var(--semantic-info);
   }
 
   .topic-badge.rotation {
-    background: color-mix(in srgb, var(--theme-accent, #22d3ee) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #22d3ee) 15%,
+      transparent
+    );
     color: var(--theme-accent, #22d3ee);
   }
 
@@ -225,7 +234,8 @@ StaffQuizCompleteSection - Score display and completion actions
       color-mix(in srgb, var(--theme-accent, #22d3ee) 30%, transparent),
       color-mix(in srgb, var(--theme-accent, #22d3ee) 30%, transparent)
     );
-    border: 1px solid color-mix(in srgb, var(--theme-accent, #22d3ee) 40%, transparent);
+    border: 1px solid
+      color-mix(in srgb, var(--theme-accent, #22d3ee) 40%, transparent);
     color: white;
   }
 
@@ -235,7 +245,11 @@ StaffQuizCompleteSection - Score display and completion actions
       color-mix(in srgb, var(--theme-accent, #22d3ee) 40%, transparent),
       color-mix(in srgb, var(--theme-accent, #22d3ee) 40%, transparent)
     );
-    border-color: color-mix(in srgb, var(--theme-accent, #22d3ee) 60%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #22d3ee) 60%,
+      transparent
+    );
     transform: translateY(-2px);
   }
 

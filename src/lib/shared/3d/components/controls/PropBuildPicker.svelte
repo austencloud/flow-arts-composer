@@ -1,4 +1,5 @@
 <script lang="ts" generics="T extends string">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import { popIn } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
@@ -18,6 +19,11 @@
      * the house builds sit level with the credited ones.
      */
     showCredit?: boolean;
+    /**
+     * A bounded host hands the picker its height: the cards stack and share
+     * it instead of stopping at the render's 8:3 shape.
+     */
+    fill?: boolean;
   }
 
   let {
@@ -28,6 +34,7 @@
     density = "primary",
     useImageScale = false,
     showCredit = false,
+    fill = false,
   }: Props = $props();
 
   function moveSelection(event: KeyboardEvent, index: number): void {
@@ -62,6 +69,7 @@
   class="picker"
   class:secondary={density === "secondary"}
   class:headingless={!label}
+  class:fill
 >
   {#if label}
     <div class="picker-heading">
@@ -69,7 +77,7 @@
     </div>
   {/if}
 
-  <div class="option-grid" role="radiogroup" aria-label={label ?? "Options"}>
+  <div class="option-grid" role="radiogroup" aria-label={label ?? t("prop_build_picker_options")}>
     {#each options as option, index (option.id)}
       <button
         type="button"
@@ -78,10 +86,10 @@
         role="radio"
         aria-checked={value === option.id}
         aria-label={option.designCredit
-          ? `${option.label}, original design by ${option.designCredit.originator}`
+          ? t("prop_build_picker_design_credit_aria", { label: option.label, name: option.designCredit.originator })
           : option.label}
         title={option.designCredit
-          ? `Original design by ${option.designCredit.originator}`
+          ? t("prop_build_picker_design_credit_title", { name: option.designCredit.originator })
           : undefined}
         tabindex={value === option.id ? 0 : -1}
         onclick={() => onchange(option.id)}
@@ -89,14 +97,36 @@
       >
         <span class="preview-frame">
           <Crossfade key={option.image} duration={DURATION.normal} fill>
-            <img
-              src={option.image}
-              alt=""
-              draggable="false"
-              style:--preview-scale={useImageScale
-                ? (option.imageScale ?? 1)
-                : 1}
-            />
+            {#if option.crop}
+              <!-- Draw only the painted window, fitted and centred, so a
+                   grip-centred capture is not half empty margin. -->
+              <svg
+                class="preview-art cropped"
+                viewBox="{option.crop.x} {option.crop.y} {option.crop
+                  .width} {option.crop.height}"
+                preserveAspectRatio="xMidYMid meet"
+                aria-hidden="true"
+                style:--preview-scale={useImageScale
+                  ? (option.imageScale ?? 1)
+                  : 1}
+              >
+                <image
+                  href={option.image}
+                  width={option.crop.imageWidth}
+                  height={option.crop.imageHeight}
+                />
+              </svg>
+            {:else}
+              <img
+                class="preview-art"
+                src={option.image}
+                alt=""
+                draggable="false"
+                style:--preview-scale={useImageScale
+                  ? (option.imageScale ?? 1)
+                  : 1}
+              />
+            {/if}
           </Crossfade>
         </span>
         <span class="option-label" class:with-credit={showCredit}>
@@ -214,7 +244,7 @@
     }
   }
 
-  .preview-frame img {
+  .preview-art {
     position: absolute;
     inset: 0;
     display: block;
@@ -224,6 +254,13 @@
     pointer-events: none;
     transform: scale(var(--preview-scale));
     transition: transform var(--duration-fast, 150ms) ease;
+  }
+
+  /* A crop ends at the painted edge; keep the art off the card's border. */
+  .preview-art.cropped {
+    inset: 8% 7%;
+    width: 86%;
+    height: 84%;
   }
 
   .preview-frame :global(.crossfade) {
@@ -337,7 +374,7 @@
       transform: translateY(-2px);
     }
 
-    .option:hover img {
+    .option:hover .preview-art {
       transform: scale(calc(var(--preview-scale) * 1.04));
     }
   }
@@ -376,11 +413,35 @@
     font-size: clamp(11px, 0.46cqi, 16px);
   }
 
+  /* Fill: the cards stack and split the host's height. Props are long and
+     flat, so a full-width card frames them larger than a tall half-width one.
+     The render keeps its own shape inside the taller frame (the frame is the
+     capture colour); rows stop at a readable floor and the host scrolls. */
+  .picker.fill {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .picker.fill .option-grid {
+    flex: 1;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: minmax(7rem, 1fr);
+  }
+
+  .picker.fill .preview-frame {
+    aspect-ratio: auto;
+    height: auto;
+    min-height: 0;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .option,
     .option-label,
     .option-credit,
-    .preview-frame img {
+    .preview-art {
       transition: none;
     }
   }

@@ -103,7 +103,7 @@
       onclick={onStart}
     >
       <i class="fas fa-play" aria-hidden="true"></i>
-      <span>Start practice</span>
+      <span>{t("viewer_detail_start_practice")}</span>
     </button>
 
     <!-- Right: fine-tune (also opened by the Custom preset) -->

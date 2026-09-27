@@ -29,21 +29,19 @@
 <aside
   class="performance-inspector"
   data-performance-inspector
-  aria-label="Performance details and selection"
+  aria-label={t("viewer_detail_performance_details_and_selection")}
 >
   <header class="inspector-header">
     <div>
       <span class="eyebrow">{t("viewer_ui_performances")}</span>
       <h2>
-        {workspace.videos.length} performance{workspace.videos.length === 1
-          ? ""
-          : "s"}
+        {t(workspace.videos.length === 1 ? "viewer_performance_one" : "viewer_performance_count", { count: workspace.videos.length })}
       </h2>
     </div>
     {#if canUpload}
       <PanelButton variant="primary" onclick={workspace.requestUpload}>
         <i class="fas fa-plus" aria-hidden="true"></i>
-        Add
+        {t("viewer_detail_add")}
       </PanelButton>
     {/if}
   </header>
@@ -51,14 +49,14 @@
   {#if workspace.store.loading}
     <div class="inspector-message" role="status">
       <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-      Loading performances…
+      {t("viewer_detail_loading_performances")}
     </div>
   {:else if workspace.store.error}
     <div class="inspector-message error" role="alert">
       <span>{workspace.store.error}</span>
       <PanelButton onclick={() => workspace.store.reload()}>
         <i class="fas fa-rotate-right" aria-hidden="true"></i>
-        Try again
+        {t("viewer_detail_try_again")}
       </PanelButton>
     </div>
   {:else if workspace.selectedVideo}
@@ -82,12 +80,12 @@
         {#if workspace.selectedVideo.creatorId === authState.user?.uid}
           <div class="hand-labeling">
             <span class="eyebrow" id="hand-labeling-label"
-              >Read the card as</span
+              >{t("viewer_detail_read_the_card_as")}</span
             >
             <SegmentedControl
               options={[
-                { value: "mirror-me", label: "Mirror me" },
-                { value: "as-performed", label: "As performed" },
+                { value: "mirror-me", label: t("viewer_detail_mirror_me") },
+                { value: "as-performed", label: t("viewer_detail_as_performed") },
               ]}
               value={resolveHandLabeling(workspace.selectedVideo)}
               onchange={(value: HandLabeling) =>
@@ -109,7 +107,7 @@
                 workspace.startMapping(workspace.selectedVideo!.id)}
             >
               <i class="fas fa-music" aria-hidden="true"></i>
-              {workspace.selectedVideo.beatMap ? "Edit timing" : "Map timing"}
+              {workspace.selectedVideo.beatMap ? t("viewer_detail_edit_timing") : t("viewer_detail_map_timing")}
             </PanelButton>
           {/if}
           {#if isOwned}
@@ -120,7 +118,7 @@
                 workspace.requestDelete(workspace.selectedVideo!.id)}
             >
               <i class="fas fa-trash-alt" aria-hidden="true"></i>
-              Delete
+              {t("viewer_detail_delete")}
             </button>
           {/if}
         </div>
@@ -132,7 +130,7 @@
       aria-labelledby="performance-list-title"
     >
       <div class="list-heading">
-        <h3 id="performance-list-title">All performances</h3>
+        <h3 id="performance-list-title">{t("viewer_detail_all_performances")}</h3>
         <span>{workspace.videos.length}</span>
       </div>
       <div class="performance-list-items">
@@ -166,8 +164,8 @@
         <i class="fas fa-video"></i>
       </span>
       <div>
-        <h3>No performances yet</h3>
-        <p>Share the first human take of this sequence.</p>
+        <h3>{t("viewer_detail_no_performances_yet")}</h3>
+        <p>{t("viewer_detail_share_the_first_human_take_of_this_sequence")}</p>
       </div>
       {#if canUpload}
         <PanelButton
@@ -176,10 +174,10 @@
           fullWidth
         >
           <i class="fas fa-upload" aria-hidden="true"></i>
-          Perform this sequence
+          {t("viewer_detail_perform_this_sequence")}
         </PanelButton>
       {:else if !isLoggedIn}
-        <span class="sign-in-hint">Sign in to perform this sequence</span>
+        <span class="sign-in-hint">{t("viewer_detail_sign_in_to_perform_this_sequence")}</span>
       {/if}
     </div>
   {/if}
@@ -188,7 +186,7 @@
     <DeleteConfirmDialog
       isDeleting={workspace.isDeleting}
       positioning="absolute"
-      title="Delete performance?"
+      title={t("viewer_detail_delete_performance")}
       body={workspace.deleteError ||
         `${performanceCreatorName(workspace.pendingDeleteVideo)}'s performance from ${formatPerformanceDate(workspace.pendingDeleteVideo.createdAt)} will be permanently removed. This cannot be undone.`}
       onConfirm={workspace.confirmDelete}

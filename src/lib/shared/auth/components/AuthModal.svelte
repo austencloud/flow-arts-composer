@@ -26,6 +26,7 @@
   } from "$lib/shared/auth/services/auth-analytics-bridge";
   import { signInWithFacebook } from "$lib/shared/auth/services/authenticator";
   import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { authDrawerState } from "../state/auth-drawer-state.svelte";
   import ContextualAuthPrompt from "./ContextualAuthPrompt.svelte";
   import type { GuestEncorePrompt } from "../domain/auth-nudge-trigger";
@@ -103,19 +104,15 @@
       );
 
       if (errorCode === "auth/popup-blocked") {
-        facebookError = "Popup was blocked. Please allow popups for this site.";
+        facebookError = t("auth_facebook_popup_blocked");
       } else if (interrupted) {
         facebookError = null;
       } else if (
         errorCode === "auth/account-exists-with-different-credential"
       ) {
-        facebookError =
-          "This email is already registered. Sign in with your original method and Facebook will be connected automatically.";
+        facebookError = t("auth_facebook_existing_account");
       } else {
-        facebookError =
-          error instanceof Error
-            ? error.message
-            : "Facebook sign-in failed. Please try again.";
+        facebookError = t("auth_facebook_signin_failed");
       }
     }
   }

@@ -28,9 +28,15 @@ export class CanvasFrameCapturer {
     }
   }
 
+  /**
+   * `durationMicros` is how long the frame shows. The encoded chunk takes it
+   * from the frame, and the muxer sizes each sample by it - without it the
+   * file's last frame lasts no time at all.
+   */
   capture(
     canvas: HTMLCanvasElement,
-    timestampMicros: number
+    timestampMicros: number,
+    durationMicros?: number
   ): CapturedFrame {
     const width = canvas.width;
     const height = canvas.height;
@@ -40,7 +46,10 @@ export class CanvasFrameCapturer {
       // keeps the pixel data GPU-resident and hands us a transferable
       // handle. VideoFrame requires .close() exactly once by the final
       // consumer - in this pipeline that's the worker after encode().
-      const frame = new VideoFrame(canvas, { timestamp: timestampMicros });
+      const frame = new VideoFrame(canvas, {
+        timestamp: timestampMicros,
+        ...(durationMicros !== undefined ? { duration: durationMicros } : {}),
+      });
       return { kind: "video-frame", frame, timestampMicros, width, height };
     }
 

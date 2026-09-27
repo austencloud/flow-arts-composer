@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   /**
    * InboxNotificationItem
    *
@@ -126,7 +127,7 @@
   ) {
     const report = (failure: Error) => {
       getErrorHandler().showUserError({
-        message: "This session notification could not be opened.",
+        message: t("inbox_ui_this_session_notification_could_not_be_opened"),
         technicalDetails: failure.message,
         error: failure,
         severity: "error",
@@ -172,7 +173,7 @@
 
     const report = (failure: Error) => {
       getErrorHandler().showUserError({
-        message: "This saved sequence could not be opened.",
+        message: t("inbox_ui_this_saved_sequence_could_not_be_opened"),
         technicalDetails: failure.message,
         error: failure,
         severity: "error",
@@ -221,7 +222,7 @@
       openSequenceViewer(sequence, {
         source: "inbox_notification",
         returnPath: window.location.pathname,
-        returnLabel: "Notifications",
+        returnLabel: t("inbox_ui_notifications"),
       });
     } catch (caught) {
       const failure =
@@ -402,7 +403,7 @@
   onkeydown={handleCardKeydown}
   role="button"
   tabindex="0"
-  aria-label="{notification.message}{!notification.read ? ' (unread)' : ''}"
+  aria-label="{notification.message}{!notification.read ? ` (${t("inbox_unread")})` : ''}"
 >
   <!-- Icon -->
   <div class="icon" style="--icon-color: {getColor(notification.type)}">

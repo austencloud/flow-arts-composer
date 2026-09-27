@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { effectUiLabel } from "./effect-ui-label";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import EffectLookChips from "./EffectLookChips.svelte";
   import EffectPresetsSection from "./EffectPresetsSection.svelte";
   import type { EffectRegistration } from "./effect-registry";
@@ -62,7 +64,7 @@
     onSelectPreset,
     onPrimaryInput,
     onTune,
-    tuneLabel = "Tune",
+    tuneLabel = "",
     looks = "rail",
   }: Props = $props();
 
@@ -74,19 +76,18 @@
 <section
   class="effect-dock"
   style:--effect-accent={registration.meta.color}
-  aria-label="{registration.meta.label} controls"
+  aria-label={t("effect_deep_effect_controls", {
+    effect: effectUiLabel(registration.meta.label),
+  })}
 >
   <div class="dock-head">
     <span class="dock-identity">
-      <i
-        class="fas {registration.meta.icon} dock-icon"
-        aria-hidden="true"
-      ></i>
-      <span class="dock-name">{registration.meta.label}</span>
+      <i class="fas {registration.meta.icon} dock-icon" aria-hidden="true"></i>
+      <span class="dock-name">{effectUiLabel(registration.meta.label)}</span>
     </span>
     <button type="button" class="tune-btn" onclick={onTune}>
       <i class="fas fa-sliders" aria-hidden="true"></i>
-      <span>{tuneLabel}</span>
+      <span>{tuneLabel || t("effect_deep_tune")}</span>
     </button>
   </div>
 
@@ -127,7 +128,7 @@
 
   {#if primarySpec}
     <div class="slider-row">
-      <span class="slider-label">{primarySpec.label}</span>
+      <span class="slider-label">{effectUiLabel(primarySpec.label)}</span>
       <input
         type="range"
         class="slider"
@@ -136,7 +137,10 @@
         step={primarySpec.step}
         value={primaryValue}
         oninput={handleSliderInput}
-        aria-label="{primarySpec.label} for {registration.meta.label}"
+        aria-label={t("effect_deep_param_for_effect", {
+          param: effectUiLabel(primarySpec.label),
+          effect: effectUiLabel(registration.meta.label),
+        })}
       />
       <span class="slider-val">{primarySpec.format(primaryValue)}</span>
     </div>
@@ -150,8 +154,7 @@
     gap: 0.5rem;
     padding: 0.625rem;
     border-radius: 0.75rem;
-    border: 1px solid
-      color-mix(in srgb, var(--effect-accent) 28%, transparent);
+    border: 1px solid color-mix(in srgb, var(--effect-accent) 28%, transparent);
     background: color-mix(in srgb, var(--effect-accent) 7%, transparent);
     min-width: 0;
   }
@@ -199,8 +202,7 @@
     min-height: var(--min-touch-target, 44px);
     padding: 0 0.75rem;
     border-radius: 0.5rem;
-    border: 1px solid
-      color-mix(in srgb, var(--effect-accent) 45%, transparent);
+    border: 1px solid color-mix(in srgb, var(--effect-accent) 45%, transparent);
     background: color-mix(in srgb, var(--effect-accent) 16%, transparent);
     color: var(--theme-text, white);
     font-size: var(--font-size-compact, 12px);

@@ -104,6 +104,11 @@
   let gridMode = $derived(animationState.sequenceData?.gridMode);
 
   onMount(async () => {
+    // The boot bar in app.html waits for the app layout to report 100%, and a
+    // /test route never runs that layout, so without this the splash sits over
+    // the harness until its 15s safety net fires.
+    (window as unknown as { __tkaLoadProgress?: (p: number) => void })
+      .__tkaLoadProgress?.(100);
     const params = new URLSearchParams(window.location.search);
     studioHarness = params.has("studio");
     cardOnly = params.has("card");

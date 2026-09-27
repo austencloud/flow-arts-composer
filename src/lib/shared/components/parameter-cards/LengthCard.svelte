@@ -4,6 +4,7 @@ Uses shared StepperCard for consistent styling with Generate module
 Can operate as stepper (inline) or panel opener (click to select)
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { attachRipple } from "$lib/shared/application/services/ripple-effect";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
@@ -81,7 +82,7 @@ Can operate as stepper (inline) or panel opener (click to select)
   }
 
   function formatValue(val: number): string {
-    if (val === 0) return "Any";
+    if (val === 0) return t("shared_controls_any_length");
     return val.toString();
   }
 
@@ -102,12 +103,16 @@ Can operate as stepper (inline) or panel opener (click to select)
     }
   }
 
-  const displayValue = $derived(value ? `${value} steps` : "Any");
+  const displayValue = $derived(
+    value
+      ? t("shared_controls_step_count", { count: value })
+      : t("shared_controls_any_length")
+  );
 </script>
 
 {#if mode === "stepper"}
   <StepperCard
-    title="Length"
+    title={t("shared_controls_length")}
     {currentValue}
     {minValue}
     maxValue={max}
@@ -129,11 +134,11 @@ Can operate as stepper (inline) or panel opener (click to select)
     tabindex={disabled ? -1 : 0}
     onclick={handleCardClick}
     onkeydown={handleKeydown}
-    aria-label="Sequence length: {displayValue}. Click to change."
+    aria-label={t("shared_controls_change_length", { length: displayValue })}
     style="--card-index: {cardIndex}; grid-column: span {gridColumnSpan};"
   >
     <div class="card-header">
-      <span class="card-title">Length</span>
+      <span class="card-title">{t("shared_controls_length")}</span>
     </div>
 
     <div class="length-display">

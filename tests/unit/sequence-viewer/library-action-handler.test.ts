@@ -105,11 +105,14 @@ const LIVE_SOURCE: PresentationSource = {
 
 function makeHandler(
   isOwned = true,
-  presentationSource: PresentationSource | null = LIVE_SOURCE
+  presentationSource: PresentationSource | null = LIVE_SOURCE,
+  getPathSaveIntent?: () => { acceptSaved: () => void } | null,
+  getCurrentSequence: () => typeof sequence = () => sequence
 ) {
   const handler = createLibraryActionHandler({
-    getSequence: () => sequence as never,
+    getSequence: () => getCurrentSequence() as never,
     getIsOwned: () => isOwned,
+    getPathSaveIntent,
     getLeftPropType: () => undefined,
     getRightPropType: () => undefined,
     getCatDogModeEnabled: () => false,
@@ -173,6 +176,119 @@ describe("sequence viewer library action feedback", () => {
     );
     error.mockRestore();
     expect(await handler.savePaths()).toBe(true);
+  });
+
+  it("routes an owned path preview through normal Save without opening the prop dialog", async () => {
+    mocks.getSequence.mockResolvedValue(sequence);
+    mocks.hasMatchingContent.mockResolvedValue(true);
+    let pending = true;
+    const acceptSaved = vi.fn(() => {
+      pending = false;
+    });
+    const handler = makeHandler(true, LIVE_SOURCE, () =>
+      pending ? { acceptSaved } : null
+    );
+    await vi.waitFor(() => expect(handler.isOwnedLibraryRecord).toBe(true));
+    expect(handler.isSaved).toBe(false);
+
+    await handler.handleSave();
+
+    expect(mocks.updateSequence).toHaveBeenCalledWith(sequence.id, {
+      steps: sequence.steps,
+      metadata: sequence.metadata,
+    });
+    expect(acceptSaved).toHaveBeenCalledOnce();
+    expect(handler.isSaved).toBe(true);
+    expect(handler.saveProps).toBeNull();
+    expect(mocks.saveSequence).not.toHaveBeenCalled();
+  });
+
+  it("keeps normal Save available after a failed path update", async () => {
+    mocks.getSequence.mockResolvedValue(sequence);
+    mocks.hasMatchingContent.mockResolvedValue(true);
+    mocks.updateSequence.mockRejectedValueOnce(new Error("offline"));
+    const acceptSaved = vi.fn();
+    const handler = makeHandler(true, LIVE_SOURCE, () => ({ acceptSaved }));
+    await vi.waitFor(() => expect(handler.isOwnedLibraryRecord).toBe(true));
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await handler.handleSave();
+    expect(handler.isSaved).toBe(false);
+    expect(acceptSaved).not.toHaveBeenCalled();
+    expect(handler.saveProps).toBeNull();
+    await handler.handleSave();
+
+    expect(mocks.updateSequence).toHaveBeenCalledTimes(2);
+    expect(acceptSaved).toHaveBeenCalledOnce();
+    error.mockRestore();
+  });
+
+  it("keeps a newer path preview available after an in-flight save", async () => {
+    mocks.getSequence.mockResolvedValue(sequence);
+    mocks.hasMatchingContent.mockResolvedValue(true);
+    let resolveUpdate!: () => void;
+    mocks.updateSequence.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveUpdate = resolve;
+        })
+    );
+    let revision = 1;
+    const handler = makeHandler(true, LIVE_SOURCE, () => {
+      const savedRevision = revision;
+      return revision === 0
+        ? null
+        : {
+            acceptSaved: () => {
+              if (revision === savedRevision) revision = 0;
+            },
+          };
+    });
+    await vi.waitFor(() => expect(handler.isOwnedLibraryRecord).toBe(true));
+
+    const save = handler.handleSave();
+    expect(handler.isSaving).toBe(true);
+    revision = 2;
+    resolveUpdate();
+    await save;
+
+    expect(handler.isSaved).toBe(false);
+    expect(handler.isSaving).toBe(false);
+    expect(handler.saveProps).toBeNull();
+  });
+
+  it("does not mark a different sequence saved when a path update finishes", async () => {
+    mocks.getSequence.mockResolvedValue(sequence);
+    mocks.hasMatchingContent.mockResolvedValue(true);
+    let resolveUpdate!: () => void;
+    mocks.updateSequence.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveUpdate = resolve;
+        })
+    );
+    const nextSequence = { ...sequence, id: "sequence-2" };
+    let currentSequence = sequence;
+    const acceptSaved = vi.fn();
+    const handler = makeHandler(
+      true,
+      LIVE_SOURCE,
+      () => ({ acceptSaved }),
+      () => currentSequence
+    );
+    await vi.waitFor(() => expect(handler.isOwnedLibraryRecord).toBe(true));
+
+    const save = handler.handleSave();
+    currentSequence = nextSequence;
+    handler.syncSavedState(nextSequence as never);
+    resolveUpdate();
+    await save;
+
+    expect(handler.isSaved).toBe(false);
+    expect(mocks.updateSequence).toHaveBeenCalledWith(sequence.id, {
+      steps: sequence.steps,
+      metadata: sequence.metadata,
+    });
   });
 
   it("persists the chosen pair while leaving the source unchanged", async () => {

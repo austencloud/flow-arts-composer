@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   /**
    * InboxDrawer
    *
@@ -164,7 +165,7 @@
     void messageDeliveryState.activate(userId).catch((error) => {
       const failure = error instanceof Error ? error : new Error(String(error));
       getErrorHandler().showUserError({
-        message: "Saved message drafts could not be opened.",
+        message: t("inbox_ui_saved_message_drafts_could_not_be_opened"),
         technicalDetails: failure.message,
         error: failure,
         severity: "error",
@@ -346,7 +347,7 @@
         return;
       }
       console.error("Failed to load conversation:", error);
-      toast.error("Failed to load conversation");
+      toast.error(t("inbox_ui_failed_to_load_conversation"));
     }
   }
 
@@ -449,7 +450,7 @@
     if (inboxState.selectedConversation.type === "group") {
       return {
         primary:
-          inboxState.selectedConversation.groupMetadata?.name || "Group Chat",
+          inboxState.selectedConversation.groupMetadata?.name || t("inbox_ui_group_chat"),
         secondary: null,
       };
     }
@@ -532,8 +533,8 @@
       const sender =
         conv.participantInfo[msg.senderId]?.displayName ||
         msg.senderName ||
-        "Unknown";
-      const timestamp = msg.createdAt?.toLocaleString() || "Unknown";
+        t("inbox_ui_unknown");
+      const timestamp = msg.createdAt?.toLocaleString() || t("inbox_ui_unknown");
       const edited = msg.editedAt ? " (edited)" : "";
       const deleted = msg.isDeleted ? " [DELETED]" : "";
 
@@ -559,10 +560,10 @@
 
     try {
       await navigator.clipboard.writeText(lines.join("\n"));
-      toast.success("Conversation copied for AI");
+      toast.success(t("inbox_ui_conversation_copied_for_ai"));
     } catch (error) {
       console.error("Failed to copy conversation:", error);
-      toast.error("Failed to copy conversation");
+      toast.error(t("inbox_ui_failed_to_copy_conversation"));
     }
   }
 </script>
@@ -577,7 +578,7 @@
   closeOnEscape={false}
   onclose={handleClose}
   class="inbox-drawer"
-  ariaLabel="Inbox"
+  ariaLabel={t("inbox_ui_inbox")}
 >
   <div
     class="inbox-container"
@@ -591,8 +592,8 @@
       {#if inboxState.currentView === "list"}
         <h2 id="inbox-title">
           {inboxState.activeTab === "notifications"
-            ? "Notifications"
-            : "Messages"}
+            ? t("inbox_ui_notifications")
+            : t("inbox_ui_messages")}
         </h2>
 
         <!-- New message and create group buttons -->
@@ -600,16 +601,16 @@
           <button
             class="header-action-btn primary"
             onclick={handleNewGroup}
-            aria-label="Create group"
-            title="Create group"
+            aria-label={t("inbox_ui_create_group")}
+            title={t("inbox_ui_create_group")}
           >
             <i class="fas fa-user-group" aria-hidden="true"></i>
           </button>
           <button
             class="header-action-btn primary"
             onclick={handleNewMessage}
-            aria-label="New message"
-            title="New message"
+            aria-label={t("inbox_ui_new_message")}
+            title={t("inbox_ui_new_message")}
           >
             <i class="fas fa-pen-to-square" aria-hidden="true"></i>
           </button>
@@ -622,11 +623,11 @@
           onclick={handleToggleNotifications}
           aria-pressed={inboxState.activeTab === "notifications"}
           aria-label={inboxState.activeTab === "notifications"
-            ? "Back to messages"
-            : "View notifications"}
+            ? t("inbox_ui_back_to_messages")
+            : t("inbox_ui_view_notifications")}
           title={inboxState.activeTab === "notifications"
-            ? "Back to messages"
-            : "Notifications"}
+            ? t("inbox_ui_back_to_messages")
+            : t("inbox_ui_notifications")}
         >
           <i
             class="fas {inboxState.activeTab === 'notifications'
@@ -637,7 +638,7 @@
           {#if inboxState.activeTab !== "notifications" && inboxState.unreadNotificationCount > 0}
             <span
               class="notification-badge"
-              aria-label="{inboxState.unreadNotificationCount} unread"
+              aria-label={t("inbox_unread_count", { count: inboxState.unreadNotificationCount })}
             >
               {inboxState.unreadNotificationCount > 99
                 ? "99+"
@@ -649,7 +650,7 @@
         <button
           class="close-button"
           onclick={handleClose}
-          aria-label="Close inbox"
+          aria-label={t("inbox_ui_close_inbox")}
         >
           <i class="fas fa-times" aria-hidden="true"></i>
         </button>
@@ -657,7 +658,7 @@
         <button
           class="back-button"
           onclick={handleBack}
-          aria-label="Back to conversations"
+          aria-label={t("inbox_ui_back_to_conversations")}
         >
           <i class="fas fa-arrow-left" aria-hidden="true"></i>
         </button>
@@ -671,7 +672,7 @@
           <button
             class="settings-button"
             onclick={handleOpenGroupSettings}
-            aria-label="Group settings"
+            aria-label={t("inbox_ui_group_settings")}
           >
             <i class="fas fa-cog" aria-hidden="true"></i>
           </button>
@@ -680,8 +681,8 @@
           <button
             class="header-action-btn"
             onclick={handleCopyConversationForAI}
-            aria-label="Copy conversation for AI"
-            title="Copy for AI"
+            aria-label={t("inbox_ui_copy_conversation_for_ai")}
+            title={t("inbox_ui_copy_for_ai")}
           >
             <i class="fas fa-robot" aria-hidden="true"></i>
           </button>
@@ -689,7 +690,7 @@
         <button
           class="close-button"
           onclick={handleClose}
-          aria-label="Close inbox"
+          aria-label={t("inbox_ui_close_inbox")}
         >
           <i class="fas fa-times" aria-hidden="true"></i>
         </button>
@@ -697,26 +698,26 @@
         <button
           class="back-button"
           onclick={handleCancelCompose}
-          aria-label="Cancel new message"
+          aria-label={t("inbox_ui_cancel_new_message")}
         >
           <i class="fas fa-arrow-left" aria-hidden="true"></i>
         </button>
         <h2 id="inbox-title">
-          {inboxState.composeGroupMode ? "New Group" : "New Message"}
+          {inboxState.composeGroupMode ? t("inbox_ui_new_group") : t("inbox_ui_new_message")}
         </h2>
         <div class="spacer"></div>
       {:else if inboxState.currentView === "send-attachment"}
         <h2 id="inbox-title">
           {inboxState.shareAttachment?.type === "collection"
-            ? "Share collection"
+            ? t("inbox_ui_share_collection")
             : inboxState.shareAttachment?.type === "image"
-              ? "Send image"
-              : "Send sequence"}
+              ? t("inbox_ui_send_image")
+              : t("inbox_ui_send_sequence")}
         </h2>
         <button
           class="close-button"
           onclick={handleCancelSequenceShare}
-          aria-label="Close attachment sharing"
+          aria-label={t("inbox_ui_close_attachment_sharing")}
         >
           <i class="fas fa-times" aria-hidden="true"></i>
         </button>
@@ -726,7 +727,7 @@
         <button
           class="close-button"
           onclick={handleClose}
-          aria-label="Close inbox"
+          aria-label={t("inbox_ui_close_inbox")}
         >
           <i class="fas fa-times" aria-hidden="true"></i>
         </button>
@@ -764,7 +765,7 @@
           <!-- Loading state while conversation loads -->
           <div class="thread-loading">
             <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-            <span>Loading conversation...</span>
+            <span>{t("inbox_ui_loading_conversation")}</span>
           </div>
         {/if}
       {:else if inboxState.currentView === "compose"}

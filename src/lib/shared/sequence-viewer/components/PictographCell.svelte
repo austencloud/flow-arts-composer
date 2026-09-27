@@ -7,6 +7,7 @@
   non-clickable.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
 
   interface Props {
@@ -36,7 +37,11 @@
   }: Props = $props();
 
   const isCurrent = $derived(showHighlight && highlightedStepIndex === index);
-  const isPlayed = $derived(showHighlight && highlightedStepIndex !== null && index < highlightedStepIndex);
+  const isPlayed = $derived(
+    showHighlight &&
+      highlightedStepIndex !== null &&
+      index < highlightedStepIndex
+  );
   const isClickable = $derived(!!onStepClick && index >= 0);
   const positionStyle = $derived(
     gridColumn !== undefined && gridRow !== undefined
@@ -54,7 +59,7 @@
     style={positionStyle}
     onclick={() => onStepClick!(index)}
     type="button"
-    aria-label="Go to step {label}"
+    aria-label={t("browse_audit_go_to_step", { step: label })}
   >
     {#if isLoaded}
       <img class="cell-image" src={imageUrl} alt={label} draggable="false" />
@@ -119,8 +124,12 @@
     animation: cellImgIn var(--duration-fast, 150ms) ease;
   }
   @keyframes cellImgIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   .cell-spinner-container {
@@ -187,8 +196,14 @@
     animation: cellShadowIn 0.32s ease-out forwards;
   }
   @keyframes cellShadowIn {
-    from { opacity: 0; transform: translateY(-4px) scaleX(0.7); }
-    to { opacity: 1; transform: translateY(0) scaleX(1); }
+    from {
+      opacity: 0;
+      transform: translateY(-4px) scaleX(0.7);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scaleX(1);
+    }
   }
 
   /* Played cells dim to distinguish from upcoming */

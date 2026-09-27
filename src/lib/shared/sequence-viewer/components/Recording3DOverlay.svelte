@@ -106,7 +106,7 @@
   phaseLabel={takeoverLabel}
   error={exportProgress?.error ?? null}
   onCancel={onCancelExport}
-  label="Rendering your film"
+  label={t("viewer_detail_rendering_your_film")}
 />
 
 <style>

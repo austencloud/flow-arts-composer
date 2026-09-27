@@ -499,7 +499,7 @@
 
     switch (result.action) {
       case "already-loaded":
-        toast.info("Sequence already loaded in Construct");
+        toast.info(t("create_ui_sequence_already_loaded"));
         handleClose();
         navigationState.setActiveTab("construct");
         break;
@@ -556,7 +556,7 @@
     if (!sequence || !canShiftStart) return;
     hapticService?.trigger("selection");
     panelState.enterShiftStartMode(handleShiftStartPoseSelect);
-    toast.info("Tap the pose you want to start from.");
+    toast.info(t("create_ui_tap_start_pose"));
   }
 
   /** `tileIndex` is the tapped pose: 0 for the start tile, 1..n for steps. */
@@ -631,7 +631,7 @@
   async function handleCopySequenceJson() {
     const result = await actionOrchestrator.copySequenceJson();
     if (result.status === "completed") {
-      toast.success("Sequence JSON copied to clipboard");
+      toast.success(t("create_ui_json_copied"));
     } else if (result.status === "failed") {
       toast.error(result.message);
     }

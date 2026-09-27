@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   createTakeTiming,
   resolveTakeTiming,
+  setTakePerformanceEndAt,
+  splitTimingSection,
   type TakeTiming,
   type TimingSection,
 } from "$lib/shared/media-composition/domain/take-timing";
@@ -10,6 +12,7 @@ import {
   summarizeTiming,
 } from "$lib/shared/media-composition/domain/timing-summary";
 
+const EIGHT = Array.from({ length: 8 }, () => 1);
 const SIXTEEN = Array.from({ length: 16 }, () => 1);
 
 function timingWith(section: Partial<TimingSection>): TakeTiming {
@@ -71,6 +74,43 @@ describe("summarizeTiming", () => {
     expect(summary.tone).toBe("tempo");
     expect(summary.suggestedBpm).toBeCloseTo(50, 0);
     expect(summary.text).toContain("not 87");
+  });
+
+  describe("on an untapped part that keeps counting", () => {
+    // Moves 1-8 tapped from 1.7 s, then a keep-counting cut at 20 s, where
+    // the grid is at move 4 of pass 4.
+    const split = splitTimingSection(
+      timingWith({ tempo: "locked", taps: taps(87, 8, 1 + 60 / 87) }),
+      20,
+      "section-2",
+      2,
+      EIGHT,
+      "continues"
+    );
+    const summarizePart2 = (timing: TakeTiming) =>
+      summarizeTiming({
+        section: timing.sections[1]!,
+        resolved: resolveTakeTiming(timing, EIGHT).sections[1]!,
+        moveBeats: EIGHT,
+      }).text;
+
+    it("names the landing it runs on from", () => {
+      expect(split.sections[1]!.beatOnePosition).toBe(28);
+      const ended = setTakePerformanceEndAt(split, "section-2", EIGHT, 25);
+      const text = summarizePart2(ended);
+      expect(text).toContain("Running at 87 BPM from move 4 · pass 4");
+      expect(text).not.toContain("from move 1");
+    });
+
+    it("says it holds the pose the performance ended on", () => {
+      expect(summarizePart2(split)).toBe(
+        "Held at move 8 · pass 1, where the taps stop. Tap along to count on."
+      );
+      const ended = setTakePerformanceEndAt(split, "section-1", EIGHT, 1 + (60 / 87) * 6);
+      expect(summarizePart2(ended)).toBe(
+        "Held at move 6 · pass 1, where the performance ends."
+      );
+    });
   });
 });
 

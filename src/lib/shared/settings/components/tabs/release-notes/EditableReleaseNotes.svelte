@@ -1,5 +1,6 @@
 <!-- EditableReleaseNotes - Release notes with inline editing for admins -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { fly, scale } from "svelte/transition";
 
   let {
@@ -74,7 +75,7 @@
 
   async function saveEdit() {
     if (!editText.trim()) {
-      error = "Release notes cannot be empty";
+      error = t("settings_release_notes_empty");
       return;
     }
 
@@ -87,7 +88,7 @@
         onEndEdit();
       }
     } catch (err) {
-      error = err instanceof Error ? err.message : "Failed to save";
+      error = t("settings_save_failed");
     } finally {
       isSaving = false;
     }
@@ -113,7 +114,7 @@
       bind:this={textareaElement}
       bind:value={editText}
       onkeydown={handleKeydown}
-      placeholder="Enter release notes..."
+      placeholder={t("settings_enter_release_notes")}
       disabled={isSaving}
     ></textarea>
 
@@ -123,8 +124,7 @@
       </div>
     {:else if !hasChanges}
       <div class="hint" in:fly={{ y: -10, duration: 200 }}>
-        Make changes to enable Save • Press <kbd>Enter</kbd> to save,
-        <kbd>Esc</kbd> to cancel
+        {t("settings_edit_hint")}
       </div>
     {/if}
 
@@ -138,10 +138,10 @@
         >
           {#if isSaving}
             <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-            Saving...
+            {t("settings_avatar_saving")}
           {:else}
             <i class="fas fa-check" aria-hidden="true"></i>
-            Save
+            {t("action_save")}
           {/if}
         </button>
 
@@ -152,7 +152,7 @@
           disabled={isSaving}
         >
           <i class="fas fa-times" aria-hidden="true"></i>
-          Cancel
+          {t("action_cancel")}
         </button>
       </div>
     {/if}

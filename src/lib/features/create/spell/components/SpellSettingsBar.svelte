@@ -214,7 +214,7 @@ Container-aware responsive design (2-tier):
       <div class="chip-row">
         <MorphChip
           id="dashes"
-          label="Dashes"
+          label={t("create_ui_dashes")}
           bind:value={dashValue}
           options={dashOptions}
           displayValue={dashDisplayValue}
@@ -222,8 +222,8 @@ Container-aware responsive design (2-tier):
         />
         <MorphChip
           id="props"
-          label="Props"
-          expandedLabel="Prop Reversals"
+          label={t("create_ui_props")}
+          expandedLabel={t("create_ui_prop_reversals")}
           bind:value={propsValue}
           options={propsOptions}
           displayValue={propsDisplayValue}
@@ -231,8 +231,8 @@ Container-aware responsive design (2-tier):
         />
         <MorphChip
           id="hands"
-          label="Hands"
-          expandedLabel="Hand Reversals"
+          label={t("create_ui_hands")}
+          expandedLabel={t("create_ui_hand_reversals")}
           bind:value={handsValue}
           options={handsOptions}
           displayValue={handsDisplayValue}
@@ -242,7 +242,7 @@ Container-aware responsive design (2-tier):
       <div class="chip-row">
         <MorphChip
           id="grid"
-          label="Grid"
+          label={t("generator_grid")}
           bind:value={gridChipValue}
           options={gridOptions}
           displayValue={gridDisplayValue}

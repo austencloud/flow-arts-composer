@@ -502,7 +502,7 @@
 {#snippet viewer3DError(_error: unknown, retry: () => void)}
   <div class="error-state viewer-3d-load-state" role="alert">
     <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
-    <span>3D viewer couldn't load. Check your connection and try again.</span>
+    <span>{t("viewer_detail_3d_viewer_couldn_t_load_check_your_connection_and_try_again")}</span>
     <PanelButton variant="secondary" onclick={retry}>
       <i class="fas fa-rotate-right" aria-hidden="true"></i>
       <span>{t("viewer_ui_try_again")}</span>

@@ -1,5 +1,6 @@
 <!-- ContributorPicker - Search existing user accounts to tag as contributors on changelog entries -->
 <script lang="ts">
+	import { t } from '$lib/shared/i18n/i18n.svelte';
 	import { onDestroy } from 'svelte';
 	import type { Contributor } from '$lib/shared/versioning/domain/models/contributor-models';
 	import ContributorBadge from './ContributorBadge.svelte';
@@ -70,7 +71,7 @@
 						type="button"
 						class="remove-btn"
 						onclick={() => removeContributor(contributor.id)}
-						aria-label="Remove {contributor.displayName}"
+						aria-label={t('settings_remove_contributor', { name: contributor.displayName })}
 					>
 						<i class="fas fa-times" aria-hidden="true"></i>
 					</button>
@@ -86,7 +87,7 @@
 			onfocus={handleInputFocus}
 			onblur={handleInputBlur}
 			onkeydown={handleKeydown}
-			placeholder="Tag a contributor..."
+			placeholder={t('settings_tag_contributor')}
 			type="text"
 		/>
 

@@ -63,14 +63,14 @@
     onclick={() => handleModeChange("continuous")}
     type="button"
     aria-pressed={playbackMode === "continuous"}
-    aria-label="Continuous playback mode"
+    aria-label={t("playback_audit_continuous_mode")}
   >
     <div class="mode-btn-content">
       <i class="fas fa-play" aria-hidden="true"></i>
       <span>{t("compose_continuous")}</span>
     </div>
     {#if showDescriptions}
-      <span class="mode-desc">Loops the full sequence</span>
+      <span class="mode-desc">{t("playback_audit_loops_sequence")}</span>
     {/if}
   </button>
   <button
@@ -79,14 +79,14 @@
     onclick={() => handleModeChange("step")}
     type="button"
     aria-pressed={playbackMode === "step"}
-    aria-label="Step-by-step playback mode"
+    aria-label={t("playback_audit_step_mode")}
   >
     <div class="mode-btn-content">
       <i class="fas fa-shoe-prints" aria-hidden="true"></i>
       <span>{t("compose_step_by_step")}</span>
     </div>
     {#if showDescriptions}
-      <span class="mode-desc">One step at a time</span>
+      <span class="mode-desc">{t("playback_audit_one_step")}</span>
     {/if}
   </button>
 </div>

@@ -1,9 +1,14 @@
 <script lang="ts">
   import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
   const TKA_LETTER_RE = /^[a-zA-ZͰ-Ͽ⊕]-?$/;
 
-  const { title, count: countOverride, hideSteps = false } = $props<{
+  const {
+    title,
+    count: countOverride,
+    hideSteps = false,
+  } = $props<{
     title: string;
     /** Override the count parsed from the title (e.g. collapsed word count). */
     count?: number;
@@ -42,7 +47,9 @@
         {/if}
       </h3>
       {#if parsed.steps && !hideSteps}
-        <span class="section-meta">{parsed.steps} steps</span>
+        <span class="section-meta"
+          >{t("browse_n_steps", { count: parsed.steps })}</span
+        >
       {/if}
       {#if countOverride ?? parsed.count}
         <span class="section-count">{countOverride ?? parsed.count}</span>

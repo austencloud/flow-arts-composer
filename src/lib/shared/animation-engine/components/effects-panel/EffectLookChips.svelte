@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { effectUiLabel } from "./effect-ui-label";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { EffectPresetGroup } from "./presets/types";
   import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
 
@@ -103,7 +105,9 @@
   class:fade-start={overflowStart}
   class:fade-end={overflowEnd}
   role="radiogroup"
-  aria-label="Choose a {effectLabel} look"
+  aria-label={t("effect_deep_choose_look", {
+    effect: effectUiLabel(effectLabel),
+  })}
 >
   <button
     type="button"
@@ -119,7 +123,7 @@
       <span class="swatch" style:background={accentColor} aria-hidden="true"
       ></span>
     {/if}
-    Default
+    {t("effect_deep_default")}
   </button>
 
   <button
@@ -136,7 +140,7 @@
     {:else}
       <span class="swatch custom" aria-hidden="true"></span>
     {/if}
-    Custom
+    {t("effect_deep_custom")}
   </button>
 
   {#each presetGroup.presets as preset (preset.id)}
@@ -162,7 +166,7 @@
           aria-hidden="true"
         ></span>
       {/if}
-      {preset.name}
+      {effectUiLabel(preset.name)}
     </button>
   {/each}
 </div>
@@ -192,7 +196,11 @@
   /* Only the overflowing edge fades, so nothing softens a chip that is fully
      in view. Two-sided once you have scrolled away from the start. */
   .look-chips.fade-end {
-    mask-image: linear-gradient(to right, #000 calc(100% - 1.75rem), transparent);
+    mask-image: linear-gradient(
+      to right,
+      #000 calc(100% - 1.75rem),
+      transparent
+    );
   }
   .look-chips.fade-start {
     mask-image: linear-gradient(to right, transparent, #000 1.75rem);
@@ -239,7 +247,11 @@
       var(--fx-accent, #4a9eff) 18%,
       var(--theme-panel-bg, rgba(20, 22, 32, 0.6))
     );
-    border-color: color-mix(in srgb, var(--fx-accent, #4a9eff) 45%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--fx-accent, #4a9eff) 45%,
+      transparent
+    );
     color: var(--fx-accent-text, #c5ddff);
   }
 

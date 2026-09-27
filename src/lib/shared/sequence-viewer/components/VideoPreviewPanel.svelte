@@ -5,6 +5,7 @@
   Displays the exported video with playback controls, re-download, and dismiss.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { fade } from "svelte/transition";
   import { shareTarget } from "$lib/shared/mobile/share-action.svelte";
 
@@ -27,9 +28,9 @@
     blobUrl,
     onDismiss,
     onRedownload,
-    saveLabel = "Save Again",
+    saveLabel,
     onSaveToCloud,
-    cloudSaveLabel = "Save to sequence",
+    cloudSaveLabel,
   }: Props = $props();
 
   let cloudSaveState = $state<"idle" | "saving" | "saved">("idle");
@@ -48,7 +49,8 @@
   }
 
   // Mobile shares (native sheet); keep each host's desktop copy otherwise.
-  const effectiveSaveLabel = $derived(shareTarget.isMobile ? "Share" : saveLabel);
+  const effectiveSaveLabel = $derived(shareTarget.isMobile ? t("viewer_share") : (saveLabel ?? t("viewer_ui_save_again")));
+  const effectiveCloudSaveLabel = $derived(cloudSaveLabel ?? t("viewer_ui_save_to_sequence"));
 
   let videoEl = $state<HTMLVideoElement | null>(null);
   let isPlaying = $state(false);
@@ -93,12 +95,12 @@
   class="preview-panel"
   in:fade={{ duration: 200 }}
   role="region"
-  aria-label="Video export preview"
+  aria-label={t("viewer_ui_video_export_preview")}
 >
   <div class="preview-header">
     <div class="success-badge">
       <i class="fas fa-check-circle" aria-hidden="true"></i>
-      <span>Export complete</span>
+      <span>{t("viewer_ui_export_complete")}</span>
     </div>
   </div>
 
@@ -119,7 +121,7 @@
       class="play-overlay"
       class:visible={!isPlaying}
       onclick={togglePlayback}
-      aria-label={hasEnded ? "Replay video" : isPlaying ? "Pause video" : "Play video"}
+      aria-label={hasEnded ? t("viewer_ui_replay_video") : isPlaying ? t("viewer_ui_pause_video") : t("viewer_ui_play_video")}
     >
       <div class="play-icon">
         {#if hasEnded}
@@ -136,10 +138,10 @@
       type="button"
       class="action-btn secondary"
       onclick={replay}
-      aria-label="Replay video"
+      aria-label={t("viewer_ui_replay_video")}
     >
       <i class="fas fa-redo" aria-hidden="true"></i>
-      Replay
+      {t("viewer_ui_replay")}
     </button>
     <button
       data-save-shortcut={!shareTarget.isMobile ? "" : undefined}
@@ -157,7 +159,7 @@
         class="action-btn secondary"
         onclick={() => void saveToCloud()}
         disabled={cloudSaveState !== "idle"}
-        aria-label={cloudSaveLabel}
+        aria-label={effectiveCloudSaveLabel}
       >
         <i
           class="fas {cloudSaveState === 'saved'
@@ -168,20 +170,20 @@
           aria-hidden="true"
         ></i>
         {cloudSaveState === "saved"
-          ? "Saved"
+          ? t("viewer_ui_saved")
           : cloudSaveState === "saving"
-            ? "Saving"
-            : cloudSaveLabel}
+            ? t("viewer_ui_saving")
+            : effectiveCloudSaveLabel}
       </button>
     {/if}
     <button
       type="button"
       class="action-btn secondary"
       onclick={onDismiss}
-      aria-label="Done, return to viewer"
+      aria-label={t("viewer_ui_done_return_viewer")}
     >
       <i class="fas fa-check" aria-hidden="true"></i>
-      Done
+      {t("viewer_ui_done")}
     </button>
   </div>
 </div>

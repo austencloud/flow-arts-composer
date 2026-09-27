@@ -19,7 +19,12 @@
   import StatusTimeline from "./StatusTimeline.svelte";
   import { useUserPreview } from "$lib/shared/debug/context/user-preview-context";
   import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { getLocale, t } from "$lib/shared/i18n/i18n.svelte.js";
+  import {
+    feedbackPriorityLabel,
+    feedbackStatusLabel,
+    feedbackTypeLabel,
+  } from "../../domain/feedback-display-labels";
 
   let {
     item,
@@ -123,7 +128,7 @@
   }
 
   function formatDate(date: Date): string {
-    return date.toLocaleDateString("en-US", {
+    return date.toLocaleDateString(getLocale(), {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -179,7 +184,7 @@
   onclose={handleClose}
   class="feedback-detail-drawer"
   backdropClass="feedback-detail-backdrop"
-  ariaLabel="Feedback details"
+  ariaLabel={t("feedback_details")}
 >
   {#if item && typeConfig && statusConfig}
     <div class="detail-container">
@@ -189,14 +194,15 @@
           <div class="header-meta">
             <span class="type-badge" style="--badge-color: {typeConfig.color}">
               <i class="fas {typeConfig.icon}" aria-hidden="true"></i>
-              <span class="badge-label">{typeConfig.label}</span>
+              <span class="badge-label">{feedbackTypeLabel(item.type)}</span>
             </span>
             <span
               class="status-badge"
               style="--badge-color: {statusConfig.color}"
             >
               <i class="fas {statusConfig.icon}" aria-hidden="true"></i>
-              <span class="badge-label">{statusConfig.label}</span>
+              <span class="badge-label">{feedbackStatusLabel(item.status)}</span
+              >
             </span>
             {#if priorityConfig}
               <span
@@ -204,7 +210,9 @@
                 style="--badge-color: {priorityConfig.color}"
               >
                 <i class="fas {priorityConfig.icon}" aria-hidden="true"></i>
-                <span class="badge-label">{priorityConfig.label}</span>
+                <span class="badge-label"
+                  >{feedbackPriorityLabel(item.priority!)}</span
+                >
               </span>
             {/if}
           </div>
@@ -214,7 +222,7 @@
                 class="action-button edit"
                 onclick={() => (isEditDrawerOpen = true)}
                 type="button"
-                aria-label="Edit feedback"
+                aria-label={t("feedback_edit_aria")}
               >
                 <i class="fas fa-pen" aria-hidden="true"></i>
               </button>
@@ -224,7 +232,7 @@
                 class="action-button delete"
                 onclick={() => (showDeleteConfirm = true)}
                 type="button"
-                aria-label="Delete feedback"
+                aria-label={t("feedback_delete")}
               >
                 <i class="fas fa-trash" aria-hidden="true"></i>
               </button>
@@ -233,7 +241,7 @@
               class="action-button close"
               onclick={handleClose}
               type="button"
-              aria-label="Close detail panel"
+              aria-label={t("feedback_close_panel")}
             >
               <i class="fas fa-times" aria-hidden="true"></i>
             </button>
@@ -279,7 +287,9 @@
           <div class="screenshots-section">
             <h3>
               <i class="fas fa-images" aria-hidden="true"></i>
-              {t("feedback_screenshots_count", { count: item.imageUrls.length })}
+              {t("feedback_screenshots_count", {
+                count: item.imageUrls.length,
+              })}
             </h3>
             <div class="screenshots-grid">
               {#each item.imageUrls as imageUrl, index}
@@ -287,11 +297,11 @@
                   type="button"
                   class="screenshot-btn"
                   onclick={() => openImageViewer(index)}
-                  aria-label="View screenshot {index + 1}"
+                  aria-label={t("feedback_view_screenshot", { n: index + 1 })}
                 >
                   <img
                     src={imageUrl}
-                    alt="Screenshot {index + 1}"
+                    alt={t("feedback_screenshot_alt", { n: index + 1 })}
                     class="screenshot-thumb"
                   />
                   <div class="screenshot-overlay">
@@ -336,7 +346,9 @@
               <div class="resolution-meta">
                 {#if item.updatedAt}
                   <span class="response-date">
-                    {t("feedback_resolved_date", { date: formatDate(item.updatedAt) })}
+                    {t("feedback_resolved_date", {
+                      date: formatDate(item.updatedAt),
+                    })}
                   </span>
                 {/if}
                 {#if item.fixedInVersion}

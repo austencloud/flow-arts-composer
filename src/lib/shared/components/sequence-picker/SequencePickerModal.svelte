@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import { createBrowseEngine } from "$lib/shared/browse/engine/create-browse-engine.svelte";
   import BrowsePanel from "$lib/shared/browse/components/BrowsePanel.svelte";
@@ -25,7 +26,7 @@
     onClose,
     onSelect,
     requiredBeatCount = null,
-    title = "Select Sequence",
+    title,
     showSourceToggle = true,
     initialSource = "community",
   }: Props = $props();
@@ -42,7 +43,9 @@
             {
               type: BrowseFilterType.LENGTH,
               value: requiredBeatCount,
-              label: `${requiredBeatCount} steps`,
+              label: t("shared_controls_step_count", {
+                count: requiredBeatCount,
+              }),
             },
           ]
         : undefined,
@@ -105,8 +108,14 @@
 >
   {#snippet header()}
     <div class="picker-header">
-      <h2 id="sequence-picker-title">{title}</h2>
-      <button class="close-btn" onclick={onClose} aria-label="Close">
+      <h2 id="sequence-picker-title">
+        {title ?? t("shared_controls_select_sequence")}
+      </h2>
+      <button
+        class="close-btn"
+        onclick={onClose}
+        aria-label={t("shared_controls_close")}
+      >
         <i class="fas fa-times" aria-hidden="true"></i>
       </button>
     </div>
@@ -120,7 +129,7 @@
           layout="compact"
           onSelect={handleSelect}
           onBack={() => (showResults = false)}
-          backLabel="Filters"
+          backLabel={t("shared_controls_filters")}
           showFilterBar={false}
           hideFilterChips
           {showSourceToggle}
@@ -242,8 +251,8 @@
       height: min(
         90dvh,
         calc(
-          var(--viewport-height, 100dvh) - 32px - env(safe-area-inset-top, 0px) -
-            env(safe-area-inset-bottom, 0px)
+          var(--viewport-height, 100dvh) - 32px -
+            env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)
         )
       );
     }

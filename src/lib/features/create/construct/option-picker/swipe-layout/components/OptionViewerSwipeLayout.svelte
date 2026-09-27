@@ -219,8 +219,8 @@ Features:
   const utilityOpen = $derived(activeUtilityPanel !== null);
   const utilityPanelLabel = $derived(
     renderedUtilityPanel === "settings"
-      ? "Option settings"
-      : "Letter type guide"
+      ? t("create_deep_option_settings")
+      : t("create_deep_letter_type_guide")
   );
   const typeOptions = $derived(
     LETTER_TYPE_GROUP_DESCRIPTORS.map((group, index) => {
@@ -364,9 +364,12 @@ Features:
 {/snippet}
 
 {#snippet typeNavigation()}
-  <div class="type-navigation">
-    <div class="type-navigation-edge">
-      {#if settingsEnabled && settingsContent}
+  <div
+    class="type-navigation"
+    class:without-settings={!settingsEnabled || !settingsContent}
+  >
+    {#if settingsEnabled && settingsContent}
+      <div class="type-navigation-edge">
         <OptionPickerIconButton
           id={settingsTriggerId}
           icon="fa-sliders"
@@ -379,8 +382,8 @@ Features:
           onclick={() => toggleUtilityPanel("settings")}
           onkeydown={handleUtilityKeydown}
         />
-      {/if}
-    </div>
+      </div>
+    {/if}
 
     <div class="type-navigation-selector">
       <SegmentedControl
@@ -388,10 +391,10 @@ Features:
         value={activeGroupKey}
         onchange={handleTypeSelect}
         color="accent"
-        size="sm"
-        density="compact"
+        size="md"
+        density="tight"
         semantics="tabs"
-        ariaLabel="Letter type"
+        ariaLabel={t("create_deep_letter_type")}
         optionContent={letterTypeGroupLabel}
       />
     </div>
@@ -637,6 +640,10 @@ Features:
     border-radius: var(--radius-lg, 12px) var(--radius-lg, 12px) 0 0;
   }
 
+  .type-navigation.without-settings {
+    grid-template-columns: minmax(0, 1fr) var(--min-touch-target, 44px);
+  }
+
   .workspace-placement.expanded .type-navigation {
     border-top-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
     border-bottom-color: var(--theme-stroke, rgba(255, 255, 255, 0.14));
@@ -688,7 +695,7 @@ Features:
 
   .utility-disclosure {
     position: absolute;
-    top: calc(var(--min-touch-target, 44px) + 4px);
+    top: 100%;
     right: 0;
     left: 0;
     z-index: 3;

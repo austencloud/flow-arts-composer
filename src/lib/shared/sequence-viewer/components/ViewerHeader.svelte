@@ -246,7 +246,7 @@
           type="button"
           class="viewer-action navigation-action"
           data-escape-shortcut={!sharePanelOpen || undefined}
-          data-escape-shortcut-label="Viewer"
+          data-escape-shortcut-label={t("viewer_sequence_viewer")}
           onclick={onClose}
           aria-label={navigation.label}
           title={navigation.label}
@@ -608,10 +608,10 @@
           type="button"
           class="viewer-action close-action"
           data-escape-shortcut={!sharePanelOpen || undefined}
-          data-escape-shortcut-label="Viewer"
+          data-escape-shortcut-label={t("viewer_sequence_viewer")}
           data-ghost="safe"
           data-ghost-kind="close-overlay"
-          data-ghost-label="Close viewer"
+          data-ghost-label={t("viewer_ui_close_viewer")}
           onclick={onClose}
           aria-label={t("viewer_ui_close_viewer")}
           title={t("viewer_ui_close_viewer")}

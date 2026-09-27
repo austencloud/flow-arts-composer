@@ -30,6 +30,7 @@ import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-
 import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { reducedMotion } from "$lib/shared/transitions/motion";
 import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 import type {
   NormalizedPoint,
   TraceConversionError,
@@ -151,25 +152,48 @@ export interface TracePathsStateOptions {
  * words in TKA (orientations are radial/nonradial), so these are the right
  * nouns for a spoken instruction.
  */
-const LOCATION_NAMES: Record<string, string> = {
-  [GridLocation.NORTH]: "north",
-  [GridLocation.EAST]: "east",
-  [GridLocation.SOUTH]: "south",
-  [GridLocation.WEST]: "west",
-  [GridLocation.NORTHEAST]: "northeast",
-  [GridLocation.SOUTHEAST]: "southeast",
-  [GridLocation.SOUTHWEST]: "southwest",
-  [GridLocation.NORTHWEST]: "northwest",
-  [GridLocation.CENTER]: "center",
+const LOCATION_KEYS: Record<string, string> = {
+  [GridLocation.NORTH]: "learn_trace_location_north",
+  [GridLocation.EAST]: "learn_trace_location_east",
+  [GridLocation.SOUTH]: "learn_trace_location_south",
+  [GridLocation.WEST]: "learn_trace_location_west",
+  [GridLocation.NORTHEAST]: "learn_trace_location_northeast",
+  [GridLocation.SOUTHEAST]: "learn_trace_location_southeast",
+  [GridLocation.SOUTHWEST]: "learn_trace_location_southwest",
+  [GridLocation.NORTHWEST]: "learn_trace_location_northwest",
+  [GridLocation.CENTER]: "learn_trace_location_center",
 };
 
 export function locationName(location: GridLocation): string {
-  return LOCATION_NAMES[location] ?? String(location);
+  const key = LOCATION_KEYS[location];
+  return key ? tDynamic(key) : String(location);
 }
 
 /** Performer-relative label for the hand whose canonical trace color is shown. */
 export function handName(hand: TraceHand): string {
-  return hand === HandSide.LEFT ? "Left" : "Right";
+  return tDynamic(
+    hand === HandSide.LEFT ? "learn_trace_hand_left" : "learn_trace_hand_right"
+  );
+}
+
+/** Translate conversion failures at render time so a locale switch updates them. */
+export function conversionErrorText(error: TraceConversionError): string {
+  if (error.code === "missing-hand-motion" && error.hand !== undefined) {
+    return tDynamic("learn_trace_error_missing_hand", {
+      hand: handName(error.hand),
+      beat: (error.beatIndex ?? 0) + 1,
+    });
+  }
+  if (error.code === "discontinuous-beat" && error.hand !== undefined) {
+    return tDynamic("learn_trace_error_jump", {
+      hand: handName(error.hand),
+      beat: (error.beatIndex ?? 0) + 1,
+    });
+  }
+  if (error.code === "unequal-hand-path-lengths") {
+    return tDynamic("learn_trace_error_unequal");
+  }
+  return tDynamic("learn_trace_error_empty");
 }
 
 /** Where a segment begins on the stage, whether it moves or holds. */
@@ -345,31 +369,36 @@ export function createTracePathsState(options: TracePathsStateOptions = {}) {
     const current = phase;
     switch (current.name) {
       case "loading":
-        return "Loading the route.";
+        return tDynamic("learn_trace_loading");
       case "error":
-        return current.error.message;
+        return conversionErrorText(current.error);
       case "preview": {
         const starts = computeActiveHands()
           .map((hand) => {
             const trace = current.round.hands[hand];
             return trace
-              ? `${handName(hand)} starts at ${locationName(trace.start)}.`
+              ? tDynamic("learn_trace_starts_at", {
+                  hand: handName(hand),
+                  location: locationName(trace.start),
+                })
               : "";
           })
           .filter(Boolean)
           .join(" ");
-        return `Route ready. ${starts}`.trim();
+        return `${tDynamic("learn_trace_route_ready")} ${starts}`.trim();
       }
       case "arming": {
         const waiting = computeActiveHands().filter((hand) => !armed[hand]);
-        if (waiting.length === 0) return "Both hands are set. Begin tracing.";
-        const list = waiting
-          .map((hand) => `${handName(hand).toLowerCase()} on its start point`)
-          .join(" and ");
-        return `Put ${list}.`;
+        if (waiting.length === 0) return tDynamic("learn_trace_hands_set");
+        return waiting.length === 1
+          ? tDynamic("learn_trace_place_hand", { hand: handName(waiting[0]!) })
+          : tDynamic("learn_trace_place_both");
       }
       case "tracing":
-        return `Beat ${Math.min(beatIndex + 1, totalBeats)} of ${totalBeats}.`;
+        return tDynamic("learn_trace_beat_count", {
+          current: Math.min(beatIndex + 1, totalBeats),
+          total: totalBeats,
+        });
       case "paused":
         return pauseSentence(current.reason);
       case "feedback":
@@ -387,12 +416,19 @@ export function createTracePathsState(options: TracePathsStateOptions = {}) {
       (hand) => {
         const segment = beat.segments[hand]!;
         if (segment.kind === "hold") {
-          return `${handName(hand)} holds at ${locationName(segment.location)}`;
+          return tDynamic("learn_trace_holds_at", {
+            hand: handName(hand),
+            location: locationName(segment.location),
+          });
         }
-        return `${handName(hand)} travels ${locationName(segment.start)} to ${locationName(segment.end)}`;
+        return tDynamic("learn_trace_travels", {
+          hand: handName(hand),
+          start: locationName(segment.start),
+          end: locationName(segment.end),
+        });
       }
     );
-    return `Beat ${previewBeat + 1} of ${current.beats.length}. ${parts.join(". ")}.`;
+    return `${tDynamic("learn_trace_beat_count", { current: previewBeat + 1, total: current.beats.length })} ${parts.join(". ")}.`;
   }
 
   /**
@@ -420,12 +456,12 @@ export function createTracePathsState(options: TracePathsStateOptions = {}) {
 
   function pauseSentence(reason: TracePauseReason): string {
     if (reason === "pointer-lost") {
-      return "The touch was interrupted. Your progress is held. Place your fingers to continue.";
+      return tDynamic("learn_trace_pause_touch");
     }
     if (reason === "hidden") {
-      return "Paused while the app was in the background. Your progress is held.";
+      return tDynamic("learn_trace_pause_hidden");
     }
-    return "Paused. Your progress is held.";
+    return tDynamic("learn_trace_pause_player");
   }
 
   /**
@@ -437,15 +473,15 @@ export function createTracePathsState(options: TracePathsStateOptions = {}) {
     const beat = divergence.beatIndex + 1;
     switch (divergence.reason) {
       case "skipped-checkpoint":
-        return `${who} skipped part of the route on beat ${beat}. Follow the whole curve.`;
+        return tDynamic("learn_trace_miss_skipped", { hand: who, beat });
       case "out-of-corridor":
-        return `${who} drifted off the route on beat ${beat}. Stay inside the band.`;
+        return tDynamic("learn_trace_miss_corridor", { hand: who, beat });
       case "wrong-order":
-        return `${who} traced beat ${beat} out of order. Begin at the marked start point.`;
+        return tDynamic("learn_trace_miss_order", { hand: who, beat });
       case "lifted":
-        return `${who} lifted before the endpoint on beat ${beat}. Stay down until the target.`;
+        return tDynamic("learn_trace_miss_lifted", { hand: who, beat });
       case "hold-broken":
-        return `${who} left its hold on beat ${beat}. Keep it on the point while the other hand travels.`;
+        return tDynamic("learn_trace_miss_hold", { hand: who, beat });
     }
   }
 
@@ -456,14 +492,14 @@ export function createTracePathsState(options: TracePathsStateOptions = {}) {
    */
   function synchronySentence(metrics: TraceMetrics): string | null {
     if (metrics.synchrony === null || metrics.synchrony >= 0.75) return null;
-    return "Both paths are right. Bring the hands closer together on the beat changes.";
+    return tDynamic("learn_trace_sync_feedback");
   }
 
   function feedbackSentence(metrics: TraceMetrics): string {
     if (metrics.divergence) return divergenceSentence(metrics.divergence);
     const timing = synchronySentence(metrics);
     if (timing) return timing;
-    return "Route complete, start to finish.";
+    return tDynamic("learn_trace_complete");
   }
 
   // -------------------------------------------------------------------------
@@ -695,8 +731,8 @@ export function createTracePathsState(options: TracePathsStateOptions = {}) {
     if (!hand) {
       setCue(
         computeActiveHands().length > 1
-          ? "Two fingers at a time. Start each one on its own marked point."
-          : "Start on the marked point."
+          ? tDynamic("learn_trace_two_fingers")
+          : tDynamic("learn_trace_start_marked")
       );
       return null;
     }
@@ -805,7 +841,7 @@ export function createTracePathsState(options: TracePathsStateOptions = {}) {
     if (phase.name !== "arming" && phase.name !== "tracing") return false;
 
     if (index !== tapProgress) {
-      setCue("Tap the numbered points in order.");
+      setCue(tDynamic("learn_trace_tap_order"));
       return false;
     }
 

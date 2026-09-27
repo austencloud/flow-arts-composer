@@ -192,14 +192,14 @@
     out:flyFade={{ y: 0 }}
   >
     <ProgressRing percent={-1} size={32} strokeWidth={3} />
-    <p>Loading generator…</p>
+    <p>{t("create_audit_generator_loading")}</p>
   </div>
 {/snippet}
 
 {#snippet generateError(_error: unknown, retry: () => void)}
   <div class="generate-load-state generate-load-error" role="alert">
     <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
-    <p>The generator couldn’t load.</p>
+    <p>{t("create_audit_generator_load_error")}</p>
     <PanelButton variant="secondary" onclick={retry}>
       <i class="fas fa-rotate-right" aria-hidden="true"></i>
       <span>{t("create_ui_try_again")}</span>
@@ -224,7 +224,7 @@
         keepAlive={false}
         placeholder={isGeneratePanelActive ? generateLoading : undefined}
         error={generateError}
-        debugName="Generate settings panel"
+        debugName={t("create_audit_generator_panel")}
         onStatusChange={(status) => (generateLoadStatus = status)}
         props={{
           sequenceState: createModuleState.getActiveTabSequenceState(),

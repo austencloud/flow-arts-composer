@@ -1,26 +1,35 @@
-import type { PostBuilderState } from "$lib/shared/media-composition/state/post-builder-state.svelte";
 import type { PaintFrame } from "$lib/shared/media-composition/services/post-studio-layer-painter";
 import {
   MIN_MOVE_SECONDS,
   TAKE_MAX_BPM,
   TAKE_MIN_BPM,
-  landingDragRange,
+  addTakeTap,
+  clearTakePerformanceEnd,
+  editTakeSection,
   mergeTimingSectionIntoPrevious,
-  moveBeatOne,
-  releaseLanding,
-  setBeatOneAt,
-  setLandingAt,
-  setPerformanceEndAt,
+  moveTakeBeatOne,
+  placeTakeLanding,
+  releaseTakeLanding,
+  setTakeBeatOneAt,
+  setTakePerformanceEndAt,
   splitTimingSection,
+  takeLandingDragRange,
   takeSampleAt,
+  type ResolvedTakeTiming,
   type SplitContinuity,
+  type TakeTiming,
+  type TakeTimingStatus,
   type TimingSection,
 } from "$lib/shared/media-composition/domain/take-timing";
+import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
+import { untrack } from "svelte";
 import { sequenceFrameAt } from "$lib/shared/media-composition/domain/sequence-frame";
 import {
   landingName,
   summarizeTiming,
 } from "$lib/shared/media-composition/domain/timing-summary";
+import { shownLanding } from "./timing-lane-landings";
+import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
 export interface LandingRef {
   sectionId: string;
@@ -28,14 +37,50 @@ export interface LandingRef {
 }
 
 export type TimingSpeed = "1" | "0.75" | "0.5";
+
+/** Inputs that take no typing: their keys belong to the take. */
+const NOT_TEXT_ENTRY = new Set([
+  "checkbox",
+  "radio",
+  "button",
+  "submit",
+  "reset",
+  "range",
+  "color",
+  "file",
+  "image",
+]);
 export type TimingZoom = "4" | "8" | "16";
+
+/**
+ * What the Timing tool needs from the editor that opens it: the takes, their
+ * media and timing, and a way back. Timing belongs to a take's media, so
+ * both clips cut from one raw video share it.
+ */
+export interface TimingHost {
+  readonly takes: readonly Pick<PostTake, "id" | "label" | "durationSeconds">[];
+  selectedTakeId: string | null;
+  readonly moveBeats: readonly number[];
+  /** Takes the post uses, in order; confirming one moves to the next. */
+  readonly takesInUse: readonly Pick<PostTake, "id">[];
+  mediaUrl(takeId: string): string | null;
+  timing(takeId: string): TakeTiming | null;
+  resolvedTiming(takeId: string): ResolvedTakeTiming | null;
+  timingStatus(takeId: string): TakeTimingStatus;
+  editTiming(takeId: string, edit: (current: TakeTiming) => TakeTiming): void;
+  confirmTiming(takeId: string): void;
+  canUndoTiming(takeId: string): boolean;
+  undoTiming(takeId: string): void;
+  /** Leave the tool: "done" after the last take checks out, "back" otherwise. */
+  exitTiming(reason: "done" | "back"): void;
+}
 
 /**
  * The Timing step's working state, shared by its stage (the take, its move
  * square and the lanes) and its panel (the controls), which the studio may
  * lay out apart. The take plays on its own clock here, not the post's.
  */
-export function createPostTimingSession(builder: PostBuilderState) {
+export function createPostTimingSession(builder: TimingHost) {
   let video = $state<HTMLVideoElement | null>(null);
   let mediaSeconds = $state(0);
   let playing = $state(false);
@@ -45,7 +90,7 @@ export function createPostTimingSession(builder: PostBuilderState) {
   let selected = $state<LandingRef | null>(null);
   let tapCount = $state(0);
 
-  const takes = $derived(builder.plan.takes);
+  const takes = $derived(builder.takes);
   const takeId = $derived(
     builder.selectedTakeId &&
       takes.some((take) => take.id === builder.selectedTakeId)
@@ -102,11 +147,11 @@ export function createPostTimingSession(builder: PostBuilderState) {
   );
   const readout = $derived(
     !frame
-      ? "Not mapped here"
+      ? t("share_studio_deep_not_mapped_here")
       : frame.phase === "opening"
-        ? "Opening pose"
+        ? t("share_studio_deep_opening_pose")
         : `${landingName(Math.max(1, Math.ceil(frame.arrival - 1e-9)), movesPerPass)}${
-            frame.phase === "holding" ? " · held" : ""
+            frame.phase === "holding" ? t("share_studio_deep_held_suffix") : ""
           }`
   );
 
@@ -127,13 +172,33 @@ export function createPostTimingSession(builder: PostBuilderState) {
       mediaSeconds < section.endSeconds - 0.25
     )
   );
+  // Keeping count needs a count: a part with nothing fitted has none to carry.
+  const canKeepCounting = $derived(canSplit && Boolean(resolvedSection?.fit));
 
-  // A different take starts from its top with nothing selected.
+  /** Where the next take opened starts, instead of its top. */
+  let pendingStart: number | null = null;
+
+  // A different take starts from its top (or where it was opened at) with
+  // nothing selected.
   $effect(() => {
     void takeId;
-    mediaSeconds = 0;
+    mediaSeconds = pendingStart ?? 0;
+    pendingStart = null;
     playing = false;
     selected = null;
+  });
+
+  // A newly mounted video starts at 0; bring it to where the tool is.
+  $effect(() => {
+    if (!video) return;
+    const target = video;
+    const align = () => {
+      const at = untrack(() => mediaSeconds);
+      if (Math.abs(target.currentTime - at) > 0.01) target.currentTime = at;
+    };
+    if (target.readyState >= 1) align();
+    else target.addEventListener("loadedmetadata", align, { once: true });
+    return () => target.removeEventListener("loadedmetadata", align);
   });
 
   // Loading another take resets the rate to the default, so both carry it.
@@ -179,23 +244,37 @@ export function createPostTimingSession(builder: PostBuilderState) {
     seek(mediaSeconds + direction * MIN_MOVE_SECONDS);
   }
 
+  /**
+   * Edits the current part. The parts after it that keep its count count on
+   * from it as it now is, so the edit is on the whole take.
+   */
   function editCurrent(edit: (section: TimingSection) => TimingSection): void {
     if (!takeId || !section) return;
-    builder.editSection(takeId, section.id, edit);
+    const id = section.id;
+    builder.editTiming(takeId, (current) =>
+      editTakeSection(current, id, moveBeats, edit)
+    );
+  }
+
+  /**
+   * Moves beat 1 on the current part. Parts that keep its count renumber
+   * with it, so the edit is on the whole take.
+   */
+  function recountCurrent(
+    recount: (timing: TakeTiming, sectionId: string) => TakeTiming
+  ): void {
+    if (!takeId || !section) return;
+    const id = section.id;
+    builder.editTiming(takeId, (current) => recount(current, id));
   }
 
   function tap(): void {
     if (!takeId || !timing) return;
     const seconds = video?.currentTime ?? mediaSeconds;
-    const owner =
-      [...timing.sections]
-        .reverse()
-        .find((entry) => seconds >= entry.startSeconds) ?? timing.sections[0];
-    if (!owner) return;
-    builder.editSection(takeId, owner.id, (current) => ({
-      ...current,
-      taps: [...current.taps, seconds].sort((a, b) => a - b),
-    }));
+    // Near a nudged cut, the tap goes with the part that draws its landing.
+    builder.editTiming(takeId, (current) =>
+      addTakeTap(current, seconds, moveBeats)
+    );
     tapCount += 1;
   }
 
@@ -209,16 +288,22 @@ export function createPostTimingSession(builder: PostBuilderState) {
       return false;
     }
     const bpm = Math.round(value * 10) / 10;
+    // The field shows a tenth; a part cut from a fitted grid stores that
+    // grid's exact tempo, which committing the shown value must not move.
     editCurrent((current) =>
-      current.bpm === bpm ? current : { ...current, bpm }
+      Math.round(current.bpm * 10) / 10 === bpm ? current : { ...current, bpm }
     );
     return true;
   }
 
   function firstTapWasMoveOne(): void {
     const first = resolvedSection?.fit?.labels[0]?.seconds;
-    if (first === undefined) return;
-    editCurrent((current) => setBeatOneAt(current, moveBeats, first));
+    if (first === undefined || !section) return;
+    // A label is the raw tap; beat 1 goes where the nudged grid draws it.
+    const drawn = first + section.offsetSeconds;
+    recountCurrent((current, id) =>
+      setTakeBeatOneAt(current, id, moveBeats, drawn)
+    );
   }
 
   function dropLeadingTaps(count: number): void {
@@ -243,12 +328,13 @@ export function createPostTimingSession(builder: PostBuilderState) {
     }));
   }
 
+  // Parts that keep one count share its end, wherever it is stored.
   function clearEnd(): void {
-    editCurrent((current) => {
-      if (current.lastPosition === undefined) return current;
-      const { lastPosition: _end, ...rest } = current;
-      return rest;
-    });
+    if (!takeId || !section) return;
+    const id = section.id;
+    builder.editTiming(takeId, (current) =>
+      clearTakePerformanceEnd(current, id, moveBeats)
+    );
   }
 
   function clearTaps(): void {
@@ -257,26 +343,58 @@ export function createPostTimingSession(builder: PostBuilderState) {
     );
   }
 
+  /**
+   * A selected landing moved across a cut is shown by the part on the other
+   * side now; the selection goes with it.
+   */
+  function followSelected(landing: LandingRef): void {
+    const ref = selected;
+    if (
+      !ref ||
+      !timing ||
+      ref.sectionId !== landing.sectionId ||
+      ref.position !== landing.position
+    ) {
+      return;
+    }
+    const shown = shownLanding(timing, resolved, ref.sectionId, ref.position);
+    if (shown && shown.sectionId !== ref.sectionId) selected = shown;
+  }
+
+  // A landing beside a cut is drawn by both parts, so dragging or releasing
+  // it is an edit on the take: one drag stands, whichever part it came from.
   function placeLanding(landing: LandingRef, seconds: number): void {
     if (!takeId) return;
-    builder.editSection(takeId, landing.sectionId, (current) =>
-      setLandingAt(current, moveBeats, landing.position, seconds)
+    builder.editTiming(takeId, (current) =>
+      placeTakeLanding(
+        current,
+        landing.sectionId,
+        landing.position,
+        seconds,
+        moveBeats
+      )
     );
+    followSelected(landing);
   }
 
   function landingRange(landing: LandingRef) {
-    const owner = timing?.sections.find(
-      (entry) => entry.id === landing.sectionId
-    );
-    return owner ? landingDragRange(owner, moveBeats, landing.position) : null;
+    return timing
+      ? takeLandingDragRange(
+          timing,
+          landing.sectionId,
+          landing.position,
+          moveBeats
+        )
+      : null;
   }
 
   function releaseSelected(): void {
     const ref = selected;
     if (!takeId || !ref) return;
-    builder.editSection(takeId, ref.sectionId, (current) =>
-      releaseLanding(current, ref.position)
+    builder.editTiming(takeId, (current) =>
+      releaseTakeLanding(current, ref.sectionId, ref.position, moveBeats)
     );
+    followSelected(ref);
   }
 
   function split(continuity: SplitContinuity): void {
@@ -306,7 +424,7 @@ export function createPostTimingSession(builder: PostBuilderState) {
     );
   }
 
-  /** Records the check, then moves to the next take or on to the acts. */
+  /** Records the check, then moves to the next take or back to the editor. */
   function confirm(): void {
     if (!takeId) return;
     pause();
@@ -315,14 +433,22 @@ export function createPostTimingSession(builder: PostBuilderState) {
       (entry) => builder.timingStatus(entry.id) !== "confirmed"
     );
     if (next) builder.selectedTakeId = next.id;
-    else builder.step = "acts";
+    else builder.exitTiming("done");
   }
 
+  /**
+   * Text entry keeps its keys. A checkbox or slider Austen clicked keeps
+   * focus too, and must not swallow T.
+   */
   function isTyping(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) return false;
+    if (target instanceof HTMLInputElement) {
+      return !NOT_TEXT_ENTRY.has(target.type);
+    }
     return (
-      target instanceof HTMLElement &&
-      (target.isContentEditable ||
-        ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
+      target.isContentEditable ||
+      target instanceof HTMLTextAreaElement ||
+      target instanceof HTMLSelectElement
     );
   }
 
@@ -342,11 +468,16 @@ export function createPostTimingSession(builder: PostBuilderState) {
       // A held key repeats; one press is one landing.
       if (!event.repeat) tap();
     } else if (event.key === " ") {
-      // Space presses a focused button - except Tap, which Austen clicks
-      // mid-take and would otherwise tap a second time.
+      // Space presses a focused button, toggles a focused checkbox and opens
+      // a focused disclosure, so the keyboard can still work them - except
+      // Tap, which Austen clicks mid-take and would otherwise tap a second
+      // time.
+      const target = event.target;
       if (
-        event.target instanceof HTMLButtonElement &&
-        !event.target.hasAttribute("data-space-plays")
+        (target instanceof HTMLButtonElement &&
+          !target.hasAttribute("data-space-plays")) ||
+        target instanceof HTMLInputElement ||
+        (target instanceof HTMLElement && target.localName === "summary")
       ) {
         return;
       }
@@ -453,6 +584,13 @@ export function createPostTimingSession(builder: PostBuilderState) {
     get canSplit() {
       return canSplit;
     },
+    get canKeepCounting() {
+      return canKeepCounting;
+    },
+    /** Whether an end Austen set, or one a split carried, decides the end. */
+    get endClearable() {
+      return resolvedSection?.endStored ?? false;
+    },
     get canUndo() {
       return takeId ? builder.canUndoTiming(takeId) : false;
     },
@@ -467,8 +605,22 @@ export function createPostTimingSession(builder: PostBuilderState) {
     selectTake(id: string): void {
       builder.selectedTakeId = id;
     },
-    goToTakes(): void {
-      builder.step = "takes";
+    /**
+     * Opens a take at a moment of its media, such as a clip's first frame,
+     * so tapping starts where that clip's performance does.
+     */
+    openAt(id: string, seconds: number): void {
+      if (id === takeId) {
+        selected = null;
+        seek(seconds);
+        return;
+      }
+      pendingStart = Math.max(0, seconds);
+      builder.selectedTakeId = id;
+    },
+    exit(): void {
+      pause();
+      builder.exitTiming("back");
     },
     seek,
     pause,
@@ -488,14 +640,22 @@ export function createPostTimingSession(builder: PostBuilderState) {
     },
     beatOneHere(): void {
       const at = mediaSeconds;
-      editCurrent((current) => setBeatOneAt(current, moveBeats, at));
+      recountCurrent((current, id) =>
+        setTakeBeatOneAt(current, id, moveBeats, at)
+      );
     },
     shiftBeatOne(landings: -1 | 1): void {
-      editCurrent((current) => moveBeatOne(current, moveBeats, landings));
+      recountCurrent((current, id) =>
+        moveTakeBeatOne(current, id, moveBeats, landings)
+      );
     },
     endHere(): void {
+      if (!takeId || !section) return;
+      const id = section.id;
       const at = mediaSeconds;
-      editCurrent((current) => setPerformanceEndAt(current, moveBeats, at));
+      builder.editTiming(takeId, (current) =>
+        setTakePerformanceEndAt(current, id, moveBeats, at)
+      );
     },
     firstTapWasMoveOne,
     dropLeadingTaps,

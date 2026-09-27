@@ -215,7 +215,7 @@ compensation), so the detail view behind this sheet updates on its own.
         "[AddSequencesSheet] Shared collection update failed:",
         error
       );
-      toast.error("The collection wasn’t updated. Try again.");
+      toast.error(t("browse_ui_collection_update_failed"));
     } finally {
       pendingSequenceIds = new Set(
         [...pendingSequenceIds].filter((id) => id !== seq.id)
@@ -365,7 +365,7 @@ compensation), so the detail view behind this sheet updates on its own.
           selectedIds={memberIds}
           onSelect={handleSelect}
           onBack={backToDrill}
-          backLabel="Start here"
+          backLabel={t("site_start_here")}
           hideToolbarSearch
           onOpenFilters={() => (filterSheetOpen = true)}
         />

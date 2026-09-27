@@ -74,6 +74,9 @@ export class PropTypeManager {
   private lastTunnelPropColorSig = "";
   private lastBasePropColorSig = "";
   private currentBaseColors: TunnelPropColorPair | null = null;
+  // The base colors are exact tunnel colors, which only the recolorable
+  // pictograph artwork can match.
+  private exactBaseColors = false;
   // Per-layer prop-type signature. A performer-set change (a copy swapping its
   // prop) must regenerate that layer's sprite even when count + spectrum hold.
   private lastLayerPropSig = "";
@@ -182,7 +185,7 @@ export class PropTypeManager {
         this.settingsService?.currentSettings?.fanAppearance
     );
     const nextLook = normalizePropLook(
-      this.settingsService?.currentSettings?.propArtwork
+      props.propLook ?? this.settingsService?.currentSettings?.propArtwork
     );
     const nextGrip = normalizeTriangleGrip(
       this.settingsService?.currentSettings?.triangleGrip
@@ -292,9 +295,11 @@ export class PropTypeManager {
     state: AnimatorState,
     getFrameParams: FrameParamsProvider,
     prevDarkMode: boolean,
-    colors: TunnelPropColorPair | null = null
+    colors: TunnelPropColorPair | null = null,
+    exactColors = false
   ): boolean {
     this.latestFrameParamsProvider = getFrameParams;
+    this.exactBaseColors = exactColors;
     // No overrides - use settings via propTypeChangeService
     this.propTypeChangeService?.checkForChanges(this.settingsService);
 
@@ -430,6 +435,7 @@ export class PropTypeManager {
     const baseColors = exactColors ?? props.primaryPropColors ?? null;
     const layerColors = exactColors ?? (spectrum ? null : baseColors);
     this.currentBaseColors = baseColors;
+    this.exactBaseColors = exactColors !== null;
     const colorSig = layerColors ? JSON.stringify(layerColors) : "";
     // Signature of every layer's per-hand prop type. Empty entries fall back to
     // the global prop, so an all-default set yields "|"-joined blanks — a
@@ -639,7 +645,8 @@ export class PropTypeManager {
   async loadPropTextures(
     state: AnimatorState,
     prevDarkMode: boolean,
-    colors?: TunnelPropColorPair | null
+    colors?: TunnelPropColorPair | null,
+    _exactColors?: boolean
   ): Promise<void> {
     if (!this.propTextureService) return;
 

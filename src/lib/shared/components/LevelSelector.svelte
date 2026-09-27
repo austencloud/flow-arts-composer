@@ -16,6 +16,7 @@
   level's own tint, border and glow.
 -->
 <script lang="ts" generics="T extends number = LevelNumber">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import {
     DIFFICULTY_LEVELS,
     DEFAULT_DIFFICULTY_STYLE,
@@ -42,7 +43,7 @@
     levels = [1, 2, 3] as unknown as readonly T[],
     describe,
     compact = false,
-    ariaLabel = "Difficulty level",
+    ariaLabel,
     disabled = false,
   }: Props = $props();
 
@@ -54,7 +55,27 @@
     const supplied = describe?.(level);
     if (supplied) return supplied;
     const canonical = LEVEL_METADATA[level as LevelNumber];
-    return canonical ?? { name: `Level ${level}`, blurb: "" };
+    if (!canonical)
+      return { name: t("create_level_number", { level }), blurb: "" };
+    switch (level) {
+      case 1:
+        return {
+          name: t("create_level_base"),
+          blurb: t("create_level_base_blurb"),
+        };
+      case 2:
+        return {
+          name: t("create_level_whole"),
+          blurb: t("create_level_whole_blurb"),
+        };
+      case 3:
+        return {
+          name: t("create_level_half"),
+          blurb: t("create_level_half_blurb"),
+        };
+      default:
+        return canonical;
+    }
   }
 
   /**
@@ -73,7 +94,12 @@
   }
 </script>
 
-<div class="level-selector" class:compact role="group" aria-label={ariaLabel}>
+<div
+  class="level-selector"
+  class:compact
+  role="group"
+  aria-label={ariaLabel ?? t("create_level_difficulty")}
+>
   {#each levels as n (n)}
     {@const meta = descriptionFor(n)}
     <button
@@ -81,9 +107,13 @@
       class="lvl"
       class:selected={value === n}
       aria-pressed={value === n}
-      aria-label="Level {n}: {meta.name}"
+      aria-label={t("create_level_label", { level: n, name: meta.name })}
       {disabled}
-      title="Level {n} — {meta.name}. {meta.blurb}"
+      title={t("create_level_tooltip", {
+        level: n,
+        name: meta.name,
+        blurb: meta.blurb,
+      })}
       style="--lvl-bg: {styleFor(n).cssBg}; --lvl-ink: {styleFor(n)
         .text}; --lvl-accent: {accentFor(n)};"
       onclick={() => onchange(n)}

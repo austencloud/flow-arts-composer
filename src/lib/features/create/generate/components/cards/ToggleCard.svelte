@@ -5,6 +5,7 @@ Perfect for narrow screens and provides immediate visual affordance
 Hides header when card height is below 65px for space optimization
 -->
 <script lang="ts" generics="T">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import { createToggleCardState } from "../../state/toggle-card-state.svelte";
   import CardHeader from "./shared/CardHeader.svelte";
@@ -76,7 +77,10 @@ Hides header when card height is below 65px for space optimization
   ontouchstart={state.handleTouchStart}
   ontouchend={state.handleTouchEnd}
   ontouchcancel={state.handleTouchCancel}
-  aria-label={`${title}: ${activeOption === option1.value ? option1.label : option2.label}. Click to toggle.`}
+  aria-label={t("create_deep_toggle_card_aria", {
+    title,
+    value: activeOption === option1.value ? option1.label : option2.label,
+  })}
   data-ghost="safe"
   data-ghost-kind="generate-option"
   data-ghost-label={title}

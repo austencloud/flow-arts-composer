@@ -2,6 +2,7 @@
      relationship so linked editing is a durable state rather than a copy
      command the user has to remember pressing. -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { spinRatioKey } from "@vtg/domain";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
@@ -48,7 +49,7 @@
   class="theory-builder"
   class:tray={layout === "tray"}
   class:linked={appState.theoryRatiosLinked}
-  aria-label="Ratio Playground editor. Enter whole numbers from 0 through 15."
+  aria-label={t("shape_engine_ratio_editor_aria")}
 >
   <Crossfade
     key={appState.theoryRatiosLinked
@@ -62,15 +63,16 @@
       <div class="linked-layout">
         <ShapeMatrixRatioEntry hand="both" {layout} {onfocuschange} />
         <div class="relationship-control linked-control">
-          <span class="relationship-note">Editing either changes both</span>
+          <span class="relationship-note">{t("shape_engine_editing_both")}</span
+          >
           <PanelButton
             fullWidth
             ariaPressed={true}
-            ariaLabel="Unlink row and column ratios"
+            ariaLabel={t("shape_engine_unlink_ratios")}
             onclick={appState.unlinkTheoryRatios}
           >
             <i class="fas fa-link" aria-hidden="true"></i>
-            <strong>Linked</strong>
+            <strong>{t("shape_engine_linked")}</strong>
           </PanelButton>
         </div>
       </div>
@@ -80,41 +82,52 @@
 
         <div class="relationship-control">
           {#if choosingSource}
-            <span class="relationship-note">Which ratio should both use?</span>
+            <span class="relationship-note"
+              >{t("shape_engine_which_ratio")}</span
+            >
             <div class="source-choices">
               <PanelButton
-                ariaLabel={`Link ratios using row ratio ${leftLabel}`}
+                ariaLabel={t("shape_engine_link_using_rows", {
+                  ratio: leftLabel,
+                })}
                 onclick={() => linkUsing("left")}
               >
                 <span class="axis-dot left-dot" aria-hidden="true"></span>
-                <span>Rows {leftLabel}</span>
+                <span>{t("shape_engine_ratio_rows", { ratio: leftLabel })}</span
+                >
               </PanelButton>
               <PanelButton
-                ariaLabel={`Link ratios using column ratio ${rightLabel}`}
+                ariaLabel={t("shape_engine_link_using_columns", {
+                  ratio: rightLabel,
+                })}
                 onclick={() => linkUsing("right")}
               >
                 <span class="axis-dot right-dot" aria-hidden="true"></span>
-                <span>Columns {rightLabel}</span>
+                <span
+                  >{t("shape_engine_ratio_columns", {
+                    ratio: rightLabel,
+                  })}</span
+                >
               </PanelButton>
               <button
                 type="button"
                 class="cancel-link"
-                aria-label="Cancel linking ratios"
+                aria-label={t("shape_engine_cancel_link")}
                 onclick={() => (choosingSource = false)}
               >
                 <i class="fas fa-xmark" aria-hidden="true"></i>
               </button>
             </div>
           {:else}
-            <span class="relationship-note">Keep edits in sync</span>
+            <span class="relationship-note">{t("shape_engine_keep_sync")}</span>
             <PanelButton
               fullWidth
               ariaPressed={false}
-              ariaLabel="Link row and column ratios"
+              ariaLabel={t("shape_engine_link_ratios_aria")}
               onclick={requestLink}
             >
               <i class="fas fa-link" aria-hidden="true"></i>
-              <strong>Link ratios</strong>
+              <strong>{t("shape_engine_link_ratios")}</strong>
             </PanelButton>
           {/if}
         </div>

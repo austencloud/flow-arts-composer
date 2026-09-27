@@ -22,6 +22,21 @@ import { reducedMotion } from "$lib/shared/transitions/motion";
 import { DURATION } from "$lib/shared/transitions/transitions";
 import { MandalaOverlapMasks, paintMandalaGuide } from "./mandala-guide-painter";
 
+/**
+ * Prepared mandala paths use the animation renderer's backing-pixel scale.
+ * The guide painter takes logical pixels and applies DPR itself. Normalize
+ * to this layer's logical width before CSS fits both canvases to the stage.
+ */
+export function scaleGuideForOverlay(
+	preparedScale: number,
+	overlayLogicalWidth: number,
+	rendererCanvasSize: number
+): number {
+	return rendererCanvasSize > 0
+		? preparedScale * (overlayLogicalWidth / rendererCanvasSize)
+		: preparedScale;
+}
+
 export class MandalaOverlayCanvas {
 	private canvas: HTMLCanvasElement | null = null;
 	private ctx: CanvasRenderingContext2D | null = null;
@@ -238,7 +253,11 @@ export class MandalaOverlayCanvas {
 				},
 				{
 					paths: preparedPaths.paths,
-					scale: preparedPaths.scale,
+					scale: scaleGuideForOverlay(
+						preparedPaths.scale,
+						this.width,
+						params.canvasSize
+					),
 					strokeWidth: config.strokeWidth,
 					progress,
 					reveal: !guideMode,

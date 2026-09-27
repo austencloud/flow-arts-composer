@@ -239,15 +239,15 @@
           {t("auth_escape_menu_location")}
         </li>
         <li>
-          {t("auth_escape_choose")} <strong>Open in Safari</strong>
-          {t("auth_escape_or")} <strong>Open in Browser</strong>
+          {t("auth_escape_choose")} <strong>{t("auth_open_safari")}</strong>
+          {t("auth_escape_or")} <strong>{t("auth_open_browser")}</strong>
         </li>
       </ol>
     {:else}
       <ol class="guide">
         <li>{t("auth_escape_open_app_menu")}</li>
         <li>
-          {t("auth_escape_choose")} <strong>Open in browser</strong>{t(
+          {t("auth_escape_choose")} <strong>{t("auth_open_browser")}</strong>{t(
             "auth_escape_or_copy"
           )}
         </li>

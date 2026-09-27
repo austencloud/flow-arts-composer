@@ -126,10 +126,10 @@
   // wording rather than shipping a button that reads "Use ".
   const applyLabel = $derived(
     isApplying
-      ? "Applying…"
+      ? t("create_deep_applying")
       : placementLabel
-        ? `Use ${placementLabel}`
-        : "Use this placement"
+        ? t("create_deep_use_placement", { label: placementLabel })
+        : t("create_deep_use_this_placement")
   );
 
   function handlePlacementChange(change: PropPlacementChange) {
@@ -220,7 +220,7 @@
             options={gridModes}
             value={gridMode}
             onchange={(mode) => void onGridModeChange?.(mode)}
-            ariaLabel="Placement grid"
+            ariaLabel={t("create_deep_placement_grid")}
             color="accent"
             size="md"
           />

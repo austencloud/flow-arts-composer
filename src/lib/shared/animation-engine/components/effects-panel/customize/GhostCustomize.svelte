@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import EffectControlStack from "$lib/shared/effects/components/EffectControlStack.svelte";
   import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
 
@@ -26,7 +27,7 @@
       tiers={["primary"]}
     />
   {:else}
-    <p class="empty">Effect state unavailable.</p>
+    <p class="empty">{t("effect_deep_effect_state_unavailable")}</p>
   {/if}
 </div>
 

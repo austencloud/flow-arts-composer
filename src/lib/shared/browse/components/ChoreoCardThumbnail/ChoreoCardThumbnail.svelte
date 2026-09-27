@@ -53,6 +53,7 @@ Variation support:
   import { openCollectionPicker } from "$lib/features/library/state/collection-picker-state.svelte";
   import { cardHoverPreview } from "$lib/shared/browse/state/card-hover-preview-state.svelte";
   import { userPreviewState } from "$lib/shared/debug/state/user-preview-state.svelte";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 
   let thumbnailRef = $state<ReturnType<typeof PropAwareThumbnail> | null>(null);
 
@@ -680,8 +681,18 @@ Variation support:
   {#if (displayedSequence.publicPerformanceCount ?? 0) > 0}
     <span
       class="performance-count"
-      aria-label={`${displayedSequence.publicPerformanceCount} public ${displayedSequence.publicPerformanceCount === 1 ? "performance" : "performances"}`}
-      title={`${displayedSequence.publicPerformanceCount} public ${displayedSequence.publicPerformanceCount === 1 ? "performance" : "performances"}`}
+      aria-label={tDynamic(
+        displayedSequence.publicPerformanceCount === 1
+          ? "browse_results_public_performance_one"
+          : "browse_results_public_performance_many",
+        { count: displayedSequence.publicPerformanceCount }
+      )}
+      title={tDynamic(
+        displayedSequence.publicPerformanceCount === 1
+          ? "browse_results_public_performance_one"
+          : "browse_results_public_performance_many",
+        { count: displayedSequence.publicPerformanceCount }
+      )}
     >
       <i class="fas fa-play" aria-hidden="true"></i>
       {displayedSequence.publicPerformanceCount}

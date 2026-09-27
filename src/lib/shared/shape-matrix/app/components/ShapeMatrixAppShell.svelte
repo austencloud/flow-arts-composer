@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { tick, untrack } from "svelte";
   import { getEscapeLayerManager } from "$lib/shared/keyboard/get-escape-layer-manager";
   import PanelGroup from "$lib/shared/panels/PanelGroup.svelte";
@@ -107,8 +108,9 @@
       url,
       title: KINETIC_SHAPE_ENGINE_NAME,
     });
-    if (outcome === "copied") toast.success("Link copied");
-    else if (outcome === "failed") toast.error("Could not copy the link");
+    if (outcome === "copied") toast.success(t("shape_engine_link_copied"));
+    else if (outcome === "failed")
+      toast.error(t("shape_engine_copy_link_failed"));
   }
 
   function openRealization(
@@ -119,7 +121,7 @@
       openSequenceViewer(realization.seq, {
         source: "shape_engine",
         returnPath: "/create/shape-engine",
-        returnLabel: "Shape Engine",
+        returnLabel: t("shape_engine_name"),
         saveOnOpen: action === "save",
       });
       return;
@@ -129,7 +131,7 @@
     saveSequenceRouteHandoff({
       sequence: realization.seq,
       returnPath: `${returnUrl.pathname}${returnUrl.search}${returnUrl.hash}`,
-      returnLabel: "Shape Engine",
+      returnLabel: t("shape_engine_name"),
     });
     const params = new URLSearchParams({ from: "shape-engine" });
     if (action === "save") params.set("save", "1");
@@ -145,8 +147,10 @@
       url,
       title: `${realization.word} · ${KINETIC_SHAPE_ENGINE_NAME}`,
     });
-    if (outcome === "copied") toast.success("Sequence link copied");
-    else if (outcome === "failed") toast.error("Could not copy the link");
+    if (outcome === "copied")
+      toast.success(t("shape_engine_sequence_link_copied"));
+    else if (outcome === "failed")
+      toast.error(t("shape_engine_copy_link_failed"));
   }
   // The hero's animation state lives here, above both panes, so both surfaces
   // share one animation scope while their workspaces crossfade.
@@ -195,10 +199,18 @@
   const hasPair = $derived(
     theory ? appState.theoryPair !== null : appState.selectedPair !== null
   );
-  const LABEL_OPTIONS = [
-    { value: "turns" as const, label: "TKA turns", shortLabel: "Turns" },
-    { value: "ratios" as const, label: "VTG ratios", shortLabel: "Ratios" },
-  ];
+  const LABEL_OPTIONS = $derived([
+    {
+      value: "turns" as const,
+      label: t("shape_engine_tka_turns"),
+      shortLabel: t("shape_engine_turns"),
+    },
+    {
+      value: "ratios" as const,
+      label: t("shape_engine_vtg_ratios"),
+      shortLabel: t("shape_engine_ratios"),
+    },
+  ]);
   /* One split for both surfaces. The panes stay where they are while the
      grid and the detail inside them crossfade, so a split set on one surface
      is the split on the other. */
@@ -423,8 +435,8 @@
   <button
     type="button"
     class="top-action surprise-action compact"
-    aria-label="Surprise me with a new grid, crossing, and hand relationship"
-    title="Pick a new grid, crossing, and hand relationship"
+    aria-label={t("shape_engine_surprise_aria")}
+    title={t("shape_engine_surprise_title")}
     disabled={!theory && !appState.data}
     onclick={surpriseMe}
     transition:growFade={{ axis: "x", x: 4 }}
@@ -481,15 +493,23 @@
             type="button"
             class="back-to-matrix"
             aria-label={theory
-              ? "Back to the theory matrix"
-              : "Back to the shape matrix"}
+              ? t("shape_engine_back_theory_matrix")
+              : t("shape_engine_back_shape_matrix")}
             onclick={showMatrix}
           >
             <i class="fas fa-arrow-left" aria-hidden="true"></i>
-            <span>{theory ? "Playground" : "Matrix"}</span>
+            <span
+              >{theory
+                ? t("shape_engine_playground")
+                : t("shape_engine_matrix")}</span
+            >
           </button>
         {:else}
-          <strong>{theory ? "Ratio Playground" : "Level Matrix"}</strong>
+          <strong
+            >{theory
+              ? t("shape_engine_ratio_playground")
+              : t("shape_engine_level_matrix")}</strong
+          >
         {/if}
         <!-- The compact value editor keeps the grid as the hero. Matrix opens
              its level and turns; Theory names ratio editing directly and
@@ -502,7 +522,7 @@
       </div>
     {:else if variant === "standalone"}
       <div class="identity">
-        <strong>{KINETIC_SHAPE_ENGINE_NAME}</strong>
+        <strong>{t("shape_engine_name")}</strong>
       </div>
     {/if}
 
@@ -533,7 +553,7 @@
                  the grid; the header keeps only the settings that shape the
                  whole surface. -->
             <div class="control-cell label-control neutral-accent">
-              <span class="control-label">Notation</span>
+              <span class="control-label">{t("shape_engine_notation")}</span>
               <SegmentedControl
                 options={LABEL_OPTIONS}
                 value={appState.labelMode}
@@ -543,7 +563,7 @@
                 density="tight"
                 color="accent"
                 semantics="radiogroup"
-                ariaLabel="Turn label system"
+                ariaLabel={t("shape_engine_turn_label_system")}
               />
             </div>
           </div>
@@ -563,7 +583,7 @@
             onclick={showDetail}
             transition:growFade={{ axis: "x", x: 4 }}
           >
-            <span>Detail</span>
+            <span>{t("shape_engine_detail")}</span>
             <i class="fas fa-arrow-right" aria-hidden="true"></i>
           </button>
         {/if}
@@ -575,21 +595,21 @@
         <button
           class="top-action"
           type="button"
-          aria-label="Share this view"
+          aria-label={t("shape_engine_share_this_view")}
           onclick={shareThisView}
         >
           <i class="fas fa-share-nodes" aria-hidden="true"></i>
-          {#if !appState.compact}<span>Share</span>{/if}
+          {#if !appState.compact}<span>{t("shape_engine_share")}</span>{/if}
         </button>
       {/if}
       <button
         class="top-action"
         type="button"
-        aria-label={`About ${KINETIC_SHAPE_ENGINE_NAME}`}
+        aria-label={t("shape_engine_about_name")}
         onclick={appState.openAbout}
       >
         <i class="fas fa-circle-info" aria-hidden="true"></i>
-        {#if !appState.compact}<span>About</span>{/if}
+        {#if !appState.compact}<span>{t("shape_engine_about")}</span>{/if}
       </button>
     </div>
   </header>
@@ -603,6 +623,7 @@
         panels={[
           {
             id: "matrix",
+            resizeLabel: t("shape_engine_resize_matrix_realization"),
             content: gridPane,
             defaultSize: 1.28,
             minSize: 440,
@@ -1004,7 +1025,7 @@
   /* SegmentedControl's sliding indicator assumes equal-width segments, so
      each wrapper hands it a definite width sized to its longest label. */
   .label-control :global(.segmented-control) {
-    width: 7.5rem;
+    width: 12rem;
   }
 
   .top-actions {

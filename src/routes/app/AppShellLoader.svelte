@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { onMount } from "svelte";
   import type { Component } from "svelte";
   import LoadingGate from "$lib/shared/components/loading/LoadingGate.svelte";
@@ -39,7 +40,7 @@
   }
 
   onMount(() => {
-    (window as any).__tkaLoadProgress?.(84, "Resolving services...");
+    (window as any).__tkaLoadProgress?.(84, t("app_loading_services"));
     void import("$lib/shared/analytics/boot-profiler")
       .then(({ bootProfiler }) => bootProfiler.mark("shell:main-app-chunk"))
       .catch(() => {});
@@ -51,8 +52,8 @@
   <MainApp />
 {:else if loadError}
   <div class="shell-load-error" role="alert">
-    <p>Flow Arts Composer couldn’t finish loading.</p>
-    <button type="button" onclick={() => void loadMainApp()}>Try Again</button>
+    <p>{t("app_load_failed")}</p>
+    <button type="button" onclick={() => void loadMainApp()}>{t("app_retry")}</button>
   </div>
 {:else}
   <LoadingGate />

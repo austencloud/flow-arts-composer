@@ -12,6 +12,7 @@
   - ViewModeToggle (browse toolbar)
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   interface Props {
     showLeft: boolean;
     showRight: boolean;
@@ -28,18 +29,20 @@
     showRight,
     onToggleLeft,
     onToggleRight,
-    leftLabel = "Left",
-    rightLabel = "Right",
+    leftLabel,
+    rightLabel,
     layout = "row",
     showVisibilityIcons = false,
   }: Props = $props();
+  const resolvedLeftLabel = $derived(leftLabel ?? t("shared_controls_left"));
+  const resolvedRightLabel = $derived(rightLabel ?? t("shared_controls_right"));
 </script>
 
 <div
   class="motion-color-chips"
   class:column={layout === "column"}
   role="group"
-  aria-label="Motion visibility"
+  aria-label={t("shared_controls_motion_visibility")}
 >
   <button
     type="button"
@@ -47,15 +50,16 @@
     class:active={showLeft}
     onclick={() => onToggleLeft()}
     aria-pressed={showLeft}
-    aria-label={`${showLeft ? "Hide" : "Show"} ${leftLabel.toLowerCase()} motion`}
+    aria-label={t(
+      showLeft ? "shared_controls_hide_motion" : "shared_controls_show_motion",
+      { hand: resolvedLeftLabel }
+    )}
   >
     {#if showVisibilityIcons}
-      <i
-        class="fas {showLeft ? 'fa-eye' : 'fa-eye-slash'}"
-        aria-hidden="true"
+      <i class="fas {showLeft ? 'fa-eye' : 'fa-eye-slash'}" aria-hidden="true"
       ></i>
     {/if}
-    {leftLabel}
+    {resolvedLeftLabel}
   </button>
   <button
     type="button"
@@ -63,15 +67,16 @@
     class:active={showRight}
     onclick={() => onToggleRight()}
     aria-pressed={showRight}
-    aria-label={`${showRight ? "Hide" : "Show"} ${rightLabel.toLowerCase()} motion`}
+    aria-label={t(
+      showRight ? "shared_controls_hide_motion" : "shared_controls_show_motion",
+      { hand: resolvedRightLabel }
+    )}
   >
     {#if showVisibilityIcons}
-      <i
-        class="fas {showRight ? 'fa-eye' : 'fa-eye-slash'}"
-        aria-hidden="true"
+      <i class="fas {showRight ? 'fa-eye' : 'fa-eye-slash'}" aria-hidden="true"
       ></i>
     {/if}
-    {rightLabel}
+    {resolvedRightLabel}
   </button>
 </div>
 
@@ -97,7 +102,10 @@
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
+    transition:
+      background 160ms ease,
+      color 160ms ease,
+      border-color 160ms ease;
     min-width: var(--min-touch-target, 44px);
     min-height: var(--min-touch-target, 44px);
   }
@@ -124,13 +132,21 @@
   }
 
   .chip.blue.active {
-    background: color-mix(in srgb, var(--motion-left-color, var(--prop-blue, #2196f3)) 22%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--motion-left-color, var(--prop-blue, #2196f3)) 22%,
+      transparent
+    );
     border-color: var(--motion-left-color, var(--prop-blue, #2196f3));
     color: #fff;
   }
 
   .chip.red.active {
-    background: color-mix(in srgb, var(--motion-right-color, var(--prop-red, #f44336)) 22%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--motion-right-color, var(--prop-red, #f44336)) 22%,
+      transparent
+    );
     border-color: var(--motion-right-color, var(--prop-red, #f44336));
     color: #fff;
   }

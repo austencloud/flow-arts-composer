@@ -60,17 +60,17 @@
   {#if workspace.store.loading}
     <div class="stage-message" role="status">
       <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-      <strong>Preparing performances</strong>
-      <span>Loading the takes attached to this sequence.</span>
+      <strong>{t("viewer_detail_preparing_performances")}</strong>
+      <span>{t("viewer_detail_loading_the_takes_attached_to_this_sequence")}</span>
     </div>
   {:else if workspace.store.error}
     <div class="stage-message error" role="alert">
       <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
-      <strong>Performances could not be loaded</strong>
+      <strong>{t("viewer_detail_performances_could_not_be_loaded")}</strong>
       <span>{workspace.store.error}</span>
       <PanelButton onclick={() => workspace.store.reload()}>
         <i class="fas fa-rotate-right" aria-hidden="true"></i>
-        Try again
+        {t("viewer_detail_try_again")}
       </PanelButton>
     </div>
   {:else if !workspace.selectedVideo}
@@ -78,8 +78,8 @@
       <span class="empty-mark" aria-hidden="true">
         <i class="fas fa-video"></i>
       </span>
-      <strong>No performance selected</strong>
-      <span>The first shared take will play here.</span>
+      <strong>{t("viewer_detail_no_performance_selected")}</strong>
+      <span>{t("viewer_detail_the_first_shared_take_will_play_here")}</span>
     </div>
   {:else}
     <div

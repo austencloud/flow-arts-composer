@@ -38,6 +38,11 @@ export interface TapFitInput {
    * labels. Taps that fall before the opening pose are extras.
    */
   beatOneSeconds?: number | null;
+  /**
+   * The position the `beatOneSeconds` landing takes; 1 when unset. A part
+   * that keeps counting after a split marks its count where it was cut.
+   */
+  beatOnePosition?: number;
   /** Hold the typed tempo exactly, or fit the video's own within ±5%. */
   tempo: "locked" | "follow";
 }
@@ -175,6 +180,14 @@ export function createBeatClock(moveBeats: readonly number[]) {
 
 type BeatClock = ReturnType<typeof createBeatClock>;
 
+/** How much a moment this far from a landing counts toward that landing. */
+function comb(residualSeconds: number): number {
+  return Math.exp(
+    -(residualSeconds * residualSeconds) /
+      (2 * COMB_SIGMA_SECONDS * COMB_SIGMA_SECONDS)
+  );
+}
+
 function combScore(
   taps: readonly number[],
   clock: BeatClock,
@@ -185,11 +198,7 @@ function combScore(
   for (const tap of taps) {
     const beats = (tap - originSeconds) / secondsPerBeat;
     const position = clock.nearestPosition(beats);
-    const residual =
-      (clock.beatsBefore(position) - beats) * secondsPerBeat;
-    score += Math.exp(
-      -(residual * residual) / (2 * COMB_SIGMA_SECONDS * COMB_SIGMA_SECONDS)
-    );
+    score += comb((clock.beatsBefore(position) - beats) * secondsPerBeat);
   }
   return score;
 }
@@ -204,7 +213,16 @@ interface GridHypothesis {
 interface PhaseSeed {
   seconds: number;
   position: number;
+  /** The seed is a beat-1 mark, so its own landing should fall on it. */
+  marked: boolean;
 }
+
+/**
+ * A mark counts as half a tap on its own landing. With uneven moves, a few
+ * taps can fit two phases equally, one move apart; the mark settles which,
+ * and weighs too little to outvote a tap.
+ */
+const MARK_WEIGHT = 0.5;
 
 /**
  * Searches phase for each candidate tempo. The phase window is one shortest
@@ -228,7 +246,16 @@ function searchGrid(
       phaseWindow?.reach ?? secondsPerBeat * clock.shortestMove;
     for (let offset = -reach; offset <= reach + 1e-9; offset += phaseStep) {
       const originSeconds = center + offset;
-      const score = combScore(taps, clock, originSeconds, secondsPerBeat);
+      const score =
+        combScore(taps, clock, originSeconds, secondsPerBeat) +
+        (seed.marked
+          ? MARK_WEIGHT *
+            comb(
+              seed.seconds -
+                originSeconds -
+                secondsPerBeat * clock.beatsBefore(seed.position)
+            )
+          : 0);
       if (!best || score > best.score) {
         best = { originSeconds, secondsPerBeat, score };
       }
@@ -453,6 +480,7 @@ export function fitTapsToGrid(input: TapFitInput): TapFitResult {
     Number.isFinite(input.beatOneSeconds)
       ? input.beatOneSeconds
       : null;
+  const markPosition = Math.max(1, Math.round(input.beatOnePosition ?? 1));
   const nominal = 60 / input.bpm;
   const tempoSpanBeats = Math.min(
     MAX_TEMPO_SPAN_BEATS,
@@ -468,8 +496,8 @@ export function fitTapsToGrid(input: TapFitInput): TapFitResult {
     nominal,
     lockTempo,
     beatOne === null
-      ? { seconds: taps[0]!, position: firstTapPosition }
-      : { seconds: beatOne, position: 1 }
+      ? { seconds: taps[0]!, position: firstTapPosition, marked: false }
+      : { seconds: beatOne, position: markPosition, marked: true }
   );
   const shiftLabels = (
     labelled: MatchedTap[],
@@ -487,8 +515,11 @@ export function fitTapsToGrid(input: TapFitInput): TapFitResult {
         : null,
     };
   };
-  // With a beat-1 mark, the landing nearest it is position 1 and nothing
-  // else decides the labels.
+  // With a beat-1 mark, the landing nearest it is position 1 (or the count
+  // the mark carries) and nothing else decides the labels. When no tap is
+  // left on the grid - every one falls before the opening pose - the mark
+  // alone places it; the phase the comb found among those extras could sit
+  // a whole move off.
   const anchorToBeatOne = (
     all: MatchedTap[],
     originSeconds: number,
@@ -497,10 +528,18 @@ export function fitTapsToGrid(input: TapFitInput): TapFitResult {
     const markLabel = clock.nearestPosition(
       (beatOne! - originSeconds) / secondsPerBeat
     );
-    const shift = 1 - markLabel;
-    return shift === 0
-      ? { matched: all, originSeconds: null }
-      : shiftLabels(all, shift, secondsPerBeat);
+    const shift = markPosition - markLabel;
+    const anchored =
+      shift === 0
+        ? { matched: all, originSeconds: null }
+        : shiftLabels(all, shift, secondsPerBeat);
+    return anchored.matched.length > 0
+      ? anchored
+      : {
+          matched: [],
+          originSeconds:
+            beatOne! - secondsPerBeat * clock.beatsBefore(markPosition),
+        };
   };
   // The earliest matched tap marks `firstTapPosition` by definition. The comb
   // may have placed it a landing off when the first tap was an extra, so

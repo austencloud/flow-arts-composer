@@ -45,7 +45,11 @@ describe("prop look", () => {
     expect(resolvePropRenderKey("fan", {})).toBe("fan__fire_bare");
     expect(
       resolvePropRenderKey("bigfan", {
-        fanAppearance: { build: "pictograph", frameColor: "black", cover: "bare" },
+        fanAppearance: {
+          build: "pictograph",
+          frameColor: "black",
+          cover: "bare",
+        },
       })
     ).toBe("bigfan");
   });
@@ -70,5 +74,18 @@ describe("prop look", () => {
       "model",
       "pictograph",
     ]);
+  });
+
+  it("frames each look card on the painted half of a grip-centred prop", () => {
+    const [model, pictograph] = propLookOptions("chicken");
+    const sprite = PROP_MODEL_SPRITES.chicken!;
+    // The capture paints only the left half of its 325-wide box and the
+    // notation glyph only the right half; uncropped, both cards sat off-centre.
+    expect(model?.crop).toMatchObject(sprite.bounds!);
+    expect(model?.crop?.width).toBeLessThan(sprite.width / 2);
+    expect(pictograph?.crop?.x).toBeGreaterThan(
+      pictograph!.crop!.imageWidth / 3
+    );
+    expect(pictograph?.crop?.width).toBeLessThan(pictograph!.crop!.imageWidth);
   });
 });

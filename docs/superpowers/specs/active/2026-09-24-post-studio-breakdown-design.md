@@ -93,6 +93,9 @@ the mockup Austen was shown.
     with a floor of 0.62/1.32
   - opacity: 0.66, 0.48, 0.30, with a floor of 0.14
   - gap between cells: 6% of the focus size
+  - a cell cut by the region's edge fades with how much of it is inside: gone
+    below 15%, full strength from half. At rest this hides the previous beat,
+    which sits only about 13% inside and read as a stray grey bar.
 - **Slide.** The track slides at each landing. The slide runs over the last 18%
   of each beat's position interval with ease-in-out, so the new pose reaches
   focus exactly as it lands. Size and opacity interpolate on the continuous

@@ -7,7 +7,9 @@
 import { describe, expect, it } from "vitest";
 import {
   AUTH_NUDGE_TEXTS,
+  createMethodNudgeTrigger,
   getAuthPromptContent,
+  moduleNudgeTrigger,
   type AuthNudgeTrigger,
 } from "$lib/shared/auth/domain/auth-nudge-trigger";
 import { GUEST_SAVE_CAP } from "$lib/shared/auth/domain/guest-access-config";
@@ -40,9 +42,14 @@ describe("AUTH_NUDGE_TEXTS — one phrasing for the account ask", () => {
         "guest-first-save",
         "loop-step-cap-guest",
         "loop-locked-guest",
+        "method:assemble",
+        "method:fuse",
+        "method:tunnel",
         "module:learn",
         "module:library",
+        "module:other",
         "module:settings",
+        "module:stage",
         "patterns-guest",
         "prop-collection",
         "rewind-sequence",
@@ -157,5 +164,54 @@ describe("contextual auth prompt copy", () => {
       "Create your account"
     );
     expect(getAuthPromptContent(null, "signin").title).toBe("Welcome back");
+  });
+});
+
+describe("module gate prompt", () => {
+  it("names 3D Studio when a guest opens Stage", () => {
+    expect(moduleNudgeTrigger("stage")).toBe("module:stage");
+    expect(AUTH_NUDGE_TEXTS["module:stage"]).toContain("3D Studio");
+    expect(getAuthPromptContent("module:stage", "signup").title).toContain(
+      "3D Studio"
+    );
+  });
+
+  it("keeps the dedicated Learn and Settings prompts", () => {
+    expect(moduleNudgeTrigger("learn")).toBe("module:learn");
+    expect(moduleNudgeTrigger("settings")).toBe("module:settings");
+  });
+
+  // The Library module was folded into Browse, so no gated module is the
+  // Library. Its "your saved sequences live here" copy greeted guests on
+  // Stage, Feedback and every other module without an entry.
+  it("never gives another module the Library's saved-sequences copy", () => {
+    for (const moduleId of ["feedback", "museum", "compose", "unknown"]) {
+      const trigger = moduleNudgeTrigger(moduleId);
+      expect(trigger).toBe("module:other");
+      expect(AUTH_NUDGE_TEXTS[trigger]).not.toContain("saved sequences");
+    }
+  });
+});
+
+describe("Create method gate prompt", () => {
+  // A guest who taps a locked method on the Create front door should hear
+  // what that method does, not a generic "open this part of the app".
+  it("names the method the guest tapped", () => {
+    expect(createMethodNudgeTrigger("fuse")).toBe("method:fuse");
+    expect(createMethodNudgeTrigger("tunnel")).toBe("method:tunnel");
+    expect(createMethodNudgeTrigger("assemble")).toBe("method:assemble");
+    expect(getAuthPromptContent("method:fuse", "signup").title).toContain(
+      "Fuse"
+    );
+    expect(getAuthPromptContent("method:tunnel", "signup").title).toContain(
+      "Tunnel"
+    );
+    expect(getAuthPromptContent("method:assemble", "signup").title).toContain(
+      "Assemble"
+    );
+  });
+
+  it("falls back to the neutral ask for a method without its own copy", () => {
+    expect(createMethodNudgeTrigger("construct")).toBe("module:other");
   });
 });

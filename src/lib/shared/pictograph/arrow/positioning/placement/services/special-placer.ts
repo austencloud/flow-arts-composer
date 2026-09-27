@@ -15,6 +15,7 @@
  */
 
 import { Point as FabricPoint } from "fabric";
+import { normalizeLegacyHandSide } from "@tka/tka-types";
 import { deriveGridMode as _deriveGridMode } from "../../../../grid/services/grid-mode-deriver";
 import { GridMode } from "../../../../grid/domain/enums/grid-enums";
 import { placementFrameForGridMode } from "../domain/placement-frame";
@@ -22,7 +23,7 @@ import { placementAssetRoot } from "../domain/placement-frame";
 import { getStoredRotationOverride } from "./rotation-override-store";
 import type { PictographData } from "../../../../shared/domain/models/pictograph-data";
 import type { MotionData } from "../../../../shared/domain/models/motion-data";
-import type { HandSide } from "../../../../shared/domain/enums/pictograph-enums";
+import { HandSide } from "../../../../shared/domain/enums/pictograph-enums";
 import {
   generateOrientationKey,
   getMotionOrientationBucket,
@@ -205,6 +206,10 @@ export class SpecialPlacer {
     const orientationBuckets = Array.from(
       new Set([oriKey, legacyOriKey, getMotionOrientationBucket(motionData)])
     );
+    // Authored placement JSON and toggles saved before the 2026-08-31 hand
+    // rename spell per-hand flags with the legacy colors (blue = left, red =
+    // right). The hand spelling stays first so a newer toggle wins.
+    const hand = normalizeLegacyHandSide(motionData.hand);
     const overrideKeys = Array.from(
       new Set(
         [
@@ -212,6 +217,9 @@ export class SpecialPlacer {
           `${motionType}_rot_angle_override`,
           motionData.hand
             ? `${motionData.hand.toLowerCase()}_rot_angle_override`
+            : "",
+          hand
+            ? `${hand === HandSide.LEFT ? "blue" : "red"}_rot_angle_override`
             : "",
         ].filter(Boolean)
       )

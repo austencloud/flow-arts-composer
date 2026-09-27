@@ -1,10 +1,11 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { tick } from "svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import BentoPropGrid from "$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
   import HandPropToolbar from "$lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
-  import { viewingPropLabel } from "$lib/shared/foundation/services/prop-viewing";
-  import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
+  import { localizedPropName } from "$lib/shared/settings/components/tabs/prop-type/localized-prop-name";
+  import type { PillId } from "$lib/shared/animation-panel/pill-nav/pill-types";
   import { getEscapeLayerManager } from "$lib/shared/keyboard/get-escape-layer-manager";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import { getShapeMatrixAnimationContext } from "../context/shape-matrix-animation-context";
@@ -16,25 +17,40 @@
   const propsOpen = $derived(
     app.propPickerOpen || animation.activeSection === "props"
   );
+  function sectionTitle(section: PillId | null): string {
+    switch (section) {
+      case "grid":
+        return t("shape_engine_settings_grid");
+      case "layers":
+        return t("shape_engine_settings_layers");
+      case "props":
+        return t("shape_engine_props");
+      case "effects":
+        return t("shape_engine_settings_effects");
+      case "motion":
+        return t("shape_engine_settings_effort");
+      case "effort":
+        return t("shape_engine_settings_effort");
+      case "playback":
+        return t("shape_engine_settings_playback");
+      case "display":
+        return t("shape_engine_settings_display");
+      case "export":
+        return t("shape_engine_settings_export");
+      default:
+        return "";
+    }
+  }
   const title = $derived(
-    propsOpen
-      ? "Props"
-      : animation.activeSection === "motion"
-        ? "Effort"
-        : (animation.activeSection?.charAt(0).toUpperCase() ?? "") +
-          (animation.activeSection?.slice(1) ?? "")
+    propsOpen ? t("shape_engine_props") : sectionTitle(animation.activeSection)
   );
   const theory = $derived(app.surface === "theory");
   const theoryEffects = ["trails", ...CANVAS2D_HOSTED_EFFECTS] as const;
   // The pair when cat dog is on ("Staff / Fan"), the one prop otherwise.
   const selectedName = $derived(
     app.catDog
-      ? viewingPropLabel({
-          leftPropType: app.leftPropType,
-          rightPropType: app.rightPropType,
-          catDogMode: true,
-        })
-      : getPropTypeDisplayInfo(app.leftPropType).label
+      ? `${localizedPropName(app.leftPropType)} / ${localizedPropName(app.rightPropType)}`
+      : localizedPropName(app.leftPropType)
   );
   let done: HTMLButtonElement | null = $state(null);
 
@@ -73,12 +89,14 @@
 <section
   class="focus-workspace"
   class:settings={!propsOpen}
-  aria-label={propsOpen ? "Choose a prop" : `${title} settings`}
+  aria-label={propsOpen
+    ? t("shape_engine_choose_prop")
+    : t("shape_engine_settings_for", { name: title })}
 >
   {#snippet doneButton()}
     <PanelButton variant="primary" bind:ref={done} onclick={close}>
       <i class="fas fa-check" aria-hidden="true"></i>
-      Done
+      {t("shape_engine_done")}
     </PanelButton>
   {/snippet}
   {#if propsOpen}
@@ -132,7 +150,7 @@
         showMotionVisibility={true}
         showSequenceMarks={!theory}
         availableEffects={theory ? theoryEffects : undefined}
-        regionLabel={`${title} controls`}
+        regionLabel={t("shape_engine_settings_for", { name: title })}
       />
     </div>
   {/if}

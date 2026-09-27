@@ -57,6 +57,7 @@
   const DEFAULT_BPM = 60;
 
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { ViewerCustomColorPair } from "../domain/viewer-custom-colors";
 
   let {
     sequence,
@@ -70,6 +71,7 @@
     layout = "vertical" as "vertical" | "horizontal",
     leftPropType = null,
     rightPropType = null,
+    primaryPropColors,
     onTogglePlaybackRef,
     onControllerReady,
     hideProgressBar = false,
@@ -93,6 +95,8 @@
     layout?: "vertical" | "horizontal";
     leftPropType?: PropType | null;
     rightPropType?: PropType | null;
+    /** Host-owned prop colors; null uses the default pair. */
+    primaryPropColors?: ViewerCustomColorPair | null;
     /** Callback to receive reference to toggle playback function (for external keyboard control) */
     onTogglePlaybackRef?: (toggleFn: () => void) => void;
     /** Called when the internal playback controller is initialized, exposing it for external sync */
@@ -276,7 +280,7 @@
       onTogglePlaybackRef?.(togglePlayback);
     } catch (err) {
       console.error("Failed to initialize animation player:", err);
-      error = "Failed to load animation";
+      error = t("viewer_detail_failed_to_load_animation");
       loading = false;
     }
   });
@@ -324,14 +328,14 @@
 
       const fullSeq = await ensureMotionData(sequence);
       if (!fullSeq) {
-        error = "Failed to load sequence";
+        error = t("viewer_detail_failed_to_load_sequence");
         return;
       }
 
       animState?.setShouldLoop(true);
       const ok = controller!.initialize(fullSeq, animState!);
       if (!ok) {
-        error = "Failed to initialize playback";
+        error = t("viewer_detail_failed_to_initialize_playback");
         return;
       }
 
@@ -444,6 +448,7 @@
           {previewDarkMode}
           {leftPropType}
           {rightPropType}
+          {primaryPropColors}
           {tipEffectMap}
           progressBarVariant="minimal"
           {hideProgressBar}
@@ -516,6 +521,7 @@
         {previewDarkMode}
         {leftPropType}
         {rightPropType}
+        {primaryPropColors}
         {tipEffectMap}
         progressBarVariant="minimal"
         {hideProgressBar}

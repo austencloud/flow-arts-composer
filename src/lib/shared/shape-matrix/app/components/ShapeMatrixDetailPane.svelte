@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import ShapeMatrixDrill from "$lib/shared/shape-matrix/components/ShapeMatrixDrill.svelte";
   import type { ModeRealization } from "$lib/shared/shape-matrix/services/build-mode-realizations";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
@@ -17,10 +18,7 @@
   // hosts recompose this same live stage above a scrolling prop workspace.
 </script>
 
-<aside
-  class="detail-pane"
-  aria-label="Shape animation and element relationships"
->
+<aside class="detail-pane" aria-label={t("shape_engine_detail_aria")}>
   <div class="drill-stage">
     {#if state.data}
       <ShapeMatrixDrill
@@ -47,7 +45,7 @@
         }}
       />
     {:else}
-      <p class="status">Building the matrix…</p>
+      <p class="status">{t("shape_engine_building_matrix")}</p>
     {/if}
   </div>
 </aside>

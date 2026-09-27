@@ -20,6 +20,7 @@ import {
   GridMode,
   type GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { t } from "$lib/shared/i18n/i18n.svelte.js";
 import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
 import type { StartEndOptions } from "$lib/shared/create/state/panel-coordination-state.svelte";
@@ -51,17 +52,17 @@ export const ORIENTATION_SHORT: Record<string, string> = {
 };
 
 /** Labels mirror GenerationStylePanel's option lists — one vocabulary, two surfaces. */
-const STYLE_AXIS_LABELS: Record<StyleAxisValue, string> = {
-  smooth: "Smooth",
-  mixed: "Mixed",
-  choppy: "Choppy",
-};
+const STYLE_AXIS_LABELS = {
+  smooth: "create_ui_style_smooth",
+  mixed: "create_ui_style_mixed",
+  choppy: "create_ui_style_choppy",
+} as const;
 
-const DASH_LABELS: Record<"no-dash" | "mixed" | "prefer-dash", string> = {
-  "no-dash": "Low",
-  mixed: "Mixed",
-  "prefer-dash": "High",
-};
+const DASH_LABELS = {
+  "no-dash": "create_ui_dash_low",
+  mixed: "create_ui_style_mixed",
+  "prefer-dash": "create_ui_dash_high",
+} as const;
 
 /** The three style axes a surface can start from. */
 export type CustomizeStyleBaseline = GenerationStylePolicy;
@@ -116,13 +117,13 @@ export function buildCustomizeSummary(
   };
 
   if (input.constraintPreset !== baseline.constraintPreset) {
-    push(`Props: ${STYLE_AXIS_LABELS[input.constraintPreset]}`);
+    push(t("create_ui_summary_props", { value: t(STYLE_AXIS_LABELS[input.constraintPreset]) }));
   }
   if (input.handPathMode !== baseline.handPathMode) {
-    push(`Hands: ${STYLE_AXIS_LABELS[input.handPathMode]}`);
+    push(t("create_ui_summary_hands", { value: t(STYLE_AXIS_LABELS[input.handPathMode]) }));
   }
   if (dashKey(input.motionTypeFilter) !== dashKey(baseline.motionTypeFilter)) {
-    push(`Dashes: ${DASH_LABELS[dashKey(input.motionTypeFilter)]}`);
+    push(t("create_ui_summary_dashes", { value: t(DASH_LABELS[dashKey(input.motionTypeFilter)]) }));
   }
 
   const options = input.startEndOptions;
@@ -134,7 +135,7 @@ export function buildCustomizeSummary(
     if (blocked.length > 0) {
       const preset = detectPresetFromBlocked(blocked, gridMode);
       if (preset === StartPlacementPreset.CLASSIC) {
-        push("Classic 3");
+        push(t("create_ui_summary_classic_three"));
       } else {
         const allowed = getAllowedPlacements(blocked, gridMode);
         // A restricted set is a real constraint at every size — reporting only
@@ -142,8 +143,8 @@ export function buildCustomizeSummary(
         // "Custom" with nothing behind it.
         push(
           allowed.length === 1
-            ? `Start: ${allowed[0]}`
-            : `${allowed.length} pos`
+            ? t("create_ui_summary_start", { value: allowed[0] })
+            : t("create_ui_summary_position_count", { count: allowed.length })
         );
       }
     }
@@ -152,7 +153,7 @@ export function buildCustomizeSummary(
     // Deprecated but still persisted, and generate-actions still feeds it to
     // the engine. A card that ignores it can call a constrained state Default.
     if (options.startPlacement) {
-      push(`Start: ${placementLabel(options.startPlacement)}`);
+      push(t("create_ui_summary_start", { value: placementLabel(options.startPlacement) }));
     }
 
     // ─── End placements ───
@@ -161,11 +162,11 @@ export function buildCustomizeSummary(
     // any caller that has not migrated.
     const ends = options.endPlacements ?? [];
     if (ends.length === 1) {
-      push(`End: ${ends[0]}`);
+      push(t("create_ui_summary_end", { value: ends[0] }));
     } else if (ends.length > 1) {
-      push(`End: ${ends.length} placements`);
+      push(t("create_ui_summary_end_count", { count: ends.length }));
     } else if (options.endPlacement) {
-      push(`End: ${placementLabel(options.endPlacement)}`);
+      push(t("create_ui_summary_end", { value: placementLabel(options.endPlacement) }));
     }
 
     // ─── Start orientation ───
@@ -173,7 +174,7 @@ export function buildCustomizeSummary(
     const rightOri = options.rightStartOrientation ?? Orientation.IN;
     if (leftOri !== Orientation.IN || rightOri !== Orientation.IN) {
       push(
-        `Ori: ${ORIENTATION_SHORT[leftOri] ?? leftOri}/${ORIENTATION_SHORT[rightOri] ?? rightOri}`
+        t("create_ui_summary_orientation", { left: ORIENTATION_SHORT[leftOri] ?? leftOri, right: ORIENTATION_SHORT[rightOri] ?? rightOri })
       );
     }
 
@@ -186,14 +187,14 @@ export function buildCustomizeSummary(
       const parts: string[] = [];
       if (required > 0) parts.push(`+${required}`);
       if (excluded > 0) parts.push(`-${excluded}`);
-      push(`Letters: ${parts.join(" ")}`);
+      push(t("create_ui_summary_letters", { value: parts.join(" ") }));
     }
   }
 
   return {
     isDefault: facts.length === 0,
     facts,
-    accessibleSummary: facts.length === 0 ? "Default" : facts.join(", "),
+    accessibleSummary: facts.length === 0 ? t("create_ui_default") : facts.join(", "),
   };
 }
 
@@ -214,7 +215,7 @@ export function capSummaryFacts(
   if (facts.length <= maxRows) return [...facts];
   if (maxRows === 1) return [`${facts[0]} +${facts.length - 1}`];
   const shown = facts.slice(0, maxRows - 1);
-  return [...shown, `+${facts.length - shown.length} more`];
+  return [...shown, t("create_ui_summary_more", { count: facts.length - shown.length })];
 }
 
 /**

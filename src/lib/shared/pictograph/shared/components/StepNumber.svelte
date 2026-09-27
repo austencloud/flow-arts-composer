@@ -9,6 +9,7 @@ dark mode independent of app dark mode). Export uses explicit darkMode prop.
 -->
 <script lang="ts">
   import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
   let {
     stepNumber = null,
@@ -50,9 +51,7 @@ dark mode independent of app dark mode). Export uses explicit darkMode prop.
   const effectiveDarkMode = $derived(darkMode ?? localDarkMode);
 
   // Fill color based on effective dark mode (no stroke used)
-  const fillColor = $derived(
-    effectiveDarkMode ? "#ffffff" : "#231f20"
-  );
+  const fillColor = $derived(effectiveDarkMode ? "#ffffff" : "#231f20");
 
   // Whether this step is a real numeric step (the kind the Step Numbers toggle controls).
   // Beat number 0 is excluded so it falls through to show "Start" text;
@@ -89,10 +88,10 @@ dark mode independent of app dark mode). Export uses explicit darkMode prop.
   // Get display text - step number, "Start", or "End"
   const displayText = $derived.by(() => {
     if (stepNumber === 0) {
-      return "Start";
+      return t("viewer_ui_start");
     }
     if (stepNumber === -2) {
-      return "End";
+      return t("viewer_final_end");
     }
     return stepNumber?.toString() || "";
   });
@@ -105,12 +104,20 @@ dark mode independent of app dark mode). Export uses explicit darkMode prop.
   $effect(() => {
     let timeout: ReturnType<typeof setTimeout> | undefined;
     // Skip initial mount, animate when step number changes
-    if (prevStepNumber !== undefined && stepNumber !== prevStepNumber && stepNumber !== null) {
+    if (
+      prevStepNumber !== undefined &&
+      stepNumber !== prevStepNumber &&
+      stepNumber !== null
+    ) {
       isAnimating = true;
-      timeout = setTimeout(() => { isAnimating = false; }, 180);
+      timeout = setTimeout(() => {
+        isAnimating = false;
+      }, 180);
     }
     prevStepNumber = stepNumber;
-    return () => { if (timeout) clearTimeout(timeout); };
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
   });
 </script>
 

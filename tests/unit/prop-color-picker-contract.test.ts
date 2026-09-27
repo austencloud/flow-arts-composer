@@ -60,7 +60,7 @@ const HOSTS: Record<string, string> = {
   "shape matrix focus":
     "src/lib/shared/shape-matrix/app/components/ShapeMatrixFocusWorkspace.svelte",
   "post studio look panel":
-    "src/lib/shared/share/components/post-studio/builder/PostStudioWorkspace.svelte",
+    "src/lib/shared/share/components/post-studio/editor/PostEditorWorkspace.svelte",
   "motion path explorer":
     "src/routes/(public)/guide/motion-paths/_components/MotionPathExplorer.svelte",
   "landing play with it":

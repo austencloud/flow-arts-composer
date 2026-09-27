@@ -3,6 +3,7 @@ PortraitTouchZone.svelte - Invisible touch zone for portrait stepper
 Covers top or bottom half of the card for increment/decrement
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   let { type, title, disabled, onclick, onkeydown } = $props<{
     type: "increment" | "decrement";
     title: string;
@@ -12,7 +13,12 @@ Covers top or bottom half of the card for increment/decrement
   }>();
 
   const ariaLabel = $derived(
-    type === "increment" ? `Increase ${title}` : `Decrease ${title}`
+    t(
+      type === "increment"
+        ? "create_deep_increase_aria"
+        : "create_deep_decrease_aria",
+      { title }
+    )
   );
 </script>
 
@@ -73,6 +79,7 @@ Covers top or bottom half of the card for increment/decrement
   .portrait-touch-zone:focus-visible {
     outline: 2px solid color-mix(in srgb, var(--text-color) 70%, transparent);
     outline-offset: -2px;
-    transition: outline-color var(--duration-dramatic) cubic-bezier(0.4, 0, 0.2, 1);
+    transition: outline-color var(--duration-dramatic)
+      cubic-bezier(0.4, 0, 0.2, 1);
   }
 </style>

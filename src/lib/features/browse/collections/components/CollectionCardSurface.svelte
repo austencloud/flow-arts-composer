@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
   import type { LibraryCollection } from "$lib/shared/library/domain/models/collection";
   import type { CollectionAccessRole } from "$lib/shared/library/domain/models/collection";
@@ -41,15 +42,21 @@
     isSmart && collection.systemType === "founding"
   );
   const smartSourceLabel = $derived(
-    collection.filterSpec?.source === "my-library" ? "My Library" : "Community"
+    collection.filterSpec?.source === "my-library"
+      ? t("browse_audit_my_library")
+      : t("browse_audit_community")
   );
 
   function defaultCountLabel(n: number): string {
-    return `${n} ${n === 1 ? "sequence" : "sequences"}`;
+    return n === 1
+      ? t("browse_audit_one_sequence", { count: n })
+      : t("browse_audit_many_sequences", { count: n });
   }
 
   function smartCountLabel(n: number): string {
-    return `${n} ${n === 1 ? "match" : "matches"}`;
+    return n === 1
+      ? t("browse_audit_one_match", { count: n })
+      : t("browse_audit_matches_count", { count: n });
   }
 </script>
 
@@ -83,7 +90,7 @@
           {#if isSmart && !minimalMetadata}
             <span class="smart-label">
               <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
-              Smart
+              {t("browse_audit_smart")}
             </span>
           {/if}
         </span>
@@ -96,16 +103,20 @@
               ? smartCountLabel(collection.sequenceCount)
               : defaultCountLabel(
                   collection.sequenceCount
-                ))}{#if isSmart && !minimalMetadata}{" · "}{smartSourceLabel}{#if isBuiltInSmart}{" · "}Built
-              in{/if}{/if}{#if !isReadonly && collection.isPublic}{" · "}<i
+                ))}{#if isSmart && !minimalMetadata}{" · "}{smartSourceLabel}{#if isBuiltInSmart}{" · "}{t(
+                "browse_audit_built_in"
+              )}{/if}{/if}{#if !isReadonly && collection.isPublic}{" · "}<i
               class="fas fa-globe public-globe"
               aria-hidden="true"
-            ></i> Public{/if}
+            ></i>
+            {t("browse_audit_public")}{/if}
         </span>
         {#if ownerName}
           <span class="tile-owner">
-            by {ownerName}{#if accessRole}
-              · {accessRole === "editor" ? "Can edit" : "Can view"}{/if}
+            {t("browse_audit_by_owner", { owner: ownerName })}{#if accessRole}
+              · {accessRole === "editor"
+                ? t("browse_audit_can_edit")
+                : t("browse_audit_can_view")}{/if}
           </span>
         {:else if collection.credit}
           <!-- Hand-written attribution for a contributor with no profile to
@@ -119,7 +130,7 @@
       <button
         type="button"
         class="kebab"
-        aria-label={`Options for ${collection.name}`}
+        aria-label={t("browse_audit_options_for", { name: collection.name })}
         onclick={onOptions}
       >
         <i class="fas fa-ellipsis-vertical" aria-hidden="true"></i>

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import { DEFAULT_VIEWER_CUSTOM_COLORS } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
@@ -42,11 +43,11 @@
   type Action = "rotate" | "mirror" | "flip" | "swap";
   const pending: { action: Action; rotationSteps: number }[] = [];
   onDestroy(() => motion.destroy());
-  const descriptions = {
-    alpha: "Opposite points",
-    beta: "The same point",
-    gamma: "A right angle apart",
-  };
+  const descriptions = $derived({
+    alpha: tDynamic("learn_placement_comparison_alpha"),
+    beta: tDynamic("learn_placement_comparison_beta"),
+    gamma: tDynamic("learn_placement_comparison_gamma"),
+  });
   const examples = $derived(
     PLACEMENT_KINDS.map((kind, index) => ({
       kind,
@@ -82,7 +83,14 @@
       gridMode = getToggledGridMode(gridMode, rotationSteps);
     }
     if (action === "swap") betaSwapped = !betaSwapped;
-    announcement = `${action === "rotate" ? "Rotated 45 degrees" : action === "mirror" ? "Mirrored left and right" : action === "flip" ? "Flipped up and down" : "Hands swapped"}. Alpha, Beta and Gamma are unchanged. ${gridMode === GridMode.BOX ? "Box" : "Diamond"} grid.`;
+    announcement = tDynamic("learn_placement_comparison_announcement", {
+      action: tDynamic(`learn_placement_comparison_action_${action}`),
+      grid: tDynamic(
+        gridMode === GridMode.BOX
+          ? "learn_placement_comparison_box"
+          : "learn_placement_comparison_diamond"
+      ),
+    });
     if (reducedMotion()) {
       playNext();
       return;
@@ -113,9 +121,18 @@
 </script>
 
 <div class="placement-comparison">
-  <div class="placement-examples" role="group" aria-label="Placement examples">
+  <div
+    class="placement-examples"
+    role="group"
+    aria-label={tDynamic("learn_placement_comparison_group")}
+  >
     {#each examples as example, index (example.kind)}
-      <section class="placement-example" aria-label={`${example.kind} placement`}>
+      <section
+        class="placement-example"
+        aria-label={tDynamic("learn_placement_comparison_placement_aria", {
+          placement: example.kind[0]!.toUpperCase() + example.kind.slice(1),
+        })}
+      >
         <div class="pictograph">
           <PictographContainer
             leftColorOverride={DEFAULT_VIEWER_CUSTOM_COLORS.left}
@@ -164,7 +181,7 @@
   <div
     class="transform-bar"
     role="group"
-    aria-label="Transform all three placements"
+    aria-label={tDynamic("learn_placement_comparison_transform_group")}
   >
     <SequenceTransformActions
       toolbar
@@ -172,7 +189,7 @@
       hasSelection={false}
       isTransforming={false}
       showEditInConstructor={false}
-      actionSubject="all placements"
+      actionSubject={tDynamic("learn_placement_comparison_action_subject")}
       rotationDegrees={45}
       onMirror={() => transform("mirror")}
       onFlip={() => transform("flip")}
@@ -182,8 +199,15 @@
     />
   </div>
   <p class="grid-label">
-    {gridMode === GridMode.BOX ? "Box" : "Diamond"} grid
-    <span aria-hidden="true">·</span> Each rotation is 45°
+    {tDynamic("learn_placement_comparison_grid", {
+      grid: tDynamic(
+        gridMode === GridMode.BOX
+          ? "learn_placement_comparison_box"
+          : "learn_placement_comparison_diamond"
+      ),
+    })}
+    <span aria-hidden="true">·</span>
+    {tDynamic("learn_placement_comparison_rotation")}
   </p>
   <span class="sr-only" aria-live="polite">{announcement}</span>
 </div>

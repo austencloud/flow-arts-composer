@@ -3,6 +3,7 @@ BaseCard.svelte - Base component for all setting cards
 Provides consistent styling and interaction patterns for all generation setting cards
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { attachRipple } from "$lib/shared/application/services/ripple-effect";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
@@ -89,7 +90,8 @@ Provides consistent styling and interaction patterns for all generation setting 
     tabindex="0"
     onclick={handleClick}
     onkeydown={handleKeydown}
-    aria-label={ariaLabel ?? `${title}: ${currentValue}. Click to change.`}
+    aria-label={ariaLabel ??
+      t("create_deep_card_change_aria", { title, value: currentValue })}
     {...triggerProps}
     style="--card-color: {color}; --shadow-color: {shadowColor}; --card-index: {cardIndex}; grid-column: span {gridColumnSpan};"
   >

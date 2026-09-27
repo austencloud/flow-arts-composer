@@ -1,10 +1,15 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
   import OptionChipRow from "../OptionChipRow.svelte";
   import AdvancedControls from "$lib/shared/effects/components/AdvancedControls.svelte";
   import type { SparklesIntent } from "$lib/shared/effects/domain/effects-config";
 
-  const MODES: { value: SparklesIntent["mode"]; label: string; icon: string }[] = [
+  const MODES: {
+    value: SparklesIntent["mode"];
+    label: string;
+    icon: string;
+  }[] = [
     { value: "burst", label: "Burst", icon: "fa-bolt" },
     { value: "stream", label: "Stream", icon: "fa-water" },
     { value: "trail", label: "Trail", icon: "fa-route" },
@@ -40,7 +45,7 @@
 <div class="customize-view">
   <button type="button" class="back-btn" onclick={onBack}>
     <i class="fas fa-arrow-left" aria-hidden="true"></i>
-    Back to presets
+    {t("effect_deep_back_to_presets")}
   </button>
 
   {#if state}
@@ -63,27 +68,34 @@
 
       {#if state.sparkles.colorMode === "solid"}
         <div class="color-row">
-          <span class="color-label">Tint</span>
+          <span class="color-label">{t("effect_deep_tint")}</span>
           <div class="color-pickers">
             <label class="color-picker">
               <input
                 type="color"
                 value={state.sparkles.color}
-                oninput={(e) => state.updateEffect("sparkles", { color: (e.currentTarget as HTMLInputElement).value })}
+                oninput={(e) =>
+                  state.updateEffect("sparkles", {
+                    color: (e.currentTarget as HTMLInputElement).value,
+                  })}
               />
             </label>
           </div>
         </div>
       {:else if state.sparkles.colorMode === "palette"}
         <div class="color-row">
-          <span class="color-label">Palette</span>
+          <span class="color-label">{t("effect_deep_palette")}</span>
           <div class="color-pickers">
             {#each [0, 1, 2, 3, 4] as i (i)}
               <label class="color-picker">
                 <input
                   type="color"
                   value={paletteAt(i)}
-                  oninput={(e) => setPaletteAt(i, (e.currentTarget as HTMLInputElement).value)}
+                  oninput={(e) =>
+                    setPaletteAt(
+                      i,
+                      (e.currentTarget as HTMLInputElement).value
+                    )}
                 />
               </label>
             {/each}
@@ -93,68 +105,105 @@
 
       <!-- Rate -->
       <div class="slider-row">
-        <label for="sparkles-rate">Rate</label>
+        <label for="sparkles-rate">{t("effect_deep_rate")}</label>
         <input
           id="sparkles-rate"
-          type="range" min="0" max="1" step="0.05"
+          type="range"
+          min="0"
+          max="1"
+          step="0.05"
           value={state.sparkles.rate}
-          oninput={(e) => state.updateEffect("sparkles", { rate: +(e.currentTarget as HTMLInputElement).value })}
+          oninput={(e) =>
+            state.updateEffect("sparkles", {
+              rate: +(e.currentTarget as HTMLInputElement).value,
+            })}
         />
-        <span class="slider-value">{Math.round(state.sparkles.rate * 100)}%</span>
+        <span class="slider-value"
+          >{Math.round(state.sparkles.rate * 100)}%</span
+        >
       </div>
 
       <!-- Size -->
       <div class="slider-row">
-        <label for="sparkles-size">Size</label>
+        <label for="sparkles-size">{t("effect_deep_size")}</label>
         <input
           id="sparkles-size"
-          type="range" min="0" max="1" step="0.05"
+          type="range"
+          min="0"
+          max="1"
+          step="0.05"
           value={state.sparkles.size}
-          oninput={(e) => state.updateEffect("sparkles", { size: +(e.currentTarget as HTMLInputElement).value })}
+          oninput={(e) =>
+            state.updateEffect("sparkles", {
+              size: +(e.currentTarget as HTMLInputElement).value,
+            })}
         />
-        <span class="slider-value">{Math.round(state.sparkles.size * 100)}%</span>
+        <span class="slider-value"
+          >{Math.round(state.sparkles.size * 100)}%</span
+        >
       </div>
 
       <AdvancedControls count={3}>
         <!-- Lifetime -->
         <div class="slider-row">
-          <label for="sparkles-lifetime">Lifetime</label>
+          <label for="sparkles-lifetime">{t("effect_deep_lifetime")}</label>
           <input
             id="sparkles-lifetime"
-            type="range" min="0.1" max="3" step="0.1"
+            type="range"
+            min="0.1"
+            max="3"
+            step="0.1"
             value={state.sparkles.lifetime}
-            oninput={(e) => state.updateEffect("sparkles", { lifetime: +(e.currentTarget as HTMLInputElement).value })}
+            oninput={(e) =>
+              state.updateEffect("sparkles", {
+                lifetime: +(e.currentTarget as HTMLInputElement).value,
+              })}
           />
-          <span class="slider-value">{state.sparkles.lifetime.toFixed(1)}s</span>
+          <span class="slider-value">{state.sparkles.lifetime.toFixed(1)}s</span
+          >
         </div>
 
         <!-- Spread -->
         <div class="slider-row">
-          <label for="sparkles-spread">Spread</label>
+          <label for="sparkles-spread">{t("effect_deep_spread")}</label>
           <input
             id="sparkles-spread"
-            type="range" min="0" max="30" step="1"
+            type="range"
+            min="0"
+            max="30"
+            step="1"
             value={state.sparkles.spread}
-            oninput={(e) => state.updateEffect("sparkles", { spread: +(e.currentTarget as HTMLInputElement).value })}
+            oninput={(e) =>
+              state.updateEffect("sparkles", {
+                spread: +(e.currentTarget as HTMLInputElement).value,
+              })}
           />
           <span class="slider-value">{state.sparkles.spread}px</span>
         </div>
 
         <!-- Gravity -->
         <div class="slider-row">
-          <label for="sparkles-gravity">Gravity</label>
+          <label for="sparkles-gravity">{t("effect_deep_gravity")}</label>
           <input
             id="sparkles-gravity"
-            type="range" min="0" max="1" step="0.05"
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
             value={state.sparkles.gravity}
-            oninput={(e) => state.updateEffect("sparkles", { gravity: +(e.currentTarget as HTMLInputElement).value })}
+            oninput={(e) =>
+              state.updateEffect("sparkles", {
+                gravity: +(e.currentTarget as HTMLInputElement).value,
+              })}
           />
-          <span class="slider-value">{Math.round(state.sparkles.gravity * 100)}%</span>
+          <span class="slider-value"
+            >{Math.round(state.sparkles.gravity * 100)}%</span
+          >
         </div>
       </AdvancedControls>
     </div>
   {:else}
-    <p class="empty">Effect state unavailable.</p>
+    <p class="empty">{t("effect_deep_effect_state_unavailable")}</p>
   {/if}
 </div>
 

@@ -3,6 +3,7 @@
   surfaces own their own lazy mounting, keep-alive, and practice behavior.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
   import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
   import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
@@ -747,7 +748,7 @@
         content: animationPanel,
         resizable: splitResizable,
         minSize: splitPaneMinSize,
-        resizeLabel: "Resize animation and card",
+        resizeLabel: t("viewer_ui_resize_animation_card"),
       },
       {
         id: "preview",

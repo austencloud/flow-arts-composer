@@ -137,6 +137,24 @@
       })();
     </script>
 
+    <!-- Capture the PWA install prompt before MobileFullscreenManager exists.
+         Chrome fires beforeinstallprompt early in page load, but the manager
+         is only created lazily when the first caller reaches for it (root
+         layout defers that to requestIdleCallback). Any event that fires
+         before the manager exists would otherwise be lost, leaving
+         canInstallPWA() false even though Chrome offers an install. -->
+    <script>
+      (function () {
+        window.addEventListener("beforeinstallprompt", function (e) {
+          e.preventDefault();
+          window.__tkaInstallPrompt = e;
+        });
+        window.addEventListener("appinstalled", function () {
+          window.__tkaInstallPrompt = null;
+        });
+      })();
+    </script>
+
     <!-- tka-root-app-only:start -->
     <!-- 🚀 Preconnect to external origins for faster requests (app mode only) -->
     <!-- Landing visitors don't need Firebase/Google APIs - skip these to save ~500ms -->
@@ -283,7 +301,7 @@
       name="apple-mobile-web-app-status-bar-style"
       content="black-translucent"
     />
-    <meta name="apple-mobile-web-app-title" content="Flow Arts Composer" />
+    <meta name="apple-mobile-web-app-title" content="FA Composer" />
     <!-- Smart App Banner: prompts iOS users to open/install native app.
          Uncomment after Apple Developer enrollment assigns an App Store ID. -->
     <!-- <meta name="apple-itunes-app" content="app-id=XXXXXXXXXX"> -->
@@ -1228,7 +1246,58 @@
     <script>
       // Single calm status line. No rotating jokes — the real bar below tracks
       // actual resource load. (Replaced the old Sims-style flavor reel.)
-      var __tkaFlavorMessages = ["Loading the alphabet…"];
+      // This runs before the app's lazy locale bundle. Match its cookie-first
+      // selection so German visitors also get a translated startup screen.
+      var __tkaBootLocales = [
+        "en",
+        "es",
+        "fr",
+        "de",
+        "pt",
+        "zh",
+        "ja",
+        "ko",
+        "ar",
+        "ru",
+        "it",
+      ];
+      var __tkaBootCookie = document.cookie.match(
+        /(?:^|;\s*)PARAGLIDE_LOCALE=([^;]+)/
+      );
+      var __tkaBootLocale = __tkaBootCookie
+        ? __tkaBootCookie[1].split("-")[0].toLowerCase()
+        : "";
+      if (__tkaBootLocales.indexOf(__tkaBootLocale) === -1) {
+        __tkaBootLocale =
+          (navigator.languages || [navigator.language])
+            .map(function (language) {
+              return language.split("-")[0].toLowerCase();
+            })
+            .find(function (language) {
+              return __tkaBootLocales.indexOf(language) !== -1;
+            }) || "en";
+      }
+      var __tkaBootGerman = {
+        "Loading the alphabet…": "Das Alphabet wird geladen…",
+        "Starting up...": "Die App wird gestartet…",
+        "Connecting to cloud...": "Verbindung zur Cloud wird hergestellt…",
+        "Checking session...": "Anmeldung wird geprüft…",
+        "Loading settings...": "Einstellungen werden geladen…",
+        "Restoring workspace...": "Arbeitsbereich wird wiederhergestellt…",
+        "Applying your theme...": "Dein Erscheinungsbild wird angewendet…",
+        "Opening workspace...": "Arbeitsbereich wird geöffnet…",
+      };
+      function __tkaBootMessage(message) {
+        return __tkaBootLocale === "de"
+          ? __tkaBootGerman[message] || message
+          : message;
+      }
+      if (__tkaBootLocale === "de") {
+        document
+          .getElementById("app-loading")
+          .setAttribute("aria-label", "Flow Arts Composer wird geladen");
+      }
+      var __tkaFlavorMessages = [__tkaBootMessage("Loading the alphabet…")];
 
       // --- Phase A: Resource-tracking loading bar (5% → 70%) ---
       // Uses PerformanceObserver to track real /_app/ resource loads.
@@ -1439,7 +1508,7 @@
             });
           }
         } else if (now - __tkaLastTextTime >= __tkaMinTextGap) {
-          if (text) __tkaCrossfade(text, message);
+          if (text) __tkaCrossfade(text, __tkaBootMessage(message));
           __tkaLastTextTime = now;
         }
       };

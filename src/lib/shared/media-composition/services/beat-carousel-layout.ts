@@ -3,7 +3,8 @@
  *
  * Pure geometry for the Post Studio breakdown carousel: a 580×500-ish region
  * that shows the current beat large, with upcoming (and, once under way,
- * trailing) beats visible beside it, sliding into focus as each beat lands.
+ * trailing) beats beside it, sliding into focus as each beat lands. Cells cut
+ * by the region's edge fade with how much of them is inside.
  * No canvas, no DOM — `beat-carousel-painter.ts` draws what this returns, and
  * this same layout is what the unit tests assert against.
  *
@@ -80,6 +81,21 @@ export interface BeatCarouselLayout {
 
 const GAP_RATIO = 0.06; // spec: "Gap: 6% of focus size"
 const CAROUSEL_PRESENTATION = "spotlight" as const;
+
+/**
+ * A cell cut by the region's edge fades with how much of it is still inside:
+ * gone below 15%, full strength from half. At rest the 40% anchor leaves the
+ * previous beat about 13% inside, which drew as a stray grey bar against the
+ * animation; the fade also lets cells slide in and out without popping.
+ */
+const EDGE_FADE_FROM = 0.15;
+const EDGE_FADE_TO = 0.5;
+
+function edgeFade(insideFraction: number): number {
+  return easeInOut(
+    clamp01((insideFraction - EDGE_FADE_FROM) / (EDGE_FADE_TO - EDGE_FADE_FROM))
+  );
+}
 
 /**
  * Vertical strip reserved along the bottom of the rect for the beat-tick row.
@@ -212,17 +228,21 @@ export function layoutBeatCarousel(
     if (size <= 0 || cellIndex < 0) return;
     const left = centerX - size / 2;
     const right = centerX + size / 2;
-    if (right < rect.x || left > rect.x + rect.width) return; // entirely outside
+    const inside =
+      Math.min(right, rect.x + rect.width) - Math.max(left, rect.x);
+    const fade = edgeFade(inside / size);
+    if (fade <= 0) return;
     cells.push({
       cellIndex,
       beat: beatForCellIndex(cellIndex, beatCount, position),
       x: centerX,
       y: centerY,
       size,
-      opacity: continuousCellOpacity(
-        CAROUSEL_PRESENTATION,
-        Math.abs(cellIndex - track)
-      ),
+      opacity:
+        continuousCellOpacity(
+          CAROUSEL_PRESENTATION,
+          Math.abs(cellIndex - track)
+        ) * fade,
       isFocus: cellIndex === Math.round(track),
     });
   };

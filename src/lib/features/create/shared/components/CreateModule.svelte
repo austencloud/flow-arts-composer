@@ -90,11 +90,12 @@
   import { resolveAccessTier } from "$lib/shared/auth/domain/access-tier";
   import { isPremiumOrAbove } from "$lib/shared/auth/domain/models/user-role";
   import { isTabAccessible } from "$lib/shared/auth/domain/guest-access-config";
+  import { createMethodNudgeTrigger } from "$lib/shared/auth/domain/auth-nudge-trigger";
   import { createPanelHeightTracker } from "../state/managers/panel-height-tracker.svelte";
   import type { SettingsState } from "$lib/shared/settings/state/settings-state.svelte";
   import type { LetterSource } from "$lib/shared/create/domain/spell-models";
   import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
-  import { formatLOOPTypeForDisplay } from "$lib/shared/create/services/loop-type-utils";
+  import { loopTypeLabel } from "$lib/features/create/generate/components/loop-component-presentation";
   import { toast } from "$lib/shared/toast/state/toast-state.svelte";
   import { UndoOperationType } from "../services/undo-manager";
   import PropUnlockCelebration from "$lib/shared/gamification/components/PropUnlockCelebration.svelte";
@@ -159,16 +160,28 @@
       isPremiumOrAbove(authState.role)
     )
   );
-  const availableCreateMethods = $derived.by(() => {
+  const releasedCreateMethods = $derived.by(() => {
     // Establish the same reactive flag dependency as the navigation surfaces.
     void featureFlagState.flagsVersion;
     return CREATE_TABS.filter(
       (tab) =>
         tab.metadata?.isCreationMethod === true &&
-        featureFlagService.canAccessTab("create", tab.id) &&
-        isTabAccessible("create", tab.id, accessTier)
+        featureFlagService.canAccessTab("create", tab.id)
     );
   });
+  // Guests see the account-only methods too, as locked cards that open the
+  // sign-up screen. The board keeps one shape for everyone, and a guest can
+  // see what a free account adds.
+  const lockedCreateMethodIds = $derived(
+    new Set(
+      releasedCreateMethods
+        .filter((tab) => !isTabAccessible("create", tab.id, accessTier))
+        .map((tab) => tab.id)
+    )
+  );
+  function handleLockedCreateMethod(methodId: string): void {
+    authDrawerState.show("signup", createMethodNudgeTrigger(methodId));
+  }
   const lastUsedCreateMode = $derived(
     navigationState.hasRememberedCreateMode
       ? navigationState.currentCreateMode
@@ -193,7 +206,7 @@
   let pendingLoopType = $state<LOOPType | null>(null);
   let isApplyingLoop = $state(false);
   let pendingLoopStepCount = $state(0);
-  let pendingLoopComponentName = $state("");
+  const pendingLoopComponentName = $derived(loopTypeLabel(pendingLoopType));
   let isMobile = $state(false);
   let sequenceToTransfer: PictographData[] | null = $state(null);
   let toolPanelElement: HTMLElement | null = $state(null);
@@ -420,7 +433,7 @@
 
       try {
         const initStart = performance.now();
-        initProgress = "Resolving services...";
+        initProgress = t("create_ui_resolving_services");
         const { getCreateModuleInitializer } = await bootProfiler.measureAsync(
           "create:initializer-import",
           () =>
@@ -428,7 +441,7 @@
         );
         const initService = getCreateModuleInitializer();
 
-        initProgress = "Initializing workspace...";
+        initProgress = t("create_ui_initializing_workspace");
         const result = await bootProfiler.measureAsync(
           "create:initialize",
           () => initService.initialize()
@@ -703,7 +716,8 @@
         accountSetupState?.requestReminder();
       }
     } catch (err) {
-      error = err instanceof Error ? err.message : "Failed to select option";
+      error =
+        err instanceof Error ? err.message : t("create_audit_select_error");
     }
   }
 
@@ -742,7 +756,8 @@
         panelState,
       });
     } catch (err) {
-      error = err instanceof Error ? err.message : "Failed to clear sequence";
+      error =
+        err instanceof Error ? err.message : t("create_audit_clear_error");
     } finally {
       showClearSequenceConfirm = false;
     }
@@ -773,11 +788,9 @@
     const sequence = activeSeqState?.currentSequence;
     if (!sequence) return;
 
-    pendingLoopComponentName = formatLOOPTypeForDisplay(loopType);
-
     const result = await extensionFlowCoordinator.startFlow(sequence);
     if (!result.canExtend || !result.analysis) {
-      toast.warning("Cannot complete this LOOP");
+      toast.warning(t("create_audit_loop_error"));
       return;
     }
 
@@ -955,11 +968,13 @@
 
 {#snippet frontDoorSurface()}
   <CreateFrontDoor
-    methods={availableCreateMethods}
+    methods={releasedCreateMethods}
+    lockedMethodIds={lockedCreateMethodIds}
     active={navigationState.isCreateFrontDoorOpen}
     source={navigationState.createFrontDoorSource}
     lastUsedMode={lastUsedCreateMode}
     onSelect={handleCreateMethodSelected}
+    onLockedSelect={handleLockedCreateMethod}
   />
 {/snippet}
 
@@ -1050,9 +1065,9 @@
         <ConfirmDialog
           bind:isOpen={showClearSequenceConfirm}
           title={t("create_ui_clear_sequence")}
-          message="This will remove all steps and the start placement. Use undo to restore if needed."
-          confirmText="Clear All"
-          cancelText="Keep"
+          message={t("create_audit_clear_message")}
+          confirmText={t("create_audit_clear_all")}
+          cancelText={t("create_audit_keep")}
           variant="danger"
           showDontAskAgain={true}
           ghostConfirm={true}
@@ -1064,10 +1079,12 @@
         <!-- LOOP Completion Confirmation Dialog -->
         <ConfirmDialog
           bind:isOpen={showLoopConfirm}
-          title="Apply {pendingLoopComponentName} LOOP?"
-          message="This will add {pendingLoopStepCount} steps to your sequence."
-          confirmText="Apply"
-          cancelText="Cancel"
+          title="{t('create_audit_apply')} {pendingLoopComponentName} LOOP?"
+          message={t("create_audit_loop_steps", {
+            count: pendingLoopStepCount,
+          })}
+          confirmText={t("create_audit_apply")}
+          cancelText={t("create_audit_cancel")}
           variant="info"
           showDontAskAgain={true}
           onConfirm={confirmLoopCompletion}

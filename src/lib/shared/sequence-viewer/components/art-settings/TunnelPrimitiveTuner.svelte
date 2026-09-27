@@ -178,7 +178,7 @@
       ? t("viewer_ui_performer")
       : t("viewer_ui_performers")}
     <span class="tr-mid">·</span>
-    <span class="tr-n">{controller.propCount}</span> Props
+    <span class="tr-n">{controller.propCount}</span> {t("viewer_detail_props")}
   </p>
   {#if tunnelFactors.length}
     <p class="tuner-build">

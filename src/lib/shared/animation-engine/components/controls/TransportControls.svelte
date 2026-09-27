@@ -9,6 +9,7 @@
   - Full beat forward (>>)
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onDestroy } from "svelte";
 
   let {
@@ -70,7 +71,7 @@
         onStepHalfBeatBackward?.();
       }}
       type="button"
-      aria-label="Previous half step"
+      aria-label={t("playback_audit_previous_half_step")}
       {disabled}
     >
       <i class="fas fa-chevron-left" aria-hidden="true"></i>
@@ -87,7 +88,7 @@
         onRestartToStart();
       }}
       type="button"
-      aria-label="Restart from beginning"
+      aria-label={t("playback_audit_restart")}
       {disabled}
     >
       <i class="fas fa-backward-fast" aria-hidden="true"></i>
@@ -101,7 +102,7 @@
         onStepFullBeatBackward?.();
       }}
       type="button"
-      aria-label="Previous full step"
+      aria-label={t("playback_audit_previous_full_step")}
       {disabled}
     >
       <i class="fas fa-angles-left" aria-hidden="true"></i>
@@ -113,7 +114,9 @@
     class="play-pause-btn large"
     class:playing={isPlaying}
     onclick={onPlaybackToggle}
-    aria-label={isPlaying ? "Pause animation" : "Play animation"}
+    aria-label={isPlaying
+      ? t("playback_audit_pause_animation")
+      : t("playback_audit_play_animation")}
     type="button"
     {disabled}
   >
@@ -130,7 +133,7 @@
         onStepFullBeatForward?.();
       }}
       type="button"
-      aria-label="Next full step"
+      aria-label={t("playback_audit_next_full_step")}
       {disabled}
     >
       <i class="fas fa-angles-right" aria-hidden="true"></i>
@@ -147,7 +150,7 @@
         onStepHalfBeatForward?.();
       }}
       type="button"
-      aria-label="Next half step"
+      aria-label={t("playback_audit_next_half_step")}
       {disabled}
     >
       <i class="fas fa-chevron-right" aria-hidden="true"></i>

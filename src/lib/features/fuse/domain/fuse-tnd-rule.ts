@@ -29,6 +29,8 @@ import { createFuseRule, type FuseRule } from "./fuse-rule";
 
 export type FuseTnDMode = VtgMode;
 export type FuseQuarterOffset = "cw" | "ccw";
+export type FuseTiming = "together" | "split" | "quarter-cw" | "quarter-ccw";
+export type FuseDirection = "same" | "opposite";
 
 export interface FuseTnDSelection {
   mode: FuseTnDMode;
@@ -51,6 +53,43 @@ export const DEFAULT_TND_SELECTION: FuseTnDSelection = {
 
 export function isQuarterMode(mode: FuseTnDMode): boolean {
   return mode === "QS" || mode === "QO";
+}
+
+export function fuseTnDAxes(selection: FuseTnDSelection): {
+  timing: FuseTiming;
+  direction: FuseDirection;
+} {
+  const timing = selection.mode.startsWith("T")
+    ? "together"
+    : selection.mode.startsWith("S")
+      ? "split"
+      : selection.quarterOffset === "cw"
+        ? "quarter-cw"
+        : "quarter-ccw";
+  return {
+    timing,
+    direction: selection.mode.endsWith("S") ? "same" : "opposite",
+  };
+}
+
+export function withFuseTnDAxes(
+  selection: FuseTnDSelection,
+  change: Partial<{ timing: FuseTiming; direction: FuseDirection }>
+): FuseTnDSelection {
+  const current = fuseTnDAxes(selection);
+  const timing = change.timing ?? current.timing;
+  const direction = change.direction ?? current.direction;
+  const family = timing === "together" ? "T" : timing === "split" ? "S" : "Q";
+  return {
+    ...selection,
+    mode: `${family}${direction === "same" ? "S" : "O"}` as FuseTnDMode,
+    quarterOffset:
+      timing === "quarter-cw"
+        ? "cw"
+        : timing === "quarter-ccw"
+          ? "ccw"
+          : selection.quarterOffset,
+  };
 }
 
 /** "Together, opposite" — the words the panel and the rail read. */

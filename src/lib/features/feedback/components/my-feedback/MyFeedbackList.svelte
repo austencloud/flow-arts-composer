@@ -5,13 +5,10 @@
     FeedbackItem,
     FeedbackStatus,
   } from "$lib/shared/feedback/domain/models/feedback-models";
-  import {
-    STATUS_CONFIG,
-    TYPE_CONFIG,
-    CONFIRMATION_STATUS_CONFIG,
-  } from "$lib/shared/feedback/domain/models/feedback-models";
+  import { STATUS_CONFIG } from "$lib/shared/feedback/domain/models/feedback-models";
   import MyFeedbackCard from "./MyFeedbackCard.svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { feedbackStatusLabel } from "../../domain/feedback-display-labels";
 
   const { items, selectedItemId, onSelect, isLoading } = $props<{
     items: FeedbackItem[];
@@ -71,7 +68,7 @@
           style="--status-color: {STATUS_CONFIG[status].color}"
         >
           <i class="fas {STATUS_CONFIG[status].icon}" aria-hidden="true"></i>
-          <span>{STATUS_CONFIG[status].label}</span>
+          <span>{feedbackStatusLabel(status)}</span>
           <span class="count">{count}</span>
         </button>
       {/if}
@@ -81,7 +78,7 @@
   <section class="all-section">
     <header class="section-header">
       <i class="fas fa-list" aria-hidden="true"></i>
-      <span>{STATUS_CONFIG[selectedStatus].label}</span>
+      <span>{feedbackStatusLabel(selectedStatus)}</span>
       <span class="count">{filteredItems.length}</span>
     </header>
 
@@ -98,7 +95,11 @@
     {#if filteredItems.length === 0 && !isLoading}
       <div class="empty-filter">
         <i class="fas fa-filter" aria-hidden="true"></i>
-        <span>{t("feedback_no_status_feedback", { status: STATUS_CONFIG[selectedStatus].label.toLowerCase() })}</span>
+        <span
+          >{t("feedback_no_status_feedback", {
+            status: feedbackStatusLabel(selectedStatus).toLowerCase(),
+          })}</span
+        >
       </div>
     {/if}
 

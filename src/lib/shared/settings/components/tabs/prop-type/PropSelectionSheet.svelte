@@ -19,12 +19,14 @@
   import BentoPropGrid from "./BentoPropGrid.svelte";
   import type { PropChiralitySeam } from "./prop-chirality-seam";
   import CatDogToggle from "./CatDogToggle.svelte";
+  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
 
   let {
     isOpen = $bindable(false),
     selectedPropType,
     color = "blue",
-    title = "Select Prop",
+    title,
     onSelect,
     showTabs = false,
     activeTab = $bindable<"left" | "right">("left"),
@@ -34,6 +36,10 @@
     onCatDogToggle,
     chirality,
     showColors = true,
+    fanAppearance,
+    onFanAppearanceChange,
+    propLook,
+    onPropLookChange,
   } = $props<{
     isOpen?: boolean;
     selectedPropType: PropType;
@@ -60,7 +66,14 @@
     chirality?: PropChiralitySeam;
     /** The picker's own prop-colour control; see BentoPropGrid. */
     showColors?: boolean;
+    /** Host-owned appearance; unset edits the global settings. */
+    fanAppearance?: FanAppearance;
+    onFanAppearanceChange?: (appearance: FanAppearance) => void;
+    propLook?: PropLook;
+    onPropLookChange?: (look: PropLook) => void;
   }>();
+
+  const displayTitle = $derived(title ?? t("settings_props_select_prop"));
 
   // Desktop (side-by-side layout, i.e. nav sidebar present) opens the picker as
   // a full-height RIGHT side drawer instead of a bottom sheet — matches the
@@ -120,7 +133,7 @@
   closeOnEscape={true}
   dismissible={true}
   showHandle={true}
-  ariaLabel={title}
+  ariaLabel={displayTitle}
   class="prop-selection-drawer"
   onOpenChange={(open) => {
     if (!open) setOpen(false);
@@ -128,7 +141,7 @@
 >
   <div class="sheet-content">
     <DrawerHeader
-      {title}
+      {displayTitle}
       subtitle={t("settings_prop_sheet_help")}
       onClose={handleClose}
     />
@@ -180,7 +193,7 @@
       <BentoPropGrid
         {selectedPropType}
         {color}
-        {title}
+        {displayTitle}
         variant="inline"
         flat
         scrollMode="internal"
@@ -190,6 +203,10 @@
         onSelect={handlePropSelect}
         {chirality}
         {showColors}
+        {fanAppearance}
+        {onFanAppearanceChange}
+        {propLook}
+        {onPropLookChange}
       />
     </div>
   </div>

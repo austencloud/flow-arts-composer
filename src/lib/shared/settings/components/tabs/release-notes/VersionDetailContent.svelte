@@ -1,5 +1,7 @@
 <!-- VersionDetailContent - Changelog content for a single version, usable inline or in a drawer -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { getReactiveLocale } from "$lib/shared/i18n/locale-state.svelte";
   import { onMount } from "svelte";
   import type {
     AppVersion,
@@ -223,7 +225,7 @@
       entry: deleted,
       absoluteIndex: absIdx,
     });
-    showToast("Entry deleted", "action");
+    showToast(t("settings_entry_deleted"), "action");
     onVersionUpdated?.();
   }
 
@@ -244,7 +246,7 @@
       if (msg) showToast(msg, "undone");
       onVersionUpdated?.();
     } catch {
-      showToast("Undo failed", "action");
+      showToast(t("settings_undo_failed"), "action");
     }
   }
 
@@ -255,7 +257,7 @@
       if (msg) showToast(msg, "redone");
       onVersionUpdated?.();
     } catch {
-      showToast("Redo failed", "action");
+      showToast(t("settings_redo_failed"), "action");
     }
   }
 
@@ -265,7 +267,9 @@
 
     lines.push(`Flow Arts Composer v${version.version}`);
     lines.push(
-      `Released ${version.releasedAt.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`
+      t("settings_released_on", {
+        date: version.releasedAt.toLocaleDateString(getReactiveLocale(), { year: "numeric", month: "long", day: "numeric" }),
+      })
     );
     lines.push("");
 
@@ -275,9 +279,9 @@
     }
 
     const cats = [
-      { key: "added", label: "Added" },
-      { key: "improved", label: "Improved" },
-      { key: "fixed", label: "Fixed" },
+      { key: "added", label: t("settings_changelog_added") },
+      { key: "improved", label: t("settings_changelog_improved") },
+      { key: "fixed", label: t("settings_changelog_fixed") },
     ] as const;
 
     for (const { key, label } of cats) {
@@ -365,7 +369,7 @@
 
   {#if version.releaseNotes}
     <section>
-      <h3>Release Notes</h3>
+      <h3>{t("tab_settings_release_notes")}</h3>
       <EditableReleaseNotes
         text={version.releaseNotes}
         canEdit={isAdmin}
@@ -380,9 +384,9 @@
 
   {#if hasChangelog || isAdmin}
     <section>
-      <h3>What Changed</h3>
+      <h3>{t("settings_what_changed")}</h3>
       {#if !hasChangelog && isAdmin}<p class="hint">
-          No entries yet. Add some below:
+          {t("settings_no_entries_add_below")}
         </p>{/if}
       <div class="change-groups" data-groups={populatedCategories.length}>
         {#each populatedCategories as cat (cat)}
@@ -440,7 +444,7 @@
 
   {#if version?.contributorIds?.length && contributorMap.size > 0}
     <section>
-      <h3>Contributors</h3>
+      <h3>{t("settings_contributors")}</h3>
       <div class="contributors-grid">
         {#each version.contributorIds as cid (cid)}
           {@const contrib = contributorMap.get(cid)}
@@ -457,7 +461,7 @@
   <Drawer
     bind:isOpen={feedbackPanelOpen}
     placement="right"
-    ariaLabel={`Edit feedback: ${selectedFeedback.title}`}
+    ariaLabel={t("settings_edit_feedback", { title: selectedFeedback.title })}
   >
     {#await import("$lib/features/feedback/components/manage/FeedbackDetailPanel.svelte") then mod}
       <mod.default

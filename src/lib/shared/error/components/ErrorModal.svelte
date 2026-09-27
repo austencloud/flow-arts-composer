@@ -7,11 +7,12 @@
   Wide two-column layout on desktop, single column on mobile.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
-import { onDestroy } from "svelte";
+  import { onDestroy } from "svelte";
   import { getErrorHandler } from "$lib/shared/application/get-error-handler";
   import { getCurrentError, dismissError } from "../state/error-state.svelte";
-  import type { ErrorHandler } from '$lib/shared/application/services/error-handler'
+  import type { ErrorHandler } from "$lib/shared/application/services/error-handler";
   import {
     buildErrorCopyText,
     formatParamLabel,
@@ -50,11 +51,11 @@ import { onDestroy } from "svelte";
     error?.context.additionalData &&
       Object.keys(error.context.additionalData).length > 0
       ? error.context.additionalData
-      : null,
+      : null
   );
 
   const hasParams = $derived(
-    !!(error?.context.module || error?.context.action || additionalData),
+    !!(error?.context.module || error?.context.action || additionalData)
   );
 
   async function handleCopy() {
@@ -64,39 +65,39 @@ import { onDestroy } from "svelte";
       clearTimeout(copyResetTimeout);
       copyResetTimeout = setTimeout(() => (copied = false), 2000);
     } catch {
-      toast.error("Failed to copy to clipboard");
+      toast.error(t("shared_error_copy_failed"));
     }
   }
 
   const severityConfig: Record<
     string,
     { icon: string; color: string; bg: string; title: string }
-  > = {
+  > = $derived({
     info: {
       icon: "fa-info-circle",
       color: "var(--semantic-info)",
       bg: "rgba(59, 130, 246, 0.15)",
-      title: "Notice",
+      title: t("shared_error_notice"),
     },
     warning: {
       icon: "fa-exclamation-triangle",
       color: "var(--semantic-warning)",
       bg: "rgba(245, 158, 11, 0.15)",
-      title: "Warning",
+      title: t("shared_error_warning"),
     },
     error: {
       icon: "fa-times-circle",
       color: "var(--semantic-error)",
       bg: "rgba(239, 68, 68, 0.15)",
-      title: "Error",
+      title: t("shared_error_error"),
     },
     critical: {
       icon: "fa-skull-crossbones",
       color: "var(--semantic-error)",
       bg: "rgba(220, 38, 38, 0.2)",
-      title: "Critical Error",
+      title: t("shared_error_critical"),
     },
-  };
+  });
 
   function getConfig(severity: string) {
     return severityConfig[severity] ?? severityConfig.error!;
@@ -114,24 +115,24 @@ import { onDestroy } from "svelte";
     try {
       const errorService = getErrorHandler() ?? undefined;
       if (!errorService) {
-        toast.error("Unable to submit bug report - service unavailable");
+        toast.error(t("shared_error_service_unavailable"));
         return;
       }
 
       const feedbackId = await errorService.reportBug(
         error.id,
-        userComment || undefined,
+        userComment || undefined
       );
 
       if (feedbackId) {
-        toast.success("Bug report submitted. Thank you!");
+        toast.success(t("shared_error_submitted"));
         handleDismiss();
       } else {
-        toast.error("Failed to submit bug report. Please try again.");
+        toast.error(t("shared_error_report_failed_retry"));
       }
     } catch (err) {
       console.error("Error reporting bug:", err);
-      toast.error("Failed to submit bug report");
+      toast.error(t("shared_error_report_failed"));
     } finally {
       isReporting = false;
     }
@@ -173,16 +174,14 @@ import { onDestroy } from "svelte";
         </div>
         <h2 id="error-title" class="error-title">{config.title}</h2>
         <button class="copy-button" onclick={handleCopy}>
-          <i
-            class="fas {copied ? 'fa-check' : 'fa-copy'}"
-            aria-hidden="true"
+          <i class="fas {copied ? 'fa-check' : 'fa-copy'}" aria-hidden="true"
           ></i>
-          {copied ? "Copied" : "Copy all"}
+          {copied ? t("shared_error_copied") : t("shared_error_copy_all")}
         </button>
         <button
           class="close-button"
           onclick={handleDismiss}
-          aria-label="Dismiss error"
+          aria-label={t("shared_error_dismiss_error")}
         >
           <i class="fas fa-times" aria-hidden="true"></i>
         </button>
@@ -196,11 +195,11 @@ import { onDestroy } from "svelte";
             <p class="error-message" id="error-message">{error.message}</p>
             <div class="params-grid">
               {#if error.context.module}
-                <span class="param-label">Module</span>
+                <span class="param-label">{t("shared_error_module")}</span>
                 <span class="param-value">{error.context.module}</span>
               {/if}
               {#if error.context.action}
-                <span class="param-label">Action</span>
+                <span class="param-label">{t("shared_error_action")}</span>
                 <span class="param-value">{error.context.action}</span>
               {/if}
               {#if additionalData}
@@ -236,12 +235,12 @@ import { onDestroy } from "svelte";
           {#if error.reportable}
             <div class="report-section">
               <label class="report-label" for="error-comment"
-                >What were you trying to do?</label
+                >{t("shared_error_intent")}</label
               >
               <textarea
                 id="error-comment"
                 class="comment-input"
-                placeholder="e.g. I was generating a 16-step circular sequence..."
+                placeholder={t("shared_error_example")}
                 bind:value={userComment}
                 rows="3"
               ></textarea>
@@ -253,7 +252,7 @@ import { onDestroy } from "svelte";
       <!-- Footer spans full width -->
       <div class="error-actions">
         <button class="action-button dismiss-button" onclick={handleDismiss}>
-          Dismiss
+          {t("shared_error_dismiss")}
         </button>
         {#if error.reportable}
           <button
@@ -264,10 +263,10 @@ import { onDestroy } from "svelte";
           >
             {#if isReporting}
               <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-              Reporting...
+              {t("shared_error_reporting")}
             {:else}
               <i class="fas fa-bug" aria-hidden="true"></i>
-              Report Bug
+              {t("shared_error_report_bug")}
             {/if}
           </button>
         {/if}
@@ -330,7 +329,6 @@ import { onDestroy } from "svelte";
       transform: translateY(0);
     }
   }
-
 
   .error-header {
     display: flex;
@@ -438,7 +436,6 @@ import { onDestroy } from "svelte";
     gap: 16px;
   }
 
-
   .error-message {
     margin: 0 0 16px;
     font-size: var(--font-size-base, 15px);
@@ -446,7 +443,6 @@ import { onDestroy } from "svelte";
     line-height: 1.4;
     color: var(--theme-text);
   }
-
 
   .params-grid {
     display: grid;
@@ -498,7 +494,6 @@ import { onDestroy } from "svelte";
     word-break: break-all;
   }
 
-
   .report-section {
     display: flex;
     flex-direction: column;
@@ -531,7 +526,6 @@ import { onDestroy } from "svelte";
     outline: none;
     border-color: var(--error-color);
   }
-
 
   .error-actions {
     display: flex;

@@ -7,6 +7,23 @@ Calibration makes recurring review judgments inspectable without treating a past
 - Reproducible labeled frames: **0**. Held-out evaluations: **0**.
 - The historical case below is context, not an evaluated calibration example.
 
+## Prepared collection round
+
+[Round 02: composition study](../design/visual-calibration/round-02/index.html)
+compares three arrangements of one TKA section with identical copy, images,
+palette, and type family. It follows owner feedback that the first set still
+felt AI-generated when read. This is an authorized design discussion, not a
+conversion of that reaction into six rejection labels. See its
+[record and verification limits](../design/visual-calibration/round-02/record.md).
+No preference has been recorded for these new variants.
+
+[Round 01](../design/visual-calibration/round-01/index.html) contains six real-page
+cases and eight captured frames for Austen to label. The
+[round record](../design/visual-calibration/round-01/round.md) describes provenance,
+confounds, and how to record answers. All six cases are **unlabeled calibration
+material**, not held-out tests or accepted controls. Preparing the board does
+not change the labeled-frame count or establish reviewer reliability.
+
 Even a labeled corpus does not establish reliability until the reviewer has
 been tested on independent examples. Record the scope and uncertainty of any
 later result; never claim universal accuracy.

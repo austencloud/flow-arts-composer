@@ -2,6 +2,7 @@
 ThumbOrientationsPage - Page 2: Thumb In/Out orientations
 -->
 <script lang="ts">
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import { THUMB_EXAMPLES } from "../../../../domain/constants/staff-examples";
   import StaffPlacementVisualizer from "../StaffPlacementVisualizer.svelte";
 
@@ -23,15 +24,14 @@ ThumbOrientationsPage - Page 2: Thumb In/Out orientations
 </script>
 
 <div class="page">
-  <h2>Thumb Orientations</h2>
+  <h2>{tDynamic("learn_staff_thumbs_title")}</h2>
 
   <div class="concept-intro thumb-intro">
     <div class="concept-icon">
       <i class="fa-solid fa-hand-point-up" aria-hidden="true"></i>
     </div>
     <p class="concept-summary">
-      <strong>Thumbs In</strong> or <strong>Thumbs Out</strong> affects the staff's
-      orientation
+      {tDynamic("learn_staff_thumbs_summary")}
     </p>
   </div>
 
@@ -43,46 +43,41 @@ ThumbOrientationsPage - Page 2: Thumb In/Out orientations
       rightThumbOrientation={currentExample.rightThumb}
       showLabels={true}
     />
-    <div class="example-label">{currentExample.label}</div>
+    <div class="example-label">
+      {tDynamic(`learn_staff_example_${exampleIndex}`)}
+    </div>
     <button class="cycle-button" onclick={cycleExample}>
       <i class="fa-solid fa-shuffle" aria-hidden="true"></i>
-      Show Another Example
+      {tDynamic("learn_staff_show_example")}
     </button>
   </div>
 
   <div class="explanation">
-    <h3>Understanding Thumb Orientation</h3>
+    <h3>{tDynamic("learn_staff_thumbs_understanding")}</h3>
     <ul>
-      <li>
-        <strong>Thumbs In</strong>: Thumb ends point toward the center
-      </li>
-      <li>
-        <strong>Thumbs Out</strong>: Thumb ends point away from center
-      </li>
-      <li>
-        Mixed orientations: <strong>(in/out)</strong> or
-        <strong>(out/in)</strong>
-      </li>
-      <li>
-        Most sequences start with <strong>thumbs in</strong> for consistency
-      </li>
+      <li>{tDynamic("learn_staff_thumbs_in_definition")}</li>
+      <li>{tDynamic("learn_staff_thumbs_out_definition")}</li>
+      <li>{tDynamic("learn_staff_thumbs_mixed")}</li>
+      <li>{tDynamic("learn_staff_thumbs_start")}</li>
     </ul>
   </div>
 
   <div class="thumb-cards">
     <div class="thumb-card in">
       <i class="fa-solid fa-compress-alt" aria-hidden="true"></i>
-      <span>Thumbs In</span>
-      <small>Pointing toward center</small>
+      <span>{tDynamic("learn_staff_thumbs_in")}</span>
+      <small>{tDynamic("learn_staff_thumbs_toward_center")}</small>
     </div>
     <div class="thumb-card out">
       <i class="fa-solid fa-expand-alt" aria-hidden="true"></i>
-      <span>Thumbs Out</span>
-      <small>Pointing away from center</small>
+      <span>{tDynamic("learn_staff_thumbs_out")}</span>
+      <small>{tDynamic("learn_staff_thumbs_away_center")}</small>
     </div>
   </div>
 
-  <button class="next-button" onclick={onNext}> Next: Prospin Rotation </button>
+  <button class="next-button" onclick={onNext}
+    >{tDynamic("learn_staff_next_prospin")}</button
+  >
 </div>
 
 <style>
@@ -112,7 +107,11 @@ ThumbOrientationsPage - Page 2: Thumb In/Out orientations
     font-weight: 700;
     margin: 0;
     text-align: center;
-    background: linear-gradient(135deg, var(--theme-accent, #22d3ee) 0%, var(--theme-accent, #06b6d4) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--theme-accent, #22d3ee) 0%,
+      var(--theme-accent, #06b6d4) 100%
+    );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -140,7 +139,8 @@ ThumbOrientationsPage - Page 2: Thumb In/Out orientations
       color-mix(in srgb, var(--semantic-info, #3b82f6) 10%, transparent) 0%,
       color-mix(in srgb, var(--semantic-info, #3b82f6) 2%, transparent) 100%
     );
-    border: 1px solid color-mix(in srgb, var(--semantic-info, #3b82f6) 20%, transparent);
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-info, #3b82f6) 20%, transparent);
   }
 
   .concept-icon {
@@ -151,7 +151,11 @@ ThumbOrientationsPage - Page 2: Thumb In/Out orientations
     justify-content: center;
     border-radius: 50%;
     font-size: 1.5rem;
-    background: color-mix(in srgb, var(--semantic-info, #3b82f6) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-info, #3b82f6) 20%,
+      transparent
+    );
     color: var(--semantic-info);
   }
 
@@ -240,8 +244,13 @@ ThumbOrientationsPage - Page 2: Thumb In/Out orientations
   }
 
   .thumb-card.in {
-    background: color-mix(in srgb, var(--semantic-info, #3b82f6) 10%, transparent);
-    border: 1px solid color-mix(in srgb, var(--semantic-info, #3b82f6) 25%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-info, #3b82f6) 10%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-info, #3b82f6) 25%, transparent);
     color: var(--semantic-info);
   }
 
@@ -279,7 +288,8 @@ ThumbOrientationsPage - Page 2: Thumb In/Out orientations
       color-mix(in srgb, var(--theme-accent, #22d3ee) 30%, transparent) 0%,
       color-mix(in srgb, var(--theme-accent, #22d3ee) 30%, transparent) 100%
     );
-    border: 2px solid color-mix(in srgb, var(--theme-accent, #22d3ee) 50%, transparent);
+    border: 2px solid
+      color-mix(in srgb, var(--theme-accent, #22d3ee) 50%, transparent);
     border-radius: 12px;
     color: white;
     font-size: 1.125rem;
@@ -296,7 +306,11 @@ ThumbOrientationsPage - Page 2: Thumb In/Out orientations
       color-mix(in srgb, var(--theme-accent, #22d3ee) 40%, transparent) 0%,
       color-mix(in srgb, var(--theme-accent, #22d3ee) 40%, transparent) 100%
     );
-    border-color: color-mix(in srgb, var(--theme-accent, #22d3ee) 80%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #22d3ee) 80%,
+      transparent
+    );
     transform: translateY(-2px);
   }
 

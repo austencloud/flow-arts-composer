@@ -8,6 +8,7 @@ Displays all 16 placements with toggle behavior:
 Uses blocklist approach: placements in blockedPlacements are excluded.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
@@ -223,21 +224,21 @@ Uses blocklist approach: placements in blockedPlacements are excluded.
 <div class="multi-select-grid">
   {#if isLoading}
     <div class="loading-placeholder">
-      <span>Loading placements...</span>
+      <span>{t("shared_placement_loading")}</span>
     </div>
   {:else}
     <div
       class="quick-actions"
       role="toolbar"
-      aria-label="Quick placement choices"
+      aria-label={t("shared_placement_quick_choices")}
     >
       <FilterChipBase
-        label="All"
+        label={t("create_option_all")}
         icon="fas fa-check-double"
         mode="toggle"
         size="sm"
         active={activeSelection === "all"}
-        ariaLabel="Enable all placements"
+        ariaLabel={t("shared_placement_enable_all")}
         onclick={selectAll}
       />
       {#each presets as preset (preset.id)}
@@ -247,28 +248,28 @@ Uses blocklist approach: placements in blockedPlacements are excluded.
           mode="toggle"
           size="sm"
           active={activeSelection === `preset:${preset.id}`}
-          ariaLabel={`Use ${preset.label} placements`}
+          ariaLabel={t("shared_placement_use_preset", { name: preset.label })}
           onclick={() => selectPreset(preset)}
         />
       {/each}
       <FilterChipBase
-        label="Custom"
+        label={t("compose_custom")}
         icon="fas fa-sliders"
         mode="toggle"
         size="sm"
         active={activeSelection === "custom"}
-        ariaLabel="Select a custom mix of placements"
+        ariaLabel={t("shared_placement_custom_mix")}
         onclick={selectCustom}
       />
       <FilterChipBase
-        label="Choose one"
+        label={t("shared_placement_choose_one")}
         icon="fas fa-bullseye"
         mode="toggle"
         size="sm"
         active={activeSelection === "one"}
         ariaLabel={selectionMode === "one"
-          ? "Cancel choosing one placement"
-          : "Choose exactly one placement"}
+          ? t("shared_placement_cancel_one")
+          : t("shared_placement_exactly_one")}
         onclick={toggleChooseOne}
       />
     </div>
@@ -277,25 +278,31 @@ Uses blocklist approach: placements in blockedPlacements are excluded.
     <div class="status-row" aria-live="polite" aria-atomic="true">
       <span class="status-text">
         {#if selectionMode === "one"}
-          Choose the one placement to keep
+          {t("shared_placement_keep_one")}
         {:else if selectionMode === "custom" && customNeedsFirstPlacement}
-          Choose the first placement in your mix
+          {t("shared_placement_first")}
         {:else if selectionMode === "custom"}
-          {enabledCount} of {variations.length} placements selected
+          {t("shared_placement_selected", {
+            count: enabledCount,
+            total: variations.length,
+          })}
         {:else if enabledCount === variations.length}
-          All {variations.length} placements enabled
+          {t("shared_placement_all_enabled", { total: variations.length })}
         {:else if enabledCount === 0}
-          No placements enabled
+          {t("shared_placement_none")}
         {:else}
-          {enabledCount} of {variations.length} placements enabled
+          {t("shared_placement_enabled", {
+            count: enabledCount,
+            total: variations.length,
+          })}
         {/if}
       </span>
       <span class="hint-text"
         >{selectionMode === "one" || customNeedsFirstPlacement
-          ? "Tap a placement"
+          ? t("shared_placement_tap")
           : selectionMode === "custom"
-            ? "Tap to add or remove"
-            : "Tap to toggle"}</span
+            ? t("shared_placement_add_remove")
+            : t("shared_placement_toggle")}</span
       >
     </div>
 
@@ -315,12 +322,21 @@ Uses blocklist approach: placements in blockedPlacements are excluded.
             variation.letter
           )}
           aria-label={selectionMode === "one"
-            ? `Use only placement ${variation.startPlacement}`
+            ? t("shared_placement_only", { position: variation.startPlacement })
             : customNeedsFirstPlacement
-              ? `Start custom selection with placement ${variation.startPlacement}`
+              ? t("shared_placement_start", {
+                  position: variation.startPlacement,
+                })
               : enabled && enabledCount === 1
-                ? `Placement ${variation.startPlacement} is the only enabled placement`
-                : `${enabled ? "Disable" : "Enable"} placement ${variation.startPlacement}`}
+                ? t("shared_placement_last", {
+                    position: variation.startPlacement,
+                  })
+                : t(
+                    enabled
+                      ? "shared_placement_disable"
+                      : "shared_placement_enable",
+                    { position: variation.startPlacement }
+                  )}
           aria-pressed={enabled}
         >
           <div class="pictograph-wrapper">

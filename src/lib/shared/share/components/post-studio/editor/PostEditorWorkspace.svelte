@@ -1,0 +1,1768 @@
+<script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { onDestroy, tick, untrack } from "svelte";
+  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
+  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { getViewerStudioSurfaces } from "$lib/shared/sequence-viewer/context/viewer-studio-surfaces-context";
+  import { reparentToInspector } from "$lib/shared/sequence-viewer/components/reparent-to-inspector";
+  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+  import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
+  import { getSequenceVideosStore } from "$lib/shared/video-collaboration/state/sequence-videos-store.svelte";
+  import { createHandLabeledCard } from "$lib/shared/sequence-viewer/services/hand-labeled-card.svelte";
+  import {
+    DEFAULT_HAND_LABELING,
+    type HandLabeling,
+  } from "$lib/shared/video-collaboration/domain/hand-labeling";
+  import { POST_STUDIO_ROLE } from "$lib/shared/media-composition/domain/post-studio-presets";
+  import {
+    ANIMATION_OVERLAY_ROLE,
+    stripModeFromRole,
+    stripRole,
+    takeIdFromRole,
+  } from "$lib/shared/media-composition/domain/post-plan-compiler";
+  import {
+    itemIdFromTextRole,
+    textRole,
+  } from "$lib/shared/media-composition/domain/post-project-compiler";
+  import {
+    POST_FRAME_RATE,
+    POST_TIME_EPSILON,
+    findItem,
+    itemEnd,
+    mainItemAt,
+    type PostItem,
+    type PostItemKind,
+    type PostVideoItem,
+  } from "$lib/shared/media-composition/domain/post-project";
+  import {
+    moveKeyframes,
+    removeKeyframesAt,
+    toggleKeyframe,
+  } from "$lib/shared/media-composition/domain/post-project-keyframes";
+  import {
+    editItemKeyframes,
+    moveMainItem,
+    moveOverlayItem,
+    setTrackFlag,
+  } from "$lib/shared/media-composition/domain/post-project-edits";
+  import type { StripMode } from "$lib/shared/media-composition/domain/strip-view";
+  import type { CompositionSourceBinding } from "$lib/shared/media-composition/state/media-composition-state.svelte";
+  import {
+    createPostEditorState,
+    type CatalogTakeSource,
+    type PostEdit,
+  } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+  import type { PostStudioLayerPainter } from "$lib/shared/media-composition/services/post-studio-layer-painter";
+  import { createBeatCarouselPainter } from "$lib/shared/media-composition/services/beat-carousel-painter";
+  import { createSequenceStripPainter } from "$lib/shared/media-composition/services/sequence-strip-painter";
+  import { createTextItemPainter } from "$lib/shared/media-composition/services/text-item-painter";
+  import { loadAnimationOverlayPainter } from "$lib/shared/media-composition/services/animation-overlay-painter-registry";
+  import { planProjectAudio } from "$lib/shared/media-composition/domain/post-audio-plan";
+  import { buildMixedAudioTrack } from "$lib/shared/media-composition/services/post-audio-track";
+  import {
+    exportPostStudioVideo,
+    type PostStudioExportProgress,
+  } from "$lib/shared/media-composition/services/post-studio-exporter";
+  import AnimationPanel from "$lib/shared/animation-panel/components/AnimationPanel.svelte";
+  import ExportTakeover from "$lib/shared/video-export/components/ExportTakeover.svelte";
+  import Crossfade from "$lib/shared/components/Crossfade.svelte";
+  import { DURATION } from "$lib/shared/transitions/transitions";
+  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import type { PostStudioShareExport } from "../post-studio-share-export";
+  import PostTimingStage from "../builder/PostTimingStage.svelte";
+  import PostTimingPanel from "../builder/PostTimingPanel.svelte";
+  import { createPostTimingSession } from "../builder/post-timing-session.svelte";
+  import PostEditorCanvas from "./PostEditorCanvas.svelte";
+  import PostEditorTopBar from "./PostEditorTopBar.svelte";
+  import PostEditorTransport from "./PostEditorTransport.svelte";
+  import PostToolRow from "./PostToolRow.svelte";
+  import PostToolPanel from "./PostToolPanel.svelte";
+  import PostItemTool from "./PostItemTool.svelte";
+  import PostAddPanel from "./PostAddPanel.svelte";
+  import PostMediaPanel from "./PostMediaPanel.svelte";
+  import PostExportPanel from "./PostExportPanel.svelte";
+  import PostTimeline from "./timeline/PostTimeline.svelte";
+  import { clampPixelsPerSecond } from "./timeline/post-timeline-geometry";
+  import { itemDisplayLabel } from "./post-editor-labels";
+  import { readVideoFile, videoFileError } from "./post-editor-files";
+  import {
+    availablePanels,
+    isPanelTool,
+    keyframeChannelFor,
+    shownPanel,
+    toolRow,
+    type PostPanelToolId,
+    type PostToolId,
+    type PostToolSelection,
+  } from "./post-editor-tools";
+
+  /**
+   * One post on one screen, the way a phone video editor works: the preview,
+   * the timeline of clips and layers, and one row of tools that changes with
+   * the selection. One tool's panel shows at a time: in place of the row on a
+   * phone, beside the preview on a wide screen, or in the viewer's side
+   * panel. Every part reads the same editor state, so the frame drawn here is
+   * the frame the file gets.
+   */
+  interface Props {
+    active: boolean;
+    sequence: SequenceData;
+    cardPreviewUrl: string | null;
+    animationPreviewUrl: string | null;
+    animationPreviewType: "video" | "image";
+    cardRenderOptions: Partial<SequenceExportOptions>;
+    isPreparingCard: boolean;
+    isPreparingAnimation: boolean;
+    onExported?: (blob: Blob) => void;
+    onSharePost?: () => void;
+    previewTarget: HTMLElement | null;
+    sharing: boolean;
+    selectedPropType: PropType;
+    onPropChange: (propType: PropType) => void;
+    /** Sound a shared link asked for, applied once on open. */
+    audioSeed: "takes" | "silent" | null;
+    /** `chosen` is false for the sound a saved project opens with. */
+    onAudioChange: (audio: "takes" | "silent", chosen: boolean) => void;
+    /** Hands the share sheet this workspace's render; returns the release. */
+    registerExport: (controls: PostStudioShareExport) => () => void;
+  }
+
+  let {
+    active,
+    sequence,
+    cardPreviewUrl,
+    animationPreviewUrl,
+    animationPreviewType,
+    cardRenderOptions,
+    isPreparingCard,
+    isPreparingAnimation,
+    onExported,
+    onSharePost,
+    previewTarget,
+    sharing,
+    selectedPropType,
+    onPropChange,
+    audioSeed,
+    onAudioChange,
+    registerExport,
+  }: Props = $props();
+
+  const sharedSurfaces = getViewerStudioSurfaces();
+  const externalInspector = $derived(
+    sharedSurfaces?.externalInspectorTarget ?? null
+  );
+
+  // The per-sequence catalog, shared with the rest of the app, so a video
+  // uploaded elsewhere shows up here without reopening.
+  const videoLibrary = untrack(() =>
+    sequence.id ? getSequenceVideosStore(sequence.id) : null
+  );
+  $effect(() => {
+    void videoLibrary?.load();
+  });
+
+  const catalogVideos = $derived(videoLibrary?.videos ?? []);
+  const catalog = $derived<CatalogTakeSource[]>(
+    catalogVideos
+      .filter((video) => Boolean(video.videoUrl) && video.duration > 0)
+      .map((video) => ({
+        videoId: video.id,
+        label: video.description?.trim() || t("share_studio_saved_video"),
+        url: video.videoUrl,
+        durationSeconds: video.duration,
+        ...(video.beatMap ? { legacyStepMap: video.beatMap } : {}),
+      }))
+  );
+
+  let overlayPainter = $state.raw<PostStudioLayerPainter | null>(null);
+
+  const editor = createPostEditorState({
+    getSequence: () => sequence,
+    getCatalogVideo: (videoId) =>
+      catalog.find((video) => video.videoId === videoId) ?? null,
+    hasAnimationOverlay: () => overlayPainter !== null,
+  });
+  const session = createPostTimingSession(editor);
+
+  untrack(() => {
+    if (audioSeed && audioSeed !== editor.project.audio) {
+      editor.seedAudio(audioSeed);
+    }
+  });
+
+  $effect(() => {
+    void catalog;
+    untrack(() => editor.attachCatalogTakes());
+  });
+
+  let audioReported = false;
+  $effect(() => {
+    const audio = editor.project.audio;
+    untrack(() => onAudioChange(audio, audioReported));
+    audioReported = true;
+  });
+
+  /**
+   * The performer works in their own frame and the camera sees it reflected,
+   * so beside footage the notation follows the take's hand labeling: a
+   * catalog video remembers its own, anything else mirrors.
+   */
+  const handLabeling = $derived.by((): HandLabeling | null => {
+    const take = editor.takesInUse[0] ?? editor.takes[0];
+    if (!take) return null;
+    if (take.ref.kind === "catalog") {
+      const videoId = take.ref.videoId;
+      const video = catalogVideos.find((entry) => entry.id === videoId);
+      if (video?.handLabeling) return video.handLabeling;
+    }
+    return DEFAULT_HAND_LABELING;
+  });
+  const labeledCard = createHandLabeledCard({
+    getSequence: () => sequence,
+    getLabeling: () => handLabeling,
+  });
+  const displaySequence = $derived(labeledCard.sequence);
+
+  // ---- What each layer draws -----------------------------------------------
+
+  const carouselPainter = $derived(createBeatCarouselPainter(displaySequence));
+  const stripPainters = $derived(
+    new Map<StripMode, PostStudioLayerPainter>(
+      (["arrows", "mandala", "alternate"] as const).map((mode) => [
+        mode,
+        createSequenceStripPainter({ sequence: displaySequence, mode }),
+      ])
+    )
+  );
+
+  /** One painter per text item, reading its words live from the project. */
+  const textPainters = new Map<string, PostStudioLayerPainter>();
+  function textPainterFor(itemId: string): PostStudioLayerPainter {
+    let painter = textPainters.get(itemId);
+    if (!painter) {
+      painter = createTextItemPainter(
+        () =>
+          editor.compiled?.texts.find((text) => text.itemId === itemId) ?? null
+      );
+      textPainters.set(itemId, painter);
+    }
+    return painter;
+  }
+
+  let overlayVersion = 0;
+  $effect(() => {
+    const drawn = displaySequence;
+    const version = ++overlayVersion;
+    void loadAnimationOverlayPainter(drawn)
+      .then((painter) => {
+        if (version === overlayVersion) overlayPainter = painter;
+      })
+      .catch((error: unknown) => {
+        console.error("[PostStudio] Beat overlay unavailable:", error);
+        if (version === overlayVersion) overlayPainter = null;
+      });
+  });
+
+  function painted(
+    roleKey: string,
+    label: string,
+    painter: PostStudioLayerPainter
+  ): CompositionSourceBinding {
+    return {
+      roleKey,
+      kind: "image",
+      label,
+      previewUrl: null,
+      renderMode: "painted",
+      painter,
+      status: sequence.steps.length > 0 ? "ready" : "missing",
+    };
+  }
+
+  function bindingFor(role: string): CompositionSourceBinding | null {
+    const takeId = takeIdFromRole(role);
+    if (takeId) {
+      const take = editor.takes.find((entry) => entry.id === takeId);
+      const url = editor.mediaUrl(takeId);
+      return {
+        roleKey: role,
+        kind: "video",
+        label: take?.label ?? t("share_studio_deep_take"),
+        previewUrl: url,
+        previewType: "video",
+        renderMode: "external-media",
+        ...(take ? { durationSeconds: take.durationSeconds } : {}),
+        status: url ? "ready" : "missing",
+        missingMessage: t("share_studio_repick_local"),
+      };
+    }
+    const textItemId = itemIdFromTextRole(role);
+    if (textItemId) {
+      return {
+        roleKey: role,
+        kind: "image",
+        label: t("post_editor_kind_text"),
+        previewUrl: null,
+        renderMode: "painted",
+        painter: textPainterFor(textItemId),
+        status: "ready",
+      };
+    }
+    const strip = stripModeFromRole(role);
+    if (strip) {
+      const painter = stripPainters.get(strip);
+      return painter
+        ? painted(role, t("share_studio_deep_moves"), painter)
+        : null;
+    }
+    switch (role) {
+      case POST_STUDIO_ROLE.animation:
+        return {
+          roleKey: role,
+          kind: "sequence-animation",
+          label: t("share_studio_deep_animation"),
+          previewUrl: animationPreviewUrl,
+          previewType: animationPreviewType,
+          renderMode: "sequence-animation",
+          status:
+            sequence.steps.length > 0 || animationPreviewUrl
+              ? "ready"
+              : isPreparingAnimation
+                ? "preparing"
+                : "missing",
+        };
+      case POST_STUDIO_ROLE.carousel:
+        return painted(
+          role,
+          t("share_studio_deep_beat_carousel"),
+          carouselPainter
+        );
+      case ANIMATION_OVERLAY_ROLE:
+        return overlayPainter
+          ? painted(
+              role,
+              t("share_studio_deep_beat_and_letter"),
+              overlayPainter
+            )
+          : null;
+      case POST_STUDIO_ROLE.card:
+        return {
+          roleKey: role,
+          kind: "choreo-card",
+          label: t("share_studio_deep_choreo_card"),
+          previewUrl: cardPreviewUrl,
+          previewType: "image",
+          renderMode: "choreo-card",
+          status:
+            sequence.steps.length > 0 || cardPreviewUrl
+              ? "ready"
+              : isPreparingCard
+                ? "preparing"
+                : "missing",
+        };
+      default:
+        return null;
+    }
+  }
+
+  /** Every painter the post draws, keyed the way the exporter looks them up. */
+  function exportPainters(): Map<string, PostStudioLayerPainter> {
+    const painters = new Map<string, PostStudioLayerPainter>([
+      [POST_STUDIO_ROLE.carousel, carouselPainter],
+    ]);
+    for (const [mode, painter] of stripPainters) {
+      painters.set(stripRole(mode), painter);
+    }
+    for (const text of editor.compiled?.texts ?? []) {
+      painters.set(textRole(text.itemId), textPainterFor(text.itemId));
+    }
+    if (overlayPainter) painters.set(ANIMATION_OVERLAY_ROLE, overlayPainter);
+    return painters;
+  }
+
+  const labelFor = (item: PostItem) => itemDisplayLabel(item, editor.project);
+
+  // ---- Screen state ----------------------------------------------------------
+
+  let rootElement = $state<HTMLElement | null>(null);
+  let canvasRoot = $state<HTMLElement | null>(null);
+  /** The side column beside the preview, or in the viewer's side panel. */
+  let panelHost = $state<HTMLElement | null>(null);
+  /** The panel's own slot in that column, under the top bar. */
+  let panelSlot = $state<HTMLElement | null>(null);
+  /** A phone's bottom dock: the row, or the panel open in its place. */
+  let dockElement = $state<HTMLElement | null>(null);
+  /** The row under the timeline on a wide screen. */
+  let rowSlot = $state<HTMLElement | null>(null);
+  /** The preview and its neighbors, the row that grows to fill a phone. */
+  let stageRow = $state<HTMLElement | null>(null);
+  /** The preview's height when a phone panel opened, held until it closes. */
+  let heldStageHeight = $state<number | null>(null);
+  /** The tallest that phone panel may grow and still clear the preview. */
+  let dockPanelMax = $state<number | null>(null);
+  let fileInput = $state<HTMLInputElement | null>(null);
+  let readingFile = $state(false);
+  let fileError = $state("");
+  let pixelsPerSecond = $state(60);
+  let editorWidth = $state(0);
+  let editorHeight = $state(0);
+  let remPixels = $state(16);
+  /** The panel last asked for. A wide screen falls back to a default. */
+  let activeTool = $state<PostPanelToolId | null>(null);
+
+  let exportProgress = $state<PostStudioExportProgress | null>(null);
+  let exportError = $state("");
+  let exportedUrl = $state<string | null>(null);
+  let exportCancelled = false;
+  let exportAbort: AbortController | null = null;
+
+  const exporting = $derived(exportProgress !== null);
+  const exportPercent = $derived(
+    exportProgress && exportProgress.totalFrames > 0
+      ? Math.round(
+          (exportProgress.completedFrames / exportProgress.totalFrames) * 100
+        )
+      : 0
+  );
+  /** Tapping beats swaps the post for the take being mapped. */
+  const showTimingStage = $derived(
+    editor.mode === "timing" && !sharing && !previewTarget && !exporting
+  );
+  const sequenceName = $derived(
+    simplifyRepeatedWord(
+      sequence.displayName ||
+        deriveWord(sequence) ||
+        t("post_editor_default_name")
+    )
+  );
+  const exportFilename = $derived(
+    `${simplifyRepeatedWord(sequenceName || "tka-post")}.mp4`
+  );
+  const canRender = $derived(
+    Boolean(editor.compiled) &&
+      editor.durationSeconds > 0 &&
+      !exporting &&
+      !sharedSurfaces?.moving
+  );
+
+  /** The clip Beats opens: the selected video, else the one under the playhead. */
+  const beatsClip = $derived.by((): PostVideoItem | null => {
+    const selected = editor.selectedItem;
+    if (selected?.kind === "video") return selected;
+    const under = mainItemAt(editor.project, editor.previewSeconds);
+    return under?.kind === "video" ? under : null;
+  });
+  const canTapBeats = $derived(
+    beatsClip !== null && Boolean(editor.mediaUrl(beatsClip.takeId))
+  );
+
+  // ---- Tools -----------------------------------------------------------------
+
+  /** The editor's own width, not the window's: wide enough for a panel
+   * beside a full-height preview. */
+  const WIDE_REM = 56;
+  /** A landscape editor this wide keeps the panel beside a shorter preview.
+   * Under it, a short screen would hide the preview while a tool is open. */
+  const LANDSCAPE_WIDE_REM = 36;
+
+  $effect(() => {
+    remPixels =
+      Number.parseFloat(getComputedStyle(document.documentElement).fontSize) ||
+      16;
+  });
+
+  const layout = $derived<"phone" | "wide" | "viewer">(
+    externalInspector
+      ? "viewer"
+      : editorWidth >= WIDE_REM * remPixels ||
+          (editorWidth > editorHeight &&
+            editorWidth >= LANDSCAPE_WIDE_REM * remPixels)
+        ? "wide"
+        : "phone"
+  );
+  /** A panel always shows beside the preview or in the viewer's side panel. */
+  const panelBeside = $derived(layout !== "phone");
+
+  const selection = $derived.by((): PostToolSelection => {
+    const item = editor.selectedItem;
+    if (!item) return { kind: null, hasLayout: false };
+    return {
+      kind: item.kind,
+      hasLayout:
+        item.kind === "video" &&
+        findItem(editor.project, item.id)?.trackIndex === 0,
+    };
+  });
+  const tools = $derived(toolRow(selection));
+  const rowKey = $derived(`row:${tools.join(" ")}`);
+  const shown = $derived(shownPanel(activeTool, selection, panelBeside));
+  /** A phone shows the panel in the row's place, else the row. */
+  const dockKey = $derived(shown ?? rowKey);
+  /** The selected clip's Crop is on screen, so the preview pans its picture. */
+  const cropMode = $derived(
+    shown === "crop" && editor.selectedItem?.kind === "video"
+  );
+
+  // A phone's preview takes the height the row leaves it. A panel is taller
+  // than the row, so the preview keeps its height while one is open, and the
+  // panel fits the room under it and scrolls inside. When that room is too
+  // small to use it may take half the editor, which then scrolls under the
+  // dock. This measures before the panel goes in.
+  const MIN_DOCK_PANEL_REM = 14;
+  $effect.pre(() => {
+    const holding = layout === "phone" && !showTimingStage && shown !== null;
+    untrack(() => {
+      if (!holding) {
+        heldStageHeight = null;
+        dockPanelMax = null;
+        return;
+      }
+      if (heldStageHeight !== null) return;
+      if (!stageRow || !rootElement || !dockElement) return;
+      const stage = stageRow.getBoundingClientRect();
+      const stageBottom =
+        stage.bottom - rootElement.getBoundingClientRect().top;
+      const gap =
+        Number.parseFloat(
+          getComputedStyle(stageRow.parentElement ?? stageRow).rowGap
+        ) || 0;
+      const dock = getComputedStyle(dockElement);
+      const dockChrome =
+        Number.parseFloat(dock.paddingTop) +
+        Number.parseFloat(dock.paddingBottom) +
+        Number.parseFloat(dock.borderTopWidth);
+      // The dock's edge lands mid-gap, so it hides the transport completely.
+      const room =
+        rootElement.clientHeight - stageBottom - gap / 2 - dockChrome;
+      heldStageHeight = stage.height;
+      dockPanelMax =
+        room >= MIN_DOCK_PANEL_REM * remPixels
+          ? room
+          : Math.max(room, rootElement.clientHeight / 2);
+    });
+  });
+
+  // A tool the new selection lacks closes, so it does not open again by
+  // surprise when a later selection has it.
+  $effect(() => {
+    if (activeTool && !availablePanels(selection).includes(activeTool)) {
+      activeTool = null;
+    }
+  });
+
+  function toolDisabled(id: PostToolId): boolean {
+    if (exporting) return true;
+    switch (id) {
+      case "split":
+        return !editor.splitTarget;
+      case "duplicate":
+      case "delete":
+        return !editor.selectionEditable;
+      case "beats":
+        return !canTapBeats;
+      case "tutorial":
+        return editor.takes.length === 0;
+      default:
+        return false;
+    }
+  }
+
+  // ---- Actions ---------------------------------------------------------------
+
+  /** Opens beat tapping on a clip's footage, starting at its first frame. */
+  function openBeats(clip: PostVideoItem): void {
+    editor.pause();
+    session.openAt(clip.takeId, clip.sourceIn);
+    editor.mode = "timing";
+  }
+
+  /** From the video list: starts where the take's first clip does. */
+  function openTakeBeats(takeId: string): void {
+    let firstClip: PostVideoItem | null = null;
+    for (const track of editor.project.tracks) {
+      for (const item of track.items) {
+        if (item.kind === "video" && item.takeId === takeId) {
+          if (!firstClip || item.start < firstClip.start) firstClip = item;
+        }
+      }
+    }
+    editor.pause();
+    session.openAt(takeId, firstClip?.sourceIn ?? 0);
+    editor.mode = "timing";
+  }
+
+  function tapBeatsHere(): void {
+    if (beatsClip) openBeats(beatsClip);
+  }
+
+  function applyTutorial(): void {
+    editor.pause();
+    editor.applyTutorial({
+      runThrough: t("post_editor_run_through"),
+      slowMo: t("post_editor_slow_mo"),
+      card: t("post_editor_card_label"),
+    });
+  }
+
+  function pickTool(id: PostToolId): void {
+    if (isPanelTool(id)) {
+      openTool(id);
+      return;
+    }
+    switch (id) {
+      case "back":
+        deselect();
+        void focusAfterUpdate({ kind: "row" });
+        return;
+      case "split":
+        editor.pause();
+        if (editor.splitAtPlayhead()) {
+          void focusAfterUpdate({ kind: "tool", id: "split" });
+        }
+        return;
+      case "tutorial":
+        applyTutorial();
+        return;
+      case "beats":
+        tapBeatsHere();
+        return;
+      case "duplicate":
+        if (editor.duplicateSelected()) {
+          void focusAfterUpdate({ kind: "tool", id: "duplicate" });
+        }
+        return;
+      case "delete":
+        if (editor.deleteSelected()) void focusAfterUpdate({ kind: "row" });
+        return;
+    }
+  }
+
+  function openTool(id: PostPanelToolId): void {
+    if (id === "crop") seekIntoSelected();
+    activeTool = id;
+    // Beside the preview the row works like tabs and focus stays on it. On a
+    // phone the panel takes the row's place, so focus moves into it.
+    if (!panelBeside) void focusAfterUpdate({ kind: "panel" });
+  }
+
+  /** Done on a phone: back to the row, on the tool that opened the panel. */
+  function closePanel(): void {
+    const tool = shown;
+    activeTool = null;
+    void focusAfterUpdate(tool ? { kind: "tool", id: tool } : { kind: "row" });
+  }
+
+  function deselect(): void {
+    editor.selectedItemId = null;
+    activeTool = null;
+  }
+
+  /** Export is the post's own panel: sound, the to-do list and the render. */
+  function openExport(): void {
+    editor.selectedItemId = null;
+    activeTool = "export";
+    void focusAfterUpdate({ kind: "panel" });
+  }
+
+  /** New text opens its words; anything else shows the new item's tools. */
+  function itemAdded(kind: PostItemKind): void {
+    if (kind === "text") {
+      activeTool = "text";
+      void focusAfterUpdate({ kind: "field", selector: "textarea" });
+      return;
+    }
+    activeTool = null;
+    void focusAfterUpdate(panelBeside ? { kind: "panel" } : { kind: "row" });
+  }
+
+  /** Crop edits the frame under the playhead, so it starts inside the clip. */
+  function seekIntoSelected(): void {
+    const item = editor.selectedItem;
+    if (!item) return;
+    const seconds = editor.previewSeconds;
+    if (
+      seconds >= item.start - POST_TIME_EPSILON &&
+      seconds <= itemEnd(item) + POST_TIME_EPSILON
+    ) {
+      return;
+    }
+    editor.pause();
+    editor.seek(
+      seconds < item.start
+        ? item.start
+        : Math.max(item.start, itemEnd(item) - FRAME_SECONDS)
+    );
+  }
+
+  function pickDeviceVideo(): void {
+    if (readingFile) return;
+    fileError = "";
+    fileInput?.click();
+  }
+
+  async function addDeviceVideo(event: Event): Promise<void> {
+    const input = event.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file) return;
+    readingFile = true;
+    fileError = "";
+    try {
+      const duration = await readVideoFile(file);
+      editor.pause();
+      if (editor.addLocalVideo(file, duration)) itemAdded("video");
+    } catch (caught) {
+      fileError = videoFileError(caught);
+    } finally {
+      readingFile = false;
+    }
+  }
+
+  /**
+   * A timeline drag reports each step between its start and end; a single
+   * call outside a drag (a keyboard move) is its own undo step.
+   */
+  function asOneStep(run: () => void): void {
+    if (editor.inGesture) {
+      run();
+      return;
+    }
+    editor.beginGesture();
+    run();
+    editor.endGesture();
+  }
+
+  function applyMove(change: PostEdit): void {
+    asOneStep(() => editor.gestureStep(change));
+  }
+
+  function seekFromTimeline(seconds: number): void {
+    editor.pause();
+    editor.seek(seconds);
+  }
+
+  function zoomTimeline(factor: number): void {
+    pixelsPerSecond = clampPixelsPerSecond(pixelsPerSecond * factor);
+  }
+
+  // ---- Keys ----------------------------------------------------------------
+
+  const FRAME_SECONDS = 1 / POST_FRAME_RATE;
+  const ZOOM_STEP = 1.25;
+
+  /** Text entry, where letters are typed. A slider is not typing. */
+  function isTyping(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) return false;
+    if (target.isContentEditable) return true;
+    const field = target.closest("input, textarea, select");
+    return (
+      field !== null &&
+      !(field instanceof HTMLInputElement && field.type === "range")
+    );
+  }
+
+  /** Controls that answer Space themselves. */
+  function isControl(target: EventTarget | null): boolean {
+    return (
+      target instanceof HTMLElement &&
+      Boolean(target.closest("button, a, [role='slider'], [role='radio']"))
+    );
+  }
+
+  /** Controls that use the arrow keys, Home and End themselves. */
+  function ownsArrows(target: EventTarget | null): boolean {
+    return (
+      target instanceof HTMLElement &&
+      Boolean(
+        target.closest(
+          "input[type='range'], [role='slider'], [role='radio'], [role='radiogroup'], [role='menu'], [role='menuitem'], [role='listbox'], [role='option'], [role='tab'], [role='tablist']"
+        )
+      )
+    );
+  }
+
+  /**
+   * The editor's keys. On the beat tapper its own keys answer instead (T
+   * taps, Space plays the take). A studio the viewer keeps mounted out of
+   * sight ignores every key, and so does one that is rendering: the render
+   * seeks the post frame by frame, and playback would move the clock between
+   * a seek and its capture. Ctrl+Z and Ctrl+Y belong to the app's edit
+   * history, which presses the top bar's Undo and Redo.
+   */
+  function handleKey(event: KeyboardEvent): void {
+    if (!active || exporting) return;
+    if (showTimingStage) {
+      session.handleKey(event);
+      return;
+    }
+    if (event.defaultPrevented || event.altKey || isTyping(event.target)) {
+      return;
+    }
+    if (event.ctrlKey || event.metaKey) {
+      if (event.key.toLowerCase() === "d" && !event.shiftKey) {
+        event.preventDefault();
+        editor.duplicateSelected();
+      }
+      return;
+    }
+    switch (event.key) {
+      case " ":
+        if (event.repeat || isControl(event.target)) return;
+        event.preventDefault();
+        editor.togglePlayback();
+        return;
+      case "s":
+      case "S":
+        if (event.repeat) return;
+        event.preventDefault();
+        editor.pause();
+        editor.splitAtPlayhead();
+        return;
+      case "k":
+      case "K": {
+        if (event.repeat) return;
+        const item = editor.selectedItem;
+        if (!item || editor.isLocked(item.id)) return;
+        const seconds = editor.previewSeconds;
+        if (
+          seconds < item.start - POST_TIME_EPSILON ||
+          seconds > itemEnd(item) + POST_TIME_EPSILON
+        ) {
+          return;
+        }
+        event.preventDefault();
+        // K keys what the tool on screen edits: Crop, Position or Fade.
+        const channel = keyframeChannelFor(shown, item.kind);
+        editor.edit((project, ctx) =>
+          editItemKeyframes(
+            project,
+            item.id,
+            (it) => toggleKeyframe(it, channel, seconds),
+            ctx
+          )
+        );
+        return;
+      }
+      case "Delete":
+      case "Backspace":
+        if (!editor.selectedItem) return;
+        event.preventDefault();
+        // The item's clip and tools go with it, as with the Delete tool.
+        if (editor.deleteSelected()) void focusAfterUpdate({ kind: "row" });
+        return;
+      case "ArrowLeft":
+      case "ArrowRight": {
+        if (ownsArrows(event.target)) return;
+        event.preventDefault();
+        editor.pause();
+        const step = event.shiftKey ? 1 : FRAME_SECONDS;
+        editor.seek(
+          editor.previewSeconds + (event.key === "ArrowLeft" ? -step : step)
+        );
+        return;
+      }
+      case "Home":
+      case "End":
+        if (ownsArrows(event.target)) return;
+        event.preventDefault();
+        editor.pause();
+        editor.seek(event.key === "Home" ? 0 : editor.durationSeconds);
+        return;
+      case "+":
+      case "=":
+        event.preventDefault();
+        zoomTimeline(ZOOM_STEP);
+        return;
+      case "-":
+        event.preventDefault();
+        zoomTimeline(1 / ZOOM_STEP);
+        return;
+      case "Escape":
+        if (editor.inGesture) return;
+        // A phone's open panel closes first, then the selection clears.
+        if (!panelBeside && shown !== null) {
+          event.preventDefault();
+          closePanel();
+          return;
+        }
+        if (!editor.selectedItemId) return;
+        event.preventDefault();
+        deselect();
+        return;
+    }
+  }
+
+  // ---- The viewer shell ------------------------------------------------------
+
+  // The viewer shell shows the studio's own panel in its side inspector.
+  $effect(() => {
+    if (active) sharedSurfaces?.setInspectorContent("studio");
+  });
+
+  $effect(() =>
+    sharedSurfaces?.setControls(() => ({
+      playing: editor.isPlaying,
+      bpm: 60,
+      propType: selectedPropType,
+      toggle: editor.togglePlayback,
+      setBpm: () => undefined,
+      setProp: onPropChange,
+    }))
+  );
+
+  let sharedEntryRevision = 0;
+  $effect(() => {
+    if (!active || !sharedSurfaces?.active) return;
+    const entry = sharedSurfaces.entry;
+    if (entry.revision === sharedEntryRevision) return;
+    sharedEntryRevision = entry.revision;
+    untrack(() => {
+      if (editor.isPlaying !== entry.playing && editor.mode !== "timing") {
+        editor.togglePlayback();
+      }
+    });
+  });
+
+  // ---- Focus -----------------------------------------------------------------
+
+  type FocusTarget =
+    | { kind: "tool"; id: PostToolId }
+    | { kind: "row" }
+    | { kind: "panel" }
+    | { kind: "field"; selector: string };
+
+  /** The first match that is not fading out. */
+  function findShown(selector: string): HTMLElement | null {
+    // The panel may sit in the viewer's side panel, outside this section.
+    for (const scope of [rootElement, panelHost]) {
+      if (!scope) continue;
+      for (const element of scope.querySelectorAll<HTMLElement>(selector)) {
+        if (!element.closest("[inert]")) return element;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Moves focus once swapped tools are on screen: into the new panel, to the
+   * same tool in the new row, or to the row's first tool.
+   */
+  async function focusAfterUpdate(target: FocusTarget): Promise<void> {
+    await tick();
+    const firstTool = () =>
+      findShown('[data-tool]:not([data-tool="back"]):not(:disabled)');
+    let element: HTMLElement | null;
+    switch (target.kind) {
+      case "tool":
+        element =
+          findShown(`[data-tool="${target.id}"]:not(:disabled)`) ?? firstTool();
+        break;
+      case "row":
+        element = firstTool();
+        break;
+      case "panel":
+        element = findShown("[data-tool-panel]");
+        break;
+      case "field":
+        element =
+          findShown(`[data-tool-panel] ${target.selector}`) ??
+          findShown("[data-tool-panel]");
+        break;
+    }
+    element?.focus({ preventScroll: true });
+    if (target.kind === "field" && element instanceof HTMLTextAreaElement) {
+      element.select();
+    }
+  }
+
+  // A pick on the timeline or the preview can swap the tools while focus sits
+  // in them. Focus moves to their holder before the old ones fade out, so Tab
+  // continues into the new ones instead of starting over at the page.
+  let swapKeys = { row: "", panel: "", dock: "" };
+  $effect.pre(() => {
+    const next = { row: rowKey, panel: shown ?? "", dock: dockKey };
+    untrack(() => {
+      const previous = swapKeys;
+      swapKeys = next;
+      const focused = document.activeElement;
+      // The preview's box goes with the selection, so focus on it would drop
+      // to the page. It stays in the editor instead.
+      if (
+        !editor.selectedItemId &&
+        focused !== canvasRoot &&
+        canvasRoot?.contains(focused)
+      ) {
+        rootElement?.focus({ preventScroll: true });
+        return;
+      }
+      const holders: [HTMLElement | null, boolean][] = [
+        [rowSlot, next.row !== previous.row],
+        [panelSlot, next.panel !== previous.panel],
+        [dockElement, next.dock !== previous.dock],
+      ];
+      for (const [holder, swapping] of holders) {
+        if (
+          swapping &&
+          holder &&
+          focused !== holder &&
+          holder.contains(focused)
+        ) {
+          holder.focus({ preventScroll: true });
+          return;
+        }
+      }
+    });
+  });
+
+  // Tapping beats swaps the post for the take, and Back to editing swaps it
+  // back. Focus follows to the new controls instead of dropping to the page.
+  let shownSurface: "timing" | "edit" | null = null;
+  $effect(() => {
+    const surface = showTimingStage ? "timing" : "edit";
+    const changed = shownSurface !== null && shownSurface !== surface;
+    shownSurface = surface;
+    if (!changed) return;
+    untrack(() => {
+      const focused = document.activeElement;
+      if (focused && focused !== document.body) return;
+      if (surface === "edit") {
+        void focusAfterUpdate({ kind: "tool", id: "beats" });
+      } else {
+        (panelBeside ? panelHost : dockElement)?.focus({ preventScroll: true });
+      }
+    });
+  });
+
+  $effect(() => {
+    if (showTimingStage) untrack(() => editor.pause());
+    else untrack(() => session.pause());
+  });
+
+  $effect(() => {
+    // The shell reads the outgoing play intent before releasing its loan.
+    if (!active && !sharedSurfaces?.active) {
+      untrack(() => {
+        editor.pause();
+        session.pause();
+      });
+    }
+  });
+
+  let frameRequest: number | null = null;
+  let previousFrameTime: number | null = null;
+
+  function frame(now: number): void {
+    if (previousFrameTime !== null) {
+      editor.advance((now - previousFrameTime) / 1000);
+    }
+    previousFrameTime = now;
+    if (editor.isPlaying) frameRequest = requestAnimationFrame(frame);
+  }
+
+  $effect(() => {
+    if (!editor.isPlaying) return;
+    frameRequest = requestAnimationFrame(frame);
+    return () => {
+      if (frameRequest !== null) cancelAnimationFrame(frameRequest);
+      frameRequest = null;
+      previousFrameTime = null;
+    };
+  });
+
+  // ---- Render --------------------------------------------------------------
+
+  function nextFrame(): Promise<void> {
+    return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+  }
+
+  async function renderPost(): Promise<boolean> {
+    if (exporting || !editor.compiled || editor.durationSeconds <= 0) {
+      return false;
+    }
+    session.pause();
+    if (!canvasRoot) {
+      // The beat tapper stands where the post is drawn; the render needs the
+      // post back on screen.
+      editor.mode = "edit";
+      await tick();
+      await nextFrame();
+    }
+    const root = canvasRoot;
+    const compiled = editor.compiled;
+    if (!root || !compiled) return false;
+
+    const previousTime = editor.previewSeconds;
+    const wasPlaying = editor.isPlaying;
+    editor.pause();
+    exportCancelled = false;
+    exportAbort = new AbortController();
+    exportError = "";
+    const totalFrames = Math.ceil(
+      compiled.durationSeconds * compiled.preset.output.frameRate
+    );
+    exportProgress = { completedFrames: 0, totalFrames, phase: "audio" };
+
+    let audioUrl: string | null = null;
+    try {
+      const takeUrls = new Map<string, string>();
+      for (const take of editor.takes) {
+        const url = editor.mediaUrl(take.id);
+        if (url) takeUrls.set(take.id, url);
+      }
+      const audio = await buildMixedAudioTrack({
+        segments: planProjectAudio(compiled, editor.project.audio),
+        durationSeconds: compiled.durationSeconds,
+        takeUrls,
+        signal: exportAbort.signal,
+      });
+      if (exportCancelled) return false;
+      audioUrl = audio ? URL.createObjectURL(audio) : null;
+      exportProgress = { completedFrames: 0, totalFrames, phase: "rendering" };
+
+      const blob = await exportPostStudioVideo({
+        root,
+        preset: compiled.preset,
+        durationSeconds: compiled.durationSeconds,
+        getLayers: () => editor.frameLayers,
+        seek: editor.seek,
+        painters: exportPainters(),
+        originalAudioUrl: audioUrl,
+        originalAudioStartSeconds: 0,
+        onProgress: (progress) => (exportProgress = progress),
+        shouldCancel: () => exportCancelled,
+      });
+      if (exportedUrl) URL.revokeObjectURL(exportedUrl);
+      exportedUrl = URL.createObjectURL(blob);
+      onExported?.(blob);
+      return true;
+    } catch (error) {
+      if (!exportCancelled) {
+        console.error("[PostStudio] Export failed:", error);
+        exportError =
+          error instanceof Error
+            ? error.message
+            : t("share_studio_render_failed");
+      }
+      return false;
+    } finally {
+      if (audioUrl) URL.revokeObjectURL(audioUrl);
+      exportProgress = null;
+      editor.seek(previousTime);
+      if (wasPlaying) editor.togglePlayback();
+    }
+  }
+
+  function cancelExport(): void {
+    exportCancelled = true;
+    exportAbort?.abort();
+  }
+
+  const releaseExport = registerExport({
+    render: renderPost,
+    cancel: cancelExport,
+  });
+
+  onDestroy(() => {
+    exportCancelled = true;
+    exportAbort?.abort();
+    releaseExport();
+    if (frameRequest !== null) cancelAnimationFrame(frameRequest);
+    if (exportedUrl) URL.revokeObjectURL(exportedUrl);
+    editor.dispose();
+  });
+</script>
+
+<svelte:window onkeydown={handleKey} />
+
+{#snippet topBar()}
+  <PostEditorTopBar {editor} {exporting} onExport={openExport} />
+{/snippet}
+
+{#snippet row()}
+  <PostToolRow
+    {tools}
+    shown={panelBeside ? shown : null}
+    isDisabled={toolDisabled}
+    onpick={pickTool}
+  />
+{/snippet}
+
+{#snippet panelBody(tool: PostPanelToolId)}
+  {#if tool === "videos"}
+    <PostMediaPanel
+      {editor}
+      {catalog}
+      catalogLoading={videoLibrary?.loading ?? false}
+      catalogError={videoLibrary?.error ?? ""}
+      busy={readingFile}
+      onAddDeviceVideo={pickDeviceVideo}
+      onTapBeats={openTakeBeats}
+    />
+  {:else if tool === "add"}
+    <PostAddPanel
+      {editor}
+      {catalog}
+      busy={readingFile}
+      onAddDeviceVideo={pickDeviceVideo}
+      onAdded={itemAdded}
+    />
+  {:else if tool === "look"}
+    <AnimationPanel
+      layout="sidebar"
+      isExporting={false}
+      isPlaying={editor.isPlaying}
+      onPlaybackToggle={editor.togglePlayback}
+      showTempoControls={false}
+      showEffectsPlayback={false}
+      {selectedPropType}
+      {onPropChange}
+      sequence={displaySequence}
+    />
+  {:else if tool === "export"}
+    <PostExportPanel
+      {editor}
+      {canRender}
+      {exporting}
+      {exportPercent}
+      {exportedUrl}
+      {exportFilename}
+      {exportError}
+      onRender={() => void renderPost()}
+      onCancel={cancelExport}
+      onTapBeats={openTakeBeats}
+      {onSharePost}
+    />
+  {:else if editor.selectedItem}
+    <PostItemTool {editor} item={editor.selectedItem} {tool} />
+  {/if}
+{/snippet}
+
+{#snippet panel(tool: PostPanelToolId, placement: "dock" | "side")}
+  <PostToolPanel
+    {tool}
+    subject={editor.selectedItem ? labelFor(editor.selectedItem) : undefined}
+    onDone={placement === "dock" ? closePanel : undefined}
+    {placement}
+  >
+    {@render panelBody(tool)}
+  </PostToolPanel>
+{/snippet}
+
+{#snippet timingPanel()}
+  <div class="timing-panel">
+    <div class="timing-back">
+      <PanelButton onclick={session.exit}>
+        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+        {t("post_editor_back_to_editing")}
+      </PanelButton>
+    </div>
+    <PostTimingPanel {session} />
+  </div>
+{/snippet}
+
+<!-- The editor owns Space, S, K, the arrows and Delete, so the viewer's own
+     handlers skip it (the app's shortcuts, Shift+P, Ctrl+Z and the rest,
+     still reach it); tabindex keeps a click inside it from sending focus back
+     to the page. Undo and Redo on its top bar answer the app's history keys
+     while focus is inside it. -->
+<section
+  class="post-editor"
+  tabindex="-1"
+  data-viewer-keys-ignore
+  data-edit-history-shortcut-scope
+  data-layout={layout}
+  data-sharing={sharing}
+  data-mode={showTimingStage ? "timing" : "edit"}
+  aria-label={t("post_editor_label", { name: sequenceName })}
+  bind:this={rootElement}
+  bind:offsetWidth={editorWidth}
+  bind:offsetHeight={editorHeight}
+>
+  <div
+    class="layout"
+    style:--post-stage-min={heldStageHeight === null
+      ? null
+      : `${heldStageHeight}px`}
+    style:--post-dock-panel-max={dockPanelMax === null
+      ? null
+      : `${dockPanelMax}px`}
+  >
+    {#if !showTimingStage && !panelBeside}
+      <div class="top-bar-slot" inert={sharing || undefined}>
+        {@render topBar()}
+      </div>
+    {/if}
+
+    <div class="stage-row" bind:this={stageRow}>
+      {#if showTimingStage}
+        <div class="timing-stage">
+          <PostTimingStage
+            {session}
+            squarePainter={stripPainters.get("arrows") ?? null}
+          />
+        </div>
+      {:else}
+        <div class="preview-frame">
+          <div
+            class="preview-host"
+            inert={!!previewTarget}
+            use:reparentToInspector={previewTarget}
+          >
+            <div class="canvas-slot">
+              <PostEditorCanvas
+                {editor}
+                sequence={displaySequence}
+                qrSequence={sequence}
+                {bindingFor}
+                {labelFor}
+                {cardRenderOptions}
+                handLabeling={labeledCard.labeling}
+                showStripGuide={editor.selectedItem?.kind === "video"}
+                interactive={!exporting && !sharing && !previewTarget}
+                {cropMode}
+                bind:root={canvasRoot}
+              />
+            </div>
+          </div>
+        </div>
+      {/if}
+
+      {#if panelBeside}
+        <!-- Beside the preview, or moved into the viewer's side panel: the
+             top bar with the panel under it, the way desktop editors keep
+             Export above the settings. -->
+        <aside
+          class="panel-host"
+          class:external={layout === "viewer"}
+          tabindex="-1"
+          data-viewer-keys-ignore
+          bind:this={panelHost}
+          use:reparentToInspector={externalInspector}
+          inert={sharing || undefined}
+          aria-label={t("post_editor_tools")}
+        >
+          {#if showTimingStage}
+            {@render timingPanel()}
+          {:else}
+            <div class="side-column">
+              {@render topBar()}
+              <div class="panel-slot" tabindex="-1" bind:this={panelSlot}>
+                {#if shown}
+                  <Crossfade
+                    key={shown}
+                    mode="swap"
+                    duration={DURATION.fast}
+                    fill={layout === "wide"}
+                    animateHeight={layout === "viewer"}
+                  >
+                    {@render panel(shown, "side")}
+                  </Crossfade>
+                {/if}
+              </div>
+            </div>
+          {/if}
+        </aside>
+      {/if}
+    </div>
+
+    {#if !showTimingStage}
+      <div class="transport-slot">
+        <PostEditorTransport {editor} disabled={exporting} />
+        {#if fileError}
+          <p class="file-error" role="alert">{fileError}</p>
+        {/if}
+      </div>
+
+      <div class="timeline-slot" inert={sharing || exporting || undefined}>
+        <PostTimeline
+          project={editor.project}
+          durationSeconds={editor.durationSeconds}
+          playheadSeconds={editor.previewSeconds}
+          isPlaying={editor.isPlaying}
+          selectedItemId={editor.selectedItemId}
+          {labelFor}
+          onSeek={seekFromTimeline}
+          onSelect={(itemId) => (editor.selectedItemId = itemId)}
+          onGestureStart={() => {
+            editor.pause();
+            editor.beginGesture();
+          }}
+          onGestureEnd={editor.endGesture}
+          onGestureCancel={editor.cancelGesture}
+          onTrim={(itemId, edge, seconds) =>
+            asOneStep(() => editor.trimLive(itemId, edge, seconds))}
+          onMoveMain={(itemId, toIndex) =>
+            applyMove((project, context) =>
+              moveMainItem(project, itemId, toIndex, context)
+            )}
+          onMoveOverlay={(itemId, start, trackIndex) =>
+            applyMove((project, context) =>
+              moveOverlayItem(project, itemId, { start, trackIndex }, context)
+            )}
+          onTrackFlag={(trackId, flag, value) =>
+            editor.edit((project, context) =>
+              setTrackFlag(project, trackId, flag, value, context)
+            )}
+          onMoveKeyframe={(itemId, fromSeconds, toSeconds) =>
+            editor.edit((project, context) =>
+              editItemKeyframes(
+                project,
+                itemId,
+                (it) => moveKeyframes(it, fromSeconds, toSeconds),
+                context
+              )
+            )}
+          onDeleteKeyframesAt={(itemId, seconds) =>
+            editor.edit((project, context) =>
+              editItemKeyframes(
+                project,
+                itemId,
+                (it) => removeKeyframesAt(it, seconds),
+                context
+              )
+            )}
+          onAddVideo={pickDeviceVideo}
+          bind:pixelsPerSecond
+        />
+      </div>
+
+      {#if panelBeside}
+        <div
+          class="row-slot"
+          tabindex="-1"
+          bind:this={rowSlot}
+          inert={sharing || undefined}
+        >
+          <Crossfade key={rowKey} mode="swap" duration={DURATION.fast}>
+            {@render row()}
+          </Crossfade>
+        </div>
+      {/if}
+    {/if}
+
+    {#if !panelBeside}
+      <!-- A phone's tools stay at the bottom of the screen while the post
+           scrolls above them. An open panel takes the row's place. -->
+      <div
+        class="dock"
+        class:timing={showTimingStage}
+        tabindex="-1"
+        bind:this={dockElement}
+        inert={sharing || undefined}
+      >
+        {#if showTimingStage}
+          {@render timingPanel()}
+        {:else}
+          <Crossfade
+            key={dockKey}
+            mode="swap"
+            duration={DURATION.fast}
+            animateHeight
+          >
+            {#if shown}
+              {@render panel(shown, "dock")}
+            {:else}
+              {@render row()}
+            {/if}
+          </Crossfade>
+        {/if}
+      </div>
+    {/if}
+  </div>
+
+  <input
+    bind:this={fileInput}
+    class="file-input"
+    type="file"
+    accept="video/*"
+    onchange={addDeviceVideo}
+    tabindex="-1"
+    aria-hidden="true"
+  />
+</section>
+
+<!-- The render reads the live canvas frame by frame. Any edit made while it
+     runs lands in the middle of the output, so the app is locked until it
+     finishes or is cancelled. -->
+<ExportTakeover
+  phase={exporting ? "capturing" : "idle"}
+  progress={exportPercent / 100}
+  phaseLabel={exportProgress?.phase === "audio"
+    ? t("share_studio_mixing_sound")
+    : exportProgress
+      ? `${t("share_studio_rendering_frame")} ${exportProgress.completedFrames} ${t("share_studio_of")} ${exportProgress.totalFrames}`
+      : t("share_studio_rendering")}
+  onCancel={cancelExport}
+  label={t("share_studio_rendering_post")}
+/>
+
+<style>
+  .post-editor:focus,
+  .panel-host:focus,
+  .panel-slot:focus,
+  .row-slot:focus,
+  .dock:focus {
+    outline: none;
+  }
+
+  .post-editor {
+    /* The ruler, the main track and two layers. */
+    --post-timeline-height: 17.5rem;
+    --post-gap: 0.75rem;
+    container: post-editor / inline-size;
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    background: var(--theme-panel-bg, transparent);
+  }
+
+  /* A phone stacks the parts in the order they are used: the top bar, the
+     preview and its transport, the timeline, then the dock of tools. */
+  .layout {
+    display: flex;
+    flex-direction: column;
+    gap: var(--post-gap);
+    min-height: 100%;
+    padding: var(--post-gap);
+    box-sizing: border-box;
+  }
+
+  /* While editing, a phone's preview takes the height the other parts leave
+     it, down to 12rem, so the preview, the timeline and the row all fit on
+     one screen. Past that the editor scrolls under the dock. */
+  .post-editor[data-layout="phone"][data-mode="edit"] .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows:
+      auto minmax(var(--post-stage-min, 12rem), 1fr)
+      auto auto auto;
+    grid-template-areas: "top" "stage" "transport" "timeline" "dock";
+  }
+
+  /* Never taller than a full-width frame needs. */
+  .post-editor[data-layout="phone"][data-mode="edit"] .stage-row {
+    align-self: center;
+    height: min(100%, calc((100cqw - 2 * var(--post-gap)) * 16 / 9));
+  }
+
+  .stage-row {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    min-width: 0;
+  }
+
+  .preview-frame {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  /* The host fills whatever holds it, here or in the share sheet, and the
+     frame inside it is the largest 9:16 that fits. */
+  .preview-host {
+    container-type: size;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .canvas-slot {
+    width: min(100cqw, calc(100cqh * 9 / 16));
+  }
+
+  .timing-stage {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .transport-slot {
+    display: grid;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .file-error {
+    margin: 0;
+    color: var(--semantic-warning, #fbbf24);
+    font-size: 0.875rem;
+    text-align: center;
+  }
+
+  /* The timeline's playhead and guides stack inside it, under the dock. */
+  .timeline-slot {
+    min-width: 0;
+    min-height: 0;
+    isolation: isolate;
+  }
+
+  .row-slot {
+    min-width: 0;
+  }
+
+  /* The tools stay at the bottom of the screen on every layout: a phone's
+     dock, which an open panel takes over, and the row beside a wide
+     preview. A short window scrolls the post under them. */
+  .dock,
+  .row-slot {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    margin: auto calc(-1 * var(--post-gap)) calc(-1 * var(--post-gap));
+    padding: 0.5rem var(--post-gap)
+      max(0.5rem, env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--theme-stroke, #484755);
+    background: var(--theme-panel-bg, rgba(10, 12, 18, 0.92));
+    backdrop-filter: blur(12px);
+  }
+
+  .dock.timing {
+    position: static;
+    margin: 0;
+    padding: 0;
+    border-top: 0;
+    background: none;
+    backdrop-filter: none;
+  }
+
+  .timing-panel {
+    display: grid;
+    align-content: start;
+    gap: var(--post-gap);
+    min-width: 0;
+  }
+
+  .timing-back {
+    display: flex;
+  }
+
+  .file-input {
+    display: none;
+  }
+
+  /* On a wide screen the post fills the height: the preview with the top
+     bar and the panel right beside it, then the transport, the timeline and
+     the tool row. A short window scrolls under the row rather than shrinking
+     the preview and its panel below 15rem. The timeline keeps one height, so
+     a new layer scrolls inside it instead of shrinking the preview. The
+     viewer's own side panel holds the top bar and the panel, and the rest
+     stacks the same way. */
+  .post-editor:is([data-layout="wide"], [data-layout="viewer"]) .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(15rem, 1fr) auto var(--post-timeline-height) auto;
+    grid-template-areas: "stage" "transport" "timeline" "row";
+  }
+
+  .post-editor[data-mode="timing"]:is(
+      [data-layout="wide"],
+      [data-layout="viewer"]
+    )
+    .layout {
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-areas: "stage";
+  }
+
+  .top-bar-slot {
+    grid-area: top;
+  }
+
+  .stage-row {
+    grid-area: stage;
+  }
+
+  .transport-slot {
+    grid-area: transport;
+  }
+
+  .timeline-slot {
+    grid-area: timeline;
+  }
+
+  .row-slot {
+    grid-area: row;
+  }
+
+  .dock {
+    grid-area: dock;
+  }
+
+  /* The preview's width comes from the row's height, so the panel sits right
+     beside the video and the two center as one group. */
+  .post-editor:is([data-layout="wide"], [data-layout="viewer"]) .stage-row {
+    --post-panel-width: clamp(20rem, 30cqw, 26rem);
+    container-type: size;
+    min-height: 0;
+  }
+
+  .post-editor[data-layout="wide"] .preview-frame {
+    flex: none;
+    width: min(
+      calc(100cqh * 9 / 16),
+      calc(100cqw - var(--post-panel-width) - 1rem)
+    );
+    height: 100%;
+  }
+
+  .post-editor[data-layout="viewer"] .preview-frame {
+    flex: none;
+    width: min(100cqw, calc(100cqh * 9 / 16));
+    height: 100%;
+  }
+
+  .post-editor[data-mode="timing"] .timing-stage {
+    overflow-y: auto;
+  }
+
+  .panel-host {
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .post-editor[data-layout="wide"] .panel-host {
+    flex: 0 0 var(--post-panel-width);
+  }
+
+  .side-column {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: var(--post-gap);
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .panel-slot {
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .panel-host.external .side-column {
+    grid-template-rows: auto auto;
+    height: auto;
+  }
+
+  .post-editor[data-mode="timing"][data-layout="wide"] .panel-host {
+    overflow-y: auto;
+  }
+
+  /* In the viewer's side panel the host scrolls as a whole. */
+  .panel-host.external {
+    height: 100%;
+    padding: var(--post-gap);
+    overflow-y: auto;
+    box-sizing: border-box;
+  }
+
+  .post-editor[data-sharing="true"] .panel-host:not(.external) {
+    visibility: hidden;
+  }
+</style>

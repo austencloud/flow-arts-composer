@@ -4,6 +4,8 @@
   and ratio notation.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { localizedMatrixTurnSpokenLabel } from "../../domain/shape-matrix-display";
   import { Popover } from "bits-ui";
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import {
@@ -11,7 +13,6 @@
     type TurnValue,
   } from "$lib/shared/create/services/level-turn-values";
   import {
-    matrixTurnSpokenLabel,
     matrixTurnVisibleLabel,
     matrixTurnsForLevel,
     type MatrixLabelMode,
@@ -50,14 +51,14 @@
   let rightOpen = $state(false);
   const turnKeys = $derived(turnValues.map(turnValueToKey));
   const notationOptions = $derived([
-    { value: "turns" as const, label: "Turns", disabled },
-    { value: "ratios" as const, label: "Ratios", disabled },
+    { value: "turns" as const, label: t("shape_engine_turns"), disabled },
+    { value: "ratios" as const, label: t("shape_engine_ratios"), disabled },
   ]);
 
   function optionsFor(hand: Hand) {
     return turnValues.map((turn) => ({
       value: turnValueToKey(turn),
-      label: matrixTurnSpokenLabel(turn, labelMode),
+      label: localizedMatrixTurnSpokenLabel(turn, labelMode),
       shortLabel: matrixTurnVisibleLabel(turn, labelMode),
       tone: hand === "left" ? ("blue" as const) : ("red" as const),
       disabled,
@@ -87,7 +88,7 @@
   }
 </script>
 
-<div class="turn-controls" aria-label="Shape Matrix turn controls">
+<div class="turn-controls" aria-label={t("shape_engine_turns_aria")}>
   <div class="notation-control">
     <SegmentedControl
       options={notationOptions}
@@ -97,11 +98,11 @@
       density="tight"
       color="accent"
       semantics="radiogroup"
-      ariaLabel="Turn label system"
+      ariaLabel={t("shape_engine_turn_label_system")}
     />
   </div>
 
-  {#each [{ hand: "left" as const, label: "Left", turn: leftTurn }, { hand: "right" as const, label: "Right", turn: rightTurn }] as axis (axis.hand)}
+  {#each [{ hand: "left" as const, label: t("shape_engine_left"), turn: leftTurn }, { hand: "right" as const, label: t("shape_engine_right"), turn: rightTurn }] as axis (axis.hand)}
     <Popover.Root
       open={axis.hand === "left" ? leftOpen : rightOpen}
       onOpenChange={(open) => setOpen(axis.hand, open)}
@@ -114,7 +115,10 @@
             class="turn-trigger"
             class:left={axis.hand === "left"}
             class:right={axis.hand === "right"}
-            aria-label={`Choose ${axis.label.toLowerCase()} ${matrixTurnSpokenLabel(axis.turn, labelMode)}`}
+            aria-label={t("shape_engine_choose_axis_value", {
+              axis: axis.label,
+              value: localizedMatrixTurnSpokenLabel(axis.turn, labelMode),
+            })}
             {disabled}
           >
             <span class="hand-label">{axis.label}</span>
@@ -146,16 +150,34 @@
                   style:--dm-motion-blue={primaryPropColors?.left}
                   style:--dm-motion-red={primaryPropColors?.right}
                   transition:flyFade={{ y: -6, duration: DURATION.normal }}
-                  aria-label={`Choose ${axis.label.toLowerCase()} ${labelMode === "ratios" ? "ratio" : "turn"}`}
+                  aria-label={t("shape_engine_choose_axis_unit", {
+                    axis: axis.label,
+                    unit:
+                      labelMode === "ratios"
+                        ? t("shape_engine_ratio")
+                        : t("shape_engine_turn"),
+                  })}
                 >
                   <ShapeMatrixValueScroller
-                    label={`${axis.label} ${labelMode === "ratios" ? "ratio" : "turn"}`}
+                    label={t("shape_engine_axis_unit", {
+                      axis: axis.label,
+                      unit:
+                        labelMode === "ratios"
+                          ? t("shape_engine_ratio")
+                          : t("shape_engine_turn"),
+                    })}
                     options={optionsFor(axis.hand)}
                     keys={turnKeys}
                     value={turnValueToKey(axis.turn)}
                     onchange={(value) => chooseTurn(axis.hand, value)}
                     layout="tray"
-                    ariaLabel={`${axis.label} ${labelMode === "ratios" ? "ratio" : "turn"} value`}
+                    ariaLabel={t("shape_engine_axis_value_short", {
+                      axis: axis.label,
+                      unit:
+                        labelMode === "ratios"
+                          ? t("shape_engine_ratio")
+                          : t("shape_engine_turn"),
+                    })}
                   />
                 </section>
               {/if}

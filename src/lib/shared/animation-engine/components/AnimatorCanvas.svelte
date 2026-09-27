@@ -22,6 +22,7 @@ Last audit: 2025-12-27
 ================================================================================
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { Letter } from "$lib/shared/foundation/domain/models/letter";
@@ -75,6 +76,7 @@ Last audit: 2025-12-27
   import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
   import type { QualityTier } from "../domain/types/quality-types";
   import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
   import type { ElementalType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
   import type { GlyphOverlayFrameMode } from "../domain/glyph-overlay-frame";
 
@@ -103,6 +105,7 @@ Last audit: 2025-12-27
     leftPropType = null,
     rightPropType = null,
     fanAppearance = undefined,
+    propLook = undefined,
     leftBuugengFlipped = undefined,
     rightBuugengFlipped = undefined,
     word = null,
@@ -186,6 +189,8 @@ Last audit: 2025-12-27
     leftPropType?: string | null;
     rightPropType?: string | null;
     fanAppearance?: FanAppearance;
+    /** Page-local 2D artwork look; unset falls back to the global setting. */
+    propLook?: PropLook;
     leftBuugengFlipped?: boolean;
     rightBuugengFlipped?: boolean;
     word?: string | null;
@@ -792,7 +797,7 @@ Last audit: 2025-12-27
   <button
     type="button"
     class="corner-toggle"
-    aria-label={isPlaying ? "Pause" : "Play"}
+    aria-label={isPlaying ? t("viewer_ui_pause") : t("viewer_ui_play")}
     data-ghost="safe"
     data-ghost-kind="play"
     onclick={handleCornerToggle}
@@ -875,6 +880,7 @@ Last audit: 2025-12-27
       {leftPropType}
       {rightPropType}
       {fanAppearance}
+      {propLook}
       {leftBuugengFlipped}
       {rightBuugengFlipped}
       {previewDarkMode}
@@ -934,6 +940,7 @@ Last audit: 2025-12-27
         {leftPropType}
         {rightPropType}
         {fanAppearance}
+        {propLook}
         tipEffectMap={cellTipEffectMap}
         {visibilityManagerOverride}
         {showNonRadialPoints}
@@ -1013,14 +1020,14 @@ Last audit: 2025-12-27
           </span>
           <span class="hint-word">
             <Crossfade key={isPlaying} duration={DURATION.fast}>
-              {isPlaying ? "Pause" : "Play"}
+              {isPlaying ? t("viewer_ui_pause") : t("viewer_ui_play")}
             </Crossfade>
           </span>
         </span>
       {:else if hoverHint === "pill"}
         <span class="hint-pill">
           <i class="fas {isPlaying ? 'fa-pause' : 'fa-play'}"></i>
-          <span>{isPlaying ? "Pause" : "Play"}</span>
+          <span>{isPlaying ? t("viewer_ui_pause") : t("viewer_ui_play")}</span>
         </span>
       {/if}
     </div>

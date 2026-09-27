@@ -20,6 +20,7 @@
     type GradientOption,
   } from "$lib/shared/settings/domain/avatar-gradients";
   import type { PropOption } from "$lib/shared/settings/domain/photo-picker-types";
+  import { localizedPropName } from "../tabs/prop-type/localized-prop-name";
 
   interface Props {
     selectedGradientId: string;
@@ -59,7 +60,7 @@
       })
       .map(([propType, info]) => ({
         id: propType as PropType,
-        label: info.label,
+        label: localizedPropName(propType as PropType),
         image: info.image,
       }));
   });
@@ -103,7 +104,7 @@
         style="background: {selectedGradient.gradient};"
       >
         {#if currentPropImage}
-          <img src={currentPropImage} alt="Prop" class="prop-silhouette" />
+          <img src={currentPropImage} alt={t("settings_avatar_prop")} class="prop-silhouette" />
         {/if}
       </div>
       <span class="gradient-name"
@@ -198,7 +199,7 @@
         style="background: {selectedGradient.gradient};"
       >
         {#if currentPropImage}
-          <img src={currentPropImage} alt="Prop" class="prop-silhouette" />
+          <img src={currentPropImage} alt={t("settings_avatar_prop")} class="prop-silhouette" />
         {/if}
       </div>
       <span class="gradient-name"

@@ -172,7 +172,7 @@
 
   const FIDELITIES: { value: 720 | 1080 | 2160; label: string }[] = [
     { value: 720, label: "HD" },
-    { value: 1080, label: "Full HD" },
+    { value: 1080, label: t("viewer_detail_full_hd") },
     { value: 2160, label: "4K" },
   ];
   const EXPORT_FPS: (30 | 60)[] = [30, 60];
@@ -333,7 +333,7 @@
               "solid",
               () => (ctrl.colorMode = "solid")
             )}
-          aria-pressed={ctrl.colorMode === "solid"}>Solid</button
+          aria-pressed={ctrl.colorMode === "solid"}>{t("viewer_detail_solid")}</button
         >
         <button
           class="chip mini"
@@ -345,7 +345,7 @@
               "flow",
               () => (ctrl.colorMode = "flow")
             )}
-          aria-pressed={ctrl.colorMode === "flow"}>Flow</button
+          aria-pressed={ctrl.colorMode === "flow"}>{t("viewer_detail_flow")}</button
         >
       </div>
       <button
@@ -553,7 +553,7 @@
       <span class="slider-value">{ctrl.exportReps}×</span>
     </div>
     <div class="dl-row">
-      <span class="dl-label">Fidelity</span>
+      <span class="dl-label">{t("viewer_detail_fidelity")}</span>
       <div class="tray-chips">
         {#each FIDELITIES as f}
           <button
@@ -572,7 +572,7 @@
       </div>
     </div>
     <div class="dl-row">
-      <span class="dl-label">FPS</span>
+      <span class="dl-label">{t("viewer_detail_fps")}</span>
       <div class="tray-chips">
         {#each EXPORT_FPS as f}
           <button
@@ -593,11 +593,11 @@
     <div class="dl-foot">
       <span class="dl-estimate"
         ><i class="fas fa-clock" aria-hidden="true"></i>
-        {estimateLabel} · {ctrl.exportFrameCount} frames</span
+        {estimateLabel} · {ctrl.exportFrameCount} {t("viewer_detail_frames")}</span
       >
       {#if showExportButton}
         <button class="dl-export" onclick={handleExport}>
-          <i class="fas fa-film" aria-hidden="true"></i> Export MP4
+          <i class="fas fa-film" aria-hidden="true"></i> {t("viewer_detail_export_mp4")}
         </button>
       {/if}
     </div>

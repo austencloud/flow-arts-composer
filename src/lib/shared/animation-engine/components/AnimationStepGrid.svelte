@@ -5,6 +5,7 @@
   Shows sequence steps with playback sync highlighting (golden glow on current beat).
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import TKAGlyph from "$lib/shared/pictograph/tka-glyph/components/TKAGlyph.svelte";
 
@@ -45,7 +46,7 @@
   {#if steps().length === 0}
     <div class="empty-state">
       <i class="fas fa-layer-group" aria-hidden="true"></i>
-      <span>No sequence loaded</span>
+      <span>{t("playback_audit_no_sequence")}</span>
     </div>
   {:else}
     <div class="step-grid" style:--grid-cols={gridColumns()}>

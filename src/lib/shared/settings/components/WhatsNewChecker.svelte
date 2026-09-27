@@ -10,6 +10,7 @@
   import { whatsNewState } from "../state/whats-new-state.svelte";
   import * as versionService from "$lib/shared/feedback/services/version-service";
   import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import WhatsNewModal from "./WhatsNewModal.svelte";
 
   // Configuration
@@ -75,11 +76,11 @@
         whatsNewState.markVersionAsSeen(currentVersion);
         const count = versionData.changelogEntries.length;
         showToast({
-          message: `TKA v${currentVersion} · ${count} ${count === 1 ? "update" : "updates"}`,
+          message: t("settings_update_count_toast", { version: currentVersion, count }),
           type: "info",
           duration: 10000,
           action: {
-            label: "See what's new",
+            label: t("settings_see_whats_new"),
             onClick: () => whatsNewState.openDetail(versionData),
           },
         });

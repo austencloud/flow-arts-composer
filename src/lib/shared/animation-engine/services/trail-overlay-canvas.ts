@@ -30,10 +30,10 @@ import { Canvas2DVisibilityFadeManager } from "$lib/shared/animation-engine/serv
 import { calculateTrailSourceEndpoint } from "$lib/shared/animation-engine/services/prop-position-calculator";
 import {
   resolveTrailPointConfig,
+  trailTipEnds,
   type TrailPointSource,
   type TrailPointConfig,
 } from "../domain/types/trail-point-types";
-import { propTipEnds } from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
 import { resolveEffect } from "../domain/types/tip-effect-types";
 import { recordTunnelFormationTrailCaptures } from "./tunnel-formation-trail-telemetry";
 
@@ -292,13 +292,19 @@ export class TrailOverlayCanvas implements ITrailOverlayCanvas {
       hasRight,
       leftProp,
       rightProp,
-      leftPropType,
-      rightPropType,
+      leftPropType: leftNotationType,
+      rightPropType: rightNotationType,
+      leftPropRenderKey,
+      rightPropRenderKey,
       currentTime,
       additionalLayers,
       leftPropSwapSuppressed = false,
       rightPropSwapSuppressed = false,
     } = params;
+    // The base pair traces the artwork actually drawn; tunnel layers keep the
+    // notation type, as the fire tracker does.
+    const leftPropType = leftPropRenderKey ?? leftNotationType;
+    const rightPropType = rightPropRenderKey ?? rightNotationType;
 
     // Non-seamless loop wrap: the props teleport from the end position back to
     // the start. Drop the source rings so the next captured point can't connect
@@ -415,8 +421,8 @@ export class TrailOverlayCanvas implements ITrailOverlayCanvas {
     }
     this.frameFlipped = [leftFlipped, rightFlipped];
 
-    const leftHasTwoEnds = propTipEnds(leftPropType ?? undefined) === 2;
-    const rightHasTwoEnds = propTipEnds(rightPropType ?? undefined) === 2;
+    const leftHasTwoEnds = trailTipEnds(leftPropType) === 2;
+    const rightHasTwoEnds = trailTipEnds(rightPropType) === 2;
     const modeTracksLeft =
       trailSettings.trackingMode === TrackingMode.LEFT_END ||
       trailSettings.trackingMode === TrackingMode.BOTH_ENDS;
@@ -571,7 +577,7 @@ export class TrailOverlayCanvas implements ITrailOverlayCanvas {
           this.capturePropTipsInto(
             layer.leftProp,
             canvasSize,
-            leftPropType,
+            leftNotationType,
             0,
             leftRings.left,
             leftRings.right,
@@ -591,7 +597,7 @@ export class TrailOverlayCanvas implements ITrailOverlayCanvas {
           this.capturePropTipsInto(
             layer.rightProp,
             canvasSize,
-            rightPropType,
+            rightNotationType,
             1,
             rightRings.left,
             rightRings.right,

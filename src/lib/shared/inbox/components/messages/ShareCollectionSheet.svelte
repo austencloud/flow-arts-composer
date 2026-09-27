@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { getErrorHandler } from "$lib/shared/application/get-error-handler";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { authState } from "$lib/shared/auth/state/auth-state.svelte";
@@ -32,10 +33,10 @@
 
   const MESSAGE_MAX = 500;
   const MAX_RECENT_PEOPLE = 8;
-  const roleOptions = [
-    { value: "viewer" as const, label: "Can view", icon: "fa-solid fa-eye" },
-    { value: "editor" as const, label: "Can edit", icon: "fa-solid fa-pen" },
-  ];
+  const roleOptions = $derived([
+    { value: "viewer" as const, label: t("inbox_ui_can_view"), icon: "fa-solid fa-eye" },
+    { value: "editor" as const, label: t("inbox_ui_can_edit"), icon: "fa-solid fa-pen" },
+  ]);
 
   let { attachment, initialNote = "", onSent }: Props = $props();
   const payload = $derived(attachment.payload);
@@ -80,7 +81,7 @@
       seen.add(person.id);
       people.push({
         id: person.id,
-        displayName: person.displayName || "Unknown",
+        displayName: person.displayName || t("inbox_ui_unknown"),
         username: person.username,
         avatar: person.avatar,
         conversationId: conversation.id,
@@ -91,8 +92,8 @@
   });
   const shareLabel = $derived(
     selectedPeople.length > 1
-      ? `Share with ${selectedPeople.length}`
-      : "Share collection"
+      ? t("inbox_share_count", { count: selectedPeople.length })
+      : t("inbox_ui_share_collection")
   );
 
   onMount(() =>
@@ -108,7 +109,7 @@
         accessLoading = false;
         accessError = true;
         showFailure(
-          "People with access could not be loaded.",
+          t("inbox_ui_people_with_access_could_not_be_loaded"),
           error,
           "loadAccessList"
         );
@@ -139,7 +140,7 @@
       ...selectedPeople,
       {
         id: user.uid,
-        displayName: user.displayName || user.username || "Unknown",
+        displayName: user.displayName || user.username || t("inbox_ui_unknown"),
         username: user.username,
         avatar: user.photoURL,
       },
@@ -196,7 +197,7 @@
 
     if (sharedConversationIds.length === 0) {
       showFailure(
-        "The collection wasn’t shared. Try again.",
+        t("inbox_ui_the_collection_wasn_t_shared_try_again"),
         firstError,
         "shareCollection"
       );
@@ -208,8 +209,8 @@
     if (failures.length > 0) {
       showFailure(
         failures.length === 1
-          ? `${failures[0]} didn’t get the collection.`
-          : `${failures.length} people didn’t get the collection.`,
+          ? t("inbox_share_failed_person", { name: failures[0] ?? "" })
+          : t("inbox_share_failed_count", { count: failures.length }),
         firstError,
         "shareCollectionPartial"
       );
@@ -234,7 +235,7 @@
       haptic?.trigger("selection");
     } catch (error) {
       showFailure(
-        "That permission could not be changed.",
+        t("inbox_ui_that_permission_could_not_be_changed"),
         error,
         "changeCollectionRole"
       );
@@ -262,7 +263,7 @@
       haptic?.trigger("success");
     } catch (error) {
       showFailure(
-        "Access could not be removed.",
+        t("inbox_ui_access_could_not_be_removed"),
         error,
         "removeCollectionAccess"
       );
@@ -273,7 +274,7 @@
 </script>
 
 <div class="share-sheet">
-  <section class="collection-summary" aria-label="Collection to share">
+  <section class="collection-summary" aria-label={t("inbox_ui_collection_to_share")}>
     <div
       class="collection-icon"
       style:--collection-color={payload.color ?? "var(--theme-accent)"}
@@ -281,7 +282,7 @@
       <i class={payload.icon || "fa-solid fa-folder"} aria-hidden="true"></i>
     </div>
     <div class="collection-copy">
-      <span class="eyebrow">Collection</span>
+      <span class="eyebrow">{t("inbox_ui_collection")}</span>
       <h3>{payload.name}</h3>
       <p>
         {payload.sequenceCount}
@@ -293,8 +294,8 @@
   <section class="add-people" aria-labelledby="add-people-title">
     <div class="section-heading">
       <div>
-        <h3 id="add-people-title">Add people</h3>
-        <p>Choose what they can do, then send the collection in a message.</p>
+        <h3 id="add-people-title">{t("inbox_ui_add_people")}</h3>
+        <p>{t("inbox_ui_choose_what_they_can_do_then_send_the_collection_in_a_message")}</p>
       </div>
     </div>
 
@@ -302,14 +303,14 @@
       options={roleOptions}
       value={role}
       onchange={(value) => (role = value)}
-      ariaLabel="Permission for new people"
+      ariaLabel={t("inbox_ui_permission_for_new_people")}
       semantics="radiogroup"
     />
 
     {#key searchResetKey}
       <UserSearchInput
         onSelect={selectSearchResult}
-        placeholder="Search by username or name"
+        placeholder={t("inbox_ui_search_by_username_or_name")}
         inlineResults
         {excludeUserIds}
         disabled={phase === "sending"}
@@ -317,7 +318,7 @@
     {/key}
 
     {#if selectedPeople.length > 0}
-      <div class="selected-people" aria-label="Selected people">
+      <div class="selected-people" aria-label={t("inbox_ui_selected_people")}>
         {#each selectedPeople as person (person.id)}
           {@const identity = getUserIdentityLabels(person)}
           <button
@@ -325,7 +326,7 @@
             type="button"
             onclick={() => togglePerson(person)}
             disabled={phase === "sending"}
-            aria-label={`Remove ${identity.primary}`}
+            aria-label={t("inbox_remove_person", { name: identity.primary })}
           >
             <RobustAvatar
               src={person.avatar}
@@ -342,7 +343,7 @@
 
     {#if recentPeople.length > 0}
       <div class="recent-people">
-        <span class="field-label">Recent</span>
+        <span class="field-label">{t("inbox_ui_recent")}</span>
         <div class="recent-list">
           {#each recentPeople as person (person.id)}
             {@const identity = getUserIdentityLabels(person)}
@@ -366,12 +367,12 @@
     {/if}
 
     <label class="message-field">
-      <span>Optional message</span>
+      <span>{t("inbox_ui_optional_message")}</span>
       <textarea
         bind:value={note}
         maxlength={MESSAGE_MAX}
         rows="3"
-        placeholder="Add a note"
+        placeholder={t("inbox_ui_add_a_note")}
         disabled={phase === "sending"}
       ></textarea>
       <small>{note.length}/{MESSAGE_MAX}</small>
@@ -385,7 +386,7 @@
     >
       {#if phase === "sending"}
         <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
-        Sharing…
+        {t("inbox_ui_sharing")}
       {:else}
         <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
         {shareLabel}
@@ -396,23 +397,23 @@
   <section class="access-section" aria-labelledby="access-title">
     <div class="section-heading">
       <div>
-        <h3 id="access-title">People with access</h3>
-        <p>You control access to this collection.</p>
+        <h3 id="access-title">{t("inbox_ui_people_with_access")}</h3>
+        <p>{t("inbox_ui_you_control_access_to_this_collection")}</p>
       </div>
     </div>
 
     {#if accessLoading}
       <div class="access-state" role="status">
         <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
-        Loading access…
+        {t("inbox_ui_loading_access")}
       </div>
     {:else if accessError}
       <div class="access-state warning" role="status">
         <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
-        Access could not be loaded. Close this sheet and try again.
+        {t("inbox_ui_access_could_not_be_loaded_close_this_sheet_and_try_again")}
       </div>
     {:else if accessItems.length === 0}
-      <div class="access-state">Only you can open this collection.</div>
+      <div class="access-state">{t("inbox_ui_only_you_can_open_this_collection")}</div>
     {:else}
       <div class="access-list">
         {#each accessItems as item (item.grant.recipientId)}
@@ -425,21 +426,21 @@
             />
             <span class="access-name">{item.recipient.displayName}</span>
             <select
-              aria-label={`Permission for ${item.recipient.displayName}`}
+              aria-label={t("inbox_permission_person", { name: item.recipient.displayName })}
               value={item.grant.role}
               disabled={updatingRecipientId === item.grant.recipientId}
               onchange={(event) => changeRole(item, event.currentTarget.value)}
             >
-              <option value="viewer">Can view</option>
-              <option value="editor">Can edit</option>
+              <option value="viewer">{t("inbox_ui_can_view")}</option>
+              <option value="editor">{t("inbox_ui_can_edit")}</option>
             </select>
             <button
               type="button"
               class="remove-button"
               onclick={() => askToRemove(item)}
               disabled={updatingRecipientId === item.grant.recipientId}
-              aria-label={`Remove ${item.recipient.displayName}’s access`}
-              title="Remove access"
+              aria-label={t("inbox_remove_access_person", { name: item.recipient.displayName })}
+              title={t("inbox_ui_remove_access")}
             >
               <i class="fa-solid fa-user-minus" aria-hidden="true"></i>
             </button>
@@ -452,11 +453,11 @@
 
 <ConfirmDialog
   bind:isOpen={removeDialogOpen}
-  title="Remove access?"
+  title={t("inbox_ui_remove_access")}
   message={pendingRemoval
-    ? `${pendingRemoval.recipient.displayName} will no longer be able to open or edit this collection.`
-    : "This person will no longer have access to the collection."}
-  confirmText="Remove access"
+    ? t("inbox_remove_access_explanation", { name: pendingRemoval.recipient.displayName })
+    : t("inbox_ui_this_person_will_no_longer_have_access_to_the_collection")}
+  confirmText={t("inbox_ui_remove_access")}
   variant="danger"
   onConfirm={removeAccess}
   onCancel={() => (pendingRemoval = null)}

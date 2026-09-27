@@ -19,8 +19,13 @@ export type AuthNudgeTrigger =
   | "module:learn"
   | "module:library"
   | "module:settings"
+  | "module:stage"
+  | "module:other"
   | "edit-community"
   | "loop-locked-guest"
+  | "method:fuse"
+  | "method:tunnel"
+  | "method:assemble"
   | "community-setups"
   | "saved-setups"
   | "save-setup"
@@ -78,6 +83,9 @@ export const AUTH_NUDGE_TEXTS: Record<AuthNudgeTrigger, string> = {
   "module:library":
     "Your saved sequences live here. Log in or create a free account to see them.",
   "module:settings": "Create a free account to customize your settings.",
+  "module:stage":
+    "Create a free account to use 3D Studio and choreograph sequences in 3D.",
+  "module:other": "Create a free account to open this part of the app.",
   "edit-community": "Create a free account to edit and remix sequences.",
   // Lead with the ask, never with a definition. A guest hits this after
   // tapping Mirrored/Inverted/etc., so opening with "Rotated LOOPs are
@@ -86,6 +94,12 @@ export const AUTH_NUDGE_TEXTS: Record<AuthNudgeTrigger, string> = {
   // what stays free meanwhile.
   "loop-locked-guest":
     "Create a free account to use every LOOP type. Rotated LOOPs stay free without one.",
+  // Account-only Create methods a guest sees as locked cards on the front door.
+  "method:fuse": "Create a free account to combine two sequences into one.",
+  "method:tunnel":
+    "Create a free account to arrange sequences for several performers.",
+  "method:assemble":
+    "Create a free account to build a sequence by choosing grid points.",
   "community-setups":
     "Create a free account to use community setups and build sequences up to 64 steps.",
   "saved-setups": "Create a free account to keep setups across sessions.",
@@ -219,6 +233,16 @@ const AUTH_PROMPT_CONTENTS: Record<AuthNudgeTrigger, AuthPromptContent> = {
     title: "Save your settings",
     body: "Sign in or create an account to customize your settings.",
   },
+  "module:stage": {
+    key: "module:stage",
+    title: "Open 3D Studio",
+    body: "Sign in or create an account to build and choreograph sequences in 3D.",
+  },
+  "module:other": {
+    key: "module:other",
+    title: "Open this part of the app",
+    body: "Sign in or create an account to continue.",
+  },
   "edit-community": {
     key: "edit-community",
     title: "Edit this sequence",
@@ -228,6 +252,21 @@ const AUTH_PROMPT_CONTENTS: Record<AuthNudgeTrigger, AuthPromptContent> = {
     key: "loop-locked-guest",
     title: "Try every LOOP type",
     body: "A free account lets you use every LOOP type.",
+  },
+  "method:fuse": {
+    key: "method:fuse",
+    title: "Use Fuse",
+    body: "A free account lets you combine two sequences into one.",
+  },
+  "method:tunnel": {
+    key: "method:tunnel",
+    title: "Use Tunnel",
+    body: "A free account lets you arrange sequences for several performers.",
+  },
+  "method:assemble": {
+    key: "method:assemble",
+    title: "Use Assemble",
+    body: "A free account lets you build a sequence by choosing grid points.",
   },
   "community-setups": {
     key: "community-setups",
@@ -285,6 +324,32 @@ const AUTH_PROMPT_CONTENTS: Record<AuthNudgeTrigger, AuthPromptContent> = {
     body: "Sign in to send this image. It is saved and will send when you return.",
   },
 };
+
+// The prompt a guest sees on a module outside their allowlist. The Library
+// module was folded into Browse, so a module without its own entry gets the
+// neutral ask, never the Library's "your saved sequences live here".
+const MODULE_NUDGE_TRIGGERS: Partial<Record<string, AuthNudgeTrigger>> = {
+  learn: "module:learn",
+  settings: "module:settings",
+  stage: "module:stage",
+};
+
+export function moduleNudgeTrigger(moduleId: string): AuthNudgeTrigger {
+  return MODULE_NUDGE_TRIGGERS[moduleId] ?? "module:other";
+}
+
+// The prompt a guest sees after tapping a locked method on the Create front
+// door. It names the method so the ask reads as a next step, not a wall.
+const CREATE_METHOD_NUDGE_TRIGGERS: Partial<Record<string, AuthNudgeTrigger>> =
+  {
+    fuse: "method:fuse",
+    tunnel: "method:tunnel",
+    assemble: "method:assemble",
+  };
+
+export function createMethodNudgeTrigger(methodId: string): AuthNudgeTrigger {
+  return CREATE_METHOD_NUDGE_TRIGGERS[methodId] ?? "module:other";
+}
 
 const GENERIC_AUTH_PROMPTS: Record<AuthMode, AuthPromptContent> = {
   signup: {

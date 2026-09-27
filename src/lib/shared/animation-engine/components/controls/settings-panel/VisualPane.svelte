@@ -7,6 +7,7 @@
   - Ends selector (One End/Both Ends) - for bilateral props
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
   import { onMount } from "svelte";
   import {
@@ -213,51 +214,59 @@
       class:active={getGridEnabled()}
       onclick={toggleGrid}
       type="button"
-      aria-label={getGridEnabled() ? "Hide grid" : "Show grid"}
+      aria-label={getGridEnabled()
+        ? t("playback_audit_visual_hide_grid")
+        : t("playback_audit_visual_show_grid")}
       aria-pressed={getGridEnabled()}
     >
-      <span>Grid</span>
+      <span>{t("playback_audit_visual_grid")}</span>
     </button>
     <button
       class="element-btn"
       class:active={getProps()}
       onclick={toggleProps}
       type="button"
-      aria-label={getProps() ? "Hide props" : "Show props"}
+      aria-label={getProps()
+        ? t("playback_audit_visual_hide_props")
+        : t("playback_audit_visual_show_props")}
       aria-pressed={getProps()}
     >
-      <span>Props</span>
+      <span>{t("playback_audit_visual_props")}</span>
     </button>
     <button
       class="element-btn"
       class:active={getStepNumbers()}
       onclick={toggleStepNumbers}
       type="button"
-      aria-label={getStepNumbers() ? "Hide step numbers" : "Show step numbers"}
+      aria-label={getStepNumbers()
+        ? t("playback_audit_visual_hide_step_numbers")
+        : t("playback_audit_visual_show_step_numbers")}
       aria-pressed={getStepNumbers()}
     >
-      <span>Beat #</span>
+      <span>{t("playback_audit_visual_beat_number")}</span>
     </button>
     <button
       class="element-btn"
       class:active={getTkaGlyph()}
       onclick={toggleTkaGlyph}
       type="button"
-      title="TKA Glyph includes turn numbers"
-      aria-label={getTkaGlyph() ? "Hide TKA glyph" : "Show TKA glyph"}
+      title={t("playback_audit_visual_tka_glyph_includes_turn_numbers")}
+      aria-label={getTkaGlyph()
+        ? t("playback_audit_visual_hide_tka_glyph")
+        : t("playback_audit_visual_show_tka_glyph")}
       aria-pressed={getTkaGlyph()}
     >
-      <span>Glyph</span>
+      <span>{t("playback_audit_visual_glyph")}</span>
     </button>
     <button
       class="element-btn"
       class:active={getElementalGlyph()}
       onclick={toggleElementalGlyph}
       type="button"
-      title="Hand timing and direction glyph"
+      title={t("playback_audit_visual_hand_timing_and_direction_glyph")}
       aria-label={getElementalGlyph()
-        ? "Hide hand TnD glyph"
-        : "Show hand TnD glyph"}
+        ? t("playback_audit_visual_hide_hand_tnd_glyph")
+        : t("playback_audit_visual_show_hand_tnd_glyph")}
       aria-pressed={getElementalGlyph()}
     >
       <span>Hand TnD</span>
@@ -267,10 +276,10 @@
       class:active={getPropElementalGlyph()}
       onclick={togglePropElementalGlyph}
       type="button"
-      title="Prop timing and direction glyph"
+      title={t("playback_audit_visual_prop_timing_and_direction_glyph")}
       aria-label={getPropElementalGlyph()
-        ? "Hide prop TnD glyph"
-        : "Show prop TnD glyph"}
+        ? t("playback_audit_visual_hide_prop_tnd_glyph")
+        : t("playback_audit_visual_show_prop_tnd_glyph")}
       aria-pressed={getPropElementalGlyph()}
     >
       <span>Prop TnD</span>
@@ -280,22 +289,26 @@
       class:active={getWordHeader()}
       onclick={toggleWordHeader}
       type="button"
-      title="Word header above animation"
-      aria-label={getWordHeader() ? "Hide word header" : "Show word header"}
+      title={t("playback_audit_visual_word_header_above_animation")}
+      aria-label={getWordHeader()
+        ? t("playback_audit_visual_hide_word_header")
+        : t("playback_audit_visual_show_word_header")}
       aria-pressed={getWordHeader()}
     >
-      <span>Word</span>
+      <span>{t("playback_audit_visual_word")}</span>
     </button>
     <button
       class="element-btn"
       class:active={getProgressBar()}
       onclick={toggleProgressBar}
       type="button"
-      title="Progress bar in word header"
-      aria-label={getProgressBar() ? "Hide progress bar" : "Show progress bar"}
+      title={t("playback_audit_visual_progress_bar_in_word_header")}
+      aria-label={getProgressBar()
+        ? t("playback_audit_visual_hide_progress_bar")
+        : t("playback_audit_visual_show_progress_bar")}
       aria-pressed={getProgressBar()}
     >
-      <span>Progress</span>
+      <span>{t("playback_audit_visual_progress")}</span>
     </button>
   </div>
 
@@ -306,20 +319,20 @@
       class:active={currentTrailStyle === "off"}
       onclick={() => toggleTrails("off")}
       type="button"
-      aria-label="Turn trails off"
+      aria-label={t("playback_audit_visual_turn_trails_off")}
       aria-pressed={currentTrailStyle === "off"}
     >
-      Off
+      {t("playback_audit_visual_off")}
     </button>
     <button
       class="trail-btn"
       class:active={currentTrailStyle === "on"}
       onclick={() => toggleTrails("on")}
       type="button"
-      aria-label="Turn trails on"
+      aria-label={t("playback_audit_visual_turn_trails_on")}
       aria-pressed={currentTrailStyle === "on"}
     >
-      On
+      {t("playback_audit_visual_on")}
     </button>
   </div>
 
@@ -331,8 +344,8 @@
         class:active={isLeftEnd}
         onclick={() => setTrackingMode(TrackingMode.LEFT_END)}
         type="button"
-        title="Track {endLabels[0]} end only"
-        aria-label="Track {endLabels[0]} end only"
+        title={t("playback_audit_track_end_only", { end: endLabels[0] })}
+        aria-label={t("playback_audit_track_end_only", { end: endLabels[0] })}
         aria-pressed={isLeftEnd}
       >
         <i class="fas fa-arrow-left" aria-hidden="true"></i>
@@ -343,20 +356,20 @@
         class:active={isBothEnds}
         onclick={() => setTrackingMode(TrackingMode.BOTH_ENDS)}
         type="button"
-        title="Track both ends"
-        aria-label="Track both ends"
+        title={t("playback_audit_visual_track_both_ends")}
+        aria-label={t("playback_audit_visual_track_both_ends")}
         aria-pressed={isBothEnds}
       >
         <i class="fas fa-arrows-alt-h" aria-hidden="true"></i>
-        <span>Both</span>
+        <span>{t("playback_audit_visual_both")}</span>
       </button>
       <button
         class="ends-btn"
         class:active={isRightEnd}
         onclick={() => setTrackingMode(TrackingMode.RIGHT_END)}
         type="button"
-        title="Track {endLabels[1]} end only"
-        aria-label="Track {endLabels[1]} end only"
+        title={t("playback_audit_track_end_only", { end: endLabels[1] })}
+        aria-label={t("playback_audit_track_end_only", { end: endLabels[1] })}
         aria-pressed={isRightEnd}
       >
         <i class="fas fa-arrow-right" aria-hidden="true"></i>

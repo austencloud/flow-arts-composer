@@ -2,6 +2,7 @@
      viewer. Rendering stays asynchronous, and fixed preview/status geometry
      prevents state changes from moving the sheet. -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, untrack, type Snippet } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { growFade } from "$lib/shared/transitions/motion";
@@ -168,7 +169,7 @@
     onSendInTka,
     needsAccountForFiles = false,
     onRequestAccount,
-    videoLabel = "Video",
+    videoLabel,
     captureAnimationPreview = () => "",
     captureVideoOpener,
     is3DExport = false,
@@ -241,7 +242,8 @@
   const artifactOptions = $derived(
     shareDraft.availableArtifacts.map((value) => ({
       value,
-      label: value === "card" ? "Card" : videoLabel,
+      label:
+        value === "card" ? t("share_card") : (videoLabel ?? t("share_video")),
     }))
   );
   let cardSettingsOpen = $state(false);
@@ -258,7 +260,22 @@
   /** Captured once per session and choice; "this frame" is the preview itself. */
   let openerPreviews = $state<Partial<Record<VideoOpener, string>>>({});
   let openerCaptureSession = 0;
-  const openerOptions = [...VIDEO_OPENER_OPTIONS];
+  const openerOptions = $derived(
+    VIDEO_OPENER_OPTIONS.map((option) => ({
+      value: option.value,
+      label: videoOpenerLabel(option.value),
+    }))
+  );
+  function videoOpenerLabel(value: VideoOpener): string {
+    switch (value) {
+      case "first-beat":
+        return t("share_first_beat");
+      case "this-frame":
+        return t("share_current_frame");
+      case "mandala":
+        return "Mandala";
+    }
+  }
   let videoSettingsOpen = $state(false);
   // A tall sheet has room to show the settings without a disclosure.
   const roomySheet = new MediaQuery("(min-height: 760px)");
@@ -284,10 +301,11 @@
     { value: 60, label: "60 fps" },
     { value: 120, label: "120 fps" },
   ];
-  const videoQualityOptions: { value: VideoQuality; label: string }[] = [
-    { value: "standard", label: "Standard" },
-    { value: "cinema", label: "Cinema" },
-  ];
+  const videoQualityOptions: { value: VideoQuality; label: string }[] =
+    $derived([
+      { value: "standard", label: t("share_quality_standard") },
+      { value: "cinema", label: t("share_quality_cinema") },
+    ]);
   let captionOpen = $state(false);
   let publishOpen = $state(false);
   let failedPreviewUrl = $state<string | null>(null);
@@ -340,7 +358,7 @@
     },
     onError: () => {
       cardRenderFailed = true;
-      statusMessage = "Couldn't render the card";
+      statusMessage = t("share_render_card_failed");
     },
   });
   // Crossfade keeps the old stage mounted during its outro. Hold that card's
@@ -580,7 +598,7 @@
         key: "instagram",
         brand: "instagram",
         name: "Instagram",
-        label: "Review for Instagram",
+        label: t("share_review_instagram"),
         hint: `@${instagram.username}`,
         kind: "review",
         target: "instagram",
@@ -590,8 +608,8 @@
         key: "instagram",
         brand: "instagram",
         name: "Instagram",
-        label: "Connect professional Instagram",
-        hint: "Creator or business account",
+        label: t("share_connect_professional_instagram"),
+        hint: t("share_creator_or_business"),
         kind: "connect",
         target: "instagram",
       });
@@ -600,8 +618,8 @@
         key: "instagram",
         brand: "instagram",
         name: "Instagram",
-        label: "Send to Instagram",
-        hint: "Scan the code, post from your phone",
+        label: t("share_send_to_instagram"),
+        hint: t("share_scan_post_phone"),
         kind: "handoff",
         destination: "send-to-phone",
       });
@@ -613,8 +631,8 @@
         key: "facebook",
         brand: "facebook",
         name: "Facebook",
-        label: "Post to Facebook",
-        hint: page.selectedPageName || "Your Page",
+        label: t("share_post_facebook"),
+        hint: page.selectedPageName || t("share_your_page"),
         kind: "post",
         target: "facebook-page",
       });
@@ -623,8 +641,8 @@
         key: "facebook",
         brand: "facebook",
         name: "Facebook",
-        label: "Choose a Page",
-        hint: "Pick where your posts land",
+        label: t("share_choose_page"),
+        hint: t("share_pick_page"),
         kind: "choose-page",
         target: "facebook-page",
       });
@@ -633,8 +651,8 @@
         key: "facebook",
         brand: "facebook",
         name: "Facebook",
-        label: "Connect Facebook",
-        hint: "Post to your Page",
+        label: t("share_connect_facebook"),
+        hint: t("share_post_to_page"),
         kind: "connect",
         target: "facebook-page",
       });
@@ -643,8 +661,8 @@
         key: "facebook",
         brand: "facebook",
         name: "Facebook",
-        label: "Open Facebook",
-        hint: "Paste the image, then use Copy caption",
+        label: t("share_open_facebook"),
+        hint: t("share_paste_image_caption"),
         kind: "handoff",
         destination: "copy-image-facebook",
       });
@@ -700,10 +718,7 @@
   const opener = $derived<VideoOpener>(
     openerEnabled ? exportOptions.videoOpener : "first-beat"
   );
-  const openerLabel = $derived(
-    VIDEO_OPENER_OPTIONS.find((option) => option.value === opener)?.label ??
-      "First beat"
-  );
+  const openerLabel = $derived(videoOpenerLabel(opener));
   /** The stage shows exactly the image the clip will open with. */
   const openerPreviewUrl = $derived(
     openerEnabled && opener !== "this-frame"
@@ -1060,7 +1075,7 @@
   async function handleCopyLinkIntent(): Promise<void> {
     if (copyLinkPending) return;
     if (!copyLinkUrl && !canCreateLink) {
-      copyLinkMessage = "Save this sequence to create a shareable link.";
+      copyLinkMessage = t("share_save_sequence_link");
       return;
     }
 
@@ -1083,13 +1098,13 @@
             copyLinkUrl || buildCopyLinkUrl(shortUrl || viewerUrl, viewerUrl);
           if (fallbackUrl) {
             revealedLinkUrl = fallbackUrl;
-            copyLinkMessage = "Copy it from the link below";
+            copyLinkMessage = t("share_copy_link_manually");
           }
         }
       }
     } catch {
       if (!target || linkSessionIsCurrent(session, target)) {
-        copyLinkMessage = "Couldn't copy the link. Try again.";
+        copyLinkMessage = t("share_copy_link_failed");
       }
     } finally {
       if (!target || linkSessionIsCurrent(session, target)) {
@@ -1136,7 +1151,7 @@
     const account = metaStatus.instagram;
     if (!account || !reviewPreviewUrl || videoBusy || videoSettingsStale) {
       if (videoSettingsStale) {
-        statusMessage = "Prepare the updated video before publishing.";
+        statusMessage = t("share_prepare_updated_video_publish");
       }
       return;
     }
@@ -1226,7 +1241,7 @@
       void runDestination(destination.id);
       return;
     }
-    statusMessage = "Download the post, then finish it in Instagram.";
+    statusMessage = t("share_finish_instagram");
   }
 
   /**
@@ -1380,7 +1395,7 @@
     if (outcome === "waiting") return;
     pendingCardDownloadRevision = null;
     if (outcome === "failed") {
-      statusMessage = "Couldn't render the card. Try again.";
+      statusMessage = t("share_render_card_retry");
       return;
     }
     if (outcome === "deliver") void runDestination("download");
@@ -1407,8 +1422,7 @@
     if (outcome === "deliver") {
       void runDestination("download");
     } else {
-      statusMessage =
-        "Settings or the current view changed while rendering. Download again to prepare the updated file.";
+      statusMessage = t("share_settings_changed_download_again");
     }
   });
 
@@ -1447,7 +1461,7 @@
       const saved = await onSaveCardPresentation(shareDraft.cardPresentation);
       if (saved) {
         shareDraft.markCardPresentationSaved();
-        statusMessage = "Card footer saved";
+        statusMessage = t("share_card_footer_saved");
       }
     } finally {
       savingCardPresentation = false;
@@ -1461,19 +1475,19 @@
       word: alphabetWord || sequence?.displayName || "",
       url: postUrl,
     });
-    statusMessage = "Saved as a preset";
+    statusMessage = t("share_preset_saved");
   }
 
   function removePreset(preset: (typeof presets)[number]): void {
     if (!preset.template) return;
     captions.removeCustomPreset(preset.template);
-    statusMessage = "Preset removed";
+    statusMessage = t("share_preset_removed");
   }
 
   async function sendToPhone(): Promise<void> {
     const blob = activeBlob;
     if (!blob || !sequence?.id) {
-      qrError = "Save this sequence first so it has somewhere to upload to.";
+      qrError = t("share_save_sequence_upload");
       return;
     }
 
@@ -1490,7 +1504,7 @@
       qrDataUrl = image.src;
     } catch (error) {
       console.error("[PostShareSheet] Phone handoff failed:", error);
-      qrError = "Couldn't prepare the handoff. Sign in and try again.";
+      qrError = t("share_handoff_failed");
     } finally {
       qrPending = false;
     }
@@ -1530,7 +1544,7 @@
       }
     } catch (error) {
       console.error("[PostShareSheet] Delivery failed:", error);
-      statusMessage = "Couldn't finish sharing. Try again.";
+      statusMessage = t("share_finish_failed");
     } finally {
       busyDestination = null;
     }
@@ -1546,25 +1560,23 @@
     const blob = activeBlob;
     if (!blob || videoBusy || videoSettingsStale) {
       statusMessage = videoSettingsStale
-        ? "Prepare the updated video before publishing."
-        : "Prepare media before choosing an account.";
+        ? t("share_prepare_updated_video_publish")
+        : t("share_prepare_media_account");
       return;
     }
     if (!sequence?.id) {
-      statusMessage =
-        "Save this sequence first so it has somewhere to upload to.";
+      statusMessage = t("share_save_sequence_upload");
       return;
     }
 
     postingTarget = target;
     statusMessage = "";
-    postStage = "Uploading…";
+    postStage = t("share_uploading");
 
     try {
       // Reject unsupported containers before paying for upload and processing.
       if (artifact === "video" && blob.type && !blob.type.includes("mp4")) {
-        statusMessage =
-          "This video isn't in a format Instagram or Facebook accepts.";
+        statusMessage = t("share_unsupported_meta_format");
         return;
       }
 
@@ -1580,7 +1592,7 @@
       );
 
       postStage =
-        artifact === "video" ? "Meta is processing the video…" : "Posting…";
+        artifact === "video" ? t("share_meta_processing") : t("share_posting");
       const result = await publishToMeta({
         target,
         mediaType: artifact === "video" ? "video" : "image",
@@ -1611,13 +1623,15 @@
         postedPermalinks = { ...postedPermalinks, [target]: result.permalink };
       }
       statusMessage =
-        target === "instagram" ? "Posted to Instagram" : "Posted to your Page";
+        target === "instagram"
+          ? t("share_posted_instagram")
+          : t("share_posted_page");
     } catch (error) {
       console.error("[PostShareSheet] Direct post failed:", error);
       statusMessage =
         error instanceof MetaPublishClientError
           ? error.message
-          : "Couldn't post that. Try again.";
+          : t("share_post_failed");
     } finally {
       postingTarget = null;
       postStage = "";
@@ -1680,12 +1694,14 @@
 
     try {
       const account = await connectMetaAccount(target);
-      statusMessage = account ? `Connected ${account}` : "Connected";
+      statusMessage = account
+        ? `${t("share_connected_with")} ${account}`
+        : t("share_connected");
     } catch (error) {
       statusMessage =
         error instanceof MetaPublishClientError
           ? error.message
-          : "Couldn't connect that account.";
+          : t("share_connect_failed");
     } finally {
       connectingTarget = null;
     }
@@ -1695,9 +1711,9 @@
     connectingTarget = target;
     try {
       await disconnectMetaAccount(target);
-      statusMessage = "Disconnected";
+      statusMessage = t("share_disconnected");
     } catch {
-      statusMessage = "Couldn't disconnect that account.";
+      statusMessage = t("share_disconnect_failed");
     } finally {
       connectingTarget = null;
     }
@@ -1708,7 +1724,7 @@
     try {
       await selectFacebookPage(pageId);
     } catch {
-      statusMessage = "Couldn't switch Page.";
+      statusMessage = t("share_switch_page_failed");
     }
   }
 
@@ -1722,12 +1738,14 @@
       const account = await connectMetaAccount("facebook-page", {
         reselect: true,
       });
-      statusMessage = account ? `Connected ${account}` : "Connected";
+      statusMessage = account
+        ? `${t("share_connected_with")} ${account}`
+        : t("share_connected");
     } catch (error) {
       statusMessage =
         error instanceof MetaPublishClientError
           ? error.message
-          : "Couldn't reopen the Page list.";
+          : t("share_reopen_pages_failed");
     } finally {
       connectingTarget = null;
     }
@@ -1819,12 +1837,16 @@
 <ShareSheetFrame
   {isOpen}
   ariaLabel={shareRoute === "publish"
-    ? "Publish a post"
+    ? t("share_publish_post")
     : shareRoute === "link"
-      ? "Share a link"
+      ? t("share_a_link")
       : shareRoute === "download"
-        ? `Download ${artifact === "video" ? (videoSettingsAvailable ? "animation" : "post") : "card"}`
-        : "Share sequence"}
+        ? artifact === "video"
+          ? videoSettingsAvailable
+            ? t("share_download_animation")
+            : t("share_download_post")
+          : t("share_download_card")
+        : t("share_sequence")}
   {onClose}
   onClosed={runPendingHandoff}
   narrow={!!qrDataUrl}
@@ -1872,12 +1894,16 @@
             <div class="title-group">
               <h2 class="panel-title">
                 {shareRoute === "publish"
-                  ? "Publish a post"
+                  ? t("share_publish_post")
                   : shareRoute === "link"
-                    ? "Share a link"
+                    ? t("share_a_link")
                     : shareRoute === "download"
-                      ? `Download ${artifact === "video" ? (videoSettingsAvailable ? "animation" : "post") : "card"}`
-                      : "Share sequence"}
+                      ? artifact === "video"
+                        ? videoSettingsAvailable
+                          ? t("share_download_animation")
+                          : t("share_download_post")
+                        : t("share_download_card")
+                      : t("share_sequence")}
               </h2>
               <div class="sequence-identity">
                 <TKAWordGlyph word={glyphWord} height={glyphHeight} darkMode />
@@ -1887,7 +1913,7 @@
               type="button"
               class="header-close"
               onclick={onClose}
-              aria-label="Close share sheet"
+              aria-label={t("share_close_sheet")}
             >
               <i class="fa-solid fa-xmark" aria-hidden="true"></i>
             </button>
@@ -1907,7 +1933,7 @@
                   <img
                     class="home-preview"
                     src={animationPreviewUrl}
-                    alt="Current sequence view"
+                    alt={t("share_current_sequence_view")}
                   />
                 {/if}
                 <div class="intent-grid">
@@ -1917,9 +1943,8 @@
                     onclick={() => beginDownload(artifact)}
                   >
                     <i class="fa-solid fa-download" aria-hidden="true"></i>
-                    <span>Download a file</span>
-                    <small>Save the current view as a video or card image</small
-                    >
+                    <span>{t("share_download_file")}</span>
+                    <small>{t("share_download_file_hint")}</small>
                   </button>
                   <button
                     type="button"
@@ -1928,14 +1953,13 @@
                     onclick={() => (shareRoute = "link")}
                   >
                     <i class="fa-solid fa-link" aria-hidden="true"></i>
-                    <span>Share a link</span>
-                    <small>Open this exact view or send it to a friend</small>
+                    <span>{t("share_a_link")}</span>
+                    <small>{t("share_link_hint")}</small>
                   </button>
                   <button type="button" class="intent" onclick={openPublish}>
                     <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
-                    <span>Publish socially</span>
-                    <small>Write a caption and choose a connected account</small
-                    >
+                    <span>{t("share_publish_socially")}</span>
+                    <small>{t("share_publish_hint")}</small>
                   </button>
                 </div>
               </div>
@@ -1945,11 +1969,11 @@
                   type="button"
                   class="back-to-chooser"
                   onclick={returnToChooser}
-                  ><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back
-                  to sharing</button
+                  ><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+                  {t("share_back")}</button
                 >
                 <p class="link-description">
-                  Anyone with this link opens the current sequence view.
+                  {t("share_link_description")}
                 </p>
                 <PanelButton
                   variant="primary"
@@ -1960,18 +1984,18 @@
                   <i
                     class={copyLinkPending
                       ? "fa-solid fa-circle-notch fa-spin"
-                      : copyLinkMessage === "Link copied"
+                      : copyLinkMessage === t("share_link_copied")
                         ? "fa-solid fa-check"
                         : "fa-solid fa-copy"}
                     aria-hidden="true"
                   ></i>
                   {copyLinkPending
-                    ? "Copying link…"
-                    : copyLinkMessage === "Link copied"
-                      ? "Link copied"
-                      : "Copy link"}
+                    ? t("share_copying_link")
+                    : copyLinkMessage === t("share_link_copied")
+                      ? t("share_link_copied")
+                      : t("share_copy_link")}
                 </PanelButton>
-                {#if copyLinkMessage && copyLinkMessage !== "Link copied"}
+                {#if copyLinkMessage && copyLinkMessage !== t("share_link_copied")}
                   <p
                     class="delivery-feedback"
                     role="status"
@@ -1985,7 +2009,7 @@
                     class="link-reveal"
                     transition:growFade={{ axis: "y" }}
                   >
-                    <span>Sequence link</span>
+                    <span>{t("share_sequence_link")}</span>
                     <input
                       type="url"
                       readonly
@@ -2000,7 +2024,7 @@
                     onclick={() => handOffAfterClose(() => onSendInTka?.())}
                   >
                     <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
-                    Send to a friend
+                    {t("share_send_friend")}
                   </PanelButton>
                 {/if}
               </div>
@@ -2025,12 +2049,14 @@
                         >
                           <i class="fa-solid fa-arrow-left" aria-hidden="true"
                           ></i>
-                          Back to sharing
+                          {t("share_back")}
                         </button>
                       {/if}
                       {#if availableArtifacts.length > 1}
                         <fieldset class="file-type" disabled={videoBusy}>
-                          <span id="share-file-type">File type</span>
+                          <span id="share-file-type"
+                            >{t("share_file_type")}</span
+                          >
                           <SegmentedControl
                             options={artifactOptions}
                             value={artifact}
@@ -2102,11 +2128,10 @@
                             <div class="qr-view">
                               <img
                                 src={qrDataUrl}
-                                alt="QR code linking to the uploaded file"
+                                alt={t("share_qr_uploaded_file")}
                               />
                               <p>
-                                Scan with your phone, save it, then post from
-                                Instagram.
+                                {t("share_scan_phone_instagram")}
                               </p>
                               <button
                                 type="button"
@@ -2117,7 +2142,7 @@
                                   class="fa-solid fa-arrow-left"
                                   aria-hidden="true"
                                 ></i>
-                                Back
+                                {t("share_back_short")}
                               </button>
                             </div>
                           {:else if artifact === "video" && activeVideoUrl}
@@ -2142,7 +2167,7 @@
                               src={openerPreviewUrl}
                               alt={openerEnabled
                                 ? `Video opens with ${openerLabel.toLowerCase()}`
-                                : "Current animation view"}
+                                : t("share_current_animation_view")}
                             />
                           {:else if artifact === "video" && !videoBusy}
                             <div
@@ -2153,13 +2178,13 @@
                               ></i>
                               <strong
                                 >{videoStatus === "failed"
-                                  ? "Video could not be rendered"
-                                  : "Animation preview"}</strong
+                                  ? t("share_video_render_failed")
+                                  : t("share_animation_preview")}</strong
                               >
                               <span
                                 >{videoStatus === "failed"
-                                  ? "Check the settings and try again."
-                                  : "Your video preview appears after rendering."}</span
+                                  ? t("share_check_settings_retry")
+                                  : t("share_video_preview_after_render")}</span
                               >
                             </div>
                           {:else}
@@ -2168,7 +2193,9 @@
                                 class="fa-solid fa-circle-notch fa-spin"
                                 aria-hidden="true"
                               ></i>
-                              <span>{progressLabel || "Preparing…"}</span>
+                              <span
+                                >{progressLabel || t("share_preparing")}</span
+                              >
                             </div>
                           {/if}
                         </Crossfade>
@@ -2183,10 +2210,10 @@
                       transition:growFade={{ axis: "y" }}
                     >
                       {videoBusy
-                        ? progressLabel || "Rendering animation…"
+                        ? progressLabel || t("share_rendering_animation")
                         : videoStatus === "canceled"
-                          ? "Render canceled"
-                          : "Video could not be rendered. Check the settings and try again."}
+                          ? t("share_render_canceled")
+                          : t("share_video_render_retry")}
                     </p>
                   {/if}
                 </div>
@@ -2200,10 +2227,12 @@
                       {#if openerEnabled && sequence}
                         <fieldset
                           class="opener-row"
-                          aria-label="Opens with"
+                          aria-label={t("share_opens_with")}
                           disabled={videoBusy}
                         >
-                          <span id="share-video-opener">Opens with</span>
+                          <span id="share-video-opener"
+                            >{t("share_opens_with")}</span
+                          >
                           <SegmentedControl
                             options={openerOptions}
                             value={exportOptions.videoOpener}
@@ -2224,22 +2253,24 @@
                        stays a one-share override until saved to the card. -->
                         <fieldset
                           class="card-settings"
-                          aria-label="Card settings"
+                          aria-label={t("share_card_settings")}
                         >
                           {#if roomyCardSheet.current}
                             <div class="settings-heading">
-                              Card settings
+                              {t("share_card_settings")}
                               <span class="setting-value"
                                 >{exportOptions.imageDarkMode
-                                  ? "Dark"
-                                  : "Light"} · Footer
+                                  ? t("share_theme_dark")
+                                  : t("share_theme_light")} · {t(
+                                  "share_theme_footer"
+                                )}
                                 {shareDraft.cardPresentation.footer.mode ===
                                 "off"
-                                  ? "off"
+                                  ? t("share_footer_off")
                                   : shareDraft.cardPresentation.footer.mode ===
                                       "credit"
-                                    ? "credit"
-                                    : "custom"}</span
+                                    ? t("share_footer_credit")
+                                    : t("share_footer_custom")}</span
                               >
                             </div>
                           {:else}
@@ -2251,18 +2282,20 @@
                             >
                               <i class="fa-solid fa-sliders" aria-hidden="true"
                               ></i>
-                              Card settings
+                              {t("share_card_settings")}
                               <span class="setting-value"
                                 >{exportOptions.imageDarkMode
-                                  ? "Dark"
-                                  : "Light"} · Footer
+                                  ? t("share_theme_dark")
+                                  : t("share_theme_light")} · {t(
+                                  "share_theme_footer"
+                                )}
                                 {shareDraft.cardPresentation.footer.mode ===
                                 "off"
-                                  ? "off"
+                                  ? t("share_footer_off")
                                   : shareDraft.cardPresentation.footer.mode ===
                                       "credit"
-                                    ? "credit"
-                                    : "custom"}</span
+                                    ? t("share_footer_credit")
+                                    : t("share_footer_custom")}</span
                               >
                               <i
                                 class={cardSettingsOpen
@@ -2297,12 +2330,12 @@
                       {#if artifact === "video" && sequence && videoSettingsAvailable}
                         <fieldset
                           class="video-settings"
-                          aria-label="Video settings"
+                          aria-label={t("share_video_settings")}
                           disabled={videoBusy}
                         >
                           {#if roomySheet.current}
                             <div class="settings-heading">
-                              Video settings
+                              {t("share_video_settings")}
                               <span class="setting-value"
                                 >{exportOptions.videoResolution}p · {exportOptions.videoFps}
                                 fps · {exportOptions.videoLoopCount}×{is3DExport
@@ -2317,7 +2350,7 @@
                               onclick={() =>
                                 (videoSettingsOpen = !videoSettingsOpen)}
                             >
-                              Video settings
+                              {t("share_video_settings")}
                               <span class="setting-value"
                                 >{exportOptions.videoResolution}p · {exportOptions.videoFps}
                                 fps · {exportOptions.videoLoopCount}×{is3DExport
@@ -2338,7 +2371,7 @@
                             >
                               <div class="video-setting">
                                 <span id="share-video-resolution"
-                                  >Resolution</span
+                                  >{t("share_resolution")}</span
                                 >
                                 <SegmentedControl
                                   options={videoResolutionOptions}
@@ -2351,7 +2384,9 @@
                                 />
                               </div>
                               <div class="video-setting">
-                                <span id="share-video-fps">Frame rate</span>
+                                <span id="share-video-fps"
+                                  >{t("share_frame_rate")}</span
+                                >
                                 <SegmentedControl
                                   options={videoFpsOptions}
                                   value={exportOptions.videoFps}
@@ -2364,7 +2399,9 @@
                               </div>
                               {#if is3DExport}
                                 <div class="video-setting">
-                                  <span id="share-video-quality">Quality</span>
+                                  <span id="share-video-quality"
+                                    >{t("share_quality")}</span
+                                  >
                                   <SegmentedControl
                                     options={videoQualityOptions}
                                     value={exportOptions.videoQuality}
@@ -2377,9 +2414,9 @@
                                 </div>
                               {/if}
                               <div class="repeat-stepper">
-                                <span>Repeats</span><button
+                                <span>{t("share_repeats")}</span><button
                                   type="button"
-                                  aria-label="Decrease repeats"
+                                  aria-label={t("share_decrease_repeats")}
                                   onclick={() =>
                                     exportOptions.setVideoLoopCount(
                                       exportOptions.videoLoopCount - 1
@@ -2389,7 +2426,7 @@
                                 ><strong>{exportOptions.videoLoopCount}</strong
                                 ><button
                                   type="button"
-                                  aria-label="Increase repeats"
+                                  aria-label={t("share_increase_repeats")}
                                   onclick={() =>
                                     exportOptions.setVideoLoopCount(
                                       exportOptions.videoLoopCount + 1
@@ -2404,7 +2441,7 @@
                               class="settings-note"
                               transition:growFade={{ axis: "y" }}
                             >
-                              Settings changed. Download will render a new file.
+                              {t("share_settings_changed_render")}
                             </p>
                           {/if}
                         </fieldset>
@@ -2416,16 +2453,16 @@
                         >
                           {#if nativeShare}<PanelButton
                               onclick={() => runDestination("native-share")}
-                              >Share {artifact === "video"
-                                ? "video"
-                                : "card"}…</PanelButton
+                              >{artifact === "video"
+                                ? t("share_video")
+                                : t("share_card")}
+                              {t("share_via_app")}</PanelButton
                             >{/if}
                           {#if destinations.some((destination) => destination.id === "send-to-phone")}<PanelButton
                               onclick={() => runDestination("send-to-phone")}
-                              >Send to phone</PanelButton
+                              >{t("share_send_phone")}</PanelButton
                             ><small class="transfer-note"
-                              >Uploads this file before creating a phone
-                              transfer.</small
+                              >{t("share_upload_before_phone")}</small
                             >{/if}
                         </div>
                       {/if}
@@ -2437,8 +2474,9 @@
                 {#if !qrDataUrl}
                   {#if needsAccountForFiles}
                     <p class="account-note">
-                      Saving this {artifact === "card" ? "card" : "video"} needs a
-                      free account. Your settings are kept.
+                      {artifact === "card"
+                        ? t("share_card_needs_account")
+                        : t("share_video_needs_account")}
                     </p>
                     <PanelButton
                       variant="primary"
@@ -2446,12 +2484,12 @@
                       onclick={requestAccountForFile}
                     >
                       <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
-                      Create free account
+                      {t("share_create_free_account")}
                     </PanelButton>
                   {:else if artifact === "video" && videoBusy}
                     <PanelButton fullWidth onclick={cancelVideo}>
                       <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-                      Cancel render
+                      {t("share_cancel_render")}
                     </PanelButton>
                   {:else if artifact === "video" && (!hasVideo || videoSettingsStale)}
                     <PanelButton
@@ -2460,7 +2498,7 @@
                       onclick={downloadVideo}
                     >
                       <i class="fa-solid fa-film" aria-hidden="true"></i>
-                      Download video
+                      {t("share_download_video")}
                     </PanelButton>
                   {:else if artifact === "card"}
                     <PanelButton
@@ -2483,12 +2521,12 @@
                         aria-hidden="true"
                       ></i>
                       {cardPreview.hasError
-                        ? "Retry image"
+                        ? t("share_retry_image")
                         : cardDownloadPending
-                          ? "Preparing download…"
+                          ? t("share_preparing_download")
                           : busyDestination === "download"
-                            ? "Downloading…"
-                            : "Download card"}
+                            ? t("share_downloading")
+                            : t("share_download_card")}
                     </PanelButton>
                   {:else}
                     <PanelButton
@@ -2513,12 +2551,12 @@
                         aria-hidden="true"
                       ></i>
                       {artifact === "card" && !activeBlob && !cardRenderFailed
-                        ? "Creating image…"
+                        ? t("share_creating_image")
                         : busyDestination === "download"
-                          ? "Downloading…"
+                          ? t("share_downloading")
                           : artifact === "card"
-                            ? "Download card"
-                            : "Download video"}
+                            ? t("share_download_card")
+                            : t("share_download_video")}
                     </PanelButton>
                   {/if}
                 {/if}
@@ -2539,7 +2577,7 @@
                     type="button"
                     class="back-to-chooser"
                     onclick={() => (shareRoute = "home")}
-                    >Back to sharing</button
+                    >{t("share_back")}</button
                   >
                 {/if}
                 <Crossfade
@@ -2549,20 +2587,18 @@
                 >
                   {#if !postingAvailable}
                     <p class="account-note">
-                      Social publishing is not available here yet. Download a
-                      file, then post it from the social app you use.
+                      {t("share_social_unavailable")}
                     </p>
                     <PanelButton
                       variant="primary"
                       onclick={() => beginDownload(artifact)}
                     >
                       <i class="fa-solid fa-download" aria-hidden="true"></i>
-                      Download a file
+                      {t("share_download_file")}
                     </PanelButton>
                   {:else if needsAccountForFiles}
                     <p class="account-note">
-                      Publishing a post needs a free account so it can connect
-                      to your social accounts.
+                      {t("share_publish_needs_account")}
                     </p>
                     <PanelButton
                       variant="primary"
@@ -2570,7 +2606,7 @@
                       onclick={requestAccountForFile}
                     >
                       <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
-                      Create free account
+                      {t("share_create_free_account")}
                     </PanelButton>
                   {:else if artifact === "video" && videoBusy}
                     {#if activeVideoUrl || openerPreviewUrl}
@@ -2588,25 +2624,24 @@
                         <img
                           class="preview publish-preview"
                           src={openerPreviewUrl}
-                          alt="Current animation view"
+                          alt={t("share_current_animation_view")}
                         />
                       {/if}
                     {/if}
                     <p class="render-feedback" role="status">
-                      {progressLabel || "Rendering animation…"}
+                      {progressLabel || t("share_rendering_animation")}
                     </p>
                     <PanelButton onclick={cancelVideo}>
                       <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-                      Cancel render
+                      {t("share_cancel_render")}
                     </PanelButton>
                   {:else if artifact === "video" && videoSettingsStale}
                     <p class="render-feedback" role="status">
-                      Settings changed. Prepare the updated video before
-                      publishing.
+                      {t("share_settings_changed_publish")}
                     </p>
                     <PanelButton variant="primary" onclick={requestVideo}>
                       <i class="fa-solid fa-film" aria-hidden="true"></i>
-                      Prepare updated video
+                      {t("share_prepare_updated_video")}
                     </PanelButton>
                   {:else if artifact === "video" && activeVideoUrl}
                     <video
@@ -2621,11 +2656,11 @@
                     <img
                       class="preview publish-preview"
                       src={cardPreview.url}
-                      alt="Sequence card preview"
+                      alt={t("share_card_preview")}
                     />
                   {:else}
                     <p class="render-feedback">
-                      Prepare media before choosing an account.
+                      {t("share_prepare_media_account")}
                     </p>
                     <PanelButton
                       variant="primary"
@@ -2633,8 +2668,8 @@
                         ? requestVideo
                         : () => (filePreparationOpen = true)}
                       >{artifact === "video"
-                        ? "Prepare video"
-                        : "Prepare card"}</PanelButton
+                        ? t("share_prepare_video")
+                        : t("share_prepare_card")}</PanelButton
                     >
                   {/if}
                 </Crossfade>
@@ -2644,18 +2679,18 @@
                     transition:growFade={{ axis: "y" }}
                   >
                     <label for="post-share-caption" class="post-caption"
-                      >Post caption</label
+                      >{t("share_post_caption")}</label
                     >
                     <textarea
                       id="post-share-caption"
-                      aria-label="Post caption"
+                      aria-label={t("share_post_caption")}
                       value={caption}
                       oninput={(event) => {
                         shareDraft.caption = event.currentTarget.value;
                         shareDraft.captionTouched = true;
                       }}
                       rows="3"
-                      placeholder="Write a caption…"
+                      placeholder={t("share_caption_placeholder")}
                     ></textarea>
                     <div class="actions">
                       {#each networks as plan (plan.key)}{@render networkButton(
@@ -2670,7 +2705,7 @@
                       class="fa-solid fa-wand-magic-sparkles"
                       aria-hidden="true"
                     ></i>
-                    Edit post composition
+                    {t("share_edit_composition")}
                   </PanelButton>
                 {/if}
               </div>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { Popover } from "bits-ui";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import ImageUpload from "$lib/shared/components/image-upload/ImageUpload.svelte";
@@ -58,11 +59,11 @@
   function selectImage(file: File) {
     error = null;
     if (!IMAGE_TYPES.includes(file.type as (typeof IMAGE_TYPES)[number])) {
-      error = "Choose a JPEG, PNG, or WebP image.";
+      error = t("inbox_ui_choose_a_jpeg_png_or_webp_image");
       return;
     }
     if (file.size <= 0 || file.size > MAX_IMAGE_BYTES) {
-      error = "Images must be smaller than 10 MB.";
+      error = t("inbox_ui_images_must_be_smaller_than_10_mb");
       return;
     }
     onImageSelected(file);
@@ -89,8 +90,8 @@
 
   const progressLabel = $derived.by(() => {
     if (!progress) return "";
-    if (progress.phase === "finalizing") return "Preparing image…";
-    return `Uploading ${Math.round(progress.fraction * 100)}%`;
+    if (progress.phase === "finalizing") return t("inbox_ui_preparing_image");
+    return t("inbox_upload_progress", { percent: Math.round(progress.fraction * 100) });
   });
 </script>
 
@@ -103,7 +104,7 @@
           type="button"
           class="attach-trigger"
           disabled={disabled || attachment !== null}
-          aria-label="Attach to message"
+          aria-label={t("inbox_ui_attach_to_message")}
         >
           <i class="fas fa-paperclip" aria-hidden="true"></i>
         </button>
@@ -116,15 +117,15 @@
         sideOffset={8}
         collisionPadding={8}
         class="attachment-menu"
-        aria-label="Choose what to attach"
+        aria-label={t("inbox_ui_choose_what_to_attach")}
       >
         <button type="button" class="menu-option" onclick={chooseSequence}>
           <span class="option-icon sequence-icon" aria-hidden="true">
             <i class="fas fa-wave-square"></i>
           </span>
           <span>
-            <strong>Share sequence</strong>
-            <small>Choose from your library or the community</small>
+            <strong>{t("inbox_ui_share_sequence")}</strong>
+            <small>{t("inbox_ui_choose_from_your_library_or_the_community")}</small>
           </span>
         </button>
         <button type="button" class="menu-option" onclick={chooseImage}>
@@ -132,8 +133,8 @@
             <i class="fas fa-image"></i>
           </span>
           <span>
-            <strong>Attach image</strong>
-            <small>JPEG, PNG, or WebP up to 10 MB</small>
+            <strong>{t("inbox_ui_attach_image")}</strong>
+            <small>{t("inbox_ui_jpeg_png_or_webp_up_to_10_mb")}</small>
           </span>
         </button>
       </Popover.Content>
@@ -153,7 +154,7 @@
       uploadLabel="Choose an image to send"
       onImagesAdded={handleFiles}
       onFilesRejected={() => {
-        error = "Choose a JPEG, PNG, or WebP image.";
+        error = t("inbox_ui_choose_a_jpeg_png_or_webp_image");
       }}
     />
   </div>
@@ -163,7 +164,7 @@
       {#if attachment.type === "image" && imagePreviewUrl}
         <img
           src={imagePreviewUrl}
-          alt={attachment.file.name || "Ready to send"}
+          alt={attachment.file.name || t("inbox_ui_ready_to_send")}
         />
       {:else}
         <span class="sequence-preview-icon" aria-hidden="true">
@@ -173,12 +174,12 @@
       <div class="preview-copy">
         <strong>
           {attachment.type === "image"
-            ? attachment.file.name || "Pasted image"
+            ? attachment.file.name || t("inbox_ui_pasted_image")
             : sequenceLabel}
         </strong>
         <span aria-live="polite">
           {progressLabel ||
-            (attachment.type === "image" ? "Image ready" : "Sequence ready")}
+            (attachment.type === "image" ? t("inbox_ui_image_ready") : t("inbox_ui_sequence_ready"))}
         </span>
       </div>
       <button
@@ -186,7 +187,7 @@
         class="remove-attachment"
         onclick={onRemove}
         {disabled}
-        aria-label="Remove attachment"
+        aria-label={t("inbox_ui_remove_attachment")}
       >
         <i class="fas fa-times" aria-hidden="true"></i>
       </button>
@@ -208,7 +209,7 @@
   bind:open={sequencePickerOpen}
   onClose={() => (sequencePickerOpen = false)}
   onSelect={handleSequenceSelected}
-  title="Share a sequence"
+  title={t("inbox_ui_share_a_sequence")}
   initialSource="my-library"
 />
 

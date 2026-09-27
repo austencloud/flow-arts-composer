@@ -67,7 +67,7 @@ describe("PropGrid fan look credit", () => {
     expect(document.querySelector(".rail-credit")).toBeNull();
   });
 
-  it("offers the global 3D model choice in a captured prop's rail", async () => {
+  it("offers the global Realistic choice in a captured prop's rail", async () => {
     const onPropLookChange = vi.fn();
     render(PropGrid, {
       selectedPropType: PropType.STAFF,
@@ -80,12 +80,50 @@ describe("PropGrid fan look credit", () => {
     });
 
     await page.getByTestId("prop-look-chip").click();
-    const model = page.getByRole("radio", { name: "3D model" });
+    const model = page.getByRole("radio", { name: "Realistic" });
     const pictograph = page.getByRole("radio", { name: "Pictograph" });
     await expect.element(model).toBeVisible();
     await expect.element(pictograph).toHaveAttribute("aria-checked", "true");
 
     await model.click();
+    expect(onPropLookChange).toHaveBeenCalledWith("model");
+  });
+
+  it("lists every family style in each look as its own tile", async () => {
+    const onSelect = vi.fn();
+    const onPropLookChange = vi.fn();
+
+    render(PropGrid, {
+      selectedPropType: PropType.TRIAD,
+      onSelect,
+      allowedProps: [PropType.TRIAD, PropType.TRIGENG],
+      fanAppearance: { build: "fire", frameColor: "black", cover: "bare" },
+      onFanAppearanceChange: vi.fn(),
+      propLook: "pictograph",
+      onPropLookChange,
+    });
+
+    await page.getByRole("button", { name: "Choose Triad style" }).click();
+    for (const name of [
+      "Triad prop type",
+      "Trigeng prop type",
+      "Triad 3D",
+      "Trigeng 3D",
+    ]) {
+      await expect
+        .element(
+          page.getByRole("button", { name: `Select ${name}`, exact: true })
+        )
+        .toBeVisible();
+    }
+    expect(
+      page.getByRole("group", { name: "Prop look" }).elements()
+    ).toHaveLength(0);
+
+    await page
+      .getByRole("button", { name: "Select Trigeng 3D", exact: true })
+      .click();
+    expect(onSelect).toHaveBeenCalledWith(PropType.TRIGENG);
     expect(onPropLookChange).toHaveBeenCalledWith("model");
   });
 
@@ -112,13 +150,13 @@ describe("PropGrid fan look credit", () => {
       .element(page.getByRole("radio", { name: "Pictograph" }))
       .toHaveAttribute("aria-checked", "true");
     await expect
-      .element(page.getByRole("radio", { name: "3D model" }))
+      .element(page.getByRole("radio", { name: "Realistic" }))
       .toBeVisible();
     await expect
       .element(page.getByRole("button", { name: "Big" }))
       .toBeVisible();
 
-    await page.getByRole("radio", { name: "3D model" }).click();
+    await page.getByRole("radio", { name: "Realistic" }).click();
     expect(onPropLookChange).toHaveBeenCalledWith("model");
 
     await page.getByRole("button", { name: "Back to all props" }).click();
@@ -126,7 +164,7 @@ describe("PropGrid fan look credit", () => {
       .element(page.getByRole("button", { name: "Select Buugeng prop type" }))
       .toBeVisible();
     await expect
-      .element(page.getByRole("radio", { name: "3D model" }))
+      .element(page.getByRole("radio", { name: "Realistic" }))
       .not.toBeInTheDocument();
   });
 });

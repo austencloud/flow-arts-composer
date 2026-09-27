@@ -24,6 +24,8 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
   import StepNumber from "$lib/shared/pictograph/shared/components/StepNumber.svelte";
   import PlacementGlyph from "$lib/shared/pictograph/shared/components/PlacementGlyph.svelte";
   import ElementalGlyph from "$lib/shared/pictograph/shared/components/ElementalGlyph.svelte";
+  import { elementalDisplayLabel } from "$lib/shared/pictograph/shared/components/elemental-display-label";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getLetterDimensions } from "$lib/shared/pictograph/tka-glyph/components/TKAGlyph.svelte";
   import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
   import { isSkewedFrameBeat } from "$lib/shared/foundation/services/skewed-frame";
@@ -363,7 +365,9 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
             elementalType={effectivePropElementalType}
             visible={true}
             corner="top-right"
-            ariaLabel={`Prop timing and direction element: ${effectivePropElementalType}`}
+            ariaLabel={t("viewer_final_prop_timing_element", {
+              element: elementalDisplayLabel(effectivePropElementalType),
+            })}
           />
         </g>
       {/key}

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
   import OptionChipRow from "../OptionChipRow.svelte";
   import AdvancedControls from "$lib/shared/effects/components/AdvancedControls.svelte";
@@ -21,7 +22,7 @@
 <div class="customize-view">
   <button type="button" class="back-btn" onclick={onBack}>
     <i class="fas fa-arrow-left" aria-hidden="true"></i>
-    Back to presets
+    {t("effect_deep_back_to_presets")}
   </button>
 
   {#if state}
@@ -37,7 +38,7 @@
 
       <!-- Intensity -->
       <div class="slider-row">
-        <label for="zap-intensity">Intensity</label>
+        <label for="zap-intensity">{t("effect_deep_intensity")}</label>
         <input
           id="zap-intensity"
           type="range"
@@ -57,7 +58,7 @@
 
       <!-- Frequency -->
       <div class="slider-row">
-        <label for="zap-frequency">Frequency</label>
+        <label for="zap-frequency">{t("effect_deep_frequency")}</label>
         <input
           id="zap-frequency"
           type="range"
@@ -75,7 +76,7 @@
 
       <!-- Per-hand color pickers -->
       <div class="color-row">
-        <span class="color-label">Colors</span>
+        <span class="color-label">{t("effect_deep_colors")}</span>
         <div class="color-pickers">
           <label class="color-picker">
             <input
@@ -86,7 +87,7 @@
                   leftColor: (e.currentTarget as HTMLInputElement).value,
                 })}
             />
-            <span class="color-hand blue">Left</span>
+            <span class="color-hand blue">{t("effect_deep_left")}</span>
           </label>
           <label class="color-picker">
             <input
@@ -97,7 +98,7 @@
                   rightColor: (e.currentTarget as HTMLInputElement).value,
                 })}
             />
-            <span class="color-hand red">Right</span>
+            <span class="color-hand red">{t("effect_deep_right")}</span>
           </label>
         </div>
       </div>
@@ -106,7 +107,7 @@
         <!-- Branching (Storm style only) -->
         {#if state.zap.style === "branching"}
           <div class="slider-row">
-            <label for="zap-branching">Branching</label>
+            <label for="zap-branching">{t("effect_deep_branching")}</label>
             <input
               id="zap-branching"
               type="range"
@@ -128,7 +129,7 @@
         <!-- Wobble (Plasma style only) -->
         {#if state.zap.style === "plasma"}
           <div class="slider-row">
-            <label for="zap-wobble-rate">Wobble Rate</label>
+            <label for="zap-wobble-rate">{t("effect_deep_wobble_rate")}</label>
             <input
               id="zap-wobble-rate"
               type="range"
@@ -146,7 +147,9 @@
             >
           </div>
           <div class="slider-row">
-            <label for="zap-wobble-amount">Wobble Amount</label>
+            <label for="zap-wobble-amount"
+              >{t("effect_deep_wobble_amount")}</label
+            >
             <input
               id="zap-wobble-amount"
               type="range"
@@ -167,7 +170,7 @@
 
         <!-- Glow -->
         <div class="slider-row">
-          <label for="zap-glow">Glow</label>
+          <label for="zap-glow">{t("effect_deep_glow")}</label>
           <input
             id="zap-glow"
             type="range"
@@ -185,7 +188,7 @@
 
         <!-- Jitter -->
         <div class="slider-row">
-          <label for="zap-jitter">Jitter</label>
+          <label for="zap-jitter">{t("effect_deep_jitter")}</label>
           <input
             id="zap-jitter"
             type="range"
@@ -204,7 +207,7 @@
       </AdvancedControls>
     </div>
   {:else}
-    <p class="empty">Effect state unavailable.</p>
+    <p class="empty">{t("effect_deep_effect_state_unavailable")}</p>
   {/if}
 </div>
 

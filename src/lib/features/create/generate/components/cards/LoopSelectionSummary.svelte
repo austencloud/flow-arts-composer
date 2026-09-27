@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { LOOPSpecWire } from "@tka/sequence-engine/loop";
 
   import LoopBlockTimeline from "$lib/shared/components/LoopBlockTimeline.svelte";
@@ -28,6 +29,36 @@
         props.rhythmGate !== null &&
         !props.rhythmGate.ok)
   );
+
+  const rhythmReason = $derived.by(() => {
+    const gate = props.rhythmGate;
+    if (!gate || gate.ok) return "";
+    if (gate.reason.startsWith("No LOOP type"))
+      return t("create_deep_loop_no_match");
+    if (gate.reason.startsWith("Too short"))
+      return t("create_deep_loop_too_short");
+    const match = gate.reason.match(
+      /^(\d+) beats can't split into (\d+) equal parts$/
+    );
+    return match
+      ? t("create_deep_loop_cannot_split", { beats: match[1], parts: match[2] })
+      : gate.reason;
+  });
+
+  const guestReason = $derived.by(() => {
+    if (!props.guestLock.locked) return "";
+    if (props.guestLock.kind === "category")
+      return t("create_deep_loop_guest_category");
+    const match = props.guestLock.reason.match(
+      /at least (\d+) steps\. Guests cap at (\d+)/
+    );
+    return match
+      ? t("create_deep_loop_guest_length", {
+          minimum: match[1],
+          maximum: match[2],
+        })
+      : props.guestLock.reason;
+  });
 </script>
 
 <div
@@ -41,7 +72,7 @@
   {#if props.wordMathText}
     <div class="word-math">
       <span class="word-math-sizer" aria-hidden="true">
-        Too short — a one-step seed has nothing for inversion to flip
+        {t("create_deep_loop_too_short")}
       </span>
       <span class="word-math-live">{props.wordMathText}</span>
     </div>
@@ -55,27 +86,27 @@
     <p class="explanation-text">{props.explanationText}</p>
     {#if !props.isImplemented && props.selectionCount > 0}
       <div class="coming-soon-badge">
-        No LOOP type matches this exact combination — add or remove a component
+        {t("create_deep_loop_no_match_hint")}
       </div>
     {:else if props.guestLock.locked}
-      <div class="signup-badge">{props.guestLock.reason}</div>
+      <div class="signup-badge">{guestReason}</div>
     {:else if props.rhythmGate && !props.rhythmGate.ok}
-      <div class="coming-soon-badge">{props.rhythmGate.reason}</div>
+      <div class="coming-soon-badge">{rhythmReason}</div>
     {/if}
   </div>
 </div>
 
 {#if !props.isImplemented && props.selectionCount > 0}
   <div class="mobile-loop-status coming-soon-badge">
-    No LOOP type matches this exact combination. Add or remove a component.
+    {t("create_deep_loop_no_match_hint")}
   </div>
 {:else if props.guestLock.locked}
   <div class="mobile-loop-status signup-badge">
-    {props.guestLock.reason}
+    {guestReason}
   </div>
 {:else if props.rhythmGate && !props.rhythmGate.ok}
   <div class="mobile-loop-status coming-soon-badge">
-    {props.rhythmGate.reason}
+    {rhythmReason}
   </div>
 {/if}
 

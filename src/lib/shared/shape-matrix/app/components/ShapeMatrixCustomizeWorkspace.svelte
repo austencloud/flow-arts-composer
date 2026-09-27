@@ -28,6 +28,7 @@
   screen while the dock is; the compact settings sheet and the canonical prop
   sheet take over there. -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { tick } from "svelte";
   import AnimationPanel from "$lib/shared/animation-panel/components/AnimationPanel.svelte";
   import type { PillId } from "$lib/shared/animation-panel/pill-nav/pill-types";
@@ -119,7 +120,7 @@
   <div
     class="customize-workspace"
     role="dialog"
-    aria-label="Customize the animation"
+    aria-label={t("shape_engine_customize_aria")}
     tabindex="-1"
     onkeydown={onKeydown}
     transition:flyFade={{ y: 8 }}
@@ -127,11 +128,11 @@
     <header class="workspace-header">
       <PanelButton bind:ref={backButton} onclick={close}>
         <i class="fas fa-arrow-left" aria-hidden="true"></i>
-        <span>Back to grid</span>
+        <span>{t("shape_engine_back_to_grid")}</span>
       </PanelButton>
       <div class="workspace-title">
-        <h2>Customize the animation</h2>
-        <p>Every change plays live on the right, on the pair you chose.</p>
+        <h2>{t("shape_engine_customize_aria")}</h2>
+        <p>{t("shape_engine_customize_intro")}</p>
       </div>
     </header>
     <div class="workspace-body">
@@ -156,7 +157,7 @@
         showMotionVisibility={true}
         showSequenceMarks={!theory}
         availableEffects={theory ? theoryEffects : undefined}
-        regionLabel="Animation settings"
+        regionLabel={t("shape_engine_animation_settings")}
       />
     </div>
   </div>

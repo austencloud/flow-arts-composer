@@ -5,6 +5,7 @@ LetterConstraintsSection.svelte - Section for letter must-contain/must-not-conta
 <script lang="ts">
   import { Letter } from "$lib/shared/foundation/domain/models/letter";
   import LetterChip from "./LetterChip.svelte";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 
   let {
     mustContainLetters,
@@ -24,7 +25,7 @@ LetterConstraintsSection.svelte - Section for letter must-contain/must-not-conta
   // All kinetic alphabet letters organized by type
   const letterGroups = [
     {
-      name: "Type 1: Dual-Shift",
+      nameKey: "letter_constraints_type_1",
       letters: [
         Letter.A,
         Letter.B,
@@ -51,7 +52,7 @@ LetterConstraintsSection.svelte - Section for letter must-contain/must-not-conta
       ],
     },
     {
-      name: "Type 2: Shift",
+      nameKey: "letter_constraints_type_2",
       letters: [
         Letter.W,
         Letter.X,
@@ -66,7 +67,7 @@ LetterConstraintsSection.svelte - Section for letter must-contain/must-not-conta
       ],
     },
     {
-      name: "Type 3: Cross-Shift",
+      nameKey: "letter_constraints_type_3",
       letters: [
         Letter.W_DASH,
         Letter.X_DASH,
@@ -79,15 +80,15 @@ LetterConstraintsSection.svelte - Section for letter must-contain/must-not-conta
       ],
     },
     {
-      name: "Type 4: Dash",
+      nameKey: "letter_constraints_type_4",
       letters: [Letter.PHI, Letter.PSI, Letter.LAMBDA],
     },
     {
-      name: "Type 5: Dual-Dash",
+      nameKey: "letter_constraints_type_5",
       letters: [Letter.PHI_DASH, Letter.PSI_DASH, Letter.LAMBDA_DASH],
     },
     {
-      name: "Type 6: Static",
+      nameKey: "letter_constraints_type_6",
       letters: [
         Letter.ALPHA,
         Letter.BETA,
@@ -156,7 +157,7 @@ LetterConstraintsSection.svelte - Section for letter must-contain/must-not-conta
   );
 
   const summaryText = $derived.by(() => {
-    if (totalConstraints === 0) return "None";
+    if (totalConstraints === 0) return tDynamic("letter_constraints_none");
     const parts: string[] = [];
     if (mustContainLetters.length > 0) {
       parts.push(`+${mustContainLetters.length}`);
@@ -176,14 +177,16 @@ LetterConstraintsSection.svelte - Section for letter must-contain/must-not-conta
     aria-controls="letter-constraints-content"
   >
     <div class="header-content">
-      <h3 class="section-title">Letter Constraints</h3>
-      <p class="section-description">Letters to include or exclude</p>
+      <h3 class="section-title">{tDynamic("letter_constraints_heading")}</h3>
+      <p class="section-description">
+        {tDynamic("letter_constraints_description")}
+      </p>
     </div>
     <div class="header-value">
       {#if totalConstraints > 0}
         <span class="value-badge">{summaryText}</span>
       {:else}
-        <span class="value-any">None</span>
+        <span class="value-any">{tDynamic("letter_constraints_none")}</span>
       {/if}
       <svg
         class="chevron"
@@ -208,7 +211,7 @@ LetterConstraintsSection.svelte - Section for letter must-contain/must-not-conta
           onclick={() => (activeTab = "include")}
         >
           <span class="tab-icon">+</span>
-          Must Include (1 max)
+          {tDynamic("letter_constraints_must_include")}
           {#if mustContainLetters.length > 0}
             <span class="tab-count">{mustContainLetters.length}</span>
           {/if}
@@ -218,10 +221,10 @@ LetterConstraintsSection.svelte - Section for letter must-contain/must-not-conta
           class:active={activeTab === "exclude"}
           onclick={() => (activeTab = "exclude")}
           disabled
-          title="Coming soon"
+          title={tDynamic("letter_constraints_coming_soon")}
         >
           <span class="tab-icon">−</span>
-          Must Exclude
+          {tDynamic("letter_constraints_must_exclude")}
           {#if mustNotContainLetters.length > 0}
             <span class="tab-count">{mustNotContainLetters.length}</span>
           {/if}
@@ -232,7 +235,7 @@ LetterConstraintsSection.svelte - Section for letter must-contain/must-not-conta
       <div class="letter-groups">
         {#each letterGroups as group}
           <div class="letter-group">
-            <h4 class="group-title">{group.name}</h4>
+            <h4 class="group-title">{tDynamic(group.nameKey)}</h4>
             <div class="letter-grid">
               {#each group.letters as letter}
                 {#if activeTab === "include"}
@@ -261,7 +264,9 @@ LetterConstraintsSection.svelte - Section for letter must-contain/must-not-conta
         <div class="selection-summary">
           {#if mustContainLetters.length > 0}
             <div class="summary-row include">
-              <span class="summary-label">Include:</span>
+              <span class="summary-label"
+                >{tDynamic("letter_constraints_include_label")}</span
+              >
               <span class="summary-letters">
                 {mustContainLetters.map((l: Letter) => l.toString()).join(", ")}
               </span>
@@ -269,7 +274,9 @@ LetterConstraintsSection.svelte - Section for letter must-contain/must-not-conta
           {/if}
           {#if mustNotContainLetters.length > 0}
             <div class="summary-row exclude">
-              <span class="summary-label">Exclude:</span>
+              <span class="summary-label"
+                >{tDynamic("letter_constraints_exclude_label")}</span
+              >
               <span class="summary-letters">
                 {mustNotContainLetters
                   .map((l: Letter) => l.toString())

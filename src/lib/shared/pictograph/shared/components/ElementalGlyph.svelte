@@ -20,6 +20,8 @@ text embedded within the elemental shape. Known non-Type1 letters are rejected.
     getElementalGlyphBox,
     type ElementalGlyphCorner,
   } from "../domain/constants/elemental-glyph-layout";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { elementalDisplayLabel } from "./elemental-display-label";
 
   let {
     elementalType = null,
@@ -131,12 +133,18 @@ text embedded within the elemental shape. Known non-Type1 letters are rejected.
           role: "button",
           tabindex: 0,
           "aria-label": ariaLabel
-            ? `Toggle ${ariaLabel} visibility`
-            : "Toggle Elemental symbol visibility",
+            ? t("viewer_final_toggle_named_element_visibility", {
+                element: ariaLabel,
+              })
+            : t("viewer_final_toggle_element_visibility"),
         }
       : {
           role: "img",
-          "aria-label": ariaLabel ?? `Elemental symbol: ${elementalType}`,
+          "aria-label":
+            ariaLabel ??
+            t("viewer_final_elemental_symbol", {
+              element: elementalDisplayLabel(elementalType!),
+            }),
         }}
   >
     <image

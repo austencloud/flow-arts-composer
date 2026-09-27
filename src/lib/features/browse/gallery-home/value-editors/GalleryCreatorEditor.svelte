@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import SequencePeek from "$lib/shared/browse/components/SequencePeek.svelte";
   import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
   import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
@@ -35,7 +36,7 @@
 </script>
 
 <div class="drill-screen screen-creator">
-  {@render valueHead("Pick a creator", stackHint)}
+  {@render valueHead(t("browse_audit_pick_creator"), stackHint)}
   <div class="value-list creator-list">
     {#each catalog.creatorValues as v (v.value)}
       {@const creatorApplied =
@@ -44,7 +45,7 @@
         class="length-row tall creator-row"
         class:value-applied={creatorApplied}
         type="button"
-        aria-label={`${v.value}, ${v.count} sequences`}
+        aria-label={`${v.value}, ${t(v.count === 1 ? "browse_audit_one_sequence" : "browse_audit_many_sequences", { count: v.count })}`}
         aria-pressed={isValueApplied ? creatorApplied : undefined}
         disabled={valueDisabled(v.count, creatorApplied)}
         onclick={() => onPickValue(BrowseFilterType.OWNER, v.value, v.value)}

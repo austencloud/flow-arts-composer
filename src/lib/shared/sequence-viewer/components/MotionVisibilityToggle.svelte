@@ -99,7 +99,7 @@
       class="motion-vis-backdrop"
       role="button"
       tabindex="-1"
-      aria-label="Close motion visibility menu"
+      aria-label={t("viewer_detail_close_motion_visibility_menu")}
       onpointerdown={onBackdropPointerDown}
     ></div>
     <div

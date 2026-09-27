@@ -1,9 +1,9 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import DifficultyBadge from "$lib/shared/components/DifficultyBadge.svelte";
   import SequencePeek from "$lib/shared/browse/components/SequencePeek.svelte";
   import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
   import { DIFFICULTY_LEVELS } from "$lib/shared/config/difficulty-styles";
-  import { LEVEL_DESCRIPTIONS } from "../gallery-drill-catalog.svelte";
   import { valueDisabled } from "../gallery-value-editor";
   import type {
     GalleryValueHeadSnippet,
@@ -54,7 +54,7 @@
 </script>
 
 <div class="drill-screen screen-level">
-  {@render valueHead("Pick a level", stackHint)}
+  {@render valueHead(t("browse_audit_pick_level"), stackHint)}
   <div class="value-list">
     {#each catalog.levelValues as v (v.value)}
       {@const style = DIFFICULTY_LEVELS[v.value]}
@@ -73,9 +73,15 @@
       >
         <span class="value-numeral">{v.value}</span>
         <span class="value-main">
-          <span class="value-label">Level {v.value}</span>
+          <span class="value-label"
+            >{t("browse_audit_level_number", { level: v.value })}</span
+          >
           <span class="value-desc on-gradient"
-            >{LEVEL_DESCRIPTIONS[v.value]}</span
+            >{v.value === 1
+              ? t("browse_audit_level_1_description")
+              : v.value === 2
+                ? t("browse_audit_level_2_description")
+                : t("browse_audit_level_3_description")}</span
           >
           <span class="density-bar on-gradient">
             <span

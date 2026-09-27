@@ -5,7 +5,7 @@
   never sends the learner backward through the lesson carousel.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, tick } from "svelte";
   import { TND_ELEMENTS } from "$lib/features/choreo-card/domain/tnd-element";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
@@ -80,7 +80,12 @@
   const curriculumIndex = levelOnePlaces.findIndex(
     (place) => place.id === "1.3"
   );
-  const curriculumLabel = `Level 1 · Lesson ${curriculumIndex + 1} of ${levelOnePlaces.length}`;
+  const curriculumLabel = $derived(
+    tDynamic("learn_motion_curriculum_label", {
+      current: curriculumIndex + 1,
+      total: levelOnePlaces.length,
+    })
+  );
 
   const haptic = getHapticFeedback();
   const persistence = getExperiencePersistence(
@@ -150,11 +155,18 @@
       : undefined
   );
   const headingTitle = $derived(
-    topic?.title ?? activeMotion?.name ?? "Timing and Direction"
+    topic
+      ? tDynamic(`learn_motion_topic_${topic.id}_title`)
+      : activeMotion
+        ? tDynamic(`learn_motion_path_${activeMotion.id}_name`)
+        : tDynamic("learn_motion_timing_direction")
   );
   const headingEyebrow = $derived(
     activeMotion
-      ? `Hand motion ${stepIndex + 1} of ${HAND_PATH_STEPS.length}`
+      ? tDynamic("learn_motion_step_count", {
+          current: stepIndex + 1,
+          total: HAND_PATH_STEPS.length,
+        })
       : undefined
   );
 
@@ -270,9 +282,9 @@
       >
         <p class="motion-description">
           {#if topic}
-            {topic.description}
+            {tDynamic(`learn_motion_topic_${topic.id}_description`)}
           {:else if activeMotion}
-            {activeMotion.guideCaption}
+            {tDynamic(`learn_motion_path_${activeMotion.id}_caption`)}
           {:else}
             <span class="description-phrase"
               >{t("learn_ui_relationships_apply")}</span
@@ -301,7 +313,14 @@
                 <div class="player-frame">
                   <HandMotionPlayer
                     sequence={activeMotion.sequence}
-                    ariaLabel={`${activeMotion.name}: ${activeMotion.guideCaption}`}
+                    ariaLabel={tDynamic("learn_motion_path_aria", {
+                      name: tDynamic(
+                        `learn_motion_path_${activeMotion.id}_name`
+                      ),
+                      caption: tDynamic(
+                        `learn_motion_path_${activeMotion.id}_caption`
+                      ),
+                    })}
                   />
                 </div>
                 <div class="hand-key" aria-label={t("learn_ui_left_hand_blue")}>

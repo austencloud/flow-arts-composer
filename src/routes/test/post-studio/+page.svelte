@@ -1,8 +1,8 @@
 <!--
   Visual harness for Post Studio with the published DCKΨ- sequence and a local
-  copy of Austen's clean September 6 phone take, offered as a catalog video on
-  the Takes step. The clip is gitignored, so the route also works without it:
-  add a video from this device instead.
+  copy of Austen's clean September 6 phone take, offered as a saved video in
+  the editor's video list. The clip is gitignored, so the route also works
+  without it: add a video from this device instead.
 -->
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
@@ -19,6 +19,10 @@
   import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
   import { registerLoopDetector } from "$lib/shared/create/get-loop-detector";
   import { buildCardRenderOptions } from "$lib/shared/share/services/card-render-options";
+  import { KeyboardShortcutManager } from "$lib/shared/keyboard/services/keyboard-shortcut-manager";
+  import { ShortcutRegistry } from "$lib/shared/keyboard/services/shortcut-registry";
+  import { registerEditHistoryShortcuts } from "$lib/shared/keyboard/registration/register-edit-history-shortcuts";
+  import { keyboardShortcutState } from "$lib/shared/keyboard/state/keyboard-shortcut-state.svelte";
 
   const SEQUENCE_WORD = "DCKΨ-DCKΨ-DCKΨ-DCKΨ-";
   const SEQUENCE_ID = "DCKΨ-";
@@ -71,6 +75,11 @@
   }
 
   onMount(async () => {
+    // The boot bar in app.html waits for the app layout to report 100%, and a
+    // /test route never runs that layout, so without this the splash sits over
+    // the harness until its 15s safety net fires.
+    (window as unknown as { __tkaLoadProgress?: (p: number) => void })
+      .__tkaLoadProgress?.(100);
     registerLoopDetector(loopDetector);
     try {
       const loaded = await getBrowseLoader().loadFullSequenceData(
@@ -97,6 +106,15 @@
       loadError =
         error instanceof Error ? error.message : "Could not load Post Studio.";
     }
+  });
+
+  onMount(() => {
+    // Test routes omit the app's shortcut coordinator. Ctrl+Z and Ctrl+Y
+    // reach the editor's Undo and Redo through the app's own history routing.
+    const manager = new KeyboardShortcutManager(new ShortcutRegistry());
+    registerEditHistoryShortcuts(manager, keyboardShortcutState.isMac);
+    manager.initialize();
+    return () => manager.dispose();
   });
 
   onDestroy(() => {

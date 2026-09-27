@@ -148,6 +148,10 @@ class SettingsState {
   private unsavedLocalKeys = new Map<keyof AppSettings, number>();
   private unsavedLocalOwner: string | null = null;
   private localEditSequence = 0;
+  // The edits a rejected write left in the shared offline queue, with the
+  // sequence each was queued under. Any tab's confirmed write can deliver
+  // them, and only the tab that delivers them sees that write succeed.
+  private queuedLocalEdits = new Map<keyof AppSettings, number>();
   // Distinguishes queue entries this page load wrote from ones a previous load
   // or another tab left behind; edit sequence numbers are only comparable
   // within a session.
@@ -433,6 +437,8 @@ class SettingsState {
     remoteSettings: AppSettings,
     userId: string
   ): void {
+    this.releaseDeliveredQueuedEdits(userId);
+
     const { _localTimestamp: _remoteTs, ...remoteWithoutMeta } = remoteSettings;
     const merged = { ...DEFAULT_SETTINGS, ...remoteWithoutMeta };
 
@@ -497,6 +503,7 @@ class SettingsState {
     const uid = auth.currentUser?.uid ?? null;
     if (this.unsavedLocalOwner !== uid) {
       this.unsavedLocalKeys.clear();
+      this.queuedLocalEdits.clear();
       this.unsavedLocalOwner = uid;
     }
     // A signed-out edit belongs to the device, not an account, so it must not
@@ -521,6 +528,38 @@ class SettingsState {
     if (this.unsavedLocalOwner !== userId) return;
     for (const [key, sequence] of this.unsavedLocalKeys) {
       if (sequence <= payloadSequence) this.unsavedLocalKeys.delete(key);
+    }
+  }
+
+  /**
+   * Drop the pins on edits this tab queued that have since left the shared
+   * queue. Another tab's confirmed write carries the queue and clears what it
+   * delivered, but only that tab sees the write succeed. Another tab's newer
+   * failed edit replaces the entry instead. Either way, holding the pin kept
+   * remote changes to the setting out of this tab, and its next write put the
+   * old value back over them.
+   *
+   * The prop pair is queued, delivered and replaced whole, so its keys leave
+   * the queue together. A hand edited again since stays pinned, which keeps
+   * the whole pair local until the next write uploads it whole.
+   */
+  private releaseDeliveredQueuedEdits(userId: string): void {
+    if (this.unsavedLocalOwner !== userId || this.queuedLocalEdits.size === 0) {
+      return;
+    }
+    const queue = this.readOfflineQueue(userId);
+    for (const [key, sequence] of this.queuedLocalEdits) {
+      const change = queue[key];
+      if (change?.session === this.sessionId && change.sequence === sequence) {
+        continue;
+      }
+      this.queuedLocalEdits.delete(key);
+      // An edit made after the queued one is newer than anything the queue
+      // held, so it stays pinned for this tab's next write.
+      const pinned = this.unsavedLocalKeys.get(key);
+      if (pinned !== undefined && pinned <= sequence) {
+        this.unsavedLocalKeys.delete(key);
+      }
     }
   }
 
@@ -590,6 +629,7 @@ class SettingsState {
     // The signed-out account's unconfirmed edits must not pin keys against the
     // next account's document.
     this.unsavedLocalKeys.clear();
+    this.queuedLocalEdits.clear();
     this.unsavedLocalOwner = null;
     settingsState.imageExport = undefined;
     settingsState._localTimestamp = undefined;
@@ -762,6 +802,9 @@ class SettingsState {
     if (!persistence) return Promise.resolve();
 
     const generation = this.lifecycleGeneration;
+    // Snapshots alone can miss a delivery: the last one may have arrived
+    // before the delivering tab's write was confirmed.
+    this.releaseDeliveredQueuedEdits(userId);
     // Every edit made up to this point is in the payload. The pins stay until
     // the write is CONFIRMED: a snapshot that arrives while it is still open is
     // still older than local state. Anything edited after this line keeps its
@@ -966,11 +1009,16 @@ class SettingsState {
         for (const key of PROP_PAIR_KEYS) delete changes[key];
       }
 
+      const queuedKeys: (keyof AppSettings)[] = [];
       for (const [key, value] of Object.entries(edits)) {
         if (isPropPairKey(key) ? keepQueuedPair : queuedIsNewer(key)) continue;
         changes[key] = { value, session: this.sessionId, sequence };
+        queuedKeys.push(key as keyof AppSettings);
       }
       this.writeOfflineQueue(userId, changes);
+      if (this.unsavedLocalOwner === userId) {
+        for (const key of queuedKeys) this.queuedLocalEdits.set(key, sequence);
+      }
     } catch (error) {
       console.error("Failed to queue offline change:", error);
     }

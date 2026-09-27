@@ -1,6 +1,11 @@
 <!-- Compact value editor. Matrix opens its level, notation and turn controls;
      Theory opens the same two-sided ratio builder used in the wide ribbon. -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import {
+    localizedLevelDescription,
+    localizedMatrixTurnSpokenLabel,
+  } from "../../domain/shape-matrix-display";
   import { Popover } from "bits-ui";
   import { flyFade, growFade } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
@@ -8,7 +13,6 @@
   import LevelSelector from "$lib/shared/components/LevelSelector.svelte";
   import DifficultyBadge from "$lib/shared/components/DifficultyBadge.svelte";
   import {
-    matrixTurnSpokenLabel,
     matrixTurnVisibleLabel,
     type MatrixLabelMode,
   } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
@@ -16,10 +20,7 @@
     TurnLevel,
     TurnValue,
   } from "$lib/shared/create/services/level-turn-values";
-  import {
-    SHAPE_MATRIX_LEVELS,
-    SHAPE_MATRIX_LEVEL_DESCRIPTIONS,
-  } from "../shape-matrix-levels";
+  import { SHAPE_MATRIX_LEVELS } from "../shape-matrix-levels";
   import { theoryRatioLabel } from "$lib/shared/shape-matrix/domain/theory-ratio";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import ShapeMatrixTheoryControls from "./ShapeMatrixTheoryControls.svelte";
@@ -42,16 +43,24 @@
   /* One chip for both surfaces. Its visible action changes with the job. */
   const theory = $derived(appState.surface === "theory");
 
-  const LABEL_OPTIONS = [
-    { value: "turns" as const, label: "TKA turns", shortLabel: "Turns" },
-    { value: "ratios" as const, label: "VTG ratios", shortLabel: "Ratios" },
-  ];
+  const LABEL_OPTIONS = $derived([
+    {
+      value: "turns" as const,
+      label: t("shape_engine_tka_turns"),
+      shortLabel: t("shape_engine_turns"),
+    },
+    {
+      value: "ratios" as const,
+      label: t("shape_engine_vtg_ratios"),
+      shortLabel: t("shape_engine_ratios"),
+    },
+  ]);
 
   function visible(turn: TurnValue): string {
     return matrixTurnVisibleLabel(turn, appState.labelMode);
   }
   function spoken(turn: TurnValue): string {
-    return matrixTurnSpokenLabel(turn, appState.labelMode);
+    return localizedMatrixTurnSpokenLabel(turn, appState.labelMode);
   }
 
   const leftVisible = $derived(
@@ -66,12 +75,23 @@
   );
   const triggerLabel = $derived(
     theory
-      ? `Edit ratios. Left ${leftVisible} against right ${rightVisible}.`
-      : `Edit level and turns. Level ${appState.level}. Left ${spoken(appState.leftTurn)}, right ${spoken(appState.rightTurn)}.`
+      ? t("shape_engine_edit_ratios_summary", {
+          left: leftVisible,
+          right: rightVisible,
+        })
+      : t("shape_engine_edit_turns_summary", {
+          level: appState.level,
+          left: spoken(appState.leftTurn),
+          right: spoken(appState.rightTurn),
+        })
   );
-  const popoverTitle = $derived(theory ? "Edit ratios" : "Level and turns");
+  const popoverTitle = $derived(
+    theory ? t("shape_engine_edit_ratios") : t("shape_engine_level_and_turns")
+  );
   const closeLabel = $derived(
-    theory ? "Close ratio editor" : "Close level and turn editor"
+    theory
+      ? t("shape_engine_close_ratio_editor")
+      : t("shape_engine_close_turn_editor")
   );
 
   function applyTurn(hand: "left" | "right", turn: TurnValue): void {
@@ -97,10 +117,10 @@
       >
         {#if theory}
           <span class="theory-trigger-copy" aria-hidden="true">
-            <span class="trigger-action">Edit ratios</span>
+            <span class="trigger-action">{t("shape_engine_edit_ratios")}</span>
             <span class="trigger-pair">
               <span class="hand blue">{leftVisible}</span>
-              <span class="pair-divider">against</span>
+              <span class="pair-divider">{t("shape_engine_against")}</span>
               <span class="hand red">{rightVisible}</span>
             </span>
           </span>
@@ -151,14 +171,14 @@
                   class="level-row"
                   transition:growFade={{ duration: DURATION.normal }}
                 >
-                  <span class="row-label">Level</span>
+                  <span class="row-label">{t("shape_engine_level")}</span>
                   <LevelSelector
                     value={appState.level}
                     levels={SHAPE_MATRIX_LEVELS}
-                    describe={(level) => SHAPE_MATRIX_LEVEL_DESCRIPTIONS[level]}
+                    describe={localizedLevelDescription}
                     onchange={applyLevel}
                     compact={true}
-                    ariaLabel="Difficulty level"
+                    ariaLabel={t("shape_engine_difficulty_level")}
                   />
                 </div>
               {/if}
@@ -169,7 +189,7 @@
                 />
               {:else}
                 <div class="notation">
-                  <span class="row-label">Notation</span>
+                  <span class="row-label">{t("shape_engine_notation")}</span>
                   <SegmentedControl
                     options={LABEL_OPTIONS}
                     value={appState.labelMode}
@@ -179,7 +199,7 @@
                     density="tight"
                     color="accent"
                     semantics="radiogroup"
-                    ariaLabel="Turn label system"
+                    ariaLabel={t("shape_engine_turn_label_system")}
                   />
                 </div>
                 <ShapeMatrixTurnControls layout="tray" onturn={applyTurn} />

@@ -158,6 +158,43 @@ describe("worker prop canonical transforms", () => {
     long.dispose();
   });
 
+  it("stretches only the fire double staff's long axis to a pinned staff length", async () => {
+    const prop = await visual(PropType.FIRE_DOUBLE_STAFF, {
+      length: 1.35,
+      lengthPinned: true,
+    });
+    const transform = prop.root.getObjectByName("worker-prop-model-transform");
+    expect(transform?.scale.x).toBeCloseTo(1, 12);
+    expect(transform?.scale.y).toBeCloseTo(1.35 / 0.9, 12);
+    expect(transform?.scale.z).toBeCloseTo(1, 12);
+    prop.dispose();
+
+    // An inherited length reaches Prop3D as no length, so the model keeps
+    // its authored 900 mm whatever the shared staff length is.
+    const inherited = await visual(PropType.FIRE_DOUBLE_STAFF, {
+      length: 1.35,
+    });
+    expect(
+      inherited.root
+        .getObjectByName("worker-prop-model-transform")
+        ?.scale.toArray()
+    ).toEqual([1, 1, 1]);
+    inherited.dispose();
+
+    const chicken = await visual(PropType.CHICKEN, {
+      length: 1.35,
+      lengthPinned: true,
+    });
+    const chickenTransform = chicken.root.getObjectByName(
+      "worker-prop-model-transform"
+    );
+    expect(chickenTransform?.scale.y).toBeCloseTo(
+      chickenTransform?.scale.x ?? 0,
+      12
+    );
+    chicken.dispose();
+  });
+
   it("keeps the trail at the hand while rotating only the prop body", async () => {
     const prop = await visual(PropType.POI);
     const body = prop.root.getObjectByName("worker-prop-poi-rotated-body");
