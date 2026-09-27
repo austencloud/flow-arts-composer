@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
   import ProgressBar from "$lib/shared/components/loading/ProgressBar.svelte";
 
@@ -24,7 +25,7 @@
   class="scan-sequence-loader"
   role="status"
   aria-live="polite"
-  aria-label={word ? `Loading ${word}` : "Loading sequence"}
+  aria-label={word ? `Loading ${word}` : t("viewer_detail_loading_sequence")}
 >
   {#if glyphsReady && word}
     <div class="word-loader">

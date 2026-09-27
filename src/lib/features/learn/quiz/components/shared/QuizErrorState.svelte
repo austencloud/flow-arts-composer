@@ -2,6 +2,7 @@
 QuizErrorState - Error display with retry for quizzes
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   let {
     error,
     onRetry,
@@ -13,7 +14,7 @@ QuizErrorState - Error display with retry for quizzes
 
 <div class="error-state" role="alert" aria-live="assertive">
   <p class="error-text">{error}</p>
-  <button class="retry-btn" onclick={onRetry}>Try Again</button>
+  <button class="retry-btn" onclick={onRetry}>{t("learn_ui_try_again")}</button>
 </div>
 
 <style>

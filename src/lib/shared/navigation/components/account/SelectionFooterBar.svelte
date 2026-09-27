@@ -2,6 +2,7 @@
   SelectionFooterBar.svelte - Sticky actions in the My Props drawer.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
 
@@ -28,13 +29,13 @@
 
 <div class="selection-footer">
   {#if count === 0}
-    <span class="selection-error">Choose at least one</span>
+    <span class="selection-error">{t("nav_ui_choose_at_least_one")}</span>
   {/if}
 
   <div class="footer-actions">
     {#if onback}
       <PanelButton variant="secondary" onclick={onback} disabled={saving}>
-        Back
+        {t("learn_back")}
       </PanelButton>
     {/if}
     <PanelButton
@@ -43,7 +44,7 @@
       ariaBusy={saving}
       disabled={saving || primaryDisabled}
     >
-      {saving ? "Saving…" : primaryLabel}
+      {saving ? t("nav_ui_saving") : primaryLabel}
     </PanelButton>
   </div>
 </div>
@@ -84,5 +85,4 @@
       padding-inline: 0.75rem;
     }
   }
-
 </style>

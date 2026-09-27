@@ -18,6 +18,7 @@ import {
   PHYSICAL_CARD_SCHEMA_VERSION,
   validatePhysicalCardIssueRequest,
   type AllocatedPhysicalCard,
+  type PhysicalCardIssueCard,
   type PhysicalCardIssueResponse,
 } from "$lib/shared/qr/domain/physical-card";
 
@@ -32,13 +33,7 @@ const SHORTCODE_MASK = [
   "sequenceId",
 ] as const;
 
-interface ResolvedIssueCard {
-  cardIndex: number;
-  shortCode: string;
-  sequenceId: string | null;
-  word: string;
-  printPosition: number;
-}
+type ResolvedIssueCard = PhysicalCardIssueCard;
 
 async function mapWithConcurrency<T, R>(
   values: readonly T[],
@@ -307,6 +302,10 @@ export const POST: RequestHandler = async (event) => {
             printPosition: card.printPosition,
             sequenceId: card.sequenceId,
             sequenceWord: card.word,
+            // The printed QR carries only code and pid; a scan reads the
+            // card's props from here. URL bp/rp on older cards still win.
+            leftPropType: card.leftPropType,
+            rightPropType: card.rightPropType,
             deckId,
             deckName,
             deckReleaseNumber: request.deckReleaseNumber,

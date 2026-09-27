@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
 
   interface Props {
@@ -26,7 +27,7 @@
   <span class="row-copy">
     <span class="row-label">
       {label}
-      {#if optional}<span class="optional">Optional</span>{/if}
+      {#if optional}<span class="optional">{t("nav_ui_optional")}</span>{/if}
     </span>
     <span class="row-value" class:empty>{value}</span>
   </span>
@@ -40,7 +41,7 @@
         ariaLabel={editLabel}
       >
         <i class="fas fa-pen" aria-hidden="true"></i>
-        <span>Edit</span>
+        <span>{t("tab_museum_edit")}</span>
       </PanelButton>
     </span>
   {/if}

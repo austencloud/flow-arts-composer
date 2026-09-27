@@ -5,6 +5,7 @@
 	Displays error messages with dismiss and optional retry actions.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   const {
     message,
     onDismiss,
@@ -28,9 +29,13 @@
   <p>❌ {message}</p>
   <div class="actions">
     {#if onRetry}
-      <button type="button" class="retry" onclick={handleRetry}>Retry</button>
+      <button type="button" class="retry" onclick={handleRetry}
+        >{t("action_retry")}</button
+      >
     {/if}
-    <button type="button" onclick={handleDismiss}>Dismiss</button>
+    <button type="button" onclick={handleDismiss}
+      >{t("create_ui_dismiss")}</button
+    >
   </div>
 </div>
 

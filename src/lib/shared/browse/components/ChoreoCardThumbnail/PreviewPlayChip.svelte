@@ -10,6 +10,7 @@ desktop the same gesture instead of long-press-versus-hover.
 -->
 <script lang="ts">
   import CardChip from "./CardChip.svelte";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 
   const {
     playing,
@@ -21,8 +22,12 @@ desktop the same gesture instead of long-press-versus-hover.
 </script>
 
 <CardChip
-  label={playing ? "Stop animation" : "Play animation"}
-  title={playing ? "Stop animation" : "Play this sequence"}
+  label={tDynamic(
+    playing ? "browse_results_stop_animation" : "browse_results_play_animation"
+  )}
+  title={tDynamic(
+    playing ? "browse_results_stop_animation" : "browse_results_play_sequence"
+  )}
   pressed={playing}
   onActivate={onToggle}
 >

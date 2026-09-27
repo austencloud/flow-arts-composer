@@ -4,6 +4,7 @@
   Follows DurationRhythmSheet pattern: portal + Drawer always in DOM.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
   import { portal } from "./portal";
   import LOOPExpandedOverlay from "../cards/LOOPExpandedOverlay.svelte";
@@ -54,7 +55,7 @@
     placement="right"
     respectLayoutMode={true}
     closeOnBackdrop={true}
-    ariaLabel="Select LOOP Type"
+    ariaLabel={t("create_deep_select_loop_type")}
     class="loop-drawer-sheet"
     backdropClass="loop-backdrop"
     onclose={onClose}

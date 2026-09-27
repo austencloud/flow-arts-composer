@@ -7,6 +7,7 @@
     tap row to target it, ONE grid below targets that row
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type {
     TipEffectMap,
     EffectType,
@@ -250,7 +251,9 @@
 <div class="unified-effects">
   <!-- Scope selector -->
   <div class="scope-row">
-    <span class="scope-label" id="effect-scope-label">SCOPE</span>
+    <span class="scope-label" id="effect-scope-label"
+      >{t("compose_ui_scope")}</span
+    >
     <div
       class="scope-strip"
       role="radiogroup"
@@ -311,7 +314,11 @@
   <span class="section-header">{gridTargetLabel}</span>
 
   <!-- 4×4 icon-only grid -->
-  <div class="effect-grid" role="radiogroup" aria-label="Visual effect">
+  <div
+    class="effect-grid"
+    role="radiogroup"
+    aria-label={t("compose_ui_visual_effect")}
+  >
     {#each effectGrid as eff}
       {@const isActive = gridTargetEffect === eff.value}
       <button

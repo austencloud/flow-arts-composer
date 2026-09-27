@@ -1,6 +1,7 @@
 <script lang="ts">
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import ExperienceProgressIndicator from "./ExperienceProgressIndicator.svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
   let {
     label,
@@ -8,7 +9,7 @@
     totalSteps,
     onAction,
     onPrevious,
-    previousLabel = "Previous",
+    previousLabel = t("learn_ui_previous"),
     previousDisabled = false,
     actionIcon = "arrow",
     curriculumLabel = undefined,

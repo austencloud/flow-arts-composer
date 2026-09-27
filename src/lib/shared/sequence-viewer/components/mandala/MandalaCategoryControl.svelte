@@ -11,6 +11,7 @@
   control for the active category, so both consumers share identical behavior.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { slide } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import type { MandalaViewerController } from "../../state/mandala-viewer-controller.svelte";
@@ -129,45 +130,49 @@
     };
   });
 
-  const PATH_SHAPES: { id: MandalaPathShape; label: string }[] = [
-    { id: "arc", label: "Arc" },
-    { id: "linear", label: "Linear" },
-    { id: "concave", label: "Concave" },
-    { id: "hybrid", label: "Hybrid" },
-  ];
-  const STROKE_WIDTHS: { value: number; label: string }[] = [
-    { value: 1, label: "Thin" },
-    { value: 2.5, label: "Normal" },
-    { value: 4, label: "Thick" },
-  ];
+  const PATH_SHAPES = $derived<{ id: MandalaPathShape; label: string }[]>([
+    { id: "arc", label: t("viewer_ui_arc") },
+    { id: "linear", label: t("viewer_ui_linear") },
+    { id: "concave", label: t("viewer_ui_concave") },
+    { id: "hybrid", label: t("viewer_ui_hybrid") },
+  ]);
+  const STROKE_WIDTHS = $derived<{ value: number; label: string }[]>([
+    { value: 1, label: t("viewer_ui_thin") },
+    { value: 2.5, label: t("viewer_ui_normal") },
+    { value: 4, label: t("viewer_ui_thick") },
+  ]);
   type MotionMode = "static" | "animated";
-  const MOTION_OPTIONS: { value: MotionMode; label: string }[] = [
-    { value: "static", label: "Static" },
-    { value: "animated", label: "Animated" },
-  ];
-  const SHOW_OPTIONS: {
-    value: MandalaRenderOptions["show"];
-    label: string;
-    tone: "blue" | "red" | "accent";
-  }[] = [
-		{ value: "left", label: "Left", tone: "blue" },
-    { value: "both", label: "Both", tone: "accent" },
-		{ value: "right", label: "Right", tone: "red" },
-  ];
+  const MOTION_OPTIONS = $derived<{ value: MotionMode; label: string }[]>([
+    { value: "static", label: t("viewer_ui_static") },
+    { value: "animated", label: t("viewer_ui_animated") },
+  ]);
+  const SHOW_OPTIONS = $derived<
+    {
+      value: MandalaRenderOptions["show"];
+      label: string;
+      tone: "blue" | "red" | "accent";
+    }[]
+  >([
+    { value: "left", label: t("viewer_ui_left"), tone: "blue" },
+    { value: "both", label: t("viewer_ui_both"), tone: "accent" },
+    { value: "right", label: t("viewer_ui_right"), tone: "red" },
+  ]);
   const motionMode = $derived<MotionMode>(ctrl.paused ? "static" : "animated");
   // Derived from PRESET_COLORS (the single source of truth) so a preset added
   // there is automatically selectable here — no second list to drift out of
   // sync (this list previously hardcoded a stale 4-of-6 subset).
-  const PRESETS: { id: MandalaPresetId; label: string }[] = (
-    Object.keys(PRESET_COLORS) as Exclude<MandalaPresetId, "custom">[]
-  ).map((id) => ({ id, label: id.charAt(0).toUpperCase() + id.slice(1) }));
+  const PRESETS = $derived<{ id: MandalaPresetId; label: string }[]>(
+    (Object.keys(PRESET_COLORS) as Exclude<MandalaPresetId, "custom">[]).map(
+      (id) => ({ id, label: t(`viewer_ui_palette_${id}`) })
+    )
+  );
   const presetLabel = $derived(
-    PRESETS.find((p) => p.id === ctrl.preset)?.label ?? "Custom"
+    PRESETS.find((p) => p.id === ctrl.preset)?.label ?? t("viewer_ui_custom")
   );
 
   const FIDELITIES: { value: 720 | 1080 | 2160; label: string }[] = [
     { value: 720, label: "HD" },
-    { value: 1080, label: "Full HD" },
+    { value: 1080, label: t("viewer_detail_full_hd") },
     { value: 2160, label: "4K" },
   ];
   const EXPORT_FPS: (30 | 60)[] = [30, 60];
@@ -209,7 +214,7 @@
     transition:slide|local={{ duration: dur(220), easing: cubicOut }}
   >
     <div class="control-field">
-      <span class="control-label">Motion</span>
+      <span class="control-label">{t("viewer_ui_motion")}</span>
       <SegmentedControl
         options={MOTION_OPTIONS}
         value={motionMode}
@@ -237,7 +242,7 @@
             );
           }}
           class="slider"
-          aria-label="Undulation speed"
+          aria-label={t("viewer_ui_undulation_speed")}
         />
         <span class="slider-value">{ctrl.speed.toFixed(2)}x</span>
       </div>
@@ -297,7 +302,7 @@
         );
       }}
       class="slider"
-      aria-label="Spin"
+      aria-label={t("viewer_ui_spin")}
     />
     <span class="slider-value">{ctrl.rotation}°</span>
   </div>
@@ -307,7 +312,7 @@
     transition:slide|local={{ duration: dur(220), easing: cubicOut }}
   >
     <div class="control-field">
-      <span class="control-label">Show</span>
+      <span class="control-label">{t("viewer_ui_show")}</span>
       <SegmentedControl
         options={SHOW_OPTIONS}
         value={ctrl.show}
@@ -328,7 +333,7 @@
               "solid",
               () => (ctrl.colorMode = "solid")
             )}
-          aria-pressed={ctrl.colorMode === "solid"}>Solid</button
+          aria-pressed={ctrl.colorMode === "solid"}>{t("viewer_detail_solid")}</button
         >
         <button
           class="chip mini"
@@ -340,14 +345,14 @@
               "flow",
               () => (ctrl.colorMode = "flow")
             )}
-          aria-pressed={ctrl.colorMode === "flow"}>Flow</button
+          aria-pressed={ctrl.colorMode === "flow"}>{t("viewer_detail_flow")}</button
         >
       </div>
       <button
         class="palette-toggle"
         onclick={() => (presetsOpen = !presetsOpen)}
         aria-expanded={presetsOpen}
-        aria-label="Choose palette"
+        aria-label={t("viewer_ui_choose_palette")}
       >
         <span
           class="palette-chip"
@@ -400,7 +405,7 @@
             );
             presetsOpen = false;
           }}
-          aria-label="Custom colors"
+          aria-label={t("viewer_ui_custom_colors")}
           aria-pressed={ctrl.preset === "custom"}
         >
           <span
@@ -409,7 +414,7 @@
           >
             <i class="fas fa-eye-dropper" aria-hidden="true"></i>
           </span>
-          <span class="swatch-label">Custom</span>
+          <span class="swatch-label">{t("compose_custom")}</span>
         </button>
       </div>
     {/if}
@@ -426,9 +431,9 @@
         <LabeledColorPairPicker
           left={ctrl.customLeft}
           right={ctrl.customRight}
-          leftLabel="Left pathway"
-          rightLabel="Right pathway"
-          groupLabel="Pathway colors"
+          leftLabel={t("viewer_ui_left_pathway")}
+          rightLabel={t("viewer_ui_right_pathway")}
+          groupLabel={t("viewer_ui_pathway_colors")}
           onchange={(hand, value) => {
             if (hand === "left") ctrl.customLeft = value;
             else ctrl.customRight = value;
@@ -518,14 +523,14 @@
         );
       }}
       class="slider"
-      aria-label="Depth"
+      aria-label={t("viewer_ui_depth")}
     />
     <span class="slider-value">{ctrl.depth}%</span>
   </div>
 {:else if category === "download"}
   <div class="download-tray">
     <div class="dl-row">
-      <span class="dl-label">Loops</span>
+      <span class="dl-label">{t("viewer_ui_loops")}</span>
       <input
         type="range"
         min="1"
@@ -543,12 +548,12 @@
           );
         }}
         class="slider"
-        aria-label="Repetitions"
+        aria-label={t("export_repetitions")}
       />
       <span class="slider-value">{ctrl.exportReps}×</span>
     </div>
     <div class="dl-row">
-      <span class="dl-label">Fidelity</span>
+      <span class="dl-label">{t("viewer_detail_fidelity")}</span>
       <div class="tray-chips">
         {#each FIDELITIES as f}
           <button
@@ -567,7 +572,7 @@
       </div>
     </div>
     <div class="dl-row">
-      <span class="dl-label">FPS</span>
+      <span class="dl-label">{t("viewer_detail_fps")}</span>
       <div class="tray-chips">
         {#each EXPORT_FPS as f}
           <button
@@ -588,11 +593,11 @@
     <div class="dl-foot">
       <span class="dl-estimate"
         ><i class="fas fa-clock" aria-hidden="true"></i>
-        {estimateLabel} · {ctrl.exportFrameCount} frames</span
+        {estimateLabel} · {ctrl.exportFrameCount} {t("viewer_detail_frames")}</span
       >
       {#if showExportButton}
         <button class="dl-export" onclick={handleExport}>
-          <i class="fas fa-film" aria-hidden="true"></i> Export MP4
+          <i class="fas fa-film" aria-hidden="true"></i> {t("viewer_detail_export_mp4")}
         </button>
       {/if}
     </div>

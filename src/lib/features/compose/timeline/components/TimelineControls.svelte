@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * TimelineControls - Transport and zoom controls
    *
@@ -142,8 +143,12 @@
       class="control-btn"
       onclick={() => getState().undo()}
       disabled={!canUndo}
-      title={undoDescription ? `Undo: ${undoDescription} (Ctrl+Z)` : "Nothing to undo"}
-      aria-label={undoDescription ? `Undo: ${undoDescription}` : "Nothing to undo"}
+      title={undoDescription
+        ? `Undo: ${undoDescription} (Ctrl+Z)`
+        : "Nothing to undo"}
+      aria-label={undoDescription
+        ? `Undo: ${undoDescription}`
+        : "Nothing to undo"}
     >
       <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
     </button>
@@ -154,8 +159,12 @@
       class="control-btn"
       onclick={() => getState().redo()}
       disabled={!canRedo}
-      title={redoDescription ? `Redo: ${redoDescription} (Ctrl+Shift+Z)` : "Nothing to redo"}
-      aria-label={redoDescription ? `Redo: ${redoDescription}` : "Nothing to redo"}
+      title={redoDescription
+        ? `Redo: ${redoDescription} (Ctrl+Shift+Z)`
+        : "Nothing to redo"}
+      aria-label={redoDescription
+        ? `Redo: ${redoDescription}`
+        : "Nothing to redo"}
     >
       <i class="fa-solid fa-rotate-right" aria-hidden="true"></i>
     </button>
@@ -207,8 +216,8 @@
     <button
       class="control-btn"
       onclick={() => getState().zoomToFit()}
-      title="Fit to view"
-      aria-label="Fit to view"
+      title={t("compose_ui_fit_to_view")}
+      aria-label={t("compose_ui_fit_to_view")}
     >
       <i class="fa-solid fa-expand" aria-hidden="true"></i>
     </button>
@@ -230,8 +239,8 @@
   <button
     class="control-btn"
     onclick={() => getState().openProjectSettings()}
-    title="Timeline settings"
-    aria-label="Timeline settings"
+    title={t("compose_ui_timeline_settings")}
+    aria-label={t("compose_ui_timeline_settings")}
   >
     <i class="fa-solid fa-gear" aria-hidden="true"></i>
   </button>

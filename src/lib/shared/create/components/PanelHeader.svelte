@@ -11,6 +11,7 @@
   - Close button (always present)
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
 
   let {
@@ -56,7 +57,7 @@
       data-escape-shortcut
       data-escape-shortcut-label="Panel"
       onclick={onClose}
-      aria-label="Close panel"
+      aria-label={t("compose_close_panel")}
     >
       <i class="fas fa-times" aria-hidden="true"></i>
     </button>
@@ -123,7 +124,6 @@
     grid-column: 3; /* Explicitly place in right column */
   }
 
-
   /* Base styling for all header buttons - circular with 48px touch targets */
   :global(.panel-header .action-button),
   .close-button {
@@ -140,7 +140,11 @@
     color: #ffffff; /* White icons */
     font-size: var(--font-size-lg);
     cursor: pointer;
-    transition: all var(--transition-normal, var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1));
+    transition: all
+      var(
+        --transition-normal,
+        var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1)
+      );
     flex-shrink: 0;
     box-shadow: 0 2px 8px var(--theme-shadow);
   }
@@ -195,8 +199,10 @@
     );
     border: 1px solid color-mix(in srgb, #fff 20%, transparent);
     box-shadow:
-      0 2px 8px color-mix(in srgb, var(--semantic-error, #ef4444) 35%, transparent),
-      0 6px 18px color-mix(in srgb, var(--semantic-error, #ef4444) 25%, #000 10%);
+      0 2px 8px
+        color-mix(in srgb, var(--semantic-error, #ef4444) 35%, transparent),
+      0 6px 18px
+        color-mix(in srgb, var(--semantic-error, #ef4444) 25%, #000 10%);
   }
 
   :global(.panel-header .remove-button:hover) {
@@ -206,8 +212,10 @@
       color-mix(in srgb, var(--semantic-error, #ef4444) 88%, #000 12%)
     );
     box-shadow:
-      0 4px 12px color-mix(in srgb, var(--semantic-error, #ef4444) 45%, transparent),
-      0 8px 22px color-mix(in srgb, var(--semantic-error, #ef4444) 35%, #000 10%);
+      0 4px 12px
+        color-mix(in srgb, var(--semantic-error, #ef4444) 45%, transparent),
+      0 8px 22px
+        color-mix(in srgb, var(--semantic-error, #ef4444) 35%, #000 10%);
   }
 
   /* Adjust button (primary action) - accent gradient */
@@ -219,7 +227,8 @@
     );
     border: 1px solid color-mix(in srgb, #fff 20%, transparent);
     box-shadow:
-      0 2px 8px color-mix(in srgb, var(--theme-accent, #3b82f6) 35%, transparent),
+      0 2px 8px
+        color-mix(in srgb, var(--theme-accent, #3b82f6) 35%, transparent),
       0 6px 18px color-mix(in srgb, var(--theme-accent, #3b82f6) 25%, #000 10%);
   }
 
@@ -230,7 +239,8 @@
       color-mix(in srgb, var(--theme-accent, #3b82f6) 88%, #000 12%)
     );
     box-shadow:
-      0 4px 12px color-mix(in srgb, var(--theme-accent, #3b82f6) 45%, transparent),
+      0 4px 12px
+        color-mix(in srgb, var(--theme-accent, #3b82f6) 45%, transparent),
       0 8px 22px color-mix(in srgb, var(--theme-accent, #3b82f6) 35%, #000 10%);
   }
 
@@ -243,8 +253,10 @@
     );
     border: 1px solid color-mix(in srgb, #fff 25%, transparent);
     box-shadow:
-      0 2px 8px color-mix(in srgb, var(--accent-2026-indigo, #6366f1) 35%, transparent),
-      0 6px 18px color-mix(in srgb, var(--accent-2026-pink, #ec4899) 25%, transparent);
+      0 2px 8px
+        color-mix(in srgb, var(--accent-2026-indigo, #6366f1) 35%, transparent),
+      0 6px 18px
+        color-mix(in srgb, var(--accent-2026-pink, #ec4899) 25%, transparent);
   }
 
   :global(.panel-header .export-button:hover) {
@@ -254,8 +266,10 @@
       var(--accent-2026-pink, #ec4899)
     );
     box-shadow:
-      0 4px 14px color-mix(in srgb, var(--accent-2026-indigo, #6366f1) 55%, transparent),
-      0 10px 26px color-mix(in srgb, var(--accent-2026-pink, #ec4899) 40%, transparent);
+      0 4px 14px
+        color-mix(in srgb, var(--accent-2026-indigo, #6366f1) 55%, transparent),
+      0 10px 26px
+        color-mix(in srgb, var(--accent-2026-pink, #ec4899) 40%, transparent);
   }
 
   /* Mobile adjustments - maintain accessible touch targets (48px minimum) */

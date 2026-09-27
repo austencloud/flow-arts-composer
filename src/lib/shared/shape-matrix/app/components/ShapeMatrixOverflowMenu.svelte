@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { DropdownMenu } from "bits-ui";
   import type { HTMLButtonAttributes } from "svelte/elements";
 
@@ -37,7 +38,7 @@
         {...triggerProps}
         type="button"
         class="overflow-trigger"
-        aria-label="More Shape Engine options"
+        aria-label={t("shape_engine_more_options")}
       >
         <i class="fas fa-ellipsis-vertical" aria-hidden="true"></i>
       </button>
@@ -51,7 +52,7 @@
       sideOffset={8}
       collisionPadding={12}
       class="shape-matrix-overflow"
-      aria-label="Shape Engine options"
+      aria-label={t("shape_engine_options")}
     >
       <!-- No prop entry here: the Props control under the animation canvas
            owns that choice, where the prop is visible against the shape it
@@ -62,7 +63,7 @@
         onSelect={openOriginal}
       >
         <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
-        <span>Lorq Nichols’ original 144 Shape Matrix</span>
+        <span>{t("shape_engine_original_matrix")}</span>
       </DropdownMenu.Item>
       <DropdownMenu.Item
         class="shape-matrix-overflow-item"
@@ -70,7 +71,7 @@
         onSelect={openAbout}
       >
         <i class="fas fa-circle-info" aria-hidden="true"></i>
-        <span>About Shape Engine</span>
+        <span>{t("shape_engine_about_name")}</span>
       </DropdownMenu.Item>
     </DropdownMenu.Content>
   </DropdownMenu.Portal>

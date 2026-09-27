@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import InstagramIcon from "$lib/shared/auth/components/icons/InstagramIcon.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import { growFade } from "$lib/shared/transitions/motion";
@@ -51,46 +52,46 @@
   const accountName = $derived(capability?.username ?? "Instagram");
   const formatLabel = $derived(
     draft.format === "reel"
-      ? "Reel"
+      ? t("share_reel")
       : draft.format === "image"
-        ? "Feed image"
+        ? t("share_feed_image")
         : draft.format === "carousel"
-          ? "Carousel"
-          : "Story"
+          ? t("share_carousel")
+          : t("share_story")
   );
 
   function directPublishMessage(): string {
     if (eligibility.reasonCode === "meta/capabilities-missing") {
-      return "Reconnect Instagram so Flow Arts Composer can verify what this account supports.";
+      return t("share_reconnect_instagram_capability");
     }
     if (eligibility.reasonCode === "meta/account-mismatch") {
-      return "This draft belongs to a different Instagram account.";
+      return t("share_different_instagram_account");
     }
     return eligibility.reasonCode
       ? metaErrorMessage(eligibility.reasonCode)
-      : "This post is ready.";
+      : t("share_post_ready");
   }
 </script>
 
 <section
   class="review-shell"
-  aria-label="Review Instagram post"
+  aria-label={t("share_review_instagram_post")}
   bind:clientWidth={reviewWidth}
 >
   <header class="review-header">
     <button class="header-action" type="button" onclick={onBack}>
       <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
-      Back to sharing
+      {t("share_back")}
     </button>
     <div class="title-group">
-      <span class="eyebrow">Instagram Review</span>
-      <h2>Check the post before publishing</h2>
+      <span class="eyebrow">{t("share_instagram_review")}</span>
+      <h2>{t("share_check_post_before_publishing")}</h2>
     </div>
     <button
       class="close-button"
       type="button"
       onclick={onClose}
-      aria-label="Close share sheet"
+      aria-label={t("share_close_sheet")}
     >
       <i class="fa-solid fa-xmark" aria-hidden="true"></i>
     </button>
@@ -99,12 +100,12 @@
   <div class="mobile-view-picker">
     <SegmentedControl
       options={[
-        { value: "preview", label: "Preview" },
-        { value: "details", label: "Post details" },
+        { value: "preview", label: t("share_preview") },
+        { value: "details", label: t("share_post_details") },
       ]}
       value={postState.mobileView}
       onchange={postState.setMobileView}
-      ariaLabel="Instagram review view"
+      ariaLabel={t("share_instagram_review_view")}
       semantics="radiogroup"
       size="sm"
       color="accent"
@@ -114,7 +115,7 @@
   <div class="review-body" data-mobile-view={postState.mobileView}>
     <section
       class="preview-column"
-      aria-label="Final media preview"
+      aria-label={t("share_final_media_preview")}
       inert={compactReview && postState.mobileView !== "preview"}
       aria-hidden={compactReview && postState.mobileView !== "preview"}
     >
@@ -127,7 +128,7 @@
           <!-- svelte-ignore a11y_media_has_caption -->
           <video src={previewUrl} controls playsinline></video>
         {:else}
-          <img src={previewUrl} alt="Final Instagram post preview" />
+          <img src={previewUrl} alt={t("share_final_instagram_preview")} />
         {/if}
       </div>
       <button
@@ -136,13 +137,13 @@
         onclick={onEditComposition}
       >
         <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
-        Edit composition
+        {t("share_edit_composition_short")}
       </button>
     </section>
 
     <section
       class="details-column"
-      aria-label="Instagram post details"
+      aria-label={t("share_instagram_post_details")}
       inert={compactReview && postState.mobileView !== "details"}
       aria-hidden={compactReview && postState.mobileView !== "details"}
     >
@@ -161,7 +162,9 @@
 
       <div class="detail-card caption-card">
         <div class="section-heading">
-          <label for="instagram-review-caption">Caption</label>
+          <label for="instagram-review-caption"
+            >{t("share_caption_short")}</label
+          >
           <span class="caption-counts">
             <span>{captionParts.characters}/2,200</span>
             <span>{captionParts.hashtags}/30 #</span>
@@ -180,16 +183,16 @@
       {#if draft.format === "reel"}
         <div class="detail-card" transition:growFade={{ axis: "y" }}>
           <div class="section-heading">
-            <span>Where the Reel appears</span>
+            <span>{t("share_where_reel_appears")}</span>
           </div>
           <SegmentedControl
             options={[
-              { value: "feed", label: "Feed + Reels" },
-              { value: "reels", label: "Reels only" },
+              { value: "feed", label: t("share_feed_reels") },
+              { value: "reels", label: t("share_reels_only") },
             ]}
             value={draft.instagram.shareToFeed === false ? "reels" : "feed"}
             onchange={(value) => postState.setShareToFeed(value === "feed")}
-            ariaLabel="Where the Reel appears"
+            ariaLabel={t("share_where_reel_appears")}
             semantics="radiogroup"
             size="sm"
             color="accent"
@@ -203,8 +206,8 @@
             <i class="fa-solid fa-volume-high" aria-hidden="true"></i>
           </span>
           <span>
-            <strong>Original sound</strong>
-            <small>Included in the rendered video</small>
+            <strong>{t("share_original_sound")}</strong>
+            <small>{t("share_original_sound_included")}</small>
           </span>
         </div>
       {/if}
@@ -218,7 +221,9 @@
           <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
           <span>{directPublishMessage()}</span>
           {#if eligibility.recoveryAction === "reconnect"}
-            <button type="button" onclick={onReconnect}>Reconnect</button>
+            <button type="button" onclick={onReconnect}
+              >{t("share_reconnect")}</button
+            >
           {/if}
         </div>
       {/if}
@@ -231,7 +236,7 @@
             target="_blank"
             rel="noopener noreferrer"
           >
-            View on Instagram
+            {t("share_view_instagram")}
             <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"
             ></i>
           </a>
@@ -245,16 +250,16 @@
             {#if busy}
               <i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"
               ></i>
-              <span>{stage || "Publishing…"}</span>
+              <span>{stage || t("share_publishing")}</span>
             {:else}
               <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
-              <span>Post now</span>
+              <span>{t("share_post_now")}</span>
             {/if}
           </button>
         {/if}
         <button class="secondary-action" type="button" onclick={onHandoff}>
           <i class="fa-brands fa-instagram" aria-hidden="true"></i>
-          Finish in Instagram
+          {t("share_finish_instagram_short")}
         </button>
       </div>
     </section>

@@ -190,6 +190,13 @@ describe("staff grip contact contract", () => {
       'import { resolvePerformerUpperBodyStance } from "../domain/performer-upper-body-stance"'
     );
     expect(viewerScene).toContain("resolvePerformerUpperBodyStance(performer)");
+    // The contact owner reads the score clock, which holds at beat 1 while the
+    // start pose plays; a torso on the raw score time would turn ahead of the
+    // props it hands over.
+    expect(liveSequencePerformer).toContain(
+      "performerScoreClock(performerState),"
+    );
+    expect(performerStanceOwner).toContain("performerScoreClock(performer),");
     // An authored stance (the isolation study) may override the planned one,
     // so the render props read the resolved `renderedUpperBodyStance`, which
     // falls back to the shared owner's result.
@@ -222,12 +229,17 @@ describe("staff grip contact contract", () => {
   });
 
   it("maps sequence hands into the rig's blue and red prop inputs", () => {
+    // The contact owner hands over the performer's own left and right props,
+    // displaced where a hard beat needs it.
     expect(liveSequencePerformer).toContain(
-      "bluePropState={performerState.leftPropState}"
+      "resolvePerformerContact(performerState"
     );
-    expect(liveSequencePerformer).toContain(
-      "redPropState={performerState.rightPropState}"
-    );
+    for (const host of [liveSequencePerformer, viewerScene]) {
+      expect(host).toContain("bluePropState={contact.leftProp}");
+      expect(host).toContain("redPropState={contact.rightProp}");
+      expect(host).toContain("pairSeparation={!contact.planned}");
+      expect(host).toContain("contactResetKey={contact.resetKey}");
+    }
     expect(liveSequencePerformer).toContain(
       "bluePropType={toScenePropType(props.propType)}"
     );

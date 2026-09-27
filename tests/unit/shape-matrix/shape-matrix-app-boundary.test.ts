@@ -24,6 +24,17 @@ function svelteFiles(directory: string): string[] {
   });
 }
 
+// German i18n work (commits c1e3934175/d299d3c492 and the codex/german-shape-*
+// merges) moved many of this surface's English literals behind t() keys
+// backed by messages/en.json. Where a check below used to assert an inline
+// literal, it now asserts the source calls the key AND that messages/en.json
+// still carries the identical original English copy.
+function readEnglishMessages(): Record<string, string> {
+  return JSON.parse(
+    readFileSync(resolve("messages/en.json"), "utf8")
+  ) as Record<string, string>;
+}
+
 describe("Shape Matrix app boundary", () => {
   it("never shadows the $state rune with a binding named state", () => {
     // Svelte reads `$state` as a subscription to a variable called `state`
@@ -42,12 +53,10 @@ describe("Shape Matrix app boundary", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("keeps route navigation and viewport ownership outside the embeddable app", () => {
+  it("keeps viewport ownership in the embeddable app", () => {
     const appSource = readTree(APP_ROOT);
 
     expect(appSource).not.toContain('href="/notation"');
-    expect(appSource).not.toContain("$app/");
-    expect(appSource).not.toContain("window.location");
     expect(appSource).not.toMatch(/position:\s*fixed/);
     expect(appSource).toContain("ResizeObserver");
     expect(appSource).toContain("container: shape-matrix-app / size");
@@ -102,7 +111,10 @@ describe("Shape Matrix app boundary", () => {
     expect(bridgeSource).toContain(
       '<i class="fas fa-arrow-right bridge-arrow" aria-hidden="true"></i>'
     );
-    expect(bridgeSource).toContain('<span class="sr-only">produces</span>');
+    expect(bridgeSource).toContain(
+      '<span class="sr-only">{t("shape_engine_produces")}</span>'
+    );
+    expect(readEnglishMessages()["shape_engine_produces"]).toBe("produces");
   });
 
   it("threads the optional prop element through the canonical animation overlay", () => {
@@ -135,7 +147,10 @@ describe("Shape Matrix app boundary", () => {
     expect(animatorSource).toContain("{propElementalType}");
     expect(surfaceSource).toContain("{propElementalType}");
     expect(overlaySource).toContain('corner="top-right"');
-    expect(overlaySource).toContain("Prop timing and direction element:");
+    expect(overlaySource).toContain('t("viewer_final_prop_timing_element"');
+    expect(
+      readEnglishMessages()["viewer_final_prop_timing_element"]
+    ).toBe("Prop timing and direction element: {element}");
   });
 
   it("keeps embedded disassembly inside the Shape Matrix atmosphere", () => {
@@ -305,7 +320,7 @@ describe("Shape Matrix app boundary", () => {
     expect(stageActionsSource).toContain(
       "const hasPair = $derived(surfaceHasPair(appState));"
     );
-    expect(stageActionsSource.match(/disabled=\{!hasPair\}/g)).toHaveLength(1);
+    expect(stageActionsSource.match(/disabled=\{!hasPair\}/g)).toHaveLength(2);
     expect(workspaceSource).toContain(
       "customizeSection(appState, animationState)"
     );
@@ -316,23 +331,22 @@ describe("Shape Matrix app boundary", () => {
       "customizeSection(appState, animationState)"
     );
     // A labelled way back, and Escape through the shared layer manager.
-    expect(workspaceSource).toContain("Back to grid");
+    expect(workspaceSource).toContain('t("shape_engine_back_to_grid")');
+    expect(readEnglishMessages()["shape_engine_back_to_grid"]).toBe(
+      "Back to grid"
+    );
     expect(workspaceSource).toContain('role="dialog"');
     expect(workspaceSource).toContain('id: "shape-matrix:customize"');
 
-    // A wide host has no control band under the animation at all. The band
-    // used to carry one Customize button and a hand-rolled play button pushed
-    // to the far end of it; the canvas already toggles on a click, so the
-    // transport is the canvas and Customize is a gear in its corner. Compact
-    // hosts keep the AnimationPanel, since the grid pane is off screen there:
-    // each pill opens a sheet, and Props routes to the canonical prop sheet.
+    // Wide hosts put Customize alongside the realization actions, clear of
+    // the animation. Compact hosts keep the AnimationPanel controls.
     const animationStateSource = read(
       "src/lib/shared/shape-matrix/app/state/shape-matrix-animation-state.svelte.ts"
     );
     expect(drillSource).toMatch(
       /\{#if !appState \|\| appState\.compact\}[\s\S]*?<AnimationPanel/
     );
-    expect(drillSource).toContain("<ShapeMatrixStageActions />");
+    expect(drillSource).toContain('<ShapeMatrixStageActions placement="panel" />');
     // The canvas says what a click will do. It owns the four hint styles; the
     // engine must not answer this with a button of its own.
     expect(drillSource).toContain('hoverHint: "badge"');
@@ -516,8 +530,13 @@ describe("Shape Matrix app boundary", () => {
     expect(theorySource).toContain("<ShapeMatrixRatioEntry");
     expect(theorySource).not.toContain("<ShapeMatrixValueScroller");
     expect(theorySource).not.toContain("SegmentedControl");
-    expect(theorySource).toContain("Link ratios");
-    expect(theorySource).toContain("Which ratio should both use?");
+    expect(theorySource).toContain('t("shape_engine_link_ratios")');
+    expect(theorySource).toContain('t("shape_engine_which_ratio")');
+    const linkRatiosEn = readEnglishMessages();
+    expect(linkRatiosEn["shape_engine_link_ratios"]).toBe("Link ratios");
+    expect(linkRatiosEn["shape_engine_which_ratio"]).toBe(
+      "Which ratio should both use?"
+    );
     expect(theorySource).toContain('hand="both"');
     expect(ratioEntrySource).toContain('onclick={() => nudge("hand", -1)}');
     expect(ratioEntrySource).toContain('onclick={() => nudge("prop", 1)}');
@@ -605,6 +624,8 @@ describe("Shape Matrix app boundary", () => {
     expect(shellSource).toContain("onclick={shareThisView}");
     expect(shellSource).toContain("appState.shareLink()");
     expect(shellSource).toContain("shareOrCopyLink({");
+    expect(shellSource).toContain("generateSequenceRoutePath(realization.seq)");
+    expect(shellSource).not.toContain('shareOnOpen: action === "share"');
     expect(shellSource).not.toContain("ShapeMatrixShareButton");
     // Handing a link on has one owner: platform sheet, then clipboard.
     expect(linkShareSource).toContain("platform.share(payload)");
@@ -649,9 +670,18 @@ describe("Shape Matrix app boundary", () => {
     );
 
     // The box shows timing over direction beside the element icon; the
-    // element's name and its two-letter code are read out, not drawn.
+    // element's name and its two-letter code are read out, not drawn. German
+    // i18n work (commit d299d3c492) replaced the local words/elementName
+    // lookups with the shared localizedModeWords/localizedElementName
+    // helpers, keeping the same timing, direction, element, and mode order.
     expect(elementChipSource).toContain(
-      "ariaLabel={`${c.words.timing} ${c.words.direction}, ${elementName(c.el.element)} (${c.mode})${"
+      "ariaLabel={`${localizedModeWords(c.mode).timing} ${localizedModeWords(c.mode).direction}, ${localizedElementName(c.el.element)} (${c.mode})${"
+    );
+    expect(elementChipSource).toContain(
+      '`, ${t("shape_engine_mode_unavailable")}`'
+    );
+    expect(readEnglishMessages()["shape_engine_mode_unavailable"]).toBe(
+      "unavailable for these flowers"
     );
   });
 

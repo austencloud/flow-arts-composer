@@ -1,5 +1,6 @@
 <script lang="ts">
   import LessonStageHeading from "../LessonStageHeading.svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type {
     GridPhase,
     PointTypePhase,
@@ -13,45 +14,44 @@
 
   const copyKey = $derived(`${step}-${gridPhase}-${pointTypePhase}`);
   const title = $derived.by(() => {
-    if (step === 0) return "The Grid";
+    if (step === 0) return t("learn_ui_grid_title");
     if (step === 1) {
-      if (gridPhase === "split") return "Two Grid Modes";
-      if (gridPhase === "diamond-labels") return "Diamond Mode";
-      if (gridPhase === "box-labels") return "Box Mode";
-      return "The 8-Point Grid";
+      if (gridPhase === "split") return t("learn_ui_two_grid_modes");
+      if (gridPhase === "diamond-labels") return t("learn_ui_diamond_mode");
+      if (gridPhase === "box-labels") return t("learn_ui_box_mode");
+      return t("learn_ui_eight_point_grid");
     }
-    if (pointTypePhase === "center") return "The Center Point";
-    if (pointTypePhase === "hand") return "Hand Points";
-    return "Outer Points";
+    if (pointTypePhase === "center") return t("learn_ui_center_point");
+    if (pointTypePhase === "hand") return t("learn_ui_hand_points");
+    return t("learn_ui_outer_points");
   });
 </script>
 
 <LessonStageHeading key={copyKey} {title}>
   <p>
     {#if step === 0}
-      The Kinetic Alphabet is based on a <strong>4-point grid</strong>.
+      {t("learn_ui_grid_intro")}
     {:else if step === 1}
       {#if gridPhase === "split"}
-        There are two types of grids: <strong>Diamond</strong> and
-        <strong>Box</strong>.
+        {t("learn_ui_grid_two_modes_intro")}
       {:else if gridPhase === "diamond-labels"}
-        <strong>Diamond</strong> points are labeled with cardinal directions.
+        {t("learn_ui_diamond_directions")}
       {:else if gridPhase === "box-labels"}
-        <strong>Box</strong> points are labeled with intercardinal directions.
+        {t("learn_ui_box_directions")}
       {:else}
-        <strong>Diamond + Box</strong> together create the full 8-point grid.
+        {t("learn_ui_merged_grid_intro")}
       {/if}
     {:else if pointTypePhase === "center"}
-      The <strong>center point</strong> is the hub of all movement.
+      {t("learn_ui_center_point_intro")}
     {:else if pointTypePhase === "hand"}
-      <strong>Hand points</strong> are halfway between center and outer.
+      {t("learn_ui_hand_points_intro")}
     {:else}
-      <strong>Outer points</strong> define the grid's boundary.
+      {t("learn_ui_outer_points_intro")}
     {/if}
   </p>
 
   {#if step === 1 && gridPhase === "merged"}
-    <p class="secondary">We'll use this grid to learn hand placements.</p>
+    <p class="secondary">{t("learn_ui_grid_placements_next")}</p>
   {/if}
 </LessonStageHeading>
 

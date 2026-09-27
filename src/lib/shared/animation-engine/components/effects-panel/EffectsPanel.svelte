@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { Snippet, Component } from "svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { effectUiLabel } from "./effect-ui-label";
   import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
   import {
     isEffectId,
@@ -147,12 +149,14 @@
       Math.floor((panelRect?.height ?? 0) - (footerBox?.[0]?.blockSize ?? 0))
     )
   );
-  const pictureHost = $derived(fill && !showPlayback && !children);
+  // Both bounded and intrinsic sidebars use the same visual roster. Only a
+  // bounded page can size the inactive catalog against the remaining height.
+  const pictureHost = $derived(!showPlayback && !children);
   const rosterWidth = $derived(
     Math.floor(panelRect?.width ?? 0) - CATALOG_CHROME_X
   );
   const catalogFit = $derived(
-    pictureHost && activeEffect === "none"
+    fill && pictureHost && activeEffect === "none"
       ? fitEffectCatalog({
           width: rosterWidth,
           height: catalogRoom - CATALOG_CHROME_Y,
@@ -544,7 +548,7 @@
       class:active={activePresetId === DEFAULT_CHIP_ID}
       onclick={() => handlePresetSelect(DEFAULT_CHIP_ID)}
     >
-      Default
+      {t("effect_deep_default")}
     </button>
     <button
       type="button"
@@ -554,7 +558,7 @@
       disabled={customDisabled}
       onclick={() => handlePresetSelect(CUSTOM_CHIP_ID)}
     >
-      Custom
+      {t("effect_deep_custom")}
     </button>
   </div>
 {/snippet}
@@ -661,7 +665,7 @@
         >
           <div class="sb-browser-head">
             {#if showHeading}
-              <span class="sb-label">Effects</span>
+              <span class="sb-label">{t("effect_deep_effects")}</span>
             {/if}
             <button
               type="button"
@@ -673,8 +677,12 @@
               <i class="fas fa-power-off" aria-hidden="true"></i>
               <span>
                 {activeEffect === "none"
-                  ? "Effects off"
-                  : `Turn off ${EFFECT_LABELS[activeEffect] ?? "effect"}`}
+                  ? t("effect_deep_effects_off")
+                  : t("effect_deep_turn_off", {
+                      effect: effectUiLabel(
+                        EFFECT_LABELS[activeEffect] ?? "effect"
+                      ),
+                    })}
               </span>
             </button>
           </div>
@@ -691,7 +699,7 @@
           {#if sidebarView === "browser"}
             {@render effectDock(
               () => (sidebarDetailOpen = true),
-              "Tune",
+              t("effect_deep_tune"),
               "tiles"
             )}
           {/if}
@@ -731,7 +739,7 @@
         class="reset-all-btn"
         onclick={() => (confirmResetAllOpen = true)}
       >
-        Reset all effects to original
+        {t("effect_deep_reset_all_to_original")}
       </button>
     </div>
   </div>
@@ -760,12 +768,18 @@
               type="button"
               class="tune-back"
               onclick={handleCustomizeClose}
-              aria-label="Back to {EFFECT_LABELS[activeEffect] ?? activeEffect}"
+              aria-label={t("effect_deep_back_to_effect", {
+                effect: effectUiLabel(
+                  EFFECT_LABELS[activeEffect] ?? activeEffect
+                ),
+              })}
             >
               <i class="fas fa-arrow-left" aria-hidden="true"></i>
             </button>
             <span class="tune-name"
-              >{EFFECT_LABELS[activeEffect] ?? activeEffect}</span
+              >{effectUiLabel(
+                EFFECT_LABELS[activeEffect] ?? activeEffect
+              )}</span
             >
             <div class="tune-anchors">
               <button
@@ -774,7 +788,7 @@
                 class:active={activePresetId === DEFAULT_CHIP_ID}
                 onclick={() => handlePresetSelect(DEFAULT_CHIP_ID)}
               >
-                Default
+                {t("effect_deep_default")}
               </button>
               <button
                 type="button"
@@ -783,7 +797,7 @@
                 disabled={customDisabled}
                 onclick={() => handlePresetSelect(CUSTOM_CHIP_ID)}
               >
-                Custom
+                {t("effect_deep_custom")}
               </button>
             </div>
           </div>
@@ -826,14 +840,18 @@
               type="button"
               class="back-btn"
               onclick={() => (detailOpen = false)}
-              aria-label="All effects"
+              aria-label={t("effect_deep_all_effects")}
             >
               <i class="fas fa-arrow-left" aria-hidden="true"></i>
             </button>
-            <span class="detail-name">All effects</span>
+            <span class="detail-name">{t("effect_deep_all_effects")}</span>
           </div>
 
-          {@render effectDock(handleCustomizeOpen, "More", "rail")}
+          {@render effectDock(
+            handleCustomizeOpen,
+            t("effect_deep_more"),
+            "rail"
+          )}
         </div>
       {:else}
         <div class="drill-view">
@@ -851,8 +869,10 @@
               <i class="fas fa-ban" aria-hidden="true"></i>
               <span
                 >{activeEffect === "none"
-                  ? "Off"
-                  : `Turn off ${EFFECT_LABELS[activeEffect] ?? ""}`}</span
+                  ? t("effect_deep_off")
+                  : t("effect_deep_turn_off", {
+                      effect: effectUiLabel(EFFECT_LABELS[activeEffect] ?? ""),
+                    })}</span
               >
             </button>
           </div>
@@ -876,14 +896,14 @@
         type="button"
         class="back-row"
         onclick={handleCustomizeClose}
-        aria-label="Back to effect presets"
+        aria-label={t("effect_deep_back_to_effect_presets")}
       >
         <i class="fas fa-arrow-left" aria-hidden="true"></i>
         <span class="back-row-title">
           <span class="back-row-label"
-            >{EFFECT_LABELS[activeEffect] ?? activeEffect}</span
+            >{effectUiLabel(EFFECT_LABELS[activeEffect] ?? activeEffect)}</span
           >
-          <span class="back-row-sub">More tuning</span>
+          <span class="back-row-sub">{t("effect_deep_more_tuning")}</span>
         </span>
       </button>
       {@render customizeAnchors()}
@@ -903,8 +923,10 @@
           <i class="fas fa-ban" aria-hidden="true"></i>
           <span
             >{activeEffect === "none"
-              ? "Off"
-              : `Turn off ${EFFECT_LABELS[activeEffect] ?? ""}`}</span
+              ? t("effect_deep_off")
+              : t("effect_deep_turn_off", {
+                  effect: effectUiLabel(EFFECT_LABELS[activeEffect] ?? ""),
+                })}</span
           >
         </button>
       </div>
@@ -917,17 +939,17 @@
         {availableEffects}
       />
 
-      {@render effectDock(handleCustomizeOpen, "More", "rail")}
+      {@render effectDock(handleCustomizeOpen, t("effect_deep_more"), "rail")}
     {/if}
   </div>
 {/if}
 
 <ConfirmDialog
   bind:isOpen={confirmResetAllOpen}
-  title="Reset all effects?"
-  message="Every effect returns to its factory original. Your personal defaults and tuning are discarded. This can be undone."
-  confirmText="Reset all"
-  cancelText="Keep mine"
+  title={t("effect_deep_reset_all_title")}
+  message={t("effect_deep_reset_all_message")}
+  confirmText={t("effect_deep_reset_all")}
+  cancelText={t("effect_deep_keep_mine")}
   variant="danger"
   onConfirm={handleResetAll}
   onCancel={() => {}}

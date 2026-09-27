@@ -7,12 +7,13 @@
   take over once a module's chunk has mounted.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import IndeterminateBar from "$lib/shared/components/loading/IndeterminateBar.svelte";
 </script>
 
 <div class="neutral-loader" role="status" aria-live="polite" aria-busy="true">
   <IndeterminateBar height={3} position="top" />
-  <span class="sr-only">Loading…</span>
+  <span class="sr-only">{t("common_loading")}</span>
 </div>
 
 <style>

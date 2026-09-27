@@ -1,4 +1,5 @@
 import { PropType } from "./enums/prop-type";
+import { basePropTypeOfRenderKey } from "./prop-look";
 
 /**
  * Props with TWO mirror-symmetric tracked ends — both prop tips trace a tip
@@ -42,11 +43,14 @@ const TWO_ENDED_PROPS: ReadonlySet<PropType> = new Set([
 /**
  * How many prop tips the mandala traces for a prop: 2 = staff-like (both ends),
  * 1 = club-like (one end). Undefined defaults to 2 — staff is TKA's canonical
- * prop, so an unspecified prop keeps the historical two-tip render.
+ * prop, so an unspecified prop keeps the historical two-tip render. A render
+ * key (`bigclub__model`, `fan__lotus`) counts as the prop it draws.
  */
 export function propTipEnds(propType: PropType | string | undefined): 1 | 2 {
   if (!propType) return 2;
-  return TWO_ENDED_PROPS.has(propType as PropType) ? 2 : 1;
+  return TWO_ENDED_PROPS.has(basePropTypeOfRenderKey(propType) as PropType)
+    ? 2
+    : 1;
 }
 
 /**

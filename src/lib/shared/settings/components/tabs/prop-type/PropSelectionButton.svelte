@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
   import type { HTMLButtonAttributes } from "svelte/elements";
 
@@ -69,7 +70,7 @@
   </span>
 
   {#if badge}
-    <span class="variant-badge" aria-label={`${badge} variants`}>{badge}</span>
+    <span class="variant-badge" aria-label={t("settings_variant_count", { count: badge })}>{badge}</span>
   {/if}
 
   {#if selected || selectedLeft || selectedRight}

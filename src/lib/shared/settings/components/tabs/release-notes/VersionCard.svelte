@@ -1,10 +1,10 @@
 <!-- VersionCard - Clickable card showing a single version's summary -->
 <script lang="ts">
-  import type {
-    AppVersion,
-    ChangelogEntry,
-  } from "$lib/shared/versioning/domain/models/version-models";
+  import type { AppVersion } from "$lib/shared/versioning/domain/models/version-models";
   import { PRE_RELEASE_VERSION } from "$lib/shared/versioning/domain/models/version-models";
+  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { getReactiveLocale } from "$lib/shared/i18n/locale-state.svelte";
+  import { releaseSummary } from "./release-summary";
 
   const { version, onclick } = $props<{
     version: AppVersion;
@@ -16,25 +16,9 @@
     version.changelogEntries && version.changelogEntries.length > 0
   );
 
-  // Group changelog entries by category for summary
-  const groupedChangelog = $derived.by(() => {
-    if (!version.changelogEntries)
-      return { fixed: [], added: [], improved: [] };
-    const fixed = version.changelogEntries.filter(
-      (e: ChangelogEntry) => e.category === "fixed"
-    );
-    const added = version.changelogEntries.filter(
-      (e: ChangelogEntry) => e.category === "added"
-    );
-    const improved = version.changelogEntries.filter(
-      (e: ChangelogEntry) => e.category === "improved"
-    );
-    return { fixed, added, improved };
-  });
-
   // Format date
   const formattedDate = $derived(
-    version.releasedAt.toLocaleDateString("en-US", {
+    version.releasedAt.toLocaleDateString(getReactiveLocale(), {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -44,46 +28,7 @@
   // Check if pre-release
   const isPreRelease = $derived(version.version === PRE_RELEASE_VERSION);
 
-  // Summary text based on changelog entries if available
-  const summary = $derived.by(() => {
-    if (hasChangelog) {
-      const parts: string[] = [];
-      if (groupedChangelog.fixed.length > 0) {
-        parts.push(
-          `${groupedChangelog.fixed.length} fix${groupedChangelog.fixed.length === 1 ? "" : "es"}`
-        );
-      }
-      if (groupedChangelog.added.length > 0) {
-        parts.push(
-          `${groupedChangelog.added.length} new feature${groupedChangelog.added.length === 1 ? "" : "s"}`
-        );
-      }
-      if (groupedChangelog.improved.length > 0) {
-        parts.push(
-          `${groupedChangelog.improved.length} improvement${groupedChangelog.improved.length === 1 ? "" : "s"}`
-        );
-      }
-      return parts.join(", ") || "Updates included";
-    }
-    // Fall back to feedback summary
-    const parts: string[] = [];
-    if (version.feedbackSummary.bugs > 0) {
-      parts.push(
-        `${version.feedbackSummary.bugs} bug${version.feedbackSummary.bugs === 1 ? "" : "s"} fixed`
-      );
-    }
-    if (version.feedbackSummary.features > 0) {
-      parts.push(
-        `${version.feedbackSummary.features} feature${version.feedbackSummary.features === 1 ? "" : "s"} added`
-      );
-    }
-    if (version.feedbackSummary.general > 0) {
-      parts.push(
-        `${version.feedbackSummary.general} improvement${version.feedbackSummary.general === 1 ? "" : "s"}`
-      );
-    }
-    return parts.join(", ") || "No changes recorded";
-  });
+  const summary = $derived(releaseSummary(version));
 
   // Total changes count
   const totalChanges = $derived(
@@ -102,7 +47,7 @@
   <div class="version-info">
     <span class="version-number">
       {#if isPreRelease}
-        Pre-Release
+        {t("settings_pre_release")}
       {:else}
         v{version.version}
       {/if}
@@ -113,8 +58,9 @@
   <div class="version-summary">
     <span class="summary-text">{summary}</span>
     <span class="total-count">
-      {totalChanges}
-      {hasChangelog ? "change" : "resolved item"}{totalChanges === 1 ? "" : "s"}
+      {hasChangelog
+        ? t("settings_change_count", { count: totalChanges })
+        : t("settings_resolved_item_count", { count: totalChanges })}
     </span>
   </div>
 

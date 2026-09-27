@@ -17,6 +17,7 @@
   Domain: Export Panel - Settings Panel Wrapper
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
 
   let {
@@ -110,7 +111,7 @@
           class="close-button"
           bind:this={closeButtonElement}
           onclick={onClose}
-          aria-label="Close settings"
+          aria-label={t("export_ui_close_settings")}
         >
           <i class="fas fa-times" aria-hidden="true"></i>
         </button>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
   import type { AnimalIntent } from "$lib/shared/effects/domain/effects-config";
   import OptionChipRow from "../OptionChipRow.svelte";
@@ -11,7 +12,11 @@
   const { onBack }: Props = $props();
   const state = getEffectsConfigContext();
 
-  const PALETTES: { value: AnimalIntent["palette"]; label: string; swatch: string }[] = [
+  const PALETTES: {
+    value: AnimalIntent["palette"];
+    label: string;
+    swatch: string;
+  }[] = [
     { value: "satin", label: "Satin", swatch: "#c0c0d0" },
     { value: "velvet", label: "Velvet", swatch: "#600018" },
     { value: "ethereal", label: "Ethereal", swatch: "#c080ff" },
@@ -37,7 +42,7 @@
 <div class="customize-view">
   <button type="button" class="back-btn" onclick={onBack}>
     <i class="fas fa-arrow-left" aria-hidden="true"></i>
-    Back to presets
+    {t("effect_deep_back_to_presets")}
   </button>
 
   {#if state}
@@ -60,7 +65,7 @@
 
       {#if state.animal.palette === "custom"}
         <div class="color-row">
-          <span class="color-label">Tint</span>
+          <span class="color-label">{t("effect_deep_tint")}</span>
           <div class="color-pickers">
             <label class="color-picker">
               <input
@@ -85,7 +90,7 @@
       />
 
       <div class="slider-row">
-        <label for="animal-intensity">Intensity</label>
+        <label for="animal-intensity">{t("effect_deep_intensity")}</label>
         <input
           id="animal-intensity"
           type="range"
@@ -98,11 +103,13 @@
               intensity: +(e.currentTarget as HTMLInputElement).value,
             })}
         />
-        <span class="slider-value">{Math.round(state.animal.intensity * 100)}%</span>
+        <span class="slider-value"
+          >{Math.round(state.animal.intensity * 100)}%</span
+        >
       </div>
 
       <div class="slider-row">
-        <label for="animal-width">Width</label>
+        <label for="animal-width">{t("effect_deep_width")}</label>
         <input
           id="animal-width"
           type="range"
@@ -115,12 +122,13 @@
               width: +(e.currentTarget as HTMLInputElement).value,
             })}
         />
-        <span class="slider-value">{Math.round(state.animal.width * 100)}%</span>
+        <span class="slider-value">{Math.round(state.animal.width * 100)}%</span
+        >
       </div>
 
       <AdvancedControls count={2}>
         <div class="slider-row">
-          <label for="animal-length">Length</label>
+          <label for="animal-length">{t("effect_deep_length")}</label>
           <input
             id="animal-length"
             type="range"
@@ -133,11 +141,13 @@
                 bodyLength: +(e.currentTarget as HTMLInputElement).value,
               })}
           />
-          <span class="slider-value">{Math.round(state.animal.bodyLength * 100)}%</span>
+          <span class="slider-value"
+            >{Math.round(state.animal.bodyLength * 100)}%</span
+          >
         </div>
 
         <div class="slider-row">
-          <label for="animal-slither">Slither</label>
+          <label for="animal-slither">{t("effect_deep_slither")}</label>
           <input
             id="animal-slither"
             type="range"
@@ -150,12 +160,14 @@
                 slither: +(e.currentTarget as HTMLInputElement).value,
               })}
           />
-          <span class="slider-value">{Math.round(state.animal.slither * 100)}%</span>
+          <span class="slider-value"
+            >{Math.round(state.animal.slither * 100)}%</span
+          >
         </div>
       </AdvancedControls>
     </div>
   {:else}
-    <p class="empty">Effect state unavailable.</p>
+    <p class="empty">{t("effect_deep_effect_state_unavailable")}</p>
   {/if}
 </div>
 

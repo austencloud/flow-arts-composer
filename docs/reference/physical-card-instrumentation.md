@@ -66,12 +66,14 @@ not that a download, print, shipment, or purchase happened.
 - deck provenance
 - print position, card index, and copy index
 - export kind and output mode
+- left and right prop types printed on the card, or null when unset
 - scan count and last scan time
 - the same empty event, order, and recipient fields
 
 Both collections are browser-write-closed and admin-readable. Server credentials
 write them through Firestore REST because the production worker cannot use the
-Firestore Admin gRPC client.
+Firestore Admin gRPC client. The one public read is the prop pair described
+under [Printed URL and props](#printed-url-and-props).
 
 When an export claims a released deck number, the server verifies that its
 manifest exists and that the release number and card count agree, then replaces
@@ -85,6 +87,30 @@ Production requires the encrypted `FIREBASE_SERVICE_ACCOUNT_JSON` Pages secret.
 Local development falls back to the gitignored root
 `serviceAccountKey.json`. The worker never sends either credential to the
 browser.
+
+## Printed URL and props
+
+A serialized QR encodes only `HTTPS://TKA.RUN/{code}?pid={physicalCardId}`, at
+most 39 bytes. Props are not in the URL, so the QR's symbol version no longer
+depends on them and the same QR cell prints larger modules.
+
+A short code is shared by every card with the same choreography and keeps the
+props it was minted with, so the shortcode record cannot say which props one
+card shows. The issue endpoint stores each card's `leftPropType` and
+`rightPropType` on its `physicalCards` record instead.
+
+At scan time props resolve strongest first: `bp`/`rp` in the scanned URL, then
+the card record, then the shortcode record, then the sequence. Cards printed
+before this change carry `bp`/`rp` and keep scanning as before.
+
+- `/q/{code}` reads the card record on the server, within the page's lookup
+  timeout, and passes the props to the viewer.
+- The installed app opens the gallery viewer from the deep link and requests
+  `GET /api/physical-cards/props?code={code}&pid={physicalCardId}` from the
+  site. It returns the prop pair only when the card belongs to that code, and
+  nothing else from the record.
+
+A failed or slow lookup falls back to the shortcode's props.
 
 ## Scan facts
 

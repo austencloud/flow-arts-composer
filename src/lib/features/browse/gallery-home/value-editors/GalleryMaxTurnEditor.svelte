@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { Slider } from "bits-ui";
   import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
   import type {
@@ -35,7 +36,7 @@
   ]);
   const noLimitChoice = $derived({
     value: NO_TURN_LIMIT,
-    label: "No limit",
+    label: t("browse_audit_no_limit"),
     count: catalog.maxTurnIntensityCount,
   });
   let pendingMaxTurn = $state(Number.NaN);
@@ -86,14 +87,14 @@
     onPickExclusiveValue(
       BrowseFilterType.MAX_TURN_INTENSITY,
       choice ? choice.value : null,
-      choice ? choice.label : "No limit",
+      choice ? choice.label : t("browse_audit_no_limit"),
       previous ? { value: previous.value, label: previous.label } : undefined
     );
   }
 </script>
 
 <div class="drill-screen screen-max-turns">
-  {@render valueHead("Set a turn limit")}
+  {@render valueHead(t("browse_audit_set_turn_limit"))}
   {#if adaptiveValueLayout}
     <!-- Bits Slider normalizes an invalid initial value to its minimum and
          reports that as a change. Wait for our applied/no-limit sync so merely
@@ -102,10 +103,14 @@
       <div class="turn-picker">
         <div class="turn-summary" aria-live="polite">
           <span class="turn-limit" class:turn-limit-any={atNoLimit}>
-            {atNoLimit ? "Any" : `≤${selectedMaxTurn.value}`}
+            {atNoLimit ? t("browse_audit_any") : `≤${selectedMaxTurn.value}`}
           </span>
-          <span class="turn-unit">turns</span>
-          <span class="turn-count">{selectedMaxTurn.count} matches</span>
+          <span class="turn-unit">{t("browse_audit_turns")}</span>
+          <span class="turn-count"
+            >{t("browse_audit_matches_count", {
+              count: selectedMaxTurn.count,
+            })}</span
+          >
         </div>
 
         <div class="turn-slider-shell">
@@ -130,16 +135,23 @@
                   position="bottom"
                   class="turn-slider-label"
                 >
-                  {value === NO_TURN_LIMIT ? "Any" : `≤${value}`}
+                  {value === NO_TURN_LIMIT
+                    ? t("browse_audit_any")
+                    : `≤${value}`}
                 </Slider.TickLabel>
               {/each}
               <Slider.Thumb
                 index={0}
                 class="turn-slider-thumb"
-                aria-label="Maximum turn intensity"
+                aria-label={t("browse_ui_maximum_turn_intensity")}
                 aria-valuetext={atNoLimit
-                  ? `No turn limit, ${selectedMaxTurn.count} matches`
-                  : `At most ${selectedMaxTurn.value} turns, ${selectedMaxTurn.count} matches`}
+                  ? t("browse_audit_no_turn_limit_matches", {
+                      count: selectedMaxTurn.count,
+                    })
+                  : t("browse_audit_at_most_turns_matches", {
+                      turns: selectedMaxTurn.value,
+                      count: selectedMaxTurn.count,
+                    })}
               />
             {/snippet}
           </Slider.Root>
@@ -157,7 +169,7 @@
         >
           <span class="value-numeral small">≤{v.value}</span>
           <span class="value-main">
-            <span class="value-label muted">max turns</span>
+            <span class="value-label muted">{t("browse_audit_max_turns")}</span>
             <span class="density-bar">
               <span
                 class="density-fill"

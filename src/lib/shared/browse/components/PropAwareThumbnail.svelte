@@ -15,6 +15,7 @@
 -->
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
   import RenderingOverlay from "$lib/shared/components/loading/RenderingOverlay.svelte";
@@ -180,7 +181,10 @@
     if (variant === "wordcard") {
       return undefined; // Choreo card uses natural image aspect ratio
     }
-    return calculateGalleryAspectRatio(stepCount, effectiveStartPlacementLayout);
+    return calculateGalleryAspectRatio(
+      stepCount,
+      effectiveStartPlacementLayout
+    );
   });
 
   // Derived: Build render input from props via the shared builder so the live
@@ -531,9 +535,9 @@
   const statusLabel = $derived.by(() => {
     switch (status.state) {
       case "checking-cache":
-        return "Checking";
+        return t("browse_audit_thumbnail_checking");
       case "queued":
-        return "Queued";
+        return t("browse_audit_thumbnail_queued");
       case "rendering": {
         if (status.progress && status.progress.total > 0) {
           // Show progress relative to beat count, not total (which includes start position)
@@ -544,12 +548,12 @@
           );
           return `${currentStep}/${stepCount}`;
         }
-        return "Rendering";
+        return t("browse_audit_thumbnail_rendering");
       }
       case "uploading":
-        return "Saving";
+        return t("browse_audit_thumbnail_saving");
       default:
-        return "Loading";
+        return t("browse_audit_thumbnail_loading");
     }
   });
 
@@ -597,7 +601,7 @@
   {#if thumbnailUrl && !hasError}
     <img
       src={thumbnailUrl}
-      alt={`Preview of ${sequenceName}`}
+      alt={t("browse_audit_preview_of_sequence", { name: sequenceName })}
       loading="lazy"
       decoding="async"
       draggable="false"
@@ -613,7 +617,10 @@
       />
     {/if}
   {:else if hasError}
-    <div class="error-placeholder" aria-label="Failed to load">
+    <div
+      class="error-placeholder"
+      aria-label={t("browse_audit_failed_to_load")}
+    >
       <span class="error-icon">!</span>
       <div class="placeholder-glyph">
         <TKAWordGlyph word={displayName} height={24} darkMode={!lightMode} />
@@ -623,7 +630,7 @@
     <!-- Unified placeholder: always shows word, conditionally shows loading indicators -->
     <div
       class="loading-placeholder"
-      aria-label={isLoading ? statusLabel : "Waiting to load"}
+      aria-label={isLoading ? statusLabel : t("browse_audit_waiting_to_load")}
     >
       <div class="placeholder-glyph">
         <TKAWordGlyph word={displayName} height={24} darkMode={!lightMode} />

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import StepNumber from "$lib/shared/pictograph/shared/components/StepNumber.svelte";
   import { tick, untrack } from "svelte";
   import type { ChoreoCardCell } from "$lib/shared/choreo-card/services/choreo-card-render-engine";
@@ -155,7 +156,11 @@
 </script>
 
 {#if failed}
-  <div class="placeholder" role="img" aria-label="Pictograph unavailable">
+  <div
+    class="placeholder"
+    role="img"
+    aria-label={t("viewer_ui_pictograph_unavailable")}
+  >
     !
   </div>
 {:else if displayed}

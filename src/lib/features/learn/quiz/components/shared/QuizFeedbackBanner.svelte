@@ -7,52 +7,57 @@ Features:
 - Varied incorrect messages (never discouraging)
 -->
 <script lang="ts">
-	let {
-		isCorrect,
-		correctMessage,
-		incorrectMessage,
-		streakCount = 0
-	}: {
-		isCorrect: boolean;
-		correctMessage: string;
-		incorrectMessage: string;
-		streakCount?: number;
-	} = $props();
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  let {
+    isCorrect,
+    correctMessage,
+    incorrectMessage,
+    streakCount = 0,
+  }: {
+    isCorrect: boolean;
+    correctMessage: string;
+    incorrectMessage: string;
+    streakCount?: number;
+  } = $props();
 
-	// Supportive phrases for incorrect answers (rotate based on time)
-	const supportivePhrases = [
-		'Almost!',
-		'Keep going!',
-		'You got this!',
-		"Close one!",
-		'Learning moment!'
-	];
+  // Supportive phrases for incorrect answers (rotate based on time)
+  const supportivePhrases = [
+    t("learn_ui_almost"),
+    t("learn_ui_keep_going"),
+    t("learn_ui_you_got_this"),
+    t("learn_ui_close_one"),
+    t("learn_ui_learning_moment"),
+  ];
 
-	// Pick a phrase based on current second (pseudo-random but consistent per answer)
-	const supportivePrefix = $derived(
-		supportivePhrases[Math.floor(Date.now() / 1000) % supportivePhrases.length]
-	);
+  // Pick a phrase based on current second (pseudo-random but consistent per answer)
+  const supportivePrefix = $derived(
+    supportivePhrases[Math.floor(Date.now() / 1000) % supportivePhrases.length]
+  );
 
-	// Streak encouragement for correct answers
-	const streakMessage = $derived(
-		streakCount >= 5
-			? " You're on fire! 🔥"
-			: streakCount >= 3
-				? ' Great streak!'
-				: ''
-	);
+  // Streak encouragement for correct answers
+  const streakMessage = $derived(
+    streakCount >= 5
+      ? t("learn_ui_on_fire")
+      : streakCount >= 3
+        ? t("learn_ui_great_streak")
+        : ""
+  );
 
-	const displayMessage = $derived(
-		isCorrect
-			? correctMessage + streakMessage
-			: `${supportivePrefix} ${incorrectMessage}`
-	);
+  const displayMessage = $derived(
+    isCorrect
+      ? `${correctMessage}${streakMessage ? ` ${streakMessage}` : ""}`
+      : `${supportivePrefix} ${incorrectMessage}`
+  );
 </script>
 
-<div class="feedback-banner" class:correct={isCorrect} class:streak={isCorrect && streakCount >= 3}>
-	<span class="feedback-text">
-		{displayMessage}
-	</span>
+<div
+  class="feedback-banner"
+  class:correct={isCorrect}
+  class:streak={isCorrect && streakCount >= 3}
+>
+  <span class="feedback-text">
+    {displayMessage}
+  </span>
 </div>
 
 <style>
@@ -65,7 +70,8 @@ Features:
     background: color-mix(in srgb, var(--semantic-error) 90%, transparent);
     border-radius: 12px;
     text-align: center;
-    animation: bannerFadeIn var(--duration-emphasis) cubic-bezier(0.16, 1, 0.3, 1);
+    animation: bannerFadeIn var(--duration-emphasis)
+      cubic-bezier(0.16, 1, 0.3, 1);
     white-space: nowrap;
     z-index: var(--z-sidebar);
   }
@@ -75,8 +81,13 @@ Features:
   }
 
   .feedback-banner.streak {
-    background: linear-gradient(135deg, color-mix(in srgb, var(--semantic-success) 90%, transparent) 0%, color-mix(in srgb, var(--semantic-warning) 90%, transparent) 100%);
-    box-shadow: 0 0 20px color-mix(in srgb, var(--semantic-warning) 40%, transparent);
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--semantic-success) 90%, transparent) 0%,
+      color-mix(in srgb, var(--semantic-warning) 90%, transparent) 100%
+    );
+    box-shadow: 0 0 20px
+      color-mix(in srgb, var(--semantic-warning) 40%, transparent);
   }
 
   @keyframes bannerFadeIn {

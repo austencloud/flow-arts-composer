@@ -11,6 +11,7 @@ cancels) so the user never leaves the grid. Deleting asks for confirmation
 first and only removes the folder — the sequences inside stay in the library.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type {
     CollectionAccessRole,
     LibraryCollection,
@@ -78,7 +79,7 @@ first and only removes the folder — the sequences inside stay in the library.
       return [
         {
           id: "unfollow",
-          label: "Unfollow",
+          label: t("browse_audit_unfollow"),
           icon: "fa-xmark",
           action: () => {
             menuState = { open: false };
@@ -95,7 +96,7 @@ first and only removes the folder — the sequences inside stay in the library.
       ? [
           {
             id: "edit-rule",
-            label: "Edit rule",
+            label: t("browse_audit_edit_rule"),
             icon: "fa-sliders",
             action() {
               menuState = { open: false };
@@ -109,7 +110,7 @@ first and only removes the folder — the sequences inside stay in the library.
       : [
           {
             id: "share",
-            label: "Share collection",
+            label: t("browse_audit_share_collection"),
             icon: "fa-user-plus",
             action() {
               menuState = { open: false };
@@ -119,7 +120,7 @@ first and only removes the folder — the sequences inside stay in the library.
         ]),
     {
       id: "rename",
-      label: "Rename",
+      label: t("browse_audit_rename"),
       icon: "fa-pen",
       action() {
         menuState = { open: false };
@@ -129,7 +130,7 @@ first and only removes the folder — the sequences inside stay in the library.
     },
     {
       id: "details",
-      label: "Edit details",
+      label: t("browse_audit_edit_details"),
       icon: "fa-circle-info",
       action() {
         menuState = { open: false };
@@ -142,7 +143,9 @@ first and only removes the folder — the sequences inside stay in the library.
       : [
           {
             id: "visibility",
-            label: collection.isPublic ? "Make private" : "Make public",
+            label: collection.isPublic
+              ? t("browse_audit_make_private")
+              : t("browse_audit_make_public"),
             icon: collection.isPublic ? "fa-lock" : "fa-globe",
             async action() {
               menuState = { open: false };
@@ -159,7 +162,7 @@ first and only removes the folder — the sequences inside stay in the library.
     { type: "separator" } as ContextMenuEntry,
     {
       id: "delete",
-      label: "Delete collection",
+      label: t("browse_audit_delete_collection"),
       icon: "fa-trash",
       danger: true,
       action() {
@@ -244,7 +247,7 @@ first and only removes the folder — the sequences inside stay in the library.
     <input
       type="text"
       class="rename-field"
-      aria-label="Collection name"
+      aria-label={t("browse_ui_collection_name")}
       bind:value={renameValue}
       onkeydown={handleRenameKeydown}
       onblur={() => void commitRename()}
@@ -264,12 +267,12 @@ first and only removes the folder — the sequences inside stay in the library.
 
 <ConfirmDialog
   bind:isOpen={deleteConfirmOpen}
-  title={`Delete "${collection.name}"?`}
+  title={t("browse_audit_delete_named_collection", { name: collection.name })}
   message={isSmart
-    ? "The saved rule goes away. Every sequence it matched stays in its source."
-    : "The collection goes away, but every sequence in it stays in your library."}
-  confirmText="Delete"
-  cancelText="Keep"
+    ? t("browse_audit_delete_smart_message")
+    : t("browse_audit_delete_collection_message")}
+  confirmText={t("action_delete")}
+  cancelText={t("browse_audit_keep")}
   variant="danger"
   onConfirm={performDelete}
   onCancel={() => (deleteConfirmOpen = false)}

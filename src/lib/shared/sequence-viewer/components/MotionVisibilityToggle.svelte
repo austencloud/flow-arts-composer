@@ -9,12 +9,16 @@
   Reads/writes SequenceViewerVisibilityState via context.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { scale } from "svelte/transition";
   import { backOut, cubicOut } from "svelte/easing";
   import { getViewerVisibilityContext } from "../context/viewer-visibility-context";
   import MotionColorChips from "$lib/shared/components/MotionColorChips.svelte";
   import PrimaryPropColorSettings from "$lib/shared/settings/components/tabs/prop-type/PrimaryPropColorSettings.svelte";
-  import { getSettings, updateSetting } from "$lib/shared/application/state/app-state.svelte";
+  import {
+    getSettings,
+    updateSetting,
+  } from "$lib/shared/application/state/app-state.svelte";
 
   const visibility = getViewerVisibilityContext();
   interface Props {
@@ -70,8 +74,8 @@
     class="motion-vis-btn"
     class:open
     onclick={toggleOpen}
-    aria-label="Motion visibility"
-    title="Motion visibility"
+    aria-label={t("viewer_ui_motion_visibility")}
+    title={t("viewer_ui_motion_visibility")}
     data-ghost="safe"
     data-ghost-kind="view-toggle"
     data-ghost-label="Motion visibility"
@@ -95,13 +99,13 @@
       class="motion-vis-backdrop"
       role="button"
       tabindex="-1"
-      aria-label="Close motion visibility menu"
+      aria-label={t("viewer_detail_close_motion_visibility_menu")}
       onpointerdown={onBackdropPointerDown}
     ></div>
     <div
       class="motion-vis-popover"
       role="dialog"
-      aria-label="Motion visibility"
+      aria-label={t("viewer_ui_motion_visibility")}
       in:scale={{ duration: 180, start: 0.96, opacity: 0, easing: backOut }}
       out:scale={{ duration: 120, start: 0.98, opacity: 0, easing: cubicOut }}
     >

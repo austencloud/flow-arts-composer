@@ -18,6 +18,7 @@
   Other views still prepare their file in the share sheet.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import type { SequenceSendSession } from "$lib/shared/inbox/state/send-sequence-state.svelte";
   import SendSequenceWorkspace from "./SendSequenceWorkspace.svelte";
@@ -87,7 +88,8 @@
   const headingId = $props.id();
 
   const downloadText = $derived(
-    downloadTextOverride ?? `Download ${downloadLabel.toLowerCase()}`
+    downloadTextOverride ??
+      t("viewer_ui_download_named", { name: downloadLabel })
   );
   const rendering = $derived(downloadProgress !== null);
   const renderPercent = $derived(
@@ -98,7 +100,7 @@
 <section class="share-panel" aria-labelledby={headingId}>
   <header class="panel-head">
     <div class="title-group">
-      <h2 id={headingId}>Share</h2>
+      <h2 id={headingId}>{t("viewer_share")}</h2>
       <p class="subject" aria-live="polite">
         <i class="fa-solid {subject.icon}" aria-hidden="true"></i>
         <span>{subject.label}</span>
@@ -108,10 +110,10 @@
       type="button"
       class="close"
       data-escape-shortcut
-      data-escape-shortcut-label="Share"
+      data-escape-shortcut-label={t("viewer_share")}
       onclick={onClose}
-      aria-label="Close share"
-      title="Close share"
+      aria-label={t("viewer_ui_close_share")}
+      title={t("viewer_ui_close_share")}
     >
       <i class="fa-solid fa-xmark" aria-hidden="true"></i>
     </button>
@@ -142,7 +144,8 @@
           aria-hidden={!rendering}
         >
           <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
-          Rendering <span class="percent">{renderPercent}%</span>
+          {t("viewer_ui_rendering")}
+          <span class="percent">{renderPercent}%</span>
         </span>
       </span>
     </PanelButton>
@@ -164,31 +167,41 @@
     {/if}
   </div>
 
-  <div class="actions" role="group" aria-label="Other ways to share">
+  <div
+    class="actions"
+    role="group"
+    aria-label={t("viewer_ui_other_share_ways")}
+  >
     <PanelButton onclick={onCopyLink}>
       <i
         class="fa-solid {linkCopied ? 'fa-check' : 'fa-link'}"
         aria-hidden="true"
       ></i>
-      {linkCopied ? "Link copied" : "Copy link"}
+      {linkCopied ? t("viewer_ui_link_copied") : t("viewer_ui_copy_link")}
     </PanelButton>
-    <PanelButton onclick={onCopyEmbed} ariaLabel="Copy embed code">
+    <PanelButton
+      onclick={onCopyEmbed}
+      ariaLabel={t("viewer_ui_copy_embed_code")}
+    >
       <i
         class="fa-solid {embedCopied ? 'fa-check' : 'fa-code'}"
         aria-hidden="true"
       ></i>
-      {embedCopied ? "Code copied" : "Embed"}
+      {embedCopied ? t("viewer_ui_code_copied") : t("viewer_ui_embed")}
     </PanelButton>
     {#if onNativeShare}
-      <PanelButton onclick={onNativeShare} ariaLabel="Share to other apps">
+      <PanelButton
+        onclick={onNativeShare}
+        ariaLabel={t("viewer_ui_share_other_apps")}
+      >
         <i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i>
-        Other apps
+        {t("viewer_ui_other_apps")}
       </PanelButton>
     {/if}
     {#if onPublish}
       <PanelButton onclick={onPublish}>
         <i class="fa-solid fa-bullhorn" aria-hidden="true"></i>
-        Publish
+        {t("viewer_ui_publish")}
       </PanelButton>
     {/if}
   </div>
@@ -207,11 +220,11 @@
       {/key}
     {:else}
       <div class="guest-send">
-        <h3>Send to a friend</h3>
-        <p>Friends open it on this same view, in Flow Arts Composer.</p>
+        <h3>{t("viewer_ui_send_friend")}</h3>
+        <p>{t("viewer_ui_friend_view_explanation")}</p>
         <PanelButton onclick={onRequestAccount}>
           <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
-          Sign up to send
+          {t("viewer_ui_sign_up_send")}
         </PanelButton>
       </div>
     {/if}

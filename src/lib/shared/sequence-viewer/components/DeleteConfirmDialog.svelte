@@ -6,6 +6,7 @@
   gallery and video panel pass their own title and body for performance videos.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   interface Props {
     /** The word/name shown in the default confirmation message */
     word?: string;
@@ -32,7 +33,7 @@
     onConfirm,
     onCancel,
     positioning = "fixed",
-    title = "Delete sequence?",
+    title = t("viewer_detail_delete_sequence"),
     body,
   }: Props = $props();
 
@@ -40,7 +41,7 @@
     body ??
       (word
         ? `"${word}" will be permanently removed from your library.`
-        : "This sequence will be permanently removed from your library.")
+        : t("viewer_detail_this_sequence_will_be_permanently_removed_from_your_library"))
   );
 
   function handleKeydown(e: KeyboardEvent) {
@@ -68,7 +69,7 @@
         onclick={onCancel}
         disabled={isDeleting}
       >
-        Cancel
+        {t("viewer_detail_cancel")}
       </button>
       <button
         type="button"
@@ -76,7 +77,7 @@
         disabled={isDeleting}
         onclick={onConfirm}
       >
-        {isDeleting ? "Deleting..." : "Delete"}
+        {isDeleting ? "Deleting..." : t("viewer_detail_delete")}
       </button>
     </div>
   </div>

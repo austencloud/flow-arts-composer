@@ -6,6 +6,7 @@ it, but the surface itself is now a focused modal workspace. The rule stays in
 one rail while the live matching grid gets the rest of the canvas.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
   import ModalHeader from "$lib/shared/foundation/ui/modal/ModalHeader.svelte";
@@ -112,10 +113,15 @@ one rail while the live matching grid gets the rest of the canvas.
   const countPending = $derived(!countSettled || engine.isLoading);
   const matchStatus = $derived(
     engine.error
-      ? "Matches unavailable"
+      ? t("browse_audit_matches_unavailable")
       : countPending
-        ? "Counting matches"
-        : `${engine.resultCount} ${engine.resultCount === 1 ? "match" : "matches"}`
+        ? t("browse_audit_counting_matches")
+        : t(
+            engine.resultCount === 1
+              ? "browse_audit_match_count_singular"
+              : "browse_audit_match_count_plural",
+            { count: engine.resultCount }
+          )
   );
 
   const SECTION_FOR_FILTER_TYPE: Partial<
@@ -185,15 +191,15 @@ one rail while the live matching grid gets the rest of the canvas.
   const firstFilterHint = $derived.by(() => {
     switch (drillSection) {
       case "loop":
-        return "LOOPs apply as you tap them. Combine several.";
+        return t("browse_audit_hint_loop");
       case "family":
-        return "Families apply as you tap them. Combine several.";
+        return t("browse_audit_hint_family");
       case "max_turn_intensity":
-        return "Slide to a limit, then apply it.";
+        return t("browse_audit_hint_max_turn");
       case "chooser":
-        return "Choose a filter to start.";
+        return t("browse_audit_hint_chooser");
       default:
-        return "Options apply as you tap them. Pick any that fit.";
+        return t("browse_audit_hint_default");
     }
   });
 
@@ -258,7 +264,7 @@ one rail while the live matching grid gets the rest of the canvas.
   async function save() {
     const trimmed = name.trim() || suggestedName;
     if (!engine.hasActiveFilters) {
-      toast.error("Add at least one filter to define the rule.");
+      toast.error(t("browse_ui_add_rule_filter"));
       return;
     }
     if (saving) return;
@@ -283,8 +289,8 @@ one rail while the live matching grid gets the rest of the canvas.
       hasCommitted = true;
       toast.success(
         mode === "edit"
-          ? "Rule updated."
-          : `Smart Collection "${trimmed}" saved.`
+          ? t("browse_audit_rule_updated")
+          : t("browse_audit_smart_collection_saved", { name: trimmed })
       );
       finishClose();
     }
@@ -306,10 +312,12 @@ one rail while the live matching grid gets the rest of the canvas.
   {#snippet header()}
     <ModalHeader
       id="smart-builder-title"
-      title={mode === "edit" ? "Edit Smart Collection" : "New Smart Collection"}
+      title={mode === "edit"
+        ? t("browse_audit_edit_smart_collection")
+        : t("browse_audit_new_smart_collection")}
       subtitle={mode === "edit"
-        ? "Change the rule and review the matches."
-        : "Pick filters. Review the matches."}
+        ? t("browse_audit_change_rule_review")
+        : t("browse_audit_pick_filters_review")}
       icon="fa-wand-magic-sparkles"
       iconColor="var(--theme-accent, #8b6cff)"
       onClose={requestClose}
@@ -322,7 +330,7 @@ one rail while the live matching grid gets the rest of the canvas.
     class:filter-picker-open={filterPickerOpen}
     class:mobile-preview-open={mobilePreviewOpen}
   >
-    <aside class="rule-pane" aria-label="Smart Collection rule">
+    <aside class="rule-pane" aria-label={t("browse_ui_smart_collection_rule")}>
       {#if mode === "create" && engine.hasActiveFilters}
         <div class="identity-setup">
           <SmartCollectionNameField
@@ -344,7 +352,10 @@ one rail while the live matching grid gets the rest of the canvas.
               <!-- The rule never disappears while refining it: applied chips
                    stay readable (and editable) beside every editor. Audit
                    D-8/X-11/C-17. -->
-              <div class="picker-rule-strip" aria-label="Current rule">
+              <div
+                class="picker-rule-strip"
+                aria-label={t("browse_ui_current_rule")}
+              >
                 <span class="strip-count" aria-live="polite">{matchStatus}</span
                 >
                 <div class="strip-chips">
@@ -381,11 +392,11 @@ one rail while the live matching grid gets the rest of the canvas.
                   isValueApplied={(type, value) =>
                     appliedValueKeys.has(`${type}:${String(value)}`)}
                   chooserTitle={engine.hasActiveFilters
-                    ? "Add a filter"
-                    : "What should this collection match?"}
+                    ? t("browse_audit_add_filter")
+                    : t("browse_audit_what_collection_match")}
                   chooserHint={engine.hasActiveFilters
-                    ? "The current rule stays applied."
-                    : "Pick one filter to start. You can add more next."}
+                    ? t("browse_audit_current_rule_stays")
+                    : t("browse_audit_pick_filter_start_more")}
                   getCount={(type, value) =>
                     engine.getFilteredCount(type, value)}
                   onApply={(type, value, label, color) => {
@@ -455,11 +466,14 @@ one rail while the live matching grid gets the rest of the canvas.
             aria-labelledby="smart-filter-step-title"
           >
             <div class="rule-copy">
-              <h3 id="smart-filter-step-title">Filters</h3>
-              <p>Sequences must match every category.</p>
+              <h3 id="smart-filter-step-title">{t("browse_ui_filters")}</h3>
+              <p>{t("browse_ui_sequences_must_match_every_category")}</p>
             </div>
 
-            <div class="applied-filters" aria-label="Applied filters">
+            <div
+              class="applied-filters"
+              aria-label={t("browse_ui_applied_filters")}
+            >
               <!-- Chip body EDITS (opens that filter's editor); the split ×
                    removes. A chip whose whole surface deletes was audit
                    X-7/D-9/C-7. The strip groups values per category with
@@ -485,18 +499,25 @@ one rail while the live matching grid gets the rest of the canvas.
                 onclick={openFilterChooser}
               >
                 <i class="fas fa-plus" aria-hidden="true"></i>
-                Add filter
+                {t("browse_audit_add_filter")}
               </PanelButton>
 
               <div class="mobile-preview-action">
                 <PanelButton
                   variant="secondary"
                   fullWidth
-                  ariaLabel={`Preview ${engine.resultCount} ${engine.resultCount === 1 ? "match" : "matches"}`}
+                  ariaLabel={t(
+                    engine.resultCount === 1
+                      ? "browse_audit_preview_match"
+                      : "browse_audit_preview_matches",
+                    { count: engine.resultCount }
+                  )}
                   onclick={() => (mobilePreviewOpen = true)}
                 >
                   <i class="fas fa-eye" aria-hidden="true"></i>
-                  Preview {engine.resultCount}
+                  {t("browse_audit_preview_count", {
+                    count: engine.resultCount,
+                  })}
                 </PanelButton>
               </div>
             </div>
@@ -510,23 +531,23 @@ one rail while the live matching grid gets the rest of the canvas.
         <div class="mobile-preview-back">
           <PanelButton
             variant="secondary"
-            ariaLabel="Back to filters"
+            ariaLabel={t("browse_audit_back_to_filters")}
             onclick={() => (mobilePreviewOpen = false)}
           >
             <i class="fas fa-arrow-left" aria-hidden="true"></i>
-            Filters
+            {t("browse_audit_filters")}
           </PanelButton>
         </div>
         <div class="preview-title">
-          <span class="step-label">Live preview</span>
+          <span class="step-label">{t("browse_ui_live_preview")}</span>
           <h3 id="smart-preview-title" aria-live="polite">{matchStatus}</h3>
         </div>
         <div
           class="preview-mode"
-          aria-label="Sequence cards are a preview only"
+          aria-label={t("browse_ui_sequence_cards_are_a_preview_only")}
         >
           <i class="fas fa-eye" aria-hidden="true"></i>
-          <span>Preview only</span>
+          <span>{t("browse_ui_preview_only")}</span>
         </div>
       </header>
 
@@ -534,15 +555,15 @@ one rail while the live matching grid gets the rest of the canvas.
         {#if engine.error}
           <PanelState
             type="error"
-            title="Couldn't update the matches"
-            message="Check your connection, then try again."
+            title={t("browse_ui_couldn_t_update_the_matches")}
+            message={t("browse_audit_check_connection")}
             onretry={() => engine.refresh()}
           />
         {:else if countPending}
           <PanelState
             type="loading"
-            title="Counting matches"
-            message="The preview will update when the sequences are ready."
+            title={t("browse_ui_counting_matches")}
+            message={t("browse_audit_preview_updates")}
           />
         {:else if engine.resultCount === 0}
           <PanelState
@@ -551,11 +572,11 @@ one rail while the live matching grid gets the rest of the canvas.
               ? "fa-filter-circle-xmark"
               : "fa-filter"}
             title={engine.hasActiveFilters
-              ? "No sequences match"
-              : "Choose a filter to start"}
+              ? t("browse_audit_no_sequences_match")
+              : t("browse_audit_choose_filter_start")}
             message={engine.hasActiveFilters
-              ? "Remove a filter or choose a different value."
-              : "Matching sequences will appear here."}
+              ? t("browse_audit_remove_or_change_filter")
+              : t("browse_audit_matching_sequences_appear")}
           />
         {:else}
           <BrowsePanel
@@ -583,13 +604,13 @@ one rail while the live matching grid gets the rest of the canvas.
             onclick={() => (filterPickerOpen = false)}
           >
             <i class="fas fa-arrow-left" aria-hidden="true"></i>
-            Return to rule
+            {t("browse_audit_return_to_rule")}
           </PanelButton>
         </div>
       {:else}
         <div class="cancel-action">
           <PanelButton variant="secondary" onclick={requestClose}>
-            Cancel
+            {t("browse_audit_cancel")}
           </PanelButton>
         </div>
         <p class="save-status">
@@ -609,10 +630,10 @@ one rail while the live matching grid gets the rest of the canvas.
                 aria-hidden="true"
               ></i>
               {saving
-                ? "Saving"
+                ? t("browse_audit_saving")
                 : mode === "edit"
-                  ? "Save rule"
-                  : "Save Smart Collection"}
+                  ? t("browse_audit_save_rule")
+                  : t("browse_audit_save_smart_collection")}
             </PanelButton>
           </div>
         {/if}
@@ -634,7 +655,9 @@ one rail while the live matching grid gets the rest of the canvas.
   {#snippet header()}
     <ModalHeader
       id="discard-smart-builder-title"
-      title={mode === "edit" ? "Discard changes?" : "Discard this draft?"}
+      title={mode === "edit"
+        ? t("browse_audit_discard_changes")
+        : t("browse_audit_discard_draft")}
       icon="fa-triangle-exclamation"
       iconColor="var(--semantic-warning, #f59e0b)"
       showClose={false}
@@ -643,8 +666,8 @@ one rail while the live matching grid gets the rest of the canvas.
 
   <p class="discard-message">
     {mode === "edit"
-      ? "The rule will return to its last saved version."
-      : "The filters and any name changes in this draft will be lost."}
+      ? t("browse_audit_rule_reverts")
+      : t("browse_audit_draft_lost")}
   </p>
 
   {#snippet footer()}
@@ -653,10 +676,10 @@ one rail while the live matching grid gets the rest of the canvas.
         variant="secondary"
         onclick={() => (discardConfirmOpen = false)}
       >
-        Keep editing
+        {t("browse_audit_keep_editing")}
       </PanelButton>
       <PanelButton variant="primary" onclick={discardAndClose}>
-        Discard
+        {t("browse_audit_discard")}
       </PanelButton>
     </div>
   {/snippet}

@@ -1,5 +1,6 @@
 <!-- TabOverflowSelector - 2026-ready tab overflow handler using Popover API -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type {
     Section,
@@ -14,7 +15,7 @@
     onSectionChange = () => {},
     sectionHome = null,
     onSectionHomeSelect = () => {},
-    selectorLabel = "Select tab",
+    selectorLabel,
     moduleLabel = "",
   } = $props<{
     sections: Section[];
@@ -94,7 +95,7 @@
 <button
   class="tab-picker-trigger"
   popovertarget="tab-overflow-popover"
-  aria-label={`${currentDestination?.label ?? "Select"}. ${selectorLabel}`}
+  aria-label={`${currentDestination?.label ?? t("nav_select")}. ${selectorLabel ?? t("nav_select_tab")}`}
   aria-expanded={isOpen}
   aria-controls="tab-overflow-popover"
   onclick={handleTriggerClick}
@@ -104,7 +105,9 @@
     'var(--theme-accent)'}"
 >
   <span class="current-tab-icon">{@html currentDestination?.icon || ""}</span>
-  <span class="current-tab-label">{currentDestination?.label || "Select"}</span>
+  <span class="current-tab-label"
+    >{currentDestination?.label || t("nav_select")}</span
+  >
   <i
     class="fas fa-chevron-down chevron"
     class:rotated={isOpen}

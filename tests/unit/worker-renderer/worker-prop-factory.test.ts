@@ -158,6 +158,25 @@ describe("worker prop canonical transforms", () => {
     long.dispose();
   });
 
+  it("stretches only the fire double staff's long axis to the staff length", async () => {
+    const prop = await visual(PropType.FIRE_DOUBLE_STAFF, { length: 1.35 });
+    const transform = prop.root.getObjectByName("worker-prop-model-transform");
+    expect(transform?.scale.x).toBeCloseTo(1, 12);
+    expect(transform?.scale.y).toBeCloseTo(1.35 / 0.9, 12);
+    expect(transform?.scale.z).toBeCloseTo(1, 12);
+    prop.dispose();
+
+    const chicken = await visual(PropType.CHICKEN, { length: 1.35 });
+    const chickenTransform = chicken.root.getObjectByName(
+      "worker-prop-model-transform"
+    );
+    expect(chickenTransform?.scale.y).toBeCloseTo(
+      chickenTransform?.scale.x ?? 0,
+      12
+    );
+    chicken.dispose();
+  });
+
   it("keeps the trail at the hand while rotating only the prop body", async () => {
     const prop = await visual(PropType.POI);
     const body = prop.root.getObjectByName("worker-prop-poi-rotated-body");

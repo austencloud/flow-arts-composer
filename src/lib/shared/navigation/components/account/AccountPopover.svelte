@@ -1,5 +1,6 @@
 <!-- AccountPopover: Desktop-only popover menu above AccountRow in sidebar -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { signInWithGoogle } from "$lib/shared/auth/services/authenticator";
   import { upgradeAnonymousWithGoogle } from "$lib/shared/auth/services/anonymous-upgrade";
@@ -27,7 +28,9 @@
 
   const user = $derived(authState.user);
   const isFullAccount = $derived(authState.isFullAccount);
-  const displayName = $derived(user?.displayName || user?.email || "Guest");
+  const displayName = $derived(
+    user?.displayName || user?.email || t("nav_ui_guest")
+  );
   const email = $derived(user?.email ?? null);
   const photoURL = $derived(user?.photoURL ?? null);
 
@@ -178,7 +181,7 @@
       <button
         class="identity-header interactive"
         onclick={handleNavigateToProfile}
-        aria-label="Edit profile"
+        aria-label={t("nav_ui_edit_profile")}
       >
         <RobustAvatar
           src={photoURL}
@@ -213,19 +216,24 @@
         <button
           class="setup-summary"
           onclick={handleNavigateToProfile}
-          aria-label={`Finish account setup. ${accountSetupState.completedCount} of ${accountSetupState.totalCount} done`}
+          aria-label={t("nav_setup_finish_progress", {
+            completed: accountSetupState.completedCount,
+            total: accountSetupState.totalCount,
+          })}
         >
           <span class="setup-heading">
-            <span class="setup-title">Finish setup</span>
+            <span class="setup-title">{t("nav_ui_finish_setup")}</span>
             <span class="setup-count">
-              {accountSetupState.completedCount} of {accountSetupState.totalCount}
-              done
+              {t("nav_setup_progress", {
+                completed: accountSetupState.completedCount,
+                total: accountSetupState.totalCount,
+              })}
             </span>
           </span>
           <span
             class="setup-progress"
             role="progressbar"
-            aria-label="Account setup progress"
+            aria-label={t("nav_ui_account_setup_progress")}
             aria-valuemin="0"
             aria-valuemax={accountSetupState.totalCount}
             aria-valuenow={accountSetupState.completedCount}
@@ -234,7 +242,7 @@
             ></span>
           </span>
           <span class="setup-link">
-            Open profile
+            {t("nav_ui_open_profile")}
             <i class="fas fa-chevron-right" aria-hidden="true"></i>
           </span>
         </button>
@@ -249,7 +257,7 @@
         onclick={handleSupport}
       >
         <i class="fas fa-heart action-icon" aria-hidden="true"></i>
-        Support
+        {t("tab_community_support")}
       </button>
       {#if isFullAccount}
         <button
@@ -258,12 +266,12 @@
           onclick={handleSignOut}
         >
           <i class="fas fa-sign-out-alt action-icon" aria-hidden="true"></i>
-          Sign Out
+          {t("nav_ui_sign_out")}
         </button>
       {:else}
         <button class="action-button" role="menuitem" onclick={handleSignIn}>
           <i class="fas fa-sign-in-alt action-icon" aria-hidden="true"></i>
-          Sign In
+          {t("auth_sign_in")}
         </button>
       {/if}
     </div>
@@ -272,7 +280,7 @@
     <div class="version-footer">
       <button class="version-link" onclick={handleWhatsNew}>
         v{__APP_VERSION__}
-        <span class="whats-new-label">What's new</span>
+        <span class="whats-new-label">{t("nav_ui_what_s_new")}</span>
       </button>
     </div>
   </div>

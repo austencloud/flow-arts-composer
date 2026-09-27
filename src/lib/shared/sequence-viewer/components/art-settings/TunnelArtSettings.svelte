@@ -1,5 +1,6 @@
 <!-- Tunnel settings route each substantial rail section to its presentation owner. -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, type Snippet } from "svelte";
   import AnimatorInspectorShell from "$lib/shared/animation-panel/components/AnimatorInspectorShell.svelte";
   import AnimatorInspectorFooter from "$lib/shared/animation-panel/components/AnimatorInspectorFooter.svelte";
@@ -18,6 +19,8 @@
   import {
     computeDisplaySummary,
     computePlaybackSummary,
+    speedRailCopy,
+    tunnelRegionLabel,
   } from "$lib/shared/animation-panel/pill-nav/pill-summaries";
   import { RAIL_CATEGORY_ACCENTS } from "$lib/shared/animation-panel/pill-nav/rail-category-accents";
   import ControlDock, {
@@ -95,7 +98,7 @@
     showExport,
     showTitle = true,
     onSaveTunnel,
-    saveTunnelLabel = "Save tunnel",
+    saveTunnelLabel = t("viewer_detail_save_tunnel"),
     bpm,
     playbackMode,
     isPlaying,
@@ -157,7 +160,7 @@
   });
   const formationSummary = $derived(
     formationSummaryOverride ??
-      `${controller.presetRecipe?.name ?? "Custom"} · ${controller.performerCount} ${controller.performerCount === 1 ? "instance" : "instances"}`
+      `${controller.presetRecipe?.name ?? t("viewer_ui_custom")} · ${controller.performerCount} ${controller.performerCount === 1 ? t("viewer_ui_instance") : t("viewer_ui_instances")}`
   );
   const displaySummary = $derived.by(() => {
     void visibilityVersion;
@@ -192,8 +195,8 @@
     {
       id: "effects",
       icon: "fa-wand-magic-sparkles",
-      label: "Effects",
-      summary: "Effects",
+      label: t("viewer_ui_effects"),
+      summary: t("viewer_ui_effects"),
       accentColor: RAIL_CATEGORY_ACCENTS.effects,
     },
     ...(onPropChange
@@ -202,7 +205,7 @@
             id: "props" as const,
             propType: selectedPropType,
             fanAppearance,
-            label: "Props",
+            label: t("viewer_ui_props"),
             summary: handProps
               ? viewingPropLabel({
                   leftPropType: handProps.leftPropType,
@@ -219,7 +222,7 @@
           {
             id: "motion" as const,
             icon: "fa-gauge-high",
-            label: "Motion",
+            label: t("viewer_ui_motion"),
             summary: activeEffort.label,
             accentColor: activeEffort.color,
           },
@@ -227,14 +230,14 @@
       : [
           {
             id: "effort" as const,
-            label: "Effort",
+            label: t("viewer_ui_effort"),
             summary: activeEffort.label,
             accentColor: activeEffort.color,
           },
           {
             id: "playback" as const,
             icon: "fa-route",
-            label: "Playback",
+            label: t("viewer_ui_playback"),
             summary: computePlaybackSummary(bpm, playbackMode),
             accentColor: RAIL_CATEGORY_ACCENTS.playback,
           },
@@ -242,22 +245,21 @@
     {
       id: "display",
       icon: "fa-eye",
-      label: "Display",
+      label: t("viewer_ui_display"),
       summary: displaySummary,
       accentColor: RAIL_CATEGORY_ACCENTS.display,
     },
     {
       id: "tunnel",
       icon: "fa-shapes",
-      label: "Formation",
+      label: t("viewer_ui_formation"),
       summary: formationSummary,
       accentColor: RAIL_CATEGORY_ACCENTS.formation,
     },
     {
       id: "speed",
       icon: "fa-gauge-high",
-      label: stageAware ? "Stage Speed" : "Copy Speed",
-      summary: controller.hasSpeedOverrides ? "Mixed rates" : "Uniform",
+      ...speedRailCopy(stageAware, controller.hasSpeedOverrides),
       accentColor: RAIL_CATEGORY_ACCENTS.speed,
     },
   ]);
@@ -330,7 +332,7 @@
   );
   const tunnelDockExport = $derived<ControlDockAction>({
     icon: "fa-film",
-    label: "Export Video",
+    label: t("viewer_ui_export_video"),
     accent: true,
     onClick: onExport,
     disabled: exporting,
@@ -454,17 +456,20 @@
     onSelect={selectTunnel}
     direction={flyDir}
     {reduceMotion}
-    fillBody={tunnelSection === "display" || tunnelSection === "effects"}
+    fillBody={tunnelSection === "display" || tunnelSection === "effects" ||
+      tunnelSection === "effort" || tunnelSection === "motion"}
+    fluidBody={tunnelSection === "display" || tunnelSection === "effects" ||
+      tunnelSection === "effort" || tunnelSection === "motion"}
     {exporting}
     artPanel
-    regionLabel={showTitle ? "Tunnel settings" : "Animation controls"}
+    regionLabel={tunnelRegionLabel(showTitle)}
   >
     {#snippet body()}{@render tunnelSectionBody(tunnelSection, false)}{/snippet}
     {#snippet footer()}
       {#if showExport}
         <AnimatorInspectorFooter
           onAction={onExport}
-          label="Export Video"
+          label={t("viewer_ui_export_video")}
           icon="fa-film"
           busy={exporting}
           disabled={exporting}

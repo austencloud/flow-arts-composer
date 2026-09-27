@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
   import type { FrostIntent } from "$lib/shared/effects/domain/effects-config";
   import OptionChipRow from "../OptionChipRow.svelte";
@@ -11,7 +12,11 @@
   const { onBack }: Props = $props();
   const state = getEffectsConfigContext();
 
-  const PALETTES: { value: FrostIntent["palette"]; label: string; swatch: string }[] = [
+  const PALETTES: {
+    value: FrostIntent["palette"];
+    label: string;
+    swatch: string;
+  }[] = [
     { value: "glacial", label: "Glacial", swatch: "#a0d8ff" },
     { value: "breath", label: "Breath", swatch: "#d0e8f0" },
     { value: "black_ice", label: "Black Ice", swatch: "#202830" },
@@ -31,7 +36,7 @@
 <div class="customize-view">
   <button type="button" class="back-btn" onclick={onBack}>
     <i class="fas fa-arrow-left" aria-hidden="true"></i>
-    Back to presets
+    {t("effect_deep_back_to_presets")}
   </button>
 
   {#if state}
@@ -46,7 +51,7 @@
 
       {#if state.frost.palette === "custom"}
         <div class="color-row">
-          <span class="color-label">Tint</span>
+          <span class="color-label">{t("effect_deep_tint")}</span>
           <div class="color-pickers">
             <label class="color-picker">
               <input
@@ -71,7 +76,7 @@
       />
 
       <div class="slider-row">
-        <label for="frost-ambient">Ambient</label>
+        <label for="frost-ambient">{t("effect_deep_ambient")}</label>
         <input
           id="frost-ambient"
           type="range"
@@ -84,11 +89,13 @@
               ambientEmission: +(e.currentTarget as HTMLInputElement).value,
             })}
         />
-        <span class="slider-value">{Math.round(state.frost.ambientEmission * 100)}%</span>
+        <span class="slider-value"
+          >{Math.round(state.frost.ambientEmission * 100)}%</span
+        >
       </div>
 
       <div class="slider-row">
-        <label for="frost-motion">Motion</label>
+        <label for="frost-motion">{t("effect_deep_motion")}</label>
         <input
           id="frost-motion"
           type="range"
@@ -101,11 +108,13 @@
               motionEmission: +(e.currentTarget as HTMLInputElement).value,
             })}
         />
-        <span class="slider-value">{Math.round(state.frost.motionEmission * 100)}%</span>
+        <span class="slider-value"
+          >{Math.round(state.frost.motionEmission * 100)}%</span
+        >
       </div>
 
       <div class="slider-row">
-        <label for="frost-intensity">Intensity</label>
+        <label for="frost-intensity">{t("effect_deep_intensity")}</label>
         <input
           id="frost-intensity"
           type="range"
@@ -118,47 +127,55 @@
               intensity: +(e.currentTarget as HTMLInputElement).value,
             })}
         />
-        <span class="slider-value">{Math.round(state.frost.intensity * 100)}%</span>
+        <span class="slider-value"
+          >{Math.round(state.frost.intensity * 100)}%</span
+        >
       </div>
 
       <AdvancedControls count={2}>
         <div class="slider-row">
-        <label for="frost-crystallinity">Snowflake Size</label>
-        <input
-          id="frost-crystallinity"
-          type="range"
-          min="0"
-          max="1"
-          step="0.05"
-          value={state.frost.crystallinity}
-          oninput={(e) =>
-            state.updateEffect("frost", {
-              crystallinity: +(e.currentTarget as HTMLInputElement).value,
-            })}
-        />
-        <span class="slider-value">{Math.round(state.frost.crystallinity * 100)}%</span>
-      </div>
+          <label for="frost-crystallinity"
+            >{t("effect_deep_snowflake_size")}</label
+          >
+          <input
+            id="frost-crystallinity"
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={state.frost.crystallinity}
+            oninput={(e) =>
+              state.updateEffect("frost", {
+                crystallinity: +(e.currentTarget as HTMLInputElement).value,
+              })}
+          />
+          <span class="slider-value"
+            >{Math.round(state.frost.crystallinity * 100)}%</span
+          >
+        </div>
 
-      <div class="slider-row">
-        <label for="frost-spread">Trail Length</label>
-        <input
-          id="frost-spread"
-          type="range"
-          min="0"
-          max="1"
-          step="0.05"
-          value={state.frost.spreadRate}
-          oninput={(e) =>
-            state.updateEffect("frost", {
-              spreadRate: +(e.currentTarget as HTMLInputElement).value,
-            })}
-        />
-        <span class="slider-value">{Math.round(state.frost.spreadRate * 100)}%</span>
-      </div>
+        <div class="slider-row">
+          <label for="frost-spread">{t("effect_deep_trail_length")}</label>
+          <input
+            id="frost-spread"
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={state.frost.spreadRate}
+            oninput={(e) =>
+              state.updateEffect("frost", {
+                spreadRate: +(e.currentTarget as HTMLInputElement).value,
+              })}
+          />
+          <span class="slider-value"
+            >{Math.round(state.frost.spreadRate * 100)}%</span
+          >
+        </div>
       </AdvancedControls>
     </div>
   {:else}
-    <p class="empty">Effect state unavailable.</p>
+    <p class="empty">{t("effect_deep_effect_state_unavailable")}</p>
   {/if}
 </div>
 

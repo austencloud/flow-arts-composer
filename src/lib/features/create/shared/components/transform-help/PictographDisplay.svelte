@@ -4,6 +4,7 @@
   Shows the current pictograph with a shuffle button
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
@@ -36,11 +37,11 @@
     class="shuffle-btn"
     onclick={onShuffle}
     disabled={isLoading}
-    aria-label="Get a new random pictograph"
+    aria-label={t("create_ui_get_a_new_random_pictograph")}
     type="button"
   >
     <i class="fas fa-shuffle" aria-hidden="true"></i>
-    <span>New Example</span>
+    <span>{t("create_ui_new_example")}</span>
   </button>
 </div>
 

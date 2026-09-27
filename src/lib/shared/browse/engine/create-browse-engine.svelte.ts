@@ -39,6 +39,7 @@ import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/c
 import { parseLoopComponents } from "$lib/shared/create/services/loop-type-utils";
 import { detectRotationPeriod } from "$lib/shared/create/domain/detect-rotation-period";
 import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
+import { networkStatusState } from "$lib/shared/offline/state/network-status-state.svelte";
 import {
   applyFilter as applyBrowseFilter,
   getSequenceMaxTurn,
@@ -587,9 +588,25 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
       isLoading = true;
       sectionsReady = false;
       error = null;
+      // Saved results or the first Firestore page can populate Browse while
+      // the remainder of the public catalog is still arriving.
+      const early = refresh
+        ? null
+        : ((await loaderService.loadCachedSequenceMetadata?.()) ??
+          (await loaderService.loadInitialSequenceMetadata?.()) ??
+          null);
+      if (early?.length && isCurrentRequest()) {
+        allSequences = deduplicateById(early);
+        sectionsReady = true;
+        appendExtraCommunitySequences(requestRevision);
+      }
       const sequences = refresh
         ? await loaderService.refreshFromFirestore()
-        : await loaderService.loadSequenceMetadata();
+        : early?.length && !networkStatusState.isOnline
+          ? early
+          : early?.length
+            ? await loaderService.refreshFromFirestore()
+            : await loaderService.loadSequenceMetadata();
       if (!isCurrentRequest()) return;
       allSequences = deduplicateById(sequences);
       sectionsReady = true;

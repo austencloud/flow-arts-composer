@@ -1,5 +1,6 @@
 <!-- Mandala settings compose the canonical category control in two layouts. -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { fade } from "svelte/transition";
   import ControlDock, {
     type ControlDockAction,
@@ -47,15 +48,17 @@
     onArtSettingChange?.(group, setting, previousValue, value);
   }
 
-  const mandalaRail: { id: MandalaRailId; icon?: string; label: string }[] = [
-    { id: "speed", icon: "fa-gauge-high", label: "Speed" },
-    { id: "shape", icon: "fa-bezier-curve", label: "Shape" },
-    { id: "spin", icon: "fa-arrows-rotate", label: "Spin" },
-    { id: "colors", icon: "fa-palette", label: "Colors" },
-    { id: "weight", icon: "fa-grip-lines", label: "Weight" },
-    { id: "depth", icon: "fa-wave-square", label: "Depth" },
-    { id: "download", icon: "fa-download", label: "Download" },
-  ];
+  const mandalaRail = $derived<
+    { id: MandalaRailId; icon?: string; label: string }[]
+  >([
+    { id: "speed", icon: "fa-gauge-high", label: t("viewer_ui_speed") },
+    { id: "shape", icon: "fa-bezier-curve", label: t("viewer_ui_shape") },
+    { id: "spin", icon: "fa-arrows-rotate", label: t("viewer_ui_spin") },
+    { id: "colors", icon: "fa-palette", label: t("viewer_ui_colors") },
+    { id: "weight", icon: "fa-grip-lines", label: t("viewer_ui_weight") },
+    { id: "depth", icon: "fa-wave-square", label: t("viewer_ui_depth") },
+    { id: "download", icon: "fa-download", label: t("viewer_ui_download") },
+  ]);
 
   // Mandala shows ALL its controls stacked (each is a single compact row, so a
   // per-section rail would leave the tall panel mostly empty). The rail is kept
@@ -97,12 +100,12 @@
   // Export is the dock's one trailing action now. Share moved out entirely:
   // the header carries it on every pane, and a second one down here was the
   // duplicate Austen asked to be rid of.
-  const mandalaDockExport: ControlDockAction = {
+  const mandalaDockExport = $derived<ControlDockAction>({
     icon: "fa-download",
-    label: "Export MP4",
+    label: t("viewer_ui_export_mp4"),
     accent: true,
     onClick: () => onExport(),
-  };
+  });
 </script>
 
 {#if layout === "bottom"}
@@ -268,5 +271,4 @@
     letter-spacing: 0.01em;
     text-transform: none;
   }
-
 </style>

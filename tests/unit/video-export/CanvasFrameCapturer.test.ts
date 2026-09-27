@@ -59,6 +59,28 @@ describe("CanvasFrameCapturer", () => {
       }
     });
 
+    it("gives the frame the duration it shows for, so a file's last frame lasts", () => {
+      const inits: { timestamp: number; duration?: number }[] = [];
+      (globalThis as unknown as Globals).VideoFrame = class FakeVideoFrame {
+        constructor(
+          _source: unknown,
+          init: { timestamp: number; duration?: number }
+        ) {
+          inits.push(init);
+        }
+        close() {}
+      };
+      const canvas = document.createElement("canvas");
+      const capturer = new CanvasFrameCapturer();
+
+      capturer.capture(canvas, 2_400_000, Math.round(1_000_000 / 30));
+      capturer.capture(canvas, 2_433_333);
+
+      expect(inits[0]).toEqual({ timestamp: 2_400_000, duration: 33_333 });
+      // No duration given leaves it unset rather than zero.
+      expect(inits[1]).toEqual({ timestamp: 2_433_333 });
+    });
+
     it("returns an image-data CapturedFrame when VideoFrame is unavailable", async () => {
       (globalThis as unknown as Globals).VideoFrame = undefined;
 

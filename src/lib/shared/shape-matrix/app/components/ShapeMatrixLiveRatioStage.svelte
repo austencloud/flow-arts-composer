@@ -96,6 +96,9 @@
     handPeriod?: number;
     paused?: boolean;
     playbackMode?: PlaybackMode;
+    /** The canvas transport follows one four-beat hand cycle. */
+    onCycleProgress?: (progress: number) => void;
+    onSeekRef?: (seek: ((progress: number) => void) | null) => void;
     /** Bumping this returns every phase to its start and clears the trails. */
     alignToken?: number;
     /** Each hand's prop reach in hand-orbit radii, so the stick matches the real prop. */
@@ -123,6 +126,8 @@
     handPeriod = 4000,
     paused = false,
     playbackMode = "continuous",
+    onCycleProgress,
+    onSeekRef,
     alignToken = 0,
     propReach = { left: PROP_LENGTH, right: PROP_LENGTH },
     tipAngle = { left: 0, right: 0 },
@@ -209,6 +214,24 @@
     runtime.length = 0;
     runtime.lastSample = 0;
   }
+
+  function seekCycle(progress: number): void {
+    const next = Math.max(0, Math.min(1, progress));
+    for (const hand of hands) {
+      const runtime = runtimeFor(hand);
+      runtime.cycles = Math.floor(runtime.cycles) + next;
+      runtime.head = 0;
+      runtime.length = 0;
+      runtime.lastSample = runtime.cycles;
+    }
+    stepClockMs = 0;
+    onCycleProgress?.(next);
+  }
+
+  $effect(() => {
+    onSeekRef?.(seekCycle);
+    return () => onSeekRef?.(null);
+  });
 
   /*
    * The grid layer is DOM, so unlike every canvas layer it needs the toggle as a
@@ -386,6 +409,7 @@
     let frame = 0;
     let last = performance.now();
     let appliedAlign = alignToken;
+    let lastProgressReport = 0;
     const tips: EmitterTip[] = [];
 
     const draw = (now: number) => {
@@ -410,6 +434,8 @@
       if (appliedAlign !== alignToken) {
         appliedAlign = alignToken;
         for (const hand of hands) resetRuntime(runtimeFor(hand));
+        stepClockMs = 0;
+        onCycleProgress?.(0);
       }
 
       /*
@@ -430,6 +456,11 @@
         stepClockMs = tick.clockMs;
       }
       const handTurns = advance / handPeriod;
+      if (advance > 0 && hands[0] && now - lastProgressReport >= 50) {
+        const progress = (runtimeFor(hands[0]).cycles + handTurns) % 1;
+        onCycleProgress?.(progress);
+        lastProgressReport = now;
+      }
 
       const vm = scope?.visibility;
       const effort = vm?.getEffortPreset() ?? "linear";

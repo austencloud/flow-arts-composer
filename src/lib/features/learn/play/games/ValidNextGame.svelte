@@ -10,6 +10,7 @@ with the exact QuizAnswerEvent shape gap detection depends on. The shell
 owns back-navigation chrome — the legacy QuizBackButton is gone.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
   import { detectSingleError } from "$lib/features/learn/services/gap-detector";
@@ -168,7 +169,7 @@ owns back-navigation chrome — the legacy QuizBackButton is gone.
   </QuizContainer>
 {:else if questionData && currentPictograph}
   <QuizContainer>
-    <QuizPrompt text="Which pictograph can follow this one?" />
+    <QuizPrompt text={t("learn_ui_prompt_valid_next")} />
 
     <div class="quiz-content">
       {#key questionKey}
@@ -193,7 +194,7 @@ owns back-navigation chrome — the legacy QuizBackButton is gone.
         {#if showFeedback}
           <QuizFeedbackBanner
             isCorrect={isCorrectAnswer}
-            correctMessage="Correct!"
+            correctMessage={t("learn_ui_correct")}
             incorrectMessage=""
           />
           {#if currentGap}

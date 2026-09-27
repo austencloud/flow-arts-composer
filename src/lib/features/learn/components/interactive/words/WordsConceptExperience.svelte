@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { loadFoundingCollectionSequences } from "$lib/features/browse/collections/config/founding-collections";
@@ -64,7 +65,9 @@
 
   const coreSequences = $derived(
     LEARNING_LETTERS_CORE_WORDS.flatMap((word) => {
-      const match = sequences.find((sequence) => stripWordNotation(sequence.word) === word);
+      const match = sequences.find(
+        (sequence) => stripWordNotation(sequence.word) === word
+      );
       return match ? [match] : [];
     })
   );
@@ -88,7 +91,9 @@
   );
   const activeTeachingContent = $derived(
     activeCoreSequence
-      ? getLearningLetterTeachingContent(stripWordNotation(activeCoreSequence.word))
+      ? getLearningLetterTeachingContent(
+          stripWordNotation(activeCoreSequence.word)
+        )
       : null
   );
 
@@ -147,7 +152,7 @@
       loadState = "ready";
     } catch (caught) {
       console.error("Learning Letters deck failed to load", caught);
-      loadError = "The Learning Letters deck could not be loaded.";
+      loadError = "learn_words_deck_load_error";
       loadState = "error";
     }
   }
@@ -199,20 +204,20 @@
   onkeydown={handleKeydown}
   tabindex="0"
   role="application"
-  aria-label="Learning Letters lesson, use arrow keys to navigate"
+  aria-label={t("learn_ui_learning_letters_keyboard")}
 >
   {#if loadState === "loading"}
     <section class="load-state" role="status">
       <ProgressRing percent={-1} size={44} strokeWidth={3} />
-      <p>Loading Learning Letters…</p>
+      <p>{t("learn_ui_loading_learning_letters")}</p>
     </section>
   {:else if loadState === "error"}
     <section class="load-state" role="alert">
       <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
-      <p>{loadError}</p>
+      <p>{loadError ? tDynamic(loadError) : ""}</p>
       <PanelButton variant="secondary" onclick={loadDeck}>
         <i class="fa-solid fa-arrow-rotate-right" aria-hidden="true"></i>
-        <span>Try again</span>
+        <span>{t("learn_ui_try_again")}</span>
       </PanelButton>
     </section>
   {:else}
@@ -235,23 +240,20 @@
             >
               <div class="intro-copy">
                 <p class="chapter-label">TKA 1</p>
-                <h1 id="learning-letters-title">Learning Letters</h1>
-                <!-- Guide prose, verbatim from AlphaBetaWordsPage.svelte. -->
+                <h1 id="learning-letters-title">
+                  {t("learn_ui_learning_letters")}
+                </h1>
                 <p class="guide-prose">
-                  The first words we will learn correspond to VTG’s 1:1 motions.<br
-                  />
-                  To execute these,
-                  <strong
-                    ><em>you’ll need to use body turns and/or negative space</em
-                    ></strong
-                  >.
+                  {t("learn_ui_first_words_instruction")}
                 </p>
               </div>
 
               <div
                 class="family-preview"
                 role="img"
-                aria-label={`The six words: ${coreSequences.map(displayWord).join(", ")}`}
+                aria-label={t("learn_ui_six_words_aria", {
+                  words: coreSequences.map(displayWord).join(", "),
+                })}
               >
                 {#each coreFamilies as family (family.element.familyId)}
                   <section
@@ -282,7 +284,11 @@
           {:else if activeCoreSequence && activeCoreFamily}
             <section
               class="word-step"
-              aria-label={`Word ${activeCoreIndex + 1} of ${LEARNING_LETTERS_CORE_WORDS.length}: ${displayWord(activeCoreSequence)}`}
+              aria-label={t("learn_ui_word_of_total", {
+                current: activeCoreIndex + 1,
+                total: LEARNING_LETTERS_CORE_WORDS.length,
+                word: displayWord(activeCoreSequence),
+              })}
               style:--family-accent={activeCoreFamily.element.accentColor}
             >
               <header class="word-header">
@@ -298,7 +304,10 @@
                       <span>{activeCoreFamily.element.name}</span>
                     </span>
                     <span class="sequence-position">
-                      Word {activeCoreIndex + 1} / {LEARNING_LETTERS_CORE_WORDS.length}
+                      {t("learn_ui_word_position", {
+                        current: activeCoreIndex + 1,
+                        total: LEARNING_LETTERS_CORE_WORDS.length,
+                      })}
                     </span>
                   </div>
                 </Crossfade>
@@ -317,14 +326,11 @@
             >
               <header class="recap-header">
                 <div>
-                  <p class="chapter-label">Lesson recap</p>
-                  <h1 id="learning-letters-title">Six words</h1>
+                  <p class="chapter-label">{t("learn_ui_lesson_recap")}</p>
+                  <h1 id="learning-letters-title">{t("learn_ui_six_words")}</h1>
                 </div>
-                <!-- Guide prose, verbatim from AlphaBetaWordsPage.svelte. -->
                 <p class="guide-prose practice-prose">
-                  <strong
-                    >Practice each word once in both directions, then again
-                    starting with thumbs out.</strong
+                  <strong>{t("learn_ui_six_words_practice_instruction")}</strong
                   >
                 </p>
               </header>
@@ -341,7 +347,11 @@
                         <img src={family.element.iconPath} alt="" />
                         <span>{family.element.name}</span>
                       </span>
-                      <span>{family.sequences.length} words</span>
+                      <span
+                        >{t("learn_ui_words_count", {
+                          count: family.sequences.length,
+                        })}</span
+                      >
                     </header>
                     <div class="recap-word-grid">
                       {#each family.sequences as sequence (sequence.id)}
@@ -351,7 +361,9 @@
                         <button
                           type="button"
                           class="recap-word"
-                          aria-label={`Review ${displayWord(sequence)}`}
+                          aria-label={t("learn_ui_review_word", {
+                            word: displayWord(sequence),
+                          })}
                           onclick={() => goToStep(coreIndex + 1)}
                         >
                           <TKAWordGlyph
@@ -360,7 +372,11 @@
                             darkMode
                             fitToParent
                           />
-                          <span>Word {coreIndex + 1}</span>
+                          <span
+                            >{t("learn_ui_word_number", {
+                              number: coreIndex + 1,
+                            })}</span
+                          >
                         </button>
                       {/each}
                     </div>
@@ -373,7 +389,9 @@
 
         <footer class="lesson-transport">
           <LessonStageControls
-            label={stepIndex === recapStepIndex ? "Finish lesson" : "Next"}
+            label={stepIndex === recapStepIndex
+              ? t("learn_ui_finish_lesson")
+              : t("learn_ui_next")}
             currentStep={stepIndex + 1}
             totalSteps={LEARNING_LETTERS_TOTAL_STEPS}
             onAction={stepIndex === recapStepIndex

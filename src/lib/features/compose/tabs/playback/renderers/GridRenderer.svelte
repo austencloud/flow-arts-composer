@@ -5,6 +5,7 @@
   Each cell can contain a sequence with a specific rotation offset.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import CanvasControls from "../components/CanvasControls.svelte";
 
@@ -94,7 +95,7 @@
                 e.stopPropagation();
                 onRemoveCell(pos.index);
               }}
-              aria-label="Remove sequence"
+              aria-label={t("compose_ui_remove_sequence")}
             >
               <i class="fas fa-times" aria-hidden="true"></i>
             </button>
@@ -220,8 +221,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 20%, transparent);
-    border: 1px solid color-mix(in srgb, var(--semantic-error, #ef4444) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 20%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-error, #ef4444) 30%, transparent);
     border-radius: 6px;
     color: var(--semantic-error);
     cursor: pointer;
@@ -245,8 +251,16 @@
   }
 
   .remove-btn:hover {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 40%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-error, #ef4444) 60%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 40%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 60%,
+      transparent
+    );
   }
 
   .cell-content {

@@ -13,6 +13,7 @@
   Domain: Export Panel - Single Media - Static Image Format
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getExportPanelState } from "../../state/export-panel-state.svelte";
   import { getSequenceRenderer } from "$lib/shared/render/get-sequence-renderer";
   import type { SequenceRenderer } from "$lib/shared/render/services/sequence-renderer";
@@ -174,7 +175,7 @@
     {#if !hubState.sequence}
       <div class="empty-state">
         <i class="fas fa-image" aria-hidden="true"></i>
-        <p>No sequence loaded</p>
+        <p>{t("empty_no_sequence_loaded")}</p>
       </div>
     {:else if previewError}
       <div class="error-state">

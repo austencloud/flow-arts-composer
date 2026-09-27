@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { getCodexLetterMappingRepo } from "$lib/features/learn/codex/get-codex-letter-mapping-repo";
   import type { Letter } from "$lib/shared/foundation/domain/models/letter";
@@ -62,6 +63,14 @@
   const selectedAnswerData = $derived(
     TYPE1_LESSON_LETTERS.find((item) => item.letter === selectedAnswer) ?? null
   );
+
+  function patternLabel(pattern: keyof typeof TYPE1_PATTERN_LABELS): string {
+    return tDynamic(`learn_type1_pattern_${pattern.replaceAll("-", "_")}`);
+  }
+
+  function familyLabel(family: "alpha" | "beta"): string {
+    return tDynamic(`learn_type1_family_${family}`);
+  }
 
   onMount(async () => {
     loading = true;
@@ -144,21 +153,20 @@
   {#if phase === 1}
     <section class="explore-grid" aria-labelledby="type1-title">
       <div class="copy-column">
-        <p class="eyebrow">Type 1 letters</p>
-        <h1 id="type1-title">Same path family. Different spins.</h1>
-        <p class="lede">
-          A, B, and C stay in the alpha placement family. G, H, and I repeat
-          those same spin patterns in beta. Select any letter to compare the
-          real pictographs.
-        </p>
+        <p class="eyebrow">{tDynamic("learn_type1_eyebrow")}</p>
+        <h1 id="type1-title">{tDynamic("learn_type1_title")}</h1>
+        <p class="lede">{tDynamic("learn_type1_intro")}</p>
 
         <div class="letter-groups">
           <div class="letter-family">
             <div class="family-label">
-              <span>Alpha family</span>
+              <span>{tDynamic("learn_type1_alpha_family")}</span>
               <small>A · B · C</small>
             </div>
-            <div class="letter-row" aria-label="Alpha-family Type 1 letters">
+            <div
+              class="letter-row"
+              aria-label={tDynamic("learn_type1_alpha_letters_aria")}
+            >
               {#each TYPE1_LESSON_LETTERS.filter((item) => item.placementFamily === "alpha") as item}
                 <button
                   type="button"
@@ -167,7 +175,7 @@
                   onclick={() => chooseLetter(item.letter)}
                 >
                   <strong>{item.letter}</strong>
-                  <small>{TYPE1_PATTERN_LABELS[item.pattern]}</small>
+                  <small>{patternLabel(item.pattern)}</small>
                 </button>
               {/each}
             </div>
@@ -175,10 +183,13 @@
 
           <div class="letter-family">
             <div class="family-label">
-              <span>Beta family</span>
+              <span>{tDynamic("learn_type1_beta_family")}</span>
               <small>G · H · I</small>
             </div>
-            <div class="letter-row" aria-label="Beta-family Type 1 letters">
+            <div
+              class="letter-row"
+              aria-label={tDynamic("learn_type1_beta_letters_aria")}
+            >
               {#each TYPE1_LESSON_LETTERS.filter((item) => item.placementFamily === "beta") as item}
                 <button
                   type="button"
@@ -187,7 +198,7 @@
                   onclick={() => chooseLetter(item.letter)}
                 >
                   <strong>{item.letter}</strong>
-                  <small>{TYPE1_PATTERN_LABELS[item.pattern]}</small>
+                  <small>{patternLabel(item.pattern)}</small>
                 </button>
               {/each}
             </div>
@@ -197,9 +208,11 @@
         <div class="current-reading">
           <span class="big-letter">{activeLetter.letter}</span>
           <div>
-            <strong>{TYPE1_PATTERN_LABELS[activeLetter.pattern]}</strong>
+            <strong>{patternLabel(activeLetter.pattern)}</strong>
             <p>
-              Both hands shift within the {activeLetter.placementFamily} family.
+              {tDynamic("learn_type1_family_shift", {
+                family: familyLabel(activeLetter.placementFamily),
+              })}
             </p>
           </div>
         </div>
@@ -209,13 +222,16 @@
           type="button"
           onclick={() => goToPhase(2)}
         >
-          Check the pattern
+          {tDynamic("learn_type1_check_pattern")}
           <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
         </button>
       </div>
 
       <div class="visual-column">
-        <div class="type-stripe" aria-label="Canonical Type 1 colors">
+        <div
+          class="type-stripe"
+          aria-label={tDynamic("learn_type1_colors_aria")}
+        >
           <span></span><span></span>
         </div>
         <LessonPictographStage
@@ -225,22 +241,22 @@
             ? TYPE1_ACCENTS[1]
             : TYPE1_ACCENTS[0]}
         />
-        <p>
-          The arrows are the source of truth. The labels describe what the
-          canonical pictograph is already showing.
-        </p>
+        <p>{tDynamic("learn_type1_visual_note")}</p>
       </div>
     </section>
   {:else if phase === 2}
     <section class="challenge" aria-labelledby="type1-check-title">
       <div class="challenge-header">
         <p class="eyebrow">
-          Letter check · {questionIndex + 1} of {TYPE1_QUESTIONS.length}
+          {tDynamic("learn_type1_letter_check", {
+            current: questionIndex + 1,
+            total: TYPE1_QUESTIONS.length,
+          })}
         </p>
-        <h1 id="type1-check-title">{activeQuestion.prompt}</h1>
-        <p>
-          Choose a letter. Its real pictograph appears as soon as you answer.
-        </p>
+        <h1 id="type1-check-title">
+          {tDynamic(`learn_type1_question_${questionIndex + 1}`)}
+        </h1>
+        <p>{tDynamic("learn_type1_choose_instruction")}</p>
       </div>
 
       <div class="challenge-grid">
@@ -255,7 +271,10 @@
         />
 
         <div class="answer-panel">
-          <div class="letter-answers" aria-label="Choose a letter">
+          <div
+            class="letter-answers"
+            aria-label={tDynamic("learn_type1_choose_letter_aria")}
+          >
             {#each activeQuestion.choices as letter}
               <button
                 type="button"
@@ -276,24 +295,24 @@
             <div class="feedback wrong-feedback" role="status">
               <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
               <p>
-                <strong>{selectedAnswerData.letter}</strong> is
-                {TYPE1_PATTERN_LABELS[selectedAnswerData.pattern].toLowerCase()} in
-                {selectedAnswerData.placementFamily}. Look for
-                <strong
-                  >{TYPE1_PATTERN_LABELS[
-                    answerLetter.pattern
-                  ].toLowerCase()}</strong
-                >
-                in {answerLetter.placementFamily}.
+                {tDynamic("learn_type1_wrong_feedback", {
+                  letter: selectedAnswerData.letter,
+                  pattern: patternLabel(selectedAnswerData.pattern),
+                  family: familyLabel(selectedAnswerData.placementFamily),
+                  targetPattern: patternLabel(answerLetter.pattern),
+                  targetFamily: familyLabel(answerLetter.placementFamily),
+                })}
               </p>
             </div>
           {:else if answerState === "correct"}
             <div class="feedback correct-feedback" role="status">
               <i class="fa-solid fa-check" aria-hidden="true"></i>
               <p>
-                <strong>{answerLetter.letter}</strong> is
-                {TYPE1_PATTERN_LABELS[answerLetter.pattern].toLowerCase()} in
-                {answerLetter.placementFamily}.
+                {tDynamic("learn_type1_correct_feedback", {
+                  letter: answerLetter.letter,
+                  pattern: patternLabel(answerLetter.pattern),
+                  family: familyLabel(answerLetter.placementFamily),
+                })}
               </p>
             </div>
           {/if}
@@ -305,8 +324,8 @@
             onclick={nextQuestion}
           >
             {questionIndex === TYPE1_QUESTIONS.length - 1
-              ? "See the letter map"
-              : "Next pattern"}
+              ? tDynamic("learn_type1_see_map")
+              : tDynamic("learn_type1_next_pattern")}
             <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
           </button>
         </div>
@@ -314,22 +333,17 @@
     </section>
   {:else}
     <section class="summary" aria-labelledby="type1-summary-title">
-      <p class="eyebrow">Letter map</p>
-      <h1 id="type1-summary-title">Three patterns, two placement families</h1>
-      <p class="summary-lede">
-        The A/B/C pattern repeats as G/H/I. The placement family changes; the
-        pairing of pro and anti stays recognizable.
-      </p>
+      <p class="eyebrow">{tDynamic("learn_type1_map_eyebrow")}</p>
+      <h1 id="type1-summary-title">{tDynamic("learn_type1_map_title")}</h1>
+      <p class="summary-lede">{tDynamic("learn_type1_map_summary")}</p>
 
       <div class="pattern-map">
-        <div class="map-heading">Pattern</div>
+        <div class="map-heading">{tDynamic("learn_type1_pattern_heading")}</div>
         <div class="map-heading">Alpha</div>
         <div class="map-heading">Beta</div>
         {#each [{ pattern: "pro-pro", alpha: "A", beta: "G" }, { pattern: "anti-anti", alpha: "B", beta: "H" }, { pattern: "hybrid", alpha: "C", beta: "I" }] as row}
           <div class="pattern-name">
-            {TYPE1_PATTERN_LABELS[
-              row.pattern as keyof typeof TYPE1_PATTERN_LABELS
-            ]}
+            {patternLabel(row.pattern as keyof typeof TYPE1_PATTERN_LABELS)}
           </div>
           <div class="mapped-letter">{row.alpha}</div>
           <div class="mapped-letter">{row.beta}</div>
@@ -341,7 +355,7 @@
         type="button"
         onclick={complete}
       >
-        Complete these letters
+        {tDynamic("learn_type1_complete")}
         <i class="fa-solid fa-check" aria-hidden="true"></i>
       </button>
     </section>

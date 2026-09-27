@@ -56,6 +56,7 @@ export async function exportPostStudioVideo(
 
   const { width, height, frameRate } = input.preset.output;
   const totalFrames = Math.max(1, Math.ceil(input.durationSeconds * frameRate));
+  const frameMicros = Math.round(1_000_000 / frameRate);
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
@@ -114,7 +115,7 @@ export async function exportPostStudioVideo(
 
       const timestampMicros = Math.round((frameIndex / frameRate) * 1_000_000);
       encoder.addFrameCaptured(
-        capturer.capture(canvas, timestampMicros),
+        capturer.capture(canvas, timestampMicros, frameMicros),
         frameIndex,
         frameIndex % Math.max(1, Math.round(frameRate * 2)) === 0
       );

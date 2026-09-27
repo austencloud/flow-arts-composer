@@ -11,6 +11,7 @@
 -->
 <script lang="ts">
   import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { onMount } from "svelte";
   import {
@@ -46,7 +47,7 @@
 
   // Toast notification state
   let showToast = $state(false);
-  let toastMessage = $state("Settings saved");
+  let toastMessage = $state(t("settings_saved"));
 
   // Device detection for layout awareness
   let deviceDetector: DeviceDetector | null = null;
@@ -108,11 +109,11 @@
         event.value as AppSettings[keyof AppSettings]
       );
 
-      flashToast("Saved", 1500);
+      flashToast(t("settings_save_success"), 1500);
     } catch (error) {
       console.error("Settings save failed:", error);
       // Keep error toast visible longer
-      flashToast("Save failed", 3000);
+      flashToast(t("settings_save_failed"), 3000);
     }
   }
 
@@ -220,11 +221,11 @@
         type="button"
         class="back-header-button"
         onclick={handleBackToModule}
-        aria-label="Go back"
+        aria-label={t("action_go_back")}
       >
         <i class="fas fa-chevron-left" aria-hidden="true"></i>
       </button>
-      <span class="back-header-title">Settings</span>
+      <span class="back-header-title">{t("module_settings")}</span>
     </header>
   {/if}
 
@@ -239,7 +240,7 @@
     </div>
   </div>
 
-  {#if !isSettingsLoaded}
+  {#if !isSettingsLoaded && activeTab !== "language"}
     <div class="loading-state">
       <IOSSkeletonLoader variant="toggle" count={8} />
     </div>

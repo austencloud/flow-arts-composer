@@ -13,6 +13,7 @@
   Sections: Effects → Props → Motion → Display → Export.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { fade } from "svelte/transition";
   import type { ExportOptionsStateManager } from "../state/export-options-state.svelte";
   import type { VideoExportProgress } from "$lib/shared/compose/domain/video-export-types";
@@ -205,11 +206,8 @@
     closeRequest?: number;
     /** Accessible region name for non-export hosts. */
     regionLabel?: string;
-    /** A sidebar host whose panel height is set by something else on
-     *  screen (the motion-path studio's card matches the canvas beside it)
-     *  wants every page to spend that height rather than sit at the top of
-     *  it. Display's pictures grow into it, and Effort alone on its page
-     *  shares it between its tiles, each drawing its timing curve. */
+    /** A height-bounded sidebar can give its visual pages the remaining room.
+     *  Auto-height hosts leave this off so their content sets the height. */
     fillPages?: boolean;
   }
 
@@ -257,14 +255,20 @@
     onSettingChange,
     onActiveSectionChange,
     closeRequest = 0,
-    regionLabel = "Animation controls",
+    regionLabel,
     fillPages = false,
   }: Props = $props();
+
+  const effectiveRegionLabel = $derived(
+    regionLabel ?? t("viewer_ui_animation_controls")
+  );
 
   const viewerAnimatorInspector = getOptionalViewerAnimatorInspectorContext();
 
   const exportButtonLabel = $derived(
-    renderMode === "3d" ? "Record Scene" : "Download animation"
+    renderMode === "3d"
+      ? t("viewer_ui_record_scene")
+      : t("viewer_ui_download_animation")
   );
 
   // Export is host-optional: both the state manager and the handler must be
@@ -527,7 +531,7 @@
       match ??
       EFFORTS[0] ?? {
         id: "linear",
-        label: "Linear",
+        label: t("viewer_ui_linear"),
         subtitle: "",
         color: "#94a3b8",
         params: [],
@@ -557,16 +561,15 @@
   const playbackHasPage = $derived(
     showTempoControls || !!onPlaybackModeChange || showPathShape
   );
-  // Effort alone on a page the host asked to be filled.
-  const effortFills = $derived(
-    fillPages && layout === "sidebar" && !playbackHasPage
+  const visualPagesFill = $derived(
+    fillPages && (layout === "sidebar" || presentation === "content")
   );
 
   const playbackSummary = $derived.by(() => {
     void vmVersion;
     return showTempoControls
       ? computePlaybackSummary(bpm, vm.getPlaybackMode())
-      : "Path shape";
+      : t("viewer_ui_path_shape");
   });
 
   const displaySummary = $derived.by(() => {
@@ -689,7 +692,7 @@
               props: {
                 propType: selectedPropType,
                 fanAppearance,
-                label: "Props",
+                label: t("viewer_ui_props"),
                 summary: propsSummary,
                 accentColor: RAIL_CATEGORY_ACCENTS.props,
               },
@@ -697,12 +700,12 @@
           : {}),
         effects: {
           icon: effectsIcon,
-          label: "Effects",
+          label: t("viewer_ui_effects"),
           summary: effectsSummary,
           accentColor: effectsAccent,
         },
         effort: {
-          label: "Effort",
+          label: t("viewer_ui_effort"),
           summary: effortSummary,
           accentColor: effortAccent,
         },
@@ -713,7 +716,7 @@
           ? {
               playback: {
                 icon: "fa-route",
-                label: "Playback",
+                label: t("viewer_ui_playback"),
                 summary: playbackSummary,
                 accentColor: RAIL_CATEGORY_ACCENTS.playback,
               },
@@ -721,7 +724,7 @@
           : {}),
         display: {
           icon: "fa-eye",
-          label: "Display",
+          label: t("viewer_ui_display"),
           summary: displaySummary,
           accentColor: RAIL_CATEGORY_ACCENTS.display,
         },
@@ -732,7 +735,7 @@
         // carries the accent the rail glows with.
         motion: {
           icon: "fa-gauge-high",
-          label: "Motion",
+          label: t("viewer_ui_motion"),
           summary: effortSummary,
           accentColor: effortAccent,
         },
@@ -740,7 +743,7 @@
           ? {
               export: {
                 icon: "fa-sliders",
-                label: "Export",
+                label: t("viewer_ui_export"),
                 summary: exportSummary,
               },
             }
@@ -879,10 +882,10 @@
     </div>
   {:else if resolvedPill === "effects"}
     <EffectsPanel
-      layout={layout === "bottom" ? "strip" : "sidebar"}
-      showHeading={layout === "bottom" ||
+      layout={layout === "bottom" && !visualPagesFill ? "strip" : "sidebar"}
+      showHeading={(layout === "bottom" && !visualPagesFill) ||
         (presentation === "content" && !fillPages)}
-      fill={fillPages && layout === "sidebar"}
+      fill={visualPagesFill}
       {bpm}
       onBpmChange={onBpmChange ?? (() => {})}
       {isPlaying}
@@ -912,7 +915,7 @@
          put visibility toggles under a heading that claimed they were motion;
          it has its own pill again. Sidebar only; the mobile dock still gets
          separate tabs, where one tall merged tray would not fit. -->
-    <div class="motion-scope" class:fills={effortFills}>
+    <div class="motion-scope" class:fills={visualPagesFill}>
       <!-- A host with its own transport bar owns tempo there and passes
            showTempoControls={false}; with no playback mode either, Tempo and
            Mode have nothing to hold and Paths runs the full width above
@@ -949,17 +952,19 @@
      carry one, and the effort tiles were the single unlabelled block under a
      heading named for something else. -->
 {#snippet effortBody(labelled = false)}
-  <div class="section-pad">
+  <div class="section-pad" class:fill-effort={visualPagesFill}>
     {#if labelled}
-      <span class="rt-section-label">Effort</span>
+      <span class="rt-section-label">{t("viewer_ui_effort")}</span>
     {/if}
     {#if layout === "sidebar"}
-      <p class="section-hint">How each beat speeds up and slows down.</p>
+      <p class="section-hint">
+        {t("viewer_ui_how_each_beat_speeds_up_and_slows_down")}
+      </p>
     {/if}
     <EffortPanel
       columns={layout === "sidebar" ? 2 : 4}
       showSubtitles={layout === "sidebar"}
-      fill={effortFills}
+      fill={visualPagesFill}
       onSettingChange={(previous, value) =>
         reportSetting("effort", "preset", previous, value)}
     />
@@ -983,7 +988,7 @@
     <div class="section-pad playback-rows">
       {#if showTempoControls}
         <div class="rt-section">
-          <span class="rt-section-label">Tempo</span>
+          <span class="rt-section-label">{t("viewer_ui_tempo")}</span>
           <TempoControl
             {bpm}
             onBpmChange={onBpmChange ?? (() => {})}
@@ -996,7 +1001,7 @@
       {/if}
       {#if onPlaybackModeChange}
         <div class="rt-section">
-          <span class="rt-section-label">Mode</span>
+          <span class="rt-section-label">{t("viewer_ui_mode")}</span>
           <PlaybackModeToggle
             {playbackMode}
             {isPlaying}
@@ -1029,14 +1034,18 @@
        back when this block sat inside the merged Motion page, where a heading
        named for something else needed correcting. -->
   <div class="section-pad display-rows">
-    <div class="rt-section" role="region" aria-label="Visibility">
+    <div
+      class="rt-section"
+      role="region"
+      aria-label={t("tab_settings_visibility")}
+    >
       <DisplayPanel
         {showMotionVisibility}
         {showSequenceMarks}
         {showWordToggle}
         {sequence}
         propType={selectedPropType}
-        fill={layout === "sidebar"}
+        fill={layout === "sidebar" || visualPagesFill}
         grow={fillPages}
         {onSettingChange}
       />
@@ -1143,7 +1152,7 @@
 
       {#if renderMode === "3d"}
         <div class="field">
-          <span class="field-label">Quality</span>
+          <span class="field-label">{t("viewer_ui_quality")}</span>
           <div class="rt-chip-row">
             <button
               type="button"
@@ -1186,14 +1195,14 @@
       </div>
 
       <div class="field">
-        <span class="field-label">Loops</span>
+        <span class="field-label">{t("viewer_ui_loops")}</span>
         <div class="rt-stepper">
           <button
             type="button"
             class="rt-step-btn"
             onclick={() => setLoopCount(exportOptions.videoLoopCount - 1)}
             disabled={exportOptions.videoLoopCount <= 1}
-            aria-label="Decrease loop count"
+            aria-label={t("viewer_ui_decrease_loop_count")}
             ><i class="fas fa-minus" aria-hidden="true"></i></button
           >
           <span class="rt-val">{exportOptions.videoLoopCount}×</span>
@@ -1202,7 +1211,7 @@
             class="rt-step-btn"
             onclick={() => setLoopCount(exportOptions.videoLoopCount + 1)}
             disabled={exportOptions.videoLoopCount >= 10}
-            aria-label="Increase loop count"
+            aria-label={t("viewer_ui_increase_loop_count")}
             ><i class="fas fa-plus" aria-hidden="true"></i></button
           >
         </div>
@@ -1254,8 +1263,9 @@
 {#if presentation === "content" && layout === "bottom"}
   <div
     class="external-section-body dock-dense"
+    class:fill={visualPagesFill}
     role="region"
-    aria-label={activePillLabel || regionLabel}
+    aria-label={activePillLabel || effectiveRegionLabel}
   >
     {@render pillBody()}
   </div>
@@ -1268,7 +1278,7 @@
     class="mobile-export"
     transition:fade={{ duration: reduceMotion ? 0 : 200 }}
     role="region"
-    aria-label={regionLabel}
+    aria-label={effectiveRegionLabel}
   >
     {#if isExporting && showInlineExportProgress}
       <div class="mobile-progress" role="status" aria-live="polite">
@@ -1290,7 +1300,7 @@
             : 0}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-label="Export progress"
+          aria-label={t("viewer_ui_export_progress")}
         >
           <div
             class="progress-fill"
@@ -1302,7 +1312,7 @@
             type="button"
             class="cancel-btn"
             onclick={onCancel}
-            aria-label="Cancel export"
+            aria-label={t("export_cancel_export")}
           >
             <i class="fas fa-times" aria-hidden="true"></i>
             Cancel
@@ -1333,15 +1343,21 @@
     onSelect={handlePillSelect}
     direction={panelDirection}
     {reduceMotion}
-    fillBody={resolvedPill === "display" ||
+    fillBody={(resolvedPill === "effort" && visualPagesFill) ||
+      resolvedPill === "display" ||
       resolvedPill === "effects" ||
       resolvedPill === "props" ||
-      (resolvedPill === "motion" && effortFills)}
-    fluidBody={resolvedPill === "props"}
+      (resolvedPill === "motion" && visualPagesFill)}
+    fluidBody={resolvedPill === "props" ||
+      (visualPagesFill &&
+        (resolvedPill === "effects" ||
+          resolvedPill === "display" ||
+          resolvedPill === "motion" ||
+          resolvedPill === "effort"))}
     pageOnly={presentation === "content"}
     regionLabel={presentation === "content"
-      ? activePillLabel || regionLabel
-      : "Animation export settings"}
+      ? activePillLabel || effectiveRegionLabel
+      : t("viewer_ui_animation_export_settings")}
     onNavMount={(element) => {
       pillNavEl = element;
     }}
@@ -1408,6 +1424,10 @@
     height: 100%;
     overflow: hidden auto;
   }
+  .external-section-body.fill {
+    display: flex;
+    flex-direction: column;
+  }
   .section-pad {
     display: flex;
     flex-direction: column;
@@ -1422,15 +1442,19 @@
     container-type: inline-size;
   }
 
-  /* Effort alone on a page the host fills: each wrapper hands the height down
-     so the tiles can share it. */
+  /* Height-bounded pages give their remaining room to the curve tiles. Tempo
+     and path controls keep their natural height above the merged Motion grid. */
   .motion-scope.fills,
   .motion-scope.fills .motion-stack,
-  .motion-scope.fills .motion-stack > :global(.section-pad) {
+  .section-pad.fill-effort {
     flex: 1 1 0;
     min-height: 0;
     display: flex;
     flex-direction: column;
+  }
+
+  .motion-scope.fills .motion-stack > :global(.section-pad:not(.fill-effort)) {
+    flex: 0 0 auto;
   }
 
   /* The merged sections keep their own internal padding; the stack only
@@ -1492,16 +1516,22 @@
        which is what keeps a 315px rail from scrolling. Both come back with the
        second column, where the room exists. Effort alone on the page keeps
        them: it is the whole page, and the descriptions are what it teaches. */
-    .motion-stack:not(.effort-only) :global(.effort-sub) {
+    .motion-scope:not(.fills)
+      .motion-stack:not(.effort-only)
+      :global(.effort-sub) {
       display: none;
     }
 
-    .motion-stack:not(.effort-only) :global(.effort-btn.with-sub) {
+    .motion-scope:not(.fills)
+      .motion-stack:not(.effort-only)
+      :global(.effort-btn.with-sub) {
       padding: 8px 4px;
-      min-height: 40px;
+      min-height: 72px;
     }
 
-    .motion-stack:not(.effort-only) :global(.effort-grid) {
+    .motion-scope:not(.fills)
+      .motion-stack:not(.effort-only)
+      :global(.effort-grid) {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
@@ -1509,6 +1539,15 @@
   @container motion-stack (min-width: 528px) {
     .motion-stack {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .motion-scope.fills .motion-stack {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    .motion-scope.fills .motion-stack.effort-only {
+      grid-template-rows: minmax(0, 1fr);
     }
 
     /* A host with no Paths page (the shape matrix traces a fixed figure) has
@@ -1608,11 +1647,11 @@
      grouping the sidebar shows, in the shortest tray that can carry it. The
      previews come along; they are the point of the tile, and shrinking one is
      better than replacing it with a word. */
-  .dock-dense :global(.vis-grid) {
+  .dock-dense:not(.fill) :global(.vis-grid) {
     grid-template-columns: repeat(4, 1fr);
     gap: 4px;
   }
-  .dock-dense :global(.vis-grid > *:nth-child(n + 5)) {
+  .dock-dense:not(.fill) :global(.vis-grid > *:nth-child(n + 5)) {
     margin-top: 6px;
   }
   /* The cap is set above the column width on purpose, so the COLUMN binds and
@@ -1621,19 +1660,19 @@
      the grid read as eight smudges, which is the state this redesign replaced.
      4rem is the largest picture whose two rows still land inside the capped
      tray without scrolling. */
-  .dock-dense :global(.vis-grid .rt-chip) {
+  .dock-dense:not(.fill) :global(.vis-grid .rt-chip) {
     gap: 4px;
     padding: 6px 3px;
     --tile-art: 4rem;
   }
-  .dock-dense :global(.vis-grid .chip-label) {
+  .dock-dense:not(.fill) :global(.vis-grid .chip-label) {
     font-size: 0.68rem;
   }
   /* A tablet's dock is 776px wide with a 250px tray — 4rem is a phone's cap
      and leaves a 64px picture inside a 190px tile. 5rem is the largest picture
      whose two rows still clear that tray. */
   @container (min-width: 30rem) {
-    .dock-dense :global(.vis-grid .rt-chip) {
+    .dock-dense:not(.fill) :global(.vis-grid .rt-chip) {
       --tile-art: 5rem;
     }
   }
@@ -1651,16 +1690,16 @@
      under 44rem, which put it back on four columns of 171px tiles carrying an
      80px picture. */
   @container (min-width: 42rem) {
-    .dock-dense :global(.vis-grid) {
+    .dock-dense:not(.fill) :global(.vis-grid) {
       grid-template-columns: repeat(8, minmax(0, 1fr));
     }
-    .dock-dense :global(.vis-grid > *:nth-child(n + 5)) {
+    .dock-dense:not(.fill) :global(.vis-grid > *:nth-child(n + 5)) {
       margin-top: 0;
     }
-    .dock-dense :global(.vis-grid > *:nth-child(5)) {
+    .dock-dense:not(.fill) :global(.vis-grid > *:nth-child(5)) {
       margin-left: 8px;
     }
-    .dock-dense :global(.vis-grid .rt-chip) {
+    .dock-dense:not(.fill) :global(.vis-grid .rt-chip) {
       --tile-art: 6rem;
     }
   }
@@ -1680,6 +1719,11 @@
   .dock-dense .display-rows,
   .dock-dense .display-rows .rt-section {
     flex: 0 0 auto;
+  }
+  /* Full-page compact settings have a definite height, unlike a dock tray. */
+  .external-section-body.fill .display-rows,
+  .external-section-body.fill .display-rows .rt-section {
+    flex: 1 1 0;
   }
   /* Playback: 5 controls don't need four stacked bands. Label-left rows, and
      the two mode buttons sit side-by-side. Dock only — the sidebar keeps the
@@ -1708,13 +1752,16 @@
     flex: 1;
     min-width: 0;
   }
-  /* EffortPanel (56px tile -> 48, still >=44) */
-  .dock-dense :global(.effort-btn) {
-    min-height: 48px;
-    padding: 10px 6px;
+  /* The dock keeps the actual curves while its tray owns scrolling. */
+  .dock-dense:not(.fill) :global(.effort-btn) {
+    min-height: 72px;
+    padding: 6px 4px;
   }
-  .dock-dense :global(.effort-grid) {
+  .dock-dense:not(.fill) :global(.effort-grid) {
     gap: 4px;
+  }
+  .dock-dense:not(.fill) :global(.effort-curve) {
+    height: 22px;
   }
   /* PathShapePanel */
   .dock-dense :global(.path-shape-grid) {

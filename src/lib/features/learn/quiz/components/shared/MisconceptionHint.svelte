@@ -10,13 +10,19 @@ Tappable: navigates to TIKA with the misconception pre-loaded.
   import type { DetectedGap } from "../../../services/types";
   import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
   import { browser } from "$app/environment";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
   let { gap }: { gap: DetectedGap } = $props();
 
   const correctLetter = $derived(gap.correctLabel);
   const chosenLetter = $derived(gap.chosenLabel);
 
-  const hintText = $derived(`Not sure about ${correctLetter} vs ${chosenLetter}? Ask TIKA`);
+  const hintText = $derived(
+    t("learn_ui_ask_tika_difference", {
+      first: correctLetter,
+      second: chosenLetter,
+    })
+  );
 
   function openInTika() {
     if (!browser) return;
@@ -42,12 +48,21 @@ Tappable: navigates to TIKA with the misconception pre-loaded.
 <button
   class="misconception-hint"
   onclick={openInTika}
-  aria-label="Ask TIKA about this misconception"
+  aria-label={t("learn_ui_ask_tika_misconception")}
 >
   <span class="hint-icon">i</span>
   <span class="hint-text">{hintText}</span>
   <span class="hint-arrow" aria-hidden="true">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
       <path d="M5 12h14M12 5l7 7-7 7" />
     </svg>
   </span>
@@ -63,13 +78,18 @@ Tappable: navigates to TIKA with the misconception pre-loaded.
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
-    background: color-mix(in srgb, var(--semantic-info, #3b82f6) 85%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-info, #3b82f6) 85%,
+      transparent
+    );
     border: none;
     border-radius: 10px;
     max-width: 340px;
     z-index: 149;
     cursor: pointer;
-    animation: hintSlideIn var(--duration-emphasis, 300ms) cubic-bezier(0.16, 1, 0.3, 1);
+    animation: hintSlideIn var(--duration-emphasis, 300ms)
+      cubic-bezier(0.16, 1, 0.3, 1);
     animation-delay: 200ms;
     animation-fill-mode: backwards;
     transition: filter var(--duration-fast, 150ms) ease;

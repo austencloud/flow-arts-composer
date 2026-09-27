@@ -64,6 +64,8 @@ Usage:
     type HandSide as HandSideValue,
   } from "../domain/enums/pictograph-enums";
   import { deriveTnDFromPictograph } from "../domain/utils/tnd-deriver";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { elementalDisplayLabel } from "./elemental-display-label";
 
   // Props - all explicit, no global state dependencies
   let {
@@ -796,7 +798,7 @@ Usage:
         class="hand-color-key"
         class:visible={handColorKeyShown}
         transform="translate({expandedWidth / 2}, 0)"
-        aria-label="Left and right prop colors"
+        aria-label={t("viewer_final_prop_colors")}
         fill={darkMode === undefined
           ? "var(--dm-text-color)"
           : darkMode
@@ -867,7 +869,9 @@ Usage:
           {animateVisibility}
           xOffset={rightGlyphOffset}
           corner="top-right"
-          ariaLabel={`Prop timing and direction element: ${propElementalType}`}
+          ariaLabel={t("viewer_final_prop_timing_element", {
+            element: elementalDisplayLabel(propElementalType),
+          })}
         />
       </g>
     {/if}

@@ -17,6 +17,7 @@
 	✅ No TODOs (all implemented or documented)
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { DeviceDetector } from "$lib/shared/device/services/device-detector";
@@ -33,7 +34,6 @@
   import ConstructGenerateToggle from "../../workspace-panel/shared/components/buttons/ConstructGenerateToggle.svelte";
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
 
-
   const {
     createModuleState,
     constructTabState,
@@ -45,7 +45,6 @@
     onCloseFilters = () => {},
     isFilterPanelOpen = false,
   }: IToolPanelProps = $props();
-
 
   // Derived from props
   let activeToolPanel = $derived(createModuleState.activeSection);
@@ -89,7 +88,6 @@
     previousStep: () => {},
   });
 
-
   onMount(() => {
     hapticService = getHapticFeedback();
     deviceDetector = getDeviceDetector();
@@ -116,7 +114,6 @@
         ? "right"
         : (deviceLayout as "top" | "bottom" | "right");
   }
-
 
   const isSequenceStateInitialized = $derived(
     createModuleState.sequenceState.isInitialized
@@ -167,7 +164,6 @@
       constructTabState.isPickerStateLoading
   );
 
-
   // Keep picker state in sync with Construct tab's own sequence state
   // This ensures the StartPlacementPicker shows when sequence is empty
   // and OptionViewer shows when sequence has a start placement
@@ -194,7 +190,6 @@
     return animationStateRef;
   }
 
-
   function handleNavigateToAdvanced() {
     hapticService?.trigger("selection");
   }
@@ -203,7 +198,6 @@
     hapticService?.trigger("selection");
   }
 </script>
-
 
 <div
   class="tool-panel"
@@ -224,7 +218,7 @@
     <!-- Loading state while persistence is being restored -->
     <div class="persistence-loading">
       <ProgressRing percent={-1} size={24} strokeWidth={2} />
-      <p>Restoring sequence...</p>
+      <p>{t("create_ui_restoring_sequence")}</p>
     </div>
   {:else if activeToolPanel}
     <!-- Tab Content with Sequential Fade Transitions -->
@@ -240,7 +234,7 @@
               <!-- Loading state while determining which picker to show -->
               <div class="picker-loading">
                 <ProgressRing percent={-1} size={24} strokeWidth={2} />
-                <p>Loading options...</p>
+                <p>{t("create_ui_loading_options")}</p>
               </div>
             {:else}
               <ConstructTabContent
@@ -272,11 +266,10 @@
   {:else}
     <!-- Fallback case: persistence is loaded but no active tab -->
     <div class="no-tab-selected">
-      <p>No tab selected</p>
+      <p>{t("create_ui_no_tab_selected")}</p>
     </div>
   {/if}
 </div>
-
 
 <style>
   .tool-panel {

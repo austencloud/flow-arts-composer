@@ -97,7 +97,7 @@
 
 <header class="rail-header">
   <div class="title-row">
-    <h2>You</h2>
+    <h2>{t("browse_ui_you")}</h2>
   </div>
   <SegmentedControl
     {options}

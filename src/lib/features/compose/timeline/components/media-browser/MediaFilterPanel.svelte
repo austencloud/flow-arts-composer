@@ -2,6 +2,7 @@
   MediaFilterPanel.svelte - Advanced filter controls (difficulty, length, letter)
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { DifficultyLevel } from "$lib/shared/domain/models/sequence-parameters";
   import { DIFFICULTY_LEVELS } from "$lib/shared/domain/models/sequence-parameters";
 
@@ -41,7 +42,7 @@
 <div class="advanced-filters">
   <!-- Difficulty Row -->
   <div class="filter-row">
-    <span class="filter-label">Difficulty</span>
+    <span class="filter-label">{t("sort_difficulty")}</span>
     <div class="filter-control">
       <button
         class="level-btn"
@@ -68,7 +69,7 @@
 
   <!-- Length Row -->
   <div class="filter-row">
-    <span class="filter-label">Length</span>
+    <span class="filter-label">{t("generator_length")}</span>
     <div class="filter-control">
       <button
         class="stepper-btn"
@@ -98,7 +99,7 @@
 
   <!-- Letter Row -->
   <div class="filter-row">
-    <span class="filter-label">Letter</span>
+    <span class="filter-label">{t("browse_chip_letter")}</span>
     <div class="filter-control">
       <button class="letter-select-btn" onclick={onOpenLetterPicker}>
         <i class="fas fa-font" aria-hidden="true"></i>

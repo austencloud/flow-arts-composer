@@ -6,6 +6,7 @@
   action buttons are visible. Long-press any button for help.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import MobileActionButton from "./MobileActionButton.svelte";
   import SwapIcon from "$lib/shared/icons/SwapIcon.svelte";
   import type { ActionHelpId } from "../../domain/transforms/transform-help-content";
@@ -291,7 +292,11 @@
 
 <div class="mobile-toolbar" class:fill-available-height={fillAvailableHeight}>
   <!-- Segmented category tabs -->
-  <div class="category-tabs" role="tablist" aria-label="Action categories">
+  <div
+    class="category-tabs"
+    role="tablist"
+    aria-label={t("create_ui_action_categories")}
+  >
     {#each categories as cat}
       <button
         class="category-tab"

@@ -501,6 +501,59 @@ describe("fitTapsToGrid with a beat-1 mark", () => {
     expect(result.missedPositions).toEqual([]);
   });
 
+  it("gives the marked landing the count a split carried there", () => {
+    // The right side of a "keep counting" split, marked at landing 42.
+    const taps = run(40, 56);
+    const result = fitTapsToGrid({
+      taps,
+      bpm: 87,
+      moveBeats: sixteen,
+      firstTapPosition: 1,
+      beatOneSeconds: landing(42) + 0.05,
+      beatOnePosition: 42,
+      tempo: "follow",
+    });
+    expect(labelOf(result, landing(40))).toBe(40);
+    expect(labelOf(result, landing(42))).toBe(42);
+    expect(labelOf(result, landing(56))).toBe(56);
+    expect(result.originSeconds).toBeCloseTo(origin, 2);
+  });
+
+  it("places the grid by the mark alone when every tap is a count-in", () => {
+    // The part before a split in the count-in: no tap lands on the grid.
+    const result = fitTapsToGrid({
+      taps: [landing(-2), landing(-1)],
+      bpm: 87,
+      moveBeats: sixteen,
+      firstTapPosition: 1,
+      beatOneSeconds: landing(1) + 0.05,
+      tempo: "locked",
+    });
+    expect(result.labels.map((label) => label.position)).toEqual([null, null]);
+    expect(result.originSeconds).toBeCloseTo(origin + 0.05, 6);
+  });
+
+  it("reads two taps after a carried mark by where the mark lands", () => {
+    // The part after a keep-counting cut in a mixed-beat sequence: the mark
+    // carried there sits on landing 20, and the part holds two taps one beat
+    // apart. A one-beat gap comes up several times a pass; only the mark
+    // says which one this is.
+    const moveBeats = [1, 2, 1, 1, 2, 1, 1, 3];
+    const clock = createBeatClock(moveBeats);
+    const at = (position: number) => origin + spb * clock.beatsBefore(position);
+    const result = fitTapsToGrid({
+      taps: [at(21), at(22)],
+      bpm: 87,
+      moveBeats,
+      firstTapPosition: 1,
+      beatOneSeconds: at(20),
+      beatOnePosition: 20,
+      tempo: "locked",
+    });
+    expect(result.labels.map((label) => label.position)).toEqual([21, 22]);
+    expect(result.originSeconds).toBeCloseTo(origin, 6);
+  });
+
   it("places a two-beat move where the mark says", () => {
     const moveBeats = [1, 1, 2, 1];
     const clock = createBeatClock(moveBeats);

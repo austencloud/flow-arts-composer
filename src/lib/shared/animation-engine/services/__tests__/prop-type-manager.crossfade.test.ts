@@ -429,3 +429,53 @@ describe("PropTypeManager.handleSettingsChange crossfade trigger", () => {
     expect(renderer.startRightPropCrossfade).toHaveBeenCalledTimes(1);
   });
 });
+
+// The public composer has no settings service to write the 3D look into, so it
+// passes the look as a prop. That prop must win over the stored setting and
+// swap the drawn artwork like any other prop change.
+describe("PropTypeManager.handleOverrides prop look override", () => {
+  it("swaps to the model artwork when the host passes propLook", async () => {
+    const renderer = {
+      prepareLeftPropCrossfade: vi.fn(),
+      prepareRightPropCrossfade: vi.fn(),
+      startLeftPropCrossfade: vi.fn(),
+      startRightPropCrossfade: vi.fn(),
+    };
+    const ptm = new PropTypeManager();
+    ptm.wire({
+      settingsService: {
+        currentSettings: { propArtwork: "pictograph" },
+      } as any,
+      propTextureService: null,
+      trailCapturer: null,
+      renderLoopService: null,
+      precomputationService: null,
+      propTypeChangeService: null,
+      fireTipTracker: null,
+      animationRenderer: renderer as any,
+    });
+    const state = makeState("staff", "staff");
+    const chicken = { leftPropType: "chicken", rightPropType: "chicken" };
+
+    ptm.handleOverrides(chicken as any, state, getFrameParams, false);
+    await flushHotSwap();
+    ptm.handleOverrides(
+      { ...chicken, propLook: "pictograph" } as any,
+      state,
+      getFrameParams,
+      false
+    );
+    await flushHotSwap();
+    expect(renderer.prepareLeftPropCrossfade).not.toHaveBeenCalled();
+
+    ptm.handleOverrides(
+      { ...chicken, propLook: "model" } as any,
+      state,
+      getFrameParams,
+      false
+    );
+    await flushHotSwap();
+    expect(renderer.prepareLeftPropCrossfade).toHaveBeenCalledTimes(1);
+    expect(renderer.prepareRightPropCrossfade).toHaveBeenCalledTimes(1);
+  });
+});

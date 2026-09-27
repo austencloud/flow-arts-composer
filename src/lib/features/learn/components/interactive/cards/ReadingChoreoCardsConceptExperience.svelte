@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { tick } from "svelte";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { getHandPathReferenceCards } from "$lib/features/choreo-card/domain/hand-path-reference-cards";
@@ -152,7 +153,7 @@
   onkeydown={handleKeydown}
   tabindex="0"
   role="application"
-  aria-label="Reading a Choreo Card lesson, use arrow keys to navigate"
+  aria-label={t("learn_ui_reading_cards_keyboard")}
 >
   <LessonStageFrame artifactLayout="wide">
     {#snippet heading()}
@@ -168,7 +169,10 @@
     {/snippet}
 
     {#snippet artifact()}
-      <div class="card-study" aria-label={`${card.name} hand-path card`}>
+      <div
+        class="card-study"
+        aria-label={t("learn_ui_hand_path_card", { name: card.name })}
+      >
         <div class="card-picker">
           <SegmentedControl
             options={cardOptions}
@@ -197,7 +201,9 @@
     {#snippet controls()}
       <LessonStageControls
         progressAppearance="steps"
-        label={stepIndex === steps.length - 1 ? "Finish lesson" : "Next"}
+        label={stepIndex === steps.length - 1
+          ? t("learn_ui_finish_lesson")
+          : t("learn_ui_next")}
         currentStep={stepIndex + 1}
         totalSteps={steps.length}
         onAction={handleAction}

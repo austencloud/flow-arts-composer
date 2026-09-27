@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { getLocale, t } from "$lib/shared/i18n/i18n.svelte";
   /**
    * DateSeparator
    *
@@ -19,10 +20,10 @@
     const messageDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
 
     if (messageDate.getTime() === today.getTime()) {
-      return "Today";
+      return t("inbox_date_today");
     }
     if (messageDate.getTime() === yesterday.getTime()) {
-      return "Yesterday";
+      return t("inbox_date_yesterday");
     }
 
     // Within last 7 days - show day name
@@ -30,11 +31,11 @@
       (today.getTime() - messageDate.getTime()) / (1000 * 60 * 60 * 24)
     );
     if (daysDiff < 7) {
-      return d.toLocaleDateString(undefined, { weekday: "long" });
+      return d.toLocaleDateString(getLocale(), { weekday: "long" });
     }
 
     // Older - show full date
-    return d.toLocaleDateString(undefined, {
+    return d.toLocaleDateString(getLocale(), {
       month: "short",
       day: "numeric",
       year:
@@ -46,7 +47,7 @@
 <div
   class="date-separator"
   role="separator"
-  aria-label="Messages from {formatDateLabel(date)}"
+  aria-label={t("inbox_messages_date", { date: formatDateLabel(date) })}
 >
   <span class="date-label">{formatDateLabel(date)}</span>
 </div>

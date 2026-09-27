@@ -1,14 +1,13 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import {
     getSettings,
     updateSettings,
   } from "$lib/shared/application/state/app-state.svelte";
-  import {
-    resolveViewingProps,
-    viewingPropLabel,
-  } from "$lib/shared/foundation/services/prop-viewing";
+  import { resolveViewingProps } from "$lib/shared/foundation/services/prop-viewing";
+  import { localizedPropName } from "$lib/shared/settings/components/tabs/prop-type/localized-prop-name";
   import { captureActivePropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
   import PropPairField from "$lib/shared/pictograph/prop/components/PropPairField.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
@@ -37,7 +36,20 @@
   const resolved = $derived(
     resolveViewingProps(settings, sequence, collectionPropType)
   );
-  const label = $derived(viewingPropLabel(resolved.config));
+  const label = $derived.by(() => {
+    const { leftPropType, rightPropType } = resolved.config;
+    const left = localizedPropName(leftPropType);
+    return leftPropType === rightPropType
+      ? left
+      : `${left} / ${localizedPropName(rightPropType)}`;
+  });
+  const sourceLabel = $derived(
+    resolved.source === "Collection"
+      ? t("browse_audit_collection")
+      : resolved.source === "Saved with sequence"
+        ? t("browse_audit_saved_with_sequence")
+        : t("browse_audit_my_props")
+  );
   const mixedGallery = $derived(
     settings.propViewingMode === "as-saved" && !sequence && !collectionPropType
   );
@@ -55,45 +67,55 @@
     <PanelButton
       variant="secondary"
       onclick={show}
-      ariaLabel={`Viewing props: ${mixedGallery ? "As saved" : `${label}, ${resolved.source}`}`}
+      ariaLabel={t("browse_audit_viewing_props_value", {
+        props: mixedGallery
+          ? t("browse_audit_as_saved")
+          : `${label}, ${sourceLabel}`,
+      })}
       ariaExpanded={open}
     >
       <span class="prop-label"
-        >{presentation === "default" ? "Viewing: " : ""}{mixedGallery
-          ? "As saved"
-          : label}</span
+        >{presentation === "default"
+          ? t("browse_audit_viewing_prefix")
+          : ""}{mixedGallery ? t("browse_audit_as_saved") : label}</span
       >
       {#if !mixedGallery && presentation === "default"}<span class="source"
-          >· {resolved.source}</span
+          >· {sourceLabel}</span
         >{/if}
       <i class="fas fa-chevron-down" aria-hidden="true"></i>
     </PanelButton>
   </div>
 {/if}
 <BaseModal bind:open size="fit" labelledBy={titleId}>
-  {#snippet header()}<h2 id={titleId}>Viewing props</h2>{/snippet}
+  {#snippet header()}<h2 id={titleId}>
+      {t("browse_audit_viewing_props")}
+    </h2>{/snippet}
   <div class="choices">
     {#if !mixedGallery}
       <p class="current-props">
-        {label}<span class="source"> · {resolved.source}</span>
+        {label}<span class="source"> · {sourceLabel}</span>
       </p>
     {/if}
     <SegmentedControl
       options={[
-        { value: "my-props", label: "My props" },
-        { value: "as-saved", label: "As saved" },
+        { value: "my-props", label: t("browse_audit_my_props") },
+        { value: "as-saved", label: t("browse_audit_as_saved") },
       ]}
       value={settings.propViewingMode ?? "my-props"}
       onchange={(mode) => void onUpdate({ propViewingMode: mode })}
       semantics="radiogroup"
-      ariaLabel="Viewing props"
+      ariaLabel={t("browse_audit_viewing_props")}
     />
     <p>
       {settings.propViewingMode === "as-saved"
-        ? "Use the collection’s prop, or the props saved with each sequence. Sequences without saved props use yours."
-        : "Show sequences with your props. Saved versions stay unchanged."}
+        ? t("browse_audit_as_saved_help")
+        : t("browse_audit_my_props_help")}
     </p>
-    <PropPairField bind:value={ownProps} label="My props" showColors />
+    <PropPairField
+      bind:value={ownProps}
+      label={t("browse_audit_my_props")}
+      showColors
+    />
   </div>
   {#snippet footer()}
     <div class="actions">
@@ -101,7 +123,7 @@
         onclick={() => {
           void onUpdate({ ...ownProps });
           open = false;
-        }}>Done</PanelButton
+        }}>{t("train_filter_done")}</PanelButton
       >
     </div>
   {/snippet}

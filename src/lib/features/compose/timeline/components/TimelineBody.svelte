@@ -1,7 +1,7 @@
 <!-- TimelineBody - Main timeline tracks area with minimap, ruler, and tracks -->
 <script lang="ts">
   import { untrack } from "svelte";
-  import TimeRuler from "./TimeRuler.svelte";
+  import TimeRuler from "$lib/shared/timeline/TimeRuler.svelte";
   import TrackLane from "./TrackLane.svelte";
   import TrackHeader from "./TrackHeader.svelte";
   import Playhead from "./Playhead.svelte";

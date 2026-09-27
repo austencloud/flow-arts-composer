@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import OverflowMenu from "$lib/shared/ui/components/OverflowMenu.svelte";
@@ -247,7 +248,7 @@
                 >Follows {sourcePerformerLabel ?? "an earlier performer"}</span
               >
             {:else}
-              <span>Complete two-prop sequence</span>
+              <span>{t("create_ui_complete_two_prop_sequence")}</span>
             {/if}
           </p>
         </div>
@@ -290,7 +291,7 @@
           ariaLabel={`Generate a new ${label} sequence with the current settings`}
         >
           <i class="fas fa-dice" aria-hidden="true"></i>
-          <span class="compact-generate-label">Generate</span>
+          <span class="compact-generate-label">{t("generator_button")}</span>
         </PanelButton>
       {/if}
       <OverflowMenu
@@ -300,7 +301,7 @@
         triggerPresentation="labelled"
       >
         {#snippet trigger()}
-          <span class="compact-more-label">More</span>
+          <span class="compact-more-label">{t("create_ui_more")}</span>
           <i class="fas fa-chevron-down compact-more-chevron" aria-hidden="true"
           ></i>
           <i

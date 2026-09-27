@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onDestroy, tick, untrack } from "svelte";
-  import { motionDuration } from "$lib/shared/transitions/motion";
+  import { growFade, motionDuration } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import { createLayoutMotion } from "$lib/shared/transitions/layout-flip";
   import { holdBackgroundFor } from "$lib/shared/background/shared/state/background-hold.svelte";
@@ -35,6 +35,7 @@
   import FuseFirstStepPanel from "./FuseFirstStepPanel.svelte";
   import FusePathBuilderDialog from "./FusePathBuilderDialog.svelte";
   import FuseWorkspaceHeader from "./FuseWorkspaceHeader.svelte";
+  import FuseLinkedRulePanel from "./FuseLinkedRulePanel.svelte";
 
   const { state: fuseState } = getFuseContext();
   const settings = getSettings();
@@ -43,16 +44,11 @@
   let landscapeSplit = $state(false);
   let shortLandscape = $state(false);
   let tallPortrait = $state(false);
-  // Open state and destination live in a module so they outlast this
-  // component: a hot-module replacement of the layout, or the full reload Vite
-  // falls back to, used to shut the Rule editor mid-edit. A Pairing editor
-  // restored into a workspace whose paths are no longer linked has nothing to
-  // edit, so that one lands on the recipe list instead.
-  if (
-    fuseRecipePanel.destination === "pairing" &&
-    fuseState.mode !== "symmetry"
-  ) {
+  // Older sessions stored the rule editor as a recipe destination. Linked now
+  // keeps those controls in the workspace, so retire that restored drawer.
+  if (fuseRecipePanel.destination === "pairing") {
     fuseRecipePanel.destination = null;
+    fuseRecipePanel.open = false;
   }
   let actionSide = $state<FuseSide | null>(null);
   let firstStepOpen = $state(false);
@@ -730,19 +726,8 @@
     else openSettings(null);
   }
 
-  // Linking the paths is the act of choosing a rule, so the switch opens the
-  // rule editor. Separating them retires it: there is no rule to look at, and a
-  // recipe standing open on an empty editor is what this replaced.
   function changeMode(mode: FuseMode): void {
     fuseState.setMode(mode);
-    if (mode === "symmetry") openSettings("pairing");
-    else if (fuseRecipePanel.destination === "pairing") closeRecipe();
-  }
-
-  // The follower card's footer states the rule that built it, so clicking it
-  // opens the editor for that rule — the drawer, already scoped to Pairing.
-  function editPairing(): void {
-    openSettings("pairing");
   }
 </script>
 
@@ -751,6 +736,7 @@
     class="fuse-workspace themed-scrollbar"
     bind:this={workspaceEl}
     class:compact-workspace={compact}
+    class:linked-workspace={fuseState.mode === "symmetry"}
     class:short-landscape-workspace={shortLandscape}
     class:tall-portrait-workspace={tallPortrait}
     class:landscape-workspace={landscapeSplit}
@@ -768,13 +754,19 @@
       fuseState.pendingSide !== null ||
       fuseState.isFusing}
   >
-    <FuseWorkspaceHeader
-      recipeOpen={fuseRecipePanel.open}
-      flatRecipeRail={wideWorkspace}
-      onOpenRecipe={toggleRecipe}
-      onOpenSetting={openSettings}
-      onModeChange={changeMode}
-    />
+    <div class="fuse-header-region">
+      <FuseWorkspaceHeader
+        recipeOpen={fuseRecipePanel.open}
+        flatRecipeRail={wideWorkspace}
+        onOpenRecipe={toggleRecipe}
+        onModeChange={changeMode}
+      />
+      {#if fuseState.mode === "symmetry"}
+        <div transition:growFade>
+          <FuseLinkedRulePanel />
+        </div>
+      {/if}
+    </div>
     {#if recipeMounted && fullCard}
       <FuseRecipeColumn
         bind:destination={fuseRecipePanel.destination}
@@ -792,7 +784,6 @@
         firstStepPickerActive={inlineFirstStepSide === "left"}
         onFirstStepComplete={closeInlineFirstStep}
         onCancelFirstStep={closeInlineFirstStep}
-        onEditPairing={editPairing}
       />
       <FuseSourceCard
         side="right"
@@ -803,7 +794,6 @@
         firstStepPickerActive={inlineFirstStepSide === "right"}
         onFirstStepComplete={closeInlineFirstStep}
         onCancelFirstStep={closeInlineFirstStep}
-        onEditPairing={editPairing}
       />
       <div
         class="split-handle"
@@ -841,7 +831,6 @@
           firstStepPickerActive={inlineFirstStepSide === "left"}
           onFirstStepComplete={closeInlineFirstStep}
           onCancelFirstStep={closeInlineFirstStep}
-          onEditPairing={editPairing}
         />
         <FuseSourceCard
           side="right"
@@ -851,7 +840,6 @@
           firstStepPickerActive={inlineFirstStepSide === "right"}
           onFirstStepComplete={closeInlineFirstStep}
           onCancelFirstStep={closeInlineFirstStep}
-          onEditPairing={editPairing}
         />
       </div>
     {:else if !compact}
@@ -863,7 +851,6 @@
         firstStepPickerActive={inlineFirstStepSide === "left"}
         onFirstStepComplete={closeInlineFirstStep}
         onCancelFirstStep={closeInlineFirstStep}
-        onEditPairing={editPairing}
       />
       <FuseSourceCard
         side="right"
@@ -873,7 +860,6 @@
         firstStepPickerActive={inlineFirstStepSide === "right"}
         onFirstStepComplete={closeInlineFirstStep}
         onCancelFirstStep={closeInlineFirstStep}
-        onEditPairing={editPairing}
       />
     {/if}
     <FusePreviewStage
@@ -883,7 +869,6 @@
       isSaving={isSavingResult}
       onChooseFirstStep={openFirstStep}
       onBuildPath={openPathBuilder}
-      onEditPairing={editPairing}
       {compact}
     />
   </div>
@@ -922,6 +907,14 @@
         transparent 38%
       ),
       var(--theme-page-bg, transparent);
+  }
+
+  .fuse-header-region {
+    grid-area: header;
+    display: flex;
+    flex-direction: column;
+    gap: var(--fuse-col-gap);
+    min-width: 0;
   }
 
   .fuse-workspace {
@@ -1046,6 +1039,13 @@
       "preview";
   }
 
+  /* Keep the result usable when the permanent controls exceed a phone's
+     available height. The workspace scrolls as one page. */
+  .fuse-workspace.compact-workspace.linked-workspace {
+    grid-template-rows: max-content minmax(480px, 1fr);
+    overflow-y: auto;
+  }
+
   /* Full-card markup and its grid must change as one state transition. Keeping
      the layout behind a second CSS threshold let browser zoom put the markup
      and grid on opposite sides of the seam, creating implicit columns. */
@@ -1053,10 +1053,7 @@
      than being covered — the thing a drawer over the result could never do.
 
      Right, because every door onto the recipe is on the right: the Fuse recipe
-     button sits at the right end of the header, and Rule — the one card that
-     opens the editor rather than holding its own control — is the last card in
-     the rail. A panel that answered a right-hand control by growing out of the
-     opposite edge of the screen made you look away from what you just clicked.
+     button sits at the right end of the header, beside the recipe cards.
 
      The seven tracks are stable in both desktop compositions: paths, result,
      and Recipe each keep a named place while unused seams collapse to zero.

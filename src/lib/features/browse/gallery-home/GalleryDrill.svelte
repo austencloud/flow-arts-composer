@@ -15,6 +15,7 @@
   that leak column layout into unprefixed names.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, type Snippet } from "svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import { DURATION } from "$lib/shared/transitions/transitions";
@@ -45,6 +46,8 @@
 
   interface Props {
     pool?: readonly SequenceData[];
+    loading?: boolean;
+    loadFailed?: boolean;
     /** Live count of results if this filter value were applied. */
     getCount: (type: BrowseFilterType, value: string | number) => number;
     /** Apply the chosen filter and hand off to the grid. Values with a
@@ -153,6 +156,8 @@
   }
   let {
     pool = [],
+    loading = false,
+    loadFailed = false,
     getCount,
     onApply,
     onShowAll,
@@ -513,9 +518,9 @@
     }
   }
 
-  const stackHint = onToggleValue
-    ? "Tap several. A sequence can match any of them."
-    : undefined;
+  const stackHint = $derived(
+    onToggleValue ? t("browse_audit_tap_several_sequence_any") : undefined
+  );
   // The landing's Starting-letter glyph grows once the adaptive tier has room.
   const landingGlyphHeight = $derived(
     adaptiveValueLayout && drillWidth >= 700 && drillWidth < 900 ? 32 : 20
@@ -580,8 +585,8 @@
       <input
         type="search"
         bind:value={query}
-        placeholder="Search sequences…"
-        aria-label="Search sequences"
+        placeholder={t("browse_ui_search_sequences")}
+        aria-label={t("browse_search_sequences")}
       />
     </form>
   {/if}
@@ -632,6 +637,8 @@
             <GalleryLanding
               {catalog}
               poolSize={pool.length}
+              {loading}
+              {loadFailed}
               {showAll}
               {chooserTitle}
               {chooserHint}

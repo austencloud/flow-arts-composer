@@ -6,6 +6,14 @@ function source(path: string): string {
   return readFileSync(resolve(process.cwd(), path), "utf8");
 }
 
+// German i18n work (commits b11df1a24d, 245d999978) moved the mandala click
+// target and motion/hand control labels behind t() keys backed by
+// messages/en.json. Check the source calls the key AND messages/en.json still
+// carries the identical original English copy.
+function readEnglishMessages(): Record<string, string> {
+  return JSON.parse(source("messages/en.json")) as Record<string, string>;
+}
+
 const workspaceGrid = source(
   "src/lib/features/create/shared/workspace-panel/sequence-display/components/WorkspaceGrid.svelte"
 );
@@ -36,11 +44,16 @@ const displayTilePreview = source(
 
 describe("Create workspace mandala viewer contract", () => {
   it("makes both workspace mandala layouts accessible click targets", () => {
-    expect(workspaceGrid.match(/aria-label="Open mandala"/g)).toHaveLength(2);
+    expect(
+      workspaceGrid.match(/aria-label=\{t\("create_ui_open_mandala"\)\}/g)
+    ).toHaveLength(2);
     expect(workspaceGrid.match(/{#if onMandalaClick}/g)).toHaveLength(2);
     expect(
       workspaceGrid.match(/onclick=\{\(\) => onMandalaClick\(/g)
     ).toHaveLength(2);
+
+    const en = readEnglishMessages();
+    expect(en["create_ui_open_mandala"]).toBe("Open mandala");
   });
 
   it("routes the click through panel state and reuses the editor drawer", () => {
@@ -70,24 +83,33 @@ describe("Create workspace mandala viewer contract", () => {
 
   it("keeps motion and hand visibility inside the existing bottom controls", () => {
     expect(mandalaPanel).not.toContain('class="viewer-options"');
-    expect(mandalaControls).toContain('{ value: "static", label: "Static" }');
     expect(mandalaControls).toContain(
-      '{ value: "animated", label: "Animated" }'
+      '{ value: "static", label: t("viewer_ui_static") }'
     );
     expect(mandalaControls).toContain(
-      '{ value: "left", label: "Left", tone: "blue" }'
+      '{ value: "animated", label: t("viewer_ui_animated") }'
     );
     expect(mandalaControls).toContain(
-      '{ value: "both", label: "Both", tone: "accent" }'
+      '{ value: "left", label: t("viewer_ui_left"), tone: "blue" }'
     );
     expect(mandalaControls).toContain(
-      '{ value: "right", label: "Right", tone: "red" }'
+      '{ value: "both", label: t("viewer_ui_both"), tone: "accent" }'
+    );
+    expect(mandalaControls).toContain(
+      '{ value: "right", label: t("viewer_ui_right"), tone: "red" }'
     );
     expect(mandalaControls).not.toContain('label: "Purple"');
     expect(mandalaPanel).toContain("ctrl.show = variant");
     expect(mandalaPanel).toContain("variant: ctrl.show");
     expect(mandalaPane).toContain("show={renderedHands}");
     expect(mandalaController).toContain("show: this.show");
+
+    const en = readEnglishMessages();
+    expect(en["viewer_ui_static"]).toBe("Static");
+    expect(en["viewer_ui_animated"]).toBe("Animated");
+    expect(en["viewer_ui_left"]).toBe("Left");
+    expect(en["viewer_ui_both"]).toBe("Both");
+    expect(en["viewer_ui_right"]).toBe("Right");
   });
 
   it("puts Add to collection in the shared bottom dock", () => {

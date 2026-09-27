@@ -9,9 +9,15 @@
 
 import type { ZipCardPair } from "./types";
 import { sanitizeFilename } from "$lib/shared/foundation/services/file-downloader";
+import {
+  PRINT_SERVICE_PIXELS_PER_INCH,
+  verifyCardFrontQrs,
+} from "./print-qr-guard";
 
 export interface DeckZipExportOptions {
-  /** Per-card front renderer used to stamp a freshly allocated physical ID. */
+  /** Per-card front renderer used to stamp a freshly allocated physical ID.
+   *  The renderer owns QR verification for the fronts it returns; without it,
+   *  every front with a QR cell is decoded and size-checked before export. */
   frontRenderer?: (
     pair: ZipCardPair,
     cardIndex: number
@@ -28,6 +34,10 @@ export async function exportDeckZIP(
   onProgress?: (current: number, total: number) => void,
   options: DeckZipExportOptions = {}
 ): Promise<Blob> {
+  if (!options.frontRenderer) {
+    await verifyCardFrontQrs(pairs, () => PRINT_SERVICE_PIXELS_PER_INCH);
+  }
+
   // JSZip is lazy-loaded - it uses `new Function` internally (CSP-incompatible
   // when eagerly imported into the main chunk).
   const { default: JSZip } = await import("jszip");

@@ -11,6 +11,7 @@
   shift. Each pictograph renders its own beat number + per-hand turns.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -95,7 +96,7 @@
       class="header-btn close"
       type="button"
       onclick={onClose}
-      aria-label="Close batch editor"
+      aria-label={t("create_ui_close_batch_editor")}
     >
       <i class="fas fa-times" aria-hidden="true"></i>
     </button>

@@ -17,6 +17,7 @@ escape to a full-page grid. A host that has no such grid omits `onEject` and
 the below-seam actions mutate the engine in place.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
   import GalleryDrill from "$lib/features/browse/gallery-home/GalleryDrill.svelte";
   import type {
@@ -153,8 +154,12 @@ the below-seam actions mutate the engine in place.
     style:view-transition-name="gallery-rule-count"
     aria-live="polite"
   >
-    {engine.resultCount}
-    {engine.resultCount === 1 ? "match" : "matches"}
+    {t(
+      engine.resultCount === 1
+        ? "browse_audit_match_count_singular"
+        : "browse_audit_match_count_plural",
+      { count: engine.resultCount }
+    )}
   </span>
   {#if engine.hasActiveFilters}
     <FilterRuleStrip
@@ -165,7 +170,9 @@ the below-seam actions mutate the engine in place.
       onRemoveFilter={(key) => startMorph(() => engine.removeFilter(key))}
     />
   {:else}
-    <span class="strip-empty">No filters yet. Pick one on the left.</span>
+    <span class="strip-empty"
+      >{t("browse_ui_no_filters_yet_pick_one_on_the_left")}</span
+    >
   {/if}
   {#if resultsActions || onSaveSmart || onClose}
     <div
@@ -176,20 +183,20 @@ the below-seam actions mutate the engine in place.
       {#if onSaveSmart}
         <PanelButton
           variant="secondary"
-          ariaLabel="Save these filters as a Smart Collection"
+          ariaLabel={t("browse_audit_save_filters_smart")}
           onclick={onSaveSmart}
         >
           <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
-          Save
+          {t("browse_audit_save")}
         </PanelButton>
       {/if}
       {#if onClose}
         <PanelButton
           variant="primary"
-          ariaLabel="Close filters and view results"
+          ariaLabel={t("browse_audit_close_filters_view_results")}
           onclick={onClose}
         >
-          Done
+          {t("browse_audit_done")}
         </PanelButton>
       {/if}
     </div>
@@ -197,26 +204,38 @@ the below-seam actions mutate the engine in place.
 {/snippet}
 
 <div class="gallery-workspace">
+  {#if engine.error}
+    <div role="alert">
+      <p>{engine.error}</p>
+      <PanelButton variant="secondary" onclick={() => engine.refresh()}>
+        {t("browse_audit_try_again")}
+      </PanelButton>
+    </div>
+  {/if}
   {#if onClose && !splitPaneActive && !engine.hasActiveFilters}
     <div class="workspace-close">
       <PanelButton
         variant="primary"
-        ariaLabel="Close filters and view results"
+        ariaLabel={t("browse_audit_close_filters_view_results")}
         onclick={onClose}
       >
-        Done
+        {t("browse_audit_done")}
       </PanelButton>
     </div>
   {/if}
   {#if (engine.hasActiveFilters || resultsActions || stripReserved) && !splitPaneActive}
-    <div class="gallery-rule-strip" aria-label="Current filters">
+    <div class="gallery-rule-strip" aria-label={t("browse_ui_current_filters")}>
       <span
         class="strip-count strip-motion-anchor"
         style:view-transition-name="gallery-rule-count"
         aria-live="polite"
       >
-        {engine.resultCount}
-        {engine.resultCount === 1 ? "match" : "matches"}
+        {t(
+          engine.resultCount === 1
+            ? "browse_audit_match_count_singular"
+            : "browse_audit_match_count_plural",
+          { count: engine.resultCount }
+        )}
       </span>
       {#if engine.hasActiveFilters}
         <FilterRuleStrip
@@ -230,7 +249,7 @@ the below-seam actions mutate the engine in place.
         <span
           class="strip-empty strip-motion-anchor"
           style:view-transition-name="gallery-rule-empty"
-          >No filters yet. The whole library is ready.</span
+          >{t("browse_ui_no_filters_yet_the_whole_library_is_ready")}</span
         >
       {/if}
       <div
@@ -249,26 +268,26 @@ the below-seam actions mutate the engine in place.
               else eject(() => {});
             }}
           >
-            View {engine.resultCount} results
+            {t("browse_audit_view_results", { count: engine.resultCount })}
           </PanelButton>
         {/if}
         {#if onSaveSmart}
           <PanelButton
             variant="secondary"
-            ariaLabel="Save these filters as a Smart Collection"
+            ariaLabel={t("browse_audit_save_filters_smart")}
             onclick={onSaveSmart}
           >
             <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
-            Save
+            {t("browse_audit_save")}
           </PanelButton>
         {/if}
         {#if onClose}
           <PanelButton
             variant="primary"
-            ariaLabel="Close filters and view results"
+            ariaLabel={t("browse_audit_close_filters_view_results")}
             onclick={onClose}
           >
-            Done
+            {t("browse_audit_done")}
           </PanelButton>
         {/if}
       </div>
@@ -277,6 +296,8 @@ the below-seam actions mutate the engine in place.
   {#key drillSeed}
     <GalleryDrill
       pool={engine.allSequences}
+      loading={!engine.error && (engine.isLoading || !engine.sectionsReady)}
+      loadFailed={!!engine.error}
       adaptiveValueLayout
       persistentDesktopCatalog
       fluidWideCanvas

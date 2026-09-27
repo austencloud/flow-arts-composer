@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { bootProfiler } from "$lib/shared/analytics/boot-profiler";
   // get-create-module-initializer (64-file subtree) and get-extension-flow-coordinator
   // (10-file subtree) are imported dynamically at their only call sites (onMount /
@@ -93,7 +94,7 @@
   import type { SettingsState } from "$lib/shared/settings/state/settings-state.svelte";
   import type { LetterSource } from "$lib/shared/create/domain/spell-models";
   import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
-  import { formatLOOPTypeForDisplay } from "$lib/shared/create/services/loop-type-utils";
+  import { loopTypeLabel } from "$lib/features/create/generate/components/loop-component-presentation";
   import { toast } from "$lib/shared/toast/state/toast-state.svelte";
   import { UndoOperationType } from "../services/undo-manager";
   import PropUnlockCelebration from "$lib/shared/gamification/components/PropUnlockCelebration.svelte";
@@ -192,7 +193,7 @@
   let pendingLoopType = $state<LOOPType | null>(null);
   let isApplyingLoop = $state(false);
   let pendingLoopStepCount = $state(0);
-  let pendingLoopComponentName = $state("");
+  const pendingLoopComponentName = $derived(loopTypeLabel(pendingLoopType));
   let isMobile = $state(false);
   let sequenceToTransfer: PictographData[] | null = $state(null);
   let toolPanelElement: HTMLElement | null = $state(null);
@@ -275,7 +276,8 @@
       return;
     }
 
-    const startPlacement = constructTabState.sequenceState.selectedStartPlacement;
+    const startPlacement =
+      constructTabState.sequenceState.selectedStartPlacement;
 
     constructTabState.setSelectedStartPlacement(startPlacement);
     if (startPlacement) {
@@ -418,7 +420,7 @@
 
       try {
         const initStart = performance.now();
-        initProgress = "Resolving services...";
+        initProgress = t("create_ui_resolving_services");
         const { getCreateModuleInitializer } = await bootProfiler.measureAsync(
           "create:initializer-import",
           () =>
@@ -426,7 +428,7 @@
         );
         const initService = getCreateModuleInitializer();
 
-        initProgress = "Initializing workspace...";
+        initProgress = t("create_ui_initializing_workspace");
         const result = await bootProfiler.measureAsync(
           "create:initialize",
           () => initService.initialize()
@@ -701,7 +703,8 @@
         accountSetupState?.requestReminder();
       }
     } catch (err) {
-      error = err instanceof Error ? err.message : "Failed to select option";
+      error =
+        err instanceof Error ? err.message : t("create_audit_select_error");
     }
   }
 
@@ -740,7 +743,8 @@
         panelState,
       });
     } catch (err) {
-      error = err instanceof Error ? err.message : "Failed to clear sequence";
+      error =
+        err instanceof Error ? err.message : t("create_audit_clear_error");
     } finally {
       showClearSequenceConfirm = false;
     }
@@ -771,11 +775,9 @@
     const sequence = activeSeqState?.currentSequence;
     if (!sequence) return;
 
-    pendingLoopComponentName = formatLOOPTypeForDisplay(loopType);
-
     const result = await extensionFlowCoordinator.startFlow(sequence);
     if (!result.canExtend || !result.analysis) {
-      toast.warning("Cannot complete this LOOP");
+      toast.warning(t("create_audit_loop_error"));
       return;
     }
 
@@ -1047,10 +1049,10 @@
         <!-- Clear Sequence Confirmation Dialog -->
         <ConfirmDialog
           bind:isOpen={showClearSequenceConfirm}
-          title="Clear Sequence?"
-          message="This will remove all steps and the start placement. Use undo to restore if needed."
-          confirmText="Clear All"
-          cancelText="Keep"
+          title={t("create_ui_clear_sequence")}
+          message={t("create_audit_clear_message")}
+          confirmText={t("create_audit_clear_all")}
+          cancelText={t("create_audit_keep")}
           variant="danger"
           showDontAskAgain={true}
           ghostConfirm={true}
@@ -1062,10 +1064,12 @@
         <!-- LOOP Completion Confirmation Dialog -->
         <ConfirmDialog
           bind:isOpen={showLoopConfirm}
-          title="Apply {pendingLoopComponentName} LOOP?"
-          message="This will add {pendingLoopStepCount} steps to your sequence."
-          confirmText="Apply"
-          cancelText="Cancel"
+          title="{t('create_audit_apply')} {pendingLoopComponentName} LOOP?"
+          message={t("create_audit_loop_steps", {
+            count: pendingLoopStepCount,
+          })}
+          confirmText={t("create_audit_apply")}
+          cancelText={t("create_audit_cancel")}
           variant="info"
           showDontAskAgain={true}
           onConfirm={confirmLoopCompletion}

@@ -29,6 +29,9 @@
     resolveTrackedUpperBodyStance,
     type StanceYawTrack,
   } from "$lib/shared/3d/collision/stance-yaw-track";
+  import type { HardBeatTrack } from "$lib/shared/3d/collision/hard-beat-displacement";
+  import { resolvePerformerContact } from "$lib/shared/3d/domain/performer-contact-displacement";
+  import { performerScoreClock } from "$lib/shared/3d/domain/performer-score-clock";
   import {
     fitStaffLengthForHug,
     measurePerformerReach,
@@ -84,6 +87,11 @@
      * resolved here, so nothing downstream re-plans from it.
      */
     onStanceTrack?: (track: StanceYawTrack | null) => void;
+    /**
+     * The hard-beat displacement planned for the loaded sequence, handed out
+     * once it exists. Its `report` lists every displaced beat in metres.
+     */
+    onHardBeatTrack?: (track: HardBeatTrack | null) => void;
     /** A study can author one pose directly while retaining this component's
      * production character, hand, grip, and IK ownership. */
     authoredUpperBodyStance?: AuthoredUpperBodyStance | null;
@@ -133,7 +141,7 @@
   const upperBodyStance = $derived(
     resolveTrackedUpperBodyStance(
       stanceTrack,
-      performerState.scoreTime,
+      performerScoreClock(performerState),
       PlaneMode.WALL,
       performerState.leftPropState,
       performerState.rightPropState,
@@ -148,6 +156,13 @@
     }
   );
   const authoredStanceActive = $derived(props.authoredUpperBodyStance != null);
+  // Staffs the hands cannot hold from this stance move toward them, radially
+  // and in depth, and a seek clears the animator's contact history. A pose
+  // authored by hand keeps the props where the score puts them.
+  const contact = $derived(
+    resolvePerformerContact(performerState, { displace: !authoredStanceActive })
+  );
+  const hardBeatTrack = $derived(contact.track);
   let readyReported = false;
 
   function captureReach(diagnostics: AvatarPoseDiagnostics): void {
@@ -208,6 +223,11 @@
     props.onStanceTrack?.(track);
   });
 
+  $effect(() => {
+    const track = hardBeatTrack;
+    props.onHardBeatTrack?.(track);
+  });
+
   onDestroy(() => performerState.destroy());
 </script>
 
@@ -221,8 +241,10 @@
   visiblePlanes={new Set([Plane.WALL])}
   bluePropType={toScenePropType(props.propType)}
   redPropType={toScenePropType(props.propType)}
-  bluePropState={performerState.leftPropState}
-  redPropState={performerState.rightPropState}
+  bluePropState={contact.leftProp}
+  redPropState={contact.rightProp}
+  pairSeparation={!contact.planned}
+  contactResetKey={contact.resetKey}
   groundOffset={rigGroundOffset}
   enableLocomotion={props.enableLocomotion ?? true}
   enableFootPlanting={props.enableFootPlanting ?? true}

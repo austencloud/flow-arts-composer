@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   interface Props {
     onUndo?: () => void | Promise<void>;
     onRedo?: () => void | Promise<void>;
@@ -26,8 +27,8 @@
     data-undo-shortcut-label={undoLabel || undefined}
     disabled={!canUndo}
     tabindex="-1"
-    aria-label={undoLabel ? `Undo: ${undoLabel}` : "Undo"}
-    onclick={onUndo}>Undo</button
+    aria-label={undoLabel ? t("keyboard_ui_undo_named", { name: undoLabel }) : t("keyboard_palette_undo")}
+    onclick={onUndo}>{t("keyboard_palette_undo")}</button
   >
 {/if}
 
@@ -39,8 +40,8 @@
     data-redo-shortcut-label={redoLabel || undefined}
     disabled={!canRedo}
     tabindex="-1"
-    aria-label={redoLabel ? `Redo: ${redoLabel}` : "Redo"}
-    onclick={onRedo}>Redo</button
+    aria-label={redoLabel ? t("keyboard_ui_redo_named", { name: redoLabel }) : t("keyboard_palette_redo")}
+    onclick={onRedo}>{t("keyboard_palette_redo")}</button
   >
 {/if}
 

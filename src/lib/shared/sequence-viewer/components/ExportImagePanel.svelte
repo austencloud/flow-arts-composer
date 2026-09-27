@@ -15,6 +15,7 @@
   behind the share button that way everyone knows what to expect."
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onDestroy } from "svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import {
@@ -234,11 +235,11 @@
       ? [
           { value: "qr", label: "QR" },
           { value: "mandala", label: "Mandala" },
-          { value: "none", label: "None" },
+          { value: "none", label: t("viewer_ui_none") },
         ]
       : [
           { value: "mandala", label: "Mandala" },
-          { value: "none", label: "None" },
+          { value: "none", label: t("viewer_ui_none") },
         ]
   );
 
@@ -339,7 +340,7 @@
   // Columns options share one source with the mobile stepper (columnOptionsFor):
   // numeric counts capped at the step count, with awkward layouts hidden.
   const columnOptions = $derived<{ label: string; value: number | null }[]>([
-    { label: "Auto", value: null },
+    { label: t("viewer_ui_auto"), value: null },
     ...columnOptionsFor(stepCount).map((v) => ({ label: String(v), value: v })),
   ]);
 
@@ -402,11 +403,11 @@
   // Columns + Theme are two buttons each — a whole tab apiece wasted the tray.
   // Folded into one "Format" tab (two labeled rows), so every tab now holds a
   // meaningful group instead of a lone pair.
-  const DISPLAY_TABS: ControlDockTab[] = [
-    { id: "labels", label: "Labels", icon: "fa-font" },
-    { id: "pictograph", label: "Pictograph", icon: "fa-shapes" },
-    { id: "format", label: "Format", icon: "fa-sliders" },
-  ];
+  const DISPLAY_TABS = $derived<ControlDockTab[]>([
+    { id: "labels", label: t("viewer_ui_labels"), icon: "fa-font" },
+    { id: "pictograph", label: t("viewer_ui_pictograph"), icon: "fa-shapes" },
+    { id: "format", label: t("viewer_ui_format"), icon: "fa-sliders" },
+  ]);
   let activeTab = $state<string | null>(null);
 
   function selectDisplayTab(id: string): void {
@@ -436,7 +437,7 @@
         <div class="dock-dense">
           {#if activeTab === "labels"}
             <div class="field">
-              <span class="field-label">Header</span>
+              <span class="field-label">{t("viewer_ui_header")}</span>
               <div class="rt-chip-row">
                 <button
                   type="button"
@@ -447,7 +448,7 @@
                       "word",
                       showWord,
                       imageComposition.setAddWord.bind(imageComposition)
-                    )}>Word</button
+                    )}>{t("viewer_ui_word")}</button
                 >
                 <button
                   type="button"
@@ -460,7 +461,7 @@
                       imageComposition.setAddDifficultyLevel.bind(
                         imageComposition
                       )
-                    )}>Level</button
+                    )}>{t("generator_level")}</button
                 >
                 <button
                   type="button"
@@ -479,7 +480,7 @@
               <CardFooterEditor
                 value={effectiveCardPresentation}
                 onchange={changeCardPresentation}
-                description="Appears inside the card image."
+                description={t("viewer_ui_appears_inside_the_card_image")}
                 onSave={onSaveCardPresentation}
                 dirty={cardPresentationDirty}
                 saving={cardPresentationSaving}
@@ -488,7 +489,7 @@
             </div>
           {:else if activeTab === "pictograph"}
             <div class="field">
-              <span class="field-label">Glyphs</span>
+              <span class="field-label">{t("viewer_ui_glyphs")}</span>
               <div class="rt-chip-row">
                 <button
                   type="button"
@@ -499,7 +500,7 @@
                       "grid",
                       showGrid,
                       vm.setGridVisibility.bind(vm)
-                    )}>Grid</button
+                    )}>{t("generator_grid")}</button
                 >
                 <button
                   type="button"
@@ -525,7 +526,7 @@
                       "prop_tnd_glyph",
                       propTndGlyph,
                       (value) => vm.setGlyphVisibility("propTndGlyph", value)
-                    )}>Prop TnD</button
+                    )}>{t("viewer_detail_prop_tnd")}</button
                 >
                 <button
                   type="button"
@@ -536,7 +537,7 @@
                       "positions_glyph",
                       placementsGlyph,
                       (value) => vm.setGlyphVisibility("placementsGlyph", value)
-                    )}>Placements</button
+                    )}>{t("browse_chip_placements")}</button
                 >
                 <button
                   type="button"
@@ -547,7 +548,7 @@
                       "hand_color_key",
                       handColorKey,
                       (value) => vm.setGlyphVisibility("handColorKey", value)
-                    )}>Hand key</button
+                    )}>{t("viewer_ui_hand_key")}</button
                 >
                 <button
                   type="button"
@@ -558,13 +559,13 @@
                       "non_radial",
                       nonRadial,
                       vm.setNonRadialVisibility.bind(vm)
-                    )}>Non-radial</button
+                    )}>{t("viewer_ui_non_radial")}</button
                 >
               </div>
             </div>
             {#if hasInfoCell}
               <div class="field">
-                <span class="field-label">Info</span>
+                <span class="field-label">{t("viewer_ui_info")}</span>
                 <div class="rt-chip-row">
                   {#if isOneSpot}
                     <div class="seg-fill">
@@ -610,14 +611,16 @@
               </div>
             {/if}
             {#if hasInfoCell && canQRCode}
-              <p class="qr-scope-note">QR codes appear on opened cards and exports. Gallery thumbnails stay QR-free.</p>
+              <p class="qr-scope-note">
+                {t("viewer_detail_qr_codes_appear_on_opened_cards_and_exports_gallery_thumbnails_stay_qr_free")}
+              </p>
             {/if}
             <!-- Start position is its own group: the Show toggle plus (when on) the
                single-select layout. Kept apart from the Info-cell chooser so the
                segmented control never sits next to loose chips (label mirrors the
                desktop sidebar: "Start" label + "Show" chip). -->
             <div class="field">
-              <span class="field-label">Start</span>
+              <span class="field-label">{t("viewer_ui_start")}</span>
               <div class="rt-chip-row">
                 <button
                   type="button"
@@ -630,7 +633,7 @@
                       imageComposition.setIncludeStartPlacement.bind(
                         imageComposition
                       )
-                    )}>Show</button
+                    )}>{t("viewer_ui_show")}</button
                 >
                 {#if showStartPos}
                   <button
@@ -639,7 +642,7 @@
                     transition:growFade={{ axis: "x" }}
                     aria-pressed={startPosLayout === "row"}
                     onclick={() => setStartPlacementLayout("row")}
-                    >Top Row</button
+                    >{t("viewer_ui_top_row")}</button
                   >
                   <button
                     type="button"
@@ -647,14 +650,14 @@
                     transition:growFade={{ axis: "x" }}
                     aria-pressed={startPosLayout === "column"}
                     onclick={() => setStartPlacementLayout("column")}
-                    >Left Column</button
+                    >{t("viewer_ui_left_column")}</button
                   >
                 {/if}
               </div>
             </div>
           {:else if activeTab === "format"}
             <div class="field">
-              <span class="field-label">Columns</span>
+              <span class="field-label">{t("viewer_ui_columns")}</span>
               <div class="rt-chip-row">
                 {#each columnOptions as option}
                   <button
@@ -662,10 +665,10 @@
                     class="rt-chip"
                     aria-pressed={currentColumnCount === option.value}
                     aria-label={option.value === null
-                      ? "Auto columns and start placement"
-                      : `${option.label} columns`}
+                      ? t("viewer_ui_auto_columns_and_start_placement")
+                      : t("viewer_ui_columns_count", { count: option.label })}
                     title={option.value === null
-                      ? "Chooses columns and start placement"
+                      ? t("viewer_ui_chooses_columns_and_start_placement")
                       : undefined}
                     onclick={() => setColumns(option.value)}
                     >{option.label}</button
@@ -674,21 +677,21 @@
               </div>
             </div>
             <div class="field">
-              <span class="field-label">Theme</span>
+              <span class="field-label">{t("tab_settings_theme")}</span>
               <div class="rt-chip-row">
                 <button
                   type="button"
                   class="rt-chip"
                   aria-pressed={!exportOptions.imageDarkMode}
                   onclick={() => setTheme(false)}
-                  ><i class="fas fa-sun" aria-hidden="true"></i> Light</button
+                  ><i class="fas fa-sun" aria-hidden="true"></i> {t("viewer_detail_light")}</button
                 >
                 <button
                   type="button"
                   class="rt-chip"
                   aria-pressed={exportOptions.imageDarkMode}
                   onclick={() => setTheme(true)}
-                  ><i class="fas fa-moon" aria-hidden="true"></i> Dark</button
+                  ><i class="fas fa-moon" aria-hidden="true"></i> {t("viewer_detail_dark")}</button
                 >
               </div>
             </div>
@@ -714,17 +717,17 @@
     }}
     out:flyFade={{ duration: DURATION.fast, x: SLIDE.sm, y: 0 }}
     role="region"
-    aria-label="Card settings"
+    aria-label={t("viewer_ui_card_settings")}
   >
     <div class="panel-center-inner">
       {#if onClose}
         <div class="panel-header">
-          <span class="panel-title">Card settings</span>
+          <span class="panel-title">{t("viewer_ui_card_settings")}</span>
           <button
             type="button"
             class="close-btn"
             onclick={onClose}
-            aria-label="Close card settings"
+            aria-label={t("viewer_ui_close_card_settings")}
           >
             <i class="fas fa-times" aria-hidden="true"></i>
           </button>
@@ -741,8 +744,9 @@
             onclick={toggleHeader}
             aria-pressed={headerAnyOn}
             aria-label={headerAnyOn
-              ? "Hide all header elements"
-              : "Show all header elements"}>Header</button
+              ? t("viewer_ui_hide_all_header_elements")
+              : t("viewer_ui_show_all_header_elements")}
+            >{t("viewer_ui_header")}</button
           >
           <div class="chip-group">
             <button
@@ -755,7 +759,7 @@
                   showWord,
                   imageComposition.setAddWord.bind(imageComposition)
                 )}
-              aria-pressed={showWord}>Word</button
+              aria-pressed={showWord}>{t("viewer_ui_word")}</button
             >
             <button
               type="button"
@@ -767,7 +771,7 @@
                   showDifficulty,
                   imageComposition.setAddDifficultyLevel.bind(imageComposition)
                 )}
-              aria-pressed={showDifficulty}>Level</button
+              aria-pressed={showDifficulty}>{t("generator_level")}</button
             >
             <button
               type="button"
@@ -788,7 +792,7 @@
           <CardFooterEditor
             value={effectiveCardPresentation}
             onchange={changeCardPresentation}
-            description="Appears inside the card image."
+            description={t("viewer_ui_appears_inside_the_card_image")}
             onSave={onSaveCardPresentation}
             dirty={cardPresentationDirty}
             saving={cardPresentationSaving}
@@ -805,8 +809,9 @@
             onclick={togglePictograph}
             aria-pressed={pictographAnyOn}
             aria-label={pictographAnyOn
-              ? "Hide all pictograph elements"
-              : "Show all pictograph elements"}>Pictograph</button
+              ? t("viewer_ui_hide_all_pictograph_elements")
+              : t("viewer_ui_show_all_pictograph_elements")}
+            >{t("viewer_ui_pictograph")}</button
           >
           <div class="chip-group">
             <button
@@ -819,7 +824,7 @@
                   showGrid,
                   vm.setGridVisibility.bind(vm)
                 )}
-              aria-pressed={showGrid}>Grid</button
+              aria-pressed={showGrid}>{t("generator_grid")}</button
             >
             <button
               type="button"
@@ -848,7 +853,7 @@
                   propTndGlyph,
                   (value) => vm.setGlyphVisibility("propTndGlyph", value)
                 )}
-              aria-pressed={propTndGlyph}>Prop TnD</button
+              aria-pressed={propTndGlyph}>{t("viewer_detail_prop_tnd")}</button
             >
             <button
               type="button"
@@ -860,7 +865,8 @@
                   placementsGlyph,
                   (value) => vm.setGlyphVisibility("placementsGlyph", value)
                 )}
-              aria-pressed={placementsGlyph}>Placements</button
+              aria-pressed={placementsGlyph}
+              >{t("browse_chip_placements")}</button
             >
             <button
               type="button"
@@ -872,7 +878,7 @@
                   handColorKey,
                   (value) => vm.setGlyphVisibility("handColorKey", value)
                 )}
-              aria-pressed={handColorKey}>Hand key</button
+              aria-pressed={handColorKey}>{t("viewer_ui_hand_key")}</button
             >
             <button
               type="button"
@@ -884,7 +890,7 @@
                   nonRadial,
                   vm.setNonRadialVisibility.bind(vm)
                 )}
-              aria-pressed={nonRadial}>Non-radial</button
+              aria-pressed={nonRadial}>{t("viewer_ui_non_radial")}</button
             >
           </div>
         </div>
@@ -893,7 +899,7 @@
           {#if isOneSpot}
             <!-- One info cell: QR and Mandala compete for it -> single chooser. -->
             <div class="setting-row">
-              <span class="setting-label">Info Cell</span>
+              <span class="setting-label">{t("viewer_ui_info_cell")}</span>
               <div class="chip-group seg-fill">
                 <SegmentedControl
                   options={infoCellOptions}
@@ -921,7 +927,7 @@
                         showQRCode,
                         imageComposition.setShowQRCode.bind(imageComposition)
                       )}
-                    aria-pressed={showQRCode}>QR Code</button
+                    aria-pressed={showQRCode}>{t("viewer_detail_qr_code")}</button
                   >
                 </div>
               </div>
@@ -929,7 +935,7 @@
 
             <!-- Mandala fill (blue/red path visualization in empty col-0 cells) -->
             <div class="setting-row">
-              <span class="setting-label">Mandala</span>
+              <span class="setting-label">{t("viewer_ui_mandala")}</span>
               <div class="chip-group">
                 <button
                   type="button"
@@ -941,7 +947,7 @@
                       showMandala,
                       imageComposition.setShowMandala.bind(imageComposition)
                     )}
-                  aria-pressed={showMandala}>Mandala</button
+                  aria-pressed={showMandala}>{t("viewer_ui_mandala")}</button
                 >
               </div>
             </div>
@@ -949,11 +955,13 @@
         {/if}
 
         {#if hasInfoCell && canQRCode}
-          <p class="qr-scope-note">QR codes appear on opened cards and exports. Gallery thumbnails stay QR-free.</p>
+          <p class="qr-scope-note">
+            {t("viewer_detail_qr_codes_appear_on_opened_cards_and_exports_gallery_thumbnails_stay_qr_free")}
+          </p>
         {/if}
 
         <div class="setting-row">
-          <span class="setting-label">Start</span>
+          <span class="setting-label">{t("viewer_ui_start")}</span>
           <div class="chip-group">
             <button
               type="button"
@@ -967,7 +975,7 @@
                     imageComposition
                   )
                 )}
-              aria-pressed={showStartPos}>Show</button
+              aria-pressed={showStartPos}>{t("viewer_ui_show")}</button
             >
             {#if showStartPos}
               <button
@@ -976,7 +984,8 @@
                 transition:growFade={{ axis: "x" }}
                 class:active={startPosLayout === "row"}
                 onclick={() => setStartPlacementLayout("row")}
-                aria-pressed={startPosLayout === "row"}>Top Row</button
+                aria-pressed={startPosLayout === "row"}
+                >{t("viewer_ui_top_row")}</button
               >
               <button
                 type="button"
@@ -984,14 +993,15 @@
                 transition:growFade={{ axis: "x" }}
                 class:active={startPosLayout === "column"}
                 onclick={() => setStartPlacementLayout("column")}
-                aria-pressed={startPosLayout === "column"}>Left Column</button
+                aria-pressed={startPosLayout === "column"}
+                >{t("viewer_ui_left_column")}</button
               >
             {/if}
           </div>
         </div>
 
         <div class="setting-row">
-          <span class="setting-label">Columns</span>
+          <span class="setting-label">{t("viewer_ui_columns")}</span>
           <div class="chip-group">
             {#each columnOptions as option}
               <button
@@ -1001,10 +1011,10 @@
                 onclick={() => setColumns(option.value)}
                 aria-pressed={currentColumnCount === option.value}
                 aria-label={option.value === null
-                  ? "Auto columns and start placement"
-                  : `${option.label} columns`}
+                  ? t("viewer_ui_auto_columns_and_start_placement")
+                  : t("viewer_ui_columns_count", { count: option.label })}
                 title={option.value === null
-                  ? "Chooses columns and start placement"
+                  ? t("viewer_ui_chooses_columns_and_start_placement")
                   : undefined}>{option.label}</button
               >
             {/each}
@@ -1012,7 +1022,7 @@
         </div>
 
         <div class="setting-row">
-          <span class="setting-label">Theme</span>
+          <span class="setting-label">{t("tab_settings_theme")}</span>
           <div class="chip-group">
             <button
               type="button"
@@ -1021,7 +1031,7 @@
               onclick={() => setTheme(false)}
               aria-pressed={!exportOptions.imageDarkMode}
             >
-              <i class="fas fa-sun" aria-hidden="true"></i> Light
+              <i class="fas fa-sun" aria-hidden="true"></i> {t("viewer_detail_light")}
             </button>
             <button
               type="button"
@@ -1030,7 +1040,7 @@
               onclick={() => setTheme(true)}
               aria-pressed={exportOptions.imageDarkMode}
             >
-              <i class="fas fa-moon" aria-hidden="true"></i> Dark
+              <i class="fas fa-moon" aria-hidden="true"></i> {t("viewer_detail_dark")}
             </button>
           </div>
         </div>

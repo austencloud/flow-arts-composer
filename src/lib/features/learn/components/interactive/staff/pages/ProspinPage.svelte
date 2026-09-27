@@ -2,6 +2,7 @@
 ProspinPage - Page 3: Prospin rotation concept
 -->
 <script lang="ts">
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import { PROSPIN_EXAMPLES } from "../../../../domain/constants/staff-examples";
   import StaffPlacementVisualizer from "../StaffPlacementVisualizer.svelte";
 
@@ -23,14 +24,14 @@ ProspinPage - Page 3: Prospin rotation concept
 </script>
 
 <div class="page">
-  <h2>Prospin Rotation</h2>
+  <h2>{tDynamic("learn_staff_prospin_title")}</h2>
 
   <div class="concept-intro prospin-intro">
     <div class="concept-icon">
       <i class="fa-solid fa-sync-alt" aria-hidden="true"></i>
     </div>
     <p class="concept-summary">
-      The prop rotates in the <strong>same direction</strong> as the handpath
+      {tDynamic("learn_staff_prospin_summary")}
     </p>
   </div>
 
@@ -45,30 +46,28 @@ ProspinPage - Page 3: Prospin rotation concept
       rotationType="prospin"
     />
     <div class="example-description">
-      {currentExample.description}
+      {tDynamic(`learn_staff_prospin_example_${demoIndex}`)}
     </div>
     <button class="cycle-button" onclick={cycleExample}>
       <i class="fa-solid fa-play" aria-hidden="true"></i>
-      Show Motion Step
+      {tDynamic("learn_staff_show_motion_step")}
     </button>
   </div>
 
   <div class="explanation prospin-explanation">
-    <h3>Prospin = 90° Isolation</h3>
+    <h3>{tDynamic("learn_staff_prospin_isolation")}</h3>
     <ul>
-      <li>
-        Think of it as an <strong>isolation</strong>: the prop follows the hand
-      </li>
-      <li>Thumb orientation <strong>stays the same</strong> throughout</li>
-      <li>If you start with thumbs IN, you end with thumbs IN</li>
-      <li>The staff "rotates with" your hand movement</li>
+      <li>{tDynamic("learn_staff_prospin_explain_1")}</li>
+      <li>{tDynamic("learn_staff_prospin_explain_2")}</li>
+      <li>{tDynamic("learn_staff_prospin_explain_3")}</li>
+      <li>{tDynamic("learn_staff_prospin_explain_4")}</li>
     </ul>
   </div>
 
   <div class="rotation-formula">
     <div class="formula-item">
-      <span class="formula-label">Start</span>
-      <span class="formula-value">Thumb In</span>
+      <span class="formula-label">{tDynamic("learn_staff_start")}</span>
+      <span class="formula-value">{tDynamic("learn_staff_thumb_in")}</span>
     </div>
     <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
     <div class="formula-item prospin-item">
@@ -77,13 +76,13 @@ ProspinPage - Page 3: Prospin rotation concept
     </div>
     <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
     <div class="formula-item">
-      <span class="formula-label">End</span>
-      <span class="formula-value">Thumb In</span>
+      <span class="formula-label">{tDynamic("learn_staff_end")}</span>
+      <span class="formula-value">{tDynamic("learn_staff_thumb_in")}</span>
     </div>
   </div>
 
   <button class="next-button" onclick={onNext}>
-    Next: Antispin Rotation
+    {tDynamic("learn_staff_next_antispin")}
   </button>
 </div>
 
@@ -114,7 +113,11 @@ ProspinPage - Page 3: Prospin rotation concept
     font-weight: 700;
     margin: 0;
     text-align: center;
-    background: linear-gradient(135deg, var(--theme-accent, #22d3ee) 0%, var(--theme-accent, #06b6d4) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--theme-accent, #22d3ee) 0%,
+      var(--theme-accent, #06b6d4) 100%
+    );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -142,7 +145,8 @@ ProspinPage - Page 3: Prospin rotation concept
       color-mix(in srgb, var(--theme-accent, #22d3ee) 10%, transparent) 0%,
       color-mix(in srgb, var(--theme-accent, #22d3ee) 2%, transparent) 100%
     );
-    border: 1px solid color-mix(in srgb, var(--theme-accent, #22d3ee) 20%, transparent);
+    border: 1px solid
+      color-mix(in srgb, var(--theme-accent, #22d3ee) 20%, transparent);
   }
 
   .concept-icon {
@@ -153,7 +157,11 @@ ProspinPage - Page 3: Prospin rotation concept
     justify-content: center;
     border-radius: 50%;
     font-size: 1.5rem;
-    background: color-mix(in srgb, var(--theme-accent, #22d3ee) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #22d3ee) 20%,
+      transparent
+    );
     color: var(--theme-accent, #22d3ee);
   }
 
@@ -207,7 +215,11 @@ ProspinPage - Page 3: Prospin rotation concept
   }
 
   .prospin-explanation {
-    border-color: color-mix(in srgb, var(--theme-accent, #22d3ee) 15%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #22d3ee) 15%,
+      transparent
+    );
   }
 
   .explanation ul {
@@ -265,7 +277,11 @@ ProspinPage - Page 3: Prospin rotation concept
   }
 
   .prospin-item {
-    background: color-mix(in srgb, var(--theme-accent, #22d3ee) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #22d3ee) 15%,
+      transparent
+    );
     color: var(--theme-accent, #22d3ee);
   }
 
@@ -285,7 +301,8 @@ ProspinPage - Page 3: Prospin rotation concept
       color-mix(in srgb, var(--theme-accent, #22d3ee) 30%, transparent) 0%,
       color-mix(in srgb, var(--theme-accent, #22d3ee) 30%, transparent) 100%
     );
-    border: 2px solid color-mix(in srgb, var(--theme-accent, #22d3ee) 50%, transparent);
+    border: 2px solid
+      color-mix(in srgb, var(--theme-accent, #22d3ee) 50%, transparent);
     border-radius: 12px;
     color: white;
     font-size: 1.125rem;
@@ -302,7 +319,11 @@ ProspinPage - Page 3: Prospin rotation concept
       color-mix(in srgb, var(--theme-accent, #22d3ee) 40%, transparent) 0%,
       color-mix(in srgb, var(--theme-accent, #22d3ee) 40%, transparent) 100%
     );
-    border-color: color-mix(in srgb, var(--theme-accent, #22d3ee) 80%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #22d3ee) 80%,
+      transparent
+    );
     transform: translateY(-2px);
   }
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import { suggestSmartCollectionName } from "$lib/shared/browse/services/smart-collection-name";
   import type { SmartFilterSpec } from "$lib/shared/library/domain/models/collection";
@@ -56,7 +57,7 @@
   />
 
   <p class="save-note">
-    New matching sequences join this collection automatically.
+    {t("browse_audit_new_matches_join")}
   </p>
 
   <PanelButton
@@ -70,7 +71,9 @@
       class={`fas ${saving ? "fa-circle-notch fa-spin" : "fa-wand-magic-sparkles"}`}
       aria-hidden="true"
     ></i>
-    {saving ? "Saving collection" : "Save Smart Collection"}
+    {saving
+      ? t("browse_audit_saving_collection")
+      : t("library_ui_save_smart_collection")}
   </PanelButton>
 </form>
 

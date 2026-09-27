@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * ClipLoopSection - Loop toggle and count controls
    */
@@ -16,11 +17,11 @@
 <section class="section">
   <div class="section-header">
     <i class="fa-solid fa-repeat" aria-hidden="true"></i>
-    <span>Loop</span>
+    <span>{t("compose_ui_loop")}</span>
   </div>
 
   <label class="toggle-row">
-    <span>Enable Looping</span>
+    <span>{t("compose_ui_enable_looping")}</span>
     <input
       type="checkbox"
       checked={loop}

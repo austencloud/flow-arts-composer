@@ -5,6 +5,7 @@
   Shows a preview grid of the current pattern and a save form.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
   import { formatRotationValue } from "../../../domain/models/rotation-direction-pattern-data";
@@ -28,7 +29,9 @@
 
 <div class="save-section">
   {#if !sequence || sequence.steps.length === 0}
-    <p class="empty-message">No sequence to save pattern from</p>
+    <p class="empty-message">
+      {t("create_ui_no_sequence_to_save_pattern_from")}
+    </p>
   {:else}
     <div class="pattern-preview">
       <h3>Current Pattern ({sequence.steps.length} steps)</h3>
@@ -72,7 +75,9 @@
               </span>
               <span class="separator">|</span>
               <span
-                class="rotation-value {getRotationColorClass(rightRotation)} red"
+                class="rotation-value {getRotationColorClass(
+                  rightRotation
+                )} red"
               >
                 {rightRotation}
               </span>
@@ -85,7 +90,7 @@
     <div class="save-form">
       <input
         type="text"
-        placeholder="Pattern name (optional)"
+        placeholder={t("create_ui_pattern_name_optional")}
         value={patternName}
         oninput={(e) => onNameChange(e.currentTarget.value)}
         maxlength={50}

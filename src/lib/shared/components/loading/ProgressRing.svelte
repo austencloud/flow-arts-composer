@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * ProgressRing - Circular SVG progress indicator.
    * Works in both determinate and indeterminate modes.
@@ -17,13 +18,7 @@
     label?: string;
   }
 
-  let {
-    percent,
-    size = 48,
-    strokeWidth = 4,
-    color,
-    label,
-  }: Props = $props();
+  let { percent, size = 48, strokeWidth = 4, color, label }: Props = $props();
 
   const isIndeterminate = $derived(percent < 0);
   const clamped = $derived(Math.max(0, Math.min(100, percent)));
@@ -49,14 +44,12 @@
   aria-valuenow={isIndeterminate ? undefined : clamped}
   aria-valuemin={0}
   aria-valuemax={100}
-  aria-label={label ?? (isIndeterminate ? "Loading" : `${Math.round(clamped)}% complete`)}
+  aria-label={label ??
+    (isIndeterminate
+      ? t("common_loading")
+      : t("shared_progress_complete", { percent: Math.round(clamped) }))}
 >
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 {size} {size}"
-    class="ring-svg"
-  >
+  <svg width={size} height={size} viewBox="0 0 {size} {size}" class="ring-svg">
     <circle
       cx={center}
       cy={center}

@@ -14,7 +14,11 @@
   import { fly, fade } from "svelte/transition";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
   import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import { getLastLetter, getValidNextLetters, getLetterType } from "../../pictograph/tka-glyph/services/letter-domain-service";
+  import {
+    getLastLetter,
+    getValidNextLetters,
+    getLetterType,
+  } from "../../pictograph/tka-glyph/services/letter-domain-service";
 
   interface Props {
     isOpen: boolean;
@@ -52,7 +56,7 @@
    */
   const validNextLetters = $derived.by(() => {
     if (searchMode === "spelled") return null; // All valid in spelled mode
-    
+
     const lastLetter = getLastLetter(value);
     if (!lastLetter) return null; // All valid for first entry
 
@@ -70,10 +74,10 @@
     ["A", "B", "C", "D", "E", "F"], // Row 1
     ["G", "H", "I", "J", "K", "L"], // Row 2
     ["M", "N", "O", "P", "Q", "R"], // Row 3
-    ["S", "T", "U", "V"],           // Row 4
-    ["W", "X", "Y", "Z"],           // Row 5
-    ["Σ", "Δ", "Θ", "Ω"],           // Row 6
-    ["Φ", "Ψ", "Λ"]                 // Row 7
+    ["S", "T", "U", "V"], // Row 4
+    ["W", "X", "Y", "Z"], // Row 5
+    ["Σ", "Δ", "Θ", "Ω"], // Row 6
+    ["Φ", "Ψ", "Λ"], // Row 7
   ];
 
   const STATIC_CHARS = ["α", "β", "γ"];
@@ -115,7 +119,11 @@
   backdropClass="keyboard-backdrop"
   onclose={onClose}
 >
-  <div class="virtual-keyboard-content" role="region" aria-label="TKA Virtual Keyboard">
+  <div
+    class="virtual-keyboard-content"
+    role="region"
+    aria-label={t("shared_keyboard_label")}
+  >
     <div class="keyboard-header">
       <div class="header-left">
         <button
@@ -141,7 +149,7 @@
             class:none={resultCount === 0}
             transition:fly={{ y: -10, duration: 200 }}
           >
-            {resultCount} {resultCount === 1 ? 'match' : 'matches'}
+            {t("shared_keyboard_matches", { count: resultCount })}
           </div>
         {/if}
       </div>
@@ -152,19 +160,31 @@
           <button
             class="mode-toggle"
             class:spelled={searchMode === "spelled"}
-            onmousedown={(e) => handleAction(() => onModeToggle?.(searchMode === "standard" ? "spelled" : "standard"), e)}
+            onmousedown={(e) =>
+              handleAction(
+                () =>
+                  onModeToggle?.(
+                    searchMode === "standard" ? "spelled" : "standard"
+                  ),
+                e
+              )}
             type="button"
-            title="Toggle Search Mode"
+            title={t("shared_keyboard_toggle_mode")}
           >
-            <i class="fas {searchMode === "standard" ? "fa-link" : "fa-font"}"></i>
-            <span>{searchMode === "standard" ? "Name" : "Spell"}</span>
+            <i class="fas {searchMode === 'standard' ? 'fa-link' : 'fa-font'}"
+            ></i>
+            <span
+              >{searchMode === "standard"
+                ? t("shared_keyboard_name")
+                : t("shared_keyboard_spell")}</span
+            >
           </button>
         {/if}
-        
+
         <button
           class="header-action-btn close-btn"
           onmousedown={(e) => handleAction(handleInternalClose, e)}
-          aria-label="Close"
+          aria-label={t("common_close")}
           type="button"
         >
           <i class="fas fa-times"></i>
@@ -201,7 +221,7 @@
           >
             -
           </button>
-          
+
           {#each STATIC_CHARS as char}
             {@const disabled = isKeyDisabled(char)}
             <button
@@ -218,7 +238,7 @@
             type="button"
             class="key control-key backspace-btn"
             onmousedown={(e) => handleBackspace(e)}
-            aria-label="Backspace"
+            aria-label={t("create_ui_backspace")}
           >
             <i class="fas fa-backspace"></i>
           </button>
@@ -230,7 +250,11 @@
 
 <style>
   :global(.virtual-keyboard-drawer) {
-    background: color-mix(in srgb, var(--theme-panel-bg, #12121c) 94%, black) !important;
+    background: color-mix(
+      in srgb,
+      var(--theme-panel-bg, #12121c) 94%,
+      black
+    ) !important;
     backdrop-filter: blur(30px) saturate(200%) !important;
     border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1)) !important;
     box-shadow: 0 -10px 60px rgba(0, 0, 0, 0.8) !important;
@@ -259,8 +283,16 @@
     flex-shrink: 0;
   }
 
-  .header-left, .header-right { width: 100px; display: flex; gap: 8px; align-items: center; }
-  .header-right { justify-content: flex-end; }
+  .header-left,
+  .header-right {
+    width: 100px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .header-right {
+    justify-content: flex-end;
+  }
 
   .header-action-btn {
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.08));
@@ -273,7 +305,9 @@
     cursor: pointer;
   }
 
-  .clear-btn { color: #f87171; }
+  .clear-btn {
+    color: #f87171;
+  }
 
   .mode-toggle {
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.08));
@@ -341,7 +375,11 @@
     background: color-mix(in srgb, var(--semantic-error, #ef4444) 80%, black);
   }
 
-  .keyboard-scroll-area { flex: 1; overflow-y: auto; padding: 0 12px; }
+  .keyboard-scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 12px;
+  }
 
   .keyboard-inner-content {
     max-width: 600px;
@@ -351,7 +389,11 @@
     gap: 6px;
   }
 
-  .keyboard-row { display: flex; justify-content: center; gap: 6px; }
+  .keyboard-row {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+  }
 
   .key {
     width: 48px;
@@ -372,51 +414,76 @@
     transition: all 0.1s ease;
   }
 
-  .key:active:not(.disabled) { transform: scale(0.92); filter: brightness(1.2); }
+  .key:active:not(.disabled) {
+    transform: scale(0.92);
+    filter: brightness(1.2);
+  }
 
   .key.disabled {
     opacity: 0.15;
     cursor: not-allowed;
     filter: grayscale(1);
-    border-color: var(--theme-stroke, rgba(255,255,255,0.05));
+    border-color: var(--theme-stroke, rgba(255, 255, 255, 0.05));
     pointer-events: none;
   }
 
   /* Type 1: Dual-Shift (Blue + Purple Synthesis) */
   .type-1-key {
-    background: linear-gradient(135deg, rgba(54, 195, 255, 0.08), rgba(111, 45, 168, 0.08));
-    border-image: linear-gradient(135deg, #36c3ff, #6F2DA8) 1;
+    background: linear-gradient(
+      135deg,
+      rgba(54, 195, 255, 0.08),
+      rgba(111, 45, 168, 0.08)
+    );
+    border-image: linear-gradient(135deg, #36c3ff, #6f2da8) 1;
     border-width: 1px;
     border-style: solid;
     color: #36c3ff;
   }
-  .type-1-key:active:not(.disabled) { background: linear-gradient(135deg, rgba(54, 195, 255, 0.2), rgba(111, 45, 168, 0.2)); }
+  .type-1-key:active:not(.disabled) {
+    background: linear-gradient(
+      135deg,
+      rgba(54, 195, 255, 0.2),
+      rgba(111, 45, 168, 0.2)
+    );
+  }
 
   /* Type 2: Shift (Purple) */
   .type-2-key {
-    border-color: #6F2DA8;
+    border-color: #6f2da8;
     color: #a78bfa;
   }
-  .type-2-key:active:not(.disabled) { background: rgba(111, 45, 168, 0.2); }
+  .type-2-key:active:not(.disabled) {
+    background: rgba(111, 45, 168, 0.2);
+  }
 
   /* Type 4: Dash (Green) */
   .type-4-key {
     border-color: #26e600;
     color: #26e600;
   }
-  .type-4-key:active:not(.disabled) { background: rgba(38, 230, 0, 0.2); }
+  .type-4-key:active:not(.disabled) {
+    background: rgba(38, 230, 0, 0.2);
+  }
 
   /* Type 6: Static (Orange) */
   .type-6-key {
     border-color: #eb7d00;
     color: #f97316;
   }
-  .type-6-key:active:not(.disabled) { background: rgba(235, 125, 0, 0.2); }
+  .type-6-key:active:not(.disabled) {
+    background: rgba(235, 125, 0, 0.2);
+  }
 
-  .control-key { background: var(--theme-card-bg, rgba(255, 255, 255, 0.15)); width: 64px; }
-  .backspace-btn { color: #f87171; border-color: rgba(248, 113, 113, 0.3); }
-  
-  .dash-btn { 
+  .control-key {
+    background: var(--theme-card-bg, rgba(255, 255, 255, 0.15));
+    width: 64px;
+  }
+  .backspace-btn {
+    color: #f87171;
+    border-color: rgba(248, 113, 113, 0.3);
+  }
+
+  .dash-btn {
     font-size: 28px;
     font-weight: 900;
     color: var(--theme-accent);
@@ -424,18 +491,38 @@
     border-color: var(--theme-accent);
     box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
   }
-  .dash-btn:active:not(.disabled) { background: rgba(99, 102, 241, 0.2); }
+  .dash-btn:active:not(.disabled) {
+    background: rgba(99, 102, 241, 0.2);
+  }
 
   @media (max-width: 600px) {
-    .key { width: 42px; height: 44px; font-size: 16px; border-radius: 8px; }
-    .control-key { width: 56px; }
+    .key {
+      width: 42px;
+      height: 44px;
+      font-size: 16px;
+      border-radius: 8px;
+    }
+    .control-key {
+      width: 56px;
+    }
     /* Border-image and border-radius fix */
-    .type-1-key { border-image: none; border-color: #36c3ff; border-radius: 8px; }
+    .type-1-key {
+      border-image: none;
+      border-color: #36c3ff;
+      border-radius: 8px;
+    }
   }
 
   @media (max-width: 400px) {
-    .key { width: 38px; height: 44px; }
-    .keyboard-row { gap: 5px; }
-    .control-key { width: 48px; }
+    .key {
+      width: 38px;
+      height: 44px;
+    }
+    .keyboard-row {
+      gap: 5px;
+    }
+    .control-key {
+      width: 48px;
+    }
   }
 </style>

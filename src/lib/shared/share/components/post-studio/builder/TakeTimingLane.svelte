@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { flushSync } from "svelte";
   import type { LandingRef } from "./post-timing-session.svelte";
   import type {
     ResolvedTakeTiming,
@@ -6,7 +7,9 @@
   } from "$lib/shared/media-composition/domain/take-timing";
   import { MIN_MOVE_SECONDS } from "$lib/shared/media-composition/domain/take-timing";
   import { landingName } from "$lib/shared/media-composition/domain/timing-summary";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { formatTakeClock } from "./post-builder-format";
+  import { shownLanding, shownLandings } from "./timing-lane-landings";
 
   /**
    * The take's timing drawn against its own clock: a close-up window that
@@ -74,28 +77,37 @@
     return seconds >= windowStart - 0.05 && seconds <= windowEnd + 0.05;
   }
 
-  const landings = $derived(
-    (resolved?.sections ?? []).flatMap((section) =>
-      section.landings.map((landing) => ({
-        ...landing,
-        sectionId: section.id,
-        passStart:
-          landing.position > 0 && (landing.position - 1) % movesPerPass === 0,
-        isEnd: section.endPosition === landing.position,
-        label:
-          landing.position <= 0
-            ? "S"
-            : String(((landing.position - 1) % movesPerPass) + 1),
-      }))
-    )
-  );
+  // Each landing shows once, in the part it falls in (see `shownLandings`).
+  const landings = $derived.by(() => {
+    const ends = new Map(
+      (resolved?.sections ?? []).map((section) => [
+        section.id,
+        section.endPosition,
+      ])
+    );
+    return shownLandings(timing, resolved).map((landing) => ({
+      ...landing,
+      passStart:
+        landing.position > 0 && (landing.position - 1) % movesPerPass === 0,
+      isEnd: ends.get(landing.sectionId) === landing.position,
+      label:
+        landing.position <= 0
+          ? "S"
+          : String(((landing.position - 1) % movesPerPass) + 1),
+    }));
+  });
 
+  // A part with no taps is fitted through its beat 1 alone, and that mark
+  // is not a tap.
   const taps = $derived(
     (resolved?.sections ?? []).flatMap((section) =>
-      (section.fit?.labels ?? []).map((label) => ({
-        seconds: label.seconds,
-        matched: label.position !== null,
-      }))
+      (timing.sections.find((entry) => entry.id === section.id)?.taps.length ??
+        0) === 0
+        ? []
+        : (section.fit?.labels ?? []).map((label) => ({
+            seconds: label.seconds,
+            matched: label.position !== null,
+          }))
     )
   );
 
@@ -165,6 +177,21 @@
     const step = event.shiftKey ? 0.1 : MIN_MOVE_SECONDS;
     onselect(landing);
     onplace(landing, seconds + (event.key === "ArrowLeft" ? -step : step));
+    // Nudged across a cut, the landing is drawn by the part on the other
+    // side, as a new button; the selection and the keyboard go with it.
+    const shown = shownLanding(
+      timing,
+      resolved,
+      landing.sectionId,
+      landing.position
+    );
+    if (shown && shown.sectionId !== landing.sectionId) onselect(shown);
+    flushSync();
+    const focused = document.activeElement;
+    if (!detail || (focused && detail.contains(focused))) return;
+    detail
+      .querySelector<HTMLButtonElement>('button.landing[aria-pressed="true"]')
+      ?.focus();
   }
 </script>
 
@@ -174,12 +201,14 @@
     bind:this={detail}
     onpointerdown={seekFromDetail}
     role="group"
-    aria-label="Landings near the playhead"
+    aria-label={t("share_studio_deep_landings_near_playhead")}
   >
     {#each timing.sections as section, index (section.id)}
       {#if index > 0 && inWindow(section.startSeconds)}
         <span class="section-edge" style:left={at(section.startSeconds)}>
-          <span>Part {index + 1}</span>
+          <span
+            >{t("share_studio_deep_part_number", { number: index + 1 })}</span
+          >
         </span>
       {/if}
     {/each}
@@ -214,12 +243,14 @@
           class:selected={isSelected(landing.sectionId, landing.position)}
           class:dragging
           style:left={at(seconds)}
-          aria-label="{landingName(
-            landing.position,
-            movesPerPass
-          )} at {formatTakeClock(seconds)}{landing.pinned
-            ? ', placed by hand'
-            : ''}{landing.isEnd ? ', performance ends' : ''}"
+          aria-label="{landingName(landing.position, movesPerPass)}{t(
+            'share_studio_deep_at_time_suffix',
+            { time: formatTakeClock(seconds) }
+          )}{landing.pinned
+            ? t('share_studio_deep_placed_by_hand_suffix')
+            : ''}{landing.isEnd
+            ? t('share_studio_deep_performance_ends_suffix')
+            : ''}"
           aria-pressed={isSelected(landing.sectionId, landing.position)}
           onpointerdown={(event) => startDrag(event, ref, landing.seconds)}
           onpointermove={moveDrag}
@@ -251,7 +282,7 @@
     onpointermove={seekFromOverview}
     role="slider"
     tabindex="0"
-    aria-label="Whole take"
+    aria-label={t("share_studio_deep_whole_take")}
     aria-valuemin={0}
     aria-valuemax={Math.round(durationSeconds * 100) / 100}
     aria-valuenow={Math.round(mediaSeconds * 100) / 100}

@@ -9,6 +9,7 @@
   shell, overlay open/close/dismiss routing, and URL bootstrap.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount, tick, type ComponentProps } from "svelte";
   import type SequenceViewerDrawerContent from "./SequenceViewerDrawerContent.svelte";
   import { afterNavigate, goto } from "$app/navigation";
@@ -23,6 +24,12 @@
   } from "../state/sequence-viewer-overlay-state.svelte";
   import { getShortCodeManager } from "$lib/shared/qr/get-short-code-manager";
   import { resolveScanPropConfig } from "$lib/shared/qr/services/scan-prop-resolver";
+  import {
+    fetchPhysicalCardProps,
+    physicalCardIdNeedingProps,
+  } from "$lib/shared/qr/services/physical-card-props";
+  import { isNative } from "$lib/shared/platform/services/platform-detector";
+  import { APP_DOMAIN } from "../../../../config/domains";
   import { authState } from "$lib/shared/auth/state/auth-state.svelte";
   import { updateSettings } from "$lib/shared/application/state/app-state.svelte";
   import { parsePropsFromURL } from "$lib/shared/navigation/services/sequence-encoder";
@@ -226,6 +233,19 @@
     let openedSuccessfully = false;
     let failureReason: string | null = null;
     try {
+      // A serialized card's link names only code + pid; its props live on the
+      // physical card record. Fetch them alongside the shortcode, not after.
+      const physicalCardId = physicalCardIdNeedingProps(
+        code,
+        new URL(window.location.href).searchParams
+      );
+      const physicalCardPropsLookup = physicalCardId
+        ? fetchPhysicalCardProps(code, physicalCardId, {
+            // The app's bundle is local, so the lookup goes to the site.
+            origin: isNative() ? APP_DOMAIN : "",
+          })
+        : Promise.resolve(null);
+
       markNativeScanTransitionStage(code, "shortcode-resolve-start");
       const manager = getShortCodeManager();
       const { sequence: resolved, record } =
@@ -282,6 +302,7 @@
       const propConfig = resolveScanPropConfig(
         hydrated,
         parsePropsFromURL(currentUrl.searchParams),
+        await physicalCardPropsLookup,
         record
       );
       await updateSettings({
@@ -396,19 +417,21 @@
 
 {#snippet viewerContentPlaceholder()}
   <div class="viewer-content-state" role="status" aria-live="polite">
-    <span>Loading sequence viewer…</span>
+    <span>{t("viewer_ui_loading_viewer")}</span>
     <PanelButton variant="secondary" onclick={() => handleDismiss()}>
-      Close viewer
+      {t("viewer_ui_close_viewer")}
     </PanelButton>
   </div>
 {/snippet}
 
 {#snippet viewerContentError(_error: unknown, retry: () => void)}
   <div class="viewer-content-state viewer-content-error" role="alert">
-    <p>The sequence viewer couldn’t load.</p>
-    <PanelButton variant="secondary" onclick={retry}>Try again</PanelButton>
+    <p>{t("viewer_ui_load_failed")}</p>
+    <PanelButton variant="secondary" onclick={retry}
+      >{t("viewer_ui_try_again")}</PanelButton
+    >
     <PanelButton variant="secondary" onclick={() => handleDismiss()}>
-      Close viewer
+      {t("viewer_ui_close_viewer")}
     </PanelButton>
   </div>
 {/snippet}
@@ -423,7 +446,7 @@
   dismissible={nativeLoadingCode === null}
   closeOnBackdrop={nativeLoadingCode === null}
   closeOnEscape={nativeLoadingCode === null}
-  ariaLabel="Sequence Viewer"
+  ariaLabel={t("viewer_detail_sequence_viewer")}
   class="sequence-viewer-drawer"
 >
   <div class="viewer-stage">
@@ -452,6 +475,7 @@
         shortCode: overlay.activeShortCode,
         analyticsSource: overlay.analyticsSource,
         shareOnOpen: overlay.shareOnOpen,
+        saveOnOpen: overlay.saveOnOpen,
         tunnelComposition: overlay.tunnelComposition,
         tunnelSaveTarget: overlay.tunnelSaveTarget,
         onTunnelSaved: overlay.onTunnelSaved,

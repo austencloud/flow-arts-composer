@@ -8,6 +8,7 @@ Displays:
 - Inline in layout flow (parent controls positioning)
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   let {
     currentStep,
     totalSteps,
@@ -31,7 +32,10 @@ Displays:
   aria-valuenow={currentStep}
   aria-valuemin={1}
   aria-valuemax={totalSteps}
-  aria-label="Lesson progress: step {currentStep} of {totalSteps}"
+  aria-label={t("learn_ui_lesson_progress", {
+    current: currentStep,
+    total: totalSteps,
+  })}
 >
   <div class="progress-dots">
     {#each Array(totalSteps) as _, i}
@@ -44,7 +48,10 @@ Displays:
     {/each}
   </div>
   <span class="progress-text"
-    >{#if appearance === "steps"}Step {currentStep} of {totalSteps}{:else}{currentStep}
+    >{#if appearance === "steps"}{t("learn_ui_step_of", {
+        current: currentStep,
+        total: totalSteps,
+      })}{:else}{currentStep}
       / {totalSteps}{/if}</span
   >
 </div>

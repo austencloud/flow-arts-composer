@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
 
   let {
@@ -24,7 +25,7 @@
 
   <div class="empty-body">
     <div class="empty-content">
-      <h2 id="saved-work-title">Your saved work</h2>
+      <h2 id="saved-work-title">{t("browse_ui_your_saved_work")}</h2>
       <p class="empty-description">
         Save sequences you want to come back to. Organize them into collections
         here.
@@ -37,8 +38,14 @@
 
       {#if onCreateAccount}
         <div class="account-option">
-          <p>Want your collections on other devices? Create a free account.</p>
-          <PanelButton onclick={onCreateAccount}>Create account</PanelButton>
+          <p>
+            {t(
+              "browse_ui_want_your_collections_on_other_devices_create_a_free_account"
+            )}
+          </p>
+          <PanelButton onclick={onCreateAccount}
+            >{t("browse_ui_create_account")}</PanelButton
+          >
         </div>
       {/if}
     </div>

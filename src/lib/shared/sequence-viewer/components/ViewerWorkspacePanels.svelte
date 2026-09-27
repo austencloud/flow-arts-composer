@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
   import PanelGroup, {
     type PanelDefinition,
@@ -79,10 +80,10 @@
         resizable: inspectorResizable,
         resizeLabel:
           inspectorProfile === "performance"
-            ? "Resize viewer and performances"
+            ? t("viewer_ui_resize_performances")
             : inspectorProfile === "share"
-              ? "Resize viewer and share panel"
-              : `Resize viewer and ${inspectorProfile} settings`,
+              ? t("viewer_ui_resize_share")
+              : t("viewer_ui_resize_settings", { name: inspectorProfile }),
       },
     ];
 

@@ -3,6 +3,7 @@ import type {
   TimingSection,
 } from "$lib/shared/media-composition/domain/take-timing";
 import { judgeTimingFit } from "$lib/shared/media-composition/domain/timing-verdict";
+import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
 /**
  * The Timing step's one-line read of a section's fit, in plain words, and
@@ -32,10 +33,6 @@ function secondsText(seconds: number): string {
   return `${seconds < 0.095 ? seconds.toFixed(2) : seconds.toFixed(1)} s`;
 }
 
-function plural(count: number, one: string, many: string): string {
-  return `${count} ${count === 1 ? one : many}`;
-}
-
 export function summarizeTiming(input: {
   section: TimingSection;
   resolved: ResolvedTimingSection | null;
@@ -43,23 +40,48 @@ export function summarizeTiming(input: {
 }): TimingSummary {
   const { section, resolved } = input;
   const fit = resolved?.fit ?? null;
-  const tapCount = section.taps.filter(
-    (tap) => tap >= section.startSeconds && tap <= section.endSeconds
-  ).length;
+  // A part's taps are the ones whose landings it draws, which near a nudged
+  // cut can sit just outside it.
+  const tapCount = section.taps.length;
   const base = { suggestedBpm: null, ignoredLeadingTaps: 0 };
 
   if (!fit) {
     return {
       ...base,
       tone: "empty",
-      text: "Tap each landing as the video plays, or mark where move 1 lands.",
+      text: t("share_studio_deep_summary_start_tapping"),
     };
   }
   if (tapCount === 0) {
+    // A part that keeps counting runs on from the landing it was cut at,
+    // unless the performance has ended by then: then it holds that pose.
+    const count = section.beatOnePosition ?? 1;
+    const end = resolved?.endPosition ?? null;
+    const name = (position: number) => {
+      if (position <= 0 || input.moveBeats.length === 0)
+        return t("share_studio_deep_start");
+      const move = ((position - 1) % input.moveBeats.length) + 1;
+      const pass = Math.floor((position - 1) / input.moveBeats.length) + 1;
+      return t("share_studio_deep_move_pass_lower", { move, pass });
+    };
+    if (end !== null && end <= count) {
+      const pose =
+        end === 0 ? t("share_studio_deep_opening_pose_lower") : name(end);
+      return {
+        ...base,
+        tone: "tapping",
+        text: resolved?.endStored
+          ? t("share_studio_deep_summary_held_performance_end", { pose })
+          : t("share_studio_deep_summary_held_taps_stop", { pose }),
+      };
+    }
     return {
       ...base,
       tone: "tapping",
-      text: `Running at ${bpmText(section.bpm)} BPM from move 1. Tap along to fit the video's own timing.`,
+      text: t("share_studio_deep_summary_running", {
+        bpm: bpmText(section.bpm),
+        move: count > 1 ? name(count) : t("share_studio_deep_move_one_lower"),
+      }),
     };
   }
 
@@ -74,8 +96,17 @@ export function summarizeTiming(input: {
   const extras = fit.extraCount;
   const missed = fit.missedPositions.length;
   const leftovers = [
-    missed > 0 ? plural(missed, "missed", "missed") : null,
-    extras > 0 ? `${plural(extras, "extra tap", "extra taps")} ignored` : null,
+    missed > 0
+      ? t("share_studio_deep_summary_missed", { count: missed })
+      : null,
+    extras > 0
+      ? t(
+          extras === 1
+            ? "share_studio_deep_summary_one_extra_ignored"
+            : "share_studio_deep_summary_extra_ignored",
+          { count: extras }
+        )
+      : null,
   ].filter(Boolean);
   const tail = leftovers.length > 0 ? ` · ${leftovers.join(", ")}` : "";
 
@@ -84,7 +115,12 @@ export function summarizeTiming(input: {
       ...base,
       ignoredLeadingTaps,
       tone: "tapping",
-      text: `${plural(tapCount, "tap", "taps")} so far. Keep tapping the landings.`,
+      text: t(
+        tapCount === 1
+          ? "share_studio_deep_summary_one_tap_so_far"
+          : "share_studio_deep_summary_taps_so_far",
+        { count: tapCount }
+      ),
     };
   }
   if (verdict.kind === "tempo") {
@@ -92,7 +128,10 @@ export function summarizeTiming(input: {
       tone: "tempo",
       suggestedBpm: verdict.suggestedBpm,
       ignoredLeadingTaps,
-      text: `Your taps point to ${bpmText(verdict.suggestedBpm)} BPM, not ${bpmText(section.bpm)}.`,
+      text: t("share_studio_deep_summary_tempo", {
+        suggested: bpmText(verdict.suggestedBpm),
+        current: bpmText(section.bpm),
+      }),
     };
   }
   if (verdict.kind === "rough") {
@@ -100,21 +139,29 @@ export function summarizeTiming(input: {
       ...base,
       ignoredLeadingTaps,
       tone: "rough",
-      text: `Loose fit at ${bpmText(fit.bpm)} BPM · taps up to ${secondsText(fit.worstMissSeconds)} off${tail}`,
+      text: t("share_studio_deep_summary_rough", {
+        bpm: bpmText(fit.bpm),
+        seconds: secondsText(fit.worstMissSeconds),
+        tail,
+      }),
     };
   }
   return {
     ...base,
     ignoredLeadingTaps,
     tone: "good",
-    text: `Fits ${bpmText(Math.round(fit.bpm * 10) / 10)} BPM · taps within ${secondsText(fit.medianMissSeconds)}${tail}`,
+    text: t("share_studio_deep_summary_good", {
+      bpm: bpmText(Math.round(fit.bpm * 10) / 10),
+      seconds: secondsText(fit.medianMissSeconds),
+      tail,
+    }),
   };
 }
 
 /** "Move 3 · pass 2", or "Start" for the opening pose. */
 export function landingName(position: number, movesPerPass: number): string {
-  if (position <= 0 || movesPerPass <= 0) return "Start";
+  if (position <= 0 || movesPerPass <= 0) return t("share_studio_deep_start");
   const move = ((position - 1) % movesPerPass) + 1;
   const pass = Math.floor((position - 1) / movesPerPass) + 1;
-  return `Move ${move} · pass ${pass}`;
+  return t("share_studio_deep_move_pass", { move, pass });
 }

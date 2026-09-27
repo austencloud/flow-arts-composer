@@ -9,6 +9,7 @@
 </script>
 
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   /**
    * NotificationFilter - Modern chip-based filter controls
    */
@@ -40,22 +41,22 @@
   const notificationTypes: Array<{
     value: UserNotification["type"] | "all";
     label: string;
-  }> = [
-    { value: "all", label: "All Types" },
-    { value: "feedback-resolved", label: "Resolved" },
-    { value: "feedback-in-progress", label: "In Progress" },
-    { value: "feedback-needs-info", label: "Needs Info" },
-    { value: "feedback-response", label: "Response" },
-    { value: "sequence-liked", label: "Likes" },
-    { value: "user-followed", label: "Follows" },
-    { value: "achievement-unlocked", label: "Achievements" },
-    { value: "message-received", label: "Messages" },
-    { value: "system-announcement", label: "Announcements" },
-  ];
+  }> = $derived([
+    { value: "all", label: t("notifications_filter_all_types") },
+    { value: "feedback-resolved", label: t("notifications_filter_resolved") },
+    { value: "feedback-in-progress", label: t("notifications_filter_in_progress") },
+    { value: "feedback-needs-info", label: t("notifications_filter_needs_info") },
+    { value: "feedback-response", label: t("notifications_filter_response") },
+    { value: "sequence-liked", label: t("notifications_filter_likes") },
+    { value: "user-followed", label: t("notifications_filter_follows") },
+    { value: "achievement-unlocked", label: t("notifications_filter_achievements") },
+    { value: "message-received", label: t("notifications_filter_messages") },
+    { value: "system-announcement", label: t("notifications_filter_announcements") },
+  ]);
 
   function getTypeLabel(value: UserNotification["type"] | "all"): string {
     return (
-      notificationTypes.find((t) => t.value === value)?.label || "All Types"
+      notificationTypes.find((t) => t.value === value)?.label || t("notifications_filter_all_types")
     );
   }
 </script>
@@ -66,15 +67,15 @@
     <i class="fas fa-search" aria-hidden="true"></i>
     <input
       type="text"
-      placeholder="Search notifications..."
+      placeholder={t("notifications_search_placeholder")}
       bind:value={filters.searchQuery}
-      aria-label="Search notifications"
+      aria-label={t("notifications_search")}
     />
     {#if filters.searchQuery}
       <button
         class="clear-search"
         onclick={() => (filters.searchQuery = "")}
-        aria-label="Clear search"
+        aria-label={t("notifications_clear_search")}
       >
         <i class="fas fa-times" aria-hidden="true"></i>
       </button>
@@ -88,11 +89,11 @@
         class="filter-toggle-btn"
         class:active={showTypeFilters}
         onclick={() => (showTypeFilters = !showTypeFilters)}
-        aria-label="Toggle type filters"
-        title={showTypeFilters ? "Hide filters" : "Filter by type"}
+        aria-label={t("notifications_toggle_filters")}
+        title={showTypeFilters ? t("notifications_hide_filters") : t("notifications_filter_by_type")}
       >
         <i class="fas fa-filter" aria-hidden="true"></i>
-        <span>Filter by type</span>
+        <span>{t("notifications_filter_by_type")}</span>
         {#if filters.type !== "all"}
           <span class="active-filter-badge"></span>
         {/if}
@@ -118,7 +119,7 @@
       <button
         class="type-selector-btn mobile-only"
         onclick={() => (isTypeSheetOpen = true)}
-        aria-label="Select notification type"
+        aria-label={t("notifications_select_type")}
       >
         <i class="fas fa-filter" aria-hidden="true"></i>
         <span>{getTypeLabel(filters.type)}</span>
@@ -141,7 +142,7 @@
     }}
     role="button"
     tabindex="0"
-    aria-label="Close notification type selector"
+    aria-label={t("notifications_close_selector")}
   >
     <div
       class="sheet"
@@ -149,15 +150,15 @@
       onkeydown={(e) => e.stopPropagation()}
       role="dialog"
       aria-modal="true"
-      aria-label="Select notification type"
+      aria-label={t("notifications_select_type")}
       tabindex="-1"
     >
       <div class="sheet-header">
-        <h3>Notification Type</h3>
+        <h3>{t("notifications_type")}</h3>
         <button
           class="close-btn"
           onclick={() => (isTypeSheetOpen = false)}
-          aria-label="Close"
+          aria-label={t("notifications_close")}
         >
           <i class="fas fa-times" aria-hidden="true"></i>
         </button>

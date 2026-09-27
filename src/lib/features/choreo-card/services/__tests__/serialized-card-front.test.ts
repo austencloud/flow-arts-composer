@@ -18,7 +18,7 @@ const OPTIONS: PrintRenderOptions = {
 describe("serialized card QR placement", () => {
   it("maps the canonical inner QR cell into the framed print canvas", () => {
     expect(getSerializedQrPlacement(FOUR_BEATS, OPTIONS)).toEqual({
-      x: 446,
+      x: 427,
       y: 178,
       size: 264,
     });

@@ -5,6 +5,7 @@
   Note: This only opens the viewer - actual playback controls are inside the viewer.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
 
   let { onclick } = $props<{
@@ -24,8 +25,8 @@
   class="play-button glass-button"
   data-testid="play-button"
   onclick={handleClick}
-  aria-label="Play sequence animation"
-  title="Animate"
+  aria-label={t("create_ui_play_sequence_animation")}
+  title={t("create_ui_animate")}
 >
   <i class="fas fa-play" aria-hidden="true"></i>
 </button>
@@ -47,7 +48,11 @@
     border-radius: 50%;
     color: var(--theme-text);
     cursor: pointer;
-    transition: all var(--transition-normal, var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1));
+    transition: all
+      var(
+        --transition-normal,
+        var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1)
+      );
     box-shadow: 0 4px 12px color-mix(in srgb, #a78bfa 40%, transparent);
   }
 

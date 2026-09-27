@@ -10,6 +10,7 @@ owned by someone with an account; this fills that same line by hand until the
 real profile exists.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import CollectionPropField from "$lib/features/library/components/CollectionPropField.svelte";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
@@ -80,10 +81,12 @@ real profile exists.
 
 <BaseModal bind:open size="md" labelledBy={titleId}>
   <div class="details-dialog">
-    <h2 id={titleId} class="details-title">Collection details</h2>
+    <h2 id={titleId} class="details-title">
+      {t("browse_ui_collection_details")}
+    </h2>
 
     <label class="field">
-      <span class="field-label">Name</span>
+      <span class="field-label">{t("browse_ui_name")}</span>
       <input
         type="text"
         class="field-input"
@@ -94,18 +97,20 @@ real profile exists.
     </label>
 
     <label class="field">
-      <span class="field-label">Notes</span>
+      <span class="field-label">{t("browse_ui_notes")}</span>
       <textarea
         class="field-input field-notes"
         bind:value={description}
         rows="4"
         maxlength="500"
-        placeholder="What this collection is, and where it came from."
+        placeholder={t(
+          "browse_ui_what_this_collection_is_and_where_it_came_from"
+        )}
       ></textarea>
     </label>
 
     <label class="field">
-      <span class="field-label">Credit</span>
+      <span class="field-label">{t("browse_ui_credit")}</span>
       <input
         type="text"
         class="field-input"
@@ -127,7 +132,7 @@ real profile exists.
       <PanelButton
         variant="secondary"
         disabled={saving}
-        onclick={() => (open = false)}>Cancel</PanelButton
+        onclick={() => (open = false)}>{t("action_cancel")}</PanelButton
       >
       <PanelButton
         variant="primary"

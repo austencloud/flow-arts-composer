@@ -14,6 +14,7 @@ import {
 import { PROP_MODEL_SPRITES } from "$lib/shared/pictograph/prop/domain/prop-model-sprites.generated";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import { propTipEnds } from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
+import { trailTipEnds } from "../trail-point-types";
 
 const BIGFAN_SCALE = 600 / 325;
 
@@ -79,10 +80,16 @@ describe("render-key tip points", () => {
     const fireOverride = { points: [{ dx: 1, dy: 2 }] };
     const fanOverride = { points: [{ dx: 3, dy: 4 }] };
     setTipPointOverrideProvider((key) =>
-      key === "fan__fire_bare" ? fireOverride : key === "fan" ? fanOverride : null
+      key === "fan__fire_bare"
+        ? fireOverride
+        : key === "fan"
+          ? fanOverride
+          : null
     );
     expect(getTipPoints("fan__fire_bare")).toBe(fireOverride);
-    expect(getTipPoints("fan__lotus")).toBe(PROP_RENDER_KEY_TIP_POINTS["fan__lotus"]);
+    expect(getTipPoints("fan__lotus")).toBe(
+      PROP_RENDER_KEY_TIP_POINTS["fan__lotus"]
+    );
     expect(getTipPoints("fan")).toBe(fanOverride);
     expect(getTipPoints("fan__not-a-build")).toBe(fanOverride);
     expect(getTipPointsBaseline("fan__fire_bare")).toBe(
@@ -122,7 +129,9 @@ describe("render-key tip points", () => {
   });
 
   it("changes the geometry signature when the render key changes the points", () => {
-    expect(tipPointSignature("fan")).not.toBe(tipPointSignature("fan__fire_bare"));
+    expect(tipPointSignature("fan")).not.toBe(
+      tipPointSignature("fan__fire_bare")
+    );
     expect(tipPointSignature("fan__fire_bare")).toBe(
       tipPointSignature("fan__fire_covered")
     );
@@ -165,6 +174,76 @@ describe("model sprite tip points", () => {
     expect(getTipPoints("triad__model")).toBe(PROP_TIP_POINTS.triad);
     expect(getTipPoints("buugeng__model")).toBe(PROP_TIP_POINTS.buugeng);
   });
+
+  it("turns radial and hooped captures whose arms point away from their tips", () => {
+    // Each of these captures paints its lead arm, rim, or blade on -x while
+    // its table reaches +x; unturned, every trail and flame floats off the
+    // artwork.
+    for (const prop of [
+      "triad",
+      "bigtriad",
+      "trigeng",
+      "minihoop",
+      "bighoop",
+      "triquetra",
+      "triquetra2",
+      "sword",
+    ]) {
+      expect(modelSpriteFacesAwayFromTips(prop), prop).toBe(true);
+    }
+    for (const prop of [
+      "quiad",
+      "bigbuugeng",
+      "buugeng",
+      "bigchicken",
+      "guitar",
+      "ukulele",
+      "staff",
+    ]) {
+      expect(modelSpriteFacesAwayFromTips(prop), prop).toBe(false);
+    }
+  });
+
+  it("never draws a capture leaning away from its tip table", () => {
+    for (const [prop, entry] of Object.entries(PROP_MODEL_SPRITES)) {
+      const points = PROP_TIP_POINTS[prop]?.points ?? [];
+      if (!entry.bounds || points.length === 0) continue;
+      const half = entry.width / 2;
+      const xs = points.map((point) => point.dx);
+      const tipBias = (Math.max(...xs) + Math.min(...xs)) / 2 / half;
+      const painted = (entry.bounds.x + entry.bounds.width / 2 - half) / half;
+      const drawn = modelSpriteFacesAwayFromTips(prop) ? -painted : painted;
+      if (Math.abs(tipBias) > 0.1 && Math.abs(drawn) > 0.1) {
+        expect(Math.sign(drawn), prop).toBe(Math.sign(tipBias));
+      }
+    }
+  });
+
+  it("puts a turned sword's tip on its blade end", () => {
+    const entry = PROP_MODEL_SPRITES.sword!;
+    const half = entry.width / 2;
+    const bladeReach = half - entry.bounds!.x;
+    const [tip] = getTipPoints("sword__model").points;
+    expect(tip!.dx).toBeGreaterThan(0);
+    expect(tip!.dx).toBeLessThanOrEqual(bladeReach + 1e-9);
+    expect(tip!.dx).toBeGreaterThan(
+      entry.bounds!.x + entry.bounds!.width - half
+    );
+  });
+});
+
+describe("render keys count as the prop they draw", () => {
+  it("classifies a render key by its notation prop's ends", () => {
+    expect(propTipEnds("bigclub__model")).toBe(2);
+    expect(propTipEnds("staff__model")).toBe(2);
+    expect(propTipEnds("bigfan__fire_bare")).toBe(1);
+  });
+
+  it("traces one end when the drawn artwork has only one tip", () => {
+    expect(trailTipEnds("bigclub")).toBe(2);
+    expect(trailTipEnds("bigclub__model")).toBe(1);
+    expect(trailTipEnds("staff__model")).toBe(2);
+  });
 });
 
 describe("tip table and tip-end classification agree", () => {
@@ -173,7 +252,10 @@ describe("tip table and tip-end classification agree", () => {
       if (propTipEnds(propType) !== 2) continue;
       const points = getTipPointsBaseline(propType).points;
       expect(points, propType).toHaveLength(2);
-      expect(Math.sign(points[0]!.dx) * Math.sign(points[1]!.dx), propType).toBe(-1);
+      expect(
+        Math.sign(points[0]!.dx) * Math.sign(points[1]!.dx),
+        propType
+      ).toBe(-1);
     }
   });
 

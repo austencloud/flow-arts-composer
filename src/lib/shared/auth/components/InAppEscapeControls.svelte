@@ -14,6 +14,7 @@
   import type { EscapeTarget } from "../services/escape-target";
   import { captureEvent } from "$lib/shared/analytics/services/posthog";
   import { stripEscapeTestParams } from "../config/app-availability";
+  import { t } from "$lib/shared/i18n/i18n.svelte";
 
   /** Immutable attempt context, so every escape event carries the same segmenting
    *  properties (platform / ios_major / app_launched) instead of just `method`. */
@@ -54,8 +55,19 @@
   // copy is always available.
   const showPrimary = $derived(target.url !== null);
   const primaryDisabled = $derived(escapeState === "waiting");
+  const targetLabel = $derived(
+    target.label === "Open in Safari"
+      ? t("auth_open_safari")
+      : target.label === "Open in your browser"
+        ? t("auth_open_your_browser")
+        : target.label === "Open in the app"
+          ? t("auth_open_app")
+          : target.label === "Open in browser"
+            ? t("auth_open_browser")
+            : target.label
+  );
   const primaryLabel = $derived(
-    escapeState === "waiting" ? "Opening…" : target.label
+    escapeState === "waiting" ? t("auth_opening") : targetLabel
   );
   // Instruction targets show the guide immediately; scheme/intent targets show
   // it only once the hand-off is confirmed failed (stayed). Either way copy is
@@ -205,7 +217,11 @@
 
 <div class="escape-controls">
   {#if showPrimary}
-    <button class="primary-button" onclick={handleEscape} disabled={primaryDisabled}>
+    <button
+      class="primary-button"
+      onclick={handleEscape}
+      disabled={primaryDisabled}
+    >
       <i class="fas fa-external-link-alt" aria-hidden="true"></i>
       {primaryLabel}
     </button>
@@ -214,18 +230,27 @@
   {#if showGuide}
     {#if target.method === "android_intent"}
       <p class="status">
-        That didn't hand off to a browser. Copy the link and paste it into
-        Chrome.
+        {t("auth_escape_chrome_fallback")}
       </p>
     {:else if target.method === "ios_scheme" || target.method === "ios_instructions"}
       <ol class="guide">
-        <li>Tap the <strong>•••</strong> menu (top of this window)</li>
-        <li>Choose <strong>Open in Safari</strong> or <strong>Open in Browser</strong></li>
+        <li>
+          {t("auth_escape_tap_menu")} <strong>•••</strong>
+          {t("auth_escape_menu_location")}
+        </li>
+        <li>
+          {t("auth_escape_choose")} <strong>{t("auth_open_safari")}</strong>
+          {t("auth_escape_or")} <strong>{t("auth_open_browser")}</strong>
+        </li>
       </ol>
     {:else}
       <ol class="guide">
-        <li>Open this app's menu</li>
-        <li>Choose <strong>Open in browser</strong>, or copy the link below</li>
+        <li>{t("auth_escape_open_app_menu")}</li>
+        <li>
+          {t("auth_escape_choose")} <strong>{t("auth_open_browser")}</strong>{t(
+            "auth_escape_or_copy"
+          )}
+        </li>
       </ol>
     {/if}
   {/if}
@@ -236,7 +261,11 @@
         class="fas fa-{copied ? 'check' : copyFailed ? 'hand-pointer' : 'copy'}"
         aria-hidden="true"
       ></i>
-      {copied ? "Copied!" : copyFailed ? "Copy it manually" : "Copy Link"}
+      {copied
+        ? t("auth_link_copied")
+        : copyFailed
+          ? t("auth_copy_manually")
+          : t("auth_copy_link")}
     </button>
   {/if}
 
@@ -249,11 +278,11 @@
       type="text"
       readonly
       value={currentUrl}
-      aria-label="Page link, press and hold to copy"
+      aria-label={t("auth_link_hold_to_copy")}
       use:autoselect
       onfocus={(e) => e.currentTarget.select()}
     />
-    <p class="status" aria-live="polite">Couldn't copy automatically. Press and hold the link above.</p>
+    <p class="status" aria-live="polite">{t("auth_copy_failed_hold")}</p>
   {/if}
 </div>
 

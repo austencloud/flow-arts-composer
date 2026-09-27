@@ -16,10 +16,10 @@
 <section
   class="type-info-panel themed-scrollbar"
   tabindex="0"
-  aria-label="Letter type reference"
+  aria-label={t("create_ui_letter_type_reference")}
 >
   <header class="type-info-header">
-    <h2>Letter types</h2>
+    <h2>{t("create_ui_letter_types")}</h2>
     <p>
       Shift moves a hand to an adjacent point. Dash moves it to the opposite
       point.
@@ -31,7 +31,7 @@
       <article class="type-card">
         <div class="type-card-heading">
           <strong>
-            <span class="sr-only">Type </span>
+            <span class="sr-only">{t("create_ui_type")} </span>
             {letterType.typeName.replace("Type ", "")}
           </strong>
           <span

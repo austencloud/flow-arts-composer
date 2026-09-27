@@ -9,6 +9,7 @@
   fine — the bar's inline controls apply live; this sets the next run's defaults.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { Popover } from "bits-ui";
   import type { TempoPracticeConfig } from "../services/tempo-practice-orchestrator";
   import {
@@ -27,7 +28,12 @@
     customAnchor?: HTMLElement | null;
   }
 
-  let { config, onUpdate, open = $bindable(false), customAnchor = null }: Props = $props();
+  let {
+    config,
+    onUpdate,
+    open = $bindable(false),
+    customAnchor = null,
+  }: Props = $props();
 
   // Display values fall back to the orchestrator defaults.
   let startBpm = $derived(config.startBpm ?? 15);
@@ -58,7 +64,9 @@
   }
 
   // Plain-language summary of the current ramp.
-  let everyPhrase = $derived(roundsPerLevel === 1 ? "every loop" : `every ${roundsPerLevel} loops`);
+  let everyPhrase = $derived(
+    roundsPerLevel === 1 ? "every loop" : `every ${roundsPerLevel} loops`
+  );
   let hint = $derived(
     targetEnabled
       ? `Climbs +${increment} BPM ${everyPhrase} up to ${clamp(targetBpm, startBpm + 5, maxBpm)} BPM, then stops.`
@@ -74,8 +82,8 @@
         type="button"
         class="practice-config-trigger"
         class:open
-        aria-label="Practice settings"
-        title="Practice settings"
+        aria-label={t("viewer_ui_practice_settings")}
+        title={t("viewer_ui_practice_settings")}
       >
         <i class="fas fa-sliders" aria-hidden="true"></i>
       </button>
@@ -91,29 +99,53 @@
       customAnchor={customAnchor ?? undefined}
       class="practice-config-panel"
     >
-      <header class="config-header">Practice ramp</header>
+      <header class="config-header">{t("viewer_detail_practice_ramp")}</header>
 
       <div class="config-body">
-        {@render stepper("Start tempo", startBpm, "BPM", () => setStartBpm(startBpm - 5), () => setStartBpm(startBpm + 5))}
-        {@render stepper("Loops per speed-up", roundsPerLevel, "", () => setRounds(roundsPerLevel - 1), () => setRounds(roundsPerLevel + 1))}
-        {@render stepper("BPM per speed-up", increment, "", () => setIncrement(increment - 1), () => setIncrement(increment + 1))}
+        {@render stepper(
+          t("viewer_detail_start_tempo"),
+          startBpm,
+          "BPM",
+          () => setStartBpm(startBpm - 5),
+          () => setStartBpm(startBpm + 5)
+        )}
+        {@render stepper(
+          t("viewer_detail_loops_per_speed_up"),
+          roundsPerLevel,
+          "",
+          () => setRounds(roundsPerLevel - 1),
+          () => setRounds(roundsPerLevel + 1)
+        )}
+        {@render stepper(
+          "BPM per speed-up",
+          increment,
+          "",
+          () => setIncrement(increment - 1),
+          () => setIncrement(increment + 1)
+        )}
 
         <div class="config-row">
-          <span class="config-label">Stop at a goal</span>
+          <span class="config-label">{t("viewer_ui_stop_at_a_goal")}</span>
           <button
             type="button"
             class="goal-toggle"
             class:on={targetEnabled}
             onclick={toggleTarget}
             aria-pressed={targetEnabled}
-            aria-label={targetEnabled ? "Goal on" : "Goal off"}
+            aria-label={targetEnabled ? t("viewer_detail_goal_on") : t("viewer_detail_goal_off")}
           >
             <span class="goal-knob"></span>
           </button>
         </div>
 
         {#if targetEnabled}
-          {@render stepper("Goal tempo", clamp(targetBpm, startBpm + 5, maxBpm), "BPM", () => setTargetBpm(targetBpm - 5), () => setTargetBpm(targetBpm + 5))}
+          {@render stepper(
+            t("viewer_detail_goal_tempo"),
+            clamp(targetBpm, startBpm + 5, maxBpm),
+            "BPM",
+            () => setTargetBpm(targetBpm - 5),
+            () => setTargetBpm(targetBpm + 5)
+          )}
         {/if}
 
         <p class="config-hint">{hint}</p>
@@ -122,15 +154,33 @@
   </Popover.Portal>
 </Popover.Root>
 
-{#snippet stepper(label: string, value: number, unit: string, onMinus: () => void, onPlus: () => void)}
+{#snippet stepper(
+  label: string,
+  value: number,
+  unit: string,
+  onMinus: () => void,
+  onPlus: () => void
+)}
   <div class="config-row">
     <span class="config-label">{label}</span>
     <div class="stepper">
-      <button type="button" class="step-btn" onclick={onMinus} aria-label={`Decrease ${label}`}>
+      <button
+        type="button"
+        class="step-btn"
+        onclick={onMinus}
+        aria-label={`Decrease ${label}`}
+      >
         <i class="fas fa-minus" aria-hidden="true"></i>
       </button>
-      <span class="step-value">{value}{#if unit}<span class="step-unit">{unit}</span>{/if}</span>
-      <button type="button" class="step-btn" onclick={onPlus} aria-label={`Increase ${label}`}>
+      <span class="step-value"
+        >{value}{#if unit}<span class="step-unit">{unit}</span>{/if}</span
+      >
+      <button
+        type="button"
+        class="step-btn"
+        onclick={onPlus}
+        aria-label={`Increase ${label}`}
+      >
         <i class="fas fa-plus" aria-hidden="true"></i>
       </button>
     </div>
@@ -166,8 +216,16 @@
   }
 
   .practice-config-trigger.open {
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 16%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent, #6366f1) 45%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 16%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 45%,
+      transparent
+    );
     color: var(--theme-accent, #a78bfa);
   }
 
@@ -189,14 +247,23 @@
     z-index: var(--z-dropdown, 1000);
     /* Entrance: scale + fade from the trigger corner (side=bottom align=end). */
     transform-origin: top right;
-    animation: -global-practice-config-in var(--duration-fast, 150ms) var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+    animation: -global-practice-config-in var(--duration-fast, 150ms)
+      var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
   }
   @keyframes -global-practice-config-in {
-    from { opacity: 0; transform: scale(0.94) translateY(-6px); }
-    to { opacity: 1; transform: scale(1) translateY(0); }
+    from {
+      opacity: 0;
+      transform: scale(0.94) translateY(-6px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
   }
   @media (prefers-reduced-motion: reduce) {
-    :global(.practice-config-panel) { animation: none; }
+    :global(.practice-config-panel) {
+      animation: none;
+    }
   }
 
   .config-header {
@@ -309,11 +376,22 @@
     border-radius: 50%;
     background: var(--theme-text-dim, rgba(255, 255, 255, 0.7));
     transform: translate(0, -50%);
-    transition: transform var(--duration-fast, 150ms) var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)), background var(--duration-fast, 150ms) ease;
+    transition:
+      transform var(--duration-fast, 150ms)
+        var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)),
+      background var(--duration-fast, 150ms) ease;
   }
   .goal-toggle.on {
-    background: color-mix(in srgb, var(--theme-accent, #8b5cf6) 55%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent, #8b5cf6) 70%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 55%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 70%,
+      transparent
+    );
   }
   .goal-toggle.on .goal-knob {
     transform: translate(18px, -50%);
@@ -324,7 +402,10 @@
     outline-offset: 2px;
   }
   @media (prefers-reduced-motion: reduce) {
-    .goal-toggle, .goal-toggle .goal-knob { transition: none; }
+    .goal-toggle,
+    .goal-toggle .goal-knob {
+      transition: none;
+    }
   }
 
   .config-hint {

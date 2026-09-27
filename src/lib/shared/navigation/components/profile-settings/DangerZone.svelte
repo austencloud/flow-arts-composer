@@ -6,6 +6,7 @@
   Includes GitHub-style text confirmation barrier.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { HapticFeedback } from "../../../application/services/haptic-feedback";
   import type { DeleteReauth } from "$lib/shared/auth/services/account-manager";
   import { getProfileSettingsContext } from "../../state/profile-settings-context.svelte";
@@ -57,7 +58,8 @@
     try {
       await onDeleteAccount(reauth, deleteReason.trim() || undefined);
     } catch (e: unknown) {
-      deleteError = e instanceof Error ? e.message : "Failed to delete account";
+      deleteError =
+        e instanceof Error ? e.message : t("nav_ui_failed_to_delete_account");
       hapticService?.trigger("error");
     } finally {
       isDeleting = false;
@@ -104,7 +106,7 @@
       class:expanded={isExpanded}
       aria-hidden="true"
     ></i>
-    <span>Delete account</span>
+    <span>{t("nav_ui_delete_account")}</span>
   </button>
 
   {#if isExpanded}
@@ -118,8 +120,9 @@
       {:else}
         <p class="warning-text">
           <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
-          Deleting your account is permanent and cannot be undone. All your progress
-          and data will be lost.
+          {t(
+            "nav_ui_deleting_your_account_is_permanent_and_cannot_be_undone_all_your_progress_and_data_wi"
+          )}
         </p>
 
         {#if !ctx.ui.showDeleteConfirmation}
@@ -128,18 +131,18 @@
             onclick={handleShowConfirmation}
           >
             <i class="fas fa-trash-alt" aria-hidden="true"></i>
-            Continue to deletion
+            {t("nav_ui_continue_to_deletion")}
           </button>
         {:else}
           <div class="confirmation-box">
             <p class="confirmation-text">
               <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
-              Deleting this account is permanent.
+              {t("nav_ui_deleting_this_account_is_permanent")}
             </p>
 
             <div class="confirmation-input-section">
               <label for="delete-confirmation" class="confirmation-label">
-                To confirm, type <strong>{userIdentifier}</strong> below:
+                {t("nav_delete_confirmation")} <strong>{userIdentifier}</strong>
               </label>
               <input
                 id="delete-confirmation"
@@ -155,12 +158,12 @@
 
             <div class="confirmation-input-section">
               <label for="delete-reason" class="confirmation-label">
-                Why are you leaving? (optional)
+                {t("nav_ui_why_are_you_leaving_optional")}
               </label>
               <textarea
                 id="delete-reason"
                 class="confirmation-input reason-input"
-                placeholder="Share what went wrong"
+                placeholder={t("nav_ui_share_what_went_wrong")}
                 bind:value={deleteReason}
                 maxlength="500"
                 rows="2"
@@ -170,19 +173,21 @@
 
             {#if hasOAuth}
               <p class="confirmation-label reauth-hint">
-                Confirm with your linked account to permanently delete.
+                {t(
+                  "nav_ui_confirm_with_your_linked_account_to_permanently_delete"
+                )}
               </p>
             {:else}
               <div class="confirmation-input-section">
                 <label for="delete-password" class="confirmation-label">
-                  Enter your <strong>password</strong> to confirm:
+                  {t("nav_delete_password")}
                 </label>
                 <input
                   id="delete-password"
                   type="password"
                   class="confirmation-input"
                   class:valid={deletePassword.length > 0}
-                  placeholder="Your current password"
+                  placeholder={t("nav_ui_your_current_password")}
                   bind:value={deletePassword}
                   autocomplete="current-password"
                   disabled={isDeleting}
@@ -199,7 +204,7 @@
 
             <div class="button-row">
               <button class="button button--secondary" onclick={handleCancel}>
-                Cancel
+                {t("action_cancel")}
               </button>
               {#if hasOAuth}
                 {#if hasGoogle}
@@ -209,7 +214,9 @@
                     disabled={!usernameMatches || isDeleting}
                   >
                     <span class="reauth-provider-icon"><GoogleIcon /></span>
-                    {isDeleting ? "Deleting..." : "Confirm with Google"}
+                    {isDeleting
+                      ? t("feedback_deleting")
+                      : t("nav_ui_confirm_with_google")}
                   </button>
                 {/if}
                 {#if hasFacebook}
@@ -221,7 +228,9 @@
                     <span class="reauth-provider-icon facebook"
                       ><FacebookIcon /></span
                     >
-                    {isDeleting ? "Deleting..." : "Confirm with Facebook"}
+                    {isDeleting
+                      ? t("feedback_deleting")
+                      : t("nav_ui_confirm_with_facebook")}
                   </button>
                 {/if}
                 {#if hasInstagram}
@@ -233,7 +242,9 @@
                     <span class="reauth-provider-icon instagram"
                       ><InstagramIcon /></span
                     >
-                    {isDeleting ? "Deleting..." : "Confirm with Instagram"}
+                    {isDeleting
+                      ? t("feedback_deleting")
+                      : t("nav_ui_confirm_with_instagram")}
                   </button>
                 {/if}
               {:else}
@@ -244,7 +255,9 @@
                   disabled={!isConfirmationValid || isDeleting}
                 >
                   <i class="fas fa-trash-alt" aria-hidden="true"></i>
-                  {isDeleting ? "Deleting..." : "Delete forever"}
+                  {isDeleting
+                    ? t("feedback_deleting")
+                    : t("nav_ui_delete_forever")}
                 </button>
               {/if}
             </div>

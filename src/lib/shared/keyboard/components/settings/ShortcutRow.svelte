@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import KeyboardKeyDisplay from "./KeyboardKeyDisplay.svelte";
   import type { ShortcutWithBinding } from "../../services/types";
 
@@ -27,7 +28,7 @@
     onclick={() => onEdit(item)}
     aria-current={selected ? "true" : undefined}
   >
-    <span class="sr-only">Edit</span>
+    <span class="sr-only">{t("keyboard_ui_edit")}</span>
     <span class="shortcut-copy">
       <span class="label">{item.shortcut.label}</span>
       {#if item.shortcut.description}
@@ -41,9 +42,9 @@
 
     <span class="status" aria-hidden="true">
       {#if item.isDisabled}
-        <span class="status-badge">Off</span>
+        <span class="status-badge">{t("keyboard_ui_off")}</span>
       {:else if item.isCustomized}
-        <span class="status-badge">Changed</span>
+        <span class="status-badge">{t("keyboard_ui_changed")}</span>
       {/if}
       <i class="fas fa-chevron-right"></i>
     </span>
@@ -54,8 +55,8 @@
       type="button"
       class="reset-button"
       onclick={() => onReset(item)}
-      aria-label="Reset {item.shortcut.label} to its default"
-      title="Reset to default"
+      aria-label={t("keyboard_ui_reset_named", { name: item.shortcut.label })}
+      title={t("keyboard_ui_reset_to_default")}
     >
       <i class="fas fa-undo" aria-hidden="true"></i>
     </button>

@@ -1,6 +1,7 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import { getMessagePreviewText } from "$lib/shared/messaging/domain/message-preview";
+  import { getMessagePreviewText } from "../../utils/message-preview";
   import type { Message } from "$lib/shared/messaging/domain/models/message-models";
 
   type Action = () => void | Promise<void>;
@@ -114,7 +115,7 @@
         <button
           type="button"
           class="header-button"
-          aria-label="Back to message actions"
+          aria-label={t("inbox_ui_back_to_message_actions")}
           onclick={returnToActions}
         >
           <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
@@ -124,16 +125,16 @@
       {/if}
 
       <div class="sheet-heading">
-        <span>{isOwn ? "Your message" : message.senderName || "Message"}</span>
+        <span>{isOwn ? t("inbox_ui_your_message") : message.senderName || t("inbox_message")}</span>
         <h2 id={titleId} bind:this={headingEl} tabindex="-1">
-          {mode === "selection" ? "Select text" : "Message actions"}
+          {mode === "selection" ? t("inbox_ui_select_text") : t("inbox_ui_message_actions")}
         </h2>
       </div>
 
       <button
         type="button"
         class="header-button"
-        aria-label="Close message actions"
+        aria-label={t("inbox_ui_close_message_actions")}
         onclick={close}
       >
         <i class="fa-solid fa-xmark" aria-hidden="true"></i>
@@ -141,7 +142,7 @@
     </header>
 
     {#if mode === "actions"}
-      <div class="message-preview" aria-label="Selected message">
+      <div class="message-preview" aria-label={t("inbox_ui_selected_message")}>
         <p>{previewText}</p>
       </div>
 
@@ -149,13 +150,13 @@
         class="reaction-section"
         aria-labelledby="reaction-label-{message.id}"
       >
-        <h3 id="reaction-label-{message.id}">React</h3>
-        <div class="reaction-row" role="group" aria-label="React to message">
+        <h3 id="reaction-label-{message.id}">{t("inbox_ui_react")}</h3>
+        <div class="reaction-row" role="group" aria-label={t("inbox_ui_react_to_message")}>
           {#each reactions as emoji}
             <button
               type="button"
               class="reaction-button"
-              aria-label="React with {emoji}"
+              aria-label={t("inbox_react_emoji", { emoji: emoji })}
               onclick={() => onReaction(emoji)}
             >
               <span aria-hidden="true">{emoji}</span>
@@ -164,16 +165,16 @@
         </div>
       </section>
 
-      <div class="action-grid" aria-label="Message actions">
+      <div class="action-grid" aria-label={t("inbox_ui_message_actions")}>
         <button type="button" class="action-button" onclick={onReply}>
           <i class="fa-solid fa-reply" aria-hidden="true"></i>
-          <span>Reply</span>
+          <span>{t("inbox_ui_reply")}</span>
         </button>
 
         {#if hasText}
           <button type="button" class="action-button" onclick={onCopy}>
             <i class="fa-solid fa-copy" aria-hidden="true"></i>
-            <span>Copy</span>
+            <span>{t("inbox_ui_copy")}</span>
           </button>
           <button
             type="button"
@@ -181,35 +182,35 @@
             onclick={openSelectionMode}
           >
             <i class="fa-solid fa-i-cursor" aria-hidden="true"></i>
-            <span>Select text</span>
+            <span>{t("inbox_ui_select_text")}</span>
           </button>
         {/if}
 
         {#if showAdminCopy}
           <button type="button" class="action-button" onclick={onCopyForAI}>
             <i class="fa-solid fa-robot" aria-hidden="true"></i>
-            <span>Copy for AI</span>
+            <span>{t("inbox_ui_copy_for_ai")}</span>
           </button>
         {/if}
 
         {#if canEdit}
           <button type="button" class="action-button" onclick={onEdit}>
             <i class="fa-solid fa-pen" aria-hidden="true"></i>
-            <span>Edit</span>
+            <span>{t("inbox_ui_edit")}</span>
           </button>
         {/if}
 
         {#if canDelete}
           <button type="button" class="action-button danger" onclick={onDelete}>
             <i class="fa-solid fa-trash" aria-hidden="true"></i>
-            <span>Delete</span>
+            <span>{t("inbox_ui_delete")}</span>
           </button>
         {/if}
       </div>
     {:else}
       <div class="selection-workspace">
         <p class="selection-instruction">
-          Double-tap a word, then drag the handles to adjust the selection.
+          {t("inbox_ui_double_tap_a_word_then_drag_the_handles_to_adjust_the_selection")}
         </p>
         <textarea
           id="message-selection-{message.id}"
@@ -218,13 +219,13 @@
           bind:this={selectionSurfaceEl}
           value={message.content}
           readonly
-          aria-label="Message text to select"
+          aria-label={t("inbox_ui_message_text_to_select")}
           data-message-selection-surface="true"
           onselect={updateSelectedText}
         ></textarea>
         <div class="selection-actions">
           <button type="button" class="selection-button" onclick={onCopy}>
-            Copy all
+            {t("inbox_ui_copy_all")}
           </button>
           <button
             type="button"
@@ -232,7 +233,7 @@
             disabled={!selectedText}
             onclick={copySelection}
           >
-            Copy selection
+            {t("inbox_ui_copy_selection")}
           </button>
         </div>
       </div>

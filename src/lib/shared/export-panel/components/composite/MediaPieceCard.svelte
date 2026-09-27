@@ -13,6 +13,7 @@
   Domain: Export Panel - Composite Mode - Media Piece
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getExportPanelState } from "../../state/export-panel-state.svelte";
   import type { MediaFormat } from "../../domain/models/media-format";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
@@ -88,7 +89,7 @@
       {:else}
         <div class="placeholder-preview">
           <i class="fas fa-play-circle" aria-hidden="true"></i>
-          <p>No steps</p>
+          <p>{t("export_ui_no_steps")}</p>
         </div>
       {/if}
     {:else if format === "static"}
@@ -103,7 +104,7 @@
       {:else}
         <div class="placeholder-preview">
           <i class="fas fa-image" aria-hidden="true"></i>
-          <p>No steps</p>
+          <p>{t("export_ui_no_steps")}</p>
         </div>
       {/if}
     {:else if format === "grid"}
@@ -122,14 +123,14 @@
       {:else}
         <div class="placeholder-preview">
           <i class="fas fa-th" aria-hidden="true"></i>
-          <p>No steps</p>
+          <p>{t("export_ui_no_steps")}</p>
         </div>
       {/if}
     {:else if format === "performance"}
       <!-- Performance: camera/video placeholder -->
       <div class="placeholder-preview">
         <i class="fas fa-video" aria-hidden="true"></i>
-        <p>Performance</p>
+        <p>{t("export_ui_performance")}</p>
       </div>
     {/if}
   </div>

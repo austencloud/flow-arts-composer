@@ -18,6 +18,7 @@
   the 0 buttons. Both were chrome that restated a control already on screen.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import LevelSelector from "$lib/shared/components/LevelSelector.svelte";
   import { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
@@ -85,18 +86,20 @@
   );
   const filterExplanation = $derived(
     hiddenCount > 0
-      ? `${hiddenCount} dash/static options hidden because their spin direction reverses. Change CW/CCW or choose All to include them.`
-      : "Continuous keeps options that continue the previous spin direction."
+      ? t("create_option_hidden_reversals", { count: hiddenCount })
+      : t("create_option_continuous_explanation")
   );
 
   // Inline controls use icons to leave room for Level. A hidden-option count
   // belongs inside Continuous so changing spin direction explains its own result.
   const filterOptions = $derived([
-    { value: "all", label: "All" },
+    { value: "all", label: t("create_option_all") },
     {
       value: "continuous",
       label:
-        hiddenCount > 0 ? `Continuous. ${filterExplanation}` : "Continuous",
+        hiddenCount > 0
+          ? `${t("create_option_continuous")}. ${filterExplanation}`
+          : t("create_option_continuous"),
     },
   ]);
   const filterValue = $derived(isContinuousOnly ? "continuous" : "all");
@@ -143,11 +146,11 @@
         <div
           class="filter-seg"
           role="group"
-          aria-label="Option filter"
+          aria-label={t("create_ui_option_filter")}
           title={filterExplanation}
         >
           {#if layout === "compact"}
-            <span class="control-label">Options</span>
+            <span class="control-label">{t("create_ui_options")}</span>
           {/if}
           <SegmentedControl
             options={filterOptions}
@@ -161,7 +164,7 @@
             {#snippet optionContent(value)}
               <span class="filter-option">
                 {#if layout === "compact"}
-                  <span>{value === "all" ? "All" : "Continuous"}</span>
+                  <span>{value === "all" ? t("create_option_all") : t("create_option_continuous")}</span>
                 {:else}
                   <i
                     class={value === "all"
@@ -171,7 +174,7 @@
                   ></i>
                 {/if}
                 {#if value === "continuous" && hiddenCount > 0}
-                  <span class="filter-hidden-count">{hiddenCount} hidden</span>
+                  <span class="filter-hidden-count">{t("create_option_hidden_count", { count: hiddenCount })}</span>
                 {/if}
               </span>
             {/snippet}
@@ -185,13 +188,13 @@
            and the level colour system rather than neutral filter chrome. -->
       <div class="level-control">
         {#if layout === "compact"}
-          <span class="control-label">Level</span>
+          <span class="control-label">{t("generator_level")}</span>
         {/if}
         <LevelSelector
           value={level}
           compact={layout === "compact"}
           onchange={(n) => onLevelChange(n as TurnLevel)}
-          ariaLabel="Working difficulty level"
+          ariaLabel={t("create_option_working_level")}
         />
       </div>
 
@@ -215,7 +218,7 @@
         class="hand-half blue"
         class:has-spin={hasLeftTurns}
         role="group"
-        aria-label="Left turns"
+        aria-label={t("create_ui_left_turns")}
         in:flyFade={{ y: 6 }}
       >
         <div class="hand-meta">
@@ -231,10 +234,8 @@
               <button
                 class="spin-inline edge"
                 transition:popIn
-                title="Spin direction for dash & static options on this hand (shifts keep their own direction)"
-                aria-label="Toggle left dash/static spin (currently {dirLabel(
-                  leftRotation
-                )})"
+                title={t("create_option_spin_direction_hint")}
+                aria-label={t("create_option_toggle_left_spin", { direction: dirLabel(leftRotation) })}
                 onclick={() => onLeftRotationChange(opposite(leftRotation))}
               >
                 <i class="fas {dirIcon(leftRotation)}" aria-hidden="true"></i>
@@ -260,7 +261,7 @@
         class="hand-half red"
         class:has-spin={hasRightTurns}
         role="group"
-        aria-label="Right turns"
+        aria-label={t("create_ui_right_turns")}
         in:flyFade={{ y: 6, delay: STAGGER.micro }}
       >
         <div class="hand-meta">
@@ -269,10 +270,8 @@
               <button
                 class="spin-inline edge"
                 transition:popIn
-                title="Spin direction for dash & static options on this hand (shifts keep their own direction)"
-                aria-label="Toggle right dash/static spin (currently {dirLabel(
-                  rightRotation
-                )})"
+                title={t("create_option_spin_direction_hint")}
+                aria-label={t("create_option_toggle_right_spin", { direction: dirLabel(rightRotation) })}
                 onclick={() => onRightRotationChange(opposite(rightRotation))}
               >
                 <i class="fas {dirIcon(rightRotation)}" aria-hidden="true"></i>

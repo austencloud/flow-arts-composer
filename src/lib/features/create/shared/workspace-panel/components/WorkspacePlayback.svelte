@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import InlineAnimationPlayer from "$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
   import StepStrip from "$lib/shared/timeline/StepStrip.svelte";
@@ -119,14 +120,18 @@
             type="button"
             class="close-preview"
             onclick={onclose}
-            aria-label="Close preview"
-            title="Close preview"
+            aria-label={t("create_ui_close_preview")}
+            title={t("create_ui_close_preview")}
           >
             <i class="fas fa-times" aria-hidden="true"></i>
           </button>
         {/if}
       </div>
-      <div class="notation-rail" role="group" aria-label="Sequence pictographs">
+      <div
+        class="notation-rail"
+        role="group"
+        aria-label={t("create_ui_sequence_pictographs")}
+      >
         <StepStrip
           {sequence}
           {currentStep}

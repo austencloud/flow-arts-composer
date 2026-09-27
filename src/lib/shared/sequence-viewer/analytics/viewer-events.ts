@@ -17,6 +17,7 @@ export type SequenceViewerSource =
   | "lineage"
   | "qr"
   | "share_intake"
+  | "shape_engine"
   | "spiroanim"
   | "tunnel_collection"
   | "url_restore";

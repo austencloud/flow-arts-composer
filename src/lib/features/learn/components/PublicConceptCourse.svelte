@@ -13,6 +13,7 @@
   } from "../domain/concept-routes";
   import Seo from "$lib/shared/components/Seo.svelte";
   import { LANDING_DOMAIN } from "../../../../config/domains";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
   const COURSE_NAME = "Interactive TKA Lessons";
   const COURSE_DESCRIPTION =
@@ -114,44 +115,44 @@
   {@html `<script type="application/ld+json">${breadcrumbJsonLd}</script>`}
 </Seo>
 
-<section class="public-course" aria-label="Interactive TKA lessons">
+<section class="public-course" aria-label={t("learn_ui_interactive_lessons")}>
   {#if browser}
     <LearnTab publicCourse />
   {:else}
     <div class="course-prerender">
-      <span>Learn by doing</span>
+      <span>{t("learn_ui_learn_by_doing")}</span>
       {#if concept && experience}
         <h1>{concept.name}</h1>
         <p class="lesson-description">{concept.description}</p>
         <p>
-          About {concept.estimatedMinutes} minutes. The interactive lesson starts
-          when this page loads in your browser.
+          {t("learn_ui_estimated_minutes", {
+            minutes: concept.estimatedMinutes,
+          })}
         </p>
-        <nav class="lesson-links" aria-label="Lesson links">
+        <nav class="lesson-links" aria-label={t("learn_ui_lesson_links")}>
           <a
             href={experience.reference?.href ??
               `/guide/level-1/${experience.guideSlug}`}
           >
-            Read {experience.reference?.label ?? experience.guideLabel}
+            {t("learn_ui_read_named", {
+              name: experience.reference?.label ?? experience.guideLabel,
+            })}
           </a>
           {#if previousLesson}
             <a href={buildConceptPath(previousLesson.id)}>
-              Previous: {previousLesson.name}
+              {t("learn_ui_previous_named", { name: previousLesson.name })}
             </a>
           {/if}
           {#if nextLesson}
             <a href={buildConceptPath(nextLesson.id)}>
-              Next: {nextLesson.name}
+              {t("learn_ui_next_named", { name: nextLesson.name })}
             </a>
           {/if}
-          <a href={CONCEPT_LIST_PATH}>All lessons</a>
+          <a href={CONCEPT_LIST_PATH}>{t("learn_ui_all_lessons")}</a>
         </nav>
       {:else}
-        <h1>{concept?.name ?? "Interactive TKA lessons"}</h1>
-        <p>
-          Explore guided lessons from the grid through reading TKA words. The
-          interactive course starts when this page loads in your browser.
-        </p>
+        <h1>{concept?.name ?? t("learn_ui_interactive_lessons")}</h1>
+        <p>{t("learn_ui_public_course_intro")}</p>
         <ol class="lesson-list">
           {#each lessons as lesson (lesson.id)}
             <li>
@@ -160,7 +161,7 @@
             </li>
           {/each}
         </ol>
-        <a href="/guide">Prefer to read? Open the Guide</a>
+        <a href="/guide">{t("learn_ui_prefer_to_read")}</a>
       {/if}
     </div>
   {/if}

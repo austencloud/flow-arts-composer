@@ -30,7 +30,11 @@
   import TimelinePreview from "./TimelinePreview.svelte";
   import SourcePreview from "./SourcePreview.svelte";
   import PanelGroup from "$lib/shared/panels/PanelGroup.svelte";
-  import { timeToPixels, type TimelineTrack, type TimelineClip } from "$lib/shared/animation-engine/domain/timeline-types";
+  import {
+    timeToPixels,
+    type TimelineTrack,
+    type TimelineClip,
+  } from "$lib/shared/animation-engine/domain/timeline-types";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import { untrack } from "svelte";
 
@@ -552,7 +556,7 @@
         <button
           class="dismiss-btn"
           onclick={() => getState().clearLoadError()}
-          aria-label="Dismiss error"
+          aria-label={t("compose_ui_dismiss_error")}
         >
           <i class="fa-solid fa-xmark" aria-hidden="true"></i>
         </button>

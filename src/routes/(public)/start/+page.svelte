@@ -18,6 +18,7 @@
    */
   import ContextualAuthPrompt from "$lib/shared/auth/components/ContextualAuthPrompt.svelte";
   import EnhancedPWAInstallGuide from "$lib/shared/mobile/components/EnhancedPWAInstallGuide.svelte";
+  import { getMobileFullscreenManager } from "$lib/shared/mobile/get-mobile-fullscreen-manager";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import { authState } from "$lib/shared/auth/state/auth-state.svelte";
@@ -49,6 +50,8 @@
   let guestLoading = $state(false);
   let guestEntered = $state(false);
   let showInstallGuide = $state(false);
+  let installing = $state(false);
+  let alreadyInstalled = $state(false);
 
   type StartMode = "signup" | "member" | "guest";
   const mode: StartMode = $derived(
@@ -61,6 +64,8 @@
       origin: "festival_qr_or_direct",
       auth_mode: "signup",
     });
+
+    alreadyInstalled = getMobileFullscreenManager().isPWA();
   });
 
   onDestroy(() => {
@@ -83,8 +88,27 @@
     }
   }
 
-  function openInstallGuide() {
-    captureWhenReady("start_page_install_opened", { mode });
+  async function openInstallGuide() {
+    const manager = getMobileFullscreenManager();
+
+    if (manager.canInstallPWA()) {
+      captureWhenReady("start_page_install_opened", {
+        mode,
+        method: "native",
+      });
+      const accepted = await manager.promptInstallPWA();
+      captureWhenReady("start_page_install_prompt_result", {
+        outcome: accepted ? "accepted" : "dismissed",
+      });
+      // Dismissed: respect it, nothing else happens. We don't fall back to
+      // the sheet — the visitor already saw and declined the real prompt.
+      if (accepted) {
+        installing = true;
+      }
+      return;
+    }
+
+    captureWhenReady("start_page_install_opened", { mode, method: "guide" });
     showInstallGuide = true;
   }
 </script>
@@ -139,14 +163,22 @@
           </p>
 
           <div class="success-actions">
-            <button
-              class="install-button"
-              type="button"
-              onclick={openInstallGuide}
-            >
-              <i class="fas fa-mobile-screen-button" aria-hidden="true"></i>
-              Add it to your home screen
-            </button>
+            {#if !alreadyInstalled}
+              <button
+                class="install-button"
+                type="button"
+                onclick={openInstallGuide}
+                disabled={installing}
+              >
+                {#if installing}
+                  <i class="fas fa-circle-check" aria-hidden="true"></i>
+                  Installing. Look for FA Composer on your home screen.
+                {:else}
+                  <i class="fas fa-mobile-screen-button" aria-hidden="true"></i>
+                  Add it to your home screen
+                {/if}
+              </button>
+            {/if}
             <a class="open-app-button" href="/create">
               <i class="fas fa-arrow-right" aria-hidden="true"></i>
               Open Flow Arts Composer
@@ -325,9 +357,14 @@
     box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.32);
   }
 
-  .install-button:hover {
+  .install-button:hover:not(:disabled) {
     transform: translateY(-1px);
     box-shadow: 0 0.55rem 1.5rem rgba(0, 0, 0, 0.38);
+  }
+
+  .install-button:disabled {
+    opacity: 0.75;
+    cursor: default;
   }
 
   .open-app-button {

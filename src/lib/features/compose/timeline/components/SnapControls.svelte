@@ -8,6 +8,7 @@
   - Responsive: bottom sheet on mobile, right sheet on desktop
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getTimelineState } from "$lib/shared/animation-engine/state/timeline-state.svelte";
   import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
 
@@ -147,8 +148,8 @@
   <button
     class="more-btn"
     onclick={() => (showAdvancedSheet = true)}
-    title="More snap options"
-    aria-label="More snap options"
+    title={t("compose_ui_more_snap_options")}
+    aria-label={t("compose_ui_more_snap_options")}
   >
     <i class="fa-solid fa-sliders" aria-hidden="true"></i>
   </button>
@@ -168,7 +169,7 @@
       <button
         class="close-btn"
         onclick={() => (showAdvancedSheet = false)}
-        aria-label="Close"
+        aria-label={t("action_close")}
       >
         <i class="fa-solid fa-xmark" aria-hidden="true"></i>
       </button>
@@ -386,11 +387,7 @@
 
   /* Sheet Styles */
   :global(.snap-settings-sheet) {
-    --sheet-bg: linear-gradient(
-      135deg,
-      rgba(0, 0, 0, 0.3),
-      rgba(0, 0, 0, 0.5)
-    );
+    --sheet-bg: linear-gradient(135deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.5));
     --sheet-filter: blur(24px);
   }
 

@@ -9,6 +9,7 @@ Based on legacy start_to_end_pos_glyph.py implementation.
 <script lang="ts">
   import { GridPlacement } from "../../grid/domain/enums/grid-enums";
   import { Letter } from "../../../foundation/domain/models/letter";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
   let {
     startPlacement = null,
@@ -50,7 +51,9 @@ Based on legacy start_to_end_pos_glyph.py implementation.
   const STATIC_LETTERS = [Letter.ALPHA, Letter.BETA, Letter.GAMMA];
 
   // Extract placement group (alpha/beta/gamma) from placement string
-  function extractPlacementGroup(placement: GridPlacement | null): string | null {
+  function extractPlacementGroup(
+    placement: GridPlacement | null
+  ): string | null {
     if (!placement) return null;
     // Extract alphabetic characters (e.g., "alpha1" -> "alpha")
     const match = placement.match(/[a-z]+/i);
@@ -193,15 +196,20 @@ Based on legacy start_to_end_pos_glyph.py implementation.
     const changed =
       pulseKey !== undefined
         ? prevPulseKey !== undefined && pulseKey !== prevPulseKey
-        : (prevStartPlacement !== undefined && startPlacement !== prevStartPlacement) ||
+        : (prevStartPlacement !== undefined &&
+            startPlacement !== prevStartPlacement) ||
           (prevEndPlacement !== undefined && endPlacement !== prevEndPlacement);
 
     if (changed && (startPlacement !== null || endPlacement !== null)) {
       clearTimeout(pulseTimeout);
       // Drop the class for a frame so a pulse already in flight restarts.
       isAnimating = false;
-      requestAnimationFrame(() => { isAnimating = true; });
-      pulseTimeout = setTimeout(() => { isAnimating = false; }, PULSE_MS);
+      requestAnimationFrame(() => {
+        isAnimating = true;
+      });
+      pulseTimeout = setTimeout(() => {
+        isAnimating = false;
+      }, PULSE_MS);
     }
 
     prevStartPlacement = startPlacement;
@@ -224,7 +232,7 @@ Based on legacy start_to_end_pos_glyph.py implementation.
       ? {
           role: "button",
           tabindex: 0,
-          "aria-label": "Toggle Placement glyph visibility",
+          "aria-label": t("viewer_final_toggle_placement_visibility"),
         }
       : {}}
   >
@@ -232,39 +240,43 @@ Based on legacy start_to_end_pos_glyph.py implementation.
          SVG transform attribute, so animating the outer <g> would wipe its
          centering translate and park the glyph at the left edge mid-pulse. -->
     <g class="pulse-target" class:animating={isAnimating}>
-    <!-- Start placement letter -->
-    {#if startSvgPath}
-      <image
-        href={startSvgPath}
-        x={startX}
-        y={startY}
-        width={scaledLetterWidth}
-        height={scaledLetterHeight}
-        aria-label={`Start placement: ${startGroup}`}
-      />
-    {/if}
+      <!-- Start placement letter -->
+      {#if startSvgPath}
+        <image
+          href={startSvgPath}
+          x={startX}
+          y={startY}
+          width={scaledLetterWidth}
+          height={scaledLetterHeight}
+          aria-label={t("viewer_final_start_placement", {
+            placement: startGroup ?? "",
+          })}
+        />
+      {/if}
 
-    <!-- Arrow -->
-    <image
-      href={arrowSvgPath}
-      x={arrowX}
-      y={arrowY}
-      width={scaledArrowWidth}
-      height={scaledArrowHeight}
-      aria-label="to"
-    />
-
-    <!-- End placement letter -->
-    {#if endSvgPath}
+      <!-- Arrow -->
       <image
-        href={endSvgPath}
-        x={endX}
-        y={endY}
-        width={scaledLetterWidth}
-        height={scaledLetterHeight}
-        aria-label={`End placement: ${endGroup}`}
+        href={arrowSvgPath}
+        x={arrowX}
+        y={arrowY}
+        width={scaledArrowWidth}
+        height={scaledArrowHeight}
+        aria-label={t("viewer_final_to")}
       />
-    {/if}
+
+      <!-- End placement letter -->
+      {#if endSvgPath}
+        <image
+          href={endSvgPath}
+          x={endX}
+          y={endY}
+          width={scaledLetterWidth}
+          height={scaledLetterHeight}
+          aria-label={t("viewer_final_end_placement", {
+            placement: endGroup ?? "",
+          })}
+        />
+      {/if}
     </g>
   </g>
 {/if}

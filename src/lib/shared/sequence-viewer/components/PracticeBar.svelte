@@ -16,6 +16,7 @@
   toward the next speed-up (or the goal). Exit lives in the header.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import { fade } from "svelte/transition";
   import { Popover } from "bits-ui";
@@ -44,7 +45,20 @@
     onToggleMirror: () => void;
   }
 
-  let { progress, bpm, isPlaying, onBpmChange, onStepLevel, onToggleHold, onPlayPause, onStop, metronomeOn, onToggleMetronome, mirrorOn, onToggleMirror }: Props = $props();
+  let {
+    progress,
+    bpm,
+    isPlaying,
+    onBpmChange,
+    onStepLevel,
+    onToggleHold,
+    onPlayPause,
+    onStop,
+    metronomeOn,
+    onToggleMetronome,
+    mirrorOn,
+    onToggleMirror,
+  }: Props = $props();
 
   let bpmColor = $derived.by(() => {
     if (bpm <= 30) return "var(--semantic-success, #22c55e)";
@@ -74,7 +88,9 @@
   let fillPct = $derived.by(() => {
     if (hasTarget) {
       const span = progress.targetBpm - progress.startBpm;
-      return span > 0 ? Math.max(0, Math.min(100, ((bpm - progress.startBpm) / span) * 100)) : 0;
+      return span > 0
+        ? Math.max(0, Math.min(100, ((bpm - progress.startBpm) / span) * 100))
+        : 0;
     }
     if (isCreep) return 100;
     return progress.roundsPerLevel > 0
@@ -120,31 +136,44 @@
   $effect(() => {
     const lvl = progress.currentLevel;
     const reached = progress.reachedTarget;
-    if ((!isCreep && lvl > prevLevel) || (reached && !prevReached)) fireCelebrate();
+    if ((!isCreep && lvl > prevLevel) || (reached && !prevReached))
+      fireCelebrate();
     prevLevel = lvl;
     prevReached = reached;
   });
 
   let caption = $derived.by(() => {
-    if (progress.held) return `Holding at ${bpm} BPM`;
+    if (progress.held) return t("viewer_practice_holding_at", { bpm });
     if (hasTarget) {
       return progress.reachedTarget
-        ? `Reached ${bpm} BPM`
-        : `Climbing to ${progress.targetBpm} BPM`;
+        ? t("viewer_practice_reached", { bpm })
+        : t("viewer_practice_climbing_to", { bpm: progress.targetBpm });
     }
-    if (isCreep) return `Climbing +${progress.increment} BPM each loop`;
+    if (isCreep)
+      return t("viewer_practice_climbing_each_loop", {
+        increment: progress.increment,
+      });
     const n = progress.loopsRemaining;
-    return `Speeds up in ${n} ${n === 1 ? "loop" : "loops"}`;
+    return t(
+      n === 1
+        ? "viewer_practice_speeds_up_one"
+        : "viewer_practice_speeds_up_many",
+      { count: n }
+    );
   });
 </script>
 
-<div class="practice-bar" role="region" aria-label="Practice controls">
+<div
+  class="practice-bar"
+  role="region"
+  aria-label={t("viewer_ui_practice_controls")}
+>
   <div class="pb-group">
     <button
       class="pb-btn pb-play"
       type="button"
       onclick={onPlayPause}
-      aria-label={isPlaying ? "Pause" : "Play"}
+      aria-label={isPlaying ? t("viewer_practice_pause") : t("learn_play")}
     >
       <span class="pb-icon-stack">
         {#key isPlaying}
@@ -164,10 +193,10 @@
         type="button"
         onclick={() => onStepLevel(-1)}
         disabled={atFloor}
-        aria-label={`Slower by ${increment} BPM`}
+        aria-label={t("viewer_practice_slower_by", { increment })}
       >
         <span class="pb-step-num">&minus;{increment}</span>
-        <span class="pb-level-label">Slower</span>
+        <span class="pb-level-label">{t("train_timed_slower")}</span>
       </button>
 
       <Popover.Root bind:open={bpmOpen}>
@@ -178,15 +207,23 @@
               class="pb-readout-btn"
               class:bumped
               type="button"
-              aria-label={`Set tempo, currently ${bpm} BPM`}
+              aria-label={t("viewer_practice_set_tempo", { bpm })}
             >
               <span class="pb-bpm-value">{bpm}</span>
-              <span class="pb-bpm-unit">BPM <i class="fas fa-caret-up" aria-hidden="true"></i></span>
+              <span class="pb-bpm-unit"
+                >BPM <i class="fas fa-caret-up" aria-hidden="true"></i></span
+              >
             </button>
           {/snippet}
         </Popover.Trigger>
         <Popover.Portal>
-          <Popover.Content side="top" align="center" sideOffset={12} collisionPadding={12} class="pb-bpm-pop">
+          <Popover.Content
+            side="top"
+            align="center"
+            sideOffset={12}
+            collisionPadding={12}
+            class="pb-bpm-pop"
+          >
             <BpmChips
               {bpm}
               min={progress.startBpm}
@@ -204,10 +241,10 @@
         type="button"
         onclick={() => onStepLevel(1)}
         disabled={atCeiling}
-        aria-label={`Faster by ${increment} BPM`}
+        aria-label={t("viewer_practice_faster_by", { increment })}
       >
         <span class="pb-step-num">+{increment}</span>
-        <span class="pb-level-label">Faster</span>
+        <span class="pb-level-label">{t("train_timed_faster")}</span>
       </button>
     </div>
 
@@ -219,11 +256,17 @@
         class:held={progress.held}
         type="button"
         onclick={onToggleHold}
-        aria-label={progress.held ? "Resume speeding up" : "Hold this speed"}
+        aria-label={progress.held
+          ? t("viewer_practice_resume_speeding")
+          : t("viewer_practice_hold_speed")}
         aria-pressed={progress.held}
       >
         <i class="fas fa-snowflake" aria-hidden="true"></i>
-        <span>{progress.held ? "Held" : "Hold"}</span>
+        <span
+          >{progress.held
+            ? t("viewer_practice_held")
+            : t("viewer_practice_hold")}</span
+        >
       </button>
 
       <button
@@ -231,11 +274,20 @@
         class:on={metronomeOn}
         type="button"
         onclick={onToggleMetronome}
-        aria-label={metronomeOn ? "Mute metronome" : "Play metronome"}
+        aria-label={metronomeOn
+          ? t("viewer_practice_mute_metronome")
+          : t("viewer_practice_play_metronome")}
         aria-pressed={metronomeOn}
       >
-        <i class="fas {metronomeOn ? 'fa-volume-high' : 'fa-volume-xmark'}" aria-hidden="true"></i>
-        <span>{metronomeOn ? "Sound" : "Muted"}</span>
+        <i
+          class="fas {metronomeOn ? 'fa-volume-high' : 'fa-volume-xmark'}"
+          aria-hidden="true"
+        ></i>
+        <span
+          >{metronomeOn
+            ? t("viewer_practice_sound")
+            : t("viewer_practice_muted")}</span
+        >
       </button>
 
       <!-- data-ghost-kind="mirror": the presenter turns the camera on itself.
@@ -252,11 +304,16 @@
         data-ghost-kind={mirrorOn ? undefined : "mirror"}
         data-ghost-label="Mirror"
         onclick={onToggleMirror}
-        aria-label={mirrorOn ? "Hide camera mirror" : "Show camera mirror"}
+        aria-label={mirrorOn
+          ? t("viewer_practice_hide_camera_mirror")
+          : t("viewer_practice_show_camera_mirror")}
         aria-pressed={mirrorOn}
       >
-        <i class="fas {mirrorOn ? 'fa-video' : 'fa-video-slash'}" aria-hidden="true"></i>
-        <span>Mirror</span>
+        <i
+          class="fas {mirrorOn ? 'fa-video' : 'fa-video-slash'}"
+          aria-hidden="true"
+        ></i>
+        <span>{t("viewer_ui_mirror")}</span>
       </button>
 
       <span class="pb-divider" aria-hidden="true"></span>
@@ -270,10 +327,10 @@
         data-ghost-kind="practice-stop"
         data-ghost-label="Stop"
         onclick={onStop}
-        aria-label="Stop and return to setup"
+        aria-label={t("viewer_ui_stop_and_return_to_setup")}
       >
         <i class="fas fa-stop" aria-hidden="true"></i>
-        <span>Stop</span>
+        <span>{t("viewer_ui_stop")}</span>
       </button>
     </div>
   </div>
@@ -286,8 +343,8 @@
           class="pb-caption"
           class:ready={progress.reachedTarget}
           in:fade|local={{ duration: reduceMotion ? 0 : 150 }}
-          out:fade|local={{ duration: reduceMotion ? 0 : 150 }}
-        >{caption}</span>
+          out:fade|local={{ duration: reduceMotion ? 0 : 150 }}>{caption}</span
+        >
       {/key}
     </span>
     <div class="pb-fill-track" aria-hidden="true">
@@ -313,7 +370,8 @@
     padding: 14px 16px;
     padding-bottom: calc(14px + env(safe-area-inset-bottom));
     background: var(--theme-panel-bg, rgba(12, 14, 22, 0.98));
-    border-top: 2px solid color-mix(in srgb, var(--theme-accent, #8b5cf6) 45%, transparent);
+    border-top: 2px solid
+      color-mix(in srgb, var(--theme-accent, #8b5cf6) 45%, transparent);
     box-shadow: 0 -6px 28px rgba(0, 0, 0, 0.45);
     flex-shrink: 0;
     container-type: inline-size;
@@ -351,9 +409,17 @@
     -webkit-tap-highlight-color: transparent;
     flex-shrink: 0;
   }
-  .pb-btn:active:not(:disabled) { transform: scale(0.95); }
-  .pb-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-  .pb-btn:focus-visible { outline: 3px solid var(--theme-accent, #6366f1); outline-offset: 2px; }
+  .pb-btn:active:not(:disabled) {
+    transform: scale(0.95);
+  }
+  .pb-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+  .pb-btn:focus-visible {
+    outline: 3px solid var(--theme-accent, #6366f1);
+    outline-offset: 2px;
+  }
 
   /* Thin separator between the live controls and the settings gear. */
   .pb-divider {
@@ -375,13 +441,26 @@
     text-transform: uppercase;
     letter-spacing: 0.6px;
   }
-  .pb-hold i { font-size: 16px; }
+  .pb-hold i {
+    font-size: 16px;
+  }
   @media (hover: hover) and (pointer: fine) {
-    .pb-hold:hover { background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.12)); color: var(--theme-text, #fff); }
+    .pb-hold:hover {
+      background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.12));
+      color: var(--theme-text, #fff);
+    }
   }
   .pb-hold.held {
-    background: color-mix(in srgb, var(--theme-accent, #38bdf8) 26%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent, #38bdf8) 55%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #38bdf8) 26%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #38bdf8) 55%,
+      transparent
+    );
     color: color-mix(in srgb, var(--theme-accent, #7dd3fc) 75%, white);
   }
 
@@ -397,13 +476,26 @@
     text-transform: uppercase;
     letter-spacing: 0.6px;
   }
-  .pb-sound i { font-size: 16px; }
+  .pb-sound i {
+    font-size: 16px;
+  }
   @media (hover: hover) and (pointer: fine) {
-    .pb-sound:hover { background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.12)); color: var(--theme-text, #fff); }
+    .pb-sound:hover {
+      background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.12));
+      color: var(--theme-text, #fff);
+    }
   }
   .pb-sound.on {
-    background: color-mix(in srgb, var(--theme-accent, #38bdf8) 26%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent, #38bdf8) 55%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #38bdf8) 26%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #38bdf8) 55%,
+      transparent
+    );
     color: color-mix(in srgb, var(--theme-accent, #7dd3fc) 75%, white);
   }
 
@@ -419,13 +511,26 @@
     text-transform: uppercase;
     letter-spacing: 0.6px;
   }
-  .pb-mirror i { font-size: 16px; }
+  .pb-mirror i {
+    font-size: 16px;
+  }
   @media (hover: hover) and (pointer: fine) {
-    .pb-mirror:hover { background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.12)); color: var(--theme-text, #fff); }
+    .pb-mirror:hover {
+      background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.12));
+      color: var(--theme-text, #fff);
+    }
   }
   .pb-mirror.on {
-    background: color-mix(in srgb, var(--theme-accent, #38bdf8) 26%, transparent);
-    border-color: color-mix(in srgb, var(--theme-accent, #38bdf8) 55%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #38bdf8) 26%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #38bdf8) 55%,
+      transparent
+    );
     color: color-mix(in srgb, var(--theme-accent, #7dd3fc) 75%, white);
   }
 
@@ -435,15 +540,28 @@
     gap: 1px;
     width: 62px;
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.06));
-    border-color: color-mix(in srgb, var(--semantic-error, #ef4444) 38%, var(--theme-stroke, rgba(255, 255, 255, 0.14)));
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 38%,
+      var(--theme-stroke, rgba(255, 255, 255, 0.14))
+    );
     color: color-mix(in srgb, var(--semantic-error, #ef4444) 78%, white);
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.6px;
   }
-  .pb-stop i { font-size: 16px; }
+  .pb-stop i {
+    font-size: 16px;
+  }
   @media (hover: hover) and (pointer: fine) {
-    .pb-stop:hover { background: color-mix(in srgb, var(--semantic-error, #ef4444) 18%, transparent); color: #fff; }
+    .pb-stop:hover {
+      background: color-mix(
+        in srgb,
+        var(--semantic-error, #ef4444) 18%,
+        transparent
+      );
+      color: #fff;
+    }
   }
 
   /* Play/pause — neutral square */
@@ -453,12 +571,19 @@
     border-color: var(--theme-stroke, rgba(255, 255, 255, 0.12));
     color: var(--theme-text, #fff);
   }
-  .pb-play i { font-size: 18px; }
+  .pb-play i {
+    font-size: 18px;
+  }
   @media (hover: hover) and (pointer: fine) {
     .pb-play:hover {
       background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.12));
-      border-color: color-mix(in srgb, var(--theme-accent, #8b5cf6) 50%, transparent);
-      box-shadow: 0 0 14px color-mix(in srgb, var(--theme-accent, #8b5cf6) 30%, transparent);
+      border-color: color-mix(
+        in srgb,
+        var(--theme-accent, #8b5cf6) 50%,
+        transparent
+      );
+      box-shadow: 0 0 14px
+        color-mix(in srgb, var(--theme-accent, #8b5cf6) 30%, transparent);
     }
   }
 
@@ -495,14 +620,28 @@
     color: var(--theme-text, #fff);
   }
   .pb-level.up {
-    background: color-mix(in srgb, var(--semantic-success, #22c55e) 22%, transparent);
-    border-color: color-mix(in srgb, var(--semantic-success, #22c55e) 45%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 22%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 45%,
+      transparent
+    );
     color: color-mix(in srgb, var(--semantic-success, #22c55e) 70%, white);
   }
   @media (hover: hover) and (pointer: fine) {
-    .pb-level.down:hover:not(:disabled) { background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.12)); }
+    .pb-level.down:hover:not(:disabled) {
+      background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.12));
+    }
     .pb-level.up:hover:not(:disabled) {
-      background: color-mix(in srgb, var(--semantic-success, #22c55e) 32%, transparent);
+      background: color-mix(
+        in srgb,
+        var(--semantic-success, #22c55e) 32%,
+        transparent
+      );
       color: #fff;
     }
   }
@@ -528,11 +667,20 @@
   @media (hover: hover) and (pointer: fine) {
     .pb-readout-btn:hover {
       background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.1));
-      border-color: color-mix(in srgb, var(--bpm-color) 40%, var(--theme-stroke, rgba(255, 255, 255, 0.12)));
+      border-color: color-mix(
+        in srgb,
+        var(--bpm-color) 40%,
+        var(--theme-stroke, rgba(255, 255, 255, 0.12))
+      );
     }
   }
-  .pb-readout-btn:active { transform: scale(0.97); }
-  .pb-readout-btn:focus-visible { outline: 3px solid var(--theme-accent, #6366f1); outline-offset: 2px; }
+  .pb-readout-btn:active {
+    transform: scale(0.97);
+  }
+  .pb-readout-btn:focus-visible {
+    outline: 3px solid var(--theme-accent, #6366f1);
+    outline-offset: 2px;
+  }
   .pb-readout-btn[aria-expanded="true"] {
     border-color: color-mix(in srgb, var(--bpm-color) 55%, transparent);
     background: color-mix(in srgb, var(--bpm-color) 12%, transparent);
@@ -548,11 +696,19 @@
   }
   /* Bump pulse — the number pops when the tempo climbs. Transform only, so it
      never nudges layout. */
-  .pb-readout-btn.bumped .pb-bpm-value { animation: pb-bump 360ms ease-out; }
+  .pb-readout-btn.bumped .pb-bpm-value {
+    animation: pb-bump 360ms ease-out;
+  }
   @keyframes pb-bump {
-    0% { transform: scale(1); }
-    35% { transform: scale(1.22); }
-    100% { transform: scale(1); }
+    0% {
+      transform: scale(1);
+    }
+    35% {
+      transform: scale(1.22);
+    }
+    100% {
+      transform: scale(1);
+    }
   }
   .pb-bpm-unit {
     display: flex;
@@ -565,7 +721,10 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
     margin-top: 3px;
   }
-  .pb-bpm-unit i { font-size: 9px; opacity: 0.8; }
+  .pb-bpm-unit i {
+    font-size: 9px;
+    opacity: 0.8;
+  }
 
   /* The canonical BPM selector supplies the controls; this wrapper only owns
      popover geometry and keeps the portalled surface above app chrome. */
@@ -582,14 +741,23 @@
   /* Entrance animation via bits-ui data-state — the popover rises + fades in
      from the readout instead of snapping open. */
   :global(.pb-bpm-pop[data-state="open"]) {
-    animation: pb-bpm-pop-in 170ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+    animation: pb-bpm-pop-in 170ms
+      var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
   }
   @keyframes pb-bpm-pop-in {
-    from { opacity: 0; transform: translateY(8px) scale(0.96); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
   }
   @media (prefers-reduced-motion: reduce) {
-    :global(.pb-bpm-pop[data-state="open"]) { animation: none; }
+    :global(.pb-bpm-pop[data-state="open"]) {
+      animation: none;
+    }
   }
 
   /* Status line below the controls: caption + slim fill, full-width but capped
@@ -617,20 +785,38 @@
     transition: width var(--duration-normal, 200ms) ease;
   }
   /* Creep-mode fill breathes so the steady per-loop climb reads as alive. */
-  .pb-fill.creep { opacity: 0.45; animation: pb-fill-breathe 2.6s ease-in-out infinite; }
+  .pb-fill.creep {
+    opacity: 0.45;
+    animation: pb-fill-breathe 2.6s ease-in-out infinite;
+  }
   @keyframes pb-fill-breathe {
-    0%, 100% { opacity: 0.35; box-shadow: 0 0 4px 0 color-mix(in srgb, var(--theme-accent, #8b5cf6) 35%, transparent); }
-    50% { opacity: 0.6; box-shadow: 0 0 12px 1px color-mix(in srgb, var(--theme-accent, #8b5cf6) 60%, transparent); }
+    0%,
+    100% {
+      opacity: 0.35;
+      box-shadow: 0 0 4px 0
+        color-mix(in srgb, var(--theme-accent, #8b5cf6) 35%, transparent);
+    }
+    50% {
+      opacity: 0.6;
+      box-shadow: 0 0 12px 1px
+        color-mix(in srgb, var(--theme-accent, #8b5cf6) 60%, transparent);
+    }
   }
   /* When the goal is reached the fill settles to full with a playful overshoot. */
   .pb-fill.ready {
     background: var(--semantic-success, #22c55e);
-    transition: width var(--duration-normal, 200ms) var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
+    transition: width var(--duration-normal, 200ms)
+      var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
   }
 
   /* Caption crossfades on change; the wrap reserves a line so swaps never
      reflow. The keyed span stacks absolutely inside it. */
-  .pb-caption-wrap { position: relative; display: block; width: 100%; height: 1.25em; }
+  .pb-caption-wrap {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 1.25em;
+  }
   .pb-caption {
     position: absolute;
     inset: 0;
@@ -644,7 +830,9 @@
     text-overflow: ellipsis;
     font-variant-numeric: tabular-nums;
   }
-  .pb-caption.ready { color: color-mix(in srgb, var(--semantic-success, #22c55e) 60%, white); }
+  .pb-caption.ready {
+    color: color-mix(in srgb, var(--semantic-success, #22c55e) 60%, white);
+  }
 
   /* Play/pause glyph crossfade — old and new stack and fade so it morphs
      instead of blinking. */
@@ -666,12 +854,26 @@
 
   /* One-shot celebration when the tempo crosses a staircase speed-up. */
   .pb-level.up.celebrate {
-    animation: pb-celebrate 620ms var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
+    animation: pb-celebrate 620ms
+      var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
   }
   @keyframes pb-celebrate {
-    0% { transform: scale(1); box-shadow: 0 0 0 0 color-mix(in srgb, var(--semantic-success, #22c55e) 60%, transparent); }
-    35% { transform: scale(1.16); filter: brightness(1.25); box-shadow: 0 0 22px 6px color-mix(in srgb, var(--semantic-success, #22c55e) 65%, transparent); }
-    100% { transform: scale(1); box-shadow: 0 0 0 0 color-mix(in srgb, var(--semantic-success, #22c55e) 0%, transparent); }
+    0% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0
+        color-mix(in srgb, var(--semantic-success, #22c55e) 60%, transparent);
+    }
+    35% {
+      transform: scale(1.16);
+      filter: brightness(1.25);
+      box-shadow: 0 0 22px 6px
+        color-mix(in srgb, var(--semantic-success, #22c55e) 65%, transparent);
+    }
+    100% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0
+        color-mix(in srgb, var(--semantic-success, #22c55e) 0%, transparent);
+    }
   }
 
   /* Narrow: two tidy rows instead of an arbitrary flex-wrap. Row 1 = play +
@@ -690,14 +892,27 @@
       justify-content: center;
       gap: 12px;
     }
-    .pb-divider { display: none; }
+    .pb-divider {
+      display: none;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .pb-btn, .pb-fill, .pb-readout-btn { transition: none; }
+    .pb-btn,
+    .pb-fill,
+    .pb-readout-btn {
+      transition: none;
+    }
     .pb-level.up.celebrate,
-    .pb-fill.creep { animation: none; }
-    .pb-readout-btn.bumped .pb-bpm-value { animation: none; }
-    .pb-btn:active, .pb-readout-btn:active { transform: none; }
+    .pb-fill.creep {
+      animation: none;
+    }
+    .pb-readout-btn.bumped .pb-bpm-value {
+      animation: none;
+    }
+    .pb-btn:active,
+    .pb-readout-btn:active {
+      transform: none;
+    }
   }
 </style>

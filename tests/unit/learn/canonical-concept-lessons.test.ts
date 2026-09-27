@@ -23,6 +23,16 @@ import {
 
 const readSource = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8");
+// German i18n work (commits b11df1a24d/453be00df6/c1e3934175/245d999978/
+// d299d3c492 and the codex/german-shape-* merges) moved many of this
+// surface's English literals behind t()/tDynamic() keys backed by
+// messages/en.json. Where a check below used to assert an inline literal, it
+// now asserts the source calls the key AND that messages/en.json still
+// carries the identical (or equivalent, for merged/reworded copy) English text.
+const readEnglishMessages = (): Record<string, string> =>
+  JSON.parse(
+    readFileSync(resolve(process.cwd(), "messages/en.json"), "utf8")
+  ) as Record<string, string>;
 
 describe("canonical concept lesson content", () => {
   it("moves legacy comparison progress past the inserted bridge", () => {
@@ -157,7 +167,13 @@ describe("canonical concept lesson composition", () => {
     expect(motions).toContain(
       "const timingDirectionIndex = HAND_PATH_STEPS.length"
     );
-    expect(motions).toContain('activeMotion?.name ?? "Timing and Direction"');
+    // The static fallback moved behind an i18n key (commit d299d3c492); the
+    // topic/activeMotion branches ahead of it now resolve per-id tDynamic
+    // keys instead of reading .title/.name directly off the data.
+    expect(motions).toContain('tDynamic("learn_motion_timing_direction")');
+    expect(readEnglishMessages()["learn_motion_timing_direction"]).toBe(
+      "Timing and Direction"
+    );
     expect(motions).toContain('"stageSchemaVersion"');
     expect(motions).toContain("migrateHandMotionsSavedStep");
     expect(motions).toContain('viewMode === "scroll"\n      ? comparisonIndex');
@@ -179,8 +195,11 @@ describe("canonical concept lesson composition", () => {
     // The readout and every example name the placement. The canonical
     // pictograph already draws the glyph, so a second decorative one beside it
     // would print the same fact twice.
-    expect(placementsSrc).toContain(
-      'built ? PLACEMENT_TYPE_INFO[built].label : "Your placement"'
+    expect(placementsSrc).toMatch(
+      /\{built\s*\?\s*PLACEMENT_TYPE_INFO\[built\]\.label\s*:\s*t\("learn_ui_your_placement"\)\}/
+    );
+    expect(readEnglishMessages()["learn_ui_your_placement"]).toBe(
+      "Your placement"
     );
     expect(placementsSrc).toContain("PLACEMENT_TYPE_INFO[example.kind].label");
     expect(placementsSrc).not.toContain("TKAWordGlyph");
@@ -227,7 +246,10 @@ describe("canonical concept lesson composition", () => {
     expect(timingBoard).toContain("onStepChange={syncFocusedStep}");
     expect(timingBoard).toContain("showElementalGlyph");
     expect(timingBoard).toContain("externalPlaying={playing}");
-    expect(timingBoard).toContain("Back to all six relationships");
+    expect(timingBoard).toContain('tDynamic("learn_timing_board_back_all_aria")');
+    expect(readEnglishMessages()["learn_timing_board_back_all_aria"]).toBe(
+      "Back to all six relationships"
+    );
     expect(timingBoard).toContain("mode.id.toUpperCase()");
     expect(timingBoard).not.toContain("mode.element.element");
     expect(timingBoard).not.toMatch(
@@ -237,10 +259,27 @@ describe("canonical concept lesson composition", () => {
     // independent examples (placement, timing, direction), dropping the old
     // timing-heading/direction-heading ids and the timingMode/directionMode
     // state names along with it. Assert the current structure instead.
-    expect(timingIntro).toContain('aria-label="Timing" use:renderGateTarget={gate}>');
-    expect(timingIntro).toContain("<h3>Timing</h3>");
-    expect(timingIntro).toContain('aria-label="Direction">');
-    expect(timingIntro).toContain("<h3>Direction</h3>");
+    // German i18n work (commit d299d3c492) then moved the section headings
+    // and aria-labels behind tDynamic() keys; check the keys are wired AND
+    // messages/en.json still carries the identical heading text.
+    expect(timingIntro).toContain(
+      'aria-label={tDynamic("learn_timing_intro_timing_heading")}'
+    );
+    expect(timingIntro).toContain("use:renderGateTarget={gate}");
+    expect(timingIntro).toContain(
+      '<h3>{tDynamic("learn_timing_intro_timing_heading")}</h3>'
+    );
+    expect(timingIntro).toContain(
+      'aria-label={tDynamic("learn_timing_intro_direction_heading")}'
+    );
+    expect(timingIntro).toContain(
+      '<h3>{tDynamic("learn_timing_intro_direction_heading")}</h3>'
+    );
+    const timingIntroEn = readEnglishMessages();
+    expect(timingIntroEn["learn_timing_intro_timing_heading"]).toBe("Timing");
+    expect(timingIntroEn["learn_timing_intro_direction_heading"]).toBe(
+      "Direction"
+    );
     expect(timingIntro).toContain("SegmentedControl");
     expect(timingIntro).toContain('semantics="radiogroup"');
     expect(timingIntro).toContain('let timing = $state<TimingMode>("together");');
@@ -318,14 +357,21 @@ describe("canonical concept lesson composition", () => {
     );
 
     // Connective copy is the guide's own prose, verbatim (lt1-abc-ghi) —
-    // approved via docs/learn/copy-reviews/words-alpha-beta.md.
-    expect(words).toContain(
+    // approved via docs/learn/copy-reviews/words-alpha-beta.md. German i18n
+    // work (commit d299d3c492) merged the markup-split paragraph (a <br/>
+    // then a bold/italic clause) into one translatable sentence behind an
+    // i18n key; check the key is wired AND messages/en.json still carries
+    // both halves of the approved copy verbatim.
+    expect(words).toContain('t("learn_ui_first_words_instruction")');
+    expect(words).toContain('t("learn_ui_six_words_practice_instruction")');
+    const en = readEnglishMessages();
+    expect(en["learn_ui_first_words_instruction"]).toContain(
       "The first words we will learn correspond to VTG’s 1:1 motions."
     );
-    expect(words).toContain(
+    expect(en["learn_ui_first_words_instruction"]).toContain(
       "you’ll need to use body turns and/or negative space"
     );
-    expect(words.replace(/\s+/g, " ")).toContain(
+    expect(en["learn_ui_six_words_practice_instruction"]).toBe(
       "Practice each word once in both directions, then again starting with thumbs out."
     );
   });
@@ -356,8 +402,14 @@ describe("canonical concept lesson composition", () => {
     expect(stage).toContain("InlineAnimationPlayer");
     expect(stage).toContain("ChoreoCard");
     expect(stage).toContain("PanelGroup");
-    expect(stage).toContain("Performance video");
-    expect(stage).toContain("Guide notes");
+    // These pane labels moved behind i18n keys (commit d299d3c492).
+    expect(stage).toContain('tDynamic("learn_word_stage_performance_video")');
+    expect(stage).toContain('tDynamic("learn_word_stage_guide_notes")');
+    const stageEn = readEnglishMessages();
+    expect(stageEn["learn_word_stage_performance_video"]).toBe(
+      "Performance video"
+    );
+    expect(stageEn["learn_word_stage_guide_notes"]).toBe("Guide notes");
     expect(stage).toContain("showWordHeader={false}");
     expect(stage).toContain("showWord={false}");
     expect(stage).toContain("hideTkaGlyph");

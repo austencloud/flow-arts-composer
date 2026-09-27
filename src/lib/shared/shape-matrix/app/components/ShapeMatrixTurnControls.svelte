@@ -6,15 +6,14 @@
   bar above the grid; only where the edit navigates differs, and the host
   decides that through `onturn`. -->
 <script lang="ts">
-  import {
-    matrixTurnSpokenLabel,
-    matrixTurnVisibleLabel,
-  } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { matrixTurnVisibleLabel } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
   import {
     keyToTurnValue,
     turnValueToKey,
     type TurnValue,
   } from "$lib/shared/create/services/level-turn-values";
+  import { localizedMatrixTurnSpokenLabel } from "$lib/shared/shape-matrix/domain/shape-matrix-display";
   import ShapeMatrixRibbonCell from "./ShapeMatrixRibbonCell.svelte";
   import ShapeMatrixValueScroller from "./ShapeMatrixValueScroller.svelte";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
@@ -28,17 +27,24 @@
 
   const appState = getShapeMatrixAppContext();
 
-  const unit = $derived(appState.labelMode === "ratios" ? "ratio" : "turn");
+  const unit = $derived(
+    appState.labelMode === "ratios"
+      ? t("shape_engine_ratio")
+      : t("shape_engine_turn")
+  );
   const axes = $derived(
     (["left", "right"] as const).map((hand) => ({
       hand,
-      label: hand === "left" ? `Rows ↓ ${unit}` : `Columns → ${unit}`,
+      label:
+        hand === "left"
+          ? `${t("shape_engine_rows")} ↓ ${unit}`
+          : `${t("shape_engine_columns")} → ${unit}`,
       value: turnValueToKey(
         hand === "left" ? appState.leftTurn : appState.rightTurn
       ),
       options: appState.availableTurns.map((turn) => ({
         value: turnValueToKey(turn),
-        label: matrixTurnSpokenLabel(turn, appState.labelMode),
+        label: localizedMatrixTurnSpokenLabel(turn, appState.labelMode),
         shortLabel: matrixTurnVisibleLabel(turn, appState.labelMode),
         tone: hand === "left" ? "blue" : "red",
       })),
@@ -59,10 +65,10 @@
           class="fixed-turn-value"
           class:blue={axis.hand === "left"}
           class:red={axis.hand === "right"}
-          aria-label={`${axis.label}: ${axis.options[0]?.label ?? "Zero"}`}
+          aria-label={`${axis.label}: ${axis.options[0]?.label ?? t("shape_engine_zero")}`}
         >
           {axis.options[0]?.shortLabel ?? "0"}
-          <span>Only value at Level 1</span>
+          <span>{t("shape_engine_turns_only_one")}</span>
         </output>
       </ShapeMatrixRibbonCell>
     {:else}

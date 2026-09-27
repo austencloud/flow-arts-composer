@@ -19,12 +19,15 @@
   import {
     getGeneratorCardHelp,
     getGeneratorCardSpan,
+    getGeneratorCardTourLabel,
     getGeneratorPanelCards,
     type GeneratorCardId,
   } from "$lib/shared/create/domain/card-registry";
   import { getCardColor } from "$lib/shared/create/domain/card-colors";
   import { BackgroundType } from "@austencloud/backgrounds";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { getLocale } from "$lib/shared/i18n/i18n.svelte.js";
+  import { generatorTourText } from "$lib/shared/create/domain/generator-tour-display";
 
   let { level = 2 } = $props<{ level?: number }>();
 
@@ -40,16 +43,20 @@
 
   // Derive mini cards from the shared registry so they stay in sync
   // with the real generator panel automatically.
-  const miniCards = $derived.by((): MiniCard[] =>
-    getGeneratorPanelCards({ isBeginner: level === 1 }).map((entry) => ({
-      id: entry.id,
-      header: entry.tourHeader,
-      value: entry.tourDefaultValue,
-      gradient: getCardColor(entry.colorKey, BackgroundType.COSMIC),
-      span: getGeneratorCardSpan(entry, level === 1),
-      help: getGeneratorCardHelp(entry),
-    }))
-  );
+  const miniCards = $derived.by((): MiniCard[] => {
+    getLocale();
+    return getGeneratorPanelCards({ isBeginner: level === 1 }).map((entry) => {
+      const { header, value } = getGeneratorCardTourLabel(entry);
+      return {
+        id: entry.id,
+        header,
+        value,
+        gradient: getCardColor(entry.colorKey, BackgroundType.COSMIC),
+        span: getGeneratorCardSpan(entry, level === 1),
+        help: getGeneratorCardHelp(entry),
+      };
+    });
+  });
 
   $effect(() => {
     const stops = miniCards.map((card) => card.id);
@@ -151,7 +158,11 @@
   labelledBy="tour-modal-title"
 >
   {#if currentContent}
-    <button class="close-btn" onclick={handleClose} aria-label="Close tour">
+    <button
+      class="close-btn"
+      onclick={handleClose}
+      aria-label={generatorTourText("close_tour", "Close tour")}
+    >
       <i class="fas fa-xmark" aria-hidden="true"></i>
     </button>
 
@@ -159,7 +170,10 @@
     <div
       class="card-grid"
       role="img"
-      aria-label="Generator cards - {currentContent.name} highlighted"
+      aria-label={generatorTourText(
+        "cards_highlighted",
+        "Generator cards - {name} highlighted"
+      ).replace("{name}", currentContent.name)}
     >
       {#each miniCards as card}
         <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -174,7 +188,10 @@
           onclick={() => handleCardTap(card.id)}
           role="button"
           tabindex="0"
-          aria-label="View {card.header || card.value} help"
+          aria-label={generatorTourText(
+            "view_card_help",
+            "View {name} help"
+          ).replace("{name}", card.header || card.value)}
           onkeydown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
@@ -244,8 +261,9 @@
     <ModalFooter align="between">
       <div
         class="tour-dots"
-        aria-label="Step {generateTourState.currentStopIndex +
-          1} of {generateTourState.totalStops}"
+        aria-label={generatorTourText("step_count", "Step {current} of {total}")
+          .replace("{current}", String(generateTourState.currentStopIndex + 1))
+          .replace("{total}", String(generateTourState.totalStops))}
       >
         {#each Array(generateTourState.totalStops) as _, i}
           <div
@@ -263,17 +281,19 @@
           class="ghost"
           data-ghost="safe"
           data-ghost-kind="dismiss"
-          data-ghost-label="Skip"
-          onclick={handleSkip}>Skip</button
+          data-ghost-label={generatorTourText("skip", "Skip")}
+          onclick={handleSkip}>{generatorTourText("skip", "Skip")}</button
         >
         <button
           class="primary"
           onclick={handleNext}
           aria-label={generateTourState.isLastStop
-            ? "Finish tour"
-            : "Next step"}
+            ? generatorTourText("finish_tour", "Finish tour")
+            : generatorTourText("next_step", "Next step")}
         >
-          {generateTourState.isLastStop ? "Got it" : "Next"}
+          {generateTourState.isLastStop
+            ? generatorTourText("got_it", "Got it")
+            : generatorTourText("next", "Next")}
           {#if !generateTourState.isLastStop}
             <i class="fas fa-arrow-right next-arrow" aria-hidden="true"></i>
           {/if}

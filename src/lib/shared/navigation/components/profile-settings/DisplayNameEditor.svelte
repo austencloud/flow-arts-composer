@@ -5,6 +5,7 @@
   Extracted from AccountSettingsSection for single responsibility.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { HapticFeedback } from "../../../application/services/haptic-feedback";
   import type { User } from "firebase/auth";
   import { authState } from "../../../auth/state/auth-state.svelte";
@@ -75,7 +76,7 @@
       editButton?.focus();
     } catch (error) {
       console.error("Failed to update display name:", error);
-      saveError = "Display name couldn't be saved. Try again.";
+      saveError = t("nav_ui_display_name_couldn_t_be_saved_try_again");
       hapticService?.trigger("error");
     } finally {
       isSaving = false;
@@ -94,9 +95,9 @@
 
 <div data-save-shortcut-scope class="section">
   {#if isEditing}
-    <label class="label" for="display-name">Display name</label>
+    <label class="label" for="display-name">{t("nav_ui_display_name")}</label>
     <p class="helper-text">
-      This name appears on your sequences, comments, and profile.
+      {t("nav_ui_this_name_appears_on_your_sequences_comments_and_profile")}
     </p>
     <div class="input-row">
       <input
@@ -107,7 +108,7 @@
         bind:value={editedName}
         onkeydown={handleKeydown}
         maxlength="50"
-        placeholder="Your display name"
+        placeholder={t("nav_ui_your_display_name")}
         disabled={isSaving}
         aria-invalid={saveError ? "true" : "false"}
         aria-describedby={saveError ? "display-name-error" : undefined}
@@ -118,7 +119,7 @@
           class="icon-btn save"
           onclick={save}
           disabled={isSaving || !editedName.trim()}
-          aria-label="Save display name"
+          aria-label={t("nav_ui_save_display_name")}
         >
           {#if isSaving}
             <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
@@ -130,7 +131,7 @@
           class="icon-btn cancel"
           onclick={cancelEditing}
           disabled={isSaving}
-          aria-label="Cancel editing"
+          aria-label={t("nav_ui_cancel_editing")}
         >
           <i class="fas fa-times" aria-hidden="true"></i>
         </button>
@@ -144,8 +145,8 @@
     {/if}
   {:else}
     <AccountValueRow
-      label="Display name"
-      value={user.displayName || "Not set"}
+      label={t("nav_ui_display_name")}
+      value={user.displayName || t("profile_pronouns_not_set")}
       empty={!user.displayName}
       onEdit={() => startEditing()}
       bind:buttonRef={editButton}

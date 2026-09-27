@@ -196,7 +196,13 @@ describe("scene prop picker contract", () => {
     // A family's styles replace the grid at full tile size behind a back bar;
     // nothing floats in a popover that could clip or shrink its tiles.
     expect(canonicalGrid).not.toContain("<Popover.");
-    expect(canonicalGrid).toContain('aria-label="Back to all props"');
+    // German i18n work moved the back-bar's label behind a t() key; check the
+    // key is wired AND messages/en.json still carries the identical text.
+    expect(canonicalGrid).toContain('aria-label={t("settings_back_all_props")}');
+    const en = JSON.parse(
+      readFileSync(path.join(repoRoot, "messages/en.json"), "utf-8")
+    ) as Record<string, string>;
+    expect(en["settings_back_all_props"]).toBe("Back to all props");
     expect(canonicalGrid).toContain("data-escape-shortcut-local");
   });
 

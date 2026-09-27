@@ -53,14 +53,14 @@
   const takeover = $derived(
     toExportTakeoverPhase(exportProgress, isExporting && !isRecording)
   );
-  const takeoverLabel = $derived(
-    takeover.labelKey ? t(takeover.labelKey) : ""
-  );
+  const takeoverLabel = $derived(takeover.labelKey ? t(takeover.labelKey) : "");
 
   function formatTime(seconds: number): string {
     const m = Math.floor(seconds / 60);
     const s = Math.floor(seconds % 60);
-    return m > 0 ? `${m}:${String(s).padStart(2, "0")}` : `0:${String(s).padStart(2, "0")}`;
+    return m > 0
+      ? `${m}:${String(s).padStart(2, "0")}`
+      : `0:${String(s).padStart(2, "0")}`;
   }
 </script>
 
@@ -79,7 +79,11 @@
     <div class="rec-dot"></div>
     <span class="rec-label">REC</span>
     <span class="rec-timer">{formatTime(elapsed)}</span>
-    <button class="stop-btn" onclick={onStop} aria-label="Stop recording">
+    <button
+      class="stop-btn"
+      onclick={onStop}
+      aria-label={t("viewer_ui_stop_recording")}
+    >
       <div class="stop-icon"></div>
     </button>
   </div>
@@ -102,7 +106,7 @@
   phaseLabel={takeoverLabel}
   error={exportProgress?.error ?? null}
   onCancel={onCancelExport}
-  label="Rendering your film"
+  label={t("viewer_detail_rendering_your_film")}
 />
 
 <style>
@@ -130,10 +134,20 @@
   }
 
   @keyframes countdown-pop {
-    0% { transform: scale(1.6); opacity: 0; }
-    30% { transform: scale(1); opacity: 1; }
-    80% { opacity: 1; }
-    100% { opacity: 0.3; }
+    0% {
+      transform: scale(1.6);
+      opacity: 0;
+    }
+    30% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    80% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0.3;
+    }
   }
 
   .recording-badge {
@@ -163,8 +177,13 @@
   }
 
   @keyframes rec-pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.3;
+    }
   }
 
   .rec-label {

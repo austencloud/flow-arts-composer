@@ -1,5 +1,6 @@
 <!-- ImageUpload - Shared image selection, paste, drop, and preview control -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
 
   export interface ImageUploadState {
@@ -16,9 +17,9 @@
     stagedImages = new Map(),
     accept = "image/*",
     allowedMimeTypes,
-    uploadLabel = "Choose images",
-    attachLabel = "Attach image",
-    uploadTitle = "Choose an image",
+    uploadLabel,
+    attachLabel,
+    uploadTitle,
     onImagesAdded,
     onImageRemoved,
     onFilesRejected,
@@ -152,7 +153,7 @@
     {accept}
     multiple={maxImages > 1}
     {disabled}
-    aria-label={uploadLabel}
+    aria-label={uploadLabel ?? t("shared_controls_choose_images")}
     class="sr-only"
   />
 
@@ -182,14 +183,17 @@
 
           <!-- Uploaded badge -->
           {#if isUploaded}
-            <div class="chip-badge" aria-label="Uploaded">
+            <div class="chip-badge" aria-label={t("shared_controls_uploaded")}>
               <i class="fas fa-check" aria-hidden="true"></i>
             </div>
           {/if}
 
           <!-- Failed indicator -->
           {#if isFailed}
-            <div class="chip-failed" aria-label="Upload failed">
+            <div
+              class="chip-failed"
+              aria-label={t("shared_controls_upload_failed")}
+            >
               <i class="fas fa-exclamation" aria-hidden="true"></i>
             </div>
           {/if}
@@ -200,7 +204,7 @@
             class="chip-remove"
             onclick={() => handleRemoveImage(index)}
             {disabled}
-            aria-label="Remove {file.name}"
+            aria-label={t("shared_controls_remove_file", { name: file.name })}
           >
             <i class="fas fa-times" aria-hidden="true"></i>
           </button>
@@ -219,7 +223,7 @@
           ondragover={handleDragOver}
           ondragleave={handleDragLeave}
           {disabled}
-          aria-label={attachLabel}
+          aria-label={attachLabel ?? t("shared_controls_attach_image")}
         >
           <i class="fas fa-plus" aria-hidden="true"></i>
         </button>
@@ -237,11 +241,11 @@
       ondragover={handleDragOver}
       ondragleave={handleDragLeave}
       {disabled}
-      title={uploadTitle}
-      aria-label={attachLabel}
+      title={uploadTitle ?? t("shared_controls_choose_image")}
+      aria-label={attachLabel ?? t("shared_controls_attach_image")}
     >
       <i class="fas fa-paperclip" aria-hidden="true"></i>
-      <span>{attachLabel}</span>
+      <span>{attachLabel ?? t("shared_controls_attach_image")}</span>
     </button>
   {/if}
 </div>

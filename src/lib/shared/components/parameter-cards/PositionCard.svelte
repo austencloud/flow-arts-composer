@@ -4,6 +4,7 @@ Styled to match Generate module's card aesthetic
 Supports Alpha, Beta, Gamma placements with Greek symbol pills
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { attachRipple } from "$lib/shared/application/services/ripple-effect";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
@@ -58,8 +59,9 @@ Supports Alpha, Beta, Gamma placements with Greek symbol pills
 
   const displayValue = $derived(
     value
-      ? (STARTING_PLACEMENTS_LIST.find((p) => p.id === value)?.fullName ?? value)
-      : "Any"
+      ? (STARTING_PLACEMENTS_LIST.find((p) => p.id === value)?.fullName ??
+          value)
+      : t("shared_controls_any_position")
   );
 </script>
 
@@ -69,10 +71,10 @@ Supports Alpha, Beta, Gamma placements with Greek symbol pills
   class:disabled
   style="--card-index: {cardIndex}; grid-column: span {gridColumnSpan};"
   role="group"
-  aria-label="Starting placement selection"
+  aria-label={t("shared_controls_position_selection")}
 >
   <div class="card-header">
-    <span class="card-title">Placement</span>
+    <span class="card-title">{t("shared_controls_placement")}</span>
   </div>
 
   <div class="current-value">{displayValue}</div>

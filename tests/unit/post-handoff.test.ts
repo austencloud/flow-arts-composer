@@ -1,3 +1,4 @@
+import { setLocale } from "$lib/shared/i18n/i18n.svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const detectPlatform = vi.hoisted(() => vi.fn(() => "desktop"));
@@ -27,6 +28,35 @@ function pngBlob(): Blob {
 }
 
 describe("post handoff destinations", () => {
+  it("switches destination copy without changing actions or artifact filenames", async () => {
+    const context = {
+      artifact: "card" as const,
+      blob: pngBlob(),
+      filename: "FΨ.png",
+    };
+    await setLocale("en");
+    const english = resolveDestinations(context);
+    try {
+      await setLocale("de");
+      const german = resolveDestinations(context);
+      expect(
+        german.map(({ id, icon, primary }) => ({ id, icon, primary }))
+      ).toEqual(
+        english.map(({ id, icon, primary }) => ({ id, icon, primary }))
+      );
+      expect(german.find((d) => d.id === "send-to-phone")?.label).not.toBe(
+        english.find((d) => d.id === "send-to-phone")?.label
+      );
+      expect(german.find((d) => d.id === "copy-caption")?.label).toContain(
+        "kopieren"
+      );
+      expect(buildArtifactFilename("FΨFΨFΨFΨ", "card")).toBe("FΨ.png");
+    } finally {
+      await setLocale("en");
+      document.cookie = "PARAGLIDE_LOCALE=; max-age=0; path=/";
+    }
+    expect(resolveDestinations(context)).toEqual(english);
+  });
   beforeEach(() => {
     detectPlatform.mockReturnValue("desktop");
     supportsNativeFileShare.mockReturnValue(true);

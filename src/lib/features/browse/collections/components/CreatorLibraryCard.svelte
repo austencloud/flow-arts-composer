@@ -8,6 +8,7 @@ Displays:
 - "View Profile" link to full profile
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type {
     CreatorLibraryData,
     CreatorContentTab,
@@ -86,7 +87,9 @@ Displays:
         <img
           src={profile.avatar}
           alt={profile.displayName}
-          crossorigin={isGoogleAvatarUrl(profile.avatar) ? undefined : "anonymous"}
+          crossorigin={isGoogleAvatarUrl(profile.avatar)
+            ? undefined
+            : "anonymous"}
           referrerpolicy="no-referrer"
           onerror={(e) => {
             const img = e.currentTarget as HTMLImageElement;
@@ -110,15 +113,15 @@ Displays:
       <h3 class="display-name">{profile.displayName}</h3>
       <p class="username">@{profile.username}</p>
       <div class="stats">
-        <span class="stat" title="Sequences">
+        <span class="stat" title={t("tab_browse_sequences")}>
           <i class="fas fa-list" aria-hidden="true"></i>
           {sequenceCount}
         </span>
-        <span class="stat" title="Collections">
+        <span class="stat" title={t("tab_library_collections")}>
           <i class="fas fa-folder" aria-hidden="true"></i>
           {collectionCount}
         </span>
-        <span class="stat" title="Followers">
+        <span class="stat" title={t("browse_ui_followers")}>
           <i class="fas fa-users" aria-hidden="true"></i>
           {profile.followerCount}
         </span>
@@ -133,10 +136,10 @@ Displays:
         e.stopPropagation();
         onViewProfile?.();
       }}
-      aria-label="View full profile"
+      aria-label={t("browse_ui_view_full_profile")}
     >
       <i class="fas fa-user-circle" aria-hidden="true"></i>
-      <span>Profile</span>
+      <span>{t("browse_ui_profile")}</span>
     </button>
   </div>
 
@@ -147,7 +150,7 @@ Displays:
       <div
         class="content-tabs"
         role="tablist"
-        aria-label="Creator content tabs"
+        aria-label={t("browse_ui_creator_content_tabs")}
       >
         <button
           type="button"
@@ -186,7 +189,7 @@ Displays:
           aria-selected={false}
           aria-disabled="true"
           tabindex={-1}
-          title="Coming soon"
+          title={t("browse_ui_coming_soon")}
         >
           Compositions
           <span class="count">0</span>
@@ -240,12 +243,14 @@ Displays:
                   <span class="see-all-count"
                     >+{sequenceCount - previewSequences.length}</span
                   >
-                  <span class="see-all-text">See all</span>
+                  <span class="see-all-text">{t("browse_ui_see_all")}</span>
                 </button>
               {/if}
             </div>
           {:else}
-            <p class="empty-message">No public sequences yet</p>
+            <p class="empty-message">
+              {t("browse_ui_no_public_sequences_yet")}
+            </p>
           {/if}
         {:else if activeTab === "collections"}
           {#if publicCollections.length > 0}
@@ -264,14 +269,14 @@ Displays:
               {/each}
             </div>
           {:else}
-            <p class="empty-message">No public collections</p>
+            <p class="empty-message">{t("browse_ui_no_public_collections")}</p>
           {/if}
         {/if}
       </div>
     </div>
   {:else}
     <div class="no-content">
-      <p>No public content yet</p>
+      <p>{t("browse_ui_no_public_content_yet")}</p>
     </div>
   {/if}
 </div>

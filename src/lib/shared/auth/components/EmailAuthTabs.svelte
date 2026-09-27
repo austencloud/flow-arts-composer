@@ -47,14 +47,14 @@
         class:active={activeTab === "magic"}
         onclick={() => (activeTab = "magic")}
         aria-label={lastMethod === "magic-link"
-          ? "Email code, last used on this device"
+          ? t("auth_email_code_last_used")
           : undefined}
       >
         {#if lastMethod === "magic-link"}
           <LastUsedBadge />
         {/if}
         <i class="fas fa-envelope" aria-hidden="true"></i>
-        <span>Email code</span>
+        <span>{t("auth_email_code")}</span>
       </button>
       <button
         type="button"
@@ -64,7 +64,7 @@
         class:active={activeTab === "password"}
         onclick={() => (activeTab = "password")}
         aria-label={lastMethod === "password"
-          ? `${t("auth_password")}, last used on this device`
+          ? t("auth_password_last_used")
           : undefined}
       >
         {#if lastMethod === "password"}

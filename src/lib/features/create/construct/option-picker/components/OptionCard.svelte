@@ -5,6 +5,7 @@ Single responsibility: Render one pictograph option as a clickable card.
 Receives pre-calculated data, just renders it.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { PreparedPictographData } from "$lib/shared/pictograph/option/prepared-pictograph-data";
   import { getLetterBorderColors } from "$lib/shared/pictograph/shared/utils/letter-border-utils";
   import OptionCardContent from "./OptionCardContent.svelte";
@@ -77,9 +78,9 @@ Receives pre-calculated data, just renders it.
   data-ghost="safe"
   data-ghost-kind="option"
   data-ghost-label={pictograph.letter}
-  aria-label="Add {pictograph.letter}. Hold to preview."
+  aria-label={t("create_option_add_preview", { letter: pictograph.letter })}
   aria-keyshortcuts="Shift+Space"
-  title="Tap to add. Hold to preview."
+  title={t("create_ui_tap_to_add_hold_to_preview")}
   {@attach holdToAudition}
 >
   <OptionCardContent {pictograph} {leftReversal} {rightReversal} />

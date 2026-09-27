@@ -5,6 +5,7 @@
   Auto-focuses name input, Enter to save.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
   import { onMount } from "svelte";
@@ -28,7 +29,9 @@
   let nameInput: HTMLInputElement;
 
   let compositionName = $state("");
-  $effect.pre(() => { compositionName = suggestedName; });
+  $effect.pre(() => {
+    compositionName = suggestedName;
+  });
 
   onMount(() => {
     hapticService = getHapticFeedback();
@@ -75,12 +78,17 @@
   labelledBy="modal-title"
 >
   {#snippet header()}
-    <ModalHeader title="Save Composition" onClose={handleClose} />
+    <ModalHeader
+      title={t("compose_ui_save_composition")}
+      onClose={handleClose}
+    />
   {/snippet}
 
   <div class="modal-body">
     <div class="form-section">
-      <label for="composition-name" class="form-label">Name</label>
+      <label for="composition-name" class="form-label"
+        >{t("compose_ui_name")}</label
+      >
       <input
         id="composition-name"
         type="text"
@@ -88,7 +96,7 @@
         bind:value={compositionName}
         bind:this={nameInput}
         onkeydown={handleKeydown}
-        placeholder="e.g., Kaleidoscope 12-step, Fire Opener"
+        placeholder={t("compose_ui_e_g_kaleidoscope_12_step_fire_opener")}
         maxlength="80"
         autocomplete="off"
         data-form-type="other"

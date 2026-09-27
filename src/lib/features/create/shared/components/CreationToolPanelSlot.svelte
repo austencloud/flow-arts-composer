@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
@@ -191,17 +192,17 @@
     out:flyFade={{ y: 0 }}
   >
     <ProgressRing percent={-1} size={32} strokeWidth={3} />
-    <p>Loading generator…</p>
+    <p>{t("create_audit_generator_loading")}</p>
   </div>
 {/snippet}
 
 {#snippet generateError(_error: unknown, retry: () => void)}
   <div class="generate-load-state generate-load-error" role="alert">
     <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
-    <p>The generator couldn’t load.</p>
+    <p>{t("create_audit_generator_load_error")}</p>
     <PanelButton variant="secondary" onclick={retry}>
       <i class="fas fa-rotate-right" aria-hidden="true"></i>
-      <span>Try again</span>
+      <span>{t("create_ui_try_again")}</span>
     </PanelButton>
   </div>
 {/snippet}
@@ -223,7 +224,7 @@
         keepAlive={false}
         placeholder={isGeneratePanelActive ? generateLoading : undefined}
         error={generateError}
-        debugName="Generate settings panel"
+        debugName={t("create_audit_generator_panel")}
         onStatusChange={(status) => (generateLoadStatus = status)}
         props={{
           sequenceState: createModuleState.getActiveTabSequenceState(),
@@ -237,7 +238,7 @@
     <!-- Loading state while persistence is being restored -->
     <div class="persistence-loading">
       <ProgressRing percent={-1} size={32} strokeWidth={3} />
-      <p>Restoring sequence...</p>
+      <p>{t("create_ui_restoring_sequence")}</p>
     </div>
   {:else if activeToolPanel && activeToolPanel !== "generate"}
     <!-- Render the appropriate tool panel based on active tab -->
@@ -249,7 +250,7 @@
             {#if isPickerStateLoading}
               <div class="picker-loading">
                 <ProgressRing percent={-1} size={32} strokeWidth={3} />
-                <p>Loading options...</p>
+                <p>{t("create_ui_loading_options")}</p>
               </div>
             {:else}
               <ConstructTabContent
@@ -286,7 +287,7 @@
               />
             {:else}
               <div class="coming-soon-panel">
-                <p>Assemble loading...</p>
+                <p>{t("create_ui_assemble_loading")}</p>
               </div>
             {/if}
           {:else if activeToolPanel === "fuse"}
@@ -313,7 +314,7 @@
   {:else if !activeToolPanel}
     <!-- Fallback case -->
     <div class="no-tab-selected">
-      <p>No tab selected</p>
+      <p>{t("create_ui_no_tab_selected")}</p>
     </div>
   {/if}
 </div>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * PanelState - Loading, error, and empty state component
    *
@@ -44,12 +45,12 @@
     info: "fa-info-circle",
   };
 
-  const defaultTitles: Record<StateType, string> = {
+  const defaultTitles: Record<StateType, string> = $derived({
     loading: "",
-    error: "Couldn't load this content",
-    empty: "Nothing here yet",
-    info: "Information",
-  };
+    error: t("shared_controls_load_failed"),
+    empty: t("shared_controls_empty"),
+    info: t("shared_controls_information"),
+  });
 
   const resolvedIcon = $derived(icon ?? defaultIcons[type]);
   const resolvedTitle = $derived(title ?? defaultTitles[type]);
@@ -76,7 +77,9 @@
   {/if}
 
   {#if type === "error" && onretry}
-    <button class="panel-state__retry" onclick={onretry}> Try again </button>
+    <button class="panel-state__retry" onclick={onretry}>
+      {t("shared_controls_try_again")}
+    </button>
   {/if}
 
   {#if actions}

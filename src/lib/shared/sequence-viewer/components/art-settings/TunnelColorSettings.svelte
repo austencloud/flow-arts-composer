@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import LabeledColorPairPicker from "$lib/shared/ui/components/LabeledColorPairPicker.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
@@ -42,11 +43,11 @@
       ariaLabel: p.label,
     }))
   );
-  const performerModes = [
-    { value: "inherit", label: "Inherit" },
-    { value: "custom", label: "Two colors" },
-    { value: "hue", label: "Shared hue" },
-  ];
+  const performerModes = $derived([
+    { value: "inherit", label: t("viewer_ui_inherit") },
+    { value: "custom", label: t("viewer_ui_two_colors") },
+    { value: "hue", label: t("viewer_ui_shared_hue") },
+  ]);
   function updatePerformer(value: TunnelPerformerColors | null): void {
     if (!selected) return;
     changeSetting(
@@ -91,15 +92,15 @@
 
   // Hand colors match the choreography cards. Spectrum remains an explicit
   // instance-coloring appearance for saved tunnels that already authored it.
-  const colorOptions = [
-    { value: "hands", label: "Hand colors" },
-    { value: "spectrum", label: "Spectrum" },
-    { value: "custom", label: "Custom pair" },
-  ];
+  const colorOptions = $derived([
+    { value: "hands", label: t("viewer_ui_hand_colors") },
+    { value: "spectrum", label: t("viewer_ui_spectrum") },
+    { value: "custom", label: t("viewer_ui_custom_pair") },
+  ]);
 </script>
 
 <div class="tunnel-colors">
-  <span class="section-label">Tunnel colors</span>
+  <span class="section-label">{t("viewer_detail_tunnel_colors")}</span>
   <SegmentedControl
     options={colorOptions}
     value={controller.colorMode}
@@ -136,19 +137,19 @@
     {:else if !dense}
       <p class="section-hint">
         {controller.colorMode === "spectrum"
-          ? "Generated copies use distinct hues; Left and Right stay labeled throughout the editor."
-          : "Stage props match the pictograph Left and Right hand colors."}
+          ? t("viewer_ui_generated_copies_use_distinct_hues")
+          : t("viewer_ui_stage_props_match_hand_colors")}
       </p>
     {/if}
   </Crossfade>
   {#if selected}
-    <span class="section-label">Performer colors</span>
+    <span class="section-label">{t("viewer_detail_performer_colors")}</span>
     <SegmentedControl
       options={performerOptions}
       value={selected.id}
       onchange={(id) => (selectedId = id)}
       columns={4}
-      ariaLabel="Performer to color"
+      ariaLabel={t("viewer_ui_performer_to_color")}
       size="sm"
     />
     <span class="performer-label">{selected.label}</span>
@@ -165,7 +166,7 @@
                 custom: preview,
               }
         )}
-      ariaLabel="Performer color mode"
+      ariaLabel={t("viewer_ui_performer_color_mode")}
       size="sm"
     />
     <Crossfade
@@ -185,13 +186,17 @@
           onswap={() =>
             updatePerformer({
               ...editingColors,
-              custom: { ...editingColors.custom, left: preview.right, right: preview.left },
+              custom: {
+                ...editingColors.custom,
+                left: preview.right,
+                right: preview.left,
+              },
             })}
         />
       {:else if override?.mode === "hue"}
         <div class="hue-controls">
           <ScrubbableNumber
-            label="Shared hue"
+            label={t("viewer_ui_shared_hue")}
             value={editingColors.hue}
             min={0}
             max={359}
@@ -200,7 +205,7 @@
             onchange={(hue) => updatePerformer({ ...editingColors, hue })}
           />
           <ScrubbableNumber
-            label="Saturation"
+            label={t("viewer_ui_saturation")}
             value={editingColors.saturation}
             min={0}
             max={100}
@@ -210,7 +215,7 @@
               updatePerformer({ ...editingColors, saturation })}
           />
           <ScrubbableNumber
-            label="Left lightness"
+            label={t("viewer_ui_left_lightness")}
             value={editingColors.leftLightness}
             min={0}
             max={100}
@@ -220,7 +225,7 @@
               updatePerformer({ ...editingColors, leftLightness })}
           />
           <ScrubbableNumber
-            label="Right lightness"
+            label={t("viewer_ui_right_lightness")}
             value={editingColors.rightLightness}
             min={0}
             max={100}
@@ -231,15 +236,15 @@
           />
           <div class="shade-preview">
             <span
-              ><i style:background={preview.left}></i>Left {preview.left.toUpperCase()}</span
+              ><i style:background={preview.left}></i>{t("viewer_detail_left")} {preview.left.toUpperCase()}</span
             >
             <span
-              ><i style:background={preview.right}></i>Right {preview.right.toUpperCase()}</span
+              ><i style:background={preview.right}></i>{t("viewer_detail_right")} {preview.right.toUpperCase()}</span
             >
           </div>
         </div>
       {:else}
-        <p class="section-hint">Uses the tunnel colors above.</p>
+        <p class="section-hint">{t("viewer_detail_uses_the_tunnel_colors_above")}</p>
       {/if}
     </Crossfade>
   {/if}

@@ -50,10 +50,7 @@
   }: {
     columns?: 2 | 4;
     showSubtitles?: boolean;
-    /** The host hands the grid a definite height (the motion-path studio's
-     *  card, sized to its canvas). The rows share it and each tile spends
-     *  the room past its label on its timing curve, so the page is pictures
-     *  like Display's and Props' instead of eight labels over an empty card. */
+    /** Use responsive curve cards in a settings page. Docks keep compact tiles. */
     fill?: boolean;
     onSettingChange?: (previousValue: string, value: string) => void;
   } = $props();
@@ -76,21 +73,22 @@
   onDestroy(() => vm.unregisterObserver(handleVisibilityChange));
 </script>
 
-<div class="effort-grid" class:fill style:--effort-cols={columns}>
-  {#each EFFORTS as effort}
-    <button
-      class="effort-btn"
-      class:active={effortPreset === effort.id}
-      class:with-sub={showSubtitles}
-      type="button"
-      aria-pressed={effortPreset === effort.id}
-      onclick={() => selectEffort(effort.id)}
-      style:--effort-color={effort.color}
-    >
-      {#if fill}
+<div class="effort-panel" class:fill>
+  <div class="effort-grid" class:fill style:--effort-cols={columns}>
+    {#each EFFORTS as effort}
+      <button
+        class="effort-btn"
+        class:active={effortPreset === effort.id}
+        class:with-sub={showSubtitles}
+        type="button"
+        aria-pressed={effortPreset === effort.id}
+        onclick={() => selectEffort(effort.id)}
+        style:--effort-color={effort.color}
+      >
         <svg
           class="effort-curve"
           viewBox="0 0 {CURVE_WIDTH} {CURVE_HEIGHT}"
+          preserveAspectRatio="xMidYMid meet"
           aria-hidden="true"
         >
           <line
@@ -109,16 +107,21 @@
           />
           <path class="curve-line" d={CURVE_PATHS.get(effort.id)} />
         </svg>
-      {/if}
-      <span class="effort-label">{effort.label}</span>
-      {#if showSubtitles && effort.subtitle}
-        <span class="effort-sub">{effort.subtitle}</span>
-      {/if}
-    </button>
-  {/each}
+        <span class="effort-label">{effort.label}</span>
+        {#if showSubtitles && effort.subtitle}
+          <span class="effort-sub">{effort.subtitle}</span>
+        {/if}
+      </button>
+    {/each}
+  </div>
 </div>
 
 <style>
+  .effort-panel {
+    container: effort-panel / inline-size;
+    min-width: 0;
+  }
+
   .effort-grid {
     display: grid;
     grid-template-columns: repeat(var(--effort-cols, 4), 1fr);
@@ -126,8 +129,9 @@
   }
 
   .effort-btn {
-    min-height: 56px;
-    padding: 12px 8px;
+    min-height: 80px;
+    min-width: 0;
+    padding: 8px 4px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -156,7 +160,8 @@
   }
 
   .effort-btn.with-sub {
-    padding: 14px 8px;
+    min-height: 96px;
+    padding: 10px 6px;
     gap: 4px;
   }
 
@@ -175,25 +180,71 @@
     color: rgba(255, 255, 255, 0.75);
   }
 
-  /* The rows share the height the host gives. A tile's label keeps its own
-     height and the curve takes the rest; a box too short for curves still
-     keeps every label whole and scrolls. */
+  /* Plot proportions depend on width, never on spare panel height. */
   .effort-grid.fill {
-    flex: 1 1 0;
-    min-height: 0;
-    grid-auto-rows: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
   }
 
   .effort-grid.fill .effort-btn {
-    justify-content: flex-end;
+    justify-content: center;
+    padding: 12px;
     gap: 6px;
   }
 
   .effort-curve {
-    flex: 1 1 0;
-    min-height: 0;
+    flex: 0 0 auto;
+    height: 28px;
     width: 100%;
     overflow: visible;
+  }
+
+  .effort-grid.fill .effort-curve {
+    flex: 0 0 auto;
+    height: auto;
+    aspect-ratio: 5 / 3;
+    max-height: 120px;
+  }
+
+  .effort-grid.fill .effort-sub {
+    line-height: 1.35;
+  }
+
+  @container effort-panel (max-width: 26rem) {
+    .effort-grid.fill {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .effort-grid.fill .effort-btn {
+      display: grid;
+      grid-template-columns: minmax(60px, 2fr) minmax(0, 3fr);
+      column-gap: 16px;
+      row-gap: 2px;
+      min-height: 80px;
+      text-align: left;
+    }
+
+    .effort-grid.fill .effort-curve {
+      grid-column: 1;
+      grid-row: 1 / 3;
+      max-height: 80px;
+    }
+
+    .effort-grid.fill .effort-label {
+      grid-column: 2;
+      grid-row: 1 / 3;
+    }
+
+    .effort-grid.fill .with-sub .effort-label {
+      grid-row: 1;
+      align-self: end;
+    }
+
+    .effort-grid.fill .effort-sub {
+      grid-column: 2;
+      grid-row: 2;
+      align-self: start;
+    }
   }
 
   .curve-guide {

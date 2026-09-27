@@ -1,39 +1,35 @@
-import type { PlaneMode } from "@austencloud/scene-3d";
 import type { CharacterInstanceState } from "../state/character-instance-state.svelte";
 import {
   buildStanceYawTrackForSource,
   resolveTrackedUpperBodyStance,
   type StanceYawTrack,
 } from "../collision/stance-yaw-track";
+import {
+  sameScoreMotionKey,
+  scoreMotionKey,
+  type ScoreMotionKey,
+} from "./performer-score-motion-key";
+import { performerScoreClock } from "./performer-score-clock";
 
 interface CachedStanceTrack {
-  sequence: CharacterInstanceState["loadedSequence"];
-  planeMode: PlaneMode;
-  stepCount: number;
-  loop: boolean;
+  key: ScoreMotionKey;
   track: StanceYawTrack | null;
 }
 
 const stanceTracks = new WeakMap<CharacterInstanceState, CachedStanceTrack>();
 
+/**
+ * Replanned whenever the props it samples move. The hard-beat track keys on
+ * the same score motion, so after an effort or path change the torso and the
+ * displaced props follow one new plan instead of the torso keeping the old one.
+ */
 function resolveStanceTrack(performer: CharacterInstanceState) {
-  const sequence = performer.loadedSequence;
-  const planeMode = performer.planeMode;
-  const stepCount = performer.motionStepCount;
-  const loop = performer.loop;
+  const key = scoreMotionKey(performer);
   const cached = stanceTracks.get(performer);
-  if (
-    cached &&
-    cached.sequence === sequence &&
-    cached.planeMode === planeMode &&
-    cached.stepCount === stepCount &&
-    cached.loop === loop
-  ) {
-    return cached.track;
-  }
+  if (cached && sameScoreMotionKey(cached.key, key)) return cached.track;
 
-  const track = buildStanceYawTrackForSource(performer, planeMode);
-  stanceTracks.set(performer, { sequence, planeMode, stepCount, loop, track });
+  const track = buildStanceYawTrackForSource(performer, key.planeMode);
+  stanceTracks.set(performer, { key, track });
   return track;
 }
 
@@ -41,13 +37,13 @@ function resolveStanceTrack(performer: CharacterInstanceState) {
  * One owner for the tracked torso pose consumed by both render backends.
  */
 export function resolvePerformerUpperBodyStance(
-  performer: CharacterInstanceState,
+  performer: CharacterInstanceState
 ) {
   return resolveTrackedUpperBodyStance(
     resolveStanceTrack(performer),
-    performer.scoreTime,
+    performerScoreClock(performer),
     performer.planeMode,
     performer.leftPropState,
-    performer.rightPropState,
+    performer.rightPropState
   );
 }

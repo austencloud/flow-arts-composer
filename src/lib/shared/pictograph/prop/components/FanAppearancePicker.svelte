@@ -5,6 +5,7 @@
   has. The frame color exists only in 3D, so 2D hosts leave it off.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import PropBuildPicker from "$lib/shared/3d/components/controls/PropBuildPicker.svelte";
   import {
     fanBuildPreviewOptions,
@@ -34,11 +35,61 @@
     frameColor?: boolean;
   } = $props();
 
+  function buildLabel(id: FanBuild): string {
+    switch (id) {
+      case "pictograph":
+        return t("viewer_ui_pictograph");
+      case "fire":
+        return t("shared_fan_build_fire");
+      case "lotus":
+        return t("shared_fan_build_lotus");
+      case "flat-grip":
+        return t("shared_fan_build_flat_grip");
+      case "day":
+        return t("shared_fan_build_day");
+      case "moon":
+        return t("shared_fan_build_moon");
+      case "star":
+        return t("shared_fan_build_star");
+    }
+  }
+
   const appearance = $derived(normalizeFanAppearance(value));
-  const buildOptions = $derived(fanBuildPreviewOptions(appearance));
-  const compactLookOptions = $derived(compactFanLookPreviewOptions(appearance));
-  const frameOptions = $derived(fanFramePreviewOptions(appearance));
-  const coverOptions = $derived(fanCoverPreviewOptions(appearance));
+  const buildOptions = $derived(
+    fanBuildPreviewOptions(appearance).map((option) => ({
+      ...option,
+      label: buildLabel(option.id),
+    }))
+  );
+  const compactLookOptions = $derived(
+    compactFanLookPreviewOptions(appearance).map((option) => ({
+      ...option,
+      label:
+        option.id === "pictograph"
+          ? t("viewer_ui_pictograph")
+          : option.id === "covered-fire"
+            ? t("settings_fan_covered_look")
+            : buildLabel(option.id),
+    }))
+  );
+  const frameOptions = $derived(
+    fanFramePreviewOptions(appearance).map((option) => ({
+      ...option,
+      label:
+        option.id === "black"
+          ? t("settings_fan_frame_black")
+          : t("settings_fan_frame_white"),
+    }))
+  );
+  const coverOptions = $derived(
+    fanCoverPreviewOptions(appearance).map((option) => ({
+      ...option,
+      label:
+        option.id === "bare"
+          ? t("settings_fan_cover_bare")
+          : t("settings_fan_cover_covered"),
+    }))
+  );
   const showFrameColor = $derived(frameColor && appearance.build === "day");
   const showCover = $derived(
     appearance.build === "fire" || appearance.build === "day"
@@ -79,7 +130,7 @@
 >
   <div class="build-choice">
     <PropBuildPicker
-      label={compact ? undefined : "Build"}
+      label={compact ? undefined : t("settings_fan_build")}
       value={compact ? compactLook : appearance.build}
       options={compact ? compactLookOptions : buildOptions}
       useImageScale={compact}
@@ -100,7 +151,7 @@
       {#if showFrameColor}
         <div transition:growFade={{ duration: DURATION.normal, axis: "y" }}>
           <PropBuildPicker
-            label="Frame"
+            label={t("settings_fan_frame")}
             value={appearance.frameColor}
             options={frameOptions}
             onchange={chooseFrameColor}
@@ -111,7 +162,7 @@
       {#if showCover}
         <div>
           <PropBuildPicker
-            label="Cover"
+            label={t("settings_fan_cover")}
             value={appearance.cover}
             options={coverOptions}
             onchange={chooseCover}

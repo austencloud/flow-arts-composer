@@ -11,6 +11,7 @@
   Admin-only by virtue of its mount points.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { Popover } from "bits-ui";
   import { scale } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
@@ -109,7 +110,7 @@
         ><i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Loading…</span
       >
     {:else if entries.length === 0}
-      <span class="status-msg">No changes recorded yet.</span>
+      <span class="status-msg">{t("create_ui_no_changes_recorded_yet")}</span>
     {:else}
       {#each entries as entry (entry.id)}
         <div class="history-row">
@@ -154,8 +155,8 @@
           {...props}
           class="trigger-btn"
           class:active={open}
-          aria-label="Edit history for this arrow"
-          title="Edit history"
+          aria-label={t("create_ui_edit_history_for_this_arrow")}
+          title={t("create_ui_edit_history")}
         >
           <i class="fas fa-history" aria-hidden="true"></i>
         </button>
@@ -190,7 +191,7 @@
             >
               <header class="pop-header">
                 <i class="fas fa-history" aria-hidden="true"></i>
-                <span>Edit history</span>
+                <span>{t("create_ui_edit_history")}</span>
               </header>
               {@render list()}
             </div>

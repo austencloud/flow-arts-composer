@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { openShareCollectionSheet } from "$lib/shared/inbox/state/send-sequence-state.svelte";
   import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
   import type { CollectionOption } from "../gallery-drill-catalog.svelte";
@@ -36,8 +37,8 @@
 
 <div class="drill-screen screen-collections">
   {@render valueHead(
-    "Pick a collection",
-    stackHint ?? "Sequences filed in it."
+    t("browse_audit_pick_collection"),
+    stackHint ?? t("browse_audit_sequences_in_collection")
   )}
   <div class="value-list">
     {#each catalog.collectionValues as v (v.id)}
@@ -48,7 +49,10 @@
         class:value-applied={applied}
         style:--row-color={v.color ?? "var(--theme-accent, #6366f1)"}
         type="button"
-        aria-label={`${v.name}, ${v.count} sequences`}
+        aria-label={t("browse_audit_collection_sequence_count", {
+          name: v.name,
+          count: v.count,
+        })}
         aria-pressed={isValueApplied ? applied : undefined}
         disabled={valueDisabled(v.count, applied)}
         oncontextmenu={(event) => handleCollectionContextMenu(event, v)}

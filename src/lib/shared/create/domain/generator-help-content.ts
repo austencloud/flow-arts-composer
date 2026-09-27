@@ -5,6 +5,8 @@
  * Each control in the Generator tab has an entry explaining what it does.
  */
 
+import { generatorTourText } from "./generator-tour-display";
+
 // Generator control IDs (matches card IDs in CardBasedSettingsContainer)
 export type GeneratorHelpId =
   | "level"
@@ -247,5 +249,22 @@ export const generatorHelpContent: GeneratorHelpItem[] = [
 export function getGeneratorHelpContent(
   id: GeneratorHelpId
 ): GeneratorHelpItem | undefined {
-  return generatorHelpContent.find((item) => item.id === id);
+  const item = generatorHelpContent.find((entry) => entry.id === id);
+  if (!item) return undefined;
+
+  const prefix = `help_${id.replaceAll("-", "_")}`;
+  return {
+    ...item,
+    name: generatorTourText(`${prefix}_name`, item.name),
+    shortDesc: generatorTourText(`${prefix}_short_desc`, item.shortDesc),
+    fullDesc: generatorTourText(`${prefix}_full_desc`, item.fullDesc),
+    bullets: item.bullets?.map((bullet, index) =>
+      generatorTourText(`${prefix}_bullet_${index + 1}`, bullet)
+    ),
+    images: item.images?.map((image, index) => ({
+      ...image,
+      label: generatorTourText(`${prefix}_image_${index + 1}`, image.label),
+    })),
+    tip: item.tip ? generatorTourText(`${prefix}_tip`, item.tip) : undefined,
+  };
 }

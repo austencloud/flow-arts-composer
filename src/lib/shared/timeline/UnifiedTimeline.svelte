@@ -5,6 +5,7 @@
   import { onDestroy, type Snippet } from "svelte";
   import BpmChips from "$lib/shared/animation-engine/components/controls/BpmChips.svelte";
   import PlaybackModeToggle from "$lib/shared/animation-engine/components/controls/PlaybackModeToggle.svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
   const BPM_PRESETS = [15, 30, 60, 90, 120, 150];
 
@@ -186,7 +187,7 @@
     class="unified-timeline"
     class:compact
     role="group"
-    aria-label="Playback transport"
+    aria-label={t("viewer_final_playback_transport")}
     onkeydown={onKeydown}
   >
     <div class="transport-pill">
@@ -197,7 +198,9 @@
             e.stopPropagation();
             playback.togglePlay();
           }}
-          aria-label={playback.isPlaying ? "Pause" : "Play"}
+          aria-label={playback.isPlaying
+            ? t("viewer_ui_pause")
+            : t("viewer_ui_play")}
         >
           <i class="fas {playback.isPlaying ? 'fa-pause' : 'fa-play'}"></i>
         </button>
@@ -211,7 +214,7 @@
               e.stopPropagation();
               adjustBpm(-5);
             }}
-            aria-label="Decrease BPM"
+            aria-label={t("viewer_final_decrease_bpm")}
           >
             <i class="fas fa-minus"></i>
           </button>
@@ -219,7 +222,7 @@
             bind:this={bpmBtnEl}
             class="pill-bpm"
             onclick={handleBpmPopoverToggle}
-            aria-label="Change tempo"
+            aria-label={t("viewer_final_change_tempo")}
           >
             <span class="bpm-val">{playback.bpm}</span>
             <span class="bpm-unit">BPM</span>
@@ -230,7 +233,7 @@
               e.stopPropagation();
               adjustBpm(5);
             }}
-            aria-label="Increase BPM"
+            aria-label={t("viewer_final_increase_bpm")}
           >
             <i class="fas fa-plus"></i>
           </button>
@@ -246,11 +249,14 @@
         onpointercancel={onPointerUp}
         role="slider"
         tabindex="0"
-        aria-label="Playback progress"
+        aria-label={t("viewer_final_playback_progress")}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.round(playback.overallProgress * 100)}
-        aria-valuetext="{currentTimeLabel} of {totalTimeLabel}"
+        aria-valuetext={t("viewer_final_progress_value", {
+          current: currentTimeLabel,
+          total: totalTimeLabel,
+        })}
       >
         <div
           class="pill-fill"
@@ -285,7 +291,9 @@
         <button
           class="pill-loop"
           aria-pressed={playback.isLooping}
-          aria-label="Loop {playback.isLooping ? 'on' : 'off'}"
+          aria-label={playback.isLooping
+            ? t("viewer_final_loop_on")
+            : t("viewer_final_loop_off")}
           onclick={(e) => {
             e.stopPropagation();
             playback.toggleLoop();
@@ -308,8 +316,8 @@
           bind:this={compactTriggerEl}
           type="button"
           class="compact-more"
-          aria-label="More playback controls"
-          title="More playback controls"
+          aria-label={t("viewer_final_more_playback_controls")}
+          title={t("viewer_final_more_playback_controls")}
           aria-haspopup="dialog"
           aria-expanded={compactControlsOpen}
           onclick={(event) => {
@@ -337,11 +345,11 @@
               <div
                 class="compact-playback-panel"
                 role="group"
-                aria-label="Playback settings"
+                aria-label={t("viewer_final_playback_settings")}
               >
                 {#if hasTempo}
                   <section class="compact-section compact-tempo">
-                    <h3>Tempo</h3>
+                    <h3>{t("viewer_final_tempo")}</h3>
                     <BpmChips
                       bpm={playback.bpm ?? 60}
                       variant="full"
@@ -352,7 +360,7 @@
 
                 {#if hasMode}
                   <section class="compact-section">
-                    <h3>Playback</h3>
+                    <h3>{t("viewer_final_playback")}</h3>
                     <PlaybackModeToggle
                       layout="inline"
                       playbackMode={playback.playbackMode ?? "continuous"}
@@ -373,9 +381,11 @@
                     onclick={() => playback.toggleLoop()}
                   >
                     <i class="fas fa-sync" aria-hidden="true"></i>
-                    <span>Loop sequence</span>
+                    <span>{t("viewer_final_loop_sequence")}</span>
                     <span class="compact-setting-state">
-                      {playback.isLooping ? "On" : "Off"}
+                      {playback.isLooping
+                        ? t("feedback_state_on")
+                        : t("feedback_state_off")}
                     </span>
                   </button>
                 {/if}
@@ -397,11 +407,15 @@
         bind:this={popoverEl}
         class="bpm-popover"
         role="dialog"
-        aria-label="Select tempo preset"
+        aria-label={t("viewer_final_select_tempo_preset")}
         tabindex="-1"
         onkeydown={handlePopoverKeydown}
       >
-        <div class="bpm-presets" role="group" aria-label="BPM presets">
+        <div
+          class="bpm-presets"
+          role="group"
+          aria-label={t("viewer_final_bpm_presets")}
+        >
           {#each BPM_PRESETS as preset}
             <button
               class="bpm-preset"

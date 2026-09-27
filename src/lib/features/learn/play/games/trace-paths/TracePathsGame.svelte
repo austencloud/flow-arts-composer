@@ -43,6 +43,7 @@ competing ones.
   import TraceStage from "./components/TraceStage.svelte";
   import TraceFeedback from "./components/TraceFeedback.svelte";
   import TraceSettings from "./components/TraceSettings.svelte";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 
   let { constraints }: { constraints: QuestionConstraints } = $props();
 
@@ -175,7 +176,7 @@ competing ones.
     try {
       const result = await resolveRound();
       trace.loadRound(result);
-    } catch (error) {
+    } catch {
       // A generator that can't produce content is an earned error, not a crash.
       // The retry below re-runs exactly this path and the rest of Learn is
       // untouched.
@@ -183,10 +184,7 @@ competing ones.
         ok: false,
         error: {
           code: "empty-round",
-          message:
-            error instanceof Error
-              ? `This route could not be built: ${error.message}`
-              : "This route could not be built.",
+          message: "This route could not be built.",
         },
       });
     } finally {
@@ -259,20 +257,22 @@ competing ones.
   </div>
 
   {#if isLoading && phase.name === "loading"}
-    <p class="stage-message">Building the route.</p>
+    <p class="stage-message">{tDynamic("learn_trace_building")}</p>
   {:else if phase.name === "error"}
-    <section class="error-panel" aria-label="Route unavailable">
-      <p class="error-message">{phase.error.message}</p>
+    <section
+      class="error-panel"
+      aria-label={tDynamic("learn_trace_unavailable")}
+    >
+      <p class="error-message">{trace.statusText}</p>
       <p class="error-note">
-        The rest of Learn is unaffected. Pick up another route when you are
-        ready.
+        {tDynamic("learn_trace_error_note")}
       </p>
       <button
         type="button"
         class="action primary"
         onclick={() => void loadNextRound()}
       >
-        Get another route
+        {tDynamic("learn_trace_another_route")}
       </button>
     </section>
   {:else if phase.name === "feedback" && lastOutcome}
@@ -307,7 +307,7 @@ competing ones.
           class="action primary"
           onclick={() => trace.resume()}
         >
-          Resume the round
+          {tDynamic("learn_trace_resume")}
         </button>
       </div>
     {/if}
@@ -320,7 +320,7 @@ competing ones.
       aria-expanded={showStepThrough}
       onclick={() => (showStepThrough = !showStepThrough)}
     >
-      Step through the route
+      {tDynamic("learn_trace_step_through")}
     </button>
     <button
       type="button"
@@ -328,7 +328,7 @@ competing ones.
       aria-expanded={showSettings}
       onclick={() => (showSettings = !showSettings)}
     >
-      Round options
+      {tDynamic("learn_trace_round_options")}
     </button>
   </div>
 
@@ -336,7 +336,10 @@ competing ones.
     <!-- Step-through preview: keyboard, switch, mouse, and screen-reader users
          read each hand's path one beat at a time and can mark the route walked.
          It completes the content and claims no trace score. -->
-    <section class="step-through" aria-label="Step through the route">
+    <section
+      class="step-through"
+      aria-label={tDynamic("learn_trace_step_through")}
+    >
       <p class="step-text">{trace.previewText}</p>
       <div class="step-controls">
         <button
@@ -345,7 +348,7 @@ competing ones.
           onclick={() => trace.stepPreview(-1)}
           disabled={trace.previewBeat === 0}
         >
-          Previous beat
+          {tDynamic("learn_trace_previous_beat")}
         </button>
         <button
           type="button"
@@ -353,19 +356,18 @@ competing ones.
           onclick={() => trace.stepPreview(1)}
           disabled={trace.previewBeat >= (trace.round?.beats.length ?? 1) - 1}
         >
-          Next beat
+          {tDynamic("learn_trace_next_beat")}
         </button>
         <button
           type="button"
           class="action primary"
           onclick={() => trace.completeStepThrough()}
         >
-          Mark route walked
+          {tDynamic("learn_trace_mark_walked")}
         </button>
       </div>
       <p class="step-note">
-        Marking the route walked counts toward the challenge and does not claim
-        a trace score.
+        {tDynamic("learn_trace_step_note")}
       </p>
     </section>
   {/if}

@@ -28,10 +28,12 @@ import {
   resolveStripView,
   type StripMode,
 } from "$lib/shared/media-composition/domain/strip-view";
-import type {
-  PaintFrame,
-  PaintRect,
-  PostStudioLayerPainter,
+import {
+  nearestCachedSize,
+  paintSizeBucket,
+  type PaintFrame,
+  type PaintRect,
+  type PostStudioLayerPainter,
 } from "./post-studio-layer-painter";
 
 const BACKGROUND = "#08080c";
@@ -100,8 +102,13 @@ function mandalaSampleCounts(
   });
 }
 
+/**
+ * The square cache-key size for a target: the smaller side, rounded up to the
+ * nearest 6% ladder rung (`paintSizeBucket`) so a smoothly resized preview
+ * reuses one raster across many near-identical pixel sizes.
+ */
 function stripSquareSize(dims: { width: number; height: number }): number {
-  return Math.max(1, Math.ceil(Math.min(dims.width, dims.height)));
+  return paintSizeBucket(Math.min(dims.width, dims.height));
 }
 
 /**
@@ -142,7 +149,14 @@ class SequenceStripPainter implements PostStudioLayerPainter {
 
   async prepare(target: { width: number; height: number }): Promise<void> {
     const size = stripSquareSize(target);
-    if (this.sizeCaches.has(size)) return;
+    const cached = this.sizeCaches.get(size);
+    if (cached) {
+      // Asked for again, so it is the newest: a layer remounted after Timing
+      // keeps its size through the render's.
+      this.sizeCaches.delete(size);
+      this.sizeCaches.set(size, cached);
+      return;
+    }
     const existing = this.pendingSizes.get(size);
     if (existing) return existing;
 
@@ -229,8 +243,9 @@ class SequenceStripPainter implements PostStudioLayerPainter {
       }
     }
     this.sizeCaches.set(size, { under, arrows });
-    // A preview being resized asks for a new size on every frame. The newest
-    // few - the preview's and the render's - are the ones worth keeping.
+    // A preview being resized asks for a new size on every frame. The few
+    // asked for most recently - the preview's and the render's - are the ones
+    // worth keeping.
     for (const stale of [...this.sizeCaches.keys()].slice(
       0,
       -MAX_CACHED_SIZES
@@ -300,7 +315,10 @@ class SequenceStripPainter implements PostStudioLayerPainter {
     sequenceFrame: SequenceFrame
   ): void {
     const size = stripSquareSize(rect);
-    const cache = this.sizeCaches.get(size);
+    const nearestSize = this.sizeCaches.has(size)
+      ? size
+      : nearestCachedSize(this.sizeCaches.keys(), size);
+    const cache = nearestSize !== null ? this.sizeCaches.get(nearestSize) : undefined;
     const preparedCells = this.preparedCells;
     if (!cache || !preparedCells) return; // Not ready yet - background only.
 
@@ -415,6 +433,9 @@ class SequenceStripPainter implements PostStudioLayerPainter {
     );
 
     context.save();
+    // The render fades a layer in through the context's alpha; the preview
+    // fades the whole canvas and paints at 1.
+    const baseAlpha = context.globalAlpha;
     context.translate(centerX, centerY);
     context.scale(scale, scale);
     context.lineWidth = 2.5 / scale;
@@ -425,15 +446,14 @@ class SequenceStripPainter implements PostStudioLayerPainter {
       // The complete path gives the mandala its shape; its bright leading
       // portion records how far this hand has actually traced it so far.
       context.strokeStyle = path.color;
-      context.globalAlpha = 0.25;
+      context.globalAlpha = baseAlpha * 0.25;
       context.setLineDash([]);
       context.stroke(path.path2d);
-      context.globalAlpha = 1;
+      context.globalAlpha = baseAlpha;
       context.setLineDash([path.totalLength * fraction, path.totalLength]);
       context.stroke(path.path2d);
     }
     context.setLineDash([]);
-    context.globalAlpha = 1;
     context.restore();
   }
 }

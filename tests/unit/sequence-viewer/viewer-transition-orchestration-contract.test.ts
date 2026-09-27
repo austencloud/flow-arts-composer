@@ -5,6 +5,8 @@ import { describe, expect, it } from "vitest";
 const read = (path: string): string =>
   readFileSync(resolve(process.cwd(), path), "utf8");
 
+const messagesEn: Record<string, string> = JSON.parse(read("messages/en.json"));
+
 const splitPane = read(
   "src/lib/shared/sequence-viewer/components/ViewerSplitPane.svelte"
 );
@@ -140,16 +142,22 @@ describe("Sequence Viewer transition orchestration contract", () => {
     expect(tunnelArtSettings).toContain("<AnimatorInspectorFooter");
     // 7672b256d7 gave the wide-sidebar Props page its whole page too (the
     // 18-tile picker needed the room the old two-way condition didn't grant),
-    // reformatting the three-way check across lines. The fourth arm is Effort
-    // alone on a page its host fills (the motion-path studio's card).
+    // reformatting the three-way check across lines. 7b51429ee5 then unified
+    // visual-page filling across BOTH hosts: the Effort-only `effortFills`
+    // (which excluded a page with its own Paths controls) widened into
+    // `visualPagesFill` (any sidebar page filling remaining height), gaining
+    // its own arm alongside Motion; Tunnel's fillBody grew the same two arms
+    // (Effort, Motion) so the mobile-merged Motion page fills there too.
     expect(animationPanel).toContain(
-      'fillBody={resolvedPill === "display" ||\n' +
+      'fillBody={(resolvedPill === "effort" && visualPagesFill) ||\n' +
+        '      resolvedPill === "display" ||\n' +
         '      resolvedPill === "effects" ||\n' +
         '      resolvedPill === "props" ||\n' +
-        '      (resolvedPill === "motion" && effortFills)}'
+        '      (resolvedPill === "motion" && visualPagesFill)}'
     );
     expect(tunnelArtSettings).toContain(
-      'fillBody={tunnelSection === "display" || tunnelSection === "effects"}'
+      'fillBody={tunnelSection === "display" || tunnelSection === "effects" ||\n' +
+        '      tunnelSection === "effort" || tunnelSection === "motion"}'
     );
     expect(animatorInspectorShell).toContain("<IconRailNav");
     expect(animatorInspectorShell).toContain('class="panel-transition"');
@@ -189,8 +197,13 @@ describe("Sequence Viewer transition orchestration contract", () => {
   });
 
   it("names both responsive switchers as Sequence views", () => {
-    expect(contentRail).toContain('aria-label="Sequence views"');
-    expect(modeBottomBar).toContain('aria-label="Sequence views"');
+    // German coverage moved the literal behind an i18n key; confirm both the
+    // key is used here AND that key still resolves to the same English text.
+    expect(contentRail).toContain('aria-label={t("viewer_ui_sequence_views")}');
+    expect(modeBottomBar).toContain(
+      'aria-label={t("viewer_ui_sequence_views")}'
+    );
+    expect(messagesEn.viewer_ui_sequence_views).toBe("Sequence views");
   });
 
   it("routes split geometry through the canonical PanelGroup owner", () => {

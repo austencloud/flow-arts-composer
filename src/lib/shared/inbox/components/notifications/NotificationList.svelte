@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   /**
    * NotificationList
    *
@@ -58,7 +59,7 @@
   });
 </script>
 
-<div class="notification-list" role="region" aria-label="Notifications">
+<div class="notification-list" role="region" aria-label={t("notifications_title")}>
   <!-- Filter UI -->
   <NotificationFilter onFilterChange={(newFilters) => (filters = newFilters)} />
 
@@ -70,11 +71,11 @@
     {:else}
       <div class="empty-state">
         <i class="fas fa-filter" aria-hidden="true"></i>
-        <p>No notifications match your filters</p>
+        <p>{t("notifications_no_filter_matches")}</p>
       </div>
     {/if}
   {:else}
-    <div class="notifications" role="list" aria-label="Notification list">
+    <div class="notifications" role="list" aria-label={t("notifications_list")}>
       {#each filteredNotifications as notification, index (notification.id)}
         <div
           class="notification-wrapper"

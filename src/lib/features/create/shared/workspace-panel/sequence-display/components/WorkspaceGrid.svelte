@@ -1,5 +1,6 @@
 <!-- WorkspaceGrid.svelte - Unified workspace grid with standard and timeline layout modes -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import PanelSpinner from "$lib/shared/components/panel/PanelSpinner.svelte";
   import { tick, untrack } from "svelte";
   import { fade } from "svelte/transition";
@@ -863,7 +864,10 @@
             out:fade={{ duration: getHistoryStartDuration() }}
           >
             {#if isStartTileAwaiting}
-              <div class="pictograph-loading" aria-label="Loading pictograph">
+              <div
+                class="pictograph-loading"
+                aria-label={t("create_ui_loading_pictograph")}
+              >
                 <PanelSpinner size={6} />
               </div>
             {/if}
@@ -912,8 +916,8 @@
                     onclick={() => onMandalaClick(cell.show!, mandalaPathShape)}
                     oncontextmenu={(e) =>
                       handleMandalaContextMenu(e, cell.show!)}
-                    aria-label="Open mandala"
-                    title="Open mandala"
+                    aria-label={t("create_ui_open_mandala")}
+                    title={t("create_ui_open_mandala")}
                   >
                     {@render mandalaArtwork(cell.show)}
                   </button>
@@ -987,7 +991,7 @@
                 {#if isAwaitingReveal(stepIndex)}
                   <div
                     class="pictograph-loading"
-                    aria-label="Loading pictograph"
+                    aria-label={t("create_ui_loading_pictograph")}
                   >
                     <PanelSpinner size={6} />
                   </div>
@@ -1053,7 +1057,10 @@
           out:fade={{ duration: getHistoryStartDuration() }}
         >
           {#if isStartTileAwaiting}
-            <div class="pictograph-loading" aria-label="Loading pictograph">
+            <div
+              class="pictograph-loading"
+              aria-label={t("create_ui_loading_pictograph")}
+            >
               <PanelSpinner size={6} />
             </div>
           {/if}
@@ -1108,7 +1115,10 @@
           out:fade={{ duration: getHistoryMembershipDuration(identity) }}
         >
           {#if isAwaitingReveal(index)}
-            <div class="pictograph-loading" aria-label="Loading pictograph">
+            <div
+              class="pictograph-loading"
+              aria-label={t("create_ui_loading_pictograph")}
+            >
               <PanelSpinner size={6} />
             </div>
           {/if}
@@ -1157,8 +1167,8 @@
               class:light-bg={isLightBackground}
               onclick={() => onMandalaClick(cell.show, mandalaPathShape)}
               oncontextmenu={(e) => handleMandalaContextMenu(e, cell.show)}
-              aria-label="Open mandala"
-              title="Open mandala"
+              aria-label={t("create_ui_open_mandala")}
+              title={t("create_ui_open_mandala")}
             >
               {@render mandalaArtwork(cell.show)}
             </button>

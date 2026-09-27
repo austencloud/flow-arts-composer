@@ -8,6 +8,7 @@
   Parent controls which prop is selected and handles the selection callback.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { onMount, onDestroy } from "svelte";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -18,12 +19,14 @@
   import BentoPropGrid from "./BentoPropGrid.svelte";
   import type { PropChiralitySeam } from "./prop-chirality-seam";
   import CatDogToggle from "./CatDogToggle.svelte";
+  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
 
   let {
     isOpen = $bindable(false),
     selectedPropType,
     color = "blue",
-    title = "Select Prop",
+    title,
     onSelect,
     showTabs = false,
     activeTab = $bindable<"left" | "right">("left"),
@@ -33,6 +36,10 @@
     onCatDogToggle,
     chirality,
     showColors = true,
+    fanAppearance,
+    onFanAppearanceChange,
+    propLook,
+    onPropLookChange,
   } = $props<{
     isOpen?: boolean;
     selectedPropType: PropType;
@@ -59,7 +66,14 @@
     chirality?: PropChiralitySeam;
     /** The picker's own prop-colour control; see BentoPropGrid. */
     showColors?: boolean;
+    /** Host-owned appearance; unset edits the global settings. */
+    fanAppearance?: FanAppearance;
+    onFanAppearanceChange?: (appearance: FanAppearance) => void;
+    propLook?: PropLook;
+    onPropLookChange?: (look: PropLook) => void;
   }>();
+
+  const displayTitle = $derived(title ?? t("settings_props_select_prop"));
 
   // Desktop (side-by-side layout, i.e. nav sidebar present) opens the picker as
   // a full-height RIGHT side drawer instead of a bottom sheet — matches the
@@ -119,7 +133,7 @@
   closeOnEscape={true}
   dismissible={true}
   showHandle={true}
-  ariaLabel={title}
+  ariaLabel={displayTitle}
   class="prop-selection-drawer"
   onOpenChange={(open) => {
     if (!open) setOpen(false);
@@ -127,8 +141,8 @@
 >
   <div class="sheet-content">
     <DrawerHeader
-      {title}
-      subtitle="Pick a prop or open a family to choose its style."
+      {displayTitle}
+      subtitle={t("settings_prop_sheet_help")}
       onClose={handleClose}
     />
 
@@ -146,7 +160,7 @@
             <div
               class="segment-control"
               role="tablist"
-              aria-label="Prop hand selection"
+              aria-label={t("settings_prop_hand_selection")}
               transition:growFade={{ axis: "y" }}
             >
               <button
@@ -158,7 +172,7 @@
                 onclick={() => handleTabChange("left")}
               >
                 <span class="color-dot blue" aria-hidden="true"></span>
-                Left
+                {t("settings_left")}
               </button>
               <button
                 type="button"
@@ -169,7 +183,7 @@
                 onclick={() => handleTabChange("right")}
               >
                 <span class="color-dot red" aria-hidden="true"></span>
-                Right
+                {t("settings_right")}
               </button>
             </div>
           {/if}
@@ -179,7 +193,7 @@
       <BentoPropGrid
         {selectedPropType}
         {color}
-        {title}
+        {displayTitle}
         variant="inline"
         flat
         scrollMode="internal"
@@ -189,6 +203,10 @@
         onSelect={handlePropSelect}
         {chirality}
         {showColors}
+        {fanAppearance}
+        {onFanAppearanceChange}
+        {propLook}
+        {onPropLookChange}
       />
     </div>
   </div>

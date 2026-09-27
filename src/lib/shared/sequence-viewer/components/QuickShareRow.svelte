@@ -10,6 +10,7 @@
   - Native Share (if available)
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   interface Props {
     isCopying?: boolean;
     copySuccess?: boolean;
@@ -41,7 +42,7 @@
     class:success={copySuccess}
     onclick={onCopy}
     disabled={isCopying || disabled}
-    aria-label="Copy image to clipboard"
+    aria-label={t("browse_copy_to_clipboard")}
   >
     {#if isCopying}
       <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
@@ -50,7 +51,9 @@
     {:else}
       <i class="fas fa-copy" aria-hidden="true"></i>
     {/if}
-    <span>{copySuccess ? "Copied!" : disabled ? "Preparing link..." : "Copy"}</span>
+    <span
+      >{copySuccess ? t("browse_copied") : disabled ? t("viewer_ui_preparing_link") : t("browse_copy")}</span
+    >
   </button>
 
   <!-- Download -->
@@ -58,11 +61,11 @@
     type="button"
     class="share-btn"
     onclick={onDownload}
-    disabled={disabled}
-    aria-label="Download image"
+    {disabled}
+    aria-label={t("browse_download_image")}
   >
     <i class="fas fa-download" aria-hidden="true"></i>
-    <span>Download</span>
+    <span>{t("browse_download")}</span>
   </button>
 
   <!-- Native Share (if available) -->
@@ -71,11 +74,11 @@
       type="button"
       class="share-btn"
       onclick={onNativeShare}
-      disabled={disabled}
-      aria-label="Share externally"
+      {disabled}
+      aria-label={t("viewer_ui_share_externally")}
     >
       <i class="fas fa-share-alt" aria-hidden="true"></i>
-      <span>Share</span>
+      <span>{t("viewer_share")}</span>
     </button>
   {/if}
 </div>
@@ -132,17 +135,29 @@
 
   /* Primary button (Copy) */
   .share-btn.primary {
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 20%,
+      transparent
+    );
     border-color: var(--theme-accent, #6366f1);
   }
 
   .share-btn.primary:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--theme-accent, #6366f1) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #6366f1) 30%,
+      transparent
+    );
   }
 
   /* Success state */
   .share-btn.success {
-    background: color-mix(in srgb, var(--semantic-success, #22c55e) 20%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-success, #22c55e) 20%,
+      transparent
+    );
     border-color: var(--semantic-success, #22c55e);
     color: var(--semantic-success, #22c55e);
   }

@@ -18,6 +18,12 @@ import {
   orderBy,
   doc,
   getDoc,
+  limit,
+  startAfter,
+  type DocumentData,
+  type Query,
+  type QueryDocumentSnapshot,
+  type QuerySnapshot,
 } from "firebase/firestore";
 import { getFirestoreInstance } from "$lib/shared/auth/firebase";
 import {
@@ -36,6 +42,7 @@ import { normalizeLegacySequence } from "@tka/tka-types";
 
 /** How long the desktop viewer waits on Firestore before opening from the bundled index. */
 const DESKTOP_SOURCE_READ_TIMEOUT_MS = 2500;
+const CATALOG_PAGE_SIZE = 150;
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
   return new Promise((resolve, reject) => {
@@ -59,7 +66,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 export class PublicSequencesLoader {
   private cachedSequences: SequenceData[] | null = null;
+  private initialPageSequences: SequenceData[] | null = null;
   private loadPromise: Promise<SequenceData[]> | null = null;
+  private refreshPromise: Promise<SequenceData[]> | null = null;
+  private firstPagePromise: Promise<SequenceData[]> | null = null;
   // Map from word/name OR sequence ID to sourceRef for efficient full data lookup.
   // Both keys point to the same sourceRef so we can look up by either.
   // ID-based lookup is preferred when available (disambiguates same-word variations).
@@ -117,6 +127,31 @@ export class PublicSequencesLoader {
     }
   }
 
+  /** Give Browse its saved catalog before the full public query finishes. */
+  async loadCachedSequenceMetadata(): Promise<SequenceData[] | null> {
+    if (this.cachedSequences) return this.cachedSequences;
+    if (!this.galleryOfflineCache) return null;
+    try {
+      const cached = await this.galleryOfflineCache.loadCached();
+      // A concurrent network read may have completed while IndexedDB opened.
+      if (this.cachedSequences) return this.cachedSequences;
+      if (cached.sequences.length === 0) return null;
+      this.warmFromCache(cached.sequences, cached.sourceRefs);
+      return this.cachedSequences;
+    } catch (error) {
+      console.warn("[PublicSequencesLoader] IndexedDB read failed:", error);
+      return this.cachedSequences;
+    }
+  }
+
+  /** The first bounded page lets an empty Browse show real results promptly. */
+  async loadInitialSequenceMetadata(): Promise<SequenceData[] | null> {
+    if (this.cachedSequences) return this.cachedSequences;
+    if (!networkStatusState.isOnline) return null;
+    this.startRefresh();
+    return this.firstPagePromise;
+  }
+
   /**
    * Try Firestore first (when online), fall back to IndexedDB cache when
    * offline or when the network request fails.
@@ -124,16 +159,7 @@ export class PublicSequencesLoader {
   private async fetchWithOfflineFallback(): Promise<SequenceData[]> {
     if (networkStatusState.isOnline) {
       try {
-        const sequences = await this.fetchPublicSequences();
-        if (this.galleryOfflineCache) {
-          this.persistToOfflineCache().catch((err) =>
-            console.warn(
-              "[PublicSequencesLoader] Offline cache persist failed:",
-              err
-            )
-          );
-        }
-        return sequences;
+        return await this.refreshFromFirestore();
       } catch (error) {
         console.warn(
           "[PublicSequencesLoader] Firestore fetch failed, trying offline cache:",
@@ -202,7 +228,15 @@ export class PublicSequencesLoader {
     sequenceId?: string
   ): Promise<SequenceData | null> {
     // Ensure metadata is loaded first (populates sourceRef cache)
-    if (!this.cachedSequences) {
+    if (
+      !this.cachedSequences &&
+      !this.initialPageSequences?.some((sequence) =>
+        sequenceId
+          ? sequence.id === sequenceId
+          : sequence.name === sequenceName ||
+            stripWordNotation(sequence.word) === sequenceName
+      )
+    ) {
       await this.loadSequenceMetadata();
     }
 
@@ -216,7 +250,7 @@ export class PublicSequencesLoader {
     // source refs. Their sequence metadata still has enough owner information
     // to reconstruct the canonical source path without a network lookup.
     if (!sourceRef && sequenceId) {
-      const match = this.cachedSequences?.find(
+      const match = (this.cachedSequences ?? this.initialPageSequences)?.find(
         (sequence) => sequence.id === sequenceId
       );
       if (match?.ownerId && match.id) {
@@ -273,9 +307,10 @@ export class PublicSequencesLoader {
     if (!sourceRef && !sequenceId) {
       sourceRef = this.sourceRefCache.get(sequenceName);
       if (!sourceRef) {
-        const match = this.cachedSequences?.find(
+        const match = (this.cachedSequences ?? this.initialPageSequences)?.find(
           (sequence) =>
-            sequence.name === sequenceName || stripWordNotation(sequence.word) === sequenceName
+            sequence.name === sequenceName ||
+            stripWordNotation(sequence.word) === sequenceName
         );
         if (match?.ownerId && match.id) {
           sourceRef = `users/${match.ownerId}/sequences/${match.id}`;
@@ -327,10 +362,12 @@ export class PublicSequencesLoader {
     sequenceName: string,
     sequenceId?: string
   ): SequenceData | null {
-    const match = this.cachedSequences?.find((sequence) =>
-      sequenceId
-        ? sequence.id === sequenceId
-        : sequence.name === sequenceName || stripWordNotation(sequence.word) === sequenceName
+    const match = (this.cachedSequences ?? this.initialPageSequences)?.find(
+      (sequence) =>
+        sequenceId
+          ? sequence.id === sequenceId
+          : sequence.name === sequenceName ||
+            stripWordNotation(sequence.word) === sequenceName
     );
     return match && (match.steps?.length ?? 0) > 0 ? match : null;
   }
@@ -425,54 +462,94 @@ export class PublicSequencesLoader {
    * Updates the in-memory cache and persists to IndexedDB offline cache.
    */
   async refreshFromFirestore(): Promise<SequenceData[]> {
-    const sequences = await this.fetchPublicSequences();
-    this.cachedSequences = sequences;
-
-    // Persist to offline cache for next session
-    if (this.galleryOfflineCache) {
-      this.persistToOfflineCache().catch((err) =>
-        console.warn(
-          "[PublicSequencesLoader] Offline cache persist failed:",
-          err
-        )
-      );
-    }
-
-    return sequences;
+    this.startRefresh();
+    return this.refreshPromise!;
   }
 
-  private async fetchPublicSequences(): Promise<SequenceData[]> {
-    this.lastFetchedDocs = [];
+  private startRefresh(): void {
+    if (this.refreshPromise) return;
+    let resolveFirst!: (sequences: SequenceData[]) => void;
+    let rejectFirst!: (error: unknown) => void;
+    this.firstPagePromise = new Promise<SequenceData[]>((resolve, reject) => {
+      resolveFirst = resolve;
+      rejectFirst = reject;
+    });
+    this.refreshPromise = this.fetchPublicSequences(resolveFirst)
+      .then((sequences) => {
+        this.cachedSequences = sequences;
+        this.initialPageSequences = null;
+        if (this.galleryOfflineCache) {
+          this.persistToOfflineCache().catch((err) =>
+            console.warn(
+              "[PublicSequencesLoader] Offline cache persist failed:",
+              err
+            )
+          );
+        }
+        return sequences;
+      })
+      .catch((error: unknown) => {
+        rejectFirst(error);
+        throw error;
+      })
+      .finally(() => {
+        this.refreshPromise = null;
+        this.firstPagePromise = null;
+      });
+    // A caller can leave Browse while later pages are still loading.
+    void this.refreshPromise.catch(() => undefined);
+    void this.firstPagePromise.catch(() => undefined);
+  }
 
+  private async fetchPublicSequences(
+    onFirstPage: (sequences: SequenceData[]) => void
+  ): Promise<SequenceData[]> {
     const firestore = await getFirestoreInstance();
     const publicSeqRef = collection(firestore, getPublicSequencesPath());
-
-    // Query all public sequences, ordered by word for consistent display
-    const q = query(publicSeqRef, orderBy("word", "asc"));
-    const snapshot = await getDocs(q);
-
     const sequences: SequenceData[] = [];
-
-    snapshot.forEach((docSnap) => {
-      const data = normalizeLegacySequence(
-        docSnap.data()
-      ) as PublicSequenceIndex;
-      sequences.push(this.mapPublicIndexToSequenceData(data, docSnap.id));
-
-      // Capture raw doc for offline cache persistence after this fetch
-      this.lastFetchedDocs.push({
-        ...data,
-        id: docSnap.id,
-      } as PublicSequenceIndex);
-
-      // Cache sourceRef for efficient full data lookup later.
-      // Store under both word AND ID so we can look up by either.
-      // The ID key is prefixed with "id:" to avoid collisions with words.
-      if (data.sourceRef) {
-        this.cacheSourceRef(docSnap.id, data.sourceRef, data.word, data.name);
+    const docs: PublicSequenceIndex[] = [];
+    let cursor: QueryDocumentSnapshot<DocumentData> | null = null;
+    do {
+      const q: Query<DocumentData> = cursor
+        ? query(
+            publicSeqRef,
+            orderBy("word", "asc"),
+            startAfter(cursor),
+            limit(CATALOG_PAGE_SIZE)
+          )
+        : query(publicSeqRef, orderBy("word", "asc"), limit(CATALOG_PAGE_SIZE));
+      const snapshot: QuerySnapshot<DocumentData> = await getDocs(q);
+      if (snapshot.metadata?.fromCache) {
+        throw new Error("Public catalog read did not reach Firestore");
       }
-    });
+      snapshot.forEach((docSnap) => {
+        const data = normalizeLegacySequence(
+          docSnap.data()
+        ) as PublicSequenceIndex;
+        sequences.push(this.mapPublicIndexToSequenceData(data, docSnap.id));
 
+        // Capture raw doc for offline cache persistence after this fetch
+        docs.push({
+          ...data,
+          id: docSnap.id,
+        } as PublicSequenceIndex);
+
+        // Cache sourceRef for efficient full data lookup later.
+        // Store under both word AND ID so we can look up by either.
+        // The ID key is prefixed with "id:" to avoid collisions with words.
+        if (data.sourceRef) {
+          this.cacheSourceRef(docSnap.id, data.sourceRef, data.word, data.name);
+        }
+      });
+      if (!cursor) {
+        this.initialPageSequences = [...sequences];
+        onFirstPage([...sequences]);
+      }
+      cursor = snapshot.docs.at(-1) ?? null;
+      if (snapshot.size < CATALOG_PAGE_SIZE) break;
+    } while (cursor);
+
+    this.lastFetchedDocs = docs;
     return sequences;
   }
 

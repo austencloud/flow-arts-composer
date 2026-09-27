@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, tick } from "svelte";
   import { DEFAULT_VIEWER_CUSTOM_COLORS } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
@@ -94,7 +95,13 @@
   }
 
   function definitionFor(mode: TimingDirectionMode): string {
-    return `${mode.timing} time, ${mode.direction.toLowerCase()} direction.`;
+    return tDynamic("learn_timing_board_definition", {
+      timing: mode.timing,
+      direction:
+        mode.direction.toLowerCase() === "same"
+          ? tDynamic("learn_timing_intro_option_same")
+          : tDynamic("learn_timing_intro_option_opposite"),
+    });
   }
 
   async function setFocusedMode(
@@ -193,21 +200,27 @@
   class:has-focus={focusedMode !== null}
   bind:this={boardElement}
   role="region"
-  aria-label="Six timing and direction relationships"
+  aria-label={tDynamic("learn_timing_board_six_relationships_aria")}
 >
   <div class="board-toolbar">
     {#if !focusedMode}<div class="selection-status">
-        All six relationships
+        {tDynamic("learn_timing_board_all_relationships")}
       </div>{/if}
     <PanelButton
       variant="secondary"
       onclick={togglePlaying}
       ariaPressed={playing}
-      ariaLabel={playing ? "Pause all animations" : "Play all animations"}
+      ariaLabel={playing
+        ? tDynamic("learn_timing_board_pause_all_aria")
+        : tDynamic("learn_timing_board_play_all_aria")}
     >
       <i class="fa-solid {playing ? 'fa-pause' : 'fa-play'}" aria-hidden="true"
       ></i>
-      <span>{playing ? "Pause all" : "Play all"}</span>
+      <span
+        >{playing
+          ? tDynamic("learn_timing_board_pause_all")
+          : tDynamic("learn_timing_board_play_all")}</span
+      >
     </PanelButton>
   </div>
 
@@ -218,7 +231,14 @@
   >
     {#each orderedModes as mode, index (mode.id)}
       {#if showDirectionRowLabels && !focusedMode && (index === 0 || orderedModes[index - 1]?.direction !== mode.direction)}
-        <h3 class="direction-row-label">{mode.direction} Direction</h3>
+        <h3 class="direction-row-label">
+          {tDynamic("learn_timing_board_direction_row", {
+            direction:
+              mode.direction === "Same"
+                ? tDynamic("learn_timing_intro_option_same")
+                : tDynamic("learn_timing_intro_option_opposite"),
+          })}
+        </h3>
       {/if}
       {@const isFocused = mode.id === focusedModeId}
       {@const articleHref = articleHrefFor?.(mode)}
@@ -249,9 +269,11 @@
                 <a
                   class="mode-article-link"
                   href={articleHref}
-                  aria-label={`Read the ${fullNameFor(mode)} article`}
+                  aria-label={tDynamic("learn_timing_board_read_article_aria", {
+                    mode: fullNameFor(mode),
+                  })}
                 >
-                  <span>Read article</span>
+                  <span>{tDynamic("learn_timing_board_read_article")}</span>
                   <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
                 </a>
               {/if}
@@ -259,10 +281,10 @@
                 bind:ref={focusCloseButton}
                 variant="secondary"
                 onclick={() => void setFocusedMode(null)}
-                ariaLabel="Back to all six relationships"
+                ariaLabel={tDynamic("learn_timing_board_back_all_aria")}
               >
                 <i class="fa-solid fa-compress" aria-hidden="true"></i>
-                <span>All six</span>
+                <span>{tDynamic("learn_timing_board_all_six")}</span>
               </PanelButton>
             </div>
           {/if}
@@ -297,7 +319,9 @@
           </div>
           {#if showChoreoCards}<div
               class="mode-card"
-              aria-label={`${fullNameFor(mode)} hand paths by step`}
+              aria-label={tDynamic("learn_timing_board_hand_paths_aria", {
+                mode: fullNameFor(mode),
+              })}
             >
               <DualSourceCrossfade
                 active={isFocused ? "second" : "first"}
@@ -349,13 +373,16 @@
             aria-busy={requestedModeId === mode.id &&
               requestedModeId !== focusedModeId}
             onclick={() => void setFocusedMode(mode.id)}
-            aria-label={`Focus ${fullNameFor(mode)}. ${definitionFor(mode)}`}
+            aria-label={tDynamic("learn_timing_board_focus_aria", {
+              mode: fullNameFor(mode),
+              definition: definitionFor(mode),
+            })}
           >
             {#if requestedModeId === mode.id}
               <span
                 class="mode-preparing"
                 role="status"
-                aria-label="Preparing Choreo Card"
+                aria-label={tDynamic("learn_timing_board_preparing_card")}
               >
                 <ProgressRing percent={-1} size={18} strokeWidth={2} />
               </span>

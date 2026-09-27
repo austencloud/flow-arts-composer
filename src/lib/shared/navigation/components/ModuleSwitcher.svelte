@@ -5,6 +5,7 @@
   Uses the shared Drawer component (vaul-svelte based) for consistent UX.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { onMount } from "svelte";
@@ -53,6 +54,10 @@
   let deviceDetector: DeviceDetector | null = null;
   let isOpen = $state(false);
   let selectedModuleId = $state<ModuleId | null>(null);
+  const localizedCurrentModuleName = $derived.by(() => {
+    const module = modules.find((item) => item.id === currentModule);
+    return module ? t(module.labelKey) : currentModuleName;
+  });
 
   // The list region is the only part of the sheet that scrolls, and only when
   // the sheet reaches its height cap. Each view starts at the top.
@@ -223,7 +228,7 @@
 <!-- Drawer Component -->
 <Drawer
   bind:isOpen
-  ariaLabel="Module navigation menu"
+  ariaLabel={t("nav_ui_module_navigation_menu")}
   class="module-switcher-drawer"
   backdropClass="module-switcher-backdrop"
   placement={drawerPlacement}
@@ -237,7 +242,7 @@
         type="button"
         class="drill-back-button"
         class:visible={selectedModule !== null}
-        aria-label="Back to all modules"
+        aria-label={t("nav_ui_back_to_all_modules")}
         aria-hidden={selectedModule === null}
         tabindex={selectedModule === null ? -1 : 0}
         onclick={handleDrillBack}
@@ -245,19 +250,21 @@
         <i class="fas fa-arrow-left" aria-hidden="true"></i>
       </button>
       <div class="header-content">
-        <h2>{selectedModule?.label ?? "Navigation"}</h2>
+        <h2>
+          {selectedModule ? t(selectedModule.labelKey) : t("nav_ui_navigation")}
+        </h2>
         <div class="current-location">
           <span class="module-name">
             {selectedModule
-              ? "Choose a destination"
-              : `Currently in ${currentModuleName}`}
+              ? t("nav_ui_choose_a_destination")
+              : t("nav_current_module", { module: localizedCurrentModuleName })}
           </span>
         </div>
       </div>
       <button
         class="close-button"
         onclick={closeDrawer}
-        aria-label="Close menu"
+        aria-label={t("nav_ui_close_menu")}
       >
         <i class="fas fa-times" aria-hidden="true"></i>
       </button>
@@ -318,7 +325,7 @@
           <button
             class="drawer-action inbox"
             onclick={handleInboxClick}
-            aria-label="Inbox"
+            aria-label={t("module_inbox")}
           >
             <div class="drawer-action-icon-wrapper">
               <i class="fas fa-inbox" aria-hidden="true"></i>
@@ -328,41 +335,41 @@
                 >
               {/if}
             </div>
-            <span>Inbox</span>
+            <span>{t("module_inbox")}</span>
           </button>
         {/if}
         <button
           class="drawer-action"
           onclick={handleAccountSettings}
-          aria-label="Settings"
+          aria-label={t("module_settings")}
         >
           <i class="fas fa-cog" aria-hidden="true"></i>
-          <span>Settings</span>
+          <span>{t("module_settings")}</span>
         </button>
         <button
           class="drawer-action release-notes"
           onclick={handleWhatsNew}
-          aria-label="Open release notes"
+          aria-label={t("nav_ui_open_release_notes")}
         >
           <i class="fas fa-gift" aria-hidden="true"></i>
-          <span>Release Notes</span>
+          <span>{t("tab_settings_release_notes")}</span>
         </button>
         <button
           class="drawer-action support"
           onclick={() => supportModalState.show()}
-          aria-label="Support"
+          aria-label={t("tab_community_support")}
         >
           <i class="fas fa-heart" aria-hidden="true"></i>
-          <span>Support</span>
+          <span>{t("tab_community_support")}</span>
         </button>
         {#if isFullAccount}
           <button
             class="drawer-action sign-out"
             onclick={handleSignOut}
-            aria-label="Sign out"
+            aria-label={t("nav_ui_sign_out")}
           >
             <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
-            <span>Sign Out</span>
+            <span>{t("nav_ui_sign_out")}</span>
           </button>
         {/if}
       </div>

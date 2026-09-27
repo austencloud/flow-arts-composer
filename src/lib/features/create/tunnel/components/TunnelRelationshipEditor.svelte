@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import FuseRotationDial from "$lib/features/fuse/components/FuseRotationDial.svelte";
@@ -38,7 +39,7 @@
 >
   <header>
     <div>
-      <span class="eyebrow">Performer source</span>
+      <span class="eyebrow">{t("create_ui_performer_source")}</span>
       <h3 id="relationship-title">{sourceLabel} → {targetLabel}</h3>
     </div>
     <span class="recipe">
@@ -49,7 +50,9 @@
   </header>
 
   <div class="source-card">
-    <label for="tunnel-performer-source">Choreography source</label>
+    <label for="tunnel-performer-source"
+      >{t("create_ui_choreography_source")}</label
+    >
     <select
       id="tunnel-performer-source"
       value={sourceId}
@@ -61,7 +64,7 @@
         );
       }}
     >
-      <option value="independent">Independent sequence</option>
+      <option value="independent">{t("create_ui_independent_sequence")}</option>
       {#each state.pairingSourceCandidates as candidate (candidate.id)}
         <option value={candidate.id}>Follow {candidate.label}</option>
       {/each}
@@ -137,7 +140,7 @@
 
         <div class="offset-row">
           <div>
-            <span class="control-label">Start offset</span>
+            <span class="control-label">{t("create_ui_start_offset")}</span>
             <span class="offset-hint"
               >Shift Performer 2 around the sequence</span
             >

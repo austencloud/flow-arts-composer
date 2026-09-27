@@ -5,7 +5,7 @@
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import TransportControls from "$lib/shared/animation-engine/components/controls/TransportControls.svelte";
   import TempoControl from "$lib/shared/animation-panel/components/TempoControl.svelte";
-  import TimeRuler from "$lib/features/compose/timeline/components/TimeRuler.svelte";
+  import TimeRuler from "$lib/shared/timeline/TimeRuler.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import {

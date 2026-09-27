@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
   import type { InkIntent } from "$lib/shared/effects/domain/effects-config";
   import OptionChipRow from "../OptionChipRow.svelte";
@@ -40,7 +41,7 @@
 <div class="customize-view">
   <button type="button" class="back-btn" onclick={onBack}>
     <i class="fas fa-arrow-left" aria-hidden="true"></i>
-    Back to presets
+    {t("effect_deep_back_to_presets")}
   </button>
 
   {#if state}
@@ -56,7 +57,7 @@
 
       {#if state.ink.palette === "custom"}
         <div class="color-row">
-          <span class="color-label">Tint</span>
+          <span class="color-label">{t("effect_deep_tint")}</span>
           <div class="color-pickers">
             <label class="color-picker">
               <input
@@ -83,7 +84,7 @@
 
       <!-- Ambient emission (hard-capped at 0.3 in renderer) -->
       <div class="slider-row">
-        <label for="ink-ambient">Ambient</label>
+        <label for="ink-ambient">{t("effect_deep_ambient")}</label>
         <input
           id="ink-ambient"
           type="range"
@@ -103,7 +104,7 @@
 
       <!-- Motion emission (dominant) -->
       <div class="slider-row">
-        <label for="ink-motion">Motion</label>
+        <label for="ink-motion">{t("effect_deep_motion")}</label>
         <input
           id="ink-motion"
           type="range"
@@ -123,7 +124,7 @@
 
       <!-- Intensity (width + opacity) -->
       <div class="slider-row">
-        <label for="ink-intensity">Intensity</label>
+        <label for="ink-intensity">{t("effect_deep_intensity")}</label>
         <input
           id="ink-intensity"
           type="range"
@@ -144,7 +145,7 @@
       <AdvancedControls count={2}>
         <!-- Viscosity - wires through now, sprint 2 renders it as strand breakup -->
         <div class="slider-row">
-          <label for="ink-viscosity">Viscosity</label>
+          <label for="ink-viscosity">{t("effect_deep_viscosity")}</label>
           <input
             id="ink-viscosity"
             type="range"
@@ -164,7 +165,7 @@
 
         <!-- Splatter - wires through now, sprint 2 renders it as burst particles -->
         <div class="slider-row">
-          <label for="ink-splatter">Splatter</label>
+          <label for="ink-splatter">{t("effect_deep_splatter")}</label>
           <input
             id="ink-splatter"
             type="range"
@@ -184,7 +185,7 @@
       </AdvancedControls>
     </div>
   {:else}
-    <p class="empty">Effect state unavailable.</p>
+    <p class="empty">{t("effect_deep_effect_state_unavailable")}</p>
   {/if}
 </div>
 

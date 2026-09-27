@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import InlineAnimationPlayer from "$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
   import {
     AnimationVisibilityStateManager,
@@ -38,10 +39,13 @@
 
 <div class="learning-word-stage" bind:clientWidth={stageWidth}>
   {#snippet performancePane()}
-    <section class="studio-pane video-pane" aria-label="Performance video">
+    <section
+      class="studio-pane video-pane"
+      aria-label={tDynamic("learn_word_stage_performance_video")}
+    >
       <header class="pane-heading">
         <i class="fa-solid fa-video" aria-hidden="true"></i>
-        <span>Performance video</span>
+        <span>{tDynamic("learn_word_stage_performance_video")}</span>
       </header>
       <div class="pane-body video-body">
         {#if content?.video}
@@ -53,7 +57,9 @@
             muted
             playsinline
             preload="metadata"
-            aria-label={`Performance video for ${sequence.word}`}
+            aria-label={tDynamic("learn_word_stage_video_for", {
+              word: sequence.word,
+            })}
           >
             {#if content.video.captionsSrc}
               <track
@@ -70,7 +76,7 @@
             <span class="empty-icon" aria-hidden="true">
               <i class="fa-solid fa-circle-play"></i>
             </span>
-            <span>Video coming soon</span>
+            <span>{tDynamic("learn_word_stage_video_coming")}</span>
           </div>
         {/if}
       </div>
@@ -78,10 +84,13 @@
   {/snippet}
 
   {#snippet animationPane()}
-    <section class="studio-pane animation-pane" aria-label="Animation">
+    <section
+      class="studio-pane animation-pane"
+      aria-label={tDynamic("learn_word_stage_animation")}
+    >
       <header class="pane-heading">
         <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
-        <span>Animation</span>
+        <span>{tDynamic("learn_word_stage_animation")}</span>
       </header>
       <div class="pane-body animation-body">
         <InlineAnimationPlayer
@@ -107,10 +116,13 @@
   {/snippet}
 
   {#snippet cardPane()}
-    <section class="studio-pane card-pane" aria-label="Choreo card">
+    <section
+      class="studio-pane card-pane"
+      aria-label={tDynamic("learn_word_stage_choreo_card")}
+    >
       <header class="pane-heading">
         <i class="fa-regular fa-rectangle-list" aria-hidden="true"></i>
-        <span>Choreo card</span>
+        <span>{tDynamic("learn_word_stage_choreo_card")}</span>
       </header>
       <div class="pane-body card-body">
         <ChoreoCard
@@ -142,14 +154,14 @@
           content: performancePane,
           defaultSize: 1,
           minSize: 280,
-          resizeLabel: "Resize performance video and animation",
+          resizeLabel: tDynamic("learn_word_stage_resize_video_animation"),
         },
         {
           id: "animation",
           content: animationPane,
           defaultSize: 1.35,
           minSize: 360,
-          resizeLabel: "Resize animation and choreo card",
+          resizeLabel: tDynamic("learn_word_stage_resize_animation_card"),
         },
         {
           id: "card",
@@ -165,7 +177,7 @@
   <section class="guide-notes" aria-labelledby="guide-notes-title">
     <header>
       <i class="fa-solid fa-book-open" aria-hidden="true"></i>
-      <h2 id="guide-notes-title">Guide notes</h2>
+      <h2 id="guide-notes-title">{tDynamic("learn_word_stage_guide_notes")}</h2>
     </header>
     {#if content?.explanation}
       <div class="explanation-copy">
@@ -174,7 +186,9 @@
         {/each}
       </div>
     {:else}
-      <p class="empty-copy">Explanation coming soon</p>
+      <p class="empty-copy">
+        {tDynamic("learn_word_stage_explanation_coming")}
+      </p>
     {/if}
   </section>
 </div>

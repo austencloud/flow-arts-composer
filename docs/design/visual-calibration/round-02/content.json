@@ -1,0 +1,22 @@
+{
+  "id": "about-composition-content-v1",
+  "title": "The Kinetic Alphabet",
+  "lede": "A way to write flow arts choreography in pictures.",
+  "explanation": "Each picture records a movement step. Put them together to record a sequence.",
+  "app": "Flow Arts Composer is the browser app for composing, playing, and sharing sequences in this notation.",
+  "action": { "label": "Explore Flow Arts Composer", "href": "/composer" },
+  "creator": {
+    "src": "/images/austen-fire.webp",
+    "alt": "Austen Cloud holding fire props in a performance photograph",
+    "width": 2048,
+    "height": 2396,
+    "caption": "Created by Austen Cloud in 2022."
+  },
+  "notation": {
+    "src": "/guide/level-1/images/16-count-sequences/EΔQY.png",
+    "alt": "The EΔQY sequence shown as sixteen numbered pictographs and a starting placement",
+    "width": 4750,
+    "height": 3800,
+    "caption": "EΔQY, a 16-count sequence."
+  }
+}

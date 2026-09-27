@@ -5,6 +5,7 @@
   never sends the learner backward through the lesson carousel.
 -->
 <script lang="ts">
+  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, tick } from "svelte";
   import { TND_ELEMENTS } from "$lib/features/choreo-card/domain/tnd-element";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
@@ -79,7 +80,12 @@
   const curriculumIndex = levelOnePlaces.findIndex(
     (place) => place.id === "1.3"
   );
-  const curriculumLabel = `Level 1 · Lesson ${curriculumIndex + 1} of ${levelOnePlaces.length}`;
+  const curriculumLabel = $derived(
+    tDynamic("learn_motion_curriculum_label", {
+      current: curriculumIndex + 1,
+      total: levelOnePlaces.length,
+    })
+  );
 
   const haptic = getHapticFeedback();
   const persistence = getExperiencePersistence(
@@ -149,11 +155,18 @@
       : undefined
   );
   const headingTitle = $derived(
-    topic?.title ?? activeMotion?.name ?? "Timing and Direction"
+    topic
+      ? tDynamic(`learn_motion_topic_${topic.id}_title`)
+      : activeMotion
+        ? tDynamic(`learn_motion_path_${activeMotion.id}_name`)
+        : tDynamic("learn_motion_timing_direction")
   );
   const headingEyebrow = $derived(
     activeMotion
-      ? `Hand motion ${stepIndex + 1} of ${HAND_PATH_STEPS.length}`
+      ? tDynamic("learn_motion_step_count", {
+          current: stepIndex + 1,
+          total: HAND_PATH_STEPS.length,
+        })
       : undefined
   );
 
@@ -250,7 +263,9 @@
   onkeydown={handleKeydown}
   tabindex="0"
   role="application"
-  aria-label={`${timingDirectionOnly ? "Timing and direction" : "Hand motions"} lesson, use arrow keys to navigate`}
+  aria-label={timingDirectionOnly
+    ? t("learn_ui_timing_direction_keyboard")
+    : t("learn_ui_hand_motions_keyboard")}
 >
   <LessonStageFrame
     artifactLayout={activeMotion
@@ -267,12 +282,12 @@
       >
         <p class="motion-description">
           {#if topic}
-            {topic.description}
+            {tDynamic(`learn_motion_topic_${topic.id}_description`)}
           {:else if activeMotion}
-            {activeMotion.guideCaption}
+            {tDynamic(`learn_motion_path_${activeMotion.id}_caption`)}
           {:else}
             <span class="description-phrase"
-              >These relationships apply to hands, props, and prop ends.</span
+              >{t("learn_ui_relationships_apply")}</span
             >
           {/if}
         </p>
@@ -298,12 +313,19 @@
                 <div class="player-frame">
                   <HandMotionPlayer
                     sequence={activeMotion.sequence}
-                    ariaLabel={`${activeMotion.name}: ${activeMotion.guideCaption}`}
+                    ariaLabel={tDynamic("learn_motion_path_aria", {
+                      name: tDynamic(
+                        `learn_motion_path_${activeMotion.id}_name`
+                      ),
+                      caption: tDynamic(
+                        `learn_motion_path_${activeMotion.id}_caption`
+                      ),
+                    })}
                   />
                 </div>
-                <div class="hand-key" aria-label="Left hand is blue">
+                <div class="hand-key" aria-label={t("learn_ui_left_hand_blue")}>
                   <span aria-hidden="true"></span>
-                  <strong>Left hand</strong>
+                  <strong>{t("learn_ui_left_hand")}</strong>
                 </div>
               </div>
             {:else}
@@ -346,16 +368,18 @@
         progressAppearance="steps"
         label={isComparison
           ? viewMode === "scroll"
-            ? "Done"
-            : "Finish lesson"
+            ? t("learn_ui_done")
+            : t("learn_ui_finish_lesson")
           : comparisonRequested
-            ? "Preparing…"
-            : "Next"}
+            ? t("learn_ui_preparing")
+            : t("learn_ui_next")}
         currentStep={stepIndex - firstStage + 1}
         totalSteps={totalStages}
         onAction={handlePrimaryAction}
         onPrevious={handleBack}
-        previousLabel={viewMode === "scroll" ? "Close review" : "Previous"}
+        previousLabel={viewMode === "scroll"
+          ? t("learn_ui_close_review")
+          : t("learn_ui_previous")}
         previousDisabled={viewMode !== "scroll" && stepIndex === firstStage}
         actionIcon={isComparison ? "check" : "arrow"}
         {curriculumLabel}

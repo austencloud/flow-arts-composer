@@ -17,10 +17,10 @@ describe("MessageReactions", () => {
     });
 
     await page
-      .getByRole("button", { name: "React with 💗. 1 reaction" })
+      .getByRole("button", { name: "React with 💗. Reactions: 1." })
       .click();
     await page
-      .getByRole("button", { name: "React with 😂. 2 reactions" })
+      .getByRole("button", { name: "React with 😂. Reactions: 2." })
       .click();
 
     expect(onToggleReaction).toHaveBeenNthCalledWith(1, "💗");
@@ -35,7 +35,7 @@ describe("MessageReactions", () => {
     });
 
     await expect
-      .element(page.getByRole("button", { name: "Remove 💗. 1 reaction" }))
+      .element(page.getByRole("button", { name: "Remove 💗 reaction. Reactions: 1." }))
       .toHaveAttribute("aria-pressed", "true");
   });
 });

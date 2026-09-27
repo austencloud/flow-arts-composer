@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
   import BentoPropGrid from "$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
@@ -13,7 +14,7 @@
 </script>
 
 <div class="collection-prop-field">
-  <span class="label">Collection prop</span>
+  <span class="label">{t("library_ui_collection_prop")}</span>
   <p>Used for every sequence when a viewer chooses As saved.</p>
   <div class="actions">
     <PanelButton

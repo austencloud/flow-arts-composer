@@ -18,6 +18,7 @@ Membership writes go through collections-state (cap guard + latency
 compensation), so the detail view behind this sheet updates on its own.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount, onDestroy } from "svelte";
   import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
   import { createBrowseEngine } from "$lib/shared/browse/engine/create-browse-engine.svelte";
@@ -214,7 +215,7 @@ compensation), so the detail view behind this sheet updates on its own.
         "[AddSequencesSheet] Shared collection update failed:",
         error
       );
-      toast.error("The collection wasn’t updated. Try again.");
+      toast.error(t("browse_ui_collection_update_failed"));
     } finally {
       pendingSequenceIds = new Set(
         [...pendingSequenceIds].filter((id) => id !== seq.id)
@@ -255,18 +256,21 @@ compensation), so the detail view behind this sheet updates on its own.
       <button
         type="button"
         class="done-btn"
-        aria-label="Done"
+        aria-label={t("train_filter_done")}
         onclick={requestClose}
       >
         <i class="fas fa-check" aria-hidden="true"></i>
-        <span>Done</span>
+        <span>{t("train_filter_done")}</span>
       </button>
     </header>
 
     <div class="panel-body">
       {#if view === "drill"}
         {#if engine.hasActiveFilters}
-          <div class="sheet-rule-strip" aria-label="Current filters">
+          <div
+            class="sheet-rule-strip"
+            aria-label={t("browse_ui_current_filters")}
+          >
             <span class="strip-count" aria-live="polite">
               {engine.resultCount}
               {engine.resultCount === 1 ? "match" : "matches"}
@@ -361,7 +365,7 @@ compensation), so the detail view behind this sheet updates on its own.
           selectedIds={memberIds}
           onSelect={handleSelect}
           onBack={backToDrill}
-          backLabel="Start here"
+          backLabel={t("site_start_here")}
           hideToolbarSearch
           onOpenFilters={() => (filterSheetOpen = true)}
         />

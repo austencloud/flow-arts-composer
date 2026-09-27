@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import { getCreateModuleContext } from "$lib/features/create/shared/context/create-module-context";
   import { WORKSPACE_BUTTON_ICON } from "$lib/features/create/shared/workspace-panel/shared/workspace-button-layout";
@@ -11,22 +12,28 @@
     switch (constructTutorialState.stage) {
       case "start-placement":
         return {
-          title: "Choose a start placement",
-          instruction: "Use Presets, or choose Build to place both props.",
+          title: t("create_deep_guide_choose_start"),
+          instruction: t("create_deep_guide_choose_start_hint"),
         };
       case "next-pictograph":
         return {
           title: constructTutorialState.placementLabel
-            ? `Start placement: ${constructTutorialState.placementLabel}`
-            : "Start placement set",
-          instruction: "Tap a pictograph to add it. Hold one to preview it.",
+            ? t("create_deep_guide_start_label", {
+                label: constructTutorialState.placementLabel,
+              })
+            : t("create_deep_guide_start_set"),
+          instruction: t("create_deep_guide_add_hint"),
         };
       case "play-sequence":
         return {
           title: constructTutorialState.addedLetter
-            ? `Next step: ${constructTutorialState.addedLetter}`
-            : "Next step added",
-          instruction: `Use ${WORKSPACE_BUTTON_ICON.view.actionLabel} below the workspace.`,
+            ? t("create_deep_guide_next_label", {
+                letter: constructTutorialState.addedLetter,
+              })
+            : t("create_deep_guide_next_added"),
+          instruction: t("create_deep_guide_view_hint", {
+            action: WORKSPACE_BUTTON_ICON.view.actionLabel,
+          }),
         };
     }
   });
@@ -53,8 +60,10 @@
 
         <div class="guide-copy" aria-live="polite" aria-atomic="true">
           <span class="guide-kicker">
-            Construct guide · Step {constructTutorialState.currentStepNumber}
-            of {constructTutorialState.totalSteps}
+            {t("create_deep_guide_progress", {
+              current: constructTutorialState.currentStepNumber,
+              total: constructTutorialState.totalSteps,
+            })}
           </span>
           <strong id="construct-guide-title">{message.title}</strong>
           <span id="construct-guide-instruction">{message.instruction}</span>
@@ -62,10 +71,10 @@
 
         <PanelButton
           variant="secondary"
-          ariaLabel="Dismiss Construct guide"
+          ariaLabel={t("create_deep_guide_dismiss_aria")}
           onclick={() => constructTutorialState.dismiss()}
         >
-          Dismiss
+          {t("create_deep_dismiss")}
         </PanelButton>
       </aside>
     {:else}

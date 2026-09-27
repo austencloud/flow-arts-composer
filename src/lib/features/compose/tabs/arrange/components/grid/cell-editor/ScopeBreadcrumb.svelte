@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { ScopeLevel } from "./state/cell-editor-panel-state.svelte";
 
   export interface BreadcrumbSegment {
@@ -16,7 +17,7 @@
   } = $props();
 </script>
 
-<nav class="scope-breadcrumb" aria-label="Scope navigation">
+<nav class="scope-breadcrumb" aria-label={t("compose_ui_scope_navigation")}>
   {#each segments as seg, i (seg.level)}
     {#if i > 0}
       <i class="fas fa-chevron-right bc-sep" aria-hidden="true"></i>
@@ -69,7 +70,9 @@
     font-size: 12px;
     padding: 2px 4px;
     border-radius: 4px;
-    transition: color 120ms ease, background 120ms ease;
+    transition:
+      color 120ms ease,
+      background 120ms ease;
   }
 
   .bc-link:hover {

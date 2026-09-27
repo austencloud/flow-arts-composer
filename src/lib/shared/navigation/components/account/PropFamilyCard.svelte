@@ -1,5 +1,6 @@
 <!-- One profile skill. Hoop is the only family that opens a size choice. -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { ProfilePropFamily } from "$lib/shared/community/domain/profile-prop-catalog";
   import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -41,8 +42,10 @@
   {active}
   badge={hasChoices ? family.choices.length : undefined}
   actionLabel={hasChoices
-    ? `Choose ${family.label} skill`
-    : `${selected ? "Remove" : "Add"} ${family.label} skill`}
+    ? t("nav_choose_skill", { prop: family.label })
+    : t(selected ? "nav_remove_skill" : "nav_add_skill", {
+        prop: family.label,
+      })}
   {disabled}
   buttonProps={{
     "aria-expanded": hasChoices ? active : undefined,

@@ -5,6 +5,7 @@
   Supports help mode where clicking buttons shows educational content instead of applying transforms.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { SequenceActionId } from "$lib/shared/create/domain/sequence-action-types";
   import SwapIcon from "$lib/shared/icons/SwapIcon.svelte";
 
@@ -196,7 +197,7 @@
           <i class="fas fa-left-right" aria-hidden="true"></i>
         </div>
         <div class="btn-text">
-          <span class="btn-label">Mirror</span>
+          <span class="btn-label">{t("create_ui_mirror")}</span>
           <span class="btn-desc">Flip left & right</span>
         </div>
       </button>
@@ -403,8 +404,8 @@
               <i class="fas fa-stopwatch" aria-hidden="true"></i>
             </div>
             <div class="btn-text">
-              <span class="btn-label">Duration</span>
-              <span class="btn-desc">Step timing</span>
+              <span class="btn-label">{t("clip_duration")}</span>
+              <span class="btn-desc">{t("create_ui_step_timing")}</span>
             </div>
           </button>
         {/if}
@@ -482,7 +483,7 @@
               <i class="fas fa-arrow-rotate-left" aria-hidden="true"></i>
             </div>
             <div class="btn-text">
-              <span class="btn-label">Reset</span>
+              <span class="btn-label">{t("create_ui_reset")}</span>
               <span class="btn-desc">Original path</span>
             </div>
           </button>
@@ -494,7 +495,7 @@
   <!-- EDIT Section - dimmed in help mode since these don't have help content -->
   {#if hasEditActions}
     <section class="section edit-section" class:help-dimmed={helpMode}>
-      <span class="section-label">Edit</span>
+      <span class="section-label">{t("viewer_edit")}</span>
       <div class="section-grid">
         {#if onTurns}
           <button

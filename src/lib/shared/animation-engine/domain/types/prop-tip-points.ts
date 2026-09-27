@@ -706,12 +706,19 @@ function isAxialTable(config: PropTipConfig): boolean {
 }
 
 /**
- * True when an axial prop's capture paints on the -x side of the hand. Every
- * tip table puts a one-ended prop's business end at +x, so the animation
- * canvas rotates such sprites 180 degrees when it draws them (svg-generator)
- * and the derived tips below assume the rotated sprite. The decision is made
- * from the painted geometry alone: a capture of a two-ended notation prop can
- * still be one-sided (the big club model is a club held at its knob).
+ * Lean of the painted capture or the tip table off the grip, as a fraction of
+ * the box half-width. Below this a side is not a side.
+ */
+const MODEL_SIDE_BIAS = 0.1;
+
+/**
+ * True when a capture paints on the opposite side of the hand from its tip
+ * table. The tables put a one-sided prop's business end at +x (a triad's lead
+ * arm, a hoop's rim), so the animation canvas rotates such sprites 180 degrees
+ * when it draws them (svg-generator) and the derived tips below assume the
+ * rotated sprite. The decision is made from the painted geometry alone, so an
+ * axial capture that paints clearly on -x turns even when its notation table
+ * is two-ended (the big club model is a club held at its knob).
  */
 export function modelSpriteFacesAwayFromTips(
   propType: string,
@@ -721,9 +728,17 @@ export function modelSpriteFacesAwayFromTips(
 ): boolean {
   if (!entry?.bounds) return false;
   const base = PROP_TIP_POINTS[baseKeyOf(propType.toLowerCase())];
-  if (!base || !isAxialTable(base)) return false;
-  const paintedCentre = entry.bounds.x + entry.bounds.width / 2;
-  return paintedCentre < entry.width / 2 - entry.width * 0.1;
+  if (!base || base.points.length === 0) return false;
+  const half = entry.width / 2;
+  const paintBias = (entry.bounds.x + entry.bounds.width / 2 - half) / half;
+  if (isAxialTable(base) && paintBias < -2 * MODEL_SIDE_BIAS) return true;
+  const xs = base.points.map((point) => point.dx);
+  const tipBias = (Math.max(...xs) + Math.min(...xs)) / 2 / half;
+  return (
+    Math.abs(tipBias) > MODEL_SIDE_BIAS &&
+    Math.abs(paintBias) > MODEL_SIDE_BIAS &&
+    Math.sign(tipBias) !== Math.sign(paintBias)
+  );
 }
 
 const modelTipCache = new Map<string, PropTipConfig>();

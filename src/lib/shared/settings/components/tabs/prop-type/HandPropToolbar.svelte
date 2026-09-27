@@ -18,6 +18,7 @@
 </script>
 
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import CatDogToggle from "./CatDogToggle.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import { growFade } from "$lib/shared/transitions/motion";
@@ -41,12 +42,12 @@
     <div class="hand-segments" transition:growFade={{ axis: "y" }}>
       <SegmentedControl
         options={[
-          { value: "left", label: "Left", tone: "blue" },
-          { value: "right", label: "Right", tone: "red" },
+          { value: "left", label: t("settings_left"), tone: "blue" },
+          { value: "right", label: t("settings_right"), tone: "red" },
         ]}
         value={handProps.hand}
         onchange={handProps.onHandChange}
-        ariaLabel="Prop hand selection"
+        ariaLabel={t("settings_prop_hand_selection")}
         semantics="radiogroup"
       />
     </div>

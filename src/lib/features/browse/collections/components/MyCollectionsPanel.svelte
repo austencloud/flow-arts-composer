@@ -22,6 +22,7 @@ Signed out, a library has nowhere to live, so the tab explains itself
 instead of showing an empty shell.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount, type Component } from "svelte";
   import { dev } from "$app/environment";
   import { authState } from "$lib/shared/auth/state/auth-state.svelte";
@@ -383,9 +384,7 @@ instead of showing an empty shell.
     art_scenes: {
       label: "3D Scenes",
       load: () =>
-        import(
-          "$lib/features/scene-3d-collection/Scene3DCollectionModule.svelte"
-        ),
+        import("$lib/features/scene-3d-collection/Scene3DCollectionModule.svelte"),
     },
     art_mandala: {
       label: "Mandalas",
@@ -631,8 +630,8 @@ instead of showing an empty shell.
         <input
           type="text"
           class="name-field"
-          placeholder="Collection name"
-          aria-label="New collection name"
+          placeholder={t("browse_ui_collection_name")}
+          aria-label={t("browse_ui_new_collection_name")}
           bind:value={newName}
           onkeydown={handleInputKeydown}
           maxlength="60"
@@ -643,7 +642,7 @@ instead of showing an empty shell.
           class="confirm-create"
           onclick={handleCreate}
           disabled={!newName.trim() || creating}
-          aria-label="Create collection"
+          aria-label={t("browse_ui_create_collection")}
         >
           <i class="fas fa-check" aria-hidden="true"></i>
         </button>
@@ -725,7 +724,7 @@ instead of showing an empty shell.
       <header class="art-detail-bar">
         <button type="button" class="art-back" onclick={backToList}>
           <i class="fas fa-arrow-left" aria-hidden="true"></i>
-          <span>You</span>
+          <span>{t("browse_ui_you")}</span>
         </button>
         <span class="art-detail-title">{ART_DETAIL[artId]?.label}</span>
       </header>
@@ -751,9 +750,9 @@ instead of showing an empty shell.
       <header class="art-detail-bar">
         <button type="button" class="art-back" onclick={backToList}>
           <i class="fas fa-arrow-left" aria-hidden="true"></i>
-          <span>You</span>
+          <span>{t("browse_ui_you")}</span>
         </button>
-        <span class="art-detail-title">Performances</span>
+        <span class="art-detail-title">{t("browse_ui_performances")}</span>
       </header>
     {/if}
     <div class="art-detail-body">
@@ -817,14 +816,14 @@ instead of showing an empty shell.
     </div>
   {:else}
     {#if sharedCollections.length > 0 || sharedCollectionsState.loading || sharedCollectionsState.error}
-      <h4 class="shelf-subheading">Shared with you</h4>
+      <h4 class="shelf-subheading">{t("browse_ui_shared_with_you")}</h4>
       <div class="rail-cards">
         {@render sharedShelfContent(railSelection)}
       </div>
     {/if}
 
     {#if followedCollectionsState.items.length > 0}
-      <h4 class="shelf-subheading">Following</h4>
+      <h4 class="shelf-subheading">{t("browse_following")}</h4>
       <div class="rail-cards">
         {@render followedShelves(railSelection)}
       </div>
@@ -836,7 +835,7 @@ instead of showing an empty shell.
   <AllLibraryView onBack={backToList} />
 {:else if isSideBySide && hasLibrarySession}
   <div class="library-split">
-    <aside class="rail" aria-label="Your collections">
+    <aside class="rail" aria-label={t("browse_ui_your_collections")}>
       <WorkShelfRail
         value={activeShelf}
         sharedAvailable={hasSharedShelf}
@@ -901,7 +900,7 @@ instead of showing an empty shell.
 {:else}
   <div class="collections-list">
     <header class="list-header">
-      <h2 class="list-title">Your work</h2>
+      <h2 class="list-title">{t("browse_ui_your_work")}</h2>
     </header>
 
     {#if !hasLibrarySession}
@@ -938,17 +937,17 @@ instead of showing an empty shell.
         {/each}
       </div>
     {:else}
-      <h3 class="shelf-heading">My Collections</h3>
+      <h3 class="shelf-heading">{t("browse_ui_my_collections")}</h3>
       <div class="card-grid">
         {@render ownShelves(null)}
       </div>
 
-      <h3 class="shelf-heading">Performances</h3>
+      <h3 class="shelf-heading">{t("browse_ui_performances")}</h3>
       <div class="card-grid">
         {@render performancesShelfCard(null)}
       </div>
 
-      <h3 class="shelf-heading">Visuals</h3>
+      <h3 class="shelf-heading">{t("browse_ui_visuals")}</h3>
       <div class="card-grid">
         {@render artShelf(null)}
       </div>
@@ -959,14 +958,14 @@ instead of showing an empty shell.
       </div>
 
       {#if sharedCollections.length > 0 || sharedCollectionsState.loading || sharedCollectionsState.error}
-        <h3 class="shelf-heading">Shared with you</h3>
+        <h3 class="shelf-heading">{t("browse_ui_shared_with_you")}</h3>
         <div class="card-grid">
           {@render sharedShelfContent(null)}
         </div>
       {/if}
 
       {#if followedCollectionsState.items.length > 0}
-        <h3 class="shelf-heading">Following</h3>
+        <h3 class="shelf-heading">{t("browse_following")}</h3>
         <div class="card-grid">
           {@render followedShelves(null)}
         </div>

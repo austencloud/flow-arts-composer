@@ -15,6 +15,7 @@
   import { onMount } from "svelte";
   import { page } from "$app/state";
   import SequenceHeroDemo from "./SequenceHeroDemo.svelte";
+  import { siteCopy } from "../site-copy";
   import { createHeroAct } from "$lib/shared/landing/data/hero-act.svelte";
   import { FALLBACK_DEMO } from "$lib/shared/landing/data/per-visit-demo";
   import { isConstrainedConnection } from "$lib/shared/platform/network-conditions";
@@ -53,7 +54,7 @@
        still carries both the brand and the "notation ... flow arts" phrase. -->
   <h1 class="home-hero-title">
     <span class="title-main">The Kinetic Alphabet</span>
-    <span class="title-sub">Notation for flow arts</span>
+    <span class="title-sub">{siteCopy("Notation for flow arts")}</span>
   </h1>
 
   <SequenceHeroDemo
@@ -75,7 +76,7 @@
     loadPriority="immediate"
   />
 
-  <nav class="hero-actions" aria-label="Start here">
+  <nav class="hero-actions" aria-label={siteCopy("Start here")}>
     <a
       class="composer-cta"
       href="/create"
@@ -86,7 +87,7 @@
           destination: "/create",
         })}
     >
-      <span>Open Flow Arts Composer</span>
+      <span>{siteCopy("Open Flow Arts Composer")}</span>
     </a>
 
     <a
@@ -96,7 +97,7 @@
         trackCtaClick("hero", {
           cta_type: "what_is_tka",
           destination: "/about",
-        })}>What is TKA?</a
+        })}>{siteCopy("What is TKA?")}</a
     >
   </nav>
 </section>

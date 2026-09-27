@@ -7,6 +7,7 @@
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+import { t } from "$lib/shared/i18n/i18n.svelte.js";
 import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
 import type {
   BrowseNavigationConfig,
@@ -197,7 +198,7 @@ export function filterSequencesByNavigation(
     return sequences;
   } catch (error) {
     console.error("Failed to filter sequences by navigation:", error);
-    toast.error("Failed to apply filter. Showing all sequences instead.");
+    toast.error(t("browse_ui_filter_failed"));
     return sequences;
   }
 }

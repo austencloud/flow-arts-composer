@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import {
     getVisibleErrorToasts,
     getOverflowCount,
@@ -15,11 +16,11 @@
   class="toast-region"
   role="status"
   aria-live="polite"
-  aria-label="Notifications"
+  aria-label={t("notifications_title")}
 >
   {#if overflowCount > 0}
     <div class="overflow-badge" aria-live="polite">
-      +{overflowCount} more
+      {t("notifications_overflow", { count: overflowCount })}
     </div>
   {/if}
 
@@ -47,15 +48,15 @@
         <span class="toast-message">{toast.message}</span>
 
         {#if isWarning}
-          <span class="toast-logged" aria-label="Error logged for diagnostics">
+          <span class="toast-logged" aria-label={t("notifications_error_logged")}>
             <i class="fas fa-check" aria-hidden="true"></i>
-            Logged
+{t("notifications_logged")}
           </span>
         {/if}
 
         <button
           class="toast-close"
-          aria-label="Dismiss notification"
+          aria-label={t("notifications_dismiss")}
           onclick={() => dismissErrorToast(toast.id)}
         >
           <i class="fas fa-times" aria-hidden="true"></i>

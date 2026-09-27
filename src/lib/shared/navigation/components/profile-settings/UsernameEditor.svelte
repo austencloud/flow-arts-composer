@@ -5,6 +5,7 @@
   Extracted from AccountSettingsSection for single responsibility.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { checkUsernameAvailability } from "$lib/shared/auth/services/username-validator";
   import type { HapticFeedback } from "../../../application/services/haptic-feedback";
   import type { User } from "firebase/auth";
@@ -121,12 +122,12 @@
         error = "";
       } else {
         isAvailable = false;
-        error = result.error || "Username unavailable";
+        error = result.error || t("nav_ui_username_unavailable");
         suggestions = result.suggestions || [];
       }
     } catch (err) {
       console.error("Failed to check username:", err);
-      error = "Unable to check availability";
+      error = t("nav_ui_unable_to_check_availability");
     } finally {
       isChecking = false;
     }
@@ -152,16 +153,18 @@
       currentUsername = trimmedUsername;
       onUsernameChanged?.(trimmedUsername);
       hapticService?.trigger("success");
-      toast.success("Username updated successfully");
+      toast.success(t("nav_ui_username_updated_successfully"));
       isEditing = false;
       await tick();
       editButton?.focus();
     } catch (err) {
       console.error("Failed to update username:", err);
       hapticService?.trigger("error");
-      saveError = "Username couldn't be saved. Try again.";
+      saveError = t("nav_ui_username_couldn_t_be_saved_try_again");
       toast.error(
-        err instanceof Error ? err.message : "Failed to update username"
+        err instanceof Error
+          ? err.message
+          : t("nav_ui_failed_to_update_username")
       );
     } finally {
       isSaving = false;
@@ -185,7 +188,7 @@
 
 <div data-save-shortcut-scope class="section">
   {#if isEditing}
-    <label class="label" for="username">Username</label>
+    <label class="label" for="username">{t("nav_ui_username")}</label>
     <div class="input-row">
       <div
         class="username-input-wrapper"
@@ -202,7 +205,7 @@
           oninput={handleInput}
           onkeydown={handleKeydown}
           maxlength="20"
-          placeholder="your_username"
+          placeholder={t("nav_ui_your_username")}
           disabled={isSaving}
           aria-invalid={feedbackError ? "true" : "false"}
           aria-describedby={feedbackError ? "username-error" : undefined}
@@ -214,7 +217,7 @@
           class="icon-btn save"
           onclick={save}
           disabled={isSaveDisabled}
-          aria-label="Save username"
+          aria-label={t("nav_ui_save_username")}
         >
           {#if isSaving}
             <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
@@ -226,7 +229,7 @@
           class="icon-btn cancel"
           onclick={cancelEditing}
           disabled={isSaving}
-          aria-label="Cancel editing"
+          aria-label={t("nav_ui_cancel_editing")}
         >
           <i class="fas fa-times" aria-hidden="true"></i>
         </button>
@@ -237,7 +240,7 @@
     {#if isChecking}
       <p class="hint-message checking">
         <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-        Checking availability...
+        {t("nav_ui_checking_availability")}
       </p>
     {:else if feedbackError}
       <p id="username-error" class="hint-message error" role="alert">
@@ -246,7 +249,7 @@
       </p>
       {#if error && suggestions.length > 0}
         <div class="suggestions">
-          <span class="suggestions-label">Try:</span>
+          <span class="suggestions-label">{t("poi_lab_try_label")}</span>
           {#each suggestions as suggestion}
             <button
               type="button"
@@ -261,13 +264,15 @@
     {:else if isAvailable && editedUsername.trim()}
       <p class="hint-message success">
         <i class="fas fa-check-circle" aria-hidden="true"></i>
-        Username available
+        {t("nav_ui_username_available")}
       </p>
     {/if}
   {:else}
     <AccountValueRow
-      label="Username"
-      value={currentUsername ? `@${currentUsername}` : "Not set"}
+      label={t("nav_ui_username")}
+      value={currentUsername
+        ? `@${currentUsername}`
+        : t("profile_pronouns_not_set")}
       empty={!currentUsername}
       onEdit={startEditing}
       bind:buttonRef={editButton}

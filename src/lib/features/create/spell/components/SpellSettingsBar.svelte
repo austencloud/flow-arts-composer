@@ -11,12 +11,19 @@ Container-aware responsive design (2-tier):
 - Desktop (>=700px tall): Vertical flex column with all options visible
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { SpellPreferences } from "../domain/models/spell-models";
   import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { LOOPType, LOOP_TYPE_LABELS } from "$lib/shared/foundation/domain/models/generation/circular-models";
+  import {
+    LOOPType,
+    LOOP_TYPE_LABELS,
+  } from "$lib/shared/foundation/domain/models/generation/circular-models";
   import { LOOPComponent } from "$lib/features/create/generate/shared/domain/constants/loop-components";
-  import { parseLoopComponents, generateLOOPType } from "$lib/shared/create/services/loop-type-utils";
+  import {
+    parseLoopComponents,
+    generateLOOPType,
+  } from "$lib/shared/create/services/loop-type-utils";
   import { LOOP_COMPONENTS } from "$lib/features/create/generate/shared/domain/constants/loop-constants";
   import MorphChipGroup from "$lib/shared/foundation/ui/morph-chip/MorphChipGroup.svelte";
   import MorphChip from "$lib/shared/foundation/ui/morph-chip/MorphChip.svelte";
@@ -41,7 +48,6 @@ Container-aware responsive design (2-tier):
 
   const haptic = getHapticFeedback();
 
-
   // Single unified expansion state for all 5 chips
   let expandedId = $state<string | null>(null);
 
@@ -63,7 +69,6 @@ Container-aware responsive design (2-tier):
     }
   });
 
-
   // Dashes
   let dashValue = $derived.by(() => {
     if (preferences.motionTypeFilter === "no-dash") return "no-dash";
@@ -79,7 +84,10 @@ Container-aware responsive design (2-tier):
   function handleDashChange(v: string) {
     haptic.trigger("selection");
     const mapped = v === "mixed" ? null : v;
-    onPreferenceChange("motionTypeFilter", mapped as SpellPreferences["motionTypeFilter"]);
+    onPreferenceChange(
+      "motionTypeFilter",
+      mapped as SpellPreferences["motionTypeFilter"]
+    );
   }
 
   // Props
@@ -92,7 +100,10 @@ Container-aware responsive design (2-tier):
 
   function handlePropsChange(v: string) {
     haptic.trigger("selection");
-    onPreferenceChange("constraintPreset", v as SpellPreferences["constraintPreset"]);
+    onPreferenceChange(
+      "constraintPreset",
+      v as SpellPreferences["constraintPreset"]
+    );
   }
 
   // Hands
@@ -139,8 +150,9 @@ Container-aware responsive design (2-tier):
     return "Mixed";
   });
 
-  const gridDisplayValue = $derived(gridMode === "diamond" ? "\u25C7" : "\u25A2");
-
+  const gridDisplayValue = $derived(
+    gridMode === "diamond" ? "\u25C7" : "\u25A2"
+  );
 
   /** Check if a set of components round-trips through LOOPType resolution */
   function isRoundTripValid(components: Set<LOOPComponent>): boolean {
@@ -170,7 +182,9 @@ Container-aware responsive design (2-tier):
       onPreferenceChange("selectedLOOPType", null);
       isValidLoopCombo = true;
     } else {
-      const newType = isRoundTripValid(newSet) ? generateLOOPType(newSet) : null;
+      const newType = isRoundTripValid(newSet)
+        ? generateLOOPType(newSet)
+        : null;
       isValidLoopCombo = newType !== null;
       if (newType !== null) {
         onPreferenceChange("makeCircular", true);
@@ -200,7 +214,7 @@ Container-aware responsive design (2-tier):
       <div class="chip-row">
         <MorphChip
           id="dashes"
-          label="Dashes"
+          label={t("create_ui_dashes")}
           bind:value={dashValue}
           options={dashOptions}
           displayValue={dashDisplayValue}
@@ -208,8 +222,8 @@ Container-aware responsive design (2-tier):
         />
         <MorphChip
           id="props"
-          label="Props"
-          expandedLabel="Prop Reversals"
+          label={t("create_ui_props")}
+          expandedLabel={t("create_ui_prop_reversals")}
           bind:value={propsValue}
           options={propsOptions}
           displayValue={propsDisplayValue}
@@ -217,8 +231,8 @@ Container-aware responsive design (2-tier):
         />
         <MorphChip
           id="hands"
-          label="Hands"
-          expandedLabel="Hand Reversals"
+          label={t("create_ui_hands")}
+          expandedLabel={t("create_ui_hand_reversals")}
           bind:value={handsValue}
           options={handsOptions}
           displayValue={handsDisplayValue}
@@ -228,7 +242,7 @@ Container-aware responsive design (2-tier):
       <div class="chip-row">
         <MorphChip
           id="grid"
-          label="Grid"
+          label={t("generator_grid")}
           bind:value={gridChipValue}
           options={gridOptions}
           displayValue={gridDisplayValue}
@@ -243,7 +257,12 @@ Container-aware responsive design (2-tier):
           expandedHeight={200}
         >
           {#snippet expandedContent({ collapse, morphProgress })}
-            <div class="loop-expanded-content" role="group" aria-label="LOOP components" onpointerdown={(e) => e.stopPropagation()}>
+            <div
+              class="loop-expanded-content"
+              role="group"
+              aria-label={t("create_ui_loop_components")}
+              onpointerdown={(e) => e.stopPropagation()}
+            >
               <div class="loop-toggle-grid">
                 {#each LOOP_COMPONENTS as info}
                   {@const isActive = localLoopSelection.has(info.component)}
@@ -277,7 +296,7 @@ Container-aware responsive design (2-tier):
   <!-- DESKTOP LAYOUT: Expanded sections with all options visible -->
   <div class="desktop-layout">
     <div class="setting-section">
-      <span class="section-label">Dashes</span>
+      <span class="section-label">{t("create_ui_dashes")}</span>
       <div class="section-options" role="radiogroup">
         {#each dashOptions as option}
           <button
@@ -294,7 +313,7 @@ Container-aware responsive design (2-tier):
     </div>
 
     <div class="setting-section">
-      <span class="section-label">Prop Reversals</span>
+      <span class="section-label">{t("create_ui_prop_reversals")}</span>
       <div class="section-options" role="radiogroup">
         {#each propsOptions as option}
           <button
@@ -311,7 +330,7 @@ Container-aware responsive design (2-tier):
     </div>
 
     <div class="setting-section">
-      <span class="section-label">Hand Reversals</span>
+      <span class="section-label">{t("create_ui_hand_reversals")}</span>
       <div class="section-options" role="radiogroup">
         {#each handsOptions as option}
           <button
@@ -329,12 +348,15 @@ Container-aware responsive design (2-tier):
 
     <!-- Grid section -->
     <div class="setting-section">
-      <span class="section-label">Grid</span>
+      <span class="section-label">{t("generator_grid")}</span>
       <div class="section-options" role="radiogroup">
         <button
           class="section-option"
           class:selected={gridMode === "diamond"}
-          onclick={() => { haptic.trigger("selection"); onGridModeChange("diamond" as GridMode); }}
+          onclick={() => {
+            haptic.trigger("selection");
+            onGridModeChange("diamond" as GridMode);
+          }}
           role="radio"
           aria-checked={gridMode === "diamond"}
         >
@@ -343,7 +365,10 @@ Container-aware responsive design (2-tier):
         <button
           class="section-option"
           class:selected={gridMode === "box"}
-          onclick={() => { haptic.trigger("selection"); onGridModeChange("box" as GridMode); }}
+          onclick={() => {
+            haptic.trigger("selection");
+            onGridModeChange("box" as GridMode);
+          }}
           role="radio"
           aria-checked={gridMode === "box"}
         >
@@ -354,7 +379,7 @@ Container-aware responsive design (2-tier):
 
     <!-- Loop section - multi-toggle chips in 3x2 grid -->
     <div class="setting-section loop-section">
-      <span class="section-label">Loop</span>
+      <span class="section-label">{t("create_ui_loop")}</span>
       <div class="loop-toggle-grid">
         {#each LOOP_COMPONENTS as info}
           {@const isActive = localLoopSelection.has(info.component)}
@@ -381,7 +406,6 @@ Container-aware responsive design (2-tier):
   </div>
 </div>
 
-
 <style>
   .settings-container {
     display: flex;
@@ -392,7 +416,6 @@ Container-aware responsive design (2-tier):
   }
 
   /* Loop expanded: no special sizing needed - group handles it via min-height */
-
 
   .mobile-layout {
     display: flex;
@@ -477,7 +500,11 @@ Container-aware responsive design (2-tier):
   }
 
   .section-option.selected {
-    background: color-mix(in srgb, var(--theme-accent) 25%, var(--theme-card-bg));
+    background: color-mix(
+      in srgb,
+      var(--theme-accent) 25%,
+      var(--theme-card-bg)
+    );
     border-color: var(--theme-accent);
     color: var(--theme-text);
   }
@@ -523,7 +550,11 @@ Container-aware responsive design (2-tier):
   }
 
   .loop-toggle-chip.active {
-    background: color-mix(in srgb, var(--chip-color, var(--theme-accent)) 20%, var(--theme-card-bg));
+    background: color-mix(
+      in srgb,
+      var(--chip-color, var(--theme-accent)) 20%,
+      var(--theme-card-bg)
+    );
     border-color: var(--chip-color, var(--theme-accent));
     color: var(--theme-text);
   }
@@ -550,8 +581,13 @@ Container-aware responsive design (2-tier):
     font-size: var(--font-size-compact, 12px);
     color: var(--semantic-warning, #f59e0b);
     padding: 4px 8px;
-    background: color-mix(in srgb, var(--semantic-warning, #f59e0b) 10%, transparent);
-    border: 1px solid color-mix(in srgb, var(--semantic-warning, #f59e0b) 25%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-warning, #f59e0b) 10%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-warning, #f59e0b) 25%, transparent);
     border-radius: 6px;
   }
 

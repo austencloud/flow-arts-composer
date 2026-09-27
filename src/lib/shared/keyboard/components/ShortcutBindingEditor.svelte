@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import ConflictWarning from "./settings/ConflictWarning.svelte";
   import KeyboardKeyDisplay from "./settings/KeyboardKeyDisplay.svelte";
@@ -107,7 +108,7 @@
 <aside class="binding-editor" aria-labelledby="shortcut-editor-title">
   <header>
     <div class="title-copy">
-      <span class="eyebrow">Edit shortcut</span>
+      <span class="eyebrow">{t("keyboard_ui_edit_shortcut")}</span>
       <h3 id="shortcut-editor-title">{item.shortcut.label}</h3>
       <p>{contextLabel}</p>
     </div>
@@ -115,7 +116,7 @@
       type="button"
       class="icon-button"
       onclick={onClose}
-      aria-label="Close shortcut editor"
+      aria-label={t("keyboard_ui_close_editor")}
     >
       <i class="fas fa-times" aria-hidden="true"></i>
     </button>
@@ -127,20 +128,20 @@
 
   <dl class="binding-summary">
     <div>
-      <dt>Current</dt>
+      <dt>{t("keyboard_ui_current")}</dt>
       <dd class:muted={item.isDisabled}>
         <KeyboardKeyDisplay parsed={item.effectiveBinding} />
-        {#if item.isDisabled}<span class="off-label">Off</span>{/if}
+        {#if item.isDisabled}<span class="off-label">{t("keyboard_ui_off")}</span>{/if}
       </dd>
     </div>
     <div>
-      <dt>Default</dt>
+      <dt>{t("keyboard_ui_default")}</dt>
       <dd><KeyboardKeyDisplay parsed={item.defaultBinding} size="small" /></dd>
     </div>
   </dl>
 
   <div class="recorder">
-    <span class="field-label">New shortcut</span>
+    <span class="field-label">{t("keyboard_ui_new_shortcut")}</span>
     <button
       bind:this={captureButton}
       type="button"
@@ -153,18 +154,17 @@
       aria-describedby="shortcut-capture-help"
     >
       {#if isCapturing}
-        <span>Press your keys</span>
+        <span>{t("keyboard_ui_press_keys")}</span>
       {:else if pendingBinding}
         <KeyboardKeyDisplay parsed={pendingBinding} size="large" />
-        <span class="record-again">Record again</span>
+        <span class="record-again">{t("keyboard_ui_record_again")}</span>
       {:else}
         <i class="fas fa-keyboard" aria-hidden="true"></i>
-        <span>Record shortcut</span>
+        <span>{t("keyboard_ui_record_shortcut")}</span>
       {/if}
     </button>
     <p id="shortcut-capture-help" class="help-text">
-      Choose Record, then press a key or key combination. Escape stops
-      recording.
+      {t("keyboard_ui_record_help")}
     </p>
   </div>
 
@@ -178,30 +178,30 @@
 
   {#if pendingCombo && errorConflicts.length === 0}
     <button type="button" class="primary-button" onclick={save}>
-      Save shortcut
+      {t("keyboard_ui_save_shortcut")}
     </button>
   {/if}
 
   <div class="management-actions">
     {#if item.isDisabled}
       <button type="button" class="secondary-button" onclick={onEnable}>
-        Turn shortcut on
+        {t("keyboard_ui_turn_on")}
       </button>
     {:else}
       <button type="button" class="secondary-button" onclick={onDisable}>
-        Turn shortcut off
+        {t("keyboard_ui_turn_off")}
       </button>
     {/if}
     {#if item.isCustomized}
       <button type="button" class="secondary-button" onclick={onReset}>
-        Restore default
+        {t("keyboard_ui_restore_default")}
       </button>
     {/if}
   </div>
 
   <p class="device-note">
     <i class="fas fa-laptop" aria-hidden="true"></i>
-    Saved on this device
+    {t("keyboard_ui_saved_on_device")}
   </p>
 </aside>
 

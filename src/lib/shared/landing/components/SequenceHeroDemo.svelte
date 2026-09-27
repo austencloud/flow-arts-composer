@@ -45,6 +45,9 @@
   import { syncHeroElementalGlyphVisibility } from "$lib/shared/landing/services/hero-elemental-glyph-visibility";
   import { prefersReducedData } from "$lib/shared/platform/network-conditions";
   import { markLanding } from "$lib/shared/performance/landing-marks";
+  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
+  import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
 
   let {
     sequence,
@@ -52,6 +55,11 @@
     note,
     leftPropType,
     rightPropType,
+    fanAppearance,
+    propLook,
+    primaryPropColors,
+    leftBuugengFlipped,
+    rightBuugengFlipped,
     onReroll,
     rerolling = false,
     errorMessage = null,
@@ -82,6 +90,14 @@
         sequence with fans/clubs/buugeng instead of the default staves. */
     leftPropType?: string;
     rightPropType?: string;
+    /** Page-local prop appearance (fan build, 2D artwork look, buugeng
+        chirality) for hosts that keep their picks off the app settings. */
+    fanAppearance?: FanAppearance;
+    propLook?: PropLook;
+    /** Optional host-owned color pair; null uses the player's default colors. */
+    primaryPropColors?: ViewerCustomColorPair | null;
+    leftBuugengFlipped?: boolean;
+    rightBuugengFlipped?: boolean;
     /** When provided, a dice button appears that asks the host to swap in a
         freshly generated sequence in place (no page reload). Notation pages
         omit it, so their static demo is unchanged. */
@@ -313,6 +329,11 @@
               cornerToggle,
               leftPropType,
               rightPropType,
+              fanAppearance,
+              propLook,
+              primaryPropColors,
+              leftBuugengFlipped,
+              rightBuugengFlipped,
               onLoopComplete,
               onSequenceBoundary,
               trailSettingsOverride,
