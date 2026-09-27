@@ -11,7 +11,7 @@
 **STEP 4:** Find the first unchecked section. Tell the user which section you're working on and its constraints (word count, character limit, what reviewers look for).
 
 **STEP 5:** Pull relevant context. Depending on the section, read from:
-- `docs/museum/story-bible.md` — for project description, narrative concept
+- `E:/flow-arts-private/museum/story-bible.md` — for project description, narrative concept
 - `E:/flow-arts-private/grants/grant-tracker.md` — for framing notes
 - The codebase itself — for technical description of what Flow Arts Composer does
 - Previous approved drafts in `E:/flow-arts-private/grants/drafts/` — for consistency
