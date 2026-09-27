@@ -3219,6 +3219,8 @@
   "nav_current_module": "Currently in {module}",
   "create_ui_last_used_method": "{name}, last used on this device. {description}",
   "create_ui_last_used": "Last used",
+  "create_ui_account_badge": "Free account",
+  "create_ui_account_method": "{name}, needs a free account. {description}",
   "create_ui_show_guide": "Show guide",
   "create_ui_not_now": "Not now",
   "create_ui_presets": "Presets",

@@ -19,18 +19,26 @@
     ["assemble", 5],
   ]);
 
+  const NO_LOCKED_METHODS: ReadonlySet<string> = new Set();
+
   let {
     methods,
+    lockedMethodIds = NO_LOCKED_METHODS,
     active,
     source,
     lastUsedMode = null,
     onSelect,
+    onLockedSelect,
   }: {
     methods: Section[];
+    /** Methods a guest can see but needs a free account to open. They keep
+     *  their place in the bento so the board never changes shape at sign-in. */
+    lockedMethodIds?: ReadonlySet<string>;
     active: boolean;
     source: CreateFrontDoorSource;
     lastUsedMode?: string | null;
     onSelect: (methodId: string) => void;
+    onLockedSelect?: (methodId: string) => void;
   } = $props();
 
   const orderedMethods = $derived(
@@ -62,14 +70,34 @@
   });
 
   function selectMethod(methodId: string, trigger: HTMLButtonElement): void {
+    const locked = lockedMethodIds.has(methodId);
     haptics?.trigger("selection");
     logCreateMethodSelected({
       method: methodId,
       source,
-      isLastUsed: methodId === lastUsedMode,
+      isLastUsed: !locked && methodId === lastUsedMode,
+      isLocked: locked,
     });
     trigger.blur();
+    if (locked) {
+      onLockedSelect?.(methodId);
+      return;
+    }
     onSelect(methodId);
+  }
+
+  function accessibleName(method: Section): string | undefined {
+    const values = {
+      name: t(method.labelKey),
+      description: t(method.descKey),
+    };
+    if (lockedMethodIds.has(method.id)) {
+      return t("create_ui_account_method", values);
+    }
+    if (method.id === lastUsedMode) {
+      return t("create_ui_last_used_method", values);
+    }
+    return undefined;
   }
 </script>
 
@@ -85,13 +113,17 @@
       class="method-index"
       role="list"
       aria-label={t("create_ui_creation_methods")}
+      data-method-count={orderedMethods.length}
     >
       {#each orderedMethods as method (method.id)}
+        <!-- On the two-column phone board Construct leads with its own row
+             only when that leaves the rest in even pairs. -->
         <div
           class="method-item"
           class:primary-method={method.id === "construct" ||
             method.id === "generate"}
-          class:default-method={method.id === "construct"}
+          class:default-method={method.id === "construct" &&
+            orderedMethods.length % 2 === 1}
           role="listitem"
         >
           <button
@@ -99,15 +131,12 @@
             class="method-card"
             data-method-id={method.id}
             style:--method-color={method.color ?? "var(--theme-accent)"}
-            aria-label={method.id === lastUsedMode
-              ? t("create_ui_last_used_method", {
-                  name: t(method.labelKey),
-                  description: t(method.descKey),
-                })
-              : undefined}
+            aria-label={accessibleName(method)}
             onclick={(event) => selectMethod(method.id, event.currentTarget)}
           >
-            {#if method.id === lastUsedMode}
+            {#if lockedMethodIds.has(method.id)}
+              <LastUsedBadge label={t("create_ui_account_badge")} />
+            {:else if method.id === lastUsedMode}
               <LastUsedBadge />
             {/if}
 
@@ -339,9 +368,9 @@
       align-content: center;
     }
 
-    /* Two primary cards fill the first row. Secondary cards sit three to
-       a row, or four when a signed-in user has all six methods, so
-       Assemble never wraps alone. */
+    /* Two primary cards fill the first row and the secondary cards share
+       the second, so no card ever wraps alone. Three methods sit in one
+       row of three. */
     .method-index {
       grid-template-columns: repeat(12, minmax(0, 1fr));
       column-gap: 16px;
@@ -356,12 +385,16 @@
       grid-column: span 6;
     }
 
-    .method-item:not(.primary-method) {
+    .method-item:not(.primary-method),
+    .method-index[data-method-count="3"] .method-item {
       grid-column: span 4;
     }
 
-    .method-index:has(.method-item:nth-child(6))
-      .method-item:not(.primary-method) {
+    .method-index[data-method-count="4"] .method-item:not(.primary-method) {
+      grid-column: span 6;
+    }
+
+    .method-index[data-method-count="6"] .method-item:not(.primary-method) {
       grid-column: span 3;
     }
 
