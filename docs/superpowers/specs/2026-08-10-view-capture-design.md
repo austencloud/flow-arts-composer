@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-10
 **Status:** approved (Austen, 2026-08-10)
-**Scope:** shared module + dev endpoint + one root-layout listener, so P works on every route
+**Scope:** shared module + dev endpoint + one root-layout listener, so U works on every route
 
 > **Revised 2026-08-10, same day.** First built into the First Fire graybox
 > route alone. Austen pressed P on `/browse/gallery` and nothing happened:
@@ -24,6 +24,19 @@ instantly that shows not only the thing that I'm looking at as an image but also
 the exact coordinates and how you can take a look at that exact coordinates ...
 so that you can autonomously put yourself there take a screenshot and see if the
 image was fixed after you apply the adjustment."*
+
+> **Revised 2026-09-27.** The trigger moved from `P` to `U`. Bare `P` is also
+> the prop-picker drawer's own shortcut (`register-global-shortcuts.ts`), so
+> every press of P silently overwrote the clipboard with a debug capture on
+> the live site as well as in dev, on top of whatever else P was supposed to
+> do. No registered shortcut uses a bare `U`. The poi reversal review page
+> does, to mark a verdict unsure; it claims the press with `preventDefault`,
+> and the listener waits until every handler has seen a press and steps aside
+> when one has claimed it. The listener is now dev-only too: `$app/environment`'s `dev` keeps it out of production
+> entirely, since a debug tool has no business running for a real visitor.
+> The account of the original design below still says `P` in places, because
+> that was the key at the time; read it as history, not as the current
+> binding.
 
 Two halves, and both are required. The image proves what he saw. The pose lets
 the agent stand in the same spot after a change and compare like for like.
@@ -79,11 +92,11 @@ assets, and they must never enter a build.
 ### Global handler, per-scene registration
 
 `ViewCaptureListener.svelte` mounts once in `src/routes/+layout.svelte` and owns
-the P key everywhere. A 3D scene calls `registerViewSource({sceneId, pose,
+the U key everywhere. A 3D scene calls `registerViewSource({sceneId, pose,
 canvas, state})` in `onMount` and returns the disposer; the listener uses it
 when one is registered.
 
-With no registered source - the gallery, the library, any 2D page - P captures
+With no registered source - the gallery, the library, any 2D page - U captures
 the page instead: URL, route, viewport, scroll, and the element under the
 cursor with its DOM path, text and identifying `data-*`. No image there. A DOM
 page has no single canvas to read, and the honest alternatives (a screen-share
@@ -100,9 +113,10 @@ he cannot paste by hand.
 - `FirstFireGrayboxWalkScene.svelte` tracks live pitch from
   `onRotationChange`, applies `?view=` on mount exactly where `?camera=`
   applies, and registers its pose source with the global listener.
-- Trigger: **`P`** plus a "Copy view" button in the review HUD. `C` is crouch,
+- Trigger: **`U`** plus a "Copy view" button in the review HUD. `C` is crouch,
   `V` is the mode toggle and `G` is grab in the camera controller, so those are
-  unavailable. The button exists because a keystroke alone is not discoverable
+  unavailable, and `P` collided with the prop-picker drawer's own shortcut. The
+  button exists because a keystroke alone is not discoverable
   (`clickables-look-like-buttons.md`).
 
 ### The replay URL is the current URL plus `view=`
@@ -157,5 +171,5 @@ adopted the pose, and the live check cannot prove the encoding is stable.
 
 No capture gallery, no saved-view list, no annotation, no diffing of two frames.
 The request is copy-and-paste and that is the entire loop. Other walk scenes
-adopt the pose half with one `registerViewSource` call each; until they do, P
+adopt the pose half with one `registerViewSource` call each; until they do, U
 still captures their page.
