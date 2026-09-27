@@ -109,7 +109,7 @@ describe("reauthenticateWithGoogle", () => {
       email: "firebase@example.com",
       providerData: [
         { providerId: "password", email: "firebase@example.com" },
-        { providerId: "google.com", email: "netsua07@gmail.com" },
+        { providerId: "google.com", email: "linked-google@example.com" },
       ],
     };
     authRef.currentUser = user;
@@ -118,7 +118,7 @@ describe("reauthenticateWithGoogle", () => {
 
     const provider = h.googleProviders[0];
     expect(provider.customParameters).toEqual({
-      login_hint: "netsua07@gmail.com",
+      login_hint: "linked-google@example.com",
     });
     expect(provider.scopes).toEqual(["email", "profile"]);
     expect(h.reauthenticateWithPopup).toHaveBeenCalledWith(user, provider);
@@ -126,14 +126,14 @@ describe("reauthenticateWithGoogle", () => {
 
   it("falls back to the Firebase user email when provider data omits it", async () => {
     authRef.currentUser = {
-      email: "netsua07@gmail.com",
+      email: "linked-google@example.com",
       providerData: [{ providerId: "google.com", email: null }],
     };
 
     await reauthenticateWithGoogle();
 
     expect(h.googleProviders[0].customParameters).toEqual({
-      login_hint: "netsua07@gmail.com",
+      login_hint: "linked-google@example.com",
     });
   });
 });

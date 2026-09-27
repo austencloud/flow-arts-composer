@@ -330,6 +330,9 @@ firebase-service-account.json
 # Private: development strategy & roadmap
 .claude/plans/
 docs/plans/
+
+# Private: grant applications (they live in austencloud/flow-arts-private)
+docs/grants/
 docs/grant-copy.md
 
 # Private: museum lore & narrative strategy

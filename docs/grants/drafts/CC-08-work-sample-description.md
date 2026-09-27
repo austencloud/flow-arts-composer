@@ -1,3 +1,0 @@
-# Work Sample Description (100 words)
-
-TKA Scribe is a web application I designed and built for creating, animating, and sharing flow arts choreography using the Kinetic Alphabet. In this screen recording, I build a sequence from scratch: selecting a starting position, adding beats through an interactive pictograph builder, and playing the result as a real-time animation. The app renders animated figures performing synchronized prop manipulation based on the notation. Each pictograph encodes hand positions, prop orientations, and movement direction. This is the working tool that exists inside the museum game's fiction. What the game claims is ancient, this video shows being built today.

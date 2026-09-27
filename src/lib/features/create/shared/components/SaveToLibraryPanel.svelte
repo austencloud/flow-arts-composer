@@ -14,6 +14,7 @@
 </script>
 
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import PropPairField from "$lib/shared/pictograph/prop/components/PropPairField.svelte";
   import CreatePanelDrawer from "./CreatePanelDrawer.svelte";
   import SaveProgressOverlay from "$lib/features/library/components/SaveProgressOverlay.svelte";

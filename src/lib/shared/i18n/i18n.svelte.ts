@@ -103,17 +103,19 @@ function getInitialLocale(): Locale {
     const match = document.cookie.match(
       new RegExp(`(^| )${LOCALE_COOKIE_NAME}=([^;]+)`)
     );
-    const cookieLocale = match?.[2];
-    if (cookieLocale && isLocale(cookieLocale)) {
+    const cookieLocale = toLocale(match?.[2] ?? "");
+    if (cookieLocale) {
       return cookieLocale;
     }
   }
 
   if (typeof navigator !== "undefined" && navigator.languages) {
-    // Try browser language preference
+    // Browsers name regional variants such as "pt-BR". We pick the plain
+    // language because the Language settings list offers plain languages and
+    // highlights the one in use. A saved regional choice comes from the cookie.
     for (const lang of navigator.languages) {
-      const baseTag = lang.split("-")[0]?.toLowerCase();
-      if (baseTag && isLocale(baseTag)) {
+      const baseTag = toLocale(lang.split("-")[0] ?? "");
+      if (baseTag) {
         return baseTag;
       }
     }
@@ -123,13 +125,21 @@ function getInitialLocale(): Locale {
 }
 
 /**
- * Check if a string is a valid locale (base or regional)
+ * Check if a string is a valid locale (base or regional), ignoring case
  */
-export function isLocale(value: string): value is Locale {
+export function isLocale(value: string): boolean {
+  return toLocale(value) !== undefined;
+}
+
+/**
+ * Find the supported locale a string names, spelled the way our message files
+ * are: "es-mx" and "ES-MX" both give "es-MX". Saved cookies and browsers don't
+ * agree on capitalization, and a differently spelled tag would load English.
+ */
+export function toLocale(value: string): Locale | undefined {
   const lowerValue = value.toLowerCase();
-  return (
-    locales.includes(lowerValue as BaseLocale) ||
-    regionalLocales.includes(lowerValue as RegionalLocale)
+  return [...locales, ...regionalLocales].find(
+    (locale) => locale.toLowerCase() === lowerValue
   );
 }
 
@@ -191,10 +201,11 @@ function updateHtmlLanguage(): void {
  */
 export async function setLocale(locale: Locale): Promise<void> {
   const request = ++localeRequest;
-  if (!isLocale(locale)) {
+  const canonicalLocale = toLocale(locale);
+  if (!canonicalLocale) {
     console.warn(`Invalid locale: ${locale}, falling back to ${baseLocale}`);
-    locale = baseLocale;
   }
+  locale = canonicalLocale ?? baseLocale;
 
   // For regional locales, ensure base locale is loaded first
   const base = getBaseLocale(locale);
