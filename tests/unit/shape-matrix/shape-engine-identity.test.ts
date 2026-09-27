@@ -16,6 +16,15 @@ function read(path: string): string {
   return readFileSync(resolve(path), "utf8");
 }
 
+// German i18n work (commit d299d3c492) moved many of this surface's English
+// literals behind t() keys backed by messages/en.json. Where a test used to
+// assert an inline literal, it now asserts the source calls the key AND that
+// messages/en.json still carries the identical original English copy, so the
+// contract still fails if either the wiring or the wording drifts.
+function readEnglishMessages(): Record<string, string> {
+  return JSON.parse(read("messages/en.json")) as Record<string, string>;
+}
+
 describe("Shape Engine identity", () => {
   it("keeps the product name distinct from its matrix surfaces and legacy name", () => {
     expect(KINETIC_SHAPE_ENGINE_NAME).toBe("Shape Engine");
@@ -34,11 +43,19 @@ describe("Shape Engine identity", () => {
     expect(page).toContain("KINETIC_SHAPE_ENGINE_NAME");
     expect(page).toContain("SHAPE_MATRIX_EXPLORER_LEGACY_NAME");
     expect(shell).toContain("{KINETIC_SHAPE_ENGINE_NAME}");
-    expect(shell).toContain('theory ? "Ratio Playground" : "Level Matrix"');
-    expect(surface).toContain('ariaLabel="Choose a Shape Engine mode"');
-    expect(surface).toContain('"Level Matrix"');
-    expect(surface).toContain('"Explore Levels 1–4"');
-    expect(surface).toContain('"Ratio Playground"');
+    // The compact header's theory/matrix label switch moved behind i18n keys.
+    expect(shell).toContain('t("shape_engine_ratio_playground")');
+    expect(shell).toContain('t("shape_engine_level_matrix")');
+    expect(surface).toContain('ariaLabel={t("shape_engine_choose_mode")}');
+    expect(surface).toContain('t("shape_engine_level_matrix")');
+    expect(surface).toContain('t("shape_engine_explore_levels")');
+    expect(surface).toContain('t("shape_engine_ratio_playground")');
+
+    const en = readEnglishMessages();
+    expect(en["shape_engine_choose_mode"]).toBe("Choose a Shape Engine mode");
+    expect(en["shape_engine_level_matrix"]).toBe("Level Matrix");
+    expect(en["shape_engine_explore_levels"]).toBe("Explore Levels 1–4");
+    expect(en["shape_engine_ratio_playground"]).toBe("Ratio Playground");
   });
 
   it("keeps Lorq Nichols' source visible and the independent-work boundary explicit", () => {
@@ -67,23 +84,42 @@ describe("Shape Engine identity", () => {
     // 2026-09-06 demo-layout redesign (commit 31a3411642); the credit itself
     // did not disappear; it consolidated behind the always-visible About
     // action, whose content the assertions below still verify in full.
-    expect(shell).toContain("aria-label={`About ${KINETIC_SHAPE_ENGINE_NAME}`}");
-    expect(surface).toContain("Build your own 4×4");
+    // German i18n work (commit d299d3c492) then moved these English literals
+    // behind t() keys; check the source calls the key AND messages/en.json
+    // still carries the identical original English copy.
+    expect(shell).toContain('aria-label={t("shape_engine_about_name")}');
+    expect(surface).toContain('t("shape_engine_build_four")');
     expect(shell).not.toContain("prop:hand ratios");
-    expect(about).toContain("<h2>Lorq Nichols’ 144 Shape Matrix</h2>");
+    expect(about).toContain('<h2>{t("shape_engine_source_heading")}</h2>');
     // The 2026-09-06 demo-layout rewrite (commit 31a3411642) reworded the
     // petal-math explanation but kept the same twelve-per-hand, 144-total
     // fact; check the surviving phrasing rather than the retired copy.
-    expect(about).toMatch(
-      /pairs twelve driving styles for\s+each hand into 144 combinations/
-    );
+    expect(about).toContain('t("shape_engine_source_after")');
     expect(about).not.toContain("prop rotations : hand cycles");
     // Same rewrite merged the standalone "What Austen Cloud built" section
     // into this one; the independent-work sentence itself is unchanged.
-    expect(about).toContain("Austen built this app independently");
+    expect(about).toContain('t("shape_engine_independence_prose")');
     expect(about).toContain("KINETIC_SHAPE_ENGINE_AUTHOR");
-    expect(about).toMatch(/not an official\s+Spin Science release/);
-    expect(menu).toContain("Lorq Nichols’ original 144 Shape Matrix");
+    expect(menu).toContain('t("shape_engine_original_matrix")');
+
+    const en = readEnglishMessages();
+    expect(en["shape_engine_about_name"]).toBe("About Shape Engine");
+    expect(en["shape_engine_build_four"]).toBe("Build your own 4×4");
+    expect(en["shape_engine_source_heading"]).toBe(
+      "Lorq Nichols’ 144 Shape Matrix"
+    );
+    expect(en["shape_engine_source_after"]).toMatch(
+      /pairs twelve driving styles for each hand into 144 combinations/
+    );
+    expect(en["shape_engine_independence_prose"]).toContain(
+      "Austen built this app independently"
+    );
+    expect(en["shape_engine_independence_prose"]).toMatch(
+      /not an official Spin Science release/
+    );
+    expect(en["shape_engine_original_matrix"]).toBe(
+      "Lorq Nichols’ original 144 Shape Matrix"
+    );
   });
 
   it("uses the Shape Engine name at entry points without renaming Lorq's work", () => {

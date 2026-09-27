@@ -20,14 +20,22 @@ const canonicalPropRoot = path.join(
  * that still looks plausible.
  */
 const CANONICAL_PROP_SOURCE_HASHES = {
+  // Grip Lab staff length (95ef2c3bff): Prop3D gives the fire double staff a
+  // long-axis stretch of length / 0.9, its authored 900 mm. Shared staff
+  // length: without a length of its own it now falls back to
+  // userProportionsState.staffLength, as Staff3D does.
+  // createRegistryWorkerProp applies the same stretch from options.length,
+  // which the worker snapshot resolves the same way.
   "Prop3D.svelte":
-    "dbb650c26dc0de198ec3e52d8372eed4c0776e736fff1333c4b45aa7919955c3",
+    "325058d080be065746d30769d98724463c32d0dd3c9c30e09e1fab2e94db5ad9",
   // Hand colors (d11b2ce06c): the component re-clones when the hand palette
   // changes. The worker recolors from the same live PROP_COLORS object and
   // rebuilds a performer whose snapshot handColors differ, so it already
   // matches. The unsquared scale and flipLongAxis were mirrored earlier.
+  // lengthScaleY (95ef2c3bff) scales only the model transform's Y, which the
+  // worker's model transform now does too.
   "GltfProp3D.svelte":
-    "37842261e99ef7eac5cc88465ab954f69a5b20090d1aba6314b1b08cb4b9bc5e",
+    "01fc59727841afb81bda5c9b86a6b8d9949f789f1faa2492696dc5f1095dc21b",
   // Flat-grip (43bf94fc40) and Star builds: the component picks the build's
   // own GLB through SEPARATE_BUILD_MODEL_URLS, and fanModelUrl() in
   // worker-gltf-props.ts makes the same choice from the same build.fanBuild

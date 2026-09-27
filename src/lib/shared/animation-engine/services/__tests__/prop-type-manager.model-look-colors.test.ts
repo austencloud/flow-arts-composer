@@ -7,6 +7,7 @@ vi.mock("../svg-generator", () => ({
 }));
 
 import { PropTypeManager } from "../prop-type-manager";
+import { PROP_MODEL_SPRITES } from "$lib/shared/pictograph/prop/domain/prop-model-sprites.generated";
 
 /**
  * The 3D model look is one setting for every 2D surface. Pictographs paint
@@ -74,6 +75,95 @@ function makeManager() {
 const getFrameParams = () => ({}) as never;
 
 describe("PropTypeManager model look with chosen colors", () => {
+  it.each(Object.keys(PROP_MODEL_SPRITES))(
+    "keeps the caller's %s model look when global settings use pictographs",
+    async (spriteType) => {
+      const { ptm, propTextureService } = makeManager();
+      ptm.updateRefs({
+        settingsService: {
+          currentSettings: {
+            propArtwork: "pictograph",
+            triangleGrip: spriteType === "triangle_side" ? "side" : "corner",
+          },
+        } as any,
+      });
+      const propType = spriteType === "triangle_side" ? "triangle" : spriteType;
+      const state = makeState(propType, propType);
+      const props = {
+        leftPropType: propType,
+        rightPropType: propType,
+        propLook: "model",
+      } as const;
+
+      expect(ptm.handleOverrides(props, state, getFrameParams, true)).toBe(
+        true
+      );
+      await vi.waitFor(() =>
+        expect(propTextureService.loadPropTextures).toHaveBeenCalledWith(
+          `${spriteType}__model`,
+          `${spriteType}__model`,
+          true,
+          null
+        )
+      );
+      expect(ptm.handleOverrides(props, state, getFrameParams, true)).toBe(
+        false
+      );
+      expect(propTextureService.loadPropTextures).toHaveBeenCalledTimes(1);
+    }
+  );
+
+  it("keeps the caller's pictograph look when global settings use models", async () => {
+    const { ptm, propTextureService } = makeManager();
+    const state = makeState("buugeng", "buugeng");
+    const props = {
+      leftPropType: "buugeng",
+      rightPropType: "buugeng",
+      propLook: "pictograph",
+    } as const;
+
+    expect(ptm.handleOverrides(props, state, getFrameParams, true)).toBe(true);
+    await vi.waitFor(() =>
+      expect(propTextureService.loadPropTextures).toHaveBeenCalledWith(
+        "buugeng",
+        "buugeng",
+        true,
+        null
+      )
+    );
+    expect(ptm.handleOverrides(props, state, getFrameParams, true)).toBe(false);
+  });
+
+  it("returns to settings artwork when the caller removes its look override", async () => {
+    const { ptm, propTextureService } = makeManager();
+    ptm.updateRefs({
+      settingsService: {
+        currentSettings: { propArtwork: "pictograph" },
+      } as any,
+    });
+    const state = makeState("buugeng", "buugeng");
+    const props = { leftPropType: "buugeng", rightPropType: "buugeng" };
+
+    ptm.handleOverrides(
+      { ...props, propLook: "model" },
+      state,
+      getFrameParams,
+      true
+    );
+    await vi.waitFor(() =>
+      expect(propTextureService.loadPropTextures).toHaveBeenCalledTimes(1)
+    );
+    expect(ptm.handleOverrides(props, state, getFrameParams, true)).toBe(true);
+    await vi.waitFor(() =>
+      expect(propTextureService.loadPropTextures).toHaveBeenLastCalledWith(
+        "buugeng",
+        "buugeng",
+        true,
+        null
+      )
+    );
+  });
+
   it.each(["primaryPropColors", "tunnelPropColors"] as const)(
     "keeps the model capture when %s are set",
     async (colorSource) => {

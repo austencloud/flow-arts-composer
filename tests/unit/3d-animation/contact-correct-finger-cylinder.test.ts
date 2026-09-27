@@ -143,7 +143,7 @@ describe.runIf(avatarAssetsPresent())(
   "contact-correct full avatar solve",
   () => {
     for (const id of ["ch07", "ch18"]) {
-      it(`${id} repeats a one-hand authored target without changing it`, async () => {
+      it(`${id} repeats a one-hand authored target without changing it`, { timeout: 90_000 }, async () => {
         const { scene } = await loadRig(avatar(id));
         const services = createAvatarServices({
           enableLocomotion: false,

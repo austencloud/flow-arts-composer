@@ -86,7 +86,7 @@
       <SegmentedControl
         options={[
           { value: "pictograph", label: "Pictograph" },
-          { value: "model", label: "3D model" },
+          { value: "model", label: "Realistic" },
         ]}
         value={look}
         onchange={(value) => (look = value)}

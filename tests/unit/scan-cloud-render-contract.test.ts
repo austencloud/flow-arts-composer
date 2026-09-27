@@ -83,7 +83,9 @@ describe("QR scan cloud-render contract", () => {
     const modes = source(
       "src/lib/shared/sequence-viewer/services/viewer-modes.ts"
     );
-    expect(modes).toContain("if (scanOrigin) return 'card';");
+    // Prettier's singleQuote:false pass (i18n commit b11df1a24d) reformatted
+    // this file's quote style; the branch itself is unchanged.
+    expect(modes).toContain('if (scanOrigin) return "card";');
     expect(page).toContain("deferInteractiveStartup");
     expect(page).toContain("startInCardThenSplit");
     expect(page).toContain("setScanCardCloudProbe(true)");

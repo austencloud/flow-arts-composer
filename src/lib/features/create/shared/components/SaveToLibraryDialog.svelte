@@ -19,6 +19,7 @@ Allows user to set name, visibility, tags, collections, and notes.
 </script>
 
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { untrack } from "svelte";
   import PropPairField from "$lib/shared/pictograph/prop/components/PropPairField.svelte";
   import { captureActivePropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";

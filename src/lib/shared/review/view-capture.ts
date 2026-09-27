@@ -402,8 +402,56 @@ export async function capturePage(): Promise<PageCapture> {
 }
 
 /**
- * The global P handler's entry point: capture the on-screen scene if one has
- * registered, otherwise capture the page.
+ * The bare key that triggers a capture, in dev builds only.
+ *
+ * No registered shortcut, 3D-scene control or museum control uses a bare U.
+ * One dev page does: the poi reversal review marks a verdict "unsure" with
+ * it, and the listener steps aside there because that page claims the press.
+ * `P` was the first choice and collided with the prop-picker drawer's own
+ * shortcut, so every press also overwrote the clipboard with a debug capture.
+ */
+export const VIEW_CAPTURE_KEY_CODE = "KeyU";
+
+/** A field or editor where the key itself must reach the target, not this listener. */
+export function isTypingTarget(target: EventTarget | null): boolean {
+  const element = target as HTMLElement | null;
+  if (!element) return false;
+  if (element.isContentEditable) return true;
+  return /^(INPUT|TEXTAREA|SELECT)$/.test(element.tagName);
+}
+
+/** The subset of a KeyboardEvent this reads, so a test can pass a plain object. */
+export interface ViewCaptureKeypress {
+  code: string;
+  repeat: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+  metaKey: boolean;
+  altKey: boolean;
+  target: EventTarget | null;
+}
+
+/**
+ * Whether this keydown means "copy the view".
+ *
+ * A bare press of the chosen key only. Any modifier is left alone - Shift,
+ * Ctrl, Cmd or Alt plus this key belongs to whatever else already claims that
+ * combination, never to this listener. A held key must not repeat-fire, and a
+ * text field must keep receiving its own letters.
+ */
+export function isViewCaptureKeypress(event: ViewCaptureKeypress): boolean {
+  if (event.code !== VIEW_CAPTURE_KEY_CODE) return false;
+  if (event.repeat) return false;
+  if (event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) {
+    return false;
+  }
+  if (isTypingTarget(event.target)) return false;
+  return true;
+}
+
+/**
+ * The global key handler's entry point: capture the on-screen scene if one
+ * has registered, otherwise capture the page.
  */
 export async function captureCurrentView(): Promise<ViewCapture | PageCapture> {
   if (!activeSource) return capturePage();

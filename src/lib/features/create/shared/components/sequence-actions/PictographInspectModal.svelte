@@ -109,7 +109,7 @@
         window.matchMedia("(min-width: 1600px)").matches;
       leftOpen = wide;
       rightOpen = wide;
-      lastSelectedColor = null;
+      lastSelectedHand = null;
       calculateArrowPositions();
     }
   });
@@ -122,7 +122,7 @@
     selectedArrowState.clearSelection();
     leftOpen = false;
     rightOpen = false;
-    lastSelectedColor = null;
+    lastSelectedHand = null;
     onClose();
   }
 

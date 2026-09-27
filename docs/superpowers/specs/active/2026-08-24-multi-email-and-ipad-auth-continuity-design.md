@@ -28,8 +28,8 @@ lives in `firebase-functions/src/auth/magicLinkStateStore.test.ts` and
 
 ## Field report
 
-John Cloud had an established Google account under `theprizman@gmail.com` and
-used a magic link sent to `jcld2@live.com` on an iPad. Completing that link in
+John Cloud had an established Google account under a Gmail address and used a
+magic link sent to a separate Live.com address on an iPad. Completing that link in
 Chrome created a second Firebase UID. He also reported that the installed Home
 Screen app would not accept text input and that the email button opened a
 browser instead of the installed app.

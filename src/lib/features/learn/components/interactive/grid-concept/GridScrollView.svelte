@@ -5,6 +5,7 @@
 -->
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import MessageMarkup from "$lib/shared/i18n/MessageMarkup.svelte";
   import LessonGridDisplay from "$lib/shared/pictograph/grid/components/LessonGridDisplay.svelte";
   import GridMergeAnimation from "../grid-merge/GridMergeAnimation.svelte";
   import PageDivider from "../PageDivider.svelte";
@@ -15,7 +16,7 @@
   <div class="scroll-section">
     <h1 class="title">{t("learn_ui_grid_title")}</h1>
     <p class="description">
-      {t("learn_ui_grid_intro")}
+      <MessageMarkup text={t("learn_ui_grid_intro")} />
     </p>
     <div class="grid-container">
       <LessonGridDisplay type="diamond" size="large" />
@@ -28,7 +29,7 @@
   <div class="scroll-section">
     <h1 class="title">{t("learn_ui_two_grid_modes")}</h1>
     <p class="description">
-      {t("learn_ui_merged_grid_intro")}
+      <MessageMarkup text={t("learn_ui_merged_grid_intro")} />
     </p>
     <div class="merge-animation-container">
       <GridMergeAnimation phase="merged" />
@@ -51,7 +52,7 @@
   <div class="scroll-section">
     <h1 class="title">{t("learn_ui_three_point_types")}</h1>
     <p class="description">
-      {t("learn_ui_point_types_intro")}
+      <MessageMarkup text={t("learn_ui_point_types_intro")} />
     </p>
 
     <!-- Point types list for scroll mode -->
@@ -153,7 +154,8 @@
     text-align: center;
   }
 
-  .description strong {
+  /* MessageMarkup renders the bold terms, out of this component's CSS scope. */
+  .description :global(strong) {
     color: var(--theme-text);
     font-weight: 700;
   }

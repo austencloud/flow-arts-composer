@@ -95,7 +95,10 @@ family drill-down, Back/Escape navigation, and animated decision screens.
 `PropSelectionSheet.svelte` provides the bounded Change Prop drawer.
 Searches: prop look, model artwork, prop variants, Change Prop, fan styles.
 `PropLookPicker.svelte` composes `PropBuildPicker.svelte` for captured model
-versus pictograph artwork. `FanStyleOptionsCore.svelte` composes the existing
+("Realistic") versus pictograph artwork. `AppSettings.propArtwork` is the one
+look: `PictographContainer.svelte` and the canvas's `PropTypeManager` both read
+it, and a public route that shows the picker starts the settings service, as the
+sequence viewer and the motion-paths guide do. `FanStyleOptionsCore.svelte` composes the existing
 `FanAppearancePicker.svelte` for fan builds and covers. The effect tuner and
 viewer reuse this gallery; `ScenePropPicker.svelte` adds scene-specific finish
 controls. Extend these owners instead of appending another appearance picker
@@ -194,6 +197,16 @@ host is `ExpandedCardStage.svelte`. Searches: card morph, expand card, grow
 card, bento expand, settings panel morph. Do not FLIP a card into a panel by
 hand; claim the name on both ends and wrap the state change.
 
+The effects roster changing arrangement when an effect is turned on or off
+(two wide picture tiles per row to four small ones, or a name list to an icon
+grid) also routes through `startMorph`. `EffectsPanel.svelte` (`morphRoster`)
+wraps the change and `EffectSelector.svelte` claims a name for each tile's
+box, picture, icon and name only while it runs. This is a view transition
+rather than `createLayoutMotion` because the tiles halve in width: a scale
+flight would squash their names, and a layout flight cannot resize the grid's
+auto rows. Searches: effect roster, effect catalog, effects on off, tile
+morph.
+
 Shared-surface stacking extends `reparentToInspector`: control flights use the
 controls layer and may wait for the canvas to dock, using viewer-local
 `canvasMoving` rather than the aggregate moving flag. Canvas raster sizing
@@ -274,6 +287,7 @@ row, toolbar, dock, bottom sheet, side panel, inspector, crop tool.
 | artifact revision, immutable subject, content digest                                                                                | `shared/artifact-revisions/domain/artifact-revision.ts`; tunnel and sequence persistence use their domain revision owners                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | nested motion, coordinate node, carrier track, world trajectory, arbitrary Mandala layers                                           | `shared/motion-composition/` owns recursive sampling and clock mapping; `shared/mandala/` owns trajectory baking, projection, layer adaptation, timed reveal and SVG export. `TrajectoryMandala.svelte` presents the stationary canvas.                                                                                                                                                                                                                                                                                                                                                                                    |
 | autocomplete, typeahead, async suggestion, combobox                                                                                 | `shared/ui/components/AsyncSuggestionCombobox.svelte`; callers supply search and row presentation                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| translated emphasis, bold or italic in a translation, line break in a translation, markup or rich text in an i18n message           | `shared/i18n/message-markup.ts` reads `<strong>`, `<em>`, and `<br>` in a translated value and `shared/i18n/MessageMarkup.svelte` renders them as real elements without `{@html}`, so each locale wraps its own words; other tags stay literal text. Parents style the elements with `:global(strong)` and `:global(em)`. Closest matches kept separate: `ChangelogRichText` (changelog links and icons), `SanitizedHtml` (DOMPurify with `{@html}`), and split before/after keys, which cannot follow a translation's word order. Decision: create.                                                                       |
 | legacy tunnel, reopen saved tunnel, rebuild tunnel cast                                                                             | `features/tunnel-collection/domain/collected-tunnel-source.ts`; viewer and creator handoff owners consume it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | locomotion, exact steps, stops, turns, pivots, crossed stepping, foot IK, motion matching                                           | `shared/3d/locomotion/destination-walk-plan.ts`, `@austencloud/scene-3d` `LocomotionAnimator` and `FootPlanter`, and `features/stage/locomotion/motion-matching/`; see `.claude/rules/locomotion.md`                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | run, sprint, gait tier, acceleration, braking, air control                                                                          | `@austencloud/scene-3d` `LocomotionAnimator`, `packages/camera-3d/src/lib/ground-velocity.ts`, and `shared/3d/diagnostics/gait/gait-verdicts.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |

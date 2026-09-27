@@ -20,9 +20,18 @@ import {
   HAND_MOTIONS_STAGE_SCHEMA_VERSION,
   migrateHandMotionsSavedStep,
 } from "../../../src/lib/features/learn/components/interactive/motions/hand-motions-stage";
+import { toMessageSegments } from "../../../src/lib/shared/i18n/message-markup";
 
 const readSource = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8");
+
+const readMessages = (locale: string) =>
+  JSON.parse(readSource(`messages/${locale}.json`)) as Record<string, string>;
+
+const emphasisShape = (message: string) =>
+  toMessageSegments(message).map((segment) =>
+    segment.kind === "break" ? "break" : [segment.strong, segment.em]
+  );
 
 describe("canonical concept lesson content", () => {
   it("moves legacy comparison progress past the inserted bridge", () => {
@@ -157,7 +166,9 @@ describe("canonical concept lesson composition", () => {
     expect(motions).toContain(
       "const timingDirectionIndex = HAND_PATH_STEPS.length"
     );
-    expect(motions).toContain('activeMotion?.name ?? "Timing and Direction"');
+    expect(motions.replace(/\s+/g, " ")).toContain(
+      'activeMotion ? tDynamic(`learn_motion_path_${activeMotion.id}_name`) : tDynamic("learn_motion_timing_direction")'
+    );
     expect(motions).toContain('"stageSchemaVersion"');
     expect(motions).toContain("migrateHandMotionsSavedStep");
     expect(motions).toContain('viewMode === "scroll"\n      ? comparisonIndex');
@@ -179,8 +190,8 @@ describe("canonical concept lesson composition", () => {
     // The readout and every example name the placement. The canonical
     // pictograph already draws the glyph, so a second decorative one beside it
     // would print the same fact twice.
-    expect(placementsSrc).toContain(
-      'built ? PLACEMENT_TYPE_INFO[built].label : "Your placement"'
+    expect(placementsSrc.replace(/\s+/g, " ")).toContain(
+      'built ? PLACEMENT_TYPE_INFO[built].label : t("learn_ui_your_placement")'
     );
     expect(placementsSrc).toContain("PLACEMENT_TYPE_INFO[example.kind].label");
     expect(placementsSrc).not.toContain("TKAWordGlyph");
@@ -227,7 +238,9 @@ describe("canonical concept lesson composition", () => {
     expect(timingBoard).toContain("onStepChange={syncFocusedStep}");
     expect(timingBoard).toContain("showElementalGlyph");
     expect(timingBoard).toContain("externalPlaying={playing}");
-    expect(timingBoard).toContain("Back to all six relationships");
+    expect(timingBoard).toContain(
+      'ariaLabel={tDynamic("learn_timing_board_back_all_aria")}'
+    );
     expect(timingBoard).toContain("mode.id.toUpperCase()");
     expect(timingBoard).not.toContain("mode.element.element");
     expect(timingBoard).not.toMatch(
@@ -237,10 +250,20 @@ describe("canonical concept lesson composition", () => {
     // independent examples (placement, timing, direction), dropping the old
     // timing-heading/direction-heading ids and the timingMode/directionMode
     // state names along with it. Assert the current structure instead.
-    expect(timingIntro).toContain('aria-label="Timing" use:renderGateTarget={gate}>');
-    expect(timingIntro).toContain("<h3>Timing</h3>");
-    expect(timingIntro).toContain('aria-label="Direction">');
-    expect(timingIntro).toContain("<h3>Direction</h3>");
+    // 245d999978 moved each section's heading, which doubles as its label,
+    // into the catalog.
+    expect(timingIntro.replace(/\s+/g, " ")).toContain(
+      'aria-label={tDynamic("learn_timing_intro_timing_heading")} use:renderGateTarget={gate} >'
+    );
+    expect(timingIntro).toContain(
+      '<h3>{tDynamic("learn_timing_intro_timing_heading")}</h3>'
+    );
+    expect(timingIntro.replace(/\s+/g, " ")).toContain(
+      'aria-label={tDynamic("learn_timing_intro_direction_heading")} >'
+    );
+    expect(timingIntro).toContain(
+      '<h3>{tDynamic("learn_timing_intro_direction_heading")}</h3>'
+    );
     expect(timingIntro).toContain("SegmentedControl");
     expect(timingIntro).toContain('semantics="radiogroup"');
     expect(timingIntro).toContain('let timing = $state<TimingMode>("together");');
@@ -318,16 +341,70 @@ describe("canonical concept lesson composition", () => {
     );
 
     // Connective copy is the guide's own prose, verbatim (lt1-abc-ghi) —
-    // approved via docs/learn/copy-reviews/words-alpha-beta.md.
-    expect(words).toContain(
-      "The first words we will learn correspond to VTG’s 1:1 motions."
+    // approved via docs/learn/copy-reviews/words-alpha-beta.md, including the
+    // line break and the bold-italic clause. The i18n pass once flattened both
+    // to plain text, so the catalog's markup is pinned here, not just its words.
+    const english = readMessages("en");
+    const german = readMessages("de");
+    expect(words).toMatch(
+      /<MessageMarkup\s+text=\{t\("learn_ui_first_words_instruction"\)\}\s*\/>/
     );
-    expect(words).toContain(
-      "you’ll need to use body turns and/or negative space"
+    expect(words).toMatch(
+      /<strong>\{t\("learn_ui_six_words_practice_instruction"\)\}<\/strong/
     );
-    expect(words.replace(/\s+/g, " ")).toContain(
+    expect(toMessageSegments(english.learn_ui_first_words_instruction)).toEqual(
+      [
+        {
+          kind: "text",
+          text: "The first words we will learn correspond to VTG’s 1:1 motions.",
+          strong: false,
+          em: false,
+        },
+        { kind: "break" },
+        { kind: "text", text: "To execute these, ", strong: false, em: false },
+        {
+          kind: "text",
+          text: "you’ll need to use body turns and/or negative space",
+          strong: true,
+          em: true,
+        },
+        { kind: "text", text: ".", strong: false, em: false },
+      ]
+    );
+    expect(emphasisShape(german.learn_ui_first_words_instruction)).toEqual(
+      emphasisShape(english.learn_ui_first_words_instruction)
+    );
+    expect(english.learn_ui_six_words_practice_instruction).toBe(
       "Practice each word once in both directions, then again starting with thumbs out."
     );
+  });
+
+  it("keeps the grid lesson's bold terms in its translated sentences", () => {
+    // The same i18n pass flattened these too. Each bold term names what the
+    // learner should find on the grid at that step.
+    const english = readMessages("en");
+    const boldTerms = {
+      learn_ui_grid_intro: ["4-point grid"],
+      learn_ui_grid_two_modes_intro: ["Diamond", "Box"],
+      learn_ui_diamond_directions: ["Diamond"],
+      learn_ui_box_directions: ["Box"],
+      learn_ui_merged_grid_intro: ["Diamond + Box"],
+      learn_ui_center_point_intro: ["center point"],
+      learn_ui_hand_points_intro: ["Hand points"],
+      learn_ui_outer_points_intro: ["Outer points"],
+      learn_ui_point_types_intro: ["center, hand, and outer"],
+    };
+
+    expect(
+      Object.fromEntries(
+        Object.keys(boldTerms).map((key) => [
+          key,
+          toMessageSegments(english[key] ?? "").flatMap((segment) =>
+            segment.kind === "text" && segment.strong ? [segment.text] : []
+          ),
+        ])
+      )
+    ).toEqual(boldTerms);
   });
 
   it("keeps video, animation, card, and notes together without revealing the full deck", () => {
@@ -356,8 +433,8 @@ describe("canonical concept lesson composition", () => {
     expect(stage).toContain("InlineAnimationPlayer");
     expect(stage).toContain("ChoreoCard");
     expect(stage).toContain("PanelGroup");
-    expect(stage).toContain("Performance video");
-    expect(stage).toContain("Guide notes");
+    expect(stage).toContain('tDynamic("learn_word_stage_performance_video")');
+    expect(stage).toContain('tDynamic("learn_word_stage_guide_notes")');
     expect(stage).toContain("showWordHeader={false}");
     expect(stage).toContain("showWord={false}");
     expect(stage).toContain("hideTkaGlyph");
