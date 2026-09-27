@@ -21,6 +21,9 @@
   passes leftTurnsOverride/rightTurnsOverride, so the user's sticky Create-tab
   turns (localStorage) never leak in. Every visible demo value stays at or
   below 1.5 turns, so the public examples do not imply a higher ceiling.
+  The start picker is the same again: presets only, with the picker's saved
+  Create-tab choices neither read nor written. Presets are also what the
+  attract act taps, so a saved Build choice would leave it nothing to pick.
 
   Fully self-contained — owns its own local $state and deliberately does NOT
   touch the shared create-tutorial singleton, so this preview can never collide
@@ -887,6 +890,8 @@
               <mod.default
                 {startPlacementState}
                 embedded
+                lockedPath="presets"
+                rememberPreferences={false}
                 leftPropTypeOverride={effectiveLeftPropType}
                 rightPropTypeOverride={effectiveRightPropType}
               />

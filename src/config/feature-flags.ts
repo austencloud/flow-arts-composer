@@ -401,6 +401,34 @@ export function getSsrRenderedFeatureComponentPaths(): string[] {
 }
 
 /**
+ * Route trees that opt out of SSR. A tree's layout sets `ssr = false` for every
+ * page in it; the other entries hold one page (plus its own helpers) whose
+ * `+page.ts` sets it. tests/unit/ssr-emptied-routes.test.ts checks that every
+ * page under each entry resolves to `ssr = false`.
+ */
+const SSR_DISABLED_ROUTE_PATHS: string[] = [
+  "src/routes/test/",
+  "src/routes/[...appPath]/",
+  "src/routes/app/",
+  "src/routes/admin/",
+  "src/routes/(dev)/",
+  "src/routes/demo/",
+  "src/routes/1995/",
+  "src/routes/1989/",
+  "src/routes/1998/",
+  "src/routes/2003/",
+  "src/routes/coven/",
+  "src/routes/endless-spinner/",
+  "src/routes/hall-of-shame/",
+  "src/routes/grant-feature/",
+  "src/routes/render-pictographs/",
+  "src/routes/tools/warm-thumbnails/",
+  "src/routes/from/spiroanim/[cellKey]/",
+  "src/routes/(public)/composer/auth-lab/",
+  "src/routes/(public)/shop/success/",
+];
+
+/**
  * Route directory prefixes whose `.svelte` components are EMPTIED (not
  * resolve-stubbed) in the SSR build.
  *
@@ -411,22 +439,19 @@ export function getSsrRenderedFeatureComponentPaths(): string[] {
  * the `load` hook keeps the file in the manifest while dropping its entire
  * import graph.
  *
- * /test routes are `ssr = false` (src/routes/test/+layout.ts), so the server
- * never renders their components — yet SvelteKit still emits a server entry
- * per route and Vite bundles it into _worker.js. /test carried 1.28 MiB of
- * entries plus test-only deps (pdfjs-dist, pdf-lib, the 600 KB chosen-mandalas
- * showcase data), which is what tipped the Worker back over 25 MiB on
- * 2026-07-18 (26.9 MiB, commit 19de86ec38). Emptying them server-side is free:
- * ssr=false means the component is never rendered, and the client build keeps
- * the real pages.
+ * Routes that set `ssr = false` never render their components on the server,
+ * yet SvelteKit still emits a server entry per route and Vite bundles it into
+ * _worker.js. /test alone carried 1.28 MiB of entries plus test-only deps
+ * (pdfjs-dist, pdf-lib, the 600 KB chosen-mandalas showcase data), which is
+ * what tipped the Worker back over 25 MiB on 2026-07-18 (26.9 MiB, commit
+ * 19de86ec38). Emptying them server-side is free: ssr=false means the
+ * component is never rendered, and the client build keeps the real pages.
  *
- * Deliberately NOT the whole DEV_ONLY_ROUTE_PATTERNS list: the other dev
- * routes (embed/, demo/, (dev)/, ...) inherit the root `ssr = true`, so an
- * emptied component there WOULD render (blank) server-side. Only add a route
- * dir here after verifying it sets `ssr = false`.
+ * Never list a route that renders on the server: its emptied component would
+ * render blank. /embed, for example, inherits the root `ssr = true`.
  */
 export function getSsrEmptiedRoutePaths(): string[] {
-  return ["src/routes/test/"];
+  return [...SSR_DISABLED_ROUTE_PATHS];
 }
 
 /**

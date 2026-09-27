@@ -57,6 +57,7 @@
   } from "../_data/motion-path-explorer-state.svelte";
   import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
   import { registerLoopDetector } from "$lib/shared/create/get-loop-detector";
+  import { initializeAppServices } from "$lib/shared/application/state/services.svelte";
   import type { TurnValue } from "$lib/shared/create/services/level-turn-values";
   import type { MandalaPathShape } from "$lib/shared/mandala/domain/mandala-types";
 
@@ -426,6 +427,11 @@
   }
 
   onMount(() => {
+    // The toy box's prop look, fan build, colours and grip are the viewer's
+    // saved settings, the ones the canvas and the card's pictographs draw.
+    // Until the settings owner starts, those picks are dropped. The canvas
+    // already loads it, so starting it here adds no download.
+    initializeAppServices().catch(() => {});
     registerLoopDetector(loopDetector);
     void loadMatrix();
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");

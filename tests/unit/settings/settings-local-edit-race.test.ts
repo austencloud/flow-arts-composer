@@ -1151,6 +1151,135 @@ describe("one account document shared by several tabs", () => {
     expect(tabA.currentSettings.hapticFeedback).toBe(false);
   });
 
+  it("lets go of a failed edit once another tab delivers it", async () => {
+    const tabA = await openTab();
+    const tabB = await openTab();
+
+    // B's upload is rejected, so its edit waits in the shared queue.
+    failNextWrite();
+    await tabB.updateSetting("reducedMotion", true);
+    await settle();
+
+    // A's next save carries B's queued edit to the account.
+    await tabA.updateSetting("hapticFeedback", false);
+    await settle();
+    expect(server.reducedMotion).toBe(true);
+    expect(localStorage.getItem(queueKey)).toBeNull();
+
+    // Another device then turns reduced motion back off.
+    commit({ reducedMotion: false });
+    expect(tabB.currentSettings.reducedMotion).toBe(false);
+
+    // B's next save, for an unrelated setting, must not put B's old value
+    // back over that change.
+    await tabB.updateSetting("musicianMode", true);
+    await settle();
+
+    expect(server).toMatchObject({ reducedMotion: false, musicianMode: true });
+    expect(tabB.currentSettings.reducedMotion).toBe(false);
+  });
+
+  it("does not resend a delivered edit whose next change arrived before the delivery was confirmed", async () => {
+    const tabA = await openTab();
+    const tabB = await openTab();
+
+    failNextWrite();
+    await tabB.updateSetting("reducedMotion", true);
+    await settle();
+
+    // A's save delivers B's queued edit, and another device turns reduced
+    // motion back off before A hears that its write succeeded. B sees both
+    // snapshots while its edit still sits in the queue, and none after.
+    persister.saveSettings.mockImplementationOnce(async (payload) => {
+      commit(payload);
+      commit({ reducedMotion: false });
+    });
+    await tabA.updateSetting("hapticFeedback", false);
+    await settle();
+    expect(localStorage.getItem(queueKey)).toBeNull();
+
+    await tabB.updateSetting("musicianMode", true);
+    await settle();
+
+    expect(server).toMatchObject({ reducedMotion: false, musicianMode: true });
+    expect(tabB.currentSettings.reducedMotion).toBe(false);
+  });
+
+  it("gives way to a newer failed edit another tab queued for the same setting", async () => {
+    const tabA = await openTab();
+    const tabB = await openTab();
+
+    // B picks 3/4, then A picks 6/8. Both uploads are rejected, and A's newer
+    // choice replaces B's in the shared queue.
+    failNextWrite();
+    await tabB.updateSetting("defaultTimeSignature", "3/4");
+    await settle();
+    failNextWrite();
+    await tabA.updateSetting("defaultTimeSignature", "6/8");
+    await settle();
+
+    // B's next save, for an unrelated setting, carries the queue.
+    await tabB.updateSetting("musicianMode", true);
+    await settle();
+
+    expect(server.defaultTimeSignature).toBe("6/8");
+    expect(tabB.currentSettings.defaultTimeSignature).toBe("6/8");
+  });
+
+  it("still uploads a newer edit after another tab delivers the queued older one", async () => {
+    const tabA = await openTab();
+    const tabB = await openTab();
+
+    failNextWrite();
+    await tabB.updateSetting("reducedMotion", true);
+    await settle();
+
+    // A's save delivers B's queued edit.
+    await tabA.updateSetting("hapticFeedback", false);
+    await settle();
+    expect(server.reducedMotion).toBe(true);
+
+    // B turns reduced motion back off, which is newer than anything the
+    // queue held.
+    await tabB.updateSetting("reducedMotion", false);
+    await settle();
+
+    expect(server.reducedMotion).toBe(false);
+    expect(tabB.currentSettings.reducedMotion).toBe(false);
+  });
+
+  it("lets go of a failed prop pick whole once another tab delivers it", async () => {
+    const tabA = await openTab();
+    const tabB = await openTab();
+
+    // B's left-hand pick is rejected, so the whole pair waits in the queue.
+    failNextWrite();
+    await tabB.updateSettings({ leftPropType: PropType.FAN });
+    await settle();
+
+    await tabA.updateSetting("hapticFeedback", false);
+    await settle();
+    expect(server).toMatchObject({
+      leftPropType: PropType.FAN,
+      rightPropType: PropType.STAFF,
+    });
+
+    // Another device then picks clubs for both hands.
+    const clubs = {
+      leftPropType: PropType.CLUB,
+      rightPropType: PropType.CLUB,
+      propType: PropType.CLUB,
+      catDogMode: false,
+    };
+    commit(clubs);
+
+    await tabB.updateSetting("musicianMode", true);
+    await settle();
+
+    expect(server).toMatchObject(clubs);
+    expect(tabB.currentSettings).toMatchObject(clubs);
+  });
+
   it("retires a whole-settings queue entry written before per-key queueing", async () => {
     server.hapticFeedback = false;
     localStorage.setItem(

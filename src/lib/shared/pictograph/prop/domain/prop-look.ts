@@ -24,8 +24,9 @@ import {
 /**
  * How the 2D animation canvas draws a prop.
  *
- * - `model`: a flat capture of the same 3D model the viewer's 3D mode renders,
- *   pre-lit in the blue and red motion colors.
+ * - `model` ("Realistic" to viewers, since it is drawn flat): a capture of the
+ *   same 3D model the viewer's 3D mode renders, pre-lit in the blue and red
+ *   motion colors.
  * - `pictograph`: the flat notation artwork, recolored per hand at runtime.
  *
  * Fan keeps its own richer appearance contract (build, frame, cover); this
@@ -437,7 +438,7 @@ export function propLookOptions(propType: string): readonly PropLookOption[] {
   return [
     {
       id: "model",
-      label: "3D model",
+      label: "Realistic",
       image: modelSpriteArtwork(normalized, "left"),
       crop: sprite ? modelSpriteCrop(sprite) : undefined,
     },

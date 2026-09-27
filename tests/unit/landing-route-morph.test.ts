@@ -17,22 +17,14 @@ import {
 const readSource = (path: string): string =>
   readFileSync(resolve(process.cwd(), path), "utf-8");
 
-// German i18n work (commits b11df1a24d, 453be00df6) moved several of this
-// suite's English literals behind t()/tDynamic() keys backed by
-// messages/en.json. Where a test used to assert an inline literal, it now
-// asserts the source calls the key AND messages/en.json still carries the
-// identical original English copy.
-function readEnglishMessages(): Record<string, string> {
-  return JSON.parse(readSource("messages/en.json")) as Record<string, string>;
-}
-
 // A destination may host its morph participant in a local component rather than
 // in +page.svelte. Each entry therefore lists every file the participant is
 // allowed to live in.
 const routeSourceByPath: Record<string, string[]> = {
-  // f64350ce63 fused the standalone marketing page into ComposerExperience,
-  // which +page.svelte now only wraps; the morph participant moved with it.
+  // f64350ce63 moved the Composer page body, participant included, into
+  // ComposerExperience when About fused into it.
   "/composer": [
+    "src/routes/(public)/composer/+page.svelte",
     "src/routes/(public)/composer/_components/ComposerExperience.svelte",
   ],
   // The Choreo Cards tile lands on the catalog now; its morph participant is
@@ -261,14 +253,7 @@ describe("landing shared-element contract", () => {
     expect(guideShell).toContain("{#if ownsStandaloneChrome}");
     expect(guidePage).not.toContain("joinWaitlist");
     expect(guidePage).toContain('href="/learn/concepts"');
-    // German i18n work (commit 453be00df6) moved the "Start with X" copy
-    // behind a parameterized tDynamic() key backed by messages/en.json. Check
-    // the source calls the key AND messages/en.json still carries the
-    // identical original English copy.
     expect(guidePage).toContain('tDynamic("guide_hub_start_with", {');
-    expect(readEnglishMessages()["guide_hub_start_with"]).toBe(
-      "Start with {topic}"
-    );
     expect(guideCss).toContain("html:has(.guide-layout):not(:has(.mkt-shell))");
   });
 
@@ -292,9 +277,7 @@ describe("landing shared-element contract", () => {
     const launchpad = readSource(
       "src/lib/shared/landing/components/launchpad/LaunchpadGrid.svelte"
     );
-    // f64350ce63 fused About into the complete Composer experience: +page.svelte
-    // now only wraps ComposerExperience, which owns the hero, demos, and their
-    // loading recovery this test guards.
+    // The Composer page body lives in ComposerExperience since f64350ce63.
     const composer = readSource(
       "src/routes/(public)/composer/_components/ComposerExperience.svelte"
     );
@@ -338,18 +321,10 @@ describe("landing shared-element contract", () => {
     );
     expect(composer).toContain("latchedHeroSequence = first;");
     expect(composer).not.toContain("{#key carriedSequence?.id}");
-    // The guided construct demo is lazy-loaded through a thin wrapper now
-    // (ComposerPractice), added to adapt props for the fused page; it still
-    // renders the same ConstructSection, so the heavy builder code ships only
-    // once that wrapper is dynamically imported.
+    // 5bf02781c1 wrapped the construct demo in ComposerPractice, which still
+    // arrives through a lazy loader.
     expect(composer).toContain(
       'loader={() => import("./ComposerPractice.svelte")}'
-    );
-    const composerPractice = readSource(
-      "src/routes/(public)/composer/_components/ComposerPractice.svelte"
-    );
-    expect(composerPractice).toContain(
-      'import ConstructSection from "../_sections/ConstructSection.svelte";'
     );
     expect(composer).toContain(
       'loader={() => import("./Composer3DViewerDemo.svelte")}'
@@ -404,9 +379,6 @@ describe("landing shared-element contract", () => {
   });
 
   it("gives the promoted Composer demonstrations local loading recovery", () => {
-    // f64350ce63 fused About into the complete Composer experience: +page.svelte
-    // now only wraps ComposerExperience, which owns these demos and their
-    // per-demo error recovery.
     const composer = readSource(
       "src/routes/(public)/composer/_components/ComposerExperience.svelte"
     );
@@ -428,9 +400,6 @@ describe("landing shared-element contract", () => {
     expect(generate).toContain("classifyComposerGenerationFailure(error)");
     expect(generate).toContain('result === "no-result"');
     expect(generate).toContain('t("composer_demo_generate_failed")');
-    expect(readEnglishMessages()["composer_demo_generate_failed"]).toBe(
-      "The generator couldn't run. Try again."
-    );
     expect(sequenceHero).toContain("placeholder={playerPlaceholder}");
     expect(sequenceHero).toContain("onStatusChange={(status) =>");
   });

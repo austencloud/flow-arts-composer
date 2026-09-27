@@ -55,6 +55,8 @@ Controls moved below the grid for better UX
     rightPropTypeOverride = undefined,
     initialStartPlacement = null,
     lockedGridMode = undefined,
+    lockedPath = undefined,
+    rememberPreferences = true,
     validationMessage = null,
     onPlacementSubmitted = () => {},
     heading,
@@ -75,6 +77,12 @@ Controls moved below the grid for better UX
     rightPropTypeOverride?: PropType;
     initialStartPlacement?: PictographData | null;
     lockedGridMode?: GridMode;
+    /** Pins the picker to one start method and hides the method switch. */
+    lockedPath?: StartPlacementPath;
+    /** False keeps this picker out of the saved picker preferences: it starts
+     *  from the defaults and saves nothing, so a public demo neither inherits
+     *  a visitor's Create-tab choices nor changes them. */
+    rememberPreferences?: boolean;
     validationMessage?: string | null;
     onPlacementSubmitted?: (
       placement: PictographData,
@@ -94,6 +102,7 @@ Controls moved below the grid for better UX
   // State for showing advanced picker
   let showAdvancedPicker = $state(false);
   let pickerPath = $state<StartPlacementPath>("presets");
+  const activePath = $derived(lockedPath ?? pickerPath);
   let buildPathOpened = false;
   let buildPlacementSubmitted = false;
 
@@ -145,13 +154,13 @@ Controls moved below the grid for better UX
       void pickerState.loadPlacements();
     }
 
-    if (pickerPath === "build") {
+    if (activePath === "build") {
       buildPathOpened = true;
     }
   });
 
   onDestroy(() => {
-    if (pickerPath === "build" && buildPathOpened && !buildPlacementSubmitted) {
+    if (activePath === "build" && buildPathOpened && !buildPlacementSubmitted) {
       logConstructStartPlacementCancelled("build");
     }
   });
@@ -160,6 +169,7 @@ Controls moved below the grid for better UX
    * Load persisted picker preferences from localStorage
    */
   function loadPersistedPreferences() {
+    if (!rememberPreferences) return;
     try {
       const stored =
         localStorage.getItem(STORAGE_KEY) ??
@@ -238,6 +248,7 @@ Controls moved below the grid for better UX
    * Persist current preferences to localStorage
    */
   function persistPreferences() {
+    if (!rememberPreferences) return;
     try {
       const prefs = {
         showAdvanced: showAdvancedPicker,
@@ -272,7 +283,7 @@ Controls moved below the grid for better UX
   // Handle placement selection
   async function handlePlacementSelect(placement: PictographData) {
     hapticService?.trigger("selection");
-    const submittedPath = pickerPath;
+    const submittedPath = activePath;
     if (submittedPath === "build") {
       buildPlacementSubmitted = true;
     }
@@ -346,41 +357,49 @@ Controls moved below the grid for better UX
 </script>
 
 <!-- The header keeps its geometry when the selected method changes. -->
-<div class="start-placement-picker" data-testid="start-placement-picker">
-  <div class="picker-header">
-    {#if !embedded}
-      <div class="heading-region">
-        <Crossfade
-          key={suppressHeading}
-          animateHeight
-          duration={DURATION.emphasis}
-        >
-          {#if !suppressHeading}
-            <div class="workspace-heading">
-              {#if heading}
-                {@render heading()}
-              {:else}
-                <p class="workspace-hint">
-                  {t("create_ui_choose_your_start_placement")}
-                </p>
-              {/if}
-            </div>
-          {/if}
-        </Crossfade>
-      </div>
-    {/if}
+<div
+  class="start-placement-picker"
+  class:headerless={embedded && lockedPath !== undefined}
+  data-testid="start-placement-picker"
+>
+  {#if !embedded || lockedPath === undefined}
+    <div class="picker-header">
+      {#if !embedded}
+        <div class="heading-region">
+          <Crossfade
+            key={suppressHeading}
+            animateHeight
+            duration={DURATION.emphasis}
+          >
+            {#if !suppressHeading}
+              <div class="workspace-heading">
+                {#if heading}
+                  {@render heading()}
+                {:else}
+                  <p class="workspace-hint">
+                    {t("create_ui_choose_your_start_placement")}
+                  </p>
+                {/if}
+              </div>
+            {/if}
+          </Crossfade>
+        </div>
+      {/if}
 
-    <div class="path-selector">
-      <SegmentedControl
-        options={START_PLACEMENT_PATHS}
-        value={pickerPath}
-        onchange={handlePathChange}
-        color="accent"
-        size="md"
-        ariaLabel={t("create_ui_start_placement_method")}
-      />
+      {#if lockedPath === undefined}
+        <div class="path-selector">
+          <SegmentedControl
+            options={START_PLACEMENT_PATHS}
+            value={pickerPath}
+            onchange={handlePathChange}
+            color="accent"
+            size="md"
+            ariaLabel={t("create_ui_start_placement_method")}
+          />
+        </div>
+      {/if}
     </div>
-  </div>
+  {/if}
 
   {#if validationMessage}
     <p class="validation-message" role="alert">{validationMessage}</p>
@@ -389,12 +408,12 @@ Controls moved below the grid for better UX
   <!-- Path/view changes crossfade; grid mode still updates in place. -->
   <div class="picker-view">
     <Crossfade
-      key={`${pickerPath}-${showAdvancedPicker}`}
+      key={`${activePath}-${showAdvancedPicker}`}
       duration={DURATION.normal}
       fill
     >
       <div class="picker-content">
-        {#if pickerPath === "build"}
+        {#if activePath === "build"}
           <BuildStartPlacement
             gridMode={pickerState.currentGridMode}
             leftPropType={effectiveLeftPropType}
@@ -438,7 +457,7 @@ Controls moved below the grid for better UX
   </div>
 
   <!-- Controls Footer - below grid (hidden when embedded, e.g. the create tutorial) -->
-  {#if !embedded && pickerPath === "presets"}
+  {#if !embedded && activePath === "presets"}
     <div class="controls-footer">
       <div class="orientation-controls">
         <OrientationCycler
@@ -850,6 +869,12 @@ Controls moved below the grid for better UX
       background: var(--theme-panel-bg);
     }
 
+    /* With no header, the host surface frames the picker; this padding would
+       only shrink the presets inside a frame that already has room. */
+    .start-placement-picker.headerless {
+      padding: 0;
+    }
+
     .picker-header {
       display: grid;
       grid-template-columns: minmax(12rem, 1fr) auto minmax(12rem, 1fr);
@@ -880,7 +905,8 @@ Controls moved below the grid for better UX
       justify-self: end;
     }
 
-    .picker-view {
+    /* Divides the grid from the header, so only when one is there. */
+    .picker-header ~ .picker-view {
       border-top: 1px solid var(--theme-stroke);
       padding-top: 16px;
       box-sizing: border-box;

@@ -43,11 +43,17 @@ export function removeStep(
     `Removing beat ${stepIndex} and ${stepsToRemove - 1} subsequent steps`
   );
 
-  // Push undo snapshot before removal
+  // Push undo snapshot before removal. The description is the Undo/Redo
+  // button label, so it counts steps from 1.
+  const firstStep = stepIndex + 1;
+  const lastStep = stepIndex + stepsToRemove;
   createModuleState.pushUndoSnapshot(UndoOperationType.REMOVE_BEATS, {
     stepIndex,
     stepsRemoved: stepsToRemove,
-    description: `Remove step ${stepIndex} and ${stepsToRemove - 1} subsequent steps`,
+    description:
+      lastStep > firstStep
+        ? `Remove steps ${firstStep} to ${lastStep}`
+        : `Remove step ${firstStep}`,
   });
 
   // Remove the beat and all subsequent steps with staggered animation

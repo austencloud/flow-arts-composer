@@ -3,6 +3,7 @@
   import { onMount } from "svelte";
   import { afterNavigate, onNavigate, replaceState } from "$app/navigation";
   import { page } from "$app/state";
+  import { dev } from "$app/environment";
   import MarketingChrome from "$lib/shared/landing/components/MarketingChrome.svelte";
   import ViewCaptureListener from "$lib/shared/review/ViewCaptureListener.svelte";
   import { detectSiteMode, type SiteMode } from "../config/domains";
@@ -185,6 +186,7 @@
     "/atlas",
     "/faq",
     "/tricks",
+    "/flowers",
     "/learn/staff-spinning-choreography",
     // The archive, moved off /notation on 2026-09-03. A single page, not a
     // subtree: nothing renders under /history.
@@ -357,8 +359,13 @@
     return common;
   }
 
+  // The SSR check is static, so the server build drops every import above.
+  // `typeof window` alone is a runtime check that Rollup keeps, which bundled
+  // the whole app shell into the Cloudflare Worker.
   let preloadedImports: ReturnType<typeof startAppImports> | null =
-    typeof window !== "undefined" && detectSiteMode() === "app"
+    !import.meta.env.SSR &&
+    typeof window !== "undefined" &&
+    detectSiteMode() === "app"
       ? startAppImports()
       : null;
 
@@ -872,10 +879,14 @@
   <meta charset="utf-8" />
 </svelte:head>
 
-<!-- P copies the current view - camera pose and frame in a 3D room, URL and
-     the element under the cursor everywhere else. Mounted at the root because
-     "when I see something in the app" means any route, not one dev page. -->
-<ViewCaptureListener />
+<!-- Bare U copies the current view: camera pose and frame in a 3D room, URL
+     and the element under the cursor everywhere else. Mounted at the root
+     because "when I see something in the app" means any route, not one dev
+     page. It is a debug tool, so dev builds only: `dev` is fixed at build
+     time and production never mounts the listener. -->
+{#if dev}
+  <ViewCaptureListener />
+{/if}
 
 {#if containerError}
   <div class="error-screen">

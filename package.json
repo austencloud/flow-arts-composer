@@ -54,6 +54,7 @@
     "check": "node scripts/svelte-kit-sync-if-needed.mjs && cross-env NODE_OPTIONS=--max-old-space-size=8192 svelte-check --tsconfig ./tsconfig.json --compiler-warnings \"state_referenced_locally:ignore\"",
     "audit:frames": "node scripts/audit-frame-budget.mjs",
     "check:fast": "node scripts/svelte-kit-sync-if-needed.mjs && svelte-fast-check --tsconfig ./tsconfig.json",
+    "check:full": "node scripts/svelte-kit-sync-if-needed.mjs && cross-env NODE_OPTIONS=--max-old-space-size=12288 svelte-check --tsconfig ./tsconfig.check-full.json --compiler-warnings \"state_referenced_locally:ignore\"",
     "check:tsc": "node scripts/svelte-kit-sync-if-needed.mjs && node scripts/tsc-gate.mjs",
     "check:watch": "node scripts/svelte-kit-sync-if-needed.mjs && cross-env NODE_OPTIONS=--max-old-space-size=8192 svelte-check --tsconfig ./tsconfig.json --compiler-warnings \"state_referenced_locally:ignore\" --watch",
     "wt:status": "node scripts/worktree-automerge.mjs --skip-checks",

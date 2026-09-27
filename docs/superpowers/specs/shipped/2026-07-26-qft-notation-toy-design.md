@@ -34,8 +34,8 @@ This is a **test route**, not a public page. It does not go on the notation
 hub. The catalog decision stands: the public page is a sourced catalog and does
 not explain other people's systems.
 
-If this ever becomes public-facing, that requires Charlie's blessing first. He
-is reachable at charlicopter@gmail.com, published in the source article.
+If this ever becomes public-facing, that requires Charlie's blessing first. His
+contact details are published in the source article.
 Showing him the private version *is* that conversation; do not skip ahead of it.
 
 **QfT as published is single-plane.** A forum question about horizontal-plane
