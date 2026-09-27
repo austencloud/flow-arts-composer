@@ -67,7 +67,7 @@ describe("PropGrid fan look credit", () => {
     expect(document.querySelector(".rail-credit")).toBeNull();
   });
 
-  it("offers the global 3D model choice in a captured prop's rail", async () => {
+  it("offers the global Realistic choice in a captured prop's rail", async () => {
     const onPropLookChange = vi.fn();
     render(PropGrid, {
       selectedPropType: PropType.STAFF,
@@ -80,7 +80,7 @@ describe("PropGrid fan look credit", () => {
     });
 
     await page.getByTestId("prop-look-chip").click();
-    const model = page.getByRole("radio", { name: "3D model" });
+    const model = page.getByRole("radio", { name: "Realistic" });
     const pictograph = page.getByRole("radio", { name: "Pictograph" });
     await expect.element(model).toBeVisible();
     await expect.element(pictograph).toHaveAttribute("aria-checked", "true");
@@ -150,13 +150,13 @@ describe("PropGrid fan look credit", () => {
       .element(page.getByRole("radio", { name: "Pictograph" }))
       .toHaveAttribute("aria-checked", "true");
     await expect
-      .element(page.getByRole("radio", { name: "3D model" }))
+      .element(page.getByRole("radio", { name: "Realistic" }))
       .toBeVisible();
     await expect
       .element(page.getByRole("button", { name: "Big" }))
       .toBeVisible();
 
-    await page.getByRole("radio", { name: "3D model" }).click();
+    await page.getByRole("radio", { name: "Realistic" }).click();
     expect(onPropLookChange).toHaveBeenCalledWith("model");
 
     await page.getByRole("button", { name: "Back to all props" }).click();
@@ -164,7 +164,7 @@ describe("PropGrid fan look credit", () => {
       .element(page.getByRole("button", { name: "Select Buugeng prop type" }))
       .toBeVisible();
     await expect
-      .element(page.getByRole("radio", { name: "3D model" }))
+      .element(page.getByRole("radio", { name: "Realistic" }))
       .not.toBeInTheDocument();
   });
 });
