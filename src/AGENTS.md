@@ -14,6 +14,11 @@ remain higher priority.
   reactive state.
 - UI changes consume the existing design system. Do not introduce a second
   primitive, token family, motion system, or layout shell for an owned behavior.
+- Every surface on a page draws a prop with the same artwork. The canvas,
+  pictographs, sequence cards, previews and exports read one prop look, fan
+  build and grip: the app settings, or the page's own values passed to every
+  surface it shows. A page whose prop picker writes settings starts the
+  settings service.
 - Classify dynamic geometry: prevent accidental movement by reserving space;
   animate intentional structural change through shared motion owners. Pointer
   dragging follows the pointer and reduced motion reaches the final state

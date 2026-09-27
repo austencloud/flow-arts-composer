@@ -1,0 +1,13 @@
+{
+  // `npm run check:full`: svelte-check with TypeScript's 20 MB cap lifted.
+  //
+  // The language service drops every project file once the non-TypeScript
+  // files (our .svelte components) pass 20 MB. Ours did on 2026-08-01, and
+  // `npm run check` has checked declaration files alone ever since, reporting
+  // "0 errors". This config checks everything. It stays out of tsconfig.json
+  // until the backlog it reveals is cleared; CI runs it as an advisory job.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "disableSizeLimit": true
+  }
+}

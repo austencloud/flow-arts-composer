@@ -309,7 +309,7 @@
   }
 
   /**
-   * Contribute this room's camera to the global P handler. Registered rather
+   * Contribute this room's camera to the global U handler. Registered rather
    * than key-bound: the shortcut is app-wide, and a room only supplies the
    * pose and the frame that the shared capture wraps.
    */

@@ -41,13 +41,11 @@ describe("post-studio early-access flag", () => {
 });
 
 describe("Create tab access", () => {
-  it("releases Fuse to user accounts while Assemble stays admin-only", () => {
-    const fuse = getDefaultFeatureConfig("tab:create:fuse");
-    const assemble = getDefaultFeatureConfig("tab:create:assemble");
+  it.each(["fuse", "assemble"])("releases %s to user accounts", (tab) => {
+    const config = getDefaultFeatureConfig(`tab:create:${tab}`);
 
-    expect(fuse?.enabled).toBe(true);
-    expect(fuse?.minimumRole).toBe("user");
-    expect(assemble?.minimumRole).toBe("admin");
+    expect(config?.enabled).toBe(true);
+    expect(config?.minimumRole).toBe("user");
   });
 });
 

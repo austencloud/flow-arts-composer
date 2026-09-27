@@ -7,6 +7,7 @@
 import { describe, expect, it } from "vitest";
 import {
   AUTH_NUDGE_TEXTS,
+  createMethodNudgeTrigger,
   getAuthPromptContent,
   moduleNudgeTrigger,
   type AuthNudgeTrigger,
@@ -41,6 +42,9 @@ describe("AUTH_NUDGE_TEXTS — one phrasing for the account ask", () => {
         "guest-first-save",
         "loop-step-cap-guest",
         "loop-locked-guest",
+        "method:assemble",
+        "method:fuse",
+        "method:tunnel",
         "module:learn",
         "module:library",
         "module:other",
@@ -186,5 +190,28 @@ describe("module gate prompt", () => {
       expect(trigger).toBe("module:other");
       expect(AUTH_NUDGE_TEXTS[trigger]).not.toContain("saved sequences");
     }
+  });
+});
+
+describe("Create method gate prompt", () => {
+  // A guest who taps a locked method on the Create front door should hear
+  // what that method does, not a generic "open this part of the app".
+  it("names the method the guest tapped", () => {
+    expect(createMethodNudgeTrigger("fuse")).toBe("method:fuse");
+    expect(createMethodNudgeTrigger("tunnel")).toBe("method:tunnel");
+    expect(createMethodNudgeTrigger("assemble")).toBe("method:assemble");
+    expect(getAuthPromptContent("method:fuse", "signup").title).toContain(
+      "Fuse"
+    );
+    expect(getAuthPromptContent("method:tunnel", "signup").title).toContain(
+      "Tunnel"
+    );
+    expect(getAuthPromptContent("method:assemble", "signup").title).toContain(
+      "Assemble"
+    );
+  });
+
+  it("falls back to the neutral ask for a method without its own copy", () => {
+    expect(createMethodNudgeTrigger("construct")).toBe("module:other");
   });
 });
