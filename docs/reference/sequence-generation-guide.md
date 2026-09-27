@@ -32,7 +32,8 @@ You don't need to pre-compute bridges. Just call `generate_sequence` with a cons
 
 ### The Workflow
 
-1. **Read the humor profile** from `mcp-server/src/core/humor-profile.json`
+1. **Read the humor profile** from `E:/flow-arts-private/humor/humor-profile.json`
+   in the private repo. `FLOW_ARTS_PRIVATE_DIR` overrides the clone location.
 2. **Present 4 tagline options** based on the humor profile
 3. **Wait for selection**
 4. **Generate the sequence** with the chosen tagline:
@@ -46,7 +47,8 @@ You don't need to pre-compute bridges. Just call `generate_sequence` with a cons
    ```
 
 Do not run the training command as an automatic side effect of generating a
-sequence. It modifies tracked repository data.
+sequence. It modifies training data tracked in the private repo; commit that
+change there with an explicit path.
 
 ### Austen's Humor Profile (Summary)
 

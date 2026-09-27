@@ -93,7 +93,7 @@ later gates are pending.
 | Concern                    | Canonical owner                  | Evidence path                                             | Current conflict                                                              |
 | -------------------------- | -------------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | Creative direction         | Museum tracker                   | `C2tvT3lr69ss7EqvYknm`                                    | None                                                                          |
-| Story canon                | Museum story bible               | `docs/museum/story-bible.md`                              | No Ember-specific story claim is introduced                                   |
+| Story canon                | Museum story bible               | `E:/flow-arts-private/museum/story-bible.md`              | No Ember-specific story claim is introduced                                   |
 | Room shell and transitions | Ember environment runtime        | `src/lib/shared/3d/environments/scenes/EmberScene.svelte` | This is an orbit environment, not a navigable museum room                     |
 | Performer roster           | Viewer3D runtime                 | `src/routes/test/viewer-3d/Viewer3DWorkbench.svelte`      | No performer identity is changed                                              |
 | TKA motion                 | Not applicable                   | `domainProofRequired: false` in `scene-gates.json`        | No letter, position, motion, or sequence fact is asserted                     |
