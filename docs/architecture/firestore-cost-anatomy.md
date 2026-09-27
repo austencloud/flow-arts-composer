@@ -1,7 +1,7 @@
 # Firestore and GCP Cost Anatomy
 
 Measured 2026-09-03, against the August 2026 invoice for
-`the-kinetic-alphabet` (billing account `01F0A3-6FAE36-2C77FA`).
+`the-kinetic-alphabet`.
 
 This document exists so nobody re-derives this investigation, and so nobody
 re-proposes a lever that was already measured and killed. The enforced
