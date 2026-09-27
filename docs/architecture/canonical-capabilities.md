@@ -98,7 +98,14 @@ Searches: prop look, model artwork, prop variants, Change Prop, fan styles.
 ("Realistic") versus pictograph artwork. `AppSettings.propArtwork` is the one
 look: `PictographContainer.svelte` and the canvas's `PropTypeManager` both read
 it, and a public route that shows the picker starts the settings service, as the
-sequence viewer and the motion-paths guide do. `FanStyleOptionsCore.svelte` composes the existing
+sequence viewer and the motion-paths guide do. Sequence cards read it through
+`PreviewCellRenderOptions.propLook` (`ChoreoCard.svelte`, then
+`resolvePreviewCellRender`), and personal card exports carry it in
+`visibilityOverrides.propLook`. `renderedPropLook` adds the look to cell and
+layer cache keys only when a captured model replaces a prop. Printed and
+scanned cards stay notation artwork: the deck profile and the scan card's
+cloud cells omit the look, as they omit the fan build (decided 2026-09-27).
+`FanStyleOptionsCore.svelte` composes the existing
 `FanAppearancePicker.svelte` for fan builds and covers. The effect tuner and
 viewer reuse this gallery; `ScenePropPicker.svelte` adds scene-specific finish
 controls. Extend these owners instead of appending another appearance picker
