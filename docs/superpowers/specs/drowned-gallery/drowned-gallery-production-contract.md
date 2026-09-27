@@ -60,7 +60,7 @@ weightlessness → reflection.
 | Concern | Canonical owner | Evidence path | Current conflict |
 |---|---|---|---|
 | Creative direction | Design spec + this conversation's direction | `../2026-08-09-drowned-gallery-channels-design.md` | Supersedes the 2026-08-02 single S-path gallery; tracker capture pending |
-| Story canon | Story bible | `docs/museum/story-bible.md` | None known for Water |
+| Story canon | Story bible | `E:/flow-arts-private/museum/story-bible.md` | None known for Water |
 | Room shell and transitions | Compiled cave floor plan | `src/lib/features/museum/data/vulcan-cave-floor-plan.ts` | Resolved: gallery grew to 30 × 30 m (Q3); downstream rooms moved — see Gate 1 notes |
 | Performer roster | Live museum data | `vulcan-cave-floor-plan.ts` (`cave-water-a/b/c` in the gallery's bells) | None — `CAVE_MODE_ROOMS` / `ROOM_CONTENT` repointed to `cave-water-gallery`, retiring the 2026-08-02 loose end #5 |
 | TKA motion | Flow Arts MCP | Calls recorded 2026-08-09 (A, B, C explanations) | None |

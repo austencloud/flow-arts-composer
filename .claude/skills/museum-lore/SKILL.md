@@ -15,14 +15,20 @@ Lore-focused discussion mode for The Kinetic Archive. Writers' room energy. This
 
 ## The Two-Layer Rule
 
-**Layer 1: Story Bible** (`docs/museum/story-bible.md`) is the canonical source of truth.
+**Layer 1: Story Bible** (`E:/flow-arts-private/museum/story-bible.md`) is the canonical source of truth.
 **Layer 2: Tracker** (`node scripts/museum-dev.js`) is the audit trail.
 
 If there's a conflict, the story bible wins. The tracker records how you got there, not where you are.
 
+The story bible is private. It lives in the private repo
+`austencloud/flow-arts-private`, cloned at `E:/flow-arts-private`, so never
+recreate it in this public repository. If the clone is missing, run
+`gh repo clone austencloud/flow-arts-private E:/flow-arts-private`. Commit story
+bible changes in that repo with explicit paths.
+
 ## Before Any Lore Discussion
 
-**Read the story bible first.** Always. Before brainstorming, discussing, or proposing changes. Use the Read tool on `docs/museum/story-bible.md`. This prevents proposing ideas that contradict resolved decisions.
+**Read the story bible first.** Always. Before brainstorming, discussing, or proposing changes. Use the Read tool on `E:/flow-arts-private/museum/story-bible.md`. This prevents proposing ideas that contradict resolved decisions.
 
 ## Instructions
 
@@ -83,7 +89,7 @@ This step is **required** before ending any lore session. It prevents orphaned p
 | Proposal | **Promote** (user says yes -> `museum promote <id>`) or **Reject** (`museum <id> verdict rejected "reason"`) |
 | Question | **Answer** (`museum <id> answer "..."`) or **Carry** (tag with `carries-to-next-session`) |
 
-**Step 3:** Update `docs/museum/story-bible.md` with any promoted proposals or significant decisions. Add tracker IDs to the Canonical Decisions table.
+**Step 3:** Update `E:/flow-arts-private/museum/story-bible.md` with any promoted proposals or significant decisions. Add tracker IDs to the Canonical Decisions table, then commit the change in the private repo.
 
 **Step 4:** Run cascade check on major changes: `node scripts/museum-dev.js cascade <decisionId>`
 
