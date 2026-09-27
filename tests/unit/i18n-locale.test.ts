@@ -53,4 +53,21 @@ describe("locale selection", () => {
     expect(i18n.t("action_cancel")).toBe("Cancel");
     expect(document.documentElement.lang).toBe("en");
   });
+
+  it("keeps a regional choice and shows its base language", async () => {
+    const i18n = await import("../../src/lib/shared/i18n/i18n.svelte");
+    await i18n.setLocale("es-MX");
+    expect(i18n.getLocale()).toBe("es-MX");
+    expect(i18n.t("action_cancel")).toBe("Cancelar");
+    expect(document.cookie).toContain("PARAGLIDE_LOCALE=es-MX");
+  });
+
+  it("restores a saved regional choice in its canonical spelling", async () => {
+    vi.spyOn(navigator, "languages", "get").mockReturnValue(["en-US"]);
+    document.cookie = "PARAGLIDE_LOCALE=es-mx; path=/";
+    const i18n = await import("../../src/lib/shared/i18n/i18n.svelte");
+    await i18n.initI18n();
+    expect(i18n.getLocale()).toBe("es-MX");
+    expect(i18n.t("action_cancel")).toBe("Cancelar");
+  });
 });
