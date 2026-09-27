@@ -1,11 +1,16 @@
 <script lang="ts">
   /**
-   * Global "copy this view" key handler.
+   * Global "copy this view" key handler. Dev builds only - the root layout
+   * mounts this behind an `{#if dev}` so a real visitor's build never loads
+   * it and bare U never does anything on the live site.
    *
-   * Mounted once in the root layout so P works on every route. Austen pressed P
-   * on /browse/gallery and nothing happened, because the first version of this
-   * lived on one dev route - which is not what "when I see something in the
-   * app" means.
+   * Mounted once in the root layout so U works on every route. Austen pressed
+   * the key on /browse/gallery and nothing happened, because the first
+   * version of this lived on one dev route - which is not what "when I see
+   * something in the app" means. It used to be bound to P, but bare P is also
+   * the prop-picker drawer's own shortcut, so every press of P silently
+   * overwrote the clipboard with a debug capture on top of opening the
+   * drawer. U collides with nothing else registered in the app.
    *
    * A 3D scene that has registered a view source contributes its camera pose
    * and a frame. Everywhere else this captures the page: URL, viewport, scroll,
@@ -15,23 +20,14 @@
   import { toast } from "$lib/shared/toast/state/toast-state.svelte";
   import {
     captureCurrentView,
+    isViewCaptureKeypress,
     trackPointer,
   } from "$lib/shared/review/view-capture";
 
   let busy = false;
 
-  function isTypingTarget(target: EventTarget | null): boolean {
-    const element = target as HTMLElement | null;
-    if (!element) return false;
-    if (element.isContentEditable) return true;
-    return /^(INPUT|TEXTAREA|SELECT)$/.test(element.tagName);
-  }
-
   async function handleKeydown(event: KeyboardEvent) {
-    if (event.code !== "KeyP" || event.repeat || busy) return;
-    // Ctrl/Cmd+P is print, Alt+P belongs to the OS. Only a bare P is ours.
-    if (event.metaKey || event.ctrlKey || event.altKey) return;
-    if (isTypingTarget(event.target)) return;
+    if (busy || !isViewCaptureKeypress(event)) return;
 
     event.preventDefault();
     busy = true;
