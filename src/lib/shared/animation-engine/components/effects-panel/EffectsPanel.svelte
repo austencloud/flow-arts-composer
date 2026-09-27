@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Snippet, Component } from "svelte";
+  import { flushSync, type Snippet, type Component } from "svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { effectUiLabel } from "./effect-ui-label";
   import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
@@ -31,6 +31,8 @@
   import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import { DURATION } from "$lib/shared/transitions/transitions";
+  import { startMorph } from "$lib/shared/transitions/results-morph";
+  import { claimedViewTransitionName } from "$lib/shared/transitions/claimed-view-transition-name";
   import EffectTuneStrip from "$lib/shared/effects/components/EffectTuneStrip.svelte";
   import { primaryControls } from "$lib/shared/effects/domain/effect-control-manifest";
   import { createEffectControlOverrides } from "$lib/shared/effects/effect-control-fields";
@@ -126,7 +128,7 @@
   // tiles need and the dock the rest. That height depends on the width alone,
   // so while you compare effects the grid stays still under the pointer (see
   // .sb-footer). Only turning effects on or off changes the arrangement, and
-  // the view Crossfade animates that change.
+  // morphRoster carries the same tiles from one arrangement to the other.
   // Fractional sizes, floored once at the end: a panel 736.5px tall reports a
   // clientHeight of 737, and a catalog sized from that overflows by half a
   // pixel and puts a scrollbar on the host.
@@ -155,14 +157,18 @@
   const rosterWidth = $derived(
     Math.floor(panelRect?.width ?? 0) - CATALOG_CHROME_X
   );
-  const catalogFit = $derived(
-    fill && pictureHost && activeEffect === "none"
+  /** The arrangement the roster takes whenever nothing is on. */
+  const restingCatalogFit = $derived(
+    fill && pictureHost
       ? fitEffectCatalog({
           width: rosterWidth,
           height: catalogRoom - CATALOG_CHROME_Y,
           count: rosterCount,
         })
       : null
+  );
+  const catalogFit = $derived(
+    activeEffect === "none" ? restingCatalogFit : null
   );
   const rosterFit = $derived(
     pictureHost
@@ -218,6 +224,94 @@
         ? "catalog"
         : "browser"
   );
+
+  // ── Roster morph ──────────────────────────────────────────────────────────
+  // The catalog and the roster are one grid in two arrangements, so turning an
+  // effect on or off moves and resizes the tiles you were looking at instead
+  // of fading them out and a smaller copy in. A same-document view transition
+  // does the carrying: while it runs, each tile's box, picture, icon and name
+  // claim names (EffectSelector) and travel on their own, the section's box
+  // stretches with them, and the dock, the tune badge and the Off button's
+  // label swap where they sit (view-transitions.css). No arrangement change,
+  // no morph: switching from one effect to another leaves the grid where it
+  // is.
+  //
+  // The view Crossfade keeps one key across a carried change. Any other way
+  // the arrangement changes (a keyboard shortcut, the canvas menu, reduced
+  // motion, a browser without view transitions) moves the key on, and the
+  // Crossfade fades between the two arrangements as before.
+  const componentId = $props.id();
+  const morphId = componentId.replace(/[^\w-]/g, "");
+  let rosterMorphs = $state(0);
+  const rosterMorphName = $derived(rosterMorphs > 0 ? `fx-${morphId}` : null);
+  let carryingArrangement = false;
+  let rosterEpoch = 0;
+  let shownArrangement: string | null = null;
+  const rosterKey = $derived.by(() => {
+    const arrangement = catalogFit ? "catalog" : "browser";
+    if (
+      shownArrangement !== null &&
+      arrangement !== shownArrangement &&
+      !carryingArrangement
+    ) {
+      rosterEpoch += 1;
+    }
+    shownArrangement = arrangement;
+    return `roster-${rosterEpoch}`;
+  });
+  const sidebarKey = $derived(
+    sidebarView.startsWith("detail-") ? sidebarView : rosterKey
+  );
+  const ROSTER_MORPH_CLASS = "effect-roster-morph-active";
+
+  function carry(mutate: () => void): void {
+    carryingArrangement = true;
+    try {
+      flushSync(mutate);
+    } finally {
+      carryingArrangement = false;
+    }
+  }
+
+  /** Run a change that turns effects on or off, carrying the tiles across. */
+  function morphRoster(mutate: () => void): void {
+    if (sidebarView.startsWith("detail-") || !restingCatalogFit) {
+      mutate();
+      return;
+    }
+    // A second toggle while the first is still moving: rearranging the live
+    // grid retargets the running transition, so the tiles turn around
+    // mid-flight instead of fading.
+    if (rosterMorphs > 0) {
+      carry(mutate);
+      return;
+    }
+
+    const root = document.documentElement;
+    root.classList.add(ROSTER_MORPH_CLASS);
+    // The names have to be on the tiles before the browser captures them.
+    flushSync(() => (rosterMorphs += 1));
+    const finish = () => {
+      rosterMorphs -= 1;
+      root.classList.remove(ROSTER_MORPH_CLASS);
+    };
+    const transition = startMorph(
+      () => {
+        carryingArrangement = true;
+        mutate();
+      },
+      async () => {
+        carryingArrangement = false;
+      }
+    );
+    if (!transition) {
+      // Ran plainly: the Crossfade takes it.
+      carryingArrangement = false;
+      finish();
+      return;
+    }
+    void transition.finished.catch(() => {}).finally(finish);
+  }
 
   // Trails and fire keep a few values outside their effect intent. Both viewer
   // surfaces use the same adapters so their FX controls display and edit the
@@ -407,18 +501,26 @@
       return;
     }
     const previous = activeEffect;
-    customizeOpen = false;
-    CustomizeComponent = null;
-    effectsConfigState.setActiveEffect(effectId);
+    const apply = () => {
+      customizeOpen = false;
+      CustomizeComponent = null;
+      effectsConfigState.setActiveEffect(effectId);
+    };
+    if (previous === "none") morphRoster(apply);
+    else apply();
     reportSetting("active_effect", previous, effectId);
   }
 
   function handleSidebarDisable(): void {
     const previous = activeEffect;
-    sidebarDetailOpen = false;
-    customizeOpen = false;
-    CustomizeComponent = null;
-    effectsConfigState.setActiveEffect("none");
+    const apply = () => {
+      sidebarDetailOpen = false;
+      customizeOpen = false;
+      CustomizeComponent = null;
+      effectsConfigState.setActiveEffect("none");
+    };
+    if (previous !== "none") morphRoster(apply);
+    else apply();
     reportSetting("active_effect", previous, "none");
   }
 
@@ -650,7 +752,7 @@
          4x4 tile grid dissolving through an inspector's stacked rows is two
          unrelated layouts printed on top of each other. -->
     <Crossfade
-      key={sidebarView}
+      key={sidebarKey}
       animateHeight
       mode="swap"
       duration={DURATION.fast}
@@ -662,8 +764,18 @@
           style:height={sidebarView === "catalog"
             ? `${catalogRoom}px`
             : undefined}
+          use:claimedViewTransitionName={{
+            name: `${rosterMorphName}-section`,
+            enabled: !!rosterMorphName,
+          }}
         >
-          <div class="sb-browser-head">
+          <div
+            class="sb-browser-head"
+            use:claimedViewTransitionName={{
+              name: `${rosterMorphName}-head`,
+              enabled: !!rosterMorphName,
+            }}
+          >
             {#if showHeading}
               <span class="sb-label">{t("effect_deep_effects")}</span>
             {/if}
@@ -694,14 +806,23 @@
             {availableEffects}
             catalog={sidebarView === "catalog" ? catalogFit : rosterFit}
             portrait={catalogPortrait}
+            morphName={rosterMorphName}
           />
 
           {#if sidebarView === "browser"}
-            {@render effectDock(
-              () => (sidebarDetailOpen = true),
-              t("effect_deep_tune"),
-              "tiles"
-            )}
+            <div
+              class="sb-dock"
+              use:claimedViewTransitionName={{
+                name: `${rosterMorphName}-dock`,
+                enabled: !!rosterMorphName,
+              }}
+            >
+              {@render effectDock(
+                () => (sidebarDetailOpen = true),
+                t("effect_deep_tune"),
+                "tiles"
+              )}
+            </div>
           {/if}
         </div>
       {:else if activeEffect !== "none" && registration}
@@ -990,6 +1111,18 @@
   .sb-browser {
     display: grid;
     gap: 10px;
+    /* view-transitions.css, for morphRoster: the section's box stretches
+       between arrangements while the head and the dock swap where they sit. */
+    view-transition-class: fx-roster-box;
+  }
+
+  .sb-browser-head {
+    view-transition-class: fx-roster-swap;
+  }
+
+  .sb-dock {
+    min-width: 0;
+    view-transition-class: fx-roster-swap;
   }
 
   /* The host sets the height. Size containment keeps the panel's content out
