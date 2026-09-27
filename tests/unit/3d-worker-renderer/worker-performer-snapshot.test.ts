@@ -38,9 +38,7 @@ const PROP_BUILD = {
   fanCover: "bare",
 } as const;
 
-function performer(
-  staffLengthCm: number | null = null
-): CharacterInstanceState {
+function performer(): CharacterInstanceState {
   const prop = {
     centerPathAngle: 1,
     staffRotationAngle: 2,
@@ -55,7 +53,7 @@ function performer(
     position: { x: 6, y: 99, z: 7 },
     facingAngle: 0.4,
     planeMode: PlaneMode.WALL,
-    settings: { staffLengthCm },
+    settings: { staffLengthCm: null },
     showLeft: true,
     showRight: false,
     leftPropState: prop,
@@ -149,21 +147,6 @@ describe("worker performer snapshots", () => {
       opacity: 0.6,
       selected: false,
     });
-  });
-
-  it("tells a performer's own staff length from the inherited one", () => {
-    const options = {
-      leftPropType: PropType.FIRE_DOUBLE_STAFF,
-      rightPropType: PropType.FIRE_DOUBLE_STAFF,
-      propBuild: PROP_BUILD,
-    };
-    const inherited = createWorkerPerformerSnapshot(performer(), options);
-    expect(inherited.staffLength).toBe(userProportionsState.staffLength);
-    expect(inherited.staffLengthPinned).toBe(false);
-
-    const pinned = createWorkerPerformerSnapshot(performer(120), options);
-    expect(pinned.staffLength).toBeCloseTo(1.2, 12);
-    expect(pinned.staffLengthPinned).toBe(true);
   });
 
   it("serializes Buugeng chirality at the same correction boundary as PerformerRig", () => {

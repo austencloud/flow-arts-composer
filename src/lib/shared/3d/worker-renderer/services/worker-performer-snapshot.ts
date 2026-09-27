@@ -179,7 +179,6 @@ export function createWorkerPerformerSnapshot(
     avatarHeightCm: userProportionsState.heightCm,
     groundY: userProportionsState.groundY,
     staffLength,
-    staffLengthPinned: performer.settings.staffLengthCm != null,
     staffThickness: userProportionsState.dimensions.staffRadius,
     propBuild: { ...options.propBuild },
     handColors: { blue: PROP_COLORS.blue.main, red: PROP_COLORS.red.main },
