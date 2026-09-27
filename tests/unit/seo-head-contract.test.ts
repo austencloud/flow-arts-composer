@@ -61,6 +61,12 @@ describe("SEO head contract", () => {
 
   it("gives Flow Arts Composer one canonical product identity", () => {
     const composer = read("src/routes/(public)/composer/+page.svelte");
+    // f64350ce63 fused About into the complete Composer experience:
+    // +page.svelte kept the SEO/JSON-LD identity below, but the marketing
+    // lede copy moved into ComposerExperience, which +page.svelte now wraps.
+    const composerExperience = read(
+      "src/routes/(public)/composer/_components/ComposerExperience.svelte"
+    );
 
     expect(composer).toContain(
       'import Seo from "$lib/shared/components/Seo.svelte"'
@@ -75,7 +81,9 @@ describe("SEO head contract", () => {
     expect(composer).toContain(
       '"https://tkaflowarts.com/branding/composer-og-image.png"'
     );
-    expect(composer).toContain("Choose the moves or generate a 16-count loop.");
+    expect(composerExperience).toContain(
+      "Choose the moves or generate a 16-count loop."
+    );
     expect(composer).toContain(
       "Use cloud saves, publishing, following, and exports with a full account"
     );
@@ -138,11 +146,24 @@ describe("SEO head contract", () => {
   });
 
   it("records product CTA and field performance events for the organic funnel", () => {
-    const composer = read("src/routes/(public)/composer/+page.svelte");
+    // f64350ce63 fused About into the complete Composer experience:
+    // +page.svelte now only wraps ComposerExperience, which owns the hero CTA
+    // analytics call this test guards.
+    const composer = read(
+      "src/routes/(public)/composer/_components/ComposerExperience.svelte"
+    );
     const posthog = read("src/lib/shared/analytics/services/posthog.ts");
     const layout = read("src/routes/+layout.svelte");
 
-    expect(composer).toContain('page: "composer"');
+    // ComposerExperience now also renders on /about (the fused page), so a
+    // hardcoded "composer" literal would mislabel About's events. The CTA
+    // tags itself with the live SvelteKit route id instead — see
+    // analyticsRoute() in analytics-context.ts — which still resolves to the
+    // composer surface for this route and stays correct for both.
+    expect(composer).toContain(
+      'import { analyticsRoute } from "$lib/shared/analytics/analytics-context";'
+    );
+    expect(composer).toContain("page: analyticsRoute()");
     expect(composer).toContain('cta_type: "open_composer"');
     expect(posthog).toContain("posthog.init");
     expect(posthog).toContain("capture_performance:");

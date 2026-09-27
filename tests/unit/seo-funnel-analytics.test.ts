@@ -20,7 +20,12 @@ describe("SEO acquisition funnel analytics", () => {
   });
 
   it("tracks the Composer launch CTA and the shared footer conversion", () => {
-    const composer = read("src/routes/(public)/composer/+page.svelte");
+    // f64350ce63 fused About into the complete Composer experience:
+    // +page.svelte now only wraps ComposerExperience, which owns the hero CTA
+    // and its analytics call.
+    const composer = read(
+      "src/routes/(public)/composer/_components/ComposerExperience.svelte"
+    );
     const footer = read("src/lib/shared/landing/components/SiteFooter.svelte");
 
     expect(composer).toContain('trackCtaClick("hero"');
