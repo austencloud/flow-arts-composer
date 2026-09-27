@@ -453,7 +453,8 @@
       row-gap: 16px;
     }
 
-    .method-card {
+    .method-card,
+    .method-item.default-method .method-card {
       min-height: 104px;
       grid-template-columns: 36px minmax(0, 1fr);
       gap: 10px;
