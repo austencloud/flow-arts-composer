@@ -29,8 +29,10 @@ image was fixed after you apply the adjustment."*
 > the prop-picker drawer's own shortcut (`register-global-shortcuts.ts`), so
 > every press of P silently overwrote the clipboard with a debug capture on
 > the live site as well as in dev, on top of whatever else P was supposed to
-> do. `U` collides with nothing registered anywhere in the app. The listener
-> is now dev-only too: `$app/environment`'s `dev` keeps it out of production
+> do. No registered shortcut uses a bare `U`. The poi reversal review page
+> does, to mark a verdict unsure; it claims the press with `preventDefault`,
+> and the listener waits until every handler has seen a press and steps aside
+> when one has claimed it. The listener is now dev-only too: `$app/environment`'s `dev` keeps it out of production
 > entirely, since a debug tool has no business running for a real visitor.
 > The account of the original design below still says `P` in places, because
 > that was the key at the time; read it as history, not as the current

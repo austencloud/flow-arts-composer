@@ -402,14 +402,13 @@ export async function capturePage(): Promise<PageCapture> {
 }
 
 /**
- * The bare key that triggers a capture. Dev builds only - see
- * ViewCaptureListener for why this must never reach a real visitor.
+ * The bare key that triggers a capture, in dev builds only.
  *
- * Chosen because nothing else in the app binds it: not a registered
- * shortcut, not a 3D-scene or museum control, not WASD-style movement. `P`
- * was tried first and collided with the prop-picker drawer's own shortcut,
- * so every press silently overwrote the clipboard with a debug capture
- * instead of (or as well as) opening the drawer.
+ * No registered shortcut, 3D-scene control or museum control uses a bare U.
+ * One dev page does: the poi reversal review marks a verdict "unsure" with
+ * it, and the listener steps aside there because that page claims the press.
+ * `P` was the first choice and collided with the prop-picker drawer's own
+ * shortcut, so every press also overwrote the clipboard with a debug capture.
  */
 export const VIEW_CAPTURE_KEY_CODE = "KeyU";
 

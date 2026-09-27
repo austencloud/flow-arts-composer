@@ -20,8 +20,8 @@ import { AnimationShortcutRegistrar } from "$lib/shared/animation-engine/service
  * listen on window independently, so any feature that binds the same bare
  * key fires alongside it on every press. Bare P silently overwrote the
  * clipboard with a debug capture on top of opening the prop-picker drawer,
- * unnoticed for six weeks, because nothing ever checked the two catalogs
- * against each other.
+ * and nobody noticed, because nothing ever checked the two catalogs against
+ * each other.
  *
  * This calls the real registration functions - the same ones that build the
  * app's actual shortcut catalog and the "?" help overlay - with the smallest

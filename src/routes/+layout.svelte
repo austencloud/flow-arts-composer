@@ -873,14 +873,11 @@
   <meta charset="utf-8" />
 </svelte:head>
 
-<!-- Bare U copies the current view - camera pose and frame in a 3D room, URL
+<!-- Bare U copies the current view: camera pose and frame in a 3D room, URL
      and the element under the cursor everywhere else. Mounted at the root
      because "when I see something in the app" means any route, not one dev
-     page. Dev-only: this is a debug tool, and it used to be bound to P, which
-     collided with the prop-picker drawer's own shortcut and silently
-     overwrote every visitor's clipboard on the live site. `dev` is inlined at
-     build time, so production drops this branch and never mounts the
-     listener at all. -->
+     page. It is a debug tool, so dev builds only: `dev` is fixed at build
+     time and production never mounts the listener. -->
 {#if dev}
   <ViewCaptureListener />
 {/if}
