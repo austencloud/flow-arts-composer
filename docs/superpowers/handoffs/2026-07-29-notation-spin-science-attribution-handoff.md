@@ -130,7 +130,7 @@ were deliberately left alone.
 
 ## Loose ends (ranked)
 
-1. **Austen emails Lorq Nichols.** `SIRLORQ@GMAIL.com`, from his own contact
+1. **Austen emails Lorq Nichols** at the address on Lorq's own contact
    page. A full draft is in the session transcript; the ask is one question:
    *did I get the lineage right?* This is on the critical path, see Gotchas.
 2. **Decide `static/notation/lorq-144-shape-matrix.webp`.** His actual poster

@@ -55,10 +55,10 @@ describe("AccountManager.deleteAccount", () => {
   it("names the linked address when a different Google account reauthenticates", async () => {
     authRef.currentUser = {
       uid: "backup-user",
-      email: "netsua07@gmail.com",
+      email: "backup-user@example.com",
       providerData: [
-        { providerId: "password", email: "netsua07@gmail.com" },
-        { providerId: "google.com", email: "netsua07@gmail.com" },
+        { providerId: "password", email: "backup-user@example.com" },
+        { providerId: "google.com", email: "backup-user@example.com" },
       ],
       getIdTokenResult: vi.fn(async () => ({ claims: {} })),
     };
@@ -73,7 +73,7 @@ describe("AccountManager.deleteAccount", () => {
     });
 
     await expect(deletion).rejects.toThrow(
-      "That Google account doesn't match this Flow Arts account. Sign in as netsua07@gmail.com."
+      "That Google account doesn't match this Flow Arts account. Sign in as backup-user@example.com."
     );
     expect(h.deleteUser).not.toHaveBeenCalled();
     expect(h.getFirestoreInstance).not.toHaveBeenCalled();

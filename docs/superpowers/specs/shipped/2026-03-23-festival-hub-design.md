@@ -351,17 +351,17 @@ Campfire 2018, Carpe Diem 2022, Equilibrium 2019, Flashepoint 2017, Flame 2023/2
 
 ### Application History Seed Data
 
-| Festival | Year | Role | Status | Stipend | Contact |
-|----------|------|------|--------|---------|---------|
-| FireDrums | 2025 | Sponsored Instructor + Flowcase Performer | Accepted | $300 | savvy@firedrums.org |
-| FireDrums | 2026 | Instructor | Applied | — | workshops@firedrums.org |
-| Kinetic Fire | 2026 | Instructor | Declined | — | kineticfireworkshops@gmail.com |
-| Kinetic Fire | 2025 | Instructor | Declined (alternate) | — | kineticfireworkshops@gmail.com |
-| FLAME Festival | 2024 | Instructor | Accepted | $200 | ccoopermsw@gmail.com |
-| Midwest Flow Fest | 2023 | Instructor | Accepted | promo codes | flowfests@gmail.com |
-| FMJ Winter Workshop | 2024 | Instructor | Accepted | $150 | bean@fullmoonjam.org |
-| GLFF | 2019 | Instructor | Accepted | — | instructors.glff@gmail.com |
-| Passout | 2026 | Attendee | Registered | — | — |
+| Festival | Year | Role | Status | Stipend |
+|----------|------|------|--------|---------|
+| FireDrums | 2025 | Sponsored Instructor + Flowcase Performer | Accepted | $300 |
+| FireDrums | 2026 | Instructor | Applied | — |
+| Kinetic Fire | 2026 | Instructor | Declined | — |
+| Kinetic Fire | 2025 | Instructor | Declined (alternate) | — |
+| FLAME Festival | 2024 | Instructor | Accepted | $200 |
+| Midwest Flow Fest | 2023 | Instructor | Accepted | promo codes |
+| FMJ Winter Workshop | 2024 | Instructor | Accepted | $150 |
+| GLFF | 2019 | Instructor | Accepted | — |
+| Passout | 2026 | Attendee | Registered | — |
 
 ---
 
