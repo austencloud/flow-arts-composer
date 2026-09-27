@@ -245,6 +245,9 @@ export interface WorkerPerformerSnapshot {
   avatarHeightCm: number;
   groundY: number;
   staffLength: number;
+  /** True when the performer sets its own staff length, which the viewer then
+   *  passes to Prop3D. Absent means it inherits the shared length. */
+  staffLengthPinned?: boolean;
   staffThickness: number;
   propBuild: WorkerPropBuild;
   /** Absent means the props' authored palette. */
