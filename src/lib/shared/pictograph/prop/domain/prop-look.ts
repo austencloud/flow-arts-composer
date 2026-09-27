@@ -103,6 +103,27 @@ export function parseModelRenderKey(value: string): ModelRenderKey | null {
   return { propType: match[1]! };
 }
 
+/**
+ * The look a render of these props is cached under: "model" only when it swaps
+ * a captured sprite in for at least one of them. Every other case returns
+ * undefined, so notation cells, fans and hands keep the cache keys (local and
+ * cloud) they had before cards followed the look.
+ */
+export function renderedPropLook(
+  propLook: PropLook | null | undefined,
+  propTypes: readonly (string | null | undefined)[]
+): "model" | undefined {
+  if (normalizePropLook(propLook) !== "model") return undefined;
+  return propTypes.some(
+    (propType) =>
+      !!propType &&
+      parseModelRenderKey(resolvePropRenderKey(propType, { propLook })) !==
+        null
+  )
+    ? "model"
+    : undefined;
+}
+
 /** The notation prop behind any render key (fan build, model, or plain). */
 export function basePropTypeOfRenderKey(value: string): string {
   const normalized = value.toLowerCase();
