@@ -70,6 +70,7 @@ const PUBLIC_PATH_PREFIXES = [
   "/learn/concepts",
   "/timing-and-direction",
   "/tricks",
+  "/flowers",
   "/notation",
   // The archive lives at /history; /notation 301s to it and still serves
   // the per-prop and per-system notation pages.
