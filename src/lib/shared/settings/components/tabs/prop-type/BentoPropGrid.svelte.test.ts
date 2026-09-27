@@ -106,14 +106,14 @@ describe("BentoPropGrid prop look", () => {
   it("offers the 2D artwork choice by default", async () => {
     await openBuugengDetails();
     await expect
-      .element(page.getByRole("radio", { name: "3D model" }))
+      .element(page.getByRole("radio", { name: "Realistic" }))
       .toBeVisible();
   });
 
   it("leaves it out when the host renders in 3D", async () => {
     await openBuugengDetails(false);
     await expect
-      .element(page.getByRole("radio", { name: "3D model" }))
+      .element(page.getByRole("radio", { name: "Realistic" }))
       .not.toBeInTheDocument();
     await expect
       .element(page.getByRole("radio", { name: "Pictograph" }))
