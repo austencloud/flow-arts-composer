@@ -415,9 +415,17 @@ a responsive bento so their relationship remains explicit. Desktop and tablet
 give the two foundational methods the first row and arrange the three more
 specialized methods beneath them. Narrow phones give the default Construct
 method one full-width tile, followed by the other four methods in a two-column
-grid. This hierarchy is stable: the Last used label never reorders or resizes
+grid. When the method count changes, the board rebalances instead of leaving a
+tile alone: three methods share one row, six put four secondary methods in the
+second desktop row, and on phones Construct leads alone only when the rest pair
+evenly. This hierarchy is stable: the Last used label never reorders or resizes
 the board. That annotation uses the shared `LastUsedBadge` primitive so Create
 and sign-in communicate device-local history the same way.
+
+Guests see the account-only methods in their usual places, marked with a Free
+account label from the same badge primitive. Tapping one opens sign-up with copy
+that names the method, so the board has one shape for everyone and signing in
+never rearranges it.
 
 Each method remains a complete button with one useful description. Its icon,
 restrained whole-surface tint, and full perimeter border carry its tab color.
