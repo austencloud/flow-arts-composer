@@ -101,7 +101,7 @@ const TESTER_MODULES: ModuleId[] = ["choreo"];
  * regardless of the parent module's role.
  * Format: "moduleId:tabId"
  */
-const ADMIN_ONLY_TABS: string[] = ["create:assemble"];
+const ADMIN_ONLY_TABS: string[] = [];
 
 /**
  * Get the default role for a feature

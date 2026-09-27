@@ -16,7 +16,9 @@ export const GUEST_SAVE_CAP = 3;
 // could save but never see what they saved.
 const GUEST_MODULE_ACCESS: Record<string, string[]> = {
   // shape-engine is public at /shape-engine already, so the tab is too.
-  create: ["assemble", "construct", "generate", "shape-engine"],
+  // Assemble, Fuse and Tunnel need a free account; the front door shows them
+  // to guests with a Free account label that opens sign-up.
+  create: ["construct", "generate", "shape-engine"],
   browse: ["explore", "you"],
   creators: [],
   // Language is a device preference and must remain available before sign-in.
