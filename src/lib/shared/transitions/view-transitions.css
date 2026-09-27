@@ -106,6 +106,49 @@ html.generate-card-morph-tnd::view-transition-group(generate-card-tnd) {
   z-index: 2;
 }
 
+/* The effects roster moving between its two arrangements when an effect is
+   turned on or off. Boxes (each tile, the section) stretch to their new size;
+   the parts inside them (pictures, icons, names) travel at their own
+   proportions, so nothing reads as squashed text. What does not travel swaps
+   where it sits: the dock and the tune badge, which exist in one arrangement
+   only, and the head, whose Off button changes its label. The live page stays
+   under the moving pieces, as for the card morph above, so the canvas keeps
+   playing. Owner: EffectsPanel.svelte (morphRoster) and
+   EffectSelector.svelte. */
+html.effect-roster-morph-active {
+  view-transition-name: none;
+}
+
+html.effect-roster-morph-active::view-transition {
+  background: transparent;
+}
+
+::view-transition-group(*.fx-roster-box),
+::view-transition-group(*.fx-roster-part),
+::view-transition-group(*.fx-roster-swap) {
+  animation-duration: var(--duration-emphasis);
+  animation-timing-function: var(--ease-in-out);
+}
+
+::view-transition-old(*.fx-roster-box),
+::view-transition-new(*.fx-roster-box) {
+  height: 100%;
+}
+
+/* Swapped, not overlapped. The dock takes the space the catalog's lower rows
+   are leaving, so it waits for them to clear before it appears, and on the
+   way back it is gone before they arrive. The badge keeps the same clock so
+   it lands with its tile instead of floating ahead of it, and the Off
+   button's two labels never print over each other. */
+::view-transition-old(*.fx-roster-swap) {
+  animation-duration: calc(var(--duration-emphasis) * 0.4);
+}
+
+::view-transition-new(*.fx-roster-swap) {
+  animation-delay: calc(var(--duration-emphasis) * 0.6);
+  animation-duration: calc(var(--duration-emphasis) * 0.4);
+}
+
 ::view-transition-old(learn-lesson-heading),
 ::view-transition-new(learn-lesson-heading),
 ::view-transition-old(learn-lesson-controls),

@@ -74,9 +74,6 @@ export interface WorkerPropFactoryOptions {
   color: WorkerPropColor;
   /** The resolved performer staff length in scene metres. */
   length: number;
-  /** True when the performer sets its own staff length. Absent means it
-   *  inherits the shared length. */
-  lengthPinned?: boolean;
   /** The resolved performer staff radius in scene metres. */
   thickness: number;
   build: WorkerPropBuild;

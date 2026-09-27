@@ -197,6 +197,16 @@ host is `ExpandedCardStage.svelte`. Searches: card morph, expand card, grow
 card, bento expand, settings panel morph. Do not FLIP a card into a panel by
 hand; claim the name on both ends and wrap the state change.
 
+The effects roster changing arrangement when an effect is turned on or off
+(two wide picture tiles per row to four small ones, or a name list to an icon
+grid) also routes through `startMorph`. `EffectsPanel.svelte` (`morphRoster`)
+wraps the change and `EffectSelector.svelte` claims a name for each tile's
+box, picture, icon and name only while it runs. This is a view transition
+rather than `createLayoutMotion` because the tiles halve in width: a scale
+flight would squash their names, and a layout flight cannot resize the grid's
+auto rows. Searches: effect roster, effect catalog, effects on off, tile
+morph.
+
 Shared-surface stacking extends `reparentToInspector`: control flights use the
 controls layer and may wait for the canvas to dock, using viewer-local
 `canvasMoving` rather than the aggregate moving flag. Canvas raster sizing

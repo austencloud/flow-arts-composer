@@ -4438,19 +4438,20 @@ diff --git a/dist/lib/components/props/Poi3D.svelte.d.ts.map b/dist/lib/componen
 deleted file mode 100644
 index 4c2d4a9b12da3596bfed1803e1a6d6649fa0dfd9..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Prop3D.svelte b/dist/lib/components/props/Prop3D.svelte
-index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..4a01bc0a021307069357967d775947b122462bfd 100644
+index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..d4857a5a4c25784d0d7ccd1cebc8d8fd41a0b711 100644
 --- a/dist/lib/components/props/Prop3D.svelte
 +++ b/dist/lib/components/props/Prop3D.svelte
-@@ -13,6 +13,8 @@
+@@ -13,6 +13,9 @@
    import { PropType } from "../../domain/enums/PropType";
    import type { PropState3D } from "../../domain/models/PropState3D";
    import { resolvePropModel } from "./prop-model-registry";
 +  import { propFinishState } from "../../state/prop-finish-state.svelte";
 +  import type { PropBuild } from "../../state/prop-finish-state.svelte";
++  import { userProportionsState } from "../../state/user-proportions-state.svelte";
    import GltfProp3D from "./GltfProp3D.svelte";
  
    // Procedural fallback geometry components
-@@ -25,6 +27,7 @@
+@@ -25,6 +28,7 @@
    import Sword3D from "./Sword3D.svelte";
    import Buugeng3D from "./Buugeng3D.svelte";
    import Triad3D from "./Triad3D.svelte";
@@ -4458,7 +4459,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..4a01bc0a021307069357967d775947b1
    import Doublestar3D from "./Doublestar3D.svelte";
    import Chicken3D from "./Chicken3D.svelte";
    import Guitar3D from "./Guitar3D.svelte";
-@@ -39,6 +42,7 @@
+@@ -39,6 +43,7 @@
      visible?: boolean;
      isActivePlayer?: boolean;
      length?: number;
@@ -4466,7 +4467,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..4a01bc0a021307069357967d775947b1
    }
  
    let {
-@@ -48,8 +52,11 @@
+@@ -48,8 +53,11 @@
      visible = true,
      isActivePlayer = false,
      length,
@@ -4478,7 +4479,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..4a01bc0a021307069357967d775947b1
    // "Big" variants use a 1.4x scale on the base prop.
    const BIG_SCALE = 1.4;
  
-@@ -61,14 +68,19 @@
+@@ -61,14 +69,19 @@
  {#if visible}
    <!-- Tier 1: GLTF model (when available in registry) -->
    {#if gltfResolution}
@@ -4500,13 +4501,13 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..4a01bc0a021307069357967d775947b1
 +        {visible}
 +        {isActivePlayer}
 +        extraScale={gltfResolution.scale}
-+        lengthScaleY={propType === PropType.FIRE_DOUBLE_STAFF && length != null ? length / 0.9 : 1}
++        lengthScaleY={propType === PropType.FIRE_DOUBLE_STAFF ? (length ?? userProportionsState.staffLength) / 0.9 : 1}
 +      />
 +    {/key}
  
    <!-- Tier 2: Procedural fallback geometry -->
    {:else if propType === PropType.STAFF || propType === PropType.SIMPLESTAFF || propType === PropType.STAFF2}
-@@ -82,14 +94,22 @@
+@@ -82,14 +95,22 @@
      <Club3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
  
    {:else if propType === PropType.FAN}
@@ -4533,7 +4534,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..4a01bc0a021307069357967d775947b1
  
    {:else if propType === PropType.MINIHOOP}
      <Hoop3D {propState} {color} {visible} {isActivePlayer} {length} />
-@@ -102,10 +122,19 @@
+@@ -102,10 +123,19 @@
      <Buugeng3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
  
    {:else if propType === PropType.TRIGENG}
@@ -4555,7 +4556,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..4a01bc0a021307069357967d775947b1
  
    {:else if propType === PropType.SWORD}
      <Sword3D {propState} {color} {visible} {isActivePlayer} {length} />
-@@ -140,7 +169,15 @@
+@@ -140,7 +170,15 @@
      <Ball3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
  
    {:else if propType === PropType.QUIAD}
@@ -24507,19 +24508,20 @@ index 8a455aeebd6a4c8f408c732ac0c1bb2c177c2ab3..7cb29372ae34f587e0d58225dc3a5659
    const rotation = $derived(computePropRotation(propState));
  
 diff --git a/src/lib/components/props/Prop3D.svelte b/src/lib/components/props/Prop3D.svelte
-index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..3f466d80b00558ddc642a947c2ead65e54742c20 100644
+index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..b85756fd81323b0c09a2308874bae6e12662258e 100644
 --- a/src/lib/components/props/Prop3D.svelte
 +++ b/src/lib/components/props/Prop3D.svelte
-@@ -13,6 +13,8 @@
+@@ -13,6 +13,9 @@
    import { PropType } from "../../domain/enums/PropType";
    import type { PropState3D } from "../../domain/models/PropState3D";
    import { resolvePropModel } from "./prop-model-registry";
 +  import { propFinishState } from "../../state/prop-finish-state.svelte";
 +  import type { PropBuild } from "../../state/prop-finish-state.svelte";
++  import { userProportionsState } from "../../state/user-proportions-state.svelte";
    import GltfProp3D from "./GltfProp3D.svelte";
  
    // Procedural fallback geometry components
-@@ -20,11 +22,13 @@
+@@ -20,11 +23,13 @@
    import Club3D from "./Club3D.svelte";
    import Fan3D from "./Fan3D.svelte";
    import Hoop3D from "./Hoop3D.svelte";
@@ -24533,7 +24535,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..3f466d80b00558ddc642a947c2ead65e
    import Doublestar3D from "./Doublestar3D.svelte";
    import Chicken3D from "./Chicken3D.svelte";
    import Guitar3D from "./Guitar3D.svelte";
-@@ -39,6 +43,7 @@
+@@ -39,6 +44,7 @@
      visible?: boolean;
      isActivePlayer?: boolean;
      length?: number;
@@ -24541,7 +24543,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..3f466d80b00558ddc642a947c2ead65e
    }
  
    let {
-@@ -48,8 +53,11 @@
+@@ -48,8 +54,11 @@
      visible = true,
      isActivePlayer = false,
      length,
@@ -24553,7 +24555,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..3f466d80b00558ddc642a947c2ead65e
    // "Big" variants use a 1.4x scale on the base prop.
    const BIG_SCALE = 1.4;
  
-@@ -61,14 +69,19 @@
+@@ -61,14 +70,19 @@
  {#if visible}
    <!-- Tier 1: GLTF model (when available in registry) -->
    {#if gltfResolution}
@@ -24575,13 +24577,13 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..3f466d80b00558ddc642a947c2ead65e
 +        {visible}
 +        {isActivePlayer}
 +        extraScale={gltfResolution.scale}
-+        lengthScaleY={propType === PropType.FIRE_DOUBLE_STAFF && length != null ? length / 0.9 : 1}
++        lengthScaleY={propType === PropType.FIRE_DOUBLE_STAFF ? (length ?? userProportionsState.staffLength) / 0.9 : 1}
 +      />
 +    {/key}
  
    <!-- Tier 2: Procedural fallback geometry -->
    {:else if propType === PropType.STAFF || propType === PropType.SIMPLESTAFF || propType === PropType.STAFF2}
-@@ -82,19 +95,29 @@
+@@ -82,19 +96,29 @@
      <Club3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
  
    {:else if propType === PropType.FAN}
@@ -24615,7 +24617,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..3f466d80b00558ddc642a947c2ead65e
  
    {:else if propType === PropType.BUUGENG || propType === PropType.FRACTALGENG}
      <Buugeng3D {propState} {color} {visible} {isActivePlayer} {length} />
-@@ -102,10 +125,19 @@
+@@ -102,10 +126,19 @@
      <Buugeng3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
  
    {:else if propType === PropType.TRIGENG}
@@ -24637,7 +24639,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..3f466d80b00558ddc642a947c2ead65e
  
    {:else if propType === PropType.SWORD}
      <Sword3D {propState} {color} {visible} {isActivePlayer} {length} />
-@@ -140,7 +172,15 @@
+@@ -140,7 +173,15 @@
      <Ball3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
  
    {:else if propType === PropType.QUIAD}

@@ -49,6 +49,7 @@ describe("search indexing controls", () => {
       "<loc>https://tkaflowarts.com/timing-and-direction</loc>"
     );
     expect(sitemap).toContain("<loc>https://tkaflowarts.com/tricks</loc>");
+    expect(sitemap).toContain("<loc>https://tkaflowarts.com/flowers</loc>");
     expect(sitemap).toContain(
       "<loc>https://tkaflowarts.com/timing-and-direction/quarter-time-same-direction</loc>"
     );

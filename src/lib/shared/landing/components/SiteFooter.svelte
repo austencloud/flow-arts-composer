@@ -90,6 +90,7 @@
         { label: "Interactive lessons", href: "/learn/concepts" },
         { label: "Timing & Direction", href: "/timing-and-direction" },
         { label: "Trick names", href: "/tricks" },
+        { label: "Shape names", href: "/flowers" },
         { label: "Read the Guide", href: "/guide" },
         { label: "Kinetic Atlas", href: "/atlas" },
         { label: "FAQ", href: "/faq" },
