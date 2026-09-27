@@ -5,6 +5,14 @@ import { describe, expect, it } from "vitest";
 const readSource = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8");
 
+// German i18n work (commit b11df1a24d) moved the hero CTA's visible text
+// behind a siteCopy() lookup backed by messages/en.json. Check the source
+// calls the key AND messages/en.json still carries the identical original
+// English copy.
+function readEnglishMessages(): Record<string, string> {
+  return JSON.parse(readSource("messages/en.json")) as Record<string, string>;
+}
+
 const homeHero = readSource(
   "src/lib/shared/landing/components/HomeHero.svelte"
 );
@@ -34,7 +42,9 @@ describe("homepage hero notation rail contract", () => {
     expect(homeHero).toContain('class="composer-cta"');
     expect(homeHero).toContain('href="/create"');
     expect(homeHero).toContain("data-sveltekit-reload");
-    expect(homeHero).toContain("<span>Open Flow Arts Composer</span>");
+    expect(homeHero).toContain(
+      '<span>{siteCopy("Open Flow Arts Composer")}</span>'
+    );
     expect(homeHero).toContain('cta_type: "open_composer"');
     expect(homeHero).toContain("white-space: nowrap");
     expect(homeHero).toContain("onReroll={handleReroll}");
@@ -43,6 +53,9 @@ describe("homepage hero notation rail contract", () => {
     expect(homeHero).toContain("void heroAct.advanceNow()");
     expect(homeHero).toContain('class="hero-actions"');
     expect(homeHero).not.toContain("fa-rocket");
+
+    const en = readEnglishMessages();
+    expect(en["site_open_composer"]).toBe("Open Flow Arts Composer");
   });
 
   it("reuses the shared StepStrip through the hero's lazy stage seam", () => {

@@ -16,6 +16,14 @@ const read = (relative: string) =>
   readFileSync(resolve(ROOT, relative), "utf8");
 const readSrc = (relative: string) =>
   readFileSync(resolve(process.cwd(), "src", relative), "utf8");
+// German i18n work (commit d299d3c492) moved several of this surface's
+// English literals behind t() keys backed by messages/en.json. Where a check
+// below used to assert an inline literal, it now asserts the source calls
+// the key AND that messages/en.json still carries the identical copy.
+const readEnglishMessages = (): Record<string, string> =>
+  JSON.parse(
+    readFileSync(resolve(process.cwd(), "messages/en.json"), "utf8")
+  ) as Record<string, string>;
 
 describe("shape matrix mandala continuity", () => {
   it("uses two fixed shared-element names, stage around mandala", () => {
@@ -245,7 +253,10 @@ describe("shape matrix mandala continuity", () => {
     expect(corner).toContain("fa-arrow-right");
     expect(corner).toContain("fa-arrow-down");
     expect(corner).not.toMatch(/>\s*[↓→]\s*</);
-    expect(corner).toContain("Surprise me");
+    expect(corner).toContain('t("shape_engine_surprise_me")');
+    expect(readEnglishMessages()["shape_engine_surprise_me"]).toBe(
+      "Surprise me"
+    );
     expect(corner).not.toContain("Mixed");
     // The relationship is named by the detail pane, not repeated up here.
     expect(corner).not.toContain("relationship-dot");
@@ -356,12 +367,34 @@ describe("shape matrix mandala continuity", () => {
     // the popover, the wide header's difficulty control, and About. The
     // control names the level on every press; the shell mounts it in the
     // band beside Notation and reads no list of its own.
-    expect(popover).toContain("SHAPE_MATRIX_LEVEL_DESCRIPTIONS");
+    // German i18n work (commit d299d3c492) replaced each direct
+    // SHAPE_MATRIX_LEVEL_DESCRIPTIONS[level] lookup with the shared
+    // localizedLevelDescription(level) helper, which calls t() per level
+    // under the hood; SHAPE_MATRIX_LEVEL_DESCRIPTIONS itself still lives in
+    // shape-matrix-levels.ts as the canonical English source those keys mirror.
+    expect(popover).toContain("localizedLevelDescription");
     const control = read("app/components/ShapeMatrixDifficultyControl.svelte");
-    expect(control).toContain("SHAPE_MATRIX_LEVEL_DESCRIPTIONS");
+    expect(control).toContain("localizedLevelDescription");
     expect(control).toContain("{#key appState.level}");
     const about = read("app/components/ShapeMatrixAboutModal.svelte");
-    expect(about).toContain("SHAPE_MATRIX_LEVEL_DESCRIPTIONS");
+    expect(about).toContain("localizedLevelDescription");
+
+    const levels = read("app/shape-matrix-levels.ts");
+    expect(levels).toContain("SHAPE_MATRIX_LEVEL_DESCRIPTIONS");
+    const en = readEnglishMessages();
+    const expectedLevels: Record<number, { name: string; blurb: string }> = {
+      1: { name: "Base Motions", blurb: "Base paths with zero turns" },
+      2: { name: "Whole Turns", blurb: "Adds whole-turn possibilities" },
+      3: { name: "Half Turns + Float", blurb: "Adds half turns and Float" },
+      4: {
+        name: "Quarter Turns",
+        blurb: "Adds finer quarter-turn increments",
+      },
+    };
+    for (const [level, description] of Object.entries(expectedLevels)) {
+      expect(en[`shape_engine_level_${level}_name`]).toBe(description.name);
+      expect(en[`shape_engine_level_${level}_blurb`]).toBe(description.blurb);
+    }
     const shell = read("app/components/ShapeMatrixAppShell.svelte");
     expect(shell).not.toContain("const LEVEL_DESCRIPTIONS");
     expect(shell).toMatch(

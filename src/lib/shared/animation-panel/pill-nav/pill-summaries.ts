@@ -1,3 +1,5 @@
+import { t } from "$lib/shared/i18n/i18n.svelte.js";
+
 export function computePropsSummary(propLabel: string): string {
   return propLabel || "Staff";
 }
@@ -91,4 +93,28 @@ export function computeExportSummary(input: ExportSummaryInput): string {
   const loopLabel =
     Number.isFinite(loopCount) && loopCount > 1 ? ` • ${loopCount}×` : "";
   return `${resLabel} • ${fps} fps${loopLabel}`;
+}
+
+/** Tunnel's Speed pill: which surface the rates belong to, and whether
+ *  performers have diverged from a single shared rate. */
+export function speedRailCopy(
+  stageAware: boolean,
+  hasSpeedOverrides: boolean
+): { label: string; summary: string } {
+  return {
+    label: stageAware
+      ? t("viewer_ui_stage_speed")
+      : t("viewer_ui_copy_speed"),
+    summary: hasSpeedOverrides
+      ? t("viewer_ui_mixed_rates")
+      : t("viewer_ui_uniform"),
+  };
+}
+
+/** AnimatorInspectorShell's aria region label for Tunnel: its own settings
+ *  panel vs. the bare animation dock. */
+export function tunnelRegionLabel(showTitle: boolean): string {
+  return showTitle
+    ? t("viewer_ui_tunnel_settings")
+    : t("viewer_ui_animation_controls");
 }

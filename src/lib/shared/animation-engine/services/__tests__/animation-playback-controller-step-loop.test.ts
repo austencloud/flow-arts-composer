@@ -50,6 +50,11 @@ describe("step playback loop", () => {
       getCurrentPropStates: vi.fn(() => ({ left: {}, right: {} })),
     } as unknown as SequenceAnimationOrchestrator;
     let update: (() => void) | null = null;
+    // Reading `update` through a wrapper keeps it correctly typed at the call
+    // site below: TS's control-flow analysis doesn't see the reassignment
+    // inside `loop.start`'s mock (reached through `controller.togglePlayback()`),
+    // so a direct `update?.()` after that call sees a stale narrowed type.
+    const callUpdate = () => update?.();
     const loop = {
       start: vi.fn((callback: () => void) => {
         update = callback;
@@ -69,7 +74,7 @@ describe("step playback loop", () => {
     expect(playing).toBe(true);
 
     vi.advanceTimersByTime(1_000);
-    update?.();
+    callUpdate();
     vi.advanceTimersByTime(299);
     expect(loop.start).toHaveBeenCalledTimes(1);
     vi.advanceTimersByTime(1);
