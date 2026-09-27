@@ -5,11 +5,14 @@
  * WHY THIS EXISTS
  *
  * `svelte-check` is the project's headline type gate, but it does not stand in
- * for `tsc`: it type-checks through the Svelte language service and, when the
- * generated `.svelte-kit` tree is not exactly what it expects, it can report
- * "0 errors" over a program it never really assembled. A plain compiler pass
- * over the same `tsconfig.json` is cheap, has no such failure mode, and is the
- * thing that keeps `src/**` and `tests/**` honest between svelte-check runs.
+ * for `tsc`. It gives TypeScript's language service a 20 MB budget for
+ * non-TypeScript files, and this app's `.svelte` files have been over it since
+ * 2026-08-01. Past that budget the service silently drops every project file,
+ * so `npm run check` checks only declaration files and still reports
+ * "0 errors". `npm run check:full` uses `tsconfig.check-full.json` to lift the
+ * cap. A plain compiler pass over the same `tsconfig.json` is cheap, has no
+ * such cap, and is the thing that keeps the `.ts` files in `src/` and `tests/`
+ * honest while `npm run check` cannot see them.
  *
  * WHY IT FILTERS
  *
