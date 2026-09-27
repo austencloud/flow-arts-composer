@@ -232,6 +232,15 @@ export async function setLocale(locale: Locale): Promise<void> {
 }
 
 /**
+ * Regional override files, as a static glob. A template-literal import here
+ * breaks Vite's dependency scan whenever a module imports this file without
+ * its extension, and the browser test runner then reloads mid-run.
+ */
+const regionalMessageFiles = import.meta.glob<{ default: Messages }>(
+  "../../../../messages/*-*.json"
+);
+
+/**
  * Dynamically import locale messages
  *
  * For regional locales (e.g., es-MX), attempts to load a regional override file.
@@ -278,20 +287,18 @@ async function loadLocaleMessages(locale: Locale): Promise<Messages> {
     }
   }
 
-  // Regional locales - attempt to load override file, fall back to base
+  // Regional locales - load the override file if there is one, else the base
   if (regionalLocales.includes(locale as RegionalLocale)) {
     try {
-      // Try to load regional override file (e.g., messages/es-MX.json)
-      // This file only needs to contain keys that differ from the base locale
-      const regionalMessages = await import(
-        `../../../../messages/${locale}.json`
-      );
-      return regionalMessages.default as Messages;
+      // A regional override file (e.g., messages/es-MX.json) only needs the
+      // keys that differ from the base locale
+      const loadRegional =
+        regionalMessageFiles[`../../../../messages/${locale}.json`];
+      if (loadRegional) return (await loadRegional()).default;
     } catch {
-      // No regional override file - use base locale
-      const base = getBaseLocale(locale);
-      return loadLocaleMessages(base);
+      // Unreadable override file - use the base locale
     }
+    return loadLocaleMessages(getBaseLocale(locale));
   }
 
   // Unknown locale - fall back to English
