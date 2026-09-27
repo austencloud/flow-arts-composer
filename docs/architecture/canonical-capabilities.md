@@ -95,7 +95,10 @@ family drill-down, Back/Escape navigation, and animated decision screens.
 `PropSelectionSheet.svelte` provides the bounded Change Prop drawer.
 Searches: prop look, model artwork, prop variants, Change Prop, fan styles.
 `PropLookPicker.svelte` composes `PropBuildPicker.svelte` for captured model
-versus pictograph artwork. `FanStyleOptionsCore.svelte` composes the existing
+("Realistic") versus pictograph artwork. `AppSettings.propArtwork` is the one
+look: `PictographContainer.svelte` and the canvas's `PropTypeManager` both read
+it, and a public route that shows the picker starts the settings service, as the
+sequence viewer and the motion-paths guide do. `FanStyleOptionsCore.svelte` composes the existing
 `FanAppearancePicker.svelte` for fan builds and covers. The effect tuner and
 viewer reuse this gallery; `ScenePropPicker.svelte` adds scene-specific finish
 controls. Extend these owners instead of appending another appearance picker
