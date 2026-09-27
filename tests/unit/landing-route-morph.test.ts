@@ -21,7 +21,12 @@ const readSource = (path: string): string =>
 // in +page.svelte. Each entry therefore lists every file the participant is
 // allowed to live in.
 const routeSourceByPath: Record<string, string[]> = {
-  "/composer": ["src/routes/(public)/composer/+page.svelte"],
+  // f64350ce63 moved the Composer page body, participant included, into
+  // ComposerExperience when About fused into it.
+  "/composer": [
+    "src/routes/(public)/composer/+page.svelte",
+    "src/routes/(public)/composer/_components/ComposerExperience.svelte",
+  ],
   // The Choreo Cards tile lands on the catalog now; its morph participant is
   // the front door's hero copy block.
   "/shop": [
@@ -248,7 +253,7 @@ describe("landing shared-element contract", () => {
     expect(guideShell).toContain("{#if ownsStandaloneChrome}");
     expect(guidePage).not.toContain("joinWaitlist");
     expect(guidePage).toContain('href="/learn/concepts"');
-    expect(guidePage).toContain("Start with {firstTopicLabel}");
+    expect(guidePage).toContain('tDynamic("guide_hub_start_with", {');
     expect(guideCss).toContain("html:has(.guide-layout):not(:has(.mkt-shell))");
   });
 
@@ -272,7 +277,10 @@ describe("landing shared-element contract", () => {
     const launchpad = readSource(
       "src/lib/shared/landing/components/launchpad/LaunchpadGrid.svelte"
     );
-    const composer = readSource("src/routes/(public)/composer/+page.svelte");
+    // The Composer page body lives in ComposerExperience since f64350ce63.
+    const composer = readSource(
+      "src/routes/(public)/composer/_components/ComposerExperience.svelte"
+    );
     const archive = readSource("src/routes/(public)/history/+page.svelte");
     // The Choreo Cards tile lands on /shop now; the print pipeline behind the
     // front door's card art is the media that has to stay out of the morph.
@@ -313,11 +321,13 @@ describe("landing shared-element contract", () => {
     );
     expect(composer).toContain("latchedHeroSequence = first;");
     expect(composer).not.toContain("{#key carriedSequence?.id}");
+    // 5bf02781c1 wrapped the construct demo in ComposerPractice, which still
+    // arrives through a lazy loader.
     expect(composer).toContain(
-      'loader={() => import("./_sections/ConstructSection.svelte")}'
+      'loader={() => import("./ComposerPractice.svelte")}'
     );
     expect(composer).toContain(
-      'loader={() => import("./_components/Composer3DViewerDemo.svelte")}'
+      'loader={() => import("./Composer3DViewerDemo.svelte")}'
     );
     expect(composer).toContain("showNotationStrip={true}");
     expect(composer).toContain("showWordHeader={true}");
@@ -369,7 +379,9 @@ describe("landing shared-element contract", () => {
   });
 
   it("gives the promoted Composer demonstrations local loading recovery", () => {
-    const composer = readSource("src/routes/(public)/composer/+page.svelte");
+    const composer = readSource(
+      "src/routes/(public)/composer/_components/ComposerExperience.svelte"
+    );
     const generate = readSource(
       "src/routes/(public)/composer/_components/ComposerGenerateDemo.svelte"
     );
@@ -387,7 +399,7 @@ describe("landing shared-element contract", () => {
     expect(composer).toContain("The community gallery did not load.");
     expect(generate).toContain("classifyComposerGenerationFailure(error)");
     expect(generate).toContain('result === "no-result"');
-    expect(generate).toContain("The generator couldn't run. Try again.");
+    expect(generate).toContain('t("composer_demo_generate_failed")');
     expect(sequenceHero).toContain("placeholder={playerPlaceholder}");
     expect(sequenceHero).toContain("onStatusChange={(status) =>");
   });

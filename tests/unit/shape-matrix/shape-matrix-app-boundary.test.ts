@@ -100,7 +100,9 @@ describe("Shape Matrix app boundary", () => {
     expect(bridgeSource).toContain(
       '<i class="fas fa-arrow-right bridge-arrow" aria-hidden="true"></i>'
     );
-    expect(bridgeSource).toContain('<span class="sr-only">produces</span>');
+    expect(bridgeSource).toContain(
+      '<span class="sr-only">{t("shape_engine_produces")}</span>'
+    );
   });
 
   it("threads the optional prop element through the canonical animation overlay", () => {
@@ -133,7 +135,9 @@ describe("Shape Matrix app boundary", () => {
     expect(animatorSource).toContain("{propElementalType}");
     expect(surfaceSource).toContain("{propElementalType}");
     expect(overlaySource).toContain('corner="top-right"');
-    expect(overlaySource).toContain("Prop timing and direction element:");
+    expect(overlaySource).toContain(
+      'ariaLabel={t("viewer_final_prop_timing_element", {'
+    );
   });
 
   it("keeps embedded disassembly inside the Shape Matrix atmosphere", () => {
@@ -314,7 +318,7 @@ describe("Shape Matrix app boundary", () => {
       "customizeSection(appState, animationState)"
     );
     // A labelled way back, and Escape through the shared layer manager.
-    expect(workspaceSource).toContain("Back to grid");
+    expect(workspaceSource).toContain('{t("shape_engine_back_to_grid")}');
     expect(workspaceSource).toContain('role="dialog"');
     expect(workspaceSource).toContain('id: "shape-matrix:customize"');
 
@@ -510,8 +514,10 @@ describe("Shape Matrix app boundary", () => {
     expect(theorySource).toContain("<ShapeMatrixRatioEntry");
     expect(theorySource).not.toContain("<ShapeMatrixValueScroller");
     expect(theorySource).not.toContain("SegmentedControl");
-    expect(theorySource).toContain("Link ratios");
-    expect(theorySource).toContain("Which ratio should both use?");
+    expect(theorySource).toContain(
+      '<strong>{t("shape_engine_link_ratios")}</strong>'
+    );
+    expect(theorySource).toContain('{t("shape_engine_which_ratio")}');
     expect(theorySource).toContain('hand="both"');
     expect(ratioEntrySource).toContain('onclick={() => nudge("hand", -1)}');
     expect(ratioEntrySource).toContain('onclick={() => nudge("prop", 1)}');
@@ -647,7 +653,7 @@ describe("Shape Matrix app boundary", () => {
     // The box shows timing over direction beside the element icon; the
     // element's name and its two-letter code are read out, not drawn.
     expect(elementChipSource).toContain(
-      "ariaLabel={`${c.words.timing} ${c.words.direction}, ${elementName(c.el.element)} (${c.mode})${"
+      "ariaLabel={`${localizedModeWords(c.mode).timing} ${localizedModeWords(c.mode).direction}, ${localizedElementName(c.el.element)} (${c.mode})${"
     );
   });
 
