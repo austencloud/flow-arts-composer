@@ -277,17 +277,15 @@ function createRotatedVisual(
 }
 
 /**
- * Prop3D.svelte stretches the fire double staff's long axis to the staff length
- * it is given and keeps its grip diameter. Viewer3DScene gives it a length only
- * when the performer sets its own, so an inherited length leaves the model at
- * its authored 900 mm end to end (scripts/fire-double-staff-stations.json).
- * Every other model keeps its size.
+ * Prop3D.svelte stretches the fire double staff's long axis to the performer's
+ * staff length and keeps its grip diameter. The model is authored 900 mm end to
+ * end (scripts/fire-double-staff-stations.json); every other model keeps its
+ * size.
  */
 const FIRE_DOUBLE_STAFF_AUTHORED_LENGTH_M = 0.9;
 
 function registryLengthScaleY(options: WorkerPropFactoryOptions): number {
-  return options.propType === CANONICAL_PROP_TYPE.FIRE_DOUBLE_STAFF &&
-    options.lengthPinned
+  return options.propType === CANONICAL_PROP_TYPE.FIRE_DOUBLE_STAFF
     ? options.length / FIRE_DOUBLE_STAFF_AUTHORED_LENGTH_M
     : 1;
 }

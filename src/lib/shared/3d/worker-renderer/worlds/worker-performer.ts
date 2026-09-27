@@ -161,7 +161,6 @@ export async function createWorkerPerformerProp(
     propType,
     color: side === "left" ? "blue" : "red",
     length: snapshot.staffLength,
-    lengthPinned: snapshot.staffLengthPinned ?? false,
     thickness: snapshot.staffThickness,
     build: snapshot.propBuild,
     loadModel: (url) => propModels.load(url),
@@ -295,10 +294,6 @@ export class WorkerPerformer {
       snapshot.leftPropType === this.snapshot.leftPropType &&
       snapshot.rightPropType === this.snapshot.rightPropType &&
       snapshot.staffLength === this.snapshot.staffLength &&
-      // Unlinking prop sizes pins the length a performer already had, and
-      // only a pinned length stretches the fire double staff.
-      (snapshot.staffLengthPinned ?? false) ===
-        (this.snapshot.staffLengthPinned ?? false) &&
       snapshot.staffThickness === this.snapshot.staffThickness &&
       snapshot.propBuild.finish === this.snapshot.propBuild.finish &&
       snapshot.propBuild.fanBuild === this.snapshot.propBuild.fanBuild &&
