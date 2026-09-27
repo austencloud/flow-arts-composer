@@ -15,10 +15,12 @@ export function logCreateMethodSelected(props: {
   method: string;
   source: CreateFrontDoorSource;
   isLastUsed: boolean;
+  isLocked: boolean;
 }): void {
   captureEvent("create_method_selected", {
     method: props.method,
     source: props.source,
     is_last_used: props.isLastUsed,
+    is_locked: props.isLocked,
   });
 }

@@ -2513,6 +2513,8 @@
   "nav_current_module": "Aktuell: {module}",
   "create_ui_last_used_method": "{name}, zuletzt auf diesem Gerät verwendet. {description}",
   "create_ui_last_used": "Zuletzt verwendet",
+  "create_ui_account_badge": "Kostenloses Konto",
+  "create_ui_account_method": "{name}, benötigt ein kostenloses Konto. {description}",
   "create_ui_show_guide": "Anleitung anzeigen",
   "create_ui_not_now": "Jetzt nicht",
   "create_ui_presets": "Vorlagen",
