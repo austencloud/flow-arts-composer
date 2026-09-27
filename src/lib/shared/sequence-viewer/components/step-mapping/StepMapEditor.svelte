@@ -79,6 +79,7 @@
     startPlacement = null,
     initialStepMap,
     draftKey,
+    initialTime,
     bpm,
     onSave,
     onClose,
