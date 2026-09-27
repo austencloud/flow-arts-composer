@@ -309,7 +309,7 @@
     <aside class="view-inspector" aria-label="Autumn review coordinates">
       <button type="button" onclick={copyCurrentView}>
         <span>Copy exact view</span>
-        <kbd>P</kbd>
+        <kbd>U</kbd>
       </button>
       {#if reading}
         <dl>
