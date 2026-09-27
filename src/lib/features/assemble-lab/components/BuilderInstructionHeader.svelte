@@ -217,6 +217,14 @@
     width: max-content;
   }
 
+  /* BuilderKeyboardControl hides itself on touch-only devices; take its
+     label with it so the row never shows an empty "Input" heading. */
+  @media (hover: none), (pointer: coarse) {
+    .input-control {
+      display: none;
+    }
+  }
+
   @container tool-panel (max-width: 980px) {
     .primary-row {
       grid-template-columns: minmax(0, 1fr) auto auto;

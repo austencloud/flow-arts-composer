@@ -83,4 +83,22 @@ describe("removeStep", () => {
       state.sequenceState.removeStepAndSubsequentWithAnimation
     ).toHaveBeenCalledWith(1, expect.any(Function));
   });
+
+  it.each([
+    [0, "Remove steps 1 to 3"],
+    [1, "Remove steps 2 to 3"],
+    [2, "Remove step 3"],
+  ])(
+    "labels removal from index %i with the step numbers people see",
+    (stepIndex, description) => {
+      const state = makeState({ stepCount: 3 });
+
+      removeStep(stepIndex, state);
+
+      expect(state.pushUndoSnapshot).toHaveBeenCalledWith(
+        UndoOperationType.REMOVE_BEATS,
+        expect.objectContaining({ description })
+      );
+    }
+  );
 });

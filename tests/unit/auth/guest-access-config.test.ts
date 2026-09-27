@@ -59,7 +59,6 @@ describe("isTabAccessible", () => {
 describe("getAccessibleTabs", () => {
   it("returns allowed tabs for guests in create", () => {
     expect(getAccessibleTabs("create", "guest")).toEqual([
-      "assemble",
       "construct",
       "generate",
       "shape-engine",

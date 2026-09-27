@@ -78,3 +78,14 @@ Fix direction: `AssembleState` has no arbitrary-index mutator (only append/undo/
 5. **Layout** — container queries + kill 65vh; wire or remove view transition (D2-D4).
 6. **Approachability** — step history strip in live tab, rotation indicator on mobile, cap feedback (S3), error surfacing (S4-S5).
 7. **Dead-code purge** — orphaned lab components + latent-bug helpers.
+
+---
+
+## Status — 2026-09-27 release pass
+
+Hands-on check on the live tab at 375×667, 390×844, 810×1080, 960×412, 1440×900 and 3840×2160 before releasing Assemble to accounts:
+
+- Fixed and verified at runtime: C1 (step-editor turns edit persists and cascades), C2 (reload restores both hands), C3 (orientation and turns are offered while placing), the step history (the Create workspace shows each step as a pictograph), D2 (no clipping at 810×1080), D4 (the grid holds its position from idle to building; the dead view-transition CSS is gone). Delete, undo and Complete behave as in Construct.
+- Fixed in this pass: the removal undo label counted from zero ("Remove step 0 and 1 subsequent steps"); touch-only screens showed an empty "Input" heading where the numpad controls hide.
+- Still open: on short phones (667px tall) the workspace gives the step history about 48px thumbnails, because the shared workspace button rows take most of its 30% share. More height would squeeze the grid into the hand picker, so it needs a layout decision rather than a ratio change.
+- Release: Assemble is open to every signed-in account; guests see it on the front door with a Free account label.
