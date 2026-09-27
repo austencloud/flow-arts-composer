@@ -13,6 +13,7 @@ import {
   fanAppearanceSignature,
   normalizeFanAppearance,
 } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+import { renderedPropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
 // getSettings loaded dynamically to avoid pulling $app/environment into worker bundle
 
 interface MotionKeyData {
@@ -49,6 +50,9 @@ interface PictographKeyInput {
   turnGlyphRevision?: string;
   visibility: {
     fanAppearance?: string;
+    // Present only when a captured model sprite replaces a notation prop, so
+    // every notation render keeps its established lsp11/lsp12 key.
+    propLook?: "model";
     primaryPropColors?: { left: string; right: string };
     primaryPropColorRevision?: string;
     showTKA: boolean;
@@ -277,6 +281,10 @@ export class PictographKeyHasher {
       data,
       visibility.showTKA ?? true
     );
+    const propLook = renderedPropLook(visibility.propLook, [
+      resolvedLeftProp,
+      resolvedRightProp,
+    ]);
 
     return {
       letter: data.letter ?? undefined,
@@ -299,6 +307,7 @@ export class PictographKeyHasher {
               normalizeFanAppearance(visibility.fanAppearance)
             ),
           }),
+        ...(propLook && { propLook }),
         ...(visibility.primaryPropColors && {
           primaryPropColors: visibility.primaryPropColors,
           primaryPropColorRevision: "material-colors-v2",

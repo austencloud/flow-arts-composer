@@ -1,10 +1,15 @@
 import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+import {
+  normalizePropLook,
+  type PropLook,
+} from "$lib/shared/pictograph/prop/domain/prop-look";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { hashSequenceContent } from "$lib/shared/foundation/services/content-hasher";
 import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 
 export interface ChoreoCardRenderKeyInputs {
   fanAppearance?: FanAppearance;
+  propLook?: PropLook;
   primaryPropColors?: { left: string; right: string } | null;
   sequence: SequenceData | null | undefined;
   handPathMode?: boolean;
@@ -91,7 +96,11 @@ export function buildChoreoCardRenderKeys(
     ? `-colors:${i.primaryPropColors.left}:${i.primaryPropColors.right}`
     : "";
   const viewKey = `-view:${i.handPathMode ?? false}:${i.browseViewMode?.subject ?? "props"}:${i.browseViewMode?.granularity ?? "combined"}:${i.browseViewMode?.hand ?? "left"}`;
-  const imageKey = `${i.fanAppearance ? JSON.stringify(i.fanAppearance) : ""}${i.sequence?.id ?? ""}-${sequenceContentKey}-${stepCount}-${i.leftPropType}-${i.rightPropType}-${i.catDogModeEnabled}-${i.showStepNumbers}-${i.showNonRadial}-${i.handPointVis}-${i.showTKA}-${i.showReversals}-${durationKey}-mv:${i.showLeftMotion ? "1" : "0"}${i.showRightMotion ? "1" : "0"}-ch:${ch}-gv:${gv}${paletteKey}${viewKey}`;
+  // Like the fan build, the look swaps artwork in place: an image change that
+  // crossfades, not a structural one.
+  const lookKey =
+    normalizePropLook(i.propLook) === "model" ? "-look:model" : "";
+  const imageKey = `${i.fanAppearance ? JSON.stringify(i.fanAppearance) : ""}${i.sequence?.id ?? ""}-${sequenceContentKey}-${stepCount}-${i.leftPropType}-${i.rightPropType}-${i.catDogModeEnabled}-${i.showStepNumbers}-${i.showNonRadial}-${i.handPointVis}-${i.showTKA}-${i.showReversals}-${durationKey}-mv:${i.showLeftMotion ? "1" : "0"}${i.showRightMotion ? "1" : "0"}-ch:${ch}-gv:${gv}${paletteKey}${lookKey}${viewKey}`;
   // startPlacementLayout (row vs column) changes where the start cell sits and
   // therefore where every step cell AND the QR cell land. It's in the CONTENT
   // (layout) key but NOT imageKey/gridStableKey/structuralKey: a pure row↔column
